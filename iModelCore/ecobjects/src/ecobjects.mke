@@ -61,6 +61,7 @@ ECObjectsHeaders    =           $(ecobjectsPublicAPISrc)ECObjects.h \
                                 $(baseDir)DateTimeInfoAccessor.h \
                                 $(ecobjectsPublicAPISrc)ECDiff.h \
                                 $(ecobjectsPublicAPISrc)SchemaLocalizedStrings.h \
+				$(ecobjectsPublicAPISrc)AdHocJsonValue.h
 
 
 ECPresentationHeaders =         $(ecpresentationPublicAPISrc)auicommand.h \
@@ -120,6 +121,8 @@ $(o)ECClass$(oext)                                         : $(baseDir)ECClass.c
 
 $(o)ECEnumeration$(oext)                                         : $(baseDir)ECEnumeration.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
+$(o)KindOfQuantity$(oext)                                         : $(baseDir)KindOfQuantity.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
 $(o)ECProperty$(oext)                                      : $(baseDir)ECProperty.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
 $(o)ECInstance$(oext)                                      : $(baseDir)ECInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
@@ -165,6 +168,8 @@ $(o)PresentationMetadataHelper$(oext)                      : $(baseDir)Presentat
 $(o)ECDiff$(oext)                                          : $(baseDir)ECDiff.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)SchemaLocalizedStrings$(oext)                          : $(baseDir)SchemaLocalizedStrings.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)AdHocJsonValue$(oext)                                  : $(baseDir)AdHocJsonValue.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 # ECPresentation
 
@@ -284,7 +289,9 @@ LINKER_LIBRARIES           = xmllite$(libext)
 LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
 LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
 LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext)
-LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeomSerialization$(libext)
+LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeomSerialization$(libext)
+LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeJsonCpp$(stlibext)
+
 %ifdef BuildCGJsonValueBuilder
 LINKER_LIBRARIES            + d:/topaz1/out/Winx64/BuildContexts/DgnPlatform/SdkSources/MobileDgnSdk-Winx64/lib/Winx64/BeJsonCpp.lib
 %endif

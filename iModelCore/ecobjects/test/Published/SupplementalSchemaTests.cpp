@@ -1160,7 +1160,7 @@ TEST(SupplementalDeserializationTests, VerifyDeserializedSchemaIsSupplemented2)
     schemaContext = ECSchemaReadContext::CreateContext();
     schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
     SchemaKey key("MasterSchema", 1, 0);
-    testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
+    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
     EXPECT_TRUE(testSchema->IsSupplemented());
 
     }

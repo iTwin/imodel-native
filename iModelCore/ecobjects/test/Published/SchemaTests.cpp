@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
+#include "BeXml/BeXml.h"
 
 using namespace BentleyApi::ECN;
 
@@ -455,43 +456,39 @@ TEST_F (SchemaSearchTest, FindSchemaByName)
     SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath (L"SchemaThatReferences.01.00.ecschema.xml").c_str (), *schemaContext);
     EXPECT_EQ (SchemaReadStatus::Success, status);
 
-    EXPECT_TRUE (schema->FindSchema (SchemaKey ("SchemaThatReferences", 1, 0), SCHEMAMATCHTYPE_Exact) != NULL);
-    EXPECT_TRUE (schema->FindSchema (SchemaKey ("SchemaThatReferencez", 1, 0), SCHEMAMATCHTYPE_Exact) == NULL);
-    EXPECT_TRUE (schema->FindSchema (SchemaKey ("SchemaThatReferences", 2, 0), SCHEMAMATCHTYPE_Exact) == NULL);
-    EXPECT_TRUE (schema->FindSchema (SchemaKey ("SchemaThatReferences", 1, 1), SCHEMAMATCHTYPE_Exact) == NULL);
+    EXPECT_TRUE (schema->FindSchema (SchemaKey ("SchemaThatReferences", 1, 0), SchemaMatchType::Exact) != NULL);
+    EXPECT_TRUE (schema->FindSchema (SchemaKey ("SchemaThatReferencez", 1, 0), SchemaMatchType::Exact) == NULL);
+    EXPECT_TRUE (schema->FindSchema (SchemaKey ("SchemaThatReferences", 2, 0), SchemaMatchType::Exact) == NULL);
+    EXPECT_TRUE (schema->FindSchema (SchemaKey ("SchemaThatReferences", 1, 1), SchemaMatchType::Exact) == NULL);
 
-    EXPECT_TRUE (schema->FindSchema (SchemaKey ("BaseSchema", 1, 0), SCHEMAMATCHTYPE_Exact) != NULL);
-    EXPECT_TRUE (schema->FindSchemaP (SchemaKey ("SchemaThatReferences", 1, 0), SCHEMAMATCHTYPE_Exact) != NULL);
-    EXPECT_TRUE (schema->FindSchemaP (SchemaKey ("a", 123, 456), SCHEMAMATCHTYPE_Exact) == NULL);
+    EXPECT_TRUE (schema->FindSchema (SchemaKey ("BaseSchema", 1, 0), SchemaMatchType::Exact) != NULL);
+    EXPECT_TRUE (schema->FindSchemaP (SchemaKey ("SchemaThatReferences", 1, 0), SchemaMatchType::Exact) != NULL);
+    EXPECT_TRUE (schema->FindSchemaP (SchemaKey ("a", 123, 456), SchemaMatchType::Exact) == NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Raimondas.Rimkus 02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-static  void    ValidateSchemaNameParsing (Utf8CP fullName, bool expectFailure, Utf8CP expectName, uint32_t expectMajor, uint32_t expectMinor)
+static  void    ValidateSchemaNameParsing (Utf8CP fullName, bool expectFailure, Utf8CP expectName, uint32_t expectMajor, uint32_t expectWrite, uint32_t expectMinor)
     {
     Utf8String    shortName;
-    Utf8String    shortNameStr;
     uint32_t   versionMajor;
+    uint32_t   versionWrite;
     uint32_t   versionMinor;
-    Utf8String    fullNameStr = Utf8String (fullName);
 
-    ECObjectsStatus status = ECSchema::ParseSchemaFullName (shortName, versionMajor, versionMinor, fullName);
-    ECObjectsStatus statusStr = ECSchema::ParseSchemaFullName (shortNameStr, versionMajor, versionMinor, fullNameStr);
+    ECObjectsStatus status = ECSchema::ParseSchemaFullName (shortName, versionMajor, versionWrite, versionMinor, fullName);
 
     if (expectFailure)
         {
         EXPECT_TRUE (ECObjectsStatus::Success != status);
-        EXPECT_TRUE (ECObjectsStatus::Success != statusStr);
         return;
         }
 
     EXPECT_TRUE (ECObjectsStatus::Success == status);
-    EXPECT_TRUE (ECObjectsStatus::Success == statusStr);
 
     EXPECT_STREQ (shortName.c_str (), expectName);
-    EXPECT_STREQ (shortNameStr.c_str (), expectName);
     EXPECT_EQ (versionMajor, expectMajor);
+    EXPECT_EQ(versionWrite, expectWrite);
     EXPECT_EQ (versionMinor, expectMinor);
     }
 
@@ -500,14 +497,14 @@ static  void    ValidateSchemaNameParsing (Utf8CP fullName, bool expectFailure, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (SchemaNameParsingTest, ParseFullSchemaName)
     {
-    ValidateSchemaNameParsing ("TestName.6.8", false, "TestName", 6, 8);
-    ValidateSchemaNameParsing ("TestName.16.18", false, "TestName", 16, 18);
-    ValidateSchemaNameParsing ("TestName.126.128", false, "TestName", 126, 128);
-    ValidateSchemaNameParsing ("TestName.1267.128", true, NULL, 0, 0);
-    ValidateSchemaNameParsing ("TestName.1267", true, NULL, 0, 0);
-    ValidateSchemaNameParsing ("TestName", true, NULL, 0, 0);
-    ValidateSchemaNameParsing ("", true, NULL, 0, 0);
-    ValidateSchemaNameParsing ("12.18", true, NULL, 0, 0);
+    ValidateSchemaNameParsing ("TestName.6.8", false, "TestName", 6, 0, 8);
+    ValidateSchemaNameParsing ("TestName.16.18", false, "TestName", 16, 0, 18);
+    ValidateSchemaNameParsing ("TestName.126.128", false, "TestName", 126, 0, 128);
+    ValidateSchemaNameParsing ("TestName.1267.128", false, "TestName", 1267, 0, 128);
+    ValidateSchemaNameParsing ("TestName.1267", true, NULL, 0, 0, 0);
+    ValidateSchemaNameParsing ("TestName", true, NULL, 0, 0, 0);
+    ValidateSchemaNameParsing ("", true, NULL, 0, 0, 0);
+    ValidateSchemaNameParsing ("12.18", true, NULL, 0, 0, 0);
     }
 
 //---------------------------------------------------------------------------------------
@@ -557,6 +554,39 @@ TEST_F(SchemaDeserializationTest, InvalidStructArrayPropertySpecification)
 
     ArrayECPropertyCP typeReferences2 = prop->GetAsArrayProperty();
     ASSERT_TRUE(nullptr != typeReferences2);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, CaseSensitivity)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='CaseInsensitive' version='01.00' displayLabel='Case Insensitive' description='Testing case sensitivity with struct names and custom attributes' nameSpacePrefix='cs' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECCustomAttributeClass typeName='CustomAttrib' description='CustomAttribute' displayLabel='CA' />"
+        "    <ECStructClass typeName='MyStruct'>"
+        "        <ECProperty propertyName='Prop1' typeName='string' />"
+        "    </ECStructClass>"
+        "    <ECEntityClass typeName='Entity'>"
+        "        <ECCustomAttributes>"
+        "            <Customattrib xmlns='CaseInsensitive.01.00' />"
+        "        </ECCustomAttributes>"
+        "        <ECStructProperty propertyName='StructProp' typeName='Mystruct' />"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
+    EXPECT_EQ(SchemaReadStatus::Success, status);
+    ECClassP ent = schema->GetClassP("Entity");
+    ASSERT_TRUE(nullptr != ent);
+    ECPropertyP prop = ent->GetPropertyP("StructProp");
+    ASSERT_TRUE(nullptr != prop);
+    StructECPropertyP structProp = prop->GetAsStructPropertyP();
+    ASSERT_TRUE(nullptr != structProp);
+    EXPECT_TRUE(ent->IsDefined("CustomAttrib"));
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -886,6 +916,36 @@ TEST_F (SchemaDeserializationTest, ExpectSuccessWhenDeserializingSchemaWithBaseC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (SchemaDeserializationTest, ExpectSuccessWhenDeserializingSchemaWithEnumerationInReferencedFile)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext ();
+    WString seedPath (ECTestFixture::GetTestDataPath (L"").c_str ());
+    schemaContext->AddSchemaPath (seedPath.c_str ());
+
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath (L"EnumInReferencedSchema.01.00.01.ecschema.xml").c_str (), *schemaContext);
+    EXPECT_EQ (SchemaReadStatus::Success, status);
+
+    ASSERT_TRUE(schema.IsValid());
+
+    ECClassP pClass = schema->GetClassP ("Entity");
+    ASSERT_TRUE (nullptr != pClass);
+
+    ECPropertyP p = pClass->GetPropertyP("EnumeratedProperty");
+    ASSERT_TRUE(p != nullptr);
+
+    PrimitiveECPropertyCP prim = p->GetAsPrimitiveProperty();
+    ASSERT_TRUE(prim != nullptr);
+
+    ECEnumerationCP ecEnum = prim->GetEnumeration();
+    ASSERT_TRUE(ecEnum != nullptr);
+
+    ASSERT_TRUE(ecEnum->GetSchema().GetVersionWrite() == 12);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (SchemaDeserializationTest, ExpectSuccessWhenECSchemaContainsOnlyRequiredAttributes)
     {
     // show error messages but do not assert.
@@ -1051,7 +1111,7 @@ TEST_F (SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
 TEST_F (SchemaDeserializationTest, ExpectSuccessWhenRoundtripEnumerationUsingString)
     {
     ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     ASSERT_TRUE(schema.IsValid());
 
     //Create Enumeration
@@ -1516,7 +1576,7 @@ TEST_F (SchemaDeserializationTest, TestMultipleConstraintClassesWithKeyPropertie
 TEST_F(SchemaDeserializationTest, KindOfQuantityTest)
     {
     ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "KindOfQuantitySchema", 5, 6);
+    ECSchema::CreateSchema(schema, "KindOfQuantitySchema", "koq", 5, 0, 6);
     ASSERT_TRUE(schema.IsValid());
 
     ECEntityClassP entityClass;
@@ -1544,6 +1604,184 @@ TEST_F(SchemaDeserializationTest, KindOfQuantityTest)
     ASSERT_NE(property, nullptr);
 
     EXPECT_EQ("koq", property->GetKindOfQuantity());
+    }
+
+
+void ValidateElementOrder(bvector<Utf8String> expectedTypeNames, BeXmlNodeP root)
+    {
+    BeXmlNodeP currentNode = root->GetFirstChild();
+    for (auto expectedTypeName : expectedTypeNames)
+        {
+        if (currentNode == nullptr)
+            {
+            FAIL() << "Expected end of document, Node '" << expectedTypeName << "' expected.";
+            }
+
+        Utf8String nodeTypeName;
+        EXPECT_EQ(BeXmlStatus::BEXML_Success, currentNode->GetAttributeStringValue(nodeTypeName, "typeName"));
+        EXPECT_EQ(expectedTypeName, nodeTypeName);
+
+        currentNode = currentNode->GetNextSibling();
+        }
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Stefan.Apfel    02/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, TestPreservingElementOrder)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->SetPreserveElementOrder(true);
+
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='TestSchema' version='01.00' nameSpacePrefix='ab' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEntityClass typeName=\"GHI\" description=\"Project ECClass\" displayLabel=\"Class GHI\"></ECEntityClass>"
+        "    <ECEntityClass typeName=\"ABC\" description=\"Project ECClass\" displayLabel=\"Class ABC\"></ECEntityClass>"
+        "    <ECEnumeration typeName=\"DEF\" displayLabel=\"Enumeration DEF\" backingTypeName=\"int\" />"
+        "</ECSchema>";
+    ECSchemaPtr schema;
+    SchemaReadStatus schemaReadingStatus = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
+    EXPECT_EQ(SchemaReadStatus::Success, schemaReadingStatus);
+
+    Utf8String ecSchemaXmlString;
+    SchemaWriteStatus schemaWritingStatus = schema->WriteToXmlString(ecSchemaXmlString,3,0);
+    EXPECT_EQ(SchemaWriteStatus::Success, schemaWritingStatus);
+
+    size_t stringByteCount = ecSchemaXmlString.length() * sizeof(Utf8Char);
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
+    EXPECT_EQ(BEXML_Success, xmlStatus);
+
+    bvector<Utf8String> typeNames = {"GHI", "ABC", "DEF"};
+    ValidateElementOrder(typeNames, xmlDom.get()->GetRootElement());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Stefan.Apfel    02/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, TestDefaultElementOrder)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='TestSchema' version='01.00' nameSpacePrefix='ab' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEntityClass typeName=\"GHI\" description=\"Project ECClass\" displayLabel=\"Class GHI\"></ECEntityClass>"
+        "    <ECEntityClass typeName=\"ABC\" description=\"Project ECClass\" displayLabel=\"Class ABC\"></ECEntityClass>"
+        "    <ECEnumeration typeName=\"DEF\" displayLabel=\"Enumeration DEF\" backingTypeName=\"int\" />"
+        "</ECSchema>";
+    ECSchemaPtr schema;
+    EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext));
+
+    WString ecSchemaXmlString;
+    EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(ecSchemaXmlString,3,0));
+
+    size_t stringByteCount = ecSchemaXmlString.length() * sizeof(Utf8Char);
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
+    EXPECT_EQ(BEXML_Success, xmlStatus);
+
+    // Enumerations (DEF) are serialized first, then classes (ABC, GHI)
+    bvector<Utf8String> typeNames = {"DEF", "ABC", "GHI"};
+    ValidateElementOrder(typeNames, xmlDom.get()->GetRootElement());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Stefan.Apfel    02/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, TestPreserveElementOrderWithBaseClassAndRelationships)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->SetPreserveElementOrder(true);
+
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='TestSchema' version='01.00' nameSpacePrefix='ab' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEntityClass typeName=\"GHI\" description=\"Project ECClass\" displayLabel=\"Class GHI\"></ECEntityClass>"
+        "    <ECEntityClass typeName=\"ABC\" description=\"Project ECClass\" displayLabel=\"Class ABC\">"
+        "      <BaseClass>MNO</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECRelationshipClass typeName=\"PQR\" isDomainClass=\"True\" strength=\"referencing\" strengthDirection=\"forward\">"
+        "      <Source cardinality = \"(0, 1)\" polymorphic = \"True\">"
+        "          <Class class = \"MNO\" />"
+        "      </Source>"
+        "      <Target cardinality = '(0, 1)' polymorphic = 'True'>"
+        "          <Class class = 'JKL'>"
+        "              <Key>"
+        "                  <Property name = 'Property1' />"
+        "                  <Property name = 'Property2' />"
+        "              </Key>"
+        "          </Class>"
+        "      </Target>"
+        "    </ECRelationshipClass>"
+        "    <ECEntityClass typeName = \"MNO\" description=\"Project ECClass\" displayLabel=\"Class MNO\"></ECEntityClass>"
+        "    <ECEntityClass typeName = \"JKL\" description=\"Project ECClass\" displayLabel=\"Class JKL\">"
+        "      <ECProperty propertyName=\"Property1\" typeName=\"string\" />"
+        "      <ECProperty propertyName=\"Property2\" typeName=\"string\" />"
+        "    </ECEntityClass>"
+        "    <ECEnumeration typeName=\"DEF\" displayLabel=\"Enumeration PQR\" backingTypeName=\"int\" />"
+        "</ECSchema>";
+    ECSchemaPtr schema;
+    EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext));
+
+    WString ecSchemaXmlString;
+    EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(ecSchemaXmlString, 3, 0));
+
+    size_t stringByteCount = ecSchemaXmlString.length() * sizeof(Utf8Char);
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
+    EXPECT_EQ(BEXML_Success, xmlStatus);
+
+    // Expecting the same order as specified in the SchemaXML Document.
+    bvector<Utf8String> typeNames = {"GHI","ABC","PQR", "MNO", "JKL", "DEF", };
+    ValidateElementOrder(typeNames, xmlDom.get()->GetRootElement());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Stefan.Apfel    02/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, TestDefaultElementOrderWithBaseClassAndRelationships)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='TestSchema' version='01.00' nameSpacePrefix='ab' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEntityClass typeName=\"GHI\" description=\"Project ECClass\" displayLabel=\"Class GHI\"></ECEntityClass>"
+        "    <ECEntityClass typeName=\"ABC\" description=\"Project ECClass\" displayLabel=\"Class ABC\">"
+        "      <BaseClass>MNO</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECRelationshipClass typeName=\"DEF\" isDomainClass=\"True\" strength=\"referencing\" strengthDirection=\"forward\">"
+        "      <Source cardinality = \"(0, 1)\" polymorphic = \"True\">"
+        "          <Class class = \"MNO\" />"
+        "      </Source>"
+        "      <Target cardinality = '(0, 1)' polymorphic = 'True'>"
+        "          <Class class = 'JKL'>"
+        "              <Key>"
+        "                  <Property name = 'Property1' />"
+        "                  <Property name = 'Property2' />"
+        "              </Key>"
+        "          </Class>"
+        "      </Target>"
+        "    </ECRelationshipClass>"
+        "    <ECEntityClass typeName = \"MNO\" description=\"Project ECClass\" displayLabel=\"Class MNO\"></ECEntityClass>"
+        "    <ECEntityClass typeName = \"JKL\" description=\"Project ECClass\" displayLabel=\"Class JKL\">"
+        "      <ECProperty propertyName=\"Property1\" typeName=\"string\" />"
+        "      <ECProperty propertyName=\"Property2\" typeName=\"string\" />"
+        "    </ECEntityClass>"
+        "    <ECEnumeration typeName=\"PQR\" displayLabel=\"Enumeration PQR\" backingTypeName=\"int\" />"
+        "</ECSchema>";
+    ECSchemaPtr schema;
+    EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext));
+
+    WString ecSchemaXmlString;
+    EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(ecSchemaXmlString, 3, 0));
+
+    size_t stringByteCount = ecSchemaXmlString.length() * sizeof(Utf8Char);
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
+    EXPECT_EQ(BEXML_Success, xmlStatus);
+
+    // First Enumeration (PQR), then classes alphabetically (ABC, DEF, GHI). As MNO is the base class of ABC and
+    // JKL has a constraint in DEF, those two classes are written before the class they depend in.
+    bvector<Utf8String> typeNames = {"PQR", "MNO", "ABC", "JKL", "DEF", "GHI"};
+    ValidateElementOrder(typeNames, xmlDom.get()->GetRootElement());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1648,7 +1886,7 @@ TEST_F (SchemaSerializationTest, SerializeComprehensiveSchema)
     schemaContext->AddSchemaLocater(*schemaLocater);
 
     SchemaKey schemaKey("Bentley_Standard_CustomAttributes", 1, 12);
-    ECSchemaPtr standardCASchema = schemaContext->LocateSchema(schemaKey, SCHEMAMATCHTYPE_Latest);
+    ECSchemaPtr standardCASchema = schemaContext->LocateSchema(schemaKey, SchemaMatchType::Latest);
     EXPECT_TRUE(standardCASchema.IsValid());
 
     //Compose our new schema
@@ -1983,7 +2221,6 @@ TEST_F (SchemaLocateTest, ExpectSuccessWhenLocatingStandardSchema)
         schema = ECSchema::LocateSchema (key, *schemaContext);
         EXPECT_TRUE (schema.IsValid ());
         EXPECT_TRUE (schema->IsStandardSchema ());
-        EXPECT_STREQ (entry.second, ECSchema::FormatSchemaVersion (key.m_versionMajor, key.m_versionMinor).c_str ());
         }
     }
 
@@ -3116,26 +3353,26 @@ TEST_F (SchemaComparisonTest, VerifyMatchesOperator)
     EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0) == SchemaKey ("SchemaTest", 2, 0));
     EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0) == SchemaKey ("SchemaTest", 1, 1));
 
-    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Exact));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaNotTest", 1, 0), SCHEMAMATCHTYPE_Exact));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 2, 0), SCHEMAMATCHTYPE_Exact));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 1), SCHEMAMATCHTYPE_Exact));
+    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::Exact));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaNotTest", 1, 0), SchemaMatchType::Exact));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 2, 0), SchemaMatchType::Exact));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 1), SchemaMatchType::Exact));
 
-    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Identical));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaNotTest", 1, 0), SCHEMAMATCHTYPE_Identical));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 2, 0), SCHEMAMATCHTYPE_Identical));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 1), SCHEMAMATCHTYPE_Identical));
+    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::Identical));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaNotTest", 1, 0), SchemaMatchType::Identical));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 2, 0), SchemaMatchType::Identical));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 1), SchemaMatchType::Identical));
 
-    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Latest));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaNotTest", 1, 0), SCHEMAMATCHTYPE_Latest));
-    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 2, 0), SCHEMAMATCHTYPE_Latest));
-    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 1).Matches (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Latest));
+    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::Latest));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaNotTest", 1, 0), SchemaMatchType::Latest));
+    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 2, 0), SchemaMatchType::Latest));
+    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 1).Matches (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::Latest));
 
-    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaNotTest", 1, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 2, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 1).Matches (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 1), SCHEMAMATCHTYPE_LatestCompatible));
+    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::LatestCompatible));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaNotTest", 1, 0), SchemaMatchType::LatestCompatible));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 2, 0), SchemaMatchType::LatestCompatible));
+    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 1).Matches (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::LatestCompatible));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).Matches (SchemaKey ("SchemaTest", 1, 1), SchemaMatchType::LatestCompatible));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3148,25 +3385,25 @@ TEST_F (SchemaComparisonTest, VerifyLessThanOperator)
     EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0) < SchemaKey ("SchemaTest", 2, 0));
     EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 1) < SchemaKey ("SchemaTest", 1, 0));
 
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Exact));
-    EXPECT_TRUE (SchemaKey ("SchemaTesa", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Exact));
-    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 2, 0), SCHEMAMATCHTYPE_Exact));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 1).LessThan (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Exact));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::Exact));
+    EXPECT_TRUE (SchemaKey ("SchemaTesa", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::Exact));
+    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 2, 0), SchemaMatchType::Exact));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 1).LessThan (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::Exact));
 
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Identical));
-    EXPECT_TRUE (SchemaKey ("SchemaTesa", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Identical));
-    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 2, 0), SCHEMAMATCHTYPE_Identical));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 1).LessThan (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Identical));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::Identical));
+    EXPECT_TRUE (SchemaKey ("SchemaTesa", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::Identical));
+    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 2, 0), SchemaMatchType::Identical));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 1).LessThan (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::Identical));
 
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Latest));
-    EXPECT_TRUE (SchemaKey ("SchemaTesa", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Latest));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 2, 0), SCHEMAMATCHTYPE_Latest));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 9), SCHEMAMATCHTYPE_Latest));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::Latest));
+    EXPECT_TRUE (SchemaKey ("SchemaTesa", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::Latest));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 2, 0), SchemaMatchType::Latest));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 9), SchemaMatchType::Latest));
 
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_TRUE (SchemaKey ("SchemaTesa", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 2, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 9), SCHEMAMATCHTYPE_LatestCompatible));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::LatestCompatible));
+    EXPECT_TRUE (SchemaKey ("SchemaTesa", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 0), SchemaMatchType::LatestCompatible));
+    EXPECT_TRUE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 2, 0), SchemaMatchType::LatestCompatible));
+    EXPECT_FALSE (SchemaKey ("SchemaTest", 1, 0).LessThan (SchemaKey ("SchemaTest", 1, 9), SchemaMatchType::LatestCompatible));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3225,25 +3462,25 @@ TEST_F (SchemaCacheTest, FilterSchema)
     EXPECT_TRUE (cache->AddSchema (*schema2) == ECObjectsStatus::Success);
     EXPECT_TRUE (cache->AddSchema (*schema3) == ECObjectsStatus::Success);
 
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 2, 0), SCHEMAMATCHTYPE_Exact) != NULL);
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseZchema1", 2, 0), SCHEMAMATCHTYPE_Exact) == NULL);
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 3, 0), SCHEMAMATCHTYPE_Exact) == NULL);
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 2, 1), SCHEMAMATCHTYPE_Exact) == NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 2, 0), SchemaMatchType::Exact) != NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseZchema1", 2, 0), SchemaMatchType::Exact) == NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 3, 0), SchemaMatchType::Exact) == NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 2, 1), SchemaMatchType::Exact) == NULL);
 
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 2, 0), SCHEMAMATCHTYPE_Identical) != NULL);
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseZchema1", 2, 0), SCHEMAMATCHTYPE_Identical) == NULL);
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 3, 0), SCHEMAMATCHTYPE_Identical) == NULL);
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 2, 1), SCHEMAMATCHTYPE_Identical) == NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 2, 0), SchemaMatchType::Identical) != NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseZchema1", 2, 0), SchemaMatchType::Identical) == NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 3, 0), SchemaMatchType::Identical) == NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 2, 1), SchemaMatchType::Identical) == NULL);
 
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 2, 0), SCHEMAMATCHTYPE_Latest) != NULL);
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseZchema1", 2, 0), SCHEMAMATCHTYPE_Latest) == NULL);
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 3, 0), SCHEMAMATCHTYPE_Latest) != NULL);
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 2, 1), SCHEMAMATCHTYPE_Latest) != NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 2, 0), SchemaMatchType::Latest) != NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseZchema1", 2, 0), SchemaMatchType::Latest) == NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 3, 0), SchemaMatchType::Latest) != NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema1", 2, 1), SchemaMatchType::Latest) != NULL);
 
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema2", 5, 5), SCHEMAMATCHTYPE_LatestCompatible) != NULL);
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseZchema2", 5, 5), SCHEMAMATCHTYPE_LatestCompatible) == NULL);
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema2", 3, 5), SCHEMAMATCHTYPE_LatestCompatible) == NULL);
-    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema2", 5, 3), SCHEMAMATCHTYPE_LatestCompatible) != NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema2", 5, 5), SchemaMatchType::LatestCompatible) != NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseZchema2", 5, 5), SchemaMatchType::LatestCompatible) == NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema2", 3, 5), SchemaMatchType::LatestCompatible) == NULL);
+    EXPECT_TRUE (cache->GetSchema (SchemaKey ("BaseSchema2", 5, 3), SchemaMatchType::LatestCompatible) != NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3321,5 +3558,4 @@ TEST_F (SchemaImmutableTest, SetImmutable)
     EXPECT_EQ (schema->SetVersionMajor (13), ECObjectsStatus::SchemaIsImmutable);
     EXPECT_EQ (schema->SetVersionMinor (13), ECObjectsStatus::SchemaIsImmutable);
     }
-
 END_BENTLEY_ECN_TEST_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/CalculatedPropertyTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -160,7 +160,7 @@ IECInstancePtr CalculatedPropertyTests::CreateTestCase (Utf8CP propName, Utf8CP 
     schemaContext->AddSchemaLocater (*schemaLocater);
 
     SchemaKey schemaKey ("Bentley_Standard_CustomAttributes", 1, 5);
-    ECSchemaPtr customAttrSchema = schemaContext->LocateSchema (schemaKey, SCHEMAMATCHTYPE_Latest);
+    ECSchemaPtr customAttrSchema = schemaContext->LocateSchema (schemaKey, SchemaMatchType::Latest);
     EXPECT_TRUE (customAttrSchema.IsValid ());
 
     // Create the schema

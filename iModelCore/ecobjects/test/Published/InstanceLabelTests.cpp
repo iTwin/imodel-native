@@ -24,7 +24,7 @@ struct InstanceLabelTest      : ECTestFixture
         {
         ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
         SchemaKey schemaKey ("Bentley_Standard_CustomAttributes", 1, 5);
-        ECSchemaPtr customAttributesSchema = context->LocateSchema (schemaKey, SCHEMAMATCHTYPE_Latest);
+        ECSchemaPtr customAttributesSchema = context->LocateSchema (schemaKey, SchemaMatchType::Latest);
         
         m_customAttributeEnabler = customAttributesSchema->GetClassP ("InstanceLabelSpecification")->GetDefaultStandaloneEnabler();
 

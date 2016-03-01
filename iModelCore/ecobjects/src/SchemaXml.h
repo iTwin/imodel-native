@@ -2,7 +2,7 @@
 |
 |     $Source: src/SchemaXml.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -34,6 +34,7 @@ struct SchemaXmlWriter
     private:
         struct  ECSchemaWriteContext
             {
+            public:
             bset<Utf8CP> m_alreadyWrittenClasses;
             };
 

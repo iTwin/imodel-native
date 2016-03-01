@@ -488,24 +488,20 @@ ECObjectsStatus ResolveEnumerationType(ECEnumerationCP& enumeration, Utf8StringC
     ECObjectsStatus status = ECEnumeration::ParseEnumerationName(namespacePrefix, enumName, typeName);
     if (ECObjectsStatus::Success != status)
         {
-        LOG.errorv("Cannot resolve the type name '%s'.", typeName.c_str());
+        LOG.warningv("Cannot resolve the type name '%s'.", typeName.c_str());
         return status;
         }
 
     ECSchemaCP resolvedSchema = parentSchema.GetSchemaByNamespacePrefixP(namespacePrefix);
     if (nullptr == resolvedSchema)
         {
-        LOG.errorv("Cannot resolve the type name '%s' as an enumeration type because the namespacePrefix '%s' can not be resolved to the primary or a referenced schema.",
-                     typeName.c_str(), namespacePrefix.c_str());
         return ECObjectsStatus::SchemaNotFound;
         }
 
     ECEnumerationCP result = resolvedSchema->GetEnumerationCP(enumName.c_str());
     if (nullptr == result)
         {
-        LOG.errorv("Cannot resolve the type name '%s' as an enumeration type because ECEnumeration '%s' does not exist in the schema '%s'.",
-                     typeName.c_str(), enumName.c_str(), resolvedSchema->GetName().c_str());
-        return ECObjectsStatus::EnumerationNotFound;
+        return ECObjectsStatus::DataTypeNotSupported;
         }
 
     enumeration = result;
@@ -528,8 +524,7 @@ ECObjectsStatus PrimitiveECProperty::_SetTypeName (Utf8StringCR typeName)
         }
     
     ECEnumerationCP enumeration;
-    ECObjectsStatus status2 = ResolveEnumerationType(enumeration, typeName, this->GetClass().GetSchema());
-    if (ECObjectsStatus::Success == status2 && enumeration != nullptr)
+    if (ECObjectsStatus::Success == ResolveEnumerationType(enumeration, typeName, this->GetClass().GetSchema()))
         {
         return SetType(*enumeration);
         }

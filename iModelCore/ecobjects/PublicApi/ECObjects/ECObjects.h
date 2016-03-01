@@ -48,6 +48,8 @@ EC_TYPEDEFS(ECClass);
 EC_TYPEDEFS(ECEnumeration);
 EC_TYPEDEFS(ECEnumerator);
 EC_TYPEDEFS(ECEnumerationContainer);
+EC_TYPEDEFS(KindOfQuantity);
+EC_TYPEDEFS(KindOfQuantityContainer);
 EC_TYPEDEFS(ECEntityClass);
 EC_TYPEDEFS(ECCustomAttributeClass);
 EC_TYPEDEFS(ECStructClass);
@@ -97,6 +99,7 @@ EC_TYPEDEFS (SchemaNameClassNamePair);
 EC_TYPEDEFS (UnitSpec);
 EC_TYPEDEFS (Unit);
 EC_TYPEDEFS (UnitConverter);
+EC_TYPEDEFS(AdHocJsonValue);
 
 //__PUBLISH_SECTION_END__
 EC_TYPEDEFS (AdhocPropertyMetadata);

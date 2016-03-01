@@ -19,9 +19,11 @@
 #include <Bentley/bvector.h>
 #include <Bentley/bmap.h>
 #include <Bentley/bset.h>
+#include <Bentley/BeFileName.h>
 
-#define DEFAULT_VERSION_MAJOR   1
-#define DEFAULT_VERSION_MINOR   0
+#define DEFAULT_VERSION_MAJOR       1
+#define DEFAULT_VERSION_WRITE      0
+#define DEFAULT_VERSION_MINOR       0
 
 EC_TYPEDEFS(QualifiedECAccessor);
 
@@ -48,6 +50,8 @@ typedef bmap<Utf8CP, ECPropertyP,    less_str>  PropertyMap;
 typedef bmap<Utf8CP, ECClassP,       less_str>  ClassMap;
 typedef bmap<Utf8CP, ECEnumerationP, less_str>  EnumerationMap;
 typedef bvector<ECEnumeratorP>                  EnumeratorList;
+typedef bmap<Utf8CP, KindOfQuantityP, less_str> KindOfQuantityMap;
+typedef bvector<Utf8String>                     UnitOfMeasurementList;
 
 /*---------------------------------------------------------------------------------**//**
 * Used to hold property name and display label forECProperty, ECClass, and ECSchema.
@@ -1209,6 +1213,7 @@ private:
 
     ECObjectsStatus AddProperty (ECPropertyP& pProperty, bool resolveConflicts = false);
     ECObjectsStatus RemoveProperty (ECPropertyR pProperty);
+    void FindUniquePropertyName(Utf8StringR newName, Utf8CP prefix, Utf8CP originalName);
     ECObjectsStatus RenameConflictProperty(ECPropertyP thisProperty, bool renameDerivedProperties);
 
     static bool     SchemaAllowsOverridingArrays(ECSchemaCP schema);
@@ -1555,7 +1560,7 @@ friend struct SchemaXmlReaderImpl;
     public:
         //! The ECSchema that this enumeration is defined in
         ECOBJECTS_EXPORT ECSchemaCR GetSchema() const;
-        //! The name of this ECClass
+        //! The name of this Enumeration
         ECOBJECTS_EXPORT Utf8StringCR GetName() const;
         //! {SchemaName}:{EnumerationName} The pointer will remain valid as long as the ECEnumeration exists.
         ECOBJECTS_EXPORT Utf8StringCR GetFullName() const;
@@ -1666,6 +1671,142 @@ struct ECEnumerator : NonCopyableClass
         //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a string Primitive
         //! @param[in] value The value to set
         ECOBJECTS_EXPORT ECObjectsStatus SetString(Utf8CP value);
+    };
+
+//======================================================================================
+//! QuantityConversionType describes how conversion between compatible units should be performe
+//! @bsiclass                                                     Robert.Schili      02/2016
+//+===============+===============+===============+===============+===============+=====
+enum class QuantityConversionType
+    {
+    //! Trivial Formula-based linear or affine transformation
+    FormulaBased,
+
+    //! Will be used for various “nominal” dimensions like pipe sizes,
+    //! standard dimensions of mechanical parts and a few other similar situations
+    Mapping
+    };
+
+//======================================================================================
+//! QuantityPresentationType describes how values should be treated in general
+//! @bsiclass                                                     Robert.Schili      02/2016
+//+===============+===============+===============+===============+===============+=====
+enum class QuantityPresentationType
+    {
+    //! Default representation using a decimal value
+    Decimal,
+
+    //! Used for presenting big numbers and mostly will be used in scientific applications
+    Scientific,
+
+    //! Multi-UOM presentation. For example geographic latitudes and longitudes in a form of degrees, minutes and seconds
+    Fractional
+    };
+
+//=======================================================================================
+//! The in-memory representation of a KindOfQuantity as defined by ECSchemaXML
+//! @bsiclass
+//=======================================================================================
+struct KindOfQuantity : NonCopyableClass
+    {
+    friend struct ECSchema;
+    friend struct SchemaXmlWriter;
+    friend struct SchemaXmlReaderImpl;
+
+    private:
+        static const QuantityConversionType DEFAULT_CONVERSION_TYPE = QuantityConversionType::FormulaBased;
+        static const QuantityPresentationType DEFAULT_PRESENTATION_TYPE = QuantityPresentationType::Decimal;
+
+        ECSchemaCR m_schema;
+        mutable Utf8String m_fullName; //cached nsprefix:name representation
+        ECValidatedName m_validatedName; //wraps name and displaylabel
+        Utf8String m_description;
+        //! Describes how the conversion between compatible units should be performed
+        QuantityConversionType m_conversionType;
+        //! Addresses how values should be treated in general
+        QuantityPresentationType m_presentationType;
+        //! Optional format that accompanies the presentation type.
+        //! can store a direct set of formatting instructions or alternatively it can be a reference key by
+        //! which the actual format will be extracted from some additional resource based on the context of the formatting operation
+        Utf8String m_presentationFormat;
+        //! list of compatible UOM’s appropriate for presenting quantities on the UI and available for the user selection.
+        //! The names should be accompanied by the display precision of values for presenting the data in accordance with
+        //! engineering and standard requirements. 
+        UnitOfMeasurementList m_presentationUOMList;
+        //! UOM used for persisting the information
+        Utf8String m_persistenceUOM;
+
+        //  Lifecycle management:  The schema implementation will
+        //  serve as a factory for kind of quantities and will manage their lifecycle.
+        explicit KindOfQuantity(ECSchemaCR schema) : m_schema(schema), m_presentationType(DEFAULT_PRESENTATION_TYPE),
+            m_conversionType(DEFAULT_CONVERSION_TYPE) {};
+
+        ~KindOfQuantity() {};
+
+        // schemas index KindOfQuantity by name so publicly name can not be reset
+        void SetName(Utf8CP name);
+
+        /*SchemaReadStatus ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchemaReadContextR context);
+        SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const;*/
+
+    public:
+        //! The ECSchema that this kind of quantity is defined in
+        ECSchemaCR GetSchema() const { return m_schema; }
+
+        //! The name of this Instance
+        Utf8StringCR GetName() const { return m_validatedName.GetName(); }
+
+        //! {SchemaName}:{KindOfQuantityName} The pointer will remain valid as long as the KindOfQuantity exists.
+        ECOBJECTS_EXPORT Utf8StringCR GetFullName() const;
+        //! Given a qualified enum name, will parse out the schema's namespace prefix and the kind of quantity name.
+        //! @param[out] prefix  The namespace prefix of the schema
+        //! @param[out] kindOfQuantityName   The name of the KindOfQuantity
+        //! @param[in]  stringToParse  The qualified name, in the format of {SchemaName}:{KindOfQuantityName}
+        //! @return A status code indicating whether the qualified name was successfully parsed or not
+        ECOBJECTS_EXPORT static ECObjectsStatus ParseFullName(Utf8StringR prefix, Utf8StringR kindOfQuantityName, Utf8StringCR stringToParse);
+
+        //! Sets the display label of this KindOfQuantity
+        //! @param[in]  value  The new value to apply
+        void SetDisplayLabel(Utf8CP value) { m_validatedName.SetDisplayLabel(value); }
+        //! Gets the display label of this KindOfQuantity.  If no display label has been set explicitly, it will return the name of the KindOfQuantity
+        Utf8StringCR GetDisplayLabel() const { return m_validatedName.GetDisplayLabel(); }
+
+        //! Sets the description of this KindOfQuantity
+        //! @param[in]  value  The new value to apply
+        void SetDescription(Utf8CP value) { m_description = value; }
+        //! Gets the description of this KindOfQuantity.
+        Utf8StringCR GetDescription() const { return m_description; };
+
+        //! Sets the conversion type of this KindOfQuantity
+        //! @param[in]  value  The new value to apply
+        void SetConversionType(QuantityConversionType value) { m_conversionType = value; }
+        //! Gets the conversion type of this KindOfQuantity.
+        QuantityConversionType GetConversionType() const { return m_conversionType; };
+
+        //! Sets the presentation type of this KindOfQuantity
+        //! @param[in]  value  The new value to apply
+        void SetPresentationType(QuantityPresentationType value) { m_presentationType = value; }
+        //! Gets the presentation type of this KindOfQuantity.
+        QuantityPresentationType GetPresentationType() const { return m_presentationType; };
+
+        //! Sets the presentation format of this KindOfQuantity
+        //! @param[in]  value  The new value to apply
+        void SetPresentationFormat(Utf8CP value) { m_presentationFormat = value; }
+        //! Gets the presentation format of this KindOfQuantity. (Optional format that accompanies the presentation type)
+        Utf8StringCR GetPresentationFormat() const { return m_presentationFormat; };
+
+        //! Gets a list of compatible UOM’s appropriate for presenting quantities on the UI and available for the user selection.
+        UnitOfMeasurementList const& GetPresentationUOMList() const { return m_presentationUOMList; };
+        //! Gets an editable list of compatible UOM’s appropriate for presenting quantities on the UI and available for the user selection.
+        //! The names should be accompanied by the display precision of values for presenting the data in accordance with
+        //! engineering and standard requirements. 
+        UnitOfMeasurementList& GetPresentationUOMListR() { return m_presentationUOMList; };
+
+        //! Sets the Unit of measuerement used for persisting the information
+        //! @param[in]  value  The new value to apply
+        void SetPersistenceUOM(Utf8CP value) { m_persistenceUOM = value; }
+        //! Gets the Unit of measuerement used for persisting the information
+        Utf8StringCR GetPersistenceUOM() const { return m_persistenceUOM; };
     };
 
 //---------------------------------------------------------------------------------------
@@ -2097,16 +2238,18 @@ public:
 typedef RefCountedPtr<ECRelationshipClass>      ECRelationshipClassPtr;
 
 //! Defines what sort of match should be used when locating a schema
-enum SchemaMatchType
+enum class SchemaMatchType
     {
-    //! Find exact VersionMajor, VersionMinor match as well as Data
-    SCHEMAMATCHTYPE_Identical           =   0,
-    //! Find exact VersionMajor, VersionMinor match.
-    SCHEMAMATCHTYPE_Exact               =   1, //WIP: Rename this to NameAndVersion
-    //! Find latest version with matching VersionMajor and VersionMinor that is equal or greater.
-    SCHEMAMATCHTYPE_LatestCompatible    =   2,
+    //! Find exact VersionMajor, VersionWrite, VersionMinor match as well as Data
+    Identical,
+    //! Find exact VersionMajor, VersionWrite, VersionMinor match.
+    Exact,
+    //! Find latest version with matching VersionMajor and VersionWrite
+    LatestCompatible,
     //! Find latest version.
-    SCHEMAMATCHTYPE_Latest              =   3, //WIP:Rename this to Name
+    Latest,
+    //! Find latest version with matching VersionMajor
+    LatestMajorCompatible,
     };
 
 /*=================================================================================**//**
@@ -2117,6 +2260,7 @@ struct SchemaKey
     {
     Utf8String    m_schemaName;
     uint32_t      m_versionMajor;
+    uint32_t      m_versionWrite;
     uint32_t      m_versionMinor;
     uint32_t      m_checkSum;
 
@@ -2124,64 +2268,110 @@ struct SchemaKey
     //! @param[in]  name    The name of the ECSchema
     //! @param[in]  major   The major portion of the version
     //! @param[in]  minor   The minor portion of the version
-    SchemaKey (Utf8CP name, uint32_t major, uint32_t minor) : m_schemaName(name), m_versionMajor(major), m_versionMinor(minor), m_checkSum(0){}
+    SchemaKey (Utf8CP name, uint32_t major, uint32_t minor) : m_schemaName(name), m_versionMajor(major), m_versionWrite(DEFAULT_VERSION_WRITE), m_versionMinor(minor), m_checkSum(0){}
+
+    //! Creates a new SchemaKey with the given name and version information
+    //! @param[in]  name    The name of the ECSchema
+    //! @param[in]  major   The major portion of the version
+    //! @param[in]  write   The  write compatibility version
+    //! @param[in]  minor   The minor portion of the version
+    SchemaKey(Utf8CP name, uint32_t major, uint32_t write, uint32_t minor) : m_schemaName(name), m_versionMajor(major), m_versionWrite(write), m_versionMinor(minor), m_checkSum(0) {}
 
     //! Default constructor
-    SchemaKey () : m_versionMajor(DEFAULT_VERSION_MAJOR), m_versionMinor(DEFAULT_VERSION_MINOR), m_checkSum(0) {}
+    SchemaKey () : m_versionMajor(DEFAULT_VERSION_MAJOR), m_versionWrite(DEFAULT_VERSION_WRITE), m_versionMinor(DEFAULT_VERSION_MINOR), m_checkSum(0) {}
 
     //! Given a full schema name (which includes the version information), will return a SchemaKey with the schema name and version information set
     //! @param[out] key             A SchemaKey with the schema's name and version set
     //! @param[in]  schemaFullName  The full name of the schema.
-    ECOBJECTS_EXPORT static ECObjectsStatus ParseSchemaFullName (SchemaKey& key, Utf8CP schemaFullName);
+    static ECObjectsStatus ParseSchemaFullName (SchemaKey& key, Utf8CP schemaFullName) { return ParseSchemaFullName(key.m_schemaName, key.m_versionMajor, key.m_versionWrite, key.m_versionMinor, schemaFullName); }
+
+    //! Given a version string MM.NN, this will parse other major and minor versions
+    //! @param[out] versionMajor    The major version number
+    //! @param[out] versionWrite   Write compatibility version. Will default to zero if the string only contains two numbers.
+    //! @param[out] versionMinor    The minor version number
+    //! @param[in]  versionString   A string containing the major and minor versions (MM.NN)
+    //! @return A status code indicating whether the string was successfully parsed
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseVersionString(uint32_t& versionMajor, uint32_t& versionWrite, uint32_t& versionMinor, Utf8CP versionString);
+
+    //! Given a version string MM.NN, this will parse other major and minor versions
+    //! @param[out] schemaName      The schema name without version number qualifiers
+    //! @param[out] versionMajor    The major version number
+    //! @param[out] versionWrite The write compatibility version number
+    //! @param[out] versionMinor    The minor version number
+    //! @param[in]  fullName        A string containing the schema name and major and minor versions (GetName().MM.NN)
+    //! @return A status code indicating whether the string was successfully parsed
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseSchemaFullName(Utf8StringR schemaName, uint32_t& versionMajor, uint32_t& versionWrite, uint32_t& versionMinor, Utf8CP fullName);
+
+    //! Return full schema name in format GetName().MM.ww.mm where Name is the schema name MM is major version,ww is the  write compatibility version and mm is minor version.
+    Utf8String GetFullSchemaName() const { return FormatFullSchemaName(m_schemaName.c_str(), m_versionMajor, m_versionWrite, m_versionMinor); }
+
+    //! Generate a schema full name string given the major,  write compatibility and minor version values.
+    //! @param[in] schemaName      Name of the schema
+    //! @param[in] versionMajor    The major version number
+    //! @param[out] versionWrite  The  write compatibility version number
+    //! @param[in] versionMinor    The minor version number
+    //! @return The version string
+    ECOBJECTS_EXPORT static Utf8String FormatFullSchemaName(Utf8CP schemaName, uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor);
+
+    //! Generate a legacy schema full name, which does not contain the  write compatibility version.
+    //! @param[in] schemaName      Name of the schema
+    //! @param[in] versionMajor    The major version number
+    //! @param[in] versionMinor    The minor version number
+    //! @return The version string
+    ECOBJECTS_EXPORT static Utf8String FormatLegacyFullSchemaName(Utf8CP schemaName, uint32_t versionMajor, uint32_t versionMinor);
+
+    //! Generate a schema version string given the major and minor version values.
+    //! @param[in] versionMajor    The major version number
+    //! @param[out] versionWrite The  write compatibility version number
+    //! @param[in] versionMinor    The minor version number
+    //! @return The version string
+    ECOBJECTS_EXPORT static Utf8String FormatSchemaVersion(uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor);
+
+    Utf8String GetVersionString() const { return FormatSchemaVersion(m_versionMajor, m_versionWrite, m_versionMinor); }
 
     //! Compares two SchemaKeys and returns whether the target schema is less than this SchemaKey, where LessThan is dependent on the match type
     //! @param[in]  rhs         The SchemaKey to compare to
     //! @param[in]  matchType   The type of match to compare for
     //! @returns The comparison is based on the SchemaMatchType, defined by:
-    //! @li SCHEMAMATCHTYPE_Identical - Returns whether the current schema's checksum is less than the target's checksum.  If the checksum is not set, it falls through to the Exact match
-    //! @li SCHEMAMATCHTYPE_Exact - This will first test the names, then the major version, and lastly the minor version
-    //! @li SCHEMAMATCHTYPE_LatestCompatible - This will first test the names and then the major versions.
-    //! @li SCHEMAMATCHTYPE_Latest - Returns whether the current schema's name is less than the target's.
+    //! @li SchemaMatchType::Identical - Returns whether the current schema's checksum is less than the target's checksum.  If the checksum is not set, it falls through to the Exact match
+    //! @li SchemaMatchType::Exact - This will first test the names, then the major version, and lastly the minor version
+    //! @li SchemaMatchType::LatestCompatible - This will first test the names and then the major versions.
+    //! @li SchemaMatchType::Latest - Returns whether the current schema's name is less than the target's.
     ECOBJECTS_EXPORT bool LessThan (SchemaKeyCR rhs, SchemaMatchType matchType) const;
     
     //! Compares two SchemaKeys and returns whether the target schema matches this SchemaKey, where "matches" is dependent on the match type
     //! @param[in]  rhs         The SchemaKey to compare to
     //! @param[in]  matchType   The type of match to compare for
     //! @returns The comparison is based on the SchemaMatchType, defined by:
-    //! @li SCHEMAMATCHTYPE_Identical - Returns whether the current schema's checksum is equal to the target's checksum.  If the checksum is not set, it falls through to the Exact match
-    //! @li SCHEMAMATCHTYPE_Exact - Returns whether this schema's name, major version, and minor version are all equal to the target's.
-    //! @li SCHEMAMATCHTYPE_LatestCompatible - Returns whether this schema's name and major version are equal, and this schema's minor version is greater than or equal to the target's.
-    //! @li SCHEMAMATCHTYPE_Latest - Returns whether the current schema's name is equal to the target's.
+    //! @li SchemaMatchType::Identical - Returns whether the current schema's checksum is equal to the target's checksum.  If the checksum is not set, it falls through to the Exact match
+    //! @li SchemaMatchType::Exact - Returns whether this schema's name, major version, and minor version are all equal to the target's.
+    //! @li SchemaMatchType::LatestCompatible - Returns whether this schema's name and major version are equal, and this schema's minor version is greater than or equal to the target's.
+    //! @li SchemaMatchType::Latest - Returns whether the current schema's name is equal to the target's.
     ECOBJECTS_EXPORT bool Matches (SchemaKeyCR rhs, SchemaMatchType matchType) const;
 
     //! Compares two schema names and returns whether the target schema matches this m_schemaName. Comparison is case-sensitive
     //! @param[in]  schemaName  The schema name to compare to
-    ECOBJECTS_EXPORT int  CompareByName (Utf8String schemaName) const;
+    ECOBJECTS_EXPORT int CompareByName(Utf8StringCR schemaName) const;
+
+    //! Compares the schema version of this key to the schema version of @p rhs.
+    //! @param[in] rhs Right-hand side schema key
+    //! @return a negative number if the LHS version is less than the RHS version, a positive number if LHS version is
+    //! greater than the RHS version, 0 if the versions are the same.
+    ECOBJECTS_EXPORT int CompareByVersion(SchemaKeyCR rhs) const;
 
     //! Returns whether this SchemaKey is Identical to the target SchemaKey
-    bool operator == (SchemaKeyCR rhs) const
-        {
-        return Matches(rhs, SCHEMAMATCHTYPE_Identical);
-        }
+    bool operator == (SchemaKeyCR rhs) const { return Matches(rhs, SchemaMatchType::Identical); }
 
     //! Returns true if the target SchemaKey is not Identical to this SchemaKey, false otherwise
-    bool operator != (SchemaKeyCR rhs) const
-        {
-        return !(*this == rhs);
-        }
+    bool operator != (SchemaKeyCR rhs) const { return !(*this == rhs); }
 
     //! Returns whether this SchemaKey's checksum is less than the target SchemaKey's.
-    bool operator < (SchemaKeyCR rhs) const
-        {
-        return LessThan (rhs, SCHEMAMATCHTYPE_Identical);
-        }
-/*__PUBLISH_SECTION_END__*/
-    Utf8StringCR GetName() const {return m_schemaName;}
-    ECOBJECTS_EXPORT Utf8String GetFullSchemaName() const;
-    uint32_t GetVersionMajor() const { return m_versionMajor; };
-    uint32_t GetVersionMinor() const { return m_versionMinor; };
+    bool operator < (SchemaKeyCR rhs) const { return LessThan (rhs, SchemaMatchType::Identical); }
 
-/*__PUBLISH_SECTION_START__*/
+    Utf8StringCR GetName() const {return m_schemaName;}
+    uint32_t GetVersionMajor() const { return m_versionMajor; };
+    uint32_t GetVersionWrite() const { return m_versionWrite; };
+    uint32_t GetVersionMinor() const { return m_versionMinor; };
     };
 
 //---------------------------------------------------------------------------------------
@@ -2372,14 +2562,14 @@ typedef QualifiedECAccessorList const& QualifiedECAccessorListCR;
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct SchemaMapExact:bmap<SchemaKey, ECSchemaPtr, SchemaKeyLessThan <SCHEMAMATCHTYPE_Exact> >
+struct SchemaMapExact:bmap<SchemaKey, ECSchemaPtr, SchemaKeyLessThan <SchemaMatchType::Exact> >
     {
     //! Returns an iterator to the entry in this map matching the specified key using the specified match type, or an iterator to the end of this map if no such entry exists
     SchemaMapExact::const_iterator Find (SchemaKeyCR key, SchemaMatchType matchType) const
         {
         switch (matchType)
             {
-            case SCHEMAMATCHTYPE_Exact:
+            case SchemaMatchType::Exact:
                 return find(key);
             default:
                 return std::find_if(begin(), end(), SchemaKeyMatchPredicate(key, matchType));
@@ -2508,6 +2698,57 @@ struct ECEnumerationContainer
     };
 
 //=======================================================================================
+//! Supports STL like iterator of kind of quantities in a schema
+//! @bsiclass
+//=======================================================================================
+struct KindOfQuantityContainer
+    {
+    private:
+        friend struct ECSchema;
+        friend struct KindOfQuantity;
+
+        KindOfQuantityMap const&     m_koqMap;
+        KindOfQuantityContainer(KindOfQuantityMap const& koqMap) : m_koqMap(koqMap) {}; //public for test purposes only
+
+    public:
+        //=======================================================================================
+        // @bsistruct
+        //=======================================================================================
+        struct IteratorState : RefCountedBase
+            {
+            friend struct const_iterator;
+            public:
+                KindOfQuantityMap::const_iterator     m_mapIterator;
+
+                IteratorState(KindOfQuantityMap::const_iterator mapIterator) { m_mapIterator = mapIterator; };
+                static RefCountedPtr<IteratorState> Create(KindOfQuantityMap::const_iterator mapIterator) { return new IteratorState(mapIterator); };
+            };
+
+        //=======================================================================================
+        // @bsistruct
+        //=======================================================================================
+        struct const_iterator : std::iterator<std::forward_iterator_tag, KindOfQuantityP const>
+            {
+            private:
+                friend struct KindOfQuantityContainer;
+                RefCountedPtr<IteratorState>   m_state;
+
+                const_iterator(KindOfQuantityMap::const_iterator mapIterator) { m_state = IteratorState::Create(mapIterator); };
+                const_iterator(char*) { ; } // must publish at least one private constructor to prevent instantiation
+
+            public:
+                ECOBJECTS_EXPORT const_iterator&       operator++(); //!< Increments the iterator
+                ECOBJECTS_EXPORT bool                  operator!=(const_iterator const& rhs) const; //!< Checks for inequality
+                ECOBJECTS_EXPORT bool                  operator==(const_iterator const& rhs) const; //!< Checks for equality
+                ECOBJECTS_EXPORT ECEnumerationP const& operator* () const; //!< Returns the value at the current location
+            };
+
+    public:
+        ECOBJECTS_EXPORT const_iterator begin() const; //!< Returns the beginning of the iterator
+        ECOBJECTS_EXPORT const_iterator end()   const; //!< Returns the end of the iterator
+    };
+
+//=======================================================================================
 //! Interface to find a standalone enabler, typically for an embedded ECStruct in an ECInstance.
 //! @bsiclass
 //=======================================================================================
@@ -2610,20 +2851,44 @@ public:
 
 /*__PUBLISH_SECTION_END__*/
 
+
 //=======================================================================================
 //! Locates schemas by looking in a given set of file system folder for ECSchemaXml files
 //=======================================================================================
 struct SearchPathSchemaFileLocater : IECSchemaLocater, RefCountedBase, NonCopyableClass
 {
 private:
+    struct CandidateSchema
+        {
+        BeFileName FileName;
+        WString SearchPath;
+        SchemaKey Key;
+        };
+
     bvector<WString> m_searchPaths;
     SearchPathSchemaFileLocater (bvector<WString> const& searchPaths);
     virtual ~SearchPathSchemaFileLocater();
     static bool TryLoadingSupplementalSchemas(Utf8StringCR schemaName, WStringCR schemaFilePath, ECSchemaReadContextR schemaContext, bvector<ECSchemaP>& supplementalSchemas);
 
-    static ECSchemaPtr                  LocateSchemaByPath (SchemaKeyR key, ECSchemaReadContextR context, SchemaMatchType matchType, bvector<WString>& searchPaths);
+    void FindEligibleSchemaFiles
+    (
+    bvector<CandidateSchema>& foundFiles, 
+    SchemaKeyR desiredSchemaKey, 
+    SchemaMatchType matchType, 
+    ECSchemaReadContextCR schemaContext
+    );
 
-    static ECSchemaPtr                  FindMatchingSchema (WStringCR schemaMatchExpression, SchemaKeyR key, ECSchemaReadContextR schemaContext, SchemaMatchType matchType, bvector<WString>& searchPaths);
+    void AddCandidateSchemas
+    (
+    bvector<CandidateSchema>& foundFiles,
+    WStringCR schemaPath,
+    WStringCR fileFilter,
+    SchemaKeyR desiredSchemaKey,
+    SchemaMatchType matchType,
+    ECSchemaReadContextCR schemaContext
+    );
+
+    static bool SchemyKeyIsLessByVersion(CandidateSchema const& lhs, CandidateSchema const& rhs);
 
 protected:
     virtual ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
@@ -2638,6 +2903,33 @@ public:
 struct SupplementalSchemaInfo;
 typedef RefCountedPtr<SupplementalSchemaInfo> SupplementalSchemaInfoPtr;
 
+enum class ECSchemaElementType
+    {
+    ECClass,
+    ECEnumeration
+    };
+
+//=======================================================================================
+//! 
+//! @bsiclass
+//=======================================================================================
+struct ECSchemaElementsOrder : NonCopyableClass
+{
+private:
+    bvector<bpair<Utf8String, ECSchemaElementType>> m_elementVector;
+    bool m_preserveElementOrder;
+public:
+    ECSchemaElementsOrder() : m_preserveElementOrder(false) {}
+
+    void AddElement(Utf8CP name, ECSchemaElementType type);
+    void RemoveElement(Utf8CP name);
+    void CreateAlphabeticalOrder(ECSchemaCR ecSchema);
+    bool GetPreserveElementOrder() const { return m_preserveElementOrder; }
+    void SetPreserveElementOrder(bool value) { m_preserveElementOrder = value; }
+    bvector<bpair<Utf8String, ECSchemaElementType>>::const_iterator begin() const { return m_elementVector.begin(); } //!< Returns the beginning of the iterator
+    bvector<bpair<Utf8String, ECSchemaElementType>>::const_iterator end() const { return m_elementVector.end(); } //!< Returns the end of the iterator
+};
+
 //=======================================================================================
 //! The in-memory representation of a schema as defined by ECSchemaXML
 //! @bsiclass
@@ -2647,7 +2939,6 @@ struct ECSchema : RefCountedBase, IECCustomAttributeContainer
 private:
     ECSchema (ECSchema const&);
     ECSchema& operator= (ECSchema const&);
-
 
 friend struct SearchPathSchemaFileLocater;
 friend struct SupplementedSchemaBuilder;
@@ -2666,15 +2957,18 @@ private:
     Utf8String              m_description;
     ECClassContainer        m_classContainer;
     ECEnumerationContainer  m_enumerationContainer;
+    KindOfQuantityContainer m_kindOfQuantityContainer;
 
     // maps class name -> class pointer
     ClassMap                    m_classMap;
     EnumerationMap              m_enumerationMap;
+    KindOfQuantityMap           m_kindOfQuantityMap;
     ECSchemaReferenceList       m_refSchemaList;
     bool                        m_isSupplemented;
     bool                        m_hasExplicitDisplayLabel;
     SupplementalSchemaInfoPtr   m_supplementalSchemaInfo;
     bool                        m_immutable;
+    mutable ECSchemaElementsOrder m_serializationOrder; //mutable because we might modify this during serialization
 
     bmap<ECSchemaP, Utf8String> m_referencedSchemaNamespaceMap;
     /*__PUBLISH_SECTION_END__*/
@@ -2687,8 +2981,11 @@ private:
     bool                                AddingSchemaCausedCycles () const;
     void                                SetIsSupplemented(bool isSupplemented);
 
-    ECObjectsStatus                     AddClass (ECClassP pClass);
+    void                                FindUniqueClassName(Utf8StringR newName, Utf8CP originalName);
+    bool                                NamedElementExists(Utf8CP name);
+    ECObjectsStatus                     AddClass (ECClassP pClass, bool resolveConflicts = false);
     ECObjectsStatus                     AddEnumeration(ECEnumerationP pEnumeration);
+    ECObjectsStatus                     AddKindOfQuantity(KindOfQuantityP valueToAdd);
     ECObjectsStatus                     SetVersionFromString (Utf8CP versionString);
     ECObjectsStatus                     CopyConstraints(ECRelationshipConstraintR toRelationshipConstraint, ECRelationshipConstraintR fromRelationshipConstraint);
 
@@ -2750,6 +3047,10 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetVersionMajor(uint32_t value);
     //! Gets the major version of this schema
     ECOBJECTS_EXPORT uint32_t           GetVersionMajor() const;
+    //! Sets the write compatibility version of this schema (major version for read compatibility)
+    ECOBJECTS_EXPORT ECObjectsStatus    SetVersionWrite(uint32_t value);
+    //! Gets the write compatibility version of this schema (major version for read compatibility)
+    ECOBJECTS_EXPORT uint32_t           GetVersionWrite() const;
     //! Sets the minor version of this schema
     ECOBJECTS_EXPORT ECObjectsStatus    SetVersionMinor(uint32_t value);
     //! Gets the minor version of this schema
@@ -2757,9 +3058,14 @@ public:
     //! Returns an iterable container of ECClasses sorted by name. For unsorted called overload.
     ECOBJECTS_EXPORT ECClassContainerCR GetClasses() const;
     //! Returns an iterable container of ECClasses sorted by name. For unsorted called overload.
-    ECOBJECTS_EXPORT ECEnumerationContainerCR GetEnumerations() const;
+    ECEnumerationContainerCR GetEnumerations() const { return m_enumerationContainer; }
     //! Removes an enumeration from this schema.
     ECOBJECTS_EXPORT ECObjectsStatus    DeleteEnumeration(ECEnumerationR ecEnumeration);
+    //! Returns an iterable container of ECClasses sorted by name. For unsorted called overload.
+    KindOfQuantityContainerCR GetKindOfQuantities() const { return m_kindOfQuantityContainer; }
+    //! Removes a kind of quantity from this schema.
+    ECOBJECTS_EXPORT ECObjectsStatus    DeleteKindOfQuantity(KindOfQuantityR kindOfQuantity);
+    
     
     //! Indicates whether this schema is a so-called @b dynamic schema by
     //! checking whether the @b DynamicSchema custom attribute from the standard schema @b Bentley_Standard_CustomAttributes
@@ -2784,10 +3090,13 @@ public:
     ECOBJECTS_EXPORT bool IsSystemSchema () const;
 
     //! Gets the number of classes in the schema
-    ECOBJECTS_EXPORT uint32_t           GetClassCount() const;
+    uint32_t           GetClassCount() const { return (uint32_t) m_classMap.size(); }
 
     //! Gets the number of enumerations in the schema
-    ECOBJECTS_EXPORT uint32_t           GetEnumerationCount() const;
+    uint32_t           GetEnumerationCount() const { return (uint32_t) m_enumerationMap.size(); }
+
+    //! Gets the number of kind of quantity in the schema
+    uint32_t           GetKindOfQuantityCount() const { return (uint32_t) m_kindOfQuantityMap.size(); }
 
     //! Returns true if the display label has been set explicitly for this schema or not
     ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
@@ -2847,6 +3156,12 @@ public:
     //! @return A status code indicating whether or not the class was successfully created and added to the schema
     ECOBJECTS_EXPORT ECObjectsStatus    CreateRelationshipClass (ECRelationshipClassP& relationshipClass, Utf8StringCR name);
 
+    //! Creates a new KindOfQuantity and adds it to the schema.
+    //! @param[out] kindOfQuantity If successful, will contain a new KindOfQuantity object
+    //! @param[in] name    Name of the object to create
+    //! @return A status code indicating whether or not the object was successfully created and added to the schema
+    ECOBJECTS_EXPORT ECObjectsStatus    CreateKindOfQuantity(KindOfQuantityP& kindOfQuantity, Utf8CP name);
+
     //! Creates a new ECEnumeration and adds it to the schema.
     //! @param[out] ecEnumeration If successful, will contain a new ECEnumeration object
     //! @param[in] name    Name of the enumeration to create
@@ -2879,12 +3194,22 @@ public:
     //! Get an enumeration by name within the context of this schema.
     //! @param[in]  name     The name of the enumeration to lookup.  This must be an unqualified (short) name.
     //! @return   A const pointer to an ECN::ECEnumeration if the named enumeration exists in within the current schema; otherwise, nullptr
-    ECOBJECTS_EXPORT ECEnumerationCP          GetEnumerationCP(Utf8CP name) const;
+    ECEnumerationCP          GetEnumerationCP(Utf8CP name) const { return const_cast<ECSchemaP> (this)->GetEnumerationP(name); }
 
     //! Get an enumeration by name within the context of this schema.
     //! @param[in]  name     The name of the enumeration to lookup.  This must be an unqualified (short) name.
     //! @return   A const pointer to an ECN::ECEnumeration if the named enumeration exists in within the current schema; otherwise, nullptr
     ECOBJECTS_EXPORT ECEnumerationP           GetEnumerationP(Utf8CP name);
+
+    //! Get a kind of quantity by name within the context of this schema.
+    //! @param[in]  name     The name of the kind of quantity to lookup.  This must be an unqualified (short) name.
+    //! @return   A const pointer to an ECN::KindOfQuantity if the named kind of quantity exists in within the current schema; otherwise, nullptr
+    KindOfQuantityCP          GetKindOfQuantityCP(Utf8CP name) const { return const_cast<ECSchemaP> (this)->GetKindOfQuantityP(name); }
+
+    //! Get an kind of quantity by name within the context of this schema.
+    //! @param[in]  name     The name of the kind of quantity to lookup.  This must be an unqualified (short) name.
+    //! @return   A const pointer to an ECN::KindOfQuantity if the named enumeration exists in within the current schema; otherwise, nullptr
+    ECOBJECTS_EXPORT KindOfQuantityP           GetKindOfQuantityP(Utf8CP name);
 
     //! Gets the other schemas that are used by classes within this schema.
     //! Referenced schemas are the schemas that contain definitions of base classes,
@@ -2933,7 +3258,6 @@ public:
     //          to by ecSchemaXmlFile will contain the serialized schema.  Otherwise, the file will be unmodified
     ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlFile (WCharCP ecSchemaXmlFile, int ecXmlVersionMajor = 2, int ecXmlVersionMinor = 0, bool utf16 = false) const;
 
-
     //! Writes an ECXML schema to an IStream
     //! @param[in]  ecSchemaXmlStream   The IStream to write the serialized XML to
     //! @param[in]  ecXmlVersionMajor   The major version of the ECXml spec to be used for serializing this schema
@@ -2942,10 +3266,14 @@ public:
     //! @return A Status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the IStream
     //! will contain the serialized schema.
     ECOBJECTS_EXPORT SchemaWriteStatus  WriteToXmlStream (IStreamP ecSchemaXmlStream, int ecXmlVersionMajor = 2, int ecXmlVersionMinor = 0, bool utf16 = false);
+    
+    //! Return full schema name in format GetName().MM.ww.mm where Name is the schema name MM is major version,ww is the  write compatibility version and mm is minor version.
+    Utf8String             GetFullSchemaName() const { return m_key.GetFullSchemaName(); }
 
-
-    //! Return full schema name in format GetName().MM.mm where Name is the schema name, MM is major version and mm is minor version.
-    ECOBJECTS_EXPORT Utf8String             GetFullSchemaName () const;
+    //! Return a legacy full schema name in format GetName().MM.mm where Name is the schema name MM is major version and mm is minor version.
+    //! This overload is missing the  write compatibility version
+    Utf8String             GetLegacyFullSchemaName() const { return SchemaKey::FormatLegacyFullSchemaName(
+        m_key.GetName().c_str(), m_key.GetVersionMajor(), m_key.GetVersionMinor()); }
 
     //! Given a source class, will copy that class into this schema if it does not already exist
     //! @param[out] targetClass If successful, will contain a new ECClass object that is a copy of the sourceClass
@@ -2972,30 +3300,51 @@ public:
     //! Given a str containing SchemaXml, will compute the CheckSum
     ECOBJECTS_EXPORT static uint32_t        ComputeSchemaXmlStringCheckSum(Utf8CP str, size_t len);
 
+    //! Try using the other overload, this one is just included for legacy reasons.
     //! If the given schemaName is valid, this will create a new schema object
     //! @param[out] schemaOut   if successful, will contain a new schema object
     //! @param[in]  schemaName  Name of the schema to be created.
     //! @param[in]  versionMajor The major version number.
     //! @param[in]  versionMinor The minor version number.
     //! @return A status code indicating whether the call was succesfull or not
-    ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema (ECSchemaPtr& schemaOut, Utf8StringCR schemaName,
-                                                          uint32_t versionMajor, uint32_t versionMinor);
+    ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName,
+                                                         uint32_t versionMajor, uint32_t versionMinor);
+
+    //! Generate a schema version string given the major and minor version values.
+    //! @param[in] versionMajor    The major version number
+    //! @param[out] versionWrite The  write compatibility version number
+    //! @param[in] versionMinor    The minor version number
+    //! @return The version string
+    static Utf8String FormatSchemaVersion(uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor) { return SchemaKey::FormatSchemaVersion(versionMajor, versionWrite, versionMinor); }
 
     //! If the given schemaName and namespacePrefix is valid, this will create a new schema object
     //! @param[out] schemaOut       if successful, will contain a new schema object
     //! @param[in]  schemaName      Name of the schema to be created.
     //! @param[in]  namespacePrefix Namespace prefix of the schema to be created
     //! @param[in]  versionMajor    The major version number.
+    //! @param[out] versionWrite The  write compatibility version number
     //! @param[in]  versionMinor    The minor version number.
     //! @return A status code indicating whether the call was succesfull or not
     ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName, 
-                                                         Utf8StringCR namespacePrefix, uint32_t versionMajor, uint32_t versionMinor);
+                                                         Utf8StringCR namespacePrefix, uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor);
 
     //! Generate a schema version string given the major and minor version values.
     //! @param[in] versionMajor    The major version number
     //! @param[in] versionMinor    The minor version number
     //! @return The version string
-    ECOBJECTS_EXPORT static Utf8String      FormatSchemaVersion (uint32_t versionMajor, uint32_t versionMinor);
+    static Utf8String      FormatSchemaVersion(uint32_t versionMajor, uint32_t versionMinor)
+        {
+        return FormatSchemaVersion(versionMajor, DEFAULT_VERSION_WRITE, versionMinor);
+        }
+
+    //! Given a version string MM.NN, this will parse other major and minor versions
+    //! @param[out] schemaName      The schema name without version number qualifiers
+    //! @param[out] versionMajor    The major version number
+    //! @param[out] versionWrite The  write compatibility version number
+    //! @param[out] versionMinor    The minor version number
+    //! @param[in]  fullName        A string containing the schema name and major and minor versions (GetName().MM.NN)
+    //! @return A status code indicating whether the string was successfully parsed
+    static ECObjectsStatus ParseSchemaFullName(Utf8String& schemaName, uint32_t& versionMajor, uint32_t& versionWrite, uint32_t& versionMinor, Utf8CP fullName) { return SchemaKey::ParseSchemaFullName(schemaName, versionMajor, versionWrite, versionMinor, fullName); }
 
     //! Given a version string MM.NN, this will parse other major and minor versions
     //! @param[out] schemaName      The schema name without version number qualifiers
@@ -3003,7 +3352,11 @@ public:
     //! @param[out] versionMinor    The minor version number
     //! @param[in]  fullName        A string containing the schema name and major and minor versions (GetName().MM.NN)
     //! @return A status code indicating whether the string was successfully parsed
-    ECOBJECTS_EXPORT static ECObjectsStatus ParseSchemaFullName (Utf8String& schemaName, uint32_t& versionMajor, uint32_t& versionMinor, Utf8CP fullName);
+    static ECObjectsStatus ParseSchemaFullName(Utf8String& schemaName, uint32_t& versionMajor, uint32_t& versionMinor, Utf8CP fullName)
+        {
+        uint32_t unwanted = DEFAULT_VERSION_WRITE;
+        return ParseSchemaFullName(schemaName, versionMajor, unwanted, versionMinor, fullName);
+        }
 
     //! Given a version string MM.NN, this will parse other major and minor versions
     //! @param[out] schemaName      The schema name without version number qualifiers
@@ -3011,14 +3364,26 @@ public:
     //! @param[out] versionMinor    The minor version number
     //! @param[in]  fullName        A string containing the schema name and major and minor versions (GetName().MM.NN)
     //! @return A status code indicating whether the string was successfully parsed
-    ECOBJECTS_EXPORT static ECObjectsStatus ParseSchemaFullName (Utf8String& schemaName, uint32_t& versionMajor, uint32_t& versionMinor, Utf8StringCR fullName);
+    static ECObjectsStatus ParseSchemaFullName(Utf8String& schemaName, uint32_t& versionMajor, uint32_t& versionMinor, Utf8StringCR fullName) { return ParseSchemaFullName(schemaName, versionMajor, versionMinor, fullName.c_str()); }
 
     //! Given a version string MM.NN, this will parse other major and minor versions
     //! @param[out] versionMajor    The major version number
     //! @param[out] versionMinor    The minor version number
     //! @param[in]  versionString   A string containing the major and minor versions (MM.NN)
     //! @return A status code indicating whether the string was successfully parsed
-    ECOBJECTS_EXPORT static ECObjectsStatus ParseVersionString (uint32_t& versionMajor, uint32_t& versionMinor, Utf8CP versionString);
+    static ECObjectsStatus ParseVersionString(uint32_t& versionMajor, uint32_t& versionMinor, Utf8CP versionString)
+        {
+        uint32_t unwanted = DEFAULT_VERSION_WRITE;
+        return ParseVersionString(versionMajor, unwanted, versionMinor, versionString);
+        }
+
+    //! Given a version string MM.NN, this will parse other major and minor versions
+    //! @param[out] versionMajor    The major version number
+    //! @param[out] versionWrite    write compatibility version number, will default to zero if versionString only has two numbers.
+    //! @param[out] versionMinor    The minor version number
+    //! @param[in]  versionString   A string containing the major and minor versions (MM.NN)
+    //! @return A status code indicating whether the string was successfully parsed
+    static ECObjectsStatus ParseVersionString(uint32_t& versionMajor, uint32_t& versionWrite, uint32_t& versionMinor, Utf8CP versionString) { return SchemaKey::ParseVersionString(versionMajor, versionWrite, versionMinor, versionString); }
 
     //! Given two schemas, will check to see if the second schema is referenced by the first schema
     //! @param[in]    thisSchema            The base schema to check the references of

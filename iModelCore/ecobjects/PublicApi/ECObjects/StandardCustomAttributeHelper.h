@@ -31,84 +31,84 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //=======================================================================================    
 struct DateTimeInfo
     {
-private: 
-    bool m_isKindNull;
-    bool m_isComponentNull;
-    DateTime::Info m_info;
+    private:
+        bool m_isKindNull;
+        bool m_isComponentNull;
+        DateTime::Info m_info;
 
-    static const DateTime::Kind DEFAULT_KIND;
-    static const DateTime::Component DEFAULT_COMPONENT;
-    static const DateTime::Info s_default;
+        static const DateTime::Kind DEFAULT_KIND;
+        static const DateTime::Component DEFAULT_COMPONENT;
+        static const DateTime::Info s_default;
 
-public:
-    //***** Construction ******
-    //Intentionally use the compiler-generated versions of copy constructor, assignment operator, and destructor
+    public:
+        //***** Construction ******
+        //Intentionally use the compiler-generated versions of copy constructor, assignment operator, and destructor
 
-    //! Initializes a new instance of the DateTimeInfo type.
-    ECOBJECTS_EXPORT DateTimeInfo ();
+        //! Initializes a new instance of the DateTimeInfo type.
+        DateTimeInfo() : m_isKindNull(true), m_isComponentNull(true) {}
 
-    //! Initializes a new instance of the DateTimeInfo type.
-    //! @param[in] metadata object from which the DateTimeInfo will be initialized.
-    ECOBJECTS_EXPORT explicit DateTimeInfo (DateTime::Info const& metadata);
+        //! Initializes a new instance of the DateTimeInfo type.
+        //! @param[in] metadata object from which the DateTimeInfo will be initialized.
+        explicit DateTimeInfo(DateTime::Info const& metadata) : m_isKindNull(false), m_isComponentNull(false), m_info(metadata) {}
 
-    //__PUBLISH_SECTION_END__
-    DateTimeInfo (bool isKindNull, DateTime::Kind kind, bool isComponentNull, DateTime::Component component); 
-    //__PUBLISH_SECTION_START__
+        //__PUBLISH_SECTION_END__
+        DateTimeInfo(bool isKindNull, DateTime::Kind kind, bool isComponentNull, DateTime::Component component);
+        //__PUBLISH_SECTION_START__
 
-    //! Compares this DateTimeInfo to @p rhs.
-    //! @param [in] rhs DateTimeInfo to compare this against
-    //! @return true if both objects are equal, false otherwise
-    ECOBJECTS_EXPORT bool operator== (DateTimeInfo const& rhs) const;
+        //! Compares this DateTimeInfo to @p rhs.
+        //! @param [in] rhs DateTimeInfo to compare this against
+        //! @return true if both objects are equal, false otherwise
+        ECOBJECTS_EXPORT bool operator== (DateTimeInfo const& rhs) const;
 
-    //! Compares this DateTimeInfo to @p rhs for inequality.
-    //! @param [in] rhs DateTimeInfo to compare this against
-    //! @return true if the objects are not equal, false otherwise
-    ECOBJECTS_EXPORT bool operator!= (DateTimeInfo const& rhs) const;
+        //! Compares this DateTimeInfo to @p rhs for inequality.
+        //! @param [in] rhs DateTimeInfo to compare this against
+        //! @return true if the objects are not equal, false otherwise
+        bool operator!= (DateTimeInfo const& rhs) const { return !(*this == rhs); }
 
-    //! Indicates whether the DateTime::Kind and DateTime::Component are both unset or not.
-    //! @return true, if both DateTime::Kind and DateTime::Component are unset. false, if at least one of the two are not unset.
-    ECOBJECTS_EXPORT bool IsNull () const;
+        //! Indicates whether the DateTime::Kind and DateTime::Component are both unset or not.
+        //! @return true, if both DateTime::Kind and DateTime::Component are unset. false, if at least one of the two are not unset.
+        bool IsNull() const { return IsKindNull() && IsComponentNull(); }
 
-    //! Indicates whether the DateTime::Kind is unset or not.
-    //! @return true, if the DateTime::Kind is unset. false, otherwise
-    ECOBJECTS_EXPORT bool IsKindNull () const;
-    //! Indicates whether the DateTime::Component is unset or not.
-    //! @return true, if the DateTime::Component is unset. false, otherwise
-    ECOBJECTS_EXPORT bool IsComponentNull () const;
+        //! Indicates whether the DateTime::Kind is unset or not.
+        //! @return true, if the DateTime::Kind is unset. false, otherwise
+        bool IsKindNull() const { return m_isKindNull; }
+        //! Indicates whether the DateTime::Component is unset or not.
+        //! @return true, if the DateTime::Component is unset. false, otherwise
+        bool IsComponentNull() const { return m_isComponentNull; }
 
-    //__PUBLISH_SECTION_END__
-    //! Gets the content of this object as DateTime::Info.
-    //! @remarks Should only be called if DateTimeInfo::IsKindNull and DateTimeInfo::IsComponentNull are not true.
-    //! @return DateTime::Info representing the content of this object
-    DateTime::Info const& GetInfo () const;
-    //__PUBLISH_SECTION_START__
+        //__PUBLISH_SECTION_END__
+        //! Gets the content of this object as DateTime::Info.
+        //! @remarks Should only be called if DateTimeInfo::IsKindNull and DateTimeInfo::IsComponentNull are not true.
+        //! @return DateTime::Info representing the content of this object
+        DateTime::Info const& GetInfo() const;
+        //__PUBLISH_SECTION_START__
 
-    //! Gets the content of this object as DateTime::Info.
-    //! @remarks if \p useDefaultIfUnset is true, fills in default values for date time kind
-    //!         and date time component if they are unset.
-    //!         @see GetDefault
-    //! @param[in] useDefaultIfUnset if true, default values are filled in, if a member of this object is unset,
-    //!            if false, no default values are filled in. The value of unset members is undefined.
-    //!            Callers have to check the unset status first using DateTimeInfo::IsKindNull and DateTimeInfo::IsComponentNull
-    //! @return DateTime::Info representing the content of this object
-    ECOBJECTS_EXPORT DateTime::Info GetInfo (bool useDefaultIfUnset) const; 
-    
-    //! Gets a DateTimeInfo object with the default values used by ECObjects.
-    //! @remarks The default values are DateTime::Kind::Unspecified and DateTime::Component::DateAndTime.
-    //! @return Default DateTime::Info
-    ECOBJECTS_EXPORT static DateTime::Info const& GetDefault (); 
+        //! Gets the content of this object as DateTime::Info.
+        //! @remarks if \p useDefaultIfUnset is true, fills in default values for date time kind
+        //!         and date time component if they are unset.
+        //!         @see GetDefault
+        //! @param[in] useDefaultIfUnset if true, default values are filled in, if a member of this object is unset,
+        //!            if false, no default values are filled in. The value of unset members is undefined.
+        //!            Callers have to check the unset status first using DateTimeInfo::IsKindNull and DateTimeInfo::IsComponentNull
+        //! @return DateTime::Info representing the content of this object
+        ECOBJECTS_EXPORT DateTime::Info GetInfo(bool useDefaultIfUnset) const;
 
-    //! Checks whether the RHS object matches this object.
-    //! @remarks If one of the members
-    //!          of this object is null, the RHS counterpart is ignored and the
-    //!          members are considered matching.
-    //! @param[in] rhs RHS
-    //! @return true, if the RHS matches this object. false otherwise
-    ECOBJECTS_EXPORT bool IsMatchedBy (DateTime::Info const& rhs) const;
+        //! Gets a DateTimeInfo object with the default values used by ECObjects.
+        //! @remarks The default values are DateTime::Kind::Unspecified and DateTime::Component::DateAndTime.
+        //! @return Default DateTime::Info
+        ECOBJECTS_EXPORT static DateTime::Info const& GetDefault();
 
-    //! Generates a text representation of this object.
-    //! @return Text representation of this object
-    ECOBJECTS_EXPORT Utf8String ToString () const;
+        //! Checks whether the RHS object matches this object.
+        //! @remarks If one of the members
+        //!          of this object is null, the RHS counterpart is ignored and the
+        //!          members are considered matching.
+        //! @param[in] rhs RHS
+        //! @return true, if the RHS matches this object. false otherwise
+        ECOBJECTS_EXPORT bool IsMatchedBy(DateTime::Info const& rhs) const;
+
+        //! Generates a text representation of this object.
+        //! @return Text representation of this object
+        ECOBJECTS_EXPORT Utf8String ToString() const;
     };
 
 //=======================================================================================    
@@ -265,17 +265,22 @@ public:
     //=======================================================================================    
     struct MapStrategy
         {
+    public:
         friend struct ECDbClassMap;
+        
+        //!@see MapStrategy::GetMinimumSharedColumnCount
+        static const int UNSET_MINIMUMSHAREDCOLUMNCOUNT = -1;
 
     private:
         Utf8String m_strategy;
         Utf8String m_options;
+        int m_minimumSharedColumnCount;
         bool m_appliesToSubclasses;
 
-        MapStrategy(Utf8CP strategy, Utf8CP options, bool appliesToSubclasses) : m_strategy(strategy), m_options(options), m_appliesToSubclasses(appliesToSubclasses) {}
+        MapStrategy(Utf8CP strategy, Utf8CP options, int minimumSharedColumnCount, bool appliesToSubclasses) : m_strategy(strategy), m_options(options), m_minimumSharedColumnCount(minimumSharedColumnCount), m_appliesToSubclasses(appliesToSubclasses) {}
 
     public:
-        MapStrategy() : m_appliesToSubclasses(false) {}
+        MapStrategy() : m_appliesToSubclasses(false), m_minimumSharedColumnCount(UNSET_MINIMUMSHAREDCOLUMNCOUNT) {}
 
         //! Gets the Strategy.
         //! @return Strategy or nullptr if not set in the custom attribute
@@ -283,6 +288,10 @@ public:
         //! Gets the strategy options as comma separated list
         //! @return strategy options or nullptr if not set in the custom attribute
         Utf8CP GetOptions() const { return m_options.c_str(); }
+        //! Gets the minimum count of shared columns which should be created in the respective table
+        //! if the map strategy implies column sharing.
+        //! @return Minimum count of shared columns or @p UNSET_MINIMUMSHAREDCOLUMNCOUNT if property wasn't set.
+        int GetMinimumSharedColumnCount() const { return m_minimumSharedColumnCount; }
         //! Gets a value indicating whether the MapStrategy is also applied to subclasses of the class that
         //! holds the ClassMap custom attribute or not
         bool AppliesToSubclasses() const { return m_appliesToSubclasses; }
@@ -452,12 +461,6 @@ private:
 public:
     ECDbForeignKeyRelationshipMap() : m_relClass(nullptr), m_ca(nullptr) {}
 
-    //! Tries to get the value of the End property from the ForeignKeyRelationshipMap.
-    //! @param[out] foreignKeyEnd End of the relationship which carries the foreign key. @p foreignKeyEnd remains unchanged, 
-    //! if the End property wasn't set in the ForeignKeyRelationshipMap.
-    //! @return ECOBJECTSTATUS_Success if End was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
-    ECOBJECTS_EXPORT ECObjectsStatus TryGetEnd(ECRelationshipEnd& foreignKeyEnd) const;
-
     //! Tries to get the value of the OnDeleteAction property from the ForeignKeyRelationshipMap.
     //! @param[out] onDeleteAction OnDelete action.  @p onDeleteAction remains unchanged, if the OnDeleteAction property 
     //! wasn't set in the ForeignKeyRelationshipMap.
@@ -465,7 +468,7 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus TryGetOnDeleteAction(Utf8StringR onDeleteAction) const;
 
     //! Tries to get the value of the OnUpdateAction property from the ForeignKeyRelationshipMap.
-    //! @param[out] onUpdateAction Onpdate action. @p onDeleteAction remains unchanged, if the OnUpdateAction property 
+    //! @param[out] onUpdateAction OnUpdate action. @p onDeleteAction remains unchanged, if the OnUpdateAction property 
     //! wasn't set in the ForeignKeyRelationshipMap.
     //! @return ECOBJECTSTATUS_Success if OnUpdateAction was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
     ECOBJECTS_EXPORT ECObjectsStatus TryGetOnUpdateAction(Utf8StringR onUpdateAction) const;
@@ -482,12 +485,6 @@ public:
     //! It remains unchanged, if the ForeignKeyColumn property wasn't set in the ForeignKeyRelationshipMap.
     //! @return ECOBJECTSTATUS_Success if ForeignKeyColumn was set or unset in the ForeignKeyRelationshipMap, error codes otherwise
     ECOBJECTS_EXPORT ECObjectsStatus TryGetForeignKeyColumn(Utf8StringR foreignKeyColumnName) const;
-
-    //! Tries to get the value of the ForeignKeyClassId property from the ForeignKeyRelationshipMap.
-    //! @param[out] foreignKeyClassIdColumnName Name of column to which ForeignKeyClassId is mapped to. 
-    //! It remains unchanged, if the ForeignKeyClassId property wasn't set in the ForeignKeyRelationshipMap.
-    //! @return ECOBJECTSTATUS_Success if ForeignKeyClassId was set or unset in the ForeignKeyRelationshipMap, error codes otherwise
-    ECOBJECTS_EXPORT ECObjectsStatus TryGetForeignKeyClassIdColumn(Utf8StringR foreignKeyClassIdColumnName) const;
     };
 	
 /** @endGroup */

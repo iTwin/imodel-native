@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECObjectsPch.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/Bentley.h>
@@ -21,10 +21,3 @@
 #include <ECObjects/ECInstanceIterable.h>
 #include <ECObjects/SystemSymbolProvider.h>
 #include <BeXml/BeXml.h>
-
-
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
-extern ECObjectsStatus GetMinorVersionFromSchemaFileName (uint32_t& versionMinor, WCharCP filePath);
-END_BENTLEY_ECOBJECT_NAMESPACE
-
-

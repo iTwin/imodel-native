@@ -328,13 +328,31 @@ ECObjectsStatus ECClass::DeleteProperty (ECPropertyR prop)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            02/2016
 //---------------+---------------+---------------+---------------+---------------+-------
+void ECClass::FindUniquePropertyName(Utf8StringR newName, Utf8CP prefix, Utf8CP originalName)
+    {
+    Utf8PrintfString testName("%s_%s", prefix, originalName);
+    bool conflict = true;
+    while (conflict)
+        {
+        PropertyMap::iterator iter = m_propertyMap.find(testName.c_str());
+        if (iter == m_propertyMap.end())
+            conflict = false;
+        testName.append("_");
+        }
+    newName = testName;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2016
+//---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDerivedProperties)
     {
     PropertyMap::iterator iter = m_propertyMap.find(prop->GetName().c_str());
     if (iter == m_propertyMap.end())
         return ECObjectsStatus::PropertyNotFound;
 
-    Utf8PrintfString newName("%s_%s", prop->GetClass().GetSchema().GetNamespacePrefix().c_str(), prop->GetName().c_str());
+    Utf8String newName;
+    FindUniquePropertyName(newName, prop->GetClass().GetSchema().GetNamespacePrefix().c_str(), prop->GetName().c_str());
     ECPropertyP newProperty;
     CopyProperty(newProperty, prop, newName.c_str(), true);
 
@@ -507,7 +525,9 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
             LOG.errorv("Cannot create property '%s' because it already exists in this ECClass", pProperty->GetName().c_str());
             return ECObjectsStatus::NamedItemAlreadyExists;
             }
-        RenameConflictProperty(pProperty, true);
+        Utf8String newName;
+        FindUniquePropertyName(newName, pProperty->GetClass().GetSchema().GetNamespacePrefix().c_str(), pProperty->GetName().c_str());
+        pProperty->SetName(newName);
         }
 
     // It isn't part of this schema, but does it exist as a property on a baseClass?
@@ -1755,8 +1775,9 @@ SchemaWriteStatus ECCustomAttributeClass::_WriteXml(BeXmlWriterR xmlWriter, int 
 
     else
         {
+        Utf8String appliesToAttributeValue = ECXml::ContainerTypeToString(m_containerType);
         bmap<Utf8CP, Utf8CP> additionalAttributes;
-        additionalAttributes[CUSTOM_ATTRIBUTE_APPLIES_TO] = ECXml::ContainerTypeToString(m_containerType).c_str();
+        additionalAttributes[CUSTOM_ATTRIBUTE_APPLIES_TO] = appliesToAttributeValue.c_str();
         return T_Super::_WriteXml(xmlWriter, ecXmlVersionMajor, ecXmlVersionMinor, EC_CUSTOMATTRIBUTECLASS_ELEMENT, &additionalAttributes, true);
         }
     }
@@ -2077,6 +2098,10 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
     READ_OPTIONAL_XML_ATTRIBUTE (constraintNode, ROLELABEL_ATTRIBUTE, this, RoleLabel);
     READ_OPTIONAL_XML_ATTRIBUTE (constraintNode, CARDINALITY_ATTRIBUTE, this, Cardinality);
     
+    // For supplemental schemas, only read in the attributes
+    if (Utf8String::npos != _GetContainerSchema()->GetName().find("_Supplemental"))
+        return SchemaReadStatus::Success;
+
     for (BeXmlNodeP constraintClassNode = constraintNode.GetFirstChild(); nullptr != constraintClassNode; constraintClassNode = constraintClassNode->GetNextSibling())
         {
         if (0 != strcmp(constraintClassNode->GetName(), EC_CONSTRAINTCLASS_ELEMENT))
@@ -2662,10 +2687,6 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, EC
     if (status != SchemaReadStatus::Success)
         return status;
 
-    // skip relationship constraint classes for all supplemental schemas because they should never exist
-    if (Utf8String::npos != GetSchema().GetName().find("_Supplemental"))  
-        return SchemaReadStatus::Success;
-        
     BeXmlNodeP sourceNode = classNode.SelectSingleNode (EC_NAMESPACE_PREFIX ":" EC_SOURCECONSTRAINT_ELEMENT);
     if (NULL != sourceNode)
         status = m_source->ReadXml (*sourceNode, context);

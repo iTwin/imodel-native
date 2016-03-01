@@ -2,7 +2,7 @@
 |
 |     $Source: src/SystemSymbolProvider.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -176,12 +176,12 @@ struct StringMethods
             return ExpressionStatus::UnknownError;
         }
 
-    static ExpressionStatus Compare(EvaluationResult& evalResult, EvaluationResultVector& args)
+    static ExpressionStatus Compare(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)
         {
         return compare(evalResult, args, false);
         }
 
-    static ExpressionStatus CompareI(EvaluationResult& evalResult, EvaluationResultVector& args)
+    static ExpressionStatus CompareI(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)
         {
         return compare(evalResult, args, true);
         }
@@ -199,12 +199,12 @@ struct StringMethods
             return ExpressionStatus::UnknownError;
         }
 
-    static ExpressionStatus ToUpper(EvaluationResult& evalResult, EvaluationResultVector& args)
+    static ExpressionStatus ToUpper(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)
         {
         return convertCase(evalResult, args, &Utf8String::ToUpper);
         }
 
-    static ExpressionStatus ToLower(EvaluationResult& evalResult, EvaluationResultVector& args)
+    static ExpressionStatus ToLower(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)
         {
         return convertCase(evalResult, args, &Utf8String::ToLower);
         }
@@ -216,7 +216,7 @@ struct StringMethods
         return -1 != foundPos ? str + foundPos : NULL;
         }
 
-    static ExpressionStatus IndexOf(EvaluationResult& evalResult, EvaluationResultVector& args)
+    static ExpressionStatus IndexOf(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)
         {
         Utf8CP str, token;
         if (ExtractArg(str, args, 0, true) && ExtractArg(token, args, 1, true))
@@ -230,7 +230,7 @@ struct StringMethods
             return ExpressionStatus::UnknownError;
         }
 
-    static ExpressionStatus LastIndexOf(EvaluationResult& evalResult, EvaluationResultVector& args)
+    static ExpressionStatus LastIndexOf(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)
         {
         Utf8CP str, token;
         if (ExtractArg(str, args, 0, true) && ExtractArg(token, args, 1, true))
@@ -244,16 +244,16 @@ struct StringMethods
             return ExpressionStatus::UnknownError;
         }
 
-    static ExpressionStatus Contains(EvaluationResult& evalResult, EvaluationResultVector& args)
+    static ExpressionStatus Contains(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)
         {
-        ExpressionStatus status = IndexOf(evalResult, args);
+        ExpressionStatus status = IndexOf(evalResult, context, args);
         if (ExpressionStatus::Success == status)
             evalResult.GetECValue()->SetBoolean(evalResult.GetECValue()->GetInteger() >= 0);
 
         return status;
         }
 
-    static ExpressionStatus ContainsI(EvaluationResult& evalResult, EvaluationResultVector& args)
+    static ExpressionStatus ContainsI(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)
         {
         Utf8String str, token;
         if (ExtractArg(str, args, 0, true) && ExtractArg(token, args, 1, true))
@@ -267,7 +267,7 @@ struct StringMethods
             return ExpressionStatus::UnknownError;
         }
 
-    static ExpressionStatus ToString(EvaluationResult& evalResult, EvaluationResultVector& args)
+    static ExpressionStatus ToString(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)
         {
         if (args.size() == 1 && args[0].IsECValue())
             {
@@ -278,7 +278,7 @@ struct StringMethods
             return ExpressionStatus::UnknownError;
         }
 
-    static ExpressionStatus Length(EvaluationResult& evalResult, EvaluationResultVector& args)
+    static ExpressionStatus Length(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)
         {
         Utf8CP str;
         if (ExtractArg(str, args, 0, true))
@@ -290,7 +290,7 @@ struct StringMethods
             return ExpressionStatus::UnknownError;
         }
 
-    static ExpressionStatus SubString(EvaluationResult& evalResult, EvaluationResultVector& args)
+    static ExpressionStatus SubString(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)
         {
         Utf8String str;
         int32_t startIndex, length;
@@ -334,7 +334,7 @@ struct StringMethods
         }
 #endif
 
-    static ExpressionStatus Trim(EvaluationResult& evalResult, EvaluationResultVector& args)
+    static ExpressionStatus Trim(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)
         {
         Utf8String str;
         if (ExtractArg(str, args, 0, true))
@@ -375,7 +375,7 @@ struct StringMethods
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct DateTimeMethods
     {
-    static ExpressionStatus Now(EvaluationResult& evalResult, EvaluationResultVector& args)
+    static ExpressionStatus Now(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)
         {
         uint64_t unixMillis = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
         DateTime dt;
@@ -417,12 +417,12 @@ struct PathMethods
             return ExpressionStatus::UnknownError;
         }
 
-    static ExpressionStatus GetFileName(EvaluationResult& evalResult, EvaluationResultVector& args)
+    static ExpressionStatus GetFileName(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)
         {
         return getFileNamePart(evalResult, args, BeFileName::GetFileNameAndExtension);
         }
 
-    static ExpressionStatus GetDirectoryName(EvaluationResult& evalResult, EvaluationResultVector& args)
+    static ExpressionStatus GetDirectoryName(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)
         {
         ExpressionStatus status = getFileNamePart(evalResult, args, BeFileName::GetDirectoryName);
         if (ExpressionStatus::Success == status)
@@ -440,7 +440,7 @@ struct PathMethods
         return status;
         }
 
-    static ExpressionStatus GetExtension(EvaluationResult& evalResult, EvaluationResultVector& args)
+    static ExpressionStatus GetExtension(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)
         {
         ExpressionStatus status = getFileNamePart(evalResult, args, BeFileName::GetExtension);
         if (ExpressionStatus::Success == status)
@@ -459,12 +459,12 @@ struct PathMethods
         return status;
         }
 
-    static ExpressionStatus GetFileNameWithoutExtension(EvaluationResult& evalResult, EvaluationResultVector& args)
+    static ExpressionStatus GetFileNameWithoutExtension(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)
         {
         return getFileNamePart(evalResult, args, BeFileName::GetFileNameWithoutExtension);
         }
 
-    static ExpressionStatus GetFullPath(EvaluationResult& evalResult, EvaluationResultVector& args)
+    static ExpressionStatus GetFullPath(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)
         {
         WCharCP arg;
         WString fullPath;
@@ -477,7 +477,7 @@ struct PathMethods
             return ExpressionStatus::UnknownError;
         }
 
-    static ExpressionStatus Combine(EvaluationResult& evalResult, EvaluationResultVector& args)
+    static ExpressionStatus Combine(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)
         {
         WCharCP nextPart;
         if (!ExtractArg(nextPart, args, 0, false))
@@ -583,26 +583,26 @@ struct MathMethods
         return dividend - (divisor * roundToEven(dividend / divisor));
         }
 
-    static ExpressionStatus Acos(EvaluationResult& evalResult, EvaluationResultVector& args)             { return eval1(evalResult, args, acos); }
-    static ExpressionStatus Asin(EvaluationResult& evalResult, EvaluationResultVector& args)             { return eval1(evalResult, args, asin); }
-    static ExpressionStatus Atan(EvaluationResult& evalResult, EvaluationResultVector& args)             { return eval1(evalResult, args, atan); }
-    static ExpressionStatus Atan2(EvaluationResult& evalResult, EvaluationResultVector& args)            { return eval2(evalResult, args, atan2); }
-    static ExpressionStatus Cos(EvaluationResult& evalResult, EvaluationResultVector& args)              { return eval1(evalResult, args, cos); }
-    static ExpressionStatus Cosh(EvaluationResult& evalResult, EvaluationResultVector& args)             { return eval1(evalResult, args, cosh); }
-    static ExpressionStatus Exp(EvaluationResult& evalResult, EvaluationResultVector& args)              { return eval1(evalResult, args, exp); }
-    static ExpressionStatus IEEERemainder(EvaluationResult& evalResult, EvaluationResultVector& args)    { return eval2(evalResult, args, ieeeremainder); }
-    static ExpressionStatus Abs(EvaluationResult& evalResult, EvaluationResultVector& args)              { return eval1(evalResult, args, fabs); }
-    static ExpressionStatus Floor(EvaluationResult& evalResult, EvaluationResultVector& args)            { return eval1(evalResult, args, floor); }
-    static ExpressionStatus Ceiling(EvaluationResult& evalResult, EvaluationResultVector& args)          { return eval1(evalResult, args, ceil); }
-    static ExpressionStatus Log(EvaluationResult& evalResult, EvaluationResultVector& args)              { return eval1(evalResult, args, log); }
-    static ExpressionStatus Pow(EvaluationResult& evalResult, EvaluationResultVector& args)              { return eval2(evalResult, args, pow); }
-    static ExpressionStatus Log10(EvaluationResult& evalResult, EvaluationResultVector& args)            { return eval1(evalResult, args, log10); }
-    static ExpressionStatus Sin(EvaluationResult& evalResult, EvaluationResultVector& args)              { return eval1(evalResult, args, sin); }
-    static ExpressionStatus Sinh(EvaluationResult& evalResult, EvaluationResultVector& args)             { return eval1(evalResult, args, sinh); }
-    static ExpressionStatus Sqrt(EvaluationResult& evalResult, EvaluationResultVector& args)             { return eval1(evalResult, args, sqrt); }
-    static ExpressionStatus Tan(EvaluationResult& evalResult, EvaluationResultVector& args)              { return eval1(evalResult, args, tan); }
-    static ExpressionStatus Tanh(EvaluationResult& evalResult, EvaluationResultVector& args)             { return eval1(evalResult, args, tanh); }
-    static ExpressionStatus Round(EvaluationResult& evalResult, EvaluationResultVector& args)            { return eval1(evalResult, args, roundToEven); }
+    static ExpressionStatus Acos(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)             { return eval1(evalResult, args, acos); }
+    static ExpressionStatus Asin(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)             { return eval1(evalResult, args, asin); }
+    static ExpressionStatus Atan(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)             { return eval1(evalResult, args, atan); }
+    static ExpressionStatus Atan2(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)            { return eval2(evalResult, args, atan2); }
+    static ExpressionStatus Cos(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)              { return eval1(evalResult, args, cos); }
+    static ExpressionStatus Cosh(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)             { return eval1(evalResult, args, cosh); }
+    static ExpressionStatus Exp(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)              { return eval1(evalResult, args, exp); }
+    static ExpressionStatus IEEERemainder(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)    { return eval2(evalResult, args, ieeeremainder); }
+    static ExpressionStatus Abs(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)              { return eval1(evalResult, args, fabs); }
+    static ExpressionStatus Floor(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)            { return eval1(evalResult, args, floor); }
+    static ExpressionStatus Ceiling(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)          { return eval1(evalResult, args, ceil); }
+    static ExpressionStatus Log(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)              { return eval1(evalResult, args, log); }
+    static ExpressionStatus Pow(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)              { return eval2(evalResult, args, pow); }
+    static ExpressionStatus Log10(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)            { return eval1(evalResult, args, log10); }
+    static ExpressionStatus Sin(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)              { return eval1(evalResult, args, sin); }
+    static ExpressionStatus Sinh(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)             { return eval1(evalResult, args, sinh); }
+    static ExpressionStatus Sqrt(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)             { return eval1(evalResult, args, sqrt); }
+    static ExpressionStatus Tan(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)              { return eval1(evalResult, args, tan); }
+    static ExpressionStatus Tanh(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)             { return eval1(evalResult, args, tanh); }
+    static ExpressionStatus Round(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)            { return eval1(evalResult, args, roundToEven); }
 
     static ExpressionStatus minOrMax(EvaluationResult& evalResult, EvaluationResultVector& args, bool doMax)
         {
@@ -617,8 +617,8 @@ struct MathMethods
             return ExpressionStatus::UnknownError;
         }
 
-    static ExpressionStatus Min(EvaluationResult& evalResult, EvaluationResultVector& args)              { return minOrMax(evalResult, args, false); }
-    static ExpressionStatus Max(EvaluationResult& evalResult, EvaluationResultVector& args)              { return minOrMax(evalResult, args, true); }
+    static ExpressionStatus Min(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)              { return minOrMax(evalResult, args, false); }
+    static ExpressionStatus Max(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)              { return minOrMax(evalResult, args, true); }
 
     static ExpressionStatus almostEqual(EvaluationResult& evalResult, EvaluationResultVector& args)
         {
@@ -633,9 +633,9 @@ struct MathMethods
             return ExpressionStatus::UnknownError;
         }
 
-    static ExpressionStatus AlmostEqual(EvaluationResult& evalResult, EvaluationResultVector& args)      { return almostEqual(evalResult, args); }
+    static ExpressionStatus AlmostEqual(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)      { return almostEqual(evalResult, args); }
 
-    static ExpressionStatus BigMul(EvaluationResult& evalResult, EvaluationResultVector& args)
+    static ExpressionStatus BigMul(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)
         {
         int32_t a, b;
         if (ExtractArg(a, args, 0) && ExtractArg(b, args, 1))

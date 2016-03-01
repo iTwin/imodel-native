@@ -464,7 +464,7 @@ bvector<ECSchemaP>& localizationSchemas
             return SupplementedSchemaStatus::Metadata_Missing;
         if (!metaData.IsValid())
             return SupplementedSchemaStatus::Metadata_Missing;
-        if (!metaData->IsForPrimarySchema(primarySchema.GetName(), primarySchema.GetVersionMajor(), primarySchema.GetVersionMinor(), SchemaMatchType::SCHEMAMATCHTYPE_Latest))
+        if (!metaData->IsForPrimarySchema(primarySchema.GetName(), primarySchema.GetVersionMajor(), primarySchema.GetVersionMinor(), SchemaMatchType::Latest))
             continue;
 
         if (SchemaLocalizedStrings::IsLocalizationSupplementalSchema(supplemental))

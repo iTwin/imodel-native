@@ -106,7 +106,6 @@ ECObjectsStatus ECEnumeration::ParseEnumerationName(Utf8StringR prefix, Utf8Stri
     {
     if (0 == qualifiedEnumName.length())
         {
-        LOG.error("Failed to parse a prefix and name from a qualified name because the string is empty.");
         return ECObjectsStatus::ParseError;
         }
 
@@ -120,8 +119,6 @@ ECObjectsStatus ECEnumeration::ParseEnumerationName(Utf8StringR prefix, Utf8Stri
 
     if (qualifiedEnumName.length() == colonIndex + 1)
         {
-        LOG.errorv("Failed to parse a prefix and name from the qualified name '%s' because the string ends with a colon. There must be characters after the colon.",
-                     qualifiedEnumName.c_str());
         return ECObjectsStatus::ParseError;
         }
 

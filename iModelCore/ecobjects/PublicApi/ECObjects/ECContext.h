@@ -50,6 +50,7 @@ private:
     IECSchemaRemapperCP                     m_remapper;
     bool                                    m_acceptLegacyImperfectLatestCompatibleMatch;
     bvector<WString>                        m_cultureStrings;
+    bool                                    m_preserveElementOrder = false;
 
     bool                        GetStandardPaths (bvector<WString>& standardPaths);
 
@@ -77,12 +78,16 @@ public:
     void                                RemoveConversionSchema(ECSchemaR schema);
     ECSchemaPtr                         LocateConversionSchemaFor(Utf8CP schemaName, int versionMajor, int versionMinor);
 
-    ECSchemaPtr         LocateSchema (SchemaKeyR key, bset<SchemaMatchType> const& matches);
     ECOBJECTS_EXPORT void AddSchemaLocaters (bvector<ECN::IECSchemaLocaterP> const& schemaLocators);
 
     IECSchemaRemapperCP GetRemapper() const                         { return m_remapper; }
     void                SetRemapper (IECSchemaRemapperCP remapper)  { m_remapper = remapper; }
     void                ResolveClassName (Utf8StringR serializedClassName, ECSchemaCR schema) const;
+
+
+    bool GetPreserveElementOrder() { return m_preserveElementOrder; }
+    void SetPreserveElementOrder(bool flag) { m_preserveElementOrder = flag; }
+
 //__PUBLISH_SECTION_START__
 public:
     //! Host should call to establish search paths for standard ECSchemas.

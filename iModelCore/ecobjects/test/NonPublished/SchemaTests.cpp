@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/SchemaTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -122,7 +122,7 @@ TEST_F (SchemaTest, TestCircularReference)
     schemaContext = ECSchemaReadContext::CreateContext ();
     schemaContext->AddSchemaLocater (*schemaLocater);
     SchemaKey key ("CircleSchema", 01, 00);
-    testSchema = schemaContext->LocateSchema (key, SCHEMAMATCHTYPE_Latest);
+    testSchema = schemaContext->LocateSchema (key, SchemaMatchType::Latest);
     EXPECT_FALSE (testSchema.IsValid ());
     }
 
@@ -140,7 +140,7 @@ TEST_F (SchemaTest, TestsLatestCompatible)
     schemaContext = ECSchemaReadContext::CreateContext ();
     schemaContext->AddSchemaLocater (*schemaLocater);
     SchemaKey key ("Widgets", 01, 00);
-    testSchema = schemaContext->LocateSchema (key, SCHEMAMATCHTYPE_LatestCompatible);
+    testSchema = schemaContext->LocateSchema (key, SchemaMatchType::LatestCompatible);
     EXPECT_TRUE (testSchema.IsValid ());
     EXPECT_TRUE (testSchema->GetVersionMajor () == 9);
     EXPECT_TRUE (testSchema->GetVersionMinor () == 6);
@@ -160,7 +160,7 @@ TEST_F (SchemaTest, TestsLatest)
     schemaContext = ECSchemaReadContext::CreateContext ();
     schemaContext->AddSchemaLocater (*schemaLocater);
     SchemaKey key ("Widgets", 9, 7);
-    testSchema = schemaContext->LocateSchema (key, SCHEMAMATCHTYPE_Latest);
+    testSchema = schemaContext->LocateSchema (key, SchemaMatchType::Latest);
     EXPECT_TRUE (testSchema.IsValid ());
     EXPECT_TRUE (testSchema->GetVersionMajor () == 9);
     EXPECT_TRUE (testSchema->GetVersionMinor () == 6);
@@ -180,7 +180,7 @@ TEST_F (SchemaTest, GetBaseClassPropertyWhenSchemaHaveDuplicatePrefixes)
     schemaContext = ECSchemaReadContext::CreateContext ();
     schemaContext->AddSchemaLocater (*schemaLocater);
     SchemaKey key ("DuplicatePrefixes", 01, 00);
-    testSchema = schemaContext->LocateSchema (key, SCHEMAMATCHTYPE_Latest);
+    testSchema = schemaContext->LocateSchema (key, SchemaMatchType::Latest);
     EXPECT_TRUE (testSchema.IsValid ());
     ECClassCP CircleClass = testSchema->GetClassCP ("Circle");
     EXPECT_TRUE (CircleClass != NULL) << "Cannot Load Ellipse Class";
@@ -205,7 +205,7 @@ TEST_F (SchemaTest, GetBaseClassProperty)
     schemaContext = ECSchemaReadContext::CreateContext ();
     schemaContext->AddSchemaLocater (*schemaLocater);
     SchemaKey key ("testschema", 01, 00);
-    testSchema = schemaContext->LocateSchema (key, SCHEMAMATCHTYPE_Latest);
+    testSchema = schemaContext->LocateSchema (key, SchemaMatchType::Latest);
     EXPECT_TRUE (testSchema.IsValid ());
     ECClassCP WheelsChildClass = testSchema->GetClassCP ("WheelsChild");
     EXPECT_TRUE (WheelsChildClass != NULL) << "Cannot Load WheelsChild Class";
@@ -222,7 +222,7 @@ TEST_F (SchemaTest, GetBaseClassProperty)
 TEST_F (TestCopySchema, CopySimpleSchemaAndCreateInstance)
     {
     SchemaKey key ("BaseSchema", 01, 00);
-    m_testSchema = m_schemaContext->LocateSchema (key, SCHEMAMATCHTYPE_Latest);//ECSchema::LocateSchema(key, *schemaContext);
+    m_testSchema = m_schemaContext->LocateSchema (key, SchemaMatchType::Latest);//ECSchema::LocateSchema(key, *schemaContext);
     EXPECT_TRUE (m_testSchema.IsValid ());
     ECClassCP ellipseClass = m_testSchema->GetClassCP ("ellipse");
     IECInstancePtr ellipseClassInstance = ellipseClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
@@ -251,7 +251,7 @@ TEST_F (TestCopySchema, CopySimpleSchemaAndCreateInstance)
 TEST_F (TestCopySchema, CopySchemaWithDuplicatePrefixesAndCreateInstance)
     {
     SchemaKey key ("DuplicatePrefixes", 01, 00);
-    m_testSchema = m_schemaContext->LocateSchema (key, SCHEMAMATCHTYPE_Latest);//ECSchema::LocateSchema(key, *schemaContext);
+    m_testSchema = m_schemaContext->LocateSchema (key, SchemaMatchType::Latest);//ECSchema::LocateSchema(key, *schemaContext);
     EXPECT_TRUE (m_testSchema.IsValid ());
     ECClassCP ellipseClass = m_testSchema->GetClassCP ("Circle");
     EXPECT_TRUE (ellipseClass != NULL) << "Cannot Load Ellipse Class";
@@ -285,7 +285,7 @@ TEST_F (TestCopySchema, CopySchemaWithInvalidReferenceAndCreateInstance)
     m_schemaContext = ECSchemaReadContext::CreateContext (true);
     m_schemaContext->AddSchemaLocater (*m_schemaLocater);
     SchemaKey key ("InvalidReference", 01, 00);
-    m_testSchema = m_schemaContext->LocateSchema (key, SCHEMAMATCHTYPE_Latest);
+    m_testSchema = m_schemaContext->LocateSchema (key, SchemaMatchType::Latest);
     EXPECT_TRUE (m_testSchema.IsValid ());
     ECClassCP ellipseClass = m_testSchema->GetClassCP ("circle");
     IECInstancePtr ellipseClassInstance = ellipseClass->GetDefaultStandaloneEnabler ()->CreateInstance ();

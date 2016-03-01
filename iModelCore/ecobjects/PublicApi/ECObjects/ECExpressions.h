@@ -115,12 +115,11 @@ enum ValueType
     ValType_Lambda          =  5,
     };
 
-typedef ExpressionStatus (*ExpressionStaticMethod_t)(EvaluationResult& evalResult, EvaluationResultVector& arguments);
-typedef ExpressionStatus (*ExpressionStaticMethodWithContext_t)(EvaluationResult& evalResult, void*methodContext, EvaluationResultVector& arguments);
-typedef ExpressionStatus (*ExpressionInstanceMethod_t)(EvaluationResult& evalResult, ECInstanceListCR instanceList, EvaluationResultVector& arguments);
+typedef ExpressionStatus (*ExpressionStaticMethod_t)(EvaluationResult& evalResult, void* context, EvaluationResultVector& arguments);
+typedef ExpressionStatus (*ExpressionInstanceMethod_t)(EvaluationResult& evalResult, void* context, ECInstanceListCR instanceList, EvaluationResultVector& arguments);
 // NB: We could generalize Instance methods to take any EvaluationResult as the calling object, but we'd have to refactor all our existing instance method implementations to
 // check that the caller is an ECInstanceList...rather keep value list methods separate from instance list methods...
-typedef ExpressionStatus (*ExpressionValueListMethod_t)(EvaluationResult& evalResult, IValueListResultCR valueList, EvaluationResultVector& arguments);
+typedef ExpressionStatus (*ExpressionValueListMethod_t)(EvaluationResult& evalResult, void* context, IValueListResultCR valueList, EvaluationResultVector& arguments);
 
 /*__PUBLISH_SECTION_END__*/
 
@@ -168,9 +167,11 @@ private:
     ExpressionStaticMethod_t    m_staticMethod;
     ExpressionInstanceMethod_t  m_instanceMethod;
     ExpressionValueListMethod_t m_valueListMethod;
+    void* m_context;
+
 protected:
-                                MethodReferenceStandard(ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod);
-                                MethodReferenceStandard(ExpressionValueListMethod_t valueListMethod);
+                                MethodReferenceStandard(ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod, void* context);
+                                MethodReferenceStandard(ExpressionValueListMethod_t valueListMethod, void* context);
 
     virtual bool                _CanReuseResult ()               { return true; }
     virtual bool                _SupportsStaticMethodCall () const override { return NULL != m_staticMethod; }
@@ -185,33 +186,9 @@ protected:
     virtual ExpressionStatus    _InvokeValueListMethod (EvaluationResultR evalResult, IValueListResultCR valueList, EvaluationResultVector& arguments) override;
 public:
 
-    static MethodReferencePtr   Create(ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod);
-    static MethodReferencePtr   Create(ExpressionValueListMethod_t valueListMethod);
+    static MethodReferencePtr   Create(ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod, void* context = nullptr);
+    static MethodReferencePtr   Create(ExpressionValueListMethod_t valueListMethod, void* context = nullptr);
 };
-
-/*=================================================================================**//**
-*
-* This is result of _GetMethodReference. It is used to invoke a method.
-*
-+===============+===============+===============+===============+===============+======*/
-struct          MethodReferenceStaticWithContext : MethodReference
-{
-private:
-    ExpressionStaticMethodWithContext_t m_staticMethod;
-    void*                       m_context;
-
-protected:
-                                MethodReferenceStaticWithContext(ExpressionStaticMethodWithContext_t staticMethod, void*methodData);
-    virtual bool                _CanReuseResult ()               { return true; }
-    virtual bool                _SupportsStaticMethodCall () const override { return true; }
-    virtual bool                _SupportsInstanceMethodCall () const override { return false; }
-    virtual bool                _SupportsValueListMethodCall() const override { return false; }
-
-    virtual ExpressionStatus    _InvokeStaticMethod (EvaluationResultR evalResult, EvaluationResultVector& arguments) override;
-public:
-
-    static MethodReferencePtr   Create(ExpressionStaticMethodWithContext_t staticMethod, void*context);
-}; // MethodReference
 
 /*__PUBLISH_SECTION_START__*/
 
@@ -346,12 +323,12 @@ public:
     void PublishSymbols (SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets);
 
     // Register an IECSymbolProvider.
-    void RegisterSymbolProvider (IECSymbolProviderCR provider);
+    ECOBJECTS_EXPORT void RegisterSymbolProvider (IECSymbolProviderCR provider);
 
     // Unregister an IECSymbolProvider.
-    void UnregisterSymbolProvider (IECSymbolProviderCR provider);
+    ECOBJECTS_EXPORT void UnregisterSymbolProvider (IECSymbolProviderCR provider);
 
-    static InternalECSymbolProviderManager& GetManager ();
+    ECOBJECTS_EXPORT static InternalECSymbolProviderManager& GetManager ();
     };
 
 //__PUBLISH_SECTION_START__
@@ -506,8 +483,7 @@ public:
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Creates a new method symbol context, using the supplied methods
-    ECOBJECTS_EXPORT static MethodSymbolPtr    Create(Utf8CP name, ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod);
-    ECOBJECTS_EXPORT static MethodSymbolPtr    Create(Utf8CP name, ExpressionStaticMethodWithContext_t staticMethod, void*context);
+    ECOBJECTS_EXPORT static MethodSymbolPtr    Create(Utf8CP name, ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod, void* context = nullptr);
 };
 
 /*=================================================================================**//**
@@ -614,7 +590,7 @@ public:
 /*=================================================================================**//**
 * Provides a set of Symbols
 +===============+===============+===============+===============+===============+======*/
-struct      IECSymbolProvider
+struct EXPORT_VTABLE_ATTRIBUTE IECSymbolProvider
     {
 /*__PUBLISH_SECTION_END__*/
     typedef void(*ExternalSymbolPublisher)(SymbolExpressionContextR, bvector<Utf8String> const&);
@@ -624,6 +600,7 @@ protected:
     virtual Utf8CP                  _GetName() const = 0;
     virtual void                    _PublishSymbols (SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const = 0;
 public:
+    ECOBJECTS_EXPORT virtual ~IECSymbolProvider() { /* required due to other virtual functions */ }
     ECOBJECTS_EXPORT Utf8CP         GetName() const
                                         { return _GetName(); }
     ECOBJECTS_EXPORT void           PublishSymbols (SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const

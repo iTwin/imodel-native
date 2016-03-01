@@ -66,6 +66,7 @@
     <ClCompile Include="ECProperty.cpp" />
     <ClCompile Include="ECSchema.cpp" />
     <ClCompile Include="ECEnumeration.cpp" />
+    <ClCompile Include="KindOfQuantity.cpp" />
     <ClCompile Include="ECSchemaConverter.cpp" />
     <ClCompile Include="ECType.cpp" />
     <ClCompile Include="ECValue.cpp" />
@@ -166,8 +167,9 @@
     <ClInclude Include="SchemaXml.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\mki\ECObjects.mki" />
     <None Include="ecobjects.mke" />
-    <None Include="ecobjects.mki" />
+    <None Include="ECObjectsCompileOpts.mki" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

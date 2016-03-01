@@ -207,12 +207,12 @@ ECSchemaPtr     ECSchemaReadContext::LocateSchema (SchemaKeyR key, SchemaMatchTy
     m_knownSchemaDirtyStack.push_back(false);
 
     ECSchemaPtr schema;
-    for (bvector<IECSchemaLocaterP>::const_iterator iter = m_locaters.begin(); iter != m_locaters.end(); ++iter)
+    for (auto const& locater : m_locaters)
         {
-        if ( ! EXPECTED_CONDITION (NULL != *iter))
+        if ( ! EXPECTED_CONDITION (nullptr != locater))
             continue;
 
-        schema = (*iter)->LocateSchema(key, matchType, *this);
+        schema = locater->LocateSchema(key, matchType, *this);
         if (schema.IsValid())
             break;
 
@@ -220,48 +220,6 @@ ECSchemaPtr     ECSchemaReadContext::LocateSchema (SchemaKeyR key, SchemaMatchTy
             {
             schema = m_knownSchemas->LocateSchema (key, matchType, *this);
             m_knownSchemaDirtyStack.back() = false;
-            }
-
-        if (schema.IsValid())
-            break;
-        }
-
-    m_knownSchemaDirtyStack.pop_back();
-    return schema;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr     ECSchemaReadContext::LocateSchema (SchemaKeyR key, bset<SchemaMatchType> const& matches)
-    {
-    m_knownSchemaDirtyStack.push_back(false);
-
-    ECSchemaPtr schema;
-    for (bvector<IECSchemaLocaterP>::const_iterator iter = m_locaters.begin(); iter != m_locaters.end(); ++iter)
-        {
-        if ( ! EXPECTED_CONDITION (NULL != *iter))
-            continue;
-
-        for (bset<SchemaMatchType>::const_iterator matchIter = matches.begin(); matchIter != matches.end(); ++matchIter)
-            {
-            schema = (*iter)->LocateSchema(key, *matchIter, *this); //Doing this will change m_knownSchemas
-            if (schema.IsValid())
-                break;
-
-            if (m_knownSchemaDirtyStack.back())
-                {
-                for (bset<SchemaMatchType>::const_iterator kmatchIter = matches.begin(); matchIter != matches.end(); ++matchIter)
-                    {
-                    schema = m_knownSchemas->LocateSchema (key, *kmatchIter, *this);
-                    if (schema.IsValid())
-                        break;
-                    }
-                m_knownSchemaDirtyStack.back() = false;
-                }
-
-            if (schema.IsValid())
-                break;
             }
 
         if (schema.IsValid())
@@ -458,7 +416,7 @@ ECSchemaPtr         ECSchemaReadContext::LocateConversionSchemaFor(Utf8CP schema
         Utf8String conversionSchemaName(schemaName);
         conversionSchemaName += "_V3Conversion";
         SchemaKey key(conversionSchemaName.c_str(), versionMajor, versionMinor);
-        conversionSchema = m_conversionSchemas->LocateSchema(key, SchemaMatchType::SCHEMAMATCHTYPE_LatestCompatible);
+        conversionSchema = m_conversionSchemas->LocateSchema(key, SchemaMatchType::LatestCompatible);
         }
     
     return conversionSchema;
