@@ -5,7 +5,6 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#pragma once
 #include "ECDbPublishedTests.h"
 #include <ECDb/ECDbExpressionSymbolProviders.h>
 
@@ -350,6 +349,7 @@ TEST_F(ECDbExpressionSymbolProviderRelatedInstanceTests, FollowsRelationshipWhen
     ASSERT_STREQ(instanceB->GetInstanceId().c_str(), (*result.GetInstanceList())[0]->GetInstanceId().c_str());
     }
 
+#ifdef wip
 //---------------------------------------------------------------------------------------
 // @bsitest                                       Grigas.Petraitis              02/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -478,6 +478,7 @@ TEST_F(ECDbExpressionSymbolProviderRelatedInstanceTests, SymbolsAreInjectedWhenO
     selectedInstanceC->GetValue(v, "label");
     EXPECT_STREQ("ClassA Label", v.GetUtf8CP());
     }
+#endif
 
 END_ECDBUNITTESTS_NAMESPACE
 
