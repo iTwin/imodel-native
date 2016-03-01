@@ -18,19 +18,14 @@ struct ECDbExpressionContext : ECN::SymbolExpressionContext
 private:
     ECDbCR m_db;
 
-private:
-    Utf8CP GetPath() const {return m_db.GetDbFileName();}
-    ECN::ECValue GetName() const {return ECN::ECValue(BeFileName(m_db.GetDbFileName()).GetFileNameWithoutExtension().c_str());}
-
-protected:
-    ECDbExpressionContext(ECDbCR db)
-        : SymbolExpressionContext(nullptr), m_db(db) 
+    ECDbExpressionContext(ECDbCR db) : SymbolExpressionContext(nullptr), m_db(db)
         {
         AddSymbol(*PropertySymbol::Create<ECDbExpressionContext, Utf8CP>("Path", *this, &ECDbExpressionContext::GetPath));
         AddSymbol(*PropertySymbol::Create<ECDbExpressionContext, ECValue>("Name", *this, &ECDbExpressionContext::GetName));
         }
 
-    ECDbCR GetECDb() const {return m_db;}
+    Utf8CP GetPath() const {return m_db.GetDbFileName();}
+    ECN::ECValue GetName() const {return ECN::ECValue(BeFileName(m_db.GetDbFileName()).GetFileNameWithoutExtension().c_str());}
 
 public:
     static RefCountedPtr<ECDbExpressionContext> Create(ECDbCR db) {return new ECDbExpressionContext(db);}
@@ -42,7 +37,7 @@ public:
 void ECDbExpressionSymbolProvider::_PublishSymbols(SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const
     {
     context.AddSymbol(*ContextSymbol::CreateContextSymbol("ECDb", *ECDbExpressionContext::Create(m_db)));
-    context.AddSymbol(*MethodSymbol::Create("GetRelatedInstance", NULL, &GetRelatedInstance, const_cast<ECDbP>(&m_db)));
+    context.AddSymbol(*MethodSymbol::Create("GetRelatedInstance", nullptr, &GetRelatedInstance, const_cast<ECDbP>(&m_db)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -69,10 +64,10 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstance(EvaluationResu
     if (nullptr == context)
         return ExpressionStatus::UnknownError;
     
-    ECDbR db = *reinterpret_cast<ECDbP>(context);
+    ECDbCR db = *reinterpret_cast<ECDbCP>(context);
 
     bvector<Utf8String> argTokens;
-    BeStringUtilities::Split(args[0].GetECValue()->GetUtf8CP(), ",", NULL, argTokens);
+    BeStringUtilities::Split(args[0].GetECValue()->GetUtf8CP(), ",", nullptr, argTokens);
     if (1 > argTokens.size() || 2 < argTokens.size())
         return ExpressionStatus::UnknownError;
 
@@ -80,7 +75,7 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstance(EvaluationResu
     Utf8String failureSpec = (argTokens.size() > 1) ? argTokens[1] : "";  // "PropertyName:FailureValue"
     argTokens.clear();
 
-    BeStringUtilities::Split(arg.c_str(), ":", NULL, argTokens);
+    BeStringUtilities::Split(arg.c_str(), ":", nullptr, argTokens);
     if (argTokens.size() != 3 || argTokens[1].length() != 1)
         return ExpressionStatus::UnknownError;
 
