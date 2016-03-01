@@ -824,6 +824,9 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
         ClipVectorPtr m_viewClipVector;
 
         StopQueryCallbackFP m_stopQueryCallbackFP;
+
+        virtual size_t _GetDepth() override { return 0; }
+        virtual void _SetDepth(size_t depth) override {};
         
         virtual const DPoint3d* _GetViewBox() const override
             {
@@ -922,6 +925,7 @@ struct ScalableMeshMeshQueryParams : public IScalableMeshMeshQueryParams
     protected:
         BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr m_sourceGCSPtr;
         BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr m_targetGCSPtr;
+        size_t m_depth;
         virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetSourceGCS() override
             {
             return m_sourceGCSPtr;
@@ -930,6 +934,16 @@ struct ScalableMeshMeshQueryParams : public IScalableMeshMeshQueryParams
         virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetTargetGCS() override
             {
             return m_targetGCSPtr;
+            }
+
+        virtual size_t _GetDepth() override
+            {
+            return m_depth;
+            }
+
+        virtual void _SetDepth(size_t depth) override
+            {
+            m_depth = depth;
             }
 
         virtual void _SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
@@ -942,6 +956,7 @@ struct ScalableMeshMeshQueryParams : public IScalableMeshMeshQueryParams
 
         ScalableMeshMeshQueryParams()
             {
+            m_depth = (size_t)-1;
             }
 
         virtual ~ScalableMeshMeshQueryParams()
@@ -1162,6 +1177,9 @@ struct ScalableMeshNodePlaneQueryParams : public IScalableMeshNodePlaneQueryPara
             {
             return m_depth;
             }
+
+        virtual size_t _GetDepth() override { return 0; }
+        virtual void _SetDepth(size_t depth) override {};
         BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr m_sourceGCSPtr;
         BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr m_targetGCSPtr;
         virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetSourceGCS() override

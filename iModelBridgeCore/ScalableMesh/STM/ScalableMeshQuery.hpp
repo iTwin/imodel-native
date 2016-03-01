@@ -833,7 +833,7 @@ template <class POINT> int ScalableMeshFullResolutionMeshQuery<POINT>::_Query(bv
         nbQueryExtentPts,
         minZ,
         maxZ));
-
+    if (nbQueryExtentPts == 0) queryExtent = contentExtent;
     int status = SUCCESS;
     
     DRange3d range; 
@@ -848,7 +848,7 @@ template <class POINT> int ScalableMeshFullResolutionMeshQuery<POINT>::_Query(bv
 
     range.Get8Corners (box);
 
-    ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, YProtPtExtentType>* meshQueryP(new ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, YProtPtExtentType>(queryExtent, m_scmIndexPtr->GetDepth(), box));
+    ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, YProtPtExtentType>* meshQueryP(new ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, YProtPtExtentType>(queryExtent, scmQueryParamsPtr->GetDepth() < (size_t)-1 ? scmQueryParamsPtr->GetDepth() : m_scmIndexPtr->GetDepth(), box));
     try
         {
 

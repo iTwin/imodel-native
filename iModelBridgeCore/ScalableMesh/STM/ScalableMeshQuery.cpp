@@ -1417,6 +1417,7 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
         triangle[3] = triangle[0];
 
         std::swap(triangle[1], triangle[2]);
+        if (triangle[0].AlmostEqualXY(triangle[1]) || triangle[1].AlmostEqualXY(triangle[2]) || triangle[2].AlmostEqualXY(triangle[0])) continue;
         //DTM doesn't like colinear triangles
         if (bsiGeom_isDPoint3dArrayColinear(triangle, 3, 1e-6)) continue;
 
@@ -1894,10 +1895,20 @@ BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr IScalableMeshMeshQueryParams
     return _GetTargetGCS();
     }
 
+size_t IScalableMeshMeshQueryParams::GetDepth()
+    {
+    return _GetDepth();
+    }
+
 void IScalableMeshMeshQueryParams::SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
                                    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr)
     {
     _SetGCS(sourceGCSPtr, targetGCSPtr);
+    }
+
+void IScalableMeshMeshQueryParams::SetDepth(size_t depth)
+    {
+    _SetDepth(depth);
     }
 
 IScalableMeshViewDependentMeshQueryParams::IScalableMeshViewDependentMeshQueryParams()
