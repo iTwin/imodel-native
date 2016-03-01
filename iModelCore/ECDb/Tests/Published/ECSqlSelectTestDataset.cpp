@@ -2852,16 +2852,16 @@ ECSqlTestDataset ECSqlSelectTestDataset::SubqueryTests( int rowCountPerClass )
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Property 'A' does not match with any of the class properties.");
 
     ecsql = "SELECT * FROM ecsql.P WHERE (SELECT * FROM ecsql.P)";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "SubQuery should return exactly 1 coloumn.");
+    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "SubQuery should return exactly 1 column.");
 
     ecsql = "SELECT AVG(S) FROM (SELECT * FROM ecsql.P)";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "AVG function can only be applied to numeric values.");
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, 1);
 
     ecsql = "SELECT * FROM (SELECT I FROM ecsql.P HAVING COUNT(S)>1)";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "A GROUP BY clause is mandatory before HAVING.");
 
     ecsql = "SELECT * FROM ecsql.PSA WHERE (SELECT ? FROM ecsql.PSA WHERE I=abc)";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Propert 'I' doesn't take String values.");
+    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Property 'I' doesn't take String values.");
 
     ecsql = "SELECT L FROM (SELECT * FROM ecsql.P WHERE B <>)";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Property B is not assigned any value.");

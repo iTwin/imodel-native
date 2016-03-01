@@ -350,44 +350,45 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereFunctionTests (ECSqlType ecsqlType
     if (ToECSql (pClassECSqlStub, ecsqlType, *pClass, false))
         {
         Utf8String ecsql;
-        ecsql.Sprintf ("%s WHERE GetECClassId () <> %lld", pClassECSqlStub.c_str (), pClassId);
+        ecsql.Sprintf ("%s WHERE GetECClassId() <> %lld", pClassECSqlStub.c_str (), pClassId);
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
 
-        ecsql.Sprintf ("%s WHERE GetECClassId () = %lld", pClassECSqlStub.c_str (), pClassId);
+        ecsql.Sprintf ("%s WHERE GetECClassId() = %lld", pClassECSqlStub.c_str (), pClassId);
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), rowCountPerClass);
 
-        ecsql.Sprintf ("%s WHERE LOWER (S) = UPPER (S)", pClassECSqlStub.c_str ());
+        ecsql.Sprintf ("%s WHERE LOWER(S) = UPPER(S)", pClassECSqlStub.c_str ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
 
-        ecsql.Sprintf ("%s WHERE LOWER (UPPER (S)) = LOWER (S)", pClassECSqlStub.c_str ());
+        ecsql.Sprintf ("%s WHERE LOWER(UPPER(S)) = LOWER (S)", pClassECSqlStub.c_str ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), rowCountPerClass);
 
-        ecsql.Sprintf ("%s WHERE LOWER (I) = 'hello'", pClassECSqlStub.c_str ());
-        ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::Invalid);
+        //lower/upper only make sense with strings, but no failure if used for other data types (like in SQLite)
+        ecsql.Sprintf ("%s WHERE LOWER(I)=I", pClassECSqlStub.c_str ());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
 
-        ecsql.Sprintf ("%s WHERE UPPER (D) = 'hello'", pClassECSqlStub.c_str ());
-        ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::Invalid);
+        ecsql.Sprintf ("%s WHERE UPPER(D)>0", pClassECSqlStub.c_str ());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
 
         {
-        ecsql.Sprintf ("%s WHERE LOWER (S) = ?", pClassECSqlStub.c_str ());
+        ecsql.Sprintf ("%s WHERE LOWER(S)=?", pClassECSqlStub.c_str ());
         auto& testItem = AddTestItem (dataset, ecsqlType, ecsql.c_str (), rowCountPerClass);
         testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue ("sample string")));
         }
 
         {
-        ecsql.Sprintf ("%s WHERE LOWER (S) = ?", pClassECSqlStub.c_str ());
+        ecsql.Sprintf ("%s WHERE LOWER(S)=?", pClassECSqlStub.c_str ());
         auto& testItem = AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
         testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (1)));
         }
 
         {
-        ecsql.Sprintf ("%s WHERE LOWER (S) = ?", pClassECSqlStub.c_str ());
+        ecsql.Sprintf ("%s WHERE LOWER(S)=?", pClassECSqlStub.c_str ());
         auto& testItem = ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::Invalid);
         testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (DateTime (2012, 1, 1))));
         }
 
         {
-        ecsql.Sprintf ("%s WHERE UPPER (?) = 'hello'", pClassECSqlStub.c_str ());
+        ecsql.Sprintf ("%s WHERE UPPER(?) = 'hello'", pClassECSqlStub.c_str ());
         auto& testItem = ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::Invalid);
         testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (DateTime (2012,1,1))));
         }

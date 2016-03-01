@@ -1384,7 +1384,6 @@ namespace connectivity
                         {OSQLParseNode::comparison_predicate_part_2, "comparison_predicate_part_2"},
                         {OSQLParseNode::concatenation, "concatenation"},
                         {OSQLParseNode::cross_union, "cross_union"},
-                        {OSQLParseNode::custom_set_fct, "custom_set_fct"},
                         {OSQLParseNode::data_type, "data_type"},
                         {OSQLParseNode::datetime_factor, "datetime_factor"},
                         {OSQLParseNode::datetime_primary, "datetime_primary"},

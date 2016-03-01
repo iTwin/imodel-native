@@ -507,7 +507,6 @@ Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing(ECSqlParseContext& ct
         return FinalizeParseStatus::NotCompleted;
         }
 
-
     //verify that args are all primitive and handle parameter args
     const size_t argCount = GetChildrenCount();
     if (m_setQuantifier != SqlSetQuantifier::NotSpecified && argCount != 1)
@@ -516,6 +515,10 @@ Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing(ECSqlParseContext& ct
                                       m_functionName.c_str(), ExpHelper::ToSql(m_setQuantifier));
         return FinalizeParseStatus::Error;
         }
+
+    //no validation needed for count as it accepts everything
+    if (m_isStandardSetFunction && m_functionName.EqualsI("count"))
+        return FinalizeParseStatus::Completed;
 
     bool allArgsAreConstant = true;
     for (size_t i = 0; i < argCount; i++)
@@ -536,7 +539,11 @@ Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing(ECSqlParseContext& ct
             }
         }
 
-    SetIsConstant(allArgsAreConstant);
+    //set functions are never constant per row, as they aggregate. For custom set functions we'd have to do this too,
+    //but we don't know which custom functions are aggregate and which not
+    if (!m_isStandardSetFunction)
+        SetIsConstant(allArgsAreConstant);
+
     return FinalizeParseStatus::Completed;
     }
 

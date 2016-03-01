@@ -16,6 +16,11 @@ using namespace std;
 using namespace connectivity;
 
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       04/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+unique_ptr<OSQLParser> ECSqlParser::s_parser = nullptr;
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSqlParser::Parse (ECSqlParseTreePtr& ecsqlParseTree, ECDbCR ecdb, Utf8CP ecsql, IClassMap::View classView) const
@@ -797,7 +802,7 @@ BentleyStatus ECSqlParser::parse_opt_ecsqloptions_clause(std::unique_ptr<Options
          return ERROR;
          }
 
-     OSQLParseNode* functionNameNode = parseNode->getChild(0);
+     OSQLParseNode const* functionNameNode = parseNode->getChild(0);
      Utf8StringCR functionName = functionNameNode->getTokenValue();
      if (functionName.empty())
          {
@@ -809,9 +814,14 @@ BentleyStatus ECSqlParser::parse_opt_ecsqloptions_clause(std::unique_ptr<Options
      if (GetPointCoordinateFunctionExp::IsPointCoordinateFunction(functionName))
          return parse_getpointcoordinate_fct_spec(exp, *parseNode, functionName);
 
+     const size_t childCount = parseNode->count();
+     if (childCount == 5)
+         return parse_set_fct(exp, *parseNode, functionName.c_str(), false);
+
+
      unique_ptr<FunctionCallExp> functionCallExp = unique_ptr<FunctionCallExp>(new FunctionCallExp(functionName.c_str()));
      //parse function args. (if child parse node count is < 4, function doesn't have args)
-     if (parseNode->count() == 4)
+     if (childCount == 4)
          {
          OSQLParseNode const* argumentsNode = parseNode->getChild(2);
          if (SQL_ISRULE(argumentsNode, function_args_commalist))
@@ -832,6 +842,36 @@ BentleyStatus ECSqlParser::parse_opt_ecsqloptions_clause(std::unique_ptr<Options
      exp = std::move(functionCallExp);
      return SUCCESS;
      }
+
+ //-----------------------------------------------------------------------------------------
+ // @bsimethod                                    Affan.Khan                       05/2013
+ //+---------------+---------------+---------------+---------------+---------------+------
+ BentleyStatus ECSqlParser::parse_set_fct(unique_ptr<ValueExp>& exp, OSQLParseNode const& parseNode, Utf8CP functionName, bool isStandardSetFunction) const
+     {
+     SqlSetQuantifier setQuantifier = SqlSetQuantifier::NotSpecified;
+     if (SUCCESS != parse_opt_all_distinct(setQuantifier, parseNode.getChild(2)))
+         return ERROR;
+
+     unique_ptr<FunctionCallExp> functionCallExp = unique_ptr<FunctionCallExp>(new FunctionCallExp(functionName, setQuantifier, isStandardSetFunction));
+
+     if (BeStringUtilities::Stricmp(functionName, "count") == 0 && Exp::IsAsteriskToken(parseNode.getChild(2)->getTokenValue().c_str()))
+         {
+         unique_ptr<ValueExp> argExp = nullptr;
+         if (SUCCESS != LiteralValueExp::Create(argExp, *m_context, Exp::ASTERISK_TOKEN, ECSqlTypeInfo(ECSqlTypeInfo::Kind::Varies)))
+             return ERROR;
+
+         functionCallExp->AddArgument(move(argExp));
+         }
+     else
+         {
+         if (SUCCESS != parse_and_add_functionarg(*functionCallExp, parseNode.getChild(3/*function_arg*/)))
+             return ERROR;
+         }
+
+     exp = move(functionCallExp);
+     return SUCCESS;
+     }
+
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2015
@@ -889,94 +929,58 @@ BentleyStatus ECSqlParser::parse_functionarg(unique_ptr<ValueExp>& exp, connecti
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
- BentleyStatus ECSqlParser::parse_set_fct(unique_ptr<ValueExp>& exp, OSQLParseNode const* parseNode) const
+ BentleyStatus ECSqlParser::parse_general_set_fct(unique_ptr<ValueExp>& exp, OSQLParseNode const* parseNode) const
     {
-    if (!(SQL_ISRULE(parseNode, general_set_fct) || SQL_ISRULE(parseNode, custom_set_fct)) && 
+    if (!SQL_ISRULE(parseNode, general_set_fct) && 
         (parseNode->count() == 4 || parseNode->count() == 5))
         {
         BeAssert(false && "Wrong grammar");
         return ERROR;
         }
 
-    OSQLParseNode* functionNameNode = parseNode->getChild(0);
+    OSQLParseNode const* functionNameNode = parseNode->getChild(0);
+    if (!functionNameNode->getTokenValue().empty())
+        {
+        BeAssert(false && "general_set_fct expects no function name to be set");
+        return ERROR;
+        }
 
     Utf8CP functionName = nullptr;
-    bool isCountFunction = false;
-    if (SQL_ISRULE(parseNode, general_set_fct))
+    switch (functionNameNode->getTokenID())
         {
-        if (!functionNameNode->getTokenValue().empty())
-            {
-            BeAssert(false && "general_set_fct expects no function name to be set");
-            return ERROR;
-            }
+            case SQL_TOKEN_ANY:
+                functionName = "ANY";
+                break;
+            case SQL_TOKEN_AVG:
+                functionName = "AVG";
+                break;
+            case SQL_TOKEN_COUNT:
+                functionName = "COUNT";
+                break;
+            case SQL_TOKEN_EVERY:
+                functionName = "EVERY";
+                break;
+            case SQL_TOKEN_MAX:
+                functionName = "MAX";
+                break;
+            case SQL_TOKEN_MIN:
+                functionName = "MIN";
+                break;
+            case SQL_TOKEN_SOME:
+                functionName = "SOME";
+                break;
+            case SQL_TOKEN_SUM:
+                functionName = "SUM";
+                break;
 
-        switch (functionNameNode->getTokenID())
+            default:
             {
-                case SQL_TOKEN_ANY: 
-                    functionName = "ANY"; 
-                    break;
-                case SQL_TOKEN_AVG: 
-                    functionName = "AVG";
-                    break;
-                case SQL_TOKEN_COUNT:
-                    functionName = "COUNT";
-                    isCountFunction = true;
-                    break;
-                case SQL_TOKEN_EVERY:
-                    functionName = "EVERY";
-                    break;
-                case SQL_TOKEN_MAX:
-                    functionName = "MAX";
-                    break;
-                case SQL_TOKEN_MIN:
-                    functionName = "MIN";
-                    break;
-                case SQL_TOKEN_SOME:
-                    functionName = "SOME";
-                    break;
-                case SQL_TOKEN_SUM:
-                    functionName = "SUM";
-                    break;
-
-                default:
-                {
-                GetIssueReporter().Report(ECDbIssueSeverity::Error, "Unsupported standard set function with token ID %d", functionNameNode->getTokenID());
-                return ERROR;
-                }
-            }
-        }
-    else if (SQL_ISRULE(parseNode, custom_set_fct))
-        {
-        functionName = functionNameNode->getTokenValue().c_str();
-        if (Utf8String::IsNullOrEmpty(functionName))
-            {
-            GetIssueReporter().Report(ECDbIssueSeverity::Error, "No function name specified for custom_set_fct expression.");
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "Unsupported standard set function with token ID %d", functionNameNode->getTokenID());
             return ERROR;
             }
         }
-
-    SqlSetQuantifier setQuantifier = SqlSetQuantifier::NotSpecified;
-    if (SUCCESS != parse_opt_all_distinct(setQuantifier, parseNode->getChild(2)))
-        return ERROR;
-
-    unique_ptr<FunctionCallExp> functionCallExp = unique_ptr<FunctionCallExp>(new FunctionCallExp(functionName, setQuantifier));
-    
-    if (isCountFunction && Exp::IsAsteriskToken(parseNode->getChild(2)->getTokenValue().c_str()))
-        {
-        unique_ptr<ValueExp> argExp = nullptr;
-        if (SUCCESS != LiteralValueExp::Create(argExp, *m_context, Exp::ASTERISK_TOKEN, ECSqlTypeInfo(ECSqlTypeInfo::Kind::Varies)))
-            return ERROR;
-
-        functionCallExp->AddArgument(move(argExp));
-        }
-    else
-        {
-        if (SUCCESS != parse_and_add_functionarg(*functionCallExp, parseNode->getChild(3/*function_arg*/)))
-            return ERROR;
-        }
-
-    exp = move(functionCallExp);
-    return SUCCESS;
+        
+    return parse_set_fct(exp, *parseNode, functionName, true);
     }
 
  //-----------------------------------------------------------------------------------------
@@ -2778,8 +2782,7 @@ BentleyStatus ECSqlParser::parse_value_exp(unique_ptr<ValueExp>& valueExp, OSQLP
                 case OSQLParseNode::fold:
                     return parse_fold(valueExp, parseNode);
                 case OSQLParseNode::general_set_fct:
-                case OSQLParseNode::custom_set_fct:
-                    return parse_set_fct(valueExp, parseNode);
+                    return parse_general_set_fct(valueExp, parseNode);
                 case OSQLParseNode::fct_spec:
                     return parse_fct_spec(valueExp, parseNode);
                 case OSQLParseNode::term:
@@ -2861,6 +2864,16 @@ BentleyStatus ECSqlParser::parse_values_or_query_spec(unique_ptr<ValueExpListExp
     OSQLParseNode const* listNode = parseNode->getChild(2);
     return parse_row_value_constructor_commalist(exp, listNode);
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                    05/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+OSQLParser* ECSqlParser::GetSharedParser()
+    {
+    s_parser = unique_ptr<OSQLParser>(new OSQLParser(com::sun::star::lang::XMultiServiceFactory::CreateInstance()));
+    return s_parser.get();
+    }
+
 
 //-----------------------------------------------------------------------------------------
 // ECSqlParseContext

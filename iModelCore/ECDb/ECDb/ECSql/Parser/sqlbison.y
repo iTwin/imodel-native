@@ -218,7 +218,7 @@ using namespace connectivity;
 %type <pParseNode> derived_column as_clause table_name num_primary term num_value_exp
 %type <pParseNode> value_exp_primary num_value_fct unsigned_value_spec cast_spec fct_spec  scalar_subquery
 %type <pParseNode> position_exp extract_exp length_exp general_value_spec
-%type <pParseNode> general_set_fct set_fct_type custom_set_fct joined_table relationship_join op_relationship_direction
+%type <pParseNode> general_set_fct set_fct_type joined_table relationship_join op_relationship_direction
 %type <pParseNode> row_value_constructor_commalist row_value_constructor  row_value_constructor_elem
 /* %type <pParseNode> row_value_const_list*/
 %type <pParseNode> qualified_join value_exp join_type outer_join_type join_condition boolean_term unary_predicate
@@ -1755,7 +1755,6 @@ general_value_spec:
     ;
 fct_spec:
         general_set_fct
-        | custom_set_fct
   /*  |   fold */
     |    function_name '(' ')'
         {
@@ -1792,6 +1791,17 @@ fct_spec:
             else
                 YYERROR;
         }
+    |
+        function_name '(' opt_all_distinct function_arg ')'
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($3);
+            $$->append($4);
+            $$->append($5 = newNode(")", SQL_NODE_PUNCTUATION));
+        };
+
     ;
 function_name0:
         date_function_0Argument
@@ -2230,18 +2240,6 @@ set_fct_type:
     |   SQL_TOKEN_ANY
     |   SQL_TOKEN_SOME
     ;
-
-custom_set_fct:
-        function_name '(' opt_all_distinct function_arg ')'
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
-            $$->append($3);
-            $$->append($4);
-            $$->append($5 = newNode(")", SQL_NODE_PUNCTUATION));
-        };
-
 
 outer_join_type:
         SQL_TOKEN_LEFT %prec SQL_TOKEN_LEFT

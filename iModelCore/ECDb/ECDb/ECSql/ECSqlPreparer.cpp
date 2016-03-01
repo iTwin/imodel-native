@@ -1435,7 +1435,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
         nativeSql.AppendParenLeft();
 
     const bool isAnyOrSomeFunction = BeStringUtilities::Stricmp(functionName, "any") == 0 || BeStringUtilities::Stricmp(functionName, "some") == 0;
-    const bool isEveryFunction = !isAnyOrSomeFunction && BeStringUtilities::Stricmp(functionName, "every");
+    const bool isEveryFunction = !isAnyOrSomeFunction && BeStringUtilities::Stricmp(functionName, "every") == 0;
     const bool isAnyEveryOrSomeFunction = isAnyOrSomeFunction || isEveryFunction;
     if (isAnyEveryOrSomeFunction)
         {

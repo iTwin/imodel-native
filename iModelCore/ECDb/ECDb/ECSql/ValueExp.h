@@ -224,27 +224,28 @@ public:
 struct FunctionCallExp : ValueExp
     {
     DEFINE_EXPR_TYPE(FunctionCall)
-private:
-    Utf8String m_functionName;
-    SqlSetQuantifier m_setQuantifier;
+    private:
+        Utf8String m_functionName;
+        bool m_isStandardSetFunction;
+        SqlSetQuantifier m_setQuantifier;
 
-    static bmap<Utf8CP, ECN::PrimitiveType, CompareIUtf8> s_builtinFunctionNonDefaultReturnTypes;
+        static bmap<Utf8CP, ECN::PrimitiveType, CompareIUtf8> s_builtinFunctionNonDefaultReturnTypes;
 
-    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
-    virtual bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
-    virtual void _DoToECSql(Utf8StringR ecsql) const override;
-    virtual Utf8String _ToString() const override;
+        virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
+        virtual bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
+        virtual void _DoToECSql(Utf8StringR ecsql) const override;
+        virtual Utf8String _ToString() const override;
 
-public:
-    explicit FunctionCallExp (Utf8CP functionName, SqlSetQuantifier setQuantifier = SqlSetQuantifier::NotSpecified) : ValueExp (), m_functionName(functionName), m_setQuantifier(setQuantifier) {}
-    virtual ~FunctionCallExp () {}
+    public:
+        explicit FunctionCallExp(Utf8CP functionName, SqlSetQuantifier setQuantifier = SqlSetQuantifier::NotSpecified, bool isStandardSetFunction = false) : ValueExp(), m_functionName(functionName), m_setQuantifier(setQuantifier), m_isStandardSetFunction(isStandardSetFunction) {}
+        virtual ~FunctionCallExp() {}
 
-    Utf8CP GetFunctionName() const { return m_functionName.c_str();}
-    SqlSetQuantifier GetSetQuantifier() const { return m_setQuantifier; }
+        Utf8CP GetFunctionName() const { return m_functionName.c_str(); }
+        SqlSetQuantifier GetSetQuantifier() const { return m_setQuantifier; }
 
-    BentleyStatus AddArgument(std::unique_ptr<ValueExp> argument);
+        BentleyStatus AddArgument(std::unique_ptr<ValueExp> argument);
 
-    static ECN::PrimitiveType DetermineReturnType(ECDbCR, Utf8CP functionName, int argCount);
+        static ECN::PrimitiveType DetermineReturnType(ECDbCR, Utf8CP functionName, int argCount);
     };
 
 
