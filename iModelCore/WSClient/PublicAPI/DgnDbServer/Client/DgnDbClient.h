@@ -37,9 +37,9 @@ private:
     Utf8String                  m_serverUrl;
     Credentials                 m_credentials;
     WebServices::ClientInfoPtr  m_clientInfo;
-    IHttpHandlerPtr             m_customHandler;
+    AuthenticationHandlerPtr    m_authenticationHandler;
 
-    DgnDbClient (WebServices::ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler);
+    DgnDbClient (WebServices::ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler);
 
     AsyncTaskPtr<DgnDbRepositoryConnectionResult>   ConnectToRepository     (RepositoryInfoPtr repository, ICancellationTokenPtr cancellationToken = nullptr);
     AsyncTaskPtr<DgnDbRepositoryResult>             InitializeRepository    (WebServices::IWSRepositoryClientPtr client, Utf8StringCR repositoryId, Json::Value repositoryCreationJson, WebServices::ObjectId repositoryObjectId,
@@ -53,9 +53,9 @@ public:
 
     //! Create an instance of the client.
     //! @param[in] clientInfo Application information sent to server.
-    //! @param[in] customHandler Custom http handler for connect authentication.
+    //! @param[in] authenticationHandler Http handler for connect authentication.
     //! @return Returns a shared pointer to the created instance.
-    DGNDBSERVERCLIENT_EXPORT static DgnDbClientPtr                  Create                (WebServices::ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler = nullptr);
+    DGNDBSERVERCLIENT_EXPORT static DgnDbClientPtr                  Create                (WebServices::ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler = nullptr);
 
     //! Address of the server.
     DGNDBSERVERCLIENT_EXPORT void                                   SetServerURL          (Utf8StringCR serverUrl);

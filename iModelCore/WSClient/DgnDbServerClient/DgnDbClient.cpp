@@ -41,24 +41,24 @@ void DgnDbClient::Initialize()
 //---------------------------------------------------------------------------------------
 AsyncTaskPtr<DgnDbRepositoryConnectionResult> DgnDbClient::ConnectToRepository(RepositoryInfoPtr repository, ICancellationTokenPtr cancellationToken)
     {
-    return DgnDbRepositoryConnection::Create(repository, m_credentials, m_clientInfo, cancellationToken, m_customHandler);
+    return DgnDbRepositoryConnection::Create(repository, m_credentials, m_clientInfo, cancellationToken, m_authenticationHandler);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbClient::DgnDbClient(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler)
-    : m_clientInfo(clientInfo), m_customHandler (customHandler)
+DgnDbClient::DgnDbClient(ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler)
+    : m_clientInfo(clientInfo), m_authenticationHandler(authenticationHandler)
     {
-    m_repositoryManager = DgnDbRepositoryManager::Create(clientInfo, customHandler);
+    m_repositoryManager = DgnDbRepositoryManager::Create(clientInfo, authenticationHandler);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbClientPtr DgnDbClient::Create(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler)
+DgnDbClientPtr DgnDbClient::Create(ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler)
     {
-    return DgnDbClientPtr(new DgnDbClient(clientInfo, customHandler));
+    return DgnDbClientPtr(new DgnDbClient(clientInfo, authenticationHandler));
     }
 
 //---------------------------------------------------------------------------------------
@@ -83,7 +83,7 @@ void DgnDbClient::SetCredentials(DgnClientFx::Utils::CredentialsCR credentials)
 //---------------------------------------------------------------------------------------
 AsyncTaskPtr<WSRepositoriesResult> DgnDbClient::GetRepositoriesByPlugin(Utf8StringCR pluginId, ICancellationTokenPtr cancellationToken)
     {
-    IWSClientPtr client = WSClient::Create(m_serverUrl, m_clientInfo, m_customHandler);
+    IWSClientPtr client = WSClient::Create(m_serverUrl, m_clientInfo, m_authenticationHandler);
     return client->SendGetRepositoriesRequest(cancellationToken)->Then<WSRepositoriesResult>([=] (const WSRepositoriesResult& response)
         {
         if (response.IsSuccess())
@@ -119,7 +119,7 @@ DgnClientFx::Utils::AsyncTaskPtr<DgnDbRepositoriesResult> DgnDbClient::GetReposi
         {
         return CreateCompletedAsyncTask<DgnDbRepositoriesResult>(DgnDbRepositoriesResult::Error(DgnDbServerError::Id::InvalidServerURL));
         }
-    if (!m_credentials.IsValid() && !m_customHandler)
+    if (!m_credentials.IsValid() && !m_authenticationHandler)
         {
         return CreateCompletedAsyncTask<DgnDbRepositoriesResult>(DgnDbRepositoriesResult::Error(DgnDbServerError::Id::CredentialsNotSet));
         }
@@ -266,7 +266,7 @@ AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::CreateNewRepository(Dgn::DgnDbP
         {
         return CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(DgnDbServerError::Id::InvalidServerURL));
         }
-    if (!m_credentials.IsValid() && !m_customHandler)
+    if (!m_credentials.IsValid() && !m_authenticationHandler)
         {
         return CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(DgnDbServerError::Id::CredentialsNotSet));
         }
@@ -295,7 +295,7 @@ AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::CreateNewRepository(Dgn::DgnDbP
 
         // Stage 1. Create repository.
         Utf8String adminRepositoryURL = (*repositoriesResult.GetValue().begin()).GetId();
-        IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, adminRepositoryURL, m_clientInfo, nullptr, m_customHandler);
+        IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, adminRepositoryURL, m_clientInfo, nullptr, m_authenticationHandler);
         Json::Value repositoryCreationJson = RepositoryCreationJson(repositoryName, dbFileId, description, dbFileName, published);
         client->SetCredentials(m_credentials);
         client->SendCreateObjectRequest(repositoryCreationJson, BeFileName(), callback, cancellationToken)
@@ -394,7 +394,7 @@ AsyncTaskPtr<DgnDbBriefcaseResult> DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, 
         {
         return CreateCompletedAsyncTask<DgnDbBriefcaseResult>(DgnDbBriefcaseResult::Error(DgnDbServerError::Id::FileNotFound));
         }
-    if (!m_credentials.IsValid() && !m_customHandler)
+    if (!m_credentials.IsValid() && !m_authenticationHandler)
         {
         return CreateCompletedAsyncTask<DgnDbBriefcaseResult>(DgnDbBriefcaseResult::Error(DgnDbServerError::Id::CredentialsNotSet));
         }
@@ -446,7 +446,7 @@ AsyncTaskPtr<DgnDbFileNameResult> DgnDbClient::AquireBriefcase(Utf8StringCR repo
         {
         return CreateCompletedAsyncTask<DgnDbFileNameResult>(DgnDbFileNameResult::Error(DgnDbServerError::Id::InvalidServerURL));
         }
-    if (!m_credentials.IsValid() && !m_customHandler)
+    if (!m_credentials.IsValid() && !m_authenticationHandler)
         {
         return CreateCompletedAsyncTask<DgnDbFileNameResult>(DgnDbFileNameResult::Error(DgnDbServerError::Id::CredentialsNotSet));
         }

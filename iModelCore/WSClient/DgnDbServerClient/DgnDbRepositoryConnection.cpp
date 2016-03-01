@@ -46,10 +46,10 @@ DgnDbRepositoryConnection::DgnDbRepositoryConnection
 RepositoryInfoPtr          repository,
 WebServices::CredentialsCR credentials,
 WebServices::ClientInfoPtr clientInfo,
-IHttpHandlerPtr            customHandler
+AuthenticationHandlerPtr   authenticationHandler
 ) : m_repositoryInfo(repository)
     {
-    m_wsRepositoryClient = WSRepositoryClient::Create(repository->GetServerURL(), repository->GetWSRepositoryName(), clientInfo, nullptr, customHandler);
+    m_wsRepositoryClient = WSRepositoryClient::Create(repository->GetServerURL(), repository->GetWSRepositoryName(), clientInfo, nullptr, authenticationHandler);
     m_wsRepositoryClient->SetCredentials(credentials);
     }
 
@@ -102,22 +102,22 @@ AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::UpdateRepositoryInfo (ICanc
 //---------------------------------------------------------------------------------------
 AsyncTaskPtr<DgnDbRepositoryConnectionResult> DgnDbRepositoryConnection::Create
 (
-RepositoryInfoPtr     repository,
-CredentialsCR         credentials,
-ClientInfoPtr         clientInfo,
-ICancellationTokenPtr cancellationToken,
-IHttpHandlerPtr       customHandler
+RepositoryInfoPtr        repository,
+CredentialsCR            credentials,
+ClientInfoPtr            clientInfo,
+ICancellationTokenPtr    cancellationToken,
+AuthenticationHandlerPtr authenticationHandler
 )
     {
     if (!repository || repository->GetServerURL().empty() || repository->GetId().empty())
         {
         return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Error(DgnDbServerError::Id::InvalidRepostioryName));
         }
-    if (!credentials.IsValid() && !customHandler)
+    if (!credentials.IsValid() && !authenticationHandler)
         {
         return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Error(DgnDbServerError::Id::CredentialsNotSet));
         }
-    DgnDbRepositoryConnectionPtr repositoryConnection(new DgnDbRepositoryConnection(repository, credentials, clientInfo, customHandler));
+    DgnDbRepositoryConnectionPtr repositoryConnection(new DgnDbRepositoryConnection(repository, credentials, clientInfo, authenticationHandler));
     if (repository->GetFileId().empty())
         return repositoryConnection->UpdateRepositoryInfo(cancellationToken)->Then<DgnDbRepositoryConnectionResult>([=] (const DgnDbResult& result)
         {
