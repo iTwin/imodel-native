@@ -56,7 +56,6 @@ public:
 
         // initialize codec
         auto codec = new HCDCodecIJG(width, height, 8 * nOfChannels);
-        codec->SetSourceColorMode(HCDCodecIJG::ColorModes::RGB);
         codec->SetQuality(70);
         codec->SetSubsamplingMode(HCDCodecIJG::SubsamplingModes::SNONE);
         HFCPtr<HCDCodec> pCodec = codec;
@@ -77,8 +76,8 @@ public:
         pi_uncompressedPacket.SetBuffer(DataTypeArray, countData);
         pi_uncompressedPacket.SetDataSize(countData);
         size_t w, h;
-        w = h = (size_t)sqrt(countData / 4);
-        WriteCompressedPacket(pi_uncompressedPacket, pi_compressedPacket, (int)w, (int)h, 4);
+        w = h = (size_t)sqrt(countData / 3);
+        WriteCompressedPacket(pi_uncompressedPacket, pi_compressedPacket, (int)w, (int)h, 3);
         bvector<uint8_t> texData(pi_compressedPacket.GetDataSize());
         memcpy(&texData[0], pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize());
         int64_t id = SQLiteNodeHeader::NO_NODEID;
@@ -93,8 +92,8 @@ public:
         pi_uncompressedPacket.SetBuffer(DataTypeArray, countData);
         pi_uncompressedPacket.SetDataSize(countData);
         size_t w, h;
-        w = h = (size_t)sqrt(countData / 4);
-        WriteCompressedPacket(pi_uncompressedPacket, pi_compressedPacket, (int)w, (int)h, 4);
+        w = h = (size_t)sqrt(countData / 3);
+        WriteCompressedPacket(pi_uncompressedPacket, pi_compressedPacket, (int)w, (int)h, 3);
         bvector<uint8_t> texData(pi_compressedPacket.GetDataSize());
         memcpy(&texData[0], pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize());
         int64_t id = blockID.m_integerID;
@@ -122,7 +121,6 @@ public:
     bool LoadCompressedPacket(const HCDPacket& pi_compressedPacket, HCDPacket& pi_uncompressedPacket, size_t width, size_t height, size_t nOfChannels = 3)
     {
     auto codec = new HCDCodecIJG(width, height, nOfChannels * 8);// (pi_compressedPacket.GetDataSize()); // 24 bits per pixels
-    codec->SetSourceColorMode(HCDCodecIJG::ColorModes::RGB);
     codec->SetQuality(70);
     codec->SetSubsamplingMode(HCDCodecIJG::SubsamplingModes::SNONE);
     HFCPtr<HCDCodec> pCodec = codec;
@@ -143,11 +141,11 @@ public:
     pi_compressedPacket.SetDataSize(ptData.size());
     pi_uncompressedPacket.SetDataSize(uncompressedSize);
     size_t w, h;
-    w = h = (size_t)sqrt(uncompressedSize / 4);
-    LoadCompressedPacket(pi_compressedPacket, pi_uncompressedPacket,(int)w,(int)h,4);
+    w = h = (size_t)sqrt(uncompressedSize / 3);
+    LoadCompressedPacket(pi_compressedPacket, pi_uncompressedPacket,(int)w,(int)h,3);
     ((int*)DataTypeArray)[0] = (int)w;
     ((int*)DataTypeArray)[1] = (int)h;
-    ((int*)DataTypeArray)[2] = 4;
+    ((int*)DataTypeArray)[2] = 3;
     memcpy(DataTypeArray+3*sizeof(int), pi_uncompressedPacket.GetBufferAddress(), std::min(uncompressedSize, maxCountData));
     return std::min(uncompressedSize + 3 * sizeof(int), maxCountData);
     }
