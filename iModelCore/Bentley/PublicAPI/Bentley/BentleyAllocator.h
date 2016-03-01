@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BentleyAllocator.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,40 +15,28 @@
 
 //! Convenience to declare Bentley overrides of new and delete to allow the operations to be inlined in header files. In this case, it should be included in a public: section.
 #define DEFINE_BENTLEY_NEW_DELETE_OPERATORS\
-    void* operator new(size_t size) { return bentleyAllocator_new(size); }\
-    void operator delete(void *rawMemory, size_t size) { bentleyAllocator_delete(rawMemory, size); }
-
-//__PUBLISH_SECTION_END__
-#ifndef BENTLEYALLOCATOR_EXPORT
-#if defined (__BENTLEYALLOCATOR_BUILD__)
-    #define BENTLEYALLOCATOR_EXPORT EXPORT_ATTRIBUTE
-#endif
-#endif
-//__PUBLISH_SECTION_START__
-
-#if !defined (BENTLEYALLOCATOR_EXPORT)
-#define BENTLEYALLOCATOR_EXPORT  IMPORT_ATTRIBUTE
-#endif
-
-extern "C" BENTLEYALLOCATOR_EXPORT void* bentleyAllocator_new (size_t);
-extern "C" BENTLEYALLOCATOR_EXPORT void  bentleyAllocator_delete (void*, size_t);
-extern "C" BENTLEYALLOCATOR_EXPORT void* bentleyAllocator_malloc (size_t);
-inline void* bentleyAllocator_calloc (size_t size) {void* p=bentleyAllocator_malloc(size); memset(p,0,size); return p;}
-extern "C" BENTLEYALLOCATOR_EXPORT void* bentleyAllocator_realloc (void*, size_t);
-extern "C" BENTLEYALLOCATOR_EXPORT void  bentleyAllocator_free (void*, size_t=0);
-extern "C" BENTLEYALLOCATOR_EXPORT void* bentleyAllocator_getNullRefBuffer ();
-extern "C" BENTLEYALLOCATOR_EXPORT void  bentleyAllocator_enableLowFragmentationCRTHeap ();
-
-extern "C" BENTLEYALLOCATOR_EXPORT  void  bentleyAllocator_deleteRefCounted (void*object, size_t size);
-extern "C" BENTLEYALLOCATOR_EXPORT  void* bentleyAllocator_allocateRefCounted (size_t size);
-extern "C" BENTLEYALLOCATOR_EXPORT  void  bentleyAllocator_deleteArrayRefCounted (void*object, size_t size);
-extern "C" BENTLEYALLOCATOR_EXPORT  void* bentleyAllocator_allocateArrayRefCounted (size_t size);
-extern "C" BENTLEYALLOCATOR_EXPORT  void  bentleyAllocator_deleteIRefCounted (void*object, size_t size);
-extern "C" BENTLEYALLOCATOR_EXPORT  void* bentleyAllocator_allocateIRefCounted (size_t size);
-extern "C" BENTLEYALLOCATOR_EXPORT  void  bentleyAllocator_deleteArrayIRefCounted (void*object, size_t size);
-extern "C" BENTLEYALLOCATOR_EXPORT  void* bentleyAllocator_allocateArrayIRefCounted (size_t size);
+    void* operator new(size_t size) { return BentleyApi::bentleyAllocator_new(size); }\
+    void operator delete(void *rawMemory, size_t size) { BentleyApi::bentleyAllocator_delete(rawMemory, size); }
 
 BEGIN_BENTLEY_NAMESPACE
+
+BENTLEYDLL_EXPORT void* bentleyAllocator_new (size_t);
+BENTLEYDLL_EXPORT void  bentleyAllocator_delete (void*, size_t);
+BENTLEYDLL_EXPORT void* bentleyAllocator_malloc (size_t);
+inline void* bentleyAllocator_calloc (size_t size) {void* p=bentleyAllocator_malloc(size); memset(p,0,size); return p;}
+BENTLEYDLL_EXPORT void* bentleyAllocator_realloc (void*, size_t);
+BENTLEYDLL_EXPORT void  bentleyAllocator_free (void*, size_t=0);
+BENTLEYDLL_EXPORT void* bentleyAllocator_getNullRefBuffer ();
+BENTLEYDLL_EXPORT void  bentleyAllocator_enableLowFragmentationCRTHeap ();
+
+BENTLEYDLL_EXPORT  void  bentleyAllocator_deleteRefCounted (void*object, size_t size);
+BENTLEYDLL_EXPORT  void* bentleyAllocator_allocateRefCounted (size_t size);
+BENTLEYDLL_EXPORT  void  bentleyAllocator_deleteArrayRefCounted (void*object, size_t size);
+BENTLEYDLL_EXPORT  void* bentleyAllocator_allocateArrayRefCounted (size_t size);
+BENTLEYDLL_EXPORT  void  bentleyAllocator_deleteIRefCounted (void*object, size_t size);
+BENTLEYDLL_EXPORT  void* bentleyAllocator_allocateIRefCounted (size_t size);
+BENTLEYDLL_EXPORT  void  bentleyAllocator_deleteArrayIRefCounted (void*object, size_t size);
+BENTLEYDLL_EXPORT  void* bentleyAllocator_allocateArrayIRefCounted (size_t size);
 
 /*=================================================================================**//**
 * @Description An STL-compliant allocator that calls bentleyAllocator_malloc and bentleyAllocator_free.

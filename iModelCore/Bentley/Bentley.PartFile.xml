@@ -15,6 +15,8 @@
     </Part>
   
     <Part Name="Base" BentleyBuildMakeFile="prewire.mke">
+        <!-- BeTest.h includes <gtest/gtest.h> in some builds, and so Bentley depends on gtest, at least for include files. -->
+        <SubPart PartName="BeGtest-Includes" Repository="BeGTest" PartFile="BeGTest" />
         <Bindings>
             <PublicAPI Domain="Bentley" />
             <PublicAPI Domain="Logging" />
@@ -30,33 +32,10 @@
         </Bindings>
     </Part>
 
-    <!-- NOTE: BentleyAllocator.dll must have NO VERSION NUMBER! The SAME dll must be used by all products. -->
-    <!-- WIP Move BentleyAllocator into its own repository. -->
-    <Part Name="BentleyAllocator" BentleyBuildMakeFile="BentleyAllocator.mke" BMakeOptions="+dTMP_BUILD_STATIC">
-        <SubPart PartName="BeIcu4cLibrary" PartFile="BeIcu4cLibrary" Repository="Libsrc-Icu4c" />
-        <SubPart PartName="Base"/>
-        <Bindings>
-            <Libs ProductDirectoryName="BentleyLibs" Required="false">Delivery/$(libprefix)BentleyAllocator$(libext)</Libs>
-            <Assemblies ProductDirectoryName="BentleyNativeAssemblies">Delivery/$(shlibprefix)BentleyAllocator$(shlibext)</Assemblies>
-            <Directory ProductDirectoryName="BentleyAllocatorBinaries" SubPartDirectory="BentleyAllocatorBinaries" SourceName="Delivery/BentleyAllocatorBinaries" Required="false"/>
-        </Bindings>
-    </Part>
-
-    <!-- For when you really do need a static BentleyAllocator library. This is useful when building a standalone .EXE. -->
-    <Part Name="BentleyAllocatorStaticLib" BentleyBuildMakeFile="BentleyAllocator.mke">
-        <SubPart PartName="Base"/>
-        <Bindings>
-            <Libs ProductDirectoryName="BentleyLibs" Required="false">Delivery/$(libprefix)BentleyAllocatorStaticLib$(libext)</Libs>
-            <Assemblies ProductDirectoryName="BentleyNativeAssemblies">Delivery/$(shlibprefix)BentleyAllocatorStaticLib$(shlibext)</Assemblies>
-        </Bindings>
-    </Part>
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
     <Part Name="BentleyDll" BentleyBuildMakeFile="Bentley.mke" ApiNumber="G06" BMakeOptions="+dTMP_BUILD_STATIC">
         <SubPart PartName="Base"/>
         <SubPart PartName="BeIcu4cLibrary" PartFile="BeIcu4cLibrary" Repository="Libsrc-Icu4c"/>
-        <SubPart PartName="BentleyAllocator"/>
-        <SubPart PartName="google_gtest_lib"    PartFile="gtest"    Repository="util-gtest" />
-        <SubPart PartName="google_gmock_lib"    PartFile="gmock"    Repository="util-gmock" />
         <Bindings>
             <Libs ProductDirectoryName="BentleyLibs" Required="false">Delivery/$(libprefix)Bentley$(libext)</Libs>
             <Assemblies ProductDirectoryName="BentleyNativeAssemblies">Delivery/$(shlibprefix)Bentley$(ApiNumber)$(shlibext)</Assemblies>

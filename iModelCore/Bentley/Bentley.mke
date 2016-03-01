@@ -2,7 +2,7 @@
 #
 #     $Source: Bentley.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -74,6 +74,8 @@ $(o)BeDirectoryIterator$(oext)  : $(nonportDir)BeDirectoryIterator.cpp $(Bentley
 
 $(o)BeTextFile$(oext)           : $(nonportDir)BeTextFile.cpp $(BentleyAPISrc)BeTextFile.h ${MultiCompileDepends}
 
+$(o)RefCounted$(oext)           : $(bentleyDir)RefCounted.cpp $(BentleyAPISrc)RefCounted.h  ${MultiCompileDepends}
+
 %if defined (BENTLEY_CPP_MISSING_WCHAR_SUPPORT)
 $(o)strfunc$(oext)          : $(nonportDir)strfunc.cpp ${MultiCompileDepends}
 %endif
@@ -135,8 +137,7 @@ DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
-LINKER_LIBRARIES            = $(BuildContext)SubParts/Libs/$(libprefix)BentleyAllocator$(libext)
-LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeIcu4c$(libext)
+LINKER_LIBRARIES            = $(BuildContext)SubParts/Libs/$(libprefix)BeIcu4c$(libext)
 
 %if $(TARGET_PLATFORM)=="Windows" || $(TARGET_PLATFORM)=="WinRT"
     LINKER_LIBRARIES           + $(CLibs)
