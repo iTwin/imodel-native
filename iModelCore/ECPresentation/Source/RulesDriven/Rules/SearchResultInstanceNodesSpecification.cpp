@@ -76,7 +76,7 @@ bool SearchResultInstanceNodesSpecification::_ReadXml (BeXmlNodeP xmlNode)
             {
             SearchQuerySpecification* spec = new SearchQuerySpecification();
             if (spec->ReadXml(child))
-                m_querySpecifications.insert(spec);
+                m_querySpecifications.push_back(spec);
             else
                 delete spec;
             }
@@ -120,12 +120,12 @@ void SearchResultInstanceNodesSpecification::SetGroupByLabel (bool value) { m_gr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bset<SearchQuerySpecification*>& SearchResultInstanceNodesSpecification::GetQuerySpecificationsR() {return m_querySpecifications;}
+bvector<SearchQuerySpecification*>& SearchResultInstanceNodesSpecification::GetQuerySpecificationsR() {return m_querySpecifications;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bset<SearchQuerySpecification*> const& SearchResultInstanceNodesSpecification::GetQuerySpecifications() const {return m_querySpecifications;}
+bvector<SearchQuerySpecification*> const& SearchResultInstanceNodesSpecification::GetQuerySpecifications() const {return m_querySpecifications;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
