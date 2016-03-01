@@ -15,10 +15,8 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BeTextFile.cpp" />
     <ClCompile Include="WString.cpp" />
     <ClCompile Include="GlobalHandleContainer.cpp" />
-    <ClCompile Include="rbtree.cpp" />
     <ClCompile Include="RefCounted.cpp" />
     <ClCompile Include="nonport\BeDebugLog.cpp">
       <Filter>nonport</Filter>
