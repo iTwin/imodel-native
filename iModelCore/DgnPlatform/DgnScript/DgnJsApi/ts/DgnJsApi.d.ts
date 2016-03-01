@@ -455,7 +455,10 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type ColorDefP = cxx_pointer<ColorDef>;
 
+    /** Projection of BentleyApi::Dgn::Render::FillDisplay */
     enum RenderFillDisplay { }
+
+    /** Projection of BentleyApi::Dgn::Render::DgnGeometryClass */
     enum RenderDgnGeometryClass { }
 
     /**
@@ -736,7 +739,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     /* ------------------------------------------ ScriptBasedTool -----------------------------------------------*/
 
     /**
-     * HitDetail
+     * HitDetail - Projection of BentleyApi::Dgn::HitDetail
      */
     class HitDetail implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
         /*** NATIVE_TYPE_NAME = JsHitDetail ***/ 
@@ -776,7 +779,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     type SchemaManagerP = cxx_pointer<SchemaManager>;
 
     /**
-     * ECSchema
+     * ECSchema - Projection of BentleyApi::ECN::ECSchema
      */
     class ECSchema implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
@@ -791,7 +794,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     type ECSchemaP = cxx_pointer<ECSchema>;
 
     /**
-     * ECClass
+     * ECClass - Projection of BentleyApi::ECN::ECClass
      */
     class ECClass implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
@@ -834,7 +837,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     type ECClassP = cxx_pointer<ECClass>;
 
     /**
-     * ECInstance
+     * ECInstance - Projection of BentleyApi::ECN::ECInstance
      */
     class ECInstance implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
@@ -875,7 +878,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     }
 
     /**
-     * ECValue
+     * ECValue - Projection of BentleyApi::ECN::ECValue
      */
     class ECValue implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
@@ -898,7 +901,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     type ECValueP = cxx_pointer<ECValue>;
 
     /**
-     * AdHocJsonValue
+     * AdHocJsonValue - Projection of BentleyApi::ECN::AdHocJsonValue
      */
     class AdHocJsonValue implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
@@ -968,7 +971,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     type ECClassCollectionP = cxx_pointer<ECClassCollection>;
 
     /**
-     * An ECProperty.
+     * ECProperty - Projection of BentleyApi::ECN::ECProperty
      */
     class ECProperty implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
@@ -994,7 +997,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     type ECPropertyP = cxx_pointer<ECProperty>;
 
     /**
-     * A PrimitiveECProperty
+     * PrimitiveECProperty - Projection of BentleyApi::ECN::PrimitiveECProperty
      */
     class PrimitiveECProperty extends ECProperty implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
