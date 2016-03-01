@@ -144,7 +144,7 @@ struct WebMercatorTileDisplay
 //=======================================================================================
 struct WebMercatorDisplay : ProgressiveTask
 {
-    friend struct WebMercatorModel;
+    friend struct BentleyApi::Dgn::WebMercatorModel;
 
 protected:
     WebMercatorModel const& m_model;              //!< The model

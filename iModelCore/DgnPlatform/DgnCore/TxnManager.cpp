@@ -566,6 +566,8 @@ RevisionStatus TxnManager::MergeRevisionChanges(ChangeStream& changeStream, Utf8
 
         if (status == RevisionStatus::Success)
             {
+            OnEndValidate();
+
             DbResult result = m_dgndb.SaveChanges(""); 
             // Note: All that the above operation does is to COMMIT the current Txn and BEGIN a new one. 
             // The user should NOT be able to revert the revision id by a call to AbandonChanges() anymore, since
@@ -607,8 +609,6 @@ RevisionStatus TxnManager::MergeRevisionChanges(ChangeStream& changeStream, Utf8
 
         return status;
         }
-
-    OnEndValidate();
 
     return RevisionStatus::Success;
     }
