@@ -31,6 +31,7 @@
     <ClCompile Include="BackDoor\DgnElementHelpers.cpp" />
     <ClCompile Include="BackDoor\DgnPlatformTestDomain.cpp" />
     <ClCompile Include="BackDoor\TestDomainElements.cpp" />
+    <ClCompile Include="NonPublished\BackwardCompatibility_Tests.cpp" />
     <ClCompile Include="NonPublished\Category_Test.cpp" />
     <ClCompile Include="NonPublished\ConfigurationManager_Test.cpp" />
     <ClCompile Include="NonPublished\DgnAuthority_Test.cpp" />
@@ -66,7 +67,6 @@
     <ClCompile Include="Performance\ElementInsertPerformance.cpp" />
     <ClCompile Include="Performance\PerformanceECInstanceDeleteTests.cpp" />
     <ClCompile Include="Performance\PerformanceElementsCRUDTests.cpp" />
-    <ClCompile Include="Performance\PerformanceElementsTests.cpp" />
     <ClCompile Include="Performance\PerformanceTestFixture.cpp" />
     <ClCompile Include="Performance\RelationshipPerformance_Test.cpp" />
     <ClCompile Include="Performance\TestSchemaHelper.cpp" />
@@ -120,7 +120,6 @@
     <ClInclude Include="NonPublished\DgnHandlersTests.h" />
     <ClInclude Include="NonPublished\DgnSqlTestDomain.h" />
     <ClInclude Include="Performance\DgnECPerformanceTests.h" />
-    <ClInclude Include="Performance\PerformanceElements.h" />
     <ClInclude Include="Performance\PerformanceElementsCRUDTests.h" />
     <ClInclude Include="Performance\PerformanceTestFixture.h" />
     <ClInclude Include="Performance\TestSchemaHelper.h" />

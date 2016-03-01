@@ -241,6 +241,24 @@ int32_t JsDgnElement::SetUnhandledProperty(Utf8StringCR name, JsECValueP v)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
+JsAdHocJsonValueP JsDgnElement::GetUserProperties() const
+    {
+    DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
+    return new JsAdHocJsonValue(m_el->GetUserProperties());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+void JsDgnElement::SetUserProperties(JsAdHocJsonValueP v)
+    {
+    DGNJSAPI_VALIDATE_ARGS_VOID(IsValid() && v);
+    m_el->GetUserPropertiesR() = v->m_props;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
 JsPlacement3dP JsPhysicalElement::GetPlacement() const 
     {
     DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
@@ -420,6 +438,26 @@ JsECInstanceP JsECClass::GetCustomAttribute(Utf8StringCR className) {return getC
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 JsECInstanceP JsECProperty::GetCustomAttribute(Utf8StringCR className) {return getCustomAttribute(m_property, className);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+JsECPropertyP JsECClass::GetProperty(Utf8StringCR name)
+    {
+    DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
+    auto prop = m_ecClass->GetPropertyP(name.c_str());
+    return prop? new JsECProperty(*prop): nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+JsPrimitiveECPropertyP JsECProperty::GetAsPrimitiveProperty() const 
+    {
+    DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
+    auto prim = m_property->GetAsPrimitiveProperty();
+    return prim? new JsPrimitiveECProperty(*prim): nullptr;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15

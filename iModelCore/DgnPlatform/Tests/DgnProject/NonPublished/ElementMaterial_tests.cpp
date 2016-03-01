@@ -30,7 +30,7 @@ static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, W
     RgbFactor red = { 1.0, 0.0, 0.0};
     ByteStream fileImageData, imageData;
     uint32_t width, height;
-    ImageUtilities::RgbImageInfo rgbImageInfo;
+    RgbImageInfo rgbImageInfo;
    
     JsonRenderMaterial renderMaterialAsset;
     renderMaterialAsset.SetColor(RENDER_MATERIAL_Color, red);
@@ -38,10 +38,10 @@ static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, W
 
     BeFile imageFile;
     if (BeFileStatus::Success == imageFile.Open(pngFileName, BeFileAccess::Read) &&
-        SUCCESS == ImageUtilities::ReadImageFromPngFile(fileImageData, rgbImageInfo, imageFile))
+        SUCCESS == rgbImageInfo.ReadImageFromPngFile(fileImageData, imageFile))
         {
-        width = rgbImageInfo.width;
-        height = rgbImageInfo.height;
+        width = rgbImageInfo.m_width;
+        height = rgbImageInfo.m_height;
 
         imageData.Resize(width * height * 4);
         Byte* p = imageData.GetDataP(); 

@@ -154,7 +154,7 @@ DgnDbStatus DgnTexture::_OnDelete() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::ImagePtr DgnTexture::ExtractImage() const
     {
-    ImageUtilities::RgbImageInfo imageInfo;
+    RgbImageInfo imageInfo;
     memset(&imageInfo, 0, sizeof (imageInfo));
 
     Render::ImagePtr image = new Render::Image(m_data.m_width, m_data.m_height, Render::Image::Format::Rgba);
@@ -165,20 +165,18 @@ Render::ImagePtr DgnTexture::ExtractImage() const
             break;
 
         case DgnTexture::Format::PNG:  
-            ImageUtilities::ReadImageFromPngBuffer(image->GetByteStreamR(), imageInfo, m_data.GetData(), m_data.GetSize());
+            imageInfo.ReadImageFromPngBuffer(image->GetByteStreamR(), m_data.GetData(), m_data.GetSize());
             break;
 
         case DgnTexture::Format::JPEG:
             {
-            ImageUtilities::RgbImageInfo    jpegInfo;
-
-            jpegInfo.width = m_data.GetWidth();
-            jpegInfo.height = m_data.GetHeight();
-            jpegInfo.hasAlpha = true;
-            jpegInfo.isBGR = false;
-            jpegInfo.isTopDown = true;
+            imageInfo.m_width = m_data.GetWidth();
+            imageInfo.m_height = m_data.GetHeight();
+            imageInfo.m_hasAlpha = true;
+            imageInfo.m_isBGR = false;
+            imageInfo.m_isTopDown = true;
             
-            ImageUtilities::ReadImageFromJpgBuffer(image->GetByteStreamR(), imageInfo, m_data.GetData(), m_data.GetSize(), jpegInfo);
+            imageInfo.ReadImageFromJpgBuffer(image->GetByteStreamR(), m_data.GetData(), m_data.GetSize());
             break;
             }
     
