@@ -195,6 +195,11 @@ BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* IScalableMesh::GetDTMInterface()
     return _GetDTMInterface();
     }
 
+BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* IScalableMesh::GetDTMInterface(DMatrix4d& storageToUors)
+    {
+    return _GetDTMInterface(storageToUors);
+    }
+
 const BaseGCSCPtr& IScalableMesh::GetBaseGCS() const 
     {
     return _GetGCS().GetGeoRef().GetBasePtr();
@@ -1067,6 +1072,12 @@ template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMesh<
     return m_scalableMeshDTM.get();
  }
 
+template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMesh<POINT>::_GetDTMInterface(DMatrix4d& storageToUors)
+    {
+    m_scalableMeshDTM->SetStorageToUors(storageToUors);
+    return m_scalableMeshDTM.get();
+    }
+
 
 
 /*----------------------------------------------------------------------------+
@@ -1563,6 +1574,11 @@ template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMeshS
     return 0;
     }
 
+template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMeshSingleResolutionPointIndexView<POINT>::_GetDTMInterface(DMatrix4d& storageToUors)
+    {
+    assert(0);
+    return 0;
+    }
 
 
 template <class POINT> DTMStatusInt ScalableMeshSingleResolutionPointIndexView<POINT>::_GetRange(DRange3dR range)

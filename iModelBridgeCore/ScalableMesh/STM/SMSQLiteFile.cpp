@@ -370,7 +370,8 @@ bool SMSQLiteFile::GetNodeHeader(SQLiteNodeHeader& nodeHeader)
     nodeHeader.m_clipSetsID = std::vector<int>();
     nodeHeader.m_numberOfSubNodesOnSplit = nodeHeader.m_apSubNodeID.size();
     int64_t texIdx = stmt->GetValueInt64(14);
-    if (texIdx != SQLiteNodeHeader::NO_NODEID)
+    nodeHeader.m_areTextured = stmt->GetValueInt(15) ? true : false;
+    if (texIdx != SQLiteNodeHeader::NO_NODEID && nodeHeader.m_areTextured)
         {
         nodeHeader.m_textureID.resize(1);
         nodeHeader.m_textureID[0] = texIdx;
@@ -381,7 +382,6 @@ bool SMSQLiteFile::GetNodeHeader(SQLiteNodeHeader& nodeHeader)
         nodeHeader.m_uvsIndicesID.resize(1);
         nodeHeader.m_uvsIndicesID[0] = texIdx;
         }
-    nodeHeader.m_areTextured = stmt->GetValueInt(15) ? true : false;
     stmt->ClearBindings();
     return true;
     }
@@ -870,7 +870,16 @@ void SMSQLiteFile::StoreClipPolygon(int64_t& clipID, const bvector<uint8_t>& cli
 void SMSQLiteFile::StoreDiffSet(int64_t& diffsetID, const bvector<uint8_t>& diffsetData, size_t uncompressedSize)
     {
     std::lock_guard<std::mutex> lock(dbLock);
-    CachedStatementPtr stmt;
+    CachedStatementPtr stmt; 
+    size_t nRows = 0;
+    if (diffsetID != SQLiteNodeHeader::NO_NODEID)
+        {
+        CachedStatementPtr stmt3;
+        m_database->GetCachedStatement(stmt3, "SELECT COUNT(DiffsetId) FROM SMDiffSets WHERE DiffsetId=?");
+        stmt3->BindInt64(1, diffsetID);
+        stmt3->Step();
+        nRows = stmt3->GetValueInt64(0);
+        }
     if (diffsetID == SQLiteNodeHeader::NO_NODEID)
         {
         Savepoint insertTransaction(*m_database, "insert");
@@ -884,6 +893,18 @@ void SMSQLiteFile::StoreDiffSet(int64_t& diffsetID, const bvector<uint8_t>& diff
         m_database->GetCachedStatement(stmt2, "SELECT last_insert_rowid()");
         status = stmt2->Step();
         diffsetID = stmt2->GetValueInt64(0);
+        }
+    else if (nRows == 0)
+        {
+        Savepoint insertTransaction(*m_database, "insert");
+        m_database->GetCachedStatement(stmt, "INSERT INTO SMDiffSets (DiffsetId, Data,Size) VALUES(?, ?,?)");
+        stmt->BindInt64(1, diffsetID);
+        stmt->BindBlob(2, &diffsetData[0], (int)diffsetData.size(), MAKE_COPY_NO);
+        stmt->BindInt64(3, uncompressedSize);
+        DbResult status = stmt->Step();
+        assert(status == BE_SQLITE_DONE);
+        stmt->ClearBindings();
+        m_database->SaveChanges();
         }
     else
         {
@@ -1046,7 +1067,7 @@ bool SMSQLiteFile::HasMasterHeader()
 bool SMSQLiteFile::HasPoints()
 {
     CachedStatementPtr stmt;
-    m_database->GetCachedStatement(stmt, "SELECT count(NodeId) FROM SMPoint");
+    m_database->GetCachedStatement(stmt, "SELECT MAX(_ROWID_) FROM SMPoint LIMIT 1"); //select count() is not optimized on sqlite
     DbResult status = stmt->Step();
     assert((status == BE_SQLITE_DONE) || (status == BE_SQLITE_ROW));
     int nodeIdCount = stmt->GetValueInt(0);

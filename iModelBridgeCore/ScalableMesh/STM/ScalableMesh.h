@@ -112,6 +112,7 @@ class ScalableMeshDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::
     {
     ScalableMeshDraping* m_draping;
     IScalableMesh* m_scMesh;
+    Transform m_transformToUors;
     protected:
 
     virtual IDTMDrapingP     _GetDTMDraping() override;
@@ -141,6 +142,12 @@ class ScalableMeshDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::
         static RefCountedPtr<ScalableMeshDTM> Create(IScalableMeshPtr scMesh)
             {
             return new ScalableMeshDTM(scMesh);
+            }
+
+        void SetStorageToUors(DMatrix4d& storageToUors)
+            {
+            m_transformToUors.InitFrom(storageToUors);
+            m_draping->SetTransform(m_transformToUors);
             }
     };
 /*----------------------------------------------------------------------------+
@@ -230,6 +237,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface() override;
 
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DMatrix4d& storageToUors) override;
+
         virtual DTMStatusInt     _GetRange(DRange3dR range) override;
 
 
@@ -311,6 +320,8 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual __int64          _GetPointCount() override;
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface() override;
+
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DMatrix4d& storageToUors) override;
 
         virtual DTMStatusInt     _GetRange(DRange3dR range) override;
 

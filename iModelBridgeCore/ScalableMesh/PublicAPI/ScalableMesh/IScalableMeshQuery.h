@@ -632,16 +632,24 @@ struct IScalableMeshMeshQueryParams abstract : virtual public RefCountedBase
 
         virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetTargetGCS() = 0;
 
+        virtual size_t _GetDepth() = 0;
+
         virtual void _SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
                              BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr) = 0;
+
+        virtual void _SetDepth(size_t depth) = 0;
     public:
         BENTLEYSTM_EXPORT static IScalableMeshMeshQueryParamsPtr CreateParams();
 
         BENTLEYSTM_EXPORT BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr GetSourceGCS();
         BENTLEYSTM_EXPORT BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr GetTargetGCS();
 
+        BENTLEYSTM_EXPORT size_t GetDepth();
+
         BENTLEYSTM_EXPORT void SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
                                       BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr);
+
+        BENTLEYSTM_EXPORT void SetDepth(size_t depth);
     };
 
 

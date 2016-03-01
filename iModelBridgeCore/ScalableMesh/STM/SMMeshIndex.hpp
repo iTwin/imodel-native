@@ -69,11 +69,12 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT,EXTENT>::SMMeshIndexN
 
     m_nbClips = 0;
     m_differenceSets.SetDirty(false);
-#ifdef SM_BESQL_FORMAT
+//#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
     m_ptsIndiceVec[0].SetBlockID(GetBlockID());
     m_graphVec.SetBlockID(GetBlockID());
-#endif
+    m_differenceSets.SetBlockID(GetBlockID());
+//#endif
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(size_t pi_SplitTreshold,
@@ -114,11 +115,12 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
     m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
-#ifdef SM_BESQL_FORMAT
+//#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
     m_ptsIndiceVec[0].SetBlockID(GetBlockID());
     m_graphVec.SetBlockID(GetBlockID());
-#endif
+    m_differenceSets.SetBlockID(GetBlockID());
+//#endif
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(size_t pi_SplitTreshold,
@@ -161,11 +163,12 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
     m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
-#ifdef SM_BESQL_FORMAT
+//#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
     m_ptsIndiceVec[0].SetBlockID(GetBlockID());
     m_graphVec.SetBlockID(GetBlockID());
-#endif
+    m_differenceSets.SetBlockID(GetBlockID());
+//#endif
     }
 
 /* SM_NEEDS_WORK : Did we use it ?
@@ -331,11 +334,13 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
     m_nodeHeader.m_textureID[0]= IDTMFile::GetNullNodeID();
-#ifdef SM_BESQL_FORMAT
+//#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
     m_ptsIndiceVec[0].SetBlockID(GetBlockID());
     m_graphVec.SetBlockID(GetBlockID());
-#endif
+    m_differenceSets.SetBlockID(GetBlockID());
+
+//#endif
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(HPMBlockID blockID,
@@ -388,6 +393,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
     m_ptsIndiceVec[0].SetBlockID(GetBlockID());
     m_graphVec.SetBlockID(GetBlockID());
+    m_differenceSets.SetBlockID(GetBlockID());
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(size_t pi_SplitTreshold,
@@ -426,11 +432,12 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
 
     m_nbClips = 0;
     m_differenceSets.SetDirty(false);
-#ifdef SM_BESQL_FORMAT
+//#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
     m_ptsIndiceVec[0].SetBlockID(GetBlockID());
     m_graphVec.SetBlockID(GetBlockID());
-#endif
+    m_differenceSets.SetBlockID(GetBlockID());
+//#endif
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(HPMBlockID blockID,
@@ -472,11 +479,12 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
 
     m_nbClips = 0;
     m_differenceSets.SetDirty(false);
-#ifdef SM_BESQL_FORMAT
+//#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
     m_ptsIndiceVec[0].SetBlockID(GetBlockID());
     m_graphVec.SetBlockID(GetBlockID());
-#endif
+    m_differenceSets.SetBlockID(GetBlockID());
+//#endif
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(HPMBlockID blockID,
@@ -519,11 +527,12 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
     m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
-#ifdef SM_BESQL_FORMAT
+//#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
     m_ptsIndiceVec[0].SetBlockID(GetBlockID());
     m_graphVec.SetBlockID(GetBlockID());
-#endif
+    m_differenceSets.SetBlockID(GetBlockID());
+//#endif
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::~SMMeshIndexNode()
@@ -1978,7 +1987,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipActionRecursive(ClipAction action, uint64_t clipId, DRange3d& extent)
     {
     if (!IsLoaded()) return;
-    if (size() == 0 || m_nodeHeader.m_nbFaceIndexes < 3) return;
+    if (/*size() == 0 || m_nodeHeader.m_nbFaceIndexes < 3*/m_nodeHeader.m_totalCount == 0) return;
     DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
                                         ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent));
     if (!extent.IntersectsWith(nodeRange, 2)) return;
@@ -2349,10 +2358,10 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     HFCPtr<HRPPixelType> pPixelType(new HRPPixelTypeV32R8G8B8A8());
 
     HFCPtr<HCDCodec>     pCodec(new HCDCodecIdentity());
-    byte* pixelBufferP = new byte[textureWidthInPixels * textureHeightInPixels * 4 + 3 * sizeof(int)];
+    byte* pixelBufferP = new byte[textureWidthInPixels * textureHeightInPixels * 3 + 3 * sizeof(int)];
     memcpy(pixelBufferP, &textureWidthInPixels, sizeof(int));
     memcpy(pixelBufferP + sizeof(int), &textureHeightInPixels, sizeof(int));
-    int nOfChannels = 4;
+    int nOfChannels = 3;
     memcpy(pixelBufferP + 2 * sizeof(int), &nOfChannels, sizeof(int));
 
     pTextureBitmap = HRABitmap::Create(textureWidthInPixels,
@@ -2366,7 +2375,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     minExt.ChangeCoordSys(pTextureBitmap->GetCoordSys());
     if (/*m_nodeHeader.m_level <= 6 && */IsLeaf() && (contentExtent.XLength() / minExt.GetWidth() > textureWidthInPixels || contentExtent.YLength() / minExt.GetHeight() > textureHeightInPixels) /*&& this->size() > 0*/)
         SplitNodeBasedOnImageRes();
-    pTextureBitmap->GetPacket()->SetBuffer(pixelBufferP + 3 * sizeof(int), textureWidthInPixels * textureHeightInPixels * 4);
+    byte* pixelBufferPRGBA = new byte[textureWidthInPixels * textureHeightInPixels * 4];
+    pTextureBitmap->GetPacket()->SetBuffer(pixelBufferPRGBA, textureWidthInPixels * textureHeightInPixels * 4);
     pTextureBitmap->GetPacket()->SetBufferOwnership(false);
 
     HRAClearOptions clearOptions;
@@ -2462,7 +2472,13 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
                                               pixelBuffer);
     delete[] pixelBuffer;
 #endif
-     PushTexture(texId, pixelBufferP, textureWidthInPixels * textureHeightInPixels * 4+3*sizeof(int));
+    for (size_t i = 0; i < textureWidthInPixels*textureHeightInPixels; ++i)
+        {
+        *(pixelBufferP + 3 * sizeof(int) + i * 3) = pixelBufferPRGBA[i * 4];
+        *(pixelBufferP + 3 * sizeof(int) + i * 3 + 1) = pixelBufferPRGBA[i * 4 + 1];
+        *(pixelBufferP + 3 * sizeof(int) + i * 3 + 2) = pixelBufferPRGBA[i * 4 + 2];
+        }
+    PushTexture(texId, pixelBufferP + 3 * sizeof(int), textureWidthInPixels * textureHeightInPixels * 3);
      SetTextureDirty(texId);
     StoreTexture(texId);
     if (GetNbPtsIndices(0) >= 4)
@@ -2516,6 +2532,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
 #endif
     }
     delete[] pixelBufferP;
+    delete[] pixelBufferPRGBA;
     pTextureBitmap = 0;
     }
 
@@ -2708,6 +2725,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
 //=======================================================================================
 template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::AddClip(uint64_t clipId,  bool isVisible)
     {
+    if (size() == 0 || m_nodeHeader.m_nbFaceIndexes < 3) return false;
 #ifdef USE_DIFFSET
     bvector<DPoint3d> clipPts;
     GetClipRegistry()->GetClip(clipId - 1, clipPts);
@@ -2839,6 +2857,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::DoClip
 //=======================================================================================
 template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::DeleteClip(uint64_t clipId, bool isVisible)
     {
+    if (size() == 0 || m_nodeHeader.m_nbFaceIndexes < 3) return false;
     bool found = false;
     for (auto it = m_differenceSets.begin(); it != m_differenceSets.end(); ++it)
         {
@@ -2862,6 +2881,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Delete
 //=======================================================================================
 template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ModifyClip(uint64_t clipId, bool isVisible)
     {
+    if (size() == 0 || m_nodeHeader.m_nbFaceIndexes < 3) return false;
 #ifdef USE_DIFFSET
     bvector<DPoint3d> clipPts;
     GetClipRegistry()->GetClip(clipId, clipPts);
@@ -3503,7 +3523,7 @@ template<class POINT, class EXTENT>  void SMMeshIndex<POINT, EXTENT>::SetFeature
 template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::SetClipStore(HFCPtr<IHPMPermanentStore<DifferenceSet, Byte, Byte>>& clipStore)
     {
     m_clipStore = clipStore;
-    if (!m_clipStore->LoadMasterHeader(NULL, 1)) m_clipStore->StoreMasterHeader(NULL, 0);
+    //if (!m_clipStore->LoadMasterHeader(NULL, 1)) m_clipStore->StoreMasterHeader(NULL, 0);
     if (m_pRootNode != nullptr)dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(m_pRootNode.GetPtr())->m_differenceSets.SetStore(m_clipStore);
     }
 

@@ -61,6 +61,13 @@
         </Bindings>
     </Part>
     
+    	<Part Name="ScalableMeshCommandLineTest" BentleyBuildMakeFile="Tests/ScalableMeshCommandLineTest.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
+        <SubPart PartName="ScalableMesh"  PartFile="ScalableMesh" Repository="ScalableMesh" />
+                <Bindings>
+			<Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScMeshTest.exe</Files>
+        </Bindings>
+    </Part>
+    
     <ProductDirectoryList ListName="ScalableMeshSDK">
         <ProductDirectory Name="TMSchemas"  Deliver="true" Path="Dlls"/>
         <ProductDirectory Name="ECSchemas"  Deliver="true" Path="Dlls"/>
@@ -165,6 +172,24 @@
 		<SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
         <Directories DirectoryListName="DgnPlatform" PartFile="DgnPlatform" Repository="DgnPlatform" />        
         <Directories DirectoryListName="ScalableMeshATP" />        
+    </Product>
+ 	<ProductDirectoryList ListName="ScalableMeshCmd">
+        <ProductDirectory Name="ScalableMeshAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="Assemblies" Path="Dlls"/>
+        <ProductDirectory Name="ImagePPAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="TerrainModelNativeAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="BentleyNativeAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="BeOpenSSLAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="BeCurlAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="GeoCoordNativeAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="GeoCoordData" Deliver="true" Path="Dlls/GeoCoordinateData"/>
+        <ProductDirectory Name="Libs" Deliver="false" />
+        <ProductDirectory Name="Libs" LibType="static" Deliver="false" />
+    </ProductDirectoryList>   
+        <Product Name="ScalableMeshCommandLine">
+        <SubPart PartName="ScalableMeshCommandLineTest" />  
+        <Directories DirectoryListName="DgnPlatform" PartFile="DgnPlatform" Repository="DgnPlatform" />            
+        <Directories DirectoryListName="ScalableMeshCmd" />        
     </Product>
   
   </BuildContext>
