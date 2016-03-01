@@ -8,7 +8,6 @@
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <Bentley/BeTimeUtilities.h>
-#include <ECDb/ECSqlBuilder.h>
 #include <DgnPlatform/WebMercator.h>
 #include <DgnPlatform/DgnTexture.h>
 

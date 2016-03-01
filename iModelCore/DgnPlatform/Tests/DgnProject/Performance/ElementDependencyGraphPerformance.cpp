@@ -14,7 +14,6 @@
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <Bentley/BeTimeUtilities.h>
-#include <ECDb/ECSqlBuilder.h>
 #include <DgnPlatform/DgnElementDependency.h>
 
 #define LOCALIZED_STR(str) str
@@ -296,12 +295,12 @@ ECN::ECClassCR ElementDependencyGraph::GetElementDrivesElementClass()
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedECSqlStatementPtr ElementDependencyGraph::GetSelectElementDrivesElementById()
-{
-    ECSqlSelectBuilder b;
-    b.Select("TargetECInstanceId,TargetECClassId,SourceECInstanceId,SourceECClassId,Status").From(GetElementDrivesElementClass(), false).Where("ECInstanceId=?");
+    {
+    Utf8String ecsql("SELECT TargetECInstanceId,TargetECClassId,SourceECInstanceId,SourceECClassId,Status FROM ONLY ");
+    ecsql.append(GetElementDrivesElementClass().GetECSqlName()).append(" WHERE ECInstanceId=?");
 
-    return m_db->GetPreparedECSqlStatement(b.ToString().c_str());
-}
+    return m_db->GetPreparedECSqlStatement(ecsql.c_str());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/15

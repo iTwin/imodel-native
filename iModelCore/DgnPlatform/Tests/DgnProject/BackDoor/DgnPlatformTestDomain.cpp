@@ -339,12 +339,10 @@ void TestElementDrivesElementHandler::UpdateProperty1(DgnDbR db, EC::ECInstanceK
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECInstanceKey TestElementDrivesElementHandler::Insert(DgnDbR db, DgnElementId root, DgnElementId dependent)
     {
-    ECSqlInsertBuilder b;
-    b.InsertInto(GetECClass(db));
-    b.AddValue("SourceECInstanceId", "?");
-    b.AddValue("TargetECInstanceId", "?");
+    Utf8String ecsql("INSERT INTO ");
+    ecsql.append(GetECClass(db).GetECSqlName()).append("(SourceECInstanceId,TargetECInstanceId) VALUES(?,?)");
 
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(b.ToString().c_str());
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
 
     stmt->BindId(1, root);
     stmt->BindId(2, dependent);

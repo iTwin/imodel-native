@@ -15,7 +15,6 @@
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <Bentley/BeTimeUtilities.h>
-#include <ECDb/ECSqlBuilder.h>
 #include <DgnPlatform/DgnElementDependency.h>
 
 #define GROUP_SUBDIR L"ElementDependencyGraph"
@@ -274,10 +273,9 @@ ECN::ECClassCR ElementDependencyGraph::GetElementDrivesElementClass()
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedECSqlStatementPtr ElementDependencyGraph::GetSelectElementDrivesElementById()
     {
-    ECSqlSelectBuilder b;
-    b.Select("TargetECInstanceId,TargetECClassId,SourceECInstanceId,SourceECClassId,Status").From(GetElementDrivesElementClass(),false).Where("ECInstanceId=?");
-
-    return m_db->GetPreparedECSqlStatement(b.ToString().c_str());
+    Utf8String ecsql("SELECT TargetECInstanceId,TargetECClassId,SourceECInstanceId,SourceECClassId,Status FROM ONLY ");
+    ecsql.append(GetElementDrivesElementClass().GetECSqlName()).append(" WHERE ECInstanceId=?");
+    return m_db->GetPreparedECSqlStatement(ecsql.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -733,10 +731,10 @@ TEST_F(ElementDependencyGraph, CycleTest1)
 
 
         // Verify that the txn was rolled back. If so, my insert of e2_e1 should have been cancelled, and e2_e1 should not exist.
-        ECSqlSelectBuilder b;
-        b.Select("*").From(*m_db->Schemas().GetECClass(e2_e1.GetECClassId())).Where("ECInstanceId = ?");
+        Utf8String ecsql("SELECT * FROM ");
+        ecsql.append(m_db->Schemas().GetECClass(e2_e1.GetECClassId())->GetECSqlName()).append(" WHERE ECInstanceId=?");
         ECSqlStatement s;
-        s.Prepare(*m_db, b.ToString().c_str());
+        s.Prepare(*m_db, ecsql.c_str());
         s.BindId(1, e2_e1.GetECInstanceId());
         ASSERT_EQ( s.Step() , BE_SQLITE_DONE );
         }
@@ -1002,10 +1000,10 @@ TEST_F(ElementDependencyGraph, ModelDependenciesInvalidDirectionTest)
     TestElementDrivesElementHandler::GetHandler().Clear();
     m_db->SaveChanges();
     // Verify that the txn was rolled back. If so, my insert of e22_e1 should have been cancelled, and e22_e1 should not exist.
-    ECSqlSelectBuilder b;
-    b.Select("COUNT(*)").From(*m_db->Schemas().GetECClass(e22_e1.GetECClassId())).Where("ECInstanceId = ?");
+    Utf8String ecsql("SELECT COUNT(*) FROM ");
+    ecsql.append(m_db->Schemas().GetECClass(e22_e1.GetECClassId())->GetECSqlName()).append(" WHERE ECInstanceId = ?");
     ECSqlStatement s;
-    s.Prepare(*m_db, b.ToString().c_str());
+    s.Prepare(*m_db, ecsql.c_str());
     s.BindId(1, e22_e1.GetECInstanceId());
     ASSERT_EQ( s.Step() , BE_SQLITE_ROW );
     ASSERT_EQ( s.GetValueInt(0) , 0 );
