@@ -248,6 +248,17 @@ public:
 
 //=======================================================================================
 //! An instance of a DgnElement in memory. 
+//!
+//!  <h2>Properties</h2>
+//!  On any given element, there may be the following kinds of properties:
+//!  * Properties that are defined by the ECClass 
+//!          * Properties that are controlled by a C++ element subclass
+//!              * You must use methods on that class to access them
+//!          * Properties that are not controlled by the C++ element class – “Unhandled Properties”
+//!              * You must use the Get/SetUnhandledPropertyValue functions to access them
+//!  * Properties that are not defined by the ECClass but are added by the user – “User Properties”
+//!          * You must use the GetUserProperties methods to access them
+//!
 //! @ingroup DgnElementGroup
 // @bsiclass                                                     KeithBentley    10/13
 //=======================================================================================
