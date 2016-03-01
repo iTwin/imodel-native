@@ -2,7 +2,7 @@
 |
 |     $Source: DgnScript/DgnScriptStubbedOut.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -65,6 +65,13 @@ BeJsContextR DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext()
 DgnDbStatus DgnPlatformLib::Host::ScriptAdmin::_FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DateTime& lastModifiedTime, DgnDbR db, Utf8CP sName, DgnScriptType stypePreferred)
     {
     return DgnDbStatus::NotEnabled;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      02/16
+//---------------------------------------------------------------------------------------
+void DgnPlatformLib::Host::ScriptAdmin::_ThrowException(Utf8CP exname, Utf8CP details)
+    {
     }
 
 //---------------------------------------------------------------------------------------
