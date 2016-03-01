@@ -171,92 +171,7 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
 
     // ClassMappingRule: If exactly 1 ancestor ECClass is using SharedTable (AppliesToSubclasses), use this
     if (polymorphicSharedTableClassMaps.size() == 1)
-        {
-        m_parentClassMap = parentClassMap;
-        BeAssert(parentStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && parentStrategy.AppliesToSubclasses());
-
-        if (!m_ecInstanceIdColumnName.empty())
-            {
-            m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                                                                          "For subclasses of an ECClass with MapStrategy SharedTable(AppliesToSubclasses), ECInstanceIdColumn may not be defined in the ClassMap custom attribute. Violating ECClass: %s",
-                                                                          m_ecClass.GetFullName());
-            return ERROR;
-            }
-
-        ECDbSqlTable const& parentJoinedTable = m_parentClassMap->GetJoinedTable();
-        m_tableName = parentJoinedTable.GetName();
-        m_ecInstanceIdColumnName.assign(parentJoinedTable.GetFilteredColumnFirst(ColumnKind::ECInstanceId)->GetName());
-
-        UserECDbMapStrategy const* parentUserStrategy = m_ecdbMap.GetSchemaImportContext()->GetUserStrategy(parentClassMap->GetClass());
-        if (parentUserStrategy == nullptr)
-            {
-            BeAssert(false);
-            return ERROR;
-            }
-       
-        ECDbMapStrategy::Options options = ECDbMapStrategy::Options::None;
-        if (!Enum::Contains(userStrategy.GetOptions(), UserECDbMapStrategy::Options::DisableSharedColumns) && 
-            (Enum::Contains(userStrategy.GetOptions(), UserECDbMapStrategy::Options::SharedColumns) ||
-            Enum::Contains(parentStrategy.GetOptions(), ECDbMapStrategy::Options::SharedColumns) ||
-            Enum::Contains(parentUserStrategy->GetOptions(), UserECDbMapStrategy::Options::SharedColumnsForSubclasses)))
-            options = ECDbMapStrategy::Options::SharedColumns;
-
-        if (Enum::Contains(userStrategy.GetOptions(), UserECDbMapStrategy::Options::JoinedTablePerDirectSubclass))
-            options = options | ECDbMapStrategy::Options::ParentOfJoinedTable;
-        else if (Enum::Intersects(parentStrategy.GetOptions(), ECDbMapStrategy::Options::JoinedTable | ECDbMapStrategy::Options::ParentOfJoinedTable))
-            {
-            //! Find out if there is any property that need mapping. Simply looking at local property count does not work with multi inheritence
-            bool requiresJoinedTable = false;
-            for (ECPropertyCP property : GetECClass().GetProperties(true))
-                {
-                if (parentClassMap->GetPropertyMap(property->GetName().c_str()) == nullptr)
-                    {
-                    requiresJoinedTable = true; //There is at least one property local or inherited that require mapping.
-                    break;
-                    }
-                }
-
-            const bool parentIsParentOfJoinedTable = Enum::Contains(parentStrategy.GetOptions(), ECDbMapStrategy::Options::ParentOfJoinedTable);
-            if (parentIsParentOfJoinedTable && !requiresJoinedTable)
-                options = options | ECDbMapStrategy::Options::ParentOfJoinedTable;
-            else
-                {
-                options = options | ECDbMapStrategy::Options::JoinedTable;
-                if (parentIsParentOfJoinedTable)
-                    {
-                    std::vector<IClassMap const*> path;
-                    if (m_parentClassMap->GetPathToParentOfJoinedTable(path) == ERROR)
-                        {
-                        BeAssert(false && "Path should never be empty for joinedTable");
-                        return ERROR;
-                        }
-                    
-                    if (path.empty())
-                        {
-                        BeAssert(false && "Path is invalid");
-                        return ERROR;
-                        }
-
-                    auto const& tableNameAfterClass = path.size() > 1 ? path.at(1)->GetClass() : m_ecClass;
-                    if (SUCCESS != IClassMap::DetermineTableName(m_tableName, tableNameAfterClass))
-                        return ERROR;
-
-                    //For classes in the joined table the id column name is determined like this:
-                    //"<Rootclass name><Rootclass ECInstanceId column name>"
-                    IClassMap const* rootClassMap = m_parentClassMap->FindSharedTableRootClassMap();
-                    if (rootClassMap == nullptr)
-                        {
-                        BeAssert(false && "There should always be a root class map which defines the shared table strategy");
-                        return ERROR;
-                        }
-
-                    m_ecInstanceIdColumnName.Sprintf("%s%s", rootClassMap->GetClass().GetName().c_str(), m_ecInstanceIdColumnName.c_str());
-                    }
-                }
-            }
-
-        return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::SharedTable, options, userStrategy.GetMinimumSharedColumnCount(), true);
-        }
+        return EvaluateSharedTableMapStrategy(*parentClassMap, parentStrategy, userStrategy);
 
     // ClassMappingRule: If one or more parent is using OwnClass-polymorphic, use OwnClass-polymorphic mapping
     if (polymorphicOwnTableClassMaps.size() > 0)
@@ -267,6 +182,110 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
         return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, true);
 
     return m_resolvedStrategy.Assign(userStrategy);
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ClassMapInfo::EvaluateSharedTableMapStrategy(IClassMap const& parentClassMap, ECDbMapStrategy const& parentStrategy, UserECDbMapStrategy const& userStrategy)
+    {
+    m_parentClassMap = &parentClassMap;
+    BeAssert(parentStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && parentStrategy.AppliesToSubclasses());
+
+    if (!m_ecInstanceIdColumnName.empty())
+        {
+        m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                                                                      "For subclasses of an ECClass with MapStrategy SharedTable(AppliesToSubclasses), ECInstanceIdColumn may not be defined in the ClassMap custom attribute. Violating ECClass: %s",
+                                                                      m_ecClass.GetFullName());
+        return ERROR;
+        }
+
+    ECDbSqlTable const& parentJoinedTable = m_parentClassMap->GetJoinedTable();
+    m_tableName = parentJoinedTable.GetName();
+    m_ecInstanceIdColumnName.assign(parentJoinedTable.GetFilteredColumnFirst(ColumnKind::ECInstanceId)->GetName());
+
+    UserECDbMapStrategy const* parentUserStrategy = m_ecdbMap.GetSchemaImportContext()->GetUserStrategy(parentClassMap.GetClass());
+    if (parentUserStrategy == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    const UserECDbMapStrategy::Options userOptions = userStrategy.GetOptions();
+
+    ECDbMapStrategy::Options options = ECDbMapStrategy::Options::None;
+    int minimumSharedColumnCount = ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT;
+    if (!Enum::Contains(userOptions, UserECDbMapStrategy::Options::DisableSharedColumns) &&
+        (Enum::Contains(userOptions, UserECDbMapStrategy::Options::SharedColumns) ||
+         Enum::Contains(parentStrategy.GetOptions(), ECDbMapStrategy::Options::SharedColumns) ||
+         Enum::Contains(parentUserStrategy->GetOptions(), UserECDbMapStrategy::Options::SharedColumnsForSubclasses)))
+        {
+        options = ECDbMapStrategy::Options::SharedColumns;
+
+        //we are only using the min shared col count for classes that enable shared columns
+        if (Enum::Contains(userOptions, UserECDbMapStrategy::Options::SharedColumns))
+            minimumSharedColumnCount = userStrategy.GetMinimumSharedColumnCount();
+
+        if (minimumSharedColumnCount == ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT)
+            minimumSharedColumnCount = parentUserStrategy->GetMinimumSharedColumnCount();
+        }
+
+    if (Enum::Contains(userOptions, UserECDbMapStrategy::Options::JoinedTablePerDirectSubclass))
+        options = options | ECDbMapStrategy::Options::ParentOfJoinedTable;
+    else if (Enum::Intersects(parentStrategy.GetOptions(), ECDbMapStrategy::Options::JoinedTable | ECDbMapStrategy::Options::ParentOfJoinedTable))
+        {
+        //! Find out if there is any property that need mapping. Simply looking at local property count does not work with multi inheritance
+        bool requiresJoinedTable = false;
+        for (ECPropertyCP property : GetECClass().GetProperties(true))
+            {
+            if (parentClassMap.GetPropertyMap(property->GetName().c_str()) == nullptr)
+                {
+                requiresJoinedTable = true; //There is at least one property local or inherited that require mapping.
+                break;
+                }
+            }
+
+        const bool parentIsParentOfJoinedTable = Enum::Contains(parentStrategy.GetOptions(), ECDbMapStrategy::Options::ParentOfJoinedTable);
+        if (parentIsParentOfJoinedTable && !requiresJoinedTable)
+            options = options | ECDbMapStrategy::Options::ParentOfJoinedTable;
+        else
+            {
+            options = options | ECDbMapStrategy::Options::JoinedTable;
+            if (parentIsParentOfJoinedTable)
+                {
+                std::vector<IClassMap const*> path;
+                if (SUCCESS != parentClassMap.GetPathToParentOfJoinedTable(path))
+                    {
+                    BeAssert(false && "Path should never be empty for joinedTable");
+                    return ERROR;
+                    }
+
+                if (path.empty())
+                    {
+                    BeAssert(false && "Path is invalid");
+                    return ERROR;
+                    }
+
+                ECClassCR tableNameAfterClass = path.size() > 1 ? path[1]->GetClass() : m_ecClass;
+                if (SUCCESS != IClassMap::DetermineTableName(m_tableName, tableNameAfterClass))
+                    return ERROR;
+
+                //For classes in the joined table the id column name is determined like this:
+                //"<Rootclass name><Rootclass ECInstanceId column name>"
+                IClassMap const* rootClassMap = m_parentClassMap->FindSharedTableRootClassMap();
+                if (rootClassMap == nullptr)
+                    {
+                    BeAssert(false && "There should always be a root class map which defines the shared table strategy");
+                    return ERROR;
+                    }
+
+                m_ecInstanceIdColumnName.Sprintf("%s%s", rootClassMap->GetClass().GetName().c_str(), m_ecInstanceIdColumnName.c_str());
+                }
+            }
+        }
+
+    return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::SharedTable, options, minimumSharedColumnCount, true);
+
     }
 
 //---------------------------------------------------------------------------------

@@ -215,8 +215,8 @@ MapStatus ECDbMap::DoMapSchemas(bvector<ECSchemaCP> const& mapSchemas)
             return status;
         }
 
-    //need to finish tables (e.g. add classid cols where necessary) for classes before processing relationships
-    if (FinishTableDefinition() == ERROR)
+    //need to add classid cols where necessary for classes before processing relationships
+    if (SUCCESS != FinishTableDefinitions(true))
         return MapStatus::Error;
 
     BeAssert(status != MapStatus::BaseClassesNotMapped && "Expected to resolve all class maps by now.");
@@ -238,8 +238,8 @@ MapStatus ECDbMap::DoMapSchemas(bvector<ECSchemaCP> const& mapSchemas)
             return MapStatus::Error;
         }
 
-    //now finish tables for the relationship classes
-    if (FinishTableDefinition() != SUCCESS)
+    //now create class id cols for the relationship classes, and ensure shared col min count
+    if (SUCCESS != FinishTableDefinitions())
         return MapStatus::Error;
 
     timer.Stop();
@@ -842,45 +842,60 @@ BentleyStatus ECDbMap::CreateOrUpdateIndexesInDb() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbMap::FinishTableDefinition () const
+BentleyStatus ECDbMap::FinishTableDefinitions(bool onlyCreateClassIdColumns) const
     {
     AssertIfIsNotImportingSchema();
     const ClassMapsByTable classMapsByTable = GetClassMapsByTable();
     for (bpair<ECDbSqlTable*, bset<ClassMap*>> const& kvPair : classMapsByTable)
         {
         ECDbSqlTable* table = kvPair.first;
-        bset<ClassMap*> const& classMapSet = kvPair.second;
+        bset<ClassMap*> const& classMaps = kvPair.second;
 
-        //Create ECClassId column if required
-        if (table->GetFilteredColumnFirst(ColumnKind::ECClassId) == nullptr &&
-            table->GetPersistenceType() == PersistenceType::Persisted &&
-            table->GetTableType() != TableType::Existing)
-            {
-            bool addClassId = false;
-            if (classMapSet.size() == 1)
-                addClassId = (*classMapSet.begin())->GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable;
-            else
-                addClassId = classMapSet.size() > 1;
+        if (SUCCESS != CreateClassIdColumnIfNecessary(*table, classMaps))
+            return ERROR;
 
-            if (addClassId)
-                {
-                const size_t insertPosition = 1;
-                ECDbSqlColumn * ecClassIdColumn = table->CreateColumn(ECDB_COL_ECClassId, ECDbSqlColumn::Type::Integer, insertPosition, ColumnKind::ECClassId, PersistenceType::Persisted);
-                if (ecClassIdColumn == nullptr)
-                    return ERROR;
-                
-                ecClassIdColumn->GetConstraintR().SetIsNotNull(true);
-                //whenever we create a class id column, we index it to speed up the frequent class id look ups
-                Utf8String indexName("ix_");
-                indexName.append(table->GetName()).append("_ecclassid");
-                m_schemaImportContext->GetECDbMapDb().CreateIndex(GetECDb(), *table, indexName.c_str(), false, {ecClassIdColumn}, false, true, ECClass::UNSET_ECCLASSID);
-                }
-            }
+        if (onlyCreateClassIdColumns)
+            continue;
+
+        if (SUCCESS != table->EnsureMinimumNumberOfSharedColumns())
+            return ERROR;
         }
 
     return SUCCESS;
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        01/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus ECDbMap::CreateClassIdColumnIfNecessary(ECDbSqlTable& table, bset<ClassMap*> const& classMaps) const
+    {
+    if (table.GetFilteredColumnFirst(ColumnKind::ECClassId) != nullptr ||
+        table.GetPersistenceType() != PersistenceType::Persisted ||
+        table.GetTableType() == TableType::Existing)
+        return SUCCESS;
+
+    bool addClassIdCol = false;
+    if (classMaps.size() == 1)
+        addClassIdCol = (*classMaps.begin())->GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable;
+    else
+        addClassIdCol = classMaps.size() > 1;
+    
+    if (!addClassIdCol)
+        return SUCCESS;
+
+    const size_t insertPosition = 1;
+    ECDbSqlColumn * ecClassIdColumn = table.CreateColumn(ECDB_COL_ECClassId, ECDbSqlColumn::Type::Integer, insertPosition, ColumnKind::ECClassId, PersistenceType::Persisted);
+    if (ecClassIdColumn == nullptr)
+        return ERROR;
+
+    ecClassIdColumn->GetConstraintR().SetIsNotNull(true);
+    //whenever we create a class id column, we index it to speed up the frequent class id look ups
+    Utf8String indexName("ix_");
+    indexName.append(table.GetName()).append("_ecclassid");
+    return m_schemaImportContext->GetECDbMapDb().CreateIndex(GetECDb(), table, indexName.c_str(), false, {ecClassIdColumn}, 
+                                      false, true, ECClass::UNSET_ECCLASSID) != nullptr ? SUCCESS : ERROR;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Casey.Mullen      11/2011
@@ -1457,10 +1472,9 @@ void ECDbMap::LightweightCache::LoadRelationshipByTable()  const
                 "INNER JOIN ec_ClassMap ON ec_PropertyMap.ClassMapId = ec_ClassMap.Id "
                 "INNER JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
                 "WHERE ec_ClassMap.MapStrategy  <> 0 AND "
-                "(ec_Column.ColumnKind & %d = 0) AND (ec_Column.ColumnKind & %d = 0) AND "
+                "ec_Column.ColumnKind & %d = 0 AND "
                 "ec_Class.Type=%d AND ec_Table.IsVirtual = 0",
-                Enum::ToInt(ColumnKind::ECInstanceId),
-                Enum::ToInt(ColumnKind::ECClassId),
+                Enum::ToInt(Enum::Or(ColumnKind::ECInstanceId, ColumnKind::ECClassId)),
                 Enum::ToInt(ECClassType::Relationship));
 
     auto stmt = m_map.GetECDbR().GetCachedStatement(sql.c_str());

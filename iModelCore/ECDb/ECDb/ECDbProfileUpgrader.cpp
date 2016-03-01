@@ -11,23 +11,60 @@ using namespace std;
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+//*************************************** ECDbProfileUpgrader_XXX *********************************
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle        02/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3100::_Upgrade(ECDbR ecdb) const
+    {
+    //shared columns now have a dedicated ColumnKind::SharedDataColumn. So update all sharead column entries in ec_Column.
+    //Identifying shared columns in the previous version is done by looking for columns with ColumnKind::DataColumn, Type::Any
+    //and a table created by ECDb (-> not an existing table)
+    const int dataColKindInt = Enum::ToInt(ColumnKind::DataColumn);
+    
+    Utf8String sql;
+    sql.Sprintf("UPDATE ec_Column SET ColumnKind=%d WHERE ColumnKind & %d=%d AND Type=%d AND TableId IN (SELECT t.Id FROM ec_Table t WHERE t.Type<>%d)", Enum::ToInt(ColumnKind::SharedDataColumn),
+                dataColKindInt, dataColKindInt, Enum::ToInt(ECDbSqlColumn::Type::Any), Enum::ToInt(TableType::Existing));
+
+    Statement stmt;
+    DbResult stat = stmt.Prepare(ecdb, sql.c_str());
+    if (stat != BE_SQLITE_OK)
+        {
+        LOG.errorv("ECDb profile upgrade failed: Preparing SQL '%s' failed: %s", sql.c_str(), ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    stat = stmt.Step();
+    if (stat != BE_SQLITE_DONE)
+        {
+        LOG.errorv("ECDb profile upgrade failed: Executing SQL '%s' failed: %s", sql.c_str(), ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debugv("ECDb profile upgrade: Table 'ec_Column': changed ColumnKind from 'DataColumn' to 'SharedDataColumn' in %d rows.",
+               ecdb.GetModifiedRowCount());
+    return BE_SQLITE_OK;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle        02/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3001::_Upgrade(ECDbR ecdb) const
+    {
+    const DbResult stat = ecdb.ExecuteSql("ALTER TABLE ec_ClassMap ADD COLUMN MapStrategyMinSharedColumnCount INTEGER;");
+    if (stat != BE_SQLITE_OK)
+        {
+        LOG.error("ECDb profile upgrade failed: Adding column 'MapStrategyMinSharedColumnCount' to table 'ec_ClassMap' failed.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debug("ECDb profile upgrade: Table 'ec_ClassMap': added column 'MapStrategyMinSharedColumnCount'.");
+    return BE_SQLITE_OK;
+    }
+
+
 //*************************************** ECProfileUpgrader *********************************
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle    07/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-SchemaVersion ECDbProfileUpgrader::GetTargetVersion () const
-    {
-    return _GetTargetVersion ();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle    07/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-DbResult ECDbProfileUpgrader::Upgrade (ECDbR ecdb) const
-    {
-    return _Upgrade (ecdb);
-    }
-
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    07/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -35,9 +72,7 @@ DbResult ECDbProfileUpgrader::Upgrade (ECDbR ecdb) const
 DbResult ECDbProfileUpgrader::AlterColumns (ECDbR ecdb, Utf8CP tableName, Utf8CP newDdlBody, bool recreateIndices, Utf8CP allColumnNamesAfter,  Utf8CP matchingColumnNamesWithOldNames)
     {
     if (IsView (ecdb, tableName))
-        {
         return AlterColumnsInView (ecdb, tableName, allColumnNamesAfter);
-        }
 
     return AlterColumnsInTable (ecdb, tableName, newDdlBody, recreateIndices, allColumnNamesAfter, matchingColumnNamesWithOldNames);
     }
@@ -187,22 +222,6 @@ bool ECDbProfileUpgrader::IsView (ECDbCR ecdb, Utf8CP tableOrViewName)
     return stmt->Step () == BE_SQLITE_ROW;
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle        02/2016
-//+---------------+---------------+---------------+---------------+---------------+--------
-DbResult ECDbProfileUpgrader_3001::_Upgrade(ECDbR ecdb) const
-    {
-    DbResult stat = ecdb.ExecuteSql("ALTER TABLE ec_ClassMap ADD COLUMN MapStrategyMinSharedColumnCount INTEGER;");
-    if (stat != BE_SQLITE_OK)
-        {
-        LOG.error("ECDb profile upgrade failed: Adding column 'MapStrategyMinSharedColumnCount' to table 'ec_ClassMap' failed.");
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-        }
-
-    LOG.debug("ECDb profile upgrade: In table 'ec_ClassMap' added column 'MapStrategyMinSharedColumnCount'.");
-    return BE_SQLITE_OK;
-    }
-
 //*************************************** ECDbProfileSchemaUpgrader *********************************
 //static
 SchemaKey ECDbProfileECSchemaUpgrader::s_ecdbfileinfoSchemaKey = SchemaKey ("ECDb_FileInfo", 2, 0);
@@ -211,7 +230,7 @@ SchemaKey ECDbProfileECSchemaUpgrader::s_ecdbfileinfoSchemaKey = SchemaKey ("ECD
 // @bsimethod                                                    Krischan.Eberle        07/2012
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ECDbR ecdb)
+DbResult ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
     {
     StopWatch timer(true);
     auto context = ECSchemaReadContext::CreateContext();

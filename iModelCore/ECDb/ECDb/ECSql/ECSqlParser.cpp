@@ -797,7 +797,7 @@ BentleyStatus ECSqlParser::parse_opt_ecsqloptions_clause(std::unique_ptr<Options
     Utf8StringCR knownFunctionName = functionNameNode->getTokenValue ();
     if (knownFunctionName.empty())
         {
-        const auto tokenId = functionNameNode->getTokenID ();
+        const uint32_t tokenId = functionNameNode->getTokenID ();
         GetIssueReporter().Report(ECDbIssueSeverity::Error, "Function with token ID %d not yet supported.", tokenId);
         return ERROR;
         }
@@ -814,16 +814,14 @@ BentleyStatus ECSqlParser::parse_opt_ecsqloptions_clause(std::unique_ptr<Options
             {
             for (size_t i = 0; i < argumentsNode->count(); i++)
                 {
-                BentleyStatus stat = parse_and_add_functionarg(*functionCallExp, argumentsNode->getChild(i));
-                if (SUCCESS != stat)
-                    return stat;
+                if (SUCCESS != parse_and_add_functionarg(*functionCallExp, argumentsNode->getChild(i)))
+                    return ERROR;
                 }
             }
         else
             {
-            BentleyStatus stat = parse_and_add_functionarg(*functionCallExp, argumentsNode);
-            if (SUCCESS != stat)
-                return stat;
+            if (SUCCESS != parse_and_add_functionarg(*functionCallExp, argumentsNode))
+                return ERROR;
             }
         }
 
