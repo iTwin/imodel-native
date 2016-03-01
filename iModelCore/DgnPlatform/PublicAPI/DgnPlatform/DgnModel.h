@@ -338,6 +338,10 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnDeleted();
     /** @} */
 
+    //! Return the copyright message to display if this model is drawn in a viewport
+    //! @return a copyright message or nullptr
+    virtual Utf8CP _GetCopyrightMessage() const {return nullptr;}
+
     /** @name Dynamic cast shortcuts for a DgnModel */
     /** @{ */
     virtual GeometricModelCP _ToGeometricModel() const {return nullptr;}
@@ -399,6 +403,8 @@ protected:
     DGNPLATFORM_EXPORT virtual bool _SupportsCodeAuthority(DgnAuthorityCR) const override;
     virtual DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
 public:
+    Utf8CP GetCopyrightMessage() const {return _GetCopyrightMessage();}
+
     virtual Utf8CP _GetECClassName() const { return DGN_CLASSNAME_Model; }
     virtual Utf8CP _GetSuperECClassName() const { return nullptr; }
 
@@ -752,9 +758,16 @@ protected:
     //! That physical coordinate system can be associated with a single Geographic Coordinate System (GCS). See DgnUnits::GetDgnGCS.
     //! The implementation must transform external data into the coordinate system of the DgnDb as necessary before adding graphics to the scene.
     //! <h2>Displaying external data using progressive display</h2>
-    //! An implementation of _AddGraphicsToScene is required to be very fast. If some external data is not immediately available, then the implementation should
-    //! a) make arrangements to obtain the data in the background and b) schedule itself for callbacks during progressive display in order to display the data when it becomes available.
-    virtual void _AddGraphicsToScene(SceneContextR) {}
+    //! An implementation of _AddGraphicsToScene is required to be very fast to keep the client thread responsive. If data is not immediately available, you should
+    //! a) make arrangements to obtain the data in the background and b) schedule a ProgressiveTask to display it when available.
+    virtual void _AddSceneGraphics(SceneContextR) const {}
+
+    //! Add "terrain" graphics for this DgnModel. Terrain graphics are drawn with the scene graphics every time the camera moves. The difference between
+    //! them is that this method is called every frame whereas _AddGraphicsToSceen is only called when the query thread completes. Terrain graphics must 
+    //! be re-added every time this method is called or they will disappear.
+    //! An implementation of _AddTerrain is required to be very fast to keep the client thread responsive. If data is not immediately available, you should
+    //! a) make arrangements to obtain the data in the background and b) schedule a ProgressiveTask to display it when available.
+    virtual void _AddTerrainGraphics(TerrainContextR) const {}
 
     virtual void _OnFitView(FitContextR) {}
     virtual void _DrawModel(ViewContextR) {}
@@ -817,7 +830,6 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricModel2d : GeometricModel
 
 protected:
     GeometricModel2dCP _ToGeometricModel2d() const override final {return this;}
-
     CoordinateSpace _GetCoordinateSpace() const override final {return CoordinateSpace::Local;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element);
 

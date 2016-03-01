@@ -817,9 +817,11 @@ TEST_F(DgnElementTests, TestUserProperties)
     // would be to use the primitive setters and getters. The choice here was to just meant to get more coverage
     // by testing the outermost wrappers. 
 
-    DgnElementCPtr persistentEl;
+    DgnElementId persistentId;
     if (true)
         {
+        DgnElementCPtr persistentEl;
+
         DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
         TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
         TestElement el(params);
@@ -838,17 +840,25 @@ TEST_F(DgnElementTests, TestUserProperties)
 
         //  Insert the element
         persistentEl = el.Insert();
+        persistentId = persistentEl->GetElementId();
         }
     
-    ASSERT_TRUE(persistentEl.IsValid());
+    m_db->SaveChanges("");
 
-    // Check that we see the stored value
-    ECN::ECValue checkValue = persistentEl->GetUserProperties().GetValueEC("StringProperty");
-    EXPECT_FALSE(checkValue.IsNull());
-    EXPECT_STREQ("initial value", checkValue.ToString().c_str());
+    m_defaultModelP->EmptyModel();
+    m_db->Elements().Purge(0);
+
+    ASSERT_TRUE(persistentId.IsValid());
 
     if (true)
         {
+        DgnElementCPtr persistentEl = m_db->Elements().Get<DgnElement>(persistentId);
+
+        // Check that we see the stored value
+        ECN::ECValue checkValue = persistentEl->GetUserProperties().GetValueEC("StringProperty");
+        EXPECT_FALSE(checkValue.IsNull());
+        EXPECT_STREQ("initial value", checkValue.ToString().c_str());
+
         //  Get ready to modify the element
         RefCountedPtr<TestElement> editEl = persistentEl->MakeCopy<TestElement>();
 
@@ -874,8 +884,17 @@ TEST_F(DgnElementTests, TestUserProperties)
         persistentEl = editEl->Update();
         }
 
-    // Check that the stored value was changed
-    checkValue = persistentEl->GetUserProperties().GetValueEC("StringProperty");
-    EXPECT_FALSE(checkValue.IsNull());
-    EXPECT_STREQ("changed value", checkValue.ToString().c_str());
+    m_defaultModelP->EmptyModel();
+    m_db->Elements().Purge(0);
+
+    if (true)
+        {
+        DgnElementCPtr persistentEl = m_db->Elements().Get<DgnElement>(persistentId);
+
+        // Check that the stored value was changed
+        ECN::ECValue checkValue;
+        checkValue = persistentEl->GetUserProperties().GetValueEC("StringProperty");
+        EXPECT_FALSE(checkValue.IsNull());
+        EXPECT_STREQ("changed value", checkValue.ToString().c_str());
+        }
     }

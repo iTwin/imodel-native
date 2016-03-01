@@ -871,7 +871,6 @@ END_UNNAMED_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnBaseDomain::_OnDgnDbOpened(DgnDbR db) const
     {
-    db.Memory().AddConsumer(db.Elements(), IMemoryConsumer::Priority::Highest);
 
     static DbFunction* s_funcs[] = 
                           {

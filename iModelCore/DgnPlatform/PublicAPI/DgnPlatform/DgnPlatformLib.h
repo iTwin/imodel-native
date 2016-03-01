@@ -153,6 +153,11 @@ public:
             //! @return non-zero if the JS program is not available from the library.
             DGNPLATFORM_EXPORT virtual DgnDbStatus _FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DateTime& lastModifiedTime, DgnDbR db, Utf8CP sName, DgnScriptType stypePreferred);
 
+            //! Generate an exception in JavaScript
+            //! @param exname   The name of the exception to throw
+            //! @param details  Information about the exception
+            DGNPLATFORM_EXPORT virtual void _ThrowException(Utf8CP exname, Utf8CP details);
+
             //! Register the script error handler
             ScriptNotificationHandler* RegisterScriptNotificationHandler(ScriptNotificationHandler& h) {auto was  = m_notificationHandler; m_notificationHandler = &h; return was;}
 
@@ -868,7 +873,6 @@ public:
         RepositoryAdmin*        m_repositoryAdmin;
         Utf8String              m_productName;
         T_RegisteredDomains     m_registeredDomains;
-        bvector<CopyrightSupplier*> m_copyrights;
 
     public:
         T_RegisteredDomains& RegisteredDomains() {return m_registeredDomains;}
@@ -918,7 +922,7 @@ public:
         //! Supply the product name to be used to describe the host.
         virtual void _SupplyProductName(Utf8StringR) = 0;
 
-        virtual BeSQLite::L10N::SqlangFiles  _SupplySqlangFiles() = 0;
+        virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() = 0;
 
         Host()
             {
@@ -962,15 +966,6 @@ public:
         Utf8CP                  GetProductName()           {return m_productName.c_str();}
 
         void ChangeNotificationAdmin(NotificationAdmin& newAdmin) {m_notificationAdmin = &newAdmin;}
-
-        //! Register a copyright supplier. Do not free the supplier until after you call UnregisterCopyrightSupplier.
-        void RegisterCopyrightSupplier(CopyrightSupplier& s) {m_copyrights.push_back(&s);}
-
-        //! Un-register a copyright supplier
-        void UnregisterCopyrightSupplier(CopyrightSupplier& s) {auto i = std::remove(m_copyrights.begin(), m_copyrights.end(), &s); if (i != m_copyrights.end()) m_copyrights.erase(i);}
-
-        //! Return the list of registered copyright suppliers
-        bvector<CopyrightSupplier*> const& GetCopyrightSuppliers() const {return m_copyrights;}
 
         //! Returns true if this Host has been initialized; otherwise, false
         bool IsInitialized() {return 0 != m_fontAdmin;}

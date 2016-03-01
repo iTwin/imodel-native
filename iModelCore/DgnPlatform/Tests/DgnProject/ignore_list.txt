@@ -45,6 +45,7 @@ VolumeElementTestFixture.QueryTest                      # FenceParams::AcceptEle
 #Uses the eb ECschema which has to be refactored for EC3 and ECDb06. Notified Raman
 JsonTests.FieldEngineerStructArray
 
+MaterialTest.Iterate_WithFilter                         # Assertion on creating iterator. Unable to prepare statement
 MaterialTest.Iterate                                    # Assertion on creating iterator. Unable to prepare statement
 MaterialTest.Iterate_WithFilter                         # Assertion on creating iterator. Unable to prepare statement
 
