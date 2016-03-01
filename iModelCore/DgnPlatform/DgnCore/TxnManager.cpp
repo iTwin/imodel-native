@@ -1311,9 +1311,22 @@ void dgn_TxnTable::ElementDep::_OnValidated()
 void dgn_TxnTable::ElementDep::UpdateSummary(Changes::Change change, ChangeType changeType)
     {
     m_changes = true;
-    Changes::Change::Stage stage = (ChangeType::Insert == changeType) ? Changes::Change::Stage::New : Changes::Change::Stage::Old;
-    ECInstanceId instanceId(change.GetValue(0, stage).GetValueInt64()); // primary key is column 0
-    AddDependency(instanceId, changeType);
+    
+    if (ChangeType::Delete == changeType)
+        {
+        int64_t relid = change.GetValue(0, Changes::Change::Stage::Old).GetValueInt64();
+        int64_t relclsid = change.GetValue(1, Changes::Change::Stage::Old).GetValueInt64();
+        int64_t srcelemid = change.GetValue(2, Changes::Change::Stage::Old).GetValueInt64();
+        int64_t tgtelemid = change.GetValue(3, Changes::Change::Stage::Old).GetValueInt64();
+        BeSQLite::EC::ECInstanceKey relkey((ECN::ECClassId)relclsid, (BeSQLite::EC::ECInstanceId)relid);
+        m_deletedRels.push_back(DepRelData(relkey, DgnElementId((uint64_t)srcelemid), DgnElementId((uint64_t)tgtelemid)));
+        }
+    else
+        {
+        Changes::Change::Stage stage = (ChangeType::Insert == changeType) ? Changes::Change::Stage::New : Changes::Change::Stage::Old;
+        ECInstanceId instanceId(change.GetValue(0, stage).GetValueInt64()); // primary key is column 0
+        AddDependency(instanceId, changeType);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

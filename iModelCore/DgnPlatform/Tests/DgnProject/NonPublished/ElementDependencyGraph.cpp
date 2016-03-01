@@ -462,6 +462,33 @@ void ElementDependencyGraph::TestRelationships(DgnDb& db, ElementsAndRelationshi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, DeleteSource)
+    {
+    SetUpForRelationshipTests(L"DeleteSource");
+
+    TestElementDrivesElementHandler::GetHandler().Clear();
+
+    auto e1 = InsertElement("E1");
+    auto e2 = InsertElement("E2");
+    auto r1  = InsertElementDrivesElementRelationship(e1, e2);
+    ASSERT_TRUE(e1.IsValid() && e2.IsValid() && r1.IsValid());
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
+
+    ASSERT_EQ(1, TestElementDrivesElementHandler::GetHandler().m_relIds.size());
+    
+    TestElementDrivesElementHandler::GetHandler().Clear();
+
+    ASSERT_EQ(DgnDbStatus::Success, e1->Delete());
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
+
+    ASSERT_EQ(0, TestElementDrivesElementHandler::GetHandler().m_relIds.size());
+    ASSERT_EQ(1, TestElementDrivesElementHandler::GetHandler().m_deletedRels.size());
+    ASSERT_EQ(r1, TestElementDrivesElementHandler::GetHandler().m_deletedRels[0].m_relKey);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementDependencyGraph, DiamondTest1)
     {
     SetUpForRelationshipTests(L"DiamondTest1");
