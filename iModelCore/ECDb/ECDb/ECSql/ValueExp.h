@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ValueExp.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -226,6 +226,7 @@ struct FunctionCallExp : ValueExp
     DEFINE_EXPR_TYPE(FunctionCall)
 private:
     Utf8String m_functionName;
+    SqlSetQuantifier m_setQuantifier;
 
     static bmap<Utf8CP, ECN::PrimitiveType, CompareIUtf8> s_builtinFunctionNonDefaultReturnTypes;
 
@@ -235,12 +236,13 @@ private:
     virtual Utf8String _ToString() const override;
 
 public:
-    explicit FunctionCallExp (Utf8CP functionName) : ValueExp (), m_functionName(functionName) {}
+    explicit FunctionCallExp (Utf8CP functionName, SqlSetQuantifier setQuantifier = SqlSetQuantifier::NotSpecified) : ValueExp (), m_functionName(functionName), m_setQuantifier(setQuantifier) {}
     virtual ~FunctionCallExp () {}
 
     Utf8CP GetFunctionName() const { return m_functionName.c_str();}
+    SqlSetQuantifier GetSetQuantifier() const { return m_setQuantifier; }
 
-    void AddArgument (std::unique_ptr<ValueExp> argument);
+    BentleyStatus AddArgument(std::unique_ptr<ValueExp> argument);
 
     static ECN::PrimitiveType DetermineReturnType(ECDbCR, Utf8CP functionName, int argCount);
     };
@@ -302,67 +304,6 @@ public:
     bool IsNamedParameter () const { return !m_parameterName.empty (); }
     Utf8CP GetParameterName () const { return m_parameterName.c_str (); }
     int GetParameterIndex () const { return m_parameterIndex; }
-    };
-
-
-//=======================================================================================
-//! @bsiclass                                                Affan.Khan      04/2013
-//+===============+===============+===============+===============+===============+======
-struct SetFunctionCallExp : FunctionCallExp
-    {
-    DEFINE_EXPR_TYPE(SetFunctionCall)
-
-    enum class Function
-        {
-        Any,
-        Avg,
-        Count,
-        Every,
-        Min,
-        Max,
-        Some,
-        Sum
-        };
-
-private:
-    Function m_function;
-    SqlSetQuantifier m_setQuantifier;
-    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
-
-    virtual void _DoToECSql(Utf8StringR ecsql) const override;
-    virtual Utf8String _ToString() const override;
-
-    static Utf8CP ToString(Function function);
-public:
-    SetFunctionCallExp(Function function, SqlSetQuantifier setQuantifier)
-        : FunctionCallExp(ToString(function)), m_function(function), m_setQuantifier(setQuantifier) {}
-
-    Function GetFunction() const { return m_function; }
-    SqlSetQuantifier GetSetQuantifier() const { return m_setQuantifier; }
-    };
-
-//=======================================================================================
-//! @bsiclass                                                Krischan.Eberle      01/2014
-//+===============+===============+===============+===============+===============+======
-struct FoldFunctionCallExp : FunctionCallExp
-    {
-DEFINE_EXPR_TYPE (FoldFunctionCall)
-public:
-    enum class FoldFunction
-        {
-        Lower,
-        Upper
-        };
-
-private:
-    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
-
-    virtual Utf8String _ToString () const override;
-
-    static Utf8CP ToString(FoldFunction);
-
-public:
-    explicit FoldFunctionCallExp(FoldFunction foldFunction) : FunctionCallExp(ToString(foldFunction)) {}
     };
 
 //=======================================================================================

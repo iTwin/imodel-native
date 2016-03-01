@@ -757,52 +757,52 @@ ECSqlStatus ECSqlExpPreparer::PrepareFromExp (ECSqlPrepareContext& ctx, FromExp 
 // @bsimethod                                    Krischan.Eberle                    10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ECClassIdFunctionExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ECClassIdFunctionExp const& exp)
     {
-    auto classRefExp = exp->GetClassRefExp ();
-    BeAssert (classRefExp != nullptr && "ECClassIdFunctionExp::GetClassRefExp is expected to never return null during preparation.");
+    RangeClassRefExp const* classRefExp = exp.GetClassRefExp();
+    BeAssert(classRefExp != nullptr && "ECClassIdFunctionExp::GetClassRefExp is expected to never return null during preparation.");
     if (classRefExp->GetType() != Exp::Type::ClassName)
         {
         ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "%s only supported for simple class references. Subqueries are not yet supported.", classRefExp->ToECSql().c_str());
         return ECSqlStatus::InvalidECSql;
         }
 
-    BeAssert (dynamic_cast<ClassNameExp const*> (classRefExp) != nullptr);
-    auto classNameExp = static_cast<ClassNameExp const*> (classRefExp);
+    BeAssert(dynamic_cast<ClassNameExp const*> (classRefExp) != nullptr);
+    ClassNameExp const* classNameExp = static_cast<ClassNameExp const*> (classRefExp);
 
     NativeSqlBuilder nativeSqlSnippet;
 
-    if (exp->HasParentheses())
+    if (exp.HasParentheses())
         nativeSqlSnippet.AppendParenLeft();
 
-    auto const& classMap = classNameExp->GetInfo ().GetMap ();
+    IClassMap const& classMap = classNameExp->GetInfo().GetMap();
     ECDbSqlColumn const* classIdColumn = nullptr;
     if (classMap.GetJoinedTable().TryGetECClassIdColumn(classIdColumn))
         {
-        auto classRefId = classRefExp->GetId ().c_str ();
-        auto classIdColumnName = classIdColumn->GetName ().c_str();
-        nativeSqlSnippet.Append (classRefId, classIdColumnName);
+        auto classRefId = classRefExp->GetId().c_str();
+        auto classIdColumnName = classIdColumn->GetName().c_str();
+        nativeSqlSnippet.Append(classRefId, classIdColumnName);
         }
     else
         {
-        if (ctx.GetCurrentScope ().GetECSqlType () == ECSqlType::Select)
+        if (ctx.GetCurrentScope().GetECSqlType() == ECSqlType::Select)
             {
             //for select statements we need to use the view's ecclass id column to avoid
             //that a constant class id number shows up in order by etc
-            auto classRefId = classRefExp->GetId ().c_str ();
-            nativeSqlSnippet.Append (classRefId, ECDB_COL_ECClassId);
+            auto classRefId = classRefExp->GetId().c_str();
+            nativeSqlSnippet.Append(classRefId, ECDB_COL_ECClassId);
             }
         else
             {
             //no class id column -> class id is constant
-            nativeSqlSnippet.Append (classMap.GetClass ().GetId ());
+            nativeSqlSnippet.Append(classMap.GetClass().GetId());
             }
         }
 
-    if (exp->HasParentheses())
+    if (exp.HasParentheses())
         nativeSqlSnippet.AppendParenRight();
 
-    nativeSqlSnippets.push_back (move (nativeSqlSnippet));
+    nativeSqlSnippets.push_back(move(nativeSqlSnippet));
     return ECSqlStatus::Success;
     }
 
@@ -811,14 +811,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp (NativeSqlBuilder::Lis
 // @bsimethod                                    Krischan.Eberle                    11/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareGetPointCoordinateFunctionExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, GetPointCoordinateFunctionExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareGetPointCoordinateFunctionExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, GetPointCoordinateFunctionExp const& exp)
     {
     NativeSqlBuilder::List pointSqlSnippets;
-    ValueExp const& argExp = exp->GetArgument();
+    ValueExp const& argExp = exp.GetArgument();
     if (!argExp.GetTypeInfo().IsPoint())
         {
         BeAssert(argExp.GetTypeInfo().IsPoint() && "Invalid syntax for GetX/GetY/GetZ should have been caught by parser already.");
-        return ECSqlStatus::InvalidECSql;   
+        return ECSqlStatus::InvalidECSql;
         }
 
     ECSqlStatus stat = PrepareValueExp(pointSqlSnippets, ctx, &argExp);
@@ -826,8 +826,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareGetPointCoordinateFunctionExp(NativeSqlBuil
         return stat;
 
     size_t snippetIndex;
-    switch (exp->GetCoordinate ())
-        { 
+    switch (exp.GetCoordinate())
+        {
             case GetPointCoordinateFunctionExp::Coordinate::X:
                 snippetIndex = 0;
                 BeAssert(Utf8String(pointSqlSnippets[snippetIndex].ToString()).ToLower().EndsWith("_x]"));
@@ -1427,74 +1427,40 @@ ECSqlStatus ECSqlExpPreparer::PrepareSelectClauseExp (ECSqlPrepareContext& ctx, 
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, FunctionCallExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, FunctionCallExp const& exp)
     {
-    if (exp->GetType() == Exp::Type::SetFunctionCall)
-        {
-        SetFunctionCallExp const* setFunctionCallExp = static_cast<SetFunctionCallExp const*> (exp);
-        return PrepareSetFunctionCallExp(nativeSqlSnippets, ctx, *setFunctionCallExp);
-        }
-
-    Utf8CP functionName = exp->GetFunctionName();
-    NativeSqlBuilder nativeSql;
-    if (exp->HasParentheses())
-        nativeSql.AppendParenLeft();
-
-    nativeSql.Append(functionName).AppendParenLeft();
-
-    ECSqlStatus stat = PrepareFunctionArgExpList(nativeSql, ctx, *exp);
-    if (!stat.IsSuccess())
-        return stat;
-
-    nativeSql.AppendParenRight(); //function arg list parent
-
-    if (exp->HasParentheses())
-        nativeSql.AppendParenLeft(); 
-
-    nativeSqlSnippets.push_back(move(nativeSql));
-
-    return ECSqlStatus::Success;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    01/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-ECSqlStatus ECSqlExpPreparer::PrepareSetFunctionCallExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, SetFunctionCallExp const& exp)
-    {
+    Utf8CP functionName = exp.GetFunctionName();
     NativeSqlBuilder nativeSql;
     if (exp.HasParentheses())
         nativeSql.AppendParenLeft();
 
-    const SetFunctionCallExp::Function function = exp.GetFunction();
-    const bool isAnyEveryOrSome = function == SetFunctionCallExp::Function::Any ||
-        function == SetFunctionCallExp::Function::Every ||
-        function == SetFunctionCallExp::Function::Some;
-
-    if (isAnyEveryOrSome)
+    const bool isAnyOrSomeFunction = BeStringUtilities::Stricmp(functionName, "any") == 0 || BeStringUtilities::Stricmp(functionName, "some") == 0;
+    const bool isEveryFunction = !isAnyOrSomeFunction && BeStringUtilities::Stricmp(functionName, "every");
+    const bool isAnyEveryOrSomeFunction = isAnyOrSomeFunction || isEveryFunction;
+    if (isAnyEveryOrSomeFunction)
         {
         //ANY, EVERY, SOME is not directly supported by SQLite. But they can be expressed by standard functions
         //ANY,SOME: checks whether at least one row in the specified BOOLEAN column is TRUE -> MAX(Col) <> 0
         //EVERY: checks whether all rows in the specified BOOLEAN column are TRUE -> MIN(Col) <> 0
-        Utf8CP func = function == SetFunctionCallExp::Function::Every ? "MIN" : "MAX";
-        nativeSql.Append(func);
+        Utf8CP sqlFunctionName = isEveryFunction ? "MIN" : "MAX";
+        nativeSql.Append(sqlFunctionName);
         }
     else
-        nativeSql.Append(exp.GetFunctionName());
+        nativeSql.Append(functionName);
 
-    nativeSql.AppendParenLeft().Append (exp.GetSetQuantifier(), true);
+    nativeSql.AppendParenLeft().Append(exp.GetSetQuantifier(), true);
 
     ECSqlStatus stat = PrepareFunctionArgExpList(nativeSql, ctx, exp);
     if (!stat.IsSuccess())
         return stat;
 
-    if (isAnyEveryOrSome)
+    if (isAnyEveryOrSomeFunction)
         nativeSql.Append(" <> 0");
 
-    nativeSql.AppendParenRight(); // function arg list end paren
+    nativeSql.AppendParenRight(); //function arg list parent
 
     if (exp.HasParentheses())
-        nativeSql.AppendParenLeft();
+        nativeSql.AppendParenLeft(); 
 
     nativeSqlSnippets.push_back(move(nativeSql));
     return ECSqlStatus::Success;
@@ -1660,41 +1626,39 @@ ECSqlStatus ECSqlExpPreparer::PrepareUnaryValueExp (NativeSqlBuilder::List& nati
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareValueExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ValueExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ValueExp const* exp)
     {
-    switch(exp->GetType())
+    switch (exp->GetType())
         {
-        case Exp::Type::BetweenRangeValue:
-            return PrepareBetweenRangeValueExp (nativeSqlSnippets, ctx, static_cast<BetweenRangeValueExp const*> (exp));
-        case Exp::Type::BinaryValue:
-            return PrepareBinaryValueExp (nativeSqlSnippets, ctx, static_cast<BinaryValueExp const*> (exp));
-        case Exp::Type::Cast:
-            return PrepareCastExp (nativeSqlSnippets, ctx, static_cast<CastExp const*> (exp));
-        case Exp::Type::LiteralValue:
-            return PrepareLiteralValueExp (nativeSqlSnippets, ctx, static_cast<LiteralValueExp const*> (exp));
-        case Exp::Type::ECClassIdFunction:
-            return PrepareECClassIdFunctionExp (nativeSqlSnippets, ctx, static_cast<ECClassIdFunctionExp const*> (exp));
-        case Exp::Type::GetPointCoordinateFunction:
-            return PrepareGetPointCoordinateFunctionExp(nativeSqlSnippets, ctx, static_cast<GetPointCoordinateFunctionExp const*> (exp));
-        case Exp::Type::LikeRhsValue:
-            return PrepareLikeRhsValueExp (nativeSqlSnippets, ctx, static_cast<LikeRhsValueExp const*> (exp));
-        case Exp::Type::Parameter:
-            return PrepareParameterExp (nativeSqlSnippets, ctx, static_cast<ParameterExp const*> (exp), false, false);
-        case Exp::Type::PropertyName:
-            return ECSqlPropertyNameExpPreparer::Prepare (nativeSqlSnippets, ctx, static_cast<PropertyNameExp const*>(exp));
-        case Exp::Type::SubqueryValue:
-            return PrepareSubqueryValueExp (nativeSqlSnippets, ctx, static_cast<SubqueryValueExp const*> (exp));
-        case Exp::Type::UnaryValue:           
-            return PrepareUnaryValueExp (nativeSqlSnippets, ctx, static_cast<UnaryValueExp const*> (exp));
-        default:
-            break;
+            case Exp::Type::BetweenRangeValue:
+                return PrepareBetweenRangeValueExp(nativeSqlSnippets, ctx, static_cast<BetweenRangeValueExp const*> (exp));
+            case Exp::Type::BinaryValue:
+                return PrepareBinaryValueExp(nativeSqlSnippets, ctx, static_cast<BinaryValueExp const*> (exp));
+            case Exp::Type::Cast:
+                return PrepareCastExp(nativeSqlSnippets, ctx, static_cast<CastExp const*> (exp));
+            case Exp::Type::LiteralValue:
+                return PrepareLiteralValueExp(nativeSqlSnippets, ctx, static_cast<LiteralValueExp const*> (exp));
+            case Exp::Type::ECClassIdFunction:
+                return PrepareECClassIdFunctionExp(nativeSqlSnippets, ctx, *static_cast<ECClassIdFunctionExp const*> (exp));
+            case Exp::Type::FunctionCall:
+                return PrepareFunctionCallExp(nativeSqlSnippets, ctx, *static_cast<FunctionCallExp const*> (exp));
+            case Exp::Type::GetPointCoordinateFunction:
+                return PrepareGetPointCoordinateFunctionExp(nativeSqlSnippets, ctx, *static_cast<GetPointCoordinateFunctionExp const*> (exp));
+            case Exp::Type::LikeRhsValue:
+                return PrepareLikeRhsValueExp(nativeSqlSnippets, ctx, static_cast<LikeRhsValueExp const*> (exp));
+            case Exp::Type::Parameter:
+                return PrepareParameterExp(nativeSqlSnippets, ctx, static_cast<ParameterExp const*> (exp), false, false);
+            case Exp::Type::PropertyName:
+                return ECSqlPropertyNameExpPreparer::Prepare(nativeSqlSnippets, ctx, static_cast<PropertyNameExp const*>(exp));
+            case Exp::Type::SubqueryValue:
+                return PrepareSubqueryValueExp(nativeSqlSnippets, ctx, static_cast<SubqueryValueExp const*> (exp));
+            case Exp::Type::UnaryValue:
+                return PrepareUnaryValueExp(nativeSqlSnippets, ctx, static_cast<UnaryValueExp const*> (exp));
+            default:
+                break;
         }
 
-    auto functionCallExp = dynamic_cast<FunctionCallExp const*> (exp);
-    if (functionCallExp != nullptr)
-        return PrepareFunctionCallExp (nativeSqlSnippets, ctx, functionCallExp);
-
-    BeAssert (false && "ECSqlPreparer::PrepareValueExp> Unhandled ValueExp subclass.");
+    BeAssert(false && "ECSqlPreparer::PrepareValueExp> Unhandled ValueExp subclass.");
     return ECSqlStatus::Error;
     }
 

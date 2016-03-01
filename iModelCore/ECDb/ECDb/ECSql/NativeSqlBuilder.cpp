@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/NativeSqlBuilder.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -176,13 +176,14 @@ NativeSqlBuilder& NativeSqlBuilder::Append (BooleanSqlOperator op, bool appendTr
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-NativeSqlBuilder& NativeSqlBuilder::Append (SqlSetQuantifier setQuantifier, bool appendTrailingSpace)
+NativeSqlBuilder& NativeSqlBuilder::Append(SqlSetQuantifier setQuantifier, bool appendTrailingSpace)
     {
     //No difference of operator in ECSQL and SQLite SQL
-    auto selectionTypeStr = ExpHelper::ToSql (setQuantifier);
-    if (!Utf8String::IsNullOrEmpty (selectionTypeStr))
-        Append (selectionTypeStr, appendTrailingSpace);
+    if (setQuantifier == SqlSetQuantifier::NotSpecified)
+        return *this;
 
+    Utf8CP selectionTypeStr = ExpHelper::ToSql(setQuantifier);
+    Append(selectionTypeStr, appendTrailingSpace);
     return *this;
     }
 

@@ -170,6 +170,7 @@ namespace connectivity
                 comparison_predicate_part_2,
                 concatenation,
                 cross_union,
+                custom_set_fct,
                 data_type,
                 datetime_factor,
                 datetime_primary,

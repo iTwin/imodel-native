@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlParser.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -137,7 +137,6 @@ private:
     BentleyStatus parse_and_add_functionarg(FunctionCallExp&, connectivity::OSQLParseNode const*) const;
 
     BentleyStatus parse_getpointcoordinate_fct_spec(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const&, Utf8StringCR functionName) const;
-    BentleyStatus parse_general_set_fct(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus parse_group_by_clause(std::unique_ptr<GroupByExp>&, connectivity::OSQLParseNode const*) const;
 
     BentleyStatus parse_having_clause(std::unique_ptr<HavingExp>&, connectivity::OSQLParseNode const*) const;
@@ -189,6 +188,7 @@ private:
 
     BentleyStatus parse_schema_name(Utf8CP& schemaName, Utf8CP& className, connectivity::OSQLParseNode const*) const;
     BentleyStatus parse_search_condition(std::unique_ptr<BooleanExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus parse_set_fct(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus parse_sql_not(bool& isNot, connectivity::OSQLParseNode const*) const;
 
     BentleyStatus parse_unary_predicate(std::unique_ptr<BooleanExp>&, connectivity::OSQLParseNode const*) const;
