@@ -208,7 +208,7 @@ public:
     void SetViewCmdTargetCenter(DPoint3dCP newCenter);
     DPoint3dCP GetViewCmdTargetCenter() {return m_sync.IsValidRotatePoint() ? &m_viewCmdTargetCenter : nullptr;}
     Point2d GetScreenOrigin() const {return m_renderTarget->GetScreenOrigin();}
-    DGNVIEW_EXPORT double PixelsFromInches(double inches) const;
+    DGNPLATFORM_EXPORT double PixelsFromInches(double inches) const;
     DGNVIEW_EXPORT void ForceHeal();
     StatusInt HealViewport(UpdatePlan const&);
     bool GetNeedsHeal() {return m_sync.IsValidScene();}
