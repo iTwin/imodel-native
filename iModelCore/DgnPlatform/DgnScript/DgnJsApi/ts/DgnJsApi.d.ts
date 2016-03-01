@@ -105,7 +105,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         static ReportError(description: Bentley_Utf8String): void;
     }
 
-    /** A DgnDb */
+    /** DgnDb - Projection of BentleyApi::Dgn::DgnDb */
     class DgnDb implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsDgnDb ***/
@@ -119,7 +119,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DgnDbP = cxx_pointer<DgnDb>;
 
-    /** A wrapper for 64-bit element ids, etc. */
+    /** A 64-bit ID.  */
     class DgnObjectId implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
         /*** NATIVE_TYPE_NAME = JsDgnObjectId ***/
@@ -169,7 +169,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DgnObjectIdSetP = cxx_pointer<DgnObjectIdSet>;
 
-    /** A DgnCode */
+    /** AuthorityIssuedCodeValue - Projection of BentleyApi::Dgn::DgnCode */
     class AuthorityIssuedCodeValue implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
         /*** NATIVE_TYPE_NAME = JsAuthorityIssuedCode ***/
@@ -179,7 +179,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type AuthorityIssuedCode = cxx_pointer<AuthorityIssuedCodeValue>;
 
-    /** A collection of DgnModels */
+    /** DgnModels - Projection of BentleyApi::Dgn::DgnModels */
     class DgnModels implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsDgnModels ***/
@@ -193,7 +193,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DgnModelsP = cxx_pointer<DgnModels>;
 
-    /** A Category */
+    /** DgnCategory - Projection of BentleyApi::Dgn::DgnCategory */
     class DgnCategory implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsDgnCategory ***/
@@ -217,7 +217,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DgnCategoryP = cxx_pointer<DgnCategory>;
 
-    /** An Element. 
+    /** DgnElement - Projection of BentleyApi::Dgn::DgnElement
      *  <h2>Properties</h2>
      *  On any given element, there may be the following kinds of properties:
      *  * Properties that are defined by the ECClass 
@@ -274,7 +274,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DgnElementP = cxx_pointer<DgnElement>;
 
-    /** A physical element */
+    /** PhysicalElement - Projection of BentleyApi::Dgn::PhysicalElement */
     class PhysicalElement extends DgnElement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsPhysicalElement ***/
@@ -307,7 +307,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type PhysicalElementP = cxx_pointer<PhysicalElement>;
 
-    /** A Model in a DgnDb */
+    /** DgnModel - Projection of BentleyApi::Dgn::DgnModel */
     class DgnModel implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsDgnModel ***/
@@ -325,9 +325,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DgnModelP = cxx_pointer<DgnModel>;
 
-    /**
-     * A "sandbox" model where a component definition script can write elements and aspects that will be harvested by the platform and combined into instances.
-     */
+    /** ComponentModel - Projection of BentleyApi::Dgn::ComponentModel */
     class ComponentModel extends DgnModel implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsComponentModel ***/
@@ -338,9 +336,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type ComponentModelP = cxx_pointer<ComponentModel>;
 
-    /**
-     * A component definition
-     */
+    /** ComponentDef - Projection of BentleyApi::Dgn::ComponentDef */
     class ComponentDef implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsComponentDef ***/
@@ -429,7 +425,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     type ComponentDefP = cxx_pointer<ComponentDef>;
 
     /**
-     * ColorDef - @see BentleyApi::Dgn::ColorDef
+     * ColorDef - Projection of BentleyApi::Dgn::ColorDef
      */
     class ColorDef implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor 
     {
@@ -463,7 +459,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     enum RenderDgnGeometryClass { }
 
     /**
-     * RenderGeometryParams - @see BentleyApi::Dgn::Render::GeometryParams
+     * RenderGeometryParams - Projection of BentleyApi::Dgn::Render::GeometryParams
      */
     class RenderGeometryParams implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor 
     {
@@ -506,7 +502,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     type RenderGeometryParamsP = cxx_pointer<RenderGeometryParams>;
 
     /**
-     * TextString - @see BentleyApi::Dgn::TextString
+     * TextString - Projection of BentleyApi::Dgn::TextString
      */
     class TextString implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
@@ -519,7 +515,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     type TextStringP = cxx_pointer<TextString>;
 
     /**
-     * GeometricPrimitive - @see BentleyApi::Dgn::GeometricPrimitive
+     * GeometricPrimitive - Projection of BentleyApi::Dgn::GeometricPrimitive
      */
     class GeometricPrimitive implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
@@ -537,7 +533,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     type GeometricPrimitiveP = cxx_pointer<GeometricPrimitive>;
 
     /**
-     * DgnGeometryPart - @see BentleyApi::Dgn::DgnGeometryPart
+     * DgnGeometryPart - Projection of BentleyApi::Dgn::DgnGeometryPart
      */
     class DgnGeometryPart implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
@@ -574,7 +570,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     type GeometryCollectionIteratorP = cxx_pointer<GeometryCollectionIterator>;
 
     /**
-     * GeometryCollection - @see BentleyApi::Dgn::GeometryCollection
+     * GeometryCollection - Projection of BentleyApi::Dgn::GeometryCollection
      */
     class GeometryCollection implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
@@ -638,7 +634,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     type GeometryCollectionP = cxx_pointer<GeometryCollection>;
 
     /**
-     * GeometryBuilder - @see BentleyApi::Dgn::GeometryBuilder
+     * GeometryBuilder - Projection of BentleyApi::Dgn::GeometryBuilder
      */
     class GeometryBuilder implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
