@@ -25,10 +25,9 @@ private:
     static ECN::ExpressionStatus GetRelatedInstance(ECN::EvaluationResult& evalResult, void* context, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);
     static BentleyStatus FindRelationshipAndClassInfo(ECDbCR, ECN::ECRelationshipClassCP&, Utf8CP relationshipName, ECN::ECEntityClassCP&, Utf8CP className);
 
-protected:    
+private:
     virtual Utf8CP _GetName() const override {return "ECDbExpressionSymbolProvider";}
     ECDB_EXPORT virtual void _PublishSymbols(ECN::SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const override;
-    ECDbCR GetECDb() const {return m_db;}
 
 public:
     ECDbExpressionSymbolProvider(ECDbCR db) : m_db(db) {}
@@ -37,13 +36,13 @@ public:
 //=======================================================================================
 // @bsiclass                                      Grigas.Petraitis              02/2016
 //+===============+===============+===============+===============+===============+======
-struct ECDbInstancesExpressionSymbolsContext
+struct ECDbExpressionSymbolContext
 {
 private:
     ECDbExpressionSymbolProvider* m_provider;
 public:
-    ECDB_EXPORT ECDbInstancesExpressionSymbolsContext(ECDbCR ecdb);
-    ECDB_EXPORT ~ECDbInstancesExpressionSymbolsContext();
+    ECDB_EXPORT ECDbExpressionSymbolContext(ECDbCR ecdb);
+    ECDB_EXPORT ~ECDbExpressionSymbolContext();
     ECDB_EXPORT void LeaveContext();
 };
 

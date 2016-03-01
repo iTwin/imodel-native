@@ -42,7 +42,7 @@ public:
 void ECDbExpressionSymbolProvider::_PublishSymbols(SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const
     {
     context.AddSymbol(*ContextSymbol::CreateContextSymbol("ECDb", *ECDbExpressionContext::Create(m_db)));
-    context.AddSymbol(*MethodSymbol::Create("GetRelatedInstance", NULL, &GetRelatedInstance, const_cast<ECDbP>(&GetECDb())));
+    context.AddSymbol(*MethodSymbol::Create("GetRelatedInstance", NULL, &GetRelatedInstance, const_cast<ECDbP>(&m_db)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -235,7 +235,7 @@ BentleyStatus ECDbExpressionSymbolProvider::FindRelationshipAndClassInfo(ECDbCR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDbInstancesExpressionSymbolsContext::ECDbInstancesExpressionSymbolsContext(ECDbCR ecdb)
+ECDbExpressionSymbolContext::ECDbExpressionSymbolContext(ECDbCR ecdb)
     {
     m_provider = new ECDbExpressionSymbolProvider(ecdb);
     InternalECSymbolProviderManager::GetManager().RegisterSymbolProvider(*m_provider);
@@ -244,12 +244,12 @@ ECDbInstancesExpressionSymbolsContext::ECDbInstancesExpressionSymbolsContext(ECD
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDbInstancesExpressionSymbolsContext::~ECDbInstancesExpressionSymbolsContext() {LeaveContext();}
+ECDbExpressionSymbolContext::~ECDbExpressionSymbolContext() {LeaveContext();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECDbInstancesExpressionSymbolsContext::LeaveContext()
+void ECDbExpressionSymbolContext::LeaveContext()
     {
     if (nullptr == m_provider)
         return;
