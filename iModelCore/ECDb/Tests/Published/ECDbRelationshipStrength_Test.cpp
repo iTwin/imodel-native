@@ -732,10 +732,9 @@ TEST_F (ECDbRelationshipsIntegrityTests, BackwardEmbeddingRelationshipsTest)
     PersistedMapStrategy mapStrategy;
     size_t count_FooOwnedByGoo = 0;
     {
-#ifdef TFS361480
-    ASSERT_TRUE (TryGetPersistedMapStrategy (mapStrategy, m_ecdb, GetRelationShipClassId ("FooOwnedByGoo")));
-    ASSERT_EQ (PersistedMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable, mapStrategy.m_strategy);
-#endif
+    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, m_ecdb, GetRelationShipClassId("FooOwnedByGoo")));
+    ASSERT_EQ(PersistedMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable, mapStrategy.m_strategy);
+
     InsertRelationshipInstances ("ts.FooOwnedByGoo", fooKeys, gooKeys, FooOwnedByGooResult, count_FooOwnedByGoo);
     }
     ASSERT_EQ (count_FooOwnedByGoo, GetInsertedRelationshipsCount ("ts.FooOwnedByGoo"));
@@ -968,10 +967,9 @@ TEST_F (ECDbRelationshipsIntegrityTests, BackwardReferencingRelationshipsTest)
     PersistedMapStrategy mapStrategy;
     size_t count_GooHasFoo = 0;
     {
-#ifdef TFS361480
     ASSERT_TRUE (TryGetPersistedMapStrategy (mapStrategy, m_ecdb, GetRelationShipClassId ("GooHasFoo")));
     ASSERT_EQ (PersistedMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable, mapStrategy.m_strategy);
-#endif
+
     InsertRelationshipInstances ("ts.GooHasFoo", fooKeys, gooKeys, GooOwnsFooResult, count_GooHasFoo);
     }
     ASSERT_EQ (count_GooHasFoo, GetInsertedRelationshipsCount ("ts.GooHasFoo"));
@@ -1254,10 +1252,9 @@ TEST_F (ECDbRelationshipsIntegrityTests, BackwardHoldingRelationshipsTest)
     PersistedMapStrategy mapStrategy;
     size_t count_FooHeldByGoo = 0;
     {
-#ifdef TFS361480
-    ASSERT_TRUE (TryGetPersistedMapStrategy (mapStrategy, m_ecdb, GetRelationShipClassId ("FooHeldByGoo")));
-    ASSERT_EQ (PersistedMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable, mapStrategy.m_strategy);
-#endif // TFS361480
+    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, m_ecdb, GetRelationShipClassId("FooHeldByGoo")));
+    ASSERT_EQ(PersistedMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable, mapStrategy.m_strategy);
+
     InsertRelationshipInstances ("ts.FooHeldByGoo", fooKeys, gooKeys, fooHeldByGooResult, count_FooHeldByGoo);
     }
     ASSERT_EQ (count_FooHeldByGoo, GetInsertedRelationshipsCount ("ts.FooHeldByGoo"));

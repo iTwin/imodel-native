@@ -19,6 +19,7 @@
     <ClCompile Include="docs\samplecode\ECDbCRUD.sample.cpp" />
     <ClCompile Include="docs\samplecode\ECDbCRUDAdapters.sample.cpp" />
     <ClCompile Include="ECDb.cpp" />
+    <ClCompile Include="ECDbExpressionSymbolProviders.cpp" />
     <ClCompile Include="ECDbImpl.cpp" />
     <ClCompile Include="ECDbLogger.cpp" />
     <ClCompile Include="ECDbMapAnalyser.cpp" />
@@ -125,6 +126,7 @@
     <ClInclude Include="..\PublicAPI\ECDb\ChangeSummary.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDb.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbExpressionSymbolProviders.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDbSchemaManager.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDbTypes.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECInstanceAdapter.h" />

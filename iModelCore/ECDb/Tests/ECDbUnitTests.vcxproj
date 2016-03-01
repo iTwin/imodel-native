@@ -45,6 +45,7 @@
     <ClCompile Include="Published\ECDbSchemaRules_Test.cpp" />
     <ClCompile Include="Published\ECDbSchemas_Test.cpp" />
     <ClCompile Include="Published\ECDbSql_Test.cpp" />
+    <ClCompile Include="Published\ECDbSymbolProviderTests.cpp" />
     <ClCompile Include="Published\ECDbTestHelper.cpp" />
     <ClCompile Include="Published\ECDb_Tests.cpp" />
     <ClCompile Include="Published\ECInstanceIdSequence_Tests.cpp" />
