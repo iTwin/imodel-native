@@ -14,6 +14,7 @@
 #include <DgnDbServer/Client/RepositoryInfo.h>
 #include <DgnDbServer/Client/DgnDbServerRevision.h>
 #include <WebServices/Azure/AzureBlobStorageClient.h>
+#include <DgnClientFx/Utils/Http/AuthenticationHandler.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -77,7 +78,7 @@ private:
     friend struct DgnDbBriefcase;
     friend struct DgnDbRepositoryManager;
 
-    DgnDbRepositoryConnection (RepositoryInfoPtr repository, WebServices::CredentialsCR credentials, WebServices::ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler);
+    DgnDbRepositoryConnection (RepositoryInfoPtr repository, WebServices::CredentialsCR credentials, WebServices::ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler);
 
     //! Returns AzureBlobStorageClient. Creates if doesn't exist.
     WebServices::IAzureBlobStorageClientPtr GetAzureClient();
@@ -122,11 +123,11 @@ public:
     //! @param[in] credentials Credentials used to authenticate on the repository.
     //! @param[in] clientInfo Application information sent to server.
     //! @param[in] cancellationToken
-    //! @param[in] customHandler Custom http handler for connect authentication.
+    //! @param[in] authenticationHandler Http handler for connect authentication.
     //! @return Asynchronous task that has the created connection instance as the result.
     //! @note OpenBriefcase in DgnDbClient is used to create an instance of a DgnDbRepositoryConnection.
     static AsyncTaskPtr<DgnDbRepositoryConnectionResult> Create (RepositoryInfoPtr repository, CredentialsCR credentials, WebServices::ClientInfoPtr clientInfo, 
-                                                                 ICancellationTokenPtr cancellationToken = nullptr, IHttpHandlerPtr customHandler = nullptr);
+                                                                 ICancellationTokenPtr cancellationToken = nullptr, AuthenticationHandlerPtr authenticationHandler = nullptr);
 
     //! Aquire the requested set of locks.
     //! @param[in] locks Set of locks to acquire

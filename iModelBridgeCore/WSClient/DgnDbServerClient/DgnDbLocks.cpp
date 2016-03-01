@@ -44,7 +44,7 @@ DgnDbResult DgnDbRepositoryManager::Connect (DgnDbCR db)
             return DgnDbResult::Success();
         }
 
-    auto result = DgnDbRepositoryConnection::Create(RepositoryInfo::ReadRepositoryInfo(db), m_credentials, m_clientInfo, m_cancellationToken, m_customHandler)->GetResult();
+    auto result = DgnDbRepositoryConnection::Create(RepositoryInfo::ReadRepositoryInfo(db), m_credentials, m_clientInfo, m_cancellationToken, m_authenticationHandler)->GetResult();
     if (result.IsSuccess())
         {
         DgnDbRepositoryConnectionPtr connection = result.GetValue();
@@ -201,18 +201,18 @@ RepositoryStatus DgnDbRepositoryManager::_QueryStates (DgnLockInfoSet& lockState
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Karolis.Dziedzelis              12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbRepositoryManager::DgnDbRepositoryManager (WebServices::ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler)
+DgnDbRepositoryManager::DgnDbRepositoryManager (WebServices::ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler)
     {
     m_clientInfo = clientInfo;
-    m_customHandler = customHandler;
+    m_authenticationHandler = authenticationHandler;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Karolis.Dziedzelis              12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<DgnDbRepositoryManager> DgnDbRepositoryManager::Create (WebServices::ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler)
+std::shared_ptr<DgnDbRepositoryManager> DgnDbRepositoryManager::Create (WebServices::ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler)
     {
-    return std::shared_ptr<DgnDbRepositoryManager>(new DgnDbRepositoryManager(clientInfo, customHandler));
+    return std::shared_ptr<DgnDbRepositoryManager>(new DgnDbRepositoryManager(clientInfo, authenticationHandler));
     }
 
 /*---------------------------------------------------------------------------------**//**
