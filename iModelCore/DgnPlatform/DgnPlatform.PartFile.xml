@@ -35,7 +35,7 @@
         <SubPart PartName="ECDb"                PartFile="ECDb"         Repository="ECDb" />
         <SubPart PartName="GeomDlls"            PartFile="geomlibs"     Repository="GeomLibs" />
         <SubPart PartName="BeXmlDll"            PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
-        <SubPart PartName="ECObjectsNative"     PartFile="ecobjects"    Repository="ecobjects" />
+        <SubPart PartName="ECObjectsNative"     PartFile="ECObjects"    Repository="ecobjects" />
         <SubPart PartName="Freetype2Library"    PartFile="freetype2"    Repository="libsrc-freetype2" />
         <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
         <SubPart PartName="png"                 PartFile="png"          Repository="Libsrc-png"/>
@@ -196,83 +196,6 @@
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
         </Bindings>
     </Part>
-
-    <!-- ////////////////////////////////// Products ///////////////////////////////////////// -->
-    <ProductDirectoryList ListName="DgnPlatform">
-        <ProductDirectory Name="PublicAPI"           Deliver="false"/>
-        <ProductDirectory Name="PublicAPI"           Deliver="false" LibType="Static"/>
-        <ProductDirectory Name="VendorAPI"           Deliver="false" />
-        <ProductDirectory Name="VendorAPI"           Deliver="false" LibType="Static"/>
-        <ProductDirectory Name="MergeModules"        Deliver="false" />
-        <ProductDirectory Name="RunWaitExes"         Deliver="false" />
-        <ProductDirectory Name="WorkSpaceSystemData" Deliver="false"/>
-        <ProductDirectory Name="DgnPlatformTestExe"  Deliver="false"/>
-        <ProductDirectory Name="LoggingManagedAssemblies"           Deliver="false"/>
-        <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
-        <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false" />
-        <ProductDirectory Name="DgnDbImportConfiguration" Deliver="false" />
-        <ProductDirectory Name="Libs"            Path="Libs"/>
-        <ProductDirectory Name="Libs"            Path="StaticLibs" LibType="Static"/>
-        <ProductDirectory Name="BentleyLibs"     Path="Libs"/>
-        <ProductDirectory Name="ECObjectsLibs"   Path="Libs"/>
-        <ProductDirectory Name="BentleyNativeAssemblies" Path="Dlls"/>
-        <ProductDirectory Name="BentleyNativeAssemblies" Path="StaticLibs" LibType="Static"/>
-        <ProductDirectory Name="GeomNativeAssemblies" Path="Dlls"/>
-        <ProductDirectory Name="GeomNativeAssemblies" Path="Dlls" LibType="Static"/>
-        <ProductDirectory Name="DgnPlatformNativeAssemblies" Path="Dlls"/>
-        <ProductDirectory Name="DgnPlatformNativeAssemblies" Path="Dlls" LibType="Static"/>
-        <ProductDirectory Name="DgnPlatformLastResortFonts" RelativeTo="DgnPlatformFont" Path="LastResortFonts"/>
-        <ProductDirectory Name="DgnPlatformLastResortFonts" RelativeTo="DgnPlatformFont" Path="LastResortFonts" LibType="Static"/>
-        <ProductDirectory Name="LoggingNativeAssemblies" Path="Dlls"/>
-        <ProductDirectory Name="ecobjectsnativeassemblies" Path="Dlls"/>
-        <ProductDirectory Name="ecobjectsnativeassemblies" Path="Dlls" LibType="Static"/>
-        <ProductDirectory Name="PPNativeAssemblies" Deliver="false"/>
-        <ProductDirectory Name="ECSchemas" Path="" RelativeTo="ecobjectsnativeassemblies" />
-        <ProductDirectory Name="ECSchemas" Path="" RelativeTo="ecobjectsnativeassemblies" LibType="Static"/>
-        <ProductDirectory Name="RmgrToolsNativeAssemblies" Path="Dlls"/>
-        <ProductDirectory Name="RmgrToolsNativeAssemblies" Path="StaticLibs" LibType="Static"/>
-        <ProductDirectory Name="DgnPlatform_PublishedAPI_Scope1" Path="Include"/>
-        <ProductDirectory Name="DgnPlatform_PublishedAPI_Scope1_Doc" Path="Docs"/>
-        <ProductDirectory Name="DgnPlatform_PublishedAPI_Scope1_XML" Path="Docs"/>
-        <ProductDirectory Name="DgnPlatformDemoRoot" Path="Demo"/>
-        <ProductDirectory Name="DgnPlatformDemoSource" Path="Source" RelativeTo="DgnPlatformDemoRoot"/>
-        <ProductDirectory Name="DgnPlatformInstall" Path="install"/>
-        <ProductDirectory Name="DgnPlatformData" Path="Data"/>
-        <ProductDirectory Name="DgnPlatformDemoExe" Path="Exe" RelativeTo="DgnPlatformDemoRoot"/>
-        <ProductDirectory Name="DgnPlatformFont" Path="Fonts" RelativeTo="DgnPlatformData"/>
-        <ProductDirectory Name="DgnPlatformFont" Path="Fonts" RelativeTo="DgnPlatformData" LibType ="static"/>
-        <ProductDirectory Name="DgnCoreDecorators" Path="decorators/dgncore" RelativeTo="DgnPlatformData"/>
-        <ProductDirectory Name="DgnViewDecorators" Path="decorators/dgnview" RelativeTo="DgnPlatformData"/>
-        <ProductDirectory Name="DgnPlatformDemoDgn"  Path="Dgn" RelativeTo="DgnPlatformDemoRoot"/>
-        <ProductDirectory Name="DgnPlatformLineStyleRsc"  Path="Symb" RelativeTo="DgnPlatformData"/>
-        <ProductDirectory Name="VendorNotices" Path="Notices"/>
-        <ProductDirectory Name="VendorNotices" Path="Notices" LibType="Static"/>
-
-        <ProductDirectory Name="PdfLibInitNativeAssemblies" Deliver="false"/>
-        <ProductDirectory Name="ImagePPAssemblies"          Deliver="false"/>
-        <ProductDirectory Name="AdobeAssemblies"            Deliver="false"/>
-        <ProductDirectory Name="AdobeResource"              Deliver="false"/>
-        <ProductDirectory Name="GeoCoordData"               Deliver="false"/>
-        <ProductDirectory Name="GeoCoordNativeAssemblies"   Deliver="false"/>
-        <ProductDirectory Name="GdalData"                   Deliver="false"/>
-        <ProductDirectory Name="MrSidAssemblies"            Deliver="false"/>
-
-        <ProductDirectory Name="DgnPlatformSampleRoot" Path="Sample"/>
-        <ProductDirectory Name="DgnPlatformSampleSourceDir" Path="Source" RelativeTo="DgnPlatformSampleRoot"/>
-        <ProductDirectory Name="DgnPlatformSampleAdditionalAssets" RelativeTo="DgnPlatformSampleRoot"/>
-        <ProductDirectory Name="DgnPlatformSampleSqlangDir" Path="Sqlang" RelativeTo="DgnPlatformData"/>
-    </ProductDirectoryList>
-
-    <!-- Do we still need this product?
-    <Product Name="DgnPlatform" PrgOutputDir="DgnPlatform" SaveProduct="true">
-        <SubPart PartName="DgnPlatformLib"/>
-
-        <SubPart PartName="DgnPlatformDemoSource" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples"/>
-        <SubPart PartName="DgnPlatformSample" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples"/>
-
-        <Directories DirectoryListName="DgnPlatform" />
-    </Product>
-    -->
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // L10N                                                                   // -->
@@ -602,7 +525,7 @@
         <SubPart PartName="UnitTests-Performance"        Repository="ECDb" PartFile="ECDb"/>
         <SubPart PartName="UnitTests-Performance"        Repository="Bentley" PartFile="Bentley"/>
         <SubPart PartName="UnitTests-Performance"        Repository="DgnPlatform" PartFile="DgnPlatform"/>
-        <SubPart PartName="PerformanceTests"             Repository="ecobjects" PartFile="ecobjects"/>
+        <SubPart PartName="PerformanceTests"             Repository="ecobjects" PartFile="ECObjects"/>
         <SubPart PartName="UnitTests-PerformanceTest"        Repository="geomlibs" PartFile="geomlibs"/>
         <!-- Pull in the dgnplatform's db3 file to serve as the "framework" sqlang for testing purposes -->
         <SubPart PartName="DgnPlatformSqlang"            Repository="DgnPlatform" PartFile="DgnPlatform"/>

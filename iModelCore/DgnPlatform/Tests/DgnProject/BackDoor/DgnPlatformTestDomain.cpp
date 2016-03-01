@@ -312,6 +312,17 @@ void TestElementDrivesElementHandler::_OnRootChanged(DgnDbR db, ECInstanceId rel
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestElementDrivesElementHandler::_ProcessDeletedDependency(DgnDbR db, dgn_TxnTable::ElementDep::DepRelData const& relData)
+    {
+    m_deletedRels.push_back(relData);
+
+    if (nullptr != s_callback)
+        s_callback->_ProcessDeletedDependency(db, relData);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TestElementDrivesElementHandler::UpdateProperty1(DgnDbR db, EC::ECInstanceKeyCR key)

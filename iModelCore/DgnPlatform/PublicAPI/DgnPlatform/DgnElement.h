@@ -248,6 +248,17 @@ public:
 
 //=======================================================================================
 //! An instance of a DgnElement in memory. 
+//!
+//!  <h2>Properties</h2>
+//!  On any given element, there may be the following kinds of properties:
+//!  * Properties that are defined by the ECClass 
+//!          * Properties that are controlled by a C++ element subclass
+//!              * You must use methods on that class to access them
+//!          * Properties that are not controlled by the C++ element class – “Unhandled Properties”
+//!              * You must use the Get/SetUnhandledPropertyValue functions to access them
+//!  * Properties that are not defined by the ECClass but are added by the user – “User Properties”
+//!          * You must use the GetUserProperties methods to access them
+//!
 //! @ingroup DgnElementGroup
 // @bsiclass                                                     KeithBentley    10/13
 //=======================================================================================
@@ -571,6 +582,11 @@ private:
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement, bool isForUpdate);
     template<class T> void CallAppData(T const& caller) const;
 
+    DGNPLATFORM_EXPORT void LoadUserProperties() const;
+    void UnloadUserProperties() const;
+    DgnDbStatus SaveUserProperties() const;
+    void CopyUserProperties(DgnElementCR other);
+
 protected:
     //! @private
     struct Flags
@@ -591,6 +607,8 @@ protected:
     DgnClassId      m_classId;
     DgnCode         m_code;
     Utf8String      m_label;
+    mutable ECN::AdHocJsonValueP m_userProperties;
+
     mutable Flags   m_flags;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
@@ -995,6 +1013,12 @@ public:
     //! @note The default implementation returns the label if it is set or the code if the label is not set.
     //! @see GetLabel, GetCode, _GetDisplayLabel
     Utf8String GetDisplayLabel() const {return _GetDisplayLabel();}
+
+    //! Get the (read-only reference to) user properties of this DgnElement
+    ECN::AdHocJsonValueCR GetUserProperties() const {LoadUserProperties(); return *m_userProperties;}
+
+    //! Get the (writable reference to) user properties of this DgnElement
+    ECN::AdHocJsonValueR GetUserPropertiesR() { LoadUserProperties(); return *m_userProperties; }
 
     //! Query the DgnDb for the children of this DgnElement.
     //! @return DgnElementIdSet containing the DgnElementIds of all child elements of this DgnElement. Will be empty if no children.

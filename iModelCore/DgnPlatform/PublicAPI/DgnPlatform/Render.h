@@ -14,6 +14,12 @@
 #include "AreaPattern.h"
 #include <Bentley/BeTimeUtilities.h>
 
+#if defined (BENTLEYCONFIG_DISPLAY_WIN32)
+    struct HICON__;
+    struct HWND__;
+    struct HDC__;
+#endif
+
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
 //=======================================================================================
@@ -88,6 +94,7 @@ struct Task : RefCounted<NonCopyableClass>
     {
         Initialize,
         ChangeScene,
+        ChangeTerrain,
         ChangeRenderPlan,
         ChangeDynamics,
         ChangeDecorations,
@@ -1167,6 +1174,51 @@ struct Plan
 };
 
 //=======================================================================================
+//! A Render::Window is a platform specific object that identifies a rectangular window on a screen.
+//! On Windows, for example, the default Render::Window holds an "HWND"
+// @bsiclass                                                    Keith.Bentley   11/15
+//=======================================================================================
+struct Window : RefCounted<NonCopyableClass>
+{
+    struct Rectangle {int left, top, right, bottom;};
+protected:
+    Window() {}
+public:
+    virtual Point2d _GetScreenOrigin() const = 0;
+    virtual BSIRect _GetViewRect() const = 0;
+    virtual void _OnPaint(Rectangle&) const = 0;
+    virtual void* _GetNativeWindow() const = 0;
+
+#if defined (BENTLEYCONFIG_DISPLAY_WIN32)
+    virtual HWND__* _GetHWnd() const {return nullptr;} //!< Note this may return null even on Windows, depending on the associated Render::Target
+    HWND__* GetHWnd() const {return _GetHWnd();}
+#endif
+};
+
+//=======================================================================================
+//! A Render::Device is the platform specific object that connects a render target to a the platform's rendering system.
+//! It holds a reference to a Render::Window.
+//! On Windows, for example, the default Render::Device maps to a "DC"
+// @bsiclass                                                    Keith.Bentley   11/15
+//=======================================================================================
+struct Device : RefCounted<NonCopyableClass>
+{
+    struct PixelsPerInch {int width, height;};
+protected:
+    WindowPtr m_window;
+    Device(Window* window) : m_window(window) {}
+public:
+    virtual PixelsPerInch _GetPixelsPerInch() const = 0;
+    virtual DVec2d _GetDpiScale() const = 0;
+    virtual void* _GetNativeDevice() const = 0;
+#if defined (BENTLEYCONFIG_DISPLAY_WIN32)
+    virtual HDC__* GetDC() const {return nullptr;} //!< Note this may return null even on Windows, depending on the associated Render::Target
+#endif
+    double PixelsFromInches(double inches) const {PixelsPerInch ppi=_GetPixelsPerInch(); return inches * (ppi.height + ppi.width)/2;}
+    Window const* GetWindow() const {return m_window.get();}
+};
+
+//=======================================================================================
 //! A Render::Target is the renderer-specific factory for creating Render::Graphics.
 //! A Render:Target holds the current "scene", the current set of dynamic Graphics, and the current decorators.
 //! When frames are composed, all of those Graphics are rendered, as appropriate.
@@ -1178,10 +1230,11 @@ struct Target : RefCounted<NonCopyableClass>
 {
 protected:
     bool               m_abort;
-    Display::DevicePtr m_device;
+    DevicePtr          m_device;
     ClipPrimitiveCPtr  m_activeVolume;
     GraphicListPtr     m_currentScene;
-    GraphicListPtr     m_dynamics;        // drawn with zbuffer, with scene lighting
+    GraphicListPtr     m_terrain;
+    GraphicListPtr     m_dynamics;
     Decorations        m_decorations;
     BeAtomic<uint32_t> m_graphicsPerSecondScene;
     BeAtomic<uint32_t> m_graphicsPerSecondNonScene;
@@ -1214,6 +1267,7 @@ public:
     };
 
     virtual void _ChangeScene(GraphicListR scene, ClipPrimitiveCP activeVolume) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
+    virtual void _ChangeTerrain(GraphicListR terrain) {VerifyRenderThread(); m_terrain = !terrain.IsEmpty() ? &terrain : nullptr;}
     virtual void _ChangeDynamics(GraphicListR dynamics) {VerifyRenderThread(); m_dynamics = &dynamics;}
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
     virtual void _ChangeRenderPlan(PlanCR) = 0;
@@ -1228,7 +1282,7 @@ public:
     DVec2d GetDpiScale() const {return _GetDpiScale();}
     GraphicPtr CreateGraphic(Graphic::CreateParams const& params) {return _CreateGraphic(params);}
     GraphicPtr CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) {return _CreateSprite(sprite, location, xVec, transparency);}
-    Display::DeviceCP GetDevice() const {return m_device.get();}
+    DeviceCP GetDevice() const {return m_device.get();}
     void OnResized() {_OnResized();}
     void* ResolveOverrides(OvrGraphicParamsCP ovr) {return ovr ? _ResolveOverrides(*ovr) : nullptr;}
     MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return _GetMaterial(id, dgndb);}

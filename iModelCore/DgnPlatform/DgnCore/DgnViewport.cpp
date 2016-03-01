@@ -58,6 +58,14 @@ DRange3d DgnViewport::GetViewCorners() const
     return corners;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2012
+//--------------+------------------------------------------------------------------------
+double DgnViewport::PixelsFromInches(double inches) const
+    {
+    return GetRenderTarget()->GetDevice()->PixelsFromInches(inches);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
