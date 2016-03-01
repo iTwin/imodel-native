@@ -2738,9 +2738,19 @@ Utf8String SchemaKey::FormatSchemaVersion (uint32_t versionMajor, uint32_t versi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Robert.Schili                  01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaKey::FormatLegacySchemaVersion (uint32_t versionMajor, uint32_t versionMinor)
+    {
+    Utf8String versionString;
+    versionString.Sprintf("%02d.%02d", versionMajor, versionMinor);
+    return versionString;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Robert.Schili                  01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String SchemaKey::FormatLegacyFullSchemaName(Utf8CP schemaName, uint32_t versionMajor, uint32_t versionMinor)
     {
-    Utf8PrintfString formattedString("%s.%02d.%02d", schemaName, versionMajor, versionMinor);
+    Utf8PrintfString formattedString("%s.%s", schemaName, FormatLegacySchemaVersion(versionMajor, versionMinor).c_str());
     return formattedString;
     }
 
