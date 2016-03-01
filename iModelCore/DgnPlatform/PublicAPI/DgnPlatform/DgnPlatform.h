@@ -830,8 +830,9 @@ enum class ClipVolumePass
 enum class DrawPurpose
 {
     NotSpecified = 0,
-    CreateScene,
     CreateTerrain,
+    CreateScene,
+    Progressive,
     Plot,
     Pick,
     CaptureGeometry,

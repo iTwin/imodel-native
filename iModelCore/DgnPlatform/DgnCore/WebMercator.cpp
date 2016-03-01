@@ -88,14 +88,12 @@ struct WebMercatorUnitConverter
     BentleyStatus GetTileIdsForView(bvector<WebMercatorModel::TileId>& tileids, uint8_t desiredZoomLevel, DgnViewportR);
 };
 
-
 //=======================================================================================
 // Utility for displaying WebMercator tiles
 // @bsiclass                                                    Sam.Wilson      10/2014
 //=======================================================================================
 struct WebMercatorTileDisplay
 {
-
     WebMercatorUnitConverter m_converter;
     ByteStream m_rgbBuffer;
     bool m_drawingSubstituteTiles;
@@ -111,7 +109,7 @@ struct WebMercatorTileDisplay
     //! @return a unique ID to identify the texture
     //! @param[in] rgbData  The raw image data
     //! @param[in] imageInfo Defines the format, size, and orientation of the raw image data
-    static Render::TexturePtr DefineTexture(ByteStream const& rgbData, RgbImageInfo const& imageInfo, SceneContextR context);
+    static Render::TexturePtr DefineTexture(ByteStream const& rgbData, RgbImageInfo const& imageInfo, RenderContext& context);
 
     //! Add texture to temporary cache, or if a texture is already cached for this url, then replace it.
     //! @note Do not delete the texture. The cache will delete it if and when it is removed by trim or by replacement.
@@ -132,7 +130,7 @@ struct WebMercatorTileDisplay
 
     void DrawMissingTile(ViewContextR context, WebMercatorModel::TileId const& tileid);
 
-    void DrawAndCacheTile(SceneContextR context, WebMercatorModel::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData);
+    void DrawAndCacheTile(RenderContext& context, WebMercatorModel::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData);
 
     #ifdef WEBMERCATOR_DEBUG_TILES
     void DrawTileDebugInfo(ViewContextR context, WebMercatorModel::TileId const& tileid);
@@ -182,7 +180,7 @@ protected:
     //! This function returns Finished if m_missingTiles becomes empty.
     //! This function stops whenever view.CheckStop is true.
     //! OUTPUT: This function removes 0 or more items from m_missingTiles.
-    DGNPLATFORM_EXPORT virtual Completion _DoProgressive(SceneContext& context, WantShow&) override;
+    DGNPLATFORM_EXPORT virtual Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
 
     DGNPLATFORM_EXPORT void DrawView(ViewContextR);
 
@@ -717,7 +715,7 @@ Render::TextureP WebMercatorTileDisplay::GetCachedTexture(RgbImageInfo& cachedIm
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::TexturePtr WebMercatorTileDisplay::DefineTexture(ByteStream const& rgbData, RgbImageInfo const& imageInfo, SceneContextR context)
+Render::TexturePtr WebMercatorTileDisplay::DefineTexture(ByteStream const& rgbData, RgbImageInfo const& imageInfo, RenderContext& context)
     {
     BeAssert(!imageInfo.m_isBGR);
     
@@ -786,7 +784,7 @@ void WebMercatorTileDisplay::DrawTile(ViewContextR context, WebMercatorModel::Ti
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorTileDisplay::DrawAndCacheTile(SceneContextR context, WebMercatorModel::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData)
+void WebMercatorTileDisplay::DrawAndCacheTile(RenderContext& context, WebMercatorModel::TileId const& tileid, Utf8StringCR url, TiledRaster& realityData)
     {
     auto const& data = realityData.GetData();
     RgbImageInfo actualImageInfo = realityData.GetImageInfo();
@@ -1267,7 +1265,7 @@ void WebMercatorDisplay::DrawView(ViewContextR context)
 * This callback is invoked on a timer during progressive display.
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveTask::Completion WebMercatorDisplay::_DoProgressive(SceneContextR context, WantShow& wantShow)
+ProgressiveTask::Completion WebMercatorDisplay::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
     {
     if (BeTimeUtilities::GetCurrentTimeAsUnixMillis() < m_nextRetryTime)
         {
