@@ -1047,9 +1047,13 @@ void DgnElementDependencyGraph::InvokeAffectedDependencyHandlers()
         "Id IN (SELECT ModelId FROM " TEMP_TABLE(TXN_TABLE_Models) ") "
         " ORDER BY DependencyIndex");
 
+    bset<DgnModelId> modelsSeen;
     while (modelsInOrder->Step() == BE_SQLITE_ROW)
         {
         auto mid = modelsInOrder->GetValueId<DgnModelId>(0);
+
+        if (!modelsSeen.insert(mid).second) // The select statement above can return dups. Filter them out.
+            continue;
 
         EDGLOG(LOG_TRACE, "Model %lld", mid.GetValue());
 

@@ -470,6 +470,7 @@ TEST_F(ElementDependencyGraph, DeleteSource)
     auto e2 = InsertElement("E2");
     auto r1  = InsertElementDrivesElementRelationship(e1, e2);
     ASSERT_TRUE(e1.IsValid() && e2.IsValid() && r1.IsValid());
+    TestElementDrivesElementHandler::GetHandler().Clear();
     ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
 
     ASSERT_EQ(1, TestElementDrivesElementHandler::GetHandler().m_relIds.size());

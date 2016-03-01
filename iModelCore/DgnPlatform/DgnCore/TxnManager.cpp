@@ -1314,10 +1314,10 @@ void dgn_TxnTable::ElementDep::UpdateSummary(Changes::Change change, ChangeType 
     
     if (ChangeType::Delete == changeType)
         {
-        int64_t relid = change.GetValue(0, Changes::Change::Stage::Old).GetValueInt64();
-        int64_t relclsid = change.GetValue(1, Changes::Change::Stage::Old).GetValueInt64();
-        int64_t srcelemid = change.GetValue(2, Changes::Change::Stage::Old).GetValueInt64();
-        int64_t tgtelemid = change.GetValue(3, Changes::Change::Stage::Old).GetValueInt64();
+        int64_t relid = change.GetOldValue(0).GetValueInt64();
+        int64_t relclsid = change.GetOldValue(1).GetValueInt64();
+        int64_t srcelemid = change.GetOldValue(2).GetValueInt64();
+        int64_t tgtelemid = change.GetOldValue(3).GetValueInt64();
         BeSQLite::EC::ECInstanceKey relkey((ECN::ECClassId)relclsid, (BeSQLite::EC::ECInstanceId)relid);
         m_deletedRels.push_back(DepRelData(relkey, DgnElementId((uint64_t)srcelemid), DgnElementId((uint64_t)tgtelemid)));
         }
@@ -1400,7 +1400,18 @@ void dgn_TxnTable::Element::AddChange(Changes::Change const& change, ChangeType 
         modelId = m_txnMgr.GetDgnDb().Elements().QueryModelId(elementId);
         }
     else
-        modelId = DgnModelId(change.GetValue(2, stage).GetValueUInt64());   // assumes DgnModelId is column 2
+        {
+        static int s_modelIdColIdx = -1;
+        if (s_modelIdColIdx == -1)
+            {
+            bvector<Utf8String> columnNames;
+            m_txnMgr.GetDgnDb().GetColumns(columnNames, DGN_TABLE(DGN_CLASSNAME_Element));
+            auto i = std::find(columnNames.begin(), columnNames.end(), "ModelId");
+            BeAssert(i != columnNames.end());
+            s_modelIdColIdx = (int)std::distance(columnNames.begin(), i);
+            }
+        modelId = DgnModelId(change.GetValue(s_modelIdColIdx, stage).GetValueUInt64());
+        }
 
     AddElement(elementId, modelId, changeType);
     }
