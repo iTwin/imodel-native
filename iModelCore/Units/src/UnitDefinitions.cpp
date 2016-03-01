@@ -325,7 +325,7 @@ void AddEnergy(UnitRegistry& reg)
     unit = reg.AddUnit(WORK, SI, "GJ", "[GIGA]*N*M");
     reg.AddSynonym(unit, "GIGAJOULE");
     reg.AddUnit(WORK, USCUSTOM, "FOOT_POUNDAL", "POUNDAL*FT"); //, BISQSecUom);
-    unit = reg.AddUnit(WORK, INTERNATIONAL, "BTU", "J", 1.055056e3);
+    unit = reg.AddUnit(WORK, INTERNATIONAL, "BTU", "J", 1.05505585262e3); // Is IT BTU.  http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.  See foot note #9: 
     reg.AddSynonym(unit, "BRITISH_THERMAL_UNIT");
     reg.AddUnit(WORK, USCUSTOM, "KILOBTU", "[KILO]*BTU"); //, BISQSecUom);
 
@@ -753,7 +753,7 @@ void AddSlope(UnitRegistry& reg)
     reg.AddSynonym(unit, "MILLIMETRE_PER_METRE");
     unit = reg.AddUnit(SLOPE, SI, "M/KM", "M*KM(-1)");
     reg.AddSynonym(unit, "METRE_PER_KILOMETRE");
-    reg.AddUnit(SLOPE, USCUSTOM, "FOOT_PER_1000_FOOT", "FT*FT(-1)", 1000); //, BISQSecUom);
+    reg.AddUnit(SLOPE, USCUSTOM, "FOOT_PER_1000_FOOT", "FT*FT(-1)", 1.0e-3); //, BISQSecUom);
     unit = reg.AddUnit(SLOPE, USCUSTOM, "FT/FT", "FT*FT(-1)");
     reg.AddSynonym(unit, "FOOT_PER_FOOT"); // , "FOOT_VERTICAL_PER_FOOT_HORIZONTAL");
     //reg.AddSynonym(unit, "FOOT_HORIZONTAL_PER_FOOT_VERTICAL");
