@@ -754,6 +754,29 @@ void DgnElementDependencyGraph::InvokeHandlersInTopologicalOrder_OneGraph(Edge c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElementDependencyGraph::InvokeHandlersForDeletedRelationships() 
+    {
+    // *** NEEDS WORK: Somehow, we should sort the deleted rels by the model of the their (former) source elements
+    for (auto const& reldata : m_txnMgr.ElementDependencies().m_deletedRels)
+        {
+        auto handler = DgnElementDependencyHandler::GetHandler().FindHandler(m_txnMgr.GetDgnDb(), DgnClassId(reldata.m_relKey.GetECClassId()));
+        if (nullptr == handler)
+            continue;
+
+        EDGLOG(LOG_TRACE, "%sDELETED %lld:%lld(%lld,%lld) (%llx)", "", reldata.m_relKey.GetECClassId(), reldata.m_relKey.GetECInstanceId().GetValue(), 
+                                                                       reldata.m_source.GetValueUnchecked(), reldata.m_target.GetValueUnchecked(),
+                                                                       (intptr_t)handler);
+
+        if (m_processor != nullptr)
+            m_processor->_ProcessDeletedDependency(m_txnMgr.GetDgnDb(), reldata); 
+        else
+            handler->_ProcessDeletedDependency(m_txnMgr.GetDgnDb(), reldata); 
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElementDependencyGraph::InvokeHandlersInTopologicalOrder() 
     {
     // This is a total topological sort of the Edge queue.
@@ -763,6 +786,8 @@ void DgnElementDependencyGraph::InvokeHandlersInTopologicalOrder()
         {
         InvokeHandlersInTopologicalOrder_OneGraph(edge, bvector<Edge>());
         }
+
+    InvokeHandlersForDeletedRelationships();
     }
 
 /*---------------------------------------------------------------------------------**//**

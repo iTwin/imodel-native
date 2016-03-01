@@ -1242,6 +1242,8 @@ struct RootChangedCallback : TestElementDrivesElementHandler::Callback
         incrementDependentWidth(target, db);
         }
 
+    virtual void _ProcessDeletedDependency(DgnDbR db, dgn_TxnTable::ElementDep::DepRelData const& relData) {BeAssert(false && "Not expected to be called");}
+
     RootChangedCallback() : m_invocationCount(0)
         {
         TestElementDrivesElementHandler::SetCallback(this);
