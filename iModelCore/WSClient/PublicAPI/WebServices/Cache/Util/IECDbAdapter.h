@@ -85,9 +85,6 @@ struct EXPORT_VTABLE_ATTRIBUTE IECDbAdapter
 
         virtual ECInstanceKey GetInstanceKeyFromJsonInstance(JsonValueCR ecInstanceJson) = 0;
 
-        //! DEPRECATED
-        virtual BentleyStatus PrepareStatement(ECSqlStatement& statement, ECSqlBuilderCR builder) = 0;
-
         virtual BentleyStatus PrepareStatement(ECSqlStatement& statement, Utf8StringCR ecsql) = 0;
 
         //! Selects as few properties as possible to acomplish valid query

@@ -120,14 +120,14 @@ TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_DataSourceRemoteIdAndECI
         .SelectClassAndProperty("TestSchema.Table", "Legs")
         .SelectClassAndProperty("TestSchema.Table", "Name")
         .SelectClassAndProperty("TestSchema.Table", DataSourceCache_PROPERTY_RemoteId)
-        .SelectClassAndProperty("TestSchema.Table", ECSqlBuilder::ECINSTANCEID_SYSTEMPROPERTY);
+        .SelectClassAndProperty("TestSchema.Table", "ECInstanceId");
 
     auto properties = ServerQueryHelper(options).GetAllSelectedProperties(schemas);
 
     EXPECT_CONTAINS(properties, "Legs");
     EXPECT_CONTAINS(properties, "Name");
     EXPECT_NCONTAIN(properties, DataSourceCache_PROPERTY_RemoteId);
-    EXPECT_NCONTAIN(properties, ECSqlBuilder::ECINSTANCEID_SYSTEMPROPERTY);
+    EXPECT_NCONTAIN(properties, "ECInstanceId");
     }
 
 TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_ECExpressionHasInvalidProperty_ReturnsSelectedPropertyOnly)

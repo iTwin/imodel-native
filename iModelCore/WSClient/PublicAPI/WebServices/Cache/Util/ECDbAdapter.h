@@ -91,9 +91,6 @@ struct ECDbAdapter : public IECDbAdapter, public IECDbSchemaChangeListener
 
         WSCACHE_EXPORT ECInstanceKey GetInstanceKeyFromJsonInstance(JsonValueCR ecInstanceJson) override;
 
-        //! DEPRECATED
-        WSCACHE_EXPORT BentleyStatus PrepareStatement(ECSqlStatement& statement, ECSqlBuilderCR builder) override;
-
         //! Prepare statement. Assert and return error if failed
         WSCACHE_EXPORT BentleyStatus PrepareStatement(ECSqlStatement& statement, Utf8StringCR ecsql) override;
 

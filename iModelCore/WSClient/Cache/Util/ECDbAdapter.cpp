@@ -585,14 +585,6 @@ ICancellationTokenPtr ct
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbAdapter::PrepareStatement(ECSqlStatement& statement, ECSqlBuilderCR builder)
-    {
-    return PrepareStatement(statement, builder.ToString());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    05/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbAdapter::PrepareStatement(ECSqlStatement& statement, Utf8StringCR ecsql)
     {
     ECSqlStatus status = statement.Prepare(*m_ecDb, ecsql.c_str());
