@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/Exp.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -118,7 +118,6 @@ public:
         DateTimeConstantValue,
         Delete,
         DerivedProperty,
-        FoldFunctionCall,
         FromClause,
         FunctionCall,
         ECClassIdFunction,
@@ -150,7 +149,6 @@ public:
         RowValueConstructorList,
         Select,
         Selection,
-        SetFunctionCall,
         Subquery,
         SubqueryRef,
         SubqueryTest,

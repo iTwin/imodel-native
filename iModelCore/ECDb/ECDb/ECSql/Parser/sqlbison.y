@@ -1791,6 +1791,17 @@ fct_spec:
             else
                 YYERROR;
         }
+    |
+        function_name '(' opt_all_distinct function_arg ')'
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
+            $$->append($3);
+            $$->append($4);
+            $$->append($5 = newNode(")", SQL_NODE_PUNCTUATION));
+        };
+
     ;
 function_name0:
         date_function_0Argument
@@ -2218,11 +2229,8 @@ general_set_fct:
             $$->append($4);
             $$->append($5 = newNode(")", SQL_NODE_PUNCTUATION));
         }
-/*    ECSQL_NOT_SUPPORTED
-    |    ordered_set_function
-    |    array_aggregate_function
-*/
     ;
+
 set_fct_type:
         SQL_TOKEN_AVG
     |   SQL_TOKEN_MAX
@@ -2232,64 +2240,7 @@ set_fct_type:
     |   SQL_TOKEN_ANY
     |   SQL_TOKEN_SOME
     ;
-	/*
-	
-ordered_set_function:    
-    |    inverse_distribution_function
-    ;
-	
-	*/
-	/*
-within_group_specification:
-    {
-        $$ = SQL_NEW_RULE;
-    }
-    |    SQL_TOKEN_WITHIN SQL_TOKEN_GROUP '(' opt_order_by_clause ')'
-    {
-        $$ = SQL_NEW_RULE;
-        $$->append($1);
-        $$->append($2);
-        $$->append($3 = newNode("(", SQL_NODE_PUNCTUATION));
-        $$->append($4);
-        $$->append($5 = newNode(")", SQL_NODE_PUNCTUATION));
-    }
-    ;
-	
-hypothetical_set_function_value_expression_list:
-    value_exp_commalist
-    ; 
-    
-inverse_distribution_function:
-    inverse_distribution_function_type '('inverse_distribution_function_argument ')' within_group_specification
-    {
-        $$ = SQL_NEW_RULE;
-        $$->append($1);
-        $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
-        $$->append($3);
-        $$->append($4 = newNode(")", SQL_NODE_PUNCTUATION));
-    }
-    ;
-	
-inverse_distribution_function_argument:
-        num_value_exp
-    ;
-inverse_distribution_function_type:
-        SQL_TOKEN_PERCENTILE_CONT
-    |    SQL_TOKEN_PERCENTILE_DISC
-    ;
-    
-array_aggregate_function:
-    SQL_TOKEN_ARRAY_AGG '(' value_exp opt_order_by_clause ')'
-    {
-        $$ = SQL_NEW_RULE;
-        $$->append($1);
-        $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
-        $$->append($3);
-        $$->append($4);
-        $$->append($5 = newNode(")", SQL_NODE_PUNCTUATION));
-    }
-    ;
-    */
+
 outer_join_type:
         SQL_TOKEN_LEFT %prec SQL_TOKEN_LEFT
         {
@@ -2346,7 +2297,7 @@ cross_union:
     ;
 
 qualified_join:
-        /* wenn SQL_TOKEN_NATURAL, dann keine join_spec */
+        /* if SQL_TOKEN_NATURAL, then no join_spec */
         table_ref SQL_TOKEN_NATURAL join_type SQL_TOKEN_JOIN table_ref
         {
             $$ = SQL_NEW_RULE;
@@ -2418,11 +2369,8 @@ cast_operand:
     ;
 cast_target:
     ec_data_type
-/*
-        table_node
-      | data_type
-*/
     ;
+
 ec_data_type:
     SQL_TOKEN_BINARY 
     | SQL_TOKEN_BOOLEAN

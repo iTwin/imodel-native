@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ValueExp.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -500,41 +500,51 @@ bmap<Utf8CP, ECN::PrimitiveType, CompareIUtf8> FunctionCallExp::s_builtinFunctio
 //+---------------+---------------+---------------+---------------+---------------+------
 Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
-    switch (mode)
+    if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
-            case Exp::FinalizeParseMode::BeforeFinalizingChildren:
-                {
-                const ECN::PrimitiveType returnType = DetermineReturnType(ctx.GetECDb(), GetFunctionName(), (int) GetChildrenCount());
-                SetTypeInfo(ECSqlTypeInfo(returnType));
-                return FinalizeParseStatus::NotCompleted;
-                }
-
-            case Exp::FinalizeParseMode::AfterFinalizingChildren:
-                {
-                //verify that args are all primitive and handle parameter args
-                size_t argCount = GetChildrenCount();
-                for (size_t i = 0; i < argCount; i++)
-                    {
-                    ValueExp* argExp = GetChildP<ValueExp>(i);
-                    if (argExp->IsParameterExp())
-                        continue;
-
-                    ECSqlTypeInfo::Kind typeKind = argExp->GetTypeInfo().GetKind();
-                    if (typeKind != ECSqlTypeInfo::Kind::Primitive && typeKind != ECSqlTypeInfo::Kind::Null)
-                        {
-                        ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Function '%s' can only be called with primitive arguments. Argument #%d is not primitive.",
-                                     m_functionName.c_str(), i + 1);
-                        return FinalizeParseStatus::Error;
-                        }
-                    }
-
-                return FinalizeParseStatus::Completed;
-                }
-
-            default:
-                BeAssert(false);
-                return FinalizeParseStatus::Error;
+        const ECN::PrimitiveType returnType = DetermineReturnType(ctx.GetECDb(), GetFunctionName(), (int) GetChildrenCount());
+        SetTypeInfo(ECSqlTypeInfo(returnType));
+        return FinalizeParseStatus::NotCompleted;
         }
+
+    //verify that args are all primitive and handle parameter args
+    const size_t argCount = GetChildrenCount();
+    if (m_setQuantifier != SqlSetQuantifier::NotSpecified && argCount != 1)
+        {
+        ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Function '%s' can only have one argument if used with the %s operator.",
+                                      m_functionName.c_str(), ExpHelper::ToSql(m_setQuantifier));
+        return FinalizeParseStatus::Error;
+        }
+
+    //no validation needed for count as it accepts everything
+    if (m_isStandardSetFunction && m_functionName.EqualsI("count"))
+        return FinalizeParseStatus::Completed;
+
+    bool allArgsAreConstant = true;
+    for (size_t i = 0; i < argCount; i++)
+        {
+        ValueExp* argExp = GetChildP<ValueExp>(i);
+        if (argExp->IsParameterExp())
+            continue;
+
+        if (!argExp->IsConstant())
+            allArgsAreConstant = false;
+
+        ECSqlTypeInfo::Kind typeKind = argExp->GetTypeInfo().GetKind();
+        if (typeKind != ECSqlTypeInfo::Kind::Primitive && typeKind != ECSqlTypeInfo::Kind::Null)
+            {
+            ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Function '%s' can only be called with primitive arguments. Argument #%d is not primitive.",
+                                          m_functionName.c_str(), i + 1);
+            return FinalizeParseStatus::Error;
+            }
+        }
+
+    //set functions are never constant per row, as they aggregate. For custom set functions we'd have to do this too,
+    //but we don't know which custom functions are aggregate and which not
+    if (!m_isStandardSetFunction)
+        SetIsConstant(allArgsAreConstant);
+
+    return FinalizeParseStatus::Completed;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -550,9 +560,16 @@ bool FunctionCallExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, Para
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void FunctionCallExp::AddArgument (std::unique_ptr<ValueExp> argument)
+BentleyStatus FunctionCallExp::AddArgument(std::unique_ptr<ValueExp> argument)
     {
-    AddChild (move (argument));
+    if (m_setQuantifier != SqlSetQuantifier::NotSpecified && GetChildrenCount() >= 1)
+        {
+        BeAssert(false && "Only one argument is allowed for aggregate functions that use an aggregate operator.");
+        return ERROR;
+        }
+
+    AddChild(move(argument));
+    return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -628,7 +645,12 @@ ECN::PrimitiveType FunctionCallExp::DetermineReturnType(ECDbCR ecdb, Utf8CP func
 Utf8String FunctionCallExp::_ToString() const
     {
     Utf8String str("FunctionCall [Function: ");
-    str.append(m_functionName).append("]");
+    str.append(m_functionName);
+    
+    if (m_setQuantifier != SqlSetQuantifier::NotSpecified)
+        str.append(" Aggregate operator: ").append(ExpHelper::ToSql(m_setQuantifier));
+        
+    str.append("]");
     return str;
     }
 
@@ -638,8 +660,12 @@ Utf8String FunctionCallExp::_ToString() const
 void FunctionCallExp::_DoToECSql(Utf8StringR ecsql) const
     {
     ecsql.append(m_functionName).append("(");
+
+    if (m_setQuantifier != SqlSetQuantifier::NotSpecified)
+        ecsql.append(ExpHelper::ToSql(m_setQuantifier)).append(" ");
+
     bool isFirstItem = true;
-    for (auto argExp : GetChildren())
+    for (Exp const* argExp : GetChildren())
         {
         if (!isFirstItem)
             ecsql.append(",");
@@ -647,9 +673,9 @@ void FunctionCallExp::_DoToECSql(Utf8StringR ecsql) const
         ecsql.append(argExp->ToECSql());
         isFirstItem = false;
         }
+
     ecsql.append(")");
     }
-
 
 //****************************** LikeRhsValueExp *****************************************
 //-----------------------------------------------------------------------------------------
@@ -940,171 +966,6 @@ Utf8String ParameterExp::_ToString() const
     return str;
     }
 
-
-//****************************** SetFunctionCallExp *****************************************
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-Exp::FinalizeParseStatus SetFunctionCallExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
-    {
-    if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
-        return FinalizeParseStatus::NotCompleted;
-
-    Utf8CP functionName = GetFunctionName();
-
-    const int childCount = (int) GetChildren().size();
-    //all standard set functions require 1 arg
-    if (childCount != 1)
-        {
-        ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid function call '%s'. Function %s expects 1 argument.", ToECSql().c_str(), functionName);
-        return FinalizeParseStatus::Error;
-        }
-
-    ECN::PrimitiveType returnType = DetermineReturnType(ctx.GetECDb(), functionName, childCount);
-    SetTypeInfo(ECSqlTypeInfo(returnType));
-
-    //check arg type for all functions except COUNT (which can take any arg)
-    Function function = GetFunction();
-    if (function != Function::Count)
-        {
-        ECSqlTypeInfo const& argTypeInfo = GetChild<ValueExp>(0)->GetTypeInfo();
-
-        if (Function::Any == function ||
-            Function::Every == function ||
-            Function::Some == function)
-            {
-            if (!argTypeInfo.IsPrimitive() || argTypeInfo.GetPrimitiveType() != ECN::PRIMITIVETYPE_Boolean)
-                {
-                ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid function call '%s'. Function %s expects boolean argument", ToECSql().c_str(), functionName);
-                return FinalizeParseStatus::Error;
-                }
-            }
-        else
-            {
-            if (!argTypeInfo.IsNumeric())
-                {
-                ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid function call '%s'. Function %s expects numeric argument", ToECSql().c_str(), functionName);
-                return FinalizeParseStatus::Error;
-                }
-            }
-        }
-
-    return FinalizeParseStatus::Completed;
-    }
-
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-void SetFunctionCallExp::_DoToECSql(Utf8StringR ecsql) const
-    {
-    ecsql.append(GetFunctionName()).append ("(");
-    Utf8String selectionType = ExpHelper::ToSql(GetSetQuantifier());
-    if (!selectionType.empty())
-        ecsql.append (selectionType).append (" ");
-
-    bool isFirstItem = true;
-    for(auto argExp : GetChildren ())
-        {
-        if (!isFirstItem)
-            ecsql.append(", ");
-
-        ecsql.append(argExp->ToECSql());
-        isFirstItem = false;
-        }
-
-    ecsql.append(")");
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String SetFunctionCallExp::_ToString() const 
-    {
-    Utf8String str ("SetFunctionCall [Function: ");
-    str.append (GetFunctionName ()).append (", Type: ").append (ExpHelper::ToSql (m_setQuantifier)).append ("]");
-    return str;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    03/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-Utf8CP SetFunctionCallExp::ToString(Function function)
-    {
-    switch (function)
-        {
-            case Function::Any: return "ANY";
-            case Function::Avg: return "AVG";
-            case Function::Count: return "COUNT";
-            case Function::Every: return "EVERY";
-            case Function::Max: return "MAX";
-            case Function::Min: return "MIN";
-            case Function::Some: return "SOME";
-            case Function::Sum: return "SUM";
-
-            default:
-                BeAssert(false && "Enum Function has changed. Please update ToString");
-                return nullptr;
-        }
-    }
-
-//****************************** FoldFunctionCallExp *****************************************
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    01/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-Exp::FinalizeParseStatus FoldFunctionCallExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
-    {
-    if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
-        {
-        SetTypeInfo (ECSqlTypeInfo (PRIMITIVETYPE_String));
-        return FinalizeParseStatus::NotCompleted;
-        }
-
-    Utf8CP functionName = GetFunctionName();
-    const int childCount = (int) GetChildren().size();
-    
-    ECN::PrimitiveType returnType = DetermineReturnType(ctx.GetECDb(), functionName, childCount);
-    SetTypeInfo(ECSqlTypeInfo(returnType));
-
-    ValueExp const* argExp = GetChild<ValueExp>(0);
-    SetIsConstant(argExp->IsConstant());
-
-    ECSqlTypeInfo const& typeInfo = argExp->GetTypeInfo ();
-    if (!typeInfo.IsPrimitive () || typeInfo.GetPrimitiveType () != PRIMITIVETYPE_String)
-        {
-        ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid function call '%s'. Function %s expects string argument", ToECSql ().c_str (), functionName);
-        return FinalizeParseStatus::Error;
-        }
-
-    return FinalizeParseStatus::Completed;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    01/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String FoldFunctionCallExp::_ToString () const
-    {
-    Utf8String str ("FoldFunctionCall [Function: ");
-    str.append (GetFunctionName ()).append ("]");
-    return str;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    03/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-Utf8CP FoldFunctionCallExp::ToString(FoldFunction foldFunction)
-    {
-    switch (foldFunction)
-        {
-            case FoldFunction::Lower: return "LOWER";
-            case FoldFunction::Upper: return "UPPER";
-            default:
-                BeAssert(false && "Programmer Error: new value added to FoldFunction enum. Please update ToString method.");
-                return nullptr;
-        }
-    }
 
 //****************************** UnaryExp *****************************************
 //-----------------------------------------------------------------------------------------

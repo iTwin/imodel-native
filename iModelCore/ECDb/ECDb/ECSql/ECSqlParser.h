@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlParser.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -87,13 +87,8 @@ private:
 
 
     mutable std::unique_ptr<ECSqlParseContext> m_context;
+    static std::unique_ptr<connectivity::OSQLParser> s_parser;
 
-    //WIP_ECSQL: Mem leaks where there is error in statement. Need to use shared_ptr instead of unique_ptr
-    static connectivity::OSQLParser* GetSharedParser()
-        {
-        static std::unique_ptr<connectivity::OSQLParser> s_parser = std::unique_ptr<connectivity::OSQLParser>(new connectivity::OSQLParser(com::sun::star::lang::XMultiServiceFactory::CreateInstance()));
-        return s_parser.get();
-        }
     //root nodes
     BentleyStatus parse_select_statement(std::unique_ptr<SelectStatementExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus parse_insert_statement(std::unique_ptr<InsertStatementExp>&, connectivity::OSQLParseNode const*) const;
@@ -136,8 +131,8 @@ private:
     BentleyStatus parse_fold(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus parse_and_add_functionarg(FunctionCallExp&, connectivity::OSQLParseNode const*) const;
 
-    BentleyStatus parse_getpointcoordinate_fct_spec(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const&, Utf8StringCR functionName) const;
     BentleyStatus parse_general_set_fct(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus parse_getpointcoordinate_fct_spec(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const&, Utf8StringCR functionName) const;
     BentleyStatus parse_group_by_clause(std::unique_ptr<GroupByExp>&, connectivity::OSQLParseNode const*) const;
 
     BentleyStatus parse_having_clause(std::unique_ptr<HavingExp>&, connectivity::OSQLParseNode const*) const;
@@ -189,6 +184,7 @@ private:
 
     BentleyStatus parse_schema_name(Utf8CP& schemaName, Utf8CP& className, connectivity::OSQLParseNode const*) const;
     BentleyStatus parse_search_condition(std::unique_ptr<BooleanExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus parse_set_fct(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const&, Utf8CP functionName, bool isStandardSetFunction) const;
     BentleyStatus parse_sql_not(bool& isNot, connectivity::OSQLParseNode const*) const;
 
     BentleyStatus parse_unary_predicate(std::unique_ptr<BooleanExp>&, connectivity::OSQLParseNode const*) const;
@@ -199,9 +195,11 @@ private:
     BentleyStatus parse_values_or_query_spec(std::unique_ptr<ValueExpListExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus parse_property_path(std::unique_ptr<PropertyNameExp>&, connectivity::OSQLParseNode const*) const;
 
-    static bool IsPredicate(connectivity::OSQLParseNode const* parseNode);
-
     IssueReporter const& GetIssueReporter() const { BeAssert(m_context != nullptr); return m_context->GetIssueReporter(); }
+
+    //WIP_ECSQL: Mem leaks where there is error in statement. Need to use shared_ptr instead of unique_ptr
+    static connectivity::OSQLParser* GetSharedParser();
+    static bool IsPredicate(connectivity::OSQLParseNode const* parseNode);
 
 public:
     ECSqlParser() : m_context (nullptr) {}
