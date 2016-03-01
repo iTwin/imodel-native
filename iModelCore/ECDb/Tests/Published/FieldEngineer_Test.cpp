@@ -252,22 +252,20 @@ bool PopulateSimpleCompany (ECDbR ecDb)
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                   Ramanujam.Raman                  02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceId GetIdOfPerson (ECDbR ecDb, ECClassCR ecClass, Utf8CP firstName, Utf8CP lastName)
+ECInstanceId GetIdOfPerson(ECDbR ecDb, ECClassCR ecClass, Utf8CP firstName, Utf8CP lastName)
     {
-    ECSqlSelectBuilder sqlBuilder;
-    sqlBuilder.From (ecClass).Select (ECSqlBuilder::ECINSTANCEID_SYSTEMPROPERTY).Where ("FirstName = ? AND LastName = ?");
-
+    Utf8String ecsql("SELECT ECInstanceId FROM ");
+    ecsql.append(ecClass.GetECSqlName()).append(" WHERE FirstName=? AND LastName=?");
     ECSqlStatement statement;
-    auto stat = statement.Prepare (ecDb, sqlBuilder.ToString ().c_str ());
-    if (stat != ECSqlStatus::Success)
-        return ECInstanceId ();
+    if (ECSqlStatus::Success != statement.Prepare(ecDb, ecsql.c_str()))
+        return ECInstanceId();
 
-    statement.BindText (1, firstName, IECSqlBinder::MakeCopy::No);
-    statement.BindText (2, lastName, IECSqlBinder::MakeCopy::No);
+    statement.BindText(1, firstName, IECSqlBinder::MakeCopy::No);
+    statement.BindText(2, lastName, IECSqlBinder::MakeCopy::No);
     if (BE_SQLITE_ROW != statement.Step())
-        return ECInstanceId ();
+        return ECInstanceId();
 
-    return statement.GetValueId<ECInstanceId> (0);
+    return statement.GetValueId<ECInstanceId>(0);
     }
 
 /*---------------------------------------------------------------------------------**//**

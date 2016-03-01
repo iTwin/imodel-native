@@ -251,30 +251,26 @@ ECSqlStepTaskCreateStatus InsertStructArrayStepTask::Create(unique_ptr<InsertStr
         return ECSqlStepTaskCreateStatus::ArrayElementTypeIsUnmapped;
         }
 
-    ECSqlInsertBuilder builder;
-    builder.InsertInto(arrayElementType);
+    Utf8String ecsql;
+    ecsql.Sprintf("INSERT INTO %s(%s,%s,%s,%s", arrayElementType.GetECSqlName().c_str(),
+                  ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME, ECDbSystemSchemaHelper::PARENTECINSTANCEID_PROPNAME,
+                  ECDbSystemSchemaHelper::ECPROPERTYPATHID_PROPNAME, ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME);
+    Utf8String ecsqlValuesClause(") VALUES(?,?,?,?");
 
-    //ECSQL_Todo: Change following to constants defines
-    builder.AddValue(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME, "?");
-    builder.AddValue(ECDbSystemSchemaHelper::PARENTECINSTANCEID_PROPNAME, "?");
-    builder.AddValue(ECDbSystemSchemaHelper::ECPROPERTYPATHID_PROPNAME, "?");
-    builder.AddValue(ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME, "?");
-
-    for (auto& propertyMap : arrayElementTypeMap->GetPropertyMaps())
+    for (PropertyMapCP propertyMap : arrayElementTypeMap->GetPropertyMaps())
         {
         if (propertyMap->IsSystemPropertyMap())
             continue;
 
-        Utf8String propName("[");
-        propName.append(propertyMap->GetProperty().GetName()).append("]");
-
-        builder.AddValue(propName.c_str(), "?");
+        ecsql.append(",[").append(propertyMap->GetProperty().GetName()).append("]");
+        ecsqlValuesClause.append(",?");
         }
 
+    ecsql.append(ecsqlValuesClause).append(")");
 
-    auto aInsertStepTask = unique_ptr<InsertStructArrayStepTask> (new InsertStructArrayStepTask(*structArrayPropertyMap, classMap));
+    unique_ptr<InsertStructArrayStepTask> aInsertStepTask = unique_ptr<InsertStructArrayStepTask> (new InsertStructArrayStepTask(*structArrayPropertyMap, classMap));
     aInsertStepTask->GetStatement().Initialize(preparedContext, propertyMap->GetProperty().GetAsArrayProperty(), nullptr);
-    auto ecsqlStatus = aInsertStepTask->GetStatement().Prepare(ecdb, builder.ToString().c_str());
+    ECSqlStatus ecsqlStatus = aInsertStepTask->GetStatement().Prepare(ecdb, ecsql.c_str());
     if (ecsqlStatus != ECSqlStatus::Success)
         return ECSqlStepTaskCreateStatus::ECSqlError;
 

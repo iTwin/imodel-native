@@ -307,7 +307,7 @@ TEST_F(ECDbInstances, InsertECInstancesWithNullValues)
             {
             ECPropertyCP prop = statement.GetColumnInfo (i).GetProperty ();
             Utf8StringCR propName = prop->GetName();
-            bool expectedIsNull = propName.CompareTo (nonNullPropertyName) != 0 && !propName.Equals (ECSqlBuilder::ECINSTANCEID_SYSTEMPROPERTY);
+            bool expectedIsNull = propName.CompareTo (nonNullPropertyName) != 0 && !propName.Equals ("ECInstanceId");
             if (prop->GetIsArray())
                 expectedIsNull = false; // arrays are never Null
 

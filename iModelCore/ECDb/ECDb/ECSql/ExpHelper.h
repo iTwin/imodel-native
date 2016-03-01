@@ -8,7 +8,6 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
-#include <ECDb/ECSqlBuilder.h>
 #include "Exp.h"
 #include "SelectStatementExp.h"
 #include "JoinExp.h"

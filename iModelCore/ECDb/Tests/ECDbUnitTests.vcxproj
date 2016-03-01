@@ -64,7 +64,6 @@
     <ClCompile Include="Published\ECSqlSelectTests.cpp" />
     <ClCompile Include="Published\ECSqlStatementCache_Test.cpp" />
     <ClCompile Include="Published\ECSqlExpectedResultImpls.cpp" />
-    <ClCompile Include="Published\ECSqlBuilder_Tests.cpp" />
     <ClCompile Include="Published\ECSqlStatementTestFixture.cpp" />
     <ClCompile Include="Published\ECSqlStatementTestsSchemaHelper.cpp" />
     <ClCompile Include="Published\ECSqlStatement_FunctionTests.cpp" />

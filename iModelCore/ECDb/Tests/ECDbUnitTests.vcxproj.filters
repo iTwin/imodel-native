@@ -31,9 +31,6 @@
     <ClCompile Include="Published\ECSqlCommonTestDataset.cpp">
       <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECSqlBuilder_Tests.cpp">
-      <Filter>Published\ECSql</Filter>
-    </ClCompile>
     <ClCompile Include="Published\JsonLibrary_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>

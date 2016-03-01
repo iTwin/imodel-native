@@ -70,9 +70,6 @@
     <ClInclude Include="..\PublicAPI\ECDb\ECDbSchemaManager.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\ECDb\ECSqlBuilder.h">
-      <Filter>PublicApi</Filter>
-    </ClInclude>
     <ClInclude Include="ECSql\Parser\SqlBison.h">
       <Filter>ECSql\OSQLParser</Filter>
     </ClInclude>
@@ -356,7 +353,6 @@
       <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
-    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
     <ClInclude Include="ECDbSql.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
@@ -419,6 +415,9 @@
       <Filter>ECDbSchemaManager\Editor</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECDbExpressionSymbolProviders.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
   </ItemGroup>
@@ -617,12 +616,6 @@
     </ClCompile>
     <ClCompile Include="ECSql\ECSqlPreparedStatement.cpp">
       <Filter>ECSql\ECSqlStatement</Filter>
-    </ClCompile>
-    <ClCompile Include="ECSqlBuilder.cpp">
-      <Filter>ECSql</Filter>
-    </ClCompile>
-    <ClCompile Include="ECSqlBuilderClauses.cpp">
-      <Filter>ECSql</Filter>
     </ClCompile>
     <ClCompile Include="ECDbPolicyManager.cpp" />
     <ClCompile Include="ECSql\NativeSqlBuilder.cpp">

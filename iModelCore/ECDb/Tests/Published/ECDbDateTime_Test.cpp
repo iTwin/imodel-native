@@ -357,8 +357,7 @@ TEST_F(ECDbDateTimeTests, DateTimeStorageAccuracyTest)
         }
 
     Utf8String ecsql;
-    ecsql.Sprintf("SELECT %s,%s FROM ONLY %s", ECSqlBuilder::ECINSTANCEID_SYSTEMPROPERTY, dateTimePropertyName,
-                  testClass->GetECSqlName().c_str());
+    ecsql.Sprintf("SELECT ECInstanceId,%s FROM ONLY %s", dateTimePropertyName, testClass->GetECSqlName().c_str());
 
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, ecsql.c_str()));

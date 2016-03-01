@@ -40,8 +40,6 @@
     <ClCompile Include="ECDbSchemaWriter.cpp" />
     <ClCompile Include="ECDbSchemaReader.cpp" />
     <ClCompile Include="ECSchemaValidator.cpp" />
-    <ClCompile Include="ECSqlBuilder.cpp" />
-    <ClCompile Include="ECSqlBuilderClauses.cpp" />
     <ClCompile Include="ECSql\ClassRefExp.cpp" />
     <ClCompile Include="ECSql\DeleteStatementExp.cpp" />
     <ClCompile Include="ECSql\ECInstanceDeleter.cpp" />
@@ -134,7 +132,6 @@
     <ClInclude Include="..\PublicAPI\ECDb\ECInstanceFinder.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECJsonUtility.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECRelationshipPath.h" />
-    <ClInclude Include="..\PublicAPI\ECDb\ECSqlBuilder.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECSqlColumnInfo.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECSqlStatement.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECSqlStatus.h" />

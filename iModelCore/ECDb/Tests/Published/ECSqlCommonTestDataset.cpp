@@ -873,17 +873,18 @@ bool ECSqlCommonTestDataset::ToECSql (Utf8StringR ecsql, ECSqlType type, ECClass
         {
             case ECSqlType::Select:
                 {
-                ECSqlSelectBuilder ecsqlBuilder;
-                ecsqlBuilder.Select (ECSqlSelectBuilder::ECINSTANCEID_SYSTEMPROPERTY).From (targetClass, polymorphic);
-                ecsql = ecsqlBuilder.ToString ();
+                ecsql.append("SELECT ECInstanceId FROM ");
+                if (!polymorphic)
+                    ecsql.append("ONLY ");
+
+                ecsql.append(targetClass.GetECSqlName());
                 return true;
                 }
 
             case ECSqlType::Insert:
                 {
-                ECSqlInsertBuilder ecsqlBuilder;
-                ecsqlBuilder.InsertInto (targetClass);
-                ecsql = ecsqlBuilder.ToString ();
+                ecsql.append("INSERT INTO ");
+                ecsql.append(targetClass.GetECSqlName());
                 return true;
                 }
 
@@ -898,17 +899,21 @@ bool ECSqlCommonTestDataset::ToECSql (Utf8StringR ecsql, ECSqlType type, ECClass
                 if (!found)
                     return false;
 
-                ECSqlUpdateBuilder ecsqlBuilder;
-                ecsqlBuilder.Update (targetClass, polymorphic).AddSet (propAccessString.c_str (), "NULL");
-                ecsql = ecsqlBuilder.ToString ();
+                ecsql.append("UPDATE ");
+                if (!polymorphic)
+                    ecsql.append("ONLY ");
+
+                ecsql.append(targetClass.GetECSqlName()).append(" SET ").append(propAccessString).append("=NULL");
                 return true;
                 }
 
             case ECSqlType::Delete:
                 {
-                ECSqlDeleteBuilder ecsqlBuilder;
-                ecsqlBuilder.DeleteFrom (targetClass, polymorphic);
-                ecsql = ecsqlBuilder.ToString ();
+                ecsql.append("DELETE FROM ");
+                if (!polymorphic)
+                    ecsql.append("ONLY ");
+
+                ecsql.append(targetClass.GetECSqlName());
                 return true;
                 }
 

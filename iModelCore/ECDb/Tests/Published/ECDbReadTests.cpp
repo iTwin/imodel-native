@@ -17,19 +17,24 @@ struct ReadTests : ECDbTestFixture {};
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t CountInstancesOfClass (ECDbR db, ECClassCR ecClass, bool isPolymorphic)
+int CountInstancesOfClass (ECDbR db, ECClassCR ecClass, bool isPolymorphic)
     {
-    ECSqlSelectBuilder sqlBuilder;
-    sqlBuilder.From (ecClass, isPolymorphic).SelectAll();
-    ECSqlStatement statement;
-    auto stat = statement.Prepare (db, sqlBuilder.ToString ().c_str ());
-    if (stat != ECSqlStatus::Success)
-        return 0;
+    Utf8String ecsql("SELECT count(*) FROM ");
 
-    size_t count = 0;
-    while (statement.Step() == BE_SQLITE_ROW)
-        count++;
-    return count;
+    if (!isPolymorphic)
+        ecsql.append("ONLY ");
+
+    ecsql.append(ecClass.GetECSqlName());
+
+    ECSqlStatement statement;
+    ECSqlStatus stat = statement.Prepare (db, ecsql.c_str ());
+    if (stat != ECSqlStatus::Success)
+        return -1;
+
+    if (statement.Step() != BE_SQLITE_ROW)
+        return -1;
+
+    return statement.GetValueInt(0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -42,10 +47,9 @@ TEST_F(ReadTests, ReadPolymorphic)
     /*
      * Test retrieval when parent and children are all in the same table (TablePerHierarchy)
      */
-    size_t count;
     ECClassCP furniture = db.Schemas().GetECClass("StartupCompany", "Furniture");
     ASSERT_TRUE (furniture != nullptr);
-    count = CountInstancesOfClass (db, *furniture, false);
+    int count = CountInstancesOfClass (db, *furniture, false);
     ASSERT_EQ (3, count);
     count = CountInstancesOfClass (db, *furniture, true);
     ASSERT_EQ (9, count);
@@ -125,50 +129,49 @@ TEST_F(ReadTests, OrderBy)
 
     // Add some employees
     ECClassCP employeeClass = db.Schemas().GetECClass("StartupCompany", "Employee");
-    IECInstancePtr employee;
-    employee = CreatePerson (*employeeClass, "Leonardo", "Da Vinci");
-    InsertInstance (db, *employeeClass, *employee);
-    employee = CreatePerson (*employeeClass, "Galileo", "Galilei");
-    InsertInstance (db, *employeeClass, *employee);
-    employee = CreatePerson (*employeeClass, "Nikola", "Tesla");
-    InsertInstance (db, *employeeClass, *employee);
-    employee = CreatePerson (*employeeClass, "Niels", "Bohr");
-    InsertInstance (db, *employeeClass, *employee);
-    employee = CreatePerson (*employeeClass, "Albert", "Einstein");
-    InsertInstance (db, *employeeClass, *employee);
-    employee = CreatePerson (*employeeClass, "Albert", "Einstein");
-    InsertInstance (db, *employeeClass, *employee);
-    employee = CreatePerson (*employeeClass, "Srinivasa", "Ramanujan");
-    InsertInstance (db, *employeeClass, *employee);
+    IECInstancePtr employee = CreatePerson(*employeeClass, "Leonardo", "Da Vinci");
+    InsertInstance(db, *employeeClass, *employee);
+    employee = CreatePerson(*employeeClass, "Galileo", "Galilei");
+    InsertInstance(db, *employeeClass, *employee);
+    employee = CreatePerson(*employeeClass, "Nikola", "Tesla");
+    InsertInstance(db, *employeeClass, *employee);
+    employee = CreatePerson(*employeeClass, "Niels", "Bohr");
+    InsertInstance(db, *employeeClass, *employee);
+    employee = CreatePerson(*employeeClass, "Albert", "Einstein");
+    InsertInstance(db, *employeeClass, *employee);
+    employee = CreatePerson(*employeeClass, "Albert", "Einstein");
+    InsertInstance(db, *employeeClass, *employee);
+    employee = CreatePerson(*employeeClass, "Srinivasa", "Ramanujan");
+    InsertInstance(db, *employeeClass, *employee);
     db.SaveChanges();
 
     // Retrieve them in alphabetical order
-    ECSqlSelectBuilder selectBuilder;
-    selectBuilder.From(*employeeClass).Select("FirstName, LastName").OrderBy("LastName, FirstName"); 
+    Utf8String ecsql("SELECT FirstName,LastName FROM ");
+    ecsql.append(employeeClass->GetECSqlName()).append(" ORDER BY LastName, FirstName");
     ECSqlStatement statement;
-    auto stat = statement.Prepare (db, selectBuilder.ToString ().c_str ());
+    ECSqlStatus stat = statement.Prepare(db, ecsql.c_str());
     ASSERT_EQ(ECSqlStatus::Success, stat);
-    
+
     // Just log for a manual check
     Utf8CP firstName, lastName;
-    while (statement.Step () == BE_SQLITE_ROW)
+    while (statement.Step() == BE_SQLITE_ROW)
         {
-        firstName = statement.GetValueText (0);
-        lastName = statement.GetValueText (1);
-        LOG.infov ("%s, %s", lastName, firstName);
+        firstName = statement.GetValueText(0);
+        lastName = statement.GetValueText(1);
+        LOG.debugv("%s, %s", lastName, firstName);
         }
 
     // Validate the first few entries
     statement.Reset();
-    auto stepStat = statement.Step();
-    ASSERT_EQ ((int) BE_SQLITE_ROW, (int) stepStat);
-    lastName = statement.GetValueText (1);
-    ASSERT_TRUE (0 == ::strcmp (lastName, "Bohr"));
+    DbResult stepStat = statement.Step();
+    ASSERT_EQ(BE_SQLITE_ROW, stepStat);
+    lastName = statement.GetValueText(1);
+    ASSERT_EQ(0, strcmp(lastName, "Bohr"));
 
     stepStat = statement.Step();
-    ASSERT_EQ ((int) BE_SQLITE_ROW, (int) stepStat);
-    lastName = statement.GetValueText (1);
-    ASSERT_TRUE (0 == ::strcmp (lastName, "Da Vinci"));
+    ASSERT_EQ(BE_SQLITE_ROW, stepStat);
+    lastName = statement.GetValueText(1);
+    ASSERT_EQ(0, strcmp(lastName, "Da Vinci"));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -188,18 +191,15 @@ TEST_F(ReadTests, LimitOffset)
         bool instanceStatus = SetIntValue (*ecInstance, "intProp", ii);
         ASSERT_TRUE (instanceStatus);
         ECInstanceKey instanceKey;
-        auto insertStatus = inserter.Insert (instanceKey, *ecInstance);
-        ASSERT_TRUE (SUCCESS == insertStatus);
+        ASSERT_EQ(SUCCESS, inserter.Insert (instanceKey, *ecInstance));
         }
     db.SaveChanges();
 
     // Setup query for a page of instances
-    ECSqlSelectBuilder selectBuilder;
-    selectBuilder.From(*ecClass).Select("intProp").Limit(":pageSize", ":pageSize * (:pageNumber - 1)");
+    Utf8String ecsql("SELECT intProp FROM ");
+    ecsql.append(ecClass->GetECSqlName()).append(" LIMIT :pageSize", ":pageSize * (:pageNumber - 1)");
     ECSqlStatement statement;
-    auto stat = statement.Prepare (db, selectBuilder.ToString ().c_str ());
-
-    ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of ECSQL " << selectBuilder.ToString() << " failed";
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare (db, ecsql.c_str ())) << ecsql.c_str();
     int pageSizeIndex = statement.GetParameterIndex ("pageSize");
     ASSERT_TRUE (pageSizeIndex >= 0);
     int pageNumberIndex = statement.GetParameterIndex ("pageNumber");
@@ -212,13 +212,12 @@ TEST_F(ReadTests, LimitOffset)
     statement.BindInt (pageNumberIndex, pageNumber);
 
     // Verify the first result
-    auto stepStat = statement.Step();
-    ASSERT_TRUE (stepStat == BE_SQLITE_ROW);
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
     int actualValue = statement.GetValueInt (0);
     int expectedValue = pageSize * (pageNumber - 1);
     ASSERT_EQ (actualValue, expectedValue);
-    
     }
+
 TEST_F(ReadTests, WriteCalculatedECProperty)
 {
     ECDbR db = SetupECDb("SimpleCompany.ecdb", BeFileName(L"SimpleCompany.01.00.ecschema.xml"));
@@ -294,8 +293,7 @@ TEST_F(ReadTests, CreateECDbWithArbitraryNumberOfECInstances)
     ASSERT_TRUE (ecschemap != nullptr);
     ECClassCP employee = ecschemap->GetClassCP("Employee");
     ASSERT_TRUE(employee != NULL);
-    size_t count;
-    count = CountInstancesOfClass(ecdbr, *employee, false);
+    int count = CountInstancesOfClass(ecdbr, *employee, false);
     ASSERT_EQ(3, count);
     count = CountInstancesOfClass(ecdbr, *employee, true);
     ASSERT_EQ(2*3, count);

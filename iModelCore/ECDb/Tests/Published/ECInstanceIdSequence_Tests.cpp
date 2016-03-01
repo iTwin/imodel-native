@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECInstanceIdSequence_Tests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -480,13 +480,11 @@ TEST(ECInstanceIdSequenceTests, ChangeBriefcaseIdTest)
     ASSERT_EQ (expectedId.GetValue(), actualId.GetECInstanceId().GetValue()) << "First instance inserted after briefcase id change is expected to be {new repo id | 1}.";
 
     //finally query for the instance inserted under the old repo id
-    ECSqlSelectBuilder ecsqlBuilder;
-    SqlPrintfString whereStr("%s=%lld", ECSqlBuilder::ECINSTANCEID_SYSTEMPROPERTY, idBeforeRepoIdChange.GetECInstanceId().GetValue());
-    ecsqlBuilder.From(testClass).Select(ECSqlBuilder::ECINSTANCEID_SYSTEMPROPERTY).Where(whereStr);
+    Utf8String ecsql;
+    ecsql.Sprintf("SELECT ECInstanceId FROM %s WHERE ECInstanceId=%lld", testClass.GetECSqlName().c_str(), idBeforeRepoIdChange.GetECInstanceId().GetValue());
 
     ECSqlStatement statement;
-    auto ecsqlStat = statement.Prepare (ecdb, ecsqlBuilder.ToString ().c_str ());
-    ASSERT_EQ(ECSqlStatus::Success, ecsqlStat) << L"Preparing SQL to retrieve instance inserted before repo id change failed";
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare (ecdb, ecsql.c_str ())) << "Preparing SQL " << ecsql.c_str() << " to retrieve instance inserted before repo id change failed";
 
     int rowCount = 0;
     while (statement.Step () == BE_SQLITE_ROW)
@@ -494,10 +492,10 @@ TEST(ECInstanceIdSequenceTests, ChangeBriefcaseIdTest)
         rowCount++;
         ECInstanceId retrievedId = statement.GetValueId<ECInstanceId> (0);
 
-        EXPECT_EQ (idBeforeRepoIdChange.GetECInstanceId().GetValue(), retrievedId.GetValue()) << L"ECInstanceId of retrieved instance doesn't match.";
+        EXPECT_EQ (idBeforeRepoIdChange.GetECInstanceId().GetValue(), retrievedId.GetValue()) << "ECInstanceId of retrieved instance doesn't match.";
         }
 
-    EXPECT_EQ (1, rowCount) << L"Query to retrieve instance inserted before repo id change didn't return the expected row.";
+    ASSERT_EQ (1, rowCount) << "Query to retrieve instance inserted before repo id change didn't return the expected row.";
     }
 
 END_ECDBUNITTESTS_NAMESPACE

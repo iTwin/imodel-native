@@ -315,18 +315,23 @@ public:
             auto stmt = std::unique_ptr<ECSqlStatement>(new ECSqlStatement());
             auto enabler = testClass->GetDefaultStandaloneEnabler();
             int parameterIndex = 1;
-            ECSqlInsertBuilder ecsql;
-            ecsql.InsertInto(*testClass);
-            for (auto prop : testClass->GetProperties(true))
+            Utf8String ecsql("INSERT INTO ");
+            ecsql.append(testClass->GetECSqlName());
+            Utf8String ecsqlValuesClause(") VALUES(");
+            bool isFirstProp = true;
+            for (ECPropertyCP prop : testClass->GetProperties(true))
             {
                 if (!prop->GetIsPrimitive())
-                {
                     return false;
-                }
 
-                Utf8String propName("[");
-                propName.append(Utf8String(prop->GetName())).append("]");
-                ecsql.AddValue(propName.c_str(), "?");
+                if (!isFirstProp)
+                    {
+                    ecsql.append(",");
+                    ecsqlValuesClause.append(",");
+                    }
+
+                ecsql.append("[").append(prop->GetName()).append("]");
+                ecsqlValuesClause.append("?");
 
                 uint32_t propIndex;
                 auto stat = enabler->GetPropertyIndex(propIndex, prop->GetName().c_str());
@@ -335,9 +340,11 @@ public:
 
                 m_propertyIdToParameterMapping[propIndex] = parameterIndex;
                 parameterIndex++;
+                isFirstProp = false;
             }
 
-            auto stat = stmt->Prepare(ecdb, ecsql.ToString().c_str());
+            ecsql.append(ecsqlValuesClause).append(")");
+            auto stat = stmt->Prepare(ecdb, ecsql.c_str());
             if (stat != ECSqlStatus::Success)
                 return false;
 

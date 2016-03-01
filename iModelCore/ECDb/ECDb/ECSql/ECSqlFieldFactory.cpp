@@ -215,8 +215,8 @@ ECSqlColumnInfo&& ecsqlColumnInfo,
 PropertyMapCR propertyMap
 )
     {
-    auto const& ecdb = ctx.GetECSqlStatementR ().GetPreparedStatementP ()->GetECDb ();
-    auto structArrayProperty = propertyMap.GetProperty().GetAsStructArrayProperty();
+    ECDbCR ecdb = ctx.GetECSqlStatementR ().GetPreparedStatementP ()->GetECDb ();
+    StructArrayECPropertyCP structArrayProperty = propertyMap.GetProperty().GetAsStructArrayProperty();
     if (!structArrayProperty)
         {
         BeAssert(false && "Expecting struct array property");
@@ -232,44 +232,32 @@ PropertyMapCR propertyMap
         }
 
     //1. Generate ECSQL statement to read nested struct array.
-    ECSqlSelectBuilder innerECSql;
     Utf8String innerECSqlSelectClause;
-    bool isFirstProp = true;
     int selectColumnCount = 0;
     for (PropertyMap const* propertyMap : structTypeMap->GetPropertyMaps ())
         {
         if (propertyMap->IsECInstanceIdPropertyMap ())
             continue;
 
-        if (!isFirstProp)
-            innerECSqlSelectClause.append(", ");
-
-        innerECSqlSelectClause.append("[");
-        innerECSqlSelectClause.append(propertyMap->GetProperty().GetName());
-        innerECSqlSelectClause.append("]");
+        innerECSqlSelectClause.append("[").append(propertyMap->GetProperty().GetName()).append("],");
         selectColumnCount++;
-        isFirstProp = false;
         }
 
-    if (isFirstProp)
-        innerECSqlSelectClause.append (ECDB_COL_ECInstanceId);
-    else
-        innerECSqlSelectClause.append (", " ECDB_COL_ECInstanceId);
+    innerECSqlSelectClause.append(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME);
 
-    Utf8String whereClause;
+    Utf8String innerECSql;
+    innerECSql.Sprintf("SELECT %s FROM ONLY %s WHERE %s=? AND %s=%lld ORDER BY %s",
+                       innerECSqlSelectClause.c_str(), structType->GetECSqlName().c_str(), ECDbSystemSchemaHelper::PARENTECINSTANCEID_PROPNAME,
+                       ECDbSystemSchemaHelper::ECPROPERTYPATHID_PROPNAME, propertyMap.GetPropertyPathId(),
+                       ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME);
 
-    ECPropertyId  persistedPropertyId = propertyMap.GetPropertyPathId ();
-    whereClause.Sprintf (ECDB_COL_ParentECInstanceId " = ? AND " ECDB_COL_ECPropertyPathId " = %d", persistedPropertyId);
-    innerECSql.Select (innerECSqlSelectClause.c_str ()).From (*structType, false).Where (whereClause.c_str()).OrderBy (ECDB_COL_ECArrayIndex);
-
-    unique_ptr<StructArrayMappedToSecondaryTableECSqlField> structArrayField = unique_ptr<StructArrayMappedToSecondaryTableECSqlField>(
+      unique_ptr<StructArrayMappedToSecondaryTableECSqlField> structArrayField = unique_ptr<StructArrayMappedToSecondaryTableECSqlField>(
         new StructArrayMappedToSecondaryTableECSqlField (ctx, *structArrayProperty, move (ecsqlColumnInfo)));
 
     //2. Create and prepare the nested ECSqlStatement.
    
-    auto& secondaryECSqlStatement = structArrayField->GetSecondaryECSqlStatement();
-    
-    auto status = secondaryECSqlStatement.Prepare (ecdb, innerECSql.ToString ().c_str());
+    EmbeddedECSqlStatement& secondaryECSqlStatement = structArrayField->GetSecondaryECSqlStatement();
+    ECSqlStatus status = secondaryECSqlStatement.Prepare (ecdb, innerECSql.c_str());
     if (!status.IsSuccess())
         return status;
 

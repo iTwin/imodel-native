@@ -252,8 +252,6 @@ void ClassUpdaterImpl::Initialize(bvector<uint32_t>& propertiesToBind)
 
     Utf8String ecsql("UPDATE ONLY ");
     ecsql.append(GetECClass().GetECSqlName()).append(" SET ");
-    ECSqlUpdateBuilder builder;
-    builder.Update (GetECClass (), false);
 
     ECPropertyCP currentTimeStampProp = nullptr;
     bool hasCurrentTimeStampProp = ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty (currentTimeStampProp, GetECClass ());
@@ -324,8 +322,8 @@ void ClassUpdaterImpl::Initialize(bvector<ECPropertyCP>& propertiesToBind)
         return;
         }
 
-    ECSqlUpdateBuilder builder;
-    builder.Update (GetECClass (), false);
+    Utf8String ecsql("UPDATE ONLY ");
+    ecsql.append(GetECClass().GetECSqlName()).append(" SET ");
 
     ECPropertyCP currentTimeStampProp = nullptr;
     bool hasCurrentTimeStampProp = ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty (currentTimeStampProp, GetECClass ());
@@ -340,9 +338,10 @@ void ClassUpdaterImpl::Initialize(bvector<ECPropertyCP>& propertiesToBind)
         if (!m_needsCalculatedPropertyEvaluation)
             m_needsCalculatedPropertyEvaluation = ECInstanceAdapterHelper::IsOrContainsCalculatedProperty (*ecProperty);
 
-        Utf8String propNameSnippet ("[");
-        propNameSnippet.append (ecProperty->GetName ()).append ("]");
-        builder.AddSet (propNameSnippet.c_str (), "?");
+        if (parameterIndex != 1)
+            ecsql.append(",");
+
+        ecsql.append("[").append(ecProperty->GetName()).append("]=?");
 
         if (SUCCESS != m_ecValueBindingInfos.AddBindingInfo (GetECClass (), *ecProperty, parameterIndex))
             {
@@ -353,12 +352,10 @@ void ClassUpdaterImpl::Initialize(bvector<ECPropertyCP>& propertiesToBind)
         parameterIndex++;
         }
 
-    Utf8String whereClause (ECSqlBuilder::ECINSTANCEID_SYSTEMPROPERTY);
-    whereClause.append (" = ?");
-    builder.Where (whereClause.c_str ());
+    ecsql.append(" WHERE ECInstanceId=?");
     m_ecinstanceIdParameterIndex = parameterIndex;
 
-    ECSqlStatus stat = m_statement.Prepare(m_ecdb, builder.ToString().c_str());
+    ECSqlStatus stat = m_statement.Prepare(m_ecdb, ecsql.c_str());
     m_isValid = (stat.IsSuccess());
     }
 

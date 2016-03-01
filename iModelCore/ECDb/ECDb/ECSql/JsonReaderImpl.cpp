@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/JsonReaderImpl.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -341,10 +341,10 @@ const JsonECSqlSelectAdapter::FormatOptions& formatOptions
         ECClassCP ecRelatedClass = m_ecDb.Schemas ().GetECClass (ecRelatedClassId);
         POSTCONDITION (ecRelatedClass != nullptr, ERROR);
 
-        ECSqlSelectBuilder builder;
-        builder.From (*ecRelatedClass).SelectAll ().Where ("ECInstanceId = ?");
+        Utf8String ecsql("SELECT * FROM ");
+        ecsql.append(ecRelatedClass->GetECSqlName()).append(" WHERE ECInstanceId=?");
         CachedECSqlStatementPtr statement = nullptr;
-        if (SUCCESS != PrepareECSql (statement, builder.ToString ()))
+        if (SUCCESS != PrepareECSql (statement, ecsql.c_str()))
             return ERROR;
 
         // Determine the fully specified path to the class found - this is recorded in the output JSON. 

@@ -21,7 +21,6 @@ ECDbPublicHeaders =  \
                 $(publicApiDir)ECDb.h \
                 $(publicApiDir)ECInstanceId.h \
                 $(publicApiDir)ECDbSchemaManager.h \
-                $(publicApiDir)ECSqlBuilder.h \
                 $(publicApiDir)ECInstanceFinder.h \
                 $(publicApiDir)ECSqlStatement.h \
                 $(publicApiDir)IECSqlValue.h \
@@ -199,10 +198,6 @@ $(o)SchemaImportContext$(oext):								$(baseDir)SchemaImportContext.cpp        
 $(o)ECSchemaValidator$(oext):								$(baseDir)ECSchemaValidator.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDbPolicyManager$(oext):								$(baseDir)ECDbPolicyManager.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)ECSqlBuilder$(oext):									$(baseDir)ECSqlBuilder.cpp                  $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)ECSqlBuilderClauses$(oext):								$(baseDir)ECSqlBuilderClauses.cpp           $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDbProfileManager$(oext):								$(baseDir)ECDbProfileManager.cpp            $(ECDbAllHeaders) ${MultiCompileDepends}
 

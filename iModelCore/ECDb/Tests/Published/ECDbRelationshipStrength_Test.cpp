@@ -37,15 +37,12 @@ void DeleteInstance (IECInstanceCR instance, ECDbR ecdb)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool HasInstance (IECInstanceCR instance, ECDbR ecdb)
     {
-    ECSqlSelectBuilder builder;
-    ECClassCR ecClass = instance.GetClass ();
-    Utf8PrintfString whereECInstanceId ("ECInstanceId = %lld", InstanceToId (instance).GetValue ());
-    builder.From (ecClass, false).SelectAll ().Where (whereECInstanceId.c_str ());
+    Utf8String ecsql;
+    ecsql.Sprintf("SELECT NULL FROM ONLY %s WHERE ECInstanceId=%lld",
+                  instance.GetClass().GetECSqlName().c_str(), InstanceToId(instance).GetValue());
 
     ECSqlStatement statement;
-    auto stat = statement.Prepare (ecdb, builder.ToString ().c_str ());
-    BeAssert (stat == ECSqlStatus::Success);
-
+    EXPECT_EQ(ECSqlStatus::Success, statement.Prepare (ecdb, ecsql.c_str ()));
     return statement.Step () == BE_SQLITE_ROW;
     }
 
