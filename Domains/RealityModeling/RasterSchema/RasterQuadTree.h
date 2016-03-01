@@ -121,7 +121,7 @@ public:
     DPoint3dCP GetCorners() const { return m_corners; }
 
     //! Draw this tile in the view. Tile might not be loaded, it will be loaded only if locally available. Return true if successful.
-    bool Draw(Dgn::SceneContextR context);
+    bool Draw(Dgn::RenderContext& context);
     
     TileId const& GetId() const {return m_tileId;}
 

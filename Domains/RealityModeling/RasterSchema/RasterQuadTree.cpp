@@ -250,7 +250,7 @@ protected:
     virtual ~RasterProgressiveDisplay();
 
     //! Displays tiled rasters and schedules downloads. 
-    virtual Completion _DoProgressive(SceneContextR context, WantShow&) override;
+    virtual Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
 
     void FindBackgroudTiles(SortedTiles& backgroundTiles, std::vector<RasterTilePtr> const& visibleTiles, uint32_t resolutionDelta, DgnViewportCR viewport);
     
@@ -372,15 +372,15 @@ ReprojectStatus RasterTile::ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCa
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-bool RasterTile::Draw(SceneContextR context)
+bool RasterTile::Draw(RenderContext& context)
     {
+#ifndef NDEBUG  // debug build only.
     // Corners are in this order:
     //  [0]  [1]
     //  [2]  [3]
     DPoint3d uvPts[4];
     memcpy(uvPts, m_corners, sizeof(uvPts));
     
-#ifndef NDEBUG  // debug build only.
     static bool s_DrawTileShape = false;
     if(s_DrawTileShape)
         {
@@ -806,7 +806,7 @@ void RasterProgressiveDisplay::Draw (SceneContextR context)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-ProgressiveTask::Completion RasterProgressiveDisplay::_DoProgressive(SceneContextR context, WantShow& wantShow)
+ProgressiveTask::Completion RasterProgressiveDisplay::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
     {
     for (auto pTileQueryItr = m_queriedTiles.begin(); pTileQueryItr != m_queriedTiles.end();  /* incremented or erased in loop*/ )
         {
