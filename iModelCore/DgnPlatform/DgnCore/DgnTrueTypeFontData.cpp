@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |     $Source: DgnCore/DgnTrueTypeFontData.cpp $
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 +--------------------------------------------------------------------------------------*/
 
 #if defined (BENTLEY_WIN32)
@@ -1131,4 +1131,43 @@ DgnFontPtr DgnFontPersistence::OS::FromGlobalTrueTypeRegistry(Utf8CP name)
 #else
     return new DgnTrueTypeFont(name, new Win32TrueTypeFontData(name));
 #endif
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2016
+//---------------------------------------------------------------------------------------
+DgnFontCR DgnPlatformLib::Host::FontAdmin::_GetDecoratorFont()
+    {
+    if (!m_decoratorFont.IsValid())
+        {
+        // Try to use a more aesthetic font when available on Windows desktop.
+#if defined (BENTLEY_WIN32)
+        /*
+            While "Arial" is typically always available and is a decent choice, it is not actually used in the Windows UI, so we won't match other UI control look & feel.
+            "MS Shell Dlg 2" used to be the preferred way to do this, because Windows would swap out its meaning depending on locale.
+            However, the logical font mapping hasn't been updated for newer Windows versions, and its end result no longer matches other UI control fonts.
+            Based on some stackoverflow comments, querying the "message" font from SPI_GETNONCLIENTMETRICS is more reliable across versions.
+            
+            However, as "correct" as all of that may be, QuickVision draws most small AA text very poorly (e.g. it's fuzzy, especially when placed next to a standard UI control with ClearType rendering).
+            So, as an aesthetic compromise, just use Arial here...
+        */
+
+        Utf8String decoratorFontName = "Arial";
+        
+        //NONCLIENTMETRICS ncMetrics = {0};
+        //ncMetrics.cbSize = sizeof(NONCLIENTMETRICS);
+        //if (0 != ::SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS), &ncMetrics, 0))
+        //    decoratorFontName.Assign(ncMetrics.lfMessageFont.lfFaceName);
+
+        m_decoratorFont = DgnFontPersistence::OS::FromGlobalTrueTypeRegistry(decoratorFontName.c_str());
+#endif
+
+        if (!m_decoratorFont.IsValid())
+            {
+            _GetLastResortTrueTypeFont();
+            m_decoratorFont = m_lastResortTTFont;
+            }
+        }
+
+    return *m_decoratorFont;
     }
