@@ -197,7 +197,7 @@ TEST_F(ReadTests, LimitOffset)
 
     // Setup query for a page of instances
     Utf8String ecsql("SELECT intProp FROM ");
-    ecsql.append(ecClass->GetECSqlName()).append(" LIMIT :pageSize", ":pageSize * (:pageNumber - 1)");
+    ecsql.append(ecClass->GetECSqlName()).append(" LIMIT :pageSize OFFSET :pageSize * (:pageNumber - 1)");
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare (db, ecsql.c_str ())) << ecsql.c_str();
     int pageSizeIndex = statement.GetParameterIndex ("pageSize");

@@ -873,7 +873,7 @@ bool ECSqlCommonTestDataset::ToECSql (Utf8StringR ecsql, ECSqlType type, ECClass
         {
             case ECSqlType::Select:
                 {
-                ecsql.append("SELECT ECInstanceId FROM ");
+                ecsql.assign("SELECT ECInstanceId FROM ");
                 if (!polymorphic)
                     ecsql.append("ONLY ");
 
@@ -883,7 +883,7 @@ bool ECSqlCommonTestDataset::ToECSql (Utf8StringR ecsql, ECSqlType type, ECClass
 
             case ECSqlType::Insert:
                 {
-                ecsql.append("INSERT INTO ");
+                ecsql.assign("INSERT INTO ");
                 ecsql.append(targetClass.GetECSqlName());
                 return true;
                 }
@@ -899,7 +899,7 @@ bool ECSqlCommonTestDataset::ToECSql (Utf8StringR ecsql, ECSqlType type, ECClass
                 if (!found)
                     return false;
 
-                ecsql.append("UPDATE ");
+                ecsql.assign("UPDATE ");
                 if (!polymorphic)
                     ecsql.append("ONLY ");
 
@@ -909,7 +909,7 @@ bool ECSqlCommonTestDataset::ToECSql (Utf8StringR ecsql, ECSqlType type, ECClass
 
             case ECSqlType::Delete:
                 {
-                ecsql.append("DELETE FROM ");
+                ecsql.assign("DELETE FROM ");
                 if (!polymorphic)
                     ecsql.append("ONLY ");
 
@@ -931,7 +931,7 @@ bool ECSqlCommonTestDataset::ToECSql (Utf8StringR ecsql, ECSqlType type, ECClass
 //static
 bool ECSqlCommonTestDataset::FindPrimitivePropertyAccessStringInClass (Utf8StringR propertyAccessString, ECN::ECClassCR ecClass, bool includeBaseProperties)
     {
-    for (auto prop : ecClass.GetProperties (includeBaseProperties))
+    for (ECPropertyCP prop : ecClass.GetProperties (includeBaseProperties))
         {
         //ECSQL doesn't handle arrays yet, so always skip those when trying to find a test property access string
         if (prop->GetIsArray ())
@@ -941,13 +941,13 @@ bool ECSqlCommonTestDataset::FindPrimitivePropertyAccessStringInClass (Utf8Strin
         if (!propertyAccessString.empty ())
             propertyAccessString.append (".");
 
-        propertyAccessString.append (Utf8String (prop->GetName ()));
+        propertyAccessString.append (prop->GetName());
 
         if (prop->GetIsPrimitive ())
             return true;
         else if (prop->GetIsStruct ())
             {
-            auto structProp = prop->GetAsStructProperty ();
+            StructECPropertyCP structProp = prop->GetAsStructProperty ();
             return FindPrimitivePropertyAccessStringInClass (propertyAccessString, structProp->GetType (), includeBaseProperties);
             }
         }
