@@ -67,7 +67,7 @@ struct SearchResultInstanceNodesSpecification : public ChildNodeSpecification
     {
     /*__PUBLISH_SECTION_END__*/
     private:
-        bset<SearchQuerySpecification*> m_querySpecifications;
+        bvector<SearchQuerySpecification*> m_querySpecifications;
         bool     m_groupByClass;
         bool     m_groupByLabel;
 
@@ -97,10 +97,10 @@ struct SearchResultInstanceNodesSpecification : public ChildNodeSpecification
         ECOBJECTS_EXPORT ~SearchResultInstanceNodesSpecification();
         
         //! Returns the list of query specifications that are responsible for the results of this rule.
-        ECOBJECTS_EXPORT bset<SearchQuerySpecification*> const& GetQuerySpecifications() const;
+        ECOBJECTS_EXPORT bvector<SearchQuerySpecification*> const& GetQuerySpecifications() const;
 
         //! Returns the list of query specifications that are responsible for the results of this rule.
-        ECOBJECTS_EXPORT bset<SearchQuerySpecification*>& GetQuerySpecificationsR();
+        ECOBJECTS_EXPORT bvector<SearchQuerySpecification*>& GetQuerySpecificationsR();
 
         //! Returns true if grouping by class should be applied.
         ECOBJECTS_EXPORT bool                         GetGroupByClass (void) const;
