@@ -76,10 +76,12 @@ void DgnQueryView::_DrawDecorations(DecorateContextR context)
         m_copyrightMsgs.insert("(c) lorem ipsum dolar sit amet");
         }
 #endif
+    
+    DgnViewportCR vp = *context.GetViewport();
 
     // Configure a consistent text height regardless of display DPI.
-    static double const TEXT_HEIGHT_INCHES = 0.075;
-    double textHeight = TEXT_HEIGHT_INCHES * 96.0 /* vp.PixelsFromInches(TEXT_HEIGHT_INCHES) */;
+    static double const TEXT_HEIGHT_INCHES = 0.1;
+    double textHeight = vp.PixelsFromInches(TEXT_HEIGHT_INCHES);
     double padding = (textHeight / 2.0);
     
     TextString textString;
@@ -87,7 +89,6 @@ void DgnQueryView::_DrawDecorations(DecorateContextR context)
     textString.GetStyleR().SetSize(textHeight);
     textString.SetOrientation(RotMatrix::FromScaleFactors(1.0, -1.0, 1.0)); // y is flipped in view coords
 
-    DgnViewportCR vp = *context.GetViewport();
     BSIRect viewRect = vp.GetViewRect();
     DPoint3d textBottomRight = DPoint3d::From(viewRect.Right() - padding, viewRect.Bottom() - padding);
     DRange2d runningTextBounds = DRange2d::NullRange();
