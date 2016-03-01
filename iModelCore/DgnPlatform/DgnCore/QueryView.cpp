@@ -68,53 +68,71 @@ void DgnQueryView::_DrawDecorations(DecorateContextR context)
     if (m_copyrightMsgs.empty())
         return;
 
-    DgnViewportCR vp = *context.GetViewport();
-    static int const S_TRANSPARENCY = 10;
-    ColorDef fgColor = ColorDef::Black();
-    ColorDef bgColor = ColorDef::White();
-    bgColor = vp.MakeColorTransparency(bgColor, S_TRANSPARENCY);
-
-    auto graphic = context.CreateGraphic();
-    Render::GraphicParams params;
-    params.SetLineColor(fgColor);
-    params.SetFillColor(fgColor);
-    params.SetIsBlankingRegion(true);
-    graphic->ActivateGraphicParams(params);
-
-    //  Display the first (c) message at the bottom right.
-    BSIRect rect = vp.GetViewRect();
-    DPoint3d cloc = DPoint3d::From(rect.Right(), rect.Bottom(), 0);
-
-    static int const S_TEXTHEIGHT = 12; // in pixels
-    cloc.x -= S_TEXTHEIGHT;
-
-    TextStringStyle style;
-    style.SetFont(DgnFontManager::GetLastResortTrueTypeFont());
-    style.SetSize(DPoint2d::From(S_TEXTHEIGHT, S_TEXTHEIGHT));   // size is in pixels
-
-    TextString textString;
-    textString.SetStyle(style);
-    textString.SetOrientation(RotMatrix::FromScaleFactors(1.0, -1.0, 1.0)); // In view coords, y is flipped
-
-    for (auto& msg : m_copyrightMsgs)
+//#define TEST_MULTIPLE_COPYRIGHTS
+#if defined(TEST_MULTIPLE_COPYRIGHTS)
+    if (1 == m_copyrightMsgs.size())
         {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        DPoint3d box[4];
-        box[0].Init(cloc.x              , cloc.y, 0);           // top left
-        box[1].Init(cloc.x + widest*S_TEXTHEIGHT, cloc.y, 0);           // top right
-        box[2].Init(cloc.x + widest*S_TEXTHEIGHT, cloc.y - S_TEXTHEIGHT, 0);    // bottom right
-        box[3].Init(cloc.x              , cloc.y - S_TEXTHEIGHT, 0);    // bottom left
+        m_copyrightMsgs.insert("(c) second");
+        m_copyrightMsgs.insert("(c) lorem ipsum dolar sit amet");
+        }
 #endif
+    
+    DgnViewportCR vp = *context.GetViewport();
 
-//        graphic->AddShape(4, box, true);
+    // Configure a consistent text height regardless of display DPI.
+    static double const TEXT_HEIGHT_INCHES = 0.1;
+    double textHeight = vp.PixelsFromInches(TEXT_HEIGHT_INCHES);
+    double padding = (textHeight / 2.0);
+    
+    TextString textString;
+    textString.GetStyleR().SetFont(DgnFontManager::GetDecoratorFont());
+    textString.GetStyleR().SetSize(textHeight);
+    textString.SetOrientation(RotMatrix::FromScaleFactors(1.0, -1.0, 1.0)); // y is flipped in view coords
 
+    BSIRect viewRect = vp.GetViewRect();
+    DPoint3d textBottomRight = DPoint3d::From(viewRect.Right() - padding, viewRect.Bottom() - padding);
+    DRange2d runningTextBounds = DRange2d::NullRange();
+
+    // Always draw text in black, then create a white blanking region behind it so that it's always visible.
+    Render::GraphicPtr graphic = context.CreateGraphic();
+    graphic->SetSymbology(ColorDef::Black(), ColorDef::Black(), 0);
+
+    for (Utf8StringCR msg : m_copyrightMsgs)
+        {
         textString.SetText(msg.c_str());
-        textString.SetOriginFromJustificationOrigin(cloc, TextString::HorizontalJustification::Right, TextString::VerticalJustification::Bottom);
+        textString.SetOriginFromJustificationOrigin(textBottomRight, TextString::HorizontalJustification::Right, TextString::VerticalJustification::Bottom);
         graphic->AddTextString(textString);
+        
+        // Text's range is a tight box around the ascent of the characters. Give it some padding for aesthetics.
+        DRange2d textRange = textString.GetRange();
+        textRange.low.x -= padding;
+        textRange.low.y -= padding;
+        textRange.high.x += padding;
+        textRange.high.y += padding;
 
-        cloc.y -= S_TEXTHEIGHT; // stack the next message above this one
+        // Accumulate the screen range to draw the unioned blanking region below.
+        DRange2d screenTextRange;
+        textString.ComputeTransform().Multiply(&screenTextRange.low, &textRange.low, 2);
+        runningTextBounds.Extend(screenTextRange);
+                                                                            
+        // Advance up a line with some spacing for subsequent notices.
+        textBottomRight.y -= (textHeight + padding);
         }
 
+    ColorDef bgColor = ColorDef::White();
+    static int const FILL_TRANSPARENCY = 128;
+    bgColor = vp.MakeColorTransparency(bgColor, FILL_TRANSPARENCY);
+    
+    graphic->SetBlankingFill(bgColor);
+    
+    DPoint3d textShape[4];
+    textShape[0].Init(runningTextBounds.low);
+    textShape[1].Init(runningTextBounds.low.x, runningTextBounds.high.y);
+    textShape[2].Init(runningTextBounds.high.x, runningTextBounds.high.y);
+    textShape[3].Init(runningTextBounds.high.x, runningTextBounds.low.y);
+    
+    graphic->AddShape(_countof(textShape), textShape, true);
+    
     context.AddViewOverlay(*graphic);
     }
 

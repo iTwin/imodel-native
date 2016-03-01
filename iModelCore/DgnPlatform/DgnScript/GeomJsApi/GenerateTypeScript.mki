@@ -35,7 +35,7 @@ dgnScriptGen =% $(OutDgnPlatformBuild)DgnScriptGen/
 always:
     !~@mkdir $(dgnScriptGen)
     !~@mkdir $(dgnScriptGen)DgnPlatform
-    !~@mkdir $(dgnScriptGen)_doc
+    !~@mkdir $(dgnScriptGen)GeomJsApi_doc
 
 geomJsApiTsDir = $(dgnScriptDir)GeomJsApi/ts/
 
@@ -97,7 +97,7 @@ $(dgnScriptGen)GeomJsApi.js : $(tsSourceFiles)
     $(TypeScriptCompile) $(tsSourceFiles) --target ES5 --noImplicitAny --declaration $(DEBUG_PARMS) --out $(dgnScriptGen)GeomJsApi.js
     ~time
 
-$(dgnScriptGen)_doc/GeomJsApi_doc.h: $(dgnScriptGen)GeomJsApi.d.ts
+$(dgnScriptGen)GeomJsApi_doc/GeomJsApi_doc.h: $(dgnScriptGen)GeomJsApi.d.ts
     $(msg)
     $(_MakeFilePath)generateTypeScriptDoxygenInput.py --input=$< --output=$@ --extractionsPath=$(OutputRootDir)build/DgnPlatform/Extractions/
     ~time
@@ -114,5 +114,5 @@ $(dgnScriptGen)GeomJsApiBootstrap.cpp : $(dgnScriptGen)GeomJsApi.js $(geomJsApiT
 $(BuildContext)Delivery/GeomJsApi.d.ts : $(dgnScriptGen)GeomJsApi.d.ts
     $(LinkFirstDepToFirstTarget)
 
- $(BuildContext)Delivery/internal-docs/GeomJsApi : $(dgnScriptGen)_doc
+ $(BuildContext)Delivery/internal-docs/GeomJsApi : $(dgnScriptGen)GeomJsApi_doc
     $(LinkFirstDepToFirstTargetAsDirectory)
