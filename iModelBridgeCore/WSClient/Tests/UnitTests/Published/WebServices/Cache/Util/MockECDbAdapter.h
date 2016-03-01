@@ -65,8 +65,6 @@ struct MockECDbAdapter : public IECDbAdapter
         MOCK_METHOD1 (GetInstanceKeyFromJsonInstance,
             ECInstanceKey (JsonValueCR ecInstanceJson));
         MOCK_METHOD2 (PrepareStatement,
-            BentleyStatus (ECSqlStatement& statement, ECSqlBuilderCR builder));
-        MOCK_METHOD2 (PrepareStatement,
             BentleyStatus (ECSqlStatement& statement, Utf8StringCR ecsql));
         MOCK_METHOD3 (BindParameters,
             BentleyStatus (ECSqlStatement& statement, const bvector<Utf8String>& parameters, IECSqlBinder::MakeCopy makeCopy));
