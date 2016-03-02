@@ -31,14 +31,6 @@
 #define USING_NAMESPACE_BENTLEY_DGNPLATFORM using namespace BentleyApi::Dgn; // for backwards compatibility, do not use
 #define USING_NAMESPACE_BENTLEY_DGN         using namespace BentleyApi::Dgn;
 #define USING_NAMESPACE_BENTLEY_RENDER      using namespace BentleyApi::Dgn::Render;
-#define GLOBAL_TYPEDEF1(_sName_,_name_,structunion) \
-    structunion _sName_; \
-    namespace BENTLEY_NAMESPACE_NAME {\
-    typedef structunion _sName_*          _name_##P, &_name_##R;  \
-    typedef structunion _sName_ const*    _name_##CP; \
-    typedef structunion _sName_ const&    _name_##CR;}
-
-#define GLOBAL_TYPEDEF(_sName_,_name_) GLOBAL_TYPEDEF1(_sName_,_name_,struct)
 
 #define DGNPLATFORM_TYPEDEFS(_name_) \
     BEGIN_BENTLEY_DGN_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_DGN_NAMESPACE

@@ -68,18 +68,8 @@ void DgnQueryView::_DrawDecorations(DecorateContextR context)
     if (m_copyrightMsgs.empty())
         return;
 
-//#define TEST_MULTIPLE_COPYRIGHTS
-#if defined(TEST_MULTIPLE_COPYRIGHTS)
-    if (1 == m_copyrightMsgs.size())
-        {
-        m_copyrightMsgs.insert("(c) second");
-        m_copyrightMsgs.insert("(c) lorem ipsum dolar sit amet");
-        }
-#endif
-    
     DgnViewportCR vp = *context.GetViewport();
 
-    // Configure a consistent text height regardless of display DPI.
     static double const TEXT_HEIGHT_INCHES = 0.1;
     double textHeight = vp.PixelsFromInches(TEXT_HEIGHT_INCHES);
     double padding = (textHeight / 2.0);
@@ -269,6 +259,7 @@ void DgnQueryView::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
         {
         m_viewedModels.erase(modelId);
         }
+    
     }
 
 /*---------------------------------------------------------------------------------**//**

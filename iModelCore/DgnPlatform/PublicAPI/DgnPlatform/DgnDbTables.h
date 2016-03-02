@@ -131,7 +131,7 @@ private:
 
 public:
     //! Constructs an invalid code
-    DgnCode() { }
+    DgnCode() {}
 
     //! Constructor
     DgnCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) : m_authority(authorityId), m_value(value), m_nameSpace(nameSpace) { }
