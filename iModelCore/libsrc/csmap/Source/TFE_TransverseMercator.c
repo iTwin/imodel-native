@@ -795,19 +795,20 @@ Const double            ll [2]
     To detect these cases we check if the meridian of the projection are of the same signs
     If they are not then we will adjust the lambda by adding or subtraction 2 time pi so 
     both values are in the same rotation */
-    if (lambda < 0 && trmBFParams->projecMercen > 0)
-        lam = lambda + (2 *cs_Pi) - trmBFParams->projecMercen;
-    else if (lambda > 0 && trmBFParams->projecMercen < 0)
-        lam = lambda - (2 * cs_Pi) - trmBFParams->projecMercen;
-    else
-        lam = lambda - trmBFParams->projecMercen;
+    lam = CS_adj2pi(lambda - trmBFParams->projecMercen);
 
     /* Modified from the original Bernard Flaceliere code since the tolerance is too small
        and results in infinity or undefined values below */
     if (lam - cs_Pi_o_2 > -0.000001)
+        {
         lam = cs_Pi_o_2 -0.000001;
+        rtn_val = cs_CNVRT_DOMN;
+        }
     else if (lam + cs_Pi_o_2 < 0.000001)
+        {
         lam = -cs_Pi_o_2 + 0.000001;
+        rtn_val = cs_CNVRT_DOMN;
+        }
 #else
     lam = lambda - trmBFParams->projecMercen;
 
