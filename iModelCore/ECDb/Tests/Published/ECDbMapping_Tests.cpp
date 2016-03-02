@@ -5284,6 +5284,32 @@ TEST_F(ECDbMappingTestFixture, DroppedFkConstraintsForSharedKeyProperties)
     AssertForeignKey(false, ecdb, "ts_B", "sc_02");
     AssertForeignKey(true, ecdb, "ts_B", "AId");
 
+    ECInstanceKey sourceKey;
+    ECInstanceKey targetKey;
+    ECInstanceKey relKey;
+
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.A VALUES('A_prop')"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step(sourceKey));
+    statement.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.B1Sub(BName, B1SubName) VALUES('B_prop', 'B1Sub_prop')"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step(targetKey));
+    statement.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.Rel1(SourceECInstanceId, TargetECInstanceId, SourceECClassId, TargetECClassId) VALUES(?,?,?,?)"));
+    statement.BindId(1, sourceKey.GetECInstanceId());
+    statement.BindId(2, targetKey.GetECInstanceId());
+    statement.BindInt64(3, sourceKey.GetECClassId());
+    statement.BindInt64(4, targetKey.GetECClassId());
+    ASSERT_EQ(BE_SQLITE_DONE, statement.Step(relKey));
+    statement.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT SourceECInstanceId, TargetECInstanceId FROM ts.Rel1 WHERE ECInstanceId = ?"));
+    statement.BindId(1, relKey.GetECInstanceId());
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(sourceKey.GetECInstanceId().GetValue(), statement.GetValueInt64(0));
+    ASSERT_EQ(targetKey.GetECInstanceId().GetValue(), statement.GetValueInt64(1));
     }
 
 //---------------------------------------------------------------------------------------
