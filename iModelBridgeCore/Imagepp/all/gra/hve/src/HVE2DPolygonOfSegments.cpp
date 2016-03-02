@@ -2807,8 +2807,6 @@ HVE2DShape* HVE2DPolygonOfSegments::UnifyCrossingPolygonSCS(const HVE2DPolygonOf
     // Create recipient list
     HVE2DShape::HoleList   MyListOfPolygons;
 
-    bool SpecialProcessing = FALSE;
-
     bool SpecialProcessing = Decompose(pi_rPolygon, pi_rPoly1, pi_rPoly2, HVE2DPolygonOfSegments::UNION, MyListOfPolygons);
 
     if (SpecialProcessing)
