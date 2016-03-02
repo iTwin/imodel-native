@@ -318,7 +318,7 @@ IConnectAuthenticationPersistencePtr ConnectSignInManager::GetPersistenceMatchin
     AuthenticationType type = GetAuthenticationType();
 
     if (AuthenticationType::Token == type)
-        return std::make_shared<IdentityAuthenticationPersistence>(m_secureStore);
+        return std::make_shared<IdentityAuthenticationPersistence>(&m_localState, m_secureStore);
 
     if (AuthenticationType::Credentials == type)
         return ConnectAuthenticationPersistence::GetShared();
