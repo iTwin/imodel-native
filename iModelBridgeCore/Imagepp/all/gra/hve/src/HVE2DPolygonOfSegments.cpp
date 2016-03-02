@@ -2149,7 +2149,7 @@ HVE2DShape* HVE2DPolygonOfSegments::DifferentiateFromCrossingPolygonSCS(const HV
     // neither shape must be empty
     HPRECONDITION(!IsEmpty() && !pi_rPolygon.IsEmpty());
 
-    HVE2DShape*     pMyResultShape;
+    HVE2DShape*     pMyResultShape = nullptr;
 
     // Create recipient list
     HVE2DShape::HoleList   MyListOfPolygons;
@@ -2157,12 +2157,10 @@ HVE2DShape* HVE2DPolygonOfSegments::DifferentiateFromCrossingPolygonSCS(const HV
     // Perform decomposition process
     bool haveDecomposeException = Decompose(pi_rPolygon, pi_rPoly1, pi_rPoly2, HVE2DPolygonOfSegments::DIFFFROM, MyListOfPolygons);
 
-    //&&AR ??? 
-    haveDecomposeException;
-    
-
+    //&&AR TODO haveDecomposeException. for now return void.
+ 
     // In the case of a differentiation, all the different shapes returned are disjoint
-    if (MyListOfPolygons.size() == 0)
+    if (haveDecomposeException || MyListOfPolygons.size() == 0)
         {
         // The two shapes were either identical or ...
         pMyResultShape = new HVE2DVoidShape(GetCoordSys());
@@ -2348,20 +2346,7 @@ HVE2DShape* HVE2DPolygonOfSegments::DifferentiateCrossingPolygonSCS(const HVE2DP
     // Create recipient list
     HVE2DShape::HoleList   MyListOfPolygons;
 
-    bool SpecialProcessing  = false;
-#if 0 // no more throw
-    try
-        {
-        // Perform decomposition process
-        Decompose(pi_rPolygon, pi_rPoly1, pi_rPoly2, HVE2DPolygonOfSegments::DIFF, MyListOfPolygons);
-        }
-    catch (HVEDecompositionException&)
-        {
-        SpecialProcessing = true;
-        }
-#else
-    SpecialProcessing = Decompose(pi_rPolygon, pi_rPoly1, pi_rPoly2, HVE2DPolygonOfSegments::DIFF, MyListOfPolygons);
-#endif
+    bool SpecialProcessing = Decompose(pi_rPolygon, pi_rPoly1, pi_rPoly2, HVE2DPolygonOfSegments::DIFF, MyListOfPolygons);
 
     if (SpecialProcessing)
         {
@@ -2610,20 +2595,8 @@ HVE2DShape* HVE2DPolygonOfSegments::IntersectCrossingPolygonSCS(const HVE2DPolyg
 
     // Perform decomposition process
     // Patch from AlainR to solve TR 75690
-    bool SpecialProcessing = false;
-#if 0 // no more throw
-    try
-        {
-        // Perform decomposition process
-        Decompose(pi_rPolygon, pi_rPoly1, pi_rPoly2, HVE2DPolygonOfSegments::INTERSECT, MyListOfPolygons);
-        }
-    catch (HFCException&)
-        {
-        SpecialProcessing = true;
-        }
-#else
-    SpecialProcessing = Decompose(pi_rPolygon, pi_rPoly1, pi_rPoly2, HVE2DPolygonOfSegments::INTERSECT, MyListOfPolygons);
-#endif
+
+    bool SpecialProcessing = Decompose(pi_rPolygon, pi_rPoly1, pi_rPoly2, HVE2DPolygonOfSegments::INTERSECT, MyListOfPolygons);
 
     if (SpecialProcessing)
         {
@@ -2836,19 +2809,7 @@ HVE2DShape* HVE2DPolygonOfSegments::UnifyCrossingPolygonSCS(const HVE2DPolygonOf
 
     bool SpecialProcessing = FALSE;
 
-#if 0 // no more throw
-    try
-    	{
-        // Perform decomposition process
-        Decompose(pi_rPolygon, pi_rPoly1, pi_rPoly2, HVE2DPolygonOfSegments::UNION, MyListOfPolygons);
-    	}
-    catch (HFCException&)
-    	{
-        SpecialProcessing = TRUE;
-    	}
-#else
-    SpecialProcessing = Decompose(pi_rPolygon, pi_rPoly1, pi_rPoly2, HVE2DPolygonOfSegments::UNION, MyListOfPolygons);
-#endif
+    bool SpecialProcessing = Decompose(pi_rPolygon, pi_rPoly1, pi_rPoly2, HVE2DPolygonOfSegments::UNION, MyListOfPolygons);
 
     if (SpecialProcessing)
     	{
@@ -3529,7 +3490,7 @@ bool HVE2DPolygonOfSegments::SuperScan(const HVE2DPolygonOfSegments&  pi_rGiven,
                            pi_ScanShape2CW,
                            pi_rListOfShapes,
                            po_pAllOn))
-                       return true;
+                       return true; // decompose exception.
             }
         }
 
