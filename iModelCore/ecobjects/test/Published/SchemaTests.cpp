@@ -3598,7 +3598,9 @@ bool CompareFiles(Utf8StringCP lFileName, Utf8StringCP rFileName)
         if (lBuffer[i] != rBuffer[i])
         return false;
         }
-        return true;
+    lFile.Close();
+    rFile.Close();
+    return true;
     }
 
 TEST_F(SchemaTest, RoundtripSchemaXmlCommentsTest)
@@ -3609,10 +3611,10 @@ TEST_F(SchemaTest, RoundtripSchemaXmlCommentsTest)
 	SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"dgn.02.00.ecschema.xml").c_str(), *schemaContext);
 	EXPECT_EQ(SchemaReadStatus::Success, status);
 
-    SchemaWriteStatus statusW = schema->WriteToXmlFile(ECTestFixture::GetTestDataPath(L"dgn-result.02.00.ecschema.xml").c_str(), 2, 0, false);
+    SchemaWriteStatus statusW = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"dgn-result.02.00.ecschema.xml").c_str(), 2, 0, false);
     EXPECT_EQ(SchemaWriteStatus::Success, statusW);
 
-    Utf8String serializedSchemaFile(ECTestFixture::GetTestDataPath(L"dgn-result.02.00.ecschema.xml"));
+    Utf8String serializedSchemaFile(ECTestFixture::GetTempDataPath(L"dgn-result.02.00.ecschema.xml"));
     Utf8String expectedSchemaFile(ECTestFixture::GetTestDataPath(L"dgn-ExpectedResult.02.00.ecschema.xml"));
 
     EXPECT_TRUE(CompareFiles(&serializedSchemaFile, &expectedSchemaFile)) << "Serialized schema differs from expected schema";

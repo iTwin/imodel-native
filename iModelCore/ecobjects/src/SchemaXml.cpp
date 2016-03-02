@@ -44,6 +44,7 @@ struct SchemaXmlReaderImpl
         void PopulateSchemaElementOrder(ECSchemaElementsOrder& elementOrder, BeXmlNodeR schemaNode);
         virtual bool IsECClassElementNode(BeXmlNodeR schemaNode);
         virtual bool IsECEnumerationElementNode(BeXmlNodeR schemaNode);
+        virtual bool IsKindOfQuantityElementNode(BeXmlNodeR schemaNode);
     };
 
 //---------------------------------------------------------------------------------------
@@ -363,6 +364,14 @@ bool SchemaXmlReaderImpl::IsECEnumerationElementNode(BeXmlNodeR elementNode)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  
 //---------------+---------------+---------------+---------------+---------------+-------
+bool SchemaXmlReaderImpl::IsKindOfQuantityElementNode(BeXmlNodeR elementNode)
+    {
+    return 0 == strcmp(KIND_OF_QUANTITY_ELEMENT, elementNode.GetName());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  
+//---------------+---------------+---------------+---------------+---------------+-------
 bool SchemaXmlReaderImpl::IsECClassElementNode(BeXmlNodeR elementNode)
     {
     return 0 == strcmp(EC_CLASS_ELEMENT, elementNode.GetName()) || 
@@ -640,6 +649,10 @@ SchemaReadStatus SchemaXmlReader3::ReadClassContentsFromXml(ECSchemaPtr& schemaO
         else if(IsECEnumerationElementNode(*candidateNode))
             {
             elementOrder.AddElement(typeName.c_str(), ECSchemaElementType::ECEnumeration);
+            }
+        else if (IsKindOfQuantityElementNode(*candidateNode))
+            {
+            elementOrder.AddElement(typeName.c_str(), ECSchemaElementType::KindOfQuantity);
             }
         }
     }
@@ -968,6 +981,19 @@ SchemaWriteStatus SchemaXmlWriter::WriteEnumeration(ECEnumerationCR ecEnumeratio
     return ecEnumeration.WriteXml(m_xmlWriter, m_ecXmlVersionMajor, m_ecXmlVersionMinor);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Robert.Schili                03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaWriteStatus SchemaXmlWriter::WriteKindOfQuantity(KindOfQuantityCR kindOfQuantity)
+    {
+    SchemaWriteStatus status = SchemaWriteStatus::Success;
+    // don't write any elements that aren't in the schema we're writing.
+    if (&(kindOfQuantity.GetSchema()) != &m_ecSchema)
+        return status;
+
+    //WriteCustomAttributeDependencies(ecEnumeration);
+    return kindOfQuantity.WriteXml(m_xmlWriter, m_ecXmlVersionMajor, m_ecXmlVersionMinor);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
@@ -1038,7 +1064,8 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
     for (auto schemaElementEntry : serializationOrder)
         {
         Utf8CP elementName = schemaElementEntry.first.c_str();
-        if (schemaElementEntry.second == ECSchemaElementType::ECClass)
+        auto elementType = schemaElementEntry.second;
+        if (elementType == ECSchemaElementType::ECClass)
             {
             ECClassCP ecClass = m_ecSchema.GetClassCP(elementName);
             if (ecClass != nullptr)
@@ -1046,12 +1073,20 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
                 WriteClass(*ecClass);
                 }
             }
-        else if (schemaElementEntry.second == ECSchemaElementType::ECEnumeration)
+        else if (elementType == ECSchemaElementType::ECEnumeration)
             {
             ECEnumerationCP ecEnumeration = m_ecSchema.GetEnumerationCP(elementName);
             if (ecEnumeration != nullptr)
                 {
                 WriteEnumeration(*ecEnumeration);
+                }
+            }
+        else if (elementType == ECSchemaElementType::KindOfQuantity)
+            {
+            KindOfQuantityCP kindOfQuantity = m_ecSchema.GetKindOfQuantityCP(elementName);
+            if (kindOfQuantity != nullptr)
+                {
+                WriteKindOfQuantity(*kindOfQuantity);
                 }
             }
         }
