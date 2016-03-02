@@ -10,82 +10,175 @@
 //---------------------------------------------------------------------------------------
 // @bsiclass                                      Muhammad Hassan                  02/16
 //+---------------+---------------+---------------+---------------+---------------+------
+enum class CompatibilityStatus
+    {
+    BadElement,
+    BadModel,
+    ModelInsertFailed,
+    ElementInsertFailed,
+    ModelFillFailed,
+    Success
+    };
+
 struct BackwardsCompatibilityTests : public DgnDbTestFixture
     {
-    bool VerifyElementsAndModels()
+    private:
+        StatusInt CreateArbitraryElement(DgnElementPtr& out, DgnModelR model);
+        CompatibilityStatus insertTestElement();
+
+    protected:
+        CompatibilityStatus VerifyElementsAndModels();
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                      Muhammad Hassan                  03/16
+//+---------------+---------------+---------------+---------------+---------------+------
+StatusInt BackwardsCompatibilityTests::CreateArbitraryElement(DgnElementPtr& out, DgnModelR model)
+    {
+    DgnCategoryId categoryId = DgnCategory::QueryFirstCategoryId(model.GetDgnDb());
+    if (!categoryId.IsValid())
+        return ERROR;
+
+    DgnElementPtr element = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(model.GetDgnDb(), model.GetModelId(), DgnClassId(model.GetDgnDb().Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASSNAME_PhysicalObject)), categoryId, Placement3d()));
+    if (!element.IsValid())
+        return ERROR;
+
+    GeometrySourceP geomElement = element->ToGeometrySourceP();
+    if (nullptr == geomElement)
+        return ERROR;
+
+    geomElement->SetCategoryId(categoryId);
+
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*geomElement);
+    ICurvePrimitivePtr line = ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1, 0, 0)));
+    builder->Append(*line);
+    if (SUCCESS != builder->SetGeomStreamAndPlacement(*geomElement))
+        return ERROR;
+
+    out = element;
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                      Muhammad Hassan                  03/16
+//+---------------+---------------+---------------+---------------+---------------+------
+CompatibilityStatus BackwardsCompatibilityTests::insertTestElement()
+    {
+    DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
+    SpatialModelPtr model = new SpatialModel(SpatialModel::CreateParams(*m_db, mclassId, DgnModel::CreateModelCode("newModel")));
+    if (DgnDbStatus::Success != model->Insert()) /* Insert the new model into the DgnDb */
+        return CompatibilityStatus::ModelInsertFailed;
+
+    DgnElementPtr element;
+    DgnDbStatus insertStatus;
+    for (int i = 0; i < 3; i++)
         {
-        bool status = true;
-        DgnModels::Iterator modelsIterator = m_db->Models().MakeIterator();
-        for (DgnModels::Iterator::Entry modelEntry : modelsIterator)
+        CreateArbitraryElement(element, *model);
+
+        model->GetDgnDb().Elements().Insert(*element, &insertStatus);
+        if (DgnDbStatus::Success != insertStatus)
+            return CompatibilityStatus::ElementInsertFailed;
+        }
+
+    return CompatibilityStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                      Muhammad Hassan                  03/16
+//+---------------+---------------+---------------+---------------+---------------+------
+CompatibilityStatus BackwardsCompatibilityTests::VerifyElementsAndModels()
+    {
+    CompatibilityStatus status = CompatibilityStatus::Success;
+    insertTestElement();
+    DgnModels::Iterator modelsIterator = m_db->Models().MakeIterator();
+    for (DgnModels::Iterator::Entry modelEntry : modelsIterator)
+        {
+        DgnModelPtr model = m_db->Models().GetModel(modelEntry.GetModelId());
+        //printf("modelName: %s \n", model->GetCode().GetValue().c_str());
+        if (!model.IsValid())
             {
-            DgnModelPtr model = m_db->Models().GetModel(modelEntry.GetModelId());
-            //printf ("modelName: %s \n", model->GetCode ().GetValue ().c_str ());
-            if (!model.IsValid())
+            status = CompatibilityStatus::BadModel;
+            break;
+            }
+        model->FillModel();
+        if (!model->IsFilled())
+            {
+            status = CompatibilityStatus::ModelFillFailed;
+            break;
+            }
+
+        DgnElementMap elements = model->GetElements();
+        for (auto element : elements)
+            {
+            //printf("elementDisplayLabel: %s \n", element.second->GetDisplayLabel().c_str());
+            DgnElementId elementId = element.first;
+            DgnElementCPtr elementCPtr = m_db->Elements().GetElement(elementId);
+            if (!elementCPtr.IsValid())
                 {
-                status = false;
+                status = CompatibilityStatus::BadElement;
                 break;
-                }
-            model->FillModel();
-            if (!model->IsFilled())
-                {
-                status = false;
-                break;
-                }
-            DgnElementMap elements = model->GetElements();
-            for (auto element : elements)
-                {
-                //printf ("elementDisplayLabel: %s \n", element.second->GetDisplayLabel().c_str());
-                DgnElementId elementId = element.first;
-                if (!elementId.IsValid())
-                    {
-                    status = false;
-                    break;
-                    }
-                DgnElementCPtr elementCPtr = m_db->Elements().GetElement(elementId);
-                if (!elementCPtr.IsValid())
-                    {
-                    status = false;
-                    break;
-                    }
                 }
             }
-        return status;
         }
-    };
+    return status;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  02/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(BackwardsCompatibilityTests, OpenDgndbInCurrent)
     {
-    BeFileName compatibilityRoot;
-    BeTest::GetHost().GetDocumentsRoot(compatibilityRoot);
-    compatibilityRoot.AppendToPath(L"DgnDb");
-    compatibilityRoot.AppendToPath(L"CompatibilityRoot");
-
-    BeFileName srcFilesPath = compatibilityRoot;
+    BeFileName srcFilesPath;
+    BeTest::GetHost().GetDocumentsRoot(srcFilesPath);
+    srcFilesPath.AppendToPath(L"DgnDb");
+    srcFilesPath.AppendToPath(L"CompatibilityRoot");
     srcFilesPath.AppendToPath(L"DgnDb0601");
     srcFilesPath.AppendToPath(L"*.idgndb");
 
-    FILE *f;
-    BeFileName resultsFilePath;
-    BeTest::GetHost().GetOutputRoot(resultsFilePath);
+    BeFileName outputRoot;
+    BeTest::GetHost().GetOutputRoot(outputRoot);
+
+    BeFileName resultsFilePath = outputRoot;
     resultsFilePath.AppendToPath(L"CompatibilityResults_06.txt");
+
+    FILE *f;
     f = fopen(resultsFilePath.GetNameUtf8().c_str(), "a");
     fprintf(f, "Test Files Stream: DgnDb0601 \n");
 
     BeFileListIterator filesIterator(srcFilesPath, false);
-    BeFileName fileName;
-    while (filesIterator.GetNextFileName(fileName) != ERROR)
+    BeFileName dbName;
+
+    while (filesIterator.GetNextFileName(dbName) != ERROR)
         {
         //printf ("dgndb Name: %s", fileName.GetNameUtf8 ().c_str ());
-        DbResult status;
-        m_db = DgnDb::OpenDgnDb(&status, fileName, DgnDb::OpenParams(Db::OpenMode::Readonly));
-        if (DbResult::BE_SQLITE_OK == status && m_db.IsValid() && VerifyElementsAndModels())
+        BeFileName outputFilePath = outputRoot;
+        outputFilePath.AppendToPath(dbName.GetFileNameAndExtension().c_str());
+        //printf("dgndb Name: %s", outputFilePath.GetNameUtf8().c_str());
+
+        BeFileNameStatus copyFileStatus = BeFileName::BeCopyFile(dbName, outputFilePath);
+        CompatibilityStatus stat = CompatibilityStatus::Success;
+        bool writeStatus;
+        if (BeFileNameStatus::Success == copyFileStatus)
             {
-            fprintf(f, "SUCCESS: %ls \n", fileName.GetFileNameAndExtension().c_str());
+            DbResult status;
+            m_db = DgnDb::OpenDgnDb(&status, outputFilePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+            if (DbResult::BE_SQLITE_OK == status && m_db.IsValid())
+                {
+                stat = VerifyElementsAndModels();
+                if (stat == CompatibilityStatus::Success)
+                    writeStatus = true;
+                else
+                    writeStatus = false;
+                }
+            else
+                writeStatus = false;
+
+            if (writeStatus)
+                fprintf(f, "SUCCESS: %ls \n", outputFilePath.GetFileNameAndExtension().c_str());
+            else
+                fprintf(f, "ERROR: %ls Description: %d \n", outputFilePath.GetFileNameAndExtension().c_str(), stat);
             }
         else
-            fprintf(f, "ERROR: %ls \n", fileName.GetFileNameAndExtension().c_str());
+            fprintf(f, "FileCopyERROR: %ls \n", dbName.GetFileNameAndExtension().c_str());
         }
     }
