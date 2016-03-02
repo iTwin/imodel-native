@@ -1894,8 +1894,7 @@ TEST_F (SchemaSerializationTest, SerializeComprehensiveSchema)
 
     //Compose our new schema
     ECSchemaPtr schema;
-    ECSchema::CreateSchema (schema, "ComprehensiveSchema", 1, 0);
-    schema->SetNamespacePrefix ("cmpr");
+    ECSchema::CreateSchema (schema, "ComprehensiveSchema", "cmpr", 1, 5, 2);
     schema->SetDescription("Comprehensive Schema to demonstrate use of all ECSchema concepts.");
     schema->SetDisplayLabel("Comprehensive Schema");
     schema->AddReferencedSchema(*standardCASchema);
@@ -2011,8 +2010,19 @@ TEST_F (SchemaSerializationTest, SerializeComprehensiveSchema)
     NavigationECPropertyP navProp;
     entityClass->CreateNavigationProperty(navProp, "NavigationProperty", *relationshipClass, ECRelatedInstanceDirection::Forward);
 
-    SchemaWriteStatus status2 = schema->WriteToXmlFile (ECTestFixture::GetTempDataPath (L"ComprehensiveSchema.01.00.ecschema.xml").c_str (), 3);
+    WString fullSchemaName;
+    fullSchemaName.AssignUtf8(schema->GetFullSchemaName().c_str());
+    fullSchemaName.append(L".ecschema.xml");
+
+    WString legacyFullSchemaName;
+    legacyFullSchemaName.AssignUtf8(schema->GetLegacyFullSchemaName().c_str());
+    legacyFullSchemaName.append(L".ecschema.xml");
+    
+    SchemaWriteStatus status2 = schema->WriteToXmlFile (ECTestFixture::GetTempDataPath (fullSchemaName.c_str()).c_str (), 3);
     EXPECT_EQ (SchemaWriteStatus::Success, status2);
+
+    SchemaWriteStatus status3 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(legacyFullSchemaName.c_str()).c_str(), 2);
+    EXPECT_EQ(SchemaWriteStatus::Success, status3);
     }
 
 //This test ensures we support any unknown element or attribute put into existing ECSchema XML. Important for backwards compatibility of future EC versions.

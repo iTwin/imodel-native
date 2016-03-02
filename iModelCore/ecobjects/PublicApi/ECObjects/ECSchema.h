@@ -2326,14 +2326,24 @@ struct SchemaKey
     //! @return The version string
     ECOBJECTS_EXPORT static Utf8String FormatLegacyFullSchemaName(Utf8CP schemaName, uint32_t versionMajor, uint32_t versionMinor);
 
-    //! Generate a schema version string given the major and minor version values.
+    //! Generate a schema version string given the major write and minor version values.
     //! @param[in] versionMajor    The major version number
     //! @param[out] versionWrite The  write compatibility version number
     //! @param[in] versionMinor    The minor version number
     //! @return The version string
     ECOBJECTS_EXPORT static Utf8String FormatSchemaVersion(uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor);
 
+    //! Generate a legacy schema version string given the major and minor version values.
+    //! @param[in] versionMajor    The major version number
+    //! @param[in] versionMinor    The minor version number
+    //! @return The version string
+    ECOBJECTS_EXPORT static Utf8String FormatLegacySchemaVersion(uint32_t versionMajor, uint32_t versionMinor);
+
+    //! Generate a legacy schema version string given the major write and minor version values.
     Utf8String GetVersionString() const { return FormatSchemaVersion(m_versionMajor, m_versionWrite, m_versionMinor); }
+
+    //! Generate a legacy schema version string given the major and minor version values.
+    Utf8String GetLegacyVersionString() const { return FormatLegacySchemaVersion(m_versionMajor, m_versionMinor); }
 
     //! Compares two SchemaKeys and returns whether the target schema is less than this SchemaKey, where LessThan is dependent on the match type
     //! @param[in]  rhs         The SchemaKey to compare to
