@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECSqlStatement_FunctionTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlStatementTestFixture.h"
@@ -39,6 +39,8 @@ TEST_F(ECSqlStatementTestFixture, BuiltinFunctions)
             {"SELECT GETECCLASSID() FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
             {"SELECT GLOB(S,'Sample') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Boolean)},
             {"SELECT GROUP_CONCAT(S) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT GROUP_CONCAT(S,'|') FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT GROUP_CONCAT(DISTINCT S) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_String)},
             {"SELECT HEX(Bi) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
             {"SELECT INSTR(S,'str') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Integer)},
             {"SELECT LENGTH(S) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
@@ -99,11 +101,11 @@ TEST_F(ECSqlStatementTestFixture, BuiltinFunctions)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, SelectCountDistinct)
+TEST_F(ECSqlStatementTestFixture, FunctionCallWithDistinct)
     {
     ECDbR ecdb = SetupECDb("ecsqlbuiltinfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), 0, ECDb::OpenParams(Db::OpenMode::ReadWrite));
 
-    auto getCount = [] (ECDbCR ecdb, Utf8CP ecsql)
+    auto getIntScalar = [] (ECDbCR ecdb, Utf8CP ecsql)
         {
         ECSqlStatement stmt;
         if (ECSqlStatus::Success != stmt.Prepare(ecdb, ecsql))
@@ -114,6 +116,19 @@ TEST_F(ECSqlStatementTestFixture, SelectCountDistinct)
 
         return stmt.GetValueInt(0);
         };
+
+    auto getStringScalar = [] (ECDbCR ecdb, Utf8CP ecsql)
+        {
+        ECSqlStatement stmt;
+        if (ECSqlStatus::Success != stmt.Prepare(ecdb, ecsql))
+            return Utf8String();
+
+        if (BE_SQLITE_ROW != stmt.Step())
+            return Utf8String();
+
+        return Utf8String(stmt.GetValueText(0));
+        };
+
 
     {
     //create the following data
@@ -151,9 +166,15 @@ TEST_F(ECSqlStatementTestFixture, SelectCountDistinct)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
-    ASSERT_EQ(5, getCount(ecdb, "SELECT count(*) from ecsql.P"));
-    ASSERT_EQ(5, getCount(ecdb, "SELECT count(distinct ECInstanceId) from ecsql.P"));
-    ASSERT_EQ(2, getCount(ecdb, "SELECT count(distinct I) from ecsql.P"));
-    ASSERT_EQ(3, getCount(ecdb, "SELECT count(distinct S) from ecsql.P"));
+    ASSERT_EQ(5, getIntScalar(ecdb, "SELECT count(*) from ecsql.P"));
+    ASSERT_EQ(5, getIntScalar(ecdb, "SELECT count(distinct ECInstanceId) from ecsql.P"));
+    ASSERT_EQ(2, getIntScalar(ecdb, "SELECT count(distinct I) from ecsql.P"));
+    ASSERT_EQ(3, getIntScalar(ecdb, "SELECT count(distinct S) from ecsql.P"));
+
+    ASSERT_STREQ("1,1,2,3,3", getStringScalar(ecdb, "SELECT group_concat(S) from ecsql.P").c_str());
+    ASSERT_STREQ("1&1&2&3&3", getStringScalar(ecdb, "SELECT group_concat(S,'&') from ecsql.P").c_str());
+    ASSERT_STREQ("11233", getStringScalar(ecdb, "SELECT group_concat(S,'') from ecsql.P").c_str());
+    ASSERT_STREQ("1,2,3", getStringScalar(ecdb, "SELECT group_concat(DISTINCT S) from ecsql.P").c_str());
     }
+
 END_ECDBUNITTESTS_NAMESPACE

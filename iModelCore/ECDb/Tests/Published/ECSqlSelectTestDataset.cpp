@@ -1200,6 +1200,15 @@ ECSqlTestDataset ECSqlSelectTestDataset::FunctionTests( int rowCountPerClass )
     ecsql = "SELECT ECInstanceId FROM ecsql.PSA WHERE I = ROUND (122.8)";
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
+    ecsql = "SELECT group_concat(S) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, 1);
+
+    ecsql = "SELECT group_concat(S,'|') FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, 1);
+
+    ecsql = "SELECT group_concat(DISTINCT S) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, 1);
+
     //**** GetECClassId
     ecsql = "SELECT GetECClassId() FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
