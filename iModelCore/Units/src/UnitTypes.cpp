@@ -174,12 +174,20 @@ double Unit::Convert(double value, UnitCP toUnit) const
     return value;
     }
 
+Utf8String Unit::GetUnitDimension() const
+    {
+    Expression phenomenonExpression = Evaluate();
+    Expression baseExpression;
+    Expression::CreateExpressionWithOnlyBaseSymbols(phenomenonExpression, baseExpression, false);
+    return baseExpression.ToString(false);
+    }
+
 Utf8String Phenomenon::GetPhenomenonDimension() const
     {
     Expression phenomenonExpression = Evaluate();
     Expression baseExpression;
     Expression::CreateExpressionWithOnlyBaseSymbols(phenomenonExpression, baseExpression, false);
-    return baseExpression.ToString();
+    return baseExpression.ToString(false);
     }
 
 void Phenomenon::AddUnit(UnitCR unit)

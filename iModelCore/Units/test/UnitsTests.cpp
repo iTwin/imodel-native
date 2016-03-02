@@ -99,8 +99,8 @@ bool UnitsTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double
         NativeLogging::LoggingConfig::SetSeverity("Performance", NativeLogging::SEVERITY::LOG_TRACE);
         }
 
-    PERFORMANCELOG.debugv("About to try to convert from %s to %s", fromUnit->GetName(), targetUnit->GetName());
-    double convertedVal = fromUnit->Convert(fromVal, targetUnit);;
+    PERFORMANCELOG.debugv("About to try to convert from %s to %s", targetUnit->GetName(), fromUnit->GetName());
+    double convertedVal = targetUnit->Convert(expectedVal, fromUnit);;
 
     //QuantityP q = SimpleQuantity(fromVal, fromUnitName);
     //if (nullptr == q)
@@ -111,14 +111,14 @@ bool UnitsTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double
     //    }
 
     //double convertedVal = q->Value(targetUnitName);
-    PERFORMANCELOG.debugv("Converted %s to %s.  Expected: %lf  Actual: %lf", fromUnit->GetName(), targetUnit->GetName(), expectedVal, convertedVal);
-    if (fabs(convertedVal - expectedVal) > tolerance)
+    PERFORMANCELOG.debugv("Converted %s to %s.  Expected: %lf  Actual: %lf", targetUnit->GetName(), fromUnit->GetName(), fromVal, convertedVal);
+    if (fabs(convertedVal - fromVal) > tolerance)
         {
-        Utf8PrintfString formattedText("Conversion from %s to %s. Input: %lf Output: %lf Expected: %lf Tolerance: %.9f", fromUnitName, targetUnitName, fromVal, convertedVal, expectedVal, tolerance);
+        Utf8PrintfString formattedText("Conversion from %s to %s. Input: %lf Output: %lf Expected: %lf Tolerance: %.9f", targetUnitName, fromUnitName, expectedVal, convertedVal, fromVal, tolerance);
         conversionErrors.push_back(formattedText);
         }
-    EXPECT_FALSE(std::isnan(convertedVal) || !std::isfinite(convertedVal)) << "Conversion from " << fromUnitName << " to " << targetUnitName << " resulted in an invalid number";
-    EXPECT_NEAR(expectedVal, convertedVal, tolerance)<<  "Conversion from "<< fromUnitName << " to " << targetUnitName <<". Input : " << fromVal << ", Output : " << convertedVal << ", ExpectedOutput : " << expectedVal << "Tolerance : " << tolerance<< "\n";
+    EXPECT_FALSE(std::isnan(convertedVal) || !std::isfinite(convertedVal)) << "Conversion from " << targetUnitName << " to " << fromUnitName << " resulted in an invalid number";
+    EXPECT_NEAR(fromVal, convertedVal, tolerance)<<  "Conversion from "<< targetUnitName << " to " << fromUnitName <<". Input : " << expectedVal << ", Output : " << convertedVal << ", ExpectedOutput : " << fromVal << "Tolerance : " << tolerance<< "\n";
 
     if (showDetailLogs)
         {
@@ -477,6 +477,51 @@ void TestUnitAndConstantsExist(const bvector<Utf8String>& unitNames, Utf8CP unit
             }
         }
     }
+
+TEST_F(UnitsTests, AllUnitsNeededForFirstReleaseExist)
+    {
+    bvector<Utf8String> missingUnits;
+    bvector<Utf8String> foundUnits;
+    auto lineProcessor = [&missingUnits, &foundUnits] (bvector<Utf8String>& lines)
+        {
+        for (auto const& unitName : lines)
+            {
+            UnitCP unit = UnitRegistry::Instance().LookupUnit(unitName.c_str());
+            if (nullptr == unit)
+                missingUnits.push_back(unitName);
+            else
+                foundUnits.push_back(unitName);
+            }
+        };
+
+    ReadConversionCsvFile(L"NeededUnits.csv", lineProcessor);
+
+    if (missingUnits.size() != 0)
+        {
+        Utf8String missingString = BeStringUtilities::Join(missingUnits, ", ");
+        EXPECT_EQ(0, missingUnits.size()) << "Some needed units were not found\n" << missingString.c_str();
+        }
+    ASSERT_NE(0, foundUnits.size()) << "No units were found";
+    }
+
+//TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
+//    {
+//    ofstream fileStream("C:\\AllUnitsByPhenomenon.txt", ofstream::out);
+//    bvector<PhenomenonCP> phenomena;
+//    UnitRegistry::Instance().AllPhenomena(phenomena);
+//    for (auto const& phenomenon : phenomena)
+//        {
+//        fileStream << left << setw(35) << phenomenon->GetName() << setw(35) << phenomenon->GetDefinition() << setw(25) << phenomenon->GetPhenomenonDimension() << endl;
+//        fileStream << left << setw(84) << setfill('-') << "-" << endl;
+//        fileStream << setfill(' ');
+//        for (auto const& unit : phenomenon->GetUnits())
+//            {
+//            fileStream << left << setw(35) << unit->GetName() << setw(35) << unit->GetDefinition() << setw(25) << unit->GetUnitDimension() << endl;
+//            }
+//        fileStream << endl << endl;
+//        }
+//    fileStream.close();
+//    }
 
 struct UnitsPerformanceTests : UnitsTests {};
 

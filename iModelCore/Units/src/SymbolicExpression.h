@@ -66,7 +66,7 @@ private:
     static void Copy(ExpressionR source, ExpressionR target);
 
     void LogExpression(NativeLogging::SEVERITY loggingLevel, Utf8CP name) const;
-    Utf8String ToString() const;
+    Utf8String ToString(bool includeFactors = true) const;
     bool Contains(ExpressionSymbolCR symbol) const;
 
     static BentleyStatus ParseDefinition(SymbolCR owner, int& depth, Utf8CP definition, ExpressionR expression, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName);

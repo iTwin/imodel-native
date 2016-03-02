@@ -63,20 +63,23 @@ void UnitRegistry::AddDefaultPhenomena ()
     AddPhenomena(MAGNETICFLUX, "ELECTRIC_POTENTIAL*TIME");
     AddPhenomena(MAGNETIC_FLUX_DENSITY, "MAGNETICFLUX*LENGTH(-2)");
     AddPhenomena(INDUCTANCE, "MAGNETICFLUX*CURRENT(-1)");
-    AddPhenomena(LUMINOUSFLUX, "LUMINOUSINTENSITY*SOLIDANGLE(-1)"); // TODO: Check
-    AddPhenomena(ILLUMINANCE, "LUMINOUSFLUX*LENGTH(-2)");
+    AddPhenomena(LUMINOUS_FLUX, "LUMINOSITY*SOLIDANGLE"); // TODO: Check
+    AddPhenomena(ILLUMINANCE, "LUMINOUS_FLUX*LENGTH(-2)");
+    AddPhenomena(ROTATIONAL_SPRING_CONSTANT, "FORCE*LENGTH*ANGLE(-1)");  // TODO: Is this correct?  Should it be TORQUE/ANGLE?
+    AddPhenomena(LINEAR_ROTATIONAL_SPRING_CONSTANT, "FORCE*ANGLE(-1)"); // TODO: Understand this phenomenon instead of just copying from old units.
     //AddPhenomena(RADIATION)
     //AddPhenomena(RADEXPOSURE)
     //AddPhenomena(RADABSORBDOSE, "WORK*MASS(-1)");
     //AddPhenomena(RADEQUDOSE, "WORK*MASS(-1)");
     AddPhenomena(SIZE_LENGTH_RATE, "LENGTH*LENGTH"); // TODO: ?
-    AddPhenomena(THERMOCONDUCT, "POWER*LENGTH(-1)*TEMPERATURE(-1)");
+    AddPhenomena(THERMAL_CONDUCTIVITY, "POWER*LENGTH(-1)*TEMPERATURE(-1)");
+    //AddPhenomena(THERMAL_TRANSMITTANCE, "POWER*AREA(-1)*TEMPERATURE(-1)");
     AddPhenomena(MOLAR_VOLUME, "VOLUME*MOLE(-1)");
     AddPhenomena(MOLAR_CONCENTRATION, "MOLE*VOLUME(-1)");
     AddPhenomena(SLOPE, "LENGTH*LENGTH(-1)");
     AddPhenomena(GRAVCONSTANT, "LENGTH(3)*MASS(-1)*TIME(-2)"); // TODO: Check
     AddPhenomena(THREAD_PITCH, "LENGTH*ANGLE(-1)"); // TODO: What about rotation portion?
-    AddPhenomena(HEATTRASNFER, "POWER*AREA(-1)*TEMPERATURE(-1)"); // https://en.wikipedia.org/wiki/Heat_transfer_coefficient
+    AddPhenomena(HEAT_TRANSFER, "POWER*AREA(-1)*TEMPERATURE(-1)"); // https://en.wikipedia.org/wiki/Heat_transfer_coefficient
     AddPhenomena(HEATFLUX_DENSITY, "POWER*AREA(-1)"); // https://en.wikipedia.org/wiki/Heat_flux  see description of heat flux density
     AddPhenomena(TORSIONAL_WARPING_CONSTANT, "LENGTH(6)"); // TODO: Could also be buckling resistance ... are we missing some angular portion to this unit?
     AddPhenomena(POPULATION_DENSITY, "CAPITA*AREA(-1)");
@@ -86,6 +89,7 @@ void UnitRegistry::AddDefaultPhenomena ()
     AddPhenomena(HEATING_VALUE_VOLUMETRIC, "WORK*VOLUME(-1)"); // TODO: Check
     AddPhenomena(HEATING_VALUE_MASS, "WORK*MASS(-1)");
     AddPhenomena(HEATING_VALUE_MOLE, "WORK*MOLE(-1)");
+    AddPhenomena(SPECIFIC_HEAT_CAPACITY, "WORK*MASS(-1)*TEMPERATURE(-1)");
     //AddPhenomena(ACTION, "WORK*TIME");
     }
 

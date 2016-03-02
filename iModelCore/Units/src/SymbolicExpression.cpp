@@ -44,12 +44,12 @@ void Expression::LogExpression(NativeLogging::SEVERITY loggingLevel, Utf8CP name
     LOG.message(loggingLevel, ToString().c_str());
     }
 
-Utf8String Expression::ToString() const
+Utf8String Expression::ToString(bool includeFactors) const
     {
     Utf8String output;
     for (auto const& sWE : m_symbolExpression)
         {
-        if (sWE->GetSymbol()->GetFactor() == 0.0)
+        if (!includeFactors || sWE->GetSymbol()->GetFactor() == 0.0)
             {
             Utf8PrintfString sWEString("%s^%d * ", sWE->GetName(), sWE->GetExponent());
             output.append(sWEString.c_str());

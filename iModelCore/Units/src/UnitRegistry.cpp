@@ -81,7 +81,7 @@ Utf8CP GetBasePhenomenonName(Utf8Char dimensionSymbol)
             case BasePhenomena::Length:
                 return LENGTH;
             case BasePhenomena::Luminosity:
-                return LUMINOUSINTENSITY;
+                return LUMINOSITY;
             case BasePhenomena::Mass:
                 return MASS;
             case BasePhenomena::Mole:
