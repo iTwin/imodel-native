@@ -80,9 +80,9 @@ m_id(errorId)
 WSError::WSError(HttpResponseCR httpResponse) : WSError()
     {
     if (ConnectionStatus::OK == httpResponse.GetConnectionStatus() &&
-        LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_ERROR))
+        LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_INFO))
         {
-        LOG.errorv
+        LOG.infov
             (
             "WSError - received error:\n"
             "From Url: %s\n"
