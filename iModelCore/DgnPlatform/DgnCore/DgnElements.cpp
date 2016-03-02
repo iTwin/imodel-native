@@ -1012,7 +1012,9 @@ DgnElement::~DgnElement()
     {
     BeAssert(!IsPersistent());
     ClearAllAppData();
-    UnloadUserProperties();
+
+    if (m_userProperties)
+        UnloadUserProperties();
 
     --GetDgnDb().Elements().m_tree->m_totals.m_extant;
     }
