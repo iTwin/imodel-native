@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/AdHocJsonValue.cpp $
+|     $Source: src/AdHocJsonContainer.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -13,7 +13,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus AdHocJsonValue::FromString(Utf8CP jsonStr)
+BentleyStatus AdHocJsonContainer::FromString(Utf8CP jsonStr)
     {
     if (Utf8String::IsNullOrEmpty(jsonStr))
         {
@@ -32,7 +32,7 @@ BentleyStatus AdHocJsonValue::FromString(Utf8CP jsonStr)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-Utf8String AdHocJsonValue::ToString()
+Utf8String AdHocJsonContainer::ToString()
     {
     if (IsEmpty())
         return "";
@@ -43,182 +43,190 @@ Utf8String AdHocJsonValue::ToString()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-Json::Value const* AdHocJsonValue::GetMetaData(Utf8CP name, Utf8CP metaDataName) const
+Json::Value const* AdHocJsonPropertyValue::GetAttribute(Utf8CP attributeName) const
     {
-    Utf8String metaDataKey = Utf8PrintfString("%s%s", META_DATA_KEY_PREFIX, name);
+    Utf8CP attributeKey = m_attributeKey.c_str();
 
-    if (!m_value.isMember(metaDataKey.c_str()))
+    if (!m_value.isMember(attributeKey))
         return nullptr;
 
-    Json::Value const& entry = m_value[metaDataKey.c_str()];
-    if (!entry.isObject() || !entry.isMember(metaDataName) || entry[metaDataName].isNull())
+    Json::Value const& entry = m_value[attributeKey];
+    if (!entry.isObject() || !entry.isMember(attributeName) || entry[attributeName].isNull())
         return nullptr;
 
-    return &entry[metaDataName];
+    return &entry[attributeName];
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-void AdHocJsonValue::SetType(Utf8CP name, ECN::PrimitiveType primitiveType)
+void AdHocJsonPropertyValue::SetType(ECN::PrimitiveType primitiveType)
     {
-    SetMetaData<Utf8CP>(name, TYPE_FIELD_NAME, ECXml::GetPrimitiveTypeName(primitiveType));
+    SetAttribute<Utf8CP>(TYPE_FIELD_NAME, ECXml::GetPrimitiveTypeName(primitiveType));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-void AdHocJsonValue::SetValueBoolean(Utf8CP name, bool value)
+void AdHocJsonPropertyValue::SetValueBoolean(bool value)
     {
-    m_value[name] = value;
-    SetType(name, PRIMITIVETYPE_Boolean);
+    m_value[m_name.c_str()] = value;
+    SetType(PRIMITIVETYPE_Boolean);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-void AdHocJsonValue::SetValueInt(Utf8CP name, int32_t value, Utf8CP units /*= nullptr*/)
+void AdHocJsonPropertyValue::SetValueInt(int32_t value, Utf8CP units /*= nullptr*/)
     {
-    m_value[name] = value;
-    SetType(name, PRIMITIVETYPE_Integer);
+    m_value[m_name.c_str()] = value;
+    SetType(PRIMITIVETYPE_Integer);
     if (!Utf8String::IsNullOrEmpty(units))
-        SetUnits(name, units);
+        SetUnits(units);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-void AdHocJsonValue::SetValueInt64(Utf8CP name, int64_t value)
+void AdHocJsonPropertyValue::SetValueInt64(int64_t value)
     {
-    m_value[name] = value;
-    SetType(name, PRIMITIVETYPE_Long);
+    m_value[m_name.c_str()] = value;
+    SetType(PRIMITIVETYPE_Long);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-void AdHocJsonValue::SetValueDouble(Utf8CP name, double value, Utf8CP units /*= nullptr*/)
+void AdHocJsonPropertyValue::SetValueDouble(double value, Utf8CP units /*= nullptr*/)
     {
-    m_value[name] = value;
-    SetType(name, PRIMITIVETYPE_Double);
+    m_value[m_name.c_str()] = value;
+    SetType(PRIMITIVETYPE_Double);
     if (!Utf8String::IsNullOrEmpty(units))
-        SetUnits(name, units);
+        SetUnits(units);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-void AdHocJsonValue::SetValueText(Utf8CP name, Utf8CP value)
+void AdHocJsonPropertyValue::SetValueText(Utf8CP value)
     {
-    m_value[name] = value;
-    SetType(name, PRIMITIVETYPE_String);
+    m_value[m_name.c_str()] = value;
+    SetType(PRIMITIVETYPE_String);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-void AdHocJsonValue::SetValuePoint2D(Utf8CP name, DPoint2dCR value)
+void AdHocJsonPropertyValue::SetValuePoint2D(DPoint2dCR value)
     {
+    Utf8CP name = m_name.c_str();
     m_value[name] = Json::objectValue;
     m_value[name]["x"] = value.x;
     m_value[name]["y"] = value.y;
-    SetType(name, PRIMITIVETYPE_Point2D);
+    SetType(PRIMITIVETYPE_Point2D);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-void AdHocJsonValue::SetValuePoint3D(Utf8CP name, DPoint3dCR value)
+void AdHocJsonPropertyValue::SetValuePoint3D(DPoint3dCR value)
     {
+    Utf8CP name = m_name.c_str();
     m_value[name] = Json::objectValue;
     m_value[name]["x"] = value.x;
     m_value[name]["y"] = value.y;
     m_value[name]["z"] = value.z;
-    SetType(name, PRIMITIVETYPE_Point3D);
+    SetType(PRIMITIVETYPE_Point3D);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-void AdHocJsonValue::SetValueDateTime(Utf8CP name, DateTimeCR value)
+void AdHocJsonPropertyValue::SetValueDateTime(DateTimeCR value)
     {
     Json::Value jsonValue = value.ToUtf8String();
-    m_value[name] = jsonValue;
-    SetType(name, PRIMITIVETYPE_DateTime);
+    m_value[m_name.c_str()] = jsonValue;
+    SetType(PRIMITIVETYPE_DateTime);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-bool AdHocJsonValue::SetValueEC(Utf8CP name, ECN::ECValueCR value)
+BentleyStatus AdHocJsonPropertyValue::SetValueEC(ECN::ECValueCR value)
     {
     if (!value.IsPrimitive())
         {
         BeAssert(false && "Can only set primitive values");
-        return false;
+        return ERROR;
         }
 
     if (value.IsNull())
         {
-        SetValueNull(name);
-        return true;
+        SetValueNull();
+        return SUCCESS;
         }
 
     PrimitiveType primitiveType = value.GetPrimitiveType();
     switch (primitiveType)
         {
         case PRIMITIVETYPE_Boolean:
-            SetValueBoolean(name, value.GetBoolean());
-            return true;
+            SetValueBoolean(value.GetBoolean());
+            break;
         case PRIMITIVETYPE_DateTime:
-            SetValueDateTime(name, value.GetDateTime());
-            return true;
+            SetValueDateTime(value.GetDateTime());
+            break;
         case PRIMITIVETYPE_Double:
-            SetValueDouble(name, value.GetDouble());
-            return true;
+            SetValueDouble(value.GetDouble());
+            break;
         case PRIMITIVETYPE_Integer:
-            SetValueInt(name, value.GetInteger());
-            return true;
+            SetValueInt(value.GetInteger());
+            break;
         case PRIMITIVETYPE_Long:
-            SetValueInt64(name, value.GetLong());
-            return true;
+            SetValueInt64(value.GetLong());
+            break;
         case PRIMITIVETYPE_Point2D:
-            SetValuePoint2D(name, value.GetPoint2D());
-            return true;
+            SetValuePoint2D(value.GetPoint2D());
+            break;
         case PRIMITIVETYPE_Point3D:
-            SetValuePoint3D(name, value.GetPoint3D());
-            return true;
+            SetValuePoint3D(value.GetPoint3D());
+            break;
         case PRIMITIVETYPE_String:
-            SetValueText(name, value.GetUtf8CP());
-            return true;
+            SetValueText(value.GetUtf8CP());
+            break;
         default:
             BeAssert(false && "Cannot handle type");
-            return false;
+            return ERROR;
         }
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-void AdHocJsonValue::SetValueNull(Utf8CP name)
+void AdHocJsonPropertyValue::SetValueNull()
     {
-    m_value[name] = Json::nullValue;
+    m_value[m_name.c_str()] = Json::nullValue;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-void AdHocJsonValue::RemoveValue(Utf8CP name)
+void AdHocJsonPropertyValue::RemoveValue()
     {
-    if (m_value.isMember(name))
-        m_value.removeMember(name);
+    if (m_value.isMember(m_name.c_str()))
+        m_value.removeMember(m_name.c_str());
+
+    if (m_value.isMember(m_attributeKey.c_str()))
+        m_value.removeMember(m_attributeKey.c_str());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-Json::Value const* AdHocJsonValue::GetValue(Utf8CP name) const
+Json::Value const* AdHocJsonPropertyValue::GetJsonValue() const
     {
+    Utf8CP name = m_name.c_str();
     if (m_value.isMember(name) && !m_value[name].isNull())
         return &m_value[name];
 
@@ -228,72 +236,72 @@ Json::Value const* AdHocJsonValue::GetValue(Utf8CP name) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-bool AdHocJsonValue::GetValueBoolean(Utf8CP name) const
+bool AdHocJsonPropertyValue::GetValueBoolean() const
     {
-    Json::Value const* value = GetValue(name);
+    Json::Value const* value = GetJsonValue();
     return value ? value->asBool() : false;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-Utf8CP AdHocJsonValue::GetValueText(Utf8CP name) const
+Utf8CP AdHocJsonPropertyValue::GetValueText() const
     {
-    Json::Value const* value = GetValue(name);
+    Json::Value const* value = GetJsonValue();
     return value ? value->asCString() : nullptr;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-double AdHocJsonValue::GetValueDouble(Utf8CP name) const
+double AdHocJsonPropertyValue::GetValueDouble() const
     {
-    Json::Value const* value = GetValue(name);
+    Json::Value const* value = GetJsonValue();
     return value ? value->asDouble() : 0;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-int AdHocJsonValue::GetValueInt(Utf8CP name) const
+int AdHocJsonPropertyValue::GetValueInt() const
     {
-    Json::Value const* value = GetValue(name);
+    Json::Value const* value = GetJsonValue();
     return value ? value->asInt() : 0;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-int64_t AdHocJsonValue::GetValueInt64(Utf8CP name) const
+int64_t AdHocJsonPropertyValue::GetValueInt64() const
     {
-    Json::Value const* value = GetValue(name);
+    Json::Value const* value = GetJsonValue();
     return value ? value->asInt64() : 0;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-DPoint2d AdHocJsonValue::GetValuePoint2D(Utf8CP name) const
+DPoint2d AdHocJsonPropertyValue::GetValuePoint2D() const
     {
-    Json::Value const* value = GetValue(name);
+    Json::Value const* value = GetJsonValue();
     return value ? DPoint2d::From((*value)["x"].asDouble(), (*value)["y"].asDouble()) : DPoint2d::From(0.0, 0.0);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-DPoint3d AdHocJsonValue::GetValuePoint3D(Utf8CP name) const
+DPoint3d AdHocJsonPropertyValue::GetValuePoint3D() const
     {
-    Json::Value const* value = GetValue(name);
+    Json::Value const* value = GetJsonValue();
     return value ? DPoint3d::From((*value)["x"].asDouble(), (*value)["y"].asDouble(), (*value)["z"].asDouble()) : DPoint3d::From(0.0, 0.0, 0.0);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-DateTime AdHocJsonValue::GetValueDateTime(Utf8CP name) const
+DateTime AdHocJsonPropertyValue::GetValueDateTime() const
     {
-    Json::Value const* jsonValue = GetValue(name);
+    Json::Value const* jsonValue = GetJsonValue();
 
     DateTime value;
     if (jsonValue)
@@ -305,14 +313,13 @@ DateTime AdHocJsonValue::GetValueDateTime(Utf8CP name) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-ECValue AdHocJsonValue::GetValueEC(Utf8CP name) const
+ECValue AdHocJsonPropertyValue::GetValueEC() const
     {
-    Json::Value const* jsonValue = GetValue(name);
-    if (!jsonValue)
+    if (IsValueNull())
         return ECValue();
 
     PrimitiveType primitiveType;
-    if (!GetType(primitiveType, name))
+    if (GetStatus::Found != GetType(primitiveType))
         {
         BeAssert(false && "Could not find the primitive type of the value");
         return ECValue();
@@ -321,21 +328,21 @@ ECValue AdHocJsonValue::GetValueEC(Utf8CP name) const
     switch (primitiveType)
         {
         case PRIMITIVETYPE_Boolean:
-            return ECValue(GetValueBoolean(name));
+            return ECValue(GetValueBoolean());
         case PRIMITIVETYPE_DateTime:
-            return ECValue(GetValueDateTime(name));
+            return ECValue(GetValueDateTime());
         case PRIMITIVETYPE_Double:
-            return ECValue(GetValueDouble(name));
+            return ECValue(GetValueDouble());
         case PRIMITIVETYPE_Integer:
-            return ECValue(GetValueInt(name));
+            return ECValue(GetValueInt());
         case PRIMITIVETYPE_Long:
-            return ECValue(GetValueInt64(name));
+            return ECValue(GetValueInt64());
         case PRIMITIVETYPE_Point2D:
-            return ECValue(GetValuePoint2D(name));
+            return ECValue(GetValuePoint2D());
         case PRIMITIVETYPE_Point3D:
-            return ECValue(GetValuePoint3D(name));
+            return ECValue(GetValuePoint3D());
         case PRIMITIVETYPE_String:
-            return ECValue(GetValueText(name));
+            return ECValue(GetValueText());
         default:
             BeAssert(false);
             return ECValue();
@@ -345,90 +352,90 @@ ECValue AdHocJsonValue::GetValueEC(Utf8CP name) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-bool AdHocJsonValue::GetType(PrimitiveType& primitiveType, Utf8CP name) const
+AdHocJsonPropertyValue::GetStatus AdHocJsonPropertyValue::GetType(PrimitiveType& primitiveType) const
     {
-    Json::Value const* jsonValue = GetMetaData(name, TYPE_FIELD_NAME);
+    Json::Value const* jsonValue = GetAttribute(TYPE_FIELD_NAME);
     if (!jsonValue)
-        return false;
+        return GetStatus::NotFound;
 
-    return (ECObjectsStatus::Success == ECXml::ParsePrimitiveType(primitiveType, jsonValue->asString()));
+    return (ECObjectsStatus::Success == ECXml::ParsePrimitiveType(primitiveType, jsonValue->asString())) ? GetStatus::Found : GetStatus::NotFound;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-bool AdHocJsonValue::GetExtendedType(Utf8StringR extendedTypeName, Utf8CP name) const
+AdHocJsonPropertyValue::GetStatus AdHocJsonPropertyValue::GetExtendedType(Utf8StringR extendedTypeName) const
     {
-    Json::Value const* jsonValue = GetMetaData(name, EXTENDEDTYPE_FIELD_NAME);
+    Json::Value const* jsonValue = GetAttribute(EXTENDEDTYPE_FIELD_NAME);
     if (!jsonValue)
-        return false;
+        return GetStatus::NotFound;
 
     extendedTypeName = jsonValue->asString();
-    return true;
+    return GetStatus::Found;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-bool AdHocJsonValue::GetUnits(Utf8StringR unitsStr, Utf8CP name) const
+AdHocJsonPropertyValue::GetStatus AdHocJsonPropertyValue::GetUnits(Utf8StringR unitsStr) const
     {
-    Json::Value const* jsonValue = GetMetaData(name, UNITS_FIELD_NAME);
+    Json::Value const* jsonValue = GetAttribute(UNITS_FIELD_NAME);
     if (!jsonValue)
-        return false;
+        return GetStatus::NotFound;
 
     unitsStr = jsonValue->asString();
-    return true;
+    return GetStatus::Found;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-bool AdHocJsonValue::GetCategory(Utf8StringR categoryLabel, Utf8CP name) const
+AdHocJsonPropertyValue::GetStatus AdHocJsonPropertyValue::GetCategory(Utf8StringR categoryLabel) const
     {
-    Json::Value const* jsonValue = GetMetaData(name, CATEGORY_FIELD_NAME);
+    Json::Value const* jsonValue = GetAttribute(CATEGORY_FIELD_NAME);
     if (!jsonValue)
-        return false;
+        return GetStatus::NotFound;
 
     categoryLabel = jsonValue->asString();
-    return true;
+    return GetStatus::Found;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-bool AdHocJsonValue::GetHidden(bool& isHidden, Utf8CP name) const
+AdHocJsonPropertyValue::GetStatus AdHocJsonPropertyValue::GetHidden(bool& isHidden) const
     {
-    Json::Value const* jsonValue = GetMetaData(name, HIDDEN_FIELD_NAME);
+    Json::Value const* jsonValue = GetAttribute(HIDDEN_FIELD_NAME);
     if (!jsonValue)
-        return false;
+        return GetStatus::NotFound;
 
     isHidden = jsonValue->asBool();
-    return true;
+    return GetStatus::Found;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-bool AdHocJsonValue::GetPriority(int& priority, Utf8CP name) const
+AdHocJsonPropertyValue::GetStatus AdHocJsonPropertyValue::GetPriority(int& priority) const
     {
-    Json::Value const* jsonValue = GetMetaData(name, PRIORITY_FIELD_NAME);
+    Json::Value const* jsonValue = GetAttribute(PRIORITY_FIELD_NAME);
     if (!jsonValue)
-        return false;
+        return GetStatus::NotFound;
 
     priority = jsonValue->asInt();
-    return true;
+    return GetStatus::Found;
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    02/2016
 //---------------------------------------------------------------------------------------
-bool AdHocJsonValue::GetReadOnly(bool& isReadOnly, Utf8CP name) const
+AdHocJsonPropertyValue::GetStatus AdHocJsonPropertyValue::GetReadOnly(bool& isReadOnly) const
     {
-    Json::Value const* jsonValue = GetMetaData(name, READONLY_FIELD_NAME);
+    Json::Value const* jsonValue = GetAttribute(READONLY_FIELD_NAME);
     if (!jsonValue)
-        return false;
+        return GetStatus::NotFound;
 
     isReadOnly = jsonValue->asBool();
-    return true;
+    return GetStatus::Found;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
