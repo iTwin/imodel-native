@@ -63,9 +63,9 @@ INIT_METHOD
         // Delete any files that may be hanging around since the last run
         s_cleaned = true;
         BeFileName dirName;
-        BeTest::Host().GetOutputRoot(dirName);
+        BeTest::GetHost().GetOutputRoot(dirName);
         BeFileName::EmptyDirectory(dirName);
-        BeTest::Host().GetTempDir(dirName);
+        BeTest::GetHost().GetTempDir(dirName);
         BeFileName::EmptyDirectory(dirName);
         }
 
