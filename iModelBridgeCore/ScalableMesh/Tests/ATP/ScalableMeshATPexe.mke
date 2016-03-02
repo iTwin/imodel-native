@@ -122,6 +122,7 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)BaseGeoCoord.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)ScalableMesh.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)TerrainModelCore.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)Imagepp.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(BeJsonCppLib)
 
 LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)DgnView.lib
 LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)BeXml.lib
