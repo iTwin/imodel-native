@@ -69,52 +69,55 @@ ECObjectsStatus KindOfQuantity::ParseFullName(Utf8StringR prefix, Utf8StringR ki
     return ECObjectsStatus::Success;
     }
 
-//
-///*---------------------------------------------------------------------------------**//**
-//* @bsimethod                                    Robert.Schili                  02/2016
-//+---------------+---------------+---------------+---------------+---------------+------*/
-//SchemaWriteStatus KindOfQuantity::WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const
-//    {
-//    if (ecXmlVersionMajor < 3)
-//        { //Enumerations will only be serialized in 3.0 and later
-//        return SchemaWriteStatus::Success;
-//        }
-//
-//    Utf8CP elementName = EC_ENUMERATION_ELEMENT;
-//    SchemaWriteStatus status = SchemaWriteStatus::Success;
-//    
-//    xmlWriter.WriteElementStart(elementName);
-//    
-//    xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, this->GetName().c_str());
-//    xmlWriter.WriteAttribute(BACKING_TYPE_NAME_ATTRIBUTE, GetTypeName().c_str());
-//    xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, this->GetInvariantDescription().c_str());
-//    if (GetIsDisplayLabelDefined())
-//        xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
-//
-//    xmlWriter.WriteAttribute(IS_STRICT_ATTRIBUTE, this->GetIsStrict());
-//
-//    bool isIntType = GetType() == PrimitiveType::PRIMITIVETYPE_Integer;
-//    for (auto enumerator : m_enumeratorList)
-//        {
-//        xmlWriter.WriteElementStart(EC_ENUMERATOR_ELEMENT);
-//        Utf8StringCR displayLabel = enumerator->GetInvariantDisplayLabel();
-//        if(isIntType)
-//            xmlWriter.WriteAttribute(ENUMERATOR_VALUE_ATTRIBUTE, enumerator->GetInteger());
-//        else
-//            {
-//            xmlWriter.WriteAttribute(ENUMERATOR_VALUE_ATTRIBUTE, enumerator->GetString().c_str());
-//            }
-//
-//        if(enumerator->m_hasExplicitDisplayLabel)
-//            xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, displayLabel.c_str());
-//
-//        xmlWriter.WriteElementEnd();
-//        }
-//    
-//    //WriteCustomAttributes (xmlWriter);
-//    xmlWriter.WriteElementEnd();
-//    return status;
-//    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Robert.Schili                  03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaWriteStatus KindOfQuantity::WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const
+    {
+    if (ecXmlVersionMajor < 3)
+        { //will only be serialized in 3.0 and later
+        return SchemaWriteStatus::Success;
+        }
+
+    Utf8CP elementName = KIND_OF_QUANTITY_ELEMENT;
+    SchemaWriteStatus status = SchemaWriteStatus::Success;
+    
+    xmlWriter.WriteElementStart(elementName);
+    
+    xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, GetName().c_str());
+    xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, GetDescription().c_str());
+    auto& displayLabel = GetDisplayLabel();
+    if (!displayLabel.empty())
+        xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, displayLabel.c_str());
+
+    auto& persistenceUnit = GetPersistenceUnit();
+    if(!persistenceUnit.empty())
+        xmlWriter.WriteAttribute(PERSISTENCE_UNIT_ATTRIBUTE, persistenceUnit.c_str());
+
+    auto precision = GetPrecision();
+    if (precision != 0)
+        xmlWriter.WriteAttribute(PRECISION_ATTRIBUTE, precision);
+
+    auto& presentationUnit = GetDefaultPresentationUnit();
+    if (!presentationUnit.empty())
+        xmlWriter.WriteAttribute(DEFAULT_PRESENTATION_UNIT_ATTRIBUTE, presentationUnit.c_str());
+
+    bvector<Utf8String> const& altPresUnits = GetAlternativePresentationUnitList();
+    if (altPresUnits.size() > 0)
+        {
+        if(altPresUnits.size() == 1)
+            xmlWriter.WriteAttribute(ALT_PRESENTATION_UNITS_ATTRIBUTE, altPresUnits[0].c_str());
+        else
+            {
+            Utf8String altPresUnitsJoined = BeStringUtilities::Join(altPresUnits, ";");
+            xmlWriter.WriteAttribute(ALT_PRESENTATION_UNITS_ATTRIBUTE, altPresUnitsJoined.c_str());
+            }
+        }
+    
+    //WriteCustomAttributes (xmlWriter);
+    xmlWriter.WriteElementEnd();
+    return status;
+    }
 //
 ///*---------------------------------------------------------------------------------**//**
 //* @bsimethod                                    Robert.Schili                  02/2016
