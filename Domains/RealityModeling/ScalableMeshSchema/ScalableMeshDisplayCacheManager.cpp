@@ -26,7 +26,7 @@ SmCachedDisplayTexture* cachedTexture)
 
     std::unique_ptr<SmCachedDisplayMesh> qvCachedDisplayMesh(new SmCachedDisplayMesh);
     qvCachedDisplayMesh->m_qvElem = qv_beginElement(m_qvCache, 0, NULL);
-    qv_addQuickTriMesh(qvCachedDisplayMesh->m_qvElem, 3 * nbTriangles, indices, (int)nbVertices, positionOrigin, reinterpret_cast <FloatXYZ*> (positions),
+    if(nbTriangles > 0) qv_addQuickTriMesh(qvCachedDisplayMesh->m_qvElem, 3 * nbTriangles, indices, (int)nbVertices, positionOrigin, reinterpret_cast <FloatXYZ*> (positions),
                        reinterpret_cast <FloatXYZ*> (normals),
                        reinterpret_cast <FloatXY*> (params), textureId, cachedTexture != 0? 0 :QV_QTMESH_GENNORMALS);
     qv_endElement(qvCachedDisplayMesh->m_qvElem);

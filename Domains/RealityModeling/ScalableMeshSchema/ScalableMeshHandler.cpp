@@ -67,7 +67,9 @@ BentleyStatus ScalableMeshModel::_ReloadAllClipMasks()
 //----------------------------------------------------------------------------------------
 BentleyStatus ScalableMeshModel::_StartClipMaskBulkInsert()
     {
-    return ERROR;
+    if (nullptr == m_smPtr.get()) return ERROR;
+    m_smPtr->SetIsInsertingClips(true);
+    return SUCCESS;
     }
 
 //----------------------------------------------------------------------------------------
@@ -75,7 +77,9 @@ BentleyStatus ScalableMeshModel::_StartClipMaskBulkInsert()
 //----------------------------------------------------------------------------------------
 BentleyStatus ScalableMeshModel::_StopClipMaskBulkInsert()
     {
-    return ERROR;
+    if (nullptr == m_smPtr.get()) return ERROR;
+    m_smPtr->SetIsInsertingClips(false);
+    return SUCCESS;
     }
 
 //----------------------------------------------------------------------------------------
