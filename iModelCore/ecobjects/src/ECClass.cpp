@@ -29,7 +29,7 @@ void ECClass::SetErrorHandling (bool doAssert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClass::ECClass (ECSchemaCR schema)
     :
-    m_schema(schema), m_ecClassId(0), m_modifier(ECClassModifier::None)
+    m_schema(schema), m_ecClassId(0), m_modifier(ECClassModifier::None), m_xmlComments(), m_contentXmlComments()
     {
     //
     };
@@ -43,6 +43,8 @@ ECClass::~ECClass ()
     RemoveBaseClasses ();
 
     m_propertyList.clear();
+    m_xmlComments.clear();
+    m_contentXmlComments.clear();
     
     for (PropertyMap::iterator entry=m_propertyMap.begin(); entry != m_propertyMap.end(); ++entry)
         delete entry->second;
@@ -1361,15 +1363,44 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
     return SchemaReadStatus::Success;
     }
 
+void ECClass::_ReadCommentsInSameLine(BeXmlNodeR childNode, bvector<Utf8String>& comments)
+    {
+    BeXmlNodeP currentNode = &childNode;
+    currentNode = currentNode->GetNextSibling(BEXMLNODE_Any);
+    if (nullptr != currentNode && currentNode->type == BEXMLNODE_Comment)
+        {
+        Utf8String comment;
+        currentNode->GetContent(comment);
+        comments.push_back(comment);
+        childNode = *currentNode->GetNextSibling(BEXMLNODE_Any);
+        }
+
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties)
     {
+    bvector<Utf8String> comments;
+
     bool isSchemaSupplemental = Utf8String::npos != GetSchema().GetName().find("_Supplemental_");
     // Get the BaseClass child nodes.
-    for (BeXmlNodeP childNode = classNode.GetFirstChild (); NULL != childNode; childNode = childNode->GetNextSibling ())
+    for (BeXmlNodeP childNode = classNode.GetFirstChild (BEXMLNODE_Any); NULL != childNode; childNode = childNode->GetNextSibling (BEXMLNODE_Any))
         {
+        if (context.GetPreserveXmlComments())
+            {
+            if (childNode->type == BEXMLNODE_Comment)
+                {
+                Utf8String comment;
+                childNode->GetContent(comment);
+                comments.push_back(comment);
+                }
+             }
+
+        if (childNode->type != BEXMLNODE_Element)
+            continue;
+
         Utf8CP childNodeName = childNode->GetName ();
         if (0 == strcmp (childNodeName, EC_PROPERTY_ELEMENT))
             {
@@ -1377,12 +1408,26 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
             SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, conversionSchema, childNodeName);
             if (SchemaReadStatus::Success != status)
                 return status;
+
+            if (context.GetPreserveXmlComments())
+                {
+                _ReadCommentsInSameLine(*childNode, comments);
+                Utf8String contentIdentifier = ecProperty->GetName();
+                m_contentXmlComments[contentIdentifier] = comments;
+                }
             }
         else if (!isSchemaSupplemental && (0 == strcmp (childNodeName, EC_BASE_CLASS_ELEMENT)))
             {
             SchemaReadStatus status = _ReadBaseClassFromXml(childNode, context);
             if (SchemaReadStatus::Success != status)
                 return status;
+
+            if (context.GetPreserveXmlComments())
+                {
+                _ReadCommentsInSameLine(*childNode, comments);
+                Utf8String contentIdentifier = EC_BASE_CLASS_ELEMENT;
+                m_contentXmlComments[contentIdentifier] = comments;
+                }
             }
         else if (0 == strcmp (childNodeName, EC_ARRAYPROPERTY_ELEMENT))
             {
@@ -1411,6 +1456,14 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
             SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, conversionSchema, childNodeName);
             if (SchemaReadStatus::Success != status)
                 return status;
+
+            if (context.GetPreserveXmlComments())
+                {
+                _ReadCommentsInSameLine(*childNode, comments);
+
+                Utf8String contentIdentifier = ecProperty->GetName();
+                m_contentXmlComments[contentIdentifier] = comments;
+                }
             }
         else if (0 == strcmp(childNodeName, EC_STRUCTARRAYPROPERTY_ELEMENT)) // technically, this only happens in EC3.0 and higher, but no harm in checking 2.0 schemas
             {
@@ -1418,6 +1471,14 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
             SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass(ecProperty, childNode, context, conversionSchema, childNodeName);
             if (SchemaReadStatus::Success != status)
                 return status;
+
+            if (context.GetPreserveXmlComments())
+                {
+                _ReadCommentsInSameLine(*childNode, comments);
+
+                Utf8String contentIdentifier = ecProperty->GetName();
+                m_contentXmlComments[contentIdentifier] = comments;
+                }
             }
         else if (0 == strcmp (childNodeName, EC_STRUCTPROPERTY_ELEMENT))
             {
@@ -1425,6 +1486,13 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
             SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, conversionSchema, childNodeName);
             if (SchemaReadStatus::Success != status)
                 return status;
+            if (context.GetPreserveXmlComments())
+                {
+                _ReadCommentsInSameLine(*childNode, comments);
+
+                Utf8String contentIdentifier = ecProperty->GetName();
+                m_contentXmlComments[contentIdentifier] = comments;
+                }
             }
         else if (0 == strcmp(childNodeName, EC_NAVIGATIONPROPERTY_ELEMENT)) // also EC3.0 only
             {
@@ -1433,7 +1501,25 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
             if (SchemaReadStatus::Success != status)
                 return status;
             navigationProperties.push_back(ecProperty);
+
+            if (context.GetPreserveXmlComments())
+                {
+                _ReadCommentsInSameLine(*childNode, comments);
+
+                Utf8String contentIdentifier = ecProperty->GetName();
+                m_contentXmlComments[contentIdentifier] = comments;
+                }
             }
+        else if (0 == strcmp(childNodeName, EC_CUSTOM_ATTRIBUTES_ELEMENT))
+            {
+            if (context.GetPreserveXmlComments())
+                {
+                Utf8String contentIdentifier = EC_CUSTOM_ATTRIBUTES_ELEMENT;
+                m_contentXmlComments[contentIdentifier] = comments;
+                }
+            }
+
+        comments.clear();
         }
     
     // Add Custom Attributes
@@ -1521,6 +1607,11 @@ SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecPrope
 SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const
     {
     SchemaWriteStatus status = SchemaWriteStatus::Success;
+    // No need to check here if comments need to be preserved. If they're not preserved m_xmlComments will be empty
+    for (auto comment : m_xmlComments)
+        {
+        xmlWriter.WriteComment(comment.c_str());
+        }
 
     xmlWriter.WriteElementStart(elementName);
     
@@ -1549,14 +1640,44 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMa
     
     for (const ECClassP& baseClass: m_baseClasses)
         {
+        auto comments = m_contentXmlComments.find(EC_BASE_CLASS_ELEMENT);
+        if (comments != m_contentXmlComments.end())
+            {
+            for (auto comment : comments->second)
+                {
+                xmlWriter.WriteComment(comment.c_str());
+                }
+            }
+
+
         xmlWriter.WriteElementStart(EC_BASE_CLASS_ELEMENT);
         xmlWriter.WriteText((ECClass::GetQualifiedClassName(GetSchema(), *baseClass)).c_str());
         xmlWriter.WriteElementEnd();
         }
+
+    auto comments = m_contentXmlComments.find(EC_CUSTOM_ATTRIBUTES_ELEMENT);
+    if (comments != m_contentXmlComments.end())
+        {
+        for (auto comment : comments->second)
+            {
+            xmlWriter.WriteComment(comment.c_str());
+            }
+        }
     WriteCustomAttributes (xmlWriter);
             
     for (ECPropertyP prop: GetProperties(false))
-        {
+        { 
+        auto comments = m_contentXmlComments.find(prop->GetName());
+
+        if (comments != m_contentXmlComments.end())
+            {
+            for (auto comment : comments->second)
+                {
+                xmlWriter.WriteComment(comment.c_str());
+                }
+            }
+
+
         prop->_WriteXml (xmlWriter, ecXmlVersionMajor, ecXmlVersionMinor);
         }
     if (doElementEnd)

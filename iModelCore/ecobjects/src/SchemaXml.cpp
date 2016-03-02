@@ -205,13 +205,39 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadClassStubsFromXml(ECSchemaPtr& schemaO
     if (m_conversionSchema.IsValid())
         resolveConflicts = m_conversionSchema->IsDefined("ResolveClassNameConflicts");
 
+    bvector<Utf8String> comments;
     // Create ECClass Stubs (no properties)
-    for (BeXmlNodeP classNode = schemaNode.GetFirstChild(); NULL != classNode; classNode = classNode->GetNextSibling())
+    for (BeXmlNodeP classNode = schemaNode.GetFirstChild(BEXMLNODE_Any); NULL != classNode; classNode = classNode->GetNextSibling(BEXMLNODE_Any))
         {
-        ECClassP       ecClass = nullptr;
-        if (!ReadClassNode(ecClass, *classNode, schemaOut))
+        if (m_schemaContext.GetPreserveXmlComments())
+            {
+            if (classNode->type == BEXMLNODE_Comment)
+                {
+                Utf8String comment;
+                if (classNode->GetContent(comment) == BeXmlStatus::BEXML_Success)
+                    {
+                    comments.push_back(comment);
+                    }
+                }
+            }
+        if (classNode->type != BEXMLNODE_Element)
             continue;
 
+        ECClassP       ecClass = nullptr;
+        if (!ReadClassNode(ecClass, *classNode, schemaOut))
+        {
+            // The comments read so far belong to the current element, but it's not a class, therefore we need to drop them
+            // No need to check if PreserveXmlComments is true because the vector is empty and not used anyway
+            comments.clear();
+            continue;
+        }
+
+        if (m_schemaContext.GetPreserveXmlComments())
+            {
+            ecClass->m_xmlComments = comments;
+            comments.clear();
+            }
+            
         if (SchemaReadStatus::Success != (status = ecClass->_ReadXmlAttributes(*classNode)))
             {
             delete ecClass;
