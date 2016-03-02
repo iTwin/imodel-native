@@ -70,7 +70,8 @@ private:
     bool Contains(ExpressionSymbolCR symbol) const;
 
     static BentleyStatus ParseDefinition(SymbolCR owner, int& depth, Utf8CP definition, ExpressionR expression, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName);
-    static BentleyStatus HandleToken(int& depth, ExpressionR expression, Utf8CP definition, TokenCR token, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName);
+    static BentleyStatus HandleToken(SymbolCR owner, int& depth, ExpressionR expression, Utf8CP definition, TokenCR token, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName);
+    static void MergeSymbol(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, SymbolCP symbol, int symbolExponent, std::function<bool(SymbolCR, SymbolCR)> areEqual);
     static void MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, ExpressionR sourceExpression, int startingExponent);
     static void MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExpression,
                                  Utf8CP sourceDefinition, ExpressionR sourceExpression,
@@ -78,6 +79,7 @@ private:
     static bool ShareDimensions(PhenomenonCR phenomenon, UnitCR unit);
     static bool DimensionallyCompatible(ExpressionCR expressionA, ExpressionCR expressionB);
     static bool DimensionallyCompatible(ExpressionCR expressionA, ExpressionCR expressionB, std::function<bool(SymbolCR, SymbolCR)> areEqual);
+    static BentleyStatus GenerateConversionExpression(UnitCR from, UnitCR to, ExpressionR conversionExpression);
     static void CreateExpressionWithOnlyBaseSymbols(ExpressionCR source, ExpressionR target, bool copySymbols);
     };
 

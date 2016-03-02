@@ -35,34 +35,34 @@ void UnitRegistry::AddDefaultPhenomena ()
     AddPhenomena(MOMENTUM, "MASS*VELOCITY");
     AddPhenomena(ANGULAR_VELOCITY, "ANGLE*TIME(-1)");
     AddPhenomena(ACCELERATION, "LENGTH*TIME(-2)");
-    AddPhenomena(ANGACCELERAT, "SOLIDANGLE*TIME(-2)");
+    AddPhenomena(ANGULAR_ACCELERATION, "ANGLE*TIME(-2)");
     AddPhenomena(FORCE, "MASS*ACCELERATION");
     AddPhenomena(PRESSURE, "FORCE*AREA(-1)");
     AddPhenomena(FORCE_DENSITY, "FORCE*VOLUME(-1)");
     AddPhenomena(PRESSURE_GRADIENT, "PRESSURE*LENGTH(-1)");
     AddPhenomena(TORQUE, "FORCE*LENGTH*ANGLE");
-    AddPhenomena(MOMENTINERTIA, "MASS*LENGTH(2)");
+    AddPhenomena(MOMENT_INERTIA, "MASS*LENGTH(2)");
     AddPhenomena(AREA_MOMENT_INERTIA, "LENGTH(4)");
     AddPhenomena(MASS_RATIO, "MASS*MASS(-1)");
     AddPhenomena(DENSITY, "MASS*VOLUME(-1)");
-    AddPhenomena(SPECVOLUME, "VOLUME*MASS(-1)");
-    AddPhenomena(LINEARDENSITY, "MASS*LENGTH(-1)");
-    AddPhenomena(SURFACEDENSITY, "MASS*AREA(-1)");
+    AddPhenomena(SPECIFIC_VOLUME, "VOLUME*MASS(-1)");
+    AddPhenomena(LINEAR_DENSITY, "MASS*LENGTH(-1)");
+    AddPhenomena(SURFACE_DENSITY, "MASS*AREA(-1)");
     AddPhenomena(WORK, "FORCE*LENGTH"); // TODO: Multiple phenomemon equations: PRESSURE*VOLUME, POWER*TIME, ELECTRIC_CURRENT*TIME*ELECTRIC_POTENTIAL
     AddPhenomena(POWER, "WORK*TIME(-1)");
     AddPhenomena(FLOW, "VOLUME*TIME(-1)");
     AddPhenomena(SURFACE_FLOW_RATE, "FLOW*AREA(-1)");
     AddPhenomena(MASS_FLOW, "MASS*TIME(-1)");
     AddPhenomena(PARTICLE_FLOW, "MOLE*TIME(-1)");
-    AddPhenomena(DYNVISCOSITY, "PRESSURE*TIME"); // TODO: Check
-    AddPhenomena(KINVISCOSITY, "FORCE*DYNVISCOSITY(-1)"); // TODO: Check
+    AddPhenomena(DYNAMIC_VISCOSITY, "PRESSURE*TIME"); // TODO: Check
+    AddPhenomena(KINEMATIC_VISCOSITY, "FORCE*DYNAMIC_VISCOSITY(-1)"); // TODO: Check
     AddPhenomena(ELECTRIC_CHARGE, "CURRENT*TIME");
     AddPhenomena(ELECTRIC_POTENTIAL, "POWER*CURRENT(-1)");
-    AddPhenomena(ELRESISTANCE, "ELECTRIC_POTENTIAL*CURRENT(-1)");
+    AddPhenomena(ELECTRIC_RESISTANCE, "ELECTRIC_POTENTIAL*CURRENT(-1)");
     AddPhenomena(CAPACITANCE, "ELECTRIC_CHARGE*ELECTRIC_POTENTIAL(-1)");
-    AddPhenomena(MAGNETICFLUX, "ELECTRIC_POTENTIAL*TIME");
-    AddPhenomena(MAGNETIC_FLUX_DENSITY, "MAGNETICFLUX*LENGTH(-2)");
-    AddPhenomena(INDUCTANCE, "MAGNETICFLUX*CURRENT(-1)");
+    AddPhenomena(MAGNETIC_FLUX, "ELECTRIC_POTENTIAL*TIME");
+    AddPhenomena(MAGNETIC_FLUX_DENSITY, "MAGNETIC_FLUX*LENGTH(-2)");
+    AddPhenomena(INDUCTANCE, "MAGNETIC_FLUX*CURRENT(-1)");
     AddPhenomena(LUMINOUS_FLUX, "LUMINOSITY*SOLIDANGLE"); // TODO: Check
     AddPhenomena(ILLUMINANCE, "LUMINOUS_FLUX*LENGTH(-2)");
     AddPhenomena(ROTATIONAL_SPRING_CONSTANT, "FORCE*LENGTH*ANGLE(-1)");  // TODO: Is this correct?  Should it be TORQUE/ANGLE?
@@ -80,7 +80,7 @@ void UnitRegistry::AddDefaultPhenomena ()
     AddPhenomena(GRAVCONSTANT, "LENGTH(3)*MASS(-1)*TIME(-2)"); // TODO: Check
     AddPhenomena(THREAD_PITCH, "LENGTH*ANGLE(-1)"); // TODO: What about rotation portion?
     AddPhenomena(HEAT_TRANSFER, "POWER*AREA(-1)*TEMPERATURE(-1)"); // https://en.wikipedia.org/wiki/Heat_transfer_coefficient
-    AddPhenomena(HEATFLUX_DENSITY, "POWER*AREA(-1)"); // https://en.wikipedia.org/wiki/Heat_flux  see description of heat flux density
+    AddPhenomena(HEAT_FLUX_DENSITY, "POWER*AREA(-1)"); // https://en.wikipedia.org/wiki/Heat_flux  see description of heat flux density
     AddPhenomena(TORSIONAL_WARPING_CONSTANT, "LENGTH(6)"); // TODO: Could also be buckling resistance ... are we missing some angular portion to this unit?
     AddPhenomena(POPULATION_DENSITY, "CAPITA*AREA(-1)");
     AddPhenomena(FREQUENCY, "TIME(-1)");

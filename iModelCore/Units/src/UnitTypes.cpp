@@ -58,6 +58,7 @@ Expression& Symbol::Evaluate(int depth, std::function<SymbolCP(Utf8CP)> getSymbo
     {
     if (!m_evaluated)
         {
+        m_symbolExpression->Add(this, 1);
         Expression::ParseDefinition(*this, depth, m_definition.c_str(), *m_symbolExpression, 1, getSymbolByName);
         m_evaluated = true;
         }
@@ -127,49 +128,38 @@ double Unit::Convert(double value, UnitCP toUnit) const
         return 0.0;
         }
 
-    // TODO: USING A MAX RECRUSION DEPTH TO CATCH CYCLES IS SUPER HACKY AND MAKES CHRIS T. MAD.  Replace with something that actually detects cycles.
-    Expression fromExpression = Evaluate();
-    Expression toExpression = toUnit->Evaluate();
-    
-    fromExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, this->GetName());
-    toExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, toUnit->GetName());
-
-    if (!Expression::DimensionallyCompatible(fromExpression, toExpression))
+    Expression conversionExpression;
+    if (BentleyStatus::SUCCESS != Expression::GenerateConversionExpression(*this, *toUnit, conversionExpression))
         {
-        LOG.errorv("Cannot convert from %s: (%s) to %s: (%s) because they two toUnits are not dimensionally compatible.  Returning a conversion factor of 0.0", 
-                   this->GetName(), this->GetDefinition(), toUnit->GetName(), toUnit->GetDefinition());
+        LOG.errorv("Cannot convert from %s to %s, units incompatible, returning a conversion factor of 0.0", this->GetName(), toUnit->GetName());
         return 0.0;
         }
 
-    Expression combinedExpression;
-    Expression::Copy(fromExpression, combinedExpression);
-
-    Expression::MergeExpressions(GetDefinition(), combinedExpression, toUnit->GetDefinition(), toExpression, -1);
-    if (LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_DEBUG))
+    double factor = 1;
+    //double offset = 0;
+    for (auto const& toUnitExp : conversionExpression)
         {
-        Utf8PrintfString combinedName("%s/%s", this->GetName(), toUnit->GetName());
-        combinedExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, combinedName.c_str());
-        }
-
-    double factor = GetFactor();
-    for (auto const& toUnitExp : combinedExpression)
-        {
+        if (toUnitExp->GetExponent() == 0)
+            continue;
         if (toUnitExp->GetExponent() > 0)
+            {
             factor *= FastIntegerPower(toUnitExp->GetSymbolFactor(), toUnitExp->GetExponent());
+            //if (toUnitExp->GetSymbol()->HasOffset())
+            //    offset += toUnitExp->GetSymbol()->GetOffset();// *toUnitExp->GetSymbolFactor();
+            //offset *= factor;
+            }
         else
+            {
             factor /= FastIntegerPower(toUnitExp->GetSymbolFactor(), abs(toUnitExp->GetExponent()));
-        
-
+            //if (toUnitExp->GetSymbol()->HasOffset())
+            //    offset += toUnitExp->GetSymbol()->GetOffset();// / toUnitExp->GetSymbolFactor();
+            //offset /= factor;
+            }
+        //offset *= factor;
         }
-    factor /= toUnit->GetFactor();
-
-    if (HasOffset() && (toUnit->GetId() == fromExpression.FirstSymbol()->GetSymbol()->GetId()))
-        value += GetOffset();
-
     value *= factor;
 
-    if (toUnit->HasOffset() && (GetId() == toExpression.FirstSymbol()->GetSymbol()->GetId()))
-        value -= toUnit->GetOffset();
+    //value -= offset;
 
     return value;
     }

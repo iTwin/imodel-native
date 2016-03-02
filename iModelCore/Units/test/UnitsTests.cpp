@@ -158,11 +158,12 @@ TEST_F(UnitsTests, TestOffsetConversions)
     {
     bvector<Utf8String> loadErrors;
     bvector<Utf8String> conversionErrors;
-    TestUnitConversion(32, "FAHRENHEIT", 0, "CELSIUS", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(32, "FAHRENHEIT", 0, "CELSIUS", 1.0e-8, loadErrors, conversionErrors, true);
     TestUnitConversion(20, "FAHRENHEIT", -6.666666666666666666666666666, "CELSIUS", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(122, "FAHRENHEIT", 50, "CELSIUS", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(60, "FAHRENHEIT", 288.705555555555, "KELVIN", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(60, "FAHRENHEIT", 519.67, "RANKINE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(61.1, "FAHRENHEIT", 16, "ROMER", 1.0e-8, loadErrors, conversionErrors);
 
     TestUnitConversion(1, "CELSIUS", 33.8, "FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(-15, "CELSIUS", 5, "FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
@@ -170,14 +171,24 @@ TEST_F(UnitsTests, TestOffsetConversions)
     TestUnitConversion(60, "CELSIUS", 140, "FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(60, "CELSIUS", 333.15, "KELVIN", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(60, "CELSIUS", 599.67, "RANKINE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(-14.3, "CELSIUS", 0, "ROMER", 1.0e-8, loadErrors, conversionErrors);
 
     TestUnitConversion(42, "KELVIN", -231.15, "CELSIUS", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(42, "KELVIN", -384.07, "FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(42, "KELVIN", 75.6, "RANKINE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(571.2, "KELVIN", 164, "ROMER", 1.0e-8, loadErrors, conversionErrors);
+
 
     TestUnitConversion(42, "RANKINE", -249.81666666666, "CELSIUS", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(42, "RANKINE", -417.67, "FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(42, "RANKINE", 23.333333333333333, "KELVIN", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(630, "RANKINE", 47, "ROMER", 1.0e-8, loadErrors, conversionErrors);
+
+    TestUnitConversion(42, "ROMER", 65.7, "CELSIUS", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(42, "ROMER", 150.3, "FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(42, "ROMER", 338.9, "KELVIN", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(0, "ROMER", 470, "RANKINE", 1.0e-8, loadErrors, conversionErrors);
+
 
     Utf8String loadErrorString("Could not convert because one or both of the following units could not be loaded:\n");
     for (auto const& val : loadErrors)

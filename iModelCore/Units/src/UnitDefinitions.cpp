@@ -110,13 +110,13 @@ void AddTemperature(UnitRegistry& reg)
     UnitCP unit = reg.AddUnit(TEMPERATURE, SI, "CELSIUS", "K", 1.0, 273.15);
     reg.AddSynonym(unit, "DEGREE_CELSIUS");
     //SimpleUOM(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "#CELSIUS", 1.8)->AddSynonym("DEGREE_FAHRENHEIT");
-    unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "CELSIUS", 5.0/9.0, -32);
+    unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "CELSIUS", 5.0 / 9.0, -32);
     reg.AddSynonym(unit, "DEGREE_FAHRENHEIT");
     unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "RANKINE", "K", 5.0 / 9.0);
     reg.AddSynonym(unit, "DEGREE_RANKINE");
 
-    //unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "ROMER", "CELSIUS", 21.0 / 40.0, 7.5);
-    //reg.AddSynonym(unit, "DEGREE_ROMER");
+    unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "ROMER", "CELSIUS", 40.0 / 21.0, -7.5);
+    reg.AddSynonym(unit, "DEGREE_ROMER");
     //unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "REAMUR", "CELSIUS", 0.8);
     //reg.AddSynonym(unit, "DEGREE_REAMUR");
 
@@ -595,7 +595,7 @@ void AddForce(UnitRegistry& reg)
 
 void AddHeatFlux(UnitRegistry& reg)
     {
-    reg.AddUnit(HEATFLUX_DENSITY, SI, "W/SQ.M", "W*M(-2)"); //, BISQPrimUom);
+    reg.AddUnit(HEAT_FLUX_DENSITY, SI, "W/SQ.M", "W*M(-2)"); //, BISQPrimUom);
     }
 
 // TODO: Thermal Transmittance?
@@ -613,11 +613,11 @@ void AddHeatTransfer(UnitRegistry& reg)
 
 void AddLinearDensity(UnitRegistry& reg)
     {
-    UnitCP unit = reg.AddUnit(LINEARDENSITY, SI, "KG/M", "KG*M(-1)");
+    UnitCP unit = reg.AddUnit(LINEAR_DENSITY, SI, "KG/M", "KG*M(-1)");
     reg.AddSynonym(unit, "KILOGRAM_PER_METRE");
-    unit = reg.AddUnit(LINEARDENSITY, SI, "KG/MM", "KG*MM(-1)");
+    unit = reg.AddUnit(LINEAR_DENSITY, SI, "KG/MM", "KG*MM(-1)");
     reg.AddSynonym(unit, "KILOGRAM_PER_MILLIMETRE");
-    reg.AddUnit(LINEARDENSITY, USCUSTOM, "LBM/FT", "LBM*FT(-1)");
+    reg.AddUnit(LINEAR_DENSITY, USCUSTOM, "LBM/FT", "LBM*FT(-1)");
     reg.AddSynonym("LBM/FT", "POUND_MASS_PER_FOOT");
     }
 
@@ -721,7 +721,7 @@ void AddPressure(UnitRegistry& reg)
     reg.AddSynonym(unit, "PASCAL");
     reg.AddSynonym(unit, "NEWTON_PER_METRE_SQUARED");
 
-    reg.AddUnit(PRESSURE, SI, "PA_GAUGE", "PA", 1, 101325); // TODO: Use constant for this
+    reg.AddUnit(PRESSURE, SI, "PA_GAUGE", "PA", 1, -101325); // TODO: Use constant for this
 
     // TODO: See if this is equal to another unit here.
     reg.AddUnit(PRESSURE, SI, "NEWTON_PER_MILLIMETRE_SQUARED", "N*MM(-2)");
@@ -729,14 +729,14 @@ void AddPressure(UnitRegistry& reg)
 
     reg.AddUnit(PRESSURE, SI, "HECTOPASCAL", "[HECTO]*PA"); //, BISQSecUom);
     reg.AddUnit(PRESSURE, SI, "KILOPASCAL", "[KILO]*PA"); //, BISQSecUom);
-    reg.AddUnit(PRESSURE, SI, "KILOPASCAL_GAUGE", "[KILO]*PA", 1, 101325e-3); // TODO: Use constant for this
+    reg.AddUnit(PRESSURE, SI, "KILOPASCAL_GAUGE", "[KILO]*PA", 1, -101325e-3); // TODO: Use constant for this
     reg.AddUnit(PRESSURE, SI, "MEGAPASCAL", "[MEGA]*PA");
-    reg.AddUnit(PRESSURE, SI, "MEGAPASCAL_GAUGE", "[MEGA]*PA", 1, 101325e-6); // TODO: Use constant for this
+    reg.AddUnit(PRESSURE, SI, "MEGAPASCAL_GAUGE", "[MEGA]*PA", 1, -101325e-6); // TODO: Use constant for this
 
     unit = reg.AddUnit(PRESSURE, INTERNATIONAL, "AT", "KGF*CM(-2)");  // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
     reg.AddSynonym(unit, "ATMOSPHERE_TECHNIAL");
     reg.AddSynonym(unit, "KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED");
-    unit = reg.AddUnit(PRESSURE, INDUSTRIAL, "AT_GAUGE", "AT", 1.0, 1.0332274528);
+    unit = reg.AddUnit(PRESSURE, INDUSTRIAL, "AT_GAUGE", "AT", 1.0, -1.0332274528);
     reg.AddSynonym(unit, "KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED_GAUGE");
 
     unit = reg.AddUnit(PRESSURE, INTERNATIONAL, "KGF/SQ.M", "KGF*M(-2)");
@@ -744,7 +744,7 @@ void AddPressure(UnitRegistry& reg)
     unit = reg.AddUnit(PRESSURE, SI, "ATM", "PA", 101325);  // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
     reg.AddSynonym(unit, "ATMOSPHERE");
     reg.AddUnit(PRESSURE, SI, "BAR", "PA", 1.0e5); //, BISQNoDescript); //, BISQSecUom);
-    reg.AddUnit(PRESSURE, INDUSTRIAL, "BAR_GAUGE", "PA", 1.0e5, 1); //, BISQNoDescript); //, BISQSecUom);
+    reg.AddUnit(PRESSURE, INDUSTRIAL, "BAR_GAUGE", "PA", 1.0e5, -1); //, BISQNoDescript); //, BISQSecUom);
     unit = reg.AddUnit(PRESSURE, SI, "MBAR", "[MILLI]*BAR");
     reg.AddSynonym(unit, "MILLIBAR");
     reg.AddUnit(PRESSURE, CGS, "BARYE", "PA", 0.1); //, BISQSecUom);   // 1.0 dyn/sq.cm
@@ -753,7 +753,7 @@ void AddPressure(UnitRegistry& reg)
     unit = reg.AddUnit(PRESSURE, USCUSTOM, "PSI", "LBF*IN(-2)");
     reg.AddSynonym(unit, "POUND_FORCE_PER_INCH_SQUARED");
 
-    unit = reg.AddUnit(PRESSURE, USCUSTOM, "PSIG", "LBF*IN(-2)", 1, 14.6959); // TODO: Get reference for the offset
+    unit = reg.AddUnit(PRESSURE, USCUSTOM, "PSIG", "LBF*IN(-2)", 1, -14.6959); // TODO: Get reference for the offset
     reg.AddSynonym(unit, "POUND_FORCE_PER_INCH_SQUARED_GAUGE");
 
     unit = reg.AddUnit(PRESSURE, USCUSTOM, "KSI", "[KILO]*LBF*IN(-2)");
@@ -803,7 +803,6 @@ void AddSlope(UnitRegistry& reg)
     reg.AddSynonym("FT/FT", "FOOT_PER_FOOT");
     reg.AddSynonym("FT/FT","FOOT_VERTICAL_PER_FOOT_HORIZONTAL");
 
-    reg.AddUnit(SLOPE, USCUSTOM, "FOOT_HORIZONTAL_PER_FOOT_VERTICAL", "FT/FT(-1)");
 
     unit = reg.AddUnit(SLOPE, USCUSTOM, "IN/FT", "IN*FT(-1)");
     reg.AddSynonym(unit, "INCH_PER_FOOT");
@@ -813,18 +812,21 @@ void AddSlope(UnitRegistry& reg)
     reg.AddSynonym(unit, "FOOT_PER_MILE");
     
     reg.AddUnit(SLOPE, INTERNATIONAL, "VERTICAL_PER_HORIZONTAL", "M/M");
-    reg.AddUnit(SLOPE, INTERNATIONAL, "HORIZONTAL_PER_VERTICAL", "VERTICAL_PER_HORIZONTAL(-1)");
+
+    // TODO: Not supported, we can't invert as part of conversion
+    //reg.AddUnit(SLOPE, INTERNATIONAL, "HORIZONTAL_PER_VERTICAL", "VERTICAL_PER_HORIZONTAL(-1)");
+    //reg.AddUnit(SLOPE, USCUSTOM, "FOOT_HORIZONTAL_PER_FOOT_VERTICAL", "FT/FT(-1)");
     }
 
 void AddSurfaceDensity(UnitRegistry& reg)
     {
-    UnitCP unit = reg.AddUnit(SURFACEDENSITY, SI, "KG/SQ.M", "KG*M(-2)");
+    UnitCP unit = reg.AddUnit(SURFACE_DENSITY, SI, "KG/SQ.M", "KG*M(-2)");
     reg.AddSynonym(unit, "KILOGRAM_PER_METRE_SQUARED");
-    unit = reg.AddUnit(SURFACEDENSITY, SI, "G/SQ.M", "G*M(-2)");
+    unit = reg.AddUnit(SURFACE_DENSITY, SI, "G/SQ.M", "G*M(-2)");
     reg.AddSynonym(unit, "GRAM_PER_METRE_SQUARED");
-    unit = reg.AddUnit(SURFACEDENSITY, SI, "KG/HECTARE", "KG*HECTARE(-1)");
+    unit = reg.AddUnit(SURFACE_DENSITY, SI, "KG/HECTARE", "KG*HECTARE(-1)");
     reg.AddSynonym(unit, "KILOGRAM_PER_HECTARE");
-    unit = reg.AddUnit(SURFACEDENSITY, USCUSTOM, "LB/ACRE", "LBM*ACRE(-1)");
+    unit = reg.AddUnit(SURFACE_DENSITY, USCUSTOM, "LB/ACRE", "LBM*ACRE(-1)");
     reg.AddSynonym(unit, "POUND_PER_ACRE");
     }
 
@@ -963,22 +965,22 @@ void AddAngularVelocity(UnitRegistry& reg)
 
 void AddDynamicViscosity(UnitRegistry& reg)
     {
-    UnitCP unit = reg.AddUnit(DYNVISCOSITY, SI, "PA-S", "PA*S");
+    UnitCP unit = reg.AddUnit(DYNAMIC_VISCOSITY, SI, "PA-S", "PA*S");
     reg.AddSynonym(unit, "PASCAL_SECOND");
-    reg.AddUnit(DYNVISCOSITY, SI, "POISE", "PA-S", 0.1); //, BISQSecUom);
-    reg.AddUnit(DYNVISCOSITY, SI, "CENTIPOISE", "[CENTI]*POISE"); //, BISQSecUom);
-    unit = reg.AddUnit(DYNVISCOSITY, SI, "LB/FT*S", "LBM*FT(-1)*S(-1)"); // TODO: Confirm that this is really pound mass
+    reg.AddUnit(DYNAMIC_VISCOSITY, SI, "POISE", "PA-S", 0.1); //, BISQSecUom);
+    reg.AddUnit(DYNAMIC_VISCOSITY, SI, "CENTIPOISE", "[CENTI]*POISE"); //, BISQSecUom);
+    unit = reg.AddUnit(DYNAMIC_VISCOSITY, SI, "LB/FT*S", "LBM*FT(-1)*S(-1)"); // TODO: Confirm that this is really pound mass
     reg.AddSynonym(unit, "POUND_PER_FOOT_SECOND");
     }
 
 void AddKinematicViscosity(UnitRegistry& reg)
     {
-    UnitCP unit = reg.AddUnit(KINVISCOSITY, SI, "SQ.M/S", "M(2)*S(-1)");
+    UnitCP unit = reg.AddUnit(KINEMATIC_VISCOSITY, SI, "SQ.M/S", "M(2)*S(-1)");
     reg.AddSynonym(unit, "METRE_SQUARED_PER_SECOND");
-    unit = reg.AddUnit(KINVISCOSITY, SI, "SQ.FT/S", "FT(2)*S(-1)");
+    unit = reg.AddUnit(KINEMATIC_VISCOSITY, SI, "SQ.FT/S", "FT(2)*S(-1)");
     reg.AddSynonym(unit, "FOOT_SQUARED_PER_SECOND");
-    reg.AddUnit(KINVISCOSITY, SI, "STOKE", "CM(2)*S(-1)"); //, BISQSecUom);
-    reg.AddUnit(KINVISCOSITY, SI, "CENTISTOKE", "MM(2)*S(-1)"); //, BISQSecUom);
+    reg.AddUnit(KINEMATIC_VISCOSITY, SI, "STOKE", "CM(2)*S(-1)"); //, BISQSecUom);
+    reg.AddUnit(KINEMATIC_VISCOSITY, SI, "CENTISTOKE", "MM(2)*S(-1)"); //, BISQSecUom);
     }
 
 void AddVolume(UnitRegistry& reg)
@@ -1015,9 +1017,9 @@ void AddVolume(UnitRegistry& reg)
 
 void AddSpecificVolume(UnitRegistry& reg)
     {
-    UnitCP unit = reg.AddUnit(SPECVOLUME, USCUSTOM, "CUB.M/KG", "M(3)*KG(-1)");
+    UnitCP unit = reg.AddUnit(SPECIFIC_VOLUME, USCUSTOM, "CUB.M/KG", "M(3)*KG(-1)");
     reg.AddSynonym(unit, "METRE_CUBED_PER_KILOGRAM");
-    unit = reg.AddUnit(SPECVOLUME, USCUSTOM, "CUB.FT/LB", "FT(3)*LBM(-1)");
+    unit = reg.AddUnit(SPECIFIC_VOLUME, USCUSTOM, "CUB.FT/LB", "FT(3)*LBM(-1)");
     reg.AddSynonym(unit, "FOOT_CUBED_PER_POUND_MASS");
     }
 
