@@ -1258,6 +1258,9 @@ void dgn_TxnTable::ElementDep::_OnValidated()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_TxnTable::ElementDep::UpdateSummary(Changes::Change change, ChangeType changeType)
     {
+    if (ChangeType::Delete == changeType)
+        return; // Note: In DgnDb0601, we handle this by recording data and invoking a new callback.
+
     m_changes = true;
     Changes::Change::Stage stage = (ChangeType::Insert == changeType) ? Changes::Change::Stage::New : Changes::Change::Stage::Old;
     ECInstanceId instanceId(change.GetValue(0, stage).GetValueInt64()); // primary key is column 0
