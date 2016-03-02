@@ -372,16 +372,6 @@ namespace IndexECPlugin.Source
 
         private string InsertPackageRequest (OperationModule sender, RepositoryConnection connection, IECInstance instance, QueryModule queryModule)
             {
-
-            string pathVariable = System.Environment.GetEnvironmentVariable("Path");
-
-            string assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + ";";
-
-            if (!pathVariable.Contains(assemblyPath))
-                {
-                System.Environment.SetEnvironmentVariable("Path", assemblyPath + pathVariable);
-                }
-
             string coordinateSystem = null;
 
             string name = Guid.NewGuid().ToString();
