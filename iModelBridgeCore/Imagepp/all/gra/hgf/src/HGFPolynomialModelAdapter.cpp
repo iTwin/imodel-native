@@ -9,7 +9,6 @@
 //-----------------------------------------------------------------------------
 
 #include <ImageppInternal.h>
-#include <Imagepp/all/h/HGF2DTransfoModelAdapter.h>
 #include <Imagepp/all/h/HGF2DTranslation.h>
 #include <Imagepp/all/h/HGF2DIdentity.h>
 #include <Imagepp/all/h/HGF2DStretch.h>
@@ -280,6 +279,7 @@ inline void HGFPolynomialModelAdapter::TransposePointsUsingPolynomial(double pi_
 //+---------------+---------------+---------------+---------------+---------------+------
 inline void HGFPolynomialModelAdapter::TransposePointUsingPolynomial(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const
     {
+
     double x = pi_XIn;
     double y = pi_YIn;
     double xy = x * y;
@@ -311,6 +311,63 @@ inline void HGFPolynomialModelAdapter::TransposePointUsingPolynomial(double pi_X
         + m_CoefficientsY[7] * x2y
         + m_CoefficientsY[8] * xy2
         + m_CoefficientsY[9] * y3;
+
+    //double factor[10];
+    //factor[0] = 1;
+    //factor[1] = pi_XIn;
+    //factor[2] = pi_YIn;
+    //factor[3] = (pi_XIn * pi_XIn);
+    //factor[4] = (pi_XIn * pi_YIn);
+    //factor[5] = (pi_YIn * pi_YIn);
+    //factor[6] = (factor[3] * pi_XIn);
+    //factor[7] = (pi_YIn * factor[3]);
+    //factor[8] = (factor[5] * pi_XIn);
+    //factor[9] = (factor[5] * pi_YIn);
+
+    ////loading factors (1, x, y, x^2, xy, y^2, ...) in SSE registers
+    //__m128d storedFactor1 = _mm_loadu_pd(factor);
+    //__m128d storedFactor2 = _mm_loadu_pd(factor + 2);
+    //__m128d storedFactor3 = _mm_loadu_pd(factor + 4);
+    //__m128d storedFactor4 = _mm_loadu_pd(factor + 6);
+    //__m128d storedFactor5 = _mm_loadu_pd(factor + 8);
+
+    ////loading coefficients in SSE registers
+    //__m128d storedCoeffX1 = _mm_loadu_pd(m_CoefficientsX);
+    //__m128d storedCoeffX2 = _mm_loadu_pd(m_CoefficientsX + 2);
+    //__m128d storedCoeffX3 = _mm_loadu_pd(m_CoefficientsX + 4);
+    //__m128d storedCoeffX4 = _mm_loadu_pd(m_CoefficientsX + 6);
+    //__m128d storedCoeffX5 = _mm_loadu_pd(m_CoefficientsX + 8);
+
+    ////Dot product
+    //__m128d dotProduct1 = _mm_dp_pd(storedFactor1, storedCoeffX1, 0x31);
+    //__m128d dotProduct2 = _mm_dp_pd(storedFactor2, storedCoeffX2, 0x31);
+    //__m128d dotProduct3 = _mm_dp_pd(storedFactor3, storedCoeffX3, 0x31);
+    //__m128d dotProduct4 = _mm_dp_pd(storedFactor4, storedCoeffX4, 0x31);
+    //__m128d dotProduct5 = _mm_dp_pd(storedFactor5, storedCoeffX5, 0x31);
+
+    ////Addition of the dot product results
+    //__m128d addition = _mm_add_pd(_mm_add_pd(dotProduct1, dotProduct2), _mm_add_pd(dotProduct3, _mm_add_pd(dotProduct4, dotProduct5)));
+
+    ////Move final result out
+    //*po_pXOut = _mm_cvtsd_f64(addition);
+
+    //__m128d storedCoeffY1 = _mm_loadu_pd(m_CoefficientsY);
+    //__m128d storedCoeffY2 = _mm_loadu_pd(m_CoefficientsY + 2);
+    //__m128d storedCoeffY3 = _mm_loadu_pd(m_CoefficientsY + 4);
+    //__m128d storedCoeffY4 = _mm_loadu_pd(m_CoefficientsY + 6);
+    //__m128d storedCoeffY5 = _mm_loadu_pd(m_CoefficientsY + 8);
+
+    ////Dot product
+    //dotProduct1 = _mm_dp_pd(storedFactor1, storedCoeffY1, 0x31);
+    //dotProduct2 = _mm_dp_pd(storedFactor2, storedCoeffY2, 0x31);
+    //dotProduct3 = _mm_dp_pd(storedFactor3, storedCoeffY3, 0x31);
+    //dotProduct4 = _mm_dp_pd(storedFactor4, storedCoeffY4, 0x31);
+    //dotProduct5 = _mm_dp_pd(storedFactor5, storedCoeffY5, 0x31);
+
+    ////Addition of the dot product results
+    //addition = _mm_add_pd(_mm_add_pd(dotProduct1, dotProduct2), _mm_add_pd(dotProduct3, _mm_add_pd(dotProduct4, dotProduct5)));
+
+    //*po_pYOut = _mm_cvtsd_f64(addition);
     }
 
 //---------------------------------------------------------------------------------------
@@ -445,7 +502,8 @@ void HGFPolynomialModelAdapter::CalculatePolynomialCoefficients(const HGF2DShape
         {
         for (currentX = pi_rShape.GetExtent().GetXMin(); currentX < pi_rShape.GetExtent().GetXMax(); currentX += pi_StepX)
             {
-            if (pi_rShape.IsPointIn(HGF2DPosition(currentX, currentY)))
+            if (pi_rShape.GetShapeType() == HVE2DRectangle::CLASS_ID ||
+                pi_rShape.IsPointIn(HGF2DPosition(currentX, currentY)))
                 {
                 StatusInt s;
 

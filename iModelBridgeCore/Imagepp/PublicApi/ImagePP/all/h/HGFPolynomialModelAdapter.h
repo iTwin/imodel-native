@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFPolynomialModelAdapter.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGFPolynomialModelAdapter
@@ -17,6 +17,9 @@
 #include <Imagepp/all/h/HGF2DShape.h>
 #include <Imagepp/all/h/HGF2DDisplacement.h>
 #include <Imagepp/all/h/HFCMatrix.h>
+
+//SSE Optimization intrinsics
+#include "emmintrin.h"
 
 #define POLYNOMIAL_DEGREE 3
 #define NUMBER_OF_COEFFICIENTS 10
