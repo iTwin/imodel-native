@@ -201,7 +201,7 @@ void ChangeTestFixture::UpdateDgnDbExtents()
     {
     AxisAlignedBox3d physicalExtents;
     physicalExtents = m_testDb->Units().ComputeProjectExtents();
-    m_testDb->Units().SaveProjectExtents(physicalExtents);
+    m_testDb->Units().SetProjectExtents(physicalExtents);
 
     SpatialViewDefinitionCPtr view = dynamic_cast<SpatialViewDefinitionCP>(ViewDefinition::QueryView("Default", *m_testDb).get());
     ASSERT_TRUE(view.IsValid());
