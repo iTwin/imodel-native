@@ -55,6 +55,7 @@ JsSTRUCT(JsDPoint2d)
 JsSTRUCT(JsDVector3d)
 JsSTRUCT(JsDVector2d)
 JsSTRUCT(JsDRay3d)
+JsSTRUCT(JsDPlane3d)
 JsSTRUCT(JsDRange3d)
 JsSTRUCT(JsDPoint3dDVector3dDVector3d)
 JsSTRUCT(JsAngle)
@@ -192,6 +193,7 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 #include <DgnPlatform/GeomJsTypes/JsYawPitchRollAngles.h>
 #include <DgnPlatform/GeomJsTypes/JsDRay3d.h>
+#include <DgnPlatform/GeomJsTypes/JsDPlane3d.h>
 #include <DgnPlatform/GeomJsTypes/JsRotMatrix.h>
 #include <DgnPlatform/GeomJsTypes/JsTransform.h>
 #include <DgnPlatform/GeomJsTypes/JsDPoint3dDVector3dDVector3d.h>

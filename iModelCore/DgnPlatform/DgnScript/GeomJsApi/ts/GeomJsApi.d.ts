@@ -335,6 +335,31 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DRay3dP = cxx_pointer<DRay3d>;
 
+/**
+@description A plane defined by origin and vector normal
+*/
+    class DPlane3d implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsDPlane3d ***/ 
+        Clone(): DPlane3dP;
+        constructor (
+                Origin : DPoint3dP,
+                Normal: DVector3dP
+                );
+        
+        Origin: DPoint3dP;
+        Normal: DVector3dP;
+        OnDispose(): void;
+        Dispose(): void;
+        /** Evalate (xyz-origin) DOT normal. */
+        Evaluate (xyz : DPoint3dP) : cxx_double;
+    }
+
+    type DPlane3dP = cxx_pointer<DPlane3d>;
+
+
+
+
+
 
     type DPoint3dArrayP = cxx_pointer<DPoint3dArray>;
 
@@ -532,10 +557,13 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         static CreateTranslation (translation : DPoint3dP) : TransformP;
         static CreateTranslationXYZ (x : cxx_double, y : cxx_double, z : cxx_double) : TransformP;
         static CreateScaleAroundPoint (fixedPoint : DPoint3dP, scaleX : cxx_double, scaleY : cxx_double, scaleZ : cxx_double) : TransformP;
-
+        /** Create a coordinate frame with x,y,z columns given directly */
         static CreateOriginAndVectors (origin : DPoint3dP, xVector : DVector3dP, yVector : DVector3dP, zVector : DVector3dP) : TransformP;
-
+        /** Create a coordinate frame with x,y,z columns as vectors from origin to target points */
         static CreateOriginAnd3TargetPoints (origin : DPoint3dP, xPoint : DPoint3dP, yPoint : DPoint3dP, zPoint : DPoint3dP) : TransformP;
+        /** Create a transform that sweeps points along the sweepDirection to a point on the plane */
+        static CreateSweepToPlane (sweepDirection: DVector3dP, plane : DPlane3dP) : TransformP;
+
 
         static CreateOriginAnd2TargetPoints (origin : DPoint3dP, xPoint : DPoint3dP, yPoint : DPoint3dP) : TransformP;
 
