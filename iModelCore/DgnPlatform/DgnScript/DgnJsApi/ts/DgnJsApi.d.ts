@@ -264,9 +264,27 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         SetUnhandledProperty(name: Bentley_Utf8String, value: ECValueP): cxx_int32_t;
 
         /**
-         * Get/set the user properties for this element
+         * Get a handle to a user property on this element. 
+         * @note If the user property does not already exist, this function will create it.
+         * You can use the returned object to both get and set the property's value and metadata.
+         * @note Call DgnElement::Update after modifying a user property's value or metadata in order to save your changes.
+         * @param name The name of the property
+         * @return an object that accesses the value and metadata of the specified user property on this element.
+         * @see ContainsUserProperty
          */
-        UserProperties: AdHocJsonValueP;
+        GetUserProperty(name: Bentley_Utf8String): AdHocJsonPropertyValueP;
+
+        /**
+         * Check to see if the element has the specified user property
+         * @param name The name of the property
+         */
+        ContainsUserProperty(name: Bentley_Utf8String): cxx_bool;
+
+
+        /** Remove the specified user property from this element
+         * @param name  The name of the property
+         */
+        RemoveUserProperty(name: Bentley_Utf8String): void;
 
         OnDispose(): void;
         Dispose(): void;
@@ -901,48 +919,41 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     type ECValueP = cxx_pointer<ECValue>;
 
     /**
-     * AdHocJsonValue - Projection of BentleyApi::ECN::AdHocJsonValue
+     * AdHocJsonPropertyValue - Projection of BentleyApi::ECN::AdHocJsonPropertyValue
      */
-    class AdHocJsonValue implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    class AdHocJsonPropertyValue implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
-        /*** NATIVE_TYPE_NAME = JsAdHocJsonValue ***/
+        /*** NATIVE_TYPE_NAME = JsAdHocJsonPropertyValue ***/
 
-        /** Set the value of the specified ad hoc property.
-         * @param name  The name of the property
-         * @param value The value of the property.
-         */
-        SetValueEC(name: Bentley_Utf8String, value: ECValueP): void;
+        /** The value of this ad hoc property. */
+        ValueEC: ECValueP;
 
-        /**
-         * Set the units of the property value
-         * @param[in] name Name of the property
-         * @param[in] units String representing the units of the property value
-         */
-        SetUnits(name: Bentley_Utf8String, units: Bentley_Utf8String): void;
+        /** The type of this ad hoc property's value. */
+        Type: cxx_enum_class_uint32_t<ECPropertyPrimitiveType>;
 
-        /** Remove the specified ad hoc property.
-         * @param name  The name of the property
-         */
-        RemoveValue(name: Bentley_Utf8String): void;
+        /** The ExtendedType of this ad hoc property value, used to show or edit the property value. */
+        ExtendedType: Bentley_Utf8String;
 
-        /** Get the value of the specified ad hoc property.
-         * @param name  The name of the property
-         * @return the value of the property or null if the property is not found.
-         */
-        GetValueEC(name: Bentley_Utf8String): ECValueP;
+        /** The units of this ad hoc property value. */
+        Units: Bentley_Utf8String;
 
-        /**
-         * Get the units of the property value
-         * @param[in] name Name of the property
-         * @return units String representing the units of the property
-         */
-        GetUnits(name: Bentley_Utf8String): Bentley_Utf8String;
+        /** Controls if this ad hoc property should be hidden. */
+        Hidden: cxx_bool;
+
+        /** Controls if this ad property's value should be read-only or not. */
+        ReadOnly: cxx_bool;
+
+        /** The Priority of this ad hoc property value. Typically used for presentation. */
+        Priority: cxx_int32_t;
+
+        /** The Category of this ad hoc property value. Typically used for presentation. */
+        Category: Bentley_Utf8String;
 
         OnDispose(): void;
         Dispose(): void;
     }
 
-    type AdHocJsonValueP = cxx_pointer<AdHocJsonValue>;
+    type AdHocJsonPropertyValueP = cxx_pointer<AdHocJsonPropertyValue>;
 
     class ECClassCollectionIterator implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {

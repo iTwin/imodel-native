@@ -497,7 +497,10 @@ DgnDbStatus DgnElement::_InsertInDb()
         return existingElemWithCode.IsValid() ? DgnDbStatus::DuplicateCode : DgnDbStatus::WriteError;
         }
 
-    return SaveUserProperties();
+    if (m_userProperties)
+        status = SaveUserProperties();
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -532,7 +535,10 @@ DgnDbStatus DgnElement::_UpdateInDb()
         return DgnDbStatus::WriteError;
         }
 
-    return SaveUserProperties();
+    if (m_userProperties)
+        status = SaveUserProperties();
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -741,7 +747,8 @@ void DgnElement::CreateParams::RelocateToDestinationDb(DgnImportContext& importe
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::CopyForCloneFrom(DgnElementCR src)
     {
-    src.LoadUserProperties();
+    if (!src.m_userProperties)
+        src.LoadUserProperties();
 
     DgnCode code = GetCode();
     _CopyFrom(src);
@@ -869,10 +876,9 @@ DgnElement::CreateParams DgnElement::GetCreateParamsForImport(DgnModelR destMode
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::LoadUserProperties() const
     {
-    if (m_userProperties)
-        return;
+    BeAssert(!m_userProperties);
     
-    m_userProperties = new AdHocJsonValue();
+    m_userProperties = new AdHocJsonContainer();
 
     if (!IsPersistent())
        return;
@@ -897,9 +903,8 @@ void DgnElement::LoadUserProperties() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::SaveUserProperties() const
     {
-    if (!m_userProperties)
-        return DgnDbStatus::Success;
-    
+    BeAssert(m_userProperties);
+
     CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement("UPDATE " DGN_SCHEMA(DGN_CLASSNAME_Element) " SET UserProperties=? WHERE ECInstanceId=?");
     BeAssert(stmt.IsValid());
 
@@ -926,9 +931,7 @@ DgnDbStatus DgnElement::SaveUserProperties() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::UnloadUserProperties() const
     {
-    if (!m_userProperties)
-        return;
-
+    BeAssert(m_userProperties);
     delete m_userProperties;
     m_userProperties = nullptr;
     }
@@ -958,9 +961,56 @@ void DgnElement::CopyUserProperties(DgnElementCR other)
      */
 
     if (other.m_userProperties)
-        GetUserPropertiesR() = other.GetUserProperties();
+        {
+        if (!m_userProperties)
+            LoadUserProperties();
+        *m_userProperties = *other.m_userProperties;
+        }
     else
-        UnloadUserProperties();
+        {
+        if (m_userProperties)
+            UnloadUserProperties();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ECN::AdHocJsonPropertyValue DgnElement::GetUserProperty(Utf8CP name) const
+    {
+    if (!m_userProperties)
+        LoadUserProperties();
+    return m_userProperties->Get(name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnElement::ContainsUserProperty(Utf8CP name) const
+    {
+    if (!m_userProperties)
+        LoadUserProperties();
+    return m_userProperties->Contains(name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::RemoveUserProperty(Utf8CP name)
+    {
+    if (!m_userProperties)
+        LoadUserProperties();
+    return m_userProperties->Remove(name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::ClearUserProperties()
+    {
+    if (!m_userProperties)
+        LoadUserProperties();
+    return m_userProperties->Clear();
     }
 
 /*---------------------------------------------------------------------------------**//**

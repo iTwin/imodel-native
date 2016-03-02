@@ -612,7 +612,7 @@ StandardUnitCollection::const_iterator    StandardUnitCollection::end () const
 static const WCharCP    MS_UNITS_SHOWALL            = L"MS_UNITS_SHOWALL";
 #endif
 
-GLOBAL_TYPEDEF (UserUnitTable, UserUnitTable)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(UserUnitTable)
 DGNPLATFORM_TYPEDEFS (UserUnitTableEntry)
 typedef std::vector <UserUnitTableEntry>    UnitEntryVector;
 
@@ -661,7 +661,7 @@ public:
     UserUnitTableEntryCP    FindByNumber (int unitNumber) const;        
     UserUnitTableEntryCP    FindByLabel (WCharCP label) const;
 
-    static UserUnitTableR   GetTable();
+    static UserUnitTable&   GetTable();
 
     template <class V>
     UserUnitTableEntryCP    VisitUnits (V& v) const
@@ -872,7 +872,7 @@ UserUnitTableEntryCR    newEntry        /* => add this to the table */
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-UserUnitTableR UserUnitTable::GetTable()
+UserUnitTable& UserUnitTable::GetTable()
     {
     DgnHost::Key& key = GetHostKey();
     UserUnitTableP table = dynamic_cast<UserUnitTableP> (T_HOST.GetHostObject (key));
