@@ -848,7 +848,7 @@ template <class POINT> int ScalableMeshFullResolutionMeshQuery<POINT>::_Query(bv
 
     range.Get8Corners (box);
 
-    ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, YProtPtExtentType>* meshQueryP(new ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, YProtPtExtentType>(queryExtent, scmQueryParamsPtr->GetDepth() < (size_t)-1 ? scmQueryParamsPtr->GetDepth() : m_scmIndexPtr->GetDepth(), box));
+    ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, YProtPtExtentType>* meshQueryP(new ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, YProtPtExtentType>(queryExtent, scmQueryParamsPtr->GetLevel() < (size_t)-1 ? scmQueryParamsPtr->GetLevel() : m_scmIndexPtr->GetDepth(), box));
     try
         {
 
@@ -1025,7 +1025,7 @@ template <class POINT> bool ScalableMeshNode<POINT>::_ArePointsFullResolution() 
     return m_node->m_nodeHeader.m_IsLeaf;
     }
 
-    template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(bool loadGraph, bvector<bool>& clipsToShow) const
+template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IScalableMeshMeshFlagsPtr& flags, bvector<bool>& clipsToShow) const
         {
         LOAD_NODE
 
@@ -1037,7 +1037,7 @@ template <class POINT> bool ScalableMeshNode<POINT>::_ArePointsFullResolution() 
     auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
 
     IScalableMeshMeshPtr meshP;
-    if (loadGraph)
+    if (flags->ShouldLoadGraph())
         {
         m_meshNode->PinGraph();
 #ifdef SCALABLE_MESH_ATP
@@ -1081,8 +1081,11 @@ template <class POINT> bool ScalableMeshNode<POINT>::_ArePointsFullResolution() 
     else
         {
         m_meshNode->PinPtsIndices();
-        m_meshNode->PinUV();
-        m_meshNode->PinUVsIndices();
+        if (flags->ShouldLoadTexture())
+            {
+            m_meshNode->PinUV();
+            m_meshNode->PinUVsIndices();
+            }
         //NEEDS_WORK_SM_PROGRESSIF : Node header loaded unexpectingly
         if (m_node->size() > 0)
             {
@@ -1100,26 +1103,37 @@ template <class POINT> bool ScalableMeshNode<POINT>::_ArePointsFullResolution() 
                 }
 
             int status = meshPtr->AppendMesh(m_node->size(), &dataPoints[0],0,0, 0, 0, 0, 0, 0,0);
-            m_meshNode->PinUV();
+            if (flags->ShouldLoadTexture())
+                {
+                m_meshNode->PinUV();
+                }
             for (size_t i = 0; i < m_meshNode->GetNbPtsIndiceArrays(); ++i)
                 {
 //                    m_meshNode->PinPtsIndices(i);
  //                   m_meshNode->PinUVsIndices(i);
         int32_t* faceIndexes = m_meshNode->GetPtsIndicePtr(i);
         assert(faceIndexes != nullptr || m_meshNode->GetNbPtsIndices(i) == 0);
-                DPoint2d* pUv = m_meshNode->GetUVPtr();
+        DPoint2d* pUv = flags->ShouldLoadTexture() ? m_meshNode->GetUVPtr() : nullptr;
                 if (m_meshNode->GetNbPtsIndices(i) == 0) continue;
-                status = meshPtr->AppendMesh(0, 0, m_meshNode->GetNbPtsIndices(i), faceIndexes, 0, 0, 0, i >= 1 ? m_meshNode->GetNbUVs() : 0, i >= 1 ? pUv : 0, i >= 1 ? m_meshNode->GetUVsIndicesPtr(i - 1) : 0);
+                status = meshPtr->AppendMesh(0, 0, m_meshNode->GetNbPtsIndices(i), faceIndexes, 0, 0, 0, i >= 1 && flags->ShouldLoadTexture() ? m_meshNode->GetNbUVs() : 0, 
+                                             i >= 1&& flags->ShouldLoadTexture() ? pUv : 0, 
+                                             i >= 1 && flags->ShouldLoadTexture() ? m_meshNode->GetUVsIndicesPtr(i - 1) : 0);
 
                 // release all
 //                m_meshNode->UnPinPtsIndices(i);
 //                m_meshNode->UnPinUVsIndices(i);
                 }
-            m_meshNode->UnPinUV();
+            if (flags->ShouldLoadTexture())
+                {
+                m_meshNode->UnPinUV();
+                }
             if (meshPtr->GetNbFaces() == 0)
                 {
+                if (flags->ShouldLoadTexture())
+                    {
                     m_meshNode->UnPinUVsIndices();
                     m_meshNode->UnPinUV();
+                    }
                 m_meshNode->UnPinPtsIndices();
                 m_node->UnPin();
                 //if (isStreaming) s_streamingMutex.unlock();
@@ -1163,9 +1177,11 @@ template <class POINT> bool ScalableMeshNode<POINT>::_ArePointsFullResolution() 
 #else
                 if (m_meshNode->m_nbClips > 0)
                     {
+                    if (flags->ShouldLoadTexture())
                         m_meshNode->PinUV();
                     meshPtr->ApplyClipMesh(diffs);
-                    m_meshNode->UnPinUV();
+                    if (flags->ShouldLoadTexture())
+                        m_meshNode->UnPinUV();
                     }
 #endif
                 }
@@ -1571,10 +1587,10 @@ template <class POINT> IScalableMeshTexturePtr ScalableMeshNode<POINT>::_GetText
     return textureP;
 }
 
-template <class POINT> IScalableMeshMeshPtr ScalableMeshCachedMeshNode<POINT>::_GetMesh(bool loadGraph, bvector<bool>& clipsToShow) const
+template <class POINT> IScalableMeshMeshPtr ScalableMeshCachedMeshNode<POINT>::_GetMesh(IScalableMeshMeshFlagsPtr& flags, bvector<bool>& clipsToShow) const
     {        
     
-        return __super::_GetMesh(loadGraph, clipsToShow);  
+        return __super::_GetMesh(flags, clipsToShow);  
     }
 
 template <class POINT> IScalableMeshMeshPtr ScalableMeshCachedMeshNode<POINT>::_GetMeshByParts(const bvector<bool>& clipsToShow, ScalableMeshTextureID texID) const
@@ -2582,15 +2598,21 @@ template <class POINT> void ScalableMeshNode<POINT>::_LoadHeader() const
     return m_node->Load();    
     }
 
+extern size_t s_nGetDTMs;
+extern size_t s_nMissedDTMs;
+
 template <class POINT> BcDTMPtr ScalableMeshNode<POINT>::_GetBcDTM() const
     {
+    s_nGetDTMs++;
     auto m_meshNode = dynamic_cast<SMMeshIndexNode<POINT, YProtPtExtentType>*>(m_node.GetPtr());
     if (m_meshNode->m_tileBcDTM.get() != nullptr)
         return m_meshNode->m_tileBcDTM.get();
     else
         {
+        s_nMissedDTMs++;
         bvector<bool> clips;
-        auto meshP = GetMesh(false, clips);
+        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+        auto meshP = GetMesh(flags, clips);
         if (meshP == nullptr) return nullptr;
         meshP->GetAsBcDTM(m_meshNode->m_tileBcDTM);
         return m_meshNode->m_tileBcDTM.get();
@@ -2858,10 +2880,10 @@ template <class POINT> ScalableMeshNodeWithReprojection<POINT>::ScalableMeshNode
     }
 
 
-template <class POINT> IScalableMeshMeshPtr ScalableMeshNodeWithReprojection<POINT>::_GetMesh(bool loadGraph, bvector<bool>& clipsToShow) const
+template <class POINT> IScalableMeshMeshPtr ScalableMeshNodeWithReprojection<POINT>::_GetMesh(IScalableMeshMeshFlagsPtr& flags, bvector<bool>& clipsToShow) const
     {
     IScalableMeshMeshPtr meshP;
-    if (loadGraph)
+    if (flags->ShouldLoadGraph())
         {
         auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
         if (m_meshNode->GetGraphPtr() == NULL)
@@ -2962,7 +2984,12 @@ template <class POINT> int ScalableMeshNodeRayQuery<POINT>::_Query(IScalableMesh
     DRay3d ray = DRay3d::FromOriginAndVector(*pTestPt, params->GetDirection());
  
     HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>> currentNodeP(nullptr);
-    ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, YProtPtExtentType> query(m_scmIndexPtr->GetContentExtent(), m_scmIndexPtr->GetDepth(), ray, params->Get2d(), params->GetDepth(), params->Get2d() ? ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, YProtPtExtentType>::RaycastOptions::FIRST_INTERSECT : ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, YProtPtExtentType>::RaycastOptions::LAST_INTERSECT);
+    ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, YProtPtExtentType> query(m_scmIndexPtr->GetContentExtent(), 
+                                                                                 scmQueryParamsPtr->GetLevel() == (size_t)-1 ? m_scmIndexPtr->GetDepth() : scmQueryParamsPtr->GetLevel(), 
+                                                                                 ray, 
+                                                                                 params->Get2d(), 
+                                                                                 params->GetDepth(), 
+                                                                                 params->Get2d() ? ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, YProtPtExtentType>::RaycastOptions::FIRST_INTERSECT : ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, YProtPtExtentType>::RaycastOptions::LAST_INTERSECT);
     m_scmIndexPtr->Query(&query, currentNodeP);
     if (currentNodeP == nullptr) return ERROR;
     nodePtr = IScalableMeshNodePtr(new ScalableMeshNode<POINT>(currentNodeP));
@@ -2979,7 +3006,12 @@ template <class POINT> int ScalableMeshNodeRayQuery<POINT>::_Query(bvector<IScal
     DRay3d ray = DRay3d::FromOriginAndVector(*pTestPt, params->GetDirection());
 
     std::vector<SMPointIndexNode<POINT, YProtPtExtentType>::QueriedNode> nodesP;
-    ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, YProtPtExtentType> query(m_scmIndexPtr->GetContentExtent(), m_scmIndexPtr->GetDepth(), ray, params->Get2d(), params->GetDepth(), ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, YProtPtExtentType>::RaycastOptions::ALL_INTERSECT);
+    ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, YProtPtExtentType> query(m_scmIndexPtr->GetContentExtent(), 
+                                                                                 scmQueryParamsPtr->GetLevel() == (size_t)-1 ? m_scmIndexPtr->GetDepth() : scmQueryParamsPtr->GetLevel(),
+                                                                                 ray, 
+                                                                                 params->Get2d(), 
+                                                                                 params->GetDepth(), 
+                                                                                 ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, YProtPtExtentType>::RaycastOptions::ALL_INTERSECT);
     m_scmIndexPtr->Query(&query, nodesP);
 
     if (nodesP.size() == 0) return ERROR;

@@ -161,7 +161,8 @@ DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolume(double* cut, double* fill
     for (auto& node : returnedNodes)
         {
         bvector<bool> clips;
-        IScalableMeshMeshPtr scalableMesh = node->GetMesh(false, clips);
+        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+        IScalableMeshMeshPtr scalableMesh = node->GetMesh(flags, clips);
         //ScalableMeshMeshWithGraphPtr scalableMeshWithGraph((ScalableMeshMeshWithGraph*)scalableMesh.get(), true);
         double tileCut, tileFill;
         bvector<PolyfaceHeaderPtr> volumeMeshVector;
@@ -1382,7 +1383,8 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(double& cut, double& f
     for (auto& node : returnedNodes)
         {
         bvector<bool> clips;
-        IScalableMeshMeshPtr scalableMesh = node->GetMesh(false,clips);
+        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+        IScalableMeshMeshPtr scalableMesh = node->GetMesh(flags,clips);
         //ScalableMeshMeshWithGraphPtr scalableMeshWithGraph((ScalableMeshMeshWithGraph*)scalableMesh.get(), true);
         double tileCut, tileFill;
         totalVolume += _ComputeVolumeCutAndFillForTile(scalableMesh, tileCut, tileFill, intersectingMeshSurface, true, meshRange, volumeMeshVector);

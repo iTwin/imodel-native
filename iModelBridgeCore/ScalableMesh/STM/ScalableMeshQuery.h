@@ -825,8 +825,8 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
 
         StopQueryCallbackFP m_stopQueryCallbackFP;
 
-        virtual size_t _GetDepth() override { return 0; }
-        virtual void _SetDepth(size_t depth) override {};
+        virtual size_t _GetLevel() override { return 0; }
+        virtual void _SetLevel(size_t depth) override {};
         
         virtual const DPoint3d* _GetViewBox() const override
             {
@@ -936,12 +936,12 @@ struct ScalableMeshMeshQueryParams : public IScalableMeshMeshQueryParams
             return m_targetGCSPtr;
             }
 
-        virtual size_t _GetDepth() override
+        virtual size_t _GetLevel() override
             {
             return m_depth;
             }
 
-        virtual void _SetDepth(size_t depth) override
+        virtual void _SetLevel(size_t depth) override
             {
             m_depth = depth;
             }
@@ -1081,6 +1081,7 @@ struct ScalableMeshNodeRayQueryParams : public IScalableMeshNodeQueryParams
         DVec3d m_rayDirection;
         double m_depth;
         bool m_is2d;
+        size_t m_level;
 
         virtual void _SetDirection(DVec3d direction) override
             {
@@ -1107,6 +1108,15 @@ struct ScalableMeshNodeRayQueryParams : public IScalableMeshNodeQueryParams
             {
             return m_is2d;
             }
+
+        virtual void _SetLevel(size_t level) override
+            {
+            m_level = level;
+            }
+        virtual size_t _GetLevel() const override
+            {
+            return m_level;
+            }
     public:
         static const double INFINITE_DEPTH;
         ScalableMeshNodeRayQueryParams()
@@ -1114,6 +1124,7 @@ struct ScalableMeshNodeRayQueryParams : public IScalableMeshNodeQueryParams
             m_rayDirection = DVec3d::From(0, 0, -1);
             m_depth = INFINITE_DEPTH; 
             m_is2d = false;
+            m_level = (size_t)-1;
             }
 
         virtual ~ScalableMeshNodeRayQueryParams()
@@ -1178,8 +1189,8 @@ struct ScalableMeshNodePlaneQueryParams : public IScalableMeshNodePlaneQueryPara
             return m_depth;
             }
 
-        virtual size_t _GetDepth() override { return 0; }
-        virtual void _SetDepth(size_t depth) override {};
+        virtual size_t _GetLevel() override { return 0; }
+        virtual void _SetLevel(size_t depth) override {};
         BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr m_sourceGCSPtr;
         BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr m_targetGCSPtr;
         virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetSourceGCS() override
@@ -1240,6 +1251,29 @@ template <class POINT> class ScalableMeshNodePlaneQuery : public IScalableMeshMe
         virtual ~ScalableMeshNodePlaneQuery();
     };
 
+class ScalableMeshMeshFlags : public virtual IScalableMeshMeshFlags
+    {
+    protected:
+
+        bool m_loadGraph;
+        bool m_loadTexture;
+
+        virtual bool _ShouldLoadTexture() const override;
+        virtual bool _ShouldLoadGraph() const override;
+
+        virtual void _SetLoadTexture(bool loadTexture) override;
+        virtual void _SetLoadGraph(bool loadGraph) override;
+
+    public:
+        ScalableMeshMeshFlags()
+            {
+            m_loadGraph = false;
+            m_loadTexture = false;
+            }
+
+        virtual ~ScalableMeshMeshFlags() {}
+    };
+
 template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
     {                
@@ -1256,7 +1290,7 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
         virtual bool    _ArePointsFullResolution() const override;
 
-        virtual IScalableMeshMeshPtr _GetMesh(bool loadGraph, bvector<bool>& clipsToShow) const override;
+        virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags, bvector<bool>& clipsToShow) const override;
 
         virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow, ScalableMeshTextureID texId) const override;
 
@@ -1323,7 +1357,7 @@ template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalabl
 
     protected: 
 
-            virtual IScalableMeshMeshPtr _GetMesh(bool loadGraph, bvector<bool>& clipsToShow) const override;
+        virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags, bvector<bool>& clipsToShow) const override;
 
             virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow, ScalableMeshTextureID texId) const override;
 
@@ -1501,7 +1535,7 @@ template<class POINT> class ScalableMeshNodeWithReprojection : public ScalableMe
     private:
         GeoCoords::Reprojection  m_reprojectFunction;
     protected:
-        virtual IScalableMeshMeshPtr _GetMesh(bool loadGraph, bvector<bool>& clipsToShow) const override;
+        virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags, bvector<bool>& clipsToShow) const override;
 
         virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow, ScalableMeshTextureID texId) const override;
 

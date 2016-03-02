@@ -9012,6 +9012,20 @@ size_t SMPointIndex<POINT, EXTENT>::GetDepth() const
         }
     return m_indexHeader.m_depth;
     }
+
+
+template<class POINT, class EXTENT>
+size_t SMPointIndex<POINT, EXTENT>::GetTerrainDepth() const
+    {
+
+    if (m_pRootNode == NULL)
+        return 0;
+    if (m_indexHeader.m_terrainDepth == (size_t)-1)
+        {
+        return GetDepth();
+        }
+    return m_indexHeader.m_terrainDepth;
+    }
 /**----------------------------------------------------------------------------
 PROTECTED
 Returns the root node of the spatial index.

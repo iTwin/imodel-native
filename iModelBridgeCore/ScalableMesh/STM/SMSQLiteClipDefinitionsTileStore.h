@@ -149,6 +149,8 @@ template <class EXTENT> class SMSQLiteClipDefinitionsTileStore : public SMPointT
             return false;
             }
 
+        SMSQLiteFile* GetFile() { return m_smSQLiteFile.get(); }
+
     private:
         SMSQLiteFilePtr m_smSQLiteFile;
     };

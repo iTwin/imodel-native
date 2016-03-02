@@ -2568,14 +2568,14 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Refres
     ComputeMergedClips();
     if (m_pSubNodeNoSplit != NULL && !m_pSubNodeNoSplit->IsVirtualNode())
         {
-        dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pSubNodeNoSplit)->ComputeMergedClips();
+        dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pSubNodeNoSplit)->RefreshMergedClipsRecursive();
         }
     else if (!IsLeaf())
         {
         for (size_t indexNodes = 0; indexNodes < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNodes++)
             {
             if(m_apSubNodes[indexNodes] != nullptr)
-            dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_apSubNodes[indexNodes])->ComputeMergedClips();
+                dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_apSubNodes[indexNodes])->RefreshMergedClipsRecursive();
             }
         }
     }
@@ -2708,7 +2708,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
     allClips.clientID = (uint64_t)-1;
     bool added = false;
     for (auto& diffSet : m_differenceSets)
-        if (diffSet.clientID == (uint64_t)-1) { diffSet = allClips; added = true; }
+        if (diffSet.clientID == (uint64_t)-1) { diffSet = allClips; diffSet.upToDate = true; added = true; }
     if (!added)
         {
         m_differenceSets.push_back(allClips);

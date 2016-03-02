@@ -33,6 +33,7 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
         return 0;
         }
     WString stmFileName(argv[1]);
+
     WString outDir(argv[2]);
     StatusInt status;
     ScalableMesh::IScalableMeshPtr meshP = ScalableMesh::IScalableMesh::GetFor(stmFileName.c_str(),true,true, status);
@@ -101,9 +102,15 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
         std::swap(triangle[1], triangle[2]);
         //apparently the below colinearity test requires at least first and last point to be distinct
         if (triangle[0].AlmostEqualXY(triangle[1]) || triangle[1].AlmostEqualXY(triangle[2]) || triangle[2].AlmostEqualXY(triangle[0])) continue;
+        DSegment3d triSeg = DSegment3d::From(triangle[0], triangle[1]);
+        double param;
+        DPoint3d closestPt;
+        triSeg.ProjectPointXY(closestPt, param, triangle[2]);
+        if (closestPt.AlmostEqualXY(triangle[2])) continue;
         //DTM doesn't like colinear triangles
-        if (bsiGeom_isDPoint3dArrayColinear(triangle, 3, 1e-6)) continue;
-
+        //if (bsiGeom_isDPoint3dArrayColinear(triangle, 3, 1e-6)) continue;
+        if (fabs(triangle[0].y - triangle[1].y) < 1e-4 && fabs(triangle[2].y - triangle[1].y) < 1e-4 && fabs(triangle[0].y - triangle[2].y) < 1e-4)
+            std::cout << " ERROR COLINEAR TRIANGLE" << std::endl;
         bcdtmObject_storeDtmFeatureInDtmObject(bcdtm->GetTinHandle(), DTMFeatureType::GraphicBreak, bcdtm->GetTinHandle()->nullUserTag, 1, &bcdtm->GetTinHandle()->nullFeatureId, &triangle[0], 4);
         }
     bcdtmObject_triangulateStmTrianglesDtmObject(bcdtm->GetTinHandle());

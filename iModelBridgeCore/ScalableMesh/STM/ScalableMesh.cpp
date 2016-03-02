@@ -161,6 +161,12 @@ int IScalableMesh::GetNbResolutions() const
     return _GetNbResolutions();
     }
 
+size_t IScalableMesh::GetTerrainDepth() const
+    {
+    return _GetTerrainDepth();
+    }
+
+
 IScalableMeshPointQueryPtr IScalableMesh::GetQueryInterface(ScalableMeshQueryType queryType) const
     {
     return _GetQueryInterface(queryType);
@@ -285,6 +291,11 @@ bool IScalableMesh::ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t cli
 bool IScalableMesh::RemoveClip(uint64_t clipID)
     {
     return _RemoveClip(clipID);
+    }
+
+void IScalableMesh::SetIsInsertingClips(bool toggleInsertClips)
+    {
+    return _SetIsInsertingClips(toggleInsertClips);
     }
 
 
@@ -1255,6 +1266,19 @@ template <class POINT> int ScalableMesh<POINT>::_GetNbResolutions() const
     return nbResolutions;    
     }
 
+
+template <class POINT> size_t ScalableMesh<POINT>::_GetTerrainDepth() const
+    {
+    size_t depth = 0;
+
+    if (m_scmIndexPtr != 0)
+        {
+        depth = m_scmIndexPtr->GetTerrainDepth() != (size_t)-1 ? m_scmIndexPtr->GetTerrainDepth() : m_scmIndexPtr->GetDepth();
+        }
+
+    return depth;
+    }
+
 /*----------------------------------------------------------------------------+
 |ScalableMesh::__GetSourceGCS
 +----------------------------------------------------------------------------*/
@@ -1435,6 +1459,12 @@ template <class POINT> bool ScalableMesh<POINT>::_RemoveClip(uint64_t clipID)
     return m_scmIndexPtr->GetClipRegistry()->AddClip(pts, ptsSize) + 1;*/
     }
 
+template <class POINT> void ScalableMesh<POINT>::_SetIsInsertingClips(bool toggleInsertClips)
+    {
+    if (nullptr == m_scmIndexPtr || m_scmIndexPtr->GetClipRegistry() == nullptr) return;
+    m_scmIndexPtr->GetClipRegistry()->GetFile()->m_autocommit = !toggleInsertClips;
+    if (!toggleInsertClips) m_scmIndexPtr->RefreshMergedClips();
+    }
 
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_GetState
@@ -1658,6 +1688,11 @@ template <class POINT> int ScalableMeshSingleResolutionPointIndexView<POINT>::_G
     return 1;    
     }
 
+template <class POINT> size_t ScalableMeshSingleResolutionPointIndexView<POINT>::_GetTerrainDepth() const
+    {
+    return 1;
+    }
+
 template <class POINT> IScalableMeshPointQueryPtr ScalableMeshSingleResolutionPointIndexView<POINT>::_GetQueryInterface(ScalableMeshQueryType                queryType,                                                                                                      
                                                                                                                         BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS,
                                                                                                                         const DRange3d&                      extentInTargetGCS) const
@@ -1791,6 +1826,11 @@ template <class POINT> int ScalableMeshSingleResolutionPointIndexView<POINT>::_S
     {
     assert(!"Should not be called");
     return -1;       
+    }
+
+template <class POINT> void ScalableMeshSingleResolutionPointIndexView<POINT>::_SetIsInsertingClips(bool toggleInsertClips)
+    {
+    assert(!"Should not be called");
     }
 
 /*----------------------------------------------------------------------------+

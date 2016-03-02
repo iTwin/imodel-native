@@ -144,6 +144,7 @@ public:
     size_t GetNumberOfFeaturePoints(int64_t featureID);
     size_t GetClipPolygonByteCount(int64_t clipID);
 
+    bool m_autocommit = true;
 private:
     BeSQLite::Db* m_database;
 

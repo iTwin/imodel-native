@@ -61,6 +61,12 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
 
         }
 
+    SMSQLiteFilePtr GetFile()
+        {
+        if (m_clipStore == NULL) OpenStore();
+        return m_clipStore->GetFile();
+        }
+
     ~ClipRegistry()
         {
         StoreAllClips();

@@ -1395,6 +1395,8 @@ public:
 
     HFCPtr<SMPointIndexNode<POINT, EXTENT> > FindNode(EXTENT ext, size_t level) const;
 
+    size_t              GetTerrainDepth() const;
+
     /**----------------------------------------------------------------------------
     Returns the root node of the index
 

@@ -840,7 +840,7 @@ void SMSQLiteFile::StoreClipPolygon(int64_t& clipID, const bvector<uint8_t>& cli
         m_database->GetCachedStatement(stmt2, "SELECT last_insert_rowid()");
         status = stmt2->Step();
         clipID = stmt2->GetValueInt64(0);
-        m_database->SaveChanges();
+        if (m_autocommit) m_database->SaveChanges();
         }
     else if (nRows == 0)
         {
@@ -852,7 +852,7 @@ void SMSQLiteFile::StoreClipPolygon(int64_t& clipID, const bvector<uint8_t>& cli
         DbResult status = stmt->Step();
         assert(status == BE_SQLITE_DONE);
         stmt->ClearBindings();
-        m_database->SaveChanges();
+        if (m_autocommit) m_database->SaveChanges();
         }
     else
         {
@@ -863,7 +863,7 @@ void SMSQLiteFile::StoreClipPolygon(int64_t& clipID, const bvector<uint8_t>& cli
         DbResult status = stmt->Step();
         assert(status == BE_SQLITE_DONE);
         stmt->ClearBindings();
-        m_database->SaveChanges();
+        if (m_autocommit) m_database->SaveChanges();
         }
     }
 

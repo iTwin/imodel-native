@@ -1704,10 +1704,12 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelIntersectIndex
     double par=0,par2=0;
     DPoint2d intersect2d;
     DPoint2d dest2d = DPoint2d::From(m_target.direction.x, m_target.direction.y);
+
     if (!m_is2d ? m_target.ClipToRange(range, segment, fraction) : (bsiDRange2d_intersectRay(&range2d, &par, &par2, &intersect2d, NULL, &origin2d, &dest2d) && (par2 > 0 || par > 0))) //ray intersects the node
         {
         if (m_is2d && m_depth != -1 && (m_depth<par)) return false;
         if (node->m_nodeHeader.m_totalCount == 0) return false;
+
         if ((node->m_nodeHeader.m_balanced && node->GetLevel() == m_requestedLevel) || (!node->m_nodeHeader.m_balanced && node->IsLeaf()) && (!m_is2d || par > 0))
                 {
                 if (isnan(m_bestHitScore) || (m_intersect == RaycastOptions::LAST_INTERSECT && m_bestHitScore < (!m_is2d ? fraction.high : par))
@@ -1738,14 +1740,18 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelIntersectIndex
     DRange1d fraction;
     DRange2d range2d = DRange2d::From(DPoint2d::From(ExtentOp<EXTENT>::GetXMin(ext), ExtentOp<EXTENT>::GetYMin(ext)),
                                       DPoint2d::From(ExtentOp<EXTENT>::GetXMax(ext), ExtentOp<EXTENT>::GetYMax(ext)));
+
     DPoint2d origin2d = DPoint2d::From(m_target.origin.x, m_target.origin.y);
     double par=0, par2=0;
     DPoint2d intersect2d;
     DPoint2d dest2d = DPoint2d::From(m_target.direction.x, m_target.direction.y);
+
     if (!m_is2d ? m_target.ClipToRange(range, segment, fraction) : (bsiDRange2d_intersectRay(&range2d, &par, &par2, &intersect2d, NULL, &origin2d, &dest2d) && (par2 > 0 || par > 0))) //ray intersects the node
         {
         if (m_is2d && m_depth != -1 && (m_depth < par)) return false;
+        if (!m_is2d && m_depth != -1 && ((m_depth < fraction.low) || (fraction.high < 0 && m_depth < fabs(fraction.high)))) return false;
         if (node->m_nodeHeader.m_totalCount == 0) return false;
+
         if ((node->m_nodeHeader.m_balanced && node->GetLevel() == m_requestedLevel) || (!node->m_nodeHeader.m_balanced && node->IsLeaf()) && (!m_is2d || par > 0))
             {
             double positionAlongRay = m_is2d ? par : fraction.low;

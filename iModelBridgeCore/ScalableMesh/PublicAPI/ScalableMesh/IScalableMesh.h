@@ -60,6 +60,8 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         virtual int                    _GetNbResolutions() const = 0;
 
+        virtual size_t                 _GetTerrainDepth() const = 0;
+
         virtual IScalableMeshPointQueryPtr         _GetQueryInterface(ScalableMeshQueryType queryType) const = 0;
 
         virtual IScalableMeshPointQueryPtr         _GetQueryInterface(ScalableMeshQueryType                queryType,                                                           
@@ -109,6 +111,8 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) = 0;;
 
         virtual bool                               _RemoveClip(uint64_t clipID) = 0;
+
+        virtual void                               _SetIsInsertingClips(bool toggleInsertMode) = 0;
     /*__PUBLISH_SECTION_START__*/
     public:
         //! Gets the number of points of the DTM.
@@ -127,7 +131,9 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
             
         BENTLEYSTM_EXPORT ScalableMeshCompressionType   GetCompressionType() const;
 
-        BENTLEYSTM_EXPORT int                    GetNbResolutions() const;          
+        BENTLEYSTM_EXPORT int                    GetNbResolutions() const;    
+
+        BENTLEYSTM_EXPORT size_t                 GetTerrainDepth() const;
 
         BENTLEYSTM_EXPORT IScalableMeshPointQueryPtr         GetQueryInterface(ScalableMeshQueryType queryType) const;
 
@@ -183,6 +189,8 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         BENTLEYSTM_EXPORT bool                   ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID);
 
         BENTLEYSTM_EXPORT bool                   RemoveClip(uint64_t clipID);
+
+        BENTLEYSTM_EXPORT void                   SetIsInsertingClips(bool toggleInsertMode);
 
     
         BENTLEYSTM_EXPORT static IScalableMeshPtr        GetFor                 (const WChar*          filePath,
