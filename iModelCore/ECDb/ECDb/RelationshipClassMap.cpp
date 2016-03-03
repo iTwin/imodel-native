@@ -1,11 +1,3 @@
-m_impliedColumnName
-m_impliedColumnName
-m_impliedColumnName
-m_canImplyFromNavigationProperty
-m_impliedColumnName
-m_canImplyFromNavigationProperty
-m_canImplyFromNavigationProperty
-m_canImplyFromNavigationProperty
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: ECDb/RelationshipClassMap.cpp $
