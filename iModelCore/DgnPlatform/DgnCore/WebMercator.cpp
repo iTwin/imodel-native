@@ -51,7 +51,7 @@ enum {MIN_ZOOM_LEVEL=0, MAX_ZOOM_LEVEL=22};
 //=======================================================================================
 struct WebMercatorDisplay : ProgressiveTask
 {
-    friend struct WebMercatorModel;
+    friend struct BentleyApi::Dgn::WebMercatorModel;
 
 protected:
     WebMercatorModel const& m_model;
