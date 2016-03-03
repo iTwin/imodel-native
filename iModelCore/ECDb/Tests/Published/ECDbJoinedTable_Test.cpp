@@ -2284,7 +2284,8 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipWithStandAloneClass1)
 //      IFace <- IFaceHasBody(REFERENCING) -> Body
 //      IFace <- IFaceHasManyBody(REFERENCING) -> Body
 //      IFace <- ManyIFaceHaveManyBody(REFERENCING) -> Body
-// @bsiMethod                                      Muhammad Hassan                  01/16
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (JoinedTableECDbMapStrategyTests, PolymorphicRelationshipWithStandAloneClass)
     {
@@ -2458,6 +2459,211 @@ TEST_F (JoinedTableECDbMapStrategyTests, PolymorphicRelationshipWithStandAloneCl
     VerifyInsertedInstance (db, ecsql.c_str (), booInstanceId2, bodyInstanceId2, booClassId, bodyClassId);
     }
     db.Schemas ().CreateECClassViewsInDb ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  03/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(JoinedTableECDbMapStrategyTests, DropFKConstraintForSharedColumnForSubClasses)
+    {
+    SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+                        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                        "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                        "    <ECEntityClass typeName='A'>"
+                        "        <ECProperty propertyName='AName' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='B'>"
+                        "     <ECCustomAttributes>"
+                        "        <ClassMap xmlns='ECDbMap.01.00'>"
+                        "             <MapStrategy>"
+                        "                <Strategy>SharedTable</Strategy>"
+                        "                <AppliesToSubclasses>True</AppliesToSubclasses>"
+                        "                <Options>JoinedTablePerDirectSubclass</Options>"
+                        "             </MapStrategy>"
+                        "        </ClassMap>"
+                        "     </ECCustomAttributes>"
+                        "        <ECProperty propertyName='BName' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='B1Sub'>"
+                        "     <ECCustomAttributes>"
+                        "        <ClassMap xmlns='ECDbMap.01.00'>"
+                        "             <MapStrategy>"
+                        "                <Options>SharedColumnsForSubClasses</Options>"
+                        "             </MapStrategy>"
+                        "        </ClassMap>"
+                        "     </ECCustomAttributes>"
+                        "        <BaseClass>B</BaseClass>"
+                        "        <ECProperty propertyName='B1SubName' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='B1SubSub'>"
+                        "        <BaseClass>B1Sub</BaseClass>"
+                        "        <ECProperty propertyName='B1SubSubName' typeName='string' />"
+                        "        <ECProperty propertyName='AId' typeName='long' />"
+                        "    </ECEntityClass>"
+                        "  <ECRelationshipClass typeName='Rel1' strength='embedding'>"
+                        "      <ECCustomAttributes>"
+                        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
+                        "          <OnDeleteAction>Restrict</OnDeleteAction>"
+                        "        </ForeignKeyRelationshipMap>"
+                        "     </ECCustomAttributes>"
+                        "    <Source cardinality='(0,1)' polymorphic='True'>"
+                        "      <Class class = 'A' />"
+                        "    </Source>"
+                        "    <Target cardinality='(0,N)' polymorphic='True'>"
+                        "      <Class class = 'B1SubSub'>"
+                        "           <Key>"
+                        "              <Property name='AId'/>"
+                        "           </Key>"
+                        "      </Class>"
+                        "    </Target>"
+                        "  </ECRelationshipClass>"
+                        "</ECSchema>");
+
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testItem, "fkconstraintsonsharedcolumnsforsubclasses.ecdb");
+    ASSERT_FALSE(asserted);
+
+    AssertForeignKey(false, ecdb, "ts_B1Sub", "sc_02");
+
+    ECInstanceKey sourceKey;
+    ECInstanceKey targetKey;
+    ECInstanceKey relKey;
+
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.A VALUES('A_prop')"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step(sourceKey));
+    statement.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.B1SubSub(BName, B1SubName, B1SubSubName) VALUES('B_prop', 'B1Sub_prop', 'B1SubSub_prop')"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step(targetKey));
+    statement.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.Rel1(SourceECInstanceId, TargetECInstanceId, SourceECClassId, TargetECClassId) VALUES(?,?,?,?)"));
+    statement.BindId(1, sourceKey.GetECInstanceId());
+    statement.BindId(2, targetKey.GetECInstanceId());
+    statement.BindInt64(3, sourceKey.GetECClassId());
+    statement.BindInt64(4, targetKey.GetECClassId());
+    ASSERT_EQ(BE_SQLITE_DONE, statement.Step(relKey));
+    statement.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT SourceECInstanceId, TargetECInstanceId FROM ts.Rel1 WHERE ECInstanceId = ?"));
+    statement.BindId(1, relKey.GetECInstanceId());
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(sourceKey.GetECInstanceId().GetValue(), statement.GetValueInt64(0));
+    ASSERT_EQ(targetKey.GetECInstanceId().GetValue(), statement.GetValueInt64(1));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  03/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(JoinedTableECDbMapStrategyTests, VerifyONDeleteRestrictWithJoinedTable)
+    {
+    SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+               "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+               "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+               "    <ECEntityClass typeName='A'>"
+               "        <ECProperty propertyName='A_prop' typeName='string' />"
+               "    </ECEntityClass>"
+               "    <ECEntityClass typeName='B'>"
+               "      <ECCustomAttributes>"
+               "        <ClassMap xmlns='ECDbMap.01.00'>"
+               "          <MapStrategy>"
+               "             <Strategy>SharedTable</Strategy>"
+               "             <AppliesToSubclasses>True</AppliesToSubclasses>"
+               "             <Options>JoinedTablePerDirectSubclass</Options>"
+               "          </MapStrategy>"
+               "        </ClassMap>"
+               "     </ECCustomAttributes>"
+               "        <ECProperty propertyName='B_prop' typeName='string' />"
+               "    </ECEntityClass>"
+               "    <ECEntityClass typeName='B1'>"
+               "        <BaseClass>B</BaseClass>"
+               "        <ECProperty propertyName='B1_prop' typeName='string' />"
+               "    </ECEntityClass>"
+               "  <ECRelationshipClass typeName='AOwnsB' strength='embedding'>"
+               "      <ECCustomAttributes>"
+               "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
+               "          <OnDeleteAction>Cascade</OnDeleteAction>"
+               "        </ForeignKeyRelationshipMap>"
+               "     </ECCustomAttributes>"
+               "    <Source cardinality='(0,1)' polymorphic='True'>"
+               "      <Class class = 'A' />"
+               "    </Source>"
+               "    <Target cardinality='(0,N)' polymorphic='True'>"
+               "      <Class class = 'B'/>"
+               "    </Target>"
+               "  </ECRelationshipClass>"
+               "  <ECRelationshipClass typeName='AOwnsB1' strength='embedding'>"
+               "      <ECCustomAttributes>"
+               "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
+               "          <OnDeleteAction>Restrict</OnDeleteAction>"
+               "        </ForeignKeyRelationshipMap>"
+               "     </ECCustomAttributes>"
+               "    <Source cardinality='(0,1)' polymorphic='True'>"
+               "      <Class class = 'A' />"
+               "    </Source>"
+               "    <Target cardinality='(0,N)' polymorphic='True'>"
+               "      <Class class = 'B1'/>"
+               "    </Target>"
+               "  </ECRelationshipClass>"
+               "  </ECSchema>",
+               true, "Supported cases");
+
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testItem, "ondeleterestrictforjoinedtable.ecdb");
+    ASSERT_FALSE(asserted);
+
+    ECInstanceKey sourceKey;
+    ECInstanceKey targetKey;
+
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.A VALUES('A1')"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step(sourceKey));
+    statement.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.B VALUES('B1')"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step(targetKey));
+    statement.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.AOwnsB(SourceECInstanceId, TargetECInstanceId, SourceECClassId, TargetECClassId) VALUES(?,?,?,?)"));
+    statement.BindId(1, sourceKey.GetECInstanceId());
+    statement.BindId(2, targetKey.GetECInstanceId());
+    statement.BindInt64(3, sourceKey.GetECClassId());
+    statement.BindInt64(4, targetKey.GetECClassId());
+    ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
+    statement.Finalize();
+
+    ECInstanceKey sourceKey1;
+    ECInstanceKey targetKey1;
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.A VALUES('A2')"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step(sourceKey1));
+    statement.Finalize();
+
+    
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.B1(B_prop, B1_prop) VALUES('B2', 'B11')"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step(targetKey1));
+    statement.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.AOwnsB1(SourceECInstanceId, TargetECInstanceId, SourceECClassId, TargetECClassId) VALUES(?,?,?,?)"));
+    statement.BindId(1, sourceKey1.GetECInstanceId());
+    statement.BindId(2, targetKey1.GetECInstanceId());
+    statement.BindInt64(3, sourceKey1.GetECClassId());
+    statement.BindInt64(4, targetKey1.GetECClassId());
+    ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
+    statement.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "DELETE FROM ts.A WHERE ECInstanceId = ?"));
+    statement.BindId(1, sourceKey.GetECInstanceId());
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+    statement.Reset();
+    statement.ClearBindings();
+
+    statement.BindId(1, sourceKey1.GetECInstanceId());
+    ASSERT_EQ(DbResult::BE_SQLITE_CONSTRAINT_TRIGGER, statement.Step());
+    statement.Finalize();
     }
 
 //---------------------------------------------------------------------------------------
