@@ -133,6 +133,12 @@ void AddTemperatureChange(UnitRegistry& reg)
     reg.AddSynonym("DELTA_RANKINE", "DELTA_DEGREE_RANKINE");
     }
 
+void AddTemperatureGradient(UnitRegistry& reg)
+    {
+    reg.AddUnit(TEMPERATURE_GRADIENT, SI, "KELVIN/M", "DELTA_KELVIN*M(-1)");
+    reg.AddSynonym("KELVIN/M", "DELTA_DEGREE_KELVIN_PER_METRE");
+    }
+
 void AddLuminousFlux(UnitRegistry& reg)
     {
     reg.AddUnit(LUMINOUS_FLUX, SI, "LUMEN", "CANDELA*STERAD");
@@ -849,6 +855,18 @@ void AddThermalConductivity(UnitRegistry& reg)
     //LoadUOM(THERMAL_CONDUCTIVITY, USCUSTOM, "BTU_INCH_PER_FOOT_SQUARED_PER_HOUR_PER_DEGREE_FAHRENHEIT", "M_L_PER_T3_K", 6.933471798516, 0.0)->AddSynonym("BTU_INCH_PER_FOOT_SQUARED_PER_HOUR_PER_DEGREE_FAHRENHEIT");
     }
 
+void AddThermalResistance(UnitRegistry& reg)
+    {
+    reg.AddUnit(THERMAL_RESISTANCE, SI, "(SQ.M*KELVIN)/WATT", "M(2)*DELTA_KELVIN*WATT(-1)");
+    reg.AddSynonym("(SQ.M*KELVIN)/WATT", "METRE_SQUARED_DELTA_DEGREE_KELVIN_PER_WATT");
+
+    reg.AddUnit(THERMAL_RESISTANCE, SI, "(SQ.M*CELSIUS)/WATT", "M(2)*DELTA_CELSIUS*WATT(-1)");
+    reg.AddSynonym("(SQ.M*CELSIUS)/WATT", "METRE_SQUARED_DELTA_DEGREE_CELSIUS_PER_WATT");
+
+    reg.AddUnit(THERMAL_RESISTANCE, USCUSTOM, "(SQ.FT*HR*FAHRENHEIT)/BTU", "FT(2)*HR*DELTA_FAHRENHEIT*BTU(-1)");
+    reg.AddSynonym("(SQ.FT*HR*FAHRENHEIT)/BTU", "FOOT_SQUARED_HOUR_DELTA_DEGREE_FAHRENHEIT_PER_BTU");
+    }
+
 void AddThreadPitch(UnitRegistry& reg)
     {
     UnitCP unit = reg.AddUnit(THREAD_PITCH, SI, "M/REVOLUTION", "M*REVOLUTION(-1)");
@@ -1129,6 +1147,8 @@ void UnitRegistry::AddDefaultUnits ()
     AddSlope(reg);
     AddSurfaceDensity(reg);
     AddThermalConductivity(reg);
+    AddThermalResistance(reg);
+    AddTemperatureGradient(reg);
     AddThreadPitch(reg);
     AddVelocity(reg);
     AddAngularVelocity(reg);
