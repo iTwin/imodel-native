@@ -352,6 +352,7 @@ ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDer
     PropertyMap::iterator iter = m_propertyMap.find(prop->GetName().c_str());
     if (iter == m_propertyMap.end())
         return ECObjectsStatus::PropertyNotFound;
+    ECPropertyP thisProp = iter->second; // Since the property that is passed in might come from a base class, we need the actual pointer of the property from this class in order to search the propertyList for it
 
     Utf8String newName;
     FindUniquePropertyName(newName, prop->GetClass().GetSchema().GetNamespacePrefix().c_str(), prop->GetName().c_str());
@@ -360,8 +361,7 @@ ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDer
 
     iter = m_propertyMap.find(prop->GetName().c_str());
     m_propertyMap.erase(iter);
-
-    auto iter2 = std::find(m_propertyList.begin(), m_propertyList.end(), prop);
+    auto iter2 = std::find(m_propertyList.begin(), m_propertyList.end(), thisProp);
     if (iter2 != m_propertyList.end())
         m_propertyList.erase(iter2);
     InvalidateDefaultStandaloneEnabler();
@@ -499,17 +499,14 @@ ECObjectsStatus ECClass::OnBaseClassPropertyAdded (ECPropertyCR baseProperty, bo
 
         // TFS#246533: Silly multiple inheritance scenarios...does derived property already have a different base property? Does the new property
         // have priority over that one based on the order of base class declarations?
-        if (nullptr == derivedProperty->GetBaseProperty() || GetBaseClassPropertyP (baseProperty.GetName().c_str()) == &baseProperty)
+        else if (nullptr == derivedProperty->GetBaseProperty() || GetBaseClassPropertyP (baseProperty.GetName().c_str()) == &baseProperty)
             {
             if (ECObjectsStatus::Success == (status = CanPropertyBeOverridden (baseProperty, *derivedProperty)))
                 derivedProperty->SetBaseProperty (&baseProperty);
             }
         }
-    else
-        {
-        for (ECClassP derivedClass : m_derivedClasses)
-            status = derivedClass->OnBaseClassPropertyAdded (baseProperty, resolveConflicts);
-        }
+    for (ECClassP derivedClass : m_derivedClasses)
+        status = derivedClass->OnBaseClassPropertyAdded (baseProperty, resolveConflicts);
 
     return status;
     }
