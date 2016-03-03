@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnCoreValueFormat.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -186,34 +186,34 @@ bool AngleFormatter::UseTwoDigitMinWidth() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AngleFormatter::ConcatUnitLabel(WStringR inString, AngleFormatter::AngleUnit unit) const
+void AngleFormatter::ConcatUnitLabel(Utf8StringR inString, AngleFormatter::AngleUnit unit) const
     {
     switch (unit)
         {
         case ANGLE_UNIT_Degrees:
             {
             WChar degStr[] = { 0x00b0 /*degree*/, 0 };
-            inString.append(degStr);
+            inString.append (Utf8String (degStr));
             break;
             }
         case ANGLE_UNIT_Minutes:
             {
-            inString.append(L"'");
+            inString.append("'");
             break;
             }
         case ANGLE_UNIT_Seconds:
             {
-            inString.append(L"\"");
+            inString.append("\"");
             break;
             }
         case ANGLE_UNIT_Grads:
             {
-            inString.append(L"g");
+            inString.append("g");
             break;
             }
         case ANGLE_UNIT_Radians:
             {
-            inString.append(L"r");
+            inString.append("r");
             break;
             }
         }
@@ -222,23 +222,22 @@ void AngleFormatter::ConcatUnitLabel(WStringR inString, AngleFormatter::AngleUni
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AngleFormatter::PrependLeadingZeroIfNeeded(WStringR inString, double value) const
+void AngleFormatter::PrependLeadingZeroIfNeeded(Utf8StringR inString, double value) const
     {
     if ( ! UseTwoDigitMinWidth() || value >= 10.0 || ! m_leadingZero)
         return;
 
-    inString.append(L"0");
+    inString.append("0");
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AngleFormatter::ConcatIntegerString(WStringR inString, int value, AngleFormatter::AngleUnit unit) const
+void AngleFormatter::ConcatIntegerString(Utf8StringR inString, int value, AngleFormatter::AngleUnit unit) const
     {
     PrependLeadingZeroIfNeeded(inString, value);
 
-    WString tmpString;
-    tmpString.Sprintf(L"%d", value);
+    Utf8PrintfString tmpString ("%d", value);
     inString.append(tmpString);
 
     ConcatUnitLabel(inString, unit);
@@ -247,7 +246,7 @@ void AngleFormatter::ConcatIntegerString(WStringR inString, int value, AngleForm
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AngleFormatter::ConcatPrecisionString(WStringR inString, double value, AngleFormatter::AngleUnit unit, double delta) const
+void AngleFormatter::ConcatPrecisionString(Utf8StringR inString, double value, AngleFormatter::AngleUnit unit, double delta) const
     {
     if (AnglePrecision::Whole == m_precision)
         {
@@ -266,15 +265,13 @@ void AngleFormatter::ConcatPrecisionString(WStringR inString, double value, Angl
 
     PrependLeadingZeroIfNeeded(inString, value);
 
-    WString   tmpString, fmtString;
-
-    fmtString.Sprintf(L"%%.%dlf", m_precision);
-    tmpString.Sprintf(fmtString.c_str(), value);
+    Utf8PrintfString    fmtString ("%%.%dlf", m_precision);
+    Utf8PrintfString    tmpString (fmtString.c_str(), value);
 
     if (!m_trailingZeros)
         DoubleFormatterBase::StripTrailingZeros(tmpString);
 
-    if (! m_leadingZero && L'0' == tmpString[0])
+    if (! m_leadingZero && '0' == tmpString[0])
         {
         if (1 < tmpString.size() && ! UseTwoDigitMinWidth())
             tmpString.erase(0, 1);
@@ -289,17 +286,17 @@ void AngleFormatter::ConcatPrecisionString(WStringR inString, double value, Angl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString         AngleFormatter::ToString(double angle) const
+Utf8String      AngleFormatter::ToString(double angle) const
     {
     double          rmin, seconds, delta;
     int             degrees, minutes;
-    WString         angleString;
+    Utf8String      angleString;
 
     if (m_allowNegative && 0.0 > angle)
         {
         angle = fabs(angle);
 
-        angleString.assign(L"-");
+        angleString.assign("-");
         }
 
     if (fabs(angle) > 1.0e+10)
@@ -395,7 +392,7 @@ WString         AngleFormatter::ToString(double angle) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString     AngleFormatter::ToStringFromRadians(double radians) const
+Utf8String      AngleFormatter::ToStringFromRadians(double radians) const
     {
     double degrees = Angle::RadiansToDegrees(radians);
     return ToString(degrees);
@@ -540,9 +537,9 @@ int DirectionFormatter::GetLegacyAngleMode() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString DirectionFormatter::ToString(double value) const
+Utf8String      DirectionFormatter::ToString(double value) const
     {
-    WString directionString;
+    Utf8String  directionString;
 
     while (value < 0.0)   value += 360.0;
     while (value > 360.0) value -= 360.0;
@@ -575,8 +572,8 @@ WString DirectionFormatter::ToString(double value) const
             if (360.0 == value)
                 value = 0;
 
-            WString prefixChar;
-            WString suffixChar;
+            Utf8String prefixChar;
+            Utf8String suffixChar;
 
             // Previously, we used the following code to determine the quadrant:
             //     int  quadrant = (int) (value/90.0);
@@ -588,39 +585,39 @@ WString DirectionFormatter::ToString(double value) const
             if (0.0 <= value && 90.0 >= value)
                 {
                 value = 90.0 - value;
-                prefixChar = L"N";
-                suffixChar = L"E";
+                prefixChar = "N";
+                suffixChar = "E";
                 }
             else
             if (90.0 < value && 180.0 >= value)
                 {
                 value = value - 90.0;
-                prefixChar = L"N";
-                suffixChar = L"W";
+                prefixChar = "N";
+                suffixChar = "W";
                 }
             else
             if (180.0 < value && 270.0 > value)
                 {
                 value = 270.0 - value;
-                prefixChar = L"S";
-                suffixChar = L"W";
+                prefixChar = "S";
+                suffixChar = "W";
                 }
             else
                 {
                 value = value - 270.0;
-                prefixChar = L"S";
-                suffixChar = L"E";
+                prefixChar = "S";
+                suffixChar = "E";
                 }
 
             directionString.append(prefixChar);
 
             if (m_bearingSpaces)
-                directionString.append(L" ");
+                directionString.append(" ");
 
             directionString.append(m_angleFormatter->ToString(value));
 
             if (m_bearingSpaces)
-                directionString.append(L" ");
+                directionString.append(" ");
 
             directionString.append(suffixChar);
 
@@ -634,7 +631,7 @@ WString DirectionFormatter::ToString(double value) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString DirectionFormatter::ToStringFromRadians(double radians) const
+Utf8String DirectionFormatter::ToStringFromRadians(double radians) const
     {
     double degrees = Angle::RadiansToDegrees(radians);
     return ToString(degrees);
@@ -947,24 +944,23 @@ void DistanceFormatter::SetDWGUnitFormat(DwgUnitFormat newVal)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoeZbuchalski   12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString DistanceFormatter::ToString(double meters) const
+Utf8String DistanceFormatter::ToString(double meters) const
     {
-    WString         outString;
-    WString         masterUnitString, subUnitString, posUnitString;
-    WChar           connector;
+    Utf8String      outString;
+    Utf8Char        connector;
     double          masterUnits, subUnits;
     bool            isNegative;
     int64_t         iMasterUnits, iSubUnits;
     double          subPerMaster;
     double          posPerSub;
     bool            unitFlag = m_unitFlag;
-    WString         masterUnitsLabel, subUnitsLabel;
+    Utf8String      masterUnitsLabel, subUnitsLabel;
 
     masterUnitsLabel = m_masterUnit.GetLabel();
     subUnitsLabel = m_subUnit.GetLabel();
 
-    subPerMaster = GetSubPerMaster(); //  First calculate subPerMaster; then calculate posPerSub
-    posPerSub = m_subUnit.ToMeters(); // Storage units are always meters
+    subPerMaster = GetSubPerMaster();
+    posPerSub = m_subUnit.ToMeters(); // Input value is always in meters
 
     if (m_scaleFactor != 0 && m_scaleFactor != 1)
          meters *= m_scaleFactor;
@@ -983,7 +979,7 @@ WString DistanceFormatter::ToString(double meters) const
         {
         case DgnUnitFormat::MUSU:          /* Master-Sub Units */
             {
-            masterUnitString.Sprintf(L"%lld", iMasterUnits);
+            Utf8PrintfString masterUnitString ("%lld", iMasterUnits);
             if (m_suppressZeroMasterUnits)
                 {
                 if (iMasterUnits == 0 && subUnits != 0)
@@ -994,31 +990,31 @@ WString DistanceFormatter::ToString(double meters) const
                 }
 
             if (m_insertThousandsSeparator)
-                InsertThousandsSeparator(masterUnitString, m_thousandsSeparatorW);
+                InsertThousandsSeparator(masterUnitString, m_thousandsSeparator);
 
-            double limit = pow(10.0, -m_precisionByte);
+            Utf8String  subUnitString;
+            double      limit = pow(10.0, -m_precisionByte);
             if (m_suppressZeroSubUnits && limit > subUnits)
                 {
-                subUnitString.clear();
                 subUnitsLabel.clear();
                 }
             else
                 {
                 GetPrecisionString(subUnitString, subUnits, m_precisionType, m_precisionByte, m_leadingZero, m_trailingZeros);
-                ReplaceDecimalSeparator(subUnitString, m_decimalSeparatorW);
+                ReplaceDecimalSeparator(subUnitString, m_decimalSeparator);
                 }
 
             if (unitFlag || !m_isDgnCoordReadOutCapable)
-                outString.Sprintf(L"%ls%ls%lc%ls%ls", masterUnitString.c_str(), masterUnitsLabel.c_str(), connector, subUnitString.c_str(), subUnitsLabel.c_str());
+                outString.Sprintf("%s%s%c%s%s", masterUnitString.c_str(), masterUnitsLabel.c_str(), connector, subUnitString.c_str(), subUnitsLabel.c_str());
             else
-                outString.Sprintf(L"%ls:%ls", masterUnitString.c_str(), subUnitString.c_str());
+                outString.Sprintf("%s:%s", masterUnitString.c_str(), subUnitString.c_str());
 
             break;
             }
         case DgnUnitFormat::MU:            /* Master Unit */
             {
             // Can't call ToStringBasic because UorsToMasterSubPositional already added in minRes*ROUNDOFF
-            outString = T_Super::ToStringFromElevatedValueW(masterUnits);
+            outString = T_Super::ToStringFromElevatedValue(masterUnits);
             if (unitFlag)
                 outString.append(masterUnitsLabel);
 
@@ -1029,7 +1025,7 @@ WString DistanceFormatter::ToString(double meters) const
             double  totalSuUnits = subUnits + subPerMaster * iMasterUnits;
 
             // Can't call ToStringBasic because UorsToMasterSubPositional already added in minRes*ROUNDOFF
-            outString = T_Super::ToStringFromElevatedValueW(totalSuUnits);
+            outString = T_Super::ToStringFromElevatedValue(totalSuUnits);
             if (unitFlag)
                 outString.append(subUnitsLabel);
 
@@ -1038,7 +1034,7 @@ WString DistanceFormatter::ToString(double meters) const
         }
 
     if (isNegative)
-        outString.insert(0, L"-");
+        outString.insert(0, "-");
 
     return outString;
     }
@@ -1208,7 +1204,7 @@ static void transformByACS (DPoint3d point, IAuxCoordSysCR acs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString         PointFormatter::ToString(DPoint3dCR point) const
+Utf8String      PointFormatter::ToString(DPoint3dCR point) const
     {
     // Ensure that these are initialized
     (const_cast <PointFormatterP> (this))->GetAuxCoordSys();
@@ -1217,15 +1213,15 @@ WString         PointFormatter::ToString(DPoint3dCR point) const
     DPoint3d offpnt = point;
     transformByACS (offpnt, *m_acs);
 
-    WString outputString;
+    Utf8String outputString;
 
     outputString.append(m_distanceFormatter->ToString(offpnt.x));
-    outputString.append(L", ");
+    outputString.append(", ");
     outputString.append(m_distanceFormatter->ToString(offpnt.y));
 
     if (m_is3d)
         {
-        outputString.append(L", ");
+        outputString.append(", ");
         outputString.append(m_distanceFormatter->ToString(offpnt.z));
         }
 
@@ -1356,12 +1352,12 @@ AreaFormatterPtr    AreaFormatter::Create(DgnViewportR viewport)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static  void    appendUnitLabel(WStringR str, WCharCP label, L10N::StringId decoratorId, bool asSuffix)
+static  void    appendUnitLabel(Utf8StringR str, Utf8CP label, L10N::StringId decoratorId, bool asSuffix)
     {
     if ('\0' == *label)
         return;
 
-    WString decorator = DgnCoreL10N::GetStringW(decoratorId);
+    Utf8String decorator = DgnCoreL10N::GetString(decoratorId);
 
     if (iswupper(*label))
         decorator.ToUpper();
@@ -1381,14 +1377,14 @@ static  void    appendUnitLabel(WStringR str, WCharCP label, L10N::StringId deco
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString AreaFormatter::ToString(double meters) const
+Utf8String AreaFormatter::ToString(double squareMeters) const
     {
-    meters /= m_scaleFactor * m_scaleFactor;
+    squareMeters /= m_scaleFactor * m_scaleFactor;
 
     double mastMeters = m_masterUnit.ToMeters();
-    double area = meters / (mastMeters*mastMeters);
+    double area = squareMeters / (mastMeters*mastMeters);
 
-    WString outString = T_Super::ToStringBasicW(area);
+    Utf8String outString = T_Super::ToStringBasic(area);
 
     if (m_showUnitLabel)
         appendUnitLabel(outString, m_masterUnit.GetLabelCP(), m_labelDecoratorAsSuffix ? DgnCoreL10N::UNIT_LABEL_SUFFIX_Area() : DgnCoreL10N::UNIT_LABEL_PREFIX_Area(), m_labelDecoratorAsSuffix);
@@ -1442,14 +1438,14 @@ VolumeFormatterPtr VolumeFormatter::Create(DgnViewportR viewport)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString VolumeFormatter::ToString(double meters) const
+Utf8String VolumeFormatter::ToString(double cubicMeters) const
     {
-    meters /= m_scaleFactor * m_scaleFactor * m_scaleFactor;
+        cubicMeters /= m_scaleFactor * m_scaleFactor * m_scaleFactor;
 
     double mastMeters = m_masterUnit.ToMeters();
-    double cube = meters / (mastMeters*mastMeters*mastMeters);
+    double cube = cubicMeters / (mastMeters*mastMeters*mastMeters);
 
-    WString outString = T_Super::ToStringBasicW(cube);
+    Utf8String outString = T_Super::ToStringBasic(cube);
 
     if (m_showUnitLabel)
         appendUnitLabel(outString, m_masterUnit.GetLabelCP(), m_labelDecoratorAsSuffix ? DgnCoreL10N::UNIT_LABEL_SUFFIX_Volume() : DgnCoreL10N::UNIT_LABEL_PREFIX_Volume(), m_labelDecoratorAsSuffix);
@@ -1512,21 +1508,21 @@ DateTimeFormatterPtr DateTimeFormatter::Clone() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-WChar   DateTimeFormatter::GetDecimalSeparator() const                  { return m_decimalSeparator; }
-WChar   DateTimeFormatter::GetTimeSeparator() const                     { return m_timeSeparator; }
-WChar   DateTimeFormatter::GetDateSeparator() const                     { return m_dateSeparator; }
-uint8_t DateTimeFormatter::GetFractionalSecondPrecision() const         { return m_fractionalPrecision; }
-bool    DateTimeFormatter::GetTrailingZeros() const                     { return m_fractionalTrailingZeros; }
-bool    DateTimeFormatter::GetConvertToLocalTime() const                { return m_convertToLocalTime; }
+Utf8Char    DateTimeFormatter::GetDecimalSeparator() const                  { return m_decimalSeparator; }
+Utf8Char    DateTimeFormatter::GetTimeSeparator() const                     { return m_timeSeparator; }
+Utf8Char    DateTimeFormatter::GetDateSeparator() const                     { return m_dateSeparator; }
+uint8_t     DateTimeFormatter::GetFractionalSecondPrecision() const         { return m_fractionalPrecision; }
+bool        DateTimeFormatter::GetTrailingZeros() const                     { return m_fractionalTrailingZeros; }
+bool        DateTimeFormatter::GetConvertToLocalTime() const                { return m_convertToLocalTime; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DateTimeFormatter::ClearFormatParts()                          { m_partList.clear(); }
-void DateTimeFormatter::SetDecimalSeparator(WChar sep)             { m_decimalSeparator = sep; }
-void DateTimeFormatter::SetTimeSeparator(WChar sep)                { m_timeSeparator = sep; }
-void DateTimeFormatter::SetDateSeparator(WChar sep)                { m_dateSeparator = sep; }
-void DateTimeFormatter::SetFractionalSecondPrecision(uint8_t prec)   { m_fractionalPrecision = prec; }
+void DateTimeFormatter::ClearFormatParts()                         { m_partList.clear(); }
+void DateTimeFormatter::SetDecimalSeparator(Utf8Char sep)          { m_decimalSeparator = sep; }
+void DateTimeFormatter::SetTimeSeparator(Utf8Char sep)             { m_timeSeparator = sep; }
+void DateTimeFormatter::SetDateSeparator(Utf8Char sep)             { m_dateSeparator = sep; }
+void DateTimeFormatter::SetFractionalSecondPrecision(uint8_t prec) { m_fractionalPrecision = prec; }
 void DateTimeFormatter::SetTrailingZeros(bool show)                { m_fractionalTrailingZeros = show; }
 void DateTimeFormatter::SetConvertToLocalTime(bool convert)        { m_convertToLocalTime = convert; }
 
@@ -1571,7 +1567,7 @@ void DateTimeFormatter::AppendFormatPart(DateTimeFormatPart part)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static WString getDayName(int d, bool useShort)
+static Utf8String getDayName(int d, bool useShort)
     {
     BeAssert(7 > d);
     DgnCoreL10N::StringId longNames[]={
@@ -1594,13 +1590,13 @@ static WString getDayName(int d, bool useShort)
         };
 
     DgnCoreL10N::StringId* base = useShort ? shortNames : longNames;
-    return DgnCoreL10N::GetStringW(*(base + d));
+    return DgnCoreL10N::GetString(*(base + d));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static WString getMonthName(int m, bool useShort)
+static Utf8String getMonthName(int m, bool useShort)
     {
     BeAssert(12 > m);
 
@@ -1635,13 +1631,13 @@ static WString getMonthName(int m, bool useShort)
         };
 
     DgnCoreL10N::StringId* base = useShort ? shortNames : longNames;
-    return DgnCoreL10N::GetStringW(*(base + m));
+    return DgnCoreL10N::GetString(*(base + m));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static WString getAmPmName(bool pm, bool useShort)
+static Utf8String getAmPmName(bool pm, bool useShort)
     {
     DgnCoreL10N::StringId longNames[]={
         DgnCoreL10N::DATETIME_AM(),
@@ -1653,13 +1649,13 @@ static WString getAmPmName(bool pm, bool useShort)
         };
 
     DgnCoreL10N::StringId* base = useShort ? shortNames : longNames;
-    return DgnCoreL10N::GetStringW(*(base + (pm ? 1 : 0)));
+    return DgnCoreL10N::GetString(*(base + (pm ? 1 : 0)));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void formatUtc(WStringR str, DateTimeCR local, DateTimeFormatterCR formatter, DateTimeFormatPart part)
+static void formatUtc(Utf8StringR str, DateTimeCR local, DateTimeFormatterCR formatter, DateTimeFormatPart part)
     {
     // The point of this function is to coerce ToString into formatting a time span (vs. a time) representing offset from UTC.
     
@@ -1704,7 +1700,7 @@ static void formatUtc(WStringR str, DateTimeCR local, DateTimeFormatterCR format
 * Android.
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString DateTimeFormatter::ToString(DateTimeCR dtIn) const
+Utf8String DateTimeFormatter::ToString(DateTimeCR dtIn) const
     {
     DateTime dt = dtIn;
     if (m_convertToLocalTime)
@@ -1716,39 +1712,39 @@ WString DateTimeFormatter::ToString(DateTimeCR dtIn) const
     if (m_partList.empty())
         appendFormatPart(localPartList, DATETIME_PART_General);
 
-    WString     result;
-    WString     tmp;
+    Utf8String  result;
+    Utf8String  tmp;
     for (DateTimeFormatPart part: partList)
         {
         switch (part)
             {
         case DATETIME_PART_DayOfWeek:           result.append(getDayName((int)dt.GetDayOfWeek(), false)); break;
         case DATETIME_PART_DoW:                 result.append(getDayName((int)dt.GetDayOfWeek(), true)); break;
-        case DATETIME_PART_D:                   tmp.Sprintf(L"%d", dt.GetDay()); result.append(tmp); break;
-        case DATETIME_PART_DD:                  tmp.Sprintf(L"%02d", dt.GetDay()); result.append(tmp); break;
+        case DATETIME_PART_D:                   tmp.Sprintf("%d", dt.GetDay()); result.append(tmp); break;
+        case DATETIME_PART_DD:                  tmp.Sprintf("%02d", dt.GetDay()); result.append(tmp); break;
         case DATETIME_PART_Month:               result.append(getMonthName(dt.GetMonth() - 1, false)); break;
         case DATETIME_PART_Mon:                 result.append(getMonthName(dt.GetMonth() - 1, true)); break;
-        case DATETIME_PART_M:                   tmp.Sprintf(L"%d", dt.GetMonth()); result.append(tmp); break;
-        case DATETIME_PART_MM:                  tmp.Sprintf(L"%02d", dt.GetMonth()); result.append(tmp); break;
-        case DATETIME_PART_d:                   tmp.Sprintf(L"%d", dt.GetDayOfYear()); result.append(tmp); break;
-        case DATETIME_PART_ddd:                 tmp.Sprintf(L"%03d", dt.GetDayOfYear()); result.append(tmp); break;
-        case DATETIME_PART_YYYY:                tmp.Sprintf(L"%d", dt.GetYear()); result.append(tmp); break;
+        case DATETIME_PART_M:                   tmp.Sprintf("%d", dt.GetMonth()); result.append(tmp); break;
+        case DATETIME_PART_MM:                  tmp.Sprintf("%02d", dt.GetMonth()); result.append(tmp); break;
+        case DATETIME_PART_d:                   tmp.Sprintf("%d", dt.GetDayOfYear()); result.append(tmp); break;
+        case DATETIME_PART_ddd:                 tmp.Sprintf("%03d", dt.GetDayOfYear()); result.append(tmp); break;
+        case DATETIME_PART_YYYY:                tmp.Sprintf("%d", dt.GetYear()); result.append(tmp); break;
         case DATETIME_PART_h:
         case DATETIME_PART_hh:
             {
             int hour = dt.GetHour();
             if (0 == hour)      hour = 12;
             else if (12 < hour) hour -= 12;
-            tmp.Sprintf((DATETIME_PART_h == part ? L"%d" : L"%02d"), hour);
+            tmp.Sprintf((DATETIME_PART_h == part ? "%d" : "%02d"), hour);
             result.append(tmp);
             }
             break;
-        case DATETIME_PART_H:                   tmp.Sprintf(L"%d", dt.GetHour()); result.append(tmp); break;
-        case DATETIME_PART_HH:                  tmp.Sprintf(L"%02d", dt.GetHour()); result.append(tmp); break;
-        case DATETIME_PART_m:                   tmp.Sprintf(L"%d", dt.GetMinute()); result.append(tmp); break;
-        case DATETIME_PART_mm:                  tmp.Sprintf(L"%02d", dt.GetMinute()); result.append(tmp); break;
-        case DATETIME_PART_s:                   tmp.Sprintf(L"%d", dt.GetSecond()); result.append(tmp); break;
-        case DATETIME_PART_ss:                  tmp.Sprintf(L"%02d", dt.GetSecond()); result.append(tmp); break;
+        case DATETIME_PART_H:                   tmp.Sprintf("%d", dt.GetHour()); result.append(tmp); break;
+        case DATETIME_PART_HH:                  tmp.Sprintf("%02d", dt.GetHour()); result.append(tmp); break;
+        case DATETIME_PART_m:                   tmp.Sprintf("%d", dt.GetMinute()); result.append(tmp); break;
+        case DATETIME_PART_mm:                  tmp.Sprintf("%02d", dt.GetMinute()); result.append(tmp); break;
+        case DATETIME_PART_s:                   tmp.Sprintf("%d", dt.GetSecond()); result.append(tmp); break;
+        case DATETIME_PART_ss:                  tmp.Sprintf("%02d", dt.GetSecond()); result.append(tmp); break;
         case DATETIME_PART_Comma:               result.append(1, ','); break;
         case DATETIME_PART_DateSeparator:       result.append(1, m_dateSeparator); break;
         case DATETIME_PART_TimeSeparator:       result.append(1, m_timeSeparator); break;
@@ -1756,11 +1752,11 @@ WString DateTimeFormatter::ToString(DateTimeCR dtIn) const
         case DATETIME_PART_Space:               result.append(1, ' '); break;
         case DATETIME_PART_AMPM:                result.append(getAmPmName(12 <= dt.GetHour(), false)); break;
         case DATETIME_PART_AP:                  result.append(getAmPmName(12 <= dt.GetHour(), true)); break;
-        case DATETIME_PART_UTC:                 result.AppendUtf8(DgnCoreL10N::GetString(DgnCoreL10N::DATETIME_UTC()).c_str()); break;
-        case DATETIME_PART_Y:                   tmp.Sprintf(L"%d", dt.GetYear() % 100); result.append(tmp); break;
-        case DATETIME_PART_YY:                  tmp.Sprintf(L"%02d", dt.GetYear() % 100); result.append(tmp); break;
-        case DATETIME_PART_YYY:                 tmp.Sprintf(L"%03d", dt.GetYear()); result.append(tmp); break;
-        case DATETIME_PART_YYYYY:               tmp.Sprintf(L"%05d", dt.GetYear()); result.append(tmp); break;
+        case DATETIME_PART_UTC:                 result.append(DgnCoreL10N::GetString(DgnCoreL10N::DATETIME_UTC()).c_str()); break;
+        case DATETIME_PART_Y:                   tmp.Sprintf("%d", dt.GetYear() % 100); result.append(tmp); break;
+        case DATETIME_PART_YY:                  tmp.Sprintf("%02d", dt.GetYear() % 100); result.append(tmp); break;
+        case DATETIME_PART_YYY:                 tmp.Sprintf("%03d", dt.GetYear()); result.append(tmp); break;
+        case DATETIME_PART_YYYYY:               tmp.Sprintf("%05d", dt.GetYear()); result.append(tmp); break;
         case DATETIME_PART_FractionalSeconds:
             {
             // Note input value gives us a precision of 3 - no more, no less.
@@ -1770,9 +1766,9 @@ WString DateTimeFormatter::ToString(DateTimeCR dtIn) const
             switch (m_fractionalPrecision)
                 {
             case 0:     break;
-            case 1:     tmp.Sprintf(L"%d", (int32_t)(dms / 100.0 + 0.5)); break;
-            case 2:     tmp.Sprintf(L"%02d", (int32_t)(dms / 10.0 + 0.5)); break;
-            default:    tmp.Sprintf(L"%03d", ms); break;
+            case 1:     tmp.Sprintf("%d", (int32_t)(dms / 100.0 + 0.5)); break;
+            case 2:     tmp.Sprintf("%02d", (int32_t)(dms / 10.0 + 0.5)); break;
+            default:    tmp.Sprintf("%03d", ms); break;
                 }
             
             if (!m_fractionalTrailingZeros)

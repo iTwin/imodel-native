@@ -74,8 +74,8 @@ DG_INLINE StatusInt IAuxCoordSys::SetType(ACSType type) {return _SetType(type);}
 DG_INLINE StatusInt IAuxCoordSys::SetScale(double scale) {return _SetScale(scale);}
 DG_INLINE StatusInt IAuxCoordSys::SetOrigin(DPoint3dCR pOrigin) {return _SetOrigin(pOrigin);}
 DG_INLINE StatusInt IAuxCoordSys::SetRotation(RotMatrixCR pRot) {return _SetRotation(pRot);}
-DG_INLINE StatusInt IAuxCoordSys::PointFromString(DPoint3dR outPoint, WStringR errorMsg, WCharCP inString, bool relative, DPoint3dCP lastPoint, DgnModelR modelRef) {return _PointFromString(outPoint, errorMsg, inString, relative, lastPoint, modelRef);}
-DG_INLINE StatusInt IAuxCoordSys::StringFromPoint(WStringR outString, WStringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelR modelRef, DistanceFormatterR distanceFormatter, DirectionFormatterR directionFormatter)
+DG_INLINE StatusInt IAuxCoordSys::PointFromString(DPoint3dR outPoint, Utf8StringR errorMsg, Utf8CP inString, bool relative, DPoint3dCP lastPoint, DgnModelR modelRef) {return _PointFromString(outPoint, errorMsg, inString, relative, lastPoint, modelRef);}
+DG_INLINE StatusInt IAuxCoordSys::StringFromPoint(Utf8StringR outString, Utf8StringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelR modelRef, DistanceFormatterR distanceFormatter, DirectionFormatterR directionFormatter)
                                                         { return _StringFromPoint(outString, errorMsg, inPoint, delta, deltaOrigin, modelRef, distanceFormatter, directionFormatter); }
 DG_INLINE StatusInt IAuxCoordSys::SetFlags(ACSFlags flags) {return _SetFlags(flags);}
 DG_INLINE void IAuxCoordSys::DrawGrid(DecorateContextR context) const {return _DrawGrid(context);}
@@ -141,7 +141,7 @@ DG_INLINE bool AngleFormatter::GetAllowNegative() const { return m_allowNegative
 DG_INLINE bool AngleFormatter::GetAllowUnclamped() const { return m_allowUnclamped; };
 DG_INLINE void AngleFormatter::SetAngleMode(AngleMode newVal) { m_angleMode = newVal; }
 DG_INLINE void AngleFormatter::SetAnglePrecision(AnglePrecision newVal) { m_precision = newVal; }
-DG_INLINE void AngleFormatter::SetDecimalSeparator(WChar newVal) { m_decimalSeparator = newVal; }
+DG_INLINE void AngleFormatter::SetDecimalSeparator(Utf8Char newVal) { m_decimalSeparator = newVal; }
 DG_INLINE void AngleFormatter::SetLeadingZero(bool newVal) { m_leadingZero = newVal; }
 DG_INLINE void AngleFormatter::SetTrailingZeros(bool newVal) { m_trailingZeros = newVal; }
 DG_INLINE void AngleFormatter::SetAllowNegative(bool newVal) { m_allowNegative = newVal; }
@@ -207,10 +207,10 @@ DG_INLINE bool DirectionParser::GetClockwise() { return m_isClockwise; }
 DG_INLINE void DirectionParser::SetBaseDirection(double newVal) { m_baseDirection = newVal; }
 DG_INLINE double DirectionParser::GetBaseDirection() { return m_baseDirection; }
 
-DG_INLINE void DistanceParser::SetMasterUnitLabel(WCharCP label) { m_masterUnitLabel = label; }
-DG_INLINE WCharCP DistanceParser::GetMasterUnitsLabel() { return m_masterUnitLabel.c_str(); }
-DG_INLINE void DistanceParser::SetSubUnitLabel(WCharCP label) { m_subUnitLabel = label; }
-DG_INLINE WCharCP DistanceParser::GetSubUnitsLabel() { return m_subUnitLabel.c_str(); }
+DG_INLINE void DistanceParser::SetMasterUnitLabel(Utf8CP label) { m_masterUnitLabel = label; }
+DG_INLINE Utf8CP DistanceParser::GetMasterUnitsLabel() { return m_masterUnitLabel.c_str(); }
+DG_INLINE void DistanceParser::SetSubUnitLabel(Utf8CP label) { m_subUnitLabel = label; }
+DG_INLINE Utf8CP DistanceParser::GetSubUnitsLabel() { return m_subUnitLabel.c_str(); }
 DG_INLINE void DistanceParser::SetMasterUnitScale(double scale) { m_masterUnitScale = scale; }
 DG_INLINE double DistanceParser::GetMasterUnitsScale() { return m_masterUnitScale; }
 DG_INLINE void DistanceParser::SetSubUnitScale(double scale) { m_subUnitScale = scale; }

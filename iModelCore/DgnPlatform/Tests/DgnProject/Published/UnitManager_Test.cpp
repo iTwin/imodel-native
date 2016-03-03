@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/UnitManager_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -60,10 +60,10 @@ TEST_F (UnitManagerTest, GetStandardUnit_NULL)
 TEST_F (UnitManagerTest, GetStandardUnitByName)
     {
     UnitDefinition def;
-    
-    WChar const* buffer = LOCALIZED_STR(L"meter");
+
+    Utf8CP buffer = LOCALIZED_STR("meter");
     def = UnitDefinition::GetStandardUnitByName (buffer);
-    
+
     ASSERT_TRUE (1.0 == def.GetDenominator()&& 
            1.0 == def.GetNumerator() && 
            UnitBase::Meter == def.GetBase() && 
@@ -77,7 +77,7 @@ TEST_F (UnitManagerTest, GetStandardUnitByName_None)
     {
     UnitDefinition def;
     
-    WChar const* buffer = LOCALIZED_STR(L"none");
+    Utf8CP buffer = LOCALIZED_STR("none");
     def = UnitDefinition::GetStandardUnitByName (buffer);
     
     ASSERT_TRUE (false == def.IsValid());
@@ -88,7 +88,7 @@ TEST_F (UnitManagerTest, GetStandardUnitByName_None)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (UnitManagerTest, IsStandardUnit)
     {
-    UnitDefinition def(UnitBase::Meter, UnitSystem::Metric, 100.0, 1.0, LOCALIZED_STR(L"def"));
+    UnitDefinition def(UnitBase::Meter, UnitSystem::Metric, 100.0, 1.0, LOCALIZED_STR("def"));
 
     ASSERT_TRUE (StandardUnit::MetricCentimeters == def.IsStandardUnit());
     }
@@ -98,9 +98,9 @@ TEST_F (UnitManagerTest, IsStandardUnit)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (UnitManagerTest, GetStandardLabel)
     {
-    WString label = UnitDefinition::GetStandardLabel (StandardUnit::AngleGrads);
+    Utf8String label = UnitDefinition::GetStandardLabel (StandardUnit::AngleGrads);
 
-    ASSERT_TRUE (label == WString(LOCALIZED_STR(L"grad")));
+    ASSERT_TRUE (label == Utf8String(LOCALIZED_STR("grad")));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -108,9 +108,9 @@ TEST_F (UnitManagerTest, GetStandardLabel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (UnitManagerTest, GetStandardName)
     {
-    WString name = UnitDefinition::GetStandardName (StandardUnit::NoSystemLightYears, false);
+    Utf8String name = UnitDefinition::GetStandardName (StandardUnit::NoSystemLightYears, false);
 
-    ASSERT_TRUE (name == WString(LOCALIZED_STR(L"Light Years")));
+    ASSERT_TRUE (name == Utf8String(LOCALIZED_STR("Light Years")));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -118,9 +118,9 @@ TEST_F (UnitManagerTest, GetStandardName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (UnitManagerTest, GetStandardName_None)
     {
-    WString name = UnitDefinition::GetStandardName (StandardUnit::Custom, false);
+    Utf8String name = UnitDefinition::GetStandardName (StandardUnit::Custom, false);
 
-    ASSERT_TRUE (name == WString(L""));
+    ASSERT_TRUE (name == Utf8String(""));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -353,7 +353,7 @@ TEST (UnitIterator, GetNumber)
     StandardUnitCollection  collection (options);
 
     StandardUnitCollection::Entry   unitEntry = *collection.begin();
-    
+
     ASSERT_TRUE (StandardUnit::MetricFemtometers == unitEntry.GetNumber());
     }
 
@@ -366,6 +366,6 @@ TEST (UnitIterator, GetName)
     StandardUnitCollection  collection (options);
 
     StandardUnitCollection::Entry   unitEntry = *collection.begin();
-    
-    ASSERT_TRUE (unitEntry.GetName() == WString(LOCALIZED_STR(L"Femtometers")));
+
+    ASSERT_TRUE (unitEntry.GetName() == Utf8String(LOCALIZED_STR("Femtometers")));
     }
