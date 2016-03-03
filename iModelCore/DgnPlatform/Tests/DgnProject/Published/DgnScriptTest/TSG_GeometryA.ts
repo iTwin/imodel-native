@@ -311,21 +311,63 @@ module DgnScriptTests {
         ExerciseMesh(mesh, 2);
         }
 
-    function t_spiral ()
+    // create and populate regular polygon in a plane parallel to xy.
+    // @remarks when isRadiusOuter if TRUE, the first point is placed on the x axis at x=radius.
+    // @remarks when isRadiusOuter is FALSE, the first edge is perpendicular to the x axis at x=radius
+    // @param [in] origin center of the polygon.
+    // @param [in] numSide number of polygon sides.
+    // @param [in] radius radius of computed points (see isRadiusOuter parameter)
+    // @param [in] isRadiusOuter selects measurement to points (true) or edges (false)
+    function RegularXYPolygonPoints (origin : Bentley.Dgn.DPoint3d, numSide:number, radius : number, isRadiusOuter : boolean) : Bentley.Dgn.DPoint3dArray
         {
-        var spiral = Bentley.Dgn.SpiralCurve.CreateSpiralBearingRadiusLengthRadius
-                (10, Bentley.Dgn.Angle.CreateDegrees (0), 0.0, 2.0, 10.0, Bentley.Dgn.Transform.CreateIdentity (), 0.0, 1.0);
-        var df = 1.0 / 8.0;
-        var f = 0.0;
-        for (; f <= 1.0; f += df);
+        var stepDegrees = 360. / numSide;
+        var points = new Bentley.Dgn.DPoint3dArray ();
+        var startDegrees = isRadiusOuter ? 0.0 : 0.5 * stepDegrees;
+        var i = 0;
+        for (i = 0; i < numSide; i++)
             {
-            //WIP: workaround for build error: Property 'FractionPoint' does not exist on type 'SpiralCurve'
-            //var xyz = spiral.FractionToPoint (f);
+            var angle = Bentley.Dgn.Angle.CreateDegrees (startDegrees + i * stepDegrees);
+            points.Add (origin.Plus (Bentley.Dgn.DVector3d.CreateXYAngleAndMagnitude (angle, radius)));
             }
+        // repeat first point
+        points.AddXYZ (radius, 0, 0);
+        return points;
+        }
+        var spiral = Bentley.Dgn.SpiralCurve.CreateSpiralBearingRadiusLengthRadius
+    function LoopFromPoints (points: Bentley.Dgn.DPoint3dArray) : Bentley.Dgn.Geometry
+        {
+        var loop = new Bentley.Dgn.Loop ()
+        loop.Add (new Bentley.Dgn.LineString (points));
+        return loop;
+        }
 
+    function TryTransformGeometryArrayInPlace (geometry: Array<Bentley.Dgn.Geometry>, transform: Bentley.Dgn.Transform)
+        {
+        var i = 0;
+       for (;i < geometry.length;i++)
+            geometry[i].TryTransformInPlace (transform);
+        }
+    function CloneAndTransformGeometryArray (geometry :Array<Bentley.Dgn.Geometry>, transform: Bentley.Dgn.Transform):Array<Bentley.Dgn.Geometry>
+        {
+        var i = 0;
+        var result = new Array<Bentley.Dgn.Geometry> ();
+        for (;i < geometry.length;i++)
+            result.push (geometry[i].Clone ());
+        if (transform != null)
+            TryTransformGeometryArrayInPlace (geometry, transform);
+        return result;
+        }
+
+    
+
+
+    function t_arrayOfGeometry ()
+        {        
+        var geometry1: Bentley.Dgn.Geometry[];
+        geometry1.push (LoopFromPoints (RegularXYPolygonPoints (new Bentley.Dgn.DPoint3d (0,0,0), 4, 1.0, false)));
+        var geometry2 = CloneAndTransformGeometryArray (geometry1, Bentley.Dgn.Transform.CreateTranslationXYZ (1,0,3));
         }
     t_polyfaceMeshA ();  
-    t_spiral ();
 
     logMessage('Test1 Z');
 }

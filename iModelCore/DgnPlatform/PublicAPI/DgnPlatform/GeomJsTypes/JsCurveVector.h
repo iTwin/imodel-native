@@ -140,6 +140,21 @@ public:
         }
     void Add (JsCurvePrimitiveP primitive){m_curveVector->Add (primitive->GetICurvePrimitivePtr ());}
     JsPathP Clone () {return new JsPath (m_curveVector->Clone ());} 
+
+    static JsPathP Create1 (JsCurvePrimitiveP curve)
+        {
+        auto path = new JsPath ();
+        path->Add (curve);
+        return path;
+        }
+
+    static JsPathP Create2 (JsCurvePrimitiveP curve1, JsCurvePrimitiveP curve2)
+        {
+        auto path = new JsPath ();
+        path->Add (curve1);
+        path->Add (curve2);
+        return path;
+        }
 };
 
 //=======================================================================================
@@ -156,6 +171,20 @@ public:
     JsLoop ()
         {
         Set (CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer));
+        }
+    static JsLoopP Create1 (JsCurvePrimitiveP curve)
+        {
+        auto loop = new JsLoop ();
+        loop->Add (curve);
+        return loop;
+        }
+
+    static JsLoopP Create2 (JsCurvePrimitiveP curve1, JsCurvePrimitiveP curve2)
+        {
+        auto loop = new JsLoop ();
+        loop->Add (curve1);
+        loop->Add (curve2);
+        return loop;
         }
 
     JsLoopP Clone () {return new JsLoop (m_curveVector->Clone ());} 
@@ -181,6 +210,21 @@ public:
 
     JsParityRegion * Clone () {return new JsParityRegion (m_curveVector->Clone ());} 
     void Add (JsLoopP loop){m_curveVector->Add (loop->m_curveVector);}
+
+    static JsParityRegionP Create1 (JsLoopP loop)
+        {
+        auto region = new JsParityRegion ();
+        region->Add (loop);
+        return region;
+        }
+
+    static JsParityRegionP Create2 (JsLoopP loop1, JsLoopP loop2)
+        {
+        auto region = new JsParityRegion ();
+        region->Add (loop1);
+        region->Add (loop2);
+        return region;
+        }
 };
 
 //=======================================================================================

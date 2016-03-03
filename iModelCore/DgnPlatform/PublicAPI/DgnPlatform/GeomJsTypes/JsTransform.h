@@ -50,6 +50,13 @@ public:
                 {return new JsTransform (Transform::From (x, y, z));}
     static JsTransformP CreateScaleAroundPoint (JsDPoint3dP fixedPoint, double scaleX, double scaleY, double scaleZ)
                 {return new JsTransform (Transform::FromFixedPointAndScaleFactors (fixedPoint->Get (), scaleX, scaleY, scaleZ));}
+    static JsTransformP CreateSweepToPlane (JsDVector3dP sweepVector, JsDPlane3dP targetPlane)
+                {
+                auto transform =Transform::FromSweepToPlane (sweepVector->Get (), targetPlane->Get ());
+                if (transform.IsValid ())
+                    return new JsTransform (transform.Value ());
+                return nullptr;
+                }
 
     static JsTransformP CreateOriginAndVectors (JsDPoint3dP origin, JsDVector3dP xVector, JsDVector3dP yVector, JsDVector3dP zVector)
                 {

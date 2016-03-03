@@ -2,7 +2,7 @@
 |
 |   $Source: DgnCore/UnitDefinition.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -59,7 +59,7 @@ UnitSystem      UnitDefinition::SystemFromInt (uint32_t val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UnitDefinition:: Init (UnitBase base, UnitSystem sys, double num, double den, WCharCP label)
+void UnitDefinition:: Init (UnitBase base, UnitSystem sys, double num, double den, Utf8CP label)
     {
     m_base = base;
     m_system = sys;
@@ -95,7 +95,7 @@ void    UnitDefinition::SetInvalid ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            UnitDefinition::SetLabel (WCharCP val)
+void            UnitDefinition::SetLabel (Utf8CP val)
     {
     if (NULL != val)
         m_label.assign(val);
@@ -114,7 +114,7 @@ UnitDefinition::UnitDefinition ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitDefinition::UnitDefinition (UnitBase base, UnitSystem sys, double num, double den, WCharCP label)
+UnitDefinition::UnitDefinition (UnitBase base, UnitSystem sys, double num, double den, Utf8CP label)
     {
     Init (base, sys, num, den, label);
     }
@@ -140,7 +140,7 @@ bool UnitDefinition::IsEqual (UnitDefinitionCR other) const
         return false;
         }
 
-    return (0 == wcscmp (m_label.c_str(), other.m_label.c_str()));
+    return m_label.Equals (other.m_label);
     }
 
 /*---------------------------------------------------------------------------------**//**

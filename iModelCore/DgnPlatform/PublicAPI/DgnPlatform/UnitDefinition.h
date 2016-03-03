@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/UnitDefinition.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -58,7 +58,7 @@ private:
     UnitSystem      m_system;
     double          m_numerator;
     double          m_denominator;
-    WString         m_label;
+    Utf8String      m_label;
 
 protected:
 
@@ -74,10 +74,10 @@ public:
     DGNPLATFORM_EXPORT UnitDefinition ();
 
     //! Construct a fully initialized UnitDefinition.
-    DGNPLATFORM_EXPORT UnitDefinition (UnitBase base, UnitSystem sys, double num, double den, WCharCP label);
+    DGNPLATFORM_EXPORT UnitDefinition (UnitBase base, UnitSystem sys, double num, double den, Utf8CP label);
 
     //! Initialize a UnitDefinition from data.
-    DGNPLATFORM_EXPORT void Init (UnitBase base, UnitSystem sys, double num, double den, WCharCP label);
+    DGNPLATFORM_EXPORT void Init (UnitBase base, UnitSystem sys, double num, double den, Utf8CP label);
 
     //! Initialize a UnitDefinition from another UnitDefinition
     DGNPLATFORM_EXPORT void Init (UnitDefinitionCR source);
@@ -131,32 +131,31 @@ public:
     UnitSystem GetSystem() const { return m_system; };
     double GetNumerator() const { return m_numerator; };
     double GetDenominator() const { return m_denominator; };
-    WString GetLabel() const { return m_label; };
-    WCharCP GetLabelCP() const { return m_label.c_str(); };
+    Utf8String GetLabel() const { return m_label; };
+    Utf8CP GetLabelCP() const { return m_label.c_str(); };
     double ToMeters(double val=1.0) const {return val / (GetNumerator()/GetDenominator());}
     double ToMillimeters(double val=1.0) const {return 1000.0 * ToMeters(val);}
 
-    DGNPLATFORM_EXPORT void SetLabel (WCharCP val);
-    void SetLabel (Utf8String val) {SetLabel(WString(val.c_str(), true).c_str());}
+    DGNPLATFORM_EXPORT void SetLabel (Utf8CP val);
 
     //! Get the definition for a standard unit.
     DGNPLATFORM_EXPORT static UnitDefinition GetStandardUnit (StandardUnit iUnit);
 
     //! Find the definition of a standard unit from its name in the current language.
-    DGNPLATFORM_EXPORT static UnitDefinition GetStandardUnitByName (WCharCP name);
+    DGNPLATFORM_EXPORT static UnitDefinition GetStandardUnitByName (Utf8CP name);
 
     //! Determine if a unit definition is the same size as a standard unit.
     //! @return StandardUnit::None if the input does not match a standard unit.
     DGNPLATFORM_EXPORT StandardUnit IsStandardUnit () const;
 
     //! Get the label of a standard unit in the current language.
-    DGNPLATFORM_EXPORT static WString GetStandardLabel (StandardUnit iUnit);
+    DGNPLATFORM_EXPORT static Utf8String GetStandardLabel (StandardUnit iUnit);
 
     //! Get the name of a standard unit in the current language.
-    DGNPLATFORM_EXPORT static WString GetStandardName (StandardUnit iUnit, bool singular=false);
+    DGNPLATFORM_EXPORT static Utf8String GetStandardName (StandardUnit iUnit, bool singular=false);
 
     //! Get the name of a unit from the user's workspace.
-    DGNPLATFORM_EXPORT WString GetName (bool singular=false, bool alsoStandard=false) const;
+    DGNPLATFORM_EXPORT Utf8String GetName (bool singular=false, bool alsoStandard=false) const;
 
     //! Get the number of a unit from the user's workspace.
     DGNPLATFORM_EXPORT int GetNumber (bool alsoStandard=false) const;
@@ -170,13 +169,13 @@ public:
     DGNPLATFORM_EXPORT UnitDefinition GetNextSmaller () const;
 
     //! Find the definition of a unit from the user's workspace by matching its name in the current language.
-    DGNPLATFORM_EXPORT static UnitDefinition GetByName (WCharCP unitName, bool alsoStandard=false);
+    DGNPLATFORM_EXPORT static UnitDefinition GetByName (Utf8CP unitName, bool alsoStandard=false);
 
     //! Find the definition of a unit from the user's workspace by matching the number assigned to it in the current session.
     DGNPLATFORM_EXPORT static UnitDefinition GetByNumber (int unitNumber, bool alsoStandard=false);
 
     //! Find the definition of a unit from the user's workspace by matching one of its labels.
-    DGNPLATFORM_EXPORT static UnitDefinition GetByLabel (WCharCP label, bool alsoStandard=false);
+    DGNPLATFORM_EXPORT static UnitDefinition GetByLabel (Utf8CP label, bool alsoStandard=false);
 
 //__PUBLISH_SECTION_END__
     DGNPLATFORM_EXPORT static void    BackDoor_ResetUserUnitsForTest();
@@ -299,7 +298,7 @@ public:
         DGNPLATFORM_EXPORT StandardUnit GetNumber () const;
 
         //! Get information about the iterator's current unit.
-        DGNPLATFORM_EXPORT WString GetName (bool singular=false) const;
+        DGNPLATFORM_EXPORT Utf8String GetName (bool singular=false) const;
     };
 
     //=======================================================================================
@@ -377,7 +376,7 @@ public:
         DGNPLATFORM_EXPORT StandardUnit GetNumber() const;
 
         //! Get information about the iterator's current unit.
-        DGNPLATFORM_EXPORT WString GetName(bool singular=false) const;
+        DGNPLATFORM_EXPORT Utf8String GetName(bool singular=false) const;
     };
 
     //=======================================================================================
