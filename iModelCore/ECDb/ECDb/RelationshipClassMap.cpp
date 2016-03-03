@@ -1,3 +1,11 @@
+m_impliedColumnName
+m_impliedColumnName
+m_impliedColumnName
+m_canImplyFromNavigationProperty
+m_impliedColumnName
+m_canImplyFromNavigationProperty
+m_canImplyFromNavigationProperty
+m_canImplyFromNavigationProperty
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: ECDb/RelationshipClassMap.cpp $
@@ -403,33 +411,42 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
         }
     else
         {
-        Utf8String fkColumnName(relationshipClassMapInfo.GetColumnsMapping(GetForeignEnd()).GetECInstanceIdColumnName());
-        if (fkColumnName.empty())
-            {
-            if (SUCCESS != TryGetConstraintIdColumnNameFromNavigationProperty(fkColumnName, GetECDbMap().GetECDb(), foreignEndConstraint, relationshipClass, GetForeignEnd()))
-                return MapStatus::Error;
-            }
+        Utf8CP userProvidedFkColumnName = relationshipClassMapInfo.GetColumnsMapping(GetForeignEnd()).GetECInstanceIdColumnName();
 
-        if (fkColumnName.empty())
-            fkColumnName.append("ForeignECInstanceId_").append(relationshipClass.GetName());
+        ForeignKeyColumnInfo fkColInfo;
+        if (SUCCESS != TryGetForeignKeyColumnInfoFromNavigationProperty(fkColInfo, foreignEndConstraint, relationshipClass, GetForeignEnd()))
+            return MapStatus::Error;
+
+        Utf8String fkColName;
+        if (!Utf8String::IsNullOrEmpty(userProvidedFkColumnName))
+            fkColName.assign(userProvidedFkColumnName);
+        else if (fkColInfo.CanImplyFromNavigationProperty() && !fkColInfo.GetImpliedColumnName().empty())
+            fkColName.assign(fkColInfo.GetImpliedColumnName());
+        else
+            fkColName.append("ForeignECInstanceId_").append(relationshipClass.GetName());
 
         for (ECDbSqlTable const* foreignEndTable : foreignEndTables)
             {
-            if (foreignEndTable->FindColumnCP(fkColumnName.c_str()) != nullptr)
+            if (foreignEndTable->FindColumnCP(fkColName.c_str()) != nullptr)
                 {
                 GetECDbMap().GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
                                                                                  "Failed to map ECRelationshipClass '%s'. ForeignKey column name '%s' is already used by another column in the foreign key end table %s.",
-                                                                                 fkColumnName.c_str(), relationshipClass.GetFullName(), foreignEndTable->GetName().c_str());
+                                                                                 fkColName.c_str(), relationshipClass.GetFullName(), foreignEndTable->GetName().c_str());
 
                 return MapStatus::Error;
                 }
 
+
+            int fkColPosition = -1;
+            if (SUCCESS != TryDetermineForeignKeyColumnPosition(fkColPosition, *foreignEndTable, fkColInfo))
+                return MapStatus::Error;
+
             const PersistenceType columnPersistenceType = foreignEndTable->IsOwnedByECDb() && foreignEndTable->GetPersistenceType() == PersistenceType::Persisted ? PersistenceType::Persisted : PersistenceType::Virtual;
-            ECDbSqlColumn* fkCol = const_cast<ECDbSqlTable*>(foreignEndTable)->CreateColumn(fkColumnName.c_str(), ECDbSqlColumn::Type::Integer, foreignKeyColumnKind, columnPersistenceType);
+            ECDbSqlColumn* fkCol = const_cast<ECDbSqlTable*>(foreignEndTable)->CreateColumn(fkColName.c_str(), ECDbSqlColumn::Type::Integer, fkColPosition, foreignKeyColumnKind, columnPersistenceType);
             if (fkCol == nullptr)
                 {
                 LOG.errorv("Could not create foreign key column %s in table %s for the ECRelationshipClass %s.",
-                           fkColumnName.c_str(), foreignEndTable->GetName().c_str(), relationshipClass.GetFullName());
+                           fkColName.c_str(), foreignEndTable->GetName().c_str(), relationshipClass.GetFullName());
                 BeAssert(false && "Could not create FK column for end table mapping");
                 return MapStatus::Error;
                 }
@@ -985,9 +1002,10 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(std::set<ECD
 //---------------------------------------------------------------------------------------
 // @bsimethod                      Krischan.Eberle                          01/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus RelationshipClassEndTableMap::TryGetConstraintIdColumnNameFromNavigationProperty(Utf8StringR columnName, ECDbCR ecdb, ECN::ECRelationshipConstraintCR constraint, ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd constraintEnd) const
+BentleyStatus RelationshipClassEndTableMap::TryGetForeignKeyColumnInfoFromNavigationProperty(ForeignKeyColumnInfo& fkColInfo, ECN::ECRelationshipConstraintCR constraint, ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd constraintEnd) const
     {
-    columnName.clear();
+    fkColInfo.Clear();
+
     ECRelationshipConstraintClassList const& constraintClasses = constraint.GetConstraintClasses();
     if (constraintClasses.size() == 0)
         return SUCCESS;
@@ -1019,9 +1037,106 @@ BentleyStatus RelationshipClassEndTableMap::TryGetConstraintIdColumnNameFromNavi
 
     bool isNullable, isUnique; //unused
     ECDbSqlColumn::Constraint::Collation collation;//unused
-    return PropertyMap::DetermineColumnInfo(columnName, isNullable, isUnique, collation, ecdb, *singleNavProperty, singleNavProperty->GetName().c_str());
+    Utf8String columnName;
+    if (SUCCESS != PropertyMap::DetermineColumnInfo(columnName, isNullable, isUnique, collation, GetECDbMap().GetECDb(), *singleNavProperty, singleNavProperty->GetName().c_str()))
+        return ERROR;
+
+    ClassMap const* classMap = GetECDbMap().GetClassMap(singleNavProperty->GetClass());
+    if (classMap->GetColumnFactory().UsesSharedColumnStrategy())
+        {
+        //table uses shared columns, so FK col position cannot depend on NavigationProperty position
+        fkColInfo.Assign(columnName.c_str(), true, nullptr, nullptr);
+        return SUCCESS;
+        }
+
+    //now determine the property map defined just before the nav prop in the ECClass, that is mapped to
+    PropertyMapCP precedingPropMap = nullptr;
+    PropertyMapCP succeedingPropMap = nullptr;
+    bool foundNavProp = false;
+    for (PropertyMapCP propMap : classMap->GetPropertyMaps())
+        {
+        if (&propMap->GetProperty() == singleNavProperty)
+            {
+            foundNavProp = true;
+            if (precedingPropMap != nullptr)
+                break;
+
+            //no preceding prop map exists, continue until suceeding prop map is found
+            continue;
+            }
+
+        if (propMap->IsSystemPropertyMap() || propMap->GetAsNavigationPropertyMap() != nullptr || propMap->GetAsPropertyMapStructArray() != nullptr)
+            continue;
+
+        if (!foundNavProp)
+            precedingPropMap = propMap;
+        else
+            {
+            succeedingPropMap = propMap;
+            break;
+            }
+        }
+
+    fkColInfo.Assign(columnName.c_str(), false, precedingPropMap, succeedingPropMap);
+    return SUCCESS;
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                      Krischan.Eberle                          03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus RelationshipClassEndTableMap::TryDetermineForeignKeyColumnPosition(int& position, ECDbSqlTable const& table, ForeignKeyColumnInfo const& fkColInfo) const
+    {
+    position = -1;
+    if (!fkColInfo.CanImplyFromNavigationProperty() || fkColInfo.AppendToEnd())
+        return SUCCESS;
+
+    PropertyMapCP precedingPropMap = fkColInfo.GetPropertyMapBeforeNavProp();
+    std::vector<ECDbSqlColumn const*> precedingCols;
+    if (precedingPropMap != nullptr)
+        precedingPropMap->GetColumns(precedingCols, table);
+
+    bool isNeighborColumnPreceeding = true;
+    ECDbSqlColumn const* neighborColumn = nullptr;
+    if (!precedingCols.empty())
+        neighborColumn = precedingCols.back();
+    else
+        {
+        PropertyMapCP succeedingPropMap = fkColInfo.GetPropertyMapAfterNavProp();
+        std::vector<ECDbSqlColumn const*> succeedingCols;
+        if (succeedingPropMap != nullptr)
+            succeedingPropMap->GetColumns(succeedingCols, table);
+
+        if (!succeedingCols.empty())
+            {
+            neighborColumn = succeedingCols[0];
+            isNeighborColumnPreceeding = false;
+            }
+        }
+
+    if (neighborColumn == nullptr)
+        {
+        ECDbSqlColumn const* unused = nullptr;
+        position = table.TryGetECClassIdColumn(unused) ? 2 : 1;
+        return SUCCESS;
+        }
+
+    int i = 0;
+    for (ECDbSqlColumn const* col : table.GetColumns())
+        {
+        if (col == neighborColumn)
+            break;
+
+        i++;
+        }
+
+    if (isNeighborColumnPreceeding)
+        position = i + 1;
+    else
+        position = i;
+
+    return SUCCESS;
+    }
 
 //************************** RelationshipClassLinkTableMap *****************************************
 /*---------------------------------------------------------------------------------**//**

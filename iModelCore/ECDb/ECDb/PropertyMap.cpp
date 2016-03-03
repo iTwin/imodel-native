@@ -1171,7 +1171,7 @@ NavigationPropertyMap::NavigationPropertyMap(ClassMapLoadContext& ctx, ECN::ECPr
     {
     BeAssert(prop.GetIsNavigation());
     
-    //we need to wait with finishing the nav prop map set up to the end when all relationships have been imported and mapped
+    //we need to wait with finishing the nav prop map set up to the end when all relationships have been processed
     ctx.AddNavigationPropertyMap(*this);
     }
 
@@ -1223,29 +1223,40 @@ BentleyStatus NavigationPropertyMap::Postprocess(ECDbMapCR ecdbMap)
         return ERROR;
         }
 
-    ECDbSqlColumn const* constraintIdCol = nullptr;
+    ECDbSqlColumn const* fkCol = nullptr;
     std::vector<ECDbSqlColumn const*> columns;
     GetConstraintMap(NavigationEnd::To).GetECInstanceIdPropMap()->GetColumns(columns, classMap->GetPrimaryTable());
     if (columns.size() == 1)
-        constraintIdCol = columns.front();
+        fkCol = columns.front();
 
-    if (constraintIdCol == nullptr && !classMap->IsMappedToSingleTable())
+    if (fkCol == nullptr && !classMap->IsMappedToSingleTable())
         {
         GetConstraintMap(NavigationEnd::To).GetECInstanceIdPropMap()->GetColumns(columns, classMap->GetJoinedTable());
         if (columns.size() == 1)
-            constraintIdCol = columns.front();
+            fkCol = columns.front();
         }
 
-    if (constraintIdCol == nullptr)
+    if (fkCol == nullptr)
         {
         BeAssert(false);
         return ERROR;
         }
-    else
-        m_columns.push_back(constraintIdCol);
+    
+    PropertyMapCP precedingPropMap = nullptr;
+    for (PropertyMapCP propMap : classMap->GetPropertyMaps())
+        {
+        if (propMap == this)
+            break;
 
+        precedingPropMap = propMap;
+        }
+
+    std::vector<ECDbSqlColumn const*> precedingColumns;
+    precedingPropMap->GetColumns(precedingColumns, fkCol->GetTable());
+
+    m_columns.push_back(fkCol);
     BeAssert(m_mappedTables.empty());
-    m_mappedTables.push_back(&constraintIdCol->GetTable());
+    m_mappedTables.push_back(&fkCol->GetTable());
     return SUCCESS;
     }
 

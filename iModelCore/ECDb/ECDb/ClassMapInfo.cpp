@@ -444,18 +444,12 @@ BentleyStatus ClassMapInfo::InitializeClassHasCurrentTimeStampProperty()
 * Returns true if all base classes have been mapped.
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ClassMapInfo::GatherBaseClassMaps 
-(
-bvector<IClassMap const*>& baseClassMaps,
-bvector<IClassMap const*>& tphMaps,
-bvector<IClassMap const*>& tpcMaps,
-bvector<IClassMap const*>& nmhMaps,
-ECClassCR          ecClass
-) const
+bool ClassMapInfo::GatherBaseClassMaps(bvector<IClassMap const*>& baseClassMaps,bvector<IClassMap const*>& tphMaps,
+                                       bvector<IClassMap const*>& tpcMaps,bvector<IClassMap const*>& nmhMaps,ECClassCR ecClass) const
     {
-    for (ECClassP baseClass : ecClass.GetBaseClasses())
+    for (ECClassCP baseClass : ecClass.GetBaseClasses())
         {
-        auto baseClassMap = m_ecdbMap.GetClassMap(*baseClass);
+        ClassMap const* baseClassMap = m_ecdbMap.GetClassMap(*baseClass);
         if (baseClassMap == nullptr)
             return false;
 
@@ -466,15 +460,15 @@ ECClassCR          ecClass
             return true;
             }
 
-        auto baseTable = &baseClassMap->GetPrimaryTable();
+        ECDbSqlTable const& baseTable = baseClassMap->GetPrimaryTable();
         switch (baseMapStrategy.GetStrategy())
             {
                 case ECDbMapStrategy::Strategy::SharedTable:
                     {
                     bool add = true;
-                    for (auto classMap : tphMaps)
+                    for (IClassMap const* classMap : tphMaps)
                         {
-                        if (&classMap->GetPrimaryTable() == baseTable)
+                        if (&classMap->GetPrimaryTable() == &baseTable)
                             {
                             add = false;
                             break;

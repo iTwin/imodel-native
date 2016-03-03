@@ -141,7 +141,7 @@ public:
 
     //! Adds a listener that listens to issues reported by this ECDb object.
     //! @remarks Only one listener can be added at a time.
-    //! @param[in] issueListener Issue listener. The listener must remain valid as
+    //! @param[in] issueListener Issue listener. The listener must remain valid
     //! while this ECDb is valid, or until it is removed via RemoveIssueListener.
     //! @return SUCCESS or ERROR if another lister was already added before.
     ECDB_EXPORT BentleyStatus AddIssueListener(IIssueListener const& issueListener);

@@ -103,6 +103,43 @@ public:
 struct RelationshipClassEndTableMap : RelationshipClassMap
     {
 private:
+    struct ForeignKeyColumnInfo : NonCopyableClass
+        {
+    private:
+        bool m_canImplyFromNavigationProperty;
+        Utf8String m_impliedColumnName;
+        bool m_appendToEnd;
+        PropertyMapCP m_propMapBeforeNavProp;
+        PropertyMapCP m_propMapAfterNavProp;
+
+    public:
+        ForeignKeyColumnInfo() : m_canImplyFromNavigationProperty(false), m_appendToEnd(true), m_propMapBeforeNavProp(nullptr), m_propMapAfterNavProp(nullptr) {}
+
+        void Assign(Utf8CP impliedColName, bool appendToEnd, PropertyMapCP propMapBeforeNavProp, PropertyMapCP propMapAfterNavProp)
+            {
+            m_canImplyFromNavigationProperty = true;
+            m_impliedColumnName.assign(impliedColName);
+            m_appendToEnd = appendToEnd;
+            m_propMapBeforeNavProp = propMapBeforeNavProp;
+            m_propMapAfterNavProp = propMapAfterNavProp;
+            }
+
+        void Clear()
+            {
+            m_canImplyFromNavigationProperty = false;
+            m_impliedColumnName.clear();
+            m_appendToEnd = true;
+            m_propMapBeforeNavProp = nullptr;
+            m_propMapAfterNavProp = nullptr;
+            }
+
+        bool CanImplyFromNavigationProperty() const { return m_canImplyFromNavigationProperty; }
+        Utf8StringCR GetImpliedColumnName() const { return m_impliedColumnName; }
+        bool AppendToEnd() const { return m_appendToEnd; }
+        PropertyMapCP GetPropertyMapBeforeNavProp() const { return m_propMapBeforeNavProp; }
+        PropertyMapCP GetPropertyMapAfterNavProp() const { return m_propMapAfterNavProp; }
+        };
+
     bool m_autogenerateForeignKeyColumns;
 
     RelationshipClassEndTableMap (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
@@ -122,7 +159,8 @@ private:
     //! @return SUCCESS if key property was found or no key property exists on the constraint. ERROR if constraint has more
     //! than one class or more than one key properties.
     BentleyStatus TryGetKeyPropertyColumn(std::set<ECDbSqlColumn const*>& keyPropertyColumns, ECN::ECRelationshipConstraintCR, ECN::ECRelationshipClassCR, ECN::ECRelationshipEnd constraintEnd) const;
-    BentleyStatus TryGetConstraintIdColumnNameFromNavigationProperty(Utf8StringR, ECDbCR, ECN::ECRelationshipConstraintCR, ECN::ECRelationshipClassCR, ECN::ECRelationshipEnd constraintEnd) const;
+    BentleyStatus TryGetForeignKeyColumnInfoFromNavigationProperty(ForeignKeyColumnInfo&, ECN::ECRelationshipConstraintCR, ECN::ECRelationshipClassCR, ECN::ECRelationshipEnd constraintEnd) const;
+    BentleyStatus TryDetermineForeignKeyColumnPosition(int& position, ECDbSqlTable const&, ForeignKeyColumnInfo const&) const;
 
     virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ClassMapLoadContext&, ECDbClassMapInfo const&, IClassMap const* parentClassMap) override;
 

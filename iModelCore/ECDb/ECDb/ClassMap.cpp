@@ -30,28 +30,10 @@ BentleyStatus ClassDbView::Generate(NativeSqlBuilder& viewSql, bool isPolymorphi
         return ERROR;
         }
 
-    //ECSQL_TODO optimizeByIncludingOnlyRealTables result is optmize short queries but require some chatting with db to determine if table exist or not
-    //           this feature need to be evaluated for performance before its enabled.
     return ViewGenerator::CreateView(viewSql, m_classMap->GetECDbMap(), *m_classMap, isPolymorphic, preparedContext, true /*optimizeByIncludingOnlyRealTables*/);
     }
 
 //********************* IClassMap ******************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                    12/2015
-//---------------------------------------------------------------------------------------
-const Utf8String IClassMap::GetPersistedViewName() const
-    {
-    return Utf8String("_" + GetClass().GetSchema().GetNamespacePrefix() + "_" + GetClass().GetName());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                    12/2015
-//---------------------------------------------------------------------------------------
-bool IClassMap::HasPersistedView() const
-    {
-    return GetECDbMap().GetECDb().TableExists(GetPersistedViewName().c_str());
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    02/2014
 //---------------------------------------------------------------------------------------
@@ -78,25 +60,6 @@ PropertyMapCP IClassMap::GetPropertyMap(Utf8CP propertyName) const
         return propMap;
 
     return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  06/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-bool IClassMap::ContainsPropertyMapToTable() const
-    {
-    bool found = false;
-    GetPropertyMaps().Traverse([&found] (TraversalFeedback& feedback, PropertyMapCP propMap)
-        {
-        BeAssert(propMap != nullptr);
-        if (propMap->GetAsPropertyMapStructArray() != nullptr)
-            {
-            found = true;
-            feedback = TraversalFeedback::Cancel;
-            }
-        }, true);
-
-    return found;
     }
 
 //------------------------------------------------------------------------------------------
@@ -413,6 +376,23 @@ BentleyStatus IClassMap::DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECCl
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                    12/2015
+//---------------------------------------------------------------------------------------
+Utf8String IClassMap::GetPersistedViewName() const
+    {
+    Utf8String name;
+    name.Sprintf("_%s_%s", GetClass().GetSchema().GetNamespacePrefix().c_str(), GetClass().GetName().c_str());
+    return std::move(name);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                    12/2015
+//---------------------------------------------------------------------------------------
+bool IClassMap::HasPersistedView() const
+    {
+    return GetECDbMap().GetECDb().TableExists(GetPersistedViewName().c_str());
+    }
 
 //********************* ClassMap ******************************************
 //---------------------------------------------------------------------------------------
@@ -699,12 +679,6 @@ MapStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, IClassMap const* p
         if (propMap == nullptr)
             return MapStatus::Error;
 
-        if (GetPropertyMap(propertyAccessString) != nullptr)
-            {
-            BeAssert(GetPropertyMap(propertyAccessString) == nullptr && " it should not be there");
-            return MapStatus::Error;
-            }
-
         if (isImportingSchemas)
             {
             if (SUCCESS != propMap->FindOrCreateColumnsInTable(*this))
@@ -712,8 +686,6 @@ MapStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, IClassMap const* p
                 BeAssert(false);
                 return MapStatus::Error;
                 }
-
-            GetPropertyMapsR().AddPropertyMap(propMap);
             }
         else
             {
@@ -723,8 +695,9 @@ MapStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, IClassMap const* p
                 return MapStatus::Error;
                 }
 
-            GetPropertyMapsR().AddPropertyMap(propMap);
             }
+
+        GetPropertyMapsR().AddPropertyMap(propMap);
         }
 
     return MapStatus::Success;
@@ -1056,12 +1029,22 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
+ColumnFactory::ColumnFactory(ClassMapCR classMap) : m_classMap(classMap), m_usesSharedColumnStrategy(false)
+    {
+    m_usesSharedColumnStrategy = Enum::Contains(m_classMap.GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::SharedColumns);
+    BeAssert(!m_usesSharedColumnStrategy || m_classMap.GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable);
+
+    Update();
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       01 / 2015
+//------------------------------------------------------------------------------------------
 ECDbSqlColumn* ColumnFactory::CreateColumn(PropertyMapCR propMap, Utf8CP requestedColumnName, ECDbSqlColumn::Type colType, bool addNotNullConstraint, bool addUniqueConstraint, ECDbSqlColumn::Constraint::Collation collation) const
     {
     ECDbSqlColumn* outColumn = nullptr;
-    if (Enum::Contains(m_classMap.GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::SharedColumns))
+    if (m_usesSharedColumnStrategy)
         {
-        BeAssert(m_classMap.GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable);
         // Shared column does not support NOT NULL constraint -> omit NOT NULL and issue warning
         if (addNotNullConstraint || addUniqueConstraint || collation != ECDbSqlColumn::Constraint::Collation::Default)
             {
@@ -1075,10 +1058,7 @@ ECDbSqlColumn* ColumnFactory::CreateColumn(PropertyMapCR propMap, Utf8CP request
         outColumn = ApplySharedColumnStrategy();
         }
     else
-        {
-        BeAssert(!Utf8String::IsNullOrEmpty(requestedColumnName) && "requestedColumnName must not be null for Strategy::CreateOrReuse");
         outColumn = ApplyDefaultStrategy(requestedColumnName, propMap, colType, addNotNullConstraint, addUniqueConstraint, collation);
-        }
 
     if (outColumn == nullptr)
         {
@@ -1086,7 +1066,7 @@ ECDbSqlColumn* ColumnFactory::CreateColumn(PropertyMapCR propMap, Utf8CP request
         return nullptr;
         }
 
-    RegisterColumnInUse(*outColumn);
+    CacheUsedColumn(*outColumn);
     return outColumn;
     }
 
@@ -1095,7 +1075,7 @@ ECDbSqlColumn* ColumnFactory::CreateColumn(PropertyMapCR propMap, Utf8CP request
 //-----------------------------------------------------------------------------------------
 ECDbSqlColumn* ColumnFactory::ApplyDefaultStrategy(Utf8CP requestedColumnName, PropertyMapCR propMap, ECDbSqlColumn::Type colType, bool addNotNullConstraint, bool addUniqueConstraint, ECDbSqlColumn::Constraint::Collation collation) const
     {
-    BeAssert(!Utf8String::IsNullOrEmpty(requestedColumnName) && "Column name must not be null for CreateOrReuseStrategy");
+    BeAssert(!Utf8String::IsNullOrEmpty(requestedColumnName) && "Column name must not be null for default strategy");
 
     ECDbSqlColumn* existingColumn = GetTable().FindColumnP(requestedColumnName);
     if (existingColumn != nullptr && !IsColumnInUse(*existingColumn) &&
@@ -1242,31 +1222,17 @@ bool ColumnFactory::TryFindReusableSharedDataColumn(ECDbSqlColumn const*& reusab
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-void ColumnFactory::RegisterColumnInUse(ECDbSqlColumn const& column) const
+void ColumnFactory::CacheUsedColumn(ECDbSqlColumn const& column) const
     {
-    m_columnsInUseSet.insert(column.GetFullName());
+    m_columnsInUse.insert(column.GetFullName());
     }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-bool ColumnFactory::IsColumnInUse(Utf8CP columnFullName) const
-    {
-    return m_columnsInUseSet.find(columnFullName) != m_columnsInUseSet.end();
-    }
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       01 / 2015
-//------------------------------------------------------------------------------------------
-bool ColumnFactory::IsColumnInUse(Utf8CP tableName, Utf8CP columnName) const
-    {
-    return IsColumnInUse(ECDbSqlColumn::BuildFullName(tableName, columnName).c_str());
-    }
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       01 / 2015
-//------------------------------------------------------------------------------------------
 bool ColumnFactory::IsColumnInUse(ECDbSqlColumn const& column) const
     {
-    return IsColumnInUse(column.GetFullName().c_str());
+    return m_columnsInUse.find(column.GetFullName()) != m_columnsInUse.end();
     }
 
 //------------------------------------------------------------------------------------------
@@ -1274,7 +1240,7 @@ bool ColumnFactory::IsColumnInUse(ECDbSqlColumn const& column) const
 //------------------------------------------------------------------------------------------
 void ColumnFactory::Update()
     {
-    m_columnsInUseSet.clear();
+    m_columnsInUse.clear();
     std::vector<ECDbSqlColumn const*> columnsInUse;
     m_classMap.GetPropertyMaps().Traverse(
         [&] (TraversalFeedback& feedback, PropertyMapCP propMap)
@@ -1285,10 +1251,10 @@ void ColumnFactory::Update()
         feedback = TraversalFeedback::Next;
         }, true);
 
-    for (auto columnInUse : columnsInUse)
+    for (ECDbSqlColumn const* columnInUse : columnsInUse)
         {
-        if (columnInUse)
-            RegisterColumnInUse(*columnInUse);
+        if (columnInUse != nullptr)
+            CacheUsedColumn(*columnInUse);
         }
     }
 

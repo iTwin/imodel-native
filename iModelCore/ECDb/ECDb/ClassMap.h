@@ -129,97 +129,90 @@ struct PropertyMapSet : NonCopyableClass
 struct IClassMap : NonCopyableClass
     {
     typedef std::vector<ECDbSqlTable*>& TableListR;
-public:
-    //! Class map type. Used to avoid dynamic_cast when casting to sub classes of ClassMap.
-    enum class Type
-        {
-        Class,
-        SecondaryTable,
-        EmbeddedType,
-        RelationshipEndTable,
-        RelationshipLinkTable,
-        Unmapped
-        };
+    public:
+        //! Class map type. Used to avoid dynamic_cast when casting to sub classes of ClassMap.
+        enum class Type
+            {
+            Class,
+            SecondaryTable,
+            EmbeddedType,
+            RelationshipEndTable,
+            RelationshipLinkTable,
+            Unmapped
+            };
 
-    //! Class map view. Depending on the view, a class map exposes different property maps.
-    //! @remarks The view only differs for ECClasses which are domain classes and structs at the same time
-    //! Furthermore, the view EmbeddedType is only used internally for executing secondary ECSqlStatements.
-    enum class View
-        {
-        DomainClass, //!<Class of the mapping is viewed as domain class
-        EmbeddedType //!<Class of the mapping is viewed as struct type embedded into another class
-        };
-  
-private:
-    virtual IClassMap const& _GetView (View classView) const = 0;
-    virtual Type _GetClassMapType () const = 0;
-    virtual ECN::ECClassCR _GetClass () const = 0;
-    virtual ECN::ECClassId _GetParentMapClassId () const = 0;
-    virtual PropertyMapCollection const& _GetPropertyMaps () const = 0;
-    virtual TableListR _GetTables () const = 0;
-    virtual ECDbMapStrategy const& _GetMapStrategy () const = 0;
-    virtual ECDbMapCR _GetECDbMap () const = 0;
-    virtual ClassDbView const& _GetDbView () const = 0;
+        //! Class map view. Depending on the view, a class map exposes different property maps.
+        //! @remarks The view only differs for ECClasses which are domain classes and structs at the same time
+        //! Furthermore, the view EmbeddedType is only used internally for executing secondary ECSqlStatements.
+        enum class View
+            {
+            DomainClass, //!<Class of the mapping is viewed as domain class
+            EmbeddedType //!<Class of the mapping is viewed as struct type embedded into another class
+            };
 
-protected:
-    bool m_isECInstanceIdAutogenerationDisabled;
+    private:
+        virtual IClassMap const& _GetView(View classView) const = 0;
+        virtual Type _GetClassMapType() const = 0;
+        virtual ECN::ECClassCR _GetClass() const = 0;
+        virtual ECN::ECClassId _GetParentMapClassId() const = 0;
+        virtual PropertyMapCollection const& _GetPropertyMaps() const = 0;
+        virtual TableListR _GetTables() const = 0;
+        virtual ECDbMapStrategy const& _GetMapStrategy() const = 0;
+        virtual ECDbMapCR _GetECDbMap() const = 0;
+        virtual ClassDbView const& _GetDbView() const = 0;
 
-    IClassMap() : m_isECInstanceIdAutogenerationDisabled(false) {}
+    protected:
+        bool m_isECInstanceIdAutogenerationDisabled;
 
-public:
-    virtual ~IClassMap () {}
+        IClassMap() : m_isECInstanceIdAutogenerationDisabled(false) {}
 
-    IClassMap const& GetView (View classView) const;
+    public:
+        virtual ~IClassMap() {}
 
-    TableListR GetTables() const { return _GetTables(); }
-    ECDbSqlTable& GetPrimaryTable() const { BeAssert(!GetTables().empty()); return *GetTables().front(); }
-    ECDbSqlTable& GetJoinedTable() const { BeAssert(!GetTables().empty()); return *GetTables().back(); }
-    bool IsMappedTo(ECDbSqlTable const& table) const { TableListR tables = GetTables(); return std::find(tables.begin(), tables.end(), &table) != tables.end(); }
-    bool IsMappedToSingleTable() const { return GetTables().size() == 1; }
+        IClassMap const& GetView(View classView) const;
 
-    IClassMap const* FindSharedTableRootClassMap() const;
-    IClassMap const* FindClassMapOfParentOfJoinedTable() const;
-    BentleyStatus GetPathToParentOfJoinedTable(std::vector<IClassMap const*>& path) const;
-    IClassMap const* GetParentOfJoinedTable() const;
-    PropertyMapCP GetPropertyMap (Utf8CP propertyName) const;
+        TableListR GetTables() const { return _GetTables(); }
+        ECDbSqlTable& GetPrimaryTable() const { BeAssert(!GetTables().empty()); return *GetTables().front(); }
+        ECDbSqlTable& GetJoinedTable() const { BeAssert(!GetTables().empty()); return *GetTables().back(); }
+        bool IsMappedTo(ECDbSqlTable const& table) const { TableListR tables = GetTables(); return std::find(tables.begin(), tables.end(), &table) != tables.end(); }
+        bool IsMappedToSingleTable() const { return GetTables().size() == 1; }
 
-    //! Returns a collection of this class map's property maps.
-    //! @return Collection of property maps of this class map
-    PropertyMapCollection const& GetPropertyMaps () const;
+        IClassMap const* FindSharedTableRootClassMap() const;
+        IClassMap const* FindClassMapOfParentOfJoinedTable() const;
+        BentleyStatus GetPathToParentOfJoinedTable(std::vector<IClassMap const*>& path) const;
+        IClassMap const* GetParentOfJoinedTable() const;
+        PropertyMapCP GetPropertyMap(Utf8CP propertyName) const;
 
-    //! Returns the class maps of the classes derived from this class map's class.
-    //! @return Derived classes class maps
-    std::vector<IClassMap const*> GetDerivedClassMaps () const;
+        //! Returns a collection of this class map's property maps.
+        //! @return Collection of property maps of this class map
+        PropertyMapCollection const& GetPropertyMaps() const;
 
-    //! Checks whether this class map contains a property map of type PropertyMapToTable.
-    //! @return true, if the class map contains a PropertyMapToTable map. false otherwise.
-    bool ContainsPropertyMapToTable () const;
+        //! Returns the class maps of the classes derived from this class map's class.
+        //! @return Derived classes class maps
+        std::vector<IClassMap const*> GetDerivedClassMaps() const;
 
-    ECN::ECClassCR GetClass () const;
-    ECN::ECClassId GetParentMapClassId () const;
+        ECN::ECClassCR GetClass() const;
+        ECN::ECClassId GetParentMapClassId() const;
 
-    ECDbMapStrategy const& GetMapStrategy () const;
-    ECDbMapCR GetECDbMap () const;
-    ClassDbView const& GetDbView () const;
-    Type GetClassMapType () const;
-    bool IsECInstanceIdAutogenerationDisabled() const { return m_isECInstanceIdAutogenerationDisabled; }
+        ECDbMapStrategy const& GetMapStrategy() const;
+        ECDbMapCR GetECDbMap() const;
+        ClassDbView const& GetDbView() const;
+        Type GetClassMapType() const;
+        bool IsECInstanceIdAutogenerationDisabled() const { return m_isECInstanceIdAutogenerationDisabled; }
 
-    StorageDescription const& GetStorageDescription() const;
-    bool IsRelationshipClassMap() const;
-    bool HasJoinedTable() const;
-    bool IsParentOfJoinedTable() const;
-    bool MapsToStructArrayTable () const;
-    static bool MapsToStructArrayTable(ECN::ECClassCR);
-    Utf8String ToString () const;
-    const Utf8String GetPersistedViewName() const;
-    bool HasPersistedView() const;
+        StorageDescription const& GetStorageDescription() const;
+        bool IsRelationshipClassMap() const;
+        bool HasJoinedTable() const;
+        bool IsParentOfJoinedTable() const;
+        bool MapsToStructArrayTable() const;
+        static bool MapsToStructArrayTable(ECN::ECClassCR);
+        Utf8String ToString() const;
+        Utf8String GetPersistedViewName() const;
+        bool HasPersistedView() const;
 
-    static BentleyStatus DetermineTableName(Utf8StringR tableName, ECN::ECClassCR, Utf8CP tablePrefix = nullptr);
-    static BentleyStatus DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR);
-    static bool IsAnyClass (ECN::ECClassCR);
-    virtual bool SupportECSql(ECSqlType ecsqlType, Utf8StringP reason = nullptr) const { BeAssert(false); return false;}
-
-
+        static BentleyStatus DetermineTableName(Utf8StringR tableName, ECN::ECClassCR, Utf8CP tablePrefix = nullptr);
+        static BentleyStatus DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR);
+        static bool IsAnyClass(ECN::ECClassCR);
     };
 
 //======================================================================================
@@ -229,30 +222,29 @@ struct ColumnFactory : NonCopyableClass
     {
     private:
         ClassMapCR m_classMap;
-        mutable std::set<Utf8String, CompareIUtf8> m_columnsInUseSet;
+        bool m_usesSharedColumnStrategy;
+        mutable std::set<Utf8String, CompareIUtf8> m_columnsInUse;
 
-        BentleyStatus ResolveColumnName (Utf8StringR resolvedColumName, Utf8CP requestedColumnName, ECN::ECClassId, int retryCount) const;
-        
-        ECDbSqlColumn* ApplyDefaultStrategy (Utf8CP requestedColumnName, PropertyMapCR, ECDbSqlColumn::Type, bool addNotNullConstraint, bool addUniqueConstraint, ECDbSqlColumn::Constraint::Collation) const;
+        BentleyStatus ResolveColumnName(Utf8StringR resolvedColumName, Utf8CP requestedColumnName, ECN::ECClassId, int retryCount) const;
+
+        ECDbSqlColumn* ApplyDefaultStrategy(Utf8CP requestedColumnName, PropertyMapCR, ECDbSqlColumn::Type, bool addNotNullConstraint, bool addUniqueConstraint, ECDbSqlColumn::Constraint::Collation) const;
         ECDbSqlColumn* ApplySharedColumnStrategy() const;
 
-        ECN::ECClassId GetPersistenceClassId (PropertyMapCR) const;
-        bool TryFindReusableSharedDataColumn (ECDbSqlColumn const*& reusableColumn) const;
-        bool IsColumnInUse (Utf8CP columnFullName) const;
-        bool IsColumnInUse (Utf8CP tableName, Utf8CP columnName) const;
-        bool IsColumnInUse (ECDbSqlColumn const&) const;
-
-        void RegisterColumnInUse(ECDbSqlColumn const&) const;
+        ECN::ECClassId GetPersistenceClassId(PropertyMapCR) const;
+        bool TryFindReusableSharedDataColumn(ECDbSqlColumn const*& reusableColumn) const;
+        bool IsColumnInUse(ECDbSqlColumn const&) const;
+        void CacheUsedColumn(ECDbSqlColumn const&) const;
 
         ECDbSqlTable& GetTable() const;
 
     public:
-        explicit ColumnFactory(ClassMapCR classMap) : m_classMap(classMap) { Update(); }
-        ~ColumnFactory (){}
+        explicit ColumnFactory(ClassMapCR classMap);
+        ~ColumnFactory() {}
 
         ECDbSqlColumn* CreateColumn(PropertyMapCR, Utf8CP requestedColumnName, ECDbSqlColumn::Type, bool addNotNullConstraint, bool addUniqueConstraint, ECDbSqlColumn::Constraint::Collation) const;
-
         void Update();
+
+        bool UsesSharedColumnStrategy() const { return m_usesSharedColumnStrategy; }
     };
 
 //=======================================================================================

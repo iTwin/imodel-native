@@ -520,8 +520,8 @@ public:
         bool IsOwnedByECDb() const { return m_tableType != TableType::Existing; }
         ECDbMapDb const& GetDbDef () const{ return m_dbDef; }
         ECDbMapDb & GetDbDefR () { return m_dbDef; }
-        ECDbSqlColumn* CreateColumn(Utf8CP name, ECDbSqlColumn::Type, size_t position, ColumnKind, PersistenceType);
-        ECDbSqlColumn* CreateColumn(Utf8CP name, ECDbSqlColumn::Type type, ColumnKind kind, PersistenceType persistenceType) { return CreateColumn(name, type, m_orderedColumns.size(), kind, persistenceType); }
+        ECDbSqlColumn* CreateColumn(Utf8CP name, ECDbSqlColumn::Type, int position, ColumnKind, PersistenceType);
+        ECDbSqlColumn* CreateColumn(Utf8CP name, ECDbSqlColumn::Type type, ColumnKind kind, PersistenceType persistenceType) { return CreateColumn(name, type, -1, kind, persistenceType); }
         ECDbSqlColumn* CreateSharedColumn() { return CreateColumn(nullptr, ECDbSqlColumn::Type::Any, ColumnKind::SharedDataColumn, PersistenceType::Persisted); }
         BentleyStatus SetMinimumSharedColumnCount(int minimumSharedColumnCount);
         BentleyStatus EnsureMinimumNumberOfSharedColumns();
@@ -549,7 +549,6 @@ public:
         void AddColumnEventHandler (std::function<void (ColumnEvent, ECDbSqlColumn&)> columnEventHandler){ m_columnEvents.push_back(columnEventHandler); }
         PersistenceManager const& GetPersistenceManager () const { return m_persistenceManager; }
         bool IsValid () const { return m_columns.size () > 0; }
-        size_t IndexOf (ECDbSqlColumn const& column) const;
     };
 
 //======================================================================================
@@ -810,7 +809,7 @@ struct ECDbSqlPersistence : NonCopyableClass
         DbResult ReadForeignKeys (ECDbSqlTable&) const;
         DbResult ReadForeignKey (Statement&, ECDbSqlTable&) const;
         DbResult InsertTable (ECDbSqlTable const&) const;
-        DbResult InsertColumn (ECDbSqlColumn const&, int primaryKeyOrdianal) const;
+        DbResult InsertColumn (ECDbSqlColumn const&, int columnOrdinal, int primaryKeyOrdianal) const;
         DbResult InsertConstraint (ECDbSqlConstraint const&) const;
         DbResult InsertForeignKey (ECDbSqlForeignKeyConstraint const&) const;
 

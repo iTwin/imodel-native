@@ -299,15 +299,6 @@ std::vector<const ECDbSqlTrigger*> ECDbSqlTable::GetTriggers()const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-size_t ECDbSqlTable::IndexOf(ECDbSqlColumn const& column) const
-    {
-    BeAssert(&(column.GetTable()) == this);
-    return std::distance(m_orderedColumns.begin(), std::find(m_orderedColumns.begin(), m_orderedColumns.end(), &column));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
-//---------------------------------------------------------------------------------------
 BentleyStatus ECDbSqlTable::RemoveConstraint(ECDbSqlConstraint const& constraint)
     {
     for (auto itor = m_constraints.begin(); itor != m_constraints.end(); ++itor)
@@ -324,7 +315,7 @@ BentleyStatus ECDbSqlTable::RemoveConstraint(ECDbSqlConstraint const& constraint
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-ECDbSqlColumn* ECDbSqlTable::CreateColumn(Utf8CP name, ECDbSqlColumn::Type type, size_t position, ColumnKind kind, PersistenceType persistenceType)
+ECDbSqlColumn* ECDbSqlTable::CreateColumn(Utf8CP name, ECDbSqlColumn::Type type, int position, ColumnKind kind, PersistenceType persistenceType)
     {
     if (GetEditHandleR().AssertNotInEditMode())
         return nullptr;
@@ -358,7 +349,11 @@ ECDbSqlColumn* ECDbSqlTable::CreateColumn(Utf8CP name, ECDbSqlColumn::Type type,
             newColumn = std::make_shared<ECDbSqlColumn>(*this, generatedName.c_str(), type, kind, resolvePersistenceType, GetDbDefR().GetManagerR().GetIdGenerator().NextColumnId());
         }
 
-    m_orderedColumns.insert(m_orderedColumns.begin() + position, newColumn.get());
+    if (position < 0)
+        m_orderedColumns.push_back(newColumn.get());
+    else
+        m_orderedColumns.insert(m_orderedColumns.begin() + (size_t) position, newColumn.get());
+
     m_columns[newColumn->GetName().c_str()] = newColumn;
 
     for (auto& eh : m_columnEvents)
@@ -2207,17 +2202,17 @@ DbResult ECDbSqlPersistence::Insert(ECDbMapDb const& db) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-DbResult ECDbSqlPersistence::InsertTable(ECDbSqlTable const& o) const
+DbResult ECDbSqlPersistence::InsertTable(ECDbSqlTable const& table) const
     {
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT OR REPLACE INTO ec_Table (Id, Name, Type, IsVirtual, BaseTableId) VALUES (?, ?, ?, ?, ?)");
     if (stmt == nullptr)
         return BE_SQLITE_ERROR;
 
-    stmt->BindInt64(1, o.GetId());
-    stmt->BindText(2, o.GetName().c_str(), Statement::MakeCopy::No);
-    stmt->BindInt(3, Enum::ToInt(o.GetTableType()));
-    stmt->BindInt(4, o.GetPersistenceType() == PersistenceType::Virtual ? 1 : 0);
-    if (auto baseTable = o.GetParentOfJoinedTable())
+    stmt->BindInt64(1, table.GetId());
+    stmt->BindText(2, table.GetName().c_str(), Statement::MakeCopy::No);
+    stmt->BindInt(3, Enum::ToInt(table.GetTableType()));
+    stmt->BindInt(4, table.GetPersistenceType() == PersistenceType::Virtual ? 1 : 0);
+    if (auto baseTable = table.GetParentOfJoinedTable())
         stmt->BindInt64(5, baseTable->GetId());
     else
         stmt->BindNull(5);
@@ -2229,19 +2224,23 @@ DbResult ECDbSqlPersistence::InsertTable(ECDbSqlTable const& o) const
 
     std::map<ECDbSqlColumn const*, int> primaryKeys;
     int i = 0;
-    if (auto const n = const_cast<ECDbSqlTable&>(o).GetPrimaryKeyConstraint(false))
+    if (ECDbSqlPrimaryKeyConstraint const* pkConstraint = const_cast<ECDbSqlTable&>(table).GetPrimaryKeyConstraint(false))
         {
-        for (auto pk : n->GetColumns())
+        for (ECDbSqlColumn const* pkCol : pkConstraint->GetColumns())
             {
-            primaryKeys[pk] = i++;
+            primaryKeys[pkCol] = i++;
             }
         }
-    for (auto column : o.GetColumns())
+
+    int columnOrdinal = 0;
+    for (ECDbSqlColumn const* column : table.GetColumns())
         {
         auto itor = primaryKeys.find(column);
-        stat = InsertColumn(*column, (itor == primaryKeys.end() ? -1 : itor->second));
+        stat = InsertColumn(*column, columnOrdinal, (itor == primaryKeys.end() ? -1 : itor->second));
         if (stat != BE_SQLITE_OK)
             return stat;
+
+        columnOrdinal++;
         }
 
     return BE_SQLITE_OK;
@@ -2250,32 +2249,32 @@ DbResult ECDbSqlPersistence::InsertTable(ECDbSqlTable const& o) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-DbResult ECDbSqlPersistence::InsertColumn(ECDbSqlColumn const& o, int primaryKeyOrdinal) const
+DbResult ECDbSqlPersistence::InsertColumn(ECDbSqlColumn const& column, int columnOrdinal, int primaryKeyOrdinal) const
     {
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT OR REPLACE INTO ec_Column (Id, TableId, Name, Type, IsVirtual, Ordinal, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, ColumnKind) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     if (stmt == nullptr)
         return BE_SQLITE_ERROR;
 
-    stmt->BindInt64(1, o.GetId());
-    stmt->BindInt64(2, o.GetTable().GetId());
-    stmt->BindText(3, o.GetName().c_str(), Statement::MakeCopy::No);
-    stmt->BindInt(4, static_cast<int>(o.GetType()));
-    stmt->BindInt(5, o.GetPersistenceType() == PersistenceType::Virtual ? 1 : 0);
-    stmt->BindInt64(6, o.GetTable().IndexOf(o));
-    stmt->BindInt(7, o.GetConstraint().IsNotNull() ? 1 : 0);
-    stmt->BindInt(8, o.GetConstraint().IsUnique() ? 1 : 0);
+    stmt->BindInt64(1, column.GetId());
+    stmt->BindInt64(2, column.GetTable().GetId());
+    stmt->BindText(3, column.GetName().c_str(), Statement::MakeCopy::No);
+    stmt->BindInt(4, static_cast<int>(column.GetType()));
+    stmt->BindInt(5, column.GetPersistenceType() == PersistenceType::Virtual ? 1 : 0);
+    stmt->BindInt64(6, columnOrdinal);
+    stmt->BindInt(7, column.GetConstraint().IsNotNull() ? 1 : 0);
+    stmt->BindInt(8, column.GetConstraint().IsUnique() ? 1 : 0);
 
-    if (!o.GetConstraint().GetCheckExpression().empty())
-        stmt->BindText(9, o.GetConstraint().GetCheckExpression().c_str(), Statement::MakeCopy::No);
+    if (!column.GetConstraint().GetCheckExpression().empty())
+        stmt->BindText(9, column.GetConstraint().GetCheckExpression().c_str(), Statement::MakeCopy::No);
 
-    if (!o.GetConstraint().GetDefaultExpression().empty())
-        stmt->BindText(10, o.GetConstraint().GetDefaultExpression().c_str(), Statement::MakeCopy::No);
+    if (!column.GetConstraint().GetDefaultExpression().empty())
+        stmt->BindText(10, column.GetConstraint().GetDefaultExpression().c_str(), Statement::MakeCopy::No);
 
-    stmt->BindInt(11, static_cast<int>(o.GetConstraint().GetCollation()));
+    stmt->BindInt(11, static_cast<int>(column.GetConstraint().GetCollation()));
     if (primaryKeyOrdinal > -1)
         stmt->BindInt(12, primaryKeyOrdinal);
 
-    stmt->BindInt(13, Enum::ToInt(o.GetKind()));
+    stmt->BindInt(13, Enum::ToInt(column.GetKind()));
     const DbResult stat = stmt->Step();
     return stat == BE_SQLITE_DONE ? BE_SQLITE_OK : stat;
     }

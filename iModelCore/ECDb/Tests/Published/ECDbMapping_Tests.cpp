@@ -5780,6 +5780,301 @@ TEST_F(ECDbMappingTestFixture, DroppedFkConstraintsForSharedKeyProperties)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  03/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, ForeignKeyColumnPosition)
+    {
+    auto assertColumnPosition = [] (ECDbCR ecdb, Utf8CP tableName, Utf8CP columnName, int expectedPosition, Utf8CP scenario)
+        {
+        bvector<Utf8String> colNames;
+        ASSERT_TRUE(ecdb.GetColumns(colNames, tableName)) << "Scenario: " << scenario << " Table: " << tableName << " Column: " << columnName << " Expected position: " << expectedPosition;
+
+        const int colCount = (int) colNames.size();
+        if (expectedPosition < 0)
+            expectedPosition = colCount - 1;
+        else
+            ASSERT_LE(expectedPosition, colCount - 1) << "Scenario: " << scenario << " Table: " << tableName << " Column: " << columnName << " Expected position: " << expectedPosition;
+        
+        int actualPosition = 0;
+        for (Utf8StringCR colName : colNames)
+            {
+            if (colName.EqualsI(columnName))
+                break;
+
+            actualPosition++;
+            }
+
+        ASSERT_EQ(expectedPosition, actualPosition) << "Scenario: " << scenario << " Table: " << tableName << " Column: " << columnName << " Expected position: " << expectedPosition;
+        };
+
+    {
+    SchemaItem testItem("No NavProp", "<?xml version='1.0' encoding='utf-8'?>"
+                        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                        "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                        "    <ECEntityClass typeName='Parent'>"
+                        "        <ECProperty propertyName='ParentProp1' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='Base' modifier='Abstract'>"
+                        "      <ECCustomAttributes>"
+                        "        <ClassMap xmlns='ECDbMap.01.00'>"
+                        "             <MapStrategy>"
+                        "                <Strategy>SharedTable</Strategy>"
+                        "                <AppliesToSubclasses>True</AppliesToSubclasses>"
+                        "             </MapStrategy>"
+                        "        </ClassMap>"
+                        "      </ECCustomAttributes>"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='A'>"
+                        "        <BaseClass>Base</BaseClass>"
+                        "        <ECProperty propertyName='AProp1' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='AA'>"
+                        "        <BaseClass>A</BaseClass>"
+                        "        <ECProperty propertyName='AAProp1' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='B'>"
+                        "        <BaseClass>Base</BaseClass>"
+                        "        <ECProperty propertyName='BProp1' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='C'>"
+                        "        <BaseClass>Base</BaseClass>"
+                        "        <ECProperty propertyName='CProp1' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "  <ECRelationshipClass typeName='Rel' strength='embedding'>"
+                        "    <Source cardinality='(0,1)' polymorphic='True'>"
+                        "      <Class class = 'Parent' />"
+                        "    </Source>"
+                        "    <Target cardinality='(0,N)' polymorphic='True'>"
+                        "      <Class class = 'B' />"
+                        "    </Target>"
+                        "  </ECRelationshipClass>"
+                        "</ECSchema>");
+
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testItem, "fkcolumnposition.ecdb");
+    ASSERT_FALSE(asserted);
+
+    AssertForeignKey(true, ecdb, "ts_Base", "ForeignECInstanceId_Rel");
+    assertColumnPosition(ecdb, "ts_Base", "ForeignECInstanceId_Rel", -1, testItem.m_name.c_str());
+    }
+
+
+    {
+    SchemaItem testItem("Nav Prop as first prop", "<?xml version='1.0' encoding='utf-8'?>"
+                        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                        "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                        "    <ECEntityClass typeName='Parent'>"
+                        "        <ECProperty propertyName='ParentProp1' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='Base' modifier='Abstract'>"
+                        "      <ECCustomAttributes>"
+                        "        <ClassMap xmlns='ECDbMap.01.00'>"
+                        "             <MapStrategy>"
+                        "                <Strategy>SharedTable</Strategy>"
+                        "                <AppliesToSubclasses>True</AppliesToSubclasses>"
+                        "             </MapStrategy>"
+                        "        </ClassMap>"
+                        "      </ECCustomAttributes>"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='A'>"
+                        "        <BaseClass>Base</BaseClass>"
+                        "        <ECProperty propertyName='AProp1' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='B'>"
+                        "        <BaseClass>Base</BaseClass>"
+                        "        <ECNavigationProperty propertyName='ParentId' relationshipName='Rel' direction='Backward' />"
+                        "        <ECProperty propertyName='BProp1' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='AA'>"
+                        "        <BaseClass>A</BaseClass>"
+                        "        <ECProperty propertyName='AAProp1' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='C'>"
+                        "        <BaseClass>Base</BaseClass>"
+                        "        <ECProperty propertyName='CProp1' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "  <ECRelationshipClass typeName='Rel' strength='embedding'>"
+                        "    <Source cardinality='(0,1)' polymorphic='True'>"
+                        "      <Class class = 'Parent' />"
+                        "    </Source>"
+                        "    <Target cardinality='(0,N)' polymorphic='True'>"
+                        "      <Class class = 'B' />"
+                        "    </Target>"
+                        "  </ECRelationshipClass>"
+                        "</ECSchema>");
+
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testItem, "fkcolumnposition.ecdb");
+    ASSERT_FALSE(asserted);
+
+    AssertForeignKey(true, ecdb, "ts_Base", "ParentId");
+    //Subsubclasses come before sibling classes, therefore parent id is after AAProp1
+    assertColumnPosition(ecdb, "ts_Base", "ParentId", 4, testItem.m_name.c_str());
+    }
+
+    {
+    SchemaItem testItem("Nav prop as last property", "<?xml version='1.0' encoding='utf-8'?>"
+                        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                        "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                        "    <ECEntityClass typeName='Parent'>"
+                        "        <ECProperty propertyName='ParentProp1' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='Base' modifier='Abstract'>"
+                        "      <ECCustomAttributes>"
+                        "        <ClassMap xmlns='ECDbMap.01.00'>"
+                        "             <MapStrategy>"
+                        "                <Strategy>SharedTable</Strategy>"
+                        "                <AppliesToSubclasses>True</AppliesToSubclasses>"
+                        "             </MapStrategy>"
+                        "        </ClassMap>"
+                        "      </ECCustomAttributes>"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='A'>"
+                        "        <BaseClass>Base</BaseClass>"
+                        "        <ECProperty propertyName='AProp1' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='AA'>"
+                        "        <BaseClass>A</BaseClass>"
+                        "        <ECProperty propertyName='AAProp1' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='B'>"
+                        "        <BaseClass>Base</BaseClass>"
+                        "        <ECProperty propertyName='BProp1' typeName='string' />"
+                        "        <ECNavigationProperty propertyName='ParentId' relationshipName='Rel' direction='Backward' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='C'>"
+                        "        <BaseClass>Base</BaseClass>"
+                        "        <ECProperty propertyName='CProp1' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "  <ECRelationshipClass typeName='Rel' strength='embedding'>"
+                        "    <Source cardinality='(0,1)' polymorphic='True'>"
+                        "      <Class class = 'Parent' />"
+                        "    </Source>"
+                        "    <Target cardinality='(0,N)' polymorphic='True'>"
+                        "      <Class class = 'B' />"
+                        "    </Target>"
+                        "  </ECRelationshipClass>"
+                        "</ECSchema>");
+
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testItem, "fkcolumnposition.ecdb");
+    ASSERT_FALSE(asserted);
+
+    AssertForeignKey(true, ecdb, "ts_Base", "ParentId");
+    assertColumnPosition(ecdb, "ts_Base", "ParentId", 5, testItem.m_name.c_str());
+    }
+
+    {
+    SchemaItem testItem("Nav prop is only prop", "<?xml version='1.0' encoding='utf-8'?>"
+                        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                        "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                        "    <ECEntityClass typeName='Parent'>"
+                        "        <ECProperty propertyName='ParentProp1' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='Base' modifier='Abstract'>"
+                        "      <ECCustomAttributes>"
+                        "        <ClassMap xmlns='ECDbMap.01.00'>"
+                        "             <MapStrategy>"
+                        "                <Strategy>SharedTable</Strategy>"
+                        "                <AppliesToSubclasses>True</AppliesToSubclasses>"
+                        "             </MapStrategy>"
+                        "        </ClassMap>"
+                        "      </ECCustomAttributes>"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='A'>"
+                        "        <BaseClass>Base</BaseClass>"
+                        "        <ECProperty propertyName='AProp1' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='AA'>"
+                        "        <BaseClass>A</BaseClass>"
+                        "        <ECProperty propertyName='AAProp1' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='B'>"
+                        "        <BaseClass>Base</BaseClass>"
+                        "        <ECNavigationProperty propertyName='ParentId' relationshipName='Rel' direction='Backward' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='C'>"
+                        "        <BaseClass>Base</BaseClass>"
+                        "        <ECProperty propertyName='CProp1' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "  <ECRelationshipClass typeName='Rel' strength='embedding'>"
+                        "    <Source cardinality='(0,1)' polymorphic='True'>"
+                        "      <Class class = 'Parent' />"
+                        "    </Source>"
+                        "    <Target cardinality='(0,N)' polymorphic='True'>"
+                        "      <Class class = 'B' />"
+                        "    </Target>"
+                        "  </ECRelationshipClass>"
+                        "</ECSchema>");
+
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testItem, "fkcolumnposition.ecdb");
+    ASSERT_FALSE(asserted);
+
+    AssertForeignKey(true, ecdb, "ts_Base", "ParentId");
+    assertColumnPosition(ecdb, "ts_Base", "ParentId", 2, testItem.m_name.c_str());
+    }
+
+    {
+    SchemaItem testItem("Nav Prop in class with shared columns", "<?xml version='1.0' encoding='utf-8'?>"
+                        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                        "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                        "    <ECEntityClass typeName='Parent'>"
+                        "        <ECProperty propertyName='ParentProp1' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='Base' modifier='Abstract'>"
+                        "      <ECCustomAttributes>"
+                        "        <ClassMap xmlns='ECDbMap.01.00'>"
+                        "             <MapStrategy>"
+                        "                <Strategy>SharedTable</Strategy>"
+                        "                <AppliesToSubclasses>True</AppliesToSubclasses>"
+                        "                <Options>SharedColumnsForSubclasses</Options>"
+                        "             </MapStrategy>"
+                        "        </ClassMap>"
+                        "      </ECCustomAttributes>"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='A'>"
+                        "        <BaseClass>Base</BaseClass>"
+                        "        <ECProperty propertyName='AProp1' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='AA'>"
+                        "        <BaseClass>A</BaseClass>"
+                        "        <ECProperty propertyName='AAProp1' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='B'>"
+                        "        <BaseClass>Base</BaseClass>"
+                        "        <ECNavigationProperty propertyName='ParentId' relationshipName='Rel' direction='Backward' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='C'>"
+                        "        <BaseClass>Base</BaseClass>"
+                        "        <ECProperty propertyName='CProp1' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "  <ECRelationshipClass typeName='Rel' strength='embedding'>"
+                        "    <Source cardinality='(0,1)' polymorphic='True'>"
+                        "      <Class class = 'Parent' />"
+                        "    </Source>"
+                        "    <Target cardinality='(0,N)' polymorphic='True'>"
+                        "      <Class class = 'B' />"
+                        "    </Target>"
+                        "  </ECRelationshipClass>"
+                        "</ECSchema>");
+
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testItem, "fkcolumnposition.ecdb");
+    ASSERT_FALSE(asserted);
+
+    AssertForeignKey(true, ecdb, "ts_Base", "ParentId");
+    assertColumnPosition(ecdb, "ts_Base", "ParentId", -1, testItem.m_name.c_str());
+    }
+
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  02/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)

@@ -884,8 +884,7 @@ BentleyStatus ECDbMap::CreateClassIdColumnIfNecessary(ECDbSqlTable& table, bset<
     if (!addClassIdCol)
         return SUCCESS;
 
-    const size_t insertPosition = 1;
-    ECDbSqlColumn * ecClassIdColumn = table.CreateColumn(ECDB_COL_ECClassId, ECDbSqlColumn::Type::Integer, insertPosition, ColumnKind::ECClassId, PersistenceType::Persisted);
+    ECDbSqlColumn * ecClassIdColumn = table.CreateColumn(ECDB_COL_ECClassId, ECDbSqlColumn::Type::Integer, 1, ColumnKind::ECClassId, PersistenceType::Persisted);
     if (ecClassIdColumn == nullptr)
         return ERROR;
 

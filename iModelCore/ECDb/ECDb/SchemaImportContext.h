@@ -97,6 +97,8 @@ private:
     mutable std::map<ECN::ECClassCP, std::unique_ptr<UserECDbMapStrategy>> m_userStrategyCache;
     std::map<ClassMap const*, std::unique_ptr<ClassMapInfo>> m_classMapInfoCache;
 
+    bset<ECN::ECRelationshipClassCP> m_relationshipClassesWithSingleNavigationProperty;
+
     ClassMapLoadContext m_loadContext;
 
     UserECDbMapStrategy* GetUserStrategyP(ECN::ECClassCR, ECN::ECDbClassMap const*) const;
@@ -114,6 +116,8 @@ public:
     void CacheClassMapInfo(ClassMap const&, std::unique_ptr<ClassMapInfo>&);
     std::map<ClassMap const*, std::unique_ptr<ClassMapInfo>> const& GetClassMapInfoCache() const { return m_classMapInfoCache; }
 
+    void AddNRelationshipRelationshipClassWithSingleNavigationProperty(ECN::ECRelationshipClassCR relClass) { m_relationshipClassesWithSingleNavigationProperty.insert(&relClass); }
+    bool IsRelationshipClassWithSingleNavigationProperty(ECN::ECRelationshipClassCR relClass) const { return m_relationshipClassesWithSingleNavigationProperty.find(&relClass) != m_relationshipClassesWithSingleNavigationProperty.end(); }
     ClassMapLoadContext& GetClassMapLoadContext() { return m_loadContext; }
     SchemaImportECDbMapDb& GetECDbMapDb() { return m_ecdbMapDb; }
     };
