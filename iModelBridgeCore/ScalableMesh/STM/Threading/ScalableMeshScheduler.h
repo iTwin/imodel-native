@@ -13,6 +13,7 @@
 #pragma once
 
 #include <ScalableMesh/IScalableMesh.h>
+#include <queue>
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 class ScalableMeshThreadPool;
 

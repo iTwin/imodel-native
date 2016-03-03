@@ -258,10 +258,10 @@ class IDTMFileCreator : public LocalFileSourceCreatorBase
 
             if (layerDirP->HasWkt())
                 {
-                HCPWKT wkt(layerDirP->GetWkt());
-                success &= !wkt.IsEmpty();
+                //HCPWKT wkt(layerDirP->GetWkt());
+                success &= !layerDirP->GetWkt().IsEmpty();
                 
-                WString wktStr(wkt.GetCStr());
+                WString wktStr(layerDirP->GetWkt().GetCStr());
 
                 IDTMFile::WktFlavor fileWktFlavor = GetWKTFlavor(&wktStr, wktStr);                
 

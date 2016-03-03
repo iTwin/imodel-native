@@ -52,15 +52,15 @@ public:
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   01/10
 //=======================================================================================
-struct AppViewManager : Bentley::DgnPlatform::IViewManager
+struct AppViewManager : BENTLEY_NAMESPACE_NAME::DgnPlatform::IViewManager
 {
 private:
-    Bentley::DgnPlatform::IndexedViewSet* m_activeViewSet;
+    BENTLEY_NAMESPACE_NAME::DgnPlatform::IndexedViewSet* m_activeViewSet;
     HWND                                  m_topWindow;
     
-    virtual Bentley::DgnPlatform::DgnDisplayCoreTypes::WindowP _GetTopWindow(int) override {return (Bentley::DgnPlatform::DgnDisplayCoreTypes::WindowP)m_topWindow;}
+    virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnDisplayCoreTypes::WindowP _GetTopWindow(int) override {return (BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnDisplayCoreTypes::WindowP)m_topWindow;}
     virtual bool                                               _DoesHostHaveFocus() {return false;}
-    virtual Bentley::DgnPlatform::IndexedViewSet&              _GetActiveViewSet() override {assert(!"Not expect to be call in offline mode"); return *m_activeViewSet;}
+    virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::IndexedViewSet&              _GetActiveViewSet() override {assert(!"Not expect to be call in offline mode"); return *m_activeViewSet;}
     virtual int             _GetCurrentViewNumber() override {return 0;}
     virtual HUDManagerP     _GetHUDManager () {return NULL;}
 
@@ -74,26 +74,26 @@ public:
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   01/10
 //=======================================================================================
-class AppHost : public Bentley::DgnPlatform::DgnViewLib::Host
+class AppHost : public BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnViewLib::Host
 {
     AppViewManager   m_viewManager;
 
 protected:
 
-    virtual Bentley::DgnPlatform::DgnPlatformLib::Host::NotificationAdmin&  _SupplyNotificationAdmin() override;        
+    virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::NotificationAdmin&  _SupplyNotificationAdmin() override;        
     virtual void                                                            _SupplyProductName(WStringR name) override;     
-    virtual Bentley::DgnPlatform::DgnFileIOLib::Host::DigitalRightsManager& _SupplyDigitalRightsManager() override;     
+    virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnFileIOLib::Host::DigitalRightsManager& _SupplyDigitalRightsManager() override;     
     //virtual GraphicsAdmin&                                                 _SupplyGraphicsAdmin() override;            
     //virtual ViewStateAdmin&                                                _SupplyViewStateAdmin() override;           
     //virtual ToolAdmin&                                                     _SupplyToolAdmin() override;                
-    virtual Bentley::DgnPlatform::IViewManager&                             _SupplyViewManager() override;              
+    virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::IViewManager&                             _SupplyViewManager() override;              
     //virtual SolidsKernelAdmin&                                             _SupplySolidsKernelAdmin() override;        
-    virtual Bentley::DgnPlatform::DgnPlatformLib::Host::RasterAttachmentAdmin&      _SupplyRasterAttachmentAdmin() override;    
-    virtual Bentley::DgnPlatform::DgnPlatformLib::Host::PointCloudAdmin&            _SupplyPointCloudAdmin() override;          
+    virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::RasterAttachmentAdmin&      _SupplyRasterAttachmentAdmin() override;    
+    virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::PointCloudAdmin&            _SupplyPointCloudAdmin() override;          
     //virtual FontAdmin&                                                     _SupplyFontAdmin() override;                
     //virtual MaterialAdmin&                                                 _SupplyMaterialAdmin();                     
     //virtual ProgressiveDisplayManager&                                     _SupplyProgressiveDisplayManager() override;
-    virtual Bentley::DgnPlatform::DgnPlatformLib::Host::GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin() override;
+    virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin() override;
 
 public:
     void Startup (/*HWND*/);
@@ -106,11 +106,11 @@ public:
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   01/10
 //=======================================================================================
-struct AppNotificationAdmin : Bentley::DgnPlatform::DgnPlatformLib::Host::NotificationAdmin
+struct AppNotificationAdmin : BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::NotificationAdmin
 {
-    virtual StatusInt _OutputMessage (Bentley::DgnPlatform::NotifyMessageDetails const& msg) override;
+    virtual StatusInt _OutputMessage (BENTLEY_NAMESPACE_NAME::DgnPlatform::NotifyMessageDetails const& msg) override;
     virtual void      _OutputPrompt (WCharCP) override;
-    virtual Bentley::DgnPlatform::NotificationManager::MessageBoxValue _OpenMessageBox (Bentley::DgnPlatform::NotificationManager::MessageBoxType, WCharCP, Bentley::DgnPlatform::NotificationManager::MessageBoxIconType) override;
+    virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::NotificationManager::MessageBoxValue _OpenMessageBox (BENTLEY_NAMESPACE_NAME::DgnPlatform::NotificationManager::MessageBoxType, WCharCP, BENTLEY_NAMESPACE_NAME::DgnPlatform::NotificationManager::MessageBoxIconType) override;
 };
 
 /*=================================================================================**//**
@@ -118,16 +118,16 @@ struct AppNotificationAdmin : Bentley::DgnPlatform::DgnPlatformLib::Host::Notifi
 * engineering data. Therefore, it is safe for DgnViewDemo to open rights-restricted DGN files.
 * @bsiclass                                     Sam.Wilson                      06/2010
 +===============+===============+===============+===============+===============+======*/
-struct ReadOnlyDigitalRightsManager : Bentley::DgnPlatform::DgnFileIOLib::Host::DigitalRightsManager
+struct ReadOnlyDigitalRightsManager : BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnFileIOLib::Host::DigitalRightsManager
 {
-//    virtual StatusInt _OnEnterRestrictedMode (bool assertKeys, Bentley::DgnFileProtection::KeyMaterialWithDescription* keylist, uint32_t nkeys, Bentley::DgnPlatform::DgnFileP file, uint32_t rights) override {return SUCCESS;}
+//    virtual StatusInt _OnEnterRestrictedMode (bool assertKeys, BENTLEY_NAMESPACE_NAME::DgnFileProtection::KeyMaterialWithDescription* keylist, uint32_t nkeys, BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnFileP file, uint32_t rights) override {return SUCCESS;}
 };
 
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 /*
-struct AppSolidKernelAdmin : Bentley::DgnPlatform::PSolidKernelAdmin
+struct AppSolidKernelAdmin : BENTLEY_NAMESPACE_NAME::DgnPlatform::PSolidKernelAdmin
     {
     virtual BentleyStatus _RestoreEntityFromMemory (DgnPlatform::ISolidKernelEntityPtr&, void const* pBuffer, unsigned int bufferSize, DgnPlatform::ISolidKernelEntity::SolidKernelType kernelType, TransformCR) const override;
     };

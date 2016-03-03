@@ -5,8 +5,7 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#define ONE_ONE_TRIANGULATION
-#ifdef ONE_ONE_TRIANGULATION
+/*#pragma once
 #include "ITiledTriangulatorValidator.h"
 #include "MrDTMFace.h"
 #include "TiledTriangulatorUtil.h"
@@ -66,6 +65,3 @@ class TiledTriangulatorValidator : public ITiledTriangulatorValidator
         TiledTriangulatorValidator(RefCountedPtr<BcDTM> memDtmPtr);
         ~TiledTriangulatorValidator();
     };
-
-//END_GEODTMAPP_NAMESPACE
-#endif

@@ -13,7 +13,7 @@
 
 #include "SMPointIndex.h"
 
-#include <ImagePP/all/h/IDTMTypes.h>
+//#include <ImagePP/all/h/IDTMTypes.h>
 
 #include <ScalableMesh/ScalableMeshUtilityFunctions.h>
 
@@ -46,10 +46,10 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentPoint
         // this member will contain the viewbox as reprojected in the STM GCS.
         DPoint3d                                         m_viewBox[8];
         // The GCS of the STM
-        BaseGCSPtr                                       m_sourceGCSPtr;
+        BaseGCSCPtr                                       m_sourceGCSPtr;
 
         // The GCS of the target
-        BaseGCSPtr                                       m_targetGCSPtr;
+        BaseGCSCPtr                                       m_targetGCSPtr;
 
     protected: 
 
@@ -74,6 +74,11 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentPoint
                                                        shapeExtent.GetXMax(),
                                                        shapeExtent.GetYMax());
                 }
+            else
+                {
+                myExtent = ExtentOp<EXTENT>::Create(0, 0, 0, 0);
+                }
+
             return myExtent;
             }
                                             
@@ -163,8 +168,8 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentPoint
          * will be converted to the units of the targerGCS then reprojected to the source GCS
          * fully ready for querying. 
          +---------------+---------------+---------------+---------------+---------------+------*/
-        void SetReprojectionInfo(BaseGCSPtr& pi_sourceGCSPtr,
-                                 BaseGCSPtr& pi_targetGCSPtr)
+        void SetReprojectionInfo(BaseGCSCPtr& pi_sourceGCSPtr,
+                                 BaseGCSCPtr& pi_targetGCSPtr)
             {            
             m_sourceGCSPtr = pi_sourceGCSPtr;
             m_targetGCSPtr = pi_targetGCSPtr;
@@ -266,7 +271,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelMeshIndexQuer
         virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                    size_t numSubNodes,
-                                   Bentley::ScalableMesh::ScalableMeshMesh* mesh);           
+                                   BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* mesh);           
         virtual bool        Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                                   HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                   size_t numSubNodes,
@@ -443,7 +448,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
         virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
                                             HPMMemoryManagedVector<POINT>& points);        
         virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
-                                            Bentley::ScalableMesh::ScalableMeshMesh* mesh);
+                                            BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* mesh);
         virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
                                             vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes);
 
@@ -455,7 +460,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
         virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                    size_t numSubNodes,
-                                   Bentley::ScalableMesh::ScalableMeshMesh* mesh);
+                                   BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* mesh);
         virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                    size_t numSubNodes,

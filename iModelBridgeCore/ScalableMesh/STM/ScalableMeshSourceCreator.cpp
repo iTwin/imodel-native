@@ -341,7 +341,8 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
 
 
-    std::list<IDTMFile::Extent3d64f> listRemoveExtent;
+   // std::list<IDTMFile::Extent3d64f> listRemoveExtent;
+    std::list<DRange3d> listRemoveExtent;
     IDTMSourceCollection::const_iterator it = m_sources.Begin();
 
     for (IDTMSourceCollection::iterator it = m_sources.BeginEdit(); it != m_sources.EndEdit(); it++)
@@ -356,23 +357,25 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         if (data.GetUpToDateState() == UpToDateState::REMOVE || data.GetUpToDateState() == UpToDateState::MODIFY)
             {
             DRange3d sourceRange = data.GetExtentByLayer(0);
-            IDTMFile::Extent3d64f removeExtent;
+            /*IDTMFile::Extent3d64f removeExtent;
             removeExtent.xMin = sourceRange.low.x;
             removeExtent.xMax = sourceRange.high.x;
             removeExtent.yMin = sourceRange.low.y;
             removeExtent.yMax = sourceRange.high.y;
             removeExtent.zMin = sourceRange.low.z;
-            removeExtent.zMax = sourceRange.high.z;
+            removeExtent.zMax = sourceRange.high.z;*/
+            DRange3d removeExtent = sourceRange;
 
             for (size_t i = 1; i < data.GetLayerCount(); i++)
                 {
                 DRange3d sourceRange = data.GetExtentByLayer((int)i);
-                removeExtent.xMin = removeExtent.xMin > sourceRange.low.x ? sourceRange.low.x : removeExtent.xMin;
+                /*removeExtent.xMin = removeExtent.xMin > sourceRange.low.x ? sourceRange.low.x : removeExtent.xMin;
                 removeExtent.xMax = removeExtent.xMax > sourceRange.high.x ? removeExtent.xMax : sourceRange.high.x;
                 removeExtent.yMin = removeExtent.yMin > sourceRange.low.y ? sourceRange.low.y : removeExtent.yMin;
                 removeExtent.yMax = removeExtent.yMax > sourceRange.high.y ? removeExtent.yMax : sourceRange.high.y;
                 removeExtent.zMin = removeExtent.zMin > sourceRange.low.z ? sourceRange.low.z : removeExtent.zMin;
-                removeExtent.zMax = removeExtent.zMax > sourceRange.high.z ? removeExtent.zMax : sourceRange.high.z;
+                removeExtent.zMax = removeExtent.zMax > sourceRange.high.z ? removeExtent.zMax : sourceRange.high.z;*/
+                removeExtent.Extend(sourceRange);
                 }
 
             if (data.GetUpToDateState() == UpToDateState::MODIFY)
@@ -417,7 +420,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     WString featureFilePath = name.append(L"_feature"); //temporary file, deleted after generation
     //IDTMFile::File::Ptr featureFilePtr = IDTMFile::File::Create(featureFilePath.c_str());
     SMSQLiteFilePtr sqliteFeatureFile = new SMSQLiteFile();
-    sqliteFeatureFile->Create(featureFilePath.c_str());
+    sqliteFeatureFile->Create(featureFilePath);
     HFCPtr<GenericTileStoreType>  pFeatureTileStore = new SMSQLiteFeatureTileStore<PointIndexExtentType>(sqliteFeatureFile);//new TileStoreType(featureFilePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType));
     //pFeatureTileStore->StoreMasterHeader(NULL, 0);
     pDataIndex->SetFeatureStore(pFeatureTileStore);
@@ -770,8 +773,8 @@ int IScalableMeshSourceCreator::Impl::ImportRasterSourcesTo(HFCPtr<IndexType>& p
     HIMMosaic::RasterList rasterList;
     for (auto& source : filteredSources)
         {
-        const ILocalFileMoniker* moniker(dynamic_cast<const ILocalFileMoniker*>(&source->GetMoniker()));
-        WString path = WString(L"file://")+moniker->GetURL().GetPath();
+        //const ILocalFileMoniker* moniker(dynamic_cast<const ILocalFileMoniker*>(&source->GetPath()));
+        WString path = WString(L"file://") + source->GetPath();
         HFCPtr<HGF2DCoordSys>  pLogicalCoordSys;
         HFCPtr<HRSObjectStore> pObjectStore;
         HFCPtr<HRFRasterFile>  pRasterFile;
@@ -804,11 +807,11 @@ int IScalableMeshSourceCreator::Impl::ImportRasterSourcesTo(HFCPtr<IndexType>& p
 * @bsimethod                                                  Mathieu.St-Pierre   11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename PointIndex>       
-StatusInt IScalableMeshSourceCreator::Impl::RemoveSourcesFrom(PointIndex& pointIndex, list<IDTMFile::Extent3d64f> listRemoveExtent) const
+StatusInt IScalableMeshSourceCreator::Impl::RemoveSourcesFrom(PointIndex& pointIndex, std::list<DRange3d> listRemoveExtent) const
     {
     //NEEDS_WORK_SM : Logic for determining the extent to remove should be here.  
-    std::list<IDTMFile::Extent3d64f>::const_iterator it = listRemoveExtent.begin();
-    for (std::list<IDTMFile::Extent3d64f>::const_iterator it = listRemoveExtent.begin(); it != listRemoveExtent.end(); it++)
+    std::list<DRange3d>::const_iterator it = listRemoveExtent.begin();
+    for (std::list<DRange3d>::const_iterator it = listRemoveExtent.begin(); it != listRemoveExtent.end(); it++)
         {
             {
             pointIndex.RemovePoints(*it);
@@ -871,7 +874,7 @@ int IScalableMeshSourceCreator::Impl::LoadSources(SMSQLiteFilePtr& smSQLiteFile)
     SourcesDataSQLite* sourcesData = new SourcesDataSQLite();
     smSQLiteFile->LoadSources(*sourcesData);
     bool success = true;
-    success &= Bentley::ScalableMesh::LoadSources(m_sources, *sourcesData, m_sourceEnv);
+    success &= BENTLEY_NAMESPACE_NAME::ScalableMesh::LoadSources(m_sources, *sourcesData, m_sourceEnv);
 
     m_lastSourcesModificationCheckTime = CreateTimeFrom(sourcesData->GetLastModifiedCheckTime());
     m_lastSourcesModificationTime = CreateTimeFrom(sourcesData->GetLastModifiedTime());
@@ -891,7 +894,7 @@ int IScalableMeshSourceCreator::Impl::SaveSources(SMSQLiteFilePtr& smSQLiteFile)
     bool success = true;
 
     // Create Data
-    success &= Bentley::ScalableMesh::SaveSources(m_sources, *sourcesData, m_sourceEnv);
+    success &= BENTLEY_NAMESPACE_NAME::ScalableMesh::SaveSources(m_sources, *sourcesData, m_sourceEnv);
     sourcesData->SetLastModifiedCheckTime(GetCTimeFor(m_lastSourcesModificationCheckTime));
     sourcesData->SetLastModifiedTime(GetCTimeFor(m_lastSourcesModificationTime));
     sourcesData->SetLastSyncTime(GetCTimeFor(m_lastSyncTime));

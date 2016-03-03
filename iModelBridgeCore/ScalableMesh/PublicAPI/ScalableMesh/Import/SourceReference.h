@@ -6,7 +6,7 @@
 |       $Date: 2012/02/23 18:20:09 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,8 +24,8 @@ struct ElementRefBase;
 }
 END_BENTLEY_NAMESPACE
     
-typedef struct Bentley::DgnPlatform::ElementRefBase* ElementReferenceP;
-typedef struct Bentley::DgnPlatform::DgnModelRef*  DgnModelReferenceP;
+typedef struct BENTLEY_NAMESPACE_NAME::DgnPlatform::ElementRefBase* ElementReferenceP;
+typedef struct BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnModelRef*  DgnModelReferenceP;
 
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VXX_NAMESPACE(0)
 struct DGNElementSourceRefBase;
@@ -352,8 +352,8 @@ public:
 
     IMPORT_DLLE virtual                     ~DGNElementSourceRef                   ();
 
-    IMPORT_DLLE UInt                        GetElementType                         () const;
-    IMPORT_DLLE UInt                        GetElementHandlerID                    () const;
+    IMPORT_DLLE uint32_t                        GetElementType                         () const;
+    IMPORT_DLLE uint32_t                        GetElementHandlerID                    () const;
     
     IMPORT_DLLE ElementReferenceP           GetElementRef                          () const;
     IMPORT_DLLE DgnModelReferenceP          GetModelRef                            () const;    

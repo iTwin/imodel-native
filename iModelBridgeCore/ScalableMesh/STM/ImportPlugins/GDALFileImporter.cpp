@@ -28,7 +28,7 @@
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(0)
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
-using namespace Bentley::ScalableMesh::Plugin;
+using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::Plugin;
 
 namespace
     { //BEGIN UNNAMED NAMESPACE
@@ -426,7 +426,7 @@ class GDALLinearExtractorCreator : public InputExtractorCreatorMixinBase<GDALSou
     * @bsimethod                                                  Elenie.Godzaridis   04/2015
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual RawCapacities                       _GetOutputCapacities(GDALSource&                 sourceBase,
-                                                                                    const Bentley::ScalableMesh::Import::Source&                   source,
+                                                                                    const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source&                   source,
                                                                                     const ExtractionQuery&          selection) const override
         {
         return RawCapacities(sourceBase.GetFeatureCount() * sizeof(IDTMFile::FeatureHeader), sourceBase.GetPointCount()*sizeof(DPoint3d));
@@ -437,7 +437,7 @@ class GDALLinearExtractorCreator : public InputExtractorCreatorMixinBase<GDALSou
     * @bsimethod                                                  Elenie.Godzaridis   04/2015
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual InputExtractorBase*                 _Create(GDALSource&                 sourceBase,
-                                                                                    const Bentley::ScalableMesh::Import::Source&                   source,
+                                                                                    const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source&                   source,
                                                                                     const ExtractionQuery&          selection,
                                                                                     const ExtractionConfig&         config,
                                                                                     Log&                            log) const override

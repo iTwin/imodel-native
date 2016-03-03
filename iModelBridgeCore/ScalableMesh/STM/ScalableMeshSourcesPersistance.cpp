@@ -30,7 +30,7 @@ using namespace IDTMFile;
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
-
+#pragma warning(disable:4702)
 
 /*
  * Save privates
@@ -39,10 +39,10 @@ namespace { // Unamed namespace
 
 struct FormatVersions
     {
-    UInt                            serializedSource;
-    UInt                            contentConfig;
-    UInt                            importSequence;
-    UInt                            importConfig;
+    uint32_t                            serializedSource;
+    uint32_t                            contentConfig;
+    uint32_t                            importSequence;
+    uint32_t                            importConfig;
     };
 
 

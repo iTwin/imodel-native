@@ -12,15 +12,18 @@
 
 /*__PUBLISH_SECTION_START__*/       
 #pragma once
+#ifndef BENTLEY_NAMESPACE_NAME
+#define BENTLEY_NAMESPACE_NAME Bentley
+#endif
 
 #define BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE    BEGIN_BENTLEY_NAMESPACE namespace ScalableMesh {
 #define END_BENTLEY_SCALABLEMESH_NAMESPACE     }}
-#define USING_NAMESPACE_BENTLEY_SCALABLEMESH    using namespace Bentley::ScalableMesh;
+#define USING_NAMESPACE_BENTLEY_SCALABLEMESH    using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh;
 
 #ifndef BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
 #define BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE namespace Import {
 #define END_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE  END_BENTLEY_SCALABLEMESH_NAMESPACE}
-#define USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT using namespace Bentley::ScalableMesh::Import;
+#define USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::Import;
 #endif //!BEGIN_BENTLEY_MRDTM_IMPORT_NAMESPACE
 
 #ifdef __BENTLEYSTM_BUILD__ 
@@ -130,7 +133,7 @@ enum DTMStatus
     
 #define MEAN_SCREEN_PIXELS_PER_POINT 100
 
-
+/*
 struct IDTMVolume abstract
 {
 protected:
@@ -140,7 +143,7 @@ virtual DTMStatusInt _ComputeVolumeCutAndFill(PolyfaceHeaderPtr& terrainMesh, do
 public:
 BENTLEYSTM_EXPORT DTMStatusInt ComputeVolumeCutAndFill(double& cut, double& fill, double& area, PolyfaceHeader& intersectingMeshSurface, DRange3d& meshRange, bvector<PolyfaceHeaderPtr>& volumeMeshVector);
 BENTLEYSTM_EXPORT DTMStatusInt ComputeVolumeCutAndFill(PolyfaceHeaderPtr& terrainMesh, double& cut, double& fill, PolyfaceHeader& mesh, bool is2d, bvector<PolyfaceHeaderPtr>& volumeMeshVector);
-};
+};*/
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
 /*__PUBLISH_SECTION_END__*/

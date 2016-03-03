@@ -20,9 +20,9 @@
 
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
-IDTMSourcePtr CreateSourceFor(const WString&          sourcePath,
+/*IDTMSourcePtr CreateSourceFor(const WString&          sourcePath,
                                     DTMSourceDataType importedType, 
-                                    BeXmlNodeP        pTestChildNode = 0);
+                                    BeXmlNodeP        pTestChildNode = 0);*/
                                     
 void ParseDTMFeatureType(WString& name, DTMFeatureType& type);
 
@@ -48,5 +48,5 @@ WString GetIndexMethodValue(int indexMethod);
 
 WString GetTrimmingMethodValue(int trimmingMethod);
 
-Bentley::WString UpdateTest_GetStmFileNameWithSuffix(Bentley::WString stmFileName, Bentley::WString suffix);
+BENTLEY_NAMESPACE_NAME::WString UpdateTest_GetStmFileNameWithSuffix(BENTLEY_NAMESPACE_NAME::WString stmFileName, BENTLEY_NAMESPACE_NAME::WString suffix);
 

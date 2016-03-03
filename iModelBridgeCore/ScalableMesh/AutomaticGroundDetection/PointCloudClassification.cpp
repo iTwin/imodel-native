@@ -376,9 +376,9 @@ void ClassificationChannelHandler::SwapChannelValues (IPointCloudChannelP pPoint
     if (!classificationBuffer || !channelBuffer)
         return;
 
-    UInt const bufferSize = pPointCloudBuffers.GetNumPoints();
+    uint32_t const bufferSize = pPointCloudBuffers.GetNumPoints();
 
-    for (UInt j = 0; j < bufferSize; j++)
+    for (uint32_t j = 0; j < bufferSize; j++)
         {
         if (channelBuffer[j] != _DEFAULTCHANNELVALUE)
             {

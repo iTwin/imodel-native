@@ -812,7 +812,7 @@ DGNElementSourceRef::~DGNElementSourceRef()
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt DGNElementSourceRef::GetElementType () const
+uint32_t DGNElementSourceRef::GetElementType () const
     {
     return m_baseP->_GetElementType();
     }
@@ -821,7 +821,7 @@ UInt DGNElementSourceRef::GetElementType () const
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt DGNElementSourceRef::GetElementHandlerID () const
+uint32_t DGNElementSourceRef::GetElementHandlerID () const
     {
     return m_baseP->_GetElementHandlerID();
     }

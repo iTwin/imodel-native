@@ -6,7 +6,7 @@
 |       $Date: 2011/10/31 15:45:08 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -42,7 +42,6 @@ private:
     Time                                m_lastModified;        
 // TDORAY: Add a last modified check time
     SourceImportConfig                  m_config;
-    IMonikerPtr                         m_monikerPtr;     
 
     virtual void                        _NotifyOfPublicEdit            () override;
     virtual void                        _NotifyOfLastEditUpdate        (Time                    updatedLastEditTime) override;
@@ -54,8 +53,12 @@ private:
 
 
 protected:
+    WString m_path;
     explicit                            Impl                           (DTMSourceDataType       sourceDataType, 
                                                                         const IMoniker*         monikerP);
+
+                                Impl(DTMSourceDataType       sourceDataType,
+                                             WCharCP         fullPath);
 
                                         Impl                           (const Impl&             rhs);
 public:
@@ -63,8 +66,10 @@ public:
 
     // Uses default copy behavior
 
-    const IMoniker&                     GetMoniker                     () const { return *m_monikerPtr; }
-    bool                                HasMoniker                     () const { return 0 != m_monikerPtr.get(); }
+    /*const IMoniker&                     GetMoniker                     () const { return *m_monikerPtr; }
+    bool                                HasMoniker                     () const { return 0 != m_monikerPtr.get(); }*/
+
+    WString                             GetPath                        () const { return m_path; }
 
     Time                                GetLastModified                () const;
     Time                                GetLastModifiedCheckTime       () const;
@@ -98,6 +103,8 @@ private:
 protected:
     explicit                            Impl                           (DTMSourceDataType       sourceDataType, 
                                                                         const IMoniker*         monikerP);
+    explicit                            Impl(DTMSourceDataType       sourceDataType,
+                                             const WCharCP         fullPath);
 public:
     virtual                             ~Impl                          ();    
 

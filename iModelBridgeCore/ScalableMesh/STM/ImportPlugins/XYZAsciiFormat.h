@@ -2,7 +2,7 @@
 |
 |   $Source: STM/ImportPlugins/XYZAsciiFormat.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #pragma once
@@ -21,8 +21,8 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct XYZFormat
     {
-    static const UInt           MAX_FIELD_COUNT = 20;
-    static const UInt           MINIMUM_FIELD_COUNT = 3;
+    static const uint32_t           MAX_FIELD_COUNT = 20;
+    static const uint32_t           MINIMUM_FIELD_COUNT = 3;
     static const WChar           INVALID_DELIMITER = 0;
 
     static const WChar           NEW_LINE = '\n';
@@ -36,7 +36,7 @@ struct XYZFormat
     struct                      IsNewLineOrComment;
 
     //struct                      CType;
-    typedef Bentley::ScalableMesh::Plugin::FileRange
+    typedef BENTLEY_NAMESPACE_NAME::ScalableMesh::Plugin::FileRange
                                 FileRange;
 
 private:
@@ -47,7 +47,7 @@ private:
     static bool                 IsNum                              (WChar                        c);
 
 public:
-    static UInt                 SplitLine                          (FileRange                   fieldsRanges[],
+    static uint32_t                 SplitLine                          (FileRange                   fieldsRanges[],
                                                                     const FileRange             lineRange);
 
     static bool                 IsCommentLine                      (const FileRange&            lineRange);
@@ -64,10 +64,10 @@ public:
     static WChar                 GetDelimiterFor                    (FileRange::const_iterator   delimZoneBegin,
                                                                     FileRange::const_iterator   delimZoneEnd);
     static WChar                 GetDelimiterFor                    (const FileRange             fields[],
-                                                                    UInt                        fieldsCount);
+                                                                    uint32_t                        fieldsCount);
 
     template <typename OutIt, typename IsWSPred>
-    static UInt                 ReadLine                           (FILE*       file, 
+    static uint32_t                 ReadLine                           (FILE*       file, 
                                                                     OutIt&      outBeginIt,
                                                                     OutIt       outEndIt,
                                                                     IsWSPred    isWSPred,

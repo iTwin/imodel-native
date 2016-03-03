@@ -17,7 +17,7 @@
 #include "InternalUtilityFunctions.h"
 #include "SMPointIndex.h"
 
-using namespace Bentley::GeoCoordinates;
+using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 
@@ -120,7 +120,7 @@ static void ClipConvexPolygonToPlane (DPoint3d *polygonPoints, int &n, DPlane3d 
     {
     DPoint3d clippedPoints[100];
     int m = 0;
-    double h0, h1;
+    double h0=0, h1=0;
     for (int i = 0; i < n; i++)
         {
         h1 = bsiDPlane3d_evaluate (&plane, &polygonPoints[i]);
@@ -624,7 +624,7 @@ int CreateBcDTM(DTMPtr& dtmPtr)
 | SetClipsToDTM
   Utility function that adds to the given DTM the clips.
 +----------------------------------------------------------------------------*/ 
-int SetClipsToDTM (Bentley::TerrainModel::DTMPtr&  dtmPtr,
+int SetClipsToDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&  dtmPtr,
                    const DRange3d&                 dtmRange,
                    const IScalableMeshClipContainerPtr&   clips)
     {
@@ -642,7 +642,7 @@ int SetClipsToDTM (Bentley::TerrainModel::DTMPtr&  dtmPtr,
 | SetClipsToDTM
   Utility function that adds to the given DTM the clips.
 +----------------------------------------------------------------------------*/ 
-int SetClipsToDTM (Bentley::TerrainModel::DTMPtr&  dtmPtr,
+int SetClipsToDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&  dtmPtr,
                    const DRange3d&                 dtmRange,
                    const vector<DPoint3d>&         regionPoints,
                    const IScalableMeshClipContainerPtr&   clips)
@@ -975,8 +975,8 @@ bool SetLinearsForPresentationModeCallback(addLinearsForPresentationModeFP callb
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AlainRobert  07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GCSMathematicalDomainsOverlap(Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr,
-                                   Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr)
+bool GCSMathematicalDomainsOverlap(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
+                                   BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr)
     {
 
     HFCPtr<HGF2DCoordSys> pDummyCS = new HGF2DCoordSys();

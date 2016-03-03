@@ -13,7 +13,7 @@
 #include "../ImagePPHeaders.h"
 #include "ScalableMeshClipMaskFilterFactory.h"
 #include <ScalableMesh/Import/Plugin/FilterV0.h>
-
+#include "../IDTMFeatureArray.h"
 #include <ScalableMesh/Type/IScalableMeshPoint.h>
 #include <ScalableMesh/Type/IScalableMeshLinear.h>
 
@@ -27,14 +27,14 @@ template <typename PointT>
 struct IsPointClippedPred
     {
     const HVEClipShape& m_rShape;
-    mutable HGF2DLocation& m_rTmpPt; // NTERAY: this is bad if a threaded remove_copy_if algorithm is used
+    HGF2DLocation& m_rTmpPt; // NTERAY: this is bad if a threaded remove_copy_if algorithm is used
     explicit IsPointClippedPred (const HVEClipShape& pi_rShape, 
                             HGF2DLocation& po_rTmpPt) : m_rShape(pi_rShape), m_rTmpPt(po_rTmpPt) {}
 
     bool operator () (const PointT& rhs) const
         {
-        m_rTmpPt.SetX(PointTrait<PointT>::GetX(rhs));
-        m_rTmpPt.SetY(PointTrait<PointT>::GetY(rhs));
+        m_rTmpPt.SetX(rhs.x);
+        m_rTmpPt.SetY(rhs.y);
         return m_rShape.IsPointClipped(m_rTmpPt);
         }
     };

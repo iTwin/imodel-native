@@ -227,7 +227,7 @@ Unit GetUnitFor (const BaseGCS& baseGCS)
     // User must provide a valid base GCS.
     assert(baseGCS.IsValid());
 
-    typedef Bentley::GeoCoordinates::Unit GeoCoordUnit;
+    typedef BENTLEY_NAMESPACE_NAME::GeoCoordinates::Unit GeoCoordUnit;
     WString units;
     const GeoCoordUnit* geoCoordUnitP = GeoCoordUnit::FindUnit(baseGCS.GetUnits(units));
 
@@ -239,9 +239,9 @@ Unit GetUnitFor (const BaseGCS& baseGCS)
 
     switch (geoCoordUnitP->GetBase())
         {
-    case Bentley::GeoCoordinates::GeoUnitBase::Meter:
+    case BENTLEY_NAMESPACE_NAME::GeoCoordinates::GeoUnitBase::Meter:
         return Unit::CreateLinearFrom(geoCoordUnitP->GetName(), geoCoordUnitP->GetConversionFactor());
-    case Bentley::GeoCoordinates::GeoUnitBase::Degree:
+    case BENTLEY_NAMESPACE_NAME::GeoCoordinates::GeoUnitBase::Degree:
         return Unit::CreateFromDegreeBased(geoCoordUnitP->GetName(), geoCoordUnitP->GetConversionFactor());
     default:
         assert(!"Unexpected!");
@@ -503,7 +503,7 @@ inline GCS::Status GCS::Impl::GetNullCSWKT (WString& wkt) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 GCS::Status GCS::Impl::GetBaseCSWKT (WString& wkt) const
     {            
-    if (BSISUCCESS != m_geoRef.GetBase().GetWellKnownText(wkt, BaseGCS::wktFlavorAutodesk))
+    if (BSISUCCESS != m_geoRef.GetBase().GetWellKnownText(wkt, BaseGCS::wktFlavorAutodesk, false))
         return S_ERROR;  
      
     return S_SUCCESS;
@@ -621,19 +621,6 @@ bool GCS::IsNull () const
     return !m_implP->m_hasUnit; 
     }
 
-
-
-
-
-/*---------------------------------------------------------------------------------**//**
-* @description  
-* @bsimethod                                                  Raymond.Gauthier   09/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool GCS::HasGeospatialReference () const
-    {
-    return !m_implP->m_geoRef.IsNull();
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   09/2011
@@ -641,16 +628,6 @@ bool GCS::HasGeospatialReference () const
 bool GCS::HasGeoRef () const
     {
     return !m_implP->m_geoRef.IsNull();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @description  
-* @bsimethod                                                  Raymond.Gauthier   10/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-const GeospatialReference& GCS::GetGeospatialReference () const
-    {
-    assert(!m_implP->m_geoRef.IsNull());
-    return m_implP->m_geoRef;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -931,7 +908,7 @@ GCS GCSFactory::Impl::CreateFromBaseCS (const WChar*             wkt,
                                         const LocalTransform*   localTransformP,
                                         Status&                 status) const
     {
-    BaseGCSPtr gcsPtr(BaseGCS::CreateGCS());     
+    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr gcsPtr(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS());
     WString w_wkt(wkt);
     StatusInt initWarningCode = BSISUCCESS;
     const StatusInt initStatus = gcsPtr->InitFromWellKnownText(&initWarningCode, 0, wktFlavor, w_wkt.GetWCharCP());
@@ -941,8 +918,8 @@ GCS GCSFactory::Impl::CreateFromBaseCS (const WChar*             wkt,
         status = S_ERROR;
         return GCS::GetNull ();
         }
-
-    return Create(gcsPtr, localTransformP, status);
+    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr constGcsPtr = gcsPtr.get();
+    return Create(constGcsPtr, localTransformP, status);
     }
 
 /*---------------------------------------------------------------------------------**//**

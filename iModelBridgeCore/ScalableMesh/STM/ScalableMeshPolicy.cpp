@@ -92,9 +92,9 @@ public:  // OPERATOR_NEW_KLUDGE
 private:
     static HPMMemoryMgr&            GetMemoryMgrInstance           ();
 
-    static UInt                     s_InstanceCount;
+    static uint32_t                     s_InstanceCount;
     HPMMemoryMgr&                   m_memMgr;
-    mutable UInt                    m_allocatedBlockCount;    
+    mutable uint32_t                    m_allocatedBlockCount;    
 
 public:
     static size_t                   GetMemoryMgrKeptBlockCount     ();
@@ -127,7 +127,7 @@ public:
 
     };
 
-UInt ImportMemoryAllocator::Impl::s_InstanceCount = 0;
+uint32_t ImportMemoryAllocator::Impl::s_InstanceCount = 0;
 
 
 /*---------------------------------------------------------------------------------**//**

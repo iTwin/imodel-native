@@ -142,12 +142,12 @@ namespace {
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 void                        AppendImportLayerCommandsToExistingSequence    (const ImportSequence&           templateCommands,
-                                                                            UInt                            importedLayer,
+                                                                            uint32_t                            importedLayer,
                                                                             ImportSequence&                 sequence)
     {
     class CommandVisitor : public IImportSequenceVisitor
         {
-        const UInt                      m_importedLayer;
+        const uint32_t                      m_importedLayer;
         ImportSequence&                 m_sequence;
 
         virtual void                    _Visit                     (const ImportAllCommand&                     command) override
@@ -230,7 +230,7 @@ void                        AppendImportLayerCommandsToExistingSequence    (cons
             }
 
     public:
-        explicit                        CommandVisitor             (UInt                                        importedLayer,
+        explicit                        CommandVisitor             (uint32_t                                        importedLayer,
                                                                     ImportSequence&                             sequence)
             :   m_importedLayer(importedLayer),
                 m_sequence(sequence)
@@ -250,7 +250,7 @@ void                        AppendImportLayerCommandsToExistingSequence    (cons
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SourceImportConfig::AddImportedLayer (UInt layerID)
+void SourceImportConfig::AddImportedLayer (uint32_t layerID)
     {
     m_implP->OnPublicEdit();
     m_implP->OnSequenceAddition();

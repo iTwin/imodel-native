@@ -3,11 +3,12 @@
 #include <ImagePP/all/h/HFCException.h>
 #include <ScalableMesh\ScalableMeshUtilityFunctions.h>
 #include <ScalableMesh\IScalableMeshQuery.h>
-#include <eigen\Eigen\Dense>
-#include <PCLWrapper\IDefines.h>
-#include <PCLWrapper\INormalCalculator.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+//#include <eigen\Eigen\Dense>
+//#include <PCLWrapper\IDefines.h>
+//#include <PCLWrapper\INormalCalculator.h>
 #include "ScalableMeshQuery.h"
-#include "MeshingFunctions.h"
+//#include "MeshingFunctions.h"
 #include <ScalableMesh\ScalableMeshUtilityFunctions.h>
 #include <Mtg/MtgStructs.h>
 #include <Geom/bsp/bspbound.fdf>
@@ -47,8 +48,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT,EXTENT>::SMMeshIndexN
     m_isGraphLoaded = false;
     m_graphVec.SetDirty(false);
     m_graphVec.SetDiscarded(true);
-    m_isPtsIndiceLoaded = false;
-    
+    m_isPtsIndiceLoaded = false;            
     m_isUVLoaded = false;
     m_isUVsIndicesLoaded = false;
     m_ptsIndiceVec[0].SetDirty(false);
@@ -67,12 +67,14 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT,EXTENT>::SMMeshIndexN
     m_nodeHeader.m_textureID.resize(1);
     m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
 
+    m_nbClips = 0;
     m_differenceSets.SetDirty(false);
-#ifdef SM_BESQL_FORMAT
+//#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
     m_ptsIndiceVec[0].SetBlockID(GetBlockID());
     m_graphVec.SetBlockID(GetBlockID());
-#endif
+    m_differenceSets.SetBlockID(GetBlockID());
+//#endif
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(size_t pi_SplitTreshold,
@@ -88,16 +90,18 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_SMIndex = pi_rpParentNode->m_SMIndex;
     m_mesher2_5d = pi_rpParentNode->GetMesher2_5d();
     m_mesher3d = pi_rpParentNode->GetMesher3d();
-    m_isGraphLoaded = false;
+    m_isGraphLoaded = false;    
     m_graphVec.SetDirty(false);
     m_graphVec.SetDiscarded(true);
     m_isPtsIndiceLoaded = false;
     m_isUVLoaded = false;
-    m_isUVsIndicesLoaded = false;
+    m_isUVsIndicesLoaded = false;    
     m_ptsIndiceVec[0].SetDirty(false);
     m_uvVec.SetDirty(false);
     m_uvsIndicesVec[0].SetDirty(false);
     m_textureVec[0].SetDirty(false);
+
+    m_nbClips = 0;
     m_differenceSets.SetDirty(false);
     m_differenceSets.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore());
     m_differenceSets.SetPool(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipPool());
@@ -111,11 +115,12 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
     m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
-#ifdef SM_BESQL_FORMAT
+//#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
     m_ptsIndiceVec[0].SetBlockID(GetBlockID());
     m_graphVec.SetBlockID(GetBlockID());
-#endif
+    m_differenceSets.SetBlockID(GetBlockID());
+//#endif
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(size_t pi_SplitTreshold,
@@ -143,6 +148,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_uvVec.SetDirty(false);
     m_uvsIndicesVec[0].SetDirty(false);
     m_textureVec[0].SetDirty(false);
+
+    m_nbClips = 0;
     m_differenceSets.SetDirty(false);
     m_differenceSets.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore());
     m_differenceSets.SetPool(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipPool());
@@ -156,11 +163,12 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
     m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
-#ifdef SM_BESQL_FORMAT
+//#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
     m_ptsIndiceVec[0].SetBlockID(GetBlockID());
     m_graphVec.SetBlockID(GetBlockID());
-#endif
+    m_differenceSets.SetBlockID(GetBlockID());
+//#endif
     }
 
 /* SM_NEEDS_WORK : Did we use it ?
@@ -310,6 +318,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_isUVsIndicesLoaded = false;
     m_uvsIndicesVec[0].SetDirty(false);
     m_textureVec[0].SetDirty(false);
+
+    m_nbClips = 0;
     m_differenceSets.SetDirty(false);
     m_differenceSets.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore());
     m_differenceSets.SetPool(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipPool());
@@ -324,11 +334,13 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
     m_nodeHeader.m_textureID[0]= IDTMFile::GetNullNodeID();
-#ifdef SM_BESQL_FORMAT
+//#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
     m_ptsIndiceVec[0].SetBlockID(GetBlockID());
     m_graphVec.SetBlockID(GetBlockID());
-#endif
+    m_differenceSets.SetBlockID(GetBlockID());
+
+//#endif
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(HPMBlockID blockID,
@@ -362,8 +374,9 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_ptsIndiceVec[0].SetDirty(false);
     m_textureVec[0].SetDirty(false);
     m_uvsIndicesVec[0].SetDirty(false);
-
     m_uvVec.SetDirty(false);
+
+    m_nbClips = 0;
     m_differenceSets.SetDirty(false);
     m_differenceSets.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore());
     m_differenceSets.SetPool(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipPool());
@@ -380,6 +393,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
     m_ptsIndiceVec[0].SetBlockID(GetBlockID());
     m_graphVec.SetBlockID(GetBlockID());
+    m_differenceSets.SetBlockID(GetBlockID());
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(size_t pi_SplitTreshold,
@@ -415,12 +429,15 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_uvsIndicesID[0] = IDTMFile::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
     m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
+
+    m_nbClips = 0;
     m_differenceSets.SetDirty(false);
-#ifdef SM_BESQL_FORMAT
+//#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
     m_ptsIndiceVec[0].SetBlockID(GetBlockID());
     m_graphVec.SetBlockID(GetBlockID());
-#endif
+    m_differenceSets.SetBlockID(GetBlockID());
+//#endif
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(HPMBlockID blockID,
@@ -459,12 +476,15 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_uvID/*[0]*/ = IDTMFile::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
     m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
+
+    m_nbClips = 0;
     m_differenceSets.SetDirty(false);
-#ifdef SM_BESQL_FORMAT
+//#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
     m_ptsIndiceVec[0].SetBlockID(GetBlockID());
     m_graphVec.SetBlockID(GetBlockID());
-#endif
+    m_differenceSets.SetBlockID(GetBlockID());
+//#endif
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(HPMBlockID blockID,
@@ -493,6 +513,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_uvVec.SetDirty(false);
     m_uvsIndicesVec[0].SetDirty(false);
     m_textureVec[0].SetDirty(false);
+
+    m_nbClips = 0;
     m_differenceSets.SetDirty(false);
     m_differenceSets.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore());
     m_differenceSets.SetPool(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipPool());
@@ -505,11 +527,12 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
     m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
-#ifdef SM_BESQL_FORMAT
+//#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
     m_ptsIndiceVec[0].SetBlockID(GetBlockID());
     m_graphVec.SetBlockID(GetBlockID());
-#endif
+    m_differenceSets.SetBlockID(GetBlockID());
+//#endif
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::~SMMeshIndexNode()
@@ -845,7 +868,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::DumpOct
     char   TempBuffer[3000];
     int    NbChars;
     size_t NbWrittenChars;
-    uint32_t nodeId;
+    __int64 nodeId;
 
     if (GetBlockID().IsValid())
         {
@@ -856,7 +879,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::DumpOct
         nodeId = IDTMFile::GetNullNodeID();
         }
 
-    NbChars = sprintf(TempBuffer, "<ChildNode NodeId=\"%i\" TotalPoints=\"%i\" SplitDepth=\"%i\" ArePoints3d=\"%i\">", nodeId, GetCount(), GetSplitDepth(), m_nodeHeader.m_arePoints3d ? 1 : 0);
+    NbChars = sprintf(TempBuffer, "<ChildNode NodeId=\"%lli\" TotalPoints=\"%lli\" SplitDepth=\"%zi\" ArePoints3d=\"%i\">", nodeId, GetCount(), GetSplitDepth(), m_nodeHeader.m_arePoints3d ? 1 : 0);
 
     NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
@@ -901,28 +924,28 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::DumpOct
     HASSERT(NbWrittenChars == NbChars);
 
     //Cumulative Number Of Points
-    NbChars = sprintf(TempBuffer, "<CumulNbOfPoints>%u</CumulNbOfPoints>\n", GetCount());
+    NbChars = sprintf(TempBuffer, "<CumulNbOfPoints>%llu</CumulNbOfPoints>\n", GetCount());
 
     NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
     HASSERT(NbWrittenChars == NbChars);
 
     //Number Of Points
-    NbChars = sprintf(TempBuffer, "<NbOfIndexes>%u</NbOfIndexes>\n", m_nodeHeader.m_nbFaceIndexes);
+    NbChars = sprintf(TempBuffer, "<NbOfIndexes>%zu</NbOfIndexes>\n", m_nodeHeader.m_nbFaceIndexes);
 
     NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
     HASSERT(NbWrittenChars == NbChars);
 
     //Level
-    NbChars = sprintf(TempBuffer, "<Level>%i</Level>\n", m_nodeHeader.m_level);
+    NbChars = sprintf(TempBuffer, "<Level>%zi</Level>\n", m_nodeHeader.m_level);
 
     NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
     HASSERT(NbWrittenChars == NbChars);
 
     // SplitTreshold
-    NbChars = sprintf(TempBuffer, "<SplitTreshold>%i</SplitTreshold>", m_nodeHeader.m_SplitTreshold);
+    NbChars = sprintf(TempBuffer, "<SplitTreshold>%zi</SplitTreshold>", m_nodeHeader.m_SplitTreshold);
 
     NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
@@ -958,11 +981,11 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::DumpOct
 
     HASSERT(NbWrittenChars == NbChars);
 
-    for (size_t neighborPosInd = 0; neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosInd++)
+    for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
         {
         for (size_t neighborInd = 0; neighborInd < m_nodeHeader.m_apNeighborNodeID[neighborPosInd].size(); neighborInd++)
             {
-            NbChars = sprintf(TempBuffer, "P %i I %i Id %i ", neighborPosInd, neighborInd, m_nodeHeader.m_apNeighborNodeID[neighborPosInd][neighborInd].m_integerID);
+            NbChars = sprintf(TempBuffer, "P %zi I %zi Id %lli ", neighborPosInd, neighborInd, m_nodeHeader.m_apNeighborNodeID[neighborPosInd][neighborInd].m_integerID);
 
             NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
@@ -977,7 +1000,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::DumpOct
     HASSERT(NbWrittenChars == NbChars);
 
     //GraphID
-    NbChars = sprintf(TempBuffer, "<GraphID>%u</GraphID>\n", m_nodeHeader.m_graphID.m_integerID);
+    NbChars = sprintf(TempBuffer, "<GraphID>%llu</GraphID>\n", m_nodeHeader.m_graphID.m_integerID);
 
     NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
@@ -985,7 +1008,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::DumpOct
 
     for (size_t i = 0; i < m_nodeHeader.m_ptsIndiceID.size(); ++i)
         {
-        NbChars = sprintf(TempBuffer, "<IndiceID>%u</IndiceID>\n", m_nodeHeader.m_ptsIndiceID[i].m_integerID);
+        NbChars = sprintf(TempBuffer, "<IndiceID>%llu</IndiceID>\n", m_nodeHeader.m_ptsIndiceID[i].m_integerID);
 
         NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
@@ -995,7 +1018,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::DumpOct
     for (size_t i = 0; i <m_ptsIndiceVec.size(); ++i)
         {
         if (m_ptsIndiceVec[i].Discarded() && m_ptsIndiceVec[i].GetBlockID().IsValid()) m_ptsIndiceVec[i].Inflate();
-        NbChars = sprintf(TempBuffer, "<IndiceVec Number=\"%i\" BlockID=\"%i\">%u</IndiceVec>\n", i, m_ptsIndiceVec[i].GetBlockID().m_integerID, m_ptsIndiceVec[i].size());
+        NbChars = sprintf(TempBuffer, "<IndiceVec Number=\"%zi\" BlockID=\"%lli\">%zu</IndiceVec>\n", i, m_ptsIndiceVec[i].GetBlockID().m_integerID, m_ptsIndiceVec[i].size());
 
         NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pi_pOutputXmlFileStream);
 
@@ -1009,7 +1032,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::DumpOct
 
     HASSERT(NbWrittenChars == NbChars);
 
-    for (size_t neighborPosInd = 0; neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosInd++)
+    for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
         {
         if (m_nodeHeader.m_apAreNeighborNodesStitched[neighborPosInd] == true)
             {
@@ -1159,7 +1182,7 @@ template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::StoreP
             SetBlockID(m_nodeHeader.m_ptsIndiceID[0]);
             if (GetParentNode() != nullptr) ((SMMeshIndexNode<POINT, EXTENT>*)GetParentNode().GetPtr())->AdviseSubNodeIDChanged(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this));
             AdviseParentNodeIDChanged();
-            for (size_t neighborPosInd = 0; neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosInd++)
+            for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
                 {
                 for (size_t neighborInd = 0; neighborInd < m_apNeighborNodes[neighborPosInd].size(); neighborInd++)
                     {
@@ -1958,6 +1981,41 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
     m_featureDefinitions.clear();
 
     }
+//=======================================================================================
+// @bsimethod                                                   Elenie.Godzaridis 02/16
+//=======================================================================================
+template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipActionRecursive(ClipAction action, uint64_t clipId, DRange3d& extent)
+    {
+    if (!IsLoaded()) return;
+    if (/*size() == 0 || m_nodeHeader.m_nbFaceIndexes < 3*/m_nodeHeader.m_totalCount == 0) return;
+    DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
+                                        ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent));
+    if (!extent.IntersectsWith(nodeRange, 2)) return;
+    switch (action)
+        {
+        case ClipAction::ACTION_ADD:
+            AddClip(clipId, false);
+            break;
+        case ClipAction::ACTION_MODIFY:
+            ModifyClip(clipId, false);
+            break;
+        case ClipAction::ACTION_DELETE:
+            DeleteClip(clipId, false);
+            break;
+        }
+    if (m_pSubNodeNoSplit != NULL && !m_pSubNodeNoSplit->IsVirtualNode())
+        {
+        dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pSubNodeNoSplit)->ClipActionRecursive(action, clipId, extent);
+        }
+    else if (!IsLeaf())
+        {
+        for (size_t indexNodes = 0; indexNodes < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNodes++)
+            {
+            if (m_apSubNodes[indexNodes] != nullptr)
+                dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_apSubNodes[indexNodes])->ClipActionRecursive(action, clipId, extent);
+            }
+        }
+    }
 
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 10/15
@@ -2300,25 +2358,25 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     HFCPtr<HRPPixelType> pPixelType(new HRPPixelTypeV32R8G8B8A8());
 
     HFCPtr<HCDCodec>     pCodec(new HCDCodecIdentity());
-    byte* pixelBufferP = new byte[textureWidthInPixels * textureHeightInPixels * 4 + 3 * sizeof(int)];
+    byte* pixelBufferP = new byte[textureWidthInPixels * textureHeightInPixels * 3 + 3 * sizeof(int)];
     memcpy(pixelBufferP, &textureWidthInPixels, sizeof(int));
     memcpy(pixelBufferP + sizeof(int), &textureHeightInPixels, sizeof(int));
-    int nOfChannels = 4;
+    int nOfChannels = 3;
     memcpy(pixelBufferP + 2 * sizeof(int), &nOfChannels, sizeof(int));
-    pTextureBitmap = new HRABitmap(textureWidthInPixels,
+
+    pTextureBitmap = HRABitmap::Create(textureWidthInPixels,
                                    textureHeightInPixels,
                                    pTransfoModel.GetPtr(),
                                    sourceRasterP->GetCoordSys(),
                                    pPixelType,
-                                   8,
-                                   HRABitmap::UPPER_LEFT_HORIZONTAL,
-                                   pCodec);
+                                   8);
     HGF2DExtent minExt, maxExt;
     sourceRasterP->GetPixelSizeRange(minExt, maxExt);
     minExt.ChangeCoordSys(pTextureBitmap->GetCoordSys());
     if (/*m_nodeHeader.m_level <= 6 && */IsLeaf() && (contentExtent.XLength() / minExt.GetWidth() > textureWidthInPixels || contentExtent.YLength() / minExt.GetHeight() > textureHeightInPixels) /*&& this->size() > 0*/)
         SplitNodeBasedOnImageRes();
-    pTextureBitmap->GetPacket()->SetBuffer(pixelBufferP + 3 * sizeof(int), textureWidthInPixels * textureHeightInPixels * 4);
+    byte* pixelBufferPRGBA = new byte[textureWidthInPixels * textureHeightInPixels * 4];
+    pTextureBitmap->GetPacket()->SetBuffer(pixelBufferPRGBA, textureWidthInPixels * textureHeightInPixels * 4);
     pTextureBitmap->GetPacket()->SetBufferOwnership(false);
 
     HRAClearOptions clearOptions;
@@ -2326,7 +2384,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     //CR 332863 - Quick trick to display the STM outside in smooth outside the area where texture data are available. 
     //              Note that this trick will lead to the translucent color shown throughout transparent raster being a shade of gray 
     //              instead of the color of the background.
-    UInt32 whiteOpaque = 0xFFFFFFFF;
+    uint32_t whiteOpaque = 0xFFFFFFFF;
 
     clearOptions.SetRawDataValue(&whiteOpaque);
 
@@ -2334,11 +2392,10 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
 
     HRACopyFromOptions copyFromOptions;
 
-    //Rasterlib set this option on the last tile of a row or a column to avoid black lines.     
-    copyFromOptions.SetGridShapeMode(true);
+
     copyFromOptions.SetAlphaBlend(true);
 
-    pTextureBitmap->CopyFrom(sourceRasterP, copyFromOptions);
+    pTextureBitmap->CopyFrom(*sourceRasterP, copyFromOptions);
 #ifdef ACTIVATE_TEXTURE_DUMP
     WString fileName = L"file://";
     fileName.append(L"e:\\output\\scmesh\\2015-11-19\\texture_before_");
@@ -2415,7 +2472,13 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
                                               pixelBuffer);
     delete[] pixelBuffer;
 #endif
-     PushTexture(texId, pixelBufferP, textureWidthInPixels * textureHeightInPixels * 4+3*sizeof(int));
+    for (size_t i = 0; i < textureWidthInPixels*textureHeightInPixels; ++i)
+        {
+        *(pixelBufferP + 3 * sizeof(int) + i * 3) = pixelBufferPRGBA[i * 4];
+        *(pixelBufferP + 3 * sizeof(int) + i * 3 + 1) = pixelBufferPRGBA[i * 4 + 1];
+        *(pixelBufferP + 3 * sizeof(int) + i * 3 + 2) = pixelBufferPRGBA[i * 4 + 2];
+        }
+    PushTexture(texId, pixelBufferP + 3 * sizeof(int), textureWidthInPixels * textureHeightInPixels * 3);
      SetTextureDirty(texId);
     StoreTexture(texId);
     if (GetNbPtsIndices(0) >= 4)
@@ -2469,6 +2532,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
 #endif
     }
     delete[] pixelBufferP;
+    delete[] pixelBufferPRGBA;
     pTextureBitmap = 0;
     }
 
@@ -2504,16 +2568,28 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Refres
     ComputeMergedClips();
     if (m_pSubNodeNoSplit != NULL && !m_pSubNodeNoSplit->IsVirtualNode())
         {
-        dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pSubNodeNoSplit)->ComputeMergedClips();
+        dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pSubNodeNoSplit)->RefreshMergedClipsRecursive();
         }
     else if (!IsLeaf())
         {
         for (size_t indexNodes = 0; indexNodes < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNodes++)
             {
             if(m_apSubNodes[indexNodes] != nullptr)
-            dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_apSubNodes[indexNodes])->ComputeMergedClips();
+                dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_apSubNodes[indexNodes])->RefreshMergedClipsRecursive();
             }
         }
+    }
+
+//=======================================================================================
+// @bsimethod                                                   Elenie.Godzaridis 02/16
+//=======================================================================================
+template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::HasClip(uint64_t clipId)
+    {
+    for (auto& diffSet : m_differenceSets)
+        {
+        if (diffSet.clientID == clipId && (!diffSet.upToDate || !diffSet.IsEmpty())) return true;
+        }
+    return false;
     }
 
 //=======================================================================================
@@ -2573,12 +2649,12 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
     bvector<uint64_t> clipIds;
     for (auto& diffSet : m_differenceSets)
         {
-        uint64_t upperId = (diffSet.clientID >> 32);
-        if (upperId == 0 && diffSet.clientID != 0)
+        //uint64_t upperId = (diffSet.clientID >> 32);
+        if (diffSet.clientID < ((uint64_t)-1) && diffSet.clientID != 0)
             {
             clipIds.push_back(diffSet.clientID);
             polys.push_back(bvector<DPoint3d>());
-            GetClipRegistry()->GetClip(diffSet.clientID - 1, polys.back());
+            GetClipRegistry()->GetClip(diffSet.clientID, polys.back());
             }
         }
     m_differenceSets.clear();
@@ -2612,6 +2688,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         UnPinUVsIndices(j-1);
 
         if (!hasClip) continue;
+        bvector<bvector<PolyfaceHeaderPtr>> skirts;
+        //BuildSkirtMeshesForPolygonSet(skirts, polyfaces, polys, nodeRange);
         map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
         for (size_t i = 0; i < size(); ++i)
             mapOfPoints[points[i]] = (int)i;
@@ -2624,6 +2702,15 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
             m_differenceSets.push_back(current);
             (m_differenceSets.begin() + (m_differenceSets.size() - 1))->upToDate = true;
             ++m_nbClips;
+           /* if (current.clientID != 0)
+                {
+                DifferenceSet skirt = DifferenceSet::FromPolyfaceSet(skirts[&polyface - &polyfaces[0]], mapOfPoints);
+                skirt.clientID = current.clientID;
+                skirt.toggledForID = false;
+                m_differenceSets.push_back(skirt);
+                (m_differenceSets.begin() + (m_differenceSets.size() - 1))->upToDate = true;
+                ++m_nbClips;
+                }*/
             }
         }
         }
@@ -2632,7 +2719,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
     allClips.clientID = (uint64_t)-1;
     bool added = false;
     for (auto& diffSet : m_differenceSets)
-        if (diffSet.clientID == (uint64_t)-1) { diffSet = allClips; added = true; }
+        if (diffSet.clientID == (uint64_t)-1) { diffSet = allClips; diffSet.upToDate = true; added = true; }
     if (!added)
         {
         m_differenceSets.push_back(allClips);
@@ -2649,6 +2736,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
 //=======================================================================================
 template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::AddClip(uint64_t clipId,  bool isVisible)
     {
+    if (size() == 0 || m_nodeHeader.m_nbFaceIndexes < 3) return false;
+#ifdef USE_DIFFSET
     bvector<DPoint3d> clipPts;
     GetClipRegistry()->GetClip(clipId - 1, clipPts);
     if (clipPts.size() == 0 || size() == 0 || m_nodeHeader.m_nbFaceIndexes < 3) return false;
@@ -2656,20 +2745,24 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::AddCli
     DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
                                         ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent));
     if (clipExt.IntersectsWith(nodeRange,2) && GridBasedIntersect(clipPts, clipExt,nodeRange))
+        
+#endif
         {
         bool clipFound = false;
         for (auto& diffSet : m_differenceSets) if (diffSet.clientID == clipId) clipFound = true;
         if (clipFound) return true; //clip already added
+#ifdef USE_DIFFSET
         vector<DPoint3d> points(size());
 
         std::transform(begin(), end(), &points[0], PtToPtConverter());
         Clipper clipNode(&points[0], size(), (int32_t*)GetPtsIndicePtr(0), m_nodeHeader.m_nbFaceIndexes, nodeRange);
+#endif
         DifferenceSet d;
 #if DEBUG && SM_TRACE_CLIPS
         std::string s;
         s += " AREA IS" + std::to_string(bsiGeom_getXYPolygonArea(&clipPts[0], (int)clipPts.size()));
 #endif
-        if (nodeRange.XLength() <= clipExt.XLength() * 10000 && nodeRange.YLength() <= clipExt.YLength() * 10000)
+ //       if (nodeRange.XLength() <= clipExt.XLength() * 10000 && nodeRange.YLength() <= clipExt.YLength() * 10000)
 #ifdef USE_DIFFSET
             d = clipNode.ClipNonConvexPolygon2D(&clipPts[0], clipPts.size());
 #else
@@ -2677,7 +2770,8 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::AddCli
             d.clientID = clipId;
             d.firstIndex = (int32_t)size() + 1;
             m_differenceSets.push_back(d);
-            (m_differenceSets.begin() + (m_differenceSets.size() - 1))->upToDate = true;
+            m_nbClips++;
+            (m_differenceSets.begin() + (m_differenceSets.size() - 1))->upToDate = false;
             for (auto& other : m_differenceSets)
                 {
                 if (other.clientID == ((uint64_t)-1)) other.upToDate = false;
@@ -2731,7 +2825,9 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::AddCli
         PropagateClip(clipId, ClipAction::ACTION_ADD);
         return !emptyClip;
         }
+#ifdef USE_DIFFSET
     else return false;
+#endif
     }
 
 //=======================================================================================
@@ -2772,15 +2868,23 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::DoClip
 //=======================================================================================
 template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::DeleteClip(uint64_t clipId, bool isVisible)
     {
+    if (size() == 0 || m_nodeHeader.m_nbFaceIndexes < 3) return false;
+    bool found = false;
     for (auto it = m_differenceSets.begin(); it != m_differenceSets.end(); ++it)
+        {
         if (it->clientID == clipId)
             {
             m_differenceSets.erase(it);
             m_nbClips--;
-            if (m_nodeHeader.m_level < 7) PropagateDeleteClipImmediately(clipId);
-            return true;
+            //if (m_nodeHeader.m_level < 7) PropagateDeleteClipImmediately(clipId);
+            found = true;
             }
-    return false;
+        else if (it->clientID == (uint64_t)-1)
+            {
+            it->upToDate = false;
+            }
+        }
+    return found;
     }
 
 //=======================================================================================
@@ -2788,6 +2892,8 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Delete
 //=======================================================================================
 template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ModifyClip(uint64_t clipId, bool isVisible)
     {
+    if (size() == 0 || m_nodeHeader.m_nbFaceIndexes < 3) return false;
+#ifdef USE_DIFFSET
     bvector<DPoint3d> clipPts;
     GetClipRegistry()->GetClip(clipId, clipPts);
     if (clipPts.size() == 0) return false;
@@ -2795,13 +2901,17 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Modify
     DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
                                         ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent));
     bool clipIntersects = clipExt.IntersectsWith(nodeRange);
+#endif
+    bool found = false;
     for (auto it = m_differenceSets.begin(); it != m_differenceSets.end(); ++it)
+        {
         if (it->clientID == clipId)
             {
+#ifdef USE_DIFFSET
             if (isVisible)
                 {
                 PropagateClipUpwards(clipId, ClipAction::ACTION_MODIFY);
-                PropagateClipToNeighbors(clipId,ClipAction::ACTION_MODIFY);
+                PropagateClipToNeighbors(clipId, ClipAction::ACTION_MODIFY);
                 }
             if (!clipIntersects)
                 {
@@ -2825,13 +2935,24 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Modify
                 else
                     {
                     d.clientID = clipId;
-                    m_differenceSets.modify(it - m_differenceSets.begin(),d);
+                    m_differenceSets.modify(it - m_differenceSets.begin(), d);
                     if (m_nodeHeader.m_level < 7) PropagateClip(clipId, ClipAction::ACTION_MODIFY);
                     return true;
                     }
-                }
+
+#else
+            *it = DifferenceSet();
+            it->clientID = clipId;
+#endif
             }
-    return false;
+#ifndef USE_DIFFSET
+        else if (it->clientID == (uint64_t)-1)
+            {
+            it->upToDate = false;
+            }
+#endif
+        }
+    return found;
     }
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 09/15
@@ -3165,8 +3286,18 @@ template<class POINT, class EXTENT> ISMPointIndexMesher<POINT, EXTENT>* SMMeshIn
 
 template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::TextureFromRaster(HIMMosaic* sourceRasterP)
     {
+    if (m_indexHeader.m_terrainDepth == (size_t)-1)
+        {
+        m_indexHeader.m_terrainDepth = m_pRootNode->GetDepth();
+        m_indexHeader.m_depth = (size_t)-1;
+        }
     if (sourceRasterP == nullptr || sourceRasterP->GetEffectiveShape() == nullptr || sourceRasterP->GetEffectiveShape()->IsEmpty()) return;
     if (m_pRootNode != NULL)   dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode)->TextureFromRasterRecursive(sourceRasterP);
+    }
+
+template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::PerformClipAction(ClipAction action, uint64_t clipId, DRange3d& extent)
+    {
+    if (m_pRootNode != NULL)   dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode)->ClipActionRecursive(action, clipId, extent);
     }
 
 template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::AddFeatureDefinition(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent)
@@ -3403,7 +3534,8 @@ template<class POINT, class EXTENT>  void SMMeshIndex<POINT, EXTENT>::SetFeature
 template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::SetClipStore(HFCPtr<IHPMPermanentStore<DifferenceSet, Byte, Byte>>& clipStore)
     {
     m_clipStore = clipStore;
-    if (!m_clipStore->LoadMasterHeader(NULL, 1)) m_clipStore->StoreMasterHeader(NULL, 0);
+    //if (!m_clipStore->LoadMasterHeader(NULL, 1)) m_clipStore->StoreMasterHeader(NULL, 0);
+    if (m_pRootNode != nullptr)dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(m_pRootNode.GetPtr())->m_differenceSets.SetStore(m_clipStore);
     }
 
 
@@ -3415,4 +3547,5 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::SetClipRe
 template<class POINT, class EXTENT>  void SMMeshIndex<POINT, EXTENT>::SetClipPool(HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>>& clipPool)
     {
     m_clipPool = clipPool;
+    if (m_pRootNode != nullptr)dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(m_pRootNode.GetPtr())->m_differenceSets.SetPool(m_clipPool);
     }

@@ -45,7 +45,7 @@ private:
 
     virtual ContentDescriptor               _CreateDescriptor      () const = 0;
 
-    virtual BackInserter*                   _CreateBackInserterFor (UInt                        layerID,
+    virtual BackInserter*                   _CreateBackInserterFor (uint32_t                        layerID,
                                                                     const DataType&             type,
                                                                     Log&                 log) const = 0;
 
@@ -60,7 +60,7 @@ public:
     // TDORAY: Add insertion config replace layerID and type for insertion query.
 
      BackInserterPtr             CreateBackInserterFor  (const PacketGroup&          packets,
-                                                                    UInt                        layerID,
+                                                                    uint32_t                        layerID,
                                                                     const DataType&             type,
                                                                     Log&                        log) const;
     };

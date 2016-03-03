@@ -11,7 +11,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 size_t DifferenceSet::WriteToBinaryStream(void*& serialized)
     {
-    size_t ct = sizeof(int32_t)+ 5*sizeof(uint64_t) + addedVertices.size()*sizeof(DPoint3d) + addedFaces.size()*sizeof(int32_t) + removedVertices.size()*sizeof(int32_t) + removedFaces.size() * sizeof(int32_t);
+    size_t ct = sizeof(int32_t)+ 5*sizeof(uint64_t) + addedVertices.size()*sizeof(DPoint3d) + addedFaces.size()*sizeof(int32_t) + removedVertices.size()*sizeof(int32_t) + removedFaces.size() * sizeof(int32_t)+sizeof(bool);
     serialized = malloc(ct);
     size_t offset = 0;
     memcpy(serialized, &clientID, sizeof(uint64_t));
@@ -48,6 +48,8 @@ size_t DifferenceSet::WriteToBinaryStream(void*& serialized)
     offset += sizeof(uint64_t);
     memcpy((uint8_t*)serialized + offset, &addedUvIndices[0], addedUvIndices.size()*sizeof(int32_t));
     offset += addedUvIndices.size()*sizeof(int32_t);
+    memcpy((uint8_t*)serialized + offset, &toggledForID, sizeof(bool));
+    offset += sizeof(bool);
     return ct;
     }
 
@@ -94,6 +96,8 @@ void DifferenceSet::LoadFromBinaryStream(void* serialized, size_t ct)
     addedUvIndices.resize(size);
     memcpy(&addedUvIndices[0], (uint8_t*)serialized + offset + sizeof(uint64_t), size*sizeof(int32_t));
     offset += sizeof(uint64_t) + size*sizeof(int32_t);
+    memcpy(&toggledForID, (uint8_t*)serialized + offset + sizeof(uint64_t), sizeof(bool));
+    offset += sizeof(bool);
     }
 
 
@@ -398,7 +402,7 @@ DifferenceSet DifferenceSet::MergeSetWith(DifferenceSet& d, const DPoint3d* vert
                 if (d.addedFaces[f + i] < firstIndex) neighborsOfMarkedVertices[d.addedFaces[f + i] - 1] = true;
             }
         }*/
-    Bentley::TerrainModel::DTMPtr dtmPtr;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr;
     BC_DTM_OBJ* bcDtmP = 0;
     int dtmCreateStatus = bcdtmObject_createDtmObject(&bcDtmP);
     if (dtmCreateStatus == 0)
@@ -431,7 +435,7 @@ DifferenceSet DifferenceSet::MergeSetWith(DifferenceSet& d, const DPoint3d* vert
                                               &numRegionTextureIds,
                                               &clip2[0],
                                               (long)clip2.size());
-    Bentley::TerrainModel::DTMMeshEnumeratorPtr en = Bentley::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
 
     en->SetExcludeAllRegions();
     en->SetMaxTriangles(dtmPtr->GetBcDTM()->GetTrianglesCount() * 2);

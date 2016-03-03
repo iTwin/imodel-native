@@ -54,7 +54,7 @@ class Clipper
     DifferenceSetWithTracking ClipConvexPolygon2DCustom(const DPoint3d* poly, size_t polySize);
     DifferenceSetWithTracking ClipPolygon2DDTM(const DPoint3d* poly, size_t polySize);
 
-    DTMInsertPointCallback GetUVInterpolationCallback(bmap<DPoint3d, bvector<bpair<bpair<DPoint3d, DPoint3d>, bvector<DPoint2d>>>, DPoint3dZYXTolerancedSortComparison>& uvs, Bentley::TerrainModel::DTMPtr& dtmPtr);
+    DTMInsertPointCallback GetUVInterpolationCallback(bmap<DPoint3d, bvector<bpair<bpair<DPoint3d, DPoint3d>, bvector<DPoint2d>>>, DPoint3dZYXTolerancedSortComparison>& uvs, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr);
 
     public:
         Clipper(const DPoint3d* vertexBuffer, size_t nVertices, const int32_t* indexBuffer, size_t nIndices, DRange3d extent, const DPoint2d* uvs = nullptr, const int32_t* uvIndices = nullptr) :
@@ -64,9 +64,9 @@ class Clipper
         DifferenceSet ClipNonConvexPolygon2D(const DPoint3d* poly, size_t polySize);
         DifferenceSetWithTracking ClipConvexPolygon2D(const DPoint3d* poly, size_t polySize);
         DifferenceSet ClipSeveralPolygons(bvector<bvector<DPoint3d>>& polygons);
-        void MakeDTMFromIndexList(Bentley::TerrainModel::DTMPtr& dtm);
+        void MakeDTMFromIndexList(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtm);
         bool GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, bmap<DPoint3d, bvector<bpair<bpair<DPoint3d, DPoint3d>, bvector<DPoint2d>>>, DPoint3dZYXTolerancedSortComparison>& uvs);
-        bool GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, bmap<DPoint3d, bvector<bpair<bpair<DPoint3d, DPoint3d>, bvector<DPoint2d>>>, DPoint3dZYXTolerancedSortComparison>& uvs, Bentley::TerrainModel::DTMPtr& dtmPtr);
+        bool GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, bmap<DPoint3d, bvector<bpair<bpair<DPoint3d, DPoint3d>, bvector<DPoint2d>>>, DPoint3dZYXTolerancedSortComparison>& uvs, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr);
 
 
     };

@@ -32,6 +32,7 @@
 
 
 #include <ScalableMesh/GeoCoords/GCS.h>
+#include "..\STM\SMPointTileStore.h"
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_GEOCOORDINATES
 
@@ -216,9 +217,9 @@ void ImporterImpl::Import      (const ImportCommand&    command,
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ImporterImpl::Import  (UInt                    sourceLayerID,
+void ImporterImpl::Import  (uint32_t                    sourceLayerID,
                             const DataTypeFamily&   sourceTypeFamily,
-                            UInt                    targetLayerID,
+                            uint32_t                    targetLayerID,
                             const DataTypeFamily&   targetTypeFamily,
                             const Config&           config)
     {
@@ -250,9 +251,9 @@ void ImporterImpl::Import  (UInt                    sourceLayerID,
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ImporterImpl::Import  (UInt                                sourceLayerID,
+void ImporterImpl::Import  (uint32_t                                sourceLayerID,
                             const DataType&                     sourceType,
-                            UInt                                targetLayerID,
+                            uint32_t                                targetLayerID,
                             const DataTypeFamily&               targetTypeFamily,
                             const Config&                       config)
     {
@@ -273,9 +274,9 @@ void ImporterImpl::Import  (UInt                                sourceLayerID,
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ImporterImpl::Import  (UInt                        sourceLayerID,   
+void ImporterImpl::Import  (uint32_t                        sourceLayerID,   
                             const DataType&             sourceType,
-                            UInt                        targetLayerID,   
+                            uint32_t                        targetLayerID,   
                             const DataType&             targetType,
                             const Config&               config)
     {
@@ -530,9 +531,9 @@ const InputExtractorCreator* ImporterImpl::GetPluginCreatorFor (const DataType& 
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-FilterCreatorCPtr ImporterImpl::GetFilterCreatorFor    (UInt                    sourceLayerID,
+FilterCreatorCPtr ImporterImpl::GetFilterCreatorFor    (uint32_t                    sourceLayerID,
                                                         const DataType&         sourceType,
-                                                        UInt                    targetLayerID,
+                                                        uint32_t                    targetLayerID,
                                                         const DataType&         targetType,
                                                         const Config&           config)
     {

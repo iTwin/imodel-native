@@ -15,6 +15,7 @@
 #pragma once
 #include <functional>
 
+#pragma warning(disable:4067) //for compiling boost on vs2015
 #include <boost/config.hpp>
 #include <boost/iterator/iterator_adaptor.hpp>
 #include <boost/iterator/transform_iterator.hpp>
@@ -951,7 +952,7 @@ const GraphWithGeometryInfo& g)
         if (!g.graphP->IsValidNodeId(node)) break;
         }
     f.close();*/
-    MTGNodeId oldVSucc = g.graphP->VSucc(g.graphP->FSucc(h));
+   /*MTGNodeId oldVSucc = g.graphP->VSucc(g.graphP->FSucc(h));
     MTGNodeId oldFSucc = g.graphP->FSucc(h);
     MTGNodeId oldMate = g.graphP->EdgeMate(h);
     g.graphP->FSucc(h) = next;
@@ -959,7 +960,7 @@ const GraphWithGeometryInfo& g)
         {
         g.graphP->VSucc(oldFSucc) = g.graphP->VSucc(next);
         g.graphP->VSucc(next) = oldVSucc;
-        }
+        }*/
     /*
     f.open("E:\\output\\cgal.log", std::ios_base::app);
     f << " mate is edge " + std::to_string(g.graphP->EdgeMate(h)) << std::endl;

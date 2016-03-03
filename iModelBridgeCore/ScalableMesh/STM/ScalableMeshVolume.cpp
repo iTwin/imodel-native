@@ -141,7 +141,55 @@ DRange3d RangeOfNodes (MTGFacets *facets, bvector<MTGNodeId> &nodes, size_t &num
     return range;
     }
 
-//double ScalableMeshVolume::ComputeVolumeCutAndFillForTile(PolyfaceHeaderPtr terrainMesh, double& cut, double& fill, PolyfaceHeader& mesh, bool is2d, bvector<PolyfaceHeaderPtr>& volumeMeshVector)
+DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolume(double* cut, double* fill, double* volume, PolyfaceHeaderCP mesh)
+    {
+    double totalVolume = 0.0, totalCut = 0.0, totalFill = 0.0;
+
+    IScalableMeshMeshQueryPtr meshQueryInterface = ((IScalableMesh*)m_scmPtr.get())->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
+    bvector<IScalableMeshNodePtr> returnedNodes;
+    IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
+    DRange3d fileRange;
+    ((IDTM*)m_scmPtr.get())->GetRange(fileRange);
+    DRange3d meshRange = mesh->PointRange();
+    DPoint3d box[4] = {
+        DPoint3d::From(meshRange.low.x, meshRange.low.y, fileRange.low.z),
+        DPoint3d::From(meshRange.low.x, meshRange.high.y, fileRange.low.z),
+        DPoint3d::From(meshRange.high.x, meshRange.low.y, fileRange.high.z),
+        DPoint3d::From(meshRange.high.x, meshRange.high.y, fileRange.high.z)
+        };
+    meshQueryInterface->Query(returnedNodes, box, 4, params);
+    for (auto& node : returnedNodes)
+        {
+        bvector<bool> clips;
+        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+        IScalableMeshMeshPtr scalableMesh = node->GetMesh(flags, clips);
+        //ScalableMeshMeshWithGraphPtr scalableMeshWithGraph((ScalableMeshMeshWithGraph*)scalableMesh.get(), true);
+        double tileCut, tileFill;
+        bvector<PolyfaceHeaderPtr> volumeMeshVector;
+        totalVolume += _ComputeVolumeCutAndFillForTile(scalableMesh, tileCut, tileFill, *const_cast<PolyfaceHeaderP>(mesh), true, meshRange, volumeMeshVector);
+        totalCut += tileCut;
+        totalFill += tileFill;
+        }
+    *cut = totalCut;
+    *fill = totalFill;
+    *volume = totalVolume;
+    return DTMStatusInt::DTM_SUCCESS;
+    }
+
+DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolumeClosed(double* cut, double* fill, double* volume, PolyfaceHeaderCP mesh)
+    {
+    return _ComputeCutFillVolume(cut, fill, volume, mesh);
+    }
+
+bool ScalableMeshVolume::_RestrictVolumeToRegion(uint64_t regionId)
+    {
+    return true;
+    }
+
+void ScalableMeshVolume::_RemoveAllRestrictions()
+    {}
+
+
 DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(PolyfaceHeaderPtr& terrainMesh, double& cut, double& fill, PolyfaceHeader& mesh, bool is2d, bvector<PolyfaceHeaderPtr>& volumeMeshVector)
     {
     double totalVolume = 0.0, totalCut = 0.0, totalFill = 0.0;
@@ -192,7 +240,7 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(PolyfaceHeaderPtr& ter
         //for(int i=0; i<curveBoundary->)
         //segments.push_back(segments[0]);
 /*
-//        Bentley::TerrainModel::DTMPtr dtmPtr;
+//        BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr;
         //BC_DTM_OBJ* dtmObject = NULL;
         //dtmObject = dtmPtr->GetBcDTM()->GetTinHandle();
 #if 0
@@ -1335,7 +1383,8 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(double& cut, double& f
     for (auto& node : returnedNodes)
         {
         bvector<bool> clips;
-        IScalableMeshMeshPtr scalableMesh = node->GetMesh(false,clips);
+        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+        IScalableMeshMeshPtr scalableMesh = node->GetMesh(flags,clips);
         //ScalableMeshMeshWithGraphPtr scalableMeshWithGraph((ScalableMeshMeshWithGraph*)scalableMesh.get(), true);
         double tileCut, tileFill;
         totalVolume += _ComputeVolumeCutAndFillForTile(scalableMesh, tileCut, tileFill, intersectingMeshSurface, true, meshRange, volumeMeshVector);

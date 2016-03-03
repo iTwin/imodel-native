@@ -12,8 +12,8 @@
 #include <ImagePP/all/h/HFCPtr.h>
 
 #include <ImagePP/all/h/HGF3DExtent.h>
-#include <ImagePP/all/h/IDTMTypes.h>
-#include <ImagePP/all/h/IDTMFile.h>
+//#include <ImagePP/all/h/IDTMTypes.h>
+//#include <ImagePP/all/h/IDTMFile.h>
 
 #include <ImagePP/all/h/HPMPooledVector.h>
 
@@ -69,24 +69,6 @@ template<class T> class OverrideSizeTypeTrait<true, T> : public T
     
     
     public:
-    //NEEDS_WORK_SM placed those here instead of StoredPooledVector, but probably should use different storage for indexes than coordinates
-
-        OverrideSizeTypeTrait<true,T>() : T()
-            {
-            }
-
-        virtual size_t size() const override
-            {
-            assert(T::size() - m_nbPointsUsedForMeshIndex < 1e10);
-            return T::size() - m_nbPointsUsedForMeshIndex;
-// SM_NEEDS_WORK : remove this because now we have an IndiceTileStore
-            //return m_count;// - m_nbPointsUsedForMeshIndex;
-            }
-
-    size_t sizeTotal() const
-        {
-        return T::size();
-        }
 
     void setNbPointsUsedForMeshIndex(size_t nbPointsUsedForMeshIndex) const
         {
@@ -95,7 +77,7 @@ template<class T> class OverrideSizeTypeTrait<true, T> : public T
     };
 
 
-namespace Bentley
+namespace BENTLEY_NAMESPACE_NAME
     {
     namespace ScalableMesh
         {        
@@ -144,8 +126,8 @@ template <class POINT, class EXTENT> class SMPointIndexNode : public HPMStoredPo
     friend class SMPointIndex<POINT, EXTENT>;    
     friend class SMMeshIndex<POINT, EXTENT>;    
     friend class SMMeshIndexNode<POINT, EXTENT>;    
-    friend class Bentley::ScalableMesh::NodeQueryProcessor<POINT, EXTENT>;
-    friend class Bentley::ScalableMesh::ScalableMeshProgressiveQueryEngine;
+    friend class BENTLEY_NAMESPACE_NAME::ScalableMesh::NodeQueryProcessor<POINT, EXTENT>;
+    friend class BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshProgressiveQueryEngine;
 
     //typedef OverrideSizeTypeTrait<std::is_base_of<HPMPooledVector<POINT>, HPMStoredPooledVector<POINT>>::value, HPMStoredPooledVector<POINT>> CONTAINER;
     typedef HPMStoredPooledVector<POINT> CONTAINER;
@@ -1130,14 +1112,14 @@ protected:
             return static_cast<IDTMFile::NodeID>(blockID.m_integerID);
             }
 
-        static IDTMFile::SubNodesTable::value_type ConvertChildID(const HPMBlockID& childID)
+        static IDTMFile::NodeID ConvertChildID(const HPMBlockID& childID)
             {
-            return static_cast<IDTMFile::SubNodesTable::value_type>(childID.m_integerID);
+            return static_cast<IDTMFile::NodeID>(childID.m_integerID);
             }
 
-        static IDTMFile::NeighborNodesTable::value_type ConvertNeighborID(const HPMBlockID& neighborID)
+        static IDTMFile::NodeID ConvertNeighborID(const HPMBlockID& neighborID)
             {
-            return static_cast<IDTMFile::NeighborNodesTable::value_type>(neighborID.m_integerID);
+            return static_cast<IDTMFile::NodeID>(neighborID.m_integerID);
             }
 
         //Should be accessed using GetParentNode.        
@@ -1176,7 +1158,7 @@ template <class POINT, class EXTENT, class NODE> class SMIndexNodeVirtual : publ
             return GetParentNodePtr()->size();
             };
 
-        virtual const POINT& operator[](size_t index) const override
+        virtual const POINT& operator[](size_t index) const// override
             {
             return GetParentNodePtr()->operator[](index);
             };
@@ -1412,6 +1394,8 @@ public:
     size_t              GetDepth() const;
 
     HFCPtr<SMPointIndexNode<POINT, EXTENT> > FindNode(EXTENT ext, size_t level) const;
+
+    size_t              GetTerrainDepth() const;
 
     /**----------------------------------------------------------------------------
     Returns the root node of the index

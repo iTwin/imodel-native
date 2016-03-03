@@ -40,7 +40,7 @@
 #ifdef SCALABLE_MESH_ATP
 #include <ScalableMesh/IScalableMeshATP.h>
 #endif
-#include <hash_map>
+//#include <hash_map>
 
 //NEEDS_WORK_SM_STREAMING : remove this!
 extern std::mutex s_streamingMutex;
@@ -55,7 +55,8 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 struct ScalableMeshViewDependentQueryParams;
 class ScalableMeshViewDependentQuery;
 
-typedef IDTMFile::Extent3d64f YProtPtExtentType;
+//typedef IDTMFile::Extent3d64f YProtPtExtentType;
+typedef DRange3d YProtPtExtentType;
 typedef HGF3DExtent<double> YProtFeatureExtentType;
 
 struct ScalableMeshExtentQuery;
@@ -69,23 +70,23 @@ struct ScalableMeshQueryParameters : public virtual IScalableMeshQueryParameters
     {    
     private: 
                
-        Bentley::GeoCoordinates::BaseGCSPtr m_sourceGCSPtr;
-        Bentley::GeoCoordinates::BaseGCSPtr m_targetGCSPtr;
+        BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr m_sourceGCSPtr;
+        BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr m_targetGCSPtr;
                 
     protected:                  
                 
-        virtual Bentley::GeoCoordinates::BaseGCSPtr _GetSourceGCS() override
+        virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetSourceGCS() override
             {
             return m_sourceGCSPtr;
             }
 
-        virtual Bentley::GeoCoordinates::BaseGCSPtr _GetTargetGCS() override
+        virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetTargetGCS() override
             {
             return m_targetGCSPtr;
             }
 
-        virtual void _SetGCS(Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr, 
-                             Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr) override
+        virtual void _SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr, 
+                             BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr) override
             {
             m_sourceGCSPtr = sourceGCSPtr;
             m_targetGCSPtr = targetGCSPtr;
@@ -388,7 +389,7 @@ struct ScalableMeshFixResolutionMaxPointsQueryParams : public virtual IScalableM
             {
             }
     };
-
+#if 0
 struct ScalableMeshQueryAllLinearsQueryParams : public virtual IScalableMeshQueryAllLinearsQueryParams,
                                          public virtual ScalableMeshFullResolutionLinearQueryParams
     {    
@@ -425,11 +426,12 @@ struct ScalableMeshQueryAllLinearsQueryParams : public virtual IScalableMeshQuer
                 }
             return newList;
             }
-
+#if 0
         virtual void _SetFeatures (const list<HFCPtr<HVEDTMLinearFeature>>& features)
             {
             m_features = features;
             }
+#endif
                
     public : 
 
@@ -441,7 +443,7 @@ struct ScalableMeshQueryAllLinearsQueryParams : public virtual IScalableMeshQuer
             {
             }               
     };
-
+#endif
 #pragma warning( pop)
 
 /*==================================================================*/
@@ -489,12 +491,12 @@ class ScalableMeshPointQuery : public IScalableMeshPointQuery
                                                                    double          zMin, 
                                                                    double          zMax) /*const*/;
         //NEEDS_WORK_SM - TEMP in public END
-
+#if 0
         static int AddLinears(const DTMPtr&               dtmPtr,
                        list<HFCPtr<HVEDTMLinearFeature>>& linearList, 
                        size_t                             maxNumberOfPoints,
                        bool                               useDecimation);
-
+#endif
         static IScalableMeshPointQueryPtr GetReprojectionQueryInterface(IScalableMeshPtr        scmToQueryPtr,
                                                                         ScalableMeshQueryType   queryType,                                                             
                                                                         const GeoCoords::GCS&   sourceGCStr,
@@ -671,7 +673,7 @@ class ScalableMeshMesh : public IScalableMeshMesh
         DPoint3d* m_points;
         size_t    m_nbPoints;
 
-        virtual const Bentley::PolyfaceQuery* _GetPolyfaceQuery() const override;
+        virtual const BENTLEY_NAMESPACE_NAME::PolyfaceQuery* _GetPolyfaceQuery() const override;
 
         virtual size_t _GetNbPoints() const override;
 
@@ -708,7 +710,7 @@ class ScalableMeshMesh : public IScalableMeshMesh
         const DPoint3d* GetPoints() const {return m_points;}
 
               size_t GetNbFaceIndexes() const {return m_nbFaceIndexes;}
-        const Int32* GetFaceIndexes() const {return m_faceIndexes;}
+        const int32_t* GetFaceIndexes() const {return m_faceIndexes;}
 
         int AppendMesh(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, size_t uvCount, DPoint2d* pUv, int32_t* pUvIndex);
 
@@ -809,8 +811,8 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
     {    
     protected :
 
-        Bentley::GeoCoordinates::BaseGCSPtr m_sourceGCSPtr;
-        Bentley::GeoCoordinates::BaseGCSPtr m_targetGCSPtr;
+        BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr m_sourceGCSPtr;
+        BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr m_targetGCSPtr;
 
         bool     m_isProgressiveDisplay;
         double   m_minScreenPixelsPerPoint;
@@ -822,6 +824,9 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
         ClipVectorPtr m_viewClipVector;
 
         StopQueryCallbackFP m_stopQueryCallbackFP;
+
+        virtual size_t _GetLevel() override { return 0; }
+        virtual void _SetLevel(size_t depth) override {};
         
         virtual const DPoint3d* _GetViewBox() const override
             {
@@ -884,18 +889,18 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
             m_viewClipVector = viewClipVector;           
             }        
      
-        virtual Bentley::GeoCoordinates::BaseGCSPtr _GetSourceGCS() override
+        virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetSourceGCS() override
             {
             return m_sourceGCSPtr;
             }
 
-        virtual Bentley::GeoCoordinates::BaseGCSPtr _GetTargetGCS() override
+        virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetTargetGCS() override
             {
             return m_targetGCSPtr;
             }
 
-        virtual void _SetGCS(Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr,
-                             Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr) override
+        virtual void _SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
+                             BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr) override
             {
             m_sourceGCSPtr = sourceGCSPtr;
             m_targetGCSPtr = targetGCSPtr;
@@ -918,20 +923,31 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
 struct ScalableMeshMeshQueryParams : public IScalableMeshMeshQueryParams
     {
     protected:
-        Bentley::GeoCoordinates::BaseGCSPtr m_sourceGCSPtr;
-        Bentley::GeoCoordinates::BaseGCSPtr m_targetGCSPtr;
-        virtual Bentley::GeoCoordinates::BaseGCSPtr _GetSourceGCS() override
+        BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr m_sourceGCSPtr;
+        BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr m_targetGCSPtr;
+        size_t m_depth;
+        virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetSourceGCS() override
             {
             return m_sourceGCSPtr;
             }
 
-        virtual Bentley::GeoCoordinates::BaseGCSPtr _GetTargetGCS() override
+        virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetTargetGCS() override
             {
             return m_targetGCSPtr;
             }
 
-        virtual void _SetGCS(Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr,
-                             Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr) override
+        virtual size_t _GetLevel() override
+            {
+            return m_depth;
+            }
+
+        virtual void _SetLevel(size_t depth) override
+            {
+            m_depth = depth;
+            }
+
+        virtual void _SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
+                             BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr) override
             {
             m_sourceGCSPtr = sourceGCSPtr;
             m_targetGCSPtr = targetGCSPtr;
@@ -940,6 +956,7 @@ struct ScalableMeshMeshQueryParams : public IScalableMeshMeshQueryParams
 
         ScalableMeshMeshQueryParams()
             {
+            m_depth = (size_t)-1;
             }
 
         virtual ~ScalableMeshMeshQueryParams()
@@ -1064,6 +1081,7 @@ struct ScalableMeshNodeRayQueryParams : public IScalableMeshNodeQueryParams
         DVec3d m_rayDirection;
         double m_depth;
         bool m_is2d;
+        size_t m_level;
 
         virtual void _SetDirection(DVec3d direction) override
             {
@@ -1090,6 +1108,15 @@ struct ScalableMeshNodeRayQueryParams : public IScalableMeshNodeQueryParams
             {
             return m_is2d;
             }
+
+        virtual void _SetLevel(size_t level) override
+            {
+            m_level = level;
+            }
+        virtual size_t _GetLevel() const override
+            {
+            return m_level;
+            }
     public:
         static const double INFINITE_DEPTH;
         ScalableMeshNodeRayQueryParams()
@@ -1097,6 +1124,7 @@ struct ScalableMeshNodeRayQueryParams : public IScalableMeshNodeQueryParams
             m_rayDirection = DVec3d::From(0, 0, -1);
             m_depth = INFINITE_DEPTH; 
             m_is2d = false;
+            m_level = (size_t)-1;
             }
 
         virtual ~ScalableMeshNodeRayQueryParams()
@@ -1160,20 +1188,23 @@ struct ScalableMeshNodePlaneQueryParams : public IScalableMeshNodePlaneQueryPara
             {
             return m_depth;
             }
-        Bentley::GeoCoordinates::BaseGCSPtr m_sourceGCSPtr;
-        Bentley::GeoCoordinates::BaseGCSPtr m_targetGCSPtr;
-        virtual Bentley::GeoCoordinates::BaseGCSPtr _GetSourceGCS() override
+
+        virtual size_t _GetLevel() override { return 0; }
+        virtual void _SetLevel(size_t depth) override {};
+        BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr m_sourceGCSPtr;
+        BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr m_targetGCSPtr;
+        virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetSourceGCS() override
             {
             return m_sourceGCSPtr;
             }
 
-        virtual Bentley::GeoCoordinates::BaseGCSPtr _GetTargetGCS() override
+        virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetTargetGCS() override
             {
             return m_targetGCSPtr;
             }
 
-        virtual void _SetGCS(Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr,
-                             Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr) override
+        virtual void _SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
+                             BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr) override
             {
             m_sourceGCSPtr = sourceGCSPtr;
             m_targetGCSPtr = targetGCSPtr;
@@ -1220,13 +1251,38 @@ template <class POINT> class ScalableMeshNodePlaneQuery : public IScalableMeshMe
         virtual ~ScalableMeshNodePlaneQuery();
     };
 
+class ScalableMeshMeshFlags : public virtual IScalableMeshMeshFlags
+    {
+    protected:
+
+        bool m_loadGraph;
+        bool m_loadTexture;
+
+        virtual bool _ShouldLoadTexture() const override;
+        virtual bool _ShouldLoadGraph() const override;
+
+        virtual void _SetLoadTexture(bool loadTexture) override;
+        virtual void _SetLoadGraph(bool loadGraph) override;
+
+    public:
+        ScalableMeshMeshFlags()
+            {
+            m_loadGraph = false;
+            m_loadTexture = false;
+            }
+
+        virtual ~ScalableMeshMeshFlags() {}
+    };
+
 template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
     {                
     protected:
         HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>> m_node;        
 
-        void ComputeDiffSet(DifferenceSet& diffs, const bvector<bool>& clipsToShow, ScalableMeshTextureID texID) const;
+        void ComputeDiffSet(DifferenceSet& diffs, const bvector<bool>& clipsToShow, ScalableMeshTextureID texID, bool applyAllClips = false) const;
+
+        void ComputeDiffSet(DifferenceSet& diffs, const bset<uint64_t>& clipsToShow, ScalableMeshTextureID texID) const;
 
         virtual BcDTMPtr   _GetBcDTM() const override;
 
@@ -1234,9 +1290,11 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
         virtual bool    _ArePointsFullResolution() const override;
 
-        virtual IScalableMeshMeshPtr _GetMesh(bool loadGraph, bvector<bool>& clipsToShow) const override;
+        virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags, bvector<bool>& clipsToShow) const override;
 
         virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow, ScalableMeshTextureID texId) const override;
+
+        virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow, ScalableMeshTextureID texId) const override;
 
         virtual void   _ApplyAllExistingClips() const override;
 
@@ -1274,6 +1332,8 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
         virtual void _LoadHeader() const override;
 
+        virtual bool _HasClip(uint64_t clip) const override;
+
         
     public:         
         ScalableMeshNode(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr);
@@ -1297,9 +1357,11 @@ template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalabl
 
     protected: 
 
-            virtual IScalableMeshMeshPtr _GetMesh(bool loadGraph, bvector<bool>& clipsToShow) const override;
+        virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags, bvector<bool>& clipsToShow) const override;
 
             virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow, ScalableMeshTextureID texId) const override;
+
+            virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow, ScalableMeshTextureID texId) const override;
 
             virtual IScalableMeshTexturePtr _GetTexture(size_t texture_id) const override;
 
@@ -1318,7 +1380,9 @@ template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalabl
 
             ScalableMeshCachedMeshNode() {};
 
-            void LoadMeshes(bool loadGraph, const bvector<bool>& clipsToShow);
+            void LoadMeshes(bool loadGraph, const bvector<bool>& clipsToShow, bool applyAllClips=false);
+
+            void LoadMeshes(bool loadGraph, const bset<uint64_t>& clipsToShow);
 
             virtual StatusInt _GetCachedMesh(SmCachedDisplayMesh*& cachedMesh, size_t cachedMeshId) const override {return ERROR;}
 
@@ -1415,7 +1479,9 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
                     }
                 }
             
-            void LoadMeshes(bool loadGraph, const bvector<bool>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture);                               
+            void LoadMeshes(bool loadGraph, const bvector<bool>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture, bool applyAllClips = false);
+
+            void LoadMeshes(bool loadGraph, const bset<uint64_t>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture);
 
             static ScalableMeshCachedDisplayNode<POINT>* Create(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr)
                 {
@@ -1469,9 +1535,11 @@ template<class POINT> class ScalableMeshNodeWithReprojection : public ScalableMe
     private:
         GeoCoords::Reprojection  m_reprojectFunction;
     protected:
-        virtual IScalableMeshMeshPtr _GetMesh(bool loadGraph, bvector<bool>& clipsToShow) const override;
+        virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags, bvector<bool>& clipsToShow) const override;
 
         virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow, ScalableMeshTextureID texId) const override;
+
+        virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow, ScalableMeshTextureID texId) const override;
     public:
         ScalableMeshNodeWithReprojection(IScalableMeshNodePtr nodeInfo, const GeoCoords::Reprojection& reproject);
         ScalableMeshNodeWithReprojection(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr, const GeoCoords::Reprojection& reproject);

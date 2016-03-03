@@ -18,6 +18,9 @@ SolutionPolicyMki=$(baseDir)ScalableMesh.mki
 dirToSearch=$(BuildContext)VendorAPI/CGAL
 %include cincapnd.mki
 
+dirToSearch=$(BuildContext)VendorAPI/Boost_1_5_7_0
+%include cincapnd.mki
+
 #----------------------------------------------------------------------
 #       Create output directories
 #----------------------------------------------------------------------
@@ -30,7 +33,7 @@ always:
 always:
    @CreateSymLinks.py -d"$(BuildContext)PublicAPI/ScalableMesh=$(SCMPublicAPISrc)/ScalableMesh"
 
-CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB
+CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED
 
 #For legal reasons, not compiling these libraries or code depending on them right now.
 %if !defined (3DMesh)
@@ -38,7 +41,7 @@ CCompOpts + -DNO_3D_MESH
 %endif
 
 %if !defined (GarlandFilter)
-CCompOpts + -DNO_GARLAND_FILTER
+CCompOpts + -DNO_GARLAND_FILTER 
 %endif
 #----------------------------------------------------------------------
 #       Inform user of compile options
@@ -52,11 +55,12 @@ always:
 #----------------------------------------------------------------------
 PchCompiland = $(stmDir)ScalableMeshPCH.cpp
 PchOutputDir = $(o)
-PchExtraOptions    = -Zm180 -openmp
+PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTM_BUILD__ -DSCALABLE_MESH_DGN -DNOMINMAX 
+CompileOptionsMki =  $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy.mki
 %include $(SharedMki)PreCompileHeader.mki
 
 # UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki
-CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION
+CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION 
 
 %if !defined (3DMesh)
 CCPchOpts + -DNO_3D_MESH
@@ -264,6 +268,8 @@ $(o)ScalableMeshScheduler$(oext) : $(stmDir)Threading/ScalableMeshScheduler.cpp 
 $(o)LightThreadPool$(oext) : $(stmDir)Threading/LightThreadPool.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)SMSQLiteFile$(oext) : $(stmDir)SMSQLiteFile.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)HPUPacket$(oext) : $(stmDir)HPUPacket.cpp $(stmDir)HPUPacket.h ${MultiCompileDepends}
 
 #-----------------------------------------------------------------------
 #   Build Compile Automatic Ground Detection 

@@ -5,9 +5,9 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#define ONE_ONE_TRIANGULATION
-#ifdef ONE_ONE_TRIANGULATION
-
+#pragma once
+#include <DgnPlatform/ClipVector.h>
+#include <DgnPlatform/DgnPlatform.h>
 #include <ScalableMesh/IScalableMesh.h>
 
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
@@ -22,7 +22,7 @@ typedef RefCountedPtr<ITiledTriangulatorValidator> ITiledTriangulatorValidatorPt
 * Interface implemented by MRDTM engines.
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
-struct ITiledTriangulatorValidator : public RefCountedBase
+/*struct ITiledTriangulatorValidator : public RefCountedBase
     {
         private:
         protected:
@@ -52,7 +52,7 @@ struct ITiledTriangulatorValidator : public RefCountedBase
         int SetOuputInActiveModel(bool outputIncorrectTriangles);
 
         static ITiledTriangulatorValidatorPtr CreateFor (RefCountedPtr<BcDTM> memDtmPtr);
-    };
+    };*/
 
 //END_GEODTMAPP_NAMESPACE
-#endif
+//#endif

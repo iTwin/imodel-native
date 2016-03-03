@@ -426,17 +426,17 @@ WKTKeyword::Type GetWktType(WString wkt)
 /*----------------------------------------------------------------------------+
 |
 +----------------------------------------------------------------------------*/ 
-bool MapWktFlavorEnum(Bentley::GeoCoordinates::BaseGCS::WktFlavor& baseGcsWktFlavor, IDTMFile::WktFlavor fileWktFlavor)
+bool MapWktFlavorEnum(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor& baseGcsWktFlavor, IDTMFile::WktFlavor fileWktFlavor)
     {
     //Temporary use numeric value until the basegcs enum match the csmap's one.
     switch(fileWktFlavor)
         {
         case IDTMFile::WktFlavor_Oracle9 :
-            baseGcsWktFlavor = (Bentley::GeoCoordinates::BaseGCS::WktFlavor)7;
+            baseGcsWktFlavor = (BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor)7;
             break;
 
         case IDTMFile::WktFlavor_Autodesk :
-            baseGcsWktFlavor = (Bentley::GeoCoordinates::BaseGCS::WktFlavor)8;
+            baseGcsWktFlavor = (BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor)8;
             break;
 
         default : 

@@ -6,7 +6,7 @@
 |       $Date: 2011/08/30 19:04:18 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -74,11 +74,11 @@ private:
     typedef const void*     ClassID;
 
     ClassID                 m_id;
-    UInt                    m_roleQty;
+    uint32_t                    m_roleQty;
     const void*             m_implP; // Reserved for further use
 
     IMPORT_DLLE explicit    DataTypeFamilyBase                     (ClassID         id,
-                                                                    UInt            roleQty);
+                                                                    uint32_t            roleQty);
 
 public:
     IMPORT_DLLE virtual     ~DataTypeFamilyBase                    ();
@@ -100,7 +100,7 @@ protected:
     typedef StaticDataTypeFamilyBase<T> 
                             super_class;
 
-    explicit                StaticDataTypeFamilyBase               (UInt            roleQty)
+    explicit                StaticDataTypeFamilyBase               (uint32_t            roleQty)
             :   DataTypeFamilyBase(0, roleQty) 
         {
         m_id = GenerateClassID();

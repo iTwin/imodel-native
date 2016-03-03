@@ -8,16 +8,33 @@
 #pragma once
 #include <TerrainModel/TerrainModel.h>
 #include <DgnPlatform/DgnPlatform.h>
-#include <TerrainModel/ElementHandler/TerrainModelElementHandler.h>
+//#include <TerrainModel/ElementHandler/TerrainModelElementHandler.h>
 #include <ImagePP/h/ImageppAPI.h>
 #include <GeoCoord/BaseGeoCoord.h>
-#include <ImagePP/all/h/interface/IRasterGeoCoordinateServices.h>
-#include <ScalableMesh/GeoCoords/Definitions.h>
+//#include <ImagePP/all/h/interface/IRasterGeoCoordinateServices.h>
+//#include <ScalableMesh/GeoCoords/Definitions.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
-#include <DgnPlatform/ElementHandle.h>
+//#include <DgnPlatform/ElementHandle.h>
 //#include <TerrainModel/ElementHandler/DTMDataRef.h>
 //#include <TerrainModel/ElementHandler/IMrDTMDataRef.h>
 #include <ScalableMesh/IScalableMesh.h>
+#include <DgnPlatform/DgnPlatform.r.h>
+#include <DgnPlatform/DgnModel.h>
+
+#include    <DgnPlatform/DgnCoreAPI.h>
+
+#include <DgnPlatform/DgnPlatform.h>
+#include <DgnPlatform/DgnPlatformApi.h>
+#include <TerrainModel/TerrainModel.h>
+#include <ScalableMesh\ScalableMeshDefs.h>
+//#include <ScalableMesh\IScalableMeshStream.h>
+#include <ScalableMesh\IScalableMeshURL.h>
+#include <ScalableMesh\Import\ScalableMeshData.h>
+#include <ScalableMesh\IScalableMeshSources.h>
+#include <ScalableMesh\IScalableMeshSourceImportConfig.h>
+#include <ScalableMesh\IScalableMeshSourceCollection.h>
+
+//#include    <DgnGeoCoord\DgnGeoCoordApi.h>
 
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 USING_NAMESPACE_BENTLEY
@@ -53,15 +70,15 @@ typedef enum
 
 void AugmentExtentByFactor(DRange2d& extent, const double& factor);
 
-UInt64 getExtractedTMMaxPointCount ();
+uint64_t getExtractedTMMaxPointCount ();
 
-bool GeoCoord_IsAvailable();
+//bool GeoCoord_IsAvailable();
 //bool IsElemHandleReadOnly (ElementHandle eh);
 void EnsureFolderSeparatorCharacterAtEnd (WStringR wFolderName);
 //StatusInt LoadStringFromGEODTM(WChar* pString, UInt32 listId, UInt32 stringNum);
 /*StatusInt ExportSTMToDTM(EditElementHandleR eeh, DgnModelRefP modelRef);
 StatusInt ExportSTMToDTM(EditElementHandleR dtmElm, EditElementHandleCR stmElm, DgnModelRefP modelRef);*/
-Bentley::DgnPlatform::StandardUnit FindUnitNumber(double ratioToMeter);
+//BentleyApi::Dgn::StandardUnit FindUnitNumber(double ratioToMeter);
 //GCS GetModelGCS (DgnModelRefP modelRef);
 //WString GetFileNameFor (const Bentley::TerrainModel::Element::IMrDTMDataRef& dataRef);
 //bool IsProcessTerminatedByUser ();
@@ -133,13 +150,13 @@ StatusInt GetApproximationNbPtsNeedToExtract(IScalableMeshPtr                   
                                                                   unsigned int*                nbPointsForPointFeatures,
                                                                   unsigned int*                nbPointsForLinearFeatures);*/
 
-void GetFromModelRefToActiveTransform(TransformR fromModelRefToActiveTransform, DgnModelRefP modelRef);
+//void GetFromModelRefToActiveTransform(TransformR fromModelRefToActiveTransform, DgnModelP modelRef);
 
 //StatusInt transformDTMFromActiveMeterToUOR(BcDTM& ibcdtm, ElementHandleCR tmElementHandle);
 
 //StatusInt transformDTMFromStorageToUOR(BcDTM& ibcdtm, ElementHandleCR tmElementHandle);
 
-class NonUndoableTxn : DgnCacheTxn
+/*class NonUndoableTxn : DgnCacheTxn
     {
     public:
         NonUndoableTxn ()
@@ -155,8 +172,8 @@ class NonUndoableTxn : DgnCacheTxn
     private:
         ITxn*           m_oldTxn;
         bool            m_oldUndoRedoState;
-    };
+    };*/
 
-void GetTransformForPoints(Transform& uorToMeter, Transform& meterToUor);
+//void GetTransformForPoints(Transform& uorToMeter, Transform& meterToUor);
 
 void AugmentRangeByFactor(DRange2d& range, const double& factor);

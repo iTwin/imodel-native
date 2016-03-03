@@ -43,7 +43,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 /*
  * Driver current version
  */ 
-const UInt ContentConfigSerializer::FORMAT_VERSION = 0;
+const uint32_t ContentConfigSerializer::FORMAT_VERSION = 0;
 
 
 namespace { // Unnamed namespace
@@ -213,7 +213,7 @@ bool                                OutputType(SourceDataSQLite&                
         dimIt != dimsEnd;
             ++dimIt)
         {
-            const Bentley::ScalableMesh::Import::DimensionType& dimType = dimIt->GetType();
+            const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType& dimType = dimIt->GetType();
 
             const byte dimensionTypeField = static_cast<byte>(dimType.GetID());
             const byte dimensionRoleField = static_cast<byte>(dimIt->GetRole());
@@ -250,7 +250,7 @@ bool OutputGCS(SourceDataSQLite& sourceData, const GCS& gcs)
 
 
 bool                                OutputLayer(SourceDataSQLite&                              sourceData,
-    UInt                                        layer)
+    uint32_t                                        layer)
 {
     const uint32_t layerField = layer;
     sourceData.SetLayer(layerField);
@@ -607,7 +607,7 @@ protected:
         static const DataTypeFamily TIN_TYPE_FAMILY(TINTypeFamilyCreator().Create());
         static const DataTypeFamily MESH_TYPE_FAMILY(MeshTypeFamilyCreator().Create());
 
-        const UInt DataTypeFamilyField = sourceData.GetTypeFamilyID();
+        const uint32_t DataTypeFamilyField = sourceData.GetTypeFamilyID();
         switch (DataTypeFamilyField)
         {
         case TFID_POINT:
@@ -623,17 +623,17 @@ protected:
         }
     }
 
-    static UInt                 LoadLayer(SourceDataSQLite&      sourceData)
+    static uint32_t                 LoadLayer(SourceDataSQLite&      sourceData)
     {
         uint32_t layerField = INVALID_LAYER;
         //ReadValue(stream, layerField);
         return layerField;
     }
 
-    static const UInt           INVALID_LAYER;
+    static const uint32_t           INVALID_LAYER;
     };
 
-const UInt ComponentCreator::INVALID_LAYER(numeric_limits<UInt>::max());
+const uint32_t ComponentCreator::INVALID_LAYER(numeric_limits<uint32_t>::max());
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -768,7 +768,7 @@ const struct GCSExtendedConfigCreatorV2 : public ComponentCreator
 
             IDTMFile::WktFlavor fileWktFlavor = GetWKTFlavor(&gcsWKT, gcsWKT);
 
-            Bentley::GeoCoordinates::BaseGCS::WktFlavor baseGcsWktFlavor;
+            BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor baseGcsWktFlavor;
 
             bool result = MapWktFlavorEnum(baseGcsWktFlavor, fileWktFlavor);
             assert(result == true);
@@ -839,24 +839,24 @@ const struct TypeConfigCreator : ComponentCreator
 
                 for (uint32_t dimIdx = 0; dimIdx < dimensionCountField; ++dimIdx)
                 {
-                    const UInt dimensionTypeField = sourceData.GetDimensionType(orgIdx, dimIdx);
-                    const UInt dimensionRoleField = sourceData.GetDimensionRole(orgIdx, dimIdx);
+                    const uint32_t dimensionTypeField = sourceData.GetDimensionType(orgIdx, dimIdx);
+                    const uint32_t dimensionRoleField = sourceData.GetDimensionRole(orgIdx, dimIdx);
 
                     if (typeFamilyP->GetRoleQty() <= dimensionRoleField)
                         return 0;
 
                     const DimensionRole dimRole = static_cast<DimensionRole>(dimensionRoleField);
 
-                    if (Bentley::ScalableMesh::Import::DimensionType::ID_QTY > dimensionTypeField)
+                    if (BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::ID_QTY > dimensionTypeField)
                     {
-                        org.push_back(DimensionDef(Bentley::ScalableMesh::Import::DimensionType::GetFor(static_cast<Bentley::ScalableMesh::Import::DimensionType::ID>(dimensionTypeField)),
+                        org.push_back(DimensionDef(BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::GetFor(static_cast<BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::ID>(dimensionTypeField)),
                             dimRole));
                     }
-                    else if (Bentley::ScalableMesh::Import::DimensionType::ID_CUSTOM == dimensionTypeField)
+                    else if (BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::ID_CUSTOM == dimensionTypeField)
                     {
                         WString typeName = sourceData.GetDimensionTypeName(orgIdx, dimIdx);
 
-                        org.push_back(DimensionDef(Bentley::ScalableMesh::Import::DimensionType::GetFor(typeName.c_str()), dimRole));
+                        org.push_back(DimensionDef(BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::GetFor(typeName.c_str()), dimRole));
                     }
                     else
                     {
@@ -931,7 +931,7 @@ const ComponentFactory::CreatorItem* ComponentFactory::GetCreatorIndex ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentConfigComponentBase* ComponentFactory::Create(bool& isNewerSerializationID, SourceDataSQLite& sourceData) const
 {
-    const UInt componentIDField = sourceData.PopConfigComponentID();
+    const uint32_t componentIDField = sourceData.PopConfigComponentID();
 
     if (CCSID_QTY <= componentIDField)
     {
@@ -991,7 +991,7 @@ bool                                GenericDeserialize(SourceDataSQLite&        
 +---------------+---------------+---------------+---------------+---------------+------*/
 LayerConfigCreator::Component* LayerConfigCreator::_Create(SourceDataSQLite&      sourceData) const
 {
-    const UInt layerID = LoadLayer(sourceData);
+    const uint32_t layerID = LoadLayer(sourceData);
     if (INVALID_LAYER == layerID)
         return 0;
 
@@ -1014,7 +1014,7 @@ LayerConfigCreator::Component* LayerConfigCreator::_Create(SourceDataSQLite&    
 
 bool ContentConfigSerializer::Deserialize(SourceDataSQLite&      sourceData,
     ContentConfig&      config,
-    UInt                formatVersion) const
+    uint32_t                formatVersion) const
 {
     if (ContentConfigSerializer::FORMAT_VERSION != formatVersion)
     {

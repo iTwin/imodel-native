@@ -6,7 +6,7 @@
 |       $Date: 2011/08/05 14:06:16 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -53,14 +53,14 @@ struct DataType;
 struct ExtractionQuery : private Uncopyable
     {
 private:
-    UInt                                        m_layer;
+    uint32_t                                        m_layer;
     const DataType&                             m_type;
 public:
-    explicit                                    ExtractionQuery                            (UInt                    layer,
+    explicit                                    ExtractionQuery                            (uint32_t                    layer,
                                                                                             const DataType&         type)
         :   m_type(type), m_layer(layer) { }
 
-    UInt                                        GetLayer                                   () const { return m_layer; }
+    uint32_t                                        GetLayer                                   () const { return m_layer; }
     const DataType&                             GetType                                    () const { return m_type; }
     };
 

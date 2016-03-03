@@ -10,8 +10,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include <windows.h>
+//#include "ScalableMeshATPPch.h"
 #include "ATPFileFinder.h"
+#include <windows.h>
 #include <ImagePP/h/HmrMacro.h>
 
 inline void AddMissingBackslashToFolderPath(WString* pio_pFolderPath)

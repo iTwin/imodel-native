@@ -6,22 +6,14 @@
 |
 +--------------------------------------------------------------------------------------*/
 //#include "DcStmCorePCH.h"
-
-#define ONE_ONE_TRIANGULATION
-#ifdef ONE_ONE_TRIANGULATION
+//#include "ScalableMeshATPPch.h"
 #include "TiledTriangulatorValidator.h"
 #include <DgnPlatform/DgnPlatform.h>
-#include <DgnPlatform/DgnFileIO/DgnElements.h>
-#include <DgnPlatform/ModelAccess.h>
+#include <DgnPlatform/DgnCoreAPI.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
-
-#include <DgnPlatform/DgnHost.h>
-#include <DgnView/DgnViewAPI.h>
-#include <ScalableMesh\ScalableMeshAdmin.h>
-#include <ScalableMesh\ScalableMeshLib.h>
     
 #define MAX_POINTS_PER_DTM   10000
 #define MAX_FEATURES_PER_DTM UINT_MAX
@@ -33,7 +25,7 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH
 /*----------------------------------------------------------------------------+
 |ITiledTriangulatorValidator Method Definition Section - Begin
 +----------------------------------------------------------------------------*/
-ITiledTriangulatorValidatorPtr ITiledTriangulatorValidator::CreateFor (RefCountedPtr<BcDTM> memDtmPtr)
+/*ITiledTriangulatorValidatorPtr ITiledTriangulatorValidator::CreateFor (RefCountedPtr<BcDTM> memDtmPtr)
     {
     return new TiledTriangulatorValidator(memDtmPtr);
     }
@@ -68,7 +60,7 @@ int ITiledTriangulatorValidator::SetOuputInActiveModel(bool outputIncorrectTrian
 |ITiledTriangulatorValidator Method Definition Section - End
 +----------------------------------------------------------------------------*/
 
-
+/*
 //#define DBL_COMPARE_TOL 0.00001
 static double DBL_COMPARE_TOL = 0.01;
 
@@ -97,7 +89,7 @@ struct TreeNode
     };
     */
 
-
+    /*
 TiledTriangulatorValidator::TiledTriangulatorValidator(RefCountedPtr<BcDTM> memDtmPtr)
     {
     m_outputIncorrectTriangles = false;
@@ -278,7 +270,7 @@ int TiledTriangulatorValidator::_CompareMemDTMwithTileDTM(const DTMPtr& tileDtmP
     vector<FaceWithProperties>::iterator facesInTileIter(facesInTile.begin());
     vector<FaceWithProperties>::iterator facesInTileIterEnd(facesInTile.end());
     */
-
+/*
     long numTriangles = tileDtmPtr->GetBcDTM()->GetTrianglesCount();
 
     if (numTriangles == 0) return ERROR;
@@ -476,7 +468,7 @@ int TiledTriangulatorValidator::_CompareMemDTMwithTileDTM(const DTMPtr& tileDtmP
 
         int status = m_memDtmPtr->getRange(&minRange, &maxRange);
         */
-
+/*
         while (invalidTriIter != invalidTriangles.end())
             {
             if (s_useTriSearchNewCode)
@@ -707,7 +699,7 @@ int TiledTriangulatorValidator::_CompareMemDTMwithTileDTM(const DTMPtr& tileDtmP
                     invalidTriIter++;
                     }
                     */
-                }
+/*                }
             }
         }
 
@@ -725,7 +717,7 @@ int TiledTriangulatorValidator::_CompareMemDTMwithTileDTM(const DTMPtr& tileDtmP
 
             while (invalidTriIter != invalidTriangles.end())
                 {
-                long nbVertices = m_memDtmPtr->GetPointCount ();
+                long nbVertices = (long)m_memDtmPtr->GetPointCount ();
                 bool vert0Found = false;
                 bool vert1Found = false;
                 bool vert2Found = false;
@@ -845,7 +837,7 @@ int TiledTriangulatorValidator::_CompareMemDTMwithTileDTM(const DTMPtr& tileDtmP
 
 //                lineElement.AddToModel();
 
-                invalidTriIter++;
+/*                invalidTriIter++;
                 }
             }
 

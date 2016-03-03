@@ -6,7 +6,7 @@
 |       $Date: 2011/10/21 17:32:24 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -55,7 +55,7 @@ ImportAllToLayerCommand::ImportAllToLayerCommand   (const ImportAllToLayerComman
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ImportAllToLayerCommand::ImportAllToLayerCommand   (UInt targetLayer)
+ImportAllToLayerCommand::ImportAllToLayerCommand   (uint32_t targetLayer)
     :   m_targetLayer(targetLayer)
     {
     }
@@ -72,7 +72,7 @@ ImportAllToLayerCommand::~ImportAllToLayerCommand ()
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt ImportAllToLayerCommand::GetTargetLayer () const
+uint32_t ImportAllToLayerCommand::GetTargetLayer () const
     {
     return m_targetLayer;
     }
@@ -91,7 +91,7 @@ ImportAllToLayerTypeCommand::ImportAllToLayerTypeCommand   (const ImportAllToLay
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ImportAllToLayerTypeCommand::ImportAllToLayerTypeCommand   (UInt                    targetLayer,
+ImportAllToLayerTypeCommand::ImportAllToLayerTypeCommand   (uint32_t                    targetLayer,
                                                             const DataTypeFamily&   targetType)
     :   m_targetType(targetType), m_targetLayer(targetLayer)
     {
@@ -109,7 +109,7 @@ ImportAllToLayerTypeCommand::~ImportAllToLayerTypeCommand ()
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt ImportAllToLayerTypeCommand::GetTargetLayer () const
+uint32_t ImportAllToLayerTypeCommand::GetTargetLayer () const
     {
     return m_targetLayer;
     }
@@ -164,7 +164,7 @@ const DataTypeFamily& ImportAllToTypeCommand::GetTargetType () const
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ImportLayerCommand::ImportLayerCommand (UInt layer)
+ImportLayerCommand::ImportLayerCommand (uint32_t layer)
     :   m_sourceLayer(layer)
     {
     }
@@ -191,7 +191,7 @@ ImportLayerCommand::~ImportLayerCommand ()
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt ImportLayerCommand::GetSourceLayer () const
+uint32_t ImportLayerCommand::GetSourceLayer () const
     {
     return m_sourceLayer;
     }
@@ -210,8 +210,8 @@ ImportLayerToLayerCommand::ImportLayerToLayerCommand (const ImportLayerToLayerCo
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ImportLayerToLayerCommand::ImportLayerToLayerCommand   (UInt    sourceLayer,
-                                                        UInt    targetLayer)
+ImportLayerToLayerCommand::ImportLayerToLayerCommand   (uint32_t    sourceLayer,
+                                                        uint32_t    targetLayer)
     :   m_sourceLayer(sourceLayer), m_targetLayer(targetLayer)
     {
     }
@@ -228,7 +228,7 @@ ImportLayerToLayerCommand::~ImportLayerToLayerCommand ()
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt ImportLayerToLayerCommand::GetSourceLayer () const
+uint32_t ImportLayerToLayerCommand::GetSourceLayer () const
     {
     return m_sourceLayer;
     }
@@ -237,7 +237,7 @@ UInt ImportLayerToLayerCommand::GetSourceLayer () const
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt ImportLayerToLayerCommand::GetTargetLayer () const
+uint32_t ImportLayerToLayerCommand::GetTargetLayer () const
     {
     return m_targetLayer;
     }
@@ -256,8 +256,8 @@ ImportLayerToLayerTypeCommand::ImportLayerToLayerTypeCommand (const ImportLayerT
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ImportLayerToLayerTypeCommand::ImportLayerToLayerTypeCommand   (UInt                    sourceLayer,
-                                                                UInt                    targetLayer,
+ImportLayerToLayerTypeCommand::ImportLayerToLayerTypeCommand   (uint32_t                    sourceLayer,
+                                                                uint32_t                    targetLayer,
                                                                 const DataTypeFamily&   targetType)
     :   m_sourceLayer(sourceLayer), m_targetLayer(targetLayer), m_targetType(targetType)
     {
@@ -275,7 +275,7 @@ ImportLayerToLayerTypeCommand::~ImportLayerToLayerTypeCommand  ()
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt ImportLayerToLayerTypeCommand::GetSourceLayer () const
+uint32_t ImportLayerToLayerTypeCommand::GetSourceLayer () const
     {
     return m_sourceLayer;
     }   
@@ -284,7 +284,7 @@ UInt ImportLayerToLayerTypeCommand::GetSourceLayer () const
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt ImportLayerToLayerTypeCommand::GetTargetLayer () const
+uint32_t ImportLayerToLayerTypeCommand::GetTargetLayer () const
     {
     return m_targetLayer;
     }
@@ -312,7 +312,7 @@ ImportLayerToTypeCommand::ImportLayerToTypeCommand (const ImportLayerToTypeComma
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ImportLayerToTypeCommand::ImportLayerToTypeCommand (UInt                    sourceLayer,
+ImportLayerToTypeCommand::ImportLayerToTypeCommand (uint32_t                    sourceLayer,
                                                     const DataTypeFamily&   targetType)
     :   m_sourceLayer(sourceLayer), m_targetType(targetType)
     {
@@ -330,7 +330,7 @@ ImportLayerToTypeCommand::~ImportLayerToTypeCommand ()
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt ImportLayerToTypeCommand::GetSourceLayer () const
+uint32_t ImportLayerToTypeCommand::GetSourceLayer () const
     {
     return m_sourceLayer;
     }
@@ -359,7 +359,7 @@ ImportLayerTypeCommand::ImportLayerTypeCommand (const ImportLayerTypeCommand&   
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ImportLayerTypeCommand::ImportLayerTypeCommand (UInt                    sourceLayer,
+ImportLayerTypeCommand::ImportLayerTypeCommand (uint32_t                    sourceLayer,
                                                 const DataTypeFamily&   sourceType)
     :   m_sourceLayer(sourceLayer), m_sourceType(sourceType)
     {
@@ -377,7 +377,7 @@ ImportLayerTypeCommand::~ImportLayerTypeCommand ()
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt ImportLayerTypeCommand::GetSourceLayer () const
+uint32_t ImportLayerTypeCommand::GetSourceLayer () const
     {
     return m_sourceLayer;
     }
@@ -405,9 +405,9 @@ ImportLayerTypeToLayerCommand::ImportLayerTypeToLayerCommand   (const ImportLaye
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ImportLayerTypeToLayerCommand::ImportLayerTypeToLayerCommand   (UInt                    sourceLayer,
+ImportLayerTypeToLayerCommand::ImportLayerTypeToLayerCommand   (uint32_t                    sourceLayer,
                                                                 const DataTypeFamily&   sourceType,
-                                                                UInt                    targetLayer)
+                                                                uint32_t                    targetLayer)
     :   m_sourceLayer(sourceLayer), m_sourceType(sourceType), m_targetLayer(targetLayer)
     {
     }
@@ -424,7 +424,7 @@ ImportLayerTypeToLayerCommand::~ImportLayerTypeToLayerCommand ()
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt ImportLayerTypeToLayerCommand::GetSourceLayer () const
+uint32_t ImportLayerTypeToLayerCommand::GetSourceLayer () const
     {
     return m_sourceLayer;
     }
@@ -442,7 +442,7 @@ const DataTypeFamily& ImportLayerTypeToLayerCommand::GetSourceType () const
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt ImportLayerTypeToLayerCommand::GetTargetLayer () const
+uint32_t ImportLayerTypeToLayerCommand::GetTargetLayer () const
     {
     return m_sourceLayer;
     }
@@ -464,9 +464,9 @@ ImportLayerTypeToLayerTypeCommand::ImportLayerTypeToLayerTypeCommand     (const 
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ImportLayerTypeToLayerTypeCommand::ImportLayerTypeToLayerTypeCommand   (UInt                    sourceLayer,
+ImportLayerTypeToLayerTypeCommand::ImportLayerTypeToLayerTypeCommand   (uint32_t                    sourceLayer,
                                                                         const DataTypeFamily&   sourceType,
-                                                                        UInt                    targetLayer,
+                                                                        uint32_t                    targetLayer,
                                                                         const DataTypeFamily&   targetType)
     :   m_sourceLayer(sourceLayer), m_sourceType(sourceType),
         m_targetLayer(targetLayer), m_targetType(targetType)
@@ -486,7 +486,7 @@ ImportLayerTypeToLayerTypeCommand::~ImportLayerTypeToLayerTypeCommand  ()
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt ImportLayerTypeToLayerTypeCommand::GetSourceLayer () const
+uint32_t ImportLayerTypeToLayerTypeCommand::GetSourceLayer () const
     {
     return m_sourceLayer;
     }
@@ -504,7 +504,7 @@ const DataTypeFamily& ImportLayerTypeToLayerTypeCommand::GetSourceType () const
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt ImportLayerTypeToLayerTypeCommand::GetTargetLayer () const
+uint32_t ImportLayerTypeToLayerTypeCommand::GetTargetLayer () const
     {
     return m_targetLayer;
     }
@@ -532,7 +532,7 @@ ImportLayerTypeToTypeCommand::ImportLayerTypeToTypeCommand (const ImportLayerTyp
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ImportLayerTypeToTypeCommand::ImportLayerTypeToTypeCommand (UInt                    sourceLayer,
+ImportLayerTypeToTypeCommand::ImportLayerTypeToTypeCommand (uint32_t                    sourceLayer,
                                                             const DataTypeFamily&   sourceType,
                                                             const DataTypeFamily&   targetType)
     :   m_sourceLayer(sourceLayer), m_sourceType(sourceType), m_targetType(targetType)
@@ -551,7 +551,7 @@ ImportLayerTypeToTypeCommand::~ImportLayerTypeToTypeCommand ()
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt ImportLayerTypeToTypeCommand::GetSourceLayer () const
+uint32_t ImportLayerTypeToTypeCommand::GetSourceLayer () const
     {
     return m_sourceLayer;
     }
@@ -625,7 +625,7 @@ ImportTypeToLayerCommand::ImportTypeToLayerCommand (const ImportTypeToLayerComma
 * @bsimethod                                                    Raymond.Gauthier  06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ImportTypeToLayerCommand::ImportTypeToLayerCommand (const DataTypeFamily&   sourceType,
-                                                    UInt                    targetLayer)
+                                                    uint32_t                    targetLayer)
     :   m_sourceType(sourceType), m_targetLayer(targetLayer)
     {
     }
@@ -651,7 +651,7 @@ const DataTypeFamily& ImportTypeToLayerCommand::GetSourceType () const
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt ImportTypeToLayerCommand::GetTargetLayer () const
+uint32_t ImportTypeToLayerCommand::GetTargetLayer () const
     {
     return m_targetLayer;
     }
@@ -720,7 +720,7 @@ ImportTypeToLayerTypeCommand::ImportTypeToLayerTypeCommand (const ImportTypeToLa
 * @bsimethod                                                    Raymond.Gauthier  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ImportTypeToLayerTypeCommand::ImportTypeToLayerTypeCommand (const DataTypeFamily&   sourceType,
-                                                            UInt                    targetLayer,
+                                                            uint32_t                    targetLayer,
                                                             const DataTypeFamily&   targetType)
     :   m_sourceType(sourceType), m_targetType(targetType),
         m_targetLayer(targetLayer)
@@ -748,7 +748,7 @@ const DataTypeFamily& ImportTypeToLayerTypeCommand::GetSourceType () const
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt ImportTypeToLayerTypeCommand::GetTargetLayer () const
+uint32_t ImportTypeToLayerTypeCommand::GetTargetLayer () const
     {
     return m_targetLayer;
     }

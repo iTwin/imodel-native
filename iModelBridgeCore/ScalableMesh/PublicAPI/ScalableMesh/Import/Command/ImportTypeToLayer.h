@@ -6,7 +6,7 @@
 |       $Date: 2011/11/22 21:58:25 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -33,17 +33,17 @@ public:  // OPERATOR_NEW_KLUDGE
 
 private:
     DataTypeFamily                      m_sourceType;
-    UInt                                m_targetLayer;
+    uint32_t                                m_targetLayer;
 
 public:
     IMPORT_DLLE explicit                ImportTypeToLayerCommand           (const DataTypeFamily&                   sourceType,
-                                                                            UInt                                    targetLayer);
+                                                                            uint32_t                                    targetLayer);
     IMPORT_DLLE virtual                 ~ImportTypeToLayerCommand          ();
 
     IMPORT_DLLE                         ImportTypeToLayerCommand           (const ImportTypeToLayerCommand&         rhs);
 
     const DataTypeFamily&               GetSourceType                      () const;
-    UInt                                GetTargetLayer                     () const;
+    uint32_t                                GetTargetLayer                     () const;
     };
 
 

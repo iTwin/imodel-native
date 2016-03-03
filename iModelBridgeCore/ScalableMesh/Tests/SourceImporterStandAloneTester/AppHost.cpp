@@ -29,7 +29,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 USING_NAMESPACE_BENTLEY_TERRAINMODEL_ELEMENT 
 USING_NAMESPACE_RASTER
-using namespace Bentley::GeoCoordinates;
+using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
 /*---------------------------------------------------------------------------------**//**
 * @description
@@ -48,7 +48,7 @@ private:
         if (BSISUCCESS != status)
             fileName = m_mrdtmMonikerPtr->GetPortableName(); // File not found. Return file name with configuration variable.
 
-        return Bentley::ScalableMesh::LocalFileURL(fileName.c_str());
+        return BENTLEY_NAMESPACE_NAME::ScalableMesh::LocalFileURL(fileName.c_str());
         }
 
 
@@ -56,7 +56,7 @@ private:
 
     virtual DTMSourceMonikerType        _GetType                       () const override
         {
-        return Bentley::ScalableMesh::DTM_SOURCE_MONIKER_MSDOCUMENT;
+        return BENTLEY_NAMESPACE_NAME::ScalableMesh::DTM_SOURCE_MONIKER_MSDOCUMENT;
         }
 
 
@@ -189,7 +189,7 @@ void InitMonikerFactories()
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct AppRasterCoreAdmin : Bentley::DgnPlatform::Raster::RasterCoreAdmin
+struct AppRasterCoreAdmin : BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreAdmin
 {
 virtual bool                    _IsProgressiveDisplayEnabled() const    {return true;}
 };
@@ -197,9 +197,9 @@ virtual bool                    _IsProgressiveDisplayEnabled() const    {return 
 /*=================================================================================**//**
 * @bsiclass                                     		Marc.Bedard     02/2011
 +===============+===============+===============+===============+===============+======*/
-struct AppRasterCoreLibHost : Bentley::DgnPlatform::Raster::RasterCoreLib::Host 
+struct AppRasterCoreLibHost : BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreLib::Host 
 {
-virtual Bentley::DgnPlatform::Raster::RasterCoreAdmin& _SupplyRasterCoreAdmin() override {return *new AppRasterCoreAdmin();}
+virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreAdmin& _SupplyRasterCoreAdmin() override {return *new AppRasterCoreAdmin();}
 }; // RasterCoreLib::Host
 
 void AppHost::Startup (/*HWND*/)
@@ -220,16 +220,16 @@ void AppHost::Startup (/*HWND*/)
     DgnViewLib::Initialize (*this, true);
 
     //Application needs to initialize PdfLibInitializer dll if it wants support for PDF raster attachment.
-    //Bentley::PdfLibInitializer::Initialize(*new ViewDemoPdfLibInitializerHost());
+    //BENTLEY_NAMESPACE_NAME::PdfLibInitializer::Initialize(*new ViewDemoPdfLibInitializerHost());
 
-    Bentley::DgnPlatform::Raster::RasterCoreLib::Initialize (*new AppRasterCoreLibHost());
-    BeAssert (Bentley::DgnPlatform::Raster::RasterCoreLib::IsInitialized());
+    BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreLib::Initialize (*new AppRasterCoreLibHost());
+    BeAssert (BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreLib::IsInitialized());
 
     //Ensure basegeocoord is initialized.
     _SupplyGeoCoordinationAdmin()._GetServices();
     
     //Required for reading TM element
-    Bentley::TerrainModel::Element::DTMElementHandlerManager::InitializeForOfflineTmImport();
+    BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementHandlerManager::InitializeForOfflineTmImport();
 
     //m_viewManager.SetTopWindow(topWindow);
 
@@ -245,26 +245,26 @@ void AppHost::Startup (/*HWND*/)
 void AppHost::Terminate ()
     {
     //call rasterCore cleanup code
-    Bentley::DgnPlatform::Raster::RasterCoreLib::GetHost().Terminate(true);
+    BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreLib::GetHost().Terminate(true);
 
     //call PdfLibInitializer dll cleanup code.
-    //Bentley::PdfLibInitializer::GetHost().Terminate(true);
+    //BENTLEY_NAMESPACE_NAME::PdfLibInitializer::GetHost().Terminate(true);
     }
 
 void                                                                   AppHost::_SupplyProductName(WStringR name)   {name.assign(L"DgnView Demo");}
-Bentley::DgnPlatform::DgnPlatformLib::Host::NotificationAdmin&         AppHost::_SupplyNotificationAdmin()          {return *new AppNotificationAdmin();}
-Bentley::DgnPlatform::DgnFileIOLib::Host::DigitalRightsManager&        AppHost::_SupplyDigitalRightsManager()       {return *new ReadOnlyDigitalRightsManager;}
+BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::NotificationAdmin&         AppHost::_SupplyNotificationAdmin()          {return *new AppNotificationAdmin();}
+BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnFileIOLib::Host::DigitalRightsManager&        AppHost::_SupplyDigitalRightsManager()       {return *new ReadOnlyDigitalRightsManager;}
 //GraphicsAdmin&             AppHost::_SupplyGraphicsAdmin()              {return *new DgnViewGraphicsAdmin();}
 //ViewStateAdmin&            AppHost::_SupplyViewStateAdmin()             {return *new DemoViewStateAdmin();}
 //ToolAdmin&                 AppHost::_SupplyToolAdmin()                  {return *new DemoToolAdmin();}
-Bentley::DgnPlatform::IViewManager&                                    AppHost::_SupplyViewManager()                {return m_viewManager; }
+BENTLEY_NAMESPACE_NAME::DgnPlatform::IViewManager&                                    AppHost::_SupplyViewManager()                {return m_viewManager; }
 //SolidsKernelAdmin&         AppHost::_SupplySolidsKernelAdmin()          {return *new AppSolidKernelAdmin();}
-Bentley::DgnPlatform::DgnPlatformLib::Host::RasterAttachmentAdmin&     AppHost::_SupplyRasterAttachmentAdmin()      {return Bentley::DgnPlatform::Raster::RasterCoreLib::GetDefaultRasterAttachmentAdmin();}
-Bentley::DgnPlatform::DgnPlatformLib::Host::PointCloudAdmin&           AppHost::_SupplyPointCloudAdmin()            {return *new Bentley::DgnPlatform::PointCloudDisplayAdmin();}
+BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::RasterAttachmentAdmin&     AppHost::_SupplyRasterAttachmentAdmin()      {return BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreLib::GetDefaultRasterAttachmentAdmin();}
+BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::PointCloudAdmin&           AppHost::_SupplyPointCloudAdmin()            {return *new BENTLEY_NAMESPACE_NAME::DgnPlatform::PointCloudDisplayAdmin();}
 //FontAdmin&                 AppHost::_SupplyFontAdmin()                  {return *new DemoFontAdmin();}
 //MaterialAdmin&             AppHost::_SupplyMaterialAdmin()              {return *new DemoMaterialAdmin(); }
 //ProgressiveDisplayManager& AppHost::_SupplyProgressiveDisplayManager()  {return *new DemoProgressiveDisplayManager(); }
-Bentley::DgnPlatform::DgnPlatformLib::Host::GeoCoordinationAdmin&      AppHost::_SupplyGeoCoordinationAdmin()       
+BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::GeoCoordinationAdmin&      AppHost::_SupplyGeoCoordinationAdmin()       
     {        
     wchar_t* outRoot = _wgetenv(L"OutRoot");
     assert(outRoot != 0);

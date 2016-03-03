@@ -42,7 +42,7 @@ template <class EXTENT> class SMSQLiteIndiceTileStore : public SMPointTileStore<
 
     public:
         // Don't need this
-        /*SMSQLiteIndiceTileStore(Bentley::WString filename, const IDTMFile::AccessMode& accessMode)
+        /*SMSQLiteIndiceTileStore(BENTLEY_NAMESPACE_NAME::WString filename, const IDTMFile::AccessMode& accessMode)
             {
             m_smSQLiteFile = SMSQLiteFile::Create();
             Utf8String filenameA;

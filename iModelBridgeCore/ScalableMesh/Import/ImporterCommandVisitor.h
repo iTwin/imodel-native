@@ -6,7 +6,7 @@
 |       $Date: 2011/08/23 19:49:08 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -55,37 +55,37 @@ class CommandVisitor : public IImportSequenceVisitor
 
 
 
-    void                            ImportLayer                (UInt                                        sourceLayer) const;
+    void                            ImportLayer                (uint32_t                                        sourceLayer) const;
 
-    void                            ImportLayerToLayer         (UInt                                        sourceLayer,
-                                                                UInt                                        targetLayer) const;
+    void                            ImportLayerToLayer         (uint32_t                                        sourceLayer,
+                                                                uint32_t                                        targetLayer) const;
 
-    void                            ImportLayerToLayerType     (UInt                                        sourceLayer,
-                                                                UInt                                        targetLayer,
+    void                            ImportLayerToLayerType     (uint32_t                                        sourceLayer,
+                                                                uint32_t                                        targetLayer,
                                                                 const DataTypeFamily&                       targetType) const;
 
-    void                            ImportLayerToType          (UInt                                        sourceLayer,
+    void                            ImportLayerToType          (uint32_t                                        sourceLayer,
                                                                 const DataTypeFamily&                       targetType) const;
 
 
-    void                            ImportLayerType            (UInt                                        sourceLayer,
+    void                            ImportLayerType            (uint32_t                                        sourceLayer,
                                                                 const DataTypeFamily&                       sourceType) const;
     
-    void                            ImportLayerTypeToLayer     (UInt                                        sourceLayer,
+    void                            ImportLayerTypeToLayer     (uint32_t                                        sourceLayer,
                                                                 const DataTypeFamily&                       sourceType,
-                                                                UInt                                        targetLayer) const;
+                                                                uint32_t                                        targetLayer) const;
 
-    void                            ImportLayerTypeToLayerType (UInt                                        sourceLayer,
+    void                            ImportLayerTypeToLayerType (uint32_t                                        sourceLayer,
                                                                 const DataTypeFamily&                       sourceType,
-                                                                UInt                                        targetLayer,
+                                                                uint32_t                                        targetLayer,
                                                                 const DataTypeFamily&                       targetType) const;
 
-    void                            ImportLayerTypeToLayerType (UInt                                        sourceLayer,
+    void                            ImportLayerTypeToLayerType (uint32_t                                        sourceLayer,
                                                                 const DataType&                             sourceType,
-                                                                UInt                                        targetLayer,
+                                                                uint32_t                                        targetLayer,
                                                                 const DataTypeFamily&                       targetType) const;
 
-    void                            ImportLayerTypeToType      (UInt                                        sourceLayer,
+    void                            ImportLayerTypeToType      (uint32_t                                        sourceLayer,
                                                                 const DataTypeFamily&                       sourceType,
                                                                 const DataTypeFamily&                       targetType) const;
 
@@ -93,10 +93,10 @@ class CommandVisitor : public IImportSequenceVisitor
     void                            ImportType                 (const DataTypeFamily&                       sourceType) const;
 
     void                            ImportTypeToLayer          (const DataTypeFamily&                       sourceType,
-                                                                UInt                                        targetLayer) const;
+                                                                uint32_t                                        targetLayer) const;
 
     void                            ImportTypeToLayerType      (const DataTypeFamily&                       sourceType,
-                                                                UInt                                        targetLayer,
+                                                                uint32_t                                        targetLayer,
                                                                 const DataTypeFamily&                       targetType) const;
 
     void                            ImportTypeToType           (const DataTypeFamily&                       sourceType,

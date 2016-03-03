@@ -50,7 +50,7 @@ WString SisterFileManager::GetChannelFileName(ElementHandleCR eh, WStringCR exte
     PointCloudPropertiesPtr attributes = pQuery->GetPointCloudProperties(eh);
 
     // Resolve the path
-    Bentley::WString inFilename = attributes->GetFileMoniker().ResolveDisplayName();
+    BENTLEY_NAMESPACE_NAME::WString inFilename = attributes->GetFileMoniker().ResolveDisplayName();
     
     WString devStr, dirStr, nameStr;    
     BeFileName::ParseName (&devStr, &dirStr, &nameStr, 0, inFilename.c_str());   

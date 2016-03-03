@@ -13,8 +13,16 @@
 
 #include "SMPointTileStore.h"
 #include <ImagePP/all/h/HCDCodecZlib.h>
-#include "ScalableMesh/Streaming/AzureStorage.h"
+//#include "ScalableMesh/Streaming/AzureStorage.h"
 #include <curl/curl.h>
+
+#ifdef VANCOUVER_API
+#define OPEN_FILE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::None)
+#define OPEN_FILE_SHARE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::Read)
+#else
+#define OPEN_FILE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode)
+#define OPEN_FILE_SHARE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode)
+#endif
 
 //static bool s_useStreamingStore = true;
 static bool s_save_grouped_store = false;
@@ -65,12 +73,12 @@ class SMNodeGroupMasterHeader : public std::vector<SMGroupInfo>
             ssOldMasterHeader << WString(pi_pMasterHeaderPath + L"\\MasterHeader.sscm");
             auto oldMasterHeaderFilename = ssOldMasterHeader.str();
             BeFile oldMasterHeaderFile;
-            if (BeFileStatus::Success != oldMasterHeaderFile.Open(oldMasterHeaderFilename.c_str(), BeFileAccess::Read, BeFileSharing::None))
+            if (BeFileStatus::Success != OPEN_FILE(oldMasterHeaderFile, oldMasterHeaderFilename.c_str(), BeFileAccess::Read)) //oldMasterHeaderFile.Open(oldMasterHeaderFilename.c_str(), BeFileAccess::Read, BeFileSharing::None))
                 assert(!"Problem reading the old Master Header File... does it exist?");
-            UInt64 fileSize;
+            uint64_t fileSize;
             oldMasterHeaderFile.GetSize(fileSize);
             bvector<Byte> oldMasterHeaderBuffer(fileSize);
-            UInt32 bytes_read;
+            uint32_t bytes_read;
             oldMasterHeaderFile.Read(oldMasterHeaderBuffer.data(), &bytes_read, fileSize);
             assert(bytes_read == fileSize);
 
@@ -78,7 +86,7 @@ class SMNodeGroupMasterHeader : public std::vector<SMGroupInfo>
             ss << WString(pi_pOutputDirPath + L"\\MasterHeader.bin");
             auto group_header_filename = ss.str();
             BeFile file;
-            if (BeFileStatus::Success == file.Open(group_header_filename.c_str(), BeFileAccess::Write, BeFileSharing::None) ||
+            if (BeFileStatus::Success == OPEN_FILE(file, group_header_filename.c_str(), BeFileAccess::Write) ||//  file.Open(group_header_filename.c_str(), BeFileAccess::Write, BeFileSharing::None) ||
                 BeFileStatus::Success == file.Create(group_header_filename.c_str()))
                 {
                 uint32_t NbChars = 0;
@@ -89,8 +97,8 @@ class SMNodeGroupMasterHeader : public std::vector<SMGroupInfo>
                 file.Write(&NbChars, &sizeOldMasterHeaderFile, sizeof(sizeOldMasterHeaderFile));
                 assert(NbChars == sizeof(sizeOldMasterHeaderFile));
 
-                file.Write(&NbChars, oldMasterHeaderBuffer.data(), (UInt32)oldMasterHeaderBuffer.size());
-                assert(NbChars == (UInt32)oldMasterHeaderBuffer.size());
+                file.Write(&NbChars, oldMasterHeaderBuffer.data(), (uint32_t)oldMasterHeaderBuffer.size());
+                assert(NbChars == (uint32_t)oldMasterHeaderBuffer.size());
 
                 // Append group information
                 for (auto& groupInfo : *this)
@@ -222,7 +230,7 @@ class SMNodeGroup
             ss << path << m_pID << L".bin";
             auto group_filename = ss.str();
             BeFile file;
-            if (BeFileStatus::Success == file.Open(group_filename.c_str(), BeFileAccess::Write, BeFileSharing::None) ||
+            if (BeFileStatus::Success == OPEN_FILE(file, group_filename.c_str(), BeFileAccess::Write) ||//file.Open(group_filename.c_str(), BeFileAccess::Write, BeFileSharing::None) ||
                 BeFileStatus::Success == file.Create(group_filename.c_str()))
                 {
                 uint32_t NbChars = 0;
@@ -303,14 +311,14 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             return static_cast<IDTMFile::NodeID>(blockID.m_integerID);
             }
 
-        static IDTMFile::SubNodesTable::value_type ConvertChildID(const HPMBlockID& childID)
+        static IDTMFile::NodeID ConvertChildID(const HPMBlockID& childID)
             {
-            return static_cast<IDTMFile::SubNodesTable::value_type>(childID.m_integerID);
+            return static_cast<IDTMFile::NodeID>(childID.m_integerID);
             }
 
-        static IDTMFile::NeighborNodesTable::value_type ConvertNeighborID(const HPMBlockID& neighborID)
+        static IDTMFile::NodeID ConvertNeighborID(const HPMBlockID& neighborID)
             {
-            return static_cast<IDTMFile::NeighborNodesTable::value_type>(neighborID.m_integerID);
+            return static_cast<IDTMFile::NodeID>(neighborID.m_integerID);
             }
 
         bool WriteCompressedPacket(const HCDPacket& pi_uncompressedPacket,
@@ -538,7 +546,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 }
             
             /* Neighbors */
-            for (size_t neighborPosInd = 0; neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosInd++)
+            for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
                 {
                 size_t numNeighbors;
                 memcpy(&numNeighbors, headerData + dataIndex, sizeof(numNeighbors));
@@ -730,7 +738,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             //    auto node_location = L"http://realitydatastreaming.azurewebsites.net/Mesh/c1sub_scalablemesh/" + block_name + L"\n";
             //    Utf8String utf8_node_location;
             //    BeStringUtilities::WCharToUtf8(utf8_node_location, node_location.c_str());
-            //    file.Write(NULL, utf8_node_location.c_str(), (UInt32)utf8_node_location.length());
+            //    file.Write(NULL, utf8_node_location.c_str(), (uint32_t)utf8_node_location.length());
             //    }
             //else
             //    {
@@ -774,8 +782,8 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             m_path_to_grouped_headers(grouped_headers_path),
             m_node_id(0),
             m_pCodec(new HCDCodecZlib()),
-            m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ=="),
-            m_stream_store(m_storage_connection_string, L"scalablemeshtest")
+            m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==")//,
+           // m_stream_store(m_storage_connection_string, L"scalablemeshtest")
             {
             if (s_stream_from_disk)
                 {
@@ -852,7 +860,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     buffer_size = buffer.size();
                     file.Write(NULL, buffer.c_str(), buffer_size);
                     };
-                if (BeFileStatus::Success == file.Open(filename, BeFileAccess::Write, BeFileSharing::None))
+                if (BeFileStatus::Success == OPEN_FILE(file, filename, BeFileAccess::Write) )//file.Open(filename, BeFileAccess::Write, BeFileSharing::None))
                     {
                     jsonWriter(file, m_masterHeader);
                     }
@@ -887,14 +895,14 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                         if (s_stream_from_disk)
                             {
                             BeFile file;
-                            if (BeFileStatus::Success != file.Open(filename.c_str(), BeFileAccess::Read, BeFileSharing::None))
+                            if (BeFileStatus::Success != OPEN_FILE(file, filename.c_str(), BeFileAccess::Read))
                                 {
                                 return 0;
                                 }
                             file.GetSize(headerSize);
                             //bvector<Byte> masterHeaderBuffer(fileSize);
                             masterHeaderBuffer = new char[headerSize];
-                            UInt32 bytes_read;
+                            uint32_t bytes_read;
                             file.Read(masterHeaderBuffer, &bytes_read, (uint32_t)headerSize);
                             assert(bytes_read == headerSize);
 
@@ -902,7 +910,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                             }
                         else 
                             {
-                            m_stream_store.DownloadBlob(filename.c_str(), [indexHeader, &headerSize, &masterHeaderBuffer](const scalable_mesh::azure::Storage::point_buffer_type& buffer)
+                           /* m_stream_store.DownloadBlob(filename.c_str(), [indexHeader, &headerSize, &masterHeaderBuffer](const scalable_mesh::azure::Storage::point_buffer_type& buffer)
                                 {
                                 if (buffer.empty())
                                     {
@@ -913,7 +921,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
                                 masterHeaderBuffer = new char[headerSize];
                                 memcpy(masterHeaderBuffer, buffer.data(), headerSize);
-                                });
+                                });*/
                             }
 
                         uint64_t position = 0;
@@ -966,7 +974,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     // For this particular implementation the header size is unused ... The indexHeader is unique and of known size
                     BeFile file;
                     auto filename = (m_path + L"MasterHeader.sscm").c_str();
-                    if (BeFileStatus::Success != file.Open(filename, BeFileAccess::Read, BeFileSharing::None))
+                    if (BeFileStatus::Success != OPEN_FILE(file, filename, BeFileAccess::Read))//file.Open(filename, BeFileAccess::Read, BeFileSharing::None))
                         return 0;
                     char inBuffer[100000];
                     uint32_t bytes_read = 0;
@@ -992,7 +1000,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     }
                 else {
                     auto blob_name = m_path + L"MasterHeader.sscm";
-                    m_stream_store.DownloadBlob(blob_name.c_str(), [indexHeader, &headerSize](const scalable_mesh::azure::Storage::point_buffer_type& buffer)
+                   /* m_stream_store.DownloadBlob(blob_name.c_str(), [indexHeader, &headerSize](const scalable_mesh::azure::Storage::point_buffer_type& buffer)
                         {
                         if (buffer.empty()) 
                             {
@@ -1011,7 +1019,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                         auto rootNodeBlockID = masterHeader["rootNodeBlockID"].asUInt();
                         indexHeader->m_rootNodeBlockID = rootNodeBlockID != IDTMFile::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
 
-                        });
+                        });*/
 
                     }
                 return headerSize;
@@ -1038,7 +1046,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 ss << pathToPoints << L"p_" << blockIDConvert << L".bin";
                 auto filename = ss.str();
                 BeFile file;
-                auto fileOpened = file.Open(filename.c_str(), BeFileAccess::Write, BeFileSharing::None);
+                auto fileOpened = OPEN_FILE(file, filename.c_str(), BeFileAccess::Write);//file.Open(filename.c_str(), BeFileAccess::Write, BeFileSharing::None);
                 if (BeFileStatus::Success != fileOpened)
                     {
                     auto fileCreated = file.Create(filename.c_str());
@@ -1094,7 +1102,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 {
 
                 BeFile file;
-                if (BeFileStatus::Success == file.Open(filename.c_str(), BeFileAccess::Read, BeFileSharing::Read))
+                if (BeFileStatus::Success == OPEN_FILE_SHARE(file, filename.c_str(), BeFileAccess::Read))//file.Open(filename.c_str(), BeFileAccess::Read, BeFileSharing::Read))
                     {
                     auto DataTypeArray = new Byte[sizeof(uint32_t)];
                     uint32_t bytesRead = 0;
@@ -1137,7 +1145,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 //assert(fileRead == blobDownloaded);
                 //assert(UncompressedSize == localUncompressedSize);*/
                 bool blobDownloaded = false;
-                m_stream_store.DownloadBlob(filename.c_str(), [this, &blobDownloaded, &UncompressedSize, &blockIDConvert](scalable_mesh::azure::Storage::point_buffer_type& buffer)
+                /*m_stream_store.DownloadBlob(filename.c_str(), [this, &blobDownloaded, &UncompressedSize, &blockIDConvert](scalable_mesh::azure::Storage::point_buffer_type& buffer)
                     {
                     UncompressedSize = reinterpret_cast<uint32_t&>(buffer[0]);
 
@@ -1145,7 +1153,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     points.resize(UncompressedSize);
                     memcpy(points.data(), buffer.data() + sizeof(uint32_t), buffer.size() - sizeof(uint32_t));
                     blobDownloaded = true;
-                    });
+                    });*/
                 assert(blobDownloaded);
                 //delete[] dataArrayTmp;
                 }
@@ -1160,7 +1168,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             Json::Value block;
 
             block["id"] = ConvertBlockID(blockID);
-            block["resolution"] = (IDTMFile::ResolutionID)header->m_level;
+            block["resolution"] = (IDTMFile::NodeID)header->m_level;
             block["filtered"] = header->m_filtered;
             block["parentID"] = header->m_parentNodeID.IsValid() ? ConvertBlockID(header->m_parentNodeID) : IDTMFile::GetNullNodeID();
             block["isLeaf"] = header->m_IsLeaf;
@@ -1191,7 +1199,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
             auto& neighbors = block["neighbors"];
             int neighborInfoInd = 0;
-            for (size_t neighborPosInd = 0; neighborPosInd < IDTMFile::NeighborNodesTable::MAX_QTY; neighborPosInd++)
+            for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
                 {
                 for (size_t neighborInd = 0; neighborInd < header->m_apNeighborNodeID[neighborPosInd].size(); neighborInd++)
                     {
@@ -1305,7 +1313,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 buffer_size = buffer.size();
                 file.Write(NULL, buffer.c_str(), buffer_size);
                 };
-            if (BeFileStatus::Success == file.Open(filename.c_str(), BeFileAccess::Write, BeFileSharing::None))
+            if (BeFileStatus::Success == OPEN_FILE(file, filename.c_str(), BeFileAccess::Write))//file.Open(filename.c_str(), BeFileAccess::Write, BeFileSharing::None))
                 {
                 jsonWriter(file, block);
                 }
@@ -1360,7 +1368,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     if (s_stream_from_disk)
                         {
                         BeFile file;
-                        if (BeFileStatus::Success == file.Open(group_filename.c_str(), BeFileAccess::Read, BeFileSharing::None))
+                        if (BeFileStatus::Success == OPEN_FILE(file, group_filename.c_str(), BeFileAccess::Write))//file.Open(group_filename.c_str(), BeFileAccess::Read, BeFileSharing::None) ||
                             {
                             uint64_t fileSize;
                             file.GetSize(fileSize);
@@ -1377,7 +1385,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                         }
                     else
                         {
-                        m_stream_store.DownloadBlob(group_filename.c_str(), [&inBuffer, &bytes_read](const scalable_mesh::azure::Storage::point_buffer_type& buffer)
+                        /*m_stream_store.DownloadBlob(group_filename.c_str(), [&inBuffer, &bytes_read](const scalable_mesh::azure::Storage::point_buffer_type& buffer)
                             {
                             if (buffer.empty())
                                 {
@@ -1388,7 +1396,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
                             inBuffer = new Byte[bytes_read];
                             memcpy(inBuffer, buffer.data(), bytes_read);
-                            });
+                            });*/
                         }
                     SMNodeGroup node_group;
 
@@ -1415,7 +1423,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             if (s_stream_from_disk)
                 {
                 BeFile file;
-                if (BeFileStatus::Success != file.Open(filename.c_str(), BeFileAccess::Read, BeFileSharing::None))
+                if (BeFileStatus::Success != OPEN_FILE(file, filename.c_str(), BeFileAccess::Read))//file.Open(filename.c_str(), BeFileAccess::Read, BeFileSharing::None))
                     {
                     return 1;
                     }
@@ -1437,13 +1445,13 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 reader.parse(reinterpret_cast<char*>(&buffer.front()), reinterpret_cast<char*>(&buffer.back()), nodeHeader);
                 }
             else {
-                auto blob_name = filename.c_str();
-                m_stream_store.DownloadBlob(blob_name, [&nodeHeader](scalable_mesh::azure::Storage::point_buffer_type& buffer)
+                //auto blob_name = filename.c_str();
+                /*m_stream_store.DownloadBlob(blob_name, [&nodeHeader](scalable_mesh::azure::Storage::point_buffer_type& buffer)
                     {
                     assert(!buffer.empty());
                     Json::Reader reader;
                     reader.parse(reinterpret_cast<char*>(&buffer.front()), reinterpret_cast<char*>(&buffer.back()), nodeHeader);
-                    });
+                    });*/
                 }
 
             ReadNodeHeaderFromJSON(header, nodeHeader);
@@ -1485,7 +1493,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 Byte* dataArrayTmp = new Byte[maxDataSize];
                 uint32_t sizeData;
                 BeFile file;
-                if (BeFileStatus::Success == file.Open(filename.c_str(), BeFileAccess::Read, BeFileSharing::None))
+                if (BeFileStatus::Success == OPEN_FILE(file, filename.c_str(), BeFileAccess::Read))//file.Open(filename.c_str(), BeFileAccess::Read, BeFileSharing::None))
                     {
                     auto read_result = file.Read(dataArrayTmp, &sizeData, maxDataSize);
                     HASSERT(BeFileStatus::Success == read_result);
@@ -1528,7 +1536,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             else {
                 // stream from azure
                 bool blobDownloaded = false;
-                m_stream_store.DownloadBlob(filename.c_str(), [this, DataTypeArray, &maxDataSize, &blobDownloaded](scalable_mesh::azure::Storage::point_buffer_type& buffer)
+                /*m_stream_store.DownloadBlob(filename.c_str(), [this, DataTypeArray, &maxDataSize, &blobDownloaded](scalable_mesh::azure::Storage::point_buffer_type& buffer)
                     {
                     assert(!buffer.empty() && buffer.size() <= maxDataSize);
                     //assert(buffer.size() == sizeDataLocal);
@@ -1544,7 +1552,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     assert(UncompressedSize == uncompressedPacket.GetDataSize());
                     memcpy(DataTypeArray, uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());
                     blobDownloaded = true;
-                    });
+                    });*/
                 assert(blobDownloaded);
                 }
             return 1;
@@ -1572,11 +1580,11 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
         WString m_path;
         Json::Value m_masterHeader;
         Json::Value m_header;
-        UINT32 m_node_id;
+        uint32_t m_node_id;
         bool m_stream_from_disk;
         HFCPtr<HCDCodec>        m_pCodec;
         std::wstring m_storage_connection_string;
-        scalable_mesh::azure::Storage m_stream_store;
+        //scalable_mesh::azure::Storage m_stream_store;
         WString m_path_to_grouped_headers;
         SMNodeGroupMasterHeader m_groupMasterHeader;
         std::vector<SMNodeGroup> m_cached_node_header_groups;

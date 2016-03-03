@@ -147,7 +147,7 @@ bool IDTMSource::IsReachable () const
     {
     return m_implP->_IsReachable();
     }
-
+#if 0
 /*----------------------------------------------------------------------------+
 |IDTMSource::GetMoniker
 +----------------------------------------------------------------------------*/ 
@@ -156,7 +156,15 @@ const IMoniker& IDTMSource::GetMoniker () const
     assert(0 != m_implP->m_monikerPtr.get());
     return *m_implP->m_monikerPtr;
     }
+#endif
 
+/*----------------------------------------------------------------------------+
+|IDTMSource::GetPath
++----------------------------------------------------------------------------*/
+WString IDTMSource::GetPath() const
+    {
+    return m_implP->GetPath();
+    }
 /*----------------------------------------------------------------------------+
 |IDTMSource::GetSourceDataType
 +----------------------------------------------------------------------------*/
@@ -340,7 +348,23 @@ IDTMSource::Impl::Impl (DTMSourceDataType       sourceDataType,
         m_lastModified(CreateUnknownModificationTime()),
         m_config(GetImportSequenceFor(sourceDataType))
     {
-    m_monikerPtr = const_cast<IMoniker*>(monikerP);    
+    m_path = dynamic_cast<const ILocalFileMoniker*>(monikerP)->GetURL().GetPath();
+    m_sourceDataType = sourceDataType;
+
+    m_config.RegisterEditListener(*this);
+
+    }
+
+/*----------------------------------------------------------------------------+
+|DTMSource class
++----------------------------------------------------------------------------*/
+IDTMSource::Impl::Impl(DTMSourceDataType       sourceDataType,
+                       WCharCP fullPath)
+                       : m_editListenerP(0),
+                       m_lastModified(CreateUnknownModificationTime()),
+                       m_config(GetImportSequenceFor(sourceDataType))
+    {
+    m_path = WString(fullPath);
     m_sourceDataType = sourceDataType;
 
     m_config.RegisterEditListener(*this);
@@ -352,7 +376,7 @@ IDTMSource::Impl::Impl (const Impl& rhs)
         m_sourceDataType(rhs.m_sourceDataType),      
         m_lastModified(rhs.m_lastModified),
         m_config(rhs.m_config),
-        m_monikerPtr(rhs.m_monikerPtr)
+        m_path(rhs.m_path)
     {
     m_config.RegisterEditListener(*this);
     }
@@ -405,8 +429,7 @@ void IDTMSource::Impl::_NotifyOfLastEditUpdate (Time updatedLastEditTime)
 +----------------------------------------------------------------------------*/ 
 bool IDTMSource::Impl::_IsReachable () const
     {
-    assert(0 != m_monikerPtr.get());
-    return m_monikerPtr->IsTargetReachable();
+    return std::ifstream(m_path.c_str()).good();
     }
 
 
@@ -494,7 +517,14 @@ IDTMLocalFileSourcePtr IDTMLocalFileSource::Create (DTMSourceDataType           
     return new IDTMLocalFileSource(new Impl(sourceDataType, localFileMonikerPtr.get())); 
     }
 
-
+/*----------------------------------------------------------------------------+
+|static IDTMLocalFileSource::Create
++----------------------------------------------------------------------------*/
+IDTMLocalFileSourcePtr IDTMLocalFileSource::Create(DTMSourceDataType           sourceDataType,
+                                                   const WCharCP fullPath)
+    {
+    return new IDTMLocalFileSource(new Impl(sourceDataType, fullPath));
+    }
 
 /*----------------------------------------------------------------------------+
 |DTMLocalFileSource class
@@ -505,6 +535,15 @@ IDTMLocalFileSource::Impl::Impl(DTMSourceDataType   sourceDataType,
         m_fileFound(false)
     {    
     }
+
+/*----------------------------------------------------------------------------+
+|DTMLocalFileSource class
++----------------------------------------------------------------------------*/
+IDTMLocalFileSource::Impl::Impl(DTMSourceDataType   sourceDataType,
+                                const WCharCP fullPath)
+                                : IDTMSource::Impl(sourceDataType, fullPath),
+                                m_fileFound(false)
+    {}
 
 IDTMLocalFileSource::Impl::~Impl()
     {
@@ -517,8 +556,10 @@ IDTMLocalFileSource::Impl::~Impl()
 +---------------+---------------+---------------+---------------+---------------+------*/
 LocalFileURL IDTMLocalFileSource::Impl::GetURL (StatusInt& status) const
     {
-    assert(HasMoniker() && (dynamic_cast<const ILocalFileMoniker*>(&GetMoniker()) != 0));
-    return static_cast<const ILocalFileMoniker&>(GetMoniker()).GetURL(status);
+    status = BSISUCCESS;
+    return LocalFileURL(m_path.c_str());
+    //assert(HasMoniker() && (dynamic_cast<const ILocalFileMoniker*>(&GetMoniker()) != 0));
+    //return static_cast<const ILocalFileMoniker&>(GetMoniker()).GetURL(status);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -528,19 +569,7 @@ LocalFileURL IDTMLocalFileSource::Impl::GetURL (StatusInt& status) const
 const WString& IDTMLocalFileSource::Impl::GetPath (StatusInt& status) const
     {
     status = BSISUCCESS;
-
-    if (!m_fileFound)
-        {
-        const LocalFileURL url(GetURL(status));
-
-        m_localURL.assign(url.GetPath());
-        if (BSISUCCESS == status)
-            {
-            m_fileFound = true;
-            }
-        }
-
-    return m_localURL;
+    return m_path;
     }
 
 
@@ -913,7 +942,7 @@ IDTMSourceCollection& IDTMSourceGroup::EditSources ()
 |DTMSourceGroup class
 +----------------------------------------------------------------------------*/                        
 IDTMSourceGroup::Impl::Impl() 
-    :   IDTMSource::Impl(DTM_SOURCE_DATA_MIX, 0)
+    :   IDTMSource::Impl(DTM_SOURCE_DATA_MIX, (WCharCP)nullptr)
     {
     m_sources.RegisterEditListener(*this);
     }

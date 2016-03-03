@@ -6,7 +6,7 @@
 |       $Date: 2011/12/20 16:24:03 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -15,7 +15,20 @@
 #include <ScalableMesh/GeoCoords/Definitions.h>
 #include <deque>
 
+namespace IDTMFile
+    {
+
+
+    enum WktFlavor
+        {
+        WktFlavor_Oracle9 = 1,
+        WktFlavor_Autodesk,
+        WktFlavor_End,
+        };
+    }
+
 BEGIN_BENTLEY_SCALABLEMESH_GEOCOORDINATES_NAMESPACE
+
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
@@ -61,7 +74,7 @@ IDTMFile::WktFlavor                     GetWKTFlavor                       (WStr
 
 WKTKeyword::Type                        GetWktType                         (WString wkt);
 
-bool MapWktFlavorEnum(Bentley::GeoCoordinates::BaseGCS::WktFlavor& baseGcsWktFlavor, IDTMFile::WktFlavor fileWktFlavor);
+bool MapWktFlavorEnum(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor& baseGcsWktFlavor, IDTMFile::WktFlavor fileWktFlavor);
 
 
 END_BENTLEY_SCALABLEMESH_GEOCOORDINATES_NAMESPACE

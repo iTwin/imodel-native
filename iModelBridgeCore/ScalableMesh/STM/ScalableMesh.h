@@ -56,13 +56,14 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 
 /*__PUBLISH_SECTION_START__*/
-using namespace Bentley::GeoCoordinates;
+using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 extern bool s_useSQLFormat;
-typedef IDTMFile::Extent3d64f        YProtPtExtentType;
+//typedef IDTMFile::Extent3d64f        YProtPtExtentType;
+typedef DRange3d YProtPtExtentType;
 typedef HGF3DExtent<double> YProtFeatureExtentType;
 
 /*----------------------------------------------------------------------------+
@@ -107,22 +108,24 @@ public:
     };
 
 
-class ScalableMeshDTM : public RefCounted<Bentley::TerrainModel::IDTM>
+class ScalableMeshDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM>
     {
     ScalableMeshDraping* m_draping;
     IScalableMesh* m_scMesh;
+    Transform m_transformToUors;
     protected:
 
     virtual IDTMDrapingP     _GetDTMDraping() override;
     virtual IDTMDrainageP    _GetDTMDrainage() override;
     virtual IDTMContouringP  _GetDTMContouring() override;
-    virtual Int64 _GetPointCount() override;
+    virtual int64_t _GetPointCount() override;
     virtual DTMStatusInt _GetRange(DRange3dR range) override;
     virtual BcDTMP _GetBcDTM() override;
     virtual DTMStatusInt _GetBoundary(DTMPointArray& ret) override;
     virtual DTMStatusInt _CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints) override;
     virtual DTMStatusInt _GetTransformDTM(DTMPtr& transformedDTM, TransformCR transformation) override;
     virtual bool _GetTransformation(TransformR transformation) override;
+    virtual IDTMVolumeP _GetDTMVolume() override;
 
     public:
         ScalableMeshDTM(IScalableMeshPtr scMesh)
@@ -139,6 +142,12 @@ class ScalableMeshDTM : public RefCounted<Bentley::TerrainModel::IDTM>
         static RefCountedPtr<ScalableMeshDTM> Create(IScalableMeshPtr scMesh)
             {
             return new ScalableMeshDTM(scMesh);
+            }
+
+        void SetStorageToUors(DMatrix4d& storageToUors)
+            {
+            m_transformToUors.InitFrom(storageToUors);
+            m_draping->SetTransform(m_transformToUors);
             }
     };
 /*----------------------------------------------------------------------------+
@@ -205,12 +214,12 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         static DRange3d                 ComputeTotalExtentFor          (const PointIndexType*           pointIndexP);
 
         bool                            AreDataCompressed              ();
-
+#if 0
         void                            AddBreaklineSet                (list<HFCPtr<HVEDTMLinearFeature> >& breaklineList, 
                                                                         BC_DTM_OBJ*                         po_ppBcDtmObj);
 
         ISMPointIndexFilter<INDEXPOINT, YProtPtExtentType>* CreatePointIndexFilter(IDTMFile::UniformFeatureDir* pointDirPtr) const;
-
+#endif
         void CreateSpatialIndexFromExtents(list<HVE2DSegment>& pi_rpBreaklineList, 
                                            BC_DTM_OBJ**        po_ppBcDtmObj);
         
@@ -226,8 +235,9 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual __int64          _GetPointCount() override;
         
 
-        virtual IDTMVolumeP  _GetDTMVolume() override;
-        virtual Bentley::TerrainModel::IDTM*  _GetDTMInterface() override;
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface() override;
+
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DMatrix4d& storageToUors) override;
 
         virtual DTMStatusInt     _GetRange(DRange3dR range) override;
 
@@ -237,14 +247,15 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual int                    _GenerateSubResolutions() override;
         virtual __int64                _GetBreaklineCount() const override;
         virtual ScalableMeshCompressionType   _GetCompressionType() const override;          
-        virtual int                    _GetNbResolutions() const override;        
+        virtual int                    _GetNbResolutions() const override;    
+        virtual size_t                    _GetTerrainDepth() const override;
         virtual IScalableMeshPointQueryPtr         _GetQueryInterface(ScalableMeshQueryType     queryType) const override;
         virtual IScalableMeshPointQueryPtr         _GetQueryInterface(ScalableMeshQueryType                queryType,                                                           
-                                                                      Bentley::GeoCoordinates::BaseGCSPtr& targetGCS,
+                                                                      BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS,
                                                                       const DRange3d&                      extentInTargetGCS) const override;        
         virtual IScalableMeshMeshQueryPtr     _GetMeshQueryInterface(MeshQueryType queryType) const override;
         virtual IScalableMeshMeshQueryPtr     _GetMeshQueryInterface(MeshQueryType queryType,
-                                                              Bentley::GeoCoordinates::BaseGCSPtr& targetGCS,
+                                                              BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS,
                                                               const DRange3d&                      extentInTargetGCS) const override;
         virtual IScalableMeshNodeRayQueryPtr     _GetNodeQueryInterface() const override;
         virtual const GeoCoords::GCS&  _GetGCS() const override;
@@ -253,8 +264,14 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual bool                   _IsProgressive() const override;    
         virtual bool                   _IsReadOnly() const override;
         virtual bool                   _IsShareable() const override;
-        virtual int                    _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, Bentley::GeoCoordinates::BaseGCSPtr& targetGCS) const;
+        virtual int                    _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const;
+
+
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) override;
+        virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
+        virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
+        virtual bool                               _RemoveClip(uint64_t clipID) override;
+        virtual void                               _SetIsInsertingClips(bool toggleInsertMode) override;
         
 #ifdef SCALABLE_MESH_ATP
         virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes) const override; 
@@ -304,8 +321,9 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         // Inherited from IDTM   
         virtual __int64          _GetPointCount() override;
 
-        virtual IDTMVolumeP  _GetDTMVolume() override;
-        virtual Bentley::TerrainModel::IDTM*  _GetDTMInterface() override;
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface() override;
+
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DMatrix4d& storageToUors) override;
 
         virtual DTMStatusInt     _GetRange(DRange3dR range) override;
 
@@ -315,14 +333,15 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual int                    _GenerateSubResolutions() override;
         virtual __int64                _GetBreaklineCount() const override;
         virtual ScalableMeshCompressionType   _GetCompressionType() const override;           
-        virtual int                    _GetNbResolutions() const override;        
+        virtual int                    _GetNbResolutions() const override;    
+        virtual size_t                    _GetTerrainDepth() const override;
         virtual IScalableMeshPointQueryPtr         _GetQueryInterface(ScalableMeshQueryType     queryType) const override;
         virtual IScalableMeshPointQueryPtr         _GetQueryInterface(ScalableMeshQueryType                queryType, 
-                                                                      Bentley::GeoCoordinates::BaseGCSPtr& targetGCS,
+                                                                      BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS,
                                                                       const DRange3d&                      extentInTargetGCS) const override;                
         virtual IScalableMeshMeshQueryPtr     _GetMeshQueryInterface(MeshQueryType queryType) const override; 
         virtual IScalableMeshMeshQueryPtr     _GetMeshQueryInterface(MeshQueryType queryType,
-                                                              Bentley::GeoCoordinates::BaseGCSPtr& targetGCS,
+                                                              BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS,
                                                               const DRange3d&                      extentInTargetGCS) const override;
         virtual IScalableMeshNodeRayQueryPtr     _GetNodeQueryInterface() const override;
         const GeoCoords::GCS&          _GetGCS() const override;
@@ -331,14 +350,20 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual bool                   _IsProgressive() const override;       
         virtual bool                   _IsReadOnly() const override;
         virtual bool                   _IsShareable() const override;
+
+
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) override;
+        virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
+        virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
+        virtual bool                               _RemoveClip(uint64_t clipID) override;
+        virtual void                               _SetIsInsertingClips(bool toggleInsertMode) override;
         
         //Data source synchronization functions.
         virtual bool                   _InSynchWithSources() const override; 
         virtual bool                   _LastSynchronizationCheck(time_t& last) const override;        
         virtual int                    _SynchWithSources() override;
 
-        virtual int                    _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, Bentley::GeoCoordinates::BaseGCSPtr& targetGCS) const override;
+        virtual int                    _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const override;
 
 #ifdef SCALABLE_MESH_ATP
         virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes) const override {return ERROR;}

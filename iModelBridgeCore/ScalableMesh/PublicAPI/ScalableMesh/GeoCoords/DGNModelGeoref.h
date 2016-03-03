@@ -20,11 +20,11 @@ END_BENTLEY_SCALABLEMESH_GEOCOORDINATES_NAMESPACE
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-using Bentley::ScalableMesh::GeoCoords::GCS;
-using Bentley::ScalableMesh::GeoCoords::LocalTransform;
-using Bentley::ScalableMesh::GeoCoords::TransfoModel;
-using Bentley::ScalableMesh::GeoCoords::TransfoMatrix;
-using Bentley::ScalableMesh::GeoCoords::Unit;
+using BENTLEY_NAMESPACE_NAME::ScalableMesh::GeoCoords::GCS;
+using BENTLEY_NAMESPACE_NAME::ScalableMesh::GeoCoords::LocalTransform;
+using BENTLEY_NAMESPACE_NAME::ScalableMesh::GeoCoords::TransfoModel;
+using BENTLEY_NAMESPACE_NAME::ScalableMesh::GeoCoords::TransfoMatrix;
+using BENTLEY_NAMESPACE_NAME::ScalableMesh::GeoCoords::Unit;
 
 inline const Transform& ToBSITransform (const TransfoMatrix& transform)
     {

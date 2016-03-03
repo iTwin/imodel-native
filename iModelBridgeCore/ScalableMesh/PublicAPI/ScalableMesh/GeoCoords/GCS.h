@@ -6,7 +6,7 @@
 |       $Date: 2011/12/01 18:51:33 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -30,7 +30,7 @@ namespace GeoCoordinates {
 class BaseGCS;
 
 typedef RefCountedPtr<BaseGCS>          BaseGCSPtr;
-typedef Bentley::RefCountedPtr<BaseGCS> BaseGCSCPtr; // TDORAY Make const when available
+typedef BENTLEY_NAMESPACE_NAME::RefCountedCPtr<BaseGCS> BaseGCSCPtr; 
 
 } // namespace GeoCoordinates
 END_BENTLEY_NAMESPACE
@@ -53,9 +53,9 @@ struct GeospatialReference;
 typedef GeospatialReference                 GeoRef;
 
 // Make BaseGCS and its pointers part of this namespace
-using Bentley::GeoCoordinates::BaseGCS;
-using Bentley::GeoCoordinates::BaseGCSPtr;
-using Bentley::GeoCoordinates::BaseGCSCPtr;
+using BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS;
+using BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr;
+using BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr;
 
 /*---------------------------------------------------------------------------------**//**
 * @description  Factory for creating GCS. User may specify custom log mechanism that will
@@ -233,7 +233,6 @@ private:
     typedef SharedPtrTypeTrait<Impl>::type  ImplPtr;
     ImplPtr                                 m_implP;
 
-    explicit                                GCS                                (Impl*                       implP);
    
 public:
     GEOCOORDS_DLLE static const GCS&        GetNull                            ();
@@ -244,11 +243,8 @@ public:
     GEOCOORDS_DLLE GCS&                     operator=                          (const GCS&                  rhs);
 
     GEOCOORDS_DLLE bool                     IsNull                             () const;
-
-    GEOCOORDS_DLLE bool                     HasGeospatialReference             () const;
+    
     GEOCOORDS_DLLE bool                     HasGeoRef                          () const;
-    GEOCOORDS_DLLE const GeospatialReference&                     
-                                            GetGeospatialReference             () const;
     GEOCOORDS_DLLE const GeoRef&            GetGeoRef                          () const;
 
     // TDORAY: Add geo spatial reference Edit accessors here. These may trigger object copy if shared.
@@ -258,6 +254,7 @@ public:
 
     // Synonymous to GetHorizontalUnit when non-uniform vertical/horizontal units
     GEOCOORDS_DLLE const Unit&              GetUnit                            () const; 
+    explicit                                GCS                                (Impl*                       implP);
 
     GEOCOORDS_DLLE const Unit&              GetHorizontalUnit                  () const;
     GEOCOORDS_DLLE const Unit&              GetVerticalUnit                    () const;

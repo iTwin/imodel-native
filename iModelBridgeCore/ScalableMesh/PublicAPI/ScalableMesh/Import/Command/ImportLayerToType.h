@@ -6,7 +6,7 @@
 |       $Date: 2011/11/22 21:58:15 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -32,10 +32,10 @@ public:  // OPERATOR_NEW_KLUDGE
     void operator delete [] (void *rawMemory, size_t size) { bentleyAllocator_deleteArrayRefCounted (rawMemory, size); }
 
 private:
-    UInt                                m_sourceLayer;
+    uint32_t                                m_sourceLayer;
     DataTypeFamily                      m_targetType;
 public:
-    IMPORT_DLLE explicit                ImportLayerToTypeCommand           (UInt                                    sourceLayer,
+    IMPORT_DLLE explicit                ImportLayerToTypeCommand           (uint32_t                                    sourceLayer,
                                                                             const DataTypeFamily&                   targetType);
 
 
@@ -43,7 +43,7 @@ public:
 
     IMPORT_DLLE                         ImportLayerToTypeCommand           (const ImportLayerToTypeCommand&         rhs);
 
-    UInt                                GetSourceLayer                     () const;
+    uint32_t                                GetSourceLayer                     () const;
     const DataTypeFamily&               GetTargetType                      () const;
     };
 

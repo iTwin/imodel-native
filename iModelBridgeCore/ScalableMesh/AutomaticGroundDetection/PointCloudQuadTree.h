@@ -40,7 +40,7 @@ typedef RefCountedPtr<PointCloudQuadTree>          PointCloudQuadTreePtr;
 typedef RefCountedPtr<PointCloudQuadNode>          PointCloudQuadNodePtr;
 
 
-struct quadSeed : public Bentley::RefCountedBase
+struct quadSeed : public BENTLEY_NAMESPACE_NAME::RefCountedBase
     {
     protected : 
     

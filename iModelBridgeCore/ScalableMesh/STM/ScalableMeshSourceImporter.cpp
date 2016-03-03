@@ -67,7 +67,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 #include "ScalableMeshSourceImporter.h"
 
-#include <DgnPlatform\Tools\ConfigurationManager.h>
+//#include <DgnPlatform\Tools\ConfigurationManager.h>
 
 
 
@@ -203,7 +203,7 @@ StatusInt IScalableMeshSourceImporter::Import ()
     return m_implP->Import();
     }
 
-const Bentley::GeoCoordinates::BaseGCSPtr& IScalableMeshSourceImporter::GetBaseGCS () const
+const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& IScalableMeshSourceImporter::GetBaseGCS () const
     {
     return GetAdvancedGCS().GetGeoRef().GetBasePtr();
     }
@@ -247,7 +247,7 @@ StatusInt IScalableMeshSourceImporter::SetCompression(ScalableMeshCompressionTyp
     return SUCCESS;
     }
 
-StatusInt IScalableMeshSourceImporter::SetBaseGCS (const Bentley::GeoCoordinates::BaseGCSPtr& gcsPtr)
+StatusInt IScalableMeshSourceImporter::SetBaseGCS (const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& gcsPtr)
     {
     return SetGCS(GetGCSFactory().Create(gcsPtr));
     }
@@ -632,7 +632,7 @@ int IScalableMeshSourceImporter::Impl::LoadSources (IScalableMeshSourceImporterS
     //NEEDS_WORK_SM_IMPORTER : ??
     DocumentEnv dummyDocumentEnv(L"");
 
-    success &= Bentley::ScalableMesh::LoadSources(m_sources, sourceImporterStoragePtr, dummyDocumentEnv);
+    success &= BENTLEY_NAMESPACE_NAME::ScalableMesh::LoadSources(m_sources, sourceImporterStoragePtr, dummyDocumentEnv);
     /*
     m_lastSourcesModificationCheckTime = CreateTimeFrom(sourceDirPtr->GetLastModifiedCheckTime());
     m_lastSourcesModificationTime = CreateTimeFrom(sourceDirPtr->GetLastModifiedTime());
@@ -674,7 +674,7 @@ int IScalableMeshSourceImporter::Impl::SaveSources (IScalableMeshSourceImporterS
     //NEEDS_WORK_SM_IMPORTER : ??
     DocumentEnv dummyDoc(L"");
 
-    success &= Bentley::ScalableMesh::SaveSources(m_sources, sourceImporterStoragePtr, dummyDoc);
+    success &= BENTLEY_NAMESPACE_NAME::ScalableMesh::SaveSources(m_sources, sourceImporterStoragePtr, dummyDoc);
     /*NEEDS_WORK_SM_IMPORTER : TODO
     success &= sourceDirPtr->SetLastModifiedCheckTime(GetCTimeFor(m_lastSourcesModificationCheckTime));
     success &= sourceDirPtr->SetLastModifiedTime(GetCTimeFor(m_lastSourcesModificationTime));

@@ -94,25 +94,25 @@ template<class EXTENT> bool GetVisibleExtent(EXTENT&        po_rVisibleExtent,
     return isVisible;  
     }
 
-BENTLEYSTM_EXPORT int CreateBcDTM(Bentley::TerrainModel::DTMPtr& dtmPtr);
+BENTLEYSTM_EXPORT int CreateBcDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr);
 
-BENTLEYSTM_EXPORT int SetClipsToDTM (Bentley::TerrainModel::DTMPtr& dtmPtr,
+BENTLEYSTM_EXPORT int SetClipsToDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr,
                                const DRange3d&                      dtmRange,
                                const IScalableMeshClipContainerPtr&        clips);
 
-BENTLEYSTM_EXPORT int SetClipsToDTM (Bentley::TerrainModel::DTMPtr& dtmPtr,
+BENTLEYSTM_EXPORT int SetClipsToDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr,
                                const DRange3d&                      dtmRange,
                                const vector<DPoint3d>&              regionPoints,
                                const IScalableMeshClipContainerPtr&        clips);
 
-BENTLEYSTM_EXPORT int TriangulateDTM(Bentley::TerrainModel::DTMPtr&                     dtmPtr, 
-                               const Bentley::ScalableMesh::IScalableMeshQueryParametersPtr& scmQueryParamsPtr);
+BENTLEYSTM_EXPORT int TriangulateDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&                     dtmPtr, 
+                               const BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshQueryParametersPtr& scmQueryParamsPtr);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AlainRobert  07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BENTLEYSTM_EXPORT bool GCSMathematicalDomainsOverlap(Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr,
-                                               Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr);
+BENTLEYSTM_EXPORT bool GCSMathematicalDomainsOverlap(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
+                                               BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr);
 
 typedef vector<DPoint3d> MaskPoints;
 typedef list<MaskPoints> MaskList;
@@ -125,7 +125,7 @@ BENTLEYSTM_EXPORT bool AddExtentAndTestMatch(bool&           shouldAddMatchedCac
 
 class DTMLinearFeature;
 
-typedef int (*addLinearsForPresentationModeFP)(const Bentley::TerrainModel::DTMPtr&  dtmPtr,                                                 
+typedef int (*addLinearsForPresentationModeFP)(const BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&  dtmPtr,                                                 
                                                DTMLinearFeature*            linearList,
                                                unsigned int                 nbLinearListElems,                                               
                                                size_t                       maxNumberOfPoints);

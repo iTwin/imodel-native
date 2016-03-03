@@ -77,7 +77,7 @@ struct IScalableMeshSourceCreator::Impl : public IScalableMeshCreator::Impl, pub
         StatusInt                           ImportSourcesTo(Import::Sink*                           sinkP);
 
         template <typename PointIndex>
-        StatusInt                           RemoveSourcesFrom(PointIndex& pointIndex, list<IDTMFile::Extent3d64f> listRemoveExtent) const;
+        StatusInt                           RemoveSourcesFrom(PointIndex& pointIndex, list<DRange3d> listRemoveExtent) const;
 
 
         StatusInt                           UpdateLastModified();

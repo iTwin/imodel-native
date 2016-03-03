@@ -50,7 +50,7 @@
 #include "ScalableMeshCoreFns.h"
 
 #include <ScalableMesh/GeoCoords/Reprojection.h>
-#include <ImagePP/all/h/IDTMFile.h>
+//#include <ImagePP/all/h/IDTMFile.h>
 #include <ScalableMesh/IScalableMeshDocumentEnv.h>
 
 #include "ScalableMeshEditListener.h"
@@ -65,7 +65,7 @@
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 /*__PUBLISH_SECTION_START__*/
-using namespace Bentley::GeoCoordinates;
+using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
 
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
@@ -82,7 +82,8 @@ typedef RefCountedPtr<IStorage>             IStoragePtr;
 typedef RefCountedPtr<ClipShapeStorage>     ClipShapeStoragePtr;
 
 typedef DPoint3d                          PointType;
-typedef IDTMFile::Extent3d64f                         PointIndexExtentType;
+//typedef IDTMFile::Extent3d64f                         PointIndexExtentType;
+typedef DRange3d PointIndexExtentType;
 typedef SMMeshIndex <PointType, PointIndexExtentType> IndexType;
 
 void RegisterDelayedImporters();
@@ -94,7 +95,7 @@ inline bool fileExist(const WChar* fileName)
 
 
 
-bool DgnDbFilename(Bentley::WString& stmFilename);
+bool DgnDbFilename(BENTLEY_NAMESPACE_NAME::WString& stmFilename);
 
 /*---------------------------------------------------------------------------------**//**
 * @description  

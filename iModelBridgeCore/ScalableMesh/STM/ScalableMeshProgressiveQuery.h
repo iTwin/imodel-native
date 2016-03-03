@@ -34,7 +34,7 @@
 #ifdef SCALABLE_MESH_ATP
 #include <ScalableMesh/IScalableMeshATP.h>
 #endif
-#include <hash_map>
+//#include <hash_map>
 
 //Only way found to deactivate warning C4250 since the pragma warning(disable... doesn't work
 #pragma warning( push, 0 )
@@ -44,7 +44,8 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 
 
-typedef IDTMFile::Extent3d64f YProtPtExtentType;
+//typedef IDTMFile::Extent3d64f YProtPtExtentType;
+typedef DRange3d YProtPtExtentType;
 typedef HGF3DExtent<double> YProtFeatureExtentType;
 
 struct ScalableMeshExtentQuery;
@@ -87,7 +88,7 @@ class ScalableMeshProgressiveQueryEngine : public virtual IScalableMeshProgressi
         IScalableMeshPtr                    m_scalableMeshPtr;
         IScalableMeshDisplayCacheManagerPtr m_displayCacheManagerPtr;
 
-        void StartNewQuery(RequestedQuery& newQuery, ISMPointIndexQuery<DPoint3d, YProtPtExtentType>* queryObjectP, const bvector<Bentley::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes);
+        void StartNewQuery(RequestedQuery& newQuery, ISMPointIndexQuery<DPoint3d, YProtPtExtentType>* queryObjectP, const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes);
 
     protected:                                        
 
@@ -96,18 +97,20 @@ class ScalableMeshProgressiveQueryEngine : public virtual IScalableMeshProgressi
         //Inherited from ScalableMeshProgressiveQueryEngine
         virtual BentleyStatus _ClearCaching(const bvector<DRange2d>* clearRanges, const IScalableMeshPtr& scalableMeshPtr);
 
+        virtual BentleyStatus _ClearCaching(const bvector<uint64_t>& clipIds, const IScalableMeshPtr& scalableMeshPtr);
+
         virtual BentleyStatus _StartQuery(int                                                                      queryId, 
                                           IScalableMeshViewDependentMeshQueryParamsPtr                             queryParam, 
-                                          const bvector<Bentley::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes,                                           
+                                          const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes,                                           
                                           bool                                                                     loadTexture,
                                           const bvector<bool>&                                                     clipVisibilities,
                                           const DMatrix4d*                                                         prevLocalToView,
                                           const DMatrix4d*                                                         newLocalToView) override; 
 
-        virtual BentleyStatus _GetOverviewNodes(bvector<Bentley::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
+        virtual BentleyStatus _GetOverviewNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
                                                 int                                                                queryId) const override;        
 
-        virtual BentleyStatus _GetQueriedNodes(bvector<Bentley::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
+        virtual BentleyStatus _GetQueriedNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
                                                int                                                                queryId) const override;
 
         virtual BentleyStatus _StopQuery(int queryId) override; 

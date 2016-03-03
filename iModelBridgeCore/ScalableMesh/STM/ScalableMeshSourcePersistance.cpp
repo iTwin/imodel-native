@@ -26,7 +26,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 /*
  * Driver current version
  */ 
-const UInt SourceSerializer::FORMAT_VERSION = 0;
+const uint32_t SourceSerializer::FORMAT_VERSION = 0;
 
 namespace {
 enum DTMSourceId
@@ -149,7 +149,9 @@ bool                            OutputSource(SourceDataSQLite&                  
 
     const byte sourceTypeField = static_cast<byte>(source.GetSourceType());
     sourceData.SetSourceType(sourceTypeField);
-    return BSISUCCESS == source.GetMoniker().Serialize(sourceData, env);
+    sourceData.SetMonikerString(source.GetPath());
+    return true;
+    //return BSISUCCESS == source.GetMoniker().Serialize(sourceData, env);
 }
 
 
@@ -321,7 +323,7 @@ bool                            LoadSourcePart(SourceDataSQLite&      sourceData
     DTMSourceDataType&  sourceType,
     IMonikerPtr&        monikerPtr)
 {
-    //const UInt sourceTypeField = stream.get();
+    //const uint32_t sourceTypeField = stream.get();
     uint32_t sourceTypeField = sourceData.GetSourceType();
     if (sourceTypeField >= DTM_SOURCE_DATA_QTY)
         return false;
@@ -428,12 +430,18 @@ struct IDTMLocalFileSourceCreator : public IDTMSourceCreator
             const DocumentEnv&    env) const
         {
             DTMSourceDataType   sourceType;
-            IMonikerPtr         monikerPtr;
+            //IMonikerPtr         monikerPtr;
 
-            if (LoadSourcePart(sourceData, env, sourceType, monikerPtr))
-                return new IDTMLocalFileSource(new IDTMLocalFileSource::Impl(sourceType, monikerPtr.get()));
+            uint32_t sourceTypeField = sourceData.GetSourceType();
+            sourceType = static_cast<DTMSourceDataType>(sourceTypeField);
+            WString fullPath = sourceData.GetMonikerString();
 
-            return 0;
+            //IDTMSourcePtr srcPtr = IDTMLocalFileSource::Create(sourceType, fullPath.c_str());
+            //return srcPtr.get();
+            //if (LoadSourcePart(sourceData, env, sourceType, monikerPtr))
+            return new IDTMLocalFileSource(new IDTMLocalFileSource::Impl(sourceType, fullPath.c_str()));
+
+            //return 0;
         }
 
     } s_localFileSourceCreator;
@@ -575,7 +583,7 @@ const IDTMSourceFactory::CreatorItem* IDTMSourceFactory::GetCreatorIndex ()
 IDTMSource* IDTMSourceFactory::Create(SourceDataSQLite&          sourceData,
     const DocumentEnv&        env) const
 {
-    const UInt sourceIDField = sourceData.GetDTMSourceID();
+    const uint32_t sourceIDField = sourceData.GetDTMSourceID();
 
     if (DTM_SOURCE_ID_QTY <= sourceIDField)
         return 0;
@@ -616,7 +624,7 @@ bool SourceSerializer::Serialize(const IDTMSource&   source,
 +---------------+---------------+---------------+---------------+---------------+------*/
 IDTMSourcePtr SourceSerializer::Deserialize(SourceDataSQLite&          sourceData,
     const DocumentEnv&      env,
-    UInt                    formatVersion) const
+    uint32_t                    formatVersion) const
 {
     if (SourceSerializer::FORMAT_VERSION != formatVersion)
     {

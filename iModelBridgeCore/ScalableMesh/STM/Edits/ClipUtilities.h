@@ -72,8 +72,8 @@ class Clipper
     DifferenceSet ClipTriangle(const DPoint3d* triangle, const bool* triangleMask, const DPoint3d* poly, size_t polySize, DRange3d polyExt);
     DifferenceSetWithTracking ClipConvexPolygon2DCustom(const DPoint3d* poly, size_t polySize);
     DifferenceSetWithTracking ClipPolygon2DDTM(const DPoint3d* poly, size_t polySize);
-    void TagUVsOnPolyface(PolyfaceHeaderPtr& poly, Bentley::TerrainModel::DTMPtr& dtmPtr, FaceToUVMap& faceToUVMap);
-    DTMInsertPointCallback GetInsertPointCallback(FaceToUVMap& faceToUVMap, Bentley::TerrainModel::DTMPtr& ptr);
+    void TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr, FaceToUVMap& faceToUVMap);
+    DTMInsertPointCallback GetInsertPointCallback(FaceToUVMap& faceToUVMap, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& ptr);
 
     public:
         Clipper(const DPoint3d* vertexBuffer, size_t nVertices, const int32_t* indexBuffer, size_t nIndices, DRange3d extent, const DPoint2d* uvBuffer = nullptr, const int32_t* uvIndices = nullptr) :
@@ -83,13 +83,15 @@ class Clipper
         DifferenceSet ClipNonConvexPolygon2D(const DPoint3d* poly, size_t polySize);
         DifferenceSetWithTracking ClipConvexPolygon2D(const DPoint3d* poly, size_t polySize);
         DifferenceSet ClipSeveralPolygons(bvector<bvector<DPoint3d>>& polygons);
-        void MakeDTMFromIndexList(Bentley::TerrainModel::DTMPtr& dtm);
+        void MakeDTMFromIndexList(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtm);
         bool GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons);
-        bool GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, Bentley::TerrainModel::DTMPtr& dtmPtr);
+        bool GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr);
 
 
     };
 template<class POINT, class EXTENT> void ClipMeshToNodeRange(vector<int>& faceIndexes, vector<POINT>& nodePts, bvector<DPoint3d>& pts, EXTENT& contentExtent, DRange3d& nodeRange, ScalableMeshMesh* meshP);
 void print_polygonarray(std::string& s, const char* tag, DPoint3d* polyArray, int polySize);
 
+
+//void BuildSkirtMeshesForPolygonSet(bvector<bvector<PolyfaceHeaderPtr>>& skirts, bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, DRange3d& nodeRange);
 END_BENTLEY_SCALABLEMESH_NAMESPACE

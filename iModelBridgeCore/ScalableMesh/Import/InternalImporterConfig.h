@@ -6,7 +6,7 @@
 |       $Date: 2011/09/01 14:06:52 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -46,7 +46,7 @@ class Config : public IImportConfigVisitor
     bool                            m_importAttachments;
 
     bool                            m_hasDefaultTargetLayer;
-    UInt                            m_defaultTargetLayer;
+    uint32_t                            m_defaultTargetLayer;
 
     const DataTypeFamily*           m_defaultTargetTypeP;
 
@@ -74,7 +74,7 @@ public:
     
 
     bool                            HasDefaultTargetLayer      () const { return m_hasDefaultTargetLayer; }
-    UInt                            GetDefaultTargetLayer      () const { return m_defaultTargetLayer; }
+    uint32_t                            GetDefaultTargetLayer      () const { return m_defaultTargetLayer; }
 
     bool                            HasDefaultTargetType       () const { return 0 != m_defaultTargetTypeP; }
     const DataTypeFamily&           GetDefaultTargetType       () const { return *m_defaultTargetTypeP; }

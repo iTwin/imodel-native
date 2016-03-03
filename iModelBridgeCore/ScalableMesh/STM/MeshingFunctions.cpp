@@ -38,7 +38,7 @@ void computeGridDistancesAPSS(std::vector<float>* distances, std::vector<DPoint3
     for (size_t i = level; i < depth; i++) rad *= 8;
     distances->resize((xcells + 1)*(ycells + 1)*(zcells + 1));
     void* handle = nullptr;
-    Bentley::PCLUtility::INormalCalculator::InitKdTree(&handle,&((*points)[0]), points->size());
+    BENTLEY_NAMESPACE_NAME::PCLUtility::INormalCalculator::InitKdTree(&handle,&((*points)[0]), points->size());
 #pragma omp parallel for num_threads(6)
     for (int x = 0; x <= xcells; x++)
         {
@@ -57,7 +57,7 @@ void computeGridDistancesAPSS(std::vector<float>* distances, std::vector<DPoint3
                 std::vector<int> indices;
                 //std::vector<float> distances;
                 //tree->radiusSearch(PointXYZ(point[0], point[1], point[2]), neighborRad, indices, distances, max_nn);
-                Bentley::PCLUtility::INormalCalculator::RadiusSearch(indicesArr, &size, handle, point, rad, max_nn);
+                BENTLEY_NAMESPACE_NAME::PCLUtility::INormalCalculator::RadiusSearch(indicesArr, &size, handle, point, rad, max_nn);
                 if (size == 0) continue;
                 indices.resize(size);
                 memcpy(&indices[0], indicesArr, size);
@@ -77,7 +77,7 @@ void computeGridDistancesAPSS(std::vector<float>* distances, std::vector<DPoint3
                 }
             }
         }
-    Bentley::PCLUtility::INormalCalculator::ReleaseKdTree(handle);
+    BENTLEY_NAMESPACE_NAME::PCLUtility::INormalCalculator::ReleaseKdTree(handle);
     }
 
 /**

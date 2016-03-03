@@ -19,8 +19,8 @@ extern bool   GET_HIGHEST_RES;
 +------------------------------------------------------------------*/
 #include "InternalUtilityFunctions.h"
 #include "ScalableMesh.h"
-#include "DTMGraphTileStore.h"
-#include "SMTextureTileStore.h"
+//#include "DTMGraphTileStore.h"
+//#include "SMTextureTileStore.h"
 #include "ScalableMeshQuadTreeBCLIBFilters.h"
 #include "ScalableMeshQuadTreeQueries.h"
 
@@ -39,7 +39,7 @@ extern bool   GET_HIGHEST_RES;
 #include "ScalableMeshDraping.h"
 #include "ScalableMeshVolume.h"
 
-#include "Edits\DiffSetTileStore.h"
+//#include "Edits\DiffSetTileStore.h"
 #include "SMSQLiteDiffsetTileStore.h"
 #include "Edits\ClipRegistry.h"
 #include "SMSQLitePointTileStore.h"
@@ -48,7 +48,7 @@ extern bool   GET_HIGHEST_RES;
 #include "SMSQLiteUVStore.h"
 #include "SMSQLiteUVIndiceTileStore.h"
 #include "SMSQLiteTextureTileStore.h"
-#include "CGALEdgeCollapse.h"
+//#include "CGALEdgeCollapse.h"
 
 
 
@@ -161,13 +161,19 @@ int IScalableMesh::GetNbResolutions() const
     return _GetNbResolutions();
     }
 
+size_t IScalableMesh::GetTerrainDepth() const
+    {
+    return _GetTerrainDepth();
+    }
+
+
 IScalableMeshPointQueryPtr IScalableMesh::GetQueryInterface(ScalableMeshQueryType queryType) const
     {
     return _GetQueryInterface(queryType);
     }
 
 IScalableMeshPointQueryPtr IScalableMesh::GetQueryInterface(ScalableMeshQueryType                         queryType,                                          
-                                                            Bentley::GeoCoordinates::BaseGCSPtr& targetGCS,
+                                                            BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS,
                                                             const DRange3d& extentInTargetGCS) const
     {
     return _GetQueryInterface(queryType, targetGCS, extentInTargetGCS);
@@ -179,7 +185,7 @@ IScalableMeshMeshQueryPtr IScalableMesh::GetMeshQueryInterface(MeshQueryType que
     }
 
 IScalableMeshMeshQueryPtr IScalableMesh::GetMeshQueryInterface(MeshQueryType queryType,
-                                                 Bentley::GeoCoordinates::BaseGCSPtr& targetGCS,
+                                                 BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS,
                                                  const DRange3d& extentInTargetGCS) const
     {
     return _GetMeshQueryInterface(queryType, targetGCS, extentInTargetGCS);
@@ -190,22 +196,22 @@ IScalableMeshNodeRayQueryPtr IScalableMesh::GetNodeQueryInterface() const
     return _GetNodeQueryInterface();
     }
 
-IDTMVolume* IScalableMesh::GetDTMVolume()
-    {
-    return _GetDTMVolume();
-    }
-
-Bentley::TerrainModel::IDTM* IScalableMesh::GetDTMInterface()
+BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* IScalableMesh::GetDTMInterface()
     {
     return _GetDTMInterface();
     }
 
-const BaseGCSPtr& IScalableMesh::GetBaseGCS() const 
+BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* IScalableMesh::GetDTMInterface(DMatrix4d& storageToUors)
+    {
+    return _GetDTMInterface(storageToUors);
+    }
+
+const BaseGCSCPtr& IScalableMesh::GetBaseGCS() const 
     {
     return _GetGCS().GetGeoRef().GetBasePtr();
     }
 
-StatusInt IScalableMesh::SetBaseGCS(const BaseGCSPtr& baseGCSPtr)
+StatusInt IScalableMesh::SetBaseGCS(const BaseGCSCPtr& baseGCSPtr)
     {
     GCSFactory::Status createStatus = GCSFactory::S_SUCCESS;
     GCS gcs(GetGCSFactory().Create(baseGCSPtr, createStatus));
@@ -261,7 +267,7 @@ int IScalableMesh::SynchWithSources()
     return _SynchWithSources();
     } 
 
-int IScalableMesh::GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, Bentley::GeoCoordinates::BaseGCSPtr& targetGCS) const
+int IScalableMesh::GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const
     {
     return _GetRangeInSpecificGCS(lowPt, highPt, targetGCS);
     }
@@ -271,6 +277,27 @@ uint64_t IScalableMesh::AddClip(const DPoint3d* pts, size_t ptsSize)
     {
     return _AddClip(pts, ptsSize);
     }
+
+bool IScalableMesh::AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID)
+    {
+    return _AddClip(pts, ptsSize, clipID);
+    }
+
+bool IScalableMesh::ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID)
+    {
+    return _ModifyClip(pts, ptsSize, clipID);
+    }
+
+bool IScalableMesh::RemoveClip(uint64_t clipID)
+    {
+    return _RemoveClip(clipID);
+    }
+
+void IScalableMesh::SetIsInsertingClips(bool toggleInsertClips)
+    {
+    return _SetIsInsertingClips(toggleInsertClips);
+    }
+
 
 #ifdef SCALABLE_MESH_ATP
 int IScalableMesh::LoadAllNodeHeaders(size_t& nbLoadedNodes) const
@@ -335,9 +362,6 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
     SMSQLiteFilePtr smSQLiteFile(SMSQLiteFile::Open(filePath, openReadOnly, openStatus));
     if(smSQLiteFile == nullptr)
     {
-        if (openStatus == DTMFILE_UNSUPPORTED_VERSION)
-            status = DTMFILE_UNSUPPORTED_VERSION;
-        else
             status = BSIERROR;
 
         return 0; // Error opening file
@@ -476,23 +500,25 @@ template <class POINT> unsigned __int64 ScalableMesh<POINT>::CountPointsInExtent
                 // Approximate number of points. The points are assumed to be evenly distributed in the tile extent.
                 // This could potentially lead to poor performance if the points are concentrated in specific areas of
                 // the tile extent.
-                double nodeExtentDistanceX = nodePtr->GetContentExtent().xMax - nodePtr->GetContentExtent().xMin;
-                double nodeExtentDistanceY = nodePtr->GetContentExtent().yMax - nodePtr->GetContentExtent().yMin;
+                double nodeExtentDistanceX = ExtentOp<YProtPtExtentType>::GetWidth(nodePtr->GetContentExtent());
+                double nodeExtentDistanceY = ExtentOp<YProtPtExtentType>::GetHeight(nodePtr->GetContentExtent());
                 double nodeExtentArea = nodeExtentDistanceX * nodeExtentDistanceY;
-                double extentDistanceX = extent.xMax - extent.xMin;
-                double extentDistanceY = extent.yMax - extent.yMin;
+                double extentDistanceX = ExtentOp<YProtPtExtentType>::GetWidth(extent);
+                double extentDistanceY = ExtentOp<YProtPtExtentType>::GetHeight(extent);
                 double extentArea = extentDistanceX * extentDistanceY;
                 return unsigned __int64(nodePtr->GetCount()*(extentArea/nodeExtentArea));
                 }
             else {
-                double nodeExtentDistanceX = nodePtr->GetContentExtent().xMax - nodePtr->GetContentExtent().xMin;
-                double nodeExtentDistanceY = nodePtr->GetContentExtent().yMax - nodePtr->GetContentExtent().yMin;
+                double nodeExtentDistanceX = ExtentOp<YProtPtExtentType>::GetWidth(nodePtr->GetContentExtent());
+                double nodeExtentDistanceY = ExtentOp<YProtPtExtentType>::GetHeight(nodePtr->GetContentExtent());
                 double nodeExtentArea = nodeExtentDistanceX * nodeExtentDistanceY;
                 // Create intersection extent
-                double xAxisValues[] = {nodePtr->GetContentExtent().xMin,nodePtr->GetContentExtent().xMax,extent.xMin,extent.xMax};
+                double xAxisValues[] = { ExtentOp<YProtPtExtentType>::GetXMin(nodePtr->GetContentExtent()), ExtentOp<YProtPtExtentType>::GetXMax(nodePtr->GetContentExtent()),
+                    ExtentOp<YProtPtExtentType>::GetXMin(extent), ExtentOp<YProtPtExtentType>::GetXMax(extent) };
                 vector<double> xAxisValuesV (xAxisValues,xAxisValues+sizeof(xAxisValues)/ sizeof(double)) ;
                 sort(xAxisValuesV.begin(),xAxisValuesV.end());
-                double yAxisValues[] = {nodePtr->GetContentExtent().yMin,nodePtr->GetContentExtent().yMax,extent.yMin,extent.yMax};
+                double yAxisValues[] = { ExtentOp<YProtPtExtentType>::GetYMin(nodePtr->GetContentExtent()), ExtentOp<YProtPtExtentType>::GetYMax(nodePtr->GetContentExtent()), 
+                    ExtentOp<YProtPtExtentType>::GetYMin(extent), ExtentOp<YProtPtExtentType>::GetYMax(extent) };
                 vector<double> yAxisValuesV (yAxisValues,yAxisValues+sizeof(yAxisValues)/ sizeof(double)) ;
                 sort(yAxisValuesV.begin(),yAxisValuesV.end());
                 YProtPtExtentType intersectionExtent = ExtentOp<YProtPtExtentType>::Create(xAxisValuesV[1],yAxisValuesV[1],xAxisValuesV[2],yAxisValuesV[2]);
@@ -640,7 +666,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
                     // NEEDS_WORK_SM - Need to stream textures as well
                     pStreamingTileStore = new StreamingStoreType(point_store_path, groupedStreamingFilePath, AreDataCompressed());
-                    pStreamingIndiceTileStore = new SMStreamingPointTaggedTileStore< Int32, YProtPtExtentType>(indice_store_path, groupedStreamingFilePath, AreDataCompressed());
+                    pStreamingIndiceTileStore = new SMStreamingPointTaggedTileStore< int32_t, YProtPtExtentType>(indice_store_path, groupedStreamingFilePath, AreDataCompressed());
                     pStreamingUVTileStore = new SMStreamingPointTaggedTileStore< DPoint2d, YProtPtExtentType>(uv_store_path, groupedStreamingFilePath, AreDataCompressed());
                     pStreamingUVsIndicesTileStore = new SMStreamingPointTaggedTileStore<int32_t, YProtPtExtentType >(uvIndice_store_path, groupedStreamingFilePath, AreDataCompressed());
                     pTextureTileStore = new StreamingTextureTileStore(texture_store_path.c_str(), 4);
@@ -747,7 +773,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
             SourcesDataSQLite* sourcesData = new SourcesDataSQLite();
             m_smSQLitePtr->LoadSources(*sourcesData);
 
-            bool success = Bentley::ScalableMesh::LoadSources(sources, *sourcesData, sourceEnv);
+            bool success = BENTLEY_NAMESPACE_NAME::ScalableMesh::LoadSources(sources, *sourcesData, sourceEnv);
             assert(success == true);
 
 
@@ -829,7 +855,7 @@ DRange3d ScalableMesh<POINT>::ComputeTotalExtentFor   (const PointIndexType*   p
 
     return totalExtent;
     }
-
+#if 0
 /*----------------------------------------------------------------------------+
 |ScalableMesh::CreatePointIndexFilter
 +----------------------------------------------------------------------------*/
@@ -877,7 +903,7 @@ template <class POINT> ISMPointIndexFilter<POINT, YProtPtExtentType>* ScalableMe
 
     return pFilter;
     }
-
+#endif
 
 /*----------------------------------------------------------------------------+
 |ScalableMesh::ComputeTileBoundaryDuringQuery
@@ -959,6 +985,7 @@ template <class POINT> void ScalableMesh<POINT>::CreateSpatialIndexFromExtents(l
 /*----------------------------------------------------------------------------+
 |ScalableMesh::AddBreaklineSet
 +----------------------------------------------------------------------------*/
+#if 0
 template <class POINT> void ScalableMesh<POINT>::AddBreaklineSet(list<HFCPtr<HVEDTMLinearFeature> >& breaklineList, 
                                                           BC_DTM_OBJ*                         po_pBcDtmObj)
     {   
@@ -988,11 +1015,11 @@ template <class POINT> void ScalableMesh<POINT>::AddBreaklineSet(list<HFCPtr<HVE
             }         
         }
     }
-
+#endif
 /*-------------------Methods inherited from IDTM-----------------------------*/
 
 
-__int64 ScalableMeshDTM::_GetPointCount()
+int64_t ScalableMeshDTM::_GetPointCount()
     {
     return m_scMesh->GetPointCount();
     }
@@ -1046,15 +1073,21 @@ DTMStatusInt ScalableMeshDTM::_GetRange(DRange3dR range)
     return DTM_SUCCESS;
     }
 
-template <class POINT> IDTMVolumeP ScalableMesh<POINT>::_GetDTMVolume()
+IDTMVolumeP ScalableMeshDTM::_GetDTMVolume()
     {
-    return new ScalableMeshVolume(this);
+    return new ScalableMeshVolume(m_scMesh);
     }
 
-template <class POINT> Bentley::TerrainModel::IDTM* ScalableMesh<POINT>::_GetDTMInterface()
+template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMesh<POINT>::_GetDTMInterface()
  {
     return m_scalableMeshDTM.get();
  }
+
+template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMesh<POINT>::_GetDTMInterface(DMatrix4d& storageToUors)
+    {
+    m_scalableMeshDTM->SetStorageToUors(storageToUors);
+    return m_scalableMeshDTM.get();
+    }
 
 
 
@@ -1105,12 +1138,6 @@ template <class POINT> __int64 ScalableMesh<POINT>::_GetBreaklineCount() const
 template <class POINT> DTMStatusInt ScalableMesh<POINT>::_GetRange(DRange3dR range) 
     {
 
-    HFCPtr<HRABitmap> pTextureBitmap(new HRABitmap);
-    
-    HRAClearOptions clearOptions;
-
-    pTextureBitmap->Clear(clearOptions);
-
 
     range = m_contentExtent;
     return DTM_SUCCESS;
@@ -1139,7 +1166,7 @@ template <class POINT> ScalableMeshCompressionType ScalableMesh<POINT>::_GetComp
 |ScalableMesh::_GetQueryInterface
 +----------------------------------------------------------------------------*/
 template <class POINT> IScalableMeshPointQueryPtr ScalableMesh<POINT>::_GetQueryInterface(ScalableMeshQueryType                         queryType,                                                                        
-                                                                                          Bentley::GeoCoordinates::BaseGCSPtr& targetBaseGCSPtr,
+                                                                                          BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetBaseGCSPtr,
                                                                                           const DRange3d&                       extentInTargetGCS) const
     {
     IScalableMeshPointQueryPtr scmQueryPtr;
@@ -1204,7 +1231,7 @@ template <class POINT> IScalableMeshMeshQueryPtr ScalableMesh<POINT>::_GetMeshQu
     }
 
 template <class POINT> IScalableMeshMeshQueryPtr ScalableMesh<POINT>::_GetMeshQueryInterface(MeshQueryType queryType,
-                                                                               Bentley::GeoCoordinates::BaseGCSPtr& targetBaseGCSPtr,
+                                                                               BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetBaseGCSPtr,
                                                                                const DRange3d&                       extentInTargetGCS) const
     {
     GCS targetGCS = GetGCSFactory().Create(targetBaseGCSPtr);
@@ -1237,6 +1264,19 @@ template <class POINT> int ScalableMesh<POINT>::_GetNbResolutions() const
         }        
     
     return nbResolutions;    
+    }
+
+
+template <class POINT> size_t ScalableMesh<POINT>::_GetTerrainDepth() const
+    {
+    size_t depth = 0;
+
+    if (m_scmIndexPtr != 0)
+        {
+        depth = m_scmIndexPtr->GetTerrainDepth() != (size_t)-1 ? m_scmIndexPtr->GetTerrainDepth() : m_scmIndexPtr->GetDepth();
+        }
+
+    return depth;
     }
 
 /*----------------------------------------------------------------------------+
@@ -1280,19 +1320,19 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_SetGCS(const GCS& newGCS)
 {
     const GCS& savedGCS = (newGCS.IsNull()) ? GetDefaultGCS() : newGCS;
 
-    HCPWKT wkt;
+    //HCPWKT wkt;
 
     GCS::Status wktCreateStatus = GCS::S_SUCCESS;
-    wkt = HCPWKT(savedGCS.GetWKT(wktCreateStatus).GetCStr());
+    //wkt = HCPWKT(savedGCS.GetWKT(wktCreateStatus).GetCStr());
 
-    WString extendedWktStr(wkt.GetCStr());
+    WString extendedWktStr(savedGCS.GetWKT(wktCreateStatus).GetCStr());
 
     if (WKTKeyword::TYPE_UNKNOWN == GetWktType(extendedWktStr))
     {
         wchar_t wktFlavor[2] = { (wchar_t)IDTMFile::WktFlavor_Autodesk, L'\0' };
 
         extendedWktStr += WString(wktFlavor);
-        wkt = HCPWKT(extendedWktStr.c_str());
+        //wkt = HCPWKT(extendedWktStr.c_str());
     }
 
     if (GCS::S_SUCCESS != wktCreateStatus)
@@ -1302,11 +1342,11 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_SetGCS(const GCS& newGCS)
     // is that of the default GCS.
     WString wktStr;
     m_smSQLitePtr->GetWkt(wktStr);
-    HCPWKT oldWkt = HCPWKT(wktStr.c_str());
+    //HCPWKT oldWkt = HCPWKT(wktStr.c_str());
 
-    if (!m_smSQLitePtr->SetWkt(wkt.GetCStr()))
+    if (!m_smSQLitePtr->SetWkt(extendedWktStr.c_str()))
     {
-        bool result = m_smSQLitePtr->SetWkt(oldWkt.GetCStr());
+    bool result = m_smSQLitePtr->SetWkt(wktStr.c_str());
         assert(result);
 
         return BSIERROR;
@@ -1351,6 +1391,80 @@ template <class POINT> uint64_t ScalableMesh<POINT>::_AddClip(const DPoint3d* pt
     return m_scmIndexPtr->GetClipRegistry()->AddClip(pts, ptsSize)+1;
     }
 
+/*----------------------------------------------------------------------------+
+|ScalableMesh::_AddClip
++----------------------------------------------------------------------------*/
+template <class POINT> bool ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID)
+    {
+    if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
+    DRange3d extent = DRange3d::From(pts, (int)ptsSize);
+    m_scmIndexPtr->GetClipRegistry()->ModifyClip(clipID, pts, ptsSize);
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, clipID, extent);
+    return true;
+    /*if (bsiGeom_getXYPolygonArea(pts, (int)ptsSize) < 0) //need to flip polygon so it's counterclockwise
+        {
+        uint64_t clipId = 0;
+        DPoint3d* flippedPts = new DPoint3d[ptsSize];
+        for (size_t pt = 0; pt < ptsSize; ++pt) flippedPts[pt] = pts[ptsSize - 1 - pt];
+        clipId = m_scmIndexPtr->GetClipRegistry()->AddClip(flippedPts, ptsSize) + 1;
+        delete[] flippedPts;
+        return clipId;
+        }
+    return m_scmIndexPtr->GetClipRegistry()->AddClip(pts, ptsSize) + 1;*/
+    }
+
+/*----------------------------------------------------------------------------+
+|ScalableMesh::_ModifyClip
++----------------------------------------------------------------------------*/
+template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID)
+    {
+    if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
+    DRange3d extent = DRange3d::From(pts, (int)ptsSize);
+    m_scmIndexPtr->GetClipRegistry()->ModifyClip(clipID, pts, ptsSize);
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, extent);
+    return true;
+    /*if (bsiGeom_getXYPolygonArea(pts, (int)ptsSize) < 0) //need to flip polygon so it's counterclockwise
+        {
+        uint64_t clipId = 0;
+        DPoint3d* flippedPts = new DPoint3d[ptsSize];
+        for (size_t pt = 0; pt < ptsSize; ++pt) flippedPts[pt] = pts[ptsSize - 1 - pt];
+        clipId = m_scmIndexPtr->GetClipRegistry()->AddClip(flippedPts, ptsSize) + 1;
+        delete[] flippedPts;
+        return clipId;
+        }
+    return m_scmIndexPtr->GetClipRegistry()->AddClip(pts, ptsSize) + 1;*/
+    }
+
+/*----------------------------------------------------------------------------+
+|ScalableMesh::_RemoveClip
++----------------------------------------------------------------------------*/
+template <class POINT> bool ScalableMesh<POINT>::_RemoveClip(uint64_t clipID)
+    {
+    if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
+    bvector<DPoint3d> clipData;
+    m_scmIndexPtr->GetClipRegistry()->GetClip(clipID, clipData);
+    DRange3d extent = DRange3d::From(&clipData[0], (int)clipData.size());
+    m_scmIndexPtr->GetClipRegistry()->DeleteClip(clipID);
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_DELETE, clipID, extent);
+    return true;
+    /*if (bsiGeom_getXYPolygonArea(pts, (int)ptsSize) < 0) //need to flip polygon so it's counterclockwise
+        {
+        uint64_t clipId = 0;
+        DPoint3d* flippedPts = new DPoint3d[ptsSize];
+        for (size_t pt = 0; pt < ptsSize; ++pt) flippedPts[pt] = pts[ptsSize - 1 - pt];
+        clipId = m_scmIndexPtr->GetClipRegistry()->AddClip(flippedPts, ptsSize) + 1;
+        delete[] flippedPts;
+        return clipId;
+        }
+    return m_scmIndexPtr->GetClipRegistry()->AddClip(pts, ptsSize) + 1;*/
+    }
+
+template <class POINT> void ScalableMesh<POINT>::_SetIsInsertingClips(bool toggleInsertClips)
+    {
+    if (nullptr == m_scmIndexPtr || m_scmIndexPtr->GetClipRegistry() == nullptr) return;
+    m_scmIndexPtr->GetClipRegistry()->GetFile()->m_autocommit = !toggleInsertClips;
+    if (!toggleInsertClips) m_scmIndexPtr->RefreshMergedClips();
+    }
 
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_GetState
@@ -1376,12 +1490,12 @@ template <class POINT> bool ScalableMesh<POINT>::_InSynchWithSources() const
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_GetRangeInSpecificGCS
 +----------------------------------------------------------------------------*/
-template <class POINT> int ScalableMesh<POINT>::_GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, Bentley::GeoCoordinates::BaseGCSPtr& targetGCS) const
+template <class POINT> int ScalableMesh<POINT>::_GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const
     {
     StatusInt status = SUCCESS;
 
     DRange3d reprojectedRange;
-    status = ReprojectRangeDomainLimited(reprojectedRange, m_contentExtent, (BaseGCSPtr&)m_sourceGCS.GetGeoRef().GetBasePtr(), targetGCS);
+    status = ReprojectRangeDomainLimited(reprojectedRange, m_contentExtent, const_cast<BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr&>(m_sourceGCS.GetGeoRef().GetBasePtr()), targetGCS);
 
     lowPt.x = reprojectedRange.low.x;
     highPt.x = reprojectedRange.high.x;
@@ -1484,13 +1598,13 @@ template <class POINT> __int64 ScalableMeshSingleResolutionPointIndexView<POINT>
     }
 
 
-template <class POINT> Bentley::TerrainModel::IDTM* ScalableMeshSingleResolutionPointIndexView<POINT>::_GetDTMInterface()
+template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMeshSingleResolutionPointIndexView<POINT>::_GetDTMInterface()
     {
     assert(0);
     return 0;
     }
 
-template <class POINT> IDTMVolumeP  ScalableMeshSingleResolutionPointIndexView<POINT>::_GetDTMVolume()
+template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMeshSingleResolutionPointIndexView<POINT>::_GetDTMInterface(DMatrix4d& storageToUors)
     {
     assert(0);
     return 0;
@@ -1519,7 +1633,7 @@ template <class POINT> uint64_t ScalableMeshSingleResolutionPointIndexView<POINT
 /*----------------------------------------------------------------------------+
 |ScalableMeshSingleResolutionPointIndexView::_GetRangeInSpecificGCS
 +----------------------------------------------------------------------------*/
-template <class POINT> int ScalableMeshSingleResolutionPointIndexView<POINT>::_GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, Bentley::GeoCoordinates::BaseGCSPtr& targetGCS) const
+template <class POINT> int ScalableMeshSingleResolutionPointIndexView<POINT>::_GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const
     {
     StatusInt status = SUCCESS;
 
@@ -1534,7 +1648,7 @@ template <class POINT> int ScalableMeshSingleResolutionPointIndexView<POINT>::_G
     initialRange.high.z = ExtentOp<YProtPtExtentType>::GetZMax(ExtentPoints);
 
     DRange3d reprojectedRange;
-    status = ReprojectRangeDomainLimited(reprojectedRange, initialRange, (BaseGCSPtr&)m_sourceGCS.GetGeoRef().GetBasePtr(), targetGCS);
+    status = ReprojectRangeDomainLimited(reprojectedRange, initialRange, const_cast<BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr&>(m_sourceGCS.GetGeoRef().GetBasePtr()), targetGCS);
 
     lowPt.x = reprojectedRange.low.x;
     highPt.x = reprojectedRange.high.x;
@@ -1574,8 +1688,13 @@ template <class POINT> int ScalableMeshSingleResolutionPointIndexView<POINT>::_G
     return 1;    
     }
 
+template <class POINT> size_t ScalableMeshSingleResolutionPointIndexView<POINT>::_GetTerrainDepth() const
+    {
+    return 1;
+    }
+
 template <class POINT> IScalableMeshPointQueryPtr ScalableMeshSingleResolutionPointIndexView<POINT>::_GetQueryInterface(ScalableMeshQueryType                queryType,                                                                                                      
-                                                                                                                        Bentley::GeoCoordinates::BaseGCSPtr& targetGCS,
+                                                                                                                        BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS,
                                                                                                                         const DRange3d&                      extentInTargetGCS) const
     {                   
     GeoCoords::GCS targetGeoCoord(GetGCSFactory().Create(targetGCS));           
@@ -1619,7 +1738,7 @@ template <class POINT> IScalableMeshMeshQueryPtr ScalableMeshSingleResolutionPoi
     }
 
 template <class POINT> IScalableMeshMeshQueryPtr ScalableMeshSingleResolutionPointIndexView<POINT>::_GetMeshQueryInterface(MeshQueryType queryType,
-                                                                                                             Bentley::GeoCoordinates::BaseGCSPtr& targetGCS,
+                                                                                                             BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS,
                                                                                                              const DRange3d&                      extentInTargetGCS) const
     {
     assert(!"Not supported");
@@ -1651,6 +1770,25 @@ template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_
     assert(0);
     return false;
     }
+
+
+
+template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID)
+    {
+    return false;
+    }
+
+template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID)
+    {
+    return false;
+    }
+
+template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_RemoveClip(uint64_t clipID)
+    {
+    return false;
+    }
+
+
 
 template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_IsReadOnly() const
     {    
@@ -1690,10 +1828,15 @@ template <class POINT> int ScalableMeshSingleResolutionPointIndexView<POINT>::_S
     return -1;       
     }
 
+template <class POINT> void ScalableMeshSingleResolutionPointIndexView<POINT>::_SetIsInsertingClips(bool toggleInsertClips)
+    {
+    assert(!"Should not be called");
+    }
+
 /*----------------------------------------------------------------------------+
 |ScalableMeshSingleResolutionPointIndexView Method Definition Section - End
 +----------------------------------------------------------------------------*/
-
+/*
 DTMStatusInt IDTMVolume::ComputeVolumeCutAndFill(double& cut, double& fill, double& area, PolyfaceHeader& intersectingMeshSurface, DRange3d& meshRange, bvector<PolyfaceHeaderPtr>& volumeMeshVector)
     {
     return _ComputeVolumeCutAndFill(cut, fill, area, intersectingMeshSurface,meshRange, volumeMeshVector);
@@ -1703,7 +1846,7 @@ DTMStatusInt IDTMVolume::ComputeVolumeCutAndFill(PolyfaceHeaderPtr& terrainMesh,
     {
     return _ComputeVolumeCutAndFill(terrainMesh, cut, fill, mesh, is2d, volumeMeshVector);
     }
-
+*/
 
 void edgeCollapseTest(WCharCP param)
     {
@@ -1719,7 +1862,7 @@ void edgeCollapseTest(WCharCP param)
     fread(&npts, sizeof(size_t), 1, mesh);
     std::vector<DPoint3d> pts(npts);
     fread(&pts[0], sizeof(DPoint3d), npts, mesh);
-    CGALEdgeCollapse(&g, pts, 20000000);
+    //CGALEdgeCollapse(&g, pts, 20000000);
     fclose(mesh);
     }
 

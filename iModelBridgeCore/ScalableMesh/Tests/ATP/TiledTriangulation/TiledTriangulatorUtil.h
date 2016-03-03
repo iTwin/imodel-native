@@ -20,22 +20,26 @@
 #include <ImagePP/all/h/HPMPersistentObject.h>
 
 #include <ImagePP/all/h/HFCPtr.h>*/
-#include <ImagePP/all/h/HVEDTMLinearFeature.h>
+//#include <ImagePP/all/h/HVEDTMLinearFeature.h>
 #include <ImagePP/all/h/HPMPooledVector.h>
+#include <ImagePP/all/h/HGF2DCoordSys.h>
+#include <ImagePP/all/h/HGF2DLocation.h>
 #include <ScalableMesh/IScalableMesh.h>
 #include <TerrainModel/TerrainModel.h>
+#include <TerrainModel/Core/bcDTMClass.h>
 
 //BEGIN_GEODTMAPP_NAMESPACE
-void dumpDTMInTinFile(Bentley::TerrainModel::BcDTM* dtmP, wstring& fileName, const __int64* indP);
+//void dumpDTMInTinFile(Bentley::TerrainModel::BcDTM* dtmP, wstring& fileName, const __int64* indP);
 
-StatusInt addLinearsIn (DTMPtr& dtmPtr,
+/*StatusInt addLinearsIn (DTMPtr& dtmPtr,
                         list<HFCPtr<HVEDTMLinearFeature>>& linearList,
-                        unsigned int                       maxNumberOfPoints);
+                        unsigned int                       maxNumberOfPoints);*/
+USING_NAMESPACE_IMAGEPP
 
 bool isClosedFeature(DTMFeatureType featureType);
 
-int addPolygonAsFeatureInDTM (Bentley::TerrainModel::DTMPtr& dtmPtr,
-                              const Bentley::ScalableMesh::IScalableMeshQueryParametersPtr& mrDTMQueryParamsPtr,
+int addPolygonAsFeatureInDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr,
+                              const BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshQueryParametersPtr& mrDTMQueryParamsPtr,
                               vector<DPoint3d>& polygon,
                               const int& featureType,
                               const bool triangulateAfter = true);
@@ -44,19 +48,19 @@ vector<DPoint2d> convertDRange2dToVectorDPoint2d (const DRange2d& inputRange);
 
 vector<DPoint3d> convertDRange2dToVectorDPoint3d (const DRange2d& inputRange);
 
-int insertTrianglesAsFeatureInDTM (Bentley::TerrainModel::DTMPtr& dtmPtr,
+int insertTrianglesAsFeatureInDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr,
                                    HPMMemoryManagedVector<DPoint3d>& triangleList,
                                    //vector<DPoint3d>& triangles,
                                    const int featureType);
 
-int createDTMFromTriangles (Bentley::TerrainModel::DTMPtr& dtmPtr,
-                            const Bentley::ScalableMesh::IScalableMeshQueryParametersPtr& mrDTMQueryParamsPtr,
+int createDTMFromTriangles (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr,
+                            const BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshQueryParametersPtr& mrDTMQueryParamsPtr,
                             HPMMemoryManagedVector<DPoint3d>& triangleList,
                             //vector<DPoint3d>& triangles,
                             const int featureType,
                             const bool triangulate = true);
 
-void getAllMeshFacesAndComputeBoundingCircles (Bentley::TerrainModel::BcDTMMeshPtr mesh, vector<FaceWithProperties>& VectorFaces);
+void getAllMeshFacesAndComputeBoundingCircles (BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMMeshPtr mesh, vector<FaceWithProperties>& VectorFaces);
 
 void getRangeFromPoints(DPoint3dCP linePoints, const int nbPoints, DRange2d& range);
 

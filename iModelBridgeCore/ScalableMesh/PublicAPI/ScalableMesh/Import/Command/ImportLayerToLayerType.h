@@ -6,7 +6,7 @@
 |       $Date: 2011/11/22 21:58:14 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -33,21 +33,21 @@ struct ImportLayerToLayerTypeCommand : public ImportCommandMixinBase<ImportLayer
     void operator delete [] (void *rawMemory, size_t size) { bentleyAllocator_deleteArrayRefCounted (rawMemory, size); }
 
 private:
-    UInt                                m_sourceLayer;
-    UInt                                m_targetLayer;
+    uint32_t                                m_sourceLayer;
+    uint32_t                                m_targetLayer;
     DataTypeFamily                      m_targetType;
 
 public:
-    IMPORT_DLLE explicit                ImportLayerToLayerTypeCommand      (UInt                                    sourceLayer,
-                                                                            UInt                                    targetLayer,
+    IMPORT_DLLE explicit                ImportLayerToLayerTypeCommand      (uint32_t                                    sourceLayer,
+                                                                            uint32_t                                    targetLayer,
                                                                             const DataTypeFamily&                   targetType);
 
     IMPORT_DLLE virtual                 ~ImportLayerToLayerTypeCommand     ();
 
     IMPORT_DLLE                         ImportLayerToLayerTypeCommand      (const ImportLayerToLayerTypeCommand&    rhs);
 
-    UInt                                GetSourceLayer                     () const;
-    UInt                                GetTargetLayer                     () const;
+    uint32_t                                GetSourceLayer                     () const;
+    uint32_t                                GetTargetLayer                     () const;
     const DataTypeFamily&               GetTargetType                      () const;
     };
 

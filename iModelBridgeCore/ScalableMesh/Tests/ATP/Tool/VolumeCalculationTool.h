@@ -1,4 +1,6 @@
-#pragma once
+/*#pragma once
+
+#include <DgnPlatform/ClipVector.h>
 #include <DgnPlatform/DgnPlatform.h>
 #include <ScalableMesh/IScalableMesh.h>
 #include <TerrainModel/TerrainModel.h>
@@ -13,4 +15,4 @@ StatusInt ComputeVolumeForAgenda(ElementAgendaR agenda, IScalableMeshPtr smPtr, 
 StatusInt ComputeVolumeForAgenda(ElementAgendaR agenda, IScalableMeshPtr smPtr, ElementAgendaR agendaGround, double& cut, double& fill, double& volume, bvector<PolyfaceHeaderPtr>& volumeMeshVector);
 
 double ComputeVolumeCutAndFill(DTMPtr smPtr, double& cut, double& fill, PolyfaceHeader& mesh, DRange3d& elemRange, bvector<PolyfaceHeaderPtr>& volumeMeshVector);
-double ComputeVolumeCutAndFill(DTMPtr smPtr, double& cut, double& fill, PolyfaceHeaderPtr& meshGround, PolyfaceHeader& mesh, DRange3d& elemRange, bvector<PolyfaceHeaderPtr>& volumeMeshVector);
+double ComputeVolumeCutAndFill(DTMPtr smPtr, double& cut, double& fill, PolyfaceHeaderPtr& meshGround, PolyfaceHeader& mesh, DRange3d& elemRange, bvector<PolyfaceHeaderPtr>& volumeMeshVector);*/

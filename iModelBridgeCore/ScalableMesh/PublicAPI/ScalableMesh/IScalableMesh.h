@@ -14,7 +14,7 @@
 #include <ScalableMesh/ScalableMeshDefs.h>
 #include <Bentley/RefCounted.h>
 
-ADD_BENTLEY_TYPEDEFS (Bentley::ScalableMesh, IDTMVolume)
+//ADD_BENTLEY_TYPEDEFS (BENTLEY_NAMESPACE_NAME::ScalableMesh, IDTMVolume)
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -36,7 +36,7 @@ struct Count;
 * Interface implemented by MRDTM engines.
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
-struct IScalableMesh abstract:  IRefCounted //Bentley::TerrainModel::IDTM
+struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM
     {
     private:
         
@@ -60,23 +60,25 @@ struct IScalableMesh abstract:  IRefCounted //Bentley::TerrainModel::IDTM
 
         virtual int                    _GetNbResolutions() const = 0;
 
+        virtual size_t                 _GetTerrainDepth() const = 0;
+
         virtual IScalableMeshPointQueryPtr         _GetQueryInterface(ScalableMeshQueryType queryType) const = 0;
 
         virtual IScalableMeshPointQueryPtr         _GetQueryInterface(ScalableMeshQueryType                queryType,                                                           
-                                                                      Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr,
+                                                                      BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr,
                                                                       const DRange3d&                      extentInTargetGCS) const = 0;
 
         virtual IScalableMeshMeshQueryPtr     _GetMeshQueryInterface(MeshQueryType queryType) const = 0;
 
         virtual IScalableMeshMeshQueryPtr     _GetMeshQueryInterface(MeshQueryType                        queryType,
-                                                                     Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr,
+                                                                     BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr,
                                                                      const DRange3d&                      extentInTargetGCS) const = 0;
 
         virtual IScalableMeshNodeRayQueryPtr     _GetNodeQueryInterface() const = 0;
 
-        virtual IDTMVolumeP             _GetDTMVolume() = 0;
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   _GetDTMInterface() = 0;
 
-        virtual Bentley::TerrainModel::IDTM*   _GetDTMInterface() = 0;
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   _GetDTMInterface(DMatrix4d& storageToUors) = 0;
 
         virtual const GeoCoords::GCS&               _GetGCS() const = 0;
 
@@ -97,12 +99,20 @@ struct IScalableMesh abstract:  IRefCounted //Bentley::TerrainModel::IDTM
 
         virtual int                                 _SynchWithSources() = 0;  
 
-        virtual int                                 _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, Bentley::GeoCoordinates::BaseGCSPtr& targetGCS) const = 0;
+        virtual int                                 _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const = 0;
 
 #ifdef SCALABLE_MESH_ATP
         virtual int                                 _LoadAllNodeHeaders(size_t& nbLoadedNodes) const = 0; 
 #endif
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) = 0;
+
+        virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) = 0;
+
+        virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) = 0;;
+
+        virtual bool                               _RemoveClip(uint64_t clipID) = 0;
+
+        virtual void                               _SetIsInsertingClips(bool toggleInsertMode) = 0;
     /*__PUBLISH_SECTION_START__*/
     public:
         //! Gets the number of points of the DTM.
@@ -121,29 +131,31 @@ struct IScalableMesh abstract:  IRefCounted //Bentley::TerrainModel::IDTM
             
         BENTLEYSTM_EXPORT ScalableMeshCompressionType   GetCompressionType() const;
 
-        BENTLEYSTM_EXPORT int                    GetNbResolutions() const;          
+        BENTLEYSTM_EXPORT int                    GetNbResolutions() const;    
+
+        BENTLEYSTM_EXPORT size_t                 GetTerrainDepth() const;
 
         BENTLEYSTM_EXPORT IScalableMeshPointQueryPtr         GetQueryInterface(ScalableMeshQueryType queryType) const;
 
         BENTLEYSTM_EXPORT IScalableMeshPointQueryPtr         GetQueryInterface(ScalableMeshQueryType                queryType,                                                              
-                                                                               Bentley::GeoCoordinates::BaseGCSPtr& targetGCS,
+                                                                               BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS,
                                                                                const DRange3d&                      extentInTargetGCS) const;
 
         BENTLEYSTM_EXPORT IScalableMeshMeshQueryPtr    GetMeshQueryInterface(MeshQueryType queryType) const;
 
         BENTLEYSTM_EXPORT IScalableMeshMeshQueryPtr     GetMeshQueryInterface(MeshQueryType queryType,
-                                                                        Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr,
+                                                                        BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr,
                                                                         const DRange3d&                      extentInTargetGCS) const;
 
         BENTLEYSTM_EXPORT IScalableMeshNodeRayQueryPtr    GetNodeQueryInterface() const;
 
-        BENTLEYSTM_EXPORT  IDTMVolumeP             GetDTMVolume();
+        BENTLEYSTM_EXPORT BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   GetDTMInterface();
 
-        BENTLEYSTM_EXPORT Bentley::TerrainModel::IDTM*   GetDTMInterface();
+        BENTLEYSTM_EXPORT BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   GetDTMInterface(DMatrix4d& storageToUors);
 
-        BENTLEYSTM_EXPORT const Bentley::GeoCoordinates::BaseGCSPtr&
+        BENTLEYSTM_EXPORT const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr&
                                            GetBaseGCS() const;
-        BENTLEYSTM_EXPORT StatusInt              SetBaseGCS(const Bentley::GeoCoordinates::BaseGCSPtr& sourceGCS);
+        BENTLEYSTM_EXPORT StatusInt              SetBaseGCS(const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCS);
 
         BENTLEYSTM_EXPORT const GeoCoords::GCS&  GetGCS() const;
         BENTLEYSTM_EXPORT StatusInt              SetGCS(const GeoCoords::GCS& gcs);
@@ -166,11 +178,19 @@ struct IScalableMesh abstract:  IRefCounted //Bentley::TerrainModel::IDTM
 
         BENTLEYSTM_EXPORT int                    SynchWithSources(); 
 
-        BENTLEYSTM_EXPORT int                    GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, Bentley::GeoCoordinates::BaseGCSPtr& targetGCS) const;
+        BENTLEYSTM_EXPORT int                    GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const;
 
         BENTLEYSTM_EXPORT Count                  GetCountInRange (const DRange2d& range, const CountType& type, const unsigned __int64& maxNumberCountedPoints) const;
 
         BENTLEYSTM_EXPORT uint64_t               AddClip(const DPoint3d* pts, size_t ptsSize);
+
+        BENTLEYSTM_EXPORT bool                   AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID);
+
+        BENTLEYSTM_EXPORT bool                   ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID);
+
+        BENTLEYSTM_EXPORT bool                   RemoveClip(uint64_t clipID);
+
+        BENTLEYSTM_EXPORT void                   SetIsInsertingClips(bool toggleInsertMode);
 
     
         BENTLEYSTM_EXPORT static IScalableMeshPtr        GetFor                 (const WChar*          filePath,

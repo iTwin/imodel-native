@@ -40,7 +40,7 @@ template <class EXTENT> class SMSQLiteUVTileStore : public SMPointTileStore<DPoi
             }
 
     public:
-        /*SMSQLiteUVTileStore(Bentley::WString filename, const IDTMFile::AccessMode& accessMode)
+        /*SMSQLiteUVTileStore(BENTLEY_NAMESPACE_NAME::WString filename, const IDTMFile::AccessMode& accessMode)
             {
             m_smSQLiteFile = SMSQLiteFile::Create();
             Utf8String filenameA;

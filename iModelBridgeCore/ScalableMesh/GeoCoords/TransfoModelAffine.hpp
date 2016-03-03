@@ -6,7 +6,7 @@
 |       $Date: 2011/11/07 14:27:03 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -74,7 +74,7 @@ private:
 
         Transform transform(ToTransform3d(m_transFn.m));
 
-        if (!bsiTransform_invert(&transform, &transform))
+        if (!transform.InverseOf(transform))
             return 0;
 
         return new TransfoModelAffine(FromTransform3d(transform));

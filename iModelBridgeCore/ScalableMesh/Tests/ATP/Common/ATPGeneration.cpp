@@ -1,22 +1,39 @@
+//#include "ScalableMeshATPPch.h"
 #include "ATPUtils.h"
+
+#include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdio.h>
+#include <errno.h>
+#include <wtypes.h>
+
+
 #include "ATPDefinitions.h"
 #include "ATPGeneration.h"
 #include "ATPFileFinder.h"
-#include <DgnPlatform/DgnFile.h>
-#include <ScalableMesh/Import/ScalableMeshData.h>
-#include <ScalableMesh\IScalableMeshSourceImportConfig.h>
-#include <DgnPlatform\DgnDocumentManager.h>
-#include <DgnPlatform\LevelCache.h>
+//#include <DgnPlatform/DgnFile.h>
+//#include <ScalableMesh/Import/ScalableMeshData.h>
+//#include <ScalableMesh\IScalableMeshSourceImportConfig.h>
+//#include <DgnPlatform\DgnDocumentManager.h>
+//#include <DgnPlatform\LevelCache.h>
+#include <ScalableMesh/IScalableMeshSourceImportConfig.h>
 #include <DgnPlatform\DgnPlatformErrors.r.h>
+#include <DgnPlatform\DgnPlatformBaseType.r.h>
+
+
+//#include    <DgnGeoCoord\DgnGeoCoordApi.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 //USING_NAMESPACE_SCALABLEMESH
 
+/*typedef uint32_t  LevelId;
+
 StatusInt    mdlLevel_getIdFromName
 (
     LevelId*        levelIdOut,
-    DgnModelRefP    modelRefIn,
+    DgnModelP    modelRefIn,
     LevelId,
     WCharCP         levelNameIn
     )
@@ -38,9 +55,9 @@ StatusInt    mdlLevel_getIdFromName
         *levelIdOut = level.GetLevelId();
 
     return SUCCESS;
-    }
+    }*/
 
-IDTMSourcePtr CreateSourceFor(const WString&          sourcePath,
+/*IDTMSourcePtr CreateSourceFor(const WString&          sourcePath,
                                     DTMSourceDataType importedType, 
                                     BeXmlNodeP        pTestChildNode)
     {
@@ -94,7 +111,7 @@ IDTMSourcePtr CreateSourceFor(const WString&          sourcePath,
         }
             
     return IDTMLocalFileSource::Create(importedType, monikerPtr).get();
-    }
+    }*/
 
 void ParseDTMFeatureType(WString& name, DTMFeatureType& type)
     {
@@ -254,13 +271,13 @@ bool ParseGenerationOptions(ScalableMeshMesherType* mesherType, ScalableMeshFilt
             {
             if (mesherType != 0)
                 {
-                Int32 mesherTypeAttr;
+                int32_t mesherTypeAttr;
 
                 StatusInt status = pTestChildNode->GetAttributeInt32Value(mesherTypeAttr, "type");
 
                 if ((status == BEXML_Success) && (mesherTypeAttr >= 0) && (mesherTypeAttr < SCM_MESHER_QTY))
                     {
-                    *mesherType = (Bentley::ScalableMesh::ScalableMeshMesherType)mesherTypeAttr;
+                    *mesherType = (BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesherType)mesherTypeAttr;
                     }
                 else
                     {
@@ -294,13 +311,13 @@ bool ParseGenerationOptions(ScalableMeshMesherType* mesherType, ScalableMeshFilt
                 {
                 if (filterType != 0)
                     {
-                    Int32 filterTypeAttr;
+                    int32_t filterTypeAttr;
 
                     StatusInt status = pTestChildNode->GetAttributeInt32Value(filterTypeAttr, "type");
 
                     if ((status == BEXML_Success) && (filterTypeAttr >= 0) && (filterTypeAttr < SCM_FILTER_QTY))
                         {
-                        *filterType = (Bentley::ScalableMesh::ScalableMeshFilterType)filterTypeAttr;
+                        *filterType = (BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshFilterType)filterTypeAttr;
                         }
                     else
                         {
@@ -317,13 +334,13 @@ bool ParseGenerationOptions(ScalableMeshMesherType* mesherType, ScalableMeshFilt
                     {
                     if (saveType != 0)
                         {
-                        Int32 saveTypeAttr;
+                        int32_t saveTypeAttr;
 
                         StatusInt status = pTestChildNode->GetAttributeInt32Value(saveTypeAttr, "type");
 
                         if ((status == BEXML_Success) && (saveTypeAttr >= 0) && (saveTypeAttr < SCM_SAVE_QTY))
                             {
-                            *saveType = (Bentley::ScalableMesh::ScalableMeshSaveType)saveTypeAttr;
+                            *saveType = (BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshSaveType)saveTypeAttr;
                             }
                         else
                             {
@@ -365,12 +382,13 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pTes
                 if ((datasetPath.c_str()[datasetPath.size() - 1] != L'\\') &&
                     (datasetPath.c_str()[datasetPath.size() - 1] != L'/'))
                     {
-                    IDTMSourcePtr srcPtr = CreateSourceFor(datasetPath, dataType, pTestChildNode);
+                    //IDTMSourcePtr srcPtr = CreateSourceFor(datasetPath, dataType, pTestChildNode);
+                    IDTMSourcePtr srcPtr = IDTMLocalFileSource::Create(dataType, datasetPath.c_str());
                     AddOptionToSource(srcPtr, pTestChildNode);
                     if (BSISUCCESS != sourceCollection.Add(srcPtr))
                         {
                         isSuccess = false;
-                        wprintf(L"ERROR : cannot add %s\r\n", datasetPath);
+                        wprintf(L"ERROR : cannot add %s\r\n", datasetPath.c_str());
                         break;
                         }
                     }
@@ -395,12 +413,13 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pTes
                         if (0 == BeStringUtilities::Wcsicmp(extension.c_str(), L"classif")) continue;
                         if (!ext.empty() && 0 != BeStringUtilities::Wcsicmp(extension.c_str(), ext.c_str())) continue;
                         if (!filter.empty() && !name.ContainsI(filter)) continue;
-                        IDTMSourcePtr srcPtr = CreateSourceFor(firstPath, dataType, pTestChildNode);
+                        //IDTMSourcePtr srcPtr = CreateSourceFor(firstPath, dataType, pTestChildNode);
+                        IDTMSourcePtr srcPtr = IDTMLocalFileSource::Create(dataType, firstPath.c_str());
                         AddOptionToSource(srcPtr, pTestChildNode);
                         if (BSISUCCESS != sourceCollection.Add(srcPtr))
                             {
                             isSuccess = false;
-                            wprintf(L"ERROR : cannot add %s\r\n", firstPath);
+                            wprintf(L"ERROR : cannot add %s\r\n", firstPath.c_str());
                             break;
                             }
                         }
@@ -451,22 +470,31 @@ bool ParseBaselineSubNodes(WString& baselinePointFileName, WString& baselineFeat
     return baselineSubNodeFound;
     }
 
-Bentley::WString UpdateTest_GetStmFileNameWithSuffix(Bentley::WString stmFileName, Bentley::WString suffix)
+BENTLEY_NAMESPACE_NAME::WString UpdateTest_GetStmFileNameWithSuffix(BENTLEY_NAMESPACE_NAME::WString stmFileName, BENTLEY_NAMESPACE_NAME::WString suffix)
     {
     // Testfile.stm will become TestFileSuffix.stm.
     // Could be used to create a file like "TestFile_Add.stm"
     // to specify that the file is the result of a partial update of type "Add".
 
-    Bentley::WString stmFileExtension(".stm");
-    Bentley::WString prefix = stmFileName.substr(0, stmFileName.length() - stmFileExtension.length());
+    BENTLEY_NAMESPACE_NAME::WString stmFileExtension(L".stm");
+    BENTLEY_NAMESPACE_NAME::WString prefix = stmFileName.substr(0, stmFileName.length() - stmFileExtension.length());
 
-    bvector<WString> newPathStrings;
-    newPathStrings.push_back(prefix);
-    newPathStrings.push_back(suffix);
-    newPathStrings.push_back(stmFileExtension);
-    WString  newPath = BeStringUtilities::Join(newPathStrings, NULL);
+    bvector<Utf8CP> newPathStrings;
+    Utf8String prefixString;
+    BeStringUtilities::WCharToUtf8(prefixString, prefix.c_str());
+    newPathStrings.push_back(prefixString.c_str());
+    Utf8String suffixString;
+    BeStringUtilities::WCharToUtf8(suffixString, suffix.c_str());
+    newPathStrings.push_back(suffixString.c_str());
+    Utf8String stmFileExtensionString;
+    BeStringUtilities::WCharToUtf8(stmFileExtensionString, stmFileExtension.c_str());
+    newPathStrings.push_back(stmFileExtensionString.c_str());
+    Utf8String  newPath = BeStringUtilities::Join(newPathStrings, nullptr);
 
-    return newPath;
+    WString newPathWstring;
+    BeStringUtilities::Utf8ToWChar(newPathWstring, newPath.c_str(), newPath.size());
+
+    return newPathWstring;
     }
 
 WString GetMesherTypeName(ScalableMeshMesherType mesherType)
@@ -493,7 +521,7 @@ WString GetMesherTypeName(ScalableMeshMesherType mesherType)
             assert(!"Unknown mesher type");
         }
 
-    return WString("");
+    return WString(L"");
     }
 
 WString GetFilterTypeName(ScalableMeshFilterType filterType)
@@ -509,7 +537,7 @@ WString GetFilterTypeName(ScalableMeshFilterType filterType)
         default:
             assert(!"Unknown filter type");
         }
-    return WString("");
+    return WString(L"");
     }
 
 WString GetTrimmingTypeName(int trimmingType)
@@ -526,7 +554,7 @@ WString GetTrimmingTypeName(int trimmingType)
             assert(!"Unknown trimming type");
         }
 
-    return WString("");
+    return WString(L"");
     }
 
 WString GetBlossomMatchingValue(int blossomMatch)
@@ -548,7 +576,7 @@ WString GetBlossomMatchingValue(int blossomMatch)
             assert(!"Wrong blossom matching value");
         }
 
-    return WString("");
+    return WString(L"");
     }
 
 WString GetIndexMethodValue(int indexMethod)
@@ -573,7 +601,7 @@ WString GetIndexMethodValue(int indexMethod)
             assert(!"Wrong index method");
         }
 
-    return WString("");
+    return WString(L"");
     }
 
 WString GetTrimmingMethodValue(int trimmingMethod)
@@ -592,5 +620,5 @@ WString GetTrimmingMethodValue(int trimmingMethod)
             assert(!"Wrong trimming method");
         }
 
-    return WString("");
+    return WString(L"");
     }

@@ -125,13 +125,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -x64  </NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -x64  </NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\ScalableMesh\ ScalableMesh.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -x64 -c
+    <NMakeReBuildCommandLine>BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -x64 -c
 python.exe $(SrcBsiCommon)build\BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -x64</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -x64 -c
+    <NMakeCleanCommandLine>BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -x64 -c
 </NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel</NMakeIncludeSearchPath>
     <NMakeForcedIncludes>$(ProjectDir)STM\ScalableMeshPCH.h</NMakeForcedIncludes>
@@ -142,7 +142,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p  ScalableMesh -f  ScalableMes
     <NMakeAssemblySearchPath>
     </NMakeAssemblySearchPath>
     <SourcePath>$(SourcePath);D:\PointoolsVortexAPI</SourcePath>
-    <IncludePath>C:\dev\ScalableMesh-Topaz\out\debug\Winx64\BuildContexts\DgnPlatform\PublicAPI;C:\dev\ScalableMesh-Topaz\out\debug\Winx64\BuildContexts\scalablemesh\PublicAPI;$(IncludePath)</IncludePath>
+    <IncludePath>C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnPlatform\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\TerrainModel\PublicAPI;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMesh -f ScalableMesh -r ScalableMesh -ax64 re ScalableMesh</NMakeBuildCommandLine>
@@ -566,6 +566,9 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMesh -f ScalableMesh 
     <ClInclude Include="STM\Threading\ScalableMeshScheduler.h" />
   </ItemGroup>
   <ItemGroup>
+    <Xml Include="ScalableMesh.PartFile.xml">
+      <SubType>Designer</SubType>
+    </Xml>
     <Xml Include="transkit\transkit.xml" />
   </ItemGroup>
   <ItemGroup>
@@ -631,6 +634,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMesh -f ScalableMesh 
     <ClCompile Include="STM\3dDelaunay\tetGen\tetgenPredicates.cpp" />
     <ClCompile Include="STM\3dDelaunay\TrimHull.cpp" />
     <ClCompile Include="STM\CGALEdgeCollapse.cpp" />
+    <ClCompile Include="STM\Edits\Skirts.cpp" />
     <ClCompile Include="STM\ScalableMeshQuadTreeQueries.cpp" />
     <ClCompile Include="STM\ScalableTerrainModelAdmin.cpp" />
     <ClCompile Include="STM\DrapeOnGraph.cpp" />

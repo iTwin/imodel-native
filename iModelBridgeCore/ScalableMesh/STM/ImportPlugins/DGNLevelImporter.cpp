@@ -692,7 +692,7 @@ class DGNLevelPointExtractorFactory : public InputExtractorCreatorMixinBase<DGNL
     * @bsimethod                                                  Raymond.Gauthier   07/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual RawCapacities                       _GetOutputCapacities               (DGNLevelSource&                 sourceBase,
-                                                                                    const Bentley::ScalableMesh::Import::Source&                   source,
+                                                                                    const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source&                   source,
                                                                                     const ExtractionQuery&          selection) const override
         {
         return RawCapacities(sourceBase.GetStats().m_point.GetPointCapacity() * sizeof(DPoint3d));
@@ -703,7 +703,7 @@ class DGNLevelPointExtractorFactory : public InputExtractorCreatorMixinBase<DGNL
     * @bsimethod                                                  Raymond.Gauthier   07/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual InputExtractorBase*                 _Create                            (DGNLevelSource&                 sourceBase,
-                                                                                    const Bentley::ScalableMesh::Import::Source&                   source,
+                                                                                    const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source&                   source,
                                                                                     const ExtractionQuery&          selection,
                                                                                     const ExtractionConfig&         config,
                                                                                     Log&                            log) const override
@@ -821,7 +821,7 @@ class DGNLevelLinearExtractorCreator : public InputExtractorCreatorMixinBase<DGN
     * @bsimethod                                                  Raymond.Gauthier   07/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual RawCapacities                       _GetOutputCapacities               (DGNLevelSource&                 sourceBase,
-                                                                                    const Bentley::ScalableMesh::Import::Source&                   source,
+                                                                                    const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source&                   source,
                                                                                     const ExtractionQuery&          selection) const override
         {
         return RawCapacities(sourceBase.GetStats().m_linear.m_featureCount * sizeof(IDTMFile::FeatureHeader),
@@ -833,7 +833,7 @@ class DGNLevelLinearExtractorCreator : public InputExtractorCreatorMixinBase<DGN
     * @bsimethod                                                  Raymond.Gauthier   07/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual InputExtractorBase*                 _Create                            (DGNLevelSource&                 sourceBase,
-                                                                                    const Bentley::ScalableMesh::Import::Source&                   source,
+                                                                                    const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source&                   source,
                                                                                     const ExtractionQuery&          selection,
                                                                                     const ExtractionConfig&         config,
                                                                                     Log&                            log) const override
@@ -942,7 +942,7 @@ class DGNLevelMeshExtractorCreator : public InputExtractorCreatorMixinBase<DGNLe
     * @bsimethod                                                Jean-Francois.Cote   08/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual RawCapacities                       _GetOutputCapacities               (DGNLevelSource&                 sourceBase,
-                                                                                    const Bentley::ScalableMesh::Import::Source&                   source,
+                                                                                    const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source&                   source,
                                                                                     const ExtractionQuery&          selection) const override
         {
         return RawCapacities(sourceBase.GetStats().m_mesh.m_featureCount * sizeof(IDTMFile::FeatureHeader),
@@ -954,7 +954,7 @@ class DGNLevelMeshExtractorCreator : public InputExtractorCreatorMixinBase<DGNLe
     * @bsimethod                                                Jean-Francois.Cote   08/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual InputExtractorBase*                 _Create                            (DGNLevelSource&                 sourceBase,
-                                                                                    const Bentley::ScalableMesh::Import::Source&                   source,
+                                                                                    const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source&                   source,
                                                                                     const ExtractionQuery&          selection,
                                                                                     const ExtractionConfig&         config,
                                                                                     Log&                            log) const override

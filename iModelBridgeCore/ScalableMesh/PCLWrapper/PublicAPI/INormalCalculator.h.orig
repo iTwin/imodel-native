@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -15,13 +15,13 @@ BEGIN_PCLWRAPPER_NAMESPACE
 
 struct INormalCalculator;
 
-typedef Bentley::RefCountedPtr<INormalCalculator> INormalCalculatorPtr;
+typedef BENTLEY_NAMESPACE_NAME::RefCountedPtr<INormalCalculator> INormalCalculatorPtr;
 
 /*=================================================================================**//**
 * Interface implemented by MRDTM engines.
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
-struct INormalCalculator : public Bentley::RefCountedBase
+struct INormalCalculator : public BENTLEY_NAMESPACE_NAME::RefCountedBase
     {
     private:
 

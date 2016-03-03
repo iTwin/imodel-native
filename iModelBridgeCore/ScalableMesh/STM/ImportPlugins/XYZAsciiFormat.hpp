@@ -2,7 +2,7 @@
 |
 |   $Source: STM/ImportPlugins/XYZAsciiFormat.hpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 
@@ -85,9 +85,9 @@ inline WChar XYZFormat::FindDelimiterIn (FileRange::const_iterator delimZoneBegi
 * @description
 * @bsimethod                                               Raymond.Gauthier    12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline UInt XYZFormat::SplitLine (FileRange fieldsRanges[], const FileRange lineRange)
+inline uint32_t XYZFormat::SplitLine (FileRange fieldsRanges[], const FileRange lineRange)
     {
-    UInt fieldCount = 0;
+    uint32_t fieldCount = 0;
     FileRange fieldRange(find_if(lineRange.begin, lineRange.end, IsNumeric()), lineRange.end);
 
     fieldRange.end = find_if(fieldRange.begin, lineRange.end, not1(IsNumeric()));
@@ -166,7 +166,7 @@ inline WChar XYZFormat::GetDelimiterFor (FileRange::const_iterator delimZoneBegi
 * @description
 * @bsimethod                                               Raymond.Gauthier    12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline WChar XYZFormat::GetDelimiterFor (const FileRange fields[], UInt fieldsCount)
+inline WChar XYZFormat::GetDelimiterFor (const FileRange fields[], uint32_t fieldsCount)
     {
     struct DelimiterBetweenEqualTo : std::binary_function<FileRange, FileRange, bool>
         {
@@ -194,14 +194,14 @@ inline WChar XYZFormat::GetDelimiterFor (const FileRange fields[], UInt fieldsCo
 * @bsimethod                                               Raymond.Gauthier    02/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename OutIt, typename IsWSPred>
-UInt XYZFormat::ReadLine   (FILE*       file,
+uint32_t XYZFormat::ReadLine   (FILE*       file,
                             OutIt&      outBeginIt,
                             OutIt       outEndIt,
                             IsWSPred    isWSPred,
                             WChar        newDelimiter)
     {
     bool inWS = true;
-    UInt fieldCount = 0;    
+    uint32_t fieldCount = 0;    
     OutIt outIt(outBeginIt);
 
     // Copy until new line or comment

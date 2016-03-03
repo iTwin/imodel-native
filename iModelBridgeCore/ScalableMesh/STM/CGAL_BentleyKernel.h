@@ -20,27 +20,27 @@
 
 namespace CGAL
     {
-    struct DVec3d2 : public Bentley::DVec3d
+    struct DVec3d2 : public BENTLEY_NAMESPACE_NAME::DVec3d
         {
         DVec3d2();
         DVec3d2(const Null_vector& vec)
             {};
-        DVec3d2(const Bentley::DVec3d& vec)
+        DVec3d2(const BENTLEY_NAMESPACE_NAME::DVec3d& vec)
             :DVec3d(vec)
             {};
-        DVec3d2(const Bentley::DPoint3d& vec)
+        DVec3d2(const BENTLEY_NAMESPACE_NAME::DPoint3d& vec)
             :DVec3d(DVec3d::From(vec.x, vec.y, vec.z))
             {};
         };
 
-    Bentley::DPoint3d operator-(const Bentley::DPoint3d& a, const Bentley::DPoint3d&b)
+    BENTLEY_NAMESPACE_NAME::DPoint3d operator-(const BENTLEY_NAMESPACE_NAME::DPoint3d& a, const BENTLEY_NAMESPACE_NAME::DPoint3d&b)
         {
         DPoint3d sub;
         sub.DifferenceOf(a, b);
         return sub;
         }
 
-    Bentley::DPoint3d operator-(const Bentley::DPoint3d& a, const Origin&b)
+    BENTLEY_NAMESPACE_NAME::DPoint3d operator-(const BENTLEY_NAMESPACE_NAME::DPoint3d& a, const Origin&b)
         {
         return a;
         }
@@ -50,13 +50,13 @@ namespace CGAL
         return a.DotProduct(b);
         }
 
-    Bentley::DVec3d operator*(const Bentley::DVec3d& a, const double b)
+    BENTLEY_NAMESPACE_NAME::DVec3d operator*(const BENTLEY_NAMESPACE_NAME::DVec3d& a, const double b)
         {
         return DVec3d::FromScale(a, b);
         }
 
 
-    Bentley::DVec3d operator*(const double b, const Bentley::DVec3d& a)
+    BENTLEY_NAMESPACE_NAME::DVec3d operator*(const double b, const BENTLEY_NAMESPACE_NAME::DVec3d& a)
         {
         return DVec3d::FromScale(a, b);
         }

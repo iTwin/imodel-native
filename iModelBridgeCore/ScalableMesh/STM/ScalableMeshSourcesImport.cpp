@@ -219,11 +219,11 @@ namespace {
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ImportSequence              CreateAttachmentImportSequence                 (const ImportSequence&           sequence,
-                                                                            UInt                            parentLayer)
+                                                                            uint32_t                            parentLayer)
     {
     class CommandVisitor : public IImportSequenceVisitor
         {
-        const UInt                      m_parentLayer;
+        const uint32_t                      m_parentLayer;
         ImportSequence                  m_sequence;
 
         virtual void                    _Visit                     (const ImportAllCommand&                     command) override
@@ -303,7 +303,7 @@ ImportSequence              CreateAttachmentImportSequence                 (cons
             }
 
     public:
-        explicit                        CommandVisitor             (UInt                                        parentLayer)
+        explicit                        CommandVisitor             (uint32_t                                        parentLayer)
             :   m_parentLayer(parentLayer)
             {
             }

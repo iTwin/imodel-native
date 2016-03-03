@@ -49,7 +49,7 @@ namespace {
 DimensionType::Info                 s_typeInfoVoid                 (L"Void",            0);
 DimensionType::Info                 s_typeInfoUInt8                (L"UInt8",           1);
 DimensionType::Info                 s_typeInfoUInt16               (L"UInt16",          2);
-DimensionType::Info                 s_typeInfoUInt32               (L"UInt32",          4);
+DimensionType::Info                 s_typeInfoUInt32               (L"uint32_t",          4);
 DimensionType::Info                 s_typeInfoFloat32              (L"Float32",         4);
 DimensionType::Info                 s_typeInfoFloat64              (L"Float64",         8);
 

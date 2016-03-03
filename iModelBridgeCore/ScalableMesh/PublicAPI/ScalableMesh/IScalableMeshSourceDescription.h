@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:17 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -49,17 +49,17 @@ struct SourceLayerDescriptor
 private:
     friend struct                           SourceLayerDescriptorHolder;
 
-    UInt                                    m_id;
+    uint32_t                                    m_id;
     const Import::LayerDescriptor*          m_descriptorP;
     const void*                             m_implP;
 
-    explicit                                SourceLayerDescriptor      (UInt                            layer,
+    explicit                                SourceLayerDescriptor      (uint32_t                            layer,
                                                                         const Import::LayerDescriptor&  descriptor);   
 
                                             SourceLayerDescriptor      (const SourceLayerDescriptor&    rhs);
     SourceLayerDescriptor&                  operator=                  (const SourceLayerDescriptor&    rhs);
 public:
-    BENTLEYSTM_EXPORT UInt                        GetID                      () const;
+    BENTLEYSTM_EXPORT uint32_t                        GetID                      () const;
     BENTLEYSTM_EXPORT const WChar*              GetName                    () const;
 
     BENTLEYSTM_EXPORT const Import::LayerDescriptor&
@@ -101,13 +101,13 @@ public:
     struct IncompleteType
         {
     private:
-        UInt                                m_layerID;
+        uint32_t                                m_layerID;
         Import::DataType                    m_type;
     public:
-        explicit                            IncompleteType             (UInt                        layer,
+        explicit                            IncompleteType             (uint32_t                        layer,
                                                                         const Import::DataType&     type);
 
-        BENTLEYSTM_EXPORT UInt                    GetLayerID                 () const;
+        BENTLEYSTM_EXPORT uint32_t                    GetLayerID                 () const;
         BENTLEYSTM_EXPORT const Import::DataType& GetType                    () const;
 
         };
@@ -151,13 +151,13 @@ public:
     BENTLEYSTM_EXPORT IncompleteTypeCIter         IncompleteTypesEnd         () const;
 
 
-    BENTLEYSTM_EXPORT UInt                        GetLayerSelectionSize      () const;
+    BENTLEYSTM_EXPORT uint32_t                        GetLayerSelectionSize      () const;
 
     BENTLEYSTM_EXPORT LayerCIter                  LayerSelectionBegin        () const;
     BENTLEYSTM_EXPORT LayerCIter                  LayerSelectionEnd          () const;
 
 
-    BENTLEYSTM_EXPORT UInt                        GetLayerCount              () const;
+    BENTLEYSTM_EXPORT uint32_t                        GetLayerCount              () const;
     BENTLEYSTM_EXPORT const Import::ContentDescriptor&
                                             GetDescriptor              () const;
     };

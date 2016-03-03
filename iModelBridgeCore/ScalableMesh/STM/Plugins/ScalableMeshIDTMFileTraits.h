@@ -12,7 +12,7 @@
 #pragma once
 
 
-#include <ImagePP/all/h/IDTMFileDirectories/PointTypes.h>
+//#include <ImagePP/all/h/IDTMFileDirectories/PointTypes.h>
 
 #include <ScalableMesh/Type/IScalableMeshPoint.h>
 #include <ScalableMesh/Type/IScalableMeshLinear.h>

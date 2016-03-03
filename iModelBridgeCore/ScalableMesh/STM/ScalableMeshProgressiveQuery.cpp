@@ -11,6 +11,8 @@
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
+#undef static_assert
+#include <DgnPlatform/DgnPlatformLib.h>
 #include "ImagePPHeaders.h"
 //#define GPU
 USING_NAMESPACE_IMAGEPP;
@@ -87,9 +89,14 @@ BentleyStatus IScalableMeshProgressiveQueryEngine::ClearCaching(const bvector<DR
     return _ClearCaching(clearRanges, scalableMeshPtr);
     }
 
+BentleyStatus IScalableMeshProgressiveQueryEngine::ClearCaching(const bvector<uint64_t>& clipIds, const IScalableMeshPtr& scalableMeshPtr)
+    {
+    return _ClearCaching(clipIds, scalableMeshPtr);
+    }
+
 BentleyStatus IScalableMeshProgressiveQueryEngine::StartQuery(int                                                                      queryId,
                                                               IScalableMeshViewDependentMeshQueryParamsPtr                             queryParam,
-                                                              const bvector<Bentley::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes,
+                                                              const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes,
                                                               bool                                                                     loadTexture,
                                                               const bvector<bool>&                                                     clipVisibilities,
                                                               const DMatrix4d*                                                         prevLocalToView,
@@ -239,6 +246,51 @@ public:
         m_nodeListMutex.unlock();
         }
 
+    void ClearCachedNodes(const bvector<uint64_t>& clipIds, IScalableMeshPtr& scalableMeshPtr)
+        {
+        m_nodeListMutex.lock();
+
+        auto cachedNodeIter(m_cachedNodes.begin());
+        auto cachedNodeIterEnd(m_cachedNodes.end());
+
+        //NEEDS_WORK_SM : Maybe should try making it parallel?        
+        while (cachedNodeIter != cachedNodeIterEnd)
+            {
+            if (cachedNodeIter->m_scalableMeshPtr == scalableMeshPtr)
+                {
+                if (clipIds.size() > 0)
+                    {
+
+                    bool isCleared = false;
+
+                    for (auto& id : clipIds)
+                        {
+                        if (cachedNodeIter->m_displayNodePtr->HasClip(id))
+                            {
+                            cachedNodeIter = m_cachedNodes.erase(cachedNodeIter);
+                            isCleared = true;
+                            break;
+                            }
+                        }
+
+                    if (!isCleared)
+                        cachedNodeIter++;
+
+                    }
+                else
+                    {
+                    cachedNodeIter = m_cachedNodes.erase(cachedNodeIter);
+                    }
+                }
+            else
+                {
+                cachedNodeIter++;
+                }
+            }
+
+        m_nodeListMutex.unlock();
+        }
+
         void GetNodeListLock()
             {
             m_nodeListMutex.lock();
@@ -291,7 +343,7 @@ public:
                 ScalableMeshCachedDisplayNode<POINT>* meshNode(ScalableMeshCachedDisplayNode<POINT>::Create(node));               
                 meshNode->ApplyAllExistingClips();
                 
-                meshNode->LoadMeshes(false, clipVisibilities, s_displayCacheManagerPtr, loadTexture);
+                meshNode->LoadMeshes(false, clipVisibilities, s_displayCacheManagerPtr, loadTexture, true);
                 foundNodePtr = meshNode;                
                 AddCachedNode(s_scalableMeshPtr, foundNodePtr);
                 }   
@@ -441,9 +493,10 @@ template <class POINT, class EXTENT> struct ProcessingQuery : public RefCountedB
         m_foundMeshNodeMutexes = new std::mutex[nbWorkingThreads];
         m_nodeQueryProcessors.resize(nbWorkingThreads);
         m_nodeQueryProcessorMutexes = new std::mutex[nbWorkingThreads];
-
+                
         m_queryObjectP = queryObjectP;
         m_isCancel = false;
+        m_isConsumingNode = false;
         m_loadTexture = loadTexture;        
         }
 
@@ -791,7 +844,8 @@ public:
         {
         if (!s_streamingSM)
             {
-            m_numWorkingThreads = std::thread::hardware_concurrency() - 1;
+			//m_numWorkingThreads = std::thread::hardware_concurrency() - 1;
+            m_numWorkingThreads = 1;
             }
         else
             {
@@ -1107,8 +1161,8 @@ template <class POINT> int BuildQueryObject(//ScalableMeshQuadTreeViewDependentM
     //MS : Might need to be done at the ScalableMeshReprojectionQuery level.    
     if ((queryParam->GetSourceGCS() != 0) && (queryParam->GetTargetGCS() != 0))
         {
-        BaseGCSPtr sourcePtr = queryParam->GetSourceGCS();
-        BaseGCSPtr targetPtr = queryParam->GetTargetGCS();
+        BaseGCSCPtr sourcePtr = queryParam->GetSourceGCS();
+        BaseGCSCPtr targetPtr = queryParam->GetTargetGCS();
         viewDependentQueryP->SetReprojectionInfo(sourcePtr, targetPtr);
         }   
 
@@ -1183,7 +1237,7 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
         }
     }
 
-void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery, ISMPointIndexQuery<DPoint3d, YProtPtExtentType>* queryObjectP, const bvector<Bentley::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes)
+void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery, ISMPointIndexQuery<DPoint3d, YProtPtExtentType>* queryObjectP, const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes)
     {
     static int s_maxLevel = 2;
        
@@ -1257,6 +1311,8 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
             }
 
         CachedDisplayNodeManager::GetManager().ReleaseNodeListLock();
+
+        assert(lowerResOverviewNodes.size() > 0 || (nodesToSearch.GetNodes().size() - currentInd) == 0);
         
         newQuery.m_overviewMeshNodes.insert(newQuery.m_overviewMeshNodes.end(), lowerResOverviewNodes.begin(), lowerResOverviewNodes.end());        
 
@@ -1356,9 +1412,16 @@ BentleyStatus ScalableMeshProgressiveQueryEngine::_ClearCaching(const bvector<DR
     return SUCCESS;
     }
 
+BentleyStatus ScalableMeshProgressiveQueryEngine::_ClearCaching(const bvector<uint64_t>& clipIds, const IScalableMeshPtr& scalableMeshPtr)
+    {
+    CachedDisplayNodeManager::GetManager().ClearCachedNodes(clipIds, s_scalableMeshPtr);
+
+    return SUCCESS;
+    }
+
 BentleyStatus ScalableMeshProgressiveQueryEngine::_StartQuery(int                                                                      queryId,
                                                               IScalableMeshViewDependentMeshQueryParamsPtr                             queryParam,
-                                                              const bvector<Bentley::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes,
+                                                              const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes,
                                                               bool                                                                     loadTexture,
                                                               const bvector<bool>&                                                     clipVisibilities,
                                                               const DMatrix4d*                                                         prevLocalToView,
@@ -1387,7 +1450,7 @@ BentleyStatus ScalableMeshProgressiveQueryEngine::_StartQuery(int               
     return SUCCESS;
     }
 
-BentleyStatus ScalableMeshProgressiveQueryEngine::_GetOverviewNodes(bvector<Bentley::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes,
+BentleyStatus ScalableMeshProgressiveQueryEngine::_GetOverviewNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes,
     int                                                   queryId) const
     {
     const RequestedQuery* requestedQueryP = 0;
@@ -1416,7 +1479,7 @@ BentleyStatus ScalableMeshProgressiveQueryEngine::_GetOverviewNodes(bvector<Bent
     return status;
     }
 
-BentleyStatus ScalableMeshProgressiveQueryEngine::_GetQueriedNodes(bvector<Bentley::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes,
+BentleyStatus ScalableMeshProgressiveQueryEngine::_GetQueriedNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes,
     int                                                   queryId) const
     {
     RequestedQuery* requestedQueryP = 0;

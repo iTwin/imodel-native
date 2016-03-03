@@ -20,7 +20,7 @@ namespace IDTMFile
             };
 
 
-        template <> struct PointTypeIDTrait < Bentley::DPoint3d >
+        template <> struct PointTypeIDTrait < BENTLEY_NAMESPACE_NAME::DPoint3d >
             {
             static const PointTypeID                value = POINT_TYPE_POINT3D;
             };

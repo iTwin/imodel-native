@@ -13,7 +13,6 @@
 #pragma once
 #include <Bentley/Bentley.h>
 #include <Bentley/bvector.h>
-#include <Geom/GeomApi.h>
 #include <ScalableMesh/IScalableMesh.h>
 #include "..\SMPointTileStore.h"
 #include "..\SMSQLiteClipDefinitionsTileStore.h"
@@ -21,20 +20,24 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-typedef IDTMFile::Extent3d64f        YProtPtExtentType;
+//typedef IDTMFile::Extent3d64f        YProtPtExtentType;
+typedef DRange3d       YProtPtExtentType;
 class ClipRegistry : public HFCShareableObject<ClipRegistry>
     {
     //HFCPtr<SMPointTaggedTileStore<DPoint3d, YProtPtExtentType>> m_clipStore;
     HFCPtr<SMSQLiteClipDefinitionsTileStore<YProtPtExtentType>> m_clipStore;
-    HFCPtr<HPMCountLimitedPool<DPoint3d>> m_pool;
-    vector<HPMStoredPooledVector<DPoint3d>> m_clips;
+    //HFCPtr<HPMCountLimitedPool<DPoint3d>> m_pool;
+    //vector<HPMStoredPooledVector<DPoint3d>> m_clips;
     SMPointIndexHeader<YProtPtExtentType> h;
     WString m_path;
+    bmap<uint64_t, bvector<DPoint3d>> m_clipDefs;
+    uint64_t m_maxID;
+
     public:
 
     ClipRegistry(const WString& fileName)
         {
-        m_pool = new HPMCountLimitedPool<DPoint3d>(new HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment(100, 2000 * sizeof(DPoint3d)), 200000);
+       // m_pool = new HPMCountLimitedPool<DPoint3d>(new HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment(100, 2000 * sizeof(DPoint3d)), 200000);
        // IDTMFile::File::Ptr filePtr = IDTMFile::File::Open(fileName.c_str());
         StatusInt status;
         SMSQLiteFilePtr filePtr = SMSQLiteFile::Open(fileName.c_str(), false, status);
@@ -42,27 +45,36 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
         if (status && nullptr != filePtr.get()) m_clipStore = new SMSQLiteClipDefinitionsTileStore<YProtPtExtentType>(filePtr);//new SMPointTaggedTileStore<DPoint3d, YProtPtExtentType>(filePtr, false);
         h.m_depth = 0;
         h.m_SplitTreshold = 1;
+        m_maxID = 0;
         if (filePtr == NULL /*|| !m_clipStore->LoadMasterHeader(&h, 1)*/)
             {
             m_clipStore = NULL;
             }
             //m_clipStore->StoreMasterHeader(&h, 0);
-        m_clips.resize(h.m_depth);
-        for (auto& clip : m_clips)
+        //m_clips.resize(h.m_depth);
+        /*for (auto& clip : m_clips)
             {
             clip.SetBlockID(&clip - &m_clips[0]);
             if (clip.Discarded()) clip.Inflate();
-            }
+            }*/
+        if (filePtr != NULL && m_clipStore != NULL) LoadAllClips();
 
+        }
+
+    SMSQLiteFilePtr GetFile()
+        {
+        if (m_clipStore == NULL) OpenStore();
+        return m_clipStore->GetFile();
         }
 
     ~ClipRegistry()
         {
-        for (auto& clip : m_clips)
+        StoreAllClips();
+        /*for (auto& clip : m_clips)
             {
             clip.UnPin();
             if(clip.IsDirty() && !clip.Discarded()) clip.Discard();
-            }
+            }*/
         if (m_clipStore != NULL)
             {
             m_clipStore->StoreMasterHeader(&h, 0);
@@ -73,16 +85,27 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
     void OpenStore()
         {
         //IDTMFile::File::Ptr filePtr = IDTMFile::File::Create(m_path.c_str());
-        StatusInt status;
+        StatusInt status = 0;
         SMSQLiteFilePtr filePtr = SMSQLiteFile::Open(m_path.c_str(), false, status);
-        filePtr->Create(m_path.c_str());
+        Utf8String utf8Path(m_path);
+        if (status==0) filePtr->Create(utf8Path.c_str());
         if (filePtr.get() != nullptr && filePtr->IsOpen()) m_clipStore = new SMSQLiteClipDefinitionsTileStore<YProtPtExtentType>(filePtr);//new SMPointTaggedTileStore<DPoint3d, YProtPtExtentType>(filePtr, false);
+        }
+
+    void LoadAllClips()
+        {
+        //m_maxID = m_clipStore->GetNextID();
+        }
+
+    void StoreAllClips()
+        {
+
         }
 
     uint64_t AddClip(const DPoint3d* clip, size_t clipSize)
         {
         if (m_clipStore == NULL) OpenStore();
-        if (m_clips.size() + 1 > m_clips.capacity())
+        /*if (m_clips.size() + 1 > m_clips.capacity())
             {
             for (auto& element : m_clips)
                 {
@@ -102,33 +125,41 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
         newClip.Discard();
         newClip.Inflate();
         newClip.Pin();
-        return newClip.GetBlockID().m_integerID;
+        return newClip.GetBlockID().m_integerID;*/
+        m_clipStore->StoreBlock(const_cast<DPoint3d*>(clip), clipSize, m_maxID);
+        return m_maxID++;
         }
 
     void ModifyClip(uint64_t id, const DPoint3d* clip, size_t clipSize)
         {
-        m_clips[id].clear();
-        m_clips[id].push_back(clip, clipSize);
+        //m_clips[id].clear();
+        //m_clips[id].push_back(clip, clipSize);
+        if (m_clipStore == NULL) OpenStore();
+        m_clipStore->StoreBlock(const_cast<DPoint3d*>(clip), clipSize, id);
         }
 
 
-    void DeleteClip(uint64_t id, const DPoint3d* clip, size_t clipSize)
+    void DeleteClip(uint64_t id)
         {
-        m_clips[id].clear();
-        m_clipStore->DestroyBlock(m_clips[id].GetBlockID());
-        m_clips[id].SetDirty(false);
+        //m_clips[id].clear();
+        m_clipStore->DestroyBlock(/*m_clips[id].GetBlockID()*/id);
+        //m_clips[id].SetDirty(false);
         }
 
     void GetClip(uint64_t id, bvector<DPoint3d>& clip)
         {
-        if (id < 0 || id > m_clips.size()) return;
+        /*if (id < 0 || id > m_clips.size()) return;
         clip.resize(m_clips[id].size());
-        m_clips[id].get(&clip[0], clip.size());
+        m_clips[id].get(&clip[0], clip.size());*/
+        size_t nOfPts = m_clipStore->GetBlockDataCount(id);
+        if (nOfPts == 0) return;
+        else clip.resize(nOfPts);
+        m_clipStore->LoadBlock(&clip[0], nOfPts, id);
         }
 
     size_t GetNbClips()
         {
-        return m_clips.size();
+        return 0;//m_clipStore->CountClips();// m_clips.size();
         }
     };
 

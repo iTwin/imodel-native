@@ -6,7 +6,7 @@
 |       $Date: 2011/11/18 15:51:11 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -56,7 +56,7 @@ inline bool ReadStringW (BinaryIStream& stream, WStringR myString)
 template <class String_T>
 bool __WriteString_T (BinaryOStream& stream, String_T const& myString)
     {
-    stream.write(reinterpret_cast<const byte*>(myString.c_str()), (UInt)(sizeof(String_T::value_type)*(myString.size() + 1)));
+    stream.write(reinterpret_cast<const byte*>(myString.c_str()), (uint32_t)(sizeof(String_T::value_type)*(myString.size() + 1)));
     return stream.good();
     }
 

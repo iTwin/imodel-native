@@ -39,7 +39,7 @@ LayerDesc::LayerDesc (const LayerDescriptor&      layerDesc)
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 LayerDesc::LayerDesc (const LayerDescriptor&      layerDesc,
-                      UInt                        layerID)
+                      uint32_t                        layerID)
     :   m_id(layerID),
         m_gcs(layerDesc.GetGCS()),
         m_extentP(layerDesc.HasExtent() ? &layerDesc.GetExtent() : 0),
@@ -55,7 +55,7 @@ LayerDesc::LayerDesc (const LayerDescriptor&      layerDesc,
 ContentDesc::ContentDesc (const ContentDescriptor&  contentDesc)    
     :   m_layers(contentDesc.LayersBegin(), contentDesc.LayersEnd())
     {
-    for (UInt layerID = 0; layerID < m_layers.size(); ++layerID)
+    for (uint32_t layerID = 0; layerID < m_layers.size(); ++layerID)
         m_layers[layerID].SetID(layerID);
     }
 

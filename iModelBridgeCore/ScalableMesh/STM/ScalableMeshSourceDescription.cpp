@@ -49,7 +49,7 @@ struct SourceLayerDescriptorHolder
     SourceLayerDescriptorHolder&    operator=                          (const SourceLayerDescriptor&    rhs) 
         { m_held = rhs; return *this; }
 
-    explicit                        SourceLayerDescriptorHolder        (UInt                            layer,
+    explicit                        SourceLayerDescriptorHolder        (uint32_t                            layer,
                                                                         const Import::LayerDescriptor&  descriptor)
         :   m_held(layer, descriptor)
         {}
@@ -65,7 +65,7 @@ static_assert(sizeof(SourceLayerDescriptorHolder) == sizeof(SourceLayerDescripto
 * @description  
 * @bsimethod                                                  Raymond.Gauthier  12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-SourceLayerDescriptor::SourceLayerDescriptor   (UInt                    layer,
+SourceLayerDescriptor::SourceLayerDescriptor   (uint32_t                    layer,
                                                 const LayerDescriptor&  descriptor)
     :   m_id(layer),
         m_descriptorP(&descriptor),
@@ -101,7 +101,7 @@ SourceLayerDescriptor& SourceLayerDescriptor::operator= (const SourceLayerDescri
 * @description  
 * @bsimethod                                                  Raymond.Gauthier  12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt SourceLayerDescriptor::GetID () const
+uint32_t SourceLayerDescriptor::GetID () const
     {
     return m_id;
     }
@@ -150,7 +150,7 @@ struct SourceDescriptor::Impl
 
     void                            InitLayerSelection                         (const ImportSequence&           importSequence)
         {
-        const UInt layerCount = m_descriptor.GetLayerCount();
+        const uint32_t layerCount = m_descriptor.GetLayerCount();
         
         if (1 == layerCount)
             return InitSingleLayerSelection(importSequence);
@@ -186,10 +186,10 @@ void SourceDescriptor::Impl::InitSingleLayerSelection (const ImportSequence&  im
         void                            SelectAll                  ()
             { m_selected = true; }
 
-        void                            Select                     (const UInt                                  layerID)
+        void                            Select                     (const uint32_t                                  layerID)
             { m_selected = m_selected || 0 == layerID; }
 
-        void                            SelectIfHasType            (const UInt                                  layerID,
+        void                            SelectIfHasType            (const uint32_t                                  layerID,
                                                                     const DataTypeFamily&                       type)
             {
             m_selected = m_selected || 
@@ -281,7 +281,7 @@ void SourceDescriptor::Impl::InitMultipleLayerSelection (const ImportSequence&  
             fill(m_selected.begin(), m_selected.end(), true);
             }
 
-        void                            Select                     (const UInt                                  layerID)
+        void                            Select                     (const uint32_t                                  layerID)
             {
             if (layerID >= m_selected.size())
                 return;
@@ -289,7 +289,7 @@ void SourceDescriptor::Impl::InitMultipleLayerSelection (const ImportSequence&  
             m_selected[layerID] = true;
             }
 
-        void                            SelectIfHasType            (const UInt                                  layerID,
+        void                            SelectIfHasType            (const uint32_t                                  layerID,
                                                                     const DataTypeFamily&                       type)
             {
             const LayerDescCIter layerIt(m_layersBegin + layerID);
@@ -359,7 +359,7 @@ void SourceDescriptor::Impl::InitMultipleLayerSelection (const ImportSequence&  
         void                            CopyTo                     (vector<SourceLayerDescriptorHolder>&        selection) const
             {
             SelectedList::const_iterator selectedIt = m_selected.begin();
-            UInt layerID = 0;
+            uint32_t layerID = 0;
 
             for (ContentDescriptor::const_iterator layerIt = m_layersBegin;
                  m_layersEnd != layerIt;
@@ -411,7 +411,7 @@ void SourceDescriptor::Impl::InitLayersWithIncompleteTypes              ()
 * @description  
 * @bsimethod                                                  Raymond.Gauthier  04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-SourceDescriptor::IncompleteType::IncompleteType   (UInt                layer,
+SourceDescriptor::IncompleteType::IncompleteType   (uint32_t                layer,
                                                     const DataType&     type)
     :   m_layerID(layer),
         m_type(type)
@@ -423,7 +423,7 @@ SourceDescriptor::IncompleteType::IncompleteType   (UInt                layer,
 * @description  
 * @bsimethod                                                  Raymond.Gauthier  04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt SourceDescriptor::IncompleteType::GetLayerID () const
+uint32_t SourceDescriptor::IncompleteType::GetLayerID () const
     {
     return m_layerID;
     }
@@ -701,9 +701,9 @@ SourceDescriptor::IncompleteTypeCIter SourceDescriptor::IncompleteTypesEnd () co
 * @description  
 * @bsimethod                                                  Raymond.Gauthier  01/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt SourceDescriptor::GetLayerSelectionSize () const
+uint32_t SourceDescriptor::GetLayerSelectionSize () const
     {
-    return static_cast<UInt>(m_implP->m_layerSelection.size());
+    return static_cast<uint32_t>(m_implP->m_layerSelection.size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -728,7 +728,7 @@ SourceDescriptor::LayerCIter SourceDescriptor::LayerSelectionEnd () const
 * @description  
 * @bsimethod                                                  Raymond.Gauthier  01/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt SourceDescriptor::GetLayerCount () const
+uint32_t SourceDescriptor::GetLayerCount () const
     {
     return m_implP->m_descriptor.GetLayerCount();
     }

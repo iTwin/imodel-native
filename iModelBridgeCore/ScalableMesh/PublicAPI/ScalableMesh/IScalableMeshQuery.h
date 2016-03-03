@@ -23,7 +23,9 @@
 #include <Geom\Polyface.h>
 #include <list>
 #include <DgnPlatform/DgnPlatform.h>
-
+#include <DgnPlatform/ClipVector.h>
+#include <Bentley\bset.h>
+USING_NAMESPACE_BENTLEY_DGNPLATFORM
 //#include <Bentley/RefCounted.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -35,6 +37,7 @@ struct IScalableMeshNodeEdit;
 struct IScalableMeshCachedDisplayNode;
 struct IScalableMeshPointQuery;
 struct IScalableMeshMeshQuery;
+struct IScalableMeshMeshFlags;
 struct IScalableMeshMeshQueryParams;
 struct IScalableMeshViewDependentMeshQueryParams;
 struct IScalableMeshNodeRayQuery;
@@ -50,6 +53,7 @@ struct IScalableMeshViewDependentQueryParams;
 struct IScalableMeshQueryAllLinearsQueryParams;
 
 typedef RefCountedPtr<IScalableMeshMesh>                              IScalableMeshMeshPtr;
+typedef RefCountedPtr<IScalableMeshMeshFlags>                         IScalableMeshMeshFlagsPtr;
 typedef RefCountedPtr<IScalableMeshTexture>                           IScalableMeshTexturePtr;
 typedef RefCountedPtr<IScalableMeshMeshQuery>                         IScalableMeshMeshQueryPtr;
 typedef RefCountedPtr<IScalableMeshMeshQueryParams>                   IScalableMeshMeshQueryParamsPtr;
@@ -86,20 +90,20 @@ struct IScalableMeshQueryParameters abstract: virtual public RefCountedBase
                  IScalableMeshQueryParameters();                    
         virtual ~IScalableMeshQueryParameters();                
 
-        virtual Bentley::GeoCoordinates::BaseGCSPtr _GetSourceGCS() = 0;
+        virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetSourceGCS() = 0;
 
-        virtual Bentley::GeoCoordinates::BaseGCSPtr _GetTargetGCS() = 0;
+        virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetTargetGCS() = 0;
 
-        virtual void _SetGCS(Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr, 
-                             Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr) = 0;
+        virtual void _SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr, 
+                             BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr) = 0;
                                        
     public:    
                     
-        BENTLEYSTM_EXPORT Bentley::GeoCoordinates::BaseGCSPtr GetSourceGCS();
-        BENTLEYSTM_EXPORT Bentley::GeoCoordinates::BaseGCSPtr GetTargetGCS();
+        BENTLEYSTM_EXPORT BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr GetSourceGCS();
+        BENTLEYSTM_EXPORT BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr GetTargetGCS();
 
-        BENTLEYSTM_EXPORT void SetGCS(Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr, 
-                                      Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr);                        
+        BENTLEYSTM_EXPORT void SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr, 
+                                      BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr);                        
             
         BENTLEYSTM_EXPORT static double GetToleranceTriangulationParam();
     };
@@ -374,7 +378,7 @@ struct IScalableMeshMesh : public RefCountedBase
 
     protected:         
 
-        virtual const Bentley::PolyfaceQuery* _GetPolyfaceQuery() const = 0;
+        virtual const BENTLEY_NAMESPACE_NAME::PolyfaceQuery* _GetPolyfaceQuery() const = 0;
 
         virtual DPoint3d* _EditPoints() = 0;
 
@@ -382,7 +386,7 @@ struct IScalableMeshMesh : public RefCountedBase
 
         virtual size_t _GetNbFaces() const = 0;
 
-        virtual DTMStatusInt _GetAsBcDTM(Bentley::TerrainModel::BcDTMPtr& bcdtm) = 0;
+        virtual DTMStatusInt _GetAsBcDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& bcdtm) = 0;
 
         virtual bool _FindTriangleForProjectedPoint(int* outTriangle, DPoint3d& point, bool use2d = false) const = 0;
         virtual bool _FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d = false) const = 0;
@@ -397,7 +401,7 @@ struct IScalableMeshMesh : public RefCountedBase
 
     public: 
 
-        BENTLEYSTM_EXPORT const Bentley::PolyfaceQuery* GetPolyfaceQuery() const;
+        BENTLEYSTM_EXPORT const BENTLEY_NAMESPACE_NAME::PolyfaceQuery* GetPolyfaceQuery() const;
 
         BENTLEYSTM_EXPORT size_t GetNbPoints() const;
 
@@ -405,7 +409,7 @@ struct IScalableMeshMesh : public RefCountedBase
 
         DPoint3d* EditPoints();
 
-        BENTLEYSTM_EXPORT DTMStatusInt GetAsBcDTM(Bentley::TerrainModel::BcDTMPtr& bcdtm);
+        BENTLEYSTM_EXPORT DTMStatusInt GetAsBcDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& bcdtm);
 
         //NEEDS_WORK_SM: maybe move all geometry-related functions to util interface
         
@@ -465,20 +469,41 @@ public:
 
 typedef size_t ScalableMeshTextureID;
 
+struct IScalableMeshMeshFlags abstract: public RefCountedBase
+    {
+    protected:
+        virtual bool _ShouldLoadTexture() const = 0;
+        virtual bool _ShouldLoadGraph() const = 0;
+
+        virtual void _SetLoadTexture(bool loadTexture) = 0;
+        virtual void _SetLoadGraph(bool loadGraph) = 0;
+
+    public:
+        BENTLEYSTM_EXPORT bool ShouldLoadTexture() const;
+        BENTLEYSTM_EXPORT bool ShouldLoadGraph() const;
+
+        BENTLEYSTM_EXPORT void SetLoadTexture(bool loadTexture);
+        BENTLEYSTM_EXPORT void SetLoadGraph(bool loadGraph);
+
+        BENTLEYSTM_EXPORT static IScalableMeshMeshFlagsPtr Create();
+    };
+
 struct IScalableMeshNode abstract: virtual public RefCountedBase
 
     {
     private:
     protected:
-        virtual Bentley::TerrainModel::BcDTMPtr  _GetBcDTM() const = 0;
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr  _GetBcDTM() const = 0;
 
         virtual bool    _ArePoints3d() const = 0;
 
         virtual bool    _ArePointsFullResolution() const = 0;
 
-        virtual IScalableMeshMeshPtr _GetMesh(bool loadGraph, bvector<bool>& clipsToShow) const = 0;
+        virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags, bvector<bool>& clipsToShow) const = 0;
 
         virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow, ScalableMeshTextureID texId) const = 0;
+
+        virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow, ScalableMeshTextureID texId) const = 0;
 
         virtual IScalableMeshTexturePtr _GetTexture(size_t texture_id) const = 0;
 
@@ -516,19 +541,23 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         virtual void _LoadHeader() const = 0;
 
+        virtual bool _HasClip(uint64_t id) const = 0;
+
                 
     public:
         static const BENTLEYSTM_EXPORT ScalableMeshTextureID UNTEXTURED_PART = 0;
 
-        BENTLEYSTM_EXPORT Bentley::TerrainModel::BcDTMPtr          GetBcDTM() const;
+        BENTLEYSTM_EXPORT BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr          GetBcDTM() const;
         
         BENTLEYSTM_EXPORT bool          ArePoints3d() const;
 
         BENTLEYSTM_EXPORT bool          ArePointsFullResolution() const;
         
-        BENTLEYSTM_EXPORT IScalableMeshMeshPtr GetMesh(bool loadGraph, bvector<bool>& clipsToShow) const;
+        BENTLEYSTM_EXPORT IScalableMeshMeshPtr GetMesh(IScalableMeshMeshFlagsPtr& flags, bvector<bool>& clipsToShow) const;
 
         BENTLEYSTM_EXPORT IScalableMeshMeshPtr GetMeshByParts(bvector<bool>& clipsToShow, ScalableMeshTextureID texId) const;
+
+        BENTLEYSTM_EXPORT IScalableMeshMeshPtr GetMeshByParts(bset<uint64_t>& clipsToShow, ScalableMeshTextureID texId) const;
 
         BENTLEYSTM_EXPORT IScalableMeshTexturePtr GetTexture(size_t texture_id) const;
                 
@@ -566,6 +595,8 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         BENTLEYSTM_EXPORT bool IsMeshLoaded() const;
 
         BENTLEYSTM_EXPORT void LoadHeader() const;
+
+        BENTLEYSTM_EXPORT bool HasClip(uint64_t id) const;
     };
 
 struct SmCachedDisplayMesh;
@@ -618,20 +649,28 @@ struct IScalableMeshMeshQueryParams abstract : virtual public RefCountedBase
         IScalableMeshMeshQueryParams();
         virtual ~IScalableMeshMeshQueryParams();
 
-        virtual Bentley::GeoCoordinates::BaseGCSPtr _GetSourceGCS() = 0;
+        virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetSourceGCS() = 0;
 
-        virtual Bentley::GeoCoordinates::BaseGCSPtr _GetTargetGCS() = 0;
+        virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetTargetGCS() = 0;
 
-        virtual void _SetGCS(Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr,
-                             Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr) = 0;
+        virtual size_t _GetLevel() = 0;
+
+        virtual void _SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
+                             BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr) = 0;
+
+        virtual void _SetLevel(size_t depth) = 0;
     public:
         BENTLEYSTM_EXPORT static IScalableMeshMeshQueryParamsPtr CreateParams();
 
-        BENTLEYSTM_EXPORT Bentley::GeoCoordinates::BaseGCSPtr GetSourceGCS();
-        BENTLEYSTM_EXPORT Bentley::GeoCoordinates::BaseGCSPtr GetTargetGCS();
+        BENTLEYSTM_EXPORT BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr GetSourceGCS();
+        BENTLEYSTM_EXPORT BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr GetTargetGCS();
 
-        BENTLEYSTM_EXPORT void SetGCS(Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr,
-                                      Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr);
+        BENTLEYSTM_EXPORT size_t GetLevel();
+
+        BENTLEYSTM_EXPORT void SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
+                                      BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr);
+
+        BENTLEYSTM_EXPORT void SetLevel(size_t depth);
     };
 
 
@@ -770,13 +809,21 @@ struct IScalableMeshNodeQueryParams abstract: RefCountedBase
         virtual double _GetDepth() const = 0;
         virtual void _Set2d(bool is2d) = 0;
         virtual bool _Get2d() const = 0;
+
+        virtual size_t _GetLevel() const = 0;
+        virtual void _SetLevel(size_t level) = 0;
     public:
         BENTLEYSTM_EXPORT void SetDirection(DVec3d direction) { return _SetDirection(direction); }
         BENTLEYSTM_EXPORT DVec3d GetDirection() { return _GetDirection(); }
+
         BENTLEYSTM_EXPORT  void SetDepth(double depth) { return _SetDepth(depth); }
         BENTLEYSTM_EXPORT  double GetDepth() { return _GetDepth(); }
+
         BENTLEYSTM_EXPORT  void Set2d(bool is2d) { return _Set2d(is2d); }
         BENTLEYSTM_EXPORT bool Get2d() { return _Get2d(); }
+
+        BENTLEYSTM_EXPORT void SetLevel(size_t level) { return _SetLevel(level); }
+        BENTLEYSTM_EXPORT size_t GetLevel() { return _GetLevel(); }
 
         BENTLEYSTM_EXPORT static IScalableMeshNodeQueryParamsPtr CreateParams();
     };

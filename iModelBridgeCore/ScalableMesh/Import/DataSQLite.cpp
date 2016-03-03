@@ -2,6 +2,12 @@
 #include "../STM/ImagePPHeaders.h"
 #include <ScalableMesh/Import/DataSQLite.h>
 
+#ifdef VANCOUVER_API
+#define WSTRING_FROM_CSTR(cstr) WString(cstr)
+#else
+#define WSTRING_FROM_CSTR(cstr) WString(cstr, BentleyCharEncoding::Utf8)
+#endif
+
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
 
 struct SourceDataSQLite::Impl : public ShareableObjectTypeTrait<Impl>::type
@@ -47,7 +53,7 @@ struct SourceDataSQLite::Impl : public ShareableObjectTypeTrait<Impl>::type
     explicit                    Impl()
         : m_smData(ScalableMeshData::GetNull())
         {
-            m_extendedWktStr = WString("");
+        m_extendedWktStr = WSTRING_FROM_CSTR("");
             m_flags = 0;
             m_typeFamilyID = 0;
             m_orgCount = 0;
@@ -61,13 +67,13 @@ struct SourceDataSQLite::Impl : public ShareableObjectTypeTrait<Impl>::type
             m_DTMSourceID = 0;
             m_sourceType = 0;
             m_modelID = 0;
-            m_modelName = WString("");
+            m_modelName = WSTRING_FROM_CSTR("");
             m_levelID = 0;
-            m_rootToRefPersistentPath = WString("");
-            m_referenceName = WString("");
-            m_referenceModelName = WString("");
+            m_rootToRefPersistentPath = WSTRING_FROM_CSTR("");
+            m_referenceName = WSTRING_FROM_CSTR("");
+            m_referenceModelName = WSTRING_FROM_CSTR("");
             m_monikerType = 0;
-            m_monikerString = WString("");
+            m_monikerString = WSTRING_FROM_CSTR("");
             m_configComponentID = std::vector<byte>();
             m_commandCount = 0;
             m_commandID = std::vector<byte>();

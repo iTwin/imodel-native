@@ -31,7 +31,7 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(0)
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
-using namespace Bentley::ScalableMesh::Plugin;
+using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::Plugin;
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -54,7 +54,7 @@ struct Surface
     {
 private:
     struct                          Impl;
-    typedef Bentley::RefCountedPtr<Impl>      
+    typedef BENTLEY_NAMESPACE_NAME::RefCountedPtr<Impl>      
                                     ImplPtr;
 
     ImplPtr                         m_implP;
@@ -89,7 +89,7 @@ public:
 * @description     
 * @bsiclass                                                 Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct Surface::Impl : public Bentley::RefCountedBase
+struct Surface::Impl : public BENTLEY_NAMESPACE_NAME::RefCountedBase
     {
   public:  // OPERATOR_NEW_KLUDGE
     void * operator new(size_t size) { return bentleyAllocator_allocateRefCounted (size); }
@@ -158,14 +158,14 @@ private:
     typedef vector<Surface>             SurfaceList;
     friend class LandXMLFileCreator;
 
-    Bentley::TerrainModel::LandXMLImporterPtr m_landImporterP;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::LandXMLImporterPtr m_landImporterP;
     SurfaceList                             m_surfaces; 
 
     /*---------------------------------------------------------------------------------**//**
     * @description  
     * @bsimethod                                                Jean-Francois.Cote   02/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
-    explicit        LandXMLSource  (Bentley::TerrainModel::LandXMLImporter& landImporter) 
+    explicit        LandXMLSource  (BENTLEY_NAMESPACE_NAME::TerrainModel::LandXMLImporter& landImporter) 
         :   m_landImporterP(&landImporter)
         { 
         TerrainInfoList const& landSurfaceList = m_landImporterP->GetTerrains();
@@ -231,7 +231,7 @@ public:
         return (uint32_t)m_surfaces.size();
         }
 
-    Surface*                            FindSurfaceFor                                    (UInt                    layer)
+    Surface*                            FindSurfaceFor                                    (uint32_t                    layer)
         {
         if (m_surfaces.size() < layer)
             return 0;
@@ -272,7 +272,7 @@ class LandXMLFileCreator : public LocalFileSourceCreatorBase
             return false;
 
         // Look for the element by the name LandXML and at the same moment, check if this file contains at least one surface
-        Bentley::TerrainModel::LandXMLImporterPtr landImporterP(Bentley::TerrainModel::LandXMLImporter::Create(sourceRef.GetPath().c_str()));
+        BENTLEY_NAMESPACE_NAME::TerrainModel::LandXMLImporterPtr landImporterP(BENTLEY_NAMESPACE_NAME::TerrainModel::LandXMLImporter::Create(sourceRef.GetPath().c_str()));
 
         return landImporterP->GetTerrains().size() > 0;
         }
@@ -284,7 +284,7 @@ class LandXMLFileCreator : public LocalFileSourceCreatorBase
     virtual SourceBase*                _Create                                         (const LocalFileSourceRef&       sourceRef,
                                                                                         Log&                     log) const override
         {  
-        Bentley::TerrainModel::LandXMLImporterPtr landImporterP(Bentley::TerrainModel::LandXMLImporter::Create(sourceRef.GetPath().c_str()));
+        BENTLEY_NAMESPACE_NAME::TerrainModel::LandXMLImporterPtr landImporterP(BENTLEY_NAMESPACE_NAME::TerrainModel::LandXMLImporter::Create(sourceRef.GetPath().c_str()));
         return new LandXMLSource(*landImporterP);
         }
     };
@@ -328,7 +328,7 @@ class LandXMLPointExtractorCreator : public InputExtractorCreatorMixinBase<LandX
                                                                                     const ExtractionConfig&         config,
                                                                                     Log&                     log) const override
         {
-        using namespace Bentley::ScalableMesh::Plugin::V0;
+        using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::Plugin::V0;
 
         Surface* surfaceP = sourceBase.FindSurfaceFor(selection.GetLayer());
         if (0 == surfaceP || !surfaceP->GetPointHandler().ComputeCounts())
@@ -379,7 +379,7 @@ class LandXMLLinearExtractorCreator : public InputExtractorCreatorMixinBase<Land
                                                                                     const ExtractionConfig&         config,
                                                                                     Log&                     log) const override
         {
-        using namespace Bentley::ScalableMesh::Plugin::V0;
+        using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::Plugin::V0;
 
         Surface* surfaceP = sourceBase.FindSurfaceFor(selection.GetLayer());
         if (0 == surfaceP || !surfaceP->GetLinearHandler().ComputeCounts())
@@ -467,7 +467,7 @@ class LandXMLTINExtractorCreator : public InputExtractorCreatorMixinBase<LandXML
                                                                                     const ExtractionConfig&         config,
                                                                                     Log&                     log) const override
         {
-        using namespace Bentley::ScalableMesh::Plugin::V0;
+        using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::Plugin::V0;
 
         Surface* surfaceP = sourceBase.FindSurfaceFor(selection.GetLayer());
         if (0 == surfaceP)

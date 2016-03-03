@@ -32,7 +32,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 /*
  * Driver current version
  */ 
-const UInt ImportSequenceSerializer::FORMAT_VERSION = 0;
+const uint32_t ImportSequenceSerializer::FORMAT_VERSION = 0;
 
 
 namespace { // Unnamed namespace
@@ -92,7 +92,7 @@ class CmdVisitor : public IImportSequenceVisitor
             //return m_stream.put(static_cast<byte>(id)).good();
         }
 
-        bool                            OutputLayer(UInt                                        layer)
+        bool                            OutputLayer(uint32_t                                        layer)
         {
             const uint32_t layerField = layer;
             m_sourceData.SetLayer(layerField);
@@ -259,7 +259,7 @@ protected:
         static const DataTypeFamily TIN_TYPE_FAMILY(TINTypeFamilyCreator().Create());
         static const DataTypeFamily MESH_TYPE_FAMILY(MeshTypeFamilyCreator().Create());
 
-        const UInt DataTypeFamilyField = sourceData.GetTypeFamilyID();
+        const uint32_t DataTypeFamilyField = sourceData.GetTypeFamilyID();
         switch (DataTypeFamilyField)
         {
         case TFID_POINT:
@@ -275,17 +275,17 @@ protected:
         }
     }
 
-    UInt                        LoadLayer(SourceDataSQLite&      sourceData) const
+    uint32_t                        LoadLayer(SourceDataSQLite&      sourceData) const
     {
         uint32_t layerField = sourceData.GetLayer();
         return layerField;
     }
 
 
-    static const UInt           INVALID_LAYER;
+    static const uint32_t           INVALID_LAYER;
     };
 
-const UInt CmdCreator::INVALID_LAYER(numeric_limits<UInt>::max());
+const uint32_t CmdCreator::INVALID_LAYER(numeric_limits<uint32_t>::max());
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
@@ -317,7 +317,7 @@ struct ImportAllToLayerCommandCreator : CmdCreator
 {
     virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
     {
-        const UInt targetLayer = LoadLayer(sourceData);
+        const uint32_t targetLayer = LoadLayer(sourceData);
         if (INVALID_LAYER == targetLayer)
             return 0;
 
@@ -329,7 +329,7 @@ struct ImportAllToLayerTypeCommandCreator : CmdCreator
 {
     virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
     {
-        const UInt targetLayer = LoadLayer(sourceData);
+        const uint32_t targetLayer = LoadLayer(sourceData);
         const DataTypeFamily* targetTypeP = LoadType(sourceData);
 
         if (INVALID_LAYER == targetLayer ||
@@ -356,7 +356,7 @@ struct ImportLayerCommandCreator : CmdCreator
 {
     virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
     {
-        const UInt sourceLayer = LoadLayer(sourceData);
+        const uint32_t sourceLayer = LoadLayer(sourceData);
         if (INVALID_LAYER == sourceLayer)
             return 0;
 
@@ -368,8 +368,8 @@ struct ImportLayerToLayerCommandCreator : CmdCreator
 {
     virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
     {
-        const UInt sourceLayer = LoadLayer(sourceData);
-        const UInt targetLayer = LoadLayer(sourceData);
+        const uint32_t sourceLayer = LoadLayer(sourceData);
+        const uint32_t targetLayer = LoadLayer(sourceData);
         if (INVALID_LAYER == sourceLayer ||
             INVALID_LAYER == targetLayer)
             return 0;
@@ -382,8 +382,8 @@ struct ImportLayerToLayerTypeCommandCreator : CmdCreator
 {
     virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
     {
-        const UInt sourceLayer = LoadLayer(sourceData);
-        const UInt targetLayer = LoadLayer(sourceData);
+        const uint32_t sourceLayer = LoadLayer(sourceData);
+        const uint32_t targetLayer = LoadLayer(sourceData);
         const DataTypeFamily* targetTypeP = LoadType(sourceData);
 
         if (INVALID_LAYER == sourceLayer ||
@@ -399,7 +399,7 @@ struct ImportLayerToTypeCommandCreator : CmdCreator
 {
     virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
     {
-        const UInt sourceLayer = LoadLayer(sourceData);
+        const uint32_t sourceLayer = LoadLayer(sourceData);
         const DataTypeFamily* targetTypeP = LoadType(sourceData);
 
         if (INVALID_LAYER == sourceLayer ||
@@ -414,7 +414,7 @@ struct ImportLayerTypeCommandCreator : CmdCreator
 {
     virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
     {
-        const UInt sourceLayer = LoadLayer(sourceData);
+        const uint32_t sourceLayer = LoadLayer(sourceData);
         const DataTypeFamily* sourceTypeP = LoadType(sourceData);
 
         if (INVALID_LAYER == sourceLayer ||
@@ -429,9 +429,9 @@ struct ImportLayerTypeToLayerCommandCreator : CmdCreator
 {
     virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
     {
-        const UInt sourceLayer = LoadLayer(sourceData);
+        const uint32_t sourceLayer = LoadLayer(sourceData);
         const DataTypeFamily* sourceTypeP = LoadType(sourceData);
-        const UInt targetLayer = LoadLayer(sourceData);
+        const uint32_t targetLayer = LoadLayer(sourceData);
 
         if (INVALID_LAYER == sourceLayer ||
             0 == sourceTypeP ||
@@ -446,9 +446,9 @@ struct ImportLayerTypeToLayerTypeCommandCreator : CmdCreator
 {
     virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
     {
-        const UInt sourceLayer = LoadLayer(sourceData);
+        const uint32_t sourceLayer = LoadLayer(sourceData);
         const DataTypeFamily* sourceTypeP = LoadType(sourceData);
-        const UInt targetLayer = LoadLayer(sourceData);
+        const uint32_t targetLayer = LoadLayer(sourceData);
         const DataTypeFamily* targetTypeP = LoadType(sourceData);
 
         if (INVALID_LAYER == sourceLayer ||
@@ -465,7 +465,7 @@ struct ImportLayerTypeToTypeCommandCreator : CmdCreator
 {
     virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
     {
-        const UInt sourceLayer = LoadLayer(sourceData);
+        const uint32_t sourceLayer = LoadLayer(sourceData);
         const DataTypeFamily* sourceTypeP = LoadType(sourceData);
         const DataTypeFamily* targetTypeP = LoadType(sourceData);
 
@@ -495,7 +495,7 @@ struct ImportTypeToLayerCommandCreator : CmdCreator
     virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
     {
         const DataTypeFamily* sourceTypeP = LoadType(sourceData);
-        const UInt targetLayer = LoadLayer(sourceData);
+        const uint32_t targetLayer = LoadLayer(sourceData);
 
         if (0 == sourceTypeP ||
             INVALID_LAYER == targetLayer)
@@ -510,7 +510,7 @@ struct ImportTypeToLayerTypeCommandCreator : CmdCreator
     virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const override
     {
         const DataTypeFamily* sourceTypeP = LoadType(sourceData);
-        const UInt targetLayer = LoadLayer(sourceData);
+        const uint32_t targetLayer = LoadLayer(sourceData);
         const DataTypeFamily* targetTypeP = LoadType(sourceData);
 
         if (0 == sourceTypeP ||
@@ -577,7 +577,7 @@ const CmdFactory::CreatorItem* CmdFactory::GetCreatorIndex ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ImportCommandBase* CmdFactory::Create(SourceDataSQLite& sourceData) const
 {
-    const UInt commandIDField = sourceData.PopCommandID();
+    const uint32_t commandIDField = sourceData.PopCommandID();
 
     if (CSID_QTY <= commandIDField)
         return 0;
@@ -628,7 +628,7 @@ bool ImportSequenceSerializer::Serialize(const ImportSequence&   sequence,
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ImportSequenceSerializer::Deserialize(SourceDataSQLite&      sourceData,
     ImportSequence&     sequence,
-    UInt                formatVersion) const
+    uint32_t                formatVersion) const
 {
     if (ImportSequenceSerializer::FORMAT_VERSION != formatVersion)
     {

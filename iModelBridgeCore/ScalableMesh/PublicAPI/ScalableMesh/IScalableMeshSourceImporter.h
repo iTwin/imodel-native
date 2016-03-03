@@ -6,7 +6,7 @@
 |       $Date: 2012/03/21 18:37:07 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -25,7 +25,7 @@
 #include <ScalableMesh/GeoCoords/GCS.h>
 
 //NEEDS_WORK_SM_IMPORTER : Not sure want dependency on this.
-#include <ImagePP\all\h\HPUPacket.h>
+#include "HPUPacket.h"
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -128,7 +128,7 @@ public:
 
         BENTLEYSTM_EXPORT const GeoCoords::GCS&   GetGCS                     () const;
 
-        BENTLEYSTM_EXPORT const Bentley::GeoCoordinates::BaseGCSPtr& 
+        BENTLEYSTM_EXPORT const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& 
                                             GetBaseGCS                 () const;
                                         
         
@@ -144,7 +144,7 @@ public:
 
         BENTLEYSTM_EXPORT StatusInt               SetGCS                     (const GeoCoords::GCS&       gcs);
 
-        BENTLEYSTM_EXPORT StatusInt               SetBaseGCS                 (const Bentley::GeoCoordinates::BaseGCSPtr& gcsPtr);
+        BENTLEYSTM_EXPORT StatusInt               SetBaseGCS                 (const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& gcsPtr);
         
         BENTLEYSTM_EXPORT StatusInt               SetFeatureCallback         (WriteFeatureCallbackFP writeFeatureCallbackFP);
 

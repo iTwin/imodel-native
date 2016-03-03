@@ -426,12 +426,12 @@ class TextureTileStore : public IHPMPermanentStore<Byte, float, float> // JPEGDa
             /*
             union MyUnion
             {
-                UInt32 m_IntValue;
+                uint32_t m_IntValue;
                 Byte m_ByteValue[4];
             } SubType;
-            UInt32 Type;
+            uint32_t Type;
 
-            Type = ((UINT32*) pi_compressedPacket)*/
+            Type = ((uint32_t*) pi_compressedPacket)*/
 
             //pi_compressedPacket.GetCodec();
             /*
@@ -551,7 +551,7 @@ class TextureTileStore : public IHPMPermanentStore<Byte, float, float> // JPEGDa
             memcpy(DataTypeArray, resultDecompressed, size);
 
             // Get our internal copy for easier code reading and data manipulation.
-            /*UInt32 widthInByteToRead = (UInt32)ceil((float)(m_pResolutionDescriptor->GetWidth()) * ((float)m_BitPerPixel / 8.0));
+            /*uint32_t widthInByteToRead = (uint32_t)ceil((float)(m_pResolutionDescriptor->GetWidth()) * ((float)m_BitPerPixel / 8.0));
 
             HCDPacket uncompress(DataTypeArray, widthInByteToRead);
 

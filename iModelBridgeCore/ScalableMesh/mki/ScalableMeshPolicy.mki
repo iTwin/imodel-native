@@ -15,7 +15,8 @@
 __ScalableTerrainModelPolicy_mki__=1
 
 OPTIMIZE_FOR_SPEED=1
-
+appName=ScalableMesh
+CCompPDBName = $(appName)
 # ------------------------------------
 # Source directories
 # ------------------------------------
@@ -49,7 +50,7 @@ ContextSubpartsLibs = $(BuildContext)SubParts/Libs/
 #----------------------------------------------------------
 # Compile and link settings
 #----------------------------------------------------------
-%include $(SharedMki)CommonCompileLinkPolicy.mki
+
 
 PublicApiIncludes + -I$(STMPrivateApiSrc) -I${BuildContext}/VendorAPI/cpprestsdk/ -I${BuildContext}/VendorAPI/wastorage/ -I${BuildContext}/VendorAPI/BeCurl/ -I${BuildContext}/VendorAPI/BeSQLite/
 

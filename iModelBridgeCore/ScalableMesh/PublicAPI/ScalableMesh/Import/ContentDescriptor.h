@@ -6,7 +6,7 @@
 |       $Date: 2011/11/18 15:51:23 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -68,7 +68,7 @@ public:
     // NEEDS_WORK_SM : easy way create iterator to overite layer, maybe a better way ?
     typedef value_type*                            iterator;
 
-    typedef UInt                                LayerID;
+    typedef uint32_t                                LayerID;
 
     IMPORT_DLLE explicit                        ContentDescriptor                  (const WChar*                      name);
     IMPORT_DLLE explicit                        ContentDescriptor                  (const WChar*                      name,
@@ -92,7 +92,7 @@ public:
     IMPORT_DLLE const WString&               GetName                            () const;
     IMPORT_DLLE const WChar*                 GetNameCStr                        () const;
 
-    IMPORT_DLLE UInt                            GetLayerCount                      () const;
+    IMPORT_DLLE uint32_t                            GetLayerCount                      () const;
 
     IMPORT_DLLE const_iterator                  LayersBegin                        () const;
     IMPORT_DLLE const_iterator                  LayersEnd                          () const;
@@ -154,7 +154,7 @@ public:
     IMPORT_DLLE const WString&               GetName                            () const;
     IMPORT_DLLE const WChar*                 GetNameCStr                        () const;
 
-    IMPORT_DLLE UInt                            GetTypeCount                       () const;
+    IMPORT_DLLE uint32_t                            GetTypeCount                       () const;
 
     IMPORT_DLLE const_iterator                  TypesBegin                         () const;
     IMPORT_DLLE const_iterator                  TypesEnd                           () const;
