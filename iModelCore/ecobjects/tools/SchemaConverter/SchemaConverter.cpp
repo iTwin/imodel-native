@@ -65,7 +65,7 @@ struct ConversionOptions
     };
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   BentleySystems
+// @bsimethod                              Prasanna.Prakash                       01/2016
 //---------------------------------------------------------------------------------------
 static void GetOutputFile
 (
@@ -81,7 +81,10 @@ ConversionOptions   options
 		schema.SetVersionWrite(options.WriteVersion);
         schema.SetVersionMinor(options.MinorVersion);
         }
-    schemaName.AssignUtf8(schema.GetFullSchemaName().c_str());
+    if (options.TargetECXmlVersion == 2)
+        schemaName.AssignUtf8(schema.GetLegacyFullSchemaName().c_str());
+    else if (options.TargetECXmlVersion == 3)
+        schemaName.AssignUtf8(schema.GetFullSchemaName().c_str());
     schemaName += L".ecschema.xml";
     BeFileName file(nullptr, options.OutputDirectory.GetName(), schemaName.c_str(), nullptr);
     outputFile = file;

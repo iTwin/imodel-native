@@ -39,6 +39,7 @@ static Utf8CP      ECXML_URI                           = "http://www.bentley.com
 #define     EC_SCHEMAREFERENCE_ELEMENT          "ECSchemaReference"
 #define     EC_ENUMERATION_ELEMENT              "ECEnumeration"
 #define     EC_ENUMERATOR_ELEMENT               "ECEnumerator"
+#define     KIND_OF_QUANTITY_ELEMENT            "KindOfQuantity"
 
 #define     BASECLASS_ATTRIBUTE                 "baseClass"
 #define     TYPE_NAME_ATTRIBUTE                 "typeName"
@@ -69,7 +70,10 @@ static Utf8CP      ECXML_URI                           = "http://www.bentley.com
 #define     MAXIMUM_VALUE_ATTRIBUTE             "MaximumValue"
 #define     MINIMUM_VALUE_ATTRIBUTE             "MinimumValue"
 #define     KIND_OF_QUANTITY_ATTRIBUTE          "kindOfQuantity"
-
+#define     PERSISTENCE_UNIT_ATTRIBUTE          "persistenceUnit"
+#define     DEFAULT_PRESENTATION_UNIT_ATTRIBUTE "defaultPresentationUnit"
+#define     ALT_PRESENTATION_UNITS_ATTRIBUTE    "alternativePresentationUnits"
+#define     PRECISION_ATTRIBUTE                 "precision"
 
 #define     STRENGTH_ATTRIBUTE                  "strength"
 #define     STRENGTHDIRECTION_ATTRIBUTE         "strengthDirection"
