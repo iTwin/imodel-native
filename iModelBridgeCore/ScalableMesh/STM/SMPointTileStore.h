@@ -514,14 +514,14 @@ protected:
         return static_cast<IDTMFile::NodeID>(blockID.m_integerID);
         }
 
-    static IDTMFile::SubNodesTable::value_type ConvertChildID (const HPMBlockID& childID)
+    static IDTMFile::NodeID ConvertChildID (const HPMBlockID& childID)
         {
-        return static_cast<IDTMFile::SubNodesTable::value_type>(childID.m_integerID);
+        return static_cast<IDTMFile::NodeID>(childID.m_integerID);
         }
 
-    static IDTMFile::NeighborNodesTable::value_type ConvertNeighborID (const HPMBlockID& neighborID)
+    static IDTMFile::NodeID ConvertNeighborID (const HPMBlockID& neighborID)
         {
-        return static_cast<IDTMFile::NeighborNodesTable::value_type>(neighborID.m_integerID);
+        return static_cast<IDTMFile::NodeID>(neighborID.m_integerID);
         }
 
 public:

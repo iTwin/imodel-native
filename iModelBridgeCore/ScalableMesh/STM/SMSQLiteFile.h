@@ -11,7 +11,7 @@ using namespace std;
 
 class SMSQLiteFile;
 
-typedef Bentley::RefCountedPtr<SMSQLiteFile> SMSQLiteFilePtr;
+typedef BENTLEY_NAMESPACE_NAME::RefCountedPtr<SMSQLiteFile> SMSQLiteFilePtr;
 
 
 struct SQLiteNodeHeader
@@ -73,6 +73,7 @@ struct SQLiteIndexHeader
     size_t                  m_numberOfSubNodesOnSplit;      // Control value that hold either 4 or 8 to indicate if a quadtree or octtree is used.
     size_t                  m_depth;                        // Cached (maximum) number of levels in the tree.
     int              m_rootNodeBlockID;
+    size_t                  m_terrainDepth;                 //Maximum number of LODs for terrain(mesh) data, set at generation time
     };
 
 struct SQLiteSourcesData
@@ -80,16 +81,16 @@ struct SQLiteSourcesData
     WString m_path;
 };
 
-class SMSQLiteFile : public Bentley::RefCountedBase
+class SMSQLiteFile : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 {
 public:
     SMSQLiteFile();
     ~SMSQLiteFile();
 
-    bool Open(Bentley::Utf8CP filename, bool openReadOnly = true);
-    bool Open(Bentley::WString filename, bool openReadOnly = true);
-    bool Create(Bentley::Utf8CP filename);
-    bool Create(Bentley::WString filename);
+    bool Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOnly = true);
+    bool Open(BENTLEY_NAMESPACE_NAME::WString& filename, bool openReadOnly = true);
+    bool Create(BENTLEY_NAMESPACE_NAME::Utf8CP filename);
+    bool Create(BENTLEY_NAMESPACE_NAME::WString& filename);
     bool Close();
     bool IsOpen() { return m_database->IsDbOpen(); }
 
@@ -143,6 +144,7 @@ public:
     size_t GetNumberOfFeaturePoints(int64_t featureID);
     size_t GetClipPolygonByteCount(int64_t clipID);
 
+    bool m_autocommit = true;
 private:
     BeSQLite::Db* m_database;
 

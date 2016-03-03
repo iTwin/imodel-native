@@ -204,7 +204,7 @@ class TextureTileStore : public IHPMPermanentStore<Byte, float, float> // JPEGDa
         bool WriteCompressedPacket(const HCDPacket& pi_uncompressedPacket,
             HCDPacket& pi_compressedPacket, int width, int height, int nOfChannels = 3)
         {
-            HPRECONDITION(pi_uncompressedPacket.GetDataSize() <= (numeric_limits<UInt32>::max) ());
+            HPRECONDITION(pi_uncompressedPacket.GetDataSize() <= (numeric_limits<uint32_t>::max) ());
 
             // initialize codec
             auto codec = new HCDCodecIJG(width, height, 8*nOfChannels);
@@ -418,7 +418,7 @@ class TextureTileStore : public IHPMPermanentStore<Byte, float, float> // JPEGDa
 
         bool LoadCompressedPacket(const HCDPacket& pi_compressedPacket, HCDPacket& pi_uncompressedPacket, size_t width, size_t height, size_t nOfChannels=3)
         {
-            HPRECONDITION(pi_compressedPacket.GetDataSize() <= (numeric_limits<UInt32>::max)());
+            HPRECONDITION(pi_compressedPacket.GetDataSize() <= (numeric_limits<uint32_t>::max)());
 
             // initialize codec
             //HFCPtr<HCDCodec> pCodec = new HCDCodecImage("CodecName", piWidth, piHeight, piBitPerPixel);// (pi_compressedPacket.GetDataSize());
