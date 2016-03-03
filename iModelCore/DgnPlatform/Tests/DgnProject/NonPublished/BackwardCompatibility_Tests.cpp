@@ -12,12 +12,13 @@
 //+---------------+---------------+---------------+---------------+---------------+------
 enum class CompatibilityStatus
     {
+    Success,
+    Error,
     BadElement,
     BadModel,
     ModelInsertFailed,
     ElementInsertFailed,
-    ModelFillFailed,
-    Success
+    ModelFillFailed
     };
 
 struct BackwardsCompatibilityTests : public DgnDbTestFixture
@@ -31,7 +32,7 @@ struct BackwardsCompatibilityTests : public DgnDbTestFixture
     };
 
 //---------------------------------------------------------------------------------------
-// @bsiclass                                      Muhammad Hassan                  03/16
+// @bsimethod                                      Muhammad Hassan                  03/16
 //+---------------+---------------+---------------+---------------+---------------+------
 StatusInt BackwardsCompatibilityTests::CreateArbitraryElement(DgnElementPtr& out, DgnModelR model)
     {
@@ -60,7 +61,7 @@ StatusInt BackwardsCompatibilityTests::CreateArbitraryElement(DgnElementPtr& out
     }
 
 //---------------------------------------------------------------------------------------
-// @bsiclass                                      Muhammad Hassan                  03/16
+// @bsimethod                                      Muhammad Hassan                  03/16
 //+---------------+---------------+---------------+---------------+---------------+------
 CompatibilityStatus BackwardsCompatibilityTests::insertTestElement()
     {
@@ -84,7 +85,7 @@ CompatibilityStatus BackwardsCompatibilityTests::insertTestElement()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsiclass                                      Muhammad Hassan                  03/16
+// @bsimethod                                      Muhammad Hassan                  03/16
 //+---------------+---------------+---------------+---------------+---------------+------
 CompatibilityStatus BackwardsCompatibilityTests::VerifyElementsAndModels()
     {
@@ -171,7 +172,10 @@ TEST_F(BackwardsCompatibilityTests, OpenDgndbInCurrent)
                     writeStatus = false;
                 }
             else
+                {
+                stat = CompatibilityStatus::Error;
                 writeStatus = false;
+                }
 
             if (writeStatus)
                 fprintf(f, "SUCCESS: %ls \n", outputFilePath.GetFileNameAndExtension().c_str());
