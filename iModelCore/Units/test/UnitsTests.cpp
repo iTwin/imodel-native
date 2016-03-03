@@ -99,8 +99,8 @@ bool UnitsTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double
         NativeLogging::LoggingConfig::SetSeverity("Performance", NativeLogging::SEVERITY::LOG_TRACE);
         }
 
-    PERFORMANCELOG.debugv("About to try to convert from %s to %s", targetUnit->GetName(), fromUnit->GetName());
-    double convertedVal = targetUnit->Convert(expectedVal, fromUnit);;
+    PERFORMANCELOG.debugv("About to try to convert %lf %s to %s", fromVal, fromUnit->GetName(), targetUnit->GetName());
+    double convertedVal = fromUnit->Convert(fromVal, targetUnit);;
 
     //QuantityP q = SimpleQuantity(fromVal, fromUnitName);
     //if (nullptr == q)
@@ -111,14 +111,14 @@ bool UnitsTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double
     //    }
 
     //double convertedVal = q->Value(targetUnitName);
-    PERFORMANCELOG.debugv("Converted %s to %s.  Expected: %lf  Actual: %lf", targetUnit->GetName(), fromUnit->GetName(), fromVal, convertedVal);
-    if (fabs(convertedVal - fromVal) > tolerance)
+    PERFORMANCELOG.debugv("Converted %s to %s.  Expected: %lf  Actual: %lf", fromUnit->GetName(), targetUnit->GetName(), expectedVal, convertedVal);
+    if (fabs(convertedVal - expectedVal) > tolerance)
         {
-        Utf8PrintfString formattedText("Conversion from %s to %s. Input: %lf Output: %lf Expected: %lf Tolerance: %.9f", targetUnitName, fromUnitName, expectedVal, convertedVal, fromVal, tolerance);
+        Utf8PrintfString formattedText("Conversion from %s to %s. Input: %lf Output: %lf Expected: %lf Tolerance: %.9f", fromUnitName, targetUnitName, fromVal, convertedVal, expectedVal, tolerance);
         conversionErrors.push_back(formattedText);
         }
-    EXPECT_FALSE(std::isnan(convertedVal) || !std::isfinite(convertedVal)) << "Conversion from " << targetUnitName << " to " << fromUnitName << " resulted in an invalid number";
-    EXPECT_NEAR(fromVal, convertedVal, tolerance)<<  "Conversion from "<< targetUnitName << " to " << fromUnitName <<". Input : " << expectedVal << ", Output : " << convertedVal << ", ExpectedOutput : " << fromVal << "Tolerance : " << tolerance<< "\n";
+    EXPECT_FALSE(std::isnan(convertedVal) || !std::isfinite(convertedVal)) << "Conversion from " << fromUnitName << " to " << targetUnitName << " resulted in an invalid number";
+    EXPECT_NEAR(expectedVal, convertedVal, tolerance)<<  "Conversion from "<< fromUnitName << " to " << targetUnitName <<". Input : " << fromVal << ", Output : " << convertedVal << ", ExpectedOutput : " << expectedVal << " Tolerance : " << tolerance<< "\n";
 
     if (showDetailLogs)
         {
@@ -158,12 +158,16 @@ TEST_F(UnitsTests, TestOffsetConversions)
     {
     bvector<Utf8String> loadErrors;
     bvector<Utf8String> conversionErrors;
-    TestUnitConversion(32, "FAHRENHEIT", 0, "CELSIUS", 1.0e-8, loadErrors, conversionErrors, true);
+    TestUnitConversion(32, "FAHRENHEIT", 0, "CELSIUS", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(20, "FAHRENHEIT", -6.666666666666666666666666666, "CELSIUS", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(122, "FAHRENHEIT", 50, "CELSIUS", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(60, "FAHRENHEIT", 288.705555555555, "KELVIN", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(60, "FAHRENHEIT", 519.67, "RANKINE", 1.0e-8, loadErrors, conversionErrors);
-    TestUnitConversion(61.1, "FAHRENHEIT", 16, "ROMER", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(61.1, "FAHRENHEIT", 15.9875, "ROMER", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(0, "FAHRENHEIT", -17.777777777777777777777777777778, "CELSIUS", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(0, "FAHRENHEIT", 255.37222222222222222222222222222, "KELVIN", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(0, "FAHRENHEIT", 459.67, "RANKINE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(0, "FAHRENHEIT", -1.8333333333333, "ROMER", 1.0e-8, loadErrors, conversionErrors);
 
     TestUnitConversion(1, "CELSIUS", 33.8, "FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(-15, "CELSIUS", 5, "FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
@@ -171,23 +175,39 @@ TEST_F(UnitsTests, TestOffsetConversions)
     TestUnitConversion(60, "CELSIUS", 140, "FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(60, "CELSIUS", 333.15, "KELVIN", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(60, "CELSIUS", 599.67, "RANKINE", 1.0e-8, loadErrors, conversionErrors);
-    TestUnitConversion(-14.3, "CELSIUS", 0, "ROMER", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(-14.3, "CELSIUS", -0.0075, "ROMER", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(0, "CELSIUS", 32, "FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(0, "CELSIUS", 273.15, "KELVIN", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(0, "CELSIUS", 491.67, "RANKINE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(0, "CELSIUS", 7.5, "ROMER", 1.0e-8, loadErrors, conversionErrors);
 
     TestUnitConversion(42, "KELVIN", -231.15, "CELSIUS", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(42, "KELVIN", -384.07, "FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(42, "KELVIN", 75.6, "RANKINE", 1.0e-8, loadErrors, conversionErrors);
-    TestUnitConversion(571.2, "KELVIN", 164, "ROMER", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(571.2, "KELVIN", 163.97625, "ROMER", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(0, "KELVIN", -273.15, "CELSIUS", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(0, "KELVIN", -459.67, "FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(0, "KELVIN", 0, "RANKINE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(0, "KELVIN", -135.90375, "ROMER", 1.0e-8, loadErrors, conversionErrors);
 
 
     TestUnitConversion(42, "RANKINE", -249.81666666666, "CELSIUS", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(42, "RANKINE", -417.67, "FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(42, "RANKINE", 23.333333333333333, "KELVIN", 1.0e-8, loadErrors, conversionErrors);
-    TestUnitConversion(630, "RANKINE", 47, "ROMER", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(630, "RANKINE", 47.84625, "ROMER", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(0, "RANKINE", -273.15, "CELSIUS", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(0, "RANKINE", -459.67, "FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(0, "RANKINE", 0, "KELVIN", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(0, "RANKINE", -135.90375, "ROMER", 1.0e-8, loadErrors, conversionErrors);
 
-    TestUnitConversion(42, "ROMER", 65.7, "CELSIUS", 1.0e-8, loadErrors, conversionErrors);
-    TestUnitConversion(42, "ROMER", 150.3, "FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
-    TestUnitConversion(42, "ROMER", 338.9, "KELVIN", 1.0e-8, loadErrors, conversionErrors);
-    TestUnitConversion(0, "ROMER", 470, "RANKINE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(42, "ROMER", 65.714285714285714285714285714286, "CELSIUS", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(42, "ROMER", 150.28571428571428571428571428571, "FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(42, "ROMER", 338.86428571428571428571428571429, "KELVIN", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(42, "ROMER", 609.95571428571428571428571428571, "RANKINE", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(0, "ROMER", -14.2857142857, "CELSIUS", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(0, "ROMER", 6.285714285714285714, "FAHRENHEIT", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(0, "ROMER", 258.8642857142857142, "KELVIN", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(0, "ROMER", 465.9557142857142857, "RANKINE", 1.0e-8, loadErrors, conversionErrors);
 
 
     Utf8String loadErrorString("Could not convert because one or both of the following units could not be loaded:\n");
@@ -413,7 +433,7 @@ void UnitsTests::TestConversionsLoadedFromCvsFile(Utf8CP fileName)
         {
         ++numberConversions;
         //passing 1.0e-6 to tolerance instead of the csv value
-        if (TestUnitConversion(GetDouble(tokens[0]), tokens[1].c_str(), GetDouble(tokens[2]), tokens[3].c_str(), 1.0e-6, loadErrors, conversionErrors))
+        if (TestUnitConversion(GetDouble(tokens[2]), tokens[3].c_str(), GetDouble(tokens[0]), tokens[1].c_str(), 1.0e-6, loadErrors, conversionErrors))
             ++numberWhereUnitsFound;
         };
 

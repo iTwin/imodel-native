@@ -136,30 +136,57 @@ double Unit::Convert(double value, UnitCP toUnit) const
         }
 
     double factor = 1;
-    //double offset = 0;
+    double offset = 0;
     for (auto const& toUnitExp : conversionExpression)
         {
         if (toUnitExp->GetExponent() == 0)
             continue;
+        
+        LOG.infov("Adding unit %s^%d to the conversion.  Factor: %lf  Offset:%lf", toUnitExp->GetSymbol()->GetName(), 
+                  toUnitExp->GetExponent(), toUnitExp->GetSymbolFactor(), toUnitExp->GetSymbol()->GetOffset());
+        double unitFactor = FastIntegerPower(toUnitExp->GetSymbolFactor(), abs(toUnitExp->GetExponent()));
         if (toUnitExp->GetExponent() > 0)
             {
-            factor *= FastIntegerPower(toUnitExp->GetSymbolFactor(), toUnitExp->GetExponent());
-            //if (toUnitExp->GetSymbol()->HasOffset())
-            //    offset += toUnitExp->GetSymbol()->GetOffset();// *toUnitExp->GetSymbolFactor();
-            //offset *= factor;
+            LOG.infov("Multiplying existing factor %lf by %lf", factor, unitFactor);
+            factor *= unitFactor;
+            LOG.infov("New factor %lf", factor);
+            if (toUnitExp->GetSymbol()->HasOffset())
+                {
+                double unitOffset = toUnitExp->GetSymbol()->GetOffset() * toUnitExp->GetSymbol()->GetFactor();
+                LOG.infov("Adding %lf to existing offset %lf.", unitOffset, offset);
+                offset += unitOffset;
+                LOG.infov("New offset %lf", offset);
+                }
+            else
+                {
+                LOG.infov("Multiplying offset %lf by units conversion factor %lf", offset, unitFactor);
+                offset *= unitFactor;
+                LOG.infov("New offset %lf", offset);
+                }
             }
         else
             {
-            factor /= FastIntegerPower(toUnitExp->GetSymbolFactor(), abs(toUnitExp->GetExponent()));
-            //if (toUnitExp->GetSymbol()->HasOffset())
-            //    offset += toUnitExp->GetSymbol()->GetOffset();// / toUnitExp->GetSymbolFactor();
-            //offset /= factor;
+            LOG.infov("Dividing existing factor %lf by %lf", factor, unitFactor);
+            factor /= unitFactor;
+            LOG.infov("New factor %lf", factor);
+            if (toUnitExp->GetSymbol()->HasOffset())
+                {
+                double unitOffset = toUnitExp->GetSymbol()->GetOffset() * toUnitExp->GetSymbol()->GetFactor();
+                LOG.infov("Subtracting %lf from existing offset %lf.", unitOffset, offset);
+                offset -= unitOffset;
+                LOG.infov("New offset %lf", offset);
+                }
+
+            LOG.infov("Dividing offset %lf by units conversion factor %lf", offset, unitFactor);
+            offset /= unitFactor;
+            LOG.infov("New offset %lf", offset);
             }
-        //offset *= factor;
         }
+    
+    LOG.infov("Conversion factor: %lf, offset: %lf", factor, offset);
     value *= factor;
 
-    //value -= offset;
+    value += offset;
 
     return value;
     }

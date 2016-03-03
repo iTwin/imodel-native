@@ -165,10 +165,10 @@ void Expression::MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExp
 void Expression::MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, ExpressionR sourceExpression, int startingExponent, std::function<bool(SymbolCR, SymbolCR)> areEqual)
     {
     LOG.debugv("Merging Expressions %s --> %s", sourceDefinition, targetDefinition);
-    for (const auto& uWE : sourceExpression)
+    for (auto it = sourceExpression.rbegin(); it != sourceExpression.rend(); ++it)
         {
-        int     mergedExponent = uWE->GetExponent() * startingExponent;
-        MergeSymbol(targetDefinition, targetExpression, sourceDefinition, uWE->GetSymbol(), mergedExponent, areEqual);
+        int     mergedExponent = (*it)->GetExponent() * startingExponent;
+        MergeSymbol(targetDefinition, targetExpression, sourceDefinition, (*it)->GetSymbol(), mergedExponent, areEqual);
         }
     }
 

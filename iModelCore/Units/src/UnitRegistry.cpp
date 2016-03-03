@@ -94,6 +94,8 @@ Utf8CP GetBasePhenomenonName(Utf8Char dimensionSymbol)
                 return SOLIDANGLE;
             case BasePhenomena::Temperature:
                 return TEMPERATURE;
+            case BasePhenomena::TemperatureChange:
+                return TEMPERATURE_CHANGE;
             case BasePhenomena::Time:
                 return TIME;
             default:

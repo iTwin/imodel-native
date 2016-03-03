@@ -46,6 +46,7 @@ static Utf8CP const LENGTH = "LENGTH";
 static Utf8CP const MASS = "MASS";
 static Utf8CP const TIME = "TIME";
 static Utf8CP const TEMPERATURE = "TEMPERATURE";
+static Utf8CP const TEMPERATURE_CHANGE = "TEMPERATURE_CHANGE";
 static Utf8CP const CURRENT = "CURRENT";
 static Utf8CP const MOLE = "MOLE";
 static Utf8CP const LUMINOSITY = "LUMINOSITY";
@@ -130,6 +131,7 @@ public:
     static const Utf8Char Mass = 'M';
     static const Utf8Char Time = 'T';
     static const Utf8Char Temperature = 'K';
+    static const Utf8Char TemperatureChange = 'D';
     static const Utf8Char ElectricCurrent = 'I';
     static const Utf8Char Mole = 'N';
     static const Utf8Char Luminosity = 'J';

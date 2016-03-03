@@ -42,6 +42,8 @@ struct Expression
     typedef bvector<ExpressionSymbolP> SymbolList;
     typedef SymbolList::iterator iterator;
     typedef SymbolList::const_iterator const_iterator;
+    typedef SymbolList::reverse_iterator reverse_iterator;
+    typedef SymbolList::const_reverse_iterator const_reverse_iterator;
     
     friend struct Symbol;
     friend struct Unit;
@@ -54,6 +56,12 @@ private:
     iterator end() { return m_symbolExpression.end(); }
     const_iterator begin() const { return m_symbolExpression.begin(); }
     const_iterator end() const { return m_symbolExpression.end(); }
+
+    reverse_iterator rbegin() { return m_symbolExpression.rbegin(); }
+    reverse_iterator rend() { return m_symbolExpression.rend(); }
+    const_reverse_iterator rbegin() const { return m_symbolExpression.rbegin(); }
+    const_reverse_iterator rend() const { return m_symbolExpression.rend(); }
+
 
     ExpressionSymbolCP FirstSymbol() const { return m_symbolExpression.front(); }
 

@@ -109,7 +109,6 @@ void AddTemperature(UnitRegistry& reg)
     {
     UnitCP unit = reg.AddUnit(TEMPERATURE, SI, "CELSIUS", "K", 1.0, 273.15);
     reg.AddSynonym(unit, "DEGREE_CELSIUS");
-    //SimpleUOM(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "#CELSIUS", 1.8)->AddSynonym("DEGREE_FAHRENHEIT");
     unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "CELSIUS", 5.0 / 9.0, -32);
     reg.AddSynonym(unit, "DEGREE_FAHRENHEIT");
     unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "RANKINE", "K", 5.0 / 9.0);
@@ -120,15 +119,18 @@ void AddTemperature(UnitRegistry& reg)
     //unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "REAMUR", "CELSIUS", 0.8);
     //reg.AddSynonym(unit, "DEGREE_REAMUR");
 
-    /* the algorithm will decided whether to use full conversion or delta
-    some indicator could be used to explicitly indicate using deltas (like ^ preceding the name)
-    this prfeix will be ignored for all units havig additive = 0, and it will be overruled in many formulas
-    reg.AddUnit(BISPH_LENGTH, SI, "DELTA_DEGREE_CELSIUS", "K", 1.8, 1.0, 0.0); //, BISQNoDescript); //, BISQSecUom);
-    reg.AddUnit(BISPH_LENGTH, USCUSTOM, "DELTA_DEGREE_FAHRENHEIT", "K", 1.8, 1.0, 0.0); //, BISQNoDescript); //, BISQSecUom);
-    reg.AddUnit(BISPH_LENGTH, SI, "DELTA_DEGREE_KELVIN", "K", 1, 0.0); //, BISQNoDescript); //, BISQSecUom);
-    reg.AddUnit(BISPH_LENGTH, SI, "DELTA_DEGREE_KELVIN_PER_METRE", "K_PER_L", 1, 0.0); //, BISQNoDescript); //, BISQSecUom);
-    reg.AddUnit(BISPH_LENGTH, USCUSTOM, "DELTA_DEGREE_RANKINE", "K", 1.8, 0.0); //, BISQNoDescript); //, BISQSecUom);
-    */
+    }
+
+void AddTemperatureChange(UnitRegistry& reg)
+    {
+    reg.AddUnit(TEMPERATURE_CHANGE, SI, "DELTA_CELSIUS", "DELTA_KELVIN", 1.0);
+    reg.AddSynonym("DELTA_CELSIUS", "DELTA_DEGREE_CELSIUS");
+    
+    reg.AddUnit(TEMPERATURE_CHANGE, USCUSTOM, "DELTA_FAHRENHEIT", "DELTA_CELSIUS", 5.0 / 9.0);
+    reg.AddSynonym("DELTA_FAHRENHEIT", "DELTA_DEGREE_FAHRENHEIT");
+    
+    reg.AddUnit(TEMPERATURE_CHANGE, USCUSTOM, "DELTA_RANKINE", "DELTA_KELVIN", 5.0 / 9.0);
+    reg.AddSynonym("DELTA_RANKINE", "DELTA_DEGREE_RANKINE");
     }
 
 void AddLuminousFlux(UnitRegistry& reg)
@@ -140,6 +142,7 @@ void AddIlluminance(UnitRegistry& reg)
     {
     reg.AddUnit(ILLUMINANCE, SI, "LUX", "LUMEN*M(-2)");
     reg.AddUnit(ILLUMINANCE, USCUSTOM, "LUMEN/SQ.FT", "LUMEN*FT(-2)");
+    reg.AddSynonym("LUMEN/SQ.FT", "LUMEN_PER_FOOT_SQUARED");
     }
 
 void AddLuminosity(UnitRegistry& reg)
@@ -406,10 +409,10 @@ void AddHeatingValue(UnitRegistry& reg)
 
 void AddSpecificHeatCapacity(UnitRegistry& reg)
     {
-    reg.AddUnit(SPECIFIC_HEAT_CAPACITY, SI, "J/(KG*K)", "J*KG(-1)*K(-1)");
+    reg.AddUnit(SPECIFIC_HEAT_CAPACITY, SI, "J/(KG*K)", "J*KG(-1)*DELTA_KELVIN(-1)");
     reg.AddSynonym("J/(KG*K)", "JOULE_PER_KILOGRAM_DELTA_DEGREE_KELVIN");
 
-    reg.AddUnit(SPECIFIC_HEAT_CAPACITY, USCUSTOM, "BTU/(LBM*RANKINE)", "BTU*LBM(-1)*RANKINE(-1)");
+    reg.AddUnit(SPECIFIC_HEAT_CAPACITY, USCUSTOM, "BTU/(LBM*RANKINE)", "BTU*LBM(-1)*DELTA_RANKINE(-1)");
     reg.AddSynonym("BTU/(LBM*RANKINE)", "BTU_PER_POUND_MASS_PER_DELTA_DEGREE_RANKINE");
     }
 
@@ -601,13 +604,13 @@ void AddHeatFlux(UnitRegistry& reg)
 // TODO: Thermal Transmittance?
 void AddHeatTransfer(UnitRegistry& reg)
     {
-    reg.AddUnit(HEAT_TRANSFER, SI, "W/(SQ.M*K)", "W*M(-2)*K(-1)");
+    reg.AddUnit(HEAT_TRANSFER, SI, "W/(SQ.M*K)", "W*M(-2)*DELTA_KELVIN(-1)");
     reg.AddSynonym("W/(SQ.M*K)", "WATT_PER_METRE_SQUARED_PER_DELTA_DEGREE_KELVIN");
     
-    reg.AddUnit(HEAT_TRANSFER, SI, "W/(SQ.M*CELSIUS)", "W*M(-2)*CELSIUS(-1)");
+    reg.AddUnit(HEAT_TRANSFER, SI, "W/(SQ.M*CELSIUS)", "W*M(-2)*DELTA_CELSIUS(-1)");
     reg.AddSynonym("W/(SQ.M*CELSIUS)", "WATT_PER_METRE_SQUARED_PER_DELTA_DEGREE_CELSIUS");
     
-    reg.AddUnit(HEAT_TRANSFER, USCUSTOM, "BTU/(SQ.FT*HR*FAHRENHEIT)", "BTU*FT(-2)*HR(-1)*FAHRENHEIT(-1)");
+    reg.AddUnit(HEAT_TRANSFER, USCUSTOM, "BTU/(SQ.FT*HR*FAHRENHEIT)", "BTU*FT(-2)*HR(-1)*DELTA_FAHRENHEIT(-1)");
     reg.AddSynonym("BTU/(SQ.FT*HR*FAHRENHEIT)", "BTU_PER_FOOT_SQUARED_PER_HOUR_PER_DELTA_DEGREE_FAHRENHEIT");
     }
 
@@ -832,16 +835,16 @@ void AddSurfaceDensity(UnitRegistry& reg)
 
 void AddThermalConductivity(UnitRegistry& reg)
     {
-    reg.AddUnit(THERMAL_CONDUCTIVITY, USCUSTOM, "W/(M*K)", "W*M(-1)*K(-1)");
+    reg.AddUnit(THERMAL_CONDUCTIVITY, USCUSTOM, "W/(M*K)", "W*M(-1)*DELTA_KELVIN(-1)");
     reg.AddSynonym("W/(M*K)", "WATT_PER_METRE_PER_DEGREE_KELVIN");
-    reg.AddUnit(THERMAL_CONDUCTIVITY, SI, "W/(M*C)", "W*M(-1)*CELSIUS(-1)");
+    reg.AddUnit(THERMAL_CONDUCTIVITY, SI, "W/(M*C)", "W*M(-1)*DELTA_CELSIUS(-1)");
     reg.AddSynonym("W/(M*C)", "WATT_PER_METRE_PER_DEGREE_CELSIUS");
 
-    reg.AddUnit(THERMAL_CONDUCTIVITY, USCUSTOM, "(BTU*IN)/(SQ.FT*HR*FAHRENHEIT)", "BTU*IN*FT(-2)*HR(-1)*FAHRENHEIT(-1)");
+    reg.AddUnit(THERMAL_CONDUCTIVITY, USCUSTOM, "(BTU*IN)/(SQ.FT*HR*FAHRENHEIT)", "BTU*IN*FT(-2)*HR(-1)*DELTA_FAHRENHEIT(-1)");
     reg.AddSynonym("(BTU*IN)/(SQ.FT*HR*FAHRENHEIT)", "BTU_INCH_PER_FOOT_SQUARED_PER_HOUR_PER_DEGREE_FAHRENHEIT");
     
     
-    //reg.AddUnit(THERMAL_CONDUCTIVITY, USCUSTOM, "BTU_PER_HOUR_PER_FOOT_PER_DELTA_DEGREE_FAHRENHEIT", "BTU*HR(-1)*FT(-1)*FAHRENHEIT(-1)"); //, BISQSecUom);
+    //reg.AddUnit(THERMAL_CONDUCTIVITY, USCUSTOM, "BTU_PER_HOUR_PER_FOOT_PER_DELTA_DEGREE_FAHRENHEIT", "BTU*HR(-1)*FT(-1)*DELTA_FAHRENHEIT(-1)"); //, BISQSecUom);
     //LoadUOM(THERMAL_CONDUCTIVITY, INDUSTRIAL, "BTU_PER_FOOT_SQUARED_PER_HOUR_PER_DELTA_DEGREE_FAHRENHEIT", "M_PER_T3_K", 0.1761101836823, 0.0); //, BISQNoDescript); //, BISQSecUom);
     //LoadUOM(THERMAL_CONDUCTIVITY, USCUSTOM, "BTU_INCH_PER_FOOT_SQUARED_PER_HOUR_PER_DEGREE_FAHRENHEIT", "M_L_PER_T3_K", 6.933471798516, 0.0)->AddSynonym("BTU_INCH_PER_FOOT_SQUARED_PER_HOUR_PER_DEGREE_FAHRENHEIT");
     }
@@ -1053,6 +1056,10 @@ void UnitRegistry::AddDefaultUnits ()
     unit = reg.AddDimensionBaseUnit("K", BasePhenomena::Temperature);
     reg.AddSynonym(unit, "KELVIN");
     reg.AddSynonym(unit, "DEGREE_KELVIN");
+
+    reg.AddDimensionBaseUnit("DELTA_KELVIN", BasePhenomena::TemperatureChange);
+    reg.AddSynonym("DELTA_KELVIN", "DELTA_DEGREE_KELVIN");
+
     unit = reg.AddDimensionBaseUnit("A", BasePhenomena::ElectricCurrent); //, BISQPrimUom);
     reg.AddSynonym(unit, "AMPERE");
     unit = reg.AddDimensionBaseUnit("MOL", BasePhenomena::Mole); // Where mol is the SI gram mol or gmol.
@@ -1076,6 +1083,7 @@ void UnitRegistry::AddDefaultUnits ()
     AddMass(reg);
     AddTime(reg);
     AddTemperature(reg);
+    AddTemperatureChange(reg);
     AddLuminousFlux(reg);
     AddIlluminance(reg);
     AddLuminosity(reg);
