@@ -121,7 +121,7 @@ public:
     DPoint3dCP GetCorners() const { return m_corners; }
 
     //! Draw this tile in the view. Tile might not be loaded, it will be loaded only if locally available. Return true if successful.
-    bool Draw(Dgn::RenderContext& context);
+    bool Draw(Dgn::RenderContextR context);
     
     TileId const& GetId() const {return m_tileId;}
 
@@ -201,7 +201,7 @@ public:
 
     Dgn::DgnDbR GetDgnDb() {return m_dgnDb;}
 
-    void Draw (Dgn::SceneContextR context);
+    void Draw (Dgn::RenderContextR context);
 
     //! Some format look best when increased quality is used. ex. WMS. Or we just want to display faster. Full quality is 1.0.
     void SetVisibleQualityFactor(double factor) {m_visibleQualityFactor=factor;}

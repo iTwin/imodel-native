@@ -41,9 +41,9 @@ RasterQuadTreeP RasterModel::GetTree() const
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     4/2015
+// @bsimethod                                                   Mathieu.Marchand  3/2016
 //----------------------------------------------------------------------------------------
-void RasterModel::_AddSceneGraphics(SceneContextR context) const
+void RasterModel::_AddTerrainGraphics(TerrainContextR context) const
     {
     //Note that this call occurs on the client thread and that is must be fast.
     RasterQuadTreeP pTree = GetTree();
