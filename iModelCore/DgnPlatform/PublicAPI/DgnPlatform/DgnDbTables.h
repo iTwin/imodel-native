@@ -698,7 +698,8 @@ public:
     void SetGlobalOrigin(DPoint3dCR origin) {m_globalOrigin=origin;}
     DPoint3dCR GetGlobalOrigin() const {return m_globalOrigin;}
 
-    DGNPLATFORM_EXPORT BeSQLite::DbResult SaveProjectExtents(AxisAlignedBox3dCR newExtents);
+    //! Update the project extents, call SaveChanges to commit.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult SetProjectExtents(AxisAlignedBox3dCR newExtents);
 
     //! (Re-)compute the project extents by looking at the range tree.
     DGNPLATFORM_EXPORT AxisAlignedBox3d ComputeProjectExtents();
