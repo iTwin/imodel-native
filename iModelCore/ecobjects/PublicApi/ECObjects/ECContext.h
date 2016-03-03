@@ -51,6 +51,7 @@ private:
     bool                                    m_acceptLegacyImperfectLatestCompatibleMatch;
     bvector<WString>                        m_cultureStrings;
     bool                                    m_preserveElementOrder = false;
+    bool                                    m_preserveXmlComments = false;
 
     bool                        GetStandardPaths (bvector<WString>& standardPaths);
 
@@ -87,6 +88,15 @@ public:
 
     bool GetPreserveElementOrder() { return m_preserveElementOrder; }
     void SetPreserveElementOrder(bool flag) { m_preserveElementOrder = flag; }
+
+    bool GetPreserveXmlComments() { return m_preserveElementOrder; }
+    void SetPreserveXmlComments(bool flag) 
+        { 
+        m_preserveXmlComments = flag; 
+        // To preserve xml comments it's required that the element order is also preserved
+        if (flag == true)
+            m_preserveElementOrder = true;
+        }
 
 //__PUBLISH_SECTION_START__
 public:

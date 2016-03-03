@@ -51,7 +51,6 @@ typedef bmap<Utf8CP, ECClassP,       less_str>  ClassMap;
 typedef bmap<Utf8CP, ECEnumerationP, less_str>  EnumerationMap;
 typedef bvector<ECEnumeratorP>                  EnumeratorList;
 typedef bmap<Utf8CP, KindOfQuantityP, less_str> KindOfQuantityMap;
-typedef bvector<Utf8String>                     UnitOfMeasurementList;
 
 /*---------------------------------------------------------------------------------**//**
 * Used to hold property name and display label forECProperty, ECClass, and ECSchema.
@@ -224,6 +223,7 @@ private:
 
     ECCustomAttributeCollection         m_primaryCustomAttributes;
     ECCustomAttributeCollection         m_supplementedCustomAttributes;
+    bmap<IECInstanceCP, bvector<Utf8String>>  m_customAttributeXmlComments;
     SchemaWriteStatus                   AddCustomAttributeProperties (BeXmlNodeR oldNode, BeXmlNodeR newNode) const;
 
     IECInstancePtr                      GetCustomAttributeInternal(Utf8StringCR schemaName, Utf8StringCR className, bool includeBaseClasses, bool includeSupplementalAttributes) const;
@@ -1210,6 +1210,9 @@ private:
     PropertyMap                     m_propertyMap;
     PropertyList                    m_propertyList;
     mutable StandaloneECEnablerPtr  m_defaultStandaloneEnabler;
+    bvector<Utf8String> m_xmlComments;
+    bmap<Utf8String, bvector<Utf8String>> m_contentXmlComments;
+    bmap<int, bvector<Utf8String>> m_customAttributeXmlComments;
 
     ECObjectsStatus AddProperty (ECPropertyP& pProperty, bool resolveConflicts = false);
     ECObjectsStatus RemoveProperty (ECPropertyR pProperty);
@@ -1262,6 +1265,8 @@ protected:
     //! @param[out] navigationProperties A running list of all naviagtion properties in the schema.  This list is used for validation, which may only happen after all classes are loaded
     //! @return   Status code
     virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties);
+
+    void _ReadCommentsInSameLine(BeXmlNodeR childNode, bvector<Utf8String>& comments);
 
     SchemaReadStatus                    _ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaReadContextR context);
     SchemaReadStatus                    _ReadPropertyFromXmlAndAddToClass( ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, Utf8CP childNodeName );
@@ -1673,36 +1678,6 @@ struct ECEnumerator : NonCopyableClass
         ECOBJECTS_EXPORT ECObjectsStatus SetString(Utf8CP value);
     };
 
-//======================================================================================
-//! QuantityConversionType describes how conversion between compatible units should be performe
-//! @bsiclass                                                     Robert.Schili      02/2016
-//+===============+===============+===============+===============+===============+=====
-enum class QuantityConversionType
-    {
-    //! Trivial Formula-based linear or affine transformation
-    FormulaBased,
-
-    //! Will be used for various “nominal” dimensions like pipe sizes,
-    //! standard dimensions of mechanical parts and a few other similar situations
-    Mapping
-    };
-
-//======================================================================================
-//! QuantityPresentationType describes how values should be treated in general
-//! @bsiclass                                                     Robert.Schili      02/2016
-//+===============+===============+===============+===============+===============+=====
-enum class QuantityPresentationType
-    {
-    //! Default representation using a decimal value
-    Decimal,
-
-    //! Used for presenting big numbers and mostly will be used in scientific applications
-    Scientific,
-
-    //! Multi-UOM presentation. For example geographic latitudes and longitudes in a form of degrees, minutes and seconds
-    Fractional
-    };
-
 //=======================================================================================
 //! The in-memory representation of a KindOfQuantity as defined by ECSchemaXML
 //! @bsiclass
@@ -1714,40 +1689,30 @@ struct KindOfQuantity : NonCopyableClass
     friend struct SchemaXmlReaderImpl;
 
     private:
-        static const QuantityConversionType DEFAULT_CONVERSION_TYPE = QuantityConversionType::FormulaBased;
-        static const QuantityPresentationType DEFAULT_PRESENTATION_TYPE = QuantityPresentationType::Decimal;
-
         ECSchemaCR m_schema;
         mutable Utf8String m_fullName; //cached nsprefix:name representation
         ECValidatedName m_validatedName; //wraps name and displaylabel
         Utf8String m_description;
-        //! Describes how the conversion between compatible units should be performed
-        QuantityConversionType m_conversionType;
-        //! Addresses how values should be treated in general
-        QuantityPresentationType m_presentationType;
-        //! Optional format that accompanies the presentation type.
-        //! can store a direct set of formatting instructions or alternatively it can be a reference key by
-        //! which the actual format will be extracted from some additional resource based on the context of the formatting operation
-        Utf8String m_presentationFormat;
-        //! list of compatible UOM’s appropriate for presenting quantities on the UI and available for the user selection.
-        //! The names should be accompanied by the display precision of values for presenting the data in accordance with
-        //! engineering and standard requirements. 
-        UnitOfMeasurementList m_presentationUOMList;
-        //! UOM used for persisting the information
-        Utf8String m_persistenceUOM;
+        //! Unit used for persisting the information
+        Utf8String m_persistenceUnit;
+        //! Precision
+        uint32_t m_persistencePrecision;
+        //! Unit used for presenting the information
+        Utf8String m_defaultPresentationUnit;
+        //! list of alternative presentation Units
+        bvector<Utf8String> m_alternativePresentationUnitList;
 
         //  Lifecycle management:  The schema implementation will
         //  serve as a factory for kind of quantities and will manage their lifecycle.
-        explicit KindOfQuantity(ECSchemaCR schema) : m_schema(schema), m_presentationType(DEFAULT_PRESENTATION_TYPE),
-            m_conversionType(DEFAULT_CONVERSION_TYPE) {};
+        explicit KindOfQuantity(ECSchemaCR schema) : m_schema(schema), m_persistencePrecision(0) {};
 
         ~KindOfQuantity() {};
 
         // schemas index KindOfQuantity by name so publicly name can not be reset
         void SetName(Utf8CP name);
 
-        /*SchemaReadStatus ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchemaReadContextR context);
-        SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const;*/
+        /*SchemaReadStatus ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchemaReadContextR context);*/
+        SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const;
 
     public:
         //! The ECSchema that this kind of quantity is defined in
@@ -1777,36 +1742,28 @@ struct KindOfQuantity : NonCopyableClass
         //! Gets the description of this KindOfQuantity.
         Utf8StringCR GetDescription() const { return m_description; };
 
-        //! Sets the conversion type of this KindOfQuantity
-        //! @param[in]  value  The new value to apply
-        void SetConversionType(QuantityConversionType value) { m_conversionType = value; }
-        //! Gets the conversion type of this KindOfQuantity.
-        QuantityConversionType GetConversionType() const { return m_conversionType; };
-
-        //! Sets the presentation type of this KindOfQuantity
-        //! @param[in]  value  The new value to apply
-        void SetPresentationType(QuantityPresentationType value) { m_presentationType = value; }
-        //! Gets the presentation type of this KindOfQuantity.
-        QuantityPresentationType GetPresentationType() const { return m_presentationType; };
-
-        //! Sets the presentation format of this KindOfQuantity
-        //! @param[in]  value  The new value to apply
-        void SetPresentationFormat(Utf8CP value) { m_presentationFormat = value; }
-        //! Gets the presentation format of this KindOfQuantity. (Optional format that accompanies the presentation type)
-        Utf8StringCR GetPresentationFormat() const { return m_presentationFormat; };
-
-        //! Gets a list of compatible UOM’s appropriate for presenting quantities on the UI and available for the user selection.
-        UnitOfMeasurementList const& GetPresentationUOMList() const { return m_presentationUOMList; };
-        //! Gets an editable list of compatible UOM’s appropriate for presenting quantities on the UI and available for the user selection.
-        //! The names should be accompanied by the display precision of values for presenting the data in accordance with
-        //! engineering and standard requirements. 
-        UnitOfMeasurementList& GetPresentationUOMListR() { return m_presentationUOMList; };
-
         //! Sets the Unit of measuerement used for persisting the information
         //! @param[in]  value  The new value to apply
-        void SetPersistenceUOM(Utf8CP value) { m_persistenceUOM = value; }
+        void SetPersistenceUnit(Utf8CP value) { m_persistenceUnit = value; }
         //! Gets the Unit of measuerement used for persisting the information
-        Utf8StringCR GetPersistenceUOM() const { return m_persistenceUOM; };
+        Utf8StringCR GetPersistenceUnit() const { return m_persistenceUnit; };
+
+        //! Sets the Precision used for persisting the information. A precision of zero indicates that a default will be used.
+        //! @param[in]  value  The new value to apply
+        void SetPrecision(uint32_t value) { m_persistencePrecision = value; }
+        //! Gets the precision used for persisting the information. A precision of zero indicates that a default will be used.
+        uint32_t GetPrecision() const { return m_persistencePrecision; };
+        
+        //! Sets the default presentation Unit of this KindOfQuantity
+        //! @param[in]  value  The new value to apply
+        void SetDefaultPresentationUnit(Utf8CP value) { m_defaultPresentationUnit = value; }
+        //! Gets the default presentation Unit of this KindOfQuantity.
+        Utf8StringCR GetDefaultPresentationUnit() const { return m_defaultPresentationUnit; };
+
+        //! Gets a list of alternative Unit’s appropriate for presenting quantities on the UI and available for the user selection.
+        bvector<Utf8String> const& GetAlternativePresentationUnitList() const { return m_alternativePresentationUnitList; };
+        //! Gets an editable list of alternative Unit’s appropriate for presenting quantities on the UI and available for the user selection.
+        bvector<Utf8String>& GetAlternativePresentationUnitListR() { return m_alternativePresentationUnitList; };
     };
 
 //---------------------------------------------------------------------------------------
@@ -2320,14 +2277,24 @@ struct SchemaKey
     //! @return The version string
     ECOBJECTS_EXPORT static Utf8String FormatLegacyFullSchemaName(Utf8CP schemaName, uint32_t versionMajor, uint32_t versionMinor);
 
-    //! Generate a schema version string given the major and minor version values.
+    //! Generate a schema version string given the major write and minor version values.
     //! @param[in] versionMajor    The major version number
     //! @param[out] versionWrite The  write compatibility version number
     //! @param[in] versionMinor    The minor version number
     //! @return The version string
     ECOBJECTS_EXPORT static Utf8String FormatSchemaVersion(uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor);
 
+    //! Generate a legacy schema version string given the major and minor version values.
+    //! @param[in] versionMajor    The major version number
+    //! @param[in] versionMinor    The minor version number
+    //! @return The version string
+    ECOBJECTS_EXPORT static Utf8String FormatLegacySchemaVersion(uint32_t versionMajor, uint32_t versionMinor);
+
+    //! Generate a legacy schema version string given the major write and minor version values.
     Utf8String GetVersionString() const { return FormatSchemaVersion(m_versionMajor, m_versionWrite, m_versionMinor); }
+
+    //! Generate a legacy schema version string given the major and minor version values.
+    Utf8String GetLegacyVersionString() const { return FormatLegacySchemaVersion(m_versionMajor, m_versionMinor); }
 
     //! Compares two SchemaKeys and returns whether the target schema is less than this SchemaKey, where LessThan is dependent on the match type
     //! @param[in]  rhs         The SchemaKey to compare to
@@ -2693,8 +2660,8 @@ struct ECEnumerationContainer
             };
 
     public:
-        ECOBJECTS_EXPORT const_iterator begin() const; //!< Returns the beginning of the iterator
-        ECOBJECTS_EXPORT const_iterator end()   const; //!< Returns the end of the iterator
+        const_iterator begin() const { return ECEnumerationContainer::const_iterator(m_enumerationMap.begin()); } //!< Returns the beginning of the iterator
+        const_iterator end()   const { return ECEnumerationContainer::const_iterator(m_enumerationMap.end()); } //!< Returns the end of the iterator
     };
 
 //=======================================================================================
@@ -2740,12 +2707,12 @@ struct KindOfQuantityContainer
                 ECOBJECTS_EXPORT const_iterator&       operator++(); //!< Increments the iterator
                 ECOBJECTS_EXPORT bool                  operator!=(const_iterator const& rhs) const; //!< Checks for inequality
                 ECOBJECTS_EXPORT bool                  operator==(const_iterator const& rhs) const; //!< Checks for equality
-                ECOBJECTS_EXPORT ECEnumerationP const& operator* () const; //!< Returns the value at the current location
+                ECOBJECTS_EXPORT KindOfQuantityP const& operator* () const; //!< Returns the value at the current location
             };
 
     public:
-        ECOBJECTS_EXPORT const_iterator begin() const; //!< Returns the beginning of the iterator
-        ECOBJECTS_EXPORT const_iterator end()   const; //!< Returns the end of the iterator
+        const_iterator begin() const { return KindOfQuantityContainer::const_iterator(m_koqMap.begin()); } //!< Returns the beginning of the iterator
+        const_iterator end()   const { return KindOfQuantityContainer::const_iterator(m_koqMap.end()); } //!< Returns the end of the iterator
     };
 
 //=======================================================================================
@@ -2906,7 +2873,8 @@ typedef RefCountedPtr<SupplementalSchemaInfo> SupplementalSchemaInfoPtr;
 enum class ECSchemaElementType
     {
     ECClass,
-    ECEnumeration
+    ECEnumeration,
+    KindOfQuantity
     };
 
 //=======================================================================================

@@ -44,6 +44,7 @@ struct SchemaXmlReaderImpl
         void PopulateSchemaElementOrder(ECSchemaElementsOrder& elementOrder, BeXmlNodeR schemaNode);
         virtual bool IsECClassElementNode(BeXmlNodeR schemaNode);
         virtual bool IsECEnumerationElementNode(BeXmlNodeR schemaNode);
+        virtual bool IsKindOfQuantityElementNode(BeXmlNodeR schemaNode);
     };
 
 //---------------------------------------------------------------------------------------
@@ -205,13 +206,39 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadClassStubsFromXml(ECSchemaPtr& schemaO
     if (m_conversionSchema.IsValid())
         resolveConflicts = m_conversionSchema->IsDefined("ResolveClassNameConflicts");
 
+    bvector<Utf8String> comments;
     // Create ECClass Stubs (no properties)
-    for (BeXmlNodeP classNode = schemaNode.GetFirstChild(); NULL != classNode; classNode = classNode->GetNextSibling())
+    for (BeXmlNodeP classNode = schemaNode.GetFirstChild(BEXMLNODE_Any); NULL != classNode; classNode = classNode->GetNextSibling(BEXMLNODE_Any))
         {
-        ECClassP       ecClass = nullptr;
-        if (!ReadClassNode(ecClass, *classNode, schemaOut))
+        if (m_schemaContext.GetPreserveXmlComments())
+            {
+            if (classNode->type == BEXMLNODE_Comment)
+                {
+                Utf8String comment;
+                if (classNode->GetContent(comment) == BeXmlStatus::BEXML_Success)
+                    {
+                    comments.push_back(comment);
+                    }
+                }
+            }
+        if (classNode->type != BEXMLNODE_Element)
             continue;
 
+        ECClassP       ecClass = nullptr;
+        if (!ReadClassNode(ecClass, *classNode, schemaOut))
+        {
+            // The comments read so far belong to the current element, but it's not a class, therefore we need to drop them
+            // No need to check if PreserveXmlComments is true because the vector is empty and not used anyway
+            comments.clear();
+            continue;
+        }
+
+        if (m_schemaContext.GetPreserveXmlComments())
+            {
+            ecClass->m_xmlComments = comments;
+            comments.clear();
+            }
+            
         if (SchemaReadStatus::Success != (status = ecClass->_ReadXmlAttributes(*classNode)))
             {
             delete ecClass;
@@ -332,6 +359,14 @@ ECRelationshipClassP SchemaXmlReaderImpl::CreateRelationshipClass(ECSchemaPtr& s
 bool SchemaXmlReaderImpl::IsECEnumerationElementNode(BeXmlNodeR elementNode)
     {
     return 0 == strcmp(EC_ENUMERATION_ELEMENT, elementNode.GetName());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  
+//---------------+---------------+---------------+---------------+---------------+-------
+bool SchemaXmlReaderImpl::IsKindOfQuantityElementNode(BeXmlNodeR elementNode)
+    {
+    return 0 == strcmp(KIND_OF_QUANTITY_ELEMENT, elementNode.GetName());
     }
 
 //---------------------------------------------------------------------------------------
@@ -615,6 +650,10 @@ SchemaReadStatus SchemaXmlReader3::ReadClassContentsFromXml(ECSchemaPtr& schemaO
             {
             elementOrder.AddElement(typeName.c_str(), ECSchemaElementType::ECEnumeration);
             }
+        else if (IsKindOfQuantityElementNode(*candidateNode))
+            {
+            elementOrder.AddElement(typeName.c_str(), ECSchemaElementType::KindOfQuantity);
+            }
         }
     }
 
@@ -851,7 +890,14 @@ SchemaWriteStatus SchemaXmlWriter::WriteSchemaReferences()
         m_xmlWriter.WriteElementStart(EC_SCHEMAREFERENCE_ELEMENT);
         m_xmlWriter.WriteAttribute(SCHEMAREF_NAME_ATTRIBUTE, refSchema->GetName().c_str());
 
-        m_xmlWriter.WriteAttribute(SCHEMAREF_VERSION_ATTRIBUTE, refSchema->GetSchemaKey().GetVersionString().c_str());
+        if (m_ecXmlVersionMajor == 2)
+            {
+            m_xmlWriter.WriteAttribute(SCHEMAREF_VERSION_ATTRIBUTE, refSchema->GetSchemaKey().GetLegacyVersionString().c_str());
+            }
+        else
+            {
+            m_xmlWriter.WriteAttribute(SCHEMAREF_VERSION_ATTRIBUTE, refSchema->GetSchemaKey().GetVersionString().c_str());
+            }
 
         const Utf8String prefix = mapPair.second;
         m_xmlWriter.WriteAttribute(SCHEMAREF_PREFIX_ATTRIBUTE, prefix.c_str());
@@ -935,6 +981,19 @@ SchemaWriteStatus SchemaXmlWriter::WriteEnumeration(ECEnumerationCR ecEnumeratio
     return ecEnumeration.WriteXml(m_xmlWriter, m_ecXmlVersionMajor, m_ecXmlVersionMinor);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Robert.Schili                03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaWriteStatus SchemaXmlWriter::WriteKindOfQuantity(KindOfQuantityCR kindOfQuantity)
+    {
+    SchemaWriteStatus status = SchemaWriteStatus::Success;
+    // don't write any elements that aren't in the schema we're writing.
+    if (&(kindOfQuantity.GetSchema()) != &m_ecSchema)
+        return status;
+
+    //WriteCustomAttributeDependencies(ecEnumeration);
+    return kindOfQuantity.WriteXml(m_xmlWriter, m_ecXmlVersionMajor, m_ecXmlVersionMinor);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
@@ -975,7 +1034,16 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
 
     m_xmlWriter.WriteAttribute(SCHEMA_NAME_ATTRIBUTE, m_ecSchema.GetName().c_str());
     m_xmlWriter.WriteAttribute(SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE, m_ecSchema.GetNamespacePrefix().c_str());
-    m_xmlWriter.WriteAttribute(SCHEMA_VERSION_ATTRIBUTE, m_ecSchema.GetSchemaKey().GetVersionString().c_str());
+
+    if (m_ecXmlVersionMajor == 2)
+        {
+        m_xmlWriter.WriteAttribute(SCHEMA_VERSION_ATTRIBUTE, m_ecSchema.GetSchemaKey().GetLegacyVersionString().c_str());
+        }
+    else
+        {
+        m_xmlWriter.WriteAttribute(SCHEMA_VERSION_ATTRIBUTE, m_ecSchema.GetSchemaKey().GetVersionString().c_str());
+        }
+    
     m_xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, m_ecSchema.GetInvariantDescription().c_str());
     if (m_ecSchema.GetIsDisplayLabelDefined())
         m_xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, m_ecSchema.GetInvariantDisplayLabel().c_str());
@@ -996,7 +1064,8 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
     for (auto schemaElementEntry : serializationOrder)
         {
         Utf8CP elementName = schemaElementEntry.first.c_str();
-        if (schemaElementEntry.second == ECSchemaElementType::ECClass)
+        auto elementType = schemaElementEntry.second;
+        if (elementType == ECSchemaElementType::ECClass)
             {
             ECClassCP ecClass = m_ecSchema.GetClassCP(elementName);
             if (ecClass != nullptr)
@@ -1004,12 +1073,20 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
                 WriteClass(*ecClass);
                 }
             }
-        else if (schemaElementEntry.second == ECSchemaElementType::ECEnumeration)
+        else if (elementType == ECSchemaElementType::ECEnumeration)
             {
             ECEnumerationCP ecEnumeration = m_ecSchema.GetEnumerationCP(elementName);
             if (ecEnumeration != nullptr)
                 {
                 WriteEnumeration(*ecEnumeration);
+                }
+            }
+        else if (elementType == ECSchemaElementType::KindOfQuantity)
+            {
+            KindOfQuantityCP kindOfQuantity = m_ecSchema.GetKindOfQuantityCP(elementName);
+            if (kindOfQuantity != nullptr)
+                {
+                WriteKindOfQuantity(*kindOfQuantity);
                 }
             }
         }

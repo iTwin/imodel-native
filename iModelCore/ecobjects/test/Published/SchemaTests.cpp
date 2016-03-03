@@ -9,6 +9,9 @@
 #include "../TestFixture/TestFixture.h"
 #include "BeXml/BeXml.h"
 
+#include <iostream>
+#include <fstream>
+
 using namespace BentleyApi::ECN;
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
@@ -1891,8 +1894,7 @@ TEST_F (SchemaSerializationTest, SerializeComprehensiveSchema)
 
     //Compose our new schema
     ECSchemaPtr schema;
-    ECSchema::CreateSchema (schema, "ComprehensiveSchema", 1, 0);
-    schema->SetNamespacePrefix ("cmpr");
+    ECSchema::CreateSchema (schema, "ComprehensiveSchema", "cmpr", 1, 5, 2);
     schema->SetDescription("Comprehensive Schema to demonstrate use of all ECSchema concepts.");
     schema->SetDisplayLabel("Comprehensive Schema");
     schema->AddReferencedSchema(*standardCASchema);
@@ -2008,8 +2010,19 @@ TEST_F (SchemaSerializationTest, SerializeComprehensiveSchema)
     NavigationECPropertyP navProp;
     entityClass->CreateNavigationProperty(navProp, "NavigationProperty", *relationshipClass, ECRelatedInstanceDirection::Forward);
 
-    SchemaWriteStatus status2 = schema->WriteToXmlFile (ECTestFixture::GetTempDataPath (L"ComprehensiveSchema.01.00.ecschema.xml").c_str (), 3);
+    WString fullSchemaName;
+    fullSchemaName.AssignUtf8(schema->GetFullSchemaName().c_str());
+    fullSchemaName.append(L".ecschema.xml");
+
+    WString legacyFullSchemaName;
+    legacyFullSchemaName.AssignUtf8(schema->GetLegacyFullSchemaName().c_str());
+    legacyFullSchemaName.append(L".ecschema.xml");
+    
+    SchemaWriteStatus status2 = schema->WriteToXmlFile (ECTestFixture::GetTempDataPath (fullSchemaName.c_str()).c_str (), 3);
     EXPECT_EQ (SchemaWriteStatus::Success, status2);
+
+    SchemaWriteStatus status3 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(legacyFullSchemaName.c_str()).c_str(), 2);
+    EXPECT_EQ(SchemaWriteStatus::Success, status3);
     }
 
 //This test ensures we support any unknown element or attribute put into existing ECSchema XML. Important for backwards compatibility of future EC versions.
@@ -3557,5 +3570,56 @@ TEST_F (SchemaImmutableTest, SetImmutable)
     EXPECT_EQ (schema->SetDisplayLabel ("Some new label"), ECObjectsStatus::SchemaIsImmutable);
     EXPECT_EQ (schema->SetVersionMajor (13), ECObjectsStatus::SchemaIsImmutable);
     EXPECT_EQ (schema->SetVersionMinor (13), ECObjectsStatus::SchemaIsImmutable);
+    }
+
+bool CompareFiles(Utf8StringCP lFileName, Utf8StringCP rFileName)
+    {
+    BeFile lFile;
+    BeFileStatus lStatus = lFile.Open(*lFileName, BeFileAccess::Read);
+
+    EXPECT_EQ(BeFileStatus::Success, lStatus) << "Could not open " << *lFileName << " for verification";
+
+    BeFile rFile;
+    BeFileStatus rStatus = rFile.Open(*rFileName, BeFileAccess::Read);
+    EXPECT_EQ(BeFileStatus::Success, lStatus) << "Could not open " << *rFileName << " for verification";
+
+    ByteStream lStream;
+    ByteStream rStream;
+    lStatus = lFile.ReadEntireFile(lStream);
+    rStatus = rFile.ReadEntireFile(rStream);
+
+    if (lStream.GetSize() != rStream.GetSize())
+        return false;
+    
+    const uint8_t *lBuffer = lStream.GetData();
+    const uint8_t *rBuffer = rStream.GetData();
+    for (uint32_t i = 0; i < lStream.GetSize(); i++)
+        {
+        if (lBuffer[i] != rBuffer[i])
+        return false;
+        }
+    lFile.Close();
+    rFile.Close();
+    return true;
+    }
+
+TEST_F(SchemaTest, RoundtripSchemaXmlCommentsTest)
+    {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->SetPreserveXmlComments(true);
+    ECSchemaPtr schema;
+	SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"dgn.02.00.ecschema.xml").c_str(), *schemaContext);
+	EXPECT_EQ(SchemaReadStatus::Success, status);
+
+    SchemaWriteStatus statusW = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"dgn-result.02.00.ecschema.xml").c_str(), 2, 0, false);
+    EXPECT_EQ(SchemaWriteStatus::Success, statusW);
+
+    Utf8String serializedSchemaFile(ECTestFixture::GetTempDataPath(L"dgn-result.02.00.ecschema.xml"));
+    Utf8String expectedSchemaFile(ECTestFixture::GetTestDataPath(L"dgn-ExpectedResult.02.00.ecschema.xml"));
+
+    EXPECT_TRUE(CompareFiles(&serializedSchemaFile, &expectedSchemaFile)) << "Serialized schema differs from expected schema";
+
+
+    //EXPECT_TRUE(CompareFiles("dgn-result.02.00.ecschema.xml", "dgn-ExpectedResult.02.00.ecschema.xml"));
     }
 END_BENTLEY_ECN_TEST_NAMESPACE

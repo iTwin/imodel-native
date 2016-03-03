@@ -1153,8 +1153,10 @@ ECObjectsStatus ECSchema::AddKindOfQuantity(KindOfQuantityP valueToAdd)
         return ECObjectsStatus::Error;
         }
 
-    /*if (m_serializationOrder != nullptr)
-    m_serializationOrder->AddElement(valueToAdd->GetName().c_str(), ECSchemaElementType::KindOfQuantity);*/
+    if (m_serializationOrder.GetPreserveElementOrder())
+        {
+        m_serializationOrder.AddElement(valueToAdd->GetName().c_str(), ECSchemaElementType::KindOfQuantity);
+        }
 
     return ECObjectsStatus::Success;
     }
@@ -2539,22 +2541,6 @@ ECClassP const& ECClassContainer::const_iterator::operator*() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECEnumerationContainer::const_iterator  ECEnumerationContainer::begin () const
-    {
-    return ECEnumerationContainer::const_iterator(m_enumerationMap.begin());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECEnumerationContainer::const_iterator  ECEnumerationContainer::end () const
-    {
-    return ECEnumerationContainer::const_iterator(m_enumerationMap.end());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 ECEnumerationContainer::const_iterator& ECEnumerationContainer::const_iterator::operator++()
     {
     m_state->m_mapIterator++;
@@ -2583,7 +2569,48 @@ ECEnumerationP const& ECEnumerationContainer::const_iterator::operator*() const
     {
     // Get rid of ECClassContainer or make it return a pointer directly
 #ifdef CREATES_A_TEMP
-    bpair<WCharCP , ECClassP> const& mapPair = *(m_state->m_mapIterator);
+    bpair<Utf8CP , ECEnumerationP> const& mapPair = *(m_state->m_mapIterator);
+    return mapPair.second;
+#else
+    return m_state->m_mapIterator->second;
+#endif
+    };
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// KindOfQuantityContainer
+/////////////////////////////////////////////////////////////////////////////////////////
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+KindOfQuantityContainer::const_iterator& KindOfQuantityContainer::const_iterator::operator++()
+    {
+    m_state->m_mapIterator++;
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    KindOfQuantityContainer::const_iterator::operator!= (const_iterator const& rhs) const
+    {
+    return (m_state->m_mapIterator != rhs.m_state->m_mapIterator);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    KindOfQuantityContainer::const_iterator::operator== (const_iterator const& rhs) const
+    {
+    return (m_state->m_mapIterator == rhs.m_state->m_mapIterator);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+KindOfQuantityP const& KindOfQuantityContainer::const_iterator::operator*() const
+    {
+    // Get rid of ECClassContainer or make it return a pointer directly
+#ifdef CREATES_A_TEMP
+    bpair<Utf8CP , KindOfQuantityP> const& mapPair = *(m_state->m_mapIterator);
     return mapPair.second;
 #else
     return m_state->m_mapIterator->second;
@@ -2648,6 +2675,17 @@ void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaCR ecSchema)
     for (ECClassP pClass : sortedClasses)
         {
         AddElement(pClass->GetName().c_str(), ECSchemaElementType::ECClass);
+        }
+
+    for (auto pKindOfQuantity : ecSchema.GetKindOfQuantities())
+        {
+        if (nullptr == pKindOfQuantity)
+            {
+            BeAssert(false);
+            continue;
+            }
+        else
+            AddElement(pKindOfQuantity->GetName().c_str(), ECSchemaElementType::KindOfQuantity);
         }
     }
 
@@ -2738,9 +2776,19 @@ Utf8String SchemaKey::FormatSchemaVersion (uint32_t versionMajor, uint32_t versi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Robert.Schili                  01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SchemaKey::FormatLegacySchemaVersion (uint32_t versionMajor, uint32_t versionMinor)
+    {
+    Utf8String versionString;
+    versionString.Sprintf("%02d.%02d", versionMajor, versionMinor);
+    return versionString;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Robert.Schili                  01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String SchemaKey::FormatLegacyFullSchemaName(Utf8CP schemaName, uint32_t versionMajor, uint32_t versionMinor)
     {
-    Utf8PrintfString formattedString("%s.%02d.%02d", schemaName, versionMajor, versionMinor);
+    Utf8PrintfString formattedString("%s.%s", schemaName, FormatLegacySchemaVersion(versionMajor, versionMinor).c_str());
     return formattedString;
     }
 
