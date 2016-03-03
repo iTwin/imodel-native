@@ -2216,7 +2216,10 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
     READ_OPTIONAL_XML_ATTRIBUTE (constraintNode, ROLELABEL_ATTRIBUTE, this, RoleLabel);
     READ_OPTIONAL_XML_ATTRIBUTE (constraintNode, CARDINALITY_ATTRIBUTE, this, Cardinality);
     
-    // For supplemental schemas, only read in the attributes
+    // Add Custom Attributes
+    ReadCustomAttributes(constraintNode, schemaContext, m_relClass->GetSchema());
+
+    // For supplemental schemas, only read in the attributes and custom attributes
     if (Utf8String::npos != _GetContainerSchema()->GetName().find("_Supplemental"))
         return SchemaReadStatus::Success;
 
@@ -2279,8 +2282,6 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
             }
         }
 
-    // Add Custom Attributes
-    ReadCustomAttributes (constraintNode, schemaContext, m_relClass->GetSchema());
     return status;
     }
     
