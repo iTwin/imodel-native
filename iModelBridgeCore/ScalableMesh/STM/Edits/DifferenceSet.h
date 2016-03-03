@@ -27,12 +27,14 @@ struct DifferenceSet
     bvector<int32_t> removedFaces;
     bvector<DPoint2d> addedUvs;
     bvector<int32_t> addedUvIndices;
+    bool toggledForID;
     atomic<bool> upToDate;
 
     DifferenceSet()
         {
         upToDate = true;
         firstIndex = 0;
+        toggledForID = true;
         }
 
     DifferenceSet(const DifferenceSet& d) :clientID(d.clientID), firstIndex(d.firstIndex), addedVertices(d.addedVertices),

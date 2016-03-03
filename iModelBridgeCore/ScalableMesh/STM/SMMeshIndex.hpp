@@ -2688,6 +2688,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         UnPinUVsIndices(j-1);
 
         if (!hasClip) continue;
+        bvector<bvector<PolyfaceHeaderPtr>> skirts;
+        //BuildSkirtMeshesForPolygonSet(skirts, polyfaces, polys, nodeRange);
         map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
         for (size_t i = 0; i < size(); ++i)
             mapOfPoints[points[i]] = (int)i;
@@ -2700,6 +2702,15 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
             m_differenceSets.push_back(current);
             (m_differenceSets.begin() + (m_differenceSets.size() - 1))->upToDate = true;
             ++m_nbClips;
+           /* if (current.clientID != 0)
+                {
+                DifferenceSet skirt = DifferenceSet::FromPolyfaceSet(skirts[&polyface - &polyfaces[0]], mapOfPoints);
+                skirt.clientID = current.clientID;
+                skirt.toggledForID = false;
+                m_differenceSets.push_back(skirt);
+                (m_differenceSets.begin() + (m_differenceSets.size() - 1))->upToDate = true;
+                ++m_nbClips;
+                }*/
             }
         }
         }

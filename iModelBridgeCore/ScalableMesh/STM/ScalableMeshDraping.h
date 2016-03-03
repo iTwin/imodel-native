@@ -23,6 +23,11 @@ struct ScalableMeshDraping : IDTMDraping
         IScalableMesh* m_scmPtr;
         Transform m_transform;
         Transform m_UorsToStorage;
+
+        DTMStatusInt DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int* drapedTypeP, DPoint3dCR point, const DMatrix4d& w2vMap);
+
+        size_t ComputeLevelForTransform(const DMatrix4d& w2vMap);
+
     protected:
         virtual DTMStatusInt _DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int* drapedTypeP, DPoint3dCR point) override;
         virtual DTMStatusInt _DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) override;

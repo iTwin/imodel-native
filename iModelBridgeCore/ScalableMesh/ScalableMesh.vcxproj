@@ -634,6 +634,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMesh -f ScalableMesh 
     <ClCompile Include="STM\3dDelaunay\tetGen\tetgenPredicates.cpp" />
     <ClCompile Include="STM\3dDelaunay\TrimHull.cpp" />
     <ClCompile Include="STM\CGALEdgeCollapse.cpp" />
+    <ClCompile Include="STM\Edits\Skirts.cpp" />
     <ClCompile Include="STM\ScalableMeshQuadTreeQueries.cpp" />
     <ClCompile Include="STM\ScalableTerrainModelAdmin.cpp" />
     <ClCompile Include="STM\DrapeOnGraph.cpp" />

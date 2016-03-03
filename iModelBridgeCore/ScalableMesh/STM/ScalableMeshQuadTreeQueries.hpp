@@ -1693,7 +1693,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelIntersectIndex
                                                                                                      size_t numSubNodes,
                                                                                                      HFCPtr<SMPointIndexNode<POINT, EXTENT> >& hitNode)
     {
-    EXTENT ext = node->m_nodeHeader.m_contentExtent;
+    EXTENT ext = (node->GetLevel() == m_requestedLevel || node->IsLeaf()) ? node->m_nodeHeader.m_contentExtent : node->m_nodeHeader.m_nodeExtent;
     DRange3d range = DRange3d::From(DPoint3d::From(ExtentOp<EXTENT>::GetXMin(ext), ExtentOp<EXTENT>::GetYMin(ext), ExtentOp<EXTENT>::GetZMin(ext)),
                                     DPoint3d::From(ExtentOp<EXTENT>::GetXMax(ext), ExtentOp<EXTENT>::GetYMax(ext), ExtentOp<EXTENT>::GetZMax(ext)));
     DSegment3d segment;
@@ -1733,7 +1733,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelIntersectIndex
                                                                                                             size_t numSubNodes,
                                                                                                             vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes)
     {
-    EXTENT ext = node->m_nodeHeader.m_contentExtent;
+    EXTENT ext = (node->GetLevel() == m_requestedLevel || node->IsLeaf()) ? node->m_nodeHeader.m_contentExtent : node->m_nodeHeader.m_nodeExtent;
     DRange3d range = DRange3d::From(DPoint3d::From(ExtentOp<EXTENT>::GetXMin(ext), ExtentOp<EXTENT>::GetYMin(ext), ExtentOp<EXTENT>::GetZMin(ext)),
                                     DPoint3d::From(ExtentOp<EXTENT>::GetXMax(ext), ExtentOp<EXTENT>::GetYMax(ext), ExtentOp<EXTENT>::GetZMax(ext)));
     DSegment3d segment;
@@ -1778,7 +1778,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelPlaneIntersect
                                                                                                             size_t numSubNodes,
                                                                                                             HFCPtr<SMPointIndexNode<POINT, EXTENT> >& hitNode)
     {
-    EXTENT ext = node->m_nodeHeader.m_contentExtent;
+    EXTENT ext = (node->GetLevel() == m_requestedLevel || node->IsLeaf()) ? node->m_nodeHeader.m_contentExtent : node->m_nodeHeader.m_nodeExtent;
     DRange3d range = DRange3d::From(DPoint3d::From(ExtentOp<EXTENT>::GetXMin(ext), ExtentOp<EXTENT>::GetYMin(ext), ExtentOp<EXTENT>::GetZMin(ext)),
                                     DPoint3d::From(ExtentOp<EXTENT>::GetXMax(ext), ExtentOp<EXTENT>::GetYMax(ext), ExtentOp<EXTENT>::GetZMax(ext)));
 
