@@ -9,7 +9,6 @@
 //-----------------------------------------------------------------------------
 
 #include <ImageppInternal.h>
-#include <Imagepp/all/h/HGF2DTransfoModelAdapter.h>
 #include <Imagepp/all/h/HGF2DTranslation.h>
 #include <Imagepp/all/h/HGF2DIdentity.h>
 #include <Imagepp/all/h/HGF2DStretch.h>
@@ -48,7 +47,7 @@ HGFPolynomialModelAdapter::HGFPolynomialModelAdapter(const HGF2DTransfoModel&  p
 HGFPolynomialModelAdapter::HGFPolynomialModelAdapter(const HGFPolynomialModelAdapter& pi_rObj)
     : HGF2DTransfoModelAdapter(pi_rObj)
     {
-    Copy (pi_rObj);
+    Copy(pi_rObj);
 
     HINVARIANTS;
     }
@@ -57,8 +56,7 @@ HGFPolynomialModelAdapter::HGFPolynomialModelAdapter(const HGFPolynomialModelAda
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
 HGFPolynomialModelAdapter::~HGFPolynomialModelAdapter()
-    {
-    }
+    {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
@@ -72,7 +70,7 @@ HGFPolynomialModelAdapter& HGFPolynomialModelAdapter::operator=(const HGFPolynom
         {
         // Call ancestor operator=
         HGF2DTransfoModelAdapter::operator=(pi_rObj);
-        Copy (pi_rObj);
+        Copy(pi_rObj);
         }
 
     // Return reference to self
@@ -121,7 +119,7 @@ StatusInt HGFPolynomialModelAdapter::ConvertDirect(double pi_YIn, double pi_XInS
         uint32_t Index;
         double X;
 
-        for (Index = 0, X = pi_XInStart; Index < pi_NumLoc ; ++Index, X+=pi_XInStep)
+        for (Index = 0, X = pi_XInStart; Index < pi_NumLoc; ++Index, X += pi_XInStep)
             {
             m_pAdaptedTransfoModel->ConvertDirect(X, pi_YIn, po_pXOut + Index, po_pYOut + Index);
             }
@@ -151,7 +149,7 @@ StatusInt HGFPolynomialModelAdapter::ConvertDirect(double pi_XIn, double pi_YIn,
 //-----------------------------------------------------------------------------
 StatusInt HGFPolynomialModelAdapter::ConvertDirect(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
     {
-    for(uint32_t i = 0; i < pi_NumLoc; i++)
+    for (uint32_t i = 0; i < pi_NumLoc; i++)
         {
         ConvertDirect(pio_aXInOut[i], pio_aYInOut[i], pio_aXInOut + i, pio_aYInOut + i);
         }
@@ -182,7 +180,7 @@ StatusInt HGFPolynomialModelAdapter::ConvertInverse(double pi_YIn, double pi_XIn
         uint32_t Index;
         double X;
 
-        for (Index = 0, X = pi_XInStart; Index < pi_NumLoc ; ++Index, X+=pi_XInStep)
+        for (Index = 0, X = pi_XInStart; Index < pi_NumLoc; ++Index, X += pi_XInStep)
             {
             m_pAdaptedTransfoModel->ConvertInverse(X, pi_YIn, po_pXOut + Index, po_pYOut + Index);
             }
@@ -212,7 +210,7 @@ StatusInt HGFPolynomialModelAdapter::ConvertInverse(double pi_XIn, double pi_YIn
 //-----------------------------------------------------------------------------
 StatusInt HGFPolynomialModelAdapter::ConvertInverse(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
     {
-    for(uint32_t i = 0; i < pi_NumLoc; i++)
+    for (uint32_t i = 0; i < pi_NumLoc; i++)
         {
         ConvertInverse(pio_aXInOut[i], pio_aYInOut[i], pio_aXInOut + i, pio_aYInOut + i);
         }
@@ -227,51 +225,51 @@ inline void HGFPolynomialModelAdapter::TransposePointsUsingPolynomial(double pi_
     double y2 = y * y;
     double y3 = y2 * y;
 
-    double a2_x       = m_CoefficientsX[2] * y;
+    double a2_x = m_CoefficientsX[2] * y;
     double partial4_x = m_CoefficientsX[4] * y;
-    double a5_x       = m_CoefficientsX[5] * y2;
+    double a5_x = m_CoefficientsX[5] * y2;
     double partial7_x = m_CoefficientsX[7] * y;
     double partial8_x = m_CoefficientsX[8] * y2;
-    double a9_x       = m_CoefficientsX[9] * y3;
+    double a9_x = m_CoefficientsX[9] * y3;
 
-    double a2_y       = m_CoefficientsY[2] * y;
+    double a2_y = m_CoefficientsY[2] * y;
     double partial4_y = m_CoefficientsY[4] * y;
-    double a5_y       = m_CoefficientsY[5] * y2;
+    double a5_y = m_CoefficientsY[5] * y2;
     double partial7_y = m_CoefficientsY[7] * y;
     double partial8_y = m_CoefficientsY[8] * y2;
-    double a9_y       = m_CoefficientsY[9] * y3;
+    double a9_y = m_CoefficientsY[9] * y3;
 
 
     uint32_t index;
     double x;
     double x2;
     double x3;
-    for (index = 0, x = pi_XInStart; index < pi_NumLoc ; ++index, x+=pi_XInStep)
+    for (index = 0, x = pi_XInStart; index < pi_NumLoc; ++index, x += pi_XInStep)
         {
         x2 = x * x;
         x3 = x2 * x;
 
         *(po_pXOut + index) = m_CoefficientsX[0]
-                            + m_CoefficientsX[1] * x
-                            + a2_x
-                            + m_CoefficientsX[3] * x2
-                            + partial4_x * x
-                            + a5_x
-                            + m_CoefficientsX[6] * x3
-                            + partial7_x * x2
-                            + partial8_x * x
-                            + a9_x;
+            + m_CoefficientsX[1] * x
+            + a2_x
+            + m_CoefficientsX[3] * x2
+            + partial4_x * x
+            + a5_x
+            + m_CoefficientsX[6] * x3
+            + partial7_x * x2
+            + partial8_x * x
+            + a9_x;
 
         *(po_pYOut + index) = m_CoefficientsY[0]
-                            + m_CoefficientsY[1] * x
-                            + a2_y
-                            + m_CoefficientsY[3] * x2
-                            + partial4_y * x
-                            + a5_y
-                            + m_CoefficientsY[6] * x3
-                            + partial7_y * x2
-                            + partial8_y * x
-                            + a9_y;
+            + m_CoefficientsY[1] * x
+            + a2_y
+            + m_CoefficientsY[3] * x2
+            + partial4_y * x
+            + a5_y
+            + m_CoefficientsY[6] * x3
+            + partial7_y * x2
+            + partial8_y * x
+            + a9_y;
         }
 
     }
@@ -281,6 +279,7 @@ inline void HGFPolynomialModelAdapter::TransposePointsUsingPolynomial(double pi_
 //+---------------+---------------+---------------+---------------+---------------+------
 inline void HGFPolynomialModelAdapter::TransposePointUsingPolynomial(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const
     {
+
     double x = pi_XIn;
     double y = pi_YIn;
     double xy = x * y;
@@ -292,38 +291,95 @@ inline void HGFPolynomialModelAdapter::TransposePointUsingPolynomial(double pi_X
     double y3 = y2 * y;
 
     *po_pXOut = m_CoefficientsX[0]
-              + m_CoefficientsX[1] * x
-              + m_CoefficientsX[2] * y
-              + m_CoefficientsX[3] * x2
-              + m_CoefficientsX[4] * xy
-              + m_CoefficientsX[5] * y2
-              + m_CoefficientsX[6] * x3
-              + m_CoefficientsX[7] * x2y
-              + m_CoefficientsX[8] * xy2
-              + m_CoefficientsX[9] * y3;
+        + m_CoefficientsX[1] * x
+        + m_CoefficientsX[2] * y
+        + m_CoefficientsX[3] * x2
+        + m_CoefficientsX[4] * xy
+        + m_CoefficientsX[5] * y2
+        + m_CoefficientsX[6] * x3
+        + m_CoefficientsX[7] * x2y
+        + m_CoefficientsX[8] * xy2
+        + m_CoefficientsX[9] * y3;
 
     *po_pYOut = m_CoefficientsY[0]
-              + m_CoefficientsY[1] * x
-              + m_CoefficientsY[2] * y
-              + m_CoefficientsY[3] * x2
-              + m_CoefficientsY[4] * xy
-              + m_CoefficientsY[5] * y2
-              + m_CoefficientsY[6] * x3
-              + m_CoefficientsY[7] * x2y
-              + m_CoefficientsY[8] * xy2
-              + m_CoefficientsY[9] * y3;
+        + m_CoefficientsY[1] * x
+        + m_CoefficientsY[2] * y
+        + m_CoefficientsY[3] * x2
+        + m_CoefficientsY[4] * xy
+        + m_CoefficientsY[5] * y2
+        + m_CoefficientsY[6] * x3
+        + m_CoefficientsY[7] * x2y
+        + m_CoefficientsY[8] * xy2
+        + m_CoefficientsY[9] * y3;
+
+    //double factor[10];
+    //factor[0] = 1;
+    //factor[1] = pi_XIn;
+    //factor[2] = pi_YIn;
+    //factor[3] = (pi_XIn * pi_XIn);
+    //factor[4] = (pi_XIn * pi_YIn);
+    //factor[5] = (pi_YIn * pi_YIn);
+    //factor[6] = (factor[3] * pi_XIn);
+    //factor[7] = (pi_YIn * factor[3]);
+    //factor[8] = (factor[5] * pi_XIn);
+    //factor[9] = (factor[5] * pi_YIn);
+
+    ////loading factors (1, x, y, x^2, xy, y^2, ...) in SSE registers
+    //__m128d storedFactor1 = _mm_loadu_pd(factor);
+    //__m128d storedFactor2 = _mm_loadu_pd(factor + 2);
+    //__m128d storedFactor3 = _mm_loadu_pd(factor + 4);
+    //__m128d storedFactor4 = _mm_loadu_pd(factor + 6);
+    //__m128d storedFactor5 = _mm_loadu_pd(factor + 8);
+
+    ////loading coefficients in SSE registers
+    //__m128d storedCoeffX1 = _mm_loadu_pd(m_CoefficientsX);
+    //__m128d storedCoeffX2 = _mm_loadu_pd(m_CoefficientsX + 2);
+    //__m128d storedCoeffX3 = _mm_loadu_pd(m_CoefficientsX + 4);
+    //__m128d storedCoeffX4 = _mm_loadu_pd(m_CoefficientsX + 6);
+    //__m128d storedCoeffX5 = _mm_loadu_pd(m_CoefficientsX + 8);
+
+    ////Dot product
+    //__m128d dotProduct1 = _mm_dp_pd(storedFactor1, storedCoeffX1, 0x31);
+    //__m128d dotProduct2 = _mm_dp_pd(storedFactor2, storedCoeffX2, 0x31);
+    //__m128d dotProduct3 = _mm_dp_pd(storedFactor3, storedCoeffX3, 0x31);
+    //__m128d dotProduct4 = _mm_dp_pd(storedFactor4, storedCoeffX4, 0x31);
+    //__m128d dotProduct5 = _mm_dp_pd(storedFactor5, storedCoeffX5, 0x31);
+
+    ////Addition of the dot product results
+    //__m128d addition = _mm_add_pd(_mm_add_pd(dotProduct1, dotProduct2), _mm_add_pd(dotProduct3, _mm_add_pd(dotProduct4, dotProduct5)));
+
+    ////Move final result out
+    //*po_pXOut = _mm_cvtsd_f64(addition);
+
+    //__m128d storedCoeffY1 = _mm_loadu_pd(m_CoefficientsY);
+    //__m128d storedCoeffY2 = _mm_loadu_pd(m_CoefficientsY + 2);
+    //__m128d storedCoeffY3 = _mm_loadu_pd(m_CoefficientsY + 4);
+    //__m128d storedCoeffY4 = _mm_loadu_pd(m_CoefficientsY + 6);
+    //__m128d storedCoeffY5 = _mm_loadu_pd(m_CoefficientsY + 8);
+
+    ////Dot product
+    //dotProduct1 = _mm_dp_pd(storedFactor1, storedCoeffY1, 0x31);
+    //dotProduct2 = _mm_dp_pd(storedFactor2, storedCoeffY2, 0x31);
+    //dotProduct3 = _mm_dp_pd(storedFactor3, storedCoeffY3, 0x31);
+    //dotProduct4 = _mm_dp_pd(storedFactor4, storedCoeffY4, 0x31);
+    //dotProduct5 = _mm_dp_pd(storedFactor5, storedCoeffY5, 0x31);
+
+    ////Addition of the dot product results
+    //addition = _mm_add_pd(_mm_add_pd(dotProduct1, dotProduct2), _mm_add_pd(dotProduct3, _mm_add_pd(dotProduct4, dotProduct5)));
+
+    //*po_pYOut = _mm_cvtsd_f64(addition);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void HGFPolynomialModelAdapter::Copy (const HGFPolynomialModelAdapter& pi_rObj)
+void HGFPolynomialModelAdapter::Copy(const HGFPolynomialModelAdapter& pi_rObj)
     {
     m_StepX = pi_rObj.m_StepX;
     m_StepY = pi_rObj.m_StepY;
     m_ApplicationArea = pi_rObj.m_ApplicationArea;
     m_UsePolynomialForDirect = pi_rObj.m_UsePolynomialForDirect;
-    for(uint32_t i = 0; i < NUMBER_OF_COEFFICIENTS; i++)
+    for (uint32_t i = 0; i < NUMBER_OF_COEFFICIENTS; i++)
         {
         m_CoefficientsX[i] = pi_rObj.m_CoefficientsX[i];
         m_CoefficientsY[i] = pi_rObj.m_CoefficientsY[i];
@@ -336,7 +392,7 @@ void HGFPolynomialModelAdapter::Copy (const HGFPolynomialModelAdapter& pi_rObj)
 // This method allocates a copy of self. The caller is responsible for
 // the deletion of this object.
 //-----------------------------------------------------------------------------
-HGF2DTransfoModel* HGFPolynomialModelAdapter::Clone () const
+HGF2DTransfoModel* HGFPolynomialModelAdapter::Clone() const
     {
     HINVARIANTS;
 
@@ -347,7 +403,7 @@ HGF2DTransfoModel* HGFPolynomialModelAdapter::Clone () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void HGFPolynomialModelAdapter::Reverse ()
+void HGFPolynomialModelAdapter::Reverse()
     {
     HGF2DTransfoModelAdapter::Reverse();
     m_UsePolynomialForDirect = !m_UsePolynomialForDirect;
@@ -377,23 +433,10 @@ HFCMatrix<3, 3> HGFPolynomialModelAdapter::GetMatrix() const
 //+---------------+---------------+---------------+---------------+---------------+------
 void InitializeLinearAlgebraProblem(RowMajorMatrix& matrixX, RowMajorMatrix& vectorRightHandSideX,
                                     RowMajorMatrix& matrixY, RowMajorMatrix& vectorRightHandSideY, double* pTiePointsSrc,
-                                    double* pTiePointsDest, uint32_t numberOfPoints, bool reverse)
+                                    double* pTiePointsDest, uint32_t numberOfPoints)
     {
-    double* pPolyFunctionDomainPoints;
-    double* pPolyFunctionCodomainPoints;
-
-    if (reverse)
-        {
-        pPolyFunctionDomainPoints = pTiePointsDest;
-        pPolyFunctionCodomainPoints = pTiePointsSrc;
-        }
-    else
-        {
-        pPolyFunctionDomainPoints = pTiePointsSrc;
-        pPolyFunctionCodomainPoints = pTiePointsDest;
-        }
-
-
+    double* pPolyFunctionDomainPoints = pTiePointsSrc;
+    double* pPolyFunctionCodomainPoints = pTiePointsDest;
     double xDom;
     double yDom;
     double xCodom;
@@ -432,7 +475,7 @@ void InitializeLinearAlgebraProblem(RowMajorMatrix& matrixX, RowMajorMatrix& vec
 //  @param pi_StepX The sampling step used in X.
 //  @param pi_StepY The sampling step used in Y.
 // -----------------------------------------------------------------------------
- void HGFPolynomialModelAdapter::CalculatePolynomialCoefficients(const HGF2DShape& pi_rShape, double pi_StepX, double pi_StepY)
+void HGFPolynomialModelAdapter::CalculatePolynomialCoefficients(const HGF2DShape& pi_rShape, double pi_StepX, double pi_StepY)
     {
     // The extent of area must not be empty
     HPRECONDITION(pi_rShape.GetExtent().GetWidth() != 0.0);
@@ -443,7 +486,7 @@ void InitializeLinearAlgebraProblem(RowMajorMatrix& matrixX, RowMajorMatrix& vec
     HPRECONDITION(pi_StepY > 0.0);
 
     // Calculate the maximum number of tie points needed (some may be in the extent but out of the shape)
-    uint32_t maxNumberOfPoints = (uint32_t)(((pi_rShape.GetExtent().GetHeight() / pi_StepY) + 2) * ((pi_rShape.GetExtent().GetWidth() / pi_StepX) + 2));
+    uint32_t maxNumberOfPoints = (uint32_t) (((pi_rShape.GetExtent().GetHeight() / pi_StepY) + 2) * ((pi_rShape.GetExtent().GetWidth() / pi_StepX) + 2));
 
 
     // Allocate Tie Points
@@ -455,26 +498,32 @@ void InitializeLinearAlgebraProblem(RowMajorMatrix& matrixX, RowMajorMatrix& vec
 
     bool isShapeRectangle = pi_rShape.GetShapeType() == HGF2DRectangle::CLASS_ID;
     HGF2DLiteExtent shapeExtent = pi_rShape.GetExtent();
-    for (double currentY = shapeExtent.GetYMin() ; currentY < shapeExtent.GetYMax() ; currentY += pi_StepY)
+    for (double currentY = shapeExtent.GetYMin(); currentY < shapeExtent.GetYMax(); currentY += pi_StepY)
         {
-        for (double currentX = shapeExtent.GetXMin() ; currentX < shapeExtent.GetXMax() ; currentX += pi_StepX)
+        for (double currentX = shapeExtent.GetXMin(); currentX < shapeExtent.GetXMax(); currentX += pi_StepX)
             {
-            if(isShapeRectangle ||
-               pi_rShape.IsPointIn(HGF2DPosition(currentX, currentY))) // || pi_rShape.IsPointOn(HGF2DPosition(currentX, currentY)))  
+            if (isShapeRectangle || pi_rShape.IsPointIn(HGF2DPosition(currentX, currentY)))
                 {
-                StatusInt convertStatus = m_pAdaptedTransfoModel->ConvertInverse(currentX, currentY, &pTiePointsSrc[currentTiePointVal], &pTiePointsSrc[currentTiePointVal + 1]);
-                if(SUCCESS == convertStatus)
-                    {
-                    pTiePointsDest[currentTiePointVal] = currentX;
-                    pTiePointsDest[currentTiePointVal + 1] = currentY;
+                StatusInt convertStatus;
 
-                    currentTiePointVal += 2;
-                    effectiveNumberOfPoints++;
-                    }
+                if (m_UsePolynomialForDirect)
+                    convertStatus = m_pAdaptedTransfoModel->ConvertDirect(currentX, currentY, &pTiePointsDest[currentTiePointVal], &pTiePointsDest[currentTiePointVal + 1]);
+                else
+                    convertStatus = m_pAdaptedTransfoModel->ConvertInverse(currentX, currentY, &pTiePointsDest[currentTiePointVal], &pTiePointsDest[currentTiePointVal + 1]);
+
+                if (SUCCESS != convertStatus)
+                    continue;
+
+                pTiePointsSrc[currentTiePointVal] = currentX;
+                pTiePointsSrc[currentTiePointVal + 1] = currentY;
+
+                currentTiePointVal += 2;
+                effectiveNumberOfPoints++;
+
                 }
             }
         }
-    if(effectiveNumberOfPoints >= MINIMUM_NUMBER_OF_TIE_POINTS)
+    if (effectiveNumberOfPoints >= MINIMUM_NUMBER_OF_TIE_POINTS)
         m_EnoughTiePoints = true;
 
     // The problem of finding coefficients for the polynomial approximation function is split in two subproblems:
@@ -485,7 +534,7 @@ void InitializeLinearAlgebraProblem(RowMajorMatrix& matrixX, RowMajorMatrix& vec
     RowMajorMatrix vectorRightHandSideOverdeterminedY(effectiveNumberOfPoints, 1);
 
     InitializeLinearAlgebraProblem(matrixOverdeterminedX, vectorRightHandSideOverdeterminedX, matrixOverdeterminedY, vectorRightHandSideOverdeterminedY,
-                                   pTiePointsSrc, pTiePointsDest, effectiveNumberOfPoints, !m_UsePolynomialForDirect);
+                                   pTiePointsSrc, pTiePointsDest, effectiveNumberOfPoints);
 
     //Compute square matrix Ax and Ay
     size_t bufferSize = matrixOverdeterminedX.NumRows() * matrixOverdeterminedX.NumColumns();
@@ -550,52 +599,53 @@ StatusInt HGFPolynomialModelAdapter::GetMeanError(double* po_pMeanError, double*
     double stepX = m_StepX / 13;
     double stepY = m_StepY / 13;
 
-    double currentX;
-    double currentY;
-    double currentError;
-    double tempX;
-    double tempY;
-    double polyTransformedX;
-    double polyTransformedY;
-    StatusInt s;
-    for (currentY = m_ApplicationArea->GetExtent().GetYMin() ; currentY < m_ApplicationArea->GetExtent().GetYMax() ; currentY += stepY)
+    double currentX, currentY, currentError;
+    double tempX, tempY;
+    double polyTransformedX, polyTransformedY;
+
+    for (currentY = m_ApplicationArea->GetExtent().GetYMin(); currentY < m_ApplicationArea->GetExtent().GetYMax(); currentY += stepY)
         {
-        for (currentX = m_ApplicationArea->GetExtent().GetXMin() ; currentX < m_ApplicationArea->GetExtent().GetXMax() ; currentX += stepX)
+        for (currentX = m_ApplicationArea->GetExtent().GetXMin(); currentX < m_ApplicationArea->GetExtent().GetXMax(); currentX += stepX)
             {
-            if(m_ApplicationArea->IsPointIn(HGF2DPosition(currentX, currentY)))
+            if (m_ApplicationArea->IsPointIn(HGF2DPosition(currentX, currentY)))
                 {
+                StatusInt status = ERROR;
                 if (m_UsePolynomialForDirect)
                     {
-                    ConvertInverse(currentX, currentY, &tempX, &tempY);
-                    ConvertDirect(tempX, tempY, &polyTransformedX, &polyTransformedY);
-                    s = m_pAdaptedTransfoModel->ConvertDirect(tempX, tempY, &currentX, &currentY);
-                    currentError = sqrt(pow(polyTransformedX - currentX, 2) + pow(polyTransformedY - currentY, 2));
+                    ConvertDirect(currentX, currentY, &polyTransformedX, &polyTransformedY);
+                    status = m_pAdaptedTransfoModel->ConvertDirect(currentX, currentY, &tempX, &tempY);
                     }
                 else
                     {
                     ConvertInverse(currentX, currentY, &polyTransformedX, &polyTransformedY);
-                    s = m_pAdaptedTransfoModel->ConvertInverse(currentX, currentY, &tempX, &tempY);
-                    currentError = sqrt(pow(polyTransformedX - tempX, 2) + pow(polyTransformedY - tempY, 2));
+                    status = m_pAdaptedTransfoModel->ConvertInverse(currentX, currentY, &tempX, &tempY);
                     }
-                if(s != SUCCESS)
-                    return ERROR;
-                if(currentError < *po_pMinError)
+                if (SUCCESS == status)
                     {
-                    *po_pMinError = currentError;
-                    *po_pMinErrorPosition = HGF2DPosition(currentX, currentY);
+                    currentError = MAX(fabs(polyTransformedX - tempX), fabs(polyTransformedY - tempY));
+                    if (currentError < *po_pMinError)
+                        {
+                        *po_pMinError = currentError;
+                        *po_pMinErrorPosition = HGF2DPosition(currentX, currentY);
+                        }
+                    if (currentError > *po_pMaxError)
+                        {
+                        *po_pMaxError = currentError;
+                        *po_pMaxErrorPosition = HGF2DPosition(currentX, currentY);
+                        }
+                    sumOfError += currentError;
+                    ++numberOfTestedPoints;
                     }
-                if(currentError > *po_pMaxError)
-                    {
-                    *po_pMaxError = currentError;
-                    *po_pMaxErrorPosition = HGF2DPosition(currentX, currentY);
-                    }
-                sumOfError += currentError;
-                numberOfTestedPoints++;
                 }
             }
         }
-    *po_pMeanError = sumOfError / numberOfTestedPoints;
-    return SUCCESS;
+    if (numberOfTestedPoints > 0)
+        {
+        *po_pMeanError = sumOfError / numberOfTestedPoints;
+        return SUCCESS;
+        }
+    else
+        return ERROR;
     }
 
 
@@ -604,7 +654,7 @@ StatusInt HGFPolynomialModelAdapter::GetMeanError(double* po_pMeanError, double*
 // ComposeInverseWithDirectOf
 // Composes a new transformation model as a combination of self and given
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGFPolynomialModelAdapter::ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGFPolynomialModelAdapter::ComposeInverseWithDirectOf(const HGF2DTransfoModel& pi_rModel) const
     {
     // Recipient
     HFCPtr<HGF2DTransfoModel> pResultModel;
@@ -618,7 +668,7 @@ HFCPtr<HGF2DTransfoModel>  HGFPolynomialModelAdapter::ComposeInverseWithDirectOf
 
         pPolynomial->m_pAdaptedTransfoModel = pPolynomial->m_pAdaptedTransfoModel->ComposeInverseWithDirectOf(pi_rModel);
 
-        if(m_UsePolynomialForDirect)
+        if (m_UsePolynomialForDirect)
             {
             pi_rModel.GetStretchParams(&scaleFactorX, &scaleFactorY, &displacement);
 
@@ -654,7 +704,7 @@ HFCPtr<HGF2DTransfoModel>  HGFPolynomialModelAdapter::ComposeInverseWithDirectOf
 // returned. The major difference with the Compose() method, is that the order
 // of composition is reversed,
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGFPolynomialModelAdapter::ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGFPolynomialModelAdapter::ComposeYourself(const HGF2DTransfoModel& pi_rModel) const
     {
     // Recipient
     HFCPtr<HGF2DTransfoModel> pResultModel;
@@ -668,7 +718,7 @@ HFCPtr<HGF2DTransfoModel>  HGFPolynomialModelAdapter::ComposeYourself (const HGF
 
         pPolynomial->m_pAdaptedTransfoModel = pi_rModel.ComposeInverseWithDirectOf(*pPolynomial->m_pAdaptedTransfoModel);
 
-        if(m_UsePolynomialForDirect)
+        if (m_UsePolynomialForDirect)
             {
             pi_rModel.GetStretchParams(&scaleFactorX, &scaleFactorY, &displacement);
 
@@ -690,7 +740,7 @@ HFCPtr<HGF2DTransfoModel>  HGFPolynomialModelAdapter::ComposeYourself (const HGF
         {
         // Type is not known ... build a complex
         // To do this we call the ancester ComposeYourself
-        pResultModel = HGF2DTransfoModel::ComposeYourself (pi_rModel);
+        pResultModel = HGF2DTransfoModel::ComposeYourself(pi_rModel);
         }
 
     return (pResultModel);
@@ -753,7 +803,7 @@ HFCPtr<HGF2DTransfoModel>  HGFPolynomialModelAdapter::ComposeYourself (const HGF
 //--------------------------------------------------------------------------------------------------------------
 void HGFPolynomialModelAdapter::AddStretchBeforePolynomial(double pi_TranslationX, double pi_TranslationY, double pi_ScalingX, double pi_ScalingY)
     {
-    double temp [10] = { };
+    double temp[10] = {};
 
     double b_x = pi_ScalingX;
     double b2_x = b_x * b_x;
@@ -770,15 +820,15 @@ void HGFPolynomialModelAdapter::AddStretchBeforePolynomial(double pi_Translation
     double c3_y = c2_y * c_y;
 
     //Calculate new X coefficients
-    temp[0] = m_CoefficientsX[0]              + m_CoefficientsX[1] * c_x  + m_CoefficientsX[2] * c_y  + m_CoefficientsX[3] * c2_x
-            + m_CoefficientsX[4] * c_x * c_y  + m_CoefficientsX[5] * c2_y + m_CoefficientsX[6] * c3_x + m_CoefficientsX[7] * c2_x * c_y
-            + m_CoefficientsX[8] * c_x * c2_y + m_CoefficientsX[9] * c3_y;
+    temp[0] = m_CoefficientsX[0] + m_CoefficientsX[1] * c_x + m_CoefficientsX[2] * c_y + m_CoefficientsX[3] * c2_x
+        + m_CoefficientsX[4] * c_x * c_y + m_CoefficientsX[5] * c2_y + m_CoefficientsX[6] * c3_x + m_CoefficientsX[7] * c2_x * c_y
+        + m_CoefficientsX[8] * c_x * c2_y + m_CoefficientsX[9] * c3_y;
 
-    temp[1] = (m_CoefficientsX[1] * b_x)            + (2 * m_CoefficientsX[3] * b_x * c_x)       + (m_CoefficientsX[4] * b_x * c_y)
-            + (3 * m_CoefficientsX[6] * b_x * c2_x) + (2 * m_CoefficientsX[7] * b_x * c_x * c_y) + (m_CoefficientsX[8] * b_x * c2_y);
+    temp[1] = (m_CoefficientsX[1] * b_x) + (2 * m_CoefficientsX[3] * b_x * c_x) + (m_CoefficientsX[4] * b_x * c_y)
+        + (3 * m_CoefficientsX[6] * b_x * c2_x) + (2 * m_CoefficientsX[7] * b_x * c_x * c_y) + (m_CoefficientsX[8] * b_x * c2_y);
 
-    temp[2] = (m_CoefficientsX[2] * b_y)        + (m_CoefficientsX[4] * b_y * c_x)           + (2 * m_CoefficientsX[5] * b_y * c_y)
-            + (m_CoefficientsX[7] * b_y * c2_x) + (2 * m_CoefficientsX[8] * b_y * c_x * c_y) + (3 * m_CoefficientsX[9] * b_y * c2_y);
+    temp[2] = (m_CoefficientsX[2] * b_y) + (m_CoefficientsX[4] * b_y * c_x) + (2 * m_CoefficientsX[5] * b_y * c_y)
+        + (m_CoefficientsX[7] * b_y * c2_x) + (2 * m_CoefficientsX[8] * b_y * c_x * c_y) + (3 * m_CoefficientsX[9] * b_y * c2_y);
 
     temp[3] = (m_CoefficientsX[3] * b2_x) + (3 * m_CoefficientsX[6] * b2_x * c_x) + (m_CoefficientsX[7] * b2_x * c_y);
     temp[4] = (m_CoefficientsX[4] * b_x * b_y) + (2 * m_CoefficientsX[7] * b_x * b_y * c_x) + (2 * m_CoefficientsX[8] * b_x * b_y * c_y);
@@ -800,15 +850,15 @@ void HGFPolynomialModelAdapter::AddStretchBeforePolynomial(double pi_Translation
     m_CoefficientsX[9] = temp[9];
 
     //Calculate new Y coefficients
-    temp[0] = m_CoefficientsY[0]              + m_CoefficientsY[1] * c_x  + m_CoefficientsY[2] * c_y  + m_CoefficientsY[3] * c2_x
-            + m_CoefficientsY[4] * c_x * c_y  + m_CoefficientsY[5] * c2_y + m_CoefficientsY[6] * c3_x + m_CoefficientsY[7] * c2_x * c_y
-            + m_CoefficientsY[8] * c_x * c2_y + m_CoefficientsY[9] * c3_y;
+    temp[0] = m_CoefficientsY[0] + m_CoefficientsY[1] * c_x + m_CoefficientsY[2] * c_y + m_CoefficientsY[3] * c2_x
+        + m_CoefficientsY[4] * c_x * c_y + m_CoefficientsY[5] * c2_y + m_CoefficientsY[6] * c3_x + m_CoefficientsY[7] * c2_x * c_y
+        + m_CoefficientsY[8] * c_x * c2_y + m_CoefficientsY[9] * c3_y;
 
-    temp[1] = (m_CoefficientsY[1] * b_x)            + (2 * m_CoefficientsY[3] * b_x * c_x)       + (m_CoefficientsY[4] * b_x * c_y)
-            + (3 * m_CoefficientsY[6] * b_x * c2_x) + (2 * m_CoefficientsY[7] * b_x * c_x * c_y) + (m_CoefficientsY[8] * b_x * c2_y);
+    temp[1] = (m_CoefficientsY[1] * b_x) + (2 * m_CoefficientsY[3] * b_x * c_x) + (m_CoefficientsY[4] * b_x * c_y)
+        + (3 * m_CoefficientsY[6] * b_x * c2_x) + (2 * m_CoefficientsY[7] * b_x * c_x * c_y) + (m_CoefficientsY[8] * b_x * c2_y);
 
-    temp[2] = (m_CoefficientsY[2] * b_y)        + (m_CoefficientsY[4] * b_y * c_x)           + (2 * m_CoefficientsY[5] * b_y * c_y)
-            + (m_CoefficientsY[7] * b_y * c2_x) + (2 * m_CoefficientsY[8] * b_y * c_x * c_y) + (3 * m_CoefficientsY[9] * b_y * c2_y);
+    temp[2] = (m_CoefficientsY[2] * b_y) + (m_CoefficientsY[4] * b_y * c_x) + (2 * m_CoefficientsY[5] * b_y * c_y)
+        + (m_CoefficientsY[7] * b_y * c2_x) + (2 * m_CoefficientsY[8] * b_y * c_x * c_y) + (3 * m_CoefficientsY[9] * b_y * c2_y);
 
     temp[3] = (m_CoefficientsY[3] * b2_x) + (3 * m_CoefficientsY[6] * b2_x * c_x) + (m_CoefficientsY[7] * b2_x * c_y);
     temp[4] = (m_CoefficientsY[4] * b_x * b_y) + (2 * m_CoefficientsY[7] * b_x * b_y * c_x) + (2 * m_CoefficientsY[8] * b_x * b_y * c_y);
