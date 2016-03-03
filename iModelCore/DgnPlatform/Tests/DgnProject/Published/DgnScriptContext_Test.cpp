@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #ifndef BENTLEYCONFIG_NO_JAVASCRIPT
 #include "DgnHandlersTests.h"
+#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnScript.h>
 #include <DgnPlatform/GenericDomain.h>
@@ -203,7 +204,9 @@ struct DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHan
     {
     void _HandleScriptError(BeJsContextR, Category category, Utf8CP description, Utf8CP details) override
         {
-        FAIL() << (Utf8CP)Utf8PrintfString("JS error %x: %s , %s", (int)category, description, details);
+        //enum class Category {ReportedByScript, ParseError, Exception, Other};
+        static char const* s_errTypes[] = {"ReportedByScript", "ParseError", "Exception", "Other"};
+        FAIL() << (Utf8CP)Utf8PrintfString("JavaScript error %s: %s, %s", s_errTypes[(int)category], description, details);
         }
 
     void _HandleLogMessage(Utf8CP category, DgnPlatformLib::Host::ScriptAdmin::LoggingSeverity sev, Utf8CP msg) override
@@ -232,6 +235,10 @@ TEST_F(DgnScriptTest, RunScripts)
     DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, /*needBriefcase*/false);
     DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
+
+    auto status = BentleyApi::DPTest::DgnPlatformTestDomain::GetDomain().ImportSchema(*project);
+    ASSERT_TRUE(DgnDbStatus::Success == status);
+
     DgnModelPtr model = project->Models().GetModel(project->Models().QueryFirstModelId());
     model->FillModel();
     Json::Value parms = Json::objectValue;

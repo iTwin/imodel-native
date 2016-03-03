@@ -97,8 +97,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
         void InvalidateDecorations() {m_decorations=false;}
         void InvalidateQuery() {m_query=false;}
         void InvalidateScene() {m_scene=false; InvalidateQuery(); InvalidateDecorations();}
-        void InvalidateController() {m_controller=false; InvalidateScene();}
         void InvalidateRenderPlan() {m_renderPlan=false; InvalidateScene();}
+        void InvalidateController() {m_controller=false; InvalidateRenderPlan();}
         void InvalidateRotatePoint() {m_rotatePoint=false;}
         void InvalidateFirstDrawComplete() {m_firstDrawComplete=false;}
         void SetValidDecorations() {m_decorations=true;}
@@ -162,6 +162,7 @@ protected:
     DMap4d CalcNpcToView();
     void QueueDrawFrame();
     void CalcTargetNumElements(UpdatePlan const& plan, bool isForProgressive);
+    void CreateTerrain(UpdatePlan const& plan);
     StatusInt CreateScene(UpdatePlan const& plan);
     DGNPLATFORM_EXPORT void SaveViewUndo();
 
@@ -197,7 +198,7 @@ public:
     DGNPLATFORM_EXPORT StatusInt ComputeVisibleDepthRange (double& minDepth, double& maxDepth, bool ignoreViewExtent = false);
     DGNPLATFORM_EXPORT StatusInt ComputeViewRange(DRange3dR, FitViewParams& params) ;
     void SetNeedsRefresh() const {m_sync.InvalidateDecorations();}
-    void SetNeedsHeal() const {m_sync.InvalidateScene();}
+    void SetNeedsHeal() const {m_sync.InvalidateController();}
     DGNPLATFORM_EXPORT bool UseClipVolume(DgnModelCP) const;
     DGNPLATFORM_EXPORT static int GetDefaultIndexedLineWidth(int index);
     DGNPLATFORM_EXPORT static void OutputFrustumErrorMessage(ViewportStatus errorStatus);
@@ -205,9 +206,9 @@ public:
     bool Allow3dManipulations() const {return m_viewController->Allow3dManipulations();}
     void DrawToolGraphics(ViewContextR context, bool isPreUpdate);
     void SetViewCmdTargetCenter(DPoint3dCP newCenter);
-    DPoint3dCP GetViewCmdTargetCenter() {return !m_sync.IsValidRotatePoint() ? &m_viewCmdTargetCenter : nullptr;}
+    DPoint3dCP GetViewCmdTargetCenter() {return m_sync.IsValidRotatePoint() ? &m_viewCmdTargetCenter : nullptr;}
     Point2d GetScreenOrigin() const {return m_renderTarget->GetScreenOrigin();}
-    DGNVIEW_EXPORT double PixelsFromInches(double inches) const;
+    DGNPLATFORM_EXPORT double PixelsFromInches(double inches) const;
     DGNVIEW_EXPORT void ForceHeal();
     StatusInt HealViewport(UpdatePlan const&);
     bool GetNeedsHeal() {return m_sync.IsValidScene();}

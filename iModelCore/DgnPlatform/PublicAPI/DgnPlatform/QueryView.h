@@ -147,17 +147,17 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
         RangeQuery m_rangeQuery;
         DgnQueryViewR m_view;
         explicit NonScene(DgnQueryViewR view, DgnViewportCR, SceneMembers& scene);
-        virtual Completion _DoProgressive(SceneContext& context, WantShow&) override;
+        virtual Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
     };
 
 protected:
-    bool m_forceNewQuery = false;
     bool m_noQuery = false;
     mutable bool m_abortQuery = false;
     Utf8String m_viewSQL;
     double m_sceneLODSize = 6.0; 
     double m_nonSceneLODSize = 7.0; 
     SpecialElements m_special;
+    bset<Utf8String> m_copyrightMsgs;  // only keep unique ones
     ClipPrimitivePtr m_activeVolume;     //!< the active volume. If present, elements inside this volume may be treated specially
     mutable QueryResultsPtr m_results;
 
@@ -174,12 +174,14 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnUpdate(DgnViewportR vp, UpdatePlan const& plan) override;
     DGNPLATFORM_EXPORT virtual void _OnAttachedToViewport(DgnViewportR) override;
     DGNPLATFORM_EXPORT virtual void _CreateScene(SceneContextR) override;
+    DGNPLATFORM_EXPORT virtual void _CreateTerrain(TerrainContextR context) override;
     DGNPLATFORM_EXPORT virtual void _VisitAllElements(ViewContextR) override;
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR context) override;
     DGNPLATFORM_EXPORT virtual void _OnCategoryChange(bool singleEnabled) override;
     DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
     DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(struct FitContext&) override;
-    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _GetViewedExtents() const;
+    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _GetViewedExtents() const override final; // Always DgnDb::Units().GetProjectExtents() for QueryViews, don't allow override.
+    DGNPLATFORM_EXPORT virtual void _DrawDecorations(DecorateContextR) override;
 
 public:
     //! @param dgndb  The DgnDb for the view

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/MarkupProject_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -94,10 +94,10 @@ TEST(DgnMarkupProjectTest, CreateDgnMarkupProject)
     
     if (true) // Check that the Name property was set (in model creation) as expected and can be accessed as an ECProperty
         {
-        ECSqlSelectBuilder selectSql;
-        selectSql.Select("Name").From(*rdlClass, false).Where ("ECInstanceId=?");
+        Utf8String selectECSql("SELECT Name FROM ONLY ");
+        selectECSql.append(rdlClass->GetECSqlName()).append(" WHERE ECInstanceId=?");
         ECSqlStatement selectStmt;
-        selectStmt.Prepare (*mproject, selectSql.ToString ().c_str ());
+        selectStmt.Prepare (*mproject, selectECSql.c_str ());
         selectStmt.BindId (1, rdlModel->GetECInstanceId());
         ASSERT_TRUE (selectStmt.Step() == BE_SQLITE_ROW);
         ASSERT_STREQ( selectStmt.GetValueText(0), "foo" );
@@ -106,10 +106,10 @@ TEST(DgnMarkupProjectTest, CreateDgnMarkupProject)
     //TODO: ECSQL does not support updates yet. Once it does, this code needs to be adopted
     if (true) // Set the Description property
         {
-        ECSqlUpdateBuilder updateSql;
-        updateSql.Update(*rdlClass, false).Where("ECInstanceId=?").AddSet("Description", "'Some Description'");
+        Utf8String updateECSql("UPDATE ONLY ");
+        updateECSql.append(rdlClass->GetECSqlName()).append(" SET Description='Some Description' WHERE ECInstanceId=?");
         ECSqlStatement updateStmt;
-        updateStmt.Prepare (*mproject, updateSql.ToString ().c_str ());
+        updateStmt.Prepare (*mproject, updateECSql.c_str ());
         updateStmt.BindId (1, rdlModel->GetECInstanceId());
         ASSERT_TRUE (updateStmt.Step() == BE_SQLITE_DONE);
         mproject->SaveChanges();
@@ -117,10 +117,10 @@ TEST(DgnMarkupProjectTest, CreateDgnMarkupProject)
 
     if (true) // Check that the Description property was set as expected
         {
-        ECSqlSelectBuilder selectSql;
-        selectSql.Select("Description").From(*rdlClass, false).Where ("ECInstanceId=?");
+        Utf8String selectECSql("SELECT Description FROM ONLY ");
+        selectECSql.append(rdlClass->GetECSqlName()).append(" WHERE ECInstanceId=?");
         ECSqlStatement selectStmt;
-        selectStmt.Prepare (*mproject, selectSql.ToString ().c_str ());
+        selectStmt.Prepare (*mproject, selectECSql.c_str ());
         selectStmt.BindId (1, rdlModel->GetECInstanceId());
         ASSERT_TRUE (selectStmt.Step() == BE_SQLITE_ROW);
         ASSERT_STREQ( selectStmt.GetValueText(0), "Some Description" );

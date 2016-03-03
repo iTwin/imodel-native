@@ -211,10 +211,15 @@ TEST_F(RevisionTestFixture, Workflow)
     CreateDgnDb();
     m_testDb->SaveChanges("Created Initial Model");
 
+    m_testModel->FillModel();
+    int initialElementCount = (int) m_testModel->GetElements().size();
+
     // Create an initial revision
     DgnRevisionPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
     
+    Utf8String initialParentRevId = m_testDb->Revisions().GetParentRevisionId();
+
     // Create and save multiple revisions
     BackupTestFile();
     bvector<DgnRevisionPtr> revisions;
@@ -239,6 +244,26 @@ TEST_F(RevisionTestFixture, Workflow)
     // Merge all the saved revisions
     RevisionStatus status = m_testDb->Revisions().MergeRevisions(revisions);
     ASSERT_TRUE(status == RevisionStatus::Success);
+
+    // Check the updated element count
+    m_testModel->FillModel();
+    int mergedElementCount = (int) m_testModel->GetElements().size();
+    int expectedElementCount = dimension * dimension * numRevisions + initialElementCount;
+    ASSERT_EQ(expectedElementCount, mergedElementCount);
+
+    // Check the updated revision id
+    Utf8String mergedParentRevId = m_testDb->Revisions().GetParentRevisionId();
+    ASSERT_TRUE(mergedParentRevId != initialParentRevId);
+
+    // Abandon changes, and test that the parent revision and elements do not change
+    m_testDb->AbandonChanges();
+    
+    m_testModel->FillModel();
+    int abandonedElementCount = (int) m_testModel->GetElements().size();
+    ASSERT_TRUE(abandonedElementCount == mergedElementCount);
+
+    Utf8String newParentRevId = m_testDb->Revisions().GetParentRevisionId();
+    ASSERT_TRUE(newParentRevId == mergedParentRevId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -342,7 +367,7 @@ void RevisionTestFixture::ExtractCodesFromRevision(DgnCodeSet& assigned, CodeSet
     DgnRevisionPtr rev = m_testDb->Revisions().StartCreateRevision();
     BeAssert(rev.IsValid());
 
-    ChangeStreamFileReader stream(rev->GetChangeStreamFile());
+    ChangeStreamFileReader stream(rev->GetChangeStreamFile(), *m_testDb);
     DgnChangeSummary summary(*m_testDb);
     EXPECT_EQ(SUCCESS, summary.FromChangeSet(stream));
     summary.GetCodes(assigned, discarded);

@@ -212,9 +212,8 @@ DbResult DgnDb::OpenParams::_DoUpgrade(DgnDbR project, DgnVersion& version) cons
             }
         }
 
-    BeAssert(false); // if no upgrade code necessary, add an upgrader that does nothing
-    version = getCurrentSchemaVerion();
 #endif
+    version = getCurrentSchemaVerion();
     return  BE_SQLITE_OK;
     }
 

@@ -19,6 +19,8 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct DgnRevision : RefCountedBase
 {
+    friend struct TxnManager;
+
     //! Options for additional information to include in a DgnRevision
     enum class Include
     {
@@ -122,6 +124,7 @@ ENUM_IS_FLAGS(DgnRevision::Include);
 struct EXPORT_VTABLE_ATTRIBUTE ChangeStreamFileReader : BeSQLite::ChangeStream
 {
 private:
+    DgnDbCR m_dgndb; // Used only for debugging
     bvector<BeFileName> m_pathnames;
 
     BeFile m_currentFile;
@@ -140,8 +143,8 @@ private:
     DGNPLATFORM_EXPORT virtual BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause clause, BeSQLite::Changes::Change iter);
 
 public:
-    ChangeStreamFileReader(bvector<BeFileName> pathnames) : m_pathnames(pathnames) {}
-    ChangeStreamFileReader(BeFileNameCR pathname) { m_pathnames.push_back(pathname); }
+    ChangeStreamFileReader(bvector<BeFileName> pathnames, DgnDbCR dgnDb) : m_pathnames(pathnames), m_dgndb(dgnDb) {}
+    ChangeStreamFileReader(BeFileNameCR pathname, DgnDbCR dgnDb) : m_dgndb(dgnDb) { m_pathnames.push_back(pathname); }
     ~ChangeStreamFileReader() {}
 };
 
@@ -166,7 +169,7 @@ private:
 
     RevisionStatus GroupChanges(BeSQLite::ChangeGroup& changeGroup) const;
     DgnRevisionPtr CreateRevisionObject(RevisionStatus* outStatus, BeSQLite::ChangeGroup& changeGroup, DgnRevision::Include include);
-    static RevisionStatus WriteChangesToFile(BeFileNameCR pathname, BeSQLite::ChangeGroup& changeGroup);
+    RevisionStatus WriteChangesToFile(BeFileNameCR pathname, BeSQLite::ChangeGroup& changeGroup);
 
 public:
     //! Constructor

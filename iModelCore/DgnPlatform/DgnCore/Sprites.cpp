@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/Sprites.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -12,8 +12,8 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpriteLocation::SpriteLocation()
     {
-    m_viewport = NULL;
-    m_sprite   = NULL;
+    m_viewport = nullptr;
+    m_sprite   = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -33,9 +33,9 @@ void SpriteLocation::DecorateViewport(DecorateContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    SpriteLocation::Activate(ISpriteP sprite, DgnViewportP viewport, DPoint3dCR location, int transparency)
+void SpriteLocation::Activate(ISpriteP sprite, DgnViewportP viewport, DPoint3dCR location, int transparency)
     {
-    if (NULL == sprite || NULL == viewport)
+    if (nullptr == sprite || nullptr == viewport)
         return;
 
     viewport->SetNeedsRefresh();
@@ -59,9 +59,9 @@ void SpriteLocation::Deactivate()
         return;
 
     m_viewport->SetNeedsRefresh();
-    m_viewport = NULL;
+    m_viewport = nullptr;
     m_sprite->Release();
-    m_sprite   = NULL;
+    m_sprite = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -74,7 +74,7 @@ StaticSprite::StaticSprite(Utf8CP nameSpace, Utf8CP spriteName) : m_namespace(na
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  08/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ISpriteP        StaticSprite::GetISpriteP ()
+ISpriteP StaticSprite::GetISpriteP()
     {
     if (m_sprite.IsNull())
         {
@@ -121,12 +121,12 @@ void initKeypointSprites()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-ISpriteP        SnapContext::GetSnapSprite(SnapMode snapMode)
+ISpriteP SnapContext::GetSnapSprite(SnapMode snapMode)
     {
     KeypointType    keypointType = GetSnapKeypointType(snapMode);
 
     if (KEYPOINT_TYPE_Unknown <= keypointType)
-        return NULL;
+        return nullptr;
 
     initKeypointSprites();
     return s_keypointSprites[keypointType]->GetISpriteP ();
@@ -168,16 +168,16 @@ RgbaSpritePtr RgbaSprite::CreateFromPngBuffer(Byte const*inputBuffer, size_t num
 //---------------------------------------------------------------------------------------
 void RgbaSprite::PopulateRgbaSpriteFromPngBuffer(Byte const*inputBuffer, size_t numberBytes)
     {
-    ImageUtilities::RgbImageInfo info;
-    if (BSISUCCESS != ImageUtilities::ReadImageFromPngBuffer(m_rgbaBuffer, info, inputBuffer, numberBytes) || !info.hasAlpha)
+    RgbImageInfo info;
+    if (BSISUCCESS != info.ReadImageFromPngBuffer(m_rgbaBuffer, inputBuffer, numberBytes) || !info.m_hasAlpha)
         {
         m_isLoaded = false;
         m_rgbaBuffer.Clear();
         return;
         }
 
-    m_size.x = (int)info.width;
-    m_size.y = (int)info.height;
+    m_size.x = (int)info.m_width;
+    m_size.y = (int)info.m_height;
     m_isLoaded = true;
     }
 
@@ -224,30 +224,7 @@ void NamedSprite::_LoadSprite()
         pngFile.ReadEntireFile(pngData);
 
         PopulateRgbaSpriteFromPngBuffer(&pngData[0], pngData.size());
-        return;
         }
-
-#if defined (LOADING_FROM_DATABASE)
-    //  Otherwise treat it as a database
-    BeSQLite::Db  pngDB;
-
-    Db::OpenParams params(Db::OPEN_Readonly);
-    params.SetRawSQLite();
-
-    Utf8String  pngPathUtf8 = pngPath.GetNameUtf8();
-    pngDB.OpenBeSQLiteDb(pngPathUtf8.c_str(), params);
-
-    BeSQLite::SqlPrintfString  selectString("SELECT Value from Png_icons where Namespace='%s' And IconName='%s'", "DgnCore", m_spriteName.c_str());
-    Statement stmt;
-    stmt.Prepare(pngDB, selectString.GetUtf8CP());
-
-    stmt.Step();
-
-    int blobSize = (size_t)stmt.GetColumnBytes(0);
-    BeAssert(blobSize > 0);
-    Byte const* blobBytes = (Byte const*)stmt.GetValueBlob(0);
-    CreateRgbaSpriteFromPngBuffer(blobBytes], (size_t)blobSize);
-#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -255,13 +232,6 @@ void NamedSprite::_LoadSprite()
 //---------------------------------------------------------------------------------------
 RgbaSprite::~RgbaSprite()
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    //  Destructor for statics called in the main thread. If the main thread is shutting down
-    //  there is no need to do anything.
-    if (DgnPlatformLib::QueryHost() != nullptr)
-        // inform QVision that memory address being used as cached texture id no longer valid...
-        T_HOST.GetGraphicsAdmin()._DeleteTexture((uintptr_t) this);
-#endif
     }
 
 //---------------------------------------------------------------------------------------

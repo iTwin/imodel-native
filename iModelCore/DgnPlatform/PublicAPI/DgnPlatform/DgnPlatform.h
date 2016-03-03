@@ -31,14 +31,6 @@
 #define USING_NAMESPACE_BENTLEY_DGNPLATFORM using namespace BentleyApi::Dgn; // for backwards compatibility, do not use
 #define USING_NAMESPACE_BENTLEY_DGN         using namespace BentleyApi::Dgn;
 #define USING_NAMESPACE_BENTLEY_RENDER      using namespace BentleyApi::Dgn::Render;
-#define GLOBAL_TYPEDEF1(_sName_,_name_,structunion) \
-    structunion _sName_; \
-    namespace BENTLEY_NAMESPACE_NAME {\
-    typedef structunion _sName_*          _name_##P, &_name_##R;  \
-    typedef structunion _sName_ const*    _name_##CP; \
-    typedef structunion _sName_ const&    _name_##CR;}
-
-#define GLOBAL_TYPEDEF(_sName_,_name_) GLOBAL_TYPEDEF1(_sName_,_name_,struct)
 
 #define DGNPLATFORM_TYPEDEFS(_name_) \
     BEGIN_BENTLEY_DGN_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_DGN_NAMESPACE
@@ -58,6 +50,7 @@ BENTLEY_NAMESPACE_TYPEDEFS(BeJsContext)
 BENTLEY_NAMESPACE_TYPEDEFS(BeJsEnvironment)
 
 DGNPLATFORM_TYPEDEFS(AnnotationElement)
+DGNPLATFORM_TYPEDEFS(AnnotationElement2d)
 DGNPLATFORM_TYPEDEFS(AxisAlignedBox2d)
 DGNPLATFORM_TYPEDEFS(AxisAlignedBox3d)
 DGNPLATFORM_TYPEDEFS(BoundingBox2d)
@@ -95,6 +88,7 @@ DGNPLATFORM_TYPEDEFS(DgnMarkupProject)
 DGNPLATFORM_TYPEDEFS(DgnModel)
 DGNPLATFORM_TYPEDEFS(DgnMouseWheelEvent)
 DGNPLATFORM_TYPEDEFS(DgnProgressMeter)
+DGNPLATFORM_TYPEDEFS(DgnQueryView)
 DGNPLATFORM_TYPEDEFS(DgnRevision)
 DGNPLATFORM_TYPEDEFS(DgnRscFont)
 DGNPLATFORM_TYPEDEFS(DgnScript)
@@ -104,8 +98,7 @@ DGNPLATFORM_TYPEDEFS(DgnViewport)
 DGNPLATFORM_TYPEDEFS(DictionaryElement)
 DGNPLATFORM_TYPEDEFS(DisplayStyle)
 DGNPLATFORM_TYPEDEFS(DisplayStyleFlags)
-DGNPLATFORM_TYPEDEFS (AnnotationElement2d)
-DGNPLATFORM_TYPEDEFS (DrawingGraphic)
+DGNPLATFORM_TYPEDEFS(DrawingGraphic)
 DGNPLATFORM_TYPEDEFS(DrawingModel)
 DGNPLATFORM_TYPEDEFS(DrawingViewDefinition)
 DGNPLATFORM_TYPEDEFS(DropGeometry)
@@ -164,7 +157,6 @@ DGNPLATFORM_TYPEDEFS(PhysicalViewDefinition)
 DGNPLATFORM_TYPEDEFS(Placement2d)
 DGNPLATFORM_TYPEDEFS(Placement3d)
 DGNPLATFORM_TYPEDEFS(PropertyContext)
-DGNPLATFORM_TYPEDEFS(DgnQueryView)
 DGNPLATFORM_TYPEDEFS(RedlineModel)
 DGNPLATFORM_TYPEDEFS(RedlineViewController)
 DGNPLATFORM_TYPEDEFS(RegionGraphicsContext)
@@ -185,6 +177,7 @@ DGNPLATFORM_TYPEDEFS(SpatialRedlineViewController)
 DGNPLATFORM_TYPEDEFS(SpatialViewController)
 DGNPLATFORM_TYPEDEFS(SpatialViewDefinition)
 DGNPLATFORM_TYPEDEFS(SystemElement)
+DGNPLATFORM_TYPEDEFS(TerrainContext)
 DGNPLATFORM_TYPEDEFS(TextString)
 DGNPLATFORM_TYPEDEFS(TextStringStyle)
 DGNPLATFORM_TYPEDEFS(TransformClipStack)
@@ -239,12 +232,8 @@ DGNPLATFORM_REF_COUNTED_PTR(TxnManager)
 DGNPLATFORM_REF_COUNTED_PTR(ViewController)
 DGNPLATFORM_REF_COUNTED_PTR(ViewDefinition)
 
-BEGIN_BENTLEY_DISPLAY_NAMESPACE
-    DEFINE_POINTER_SUFFIX_TYPEDEFS(Device)
-    DEFINE_REF_COUNTED_PTR(Device)
-END_BENTLEY_DISPLAY_NAMESPACE
-
 BEGIN_BENTLEY_RENDER_NAMESPACE
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Device)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryParams)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(GradientSymb)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Graphic)
@@ -264,7 +253,9 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Target)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Task)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Texture)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Window)
 
+    DEFINE_REF_COUNTED_PTR(Device)
     DEFINE_REF_COUNTED_PTR(GradientSymb)
     DEFINE_REF_COUNTED_PTR(Graphic)
     DEFINE_REF_COUNTED_PTR(GraphicList)
@@ -276,6 +267,7 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_REF_COUNTED_PTR(Target)
     DEFINE_REF_COUNTED_PTR(Task)
     DEFINE_REF_COUNTED_PTR(Texture)
+    DEFINE_REF_COUNTED_PTR(Window)
 END_BENTLEY_RENDER_NAMESPACE
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -829,7 +821,9 @@ enum class ClipVolumePass
 enum class DrawPurpose
 {
     NotSpecified = 0,
+    CreateTerrain,
     CreateScene,
+    Progressive,
     Plot,
     Pick,
     CaptureGeometry,
@@ -966,19 +960,6 @@ public:
 // Used for verifying published tests in DgnPlatformTest are using published headers. DO NOT REMOVE.
 #define __DGNPLATFORM_NON_PUBLISHED_HEADER__ 1
 /*__PUBLISH_SECTION_START__*/
-
-/*=================================================================================**//**
-* Interface to be adopted by a class that wants to supply a copyright message that must
-* be display in a viewport.
-* @bsiclass                                                     Sam.Wilson      10/15
-+===============+===============+===============+===============+===============+======*/
-struct CopyrightSupplier
-    {
-    //! Return the copyright message to display in the specified viewport
-    //! @param vp   The viewport that is being displayed
-    //! @return a copyright message to display or an empty string to display nothing
-    virtual Utf8String _GetCopyrightMessage(DgnViewportCR vp) = 0;
-    };
 
 
 /** @endcond */

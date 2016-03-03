@@ -387,34 +387,69 @@ public:
 };
 
 //=======================================================================================
-// @bsiclass                                                    Keith.Bentley   10/15
+// @bsiclass                                                    Keith.Bentley   02/16
 //=======================================================================================
-struct SceneContext : RenderContext
+struct RenderListContext : RenderContext
 {
     DEFINE_T_SUPER(RenderContext);
     friend struct DgnQueryView;
 
-private:
-    bool m_wantStroke = true;
+protected:
     int32_t m_checkStopInterval;
     int32_t m_checkStopElementSkip = 10;
     int32_t m_checkStopElementCount = 0;
     uint64_t m_nextCheckStop;
-    Render::GraphicListR m_scene;
+    Render::GraphicListR m_list;
     UpdateAbort m_abortReason = UpdateAbort::None;
     UpdatePlan const& m_plan;
-
     void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
     bool _CheckStop() override;
     int AccumulateMotion();
     bool DoCheckStop();
+
+public:    
+    UpdatePlan const& GetUpdatePlan() const {return m_plan;}
+    RenderListContext(DgnViewportR vp, DrawPurpose purpose, Render::GraphicListR list, UpdatePlan const& plan) : RenderContext(vp, purpose), m_list(list), m_plan(plan) {}
+};
+
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   10/15
+//=======================================================================================
+struct SceneContext : RenderListContext
+{
+    DEFINE_T_SUPER(RenderListContext);
+    friend struct DgnQueryView;
+
+private:
+    bool m_wantStroke = true;
+    bool _CheckStop() override;
     void SetNoStroking(bool val) {m_wantStroke=!val;}
     Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize) override {return m_wantStroke ? T_Super::_StrokeGeometry(source,pixelSize) : nullptr;}
     void EnableCheckStop(int stopInterval, int const* motionTolerance);
 
 public:
     SceneContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan);
-    UpdatePlan const& GetUpdatePlan() const {return m_plan;}
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   10/15
+//=======================================================================================
+struct ProgressiveContext : RenderListContext
+{
+    DEFINE_T_SUPER(RenderListContext);
+public:
+    ProgressiveContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan) : RenderListContext(vp, DrawPurpose::Progressive, scene, plan) {}
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   02/16
+//=======================================================================================
+struct TerrainContext : RenderListContext
+{
+    DEFINE_T_SUPER(RenderListContext);
+public:
+    TerrainContext(DgnViewportR vp, Render::GraphicListR terrain, UpdatePlan const& plan) : RenderListContext(vp, DrawPurpose::CreateTerrain, terrain, plan) {}
 };
 
 //=======================================================================================

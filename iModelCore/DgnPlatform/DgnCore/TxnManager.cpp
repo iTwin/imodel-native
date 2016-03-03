@@ -494,19 +494,19 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
         changeset.ConcatenateWith(indirectChanges); // combine direct and indirect changes into a single changeset
         }
 
-    if (BSISUCCESS != status)
+    if (SUCCESS != status)
         {
         LOG.errorv("Cancelling txn due to fatal validation error.");
         OnEndValidate();
         return CancelChanges(changeset); // roll back entire txn
-        }
-
-    // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
-    T_HOST.GetTxnAdmin()._OnCommit(*this);
+        }   
 
     DbResult result = SaveCurrentChange(changeset, operation); // save changeset into DgnDb itself, along with the description of the operation we're performing
     if (result != BE_SQLITE_DONE)
         return OnCommitStatus::Abort;
+
+    // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
+    T_HOST.GetTxnAdmin()._OnCommit(*this);
 
     m_dgndb.Revisions().UpdateInitialParentRevisionId(); // All new revisions are now based on the latest parent revision id
 
@@ -518,7 +518,7 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
  * Merge changes from a changeStream that originated in an external repository
  * @bsimethod                                Ramanujam.Raman                    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TxnManager::MergeChanges(ChangeStream& changeStream)
+RevisionStatus TxnManager::MergeRevisionChanges(ChangeStream& changeStream, Utf8StringCR newParentRevisionId)
     {
     BeAssert(!InDynamicTxn());
 
@@ -527,16 +527,18 @@ BentleyStatus TxnManager::MergeChanges(ChangeStream& changeStream)
     if (result != BE_SQLITE_OK)
         {
         BeAssert(false);
-        return ERROR;
+        return RevisionStatus::MergeError;
         }
     m_dgndb.Txns().EnableTracking(true);
-        
+
     OnBeginValidate();
 
     Changes changes(changeStream);
     AddChanges(changes);
 
-    BentleyStatus status = PropagateChanges();   // Propagate to generate indirect changes
+    RevisionStatus status = RevisionStatus::Success;
+    if (SUCCESS != PropagateChanges())
+        status = RevisionStatus::MergePropagationError;
 
     UndoChangeSet indirectChanges;
     if (HasChanges())
@@ -544,24 +546,71 @@ BentleyStatus TxnManager::MergeChanges(ChangeStream& changeStream)
         indirectChanges.FromChangeTrack(*this);
         Restart();
 
-        if (SUCCESS == status)
+        if (status == RevisionStatus::Success)
             {
-            // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
-            T_HOST.GetTxnAdmin()._OnCommit(*this);
+            T_HOST.GetTxnAdmin()._OnCommit(*this); // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
 
             Utf8String mergeComment = DgnCoreL10N::GetString(DgnCoreL10N::REVISION_Merge());
-
             DbResult result = SaveCurrentChange(indirectChanges, mergeComment.c_str());
             if (BE_SQLITE_DONE != result)
-                status = ERROR;
+                {
+                BeAssert(false);
+                status = RevisionStatus::SQLiteError;
+                }
+            }
+        }
+
+    if (status == RevisionStatus::Success)
+        {
+        status = m_dgndb.Revisions().SetParentRevisionId(newParentRevisionId);
+
+        if (status == RevisionStatus::Success)
+            {
+            OnEndValidate();
+
+            DbResult result = m_dgndb.SaveChanges(""); 
+            // Note: All that the above operation does is to COMMIT the current Txn and BEGIN a new one. 
+            // The user should NOT be able to revert the revision id by a call to AbandonChanges() anymore, since
+            // the merged changes are lost after this routine and cannot be used for change propagation anymore. 
+            if (BE_SQLITE_OK != result)
+                {
+                BeAssert(false);
+                status = RevisionStatus::SQLiteError;
+                }
+            }
+        }
+        
+    if (status != RevisionStatus::Success)
+        {
+        // Ensure the entire transaction is rolled back to before the merge, and the txn tables are notified to
+        // appropriately revert their in-memory state.
+        LOG.errorv("Could not propagate changes after merge due to validation errors.");
+
+        OnEndValidate();
+
+        // Note: CancelChanges() requires an iterator over the inverse of the changes notified through AddChanges(). 
+        // The change stream can be inverted only by holding the inverse either in memory, or as a new file on disk. 
+        // Since this is an unlikely error condition, we just hold the changes in memory and not worry about the 
+        // memory overhead. We can always revisit if this proves to be too expensive. 
+        ChangeGroup undoChangeGroup;
+        changeStream.ToChangeGroup(undoChangeGroup);
+        if (indirectChanges.IsValid())
+            {
+            DbResult locResult = undoChangeGroup.AddChanges(indirectChanges.GetSize(), indirectChanges.GetData());
+            BeAssert(locResult == BE_SQLITE_OK);
+            UNUSED_VARIABLE(locResult);
             }
 
-        if (SUCCESS != status)
-            CancelChanges(indirectChanges);
+        UndoChangeSet undoChangeSet;
+        undoChangeSet.FromChangeGroup(undoChangeGroup);
+        ChangeTracker::OnCommitStatus cancelStatus = CancelChanges(undoChangeSet); // roll back entire txn
+        BeAssert(cancelStatus == ChangeTracker::OnCommitStatus::Completed);
+        UNUSED_VARIABLE(cancelStatus);
+
+        return status;
         }
-    
-    OnEndValidate();
-    return status;
+
+    return RevisionStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -894,7 +943,6 @@ DgnDbStatus TxnManager::ReverseAll(bool prompt)
 
     if (prompt && !T_HOST.GetTxnAdmin()._OnPromptReverseAll())
         {
-        T_HOST.GetTxnAdmin()._RestartTool();
         return DgnDbStatus::NothingToUndo;
         }
 
@@ -1263,9 +1311,22 @@ void dgn_TxnTable::ElementDep::_OnValidated()
 void dgn_TxnTable::ElementDep::UpdateSummary(Changes::Change change, ChangeType changeType)
     {
     m_changes = true;
-    Changes::Change::Stage stage = (ChangeType::Insert == changeType) ? Changes::Change::Stage::New : Changes::Change::Stage::Old;
-    ECInstanceId instanceId(change.GetValue(0, stage).GetValueInt64()); // primary key is column 0
-    AddDependency(instanceId, changeType);
+    
+    if (ChangeType::Delete == changeType)
+        {
+        int64_t relid = change.GetOldValue(0).GetValueInt64();
+        int64_t relclsid = change.GetOldValue(1).GetValueInt64();
+        int64_t srcelemid = change.GetOldValue(2).GetValueInt64();
+        int64_t tgtelemid = change.GetOldValue(3).GetValueInt64();
+        BeSQLite::EC::ECInstanceKey relkey((ECN::ECClassId)relclsid, (BeSQLite::EC::ECInstanceId)relid);
+        m_deletedRels.push_back(DepRelData(relkey, DgnElementId((uint64_t)srcelemid), DgnElementId((uint64_t)tgtelemid)));
+        }
+    else
+        {
+        Changes::Change::Stage stage = (ChangeType::Insert == changeType) ? Changes::Change::Stage::New : Changes::Change::Stage::Old;
+        ECInstanceId instanceId(change.GetValue(0, stage).GetValueInt64()); // primary key is column 0
+        AddDependency(instanceId, changeType);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1339,7 +1400,18 @@ void dgn_TxnTable::Element::AddChange(Changes::Change const& change, ChangeType 
         modelId = m_txnMgr.GetDgnDb().Elements().QueryModelId(elementId);
         }
     else
-        modelId = DgnModelId(change.GetValue(2, stage).GetValueUInt64());   // assumes DgnModelId is column 2
+        {
+        static int s_modelIdColIdx = -1;
+        if (s_modelIdColIdx == -1)
+            {
+            bvector<Utf8String> columnNames;
+            m_txnMgr.GetDgnDb().GetColumns(columnNames, DGN_TABLE(DGN_CLASSNAME_Element));
+            auto i = std::find(columnNames.begin(), columnNames.end(), "ModelId");
+            BeAssert(i != columnNames.end());
+            s_modelIdColIdx = (int)std::distance(columnNames.begin(), i);
+            }
+        modelId = DgnModelId(change.GetValue(s_modelIdColIdx, stage).GetValueUInt64());
+        }
 
     AddElement(elementId, modelId, changeType);
     }
