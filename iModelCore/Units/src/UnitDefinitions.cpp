@@ -735,34 +735,40 @@ void AddPressure(UnitRegistry& reg)
     // TODO: See if this is equal to another unit here.
     reg.AddUnit(PRESSURE, SI, "NEWTON_PER_MILLIMETRE_SQUARED", "N*MM(-2)");
 
-
     reg.AddUnit(PRESSURE, SI, "HECTOPASCAL", "[HECTO]*PA"); //, BISQSecUom);
+
     reg.AddUnit(PRESSURE, SI, "KILOPASCAL", "[KILO]*PA"); //, BISQSecUom);
     reg.AddUnit(PRESSURE, SI, "KILOPASCAL_GAUGE", "[KILO]*PA", 1, -101325e-3); // TODO: Use constant for this
+
     reg.AddUnit(PRESSURE, SI, "MEGAPASCAL", "[MEGA]*PA");
     reg.AddUnit(PRESSURE, SI, "MEGAPASCAL_GAUGE", "[MEGA]*PA", 1, -101325e-6); // TODO: Use constant for this
 
     unit = reg.AddUnit(PRESSURE, INTERNATIONAL, "AT", "KGF*CM(-2)");  // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
     reg.AddSynonym(unit, "ATMOSPHERE_TECHNIAL");
     reg.AddSynonym(unit, "KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED");
-    unit = reg.AddUnit(PRESSURE, INDUSTRIAL, "AT_GAUGE", "AT", 1.0, -1.0332274528);
+
+    unit = reg.AddUnit(PRESSURE, INDUSTRIAL, "AT_GAUGE", "AT", 1.0, -1.0332274527998859); // TODO: double check, used 101325 PA -> AT conversion
     reg.AddSynonym(unit, "KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED_GAUGE");
 
     unit = reg.AddUnit(PRESSURE, INTERNATIONAL, "KGF/SQ.M", "KGF*M(-2)");
     reg.AddSynonym(unit, "KILOGRAM_FORCE_PER_METRE_SQUARED");
+
     unit = reg.AddUnit(PRESSURE, SI, "ATM", "PA", 101325);  // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
     reg.AddSynonym(unit, "ATMOSPHERE");
+
     reg.AddUnit(PRESSURE, SI, "BAR", "PA", 1.0e5); //, BISQNoDescript); //, BISQSecUom);
-    reg.AddUnit(PRESSURE, INDUSTRIAL, "BAR_GAUGE", "PA", 1.0e5, -1); //, BISQNoDescript); //, BISQSecUom);
+    reg.AddUnit(PRESSURE, INDUSTRIAL, "BAR_GAUGE", "PA", 1.0e5, -1.01325); //, BISQNoDescript); //, BISQSecUom);
+
     unit = reg.AddUnit(PRESSURE, SI, "MBAR", "[MILLI]*BAR");
     reg.AddSynonym(unit, "MILLIBAR");
+
     reg.AddUnit(PRESSURE, CGS, "BARYE", "PA", 0.1); //, BISQSecUom);   // 1.0 dyn/sq.cm
 
 
     unit = reg.AddUnit(PRESSURE, USCUSTOM, "PSI", "LBF*IN(-2)");
     reg.AddSynonym(unit, "POUND_FORCE_PER_INCH_SQUARED");
 
-    unit = reg.AddUnit(PRESSURE, USCUSTOM, "PSIG", "LBF*IN(-2)", 1, -14.6959); // TODO: Get reference for the offset
+    unit = reg.AddUnit(PRESSURE, USCUSTOM, "PSIG", "LBF*IN(-2)", 1, -14.695948775513449); // TODO: double check, used 101325 PA -> PSI conversion
     reg.AddSynonym(unit, "POUND_FORCE_PER_INCH_SQUARED_GAUGE");
 
     unit = reg.AddUnit(PRESSURE, USCUSTOM, "KSI", "[KILO]*LBF*IN(-2)");

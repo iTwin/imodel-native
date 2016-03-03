@@ -74,6 +74,18 @@ struct UnitsTests : UnitsTestFixture
         return convertedVal;
         }
     };
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Chris.Tartamella     02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+template<class T> typename std::enable_if<!std::numeric_limits<T>::is_integer, bool>::type
+static almost_equal(const T x, const T y, int ulp)
+    {
+    // the machine epsilon has to be scaled to the magnitude of the values used
+    // and multiplied by the desired precision in ULPs (units in the last place)
+    return std::abs(x - y) < std::numeric_limits<T>::epsilon() * std::abs(x + y) * ulp
+        // unless the result is subnormal
+        || std::abs(x - y) < std::numeric_limits<T>::min();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsiclass                                     Basanta.Kharel                 12/2015
@@ -112,7 +124,8 @@ bool UnitsTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double
 
     //double convertedVal = q->Value(targetUnitName);
     PERFORMANCELOG.debugv("Converted %s to %s.  Expected: %lf  Actual: %lf", fromUnit->GetName(), targetUnit->GetName(), expectedVal, convertedVal);
-    if (fabs(convertedVal - expectedVal) > tolerance)
+    //if (fabs(convertedVal - expectedVal) > tolerance)
+    if(!almost_equal<double>(expectedVal, convertedVal, 10000000))
         {
         Utf8PrintfString formattedText("Conversion from %s to %s. Input: %lf Output: %lf Expected: %lf Tolerance: %.9f", fromUnitName, targetUnitName, fromVal, convertedVal, expectedVal, tolerance);
         conversionErrors.push_back(formattedText);
@@ -222,7 +235,7 @@ TEST_F(UnitsTests, TestOffsetConversions)
 
     }
 
-TEST_F(UnitsTests, TestBasiConversion)
+TEST_F(UnitsTests, TestBasicConversion)
     {
     bvector<Utf8String> loadErrors;
     bvector<Utf8String> conversionErrors;
