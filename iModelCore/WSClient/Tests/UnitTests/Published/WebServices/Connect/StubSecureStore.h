@@ -9,6 +9,7 @@
 #pragma once
 
 #include <MobileDgn/Utils/SecureStore.h>
+#include <Bentley/Base64Utilities.h>
 
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
@@ -42,11 +43,11 @@ struct StubSecureStore : public ISecureStore
         
     Utf8String Encrypt (Utf8CP value) override
         {
-        return value;
+        return Base64Utilities::Encode(value);
         };
         
     Utf8String Decrypt (Utf8CP value) override
         {
-        return value;
+        return Base64Utilities::Decode(value);
         };
     };
