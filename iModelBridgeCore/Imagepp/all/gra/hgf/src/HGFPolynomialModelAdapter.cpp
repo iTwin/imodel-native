@@ -452,25 +452,21 @@ void InitializeLinearAlgebraProblem(RowMajorMatrix& matrixX, RowMajorMatrix& vec
 
     uint32_t currentTiePointVal = 0;
     uint32_t effectiveNumberOfPoints = 0;
-    double currentX;
-    double currentY;
-    double tempX;
-    double tempY;
 
-    for (currentY = pi_rShape.GetExtent().GetYMin() ; currentY < pi_rShape.GetExtent().GetYMax() ; currentY += pi_StepY)
+    bool isShapeRectangle = pi_rShape.GetShapeType() == HGF2DRectangle::CLASS_ID;
+    HGF2DLiteExtent shapeExtent = pi_rShape.GetExtent();
+    for (double currentY = shapeExtent.GetYMin() ; currentY < shapeExtent.GetYMax() ; currentY += pi_StepY)
         {
-        for (currentX = pi_rShape.GetExtent().GetXMin() ; currentX < pi_rShape.GetExtent().GetXMax() ; currentX += pi_StepX)
+        for (double currentX = shapeExtent.GetXMin() ; currentX < shapeExtent.GetXMax() ; currentX += pi_StepX)
             {
-            if(pi_rShape.IsPointIn(HGF2DPosition(currentX, currentY)))
+            if(isShapeRectangle ||
+               pi_rShape.IsPointIn(HGF2DPosition(currentX, currentY))) // || pi_rShape.IsPointOn(HGF2DPosition(currentX, currentY)))  
                 {
-                if(m_pAdaptedTransfoModel->ConvertInverse(currentX, currentY, &tempX, &tempY) == SUCCESS)
+                StatusInt convertStatus = m_pAdaptedTransfoModel->ConvertInverse(currentX, currentY, &pTiePointsSrc[currentTiePointVal], &pTiePointsSrc[currentTiePointVal + 1]);
+                if(SUCCESS == convertStatus)
                     {
                     pTiePointsDest[currentTiePointVal] = currentX;
                     pTiePointsDest[currentTiePointVal + 1] = currentY;
-
-
-                    pTiePointsSrc[currentTiePointVal] = tempX;
-                    pTiePointsSrc[currentTiePointVal + 1] = tempY;
 
                     currentTiePointVal += 2;
                     effectiveNumberOfPoints++;
