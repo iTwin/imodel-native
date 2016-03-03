@@ -3789,10 +3789,14 @@ void    MergeDictionary::AdjustMergesAfterIndex (uint32_t index, bool isRow, boo
 
     for (MergeEntryR merge : mergesToAdjust)
         {
+        TableCellIndex  rootIndex = merge.GetRootIndex();
+        erase (rootIndex);
+        }
+
+    for (MergeEntryR merge : mergesToAdjust)
+        {
         AnnotationTableCellIndex  rootIndex = merge.GetRootIndex();
         uint32_t&                 toAdjust (isRow ? rootIndex.row : rootIndex.col);
-
-        erase (rootIndex);
 
         if (increment)
             toAdjust += 1;
