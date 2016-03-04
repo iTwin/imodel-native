@@ -1,10 +1,5 @@
-#define DECLARATION_BEGIN   @interface __FIXTURE__ : XCTestCase {}
+#define DECLARATION_BEGIN   @interface __FIXTURE__ : SenTest_BaseClass {}
 DECLARATION_BEGIN
-
-#define INIT_DECLARATION    + (void) begtest_initialize;
-#define UNINIT_DECLARATION  + (void) begtest_uninitialize;
-INIT_DECLARATION
-UNINIT_DECLARATION
 
 #define DECLARATION_END     @end
 DECLARATION_END
@@ -27,64 +22,6 @@ DECLARATION_END
 
 #define IMPLEMENTATION_BEGIN @implementation __FIXTURE__
 IMPLEMENTATION_BEGIN
-
-#define INIT_METHOD     + (void) begtest_initialize {
-INIT_METHOD
-    NSArray*  documentPaths  = NSSearchPathForDirectoriesInDomains (NSDocumentDirectory, NSUserDomainMask, YES);
-    NSString* documentDir    = [[documentPaths objectAtIndex:0] stringByAppendingPathComponent:@"Documents"];
-    
-    #ifdef COMMENT_OUT // *** No. We have some tests that have no documents
-    // When running the tests on a simulator for the first time, XCode is not able to deploy the application data package
-    // (you get a warning about that). Application data package contains test documents so the tests that depend on them fail.
-    // If the app data package is deployed successfully, it always has the documents.manifest file. Here we check if it exists
-    // and fail immediately if it doesn't. So if the tests fail on this assert (and you're running them for the first time
-    // on a simulator), simply try to rerun them. 
-    BeFileName documentsManifest (WString ([[documentPaths objectAtIndex:0] cStringUsingEncoding:NSUTF8StringEncoding], BentleyCharEncoding::Utf8).c_str ());
-    documentsManifest.AppendToPath (L"documents.manifest");
-    BeAssert (documentsManifest.DoesPathExist ());
-    #endif
-        
-    NSString* bundleDir      = [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"DgnClientFxAssets.bundle"];
-    NSString* tempDir        = NSTemporaryDirectory ();
-    NSArray*  appSupportUrls = [[NSFileManager defaultManager] URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask];
-    NSString* appBundleId    = [[NSBundle mainBundle] bundleIdentifier];
-    NSURL*    appSupportUrl  = [[appSupportUrls objectAtIndex:0] URLByAppendingPathComponent:appBundleId];
-    NSString* appSupportDir  = [appSupportUrl path];
-    [[NSFileManager defaultManager] createDirectoryAtURL:appSupportUrl withIntermediateDirectories:YES attributes:nil error:nil];
-
-    BeTest::Initialize (*BeTestHost::Create([documentDir    cStringUsingEncoding:NSUTF8StringEncoding],
-                                            [bundleDir      cStringUsingEncoding:NSUTF8StringEncoding],
-                                            [tempDir        cStringUsingEncoding:NSUTF8StringEncoding],
-                                            [appSupportDir  cStringUsingEncoding:NSUTF8StringEncoding]));
-
-    static bool s_cleaned;
-    if (!s_cleaned)
-        {
-        // Delete any files that may be hanging around since the last run
-        s_cleaned = true;
-        BeFileName dirName;
-        BeTest::GetHost().GetOutputRoot(dirName);
-        BeFileName::EmptyDirectory(dirName);
-        BeTest::GetHost().GetTempDir(dirName);
-        BeFileName::EmptyDirectory(dirName);
-        }
-
-    BentleyApi::NativeLogging::LoggingConfig::SetOption (CONFIG_OPTION_DEFAULT_SEVERITY, LOG_TEXT_FATAL);
-    BentleyApi::NativeLogging::LoggingConfig::ActivateProvider (BentleyApi::NativeLogging::CONSOLE_LOGGING_PROVIDER); // send messages to syslog
-    
-    BeFileName frameworkSqlang;
-    BeTest::GetHost().GetFrameworkSqlangFiles(frameworkSqlang);
-    // Some tests do not have language file. Skip L10N initialization because L10N assert will block the test.
-    if(frameworkSqlang.DoesPathExist())
-        BeSQLite::L10N::Initialize(frameworkSqlang);
-}
-
-#define UNINIT_METHOD   + (void) begtest_uninitialize {
-UNINIT_METHOD
-    BeSQLite::L10N::Shutdown();
-    BentleyApi::NativeLogging::LoggingConfig::DeactivateProvider ();
-    BeTest::Uninitialize ();
-}
 
 #define SETUP_METHOD    - (void)setUp { [super setUp]; [__FIXTURE__ begtest_initialize]; }
 SETUP_METHOD
