@@ -16,11 +16,6 @@ using namespace std;
 using namespace connectivity;
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       04/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-unique_ptr<OSQLParser> ECSqlParser::s_parser = nullptr;
-
-//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSqlParser::Parse (ECSqlParseTreePtr& ecsqlParseTree, ECDbCR ecdb, Utf8CP ecsql, IClassMap::View classView) const
@@ -2870,8 +2865,9 @@ BentleyStatus ECSqlParser::parse_values_or_query_spec(unique_ptr<ValueExpListExp
 //+---------------+---------------+---------------+---------------+---------------+--------
 OSQLParser* ECSqlParser::GetSharedParser()
     {
-    s_parser = unique_ptr<OSQLParser>(new OSQLParser(com::sun::star::lang::XMultiServiceFactory::CreateInstance()));
-    return s_parser.get();
+    //WIP_ECSQL: Mem leaks where there is error in statement. Need to use shared_ptr instead of unique_ptr
+    static std::unique_ptr<connectivity::OSQLParser> parser = std::unique_ptr<connectivity::OSQLParser>(new connectivity::OSQLParser(com::sun::star::lang::XMultiServiceFactory::CreateInstance()));
+    return parser.get();
     }
 
 

@@ -87,7 +87,6 @@ private:
 
 
     mutable std::unique_ptr<ECSqlParseContext> m_context;
-    static std::unique_ptr<connectivity::OSQLParser> s_parser;
 
     //root nodes
     BentleyStatus parse_select_statement(std::unique_ptr<SelectStatementExp>&, connectivity::OSQLParseNode const*) const;
