@@ -1055,10 +1055,48 @@ public:
     //! @private
     void AddTile(TextureCR tile, DPoint3dCP corners) {_AddTile(tile, corners);}
 
-    // Helper Methods to draw simple SolidPrimitives.
+    //! Helper Methods to draw simple SolidPrimitives.
     void AddTorus(DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped) {AddSolidPrimitive(*ISolidPrimitive::CreateDgnTorusPipe(DgnTorusPipeDetail(center, vectorX, vectorY, majorRadius, minorRadius, sweepAngle, capped)));}
     void AddBox(DVec3dCR primary, DVec3dCR secondary, DPoint3dCR basePoint, DPoint3dCR topPoint, double baseWidth, double baseLength, double topWidth, double topLength, bool capped) {AddSolidPrimitive(*ISolidPrimitive::CreateDgnBox(DgnBoxDetail::InitFromCenters(basePoint, topPoint, primary, secondary, baseWidth, baseLength, topWidth, topLength, capped)));}
 
+    //! Add DRange3d edges using AddLineString
+    void AddRangeBox(DRange3dCR range)
+        {
+        DPoint3d p[8], tmpPts[9];
+
+        p[0].x = p[3].x = p[4].x = p[5].x = range.low.x;
+        p[1].x = p[2].x = p[6].x = p[7].x = range.high.x;
+        p[0].y = p[1].y = p[4].y = p[7].y = range.low.y;
+        p[2].y = p[3].y = p[5].y = p[6].y = range.high.y;
+        p[0].z = p[1].z = p[2].z = p[3].z = range.low.z;
+        p[4].z = p[5].z = p[6].z = p[7].z = range.high.z;
+
+        tmpPts[0] = p[0]; tmpPts[1] = p[1]; tmpPts[2] = p[2];
+        tmpPts[3] = p[3]; tmpPts[4] = p[5]; tmpPts[5] = p[6];
+        tmpPts[6] = p[7]; tmpPts[7] = p[4]; tmpPts[8] = p[0];
+
+        AddLineString(9, tmpPts);
+        AddLineString(2, DSegment3d::From(p[0], p[3]).point);
+        AddLineString(2, DSegment3d::From(p[4], p[5]).point);
+        AddLineString(2, DSegment3d::From(p[1], p[7]).point);
+        AddLineString(2, DSegment3d::From(p[2], p[6]).point);
+        }
+
+    //! Add DRange2d edges using AddLineString2d
+    void AddRangeBox2d(DRange2dCR range, double zDepth)
+        {
+        DPoint2d tmpPts[5];
+
+        tmpPts[0] = DPoint2d::From(range.low.x, range.low.y);
+        tmpPts[1] = DPoint2d::From(range.high.x, range.low.y);
+        tmpPts[2] = DPoint2d::From(range.high.x, range.high.y);
+        tmpPts[3] = DPoint2d::From(range.low.x, range.high.y);
+        tmpPts[4] = tmpPts[0];
+
+        AddLineString2d(5, tmpPts, zDepth);
+        }
+
+    //! Add raster
     void AddRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels) {_AddRaster(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels);}
     void AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth) {_AddRaster2d(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, zDepth);}
 

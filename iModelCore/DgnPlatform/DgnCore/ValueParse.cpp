@@ -283,8 +283,8 @@ static int      vp_mdlString_toUors2
 double*         uor,
 size_t&         szParsed,
 WCharCP         inStr,
-WCharCP         masterUnitsLabel,
-WCharCP         subUnitsLabel,
+Utf8CP          masterUnitsLabelIn,
+Utf8CP          subUnitsLabelIn,
 double          uorPerMast,
 double          uorPerSub
 )
@@ -294,6 +294,9 @@ double          uorPerSub
     szParsed = 0;
     WChar buffer[1024];
     WChar *mu_str, *su_str, *pu_str, *p;
+
+    WString masterUnitsLabel (masterUnitsLabelIn, BentleyCharEncoding::Utf8);
+    WString subUnitsLabel    (subUnitsLabelIn,    BentleyCharEncoding::Utf8);
 
     bool            negflg;
     BeAssert (wcslen (inStr) < 1024);
@@ -308,10 +311,10 @@ double          uorPerSub
         }
     WCharP start = str;
 
-    if (0 == masterUnitsLabel[0])
+    if (masterUnitsLabel.empty())
         p = NULL;
     else
-        p = ::wcsstr (str, masterUnitsLabel);
+        p = ::wcsstr (str, masterUnitsLabel.c_str());
     bool doMuSu = true; 
     if (NULL != p)
         {
@@ -319,8 +322,8 @@ double          uorPerSub
         WChar *pNext = ::wcschr (p, L'-');
         if (NULL == pNext)
             {
-            pNext = p + wcslen (masterUnitsLabel);
-            szParsed += wcslen (masterUnitsLabel);
+            pNext = p + masterUnitsLabel.size();
+            szParsed += masterUnitsLabel.size();
             }
         else
             {
@@ -332,10 +335,10 @@ double          uorPerSub
             *p = *pNext;
         *p = 0;
         /* remove sub units label */
-        if (0 != *subUnitsLabel)
+        if ( ! subUnitsLabel.empty())
             {
-            p = ::wcsstr (str, subUnitsLabel);
-            szParsed += wcslen (subUnitsLabel);
+            p = ::wcsstr (str, subUnitsLabel.c_str());
+            szParsed += subUnitsLabel.size();
 
             if (NULL != p)
                 *p = 0;
@@ -434,15 +437,13 @@ static bool vp_cmdStartsWith (WCharCP cmd, WCharCP in)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     05/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static WCharCP vp_removeWhiteSpaceAndCount (size_t& count, WCharCP str)
+static void vp_removeWhiteSpaceAndCount (size_t& count, WStringR str)
     {
-    count = 0;
-    while (str && L' ' == *str)
-        {
-        ++str;
+    size_t firstNonSpaceIdx = 0;
+    for (; (firstNonSpaceIdx < str.length()) && iswspace(str.at(firstNonSpaceIdx)); ++firstNonSpaceIdx)
         ++count;
-        }
-    return str;
+
+    str.erase (str.begin(), (str.begin() + firstNonSpaceIdx));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -456,22 +457,24 @@ DoubleParserPtr         DoubleParser::Clone() const         { return new DoubleP
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DoubleParser::ToValue (double& outValue, WCharCP input) const
+BentleyStatus DoubleParser::ToValue (double& outValue, Utf8CP input) const
     {
     outValue = 0.0;
     if (NULL == input || 0 == *input)
         return SUCCESS;
 
+    WString inString (input, BentleyCharEncoding::Utf8);
+
     size_t numCharsParsed = 0;
     size_t whiteSpaceCount = 0;
-    input = vp_removeWhiteSpaceAndCount (whiteSpaceCount, input);
+    vp_removeWhiteSpaceAndCount (whiteSpaceCount, inString);
     bool negflg = false;
-    if (SUCCESS != vp_AddNumberStringScaledNoModify (outValue, numCharsParsed, negflg, input, 1.0))
+    if (SUCCESS != vp_AddNumberStringScaledNoModify (outValue, numCharsParsed, negflg, inString.c_str(), 1.0))
         return ERROR;
 
     if (negflg)
         outValue = -outValue;
-    
+
     numCharsParsed += whiteSpaceCount;
     return SUCCESS;
     }
@@ -524,20 +527,22 @@ AngleParserPtr  AngleParser::Create(GeometricModelCR model)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus AngleParser::ToValue (double& outAngle, WCharCP input) const
+BentleyStatus AngleParser::ToValue (double& outAngle, Utf8CP input) const
     {
     outAngle = 0.0;
     // null and empty strings result in 0.0 angle
     if (NULL == input || 0 == *input)
         return SUCCESS;
 
+    WString inString(input, BentleyCharEncoding::Utf8);
+
     size_t whiteSpaceCount = 0;
-    input = vp_removeWhiteSpaceAndCount (whiteSpaceCount, input);
+    vp_removeWhiteSpaceAndCount (whiteSpaceCount, inString);
 
     // assume degrees unless format is Gradians or Radians. Also assume degrees if any of the degree delimiters are present.
-    if (vp_parseAsDegreeString (m_angleMode, input))
+    if (vp_parseAsDegreeString (m_angleMode, inString.c_str()))
         {
-        return SUCCESS == vp_degreeAngleFromString (outAngle, input) ? SUCCESS : ERROR;
+        return SUCCESS == vp_degreeAngleFromString (outAngle, inString.c_str()) ? SUCCESS : ERROR;
         }
 
     double  scaleFactor = 1.0;
@@ -556,7 +561,7 @@ BentleyStatus AngleParser::ToValue (double& outAngle, WCharCP input) const
         }
 
     size_t numCharsParsed = 0;
-    vp_AddNumberStringScaledNoModify (outAngle, numCharsParsed, negflg, input, scaleFactor);
+    vp_AddNumberStringScaledNoModify (outAngle, numCharsParsed, negflg, inString.c_str(), scaleFactor);
 
     if (negflg)
         outAngle = -outAngle;
@@ -703,14 +708,14 @@ DirectionParserPtr      DirectionParser::Create(GeometricModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RBB             07/87
 +---------------+---------------+---------------+---------------+---------------+------*/
-int         DirectionParser::StringToDirection (double& dir, WCharCP inputString) const
+int         DirectionParser::StringToDirection (double& dir, WCharCP input) const
     {
-    WString str = inputString;
+    WString str = input;
 
     double  tmpang;
     short   ns_command = 0, ew_command = 0;
     WChar   *leftover, *ew_str, *p;
-    size_t  szInput = wcslen (inputString) + 1;
+    size_t  szInput = str.size() + 1;
     WCharP  strng = (WCharP) _alloca(szInput * sizeof (WChar));
     WCharP  nw_str = (WCharP) _alloca(szInput * sizeof (WChar));
     wcscpy (strng, str.c_str());
@@ -757,7 +762,7 @@ int         DirectionParser::StringToDirection (double& dir, WCharCP inputString
             ew_command = -1;
             }
 
-        if (SUCCESS == m_angleParser->ToValue (tmpang, leftover))
+        if (SUCCESS == m_angleParser->ToValue (tmpang, Utf8String (leftover).c_str()))
             {
             if (ew_command == 1 || ew_command == 2)
                 {
@@ -807,7 +812,7 @@ int         DirectionParser::StringToDirection (double& dir, WCharCP inputString
             }
         else
             {
-            if (SUCCESS == m_angleParser->ToValue (dir, strng))
+            if (SUCCESS == m_angleParser->ToValue (dir, Utf8String (strng).c_str()))
                 {
                 if (DirectionMode::Azimuth == m_mode)
                     {
@@ -830,16 +835,18 @@ int         DirectionParser::StringToDirection (double& dir, WCharCP inputString
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DirectionParser::ToValue (double& outDirection, WCharCP input)
+BentleyStatus DirectionParser::ToValue (double& outDirection, Utf8CP input)
     {
     outDirection = 0.0;
     if (NULL == input || 0 == *input)
         return SUCCESS;
 
-    size_t whiteSpaceCount = 0;
-    input = vp_removeWhiteSpaceAndCount (whiteSpaceCount, input);
+    WString str(input, BentleyCharEncoding::Utf8);
 
-    if (SUCCESS != StringToDirection (outDirection, input))
+    size_t whiteSpaceCount = 0;
+    vp_removeWhiteSpaceAndCount (whiteSpaceCount, str);
+
+    if (SUCCESS != StringToDirection (outDirection, str.c_str()))
         return ERROR; 
 
     outDirection += m_trueNorth;
@@ -943,18 +950,20 @@ DistanceParserPtr       DistanceParser::Create(GeometricModelCR model, IAuxCoord
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DistanceParser::ToValue (double& outValue, size_t& numCharsParsed, WCharCP input) 
+BentleyStatus DistanceParser::ToValue (double& outValue, size_t& numCharsParsed, Utf8CP input) 
     {
     outValue = 0.0;
     if (NULL == input || 0 == *input)
         return  SUCCESS;
 
+    WString inString(input, BentleyCharEncoding::Utf8);
+
     size_t whiteSpaceCount = 0;
-    input = vp_removeWhiteSpaceAndCount (whiteSpaceCount, input);
+    vp_removeWhiteSpaceAndCount (whiteSpaceCount, inString);
 
     BentleyStatus result = SUCCESS == vp_mdlString_toUors2 (&outValue, 
             numCharsParsed,
-            input, 
+            inString.c_str(),
             m_masterUnitLabel.c_str(), 
             m_subUnitLabel.c_str(), 
             m_masterUnitScale, 
@@ -971,7 +980,7 @@ BentleyStatus DistanceParser::ToValue (double& outValue, size_t& numCharsParsed,
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DistanceParser::ToValue (double& outValue, WCharCP input) 
+BentleyStatus DistanceParser::ToValue (double& outValue, Utf8CP input) 
     {
     size_t  numChars;
 
@@ -1070,13 +1079,15 @@ BentleyStatus   PointParser::StringToPoint
 (
 DPoint3dR       point,              /* <= point returned */
 Point3dP        relativeFlags,      /* <= bool for each coordinate */
-WCharCP         inString            /* => character string */
+Utf8CP          input               /* => character string */
 )
     {
+    WString inString (input, BentleyCharEncoding::Utf8);
+
     int         numCoords = 0;
     WString     coordStr[3];
-    WCharCP     currPos = inString;
-    WCharCP     endPos = inString + wcslen (inString);
+    WCharCP     currPos = inString.begin();
+    WCharCP     endPos  = inString.end();
 
     for (int iCoord = 0; iCoord < 3; iCoord++)
         {
@@ -1123,13 +1134,13 @@ WCharCP         inString            /* => character string */
     double y = 0.0;
     double z = 0.0;
 
-    if (SUCCESS != m_distanceParser->ToValue (x, coordStr[0].c_str()) ||
-        SUCCESS != m_distanceParser->ToValue (y, coordStr[1].c_str()) )
+    if (SUCCESS != m_distanceParser->ToValue (x, Utf8String (coordStr[0]).c_str()) ||
+        SUCCESS != m_distanceParser->ToValue (y, Utf8String (coordStr[1]).c_str()) )
         return ERROR;
 
     if (m_is3d)
         {
-        if (SUCCESS != m_distanceParser->ToValue (z, coordStr[2].c_str()))
+        if (SUCCESS != m_distanceParser->ToValue (z, Utf8String (coordStr[2]).c_str()))
             return ERROR;
         }
 
@@ -1143,7 +1154,7 @@ WCharCP         inString            /* => character string */
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PointParser::ToValue (DPoint3dR outPoint, WCharCP input)
+BentleyStatus PointParser::ToValue (DPoint3dR outPoint, Utf8CP input)
     {
     outPoint.Init (0.0, 0.0, 0.0);
     if (NULL == input || 0 == *input)
@@ -1157,7 +1168,7 @@ BentleyStatus PointParser::ToValue (DPoint3dR outPoint, WCharCP input)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PointParser::ToValue (DPoint3dR outPoint, Point3dR relativeFlags, WCharCP input)
+BentleyStatus PointParser::ToValue (DPoint3dR outPoint, Point3dR relativeFlags, Utf8CP input)
     {
     outPoint.Init (0.0, 0.0, 0.0);
     if (NULL == input || 0 == *input)
@@ -1194,17 +1205,19 @@ void            AreaOrVolumeParser::InitModelSettings(GeometricModelCR model)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus AreaOrVolumeParser::ToValue (double& outValue, size_t& numCharsParsed, WCharCP input) 
+BentleyStatus AreaOrVolumeParser::ToValue (double& outValue, size_t& numCharsParsed, Utf8CP input) 
     {
     outValue = 0.0;
     if (NULL == input || 0 == *input)
         return  SUCCESS;
 
+    WString inString(input, BentleyCharEncoding::Utf8);
+
     size_t whiteSpaceCount = 0;
-    input = vp_removeWhiteSpaceAndCount (whiteSpaceCount, input);
+    vp_removeWhiteSpaceAndCount (whiteSpaceCount, inString);
 
     bool    negative;
-    int     result = vp_AddNumberStringScaledNoModify (outValue, numCharsParsed, negative, input, pow (m_masterUnitScale, m_dimension));
+    int     result = vp_AddNumberStringScaledNoModify (outValue, numCharsParsed, negative, inString.c_str(), pow (m_masterUnitScale, m_dimension));
 
     if (SUCCESS == result)
         outValue *= pow (m_scale, m_dimension);
@@ -1217,7 +1230,7 @@ BentleyStatus AreaOrVolumeParser::ToValue (double& outValue, size_t& numCharsPar
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus AreaOrVolumeParser::ToValue (double& outValue, WCharCP input) 
+BentleyStatus AreaOrVolumeParser::ToValue (double& outValue, Utf8CP input) 
     {
     size_t  numChars;
 
