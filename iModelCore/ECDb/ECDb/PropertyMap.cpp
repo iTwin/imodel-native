@@ -17,7 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                                    Krischan.Eberle    03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-PropertyMapPtr PropertyMapFactory::CreatePropertyMap(ClassMapLoadContext& ctx, ECDbCR ecdb, ECPropertyCR ecProperty, ECClassCR rootClass, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap)
+PropertyMapPtr PropertyMapFactory::CreatePropertyMap(ClassMapLoadContext& ctx, ECDbCR ecdb, ECPropertyCR ecProperty, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap)
     {
     if (!ecProperty.HasId())
         ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema(ecdb, ecProperty);
@@ -54,14 +54,16 @@ PropertyMapPtr PropertyMapFactory::CreatePropertyMap(ClassMapLoadContext& ctx, E
         return StructPropertyMap::Create(ctx, ecdb, *ecProperty.GetAsStructProperty(), propertyAccessString, parentPropertyMap); // The individual properties get their own binding, but we need a placeholder for the overall struct
 
     BeAssert(ecProperty.GetIsNavigation());
-    return NavigationPropertyMap::Create(ctx, ecdb, *ecProperty.GetAsNavigationProperty(), propertyAccessString, parentPropertyMap, rootClass);
+
+    BeAssert(parentPropertyMap == nullptr && "NavigationProperties can only be created on entity classes, so parent prop map is expected to be nullptr");
+    return NavigationPropertyMap::Create(ctx, ecdb, *ecProperty.GetAsNavigationProperty(), propertyAccessString);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan          10/2015
 //---------------------------------------------------------------------------------------
 //static
-PropertyMapPtr PropertyMapFactory::ClonePropertyMap(ECDbMapCR ecdbMap, PropertyMapCR proto, ECN::ECClassCR clonedBy, PropertyMap const* parentPropertyMap)
+PropertyMapPtr PropertyMapFactory::ClonePropertyMap(ECDbMapCR ecdbMap, PropertyMapCR proto, ECN::ECClassCR targetClass, PropertyMap const* parentPropertyMap)
     {
     if (ecdbMap.GetSchemaImportContext() == nullptr)
         {
@@ -82,20 +84,19 @@ PropertyMapPtr PropertyMapFactory::ClonePropertyMap(ECDbMapCR ecdbMap, PropertyM
         return StructArrayTablePropertyMap::Clone(*protoMap, parentPropertyMap);
 
     if (auto protoMap = dynamic_cast<StructPropertyMap const*>(&proto))
-        return StructPropertyMap::Clone(ecdbMap, *protoMap, clonedBy, parentPropertyMap);
+        return StructPropertyMap::Clone(ecdbMap, *protoMap, targetClass, parentPropertyMap);
 
     if (auto protoMap = proto.GetAsNavigationPropertyMap())
-        return NavigationPropertyMap::Clone(ecdbMap.GetSchemaImportContext()->GetClassMapLoadContext(), *protoMap, clonedBy, parentPropertyMap);
+        {
+        BeAssert(parentPropertyMap == nullptr && "NavigationProperties can only be created on entity classes, so parent prop map is expected to be nullptr");
+        return NavigationPropertyMap::Clone(ecdbMap.GetSchemaImportContext()->GetClassMapLoadContext(), *protoMap, targetClass);
+        }
 
     BeAssert(false && "Case is not handled");
     return nullptr;
     }
 
 //******************************** PropertyMap *****************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle     12/2013
-//---------------------------------------------------------------------------------------
-bool PropertyMap::IsVirtual () const { return _IsVirtual (); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     01/2016
@@ -580,12 +581,12 @@ StructPropertyMap::StructPropertyMap (ECN::StructECPropertyCR ecProperty, Utf8CP
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan     09/2013
 //---------------------------------------------------------------------------------------
-StructPropertyMap::StructPropertyMap(ECDbMapCR ecdbMap, StructPropertyMap const& proto, ECN::ECClassCR clonedBy, PropertyMap const* parentPropertyMap) 
+StructPropertyMap::StructPropertyMap(ECDbMapCR ecdbMap, StructPropertyMap const& proto, ECN::ECClassCR targetClass, PropertyMap const* parentPropertyMap)
     : PropertyMap(proto, parentPropertyMap)
     {
     for (PropertyMap const* protoChild : proto.m_children)
         {
-        m_children.AddPropertyMap(protoChild->GetProperty().GetName().c_str(), PropertyMapFactory::ClonePropertyMap(ecdbMap, *protoChild, clonedBy, this));
+        m_children.AddPropertyMap(protoChild->GetProperty().GetName().c_str(), PropertyMapFactory::ClonePropertyMap(ecdbMap, *protoChild, targetClass, this));
         }
     }
 
@@ -624,9 +625,7 @@ PropertyMapCP StructPropertyMap::GetPropertyMap (Utf8CP propertyName) const
                 return propertyMap;
 
             if (StructPropertyMap const* structPropertyMap = dynamic_cast<StructPropertyMap const*>(propertyMap))
-                {
                 return structPropertyMap->GetPropertyMap(rest.c_str());
-                } 
             }
         }
 
@@ -650,14 +649,12 @@ void StructPropertyMap::_GetColumns(std::vector<ECDbSqlColumn const*>& columns) 
 //---------------------------------------------------------------------------------------
 BentleyStatus StructPropertyMap::Initialize(ClassMapLoadContext& ctx, ECDbCR ecdb)
     {
-    PRECONDITION(GetProperty().GetIsStruct() && "Expecting a struct type property", ERROR);
-    ECClassCR rootClass = GetProperty().GetClass();
     StructECPropertyCP structProperty = GetProperty().GetAsStructProperty();
     for (ECPropertyCP property : structProperty->GetType().GetProperties(true))
         {
         Utf8String accessString(GetPropertyAccessString());
         accessString.append(".").append(property->GetName());
-        PropertyMapPtr propertyMap = PropertyMapFactory::CreatePropertyMap(ctx, ecdb, *property, rootClass, accessString.c_str(), this);
+        PropertyMapPtr propertyMap = PropertyMapFactory::CreatePropertyMap(ctx, ecdb, *property, accessString.c_str(), this);
         //don't use full prop access string as key in child collection, but just the relative prop access string which is 
         //just the prop name
         if (propertyMap != nullptr)
@@ -673,7 +670,7 @@ BentleyStatus StructPropertyMap::Initialize(ClassMapLoadContext& ctx, ECDbCR ecd
 //---------------------------------------------------------------------------------------
 BentleyStatus StructPropertyMap::_FindOrCreateColumnsInTable(ClassMap const& classMap)
     {
-    for(auto childPropMap : m_children)
+    for(PropertyMap const* childPropMap : m_children)
         {
         if (SUCCESS != const_cast<PropertyMap*> (childPropMap)->FindOrCreateColumnsInTable(classMap))
             return ERROR;
@@ -1131,7 +1128,7 @@ Utf8String PrimitiveArrayPropertyMap::_ToString() const
 // @bsimethod                                 Krischan.Eberle                      01/2016
 //---------------------------------------------------------------------------------------
 //static
-PropertyMapPtr NavigationPropertyMap::Create(ClassMapLoadContext& ctx, ECDbCR ecdb, ECN::NavigationECPropertyCR navProp, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap, ECClassCR createdByClass)
+PropertyMapPtr NavigationPropertyMap::Create(ClassMapLoadContext& ctx, ECDbCR ecdb, ECN::NavigationECPropertyCR navProp, Utf8CP propertyAccessString)
     {
     if (navProp.IsMultiple())
         {
@@ -1141,14 +1138,14 @@ PropertyMapPtr NavigationPropertyMap::Create(ClassMapLoadContext& ctx, ECDbCR ec
         return nullptr;
         }
 
-    return new NavigationPropertyMap(ctx, navProp, propertyAccessString, parentPropertyMap, createdByClass);
+    return new NavigationPropertyMap(ctx, navProp, propertyAccessString);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                      12/2015
 //---------------------------------------------------------------------------------------
-NavigationPropertyMap::NavigationPropertyMap(ClassMapLoadContext& ctx, ECN::NavigationECPropertyCR prop, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap, ECClassCR createdByClass)
-    : PropertyMap(prop, propertyAccessString, parentPropertyMap), m_relClassMap(nullptr), m_createdByClass(&createdByClass)
+NavigationPropertyMap::NavigationPropertyMap(ClassMapLoadContext& ctx, ECN::NavigationECPropertyCR prop, Utf8CP propertyAccessString)
+    : PropertyMap(prop, propertyAccessString, nullptr), m_relClassMap(nullptr), m_ecClass(prop.GetClass())
     {
     //we need to wait with finishing the nav prop map set up to the end when all relationships have been processed
     ctx.AddNavigationPropertyMap(*this);
@@ -1157,8 +1154,8 @@ NavigationPropertyMap::NavigationPropertyMap(ClassMapLoadContext& ctx, ECN::Navi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                      01/2016
 //---------------------------------------------------------------------------------------
-NavigationPropertyMap::NavigationPropertyMap(ClassMapLoadContext& ctx, NavigationPropertyMap const& proto, PropertyMap const* parentPropertyMap, ECClassCR createdByClass)
-    :PropertyMap(proto, parentPropertyMap), m_relClassMap(proto.m_relClassMap), m_createdByClass(&createdByClass)
+NavigationPropertyMap::NavigationPropertyMap(ClassMapLoadContext& ctx, NavigationPropertyMap const& proto, ECClassCR targetClass)
+    :PropertyMap(proto, nullptr), m_relClassMap(proto.m_relClassMap), m_ecClass(targetClass)
     {
     //we need to wait with finishing the nav prop map set up to the end when all relationships have been imported and mapped
     if (proto.m_relClassMap == nullptr)
@@ -1194,11 +1191,10 @@ BentleyStatus NavigationPropertyMap::Postprocess(ECDbMapCR ecdbMap)
 
     m_relClassMap = static_cast<RelationshipClassMap const*> (relClassMap);
 
-    BeAssert(m_createdByClass != nullptr);
-    ClassMap const* classMap = ecdbMap.GetClassMap(*m_createdByClass);
+    ClassMap const* classMap = ecdbMap.GetClassMap(m_ecClass);
     if (classMap == nullptr)
         {
-        BeAssert(false && "Fail to find ClassMaps that created the NavigationPropMap");
+        BeAssert(false && "Fail to find ClassMap that created the NavigationPropMap");
         return ERROR;
         }
 

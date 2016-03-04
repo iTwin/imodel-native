@@ -675,7 +675,7 @@ MapStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, IClassMap const* p
     for (ECPropertyCP property : propertiesToCreatePropMapsFor)
         {
         Utf8CP propertyAccessString = property->GetName().c_str();
-        PropertyMapPtr propMap = PropertyMapFactory::CreatePropertyMap(ctx, m_ecDbMap.GetECDb(), *property, m_ecClass, propertyAccessString, nullptr);
+        PropertyMapPtr propMap = PropertyMapFactory::CreatePropertyMap(ctx, m_ecDbMap.GetECDb(), *property, propertyAccessString, nullptr);
         if (propMap == nullptr)
             return MapStatus::Error;
 

@@ -119,7 +119,6 @@ public:
     StructArrayTablePropertyMap const* GetAsStructArrayTablePropertyMap() const { return _GetAsStructArrayTablePropertyMap(); }
     ECClassIdRelationshipConstraintPropertyMap const* GetAsECClassIdRelationshipConstraintPropertyMap() const { return _GetAsECClassIdRelationshipConstraintPropertyMapRelationship(); }
     ECN::ECPropertyCR GetProperty() const;
-    PropertyMapCP GetParent() const { return m_parentPropertyMap; }
     static uint32_t GetPropertyIndex(ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty); //needs to take an enabler, not a class    
     PropertyMapCollection const& GetChildren() const { return m_children; }
 
@@ -127,7 +126,7 @@ public:
     //! to a virtual DbColumn. A virtual DbColumn does not exist in a real table, but might
     //! be used as column aliases in views.
     //! @return true if property map is virtual, false otherwise
-    bool IsVirtual() const;
+    bool IsVirtual() const { return _IsVirtual(); }
 
     std::vector<ECDbSqlTable const*> const& GetTables() const { return m_mappedTables; }
     ECDbSqlTable const* GetTable() const;
@@ -352,10 +351,12 @@ public:
 private:
     RelationshipClassMap const* m_relClassMap;
     std::vector<ECDbSqlColumn const* > m_columns;
-    ECN::ECClassCP m_createdByClass;
+    ECN::ECClassCR m_ecClass; //cannot use GetProperty().GetClass() because a nav prop map can be cloned when inheriting.
 
-    NavigationPropertyMap(ClassMapLoadContext&, ECN::NavigationECPropertyCR, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap, ECN::ECClassCR createdByClass);
-    NavigationPropertyMap(ClassMapLoadContext&, NavigationPropertyMap const& proto, PropertyMap const* parentPropertyMap, ECN::ECClassCR createdByClass);
+    //NavigationProperties can only be created on EntityECClasses, therefore the ctors don't take a parent property map
+    //which would be the struct property containing the prop
+    NavigationPropertyMap(ClassMapLoadContext&, ECN::NavigationECPropertyCR, Utf8CP propertyAccessString);
+    NavigationPropertyMap(ClassMapLoadContext&, NavigationPropertyMap const& proto, ECN::ECClassCR targetClass);
 
     virtual void _GetColumns(std::vector<ECDbSqlColumn const*>&) const override;
     virtual Utf8String _ToString() const override { return Utf8PrintfString("NavigationPropertyMap: ecProperty=%s.%s", m_ecProperty.GetClass().GetFullName(), m_ecProperty.GetName().c_str()); }
@@ -372,8 +373,8 @@ private:
 
 public:
     ~NavigationPropertyMap() {}
-    static PropertyMapPtr Create(ClassMapLoadContext&, ECDbCR, ECN::NavigationECPropertyCR, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap, ECN::ECClassCR createdByClass);
-    static PropertyMapPtr Clone(ClassMapLoadContext& ctx, NavigationPropertyMap const& proto, ECN::ECClassCR clonedBy, PropertyMap const* parentPropertyMap) { return new NavigationPropertyMap(ctx, proto, parentPropertyMap, clonedBy); }
+    static PropertyMapPtr Create(ClassMapLoadContext&, ECDbCR, ECN::NavigationECPropertyCR, Utf8CP propertyAccessString);
+    static PropertyMapPtr Clone(ClassMapLoadContext& ctx, NavigationPropertyMap const& proto, ECN::ECClassCR targetClass) { return new NavigationPropertyMap(ctx, proto, targetClass); }
 
     BentleyStatus Postprocess(ECDbMapCR);
 
@@ -395,9 +396,9 @@ private:
     ~PropertyMapFactory();
 
 public:
-    static PropertyMapPtr CreatePropertyMap(ClassMapLoadContext&, ECDbCR, ECN::ECPropertyCR, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap);
+    static PropertyMapPtr CreatePropertyMap(ClassMapLoadContext&, ECDbCR, ECN::ECPropertyCR, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap);
     
     //only called during schema import
-    static PropertyMapPtr ClonePropertyMap(ECDbMapCR, PropertyMapCR, ECN::ECClassCR clonedBy, PropertyMap const* parentPropertyMap);
+    static PropertyMapPtr ClonePropertyMap(ECDbMapCR, PropertyMapCR, ECN::ECClassCR targetClass, PropertyMap const* parentPropertyMap);
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE
