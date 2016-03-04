@@ -53,6 +53,7 @@ enum class DgnDbStatus : int
     InvalidName,
     InvalidParent,
     InvalidSchemaVersion,
+    MismatchGcs, //!< The Geographic Coordinate Systems of the source and target are not based on equivalent projections
     Mismatch2d3d,
     MissingDomain,
     MissingHandler,
