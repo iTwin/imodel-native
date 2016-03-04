@@ -75,8 +75,8 @@ struct DifferenceSet
     DifferenceSet MergeSetWith(DifferenceSet& d, const DPoint3d* vertices, bvector<DPoint3d>& clip1, bvector<DPoint3d>& clip2);
     static DifferenceSet  FromPolyfaceSet(bvector<PolyfaceHeaderPtr>& polyMesh, const DPoint3d* vertices, size_t nVertices);
     PolyfaceHeaderPtr ToPolyfaceMesh(const DPoint3d* points, size_t nofPoints);
-    static DifferenceSet  FromPolyfaceSet(bvector<PolyfaceHeaderPtr>& polyMesh, map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> & mapOfPoints);
-    static DifferenceSet  FromPolyface(PolyfaceHeaderPtr& polyMeshes, map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> & mapOfPoints);
+    static DifferenceSet  FromPolyfaceSet(bvector<PolyfaceHeaderPtr>& polyMesh, map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> & mapOfPoints, size_t maxPtIdx);
+    static DifferenceSet  FromPolyface(PolyfaceHeaderPtr& polyMeshes, map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> & mapOfPoints, size_t maxPtIdx);
     };
 template<typename T>
 static bool sort_yx

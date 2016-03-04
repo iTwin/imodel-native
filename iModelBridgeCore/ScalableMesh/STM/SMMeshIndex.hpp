@@ -2703,7 +2703,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
             mapOfPoints[points[i]] = (int)i;
         for (auto& polyface : polyfaces)
             {
-            DifferenceSet current = DifferenceSet::FromPolyfaceSet(polyface, mapOfPoints);
+            DifferenceSet current = DifferenceSet::FromPolyfaceSet(polyface, mapOfPoints, this->size() + 1);
             for (auto& poly : polyface) poly = nullptr;
             if (&polyface - &polyfaces[0] == 0) current.clientID = 0;
             else current.clientID = clipIds[(&polyface - &polyfaces[0]) - 1];
@@ -2765,7 +2765,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::BuildS
                 GetClipRegistry()->GetSkirt(diffSet.clientID, skirts);
                 bvector<PolyfaceHeaderPtr> polyfaces;
                 builder.BuildSkirtMesh(polyfaces, skirts);
-                DifferenceSet current = DifferenceSet::FromPolyfaceSet(polyfaces, mapOfPoints);
+                DifferenceSet current = DifferenceSet::FromPolyfaceSet(polyfaces, mapOfPoints,this->size() + 1);
                 current.clientID = diffSet.clientID;
                 current.toggledForID = false;
                 diffSet = current;

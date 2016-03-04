@@ -476,10 +476,11 @@ DifferenceSet DifferenceSet::MergeSetWith(DifferenceSet& d, const DPoint3d* vert
         }
     return newDiff;
     }
-    DifferenceSet  DifferenceSet::FromPolyface(PolyfaceHeaderPtr& polyMesh, map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> & mapOfPoints)
+    DifferenceSet  DifferenceSet::FromPolyface(PolyfaceHeaderPtr& polyMesh, map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> & mapOfPoints, size_t maxPtIdx)
     {
     DifferenceSet d;
-    d.firstIndex = (int)mapOfPoints.size() + 1;
+    d.firstIndex = (int)maxPtIdx;
+    if (polyMesh == nullptr) return d;
     size_t originalNFaces = d.addedFaces.size();
     for (PolyfaceVisitorPtr addedFacets = PolyfaceVisitor::Attach(*polyMesh); addedFacets->AdvanceToNextFace();)
         {
@@ -523,18 +524,18 @@ DifferenceSet DifferenceSet::MergeSetWith(DifferenceSet& d, const DPoint3d* vert
     map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
     for (size_t i = 0; i < nVertices; ++i)
         mapOfPoints[vertices[i]] = (int)i;
-    return DifferenceSet::FromPolyfaceSet(polyMeshes, mapOfPoints);
+    return DifferenceSet::FromPolyfaceSet(polyMeshes, mapOfPoints, nVertices+1);
     }
 
-    DifferenceSet  DifferenceSet::FromPolyfaceSet(bvector<PolyfaceHeaderPtr>& polyMeshes, map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> & mapOfPoints)
+    DifferenceSet  DifferenceSet::FromPolyfaceSet(bvector<PolyfaceHeaderPtr>& polyMeshes, map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> & mapOfPoints, size_t maxPtIdx)
     {
     DifferenceSet d;
-    d.firstIndex = (int)mapOfPoints.size() + 1;
+    d.firstIndex = (int)maxPtIdx;
     if (polyMeshes.size() == 0) return d;
-    d = DifferenceSet::FromPolyface(polyMeshes[0], mapOfPoints);
+    d = DifferenceSet::FromPolyface(polyMeshes[0], mapOfPoints,maxPtIdx);
     for (size_t n = 1; n < polyMeshes.size(); ++n)
         {
-        DifferenceSet d1 = DifferenceSet::FromPolyface(polyMeshes[n], mapOfPoints);
+        DifferenceSet d1 = DifferenceSet::FromPolyface(polyMeshes[n], mapOfPoints, maxPtIdx);
         d.ApplySet(d1, 0);
         }
     return d;

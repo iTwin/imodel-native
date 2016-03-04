@@ -2160,7 +2160,7 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
                         for (size_t ind = 0; ind < toLoadNbFaceIndexes; ind++)
                             {
                             toLoadFaceIndexes[ind] -= 1;                            
-                            }                        
+                            } 
                         }
                     else
                         {
