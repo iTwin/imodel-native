@@ -1181,6 +1181,70 @@ TEST_F (SchemaDeserializationTest, ExpectSuccessWhenRoundtripEnumerationUsingStr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (SchemaDeserializationTest, ExpectSuccessWhenRoundtripKindOfQuantityUsingString)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
+    ASSERT_TRUE(schema.IsValid());
+
+    KindOfQuantityP kindOfQuantity;
+    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity, "MyKindOfQuantity"));
+    kindOfQuantity->SetDescription("DESC");
+    kindOfQuantity->SetDisplayLabel("DL");
+    kindOfQuantity->SetPersistenceUnit("CENTIMETRE");
+    kindOfQuantity->SetPrecision(10);
+    kindOfQuantity->SetDefaultPresentationUnit("FOOT");
+    auto& altPresUnits = kindOfQuantity->GetAlternativePresentationUnitListR();
+    altPresUnits.push_back("INCH");
+    altPresUnits.push_back("MILLIINCH");
+
+    /*ECEntityClassP entityClass;
+    status = schema->CreateEntityClass(entityClass, "EntityClass");
+    ASSERT_TRUE(status == ECObjectsStatus::Success);
+    PrimitiveECPropertyP property;
+    status = entityClass->CreateEnumerationProperty(property, "EnumProperty", *enumeration);
+    ASSERT_TRUE(status == ECObjectsStatus::Success);
+    ASSERT_TRUE(property != nullptr);
+    EXPECT_STREQ("Enumeration", property->GetTypeName().c_str());*/
+
+    Utf8String ecSchemaXmlString;
+    SchemaWriteStatus status2 = schema->WriteToXmlString (ecSchemaXmlString, 3);
+    EXPECT_EQ (SchemaWriteStatus::Success, status2);
+
+    ECSchemaPtr deserializedSchema;
+    auto schemaContext = ECSchemaReadContext::CreateContext ();
+    auto status3 = ECSchema::ReadFromXmlString (deserializedSchema, ecSchemaXmlString.c_str (), *schemaContext);
+    EXPECT_EQ (SchemaReadStatus::Success, status3);
+
+    EXPECT_EQ(1, deserializedSchema->GetKindOfQuantityCount());
+    KindOfQuantityCP deserializedKindOfQuantity;
+    deserializedKindOfQuantity = deserializedSchema->GetKindOfQuantityCP("MyKindOfQuantity");
+    ASSERT_TRUE(deserializedKindOfQuantity != nullptr);
+    EXPECT_STREQ("DL", deserializedKindOfQuantity->GetDisplayLabel().c_str());
+    EXPECT_STREQ("DESC", deserializedKindOfQuantity->GetDescription().c_str());
+    EXPECT_STREQ("CENTIMETRE", deserializedKindOfQuantity->GetPersistenceUnit().c_str());
+    EXPECT_EQ(10, deserializedKindOfQuantity->GetPrecision());
+
+    EXPECT_STREQ("FOOT", deserializedKindOfQuantity->GetDefaultPresentationUnit().c_str());
+    auto& resultAltUnits = deserializedKindOfQuantity->GetAlternativePresentationUnitList();
+    EXPECT_EQ(2, resultAltUnits.size());
+    EXPECT_STREQ("INCH", resultAltUnits[0].c_str());
+    EXPECT_STREQ("MILLIINCH", resultAltUnits[1].c_str());
+    /*ECClassCP deserializedClass = deserializedSchema->GetClassCP("EntityClass");
+    ECPropertyP deserializedProperty = deserializedClass->GetPropertyP("EnumProperty");
+    EXPECT_STREQ("Enumeration", deserializedProperty->GetTypeName().c_str());
+    PrimitiveECPropertyCP deserializedPrimitive = deserializedProperty->GetAsPrimitiveProperty();
+    ASSERT_TRUE(nullptr != deserializedPrimitive);
+
+    ECEnumerationCP propertyEnumeration = deserializedPrimitive->GetEnumeration();
+    ASSERT_TRUE(nullptr != propertyEnumeration);
+    EXPECT_STREQ("string", propertyEnumeration->GetTypeName().c_str());*/
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (SchemaDeserializationTest, ExpectFailureWithDuplicateClassesInXml)
     {
     Utf8CP widgets_schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
