@@ -170,9 +170,16 @@ DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolume(double* cut, double* fill
         totalCut += tileCut;
         totalFill += tileFill;
         }
-    *cut = totalCut;
-    *fill = totalFill;
-    *volume = totalVolume;
+
+    if (cut != 0)
+        *cut = totalCut;
+
+    if (fill != 0)
+        *fill = totalFill;
+
+    if (volume != 0)
+        *volume = totalVolume;
+
     return DTMStatusInt::DTM_SUCCESS;
     }
 
