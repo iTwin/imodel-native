@@ -1246,6 +1246,7 @@ protected:
     virtual ~ECClass();
 
     ECObjectsStatus                     AddProperty(ECPropertyP pProperty, Utf8StringCR name);
+    virtual ECObjectsStatus             _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false);
 
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
     virtual ECSchemaCP                  _GetContainerSchema() const override;
@@ -1919,6 +1920,10 @@ public:
     //!     (1,n) cardinality. This static property can be used instead of a standard
     //!     constructor of RelationshipCardinality to reduce memory usage.
     ECOBJECTS_EXPORT static RelationshipCardinalityCR OneMany();
+
+    //! Compares the two Cardinalities and returns whether they are equal (0). Otherwise the
+    //! larger scope will be returned either rhs (1) or lhs (-1)
+    ECOBJECTS_EXPORT static int Compare(RelationshipCardinality const& lhs, RelationshipCardinality const& rhs);
 };
 //=======================================================================================
 //! This class holds a class in an ECRelationship constraint plus its key properties
@@ -2043,6 +2048,8 @@ private:
     SchemaWriteStatus           WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName) const;
     SchemaReadStatus            ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext);
 
+    ECObjectsStatus             ValidateClassConstraint(ECEntityClassCR constraintClass) const;
+    ECObjectsStatus             ValidateCardinalityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit) const;
 
 protected:
     virtual ECSchemaCP          _GetContainerSchema() const override;
@@ -2158,6 +2165,9 @@ private:
     ECObjectsStatus                     SetStrength (Utf8CP strength);
     ECObjectsStatus                     SetStrengthDirection (Utf8CP direction);
 
+    bool                                ValidateStrengthConstraint(StrengthType value, bool compareValue=true) const;
+    bool                                ValidateStrengthDirectionConstraint(ECRelatedInstanceDirection value, bool compareValue = true) const;
+
 protected:
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const override;
 
@@ -2165,7 +2175,8 @@ protected:
     virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties) override;
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const override {return this;};
     virtual ECRelationshipClassP        _GetRelationshipClassP ()  override {return this;};
-    virtual ECClassType _GetClassType() const override { return ECClassType::Relationship; }
+    virtual ECClassType                 _GetClassType() const override { return ECClassType::Relationship; }
+    virtual ECObjectsStatus             _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false) override;
 
 //__PUBLISH_SECTION_START__
 public:
