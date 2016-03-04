@@ -39,6 +39,10 @@ Utf8StringCR KindOfQuantity::GetFullName () const
     return m_fullName;
     }
 
+//Following two methods need to be exported as the ValidatedName struct does not export its methods.
+void KindOfQuantity::SetDisplayLabel(Utf8CP value) { m_validatedName.SetDisplayLabel(value); }
+Utf8StringCR KindOfQuantity::GetDisplayLabel() const { return m_validatedName.GetDisplayLabel(); }
+
 ECObjectsStatus KindOfQuantity::ParseFullName(Utf8StringR prefix, Utf8StringR kindOfQuantityName, Utf8StringCR stringToParse)
     {
     if (0 == stringToParse.length())
@@ -118,105 +122,65 @@ SchemaWriteStatus KindOfQuantity::WriteXml (BeXmlWriterR xmlWriter, int ecXmlVer
     xmlWriter.WriteElementEnd();
     return status;
     }
-//
-///*---------------------------------------------------------------------------------**//**
-//* @bsimethod                                    Robert.Schili                  02/2016
-//+---------------+---------------+---------------+---------------+---------------+------*/
-//SchemaReadStatus ECEnumeration::ReadXml(BeXmlNodeR enumerationNode, ECSchemaReadContextR context)
-//    {
-//    Utf8String value;      // used by the macros.
-//    if (GetName().length() == 0)
-//        {
-//        if (BEXML_Success != enumerationNode.GetAttributeStringValue(value, TYPE_NAME_ATTRIBUTE))
-//            {
-//            LOG.errorv("Invalid ECSchemaXML: %s element must contain a %s attribute", TYPE_NAME_ATTRIBUTE, enumerationNode.GetName());
-//            return SchemaReadStatus::InvalidECSchemaXml;
-//            }
-//
-//        SetName(value.c_str());
-//        }
-//
-//    if (BEXML_Success == enumerationNode.GetAttributeStringValue(value, DESCRIPTION_ATTRIBUTE))
-//        {
-//        SetDescription(value.c_str());
-//        }
-//
-//    if (BEXML_Success == enumerationNode.GetAttributeStringValue(value, DISPLAY_LABEL_ATTRIBUTE))
-//        {
-//        SetDisplayLabel(value.c_str());
-//        }
-//    
-//    // BACKING_TYPE_NAME_ATTRIBUTE is a required attribute.  If it is missing, an error will be returned.
-//    if (BEXML_Success != enumerationNode.GetAttributeStringValue(value, BACKING_TYPE_NAME_ATTRIBUTE))
-//        {
-//        BeAssert(s_noAssert);
-//        LOG.errorv("Invalid ECSchemaXML: %s element must contain a %s attribute", enumerationNode.GetName(), BACKING_TYPE_NAME_ATTRIBUTE);
-//        return SchemaReadStatus::InvalidECSchemaXml;
-//        }
-//
-//    if (ECObjectsStatus::Success != this->SetTypeName(value.c_str()))
-//        {
-//        LOG.errorv("Invalid type name on enumeration '%s': '%s'.", this->GetName().c_str(), value.c_str());
-//        return SchemaReadStatus::InvalidPrimitiveType;
-//        }
-//
-//    bool isStrict = true;
-//    if (BEXML_Success == enumerationNode.GetAttributeBooleanValue(isStrict, IS_STRICT_ATTRIBUTE))
-//        {
-//        SetIsStrict(isStrict);
-//        }
-//
-//    PrimitiveType primitiveType = GetType();
-//
-//    for (BeXmlNodeP childNode = enumerationNode.GetFirstChild(); childNode != nullptr; childNode = childNode->GetNextSibling())
-//        {
-//        Utf8CP childNodeName = childNode->GetName();
-//        if (0 != strcmp(childNodeName, EC_ENUMERATOR_ELEMENT))
-//            continue;
-//
-//        ECEnumeratorP enumerator;
-//        if (primitiveType == PrimitiveType::PRIMITIVETYPE_Integer)
-//            {
-//            int32_t intValue;
-//            BeXmlStatus status = childNode->GetAttributeInt32Value(intValue, ENUMERATOR_VALUE_ATTRIBUTE);
-//            if (status != BeXmlStatus::BEXML_Success)
-//                {
-//                LOG.warningv("Failed to read int attribute '%s' on ECEnumerator for Enumeration '%s'.", ENUMERATOR_VALUE_ATTRIBUTE, this->GetName().c_str());
-//                continue;
-//                }
-//            
-//            if (this->CreateEnumerator(enumerator, intValue) != ECObjectsStatus::Success)
-//                {
-//                LOG.warningv("Failed to add value '%d' to ECEnumeration '%s'. Duplicate or invalid entry?", intValue, this->GetName().c_str());
-//                continue;
-//                }
-//            }
-//        else
-//            {
-//            Utf8String stringValue;
-//            BeXmlStatus status = childNode->GetAttributeStringValue(stringValue, ENUMERATOR_VALUE_ATTRIBUTE);
-//            if (status != BeXmlStatus::BEXML_Success)
-//                {
-//                LOG.warningv("Missing xml element '%s' on ECEnumerator for Enumeration '%s'.", ENUMERATOR_VALUE_ATTRIBUTE, this->GetName().c_str());
-//                continue;
-//                }
-//
-//            if (this->CreateEnumerator(enumerator, stringValue.c_str()) != ECObjectsStatus::Success)
-//                {
-//                LOG.warningv("Failed to add value '%s' to ECEnumeration '%s'. Duplicate or invalid entry?", stringValue.c_str(), this->GetName().c_str());
-//                continue;
-//                }
-//            }
-//
-//        Utf8String displayLabel;
-//        if (childNode->GetAttributeStringValue(displayLabel, DISPLAY_LABEL_ATTRIBUTE) == BeXmlStatus::BEXML_Success)
-//            {
-//            enumerator->SetDisplayLabel(displayLabel.c_str());
-//            }
-//        }
-//
-//    return SchemaReadStatus::Success;
-//    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchemaReadContextR context)
+    {
+    Utf8String value;      // used by the macros.
+    if (GetName().length() == 0)
+        {
+        if (BEXML_Success != kindOfQuantityNode.GetAttributeStringValue(value, TYPE_NAME_ATTRIBUTE))
+            {
+            LOG.errorv("Invalid ECSchemaXML: %s element must contain a %s attribute", TYPE_NAME_ATTRIBUTE, kindOfQuantityNode.GetName());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+
+        SetName(value.c_str());
+        }
+
+    if (BEXML_Success == kindOfQuantityNode.GetAttributeStringValue(value, DESCRIPTION_ATTRIBUTE))
+        {
+        SetDescription(value.c_str());
+        }
+
+    if (BEXML_Success == kindOfQuantityNode.GetAttributeStringValue(value, DISPLAY_LABEL_ATTRIBUTE))
+        {
+        SetDisplayLabel(value.c_str());
+        }
+    
+    // BACKING_TYPE_NAME_ATTRIBUTE is a required attribute.  If it is missing, an error will be returned.
+    if (BEXML_Success != kindOfQuantityNode.GetAttributeStringValue(value, PERSISTENCE_UNIT_ATTRIBUTE))
+        {
+        LOG.errorv("Invalid ECSchemaXML: %s element must contain a %s attribute", kindOfQuantityNode.GetName(), PERSISTENCE_UNIT_ATTRIBUTE);
+        return SchemaReadStatus::InvalidECSchemaXml;
+        }
+
+    SetPersistenceUnit(value.c_str());
+
+    uint32_t precision;
+    if (BEXML_Success == kindOfQuantityNode.GetAttributeUInt32Value(precision, PRECISION_ATTRIBUTE))
+        {
+        SetPrecision(precision);
+        }
+
+    if (BEXML_Success == kindOfQuantityNode.GetAttributeStringValue(value, DEFAULT_PRESENTATION_UNIT_ATTRIBUTE))
+        {
+        SetDefaultPresentationUnit(value.c_str());
+        }
+
+    if (BEXML_Success == kindOfQuantityNode.GetAttributeStringValue(value, ALT_PRESENTATION_UNITS_ATTRIBUTE))
+        {
+        bvector<Utf8String> altPresUnits;
+        BeStringUtilities::Split(value.c_str(), ";", altPresUnits);
+        if (altPresUnits.size() >= 1)
+            {
+            GetAlternativePresentationUnitListR().assign(altPresUnits.begin(), altPresUnits.end());
+            }
+        }
+    return SchemaReadStatus::Success;
+    }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 

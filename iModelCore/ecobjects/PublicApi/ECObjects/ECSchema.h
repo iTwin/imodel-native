@@ -1711,7 +1711,7 @@ struct KindOfQuantity : NonCopyableClass
         // schemas index KindOfQuantity by name so publicly name can not be reset
         void SetName(Utf8CP name);
 
-        /*SchemaReadStatus ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchemaReadContextR context);*/
+        SchemaReadStatus ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchemaReadContextR context);
         SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const;
 
     public:
@@ -1732,9 +1732,9 @@ struct KindOfQuantity : NonCopyableClass
 
         //! Sets the display label of this KindOfQuantity
         //! @param[in]  value  The new value to apply
-        void SetDisplayLabel(Utf8CP value) { m_validatedName.SetDisplayLabel(value); }
+        ECOBJECTS_EXPORT void SetDisplayLabel(Utf8CP value);
         //! Gets the display label of this KindOfQuantity.  If no display label has been set explicitly, it will return the name of the KindOfQuantity
-        Utf8StringCR GetDisplayLabel() const { return m_validatedName.GetDisplayLabel(); }
+        ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
 
         //! Sets the description of this KindOfQuantity
         //! @param[in]  value  The new value to apply

@@ -40,6 +40,7 @@ struct SchemaXmlReaderImpl
         virtual SchemaReadStatus ReadClassStubsFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, ClassDeserializationVector& classes);
         virtual SchemaReadStatus ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector&  classes) = 0;
         SchemaReadStatus ReadEnumerationsFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
+        SchemaReadStatus ReadKindOfQuantitiesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
         
         void PopulateSchemaElementOrder(ECSchemaElementsOrder& elementOrder, BeXmlNodeR schemaNode);
         virtual bool IsECClassElementNode(BeXmlNodeR schemaNode);
@@ -664,7 +665,6 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadEnumerationsFromXml(ECSchemaPtr& schem
     {
     SchemaReadStatus status = SchemaReadStatus::Success;
 
-    // Create ECClass Stubs (no properties)
     for (BeXmlNodeP candidateNode = schemaNode.GetFirstChild(); nullptr != candidateNode; candidateNode = candidateNode->GetNextSibling())
         {
         if (!IsECEnumerationElementNode(*candidateNode))
@@ -695,6 +695,48 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadEnumerationsFromXml(ECSchemaPtr& schem
             {
             delete ecEnumeration;
             ecEnumeration = nullptr;
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Robert.Schili            03/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaReadStatus SchemaXmlReaderImpl::ReadKindOfQuantitiesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode)
+    {
+    SchemaReadStatus status = SchemaReadStatus::Success;
+
+    for (BeXmlNodeP candidateNode = schemaNode.GetFirstChild(); nullptr != candidateNode; candidateNode = candidateNode->GetNextSibling())
+        {
+        if (!IsKindOfQuantityElementNode(*candidateNode))
+            {
+            continue; //node is not relevant
+            }
+
+        KindOfQuantityP kindOfQuantity = new KindOfQuantity(*schemaOut);
+        status = kindOfQuantity->ReadXml(*candidateNode, m_schemaContext);
+        if (SchemaReadStatus::Success != status)
+            {
+            delete kindOfQuantity;
+            return status;
+            }
+
+        ECObjectsStatus addStatus = schemaOut->AddKindOfQuantity(kindOfQuantity);
+
+        if (addStatus == ECObjectsStatus::NamedItemAlreadyExists)
+            {
+            LOG.errorv("Duplicate kind of quantity node for %s in schema %s.", kindOfQuantity->GetName().c_str(), schemaOut->GetFullSchemaName().c_str());
+            delete kindOfQuantity;
+            kindOfQuantity = nullptr;
+            return SchemaReadStatus::DuplicateTypeName;
+            }
+
+        if (ECObjectsStatus::Success != addStatus)
+            {
+            delete kindOfQuantity;
+            kindOfQuantity = nullptr;
             return SchemaReadStatus::InvalidECSchemaXml;
             }
         }
@@ -837,7 +879,16 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
         return status;
     
     readingEnumerations.Stop();
-    LOG.tracev("Reading enumerations stubs for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingEnumerations.GetElapsedSeconds());
+    LOG.tracev("Reading enumerations for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingEnumerations.GetElapsedSeconds());
+
+    StopWatch readingKindOfQuantities("Reading kind of quantity", true);
+    status = reader->ReadKindOfQuantitiesFromXml(schemaOut, *schemaNode);
+
+    if (SchemaReadStatus::Success != status)
+        return status;
+
+    readingKindOfQuantities.Stop();
+    LOG.tracev("Reading kind of quantity elements for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingKindOfQuantities.GetElapsedSeconds());
 
     // NEEDSWORK ECClass inheritance (base classes, properties & relationship endpoints)
     StopWatch readingClassContents("Reading class contents", true);
