@@ -2010,6 +2010,17 @@ TEST_F (SchemaSerializationTest, SerializeComprehensiveSchema)
     NavigationECPropertyP navProp;
     entityClass->CreateNavigationProperty(navProp, "NavigationProperty", *relationshipClass, ECRelatedInstanceDirection::Forward);
 
+    KindOfQuantityP kindOfQuantity;
+    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity, "MyKindOfQuantity"));
+    kindOfQuantity->SetDescription("Kind of a Description here");
+    kindOfQuantity->SetDisplayLabel("best quantity of all times");
+    kindOfQuantity->SetPersistenceUnit("CENTIMETRE");
+    kindOfQuantity->SetPrecision(10);
+    kindOfQuantity->SetDefaultPresentationUnit("FOOT");
+    auto& altPresUnits = kindOfQuantity->GetAlternativePresentationUnitListR();
+    altPresUnits.push_back("INCH");
+    altPresUnits.push_back("MILLIINCH");
+
     WString fullSchemaName;
     fullSchemaName.AssignUtf8(schema->GetFullSchemaName().c_str());
     fullSchemaName.append(L".ecschema.xml");
