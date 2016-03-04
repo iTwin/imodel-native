@@ -474,7 +474,7 @@ Render::ImagePtr WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
     BeAssert(pWmsTileData.IsValid());
 
     auto const& data = pWmsTileData->GetData();
-    ImageUtilities::RgbImageInfo actualImageInfo;
+    RgbImageInfo actualImageInfo;
     Utf8StringCR contentType = pWmsTileData->GetContentType();
     
     BentleyStatus status;
@@ -483,19 +483,11 @@ Render::ImagePtr WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
 
     if (contentType.EqualsI (CONTENT_TYPE_PNG))
         {
-        status = ImageUtilities::ReadImageFromPngBuffer (m_decompressBuffer, actualImageInfo, data.data(), data.size());
+        status = actualImageInfo.ReadImageFromPngBuffer(m_decompressBuffer, data.data(), data.size());
         }
     else if (contentType.EqualsI (CONTENT_TYPE_JPEG))
         {
-        //&&MM I don't understand this concept of expected image info. The fileRead should output that info.
-        ImageUtilities::RgbImageInfo expectedImageInfo;
-        expectedImageInfo.width = GetTileSizeX(id);
-        expectedImageInfo.height = GetTileSizeY(id);
-        expectedImageInfo.hasAlpha = false;
-        expectedImageInfo.isBGR = false;
-        expectedImageInfo.isTopDown = true;
-
-        status = ImageUtilities::ReadImageFromJpgBuffer (m_decompressBuffer, actualImageInfo, data.data(), data.size(), expectedImageInfo);
+        status = actualImageInfo.ReadImageFromJpgBuffer(m_decompressBuffer, data.data(), data.size());
         }
     else
         {
@@ -508,13 +500,13 @@ Render::ImagePtr WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
         return NULL;
     
     
-    BeAssert (!actualImageInfo.isBGR);    //&&MM todo 
-    Render::Image::Format pixelType = actualImageInfo.hasAlpha ? Render::Image::Format::Rgba : Render::Image::Format::Rgb;
+    BeAssert (!actualImageInfo.m_isBGR);    //&&MM todo 
+    Render::Image::Format pixelType = actualImageInfo.m_hasAlpha ? Render::Image::Format::Rgba : Render::Image::Format::Rgb;
 
     //&&MM how to tell if we need to enable alpha?
     //     We cannot reuse buffer anymore review...
-    Render::ImagePtr pImage = new Render::Image(actualImageInfo.width, actualImageInfo.height, pixelType, std::move(m_decompressBuffer));
-    alphaBlend = m_mapInfo.m_transparent && actualImageInfo.hasAlpha;
+    Render::ImagePtr pImage = new Render::Image(actualImageInfo.m_width, actualImageInfo.m_height, pixelType, std::move(m_decompressBuffer));
+    alphaBlend = m_mapInfo.m_transparent && actualImageInfo.m_hasAlpha;
 
     return pImage;
     }

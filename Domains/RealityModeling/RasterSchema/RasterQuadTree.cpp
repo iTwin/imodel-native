@@ -246,22 +246,22 @@ protected:
         };
     typedef bset<RasterTilePtr, SortByResolution> SortedTiles;
 
-    RasterProgressiveDisplay (RasterQuadTreeR raster, SceneContextR context);
+    RasterProgressiveDisplay (RasterQuadTreeR raster, RenderContextR context);
     virtual ~RasterProgressiveDisplay();
 
     //! Displays tiled rasters and schedules downloads. 
-    virtual Completion _DoProgressive(SceneContextR context, WantShow&) override;
+    virtual Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
 
     void FindBackgroudTiles(SortedTiles& backgroundTiles, std::vector<RasterTilePtr> const& visibleTiles, uint32_t resolutionDelta, DgnViewportCR viewport);
     
-    void DrawLoadedChildren(RasterTileR tile, uint32_t resolutionDelta, SceneContextR context);
+    void DrawLoadedChildren(RasterTileR tile, uint32_t resolutionDelta, RenderContextR context);
 
 public:
-    static bool ShouldDrawInConvext(SceneContextR context);
+    static bool ShouldDrawInConvext(RenderContextR context);
 
-    void Draw (SceneContextR context);
+    void Draw (RenderContextR context);
 
-    static RefCountedPtr<RasterProgressiveDisplay> Create(RasterQuadTreeR raster, SceneContextR context);
+    static RefCountedPtr<RasterProgressiveDisplay> Create(RasterQuadTreeR raster, RenderContextR context);
 };
 
 //----------------------------------------------------------------------------------------
@@ -372,15 +372,15 @@ ReprojectStatus RasterTile::ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCa
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-bool RasterTile::Draw(SceneContextR context)
+bool RasterTile::Draw(RenderContextR context)
     {
+#ifndef NDEBUG  // debug build only.
     // Corners are in this order:
     //  [0]  [1]
     //  [2]  [3]
     DPoint3d uvPts[4];
     memcpy(uvPts, m_corners, sizeof(uvPts));
     
-#ifndef NDEBUG  // debug build only.
     static bool s_DrawTileShape = false;
     if(s_DrawTileShape)
         {
@@ -688,7 +688,7 @@ void RasterQuadTree::QueryVisible(std::vector<RasterTilePtr>& visibles, ViewCont
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-void RasterQuadTree::Draw(SceneContextR context)
+void RasterQuadTree::Draw(RenderContextR context)
     {
     // First, determine if we should draw tiles at all.
     if (!RasterProgressiveDisplay::ShouldDrawInConvext(context) || NULL == context.GetViewport())
@@ -715,7 +715,7 @@ void RasterQuadTree::DropGraphicsForViewport(Dgn::DgnViewportCR viewport)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-RasterProgressiveDisplay::RasterProgressiveDisplay(RasterQuadTreeR raster, SceneContextR context)
+RasterProgressiveDisplay::RasterProgressiveDisplay(RasterQuadTreeR raster, RenderContextR context)
 :m_raster(raster),
  m_viewport(context.GetViewportR())
     {
@@ -731,7 +731,7 @@ RasterProgressiveDisplay::~RasterProgressiveDisplay()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-RefCountedPtr<RasterProgressiveDisplay> RasterProgressiveDisplay::Create(RasterQuadTreeR rasterTree, SceneContextR context)
+RefCountedPtr<RasterProgressiveDisplay> RasterProgressiveDisplay::Create(RasterQuadTreeR rasterTree, RenderContextR context)
     {
     return new RasterProgressiveDisplay(rasterTree, context);
     }
@@ -739,7 +739,7 @@ RefCountedPtr<RasterProgressiveDisplay> RasterProgressiveDisplay::Create(RasterQ
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-bool RasterProgressiveDisplay::ShouldDrawInConvext (SceneContextR context)
+bool RasterProgressiveDisplay::ShouldDrawInConvext (RenderContextR context)
     {
     switch (context.GetDrawPurpose())
         {
@@ -760,7 +760,7 @@ bool RasterProgressiveDisplay::ShouldDrawInConvext (SceneContextR context)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  5/2015
 //----------------------------------------------------------------------------------------
-void RasterProgressiveDisplay::DrawLoadedChildren(RasterTileR tile, uint32_t resolutionDelta, SceneContextR context)
+void RasterProgressiveDisplay::DrawLoadedChildren(RasterTileR tile, uint32_t resolutionDelta, RenderContextR context)
     {
     if(0 == resolutionDelta)
         return;
@@ -804,7 +804,7 @@ void RasterProgressiveDisplay::FindBackgroudTiles(SortedTiles& backgroundTiles, 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-void RasterProgressiveDisplay::Draw (SceneContextR context)
+void RasterProgressiveDisplay::Draw (RenderContextR context)
     {
     BeAssert(nullptr != context.GetViewport()); // a scene should always have a viewport.
 
@@ -843,7 +843,7 @@ void RasterProgressiveDisplay::Draw (SceneContextR context)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-ProgressiveTask::Completion RasterProgressiveDisplay::_DoProgressive(SceneContextR context, WantShow& wantShow)
+ProgressiveTask::Completion RasterProgressiveDisplay::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
     {
     for (auto pTileQueryItr = m_queriedTiles.begin(); pTileQueryItr != m_queriedTiles.end();  /* incremented or erased in loop*/ )
         {
