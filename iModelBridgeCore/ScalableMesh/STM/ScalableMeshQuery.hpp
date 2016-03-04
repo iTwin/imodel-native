@@ -1227,7 +1227,9 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
             if (d.clientID == 0) currentTexId++;
             if (currentTexId != texID) continue;
             //uint64_t upperId = (d.clientID >> 32);
-            if (d.clientID == 0 || (d.clientID < ((uint64_t)-1) && lowerId - 1 < clipsToShow.size() && !clipsToShow[lowerId - 1] && !applyAllClips) && d.upToDate)
+            if (d.clientID == 0 || 
+                (d.toggledForID && d.clientID < ((uint64_t)-1) && lowerId - 1 < clipsToShow.size() && !clipsToShow[lowerId - 1] && !applyAllClips) 
+                && d.upToDate)
                 {
                 //meshPtr->ApplyDifferenceSet(d);
                 diffs.ApplySet(d, 0);
@@ -2619,6 +2621,18 @@ template <class POINT> BcDTMPtr ScalableMeshNode<POINT>::_GetBcDTM() const
         }
     }
 
+template <class POINT> void ScalableMeshNode<POINT>::_GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const
+    {
+    auto m_meshNode = dynamic_cast<SMMeshIndexNode<POINT, YProtPtExtentType>*>(m_node.GetPtr());
+    for (size_t i = 0; i < m_meshNode->m_nbClips; ++i)
+        {
+        DifferenceSet d = m_meshNode->GetClipSet(i);
+        if (d.toggledForID) continue;
+        PolyfaceHeaderPtr mesh = d.ToPolyfaceMesh(&m_node->operator[](0), m_node->size());
+        meshes.push_back(mesh);
+        }
+    }
+
 template <class POINT> bool ScalableMeshNode<POINT>::_HasClip(uint64_t clip) const
     {
     auto m_meshNode = dynamic_cast<SMMeshIndexNode<POINT, YProtPtExtentType>*>(m_node.GetPtr());
@@ -2642,7 +2656,8 @@ template <class POINT> void ScalableMeshNode<POINT>::_ApplyAllExistingClips() co
 
 template <class POINT> void ScalableMeshNode<POINT>::_RefreshMergedClip() const
     {
-    return dynamic_cast<SMMeshIndexNode<POINT, YProtPtExtentType>*>(m_node.GetPtr())->ComputeMergedClips();
+    dynamic_cast<SMMeshIndexNode<POINT, YProtPtExtentType>*>(m_node.GetPtr())->BuildSkirts();
+    dynamic_cast<SMMeshIndexNode<POINT, YProtPtExtentType>*>(m_node.GetPtr())->ComputeMergedClips();
     }
 
 template <class POINT> bool ScalableMeshNode<POINT>::_AddClip(uint64_t id, bool isVisible) const

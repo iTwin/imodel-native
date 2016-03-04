@@ -467,6 +467,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMesh -f ScalableMesh 
     <ClInclude Include="STM\3dDelaunay\TrimHull.h" />
     <ClInclude Include="STM\CGALEdgeCollapse.h" />
     <ClInclude Include="STM\CGAL_BentleyKernel.h" />
+    <ClInclude Include="STM\Edits\Skirts.h" />
     <ClInclude Include="STM\ScalableMeshFileMoniker.h" />
     <ClInclude Include="STM\DrapeOnGraph.h" />
     <ClInclude Include="STM\SMSQLiteClipDefinitionsTileStore.h" />
@@ -551,6 +552,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMesh -f ScalableMesh 
     <ClInclude Include="STM\SMSQLiteGraphTileStore.h" />
     <ClInclude Include="STM\SMSQLiteIndiceTileStore.h" />
     <ClInclude Include="STM\SMSQLitePointTileStore.h" />
+    <ClInclude Include="STM\SMSQLiteSkirtDefinitionsTileStore.h" />
     <ClInclude Include="STM\SMSQLiteTextureTileStore.h" />
     <ClInclude Include="STM\SMMeshIndex.h" />
     <ClInclude Include="STM\SMMeshIndex.hpp" />

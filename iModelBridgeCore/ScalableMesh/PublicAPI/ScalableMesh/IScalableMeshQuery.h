@@ -543,6 +543,8 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         virtual bool _HasClip(uint64_t id) const = 0;
 
+        virtual void _GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const = 0;
+
                 
     public:
         static const BENTLEYSTM_EXPORT ScalableMeshTextureID UNTEXTURED_PART = 0;
@@ -597,6 +599,8 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         BENTLEYSTM_EXPORT void LoadHeader() const;
 
         BENTLEYSTM_EXPORT bool HasClip(uint64_t id) const;
+
+        BENTLEYSTM_EXPORT void GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const;
     };
 
 struct SmCachedDisplayMesh;

@@ -2228,6 +2228,12 @@ bool IScalableMeshNode::HasClip(uint64_t clipId) const
     return _HasClip(clipId);
     }
 
+void IScalableMeshNode::GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const
+    {
+    return _GetSkirtMeshes(meshes);
+    }
+
+
 int IScalableMeshNodeRayQuery::Query(IScalableMeshNodePtr&                               nodePtr,
                               const DPoint3d*                           pTestPt,
                               const DPoint3d*                              pClipShapePts,

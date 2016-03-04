@@ -279,6 +279,8 @@ $(o)SMSQLiteFile$(oext) : $(stmDir)SMSQLiteFile.cpp $(PCHHeaderDepends) ${MultiC
 
 $(o)HPUPacket$(oext) : $(stmDir)HPUPacket.cpp $(stmDir)HPUPacket.h ${MultiCompileDepends}
 
+$(o)Skirts$(oext) : $(stmDir)Edits/Skirts.cpp $(stmDir)Edits/Skirts.h ${MultiCompileDepends}
+
 #-----------------------------------------------------------------------
 #   Build Compile Automatic Ground Detection 
 #-----------------------------------------------------------------------

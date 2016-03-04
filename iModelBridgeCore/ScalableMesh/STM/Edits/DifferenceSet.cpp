@@ -539,4 +539,40 @@ DifferenceSet DifferenceSet::MergeSetWith(DifferenceSet& d, const DPoint3d* vert
         }
     return d;
     }
+
+
+    PolyfaceHeaderPtr DifferenceSet::ToPolyfaceMesh(const DPoint3d* points, size_t nOfPoints)
+        {
+        bvector<int32_t> indices;
+        bvector<DPoint3d> pts;
+        bmap<int, int> mapOfPts;
+        size_t currentPt = 0;
+        if (addedFaces.size() >= 3 && addedFaces.size() < 1024 * 1024)
+            {
+
+            for (int i = 0; i + 2 < addedFaces.size(); i += 3)
+                {
+                if (!(addedFaces[i] - 1 >= 0 && addedFaces[i] - 1 < nOfPoints + addedVertices.size() && addedFaces[i + 1] - 1 >= 0 && addedFaces[i + 1] - 1 < nOfPoints + addedVertices.size()
+                    && addedFaces[i + 2] - 1 >= 0 && addedFaces[i + 2] - 1 < nOfPoints + addedVertices.size()))
+                    {
+                    continue;
+                    }
+                assert(addedFaces[i] - 1 >= 0 && addedFaces[i] - 1 < nOfPoints + addedVertices.size() && addedFaces[i + 1] - 1 >= 0 && addedFaces[i + 1] - 1 < nOfPoints + addedVertices.size()
+                       && addedFaces[i + 2] - 1 >= 0 && addedFaces[i + 2] - 1 < nOfPoints + addedVertices.size());
+                for (size_t j = 0; j < 3;  ++j)
+                    {
+                    int32_t idx = (int32_t)(addedFaces[i + j] >= firstIndex ? addedFaces[i + j] - firstIndex + nOfPoints + 1 : addedFaces[i + j]);
+                    assert(idx > 0 && idx <= nOfPoints + addedVertices.size());
+                    if (mapOfPts.count(idx) == 0)
+                        {
+                        mapOfPts[idx] = (int)currentPt;
+                        pts.push_back(addedFaces[i + j] >= firstIndex ? addedVertices[addedFaces[i + j] - firstIndex] : points[addedFaces[i + j] - 1]);
+                        currentPt++;
+                        }
+                    indices.push_back(mapOfPts[idx]+1);
+                    }
+                }
+            }
+        return PolyfaceHeader::CreateIndexedMesh(3,pts, indices);
+        }
 END_BENTLEY_SCALABLEMESH_NAMESPACE

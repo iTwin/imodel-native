@@ -296,12 +296,14 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     void                RefreshMergedClipsRecursive();
 
     //Checks whether clip should apply to node and update lists accordingly
-    void                ClipActionRecursive(ClipAction action,uint64_t clipId, DRange3d& extent);
+    void                ClipActionRecursive(ClipAction action,uint64_t clipId, DRange3d& extent, bool setToggledWhenIdIsOn = true);
 
     ClipRegistry* GetClipRegistry() const
         {
         return dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipRegistry();
         }
+
+    void  BuildSkirts();
 
     bool HasClip(uint64_t clipId);
 
@@ -310,13 +312,13 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     //Adds a new set of differences matching the desired clip (synchronously).
     //The base mesh is retained and the clip is a non-destructive modification.
     //Caller provides desired ID for the new clip. Returns true if clip was added, false if clip is out of bounds.
-    bool  AddClip(uint64_t clipId, bool isVisible);
+    bool  AddClip(uint64_t clipId, bool isVisible, bool setToggledWhenIdIsOn = true);
 
     //Deletes an existing clip or returns false if there is no clip with this ID.
-    bool  DeleteClip(uint64_t clipId, bool isVisible);
+    bool  DeleteClip(uint64_t clipId, bool isVisible, bool setToggledWhenIdIsOn=true);
 
     //Modifies an existing clip or returns false if there is no clip with this ID.
-    bool ModifyClip(uint64_t clipId,  bool isVisible);
+    bool ModifyClip(uint64_t clipId, bool isVisible, bool setToggledWhenIdIsOn = true);
 
     //Requests adding a clip asynchronously. ID is set but diffset is filled later.
     bool  AddClipAsync(uint64_t clipId, bool isVisible);
@@ -787,7 +789,7 @@ size_t GetNbPtsIndices(size_t texture_id) const
         void                AddFeatureDefinition(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
 
         void                AddClipDefinition(bvector<DPoint3d>& points, DRange3d& extent);
-        void                PerformClipAction(ClipAction action, uint64_t clipId, DRange3d& extent);
+        void                PerformClipAction(ClipAction action, uint64_t clipId, DRange3d& extent, bool setToggledWhenIDIsOn=true);
         void                RefreshMergedClips();
 
 

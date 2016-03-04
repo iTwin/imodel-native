@@ -298,6 +298,21 @@ void IScalableMesh::SetIsInsertingClips(bool toggleInsertClips)
     return _SetIsInsertingClips(toggleInsertClips);
     }
 
+bool IScalableMesh::AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t clipID)
+    {
+    return _AddSkirt(skirt, clipID);
+    }
+
+bool IScalableMesh::ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t clipID)
+    {
+    return _ModifySkirt(skirt, clipID);
+    }
+
+bool IScalableMesh::RemoveSkirt(uint64_t clipID)
+    {
+    return _RemoveSkirt(clipID);
+    }
+
 
 #ifdef SCALABLE_MESH_ATP
 int IScalableMesh::LoadAllNodeHeaders(size_t& nbLoadedNodes) const
@@ -1467,6 +1482,47 @@ template <class POINT> void ScalableMesh<POINT>::_SetIsInsertingClips(bool toggl
     }
 
 /*----------------------------------------------------------------------------+
+|ScalableMesh::_AddClip
++----------------------------------------------------------------------------*/
+template <class POINT> bool ScalableMesh<POINT>::_AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t clipID)
+    {
+    if (m_scmIndexPtr->GetClipRegistry() == nullptr || skirt.size() == 0 || skirt[0].size() == 0) return false;
+    DRange3d extent = DRange3d::From(skirt[0][0]);
+    for (auto& vec : skirt) extent.Extend(vec, nullptr);
+    m_scmIndexPtr->GetClipRegistry()->ModifySkirt(clipID, skirt);
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, clipID, extent, false);
+    return true;
+    }
+
+/*----------------------------------------------------------------------------+
+|ScalableMesh::_ModifyClip
++----------------------------------------------------------------------------*/
+template <class POINT> bool ScalableMesh<POINT>::_ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t clipID)
+    {
+    if (m_scmIndexPtr->GetClipRegistry() == nullptr || skirt.size() ==0 || skirt[0].size() ==0) return false;
+    DRange3d extent = DRange3d::From(skirt[0][0]);
+    for (auto& vec : skirt) extent.Extend(vec, nullptr);
+    m_scmIndexPtr->GetClipRegistry()->ModifySkirt(clipID, skirt);
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, extent, false);
+    return true;
+    }
+
+/*----------------------------------------------------------------------------+
+|ScalableMesh::_RemoveClip
++----------------------------------------------------------------------------*/
+template <class POINT> bool ScalableMesh<POINT>::_RemoveSkirt(uint64_t clipID)
+    {
+    if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
+    bvector<bvector<DPoint3d>> skirt;
+    m_scmIndexPtr->GetClipRegistry()->GetSkirt(clipID, skirt);
+    DRange3d extent = DRange3d::From(skirt[0][0]);
+    for (auto& vec : skirt) extent.Extend(vec, nullptr);
+    m_scmIndexPtr->GetClipRegistry()->DeleteClip(clipID);
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_DELETE, clipID, extent, false);
+    return true;
+    }
+
+/*----------------------------------------------------------------------------+
 |ScalableMesh::_GetState
 +----------------------------------------------------------------------------*/
 template <class POINT> ScalableMeshState ScalableMesh<POINT>::_GetState() const
@@ -1784,6 +1840,22 @@ template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_
     }
 
 template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_RemoveClip(uint64_t clipID)
+    {
+    return false;
+    }
+
+
+template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t clipID)
+    {
+    return false;
+    }
+
+template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t clipID)
+    {
+    return false;
+    }
+
+template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_RemoveSkirt(uint64_t clipID)
     {
     return false;
     }

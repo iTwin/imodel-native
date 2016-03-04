@@ -112,6 +112,13 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         virtual bool                               _RemoveClip(uint64_t clipID) = 0;
 
+
+        virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) = 0;
+
+        virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) = 0;
+
+        virtual bool                               _RemoveSkirt(uint64_t skirtID) = 0;
+
         virtual void                               _SetIsInsertingClips(bool toggleInsertMode) = 0;
     /*__PUBLISH_SECTION_START__*/
     public:
@@ -189,6 +196,12 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         BENTLEYSTM_EXPORT bool                   ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID);
 
         BENTLEYSTM_EXPORT bool                   RemoveClip(uint64_t clipID);
+
+        BENTLEYSTM_EXPORT bool                   ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID);
+
+        BENTLEYSTM_EXPORT bool                   AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID);
+
+        BENTLEYSTM_EXPORT bool                   RemoveSkirt(uint64_t skirtID);
 
         BENTLEYSTM_EXPORT void                   SetIsInsertingClips(bool toggleInsertMode);
 

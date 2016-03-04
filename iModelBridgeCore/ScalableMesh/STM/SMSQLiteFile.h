@@ -124,6 +124,7 @@ public:
     void GetGraph(int64_t nodeID, bvector<uint8_t>& graph, size_t& uncompressedSize);
     void GetFeature(int64_t featureID, bvector<uint8_t>& featureData, size_t& uncompressedSize);
     void GetClipPolygon(int64_t clipID, bvector<uint8_t>& clipData, size_t& uncompressedSize);
+    void GetSkirtPolygon(int64_t clipID, bvector<uint8_t>& clipData, size_t& uncompressedSize);
     void GetDiffSet(int64_t diffsetID, bvector<uint8_t>& diffsetData, size_t& uncompressedSize);
 
     void StorePoints(int64_t& nodeID, const bvector<uint8_t>& pts, size_t uncompressedSize);
@@ -134,6 +135,7 @@ public:
     void StoreGraph(int64_t& nodeID, const bvector<uint8_t>& graph, size_t uncompressedSize);
     void StoreFeature(int64_t& featureID, const bvector<uint8_t>& featureData, size_t uncompressedSize);
     void StoreClipPolygon(int64_t& clipID, const bvector<uint8_t>& clipData, size_t uncompressedSize);
+    void StoreSkirtPolygon(int64_t& clipID, const bvector<uint8_t>& clipData, size_t uncompressedSize);
     void StoreDiffSet(int64_t& diffsetID, const bvector<uint8_t>& diffsetData, size_t uncompressedSize);
 
     size_t GetNumberOfPoints(int64_t nodeID);
@@ -143,6 +145,7 @@ public:
     size_t GetTextureByteCount(int64_t nodeID);
     size_t GetNumberOfFeaturePoints(int64_t featureID);
     size_t GetClipPolygonByteCount(int64_t clipID);
+    size_t GetSkirtPolygonByteCount(int64_t skirtID);
 
     bool m_autocommit = true;
 private:
