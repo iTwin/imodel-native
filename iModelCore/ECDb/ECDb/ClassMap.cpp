@@ -664,7 +664,7 @@ MapStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, IClassMap const* p
         //nav prop maps and if the class is mapped to primary and joined table, create clones of property maps of the base class
         //as the context (table, containing ECClass) is different
         if (isImportingSchemas)
-            GetPropertyMapsR().AddPropertyMap(PropertyMap::Clone(m_ecDbMap, *propMapInBaseClass, GetClass(), nullptr));
+            GetPropertyMapsR().AddPropertyMap(PropertyMapFactory::ClonePropertyMap(m_ecDbMap, *propMapInBaseClass, GetClass(), nullptr));
         else
             propertiesToCreatePropMapsFor.push_back(property);
         }
@@ -675,7 +675,7 @@ MapStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, IClassMap const* p
     for (ECPropertyCP property : propertiesToCreatePropMapsFor)
         {
         Utf8CP propertyAccessString = property->GetName().c_str();
-        PropertyMapPtr propMap = PropertyMap::CreateAndEvaluateMapping(ctx, m_ecDbMap.GetECDb(), *property, m_ecClass, propertyAccessString, nullptr);
+        PropertyMapPtr propMap = PropertyMapFactory::CreatePropertyMap(ctx, m_ecDbMap.GetECDb(), *property, m_ecClass, propertyAccessString, nullptr);
         if (propMap == nullptr)
             return MapStatus::Error;
 

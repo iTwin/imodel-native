@@ -239,7 +239,7 @@ ECSqlStepTaskCreateStatus InsertStructArrayStepTask::Create(unique_ptr<InsertStr
     if (structArrayPropertyMap == nullptr)
         return ECSqlStepTaskCreateStatus::PropertyNotStructArrayType;
 
-    auto& arrayElementType = structArrayPropertyMap->GetElementType();
+    auto& arrayElementType = structArrayPropertyMap->GetStructElementType();
     auto arrayElementTypeMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMap(arrayElementType);
     if (!arrayElementTypeMap)
         {
@@ -319,7 +319,7 @@ ECSqlStepTaskCreateStatus DeleteStructArrayStepTask::Create(unique_ptr<DeleteStr
     if (structArrayPropertyMap == nullptr)
         return ECSqlStepTaskCreateStatus::PropertyNotStructArrayType;
 
-    ECClassCR arrayElementType = structArrayPropertyMap->GetElementType();
+    ECClassCR arrayElementType = structArrayPropertyMap->GetStructElementType();
     ClassMap const* arrayElementTypeMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMap(arrayElementType);
     if (arrayElementTypeMap == nullptr)
         return ECSqlStepTaskCreateStatus::ArrayElementTypeMapNotFound;

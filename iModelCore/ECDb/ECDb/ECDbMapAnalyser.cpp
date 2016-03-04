@@ -1098,7 +1098,7 @@ void ECDbMapAnalyser::AnalyseStruct(Class& classInfo)
         {
         if (StructArrayTablePropertyMap const* structArrayTablePropMap = propertyMap->GetAsStructArrayTablePropertyMap())
             {
-            if (auto associatedClasMap = m_map.GetClassMap(structArrayTablePropMap->GetElementType()))
+            if (auto associatedClasMap = m_map.GetClassMap(structArrayTablePropMap->GetStructElementType()))
                 {
                 if (associatedClasMap->GetJoinedTable().GetPersistenceType() == PersistenceType::Persisted)
                     {
