@@ -2795,7 +2795,7 @@ ECRelatedInstanceDirection ECRelationshipClass::GetStrengthDirection () const
 ECObjectsStatus ECRelationshipClass::SetStrengthDirection (ECRelatedInstanceDirection direction)
     {
     if (!ValidateStrengthDirectionConstraint(direction, false))
-        ECObjectsStatus::RelationshipConstraintsNotCompatible;
+        return ECObjectsStatus::RelationshipConstraintsNotCompatible;
 
     m_strengthDirection = direction;
     return ECObjectsStatus::Success;
