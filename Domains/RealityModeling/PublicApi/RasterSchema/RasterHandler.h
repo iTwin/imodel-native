@@ -24,6 +24,14 @@ struct EXPORT_VTABLE_ATTRIBUTE RasterModel : Dgn::SpatialModel
 protected:
     friend struct RasterModelHandler;
 
+    enum class LoadRasterStatus
+        {
+        Unloaded,
+        Loaded,
+        UnknownError,
+        };
+
+    mutable LoadRasterStatus  m_loadStatus;
     mutable RasterQuadTreePtr m_rasterTreeP;
     
     //! Destruct a RasterModel object.
@@ -35,12 +43,11 @@ protected:
 
     RasterQuadTreeP GetTree() const;
 
-    //&&MM TODO 
-    virtual void _OnFitView(Dgn::FitContextR) {}
+    virtual void _OnFitView(Dgn::FitContextR) override;
 
-    //&&MM TODO this how we make our raster pick-able
-    virtual void _DrawModel(Dgn::ViewContextR) {}
-
+    //This how we make our raster pick-able
+    virtual void _DrawModel(Dgn::ViewContextR) override;
+    
     virtual void _DropGraphicsForViewport(Dgn::DgnViewportCR viewport) override;
 
 public:

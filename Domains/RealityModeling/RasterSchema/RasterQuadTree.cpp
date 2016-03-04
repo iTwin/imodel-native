@@ -658,7 +658,12 @@ void RasterTile::OnItemRemoveFromCache(RasterTileCache::ItemId const& id)
 //----------------------------------------------------------------------------------------
 RasterQuadTreePtr RasterQuadTree::Create(RasterSourceR source, DgnDbR dgnDb)
     {
-    return new RasterQuadTree(source, dgnDb);
+    RasterQuadTreePtr pTree = new RasterQuadTree(source, dgnDb);
+    // may occurs if we have reprojection errors
+    if (pTree->m_pRoot.IsNull())
+        return nullptr;
+
+    return pTree;
     }
 
 //----------------------------------------------------------------------------------------
