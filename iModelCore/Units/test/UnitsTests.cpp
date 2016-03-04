@@ -488,6 +488,39 @@ void GetUnitsByName(UnitRegistry& hub, bvector<Utf8String>& unitNames)
         }
     }
 
+//void ReadFile(Utf8CP path, std::function<void(Utf8CP)> lineProcessor)
+//    {
+//    std::ifstream ifs(path, std::ifstream::in);
+//    std::string line;
+//
+//    while (std::getline(ifs, line))
+//        {
+//        lineProcessor(line.c_str());
+//        }
+//    }
+//
+//TEST_F(UnitsTests, MergeListsOfUnits)
+//    {
+//    bvector<Utf8String> unitsList;
+//    auto merger = [&unitsList] (Utf8CP token)
+//        {
+//        auto it = find(unitsList.begin(), unitsList.end(), token);
+//        if (it == unitsList.end())
+//            unitsList.push_back(token);
+//        };
+//
+//    ReadFile("C:\\Source\\GraphiteTestData\\Second pass units lists\\units.txt.bak", merger);
+//    ReadFile("C:\\Source\\GraphiteTestData\\Second pass units lists\\allowableUnits.txt", merger);
+//    ReadFile("C:\\Source\\DgnDb0601Dev_1\\src\\Units\\test\\ConversionData\\NeededUnits.csv", merger);
+//
+//    sort(unitsList.begin(), unitsList.end());
+//
+//    ofstream fileStream("C:\\NeededUnits.csv", ofstream::out);
+//    for (auto const& unit : unitsList)
+//        fileStream << unit.c_str() << endl;
+//    fileStream.close();
+//    }
+
 TEST_F(UnitsTests, TestEveryUnitIsAddedToItsPhenomenon)
     {
     UnitRegistry& hub = UnitRegistry::Instance();

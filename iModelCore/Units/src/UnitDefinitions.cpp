@@ -422,6 +422,18 @@ void AddSpecificHeatCapacity(UnitRegistry& reg)
     reg.AddSynonym("BTU/(LBM*RANKINE)", "BTU_PER_POUND_MASS_PER_DELTA_DEGREE_RANKINE");
     }
 
+void AddSpecificHeatCapacityMolar(UnitRegistry& reg)
+    {
+    reg.AddUnit(SPECIFIC_HEAT_CAPACITY_MOLAR, SI, "J/(LB-MOLE*K)", "J*LB-MOLE(-1)*DELTA_KELVIN(-1)");
+    reg.AddSynonym("J/(LB-MOLE*K)", "JOULE_PER_KILOMOLE_PER_DELTA_DEGREE_KELVIN");
+
+    reg.AddUnit(SPECIFIC_HEAT_CAPACITY_MOLAR, SI, "KJ/(KMOL*K)", "KJ*KMOL(-1)*DELTA_KELVIN(-1)");
+    reg.AddSynonym("KJ/(KMOL*K)", "KILOJOULE_PER_KILOMOLE_PER_DELTA_DEGREE_KELVIN");
+
+    reg.AddUnit(SPECIFIC_HEAT_CAPACITY_MOLAR, SI, "BTU/(LB-MOLE*RANKINE)", "BTU*LB-MOLE(-1)*DELTA_RANKINE(-1)");
+    reg.AddSynonym("BTU/(LB-MOLE*RANKINE)", "BTU_PER_POUND_MOLE_PER_DELTA_DEGREE_RANKINE");
+    }
+
 void AddVolumeFlowRateByArea(UnitRegistry& reg)
     {
 
@@ -804,8 +816,7 @@ void AddSlope(UnitRegistry& reg)
     {
     UnitCP unit = reg.AddUnit(SLOPE, SI, "M/M", "M*M(-1)");
     reg.AddSynonym(unit, "METRE_PER_METRE"); 
-    // , "METRE_HORIZONTAL_PER_METRE_VERTICAL");
-    //reg.AddSynonym(unit, "METRE_VERTICAL_PER_METRE_HORIZONTAL");
+    reg.AddSynonym(unit, "METRE_VERTICAL_PER_METRE_HORIZONTAL");
 
     unit = reg.AddUnit(SLOPE, SI, "CM/M", "CM*M(-1)");
     reg.AddSynonym(unit, "CENTIMETRE_PER_METRE");
@@ -831,6 +842,7 @@ void AddSlope(UnitRegistry& reg)
     // TODO: Not supported, we can't invert as part of conversion
     //reg.AddUnit(SLOPE, INTERNATIONAL, "HORIZONTAL_PER_VERTICAL", "VERTICAL_PER_HORIZONTAL(-1)");
     //reg.AddUnit(SLOPE, USCUSTOM, "FOOT_HORIZONTAL_PER_FOOT_VERTICAL", "FT/FT(-1)");
+    // , "METRE_HORIZONTAL_PER_METRE_VERTICAL");
     }
 
 void AddSurfaceDensity(UnitRegistry& reg)
@@ -1132,6 +1144,7 @@ void UnitRegistry::AddDefaultUnits ()
     AddEnergyDensity(reg);
     AddHeatingValue(reg);
     AddSpecificHeatCapacity(reg);
+    AddSpecificHeatCapacityMolar(reg);
     AddVolumeFlowRate(reg);
     AddFrequency(reg);
     AddSurfaceFlowRate(reg);

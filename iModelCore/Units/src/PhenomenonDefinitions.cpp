@@ -93,6 +93,7 @@ void UnitRegistry::AddDefaultPhenomena ()
     AddPhenomena(HEATING_VALUE_MASS, "WORK*MASS(-1)");
     AddPhenomena(HEATING_VALUE_MOLE, "WORK*MOLE(-1)");
     AddPhenomena(SPECIFIC_HEAT_CAPACITY, "WORK*MASS(-1)*TEMPERATURE_CHANGE(-1)");
+    AddPhenomena(SPECIFIC_HEAT_CAPACITY_MOLAR, "WORK*MOLE(-1)*TEMPERATURE_CHANGE(-1)");
     //AddPhenomena(ACTION, "WORK*TIME");
     }
 
