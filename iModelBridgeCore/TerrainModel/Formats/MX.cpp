@@ -199,6 +199,8 @@ BcDTMPtr MXFilImporter::ImportStringModel (ModelTableRecord* modelTableRecord) c
     if (dtm.IsNull())
         dtm = BcDTM::Create ();
     DTMFeatureId featureId;
+    bvector<DPoint3d> pointList;
+
     MXModelFile* modelFile = modelTableRecord->getModelFile();
     // triangulation model search for the strings.
     MXModelObjectPtr<StringTable> stringTable;
@@ -214,8 +216,10 @@ BcDTMPtr MXFilImporter::ImportStringModel (ModelTableRecord* modelTableRecord) c
                 WString stringName (stringTableRecord->stringName ());
                 int numDims = stringTableRecord->type() % 100;
                 bool isPointString = (((numDims == 3) || (numDims == 4)) && (stringTableRecord->stringName()[0] == 'P'));
+                bool isTextString = (stringTableRecord->stringName()[0] == '*');
+
                 // Add String Masking here! and/or callback!
-                DTMFeatureType featureType = isPointString ? DTMFeatureType::FeatureSpot : DTMFeatureType::Breakline;
+                DTMFeatureType featureType = isPointString || isTextString ? DTMFeatureType::FeatureSpot : DTMFeatureType::Breakline;
                 // Need to interpret the string type and do we want to import it?
                 unsigned char* data = (unsigned char*)stringTableRecord->stringData();
                 bool isContour = false;
@@ -278,127 +282,75 @@ BcDTMPtr MXFilImporter::ImportStringModel (ModelTableRecord* modelTableRecord) c
                     }
 
                 // Add the points.
-
-                int numPoints = stringTableRecord->numPoints();
-                int pointNum = 0;
-                int startPt = -1;
-                bool inNullSegment = false;
-                bool inDisco = discos[0] == eStart;
                 bool includeNULLSegments = false;
                 //bool nullInValidLevels = false;
 
-                while (pointNum < numPoints)
+                int numPoints = stringTableRecord->numPoints();
+                int pointNum = 0;
+                bool inNullSegment = points[0].z < -998;
+                bool inDisco = discos[0] == eStart;
+                pointList.clear();
+
+                for (pointNum = 0; pointNum < numPoints; pointNum++)
                     {
-                    // If start disco detected, read forward until end disco detected
-                    while ((pointNum < numPoints)
-                        && (inDisco))
-                        {            
-
-                        // Report a disco at the start of string as a point
-                        if (pointNum == 0)
-                            {
-                            if (startPt == -1)
-                                startPt = pointNum;
-
-                            // Add callback...
-                            dtm->AddLinearFeature (featureType, &points[startPt], pointNum - startPt + 1, asLong (stringTableRecord->stringName()), &featureId);
-                            if (m_callback)
-                                m_callback->AddFeature (featureId, L"", L"", stringName.GetWCharCP (), L"", featureType, &points[startPt], pointNum - startPt + 1);
-                            startPt = -1;
-                            }
-
-                        if (discos[pointNum] == eEnd)
-                            {
-                            inDisco = false;
-                            break;
-                            }
-
-                        pointNum++;
-                        }             
-
-                    // If null detected and no disco, read forward till valid level or disco detected
-                    while ((pointNum < numPoints) 
-                        && (points[pointNum].z < -998) 
-                        && (discos[pointNum] != eStart)
-                        && (discos[pointNum] != eBearing))
-                        {
-                        inNullSegment = true;
-                        if (startPt == -1)
-                            startPt = pointNum;
-                        pointNum++;
-                        }
-
-                    // End of null segment - include the point the finishes the null segement (valid level, start disco or bearing disco
-                    if (inNullSegment)
-                        {
-                        if (includeNULLSegments)
-                            {
-
-                            if (pointNum < numPoints)
-                                {
-                                if (startPt == -1)
-                                    startPt = pointNum;
-                                if (discos[pointNum] == eStart)
-                                    inDisco = true;
-                                }
-
-                            //if (nullInValidLevels)
-                            //    {
-                            //    pointList[0].Z = -999;
-                            //    pointList[pointList->Count - 1].Z = -999;
-                            //    }
-
-                            if (startPt == -1)
-                                startPt = pointNum;
-                            // Add callback...
-                            dtm->AddLinearFeature (featureType, &points[startPt], pointNum - startPt + 1, asLong (stringTableRecord->stringName()), &featureId);
-                            if (m_callback)
-                                m_callback->AddFeature (featureId, L"", L"", stringName.GetWCharCP (), L"", featureType, &points[startPt], pointNum - startPt + 1);
-                            }
-                        startPt = -1;
-
-                        inNullSegment = false;
-                        }
-
-                    // Start of disco detected - back top main loop
                     if (inDisco)
                         {
-                        pointNum++;
-                        continue;              
+                        if (discos[pointNum] != eEnd)
+                            continue;
+
+                        inDisco = false;
+                        pointList.push_back(points[pointNum]);
+                        inNullSegment = points[pointNum].z < -998;
+                        continue;
                         }
 
-                    // Normal level must be detected - read forward till null level, bearing or start disco
-                    while (pointNum < numPoints)
+                    // Skip over discos.
+                    bool isPointNull = points[pointNum].z < -998;
+
+                    if (isPointNull == inNullSegment)
+                        pointList.push_back(points[pointNum]);
+                    else
                         {
-                        // Null level detected - break back to start of loop
-                        if (points[pointNum].z < -998)
-                            break;
+                        if (inNullSegment)
+                            pointList.push_back(points[pointNum]);
 
-                        // Point is ok to add - might be bearing disco or start disco
-                        if (startPt == -1)
-                            startPt = pointNum;
-
-                        if (discos[pointNum] == eStart)
+                        if (includeNULLSegments || !inNullSegment)
                             {
-                            inDisco = true;
-                            break;
+                            if (inNullSegment)
+                                pointList.push_back(points[pointNum]);
+                            dtm->AddLinearFeature(featureType, pointList.data(), (int)pointList.size(), asLong(stringTableRecord->stringName()), &featureId);
+                            if (m_callback)
+                                m_callback->AddFeature(featureId, L"", L"", stringName.GetWCharCP(), L"", featureType, pointList.data(), (int)pointList.size());
                             }
-
-                        pointNum++;
-
+                        pointList.clear();
+                        if (inNullSegment)
+                            pointList.push_back(points[pointNum]);
+                        inNullSegment = isPointNull;
                         }
-        
-                    // Add the level points to results
-                    if (startPt != -1)
+
+                    if (discos[pointNum] == eStart)
                         {
-                        // Add callback...
-                        dtm->AddLinearFeature (featureType, &points[startPt], pointNum - startPt, asLong (stringTableRecord->stringName()), &featureId);
-                        if (m_callback)
-                            m_callback->AddFeature (featureId, L"", L"", stringName.GetWCharCP (), L"", featureType, &points[startPt], pointNum - startPt);
-                        startPt = -1;
+                        if (!pointList.empty())
+                            {
+                            if (includeNULLSegments || !inNullSegment)
+                                {
+                                dtm->AddLinearFeature(featureType, pointList.data(), (int)pointList.size(), asLong(stringTableRecord->stringName()), &featureId);
+                                if (m_callback)
+                                    m_callback->AddFeature(featureId, L"", L"", stringName.GetWCharCP(), L"", featureType, pointList.data(), (int)pointList.size());
+                                }
+                            pointList.clear();
+                            }
+                        inDisco = true;
                         }
                     }
-                }
+                if (includeNULLSegments || !inNullSegment)
+                    {
+                    dtm->AddLinearFeature(featureType, pointList.data(), (int)pointList.size(), asLong(stringTableRecord->stringName()), &featureId);
+                    if (m_callback)
+                        m_callback->AddFeature(featureId, L"", L"", stringName.GetWCharCP(), L"", featureType, pointList.data(), (int)pointList.size());
+                    }
+                pointList.clear();
+               }
             iter->next();
             }
         }
