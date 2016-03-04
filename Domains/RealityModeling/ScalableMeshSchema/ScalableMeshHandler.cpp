@@ -318,6 +318,7 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
                 requestedNodes.push_back(meshNodes[nodeInd]);
             else
             */
+            bool wasDrawn = false;
             for (size_t meshInd = 0; meshInd < meshNodes[nodeInd]->GetNbMeshes(); meshInd++)                
                 {
                 SmCachedDisplayMesh* cachedMesh = 0;
@@ -346,23 +347,24 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
                     }
                         
                 if (qvElem != 0)
-                    {       
+                    {
+                    wasDrawn = true;
                     if (cachedMesh == 0)
                         {
                         //NEEDS_WORK_SM : Not support yet.
                         //ActivateMaterial(meshNodes[nodeInd], meshInd, context);
                         }
-                                    {
-                ElemMatSymbP matSymbP = context.GetElemMatSymb();
+                                        {
+                                        ElemMatSymbP matSymbP = context.GetElemMatSymb();
 
-                matSymbP->Init();
-                ColorDef white(0xff, 0xff, 0xff);
-                ColorDef green(0, 0x77, 0);
-                matSymbP->SetLineColor(meshNodes[nodeInd]->GetNbTexture() != 0 ? white: green);
-                matSymbP->SetFillColor(meshNodes[nodeInd]->GetNbTexture() != 0 ? white : green);
-                context.OnPreDrawTransient(); // If not reset, last drawn override is applyed to dtm (Selected/Hide preview)
-                context.GetIDrawGeom().ActivateMatSymb(matSymbP);
-                }
+                                        matSymbP->Init();
+                                        ColorDef white(0xff, 0xff, 0xff);
+                                        ColorDef green(0, 0x77, 0);
+                                        matSymbP->SetLineColor(meshNodes[nodeInd]->GetNbTexture() != 0 ? white : green);
+                                        matSymbP->SetFillColor(meshNodes[nodeInd]->GetNbTexture() != 0 ? white : green);
+                                        context.OnPreDrawTransient(); // If not reset, last drawn override is applyed to dtm (Selected/Hide preview)
+                                        context.GetIDrawGeom().ActivateMatSymb(matSymbP);
+                                            }
                     SmCachedGraphics smCached(context.GetDgnDb(), qvElem);
                     context.DrawCached(smCached);
                     smCached.UnlinkQvElem();
@@ -372,7 +374,22 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
                     {                                           
                     nodesWithoutQvElem.push_back(meshNodes[nodeInd]);                
                     }
-                }        
+                }
+            if (wasDrawn)
+                {
+                ElemMatSymbP matSymbP = context.GetElemMatSymb();
+
+                matSymbP->Init();
+                ColorDef green(0, 0x77, 0);
+                matSymbP->SetLineColor(green);
+                matSymbP->SetFillColor(green);
+                context.OnPreDrawTransient(); 
+                context.GetIDrawGeom().ActivateMatSymb(matSymbP);
+                bvector<PolyfaceHeaderPtr> skirtMeshParts;
+                meshNodes[nodeInd]->GetSkirtMeshes(skirtMeshParts);
+                for (auto& part : skirtMeshParts)
+                    context.GetIDrawGeom().DrawPolyface(*part);
+                }
             }
     
         for (auto& node : nodesWithoutQvElem)
