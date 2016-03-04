@@ -156,7 +156,7 @@ PropertyNameExp const* propertyName
         auto classNameExp = static_cast<ClassNameExp const*>(propertyName->GetClassRefExp());
         PRECONDITION(classNameExp != nullptr, ECSqlStatus::Error);
         auto& propertyMap = propertyName->GetPropertyMap();
-        if(auto structPropertyMap = dynamic_cast<PropertyMapStructCP>(&propertyMap))
+        if(StructPropertyMap const* structPropertyMap = dynamic_cast<StructPropertyMap const*>(&propertyMap))
             return CreateStructMemberFields (field, sqlColumnIndex, ctx, *structPropertyMap, move (ecsqlColumnInfo));
 
         BeAssert (false && "For struct properties we only support inline mapping %s");
@@ -165,7 +165,7 @@ PropertyNameExp const* propertyName
     if (propertyName->GetClassRefExp ()->GetType () == Exp::Type::SubqueryRef)
         {        
         auto& propertyMap = propertyName->GetPropertyMap ();
-        if (auto structPropertyMap = dynamic_cast<PropertyMapStructCP>(&propertyMap))
+        if (StructPropertyMap const* structPropertyMap = dynamic_cast<StructPropertyMap const*>(&propertyMap))
             return CreateStructMemberFields (field, sqlColumnIndex, ctx, *structPropertyMap, move (ecsqlColumnInfo));
         
         BeAssert(false && "For struct properties we only support inline mapping %s");
@@ -285,7 +285,7 @@ ECSqlStatus ECSqlFieldFactory::CreateStructMemberFields
 std::unique_ptr<ECSqlField>& structField, 
 int& sqlColumnIndex, 
 ECSqlPrepareContext& ctx, 
-PropertyMapStructCR structPropertyMap,
+StructPropertyMap const& structPropertyMap,
 ECSqlColumnInfo&& structFieldColumnInfo
 )
     {
@@ -301,7 +301,7 @@ ECSqlColumnInfo&& structFieldColumnInfo
         ECSqlColumnInfo childColumnInfo = ECSqlColumnInfo::CreateChild(newStructField->GetColumnInfo(), childPropertyMap->GetProperty());
 
         std::unique_ptr<ECSqlField> childField = nullptr;
-        if (PropertyMapStructCP childStructPropMap = dynamic_cast<PropertyMapStructCP>(childPropertyMap))
+        if (StructPropertyMap const* childStructPropMap = dynamic_cast<StructPropertyMap const*>(childPropertyMap))
             {
             status = CreateStructMemberFields(childField, sqlColumnIndex, ctx, *childStructPropMap, move(childColumnInfo));
             if (!status.IsSuccess())

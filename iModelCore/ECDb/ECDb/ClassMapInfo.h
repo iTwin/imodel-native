@@ -186,7 +186,7 @@ private:
     static std::vector<std::pair<Utf8String, Utf8String>> const& GetIdSpecCustomAttributeNames();
 
 public:
-    static ClassIndexInfoPtr Clone(ClassIndexInfoCR, Utf8CP newIndexName);
+    static ClassIndexInfoPtr Clone(ClassIndexInfo const&, Utf8CP newIndexName);
     //!@param customClassMap pass nullptr if @p ecClass doesn't have the ClassMap CA. 
     static BentleyStatus CreateFromECClass(bvector<ClassIndexInfoPtr>& indexInfos, ECDbCR, ECN::ECClassCR ecClass, ECN::ECDbClassMap const* customClassMap);
 

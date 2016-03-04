@@ -29,10 +29,10 @@ void StructToColumnsECSqlBinder::Initialize ()
     auto const& typeInfo = GetTypeInfo ();
     auto propMap = typeInfo.GetPropertyMap ();
     BeAssert (propMap != nullptr && "Struct parameters are expected to always have a PropertyNameExp as target expression");
-    BeAssert (dynamic_cast<PropertyMapStructCP> (propMap) != nullptr);
+    BeAssert (dynamic_cast<StructPropertyMap const*> (propMap) != nullptr);
 
     int totalMappedSqliteParameterCount = 0;
-    for (auto childPropMap : propMap->GetChildren ()) //GetChildren ensures the correct and always same order
+    for (PropertyMapCP childPropMap : propMap->GetChildren ()) //GetChildren ensures the correct and always same order
         {
         auto binder = ECSqlBinderFactory::CreateBinder (GetECSqlStatementR (), *childPropMap);
         int mappedSqliteParameterCount = binder->GetMappedSqlParameterCount ();

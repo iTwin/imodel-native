@@ -213,7 +213,7 @@ BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass(std::v
         {
         if ((skipSystemProperties && baseClassPropertyMap->IsSystemPropertyMap()) ||
             !prepareContext.GetSelectionOptions().IsSelected(baseClassPropertyMap->GetPropertyAccessString()) ||
-            baseClassPropertyMap->GetAsPropertyMapStructArray())
+            baseClassPropertyMap->GetAsStructArrayTablePropertyMap())
             continue;
 
         NavigationPropertyMap const* navPropMap = baseClassPropertyMap->GetAsNavigationPropertyMap();
@@ -452,7 +452,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationshipClassLinkTableMap (NativeS
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      09/2013
 //+---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus ViewGenerator::CreateViewForRelationshipClassEndTableMap (NativeSqlBuilder& viewSql, ECDbMapCR ecdbMap, ECSqlPrepareContext const& prepareContext, RelationshipClassEndTableMapCR relationMap, IClassMap const& baseClassMap)
+BentleyStatus ViewGenerator::CreateViewForRelationshipClassEndTableMap (NativeSqlBuilder& viewSql, ECDbMapCR ecdbMap, ECSqlPrepareContext const& prepareContext, RelationshipClassEndTableMap const& relationMap, IClassMap const& baseClassMap)
     {
     //ECInstanceId, ECClassId of the relationship instance
 		std::vector<ECDbSqlColumn const*> columns;
@@ -500,8 +500,8 @@ BentleyStatus ViewGenerator::BuildRelationshipJoinIfAny (NativeSqlBuilder& sqlBu
     if (classMap._RequiresJoin(endPoint))
         {
         ECDbMapCR ecdbMap = classMap.GetECDbMap();
-        PropertyMapRelationshipConstraintClassId const* ecclassIdPropertyMap = endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECClassIdPropMap() : classMap.GetTargetECClassIdPropMap();
-        PropertyMapRelationshipConstraintECInstanceId const* ecInstanceIdPropertyMap = static_cast<PropertyMapRelationshipConstraintECInstanceId const*>(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECInstanceIdPropMap() : classMap.GetTargetECInstanceIdPropMap());
+        ECClassIdRelationshipConstraintPropertyMap const* ecclassIdPropertyMap = endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECClassIdPropMap() : classMap.GetTargetECClassIdPropMap();
+        ECInstanceIdRelationshipConstraintPropertyMap const* ecInstanceIdPropertyMap = static_cast<ECInstanceIdRelationshipConstraintPropertyMap const*>(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECInstanceIdPropMap() : classMap.GetTargetECInstanceIdPropMap());
         size_t tableCount = ecdbMap.GetTableCountOnRelationshipEnd(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetRelationshipClass().GetSource() : classMap.GetRelationshipClass().GetTarget());
         ECDbSqlTable const* targetTable = &ecclassIdPropertyMap->GetSingleColumn()->GetTable();
         if (tableCount > 1 
@@ -547,7 +547,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
     switch(relationMap.GetClassMapType())
         {
         case ClassMap::Type::RelationshipEndTable:
-            return CreateViewForRelationshipClassEndTableMap (viewSql, map, prepareContext, static_cast<RelationshipClassEndTableMapCR>(relationMap), baseClassMap);
+            return CreateViewForRelationshipClassEndTableMap (viewSql, map, prepareContext, static_cast<RelationshipClassEndTableMap const&>(relationMap), baseClassMap);
         case ClassMap::Type::RelationshipLinkTable:
             return CreateViewForRelationshipClassLinkTableMap (viewSql, map, prepareContext, static_cast<RelationshipClassMapCR>(relationMap), baseClassMap);
         default:
@@ -600,7 +600,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
                      if (!unionQuery.IsEmpty())
                          unionQuery.Append(" UNION ");
 
-                     if (SUCCESS != CreateViewForRelationshipClassEndTableMap(unionQuery, map, prepareContext, *static_cast<RelationshipClassEndTableMapCP>(cm), relationMap))
+                     if (SUCCESS != CreateViewForRelationshipClassEndTableMap(unionQuery, map, prepareContext, *static_cast<RelationshipClassEndTableMap const*>(cm), relationMap))
                          return ERROR;
 
                      break;
@@ -610,7 +610,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
                  if (!unionQuery.IsEmpty())
                      unionQuery.Append(" UNION ");
 
-                 if (SUCCESS != CreateViewForRelationshipClassLinkTableMap(unionQuery, map, prepareContext, *static_cast<RelationshipClassLinkTableMapCP>(cm), relationMap))
+                 if (SUCCESS != CreateViewForRelationshipClassLinkTableMap(unionQuery, map, prepareContext, *static_cast<RelationshipClassLinkTableMap const*>(cm), relationMap))
                      return ERROR;
 
                  ECDbSqlTable const& table = relationMap.GetJoinedTable();
@@ -642,16 +642,16 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
          if (vm.second.GetStorageType() != DbMetaDataHelper::ObjectType::Table)
              continue;
 
-         std::vector<RelationshipClassEndTableMapCP> etm;
-         std::vector<RelationshipClassLinkTableMapCP> ltm;
+         std::vector<RelationshipClassEndTableMap const*> etm;
+         std::vector<RelationshipClassLinkTableMap const*> ltm;
          for (IClassMap const* cm : vm.second.GetClassMaps())
              {
              switch (cm->GetClassMapType())
                  {
                      case ClassMap::Type::RelationshipEndTable:
-                         etm.push_back(static_cast<RelationshipClassEndTableMapCP>(cm)); break;
+                         etm.push_back(static_cast<RelationshipClassEndTableMap const*>(cm)); break;
                      case ClassMap::Type::RelationshipLinkTable:
-                         ltm.push_back(static_cast<RelationshipClassLinkTableMapCP>(cm)); break;
+                         ltm.push_back(static_cast<RelationshipClassLinkTableMap const*>(cm)); break;
                      default:
                          BeAssert(false);
                          break;
@@ -663,7 +663,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
              if (!unionQuery.IsEmpty())
                  unionQuery.Append(" UNION ");
 
-             RelationshipClassLinkTableMapCR firstClassMap = *ltm.front();
+             RelationshipClassLinkTableMap const& firstClassMap = *ltm.front();
              if (SUCCESS != CreateViewForRelationshipClassLinkTableMap(unionQuery, map, prepareContext, firstClassMap, relationMap))
                  return ERROR;
 
@@ -684,7 +684,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
                  }
              }
 
-         for (RelationshipClassEndTableMapCP et : etm)
+         for (RelationshipClassEndTableMap const* et : etm)
              {
              if (!unionQuery.IsEmpty())
                  unionQuery.Append(" UNION ");
@@ -719,7 +719,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps (NativeSqlBuilder& viewSql, EC
     viewSql.Append (relationMap.GetClass ().GetId ()).AppendSpace ().Append (ECDB_COL_ECClassId).AppendComma (true);
 
     //SourceECInstanceId-----------------------------------
-    PropertyMapRelationshipConstraint const* idPropMap = static_cast<PropertyMapRelationshipConstraint const*> (relationMap.GetSourceECInstanceIdPropMap ());
+    RelationshipConstraintPropertyMap const* idPropMap = static_cast<RelationshipConstraintPropertyMap const*> (relationMap.GetSourceECInstanceIdPropMap ());
     BeAssert(idPropMap->GetSingleColumn(contextTable, true) != nullptr);
     if (!idPropMap->IsVirtual ())
         viewSql.AppendEscaped (contextTable.GetName ().c_str ()).AppendDot ();
@@ -728,7 +728,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps (NativeSqlBuilder& viewSql, EC
     viewSql.AppendComma (true);
 
     //SourceECClassId--------------------------------------
-    PropertyMapRelationshipConstraintClassId const* classIdPropMap = relationMap.GetSourceECClassIdPropMap();
+    ECClassIdRelationshipConstraintPropertyMap const* classIdPropMap = relationMap.GetSourceECClassIdPropMap();
     if (!classIdPropMap->IsVirtual())
         {
         if (relationMap._RequiresJoin(ECRelationshipEnd::ECRelationshipEnd_Source))
@@ -741,8 +741,8 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps (NativeSqlBuilder& viewSql, EC
     viewSql.AppendComma (true);
 
     //TargetECInstanceId-----------------------------------
-    BeAssert (dynamic_cast<PropertyMapRelationshipConstraint const*> (relationMap.GetTargetECInstanceIdPropMap ()) != nullptr);
-    idPropMap = static_cast<PropertyMapRelationshipConstraint const*> (relationMap.GetTargetECInstanceIdPropMap ());
+    BeAssert (dynamic_cast<RelationshipConstraintPropertyMap const*> (relationMap.GetTargetECInstanceIdPropMap ()) != nullptr);
+    idPropMap = static_cast<RelationshipConstraintPropertyMap const*> (relationMap.GetTargetECInstanceIdPropMap ());
     BeAssert(idPropMap->GetSingleColumn(contextTable, true) != nullptr);
     if (!idPropMap->IsVirtual())
         viewSql.AppendEscaped(contextTable.GetName().c_str()).AppendDot();
@@ -815,7 +815,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMapsToNullView(NativeSqlBuilder& vi
 // @bsimethod                                 Krischan.Eberle                    12/2013
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ViewGenerator::AppendConstraintClassIdPropMap(NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, PropertyMapRelationshipConstraint const& propMap, ECDbMapCR ecdbMap, RelationshipClassMapCR relationMap, ECRelationshipConstraintCR constraint, ECDbSqlTable const& contextTable)
+BentleyStatus ViewGenerator::AppendConstraintClassIdPropMap(NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, RelationshipConstraintPropertyMap const& propMap, ECDbMapCR ecdbMap, RelationshipClassMapCR relationMap, ECRelationshipConstraintCR constraint, ECDbSqlTable const& contextTable)
     {
     ECDbSqlColumn const* column = propMap.GetSingleColumn(contextTable, false);
     BeAssert(column != nullptr);
@@ -891,7 +891,7 @@ void ViewGenerator::CreateSystemClassView(NativeSqlBuilder &viewSql, std::map<EC
 
         bool includeEntireTable = tableToIncludeEntirly.find(tableP) != tableToIncludeEntirly.end();
         IClassMap const* classMap = classMaps[0];
-        ECDbSqlColumn const* ecInstanceIdColumn = classMap->GetPropertyMap(PropertyMapECInstanceId::PROPERTYACCESSSTRING)->GetSingleColumn();
+        ECDbSqlColumn const* ecInstanceIdColumn = classMap->GetPropertyMap(ECInstanceIdPropertyMap::PROPERTYACCESSSTRING)->GetSingleColumn();
         ECDbSqlColumn const* ecClassIdColumn = nullptr;
         tableP->TryGetECClassIdColumn(ecClassIdColumn);
 

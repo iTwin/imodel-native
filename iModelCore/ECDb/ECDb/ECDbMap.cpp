@@ -2108,7 +2108,7 @@ BentleyStatus RelationshipPurger::Initialize(ECDbR ecdb)
 
         if (relClassMap->GetClassMapType() == IClassMap::Type::RelationshipEndTable)
             {
-            RelationshipClassEndTableMapCP endTableRelClassMap = static_cast<RelationshipClassEndTableMapCP>(relClassMap);
+            RelationshipClassEndTableMap const* endTableRelClassMap = static_cast<RelationshipClassEndTableMap const*>(relClassMap);
             PropertyMapCP foreignIdPropMap = endTableRelClassMap->GetConstraintECInstanceIdPropMap(endTableRelClassMap->GetReferencedEnd());
 
             ColumnKind foreignIdColKind = endTableRelClassMap->GetReferencedEnd() == ECRelationshipEnd_Source ? ColumnKind::SourceECInstanceId : ColumnKind::TargetECInstanceId;
@@ -2130,7 +2130,7 @@ BentleyStatus RelationshipPurger::Initialize(ECDbR ecdb)
             }
         else
             {
-            ECDbSqlTable const& primaryTable = static_cast<RelationshipClassLinkTableMapCP>(relClassMap)->GetPrimaryTable();
+            ECDbSqlTable const& primaryTable = static_cast<RelationshipClassLinkTableMap const*>(relClassMap)->GetPrimaryTable();
 
             ECDbMap::LightweightCache::RelationshipEnd heldEnd = relClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? ECDbMap::LightweightCache::RelationshipEnd::Target : ECDbMap::LightweightCache::RelationshipEnd::Source;
             auto it = linkTables.find(&primaryTable);

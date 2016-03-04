@@ -14,20 +14,16 @@
 #include <type_traits>
 
 ECDB_TYPEDEFS(ECDbMap);
-
-ECDB_TYPEDEFS_PTR(ECDbSchemaWriter);
-ECDB_TYPEDEFS_PTR(ECDbSchemaReader);
 ECDB_TYPEDEFS_PTR(ClassMap);
 ECDB_TYPEDEFS_PTR(PropertyMap);
-ECDB_TYPEDEFS_PTR(PropertyMapStruct);
-ECDB_TYPEDEFS_PTR(PropertyMapStructArray);
-ECDB_TYPEDEFS_PTR(RelationshipClassMap);
-ECDB_TYPEDEFS_PTR(RelationshipClassEndTableMap);
-ECDB_TYPEDEFS_PTR(RelationshipClassLinkTableMap);
-ECDB_TYPEDEFS_PTR(ClassIndexInfo);
-ECDB_TYPEDEFS_PTR(StandardKeySpecification);
+ECDB_TYPEDEFS(RelationshipClassMap);
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+struct ECDbSchemaReader;
+typedef RefCountedPtr<ECDbSchemaReader> ECDbSchemaReaderPtr;
+struct ClassIndexInfo;
+typedef RefCountedPtr<ClassIndexInfo> ClassIndexInfoPtr;
 
 #define LOG (ECDbLogger::Get())
 

@@ -11,12 +11,12 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 void RenderPropertyMap (NativeSqlBuilder::List& snippets, PropertyMapCR propertyMap)
     {
-    BeAssert (propertyMap.GetAsPropertyMapStructArray () == nullptr);
+    BeAssert (propertyMap.GetAsStructArrayTablePropertyMap () == nullptr);
     auto& children = propertyMap.GetChildren ();
     if (children.Size() == 0)
         {
         Utf8String accessString = Utf8String (propertyMap.GetPropertyAccessString ());
-        if (auto mp = dynamic_cast<PropertyMapPoint const*>(&propertyMap))
+        if (auto mp = dynamic_cast<PointPropertyMap const*>(&propertyMap))
             {
             snippets.push_back (NativeSqlBuilder{ ("[" + accessString + ".X]").c_str ()});
             snippets.push_back (NativeSqlBuilder{ ("[" + accessString + ".Y]").c_str () });
@@ -112,7 +112,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
 
     if (currentScopeECSqlType == ECSqlType::Delete || currentScopeECSqlType == ECSqlType::Update)
         {
-        if (auto typeIdPM = dynamic_cast<PropertyMapRelationshipConstraintClassId const*>(propertyMap))
+        if (auto typeIdPM = dynamic_cast<ECClassIdRelationshipConstraintPropertyMap const*>(propertyMap))
             {
             if (!typeIdPM->IsMappedToClassMapTables() && !typeIdPM->IsVirtual())
                 {
@@ -158,7 +158,7 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext::ExpScop
     const auto currentScopeECSqlType = currentScope.GetECSqlType();
 
     //Property maps to virtual column which can mean that the exp doesn't need to be translated.
-    PropertyMapRelationshipConstraintClassId const* constraintClassIdPropMap = propertyMap.GetAsPropertyMapRelationshipConstraintClassId();
+    ECClassIdRelationshipConstraintPropertyMap const* constraintClassIdPropMap = propertyMap.GetAsECClassIdRelationshipConstraintPropertyMap();
     if (propertyMap.IsVirtual() || (constraintClassIdPropMap != nullptr && !constraintClassIdPropMap->IsMappedToClassMapTables() && currentScopeECSqlType != ECSqlType::Select))
         {
         //In INSERT statements, virtual columns are always ignored

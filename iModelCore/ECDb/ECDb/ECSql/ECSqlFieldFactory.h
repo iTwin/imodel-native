@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlFieldFactory.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -68,7 +68,7 @@ private:
     std::unique_ptr<ECSqlField>&, 
     int& sqlColumnIndex, 
     ECSqlPrepareContext&, 
-    PropertyMapStructCR,
+    StructPropertyMap const&,
     ECSqlColumnInfo&&
     );
 

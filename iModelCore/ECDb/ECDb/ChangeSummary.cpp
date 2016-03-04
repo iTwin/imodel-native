@@ -15,7 +15,7 @@ ECDB_TYPEDEFS(TableMap);
 ECDB_TYPEDEFS(SqlChange);
 ECDB_TYPEDEFS(IClassMap);
 ECDB_TYPEDEFS(ECDbSqlColumn);
-ECDB_TYPEDEFS(PropertyMapPoint);
+ECDB_TYPEDEFS(PointPropertyMap);
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -222,8 +222,8 @@ private:
     void ExtractInstance(IClassMapCR primaryClassMap, ECInstanceId instanceId);
 
     void ExtractRelInstance(IClassMapCR classMap, ECInstanceId relInstanceId);
-    void ExtractRelInstanceInEndTable(RelationshipClassEndTableMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECClassId foreignEndClassId);
-    void ExtractRelInstanceInLinkTable(RelationshipClassLinkTableMapCR relClassMap, ECInstanceId relInstanceId);
+    void ExtractRelInstanceInEndTable(RelationshipClassEndTableMap const& relClassMap, ECInstanceId relInstanceId, ECN::ECClassId foreignEndClassId);
+    void ExtractRelInstanceInLinkTable(RelationshipClassLinkTableMap const& relClassMap, ECInstanceId relInstanceId);
     void GetRelEndInstanceKeys(ECInstanceKey& oldInstanceKey, ECInstanceKey& newInstanceKey, RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd) const;
     ECN::ECClassId GetRelEndClassId(RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd, ECInstanceId endInstanceId) const;
     static ECN::ECClassId GetRelEndClassIdFromRelClass(ECN::ECRelationshipClassCP relClass, ECN::ECRelationshipEnd relEnd);
@@ -1025,7 +1025,7 @@ bool ChangeExtractor::ChangeAffectsClass(IClassMapCR classMap) const
 //---------------------------------------------------------------------------------------
 bool ChangeExtractor::ChangeAffectsProperty(PropertyMapCR propertyMap) const
     {
-    PropertyMapStructCP inlineStructMap = dynamic_cast<PropertyMapStructCP> (&propertyMap);
+    StructPropertyMap const* inlineStructMap = dynamic_cast<StructPropertyMap const*> (&propertyMap);
     if (inlineStructMap != nullptr)
         {
         for (PropertyMapCP childPropertyMap : inlineStructMap->GetChildren())
@@ -1248,7 +1248,7 @@ void ChangeExtractor::ExtractRelInstance(IClassMapCR classMap, ECInstanceId relI
     IClassMap::Type type = classMap.GetClassMapType();
     if (type == IClassMap::Type::RelationshipLinkTable)
         {
-        RelationshipClassLinkTableMapCP relClassMap = dynamic_cast<RelationshipClassLinkTableMapCP> (&classMap);
+        RelationshipClassLinkTableMap const* relClassMap = dynamic_cast<RelationshipClassLinkTableMap const*> (&classMap);
         BeAssert(relClassMap != nullptr);
         ExtractRelInstanceInLinkTable(*relClassMap, relInstanceId);
         return;
@@ -1257,7 +1257,7 @@ void ChangeExtractor::ExtractRelInstance(IClassMapCR classMap, ECInstanceId relI
     bvector<ECClassId> const& relClassIds = m_tableMap->GetForeignKeyRelClassIds();
     for (ECClassId relClassId : relClassIds)
         {
-        RelationshipClassEndTableMapCP relClassMap = dynamic_cast<RelationshipClassEndTableMapCP> (GetClassMap(m_ecdb, relClassId));
+        RelationshipClassEndTableMap const* relClassMap = dynamic_cast<RelationshipClassEndTableMap const*> (GetClassMap(m_ecdb, relClassId));
         BeAssert(relClassMap != nullptr);
 
         ExtractRelInstanceInEndTable(*relClassMap, relInstanceId, classMap.GetClass().GetId());
@@ -1267,7 +1267,7 @@ void ChangeExtractor::ExtractRelInstance(IClassMapCR classMap, ECInstanceId relI
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-void ChangeExtractor::ExtractRelInstanceInEndTable(RelationshipClassEndTableMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECClassId foreignEndClassId)
+void ChangeExtractor::ExtractRelInstanceInEndTable(RelationshipClassEndTableMap const& relClassMap, ECInstanceId relInstanceId, ECN::ECClassId foreignEndClassId)
     {
     // Check that this end of the relationship matches the actual class found. 
     ECN::ECRelationshipEnd foreignEnd = relClassMap.GetForeignEnd();
@@ -1321,7 +1321,7 @@ void ChangeExtractor::ExtractRelInstanceInEndTable(RelationshipClassEndTableMapC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ChangeExtractor::ExtractRelInstanceInLinkTable(RelationshipClassLinkTableMapCR relClassMap, ECInstanceId relInstanceId)
+void ChangeExtractor::ExtractRelInstanceInLinkTable(RelationshipClassLinkTableMap const& relClassMap, ECInstanceId relInstanceId)
     {
     DbOpcode dbOpcode = m_sqlChange->GetDbOpcode();
     if (dbOpcode == DbOpcode::Update && !ChangeAffectsClass(relClassMap))
@@ -1520,7 +1520,7 @@ void ChangeExtractor::RecordStructArrayParentInstance(IClassMapCR classMap, ECIn
 //---------------------------------------------------------------------------------------
 void ChangeExtractor::RecordPropertyValue(ChangeSummary::InstanceCR instance, PropertyMapCR propertyMap)
     {
-    PropertyMapStructCP inlineStructMap = dynamic_cast<PropertyMapStructCP> (&propertyMap);
+    StructPropertyMap const* inlineStructMap = dynamic_cast<StructPropertyMap const*> (&propertyMap);
     if (inlineStructMap != nullptr)
         {
         for (PropertyMapCP childPropertyMap : inlineStructMap->GetChildren())
@@ -1532,7 +1532,7 @@ void ChangeExtractor::RecordPropertyValue(ChangeSummary::InstanceCR instance, Pr
     std::vector<ECDbSqlColumnCP> columns;
     propertyMap.GetColumns(columns);
 
-    PropertyMapPointCP pointMap = dynamic_cast<PropertyMapPointCP> (&propertyMap);
+    PointPropertyMap const* pointMap = dynamic_cast<PointPropertyMap const*> (&propertyMap);
     if (pointMap != nullptr)
         {
         BeAssert(columns.size() == (pointMap->Is3d() ? 3 : 2));
@@ -1545,7 +1545,7 @@ void ChangeExtractor::RecordPropertyValue(ChangeSummary::InstanceCR instance, Pr
         return;
         }
 
-    PropertyMapSystem const* systemMap = dynamic_cast<PropertyMapSystem const*> (&propertyMap);
+    SystemPropertyMap const* systemMap = dynamic_cast<SystemPropertyMap const*> (&propertyMap);
     if (systemMap != nullptr)
         return;
 
@@ -1556,7 +1556,7 @@ void ChangeExtractor::RecordPropertyValue(ChangeSummary::InstanceCR instance, Pr
         return;
         }
 
-    BeAssert(nullptr != dynamic_cast<PropertyMapStructArray const*> (&propertyMap));
+    BeAssert(nullptr != dynamic_cast<StructArrayTablePropertyMap const*> (&propertyMap));
     BeAssert(columns.size() == 0);
     }
 

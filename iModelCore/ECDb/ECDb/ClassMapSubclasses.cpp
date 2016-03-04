@@ -55,16 +55,16 @@ IClassMap const& StructClassMap::_GetView (View classView) const
 MapStatus StructClassMap::EmbeddedTypeClassMap::Initialize ()
     {
     auto const& schemaManager = GetECDbMap ().GetECDbR ().Schemas ();
-    auto systemPropMap = PropertyMapStructArrayTableKey::Create (schemaManager, ECSqlSystemProperty::ECInstanceId, *this);
+    auto systemPropMap = StructArrayTableKeyPropertyMap::Create (schemaManager, ECSqlSystemProperty::ECInstanceId, *this);
     m_embeddedClassViewPropMaps.AddPropertyMap (systemPropMap);
 
-    systemPropMap = PropertyMapStructArrayTableKey::Create (schemaManager, ECSqlSystemProperty::ParentECInstanceId, *this);
+    systemPropMap = StructArrayTableKeyPropertyMap::Create (schemaManager, ECSqlSystemProperty::ParentECInstanceId, *this);
     m_embeddedClassViewPropMaps.AddPropertyMap (systemPropMap);
 
-    systemPropMap = PropertyMapStructArrayTableKey::Create (schemaManager, ECSqlSystemProperty::ECPropertyPathId, *this);
+    systemPropMap = StructArrayTableKeyPropertyMap::Create (schemaManager, ECSqlSystemProperty::ECPropertyPathId, *this);
     m_embeddedClassViewPropMaps.AddPropertyMap (systemPropMap);
 
-    systemPropMap = PropertyMapStructArrayTableKey::Create (schemaManager, ECSqlSystemProperty::ECArrayIndex, *this);
+    systemPropMap = StructArrayTableKeyPropertyMap::Create (schemaManager, ECSqlSystemProperty::ECArrayIndex, *this);
     m_embeddedClassViewPropMaps.AddPropertyMap (systemPropMap);
 
     for (auto propMap : m_secondaryTableClassMap.GetPropertyMaps ())

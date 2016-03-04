@@ -250,7 +250,7 @@ struct ECDbMapAnalyser
             private:
                 std::set<Class*> m_classes;
                 PropertyMapCP m_ecid;
-                PropertyMapRelationshipConstraintClassId const* m_classId;
+                ECClassIdRelationshipConstraintPropertyMap const* m_classId;
                 EndType m_type;
                 Relationship const& m_parent;
             public:
@@ -258,7 +258,7 @@ struct ECDbMapAnalyser
                 std::set<Class*>& GetClassesR();
                 std::set<Storage const*> GetStorages() const;
                 PropertyMapCP GetInstanceId() const;
-                PropertyMapRelationshipConstraintClassId const* GetClassId() const;
+                ECClassIdRelationshipConstraintPropertyMap const* GetClassId() const;
                 EndType GetEnd() const;
                 bool Contains(Class const& constraintClass) const;
                 EndInfo GetResolvedInstanceId(Storage const& forStorage) const;
@@ -408,8 +408,8 @@ struct ECClassViewGenerator : NonCopyableClass
         static BentleyStatus BuildSystemSelectionClause(NativeSqlBuilder::List& fragments, ClassMapCR baseClassMap, ClassMapCR classMap, bool nullValue);
 
         static BentleyStatus BuildPrimitivePropertyExpression(NativeSqlBuilder& viewSql, PropertyMap const&, Utf8CP tablePrefix, bool nullValue);
-        static BentleyStatus BuildPointPropertyExpression(NativeSqlBuilder& viewSql, PropertyMapPoint const& propertyMap, Utf8CP tablePrefix, bool nullValue);
-        static BentleyStatus BuildStructPropertyExpression(NativeSqlBuilder& viewSql, PropertyMapStruct const& propertyMap, Utf8CP tablePrefix, bool nullValue);
+        static BentleyStatus BuildPointPropertyExpression(NativeSqlBuilder& viewSql, PointPropertyMap const& propertyMap, Utf8CP tablePrefix, bool nullValue);
+        static BentleyStatus BuildStructPropertyExpression(NativeSqlBuilder& viewSql, StructPropertyMap const& propertyMap, Utf8CP tablePrefix, bool nullValue);
         static BentleyStatus BuildPropertyExpression(NativeSqlBuilder& viewSql, PropertyMapCR propertyMap, Utf8CP tablePrefix, bool nullValue);
 
         static BentleyStatus BuildECClassIdConstraintExpression(NativeSqlBuilder::List& fragments, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, Utf8CP tablePrefix, bool nullValue);
@@ -426,7 +426,7 @@ struct ECClassViewGenerator : NonCopyableClass
         static Utf8CP DetermineCastTargetType(ECDbSqlColumn const&, ECN::ECPropertyCR);
         static Utf8CP DetermineCastTargetType(ECDbSqlColumn const&, ECDbSqlColumn::Type targetType);
 
-        static void CollectDerivedEndTableRelationships(std::set<RelationshipClassEndTableMapCP>& childMaps, RelationshipClassMapCR classMap);
+        static void CollectDerivedEndTableRelationships(std::set<RelationshipClassEndTableMap const*>& childMaps, RelationshipClassMapCR classMap);
 
     public:
         explicit ECClassViewGenerator(ECDbMapCR map) : m_map(map) {}

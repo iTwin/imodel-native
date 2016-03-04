@@ -82,13 +82,13 @@ public:
 
 private:
     ExecutionCategory m_category;
-    PropertyMapStructArrayCR m_propertyMap;
+    StructArrayTablePropertyMap const& m_propertyMap;
     IClassMap const& m_classMap;
 
     virtual DbResult _Execute(ECInstanceId const& instanceId) = 0;
 
 protected:
-    ECSqlStepTask(ExecutionCategory category, PropertyMapStructArrayCR propertyMap, IClassMap const& classMap)
+    ECSqlStepTask(ExecutionCategory category, StructArrayTablePropertyMap const& propertyMap, IClassMap const& classMap)
         : m_category(category), m_propertyMap(propertyMap), m_classMap(classMap) {}
 
 public:
@@ -99,7 +99,7 @@ public:
     DbResult Execute(ECInstanceId const& instanceId) { return _Execute(instanceId); }
 
     IClassMap const& GetClassMap() const { return m_classMap; }
-    PropertyMapStructArrayCR GetPropertyMap() const { return m_propertyMap; }
+    StructArrayTablePropertyMap const& GetPropertyMap() const { return m_propertyMap; }
     };
 
 
@@ -136,7 +136,7 @@ private:
     virtual ECSqlParameterValue* _GetParameter () = 0;
 
 protected:
-    ParametericStepTask (ExecutionCategory category, PropertyMapStructArrayCR propertyMap, IClassMap const& classMap)
+    ParametericStepTask (ExecutionCategory category, StructArrayTablePropertyMap const& propertyMap, IClassMap const& classMap)
         :ECSqlStepTask(category, propertyMap, classMap) {}
 
 public:
@@ -163,7 +163,7 @@ private:
     ECSqlParameterValue* m_parameterValue;
     ECPropertyId m_propertyPathId;
 private:
-    InsertStructArrayStepTask (PropertyMapStructArrayCR, IClassMap const&);
+    InsertStructArrayStepTask (StructArrayTablePropertyMap const&, IClassMap const&);
     virtual DbResult _Execute (ECInstanceId const& instanceId) override;
 
     virtual void _SetParameterSource (ECSqlParameterValue& parameterSource) override { m_parameterValue = &parameterSource; }
@@ -187,7 +187,7 @@ private:
     std::unique_ptr<EmbeddedECSqlStatement> m_deleteStmt;
 
 private:
-    DeleteStructArrayStepTask (PropertyMapStructArrayCR, IClassMap const&);
+    DeleteStructArrayStepTask (StructArrayTablePropertyMap const&, IClassMap const&);
     virtual DbResult _Execute (ECInstanceId const& instanceId) override;
 
     public:

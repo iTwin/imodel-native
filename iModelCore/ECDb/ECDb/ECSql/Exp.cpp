@@ -35,7 +35,7 @@ std::set<ECDbSqlTable const*> Exp::GetReferencedTables() const
         auto propertyNameExp = static_cast<PropertyNameExp const*>(exp);
         if (!propertyNameExp->IsPropertyRef())
             {
-            if (propertyNameExp->GetTypeInfo().GetPropertyMap()->GetAsPropertyMapStructArray())
+            if (propertyNameExp->GetTypeInfo().GetPropertyMap()->GetAsStructArrayTablePropertyMap())
                 continue;
 
             std::vector<ECDbSqlColumn const*> columns;            

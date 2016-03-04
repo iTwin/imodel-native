@@ -326,7 +326,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
             joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
             info->m_parameterMap.GetSecondaryR().Add(thisValueParams);
             }
-        else if (property->GetPropertyMap().GetAsPropertyMapStructArray())
+        else if (property->GetPropertyMap().GetAsStructArrayTablePropertyMap())
             {
             joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
             joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
@@ -422,7 +422,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
             joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
             info->m_parameterMap.GetSecondaryR().Add(thisValueParams);
             }
-        else if (property->GetPropertyMap().GetAsPropertyMapStructArray())
+        else if (property->GetPropertyMap().GetAsStructArrayTablePropertyMap())
             {
             joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
             joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));

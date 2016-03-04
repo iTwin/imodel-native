@@ -961,7 +961,7 @@ ClassIndexInfoPtr ClassIndexInfo::Create(ECDbCR ecdb, ECN::ECDbClassMap::DbIndex
 // @bsimethod                                 Krischan.Eberle                02/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ClassIndexInfoPtr ClassIndexInfo::Clone(ClassIndexInfoCR rhs, Utf8CP newIndexName)
+ClassIndexInfoPtr ClassIndexInfo::Clone(ClassIndexInfo const& rhs, Utf8CP newIndexName)
     {
     return new ClassIndexInfo(newIndexName, rhs.GetIsUnique(), rhs.GetProperties(), rhs.IsAddPropsAreNotNullWhereExp());
     }

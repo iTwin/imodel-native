@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlDeletePreparer.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -37,7 +37,7 @@ private:
                         DeleteStatementExp const& exp, ClassNameExp const& classNameExp);
 
     static ECSqlStatus PrepareForClass (ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets);
-    static ECSqlStatus PrepareForEndTableRelationship (ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, RelationshipClassEndTableMapCR classMap);
+    static ECSqlStatus PrepareForEndTableRelationship (ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, RelationshipClassEndTableMap const& classMap);
 
     static void BuildNativeSqlDeleteStatement (NativeSqlBuilder& deleteBuilder, NativeSqlSnippets const& deleteNativeSqlSnippets);
     static void BuildNativeSqlUpdateStatement (NativeSqlBuilder& updateBuilder, NativeSqlSnippets const& deleteNativeSqlSnippets,

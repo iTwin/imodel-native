@@ -667,7 +667,7 @@ PropertyMapCP ECDbMapAnalyser::Relationship::EndPoint::GetInstanceId () const { 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-PropertyMapRelationshipConstraintClassId const* ECDbMapAnalyser::Relationship::EndPoint::GetClassId () const { return m_classId; }
+ECClassIdRelationshipConstraintPropertyMap const* ECDbMapAnalyser::Relationship::EndPoint::GetClassId () const { return m_classId; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
@@ -713,7 +713,7 @@ ECDbMapAnalyser::Relationship::PersistanceLocation ECDbMapAnalyser::Relationship
     if (IsLinkTable ())
         return PersistanceLocation::Self;
 
-    auto& endTable = static_cast<RelationshipClassEndTableMapCR>(GetRelationshipClassMap ());
+    auto& endTable = static_cast<RelationshipClassEndTableMap const&>(GetRelationshipClassMap ());
     if (endTable.GetForeignEnd () == ECN::ECRelationshipEnd::ECRelationshipEnd_Source)
         {
         if (endTable.GetRelationshipClass ().GetStrengthDirection () == ECN::ECRelatedInstanceDirection::Forward)
@@ -1093,16 +1093,16 @@ BentleyStatus ECDbMapAnalyser::AnalyseClass (ClassMapCR ecClassMap)
 //---------------------------------------------------------------------------------------
 void ECDbMapAnalyser::AnalyseStruct(Class& classInfo)
     {
-    std::map<IClassMap const*, std::vector<PropertyMapStructArrayCP>> structPropertyMaps;
+    std::map<IClassMap const*, std::vector<StructArrayTablePropertyMap const*>> structPropertyMaps;
     classInfo.GetClassMap().GetPropertyMaps().Traverse([&] (TraversalFeedback& feedback, PropertyMapCP propertyMap)
         {
-        if (auto mapToTable = propertyMap->GetAsPropertyMapStructArray())
+        if (StructArrayTablePropertyMap const* structArrayTablePropMap = propertyMap->GetAsStructArrayTablePropertyMap())
             {
-            if (auto associatedClasMap = m_map.GetClassMap(mapToTable->GetElementType()))
+            if (auto associatedClasMap = m_map.GetClassMap(structArrayTablePropMap->GetElementType()))
                 {
                 if (associatedClasMap->GetJoinedTable().GetPersistenceType() == PersistenceType::Persisted)
                     {
-                    structPropertyMaps[associatedClasMap].push_back(mapToTable);
+                    structPropertyMaps[associatedClasMap].push_back(structArrayTablePropMap);
                     }
                 }
             }
@@ -2036,10 +2036,10 @@ BentleyStatus ECClassViewGenerator::BuildClassView(SqlViewBuilder& viewBuilder, 
 //---------------------------------------------------------------------------------------
 BentleyStatus ECClassViewGenerator::BuildRelationshipJoinIfAny(NativeSqlBuilder& sqlBuilder, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint) const
     {
-    PropertyMapRelationshipConstraintClassId const* ecclassIdPropertyMap = endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECClassIdPropMap() : classMap.GetTargetECClassIdPropMap();
+    ECClassIdRelationshipConstraintPropertyMap const* ecclassIdPropertyMap = endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECClassIdPropMap() : classMap.GetTargetECClassIdPropMap();
     if (!ecclassIdPropertyMap->IsMappedToClassMapTables())
         {
-        PropertyMapRelationshipConstraintECInstanceId const* ecInstanceIdPropertyMap = static_cast<PropertyMapRelationshipConstraintECInstanceId const*>(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECInstanceIdPropMap() : classMap.GetTargetECInstanceIdPropMap());
+        ECInstanceIdRelationshipConstraintPropertyMap const* ecInstanceIdPropertyMap = static_cast<ECInstanceIdRelationshipConstraintPropertyMap const*>(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECInstanceIdPropMap() : classMap.GetTargetECInstanceIdPropMap());
         ECDbMapCR ecdbMap = classMap.GetECDbMap();
         size_t tableCount = ecdbMap.GetTableCountOnRelationshipEnd(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetRelationshipClass().GetSource() : classMap.GetRelationshipClass().GetTarget());
         ECDbSqlTable const* targetTable = ecclassIdPropertyMap->GetTable();
@@ -2084,7 +2084,7 @@ BentleyStatus ECClassViewGenerator::BuildRelationshipJoinIfAny(NativeSqlBuilder&
 //---------------------------------------------------------------------------------------
 BentleyStatus ECClassViewGenerator::BuildEndTableRelationshipView(NativeSqlBuilder::List& unionList, RelationshipClassMapCR classMap) const
     {
-    std::set<RelationshipClassEndTableMapCP> childMaps;
+    std::set<RelationshipClassEndTableMap const*> childMaps;
     CollectDerivedEndTableRelationships(childMaps, classMap);
     for (auto endClassMap : childMaps)
         {
@@ -2121,10 +2121,10 @@ BentleyStatus ECClassViewGenerator::BuildEndTableRelationshipView(NativeSqlBuild
 // @bsimethod                                 Affan.Khan                         06/2015
 //---------------------------------------------------------------------------------------
 //static
-void ECClassViewGenerator::CollectDerivedEndTableRelationships(std::set<RelationshipClassEndTableMapCP>& childMaps, RelationshipClassMapCR classMap)
+void ECClassViewGenerator::CollectDerivedEndTableRelationships(std::set<RelationshipClassEndTableMap const*>& childMaps, RelationshipClassMapCR classMap)
     {
     if (classMap.GetMapStrategy().IsForeignKeyMapping())
-        childMaps.insert(static_cast<RelationshipClassEndTableMapCP>(&classMap));
+        childMaps.insert(static_cast<RelationshipClassEndTableMap const*>(&classMap));
 
     for (auto derviedMap : classMap.GetDerivedClassMaps())
         {
@@ -2177,16 +2177,16 @@ BentleyStatus ECClassViewGenerator::BuildSelectionClause(NativeSqlBuilder& viewS
 //static
 BentleyStatus ECClassViewGenerator::BuildPropertyExpression(NativeSqlBuilder& viewSql, PropertyMapCR propertyMap, Utf8CP tablePrefix, bool nullValue)
     {
-    if (PropertyMapSingleColumn const* o = dynamic_cast<PropertyMapSingleColumn const*>(&propertyMap))
+    if (SingleColumnPropertyMap const* o = dynamic_cast<SingleColumnPropertyMap const*>(&propertyMap))
         return BuildPrimitivePropertyExpression(viewSql, *o, tablePrefix, nullValue);
     
-    if (PropertyMapPoint const* o = dynamic_cast<PropertyMapPoint const*>(&propertyMap))
+    if (PointPropertyMap const* o = dynamic_cast<PointPropertyMap const*>(&propertyMap))
         return BuildPointPropertyExpression(viewSql, *o, tablePrefix, nullValue);
     
-    if (PropertyMapStruct const* o = dynamic_cast<PropertyMapStruct const*>(&propertyMap))
+    if (StructPropertyMap const* o = dynamic_cast<StructPropertyMap const*>(&propertyMap))
         return BuildStructPropertyExpression(viewSql, *o, tablePrefix, nullValue);
     
-    if (propertyMap.GetAsPropertyMapStructArray() != nullptr)
+    if (propertyMap.GetAsStructArrayTablePropertyMap() != nullptr)
         return SUCCESS;
 
     if (NavigationPropertyMap const* o = propertyMap.GetAsNavigationPropertyMap())
@@ -2208,7 +2208,7 @@ BentleyStatus ECClassViewGenerator::BuildPropertyExpression(NativeSqlBuilder& vi
 // @bsimethod                                 Affan.Khan                         06/2015
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ECClassViewGenerator::BuildPointPropertyExpression(NativeSqlBuilder& viewSql, PropertyMapPoint const& propertyMap, Utf8CP tablePrefix, bool isNullValue)
+BentleyStatus ECClassViewGenerator::BuildPointPropertyExpression(NativeSqlBuilder& viewSql, PointPropertyMap const& propertyMap, Utf8CP tablePrefix, bool isNullValue)
     {
     PrimitiveECPropertyCP primitiveProperty = propertyMap.GetProperty().GetAsPrimitiveProperty();
     if (primitiveProperty == nullptr)
@@ -2231,7 +2231,7 @@ BentleyStatus ECClassViewGenerator::BuildPointPropertyExpression(NativeSqlBuilde
 
     Utf8String colAlias(propertyMap.GetPropertyAccessString());
 
-    const ECDbSqlColumn::Type targetColType = PropertyMapPoint::GetDefaultColumnType();
+    const ECDbSqlColumn::Type targetColType = PointPropertyMap::GetDefaultColumnType();
     ECDbSqlColumn const* xCol = columns[0];
     Utf8CP xCastTargetType = DetermineCastTargetType(*xCol, targetColType);
     if (SUCCESS != BuildColumnExpression(fragments, isNullValue, xCol->GetTable().GetName().c_str(), xCol->GetName().c_str(), xCastTargetType, (colAlias + ".X").c_str()))
@@ -2282,7 +2282,7 @@ BentleyStatus ECClassViewGenerator::BuildPrimitivePropertyExpression(NativeSqlBu
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         06/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ECClassViewGenerator::BuildStructPropertyExpression(NativeSqlBuilder& viewSql, PropertyMapStructCR propertyMap, Utf8CP tablePrefix, bool isNullValue)
+BentleyStatus ECClassViewGenerator::BuildStructPropertyExpression(NativeSqlBuilder& viewSql, StructPropertyMap const& propertyMap, Utf8CP tablePrefix, bool isNullValue)
     {
     NativeSqlBuilder::List fragments;
     for (PropertyMapCP childMap : propertyMap.GetChildren())
@@ -2377,7 +2377,7 @@ BentleyStatus ECClassViewGenerator::BuildECInstanceIdConstraintExpression(Native
 BentleyStatus ECClassViewGenerator::BuildECClassIdConstraintExpression(NativeSqlBuilder::List& fragments, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, Utf8CP tablePrefix, bool isNullValue)
     {
     ECRelationshipConstraint const& constraint = endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetClass().GetRelationshipClassCP()->GetSource() : classMap.GetClass().GetRelationshipClassCP()->GetTarget();
-    PropertyMapRelationshipConstraintClassId const* propertyMap = endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECClassIdPropMap() : classMap.GetTargetECClassIdPropMap();
+    ECClassIdRelationshipConstraintPropertyMap const* propertyMap = endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECClassIdPropMap() : classMap.GetTargetECClassIdPropMap();
     Utf8CP colAlias = propertyMap->GetPropertyAccessString();
 
     if (isNullValue)

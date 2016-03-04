@@ -499,7 +499,7 @@ MapStatus ClassMap::_MapPart1(SchemaImportContext& schemaImportContext, ClassMap
         return MapStatus::Success;
 
     //does not exist yet
-    PropertyMapPtr ecInstanceIdPropertyMap = PropertyMapECInstanceId::Create(Schemas(), *this);
+    PropertyMapPtr ecInstanceIdPropertyMap = ECInstanceIdPropertyMap::Create(Schemas(), *this);
     if (ecInstanceIdPropertyMap == nullptr)
         //log and assert already done in child method
         return MapStatus::Error;
@@ -868,7 +868,7 @@ PropertyMapCP ClassMap::GetECInstanceIdPropertyMap() const
 //---------------------------------------------------------------------------------------
 bool ClassMap::TryGetECInstanceIdPropertyMap(PropertyMapPtr& ecInstanceIdPropertyMap) const
     {
-    return GetPropertyMaps().TryGetPropertyMap(ecInstanceIdPropertyMap, PropertyMapECInstanceId::PROPERTYACCESSSTRING);
+    return GetPropertyMaps().TryGetPropertyMap(ecInstanceIdPropertyMap, ECInstanceIdPropertyMap::PROPERTYACCESSSTRING);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1008,7 +1008,7 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
     
     if (auto propInfo = mapInfo.FindPropertyMapByAccessString(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME))
         {
-        PropertyMapPtr ecInstanceIdPropertyMap = PropertyMapECInstanceId::Create(Schemas(), *this, propInfo->GetColumns());
+        PropertyMapPtr ecInstanceIdPropertyMap = ECInstanceIdPropertyMap::Create(Schemas(), *this, propInfo->GetColumns());
         if (ecInstanceIdPropertyMap == nullptr)
             return BentleyStatus::ERROR;
 
@@ -1375,7 +1375,7 @@ PropertyMapSet::Ptr PropertyMapSet::Create (IClassMap const& classMap)
 
     classMap.GetPropertyMaps ().Traverse ([&propertySet] (TraversalFeedback& feedback, PropertyMapCP propMap)
         {
-        if (auto pm = dynamic_cast<PropertyMapPoint const*> (propMap))
+        if (auto pm = dynamic_cast<PointPropertyMap const*> (propMap))
             {
             std::vector<ECDbSqlColumn const*> columns;
             pm->GetColumns (columns);
@@ -1385,7 +1385,7 @@ PropertyMapSet::Ptr PropertyMapSet::Create (IClassMap const& classMap)
             if (pm->Is3d ())
                 propertySet->m_orderedEndPoints.push_back (std::unique_ptr<EndPoint> (new EndPoint ((baseAccessString + ".Z").c_str (), *columns[2], ECValue ())));
             }
-        else if (nullptr != propMap->GetAsPropertyMapStructArray() || nullptr != propMap->GetAsNavigationPropertyMap())
+        else if (nullptr != propMap->GetAsStructArrayTablePropertyMap() || nullptr != propMap->GetAsNavigationPropertyMap())
             {
             feedback = TraversalFeedback::NextSibling;
             }

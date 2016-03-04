@@ -176,7 +176,7 @@ ECSqlStatus ECSqlInsertPreparer::SetupBindStructParameter(ECSqlBinder* binder, P
                 }
             }
 
-        else if (childPropertyMap->GetAsPropertyMapStructArray() != nullptr)
+        else if (childPropertyMap->GetAsStructArrayTablePropertyMap() != nullptr)
             {
             auto structArrayBinder = dynamic_cast<StructArrayToSecondaryTableECSqlBinder*> (&propertyBinder);
             if (structArrayBinder == nullptr)
@@ -307,8 +307,8 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoLinkTableRelationship(ECSqlPre
 //static
 ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, InsertStatementExp const& exp, RelationshipClassMapCR relationshipClassMap, ECClassId sourceECClassId, ECClassId targetECClassId)
     {
-    BeAssert(dynamic_cast<RelationshipClassEndTableMapCP> (&relationshipClassMap) != nullptr);
-    auto const& relationshipEndTableMap = static_cast<RelationshipClassEndTableMapCR> (relationshipClassMap);
+    BeAssert(dynamic_cast<RelationshipClassEndTableMap const*> (&relationshipClassMap) != nullptr);
+    auto const& relationshipEndTableMap = static_cast<RelationshipClassEndTableMap const&> (relationshipClassMap);
 
     const auto foreignEnd = relationshipEndTableMap.GetForeignEnd();
 
@@ -504,7 +504,7 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
             //if not user provided ecinstanceid snippet will be appended to column names
             ecinstanceidIndex = (int) nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.size();
             PropertyMapCP ecInstanceIdPropMap = nullptr;
-            if (!classMap.GetPropertyMaps().TryGetPropertyMap(ecInstanceIdPropMap, PropertyMapECInstanceId::PROPERTYACCESSSTRING))
+            if (!classMap.GetPropertyMaps().TryGetPropertyMap(ecInstanceIdPropMap, ECInstanceIdPropertyMap::PROPERTYACCESSSTRING))
                 {
                 BeAssert(false && "ECInstanceId property map is always expected to exist for domain classes.");
                 return;
@@ -675,7 +675,7 @@ ECSqlStatus ECSqlInsertPreparer::GetConstraintClassIdExpValue(bool& isParameter,
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlInsertPreparer::PrepareConstraintClassId(NativeSqlSnippets& insertNativeSqlSnippets, ECSqlPrepareContext& ctx, PropertyMapRelationshipConstraintClassId const& constraintClassIdPropMap, ECClassId constraintClassId)
+ECSqlStatus ECSqlInsertPreparer::PrepareConstraintClassId(NativeSqlSnippets& insertNativeSqlSnippets, ECSqlPrepareContext& ctx, ECClassIdRelationshipConstraintPropertyMap const& constraintClassIdPropMap, ECClassId constraintClassId)
     {
     BeAssert(constraintClassId >= ECClass::UNSET_ECCLASSID);
     //if constraint class id maps to virtual column then ignore it as the column does not exist in the table.
@@ -749,7 +749,7 @@ void ECSqlInsertPreparer::BuildNativeSqlUpdateStatement
 NativeSqlBuilder& updateBuilder,
 NativeSqlSnippets const& insertSqlSnippets,
 std::vector<size_t> const& expIndexSkipList,
-RelationshipClassEndTableMapCR classMap
+RelationshipClassEndTableMap const& classMap
 )
     {
     //For each expression in the property name / value list, a NativeSqlBuilder::List is created. For simple primitive

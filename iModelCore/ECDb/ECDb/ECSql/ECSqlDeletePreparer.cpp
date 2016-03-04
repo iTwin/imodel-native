@@ -29,7 +29,7 @@ ECSqlStatus ECSqlDeletePreparer::Prepare (ECSqlPrepareContext& ctx, DeleteStatem
         return stat;
 
     if (classMap.GetClassMapType () == ClassMap::Type::RelationshipEndTable)
-        stat = PrepareForEndTableRelationship (ctx, deleteNativeSqlSnippets, static_cast<RelationshipClassEndTableMapCR> (classMap));
+        stat = PrepareForEndTableRelationship (ctx, deleteNativeSqlSnippets, static_cast<RelationshipClassEndTableMap const&> (classMap));
     else
         stat = PrepareForClass (ctx, deleteNativeSqlSnippets);
 
@@ -96,7 +96,7 @@ ECSqlStatus ECSqlDeletePreparer::PrepareForEndTableRelationship
 (
 ECSqlPrepareContext& ctx, 
 NativeSqlSnippets& nativeSqlSnippets, 
-RelationshipClassEndTableMapCR classMap
+RelationshipClassEndTableMap const& classMap
 )
     {
     auto referencedEndECInstanceIdPropMap = classMap.GetReferencedEndECInstanceIdPropMap ();
