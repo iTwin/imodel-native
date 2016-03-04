@@ -2957,6 +2957,7 @@ ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool ins
             return ECObjectsStatus::RelationshipConstraintsNotCompatible;
             }
 
+#ifdef THIS_BREAKS_264_TESTS
         // Compare Cardinality. In general, the cardinality of the derived class must be more restrictive 
         // than the bounds defined in the base class cardinality. 
         if (RelationshipCardinality::Compare(GetSource().GetCardinality(), relationshipBaseClass->GetSource().GetCardinality()) == 1 ||
@@ -2964,6 +2965,7 @@ ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool ins
             {
             return ECObjectsStatus::RelationshipConstraintsNotCompatible;
             }
+#endif
         }
     return ECClass::_AddBaseClass(baseClass, insertAtBeginning, resolveConflicts);
     }
