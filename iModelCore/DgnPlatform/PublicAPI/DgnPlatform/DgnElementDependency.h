@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnElementDependency.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,12 +27,19 @@ protected:
 
     //! Called by DgnElementDependencyGraph after the source DgnElement's content has changed. 
     //! This base class implementation of _OnRootChanged calls Txns::ReportValidationError to indicate a missing handler.
+    //! @note This callback is \em not invoked when the source or target element is deleted. See _ProcessDeletedDependency
     //! @param[in] db                   The DgnDb in which the handler and ECRelationship reside. 
     //! @param[in] relationshipId       The ECRelationship instance ID
     //! @param[in] source               The ECRelationship's Source DgnElement
     //! @param[in] target               The ECRelationship's Target DgnElement
     //! Call Txns::ReportValidationError to reject an invalid change. The reported error can be classified as fatal or just a warning.
     DGNPLATFORM_EXPORT virtual void _OnRootChanged(DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target);
+
+    //! Called by DgnElementDependencyGraph after the specified dependency is deleted.
+    //! @note A dependency relationship is automatically deleted when its source or target element is deleted.
+    //! @param[in] db                   The DgnDb in which the handler and ECRelationship reside. 
+    //! @param[in] relData              The relationship's data (as of the point just before it was deleted)
+    virtual void _ProcessDeletedDependency(DgnDbR db, dgn_TxnTable::ElementDep::DepRelData const& relData) {;}
 
     //! Called by DgnElementDependencyGraph after all _OnRootChanged have been invoked, in the case where the output of this dependency is also the output of other dependencies.
     //! The dependency handler should check that its requirements is still enforced. 
@@ -200,6 +207,9 @@ struct DgnElementDependencyGraph
         //! Invoked on an edge in the graph
         virtual void _ProcessEdge(Edge const& edge, DgnElementDependencyHandler* handler) = 0;
 
+        //! Invoked on a deleted dependency
+        virtual void _ProcessDeletedDependency(DgnDbR db, dgn_TxnTable::ElementDep::DepRelData const& relData) {;}
+
         //! Invoked on an edge in the graph for a validation callback
         virtual void _ProcessEdgeForValidation(Edge const& edge, DgnElementDependencyHandler* handler) = 0;
 
@@ -241,6 +251,7 @@ private:
     void InvokeHandlersInTopologicalOrder_OneGraph(Edge const&, bvector<Edge> const& pathToSupplier);
 
     void InvokeHandlersInDependencyOrder(DgnModelId);
+    void InvokeHandlersForDeletedRelationships();
 
     BeSQLite::DbResult SetFailedEdgeStatusInDb(Edge const&, bool failed);
     BeSQLite::DbResult UpdateEdgeStatusInDb(Edge const&, EdgeStatus);

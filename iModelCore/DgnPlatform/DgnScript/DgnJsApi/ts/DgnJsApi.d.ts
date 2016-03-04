@@ -105,7 +105,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         static ReportError(description: Bentley_Utf8String): void;
     }
 
-    /** A DgnDb */
+    /** DgnDb - Projection of BentleyApi::Dgn::DgnDb */
     class DgnDb implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsDgnDb ***/
@@ -119,7 +119,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DgnDbP = cxx_pointer<DgnDb>;
 
-    /** A wrapper for 64-bit element ids, etc. */
+    /** A 64-bit ID.  */
     class DgnObjectId implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
         /*** NATIVE_TYPE_NAME = JsDgnObjectId ***/
@@ -169,7 +169,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DgnObjectIdSetP = cxx_pointer<DgnObjectIdSet>;
 
-    /** A DgnCode */
+    /** AuthorityIssuedCodeValue - Projection of BentleyApi::Dgn::DgnCode */
     class AuthorityIssuedCodeValue implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
         /*** NATIVE_TYPE_NAME = JsAuthorityIssuedCode ***/
@@ -179,7 +179,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type AuthorityIssuedCode = cxx_pointer<AuthorityIssuedCodeValue>;
 
-    /** A collection of DgnModels */
+    /** DgnModels - Projection of BentleyApi::Dgn::DgnModels */
     class DgnModels implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsDgnModels ***/
@@ -193,7 +193,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DgnModelsP = cxx_pointer<DgnModels>;
 
-    /** A Category */
+    /** DgnCategory - Projection of BentleyApi::Dgn::DgnCategory */
     class DgnCategory implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsDgnCategory ***/
@@ -217,7 +217,17 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DgnCategoryP = cxx_pointer<DgnCategory>;
 
-    /** An Element */
+    /** DgnElement - Projection of BentleyApi::Dgn::DgnElement
+     *  <h2>Properties</h2>
+     *  On any given element, there may be the following kinds of properties:
+     *  * Properties that are defined by the ECClass 
+     *          * Properties that are controlled by the C++ element class
+     *              * You must use methods on that class to access them
+     *          * Properties that are not controlled by the C++ element class – “Unhandled Properties”
+     *              * You must use the Get/SetUnhandledProperty functions to access them
+     *  * Properties that are not defined by the ECClass but are added by the user – “User Properties”
+     *          * You must use the UserProperties.Get/SetValueEC methods to access them
+     */
     class DgnElement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsDgnElement ***/ 
@@ -253,13 +263,36 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
          */
         SetUnhandledProperty(name: Bentley_Utf8String, value: ECValueP): cxx_int32_t;
 
+        /**
+         * Get a handle to a user property on this element. 
+         * @note If the user property does not already exist, this function will create it.
+         * You can use the returned object to both get and set the property's value and metadata.
+         * @note Call DgnElement::Update after modifying a user property's value or metadata in order to save your changes.
+         * @param name The name of the property
+         * @return an object that accesses the value and metadata of the specified user property on this element.
+         * @see ContainsUserProperty
+         */
+        GetUserProperty(name: Bentley_Utf8String): AdHocJsonPropertyValueP;
+
+        /**
+         * Check to see if the element has the specified user property
+         * @param name The name of the property
+         */
+        ContainsUserProperty(name: Bentley_Utf8String): cxx_bool;
+
+
+        /** Remove the specified user property from this element
+         * @param name  The name of the property
+         */
+        RemoveUserProperty(name: Bentley_Utf8String): void;
+
         OnDispose(): void;
         Dispose(): void;
     }
 
     type DgnElementP = cxx_pointer<DgnElement>;
 
-    /** A physical element */
+    /** PhysicalElement - Projection of BentleyApi::Dgn::PhysicalElement */
     class PhysicalElement extends DgnElement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsPhysicalElement ***/
@@ -292,7 +325,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type PhysicalElementP = cxx_pointer<PhysicalElement>;
 
-    /** A Model in a DgnDb */
+    /** DgnModel - Projection of BentleyApi::Dgn::DgnModel */
     class DgnModel implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsDgnModel ***/
@@ -310,9 +343,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DgnModelP = cxx_pointer<DgnModel>;
 
-    /**
-     * A "sandbox" model where a component definition script can write elements and aspects that will be harvested by the platform and combined into instances.
-     */
+    /** ComponentModel - Projection of BentleyApi::Dgn::ComponentModel */
     class ComponentModel extends DgnModel implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsComponentModel ***/
@@ -323,9 +354,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type ComponentModelP = cxx_pointer<ComponentModel>;
 
-    /**
-     * A component definition
-     */
+    /** ComponentDef - Projection of BentleyApi::Dgn::ComponentDef */
     class ComponentDef implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsComponentDef ***/
@@ -413,6 +442,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type ComponentDefP = cxx_pointer<ComponentDef>;
 
+    /**
+     * ColorDef - Projection of BentleyApi::Dgn::ColorDef
+     */
     class ColorDef implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor 
     {
         /*** NATIVE_TYPE_NAME = JsColorDef ***/ 
@@ -441,9 +473,15 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type ColorDefP = cxx_pointer<ColorDef>;
 
+    /** Projection of BentleyApi::Dgn::Render::FillDisplay */
     enum RenderFillDisplay { }
+
+    /** Projection of BentleyApi::Dgn::Render::DgnGeometryClass */
     enum RenderDgnGeometryClass { }
 
+    /**
+     * RenderGeometryParams - Projection of BentleyApi::Dgn::Render::GeometryParams
+     */
     class RenderGeometryParams implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor 
     {
         /*** NATIVE_TYPE_NAME = JsRenderGeometryParams ***/ 
@@ -484,6 +522,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type RenderGeometryParamsP = cxx_pointer<RenderGeometryParams>;
 
+    /**
+     * TextString - Projection of BentleyApi::Dgn::TextString
+     */
     class TextString implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
         /*** NATIVE_TYPE_NAME = JsTextString ***/
@@ -494,6 +535,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type TextStringP = cxx_pointer<TextString>;
 
+    /**
+     * GeometricPrimitive - Projection of BentleyApi::Dgn::GeometricPrimitive
+     */
     class GeometricPrimitive implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
         /*** NATIVE_TYPE_NAME = JsGeometricPrimitive ***/
@@ -509,6 +553,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type GeometricPrimitiveP = cxx_pointer<GeometricPrimitive>;
 
+    /**
+     * DgnGeometryPart - Projection of BentleyApi::Dgn::DgnGeometryPart
+     */
     class DgnGeometryPart implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
         /*** NATIVE_TYPE_NAME = JsDgnGeometryPart ***/
@@ -543,6 +590,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type GeometryCollectionIteratorP = cxx_pointer<GeometryCollectionIterator>;
 
+    /**
+     * GeometryCollection - Projection of BentleyApi::Dgn::GeometryCollection
+     */
     class GeometryCollection implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
         /*** NATIVE_TYPE_NAME = JsGeometryCollection ***/
@@ -604,6 +654,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type GeometryCollectionP = cxx_pointer<GeometryCollection>;
 
+    /**
+     * GeometryBuilder - Projection of BentleyApi::Dgn::GeometryBuilder
+     */
     class GeometryBuilder implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsGeometryBuilder ***/ 
@@ -703,6 +756,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     /* ------------------------------------------ ScriptBasedTool -----------------------------------------------*/
 
+    /**
+     * HitDetail - Projection of BentleyApi::Dgn::HitDetail
+     */
     class HitDetail implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
         /*** NATIVE_TYPE_NAME = JsHitDetail ***/ 
 
@@ -727,6 +783,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     /* ------------------------------------------ EC -----------------------------------------------*/
 
+    /**
+     * Provides access to ECSchemas and ECClasses within a DgnDb
+     */
     class SchemaManager implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsECDbSchemaManager ***/
@@ -737,6 +796,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type SchemaManagerP = cxx_pointer<SchemaManager>;
 
+    /**
+     * ECSchema - Projection of BentleyApi::ECN::ECSchema
+     */
     class ECSchema implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsECSchema ***/
@@ -749,15 +811,41 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type ECSchemaP = cxx_pointer<ECSchema>;
 
+    /**
+     * ECClass - Projection of BentleyApi::ECN::ECClass
+     */
     class ECClass implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsECClass ***/ 
+
+        /** The name of the class */
         Name: Bentley_Utf8String;
+
+        /** The base classes of this class */
         BaseClasses: ECClassCollectionP;
+
+        /** The classes that derive from this class */
         DerivedClasses: ECClassCollectionP;
+
+        /** The properties defined by this class and all of its base classes. */
         Properties: ECPropertyCollectionP;
+
+        /**
+         * Get the definition of the specified property of this class or any of its base classes
+         * @param name The name of the property to look up 
+         * @return the property definition or null if no such property is found
+         $$PUBLISH_INSERT_FILE$$ dgnJsApi_ECClass_GetProperty.sampleCode
+         */
+        GetProperty(name: Bentley_Utf8String): ECPropertyP;
+
+        /**
+         * Query the specified custom attribute on this property definition
+         * @param className The class of the custom attribute to look up
+         * @return the custom attribute or null if no such custom attribute is defined for this property.
+         */
         GetCustomAttribute(className: Bentley_Utf8String): ECInstanceP;
 
+        /** Create a non-persistent instance of this ECClass */
         MakeInstance(): ECInstanceP;
 
         OnDispose(): void;
@@ -766,6 +854,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type ECClassP = cxx_pointer<ECClass>;
 
+    /**
+     * ECInstance - Projection of BentleyApi::ECN::ECInstance
+     */
     class ECInstance implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsECInstance ***/
@@ -804,6 +895,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         Dispose(): void;
     }
 
+    /**
+     * ECValue - Projection of BentleyApi::ECN::ECValue
+     */
     class ECValue implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsECValue ***/
@@ -824,6 +918,43 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type ECValueP = cxx_pointer<ECValue>;
 
+    /**
+     * AdHocJsonPropertyValue - Projection of BentleyApi::ECN::AdHocJsonPropertyValue
+     */
+    class AdHocJsonPropertyValue implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsAdHocJsonPropertyValue ***/
+
+        /** The value of this ad hoc property. */
+        ValueEC: ECValueP;
+
+        /** The type of this ad hoc property's value. */
+        Type: cxx_enum_class_uint32_t<ECPropertyPrimitiveType>;
+
+        /** The ExtendedType of this ad hoc property value, used to show or edit the property value. */
+        ExtendedType: Bentley_Utf8String;
+
+        /** The units of this ad hoc property value. */
+        Units: Bentley_Utf8String;
+
+        /** Controls if this ad hoc property should be hidden. */
+        Hidden: cxx_bool;
+
+        /** Controls if this ad property's value should be read-only or not. */
+        ReadOnly: cxx_bool;
+
+        /** The Priority of this ad hoc property value. Typically used for presentation. */
+        Priority: cxx_int32_t;
+
+        /** The Category of this ad hoc property value. Typically used for presentation. */
+        Category: Bentley_Utf8String;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type AdHocJsonPropertyValueP = cxx_pointer<AdHocJsonPropertyValue>;
+
     class ECClassCollectionIterator implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
         /*** NATIVE_TYPE_NAME = JsECClassCollectionIterator ***/
@@ -833,6 +964,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type ECClassCollectionIteratorP = cxx_pointer<ECClassCollectionIterator>;
 
+    /**
+     * A collection of ECClasses
+     */
     class ECClassCollection implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
         /*** NATIVE_TYPE_NAME = JsECClassCollection ***/
@@ -847,11 +981,24 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type ECClassCollectionP = cxx_pointer<ECClassCollection>;
 
+    /**
+     * ECProperty - Projection of BentleyApi::ECN::ECProperty
+     */
     class ECProperty implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsECProperty ***/
+
+        /** The name of the property */
         Name: Bentley_Utf8String;
-        IsPrimitive: cxx_bool;
+
+        /** If this property holds a primitive type, return a PrimitiveECProperty. If not, it holds a struct or an array. */
+        GetAsPrimitiveProperty(): PrimitiveECPropertyP;
+
+        /**
+         * Query the specified custom attribute on this property definition
+         * @param className The class of the custom attribute to look up
+         * @return the custom attribute or null if no such custom attribute is defined for this property.
+         */
         GetCustomAttribute(className: Bentley_Utf8String): ECInstanceP;
 
         OnDispose(): void;
@@ -860,6 +1007,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type ECPropertyP = cxx_pointer<ECProperty>;
 
+    /**
+     * PrimitiveECProperty - Projection of BentleyApi::ECN::PrimitiveECProperty
+     */
     class PrimitiveECProperty extends ECProperty implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsPrimitiveECProperty ***/
@@ -880,6 +1030,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type ECPropertyCollectionIteratorP = cxx_pointer<ECPropertyCollectionIterator>;
 
+    /**
+     * A collection of ECProperties
+     */
     class ECPropertyCollection implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
         /*** NATIVE_TYPE_NAME = JsECPropertyCollection ***/

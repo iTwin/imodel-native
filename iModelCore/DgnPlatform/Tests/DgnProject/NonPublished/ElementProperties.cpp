@@ -2,14 +2,13 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/ElementProperties.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "DgnHandlersTests.h"
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <Bentley/BeTimeUtilities.h>
-#include <ECDb/ECSqlBuilder.h>
 #include "../TestFixture/DgnDbTestFixtures.h"
 
 //=======================================================================================

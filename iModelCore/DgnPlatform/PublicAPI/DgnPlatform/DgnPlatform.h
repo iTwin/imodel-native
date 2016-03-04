@@ -31,14 +31,6 @@
 #define USING_NAMESPACE_BENTLEY_DGNPLATFORM using namespace BentleyApi::Dgn; // for backwards compatibility, do not use
 #define USING_NAMESPACE_BENTLEY_DGN         using namespace BentleyApi::Dgn;
 #define USING_NAMESPACE_BENTLEY_RENDER      using namespace BentleyApi::Dgn::Render;
-#define GLOBAL_TYPEDEF1(_sName_,_name_,structunion) \
-    structunion _sName_; \
-    namespace BENTLEY_NAMESPACE_NAME {\
-    typedef structunion _sName_*          _name_##P, &_name_##R;  \
-    typedef structunion _sName_ const*    _name_##CP; \
-    typedef structunion _sName_ const&    _name_##CR;}
-
-#define GLOBAL_TYPEDEF(_sName_,_name_) GLOBAL_TYPEDEF1(_sName_,_name_,struct)
 
 #define DGNPLATFORM_TYPEDEFS(_name_) \
     BEGIN_BENTLEY_DGN_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_DGN_NAMESPACE
@@ -168,6 +160,7 @@ DGNPLATFORM_TYPEDEFS(PropertyContext)
 DGNPLATFORM_TYPEDEFS(RedlineModel)
 DGNPLATFORM_TYPEDEFS(RedlineViewController)
 DGNPLATFORM_TYPEDEFS(RegionGraphicsContext)
+DGNPLATFORM_TYPEDEFS(RenderContext)
 DGNPLATFORM_TYPEDEFS(RevisionManager)
 DGNPLATFORM_TYPEDEFS(ScanCriteria)
 DGNPLATFORM_TYPEDEFS(SceneContext)
@@ -240,12 +233,8 @@ DGNPLATFORM_REF_COUNTED_PTR(TxnManager)
 DGNPLATFORM_REF_COUNTED_PTR(ViewController)
 DGNPLATFORM_REF_COUNTED_PTR(ViewDefinition)
 
-BEGIN_BENTLEY_DISPLAY_NAMESPACE
-    DEFINE_POINTER_SUFFIX_TYPEDEFS(Device)
-    DEFINE_REF_COUNTED_PTR(Device)
-END_BENTLEY_DISPLAY_NAMESPACE
-
 BEGIN_BENTLEY_RENDER_NAMESPACE
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Device)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryParams)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(GradientSymb)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Graphic)
@@ -265,7 +254,9 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Target)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Task)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Texture)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Window)
 
+    DEFINE_REF_COUNTED_PTR(Device)
     DEFINE_REF_COUNTED_PTR(GradientSymb)
     DEFINE_REF_COUNTED_PTR(Graphic)
     DEFINE_REF_COUNTED_PTR(GraphicList)
@@ -277,6 +268,7 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_REF_COUNTED_PTR(Target)
     DEFINE_REF_COUNTED_PTR(Task)
     DEFINE_REF_COUNTED_PTR(Texture)
+    DEFINE_REF_COUNTED_PTR(Window)
 END_BENTLEY_RENDER_NAMESPACE
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -830,8 +822,9 @@ enum class ClipVolumePass
 enum class DrawPurpose
 {
     NotSpecified = 0,
-    CreateScene,
     CreateTerrain,
+    CreateScene,
+    Progressive,
     Plot,
     Pick,
     CaptureGeometry,

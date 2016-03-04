@@ -335,6 +335,31 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DRay3dP = cxx_pointer<DRay3d>;
 
+/**
+@description A plane defined by origin and vector normal
+*/
+    class DPlane3d implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsDPlane3d ***/ 
+        Clone(): DPlane3dP;
+        constructor (
+                Origin : DPoint3dP,
+                Normal: DVector3dP
+                );
+        
+        Origin: DPoint3dP;
+        Normal: DVector3dP;
+        OnDispose(): void;
+        Dispose(): void;
+        /** Evalate (xyz-origin) DOT normal. */
+        Evaluate (xyz : DPoint3dP) : cxx_double;
+    }
+
+    type DPlane3dP = cxx_pointer<DPlane3d>;
+
+
+
+
+
 
     type DPoint3dArrayP = cxx_pointer<DPoint3dArray>;
 
@@ -532,10 +557,13 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         static CreateTranslation (translation : DPoint3dP) : TransformP;
         static CreateTranslationXYZ (x : cxx_double, y : cxx_double, z : cxx_double) : TransformP;
         static CreateScaleAroundPoint (fixedPoint : DPoint3dP, scaleX : cxx_double, scaleY : cxx_double, scaleZ : cxx_double) : TransformP;
-
+        /** Create a coordinate frame with x,y,z columns given directly */
         static CreateOriginAndVectors (origin : DPoint3dP, xVector : DVector3dP, yVector : DVector3dP, zVector : DVector3dP) : TransformP;
-
+        /** Create a coordinate frame with x,y,z columns as vectors from origin to target points */
         static CreateOriginAnd3TargetPoints (origin : DPoint3dP, xPoint : DPoint3dP, yPoint : DPoint3dP, zPoint : DPoint3dP) : TransformP;
+        /** Create a transform that sweeps points along the sweepDirection to a point on the plane */
+        static CreateSweepToPlane (sweepDirection: DVector3dP, plane : DPlane3dP) : TransformP;
+
 
         static CreateOriginAnd2TargetPoints (origin : DPoint3dP, xPoint : DPoint3dP, yPoint : DPoint3dP) : TransformP;
 
@@ -905,6 +933,10 @@ class PlanarRegion extends CurveVector implements BeJsProjection_SuppressConstru
         /** Add a curve primtive to this curve vector.
         */
         Add(primitive: CurvePrimitiveP): void;
+        /** Create a Path with a single initial curve.  Additional curves can be added later. */
+        static Create1 (curve: CurvePrimitiveP) : PathP;
+        /** Create a Path with a two initial curves.  Additional curves can be added later. */
+        static Create2 (curve1: CurvePrimitiveP, curve2: CurvePrimitiveP) : PathP;
     }
 
     type PathP = cxx_pointer<Path>;
@@ -915,10 +947,14 @@ class PlanarRegion extends CurveVector implements BeJsProjection_SuppressConstru
     class Loop extends PlanarRegion {
         /*** NATIVE_TYPE_NAME = JsLoop ***/
         Clone(): LoopP;
+        /** Create an empty loop.  Use "Add" to insert curves.*/
         constructor();
-        /** Add a curve primtive to this curve vector.
-        */
+        /** Add a curve primtive to this curve vector. */
         Add(primitive: CurvePrimitiveP): void;
+        /** Create a loop with a single initial curve.  Additional curves can be added later. */
+        static Create1 (curve: CurvePrimitiveP) : LoopP;
+        /** Create a loop with a two initial curves.  Additional curves can be added later. */
+        static Create2 (curve1: CurvePrimitiveP, curve2: CurvePrimitiveP) : LoopP;
     }
 
     type LoopP = cxx_pointer<Loop>;
@@ -931,9 +967,8 @@ class PlanarRegion extends CurveVector implements BeJsProjection_SuppressConstru
         /** Add a curve primtive to this CurveVector
         */
         Add(primitive: CurvePrimitiveP): void;
-        /** Add a (child) CurveVector to this CurveVector.
-        */
-        Add(primitive: CurveVectorP): void;
+        /** Add a (child) CurveVector to this CurveVector.  */
+        Add(curveVector: CurveVectorP): void;
     }
 
     type UnstructuredCurvesP = cxx_pointer<UnstructuredCurves>;
@@ -947,8 +982,13 @@ class PlanarRegion extends CurveVector implements BeJsProjection_SuppressConstru
     class ParityRegion extends PlanarRegion{
         /*** NATIVE_TYPE_NAME = JsParityRegion ***/
         Clone(): ParityRegionP;
+        /** Create an empty parity region.  Use "Add" to insert loops.*/
         constructor();
         Add(loop: LoopP): void;
+        /** Create a region with a single initial loop.  Additional loops can be added later. */
+        static Create1 (loop: LoopP) : ParityRegionP;
+        /** Create a region with a two initial loops.  Additional loops can be added later. */
+        static Create2 (loop1: LoopP, loop2: LoopP) : ParityRegionP;
     }
 
     type ParityRegionP = cxx_pointer<ParityRegion>;
@@ -1147,6 +1187,17 @@ type SolidPrimitiveP = cxx_pointer<SolidPrimitive>;
             capped: cxx_bool
             ): DgnConeP;
 
+        static CreateCircularConeXYZ(
+            ax : cxx_double,
+            ay : cxx_double,
+            az : cxx_double,
+            bx : cxx_double,
+            by : cxx_double,
+            bz : cxx_double,
+            radiusA: cxx_double,
+            radiusB: cxx_double,
+            capped: cxx_bool
+            ): DgnConeP;
     }
 
 type DgnConeP = cxx_pointer<DgnCone>;

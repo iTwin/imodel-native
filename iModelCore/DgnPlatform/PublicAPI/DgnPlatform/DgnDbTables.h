@@ -131,7 +131,7 @@ private:
 
 public:
     //! Constructs an invalid code
-    DgnCode() { }
+    DgnCode() {}
 
     //! Constructor
     DgnCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) : m_authority(authorityId), m_value(value), m_nameSpace(nameSpace) { }
@@ -704,7 +704,8 @@ public:
     void SetGlobalOrigin(DPoint3dCR origin) {m_globalOrigin=origin;}
     DPoint3dCR GetGlobalOrigin() const {return m_globalOrigin;}
 
-    DGNPLATFORM_EXPORT BeSQLite::DbResult SaveProjectExtents(AxisAlignedBox3dCR newExtents);
+    //! Update the project extents, call SaveChanges to commit.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult SetProjectExtents(AxisAlignedBox3dCR newExtents);
 
     //! (Re-)compute the project extents by looking at the range tree.
     DGNPLATFORM_EXPORT AxisAlignedBox3d ComputeProjectExtents();
@@ -983,6 +984,25 @@ public:
         //! Add a text type by which to filter. The query will only include text belonging to the specified types.
         //! @param[in]      textType The type by which to filter.
         DGNPLATFORM_EXPORT void AddTextType(Utf8CP textType);
+
+        //! Specify columns to be include in select statement
+        //! The columns are returned by the select statement in the order Type,Id,Text
+        enum class Column : uint8_t
+        {
+            None = 0,
+            Type = 1 << 0,
+            Id = 1 << 1,
+            Text = 1 << 2,
+            IdAndText = Id | Text,
+            TextAndType = Text | Type,
+            All = Id | Text | Type,
+            Count = 0xff,
+        };
+
+        //! Converts this Query specification into a SELECT statement
+        //! @param[in]      includedColumns Specifies the columns to be selected
+        //! @return A properly formatted and quoted SELECT statement
+        DGNPLATFORM_EXPORT Utf8String ToSelectStatement(Column includedColumns=Column::Id) const;
     };
 
     //! An iterator over the results of a full text search query
@@ -1041,6 +1061,14 @@ public:
     //! @return Success if the new record was inserted, or else an error code.
     DGNPLATFORM_EXPORT BeSQLite::DbResult Insert(Record const& record);
 
+    //! Insert a new record into the searchable text table
+    //! @param[in]      textType Identifies both the meaning of the ID and the "type" of the text. May not be empty.
+    //! @param[in]      id       The ID of the object associated with this text. Must be valid.
+    //! @param[in]      text     The searchable text. May not be empty.
+    //! @return Success if the new record was inserted, or else an error code.
+    //! @remarks The combination of text type and ID must be unique within the searchable text table
+    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertRecord(Utf8CP textType, BeSQLite::BeInt64Id id, Utf8CP text);
+
     //! Update an existing record in the searchable text table
     //! @param[in]      record      The modified record
     //! @param[in]      originalKey If non-null, identifies the existing record.
@@ -1065,5 +1093,7 @@ public:
     static bool IsUntrackedFts5Table(Utf8CP tableName);
 //__PUBLISH_SECTION_START__
 };
+
+ENUM_IS_FLAGS(DgnSearchableText::Query::Column);
 
 END_BENTLEY_DGN_NAMESPACE

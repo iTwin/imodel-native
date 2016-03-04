@@ -243,11 +243,14 @@ module DgnScriptTests {
     {
         //  EC API
         var schemas: be.SchemaManager = db.Schemas;
-        var pe: be.ECClass = schemas.GetECClass(be.DGN_ECSCHEMA_NAME, be.DGN_CLASSNAME_PhysicalElement);
-        if (!pe)
+        var elementClass: be.ECClass = schemas.GetECClass(be.DGN_ECSCHEMA_NAME, be.DGN_CLASSNAME_PhysicalElement);
+        if (!elementClass)
             be.Script.ReportError('SchemaManager.GetECClass could not find ' + be.DGN_ECSCHEMA_NAME + '.' + be.DGN_CLASSNAME_PhysicalElement);
 
-        var peprops: be.ECPropertyCollection = pe.Properties;
+        // -----------------------------------------------
+        // Test GetProperties and ECPropertyCollection
+        // -----------------------------------------------
+        var peprops: be.ECPropertyCollection = elementClass.Properties;
         var foundCode: boolean = false;
         var propertyCount: number = 0;
         for (var propiter = peprops.Begin(); peprops.IsValid(propiter); peprops.ToNext(propiter))
@@ -263,8 +266,35 @@ module DgnScriptTests {
         if (propertyCount <= 2)
             be.Script.ReportError('ECPropertyCollection must have failed -- there are more than 2 properties on PhysicalElement');
 
+        // -----------------------------------------------
+        // Test GetProperty and PrimitiveECProperty
+        // -----------------------------------------------
+        var codeProp = elementClass.GetProperty('Code');
+        if (!codeProp)
+            be.Script.ReportError('GetProperty failed to find Code property');
+        else
+        {
+            var primProp = codeProp.GetAsPrimitiveProperty();
+            if (primProp)
+                be.Script.ReportError('Code property is NOT a primitive property');
+        }
 
-        var baseclasses: be.ECClassCollection = pe.BaseClasses;
+        var LastModProp = elementClass.GetProperty('LastMod');
+        if (!LastModProp)
+            be.Script.ReportError('GetProperty failed to find LastMod property');
+        else
+        {
+            var primProp = LastModProp.GetAsPrimitiveProperty();
+            if (!primProp)
+                be.Script.ReportError('LastModProp property is a primitive property');
+            if (primProp.Type != be.ECPropertyPrimitiveType.DateTime)
+                be.Script.ReportError('LastModProp property type should be DateTime');
+        }
+
+        // -----------------------------------------------
+        // Test Base/DerivecClasses and ECClassCollection
+        // -----------------------------------------------
+        var baseclasses: be.ECClassCollection = elementClass.BaseClasses;
         var foundSpatialElement: boolean = false;
         var baseCount: number = 0;
         for (var clsiter = baseclasses.Begin(); baseclasses.IsValid(clsiter); baseclasses.ToNext(clsiter))
@@ -294,6 +324,45 @@ module DgnScriptTests {
 
     }
 
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Sam.Wilson                      02/16
+    //---------------------------------------------------------------------------------------
+    function testUserProperties(el: be.DgnElement)
+    {
+        if (el.ContainsUserProperty('stuff'))
+            be.Script.ReportError('no user props expected initially');
+
+        if (true)
+        {
+            var stuff_userprop = el.GetUserProperty('stuff');
+            stuff_userprop.ValueEC = be.ECValue.FromString('foo');
+            stuff_userprop.Units = 'm';
+            stuff_userprop.ReadOnly = true;
+            // *** TRICKY: stuff_userprop is magically connected to el. Setting stuff_userprop's value actually
+            //              updates data that is stored on el. That's why we don't need a "SetUserProperty" method.
+        }
+
+        if (!el.ContainsUserProperty('stuff'))
+            be.Script.ReportError('stuff userprop should be there now');
+
+        var stuff_userprop = el.GetUserProperty('stuff');
+        if (stuff_userprop.ValueEC.GetString() != 'foo' || stuff_userprop.Units != 'm' || !stuff_userprop.ReadOnly)
+            be.Script.ReportError('stuff userprop value should have been set to foo with units m');
+
+        el.Update();
+
+        if (!el.ContainsUserProperty('stuff'))
+            be.Script.ReportError('stuff userprop should have been saved');
+
+        el.GetUserProperty('nonsense').ValueEC = be.ECValue.FromString('bar');
+        var nonsenseValue = el.GetUserProperty('nonsense').ValueEC;
+        if (nonsenseValue.GetString() != 'bar')
+            be.Script.ReportError('nonsense userprop should have been set to bar');
+
+        el.RemoveUserProperty('nonsense');
+        if (el.ContainsUserProperty('nonsense'))
+            be.Script.ReportError('nonsense userprop should have been removed');
+    }
 
     //---------------------------------------------------------------------------------------
     // @bsimethod                                   Sam.Wilson                      02/16
@@ -501,8 +570,9 @@ module DgnScriptTests {
         //  Test EC API
         testEC(db);
 
-        //  DgnElement UnhandledProperties
+        //  DgnElement UnhandledProperties and UserProperties
         testUnhandledProperties(ele);
+        testUserProperties(ele);
 
         //  Test argument validation
         testInvalidArg();

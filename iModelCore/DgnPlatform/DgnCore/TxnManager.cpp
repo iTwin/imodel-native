@@ -566,6 +566,8 @@ RevisionStatus TxnManager::MergeRevisionChanges(ChangeStream& changeStream, Utf8
 
         if (status == RevisionStatus::Success)
             {
+            OnEndValidate();
+
             DbResult result = m_dgndb.SaveChanges(""); 
             // Note: All that the above operation does is to COMMIT the current Txn and BEGIN a new one. 
             // The user should NOT be able to revert the revision id by a call to AbandonChanges() anymore, since
@@ -607,8 +609,6 @@ RevisionStatus TxnManager::MergeRevisionChanges(ChangeStream& changeStream, Utf8
 
         return status;
         }
-
-    OnEndValidate();
 
     return RevisionStatus::Success;
     }
@@ -1311,9 +1311,22 @@ void dgn_TxnTable::ElementDep::_OnValidated()
 void dgn_TxnTable::ElementDep::UpdateSummary(Changes::Change change, ChangeType changeType)
     {
     m_changes = true;
-    Changes::Change::Stage stage = (ChangeType::Insert == changeType) ? Changes::Change::Stage::New : Changes::Change::Stage::Old;
-    ECInstanceId instanceId(change.GetValue(0, stage).GetValueInt64()); // primary key is column 0
-    AddDependency(instanceId, changeType);
+    
+    if (ChangeType::Delete == changeType)
+        {
+        int64_t relid = change.GetOldValue(0).GetValueInt64();
+        int64_t relclsid = change.GetOldValue(1).GetValueInt64();
+        int64_t srcelemid = change.GetOldValue(2).GetValueInt64();
+        int64_t tgtelemid = change.GetOldValue(3).GetValueInt64();
+        BeSQLite::EC::ECInstanceKey relkey((ECN::ECClassId)relclsid, (BeSQLite::EC::ECInstanceId)relid);
+        m_deletedRels.push_back(DepRelData(relkey, DgnElementId((uint64_t)srcelemid), DgnElementId((uint64_t)tgtelemid)));
+        }
+    else
+        {
+        Changes::Change::Stage stage = (ChangeType::Insert == changeType) ? Changes::Change::Stage::New : Changes::Change::Stage::Old;
+        ECInstanceId instanceId(change.GetValue(0, stage).GetValueInt64()); // primary key is column 0
+        AddDependency(instanceId, changeType);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1387,7 +1400,18 @@ void dgn_TxnTable::Element::AddChange(Changes::Change const& change, ChangeType 
         modelId = m_txnMgr.GetDgnDb().Elements().QueryModelId(elementId);
         }
     else
-        modelId = DgnModelId(change.GetValue(2, stage).GetValueUInt64());   // assumes DgnModelId is column 2
+        {
+        static int s_modelIdColIdx = -1;
+        if (s_modelIdColIdx == -1)
+            {
+            bvector<Utf8String> columnNames;
+            m_txnMgr.GetDgnDb().GetColumns(columnNames, DGN_TABLE(DGN_CLASSNAME_Element));
+            auto i = std::find(columnNames.begin(), columnNames.end(), "ModelId");
+            BeAssert(i != columnNames.end());
+            s_modelIdColIdx = (int)std::distance(columnNames.begin(), i);
+            }
+        modelId = DgnModelId(change.GetValue(s_modelIdColIdx, stage).GetValueUInt64());
+        }
 
     AddElement(elementId, modelId, changeType);
     }

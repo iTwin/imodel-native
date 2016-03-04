@@ -108,6 +108,14 @@ static JsDgnConeP CreateCircularCone (JsDPoint3dP pointA, JsDPoint3dP pointB, do
     return new JsDgnCone (solid);
     }
 
+static JsDgnConeP CreateCircularConeXYZ (double ax, double ay, double az, double bx, double by, double bz, double radiusA, double radiusB, bool capped)
+    {
+    DgnConeDetail coneData (DPoint3d::From (ax, ay, az), DPoint3d::From (bx, by, bz), radiusA, radiusB, capped);
+    auto solid = ISolidPrimitive::CreateDgnCone (coneData);
+    return new JsDgnCone (solid);
+    }
+
+
 };
 
 //=======================================================================================

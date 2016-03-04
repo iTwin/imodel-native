@@ -312,6 +312,17 @@ void TestElementDrivesElementHandler::_OnRootChanged(DgnDbR db, ECInstanceId rel
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestElementDrivesElementHandler::_ProcessDeletedDependency(DgnDbR db, dgn_TxnTable::ElementDep::DepRelData const& relData)
+    {
+    m_deletedRels.push_back(relData);
+
+    if (nullptr != s_callback)
+        s_callback->_ProcessDeletedDependency(db, relData);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TestElementDrivesElementHandler::UpdateProperty1(DgnDbR db, EC::ECInstanceKeyCR key)
@@ -328,12 +339,10 @@ void TestElementDrivesElementHandler::UpdateProperty1(DgnDbR db, EC::ECInstanceK
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECInstanceKey TestElementDrivesElementHandler::Insert(DgnDbR db, DgnElementId root, DgnElementId dependent)
     {
-    ECSqlInsertBuilder b;
-    b.InsertInto(GetECClass(db));
-    b.AddValue("SourceECInstanceId", "?");
-    b.AddValue("TargetECInstanceId", "?");
+    Utf8String ecsql("INSERT INTO ");
+    ecsql.append(GetECClass(db).GetECSqlName()).append("(SourceECInstanceId,TargetECInstanceId) VALUES(?,?)");
 
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(b.ToString().c_str());
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
 
     stmt->BindId(1, root);
     stmt->BindId(2, dependent);

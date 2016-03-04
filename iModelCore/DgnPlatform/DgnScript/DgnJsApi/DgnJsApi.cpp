@@ -241,6 +241,33 @@ int32_t JsDgnElement::SetUnhandledProperty(Utf8StringCR name, JsECValueP v)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
+JsAdHocJsonPropertyValueP JsDgnElement::GetUserProperty(Utf8StringCR name) const
+    {
+    DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
+    return new JsAdHocJsonPropertyValue(const_cast<JsDgnElement*>(this), m_el->GetUserProperty(name.c_str()));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+bool JsDgnElement::ContainsUserProperty(Utf8StringCR name) const
+    {
+    DGNJSAPI_VALIDATE_ARGS(IsValid(), false);
+    return m_el->ContainsUserProperty(name.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+void JsDgnElement::RemoveUserProperty(Utf8StringCR name) const
+    {
+    DGNJSAPI_VALIDATE_ARGS_VOID(IsValid());
+    m_el->RemoveUserProperty(name.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
 JsPlacement3dP JsPhysicalElement::GetPlacement() const 
     {
     DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
@@ -420,6 +447,26 @@ JsECInstanceP JsECClass::GetCustomAttribute(Utf8StringCR className) {return getC
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 JsECInstanceP JsECProperty::GetCustomAttribute(Utf8StringCR className) {return getCustomAttribute(m_property, className);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+JsECPropertyP JsECClass::GetProperty(Utf8StringCR name)
+    {
+    DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
+    auto prop = m_ecClass->GetPropertyP(name.c_str());
+    return prop? new JsECProperty(*prop): nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+JsPrimitiveECPropertyP JsECProperty::GetAsPrimitiveProperty() const 
+    {
+    DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
+    auto prim = m_property->GetAsPrimitiveProperty();
+    return prim? new JsPrimitiveECProperty(*prim): nullptr;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15

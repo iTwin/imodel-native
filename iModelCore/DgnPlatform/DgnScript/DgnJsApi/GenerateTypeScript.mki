@@ -31,7 +31,7 @@ TypeScriptCompile = $(BuildContext)SubParts/NodeJs/node$(toolchainExeext) $(Buil
 always:
     !~@mkdir $(dgnScriptGen)
     !~@mkdir $(dgnScriptGen)DgnPlatform
-    !~@mkdir $(dgnScriptGen)_doc
+    !~@mkdir $(dgnScriptGen)DgnJsApi_doc
 
 dgnJsApiTsDir = $(dgnScriptDir)DgnJsApi/ts/
 
@@ -78,7 +78,7 @@ $(dgnScriptGen)DgnJsApi.js : $(tsSourceFiles)
     $(TypeScriptCompile) $(tsSourceFiles) --target ES5 --noImplicitAny --declaration $(DEBUG_PARMS) --out $(dgnScriptGen)DgnJsApi.js
     ~time
 
-$(dgnScriptGen)_doc/DgnJsApi_doc.h: $(dgnScriptGen)DgnJsApi.d.ts
+$(dgnScriptGen)DgnJsApi_doc/DgnJsApi_doc.h: $(dgnScriptGen)DgnJsApi.d.ts
     $(msg)
     $(_MakeFilePath)generateTypeScriptDoxygenInput.py --input=$< --output=$@ --extractionsPath=$(OutputRootDir)build/DgnPlatform/Extractions/
     ~time
@@ -94,5 +94,5 @@ $(dgnScriptGen)DgnScriptBootstrap.cpp : $(dgnScriptGen)DgnJsApi.js $(dgnJsApiTsD
 $(BuildContext)Delivery/DgnJsApi.d.ts : $(dgnScriptGen)DgnJsApi.d.ts
     $(LinkFirstDepToFirstTarget)
 
- $(BuildContext)Delivery/internal-docs/DgnJsApi : $(dgnScriptGen)_doc
+ $(BuildContext)Delivery/internal-docs/DgnJsApi : $(dgnScriptGen)DgnJsApi_doc
     $(LinkFirstDepToFirstTargetAsDirectory)
