@@ -87,7 +87,7 @@ struct TiledRaster : IRealityData<TiledRaster, BeSQLiteRealityDataStorage, HttpR
     //===================================================================================
     struct RequestOptions : RefCountedBase, IRealityData::RequestOptions, RealityDataCacheOptions
     {
-    DEFINE_BENTLEY_REF_COUNTED_MEMBERS
+        DEFINE_BENTLEY_REF_COUNTED_MEMBERS
     private:
         RgbImageInfo m_expectedImageInfo;
     public:
@@ -265,8 +265,6 @@ struct TileRange
 //=======================================================================================
 struct WebMercatorDisplay : ProgressiveTask
 {
-    friend struct WebMercatorModel;
-
 protected:
     WebMercatorModel const& m_model;
     DgnUnits& m_units;
@@ -282,7 +280,7 @@ protected:
     bmap<LatLongPoint, DPoint3d> m_latLngToMeters;
     ByteStream m_rgbBuffer;
 
-protected:
+public:
     bool IsValid() const {return nullptr != m_units.GetDgnGCS();}
     void ComputeTileCorners(DPoint3d* corners, TileIdCR tileid);
     double ComputeGroundResolution(uint8_t zoomLevel);
