@@ -385,6 +385,48 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         Dispose(): void;
     }
 
+    type GeometryNodeP = cxx_pointer<GeometryNode>;
+
+/**
+@description A node in a tree or DAG structure.
+<ul>
+<li>Each node has separate arrays of geometry and nodes.
+<il>Each node has a transform that can be applied to child geometry and nodes.
+</ul>
+*/
+    class GeometryNode implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsGeometryNode ***/ 
+        constructor();
+        /** Read/write property for the transform */
+        Transform: TransformP;
+        /** Add a child geometry */
+        AddGeometry(value: GeometryP): void;
+        /** Add a child node */
+        AddNode (value: GeometryNodeP): void;
+        /** return the numer of child geometry */
+        GeometrySize(): cxx_double;
+        /** return the number of child nodes */
+        NodeSize(): cxx_double;
+        /** Clear the geometry array */
+        ClearGeometry (): void;
+        /** Clear the child node array*/
+        ClearNodes (): void;
+        /** access geometry by index */
+        GeometryAt(index: cxx_double): GeometryP;
+        /** access child nodes by index*/
+        NodeAt(index: cxx_double): GeometryNodeP;
+
+        /** Collect transformed clones all geometry in the tree (or dag).  The geometry is returned in a geometry node
+            with identity transform and no node children.
+        **/            
+        Flatten ():GeometryNodeP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+
+
     type DoubleArrayP = cxx_pointer<DoubleArray>;
 
 /**

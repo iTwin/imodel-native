@@ -73,19 +73,35 @@ JsDVector2dP CreateJsVector (DVec2dCR data, double length)
 //=======================================================================================
 JsSolidPrimitiveP JsSolidPrimitive::Clone ()
     {
-    switch (m_solidPrimitive->GetSolidPrimitiveType ())
+    return StronglyTypedJsSolidPrimitive (m_solidPrimitive);
+    }
+
+//=======================================================================================
+//                                                                      Eariln.Lutz     12/15
+//=======================================================================================
+JsSolidPrimitiveP JsSolidPrimitive::StronglyTypedJsSolidPrimitive (ISolidPrimitivePtr primitive)
+    {
+    switch (primitive->GetSolidPrimitiveType ())
         {
         case SolidPrimitiveType_DgnBox:
-            return new JsDgnBox (m_solidPrimitive->Clone ());
+            return new JsDgnBox (primitive);
         case SolidPrimitiveType_DgnSphere:
-            return new JsDgnSphere (m_solidPrimitive->Clone ());
+            return new JsDgnSphere (primitive);
         case SolidPrimitiveType_DgnTorusPipe:
-            return new JsDgnTorusPipe (m_solidPrimitive->Clone ());
+            return new JsDgnTorusPipe (primitive);
         case SolidPrimitiveType_DgnCone:
-            return new JsDgnCone (m_solidPrimitive->Clone ());
+            return new JsDgnCone (primitive);
+        case SolidPrimitiveType_DgnExtrusion:
+            return new JsDgnExtrusion (primitive);
+        case SolidPrimitiveType_DgnRotationalSweep:
+            return new JsDgnRotationalSweep (primitive);
+        case SolidPrimitiveType_DgnRuledSweep:
+            return new JsDgnRuledSweep (primitive);
         }
     return nullptr;
     }
+
+
 
 //=======================================================================================
 //                                                                      Eariln.Lutz     12/15
@@ -188,6 +204,31 @@ JsDRange3dP JsGeometry::RangeAfterTransform (JsTransformP transform)
 
 JsDRange3dP JsGeometry::Range (){ return new JsDRange3d ();}
 
+JsGeometryP JsGeometry::CreateStronglyTypedJsGeometry (IGeometryPtr geometry)
+    {
+    switch (geometry->GetGeometryType ())
+        {
+        case IGeometry::GeometryType::CurvePrimitive:
+            {
+            auto cp = geometry->GetAsICurvePrimitive ();
+            return JsCurvePrimitive::StronglyTypedJsCurvePrimitive (cp, true);
+            }
+        case IGeometry::GeometryType::CurveVector:
+            {
+            auto cv = geometry->GetAsCurveVector ();
+            return JsCurveVector::StronglyTypedJsCurveVector  (cv);
+            }
+        case IGeometry::GeometryType::SolidPrimitive:
+            return JsSolidPrimitive::StronglyTypedJsSolidPrimitive  (geometry->GetAsISolidPrimitive ());
+        case IGeometry::GeometryType::Polyface:
+            return new JsPolyfaceMesh (geometry->GetAsPolyfaceHeader ());
+/*
+        case IGeometry::GeometryType::BsplineSurface:
+            return JsBsplineSurface (geometry->GetAsBsplineSurface ());
+*/
+        }
+    return nullptr;
+    }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 //---------------------------------------------------------------------------------------

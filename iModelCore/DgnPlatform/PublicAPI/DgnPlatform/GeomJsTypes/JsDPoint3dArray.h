@@ -17,21 +17,10 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
-struct JsDPoint3dArray : RefCountedBase
+struct JsDPoint3dArray : BeProjectedRefCounted
 {
 private:
     bvector<DPoint3d> m_data;
-    bool TryDoubleToIndex (double a, size_t &index)
-        {
-        index = 0;
-        if (a < 0.0)
-            return false;
-        index = (size_t) a;
-        if (index < m_data.size ())
-            return true;
-        index = SIZE_MAX;
-        return false;
-        }
 public:   
     JsDPoint3dArray() {}
     static JsDPoint3dArrayP Create (bvector<DPoint3d> const *data)
@@ -48,7 +37,7 @@ public:
     JsDPoint3dP At (double number)
         {
         size_t index;
-        if (TryDoubleToIndex (number, index))
+        if (TryDoubleToIndex (number, m_data.size (), index))
             {
             return new JsDPoint3d (m_data[index]);
             }
@@ -70,21 +59,10 @@ public:
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
-struct JsDoubleArray : RefCountedBase
+struct JsDoubleArray : BeProjectedRefCounted
 {
 private:
     bvector<double> m_data;
-    bool TryDoubleToIndex (double a, size_t &index)
-        {
-        index = 0;
-        if (a < 0.0)
-            return false;
-        index = (size_t) a;
-        if (index < m_data.size ())
-            return true;
-        index = SIZE_MAX;
-        return false;
-        }
 public:   
     JsDoubleArray() {}
     JsDoubleArray(bvector<double> const &source) {m_data = source;}
@@ -95,7 +73,7 @@ public:
     double At (double number)
         {
         size_t index;
-        if (TryDoubleToIndex (number, index))
+        if (TryDoubleToIndex (number, m_data.size (), index))
             {
             return m_data[index];
             }
@@ -109,6 +87,64 @@ public:
             m_data.push_back (a);
         }
 };
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct JsGeometryNode : BeProjectedRefCounted
+{
+private:
+    GeometryNodePtr m_data;
+public:   
+    JsGeometryNode () {m_data = GeometryNode::Create ();}
+
+    JsGeometryNode (GeometryNodePtr node) {m_data = node;}
+
+    void AddGeometry (JsGeometryP in)
+        {
+        IGeometryPtr g = in->GetIGeometryPtr ();
+        if (g != nullptr)
+            m_data->Geometry().push_back (g);
+        }
+    void SetTransform (JsTransformP transform){m_data->SetTransform (transform->Get ());}
+    JsTransformP GetTransform () const {return new JsTransform (m_data->GetTransform ());}
+
+    void AddNode (JsGeometryNodeP in){m_data->Nodes().push_back (in->m_data);}
+
+    void ClearGeometry (){m_data->Geometry().clear ();}
+    void ClearNodes (){m_data->Nodes().clear ();}
+
+    JsGeometryP GeometryAt (double number)
+        {
+        size_t index;
+        if (TryDoubleToIndex (number, m_data->Geometry ().size (), index))
+            {
+            return JsGeometry::CreateStronglyTypedJsGeometry (m_data->Geometry()[index]);
+            }
+        return nullptr;
+        }
+
+    JsGeometryNodeP NodeAt (double number)
+        {
+        size_t index;
+        if (TryDoubleToIndex (number, m_data->Geometry ().size (), index))
+            {
+            return new JsGeometryNode (m_data->Nodes()[index]);
+            }
+        return nullptr;
+        }
+
+    JsGeometryNodeP Flatten ()
+        {
+        return new JsGeometryNode (m_data->Flatten ());
+        }
+
+    double GeometrySize (){ return (double)m_data->Geometry().size ();}
+    double NodeSize     (){ return (double)m_data->Nodes().size ();}
+
+};
+
+
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
