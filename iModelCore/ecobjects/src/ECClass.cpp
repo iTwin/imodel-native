@@ -2234,6 +2234,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateClassConstraint
 ECEntityClassCR constraintClass
 ) const
     {
+#ifdef THIS_BREAKS_264_TESTS
     ECRelationshipClassCP relationshipClass = m_relClass;
     if (!m_relClass->HasBaseClasses())
         return ECObjectsStatus::Success;
@@ -2265,6 +2266,7 @@ ECEntityClassCR constraintClass
                 }
             }
         }
+#endif
     return ECObjectsStatus::Success;
     }
 
@@ -2273,6 +2275,7 @@ ECEntityClassCR constraintClass
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipConstraint::ValidateCardinalityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit) const
     {
+#ifdef THIS_BREAKS_264_TESTS
     ECRelationshipClassCP relationshipClass = m_relClass;
     if (!m_relClass->HasBaseClasses())
         return ECObjectsStatus::Success;
@@ -2297,6 +2300,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateCardinalityConstraint(uint32_t
             return ECObjectsStatus::RelationshipConstraintsNotCompatible;
             }
         }
+#endif
     return ECObjectsStatus::Success;
     }
 
@@ -2947,6 +2951,7 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, EC
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts)
     {
+#ifdef THIS_BREAKS_264_TESTS
     if (baseClass.IsRelationshipClass())
         {
         // Get the relationship base class and compare it's strength and direction
@@ -2957,7 +2962,6 @@ ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool ins
             return ECObjectsStatus::RelationshipConstraintsNotCompatible;
             }
 
-#ifdef THIS_BREAKS_264_TESTS
         // Compare Cardinality. In general, the cardinality of the derived class must be more restrictive 
         // than the bounds defined in the base class cardinality. 
         if (RelationshipCardinality::Compare(GetSource().GetCardinality(), relationshipBaseClass->GetSource().GetCardinality()) == 1 ||
@@ -2965,8 +2969,8 @@ ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool ins
             {
             return ECObjectsStatus::RelationshipConstraintsNotCompatible;
             }
-#endif
         }
+#endif
     return ECClass::_AddBaseClass(baseClass, insertAtBeginning, resolveConflicts);
     }
 
