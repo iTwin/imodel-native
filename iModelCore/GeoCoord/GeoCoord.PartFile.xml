@@ -50,5 +50,61 @@
         <SubPart PartName="GeoCoordData"            PartFile="csmap"        Repository="libsrc-csmap" />
     </Part>
 
+    
+    <Part Name="GeoCoord-Dev">
+        <SubPart PartName= "GeoCoord-Tested" />
+    </Part>
+    <!-- ******************************** Unit Tests ************************************** -->
+    
+    <Part Name="UnitTests-NonPublished" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="GeoCoord" />
+        <SubPart PartName="GeoCoordData"            PartFile="csmap"        Repository="libsrc-csmap" />
+        <Bindings>
+            <PublicAPI Domain="GeoCoord" />
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="GeoCoord/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="GeoCoord/NonPublished" SubPartDirectory="UnitTests/GeoCoord">Delivery/UnitTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+    
+    <Part Name="Tests">
+         <SubPart PartName="UnitTests-NonPublished"/>
+        <!-- Not yet SubPart PartName="UnitTests-Published"/-->
+    </Part>
+    
+    <Product Name="GeoCoord-Tests">
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base"/>
+        <SubPart PartName="Tests"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+        <Directories DirectoryListName="GeoCoordGTestsDir"/>
+    </Product>    
+    
+    <!-- Define a gtest program to run the tests -->
+    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=GeoCoordTests -dTEST_COLLECTION_PRODUCT=GeoCoord-Tests -dGUNITTEST_NTLIBS=Urlmon.lib" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+         <SubProduct ProductName="GeoCoord-Tests"/>
+         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/GeoCoordTests/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/GeoCoordTests/Assets" />
+        </Bindings>
+    </Part>
+    
+    <Product Name="GeoCoord-Gtest">
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="GeoCoordGTestsDir"/>
+    </Product>
+    
+    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/GeoCoord-GTest/GeoCoordTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/GeoCoord -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="GeoCoord-GTest"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    </Part>
+    
 
+    <Part Name="GeoCoord-Tested">
+        <SubPart PartName="RunGtest" />
+    </Part>
+    
+    <ProductDirectoryList ListName="GeoCoordGTestsDir" >
+        <ProductDirectory Name="CSMap"                Deliver="false" />
+    </ProductDirectoryList>    
 </BuildContext>
