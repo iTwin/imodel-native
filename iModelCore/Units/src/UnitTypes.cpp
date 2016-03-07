@@ -199,7 +199,7 @@ Utf8String Unit::GetUnitDimension() const
     return baseExpression.ToString(false);
     }
 
-void Unit::MultiplyUnit (UnitCR rhs) const
+UnitCP Unit::MultiplyUnit (UnitCR rhs) const
     {
     auto temp = Evaluate();
     auto expression2 = rhs.Evaluate();
@@ -209,16 +209,37 @@ void Unit::MultiplyUnit (UnitCR rhs) const
     Expression::MergeExpressions(GetName(), expression, rhs.GetName(), expression2, 1);
 
     bvector<PhenomenonCP> phenomList;
-    PhenomenonCP matchingPhenom;
+    PhenomenonCP matchingPhenom = nullptr;
     UnitRegistry::Instance().AllPhenomena(phenomList);
     for (const auto p : phenomList)
         {
-        if (!Expression::DimensionallyCompatible(p->Evaluate(), expression))
+        if (!Expression::ShareDimensions(*p, expression))
             continue;
 
         matchingPhenom = p;
         break;
         }
+
+    if (nullptr == matchingPhenom)
+        return nullptr;
+
+    UnitCP output = nullptr;
+    for (const auto u : matchingPhenom->GetUnits())
+        {
+        temp = u->Evaluate();
+
+        Expression unitExpr;
+        Expression::Copy(temp, unitExpr);
+        Expression::MergeExpressions(u->GetName(), unitExpr, GetName(), expression, -1);
+
+        if (unitExpr.size() != 0)
+            continue;
+
+        output = u;
+        break;
+        }
+
+    return output;
     }
 
 Utf8String Phenomenon::GetPhenomenonDimension() const

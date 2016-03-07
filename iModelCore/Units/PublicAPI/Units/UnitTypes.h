@@ -43,9 +43,7 @@ protected:
     Expression& Evaluate(int depth, std::function<SymbolCP(Utf8CP)> getSymbolByName) const;
 protected:
     virtual ~Symbol();
-
-    virtual int GetPhenomenonId() const = 0;
-  
+      
 public:
     UNITS_EXPORT Utf8CP GetName() const;
     // TODO: Consider making private because it will changed depending on load order.
@@ -57,6 +55,7 @@ public:
     UNITS_EXPORT bool IsBaseSymbol() const;
     UNITS_EXPORT bool IsDimensionless() const;
 
+    virtual int GetPhenomenonId() const = 0;
 
     bool IsCompatibleWith(SymbolCR rhs) const;
 
@@ -107,7 +106,7 @@ public:
 
     PhenomenonCP GetPhenomenon()   const { return m_phenomenon; }
 
-    void MultiplyUnit (UnitCR rhs) const;
+    UnitCP MultiplyUnit (UnitCR rhs) const;
 };
 
 struct Phenomenon final : Symbol

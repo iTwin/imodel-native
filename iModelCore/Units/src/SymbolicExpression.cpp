@@ -18,6 +18,7 @@ static const Utf8Char CloseParen = ')';
 static const Utf8Char OpenBracket = '[';
 static const Utf8Char CloseBracket = ']';
 static const std::function<bool(SymbolCR, SymbolCR)> symbolsEqual = [] (SymbolCR a, SymbolCR b) { return a.GetId() == b.GetId(); };
+static const std::function<bool(SymbolCR, SymbolCR)> phenomenaEqual = [](SymbolCR a, SymbolCR b) { return a.GetPhenomenonId() == b.GetPhenomenonId(); };
 static const int maxRecursionDepth = 42;
 
 
@@ -108,7 +109,12 @@ BentleyStatus Expression::GenerateConversionExpression(UnitCR from, UnitCR to, E
 
 bool Expression::ShareDimensions(PhenomenonCR phenomenon, UnitCR unit)
     {
-    return DimensionallyCompatible(phenomenon.Evaluate(), unit.Evaluate(), [] (SymbolCR a, SymbolCR b) { return a.GetPhenomenonId() == b.GetPhenomenonId(); });
+    return DimensionallyCompatible(phenomenon.Evaluate(), unit.Evaluate(), phenomenaEqual);
+    }
+
+bool Expression::ShareDimensions(PhenomenonCR phenomenon, ExpressionCR expression)
+    {
+    return DimensionallyCompatible(phenomenon.Evaluate(), expression, phenomenaEqual);
     }
 
 bool Expression::DimensionallyCompatible(ExpressionCR fromExpression, ExpressionCR toExpression)

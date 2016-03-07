@@ -70,6 +70,9 @@ BentleyStatus Quantity::ConvertTo(Utf8CP unitName, double& value) const
         }
 
     value = m_unit->Convert(m_magnitude, newUnit);
+    if (value == 0.0)
+        return ERROR;
+
     return SUCCESS;
     }
 

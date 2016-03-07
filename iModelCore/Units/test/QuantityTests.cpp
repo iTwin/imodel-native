@@ -115,9 +115,9 @@ TEST_F(QuantityTestFixture, ComplexSubtraction)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QuantityTestFixture, SimpleMultiplication)
     {
-    auto a = Quantity::Create(2.5, "M");
+    auto a = Quantity::Create(2.5, "N");
     auto b = Quantity::Create(2.0, "M");
-    auto c = Quantity::Create(5.0, "M^(-2)");
+    auto c = Quantity::Create(5.0, "J");
 
     auto result = a->Multiply(*b);
     QuantityEquality(*c, *result);
