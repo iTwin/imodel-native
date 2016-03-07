@@ -82,7 +82,7 @@ SamlTokenPtr IdentityAuthenticationPersistence::GetToken() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DateTime IdentityAuthenticationPersistence::GetTokenSetTime() const
     {
-    Utf8String timeStr = m_secureStore->LoadValue(LocalState_NameSpace, LocalState_TokenSetTime);
+    Utf8String timeStr = m_localState.GetValue(LocalState_NameSpace, LocalState_TokenSetTime).asString();
 
     DateTime time;
     if (SUCCESS != DateTime::FromString(time, timeStr.c_str()))

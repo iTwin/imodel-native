@@ -74,6 +74,7 @@
     <ClInclude Include="Published\WebServices\Connect\ConnectAuthenticationHandlerTests.h" />
     <ClInclude Include="Published\WebServices\Connect\ConnectAuthenticationPersistenceTests.h" />
     <ClInclude Include="Published\WebServices\Connect\ConnectSignInManagerTests.h" />
+    <ClInclude Include="Published\WebServices\Connect\IdentityAuthenticationPersistenceTests.h" />
     <ClInclude Include="Published\WebServices\Connect\ImsClientTests.h" />
     <ClInclude Include="Published\WebServices\Connect\ConnectTestsHelper.h" />
     <ClInclude Include="Published\WebServices\Connect\ConnectTokenProviderTests.h" />
@@ -201,6 +202,7 @@
     <ClCompile Include="Published\WebServices\Connect\ConnectAuthenticationHandlerTests.cpp" />
     <ClCompile Include="Published\WebServices\Connect\ConnectAuthenticationPersistenceTests.cpp" />
     <ClCompile Include="Published\WebServices\Connect\ConnectSignInManagerTests.cpp" />
+    <ClCompile Include="Published\WebServices\Connect\IdentityAuthenticationPersistenceTests.cpp" />
     <ClCompile Include="Published\WebServices\Connect\ImsClientTests.cpp" />
     <ClCompile Include="Published\WebServices\Connect\ConnectTestsHelper.cpp" />
     <ClCompile Include="Published\WebServices\Connect\ConnectTokenProviderTests.cpp" />
