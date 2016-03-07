@@ -659,7 +659,7 @@ public:
             m_roundoffRatio = 0;
             m_formatterBaseDir = 0;
             m_roundoffUnit = 0;
-            m_subUnit.Init(UnitBase::Meter, UnitSystem::Metric, 1.0, 1.0, L"m");
+            m_subUnit.Init(UnitBase::Meter, UnitSystem::Metric, 1.0, 1.0, "m");
             m_masterUnit = m_subUnit;
             }
 

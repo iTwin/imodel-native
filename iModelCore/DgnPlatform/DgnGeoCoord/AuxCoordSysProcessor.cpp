@@ -222,7 +222,7 @@ uint32_t    length
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BarryBentley    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt       _PointFromString (DPoint3dR outPoint, WStringR errorMsg, WCharCP inString, bool relative, DPoint3dCP lastPoint, DgnModelRefR modelRef) override
+virtual StatusInt       _PointFromString (DPoint3dR outPoint, Utf8StringR errorMsg, Utf8CP inString, bool relative, DPoint3dCP lastPoint, DgnModelRefR modelRef) override
     {
     // from inPoint, get Latitude/Longitude.
     DgnGCSP     dgnGCS;

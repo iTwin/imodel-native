@@ -5035,7 +5035,7 @@ StandardUnit&   standardUnitNumber
         {
         // should never happen.
         assert(false);
-        unitDef.Init(Dgn::UnitBase::Meter, Dgn::UnitSystem::Metric, 1.0, 1.0, L"Meters"); 
+        unitDef.Init(Dgn::UnitBase::Meter, Dgn::UnitSystem::Metric, 1.0, 1.0, "Meters"); 
         return ERROR;
         }
 
@@ -5045,7 +5045,7 @@ StandardUnit&   standardUnitNumber
     Dgn::UnitBase base = (cs_UTYP_LEN == csUnits->type) ? Dgn::UnitBase::Meter : Dgn::UnitBase::Degree;
 
     // CS_Map has only a numerator, no denominator.
-    unitDef.Init(base, Dgn::UnitSystem::Undefined, 1.0, csUnits->factor, L""); 
+    unitDef.Init(base, Dgn::UnitSystem::Undefined, 1.0, csUnits->factor, ""); 
 
     standardUnitNumber = unitDef.IsStandardUnit();
     if ( (StandardUnit::None == standardUnitNumber) || (StandardUnit::Custom == standardUnitNumber) )
@@ -5059,8 +5059,7 @@ StandardUnit&   standardUnitNumber
         else
             system = Dgn::UnitSystem::Undefined;
 
-        WString label(csUnits->name, BentleyCharEncoding::Utf8);
-        unitDef.Init(base, system, 1.0, csUnits->factor, label.c_str()); 
+        unitDef.Init(base, system, 1.0, csUnits->factor, csUnits->name);
         }
     else
         {

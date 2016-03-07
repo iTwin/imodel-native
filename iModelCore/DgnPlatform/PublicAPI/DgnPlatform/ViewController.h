@@ -352,12 +352,12 @@ public:
     //! perform the equivalent of a dynamic_cast to a DrawingViewController.
     //! @return a valid DrawingViewControllerCP, or nullptr if this is not a drawing view
     virtual DrawingViewControllerCP _ToDrawingView() const {return nullptr;}
-    DrawingViewControllerP  ToDrawingViewP() {return const_cast<DrawingViewControllerP>(_ToDrawingView());}
+    DrawingViewControllerP ToDrawingViewP() {return const_cast<DrawingViewControllerP>(_ToDrawingView());}
 
     //! perform the equivalent of a dynamic_cast to a SheetViewController.
     //! @return a valid SheetViewControllerCP, or nullptr if this is not a sheet view
     virtual SheetViewControllerCP _ToSheetView() const {return nullptr;}
-    SheetViewControllerP  ToSheetViewP() {return const_cast<SheetViewControllerP>(_ToSheetView());}
+    SheetViewControllerP ToSheetViewP() {return const_cast<SheetViewControllerP>(_ToSheetView());}
 
     //! perform the equivalent of a dynamic_cast to a DgnQueryView.
     //! @return a valid DgnQueryViewCP, or nullptr if this is not a query view
