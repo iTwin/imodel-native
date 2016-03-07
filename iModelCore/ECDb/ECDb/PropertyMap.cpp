@@ -1217,18 +1217,6 @@ BentleyStatus NavigationPropertyMap::Postprocess(ECDbMapCR ecdbMap)
         return ERROR;
         }
     
-    PropertyMapCP precedingPropMap = nullptr;
-    for (PropertyMapCP propMap : classMap->GetPropertyMaps())
-        {
-        if (propMap == this)
-            break;
-
-        precedingPropMap = propMap;
-        }
-
-    std::vector<ECDbSqlColumn const*> precedingColumns;
-    precedingPropMap->GetColumns(precedingColumns, fkCol->GetTable());
-
     m_columns.push_back(fkCol);
     BeAssert(m_mappedTables.empty());
     m_mappedTables.push_back(&fkCol->GetTable());
