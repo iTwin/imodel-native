@@ -39,11 +39,31 @@ Utf8StringCR KindOfQuantity::GetFullName () const
     return m_fullName;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String KindOfQuantity::GetQualifiedName (ECSchemaCR primarySchema) const
+    {
+    Utf8String namespacePrefix;
+    Utf8StringCR name = GetName();
+    if (!EXPECTED_CONDITION (ECObjectsStatus::Success == primarySchema.ResolveNamespacePrefix (GetSchema(), namespacePrefix)))
+        {
+        LOG.warningv ("warning: Cannot qualify an KindOfQuantity name with a namespace prefix unless the schema containing the KindOfQuantity is referenced by the primary schema."
+            "The name will remain unqualified.\n  Primary ECSchema: %s\n  KindOfQuantity: %s\n ECSchema containing KindOfQuantity: %s", primarySchema.GetName().c_str(), name.c_str(), GetSchema().GetName().c_str());
+        return name;
+        }
+
+    if (namespacePrefix.empty())
+        return name;
+    else
+        return namespacePrefix + ":" + name;
+    }
+
 //Following two methods need to be exported as the ValidatedName struct does not export its methods.
 void KindOfQuantity::SetDisplayLabel(Utf8CP value) { m_validatedName.SetDisplayLabel(value); }
 Utf8StringCR KindOfQuantity::GetDisplayLabel() const { return m_validatedName.GetDisplayLabel(); }
 
-ECObjectsStatus KindOfQuantity::ParseFullName(Utf8StringR prefix, Utf8StringR kindOfQuantityName, Utf8StringCR stringToParse)
+ECObjectsStatus KindOfQuantity::ParseName(Utf8StringR prefix, Utf8StringR kindOfQuantityName, Utf8StringCR stringToParse)
     {
     if (0 == stringToParse.length())
         {
