@@ -75,7 +75,7 @@ struct IRealityDataBase : IRefCounted
 
     public:
         // properties
-        Utf8CP GetId() const const {return _GetId();}
+        Utf8CP GetId() const {return _GetId();}
         bool IsExpired() const {return _IsExpired();}
     };
 
