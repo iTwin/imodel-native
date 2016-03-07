@@ -853,7 +853,7 @@ int DgnQueryView::RangeQuery::_TestRTree(RTreeMatchFunction::QueryInfo const& in
     if (!ComputeOcclusionScore(m_lastScore, box))
         return BE_SQLITE_OK; // eliminated by LOD filter
 
-    BeAssert(m_lastScore>0.0);
+    BeAssert(m_lastScore>=0.0);
     BeAssert(m_minScore>=0.0);
     if (m_hitLimit && (m_count >= m_hitLimit && m_lastScore <= m_minScore))
         return BE_SQLITE_OK; // this one is smaller than the smallest entry we already have, skip it (and children).
