@@ -11,7 +11,7 @@
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 #define SM_TRACE_CLIPS_GETMESH 0
-const wchar_t* s_path = L"E:\\output\\scmesh\\2016-03-04\\";
+const wchar_t* s_path = L"E:\\output\\scmesh\\2016-03-07\\";
 
 void print_polygonarray(std::string& s, const char* tag, DPoint3d* polyArray, int polySize)
     {
@@ -254,6 +254,27 @@ bool FaceToUVMap::SplitFacetOrEdge(DPoint2d& newUv, const int32_t newPt, const i
                 return true;
                 }
         }
+#if SM_TRACE_CLIPS_GETMESH
+    nameBeforeClips = Utf8String(s_path) + "faceTrace_";
+    nameBeforeClips.append(to_string(range.low.x).c_str());
+    nameBeforeClips.append("_");
+    nameBeforeClips.append(to_string(range.low.y).c_str());
+    nameBeforeClips.append("_");
+    nameBeforeClips.append(to_string(range.high.x).c_str());
+    nameBeforeClips.append("_");
+    nameBeforeClips.append(to_string(range.high.y).c_str());
+    nameBeforeClips.append(".txt");
+    stats.open(nameBeforeClips.c_str(), std::ios_base::app);
+    stats << "COULD NOT SPLIT FACET " + std::to_string(indices[idx[0]]) + " " + std::to_string(indices[idx[1]]) + " " + std::to_string(indices[idx[2]]) << std::endl;
+    stats << " IDX IN MAP ? ";
+    stats << ((map.count(indices[idx[0]]) > 0) ? "YES\n" : "NO\n");
+    if (map.count(indices[idx[0]]) > 0)
+        {
+        stats << "2ND IDX IN MAP ? ";
+        stats << ((map[indices[idx[0]]].count(indices[idx[1]]) > 0) ? "YES\n" : "NO\n");
+        }
+    stats.close();
+#endif
     return false;
     }
 
@@ -283,6 +304,28 @@ bool FaceToUVMap::SplitEdge(DPoint2d* newUvs, const int32_t newPt, const int32_t
         if (bsiDPoint2d_pointEqualTolerance(&newUvs[0], &newUvs[1], 1e-3)) newUvs[1] = DPoint2d::From(DBL_MAX, DBL_MAX);
         return true;
         }
+#if SM_TRACE_CLIPS_GETMESH
+    Utf8String nameBeforeClips = Utf8String(s_path) + "faceTrace_";
+    nameBeforeClips.append(to_string(range.low.x).c_str());
+    nameBeforeClips.append("_");
+    nameBeforeClips.append(to_string(range.low.y).c_str());
+    nameBeforeClips.append("_");
+    nameBeforeClips.append(to_string(range.high.x).c_str());
+    nameBeforeClips.append("_");
+    nameBeforeClips.append(to_string(range.high.y).c_str());
+    nameBeforeClips.append(".txt");
+    std::ofstream stats;
+    stats.open(nameBeforeClips.c_str(), std::ios_base::app);
+    stats << "COULD NOT SPLIT EDGE " + std::to_string(indices[idx[0]]) + " " + std::to_string(indices[idx[1]]) << std::endl;
+    stats << " IDX IN MAP ? ";
+    stats << ((map.count(indices[idx[0]]) > 0) ? "YES\n" : "NO\n");
+    if (map.count(indices[idx[0]]) > 0)
+        {
+        stats << "2ND IDX IN MAP ? ";
+        stats << ((map[indices[idx[0]]].count(indices[idx[1]]) > 0) ? "YES\n" : "NO\n");
+        }
+    stats.close();
+#endif
     return false;
     }
 
@@ -1373,11 +1416,21 @@ void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::
             poly->Point().push_back(pt);
             }
         }
+    size_t nFaceMisses = 0;
     poly->PointIndex().clear();
     for (size_t i = 0; i < indices.size(); i += 3)
         {
         DPoint2d uvs[3];
-        if (!faceToUVMap.GetFacet(&indices[i], uvs)) continue;
+        if (!faceToUVMap.GetFacet(&indices[i], uvs))
+            {
+            nFaceMisses++;
+            poly->PointIndex().push_back(allPts[indices[i]] + 1);
+            poly->PointIndex().push_back(allPts[indices[i + 1]] + 1);
+            poly->PointIndex().push_back(allPts[indices[i + 2]] + 1);
+            for (size_t uvI = 0; uvI < 3; ++uvI)
+                poly->ParamIndex().push_back(1);
+            continue;
+            }
         poly->PointIndex().push_back(allPts[indices[i]] + 1);
         poly->PointIndex().push_back(allPts[indices[i + 1]] + 1);
         poly->PointIndex().push_back(allPts[indices[i + 2]] + 1);
@@ -1391,6 +1444,9 @@ void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::
             poly->ParamIndex().push_back(allUvs[uvs[uvI]]);
             }
         }
+    std::string s;
+    s+= " MISSES "+std::to_string(nFaceMisses);
+    assert(nFaceMisses <= (indices.size()*.75)/3 );
 #if SM_TRACE_CLIPS_GETMESH
     Utf8String nameBeforeClips = Utf8String(s_path) + "meshtaggeds_";
     nameBeforeClips.append(to_string(m_range.low.x).c_str());
@@ -1558,27 +1614,56 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
         originalFaceMap.ReadFrom(toDTMIndexBuffer, m_uvIndices, m_uvBuffer, m_nIndices);
         delete[] toDTMIndexBuffer;
         }
-
+    if (dtmPtr->GetBcDTM()->GetTinHandle()->dtmState != DTMState::Tin) return false;
     polyfaces.resize(polygons.size() + 1);
     if (dbg) bcdtmWrite_toFileDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), (WString(s_path) + WString(L"featurepolytest") + WString(std::to_wstring(s_nclip).c_str()) + WString(L".dtm")).c_str());
+    int stat = DTM_SUCCESS;
     for (auto& poly : polygons)
         {
-        bcdtmInsert_internalDtmFeatureMrDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(),
-                                                  DTMFeatureType::Region,
-                                                  1,
-                                                  2,
-                                                  userTag,
-                                                  &textureRegionIdsP,
-                                                  &numRegionTextureIds,
-                                                  &poly[0],
-                                                  (long)poly.size(),
-                                                  m_uvBuffer && m_uvIndices ? GetInsertPointCallback(originalFaceMap, dtmPtr) : nullptr);
+       /* DTM_POLYGON_OBJ* polyP = nullptr;
+        long flag = 0;
+        if (DTM_SUCCESS == bcdtmPolygon_intersectPolygonAndTinHullDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), &poly[0], (int)poly.size(), &polyP, &flag))
+            {*/
+            stat = bcdtmInsert_internalDtmFeatureMrDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(),
+                                                             DTMFeatureType::Region,
+                                                             1,
+                                                             2,
+                                                             userTag,
+                                                             &textureRegionIdsP,
+                                                             &numRegionTextureIds,
+                                                             &poly[0],
+                                                             (long)poly.size(),
+                                                             m_uvBuffer && m_uvIndices ? GetInsertPointCallback(originalFaceMap, dtmPtr) : nullptr);
+            //assert(stat == DTM_SUCCESS);
+           // if (stat != DTM_SUCCESS) break;
+          //  }
+       // if (polyP != nullptr) free(polyP);
         userTag++;
         }
+   /* if (stat != DTM_SUCCESS)
+        {
+        std::cout << " CAN'T CLIP WITH POLY " + std::to_string(userTag) << std::endl;
+      {        WString namePoly = WString(s_path) + L"fpreclippolyreg_";
+            namePoly.append(to_wstring(userTag).c_str());
+            namePoly.append(L"_");
+            namePoly.append(to_wstring(m_range.low.x).c_str());
+            namePoly.append(L"_");
+            namePoly.append(to_wstring(m_range.low.y).c_str());
+            namePoly.append(L".p");
+            FILE* polyCliPFile = _wfopen(namePoly.c_str(), L"wb");
+            size_t polySize = polygons[userTag].size();
+            fwrite(&polySize, sizeof(size_t), 1, polyCliPFile);
+            fwrite(&polygons[userTag][0], sizeof(DPoint3d), polySize, polyCliPFile);
+            fclose(polyCliPFile);
+            }
+        bcdtmWrite_toFileDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), (WString(s_path) + WString(L"featurepolytest") + WString(std::to_wstring(m_range.low.x).c_str())+WString(L"_") 
+            + WString(std::to_wstring(m_range.low.y).c_str())/* + WString(L"_") + WString(std::to_wstring(userTag).c_str()) + WString(L".dtm")).c_str());
+        }*/
+
     BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
     if (m_uvBuffer && m_uvIndices)en->SetUseRealPointIndexes(true);
     en->SetExcludeAllRegions();
-    en->SetMaxTriangles(dtmPtr->GetBcDTM()->GetTrianglesCount() * 2);
+    en->SetMaxTriangles(2000000);
     size_t no = 0;
     for (PolyfaceQueryP pf : *en)
         {
@@ -1610,18 +1695,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
     for (size_t n = 0; n < polygons.size() && n < numRegionTextureIds; ++n)
         {
         size_t n2 = 0;
-#ifdef WITHOUT_DARYLS_CHANGE
-        PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
-        bcdtmLoad_triangleShadeMeshForRegionDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), 2000000, 2, 1, 1, 2, textureRegionIdsP[n],
-                                                      [](DTMFeatureType featureType, int numTriangles, int numMeshPoints, DPoint3d* meshPointsP, DPoint3d*, int numMeshFaces, long* meshFacesP, void* userP) -> int
-            {
-            PolyfaceQueryCarrier* p = new PolyfaceQueryCarrier(3, false, (size_t)numMeshFaces, (size_t)numMeshPoints, meshPointsP, (const int32_t*)meshFacesP);
-            ((PolyfaceHeaderP)userP)->CopyFrom(*p);
-            delete p;
-            return 0;
-            }, vec.get());
-        polyfaces[n + 1].push_back(vec);
-#else
+
         en->Reset();
         en->SetFilterRegionByUserTag(n);
         for (PolyfaceQueryP pf : *en)
@@ -1655,7 +1729,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
             ++n2;
             polyfaces[n + 1].push_back(vec);
             }
-#endif
+
         }
     if (textureRegionIdsP != 0)
         {

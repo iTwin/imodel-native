@@ -48,6 +48,8 @@ extern bool   GET_HIGHEST_RES;
 #include "SMSQLiteUVStore.h"
 #include "SMSQLiteUVIndiceTileStore.h"
 #include "SMSQLiteTextureTileStore.h"
+#include <Vu\VuApi.h>
+#include <Vu\vupoly.fdf>
 //#include "CGALEdgeCollapse.h"
 
 
@@ -1413,6 +1415,21 @@ template <class POINT> bool ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, s
     {
     if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
     DRange3d extent = DRange3d::From(pts, (int)ptsSize);
+   /* bvector<int> idx;
+    bvector<DPoint3d> points;
+    vu_triangulateSpacePolygonExt(&idx, &points, const_cast<DPoint3d*>(pts), (int)ptsSize, 1e-6, true);
+    bvector<DPoint3d> poly;
+    bvector<DPoint3d> current;
+    for (auto& i : idx)
+        {
+        if (i > 0) current.push_back(points[i - 1]);
+        else if (current.size() > poly.size())
+            {
+            poly = current;
+            current.clear();
+            }
+        }
+    m_scmIndexPtr->GetClipRegistry()->ModifyClip(clipID, &poly[0], poly.size());*/
     m_scmIndexPtr->GetClipRegistry()->ModifyClip(clipID, pts, ptsSize);
     m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, clipID, extent);
     return true;
@@ -1435,6 +1452,21 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const DPoint3d* pts
     {
     if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
     DRange3d extent = DRange3d::From(pts, (int)ptsSize);
+   /* bvector<int> idx;
+    bvector<DPoint3d> points;
+    vu_triangulateSpacePolygonExt(&idx, &points, const_cast<DPoint3d*>(pts), (int)ptsSize, 1e-6, true);
+    bvector<DPoint3d> poly;
+    bvector<DPoint3d> current;
+    for (auto& i : idx)
+        {
+        if (i > 0) current.push_back(points[i - 1]);
+        else if (current.size() > poly.size())
+            {
+            poly = current;
+            current.clear();
+            }
+        }
+    m_scmIndexPtr->GetClipRegistry()->ModifyClip(clipID, &poly[0], poly.size());*/
     m_scmIndexPtr->GetClipRegistry()->ModifyClip(clipID, pts, ptsSize);
     m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, extent);
     return true;

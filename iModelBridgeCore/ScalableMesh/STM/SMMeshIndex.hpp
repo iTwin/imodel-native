@@ -2566,6 +2566,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
 //=======================================================================================
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::RefreshMergedClipsRecursive()
     {
+    BuildSkirts();
     ComputeMergedClips();
     if (m_pSubNodeNoSplit != NULL && !m_pSubNodeNoSplit->IsVirtualNode())
         {

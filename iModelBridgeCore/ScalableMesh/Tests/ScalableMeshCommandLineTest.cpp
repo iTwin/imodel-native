@@ -4,6 +4,7 @@ typedef uint8_t byte;
 #include <ScalableMesh\IScalableMeshNodeCreator.h>
 #include <ScalableMesh\ScalableMeshLib.h>
 #include <iostream>
+#include <TerrainModel/Core/DTMIterators.h>
 #include "..\STM\LogUtils.h"
 
 int wmain(int argc, wchar_t* argv[])
@@ -27,6 +28,65 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
         std::cout << "Please input name of Scalable mesh file as first argument" << std::endl;
         return 0;
         }
+
+    BC_DTM_OBJ* bcDtmP = 0;
+    bcdtmRead_fromFileDtmObject(&bcDtmP, argv[1]);
+    FILE* mesh = _wfopen(argv[2], L"rb");
+    std::vector<std::vector<DPoint3d>> polys;
+    while (!feof(mesh))
+        {
+        size_t nVerts = 0;
+        fread(&nVerts, sizeof(size_t), 1, mesh);
+        std::vector<DPoint3d> polyPts(nVerts);
+        size_t nRead = 0;
+        nRead = fread(&polyPts[0], sizeof(DPoint3d), nVerts, mesh);
+        polys.push_back(polyPts);
+        }
+    DTMUserTag    userTag = 0;
+    DTMFeatureId* textureRegionIdsP = 0;
+    long          numRegionTextureIds = 0;
+    for (auto& polyPts : polys)
+        {
+        int stat = DTM_SUCCESS;
+        if(polyPts.size() > 0) stat = bcdtmInsert_internalDtmFeatureMrDtmObject(bcDtmP,
+                                                             DTMFeatureType::Region,
+                                                             1,
+                                                             2,
+                                                             userTag,
+                                                             &textureRegionIdsP,
+                                                             &numRegionTextureIds,
+                                                             &polyPts[0],
+                                                             (long)polyPts.size(),
+                                                             [] (int newPtNum, DPoint3dCR pt, double&elevation, bool onEdge, const int pts[])
+            {
+            std::cout << "ADDING " << newPtNum << " ON " << (onEdge ? "EDGE " : "FACET ") << pts[0] << " " << pts[1];
+            if (!onEdge) std::cout << " " << pts[2];
+            std::cout << std::endl;
+            });
+        if (stat != DTM_SUCCESS) std::cout << "ERROR" << std::endl;
+        userTag++;
+        }
+    BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr dtmP = BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTM::CreateFromDtmHandle(bcDtmP);
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtmP);
+    en->SetExcludeAllRegions();
+    en->SetMaxTriangles(2000000);
+    for (PolyfaceQueryP pf : *en)
+        {
+        PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
+        vec->CopyFrom(*pf);
+
+            WString name = WString(argv[1]) + WString(L"_mesh.m");
+            FILE* meshAfterClip = _wfopen(name.c_str(), L"wb");
+            size_t ptCount = vec->GetPointCount();
+            size_t faceCount = vec->GetPointIndexCount();
+            fwrite(&ptCount, sizeof(size_t), 1, meshAfterClip);
+            fwrite(vec->GetPointCP(), sizeof(DPoint3d), ptCount, meshAfterClip);
+            fwrite(&faceCount, sizeof(size_t), 1, meshAfterClip);
+            fwrite(vec->GetPointIndexCP(), sizeof(int32_t), faceCount, meshAfterClip);
+            fclose(meshAfterClip);
+            
+        }
+#if 0
     if(argc < 3) 
         {
         std::cout << "Please input name of output dir as second argument" << std::endl;
@@ -70,7 +130,7 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
             }
         std::cout << returnedNodes.size() << " RETURNED NODES "<< nAnomalies<< " ERRORS " << std::endl;
         }
-#if 0
+
     FILE* mesh = _wfopen(stmFileName.c_str(), L"rb");
         size_t nVerts = 0;
         size_t nIndices = 0;
