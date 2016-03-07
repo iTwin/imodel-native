@@ -355,7 +355,7 @@ private:
 
     //NavigationProperties can only be created on EntityECClasses, therefore the ctors don't take a parent property map
     //which would be the struct property containing the prop
-    NavigationPropertyMap(ClassMapLoadContext&, ECN::NavigationECPropertyCR, Utf8CP propertyAccessString);
+    NavigationPropertyMap(ClassMapLoadContext&, ECN::ECClassCR, ECN::NavigationECPropertyCR, Utf8CP propertyAccessString);
     NavigationPropertyMap(ClassMapLoadContext&, NavigationPropertyMap const& proto, ECN::ECClassCR targetClass);
 
     virtual void _GetColumns(std::vector<ECDbSqlColumn const*>&) const override;
@@ -373,7 +373,7 @@ private:
 
 public:
     ~NavigationPropertyMap() {}
-    static PropertyMapPtr Create(ClassMapLoadContext&, ECDbCR, ECN::NavigationECPropertyCR, Utf8CP propertyAccessString);
+    static PropertyMapPtr Create(ClassMapLoadContext&, ECDbCR, ECN::ECClassCR, ECN::NavigationECPropertyCR, Utf8CP propertyAccessString);
     static PropertyMapPtr Clone(ClassMapLoadContext& ctx, NavigationPropertyMap const& proto, ECN::ECClassCR targetClass) { return new NavigationPropertyMap(ctx, proto, targetClass); }
 
     BentleyStatus Postprocess(ECDbMapCR);
@@ -396,7 +396,9 @@ private:
     ~PropertyMapFactory();
 
 public:
-    static PropertyMapPtr CreatePropertyMap(ClassMapLoadContext&, ECDbCR, ECN::ECPropertyCR, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap);
+    //ECClass must be passed explicitly, as ECPropertyCR can be inherited from base class, in which case ECProperty::GetClass would
+    //return the base class and not the class for which the prop map is to be created
+    static PropertyMapPtr CreatePropertyMap(ClassMapLoadContext&, ECDbCR, ECN::ECClassCR, ECN::ECPropertyCR, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap);
     
     //only called during schema import
     static PropertyMapPtr ClonePropertyMap(ECDbMapCR, PropertyMapCR, ECN::ECClassCR targetClass, PropertyMap const* parentPropertyMap);

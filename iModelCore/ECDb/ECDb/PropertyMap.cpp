@@ -17,7 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                                    Krischan.Eberle    03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-PropertyMapPtr PropertyMapFactory::CreatePropertyMap(ClassMapLoadContext& ctx, ECDbCR ecdb, ECPropertyCR ecProperty, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap)
+PropertyMapPtr PropertyMapFactory::CreatePropertyMap(ClassMapLoadContext& ctx, ECDbCR ecdb, ECClassCR ecClass, ECPropertyCR ecProperty, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap)
     {
     if (!ecProperty.HasId())
         ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema(ecdb, ecProperty);
@@ -56,7 +56,7 @@ PropertyMapPtr PropertyMapFactory::CreatePropertyMap(ClassMapLoadContext& ctx, E
     BeAssert(ecProperty.GetIsNavigation());
 
     BeAssert(parentPropertyMap == nullptr && "NavigationProperties can only be created on entity classes, so parent prop map is expected to be nullptr");
-    return NavigationPropertyMap::Create(ctx, ecdb, *ecProperty.GetAsNavigationProperty(), propertyAccessString);
+    return NavigationPropertyMap::Create(ctx, ecdb, ecClass, *ecProperty.GetAsNavigationProperty(), propertyAccessString);
     }
 
 //---------------------------------------------------------------------------------------
@@ -650,11 +650,12 @@ void StructPropertyMap::_GetColumns(std::vector<ECDbSqlColumn const*>& columns) 
 BentleyStatus StructPropertyMap::Initialize(ClassMapLoadContext& ctx, ECDbCR ecdb)
     {
     StructECPropertyCP structProperty = GetProperty().GetAsStructProperty();
+    ECClassCR rootClass = GetProperty().GetClass();
     for (ECPropertyCP property : structProperty->GetType().GetProperties(true))
         {
         Utf8String accessString(GetPropertyAccessString());
         accessString.append(".").append(property->GetName());
-        PropertyMapPtr propertyMap = PropertyMapFactory::CreatePropertyMap(ctx, ecdb, *property, accessString.c_str(), this);
+        PropertyMapPtr propertyMap = PropertyMapFactory::CreatePropertyMap(ctx, ecdb, rootClass, *property, accessString.c_str(), this);
         //don't use full prop access string as key in child collection, but just the relative prop access string which is 
         //just the prop name
         if (propertyMap != nullptr)
@@ -1128,24 +1129,24 @@ Utf8String PrimitiveArrayPropertyMap::_ToString() const
 // @bsimethod                                 Krischan.Eberle                      01/2016
 //---------------------------------------------------------------------------------------
 //static
-PropertyMapPtr NavigationPropertyMap::Create(ClassMapLoadContext& ctx, ECDbCR ecdb, ECN::NavigationECPropertyCR navProp, Utf8CP propertyAccessString)
+PropertyMapPtr NavigationPropertyMap::Create(ClassMapLoadContext& ctx, ECDbCR ecdb, ECN::ECClassCR ecClass, ECN::NavigationECPropertyCR navProp, Utf8CP propertyAccessString)
     {
     if (navProp.IsMultiple())
         {
         ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "NavigationECProperty '%s.%s' has a multiplicity of '%s'. ECDb only supports NavigationECProperties with a maximum multiplicity of 1.",
-                                                      navProp.GetClass().GetFullName(), navProp.GetName().c_str(),
+                                                      ecClass.GetFullName(), navProp.GetName().c_str(),
                                                       GetConstraint(navProp, NavigationEnd::To).GetCardinality().ToString().c_str());
         return nullptr;
         }
 
-    return new NavigationPropertyMap(ctx, navProp, propertyAccessString);
+    return new NavigationPropertyMap(ctx, ecClass, navProp, propertyAccessString);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                      12/2015
 //---------------------------------------------------------------------------------------
-NavigationPropertyMap::NavigationPropertyMap(ClassMapLoadContext& ctx, ECN::NavigationECPropertyCR prop, Utf8CP propertyAccessString)
-    : PropertyMap(prop, propertyAccessString, nullptr), m_relClassMap(nullptr), m_ecClass(prop.GetClass())
+NavigationPropertyMap::NavigationPropertyMap(ClassMapLoadContext& ctx, ECN::ECClassCR ecClass, ECN::NavigationECPropertyCR prop, Utf8CP propertyAccessString)
+    : PropertyMap(prop, propertyAccessString, nullptr), m_relClassMap(nullptr), m_ecClass(ecClass)
     {
     //we need to wait with finishing the nav prop map set up to the end when all relationships have been processed
     ctx.AddNavigationPropertyMap(*this);
