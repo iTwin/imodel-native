@@ -159,9 +159,11 @@ QuantityPtr Quantity::Multiply(QuantityCR rhs) const
     {
     double newValue = m_magnitude * rhs.m_magnitude;
 
-    m_unit->MultiplyUnit(*(rhs.m_unit));
+    auto newUnit = m_unit->MultiplyUnit(*(rhs.m_unit));
+    if (nullptr == newUnit)
+        return nullptr;
 
-    return Quantity::Create(newValue, m_unit->GetName());
+    return Quantity::Create(newValue, newUnit->GetName());
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -169,13 +171,13 @@ QuantityPtr Quantity::Multiply(QuantityCR rhs) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 QuantityPtr Quantity::Divide(QuantityCR rhs) const
     {
-    double convertedValue;
-    if (SUCCESS != rhs.ConvertTo(m_unit->GetName(), convertedValue))
+    double newValue = m_magnitude / rhs.m_magnitude;
+
+    auto newUnit = m_unit->DivideUnit(*(rhs.m_unit));
+    if (nullptr == newUnit)
         return nullptr;
 
-    double newValue = m_magnitude / convertedValue;
-    // TODO: fix unit.
-    return Quantity::Create(newValue, m_unit->GetName());
+    return Quantity::Create(newValue, newUnit->GetName());
     }
 
 /*--------------------------------------------------------------------------------**//**

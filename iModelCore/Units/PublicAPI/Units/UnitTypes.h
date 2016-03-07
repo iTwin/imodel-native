@@ -92,6 +92,7 @@ private:
     Expression& Evaluate() const;
 
     int GetPhenomenonId() const;
+    UnitCP CombineWithUnit(UnitCR rhs, int factor) const;
 
 public:
     UNITS_EXPORT Utf8String GetUnitDimension() const;
@@ -107,6 +108,7 @@ public:
     PhenomenonCP GetPhenomenon()   const { return m_phenomenon; }
 
     UnitCP MultiplyUnit (UnitCR rhs) const;
+    UnitCP DivideUnit(UnitCR rhs) const;
 };
 
 struct Phenomenon final : Symbol
