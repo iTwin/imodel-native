@@ -652,7 +652,7 @@ protected:
 
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext);
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor);
-    SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, int ecXmlVersionMajor, bmap<Utf8CP, CharCP>* additionalAttributes=nullptr, bool writeType=true);
+    SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, int ecXmlVersionMajor, bvector<bpair<Utf8CP, Utf8CP>>* attributes=nullptr, bool writeType=true);
     virtual Utf8String                  _GetTypeNameForXml(int ecXmlVersionMajor) const { return GetTypeName(); }
 
     virtual bool                        _IsPrimitive () const { return false; }
@@ -829,13 +829,17 @@ struct ExtendedTypeECProperty : public ECProperty
  {
 private:
     Utf8String    m_extendedTypeName;
+    KindOfQuantityCP m_kindOfQuantity;
         
 protected:
-    ExtendedTypeECProperty(ECClassCR ecClass) : ECProperty(ecClass) {};
+    ExtendedTypeECProperty(ECClassCR ecClass) : ECProperty(ecClass), m_kindOfQuantity(nullptr) {};
     virtual bool  _HasExtendedType() const override { return GetExtendedTypeName().size() > 0; }
     virtual ExtendedTypeECPropertyCP _GetAsExtendedTypePropertyCP () const override { return this; }
     virtual ExtendedTypeECPropertyP  _GetAsExtendedTypePropertyP() override { return this; }
     bool ExtendedTypeLocallyDefined() const { return m_extendedTypeName.size() > 0; }
+
+    SchemaReadStatus ReadExtendedTypeAndKindOfQuantityXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext);
+    SchemaWriteStatus WriteExtendedTypeAndKindOfQuantityXml(bvector<bpair<Utf8CP, Utf8CP>>& attributes, int ecXmlVersionMajor) const;
 
 public:
     //! Gets the extended type name of this ECProperty
@@ -844,6 +848,10 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus SetExtendedTypeName(Utf8CP extendedTypeName);
     //! Resets the extended type on this property.
     ECOBJECTS_EXPORT bool RemoveExtendedTypeName();
+    //! Sets the KindOfQuantity of this property, provide nullptr to unset.
+    void SetKindOfQuantity(KindOfQuantityCP value) { m_kindOfQuantity = value; }
+    //! Gets the KindOfQuantity of this property or nullptr, if none has been set
+    KindOfQuantityCP GetKindOfQuantity() const { return m_kindOfQuantity; }
 };
 
 //=======================================================================================
@@ -858,7 +866,6 @@ private:
     PrimitiveType                               m_primitiveType;
     ECEnumerationCP                             m_enumeration;
     mutable CalculatedPropertySpecificationPtr  m_calculatedSpec;   // lazily-initialized
-    Utf8String                                  m_kindOfQuantity;
 
     PrimitiveECProperty(ECClassCR ecClass) : m_primitiveType(PRIMITIVETYPE_String), ExtendedTypeECProperty(ecClass), m_enumeration(nullptr) {};
 
@@ -885,10 +892,6 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus SetType(ECEnumerationCR value);
     //! Gets the Enumeration of this ECProperty or nullptr if none used.
     ECOBJECTS_EXPORT ECEnumerationCP GetEnumeration() const;
-    //! Sets the KindOfQuantity of this PrimitiveECProperty
-    ECOBJECTS_EXPORT ECObjectsStatus SetKindOfQuantity(Utf8StringCR value);
-    //! Gets the KindOfQuantity of this PrimitiveECProperty
-    ECOBJECTS_EXPORT Utf8StringCR GetKindOfQuantity() const;
 };
 
 //=======================================================================================
@@ -1729,7 +1732,10 @@ struct KindOfQuantity : NonCopyableClass
         //! @param[out] kindOfQuantityName   The name of the KindOfQuantity
         //! @param[in]  stringToParse  The qualified name, in the format of {SchemaName}:{KindOfQuantityName}
         //! @return A status code indicating whether the qualified name was successfully parsed or not
-        ECOBJECTS_EXPORT static ECObjectsStatus ParseFullName(Utf8StringR prefix, Utf8StringR kindOfQuantityName, Utf8StringCR stringToParse);
+        ECOBJECTS_EXPORT static ECObjectsStatus ParseName(Utf8StringR prefix, Utf8StringR kindOfQuantityName, Utf8StringCR stringToParse);
+
+        //! Gets a qualified name of the enumeration, prefixed by the schema prefix if it does not match the primary schema.
+        ECOBJECTS_EXPORT Utf8String GetQualifiedName(ECSchemaCR primarySchema) const;
 
         //! Sets the display label of this KindOfQuantity
         //! @param[in]  value  The new value to apply
