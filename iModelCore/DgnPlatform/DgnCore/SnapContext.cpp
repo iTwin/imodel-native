@@ -441,15 +441,13 @@ virtual bool _ProcessPolyface(PolyfaceQueryCR meshData, bool isFilled, SimplifyG
         bvector<ptrdiff_t> allFaceBlocks;
         bvector<ptrdiff_t> activeReadIndexBlocks;
     
-        PolyfaceHeaderPtr mesh = meshData.Clone(); // NEEDSWORK_EARLIN - Should be able to call PartitionByConnectivity on PolyfaceQuery...
-
-        mesh->PartitionByConnectivity(2, allFaceBlocks);
+        meshData.PartitionByConnectivity(2, allFaceBlocks);
         seedReadIndices.push_back(visitor->GetReadIndex());
-        mesh->SelectBlockedIndices(allFaceBlocks, seedReadIndices, true, activeReadIndexBlocks);
+        PolyfaceHeader::SelectBlockedIndices(allFaceBlocks, seedReadIndices, true, activeReadIndexBlocks);
 
         bvector<PolyfaceHeaderPtr> perFacePolyfaces;
 
-        mesh->CopyPartitions(activeReadIndexBlocks, perFacePolyfaces);
+        meshData.CopyPartitions(activeReadIndexBlocks, perFacePolyfaces);
 
         if (0 != perFacePolyfaces.size())
             {
