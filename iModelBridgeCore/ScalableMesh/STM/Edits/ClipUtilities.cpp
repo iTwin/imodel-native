@@ -1620,10 +1620,13 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
     int stat = DTM_SUCCESS;
     for (auto& poly : polygons)
         {
-       /* DTM_POLYGON_OBJ* polyP = nullptr;
-        long flag = 0;
-        if (DTM_SUCCESS == bcdtmPolygon_intersectPolygonAndTinHullDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), &poly[0], (int)poly.size(), &polyP, &flag))
-            {*/
+        double area = fabs(bsiGeom_getXYPolygonArea(&poly[0], (int)poly.size()));
+        if (area / (m_range.XLength()*m_range.YLength()) > 0.005)
+            {
+            /* DTM_POLYGON_OBJ* polyP = nullptr;
+             long flag = 0;
+             if (DTM_SUCCESS == bcdtmPolygon_intersectPolygonAndTinHullDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), &poly[0], (int)poly.size(), &polyP, &flag))
+             {*/
             stat = bcdtmInsert_internalDtmFeatureMrDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(),
                                                              DTMFeatureType::Region,
                                                              1,
@@ -1635,9 +1638,10 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
                                                              (long)poly.size(),
                                                              m_uvBuffer && m_uvIndices ? GetInsertPointCallback(originalFaceMap, dtmPtr) : nullptr);
             //assert(stat == DTM_SUCCESS);
-           // if (stat != DTM_SUCCESS) break;
-          //  }
-       // if (polyP != nullptr) free(polyP);
+            // if (stat != DTM_SUCCESS) break;
+            //  }
+            // if (polyP != nullptr) free(polyP);
+            }
         userTag++;
         }
    /* if (stat != DTM_SUCCESS)
