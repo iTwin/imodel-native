@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnPropertyJson.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -39,7 +39,7 @@ void UnitDefinition::FromJson(JsonValueCR inValue)
     double numerator   = JsonUtils::GetDouble(inValue[DGNPROPERTYJSON_Numerator], 1.0);
     double denominator = JsonUtils::GetDouble(inValue[DGNPROPERTYJSON_Denominator], 1.0);
 
-    WString label(BeJsonUtilities::CStringFromStringValue(inValue[DGNPROPERTYJSON_Label], "m"), true);
+    Utf8String label(BeJsonUtilities::CStringFromStringValue(inValue[DGNPROPERTYJSON_Label], "m"), true);
 
     Init(base,  system, numerator, denominator, label.c_str());
     }

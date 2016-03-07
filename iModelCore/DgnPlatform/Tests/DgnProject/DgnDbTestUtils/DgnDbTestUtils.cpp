@@ -307,7 +307,7 @@ void DgnDbTestUtils::UpdateProjectExtents(DgnDbR db)
     {
     AxisAlignedBox3d physicalExtents;
     physicalExtents = db.Units().ComputeProjectExtents();
-    db.Units().SaveProjectExtents(physicalExtents);
+    db.Units().SetProjectExtents(physicalExtents);
     }
 
 //---------------------------------------------------------------------------------------

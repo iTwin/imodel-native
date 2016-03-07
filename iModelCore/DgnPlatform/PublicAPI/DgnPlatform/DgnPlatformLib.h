@@ -288,6 +288,7 @@ public:
             DgnFontPtr m_lastResortTTFont;
             DgnFontPtr m_lastResortRscFont;
             DgnFontPtr m_lastResortShxFont;
+            DgnFontPtr m_decoratorFont;
             bool m_triedToLoadFTLibrary;
             FreeType_LibraryP m_ftLibrary;
         
@@ -307,7 +308,7 @@ public:
             DgnFontCR GetLastResortShxFont() {return _GetLastResortShxFont();}
             virtual DgnFontCR _GetAnyLastResortFont() {return _GetLastResortTrueTypeFont();}
             DgnFontCR GetAnyLastResortFont() {return _GetAnyLastResortFont();}
-            virtual DgnFontCR _GetDecoratorFont() {return _GetLastResortTrueTypeFont();}
+            DGNPLATFORM_EXPORT virtual DgnFontCR _GetDecoratorFont();
             DgnFontCR GetDecoratorFont() {return _GetDecoratorFont();}
             DGNPLATFORM_EXPORT virtual DgnFontCR _ResolveFont(DgnFontCP);
             DgnFontCR ResolveFont(DgnFontCP font) {return _ResolveFont(font);}

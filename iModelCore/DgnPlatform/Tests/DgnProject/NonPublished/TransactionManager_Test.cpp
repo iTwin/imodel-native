@@ -8,7 +8,6 @@
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <Bentley/BeTimeUtilities.h>
-#include <ECDb/ECSqlBuilder.h>
 #include <DgnPlatform/WebMercator.h>
 #include <DgnPlatform/DgnTexture.h>
 
@@ -1241,6 +1240,8 @@ struct RootChangedCallback : TestElementDrivesElementHandler::Callback
         ++m_invocationCount;
         incrementDependentWidth(target, db);
         }
+
+    virtual void _ProcessDeletedDependency(DgnDbR db, dgn_TxnTable::ElementDep::DepRelData const& relData) {BeAssert(false && "Not expected to be called");}
 
     RootChangedCallback() : m_invocationCount(0)
         {

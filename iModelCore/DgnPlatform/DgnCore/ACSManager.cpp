@@ -392,8 +392,8 @@ virtual StatusInt   /*AuxCoordSys::*/_Serialize(void *buffer, uint32_t maxSize) 
 virtual StatusInt   /*AuxCoordSys::*/_PointFromString
 (
 DPoint3dR       outPoint,
-WStringR        errorMsg,
-WCharCP         inString,
+Utf8StringR     errorMsg,
+Utf8CP          inString,
 bool            relative,
 DPoint3dCP      inLastPoint,
 DgnModelR       modelRef
@@ -430,7 +430,7 @@ DgnModelR       modelRef
         }
 
     // make a local copy of the input string that we can modify.
-    WString         tmpString(inString);
+    Utf8String      tmpString(inString);
     StatusInt       status;
 
     switch (acsType)
@@ -455,8 +455,8 @@ DgnModelR       modelRef
 
         case ACSType::Cylindrical:
             {
-            bvector<WString> subStrings;
-            BeStringUtilities::Split(inString, L",", subStrings);
+            bvector<Utf8String> subStrings;
+            BeStringUtilities::Split(inString, ",", subStrings);
 
             if (subStrings.size() < 2)
                 return ERROR;
@@ -503,12 +503,11 @@ DgnModelR       modelRef
 
         case ACSType::Spherical:
             {
-            bvector<WString> subStrings;
-            BeStringUtilities::Split(inString, L",", subStrings);
+            bvector<Utf8String> subStrings;
+            BeStringUtilities::Split(inString, ",", subStrings);
 
             if (subStrings.size() < 3)
                 return ERROR;
-
 
             DistanceParserPtr   distanceParser  = DistanceParser::Create(*model, *this);
             DirectionParserPtr  directionParser = DirectionParser::Create(*model);
@@ -561,12 +560,12 @@ DgnModelR       modelRef
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual StatusInt       /*AuxCoordSys::*/_StringFromPoint
 (
-WStringR            outString,
-WStringR            errorMsg,
+Utf8StringR         outString,
+Utf8StringR         errorMsg,
 DPoint3dCR          inPoint,
 bool                delta,
 DPoint3dCP          deltaOrigin,
-DgnModelR        modelRef,
+DgnModelR           modelRef,
 DistanceFormatterR  distanceFormatter,
 DirectionFormatterR directionFormatter 
 ) override
@@ -607,14 +606,14 @@ DirectionFormatterR directionFormatter
 
             outString = distanceFormatter.ToString(distance);
 
-            WString directionString = directionFormatter.ToStringFromRadians(angle);
-            outString.append(L",");
+            Utf8String directionString = directionFormatter.ToStringFromRadians(angle);
+            outString.append(",");
             outString.append(directionString);
 
             if (modelRef.Is3d())
                 {
-                WString elevationString = distanceFormatter.ToString(tPoint.z);
-                outString.append(L",");
+                Utf8String elevationString = distanceFormatter.ToString(tPoint.z);
+                outString.append(",");
                 outString.append(elevationString);
                 }
             break;
@@ -633,13 +632,13 @@ DirectionFormatterR directionFormatter
                 phi = Angle::Acos(tPoint.z/radius);
 
             outString = distanceFormatter.ToString(radius);
-            outString.append(L",");
-            WString thetaString = directionFormatter.ToStringFromRadians(theta);
+            outString.append(",");
+            Utf8String thetaString = directionFormatter.ToStringFromRadians(theta);
             outString.append(thetaString);
 
-            outString.append(L",");
+            outString.append(",");
             // this seems wrong to me. I think it should use the AngleFormatter in the DirectionFormatter.
-            WString phiString = directionFormatter.ToStringFromRadians(phi);
+            Utf8String phiString = directionFormatter.ToStringFromRadians(phi);
             outString.append(phiString);
             break;
             }

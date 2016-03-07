@@ -241,19 +241,28 @@ int32_t JsDgnElement::SetUnhandledProperty(Utf8StringCR name, JsECValueP v)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
-JsAdHocJsonValueP JsDgnElement::GetUserProperties() const
+JsAdHocJsonPropertyValueP JsDgnElement::GetUserProperty(Utf8StringCR name) const
     {
     DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
-    return new JsAdHocJsonValue(m_el->GetUserProperties());
+    return new JsAdHocJsonPropertyValue(const_cast<JsDgnElement*>(this), m_el->GetUserProperty(name.c_str()));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
-void JsDgnElement::SetUserProperties(JsAdHocJsonValueP v)
+bool JsDgnElement::ContainsUserProperty(Utf8StringCR name) const
     {
-    DGNJSAPI_VALIDATE_ARGS_VOID(IsValid() && v);
-    m_el->GetUserPropertiesR() = v->m_props;
+    DGNJSAPI_VALIDATE_ARGS(IsValid(), false);
+    return m_el->ContainsUserProperty(name.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+void JsDgnElement::RemoveUserProperty(Utf8StringCR name) const
+    {
+    DGNJSAPI_VALIDATE_ARGS_VOID(IsValid());
+    m_el->RemoveUserProperty(name.c_str());
     }
 
 //---------------------------------------------------------------------------------------

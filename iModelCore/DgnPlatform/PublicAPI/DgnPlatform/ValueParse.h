@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ValueParse.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -48,7 +48,7 @@ public: DGNPLATFORM_EXPORT  DoubleParserPtr    Clone () const;
 //! @param[out] out         resulting value if successfully parsed.
 //! @param[in]  in          input string.
 //! @return     SUCCESS if parsed successfully. ERROR otherwise. 
-public: DGNPLATFORM_EXPORT BentleyStatus ToValue (double& out, WCharCP in) const;
+public: DGNPLATFORM_EXPORT BentleyStatus ToValue (double& out, Utf8CP in) const;
 
 }; // DoubleParser 
 
@@ -94,7 +94,7 @@ public: DGNPLATFORM_EXPORT AngleMode GetAngleMode ();
 //! @param[out] out         resulting angle in degrees if successfully parsed.
 //! @param[in]  in          input string.
 //! @return     SUCCESS if parsed successfully. ERROR otherwise. 
-public: DGNPLATFORM_EXPORT BentleyStatus ToValue (double& out, WCharCP in) const;
+public: DGNPLATFORM_EXPORT BentleyStatus ToValue (double& out, Utf8CP in) const;
 
 }; // AngleParser
 
@@ -166,7 +166,7 @@ public: DGNPLATFORM_EXPORT double           GetBaseDirection  ();
 //! @param[out] out         resulting direction in degrees if successfully parsed.
 //! @param[in]  in          input string.
 //! @return     SUCCESS if parsed successfully. ERROR otherwise. 
-public: DGNPLATFORM_EXPORT BentleyStatus ToValue (double& out, WCharCP in);
+public: DGNPLATFORM_EXPORT BentleyStatus ToValue (double& out, Utf8CP in);
 
 }; // DirectionParser 
 
@@ -179,8 +179,8 @@ struct DistanceParser : RefCountedBase
 // This parser should store master/sub/storage unit definitions, not scales.  Need to change
 // API as well.
 #endif
-private: WString                m_masterUnitLabel;
-private: WString                m_subUnitLabel;
+private: Utf8String             m_masterUnitLabel;
+private: Utf8String             m_subUnitLabel;
 private: double                 m_masterUnitScale;
 private: double                 m_subUnitScale;
 private: double                 m_scale;
@@ -196,7 +196,7 @@ public:  void                   InitModelSettings(GeometricModelCR);
 //! @param[out] numCharsParsed number of characters consumed while parsing.
 //! @param[in] in input string.
 //! @return SUCCESS if parsed successfully. ERROR otherwise. 
-public: DGNPLATFORM_EXPORT BentleyStatus ToValue (double& out, size_t& numCharsParsed, WCharCP in);
+public: DGNPLATFORM_EXPORT BentleyStatus ToValue (double& out, size_t& numCharsParsed, Utf8CP in);
 
 //! Construct a parser with default settings.
 public: static DGNPLATFORM_EXPORT  DistanceParserPtr Create ();
@@ -220,14 +220,14 @@ public: static DGNPLATFORM_EXPORT  DistanceParserPtr    Create(GeometricModelCR 
 public: DGNPLATFORM_EXPORT  DistanceParserPtr    Clone () const;
 
 //! Set Master and Sub Units manually. Normally, use the SetUnits()* method 
-public: DGNPLATFORM_EXPORT void     SetMasterUnitLabel     (WCharCP label);
-public: DGNPLATFORM_EXPORT WCharCP  GetMasterUnitsLabel     ();
-public: DGNPLATFORM_EXPORT void     SetSubUnitLabel        (WCharCP label);
-public: DGNPLATFORM_EXPORT WCharCP  GetSubUnitsLabel        ();
+public: DGNPLATFORM_EXPORT void     SetMasterUnitLabel     (Utf8CP label);
+public: DGNPLATFORM_EXPORT Utf8CP   GetMasterUnitsLabel    ();
+public: DGNPLATFORM_EXPORT void     SetSubUnitLabel        (Utf8CP label);
+public: DGNPLATFORM_EXPORT Utf8CP   GetSubUnitsLabel       ();
 public: DGNPLATFORM_EXPORT void     SetMasterUnitScale     (double scale);
-public: DGNPLATFORM_EXPORT double   GetMasterUnitsScale     ();
+public: DGNPLATFORM_EXPORT double   GetMasterUnitsScale    ();
 public: DGNPLATFORM_EXPORT void     SetSubUnitScale        (double scale);
-public: DGNPLATFORM_EXPORT double   GetSubUnitsScale        ();
+public: DGNPLATFORM_EXPORT double   GetSubUnitsScale       ();
 
 //! The value will be scaled by this factor after it is parsed.
 public: DGNPLATFORM_EXPORT void     SetScale               (double scale);
@@ -239,7 +239,7 @@ public: DGNPLATFORM_EXPORT double   GetScale               ();
 //! @param[out] out         resulting distance in uors if successfully parsed.
 //! @param[in]  in          input string.
 //! @return     SUCCESS if parsed successfully. ERROR otherwise. 
-public: DGNPLATFORM_EXPORT BentleyStatus ToValue (double& out, WCharCP in);
+public: DGNPLATFORM_EXPORT BentleyStatus ToValue (double& out, Utf8CP in);
 
 }; // DistanceParser 
 
@@ -256,14 +256,14 @@ private: /* ctor */             PointParser (PointParserCR other);
 private: void                   Init ();
 private: void                   InitModelSettings(GeometricModelCR);
 
-private:  BentleyStatus         StringToPoint (DPoint3dR out, Point3dP relativeFlags, WCharCP in);
+private:  BentleyStatus         StringToPoint (DPoint3dR out, Point3dP relativeFlags, Utf8CP in);
 
 //! Parse a string into a point value in uors.
 //! @param[out] out             resulting distance in uors if successfully parsed.
 //! @param[out] relativeFlags   true if a coordinate should be considered relative.
 //! @param[in]  in              input string.
 //! @return     SUCCESS if parsed successfully. ERROR otherwise. 
-public: DGNPLATFORM_EXPORT BentleyStatus ToValue (DPoint3dR out, Point3dR relativeFlags, WCharCP in);
+public: DGNPLATFORM_EXPORT BentleyStatus ToValue (DPoint3dR out, Point3dR relativeFlags, Utf8CP in);
 
 //! Construct a parser with default settings.
 public: static DGNPLATFORM_EXPORT  PointParserPtr     Create ();
@@ -290,7 +290,7 @@ public: DGNPLATFORM_EXPORT  PointParserPtr    Clone () const;
 //! @param[out] out         resulting distance in uors if successfully parsed.
 //! @param[in]  in          input string.
 //! @return     SUCCESS if parsed successfully. ERROR otherwise. 
-public: DGNPLATFORM_EXPORT BentleyStatus ToValue (DPoint3dR out, WCharCP in);
+public: DGNPLATFORM_EXPORT BentleyStatus ToValue (DPoint3dR out, Utf8CP in);
 
 //! Get the distance parser used by this parser for each coordinate of the point.
 //! Changes made to this object will affect the future behavior of the PointParser.
@@ -329,7 +329,7 @@ public:  DGNPLATFORM_EXPORT void    InitModelSettings(GeometricModelCR);
 //! @param[out] numCharsParsed number of characters consumed while parsing.
 //! @param[in] in input string.
 //! @return SUCCESS if parsed successfully. ERROR otherwise. 
-public: DGNPLATFORM_EXPORT BentleyStatus ToValue (double& out, size_t& numCharsParsed, WCharCP in);
+public: DGNPLATFORM_EXPORT BentleyStatus ToValue (double& out, size_t& numCharsParsed, Utf8CP in);
 
 //! Set Master and Sub Units manually. Normally, use the SetUnits()* method 
 public: DGNPLATFORM_EXPORT void     SetMasterUnitScale     (double scale);
@@ -345,7 +345,7 @@ public: DGNPLATFORM_EXPORT double   GetScale               ();
 //! @param[out] out         resulting distance in uors if successfully parsed.
 //! @param[in]  in          input string.
 //! @return     SUCCESS if parsed successfully. ERROR otherwise. 
-public: DGNPLATFORM_EXPORT BentleyStatus ToValue (double& out, WCharCP in);
+public: DGNPLATFORM_EXPORT BentleyStatus ToValue (double& out, Utf8CP in);
 
 }; // AreaOrVolumeParser 
 
