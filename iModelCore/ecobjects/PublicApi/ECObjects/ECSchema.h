@@ -1735,7 +1735,7 @@ struct KindOfQuantity : NonCopyableClass
         ECOBJECTS_EXPORT static ECObjectsStatus ParseName(Utf8StringR prefix, Utf8StringR kindOfQuantityName, Utf8StringCR stringToParse);
 
         //! Gets a qualified name of the enumeration, prefixed by the schema prefix if it does not match the primary schema.
-        ECOBJECTS_EXPORT Utf8String KindOfQuantity::GetQualifiedName(ECSchemaCR primarySchema) const;
+        ECOBJECTS_EXPORT Utf8String GetQualifiedName(ECSchemaCR primarySchema) const;
 
         //! Sets the display label of this KindOfQuantity
         //! @param[in]  value  The new value to apply
