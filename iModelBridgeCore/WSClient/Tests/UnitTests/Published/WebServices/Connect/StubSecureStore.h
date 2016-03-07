@@ -2,13 +2,14 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/StubSecureStore.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
 
 #include <DgnClientFx/Utils/SecureStore.h>
+#include <Bentley/Base64Utilities.h>
 
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
@@ -38,5 +39,15 @@ struct StubSecureStore : public ISecureStore
     void LegacyClearValue (Utf8CP nameSpace, Utf8CP key) override
         {
         legacyValues[nameSpace][key] = "";
+        };
+        
+    Utf8String Encrypt (Utf8CP value) override
+        {
+        return Base64Utilities::Encode(value);
+        };
+        
+    Utf8String Decrypt (Utf8CP value) override
+        {
+        return Base64Utilities::Decode(value);
         };
     };

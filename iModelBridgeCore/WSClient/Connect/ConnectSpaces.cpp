@@ -233,7 +233,7 @@ void ConnectSpaces::ResetEula(bool getNewToken)
 
     if (m_eulaToken.IsEmpty())
         {
-        // Note: error sent to UI thread in GetNewTokenIfNeeded().
+        SendStatusToUIThread(ResetEulaAction, CredentialsError);
         return;
         }
 
@@ -301,7 +301,7 @@ void ConnectSpaces::CheckEula(bool getNewToken)
 
     if (m_eulaToken.IsEmpty())
         {
-        // Note: error sent to UI thread in GetNewTokenIfNeeded().
+        SendStatusToUIThread(CheckEulaAction, CredentialsError);
         return;
         }
 
@@ -403,7 +403,7 @@ bool ConnectSpaces::DownloadEula(Utf8StringR eulaString, bool getNewToken)
 
     if (m_eulaToken.IsEmpty())
         {
-        // Note: error sent to UI thread in GetNewTokenIfNeeded().
+        SendStatusToUIThread(CheckEulaAction, CredentialsError);
         return false;
         }
 
@@ -477,7 +477,7 @@ void ConnectSpaces::AcceptEula(bool getNewToken)
 
     if (m_eulaToken.IsEmpty())
         {
-        // Note: error sent to UI thread in GetNewTokenIfNeeded().
+        SendStatusToUIThread(AcceptEulaAction, CredentialsError);
         return;
         }
 

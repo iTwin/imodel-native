@@ -12,14 +12,19 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
-#define SecureStoreNameSpace_Connect    "Connect"
-#define SecureStoreKey_Token            "IdentityToken"
-#define SecureStoreKey_TokenSetTime     "IdentityTokenSetTime"
+#define LocalState_NameSpace        "Connect"
+#define LocalState_Token            "IdentityToken"
+#define LocalState_TokenSetTime     "IdentityTokenSetTime"
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-IdentityAuthenticationPersistence::IdentityAuthenticationPersistence(std::shared_ptr<ISecureStore> customSecureStore) :
+IdentityAuthenticationPersistence::IdentityAuthenticationPersistence
+(
+ILocalState* localState,
+std::shared_ptr<ISecureStore> customSecureStore
+) :
+m_localState(localState ? *localState : MobileDgnCommon::LocalState()),
 m_secureStore(customSecureStore ? customSecureStore : std::make_shared<SecureStore>())
     {}
 
@@ -44,10 +49,11 @@ void IdentityAuthenticationPersistence::SetToken(SamlTokenPtr token)
     {
     BeMutexHolder lock(m_cs);
 
-    m_secureStore->SaveValue(SecureStoreNameSpace_Connect, SecureStoreKey_Token, token ? token->AsString().c_str() : "");
+    Utf8String tokenStr = token ? m_secureStore->Encrypt(token->AsString().c_str()) : "";
+    m_localState.SaveValue(LocalState_NameSpace, LocalState_Token, tokenStr);
 
     Utf8String dateStr = DateTime::GetCurrentTimeUtc().ToUtf8String();
-    m_secureStore->SaveValue(SecureStoreNameSpace_Connect, SecureStoreKey_TokenSetTime, token ? dateStr.c_str() : "");
+    m_localState.SaveValue(LocalState_NameSpace, LocalState_TokenSetTime, token ? dateStr.c_str() : "");
 
     m_token.reset();
     }
@@ -61,12 +67,11 @@ SamlTokenPtr IdentityAuthenticationPersistence::GetToken() const
 
     if (nullptr == m_token)
         {
-        Utf8String tokenStr = m_secureStore->LoadValue(SecureStoreNameSpace_Connect, SecureStoreKey_Token);
+        Utf8String tokenStr = m_localState.GetValue(LocalState_NameSpace, LocalState_Token).asString();
         if (tokenStr.empty())
-            {
             return nullptr;
-            }
-        m_token = std::make_shared<SamlToken>(tokenStr);
+
+        m_token = std::make_shared<SamlToken>(m_secureStore->Decrypt(tokenStr.c_str()));
         }
 
     return m_token;
@@ -77,7 +82,7 @@ SamlTokenPtr IdentityAuthenticationPersistence::GetToken() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DateTime IdentityAuthenticationPersistence::GetTokenSetTime() const
     {
-    Utf8String timeStr = m_secureStore->LoadValue(SecureStoreNameSpace_Connect, SecureStoreKey_TokenSetTime);
+    Utf8String timeStr = m_secureStore->LoadValue(LocalState_NameSpace, LocalState_TokenSetTime);
 
     DateTime time;
     if (SUCCESS != DateTime::FromString(time, timeStr.c_str()))

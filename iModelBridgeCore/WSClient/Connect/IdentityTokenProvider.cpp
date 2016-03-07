@@ -54,12 +54,7 @@ void IdentityTokenProvider::Configure(uint64_t tokenLifetime, uint64_t tokenRefr
 +---------------+---------------+---------------+---------------+---------------+------*/
 SamlTokenPtr IdentityTokenProvider::UpdateToken()
     {
-    if (m_store->GetToken() != nullptr)
-        {
-        if (m_tokenExpiredHandler)
-            m_tokenExpiredHandler();
-        }
-    return nullptr;
+    return RenewToken()->GetResult().GetValue();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -67,35 +62,60 @@ SamlTokenPtr IdentityTokenProvider::UpdateToken()
 +---------------+---------------+---------------+---------------+---------------+------*/
 SamlTokenPtr IdentityTokenProvider::GetToken()
     {
-    DateTime tokenSetTime = m_store->GetTokenSetTime();
-    if (tokenSetTime.IsValid() && ShouldRenewToken(tokenSetTime))
-        {
-        auto oldToken = m_store->GetToken();
-        if (nullptr == oldToken)
-            return nullptr;
-
-        auto thisPtr = shared_from_this();
-
-        AsyncTasksManager::GetDefaultScheduler()->ExecuteAsyncWithoutAttachingToCurrentTask([=]
-            {
-            // TODO: avoid launching twice - use UniqueTaskHolder once its fixed
-            LOG.infov("Renewing identity token");
-            m_client->RequestToken(*oldToken, nullptr, m_tokenLifetime)
-                ->Then([=] (SamlTokenResult result)
-                {
-                if (!result.IsSuccess())
-                    return;
-
-                auto token = result.GetValue();
-                m_store->SetToken(token);
-                LOG.infov("Renewed identity token lifetime %d minutes", token->GetLifetime());
-
-                thisPtr.get();
-                });
-            });
-        }
-
+    RenewTokenIfNeeded();
     return m_store->GetToken();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void IdentityTokenProvider::RenewTokenIfNeeded()
+    {
+    DateTime tokenSetTime = m_store->GetTokenSetTime();
+    if (!tokenSetTime.IsValid() || !ShouldRenewToken(tokenSetTime))
+        return;
+
+    auto thisPtr = shared_from_this();
+    AsyncTasksManager::GetDefaultScheduler()->ExecuteAsyncWithoutAttachingToCurrentTask([=]
+        {
+        thisPtr->RenewToken();
+        });
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<SamlTokenResult> IdentityTokenProvider::RenewToken()
+    {
+    auto oldToken = m_store->GetToken();
+    if (nullptr == oldToken)
+        return CreateCompletedAsyncTask(SamlTokenResult::Error({}));
+
+    LOG.infov("Renewing identity token");
+
+    // TODO: avoid launching twice - use UniqueTaskHolder once its fixed
+    auto thisPtr = shared_from_this();
+    return m_client->RequestToken(*oldToken, nullptr, m_tokenLifetime)
+        ->Then<SamlTokenResult>([=] (SamlTokenResult result)
+        {
+        if (result.IsSuccess())
+            {
+            auto newToken = result.GetValue();
+            m_store->SetToken(newToken);
+            LOG.infov("Renewed identity token lifetime %d minutes", newToken->GetLifetime());
+            return result;
+            }
+
+        if (result.GetError().GetHttpStatus() == HttpStatus::Unauthorized)
+            {
+            LOG.infov("Identity token expired");
+            if (m_tokenExpiredHandler)
+                m_tokenExpiredHandler();
+            }
+
+        thisPtr.get();
+        return result;
+        });
     }
 
 /*--------------------------------------------------------------------------------------+

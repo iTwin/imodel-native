@@ -52,6 +52,8 @@ struct SamlToken
         WSCLIENT_EXPORT Utf8String ToAuthorizationString() const;
         //! Return original token representation
         WSCLIENT_EXPORT Utf8StringCR AsString() const;
+        //! Compare contents of two tokens for equality
+        WSCLIENT_EXPORT bool operator==(const SamlToken& other) const;
     };
 
 typedef SamlToken& SamlTokenR;

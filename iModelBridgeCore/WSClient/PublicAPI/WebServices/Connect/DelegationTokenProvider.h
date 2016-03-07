@@ -24,20 +24,20 @@ struct DelegationTokenProvider : public IConnectTokenProvider
     private:
         IImsClientPtr m_client;
         Utf8String m_rpUri;
-        IConnectTokenProviderPtr m_baseTokenProvider;
+        IConnectTokenProviderPtr m_parentTokenProvider;
         SamlTokenPtr m_token;
         UniqueTaskHolder<SamlTokenResult> m_tokenRetriever;
         uint64_t m_tokenLifetime;
 
     private:
-        AsyncTaskPtr<SamlTokenResult> RetrieveNewToken();
+        AsyncTaskPtr<SamlTokenResult> RetrieveNewToken(bool updateParentTokenIfFailed = true);
 
     public:
         //! Create token provider for delegating service specific tokens
         //! @param client client
         //! @param rpUri Relying Party URI for token
-        //! @param baseTokenProvider token provider for base/identity token to be used to delegate new token
-        WSCLIENT_EXPORT DelegationTokenProvider(IImsClientPtr client, Utf8String rpUri, IConnectTokenProviderPtr baseTokenProvider);
+        //! @param parentTokenProvider token provider for parent/identity token to be used to delegate new token
+        WSCLIENT_EXPORT DelegationTokenProvider(IImsClientPtr client, Utf8String rpUri, IConnectTokenProviderPtr parentTokenProvider);
 
         //! Set new token lifetime
         WSCLIENT_EXPORT void Configure(uint64_t tokenLifetime);

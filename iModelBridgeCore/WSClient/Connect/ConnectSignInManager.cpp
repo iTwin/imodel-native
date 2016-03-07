@@ -26,6 +26,7 @@ USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 #define LOCALSTATE_Namespace            "Connect"
 #define LOCALSTATE_AuthenticationType   "AuthenticationType"
+#define LOCALSTATE_SignedInUser         "SignedInUser"
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                           Vytautas.Barkauskas    12/2015
@@ -124,6 +125,9 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(SamlTokenPtr to
         m_persistence = std::make_shared<ConnectSessionAuthenticationPersistence>();
         m_persistence->SetToken(token);
 
+        CheckUserChange();
+        StoreSignedInUser();
+
         LOG.infov("ConnectSignIn: renewed token lifetime %d minutes", token->GetLifetime());
         return SignInResult::Success();
         });
@@ -158,6 +162,9 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithCredentials(Credentia
         m_persistence = std::make_shared<ConnectSessionAuthenticationPersistence>();
         m_persistence->SetToken(token);
         m_persistence->SetCredentials(credentials);
+
+        CheckUserChange();
+        StoreSignedInUser();
 
         LOG.infov("ConnectSignIn: token lifetime %d minutes", token->GetLifetime());
         return SignInResult::Success();
@@ -251,6 +258,16 @@ void ConnectSignInManager::SetTokenExpiredHandler(std::function<void()> handler)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectSignInManager::SetUserChangeHandler(std::function<void()> handler)
+    {
+    BeCriticalSectionHolder lock(m_cs);
+    m_userChangeHandler = handler;
+    CheckUserChange();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 AuthenticationHandlerPtr ConnectSignInManager::GetAuthenticationHandler(Utf8StringCR serverUrl, IHttpHandlerPtr httpHandler)
     {
     BeMutexHolder lock(m_cs);
@@ -318,7 +335,7 @@ IConnectAuthenticationPersistencePtr ConnectSignInManager::GetPersistenceMatchin
     AuthenticationType type = GetAuthenticationType();
 
     if (AuthenticationType::Token == type)
-        return std::make_shared<IdentityAuthenticationPersistence>(m_secureStore);
+        return std::make_shared<IdentityAuthenticationPersistence>(&m_localState, m_secureStore);
 
     if (AuthenticationType::Credentials == type)
         return ConnectAuthenticationPersistence::GetShared();
@@ -349,4 +366,38 @@ IConnectTokenProviderPtr ConnectSignInManager::GetBaseTokenProviderMatchingAuthe
 
     // Not signed in - return failing token provider
     return std::make_shared<ConnectTokenProvider>(m_client, std::make_shared<ConnectSessionAuthenticationPersistence>());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectSignInManager::CheckUserChange()
+    {
+    if (!IsSignedIn())
+        return;
+
+    Utf8String storedUsername = m_secureStore->Decrypt(m_localState.GetValue(LOCALSTATE_Namespace, LOCALSTATE_SignedInUser).asString().c_str());
+    if (storedUsername.empty())
+        return;
+
+    UserInfo info = GetUserInfo();
+    BeAssert(!info.username.empty());
+    if (info.username == storedUsername)
+        return;
+
+    if (m_userChangeHandler)
+        {
+        m_userChangeHandler();
+        StoreSignedInUser();
+        }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectSignInManager::StoreSignedInUser()
+    {
+    UserInfo info = GetUserInfo();
+    BeAssert(!info.username.empty());
+    m_localState.SaveValue(LOCALSTATE_Namespace, LOCALSTATE_SignedInUser, m_secureStore->Encrypt(info.username.c_str()));
     }
