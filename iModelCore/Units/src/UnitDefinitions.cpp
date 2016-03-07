@@ -424,8 +424,8 @@ void AddSpecificHeatCapacity(UnitRegistry& reg)
 
 void AddSpecificHeatCapacityMolar(UnitRegistry& reg)
     {
-    reg.AddUnit(SPECIFIC_HEAT_CAPACITY_MOLAR, SI, "J/(MOL*K)", "J*MOL(-1)*DELTA_KELVIN(-1)");
-    reg.AddSynonym("J/(MOL*K)", "JOULE_PER_MOLE_PER_DELTA_DEGREE_KELVIN");
+    reg.AddUnit(SPECIFIC_HEAT_CAPACITY_MOLAR, SI, "J/(KMOL*K)", "J*KMOL(-1)*DELTA_KELVIN(-1)");
+    reg.AddSynonym("J/(KMOL*K)", "JOULE_PER_KILOMOLE_PER_DELTA_DEGREE_KELVIN");
 
     reg.AddUnit(SPECIFIC_HEAT_CAPACITY_MOLAR, SI, "KJ/(KMOL*K)", "KJ*KMOL(-1)*DELTA_KELVIN(-1)");
     reg.AddSynonym("KJ/(KMOL*K)", "KILOJOULE_PER_KILOMOLE_PER_DELTA_DEGREE_KELVIN");
