@@ -868,6 +868,7 @@ TEST_F(ECDbInstances, AdapterCheckClassBeforeOperation)
     EXPECT_EQ(ERROR, sms);
 
     JsonDeleter jsonDeleter(db, *employee);
+    ASSERT_TRUE(jsonDeleter.IsValid());
     ECInstanceId instanceId;
     ECInstanceIdHelper::FromString(instanceId, instance->GetInstanceId().c_str());
     sms = jsonDeleter.Delete(instanceId);

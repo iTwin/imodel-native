@@ -298,28 +298,28 @@ Utf8String BuildECSql (Utf8CP selectClause, Utf8CP ecSqlWithoutSelect)
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                   Ramanujam.Raman                  02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (FieldEngineer, Workflow)
+TEST(FieldEngineer, Workflow)
     {
-    /* 
+    /*
      * Note: This test has sample code that intentionally doesn't use any ATP helpers
      * for creating/populating the Db. The intent was to provide some sample code for
-     * FieldEngineer, and monitor contracts related to FieldEngineer 
-     * for regressions. 
+     * FieldEngineer, and monitor contracts related to FieldEngineer
+     * for regressions.
      */
     ECDb ecDb;
     InitializeFieldEngineerTest();
 
     bool bStatus;
-    bStatus = CreateSimpleCompany (ecDb);
-    ASSERT_TRUE (bStatus);
-    bStatus = PopulateSimpleCompany (ecDb);
-    ASSERT_TRUE (bStatus);
+    bStatus = CreateSimpleCompany(ecDb);
+    ASSERT_TRUE(bStatus);
+    bStatus = PopulateSimpleCompany(ecDb);
+    ASSERT_TRUE(bStatus);
 
     /*
      * SimpleCompany Schema:
-     *    
-     *                          ManagerRelationship 
-     *                          
+     *
+     *                          ManagerRelationship
+     *
      *                               WhiteShark
      *                                   |
      *         +_________________________|_______________________+
@@ -327,163 +327,150 @@ TEST (FieldEngineer, Workflow)
      *         |                     Lion Seal                   |
      *         |                         |                       |
      *         |                         |                       |
-     *    GoldFish/SilverFish       SalmonFish           SubContractor(400)  
+     *    GoldFish/SilverFish       SalmonFish           SubContractor(400)
      *
      *                          ContractorRelationship
      *                  SubContractor ______  SalmonFish
      *
      *                            Inheritance Hierarchy
-     *                            
+     *
      *    Employee (GoldFish, SalmonFish, BronzeFish) -> Manager (LionSeal, WhiteShark)
      *    SubContractor (SubContractor)
-     *
      */
 
-    /* 
-     * Read the instance from the Db by querying for it. 
-     */
-     
-    ECSchemaCP simpleCompanySchema = ecDb.Schemas().GetECSchema ("SimpleCompany", true);
-    ASSERT_TRUE (simpleCompanySchema != nullptr);
-    ECClassCP employeeClass = simpleCompanySchema->GetClassCP ("Employee");
-    ASSERT_TRUE (employeeClass != nullptr);
+     /*
+      * Read the instance from the Db by querying for it.
+      */
+
+    ECSchemaCP simpleCompanySchema = ecDb.Schemas().GetECSchema("SimpleCompany", true);
+    ASSERT_TRUE(simpleCompanySchema != nullptr);
+    ECClassCP employeeClass = simpleCompanySchema->GetClassCP("Employee");
+    ASSERT_TRUE(employeeClass != nullptr);
 
     // Prepare statement
     ECSqlStatement statement;
     Utf8CP ecSqlWithoutSelect = "FROM sico.Employee WHERE LastName = 'Fish' AND FirstName = 'Gold'";
-    ECSqlStatus prepareStatus = statement.Prepare (ecDb, BuildECSql ("SELECT *", ecSqlWithoutSelect).c_str());
-    ASSERT_TRUE (ECSqlStatus::Success == prepareStatus);
-    DbResult stepStatus = statement.Step();
-    ASSERT_TRUE (BE_SQLITE_ROW == stepStatus);
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecDb, BuildECSql("SELECT *", ecSqlWithoutSelect).c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
 
     // Get (Adapt) results as JSON values
-    JsonECSqlSelectAdapter jsonAdapter (statement, JsonECSqlSelectAdapter::FormatOptions (ECValueFormat::RawNativeValues));
+    JsonECSqlSelectAdapter jsonAdapter(statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
     Json::Value currentObject;
-    bool status = jsonAdapter.GetRowInstance (currentObject);
-    ASSERT_TRUE (status);
-    
+    bool status = jsonAdapter.GetRowInstance(currentObject);
+    ASSERT_TRUE(status);
+
     // Validate
-    ASSERT_TRUE (!currentObject["$ECInstanceId"].isNull());
+    ASSERT_TRUE(!currentObject["$ECInstanceId"].isNull());
     Utf8String idString = currentObject["$ECInstanceId"].asString();
-    ASSERT_TRUE (idString[0] != 0);
+    ASSERT_TRUE(idString[0] != 0);
     /* Note: Fetching raw values won't set $ECInstanceLabel, $ECClassLabel */
-    int initialCount = CountRows (ecDb, ecSqlWithoutSelect);
-    ASSERT_EQ (1, initialCount);
+    int initialCount = CountRows(ecDb, ecSqlWithoutSelect);
+    ASSERT_EQ(1, initialCount);
 
     /*
      * Read the instance from the Db by ECInstanceId (lesser code by using a helper)
      */
-    ECInstanceId ecInstanceId (BeJsonUtilities::Int64FromValue (currentObject["$ECInstanceId"]));
-    JsonReader reader (ecDb, employeeClass->GetId());
-    auto readStatus = reader.ReadInstance (currentObject, ecInstanceId, ECValueFormat::RawNativeValues);
-    ASSERT_EQ (SUCCESS, readStatus);
+    ECInstanceId ecInstanceId(BeJsonUtilities::Int64FromValue(currentObject["$ECInstanceId"]));
+    JsonReader reader(ecDb, employeeClass->GetId());
+    auto readStatus = reader.ReadInstance(currentObject, ecInstanceId, ECValueFormat::RawNativeValues);
+    ASSERT_EQ(SUCCESS, readStatus);
     //ECDbTestUtility::DebugDumpJson (currentObject);
 
-    /* 
+    /*
      * Update the instance in the Db
      */
-    JsonUpdater updater (ecDb, *employeeClass);
+    JsonUpdater updater(ecDb, *employeeClass);
+    ASSERT_TRUE(updater.IsValid());
     currentObject["FirstName"] = "Silver";
-    StatusInt updateStatus = updater.Update (currentObject); // Uses ECInstanceId in the currentObject to find the entry to update
-    ASSERT_TRUE (updateStatus == SUCCESS);
-    int afterUpdateCount = CountRows (ecDb, "FROM sico.Employee WHERE LastName = 'Fish' AND FirstName = 'Gold'");
-    ASSERT_EQ (0, afterUpdateCount);
-    afterUpdateCount = CountRows (ecDb, "FROM sico.Employee WHERE LastName = 'Fish' AND FirstName = 'Silver'");
-    ASSERT_EQ (1, afterUpdateCount);
+    StatusInt updateStatus = updater.Update(currentObject); // Uses ECInstanceId in the currentObject to find the entry to update
+    ASSERT_TRUE(updateStatus == SUCCESS);
+    int afterUpdateCount = CountRows(ecDb, "FROM sico.Employee WHERE LastName = 'Fish' AND FirstName = 'Gold'");
+    ASSERT_EQ(0, afterUpdateCount);
+    afterUpdateCount = CountRows(ecDb, "FROM sico.Employee WHERE LastName = 'Fish' AND FirstName = 'Silver'");
+    ASSERT_EQ(1, afterUpdateCount);
 
-    /* 
+    /*
      * Insert a new instance in the Db
      */
-    JsonInserter inserter (ecDb, *employeeClass);
-    currentObject.removeMember ("$ECInstanceId"); // to ensure it gets populated after the insert
+    JsonInserter inserter(ecDb, *employeeClass);
+    ASSERT_TRUE(inserter.IsValid());
+    currentObject.removeMember("$ECInstanceId"); // to ensure it gets populated after the insert
     currentObject["FirstName"] = "Bronze";
     currentObject["EmployeeId"] = GetNextId(); // Otherwise there's a conflict
-    StatusInt insertStatus = inserter.Insert (currentObject);
-    ASSERT_TRUE (insertStatus == SUCCESS);
+    StatusInt insertStatus = inserter.Insert(currentObject);
+    ASSERT_TRUE(insertStatus == SUCCESS);
     ecSqlWithoutSelect = "FROM sico.Employee WHERE LastName = 'Fish' AND FirstName = 'Bronze'";
-    int afterInsertCount = CountRows (ecDb, ecSqlWithoutSelect);
-    ASSERT_EQ (1, afterInsertCount);
-    ECInstanceId bronzeFishId (BeJsonUtilities::Int64FromValue (currentObject["$ECInstanceId"]));
-    ASSERT_TRUE (bronzeFishId.IsValid ());
-    
-    statement.Finalize();    
-    prepareStatus = statement.Prepare (ecDb, BuildECSql ("SELECT *", ecSqlWithoutSelect).c_str());
-    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
-    stepStatus = statement.Step();
-    ASSERT_TRUE (stepStatus == BE_SQLITE_ROW);
-    JsonECSqlSelectAdapter jsonAdapter2 (statement, JsonECSqlSelectAdapter::FormatOptions (ECValueFormat::RawNativeValues));
-    status = jsonAdapter2.GetRowInstance (currentObject);
-    ASSERT_TRUE (status);
+    int afterInsertCount = CountRows(ecDb, ecSqlWithoutSelect);
+    ASSERT_EQ(1, afterInsertCount);
+    ECInstanceId bronzeFishId(BeJsonUtilities::Int64FromValue(currentObject["$ECInstanceId"]));
+    ASSERT_TRUE(bronzeFishId.IsValid());
+    statement.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecDb, BuildECSql("SELECT *", ecSqlWithoutSelect).c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    JsonECSqlSelectAdapter jsonAdapter2(statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+    status = jsonAdapter2.GetRowInstance(currentObject);
+    ASSERT_TRUE(status);
 
     /*
      * Delete the instance
      */
-    JsonDeleter deleter (ecDb, *employeeClass);
-    StatusInt deleteStatus = deleter.Delete (bronzeFishId); 
-    ASSERT_TRUE (deleteStatus == SUCCESS);
-    int afterDeleteCount = CountRows (ecDb, ecSqlWithoutSelect);
-    ASSERT_EQ (0, afterDeleteCount);
-
-    statement.Reset();
-
+    JsonDeleter deleter(ecDb, *employeeClass);
+    ASSERT_TRUE(deleter.IsValid());
+    StatusInt deleteStatus = deleter.Delete(bronzeFishId);
+    ASSERT_TRUE(deleteStatus == SUCCESS);
+    int afterDeleteCount = CountRows(ecDb, ecSqlWithoutSelect);
+    ASSERT_EQ(0, afterDeleteCount);
+    statement.Finalize();
     ecDb.SaveChanges();
 
-    /* 
+    /*
      * Retrieving all related items - Get all managers that report to "WhiteShark"
      */
-     
-    // TODO: Self-joins don't seem to work. Have emailed Affan.
-    //statement.Finalize();
-    //ecSqlWithoutSelect = "FROM sico.Manager AS ManagerRelated JOIN sico.Manager AS ManagerOrigin USING sico.ManagerRelationship BACKWARD "
-    //    "WHERE ManagerOrigin.LastName = 'Shark' AND ManagerOrigin.FirstName = 'White'";
-    //prepareStatus = statement.Prepare (ecDb, BuildECSql("SELECT *", ecSqlWithoutSelect).c_str());
-    //ASSERT_TRUE (ECSqlStatus::Success == prepareStatus);
-    //int actualCount = CountRows (ecDb, ecSqlWithoutSelect);
-    //ASSERT_EQ (1, actualCount);
+    ecSqlWithoutSelect = "FROM sico.Manager AS ManagerRelated JOIN sico.Manager AS ManagerOrigin USING sico.ManagerRelationship BACKWARD "
+        "WHERE ManagerOrigin.LastName = 'Shark' AND ManagerOrigin.FirstName = 'White'";
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecDb, BuildECSql("SELECT *", ecSqlWithoutSelect).c_str()));
+    int actualCount = CountRows(ecDb, ecSqlWithoutSelect);
+    ASSERT_EQ(1, actualCount);
+    statement.Finalize();
+    ecDb.SaveChanges();
 
-    //ecDb.SaveChanges();
-
-    /* 
+    /*
      * Retrieve specific relationship - Get the ManagerRelationship between "WhiteShark" and "LionSeal"
      * (Tests relationships stored in a link table)
      */
-    ECClassCP managerClass = simpleCompanySchema->GetClassCP ("Manager");
-    ASSERT_TRUE (managerClass != nullptr);
-    ECInstanceId whiteSharkId = GetIdOfPerson (ecDb, *managerClass, "White", "Shark");
-    ASSERT_TRUE (whiteSharkId.IsValid ());
-    ECInstanceId lionSealId = GetIdOfPerson (ecDb, *managerClass, "Lion", "Seal");
-    ASSERT_TRUE (lionSealId.IsValid ());
-    ECRelationshipClassCP managerRelClass = simpleCompanySchema->GetClassCP ("ManagerRelationship")->GetRelationshipClassCP();
-    ASSERT_TRUE (managerRelClass != nullptr);
+    ECClassCP managerClass = simpleCompanySchema->GetClassCP("Manager");
+    ASSERT_TRUE(managerClass != nullptr);
+    ECInstanceId whiteSharkId = GetIdOfPerson(ecDb, *managerClass, "White", "Shark");
+    ASSERT_TRUE(whiteSharkId.IsValid());
+    ECInstanceId lionSealId = GetIdOfPerson(ecDb, *managerClass, "Lion", "Seal");
+    ASSERT_TRUE(lionSealId.IsValid());
+    ECRelationshipClassCP managerRelClass = simpleCompanySchema->GetClassCP("ManagerRelationship")->GetRelationshipClassCP();
+    ASSERT_TRUE(managerRelClass != nullptr);
 
     ecSqlWithoutSelect = "FROM sico.ManagerRelationship WHERE SourceECInstanceId=? AND TargetECInstanceId=?";
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecDb, BuildECSql("SELECT ECInstanceId", ecSqlWithoutSelect).c_str()));
+    statement.BindId(1, whiteSharkId);
+    statement.BindId(2, lionSealId);
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ECInstanceId managerRelId = statement.GetValueId<ECInstanceId>(0);
+    ASSERT_TRUE(managerRelId.IsValid());
     statement.Finalize();
-    prepareStatus = statement.Prepare (ecDb, BuildECSql("SELECT ECInstanceId", ecSqlWithoutSelect).c_str());
-    ASSERT_TRUE (ECSqlStatus::Success == prepareStatus);
-    statement.BindId (1, whiteSharkId);
-    statement.BindId (2, lionSealId);
-    stepStatus = statement.Step();
-    ASSERT_TRUE (stepStatus == BE_SQLITE_ROW);
-    ECInstanceId managerRelId = statement.GetValueId<ECInstanceId> (0);
-    ASSERT_TRUE (managerRelId.IsValid ());
-     
-     /*
-     * Remove relationship and validate
-     * (Tests relationships stored in a link table)
-     */
-     JsonDeleter deleter2 (ecDb, *managerRelClass);
-     deleteStatus = deleter2.Delete (managerRelId); 
-     ASSERT_TRUE (deleteStatus == SUCCESS);
 
-     statement.Finalize();
-     prepareStatus = statement.Prepare (ecDb, BuildECSql ("SELECT *", ecSqlWithoutSelect).c_str());
-     ASSERT_TRUE (ECSqlStatus::Success == prepareStatus);
-     stepStatus = statement.Step();
-     ASSERT_TRUE (stepStatus == BE_SQLITE_DONE); // Validate that there aren't any rows for relationship!!
+    /*
+    * Remove relationship and validate
+    * (Tests relationships stored in a link table)
+    */
+    JsonDeleter deleter2(ecDb, *managerRelClass);
+    ASSERT_TRUE(deleter.IsValid());
+    deleteStatus = deleter2.Delete(managerRelId);
+    ASSERT_TRUE(deleteStatus == SUCCESS);
 
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecDb, BuildECSql("SELECT *", ecSqlWithoutSelect).c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, statement.Step()); // Validate that there aren't any rows for relationship!!
     ecDb.SaveChanges();
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * Monitors the fix for a  crash due to circular references 
 * @bsiclass                                   Ramanujam.Raman                  10/13
