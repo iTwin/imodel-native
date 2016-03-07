@@ -91,7 +91,7 @@ static almost_equal(const T x, const T y, int ulp)
 // @bsiclass                                     Basanta.Kharel                 12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool UnitsTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double expectedVal, Utf8CP targetUnitName, double tolerance, 
-                                     bvector<Utf8String>& loadErrors, bvector<Utf8String>& conversionErrors, bool showDetailLogs)
+                                     bvector<Utf8String>& missingUnits, bvector<Utf8String>& conversionErrors, bool showDetailLogs)
     {
     //if either units are not in the library conversion is not possible
     //UnitsMapping test checks if all units are there and fails when a unit is not found
@@ -99,8 +99,16 @@ bool UnitsTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double
     UnitCP targetUnit = LocateUOM(targetUnitName);
     if (nullptr == fromUnit || nullptr == targetUnit)
         {
-        Utf8PrintfString loadError("Could not convert from %s to %s because could not load one of the units", fromUnitName, targetUnitName);
-        loadErrors.push_back(loadError);
+        if (nullptr == fromUnit)
+            {
+            if (missingUnits.end() == find(missingUnits.begin(), missingUnits.end(), fromUnitName))
+                missingUnits.push_back(fromUnitName);
+            }
+        if (nullptr == targetUnit)
+            {
+            if (missingUnits.end() == find(missingUnits.begin(), missingUnits.end(), targetUnitName))
+                missingUnits.push_back(targetUnitName);
+            }
         return false;
         }
 
@@ -223,7 +231,7 @@ TEST_F(UnitsTests, TestOffsetConversions)
     TestUnitConversion(0, "ROMER", 465.9557142857142857, "RANKINE", 1.0e-8, loadErrors, conversionErrors);
 
 
-    Utf8String loadErrorString("Could not convert because one or both of the following units could not be loaded:\n");
+    Utf8String loadErrorString("The following units were not found:\n");
     for (auto const& val : loadErrors)
         loadErrorString.append(val + "\n");
 
@@ -424,7 +432,7 @@ TEST_F(UnitsTests, UnitsConversions_Complex)
     TestUnitConversion(1.0 / 0.42992261392949271, "KILOJOULE_PER_KILOMOLE", 1.0, "BTU_PER_POUND_MOLE", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(1.0e6 / 0.42992261392949271, "KILOJOULE_PER_KILOMOLE", 1.0e6, "BTU_PER_POUND_MOLE", 1.0e-8, loadErrors, conversionErrors);
     
-    Utf8String loadErrorString("Could not convert because one or both of the following units could not be loaded:\n");
+    Utf8String loadErrorString("The following units were not found:\n");
     for (auto const& val : loadErrors)
         loadErrorString.append(val + "\n");
     
@@ -460,8 +468,8 @@ void UnitsTests::TestConversionsLoadedFromCvsFile(Utf8CP fileName)
 
     EXPECT_EQ(0, loadErrors.size()) << loadErrorString;
 
-    Utf8PrintfString conversionErrorString("%s - Total number of conversions %d, units found for %d, %d passed, %d failed, %d skipped because of missing units, error Converting :\n",
-                                            fileName, numberConversions, numberWhereUnitsFound, numberWhereUnitsFound - conversionErrors.size(), conversionErrors.size(), loadErrors.size());
+    Utf8PrintfString conversionErrorString("%s - Total number of conversions %d, units found for %d, %d passed, %d failed, %d skipped because of %d missing units, error Converting :\n",
+                                            fileName, numberConversions, numberWhereUnitsFound, numberWhereUnitsFound - conversionErrors.size(), conversionErrors.size(), numberConversions - numberWhereUnitsFound, loadErrors.size());
 
     for (auto const& val : conversionErrors)
         conversionErrorString.append(val + "\n");
