@@ -196,8 +196,8 @@ struct UpdatePlan
         bool WantMotionAbort() const {return 0 != m_motion.GetTolerance();}
     };
 
-    double      m_targetFPS = 20.0; // Frames Per second
-    uint32_t    m_timeout = 0; // seconds
+    double      m_targetFPS = 20.0; // target Frames Per Second
+    uint32_t    m_timeout = 0; // in milliseconds
     Query       m_query;
     AbortFlags  m_abortFlags;
 

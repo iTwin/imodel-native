@@ -742,11 +742,6 @@ bool WebMercatorDisplay::GetCachedTiles(bvector<TileDisplayImageData>& tileDispl
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WebMercatorModel::_AddTerrainGraphics(TerrainContextR context) const
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    if (context.GetViewport()->IsCameraOn())    // *** TBD: Not sure if we can support tiled raster in a perspective view or not. 
-        return;                                 // ***      I would at least have to figure out how to compute what portions of the earth are in the view.
-#endif
-
     RefCountedPtr<WebMercatorDisplay> display = new WebMercatorDisplay(*this, *context.GetViewport());
     display->DrawView(context);
     }
