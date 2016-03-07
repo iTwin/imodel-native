@@ -72,7 +72,7 @@ void AddMass(UnitRegistry& reg)
     //reg.AddUnit(MASS, SI, "TON", "[KILO]*KG");  // NOTE: REMOVED because TON is abigious, using TONNE, SHORT_TON and LONG_TON
     reg.AddUnit(MASS, SI, "TONNE", "[KILO]*KG"); // Also known as a metric ton http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
 
-    unit = reg.AddUnit(MASS, IMPERIAL, "LBM", "KG", 0.45359237);
+    unit = reg.AddUnit(MASS, IMPERIAL, "LBM", "KG", 0.45359237); // TODO: Get reference
     reg.AddSynonym(unit, "POUND_MASS");
     reg.AddSynonym(unit, "POUND");
     unit = reg.AddUnit(MASS, IMPERIAL, "SLUG", "LBF*S(2)*FT(-1)");
@@ -424,8 +424,8 @@ void AddSpecificHeatCapacity(UnitRegistry& reg)
 
 void AddSpecificHeatCapacityMolar(UnitRegistry& reg)
     {
-    reg.AddUnit(SPECIFIC_HEAT_CAPACITY_MOLAR, SI, "J/(LB-MOLE*K)", "J*LB-MOLE(-1)*DELTA_KELVIN(-1)");
-    reg.AddSynonym("J/(LB-MOLE*K)", "JOULE_PER_KILOMOLE_PER_DELTA_DEGREE_KELVIN");
+    reg.AddUnit(SPECIFIC_HEAT_CAPACITY_MOLAR, SI, "J/(MOL*K)", "J*MOL(-1)*DELTA_KELVIN(-1)");
+    reg.AddSynonym("J/(MOL*K)", "JOULE_PER_MOLE_PER_DELTA_DEGREE_KELVIN");
 
     reg.AddUnit(SPECIFIC_HEAT_CAPACITY_MOLAR, SI, "KJ/(KMOL*K)", "KJ*KMOL(-1)*DELTA_KELVIN(-1)");
     reg.AddSynonym("KJ/(KMOL*K)", "KILOJOULE_PER_KILOMOLE_PER_DELTA_DEGREE_KELVIN");
@@ -811,6 +811,15 @@ void AddPressureGradient(UnitRegistry& reg)
     reg.AddSynonym(unit, "BAR_PER_KILOMETRE");
     }
 
+void AddPercentage(UnitRegistry& reg)
+    {
+    reg.AddUnit(PERCENTAGE, INTERNATIONAL, "PERCENT", "ONE");
+    reg.AddSynonym("PERCENT", "PERCENT_PERCENT");
+
+    reg.AddUnit(PERCENTAGE, INTERNATIONAL, "DECIMAL_PERCENT", "PERCENT", 100);
+    reg.AddSynonym("DECIMAL_PERCENT", "UNITLESS_PERCENT");
+    }
+
 // TODO: Handle inverted slopes
 void AddSlope(UnitRegistry& reg)
     {
@@ -838,6 +847,8 @@ void AddSlope(UnitRegistry& reg)
     reg.AddSynonym(unit, "FOOT_PER_MILE");
     
     reg.AddUnit(SLOPE, INTERNATIONAL, "VERTICAL_PER_HORIZONTAL", "M/M");
+
+    reg.AddUnit(SLOPE, INTERNATIONAL, "PERCENT_SLOPE", "M/M", 1.0e-2);
 
     // TODO: Not supported, we can't invert as part of conversion
     //reg.AddUnit(SLOPE, INTERNATIONAL, "HORIZONTAL_PER_VERTICAL", "VERTICAL_PER_HORIZONTAL(-1)");
@@ -1163,6 +1174,7 @@ void UnitRegistry::AddDefaultUnits ()
     //AddPowerDensity(reg);
     AddPressure(reg);
     AddPressureGradient(reg);
+    AddPercentage(reg);
     AddSlope(reg);
     AddSurfaceDensity(reg);
     AddThermalConductivity(reg);
