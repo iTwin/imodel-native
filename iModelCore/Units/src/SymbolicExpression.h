@@ -42,6 +42,8 @@ struct Expression
     typedef bvector<ExpressionSymbolP> SymbolList;
     typedef SymbolList::iterator iterator;
     typedef SymbolList::const_iterator const_iterator;
+    typedef SymbolList::reverse_iterator reverse_iterator;
+    typedef SymbolList::const_reverse_iterator const_reverse_iterator;
     
     friend struct Symbol;
     friend struct Unit;
@@ -55,6 +57,14 @@ private:
     const_iterator begin() const { return m_symbolExpression.begin(); }
     const_iterator end() const { return m_symbolExpression.end(); }
 
+    reverse_iterator rbegin() { return m_symbolExpression.rbegin(); }
+    reverse_iterator rend() { return m_symbolExpression.rend(); }
+    const_reverse_iterator rbegin() const { return m_symbolExpression.rbegin(); }
+    const_reverse_iterator rend() const { return m_symbolExpression.rend(); }
+
+
+    ExpressionSymbolCP FirstSymbol() const { return m_symbolExpression.front(); }
+
     void erase(iterator deleteIterator, iterator end) { m_symbolExpression.erase(deleteIterator, end); }
     size_t size() const { return m_symbolExpression.size(); }
 
@@ -64,10 +74,12 @@ private:
     static void Copy(ExpressionR source, ExpressionR target);
 
     void LogExpression(NativeLogging::SEVERITY loggingLevel, Utf8CP name) const;
-    Utf8String ToString() const;
+    Utf8String ToString(bool includeFactors = true) const;
+    bool Contains(ExpressionSymbolCR symbol) const;
 
-    static BentleyStatus ParseDefinition(int& depth, Utf8CP definition, ExpressionR expression, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName);
-    static BentleyStatus HandleToken(int& depth, ExpressionR expression, Utf8CP definition, TokenCR token, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName);
+    static BentleyStatus ParseDefinition(SymbolCR owner, int& depth, Utf8CP definition, ExpressionR expression, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName);
+    static BentleyStatus HandleToken(SymbolCR owner, int& depth, ExpressionR expression, Utf8CP definition, TokenCR token, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName);
+    static void MergeSymbol(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, SymbolCP symbol, int symbolExponent, std::function<bool(SymbolCR, SymbolCR)> areEqual);
     static void MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, ExpressionR sourceExpression, int startingExponent);
     static void MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExpression,
                                  Utf8CP sourceDefinition, ExpressionR sourceExpression,
@@ -75,6 +87,7 @@ private:
     static bool ShareDimensions(PhenomenonCR phenomenon, UnitCR unit);
     static bool DimensionallyCompatible(ExpressionCR expressionA, ExpressionCR expressionB);
     static bool DimensionallyCompatible(ExpressionCR expressionA, ExpressionCR expressionB, std::function<bool(SymbolCR, SymbolCR)> areEqual);
+    static BentleyStatus GenerateConversionExpression(UnitCR from, UnitCR to, ExpressionR conversionExpression);
     static void CreateExpressionWithOnlyBaseSymbols(ExpressionCR source, ExpressionR target, bool copySymbols);
     };
 

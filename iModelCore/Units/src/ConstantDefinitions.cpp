@@ -31,41 +31,46 @@ void UnitRegistry::AddDefaultConstants ()
     reg.AddConstant(ACCELERATION, "STD_G", "M*S(-2)", 9.80665); //, "Standard Gravity");
     //reg.AddConstant(ACTION, "H", "J*S", 6.62607004e-34); //, "Planck constant"); // NOTE: Not used so removed instead of adding 'ACTION' phenomenon
     //reg.AddConstant(MOLE, "A0", "MOL(-1)", 6.022140857e23); //, "Avogadro Number"); // NOTE: Not actually MOLE but MOLE(-1), we don't use it anywhere so removed it
-    // Densities of Water in KG/CUB.M
-    reg.AddConstant(DENSITY, "H2O_0C", "KG*M(-3)", 0.99987e3); //, "Density of water at 0 degree Celsius");
-    reg.AddConstant(DENSITY, "H2O_4C", "KG*M(-3)", 1.00000e3); //, "Density of water at 4 degree Celsius");
-    reg.AddConstant(DENSITY, "H2O_10C", "KG*M(-3)", 0.99975e3); //, "Density of water at 10 degree Celsius");
-    reg.AddConstant(DENSITY, "H2O_20C", "KG*M(-3)", 0.99802e3); //, "Density of water at 20 degree Celsius");
-    reg.AddConstant(DENSITY, "H2O_30C", "KG*M(-3)", 0.9957e3); //, "Density of water at 30 degree Celsius");
-    reg.AddConstant(DENSITY, "H2O_40C", "KG*M(-3)", 0.9922e3); //, "Density of water at 40 degree Celsius");
-    reg.AddConstant(DENSITY, "H2O_50C", "KG*M(-3)", 0.9881e3); //, "Density of water at 50 degree Celsius");
-    reg.AddConstant(DENSITY, "H2O_60C", "KG*M(-3)", 0.98338e3); //, "Density of water at 60 degree Celsius");
-    reg.AddConstant(DENSITY, "H2O_70C", "KG*M(-3)", 0.97729e3); //, "Density of water at 70 degree Celsius");
-    reg.AddConstant(DENSITY, "H2O_80C", "KG*M(-3)", 0.97056e3); //, "Density of water at 80 degree Celsius");
-    reg.AddConstant(DENSITY, "H2O_90C", "KG*M(-3)", 0.9653e3); //, "Density of water at 90 degree Celsius");
-    reg.AddConstant(DENSITY, "H2O_100C", "KG*M(-3)", 0.95865e3); //, "Density of water at 100 degree Celsius");
-    // Densities of Water in LB/CUB.FT
-    reg.AddConstant(DENSITY, "H2O_32F", "LBM*FT(-3)", 62.416); //, "Density of water at 32 degree Fahrenheit");
-    reg.AddConstant(DENSITY, "H2O_39.2F", "LBM*FT(-3)", 62.424); //, "Density of water at 39.2 degree Fahrenheit");
-    reg.AddConstant(DENSITY, "H2O_40F", "LBM*FT(-3)", 62.423); //, "Density of water at 40 degree Fahrenheit");
-    reg.AddConstant(DENSITY, "H2O_50F", "LBM*FT(-3)", 62.408); //, "Density of water at 50 degree Fahrenheit");
-    reg.AddConstant(DENSITY, "H2O_60F", "LBM*FT(-3)", 62.366); //, "Density of water at 60 degree Fahrenheit");
-    reg.AddConstant(DENSITY, "H2O_70F", "LBM*FT(-3)", 62.300); //, "Density of water at 70 degree Fahrenheit");
-    reg.AddConstant(DENSITY, "H2O_80F", "LBM*FT(-3)", 62.217); //, "Density of water at 80 degree Fahrenheit");
-    reg.AddConstant(DENSITY, "H2O_90F", "LBM*FT(-3)", 62.118); //, "Density of water at 90 degree Fahrenheit");
-    reg.AddConstant(DENSITY, "H2O_100F", "LBM*FT(-3)", 61.998); //, "Density of water at 100 degree Fahrenheit");
-    reg.AddConstant(DENSITY, "H2O_120F", "LBM*FT(-3)", 61.719); //, "Density of water at 120 degree Fahrenheit");
-    reg.AddConstant(DENSITY, "H2O_140F", "LBM*FT(-3)", 61.386); //, "Density of water at 140 degree Fahrenheit");
-    reg.AddConstant(DENSITY, "H2O_160F", "LBM*FT(-3)", 61.006); //, "Density of water at 160 degree Fahrenheit");
-    reg.AddConstant(DENSITY, "H2O_180F", "LBM*FT(-3)", 60.586); //, "Density of water at 180 degree Fahrenheit");
-    reg.AddConstant(DENSITY, "H2O_200F", "LBM*FT(-3)", 60.135); //, "Density of water at 200 degree Fahrenheit");
-    reg.AddConstant(DENSITY, "H2O_212F", "LBM*FT(-3)", 59.843); //, "Density of water at 212 degree Fahrenheit");
 
-    reg.AddConstant(DENSITY, "HG_0C", "KG*M(-3)", 13.595e3); //, "Density of mercury 0 degree Celsius");
-    reg.AddConstant(DENSITY, "HG_15C", "KG*M(-3)", 13.559e3); //, "Density of mercury 15 degree Celsius");
-    reg.AddConstant(DENSITY, "HG_20C", "KG*M(-3)", 13.546e3); //, "Density of mercury 20 degree Celsius");
-    reg.AddConstant(DENSITY, "HG_25C", "KG*M(-3)", 13.532e3); //, "Density of mercury 25 degree Celsius");
-    reg.AddConstant(DENSITY, "HG_60F", "KG*M(-3)", 13.557e3); //, "Density of mercury 60 degree Fahrenheit");
+    // TODO: These densities need a reference really really badly.  Using H20_4C for Conventional because it is the documented value for
+    // conventional density that I found but it is not consistently the documented value for density of water at 4C.
+    // Densities of Water in KG/CUB.M
+    //reg.AddConstant(DENSITY, "H2O_0C", "KG*M(-3)", 0.99987e3); //, "Density of water at 0 degree Celsius");
+    //reg.AddConstant(DENSITY, "H2O_4C", "KG*M(-3)", 1.00000e3); //, "Density of water at 4 degree Celsius");
+    //reg.AddConstant(DENSITY, "H2O_10C", "KG*M(-3)", 0.99975e3); //, "Density of water at 10 degree Celsius");
+    //reg.AddConstant(DENSITY, "H2O_20C", "KG*M(-3)", 0.99802e3); //, "Density of water at 20 degree Celsius");
+    //reg.AddConstant(DENSITY, "H2O_30C", "KG*M(-3)", 0.9957e3); //, "Density of water at 30 degree Celsius");
+    //reg.AddConstant(DENSITY, "H2O_40C", "KG*M(-3)", 0.9922e3); //, "Density of water at 40 degree Celsius");
+    //reg.AddConstant(DENSITY, "H2O_50C", "KG*M(-3)", 0.9881e3); //, "Density of water at 50 degree Celsius");
+    //reg.AddConstant(DENSITY, "H2O_60C", "KG*M(-3)", 0.98338e3); //, "Density of water at 60 degree Celsius");
+    //reg.AddConstant(DENSITY, "H2O_70C", "KG*M(-3)", 0.97729e3); //, "Density of water at 70 degree Celsius");
+    //reg.AddConstant(DENSITY, "H2O_80C", "KG*M(-3)", 0.97056e3); //, "Density of water at 80 degree Celsius");
+    //reg.AddConstant(DENSITY, "H2O_90C", "KG*M(-3)", 0.9653e3); //, "Density of water at 90 degree Celsius");
+    //reg.AddConstant(DENSITY, "H2O_100C", "KG*M(-3)", 0.95865e3); //, "Density of water at 100 degree Celsius");
+    //// Densities of Water in LB/CUB.FT
+    //reg.AddConstant(DENSITY, "H2O_32F", "LBM*FT(-3)", 62.416); //, "Density of water at 32 degree Fahrenheit");
+    //reg.AddConstant(DENSITY, "H2O_39.2F", "LBM*FT(-3)", 62.424); //, "Density of water at 39.2 degree Fahrenheit");
+    //reg.AddConstant(DENSITY, "H2O_40F", "LBM*FT(-3)", 62.423); //, "Density of water at 40 degree Fahrenheit");
+    //reg.AddConstant(DENSITY, "H2O_50F", "LBM*FT(-3)", 62.408); //, "Density of water at 50 degree Fahrenheit");
+    //reg.AddConstant(DENSITY, "H2O_60F", "LBM*FT(-3)", 62.366); //, "Density of water at 60 degree Fahrenheit");
+    //reg.AddConstant(DENSITY, "H2O_70F", "LBM*FT(-3)", 62.300); //, "Density of water at 70 degree Fahrenheit");
+    //reg.AddConstant(DENSITY, "H2O_80F", "LBM*FT(-3)", 62.217); //, "Density of water at 80 degree Fahrenheit");
+    //reg.AddConstant(DENSITY, "H2O_90F", "LBM*FT(-3)", 62.118); //, "Density of water at 90 degree Fahrenheit");
+    //reg.AddConstant(DENSITY, "H2O_100F", "LBM*FT(-3)", 61.998); //, "Density of water at 100 degree Fahrenheit");
+    //reg.AddConstant(DENSITY, "H2O_120F", "LBM*FT(-3)", 61.719); //, "Density of water at 120 degree Fahrenheit");
+    //reg.AddConstant(DENSITY, "H2O_140F", "LBM*FT(-3)", 61.386); //, "Density of water at 140 degree Fahrenheit");
+    //reg.AddConstant(DENSITY, "H2O_160F", "LBM*FT(-3)", 61.006); //, "Density of water at 160 degree Fahrenheit");
+    //reg.AddConstant(DENSITY, "H2O_180F", "LBM*FT(-3)", 60.586); //, "Density of water at 180 degree Fahrenheit");
+    //reg.AddConstant(DENSITY, "H2O_200F", "LBM*FT(-3)", 60.135); //, "Density of water at 200 degree Fahrenheit");
+    //reg.AddConstant(DENSITY, "H2O_212F", "LBM*FT(-3)", 59.843); //, "Density of water at 212 degree Fahrenheit");
+
+    //reg.AddConstant(DENSITY, "HG_0C", "KG*M(-3)", 13.595e3); //, "Density of mercury 0 degree Celsius");
+    //reg.AddConstant(DENSITY, "HG_15C", "KG*M(-3)", 13.559e3); //, "Density of mercury 15 degree Celsius");
+    //reg.AddConstant(DENSITY, "HG_20C", "KG*M(-3)", 13.546e3); //, "Density of mercury 20 degree Celsius");
+    //reg.AddConstant(DENSITY, "HG_25C", "KG*M(-3)", 13.532e3); //, "Density of mercury 25 degree Celsius");
+    //reg.AddConstant(DENSITY, "HG_60F", "KG*M(-3)", 13.557e3); //, "Density of mercury 60 degree Fahrenheit");
+
+    reg.AddConstant(PRESSURE, "GAUGE_OFFSET", "PA", 101325); // TODO: Get NIST reference, There are other standards but this is the one we used in Old units framework
 
     //Decimal multiples
     reg.AddConstant(ONE, "DECI", "ONE", 1.0e-1); //, "DECI-prefix");

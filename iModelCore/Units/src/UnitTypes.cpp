@@ -58,12 +58,14 @@ Expression& Symbol::Evaluate(int depth, std::function<SymbolCP(Utf8CP)> getSymbo
     {
     if (!m_evaluated)
         {
-        Expression::ParseDefinition(depth, m_definition.c_str(), *m_symbolExpression, 1, getSymbolByName);
+        m_symbolExpression->Add(this, 1);
+        Expression::ParseDefinition(*this, depth, m_definition.c_str(), *m_symbolExpression, 1, getSymbolByName);
         m_evaluated = true;
         }
     return *m_symbolExpression;
     }
 
+// TODO: This is confusing because it accepts symbols but will only work if both symbols are of the same type.
 bool Symbol::IsCompatibleWith(SymbolCR rhs) const
     {
     return Expression::DimensionallyCompatible(*(this->m_symbolExpression), *(rhs.m_symbolExpression));
@@ -82,10 +84,10 @@ Unit::Unit(Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, int id, Utf8CP d
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitP Unit::Create (Utf8CP sysName, PhenomenonCR phenomenon, Utf8CP unitName, int id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant)
+UnitP Unit::Create(Utf8CP sysName, PhenomenonCR phenomenon, Utf8CP unitName, int id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant)
     {
     LOG.debugv("Creating unit %s  Factor: %lf  Offset: %d", unitName, factor, offset);
-    return new Unit (sysName, phenomenon, unitName, id, definition, dimensionSymbol, factor, offset, isConstant);
+    return new Unit(sysName, phenomenon, unitName, id, definition, dimensionSymbol, factor, offset, isConstant);
     }
 
 int Unit::GetPhenomenonId() const { return GetPhenomenon()->GetId(); }
@@ -103,45 +105,98 @@ Expression& Unit::Evaluate() const
     return T_Super::Evaluate(0, [] (Utf8CP unitName) { return UnitRegistry::Instance().LookupUnit(unitName); });
     }
 
-double Unit::GetConversionTo(UnitCP unit) const
+double FastIntegerPower(double a, uint32_t n)
     {
-    if (nullptr == unit)
+    double q = a;
+    double product = (n & 0x01) ? a : 1.0;
+    n = n >> 1;
+    while (n > 0)
         {
-        LOG.errorv("Cannot convert from %s to a null unit, returning a conversion factor of 0.0", this->GetName());
+        q = q * q;
+        if (n & 0x01)
+            product *= q;
+        n = n >> 1;
+        }
+    return product;
+    }
+
+double Unit::Convert(double value, UnitCP toUnit) const
+    {
+    if (nullptr == toUnit)
+        {
+        LOG.errorv("Cannot convert from %s to a null toUnit, returning a conversion factor of 0.0", this->GetName());
         return 0.0;
         }
 
-    // TODO: USING A MAX RECRUSION DEPTH TO CATCH CYCLES IS SUPER HACKY AND MAKES CHRIS T. MAD.  Replace with something that actually detects cycles.
-    Expression fromExpression = Evaluate();
-    Expression toExpression = unit->Evaluate();
+    Expression conversionExpression;
+    if (BentleyStatus::SUCCESS != Expression::GenerateConversionExpression(*this, *toUnit, conversionExpression))
+        {
+        LOG.errorv("Cannot convert from %s to %s, units incompatible, returning a conversion factor of 0.0", this->GetName(), toUnit->GetName());
+        return 0.0;
+        }
+
+    double factor = 1;
+    double offset = 0;
+    for (auto const& toUnitExp : conversionExpression)
+        {
+        if (toUnitExp->GetExponent() == 0)
+            continue;
+        
+        LOG.infov("Adding unit %s^%d to the conversion.  Factor: %lf  Offset:%lf", toUnitExp->GetSymbol()->GetName(), 
+                  toUnitExp->GetExponent(), toUnitExp->GetSymbolFactor(), toUnitExp->GetSymbol()->GetOffset());
+        double unitFactor = FastIntegerPower(toUnitExp->GetSymbolFactor(), abs(toUnitExp->GetExponent()));
+        if (toUnitExp->GetExponent() > 0)
+            {
+            LOG.infov("Multiplying existing factor %lf by %lf", factor, unitFactor);
+            factor *= unitFactor;
+            LOG.infov("New factor %lf", factor);
+            if (toUnitExp->GetSymbol()->HasOffset())
+                {
+                double unitOffset = toUnitExp->GetSymbol()->GetOffset() * toUnitExp->GetSymbol()->GetFactor();
+                LOG.infov("Adding %lf to existing offset %lf.", unitOffset, offset);
+                offset += unitOffset;
+                LOG.infov("New offset %lf", offset);
+                }
+            else
+                {
+                LOG.infov("Multiplying offset %lf by units conversion factor %lf", offset, unitFactor);
+                offset *= unitFactor;
+                LOG.infov("New offset %lf", offset);
+                }
+            }
+        else
+            {
+            LOG.infov("Dividing existing factor %lf by %lf", factor, unitFactor);
+            factor /= unitFactor;
+            LOG.infov("New factor %lf", factor);
+            if (toUnitExp->GetSymbol()->HasOffset())
+                {
+                double unitOffset = toUnitExp->GetSymbol()->GetOffset() * toUnitExp->GetSymbol()->GetFactor();
+                LOG.infov("Subtracting %lf from existing offset %lf.", unitOffset, offset);
+                offset -= unitOffset;
+                LOG.infov("New offset %lf", offset);
+                }
+
+            LOG.infov("Dividing offset %lf by units conversion factor %lf", offset, unitFactor);
+            offset /= unitFactor;
+            LOG.infov("New offset %lf", offset);
+            }
+        }
     
-    fromExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, this->GetName());
-    toExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, unit->GetName());
+    LOG.infov("Conversion factor: %lf, offset: %lf", factor, offset);
+    value *= factor;
 
-    if (!Expression::DimensionallyCompatible(fromExpression, toExpression))
-        {
-        LOG.errorv("Cannot convert from %s: (%s) to %s: (%s) because they two units are not dimensionally compatible.  Returning a conversion factor of 0.0", 
-                   this->GetName(), this->GetDefinition(), unit->GetName(), unit->GetDefinition());
-        return 0.0;
-        }
+    value += offset;
 
-    Expression combinedExpression;
-    Expression::Copy(fromExpression, combinedExpression);
+    return value;
+    }
 
-    Expression::MergeExpressions(GetDefinition(), combinedExpression, unit->GetDefinition(), toExpression, -1);
-    if (LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_DEBUG))
-        {
-        Utf8PrintfString combinedName("%s/%s", this->GetName(), unit->GetName());
-        combinedExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, combinedName.c_str());
-        }
-    double factor = GetFactor() / unit->GetFactor();
-    for (auto const& unitExp : combinedExpression)
-        {
-       // TODO: Consider always doing positive exponents and dividing if exponent is negative
-       factor *= pow(unitExp->GetSymbolFactor(), unitExp->GetExponent());
-        }
-
-    return factor;
+Utf8String Unit::GetUnitDimension() const
+    {
+    Expression phenomenonExpression = Evaluate();
+    Expression baseExpression;
+    Expression::CreateExpressionWithOnlyBaseSymbols(phenomenonExpression, baseExpression, false);
+    return baseExpression.ToString(false);
     }
 
 void Unit::MultiplyUnit (UnitCR rhs) const
@@ -171,7 +226,7 @@ Utf8String Phenomenon::GetPhenomenonDimension() const
     Expression phenomenonExpression = Evaluate();
     Expression baseExpression;
     Expression::CreateExpressionWithOnlyBaseSymbols(phenomenonExpression, baseExpression, false);
-    return baseExpression.ToString();
+    return baseExpression.ToString(false);
     }
 
 void Phenomenon::AddUnit(UnitCR unit)

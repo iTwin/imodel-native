@@ -107,27 +107,48 @@ void AddTime(UnitRegistry& reg)
 //TODO: Handle temperature and delta temperature
 void AddTemperature(UnitRegistry& reg)
     {
-    UnitCP unit = reg.AddUnit(TEMPERATURE, SI, "CELSIUS", "K", 1.0, -273.15);
+    UnitCP unit = reg.AddUnit(TEMPERATURE, SI, "CELSIUS", "K", 1.0, 273.15);
     reg.AddSynonym(unit, "DEGREE_CELSIUS");
-    //SimpleUOM(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "#CELSIUS", 1.8)->AddSynonym("DEGREE_FAHRENHEIT");
-    unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "CELSIUS", 1.8, 1.0);
+    unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "CELSIUS", 5.0 / 9.0, -32);
     reg.AddSynonym(unit, "DEGREE_FAHRENHEIT");
-    unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "RANKINE", "K", 1.8);
+    unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "RANKINE", "K", 5.0 / 9.0);
     reg.AddSynonym(unit, "DEGREE_RANKINE");
-    unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "ROMER", "CELSIUS", 21.0 / 40.0, 7.5);
-    reg.AddSynonym(unit, "DEGREE_ROMER");
-    unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "REAMUR", "CELSIUS", 0.8);
-    reg.AddSynonym(unit, "DEGREE_REAMUR");
 
-    /* the algorithm will decided whether to use full conversion or delta
-    some indicator could be used to explicitly indicate using deltas (like ^ preceding the name)
-    this prfeix will be ignored for all units havig additive = 0, and it will be overruled in many formulas
-    reg.AddUnit(BISPH_LENGTH, SI, "DELTA_DEGREE_CELSIUS", "K", 1.8, 1.0, 0.0); //, BISQNoDescript); //, BISQSecUom);
-    reg.AddUnit(BISPH_LENGTH, USCUSTOM, "DELTA_DEGREE_FAHRENHEIT", "K", 1.8, 1.0, 0.0); //, BISQNoDescript); //, BISQSecUom);
-    reg.AddUnit(BISPH_LENGTH, SI, "DELTA_DEGREE_KELVIN", "K", 1, 0.0); //, BISQNoDescript); //, BISQSecUom);
-    reg.AddUnit(BISPH_LENGTH, SI, "DELTA_DEGREE_KELVIN_PER_METRE", "K_PER_L", 1, 0.0); //, BISQNoDescript); //, BISQSecUom);
-    reg.AddUnit(BISPH_LENGTH, USCUSTOM, "DELTA_DEGREE_RANKINE", "K", 1.8, 0.0); //, BISQNoDescript); //, BISQSecUom);
-    */
+    unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "ROMER", "CELSIUS", 40.0 / 21.0, -7.5);
+    reg.AddSynonym(unit, "DEGREE_ROMER");
+    //unit = reg.AddUnit(TEMPERATURE, USCUSTOM, "REAMUR", "CELSIUS", 0.8);
+    //reg.AddSynonym(unit, "DEGREE_REAMUR");
+
+    }
+
+void AddTemperatureChange(UnitRegistry& reg)
+    {
+    reg.AddUnit(TEMPERATURE_CHANGE, SI, "DELTA_CELSIUS", "DELTA_KELVIN", 1.0);
+    reg.AddSynonym("DELTA_CELSIUS", "DELTA_DEGREE_CELSIUS");
+    
+    reg.AddUnit(TEMPERATURE_CHANGE, USCUSTOM, "DELTA_FAHRENHEIT", "DELTA_CELSIUS", 5.0 / 9.0);
+    reg.AddSynonym("DELTA_FAHRENHEIT", "DELTA_DEGREE_FAHRENHEIT");
+    
+    reg.AddUnit(TEMPERATURE_CHANGE, USCUSTOM, "DELTA_RANKINE", "DELTA_KELVIN", 5.0 / 9.0);
+    reg.AddSynonym("DELTA_RANKINE", "DELTA_DEGREE_RANKINE");
+    }
+
+void AddTemperatureGradient(UnitRegistry& reg)
+    {
+    reg.AddUnit(TEMPERATURE_GRADIENT, SI, "KELVIN/M", "DELTA_KELVIN*M(-1)");
+    reg.AddSynonym("KELVIN/M", "DELTA_DEGREE_KELVIN_PER_METRE");
+    }
+
+void AddLuminousFlux(UnitRegistry& reg)
+    {
+    reg.AddUnit(LUMINOUS_FLUX, SI, "LUMEN", "CANDELA*STERAD");
+    }
+
+void AddIlluminance(UnitRegistry& reg)
+    {
+    reg.AddUnit(ILLUMINANCE, SI, "LUX", "LUMEN*M(-2)");
+    reg.AddUnit(ILLUMINANCE, USCUSTOM, "LUMEN/SQ.FT", "LUMEN*FT(-2)");
+    reg.AddSynonym("LUMEN/SQ.FT", "LUMEN_PER_FOOT_SQUARED");
     }
 
 void AddLuminosity(UnitRegistry& reg)
@@ -161,6 +182,21 @@ void AddFinance(UnitRegistry& reg)
 
 void AddRatio(UnitRegistry& reg)
     {
+    }
+
+void AddRotationalSpringConstant(UnitRegistry& reg)
+    {
+    reg.AddUnit(ROTATIONAL_SPRING_CONSTANT, SI, "(N*M)/RAD", "N*M*RAD(-1)");
+    reg.AddSynonym("(N*M)/RAD", "NEWTON_METRE_PER_RADIAN");
+
+    reg.AddUnit(ROTATIONAL_SPRING_CONSTANT, SI, "(N*M)/DEG", "N*M*ARC_DEG(-1)");
+    reg.AddSynonym("(N*M)/DEG", "NEWTON_METRE_PER_DEGREE");
+    }
+
+void AddLinearRotationalSpringConstant(UnitRegistry& reg)
+    {
+    reg.AddUnit(LINEAR_ROTATIONAL_SPRING_CONSTANT, SI, "N/RAD", "N*RAD(-1)");
+    reg.AddSynonym("N/RAD", "NEWTON_PER_RADIAN");
     }
 
 void AddAcceleration(UnitRegistry& reg)
@@ -264,6 +300,9 @@ void AddDensity(UnitRegistry& reg)
 
     unit = reg.AddUnit(DENSITY, USCUSTOM, "KIP/CUB.FT", "KIP*FT(-3)");
     reg.AddSynonym(unit, "KIP_PER_FOOT_CUBED");
+
+    reg.AddUnit(DENSITY, USCUSTOM, "SHORT_TON/CUB.FT", "SHORT_TON* FT(-3)");
+    reg.AddSynonym("SHORT_TON/CUB.FT", "SHORT_TON_PER_FOOT_CUBED");
     }
 
 void AddForceDensity(UnitRegistry& reg)
@@ -306,6 +345,13 @@ void AddElectricCharge(UnitRegistry& reg)
     reg.AddUnit(ELECTRIC_CHARGE, SI, "COULOMB", "A*S");
     }
 
+void AddElectricPotential(UnitRegistry& reg)
+    {
+    reg.AddUnit(ELECTRIC_POTENTIAL, SI, "VOLT", "N*M*COULOMB(-1)");
+    reg.AddUnit(ELECTRIC_POTENTIAL, SI, "KILOVOLT", "[KILO]*VOLT");
+    reg.AddUnit(ELECTRIC_POTENTIAL, SI, "MEGAVOLT", "[MEGA]*VOLT");
+    }
+
 void AddEnergy(UnitRegistry& reg)
     {
     UnitCP unit = reg.AddUnit(WORK, SI, "J", "N*M");
@@ -317,7 +363,7 @@ void AddEnergy(UnitRegistry& reg)
     unit = reg.AddUnit(WORK, SI, "GJ", "[GIGA]*N*M");
     reg.AddSynonym(unit, "GIGAJOULE");
     reg.AddUnit(WORK, USCUSTOM, "FOOT_POUNDAL", "POUNDAL*FT"); //, BISQSecUom);
-    unit = reg.AddUnit(WORK, INTERNATIONAL, "BTU", "J", 1.055056e3);
+    unit = reg.AddUnit(WORK, INTERNATIONAL, "BTU", "J", 1.05505585262e3); // Is IT BTU.  http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.  See foot note #9: 
     reg.AddSynonym(unit, "BRITISH_THERMAL_UNIT");
     reg.AddUnit(WORK, USCUSTOM, "KILOBTU", "[KILO]*BTU"); //, BISQSecUom);
 
@@ -367,9 +413,25 @@ void AddHeatingValue(UnitRegistry& reg)
     
     }
 
-void AddEnergySpecificCapacity(UnitRegistry& reg)
+void AddSpecificHeatCapacity(UnitRegistry& reg)
     {
-    // TODO
+    reg.AddUnit(SPECIFIC_HEAT_CAPACITY, SI, "J/(KG*K)", "J*KG(-1)*DELTA_KELVIN(-1)");
+    reg.AddSynonym("J/(KG*K)", "JOULE_PER_KILOGRAM_DELTA_DEGREE_KELVIN");
+
+    reg.AddUnit(SPECIFIC_HEAT_CAPACITY, USCUSTOM, "BTU/(LBM*RANKINE)", "BTU*LBM(-1)*DELTA_RANKINE(-1)");
+    reg.AddSynonym("BTU/(LBM*RANKINE)", "BTU_PER_POUND_MASS_PER_DELTA_DEGREE_RANKINE");
+    }
+
+void AddSpecificHeatCapacityMolar(UnitRegistry& reg)
+    {
+    reg.AddUnit(SPECIFIC_HEAT_CAPACITY_MOLAR, SI, "J/(LB-MOLE*K)", "J*LB-MOLE(-1)*DELTA_KELVIN(-1)");
+    reg.AddSynonym("J/(LB-MOLE*K)", "JOULE_PER_KILOMOLE_PER_DELTA_DEGREE_KELVIN");
+
+    reg.AddUnit(SPECIFIC_HEAT_CAPACITY_MOLAR, SI, "KJ/(KMOL*K)", "KJ*KMOL(-1)*DELTA_KELVIN(-1)");
+    reg.AddSynonym("KJ/(KMOL*K)", "KILOJOULE_PER_KILOMOLE_PER_DELTA_DEGREE_KELVIN");
+
+    reg.AddUnit(SPECIFIC_HEAT_CAPACITY_MOLAR, SI, "BTU/(LB-MOLE*RANKINE)", "BTU*LB-MOLE(-1)*DELTA_RANKINE(-1)");
+    reg.AddSynonym("BTU/(LB-MOLE*RANKINE)", "BTU_PER_POUND_MOLE_PER_DELTA_DEGREE_RANKINE");
     }
 
 void AddVolumeFlowRateByArea(UnitRegistry& reg)
@@ -547,27 +609,37 @@ void AddForce(UnitRegistry& reg)
     reg.AddUnit(FORCE, SI, "DYNE", "G*CM*S(-2)"); //, BISQSecUom);
     unit = reg.AddUnit(FORCE, SI, "PDL", "LBM*FT*S(-2)");
     reg.AddSynonym(unit, "POUNDAL");
+
+    reg.AddUnit(FORCE, USCUSTOM, "SHORT_TON_FORCE", "[STD_G]*SHORT_TON");
+    reg.AddUnit(FORCE, USCUSTOM, "LONG_TON_FORCE", "[STD_G]*LONG_TON");
     }
 
 void AddHeatFlux(UnitRegistry& reg)
     {
-    reg.AddUnit(HEATFLUX_DENSITY, SI, "W/SQ.M", "W*M(-2)"); //, BISQPrimUom);
+    reg.AddUnit(HEAT_FLUX_DENSITY, SI, "W/SQ.M", "W*M(-2)"); //, BISQPrimUom);
     }
 
+// TODO: Thermal Transmittance?
 void AddHeatTransfer(UnitRegistry& reg)
     {
-    UnitCP unit = reg.AddUnit(HEATTRASNFER, SI, "W/(SQ.M*K)", "W*M(-2)*K(-1)");
-    reg.AddSynonym(unit, "WATT_PER_METRE_SQUARED_PER_DELTA_DEGREE_KELVIN");
-    unit = reg.AddUnit(HEATTRASNFER, SI, "W/(SQ.M*CELSIUS)", "W*M(-2)*CELSIUS(-1)");
-    reg.AddSynonym(unit, "WATT_PER_METRE_SQUARED_PER_DELTA_DEGREE_CELSIUS");
+    reg.AddUnit(HEAT_TRANSFER, SI, "W/(SQ.M*K)", "W*M(-2)*DELTA_KELVIN(-1)");
+    reg.AddSynonym("W/(SQ.M*K)", "WATT_PER_METRE_SQUARED_PER_DELTA_DEGREE_KELVIN");
+    
+    reg.AddUnit(HEAT_TRANSFER, SI, "W/(SQ.M*CELSIUS)", "W*M(-2)*DELTA_CELSIUS(-1)");
+    reg.AddSynonym("W/(SQ.M*CELSIUS)", "WATT_PER_METRE_SQUARED_PER_DELTA_DEGREE_CELSIUS");
+    
+    reg.AddUnit(HEAT_TRANSFER, USCUSTOM, "BTU/(SQ.FT*HR*FAHRENHEIT)", "BTU*FT(-2)*HR(-1)*DELTA_FAHRENHEIT(-1)");
+    reg.AddSynonym("BTU/(SQ.FT*HR*FAHRENHEIT)", "BTU_PER_FOOT_SQUARED_PER_HOUR_PER_DELTA_DEGREE_FAHRENHEIT");
     }
 
 void AddLinearDensity(UnitRegistry& reg)
     {
-    UnitCP unit = reg.AddUnit(LINEARDENSITY, SI, "KG/M", "KG*M(-1)");
+    UnitCP unit = reg.AddUnit(LINEAR_DENSITY, SI, "KG/M", "KG*M(-1)");
     reg.AddSynonym(unit, "KILOGRAM_PER_METRE");
-    unit = reg.AddUnit(LINEARDENSITY, SI, "KG/MM", "KG*MM(-1)");
+    unit = reg.AddUnit(LINEAR_DENSITY, SI, "KG/MM", "KG*MM(-1)");
     reg.AddSynonym(unit, "KILOGRAM_PER_MILLIMETRE");
+    reg.AddUnit(LINEAR_DENSITY, USCUSTOM, "LBM/FT", "LBM*FT(-1)");
+    reg.AddSynonym("LBM/FT", "POUND_MASS_PER_FOOT");
     }
 
 void AddLinearLoad(UnitRegistry& reg)
@@ -586,6 +658,8 @@ void AddTorque(UnitRegistry& reg)
     reg.AddSynonym(unit, "NEWTON_METRE");
     unit = reg.AddUnit(TORQUE, SI, "N_CM", "N*CM*RAD");
     reg.AddSynonym(unit, "NEWTON_CENTIMETRE");
+    unit = reg.AddUnit(TORQUE, USCUSTOM, "LBF_FT", "LBF*FT*RAD");
+    reg.AddSynonym(unit, "POUND_FOOT");
     }
 
 void AddMolarVolume(UnitRegistry& reg)
@@ -652,7 +726,7 @@ void AddPower(UnitRegistry& reg)
     unit = reg.AddUnit(POWER, USCUSTOM, "HP", "LBF*FT*S(-1)", 550.0);
     reg.AddSynonym(unit, "HORSEPOWER");
 
-    unit = reg.AddUnit(POWER, SI, "GJ/MONTH", "GJ*MONTH(-1)"); // TODO: Correct phen?
+    unit = reg.AddUnit(POWER, SI, "GJ/MONTH", "GJ*MONTH(-1)");
     reg.AddSynonym(unit, "GIGAJOULE_PER_MONTH");
     }
 
@@ -666,39 +740,67 @@ void AddPressure(UnitRegistry& reg)
     {
     UnitCP unit = reg.AddUnit(PRESSURE, SI, "PA", "N*M(-2)");
     reg.AddSynonym(unit, "PASCAL");
-    reg.AddUnit(PRESSURE, SI, "HECTOPASCAL", "[HECTO]*PA"); //, BISQSecUom);
-    reg.AddUnit(PRESSURE, SI, "KILOPASCAL", "[KILO]*PA"); //, BISQSecUom);
-    reg.AddUnit(PRESSURE, SI, "KILOPASCAL_GAUGE", "[KILO]*PA", 1.0, 1.0); //, BISQNoDescript); //, BISQSecUom);
+    reg.AddSynonym(unit, "NEWTON_PER_METRE_SQUARED");
 
-    unit = reg.AddUnit(PRESSURE, INTERNATIONAL, "AT", "KGF*CM(-2)");
-    reg.AddSynonym(unit, "ATMOSPHERE");
+    reg.AddUnit(PRESSURE, SI, "PA_GAUGE", "PA", 1, -101325); // TODO: Use constant for this
+
+    // TODO: See if this is equal to another unit here.
+    reg.AddUnit(PRESSURE, SI, "NEWTON_PER_MILLIMETRE_SQUARED", "N*MM(-2)");
+
+    reg.AddUnit(PRESSURE, SI, "HECTOPASCAL", "[HECTO]*PA"); //, BISQSecUom);
+
+    reg.AddUnit(PRESSURE, SI, "KILOPASCAL", "[KILO]*PA"); //, BISQSecUom);
+    reg.AddUnit(PRESSURE, SI, "KILOPASCAL_GAUGE", "[KILO]*PA", 1, -101325e-3); // TODO: Use constant for this
+
+    reg.AddUnit(PRESSURE, SI, "MEGAPASCAL", "[MEGA]*PA");
+    reg.AddUnit(PRESSURE, SI, "MEGAPASCAL_GAUGE", "[MEGA]*PA", 1, -101325e-6); // TODO: Use constant for this
+
+    unit = reg.AddUnit(PRESSURE, INTERNATIONAL, "AT", "KGF*CM(-2)");  // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+    reg.AddSynonym(unit, "ATMOSPHERE_TECHNIAL");
     reg.AddSynonym(unit, "KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED");
+
+    unit = reg.AddUnit(PRESSURE, INDUSTRIAL, "AT_GAUGE", "AT", 1.0, -1.0332274527998859); // TODO: double check, used 101325 PA -> AT conversion
+    reg.AddSynonym(unit, "KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED_GAUGE");
+
     unit = reg.AddUnit(PRESSURE, INTERNATIONAL, "KGF/SQ.M", "KGF*M(-2)");
     reg.AddSynonym(unit, "KILOGRAM_FORCE_PER_METRE_SQUARED");
-    unit = reg.AddUnit(PRESSURE, SI, "ATM", "PA", 1.01325e5);
-    reg.AddSynonym(unit, "STANDARD_ATMOSPHERE");
+
+    unit = reg.AddUnit(PRESSURE, SI, "ATM", "PA", 101325);  // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+    reg.AddSynonym(unit, "ATMOSPHERE");
+
     reg.AddUnit(PRESSURE, SI, "BAR", "PA", 1.0e5); //, BISQNoDescript); //, BISQSecUom);
+    reg.AddUnit(PRESSURE, INDUSTRIAL, "BAR_GAUGE", "PA", 1.0e5, -1.01325); //, BISQNoDescript); //, BISQSecUom);
+
     unit = reg.AddUnit(PRESSURE, SI, "MBAR", "[MILLI]*BAR");
     reg.AddSynonym(unit, "MILLIBAR");
+
     reg.AddUnit(PRESSURE, CGS, "BARYE", "PA", 0.1); //, BISQSecUom);   // 1.0 dyn/sq.cm
-    unit = reg.AddUnit(PRESSURE, SI, "PSI", "LBF*IN(-2)");
-    reg.AddSynonym(unit, "POUND_PER_SQUARED_INCH");
-    unit = reg.AddUnit(PRESSURE, SI, "KSI", "[KILO]*LBF*IN(-2)");
-    reg.AddSynonym(unit, "KILOPOUND_PER_SQUARED_INCH");
-    reg.AddUnit(PRESSURE, INDUSTRIAL, "BAR_GAUGE", "BAR", 1.0, -1.0); //, BISQNoDescript); //, BISQSecUom);
-    unit = reg.AddUnit(PRESSURE, INDUSTRIAL, "ATM_GAUGE", "AT", 1.0, 1.0332274528);
-    reg.AddSynonym(unit, "KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED_GAUGE");
-    unit = reg.AddUnit(PRESSURE, SI, "METRE_OF_H2O_CONVENTIONAL", "[STD_G]*[H2O_0C]*M");
-    reg.AddSynonym(unit, "MAQ");
-    reg.AddUnit(PRESSURE, SI, "MILLIMETRE_OF_H2O_CONVENTIONAL", "[STD_G]*[H2O_0C]*MM"); //, BISQSecUom);
-    reg.AddUnit(PRESSURE, USCUSTOM, "FOOT_OF_H2O_CONVENTIONAL", "[STD_G]*[H2O_4C]*FT"); //, BISQSecUom);
-    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_H2O_AT_32_FAHRENHEIT", "[STD_G]*[H2O_32F]*IN"); //, BISQSecUom);
-    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_H2O_AT_39_2_FAHRENHEIT", "[STD_G]*[H2O_39.2F]*IN"); //, BISQSecUom);
-    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_H2O_AT_60_FAHRENHEIT", "[STD_G]*[H2O_60F]*IN"); //, BISQSecUom);
-    reg.AddUnit(PRESSURE, USCUSTOM, "MILLIMETRE_OF_HG_AT_32_FAHRENHEIT", "[STD_G]*[HG_0C]*MM"); //, BISQSecUom);
-    unit = reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_HG_CONVENTIONAL", "[STD_G]*[HG_0C]*IN");
-    reg.AddSynonym(unit, "INCH_OF_HG_AT_32_FAHRENHEIT");
-    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_HG_AT_60_FAHRENHEIT", "[STD_G]*[HG_60F]*IN"); //, BISQSecUom);
+
+
+    unit = reg.AddUnit(PRESSURE, USCUSTOM, "PSI", "LBF*IN(-2)");
+    reg.AddSynonym(unit, "POUND_FORCE_PER_INCH_SQUARED");
+
+    unit = reg.AddUnit(PRESSURE, USCUSTOM, "PSIG", "LBF*IN(-2)", 1, -14.695948775513449); // TODO: double check, used 101325 PA -> PSI conversion
+    reg.AddSynonym(unit, "POUND_FORCE_PER_INCH_SQUARED_GAUGE");
+
+    unit = reg.AddUnit(PRESSURE, USCUSTOM, "KSI", "[KILO]*LBF*IN(-2)");
+    reg.AddUnit(PRESSURE, USCUSTOM, "POUND_FORCE_PER_FOOT_SQUARED", "LBF*FT(-2)");
+
+    reg.AddUnit(PRESSURE, USCUSTOM, "TORR", "PA", 1.333224e2);   // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+
+    // TODO: Go back to density conversion once we have verified sources for those values
+    unit = reg.AddUnit(PRESSURE, SI, "METRE_OF_H2O_CONVENTIONAL", "[KILO]*MILLIMETRE_OF_H2O_CONVENTIONAL");
+
+    reg.AddUnit(PRESSURE, SI, "MILLIMETRE_OF_H2O_CONVENTIONAL", "PA", 9.80665); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+    reg.AddUnit(PRESSURE, USCUSTOM, "FOOT_OF_H2O_CONVENTIONAL", "PA", 2.989067e3); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_H2O_AT_32_FAHRENHEIT", "PA", 249.1083); // Water is assumed to be in a liquid state. Equal to water at 0C.  No verified source
+    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_H2O_AT_39_2_FAHRENHEIT", "PA", 2.49082e2); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_H2O_AT_60_FAHRENHEIT", "PA", 2.4884e2); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+    
+    reg.AddUnit(PRESSURE, USCUSTOM, "MILLIMETRE_OF_HG_AT_32_FAHRENHEIT", "PA", 1.33322e2); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  Used centimeter of mercury (0 C) to pascal
+    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_HG_CONVENTIONAL", "PA", 3.386389e3); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_HG_AT_32_FAHRENHEIT", "PA", 3.38638e3); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_HG_AT_60_FAHRENHEIT", "PA", 3.37685e3); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
     }
 
 void AddPressureGradient(UnitRegistry& reg)
@@ -712,48 +814,75 @@ void AddPressureGradient(UnitRegistry& reg)
 // TODO: Handle inverted slopes
 void AddSlope(UnitRegistry& reg)
     {
-    UnitCP unit = reg.AddUnit(SLOPE, USCUSTOM, "M/M", "M*M(-1)");
-    reg.AddSynonym(unit, "METRE_PER_METRE"); // , "METRE_HORIZONTAL_PER_METRE_VERTICAL");
-    //reg.AddSynonym(unit, "METRE_VERTICAL_PER_METRE_HORIZONTAL");
-    unit = reg.AddUnit(SLOPE, USCUSTOM, "CM/M", "CM*M(-1)");
+    UnitCP unit = reg.AddUnit(SLOPE, SI, "M/M", "M*M(-1)");
+    reg.AddSynonym(unit, "METRE_PER_METRE"); 
+    reg.AddSynonym(unit, "METRE_VERTICAL_PER_METRE_HORIZONTAL");
+
+    unit = reg.AddUnit(SLOPE, SI, "CM/M", "CM*M(-1)");
     reg.AddSynonym(unit, "CENTIMETRE_PER_METRE");
-    unit = reg.AddUnit(SLOPE, USCUSTOM, "MM/M", "MM*M(-1)");
+    unit = reg.AddUnit(SLOPE, SI, "MM/M", "MM*M(-1)");
     reg.AddSynonym(unit, "MILLIMETRE_PER_METRE");
     unit = reg.AddUnit(SLOPE, SI, "M/KM", "M*KM(-1)");
     reg.AddSynonym(unit, "METRE_PER_KILOMETRE");
-    reg.AddUnit(SLOPE, USCUSTOM, "FOOT_PER_1000_FOOT", "FT*FT(-1)", 1000); //, BISQSecUom);
+    reg.AddUnit(SLOPE, USCUSTOM, "FOOT_PER_1000_FOOT", "FT*FT(-1)", 1.0e-3); //, BISQSecUom);
     unit = reg.AddUnit(SLOPE, USCUSTOM, "FT/FT", "FT*FT(-1)");
-    reg.AddSynonym(unit, "FOOT_PER_FOOT"); // , "FOOT_VERTICAL_PER_FOOT_HORIZONTAL");
-    //reg.AddSynonym(unit, "FOOT_HORIZONTAL_PER_FOOT_VERTICAL");
+    reg.AddSynonym("FT/FT", "FOOT_PER_FOOT");
+    reg.AddSynonym("FT/FT","FOOT_VERTICAL_PER_FOOT_HORIZONTAL");
+
+
     unit = reg.AddUnit(SLOPE, USCUSTOM, "IN/FT", "IN*FT(-1)");
     reg.AddSynonym(unit, "INCH_PER_FOOT");
     unit = reg.AddUnit(SLOPE, USCUSTOM, "FT/IN", "FT*IN(-1)");
     reg.AddSynonym(unit, "FOOT_PER_INCH");
     unit = reg.AddUnit(SLOPE, USCUSTOM, "FT/MILE", "FT*MILE(-1)");
     reg.AddSynonym(unit, "FOOT_PER_MILE");
+    
+    reg.AddUnit(SLOPE, INTERNATIONAL, "VERTICAL_PER_HORIZONTAL", "M/M");
+
+    // TODO: Not supported, we can't invert as part of conversion
+    //reg.AddUnit(SLOPE, INTERNATIONAL, "HORIZONTAL_PER_VERTICAL", "VERTICAL_PER_HORIZONTAL(-1)");
+    //reg.AddUnit(SLOPE, USCUSTOM, "FOOT_HORIZONTAL_PER_FOOT_VERTICAL", "FT/FT(-1)");
+    // , "METRE_HORIZONTAL_PER_METRE_VERTICAL");
     }
 
 void AddSurfaceDensity(UnitRegistry& reg)
     {
-    UnitCP unit = reg.AddUnit(SURFACEDENSITY, SI, "KG/SQ.M", "KG*M(-2)");
+    UnitCP unit = reg.AddUnit(SURFACE_DENSITY, SI, "KG/SQ.M", "KG*M(-2)");
     reg.AddSynonym(unit, "KILOGRAM_PER_METRE_SQUARED");
-    unit = reg.AddUnit(SURFACEDENSITY, SI, "G/SQ.M", "G*M(-2)");
+    unit = reg.AddUnit(SURFACE_DENSITY, SI, "G/SQ.M", "G*M(-2)");
     reg.AddSynonym(unit, "GRAM_PER_METRE_SQUARED");
-    unit = reg.AddUnit(SURFACEDENSITY, SI, "KG/HECTARE", "KG*HECTARE(-1)");
+    unit = reg.AddUnit(SURFACE_DENSITY, SI, "KG/HECTARE", "KG*HECTARE(-1)");
     reg.AddSynonym(unit, "KILOGRAM_PER_HECTARE");
-    unit = reg.AddUnit(SURFACEDENSITY, USCUSTOM, "LB/ACRE", "LBM*ACRE(-1)");
+    unit = reg.AddUnit(SURFACE_DENSITY, USCUSTOM, "LB/ACRE", "LBM*ACRE(-1)");
     reg.AddSynonym(unit, "POUND_PER_ACRE");
     }
 
 void AddThermalConductivity(UnitRegistry& reg)
     {
-    UnitCP unit = reg.AddUnit(THERMOCONDUCT, USCUSTOM, "W/(M*K)", "W*M(-1)*K(-1)");
-    reg.AddSynonym(unit, "WATT_PER_METRE_PER_DEGREE_KELVIN");
-    unit = reg.AddUnit(THERMOCONDUCT, USCUSTOM, "BTU/(HR*FT*FAHRENHEIT)", "BTU*HR(-1)*IN*FT(-2)*FAHRENHEIT(-1)");
-    reg.AddSynonym(unit, "BTU_INCH_PER_FOOT_SQUARED_PER_HOUR_PER_DEGREE_FAHRENHEIT");
-    reg.AddUnit(THERMOCONDUCT, USCUSTOM, "BTU_PER_HOUR_PER_FOOT_PER_DELTA_DEGREE_FAHRENHEIT", "BTU*HR(-1)*FT(-1)*FAHRENHEIT(-1)"); //, BISQSecUom);
-    //LoadUOM(THERMOCONDUCT, INDUSTRIAL, "BTU_PER_FOOT_SQUARED_PER_HOUR_PER_DELTA_DEGREE_FAHRENHEIT", "M_PER_T3_K", 0.1761101836823, 0.0); //, BISQNoDescript); //, BISQSecUom);
-    //LoadUOM(THERMOCONDUCT, USCUSTOM, "BTU_INCH_PER_FOOT_SQUARED_PER_HOUR_PER_DEGREE_FAHRENHEIT", "M_L_PER_T3_K", 6.933471798516, 0.0)->AddSynonym("BTU_INCH_PER_FOOT_SQUARED_PER_HOUR_PER_DEGREE_FAHRENHEIT");
+    reg.AddUnit(THERMAL_CONDUCTIVITY, USCUSTOM, "W/(M*K)", "W*M(-1)*DELTA_KELVIN(-1)");
+    reg.AddSynonym("W/(M*K)", "WATT_PER_METRE_PER_DEGREE_KELVIN");
+    reg.AddUnit(THERMAL_CONDUCTIVITY, SI, "W/(M*C)", "W*M(-1)*DELTA_CELSIUS(-1)");
+    reg.AddSynonym("W/(M*C)", "WATT_PER_METRE_PER_DEGREE_CELSIUS");
+
+    reg.AddUnit(THERMAL_CONDUCTIVITY, USCUSTOM, "(BTU*IN)/(SQ.FT*HR*FAHRENHEIT)", "BTU*IN*FT(-2)*HR(-1)*DELTA_FAHRENHEIT(-1)");
+    reg.AddSynonym("(BTU*IN)/(SQ.FT*HR*FAHRENHEIT)", "BTU_INCH_PER_FOOT_SQUARED_PER_HOUR_PER_DEGREE_FAHRENHEIT");
+    
+    
+    //reg.AddUnit(THERMAL_CONDUCTIVITY, USCUSTOM, "BTU_PER_HOUR_PER_FOOT_PER_DELTA_DEGREE_FAHRENHEIT", "BTU*HR(-1)*FT(-1)*DELTA_FAHRENHEIT(-1)"); //, BISQSecUom);
+    //LoadUOM(THERMAL_CONDUCTIVITY, INDUSTRIAL, "BTU_PER_FOOT_SQUARED_PER_HOUR_PER_DELTA_DEGREE_FAHRENHEIT", "M_PER_T3_K", 0.1761101836823, 0.0); //, BISQNoDescript); //, BISQSecUom);
+    //LoadUOM(THERMAL_CONDUCTIVITY, USCUSTOM, "BTU_INCH_PER_FOOT_SQUARED_PER_HOUR_PER_DEGREE_FAHRENHEIT", "M_L_PER_T3_K", 6.933471798516, 0.0)->AddSynonym("BTU_INCH_PER_FOOT_SQUARED_PER_HOUR_PER_DEGREE_FAHRENHEIT");
+    }
+
+void AddThermalResistance(UnitRegistry& reg)
+    {
+    reg.AddUnit(THERMAL_RESISTANCE, SI, "(SQ.M*KELVIN)/WATT", "M(2)*DELTA_KELVIN*WATT(-1)");
+    reg.AddSynonym("(SQ.M*KELVIN)/WATT", "METRE_SQUARED_DELTA_DEGREE_KELVIN_PER_WATT");
+
+    reg.AddUnit(THERMAL_RESISTANCE, SI, "(SQ.M*CELSIUS)/WATT", "M(2)*DELTA_CELSIUS*WATT(-1)");
+    reg.AddSynonym("(SQ.M*CELSIUS)/WATT", "METRE_SQUARED_DELTA_DEGREE_CELSIUS_PER_WATT");
+
+    reg.AddUnit(THERMAL_RESISTANCE, USCUSTOM, "(SQ.FT*HR*FAHRENHEIT)/BTU", "FT(2)*HR*DELTA_FAHRENHEIT*BTU(-1)");
+    reg.AddSynonym("(SQ.FT*HR*FAHRENHEIT)/BTU", "FOOT_SQUARED_HOUR_DELTA_DEGREE_FAHRENHEIT_PER_BTU");
     }
 
 void AddThreadPitch(UnitRegistry& reg)
@@ -836,8 +965,12 @@ void AddVelocity(UnitRegistry& reg)
     unit = reg.AddUnit(VELOCITY, SI, "MPH", "MILE*HR(-1)");
     reg.AddSynonym(unit, "MILE_PER_HOUR");
 
-    unit = reg.AddUnit(VELOCITY, MARITIME, "KNOT", "NAUT_MILE*HR(-1)");
-    reg.AddSynonym(unit, "KNOT_INTERNATIONAL");
+    unit = reg.AddUnit(VELOCITY, MARITIME, "KNOT_UK_ADMIRALTY", "M*HR(-1)", 1853.184);
+    // TODO: This is a bad synonym but needed for compatiblity with legacy units ... consider removing all synonyms and only using the name matching for conversion
+    reg.AddSynonym("KNOT_UK_ADMIRALTY", "KNOT");
+
+
+    unit = reg.AddUnit(VELOCITY, MARITIME, "KNOT_INTERNATIONAL", "NAUT_MILE*HR(-1)");
     }
 
 void AddAngularVelocity(UnitRegistry& reg)
@@ -855,6 +988,7 @@ void AddAngularVelocity(UnitRegistry& reg)
     reg.AddSynonym(unit, "CYCLE_PER_SECOND");
     unit = reg.AddUnit(ANGULAR_VELOCITY, SI, "RPM", "[PI]*RAD*MIN(-1)", 2.0);
     reg.AddSynonym(unit, "CYCLE_PER_MINUTE");
+    reg.AddSynonym("RPM", "REVOLUTION_PER_MINUTE");
     unit = reg.AddUnit(ANGULAR_VELOCITY, SI, "RPH", "[PI]*RAD*HOUR(-1)", 2.0);
     reg.AddSynonym(unit, "CYCLE_PER_HOUR");
     unit = reg.AddUnit(ANGULAR_VELOCITY, SI, "DEG/S", "ARC_DEG*S(-1)", 1.0);
@@ -870,22 +1004,22 @@ void AddAngularVelocity(UnitRegistry& reg)
 
 void AddDynamicViscosity(UnitRegistry& reg)
     {
-    UnitCP unit = reg.AddUnit(DYNVISCOSITY, SI, "PA-S", "PA*S");
+    UnitCP unit = reg.AddUnit(DYNAMIC_VISCOSITY, SI, "PA-S", "PA*S");
     reg.AddSynonym(unit, "PASCAL_SECOND");
-    reg.AddUnit(DYNVISCOSITY, SI, "POISE", "PA-S", 0.1); //, BISQSecUom);
-    reg.AddUnit(DYNVISCOSITY, SI, "CENTIPOISE", "[CENTI]*POISE"); //, BISQSecUom);
-    unit = reg.AddUnit(DYNVISCOSITY, SI, "LB/FT*S", "LBM*FT(-1)*S(-1)"); // TODO: Confirm that this is really pound mass
+    reg.AddUnit(DYNAMIC_VISCOSITY, SI, "POISE", "PA-S", 0.1); //, BISQSecUom);
+    reg.AddUnit(DYNAMIC_VISCOSITY, SI, "CENTIPOISE", "[CENTI]*POISE"); //, BISQSecUom);
+    unit = reg.AddUnit(DYNAMIC_VISCOSITY, SI, "LB/FT*S", "LBM*FT(-1)*S(-1)"); // TODO: Confirm that this is really pound mass
     reg.AddSynonym(unit, "POUND_PER_FOOT_SECOND");
     }
 
 void AddKinematicViscosity(UnitRegistry& reg)
     {
-    UnitCP unit = reg.AddUnit(KINVISCOSITY, SI, "SQ.M/S", "M(2)*S(-1)");
-    reg.AddSynonym(unit, "SQUARE_METRE_PER_SECOND");
-    unit = reg.AddUnit(KINVISCOSITY, SI, "SQ.FT/S", "FT(2)*S(-1)");
+    UnitCP unit = reg.AddUnit(KINEMATIC_VISCOSITY, SI, "SQ.M/S", "M(2)*S(-1)");
+    reg.AddSynonym(unit, "METRE_SQUARED_PER_SECOND");
+    unit = reg.AddUnit(KINEMATIC_VISCOSITY, SI, "SQ.FT/S", "FT(2)*S(-1)");
     reg.AddSynonym(unit, "FOOT_SQUARED_PER_SECOND");
-    reg.AddUnit(KINVISCOSITY, SI, "STOKES", "CM(2)*S(-1)"); //, BISQSecUom);
-    reg.AddUnit(KINVISCOSITY, SI, "CENTISTOKE", "MM(2)*S(-1)"); //, BISQSecUom);
+    reg.AddUnit(KINEMATIC_VISCOSITY, SI, "STOKE", "CM(2)*S(-1)"); //, BISQSecUom);
+    reg.AddUnit(KINEMATIC_VISCOSITY, SI, "CENTISTOKE", "MM(2)*S(-1)"); //, BISQSecUom);
     }
 
 void AddVolume(UnitRegistry& reg)
@@ -900,6 +1034,8 @@ void AddVolume(UnitRegistry& reg)
     reg.AddUnit(VOLUME, SI, "CUB.DM", "DM(3)"); //, BISQSecUom);
     reg.AddUnit(VOLUME, SI, "CUB.KM", "KM(3)"); //, BISQSecUom);
     reg.AddUnit(VOLUME, SI, "LITRE", "CUB.DM"); //, BISQSecUom);
+    reg.AddUnit(VOLUME, SI, "THOUSAND_LITRE", "[KILO]*LITRE");
+    reg.AddUnit(VOLUME, INDUSTRIAL, "THOUSAND_GALLON", "[KILO]*GALLON");
     reg.AddUnit(VOLUME, INDUSTRIAL, "MILLION_GALLON", "[MEGA]*GALLON"); //, BISQSecUom);
     reg.AddUnit(VOLUME, INDUSTRIAL, "MILLION_LITRE", "[MEGA]*LITRE"); //, BISQSecUom);
     unit = reg.AddUnit(VOLUME, SI, "MICROLITRE", "[MICRO]*LITRE");
@@ -920,9 +1056,9 @@ void AddVolume(UnitRegistry& reg)
 
 void AddSpecificVolume(UnitRegistry& reg)
     {
-    UnitCP unit = reg.AddUnit(SPECVOLUME, USCUSTOM, "CUB.M/KG", "M(3)*KG(-1)");
+    UnitCP unit = reg.AddUnit(SPECIFIC_VOLUME, USCUSTOM, "CUB.M/KG", "M(3)*KG(-1)");
     reg.AddSynonym(unit, "METRE_CUBED_PER_KILOGRAM");
-    unit = reg.AddUnit(SPECVOLUME, USCUSTOM, "CUB.FT/LB", "FT(3)*LBM(-1)");
+    unit = reg.AddUnit(SPECIFIC_VOLUME, USCUSTOM, "CUB.FT/LB", "FT(3)*LBM(-1)");
     reg.AddSynonym(unit, "FOOT_CUBED_PER_POUND_MASS");
     }
 
@@ -956,6 +1092,10 @@ void UnitRegistry::AddDefaultUnits ()
     unit = reg.AddDimensionBaseUnit("K", BasePhenomena::Temperature);
     reg.AddSynonym(unit, "KELVIN");
     reg.AddSynonym(unit, "DEGREE_KELVIN");
+
+    reg.AddDimensionBaseUnit("DELTA_KELVIN", BasePhenomena::TemperatureChange);
+    reg.AddSynonym("DELTA_KELVIN", "DELTA_DEGREE_KELVIN");
+
     unit = reg.AddDimensionBaseUnit("A", BasePhenomena::ElectricCurrent); //, BISQPrimUom);
     reg.AddSynonym(unit, "AMPERE");
     unit = reg.AddDimensionBaseUnit("MOL", BasePhenomena::Mole); // Where mol is the SI gram mol or gmol.
@@ -967,20 +1107,28 @@ void UnitRegistry::AddDefaultUnits ()
     unit = reg.AddDimensionBaseUnit("STERAD", BasePhenomena::SolidAngle);
     reg.AddSynonym(unit, "STERADIAN");
     unit = reg.AddDimensionBaseUnit("US$", BasePhenomena::Finance);
-    reg.AddSynonym(unit, "US_DOLLAR");
+    reg.AddSynonym("US$", "DOLLAR");
     reg.AddDimensionBaseUnit("PERSON", BasePhenomena::Capita); //, BISQPrimUom);
-    reg.AddDimensionBaseUnit("ONE", BasePhenomena::Ratio); //, BISQPrimUom);
+    reg.AddDimensionBaseUnit("ONE", BasePhenomena::Ratio); // TODO: I don't like that Ratio has base unit of ONE and all unitless unit will have a phenomenon of Ratio ...
+    reg.AddSynonym("ONE", "NONE");
+    reg.AddSynonym("ONE", "UNITLESS_UNIT");
+
 
 
     AddLengths(reg);
     AddMass(reg);
     AddTime(reg);
     AddTemperature(reg);
+    AddTemperatureChange(reg);
+    AddLuminousFlux(reg);
+    AddIlluminance(reg);
     AddLuminosity(reg);
     AddMole(reg);
     AddCapita(reg);
     AddFinance(reg);
     AddRatio(reg);
+    AddRotationalSpringConstant(reg);
+    AddLinearRotationalSpringConstant(reg);
     AddAcceleration(reg);
     AddPlaneAngle(reg);
     AddSolidAngle(reg);
@@ -990,10 +1138,13 @@ void UnitRegistry::AddDefaultUnits ()
     AddForceDensity(reg);
     AddPopulationDensity(reg);
     AddElectricCurrent(reg);
+    AddElectricCharge(reg);
+    AddElectricPotential(reg);
     AddEnergy(reg);
     AddEnergyDensity(reg);
     AddHeatingValue(reg);
-    AddEnergySpecificCapacity(reg);
+    AddSpecificHeatCapacity(reg);
+    AddSpecificHeatCapacityMolar(reg);
     AddVolumeFlowRate(reg);
     AddFrequency(reg);
     AddSurfaceFlowRate(reg);
@@ -1015,6 +1166,8 @@ void UnitRegistry::AddDefaultUnits ()
     AddSlope(reg);
     AddSurfaceDensity(reg);
     AddThermalConductivity(reg);
+    AddThermalResistance(reg);
+    AddTemperatureGradient(reg);
     AddThreadPitch(reg);
     AddVelocity(reg);
     AddAngularVelocity(reg);

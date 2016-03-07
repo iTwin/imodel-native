@@ -17,6 +17,9 @@ static const Utf8Char OpenParen = '(';
 static const Utf8Char CloseParen = ')';
 static const Utf8Char OpenBracket = '[';
 static const Utf8Char CloseBracket = ']';
+static const std::function<bool(SymbolCR, SymbolCR)> symbolsEqual = [] (SymbolCR a, SymbolCR b) { return a.GetId() == b.GetId(); };
+static const int maxRecursionDepth = 42;
+
 
 void Token::Clear()
     {
@@ -44,12 +47,12 @@ void Expression::LogExpression(NativeLogging::SEVERITY loggingLevel, Utf8CP name
     LOG.message(loggingLevel, ToString().c_str());
     }
 
-Utf8String Expression::ToString() const
+Utf8String Expression::ToString(bool includeFactors) const
     {
     Utf8String output;
     for (auto const& sWE : m_symbolExpression)
         {
-        if (sWE->GetSymbol()->GetFactor() == 0.0)
+        if (!includeFactors || sWE->GetSymbol()->GetFactor() == 0.0)
             {
             Utf8PrintfString sWEString("%s^%d * ", sWE->GetName(), sWE->GetExponent());
             output.append(sWEString.c_str());
@@ -77,6 +80,32 @@ void Expression::CreateExpressionWithOnlyBaseSymbols(ExpressionCR source, Expres
         }
     }
 
+BentleyStatus Expression::GenerateConversionExpression(UnitCR from, UnitCR to, ExpressionR conversionExpression)
+    {
+    // TODO: USING A MAX RECRUSION DEPTH TO CATCH CYCLES IS SUPER HACKY AND MAKES CHRIS T. MAD.  Replace with something that actually detects cycles.
+    Expression fromExpression = from.Evaluate();
+    Expression toExpression = to.Evaluate();
+
+    fromExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, from.GetName());
+    toExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, to.GetName());
+
+    if (!Expression::DimensionallyCompatible(fromExpression, toExpression))
+        {
+        LOG.errorv("Cannot convert from %s: (%s) to %s: (%s) because they are not dimensionally compatible.",
+                   from.GetName(), from.GetDefinition(), to.GetName(), to.GetDefinition());
+        return BentleyStatus::ERROR;
+        }
+
+    Expression::Copy(fromExpression, conversionExpression);
+    Expression::MergeExpressions(from.GetDefinition(), conversionExpression, to.GetDefinition(), toExpression, -1);
+    if (LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_DEBUG))
+        {
+        Utf8PrintfString combinedName("%s/%s", from.GetName(), to.GetName());
+        conversionExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, combinedName.c_str());
+        }
+    return BentleyStatus::SUCCESS;
+    }
+
 bool Expression::ShareDimensions(PhenomenonCR phenomenon, UnitCR unit)
     {
     return DimensionallyCompatible(phenomenon.Evaluate(), unit.Evaluate(), [] (SymbolCR a, SymbolCR b) { return a.GetPhenomenonId() == b.GetPhenomenonId(); });
@@ -84,7 +113,7 @@ bool Expression::ShareDimensions(PhenomenonCR phenomenon, UnitCR unit)
 
 bool Expression::DimensionallyCompatible(ExpressionCR fromExpression, ExpressionCR toExpression)
     {
-    return DimensionallyCompatible(fromExpression, toExpression, [] (SymbolCR a, SymbolCR b) { return a.GetId() == b.GetId(); });
+    return DimensionallyCompatible(fromExpression, toExpression, symbolsEqual);
     }
 
 // TODO: Consider how this could be combined with the merge step so we don't have to make two copies of the from expression
@@ -112,67 +141,58 @@ bool Expression::DimensionallyCompatible(ExpressionCR fromExpression, Expression
     return true;
     }
 
+void Expression::MergeSymbol(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, SymbolCP symbol, int symbolExponent, std::function<bool(SymbolCR, SymbolCR)> areEqual)
+    {
+    auto it = find_if(targetExpression.begin(), targetExpression.end(), [&symbol, &areEqual] (ExpressionSymbolCP a) { return areEqual(*a->GetSymbol(), *symbol); });
+    if (it != targetExpression.end())
+        {
+        LOG.debugv("%s --> %s - Merging existing Unit %s. with Exponent: %d", sourceDefinition, targetDefinition, (*it)->GetName(), symbolExponent);
+        (*it)->AddToExponent(symbolExponent);
+        }
+    else
+        {
+        LOG.debugv("%s --> %s - Adding Unit for %s with Exponent: %d", sourceDefinition, targetDefinition, symbol->GetName(), symbolExponent);
+        targetExpression.Add(symbol, symbolExponent);
+        }
+
+    }
+
 void Expression::MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, ExpressionR sourceExpression, int startingExponent)
     {
-    MergeExpressions(targetDefinition, targetExpression, sourceDefinition, sourceExpression, startingExponent, [] (SymbolCR a, SymbolCR b) { return a.GetId() == b.GetId(); });
+    MergeExpressions(targetDefinition, targetExpression, sourceDefinition, sourceExpression, startingExponent, symbolsEqual);
     }
 
 void Expression::MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, ExpressionR sourceExpression, int startingExponent, std::function<bool(SymbolCR, SymbolCR)> areEqual)
     {
     LOG.debugv("Merging Expressions %s --> %s", sourceDefinition, targetDefinition);
-    for (const auto& uWE : sourceExpression)
+    for (auto it = sourceExpression.rbegin(); it != sourceExpression.rend(); ++it)
         {
-        int     mergedExponent = uWE->GetExponent() * startingExponent;
-
-        auto it = find_if(targetExpression.begin(), targetExpression.end(), [&uWE, &areEqual] (ExpressionSymbolCP a) { return areEqual(*a->GetSymbol(), *uWE->GetSymbol()); });
-        if (it != targetExpression.end())
-            {
-            LOG.debugv("%s --> %s - Merging existing Unit %s. with Exponent: %d", sourceDefinition, targetDefinition, (*it)->GetName(), mergedExponent);
-            (*it)->AddToExponent(mergedExponent);
-            }
-        else
-            {
-            LOG.debugv("%s --> %s - Adding Unit for %s with Exponent: %d", sourceDefinition, targetDefinition, uWE->GetName(), mergedExponent);
-            targetExpression.Add(uWE->GetSymbol(), mergedExponent);
-            }
+        int     mergedExponent = (*it)->GetExponent() * startingExponent;
+        MergeSymbol(targetDefinition, targetExpression, sourceDefinition, (*it)->GetSymbol(), mergedExponent, areEqual);
         }
     }
 
-int maxRecursionDepth = 42;
-
-BentleyStatus Expression::HandleToken(int& depth, ExpressionR expression, 
+BentleyStatus Expression::HandleToken(SymbolCR owner, int& depth, ExpressionR expression, 
     Utf8CP definition, TokenCR token, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName)
     {
     LOG.debugv("%s - Handle Token: %s  TokenExp: %d  StartExp: %d", definition, token.GetName(), token.GetExponent(), startingExponent);
     int mergedExponent = token.GetExponent() * startingExponent;
 
-    SymbolCP symbol = nullptr;
-    auto it = find_if(expression.begin(), expression.end(), [&token] (ExpressionSymbolCP a) { return strcmp(token.GetName(), a->GetName()) == 0; });
-    if (it != expression.end())
-        {
-        LOG.debugv("%s - Merging existing Unit %s with Exponent: %d", definition, (*it)->GetName(), mergedExponent);
-        (*it)->AddToExponent(mergedExponent);
-        symbol = (*it)->GetSymbol();
-        }
-    else
-        {
-        LOG.debugv("%s - Adding Unit %s with Exponent: %d", definition, token.GetName(), mergedExponent);
-        symbol = getSymbolByName(token.GetName());
-        if (nullptr != symbol)
-            {
-            // Could probably skip this block if is base unit ... would result in smaller expression 
-            // but would not fully expand dimension
-            expression.Add(symbol, mergedExponent);
-            }
-        }
-
+    SymbolCP symbol = getSymbolByName(token.GetName());
     if (nullptr == symbol)
         {
         LOG.errorv("Failed to parse %s because the unit %s could not be found", definition, token.GetName());
         return BentleyStatus::ERROR;
         }
 
-    if (!symbol->IsBaseSymbol())
+    if (owner.GetId() == symbol->GetId())
+        return BentleyStatus::SUCCESS;
+
+    if (symbol->IsBaseSymbol())
+        {
+        MergeSymbol(definition, expression, symbol->GetDefinition(), symbol, mergedExponent, symbolsEqual);
+        }
+    else
         {
         if (depth > maxRecursionDepth)
             {
@@ -184,13 +204,14 @@ BentleyStatus Expression::HandleToken(int& depth, ExpressionR expression,
         Expression sourceExpression = symbol->Evaluate(depth, getSymbolByName);
         MergeExpressions(definition, expression, symbol->GetDefinition(), sourceExpression, mergedExponent);
         }
+
     return BentleyStatus::SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Colin.Kerr         02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Expression::ParseDefinition(int& depth, Utf8CP definition, 
+BentleyStatus Expression::ParseDefinition(SymbolCR owner, int& depth, Utf8CP definition,
     ExpressionR expression, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName)
     {
     ++depth;
@@ -201,6 +222,7 @@ BentleyStatus Expression::ParseDefinition(int& depth, Utf8CP definition,
     Token currentToken;
     Exponent currentExponent;
     bool inExponent = false;
+    int numTokens = 0;
     for (auto const& character : definitionString)
         {
         if (Utf8String::IsAsciiWhiteSpace(character))
@@ -215,7 +237,8 @@ BentleyStatus Expression::ParseDefinition(int& depth, Utf8CP definition,
                 return BentleyStatus::ERROR;
                 }
 
-            HandleToken(depth, expression, definition, currentToken, startingExponent, getSymbolByName);
+            HandleToken(owner, depth, expression, definition, currentToken, startingExponent, getSymbolByName);
+            ++numTokens;
             currentToken.Clear();
             continue;
             }
@@ -248,7 +271,17 @@ BentleyStatus Expression::ParseDefinition(int& depth, Utf8CP definition,
         }
  
     if (currentToken.IsValid())
-        HandleToken(depth, expression, definition, currentToken, startingExponent, getSymbolByName);
+        {
+        HandleToken(owner, depth, expression, definition, currentToken, startingExponent, getSymbolByName);
+        ++numTokens;
+        }
+
+    // TODO: Need some validation that folks aren't defining units with offsets in ways we don't support.
+    //if (owner.HasOffset() && numTokens > 1)
+    //    {
+    //    LOG.errorv("%s has an invalid symbol expression (%s) because it has more than one symbol and an offset", owner.GetName(), definition);
+    //    return BentleyStatus::ERROR;
+    //    }
 
     auto new_iter = remove_if(expression.begin(), expression.end(), [](ExpressionSymbol* a) { return a->GetExponent() == 0; });
     expression.erase(new_iter, expression.end());
@@ -259,6 +292,15 @@ BentleyStatus Expression::ParseDefinition(int& depth, Utf8CP definition,
     LOG.debugv("%s - DONE", definition);
 
     return expression.size() > 0 ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
+    }
+
+bool Expression::Contains(ExpressionSymbolCR symbol) const
+    {
+    auto it = find_if(begin(), end(), [&symbol] (ExpressionSymbol* a) { return a->GetSymbol()->GetId() == symbol.GetSymbol()->GetId(); });
+    if (it == end() || 0 == (*it)->GetExponent())
+        return false;
+
+    return true;
     }
 
 void Expression::AddCopy(ExpressionSymbolCR sWE) 
