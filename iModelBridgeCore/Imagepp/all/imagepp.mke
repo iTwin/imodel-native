@@ -1351,8 +1351,7 @@ IppJpegLib12Bits                = $(ContextSubpartsLibs)$(libprefix)IppJpeg12Bit
 IppGdalLib                      = $(ContextSubpartsLibs)$(libprefix)IppGdalLib$(stlibext)
 PdfLibInitializer               = $(libprefix)PdfLibInitializer$(libext)
 PdfLibInitializerExportLib      = $(ContextSubpartsLibs)$(PdfLibInitializer)
-BaseGeocoordLib                 = $(libprefix)basegeocoord$(libext)
-BaseGeocoordLibExportLib        = $(ContextSubpartsLibs)$(BaseGeocoordLib)
+BaseGeocoordLib                 = $(ContextSubpartsLibs)$(libprefix)basegeocoord$(libext)
 OCIName                         = Oci
 
 
@@ -1371,28 +1370,6 @@ DLM_NOMSBUILTINS            = 1
 DLM_NO_DLS                  = 1
 DLM_NOENTRY                 = 1
 
-# creatlib.mki common options
-LIB_TMP_DIR                 = $(o)
-
-%if defined (__IPP_EXTERNAL_THIRD_PARTY_SUPPORTED)
-    # Adobe pdf support 
-    LINKER_LIBRARIES_DELAYLOADED   + $(pdflsdkLib)AdobePDFL.lib  $(PdfLibInitializerExportLib) 
-    
-    # Oracle support 
-    LINKER_LIBRARIES_DELAYLOADED   + $(oracleLib)$(OCIName).lib 
-%endif
-    
-# MrSID support
-LINKER_LIBRARIES_DELAYLOADED   + $(ContextSubpartsLibs)lti_dsdk.lib $(ContextSubpartsLibs)lti_dsdk_cdll.lib 
-
-# ECW/Jpeg2000 support (delay-load removed)
-# Delaying the load of NCSEcw.lib creates a linker error 
-# due to the import of the data symbol 
-# "__declspec(dllimport) const NCS::CMutex::`vftable". 
-# This is why the dll is added above without delay-load.  
-# LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)NCSEcw.lib 
-
-
 LINKER_LIBRARIES =  $(BeLibJpegTurbo) \
                     $(IppJpegLib12Bits) \
                     $(ContextSubpartsLibs)$(libprefix)BePng$(stlibext) \
@@ -1402,22 +1379,35 @@ LINKER_LIBRARIES =  $(BeLibJpegTurbo) \
                     $(ContextSubpartsLibs)$(libprefix)MatrixFromTiePts$(stlibext) \
                     $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
                     $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
-                    $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
-                    $(BaseGeocoordLibExportLib)                 
+                    $(BaseGeocoordLib) 
+                    
+%if $(TARGET_PLATFORM)!="WinRT"
+    # TODO: DgnClientSdk uses "Casablanca" library on WinRT
+    LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext)
+%endif                
 
-%if defined (CREATE_STATIC_LIBRARIES)
-    # embed our private external static lib into gralib.
-    DLM_OBJECT_FILES + $(ContextSubpartsLibs)$(libprefix)MatrixFromTiePts$(stlibext) $(IppGdalLib) $(BeLibJpegTurbo) $(IppJpegLib12Bits) $(ContextSubpartsLibs)$(libprefix)BePng$(stlibext) $(ContextSubpartsLibs)$(libprefix)BeZLib$(stlibext)
-%else
-    %if $(TARGET_PLATFORM)=="Windows" || $(TARGET_PLATFORM)=="WinRT"
+%if $(TARGET_PLATFORM)=="Windows"
         # For HRFWebFile.cpp
         LINKER_LIBRARIES + Urlmon.lib
 
         # For GDAL
         LINKER_LIBRARIES + wsock32.lib ws2_32.lib
 
-        LINKER_LIBRARIES + $(ContextSubpartsLibs)NCSEcw.lib
-    %endif
+        # ECW/Jpeg2000 support (delay-load removed)
+        # Delaying the load of NCSEcw.lib creates a linker error due to the import of the data symbol 
+        # "__declspec(dllimport) const NCS::CMutex::`vftable". 
+        LINKER_LIBRARIES + $(ContextSubpartsLibs)NCSEcw.lib 
+
+        %if defined (__IPP_EXTERNAL_THIRD_PARTY_SUPPORTED)
+            # Adobe pdf support 
+            LINKER_LIBRARIES_DELAYLOADED   + $(pdflsdkLib)AdobePDFL.lib  $(PdfLibInitializerExportLib) 
+    
+            # Oracle support 
+            LINKER_LIBRARIES_DELAYLOADED   + $(oracleLib)$(OCIName).lib 
+        %endif
+    
+        # MrSID support
+        LINKER_LIBRARIES_DELAYLOADED   + $(ContextSubpartsLibs)lti_dsdk.lib $(ContextSubpartsLibs)lti_dsdk_cdll.lib 
 %endif
 
 %if !defined(IPP_OBJ_ONLY)
