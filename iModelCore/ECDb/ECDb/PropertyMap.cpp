@@ -248,14 +248,6 @@ ECPropertyCR PropertyMap::GetProperty() const
     return m_ecProperty;
     }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String PropertyMap::_ToString() const
-    {
-    return Utf8PrintfString("PropertyMap: ecProperty=%s.%s (%s)", m_ecProperty.GetClass().GetFullName(), m_ecProperty.GetName().c_str(), m_ecProperty.GetTypeName().c_str());
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
@@ -816,6 +808,29 @@ BentleyStatus SingleColumnPropertyMap::_Load(ECDbClassMapInfo const& classMapInf
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    01/2016
 //---------------------------------------------------------------------------------------
+BentleyStatus SingleColumnPropertyMap::DoFindOrCreateColumnsInTable(ClassMap const& classMap, ECDbSqlColumn::Type colType)
+    {
+    Utf8String colName;
+    bool isNullable = true;
+    bool isUnique = false;
+    ECDbSqlColumn::Constraint::Collation collation = ECDbSqlColumn::Constraint::Collation::Default;
+    if (SUCCESS != DetermineColumnInfo(colName, isNullable, isUnique, collation, classMap.GetECDbMap().GetECDb()))
+        return ERROR;
+
+    ECDbSqlColumn* col = classMap.GetColumnFactory().CreateColumn(*this, colName.c_str(), colType, !isNullable, isUnique, collation);
+    if (col == nullptr)
+        {
+        BeAssert(col != nullptr);
+        return ERROR;
+        }
+
+    SetColumn(*col);
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle    01/2016
+//---------------------------------------------------------------------------------------
 void SingleColumnPropertyMap::SetColumn(ECDbSqlColumn const& col)
     {
     m_column = &col;
@@ -845,23 +860,8 @@ bool SingleColumnPropertyMap::_IsVirtual() const
 //---------------------------------------------------------------------------------------
 BentleyStatus PrimitivePropertyMap::_FindOrCreateColumnsInTable(ClassMap const& classMap)
     {
-    Utf8String colName;
-    bool isNullable = true;
-    bool isUnique = false;
-    ECDbSqlColumn::Constraint::Collation collation = ECDbSqlColumn::Constraint::Collation::Default;
-    if (SUCCESS != DetermineColumnInfo(colName, isNullable, isUnique, collation, classMap.GetECDbMap().GetECDb()))
-        return ERROR;
-
     const ECDbSqlColumn::Type colType = ECDbSqlColumn::PrimitiveTypeToColumnType(GetPrimitiveProperty().GetType());
-    ECDbSqlColumn* col = classMap.GetColumnFactory().CreateColumn(*this, colName.c_str(), colType, !isNullable, isUnique, collation);
-    if (col == nullptr)
-        {
-        BeAssert(col != nullptr && "This actually indicates a mapping error. The method PrimitivePropertyMap::_FindOrCreateColumnsInTable should therefore be changed to return an error.");
-        return ERROR;
-        }
-
-    SetColumn(*col);
-    return SUCCESS;
+    return DoFindOrCreateColumnsInTable(classMap, colType);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -869,7 +869,7 @@ BentleyStatus PrimitivePropertyMap::_FindOrCreateColumnsInTable(ClassMap const& 
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String PrimitivePropertyMap::_ToString() const
     {
-    return Utf8PrintfString("PrimitivePropertyMap: ecProperty=%s.%s, columnName=%s", GetProperty().GetClass().GetFullName(),
+    return Utf8PrintfString("PrimitivePropertyMap: ECProperty: %s.%s, Column name:%s", GetProperty().GetClass().GetFullName(),
                             GetProperty().GetName().c_str(), GetColumn().GetName().c_str());
     }
 
@@ -1003,10 +1003,10 @@ BentleyStatus PointPropertyMap::SetColumns(ECDbSqlColumn const& xCol, ECDbSqlCol
 Utf8String PointPropertyMap::_ToString() const
     {
     if (m_is3d)
-        return Utf8PrintfString("PointPropertyMap (3D): ecProperty=%s.%s, columnNames=%s, %s, %s", GetProperty().GetClass().GetFullName(),
+        return Utf8PrintfString("PointPropertyMap (3D): ECProperty: %s.%s, Column names: %s, %s, %s", GetProperty().GetClass().GetFullName(),
                                 GetProperty().GetName().c_str(), m_xColumn->GetName().c_str(), m_yColumn->GetName().c_str(), m_zColumn->GetName().c_str());
 
-    return Utf8PrintfString("PointPropertyMap (2D): ecProperty=%s.%s, columnName=%s_X, _Y", GetProperty().GetClass().GetFullName(),
+    return Utf8PrintfString("PointPropertyMap (2D): ECProperty: %s.%s, Column names: %s, %s", GetProperty().GetClass().GetFullName(),
                                 GetProperty().GetName().c_str(), m_xColumn->GetName().c_str(), m_yColumn->GetName().c_str());
     }
 
@@ -1094,22 +1094,7 @@ BentleyStatus PrimitiveArrayPropertyMap::_FindOrCreateColumnsInTable(ClassMap co
         return ERROR;
         }
 
-    Utf8String colName;
-    bool isNullable = true;
-    bool isUnique = false;
-    ECDbSqlColumn::Constraint::Collation collation = ECDbSqlColumn::Constraint::Collation::Default;
-    if (SUCCESS != DetermineColumnInfo(colName, isNullable, isUnique, collation, classMap.GetECDbMap().GetECDb()))
-        return ERROR;
-
-    ECDbSqlColumn* col = classMap.GetColumnFactory().CreateColumn(*this, colName.c_str(), ECDbSqlColumn::Type::Blob, !isNullable, isUnique, collation);
-    if (col == nullptr)
-        {
-        BeAssert(col != nullptr && "This actually indicates a mapping error. The method PrimitiveArrayPropertyMap::_FindOrCreateColumnsInTable should therefore be changed to return an error.");
-        return ERROR;
-        }
-
-    SetColumn(*col);
-    return SUCCESS;
+    return DoFindOrCreateColumnsInTable(classMap, ECDbSqlColumn::Type::Blob);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -1120,9 +1105,30 @@ Utf8String PrimitiveArrayPropertyMap::_ToString() const
     ArrayECPropertyCP arrayProperty = GetProperty().GetAsArrayProperty();
     BeAssert (arrayProperty);
     
-    return Utf8PrintfString("PrimitiveArrayPropertyMap: ecProperty=%s.%s, type=%s, columnName=%s", GetProperty().GetClass().GetFullName(), 
-                            GetProperty().GetName().c_str(), ExpHelper::ToString(arrayProperty->GetPrimitiveElementType()), GetColumn().GetName().c_str());
+    return Utf8PrintfString("PrimitiveArrayPropertyMap: ECProperty: %s.%s, Column name=%s", GetProperty().GetClass().GetFullName(), 
+                            GetProperty().GetName().c_str(), GetColumn().GetName().c_str());
     }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                      03/2016
+//---------------------------------------------------------------------------------------
+BentleyStatus StructArrayJsonPropertyMap::_FindOrCreateColumnsInTable(ClassMap const& classMap)
+    {
+    return DoFindOrCreateColumnsInTable(classMap, ECDbSqlColumn::Type::Text);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                      03/2016
+//---------------------------------------------------------------------------------------
+Utf8String StructArrayJsonPropertyMap::_ToString() const
+    {
+    Utf8String str;
+    str.Sprintf("StructArrayJsonPropertyMap: ECProperty: %s.%s, Column name: %s", GetProperty().GetClass().GetFullName(),
+                GetProperty().GetName().c_str(), GetColumn().GetName().c_str());
+    return std::move(str);
+    }
+
 
 
 //---------------------------------------------------------------------------------------
