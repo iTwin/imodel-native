@@ -144,6 +144,28 @@ double Unit::GetConversionTo(UnitCP unit) const
     return factor;
     }
 
+void Unit::MultiplyUnit (UnitCR rhs) const
+    {
+    auto temp = Evaluate();
+    auto expression2 = rhs.Evaluate();
+
+    Expression expression;
+    Expression::Copy(temp, expression);
+    Expression::MergeExpressions(GetName(), expression, rhs.GetName(), expression2, 1);
+
+    bvector<PhenomenonCP> phenomList;
+    PhenomenonCP matchingPhenom;
+    UnitRegistry::Instance().AllPhenomena(phenomList);
+    for (const auto p : phenomList)
+        {
+        if (!Expression::DimensionallyCompatible(p->Evaluate(), expression))
+            continue;
+
+        matchingPhenom = p;
+        break;
+        }
+    }
+
 Utf8String Phenomenon::GetPhenomenonDimension() const
     {
     Expression phenomenonExpression = Evaluate();

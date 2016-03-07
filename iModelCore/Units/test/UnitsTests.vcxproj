@@ -19,10 +19,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="QuantityTestFixture.h" />
     <ClInclude Include="UnitsTestFixture.h" />
     <ClInclude Include="UnitsTests.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="QuantityTestFixture.cpp" />
+    <ClCompile Include="QuantityTests.cpp" />
     <ClCompile Include="UnitsTestFixture.cpp" />
     <ClCompile Include="UnitsTests.cpp" />
   </ItemGroup>

@@ -100,11 +100,14 @@ public:
     bool IsConstant() const { return m_isConstant; }
 
     PhenomenonCP GetPhenomenon()   const { return m_phenomenon; }
+
+    void MultiplyUnit (UnitCR rhs) const;
 };
 
 struct Phenomenon final : Symbol
     {
 DEFINE_T_SUPER(Symbol)
+friend struct Unit;
 friend struct UnitRegistry;
 friend struct Expression;
 
