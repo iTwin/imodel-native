@@ -335,10 +335,10 @@ TEST_F(PerformanceElementsTests, ElementsInsert)
         opCount = insertCount*i;
         if (needSqlECSql)
         {
-            SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
-            SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
-            SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
-            SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+            //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
+            //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
+            //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
+            //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
 
             ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
             ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
@@ -358,10 +358,10 @@ TEST_F(PerformanceElementsTests, ElementsInsert)
         opCount = insertCount*i;
         if (needSqlECSql)
         {
-            SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
-            SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
-            SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
-            SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+            //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
+            //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
+            //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
+            //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
 
             ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
             ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
@@ -381,10 +381,10 @@ TEST_F(PerformanceElementsTests, ElementsInsert)
         opCount = insertCount*i;
         if (needSqlECSql)
         {
-            SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
-            SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
-            SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
-            SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+            //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
+            //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
+            //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
+            //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
 
             ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
             ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
@@ -413,10 +413,10 @@ TEST_F(PerformanceElementsTests, ElementsRead)
         opCount = insertCount*i;
         if (needSqlECSql)
         {
-            SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
-            SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
-            SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false /* optimal SQL*/, false, initInstanceCount, opCount);
-            SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
+            //SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
+            //SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
+            //SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false /* optimal SQL*/, false, initInstanceCount, opCount);
+            //SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
 
             ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
             ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
@@ -436,10 +436,10 @@ TEST_F(PerformanceElementsTests, ElementsRead)
         opCount = insertCount*i;
         if (needSqlECSql)
         {
-            SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
-            SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
-            SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
-            SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
+            //SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
+            //SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
+            //SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
+            //SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
 
             ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
             ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
@@ -459,10 +459,10 @@ TEST_F(PerformanceElementsTests, ElementsRead)
         opCount = insertCount*i;
         if (needSqlECSql)
         {
-            SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
-            SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
-            SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
-            SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
+            //SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
+            //SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
+            //SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
+            //SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
 
             ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
             ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
@@ -491,10 +491,10 @@ TEST_F(PerformanceElementsTests, ElementsUpdate)
         opCount = insertCount*i;
         if (needSqlECSql)
         {
-            SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
-            SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
-            SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
-            SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
+            //SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
+            //SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
+            //SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
+            //SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
 
             ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
             ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
@@ -514,10 +514,10 @@ TEST_F(PerformanceElementsTests, ElementsUpdate)
         opCount = insertCount*i;
         if (needSqlECSql)
         {
-            SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
-            SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
-            SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
-            SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
+            //SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
+            //SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
+            //SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
+            //SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
 
             ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
             ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
@@ -537,10 +537,10 @@ TEST_F(PerformanceElementsTests, ElementsUpdate)
         opCount = insertCount*i;
         if (needSqlECSql)
         {
-            SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
-            SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
-            SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
-            SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
+            //SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
+            //SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
+            //SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
+            //SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
 
             ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
             ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
