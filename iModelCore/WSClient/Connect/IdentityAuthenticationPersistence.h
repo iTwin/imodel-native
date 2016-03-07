@@ -25,11 +25,12 @@ struct EXPORT_VTABLE_ATTRIBUTE IdentityAuthenticationPersistence : public IConne
     {
     private:
         mutable BeMutex m_cs;
+        ILocalState& m_localState;
         std::shared_ptr<ISecureStore> m_secureStore;
         mutable SamlTokenPtr m_token;
 
     public:
-        WSCLIENT_EXPORT IdentityAuthenticationPersistence(std::shared_ptr<ISecureStore> customSecureStore = nullptr);
+        WSCLIENT_EXPORT IdentityAuthenticationPersistence(ILocalState* localState = nullptr, std::shared_ptr<ISecureStore> secureStore = nullptr);
         virtual ~IdentityAuthenticationPersistence() {}
 
         WSCLIENT_EXPORT void SetToken(SamlTokenPtr token) override;

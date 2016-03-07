@@ -72,11 +72,14 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         IConnectAuthenticationPersistencePtr m_persistence;
         bmap<Utf8String, IConnectTokenProviderPtr> m_tokenProviders;
         std::function<void()> m_tokenExpiredHandler;
+        std::function<void()> m_userChangeHandler;
 
     private:
         ConnectSignInManager(IImsClientPtr client, ILocalState* localState, ISecureStorePtr secureStore);
 
         void UpdateSignInIfNeeded();
+        void CheckUserChange();
+        void StoreSignedInUser();
 
         AuthenticationType GetAuthenticationType();
         void StoreAuthenticationType(AuthenticationType type);
@@ -128,6 +131,9 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
 
         //! Will be called when token expiration is detected
         WSCLIENT_EXPORT void SetTokenExpiredHandler(std::function<void()> handler);
+
+        //! Will be called when user change is detected. Should be set when starting application.
+        WSCLIENT_EXPORT void SetUserChangeHandler(std::function<void()> handler);
 
         //! Get authentication handler for specific server when signed in.
         //! It will automatically authenticate all HttpRequests that is used with.
