@@ -43,9 +43,7 @@ protected:
     Expression& Evaluate(int depth, std::function<SymbolCP(Utf8CP)> getSymbolByName) const;
 protected:
     virtual ~Symbol();
-
-    virtual int GetPhenomenonId() const = 0;
-  
+      
 public:
     UNITS_EXPORT Utf8CP GetName() const;
     // TODO: Consider making private because it will changed depending on load order.
@@ -57,6 +55,7 @@ public:
     UNITS_EXPORT bool IsBaseSymbol() const;
     UNITS_EXPORT bool IsDimensionless() const;
 
+    virtual int GetPhenomenonId() const = 0;
 
     bool IsCompatibleWith(SymbolCR rhs) const;
 
@@ -93,6 +92,7 @@ private:
     Expression& Evaluate() const;
 
     int GetPhenomenonId() const;
+    UnitCP CombineWithUnit(UnitCR rhs, int factor) const;
 
 public:
     UNITS_EXPORT Utf8String GetUnitDimension() const;
@@ -106,11 +106,15 @@ public:
     bool IsConstant() const { return m_isConstant; }
 
     PhenomenonCP GetPhenomenon()   const { return m_phenomenon; }
+
+    UnitCP MultiplyUnit (UnitCR rhs) const;
+    UnitCP DivideUnit(UnitCR rhs) const;
 };
 
 struct Phenomenon final : Symbol
     {
 DEFINE_T_SUPER(Symbol)
+friend struct Unit;
 friend struct UnitRegistry;
 friend struct Expression;
 

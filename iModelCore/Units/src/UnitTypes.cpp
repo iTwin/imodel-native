@@ -199,6 +199,62 @@ Utf8String Unit::GetUnitDimension() const
     return baseExpression.ToString(false);
     }
 
+UnitCP Unit::CombineWithUnit(UnitCR rhs, int factor) const
+    {
+    auto temp = Evaluate();
+    auto expression2 = rhs.Evaluate();
+
+    Expression expression;
+    Expression::Copy(temp, expression);
+    Expression::MergeExpressions(GetName(), expression, rhs.GetName(), expression2, factor);
+
+    bvector<PhenomenonCP> phenomList;
+    PhenomenonCP matchingPhenom = nullptr;
+    UnitRegistry::Instance().AllPhenomena(phenomList);
+    for (const auto p : phenomList)
+        {
+        if (!Expression::ShareDimensions(*p, expression))
+            continue;
+
+        matchingPhenom = p;
+        break;
+        }
+
+    if (nullptr == matchingPhenom)
+        return nullptr;
+
+    UnitCP output = nullptr;
+    for (const auto u : matchingPhenom->GetUnits())
+        {
+        temp = u->Evaluate();
+
+        Expression unitExpr;
+        Expression::Copy(temp, unitExpr);
+        Expression::MergeExpressions(u->GetName(), unitExpr, GetName(), expression, -1);
+
+        auto count = std::count_if(unitExpr.begin(), unitExpr.end(), 
+            [](ExpressionSymbolP e) { return e->GetExponent() != 0; });
+        
+        if (count > 1)
+            continue;
+
+        output = u;
+        break;
+        }
+
+    return output;
+    }
+
+UnitCP Unit::MultiplyUnit(UnitCR rhs) const
+    {
+    return CombineWithUnit(rhs, 1);
+    }
+
+UnitCP Unit::DivideUnit(UnitCR rhs) const
+    {
+    return CombineWithUnit(rhs, -1);
+    }
+
 Utf8String Phenomenon::GetPhenomenonDimension() const
     {
     Expression phenomenonExpression = Evaluate();

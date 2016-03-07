@@ -85,6 +85,7 @@ private:
                                  Utf8CP sourceDefinition, ExpressionR sourceExpression,
                                  int startingExponent, std::function<bool(SymbolCR, SymbolCR)> areEqual);
     static bool ShareDimensions(PhenomenonCR phenomenon, UnitCR unit);
+    static bool ShareDimensions(PhenomenonCR phenomenon, ExpressionCR expression);
     static bool DimensionallyCompatible(ExpressionCR expressionA, ExpressionCR expressionB);
     static bool DimensionallyCompatible(ExpressionCR expressionA, ExpressionCR expressionB, std::function<bool(SymbolCR, SymbolCR)> areEqual);
     static BentleyStatus GenerateConversionExpression(UnitCR from, UnitCR to, ExpressionR conversionExpression);

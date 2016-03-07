@@ -5,6 +5,7 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#pragma once
 
 #include "UnitsTests.h"
 
@@ -17,13 +18,12 @@ struct UnitsTestFixture : public ::testing::Test
     {
     public:
         UnitsTestFixture() : ::testing::Test() {}
-        virtual ~UnitsTestFixture() {};
+        virtual ~UnitsTestFixture() {}
         virtual void SetUp() override;
         virtual void TearDown() override {}
 
         static Utf8String GetConversionDataPath(WCharCP dataFile);
         static Utf8String GetOutputDataPath(WCharCP dataFile);
-
     };
 
 END_UNITS_UNITTESTS_NAMESPACE

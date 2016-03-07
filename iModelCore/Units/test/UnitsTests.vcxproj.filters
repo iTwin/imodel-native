@@ -21,12 +21,21 @@
     <ClInclude Include="UnitsTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="QuantityTestFixture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="UnitsTestFixture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="UnitsTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="QuantityTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="QuantityTestFixture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
