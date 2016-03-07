@@ -134,6 +134,7 @@ TEST_F (JsonUpdaterTests, UpdateRelationshipProperty)
 
     // Update relationship properties
     JsonUpdater updater (db, *relClass);
+    ASSERT_TRUE(updater.IsValid());
 
     /*
     * Update relationship properties via Json::Value API
@@ -208,6 +209,7 @@ TEST_F (JsonUpdaterTests, UpdateProperties)
 
     // Update ecClass properties
     JsonUpdater updater (ecdb, *ecClass);
+    ASSERT_TRUE(updater.IsValid());
 
     /*
     * Update class properties via Json::Value API
@@ -339,6 +341,7 @@ TEST_F (JsonUpdaterTests, ClassHavingReadonlyOrCalcProperty)
     //Update test instance
     properties["TestReadOnlyProperty"] = "NewValue";
     JsonUpdater updater (ecdb, *ecClass);
+    ASSERT_TRUE(updater.IsValid());
     ASSERT_EQ (SUCCESS, updater.Update (instanceKey.GetECInstanceId (), properties));
 
     properties = Json::objectValue;
