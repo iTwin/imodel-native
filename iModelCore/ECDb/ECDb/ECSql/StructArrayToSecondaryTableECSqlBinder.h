@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/StructArrayToSecondaryTableECSqlBinder.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,9 +20,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct StructArrayToSecondaryTableECSqlBinder : public ECSqlBinder, public IECSqlArrayBinder
     {
 private:
+    int m_sqliteIndex;
     std::unique_ptr<ArrayECSqlParameterValue> m_value;
 
-    virtual void _SetSqliteIndex (int ecsqlParameterComponentIndex, size_t sqliteParameterIndex) override;
+    virtual void _SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteParameterIndex) override { m_sqliteIndex = (int) sqliteParameterIndex; }
     virtual void _OnClearBindings () override;
     virtual ECSqlStatus _OnBeforeStep () override;
 
@@ -34,9 +35,9 @@ private:
     virtual IECSqlArrayBinder& _BindArray (uint32_t initialCapacity) override;
 
 public:
-    StructArrayToSecondaryTableECSqlBinder (ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo);
+    StructArrayToSecondaryTableECSqlBinder (ECSqlStatementBase&, ECSqlTypeInfo const&);
+    ~StructArrayToSecondaryTableECSqlBinder() {}
     ArrayECSqlParameterValue& GetParameterValue () { return *m_value; }
-    ~StructArrayToSecondaryTableECSqlBinder () {}
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

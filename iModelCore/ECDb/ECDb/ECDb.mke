@@ -105,6 +105,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/PointECSqlBinder.h \
                 $(baseDir)ECSql/StructToColumnsECSqlBinder.h \
                 $(baseDir)ECSql/PrimitiveArrayToColumnECSqlBinder.h \
+                $(baseDir)ECSql/StructArrayJsonECSqlBinder.h \
                 $(baseDir)ECSql/StructArrayToSecondaryTableECSqlBinder.h \
                 $(baseDir)ECSql/SystemPropertyECSqlBinder.h \
                 $(baseDir)ECSql/ECSqlFieldFactory.h \
@@ -326,6 +327,8 @@ $(o)StructToColumnsECSqlBinder$(oext):                      $(baseDir)ECSql/Stru
 $(o)PrimitiveArrayToColumnECSqlBinder$(oext):               $(baseDir)ECSql/PrimitiveArrayToColumnECSqlBinder.cpp  $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)StructArrayToSecondaryTableECSqlBinder$(oext):          $(baseDir)ECSql/StructArrayToSecondaryTableECSqlBinder.cpp   $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)StructArrayJsonECSqlBinder$(oext):                      $(baseDir)ECSql/StructArrayJsonECSqlBinder.cpp   $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)SystemPropertyECSqlBinder$(oext):                       $(baseDir)ECSql/SystemPropertyECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

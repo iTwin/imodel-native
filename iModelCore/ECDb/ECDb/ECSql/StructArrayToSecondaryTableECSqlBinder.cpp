@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/StructArrayToSecondaryTableECSqlBinder.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -19,13 +19,6 @@ StructArrayToSecondaryTableECSqlBinder::StructArrayToSecondaryTableECSqlBinder (
     {
     BeAssert (GetTypeInfo ().GetKind () == ECSqlTypeInfo::Kind::StructArray);
     m_value = ECSqlParameterValueFactory::CreateArray (*ecsqlStatement.GetECDb(), typeInfo);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      08/2013
-//---------------------------------------------------------------------------------------
-void StructArrayToSecondaryTableECSqlBinder::_SetSqliteIndex (int ecsqlParameterComponentIndex, size_t sqliteIndex)
-    {
     }
 
 //---------------------------------------------------------------------------------------

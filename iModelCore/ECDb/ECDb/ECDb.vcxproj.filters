@@ -334,9 +334,6 @@
     <ClInclude Include="..\PublicAPI\ECDb\ECRelationshipPath.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\ECDb\ECSqlBuilder.h">
-      <Filter>PublicApi</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECSqlColumnInfo.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
@@ -419,6 +416,9 @@
     </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h">
       <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="ECSql\StructArrayJsonECSqlBinder.h">
+      <Filter>ECSql\ParameterBinding</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -766,6 +766,9 @@
       <Filter>ECDbSchemaManager\Editor</Filter>
     </ClCompile>
     <ClCompile Include="ECDbExpressionSymbolProviders.cpp" />
+    <ClCompile Include="ECSql\StructArrayJsonECSqlBinder.cpp">
+      <Filter>ECSql\ParameterBinding</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="ECSchemas\ECDb_FileInfo.02.00.ecschema.xml">
