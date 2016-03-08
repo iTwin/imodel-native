@@ -184,10 +184,10 @@ public:
     //! Get the parent revision id of any changes in the DgnDb
     DGNPLATFORM_EXPORT Utf8String GetParentRevisionId() const;
 
-    //! Merge an ordered collection of revisions to the Db
-    //! @param[in] mergeRevisions Ordered collection of revisions to be merged
-    //! @return RevisionStatus::Success if the revisions were successfully merged, error status otherwise. 
-    DGNPLATFORM_EXPORT RevisionStatus MergeRevisions(bvector<DgnRevisionPtr> const& mergeRevisions);
+    //! Merge a single revision to the Db
+    //! @param[in] revision The revision to be merged
+    //! @return RevisionStatus::Success if the revision was successfully merged, error status otherwise. 
+    DGNPLATFORM_EXPORT RevisionStatus MergeRevision(DgnRevisionCR revision);
 
     //! Returns true if a revision can be created. 
     DGNPLATFORM_EXPORT bool CanCreateRevision() const;
