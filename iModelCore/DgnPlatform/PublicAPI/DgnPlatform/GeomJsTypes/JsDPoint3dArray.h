@@ -99,7 +99,7 @@ public:
     JsGeometryNode () {m_data = GeometryNode::Create ();}
 
     JsGeometryNode (GeometryNodePtr node) {m_data = node;}
-
+    GeometryNodePtr GetGeometryNodePtr (){return m_data;}
     void AddGeometry (JsGeometryP g)
         {
         auto gPtr = g->GetIGeometryPtr ();

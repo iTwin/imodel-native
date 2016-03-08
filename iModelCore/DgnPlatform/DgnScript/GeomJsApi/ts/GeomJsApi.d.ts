@@ -388,10 +388,16 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     type GeometryNodeP = cxx_pointer<GeometryNode>;
 
 /**
-@description A node in a tree or DAG structure.
+@description A GeoemtryNode is a a node in a tree or DAG structure.
 <ul>
-<li>Each node has separate arrays of geometry and nodes.
-<li>Each node has a transform that can be applied to child geometry and nodes.
+<li>Each node has two arrays of "children":
+<ul>
+<li>Geometry -- an array of geometry
+<li>Members -- an array of child GeometryNodes.  Each member has a transform to be applied to the chid node.
+</ul>
+<li>Recursively following the Member pointers traces the tree or directed acyclic graph (DAG).
+<li>The structure must be acyclic. (I.e. the recursive searches do not check for revisit, and will get stuck in endless loops if there are cycles.)
+<li>A single node with no child members is essentially an array of Geometry.
 </ul>
 */
     class GeometryNode implements IDisposable {

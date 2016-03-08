@@ -4247,6 +4247,26 @@ bool GeometryBuilder::Append(PolyfaceQueryCR geom)
 
     return AppendWorld(*geomPtr);
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Earlin.Lutz 03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryBuilder::Append(IGeometryCR geometry)
+    {
+    switch (geometry.GetGeometryType ())
+        {
+        case IGeometry::GeometryType::CurvePrimitive:
+            return Append (*geometry.GetAsICurvePrimitive());
+        case IGeometry::GeometryType::CurveVector:
+            return Append(*geometry.GetAsCurveVector());
+        case IGeometry::GeometryType::Polyface:
+            return Append(*geometry.GetAsPolyfaceHeader());
+        case IGeometry::GeometryType::SolidPrimitive:
+            return Append(*geometry.GetAsISolidPrimitive());
+        case IGeometry::GeometryType::BsplineSurface:
+            return Append(*geometry.GetAsMSBsplineSurface());
+        }
+    return false;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015

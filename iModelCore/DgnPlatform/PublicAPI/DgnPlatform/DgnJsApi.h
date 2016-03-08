@@ -723,6 +723,22 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
         else if (geometry->GetISolidPrimitivePtr().IsValid())
             m_builder->Append(*geometry->GetISolidPrimitivePtr());
         }
+    void AppendGeometryNode (JsGeometryNodeP node)
+        {
+        DGNJSAPI_VALIDATE_ARGS_VOID(IsValid() && node);
+        auto nativeNode = node->GetGeometryNodePtr ();
+        if (nativeNode.IsValid ())
+            {
+            auto flatNode = node->Flatten ();
+            auto nativeFlatNode = flatNode->GetGeometryNodePtr ();
+            for (auto &geometry : nativeFlatNode->Geometry ())
+                {
+                m_builder->Append (*geometry);
+                }
+            }
+        }
+
+
 
     BentleyStatus SetGeometryStreamAndPlacement (JsDgnElementP el)
         {
