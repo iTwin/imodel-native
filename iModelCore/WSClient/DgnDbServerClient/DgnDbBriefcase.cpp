@@ -64,14 +64,18 @@ AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullAndMerge(HttpRequest::ProgressCall
         if (result.IsSuccess())
             {
             auto serverRevisions = result.GetValue();
-            bvector<DgnRevisionPtr> revisions;
-            for (auto revision : serverRevisions)
-                revisions.push_back(revision->GetRevision());
             RevisionStatus mergeStatus = RevisionStatus::Success;
-            if (!revisions.empty())
+            if (!serverRevisions.empty())
                 {
                 DgnDbServerHost::Adopt(host);
-                mergeStatus = m_db->Revisions().MergeRevisions(revisions);
+
+                for (auto revision : serverRevisions)
+                    {
+                    mergeStatus = m_db->Revisions().MergeRevision(*(revision->GetRevision()));
+                    if (mergeStatus != RevisionStatus::Success)
+                        break; // TODO: Use the information on the revision that actually failed. 
+                    }
+                    
                 DgnDbServerHost::Forget(host);
                 }
             if (RevisionStatus::Success == mergeStatus)
