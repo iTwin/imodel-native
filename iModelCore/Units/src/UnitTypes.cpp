@@ -24,7 +24,7 @@ Symbol::~Symbol()
         delete m_symbolExpression;
     }
 
-Expression& Symbol::Evaluate(int depth, std::function<SymbolCP(Utf8CP)> getSymbolByName) const
+ExpressionCR Symbol::Evaluate(int depth, std::function<SymbolCP(Utf8CP)> getSymbolByName) const
     {
     if (!m_evaluated)
         {
@@ -33,12 +33,6 @@ Expression& Symbol::Evaluate(int depth, std::function<SymbolCP(Utf8CP)> getSymbo
         m_evaluated = true;
         }
     return *m_symbolExpression;
-    }
-
-// TODO: This is confusing because it accepts symbols but will only work if both symbols are of the same type.
-bool Symbol::IsCompatibleWith(SymbolCR rhs) const
-    {
-    return Expression::DimensionallyCompatible(*(this->m_symbolExpression), *(rhs.m_symbolExpression));
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -70,7 +64,7 @@ bool Unit::IsRegistered() const
     return UnitRegistry::Instance().HasUnit(GetName());
     }
 
-Expression& Unit::Evaluate() const
+ExpressionCR Unit::Evaluate() const
     {
     return T_Super::Evaluate(0, [] (Utf8CP unitName) { return UnitRegistry::Instance().LookupUnit(unitName); });
     }
@@ -240,7 +234,7 @@ void Phenomenon::AddUnit(UnitCR unit)
         m_units.push_back(&unit);
     }
 
-Expression& Phenomenon::Evaluate() const
+ExpressionCR Phenomenon::Evaluate() const
     {
     return T_Super::Evaluate(0, [] (Utf8CP phenomenonName) { return UnitRegistry::Instance().LookupPhenomenon(phenomenonName); });
     }

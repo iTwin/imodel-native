@@ -9,7 +9,7 @@
 
 #include <Units/Units.h>
 
-UNITS_TYPEDEFS(Expression)
+
 UNITS_TYPEDEFS(ExpressionSymbol)
 UNITS_TYPEDEFS(Token)
 

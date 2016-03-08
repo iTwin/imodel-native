@@ -14,7 +14,7 @@ UNITS_TYPEDEFS(Symbol)
 UNITS_TYPEDEFS(Unit)
 UNITS_TYPEDEFS(InverseUnit)
 UNITS_TYPEDEFS(Phenomenon)
-
+UNITS_TYPEDEFS(Expression)
 BEGIN_BENTLEY_UNITS_NAMESPACE
 
 typedef bvector<Utf8String> Utf8Vector;
@@ -41,7 +41,7 @@ private:
 protected:
     Symbol(Utf8CP name, Utf8CP definition, Utf8Char dimensionSymbol, int id, double factor, double offset);
     
-    Expression& Evaluate(int depth, std::function<SymbolCP(Utf8CP)> getSymbolByName) const;
+    ExpressionCR Evaluate(int depth, std::function<SymbolCP(Utf8CP)> getSymbolByName) const;
 protected:
     virtual ~Symbol();
       
@@ -57,8 +57,6 @@ public:
     bool    IsDimensionless() const { return m_dimensionless; }
 
     virtual int GetPhenomenonId() const = 0;
-
-    bool IsCompatibleWith(SymbolCR rhs) const;
     };
 
 //struct InverseUnit : Unit
@@ -69,13 +67,14 @@ public:
 //    Utf8String m_parentUnitName;
 //    
 //    static UnitP Create(Utf8CP parentUnitName, Utf8CP unitName, int id);
-//    InverseUnit(Utf8CP parentUnitName, Utf8CP name, int id);
+//    InverseUnit(UnitCR parentUnit, Utf8CP name, int id);
 //
 //    // Lifecycle is managed by the UnitRegistry so we don't allow copies or assignments.
 //    InverseUnit() = delete;
 //    InverseUnit(InverseUnitCR unit) = delete;
 //    InverseUnitR operator=(InverseUnitCR unit) = delete;
 //
+//    UnitCP GetParentUnit() const { return m_parentUnit; }
 //
 //    };
 
@@ -103,7 +102,7 @@ private:
     Unit (UnitCR unit) = delete;
     UnitR operator=(UnitCR unit) = delete;
 
-    Expression& Evaluate() const;
+    ExpressionCR Evaluate() const;
 
     int GetPhenomenonId() const;
     UnitCP CombineWithUnit(UnitCR rhs, int factor) const;
@@ -138,7 +137,7 @@ private:
     Phenomenon(PhenomenonCR phenomenon) = delete;
     PhenomenonR operator=(PhenomenonCR phenomenon) = delete;
 
-    Expression& Evaluate() const;
+    ExpressionCR Evaluate() const;
 
     int GetPhenomenonId() const { return GetId(); }
 
