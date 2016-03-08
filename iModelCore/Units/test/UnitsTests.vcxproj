@@ -84,7 +84,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeOutput>UnitsTests.exe</NMakeOutput>
+    <NMakeOutput>$(OutRoot)Winx64\Product\Units-Gtest\UnitsTest.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions);WIN32;_DEBUG</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(ProjectDir)\..\PublicAPI\;$(ProjectDir)\..\PrivateAPI\;$(ProjectDir);$(VCInstallDir)INCLUDE\;$(OutRoot)Winx64\BuildContexts\Units\PublicAPI\;$(OutRoot)Winx64\BuildContexts\Units\VendorAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\PublicAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\VendorAPI\;$(SrcRoot)\Bentley\PublicAPI;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
