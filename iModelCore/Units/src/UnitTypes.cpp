@@ -103,20 +103,20 @@ double Unit::Convert(double value, UnitCP toUnit) const
     double offset = 0;
     for (auto const& toUnitExp : conversionExpression)
         {
-        if (toUnitExp->GetExponent() == 0)
+        if (toUnitExp.GetExponent() == 0)
             continue;
         
-        LOG.infov("Adding unit %s^%d to the conversion.  Factor: %.17g  Offset:%.17g", toUnitExp->GetSymbol()->GetName(), 
-                  toUnitExp->GetExponent(), toUnitExp->GetSymbolFactor(), toUnitExp->GetSymbol()->GetOffset());
-        double unitFactor = FastIntegerPower(toUnitExp->GetSymbolFactor(), abs(toUnitExp->GetExponent()));
-        if (toUnitExp->GetExponent() > 0)
+        LOG.infov("Adding unit %s^%d to the conversion.  Factor: %.17g  Offset:%.17g", toUnitExp.GetSymbol()->GetName(), 
+                  toUnitExp.GetExponent(), toUnitExp.GetSymbolFactor(), toUnitExp.GetSymbol()->GetOffset());
+        double unitFactor = FastIntegerPower(toUnitExp.GetSymbolFactor(), abs(toUnitExp.GetExponent()));
+        if (toUnitExp.GetExponent() > 0)
             {
             LOG.infov("Multiplying existing factor %.17g by %.17g", factor, unitFactor);
             factor *= unitFactor;
             LOG.infov("New factor %.17g", factor);
-            if (toUnitExp->GetSymbol()->HasOffset())
+            if (toUnitExp.GetSymbol()->HasOffset())
                 {
-                double unitOffset = toUnitExp->GetSymbol()->GetOffset() * toUnitExp->GetSymbol()->GetFactor();
+                double unitOffset = toUnitExp.GetSymbol()->GetOffset() * toUnitExp.GetSymbol()->GetFactor();
                 LOG.infov("Adding %.17g to existing offset %.17g.", unitOffset, offset);
                 offset += unitOffset;
                 LOG.infov("New offset %.17g", offset);
@@ -133,9 +133,9 @@ double Unit::Convert(double value, UnitCP toUnit) const
             LOG.infov("Dividing existing factor %.17g by %.17g", factor, unitFactor);
             factor /= unitFactor;
             LOG.infov("New factor %.17g", factor);
-            if (toUnitExp->GetSymbol()->HasOffset())
+            if (toUnitExp.GetSymbol()->HasOffset())
                 {
-                double unitOffset = toUnitExp->GetSymbol()->GetOffset() * toUnitExp->GetSymbol()->GetFactor();
+                double unitOffset = toUnitExp.GetSymbol()->GetOffset() * toUnitExp.GetSymbol()->GetFactor();
                 LOG.infov("Subtracting %.17g from existing offset %.17g.", unitOffset, offset);
                 offset -= unitOffset;
                 LOG.infov("New offset %l.17g", offset);
@@ -159,7 +159,7 @@ Utf8String Unit::GetUnitDimension() const
     {
     Expression phenomenonExpression = Evaluate();
     Expression baseExpression;
-    Expression::CreateExpressionWithOnlyBaseSymbols(phenomenonExpression, baseExpression, false);
+    Expression::CreateExpressionWithOnlyBaseSymbols(phenomenonExpression, baseExpression);
     return baseExpression.ToString(false);
     }
 
@@ -197,7 +197,7 @@ UnitCP Unit::CombineWithUnit(UnitCR rhs, int factor) const
         Expression::MergeExpressions(u->GetName(), unitExpr, GetName(), expression, -1);
 
         auto count = std::count_if(unitExpr.begin(), unitExpr.end(), 
-            [](ExpressionSymbolP e) { return e->GetExponent() != 0; });
+            [](ExpressionSymbolCR e) { return e.GetExponent() != 0; });
         
         if (count > 1)
             continue;
@@ -223,7 +223,7 @@ Utf8String Phenomenon::GetPhenomenonDimension() const
     {
     Expression phenomenonExpression = Evaluate();
     Expression baseExpression;
-    Expression::CreateExpressionWithOnlyBaseSymbols(phenomenonExpression, baseExpression, false);
+    Expression::CreateExpressionWithOnlyBaseSymbols(phenomenonExpression, baseExpression);
     return baseExpression.ToString(false);
     }
 

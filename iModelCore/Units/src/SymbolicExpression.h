@@ -39,7 +39,7 @@ public:
 //=======================================================================================
 struct Expression
     {
-    typedef bvector<ExpressionSymbolP> SymbolList;
+    typedef bvector<ExpressionSymbol> SymbolList;
     typedef SymbolList::iterator iterator;
     typedef SymbolList::const_iterator const_iterator;
     typedef SymbolList::reverse_iterator reverse_iterator;
@@ -63,14 +63,13 @@ private:
     const_reverse_iterator rend() const { return m_symbolExpression.rend(); }
 
 
-    ExpressionSymbolCP FirstSymbol() const { return m_symbolExpression.front(); }
+    ExpressionSymbolCR FirstSymbol() const { return m_symbolExpression.front(); }
 
     void erase(iterator deleteIterator, iterator end) { m_symbolExpression.erase(deleteIterator, end); }
     size_t size() const { return m_symbolExpression.size(); }
 
-    void AddCopy(ExpressionSymbolCR sWE);
     void Add(SymbolCP symbol, int exponent);
-    void Add(ExpressionSymbolR sWE) { m_symbolExpression.push_back(&sWE); }
+    void Add(ExpressionSymbolCR sWE) { m_symbolExpression.push_back(sWE); }
     static void Copy(ExpressionR source, ExpressionR target);
 
     void LogExpression(NativeLogging::SEVERITY loggingLevel, Utf8CP name) const;
@@ -89,7 +88,7 @@ private:
     static bool DimensionallyCompatible(ExpressionCR expressionA, ExpressionCR expressionB);
     static bool DimensionallyCompatible(ExpressionCR expressionA, ExpressionCR expressionB, std::function<bool(SymbolCR, SymbolCR)> areEqual);
     static BentleyStatus GenerateConversionExpression(UnitCR from, UnitCR to, ExpressionR conversionExpression);
-    static void CreateExpressionWithOnlyBaseSymbols(ExpressionCR source, ExpressionR target, bool copySymbols);
+    static void CreateExpressionWithOnlyBaseSymbols(ExpressionCR source, ExpressionR target);
     };
 
 //=======================================================================================
@@ -109,7 +108,7 @@ public:
     SymbolCP GetSymbol() const { return m_symbol; }
     double GetSymbolFactor() const { return m_symbol->GetFactor(); }
     
-    int GetExponent() { return m_exponent; }
+    int GetExponent() const { return m_exponent; }
     void AddToExponent(int toAdd) { m_exponent += toAdd; }
     void SetExponent(int exponent) { m_exponent = exponent; }
     };

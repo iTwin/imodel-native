@@ -188,6 +188,12 @@ TEST_F(UnitsTests, TestOffsetConversions)
     {
     bvector<Utf8String> loadErrors;
     bvector<Utf8String> conversionErrors;
+
+    // Expected values generated using the following equations and windows calculator
+    // Celsius = (Fahrenheit–32)×5÷9
+    // Kelvin = ((Fahrenheit–32)×5/9)+273.15
+    // Rankine = Fahrenheit+459.67
+    // Rømer = (Fahrenheit–32)×7/24+7.5
     TestUnitConversion(32, "FAHRENHEIT", 0, "CELSIUS", 1000, loadErrors, conversionErrors);
     TestUnitConversion(20, "FAHRENHEIT", -6.666666666666666666666666666, "CELSIUS", 1000, loadErrors, conversionErrors);
     TestUnitConversion(122, "FAHRENHEIT", 50, "CELSIUS", 1000, loadErrors, conversionErrors);
@@ -199,6 +205,11 @@ TEST_F(UnitsTests, TestOffsetConversions)
     TestUnitConversion(0, "FAHRENHEIT", 459.67, "RANKINE", 1000, loadErrors, conversionErrors);
     TestUnitConversion(0, "FAHRENHEIT", -1.8333333333333, "ROMER", 1000, loadErrors, conversionErrors);
 
+    // Expected values generated using the following equations and windows calculator
+    // Fahrenheit = Celsius×9÷5+32
+    // Kelvin = Celsius+273.15
+    // Rankine = Celsius×9/5+32+459.67
+    // Rømer = Celsius×21/40+7.5
     TestUnitConversion(1, "CELSIUS", 33.8, "FAHRENHEIT", 1000, loadErrors, conversionErrors);
     TestUnitConversion(-15, "CELSIUS", 5, "FAHRENHEIT", 1000, loadErrors, conversionErrors);
     TestUnitConversion(-25, "CELSIUS", -13, "FAHRENHEIT", 1000, loadErrors, conversionErrors);
@@ -221,6 +232,11 @@ TEST_F(UnitsTests, TestOffsetConversions)
     TestUnitConversion(0, "KELVIN", -135.90375, "ROMER", 1000, loadErrors, conversionErrors);
 
 
+    // Expected values generated using the following equations and windows calculator
+    // Celsius = (Rankine–459.67–32)×5/9
+    // Fahrenheit = Rankine–459.67
+    // Kelvin = (Rankine–459.67–32)×5/9+273.15
+    // Rømer = (Rankine–491.67)×7/24+7.5
     TestUnitConversion(42, "RANKINE", -249.81666666666, "CELSIUS", 1000, loadErrors, conversionErrors);
     TestUnitConversion(42, "RANKINE", -417.67, "FAHRENHEIT", 1000, loadErrors, conversionErrors);
     TestUnitConversion(42, "RANKINE", 23.333333333333333, "KELVIN", 1000, loadErrors, conversionErrors);

@@ -53,35 +53,32 @@ Utf8String Expression::ToString(bool includeFactors) const
     Utf8String output;
     for (auto const& sWE : m_symbolExpression)
         {
-        if (!includeFactors || sWE->GetSymbol()->GetFactor() == 0.0)
+        if (!includeFactors || sWE.GetSymbol()->GetFactor() == 0.0)
             {
-            Utf8PrintfString sWEString("%s^%d * ", sWE->GetName(), sWE->GetExponent());
+            Utf8PrintfString sWEString("%s^%d * ", sWE.GetName(), sWE.GetExponent());
             output.append(sWEString.c_str());
             }
-        else if (sWE->GetSymbol()->HasOffset())
+        else if (sWE.GetSymbol()->HasOffset())
             {
-            Utf8PrintfString sWEString("(%.17g*%s^%d + %.17g) * ", sWE->GetSymbol()->GetFactor(), sWE->GetName(), sWE->GetExponent(), sWE->GetSymbol()->GetOffset());
+            Utf8PrintfString sWEString("(%.17g*%s^%d + %.17g) * ", sWE.GetSymbol()->GetFactor(), sWE.GetName(), sWE.GetExponent(), sWE.GetSymbol()->GetOffset());
             output.append(sWEString.c_str());
             }
         else
             {
-            Utf8PrintfString sWEString("%.17g*%s^%d * ", sWE->GetSymbol()->GetFactor(), sWE->GetName(), sWE->GetExponent());
+            Utf8PrintfString sWEString("%.17g*%s^%d * ", sWE.GetSymbol()->GetFactor(), sWE.GetName(), sWE.GetExponent());
             output.append(sWEString.c_str());
             }
         }
     return output;
     }
 
-void Expression::CreateExpressionWithOnlyBaseSymbols(ExpressionCR source, ExpressionR target, bool copySymbols)
+void Expression::CreateExpressionWithOnlyBaseSymbols(ExpressionCR source, ExpressionR target)
     {
     for (auto symbolExp : source)
         {
-        if (symbolExp->GetSymbol()->IsBaseSymbol() && !symbolExp->GetSymbol()->IsDimensionless())
+        if (symbolExp.GetSymbol()->IsBaseSymbol() && !symbolExp.GetSymbol()->IsDimensionless())
             {
-            if (copySymbols)
-                target.AddCopy(*symbolExp);
-            else
-                target.Add(*symbolExp);
+            target.Add(symbolExp);
             }
         }
     }
@@ -131,19 +128,19 @@ bool Expression::DimensionallyCompatible(ExpressionCR fromExpression, Expression
 bool Expression::DimensionallyCompatible(ExpressionCR fromExpression, ExpressionCR toExpression, std::function<bool(SymbolCR, SymbolCR)> areEqual)
     {
     Expression fromBaseSymbols;
-    CreateExpressionWithOnlyBaseSymbols(fromExpression, fromBaseSymbols, true);
+    CreateExpressionWithOnlyBaseSymbols(fromExpression, fromBaseSymbols);
     Expression toBaseSymbols;
-    CreateExpressionWithOnlyBaseSymbols(toExpression, toBaseSymbols, false);
+    CreateExpressionWithOnlyBaseSymbols(toExpression, toBaseSymbols);
 
     MergeExpressions("", fromBaseSymbols, "", toBaseSymbols, -1, areEqual);
     for (auto const& unitExp : fromBaseSymbols)
         {
-        if (unitExp->GetExponent() == 0)
+        if (unitExp.GetExponent() == 0)
             continue;
-        else if (unitExp->GetExponent() > 0)
-            LOG.errorv("Cannot convert - from Expression has component of '%s' not in the to unit", unitExp->GetName());
+        else if (unitExp.GetExponent() > 0)
+            LOG.errorv("Cannot convert - from Expression has component of '%s' not in the to unit", unitExp.GetName());
         else
-            LOG.errorv("Cannot convert - to Expression has component of '%s' not in the from Unit", unitExp->GetName());
+            LOG.errorv("Cannot convert - to Expression has component of '%s' not in the from Unit", unitExp.GetName());
 
         fromExpression.LogExpression(NativeLogging::LOG_ERROR, "From");
         toExpression.LogExpression(NativeLogging::LOG_ERROR, "To");
@@ -154,11 +151,11 @@ bool Expression::DimensionallyCompatible(ExpressionCR fromExpression, Expression
 
 void Expression::MergeSymbol(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, SymbolCP symbol, int symbolExponent, std::function<bool(SymbolCR, SymbolCR)> areEqual)
     {
-    auto it = find_if(targetExpression.begin(), targetExpression.end(), [&symbol, &areEqual] (ExpressionSymbolCP a) { return areEqual(*a->GetSymbol(), *symbol); });
+    auto it = find_if(targetExpression.begin(), targetExpression.end(), [&symbol, &areEqual] (ExpressionSymbolCR a) { return areEqual(*a.GetSymbol(), *symbol); });
     if (it != targetExpression.end())
         {
-        LOG.debugv("%s --> %s - Merging existing Unit %s. with Exponent: %d", sourceDefinition, targetDefinition, (*it)->GetName(), symbolExponent);
-        (*it)->AddToExponent(symbolExponent);
+        LOG.debugv("%s --> %s - Merging existing Unit %s. with Exponent: %d", sourceDefinition, targetDefinition, (*it).GetName(), symbolExponent);
+        (*it).AddToExponent(symbolExponent);
         }
     else
         {
@@ -178,8 +175,8 @@ void Expression::MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExp
     LOG.debugv("Merging Expressions %s --> %s", sourceDefinition, targetDefinition);
     for (auto it = sourceExpression.rbegin(); it != sourceExpression.rend(); ++it)
         {
-        int     mergedExponent = (*it)->GetExponent() * startingExponent;
-        MergeSymbol(targetDefinition, targetExpression, sourceDefinition, (*it)->GetSymbol(), mergedExponent, areEqual);
+        int     mergedExponent = (*it).GetExponent() * startingExponent;
+        MergeSymbol(targetDefinition, targetExpression, sourceDefinition, (*it).GetSymbol(), mergedExponent, areEqual);
         }
     }
 
@@ -294,11 +291,8 @@ BentleyStatus Expression::ParseDefinition(SymbolCR owner, int& depth, Utf8CP def
     //    return BentleyStatus::ERROR;
     //    }
 
-    auto new_iter = remove_if(expression.begin(), expression.end(), [](ExpressionSymbol* a) { return a->GetExponent() == 0; });
+    auto new_iter = remove_if(expression.begin(), expression.end(), [](ExpressionSymbolCR a) { return a.GetExponent() == 0; });
     expression.erase(new_iter, expression.end());
-
-    // TODO: Decide if we want to sort or keep in generated order.
-    //sort(expression.begin(), expression.end(), [&] (UnitExponent* a, UnitExponent* b) { return strcmp(a->m_unit->GetPhenomenon(), b->m_unit->GetPhenomenon()); });
 
     LOG.debugv("%s - DONE", definition);
 
@@ -307,25 +301,20 @@ BentleyStatus Expression::ParseDefinition(SymbolCR owner, int& depth, Utf8CP def
 
 bool Expression::Contains(ExpressionSymbolCR symbol) const
     {
-    auto it = find_if(begin(), end(), [&symbol] (ExpressionSymbol* a) { return a->GetSymbol()->GetId() == symbol.GetSymbol()->GetId(); });
-    if (it == end() || 0 == (*it)->GetExponent())
+    auto it = find_if(begin(), end(), [&symbol] (ExpressionSymbolCR a) { return a.GetSymbol()->GetId() == symbol.GetSymbol()->GetId(); });
+    if (it == end() || 0 == (*it).GetExponent())
         return false;
 
     return true;
     }
 
-void Expression::AddCopy(ExpressionSymbolCR sWE) 
-    { 
-    m_symbolExpression.push_back(new ExpressionSymbol(sWE)); 
-    }
-
 void Expression::Add(SymbolCP symbol, int exponent) 
     {
-    m_symbolExpression.push_back(new ExpressionSymbol(symbol, exponent)); 
+    m_symbolExpression.push_back(ExpressionSymbol(symbol, exponent));
     }
 
 void Expression::Copy(ExpressionR source, ExpressionR target)
     {
     for (auto const& sourceSymbol : source)
-        target.AddCopy(*sourceSymbol);
+        target.Add(sourceSymbol);
     }
