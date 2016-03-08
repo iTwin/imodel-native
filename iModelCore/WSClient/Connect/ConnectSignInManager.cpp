@@ -107,13 +107,7 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(SamlTokenPtr to
         ->Then<SignInResult>([=] (SamlTokenResult result)
         {
         if (!result.IsSuccess())
-            {
-            // TODO: return error directly and avoid additonal localized strings
-            if (HttpStatus::Unauthorized == result.GetError().GetHttpStatus())
-                return SignInResult::Error(ConnectLocalizedString(ALERT_SignInFailed_Message));
-
-            return SignInResult::Error(ConnectLocalizedString(ALERT_SignInFailed_ServerError));
-            }
+            return SignInResult::Error(result.GetError());
 
         BeCriticalSectionHolder lock(m_cs);
 
@@ -144,13 +138,7 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithCredentials(Credentia
         ->Then<SignInResult>([=] (SamlTokenResult result)
         {
         if (!result.IsSuccess())
-            {
-            // TODO: return error directly and avoid additonal localized strings
-            if (HttpStatus::Unauthorized == result.GetError().GetHttpStatus())
-                return SignInResult::Error(ConnectLocalizedString(ALERT_SignInFailed_Message));
-
-            return SignInResult::Error(ConnectLocalizedString(ALERT_SignInFailed_ServerError));
-            }
+            return SignInResult::Error(result.GetError());
 
         BeCriticalSectionHolder lock(m_cs);
 
