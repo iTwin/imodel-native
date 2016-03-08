@@ -765,7 +765,7 @@ void AddPressure(UnitRegistry& reg)
     unit = reg.AddUnit(PRESSURE, INTERNATIONAL, "KGF/SQ.M", "KGF*M(-2)");
     reg.AddSynonym(unit, "KILOGRAM_FORCE_PER_METRE_SQUARED");
 
-    unit = reg.AddUnit(PRESSURE, SI, "ATM", "PA", 101325);  // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+    unit = reg.AddUnit(PRESSURE, SI, "ATM", "PA", 101325);  // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  Is standard atmosphere
     reg.AddSynonym(unit, "ATMOSPHERE");
 
     reg.AddUnit(PRESSURE, SI, "BAR", "PA", 1.0e5); //, BISQNoDescript); //, BISQSecUom);
