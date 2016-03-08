@@ -238,7 +238,7 @@ bool SMSQLiteFile::SetNodeHeader(const SQLiteNodeHeader& newNodeHeader)
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "REPLACE INTO SMNodeHeader (NodeId, ParentNodeId, Resolution," 
                                   "Filtered, Extent, ContentExtent, TotalCount, ArePoints3d, NbFaceIndexes, "
-                                  "NumberOfMeshComponents, AllComponent, GraphID, SubNode,Neighbor, IndiceID, TexID, IsTextured) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                                  "NumberOfMeshComponents, AllComponent, GraphID, SubNode,Neighbor, IndiceID, TexID, IsTextured, NodeCount) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
     stmt->BindInt64(1, newNodeHeader.m_nodeID);
     stmt->BindInt64(2, newNodeHeader.m_parentNodeID);
     stmt->BindInt64(3, newNodeHeader.m_level);
@@ -273,7 +273,8 @@ bool SMSQLiteFile::SetNodeHeader(const SQLiteNodeHeader& newNodeHeader)
         size_t texID = SQLiteNodeHeader::NO_NODEID;
         stmt->BindInt64(16, texID);
         }
-    stmt->BindInt(17, newNodeHeader.m_areTextured ? 1 : 0);
+    stmt->BindInt(17, newNodeHeader.m_areTextured ? 1 : 0); 
+    stmt->BindInt(18, (int)newNodeHeader.m_nodeCount);
     DbResult status = stmt->Step();
     stmt->ClearBindings();
     delete[]neighbors;
@@ -307,7 +308,7 @@ bool SMSQLiteFile::GetNodeHeader(SQLiteNodeHeader& nodeHeader)
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT ParentNodeId, Resolution, Filtered, Extent,"
                                   "ContentExtent, TotalCount, ArePoints3d, NbFaceIndexes, "
-                                  "NumberOfMeshComponents, AllComponent, GraphID, SubNode, Neighbor, IndiceId, TexID, IsTextured FROM SMNodeHeader WHERE NodeId=?");
+                                  "NumberOfMeshComponents, AllComponent, GraphID, SubNode, Neighbor, IndiceId, TexID, IsTextured, NodeCount FROM SMNodeHeader WHERE NodeId=?");
     stmt->BindInt64(1, nodeHeader.m_nodeID);
 
 
@@ -370,6 +371,7 @@ bool SMSQLiteFile::GetNodeHeader(SQLiteNodeHeader& nodeHeader)
         nodeHeader.m_uvsIndicesID[0] = texIdx;
         }
     nodeHeader.m_areTextured = stmt->GetValueInt(15) ? true : false;
+    nodeHeader.m_nodeCount = stmt->GetValueInt(16);
     stmt->ClearBindings();
     return true;
     }

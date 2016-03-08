@@ -2241,7 +2241,8 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitNodeBasedOnImageRes()
     // Indicate node is not a leaf anymore
     m_nodeHeader.m_IsLeaf = false;
     m_nodeHeader.m_IsBranched = true;
-
+    for (size_t i = 0; i < m_nodeHeader.m_numberOfSubNodesOnSplit;++i)
+    this->AdviseSubNodeIDChanged(m_apSubNodes[i]);
     SetupNeighborNodesAfterSplit();
 
    SplitMeshForChildNodes();
@@ -2517,6 +2518,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
         StoreUV();
     StoreUVsIndices(texId);
     StorePtsIndice(texId+1);
+    SetDirty(true);
 #if DEBUG && SM_TRACE_RASTER_TEXTURING 
         std::string s;
     s += " N OF INDICE ARRAYS " + std::to_string(GetNbPtsIndiceArrays());
