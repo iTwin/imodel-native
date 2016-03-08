@@ -45,8 +45,4 @@ VolumeElementTestFixture.QueryTest                      # FenceParams::AcceptEle
 #Uses the eb ECschema which has to be refactored for EC3 and ECDb06. Notified Raman
 JsonTests.FieldEngineerStructArray
 
-ECInstanceSelectTests.SelectQueriesOnDbGeneratedDuringBuild_79Main # Notified Maha and Carole
-ECInstanceSelectTests.VerifyInstanceCountFor04Plant # Notified Maha and Carole
-ECInstanceSelectTests.VerifyInstanceCountFor79Main # Notified Maha and Carole
-ECInstanceSelectTests.VerifyInstanceCountsForMain # Notified Maha and Carole
 ElementDependencyGraph.DeleteSource # Notified Sam
