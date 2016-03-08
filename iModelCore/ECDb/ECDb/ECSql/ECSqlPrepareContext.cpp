@@ -126,17 +126,6 @@ ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& prepar
     {}
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    02/2014
-//+---------------+---------------+---------------+---------------+---------------+--------
-IClassMap::View ECSqlPrepareContext::GetClassMapViewMode () const
-    {
-    if (m_parentArrayProperty == nullptr)
-        return IClassMap::View::DomainClass;
-    else
-        return IClassMap::View::EmbeddedType;
-    }
-
-//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       01/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlPrepareContext::JoinedTableInfo const* ECSqlPrepareContext::TrySetupJoinedTableInfo(ECSqlParseTreeCR exp, Utf8CP orignalECSQL)
@@ -252,13 +241,13 @@ bool ECSqlPrepareContext::FindLastParameterIndexBeforeWhereClause (int& index, E
 //static 
 std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::JoinedTableInfo::CreateForInsert(ECSqlPrepareContext& ctx, InsertStatementExp const& exp)
     {
-    IClassMap const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
+    ClassMap const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
     if (!classMap.HasJoinedTable())
         return nullptr;
 
     NativeSqlBuilder parentOfJoinedTableECSQL;
     NativeSqlBuilder joinedTableECSQL;
-    IClassMap const* parentOfJoinedTableClassMap = classMap.FindClassMapOfParentOfJoinedTable();
+    ClassMap const* parentOfJoinedTableClassMap = classMap.FindClassMapOfParentOfJoinedTable();
     if (parentOfJoinedTableClassMap == nullptr)
         {
         BeAssert(parentOfJoinedTableClassMap != nullptr && "Root class for joined table must exist.");
@@ -326,12 +315,6 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
             joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
             info->m_parameterMap.GetSecondaryR().Add(thisValueParams);
             }
-        else if (property->GetPropertyMap().GetAsStructArrayTablePropertyMap())
-            {
-            joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
-            joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
-            info->m_parameterMap.GetSecondaryR().Add(thisValueParams);
-            }
         else
             {
             BeAssert(property->GetPropertyMap().MapsToTable(primaryTable));
@@ -369,13 +352,13 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
 //static 
 std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::JoinedTableInfo::CreateForUpdate(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp)
     {
-    IClassMap const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
+    ClassMap const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
     if (!classMap.HasJoinedTable())
         return nullptr;
 
     NativeSqlBuilder parentOfJoinedTableECSQL;
     NativeSqlBuilder joinedTableECSQL;
-    IClassMap const* parentOfJoinedTableClassMap = classMap.FindClassMapOfParentOfJoinedTable();
+    ClassMap const* parentOfJoinedTableClassMap = classMap.FindClassMapOfParentOfJoinedTable();
 
     ECDbSqlTable const& primaryTable = classMap.GetPrimaryTable();
     ECDbSqlTable const& joinedTable = classMap.GetJoinedTable();
@@ -417,12 +400,6 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
             return nullptr;
             }
         else if (property->GetPropertyMap().MapsToTable(joinedTable))
-            {
-            joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
-            joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
-            info->m_parameterMap.GetSecondaryR().Add(thisValueParams);
-            }
-        else if (property->GetPropertyMap().GetAsStructArrayTablePropertyMap())
             {
             joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
             joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));

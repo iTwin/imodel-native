@@ -9,7 +9,6 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 #include "ECSqlPreparer.h"
-#include "StructArrayToSecondaryTableECSqlBinder.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -43,34 +42,31 @@ private:
     ECSqlInsertPreparer ();
     ~ECSqlInsertPreparer ();
     
-    static ECSqlStatus PrepareInsertIntoClass (ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, IClassMap const& classMap);
-    static ECSqlStatus PrepareInsertIntoRelationship (ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, InsertStatementExp const& exp, IClassMap const& classMap);
-    static ECSqlStatus PrepareInsertIntoLinkTableRelationship (ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, RelationshipClassMapCR relationshipClassMap, ECN::ECClassId sourceECClassId, ECN::ECClassId targetECClassId);
-    static ECSqlStatus PrepareInsertIntoEndTableRelationship (ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, InsertStatementExp const& exp, RelationshipClassMapCR relationshipClassMap, ECN::ECClassId sourceECClassId, ECN::ECClassId targetECClassId);
+    static ECSqlStatus PrepareInsertIntoClass (ECSqlPrepareContext&, NativeSqlSnippets& nativeSqlSnippets, ClassMap const& classMap);
+    static ECSqlStatus PrepareInsertIntoRelationship (ECSqlPrepareContext&, NativeSqlSnippets& nativeSqlSnippets, InsertStatementExp const& exp, ClassMap const& classMap);
+    static ECSqlStatus PrepareInsertIntoLinkTableRelationship (ECSqlPrepareContext&, NativeSqlSnippets& nativeSqlSnippets, RelationshipClassMapCR relationshipClassMap, ECN::ECClassId sourceECClassId, ECN::ECClassId targetECClassId);
+    static ECSqlStatus PrepareInsertIntoEndTableRelationship (ECSqlPrepareContext&, NativeSqlSnippets& nativeSqlSnippets, InsertStatementExp const& exp, RelationshipClassMapCR relationshipClassMap, ECN::ECClassId sourceECClassId, ECN::ECClassId targetECClassId);
 
-    static ECSqlStatus GenerateNativeSqlSnippets (NativeSqlSnippets& insertNativeSqlSnippets, ECSqlPrepareContext& ctx, InsertStatementExp const&, IClassMap const&);
-    static void PreparePrimaryKey (ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, IClassMap const&);
+    static ECSqlStatus GenerateNativeSqlSnippets (NativeSqlSnippets& insertNativeSqlSnippets, ECSqlPrepareContext&, InsertStatementExp const&, ClassMap const&);
+    static void PreparePrimaryKey (ECSqlPrepareContext&, NativeSqlSnippets& nativeSqlSnippets, ClassMap const&);
     static ECSqlStatus PrepareConstraintClassId (NativeSqlSnippets& insertNativeSqlSnippets, ECSqlPrepareContext&, ECClassIdRelationshipConstraintPropertyMap const&, ECN::ECClassId constraintClassId);
 
     //! Checks whether for the given constraint a class id is necessary and if yes whether the one specified in the ECSQL is valid or not.
     //! If validation was successful, the class id is returned.
-    static ECSqlStatus ValidateConstraintClassId (ECN::ECClassId& retrievedConstraintClassId, ECSqlPrepareContext& ctx, InsertStatementExp const& exp, RelationshipClassMapCR relationshipClassMap, ECN::ECRelationshipEnd constraintEnd);
+    static ECSqlStatus ValidateConstraintClassId (ECN::ECClassId& retrievedConstraintClassId, ECSqlPrepareContext&, InsertStatementExp const& exp, RelationshipClassMapCR relationshipClassMap, ECN::ECRelationshipEnd constraintEnd);
 
-    static ECSqlStatus GetConstraintClassIdExpValue (bool& isParameter, ECN::ECClassId& constraintClassId, ECSqlPrepareContext& ctx, ValueExpListExp const& valueListExp, size_t valueExpIndex, Utf8CP constraintClassIdPropertyName);
-    static int GetConstraintClassIdExpIndex (InsertStatementExp const& exp, ECN::ECRelationshipEnd constraintEnd);
+    static ECSqlStatus GetConstraintClassIdExpValue (bool& isParameter, ECN::ECClassId& constraintClassId, ECSqlPrepareContext&, ValueExpListExp const& valueListExp, size_t valueExpIndex, Utf8CP constraintClassIdPropertyName);
+    static int GetConstraintClassIdExpIndex (InsertStatementExp const&, ECN::ECRelationshipEnd constraintEnd);
 
     static void BuildNativeSqlInsertStatement (NativeSqlBuilder& insertBuilder, NativeSqlSnippets const& insertNativeSqlSnippets);
     static void BuildNativeSqlUpdateStatement (NativeSqlBuilder& updateBuilder, NativeSqlSnippets const& insertNativeSqlSnippets, std::vector<size_t> const& expIndexSkipList, RelationshipClassEndTableMap const& classMap);
 
-    static ECInstanceIdMode ValidateUserProvidedECInstanceId (int& ecinstanceIdExpIndex, ECSqlPrepareContext& ctx, InsertStatementExp const& exp, IClassMap const& classMap);
+    static ECInstanceIdMode ValidateUserProvidedECInstanceId (int& ecinstanceIdExpIndex, ECSqlPrepareContext&, InsertStatementExp const&, ClassMap const&);
 
-    static ECSqlStatus SetupBindStructArrayParameter(StructArrayToSecondaryTableECSqlBinder* structArrayBinder, PropertyMapCR propertyMap, ECSqlNonSelectPreparedStatement* noneSelectPreparedStmt, ECSqlPrepareContext& ctx, InsertStatementExp const& exp);
-    static ECSqlStatus SetupBindStructParameter(ECSqlBinder* binder, PropertyMapCR propertyMap, ECSqlNonSelectPreparedStatement* noneSelectPreparedStmt, ECSqlPrepareContext& ctx, InsertStatementExp const& exp);
     static int GetParamterCount(Exp const& exp, std::set<ParameterExp const*>& namedParameterList);
-    static ECSqlStatus PrepareStepTask (ECSqlPrepareContext& ctx, InsertStatementExp const& exp);
 
 public:
-    static ECSqlStatus Prepare (ECSqlPrepareContext& ctx, InsertStatementExp const& exp);
+    static ECSqlStatus Prepare (ECSqlPrepareContext&, InsertStatementExp const&);
     };
 
 

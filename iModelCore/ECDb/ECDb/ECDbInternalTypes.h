@@ -150,9 +150,6 @@ enum class ECContainerType
 
 #define ECDB_COL_ECInstanceId           "ECInstanceId"
 #define ECDB_COL_ECClassId              "ECClassId"
-#define ECDB_COL_ECPropertyPathId       "ECPropertyPathId"
-#define ECDB_COL_ParentECInstanceId     "ParentECInstanceId"
-#define ECDB_COL_ECArrayIndex           "ECArrayIndex"
 
 //=======================================================================================
 // @bsiclass                                 Affan.Khan                10/2015

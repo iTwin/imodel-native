@@ -16,17 +16,15 @@
 #include "ECSqlField.h"
 #include "ECSqlBinder.h"
 #include "DynamicSelectClauseECClass.h"
-#include "ECSqlStepTask.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+struct ParentOfJoinedTableECSqlStatement;
 
 //=======================================================================================
 //! Represents a prepared ECSqlStatement with all additional information needed for
 //! post-prepare operations
 // @bsiclass                                                Krischan.Eberle      12/2013
 //+===============+===============+===============+===============+===============+======
-struct ParentOfJoinedTableECSqlStatement;
-
 struct ECSqlPreparedStatement : NonCopyableClass
     {
     private:
@@ -37,7 +35,6 @@ struct ECSqlPreparedStatement : NonCopyableClass
         Utf8String m_nativeSql;
         mutable BeSQLite::Statement m_sqliteStatement;
         bool m_isNoopInSqlite;
-        bool m_onlyExecuteStepTasks;
         ECSqlParameterMap m_parameterMap;
         std::unique_ptr<ParentOfJoinedTableECSqlStatement> m_parentOfJoinedTableECSqlStatement;
         std::vector<ECN::ECSchemaPtr> m_keepAliveSchemas; //Hold on to dependent ECSchema just in case some process flush original ECSchema
@@ -52,7 +49,6 @@ struct ECSqlPreparedStatement : NonCopyableClass
 
         ECSqlParameterMap const& GetParameterMap() const { return m_parameterMap; }
         bool IsNoopInSqlite() const { return m_isNoopInSqlite; }
-        bool OnlyExecuteStepTasks() const { return m_onlyExecuteStepTasks; }
 
         IssueReporter const& GetIssueReporter() const { return m_ecdb->GetECDbImplR().GetIssueReporter(); }
 
@@ -122,18 +118,12 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct ECSqlNonSelectPreparedStatement : public ECSqlPreparedStatement
     {
-private:
-    ECSqlStepTask::Collection m_stepTasks;
-
 protected:
-    ECSqlNonSelectPreparedStatement (ECSqlType statementType, ECDbCR ecdb) :ECSqlPreparedStatement (statementType, ecdb), m_stepTasks ()  {}
-
+    ECSqlNonSelectPreparedStatement (ECSqlType statementType, ECDbCR ecdb) :ECSqlPreparedStatement (statementType, ecdb)  {}
     virtual ECSqlStatus _Reset () override;
 
 public:
-
     virtual ~ECSqlNonSelectPreparedStatement () {}
-    ECSqlStepTask::Collection& GetStepTasks () { return m_stepTasks; }
     };
 
 //=======================================================================================

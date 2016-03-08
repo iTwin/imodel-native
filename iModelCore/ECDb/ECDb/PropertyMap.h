@@ -65,7 +65,7 @@ public:
     const_iterator end() const { return m_orderedCollection.end(); }
     };
 
-struct StructArrayTablePropertyMap;
+struct StructArrayJsonPropertyMap;
 struct NavigationPropertyMap;
 struct ECClassIdRelationshipConstraintPropertyMap;
 
@@ -96,7 +96,7 @@ private:
     virtual BentleyStatus _Save(ECDbClassMapInfo&) const;
     virtual BentleyStatus _Load(ECDbClassMapInfo const&) { return SUCCESS; }
 
-    virtual StructArrayTablePropertyMap const* _GetAsStructArrayTablePropertyMap() const { return nullptr; }
+    virtual StructArrayJsonPropertyMap const* _GetAsStructArrayPropertyMap() const { return nullptr; }
     virtual NavigationPropertyMap const* _GetAsNavigationPropertyMap() const { return nullptr; }
     virtual ECClassIdRelationshipConstraintPropertyMap const* _GetAsECClassIdRelationshipConstraintPropertyMapRelationship() const { return nullptr; }
 
@@ -116,7 +116,7 @@ public:
     virtual ~PropertyMap() {}
     ECDbPropertyPathId GetPropertyPathId() const { BeAssert(m_propertyPathId != 0); return m_propertyPathId; }
     NavigationPropertyMap const* GetAsNavigationPropertyMap() const { return _GetAsNavigationPropertyMap(); }
-    StructArrayTablePropertyMap const* GetAsStructArrayTablePropertyMap() const { return _GetAsStructArrayTablePropertyMap(); }
+    StructArrayJsonPropertyMap const* GetAsStructArrayPropertyMap() const { return _GetAsStructArrayPropertyMap(); }
     ECClassIdRelationshipConstraintPropertyMap const* GetAsECClassIdRelationshipConstraintPropertyMap() const { return _GetAsECClassIdRelationshipConstraintPropertyMapRelationship(); }
     ECN::ECPropertyCR GetProperty() const;
     PropertyMapCollection const& GetChildren() const { return m_children; }
@@ -244,7 +244,7 @@ private:
     void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const;
     virtual BentleyStatus _Save(ECDbClassMapInfo&) const override;
     virtual BentleyStatus _Load(ECDbClassMapInfo const&) override;
-    Utf8String _ToString() const override;
+    virtual Utf8String _ToString() const override;
 
     BentleyStatus SetColumns(ECDbSqlColumn const&, ECDbSqlColumn const&, ECDbSqlColumn const*);
 
@@ -302,7 +302,7 @@ private:
         {}
 
     virtual BentleyStatus _FindOrCreateColumnsInTable(ClassMap const&) override;
-    Utf8String _ToString() const override;
+    virtual Utf8String _ToString() const override;
 
 public:
     ~PrimitiveArrayPropertyMap() {}
@@ -320,7 +320,8 @@ private:
     StructArrayJsonPropertyMap(StructArrayJsonPropertyMap const& proto, PropertyMap const* parentPropertyMap) :SingleColumnPropertyMap(proto, parentPropertyMap) {}
 
     virtual BentleyStatus _FindOrCreateColumnsInTable(ClassMap const&) override;
-    Utf8String _ToString() const override;
+    virtual StructArrayJsonPropertyMap const* _GetAsStructArrayPropertyMap() const override { return this; }
+    virtual Utf8String _ToString() const override;
 
     ECN::StructArrayECPropertyCR GetStructArrayProperty() const { BeAssert(GetProperty().GetIsStructArray()); return *GetProperty().GetAsStructArrayProperty(); }
 
@@ -331,30 +332,6 @@ public:
     static PropertyMapPtr Clone(StructArrayJsonPropertyMap const& proto, PropertyMap const* parentPropertyMap) { return new StructArrayJsonPropertyMap(proto, parentPropertyMap); }
 
     };
-
-/*---------------------------------------------------------------------------------------
-* Maps an array of ECStructs to a table
-* @bsimethod                                                    affan.khan        03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct StructArrayTablePropertyMap : PropertyMap
-    {
-private:
-    StructArrayTablePropertyMap(ECN::StructArrayECPropertyCR structArrayProp, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap) : PropertyMap(structArrayProp, propertyAccessString, parentPropertyMap) {}
-    StructArrayTablePropertyMap(StructArrayTablePropertyMap const& proto, PropertyMap const* parentPropertyMap) :PropertyMap(proto, parentPropertyMap) {}
-
-    virtual StructArrayTablePropertyMap const* _GetAsStructArrayTablePropertyMap() const override { return this; }
-    virtual BentleyStatus _Save(ECDbClassMapInfo&) const override;
-    virtual BentleyStatus _Load(ECDbClassMapInfo const&) override;
-    virtual Utf8String _ToString() const override;
-
-public:
-    ~StructArrayTablePropertyMap() {}
-    static PropertyMapPtr Create(ECN::StructArrayECPropertyCR structArrayProp, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap) {return new StructArrayTablePropertyMap(structArrayProp, propertyAccessString, parentPropertyMap); }
-    static PropertyMapPtr Clone(StructArrayTablePropertyMap const& proto, PropertyMap const* parentPropertyMap) { return new StructArrayTablePropertyMap(proto, parentPropertyMap); }
-
-    ECN::ECClassCR GetStructElementType() const { return *GetProperty().GetAsStructArrayProperty()->GetStructElementType(); }
-    };
-
 
 struct RelationshipConstraintMap;
 

@@ -50,7 +50,7 @@ ECSqlStatus ECSqlStatementBase::_Prepare (ECDbCR ecdb, Utf8CP ecsql)
     //Step 1: parse the ECSQL
     ECSqlParseTreePtr ecsqlParseTree = nullptr;
     ECSqlParser parser;
-    if (SUCCESS != parser.Parse(ecsqlParseTree, ecdb, ecsql, prepareContext.GetClassMapViewMode()))
+    if (SUCCESS != parser.Parse(ecsqlParseTree, ecdb, ecsql))
         {
         Finalize ();
         return ECSqlStatus::InvalidECSql;
@@ -66,7 +66,7 @@ ECSqlStatus ECSqlStatementBase::_Prepare (ECDbCR ecdb, Utf8CP ecsql)
             ecsql = joinedTableInfo->GetParentOfJoinedTableECSql();
 
         ecsqlParseTree = nullptr; //delete existing parse tree
-        if (SUCCESS != parser.Parse(ecsqlParseTree, ecdb, ecsql, prepareContext.GetClassMapViewMode()))
+        if (SUCCESS != parser.Parse(ecsqlParseTree, ecdb, ecsql))
             {
             Finalize();
             return ECSqlStatus::InvalidECSql;

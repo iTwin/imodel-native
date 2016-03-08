@@ -35,9 +35,6 @@ std::set<ECDbSqlTable const*> Exp::GetReferencedTables() const
         auto propertyNameExp = static_cast<PropertyNameExp const*>(exp);
         if (!propertyNameExp->IsPropertyRef())
             {
-            if (propertyNameExp->GetTypeInfo().GetPropertyMap()->GetAsStructArrayTablePropertyMap())
-                continue;
-
             std::vector<ECDbSqlColumn const*> columns;            
             propertyNameExp->GetTypeInfo().GetPropertyMap()->GetColumns(columns);
             for (auto column : columns)
@@ -416,7 +413,7 @@ void PropertyPath::Pop()
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus PropertyPath::Resolve(IClassMap const& classMap, Utf8String* errorMessage)
+BentleyStatus PropertyPath::Resolve(ClassMap const& classMap, Utf8String* errorMessage)
     {
     if (IsEmpty())
         return ERROR;
@@ -573,7 +570,7 @@ BentleyStatus PropertyPath::TryParseQualifiedPath(PropertyPath& resolvedProperty
         return ERROR;
         }
 
-    IClassMap const* targetClassMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMap(*targetClass);
+    ClassMap const* targetClassMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMap(*targetClass);
     if (targetClassMap == nullptr)
         {
         BeAssert(false && "No class map found for class.");

@@ -215,65 +215,14 @@ ECSqlColumnInfo&& ecsqlColumnInfo,
 PropertyMapCR propertyMap
 )
     {
-    ECDbCR ecdb = ctx.GetECSqlStatementR ().GetPreparedStatementP ()->GetECDb ();
+    /*ECDbCR ecdb = ctx.GetECSqlStatementR ().GetPreparedStatementP ()->GetECDb ();
     StructArrayECPropertyCP structArrayProperty = propertyMap.GetProperty().GetAsStructArrayProperty();
     if (!structArrayProperty)
         {
         BeAssert(false && "Expecting struct array property");
         return ECSqlStatus::Error;
         }
-
-    ECClassCP structType = structArrayProperty->GetStructElementType();
-    ClassMap const* structTypeMap = ecdb.GetECDbImplR().GetECDbMap ().GetClassMap (*structType);
-    if (structTypeMap == nullptr)
-        {
-        BeAssert(false);
-        return ECSqlStatus::Error;
-        }
-
-    //1. Generate ECSQL statement to read nested struct array.
-    Utf8String innerECSqlSelectClause;
-    int selectColumnCount = 0;
-    for (PropertyMap const* propertyMap : structTypeMap->GetPropertyMaps ())
-        {
-        if (propertyMap->IsECInstanceIdPropertyMap ())
-            continue;
-
-        innerECSqlSelectClause.append("[").append(propertyMap->GetProperty().GetName()).append("],");
-        selectColumnCount++;
-        }
-
-    innerECSqlSelectClause.append(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME);
-
-    Utf8String innerECSql;
-    innerECSql.Sprintf("SELECT %s FROM ONLY %s WHERE %s=? AND %s=%lld ORDER BY %s",
-                       innerECSqlSelectClause.c_str(), structType->GetECSqlName().c_str(), ECDbSystemSchemaHelper::PARENTECINSTANCEID_PROPNAME,
-                       ECDbSystemSchemaHelper::ECPROPERTYPATHID_PROPNAME, propertyMap.GetPropertyPathId(),
-                       ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME);
-
-      unique_ptr<StructArrayMappedToSecondaryTableECSqlField> structArrayField = unique_ptr<StructArrayMappedToSecondaryTableECSqlField>(
-        new StructArrayMappedToSecondaryTableECSqlField (ctx, *structArrayProperty, move (ecsqlColumnInfo)));
-
-    //2. Create and prepare the nested ECSqlStatement.
-   
-    EmbeddedECSqlStatement& secondaryECSqlStatement = structArrayField->GetSecondaryECSqlStatement();
-    ECSqlStatus status = secondaryECSqlStatement.Prepare (ecdb, innerECSql.c_str());
-    if (!status.IsSuccess())
-        return status;
-
-    //Make sure we hide ECInstnaceId from user
-    structArrayField->SetHiddenMemberStartIndex (selectColumnCount);
-
-    //3. Set binding information to bind ECInstanceId from parent statement to nested statement.
-    //   Everytime parent do Step() the nested statement is rerun with new value of parent ECInstanceId.
-    structArrayField->GetBinder().SetSourcePropertyPath (ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME);
-
-    // The SourcePropertyIndex would be set by Prepare later when it complete parsing parent SELECT-list. It would either map it to 
-    // existing selected ECInstanceId property or it will select ECInstanceId property automatically in sqlite statement that it generate
-    // and update the SourcePropertyIndex according to point to it.
-    structArrayField->GetBinder().SetTargetParamterIndex (1);    
-
-    field = move (structArrayField);
+        */
     return ECSqlStatus::Success;
     }
 

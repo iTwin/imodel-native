@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbPolicyManager.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -133,10 +133,10 @@ private:
     ECDbPolicyManager ();
     ~ECDbPolicyManager ();
 
-    static ECDbPolicy DoGetClassPolicy (IClassMap const& classMap, IsValidInECSqlPolicyAssertion const& assertion);
+    static ECDbPolicy DoGetClassPolicy (ClassMap const& classMap, IsValidInECSqlPolicyAssertion const& assertion);
 
 public:
-    static ECDbPolicy GetClassPolicy (IClassMap const& classMap, ECDbPolicyAssertion const& assertion);
+    static ECDbPolicy GetClassPolicy (ClassMap const& classMap, ECDbPolicyAssertion const& assertion);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -1684,12 +1684,6 @@ Utf8CP ECDbSqlColumn::KindToString(ColumnKind columnKind)
                 return "ECInstanceId";
             case ColumnKind::ECClassId:
                 return "ECClassId";
-            case ColumnKind::ECArrayIndex:
-                return "ECArrayIndex";
-            case ColumnKind::ECPropertyPathId:
-                return "ECPropertyPathId";
-            case ColumnKind::ParentECInstanceId:
-                return "ParentECInstanceId";
             case ColumnKind::SourceECInstanceId:
                 return "SourceECInstanceId";
             case ColumnKind::SourceECClassId:

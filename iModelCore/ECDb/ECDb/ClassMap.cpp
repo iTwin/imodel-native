@@ -12,395 +12,14 @@
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-//********************* ClassDbView ******************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    10/2013
-//---------------------------------------------------------------------------------------
-BentleyStatus ClassDbView::Generate(NativeSqlBuilder& viewSql, bool isPolymorphic, ECSqlPrepareContext const& preparedContext) const
-    {
-    if (m_classMap == nullptr)
-        {
-        BeAssert(false && "ClassDbView::Generate called but m_classMap is null");
-        return ERROR;
-        }
-
-    if (m_classMap->GetMapStrategy().IsNotMapped())
-        {
-        BeAssert(false && "ClassDbView::Generate must not be called on unmapped class");
-        return ERROR;
-        }
-
-    return ViewGenerator::CreateView(viewSql, m_classMap->GetECDbMap(), *m_classMap, isPolymorphic, preparedContext, true /*optimizeByIncludingOnlyRealTables*/);
-    }
-
-//********************* IClassMap ******************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    02/2014
-//---------------------------------------------------------------------------------------
-IClassMap const& IClassMap::GetView(View classView) const
-    {
-    return _GetView(classView);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    02/2014
-//---------------------------------------------------------------------------------------
-PropertyMapCollection const& IClassMap::GetPropertyMaps() const
-    {
-    return _GetPropertyMaps();
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan      09/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-PropertyMapCP IClassMap::GetPropertyMap(Utf8CP propertyName) const
-    {
-    PropertyMapCP propMap = nullptr;
-    if (GetPropertyMaps().TryGetPropertyMap(propMap, propertyName, true))
-        return propMap;
-
-    return nullptr;
-    }
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       05 / 2015
-//------------------------------------------------------------------------------------------
-StorageDescription const& IClassMap::GetStorageDescription() const
-    {
-    return GetECDbMap().GetLightweightCache().GetStorageDescription(*this);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  01/2014
-//---------------------------------------------------------------------------------------
-std::vector<IClassMap const*> IClassMap::GetDerivedClassMaps() const
-    {
-    auto const& ecdbMap = GetECDbMap();
-
-    std::vector<IClassMap const*> derivedClassMaps;
-    auto const& derivedClasses = ecdbMap.GetECDbR ().Schemas().GetDerivedECClasses(const_cast<ECClassR> (GetClass()));
-    for (auto derivedClass : derivedClasses)
-        {
-        auto derivedClassMap = ecdbMap.GetClassMap(*derivedClass);
-        derivedClassMaps.push_back(derivedClassMap);
-        }
-
-    return std::move(derivedClassMaps);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    02/2014
-//---------------------------------------------------------------------------------------
-ECClassCR IClassMap::GetClass() const
-    {
-    return _GetClass();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    02/2014
-//---------------------------------------------------------------------------------------
-ECClassId IClassMap::GetParentMapClassId() const
-    {
-    return _GetParentMapClassId();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  12/2013
-//---------------------------------------------------------------------------------------
-ClassDbView const& IClassMap::GetDbView() const
-    {
-    return _GetDbView();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  12/2013
-//---------------------------------------------------------------------------------------
-IClassMap::Type IClassMap::GetClassMapType() const
-    {
-    return _GetClassMapType();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  02/2014
-//---------------------------------------------------------------------------------------
-ECDbMapStrategy const& IClassMap::GetMapStrategy() const
-    {
-    ECDbMapStrategy const& strategy = _GetMapStrategy();
-    BeAssert(strategy.IsValid() && "MapStrategy should have been resolved by the time it is hold in a class map.");
-    return strategy;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  02/2014
-//---------------------------------------------------------------------------------------
-ECDbMapCR IClassMap::GetECDbMap() const
-    {
-    return _GetECDbMap();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  12/2013
-//---------------------------------------------------------------------------------------
-bool IClassMap::IsRelationshipClassMap() const
-    {
-    const auto type = GetClassMapType();
-    return type == Type::RelationshipEndTable || type == Type::RelationshipLinkTable;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  01/2014
-//---------------------------------------------------------------------------------------
-//static
-bool IClassMap::IsAnyClass(ECClassCR ecclass)
-    {
-    return ecclass.GetSchema().IsStandardSchema() && ecclass.GetName().Equals("AnyClass");
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  01/2014
-//---------------------------------------------------------------------------------------
-bool IClassMap::MapsToStructArrayTable() const
-    {
-    return MapsToStructArrayTable(GetClass());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  01/2014
-//---------------------------------------------------------------------------------------
-//static
-bool IClassMap::MapsToStructArrayTable(ECN::ECClassCR ecClass)
-    {
-    return ecClass.IsStructClass();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                         Affan.Khan  10/2015
-//---------------------------------------------------------------------------------------
-bool IClassMap::HasJoinedTable() const
-    {
-    return Enum::Contains(GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                         Affan.Khan  10/2015
-//---------------------------------------------------------------------------------------
-bool IClassMap::IsParentOfJoinedTable() const
-    {
-    return Enum::Contains(GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::ParentOfJoinedTable);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                         Affan.Khan  10/2015
-//---------------------------------------------------------------------------------------
-IClassMap const* IClassMap::GetParentOfJoinedTable() const
-    {
-    std::vector<IClassMap const*> path;
-    if (GetPathToParentOfJoinedTable(path) != SUCCESS)
-        return nullptr;
-
-    return path.front();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                         Affan.Khan  10/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus IClassMap::GetPathToParentOfJoinedTable(std::vector<IClassMap const*>& path) const
-    {
-    path.clear();
-    IClassMap const* current = this;
-    if (!current->HasJoinedTable() && !current->IsParentOfJoinedTable())
-        return ERROR;
-
-    path.insert(path.begin(), current);
-    do
-        {
-        ECClassId nextParentId = current->GetParentMapClassId();
-        if (nextParentId == ECClass::UNSET_ECCLASSID)
-            return SUCCESS;
-
-        current = GetECDbMap().GetClassMap(nextParentId);
-        if (current == nullptr)
-            {
-            BeAssert(current != nullptr && "Failed to find parent classmap. This should not happen");
-            return ERROR;
-            }
-
-        if (current->HasJoinedTable() || current->IsParentOfJoinedTable())
-            path.insert(path.begin(), current);
-        else
-            return SUCCESS;
-        }
-    while (current != nullptr);
-
-    path.clear();
-    return ERROR;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                         Affan.Khan  10/2015
-//---------------------------------------------------------------------------------------
-IClassMap const* IClassMap::FindClassMapOfParentOfJoinedTable() const
-    {
-    IClassMap const* current = this;
-    if (!current->HasJoinedTable())
-        return nullptr;
-
-    do
-        {
-        if (current->IsParentOfJoinedTable())
-            return current;
-
-        auto nextParentId = current->GetParentMapClassId();
-        if (nextParentId == ECClass::UNSET_ECCLASSID)
-            return nullptr;
-
-        current = GetECDbMap().GetClassMap(nextParentId);
-        if (current == nullptr)
-            {
-            BeAssert(current != nullptr && "Failed to find parent classmap. This should not happen");
-            return nullptr;
-            }
-
-        } while (current != nullptr);
-
-    return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  01/2016
-//---------------------------------------------------------------------------------------
-IClassMap const* IClassMap::FindSharedTableRootClassMap() const
-    {
-    ECDbMapStrategy mapStrategy = GetMapStrategy();
-    if (mapStrategy.GetStrategy() != ECDbMapStrategy::Strategy::SharedTable && !mapStrategy.AppliesToSubclasses())
-        return nullptr;
-
-    ECClassId parentId = GetParentMapClassId();
-    if (parentId == ECClass::UNSET_ECCLASSID)
-        return this;
-
-    ClassMap const* parent = GetECDbMap().GetClassMap(parentId);
-    if (parent == nullptr)
-        {
-        BeAssert(false && "Failed to find parent classmap. This should not happen");
-        return nullptr;
-        }
-
-    return parent->FindSharedTableRootClassMap();
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String IClassMap::ToString() const
-    {
-    Utf8CP typeStr = nullptr;
-    switch (GetClassMapType())
-        {
-        case IClassMap::Type::Class:
-            typeStr = "Class";
-            break;
-        case IClassMap::Type::EmbeddedType:
-            typeStr = "EmbeddedType";
-            break;
-        case IClassMap::Type::RelationshipEndTable:
-            typeStr = "RelationshipEndTable";
-            break;
-        case IClassMap::Type::RelationshipLinkTable:
-            typeStr = "RelationshipLinkTable";
-            break;
-        case IClassMap::Type::SecondaryTable:
-            typeStr = "SecondaryTable";
-            break;
-        case IClassMap::Type::Unmapped:
-            typeStr = "Unmapped";
-            break;
-        default:
-            BeAssert(false && "Update ClassMap::ToString to handle new value in enum IClassMap::Type.");
-            typeStr = "Unrecognized class map type";
-            break;
-        }
-
-    Utf8String str;
-    str.Sprintf("ClassMap '%s' - Type: %s - Map strategy: %s", GetClass().GetFullName(), typeStr, GetMapStrategy().ToString().c_str());
-
-    return str;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      11/2015
-//---------------------------------------------------------------------------------------
-//static
-BentleyStatus IClassMap::DetermineTableName(Utf8StringR tableName, ECN::ECClassCR ecclass, Utf8CP tablePrefix)
-    {
-    if (!Utf8String::IsNullOrEmpty(tablePrefix))
-        tableName.assign(tablePrefix);
-    else
-        {
-        if (SUCCESS != DetermineTablePrefix(tableName, ecclass))
-            return ERROR;
-        }
-
-    tableName.append("_").append(ecclass.GetName());
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      11/2015
-//---------------------------------------------------------------------------------------
-//static
-BentleyStatus IClassMap::DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR ecclass)
-    {
-    tablePrefix.clear();
-
-    ECSchemaCR schema = ecclass.GetSchema();
-    ECDbSchemaMap customSchemaMap;
-
-    if (ECDbMapCustomAttributeHelper::TryGetSchemaMap(customSchemaMap, schema))
-        {
-        if (customSchemaMap.TryGetTablePrefix(tablePrefix) != ECObjectsStatus::Success)
-            return ERROR;
-        }
-
-    if (tablePrefix.empty())
-        {
-        Utf8StringCR namespacePrefix = schema.GetNamespacePrefix();
-        if (!namespacePrefix.empty())
-            tablePrefix = namespacePrefix;
-        else
-            tablePrefix = schema.GetName();
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                    12/2015
-//---------------------------------------------------------------------------------------
-Utf8String IClassMap::GetPersistedViewName() const
-    {
-    Utf8String name;
-    name.Sprintf("_%s_%s", GetClass().GetSchema().GetNamespacePrefix().c_str(), GetClass().GetName().c_str());
-    return std::move(name);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                    12/2015
-//---------------------------------------------------------------------------------------
-bool IClassMap::HasPersistedView() const
-    {
-    return GetECDbMap().GetECDb().TableExists(GetPersistedViewName().c_str());
-    }
 
 //********************* ClassMap ******************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                06/2012
 //---------------------------------------------------------------------------------------
-ClassMap::ClassMap(ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
-    : IClassMap(), m_ecDbMap(ecDbMap), m_ecClass(ecClass), m_mapStrategy(mapStrategy),
-    m_parentMapClassId(ECClass::UNSET_ECCLASSID), m_dbView(nullptr), m_isDirty(setIsDirty), m_columnFactory(*this), m_id(0ULL)
+ClassMap::ClassMap(Type type, ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
+    : m_type(type), m_ecDbMap(ecDbMap), m_ecClass(ecClass), m_mapStrategy(mapStrategy), m_parentMapClassId(ECClass::UNSET_ECCLASSID), 
+    m_isDirty(setIsDirty), m_columnFactory(*this), m_id(0ULL), m_isECInstanceIdAutogenerationDisabled(false)
     {
     if (SUCCESS != InitializeDisableECInstanceIdAutogeneration())
         {
@@ -414,7 +33,7 @@ ClassMap::ClassMap(ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStra
 MapStatus ClassMap::Map(SchemaImportContext& schemaImportContext, ClassMapInfo const& mapInfo)
     {
     ECDbMapStrategy const& mapStrategy = GetMapStrategy();
-    IClassMap const* effectiveParentClassMap = (mapStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && mapStrategy.AppliesToSubclasses()) ? mapInfo.GetParentClassMap() : nullptr;
+    ClassMap const* effectiveParentClassMap = (mapStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && mapStrategy.AppliesToSubclasses()) ? mapInfo.GetParentClassMap() : nullptr;
 
     auto stat = _MapPart1(schemaImportContext, mapInfo, effectiveParentClassMap);
     if (stat != MapStatus::Success)
@@ -431,9 +50,8 @@ MapStatus ClassMap::Map(SchemaImportContext& schemaImportContext, ClassMapInfo c
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::_MapPart1(SchemaImportContext& schemaImportContext, ClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
+MapStatus ClassMap::_MapPart1(SchemaImportContext& schemaImportContext, ClassMapInfo const& mapInfo, ClassMap const* parentClassMap)
     {
-    m_dbView = std::unique_ptr<ClassDbView> (new ClassDbView(*this));
     ECDbSqlTable const* primaryTable = nullptr;
     TableType tableType = TableType::Primary;
     if (Enum::Contains(mapInfo.GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable))
@@ -441,8 +59,6 @@ MapStatus ClassMap::_MapPart1(SchemaImportContext& schemaImportContext, ClassMap
         tableType = TableType::Joined;
         primaryTable = &parentClassMap->GetPrimaryTable();
         }
-    else if (IClassMap::MapsToStructArrayTable(m_ecClass))
-        tableType = TableType::StructArray;
     else if (mapInfo.GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ExistingTable)
         tableType = TableType::Existing;
 
@@ -512,7 +128,7 @@ MapStatus ClassMap::_MapPart1(SchemaImportContext& schemaImportContext, ClassMap
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::_MapPart2(SchemaImportContext& schemaImportContext, ClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
+MapStatus ClassMap::_MapPart2(SchemaImportContext& schemaImportContext, ClassMapInfo const& mapInfo, ClassMap const* parentClassMap)
     {
     MapStatus stat = AddPropertyMaps(schemaImportContext.GetClassMapLoadContext(), parentClassMap, nullptr, &mapInfo);
     if (stat != MapStatus::Success)
@@ -635,7 +251,7 @@ void ClassMap::SetTable(ECDbSqlTable& newTable, bool append /*= false*/)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo,ClassMapInfo const* classMapInfo)
+MapStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, ClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo,ClassMapInfo const* classMapInfo)
     {
     const bool isJoinedTableMapping = Enum::Contains(GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable);
     const bool isImportingSchemas = classMapInfo != nullptr && loadInfo == nullptr;
@@ -874,34 +490,9 @@ bool ClassMap::TryGetECInstanceIdPropertyMap(PropertyMapPtr& ecInstanceIdPropert
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------
-PropertyMapCollection const& ClassMap::_GetPropertyMaps() const
-    {
-    return m_propertyMaps;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  02/2014
-//---------------------------------------------------------------------------------------
-PropertyMapCollection& ClassMap::GetPropertyMapsR ()
-    {
-    return m_propertyMaps;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  02/2014
-//---------------------------------------------------------------------------------------
 ECDbSchemaManagerCR ClassMap::Schemas() const
     {
     return GetECDbMap().GetECDbR ().Schemas();
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  12/2013
-//---------------------------------------------------------------------------------------
-IClassMap::Type ClassMap::_GetClassMapType() const
-    {
-    return Type::Class;
     }
 
 //---------------------------------------------------------------------------------------
@@ -953,9 +544,8 @@ BentleyStatus ClassMap::_Save(std::set<ClassMap const*>& savedGraph)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan      01/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext& ctx, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
+BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext& ctx, ECDbClassMapInfo const& mapInfo, ClassMap const* parentClassMap)
     {
-    m_dbView = std::unique_ptr<ClassDbView>(new ClassDbView(*this));
     if (parentClassMap)
         m_parentMapClassId = parentClassMap->GetClass().GetId();
 
@@ -968,10 +558,6 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
         }
 
     localPropSet.insert(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME);
-    localPropSet.insert(ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME);
-    localPropSet.insert(ECDbSystemSchemaHelper::ECPROPERTYPATHID_PROPNAME);
-    localPropSet.insert(ECDbSystemSchemaHelper::OWNERECINSTANCEID_PROPNAME);
-    localPropSet.insert(ECDbSystemSchemaHelper::PARENTECINSTANCEID_PROPNAME);
     std::set<ECDbSqlTable*> tables;
     std::set<ECDbSqlTable*> joinedTables;
 
@@ -1020,6 +606,285 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
         return ERROR;
         }
     return AddPropertyMaps(ctx, parentClassMap, &mapInfo, nullptr) == MapStatus::Success ? SUCCESS : ERROR;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan      09/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+PropertyMapCP ClassMap::GetPropertyMap(Utf8CP propertyName) const
+    {
+    PropertyMapCP propMap = nullptr;
+    if (GetPropertyMaps().TryGetPropertyMap(propMap, propertyName, true))
+        return propMap;
+
+    return nullptr;
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       05 / 2015
+//------------------------------------------------------------------------------------------
+StorageDescription const& ClassMap::GetStorageDescription() const
+    {
+    return GetECDbMap().GetLightweightCache().GetStorageDescription(*this);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  01/2014
+//---------------------------------------------------------------------------------------
+std::vector<ClassMap const*> ClassMap::GetDerivedClassMaps() const
+    {
+    auto const& ecdbMap = GetECDbMap();
+
+    std::vector<ClassMap const*> derivedClassMaps;
+    auto const& derivedClasses = ecdbMap.GetECDbR().Schemas().GetDerivedECClasses(const_cast<ECClassR> (GetClass()));
+    for (auto derivedClass : derivedClasses)
+        {
+        auto derivedClassMap = ecdbMap.GetClassMap(*derivedClass);
+        derivedClassMaps.push_back(derivedClassMap);
+        }
+
+    return std::move(derivedClassMaps);
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  12/2013
+//---------------------------------------------------------------------------------------
+bool ClassMap::IsRelationshipClassMap() const
+    {
+    const auto type = GetType();
+    return type == Type::RelationshipEndTable || type == Type::RelationshipLinkTable;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  01/2014
+//---------------------------------------------------------------------------------------
+//static
+bool ClassMap::IsAnyClass(ECClassCR ecclass)
+    {
+    return ecclass.GetSchema().IsStandardSchema() && ecclass.GetName().Equals("AnyClass");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                         Affan.Khan  10/2015
+//---------------------------------------------------------------------------------------
+bool ClassMap::HasJoinedTable() const
+    {
+    return Enum::Contains(GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                         Affan.Khan  10/2015
+//---------------------------------------------------------------------------------------
+bool ClassMap::IsParentOfJoinedTable() const
+    {
+    return Enum::Contains(GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::ParentOfJoinedTable);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                         Affan.Khan  10/2015
+//---------------------------------------------------------------------------------------
+ClassMap const* ClassMap::GetParentOfJoinedTable() const
+    {
+    std::vector<ClassMap const*> path;
+    if (GetPathToParentOfJoinedTable(path) != SUCCESS)
+        return nullptr;
+
+    return path.front();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                         Affan.Khan  10/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus ClassMap::GetPathToParentOfJoinedTable(std::vector<ClassMap const*>& path) const
+    {
+    path.clear();
+    ClassMap const* current = this;
+    if (!current->HasJoinedTable() && !current->IsParentOfJoinedTable())
+        return ERROR;
+
+    path.insert(path.begin(), current);
+    do
+        {
+        ECClassId nextParentId = current->GetParentMapClassId();
+        if (nextParentId == ECClass::UNSET_ECCLASSID)
+            return SUCCESS;
+
+        current = GetECDbMap().GetClassMap(nextParentId);
+        if (current == nullptr)
+            {
+            BeAssert(current != nullptr && "Failed to find parent classmap. This should not happen");
+            return ERROR;
+            }
+
+        if (current->HasJoinedTable() || current->IsParentOfJoinedTable())
+            path.insert(path.begin(), current);
+        else
+            return SUCCESS;
+        } while (current != nullptr);
+
+        path.clear();
+        return ERROR;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                         Affan.Khan  10/2015
+//---------------------------------------------------------------------------------------
+ClassMap const* ClassMap::FindClassMapOfParentOfJoinedTable() const
+    {
+    ClassMap const* current = this;
+    if (!current->HasJoinedTable())
+        return nullptr;
+
+    do
+        {
+        if (current->IsParentOfJoinedTable())
+            return current;
+
+        auto nextParentId = current->GetParentMapClassId();
+        if (nextParentId == ECClass::UNSET_ECCLASSID)
+            return nullptr;
+
+        current = GetECDbMap().GetClassMap(nextParentId);
+        if (current == nullptr)
+            {
+            BeAssert(current != nullptr && "Failed to find parent classmap. This should not happen");
+            return nullptr;
+            }
+
+        } while (current != nullptr);
+
+        return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  01/2016
+//---------------------------------------------------------------------------------------
+ClassMap const* ClassMap::FindSharedTableRootClassMap() const
+    {
+    ECDbMapStrategy mapStrategy = GetMapStrategy();
+    if (mapStrategy.GetStrategy() != ECDbMapStrategy::Strategy::SharedTable && !mapStrategy.AppliesToSubclasses())
+        return nullptr;
+
+    ECClassId parentId = GetParentMapClassId();
+    if (parentId == ECClass::UNSET_ECCLASSID)
+        return this;
+
+    ClassMap const* parent = GetECDbMap().GetClassMap(parentId);
+    if (parent == nullptr)
+        {
+        BeAssert(false && "Failed to find parent classmap. This should not happen");
+        return nullptr;
+        }
+
+    return parent->FindSharedTableRootClassMap();
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    casey.mullen      11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ClassMap::ToString() const
+    {
+    Utf8CP typeStr = nullptr;
+    switch (m_type)
+        {
+            case Type::Class:
+                typeStr = "Class";
+                break;
+            case Type::RelationshipEndTable:
+                typeStr = "RelationshipEndTable";
+                break;
+            case Type::RelationshipLinkTable:
+                typeStr = "RelationshipLinkTable";
+                break;
+            case Type::Unmapped:
+                typeStr = "Unmapped";
+                break;
+            default:
+                BeAssert(false && "Update ClassMap::ToString to handle new value in enum ClassMap::Type.");
+                typeStr = "Unrecognized class map type";
+                break;
+        }
+
+    Utf8String str;
+    str.Sprintf("ClassMap '%s' - Type: %s - Map strategy: %s", GetClass().GetFullName(), typeStr, GetMapStrategy().ToString().c_str());
+
+    return str;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      11/2015
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ClassMap::DetermineTableName(Utf8StringR tableName, ECN::ECClassCR ecclass, Utf8CP tablePrefix)
+    {
+    if (!Utf8String::IsNullOrEmpty(tablePrefix))
+        tableName.assign(tablePrefix);
+    else
+        {
+        if (SUCCESS != DetermineTablePrefix(tableName, ecclass))
+            return ERROR;
+        }
+
+    tableName.append("_").append(ecclass.GetName());
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      11/2015
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ClassMap::DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR ecclass)
+    {
+    tablePrefix.clear();
+
+    ECSchemaCR schema = ecclass.GetSchema();
+    ECDbSchemaMap customSchemaMap;
+
+    if (ECDbMapCustomAttributeHelper::TryGetSchemaMap(customSchemaMap, schema))
+        {
+        if (customSchemaMap.TryGetTablePrefix(tablePrefix) != ECObjectsStatus::Success)
+            return ERROR;
+        }
+
+    if (tablePrefix.empty())
+        {
+        Utf8StringCR namespacePrefix = schema.GetNamespacePrefix();
+        if (!namespacePrefix.empty())
+            tablePrefix = namespacePrefix;
+        else
+            tablePrefix = schema.GetName();
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                    12/2015
+//---------------------------------------------------------------------------------------
+Utf8String ClassMap::GetPersistedViewName() const
+    {
+    Utf8String name;
+    name.Sprintf("_%s_%s", GetClass().GetSchema().GetNamespacePrefix().c_str(), GetClass().GetName().c_str());
+    return std::move(name);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                    12/2015
+//---------------------------------------------------------------------------------------
+bool ClassMap::HasPersistedView() const
+    {
+    return GetECDbMap().GetECDb().TableExists(GetPersistedViewName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                   03/2016
+//---------------------------------------------------------------------------------------
+BentleyStatus ClassMap::GenerateSelectView(NativeSqlBuilder& viewSql, bool isPolymorphic, ECSqlPrepareContext const& prepareContext) const
+    {
+    return ViewGenerator::CreateView(viewSql, GetECDbMap(), *this, isPolymorphic, prepareContext, true /*optimizeByIncludingOnlyRealTables*/);
     }
 
 //=========================================================================================
@@ -1271,7 +1136,7 @@ ECDbSqlTable& ColumnFactory::GetTable() const
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       08 / 2015
 //------------------------------------------------------------------------------------------
-IClassMap const& PropertyMapSet::GetClassMap () const { return m_classMap; }
+ClassMap const& PropertyMapSet::GetClassMap () const { return m_classMap; }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       08 / 2015
@@ -1303,7 +1168,7 @@ const PropertyMapSet::EndPoints PropertyMapSet::FindEndPoints (ColumnKind filter
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       08 / 2015
 //------------------------------------------------------------------------------------------
-BentleyStatus PropertyMapSet::AddSystemEndPoint(PropertyMapSet& propertySet, IClassMap const& classMap, ColumnKind kind, ECValueCR value, ECDbSqlColumn const* column)
+BentleyStatus PropertyMapSet::AddSystemEndPoint(PropertyMapSet& propertySet, ClassMap const& classMap, ColumnKind kind, ECValueCR value, ECDbSqlColumn const* column)
     {
     auto const& table = classMap.GetJoinedTable();
 
@@ -1333,19 +1198,13 @@ BentleyStatus PropertyMapSet::AddSystemEndPoint(PropertyMapSet& propertySet, ICl
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       08 / 2015
 //------------------------------------------------------------------------------------------
-PropertyMapSet::Ptr PropertyMapSet::Create (IClassMap const& classMap)
+PropertyMapSet::Ptr PropertyMapSet::Create (ClassMap const& classMap)
     {
     BeAssert (classMap.GetECDbMap ().GetSQLManager ().IsNullTable (classMap.GetJoinedTable()) == false);
     Ptr propertySet = Ptr (new PropertyMapSet (classMap));
     ECValue defaultValue;
     AddSystemEndPoint (*propertySet, classMap, ColumnKind::ECInstanceId, defaultValue);
     AddSystemEndPoint (*propertySet, classMap, ColumnKind::ECClassId, ECValue (classMap.GetClass ().GetId ()));
-    if (classMap.GetClass ().IsStructClass())
-        {
-        AddSystemEndPoint (*propertySet, classMap, ColumnKind::ParentECInstanceId, defaultValue);
-        AddSystemEndPoint (*propertySet, classMap, ColumnKind::ECPropertyPathId, defaultValue);
-        AddSystemEndPoint (*propertySet, classMap, ColumnKind::ECArrayIndex, defaultValue);
-        }
 
     if (classMap.IsRelationshipClassMap ())
         {
@@ -1360,14 +1219,14 @@ PropertyMapSet::Ptr PropertyMapSet::Create (IClassMap const& classMap)
 
         AddSystemEndPoint (*propertySet, classMap, ColumnKind::SourceECInstanceId, defaultValue, sourceECInstanceIdColumn);
         auto sourceConstraintClass = sourceConstraints.at (0);
-        if (!IClassMap::IsAnyClass (*sourceConstraintClass) && sourceConstraints.size () == 1)
+        if (!ClassMap::IsAnyClass (*sourceConstraintClass) && sourceConstraints.size () == 1)
             AddSystemEndPoint (*propertySet, classMap, ColumnKind::SourceECClassId, ECValue (sourceConstraintClass->GetId ()), sourceECClassIdColumn);
         else
             AddSystemEndPoint (*propertySet, classMap, ColumnKind::SourceECClassId, defaultValue, sourceECClassIdColumn);
 
         AddSystemEndPoint (*propertySet, classMap, ColumnKind::TargetECInstanceId, defaultValue, targetECInstanceIdColumn);
         auto targetConstraintClass = targetConstraints.at (0);
-        if (!IClassMap::IsAnyClass (*targetConstraintClass) && targetConstraints.size () == 1)
+        if (!ClassMap::IsAnyClass (*targetConstraintClass) && targetConstraints.size () == 1)
             AddSystemEndPoint (*propertySet, classMap, ColumnKind::TargetECClassId, ECValue (targetConstraintClass->GetId ()), targetECClassIdColumn);
         else
             AddSystemEndPoint (*propertySet, classMap, ColumnKind::SourceECClassId, defaultValue, targetECClassIdColumn);
@@ -1385,7 +1244,7 @@ PropertyMapSet::Ptr PropertyMapSet::Create (IClassMap const& classMap)
             if (pm->Is3d ())
                 propertySet->m_orderedEndPoints.push_back (std::unique_ptr<EndPoint> (new EndPoint ((baseAccessString + ".Z").c_str (), *columns[2], ECValue ())));
             }
-        else if (nullptr != propMap->GetAsStructArrayTablePropertyMap() || nullptr != propMap->GetAsNavigationPropertyMap())
+        else if (nullptr != propMap->GetAsNavigationPropertyMap())
             {
             feedback = TraversalFeedback::NextSibling;
             }
@@ -1424,6 +1283,32 @@ BentleyStatus ClassMapLoadContext::Postprocess(ECDbMapCR ecdbMap) const
             return ERROR;
         }
 
+    return SUCCESS;
+    }
+
+
+//************************** UnmappedClassMap ***************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  02/2014
+//---------------------------------------------------------------------------------------
+MapStatus UnmappedClassMap::_MapPart1(SchemaImportContext&, ClassMapInfo const& classMapInfo, ClassMap const* parentClassMap)
+    {
+    if (parentClassMap != nullptr)
+        m_parentMapClassId = parentClassMap->GetParentMapClassId();
+
+    ECDbSqlTable const* nullTable = GetECDbMap().GetSQLManager().GetNullTable();
+    SetTable(*const_cast<ECDbSqlTable*> (nullTable));
+
+    return MapStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  10/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus UnmappedClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext& ctx, ECDbClassMapInfo const& mapInfo, ClassMap const* parentClassMap)
+    {
+    ECDbSqlTable const* nullTable = GetECDbMap().GetSQLManager().GetNullTable();
+    SetTable(*const_cast<ECDbSqlTable*> (nullTable));
     return SUCCESS;
     }
 

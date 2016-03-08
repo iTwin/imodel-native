@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/PropertyNameExp.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -60,7 +60,7 @@ private:
 public:
     explicit PropertyNameExp (PropertyPath&& propPath);
     explicit PropertyNameExp (Utf8CP propertyName);
-    PropertyNameExp (Utf8CP propertyName, RangeClassRefExp const& classRefExp, IClassMap const& classMap);
+    PropertyNameExp (Utf8CP propertyName, RangeClassRefExp const& classRefExp, ClassMap const& classMap);
     PropertyNameExp (RangeClassRefExp const& classRefExp, DerivedPropertyExp const& derivedPropExp);
 
     Utf8CP GetPropertyName() const;

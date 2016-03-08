@@ -63,24 +63,6 @@ public:
     static PropertyMapPtr Create(ECDbSchemaManagerCR, ClassMap const&, std::vector<ECDbSqlColumn const*>);
     };
 
-
-//=======================================================================================
-//! PropertyMapStructArrayTableKey is a property map for the system properties used to
-//! identify a row in a secondary table.
-/// @bsiclass                                                 Krischan.Eberle    06/2013
-//+===============+===============+===============+===============+===============+======
-struct StructArrayTableKeyPropertyMap : SystemPropertyMap
-    {
-private:
-    explicit StructArrayTableKeyPropertyMap (ECN::ECPropertyCR systemProperty, std::vector<ECDbSqlColumn const*>, ECSqlSystemProperty);
-
-    virtual Utf8String _ToString () const override;
-
-public:
-    ~StructArrayTableKeyPropertyMap () {}
-    static PropertyMapPtr Create (ECDbSchemaManagerCR, ECSqlSystemProperty, IClassMap const&);
-    };
-
 //=======================================================================================
 // @bsiclass                                                 Affan.Khan   06/2013
 //+===============+===============+===============+===============+===============+======

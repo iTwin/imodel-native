@@ -517,7 +517,7 @@ bool ValidRelationshipConstraintsRule::ValidateConstraint(ECN::ECRelationshipCla
     for (ECRelationshipConstraintClassCP constraintClass : constraintClasses)
         {
         ECClassCR constraintECClass = constraintClass->GetClass();
-        if (IClassMap::IsAnyClass(constraintECClass))
+        if (ClassMap::IsAnyClass(constraintECClass))
             {
             m_error->AddInconsistency(relClass, Error::Kind::HasAnyClassConstraint);
             valid = false;

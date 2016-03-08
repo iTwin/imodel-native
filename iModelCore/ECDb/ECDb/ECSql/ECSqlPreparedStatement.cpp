@@ -20,7 +20,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
 ECSqlPreparedStatement::ECSqlPreparedStatement(ECSqlType type, ECDbCR ecdb)
-: m_type(type), m_ecdb(&ecdb), m_isNoopInSqlite(false), m_onlyExecuteStepTasks(false), m_parentOfJoinedTableECSqlStatement(nullptr) {}
+: m_type(type), m_ecdb(&ecdb), m_isNoopInSqlite(false), m_parentOfJoinedTableECSqlStatement(nullptr) {}
 
 
 //---------------------------------------------------------------------------------------
@@ -69,11 +69,6 @@ ECSqlStatus ECSqlPreparedStatement::Prepare(ECSqlPrepareContext& prepareContext,
     if (prepareContext.NativeStatementIsNoop())
         {
         m_isNoopInSqlite = true;
-        m_nativeSql = "n/a";
-        }
-    else if (prepareContext.OnlyExecuteStepTasks())
-        {
-        m_onlyExecuteStepTasks = true;
         m_nativeSql = "n/a";
         }
     else
@@ -390,14 +385,6 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
             }
 
         instanceKey = ECInstanceKey(m_ecInstanceKeyInfo.GetECClassId(), ecinstanceidOfInsert);
-
-        if (!GetStepTasks().IsEmpty())
-            {
-            stat = GetStepTasks().ExecuteAfterStepTaskList(ecinstanceidOfInsert);
-            if (BE_SQLITE_OK != stat)
-                return stat;
-            }
-
         return BE_SQLITE_DONE;
         }
 
@@ -447,13 +434,6 @@ DbResult ECSqlUpdatePreparedStatement::Step()
     if (IsNoopInSqlite())
         return BE_SQLITE_DONE;
 
-    const DbResult status = GetStepTasks().ExecuteBeforeStepTaskList();
-    if (BE_SQLITE_OK != status)
-        return status;
-
-    if (OnlyExecuteStepTasks())
-        return BE_SQLITE_DONE;
-
     if (auto parentOfJoinedTableStmt = GetParentOfJoinedTableECSqlStatement())
         {
         const DbResult status = parentOfJoinedTableStmt->Step();
@@ -469,9 +449,6 @@ DbResult ECSqlUpdatePreparedStatement::Step()
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlNonSelectPreparedStatement::_Reset()
     {
-    if (GetStepTasks().HasSelector())
-        GetStepTasks().ResetSelector();
-
     return DoReset();
     }
 
@@ -486,10 +463,6 @@ DbResult ECSqlDeletePreparedStatement::Step()
     {
     if (IsNoopInSqlite())
         return BE_SQLITE_DONE;
-
-    const DbResult status = GetStepTasks().ExecuteBeforeStepTaskList();
-    if (BE_SQLITE_OK != status)
-        return status;
 
     return DoStep();
     }

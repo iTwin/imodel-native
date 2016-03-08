@@ -425,7 +425,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
     if (currentScopeECSqlType == ECSqlType::Select)
         {
         NativeSqlBuilder classViewSql;
-        if (classMap.GetDbView().Generate(classViewSql, exp.IsPolymorphic(), ctx) != SUCCESS)
+        if (classMap.GenerateSelectView(classViewSql, exp.IsPolymorphic(), ctx) != SUCCESS)
             {
             BeAssert(false && "Class view generation failed during preparation of class name expression.");
             return ECSqlStatus::Error;
@@ -775,7 +775,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp(NativeSqlBuilder::List
     if (exp.HasParentheses())
         nativeSqlSnippet.AppendParenLeft();
 
-    IClassMap const& classMap = classNameExp->GetInfo().GetMap();
+    ClassMap const& classMap = classNameExp->GetInfo().GetMap();
     ECDbSqlColumn const* classIdColumn = nullptr;
     if (classMap.GetJoinedTable().TryGetECClassIdColumn(classIdColumn))
         {
@@ -1323,9 +1323,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
     //Generate view for relationship
     NativeSqlBuilder relationshipView;
 
-    if (relationshipClassNameExp.GetInfo ().GetMap ().GetDbView ().Generate (relationshipView, DEFAULT_POLYMORPHIC_QUERY, ctx) != SUCCESS)
+    if (relationshipClassNameExp.GetInfo().GetMap().GenerateSelectView(relationshipView, DEFAULT_POLYMORPHIC_QUERY, ctx) != SUCCESS)
         {
-        BeAssert (false && "Generating class view during preparation of relationship class name expression failed.");
+        BeAssert(false && "Generating class view during preparation of relationship class name expression failed.");
         return ECSqlStatus::Error;
         }
 
@@ -1334,7 +1334,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
     sql.AppendEscaped (relationshipClassNameExp.GetId().c_str ());
 
     sql.Append (" ON ");
-    auto fromECInstanceIdPropMap = fromEP.GetClassNameRef ()->GetInfo ().GetMap ().GetPropertyMap (ecInstanceIdKey);
+    PropertyMapCP fromECInstanceIdPropMap = fromEP.GetClassNameRef ()->GetInfo ().GetMap ().GetPropertyMap (ecInstanceIdKey);
     PRECONDITION (fromECInstanceIdPropMap != nullptr, ECSqlStatus::Error);
     auto fromECInstanceIdNativeSqlSnippets = fromECInstanceIdPropMap->ToNativeSql (fromEP.GetClassNameRef ()->GetId ().c_str (), ecsqlType, false);
     if (fromECInstanceIdNativeSqlSnippets.size() > 1)
@@ -1396,30 +1396,30 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareSelectClauseExp (ECSqlPrepareContext& ctx, SelectClauseExp const* selectClause)
+ECSqlStatus ECSqlExpPreparer::PrepareSelectClauseExp(ECSqlPrepareContext& ctx, SelectClauseExp const* selectClause)
     {
-    std::vector<Exp const*> selection (selectClause->GetChildren ().begin (), selectClause->GetChildren ().end ());
+    std::vector<Exp const*> selection(selectClause->GetChildren().begin(), selectClause->GetChildren().end());
     NativeSqlBuilder::List selectClauseNativeSqlSnippets;
     bool first = true;
-    for (auto derivedPropExp : selection)
+    for (Exp const* derivedPropExp : selection)
         {
-        selectClauseNativeSqlSnippets.clear ();
-        auto status = PrepareDerivedPropertyExp (selectClauseNativeSqlSnippets, ctx, static_cast<DerivedPropertyExp const*> (derivedPropExp));
+        selectClauseNativeSqlSnippets.clear();
+        ECSqlStatus status = PrepareDerivedPropertyExp(selectClauseNativeSqlSnippets, ctx, static_cast<DerivedPropertyExp const*> (derivedPropExp));
         if (!status.IsSuccess())
             return status;
 
-        if (selectClauseNativeSqlSnippets.empty ())
+        if (selectClauseNativeSqlSnippets.empty())
             continue;
 
         if (first)
             first = false;
         else
-            ctx.GetSqlBuilderR ().AppendComma ();
+            ctx.GetSqlBuilderR().AppendComma();
 
-        ctx.GetSqlBuilderR ().Append (selectClauseNativeSqlSnippets);
+        ctx.GetSqlBuilderR().Append(selectClauseNativeSqlSnippets);
         }
 
-    return ResolveChildStatementsBinding(ctx);
+    return ECSqlStatus::Success;
     }
 
 
@@ -1719,18 +1719,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::ListOfLis
         BeAssert(valueExp != nullptr);
 
         const auto targetNativeSqlSnippetCount = targetNativeSqlSnippetLists[index].size();
-        bool targetIsVirtual = false;
-        bool targetIsStructArrayProp = false;
-        if (targetNativeSqlSnippetCount == 0)
-            {
-            //Both struct array props as well as virtual props result in 0 native sql snippets. For parameter preparation
-            //we need to know whether it is a virtual prop or not. Preparation of struct array parameters
-            //works implicitly
-            auto targetPropNameExp = targetExp->GetPropertyNameExp(index);
-            BeAssert(targetPropNameExp != nullptr);
-            targetIsStructArrayProp = targetPropNameExp->GetTypeInfo().GetKind() == ECSqlTypeInfo::Kind::StructArray;
-            targetIsVirtual = !targetIsStructArrayProp;
-            }
+        //virtual props result in 0 native sql snippets. 
+        const bool targetIsVirtual = targetNativeSqlSnippetCount == 0;
 
         NativeSqlBuilder::List nativeSqlSnippets;
 
@@ -1754,7 +1744,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::ListOfLis
                 stat = PrepareNullLiteralValueExp(nativeSqlSnippets, ctx, static_cast<LiteralValueExp const*> (valueExp), targetNativeSqlSnippetCount);
                 }
             }
-        else if (targetNativeSqlSnippetCount > 0 || targetIsStructArrayProp)
+        else if (targetNativeSqlSnippetCount > 0)
             stat = PrepareValueExp(nativeSqlSnippets, ctx, static_cast<ValueExp const*> (valueExp));
 
         if (!stat.IsSuccess())
@@ -1778,113 +1768,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareWhereExp(NativeSqlBuilder& nativeSqlSnippet
 
     nativeSqlSnippet.Append(" WHERE ");
     return PrepareSearchConditionExp(nativeSqlSnippet, ctx, *exp->GetSearchConditionExp());
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       09/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus FindBindableFields(std::vector<StructArrayMappedToSecondaryTableECSqlField*>& bindableFields, ECSqlField::Collection const& fieldsToBeSearched, ECSqlPrepareContext& ctx)
-    {
-    for (unique_ptr<ECSqlField> const& ecsqlField : fieldsToBeSearched)
-        {
-        if (auto bindableField = dynamic_cast<StructArrayMappedToSecondaryTableECSqlField*>(ecsqlField.get ()))
-            {
-            bindableFields.push_back (bindableField);
-            }
-        else
-            {
-            auto status = FindBindableFields(bindableFields, ecsqlField->GetChildren (), ctx);
-            if (!status.IsSuccess())
-                return status;
-            }
-        }
-    return ECSqlStatus::Success;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       09/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-ECSqlStatus ECSqlExpPreparer::ResolveChildStatementsBinding (ECSqlPrepareContext& ctx)
-    {
-
-    if (ctx.GetECSqlStatementR ().GetPreparedStatementP ()->GetType () != ECSqlType::Select)
-        return ECSqlStatus::Success;
-
-    auto preparedStatement = ctx.GetECSqlStatementR ().GetPreparedStatementP <ECSqlSelectPreparedStatement> ();
-
-    std::vector<StructArrayMappedToSecondaryTableECSqlField*> bindableFields;
-    auto const& topLevelFields = preparedStatement->GetFields ();
-    auto status = FindBindableFields(bindableFields, topLevelFields, ctx);
-    if (!status.IsSuccess())
-        return status;
-
-    for (auto arrayField : bindableFields)
-        {
-        ECClassCP structRoot = &arrayField->GetColumnInfo ().GetRootClass();
-        Utf8CP classAlias = arrayField->GetColumnInfo ().GetRootClassAlias ();
-        if (arrayField->GetColumnInfo ().IsGeneratedProperty())
-            {
-            auto propertyCP = arrayField->GetColumnInfo ().GetProperty();
-            BeAssert(propertyCP != nullptr);
-            PropertyPath backReferencePath;
-            if (SUCCESS != DynamicSelectClauseECClass::ParseBackReferenceToPropertyPath (backReferencePath, *propertyCP, preparedStatement->GetECDb ()))
-                {
-                BeAssert(false && "Failed to resolved back reference for a dynamic property");
-                }
-
-            structRoot = &backReferencePath.GetClassMap()->GetClass();
-            }
-
-        auto sourcePropertyPath = arrayField->GetBinder().GetSourcePropertyPath();
-        int fieldIndex = -1;
-        int requestedFieldIndex = -1;
-        for (unique_ptr<ECSqlField> const& candidateField : topLevelFields)
-            {                
-            fieldIndex++;
-            auto const& candidateClass = candidateField->GetColumnInfo ().GetRootClass ();
-            if (candidateClass == *structRoot)
-                {
-                if (sourcePropertyPath.Equals (candidateField->GetColumnInfo ().GetProperty ()->GetName ()))
-                    {
-                    requestedFieldIndex = fieldIndex; 
-                    break;
-                    }
-                }
-            }
-
-        if (requestedFieldIndex >= 0)
-            {
-            arrayField->GetBinder().SetSourceStatementType(ECSqlPrimitiveBinder::StatementType::ECSql);
-            arrayField->GetBinder().SetSourceColumnIndex(requestedFieldIndex);
-            }
-        else
-            {
-            auto structRootMap = preparedStatement->GetECDb ().GetECDbImplR().GetECDbMap ().GetClassMap (*structRoot);
-            auto sourcePropertyMap = structRootMap->GetPropertyMap(sourcePropertyPath.c_str());
-
-            auto nativeSqlSnippets = sourcePropertyMap->ToNativeSql (classAlias, ctx.GetCurrentScope ().GetECSqlType (), false);
-            if (nativeSqlSnippets.empty ())
-                {
-                BeAssert (false && "Expecting column names");
-                }
-
-            if (nativeSqlSnippets.size () > 1)
-                {
-                BeAssert (false && "Expecting single column");
-                }
-
-            if (ctx.GetCurrentScope().GetNativeSqlSelectClauseColumnCount() > 0)
-                ctx.GetSqlBuilderR().AppendComma();
-
-            ctx.GetSqlBuilderR ().Append (nativeSqlSnippets);
-
-            arrayField->GetBinder().SetSourceStatementType (ECSqlPrimitiveBinder::StatementType::Sqlite);
-            arrayField->GetBinder().SetSourceColumnIndex (ctx.GetCurrentScope().GetNativeSqlSelectClauseColumnCount());
-            ctx.GetCurrentScopeR().IncrementNativeSqlSelectClauseColumnCount (static_cast<int>(nativeSqlSnippets.size ()));
-            }           
-        }
-    return ECSqlStatus::Success;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -1956,7 +1839,7 @@ ECSqlStatus ECSqlExpPreparer::ResolveParameterMappings (ECSqlPrepareContext& con
 //static
 BooleanSqlOperator ECSqlExpPreparer::DetermineCompoundLogicalOpForCompoundExpressions(BooleanSqlOperator op)
     {
-    //for positive operators the elements of the compount exp are ANDed together. For negative ones they are ORed together
+    //for positive operators the elements of the compound exp are ANDed together. For negative ones they are ORed together
     //Ex: ECSQL: MyPoint = MyOtherPoint -> SQL: MyPoint_x = MyOtherPoint_x AND MyPoint_y = MyOtherPoint_y
     //    ECSQL: MyPoint <> MyOtherPoint -> SQL: MyPoint_x <> MyOtherPoint_x OR MyPoint_y <> MyOtherPoint_y
 

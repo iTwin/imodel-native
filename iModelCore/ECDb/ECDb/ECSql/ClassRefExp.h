@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ClassRefExp.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -80,13 +80,13 @@ public:
     struct Info
         {
     private:
-        IClassMap const& m_classMap;
+        ClassMap const& m_classMap;
 
     public:
-        explicit Info (IClassMap const& classMap) : m_classMap(classMap) {}
+        explicit Info (ClassMap const& classMap) : m_classMap(classMap) {}
 
-        IClassMap const& GetMap () const { return m_classMap; }
-        static std::shared_ptr<Info> Create(IClassMap const& classMap) { return std::make_shared<Info>(classMap); }
+        ClassMap const& GetMap () const { return m_classMap; }
+        static std::shared_ptr<Info> Create(ClassMap const& classMap) { return std::make_shared<Info>(classMap); }
         };
 
 private:

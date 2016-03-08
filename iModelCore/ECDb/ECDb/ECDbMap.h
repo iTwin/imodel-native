@@ -94,7 +94,7 @@ public:
             //bmap<ECN::ECClassId, bset<ECDbSqlTable const*> const& GetTablesPerClass()
             //For a end table relationship class map, the storage description provides horizontal partitions
             //For the end table's constraint classes - not for the relationship itself.
-            StorageDescription const& GetStorageDescription (IClassMap const&)  const;
+            StorageDescription const& GetStorageDescription (ClassMap const&)  const;
 
             void Load (bool forceReload);
             void Reset ();
@@ -246,7 +246,7 @@ public:
         ECN::ECClassId GetClassId () const { return m_classId; }
 
         BentleyStatus GenerateECClassIdFilter(NativeSqlBuilder& filter, ECDbSqlTable const&, ECDbSqlColumn const& classIdColumn, bool polymorphic, bool fullyQualifyColumnName = false, Utf8CP tableAlias =nullptr) const;
-        static std::unique_ptr<StorageDescription> Create(IClassMap const&, ECDbMap::LightweightCache const& lwmc);
+        static std::unique_ptr<StorageDescription> Create(ClassMap const&, ECDbMap::LightweightCache const& lwmc);
         };
     
 

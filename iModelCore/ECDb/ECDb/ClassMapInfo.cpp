@@ -57,7 +57,7 @@ MapStatus ClassMapInfo::Initialize()
     if (m_tableName.empty())
         {
         // if hint does not supply a table name, use {ECSchema prefix}_{ECClass name}
-        if (SUCCESS != IClassMap::DetermineTableName(m_tableName, m_ecClass))
+        if (SUCCESS != ClassMap::DetermineTableName(m_tableName, m_ecClass))
             return MapStatus::Error;
         }
 
@@ -69,14 +69,14 @@ MapStatus ClassMapInfo::Initialize()
 +---------------+---------------+---------------+---------------+---------------+------*/
 MapStatus ClassMapInfo::_EvaluateMapStrategy()
     {
-    if (m_ecClass.IsCustomAttributeClass())
+    if (m_ecClass.IsCustomAttributeClass() || m_ecClass.IsStructClass())
         {
-        LogClassNotMapped(NativeLogging::LOG_DEBUG, m_ecClass, "ECClass is a custom attribute which is never mapped to a table in ECDb.");
+        LogClassNotMapped(NativeLogging::LOG_DEBUG, m_ecClass, "ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.");
         m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, false);
         return MapStatus::Success;
         }
 
-    if (IClassMap::IsAnyClass(m_ecClass) || (m_ecClass.GetSchema().IsStandardSchema() && m_ecClass.GetName().CompareTo("InstanceCount") == 0))
+    if (ClassMap::IsAnyClass(m_ecClass) || (m_ecClass.GetSchema().IsStandardSchema() && m_ecClass.GetName().CompareTo("InstanceCount") == 0))
         {
         LogClassNotMapped(NativeLogging::LOG_INFO, m_ecClass, "ECClass is a standard class not supported by ECDb.");
         m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, false);
@@ -113,10 +113,10 @@ MapStatus ClassMapInfo::_EvaluateMapStrategy()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet, UserECDbMapStrategy& userStrategy)
     {
-    bvector<IClassMap const*> baseClassMaps;
-    bvector<IClassMap const*> polymorphicSharedTableClassMaps; // SharedTable (AppliesToSubclasses) have the highest priority, but there can be only one
-    bvector<IClassMap const*> polymorphicOwnTableClassMaps; // OwnTable (AppliesToSubclasses) have second priority
-    bvector<IClassMap const*> polymorphicNotMappedClassMaps; // NotMapped (AppliesToSubclasses) has priority only over NotMapped
+    bvector<ClassMap const*> baseClassMaps;
+    bvector<ClassMap const*> polymorphicSharedTableClassMaps; // SharedTable (AppliesToSubclasses) have the highest priority, but there can be only one
+    bvector<ClassMap const*> polymorphicOwnTableClassMaps; // OwnTable (AppliesToSubclasses) have second priority
+    bvector<ClassMap const*> polymorphicNotMappedClassMaps; // NotMapped (AppliesToSubclasses) has priority only over NotMapped
 
     baseClassesNotMappedYet = !GatherBaseClassMaps(baseClassMaps, polymorphicSharedTableClassMaps, polymorphicOwnTableClassMaps, polymorphicNotMappedClassMaps, m_ecClass);
     if (baseClassesNotMappedYet)
@@ -142,7 +142,7 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
         if (issues.IsSeverityEnabled(ECDbIssueSeverity::Error))
             {
             Utf8String baseClasses;
-            for (IClassMap const* baseMap : polymorphicSharedTableClassMaps)
+            for (ClassMap const* baseMap : polymorphicSharedTableClassMaps)
                 {
                 baseClasses.append(baseMap->GetClass().GetFullName());
                 baseClasses.append(" ");
@@ -155,7 +155,7 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
         return ERROR;
         }
 
-    IClassMap const* parentClassMap = nullptr;
+    ClassMap const* parentClassMap = nullptr;
     if (!polymorphicSharedTableClassMaps.empty())
         parentClassMap = polymorphicSharedTableClassMaps[0];
     else if (!polymorphicOwnTableClassMaps.empty())
@@ -187,7 +187,7 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ClassMapInfo::EvaluateSharedTableMapStrategy(IClassMap const& parentClassMap, ECDbMapStrategy const& parentStrategy, UserECDbMapStrategy const& userStrategy)
+BentleyStatus ClassMapInfo::EvaluateSharedTableMapStrategy(ClassMap const& parentClassMap, ECDbMapStrategy const& parentStrategy, UserECDbMapStrategy const& userStrategy)
     {
     m_parentClassMap = &parentClassMap;
     BeAssert(parentStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && parentStrategy.AppliesToSubclasses());
@@ -253,7 +253,7 @@ BentleyStatus ClassMapInfo::EvaluateSharedTableMapStrategy(IClassMap const& pare
             options = options | ECDbMapStrategy::Options::JoinedTable;
             if (parentIsParentOfJoinedTable)
                 {
-                std::vector<IClassMap const*> path;
+                std::vector<ClassMap const*> path;
                 if (SUCCESS != parentClassMap.GetPathToParentOfJoinedTable(path))
                     {
                     BeAssert(false && "Path should never be empty for joinedTable");
@@ -267,12 +267,12 @@ BentleyStatus ClassMapInfo::EvaluateSharedTableMapStrategy(IClassMap const& pare
                     }
 
                 ECClassCR tableNameAfterClass = path.size() > 1 ? path[1]->GetClass() : m_ecClass;
-                if (SUCCESS != IClassMap::DetermineTableName(m_tableName, tableNameAfterClass))
+                if (SUCCESS != ClassMap::DetermineTableName(m_tableName, tableNameAfterClass))
                     return ERROR;
 
                 //For classes in the joined table the id column name is determined like this:
                 //"<Rootclass name><Rootclass ECInstanceId column name>"
-                IClassMap const* rootClassMap = m_parentClassMap->FindSharedTableRootClassMap();
+                ClassMap const* rootClassMap = m_parentClassMap->FindSharedTableRootClassMap();
                 if (rootClassMap == nullptr)
                     {
                     BeAssert(false && "There should always be a root class map which defines the shared table strategy");
@@ -444,8 +444,8 @@ BentleyStatus ClassMapInfo::InitializeClassHasCurrentTimeStampProperty()
 * Returns true if all base classes have been mapped.
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ClassMapInfo::GatherBaseClassMaps(bvector<IClassMap const*>& baseClassMaps,bvector<IClassMap const*>& tphMaps,
-                                       bvector<IClassMap const*>& tpcMaps,bvector<IClassMap const*>& nmhMaps,ECClassCR ecClass) const
+bool ClassMapInfo::GatherBaseClassMaps(bvector<ClassMap const*>& baseClassMaps,bvector<ClassMap const*>& tphMaps,
+                                       bvector<ClassMap const*>& tpcMaps,bvector<ClassMap const*>& nmhMaps,ECClassCR ecClass) const
     {
     for (ECClassCP baseClass : ecClass.GetBaseClasses())
         {
@@ -466,7 +466,7 @@ bool ClassMapInfo::GatherBaseClassMaps(bvector<IClassMap const*>& baseClassMaps,
                 case ECDbMapStrategy::Strategy::SharedTable:
                     {
                     bool add = true;
-                    for (IClassMap const* classMap : tphMaps)
+                    for (ClassMap const* classMap : tphMaps)
                         {
                         if (&classMap->GetPrimaryTable() == &baseTable)
                             {

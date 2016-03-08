@@ -46,7 +46,7 @@ PropertyMapPtr PropertyMapFactory::CreatePropertyMap(ClassMapLoadContext& ctx, E
         else
             {
             BeAssert(ARRAYKIND_Primitive != arrayProperty->GetKind());
-            return StructArrayTablePropertyMap::Create(*arrayProperty->GetAsStructArrayProperty(), propertyAccessString, parentPropertyMap);
+            return StructArrayJsonPropertyMap::Create(ecdb, *arrayProperty->GetAsStructArrayProperty(), propertyAccessString, parentPropertyMap);
             }
         }
 
@@ -80,8 +80,8 @@ PropertyMapPtr PropertyMapFactory::ClonePropertyMap(ECDbMapCR ecdbMap, PropertyM
     if (auto protoMap = dynamic_cast<PrimitiveArrayPropertyMap const*>(&proto))
         return PrimitiveArrayPropertyMap::Clone(*protoMap, parentPropertyMap);
 
-    if (auto protoMap = proto.GetAsStructArrayTablePropertyMap())
-        return StructArrayTablePropertyMap::Clone(*protoMap, parentPropertyMap);
+    if (auto protoMap = proto.GetAsStructArrayPropertyMap())
+        return StructArrayJsonPropertyMap::Clone(*protoMap, parentPropertyMap);
 
     if (auto protoMap = dynamic_cast<StructPropertyMap const*>(&proto))
         return StructPropertyMap::Clone(ecdbMap, *protoMap, targetClass, parentPropertyMap);
@@ -734,58 +734,6 @@ Utf8String StructPropertyMap::_ToString() const
     return str;
     }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    affan.khan      02/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus StructArrayTablePropertyMap::_Save (ECDbClassMapInfo & classMapInfo) const
-    {
-    ECDbMapStorage const& manager = classMapInfo.GetMapStorage ();
-    auto propertyId = GetRoot ().GetProperty ().GetId ();
-    auto accessString = GetPropertyAccessString ();
-    ECDbPropertyPath const* propertyPath = manager.FindPropertyPath (propertyId, accessString);
-    if (propertyPath == nullptr)
-        propertyPath = manager.CreatePropertyPath (propertyId, accessString);
-
-    if (propertyPath == nullptr)
-        {
-        BeAssert (false && "Failed to create propertyPath");
-        return ERROR;
-        }
-
-    m_propertyPathId = propertyPath->GetId ();
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    affan.khan      02/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus StructArrayTablePropertyMap::_Load(ECDbClassMapInfo const& classMapInfo)
-    {
-    auto propertyId = GetRoot ().GetProperty ().GetId ();
-    auto accessString = GetPropertyAccessString ();
-    ECDbPropertyPath const* propertyPath = classMapInfo.GetMapStorage().FindPropertyPath (propertyId, accessString);
-    if (propertyPath == nullptr)
-        {
-        BeAssert (false && "Failed to find propertyPath");
-        return ERROR;
-        }
-
-    m_propertyPathId = propertyPath->GetId ();
-    return SUCCESS;
-    }
-       
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle     11/2013
-//---------------------------------------------------------------------------------------
-Utf8String StructArrayTablePropertyMap::_ToString() const 
-    {
-    Utf8String str;
-    str.Sprintf ("StructArrayTablePropertyMap: ecProperty=%s.%s\r\n", GetProperty().GetClass().GetFullName(), 
-        GetProperty().GetName().c_str());
-
-    return str;
-    }
-
 //******************************** SingleColumnPropertyMap *****************************************
 
 /*---------------------------------------------------------------------------------------
@@ -1188,7 +1136,7 @@ BentleyStatus NavigationPropertyMap::Postprocess(ECDbMapCR ecdbMap)
         return ERROR;
         }
 
-    if (relClassMap->GetClassMapType() == IClassMap::Type::RelationshipLinkTable)
+    if (relClassMap->GetType() == ClassMap::Type::RelationshipLinkTable)
         {
         ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
                                                                    "Failed to map NavigationECProperty '%s.%s'. NavigationECProperties for ECRelationship that map to a link table are not supported by ECDb.",
@@ -1257,7 +1205,7 @@ bool NavigationPropertyMap::IsSupportedInECSql(bool logIfNotSupported, ECDbCP ec
         return false;
         }
 
-    if (m_relClassMap->GetClassMapType() != IClassMap::Type::RelationshipEndTable)
+    if (m_relClassMap->GetType() != ClassMap::Type::RelationshipEndTable)
         {
         if (logIfNotSupported)
             ecdb->GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "NavigationECProperty '%s.%s' cannot be used in ECSQL because its ECRelationships is mapped to a link table.",

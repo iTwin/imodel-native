@@ -18,11 +18,11 @@ using namespace connectivity;
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParser::Parse (ECSqlParseTreePtr& ecsqlParseTree, ECDbCR ecdb, Utf8CP ecsql, IClassMap::View classView) const
+BentleyStatus ECSqlParser::Parse (ECSqlParseTreePtr& ecsqlParseTree, ECDbCR ecdb, Utf8CP ecsql) const
     {
     ecsqlParseTree = nullptr;
 
-    ScopedContext scopedContext (*this, ecdb, classView);
+    ScopedContext scopedContext (*this, ecdb);
     //Parse statement
     Utf8String error;
     OSQLParser* ecsqlParser = GetSharedParser();
@@ -2949,8 +2949,7 @@ BentleyStatus ECSqlParseContext::TryResolveClass(shared_ptr<ClassNameExp::Info>&
     if (map == nullptr)
         return ERROR;
 
-    IClassMap const& classMapView = map->GetView(m_classMapViewMode);
-    classNameExpInfo = ClassNameExp::Info::Create(classMapView);
+    classNameExpInfo = ClassNameExp::Info::Create(*map);
     m_classNameExpInfoList[key] = classNameExpInfo;
 
     return SUCCESS;

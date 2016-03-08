@@ -43,7 +43,6 @@ ECDbAllHeaders = \
                 $(baseDir)BeBriefcaseBasedIdSequence.h \
                 $(baseDir)ECDbMap.h \
                 $(baseDir)ClassMap.h \
-                $(baseDir)ClassMapSubclasses.h \
                 $(baseDir)RelationshipClassMap.h \
                 $(baseDir)PropertyMap.h \
                 $(baseDir)SystemPropertyMap.h \
@@ -98,7 +97,6 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/ECSqlStatementImpl.h \
                 $(baseDir)ECSql/ECSqlStatementNoopImpls.h \
                 $(baseDir)ECSql/IECSqlPrimitiveBinder.h \
-                $(baseDir)ECSql/ECSqlParameterValue.h \
                 $(baseDir)ECSql/ECSqlBinder.h \
                 $(baseDir)ECSql/ECSqlBinderFactory.h \
                 $(baseDir)ECSql/PrimitiveToSingleColumnECSqlBinder.h \
@@ -106,7 +104,6 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/StructToColumnsECSqlBinder.h \
                 $(baseDir)ECSql/PrimitiveArrayToColumnECSqlBinder.h \
                 $(baseDir)ECSql/StructArrayJsonECSqlBinder.h \
-                $(baseDir)ECSql/StructArrayToSecondaryTableECSqlBinder.h \
                 $(baseDir)ECSql/SystemPropertyECSqlBinder.h \
                 $(baseDir)ECSql/ECSqlFieldFactory.h \
                 $(baseDir)ECSql/ECSqlField.h \
@@ -114,9 +111,6 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/PrimitiveArrayMappedToSingleColumnECSqlField.h \
                 $(baseDir)ECSql/PrimitiveMappedToSingleColumnECSqlField.h \
                 $(baseDir)ECSql/StructMappedToColumnsECSqlField.h \
-                $(baseDir)ECSql/StructArrayMappedToSecondaryTableECSqlField.h \
-                $(baseDir)ECSql/ECSqlStepTask.h \
-                $(baseDir)ECSql/EmbeddedECSqlStatement.h \
                 $(baseDir)ECSql/ECInstanceAdapterHelper.h \
                 $(baseDir)ECSql/JsonReaderImpl.h \
                 $(baseDir)ECDbSql.h
@@ -169,8 +163,6 @@ $(o)MapStrategy$(oext):									    $(baseDir)MapStrategy.cpp                   
 $(o)ClassMapInfo$(oext):									$(baseDir)ClassMapInfo.cpp                  $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ClassMap$(oext):										$(baseDir)ClassMap.cpp                      $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)ClassMapSubclasses$(oext):								$(baseDir)ClassMapSubclasses.cpp            $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)RelationshipClassMap$(oext):							$(baseDir)RelationshipClassMap.cpp          $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -312,8 +304,6 @@ $(o)ECJsonUtility$(oext):				                    $(baseDir)ECSql/ECJsonUtility.c
 
 $(o)ECSqlStatementNoopImpls$(oext):                         $(baseDir)ECSql/ECSqlStatementNoopImpls.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlParameterValue$(oext):                             $(baseDir)ECSql/ECSqlParameterValue.cpp     $(ECDbAllHeaders) ${MultiCompileDepends}
-
 $(o)ECSqlBinder$(oext):                                     $(baseDir)ECSql/ECSqlBinder.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlBinderFactory$(oext):                              $(baseDir)ECSql/ECSqlBinderFactory.cpp      $(ECDbAllHeaders) ${MultiCompileDepends}
@@ -325,8 +315,6 @@ $(o)PointECSqlBinder$(oext):                                $(baseDir)ECSql/Poin
 $(o)StructToColumnsECSqlBinder$(oext):                      $(baseDir)ECSql/StructToColumnsECSqlBinder.cpp  $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)PrimitiveArrayToColumnECSqlBinder$(oext):               $(baseDir)ECSql/PrimitiveArrayToColumnECSqlBinder.cpp  $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)StructArrayToSecondaryTableECSqlBinder$(oext):          $(baseDir)ECSql/StructArrayToSecondaryTableECSqlBinder.cpp   $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)StructArrayJsonECSqlBinder$(oext):                      $(baseDir)ECSql/StructArrayJsonECSqlBinder.cpp   $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -345,12 +333,6 @@ $(o)PrimitiveMappedToSingleColumnECSqlField$(oext):         $(baseDir)ECSql/Prim
 $(o)PointMappedToColumnsECSqlField$(oext):                  $(baseDir)ECSql/PointMappedToColumnsECSqlField.cpp                    $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)StructMappedToColumnsECSqlField$(oext):                 $(baseDir)ECSql/StructMappedToColumnsECSqlField.cpp                   $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)StructArrayMappedToSecondaryTableECSqlField$(oext):     $(baseDir)ECSql/StructArrayMappedToSecondaryTableECSqlField.cpp       $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)ECSqlStepTask$(oext):	                                $(baseDir)ECSql/ECSqlStepTask.cpp       $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)EmbeddedECSqlStatement$(oext):	                        $(baseDir)ECSql/EmbeddedECSqlStatement.cpp       $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDbSql$(oext):	                                        $(baseDir)ECDbSql.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
 

@@ -9,7 +9,9 @@
 #include "ECDbPolicyManager.h"
 #include <set>
 #include "ECSql/ECSqlPrepareContext.h"
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
 #define ECDB_HOLDING_VIEW "ec_RelationshipHoldingStatistics"
 
 
@@ -743,7 +745,7 @@ bool ECDbMapAnalyser::Relationship::RequireCascade () const
 //---------------------------------------------------------------------------------------
 bool ECDbMapAnalyser::Relationship::IsLinkTable () const
     {
-    return GetRelationshipClassMap ().GetClassMapType () == IClassMap::Type::RelationshipLinkTable;
+    return GetRelationshipClassMap ().GetType () == ClassMap::Type::RelationshipLinkTable;
     }
 
 //---------------------------------------------------------------------------------------
@@ -802,42 +804,6 @@ SqlTriggerBuilder::TriggerList const& ECDbMapAnalyser::Storage::GetTriggerList (
     {
     return m_triggers;
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-void ECDbMapAnalyser::Storage::HandleStructArray ()
-    {
-    if (m_structCascades.empty ())
-        return;
-
-    auto& builder = GetTriggerListR ().Create (SqlTriggerBuilder::Type::Delete, SqlTriggerBuilder::Condition::After, false);
-    builder.GetNameBuilder ()
-        .Append (GetTable ().GetName ().c_str ())
-        .Append ("_")
-        .Append ("StructArray_Delete");
-
-    builder.GetOnBuilder ().Append (GetTable ().GetName ().c_str ());
-    auto& body = builder.GetBodyBuilder ();
-    auto ecInstanceid = GetTable ().GetFilteredColumnFirst (ColumnKind::ECInstanceId);
-    BeAssert (ecInstanceid != nullptr);
-
-    for (auto structClass : m_structCascades)
-        {
-        for (auto& i : structClass->GetPartitionsR ())
-            {
-            auto toStorage = i.first;
-            auto parentECInstanceId = toStorage->GetTable ().GetFilteredColumnFirst (ColumnKind::ParentECInstanceId);
-            BeAssert (parentECInstanceId != nullptr);
-            body
-                .Append ("DELETE FROM ")
-                .AppendEscaped (toStorage->GetTable ().GetName ().c_str ())
-                .Append (" WHERE ")
-                .AppendFormatted ("OLD.[%s] = [%s] ", ecInstanceid->GetName ().c_str (), parentECInstanceId->GetName ().c_str ());
-
-            body.Append (";").AppendEOL ();
-            }
-        }
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
@@ -892,7 +858,6 @@ void ECDbMapAnalyser::Storage::Generate ()
         }
 
     HandleCascadeLinkTable (linkTables);
-    HandleStructArray ();
     }
 
 //=====================================ECDbMapAnalyser===================================
@@ -1065,55 +1030,6 @@ ECDbMapAnalyser::Relationship&  ECDbMapAnalyser::GetRelationship(RelationshipCla
             }
         }
     return *ptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus ECDbMapAnalyser::AnalyseClass (ClassMapCR ecClassMap)
-    {
-    auto& ptr = GetClass (ecClassMap);
-    if (!ptr.InQueue ())
-        {
-        return BentleyStatus::SUCCESS;
-        }
-
-    AnalyseStruct (ptr);
-    ptr.Done (); //mark it as done
-    for (auto derivedClassId : GetDerivedClassIds (ecClassMap.GetClass ().GetId ()))
-        {
-        if (AnalyseClass (*GetClassMap (derivedClassId)) != BentleyStatus::SUCCESS)
-            return BentleyStatus::ERROR;
-        }
-    return BentleyStatus::SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-void ECDbMapAnalyser::AnalyseStruct(Class& classInfo)
-    {
-    std::map<IClassMap const*, std::vector<StructArrayTablePropertyMap const*>> structPropertyMaps;
-    classInfo.GetClassMap().GetPropertyMaps().Traverse([&] (TraversalFeedback& feedback, PropertyMapCP propertyMap)
-        {
-        if (StructArrayTablePropertyMap const* structArrayTablePropMap = propertyMap->GetAsStructArrayTablePropertyMap())
-            {
-            if (auto associatedClasMap = m_map.GetClassMap(structArrayTablePropMap->GetStructElementType()))
-                {
-                if (associatedClasMap->GetJoinedTable().GetPersistenceType() == PersistenceType::Persisted)
-                    {
-                    structPropertyMaps[associatedClasMap].push_back(structArrayTablePropMap);
-                    }
-                }
-            }
-        feedback = TraversalFeedback::Next;
-        }, true);
-
-    for (auto& key : structPropertyMaps)
-        {
-        auto& elementType = static_cast<Struct&>(GetClass(static_cast<ClassMap const&>(*key.first)));
-        classInfo.GetStorageR().StructCascadeTo().insert(&elementType);
-        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1582,17 +1498,6 @@ BentleyStatus ECDbMapAnalyser::Analyse(bool applyChanges)
     m_viewInfos.clear();
 
     SetupDerivedClassLookup();
-    for (ECClassId rootClassId : GetRootClassIds())
-        {
-        ClassMapCP classMap = GetClassMap(rootClassId);
-        if (classMap == nullptr)
-            return ERROR;
-
-        if (!classMap->GetMapStrategy().IsNotMapped())
-            if (AnalyseClass(*classMap) != SUCCESS)
-                return ERROR;
-        }
-
 
     for (ECClassId rootClassId : GetRelationshipClassIds())
         {
@@ -2186,9 +2091,6 @@ BentleyStatus ECClassViewGenerator::BuildPropertyExpression(NativeSqlBuilder& vi
     if (StructPropertyMap const* o = dynamic_cast<StructPropertyMap const*>(&propertyMap))
         return BuildStructPropertyExpression(viewSql, *o, tablePrefix, nullValue);
     
-    if (propertyMap.GetAsStructArrayTablePropertyMap() != nullptr)
-        return SUCCESS;
-
     if (NavigationPropertyMap const* o = propertyMap.GetAsNavigationPropertyMap())
         {
         if (o->IsSupportedInECSql())

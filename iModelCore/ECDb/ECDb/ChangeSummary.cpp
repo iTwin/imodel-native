@@ -13,7 +13,7 @@
 
 ECDB_TYPEDEFS(TableMap);
 ECDB_TYPEDEFS(SqlChange);
-ECDB_TYPEDEFS(IClassMap);
+ECDB_TYPEDEFS(ClassMap);
 ECDB_TYPEDEFS(ECDbSqlColumn);
 ECDB_TYPEDEFS(PointPropertyMap);
 
@@ -201,7 +201,7 @@ private:
     SqlChangeCP m_sqlChange;
     TableMapCP m_tableMap;
 
-    static IClassMapCP GetClassMap(ECDbR ecdb, ECN::ECClassId classId);
+    static ClassMapCP GetClassMap(ECDbR ecdb, ECN::ECClassId classId);
    
     TableMapCP GetTableMap(Utf8StringCR tableName) const;
     void AddTableToMap(Utf8StringCR tableName) const;
@@ -209,28 +209,24 @@ private:
 
     int64_t GetValueInt64FromChangeOrTable(Utf8StringCR columnName, ECInstanceId instanceId) const;
     ECN::ECClassId GetClassIdFromChangeOrTable(ECInstanceId instanceId) const;
-    bool ChangeAffectsClass(IClassMapCR classMap) const;
+    bool ChangeAffectsClass(ClassMapCR classMap) const;
     bool ChangeAffectsProperty(PropertyMapCR propertyMap) const;
     int GetFirstColumnIndex(PropertyMapCP propertyMap) const;
 
     BentleyStatus ExtractFromSqlChanges(Changes& sqlChanges, ExtractOption extractOption);
     BentleyStatus ExtractFromSqlChange(SqlChangeCR sqlChange, ExtractOption extractOption);
 
-    void ExtractStructArrayParentInstance(IClassMapCR primaryClassMap, ECInstanceId instanceId);
-    bool GetStructArrayParentFromChange(ECClassId& parentClassId, ECInstanceId& parentInstanceId, ECInstanceId instanceId);
+    void ExtractInstance(ClassMapCR primaryClassMap, ECInstanceId instanceId);
 
-    void ExtractInstance(IClassMapCR primaryClassMap, ECInstanceId instanceId);
-
-    void ExtractRelInstance(IClassMapCR classMap, ECInstanceId relInstanceId);
+    void ExtractRelInstance(ClassMapCR classMap, ECInstanceId relInstanceId);
     void ExtractRelInstanceInEndTable(RelationshipClassEndTableMap const& relClassMap, ECInstanceId relInstanceId, ECN::ECClassId foreignEndClassId);
     void ExtractRelInstanceInLinkTable(RelationshipClassLinkTableMap const& relClassMap, ECInstanceId relInstanceId);
     void GetRelEndInstanceKeys(ECInstanceKey& oldInstanceKey, ECInstanceKey& newInstanceKey, RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd) const;
     ECN::ECClassId GetRelEndClassId(RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd, ECInstanceId endInstanceId) const;
     static ECN::ECClassId GetRelEndClassIdFromRelClass(ECN::ECRelationshipClassCP relClass, ECN::ECRelationshipEnd relEnd);
 
-    void RecordInstance(IClassMapCR classMap, ECInstanceId instanceId, DbOpcode dbOpcode);
-    void RecordRelInstance(IClassMapCR classMap, ECInstanceId instanceId, DbOpcode dbOpcode, ECInstanceKeyCR oldSourceKey, ECInstanceKeyCR newSourceKey, ECInstanceKeyCR oldTargetKey, ECInstanceKeyCR newTargetKey);
-    void RecordStructArrayParentInstance(IClassMapCR classMap, ECInstanceId instanceId, DbOpcode dbOpcode);
+    void RecordInstance(ClassMapCR classMap, ECInstanceId instanceId, DbOpcode dbOpcode);
+    void RecordRelInstance(ClassMapCR classMap, ECInstanceId instanceId, DbOpcode dbOpcode, ECInstanceKeyCR oldSourceKey, ECInstanceKeyCR newSourceKey, ECInstanceKeyCR oldTargetKey, ECInstanceKeyCR newTargetKey);
     void RecordPropertyValue(ChangeSummary::InstanceCR instance, PropertyMapCR propertyMap);
     void RecordColumnValue(ChangeSummary::InstanceCR instance, Utf8StringCR columnName, Utf8StringCR accessString);
     
@@ -928,7 +924,7 @@ void ValuesTable::BindStatement(Statement& statement, ECN::ECClassId classId, EC
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
 // static
-IClassMapCP ChangeExtractor::GetClassMap(ECDbR ecdb, ECClassId classId)
+ClassMapCP ChangeExtractor::GetClassMap(ECDbR ecdb, ECClassId classId)
     {
     ECN::ECClassCP ecClass = ecdb.Schemas().GetECClass(classId);
     if (ecClass == nullptr)
@@ -937,7 +933,7 @@ IClassMapCP ChangeExtractor::GetClassMap(ECDbR ecdb, ECClassId classId)
         return nullptr;
         }
 
-    IClassMapCP classMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMap(*ecClass);
+    ClassMapCP classMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMap(*ecClass);
     return classMap;
     }
 
@@ -1005,7 +1001,7 @@ ECClassId ChangeExtractor::GetClassIdFromChangeOrTable(ECInstanceId instanceId) 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-bool ChangeExtractor::ChangeAffectsClass(IClassMapCR classMap) const
+bool ChangeExtractor::ChangeAffectsClass(ClassMapCR classMap) const
     {
     ECDbSqlTable const* ecDbSqlTable = m_tableMap->GetECDbSqlTable();
     for (PropertyMapCP propertyMap : classMap.GetPropertyMaps())
@@ -1129,7 +1125,7 @@ BentleyStatus ChangeExtractor::ExtractFromSqlChange(SqlChangeCR sqlChange, Extra
         }
 
     ECClassId primaryClassId = GetClassIdFromChangeOrTable(primaryInstanceId);
-    IClassMapCP primaryClassMap = GetClassMap(m_ecdb, primaryClassId);
+    ClassMapCP primaryClassMap = GetClassMap(m_ecdb, primaryClassId);
     if (primaryClassMap == nullptr)
         {
         BeAssert(false);
@@ -1140,13 +1136,6 @@ BentleyStatus ChangeExtractor::ExtractFromSqlChange(SqlChangeCR sqlChange, Extra
     BeAssert(ecDbSqlTable != nullptr);
 
     TableType tableType = ecDbSqlTable->GetTableType();
-
-    if (tableType == TableType::StructArray)
-        {
-        ExtractStructArrayParentInstance(*primaryClassMap, primaryInstanceId);
-        return SUCCESS;
-        }
-
     BeAssert(tableType == TableType::Primary || tableType == TableType::Existing || tableType == TableType::Joined);
 
     if (m_extractOption == ExtractOption::InstancesOnly && !primaryClassMap->IsRelationshipClassMap())
@@ -1167,71 +1156,7 @@ BentleyStatus ChangeExtractor::ExtractFromSqlChange(SqlChangeCR sqlChange, Extra
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-void ChangeExtractor::ExtractStructArrayParentInstance(IClassMapCR primaryClassMap, ECInstanceId instanceId)
-    {
-    // Row in struct array table - record that the parent instance has changed
-    ECClassId parentClassId;
-    ECInstanceId parentInstanceId;
-    bool isStructArray = GetStructArrayParentFromChange(parentClassId, parentInstanceId, instanceId);
-    if (!isStructArray)
-        {
-        BeAssert(false && "Structs cannot be domain instances");
-        return;
-        }
-
-    IClassMapCP parentClassMap = GetClassMap(m_ecdb, parentClassId);
-    BeAssert(parentClassMap != nullptr);
-    bool isParentRel = parentClassMap->IsRelationshipClassMap();
-    if ((isParentRel && m_extractOption == ExtractOption::RelationshipInstancesOnly) || (!isParentRel && m_extractOption == ExtractOption::InstancesOnly))
-        {
-        RecordStructArrayParentInstance(*parentClassMap, parentInstanceId, DbOpcode::Update);
-        // TODO: Record struct array values also - need to add ParentECInstanceId, ECArrayIndex columns.
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     07/2015
-//---------------------------------------------------------------------------------------
-bool ChangeExtractor::GetStructArrayParentFromChange(ECClassId& parentClassId, ECInstanceId& parentInstanceId, ECInstanceId instanceId)
-    {
-    int parentInstanceIdColumnIndex = m_tableMap->GetColumnIndexByName("ParentECInstanceId");
-    if (parentInstanceIdColumnIndex < 0)
-        return false;
-
-    int propertyPathIdColumnIndex = m_tableMap->GetColumnIndexByName("ECPropertyPathId");
-    BeAssert(propertyPathIdColumnIndex >= 0);
-
-    int64_t value = GetValueInt64FromChangeOrTable("ParentECInstanceId", instanceId);
-    if (value <= 0)
-        return false;
-    parentInstanceId = ECInstanceId(value);
-
-    int64_t propertyPathId = GetValueInt64FromChangeOrTable("ECPropertyPathId", instanceId);
-    BeAssert(propertyPathId > 0);
-
-    Utf8CP sql = "SELECT ec_Property.ClassId, ec_Property.Kind "
-        "FROM ec_Property "
-        "JOIN ec_PropertyPath ON ec_Property.Id = ec_PropertyPath.RootPropertyId "
-        "WHERE ec_PropertyPath.Id = ?";
-
-    CachedStatementPtr statement = m_ecdb.GetCachedStatement(sql);
-    BeAssert(statement.IsValid());
-
-    statement->BindInt64(1, propertyPathId);
-
-    DbResult result = statement->Step();
-    BeAssert(result == BE_SQLITE_ROW);
-    BeAssert(Enum::FromInt<ECPropertyKind> (statement->GetValueInt(1)) == ECPropertyKind::StructArray && "Expected a struct array property");
-
-    parentClassId = (ECClassId) statement->GetValueInt64(0);
-    BeAssert(parentClassId > 0);
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     10/2015
-//---------------------------------------------------------------------------------------
-void ChangeExtractor::ExtractInstance(IClassMapCR primaryClassMap, ECInstanceId instanceId)
+void ChangeExtractor::ExtractInstance(ClassMapCR primaryClassMap, ECInstanceId instanceId)
     {
     DbOpcode dbOpcode = m_sqlChange->GetDbOpcode();
     if (dbOpcode == DbOpcode::Update && !ChangeAffectsClass(primaryClassMap))
@@ -1243,10 +1168,10 @@ void ChangeExtractor::ExtractInstance(IClassMapCR primaryClassMap, ECInstanceId 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-void ChangeExtractor::ExtractRelInstance(IClassMapCR classMap, ECInstanceId relInstanceId)
+void ChangeExtractor::ExtractRelInstance(ClassMapCR classMap, ECInstanceId relInstanceId)
     {
-    IClassMap::Type type = classMap.GetClassMapType();
-    if (type == IClassMap::Type::RelationshipLinkTable)
+    ClassMap::Type type = classMap.GetType();
+    if (type == ClassMap::Type::RelationshipLinkTable)
         {
         RelationshipClassLinkTableMap const* relClassMap = dynamic_cast<RelationshipClassLinkTableMap const*> (&classMap);
         BeAssert(relClassMap != nullptr);
@@ -1474,7 +1399,7 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassIdFromRelClass(ECN::ECRelationship
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-void ChangeExtractor::RecordInstance(IClassMapCR classMap, ECInstanceId instanceId, DbOpcode dbOpcode)
+void ChangeExtractor::RecordInstance(ClassMapCR classMap, ECInstanceId instanceId, DbOpcode dbOpcode)
     {
     Utf8StringCR tableName = m_tableMap->GetTableName();
     ChangeSummary::Instance instance(m_changeSummary, classMap.GetClass().GetId(), instanceId, dbOpcode, m_sqlChange->GetIndirect(), tableName);
@@ -1494,7 +1419,7 @@ void ChangeExtractor::RecordInstance(IClassMapCR classMap, ECInstanceId instance
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-void ChangeExtractor::RecordRelInstance(IClassMapCR classMap, ECInstanceId instanceId, DbOpcode dbOpcode, ECInstanceKeyCR oldSourceKey, ECInstanceKeyCR newSourceKey, ECInstanceKeyCR oldTargetKey, ECInstanceKeyCR newTargetKey)
+void ChangeExtractor::RecordRelInstance(ClassMapCR classMap, ECInstanceId instanceId, DbOpcode dbOpcode, ECInstanceKeyCR oldSourceKey, ECInstanceKeyCR newSourceKey, ECInstanceKeyCR oldTargetKey, ECInstanceKeyCR newTargetKey)
     {
     RecordInstance(classMap, instanceId, dbOpcode);
 
@@ -1504,15 +1429,6 @@ void ChangeExtractor::RecordRelInstance(IClassMapCR classMap, ECInstanceId insta
     m_valuesTable.Insert(classId, instanceId, "SourceECInstanceId", oldSourceKey.IsValid() ? oldSourceKey.GetECInstanceId().GetValue() : -1, newSourceKey.IsValid() ? newSourceKey.GetECInstanceId().GetValue() : -1);
     m_valuesTable.Insert(classId, instanceId, "TargetECClassId", oldTargetKey.IsValid() ? oldTargetKey.GetECClassId() : -1, newTargetKey.IsValid() ? newTargetKey.GetECClassId() : -1);
     m_valuesTable.Insert(classId, instanceId, "TargetECInstanceId", oldTargetKey.IsValid() ? oldTargetKey.GetECInstanceId().GetValue() : -1, newTargetKey.IsValid() ? newTargetKey.GetECInstanceId().GetValue() : -1);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     10/2015
-//---------------------------------------------------------------------------------------
-void ChangeExtractor::RecordStructArrayParentInstance(IClassMapCR classMap, ECInstanceId instanceId, DbOpcode dbOpcode)
-    {
-    ChangeSummary::Instance instance(m_changeSummary, classMap.GetClass().GetId(), instanceId, dbOpcode, m_sqlChange->GetIndirect(), m_tableMap->GetTableName());
-    m_instancesTable.InsertOrUpdate(instance);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1528,7 +1444,8 @@ void ChangeExtractor::RecordPropertyValue(ChangeSummary::InstanceCR instance, Pr
         return;
         }
 
-    Utf8String accessString = propertyMap.GetPropertyAccessString();
+    //TODO: Should use Utf8CP to avoid a string copy
+    Utf8String accessString(propertyMap.GetPropertyAccessString());
     std::vector<ECDbSqlColumnCP> columns;
     propertyMap.GetColumns(columns);
 
@@ -1556,7 +1473,6 @@ void ChangeExtractor::RecordPropertyValue(ChangeSummary::InstanceCR instance, Pr
         return;
         }
 
-    BeAssert(nullptr != dynamic_cast<StructArrayTablePropertyMap const*> (&propertyMap));
     BeAssert(columns.size() == 0);
     }
 

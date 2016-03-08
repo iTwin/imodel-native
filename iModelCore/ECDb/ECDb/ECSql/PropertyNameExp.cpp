@@ -41,7 +41,7 @@ PropertyNameExp::PropertyNameExp (RangeClassRefExp const& classRefExp, DerivedPr
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-PropertyNameExp::PropertyNameExp (Utf8CP propertyName, RangeClassRefExp const& classRefExp, IClassMap const& classMap) 
+PropertyNameExp::PropertyNameExp (Utf8CP propertyName, RangeClassRefExp const& classRefExp, ClassMap const& classMap) 
 : ValueExp (), m_isSystemProperty (false), m_classAlias (classRefExp.GetAlias ()), m_classRefExp (&classRefExp)
     {
     m_propertyPath.Push (propertyName);
@@ -232,7 +232,7 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(Utf8StringR error, RangeClassRef
             case Exp::Type::ClassName:
                 {
                 ClassNameExp const& classNameExp = static_cast<ClassNameExp const&>(classRefExp);
-                IClassMap const& classMap = classNameExp.GetInfo().GetMap();
+                ClassMap const& classMap = classNameExp.GetInfo().GetMap();
                 return propPath.Resolve(classMap, &error);
                 }
 

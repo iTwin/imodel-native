@@ -25,7 +25,6 @@ public:
 
 private:
     ECDbCR m_ecdb;
-    IClassMap::View m_classMapViewMode;
 
     std::vector<void const*> m_finalizeParseArgs;
     bmap<Utf8String, std::shared_ptr<ClassNameExp::Info>> m_classNameExpInfoList;
@@ -35,7 +34,7 @@ private:
     int m_aliasCount;
 
 public:
-    ECSqlParseContext(ECDbCR ecdb, IClassMap::View classMapViewMode) : m_ecdb(ecdb), m_classMapViewMode(classMapViewMode), m_currentECSqlParameterIndex(0), m_aliasCount(0) {}
+    explicit ECSqlParseContext(ECDbCR ecdb) : m_ecdb(ecdb), m_currentECSqlParameterIndex(0), m_aliasCount(0) {}
 
     BentleyStatus FinalizeParsing(Exp& rootExp);
 
@@ -77,9 +76,9 @@ private:
         ECSqlParser const& m_parser;
 
     public:
-        ScopedContext(ECSqlParser const& parser, ECDbCR ecdb, IClassMap::View classMapViewMode) : m_parser(parser)
+        ScopedContext(ECSqlParser const& parser, ECDbCR ecdb) : m_parser(parser)
             {
-            m_parser.m_context = std::unique_ptr<ECSqlParseContext>(new ECSqlParseContext(ecdb, classMapViewMode));
+            m_parser.m_context = std::unique_ptr<ECSqlParseContext>(new ECSqlParseContext(ecdb));
             }
 
         ~ScopedContext() { m_parser.m_context = nullptr; }
@@ -204,7 +203,7 @@ public:
     ECSqlParser() : m_context (nullptr) {}
     ~ECSqlParser() {}
 
-    BentleyStatus Parse(ECSqlParseTreePtr& ecsqlParseTree, ECDbCR, Utf8CP ecsql, IClassMap::View) const;
+    BentleyStatus Parse(ECSqlParseTreePtr& ecsqlParseTree, ECDbCR, Utf8CP ecsql) const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

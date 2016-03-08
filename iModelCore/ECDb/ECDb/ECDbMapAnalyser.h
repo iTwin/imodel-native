@@ -161,7 +161,6 @@ struct ECDbMapAnalyser
                 }
             SqlTriggerBuilder::TriggerList& GetTriggerListR();
             SqlTriggerBuilder::TriggerList const& GetTriggerList() const;
-            void HandleStructArray();
             void HandleCascadeLinkTable(std::vector<Relationship*> const& relationships);
             void Generate();
         };
@@ -366,8 +365,6 @@ struct ECDbMapAnalyser
         Storage& GetStorage(ClassMapCR classMap);
         Class& GetClass(ClassMapCR classMap);
         Relationship&  GetRelationship(RelationshipClassMapCR classMap);
-        BentleyStatus AnalyseClass(ClassMapCR ecClassMap);
-        void AnalyseStruct(Class& classInfo);
         BentleyStatus AnalyseRelationshipClass(RelationshipClassMapCR ecRelationshipClassMap);
         std::vector<ECN::ECClassId> GetRootClassIds() const;
         std::vector<ECN::ECClassId> GetRelationshipClassIds() const;

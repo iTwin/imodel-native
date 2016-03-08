@@ -111,17 +111,8 @@ ColumnKind SystemPropertyMap::ToColumnKind() const
     {
     switch (m_kind)
         {
-        case ECSqlSystemProperty::ECArrayIndex:
-            return ColumnKind::ECArrayIndex;
-
         case ECSqlSystemProperty::ECInstanceId:
             return ColumnKind::ECInstanceId;
-
-        case ECSqlSystemProperty::ECPropertyPathId:
-            return ColumnKind::ECPropertyPathId;
-
-        case ECSqlSystemProperty::ParentECInstanceId:
-            return ColumnKind::ParentECInstanceId;
 
         case ECSqlSystemProperty::SourceECClassId:
             return ColumnKind::SourceECClassId;
@@ -196,107 +187,6 @@ Utf8String ECInstanceIdPropertyMap::_ToString () const
     {
     return Utf8PrintfString ("PropertyMapECInstanceId: Column name=%s", GetColumn ().GetName ().c_str());
     }
-
-
-
-//******************************** PropertyMapSecondaryTableKey ****************************************
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2014
-//+---------------+---------------+---------------+---------------+---------------+-
-StructArrayTableKeyPropertyMap::StructArrayTableKeyPropertyMap (ECPropertyCR ecProperty, std::vector<ECDbSqlColumn const*> columns, ECSqlSystemProperty kind)
-: SystemPropertyMap (ecProperty, std::move(columns), kind)
- {}
-
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2014
-//+---------------+---------------+---------------+---------------+---------------+-
-PropertyMapPtr StructArrayTableKeyPropertyMap::Create (ECDbSchemaManagerCR schemaManager, ECSqlSystemProperty kind, IClassMap const& classMap)
-    {
-    if (!classMap.MapsToStructArrayTable ())
-        {
-        BeAssert (false);
-        return nullptr;
-        }
-
-    if (kind != ECSqlSystemProperty::ECInstanceId && kind != ECSqlSystemProperty::ECPropertyPathId && kind != ECSqlSystemProperty::ECArrayIndex&& kind != ECSqlSystemProperty::ParentECInstanceId)
-        {
-        BeAssert (false && "StructArrayTableKeyPropertyMap::Create must only be called with ECSqlSystemProperty::ECInstanceId, ECSqlSystemProperty::ECPropertyPathId, or ECSqlSystemProperty::ECArrayIndex or ECSqlSystemProperty::ParentECInstanceId.");
-        return nullptr;
-        }
-
-    auto property = ECDbSystemSchemaHelper::GetSystemProperty (schemaManager, kind);
-    if (property == nullptr)
-        //log and assert done in child method
-        return nullptr;
-
-    std::vector<ECDbSqlColumn const*> systemColumns;  
-    if (classMap.GetJoinedTable().GetFilteredColumnList (systemColumns, ColumnKind::NonRelSystemColumn) == BentleyStatus::ERROR)
-        {
-        BeAssert (false && "StructArrayTableKeyPropertyMap::Create> Table is expected to have primary key columns.");
-        return nullptr;
-        }
-
-    ECDbSqlColumn const* systemColumn = nullptr;
-    for (ECDbSqlColumn const* column : systemColumns)
-        {
-        bool found = false;
-        switch (kind)
-            {
-                case ECSqlSystemProperty::ECInstanceId:
-                {
-                if (column->GetKind() == ColumnKind::ECInstanceId)
-                    found = true;
-
-                break;
-                }
-                case ECSqlSystemProperty::ParentECInstanceId:
-                {
-                if (column->GetKind() == ColumnKind::ParentECInstanceId)
-                    found = true;
-
-                break;
-                }
-                case ECSqlSystemProperty::ECPropertyPathId:
-                {
-                if (column->GetKind() == ColumnKind::ECPropertyPathId)
-                    found = true;
-
-                break;
-                }
-                case ECSqlSystemProperty::ECArrayIndex:
-                {
-                if (column->GetKind() == ColumnKind::ECArrayIndex)
-                    found = true;
-
-                break;
-                }
-                default:
-                    break;
-            }
-
-        if (found)
-            {
-            systemColumn = column;
-            break;
-            }
-        }
-
-    if (systemColumn == nullptr)
-        {
-        BeAssert (false && "No column found for StructArrayTableKeyPropertyMap");
-        return nullptr;
-        }
-
-    return new StructArrayTableKeyPropertyMap(*property, std::move(ToVector(systemColumn)), kind);
-    }
-
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2014
-//+---------------+---------------+---------------+---------------+---------------+-
-Utf8String StructArrayTableKeyPropertyMap::_ToString () const
- {
- return Utf8PrintfString ("StructArrayTableKeyPropertyMap: Column name=%s", GetColumn ().GetName ().c_str());
- }
 
 
 //******************************** PropertyMapRelationshipConstraint ****************************************

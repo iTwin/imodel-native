@@ -14,7 +14,6 @@
     <ClCompile Include="ChangeSummary.cpp" />
     <ClCompile Include="ClassMap.cpp" />
     <ClCompile Include="ClassMapInfo.cpp" />
-    <ClCompile Include="ClassMapSubclasses.cpp" />
     <ClCompile Include="docs\samplecode\ECDb.sample.cpp" />
     <ClCompile Include="docs\samplecode\ECDbCRUD.sample.cpp" />
     <ClCompile Include="docs\samplecode\ECDbCRUDAdapters.sample.cpp" />
@@ -50,7 +49,6 @@
     <ClCompile Include="ECSql\ECInstanceAdapterHelper.cpp" />
     <ClCompile Include="ECSql\ECSqlDeletePreparer.cpp" />
     <ClCompile Include="ECSql\ECSqlInsertPreparer.cpp" />
-    <ClCompile Include="ECSql\ECSqlParameterValue.cpp" />
     <ClCompile Include="ECSql\ECSqlPropertyNameExpPreparer.cpp" />
     <ClCompile Include="ECSql\ECSqlPropertyPathImpl.cpp" />
     <ClCompile Include="ECSql\ECSqlSelectPreparer.cpp" />
@@ -70,10 +68,8 @@
     <ClCompile Include="ECSql\ECSqlPreparedStatement.cpp" />
     <ClCompile Include="ECSql\ECSqlStatementCache.cpp" />
     <ClCompile Include="ECSql\ECSqlStatus.cpp" />
-    <ClCompile Include="ECSql\ECSqlStepTask.cpp" />
     <ClCompile Include="ECSql\ECSqlTypeInfo.cpp" />
     <ClCompile Include="ECSql\ECSqlUpdatePreparer.cpp" />
-    <ClCompile Include="ECSql\EmbeddedECSqlStatement.cpp" />
     <ClCompile Include="ECSql\Exp.cpp" />
     <ClCompile Include="ECSql\ExpHelper.cpp" />
     <ClCompile Include="ECSql\ECSqlStatement.cpp" />
@@ -106,8 +102,6 @@
     <ClCompile Include="ECSql\PropertyNameExp.cpp" />
     <ClCompile Include="ECSql\SelectStatementExp.cpp" />
     <ClCompile Include="ECSql\StructArrayJsonECSqlBinder.cpp" />
-    <ClCompile Include="ECSql\StructArrayMappedToSecondaryTableECSqlField.cpp" />
-    <ClCompile Include="ECSql\StructArrayToSecondaryTableECSqlBinder.cpp" />
     <ClCompile Include="ECSql\StructMappedToColumnsECSqlField.cpp" />
     <ClCompile Include="ECSql\StructToColumnsECSqlBinder.cpp" />
     <ClCompile Include="ECSql\SystemPropertyECSqlBinder.cpp" />
@@ -142,7 +136,6 @@
     <ClInclude Include="BeBriefcaseBasedIdSequence.h" />
     <ClInclude Include="ClassMap.h" />
     <ClInclude Include="ClassMapInfo.h" />
-    <ClInclude Include="ClassMapSubclasses.h" />
     <ClInclude Include="ECDbImpl.h" />
     <ClInclude Include="ECDbInternalTypes.h" />
     <ClInclude Include="ECDbLogger.h" />
@@ -165,7 +158,6 @@
     <ClInclude Include="ECSql\ECInstanceAdapterHelper.h" />
     <ClInclude Include="ECSql\ECSqlDeletePreparer.h" />
     <ClInclude Include="ECSql\ECSqlInsertPreparer.h" />
-    <ClInclude Include="ECSql\ECSqlParameterValue.h" />
     <ClInclude Include="ECSql\ECSqlPropertyNameExpPreparer.h" />
     <ClInclude Include="ECSql\ECSqlPropertyPathImpl.h" />
     <ClInclude Include="ECSql\ECSqlSelectPreparer.h" />
@@ -179,10 +171,8 @@
     <ClInclude Include="ECSql\ECSqlPreparer.h" />
     <ClInclude Include="ECSql\ECSqlField.h" />
     <ClInclude Include="ECSql\ECSqlPreparedStatement.h" />
-    <ClInclude Include="ECSql\ECSqlStepTask.h" />
     <ClInclude Include="ECSql\ECSqlTypeInfo.h" />
     <ClInclude Include="ECSql\ECSqlUpdatePreparer.h" />
-    <ClInclude Include="ECSql\EmbeddedECSqlStatement.h" />
     <ClInclude Include="ECSql\Exp.h" />
     <ClInclude Include="ECSql\ExpHelper.h" />
     <ClInclude Include="ECSql\ECSqlStatementNoopImpls.h" />
@@ -216,8 +206,6 @@
     <ClInclude Include="ECSql\PropertyNameExp.h" />
     <ClInclude Include="ECSql\SelectStatementExp.h" />
     <ClInclude Include="ECSql\StructArrayJsonECSqlBinder.h" />
-    <ClInclude Include="ECSql\StructArrayMappedToSecondaryTableECSqlField.h" />
-    <ClInclude Include="ECSql\StructArrayToSecondaryTableECSqlBinder.h" />
     <ClInclude Include="ECSql\StructMappedToColumnsECSqlField.h" />
     <ClInclude Include="ECSql\StructToColumnsECSqlBinder.h" />
     <ClInclude Include="ECSql\SystemPropertyECSqlBinder.h" />

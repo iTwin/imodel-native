@@ -11,7 +11,7 @@
 #include "ECDbSql.h"
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-struct IClassMap;
+struct ClassMap;
 struct ClassMapInfo;
 struct SchemaImportContext;
 
@@ -39,7 +39,7 @@ private:
     Utf8String m_tableName;
     Utf8String m_ecInstanceIdColumnName;
     bvector<ClassIndexInfoPtr> m_dbIndexes; 
-    IClassMap const* m_parentClassMap;
+    ClassMap const* m_parentClassMap;
     bool m_isMapToVirtualTable;
     ECN::ECPropertyCP m_classHasCurrentTimeStampProperty;
 
@@ -50,9 +50,9 @@ protected:
 
 private:
     BentleyStatus DoEvaluateMapStrategy(bool& baseClassesNotMappedYet, UserECDbMapStrategy&);
-    BentleyStatus EvaluateSharedTableMapStrategy(IClassMap const& parentClassMap, ECDbMapStrategy const& parentStrategy, UserECDbMapStrategy const& userStrategy);
+    BentleyStatus EvaluateSharedTableMapStrategy(ClassMap const& parentClassMap, ECDbMapStrategy const& parentStrategy, UserECDbMapStrategy const& userStrategy);
 
-    bool GatherBaseClassMaps (bvector<IClassMap const*>& baseClassMaps, bvector<IClassMap const*>& tphMaps, bvector<IClassMap const*>& tpcMaps, bvector<IClassMap const*>& nmhMaps, ECN::ECClassCR ecClass) const;
+    bool GatherBaseClassMaps (bvector<ClassMap const*>& baseClassMaps, bvector<ClassMap const*>& tphMaps, bvector<ClassMap const*>& tpcMaps, bvector<ClassMap const*>& nmhMaps, ECN::ECClassCR ecClass) const;
     bool ValidateChildStrategy(ECDbMapStrategy const& parentStrategy, UserECDbMapStrategy const& childStrategy) const;
     BentleyStatus InitializeClassHasCurrentTimeStampProperty();
 
@@ -74,7 +74,7 @@ public:
     Utf8CP GetTableName() const {return m_tableName.c_str();}
     Utf8CP GetECInstanceIdColumnName() const {return m_ecInstanceIdColumnName.c_str();}
     ECN::ECPropertyCP GetClassHasCurrentTimeStampProperty() const { return m_classHasCurrentTimeStampProperty; }
-    IClassMap const* GetParentClassMap () const { return m_parentClassMap; }
+    ClassMap const* GetParentClassMap () const { return m_parentClassMap; }
 
     //! Virtual tables are not persisted   
     bool IsMapToVirtualTable () const { return m_isMapToVirtualTable; }

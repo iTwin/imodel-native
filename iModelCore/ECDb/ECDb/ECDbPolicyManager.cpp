@@ -118,7 +118,7 @@ IsValidInECSqlPolicyAssertion IsValidInECSqlPolicyAssertion::Get (ECSqlType ecSq
 // @bsimethod                                 Krischan.Eberle                    12/2013
 //---------------------------------------------------------------------------------------
 //static
-ECDbPolicy ECDbPolicyManager::GetClassPolicy (IClassMap const& classMap, ECDbPolicyAssertion const& assertion)
+ECDbPolicy ECDbPolicyManager::GetClassPolicy (ClassMap const& classMap, ECDbPolicyAssertion const& assertion)
     {
     switch (assertion.GetType ())
         {
@@ -134,7 +134,7 @@ ECDbPolicy ECDbPolicyManager::GetClassPolicy (IClassMap const& classMap, ECDbPol
 // @bsimethod                                 Krischan.Eberle                    12/2013
 //---------------------------------------------------------------------------------------
 //static
-ECDbPolicy ECDbPolicyManager::DoGetClassPolicy(IClassMap const& classMap, IsValidInECSqlPolicyAssertion const& assertion)
+ECDbPolicy ECDbPolicyManager::DoGetClassPolicy(ClassMap const& classMap, IsValidInECSqlPolicyAssertion const& assertion)
     {
     ECClassCR ecClass = classMap.GetClass();
     Utf8StringCR className = ecClass.GetName();
