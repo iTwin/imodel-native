@@ -589,24 +589,53 @@ TEST_F(UnitsTests, AllUnitsNeededForFirstReleaseExist)
     ASSERT_NE(0, foundUnits.size()) << "No units were found";
     }
 
-//TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
-//    {
-//    ofstream fileStream("C:\\AllUnitsByPhenomenon.txt", ofstream::out);
-//    bvector<PhenomenonCP> phenomena;
-//    UnitRegistry::Instance().AllPhenomena(phenomena);
-//    for (auto const& phenomenon : phenomena)
-//        {
-//        fileStream << left << setw(35) << phenomenon->GetName() << setw(35) << phenomenon->GetDefinition() << setw(25) << phenomenon->GetPhenomenonDimension() << endl;
-//        fileStream << left << setw(84) << setfill('-') << "-" << endl;
-//        fileStream << setfill(' ');
-//        for (auto const& unit : phenomenon->GetUnits())
-//            {
-//            fileStream << left << setw(35) << unit->GetName() << setw(35) << unit->GetDefinition() << setw(25) << unit->GetUnitDimension() << endl;
-//            }
-//        fileStream << endl << endl;
-//        }
-//    fileStream.close();
-//    }
+void WriteLine(BeFile& file, Utf8CP line = nullptr)
+    {
+    Utf8String finalLine;
+    if (Utf8String::IsNullOrEmpty(line))
+        {
+        finalLine.assign("\r\n");
+        }
+    else
+        {
+        finalLine.Sprintf("%s\r\n", line);
+        }
+
+    uint32_t bytesToWrite = static_cast<uint32_t>(finalLine.SizeInBytes() - 1); //not safe, but our line will not exceed 32bits.
+    uint32_t bytesWritten;
+    EXPECT_EQ(file.Write(&bytesWritten, finalLine.c_str(), bytesToWrite), BeFileStatus::Success);
+    }
+
+TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
+    {
+    Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"AllUnitsByPhenomenon.csv");
+    BeFile file;
+    EXPECT_EQ(file.Create(fileName, true), BeFileStatus::Success);
+    EXPECT_EQ(file.Open(fileName, BeFileAccess::Write), BeFileStatus::Success);
+
+    bvector<PhenomenonCP> phenomena;
+    UnitRegistry::Instance().AllPhenomena(phenomena);
+
+    WriteLine(file, "PhenomenonName;PhenomenonDefinition;PhenomenonDimension;(first row in every table)");
+    WriteLine(file, "UnitName;UnitDefinition;UnitDimension;(all following rows)");
+
+    for (auto const& phenomenon : phenomena)
+        {
+        Utf8PrintfString line("%s;%s;%s", phenomenon->GetName(), phenomenon->GetDefinition(), phenomenon->GetPhenomenonDimension().c_str());
+        
+        WriteLine(file, line.c_str());
+        for (auto const& unit : phenomenon->GetUnits())
+            {
+            Utf8PrintfString unitLine("%s;%s;%s", unit->GetName(), unit->GetDefinition(), unit->GetUnitDimension().c_str());
+            WriteLine(file, unitLine.c_str());
+            }
+
+        WriteLine(file);
+        WriteLine(file);
+        }
+
+    file.Close();
+    }
 
 struct UnitsPerformanceTests : UnitsTests {};
 
