@@ -1387,6 +1387,8 @@ errexit :
 |   spu.03jul2002   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
+
+
 DTMStatusInt BcDTM::_DrapeLinear(Bentley::TerrainModel::DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints)
     {
     // Drape the resulting point array
@@ -1398,6 +1400,17 @@ DTMStatusInt BcDTM::_DrapeLinear(Bentley::TerrainModel::DTMDrapedLinePtr& ret, D
     if (status == DTM_SUCCESS)
         ret = drapedLineP->GetIDTMDrapedLine();
     return status;
+    }
+
+bool BcDTM::_ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint)
+    {
+    return _GetProjectedPointOnDTM(pointOnDTM, w2vMap, testPoint);
+    }
+
+bool BcDTM::_DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector)
+    {
+    long startFlag, endFlag;
+    return (DTM_SUCCESS == _ShotVector(slope, aspect, triangle, drapedType, &startFlag, &endFlag, endPt, &const_cast<DPoint3dR>(point), directionOfVector, slopeOfVector) && endFlag == 0);
     }
 
 /*----------------------------------------------------------------------+
@@ -1846,6 +1859,57 @@ DTMStatusInt BcDTM::OffsetDeltaElevation (double offset)
         offset = _dtmTransformHelper->convertDistanceToDTM (offset);
     status = (DTMStatusInt)bcdtmData_moveZDtmObject (GetTinHandle (), 2 /*increment*/, offset);
     return status ;
+    }
+    
+    
+/*----------------------------------------------------------------------+
+|                                                                       |
+|   spu.06nov2003   -  Created.                                         |
+|                                                                       |
++----------------------------------------------------------------------*/
+DTMStatusInt BcDTM::_ShotVector(double* endSlopeP, double* endAspectP, DPoint3d endTriangle[3], int* endDrapedTypeP, long* startFlag, long* endFlag, DPoint3dP endPtP, DPoint3dP startPtP,
+    double direction, double slope)
+    {
+    DPoint3d    endPt = {0, 0, 0};
+    *startFlag = 0;
+    *endFlag = 0;
+
+    // Call DTMFeatureState::Tin function
+    DTMStatusInt status;
+
+    if (_dtmTransformHelper.IsValid ())
+        {
+        DPoint3d startPt = *startPtP;
+        _dtmTransformHelper->convertPointToDTM (startPt);
+        direction = _dtmTransformHelper->convertAspectToDTM (direction);
+        slope = _dtmTransformHelper->convertSlopeToDTM (slope);
+        status = (DTMStatusInt)bcdtmSideSlope_intersectSurfaceDtmObject (GetTinHandle (), startPt.x, startPt.y, startPt.z,
+                                                         direction, slope, 1, dc_zero, &endPt.x, &endPt.y, &endPt.z, startFlag, endFlag);
+        if (status == DTM_SUCCESS)
+            _dtmTransformHelper->convertPointFromDTM (endPt);
+        }
+    else
+        {
+        status = (DTMStatusInt)bcdtmSideSlope_intersectSurfaceDtmObject (GetTinHandle (), startPtP->x, startPtP->y, startPtP->z,
+                                                         direction, slope, 1, dc_zero, &endPt.x, &endPt.y, &endPt.z, startFlag, endFlag);
+        }
+    if (status != DTM_SUCCESS) return DTM_ERROR;
+
+    if (endPtP != nullptr)
+        {
+        // If the end point is required return it
+        *endPtP = endPt;
+        }
+
+    if (endSlopeP != nullptr || endAspectP != nullptr || endTriangle != nullptr || endDrapedTypeP != nullptr)
+        {
+        // If other info about the end point are required return them
+        DTMStatusInt status = DrapePoint (nullptr, endSlopeP, endAspectP, endTriangle, *endDrapedTypeP, endPt);
+        if (status != DTM_SUCCESS)
+            return DTM_ERROR;
+        }
+
+    return DTM_SUCCESS;
     }
 
 /*----------------------------------------------------------------------+
@@ -3884,6 +3948,14 @@ Bentley::TerrainModel::IDTMDrainage* BcDTM::_GetDTMDrainage()
     }
 
 /*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Elenie.Godzaridis 1/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BENTLEY_NAMESPACE_NAME::TerrainModel::IDTMVolume* BcDTM::_GetDTMVolume()
+    {
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Daryl.Holmwood  02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 DTMStatusInt BcDTM::_GetTransformDTM (Bentley::TerrainModel::DTMPtr& transformedDTM, TransformCR transformation)
@@ -4428,6 +4500,78 @@ bool BcDTM::GetProjectedPointOnDTM (DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DP
     double elevation;
 
     if (DTM_SUCCESS != _DrapePoint (&elevation, NULL, NULL, trianglePts, drapedType, startPt))
+        {
+        return false;
+        }
+    startPt.z = elevation;
+
+    pointOnDTM = startPt;
+    if (helper) helper->convertPointFromDTM (pointOnDTM);
+    return true;
+    }
+    
+bool BcDTM::_GetProjectedPointOnDTM (DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint)
+    {
+    TMTransformHelperP helper = GetTransformHelper ();
+    DPoint3d startPt = testPoint;
+    DPoint3d endPt;
+    DPoint3d pt;
+    DMatrix4d invW2vMap;
+    DPoint4d pt4;
+    DPoint4d endPt4;
+
+    invW2vMap.QrInverseOf (w2vMap);
+    w2vMap.MultiplyAndRenormalize (&pt, &testPoint, 1);
+    pt.z -= 100;
+    invW2vMap.MultiplyAndRenormalize (&endPt, &pt, 1);
+    pt4.Init (testPoint, 0);
+    w2vMap.Multiply (&pt4, &pt4, 1);
+    pt4.z -= 100;
+    invW2vMap.Multiply (&endPt4, &pt4, 1);
+    endPt.Init (endPt4.x, endPt4.y, endPt4.z);
+
+    if (helper)
+        {
+        helper->convertPointToDTM (startPt);
+        helper->convertPointToDTM (endPt);
+        }
+
+    if (fabs (startPt.x - endPt.x) > 1e-5 || fabs (startPt.y - endPt.y) > 1e-5)
+        {
+        // Intersect line with the DTM Range
+        DRange3d range;
+        DPoint3d sP;
+        DPoint3d eP;
+        DPoint3d point;
+
+        GetRange (range);
+        endPt.x -= startPt.x;
+        endPt.y -= startPt.y;
+        endPt.z -= startPt.z;
+        double p1, p2; // Not Used
+        if (!range.IntersectRay (p1, p2, sP, eP, startPt, endPt))
+            return false;
+
+        // Non Top View
+        DPoint3d trianglePts[4];
+        long drapedType;
+        BC_DTM_OBJ* bcDTM = GetTinHandle ();
+        bool voidFlag;
+
+        if (bcdtmDrape_intersectTriangleDtmObject (bcDTM, ((DPoint3d*)&sP), ((DPoint3d*)&eP), &drapedType, (DPoint3d*)&point, (DPoint3d*)&trianglePts, voidFlag) != DTM_SUCCESS || drapedType == 0 || voidFlag != 0)
+            {
+            return false;
+            }
+
+        startPt = point;
+        }
+
+    // TopView
+    DPoint3d trianglePts[4];
+    int drapedType;
+    double elevation;
+
+    if (DTM_SUCCESS != DrapePoint (&elevation, NULL, NULL, trianglePts, drapedType, startPt))
         {
         return false;
         }

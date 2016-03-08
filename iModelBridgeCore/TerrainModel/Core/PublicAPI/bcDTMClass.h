@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/bcDTMClass.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -236,6 +236,7 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
         virtual Bentley::TerrainModel::IDTMDraping* _GetDTMDraping () override;
         virtual Bentley::TerrainModel::IDTMContouring* _GetDTMContouring () override;
         virtual Bentley::TerrainModel::IDTMDrainage* _GetDTMDrainage () override;
+        virtual Bentley::TerrainModel::IDTMVolume* _GetDTMVolume() override;
         virtual DTMStatusInt _GetBoundary (Bentley::TerrainModel::DTMPointArray& ret) override;
         virtual DTMStatusInt _CalculateSlopeArea (double& flatArea, double& slopeArea, const DPoint3d pts[], int numPoints) override;
         virtual DTMStatusInt _GetTransformDTM (Bentley::TerrainModel::DTMPtr& transformedDTM, TransformCR transformation) override;
@@ -254,6 +255,10 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
             ) override;
         virtual DTMStatusInt _DrapeLinear (Bentley::TerrainModel::DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) override;
 
+        virtual bool _ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint) override;
+
+        virtual bool _DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector) override;
+
         // End IDTMDraping Implementation
 
         // IDTMDrainage Implementation
@@ -266,6 +271,20 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
         virtual DTMStatusInt _ContourAtPoint (Bentley::TerrainModel::DTMPointArray& ret, DPoint3dCR pt, double contourInterval, DTMContourSmoothing smoothOption, double smoothFactor, int smoothDensity, DTMFenceParamsCR fence) override;
         virtual DTMStatusInt _ContourAtPoint (Bentley::TerrainModel::DTMPointArray& ret, DPoint3dCR pt, double contourInterval, DTMContourSmoothing smoothOption, double smoothFactor, int smoothDensity) override;
         // End IDTMContouring Implementation
+        virtual DTMStatusInt _ShotVector
+            (
+            double    *endSlopeP,
+            double    *endAspectP,
+            DPoint3d  endTriangle[3],
+            int       *endDrapedTypeP,
+            long      *startFlag,
+            long      *endFlag,
+            DPoint3dP endPtP,
+            DPoint3dP startPtP,
+            double    direction,
+            double    slope
+            );
+        virtual bool _GetProjectedPointOnDTM (DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint);
         // Concrete functions
     public:
         BENTLEYDTM_EXPORT  DTMStatusInt GetMemoryUsed (size_t& memoryUsed);
