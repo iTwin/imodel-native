@@ -24,7 +24,7 @@ IdentityAuthenticationPersistence::IdentityAuthenticationPersistence
 ILocalState* localState,
 std::shared_ptr<ISecureStore> customSecureStore
 ) :
-m_localState(localState ? *localState : MobileDgnCommon::LocalState()),
+m_localState(localState ? *localState : DgnClientFxCommon::LocalState()),
 m_secureStore(customSecureStore ? customSecureStore : std::make_shared<SecureStore>())
     {}
 
