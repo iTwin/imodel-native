@@ -406,8 +406,8 @@ void BeSQLiteRealityDataStorage::_Terminate()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BeSQLiteRealityDataStorage::wt_Prepare(DatabasePrepareAndCleanupHandler const& prepareHandler)
     {
+    BeMutexHolder lock(m_databaseCS);
     BeSQLite::DbResult result;
-    m_databaseCS.Enter();
     if (!m_initialized)
         {
         if (BeSQLite::BE_SQLITE_OK != (result = m_database->OpenBeSQLiteDb(m_filename.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes, m_retry.get()))))
@@ -415,7 +415,6 @@ void BeSQLiteRealityDataStorage::wt_Prepare(DatabasePrepareAndCleanupHandler con
             Db::CreateParams createParams(Db::PageSize::PAGESIZE_32K, Db::Encoding::Utf8, false, DefaultTxn::Yes, m_retry.get());
             if (BeSQLite::BE_SQLITE_OK != (result = m_database->CreateNewDb(m_filename.c_str(), BeSQLite::BeGuid(), createParams)))
                 {
-                m_databaseCS.Leave();
                 RDCLOG(LOG_ERROR, "%s: %s", m_filename.c_str(), BeSQLite::Db::InterpretDbResult(result));
                 BeAssert(false);
                 return;
@@ -435,12 +434,9 @@ void BeSQLiteRealityDataStorage::wt_Prepare(DatabasePrepareAndCleanupHandler con
         
         m_initialized = true;
         }
-    m_databaseCS.Leave();
 
     if (!prepareHandler._IsPrepared())
         {
-        BeMutexHolder lock(m_databaseCS);
-
         BentleyStatus preparationStatus = prepareHandler._PrepareDatabase(*m_database);
         BeAssert(SUCCESS == preparationStatus);
         BeAssert(m_cleanupHandlers.end() == m_cleanupHandlers.find(&prepareHandler) || typeid(prepareHandler).hash_code() == typeid(**m_cleanupHandlers.find(&prepareHandler)).hash_code());
@@ -926,7 +922,7 @@ IRealityDataBase const* FileRealityDataSource::RequestHandler::_GetData() const 
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DateTime GetExpirationDateFromCacheControlStr(Utf8CP str)
     {
-    int maxage = 0, smaxage = 0;
+    int maxage = 0;
     int start = 0;
     int i = 0;
     while (true)
@@ -937,19 +933,13 @@ static DateTime GetExpirationDateFromCacheControlStr(Utf8CP str)
             Utf8String option(str + start, i - start);
             option.Trim();
 
-            if (option.Equals("private") || option.Equals("no-cache") || option.Equals("no-store"))
+            if (option.Equals("no-cache") || option.Equals("no-store"))
                 return DateTime::GetCurrentTimeUtc(); 
             
             if (option.length() >= 7 && 0 == strncmp("max-age", option.c_str(), 7))
                 {
                 Utf8CP value = option.c_str() + 8;
                 sscanf(value, "%d", &maxage);
-                }
-
-            if (option.length() >= 8 && 0 == strncmp("s-maxage", option.c_str(), 8))
-                {
-                Utf8CP value = option.c_str() + 9;
-                sscanf(value, "%d", &smaxage);
                 }
 
             if (str[i] == '\0')
@@ -964,7 +954,7 @@ static DateTime GetExpirationDateFromCacheControlStr(Utf8CP str)
     DateTime::GetCurrentTime().ToUnixMilliseconds(currentTime);
 
     DateTime expirationDate;
-    DateTime::FromUnixMilliseconds(expirationDate, currentTime + 1000 * (0 != smaxage ? smaxage : maxage));
+    DateTime::FromUnixMilliseconds(expirationDate, currentTime + 1000 * maxage);
     return expirationDate;
     }
 
@@ -1006,12 +996,21 @@ static Utf8String GetAnsiCFormattedDateTime(DateTime const& dateTime)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis               03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static DateTime GetDefaultExpirationDate()
+    {
+    DateTime now = DateTime::GetCurrentTimeUtc();
+    return DateTime(now.GetInfo().GetKind(), now.GetYear() + 1, now.GetMonth(), now.GetDay(), now.GetHour(), now.GetMinute(), now.GetSecond());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HttpRealityDataSource::Data::ParseExpirationDateAndETag(bmap<Utf8String, Utf8String> const& header)
     {
     auto cacheControlIter = header.find("Cache-Control");
-    SetExpirationDate((cacheControlIter != header.end()) ? GetExpirationDateFromCacheControlStr(cacheControlIter->second.c_str()) : DateTime::GetCurrentTimeUtc());
+    SetExpirationDate((cacheControlIter != header.end()) ? GetExpirationDateFromCacheControlStr(cacheControlIter->second.c_str()) : GetDefaultExpirationDate());
 
     auto etagIter = header.find("ETag");
     if (header.end() != etagIter)
