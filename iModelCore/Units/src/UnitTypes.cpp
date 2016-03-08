@@ -86,7 +86,7 @@ Unit::Unit(Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, int id, Utf8CP d
 +---------------+---------------+---------------+---------------+---------------+------*/
 UnitP Unit::Create(Utf8CP sysName, PhenomenonCR phenomenon, Utf8CP unitName, int id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant)
     {
-    LOG.debugv("Creating unit %s  Factor: %lf  Offset: %d", unitName, factor, offset);
+    LOG.debugv("Creating unit %s  Factor: %.17g  Offset: %d", unitName, factor, offset);
     return new Unit(sysName, phenomenon, unitName, id, definition, dimensionSymbol, factor, offset, isConstant);
     }
 
@@ -142,48 +142,48 @@ double Unit::Convert(double value, UnitCP toUnit) const
         if (toUnitExp->GetExponent() == 0)
             continue;
         
-        LOG.infov("Adding unit %s^%d to the conversion.  Factor: %lf  Offset:%lf", toUnitExp->GetSymbol()->GetName(), 
+        LOG.infov("Adding unit %s^%d to the conversion.  Factor: %.17g  Offset:%.17g", toUnitExp->GetSymbol()->GetName(), 
                   toUnitExp->GetExponent(), toUnitExp->GetSymbolFactor(), toUnitExp->GetSymbol()->GetOffset());
         double unitFactor = FastIntegerPower(toUnitExp->GetSymbolFactor(), abs(toUnitExp->GetExponent()));
         if (toUnitExp->GetExponent() > 0)
             {
-            LOG.infov("Multiplying existing factor %lf by %lf", factor, unitFactor);
+            LOG.infov("Multiplying existing factor %.17g by %.17g", factor, unitFactor);
             factor *= unitFactor;
-            LOG.infov("New factor %lf", factor);
+            LOG.infov("New factor %.17g", factor);
             if (toUnitExp->GetSymbol()->HasOffset())
                 {
                 double unitOffset = toUnitExp->GetSymbol()->GetOffset() * toUnitExp->GetSymbol()->GetFactor();
-                LOG.infov("Adding %lf to existing offset %lf.", unitOffset, offset);
+                LOG.infov("Adding %.17g to existing offset %.17g.", unitOffset, offset);
                 offset += unitOffset;
-                LOG.infov("New offset %lf", offset);
+                LOG.infov("New offset %.17g", offset);
                 }
             else
                 {
-                LOG.infov("Multiplying offset %lf by units conversion factor %lf", offset, unitFactor);
+                LOG.infov("Multiplying offset %.17g by units conversion factor %.17g", offset, unitFactor);
                 offset *= unitFactor;
-                LOG.infov("New offset %lf", offset);
+                LOG.infov("New offset %.17g", offset);
                 }
             }
         else
             {
-            LOG.infov("Dividing existing factor %lf by %lf", factor, unitFactor);
+            LOG.infov("Dividing existing factor %.17g by %.17g", factor, unitFactor);
             factor /= unitFactor;
-            LOG.infov("New factor %lf", factor);
+            LOG.infov("New factor %.17g", factor);
             if (toUnitExp->GetSymbol()->HasOffset())
                 {
                 double unitOffset = toUnitExp->GetSymbol()->GetOffset() * toUnitExp->GetSymbol()->GetFactor();
-                LOG.infov("Subtracting %lf from existing offset %lf.", unitOffset, offset);
+                LOG.infov("Subtracting %.17g from existing offset %.17g.", unitOffset, offset);
                 offset -= unitOffset;
-                LOG.infov("New offset %lf", offset);
+                LOG.infov("New offset %l.17g", offset);
                 }
 
-            LOG.infov("Dividing offset %lf by units conversion factor %lf", offset, unitFactor);
+            LOG.infov("Dividing offset %.17g by units conversion factor %.17g", offset, unitFactor);
             offset /= unitFactor;
-            LOG.infov("New offset %lf", offset);
+            LOG.infov("New offset %.17g", offset);
             }
         }
     
-    LOG.infov("Conversion factor: %lf, offset: %lf", factor, offset);
+    LOG.infov("Conversion factor: %.17g, offset: %.17g", factor, offset);
     value *= factor;
 
     value += offset;

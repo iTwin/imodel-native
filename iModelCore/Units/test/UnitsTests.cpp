@@ -119,7 +119,7 @@ bool UnitsTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double
         NativeLogging::LoggingConfig::SetSeverity("Performance", NativeLogging::SEVERITY::LOG_TRACE);
         }
 
-    PERFORMANCELOG.debugv("About to try to convert %lf %s to %s", fromVal, fromUnit->GetName(), targetUnit->GetName());
+    PERFORMANCELOG.debugv("About to try to convert %.16g %s to %s", fromVal, fromUnit->GetName(), targetUnit->GetName());
     double convertedVal = fromUnit->Convert(fromVal, targetUnit);;
 
     //QuantityP q = SimpleQuantity(fromVal, fromUnitName);
@@ -131,15 +131,18 @@ bool UnitsTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double
     //    }
 
     //double convertedVal = q->Value(targetUnitName);
-    PERFORMANCELOG.debugv("Converted %s to %s.  Expected: %lf  Actual: %lf", fromUnit->GetName(), targetUnit->GetName(), expectedVal, convertedVal);
+    PERFORMANCELOG.debugv("Converted %s to %s.  Expected: %.17g  Actual: %.17g", fromUnit->GetName(), targetUnit->GetName(), expectedVal, convertedVal);
     //if (fabs(convertedVal - expectedVal) > tolerance)
-    if(!almost_equal<double>(expectedVal, convertedVal, 10000000))
+    int ulps = 10000000;
+    if(!almost_equal<double>(expectedVal, convertedVal, ulps))
         {
-        Utf8PrintfString formattedText("Conversion from %s to %s. Input: %lf Output: %lf Expected: %lf Tolerance: %.9f", fromUnitName, targetUnitName, fromVal, convertedVal, expectedVal, tolerance);
+        Utf8PrintfString formattedText("Conversion from %s to %s. Input: %.17g \nOutput:   %.17g \nExpected: %.17g \nDiff:     %.17g   Diff/Exp: %.17g   ULP: %d\n", 
+                                       fromUnitName, targetUnitName, fromVal, convertedVal, expectedVal, convertedVal - expectedVal, (convertedVal - expectedVal)/expectedVal, ulps);
         conversionErrors.push_back(formattedText);
+        EXPECT_FALSE(true) << formattedText;
         }
     EXPECT_FALSE(std::isnan(convertedVal) || !std::isfinite(convertedVal)) << "Conversion from " << fromUnitName << " to " << targetUnitName << " resulted in an invalid number";
-    EXPECT_NEAR(expectedVal, convertedVal, tolerance)<<  "Conversion from "<< fromUnitName << " to " << targetUnitName <<". Input : " << fromVal << ", Output : " << convertedVal << ", ExpectedOutput : " << expectedVal << " Tolerance : " << tolerance<< "\n";
+    //EXPECT_NEAR(expectedVal, convertedVal, tolerance)<<  "Conversion from "<< fromUnitName << " to " << targetUnitName <<". Input : " << fromVal << ", Output : " << convertedVal << ", ExpectedOutput : " << expectedVal << " Tolerance : " << tolerance<< "\n";
 
     if (showDetailLogs)
         {
@@ -272,6 +275,7 @@ TEST_F(UnitsTests, TestBasicConversion)
     TestUnitConversion(2.326e6, "KILOJOULE_PER_KILOGRAM", 1.0e6, "BTU_PER_POUND_MASS", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(60, "GRAM_PER_MINUTE", 1.0, "GRAM_PER_SECOND", 1.0e-8, loadErrors, conversionErrors);
     TestUnitConversion(3.53146667214886e1, "KILONEWTON_PER_METRE_CUBED", 1.0, "KILONEWTON_PER_FOOT_CUBED", 1.0e-8, loadErrors, conversionErrors);
+    TestUnitConversion(42.42, "KILOPASCAL_GAUGE", 6.15250086300203, "POUND_FORCE_PER_INCH_SQUARED_GAUGE", 1.0e-8, loadErrors, conversionErrors);
     }
 
 TEST_F(UnitsTests, CheckDimensionForEveryPhenomenon)
@@ -620,7 +624,7 @@ TEST_F(UnitsPerformanceTests, InitUnitsHub)
     bvector<Utf8String> allUnitNames;
     hub.AllUnitNames(allUnitNames, false);
 
-    PERFORMANCELOG.errorv("Time to load Units Hub with %lu units: %lf", allUnitNames.size(), timer.GetElapsedSeconds());
+    PERFORMANCELOG.errorv("Time to load Units Hub with %lu units: %.17g", allUnitNames.size(), timer.GetElapsedSeconds());
     }
 
 TEST_F(UnitsPerformanceTests, GetEveryUnitByName)
@@ -631,24 +635,24 @@ TEST_F(UnitsPerformanceTests, GetEveryUnitByName)
     timer.Start();
     UnitRegistry::Instance().AllUnitNames(allUnitNames, false);
     timer.Stop();
-    PERFORMANCELOG.errorv("Time to get all %lu primary unit names: %lf", allUnitNames.size(), timer.GetElapsedSeconds());
+    PERFORMANCELOG.errorv("Time to get all %lu primary unit names: %.17g", allUnitNames.size(), timer.GetElapsedSeconds());
     
     timer.Start();
     GetUnitsByName(UnitRegistry::Instance(), allUnitNames);
     timer.Stop();
-    PERFORMANCELOG.errorv("Time to get %lu units by name: %lf", allUnitNames.size(), timer.GetElapsedSeconds());
+    PERFORMANCELOG.errorv("Time to get %lu units by name: %.17g", allUnitNames.size(), timer.GetElapsedSeconds());
 
     UnitRegistry::Clear();
     allUnitNames.clear();
     timer.Start();
     UnitRegistry::Instance().AllUnitNames(allUnitNames, true);
     timer.Stop();
-    PERFORMANCELOG.errorv("Time to get all %lu primary unit names and synonyms: %lf", allUnitNames.size(), timer.GetElapsedSeconds());
+    PERFORMANCELOG.errorv("Time to get all %lu primary unit names and synonyms: %.17g", allUnitNames.size(), timer.GetElapsedSeconds());
 
     timer.Start();
     GetUnitsByName(UnitRegistry::Instance(), allUnitNames);
     timer.Stop();
-    PERFORMANCELOG.errorv("Time to get %lu units by name including using synonyms: %lf", allUnitNames.size(), timer.GetElapsedSeconds());
+    PERFORMANCELOG.errorv("Time to get %lu units by name including using synonyms: %.17g", allUnitNames.size(), timer.GetElapsedSeconds());
     }
 
 TEST_F(UnitsPerformanceTests, GenerateEveryConversionValue)
@@ -675,7 +679,7 @@ TEST_F(UnitsPerformanceTests, GenerateEveryConversionValue)
             }
         }
     timer.Stop();
-    PERFORMANCELOG.errorv("Time to Generate %d conversion factors: %lf", numConversions, timer.GetElapsedSeconds());
+    PERFORMANCELOG.errorv("Time to Generate %d conversion factors: %.17g", numConversions, timer.GetElapsedSeconds());
     }
 
 END_UNITS_UNITTESTS_NAMESPACE

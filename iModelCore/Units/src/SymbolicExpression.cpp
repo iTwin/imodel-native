@@ -58,9 +58,14 @@ Utf8String Expression::ToString(bool includeFactors) const
             Utf8PrintfString sWEString("%s^%d * ", sWE->GetName(), sWE->GetExponent());
             output.append(sWEString.c_str());
             }
+        else if (sWE->GetSymbol()->HasOffset())
+            {
+            Utf8PrintfString sWEString("(%.17g*%s^%d + %.17g) * ", sWE->GetSymbol()->GetFactor(), sWE->GetName(), sWE->GetExponent(), sWE->GetSymbol()->GetOffset());
+            output.append(sWEString.c_str());
+            }
         else
             {
-            Utf8PrintfString sWEString("%lf%s^%d * ", sWE->GetSymbol()->GetFactor(), sWE->GetName(), sWE->GetExponent());
+            Utf8PrintfString sWEString("%.17g*%s^%d * ", sWE->GetSymbol()->GetFactor(), sWE->GetName(), sWE->GetExponent());
             output.append(sWEString.c_str());
             }
         }
