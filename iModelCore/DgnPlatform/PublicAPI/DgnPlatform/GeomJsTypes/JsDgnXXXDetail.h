@@ -33,6 +33,7 @@ static JsSolidPrimitiveP StronglyTypedJsSolidPrimitive (ISolidPrimitivePtr primi
 
 
     virtual JsSolidPrimitiveP AsSolidPrimitive () override {return this;}
+    virtual IGeometryPtr GetIGeometryPtr (){return IGeometry::Create (m_solidPrimitive);}
 
     virtual JsDgnConeP AsDgnCone () {return nullptr;}
     virtual JsDgnSphereP AsDgnSphere () {return nullptr;}

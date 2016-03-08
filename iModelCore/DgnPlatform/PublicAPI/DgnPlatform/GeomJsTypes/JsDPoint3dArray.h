@@ -100,19 +100,15 @@ public:
 
     JsGeometryNode (GeometryNodePtr node) {m_data = node;}
 
-    void AddGeometry (JsGeometryP in)
+    void AddGeometry (JsGeometryP g)
         {
-        IGeometryPtr g = in->GetIGeometryPtr ();
-        if (g != nullptr)
-            m_data->Geometry().push_back (g);
+        auto gPtr = g->GetIGeometryPtr ();
+        m_data->AddGeometry (gPtr);
         }
-    void SetTransform (JsTransformP transform){m_data->SetTransform (transform->Get ());}
-    JsTransformP GetTransform () const {return new JsTransform (m_data->GetTransform ());}
+    void AddMemberWithTransform (JsGeometryNodeP node, JsTransformP transform) {m_data->AddMember (node->m_data, transform->Get ());}
 
-    void AddNode (JsGeometryNodeP in){m_data->Nodes().push_back (in->m_data);}
-
-    void ClearGeometry (){m_data->Geometry().clear ();}
-    void ClearNodes (){m_data->Nodes().clear ();}
+    void ClearGeometry (){m_data->ClearGeometry ();}
+    void ClearMembers (){m_data->ClearMembers ();}
 
     JsGeometryP GeometryAt (double number)
         {
@@ -124,15 +120,26 @@ public:
         return nullptr;
         }
 
-    JsGeometryNodeP NodeAt (double number)
+    JsGeometryNodeP MemberAt (double number)
         {
         size_t index;
-        if (TryDoubleToIndex (number, m_data->Geometry ().size (), index))
+        if (TryDoubleToIndex (number, m_data->Members ().size (), index))
             {
-            return new JsGeometryNode (m_data->Nodes()[index]);
+            return new JsGeometryNode (m_data->Members()[index].GetMember ());
             }
         return nullptr;
         }
+
+    JsTransformP MemberTransformAt (double number)
+        {
+        size_t index;
+        if (TryDoubleToIndex (number, m_data->Members ().size (), index))
+            {
+            return new JsTransform (m_data->Members()[index].GetTransform ());
+            }
+        return nullptr;
+        }
+
 
     JsGeometryNodeP Flatten ()
         {
@@ -140,11 +147,13 @@ public:
         }
 
     double GeometrySize (){ return (double)m_data->Geometry().size ();}
-    double NodeSize     (){ return (double)m_data->Nodes().size ();}
+    double MemberSize   (){ return (double)m_data->Members().size ();}
 
+    bool IsSameStructureAndGeometry (JsGeometryNodeP other)
+        {
+        return m_data->IsSameStructureAndGeometry (*other->m_data, 0.0);
+        }
 };
-
-
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

@@ -35,6 +35,7 @@ public:
     JsCurveVector () {}
 
     virtual JsCurveVectorP AsCurveVector () {return this;}
+    virtual IGeometryPtr GetIGeometryPtr (){return IGeometry::Create (m_curveVector);}
 
 
     JsCurveVector (CurveVectorPtr curveVector) : m_curveVector (curveVector) {}
