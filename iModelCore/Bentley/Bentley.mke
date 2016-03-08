@@ -107,6 +107,8 @@ $(o)Base64Utilities$(oext)      : $(nonportDir)Base64Utilities.cpp $(BentleyAPIS
     $(o)BeJStringUtilities$(oext) : $(nonportDir)BeJStringUtilities.cpp $(BentleyAPISrc)BeJStringUtilities.h ${MultiCompileDepends}
 %endif
 
+%include Tasks/Tasks.mki
+
 %include MultiCppCompileGo.mki
 objs =% $(MultiCompileObjectList)
 
