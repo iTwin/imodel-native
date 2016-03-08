@@ -34,6 +34,7 @@
     <None Include="ConversionData.prewire.mke" />
     <None Include="ConversionData\complex.csv" />
     <None Include="ConversionData\ConversionsBetweenAllOldUnits.csv" />
+    <None Include="ConversionData\NeededUnits.csv" />
     <None Include="ConversionData\unitcomparisondata.csv" />
     <None Include="Prewire.mke" />
   </ItemGroup>
