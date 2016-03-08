@@ -14,6 +14,12 @@
 #include "AreaPattern.h"
 #include <Bentley/BeTimeUtilities.h>
 
+#if defined (BENTLEYCONFIG_DISPLAY_WIN32)
+    struct HICON__;
+    struct HWND__;
+    struct HDC__;
+#endif
+
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
 //=======================================================================================
@@ -1049,10 +1055,48 @@ public:
     //! @private
     void AddTile(TextureCR tile, DPoint3dCP corners) {_AddTile(tile, corners);}
 
-    // Helper Methods to draw simple SolidPrimitives.
+    //! Helper Methods to draw simple SolidPrimitives.
     void AddTorus(DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped) {AddSolidPrimitive(*ISolidPrimitive::CreateDgnTorusPipe(DgnTorusPipeDetail(center, vectorX, vectorY, majorRadius, minorRadius, sweepAngle, capped)));}
     void AddBox(DVec3dCR primary, DVec3dCR secondary, DPoint3dCR basePoint, DPoint3dCR topPoint, double baseWidth, double baseLength, double topWidth, double topLength, bool capped) {AddSolidPrimitive(*ISolidPrimitive::CreateDgnBox(DgnBoxDetail::InitFromCenters(basePoint, topPoint, primary, secondary, baseWidth, baseLength, topWidth, topLength, capped)));}
 
+    //! Add DRange3d edges using AddLineString
+    void AddRangeBox(DRange3dCR range)
+        {
+        DPoint3d p[8], tmpPts[9];
+
+        p[0].x = p[3].x = p[4].x = p[5].x = range.low.x;
+        p[1].x = p[2].x = p[6].x = p[7].x = range.high.x;
+        p[0].y = p[1].y = p[4].y = p[7].y = range.low.y;
+        p[2].y = p[3].y = p[5].y = p[6].y = range.high.y;
+        p[0].z = p[1].z = p[2].z = p[3].z = range.low.z;
+        p[4].z = p[5].z = p[6].z = p[7].z = range.high.z;
+
+        tmpPts[0] = p[0]; tmpPts[1] = p[1]; tmpPts[2] = p[2];
+        tmpPts[3] = p[3]; tmpPts[4] = p[5]; tmpPts[5] = p[6];
+        tmpPts[6] = p[7]; tmpPts[7] = p[4]; tmpPts[8] = p[0];
+
+        AddLineString(9, tmpPts);
+        AddLineString(2, DSegment3d::From(p[0], p[3]).point);
+        AddLineString(2, DSegment3d::From(p[4], p[5]).point);
+        AddLineString(2, DSegment3d::From(p[1], p[7]).point);
+        AddLineString(2, DSegment3d::From(p[2], p[6]).point);
+        }
+
+    //! Add DRange2d edges using AddLineString2d
+    void AddRangeBox2d(DRange2dCR range, double zDepth)
+        {
+        DPoint2d tmpPts[5];
+
+        tmpPts[0] = DPoint2d::From(range.low.x, range.low.y);
+        tmpPts[1] = DPoint2d::From(range.high.x, range.low.y);
+        tmpPts[2] = DPoint2d::From(range.high.x, range.high.y);
+        tmpPts[3] = DPoint2d::From(range.low.x, range.high.y);
+        tmpPts[4] = tmpPts[0];
+
+        AddLineString2d(5, tmpPts, zDepth);
+        }
+
+    //! Add raster
     void AddRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels) {_AddRaster(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels);}
     void AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth) {_AddRaster2d(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, zDepth);}
 
@@ -1168,6 +1212,51 @@ struct Plan
 };
 
 //=======================================================================================
+//! A Render::Window is a platform specific object that identifies a rectangular window on a screen.
+//! On Windows, for example, the default Render::Window holds an "HWND"
+// @bsiclass                                                    Keith.Bentley   11/15
+//=======================================================================================
+struct Window : RefCounted<NonCopyableClass>
+{
+    struct Rectangle {int left, top, right, bottom;};
+protected:
+    Window() {}
+public:
+    virtual Point2d _GetScreenOrigin() const = 0;
+    virtual BSIRect _GetViewRect() const = 0;
+    virtual void _OnPaint(Rectangle&) const = 0;
+    virtual void* _GetNativeWindow() const = 0;
+
+#if defined (BENTLEYCONFIG_DISPLAY_WIN32)
+    virtual HWND__* _GetHWnd() const {return nullptr;} //!< Note this may return null even on Windows, depending on the associated Render::Target
+    HWND__* GetHWnd() const {return _GetHWnd();}
+#endif
+};
+
+//=======================================================================================
+//! A Render::Device is the platform specific object that connects a render target to a the platform's rendering system.
+//! It holds a reference to a Render::Window.
+//! On Windows, for example, the default Render::Device maps to a "DC"
+// @bsiclass                                                    Keith.Bentley   11/15
+//=======================================================================================
+struct Device : RefCounted<NonCopyableClass>
+{
+    struct PixelsPerInch {int width, height;};
+protected:
+    WindowPtr m_window;
+    Device(Window* window) : m_window(window) {}
+public:
+    virtual PixelsPerInch _GetPixelsPerInch() const = 0;
+    virtual DVec2d _GetDpiScale() const = 0;
+    virtual void* _GetNativeDevice() const = 0;
+#if defined (BENTLEYCONFIG_DISPLAY_WIN32)
+    virtual HDC__* GetDC() const {return nullptr;} //!< Note this may return null even on Windows, depending on the associated Render::Target
+#endif
+    double PixelsFromInches(double inches) const {PixelsPerInch ppi=_GetPixelsPerInch(); return inches * (ppi.height + ppi.width)/2;}
+    Window const* GetWindow() const {return m_window.get();}
+};
+
+//=======================================================================================
 //! A Render::Target is the renderer-specific factory for creating Render::Graphics.
 //! A Render:Target holds the current "scene", the current set of dynamic Graphics, and the current decorators.
 //! When frames are composed, all of those Graphics are rendered, as appropriate.
@@ -1179,7 +1268,7 @@ struct Target : RefCounted<NonCopyableClass>
 {
 protected:
     bool               m_abort;
-    Display::DevicePtr m_device;
+    DevicePtr          m_device;
     ClipPrimitiveCPtr  m_activeVolume;
     GraphicListPtr     m_currentScene;
     GraphicListPtr     m_terrain;
@@ -1231,7 +1320,7 @@ public:
     DVec2d GetDpiScale() const {return _GetDpiScale();}
     GraphicPtr CreateGraphic(Graphic::CreateParams const& params) {return _CreateGraphic(params);}
     GraphicPtr CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) {return _CreateSprite(sprite, location, xVec, transparency);}
-    Display::DeviceCP GetDevice() const {return m_device.get();}
+    DeviceCP GetDevice() const {return m_device.get();}
     void OnResized() {_OnResized();}
     void* ResolveOverrides(OvrGraphicParamsCP ovr) {return ovr ? _ResolveOverrides(*ovr) : nullptr;}
     MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return _GetMaterial(id, dgndb);}

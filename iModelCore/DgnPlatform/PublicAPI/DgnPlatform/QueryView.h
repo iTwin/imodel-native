@@ -147,7 +147,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
         RangeQuery m_rangeQuery;
         DgnQueryViewR m_view;
         explicit NonScene(DgnQueryViewR view, DgnViewportCR, SceneMembers& scene);
-        virtual Completion _DoProgressive(SceneContext& context, WantShow&) override;
+        virtual Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
     };
 
 protected:
@@ -180,7 +180,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnCategoryChange(bool singleEnabled) override;
     DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
     DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(struct FitContext&) override;
-    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _GetViewedExtents() const;
+    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _GetViewedExtents() const override final; // Always DgnDb::Units().GetProjectExtents() for QueryViews, don't allow override.
     DGNPLATFORM_EXPORT virtual void _DrawDecorations(DecorateContextR) override;
 
 public:

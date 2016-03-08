@@ -27,20 +27,20 @@ L10N::StringId m_pluralNameKey;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString GetLabel () const
+Utf8String GetLabel () const
     {
-    return DgnCoreL10N::GetStringW(m_labelKey);
+    return DgnCoreL10N::GetString(m_labelKey);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString GetName (bool bSingular) const
+Utf8String GetName (bool bSingular) const
     {
     if (bSingular)
-        return DgnCoreL10N::GetStringW(m_singularNameKey);
+        return DgnCoreL10N::GetString(m_singularNameKey);
 
-    return DgnCoreL10N::GetStringW(m_pluralNameKey);
+    return DgnCoreL10N::GetString(m_pluralNameKey);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -221,7 +221,7 @@ static StandardUnitTableEntryCP    FindMatchingScaleFactor (UnitDefinitionCR uni
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-static StandardUnitTableEntryCP    FindByName (WCharCP name)
+static StandardUnitTableEntryCP    FindByName (Utf8CP name)
     {
     if (NULL == name)
         { BeAssert (false); return NULL; }
@@ -232,8 +232,8 @@ static StandardUnitTableEntryCP    FindByName (WCharCP name)
     for (iUnit = 0, standardUnit = s_standardUnits; iUnit < _countof (s_standardUnits); iUnit++, standardUnit++)
         {
         // Try to match either the singular or plural name
-        if (0 == BeStringUtilities::Wcsicmp (standardUnit->GetName(true).c_str(),  name) || 
-            0 == BeStringUtilities::Wcsicmp (standardUnit->GetName(false).c_str(), name) )
+        if (standardUnit->GetName(true).EqualsI (name) || 
+            standardUnit->GetName(false).EqualsI (name) )
             {
             return standardUnit;
             }
@@ -260,7 +260,7 @@ UnitDefinition  UnitDefinition::GetStandardUnit (StandardUnit iUnit)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitDefinition  UnitDefinition::GetStandardUnitByName (WCharCP name)
+UnitDefinition  UnitDefinition::GetStandardUnitByName (Utf8CP name)
     {
     if (NULL == name)
         { BeAssert (false); return UnitDefinition (); }
@@ -276,12 +276,12 @@ UnitDefinition  UnitDefinition::GetStandardUnitByName (WCharCP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString         UnitDefinition::GetStandardLabel (StandardUnit iUnit)
+Utf8String      UnitDefinition::GetStandardLabel (StandardUnit iUnit)
     {
     StandardUnitTableEntryCP    unitEntry = StandardUnitTable::FindByNumber (iUnit);
 
     if (NULL == unitEntry)
-        return L"";
+        return "";
 
     return unitEntry->GetLabel();
     }
@@ -289,12 +289,12 @@ WString         UnitDefinition::GetStandardLabel (StandardUnit iUnit)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString         UnitDefinition::GetStandardName (StandardUnit iUnit, bool singular)
+Utf8String      UnitDefinition::GetStandardName (StandardUnit iUnit, bool singular)
     {
     StandardUnitTableEntryCP    unitEntry = StandardUnitTable::FindByNumber (iUnit);
 
     if (NULL == unitEntry)
-        return L"";
+        return "";
 
     return unitEntry->GetName (singular);
     }
@@ -480,7 +480,7 @@ void            UnitIteratorOptions::SetSizeCriteria (UnitDefinitionCR unitDef, 
 
 UnitDefinition   StandardUnitCollection::Entry::GetUnitDef()    const { return m_tableP ? m_tableP->ToUnitDefinition() : UnitDefinition(); }
 StandardUnit     StandardUnitCollection::Entry::GetNumber()     const { return m_tableP ? m_tableP->m_standardNumber   : StandardUnit::None; }
-WString          StandardUnitCollection::Entry::GetName(bool singular) const { return m_tableP ? m_tableP->GetName (singular) : L""; }
+Utf8String       StandardUnitCollection::Entry::GetName(bool singular) const { return m_tableP ? m_tableP->GetName (singular) : ""; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/09
@@ -609,10 +609,10 @@ StandardUnitCollection::const_iterator    StandardUnitCollection::end () const
 
 
 #if defined (WIP_CFGVAR)
-static const WCharCP    MS_UNITS_SHOWALL            = L"MS_UNITS_SHOWALL";
+static const Utf8CP    MS_UNITS_SHOWALL            = L"MS_UNITS_SHOWALL";
 #endif
 
-GLOBAL_TYPEDEF (UserUnitTable, UserUnitTable)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(UserUnitTable)
 DGNPLATFORM_TYPEDEFS (UserUnitTableEntry)
 typedef std::vector <UserUnitTableEntry>    UnitEntryVector;
 
@@ -623,11 +623,11 @@ struct Dgn::UserUnitTableEntry
     {
     int             m_number;
     UnitDefinition  m_unitDef;
-    WString         m_singularName;
-    WString         m_pluralName;
-    WString         m_labels;               // comma-separated list of labels
+    Utf8String      m_singularName;
+    Utf8String      m_pluralName;
+    Utf8String      m_labels;               // comma-separated list of labels
 
-    UserUnitTableEntry (UnitDefinitionCR unitDef, int unitNum, WCharCP singularName, WCharCP pluralName, WString labels)
+    UserUnitTableEntry (UnitDefinitionCR unitDef, int unitNum, Utf8CP singularName, Utf8CP pluralName, Utf8String labels)
         : m_unitDef (unitDef), m_number (unitNum), m_singularName (singularName), m_pluralName (pluralName), m_labels (labels) { }
     };
 
@@ -643,7 +643,7 @@ private:
 
     UserUnitTable() : m_containsStandardUnits (false)   { }
 
-    bool                    ParseLine (WStringR labels, WStringR singularName, WStringR pluralName, double& numerator, double& denominator, uint32_t& base, uint32_t& system, WCharCP input) const;
+    bool                    ParseLine (Utf8StringR labels, Utf8StringR singularName, Utf8StringR pluralName, double& numerator, double& denominator, uint32_t& base, uint32_t& system, Utf8CP input) const;
     StatusInt               AddEntry (UserUnitTableEntryCR newEntry);
     void                    PopulateFromFile();
     void                    PopulateFromStandardUnits();
@@ -656,12 +656,12 @@ public:
     void                    Dump() const;
 
     UserUnitTableEntryCP    GetEntry (size_t index) const { return (index < GetCount()) ? &m_unitVector[index] : NULL; }
-    UserUnitTableEntryCP    FindByName (WCharCP name) const;
+    UserUnitTableEntryCP    FindByName (Utf8CP name) const;
     UserUnitTableEntryCP    FindByScale (UnitDefinitionCR unitDef) const;
-    UserUnitTableEntryCP    FindByNumber (int unitNumber) const;        
-    UserUnitTableEntryCP    FindByLabel (WCharCP label) const;
+    UserUnitTableEntryCP    FindByNumber (int unitNumber) const;
+    UserUnitTableEntryCP    FindByLabel (Utf8CP label) const;
 
-    static UserUnitTableR   GetTable();
+    static UserUnitTable&   GetTable();
 
     template <class V>
     UserUnitTableEntryCP    VisitUnits (V& v) const
@@ -679,39 +679,39 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void makeStrippedString (WStringR str, WCharCP start, WCharCP end /*inclusive*/)
+static void makeStrippedString (Utf8StringR str, Utf8CP start, Utf8CP end /*inclusive*/)
     {
-    while (*start && iswspace (*start))
+    while (*start && isspace (*start))
         ++start;
-    while (*end && end > start && iswspace (*end))
+    while (*end && end > start && isspace (*end))
         --end;
 
-    str = WString (start, end+1);
+    str = Utf8String (start, end+1);
     }
 
 namespace UnitVisitors
     {
     struct ByNameFinder
         {
-        WCharCP         m_name;
-        bool            Accept (UserUnitTableEntryCR entry)     { return 0 == BeStringUtilities::Wcsicmp (entry.m_singularName.c_str(), m_name) || 0 == BeStringUtilities::Wcsicmp (entry.m_pluralName.c_str(), m_name); }
+        Utf8CP          m_name;
+        bool            Accept (UserUnitTableEntryCR entry)     { return entry.m_singularName.EqualsI(m_name) || entry.m_pluralName.EqualsI (m_name); }
         };
 
     struct ByLabelFinder
         {
-        WCharCP         m_label;
+        Utf8CP          m_label;
         bool            Accept (UserUnitTableEntryCR entry)
             {
-            WCharCP     labelList = entry.m_labels.c_str(), endOfList = labelList + wcslen (labelList), cur = labelList, next;
-            WString thisLabel;
+            Utf8CP      labelList = entry.m_labels.c_str(), endOfList = labelList + strlen (labelList), cur = labelList, next;
+            Utf8String  thisLabel;
             while (cur < endOfList)
                 {
-                next = ::wcschr (cur, ',');
+                next = ::strchr (cur, ',');
                 if (NULL == next)
                     next = endOfList;
-                
+
                 makeStrippedString (thisLabel, cur, next-1);
-                if (0 == BeStringUtilities::Wcsicmp (thisLabel.c_str(), m_label))
+                if (thisLabel.EqualsI (m_label))
                     return true;
 
                 cur = next+1;
@@ -751,7 +751,7 @@ namespace UnitVisitors
 
         bool Accept (UserUnitTableEntryCR unitEntry)
             {
-            printf ("  %d:\t%d %S (%f / %f)\n", iEntry, unitEntry.m_number, unitEntry.m_pluralName.c_str(), unitEntry.m_unitDef.GetNumerator(), unitEntry.m_unitDef.GetDenominator());
+            printf ("  %d:\t%d %s (%f / %f)\n", iEntry, unitEntry.m_number, unitEntry.m_pluralName.c_str(), unitEntry.m_unitDef.GetNumerator(), unitEntry.m_unitDef.GetDenominator());
             iEntry++;
             return false;
             }
@@ -761,7 +761,7 @@ namespace UnitVisitors
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UserUnitTableEntryCP UserUnitTable::FindByName (WCharCP name) const
+UserUnitTableEntryCP UserUnitTable::FindByName (Utf8CP name) const
     {
     UnitVisitors::ByNameFinder v = { name };
     return VisitUnits (v);
@@ -770,7 +770,7 @@ UserUnitTableEntryCP UserUnitTable::FindByName (WCharCP name) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-UserUnitTableEntryCP UserUnitTable::FindByLabel (WCharCP label) const
+UserUnitTableEntryCP UserUnitTable::FindByLabel (Utf8CP label) const
     {
     UnitVisitors::ByLabelFinder v = { label };
     return VisitUnits (v);
@@ -872,7 +872,7 @@ UserUnitTableEntryCR    newEntry        /* => add this to the table */
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-UserUnitTableR UserUnitTable::GetTable()
+UserUnitTable& UserUnitTable::GetTable()
     {
     DgnHost::Key& key = GetHostKey();
     UserUnitTableP table = dynamic_cast<UserUnitTableP> (T_HOST.GetHostObject (key));
@@ -968,16 +968,16 @@ void UserUnitTable::PopulateFromFile()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UserUnitTable::ParseLine (WStringR labels, WStringR singularName, WStringR pluralName, double& numerator, double& denominator, uint32_t& base, uint32_t& system, WCharCP input) const
+bool UserUnitTable::ParseLine (Utf8StringR labels, Utf8StringR singularName, Utf8StringR pluralName, double& numerator, double& denominator, uint32_t& base, uint32_t& system, Utf8CP input) const
     {
-    static const WChar separator = ';';
-    WCharCP a = input,
-            b = a ? ::wcschr (a, separator)   : NULL,
-            c = b ? ::wcschr (b+1, separator) : NULL,
-            d = c ? ::wcschr (c+1, separator) : NULL,
-            e = d ? ::wcschr (d+1, separator) : NULL,
-            f = e ? ::wcschr (e+1, separator) : NULL,
-            g = f ? ::wcschr (f+1, separator) : NULL;
+    static const Utf8Char separator = ';';
+    Utf8CP a = input,
+            b = a ? ::strchr (a, separator)   : NULL,
+            c = b ? ::strchr (b+1, separator) : NULL,
+            d = c ? ::strchr (c+1, separator) : NULL,
+            e = d ? ::strchr (d+1, separator) : NULL,
+            f = e ? ::strchr (e+1, separator) : NULL,
+            g = f ? ::strchr (f+1, separator) : NULL;
 
     if (NULL == g)
         return false;
@@ -986,10 +986,10 @@ bool UserUnitTable::ParseLine (WStringR labels, WStringR singularName, WStringR 
     makeStrippedString (singularName, b+1, c-1);
     makeStrippedString (pluralName, c+1, d-1);
 
-    return  1 == BE_STRING_UTILITIES_SWSCANF (d+1, L"%lf", &numerator) &&
-            1 == BE_STRING_UTILITIES_SWSCANF (e+1, L"%lf", &denominator) &&
-            1 == BE_STRING_UTILITIES_SWSCANF (f+1, L"%d", &base) &&
-            1 == BE_STRING_UTILITIES_SWSCANF (g+1, L"%d", &system);        
+    return  1 == BE_STRING_UTILITIES_UTF8_SSCANF (d+1, "%lf", &numerator) &&
+            1 == BE_STRING_UTILITIES_UTF8_SSCANF (e+1, "%lf", &denominator) &&
+            1 == BE_STRING_UTILITIES_UTF8_SSCANF (f+1, "%d", &base) &&
+            1 == BE_STRING_UTILITIES_UTF8_SSCANF (g+1, "%d", &system);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1013,10 +1013,10 @@ StandardUnit UserUnitCollection::Entry::GetNumber() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString UserUnitCollection::Entry::GetName (bool singular) const
+Utf8String UserUnitCollection::Entry::GetName (bool singular) const
     {
     UserUnitTableEntryCP entry = UserUnitTable::GetTable().GetEntry (m_index);
-    return entry ? (singular ? entry->m_singularName : entry->m_pluralName) : L"";
+    return entry ? (singular ? entry->m_singularName : entry->m_pluralName) : "";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1191,7 +1191,7 @@ int UnitDefinition::GetNumber (bool alsoStandard) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString UnitDefinition::GetName (bool singular, bool alsoStandard) const
+Utf8String UnitDefinition::GetName (bool singular, bool alsoStandard) const
     {
     UserUnitTableR table = UserUnitTable::GetTable();
     UserUnitTableEntryCP entry = table.FindByScale (*this);
@@ -1205,7 +1205,7 @@ WString UnitDefinition::GetName (bool singular, bool alsoStandard) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitDefinition UnitDefinition::GetByName (WCharCP unitName, bool alsoStandard)
+UnitDefinition UnitDefinition::GetByName (Utf8CP unitName, bool alsoStandard)
     {
     UserUnitTableR table = UserUnitTable::GetTable();
     UserUnitTableEntryCP entry = table.FindByName (unitName);
@@ -1221,7 +1221,7 @@ UnitDefinition UnitDefinition::GetByName (WCharCP unitName, bool alsoStandard)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitDefinition UnitDefinition::GetByLabel (WCharCP label, bool alsoStandard)
+UnitDefinition UnitDefinition::GetByLabel (Utf8CP label, bool alsoStandard)
     {
     UserUnitTableR table = UserUnitTable::GetTable();
     UserUnitTableEntryCP entry = table.FindByLabel (label);
@@ -1233,7 +1233,7 @@ UnitDefinition UnitDefinition::GetByLabel (WCharCP label, bool alsoStandard)
         FOR_EACH (StandardUnitCollection::Entry const& standardUnit, StandardUnitCollection (opts))
             {
             UnitDefinition def = standardUnit.GetUnitDef();
-            if (0 == BeStringUtilities::Wcsicmp (label, def.GetLabel().c_str()))
+            if (def.GetLabel().EqualsI (label))
                 return def;
             }
         }

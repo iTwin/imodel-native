@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/UnitDefinition_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -24,7 +24,7 @@ namespace UnitDefinitionSeeds
 +---------------+---------------+---------------+---------------+---------------+------*/
 UnitDefinition GenerateMeter_1_10 ()
     {
-    return UnitDefinition (UnitBase::Meter, UnitSystem::Metric, 1.0, 10.0, L"UnitDefinitionSeed1");
+    return UnitDefinition (UnitBase::Meter, UnitSystem::Metric, 1.0, 10.0, "UnitDefinitionSeed1");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -32,7 +32,7 @@ UnitDefinition GenerateMeter_1_10 ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 UnitDefinition GenerateDegree_1_10 ()
     {
-    return UnitDefinition (UnitBase::Degree, UnitSystem::English, 1.0, 10.0, L"UnitDefinitionSeed2");
+    return UnitDefinition (UnitBase::Degree, UnitSystem::English, 1.0, 10.0, "UnitDefinitionSeed2");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -40,7 +40,7 @@ UnitDefinition GenerateDegree_1_10 ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 UnitDefinition GenerateMeter_10_10 ()
     {
-    return UnitDefinition (UnitBase::Meter, UnitSystem::Metric, 10.0, 10.0, L"UnitDefinitionSeed3");
+    return UnitDefinition (UnitBase::Meter, UnitSystem::Metric, 10.0, 10.0, "UnitDefinitionSeed3");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -48,7 +48,7 @@ UnitDefinition GenerateMeter_10_10 ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 UnitDefinition GenerateMeter_1Tenth_10 ()
     {
-    return UnitDefinition (UnitBase::Meter, UnitSystem::Metric, 0.10, 10.0, L"UnitDefinitionSeed4");
+    return UnitDefinition (UnitBase::Meter, UnitSystem::Metric, 0.10, 10.0, "UnitDefinitionSeed4");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -56,7 +56,7 @@ UnitDefinition GenerateMeter_1Tenth_10 ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 UnitDefinition GenerateMeter_0_0 ()
     {
-    return UnitDefinition (UnitBase::Meter, UnitSystem::Metric, 0.0, 0.0, L"UnitDefinitionSeed5");
+    return UnitDefinition (UnitBase::Meter, UnitSystem::Metric, 0.0, 0.0, "UnitDefinitionSeed5");
     }
 
 };
@@ -227,7 +227,7 @@ TEST_F (UnitDefinitionTest, ConvertDistanceFrom)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (UnitDefinitionTest, AssignLabel)
     {
-    const WCharCP label = L"TestLabel";
+    Utf8CP label = "TestLabel";
     UnitDefinition def;
     def.SetLabel(label);
 

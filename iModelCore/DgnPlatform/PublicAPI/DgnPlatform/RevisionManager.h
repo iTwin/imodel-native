@@ -124,6 +124,7 @@ ENUM_IS_FLAGS(DgnRevision::Include);
 struct EXPORT_VTABLE_ATTRIBUTE ChangeStreamFileReader : BeSQLite::ChangeStream
 {
 private:
+    DgnDbCR m_dgndb; // Used only for debugging
     bvector<BeFileName> m_pathnames;
 
     BeFile m_currentFile;
@@ -142,8 +143,8 @@ private:
     DGNPLATFORM_EXPORT virtual BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause clause, BeSQLite::Changes::Change iter);
 
 public:
-    ChangeStreamFileReader(bvector<BeFileName> pathnames) : m_pathnames(pathnames) {}
-    ChangeStreamFileReader(BeFileNameCR pathname) { m_pathnames.push_back(pathname); }
+    ChangeStreamFileReader(bvector<BeFileName> pathnames, DgnDbCR dgnDb) : m_pathnames(pathnames), m_dgndb(dgnDb) {}
+    ChangeStreamFileReader(BeFileNameCR pathname, DgnDbCR dgnDb) : m_dgndb(dgnDb) { m_pathnames.push_back(pathname); }
     ~ChangeStreamFileReader() {}
 };
 
@@ -168,7 +169,7 @@ private:
 
     RevisionStatus GroupChanges(BeSQLite::ChangeGroup& changeGroup) const;
     DgnRevisionPtr CreateRevisionObject(RevisionStatus* outStatus, BeSQLite::ChangeGroup& changeGroup, DgnRevision::Include include);
-    static RevisionStatus WriteChangesToFile(BeFileNameCR pathname, BeSQLite::ChangeGroup& changeGroup);
+    RevisionStatus WriteChangesToFile(BeFileNameCR pathname, BeSQLite::ChangeGroup& changeGroup);
 
 public:
     //! Constructor
@@ -183,10 +184,10 @@ public:
     //! Get the parent revision id of any changes in the DgnDb
     DGNPLATFORM_EXPORT Utf8String GetParentRevisionId() const;
 
-    //! Merge an ordered collection of revisions to the Db
-    //! @param[in] mergeRevisions Ordered collection of revisions to be merged
-    //! @return RevisionStatus::Success if the revisions were successfully merged, error status otherwise. 
-    DGNPLATFORM_EXPORT RevisionStatus MergeRevisions(bvector<DgnRevisionPtr> const& mergeRevisions);
+    //! Merge a single revision to the Db
+    //! @param[in] revision The revision to be merged
+    //! @return RevisionStatus::Success if the revision was successfully merged, error status otherwise. 
+    DGNPLATFORM_EXPORT RevisionStatus MergeRevision(DgnRevisionCR revision);
 
     //! Returns true if a revision can be created. 
     DGNPLATFORM_EXPORT bool CanCreateRevision() const;

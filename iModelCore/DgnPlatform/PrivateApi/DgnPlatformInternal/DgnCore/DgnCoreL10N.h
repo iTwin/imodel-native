@@ -2,7 +2,7 @@
 |
 |     $Source: PrivateApi/DgnPlatformInternal/DgnCore/DgnCoreL10N.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -216,7 +216,7 @@ BENTLEY_TRANSLATABLE_STRINGS_START(DgnCoreL10N,dgncore_msg)
 
     L10N_STRING(MODELNAME_Dictionary)                           // =="Resource Dictionary"==
 
-    L10N_STRING(REVISION_Merge)                                 // =="Merge"==
+    L10N_STRING(REVISION_Merged)                                // =="Merged"==
 
 BENTLEY_TRANSLATABLE_STRINGS_END
 

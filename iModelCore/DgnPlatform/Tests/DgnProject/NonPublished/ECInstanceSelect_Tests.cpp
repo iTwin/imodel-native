@@ -358,18 +358,15 @@ TEST_F (ECInstanceSelectTests, VerifyInstanceCountFor04Plant)
 
     benchMark["ArcPlates"] = 9;
     benchMark["ArcShapes"] = 40;
-    //benchMark["Component"] = 787;
     benchMark["Equipment"] = 14;
     benchMark["Equipment_Part"] = 15;
     benchMark["NonComponent"] = 21;
     benchMark["Nozzle"] = 55;
-    //benchMark["Object"] = 503;
     benchMark["Pipeline"] = 61;
     benchMark["PipingComponent"] = 703;
     benchMark["Plates"] = 1;
     benchMark["Shapes"] = 433;
     benchMark["VolBodies"] = 20;
-    //benchMark["Volume"] = 503;
 
     bvector<Utf8String> schemasToCheck;
     schemasToCheck.push_back("AutoPlantPDWPersistenceStrategySchema");

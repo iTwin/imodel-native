@@ -51,6 +51,7 @@ public:
 
     virtual ICurvePrimitivePtr GetICurvePrimitivePtr () override {return m_curvePrimitive;}
     virtual JsCurvePrimitiveP AsCurvePrimitive () override {return this;}
+    virtual IGeometryPtr GetIGeometryPtr (){return IGeometry::Create (m_curvePrimitive);}
 
     // Return the native ICurvePrimitive wrapped as the strongest Js type possible.
     // optionally let child CurveVector return as (true,false)==>(nullptr, JsCurvePrimitive)
@@ -150,6 +151,12 @@ public:
         {
         ICurvePrimitivePtr cp = ICurvePrimitive::CreateLine (DSegment3d::From (pointA->Get (), pointB->Get ()));
         Set (cp);
+        }
+
+    static JsLineSegmentP CreateXYZ (double ax, double ay, double az, double bx, double by, double bz)
+        {
+        return new JsLineSegment (
+            ICurvePrimitive::CreateLine (DSegment3d::From (ax, ay, az, bx, by, bz)));
         }
     virtual JsLineSegment * Clone () override {return new JsLineSegment (m_curvePrimitive->Clone ());}
 

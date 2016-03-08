@@ -114,12 +114,10 @@ TEST(ECDbInstances, DgnElementByElementId)
 
     //WHERE ECInstanceId = ? query
         {
-        Utf8String whereClause;
-        whereClause.Sprintf ("%s = ?", ECSqlBuilder::ECINSTANCEID_SYSTEMPROPERTY);
-        ECSqlSelectBuilder builder;
-        builder.Select (ECSqlBuilder::ECINSTANCEID_SYSTEMPROPERTY).From (*elementClass, false).Where (whereClause.c_str ());
+        Utf8String ecsql("SELECT ECInstanceId FROM ONLY ");
+        ecsql.append(elementClass->GetECSqlName()).append(" WHERE ECInstanceId=?");
         ECSqlStatement statement;
-        auto stat = statement.Prepare (project, builder.ToString ().c_str ());
+        auto stat = statement.Prepare (project, ecsql..c_str ());
         ASSERT_EQ (ECSqlStatus::Success()().Get(), stat);
 
         FOR_EACH (DgnElementId expectedElementId, elements)
@@ -144,30 +142,25 @@ TEST(ECDbInstances, DgnElementByElementId)
         size_t totalElementIdCount = elements.size ();
         size_t testElementIdCount = std::min<size_t> (totalElementIdCount, 10);
 
+        Utf8String ecsql("SELECT ECInstanceId FROM ONLY ");
+        ecsql.append(elementClass->GetECSqlName()).append(" WHERE ECInstanceId IN (");
         bset<DgnElementId> expectedElementIds;
-        Utf8String whereClause;
-        whereClause.append (ECSqlBuilder::ECINSTANCEID_SYSTEMPROPERTY);
-        whereClause.append (" IN (");
         for (size_t i = 0; i < testElementIdCount; i++)
             {
             expectedElementIds.insert (elements[i]);
 
             if (i > 0)
-                {
-                whereClause.append (", ");
-                }
+                ecsql.append (", ");
 
             Utf8String ecInstanceIdStr;
             ecInstanceIdStr.Sprintf ("%lld", elements[i].GetValue());
-            whereClause.append (ecInstanceIdStr.c_str ());
+            ecsql.append (ecInstanceIdStr.c_str ());
             }
-        whereClause.append (")");
+        ecsql.append (")");
 
-        ECSqlSelectBuilder builder;
-        builder.Select (ECSqlBuilder::ECINSTANCEID_SYSTEMPROPERTY).From (*elementClass, false).Where (whereClause.c_str ());
         ECSqlStatement statement;
-        auto stat = statement.Prepare (project, builder.ToString ().c_str ());
-        ASSERT_EQ ((int) ECSqlStatus::Success(), (int) stat);
+        auto stat = statement.Prepare (project, ecsql.c_str ());
+        ASSERT_EQ (ECSqlStatus::Success(), stat);
 
         bset<DgnElementId> actualElementIds;
         while (BE_SQLITE_ROW == statement.Step ())

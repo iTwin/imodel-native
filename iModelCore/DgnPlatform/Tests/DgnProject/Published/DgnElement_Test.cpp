@@ -826,15 +826,17 @@ TEST_F(DgnElementTests, TestUserProperties)
         TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
         TestElement el(params);
 
+        ECN::AdHocJsonPropertyValue stringProperty = el.GetUserProperty("StringProperty");
+
         //  No user properties yet
-        ECN::ECValue checkValue = el.GetUserProperties().GetValueEC("StringProperty");
+        ECN::ECValue checkValue = stringProperty.GetValueEC();
         EXPECT_TRUE(checkValue.IsNull());
 
         //  Set user property (in memory)
-        ASSERT_EQ(true, el.GetUserPropertiesR().SetValueEC("StringProperty", ECN::ECValue("initial value")));
+        ASSERT_EQ(SUCCESS, stringProperty.SetValueEC(ECN::ECValue("initial value")));
 
         //      ... check that we see the pending value
-        checkValue = el.GetUserProperties().GetValueEC("StringProperty");
+        checkValue = stringProperty.GetValueEC();
         EXPECT_FALSE(checkValue.IsNull());
         EXPECT_STREQ("initial value", checkValue.ToString().c_str());
 
@@ -854,8 +856,10 @@ TEST_F(DgnElementTests, TestUserProperties)
         {
         DgnElementCPtr persistentEl = m_db->Elements().Get<DgnElement>(persistentId);
 
+        ECN::AdHocJsonPropertyValue persistedStringProperty = persistentEl->GetUserProperty("StringProperty");
+
         // Check that we see the stored value
-        ECN::ECValue checkValue = persistentEl->GetUserProperties().GetValueEC("StringProperty");
+        ECN::ECValue checkValue = persistedStringProperty.GetValueEC();
         EXPECT_FALSE(checkValue.IsNull());
         EXPECT_STREQ("initial value", checkValue.ToString().c_str());
 
@@ -863,20 +867,21 @@ TEST_F(DgnElementTests, TestUserProperties)
         RefCountedPtr<TestElement> editEl = persistentEl->MakeCopy<TestElement>();
 
         //      ... initially we still see the initial/stored value
-        checkValue = editEl->GetUserProperties().GetValueEC("StringProperty");
+        ECN::AdHocJsonPropertyValue  editedStringProperty = editEl->GetUserProperty("StringProperty");
+        checkValue = editedStringProperty.GetValueEC();
         EXPECT_FALSE(checkValue.IsNull());
         EXPECT_STREQ("initial value", checkValue.ToString().c_str());
 
         //  Set a new value (in memory)
-        EXPECT_EQ(true, editEl->GetUserPropertiesR().SetValueEC("StringProperty", ECN::ECValue("changed value")));
+        EXPECT_EQ(SUCCESS, editedStringProperty.SetValueEC(ECN::ECValue("changed value")));
 
         //      ... check that we now see the pending value on the edited copy ...
-        checkValue = editEl->GetUserProperties().GetValueEC("StringProperty");
+        checkValue = editedStringProperty.GetValueEC();
         EXPECT_FALSE(checkValue.IsNull());
         EXPECT_STREQ("changed value", checkValue.ToString().c_str());
 
         //      ... but no change on the persistent element
-        checkValue = persistentEl->GetUserProperties().GetValueEC("StringProperty");
+        checkValue = persistedStringProperty.GetValueEC();
         EXPECT_FALSE(checkValue.IsNull());
         EXPECT_STREQ("initial value", checkValue.ToString().c_str());
 
@@ -890,10 +895,11 @@ TEST_F(DgnElementTests, TestUserProperties)
     if (true)
         {
         DgnElementCPtr persistentEl = m_db->Elements().Get<DgnElement>(persistentId);
+        ECN::AdHocJsonPropertyValue persistedStringProperty = persistentEl->GetUserProperty("StringProperty");
 
         // Check that the stored value was changed
         ECN::ECValue checkValue;
-        checkValue = persistentEl->GetUserProperties().GetValueEC("StringProperty");
+        checkValue = persistedStringProperty.GetValueEC();
         EXPECT_FALSE(checkValue.IsNull());
         EXPECT_STREQ("changed value", checkValue.ToString().c_str());
         }

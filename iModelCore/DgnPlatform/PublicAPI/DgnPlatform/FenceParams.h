@@ -39,16 +39,12 @@ private:
     bool                    m_camera;
     bool                    m_overlapMode;
     double                  m_onTolerance;
-    double                  m_unusedRemove;
     double                  m_zCameraLimit;
     DgnViewportP            m_viewport;
     FenceClipMode           m_clipMode;
-    bool                    m_clipOwned;
     ClipVectorPtr           m_clip;
     DRange3d                m_fenceRange;
     LocateSurfacesPref      m_locateInteriors;
-    bool                    m_ignoreTreatAsElm;
-    bool                    m_checkScanCriteria;
 
     // Outputs
     bool                    m_hasOverlaps;
@@ -73,8 +69,6 @@ public:
     DGNPLATFORM_EXPORT void SortSplitParams();
 
     void SetHasOverlaps(bool hasOverlaps) {m_hasOverlaps = hasOverlaps;}
-    bool GetCheckScanCriteria() {return m_checkScanCriteria;}
-    void SetCheckScanCriteria(bool check) {m_checkScanCriteria = check;}
     LocateSurfacesPref GetLocateInteriors() {return m_locateInteriors;}
     DRange3dCP GetFenceRange() {return &m_fenceRange;}
 
@@ -115,14 +109,11 @@ public:
     //! Specify whether overlap testing should detect a fence that is completely contained within a region/surface element.
     DGNPLATFORM_EXPORT void SetLocateInteriors(LocateSurfacesPref);
 
-    //! Setup the fence clip boundary from 2d clipping points. Pass true for blockIfPossible to create CLIPBLOCK instead of CLIPSHAPE when points define a rectangle.
-    DGNPLATFORM_EXPORT StatusInt StoreClippingPoints(bool outside, DPoint2dP, int nPoints);
+    //! Setup the fence clip boundary from world coordinate points defining a planar shape.
+    DGNPLATFORM_EXPORT StatusInt StoreClippingPoints(DPoint3dCP, size_t nPoints, bool outside);
 
     //! Setup the fence clip boundary from a clip vector that represents a planar region or simple extruded volume.
     DGNPLATFORM_EXPORT StatusInt StoreClippingVector(ClipVectorCR clip, bool outside);
-
-    //! Return 2d clipping points suitable for calling StoreClippingPoints from 3d input points in the coordinates of the view's root model.
-    DGNPLATFORM_EXPORT void ClippingPointsFromRootPoints(DPoint2dP, DPoint3dP, int numPts, DgnViewportP);
 
     //! Return true if fence was defined by 2d points in a camera view.
     DGNPLATFORM_EXPORT bool IsCameraOn() const;

@@ -17,21 +17,10 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
-struct JsDPoint3dArray : RefCountedBase
+struct JsDPoint3dArray : BeProjectedRefCounted
 {
 private:
     bvector<DPoint3d> m_data;
-    bool TryDoubleToIndex (double a, size_t &index)
-        {
-        index = 0;
-        if (a < 0.0)
-            return false;
-        index = (size_t) a;
-        if (index < m_data.size ())
-            return true;
-        index = SIZE_MAX;
-        return false;
-        }
 public:   
     JsDPoint3dArray() {}
     static JsDPoint3dArrayP Create (bvector<DPoint3d> const *data)
@@ -48,7 +37,7 @@ public:
     JsDPoint3dP At (double number)
         {
         size_t index;
-        if (TryDoubleToIndex (number, index))
+        if (TryDoubleToIndex (number, m_data.size (), index))
             {
             return new JsDPoint3d (m_data[index]);
             }
@@ -70,21 +59,10 @@ public:
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
-struct JsDoubleArray : RefCountedBase
+struct JsDoubleArray : BeProjectedRefCounted
 {
 private:
     bvector<double> m_data;
-    bool TryDoubleToIndex (double a, size_t &index)
-        {
-        index = 0;
-        if (a < 0.0)
-            return false;
-        index = (size_t) a;
-        if (index < m_data.size ())
-            return true;
-        index = SIZE_MAX;
-        return false;
-        }
 public:   
     JsDoubleArray() {}
     JsDoubleArray(bvector<double> const &source) {m_data = source;}
@@ -95,7 +73,7 @@ public:
     double At (double number)
         {
         size_t index;
-        if (TryDoubleToIndex (number, index))
+        if (TryDoubleToIndex (number, m_data.size (), index))
             {
             return m_data[index];
             }
@@ -107,6 +85,73 @@ public:
         {
         for (double &a : other->m_data)
             m_data.push_back (a);
+        }
+};
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct JsGeometryNode : BeProjectedRefCounted
+{
+private:
+    GeometryNodePtr m_data;
+public:   
+    JsGeometryNode () {m_data = GeometryNode::Create ();}
+
+    JsGeometryNode (GeometryNodePtr node) {m_data = node;}
+    GeometryNodePtr GetGeometryNodePtr (){return m_data;}
+    void AddGeometry (JsGeometryP g)
+        {
+        auto gPtr = g->GetIGeometryPtr ();
+        m_data->AddGeometry (gPtr);
+        }
+    void AddMemberWithTransform (JsGeometryNodeP node, JsTransformP transform) {m_data->AddMember (node->m_data, transform->Get ());}
+
+    void ClearGeometry (){m_data->ClearGeometry ();}
+    void ClearMembers (){m_data->ClearMembers ();}
+
+    JsGeometryP GeometryAt (double number)
+        {
+        size_t index;
+        if (TryDoubleToIndex (number, m_data->Geometry ().size (), index))
+            {
+            return JsGeometry::CreateStronglyTypedJsGeometry (m_data->Geometry()[index]);
+            }
+        return nullptr;
+        }
+
+    JsGeometryNodeP MemberAt (double number)
+        {
+        size_t index;
+        if (TryDoubleToIndex (number, m_data->Members ().size (), index))
+            {
+            return new JsGeometryNode (m_data->Members()[index].GetMember ());
+            }
+        return nullptr;
+        }
+
+    JsTransformP MemberTransformAt (double number)
+        {
+        size_t index;
+        if (TryDoubleToIndex (number, m_data->Members ().size (), index))
+            {
+            return new JsTransform (m_data->Members()[index].GetTransform ());
+            }
+        return nullptr;
+        }
+
+
+    JsGeometryNodeP Flatten ()
+        {
+        return new JsGeometryNode (m_data->Flatten ());
+        }
+
+    double GeometrySize (){ return (double)m_data->Geometry().size ();}
+    double MemberSize   (){ return (double)m_data->Members().size ();}
+
+    bool IsSameStructureAndGeometry (JsGeometryNodeP other)
+        {
+        return m_data->IsSameStructureAndGeometry (*other->m_data, 0.0);
         }
 };
 
