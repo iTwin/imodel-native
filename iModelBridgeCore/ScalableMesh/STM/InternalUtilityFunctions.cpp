@@ -937,21 +937,21 @@ StatusInt GetGeoMathematicalDomain(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseG
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt GetMathematicalDomain(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& GCSPtr, GeoDomainShape& shape)
     {
-    //if(HRFGeoCoordinateProvider::GetServices() == NULL)
-    //    return ERROR;
+    if(HRFGeoCoordinateProvider::GetServices() == NULL)
+        return ERROR;
 
     StatusInt status = SUCCESS;
 
     GeoDomainShape geoPoints;
     
     status = GetGeoMathematicalDomain(GCSPtr, geoPoints);
-    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr pLL84 = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS(L"LL84");
-   //RasterBaseGcsPtr pTarget = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromKeyName(L"LL84");
-   // IRasterBaseGcsPtr pSource = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(GCSPtr.get());
+
+    IRasterBaseGcsPtr pTarget = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromKeyName(L"LL84");
+    IRasterBaseGcsPtr pSource = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(GCSPtr.get());
 
     // We then create the Image++ compatible geographic transformation between these
     // Geographic coordinate systems...
-    HFCPtr<HCPGCoordModel> pTransfo = new HCPGCoordModel(*pLL84, *GCSPtr);
+    HFCPtr<HCPGCoordModel> pTransfo = new HCPGCoordModel(*pTarget, *pSource);
 
     HFCPtr<HGF2DCoordSys> pSourceCS = new HGF2DCoordSys();
     HFCPtr<HGF2DCoordSys> pTargetCS = new HGF2DCoordSys(*pTransfo, pSourceCS);
@@ -1025,8 +1025,8 @@ StatusInt ReprojectRangeDomainLimited(DRange3d& reprojectedRange,
                                       BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCS,
                                       BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS)
     {
-   // if(HRFGeoCoordinateProvider::GetServices() == NULL)
-   //     return ERROR;
+    if(HRFGeoCoordinateProvider::GetServices() == NULL)
+        return ERROR;
 
     // In order to compute the range in given geographic coordinate system, we only have the content extent
     // of the index. Hopefully, eventually, we will have the properly computed hull.
@@ -1036,15 +1036,14 @@ StatusInt ReprojectRangeDomainLimited(DRange3d& reprojectedRange,
     HFCPtr<HVE2DShape> resultDomainShape = GetGCSDomainsIntersection(sourceGCS, targetGCS, latLongCoordinateSystem);
 
     // We now create Image++ compatible Geographic Coordinate System objects ...
-    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr pLL84 = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS(L"LL84");
-    //IRasterBaseGcsPtr pLL84 = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromKeyName(L"LL84");
-   // IRasterBaseGcsPtr pSource = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(sourceGCS.get());
-   // IRasterBaseGcsPtr pTarget = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(targetGCS.get());
+    IRasterBaseGcsPtr pLL84 = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromKeyName(L"LL84");
+    IRasterBaseGcsPtr pSource = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(sourceGCS.get());
+    IRasterBaseGcsPtr pTarget = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(targetGCS.get());
     
     // We then create the Image++ compatible geographic transformation between these
     // Geographic coordinate systems...
-    HFCPtr<HCPGCoordModel> pSourceToLL84 = new HCPGCoordModel(*sourceGCS, *pLL84);
-    HFCPtr<HCPGCoordModel> pTransfo = new HCPGCoordModel(*targetGCS, *sourceGCS);
+    HFCPtr<HCPGCoordModel> pSourceToLL84 = new HCPGCoordModel(*pSource, *pLL84);
+    HFCPtr<HCPGCoordModel> pTransfo = new HCPGCoordModel(*pTarget, *pSource);
 
     // We create two dummies coordinate systems linked using this geographic transformation
     HFCPtr<HGF2DCoordSys> pSourceCS = new HGF2DCoordSys(*pSourceToLL84, latLongCoordinateSystem);
@@ -1098,8 +1097,8 @@ StatusInt GetReprojectedBoxDomainLimited(BENTLEY_NAMESPACE_NAME::GeoCoordinates:
                                          DRange3d                             additionalSourceExtent,
                                          HFCPtr<HVE2DShape>                   queryShape)
     { 
-    //if(HRFGeoCoordinateProvider::GetServices() == NULL)
-    //    return ERROR;
+    if(HRFGeoCoordinateProvider::GetServices() == NULL)
+        return ERROR;
 
     // Here we have the viewbox expressed in the cartesian target GCS yet this viewbox may exceed the
     // Target GCS mathematical domain. It is also likely that it will exceeed in addition the source GCS
@@ -1130,13 +1129,12 @@ StatusInt GetReprojectedBoxDomainLimited(BENTLEY_NAMESPACE_NAME::GeoCoordinates:
     HFCPtr<HVE2DShape> resultDomainShape = GetGCSDomainsIntersection(sourceGCSPtr, targetGCSPtr, latLongCoordinateSystem);
 
     // We create a LL84 baseGCS in which are effectively expressed the geo domain
-    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr pLL84 = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS(L"LL84");
-    //IRasterBaseGcsPtr pLL84 = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromKeyName(L"LL84");
-    //IRasterBaseGcsPtr pSource = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(sourceGCSPtr.get());
-    //IRasterBaseGcsPtr pTarget = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(targetGCSPtr.get());
+    IRasterBaseGcsPtr pLL84 = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromKeyName(L"LL84");
+    IRasterBaseGcsPtr pSource = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(sourceGCSPtr.get());
+    IRasterBaseGcsPtr pTarget = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(targetGCSPtr.get());
 
     //Now we limit this domain to the query extent which is given in source coordinates
-    HFCPtr<HCPGCoordModel> pSourceToLL84 = new HCPGCoordModel(*sourceGCSPtr, *pLL84);
+    HFCPtr<HCPGCoordModel> pSourceToLL84 = new HCPGCoordModel(*pSource, *pLL84);
     HFCPtr<HGF2DCoordSys> pSourceCS = new HGF2DCoordSys(*pSourceToLL84, latLongCoordinateSystem);
 
     // Intersect with additional extent if one is defined
@@ -1163,7 +1161,7 @@ StatusInt GetReprojectedBoxDomainLimited(BENTLEY_NAMESPACE_NAME::GeoCoordinates:
         return ERROR;
         }
     // We now convert this geographic lat/long domain into the target GCS coordinates
-    HFCPtr<HCPGCoordModel> pTransfo = new HCPGCoordModel(*targetGCSPtr, *pLL84);
+    HFCPtr<HCPGCoordModel> pTransfo = new HCPGCoordModel(*pTarget, *pLL84);
     HFCPtr<HGF2DCoordSys> pTargetCS = new HGF2DCoordSys(*pTransfo, latLongCoordinateSystem);
     HFCPtr<HVE2DShape> cartesianDomain = static_cast<HVE2DShape*>(limitedDomainShape->AllocateCopyInCoordSys (pTargetCS));
 
@@ -1253,8 +1251,8 @@ HFCPtr<HVE2DShape> ReprojectShapeDomainLimited(BENTLEY_NAMESPACE_NAME::GeoCoordi
                                       size_t  pi_SourcePtQty)
             
     {
-   // if(HRFGeoCoordinateProvider::GetServices() == NULL)
-   //     return NULL;
+    if(HRFGeoCoordinateProvider::GetServices() == NULL)
+        return NULL;
 
     // Something went wrong ... we need to limit the source shape to the domains
     // Create the three coordinate systems required for transformation
@@ -1266,18 +1264,17 @@ HFCPtr<HVE2DShape> ReprojectShapeDomainLimited(BENTLEY_NAMESPACE_NAME::GeoCoordi
         return NULL;
 
     // We create a LL84 baseGCS in which are effectively expressed the geo domain
-    //IRasterBaseGcsPtr pLL84 = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromKeyName(L"LL84");
-    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr pLL84 = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS(L"LL84");
-   // IRasterBaseGcsPtr pSource = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(sourceGCSPtr.get());
-   // IRasterBaseGcsPtr pTarget = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(targetGCSPtr.get());
+    IRasterBaseGcsPtr pLL84 = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromKeyName(L"LL84");
+    IRasterBaseGcsPtr pSource = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(sourceGCSPtr.get());
+    IRasterBaseGcsPtr pTarget = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(targetGCSPtr.get());
 
     //Now we limit this domain to the query extent which is given in source coordinates
-    HFCPtr<HCPGCoordModel> pSourceToLL84 = new HCPGCoordModel(*sourceGCSPtr, *pLL84);
+    HFCPtr<HCPGCoordModel> pSourceToLL84 = new HCPGCoordModel(*pSource, *pLL84);
     HFCPtr<HGF2DCoordSys> pSourceCS = new HGF2DCoordSys(*pSourceToLL84, latLongCoordinateSystem);
 
 
     // We now convert this geographic lat/long domain into the target GCS coordinates
-    HFCPtr<HCPGCoordModel> pTransfo = new HCPGCoordModel(*targetGCSPtr, *pLL84);
+    HFCPtr<HCPGCoordModel> pTransfo = new HCPGCoordModel(*pTarget, *pLL84);
     HFCPtr<HGF2DCoordSys> pTargetCS = new HGF2DCoordSys(*pTransfo, latLongCoordinateSystem);
 
     HFCPtr<HVE2DShape> pShapeToReproject = CreateShapeFromPoints(pi_pSourcePt, pi_SourcePtQty, pTargetCS);

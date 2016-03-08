@@ -14,6 +14,7 @@
 #include "ImagePPHeaders.h"
 extern bool   GET_HIGHEST_RES;
 
+#include <STMInternal/Foundations/FoundationsPrivateTools.h>
 /*------------------------------------------------------------------+
 | Include of the current class header                               |
 +------------------------------------------------------------------*/

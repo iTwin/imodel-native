@@ -4,13 +4,13 @@
 #include "SMPointIndex.h"
 #include "Edits/DifferenceSet.h"
 //#include "Edits/ClipUtilities.h"
-#include <ImagePP/all/h/HPMIndirectCountLimitedPool.h>
+
 #include "Threading/ScalableMeshScheduler.h"
 #include "Edits\ClipRegistry.h"
 #include "InternalUtilityFunctions.h"
 #include <ImagePP/all/h/HRARaster.h>
 #include <ImagePP/all/h/HIMMosaic.h>
-
+#include <ImagePP/all/h/HPMPooledVector.h>
 #include <ImagePP/all/h/HRAClearOptions.h>
 #include <ImagePP/all/h/HRACopyFromOptions.h>
 #include <TerrainModel/Core/DTMIterators.h>
@@ -22,6 +22,11 @@
 extern bool s_useThreadsInStitching;
 extern bool s_useThreadsInMeshing;
 
+    template<> struct PoolItem<MTGGraph>
+    {
+    typedef HPMIndirectCountLimitedPoolItem<MTGGraph> Type;
+    typedef HPMIndirectCountLimitedPool<MTGGraph> PoolType;
+    };
 
 template<class DataType> class LinkedStoredPooledVector : public HPMStoredPooledVector < DataType >
     {
@@ -870,7 +875,7 @@ size_t GetNbPtsIndices(size_t texture_id) const
             HPMCountLimitedPoolItem<POINT>::SetDirty(false);
             }
 
-        virtual size_t size() const override
+        virtual size_t size() const 
             {
             return GetParentNodePtr()->size();
             };

@@ -10,6 +10,8 @@ baseDir         = $(_MakeFilePath)
 PolicyFile      = $(SrcRoot)ScalableMesh/mki/AssertScalableMeshPolicy.mki
 SolutionPolicyMki=$(baseDir)ScalableMesh.mki
 
+
+
 %include  mdl.mki
 
 #this means we can use CGAL with the modules that were licensed to us
@@ -35,6 +37,10 @@ always:
 
 CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED
 
+%if defined(VANCOUVER)
+CCompOpts + -DVANCOUVER_API
+%endif
+
 #For legal reasons, not compiling these libraries or code depending on them right now.
 %if !defined (3DMesh)
 CCompOpts + -DNO_3D_MESH
@@ -55,8 +61,7 @@ always:
 #----------------------------------------------------------------------
 PchCompiland = $(stmDir)ScalableMeshPCH.cpp
 PchOutputDir = $(o)
-PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTM_BUILD__ -DSCALABLE_MESH_DGN -DNOMINMAX 
-CompileOptionsMki =  $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy.mki
+PchExtraOptions    = -Zm180 -openmp  $(PublicApiIncludes) -I${BuildContext}PublicAPI
 %include $(SharedMki)PreCompileHeader.mki
 
 # UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki
@@ -269,7 +274,9 @@ $(o)LightThreadPool$(oext) : $(stmDir)Threading/LightThreadPool.cpp $(PCHHeaderD
 
 $(o)SMSQLiteFile$(oext) : $(stmDir)SMSQLiteFile.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
+%if defined (VANCOUVER)
 $(o)HPUPacket$(oext) : $(stmDir)HPUPacket.cpp $(stmDir)HPUPacket.h ${MultiCompileDepends}
+%endif
 
 #-----------------------------------------------------------------------
 #   Build Compile Automatic Ground Detection 
@@ -397,10 +404,10 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)RmgrTools.lib \
     $(ContextSubpartsLibs)DgnGeoCoord.lib \
     $(ContextSubpartsLibs)DgnView.lib \
+    $(ContextSubpartsLibs)TerrainModelElementHandler.lib \
     $(ContextSubpartsLibs)RasterCore.lib \
     $(ContextSubpartsLibs)libboost_system-vc120-mt-1_57$(libext) \
     $(ContextSubpartsLibs)libboost_thread-vc120-mt-1_57$(libext) \
-    $(ContextSubpartsLibs)RasterCore.lib
     $(ContextSubpartsLibs)CGAL.lib
     
 

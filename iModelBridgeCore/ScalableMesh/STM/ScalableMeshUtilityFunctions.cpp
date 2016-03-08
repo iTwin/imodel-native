@@ -611,7 +611,7 @@ int CreateBcDTM(DTMPtr& dtmPtr)
         {
         BcDTMPtr bcDtmObjPtr;
 
-        bcDtmObjPtr = BcDTM::CreateFromDtmHandle(bcDtmP);
+        bcDtmObjPtr = BcDTM::CreateFromDtmHandle(*bcDtmP);
         //bcDtmObjPtr->Release();     
 
         dtmPtr = bcDtmObjPtr.get();

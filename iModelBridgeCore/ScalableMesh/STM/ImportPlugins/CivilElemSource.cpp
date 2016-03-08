@@ -60,7 +60,7 @@ class CivilElementSourceDecorator : public SourceBase
     {
     friend class                    CivilElementSourceCreator;
 
-    auto_ptr<SourceBase>            m_decoratedP;
+    std::auto_ptr<SourceBase>            m_decoratedP;
     ElementHandle                      m_elHandle;
 
     explicit                        CivilElementSourceDecorator            (SourceBase*                 decoratedP,

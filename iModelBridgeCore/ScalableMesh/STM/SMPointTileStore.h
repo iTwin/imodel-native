@@ -19,8 +19,9 @@
 #include <ImagePP/all/h/HGFPointTileStore.h>*/
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include "SMSQLiteFile.h"
-USING_NAMESPACE_IMAGEPP
 
+USING_NAMESPACE_IMAGEPP
+#ifndef VANCOUVER_API
 namespace IDTMFile
     {
     typedef HFCAccessMode                   AccessMode;
@@ -45,6 +46,10 @@ namespace IDTMFile
         group_id_type                       groupId;    // Reference to the metadata for this feature
         };
     };
+#else
+#include <ImagePP/all/h/IDTMTypes.h>
+#include <ImagePP/all/h/IDTMFile.h>
+#endif
 //#if 0
 class IDTMFilePointFamily {};
 

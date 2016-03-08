@@ -8,7 +8,7 @@
 
 #include <ScalableMeshPCH.h>
 #include "../ImagePPHeaders.h"
-//#include <ScalableMesh\GeoCoords\DGNModelGeoref.h>
+#include <ScalableMesh\GeoCoords\DGNModelGeoref.h>
 #include <ScalableMesh\GeoCoords\Reprojection.h>
 #include <ScalableMesh\Import\Plugin\InputExtractorV0.h>
 #include <ScalableMesh\Import\Plugin\SourceV0.h>
@@ -23,8 +23,10 @@
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(0)
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
+USING_NAMESPACE_RASTER
 USING_NAMESPACE_IMAGEPP
-//using BENTLEY_NAMESPACE_NAME::GeoCoordinates::DgnGCS;
+
+using Bentley::GeoCoordinates::DgnGCS;
 
 namespace { //BEGIN UNAMED NAMESPACE
 
@@ -39,7 +41,7 @@ public:
 
 private:
     friend class                    DEMRasterFileSourceCreator;
-    //friend class                    DEMRasterElementSourceCreator;
+    friend class                    DEMRasterElementSourceCreator;
 
     auto_ptr<HUTDEMRasterXYZPointsExtractor>
                                     m_extractorP;
@@ -122,9 +124,9 @@ HUTDEMRasterXYZPointsExtractor*     CreateDEMExtractor                     (cons
     }
 
 bool                                ExtractUnitFromGeoTiffKeys             (Unit&                 unit,
-                                                                            const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& geoCoding)
+                                                                            const IRasterBaseGcs& geoCoding)
     {    
-    const unsigned int unitId = geoCoding->GetEPSGUnitCode();
+    const unsigned int unitId = geoCoding.GetEPSGUnitCode();;
 
     if (0 == unitId)
         {
@@ -132,7 +134,7 @@ bool                                ExtractUnitFromGeoTiffKeys             (Unit
         return false;
         }
         
-    if (geoCoding == 0)
+    if (geoCoding.GetBaseGCS() == 0)
         {
         unit = Unit::GetMeter();
         return false;
@@ -140,27 +142,13 @@ bool                                ExtractUnitFromGeoTiffKeys             (Unit
 
     WString unitName; 
 
-    geoCoding->GetUnits(unitName);
+    geoCoding.GetBaseGCS()->GetUnits(unitName);
 
     WString trimedUnitName(unitName.c_str());
 
     trimedUnitName.Trim();
-
-    double unitFromMeter = 1.0;
-    T_WStringVector* pAllUnitName = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::GetUnitNames();
-    for (T_WStringVector::const_iterator itr = pAllUnitName->begin(); itr != pAllUnitName->end(); ++itr)
-        {
-        WString name = *itr;
-        name.Trim();
-        if (BeStringUtilities::Wcsicmp(trimedUnitName.c_str(), name.c_str())==0)
-            {
-            BENTLEY_NAMESPACE_NAME::GeoCoordinates::UnitCP pUnit(BENTLEY_NAMESPACE_NAME::GeoCoordinates::Unit::FindUnit(itr->c_str()));
-            unitFromMeter = 1.0 / pUnit->GetConversionFactor();
-            break;
-            }
-        }
        
-    const double ratioToMeter = 1 / unitFromMeter;
+    const double ratioToMeter = 1 / geoCoding.GetUnitsFromMeters();
     
     unit = Unit::CreateLinearFrom(trimedUnitName.c_str(), ratioToMeter);
     return true;
@@ -173,15 +161,15 @@ bool                                ExtractUnitFromGeoTiffKeys             (Unit
 GCS                                 GetDEMFileGCS                          (const HUTDEMRasterXYZPointsExtractor&
                                                                                                             extractor)
     {
-    GeoCoordinates::BaseGCSCP geoCodingP = extractor.GetDEMRasterCoordSysCP();
+    const IRasterBaseGcsCP geoCodingP = extractor.GetDEMRasterCoordSysCP ();
     
     if (0 == geoCodingP)
         return GCS::GetNull();
     
-    const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr coordSysPtr(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS(*geoCodingP));
+    const BaseGCSCPtr coordSysPtr(Bentley::GeoCoordinates::BaseGCS::CreateGCS (*geoCodingP->GetBaseGCS()));
     Unit gcsUnit((0 == coordSysPtr.get()) ? Unit::GetMeter() : GetUnitFor(*coordSysPtr));
 
-    if (0 == coordSysPtr.get() && !ExtractUnitFromGeoTiffKeys(gcsUnit, geoCodingP))
+    if (0 == coordSysPtr.get() && !ExtractUnitFromGeoTiffKeys(gcsUnit, *geoCodingP))
         return GCS::GetNull();
 
     // Take into account that units have been rectified to meter (which is the base of linear units) or
@@ -288,7 +276,7 @@ class DEMRasterFileSourceCreator : public LocalFileSourceCreatorBase
 
     };
 
-#if 0
+
 
 /*---------------------------------------------------------------------------------**//**
 * @description
@@ -540,7 +528,7 @@ class DEMRasterElementSourceCreator : public DGNElementSourceCreatorBase
         }
     };
 
-#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @description
 * @bsiclass                                                  Raymond.Gauthier   10/2010
@@ -679,7 +667,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 * @bsimethod                                                  Raymond.Gauthier   02/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 const SourceRegistry::AutoRegister<DEMRasterFileSourceCreator> s_RegisterDEMRasterFileSource;
-//const SourceRegistry::AutoRegister<DEMRasterElementSourceCreator> s_RegisterDEMRasterElementSource;
+const SourceRegistry::AutoRegister<DEMRasterElementSourceCreator> s_RegisterDEMRasterElementSource;
 const ExtractorRegistry::AutoRegister<DEMRasterPointExtractorCreator> s_RegisterDEMRasterPointExtractor;
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

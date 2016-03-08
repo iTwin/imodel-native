@@ -14,6 +14,8 @@
 %endif
 __ScalableTerrainModelPolicy_mki__=1
 
+BUILD_USING_VS2013=1
+VANCOUVER=1
 OPTIMIZE_FOR_SPEED=1
 appName=ScalableMesh
 CCompPDBName = $(appName)
@@ -52,7 +54,7 @@ ContextSubpartsLibs = $(BuildContext)SubParts/Libs/
 #----------------------------------------------------------
 
 
-PublicApiIncludes + -I$(STMPrivateApiSrc) -I${BuildContext}/VendorAPI/cpprestsdk/ -I${BuildContext}/VendorAPI/wastorage/ -I${BuildContext}/VendorAPI/BeCurl/ -I${BuildContext}/VendorAPI/BeSQLite/
+PublicApiIncludes + -I$(STMPrivateApiSrc) -I${BuildContext}/PublicAPI/ -I${BuildContext}/VendorAPI/ -I${BuildContext}/VendorAPI/cpprestsdk/ -I${BuildContext}/VendorAPI/wastorage/ -I${BuildContext}/VendorAPI/BeCurl/ -I${BuildContext}/VendorAPI/BeSQLite/
 
 # dlmlink.mki common options.
 DLM_DEST                    = $(o)

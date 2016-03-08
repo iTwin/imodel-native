@@ -14,7 +14,7 @@
 
 #include <ScalableMesh/GeoCoords/Definitions.h>
 #include <deque>
-
+#ifndef VANCOUVER_API
 namespace IDTMFile
     {
 
@@ -26,7 +26,7 @@ namespace IDTMFile
         WktFlavor_End,
         };
     }
-
+#endif
 BEGIN_BENTLEY_SCALABLEMESH_GEOCOORDINATES_NAMESPACE
 
 

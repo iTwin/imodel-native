@@ -41,7 +41,6 @@ namespace BENTLEY_NAMESPACE_NAME
 #endif
         }
     }
-
 //NEEDS_WORK_SM : Temp global variable probably only for debug purpose, not sure we want to know if we are in editing.
 extern bool s_inEditing; 
 extern bool s_useThreadsInFiltering;
@@ -1153,7 +1152,7 @@ template <class POINT, class EXTENT, class NODE> class SMIndexNodeVirtual : publ
             return true;
             }
 
-        virtual size_t size() const override
+        virtual size_t size() const
             {
             return GetParentNodePtr()->size();
             };

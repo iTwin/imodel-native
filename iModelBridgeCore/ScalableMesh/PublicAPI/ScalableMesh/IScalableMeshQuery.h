@@ -14,6 +14,7 @@
 /*__PUBLISH_SECTION_START__*/
 
 //#include <GeoCoord/BaseGeoCoord.h>
+#include <ScalableMesh/GeoCoords/GCS.h>
 #include <TerrainModel/TerrainModel.h>
 #include <TerrainModel/Core/IDTM.h>
 #include <TerrainModel/Core/bcDTMClass.h>

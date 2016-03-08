@@ -11,6 +11,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
 #include "../STM/ImagePPHeaders.h"
+#include <STMInternal/Foundations/FoundationsPrivateTools.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include <ScalableMesh/GeoCoords/LocalTransform.h>
 
@@ -22,6 +23,9 @@
 #include "WktUtils.h"
 #include "GCSWktParsing.h"
 
+#ifndef VANCOUVER_API
+#define GetWellKnownText(a,b) GetWellKnownText(a,b,false)
+#endif
 
 BEGIN_BENTLEY_SCALABLEMESH_GEOCOORDINATES_NAMESPACE
 
@@ -503,7 +507,7 @@ inline GCS::Status GCS::Impl::GetNullCSWKT (WString& wkt) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 GCS::Status GCS::Impl::GetBaseCSWKT (WString& wkt) const
     {            
-    if (BSISUCCESS != m_geoRef.GetBase().GetWellKnownText(wkt, BaseGCS::wktFlavorAutodesk, false))
+    if (BSISUCCESS != m_geoRef.GetBase().GetWellKnownText(wkt, BaseGCS::wktFlavorAutodesk))
         return S_ERROR;  
      
     return S_SUCCESS;

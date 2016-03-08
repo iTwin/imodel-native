@@ -10,7 +10,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-
+#include "../STM/ImagePPHeaders.h"
 #include <ScalableMesh/Foundations/Log.h>
 #include <ScalableMesh/Foundations/Warning.h>
 #include <ScalableMesh/Foundations/Error.h>

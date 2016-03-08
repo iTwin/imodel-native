@@ -111,14 +111,14 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
     
     // Register Moniker
 
-    //InitScalableMeshMonikerFactories();
+    
 
     t_scalableTerrainModelHost = &host;
     t_scalableTerrainModelHost->Initialize();
     BeFileName tempDir;
     BeFileNameStatus beStatus = BeFileName::BeGetTempPath(tempDir);
     assert(BeFileNameStatus::Success == beStatus);
-    BeSQLiteLib::Initialize(tempDir);
+    BeSQLiteLib::Initialize(tempDir.GetNameUtf8().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

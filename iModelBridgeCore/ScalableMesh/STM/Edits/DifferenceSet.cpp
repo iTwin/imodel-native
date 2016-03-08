@@ -408,7 +408,7 @@ DifferenceSet DifferenceSet::MergeSetWith(DifferenceSet& d, const DPoint3d* vert
     if (dtmCreateStatus == 0)
         {
         BcDTMPtr bcDtmObjPtr;
-        bcDtmObjPtr = BcDTM::CreateFromDtmHandle(bcDtmP);
+        bcDtmObjPtr = BcDTM::CreateFromDtmHandle(*bcDtmP);
         dtmPtr = bcDtmObjPtr.get();
         }
     bcdtmObject_storeDtmFeatureInDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), DTMFeatureType::RandomSpots, dtmPtr->GetBcDTM()->GetTinHandle()->nullUserTag, 1, &dtmPtr->GetBcDTM()->GetTinHandle()->nullFeatureId, &allPoints[0], (long)allPoints.size());

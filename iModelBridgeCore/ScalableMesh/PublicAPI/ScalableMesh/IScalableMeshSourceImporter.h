@@ -25,8 +25,11 @@
 #include <ScalableMesh/GeoCoords/GCS.h>
 
 //NEEDS_WORK_SM_IMPORTER : Not sure want dependency on this.
+#ifndef VANCOUVER_API
 #include "HPUPacket.h"
-
+#else
+#include <ImagePP/all/h/HPUPacket.h>
+#endif
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 

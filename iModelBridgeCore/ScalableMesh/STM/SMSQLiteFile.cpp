@@ -3,12 +3,20 @@
 
 #ifdef VANCOUVER_API
 #define WSTRING_FROM_CSTR(cstr) WString(cstr)
+#define MAKE_COPY_NO Statement::MAKE_COPY_No
+#define MAKE_COPY_YES Statement::MAKE_COPY_Yes
+#define GET_VALUE_STR(stmt, id) stmt->GetValueUtf8(id)
+#define BIND_VALUE_STR(stmt, id, utf8str, copyval) stmt->BindUtf8String(id, utf8str, copyval)
+#define READONLY Db::OpenMode::OPEN_Readonly
+#define READWRITE Db::OpenMode::OPEN_ReadWrite
 #else
 #define WSTRING_FROM_CSTR(cstr) WString(cstr, BentleyCharEncoding::Utf8)
 #define MAKE_COPY_NO Statement::MakeCopy::No
 #define MAKE_COPY_YES Statement::MakeCopy::Yes
 #define GET_VALUE_STR(stmt, id) stmt->GetValueText(id)
 #define BIND_VALUE_STR(stmt, id, utf8str, copyval) stmt->BindText(id, utf8str, copyval)
+#define READONLY Db::OpenMode::Readonly
+#define READWRITE Db::OpenMode::ReadWrite
 #endif
 
 
@@ -39,7 +47,7 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
     DbResult result;
     if (m_database->IsDbOpen())
         m_database->CloseDb();
-    result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite));
+    result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY: READWRITE));
 
     //assert(result == BE_SQLITE_OK);
     return result == BE_SQLITE_OK;
@@ -250,7 +258,7 @@ bool SMSQLiteFile::SetNodeHeader(const SQLiteNodeHeader& newNodeHeader)
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "REPLACE INTO SMNodeHeader (NodeId, ParentNodeId, Resolution," 
                                   "Filtered, Extent, ContentExtent, TotalCount, ArePoints3d, NbFaceIndexes, "
-                                  "NumberOfMeshComponents, AllComponent, GraphID, SubNode,Neighbor, IndiceID, TexID, IsTextured) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                                  "NumberOfMeshComponents, AllComponent, GraphID, SubNode,Neighbor, IndiceID, TexID, IsTextured, NodeCount) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
     stmt->BindInt64(1, newNodeHeader.m_nodeID);
     stmt->BindInt64(2, newNodeHeader.m_parentNodeID);
     stmt->BindInt64(3, newNodeHeader.m_level);
@@ -285,7 +293,8 @@ bool SMSQLiteFile::SetNodeHeader(const SQLiteNodeHeader& newNodeHeader)
         size_t texID = SQLiteNodeHeader::NO_NODEID;
         stmt->BindInt64(16, texID);
         }
-    stmt->BindInt(17, newNodeHeader.m_areTextured ? 1 : 0);
+    stmt->BindInt(17, newNodeHeader.m_areTextured ? 1 : 0); 
+    stmt->BindInt(18, (int)newNodeHeader.m_nodeCount);
     DbResult status = stmt->Step();
     stmt->ClearBindings();
     delete[]neighbors;
@@ -319,7 +328,7 @@ bool SMSQLiteFile::GetNodeHeader(SQLiteNodeHeader& nodeHeader)
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT ParentNodeId, Resolution, Filtered, Extent,"
                                   "ContentExtent, TotalCount, ArePoints3d, NbFaceIndexes, "
-                                  "NumberOfMeshComponents, AllComponent, GraphID, SubNode, Neighbor, IndiceId, TexID, IsTextured FROM SMNodeHeader WHERE NodeId=?");
+                                  "NumberOfMeshComponents, AllComponent, GraphID, SubNode, Neighbor, IndiceId, TexID, IsTextured, NodeCount FROM SMNodeHeader WHERE NodeId=?");
     stmt->BindInt64(1, nodeHeader.m_nodeID);
 
 
@@ -382,6 +391,8 @@ bool SMSQLiteFile::GetNodeHeader(SQLiteNodeHeader& nodeHeader)
         nodeHeader.m_uvsIndicesID.resize(1);
         nodeHeader.m_uvsIndicesID[0] = texIdx;
         }
+    nodeHeader.m_areTextured = stmt->GetValueInt(15) ? true : false;
+    nodeHeader.m_nodeCount = stmt->GetValueInt(16);
     stmt->ClearBindings();
     return true;
     }

@@ -7,7 +7,7 @@
 //:>+--------------------------------------------------------------------------------------
 #include "ScalableMeshPCH.h"
 #include <Imagepp/h/ImagePPAPI.h>
-
+#ifndef VANCOUVER_API
 #include "HPUPacket.h"
 
 namespace HPU {
@@ -533,4 +533,6 @@ bool Packet::IsBufferOwner () const
     {
     return m_pDataPacket->HasBufferOwnership();
     }
+
 } // End namespace HPU
+#endif

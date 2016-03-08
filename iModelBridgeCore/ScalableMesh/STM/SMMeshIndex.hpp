@@ -2363,13 +2363,14 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     memcpy(pixelBufferP + sizeof(int), &textureHeightInPixels, sizeof(int));
     int nOfChannels = 3;
     memcpy(pixelBufferP + 2 * sizeof(int), &nOfChannels, sizeof(int));
-
-    pTextureBitmap = HRABitmap::Create(textureWidthInPixels,
+    pTextureBitmap = new HRABitmap(textureWidthInPixels,
                                    textureHeightInPixels,
                                    pTransfoModel.GetPtr(),
                                    sourceRasterP->GetCoordSys(),
                                    pPixelType,
-                                   8);
+                                   8,
+                                   HRABitmap::UPPER_LEFT_HORIZONTAL,
+                                   pCodec);
     HGF2DExtent minExt, maxExt;
     sourceRasterP->GetPixelSizeRange(minExt, maxExt);
     minExt.ChangeCoordSys(pTextureBitmap->GetCoordSys());
@@ -2392,10 +2393,11 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
 
     HRACopyFromOptions copyFromOptions;
 
-
+    //Rasterlib set this option on the last tile of a row or a column to avoid black lines.     
+    copyFromOptions.SetGridShapeMode(true);
     copyFromOptions.SetAlphaBlend(true);
 
-    pTextureBitmap->CopyFrom(*sourceRasterP, copyFromOptions);
+    pTextureBitmap->CopyFrom(sourceRasterP, copyFromOptions);
 #ifdef ACTIVATE_TEXTURE_DUMP
     WString fileName = L"file://";
     fileName.append(L"e:\\output\\scmesh\\2015-11-19\\texture_before_");

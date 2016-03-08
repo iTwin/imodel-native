@@ -707,14 +707,14 @@ DifferenceSet Clipper::TriangulateAroundHole(const DPoint3d* triangle, const vec
         status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::DrapeVoid, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &points[0], (long)points.size());
         }
     status = bcdtmObject_triangulateDtmObject(dtmObjP);
-    DPoint3d* ptsP;
-    long numPts, numMeshFaces;
-    long* meshFacesP;
+
     bmap<size_t, int32_t> indexMap;
-    status = bcdtmLoad_tinMeshFromDtmObject(dtmObjP, true, 20000, false, DTMFenceType::None, DTMFenceOption::None, NULL, 0, (DPoint3d**)&ptsP, &numPts, &meshFacesP, &numMeshFaces);
-    for (size_t face = 0; face < numMeshFaces; ++face)
+        bvector<long> meshFaces;
+        bvector<DPoint3d> meshPts;
+        status = bcdtmLoad_tinMeshFromDtmObject(dtmObjP, true, 20000,false, DTMFenceType::None, DTMFenceOption::None, NULL, 0, meshPts, meshFaces);
+    for (size_t face = 0; face < meshFaces.size(); ++face)
         {
-        DPoint3d p = ptsP[meshFacesP[face] - 1];
+        DPoint3d p = meshPts[meshFaces[face] - 1];
         bool isInTriangle = false;
         for (size_t i = 0; i < 3; ++i)
             {
@@ -725,11 +725,11 @@ DifferenceSet Clipper::TriangulateAroundHole(const DPoint3d* triangle, const vec
                 break;
                 }
             }
-        if (!isInTriangle && indexMap.count(meshFacesP[face]) == 0)
+        if (!isInTriangle && indexMap.count(meshFaces[face]) == 0)
             {
             d.addedVertices.push_back(p);
-            indexMap[meshFacesP[face]] = (int)d.addedVertices.size() - 1 + d.firstIndex;
-            d.addedFaces.push_back(indexMap[meshFacesP[face]]);
+            indexMap[meshFaces[face]] = (int)d.addedVertices.size() - 1 + d.firstIndex;
+            d.addedFaces.push_back(indexMap[meshFaces[face]]);
             }
         }
     d.removedFaces.push_back(1);
@@ -815,13 +815,12 @@ DifferenceSet Clipper::Triangulate(const vector<DPoint3d>& pts, const vector<vec
         status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::Breakline, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &points[0], (long)points.size());
         status = bcdtmObject_triangulateDtmObject(dtmObjP);
         if (status != SUCCESS) continue;
-        DPoint3d* ptsP = NULL;
-        long numPts, numMeshFaces;
-        long* meshFacesP = NULL;
-        status = bcdtmLoad_tinMeshFromDtmObject(dtmObjP, true, 20000,false, DTMFenceType::None, DTMFenceOption::None, NULL, 0, (DPoint3d**)&ptsP, &numPts, &meshFacesP, &numMeshFaces);
-        for (size_t face = 0; face < numMeshFaces*3; ++face)
+        bvector<DPoint3d> meshPts;
+        bvector<long> meshFaces;
+        status = bcdtmLoad_tinMeshFromDtmObject(dtmObjP, true, 20000,false, DTMFenceType::None, DTMFenceOption::None, NULL, 0, meshPts, meshFaces);
+        for (size_t face = 0; face < meshFaces.size()*3; ++face)
             {
-            DPoint3d p = ptsP[meshFacesP[face] - 1];
+            DPoint3d p = meshPts[meshFaces[face] - 1];
             bool found = false;
             for (size_t i = 0; i < toAdd.size(); ++i)
                 {
@@ -1310,7 +1309,7 @@ void Clipper::MakeDTMFromIndexList(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&
     if (dtmCreateStatus == 0)
         {
         BcDTMPtr bcDtmObjPtr;
-        bcDtmObjPtr = BcDTM::CreateFromDtmHandle(bcDtmP);
+        bcDtmObjPtr = BcDTM::CreateFromDtmHandle(*bcDtmP);
         dtmPtr = bcDtmObjPtr.get();
         }
     else return;
