@@ -260,7 +260,7 @@ void ConnectSignInManager::SetTokenExpiredHandler(std::function<void()> handler)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSignInManager::SetUserChangeHandler(std::function<void()> handler)
     {
-    BeCriticalSectionHolder lock(m_cs);
+    BeMutexHolder lock(m_cs);
     m_userChangeHandler = handler;
     CheckUserChange();
     }
