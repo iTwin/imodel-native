@@ -50,6 +50,7 @@ StatusInt BackwardsCompatibilityTests::CreateArbitraryElement(DgnElementPtr& out
 
     geomElement->SetCategoryId(categoryId);
 
+#ifdef WIP_MERGE_0600 // Must create elements differently in BIS.
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*geomElement);
     ICurvePrimitivePtr line = ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1, 0, 0)));
     builder->Append(*line);
@@ -58,6 +59,9 @@ StatusInt BackwardsCompatibilityTests::CreateArbitraryElement(DgnElementPtr& out
 
     out = element;
     return SUCCESS;
+#else
+    return ERROR;
+#endif
     }
 
 //---------------------------------------------------------------------------------------
