@@ -182,7 +182,7 @@ void UnitRegistry::AddDefaultSystems ()
 //---------------------------------------------------------------------------------------//
 // @bsimethod                                              Colin.Kerr           02/16
 //+---------------+---------------+---------------+---------------+---------------+------//
-UnitP UnitRegistry::AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant)
+UnitP UnitRegistry::AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset)
     {
     if (Utf8String::IsNullOrEmpty(unitName))
         {
@@ -205,7 +205,7 @@ UnitP UnitRegistry::AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP
         return nullptr;
         }
 
-    auto unit = Unit::Create(systemName, *phenomenon, unitName, m_nextId, definition, dimensionSymbol, factor, offset, isConstant);
+    auto unit = Unit::Create(systemName, *phenomenon, unitName, m_nextId, definition, dimensionSymbol, factor, offset);
     if (nullptr == unit)
         return nullptr;
 
@@ -236,7 +236,7 @@ UnitCP UnitRegistry::AddDimensionBaseUnit(Utf8CP unitName, Utf8Char dimensionSym
         return nullptr;
         }
     
-    return AddUnitInternal(phenomenonName, SI, unitName, unitName, dimensionSymbol, 1, 0, false);
+    return AddUnitInternal(phenomenonName, SI, unitName, unitName, dimensionSymbol, 1, 0);
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -249,7 +249,7 @@ UnitP UnitRegistry::AddUnitP (Utf8CP phenomName, Utf8CP systemName, Utf8CP unitN
         LOG.errorv("Could not create unit because unit name is null");
         return nullptr;
         }
-    return AddUnitInternal(phenomName, systemName, unitName, definition, ' ', factor, offset, false);
+    return AddUnitInternal(phenomName, systemName, unitName, definition, ' ', factor, offset);
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -290,7 +290,7 @@ UnitCP UnitRegistry::AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP 
         return nullptr;
         }
 
-    return AddUnitInternal(phenomName, CONSTANT, constantName, definition, ' ', factor, 0, true);
+    return AddUnitInternal(phenomName, CONSTANT, constantName, definition, ' ', factor, 0);
     }
 
 //---------------------------------------------------------------------------------------//

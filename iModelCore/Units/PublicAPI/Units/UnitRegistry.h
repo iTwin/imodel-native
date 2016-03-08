@@ -44,7 +44,7 @@ private:
     void AddBasePhenomena(Utf8Char dimensionalSymbol);
     UnitCP AddDimensionBaseUnit(Utf8CP unitName, Utf8Char dimensionSymbol);
 
-    UnitP AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant);
+    UnitP AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset);
 
     PhenomenonP LookupPhenomenonP(Utf8CP name) const;
     UnitP LookupUnitP(Utf8CP name) const;
@@ -54,7 +54,7 @@ private:
 
 public:
     UNITS_EXPORT static UnitRegistry & Instance();
-    UNITS_EXPORT static void Clear();
+    UNITS_EXPORT static void Clear(); // TODO: Remove or hide so cannot be called from public API, only needed for performance testing
 
     UNITS_EXPORT void AllUnits(bvector<UnitCP>& allUnits) const;
     UNITS_EXPORT void AllUnitNames(bvector<Utf8String>& allUnitNames, bool includeSynonyms) const;

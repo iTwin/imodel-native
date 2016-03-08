@@ -24,36 +24,6 @@ Symbol::~Symbol()
         delete m_symbolExpression;
     }
 
-Utf8CP Symbol::GetName() const
-    {
-    return m_name.c_str(); 
-    }
-
-int Symbol::GetId()   const
-    {
-    return m_id; 
-    }
-
-Utf8CP Symbol::GetDefinition() const
-    {
-    return m_definition.c_str(); 
-    }
-
-double Symbol::GetFactor() const
-    {
-    return m_factor; 
-    }
-
-bool Symbol::IsBaseSymbol() const
-    {
-    return ' ' != m_dimensionSymbol; 
-    }
-
-bool Symbol::IsDimensionless() const
-    {
-    return m_dimensionless; 
-    }    
-
 Expression& Symbol::Evaluate(int depth, std::function<SymbolCP(Utf8CP)> getSymbolByName) const
     {
     if (!m_evaluated)
@@ -74,9 +44,9 @@ bool Symbol::IsCompatibleWith(SymbolCR rhs) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Unit::Unit(Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, int id, Utf8CP definition, Utf8Char dimensonSymbol, double factor, double offset, bool isConstant) :
+Unit::Unit(Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, int id, Utf8CP definition, Utf8Char dimensonSymbol, double factor, double offset) :
     Symbol(name, definition, dimensonSymbol, id, factor, offset),
-    m_system(system), m_isConstant(isConstant)
+    m_system(system)
     {
     m_phenomenon = &phenomenon;
     }
@@ -84,10 +54,10 @@ Unit::Unit(Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, int id, Utf8CP d
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitP Unit::Create(Utf8CP sysName, PhenomenonCR phenomenon, Utf8CP unitName, int id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant)
+UnitP Unit::Create(Utf8CP sysName, PhenomenonCR phenomenon, Utf8CP unitName, int id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset)
     {
     LOG.debugv("Creating unit %s  Factor: %.17g  Offset: %d", unitName, factor, offset);
-    return new Unit(sysName, phenomenon, unitName, id, definition, dimensionSymbol, factor, offset, isConstant);
+    return new Unit(sysName, phenomenon, unitName, id, definition, dimensionSymbol, factor, offset);
     }
 
 int Unit::GetPhenomenonId() const { return GetPhenomenon()->GetId(); }

@@ -12,6 +12,7 @@
 
 UNITS_TYPEDEFS(Symbol)
 UNITS_TYPEDEFS(Unit)
+UNITS_TYPEDEFS(InverseUnit)
 UNITS_TYPEDEFS(Phenomenon)
 
 BEGIN_BENTLEY_UNITS_NAMESPACE
@@ -45,30 +46,44 @@ protected:
     virtual ~Symbol();
       
 public:
-    UNITS_EXPORT Utf8CP GetName() const;
+    Utf8CP  GetName() const { return m_name.c_str(); }
     // TODO: Consider making private because it will changed depending on load order.
-    UNITS_EXPORT int    GetId()   const;
-    UNITS_EXPORT Utf8CP GetDefinition() const;
-    UNITS_EXPORT double GetFactor() const;
+    int     GetId()   const { return m_id; }
+    Utf8CP  GetDefinition() const { return m_definition.c_str(); }
+    double  GetFactor() const { return m_factor; }
     bool    HasOffset() const { return 0.0 != m_offset; }
-    double GetOffset() const { return m_offset; }
-    UNITS_EXPORT bool IsBaseSymbol() const;
-    UNITS_EXPORT bool IsDimensionless() const;
+    double  GetOffset() const { return m_offset; }
+    bool    IsBaseSymbol() const { return ' ' != m_dimensionSymbol; }
+    bool    IsDimensionless() const { return m_dimensionless; }
 
     virtual int GetPhenomenonId() const = 0;
 
     bool IsCompatibleWith(SymbolCR rhs) const;
-
-    // Binary comparison operators.
-    bool operator== (SymbolCR rhs) const { return m_id == rhs.m_id; }
-    bool operator!= (SymbolCR rhs) const { return m_id != rhs.m_id; }
     };
+
+//struct InverseUnit : Unit
+//    {
+//DEFINE_T_SUPER(Unit)
+//private:
+//    UnitCP m_parentUnit;
+//    Utf8String m_parentUnitName;
+//    
+//    static UnitP Create(Utf8CP parentUnitName, Utf8CP unitName, int id);
+//    InverseUnit(Utf8CP parentUnitName, Utf8CP name, int id);
+//
+//    // Lifecycle is managed by the UnitRegistry so we don't allow copies or assignments.
+//    InverseUnit() = delete;
+//    InverseUnit(InverseUnitCR unit) = delete;
+//    InverseUnitR operator=(InverseUnitCR unit) = delete;
+//
+//
+//    };
 
 //=======================================================================================
 //! A base class for all units.
 // @bsiclass                                                    Chris.Tartamella   02/16
 //=======================================================================================
-struct Unit final: Symbol
+struct Unit : Symbol
     {
 DEFINE_T_SUPER(Symbol)
 friend struct UnitRegistry;
@@ -78,11 +93,10 @@ private:
     Utf8String      m_system;
     // TODO: Should this be a reference because it must be set?
     PhenomenonCP    m_phenomenon;
-    bool            m_isConstant;
 
-    static UnitP Create(Utf8CP sysName, PhenomenonCR phenomenon, Utf8CP unitName, int id, Utf8CP definition, Utf8Char baseDimensionSymbol, double factor, double offset, bool isConstant);
+    static UnitP Create(Utf8CP sysName, PhenomenonCR phenomenon, Utf8CP unitName, int id, Utf8CP definition, Utf8Char baseDimensionSymbol, double factor, double offset);
 
-    Unit (Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, int id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant);
+    Unit (Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, int id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset);
 
     // Lifecycle is managed by the UnitRegistry so we don't allow copies or assignments.
     Unit() = delete;
@@ -98,12 +112,7 @@ public:
     UNITS_EXPORT Utf8String GetUnitDimension() const;
     UNITS_EXPORT double Convert(double value, UnitCP toUnit) const;
 
-    // TODO: Should GetId be private?  Should probably only be used internally because id is not gaurantteed to be consistent between runs (though it is because units are added in our code)
-
     bool IsRegistered()    const;
-
-    // TODO: Consider removal ... not used now but might be used if we refactor how prefix constants are combined with their units.
-    bool IsConstant() const { return m_isConstant; }
 
     PhenomenonCP GetPhenomenon()   const { return m_phenomenon; }
 
