@@ -285,7 +285,7 @@ private:
     TxnTable* FindTxnTable(Utf8CP tableName) const;
     BeSQLite::DbResult ApplyChangeSet(BeSQLite::ChangeSet& changeset, TxnAction isUndo);
     bool IsMultiTxnMember(TxnId rowid);
-    RevisionStatus MergeRevisionChanges(BeSQLite::ChangeStream& changeStream, Utf8StringCR newParentRevisionId);
+    RevisionStatus MergeRevision(DgnRevisionCR revision);
     void CancelDynamics();
     void OnBeginApplyChanges();
     void OnEndApplyChanges();

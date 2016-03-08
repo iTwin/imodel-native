@@ -53,6 +53,7 @@ enum class DgnDbStatus : int
     InvalidName,
     InvalidParent,
     InvalidSchemaVersion,
+    MismatchGcs, //!< The Geographic Coordinate Systems of the source and target are not based on equivalent projections
     Mismatch2d3d,
     MissingDomain,
     MissingHandler,
@@ -152,7 +153,8 @@ enum class RevisionStatus : int
     NoTransactions, //!< No transactions are available to create a revision
     SQLiteError, //!< Error performing a SQLite operation on the Db
     TransactionHasUnsavedChanges, //!< Cannot perform the operation since current transaction has unsaved changes
-    WrongDgnDb, //!< Revision originated in a different Db
+    WrongDgnDb, //!< Revision originated in a different Db 
+    ParentMismatch, //!< Parent revision of the Db does not match the parent id of the revision
     };
 
 /** @cond BENTLEY_SDK_Publisher */

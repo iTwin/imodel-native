@@ -518,9 +518,11 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
  * Merge changes from a changeStream that originated in an external repository
  * @bsimethod                                Ramanujam.Raman                    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RevisionStatus TxnManager::MergeRevisionChanges(ChangeStream& changeStream, Utf8StringCR newParentRevisionId)
+RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
     {
     BeAssert(!InDynamicTxn());
+    
+    ChangeStreamFileReader changeStream(revision.GetChangeStreamFile(), m_dgndb);
 
     m_dgndb.Txns().EnableTracking(false);
     DbResult result = changeStream.ApplyChanges(m_dgndb);
@@ -531,12 +533,13 @@ RevisionStatus TxnManager::MergeRevisionChanges(ChangeStream& changeStream, Utf8
         }
     m_dgndb.Txns().EnableTracking(true);
 
+    RevisionStatus status = RevisionStatus::Success;
+
     OnBeginValidate();
 
     Changes changes(changeStream);
     AddChanges(changes);
 
-    RevisionStatus status = RevisionStatus::Success;
     if (SUCCESS != PropagateChanges())
         status = RevisionStatus::MergePropagationError;
 
@@ -550,7 +553,13 @@ RevisionStatus TxnManager::MergeRevisionChanges(ChangeStream& changeStream, Utf8
             {
             T_HOST.GetTxnAdmin()._OnCommit(*this); // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
 
-            Utf8String mergeComment = DgnCoreL10N::GetString(DgnCoreL10N::REVISION_Merge());
+            Utf8String mergeComment = DgnCoreL10N::GetString(DgnCoreL10N::REVISION_Merged()); 
+            if (!revision.GetSummary().empty())
+                {
+                mergeComment.append(": ");
+                mergeComment.append(revision.GetSummary());
+                }
+
             DbResult result = SaveCurrentChange(indirectChanges, mergeComment.c_str());
             if (BE_SQLITE_DONE != result)
                 {
@@ -560,14 +569,14 @@ RevisionStatus TxnManager::MergeRevisionChanges(ChangeStream& changeStream, Utf8
             }
         }
 
+    OnEndValidate();
+
     if (status == RevisionStatus::Success)
         {
-        status = m_dgndb.Revisions().SetParentRevisionId(newParentRevisionId);
+        status = m_dgndb.Revisions().SetParentRevisionId(revision.GetId());
 
         if (status == RevisionStatus::Success)
             {
-            OnEndValidate();
-
             DbResult result = m_dgndb.SaveChanges(""); 
             // Note: All that the above operation does is to COMMIT the current Txn and BEGIN a new one. 
             // The user should NOT be able to revert the revision id by a call to AbandonChanges() anymore, since
@@ -586,12 +595,10 @@ RevisionStatus TxnManager::MergeRevisionChanges(ChangeStream& changeStream, Utf8
         // appropriately revert their in-memory state.
         LOG.errorv("Could not propagate changes after merge due to validation errors.");
 
-        OnEndValidate();
-
         // Note: CancelChanges() requires an iterator over the inverse of the changes notified through AddChanges(). 
         // The change stream can be inverted only by holding the inverse either in memory, or as a new file on disk. 
-        // Since this is an unlikely error condition, we just hold the changes in memory and not worry about the 
-        // memory overhead. We can always revisit if this proves to be too expensive. 
+        // Since this is an unlikely error condition, and it's just a single revision, we just hold the changes in memory 
+        // and not worry about the memory overhead. 
         ChangeGroup undoChangeGroup;
         changeStream.ToChangeGroup(undoChangeGroup);
         if (indirectChanges.IsValid())
@@ -606,11 +613,9 @@ RevisionStatus TxnManager::MergeRevisionChanges(ChangeStream& changeStream, Utf8
         ChangeTracker::OnCommitStatus cancelStatus = CancelChanges(undoChangeSet); // roll back entire txn
         BeAssert(cancelStatus == ChangeTracker::OnCommitStatus::Completed);
         UNUSED_VARIABLE(cancelStatus);
-
-        return status;
         }
 
-    return RevisionStatus::Success;
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
