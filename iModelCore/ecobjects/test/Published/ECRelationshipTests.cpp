@@ -450,6 +450,7 @@ TEST_F (ECRelationshipTests, DumpToString)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECRelationshipTests, TestsRelationshipStrengthAndDirectionConstraints)
     {
+#ifdef ECRELATIONSHIP_CONSTRAINT_VALIDATION
     ECSchemaPtr schemaPtr;
     ECSchema::CreateSchema(schemaPtr, "TestSchema", 1, 0);
 
@@ -484,6 +485,7 @@ TEST_F (ECRelationshipTests, TestsRelationshipStrengthAndDirectionConstraints)
     EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass1->AddBaseClass(*relationClass3)) << "StrengthDirection was supposed to have different values (Forward/Backward) so baseclass was rejected";
     // #3 Strength and Direction are same
     EXPECT_EQ(ECObjectsStatus::Success, relationClass1->AddBaseClass(*relationClass4)) << "Failing with equal StrengthDirection and Strength, so baseclass should have been accepted.";
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -491,6 +493,7 @@ TEST_F (ECRelationshipTests, TestsRelationshipStrengthAndDirectionConstraints)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECRelationshipTests, TestsRelationshipConstraints)
     {
+#ifdef ECRELATIONSHIP_CONSTRAINT_VALIDATION
     ECSchemaPtr schemaPtr;
     ECSchema::CreateSchema(schemaPtr, "TestSchema", 1, 0);
 
@@ -528,5 +531,6 @@ TEST_F (ECRelationshipTests, TestsRelationshipConstraints)
     EXPECT_EQ(ECObjectsStatus::Success, relationClass->GetSource().AddClass(*classC));
     // #3 ClassA is the base class of ClassB but violates the base constraints (expects ClassB or bigger)
     EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetSource().AddClass(*classA));
+#endif
     }
 END_BENTLEY_ECN_TEST_NAMESPACE

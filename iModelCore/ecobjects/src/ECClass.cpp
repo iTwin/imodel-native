@@ -2234,7 +2234,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateClassConstraint
 ECEntityClassCR constraintClass
 ) const
     {
-#ifdef THIS_BREAKS_264_TESTS
+#ifdef ECRELATIONSHIP_CONSTRAINT_VALIDATION
     ECRelationshipClassCP relationshipClass = m_relClass;
     if (!m_relClass->HasBaseClasses())
         return ECObjectsStatus::Success;
@@ -2951,7 +2951,7 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, EC
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts)
     {
-#ifdef THIS_BREAKS_264_TESTS
+#ifdef ECRELATIONSHIP_CONSTRAINT_VALIDATION
     if (baseClass.IsRelationshipClass())
         {
         // Get the relationship base class and compare it's strength and direction
@@ -2979,6 +2979,7 @@ ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool ins
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECRelationshipClass::ValidateStrengthConstraint(StrengthType value, bool compareValue) const
     {
+#ifdef ECRELATIONSHIP_CONSTRAINT_VALIDATION
     if (HasBaseClasses())
         {
         for (auto baseClass : GetBaseClasses())
@@ -2988,7 +2989,10 @@ bool ECRelationshipClass::ValidateStrengthConstraint(StrengthType value, bool co
                 return false;
             }
         }
+
     return (!compareValue || GetStrength() == value);
+#endif
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2996,6 +3000,7 @@ bool ECRelationshipClass::ValidateStrengthConstraint(StrengthType value, bool co
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECRelationshipClass::ValidateStrengthDirectionConstraint(ECRelatedInstanceDirection value, bool compareValue) const
     {
+#ifdef ECRELATIONSHIP_CONSTRAINT_VALIDATION
     if (HasBaseClasses())
         {
         for (auto baseClass : GetBaseClasses())
@@ -3007,6 +3012,8 @@ bool ECRelationshipClass::ValidateStrengthDirectionConstraint(ECRelatedInstanceD
         }
 
     return (!compareValue || GetStrengthDirection() == value);
+#endif
+    return true;
     }
    
 /*---------------------------------------------------------------------------------**//**
