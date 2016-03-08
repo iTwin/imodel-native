@@ -513,10 +513,12 @@ AsyncTaskPtr<DgnDbFileNameResult> DgnDbClient::AquireBriefcase(Utf8StringCR repo
                                 RevisionStatus mergeStatus = RevisionStatus::Success;
                                 if (!revisions.empty ())
                                     {
-                                    bvector<DgnRevisionPtr> mergeRevisions;
                                     for (auto revision : revisions)
-                                        mergeRevisions.push_back (revision->GetRevision ());
-                                    mergeStatus = db->Revisions ().MergeRevisions (mergeRevisions);
+                                        {
+                                        mergeStatus = db->Revisions().MergeRevision(*(revision->GetRevision()));
+                                        if (mergeStatus != RevisionStatus::Success)
+                                            break; // TODO: Use the information on the revision that actually failed. 
+                                        }
                                     }
                                     
                                 db->CloseDb ();
