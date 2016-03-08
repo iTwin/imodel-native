@@ -13,7 +13,6 @@
 
 ECDB_TYPEDEFS(TableMap);
 ECDB_TYPEDEFS(SqlChange);
-ECDB_TYPEDEFS(ClassMap);
 ECDB_TYPEDEFS(ECDbSqlColumn);
 ECDB_TYPEDEFS(PointPropertyMap);
 
