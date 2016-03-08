@@ -2044,8 +2044,10 @@ uint64_t DgnElement::RestrictedAction::Parse(Utf8CP name)
         };
 
     for (auto const& pair : s_pairs)
+        {
         if (0 == BeStringUtilities::Stricmp(name, pair.name))
             return pair.action;
+        }
 
     return T_Super::Parse(name);
     }
@@ -2053,9 +2055,9 @@ uint64_t DgnElement::RestrictedAction::Parse(Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_OnChildInsert(DgnElementCR) const { return GetElementHandler()._IsRestrictedAction(RestrictedAction::InsertChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success; }
-DgnDbStatus DgnElement::_OnChildUpdate(DgnElementCR, DgnElementCR) const { return GetElementHandler()._IsRestrictedAction(RestrictedAction::UpdateChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success; }
-DgnDbStatus DgnElement::_OnChildDelete(DgnElementCR) const { return GetElementHandler()._IsRestrictedAction(RestrictedAction::DeleteChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success; }
+DgnDbStatus DgnElement::_OnChildInsert(DgnElementCR) const {return GetElementHandler()._IsRestrictedAction(RestrictedAction::InsertChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success;}
+DgnDbStatus DgnElement::_OnChildUpdate(DgnElementCR, DgnElementCR) const {return GetElementHandler()._IsRestrictedAction(RestrictedAction::UpdateChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success;}
+DgnDbStatus DgnElement::_OnChildDelete(DgnElementCR) const {return GetElementHandler()._IsRestrictedAction(RestrictedAction::DeleteChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
@@ -2442,6 +2444,61 @@ DgnDbStatus GeometricElement::_OnUpdate(DgnElementCR el)
     {
     auto stat = Validate();
     return DgnDbStatus::Success == stat ? T_Super::_OnUpdate(el) : stat;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::_OnInserted(DgnElementP copiedFrom) const 
+    {
+    T_Super::_OnInserted(copiedFrom);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void  GeometricElement::_OnDeleted() const 
+    {
+    T_Super::_OnDeleted();
+    if (m_graphics.IsEmpty())
+        return;
+        
+    T_HOST.GetTxnAdmin()._OnGraphicsRemoved(m_graphics);
+    m_graphics.Clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::_OnReversedAdd() const 
+    {
+    T_Super::_OnReversedAdd();
+    if (m_graphics.IsEmpty())
+        return;
+        
+    T_HOST.GetTxnAdmin()._OnGraphicsRemoved(m_graphics);
+    m_graphics.Clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::_OnReversedDelete() const 
+    {
+    T_Super::_OnReversedDelete();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::_OnUpdateFinished() const 
+    {
+    T_Super::_OnUpdateFinished(); 
+    if (m_graphics.IsEmpty())
+        return;
+        
+    T_HOST.GetTxnAdmin()._OnGraphicsRemoved(m_graphics);
+    m_graphics.Clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
