@@ -62,6 +62,7 @@ public:
     
     // Register methods.
     UNITS_EXPORT UnitCP AddUnit(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor = 1, double offset = 0);
+    UNITS_EXPORT UnitCP AddInvertingUnit(Utf8CP parentUnitName, Utf8CP unitName);
     UNITS_EXPORT UnitCP AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP definition, double factor);
     UNITS_EXPORT BentleyStatus AddSynonym(UnitCP unit, Utf8CP synonymName);
     UNITS_EXPORT BentleyStatus AddSynonym(Utf8CP unitName, Utf8CP synonymName);

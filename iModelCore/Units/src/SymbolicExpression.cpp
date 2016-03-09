@@ -159,6 +159,7 @@ void Expression::MergeSymbol(Utf8CP targetDefinition, ExpressionR targetExpressi
         }
     else
         {
+        // TODO: We should ensure we are not adding an inverting unit in an expression because this will fail to generate a conversion
         LOG.debugv("%s --> %s - Adding Unit for %s with Exponent: %d", sourceDefinition, targetDefinition, symbol->GetName(), symbolExponent);
         targetExpression.Add(symbol, symbolExponent);
         }

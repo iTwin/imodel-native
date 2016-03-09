@@ -38,10 +38,12 @@ private:
     mutable bool        m_evaluated;
     Expression * m_symbolExpression;
 
+
 protected:
     Symbol(Utf8CP name, Utf8CP definition, Utf8Char dimensionSymbol, int id, double factor, double offset);
     
     ExpressionCR Evaluate(int depth, std::function<SymbolCP(Utf8CP)> getSymbolByName) const;
+    Utf8Char GetDimensionSymbol() const { return m_dimensionSymbol; }
 protected:
     virtual ~Symbol();
       
@@ -59,43 +61,29 @@ public:
     virtual int GetPhenomenonId() const = 0;
     };
 
-//struct InverseUnit : Unit
-//    {
-//DEFINE_T_SUPER(Unit)
-//private:
-//    UnitCP m_parentUnit;
-//    Utf8String m_parentUnitName;
-//    
-//    static UnitP Create(Utf8CP parentUnitName, Utf8CP unitName, int id);
-//    InverseUnit(UnitCR parentUnit, Utf8CP name, int id);
-//
-//    // Lifecycle is managed by the UnitRegistry so we don't allow copies or assignments.
-//    InverseUnit() = delete;
-//    InverseUnit(InverseUnitCR unit) = delete;
-//    InverseUnitR operator=(InverseUnitCR unit) = delete;
-//
-//    UnitCP GetParentUnit() const { return m_parentUnit; }
-//
-//    };
 
 //=======================================================================================
 //! A base class for all units.
 // @bsiclass                                                    Chris.Tartamella   02/16
 //=======================================================================================
-struct Unit : Symbol
+struct Unit final : Symbol
     {
 DEFINE_T_SUPER(Symbol)
 friend struct UnitRegistry;
 friend struct Expression;
+friend struct InverseUnit;
 
 private:
     Utf8String      m_system;
     // TODO: Should this be a reference because it must be set?
     PhenomenonCP    m_phenomenon;
+    UnitCP          m_parent;
 
     static UnitP Create(Utf8CP sysName, PhenomenonCR phenomenon, Utf8CP unitName, int id, Utf8CP definition, Utf8Char baseDimensionSymbol, double factor, double offset);
+    static UnitP Create(UnitCR parentUnit, Utf8CP unitName, int id);
 
     Unit (Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, int id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset);
+    Unit(UnitCR parentUnit, Utf8CP name, int id);
 
     // Lifecycle is managed by the UnitRegistry so we don't allow copies or assignments.
     Unit() = delete;
@@ -104,8 +92,12 @@ private:
 
     ExpressionCR Evaluate() const;
 
-    int GetPhenomenonId() const;
-    UnitCP CombineWithUnit(UnitCR rhs, int factor) const;
+    int     GetPhenomenonId() const;
+    UnitCP  CombineWithUnit(UnitCR rhs, int factor) const;
+    Utf8CP  GetUnitSystem() const { return m_system.c_str(); }
+    bool    IsInverseUnit() const { return nullptr != m_parent; }
+    
+    double  DoNumericConversion(double value, UnitCR toUnit) const;
 
 public:
     UNITS_EXPORT Utf8String GetUnitDimension() const;

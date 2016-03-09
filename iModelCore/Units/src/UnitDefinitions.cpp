@@ -850,10 +850,9 @@ void AddSlope(UnitRegistry& reg)
 
     reg.AddUnit(SLOPE, INTERNATIONAL, "PERCENT_SLOPE", "M/M", 1.0e-2);
 
-    // TODO: Not supported, we can't invert as part of conversion
-    //reg.AddUnit(SLOPE, INTERNATIONAL, "HORIZONTAL_PER_VERTICAL", "VERTICAL_PER_HORIZONTAL(-1)");
-    //reg.AddUnit(SLOPE, USCUSTOM, "FOOT_HORIZONTAL_PER_FOOT_VERTICAL", "FT/FT(-1)");
-    // , "METRE_HORIZONTAL_PER_METRE_VERTICAL");
+    reg.AddInvertingUnit("VERTICAL_PER_HORIZONTAL", "HORIZONTAL_PER_VERTICAL");
+    reg.AddInvertingUnit("FT/FT", "FOOT_HORIZONTAL_PER_FOOT_VERTICAL");
+    reg.AddInvertingUnit("M/M", "METRE_HORIZONTAL_PER_METRE_VERTICAL");
     }
 
 void AddSurfaceDensity(UnitRegistry& reg)

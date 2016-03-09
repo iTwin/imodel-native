@@ -186,7 +186,7 @@ UnitP UnitRegistry::AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP
     {
     if (Utf8String::IsNullOrEmpty(unitName))
         {
-        LOG.errorv("Cannot create base unit because the input name is null");
+        LOG.error("Cannot create base unit because the input name is null");
         return nullptr;
         }
 
@@ -258,6 +258,50 @@ UnitP UnitRegistry::AddUnitP (Utf8CP phenomName, Utf8CP systemName, Utf8CP unitN
 UnitCP UnitRegistry::AddUnit (Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor, double offset)
     {
     return AddUnitP(phenomName, systemName, unitName, definition, factor, offset);
+    }
+
+//---------------------------------------------------------------------------------------//
+// @bsimethod                                              Colin.Kerr           03/16
+//+---------------+---------------+---------------+---------------+---------------+------//
+UnitCP UnitRegistry::AddInvertingUnit(Utf8CP parentUnitName, Utf8CP unitName)
+    {
+    if (Utf8String::IsNullOrEmpty(unitName))
+        {
+        LOG.error("Cannot create unit because the input name is null");
+        return nullptr;
+        }
+
+    if (Utf8String::IsNullOrEmpty(parentUnitName))
+        {
+        LOG.errorv("Cannot create unit %s because it's parent name is null", unitName);
+        return nullptr;
+        }
+
+    UnitCP parentUnit = LookupUnit(parentUnitName);
+    if (nullptr == parentUnit)
+        {
+        LOG.errorv("Cannot create unit %s because it's parent unit %s cannot be found", unitName, parentUnitName);
+        return nullptr;
+        }
+    
+    if (NameConflicts(unitName))
+        {
+        LOG.errorv("Could not create unit '%s' because that name is already in use", unitName);
+        return nullptr;
+        }
+    
+    auto unit = Unit::Create(*parentUnit, unitName, m_nextId);
+    if (nullptr == unit)
+        return nullptr;
+
+    PhenomenonP phenomenon = LookupPhenomenonP(parentUnit->GetPhenomenon()->GetName());
+    phenomenon->AddUnit(*unit);
+
+    ++m_nextId;
+
+    m_units.insert(bpair<Utf8String, UnitP>(unitName, unit));
+
+    return unit;
     }
 
 //---------------------------------------------------------------------------------------//
