@@ -283,8 +283,6 @@ public:
     ~StructPropertyMap() {}
     static PropertyMapPtr Create(ClassMapLoadContext&, ECDbCR, ECN::StructECPropertyCR, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap);
     static PropertyMapPtr Clone(ECDbMapCR ecdbMap, StructPropertyMap const& proto, ECN::ECClassCR clonedBy, PropertyMap const* parentPropertyMap) { return new StructPropertyMap(ecdbMap, proto, clonedBy, parentPropertyMap); }
-
-    PropertyMapCP GetPropertyMap(Utf8CP propertyName) const;
     };
 
 //=======================================================================================

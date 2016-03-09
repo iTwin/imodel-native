@@ -20,40 +20,20 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        11/2014
 //---------------------------------------------------------------------------------------
-EditHandle::EditHandle() :m_canEdit(true), m_isModified(false) {}
+EditHandle::EditHandle() :m_canEdit(true) {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        11/2014
 //---------------------------------------------------------------------------------------
 bool EditHandle::BeginEdit()
     {
-    if (CanEdit() || IsModified())
+    if (CanEdit())
         {
         BeAssert(false && "Already in edit mode");
         return false;
         }
 
     m_canEdit = true;
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        11/2014
-//---------------------------------------------------------------------------------------
-bool EditHandle::IsModified() const { return m_isModified; }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        11/2014
-//---------------------------------------------------------------------------------------
-bool EditHandle::SetModified()
-    {
-    if (AssertNotInEditMode())
-        return false;
-
-    if (!m_isModified)
-        m_isModified = true;
-
     return true;
     }
 
@@ -91,30 +71,11 @@ bool EditHandle::AssertNotInEditMode()
 
     return false;
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        11/2014
-//---------------------------------------------------------------------------------------
-bool EditHandle::AssertInEditMode() const
-    {
-    if (CanEdit())
-        {
-        BeAssert(false && "Object must not be in edit mode");
-        return true;
-        }
-
-    return false;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        11/2014
-//---------------------------------------------------------------------------------------
-EditHandle::EditHandle(EditHandle const &&  eh)
-    : m_canEdit(eh.m_canEdit), m_isModified(eh.m_isModified)
-    {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        11/2014
 //---------------------------------------------------------------------------------------
-EditHandle::~EditHandle() { /*AssertInEditMode ();*/ }
+EditHandle::~EditHandle() {}
 
 
 //****************************************************************************************
@@ -569,15 +530,6 @@ BentleyStatus ECDbSqlTable::PersistenceManager::CreateTriggers(ECDbR ecdb, bool 
     return SUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
-//---------------------------------------------------------------------------------------
-bool ECDbSqlTable::PersistenceManager::Exist(ECDbR ecdb) const
-    {
-    return ecdb.TableExists(m_table.GetName().c_str());
-    }
-
-
 //****************************************************************************************
 //ECDbSqlDb
 //****************************************************************************************
@@ -595,22 +547,6 @@ void ECDbMapDb::Reset()
 bool ECDbMapDb::IsNameInUse(Utf8CP name) const
     {
     return m_tables.find(name) != m_tables.end();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
-//---------------------------------------------------------------------------------------
-BentleyStatus ECDbMapDb::DropTable(Utf8CP name)
-    {
-    auto itor = m_tables.find(name);
-    if (itor == m_tables.end())
-        {
-        BeAssert(false && "Fail to find table");
-        return BentleyStatus::ERROR;
-        }
-
-    m_tables.erase(itor);
-    return BentleyStatus::SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -803,19 +739,6 @@ const std::vector<ECDbSqlTable*> ECDbMapDb::GetTablesR()
         tables.push_back(key.second.get());
 
     return tables;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
-//---------------------------------------------------------------------------------------
-bool ECDbMapDb::IsModified() const
-    {
-    for (auto& key : m_tables)
-        {
-        if (key.second->GetEditHandle().IsModified())
-            return true;
-        }
-
-    return false;
     }
 
 //****************************************************************************************
@@ -1875,51 +1798,6 @@ bool ECDbSQLManager::IsTableChanged(ECDbSqlTable const& table) const
     }
 
 //****************************************************************************************
-//StringPool
-//****************************************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-Utf8CP StringPool::Set(Utf8CP str)
-    {
-    auto v = Get(str);
-    if (v == nullptr)
-        {
-        auto copy = (Utf8P) malloc(strlen(str) + 1);
-        if (copy == nullptr)
-            return nullptr;
-
-        strcpy(copy, str);
-        m_lookUp.insert(copy);
-        return copy;
-        }
-
-    return v;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-bool StringPool::Exists(Utf8CP accessString) const
-    {
-    return Get(accessString) != nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-Utf8CP StringPool::Get(Utf8CP str) const
-    {
-    auto itor = m_lookUp.find(str);
-    if (itor == m_lookUp.end())
-        return nullptr;
-
-    return *itor;
-    }
-
-
-
-//****************************************************************************************
 //ECDbSqlPersistence
 //****************************************************************************************
 
@@ -1930,29 +1808,6 @@ DbResult ECDbSqlPersistence::Read(ECDbMapDb& o) const
     {
     IIdGenerator::DisableGeneratorScope disableIdGenerator(o.GetManagerR().GetIdGenerator());
     return ReadTables(o);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        01/2015
-//---------------------------------------------------------------------------------------
-DbResult ECDbSqlPersistence::ReadForeignKeys(ECDbMapDb& o) const
-    {
-    for (ECDbSqlTable* table : o.GetTablesR())
-        {
-        const bool canEdit = table->GetEditHandle().CanEdit();
-        if (!canEdit)
-            table->GetEditHandleR().BeginEdit();
-
-        //read foreign key
-        const DbResult stat = ReadForeignKeys(*table);
-        if (stat != BE_SQLITE_OK)
-            return stat;
-
-        if (!canEdit)
-            table->GetEditHandleR().EndEdit();
-        }
-
-    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
