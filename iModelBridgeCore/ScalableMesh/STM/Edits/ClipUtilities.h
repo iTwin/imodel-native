@@ -92,4 +92,6 @@ class Clipper
 template<class POINT, class EXTENT> void ClipMeshToNodeRange(vector<int>& faceIndexes, vector<POINT>& nodePts, bvector<DPoint3d>& pts, EXTENT& contentExtent, DRange3d& nodeRange, ScalableMeshMesh* meshP);
 void print_polygonarray(std::string& s, const char* tag, DPoint3d* polyArray, int polySize);
 
+
+//void BuildSkirtMeshesForPolygonSet(bvector<bvector<PolyfaceHeaderPtr>>& skirts, bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, DRange3d& nodeRange);
 END_BENTLEY_SCALABLEMESH_NAMESPACE

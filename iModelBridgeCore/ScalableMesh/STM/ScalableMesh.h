@@ -247,7 +247,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual int                    _GenerateSubResolutions() override;
         virtual __int64                _GetBreaklineCount() const override;
         virtual ScalableMeshCompressionType   _GetCompressionType() const override;          
-        virtual int                    _GetNbResolutions() const override;        
+        virtual int                    _GetNbResolutions() const override;    
+        virtual size_t                    _GetTerrainDepth() const override;
         virtual IScalableMeshPointQueryPtr         _GetQueryInterface(ScalableMeshQueryType     queryType) const override;
         virtual IScalableMeshPointQueryPtr         _GetQueryInterface(ScalableMeshQueryType                queryType,                                                           
                                                                       BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS,
@@ -270,6 +271,11 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
         virtual bool                               _RemoveClip(uint64_t clipID) override;
+        virtual void                               _SetIsInsertingClips(bool toggleInsertMode) override;
+
+        virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
+        virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
+        virtual bool                               _RemoveSkirt(uint64_t skirtID) override;
         
 #ifdef SCALABLE_MESH_ATP
         virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes) const override; 
@@ -331,7 +337,8 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual int                    _GenerateSubResolutions() override;
         virtual __int64                _GetBreaklineCount() const override;
         virtual ScalableMeshCompressionType   _GetCompressionType() const override;           
-        virtual int                    _GetNbResolutions() const override;        
+        virtual int                    _GetNbResolutions() const override;    
+        virtual size_t                    _GetTerrainDepth() const override;
         virtual IScalableMeshPointQueryPtr         _GetQueryInterface(ScalableMeshQueryType     queryType) const override;
         virtual IScalableMeshPointQueryPtr         _GetQueryInterface(ScalableMeshQueryType                queryType, 
                                                                       BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS,
@@ -353,6 +360,11 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
         virtual bool                               _RemoveClip(uint64_t clipID) override;
+        virtual void                               _SetIsInsertingClips(bool toggleInsertMode) override;
+
+        virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
+        virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
+        virtual bool                               _RemoveSkirt(uint64_t skirtID) override;
         
         //Data source synchronization functions.
         virtual bool                   _InSynchWithSources() const override; 

@@ -16,6 +16,7 @@
 #include <ScalableMesh/IScalableMesh.h>
 #include "..\SMPointTileStore.h"
 #include "..\SMSQLiteClipDefinitionsTileStore.h"
+#include "..\SMSQLiteSkirtDefinitionsTileStore.h"
 //#include "..\PointTypeDPoint3d.h"
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -26,6 +27,7 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
     {
     //HFCPtr<SMPointTaggedTileStore<DPoint3d, YProtPtExtentType>> m_clipStore;
     HFCPtr<SMSQLiteClipDefinitionsTileStore<YProtPtExtentType>> m_clipStore;
+    HFCPtr<SMSQLiteSkirtDefinitionsTileStore<YProtPtExtentType>> m_skirtStore;
     //HFCPtr<HPMCountLimitedPool<DPoint3d>> m_pool;
     //vector<HPMStoredPooledVector<DPoint3d>> m_clips;
     SMPointIndexHeader<YProtPtExtentType> h;
@@ -57,8 +59,18 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
             clip.SetBlockID(&clip - &m_clips[0]);
             if (clip.Discarded()) clip.Inflate();
             }*/
-        if (filePtr != NULL && m_clipStore != NULL) LoadAllClips();
+        if (filePtr != NULL && m_clipStore != NULL)
+            {
+            m_skirtStore = new SMSQLiteSkirtDefinitionsTileStore<YProtPtExtentType>(filePtr);
+            LoadAllClips();
+            }
 
+        }
+
+    SMSQLiteFilePtr GetFile()
+        {
+        if (m_clipStore == NULL) OpenStore();
+        return m_clipStore->GetFile();
         }
 
     ~ClipRegistry()
@@ -83,7 +95,11 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
         SMSQLiteFilePtr filePtr = SMSQLiteFile::Open(m_path.c_str(), false, status);
         Utf8String utf8Path(m_path);
         if (status==0) filePtr->Create(utf8Path.c_str());
-        if (filePtr.get() != nullptr && filePtr->IsOpen()) m_clipStore = new SMSQLiteClipDefinitionsTileStore<YProtPtExtentType>(filePtr);//new SMPointTaggedTileStore<DPoint3d, YProtPtExtentType>(filePtr, false);
+        if (filePtr.get() != nullptr && filePtr->IsOpen())
+            {
+            m_clipStore = new SMSQLiteClipDefinitionsTileStore<YProtPtExtentType>(filePtr);
+            m_skirtStore = new SMSQLiteSkirtDefinitionsTileStore<YProtPtExtentType>(filePtr);
+            }//new SMPointTaggedTileStore<DPoint3d, YProtPtExtentType>(filePtr, false);
         }
 
     void LoadAllClips()
@@ -149,6 +165,63 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
         if (nOfPts == 0) return;
         else clip.resize(nOfPts);
         m_clipStore->LoadBlock(&clip[0], nOfPts, id);
+        }
+
+    uint64_t AddSkirts(const bvector<bvector<DPoint3d>>& skirts)
+        {
+        if (m_skirtStore == NULL) OpenStore();
+
+        bvector<DPoint3d> newSkirts;
+        for (auto& skirt : skirts)
+            {
+            newSkirts.insert(newSkirts.end(), skirt.begin(), skirt.end());
+            newSkirts.push_back(DPoint3d::From(DBL_MAX, DBL_MAX, DBL_MAX));
+            }
+        m_skirtStore->StoreBlock(newSkirts.data(), newSkirts.size(), m_maxID);
+        return m_maxID++;
+        }
+
+    void ModifySkirt(uint64_t id, const bvector<bvector<DPoint3d>>& skirts)
+        {
+        if (m_skirtStore == NULL) OpenStore();
+
+        bvector<DPoint3d> newSkirts;
+        for (auto& skirt : skirts)
+            {
+            newSkirts.insert(newSkirts.end(), skirt.begin(), skirt.end());
+            newSkirts.push_back(DPoint3d::From(DBL_MAX, DBL_MAX, DBL_MAX));
+            }
+        m_skirtStore->StoreBlock(newSkirts.data(), newSkirts.size(), id);
+        }
+
+
+    void DeleteSkirt(uint64_t id)
+        {
+        //m_clips[id].clear();
+        m_skirtStore->DestroyBlock(/*m_clips[id].GetBlockID()*/id);
+        //m_clips[id].SetDirty(false);
+        }
+
+    void GetSkirt(uint64_t id, bvector<bvector<DPoint3d>>& skirts)
+        {
+        /*if (id < 0 || id > m_clips.size()) return;
+        clip.resize(m_clips[id].size());
+        m_clips[id].get(&clip[0], clip.size());*/
+        bvector<DPoint3d> outSkirt;
+        size_t nOfPts = m_skirtStore->GetBlockDataCount(id);
+        if (nOfPts == 0) return;
+        else outSkirt.resize(nOfPts);
+        m_skirtStore->LoadBlock(&outSkirt[0], nOfPts, id);
+        bvector<DPoint3d> curSkirt;
+        for (auto&pt : outSkirt)
+            {
+            if (pt.x == DBL_MAX)
+                {
+                skirts.push_back(curSkirt);
+                curSkirt.clear();
+                }
+            else curSkirt.push_back(pt);
+            }
         }
 
     size_t GetNbClips()

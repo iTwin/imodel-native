@@ -1398,6 +1398,9 @@ bool ScalableMeshMesh::_FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DP
     return false;
     }
 
+size_t s_nGetDTMs=0;
+size_t s_nMissedDTMs=0;
+
 DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
     { 
     BC_DTM_OBJ* bcDtmP = 0;
@@ -1417,9 +1420,13 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
         triangle[3] = triangle[0];
 
         std::swap(triangle[1], triangle[2]);
+        //colinearity test
         if (triangle[0].AlmostEqualXY(triangle[1]) || triangle[1].AlmostEqualXY(triangle[2]) || triangle[2].AlmostEqualXY(triangle[0])) continue;
-        //DTM doesn't like colinear triangles
-        if (bsiGeom_isDPoint3dArrayColinear(triangle, 3, 1e-6)) continue;
+        DSegment3d triSeg = DSegment3d::From(triangle[0], triangle[1]);
+        double param;
+        DPoint3d closestPt;
+        triSeg.ProjectPointXY(closestPt, param, triangle[2]);
+        if (closestPt.AlmostEqualXY(triangle[2])) continue;
 
         bcdtmObject_storeDtmFeatureInDtmObject(bcdtm->GetTinHandle(), DTMFeatureType::GraphicBreak, bcdtm->GetTinHandle()->nullUserTag, 1, &bcdtm->GetTinHandle()->nullFeatureId, &triangle[0], 4);
         }
@@ -1895,9 +1902,9 @@ BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr IScalableMeshMeshQueryParams
     return _GetTargetGCS();
     }
 
-size_t IScalableMeshMeshQueryParams::GetDepth()
+size_t IScalableMeshMeshQueryParams::GetLevel()
     {
-    return _GetDepth();
+    return _GetLevel();
     }
 
 void IScalableMeshMeshQueryParams::SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
@@ -1906,9 +1913,9 @@ void IScalableMeshMeshQueryParams::SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates
     _SetGCS(sourceGCSPtr, targetGCSPtr);
     }
 
-void IScalableMeshMeshQueryParams::SetDepth(size_t depth)
+void IScalableMeshMeshQueryParams::SetLevel(size_t depth)
     {
-    _SetDepth(depth);
+    _SetLevel(depth);
     }
 
 IScalableMeshViewDependentMeshQueryParams::IScalableMeshViewDependentMeshQueryParams()
@@ -2048,6 +2055,53 @@ IScalableMeshNodePlaneQueryParamsPtr IScalableMeshNodePlaneQueryParams::CreatePa
     return IScalableMeshNodePlaneQueryParamsPtr(new ScalableMeshNodePlaneQueryParams());
     }
 
+
+bool IScalableMeshMeshFlags::ShouldLoadTexture() const
+    {
+    return _ShouldLoadTexture();
+    }
+
+bool IScalableMeshMeshFlags::ShouldLoadGraph() const
+    {
+    return _ShouldLoadGraph();
+    }
+
+void IScalableMeshMeshFlags::SetLoadTexture(bool loadTexture) 
+    {
+    _SetLoadTexture(loadTexture);
+    }
+
+void IScalableMeshMeshFlags::SetLoadGraph(bool loadGraph) 
+    {
+    _SetLoadGraph(loadGraph);
+    }
+
+IScalableMeshMeshFlagsPtr IScalableMeshMeshFlags::Create()
+    {
+    return new ScalableMeshMeshFlags();
+    }
+
+
+bool ScalableMeshMeshFlags::_ShouldLoadTexture() const
+    {
+    return m_loadTexture;
+    }
+
+bool ScalableMeshMeshFlags::_ShouldLoadGraph() const
+    {
+    return m_loadGraph;
+    }
+
+void ScalableMeshMeshFlags::_SetLoadTexture(bool loadTexture)
+    {
+    m_loadTexture = loadTexture;
+    }
+
+void ScalableMeshMeshFlags::_SetLoadGraph(bool loadGraph)
+    {
+    m_loadGraph = loadGraph;
+    }
+
 bool IScalableMeshNode::ArePoints3d() const
     {
     return _ArePoints3d();
@@ -2063,9 +2117,9 @@ bool IScalableMeshNode::ArePointsFullResolution() const
     return _ArePointsFullResolution();
     }
 
-IScalableMeshMeshPtr IScalableMeshNode::GetMesh(bool loadGraph, bvector<bool>& clipsToShow) const
+IScalableMeshMeshPtr IScalableMeshNode::GetMesh(IScalableMeshMeshFlagsPtr& flags, bvector<bool>& clipsToShow) const
     {
-    return _GetMesh(loadGraph, clipsToShow);
+    return _GetMesh(flags, clipsToShow);
     }  
 
 IScalableMeshMeshPtr IScalableMeshNode::GetMeshByParts(bvector<bool>& clipsToShow, ScalableMeshTextureID texId) const
@@ -2173,6 +2227,12 @@ bool IScalableMeshNode::HasClip(uint64_t clipId) const
     {
     return _HasClip(clipId);
     }
+
+void IScalableMeshNode::GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const
+    {
+    return _GetSkirtMeshes(meshes);
+    }
+
 
 int IScalableMeshNodeRayQuery::Query(IScalableMeshNodePtr&                               nodePtr,
                               const DPoint3d*                           pTestPt,

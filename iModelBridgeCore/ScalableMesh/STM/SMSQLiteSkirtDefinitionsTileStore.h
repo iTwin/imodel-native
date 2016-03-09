@@ -5,7 +5,7 @@
 #include "SMSQLiteFile.h"
 
 
-template <class EXTENT> class SMSQLiteClipDefinitionsTileStore : public SMPointTileStore<DPoint3d, EXTENT>
+template <class EXTENT> class SMSQLiteSkirtDefinitionsTileStore : public SMPointTileStore<DPoint3d, EXTENT>
     {
     private:
 
@@ -41,24 +41,13 @@ template <class EXTENT> class SMSQLiteClipDefinitionsTileStore : public SMPointT
             }
 
     public:
-        // Don't need this
-        /*SMSQLiteIndiceTileStore(BENTLEY_NAMESPACE_NAME::WString filename, const IDTMFile::AccessMode& accessMode)
-        {
-        m_smSQLiteFile = SMSQLiteFile::Create();
-        Utf8String filenameA;
-        BeStringUtilities::WCharToUtf8(filenameA, filename.c_str());
-        if (accessMode.m_HasCreateAccess)
-        m_smSQLiteFile->Create(filenameA.c_str());
-        else
-        m_smSQLiteFile->Open(filenameA.c_str());
-        }*/
 
-        SMSQLiteClipDefinitionsTileStore(SMSQLiteFilePtr file)
+        SMSQLiteSkirtDefinitionsTileStore(SMSQLiteFilePtr file)
             {
             m_smSQLiteFile = file;
             }
 
-        virtual ~SMSQLiteClipDefinitionsTileStore()
+        virtual ~SMSQLiteSkirtDefinitionsTileStore()
             {
             //m_smSQLiteFile->Close();
             }
@@ -97,7 +86,7 @@ template <class EXTENT> class SMSQLiteClipDefinitionsTileStore : public SMPointT
             bvector<uint8_t> indexData(pi_compressedPacket.GetDataSize());
             memcpy(&indexData[0], pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize());
             int64_t id = SQLiteNodeHeader::NO_NODEID;
-            m_smSQLiteFile->StoreClipPolygon(id, indexData, countData*sizeof(DPoint3d));
+            m_smSQLiteFile->StoreSkirtPolygon(id, indexData, countData*sizeof(DPoint3d));
             return HPMBlockID(id);
             }
 
@@ -111,13 +100,13 @@ template <class EXTENT> class SMSQLiteClipDefinitionsTileStore : public SMPointT
             bvector<uint8_t> indexData(pi_compressedPacket.GetDataSize());
             memcpy(&indexData[0], pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize());
             int64_t id = blockID.m_integerID;
-            m_smSQLiteFile->StoreClipPolygon(id, indexData, countData*sizeof(DPoint3d));
+            m_smSQLiteFile->StoreSkirtPolygon(id, indexData, countData*sizeof(DPoint3d));
             return HPMBlockID(id);
             }
 
         virtual size_t GetBlockDataCount(HPMBlockID blockID) const
             {
-            return m_smSQLiteFile->GetClipPolygonByteCount(blockID.m_integerID) / sizeof(DPoint3d);
+            return m_smSQLiteFile->GetSkirtPolygonByteCount(blockID.m_integerID) / sizeof(DPoint3d);
             }
 
         virtual size_t StoreHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
@@ -134,7 +123,7 @@ template <class EXTENT> class SMSQLiteClipDefinitionsTileStore : public SMPointT
             {
             bvector<uint8_t> ptData;
             size_t uncompressedSize = 0;
-            m_smSQLiteFile->GetClipPolygon(blockID.m_integerID, ptData, uncompressedSize);
+            m_smSQLiteFile->GetSkirtPolygon(blockID.m_integerID, ptData, uncompressedSize);
             HCDPacket pi_uncompressedPacket, pi_compressedPacket;
             pi_compressedPacket.SetBuffer(&ptData[0], ptData.size());
             pi_compressedPacket.SetDataSize(ptData.size());

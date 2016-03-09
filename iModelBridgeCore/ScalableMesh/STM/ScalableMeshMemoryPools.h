@@ -56,11 +56,11 @@ template <typename POINT> ScalableMeshMemoryPools<POINT>::ScalableMeshMemoryPool
     m_pointPoolSize = 20000000;
     m_featurePoolSize = 10000000;
     m_ptsIndicePoolSize = 20000000;
-    m_diffSetPoolSize = 10000000;
+    m_diffSetPoolSize = 4000000;
     m_graphPoolSize = 600000000;
     m_texturePoolSize = 600000000;
-    m_uvPoolSize = 20000000;
-    m_uvsIndicesPoolSize = 20000000;
+    m_uvPoolSize = 2000000;
+    m_uvsIndicesPoolSize = 2000000;
     m_pointPool = new HPMCountLimitedPool<POINT>(m_myMemMgr, m_pointPoolSize);
     m_ptsIndicePool = new HPMCountLimitedPool<int32_t>(m_myMemMgr,m_ptsIndicePoolSize);
     m_graphPool = new HPMIndirectCountLimitedPool<MTGGraph>(m_graphPoolSize);

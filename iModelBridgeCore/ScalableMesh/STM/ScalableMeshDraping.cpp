@@ -92,6 +92,8 @@ bool MeshTraversalQueue::TryStartTraversal(bool& needProjectionToFindFirstTriang
     {
     IScalableMeshNodeQueryParamsPtr params = IScalableMeshNodeQueryParams::CreateParams();
     IScalableMeshNodeRayQueryPtr query = m_scm->GetNodeQueryInterface();
+    params->SetLevel(m_scm->GetTerrainDepth());
+
     MeshTraversalStep firstStep;
     firstStep.currentSegment = segment;
     firstStep.startPoint = m_polylineToDrape[segment];
@@ -106,9 +108,11 @@ bool MeshTraversalQueue::TryStartTraversal(bool& needProjectionToFindFirstTriang
         {
         //2d ray query to find node along line segment
         IScalableMeshNodeQueryParamsPtr paramsLine = IScalableMeshNodeQueryParams::CreateParams();
+        paramsLine->SetLevel(m_scm->GetTerrainDepth());
         paramsLine->SetDirection(DVec3d::FromStartEndNormalize(m_polylineToDrape[segment], m_polylineToDrape[segment+1]));
         paramsLine->SetDepth(DVec3d::FromStartEnd(m_polylineToDrape[segment], m_polylineToDrape[segment+1]).Magnitude());
         paramsLine->Set2d(true);
+
         IScalableMeshNodeRayQueryPtr queryLine = m_scm->GetNodeQueryInterface();
         if (queryLine->Query(firstStep.linkedNode, ptr, NULL, 0, paramsLine) != SUCCESS || firstStep.linkedNode.get() == nullptr) return false;
         DRange3d nodeRange = firstStep.linkedNode->GetContentExtent();
@@ -116,6 +120,7 @@ bool MeshTraversalQueue::TryStartTraversal(bool& needProjectionToFindFirstTriang
         DPoint2d pt1 = DPoint2d::From(m_polylineToDrape[segment].x, m_polylineToDrape[segment].y);
         DPoint2d pt2 = DPoint2d::From(m_polylineToDrape[segment+1].x - m_polylineToDrape[segment].x, m_polylineToDrape[segment+1].y - m_polylineToDrape[segment].y);
         DPoint2d intersect;
+
         if (!bsiDRange2d_intersectRay(&nodeRange2d, NULL, NULL, &intersect, NULL, &pt1, &pt2)) return false;
         firstStep.startPoint.x = intersect.x;
         firstStep.startPoint.y = intersect.y;
@@ -224,7 +229,9 @@ bool NodeMeshIntersectsRay(bool& extentIntersectsRay, MeshTraversalStep& step,  
         else
             {
             bvector<bool> clips;
-            meshP = node->GetMesh(true,clips);
+            IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+            flags->SetLoadGraph(true);
+            meshP = node->GetMesh(flags,clips);
             if (!findTriangleAlongRay) withinMesh = meshP->FindTriangleForProjectedPoint(triangle, step.startPoint, !node->ArePoints3d());
             if (findTriangleAlongRay || !withinMesh)
                 {
@@ -540,7 +547,7 @@ bool ScalableMeshDraping::_ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap
     if (startPt.DistanceSquaredXY(endPt) < 1e-4)
         {
         double elevation = 0.0;
-        if (DTM_SUCCESS != DrapePoint(&elevation, NULL, NULL, NULL, NULL, startPt))
+        if (DTM_SUCCESS != DrapePoint(&elevation, NULL, NULL, NULL, NULL, startPt, w2vMap))
             {
             return false;
             }
@@ -555,6 +562,7 @@ bool ScalableMeshDraping::_ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap
         vecDirection.DifferenceOf(endPt, startPt);
         IScalableMeshNodeQueryParamsPtr params = IScalableMeshNodeQueryParams::CreateParams();
         IScalableMeshNodeRayQueryPtr query = m_scmPtr->GetNodeQueryInterface();
+        params->SetLevel(ComputeLevelForTransform(w2vMap));
         bvector<IScalableMeshNodePtr> nodes;
         params->SetDirection(vecDirection);
         if (query->Query(nodes, &startPt, NULL, 0, params) != SUCCESS)
@@ -579,13 +587,20 @@ bool ScalableMeshDraping::_DrapeAlongVector(DPoint3d* endPt, double *slope, doub
     vecDirection.z = slopeOfVector;
     IScalableMeshNodeQueryParamsPtr params = IScalableMeshNodeQueryParams::CreateParams();
     IScalableMeshNodeRayQueryPtr query = m_scmPtr->GetNodeQueryInterface();
+    params->SetLevel(m_scmPtr->GetTerrainDepth());
+
     bvector<IScalableMeshNodePtr> nodes;
     params->SetDirection(vecDirection);
+    DPoint3d depthVal = DPoint3d::From(1000, 1000, 1000);
+    m_UorsToStorage.Multiply(depthVal);
+    params->SetDepth(depthVal.x);
     DPoint3d transformedPt = point;
     m_UorsToStorage.Multiply(transformedPt);
     if (query->Query(nodes, &transformedPt, NULL, 0, params) != SUCCESS)
          return false;
     bvector<bool> clips;
+    bool ret = false;
+    clock_t begin = clock();
     for (auto& node : nodes)
         {
         BcDTMPtr dtmP = node->GetBcDTM();
@@ -595,16 +610,36 @@ bool ScalableMeshDraping::_DrapeAlongVector(DPoint3d* endPt, double *slope, doub
                 {
                 m_transform.Multiply(*endPt);
                 }
-            return true;
+            ret = true;
+            break;
             }
         }
-    return false;
+    clock_t time = clock() - begin;
+    time = time;
+    return ret;
     }
 
-DTMStatusInt ScalableMeshDraping::_DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int* drapedTypeP, DPoint3dCR point)
+
+size_t ScalableMeshDraping::ComputeLevelForTransform(const DMatrix4d& w2vMap)
+    {
+    if (w2vMap.IsIdentity()) return m_scmPtr->GetTerrainDepth();
+    DRange3d range;
+    m_scmPtr->GetRange(range);
+    Transform w2vTrans;
+    w2vTrans.InitFrom(w2vMap);
+    w2vTrans.Multiply(range.low);
+    w2vTrans.Multiply(range.high);
+    double maxLength = std::max(std::max(range.XLength(), range.YLength()), range.ZLength());
+    size_t targetLevel = std::min(m_scmPtr->GetTerrainDepth(), (size_t)(ceil(log(maxLength / 20.0) / log(4))));
+    return  targetLevel;
+    }
+
+DTMStatusInt ScalableMeshDraping::DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int* drapedTypeP, DPoint3dCR point, const DMatrix4d& w2vMap)
     {
     IScalableMeshNodeQueryParamsPtr params = IScalableMeshNodeQueryParams::CreateParams();
     IScalableMeshNodeRayQueryPtr query = m_scmPtr->GetNodeQueryInterface();
+    params->SetLevel(ComputeLevelForTransform(w2vMap));
+
     IScalableMeshNodePtr node;
     DPoint3d transformedPt = point;
     m_UorsToStorage.Multiply(transformedPt);
@@ -627,6 +662,13 @@ DTMStatusInt ScalableMeshDraping::_DrapePoint(double* elevationP, double* slopeP
         *elevationP = transformedPt.z;
         }
     return result;
+    }
+
+DTMStatusInt ScalableMeshDraping::_DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int* drapedTypeP, DPoint3dCR point)
+    {
+    Transform t = Transform::FromIdentity();
+    DMatrix4d identityTrans = DMatrix4d::From(t);
+    return DrapePoint(elevationP, slopeP, aspectP, triangle, drapedTypeP, point, identityTrans);
     }
 
 int PickLineSegmentForProjectedPoint(DPoint3dCP line, int nPts, int beginning, DPoint3dCR pt)
@@ -700,7 +742,9 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
                 if (!s_civilDraping)
                     {
                     bvector<bool> clips;
-                    meshP = startNode.linkedNode->GetMesh(true, clips);
+                    IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+                    flags->SetLoadGraph(true);
+                    meshP = startNode.linkedNode->GetMesh(flags, clips);
                     if (!findTriangleAlongRay) withinMesh = meshP->FindTriangleForProjectedPoint(triangle, startNode.startPoint, !startNode.linkedNode->ArePoints3d());
                     if (findTriangleAlongRay || !withinMesh)
                         {

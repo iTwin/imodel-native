@@ -930,6 +930,12 @@
     </ClInclude>
     <ClInclude Include="STM\SMSQLiteClipDefinitionsTileStore.h" />
     <ClInclude Include="STM\SMSQLiteDiffsetTileStore.h" />
+    <ClInclude Include="STM\SMSQLiteSkirtDefinitionsTileStore.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\Edits\Skirts.h">
+      <Filter>Includes\STM\Edits</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Foundations\Errors.cpp">
@@ -1323,6 +1329,9 @@
       <Filter>Source\STM</Filter>
     </ClCompile>
     <ClCompile Include="STM\Plugins\ScalableMeshTypeConversionFilterPlugins.cpp" />
+    <ClCompile Include="STM\Edits\Skirts.cpp">
+      <Filter>Source\STM\Edits</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="ScalableTerrainModel.mke" />

@@ -149,7 +149,7 @@ DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolume(double* cut, double* fill
     bvector<IScalableMeshNodePtr> returnedNodes;
     IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
     DRange3d fileRange;
-    ((IDTM*)m_scmPtr->GetDTMInterface())->GetRange(fileRange);
+    m_scmPtr->GetDTMInterface()->GetRange(fileRange);
     DRange3d meshRange = mesh->PointRange();
     DPoint3d box[4] = {
         DPoint3d::From(meshRange.low.x, meshRange.low.y, fileRange.low.z),
@@ -157,11 +157,14 @@ DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolume(double* cut, double* fill
         DPoint3d::From(meshRange.high.x, meshRange.low.y, fileRange.high.z),
         DPoint3d::From(meshRange.high.x, meshRange.high.y, fileRange.high.z)
         };
+    if (meshRange.IsEmpty()) return DTMStatusInt::DTM_SUCCESS;
+    params->SetLevel(m_scmPtr->GetTerrainDepth());
     meshQueryInterface->Query(returnedNodes, box, 4, params);
     for (auto& node : returnedNodes)
         {
         bvector<bool> clips;
-        IScalableMeshMeshPtr scalableMesh = node->GetMesh(false, clips);
+        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+        IScalableMeshMeshPtr scalableMesh = node->GetMesh(flags, clips);
         //ScalableMeshMeshWithGraphPtr scalableMeshWithGraph((ScalableMeshMeshWithGraph*)scalableMesh.get(), true);
         double tileCut, tileFill;
         bvector<PolyfaceHeaderPtr> volumeMeshVector;
@@ -169,9 +172,16 @@ DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolume(double* cut, double* fill
         totalCut += tileCut;
         totalFill += tileFill;
         }
-    *cut = totalCut;
-    *fill = totalFill;
-    *volume = totalVolume;
+
+    if (cut != 0)
+        *cut = totalCut;
+
+    if (fill != 0)
+        *fill = totalFill;
+
+    if (volume != 0)
+        *volume = totalVolume;
+
     return DTMStatusInt::DTM_SUCCESS;
     }
 
@@ -1382,7 +1392,8 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(double& cut, double& f
     for (auto& node : returnedNodes)
         {
         bvector<bool> clips;
-        IScalableMeshMeshPtr scalableMesh = node->GetMesh(false,clips);
+        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+        IScalableMeshMeshPtr scalableMesh = node->GetMesh(flags,clips);
         //ScalableMeshMeshWithGraphPtr scalableMeshWithGraph((ScalableMeshMeshWithGraph*)scalableMesh.get(), true);
         double tileCut, tileFill;
         totalVolume += _ComputeVolumeCutAndFillForTile(scalableMesh, tileCut, tileFill, intersectingMeshSurface, true, meshRange, volumeMeshVector);

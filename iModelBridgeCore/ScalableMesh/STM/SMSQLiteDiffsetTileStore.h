@@ -191,6 +191,7 @@ class SMSQLiteDiffsetTileStore : public IHPMPermanentStore<DifferenceSet, Byte, 
                     //this leads to undefined behavior when using the object. So we call the constructor on the allocated memory from the pool right here using placement new.
                     DifferenceSet * diffSet = new(DataTypeArray + ct)DifferenceSet();
                     diffSet->LoadFromBinaryStream(&diffsetData[0] + offset + 1, (size_t)*((int32_t*)&diffsetData[offset]));
+                    diffSet->upToDate = true;
                     offset++;
                     offset += *((int32_t*)&diffsetData[offset]);
                     ++ct;
