@@ -48,7 +48,7 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
             uint32_t identityTokenRefreshRate = 60;
             //! Delegation token lifetime to be requested in minutes
             uint32_t delegationTokenLifetime = 60;
-            //! Delegation token expiration detection threshold in minutes
+            //! Renew delegation token 5 minutes (or other) before it expires
             uint32_t delegationTokenExpirationThreshold = 5;
             };
 
