@@ -44,7 +44,7 @@ private:
     void AddBasePhenomena(Utf8Char dimensionalSymbol);
     UnitCP AddDimensionBaseUnit(Utf8CP unitName, Utf8Char dimensionSymbol);
 
-    UnitP AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset);
+    UnitP AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant);
 
     PhenomenonP LookupPhenomenonP(Utf8CP name) const;
     UnitP LookupUnitP(Utf8CP name) const;

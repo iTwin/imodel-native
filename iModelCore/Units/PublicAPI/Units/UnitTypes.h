@@ -78,11 +78,12 @@ private:
     // TODO: Should this be a reference because it must be set?
     PhenomenonCP    m_phenomenon;
     UnitCP          m_parent;
+    bool            m_isConstant;
 
-    static UnitP Create(Utf8CP sysName, PhenomenonCR phenomenon, Utf8CP unitName, int id, Utf8CP definition, Utf8Char baseDimensionSymbol, double factor, double offset);
+    static UnitP Create(Utf8CP sysName, PhenomenonCR phenomenon, Utf8CP unitName, int id, Utf8CP definition, Utf8Char baseDimensionSymbol, double factor, double offset, bool isConstant);
     static UnitP Create(UnitCR parentUnit, Utf8CP unitName, int id);
 
-    Unit (Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, int id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset);
+    Unit (Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, int id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant);
     Unit(UnitCR parentUnit, Utf8CP name, int id);
 
     // Lifecycle is managed by the UnitRegistry so we don't allow copies or assignments.
@@ -104,6 +105,7 @@ public:
     UNITS_EXPORT double Convert(double value, UnitCP toUnit) const;
 
     bool IsRegistered()    const;
+    bool IsConstant() const { return m_isConstant; }
 
     PhenomenonCP GetPhenomenon()   const { return m_phenomenon; }
 

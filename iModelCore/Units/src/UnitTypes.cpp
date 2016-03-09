@@ -35,8 +35,10 @@ ExpressionCR Symbol::Evaluate(int depth, std::function<SymbolCP(Utf8CP)> getSymb
     return *m_symbolExpression;
     }
 
+// TODO: Is the definition correct here?
+// TODO: We should probably restrict inverting units to units which are unitless.  If we do not then the inverted unit would have a different dimension.
 Unit::Unit(UnitCR parent, Utf8CP unitName, int id) : 
-    Unit(parent.GetUnitSystem(), *parent.GetPhenomenon(), unitName, id, parent.GetDefinition(), parent.GetDimensionSymbol(), 0, 0)
+    Unit(parent.GetUnitSystem(), *parent.GetPhenomenon(), unitName, id, parent.GetDefinition(), parent.GetDimensionSymbol(), 0, 0, false)
     {
     m_parent = &parent;
     }
@@ -44,9 +46,9 @@ Unit::Unit(UnitCR parent, Utf8CP unitName, int id) :
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Unit::Unit(Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, int id, Utf8CP definition, Utf8Char dimensonSymbol, double factor, double offset) :
+Unit::Unit(Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, int id, Utf8CP definition, Utf8Char dimensonSymbol, double factor, double offset, bool isConstant) :
     Symbol(name, definition, dimensonSymbol, id, factor, offset),
-    m_system(system), m_parent(nullptr)
+    m_system(system), m_parent(nullptr), m_isConstant(isConstant)
     {
     m_phenomenon = &phenomenon;
     }
@@ -54,10 +56,10 @@ Unit::Unit(Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, int id, Utf8CP d
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitP Unit::Create(Utf8CP sysName, PhenomenonCR phenomenon, Utf8CP unitName, int id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset)
+UnitP Unit::Create(Utf8CP sysName, PhenomenonCR phenomenon, Utf8CP unitName, int id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant)
     {
     LOG.debugv("Creating unit %s  Factor: %.17g  Offset: %d", unitName, factor, offset);
-    return new Unit(sysName, phenomenon, unitName, id, definition, dimensionSymbol, factor, offset);
+    return new Unit(sysName, phenomenon, unitName, id, definition, dimensionSymbol, factor, offset, isConstant);
     }
 
 int Unit::GetPhenomenonId() const { return GetPhenomenon()->GetId(); }
