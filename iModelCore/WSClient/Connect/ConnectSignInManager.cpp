@@ -288,7 +288,7 @@ IConnectTokenProviderPtr ConnectSignInManager::GetCachedTokenProvider(Utf8String
     IConnectTokenProviderPtr baseProvider = GetBaseTokenProviderMatchingAuthenticationType();
 
     auto delegationProvider = std::make_shared<DelegationTokenProvider>(m_client, rpUri, baseProvider);
-    delegationProvider->Configure(m_config.delegationTokenLifetime);
+    delegationProvider->Configure(m_config.delegationTokenLifetime, m_config.delegationTokenExpirationThreshold);
 
     m_tokenProviders[rpUri] = delegationProvider;
     return delegationProvider;

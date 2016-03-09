@@ -71,7 +71,7 @@ SamlTokenPtr StubSamlToken(uint32_t validMinutes)
 
 SamlTokenPtr StubSamlToken(const std::map<Utf8String, Utf8String>& attributes)
     {
-    auto token = std::make_shared<SamlToken>(StubSamlTokenXML(0, "TestCert", attributes));
+    auto token = std::make_shared<SamlToken>(StubSamlTokenXML(10000, "TestCert", attributes));
     EXPECT_FALSE(token->AsString().empty());
     return token;
     }
