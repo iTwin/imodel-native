@@ -1019,163 +1019,163 @@ void Perform2DStitchQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     return SUCCESS;
     }*/
 
-    struct DPoint3dComparer
-        {
-        private:
-            DPoint3d m_start;
-            DPoint3d m_end;
-        public:
-            DPoint3dComparer()
-                {
-                }
-            DPoint3dComparer(DPoint3d& start, DPoint3d& end)
-                {
-                SetStart(start); SetEnd(end);
-                }
-            void SetStart(DPoint3d& start)
-                {
-                m_start = start;
-                }
-            void SetEnd(DPoint3d& end)
-                {
-                m_end = end;
-                }
-            bool operator() (DPoint3d& X1, DPoint3d& X2)
-                {
-                DPoint3d direction;
-                direction.x = m_end.x - m_start.x;
-                direction.y = m_end.y - m_start.y;
-                direction.z = m_end.z - m_start.z;
-                // First point
-                DPoint3d X1direction;
-                X1direction.x = X1.x - m_start.x;
-                X1direction.y = X1.y - m_start.y;
-                X1direction.z = X1.z - m_start.z;
-                const double X1RelativePosition = X1direction.x*direction.x + X1direction.y*direction.y + X1direction.y*direction.y;
-                // Second point
-                DPoint3d X2direction;
-                X2direction.x = X2.x - m_start.x;
-                X2direction.y = X2.y - m_start.y;
-                X2direction.z = X2.z - m_start.z;
-                const double X2RelativePosition = X2direction.x*direction.x + X2direction.y*direction.y + X2direction.y*direction.y;
-                return X1RelativePosition < X2RelativePosition;
-                }
-        };
-
-    StatusInt DrapeOnScalableMesh(DTMPtr& smPtr, std::vector<std::vector<DPoint3d>>& drapedPoints, std::vector<DPoint3d> origPoints)
-        {
-        DTMDrapedLinePtr drapedLine;
-        auto draping = smPtr->GetDTMDraping();
-
-        draping->DrapeLinear(drapedLine, origPoints.data(), (int)origPoints.size());
-        if (drapedLine.IsNull())
-            return ERROR;
-//        delete draping;
-        unsigned int numPoints = drapedLine->GetPointCount();
-        drapedPoints.resize(1);
-        for (unsigned int ptNum = 0; ptNum < numPoints; ptNum++)
+struct DPoint3dComparer
+    {
+    private:
+        DPoint3d m_start;
+        DPoint3d m_end;
+    public:
+        DPoint3dComparer()
             {
-            DPoint3d pt;
-            drapedLine->GetPointByIndex(&pt, nullptr, nullptr, ptNum);
-            drapedPoints[0].push_back(pt);
             }
+        DPoint3dComparer(DPoint3d& start, DPoint3d& end)
+            {
+            SetStart(start); SetEnd(end);
+            }
+        void SetStart(DPoint3d& start)
+            {
+            m_start = start;
+            }
+        void SetEnd(DPoint3d& end)
+            {
+            m_end = end;
+            }
+        bool operator() (DPoint3d& X1, DPoint3d& X2)
+            {
+            DPoint3d direction;
+            direction.x = m_end.x - m_start.x;
+            direction.y = m_end.y - m_start.y;
+            direction.z = m_end.z - m_start.z;
+            // First point
+            DPoint3d X1direction;
+            X1direction.x = X1.x - m_start.x;
+            X1direction.y = X1.y - m_start.y;
+            X1direction.z = X1.z - m_start.z;
+            const double X1RelativePosition = X1direction.x*direction.x + X1direction.y*direction.y + X1direction.y*direction.y;
+            // Second point
+            DPoint3d X2direction;
+            X2direction.x = X2.x - m_start.x;
+            X2direction.y = X2.y - m_start.y;
+            X2direction.z = X2.z - m_start.z;
+            const double X2RelativePosition = X2direction.x*direction.x + X2direction.y*direction.y + X2direction.y*direction.y;
+            return X1RelativePosition < X2RelativePosition;
+            }
+    };
 
-        return SUCCESS;
+StatusInt DrapeOnScalableMesh(DTMPtr& smPtr, std::vector<std::vector<DPoint3d>>& drapedPoints, std::vector<DPoint3d> origPoints)
+    {
+    DTMDrapedLinePtr drapedLine;
+    auto draping = smPtr->GetDTMDraping();
+
+    draping->DrapeLinear(drapedLine, origPoints.data(), (int)origPoints.size());
+    if (drapedLine.IsNull())
+        return ERROR;
+    //        delete draping;
+    unsigned int numPoints = drapedLine->GetPointCount();
+    drapedPoints.resize(1);
+    for (unsigned int ptNum = 0; ptNum < numPoints; ptNum++)
+        {
+        DPoint3d pt;
+        drapedLine->GetPointByIndex(&pt, nullptr, nullptr, ptNum);
+        drapedPoints[0].push_back(pt);
         }
 
-    StatusInt DoBatchDrape(vector<vector<DPoint3d>>& lines, DTMPtr& dtmPtr, vector<vector<DPoint3d>>& drapeLines)
+    return SUCCESS;
+    }
+
+StatusInt DoBatchDrape(vector<vector<DPoint3d>>& lines, DTMPtr& dtmPtr, vector<vector<DPoint3d>>& drapeLines)
+    {
+    bool aborded = false;
+
+    int numElemDraped = 0;
+    int numElemNOTDraped = 0;
+    int numPartial = 0;
+    int numPts = 0;
+    double drapeLength = 0.0;
+
+    clock_t timer = clock();
+    for (auto& origPoints : lines)
         {
-        bool aborded = false;
-
-        int numElemDraped = 0;
-        int numElemNOTDraped = 0;
-        int numPartial = 0;
-        int numPts = 0;
-        double drapeLength = 0.0;
-
-        clock_t timer = clock();
-        for (auto& origPoints : lines)
+        StatusInt status;
+        std::vector<std::vector<DPoint3d>> drapedPoints(origPoints.size() - 1);
+        status = DrapeOnScalableMesh(dtmPtr, drapedPoints, origPoints);
+        /*if(status == ABORT)
             {
-            StatusInt status;
-            std::vector<std::vector<DPoint3d>> drapedPoints(origPoints.size() - 1);
-            status = DrapeOnScalableMesh(dtmPtr, drapedPoints, origPoints);
-            /*if(status == ABORT)
+            aborded = true;
+            break;
+            }
+        else */if (status == ERROR)
+            {
+            numElemNOTDraped++;
+            continue;
+            }
+        numElemDraped++;
+
+        vector<DPoint3d> drapeLine;
+
+        // Sort draped points on line and remove duplicates...
+        for (unsigned int line = 0; line < origPoints.size() - 1; ++line)
+            {
+            sort(drapedPoints[line].begin(), drapedPoints[line].end(), DPoint3dComparer(origPoints[line], origPoints[line + 1]));
+            std::vector<DPoint3d>::iterator it = unique(drapedPoints[line].begin(), drapedPoints[line].end(), DPoint3dEqualityTest);
+            drapedPoints[line].resize(std::distance(drapedPoints[line].begin(), it));
+            }
+
+        // Add to final draped points vector
+        for (unsigned int line = 0; line < drapedPoints.size(); line++)
+            for (unsigned int i = 0; i < drapedPoints[line].size(); i++)
+                drapeLine.push_back(drapedPoints[line][i]);
+
+        vector<DPoint3d>::iterator it = unique(drapeLine.begin(), drapeLine.end(), DPoint3dEqualityTest);
+        drapeLine.resize(std::distance(drapeLine.begin(), it));
+
+        //reporting of partial drapes
+        if (status == SUCCESS && drapeLine.size() == 0)
+            {
+            numPartial++;
+            }
+        else if (status == SUCCESS)
+            {
+            //DRay3d lastSegment = DRay3d::FromOriginAndVector(origPoints[origPoints.size() - 2], DVec3d::FromStartEnd(origPoints[origPoints.size() - 2], origPoints[origPoints.size() - 1]));
+            //DPoint3d intersectPt1, intersectPt2;
+            //DRay3d endOfDrapeLine = DRay3d::FromOriginAndVector(drapeLine.back(), DVec3d::From(0, 0, 1));
+            //double p1, p2;
+            //if (bsiDRay3d_closestApproach(&p1, &p2, &intersectPt1, &intersectPt2, &lastSegment, &endOfDrapeLine) && p1 > 0 && p1 <= 1 && bsiDPoint3d_pointEqualTolerance(&intersectPt1, &intersectPt2, 0.001) && bsiDPoint3d_pointEqualTolerance(&intersectPt1, &origPoints[origPoints.size() - 1], 0.001))
+            DPoint3d pt = drapeLine.back();
+            if (fabs(origPoints[origPoints.size() - 1].x - pt.x) < 1 && fabs(origPoints[origPoints.size() - 1].y - pt.y) < 1)
                 {
-                aborded = true;
-                break;
+                drapeLength += 1.0;
                 }
-            else */if (status == ERROR)
-                {
-                numElemNOTDraped++;
-                continue;
-                }
-            numElemDraped++;
-
-            vector<DPoint3d> drapeLine;
-
-            // Sort draped points on line and remove duplicates...
-            for (unsigned int line = 0; line < origPoints.size() - 1; ++line)
-                {
-                sort(drapedPoints[line].begin(), drapedPoints[line].end(), DPoint3dComparer(origPoints[line], origPoints[line + 1]));
-                std::vector<DPoint3d>::iterator it = unique(drapedPoints[line].begin(), drapedPoints[line].end(), DPoint3dEqualityTest);
-                drapedPoints[line].resize(std::distance(drapedPoints[line].begin(), it));
-                }
-
-            // Add to final draped points vector
-            for (unsigned int line = 0; line < drapedPoints.size(); line++)
-                for (unsigned int i = 0; i < drapedPoints[line].size(); i++)
-                    drapeLine.push_back(drapedPoints[line][i]);
-
-            vector<DPoint3d>::iterator it = unique(drapeLine.begin(), drapeLine.end(), DPoint3dEqualityTest);
-            drapeLine.resize(std::distance(drapeLine.begin(), it));
-
-            //reporting of partial drapes
-            if (status == SUCCESS && drapeLine.size() == 0)
+            else
                 {
                 numPartial++;
-                }
-            else if (status == SUCCESS)
-                {
-                //DRay3d lastSegment = DRay3d::FromOriginAndVector(origPoints[origPoints.size() - 2], DVec3d::FromStartEnd(origPoints[origPoints.size() - 2], origPoints[origPoints.size() - 1]));
-                //DPoint3d intersectPt1, intersectPt2;
-                //DRay3d endOfDrapeLine = DRay3d::FromOriginAndVector(drapeLine.back(), DVec3d::From(0, 0, 1));
-                //double p1, p2;
-                //if (bsiDRay3d_closestApproach(&p1, &p2, &intersectPt1, &intersectPt2, &lastSegment, &endOfDrapeLine) && p1 > 0 && p1 <= 1 && bsiDPoint3d_pointEqualTolerance(&intersectPt1, &intersectPt2, 0.001) && bsiDPoint3d_pointEqualTolerance(&intersectPt1, &origPoints[origPoints.size() - 1], 0.001))
-                DPoint3d pt = drapeLine.back();
-                if (fabs(origPoints[origPoints.size() - 1].x - pt.x) < 1 && fabs(origPoints[origPoints.size() - 1].y - pt.y) < 1)
-                    {
-                    drapeLength += 1.0;
-                    }
-                else
-                    {
-                    numPartial++;
 
-                    // if (bsiDPoint3d_pointEqualTolerance(&intersectPt1, &intersectPt2, 0.001))
-                    DPoint3d intersectPt1 = pt;
-                    intersectPt1.z = origPoints[origPoints.size() - 1].z;
-                    drapeLength += fabs(DVec3d::FromStartEnd(origPoints[origPoints.size() - 2], intersectPt1).MagnitudeSquared() / DVec3d::FromStartEnd(origPoints[origPoints.size() - 2], origPoints[origPoints.size() - 1]).MagnitudeSquared());
-                    }
+                // if (bsiDPoint3d_pointEqualTolerance(&intersectPt1, &intersectPt2, 0.001))
+                DPoint3d intersectPt1 = pt;
+                intersectPt1.z = origPoints[origPoints.size() - 1].z;
+                drapeLength += fabs(DVec3d::FromStartEnd(origPoints[origPoints.size() - 2], intersectPt1).MagnitudeSquared() / DVec3d::FromStartEnd(origPoints[origPoints.size() - 2], origPoints[origPoints.size() - 1]).MagnitudeSquared());
                 }
-            numPts += (int)drapeLine.size();
-            drapeLines.push_back(drapeLine);
             }
-
-        timer = clock() - timer;
-
-        float secs;
-        secs = ((float)timer) / CLOCKS_PER_SEC;
-        IScalableMeshATP::StoreDouble(L"drapeTime", secs);
-        drapeLength /= numElemDraped;
-        IScalableMeshATP::StoreInt(L"nOfLines", numElemDraped + numElemNOTDraped);
-        IScalableMeshATP::StoreInt(L"nOfLinesNotDraped", numElemNOTDraped);
-        IScalableMeshATP::StoreInt(L"nOfLinesDraped", numElemDraped);
-        IScalableMeshATP::StoreInt(L"nOfLinesPartial", numPartial);
-        IScalableMeshATP::StoreInt(L"nOfOutputPoints", numPts);
-        IScalableMeshATP::StoreDouble(L"lengthOfLinesPartial", drapeLength);
-        StatusInt status = aborded;
-
-        return status;
+        numPts += (int)drapeLine.size();
+        drapeLines.push_back(drapeLine);
         }
+
+    timer = clock() - timer;
+
+    float secs;
+    secs = ((float)timer) / CLOCKS_PER_SEC;
+    IScalableMeshATP::StoreDouble(L"drapeTime", secs);
+    drapeLength /= numElemDraped;
+    IScalableMeshATP::StoreInt(L"nOfLines", numElemDraped + numElemNOTDraped);
+    IScalableMeshATP::StoreInt(L"nOfLinesNotDraped", numElemNOTDraped);
+    IScalableMeshATP::StoreInt(L"nOfLinesDraped", numElemDraped);
+    IScalableMeshATP::StoreInt(L"nOfLinesPartial", numPartial);
+    IScalableMeshATP::StoreInt(L"nOfOutputPoints", numPts);
+    IScalableMeshATP::StoreDouble(L"lengthOfLinesPartial", drapeLength);
+    StatusInt status = aborded;
+
+    return status;
+    }
 
 void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
@@ -1246,7 +1246,7 @@ void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             point.z = jsonPoint["z"].asDouble();
             origPoints.push_back(point);
             }
-        if(!origPoints.empty())
+        if (!origPoints.empty())
             lines.push_back(origPoints);
         }
     DTMPtr dtmP = dynamic_cast<BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*>(&*stmFile->GetDTMInterface());
@@ -1378,49 +1378,49 @@ void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                     agenda.Clear();
                     model->DeleteDgnAttachment(newAttachment);
                     //write out results*/
-                    int64_t nOfLinesToDrape = 0, nOfLinesDraped = 0, nOfLinesNotDraped = 0;
-                    double timeOfDrape = 0.0;
-                    IScalableMeshATP::GetInt(L"nOfLines", nOfLinesToDrape);
-                    IScalableMeshATP::GetInt(L"nOfLinesNotDraped", nOfLinesNotDraped);
-                    IScalableMeshATP::GetInt(L"nOfLinesDraped", nOfLinesDraped);
-                    IScalableMeshATP::GetDouble(L"drapeTime", timeOfDrape);
-                    int64_t loadAttempts;
-                    int64_t loadMisses;
-                    int64_t nOutPts = 0;
-                    int64_t nPartial = 0;
-                    double drapeLength = 0.0;
-                    IScalableMeshATP::GetInt(L"nOfGraphLoadAttempts", loadAttempts);
-                    IScalableMeshATP::GetInt(L"nOfGraphStoreMisses", loadMisses);
-                    IScalableMeshATP::GetInt(L"nOfLinesPartial", nPartial);
-                    IScalableMeshATP::GetInt(L"nOfOutputPoints", nOutPts);
-                    IScalableMeshATP::GetDouble(L"lengthOfLinesPartial", drapeLength);
-                    fwprintf(pResultFile, L"%s,%s,%I64d,%I64d,%I64d,%I64d,%.5f,%.5f,%.5f,%I64d,%.5f,%.5f,%.5f,%I64d, %.5f\n",
-                             stmFileName.c_str(),
-                             result.c_str(),
-                             stmFile->GetPointCount(),
-                             nOfLinesToDrape,
-                             nOfLinesDraped,
-                             nOfLinesDraped - nPartial,
-                             nPartial * 100.0 / nOfLinesDraped,
-                             drapeLength * 100.0,
-                             loadMisses*100.0 / loadAttempts,
-                             nOfLinesNotDraped,
-                             (double)nOfLinesNotDraped*100.0 / nOfLinesToDrape,
-                             timeOfDrape,
-                             timeOfDrape / nOfLinesToDrape,
-                             nOutPts,
-                             1000 * timeOfDrape / nOutPts);
-                    IScalableMeshATP::StoreInt(L"nOfLines", 0);
-                    IScalableMeshATP::StoreInt(L"nOfLinesNotDraped", 0);
-                    IScalableMeshATP::StoreInt(L"nOfLinesDraped", 0);
-                    IScalableMeshATP::StoreInt(L"nOfOutputPoints", 0);
-                    IScalableMeshATP::StoreDouble(L"drapeTime", 0.0);
-                    IScalableMeshATP::StoreDouble(L"lengthOfLinesPartial", 0.0);
-                    IScalableMeshATP::StoreInt(L"nOfLinesPartial", 0);
-                    fflush(pResultFile);
-                    stmFile = nullptr;
-                    dtmP = nullptr;
-                    //drape agenda
+    int64_t nOfLinesToDrape = 0, nOfLinesDraped = 0, nOfLinesNotDraped = 0;
+    double timeOfDrape = 0.0;
+    IScalableMeshATP::GetInt(L"nOfLines", nOfLinesToDrape);
+    IScalableMeshATP::GetInt(L"nOfLinesNotDraped", nOfLinesNotDraped);
+    IScalableMeshATP::GetInt(L"nOfLinesDraped", nOfLinesDraped);
+    IScalableMeshATP::GetDouble(L"drapeTime", timeOfDrape);
+    int64_t loadAttempts;
+    int64_t loadMisses;
+    int64_t nOutPts = 0;
+    int64_t nPartial = 0;
+    double drapeLength = 0.0;
+    IScalableMeshATP::GetInt(L"nOfGraphLoadAttempts", loadAttempts);
+    IScalableMeshATP::GetInt(L"nOfGraphStoreMisses", loadMisses);
+    IScalableMeshATP::GetInt(L"nOfLinesPartial", nPartial);
+    IScalableMeshATP::GetInt(L"nOfOutputPoints", nOutPts);
+    IScalableMeshATP::GetDouble(L"lengthOfLinesPartial", drapeLength);
+    fwprintf(pResultFile, L"%s,%s,%I64d,%I64d,%I64d,%I64d,%.5f,%.5f,%.5f,%I64d,%.5f,%.5f,%.5f,%I64d, %.5f\n",
+             stmFileName.c_str(),
+             result.c_str(),
+             stmFile->GetPointCount(),
+             nOfLinesToDrape,
+             nOfLinesDraped,
+             nOfLinesDraped - nPartial,
+             nPartial * 100.0 / nOfLinesDraped,
+             drapeLength * 100.0,
+             loadMisses*100.0 / loadAttempts,
+             nOfLinesNotDraped,
+             (double)nOfLinesNotDraped*100.0 / nOfLinesToDrape,
+             timeOfDrape,
+             timeOfDrape / nOfLinesToDrape,
+             nOutPts,
+             1000 * timeOfDrape / nOutPts);
+    IScalableMeshATP::StoreInt(L"nOfLines", 0);
+    IScalableMeshATP::StoreInt(L"nOfLinesNotDraped", 0);
+    IScalableMeshATP::StoreInt(L"nOfLinesDraped", 0);
+    IScalableMeshATP::StoreInt(L"nOfOutputPoints", 0);
+    IScalableMeshATP::StoreDouble(L"drapeTime", 0.0);
+    IScalableMeshATP::StoreDouble(L"lengthOfLinesPartial", 0.0);
+    IScalableMeshATP::StoreInt(L"nOfLinesPartial", 0);
+    fflush(pResultFile);
+    stmFile = nullptr;
+    dtmP = nullptr;
+    //drape agenda
     }
 
 /*int CollectFirstMeshElement
@@ -1441,446 +1441,285 @@ void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
 void PerformVolumeTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    assert(false && "Not ported yet! Perhaps we could use your help?");
-    /*        WString stmFileName, corridorFileName;
-            // Parses the test(s) definition:
-            if (pTestNode->GetAttributeStringValue(stmFileName, "stmFileName") != BEXML_Success)
-                {
-                printf("ERROR : stmFileName attribute not found\r\n");
-                return;
-                }
-            StatusInt status;
-            IScalableMeshPtr stmFile = IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
-
-            Int64 pointCount = 0;
-            WString result;
-
-            if (stmFile != 0)
-                {
-                pointCount = stmFile->GetPointCount();
-                result = L"SUCCESS";
-                }
-            else
-                {
-                result = L"FAILURE";
-                }
-            if (pTestNode->GetAttributeStringValue(corridorFileName, "corridorFileName") != BEXML_Success)
-                {
-                printf("ERROR : corridorFileName attribute not found\r\n");
-                return;
-                }
-            DgnFileStatus fileOpenStatus;
-            DgnDocumentPtr meshDoc = DgnDocument::CreateFromFileName(fileOpenStatus, corridorFileName.c_str(), NULL, DEFDGNFILE_ID, DgnDocument::FetchMode::Read);
-            DgnModelRefP model = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef();
-            DgnAttachment* newAttachment;
-            model->CreateDgnAttachment(newAttachment, *meshDoc->GetMonikerPtr(), L"");
-
-            ElementAgenda agenda;
-
-            LevelCache& levelCache = newAttachment->GetLevelCacheR();
-
-            LevelHandle level = levelCache.GetLevelByName(L"mesh", false);
-            LevelId levelId = level.GetLevelId();
-
-            //collect all elements from level
-
-            ScanCriteriaP scP = new ScanCriteria();
-
-            //mdlScanCriteria_setModel(scP, newAttachment);
-            //mdlScanCriteria_setReturnType(scP, MSSCANCRIT_ITERATE_ELMREF, false, true);
-            //mdlScanCriteria_setElemRefCallback(scP, CollectFirstMeshElement, &agenda);
-            BitMaskP  levelBitMask = BitMask::Create(false);
-            //mdlBitMask_create(&levelBitMask, false);
-            //mdlBitMask_setBit(levelBitMask, levelId - 1, 1);
-            //mdlScanCriteria_setLevelTest(scP, levelBitMask, false, false);
-
-            //mdlScanCriteria_scan(scP, NULL, NULL, NULL);
-
-            //mdlScanCriteria_free(scP);
-            scP->SetModelRef(newAttachment);
-            scP->SetReturnType(MSSCANCRIT_ITERATE_ELMREF, false, false);
-            scP->SetElemRefCallback(CollectFirstMeshElement, &agenda);
-            //levelBitMask->Create(false);
-            levelBitMask->SetBit(levelId - 1, 1);
-            scP->SetLevelTest(levelBitMask, false);
-            scP->Scan();
-
-            double cut = 0.0, fill = 0.0, volume = 0.0;
-            double cutValidate = 0.0, fillValidate = 0.0, volumeValidate = 0.0;
-            double cutError = 0.0, fillError = 0.0, volumeError = 0.0, avgError = 0.0;
-            double secs = 0.0;
-            double   cutConnected, fillConnected, volConnected, stitchCut, stitchFill, stitchVol;
-            cutConnected = fillConnected = volConnected = stitchCut = stitchFill = stitchVol = 0.0;
-            /* FileLevelCache& fileLevelCache = model->GetDgnFileP()->GetLevelCacheR();
-            EditLevelHandle outputLevel = fileLevelCache.CreateLevel(L"meshes", LEVEL_NULL_CODE, LEVEL_NULL_ID);
-            fileLevelCache.Write();*/
-
-
-
-
-
-
-
-
-            /* ElementAgenda agendaGround;
-
-            LevelCache& levelCacheGround = newAttachment->GetLevelCacheR();
-
-            LevelHandle levelGround = levelCacheGround.GetLevelByName(L"meshGround", false);
-            LevelId levelIdGround = levelGround.GetLevelId();
-
-            //collect all elements from level
-
-            ScanCriteriaP scPGround = mdlScanCriteria_create();
-
-            mdlScanCriteria_setModel(scPGround, newAttachment);
-            mdlScanCriteria_setReturnType(scPGround, MSSCANCRIT_ITERATE_ELMREF, false, true);
-            mdlScanCriteria_setElemRefCallback(scPGround, CollectFirstMeshElement, &agendaGround);
-            BitMaskP  levelBitMaskGround;
-            mdlBitMask_create(&levelBitMaskGround, false);
-            mdlBitMask_setBit(levelBitMaskGround, levelIdGround - 1, 1);
-            mdlScanCriteria_setLevelTest(scPGround, levelBitMaskGround, false, false);
-
-            mdlScanCriteria_scan(scPGround, NULL, NULL, NULL);
-
-            mdlScanCriteria_free(scPGround);
-            //double cut = 0.0, fill = 0.0, volume = 0.0;
-            //double cutValidate = 0.0, fillValidate = 0.0, volumeValidate = 0.0;
-            //double cutError = 0.0, fillError = 0.0, volumeError = 0.0, avgError = 0.0;
-            //double secs = 0.0;
-            //double   cutConnected, fillConnected, volConnected, stitchCut, stitchFill, stitchVol;
-            //cutConnected = fillConnected = volConnected = stitchCut = stitchFill = stitchVol = 0.0;
-            FileLevelCache& fileLevelCacheGround = model->GetDgnFileP()->GetLevelCacheR();
-            EditLevelHandle outputLevelGround = fileLevelCacheGround.CreateLevel(L"meshesGround", LEVEL_NULL_CODE, LEVEL_NULL_ID);
-            fileLevelCacheGround.Write();*/
-
-
-            /*
-
-
-
-
-
-
-
-
-                        if (agenda.GetCount() == 0)
-                            {
-                            result = L"MESH NOT FOUND";
-                            }
-                        else
-                            {
-                            DRange3d range;
-                            ScanRangeCP scanRangeP = elemHandle_checkIndexRange(*(EditElementHandleP)agenda.GetFirstP());
-                            DataConvert::ScanRangeToDRange3d(range, *scanRangeP);
-                            IScalableMeshATP::StoreInt(L"nTiles", 0);
-                            IScalableMeshATP::StoreInt(L"nNoCutFillTiles", 0);
-                            IScalableMeshATP::StoreInt(L"nSectionsTotal", 0);
-                            IScalableMeshATP::StoreInt(L"nFailedComputePrincipalMoments", 0);
-                            bvector<PolyfaceHeaderPtr> volumeMesh;
-                            status = ComputeVolumeForAgenda(agenda, stmFile, cut, fill, volume, volumeMesh);
-
-                            //            status = STMVolumeCalculationTool::ComputeVolumeForAgenda(agenda, stmFile, agendaGround, cut, fill, volume, volumeMesh);
-
-
-                            /*
-                            EditElementHandleP meshElement = agenda.GetFirstP();
-
-                            Handler&  elmHandler = meshElement->GetHandler();
-                            IMeshQuery*  meshQuery = dynamic_cast <IMeshQuery*> (&elmHandler);
-                            clock_t timer = clock();
-                            DRange3d elemRange;
-                            ScanRangeCP scanRangeP = elemHandle_checkIndexRange(*(EditElementHandleP)agenda.GetFirstP());
-                            DataConvert::ScanRangeToDRange3d(elemRange, *scanRangeP);
-                            PolyfaceHeaderPtr meshData;
-                            if (NULL != meshQuery)
-                            {
-                            PolyfaceHeaderPtr meshData;
-
-                            if (SUCCESS == meshQuery->GetMeshData(*meshElement, meshData))
-                            {
-                            Transform uorToMeter, meterToUor;
-                            GetTransformForPoints(uorToMeter, meterToUor);
-                            meshData->Transform(uorToMeter);
-                            bsiTransform_multiplyDPoint3dArrayInPlace(&uorToMeter, &elemRange.low, 1);
-                            bsiTransform_multiplyDPoint3dArrayInPlace(&uorToMeter, &elemRange.high, 1);
-                            Transform refToActiveTrf;
-                            GetFromModelRefToActiveTransform(refToActiveTrf, meshElement->GetModelRef());
-                            meshData->Transform(refToActiveTrf);
-                            bsiTransform_multiplyDPoint3dArrayInPlace(&refToActiveTrf, &elemRange.low, 1);
-                            bsiTransform_multiplyDPoint3dArrayInPlace(&refToActiveTrf, &elemRange.high, 1);
-                            IScalableMeshATP::StoreInt(L"nTrianglesInCorridor", meshData->GetNumFacet());
-                            //                    volume = ComputeVolumeCutAndFill(smPtr, cut, fill, *meshData, elemRange, volumeMeshVector);
-                            timer = clock() - timer;
-                            float secs;
-                            secs = ((float)timer) / CLOCKS_PER_SEC;
-                            IMrDTMATP::StoreDouble(L"volumeTime", secs);
-                            return SUCCESS;
-                            }
-                            }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                            FileLevelCache& fileLeveCacheGround = model->GetDgnFileP()->GetLevelCacheR();
-                            EditLevelHandle outputLevelGround = fileLeveCacheGround.CreateLevel(L"ground", LEVEL_NULL_CODE, LEVEL_NULL_ID);
-                            fileLeveCacheGround.Write();
-
-
-
-
-
-
-
-                            EditElementHandleP meshElementGround = agenda.GetFirstP();
-
-                            Handler&  elmHandlerGround = meshElementGround->GetHandler();
-                            IMeshQuery*  meshQueryGround = dynamic_cast <IMeshQuery*> (&elmHandlerGround);
-                            clock_t timer = clock();
-                            DRange3d elemRange;
-                            ScanRangeCP scanRangeP = elemHandle_checkIndexRange(*(EditElementHandleP)agenda.GetFirstP());
-                            DataConvert::ScanRangeToDRange3d(elemRange, *scanRangeP);
-                            if (NULL != meshQueryGround)
-                            {
-                            PolyfaceHeaderPtr meshDataGround;
-
-                            if (SUCCESS == meshQueryGround->GetMeshData(*meshElementGround, meshDataGround))
-                            {
-                            Transform uorToMeter, meterToUor;
-                            GetTransformForPoints(uorToMeter, meterToUor);
-                            meshDataGround->Transform(uorToMeter);
-                            bsiTransform_multiplyDPoint3dArrayInPlace(&uorToMeter, &elemRange.low, 1);
-                            bsiTransform_multiplyDPoint3dArrayInPlace(&uorToMeter, &elemRange.high, 1);
-                            Transform refToActiveTrf;
-                            GetFromModelRefToActiveTransform(refToActiveTrf, meshElementGround->GetModelRef());
-                            meshDataGround->Transform(refToActiveTrf);
-                            bsiTransform_multiplyDPoint3dArrayInPlace(&refToActiveTrf, &elemRange.low, 1);
-                            bsiTransform_multiplyDPoint3dArrayInPlace(&refToActiveTrf, &elemRange.high, 1);
-                            IMrDTMATP::StoreInt(L"nTrianglesInCorridor", meshDataGround->GetNumFacet());
-                            //volume = ComputeVolumeCutAndFill(smPtr, cut, fill, *meshData, elemRange, volumeMeshVector);
-                            volume = ComputeVolumeCutAndFill(meshDataGround, cut, fill, *meshData, false, volumeMesh);
-                            timer = clock() - timer;
-                            float secs;
-                            secs = ((float)timer) / CLOCKS_PER_SEC;
-                            IScalableMeshATP::StoreDouble(L"volumeTime", secs);
-                            }
-                            }
-
-
-
-
-
-
-
-
-
-                            //            double area;
-
-                            IScalableMeshPtr mrDTMPtr = (IMrDTM*)smPtr.get();
-                            //ScalableMeshVolume volumeCalculation(meshGround);
-                            //if (volume == NULL) return 0;
-                            //volumeCalculation->ComputeVolumeCutAndFillForTile(meshGround, cut, fill, mesh, false, meshExtent, volumeMesh);
-                            //return cut - fill;
-
-
-
-                            */
-
-                            /*
-
-                                                    for (int i = 0; i<volumeMesh.size(); i++)
-                                                        {
-                                                        //Transform uorToMeter, meterToUor;
-                                                        //GetTransformForPoints(uorToMeter, meterToUor);
-                                                        //Transform refToActiveTrf;
-                                                        //GetFromModelRefToActiveTransform(refToActiveTrf, ((EditElementHandleP)agenda.GetFirstP())->GetModelRef());
-                                                        //volumeMesh[i]->Transform(meterToUor);
-                                                        //volumeMesh[i]->Transform(refToActiveTrf);
-                                                        //MSElementDescr* desc = NULL;
-                                                        //mdlMesh_newPolyfaceFromEmbeddedArraysExt(&desc, NULL, &volumeMesh[i]->PointIndex(), 0, &volumeMesh[i]->Point(), (0 == volumeMesh[i]->NormalIndex().size() ? NULL : &volumeMesh[i]->NormalIndex()), (0 == volumeMesh[i]->Normal().size() ? NULL : (EmbeddedDPoint3dArray*) &volumeMesh[i]->Normal()), (0 == volumeMesh[i]->ParamIndex().size() ? NULL : &volumeMesh[i]->ParamIndex()), (0 == volumeMesh[i]->Param().size() ? NULL : (EmbeddedDPoint2dArray*)&volumeMesh[i]->Param()), NULL, NULL, NULL, NULL, false, true);
-                                                        //mdlMesh_newPolyfaceFromEmbeddedArraysExt(&desc, NULL, &volumeMesh[i]->PointIndex(), 0, &volumeMesh[i]->Point(), (0 == volumeMesh[i]->NormalIndex().size() ? NULL : &volumeMesh[i]->NormalIndex()), (0 == volumeMesh[i]->Normal().size() ? NULL : (EmbeddedDPoint3dArray*) &volumeMesh[i]->Normal()), (0 == volumeMesh[i]->ParamIndex().size() ? NULL : &volumeMesh[i]->ParamIndex()), (0 == volumeMesh[i]->Param().size() ? NULL : (EmbeddedDPoint2dArray*)&volumeMesh[i]->Param()), NULL, NULL, NULL, NULL, false, true);
-                                                        //                mdlElmdscr_add(desc);
-                                                        //EditElementHandle handle(desc, true, true, mdlModelRef_getActive());
-                                                        //handle.AddToModel();
-                                                        /*mdlElmdscr_add(desc);
-                                                        EditElementHandle handle(pNewElmDsc, true, true, model); 
-                                                        handle.AddToModel();*/
-                                                        /*                                        }
-
-                                                                                            if (status != SUCCESS)
-                                                                                                {
-                                                                                                result = L"FAILED TO COMPUTE";
-                                                                                                }
-                                                                                            else
-                                                                                                {
-                                                                                                clock_t timer = clock();
-                                                                                                IScalableMeshMeshQueryPtr meshQueryInterface = ((IScalableMesh*)stmFile.get())->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
-                                                                                                bvector<IScalableMeshNodePtr> returnedNodes;
-                                                                                                IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
-                                                                                                DRange3d fileRange;
-                                                                                                stmFile->GetRange(fileRange);
-                                                                                                Transform uorToMeter, meterToUor;
-                                                                                                GetTransformForPoints(uorToMeter, meterToUor);
-                                                                                                bsiTransform_multiplyDPoint3dArrayInPlace(&uorToMeter, &range.low, 1);
-                                                                                                bsiTransform_multiplyDPoint3dArrayInPlace(&uorToMeter, &range.high, 1);
-                                                                                                Transform refToActiveTrf;
-                                                                                                GetFromModelRefToActiveTransform(refToActiveTrf, ((EditElementHandleP)agenda.GetFirstP())->GetModelRef());
-                                                                                                bsiTransform_multiplyDPoint3dArrayInPlace(&refToActiveTrf, &range.low, 1);
-                                                                                                bsiTransform_multiplyDPoint3dArrayInPlace(&refToActiveTrf, &range.high, 1);
-                                                                                                DPoint3d box[4] = {
-                                                                                                    DPoint3d::From(range.low.x, range.low.y, fileRange.low.z),
-                                                                                                    DPoint3d::From(range.low.x, range.high.y, fileRange.low.z),
-                                                                                                    DPoint3d::From(range.high.x, range.low.y, fileRange.high.z),
-                                                                                                    DPoint3d::From(range.high.x, range.high.y, fileRange.high.z)
-                                                                                                    };
-                                                                                                meshQueryInterface->Query(returnedNodes, box, 4, params);
-                                                                                                // DPoint3d triangle[4];
-                                                                                                // int status = SUCCESS;
-                                                                                                PolyfaceHeaderPtr terrainMesh;
-                                                                                                IFacetOptionsPtr  options = IFacetOptions::Create();
-                                                                                                options->SetMaxPerFace(3);
-                                                                                                IPolyfaceConstructionPtr  builder = IPolyfaceConstruction::New(*options);
-                                                                                                bvector<DPoint3d> allPts;
-                                                                                                for (auto& node : returnedNodes)
-                                                                                                    {
-                                                                                                    bvector<bool> clips;
-                                                                                                    IScalableMeshMeshPtr scalableMesh = node->GetMesh(false, clips);
-                                                                                                    const PolyfaceQuery* polyface = scalableMesh->GetPolyfaceQuery();
-                                                                                                    builder->AddPolyface(*polyface);
-                                                                                                    allPts.insert(allPts.end(), polyface->GetPointCP(), polyface->GetPointCP() + polyface->GetPointCount());
-                                                                                                    }
-                                                                                                IMeshQuery*  meshQuery = dynamic_cast <IMeshQuery*> (&((EditElementHandleP)agenda.GetFirstP())->GetHandler());
-                                                                                                PolyfaceHeaderPtr mesh;
-                                                                                                meshQuery->GetMeshData(*agenda.GetFirstP(), mesh);
-                                                                                                mesh->Transform(uorToMeter);
-                                                                                                mesh->Transform(refToActiveTrf);
-                                                                                                bvector<PolyfaceHeaderPtr> cutSections, fillSections;
-                                                                                                terrainMesh = builder->GetClientMeshPtr();
-                                                                                                PolyfaceQuery::ComputeCutAndFill(*terrainMesh, *mesh, cutSections, fillSections);
-                                                                                                for (auto& polyfaceP : cutSections)
-                                                                                                    {
-                                                                                                    double sectionCut = 0.0;
-                                                                                                    DPoint3d centroid;
-                                                                                                    RotMatrix axes;
-                                                                                                    DVec3d moments;
-                                                                                                    polyfaceP->ComputePrincipalMomentsAllowMissingSideFacets(sectionCut, centroid, axes, moments, true);
-                                                                                                    cutValidate += fabs(sectionCut);
-                                                                                                    }
-                                                                                                for (auto& polyfaceP : fillSections)
-                                                                                                    {
-                                                                                                    double sectionFill = 0.0;
-                                                                                                    DPoint3d centroid;
-                                                                                                    RotMatrix axes;
-                                                                                                    DVec3d moments;
-                                                                                                    polyfaceP->ComputePrincipalMomentsAllowMissingSideFacets(sectionFill, centroid, axes, moments, true);
-                                                                                                    fillValidate += fabs(sectionFill);
-                                                                                                    }
-
-                                                                                                volumeValidate = cutValidate - fillValidate;
-                                                                                                cutError = cutValidate == 0 ? 0 : 100.0*(cut - cutValidate) / cutValidate;
-                                                                                                fillError = fillValidate == 0 ? 0 : 100.0*(fill - fillValidate) / fillValidate;
-                                                                                                volumeError = volumeValidate == 0 ? 0 : 100.0*(volume - volumeValidate) / volumeValidate;
-                                                                                                avgError = (fabs(cutError) + fabs(fillError) + fabs(volumeError)) / 3.0;
-                                                                                                timer = clock() - timer;
-                                                                                                secs = ((float)timer) / CLOCKS_PER_SEC;
-                                                                                                terrainMesh->ClearAllVectors();
-                                                                                                Bentley::TerrainModel::DTMPtr dtmPtr;
-                                                                                                int status = CreateBcDTM(dtmPtr);
-                                                                                                BC_DTM_OBJ* dtmObjP(dtmPtr->GetBcDTM()->GetTinHandle());
-                                                                                                status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::RandomSpots, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &allPts[0], (long)allPts.size());
-                                                                                                status = bcdtmObject_triangulateDtmObject(dtmObjP);
-                                                                                                builder = IPolyfaceConstruction::New(*options);
-                                                                                                BcDTMMeshPtr meshP = dtmPtr->GetBcDTM()->GetMesh((long)true, 0, NULL, 0);
-                                                                                                DPoint3d triangle[4];
-                                                                                                for (long i = 0; i < meshP->GetFaceCount(); ++i)
-                                                                                                    {
-                                                                                                    triangle[0] = meshP->GetFace(i)->GetCoordinates(0);
-                                                                                                    triangle[1] = meshP->GetFace(i)->GetCoordinates(1);
-                                                                                                    triangle[2] = meshP->GetFace(i)->GetCoordinates(2);
-                                                                                                    builder->AddTriStrip(triangle, NULL, NULL, 3, true);
-                                                                                                    }
-                                                                                                terrainMesh = builder->GetClientMeshPtr();
-                                                                                                cutSections.clear();
-                                                                                                fillSections.clear();
-                                                                                                PolyfaceQuery::ComputeCutAndFill(*terrainMesh, *mesh, cutSections, fillSections);
-                                                                                                for (auto& polyfaceP : cutSections)
-                                                                                                    {
-                                                                                                    double sectionCut = 0.0;
-                                                                                                    DPoint3d centroid;
-                                                                                                    RotMatrix axes;
-                                                                                                    DVec3d moments;
-                                                                                                    polyfaceP->ComputePrincipalMomentsAllowMissingSideFacets(sectionCut, centroid, axes, moments, true);
-                                                                                                    cutConnected += fabs(sectionCut);
-                                                                                                    }
-                                                                                                for (auto& polyfaceP : fillSections)
-                                                                                                    {
-                                                                                                    double sectionFill = 0.0;
-                                                                                                    DPoint3d centroid;
-                                                                                                    RotMatrix axes;
-                                                                                                    DVec3d moments;
-                                                                                                    polyfaceP->ComputePrincipalMomentsAllowMissingSideFacets(sectionFill, centroid, axes, moments, true);
-                                                                                                    fillConnected += fabs(sectionFill);
-                                                                                                    }
-                                                                                                volConnected = cutConnected - fillConnected;
-                                                                                                stitchCut = cutConnected == 0 ? 0 : 100.0*(cut - cutConnected) / cutConnected;
-                                                                                                stitchFill = fillConnected == 0 ? 0 : 100.0*(fill - fillConnected) / fillConnected;
-                                                                                                stitchVol = volConnected == 0 ? 0 : 100.0*(volume - volConnected) / volConnected;
-                                                                                                meshQuery = nullptr;
-                                                                                                }
-                                                                                            }
-
-                                                                                        agenda.Clear();
-                                                                                        //model->DeleteDgnAttachment(newAttachment);
-                                                                                        //write out results
-                                                                                        double timeToCompute = 0.0;
-                                                                                        Int64 nOfTriangles = 0, nTiles = 0, nFailedTiles = 0, nSections = 0, nSectionErrors = 0;
-                                                                                        IScalableMeshATP::GetInt(L"nTrianglesInCorridor", nOfTriangles);
-                                                                                        IScalableMeshATP::GetDouble(L"volumeTime", timeToCompute);
-                                                                                        IScalableMeshATP::GetInt(L"nTiles", nTiles);
-                                                                                        IScalableMeshATP::GetInt(L"nNoCutFillTiles", nFailedTiles);
-                                                                                        IScalableMeshATP::GetInt(L"nSectionsTotal", nSections);
-                                                                                        IScalableMeshATP::GetInt(L"nFailedComputePrincipalMoments", nSectionErrors);
-                                                                                        fwprintf(pResultFile, L"%s,%s,%I64d,%I64d,%.5f,%.5f,%.5f,%I64d,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f\n",
-                                                                                                 stmFileName.c_str(),
-                                                                                                 result.c_str(),
-                                                                                                 stmFile->GetPointCount(),
-                                                                                                 nOfTriangles,
-                                                                                                 cut,
-                                                                                                 fill,
-                                                                                                 volume,
-                                                                                                 nTiles,
-                                                                                                 cutValidate,
-                                                                                                 fillValidate,
-                                                                                                 volumeValidate,
-                                                                                                 cutError,
-                                                                                                 fillError,
-                                                                                                 volumeError,
-                                                                                                 timeToCompute,
-                                                                                                 avgError,
-                                                                                                 secs,
-                                                                                                 cutConnected,
-                                                                                                 fillConnected,
-                                                                                                 volConnected,
-                                                                                                 stitchCut,
-                                                                                                 stitchFill,
-                                                                                                 stitchVol);
-                                                                                        IScalableMeshATP::StoreDouble(L"volumeTime", 0.0);
-                                                                                        IScalableMeshATP::StoreInt(L"nTrianglesInCorridor", 0);
-                                                                                        fflush(pResultFile);
-                                                        */
+    //assert(false && "Not ported yet! Perhaps we could use your help?");
+    WString stmFileName, importFileName;
+    // Parses the test(s) definition:
+    if (pTestNode->GetAttributeStringValue(stmFileName, "stmFileName") != BEXML_Success)
+        {
+        printf("ERROR : stmFileName attribute not found\r\n");
+        return;
+        }
+    StatusInt status;
+    IScalableMeshPtr stmFile = IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
+
+    int64_t pointCount = 0;
+    WString result;
+
+    if (stmFile != 0)
+        {
+        pointCount = stmFile->GetPointCount();
+        result = L"SUCCESS";
+        }
+    else
+        {
+        result = L"FAILURE";
+        }
+    if (pTestNode->GetAttributeStringValue(importFileName, "importFileName") != BEXML_Success)
+        {
+        printf("ERROR : importFileName attribute not found\r\n");
+        return;
+        }
+
+    BeFile file;
+    if (BeFileStatus::Success != file.Open(importFileName.c_str(), BeFileAccess::Read))
+        {
+        //printf("ERROR : can't open file : %s", linesFileName);
+        return;
+        }
+    char* meshFileBuffer = nullptr;
+    size_t fileSize;
+    file.GetSize(fileSize);
+    meshFileBuffer = new char[fileSize];
+    uint32_t bytes_read;
+    file.Read(meshFileBuffer, &bytes_read, (uint32_t)fileSize);
+    assert(bytes_read == fileSize);
+    file.Close();
+
+    Json::Reader reader;
+    Json::Value mesh;
+    reader.parse(meshFileBuffer, meshFileBuffer + bytes_read, mesh);
+
+    DRange3d elemRange;
+    elemRange.high.x = mesh["elemRange"]["high.x"].asDouble();
+    elemRange.high.y = mesh["elemRange"]["high.y"].asDouble();
+    elemRange.high.z = mesh["elemRange"]["high.z"].asDouble();
+    elemRange.low.x = mesh["elemRange"]["low.x"].asDouble();
+    elemRange.low.y = mesh["elemRange"]["low.y"].asDouble();
+    elemRange.low.z = mesh["elemRange"]["low.z"].asDouble();
+
+    double pointSize = mesh["mesh"]["pointCount"].asDouble();
+    bvector<DPoint3d> points;
+    points.resize(pointSize);
+    int i = 0;
+    for (const auto& jsonObject : mesh["mesh"]["Points"])
+        {
+        DPoint3d point;
+        point.x = jsonObject["Point"][0].asDouble();
+        point.y = jsonObject["Point"][1].asDouble();
+        point.z = jsonObject["Point"][2].asDouble();
+        points[i++] = point;
+        }
+
+    double pointIndexSize = mesh["mesh"]["pointIndexCount"].asDouble();
+    bvector<int32_t> pointsIndex;
+    pointsIndex.resize(pointIndexSize);
+    for (int i = 0; i < pointIndexSize; i++)
+        {
+        int32_t id = mesh["mesh"]["PointsIndex"][i].asInt();
+        pointsIndex[i] = id;
+        }
+
+    //PolyfaceQuery* poly = new PolyfaceQueryCarrier(3, false/*twoSided*/, pointIndexSize, pointSize, points, pointsIndex);
+
+    PolyfaceHeaderPtr meshData = PolyfaceHeader::CreateIndexedMesh(3, points, pointsIndex);
+
+    //PolyfaceHeaderPtr meshData;
+    //IFacetOptionsPtr options = IFacetOptions::Create();
+    //options->SetMaxPerFace(3);
+    //IPolyfaceConstructionPtr builder = IPolyfaceConstruction::New(*options);
+    //builder->AddPolyface(*poly);
+    //meshData = builder->GetClientMeshPtr();
+
+    double cut = 0.0, fill = 0.0, volume = 0.0;
+    double cutValidate = 0.0, fillValidate = 0.0, volumeValidate = 0.0;
+    double cutError = 0.0, fillError = 0.0, volumeError = 0.0, avgError = 0.0;
+    double secs = 0.0;
+    double   cutConnected, fillConnected, volConnected, stitchCut, stitchFill, stitchVol;
+    cutConnected = fillConnected = volConnected = stitchCut = stitchFill = stitchVol = 0.0;
+
+    {
+    IScalableMeshATP::StoreInt(L"nTiles", 0);
+    IScalableMeshATP::StoreInt(L"nNoCutFillTiles", 0);
+    IScalableMeshATP::StoreInt(L"nSectionsTotal", 0);
+    IScalableMeshATP::StoreInt(L"nFailedComputePrincipalMoments", 0);
+    //bvector<PolyfaceHeaderPtr> volumeMesh;
+    status = ComputeVolumeForAgenda(/*elemRange,*/ meshData, stmFile, cut, fill, volume/*, volumeMesh*/);
+
+
+
+    /*    for (int i = 0; i < volumeMesh.size(); i++)
+            {
+            //Transform uorToMeter, meterToUor;
+            //GetTransformForPoints(uorToMeter, meterToUor);
+            //Transform refToActiveTrf;
+            //GetFromModelRefToActiveTransform(refToActiveTrf, ((EditElementHandleP)agenda.GetFirstP())->GetModelRef());
+            //volumeMesh[i]->Transform(meterToUor);
+            //volumeMesh[i]->Transform(refToActiveTrf);
+            //MSElementDescr* desc = NULL;
+            //mdlMesh_newPolyfaceFromEmbeddedArraysExt(&desc, NULL, &volumeMesh[i]->PointIndex(), 0, &volumeMesh[i]->Point(), (0 == volumeMesh[i]->NormalIndex().size() ? NULL : &volumeMesh[i]->NormalIndex()), (0 == volumeMesh[i]->Normal().size() ? NULL : (EmbeddedDPoint3dArray*) &volumeMesh[i]->Normal()), (0 == volumeMesh[i]->ParamIndex().size() ? NULL : &volumeMesh[i]->ParamIndex()), (0 == volumeMesh[i]->Param().size() ? NULL : (EmbeddedDPoint2dArray*)&volumeMesh[i]->Param()), NULL, NULL, NULL, NULL, false, true);
+            //mdlMesh_newPolyfaceFromEmbeddedArraysExt(&desc, NULL, &volumeMesh[i]->PointIndex(), 0, &volumeMesh[i]->Point(), (0 == volumeMesh[i]->NormalIndex().size() ? NULL : &volumeMesh[i]->NormalIndex()), (0 == volumeMesh[i]->Normal().size() ? NULL : (EmbeddedDPoint3dArray*) &volumeMesh[i]->Normal()), (0 == volumeMesh[i]->ParamIndex().size() ? NULL : &volumeMesh[i]->ParamIndex()), (0 == volumeMesh[i]->Param().size() ? NULL : (EmbeddedDPoint2dArray*)&volumeMesh[i]->Param()), NULL, NULL, NULL, NULL, false, true);
+            //                mdlElmdscr_add(desc);
+            //EditElementHandle handle(desc, true, true, mdlModelRef_getActive());
+            //handle.AddToModel();
+            /*mdlElmdscr_add(desc);
+            EditElementHandle handle(pNewElmDsc, true, true, model); 
+            handle.AddToModel();*/
+            //        }
+
+    if (status != SUCCESS)
+        {
+        result = L"FAILED TO COMPUTE";
+        }
+    else
+        {
+        clock_t timer = clock();
+        IScalableMeshMeshQueryPtr meshQueryInterface = ((IScalableMesh*)stmFile.get())->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
+        bvector<IScalableMeshNodePtr> returnedNodes;
+        IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
+        DRange3d fileRange;
+        stmFile->GetRange(fileRange);
+        //Transform uorToMeter, meterToUor;
+
+        DPoint3d box[4] = {
+            DPoint3d::From(elemRange.low.x, elemRange.low.y, fileRange.low.z),
+            DPoint3d::From(elemRange.low.x, elemRange.high.y, fileRange.low.z),
+            DPoint3d::From(elemRange.high.x, elemRange.low.y, fileRange.high.z),
+            DPoint3d::From(elemRange.high.x, elemRange.high.y, fileRange.high.z)
+            };
+        meshQueryInterface->Query(returnedNodes, box, 4, params);
+        // DPoint3d triangle[4];
+        // int status = SUCCESS;
+        PolyfaceHeaderPtr terrainMesh;
+        IFacetOptionsPtr  options = IFacetOptions::Create();
+        options->SetMaxPerFace(3);
+        IPolyfaceConstructionPtr  builder = IPolyfaceConstruction::New(*options);
+        bvector<DPoint3d> allPts;
+        for (auto& node : returnedNodes)
+            {
+            bvector<bool> clips;
+            IScalableMeshMeshPtr scalableMesh = node->GetMesh(false, clips);
+            const PolyfaceQuery* polyface = scalableMesh->GetPolyfaceQuery();
+            builder->AddPolyface(*polyface);
+            allPts.insert(allPts.end(), polyface->GetPointCP(), polyface->GetPointCP() + polyface->GetPointCount());
+            }
+        //IMeshQuery*  meshQuery = dynamic_cast <IMeshQuery*> (&((EditElementHandleP)agenda.GetFirstP())->GetHandler());
+        //PolyfaceHeaderPtr mesh;
+        //meshQuery->GetMeshData(*agenda.GetFirstP(), mesh);
+        //mesh->Transform(uorToMeter);
+        //mesh->Transform(refToActiveTrf);
+        bvector<PolyfaceHeaderPtr> cutSections, fillSections;
+        terrainMesh = builder->GetClientMeshPtr();
+        PolyfaceQuery::ComputeCutAndFill(*terrainMesh, *meshData, cutSections, fillSections);
+        for (auto& polyfaceP : cutSections)
+            {
+            double sectionCut = 0.0;
+            DPoint3d centroid;
+            RotMatrix axes;
+            DVec3d moments;
+            polyfaceP->ComputePrincipalMomentsAllowMissingSideFacets(sectionCut, centroid, axes, moments, true);
+            cutValidate += fabs(sectionCut);
+            }
+        for (auto& polyfaceP : fillSections)
+            {
+            double sectionFill = 0.0;
+            DPoint3d centroid;
+            RotMatrix axes;
+            DVec3d moments;
+            polyfaceP->ComputePrincipalMomentsAllowMissingSideFacets(sectionFill, centroid, axes, moments, true);
+            fillValidate += fabs(sectionFill);
+            }
+
+        volumeValidate = cutValidate - fillValidate;
+        cutError = cutValidate == 0 ? 0 : 100.0*(cut - cutValidate) / cutValidate;
+        fillError = fillValidate == 0 ? 0 : 100.0*(fill - fillValidate) / fillValidate;
+        volumeError = volumeValidate == 0 ? 0 : 100.0*(volume - volumeValidate) / volumeValidate;
+        avgError = (fabs(cutError) + fabs(fillError) + fabs(volumeError)) / 3.0;
+        timer = clock() - timer;
+        secs = ((float)timer) / CLOCKS_PER_SEC;
+        terrainMesh->ClearAllVectors();
+        BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr;
+        int status = CreateBcDTM(dtmPtr);
+        BC_DTM_OBJ* dtmObjP(dtmPtr->GetBcDTM()->GetTinHandle());
+        status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::RandomSpots, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &allPts[0], (long)allPts.size());
+        status = bcdtmObject_triangulateDtmObject(dtmObjP);
+        builder = IPolyfaceConstruction::New(*options);
+        BcDTMMeshPtr meshP = dtmPtr->GetBcDTM()->GetMesh((long)true, 0, NULL, 0);
+        DPoint3d triangle[4];
+        for (long i = 0; i < meshP->GetFaceCount(); ++i)
+            {
+            triangle[0] = meshP->GetFace(i)->GetCoordinates(0);
+            triangle[1] = meshP->GetFace(i)->GetCoordinates(1);
+            triangle[2] = meshP->GetFace(i)->GetCoordinates(2);
+            builder->AddTriStrip(triangle, NULL, NULL, 3, true);
+            }
+        terrainMesh = builder->GetClientMeshPtr();
+        cutSections.clear();
+        fillSections.clear();
+        PolyfaceQuery::ComputeCutAndFill(*terrainMesh, *meshData, cutSections, fillSections);
+        for (auto& polyfaceP : cutSections)
+            {
+            double sectionCut = 0.0;
+            DPoint3d centroid;
+            RotMatrix axes;
+            DVec3d moments;
+            polyfaceP->ComputePrincipalMomentsAllowMissingSideFacets(sectionCut, centroid, axes, moments, true);
+            cutConnected += fabs(sectionCut);
+            }
+        for (auto& polyfaceP : fillSections)
+            {
+            double sectionFill = 0.0;
+            DPoint3d centroid;
+            RotMatrix axes;
+            DVec3d moments;
+            polyfaceP->ComputePrincipalMomentsAllowMissingSideFacets(sectionFill, centroid, axes, moments, true);
+            fillConnected += fabs(sectionFill);
+            }
+        volConnected = cutConnected - fillConnected;
+        stitchCut = cutConnected == 0 ? 0 : 100.0*(cut - cutConnected) / cutConnected;
+        stitchFill = fillConnected == 0 ? 0 : 100.0*(fill - fillConnected) / fillConnected;
+        stitchVol = volConnected == 0 ? 0 : 100.0*(volume - volConnected) / volConnected;
+        //meshQuery = nullptr;
+        }
+    }
+
+    //agenda.Clear();
+    //model->DeleteDgnAttachment(newAttachment);
+    //write out results
+    double timeToCompute = 0.0;
+    int64_t nOfTriangles = 0, nTiles = 0, nFailedTiles = 0, nSections = 0, nSectionErrors = 0;
+    IScalableMeshATP::GetInt(L"nTrianglesInCorridor", nOfTriangles);
+    IScalableMeshATP::GetDouble(L"volumeTime", timeToCompute);
+    IScalableMeshATP::GetInt(L"nTiles", nTiles);
+    IScalableMeshATP::GetInt(L"nNoCutFillTiles", nFailedTiles);
+    IScalableMeshATP::GetInt(L"nSectionsTotal", nSections);
+    IScalableMeshATP::GetInt(L"nFailedComputePrincipalMoments", nSectionErrors);
+    fwprintf(pResultFile, L"%s,%s,%I64d,%I64d,%.5f,%.5f,%.5f,%I64d,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f\n",
+             stmFileName.c_str(),
+             result.c_str(),
+             stmFile->GetPointCount(),
+             nOfTriangles,
+             cut,
+             fill,
+             volume,
+             nTiles,
+             cutValidate,
+             fillValidate,
+             volumeValidate,
+             cutError,
+             fillError,
+             volumeError,
+             timeToCompute,
+             avgError,
+             secs,
+             cutConnected,
+             fillConnected,
+             volConnected,
+             stitchCut,
+             stitchFill,
+             stitchVol);
+    IScalableMeshATP::StoreDouble(L"volumeTime", 0.0);
+    IScalableMeshATP::StoreInt(L"nTrianglesInCorridor", 0);
+    fflush(pResultFile);
     }
 
 /*---------------------------------------------------------------------------------**//**

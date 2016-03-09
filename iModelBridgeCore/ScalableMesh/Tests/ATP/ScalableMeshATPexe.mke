@@ -86,7 +86,7 @@ $(o)ATPFileFinder$(oext): $(baseDir)Common/ATPFileFinder.cpp ${MultiCompileDepen
 
 #$(o)DrapeLineTool$(oext): $(baseDir)Tool/DrapeLineTool.cpp $(baseDir)Tool/DrapeLineTool.h ${MultiCompileDepends}
 
-#$(o)VolumeCalculationTool$(oext): $(baseDir)Tool/VolumeCalculationTool.cpp $(baseDir)Tool/VolumeCalculationTool.h ${MultiCompileDepends}
+$(o)VolumeCalculationTool$(oext): $(baseDir)Tool/VolumeCalculationTool.cpp $(baseDir)Tool/VolumeCalculationTool.h ${MultiCompileDepends}
 
 $(o)ATPUtils$(oext): $(baseDir)Common/ATPUtils.cpp ${MultiCompileDepends}
 
