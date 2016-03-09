@@ -472,7 +472,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelMeshIndexQuery
             7744xx..
             
             || */ //NEEDS_WORK_SM : Why leaf, this is the given level that we wants?
-            m_requestedLevel == node->GetLevel() /*||
+            m_requestedLevel == node->GetLevel() || (!node->m_nodeHeader.m_balanced && node->IsLeaf()) /*||
                                                  (node->GetFilter()->IsProgressiveFilter() && m_requestedLevel > node->GetLevel())*/)
             {         
             if (node->m_nodeHeader.m_nbFaceIndexes > 0)

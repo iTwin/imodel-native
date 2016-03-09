@@ -155,8 +155,8 @@ bool SMSQLiteFile::Create(BENTLEY_NAMESPACE_NAME::Utf8CP filename)
                                      "PolygonData BLOB,"
                                      "Size INTEGER");
 
-    result = m_database->CreateTable("SMDiffsets", "DiffsetId INTEGER PRIMARY KEY,"
-                                     "DiffsetData BLOB,"
+    result = m_database->CreateTable("SMDiffSets", "DiffsetId INTEGER PRIMARY KEY,"
+                                     "Data BLOB,"
                                      "Size INTEGER");
     assert(result == BE_SQLITE_OK);
 
@@ -557,7 +557,7 @@ void SMSQLiteFile::GetDiffSet(int64_t diffsetID, bvector<uint8_t>& diffsetData, 
     {
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
-    m_database->GetCachedStatement(stmt, "SELECT DiffsetData, length(DiffsetData), Size FROM SMDiffsets WHERE DiffsetId=?");
+    m_database->GetCachedStatement(stmt, "SELECT Data, length(Data), Size FROM SMDiffSets WHERE DiffsetId=?");
     stmt->BindInt64(1, diffsetID);
     DbResult status = stmt->Step();
     // assert(status == BE_SQLITE_ROW);

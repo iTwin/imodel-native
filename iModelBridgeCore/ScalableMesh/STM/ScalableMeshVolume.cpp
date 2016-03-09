@@ -149,7 +149,7 @@ DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolume(double* cut, double* fill
     bvector<IScalableMeshNodePtr> returnedNodes;
     IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
     DRange3d fileRange;
-    ((IDTM*)m_scmPtr.get())->GetRange(fileRange);
+    m_scmPtr->GetDTMInterface()->GetRange(fileRange);
     DRange3d meshRange = mesh->PointRange();
     DPoint3d box[4] = {
         DPoint3d::From(meshRange.low.x, meshRange.low.y, fileRange.low.z),
@@ -157,6 +157,8 @@ DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolume(double* cut, double* fill
         DPoint3d::From(meshRange.high.x, meshRange.low.y, fileRange.high.z),
         DPoint3d::From(meshRange.high.x, meshRange.high.y, fileRange.high.z)
         };
+    if (meshRange.IsEmpty()) return DTMStatusInt::DTM_SUCCESS;
+    params->SetLevel(m_scmPtr->GetTerrainDepth());
     meshQueryInterface->Query(returnedNodes, box, 4, params);
     for (auto& node : returnedNodes)
         {

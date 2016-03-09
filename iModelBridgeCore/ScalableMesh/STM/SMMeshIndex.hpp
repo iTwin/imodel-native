@@ -2688,7 +2688,10 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
 
         Clipper clipNode(&points[0], size(), (int32_t*)GetPtsIndicePtr(j), GetNbPtsIndices(j), nodeRange, GetUVPtr(), GetUVsIndicesPtr(j-1));
         bvector<bvector<PolyfaceHeaderPtr>> polyfaces;
-        bool hasClip = clipNode.GetRegionsFromClipPolys(polyfaces, polys);
+        auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
+        IScalableMeshNodePtr nodeP(new ScalableMeshNode<POINT>(nodePtr));
+        DTMPtr dtm = nodeP->GetBcDTM().get();
+        bool hasClip = dtm.get() != nullptr && clipNode.GetRegionsFromClipPolys(polyfaces, polys,dtm);
        // m_differenceSets.clear();
        // m_nbClips = 0;
         UnPin();    
@@ -2753,6 +2756,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::BuildS
         auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
         IScalableMeshNodePtr nodeP(new ScalableMeshNode<POINT>(nodePtr));
         auto dtm = nodeP->GetBcDTM();
+        if (dtm.get() == nullptr) return;
             SkirtBuilder builder(dtm);
             map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
             for (size_t i = 0; i < size(); ++i)

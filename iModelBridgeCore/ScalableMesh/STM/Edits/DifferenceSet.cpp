@@ -11,7 +11,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 size_t DifferenceSet::WriteToBinaryStream(void*& serialized)
     {
-    size_t ct = sizeof(int32_t)+ 5*sizeof(uint64_t) + addedVertices.size()*sizeof(DPoint3d) + addedFaces.size()*sizeof(int32_t) + removedVertices.size()*sizeof(int32_t) + removedFaces.size() * sizeof(int32_t)+sizeof(bool);
+    size_t ct = sizeof(int32_t) + 7 * sizeof(uint64_t) + addedVertices.size()*sizeof(DPoint3d) + addedFaces.size()*sizeof(int32_t) + removedVertices.size()*sizeof(int32_t) + removedFaces.size() * sizeof(int32_t) + addedUvs.size()*sizeof(DPoint2d) + addedUvIndices.size()*sizeof(int32_t)+ sizeof(bool);
     serialized = malloc(ct);
     size_t offset = 0;
     memcpy(serialized, &clientID, sizeof(uint64_t));
