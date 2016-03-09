@@ -61,7 +61,8 @@ ECObjectsHeaders    =           $(ecobjectsPublicAPISrc)ECObjects.h \
                                 $(baseDir)DateTimeInfoAccessor.h \
                                 $(ecobjectsPublicAPISrc)ECDiff.h \
                                 $(ecobjectsPublicAPISrc)SchemaLocalizedStrings.h \
-                                $(ecobjectsPublicAPISrc)AdHocJsonContainer.h
+                                $(ecobjectsPublicAPISrc)AdHocJsonContainer.h \
+                                $(ecobjectsPublicAPISrc)ECJsonUtilities.h
 
 
 ECPresentationHeaders =         $(ecpresentationPublicAPISrc)auicommand.h \
@@ -170,6 +171,8 @@ $(o)ECDiff$(oext)                                          : $(baseDir)ECDiff.cp
 $(o)SchemaLocalizedStrings$(oext)                          : $(baseDir)SchemaLocalizedStrings.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)AdHocJsonContainer$(oext)                              : $(baseDir)AdHocJsonContainer.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)ECJsonUtilities$(oext)                                 : $(baseDir)ECJsonUtilities.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 # ECPresentation
 

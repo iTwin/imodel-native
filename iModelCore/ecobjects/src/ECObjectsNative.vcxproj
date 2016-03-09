@@ -62,6 +62,7 @@
     <ClCompile Include="ECEnabler.cpp" />
     <ClCompile Include="ECInstance.cpp" />
     <ClCompile Include="ecinstanceiterable.cpp" />
+    <ClCompile Include="ECJsonUtilities.cpp" />
     <ClCompile Include="ECObjectsPch.cpp" />
     <ClCompile Include="ECProperty.cpp" />
     <ClCompile Include="ECSchema.cpp" />
@@ -135,6 +136,7 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECExpressions.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECInstance.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECInstanceIterable.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECJsonUtilities.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjects.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPI.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPIOverview.h" />
