@@ -20,11 +20,16 @@
 
 // General compiler Include files
 #if defined (BENTLEY_WIN32) ||defined(BENTLEY_WINRT)
-#pragma inline_depth(64)
+    #pragma inline_depth(64)
 
-#include <concrt.h>
-#include <ppl.h>
-#define HAVE_CONCURRENCY_RUNTIME 
+    #include <concrt.h>
+    #include <ppl.h>
+    #define HAVE_CONCURRENCY_RUNTIME 
+
+    #if defined(_M_IX86) || defined(_M_X64)
+        #define HAVE_SIMD_INTRINSICS
+        #include <emmintrin.h>
+    #endif
 
 #elif defined(__unix__)
 

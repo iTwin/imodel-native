@@ -18,9 +18,6 @@
 #include <Imagepp/all/h/HGF2DDisplacement.h>
 #include <Imagepp/all/h/HFCMatrix.h>
 
-//SSE Optimization intrinsics
-#include "emmintrin.h"
-
 #define POLYNOMIAL_DEGREE 3
 #define NUMBER_OF_COEFFICIENTS 10
 #define MINIMUM_NUMBER_OF_TIE_POINTS 50
