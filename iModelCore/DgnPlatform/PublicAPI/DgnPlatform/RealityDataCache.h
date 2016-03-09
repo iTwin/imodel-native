@@ -863,8 +863,7 @@ struct BeSQLiteRealityDataStorage : IRealityDataStorage<BeSQLiteRealityDataStora
 
             //! Called to free some space in the database.
             //! @param[in] db           The database to cleanup.
-            //! @param[in] percentage   The percentage of data that should be freed.
-            virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db, double percentage) const = 0;
+            virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db) const = 0;
         };
     typedef RefCountedPtr<DatabasePrepareAndCleanupHandler> DatabasePrepareAndCleanupHandlerPtr;
 
@@ -1002,12 +1001,11 @@ private:
     BeMutex           m_databaseCS;
     bset<Utf8String> m_activeRequests;
     BeMutex m_activeRequestsCS;
-    uint32_t m_idleTime; 
-    uint64_t m_cacheSize;
+    uint32_t m_idleTime;
     RefCountedPtr<BeSQLite::BusyRetry> m_retry;
 
 private:
-    BeSQLiteRealityDataStorage(BeFileName const& filename, uint32_t idleTime, uint64_t cacheSize);
+    BeSQLiteRealityDataStorage(BeFileName const& filename, uint32_t idleTime);
     void                     wt_Prepare(DatabasePrepareAndCleanupHandler const& prepareHandler);
     void                     wt_Cleanup();
     void                     wt_Persist(Data const& data);
@@ -1031,8 +1029,7 @@ public:
     //! Creates a new BeSQLiteRealityDataStorage.
     //! @param[in] filename     File name.
     //! @param[in] idleTime     Time (in miliseconds) for the worker thread to wait before commiting changes to the database.
-    //! @param[in] cacheSize    Sets max size (in bytes) which is allowed for RealityDataCache database.
-    DGNPLATFORM_EXPORT static BeSQLiteRealityDataStoragePtr Create(BeFileName const& filename, uint32_t idleTime = 5000, uint64_t cacheSize = 0);
+    DGNPLATFORM_EXPORT static BeSQLiteRealityDataStoragePtr Create(BeFileName const& filename, uint32_t idleTime = 5000);
 
     //! Initialize data object with the data in the database.
     DGNPLATFORM_EXPORT RealityDataStorageResult Select(Data& data, Utf8CP id, SelectOptions const& options, IRealityDataStorageResponseReceiver& responseReceiver);

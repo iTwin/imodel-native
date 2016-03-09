@@ -456,16 +456,6 @@ public:
             virtual BentleyStatus _CreateLocalFileId(Utf8StringR fileId, BeFileNameCR fullPath, BeFileNameCR basePath) const {return ERROR;}
             };
 
-        //! Supply IRealityDatahandlers
-        struct RealityDataAdmin : IHostObject
-        {
-        private:
-            RealityDataCachePtr m_cache;
-
-        public:
-            DGNPLATFORM_EXPORT RealityDataCache& GetCache();
-        };
-
         //! Support for elements that store their data as Parasolid or Acis breps. Also required
         //! to output element graphics as solid kernel entities and facet sets.
         struct SolidsKernelAdmin : IHostObject
@@ -870,7 +860,6 @@ public:
         TxnAdmin*               m_txnAdmin;
         IACSManagerP            m_acsManager;
         FormatterAdmin*         m_formatterAdmin;
-        RealityDataAdmin*       m_realityDataAdmin;
         ScriptAdmin*            m_scriptingAdmin;
         RepositoryAdmin*        m_repositoryAdmin;
         Utf8String              m_productName;
@@ -912,9 +901,6 @@ public:
         //! Supply the formatter admin
         DGNPLATFORM_EXPORT virtual FormatterAdmin& _SupplyFormatterAdmin();
 
-        //! Supply the RealityDataAdmin
-        DGNPLATFORM_EXPORT virtual RealityDataAdmin& _SupplyRealityDataAdmin();
-
         //! Supply the ScriptAdmin
         DGNPLATFORM_EXPORT virtual ScriptAdmin& _SupplyScriptingAdmin();
 
@@ -941,7 +927,6 @@ public:
             m_txnAdmin = nullptr;
             m_acsManager = nullptr;
             m_formatterAdmin = nullptr;
-            m_realityDataAdmin = nullptr;
             m_scriptingAdmin = nullptr;
             m_repositoryAdmin = nullptr;
             };
@@ -962,7 +947,6 @@ public:
         TxnAdmin&               GetTxnAdmin()              {return *m_txnAdmin;}
         IACSManagerR            GetAcsManager()            {return *m_acsManager;}
         FormatterAdmin&         GetFormatterAdmin()        {return *m_formatterAdmin;}
-        RealityDataAdmin&       GetRealityDataAdmin()      {return *m_realityDataAdmin;}
         ScriptAdmin&            GetScriptAdmin()           {return *m_scriptingAdmin;}
         RepositoryAdmin&        GetRepositoryAdmin()       {return *m_repositoryAdmin;}
         Utf8CP                  GetProductName()           {return m_productName.c_str();}

@@ -416,16 +416,16 @@ struct TestDatabasePrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databa
     {
     mutable bool m_prepared;
     std::function<BentleyStatus(BeSQLite::Db&)> m_prepareDatabaseHandler;
-    std::function<BentleyStatus(BeSQLite::Db&, double percentage)> m_cleanupDatabaseHandler;
+    std::function<BentleyStatus(BeSQLite::Db&)> m_cleanupDatabaseHandler;
 
     TestDatabasePrepareAndCleanupHandler() : m_prepareDatabaseHandler(nullptr), m_cleanupDatabaseHandler(nullptr), m_prepared(false) {}
     static RefCountedPtr<TestDatabasePrepareAndCleanupHandler> Create() {return new TestDatabasePrepareAndCleanupHandler();}
     void SetPrepareDatabaseHandler(std::function<BentleyStatus(BeSQLite::Db&)> const& prepareDatabaseHandler) {m_prepareDatabaseHandler = prepareDatabaseHandler;}
-    void SetCleanupDatabaseHandler(std::function<BentleyStatus(BeSQLite::Db&, double percentage)> const& cleanupDatabaseHandler) {m_cleanupDatabaseHandler = cleanupDatabaseHandler;}
+    void SetCleanupDatabaseHandler(std::function<BentleyStatus(BeSQLite::Db&)> const& cleanupDatabaseHandler) {m_cleanupDatabaseHandler = cleanupDatabaseHandler;}
 
     virtual bool _IsPrepared() const override {return m_prepared;}
     virtual BentleyStatus _PrepareDatabase(BeSQLite::Db& db) const override { m_prepared = true; return (nullptr != m_prepareDatabaseHandler ? m_prepareDatabaseHandler(db) : SUCCESS);}
-    virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db, double percentage) const override {return (nullptr != m_cleanupDatabaseHandler ? m_cleanupDatabaseHandler(db, percentage) : SUCCESS);}
+    virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db) const override {return (nullptr != m_cleanupDatabaseHandler ? m_cleanupDatabaseHandler(db) : SUCCESS);}
     };
 
 //=======================================================================================
@@ -484,7 +484,7 @@ public:
         BeTest::GetHost().GetOutputRoot(filename);
         filename.AppendToPath(L"BeSQLiteRealityDataStorageTests.db");
 
-        m_storage = BeSQLiteRealityDataStorage::Create(filename, 0, 1);
+        m_storage = BeSQLiteRealityDataStorage::Create(filename, 0);
         }
     virtual void TearDown() override
         {
@@ -581,7 +581,7 @@ TEST_F (BeSQLiteRealityDataStorageTests, DoesCleanupDatabase)
     BeAtomic<bool> didCleanup(false);
     BeConditionVariable cv;
     RefCountedPtr<TestDatabasePrepareAndCleanupHandler> handler = TestDatabasePrepareAndCleanupHandler::Create();
-    handler->SetCleanupDatabaseHandler([&didCleanup, &cv](BeSQLite::Db&, double percentage)
+    handler->SetCleanupDatabaseHandler([&didCleanup, &cv](BeSQLite::Db&)
         {
         BeMutexHolder lock(cv.GetMutex());
         didCleanup = true;
