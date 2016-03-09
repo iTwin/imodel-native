@@ -102,6 +102,7 @@
     <ClCompile Include="ECSql\PropertyNameExp.cpp" />
     <ClCompile Include="ECSql\SelectStatementExp.cpp" />
     <ClCompile Include="ECSql\StructArrayJsonECSqlBinder.cpp" />
+    <ClCompile Include="ECSql\StructArrayJsonECSqlField.cpp" />
     <ClCompile Include="ECSql\StructMappedToColumnsECSqlField.cpp" />
     <ClCompile Include="ECSql\StructToColumnsECSqlBinder.cpp" />
     <ClCompile Include="ECSql\SystemPropertyECSqlBinder.cpp" />
@@ -206,6 +207,7 @@
     <ClInclude Include="ECSql\PropertyNameExp.h" />
     <ClInclude Include="ECSql\SelectStatementExp.h" />
     <ClInclude Include="ECSql\StructArrayJsonECSqlBinder.h" />
+    <ClInclude Include="ECSql\StructArrayJsonECSqlField.h" />
     <ClInclude Include="ECSql\StructMappedToColumnsECSqlField.h" />
     <ClInclude Include="ECSql\StructToColumnsECSqlBinder.h" />
     <ClInclude Include="ECSql\SystemPropertyECSqlBinder.h" />

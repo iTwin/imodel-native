@@ -71,7 +71,7 @@ private:
     virtual IECSqlPrimitiveBinder& _BindPrimitive() override { return *this; }
 
     virtual ECSqlStatus _BuildJson(Json::Value&) const override;
-    virtual void _Clear() override { m_value.clear(); }
+    virtual void _Clear() override { m_value = Json::Value(Json::nullValue); }
 
     bool CanBindValue(ECN::PrimitiveType actualType) const { return actualType == GetTypeInfo().GetPrimitiveType(); }
 
@@ -114,7 +114,7 @@ private:
     virtual IECSqlBinder& _AddArrayElement() override;
 
     virtual ECSqlStatus _BuildJson(Json::Value&) const override;
-    virtual void _Clear() override;
+    virtual void _Clear() override { return m_elements.clear(); }
 
 public:
     ArrayJsonECSqlBinder(ECDbCR ecdb, ECSqlTypeInfo const& typeInfo, Utf8CP propertyName, bool isRoot) : JsonECSqlBinder(ecdb, typeInfo, propertyName, isRoot), IECSqlArrayBinder() {}

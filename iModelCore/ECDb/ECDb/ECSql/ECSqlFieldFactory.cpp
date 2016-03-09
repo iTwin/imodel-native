@@ -277,7 +277,7 @@ ECSqlColumnInfo&& structFieldColumnInfo
             NavigationECPropertyCP navProp = childPropertyMap->GetProperty().GetAsNavigationProperty();
             PrimitiveType navPropIdType = navProp->GetType();
             if (!navProp->IsMultiple())
-                status = CreatePrimitiveArrayField(childField, sqlColumnIndex, ctx, move(childColumnInfo), nullptr, navPropIdType);
+                status = CreatePrimitiveField(childField, sqlColumnIndex, ctx, move(childColumnInfo), nullptr, navPropIdType);
             else
                 status = CreatePrimitiveArrayField(childField, sqlColumnIndex, ctx, move(childColumnInfo), nullptr, navPropIdType);
             }

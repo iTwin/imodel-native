@@ -1,4 +1,5 @@
-/*--------------------------------------------------------------------------------------+
+/*------------------
+--------------------------------------------------------------------+
 |
 |     $Source: ECDb/ECSql/StructArrayJsonECSqlBinder.cpp $
 |
@@ -13,6 +14,9 @@
 #include <GeomSerialization/GeomLibsFlatBufferApi.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+#define DEBUG_JSON(header,json) {Json::FastWriter writer; printf("%s: %s\r\n", header, writer.write(json).c_str()); }
+
 // ************************************************
 // JsonECSqlBinderFactory
 // ************************************************
@@ -70,7 +74,9 @@ std::unique_ptr<ArrayJsonECSqlBinder> JsonECSqlBinderFactory::CreateArray(ECDbCR
 ECSqlStatus JsonECSqlBinder::BuildJson(Json::Value& json) const
     {
     Json::Value& val = IgnorePropertyNameInJson() ? json : json[m_propertyName];
-    return _BuildJson(val);
+    ECSqlStatus stat = _BuildJson(val);
+    DEBUG_JSON("", json);
+    return stat;
     }
 
 
@@ -408,12 +414,10 @@ ECSqlStatus StructJsonECSqlBinder::_BuildJson(Json::Value& json) const
 
         JsonECSqlBinder& member = *it->second;
 
-        Json::Value memberJson;
-        ECSqlStatus stat = member.BuildJson(memberJson);
+        ECSqlStatus stat = member.BuildJson(json);
         if (!stat.IsSuccess())
             return stat;
 
-        json[prop->GetName().c_str()] = memberJson;
         }
 
     return ECSqlStatus::Success;
@@ -478,8 +482,6 @@ IECSqlBinder& ArrayJsonECSqlBinder::_AddArrayElement()
 //---------------------------------------------------------------------------------------
 ECSqlStatus ArrayJsonECSqlBinder::_BuildJson(Json::Value& json) const
     {
-    json.resize((Json::ArrayIndex) GetLength());
-
     for (std::unique_ptr<JsonECSqlBinder>& element : m_elements)
         {
         Json::Value elementJson;
@@ -492,19 +494,6 @@ ECSqlStatus ArrayJsonECSqlBinder::_BuildJson(Json::Value& json) const
 
     return ECSqlStatus::Success;
     }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      03/2016
-//---------------------------------------------------------------------------------------
-void ArrayJsonECSqlBinder::_Clear()
-    {
-    for (std::unique_ptr<JsonECSqlBinder>& element : m_elements)
-        {
-        element->Clear();
-        }
-    }
-
 
 
 // *****************************************************
@@ -537,11 +526,11 @@ ECSqlStatus StructArrayJsonECSqlBinder::_OnBeforeStep()
         return jsonBinder.BindNull();
 
     Json::Value structArrayJson(Json::arrayValue);
-    structArrayJson.resize((Json::ArrayIndex) m_binder->GetLength());
-    
     stat = m_binder->BuildJson(structArrayJson);
     if (!stat.IsSuccess())
         return stat;
+
+    DEBUG_JSON("Final", structArrayJson);
 
     Json::FastWriter writer;
     Utf8String jsonStr = writer.write(structArrayJson);

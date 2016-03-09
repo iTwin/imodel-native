@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlField.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -57,32 +57,4 @@ public:
     ECSqlStatus Reset ();
     };
 
-//=======================================================================================
-//! @bsiclass                                                Affan.Khan      09/2013
-//ECSQL_TODO: Need to move this to another file
-//+===============+===============+===============+===============+===============+======
-struct ECSqlPrimitiveBinder
-    {
-    enum class StatementType
-        {
-        ECSql, Sqlite, Unknown
-        };
-private:
-    Utf8String m_sourcePropertyPath;
-    int m_sourceColumnIndex;
-    int m_targetParameterIndex;
-    StatementType m_sourceStmtType;
-public:
-    ECSqlPrimitiveBinder();
-    void SetSourcePropertyPath(Utf8CP column);
-    void SetSourceStatementType(StatementType type);
-    void SetSourceColumnIndex(int columnIndex);
-    void SetTargetParamterIndex(int parameterIndex);
-    bool IsResolved() const;
-    Utf8StringCR GetSourcePropertyPath() const;
-    int GetSourceColumnIndex() const;
-    int GetTargetParameterIndex() const;
-    StatementType GetSourceStatementType () const;
-    ECSqlStatus Execute(ECSqlStatementBase& sourceStmt, ECSqlStatementBase& targetStmt, IECSqlBinder::MakeCopy makeCopy);
-    };
 END_BENTLEY_SQLITE_EC_NAMESPACE

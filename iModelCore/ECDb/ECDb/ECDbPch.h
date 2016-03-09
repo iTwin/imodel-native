@@ -65,6 +65,7 @@
 #include "ECSql/PrimitiveArrayMappedToSingleColumnECSqlField.h"
 #include "ECSql/PointMappedToColumnsECSqlField.h"
 #include "ECSql/StructMappedToColumnsECSqlField.h"
+#include "ECSql/StructArrayJsonECSqlField.h"
 #include "ECSql/ECSqlDeletePreparer.h"
 #include "ECSql/ECInstanceAdapterHelper.h"
 #include "ECSql/ECSqlPrepareContext.h"

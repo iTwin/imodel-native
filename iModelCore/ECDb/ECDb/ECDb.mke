@@ -111,6 +111,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/PrimitiveArrayMappedToSingleColumnECSqlField.h \
                 $(baseDir)ECSql/PrimitiveMappedToSingleColumnECSqlField.h \
                 $(baseDir)ECSql/StructMappedToColumnsECSqlField.h \
+                $(baseDir)ECSql/StructArrayJsonECSqlField.h \
                 $(baseDir)ECSql/ECInstanceAdapterHelper.h \
                 $(baseDir)ECSql/JsonReaderImpl.h \
                 $(baseDir)ECDbSql.h
@@ -334,11 +335,13 @@ $(o)PointMappedToColumnsECSqlField$(oext):                  $(baseDir)ECSql/Poin
 
 $(o)StructMappedToColumnsECSqlField$(oext):                 $(baseDir)ECSql/StructMappedToColumnsECSqlField.cpp                   $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)StructArrayJsonECSqlField$(oext):                       $(baseDir)ECSql/StructArrayJsonECSqlField.cpp                   $(ECDbAllHeaders) ${MultiCompileDepends}
+
 $(o)ECDbSql$(oext):	                                        $(baseDir)ECDbSql.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDbSchemaEditor$(oext):	                            $(baseDir)ECDbSchemaEditor.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbExpressionSymbolProviders$(oext):               $(baseDir)ECDbExpressionSymbolProviders.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECDbExpressionSymbolProviders$(oext):                   $(baseDir)ECDbExpressionSymbolProviders.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 
 %include MultiCppCompileGo.mki

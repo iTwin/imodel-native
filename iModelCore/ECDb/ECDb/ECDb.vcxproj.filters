@@ -402,6 +402,9 @@
     <ClInclude Include="ECSql\StructArrayJsonECSqlBinder.h">
       <Filter>ECSql\ParameterBinding</Filter>
     </ClInclude>
+    <ClInclude Include="ECSql\StructArrayJsonECSqlField.h">
+      <Filter>ECSql\Fields</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -732,6 +735,9 @@
     <ClCompile Include="ECDbExpressionSymbolProviders.cpp" />
     <ClCompile Include="ECSql\StructArrayJsonECSqlBinder.cpp">
       <Filter>ECSql\ParameterBinding</Filter>
+    </ClCompile>
+    <ClCompile Include="ECSql\StructArrayJsonECSqlField.cpp">
+      <Filter>ECSql\Fields</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
