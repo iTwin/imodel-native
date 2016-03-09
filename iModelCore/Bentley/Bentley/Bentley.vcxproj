@@ -102,7 +102,6 @@
     <ClInclude Include="nonport\strfunc.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BeTextFile.cpp" />
     <ClCompile Include="DateTime.cpp" />
     <ClCompile Include="DateTimeConverter.cpp" />
     <ClCompile Include="GlobalHandleContainer.cpp" />
@@ -131,7 +130,6 @@
     <ClCompile Include="nonport\stg\redblack.cpp" />
     <ClCompile Include="nonport\strfunc.cpp" />
     <ClCompile Include="nonport\ThumbnailPropertyValue.cpp" />
-    <ClCompile Include="rbtree.cpp" />
     <ClCompile Include="RefCounted.cpp" />
     <ClCompile Include="WString.cpp" />
   </ItemGroup>
