@@ -57,6 +57,9 @@
     <ClCompile Include="Connect\ImsClientTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Examples\ExampleTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Repository\WorkspaceTests.h">
@@ -99,6 +102,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Connect\ImsClientTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Examples\ExampleTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
