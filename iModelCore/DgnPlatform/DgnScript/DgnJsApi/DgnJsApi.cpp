@@ -28,16 +28,34 @@ static RefCountedPtr<GeometricElement3d> createGeometricElement3d(DgnModelR mode
         ecSqlClassName = GENERIC_SCHEMA(GENERIC_CLASSNAME_PhysicalObject);
     Utf8CP dot = strchr(ecSqlClassName, '.');
     if (nullptr == dot)
+        {
+        T_HOST.GetScriptAdmin().HandleScriptError(DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::Other, "malformed ECSql ecclass name", ecSqlClassName);
         return nullptr;
+        }
     Utf8String ecschema(ecSqlClassName, dot);
     Utf8String ecclass(dot+1);
     DgnDbR db = model.GetDgnDb();
     DgnClassId pclassId = DgnClassId(db.Schemas().GetECClassId(ecschema.c_str(), ecclass.c_str()));
     if (!pclassId.IsValid())
+        {
+        T_HOST.GetScriptAdmin().HandleScriptError(DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::Other, "ECClass not found", ecSqlClassName);
         return nullptr;
-    DgnElementPtr el = dgn_ElementHandler::Geometric3d::GetHandler().Create(GeometricElement3d::CreateParams(db, model.GetModelId(), pclassId, catid));
+        }
+    dgn_ElementHandler::Element* handler = dgn_ElementHandler::Element::FindHandler(model.GetDgnDb(), pclassId);
+    if (nullptr == handler)
+        {
+        T_HOST.GetScriptAdmin().HandleScriptError(DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::Other, "handler not found", ecSqlClassName);
+        return nullptr;
+        }
+    DgnElementPtr el = handler->Create(DgnElement::CreateParams(db, model.GetModelId(), pclassId));
+    if (!el.IsValid())
+        {
+        Utf8PrintfString details ("class: %s category: %llx", ecSqlClassName, catid.GetValueUnchecked());
+        T_HOST.GetScriptAdmin().HandleScriptError(DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::Other, "dgn_ElementHandler::Geometric3d::GetHandler().Create failed", details.c_str());
+        return nullptr;
+        }
     GeometricElement3d* geom = JsPhysicalElement::ToGeometricElement3d(*el);
-    geom->SetCategoryId(catid); // *** TRICKY: Generic ElementHandler::Create does not set Category
+    geom->SetCategoryId(catid); // *** TRICKY: Generic ElementHandler::Create method does not set Category
     return geom;
     }
 
@@ -181,9 +199,10 @@ JsTextStringP JsGeometricPrimitive::GetTextString()  const
 int32_t JsDgnElement::Insert() 
     {
     DGNJSAPI_VALIDATE_ARGS_ERROR(IsValid());
-    auto cptr = m_el->Insert();
+    DgnDbStatus status;
+    auto cptr = m_el->Insert(&status);
     if (!cptr.IsValid())
-        return -2;
+        return (int32_t)status;
     m_el = cptr->CopyForEdit();
     return 0;
     }
@@ -425,17 +444,26 @@ JsECInstanceP getCustomAttribute(T* ccontainer, Utf8StringCR className)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsECInstanceP JsECClass::GetCustomAttribute(Utf8StringCR className) {return getCustomAttribute(m_ecClass, className);}
+JsECInstanceP JsECClass::GetCustomAttribute(Utf8StringCR className) const {return getCustomAttribute(m_ecClass, className);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsECInstanceP JsECProperty::GetCustomAttribute(Utf8StringCR className) {return getCustomAttribute(m_property, className);}
+JsECInstanceP JsECProperty::GetCustomAttribute(Utf8StringCR className) const {return getCustomAttribute(m_property, className);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsECPropertyP JsECClass::GetProperty(Utf8StringCR name)
+JsECSchemaP JsECClass::GetSchema() const
+    {
+    DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
+    return new JsECSchema(m_ecClass->GetSchema());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+JsECPropertyP JsECClass::GetProperty(Utf8StringCR name) const
     {
     DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
     auto prop = m_ecClass->GetPropertyP(name.c_str());

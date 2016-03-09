@@ -27,12 +27,7 @@ ElementGeomPartTests.GeomPart2d                 # UmarH -- WIP Domain imlementat
 ChangeSummaryTestFixture.* # Too fragile due to various schema changes - temporarily commenting the tests out. 
 ConfigurationManager_Test.*                             # UmarH -- Tests are ported from Vancouver for MacroConfiguration ,seems macros are not expanding on get variable method. 
 
-ComponentModelBasicTest.QueryComponentDefs              
-ComponentModelBasicTest.Variations                                  #  Delete -- WIP_COMPONENT: detect if variation is in use
 ComponentModelBasicTest.MakeVariationInstance           # UmarH Failing Only on 0601Dev Firebug ( not locally), need to investigate
-ComponentModelTest.SimulateDeveloperAndClient                       # Broken with removal of dgn_ElementHandler::Physical, notified Sam
-ComponentModelTest.SimulateDeveloperAndClientWithNestingSingleton   # Broken with removal of dgn_ElementHandler::Physical, notified Sam
-ComponentModelTest.SimulateDeveloperAndClientWithNesting            # Broken with removal of dgn_ElementHandler::Physical, notified Sam
 
 DgnProjectPackageTest.VerifyViewsForDgndbFilesConvertedDuringBuild   #Affan #TFS353039
 
@@ -43,4 +38,3 @@ VolumeElementTestFixture.QueryTest                      # FenceParams::AcceptEle
 #Uses the eb ECschema which has to be refactored for EC3 and ECDb06. Notified Raman
 JsonTests.FieldEngineerStructArray
 
-ElementDependencyGraph.DeleteSource # Notified Sam
