@@ -51,6 +51,7 @@ BentleyStatus ScalableMeshModel::_ReloadClipMask(BentleyApi::Dgn::DgnElementId& 
     bvector<uint64_t> clipIds;
     clipIds.push_back(clipMaskElementId.GetValue());
     m_progressiveQueryEngine->ClearCaching(clipIds, m_smPtr);
+    m_forceRedraw = true;
     return SUCCESS;
     }
 
@@ -552,15 +553,14 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         {
         //If the m_dtmPtr equals 0 it could mean that the last data request to the STM was cancelled, so start a new request even
         //if the view has not changed.
-        if (m_currentDrawingInfoPtr->HasAppearanceChanged(nextDrawingInfoPtr) == false)                
+        if (m_currentDrawingInfoPtr->HasAppearanceChanged(nextDrawingInfoPtr) == false && !m_forceRedraw)                
             {
             //assert((m_currentDrawingInfoPtr->m_overviewNodes.size() == 0) && (m_currentDrawingInfoPtr->m_meshNodes.size() > 0));
 
             ProgressiveDrawMeshNode2(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_storageToUorsTransfo);                              
             return;                        
-            }                        
+            }   
         }        
-    
     BentleyStatus status;
 
     status = m_progressiveQueryEngine->StopQuery(nextDrawingInfoPtr->GetViewNumber()); 
@@ -655,8 +655,8 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         status = m_progressiveQueryEngine->GetQueriedNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
         m_currentDrawingInfoPtr->m_overviewNodes.clear();
         assert(status == SUCCESS);
-
         needProgressive = false;
+        m_forceRedraw = false;
         }
     else
         {        
@@ -675,6 +675,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         {
         ScalableMeshProgressiveDisplay::Schedule(m_progressiveQueryEngine, m_currentDrawingInfoPtr, m_storageToUorsTransfo, context);
         }
+
     }                 
 
 //NEEDS_WORK_SM : Should be at application level
@@ -702,6 +703,7 @@ ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams con
         {
         OpenFile(tmFileName, GetDgnDb());    
         }
+    m_forceRedraw = false;
     }
 
 //----------------------------------------------------------------------------------------

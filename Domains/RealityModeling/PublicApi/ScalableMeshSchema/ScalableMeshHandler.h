@@ -92,7 +92,8 @@ struct ScalableMeshModel : IMeshSpatialModel
         IScalableMeshDisplayCacheManagerPtr     m_displayNodesCache;
         IScalableMeshProgressiveQueryEnginePtr  m_progressiveQueryEngine;        
         ScalableMeshDrawingInfoPtr              m_currentDrawingInfoPtr;
-        DMatrix4d                               m_storageToUorsTransfo;        
+        DMatrix4d                               m_storageToUorsTransfo; 
+        bool m_forceRedraw;
 
     protected:
  
