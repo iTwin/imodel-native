@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/SearchableText.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -72,12 +72,61 @@ Utf8String DgnSearchableText::Query::ToWhereClause() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String DgnSearchableText::Query::ToSelectStatement(DgnSearchableText::Query::Column cols) const
+    {
+    Utf8String sql("SELECT ");
+    switch (cols)
+        {
+        case Column::Count:
+            sql.append("count(*) ");
+            break;
+        case Column::None:
+            sql.append("NULL ");
+            break;
+        case Column::All:
+            sql.append("Type,Id,Text ");
+            break;
+        default:
+            {
+            uint32_t nCols = 0;
+            if (Column::None != (cols & Column::Type))
+                {
+                ++nCols;
+                sql.append("Type");
+                }
+
+            if (Column::None != (cols & Column::Id))
+                sql.append(0 < nCols++ ? ",Id" : "Id");
+
+            if (Column::None != (cols & Column::Text))
+                sql.append(0 < nCols++ ? ",Text" : "Text");
+
+            if (0 == nCols)
+                {
+                BeAssert(false && "Invalid Query::Column mask...");
+                sql.append("NULL");
+                }
+
+            sql.append(1, ' ');
+            break;
+            }
+        }
+
+    sql.append(" FROM " FTS_TABLE_Index " ");
+    sql.append(ToWhereClause());
+
+    return sql;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t DgnSearchableText::QueryCount(Query const& query) const
     {
     Statement stmt;
-    Utf8PrintfString sql("SELECT count(*) FROM " FTS_TABLE_Index " %s", query.ToWhereClause().c_str());
+    Utf8String sql = query.ToSelectStatement(Query::Column::Count);
     if (BE_SQLITE_OK != stmt.Prepare(GetDgnDb(), sql.c_str()) || BE_SQLITE_ROW != stmt.Step())
         {
         BeAssert(false);
@@ -94,7 +143,7 @@ DgnSearchableText::Iterator::const_iterator DgnSearchableText::Iterator::begin()
     {
     if (!m_stmt.IsValid())
         {
-        Utf8PrintfString sql("SELECT Type,Id,Text FROM " FTS_TABLE_Index " %s", m_query.ToWhereClause().c_str());
+        Utf8String sql = m_query.ToSelectStatement(Query::Column::All);
         m_stmt = m_db->GetCachedStatement(sql.c_str());
         }
     else
@@ -154,7 +203,18 @@ DgnSearchableText::TextTypes DgnSearchableText::QueryTextTypes() const
 DbResult DgnSearchableText::Insert(Record const& record)
     {
     BeAssert(record.IsValid());
-    SqlPrintfString sql("INSERT INTO " FTS_TABLE_Content " (Type,Id,Text) VALUES (%Q,%llu,%Q)", record.GetTextType().c_str(), record.GetId().GetValue(), record.GetText().c_str());
+    return InsertRecord(record.GetTextType().c_str(), record.GetId(), record.GetText().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnSearchableText::InsertRecord(Utf8CP textType, BeInt64Id id, Utf8CP text)
+    {
+    BeAssert(!Utf8String::IsNullOrEmpty(textType) && !Utf8String::IsNullOrEmpty(text));
+    BeAssert(id.IsValid());
+
+    SqlPrintfString sql("INSERT INTO " FTS_TABLE_Content " (Type,Id,Text) VALUES (%Q,%llu,%Q)", textType, id.GetValue(), text);
     return GetDgnDb().ExecuteSql(sql);
     }
 

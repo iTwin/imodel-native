@@ -93,7 +93,7 @@ void DgnUnits::Save()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnUnits::SaveProjectExtents(AxisAlignedBox3dCR newExtents)
+DbResult DgnUnits::SetProjectExtents(AxisAlignedBox3dCR newExtents)
     {
     m_extent = newExtents;
     Json::Value jsonObj;

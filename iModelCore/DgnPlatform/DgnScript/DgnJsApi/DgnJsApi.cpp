@@ -138,13 +138,7 @@ JsGeometryP JsGeometricPrimitive::GetGeometry() const
         case GeometricPrimitive::GeometryType::CurvePrimitive:
             {
             ICurvePrimitivePtr curve = m_value->GetAsICurvePrimitive();
-            switch (curve->GetCurvePrimitiveType())
-                {
-                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line               : return new JsLineSegment(curve);
-                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc                : return new JsEllipticArc(curve);
-                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Catenary           : return new JsCatenaryCurve(curve);
-                }
-            return new JsCurvePrimitive(curve);
+            return JsCurvePrimitive::StronglyTypedJsCurvePrimitive (curve, true);
             }
         
         case GeometricPrimitive::GeometryType::CurveVector:
@@ -159,17 +153,7 @@ JsGeometryP JsGeometricPrimitive::GetGeometry() const
         case GeometricPrimitive::GeometryType::SolidPrimitive:
             {
             ISolidPrimitivePtr solid = m_value->GetAsISolidPrimitive();
-            switch (solid->GetSolidPrimitiveType())
-                {
-                case SolidPrimitiveType::SolidPrimitiveType_DgnBox: return new JsDgnBox(solid);
-                case SolidPrimitiveType::SolidPrimitiveType_DgnTorusPipe: return new JsDgnTorusPipe(solid);
-                case SolidPrimitiveType::SolidPrimitiveType_DgnCone: return new JsDgnCone(solid);
-                case SolidPrimitiveType::SolidPrimitiveType_DgnSphere: return new JsDgnSphere(solid);
-                case SolidPrimitiveType::SolidPrimitiveType_DgnExtrusion: return new JsDgnExtrusion(solid);
-                case SolidPrimitiveType::SolidPrimitiveType_DgnRotationalSweep: return new JsDgnRotationalSweep(solid);
-                case SolidPrimitiveType::SolidPrimitiveType_DgnRuledSweep: return new JsDgnRuledSweep(solid);
-                }
-            return new JsSolidPrimitive(solid);
+            return JsSolidPrimitive::StronglyTypedJsSolidPrimitive (solid);
             }
         }
 
@@ -241,19 +225,28 @@ int32_t JsDgnElement::SetUnhandledProperty(Utf8StringCR name, JsECValueP v)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
-JsAdHocJsonValueP JsDgnElement::GetUserProperties() const
+JsAdHocJsonPropertyValueP JsDgnElement::GetUserProperty(Utf8StringCR name) const
     {
     DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
-    return new JsAdHocJsonValue(m_el->GetUserProperties());
+    return new JsAdHocJsonPropertyValue(const_cast<JsDgnElement*>(this), m_el->GetUserProperty(name.c_str()));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
-void JsDgnElement::SetUserProperties(JsAdHocJsonValueP v)
+bool JsDgnElement::ContainsUserProperty(Utf8StringCR name) const
     {
-    DGNJSAPI_VALIDATE_ARGS_VOID(IsValid() && v);
-    m_el->GetUserPropertiesR() = v->m_props;
+    DGNJSAPI_VALIDATE_ARGS(IsValid(), false);
+    return m_el->ContainsUserProperty(name.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+void JsDgnElement::RemoveUserProperty(Utf8StringCR name) const
+    {
+    DGNJSAPI_VALIDATE_ARGS_VOID(IsValid());
+    m_el->RemoveUserProperty(name.c_str());
     }
 
 //---------------------------------------------------------------------------------------

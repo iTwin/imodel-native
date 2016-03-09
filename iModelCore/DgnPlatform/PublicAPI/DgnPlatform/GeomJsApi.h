@@ -55,6 +55,7 @@ JsSTRUCT(JsDPoint2d)
 JsSTRUCT(JsDVector3d)
 JsSTRUCT(JsDVector2d)
 JsSTRUCT(JsDRay3d)
+JsSTRUCT(JsDPlane3d)
 JsSTRUCT(JsDRange3d)
 JsSTRUCT(JsDPoint3dDVector3dDVector3d)
 JsSTRUCT(JsAngle)
@@ -65,6 +66,7 @@ JsSTRUCT(JsDPoint3dArray)
 JsSTRUCT(JsDoubleArray)
 
 JsSTRUCT(JsGeometry)
+JsSTRUCT(JsGeometryNode)
 
     JsSTRUCT(JsCurvePrimitive)
         JsSTRUCT(JsLineSegment)
@@ -115,9 +117,12 @@ bool TryDoubleToIndex (double a, size_t upperBound, size_t &index);
 struct JsGeometry : BeProjectedRefCounted
 {
 virtual JsGeometry *Clone () = 0;
+virtual IGeometryPtr GetIGeometryPtr (){return nullptr;}
 virtual bool TryTransformInPlace (JsTransformP transform){return false;}
 virtual bool IsSameStructureAndGeometry (JsGeometryP other){return false;}
 virtual bool IsSameStructure (JsGeometryP other){return false;}
+
+static JsGeometryP CreateStronglyTypedJsGeometry (IGeometryPtr geometry);
 // Native-side type signatures . . .base class returns null for all native Ptr queries. Derived classes override as appropriate
 virtual ICurvePrimitivePtr GetICurvePrimitivePtr (){return nullptr;}
 virtual ISolidPrimitivePtr GetISolidPrimitivePtr (){return nullptr;}
@@ -192,6 +197,7 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 #include <DgnPlatform/GeomJsTypes/JsYawPitchRollAngles.h>
 #include <DgnPlatform/GeomJsTypes/JsDRay3d.h>
+#include <DgnPlatform/GeomJsTypes/JsDPlane3d.h>
 #include <DgnPlatform/GeomJsTypes/JsRotMatrix.h>
 #include <DgnPlatform/GeomJsTypes/JsTransform.h>
 #include <DgnPlatform/GeomJsTypes/JsDPoint3dDVector3dDVector3d.h>

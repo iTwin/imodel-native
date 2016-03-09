@@ -497,7 +497,10 @@ DgnDbStatus DgnElement::_InsertInDb()
         return existingElemWithCode.IsValid() ? DgnDbStatus::DuplicateCode : DgnDbStatus::WriteError;
         }
 
-    return SaveUserProperties();
+    if (m_userProperties)
+        status = SaveUserProperties();
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -532,7 +535,10 @@ DgnDbStatus DgnElement::_UpdateInDb()
         return DgnDbStatus::WriteError;
         }
 
-    return SaveUserProperties();
+    if (m_userProperties)
+        status = SaveUserProperties();
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -741,7 +747,8 @@ void DgnElement::CreateParams::RelocateToDestinationDb(DgnImportContext& importe
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::CopyForCloneFrom(DgnElementCR src)
     {
-    src.LoadUserProperties();
+    if (!src.m_userProperties)
+        src.LoadUserProperties();
 
     DgnCode code = GetCode();
     _CopyFrom(src);
@@ -869,10 +876,9 @@ DgnElement::CreateParams DgnElement::GetCreateParamsForImport(DgnModelR destMode
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::LoadUserProperties() const
     {
-    if (m_userProperties)
-        return;
+    BeAssert(!m_userProperties);
     
-    m_userProperties = new AdHocJsonValue();
+    m_userProperties = new AdHocJsonContainer();
 
     if (!IsPersistent())
        return;
@@ -897,9 +903,8 @@ void DgnElement::LoadUserProperties() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::SaveUserProperties() const
     {
-    if (!m_userProperties)
-        return DgnDbStatus::Success;
-    
+    BeAssert(m_userProperties);
+
     CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement("UPDATE " DGN_SCHEMA(DGN_CLASSNAME_Element) " SET UserProperties=? WHERE ECInstanceId=?");
     BeAssert(stmt.IsValid());
 
@@ -926,9 +931,7 @@ DgnDbStatus DgnElement::SaveUserProperties() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::UnloadUserProperties() const
     {
-    if (!m_userProperties)
-        return;
-
+    BeAssert(m_userProperties);
     delete m_userProperties;
     m_userProperties = nullptr;
     }
@@ -958,9 +961,56 @@ void DgnElement::CopyUserProperties(DgnElementCR other)
      */
 
     if (other.m_userProperties)
-        GetUserPropertiesR() = other.GetUserProperties();
+        {
+        if (!m_userProperties)
+            LoadUserProperties();
+        *m_userProperties = *other.m_userProperties;
+        }
     else
-        UnloadUserProperties();
+        {
+        if (m_userProperties)
+            UnloadUserProperties();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ECN::AdHocJsonPropertyValue DgnElement::GetUserProperty(Utf8CP name) const
+    {
+    if (!m_userProperties)
+        LoadUserProperties();
+    return m_userProperties->Get(name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnElement::ContainsUserProperty(Utf8CP name) const
+    {
+    if (!m_userProperties)
+        LoadUserProperties();
+    return m_userProperties->Contains(name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::RemoveUserProperty(Utf8CP name)
+    {
+    if (!m_userProperties)
+        LoadUserProperties();
+    return m_userProperties->Remove(name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::ClearUserProperties()
+    {
+    if (!m_userProperties)
+        LoadUserProperties();
+    return m_userProperties->Clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1016,6 +1066,103 @@ DgnElementCPtr ElementImporter::ImportElement(DgnDbStatus* statusOut, DgnModelR 
     return destElement;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                   Carole.MacDonald            01/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+struct InstanceUpdater : DgnElement::AppData
+    {
+    private:
+        static Key s_key;
+        DgnImportContext& m_importer;
+        DgnElementId m_sourceElementId;
+        DropMe _OnInserted(DgnElementCR el) override;
+        void Update(DgnElementCR el);
+
+    public:
+        explicit InstanceUpdater(DgnImportContext& importer, DgnElementId sourceId) : m_importer(importer), m_sourceElementId(sourceId) {}
+        static Key& GetKey() { return s_key; }
+    };
+
+//static
+InstanceUpdater::Key InstanceUpdater::s_key;
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+InstanceUpdater::DropMe InstanceUpdater::_OnInserted(DgnElementCR el)
+    {
+    if (m_sourceElementId.IsValid())
+        Update(el);
+
+    return DropMe::Yes;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+BeSQLite::EC::ECInstanceUpdater const& DgnImportContext::GetUpdater(ECN::ECClassCR ecClass) const
+    {
+    auto it = m_updaterCache.find(&ecClass);
+    if (it != m_updaterCache.end())
+        return *it->second;
+
+    bvector<ECN::ECPropertyCP> propertiesToBind;
+    for (ECN::ECPropertyCP ecProperty : ecClass.GetProperties(true))
+        {
+        // Don't bind any of the dgn derived properties
+        if (ecProperty->GetClass().GetSchema().GetName().Equals("dgn"))
+            continue;
+        propertiesToBind.push_back(ecProperty);
+        }
+
+    auto updater = new BeSQLite::EC::ECInstanceUpdater(GetDestinationDb(), ecClass, propertiesToBind);
+
+    //just log error, we will still return the invalid inserter, and the caller will check for validity again
+    if (!updater->IsValid())
+        {
+        Utf8String error;
+        error.Sprintf("Could not create ECInstanceUpdater for ECClass '%s'. No instances of that class will be updated in the DgnDb file. Please see ECDb entries in log file for details.",
+                        Utf8String(ecClass.GetFullName()).c_str());
+        //LOG(error.c_str());
+        }
+
+    m_updaterCache[&ecClass] = updater;
+    return *updater;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+void InstanceUpdater::Update(DgnElementCR el)
+    {
+    ECN::ECClassCP targetClass = el.GetElementClass();
+    ECInstanceUpdater const& updater = m_importer.GetUpdater(*targetClass);
+    if (!updater.IsValid())
+        return;
+
+    SqlPrintfString ecSql("SELECT * FROM [%s].[%s] WHERE ECInstanceId = ?", Utf8String(targetClass->GetSchema().GetName()).c_str(), Utf8String(targetClass->GetName()).c_str());
+    ECSqlStatement ecStatement;
+    ECSqlStatus status = ecStatement.Prepare(m_importer.GetSourceDb(), ecSql.GetUtf8CP());
+    if (ECSqlStatus::Success != status)
+        {
+        // log error?
+        return;
+        }
+
+    ecStatement.BindId(1, m_sourceElementId);
+    ECInstanceECSqlSelectAdapter adapter(ecStatement);
+    while (BE_SQLITE_ROW == ecStatement.Step())
+        {
+        IECInstancePtr instance = adapter.GetInstance();
+        BeAssert(instance.IsValid());
+        Utf8Char idStrBuffer[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
+        ECInstanceIdHelper::ToString(idStrBuffer, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, el.GetElementId());
+        ECN::StandaloneECInstancePtr targetInstance = targetClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        targetInstance->SetInstanceId(idStrBuffer);
+        targetInstance->CopyValues(*instance.get());
+        updater.Update(*targetInstance.get());
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1046,6 +1193,8 @@ DgnElementCPtr DgnElement::Import(DgnDbStatus* stat, DgnModelR destModel, DgnImp
     if (!cc.IsValid())
         return DgnElementCPtr();
 
+    InstanceUpdater* instanceUpdater = new InstanceUpdater(importer, this->GetElementId());
+    cc->AddAppData(InstanceUpdater::GetKey(), instanceUpdater);
     DgnElementCPtr ccp = cc->Insert(stat);
     if (!ccp.IsValid())
         return ccp;

@@ -190,10 +190,8 @@ Utf8String DgnElementDependencyGraph::FmtCyclePath(Edge const& edge, bvector<Edg
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String DgnElementDependencyGraph::GetElementCode(DgnElementId eid)
     {
-    ECSqlSelectBuilder b;
-    b.Select("Code.[Value]").From(*GetDgnDb().Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element), true).Where(ECSQL_ECINSTANCEID "=?");
     ECSqlStatement s;
-    s.Prepare(GetDgnDb(), b.ToString().c_str());
+    s.Prepare(GetDgnDb(), "SELECT Code.[Value] FROM " DGN_ECSCHEMA_NAME "." DGN_CLASSNAME_Element " WHERE ECInstanceId=?");
     s.BindId(1, eid);
     s.Step();
     return s.GetValueText(0);
@@ -754,6 +752,29 @@ void DgnElementDependencyGraph::InvokeHandlersInTopologicalOrder_OneGraph(Edge c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElementDependencyGraph::InvokeHandlersForDeletedRelationships() 
+    {
+    // *** NEEDS WORK: Somehow, we should sort the deleted rels by the model of the their (former) source elements
+    for (auto const& reldata : m_txnMgr.ElementDependencies().m_deletedRels)
+        {
+        auto handler = DgnElementDependencyHandler::GetHandler().FindHandler(m_txnMgr.GetDgnDb(), DgnClassId(reldata.m_relKey.GetECClassId()));
+        if (nullptr == handler)
+            continue;
+
+        EDGLOG(LOG_TRACE, "%sDELETED %lld:%lld(%lld,%lld) (%llx)", "", reldata.m_relKey.GetECClassId(), reldata.m_relKey.GetECInstanceId().GetValue(), 
+                                                                       reldata.m_source.GetValueUnchecked(), reldata.m_target.GetValueUnchecked(),
+                                                                       (intptr_t)handler);
+
+        if (m_processor != nullptr)
+            m_processor->_ProcessDeletedDependency(m_txnMgr.GetDgnDb(), reldata); 
+        else
+            handler->_ProcessDeletedDependency(m_txnMgr.GetDgnDb(), reldata); 
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElementDependencyGraph::InvokeHandlersInTopologicalOrder() 
     {
     // This is a total topological sort of the Edge queue.
@@ -763,6 +784,8 @@ void DgnElementDependencyGraph::InvokeHandlersInTopologicalOrder()
         {
         InvokeHandlersInTopologicalOrder_OneGraph(edge, bvector<Edge>());
         }
+
+    InvokeHandlersForDeletedRelationships();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1024,9 +1047,13 @@ void DgnElementDependencyGraph::InvokeAffectedDependencyHandlers()
         "Id IN (SELECT ModelId FROM " TEMP_TABLE(TXN_TABLE_Models) ") "
         " ORDER BY DependencyIndex");
 
+    bset<DgnModelId> modelsSeen;
     while (modelsInOrder->Step() == BE_SQLITE_ROW)
         {
         auto mid = modelsInOrder->GetValueId<DgnModelId>(0);
+
+        if (!modelsSeen.insert(mid).second) // The select statement above can return dups. Filter them out.
+            continue;
 
         EDGLOG(LOG_TRACE, "Model %lld", mid.GetValue());
 

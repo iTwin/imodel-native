@@ -242,9 +242,12 @@ TEST_F(RevisionTestFixture, Workflow)
         DumpRevision(*rev);
 
     // Merge all the saved revisions
-    RevisionStatus status = m_testDb->Revisions().MergeRevisions(revisions);
-    ASSERT_TRUE(status == RevisionStatus::Success);
-
+    for (DgnRevisionPtr const& rev : revisions)
+        {
+        RevisionStatus status = m_testDb->Revisions().MergeRevision(*rev);
+        ASSERT_TRUE(status == RevisionStatus::Success);
+        }
+ 
     // Check the updated element count
     m_testModel->FillModel();
     int mergedElementCount = (int) m_testModel->GetElements().size();
@@ -295,10 +298,8 @@ TEST_F(RevisionTestFixture, ConflictError)
     m_testDb->SaveChanges("Modified the element");
 
     // Merge changes from revision
-    bvector<DgnRevisionPtr> revisions;
-    revisions.push_back(revision);
     BeTest::SetFailOnAssert(false);
-    RevisionStatus status = m_testDb->Revisions().MergeRevisions(revisions);
+    RevisionStatus status = m_testDb->Revisions().MergeRevision(*revision);
     ASSERT_TRUE(status != RevisionStatus::Success);
     BeTest::SetFailOnAssert(true);
     }
@@ -306,10 +307,13 @@ TEST_F(RevisionTestFixture, ConflictError)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    01/2016
 //---------------------------------------------------------------------------------------
-TEST_F(RevisionTestFixture, OnDeleteRestrictMergeTest)
+TEST_F(RevisionTestFixture, MoreWorkflow)
     {
     // Setup baseline
     CreateDgnDb();
+    m_testDb->SaveChanges("Created Initial Model");
+    DgnRevisionPtr initialRevision = CreateRevision();
+    ASSERT_TRUE(initialRevision.IsValid());
 
     // Create Revision 1 inserting an element into the test model
     BackupTestFile();
@@ -320,41 +324,62 @@ TEST_F(RevisionTestFixture, OnDeleteRestrictMergeTest)
     DgnRevisionPtr revision1 = CreateRevision();
     ASSERT_TRUE(revision1.IsValid());
 
-    // Create Revision 2 deleting the test model
-    RestoreTestFile();
-    ASSERT_TRUE(m_testModel.IsValid());
-    DgnDbStatus status = m_testModel->Delete();
+    // Create Revision 2 after deleting the same element
+    DgnElementCPtr el = m_testDb->Elements().Get<DgnElement>(elementId);
+    ASSERT_TRUE(el.IsValid());
+    DgnDbStatus status = m_testDb->Elements().Delete(*el);
     ASSERT_TRUE(status == DgnDbStatus::Success);
-    m_testModel = nullptr;
-    m_testDb->SaveChanges("Deleted model and contained elements");
+    el = nullptr;
+    m_testDb->SaveChanges("Deleted same element");
 
     DgnRevisionPtr revision2 = CreateRevision();
     ASSERT_TRUE(revision2.IsValid());
 
-    // Merge Rev1->Rev2: Should fail since the model has been deleted
+    // Create Revision 3 deleting the test model (the API causes Elements to get deleted)
     RestoreTestFile();
     ASSERT_TRUE(m_testModel.IsValid());
+    status = m_testModel->Delete();
+    ASSERT_TRUE(status == DgnDbStatus::Success);
+    m_testModel = nullptr;
+    m_testDb->SaveChanges("Deleted model and contained elements");
 
-    bvector<DgnRevisionPtr> revisions;
-    revisions.push_back(revision1);
-    revisions.push_back(revision2);
+    DgnRevisionPtr revision3 = CreateRevision();
+    ASSERT_TRUE(revision3.IsValid());
+
+    RevisionStatus revStatus;
+
+    // Merge Rev1 first
+    RestoreTestFile();
+    ASSERT_TRUE(m_testModel.IsValid());
+    revStatus = m_testDb->Revisions().MergeRevision(*revision1);
+    ASSERT_TRUE(revStatus == RevisionStatus::Success);
+
+    // Merge Rev2 next
+    revStatus = m_testDb->Revisions().MergeRevision(*revision2);
+    ASSERT_TRUE(revStatus == RevisionStatus::Success);
+
+    // Merge Rev3 next - should fail since the parent does not match
     BeTest::SetFailOnAssert(false);
-    RevisionStatus revStatus = m_testDb->Revisions().MergeRevisions(revisions);
+    revStatus = m_testDb->Revisions().MergeRevision(*revision3);
     BeTest::SetFailOnAssert(true);
+    ASSERT_TRUE(revStatus == RevisionStatus::ParentMismatch);
+
+    // Merge Rev3 first
+    RestoreTestFile();
+    ASSERT_TRUE(m_testModel.IsValid());
+    revStatus = m_testDb->Revisions().MergeRevision(*revision3);
+    ASSERT_TRUE(revStatus == RevisionStatus::Success);
     
-    ASSERT_TRUE(revStatus == RevisionStatus::MergeError);
-
-    // Merge Rev2->Rev1: Should fail since the model has been deleted
+    // Delete model and Merge Rev1 - should fail since the model does not exist
     RestoreTestFile();
-    ASSERT_TRUE(m_testModel.IsValid());
+    status = m_testModel->Delete();
+    ASSERT_TRUE(status == DgnDbStatus::Success);
+    m_testModel = nullptr;
+    m_testDb->SaveChanges("Deleted model and contained elements");
 
-    revisions.clear();
-    revisions.push_back(revision2);
-    revisions.push_back(revision1);
     BeTest::SetFailOnAssert(false);
-    revStatus = m_testDb->Revisions().MergeRevisions(revisions);
+    revStatus = m_testDb->Revisions().MergeRevision(*revision1);
     BeTest::SetFailOnAssert(true);
-
     ASSERT_TRUE(revStatus == RevisionStatus::MergeError);
     }
 
@@ -367,7 +392,7 @@ void RevisionTestFixture::ExtractCodesFromRevision(DgnCodeSet& assigned, CodeSet
     DgnRevisionPtr rev = m_testDb->Revisions().StartCreateRevision();
     BeAssert(rev.IsValid());
 
-    ChangeStreamFileReader stream(rev->GetChangeStreamFile());
+    ChangeStreamFileReader stream(rev->GetChangeStreamFile(), *m_testDb);
     DgnChangeSummary summary(*m_testDb);
     EXPECT_EQ(SUCCESS, summary.FromChangeSet(stream));
     summary.GetCodes(assigned, discarded);

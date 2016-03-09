@@ -214,8 +214,8 @@ virtual StatusInt _SetType(ACSType type) = 0;
 virtual StatusInt _SetScale(double scale) = 0;
 virtual StatusInt _SetOrigin(DPoint3dCR pOrigin) = 0;
 virtual StatusInt _SetRotation(RotMatrixCR pRot) = 0;
-virtual StatusInt _PointFromString(DPoint3dR outPoint, WStringR errorMsg, WCharCP inString, bool relative, DPoint3dCP lastPoint, DgnModelR modelRef) = 0;
-virtual StatusInt _StringFromPoint(WStringR outString, WStringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelR modelRef, DistanceFormatterR distanceFormatter, DirectionFormatterR directionFormatter) = 0;
+virtual StatusInt _PointFromString(DPoint3dR outPoint, Utf8StringR errorMsg, Utf8CP inString, bool relative, DPoint3dCP lastPoint, DgnModelR modelRef) = 0;
+virtual StatusInt _StringFromPoint(Utf8StringR outString, Utf8StringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelR modelRef, DistanceFormatterR distanceFormatter, DirectionFormatterR directionFormatter) = 0;
 virtual StatusInt _SetFlags(ACSFlags flags) = 0;
 virtual uint32_t _GetExtenderId() const = 0;
 virtual uint32_t _GetSerializedSize() const = 0;
@@ -310,10 +310,10 @@ DGNPLATFORM_EXPORT StatusInt SetOrigin (DPoint3dCR pOrigin);
 DGNPLATFORM_EXPORT StatusInt SetRotation (RotMatrixCR pRot);
 
 //! Get the point (in UORs) corresponding to the input string.
-DGNPLATFORM_EXPORT StatusInt PointFromString (DPoint3dR outPoint, WStringR errorMsg, WCharCP inString, bool relative, DPoint3dCP lastPoint, DgnModelR modelRef);
+DGNPLATFORM_EXPORT StatusInt PointFromString (DPoint3dR outPoint, Utf8StringR errorMsg, Utf8CP inString, bool relative, DPoint3dCP lastPoint, DgnModelR modelRef);
 
 //! Get the string that represents the input point.
-DGNPLATFORM_EXPORT StatusInt StringFromPoint (WStringR outString, WStringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelR modelRef, DistanceFormatterR distanceFromatter, DirectionFormatterR directionFormatter);
+DGNPLATFORM_EXPORT StatusInt StringFromPoint (Utf8StringR outString, Utf8StringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelR modelRef, DistanceFormatterR distanceFromatter, DirectionFormatterR directionFormatter);
 
 //__PUBLISH_SECTION_END__
 

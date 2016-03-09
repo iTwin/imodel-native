@@ -20,6 +20,7 @@ struct ChangeStreamFileWriter : ChangeStream
 private:
     BeFileName m_pathname;
     BeFile m_file;
+    DgnDbCR m_dgndb; // Only for debugging
 
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Ramanujam.Raman                    10/2015
@@ -60,8 +61,9 @@ private:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Ramanujam.Raman                    10/2015
     //---------------------------------------------------------------------------------------
-    ChangeSet::ConflictResolution _OnConflict(ChangeSet::ConflictCause clause, Changes::Change iter)
+    ChangeSet::ConflictResolution _OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter)
         {
+        iter.Dump(m_dgndb, false, 1);
         BeAssert(false);
         return ChangeSet::ConflictResolution::Abort;
         }
@@ -70,7 +72,7 @@ public:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Ramanujam.Raman                    10/2015
     //---------------------------------------------------------------------------------------
-    ChangeStreamFileWriter(BeFileNameCR pathname) : m_pathname(pathname) {}
+    ChangeStreamFileWriter(BeFileNameCR pathname, DgnDbCR dgnDb) : m_pathname(pathname), m_dgndb(dgnDb) {}
     ~ChangeStreamFileWriter() {}
 };
 
@@ -200,8 +202,20 @@ void ChangeStreamFileReader::_Reset()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-ChangeSet::ConflictResolution ChangeStreamFileReader::_OnConflict(ChangeSet::ConflictCause clause, Changes::Change iter)
+ChangeSet::ConflictResolution ChangeStreamFileReader::_OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter)
     {
+    Utf8CP tableName;
+    int nCols, indirect;
+    DbOpcode opcode;
+    DbResult result = iter.GetOperation(&tableName, &nCols, &opcode, &indirect);
+    BeAssert(result == BE_SQLITE_OK);
+    UNUSED_VARIABLE(result);
+
+    if (cause == ConflictCause::NotFound && opcode == DbOpcode::Delete) // a delete that is already gone. 
+       return ConflictResolution::Skip; // This is caused by propagate delete on a foreign key. It is not a problem.
+
+    if (tableName)
+        iter.Dump(m_dgndb, false, 1);
     BeAssert(false);
     return ChangeSet::ConflictResolution::Abort;
     }
@@ -275,7 +289,7 @@ private:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Ramanujam.Raman                    10/2015
     //---------------------------------------------------------------------------------------
-    ChangeSet::ConflictResolution _OnConflict(ChangeSet::ConflictCause clause, Changes::Change iter)
+    ChangeSet::ConflictResolution _OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter)
         {
         BeAssert(false);
         return ChangeSet::ConflictResolution::Abort;
@@ -377,7 +391,7 @@ void DgnRevision::Dump(DgnDbCR dgndb) const
     printf("ChangeStreamFile: %ls\n", m_changeStreamFile.c_str());
     printf("DateTime: %s\n", m_dateTime.ToUtf8String().c_str());
 
-    ChangeStreamFileReader fs(m_changeStreamFile);
+    ChangeStreamFileReader fs(m_changeStreamFile, dgndb);
     fs.Dump("Contents:\n", dgndb, false, 0);
 
     printf("\n");
@@ -407,7 +421,7 @@ RevisionStatus DgnRevision::Validate(DgnDbCR dgndb) const
         return RevisionStatus::FileNotFound;
         }
 
-    ChangeStreamFileReader fs (m_changeStreamFile);
+    ChangeStreamFileReader fs (m_changeStreamFile, dgndb);
     Utf8String id = DgnRevisionIdGenerator::GenerateId(m_parentId, fs);
     if (m_id != id)
         {
@@ -428,7 +442,7 @@ void DgnRevision::IncludeChangeGroupData(ChangeGroup& changeGroup, Include inclu
 
     // NEEDSWORK? We can't create a useful ChangeStream from the ChangeGroup, even though it has a FromChangeGroup() function?
     // Would like to avoid having to read from disk here...
-    ChangeStreamFileReader stream(GetChangeStreamFile());
+    ChangeStreamFileReader stream(GetChangeStreamFile(), db);
     DgnChangeSummary summary(db);
     if (SUCCESS != summary.FromChangeSet(stream))
         return;
@@ -525,14 +539,9 @@ Utf8String RevisionManager::GetInitialParentRevisionId() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-RevisionStatus RevisionManager::MergeRevisions(bvector<DgnRevisionPtr> const& mergeRevisions)
+RevisionStatus RevisionManager::MergeRevision(DgnRevisionCR revision)
     {
     TxnManagerR txnMgr = m_dgndb.Txns();
-    if (mergeRevisions.empty())
-        {
-        BeAssert(false && "Nothing to merge");
-        return RevisionStatus::NothingToMerge;
-        }
 
     if (!txnMgr.IsTracking())
         {
@@ -558,23 +567,17 @@ RevisionStatus RevisionManager::MergeRevisions(bvector<DgnRevisionPtr> const& me
         return RevisionStatus::IsCreatingRevision;
         }
 
-    Utf8String dbGuid = m_dgndb.GetDbGuid().ToString();
+    RevisionStatus status = revision.Validate(m_dgndb);
+    if (RevisionStatus::Success != status)
+        return status;
 
-    RevisionStatus status;
-    bvector<BeFileName> changeStreamFiles;
-    for (DgnRevisionPtr const& revision : mergeRevisions)
+    if (GetParentRevisionId() != revision.GetParentId())
         {
-        status = revision->Validate(m_dgndb);
-        if (RevisionStatus::Success != status)
-            return status;
-
-        changeStreamFiles.push_back(revision->GetChangeStreamFile());
+        BeAssert(false && "Parent of revision should match the parent revision id of the Db");
+        return RevisionStatus::ParentMismatch;
         }
-        
-    DgnRevisionPtr const& newParentRevision = *(mergeRevisions.end() - 1);
 
-    ChangeStreamFileReader revisionStream (changeStreamFiles);
-    return txnMgr.MergeRevisionChanges(revisionStream, newParentRevision->GetId());
+    return txnMgr.MergeRevision(revision);
     }
 
 //---------------------------------------------------------------------------------------
@@ -632,10 +635,9 @@ DgnRevisionPtr RevisionManager::CreateRevisionObject(RevisionStatus* outStatus, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-// static
 RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, ChangeGroup& changeGroup)
     {
-    ChangeStreamFileWriter writer(pathname);
+    ChangeStreamFileWriter writer(pathname, m_dgndb);
     DbResult result = writer.FromChangeGroup(changeGroup);
     if (BE_SQLITE_OK != result)
         {

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/GeomJsTypes/JsPolyfaceMesh.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -23,6 +23,8 @@ PolyfaceHeaderPtr m_data;
 
 public:
     virtual PolyfaceHeaderPtr GetPolyfaceHeaderPtr () override {return m_data;}
+    virtual IGeometryPtr GetIGeometryPtr (){return IGeometry::Create (m_data);}
+
     JsPolyfaceMesh (PolyfaceHeaderPtr const &header) { m_data = header;}
     JsPolyfaceMeshP Clone ()
         {

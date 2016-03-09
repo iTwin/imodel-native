@@ -27,12 +27,13 @@ public:
 JsSolidPrimitive (ISolidPrimitivePtr const &solidPrimitive) : m_solidPrimitive (solidPrimitive){}
 // hmm ...this class is not instantiable but typescript wrapperw want it to be so ...
 virtual JsSolidPrimitiveP Clone ();
-
+static JsSolidPrimitiveP StronglyTypedJsSolidPrimitive (ISolidPrimitivePtr primitive);
 
     JsSolidPrimitive (){}
 
 
     virtual JsSolidPrimitiveP AsSolidPrimitive () override {return this;}
+    virtual IGeometryPtr GetIGeometryPtr (){return IGeometry::Create (m_solidPrimitive);}
 
     virtual JsDgnConeP AsDgnCone () {return nullptr;}
     virtual JsDgnSphereP AsDgnSphere () {return nullptr;}
@@ -107,6 +108,14 @@ static JsDgnConeP CreateCircularCone (JsDPoint3dP pointA, JsDPoint3dP pointB, do
     auto solid = ISolidPrimitive::CreateDgnCone (coneData);
     return new JsDgnCone (solid);
     }
+
+static JsDgnConeP CreateCircularConeXYZ (double ax, double ay, double az, double bx, double by, double bz, double radiusA, double radiusB, bool capped)
+    {
+    DgnConeDetail coneData (DPoint3d::From (ax, ay, az), DPoint3d::From (bx, by, bz), radiusA, radiusB, capped);
+    auto solid = ISolidPrimitive::CreateDgnCone (coneData);
+    return new JsDgnCone (solid);
+    }
+
 
 };
 

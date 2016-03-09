@@ -285,7 +285,7 @@ private:
     TxnTable* FindTxnTable(Utf8CP tableName) const;
     BeSQLite::DbResult ApplyChangeSet(BeSQLite::ChangeSet& changeset, TxnAction isUndo);
     bool IsMultiTxnMember(TxnId rowid);
-    RevisionStatus MergeRevisionChanges(BeSQLite::ChangeStream& changeStream, Utf8StringCR newParentRevisionId);
+    RevisionStatus MergeRevision(DgnRevisionCR revision);
     void CancelDynamics();
     void OnBeginApplyChanges();
     void OnEndApplyChanges();
@@ -594,8 +594,17 @@ namespace dgn_TxnTable
 
     struct ElementDep : TxnTable
     {
+        struct DepRelData
+            {
+            BeSQLite::EC::ECInstanceKey m_relKey;
+            DgnElementId m_source, m_target;
+
+            DepRelData(BeSQLite::EC::ECInstanceKey const& key, DgnElementId s, DgnElementId t) : m_relKey(key), m_source(s), m_target(t) {;}
+            };
+
         BeSQLite::Statement m_stmt;
         DgnElementIdSet m_failedTargets;
+        bvector<DepRelData> m_deletedRels;
         bool m_changes;
         static Utf8CP MyTableName() {return DGN_TABLE(DGN_RELNAME_ElementDrivesElement);}
         Utf8CP _GetTableName() const {return MyTableName();}

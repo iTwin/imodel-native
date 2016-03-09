@@ -36,8 +36,6 @@ ComponentModelTest.SimulateDeveloperAndClientWithNesting            # Broken wit
 
 DgnProjectPackageTest.VerifyViewsForDgndbFilesConvertedDuringBuild   #Affan #TFS353039
 
-ImportTest.ImportElementsWithDependencies # Seemingly utterly unrelated schema changes induce this
-
 # WIP fixing after 0601 branch created
 ViewAttachmentTest.Geom                                 # NonVisibleViewport
 VolumeElementTestFixture.QueryTest                      # FenceParams::AcceptElement
@@ -47,4 +45,4 @@ JsonTests.FieldEngineerStructArray
 
 MaterialTest.Iterate_WithFilter                         # Assertion on creating iterator. Unable to prepare statement
 MaterialTest.Iterate                                    # Assertion on creating iterator. Unable to prepare statement
-
+ElementDependencyGraph.DeleteSource # Notified Sam

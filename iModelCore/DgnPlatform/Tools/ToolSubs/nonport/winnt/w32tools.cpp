@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/nonport/winnt/w32tools.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -122,10 +122,10 @@ CRuntimeMemFuncs *memFuncsP
     }
 #endif
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    MikeStratoti    03/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public void     toolSubsystem_setThreadName     // Set thread name for VC6 debugger.
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    04/2015
+//---------------------------------------------------------------------------------------
+static void setThreadName
 (
 char const * const  sz9CharacterThreadName      // => Thread name, 9 characters + null max
 )
@@ -159,6 +159,27 @@ char const * const  sz9CharacterThreadName      // => Thread name, 9 characters 
         {
         ;
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    MikeStratoti    03/10
++---------------+---------------+---------------+---------------+---------------+------*/
+Public void     toolSubsystem_setThreadName     // Set thread name for Visual Studio debugger.
+(
+char const * const  sz9CharacterThreadName      // => Thread name, 9 characters + null max
+)
+    {
+    //  This is to get around a debugger bug.  When running a managed debugging session
+    //  RaiseException does not save RBX. However, in an optimized build the caller 
+    //  relies on RBX being saved and crashes when RBX is not saved. Therefore we
+    //  use this code to explicitly save and restore the registers.
+    CONTEXT ctxt = { 0 };
+    ctxt.ContextFlags = CONTEXT_INTEGER;
+    GetThreadContext(GetCurrentThread(), &ctxt);
+
+    setThreadName(sz9CharacterThreadName);
+
+    SetThreadContext(GetCurrentThread(), &ctxt);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -241,7 +262,7 @@ Public WCharCP    win32Tools_exceptionToString (uint32_t exceptionCode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Public void     win32tools_recordDelayLoadHookFailure
 (
-uint32_t      dliNotify,
+uint32_t        dliNotify,
 PDelayLoadInfo  pdli
 )
     {
@@ -250,87 +271,41 @@ PDelayLoadInfo  pdli
     g_DelayLoadHookFailure.dli       = *pdli;
     }
 
-#if defined (NOT_USED)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    MikeStratoti                    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void    win32Tools_printDelayLoadHookFailure
 (
-FILE            * const stream
+BeTextFile*                    stream
 )
     {
-    char           const *msg;
-    uint32_t const  notify = g_DelayLoadHookFailure.dliNotify;
-    DelayLoadInfo  const  dli    = g_DelayLoadHookFailure.dli;
+    WChar           const *msg;
+    uint32_t        const  notify = g_DelayLoadHookFailure.dliNotify;
+    DelayLoadInfo   const  dli    = g_DelayLoadHookFailure.dli;
 
-    if      (dliStartProcessing       == notify) msg = "StartProcessing";
-    else if (dliNotePreGetProcAddress == notify) msg = "NotePreGetProcAddress";
-    else if (dliFailLoadLib           == notify) msg = "FailLoadLib";
-    else if (dliFailGetProc           == notify) msg = "FailGetProc";
-    else if (dliNoteEndProcessing     == notify) msg = "NoteEndProcessing";
-    else                                         msg = "Unknown";
+    if      (dliStartProcessing       == notify) msg = L"StartProcessing";
+    else if (dliNotePreGetProcAddress == notify) msg = L"NotePreGetProcAddress";
+    else if (dliFailLoadLib           == notify) msg = L"FailLoadLib";
+    else if (dliFailGetProc           == notify) msg = L"FailGetProc";
+    else if (dliNoteEndProcessing     == notify) msg = L"NoteEndProcessing";
+    else                                         msg = L"Unknown";
 
-    fprintf (stream, "     notify: %d '%s'\n", notify, msg);
-    fprintf (stream, "     dli: cb %d,  last error %d, hmodCur %#x\n", dli.cb, dli.dwLastError, dli.hmodCur, dli.szDll);
-    fprintf (stream, "          lib '%s', ", dli.szDll);
+    stream->PrintfTo (FALSE,  L"     notify: %d '%ls'\n", notify, msg);
+    stream->PrintfTo (FALSE,  L"     dli: cb %d,  last error %d, hmodCur %#x\n", dli.cb, dli.dwLastError, dli.hmodCur, dli.szDll);
+    stream->PrintfTo (FALSE,  L"          lib '%hs', ", dli.szDll);
     if (dli.dlp.fImportByName)
-        fprintf (stream, " function '%s'", dli.dlp.szProcName);
+        stream->PrintfTo (FALSE,  L" function '%hs'", dli.dlp.szProcName);
     else
-        fprintf (stream, " oridinal %d/%#x", dli.dlp.dwOrdinal, dli.dlp.dwOrdinal);
-    fprintf (stream, "\n");
+        stream->PrintfTo (FALSE,  L" oridinal %d/%#x", dli.dlp.dwOrdinal, dli.dlp.dwOrdinal);
+    stream->PrintfTo (FALSE,  L"\n");
     }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                    Peter.Segal                     03/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void    win32Tools_displayMemoryStats
-(
-FILE * const    stream
-)
-    {
-    MEMORYSTATUSEX              stat = { sizeof(stat) };
-    PROCESS_MEMORY_COUNTERS     pmc;
-
-    HANDLE const    hProc    = GetCurrentProcess ();
-
-    fprintf (stream, "\nMemory Statistics for process ID %d:\n\n", GetCurrentProcessId());
-
-    if (GlobalMemoryStatusEx (&stat))
-        {
-        fprintf (stream, "    %10I64u MB Total Phys\n",                 stat.ullTotalPhys >> 20);
-        fprintf (stream, "    %10I64u MB Avail Phys\n",                 stat.ullAvailPhys >> 20);
-        fprintf (stream, "    %10I64u MB Total Page File\n",            stat.ullTotalPageFile >> 20);
-        fprintf (stream, "    %10I64u MB Avail Page File\n",            stat.ullAvailPageFile >> 20);
-        fprintf (stream, "    %10I64u MB Total Virtual\n",              stat.ullTotalVirtual >> 20);
-        fprintf (stream, "    %10I64u MB Avail Virtual\n",              stat.ullAvailVirtual >> 20);
-        fprintf (stream, "    %10I64u MB Avail Extended Virtual\n\n",   stat.ullAvailExtendedVirtual >> 20);
-        }
-
-    if (GetProcessMemoryInfo (hProc, &pmc, sizeof(pmc)))
-        {
-        fprintf (stream, "    %10u MB PeakWorkingSetSize\n",            pmc.PeakWorkingSetSize >> 20);
-        fprintf (stream, "    %10u MB WorkingSetSize\n",                pmc.WorkingSetSize >> 20);
-        fprintf (stream, "    %10u MB PagefileUsage\n",                 pmc.PagefileUsage >> 20);
-        fprintf (stream, "    %10u MB PeakPagefileUsage\n\n",           pmc.PeakPagefileUsage >> 20);
-
-        fprintf (stream, "       %10u PageFaultCount\n",                pmc.PageFaultCount);
-        fprintf (stream, "       %10u QuotaPeakPagedPoolUsage\n",       pmc.QuotaPeakPagedPoolUsage);
-        fprintf (stream, "       %10u QuotaPagedPoolUsage\n",           pmc.QuotaPagedPoolUsage);
-        fprintf (stream, "       %10u QuotaPeakNonPagedPoolUsage\n",    pmc.QuotaPeakNonPagedPoolUsage);
-        fprintf (stream, "       %10u QuotaNonPagedPoolUsage\n\n",      pmc.QuotaNonPagedPoolUsage);
-        }
-
-    fprintf (stream, "       %10u GDI Objects\n",                       GetGuiResources (hProc, GR_GDIOBJECTS));
-    fprintf (stream, "       %10u USER Objects\n",                      GetGuiResources (hProc, GR_USEROBJECTS));
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mike.Stratoti                   10/03
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    win32Tools_generateMiniDump
 (
-FILE                     * const stream,
+BeTextFile*                      stream,
 EXCEPTION_POINTERS const * const exceptionInfoP,
 WCharCP                        dmpFileName
 )
@@ -399,24 +374,18 @@ WCharCP                        dmpFileName
     if (! hDbgHelp)
         {
         if (NULL != stream)
-            fprintf (stream, "\n\nMissing \"%s\" or from system. No dump generated.\n", Utf8String(modulePath).c_str());
+            stream->PrintfTo (FALSE,  L"\n\nMissing \"%ls\" or from system. No dump generated.\n", modulePath);
         FreeLibrary (hDbgHelp);
         return;
         }
     
-    typedef struct _MINIDUMP_EXCEPTION_INFORMATION
-        {
-        uint32_t             ThreadId;
-        PEXCEPTION_POINTERS ExceptionPointers;
-        BOOL                ClientPointers;
-        } MINIDUMP_EXCEPTION_INFORMATION, *PMINIDUMP_EXCEPTION_INFORMATION;
     typedef BOOL (__stdcall *FPMiniDumpWriteDump) (HANDLE hProcess, DWORD ProcessId, HANDLE hFile, MINIDUMP_TYPE DumpType, PMINIDUMP_EXCEPTION_INFORMATION, PVOID, PVOID);
 
     FPMiniDumpWriteDump const fpMiniDumpWriteDump = (FPMiniDumpWriteDump) GetProcAddress (hDbgHelp, "MiniDumpWriteDump");
     if (!fpMiniDumpWriteDump)
         {
         if (NULL != stream)
-            fprintf (stream, "\n\nMissing \"MiniDumpWriteDump\" API from \"%s\". No dump generated.\n", Utf8String(szWitchDll).c_str());
+            stream->PrintfTo (FALSE,  L"\n\nMissing \"MiniDumpWriteDump\" API from \"%ls\". No dump generated.\n", szWitchDll);
         FreeLibrary (hDbgHelp);
         return;
         }
@@ -433,7 +402,7 @@ WCharCP                        dmpFileName
         if (miniDumpType.EqualsI (L"none"))
             {
             if (NULL != stream)
-                fprintf (stream, "\n\nSuppressed mini-dump generation.\n");
+                stream->PrintfTo (FALSE,  L"\n\nSuppressed mini-dump generation.\n");
             FreeLibrary (hDbgHelp);
             return;
             }
@@ -463,9 +432,9 @@ WCharCP                        dmpFileName
         if (NULL != stream)
             {
             if (stat)
-                fprintf (stream, "\n\nWrote a mini-dump type %#x to \"%s\".\n", dumpOpts, Utf8String(szDumpFile).c_str());
+                stream->PrintfTo (FALSE,  L"\n\nWrote a mini-dump type %#x to \"%ls\".\n", dumpOpts, szDumpFile);
             else
-                fprintf (stream, "\n\nFailed to write a mini-dump. GLE %#x.\n", GetLastError());
+                stream->PrintfTo (FALSE,  L"\n\nFailed to write a mini-dump. GLE %#x.\n", GetLastError());
             }
         CloseHandle (hDumpFile);
         }
@@ -510,7 +479,7 @@ uint32_t newFpuMask     /* => new excp. mask or 0 to use default or previously s
             {
             defaultMask = MCW_EM;
 
-#if !defined (PRG_CERTIFIEDBUILD) && !defined (PRG_BETABUILD)
+#if !defined (NDEBUG)
             /* --------------------------------------------------------------------
             For development and beta builds, we want to catch FPU exceptions, but .NET interferes.
             The only ones it allows are EM_OVERFLOW and EM_ZERODIVIDE
@@ -524,7 +493,12 @@ uint32_t newFpuMask     /* => new excp. mask or 0 to use default or previously s
             to crash. If you do not use affected managed code, you can set MS_FPUMASK=0x00080013,
             which is equivalent to the previous default of (MCW_EM & ~(EM_OVERFLOW | EM_ZERODIVIDE)).
             -------------------------------------------------------------------*/
-            defaultMask = MCW_EM & ~(EM_ZERODIVIDE);
+            /* -------------------------------------------------------------------
+            Setting the Ribbon as the default user interface for MicroStation, which uses 
+            WPF & Telerik controls. These cause DivideByZero exceptions a lot internally, 
+            so we can't include EM_ZERODIVIDE.
+            //defaultMask = MCW_EM & ~(EM_ZERODIVIDE);
+            -------------------------------------------------------------------*/
 #endif
             }
 
@@ -566,10 +540,7 @@ void
 )
     {
     uint32_t fVersionFlags = GetVersion();
-//    UInt32   fOsVersion = fVersionFlags & 0x0000FFFF;
     uint32_t wOSMajorVersion = LOBYTE(LOWORD(fVersionFlags));
-//    UInt32   wOSMinorVersion = HIBYTE(LOWORD(fVersionFlags));
-//    UInt32   wOSBuild        = HIWORD(fVersionFlags) & ~0x8000;
     bool isRunningWinNT  = !(fVersionFlags & 0x80000000);
     bool isRunningWinNTTerminalServer = false;
 
@@ -652,3 +623,461 @@ void
             }
         return isRunningWinNTTerminalServer;
     }
+
+
+
+#pragma warning( disable : 4189)
+/*----------------------------------------------------------------------+
+| name          win32Tools_executeExternalProbe                         |
+| author        MikeStratoti                            09/01           |
++----------------------------------------------------------------------*/
+Public int      win32Tools_executeExternalProbe
+(
+BeTextFile*       stream,                           // => Append to this stream
+WChar             * const szProbeExeName,           // => can't make it const * const because of CreateProcess
+STARTUPINFOW const * const psiOption                 // => Optional STARTUPINFO for probe window visibility
+)
+    {
+    BOOL                    ok = FALSE;
+    HANDLE                  hStdoutChild =  INVALID_HANDLE_VALUE;               // OS handle of duped hStream
+    STARTUPINFOW            si;
+
+
+    /*-------------------------------------------------------------------
+     Honor the optional STARTUPINFO.
+    -------------------------------------------------------------------*/
+    if (psiOption)
+        {
+        si = *psiOption;
+        }
+    else
+        {
+        memset (&si, 0, sizeof si);
+        si.cb          = sizeof si;
+        si.dwFlags     = STARTF_USESHOWWINDOW;
+        si.wShowWindow = SW_HIDE;
+        }
+
+    /*-------------------------------------------------------------------
+     Get the OS level handle to the output stream
+    -------------------------------------------------------------------*/
+    if (stream)
+        {
+#if defined NOT_IMPLEMENTED
+        HANDLE      hStream  =  INVALID_HANDLE_VALUE;                           // OS handdle for the fopen'ed stream
+
+        fflush (fpStream);
+        hStream = (HANDLE) _get_osfhandle (_fileno (fpStream));
+
+        /*-------------------------------------------------------------------
+         Create a duplicate of the output write handle for the std error write handle.
+         This is necessary in case the child application closes one of its std output handles
+         we don't want ours to close, too.
+        -------------------------------------------------------------------*/
+        HANDLE  const  currProc = GetCurrentProcess ();
+        ok = DuplicateHandle (currProc, hStream, currProc,  &hStdoutChild, ___, TRUE, DUPLICATE_SAME_ACCESS);
+        if ( ! ok )
+            return  -1;
+
+        /*-------------------------------------------------------------------
+         Make child process use this app's standard files.
+        -------------------------------------------------------------------*/
+        si.dwFlags   |= STARTF_USESTDHANDLES;
+        si.hStdInput  = hStdoutChild;
+        si.hStdOutput = hStdoutChild;
+        si.hStdError  = hStdoutChild;
+#endif
+        }
+
+    {
+    SECURITY_ATTRIBUTES     sa;
+    PROCESS_INFORMATION     pi;
+    memset (&pi, 0, sizeof pi);
+
+    /*-------------------------------------------------------------------
+     Set up the security attributes struct so that the child can inherit our file handles.
+    -------------------------------------------------------------------*/
+    memset (&sa, 0, sizeof sa);
+    sa.nLength              = sizeof sa;
+    sa.bInheritHandle       = TRUE;
+
+    ok = CreateProcessW (___, szProbeExeName, ___, ___, TRUE, DETACHED_PROCESS , ___, ___, &si, &pi);
+    if (ok)
+        {
+        WaitForSingleObject (pi.hProcess, 3 * (60 * 1000) );                    // 3 min timeout
+        CloseHandle (pi.hProcess);
+        CloseHandle (pi.hThread);
+        }
+    }
+    if (INVALID_HANDLE_VALUE != hStdoutChild)
+        CloseHandle (hStdoutChild);
+    return  ok ? 0 : -3;
+    }
+
+
+
+/*----------------------------------------------------------------------+
+| name          win32tools_processBSIExceptionLog                       |
+| author        Mike.Stratoti                           10/03           |
++----------------------------------------------------------------------*/
+DGNPLATFORM_EXPORT int32_t  win32tools_processBSIExceptionLog        // WIP - Must implement
+(
+BeTextFile*             stream,                                 // => Optional
+WChar   const * const   szDumpFile                              // => Optional
+)
+    {
+    WChar   cmdBuf[2048] = L"ProcessBSIExceptionLogs";
+    WChar  *cmd = cmdBuf;
+    int32_t rtn = -1;
+    WString cfgVariable;
+
+//    __try
+        {
+        STARTUPINFOW     si, *psi = NULL;
+        /*-------------------------------------------------------------------------------
+         Get an optional external override.  THe config var <MS_ProcessExceptionLog> can
+         assume 2 forms:
+                        <program_name> <arguments>  full-path-to-dumpfile
+            [<swValue>] <program_name> <arguments>  full-path-to-dumpfile
+
+         Where <swValue> is passed as the STARTUPINFO::wShowWindow value
+        -------------------------------------------------------------------------------*/
+        ConfigurationManager::GetVariable (cfgVariable, L"MS_PROCESSEXCEPTIONLOG");
+        if (!cfgVariable.empty())
+            {
+            DWORD     swFlags=0;
+            WChar    * pDigitsEnd = NULL;
+
+            wcsncpy (cmdBuf, cfgVariable.c_str(), sizeof cmdBuf/sizeof WChar);
+
+            // If there is a leading hex number then assume that it is one of the SW_xxx constants.
+            swFlags = wcstoul (cmd, &pDigitsEnd, 16);
+            if (cmd != pDigitsEnd)
+                {
+                memset (&si, 0, sizeof si);
+                si.cb          = sizeof si;
+                si.dwFlags     = STARTF_USESHOWWINDOW;
+                si.wShowWindow = (WORD) swFlags;
+                psi = &si;
+    
+                cmd = pDigitsEnd;               // skip white space after window show value
+                while (*cmd && isspace (*cmd))
+                    cmd++;
+
+                }
+            }
+
+        // Append a space and the dump file.  Enquote the dump filename
+        if (szDumpFile)
+            {
+            wcscat (cmd, L" ");
+            if ('"' == *szDumpFile)
+                wcscat (cmd, szDumpFile);
+            else
+                {
+                wcscat (cmd, L" \"");
+                wcscat (cmd, szDumpFile);
+                wcscat (cmd, L"\"");
+                }
+            }
+
+        rtn = win32Tools_executeExternalProbe (stream, cmd, psi);
+        }
+//    __except (EXCEPTION_EXECUTE_HANDLER) { ; }
+
+    return rtn;
+    }
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                    Peter.Segal                     03/06
++---------------+---------------+---------------+---------------+---------------+------*/
+static void    win32Tools_displayMemoryStats (BeTextFile* stream)
+    {
+    MEMORYSTATUSEX              stat = { sizeof stat };
+    PROCESS_MEMORY_COUNTERS     pmc;
+
+    HANDLE const    hProc    = GetCurrentProcess ();
+
+    stream->PrintfTo (FALSE,  L"\nMemory Statistics for process ID %d:\n\n", GetCurrentProcessId());
+
+    if (GlobalMemoryStatusEx (&stat))
+        {
+        stream->PrintfTo (FALSE,  L"    %10I64u MB Total Phys\n",                 stat.ullTotalPhys >> 20);
+        stream->PrintfTo (FALSE,  L"    %10I64u MB Avail Phys\n",                 stat.ullAvailPhys >> 20); 
+        stream->PrintfTo (FALSE,  L"    %10I64u MB Total Page File\n",            stat.ullTotalPageFile >> 20);
+        stream->PrintfTo (FALSE,  L"    %10I64u MB Avail Page File\n",            stat.ullAvailPageFile >> 20);
+        stream->PrintfTo (FALSE,  L"    %10I64u MB Total Virtual\n",              stat.ullTotalVirtual >> 20);
+        stream->PrintfTo (FALSE,  L"    %10I64u MB Avail Virtual\n",              stat.ullAvailVirtual >> 20);
+        stream->PrintfTo (FALSE,  L"    %10I64u MB Avail Extended Virtual\n\n",   stat.ullAvailExtendedVirtual >> 20);
+        }
+
+    if (GetProcessMemoryInfo (hProc, &pmc, sizeof pmc))
+        {
+        stream->PrintfTo (FALSE,  L"    %10u MB PeakWorkingSetSize\n",            pmc.PeakWorkingSetSize >> 20);
+        stream->PrintfTo (FALSE,  L"    %10u MB WorkingSetSize\n",                pmc.WorkingSetSize >> 20);
+        stream->PrintfTo (FALSE,  L"    %10u MB PagefileUsage\n",                 pmc.PagefileUsage >> 20); 
+        stream->PrintfTo (FALSE,  L"    %10u MB PeakPagefileUsage\n\n",           pmc.PeakPagefileUsage >> 20);
+
+        stream->PrintfTo (FALSE,  L"       %10u PageFaultCount\n",                pmc.PageFaultCount);
+        stream->PrintfTo (FALSE,  L"       %10u QuotaPeakPagedPoolUsage\n",       pmc.QuotaPeakPagedPoolUsage);
+        stream->PrintfTo (FALSE,  L"       %10u QuotaPagedPoolUsage\n",           pmc.QuotaPagedPoolUsage);
+        stream->PrintfTo (FALSE,  L"       %10u QuotaPeakNonPagedPoolUsage\n",    pmc.QuotaPeakNonPagedPoolUsage);
+        stream->PrintfTo (FALSE,  L"       %10u QuotaNonPagedPoolUsage\n\n",      pmc.QuotaNonPagedPoolUsage);
+        }
+
+    stream->PrintfTo (FALSE,  L"       %10u GDI Objects\n",                       GetGuiResources (hProc, GR_GDIOBJECTS));
+    stream->PrintfTo (FALSE,  L"       %10u USER Objects\n",                      GetGuiResources (hProc, GR_USEROBJECTS));
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    PhilipMcGraw                    03/2002
++---------------+---------------+---------------+---------------+---------------+------*/
+Public void     win32Tools_getStackInfo
+(
+PBYTE  *outBaseP,       // <=
+PBYTE  *outEndP,        // <=
+SIZE_T *outSizeP,       // <=
+PBYTE   espRegister     // =>
+)
+    {
+    MEMORY_BASIC_INFORMATION mbi;
+    PBYTE stackBase = 0;
+    PBYTE stackEnd  = 0;
+
+    /* find stack base and end */
+    memset(&mbi, 0, sizeof mbi);
+    VirtualQuery ((void *)espRegister, &mbi, sizeof mbi);
+    stackBase = (PBYTE)mbi.AllocationBase;
+    stackEnd  = (PBYTE)mbi.BaseAddress + mbi.RegionSize;
+
+    if (outBaseP)
+        *outBaseP = stackBase;
+    if (outEndP)
+        *outEndP  = stackEnd;
+    if (outSizeP)
+        *outSizeP = (SIZE_T)(stackEnd - stackBase);
+    }
+   
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    GeorgeDulchinos 10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+#if !defined (_WIN64)
+void    dumpRegistersX86
+(
+BeTextFile*     stream,
+CONTEXT&        regs
+)
+    {
+        WChar       const invalid[] = L" (may not be valid):\n";
+        WChar       const colon[]   = L":\n";
+
+        stream->PrintfTo (FALSE,  L"\nMachine Registers:\n");
+        stream->PrintfTo (FALSE,  L"\nData Registers%ls",                             (CONTEXT_INTEGER & regs.ContextFlags) ? colon : invalid);
+        stream->PrintfTo (FALSE,  L" EAX: %08lx    EBX: %08lx    ECX: %08lx\n",       regs.Eax, regs.Ebx, regs.Ecx);
+        stream->PrintfTo (FALSE,  L" EDX: %08lx    EDI: %08lx    ESI: %08lx\n",       regs.Edx, regs.Edi, regs.Esi);
+
+        stream->PrintfTo (FALSE,  L"\nControl Registers%ls",                          (CONTEXT_CONTROL & regs.ContextFlags) ? colon : invalid);
+        stream->PrintfTo (FALSE,  L" EBP: %08lx    Flags: %08lx\n",                   regs.Ebp, regs.EFlags);
+        stream->PrintfTo (FALSE,  L" CS:EIP  %02lx:%08lx    SS:ESP  %02lx:%08lx\n",   regs.SegCs, regs.Eip,       regs.SegSs, regs.Esp);
+
+        PBYTE       stackBase=0, stackEnd=0;
+        SIZE_T      stackSize=0, stackUsed=0;
+        win32Tools_getStackInfo (&stackBase, &stackEnd, &stackSize, (PBYTE)regs.Esp);
+        if (stackSize)
+            stackUsed = (100 * (stackEnd - (PBYTE)regs.Esp)) / stackSize;
+        stream->PrintfTo (FALSE,  L" Stack range:(%08lx-%08lx) Stack usage: %lu%%\n", stackBase, stackEnd, stackUsed);
+
+        stream->PrintfTo (FALSE,  L"\nDebug Registers%ls",                            (CONTEXT_DEBUG_REGISTERS & regs.ContextFlags) ? colon : invalid);
+
+        stream->PrintfTo (FALSE,  L" Dr0: %08lx   Dr1: %08lx   Dr2: %08lx\n",         regs.Dr0, regs.Dr1, regs.Dr2);
+        stream->PrintfTo (FALSE,  L" Dr3: %08lx   Dr6: %08lx   Dr7: %08lx\n",         regs.Dr3, regs.Dr6, regs.Dr7);
+
+        stream->PrintfTo (FALSE,  L"\nFloating Point Registers%ls",                    (CONTEXT_FLOATING_POINT & regs.ContextFlags) ? colon : invalid);
+
+        stream->PrintfTo (FALSE,  L" Control: %04x   Status: %04x   Tag: %04x\n",  regs.FloatSave.ControlWord & 0x0000ffff,
+                                                                         regs.FloatSave.StatusWord  & 0x0000ffff,
+                                                                         regs.FloatSave.TagWord     & 0x0000ffff);
+
+        stream->PrintfTo (FALSE,  L" Last FPU operation address: %02lx:%08lx    Data: %02lx:%08lx\n",
+            regs.FloatSave.ErrorSelector & 0x0000ffff, regs.FloatSave.ErrorOffset,
+            regs.FloatSave.DataSelector  & 0x0000ffff, regs.FloatSave.DataOffset);
+
+        stream->PrintfTo (FALSE,  L"  Register Area:");
+        int i;
+        for (i=0; i < SIZE_OF_80387_REGISTERS; i++)
+            {
+            if (0 == (i%20) )
+                stream->PrintfTo (FALSE,   L"\n     ");
+            stream->PrintfTo (FALSE,  L" %02x", regs.FloatSave.RegisterArea[i]);
+            }
+        stream->PrintfTo (FALSE,   L"\n");
+
+        stream->PrintfTo (FALSE,  L"\nSegment Registers%ls", (CONTEXT_SEGMENTS & regs.ContextFlags) ? colon : invalid);
+        stream->PrintfTo (FALSE,  L" DS: %02lx    ES: %02lx    FS: %02lx    GS: %02lx\n", regs.SegDs, regs.SegEs, regs.SegFs, regs.SegGs);
+    }
+#endif  // !defined (_WIN64)
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    John.Gooding    02/2006
++---------------+---------------+---------------+---------------+---------------+------*/
+static void    invokeManagedStackDump (BeTextFile* stream)
+    {
+    char            const managedWalkerDLL [] = "Assemblies\\Bentley.MicroStation.General.dll";
+    char                  moduleName [MAX_PATH]="", exePath[MAX_PATH]="";
+    HMODULE         generalLib;
+    void    (*dumper)(BeTextFilePtr stream) = NULL;
+
+    char *szFileName = NULL;
+    GetModuleFileName (___, exePath, MAX_PATH);
+    GetFullPathName (exePath, MAX_PATH, exePath, &szFileName);
+    if (szFileName)
+        *szFileName = '\0';
+    _makepath (moduleName, ___, exePath, managedWalkerDLL,___);
+
+    generalLib = LoadLibrary (moduleName);
+        
+    if (NULL != generalLib)
+        dumper = (void (*)(BeTextFilePtr stream))GetProcAddress (generalLib, "ManagedStackWalker_dumpToFile");
+        
+    if (NULL != dumper)
+        {
+        BeTextFilePtr streamPtr (stream);
+        dumper (streamPtr);
+        }
+    }
+
+
+
+#if defined (NEEDSWORK_Exception_Logging)
+static BeTextFile* g_logStream;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    TonyCleveland   01/05
++---------------+---------------+---------------+---------------+---------------+------*/
+static void __stdcall logCallback (LPCTSTR pMsg)
+    {
+    if (g_logStream)
+        g_logStream->PrintfTo (FALSE, L"%s", pMsg );
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    MichaelStratoti                 12/92  
++---------------+---------------+---------------+---------------+---------------+------*/
+DGNPLATFORM_EXPORT void    win32Tools_dumpExceptionCallStack           // WIP - Must implement
+(
+BeTextFile*                      stream,
+EXCEPTION_POINTERS const * const exceptionInfoP,
+int32_t                    const debugLevel
+)
+    {
+    CONTEXT      regs;
+    static bool dejavu;
+
+    if (dejavu)
+        return;
+
+    dejavu = true;
+
+    memset (&regs, 0, sizeof regs);
+    PBYTE stackPointer = 0; 
+
+    if (exceptionInfoP  &&  exceptionInfoP->ExceptionRecord)
+        {
+        /*-------------------------------------------------------------------
+         Display Exception Text
+        -------------------------------------------------------------------*/
+        __try 
+            {  
+            stream->PrintfTo (FALSE,  L"\nException String:  '%ls'\n", win32Tools_exceptionToString (exceptionInfoP->ExceptionRecord->ExceptionCode) );
+            }    
+        __except (EXCEPTION_EXECUTE_HANDLER) { ; }
+        }
+
+    if (exceptionInfoP  &&  exceptionInfoP->ContextRecord)
+        {
+        /*-------------------------------------------------------------------
+         Display all registers.
+        -------------------------------------------------------------------*/
+        regs = *exceptionInfoP->ContextRecord;
+
+#if defined (_WIN64)
+        stackPointer = (PBYTE)regs.Rsp; 
+#else
+        stackPointer = (PBYTE)regs.Esp;
+        dumpRegistersX86 (stream, regs);
+#endif
+
+        __try { win32Tools_displayMemoryStats (stream); }    __except (EXCEPTION_EXECUTE_HANDLER) { ; }
+        __try { win32Tools_generateMiniDump (stream, exceptionInfoP, NULL); }    __except (EXCEPTION_EXECUTE_HANDLER) { ; }
+
+
+
+#if defined (NEEDSWORK_Exception_Logging)
+    g_logStream = stream;
+    exception_registerExceptionLogCallback(logCallback);
+    exception_logCallStackInfo((LPEXCEPTION_POINTERS)exceptionInfoP);
+    g_logStream = NULL;
+#endif
+
+    __try 
+        { 
+        invokeManagedStackDump (stream); }  __except (EXCEPTION_EXECUTE_HANDLER) { ; }
+        }
+
+    /*-------------------------------------------------------------------
+     Display delay load problems.
+    -------------------------------------------------------------------*/
+    if (g_DelayLoadHookFailure.isValid)
+        {
+        stream->PrintfTo (FALSE,  L"\nDelay load hook failure detail:\n");
+        __try { win32Tools_printDelayLoadHookFailure (stream); }    __except (EXCEPTION_EXECUTE_HANDLER) { ; }
+        g_DelayLoadHookFailure.isValid = FALSE;
+        }
+
+    /*-------------------------------------------------------------------
+     Display raw stack dump.
+    -------------------------------------------------------------------*/
+    if (exceptionInfoP)
+        {
+        PBYTE byteP = (PBYTE)  stackPointer;
+        PBYTE endP  = byteP;
+
+        win32Tools_getStackInfo (___, &endP, ___, stackPointer);
+
+        stream->PrintfTo (FALSE,  L"\nRaw stack dump:\n");
+
+        __try
+            {
+            uint32_t  const *  ulP = (uint32_t *) stackPointer;
+            int i, lines;
+            for (lines=0; (lines < 1024) && (byteP <= endP); lines++)
+                {
+                stream->PrintfTo (FALSE,  L"%08x : ", byteP);
+                for (i=0; i< 4; i++, ulP++)
+                    stream->PrintfTo (FALSE,  L" %08x ", *ulP);
+
+                stream->PrintfTo (FALSE,  L" : ");
+
+                for (i=0; i < 8; i++, byteP++)
+                    stream->PrintfTo (FALSE,  L"%hc", isprint(*byteP) ? *byteP : '.');
+
+                stream->PrintfTo (FALSE,  L" ");
+
+                for (i=0; i < 8; i++, byteP++)
+                    stream->PrintfTo (FALSE,  L"%hc", isprint(*byteP) ? *byteP : '.');
+
+                stream->PrintfTo (FALSE,  L" :\n");
+                }
+            }
+        __except (EXCEPTION_EXECUTE_HANDLER)
+            {
+            ;
+            }
+        }
+
+    dejavu = false;
+    }
+

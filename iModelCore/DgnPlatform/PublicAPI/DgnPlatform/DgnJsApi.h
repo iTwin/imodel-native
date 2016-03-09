@@ -65,8 +65,8 @@ typedef JsECInstance* JsECInstanceP;
 struct JsECValue;
 typedef JsECValue* JsECValueP;
 
-struct JsAdHocJsonValue;
-typedef JsAdHocJsonValue* JsAdHocJsonValueP;
+struct JsAdHocJsonPropertyValue;
+typedef JsAdHocJsonPropertyValue* JsAdHocJsonPropertyValueP;
 
 struct JsECClass;
 typedef JsECClass* JsECClassP;
@@ -291,8 +291,9 @@ struct JsDgnElement : RefCountedBaseWithCreate
     JsECValueP GetUnhandledProperty(Utf8StringCR);
     int32_t SetUnhandledProperty(Utf8StringCR, JsECValueP);
 
-    JsAdHocJsonValueP GetUserProperties() const;
-    void SetUserProperties(JsAdHocJsonValueP);
+    bool ContainsUserProperty(Utf8StringCR name) const;
+    JsAdHocJsonPropertyValueP GetUserProperty(Utf8StringCR name) const;
+    void RemoveUserProperty(Utf8StringCR name) const;
 
     STUB_OUT_SET_METHOD(Model, JsDgnModelP)
     STUB_OUT_SET_METHOD(ElementId,JsDgnObjectIdP)
@@ -722,6 +723,22 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
         else if (geometry->GetISolidPrimitivePtr().IsValid())
             m_builder->Append(*geometry->GetISolidPrimitivePtr());
         }
+    void AppendGeometryNode (JsGeometryNodeP node)
+        {
+        DGNJSAPI_VALIDATE_ARGS_VOID(IsValid() && node);
+        auto nativeNode = node->GetGeometryNodePtr ();
+        if (nativeNode.IsValid ())
+            {
+            auto flatNode = node->Flatten ();
+            auto nativeFlatNode = flatNode->GetGeometryNodePtr ();
+            for (auto &geometry : nativeFlatNode->Geometry ())
+                {
+                m_builder->Append (*geometry);
+                }
+            }
+        }
+
+
 
     BentleyStatus SetGeometryStreamAndPlacement (JsDgnElementP el)
         {
@@ -986,18 +1003,37 @@ struct JsECValue : RefCountedBaseWithCreate
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
-struct JsAdHocJsonValue : RefCountedBaseWithCreate
+struct JsAdHocJsonPropertyValue : RefCountedBaseWithCreate
 {
-    ECN::AdHocJsonValue m_props;
+    RefCountedPtr<JsDgnElement> m_jsel;   // keep the native and JS element objects alive while I hold a reference to the native element's data
+    ECN::AdHocJsonPropertyValue m_prop;
 
-    JsAdHocJsonValue(ECN::AdHocJsonValueCR p) : m_props(p) {;}
+    JsAdHocJsonPropertyValue(JsDgnElement* jsel, ECN::AdHocJsonPropertyValueCR p) : m_jsel(jsel), m_prop(p) {;}
 
-    void SetUnits(Utf8StringCR name, Utf8StringCR units) {m_props.SetUnits(name.c_str(), units.c_str());}
-    bool SetValueEC(Utf8StringCR name, JsECValueP value) {DGNJSAPI_VALIDATE_ARGS(DGNJSAPI_IS_VALID_JSOBJ(value), false); return m_props.SetValueEC(name.c_str(), value->m_value);}
-    void RemoveValue(Utf8StringCR name) {m_props.RemoveValue(name.c_str());}
+    Utf8String GetUnits() const {Utf8String u; return (ECN::AdHocJsonPropertyValue::GetStatus::Found == m_prop.GetUnits(u))? u: "";}
+    void SetUnits(Utf8StringCR units) {m_prop.SetUnits(units.c_str());}
 
-    Utf8String GetUnits(Utf8StringCR name) const {Utf8String u; return m_props.GetUnits(u, name.c_str())? u: "";}
-    JsECValueP GetValueEC(Utf8StringCR name) {ECN::ECValue v = m_props.GetValueEC(name.c_str()); return v.IsNull()? nullptr: new JsECValue(v);}
+    Utf8String GetExtendedType() const {Utf8String u; return (ECN::AdHocJsonPropertyValue::GetStatus::Found == m_prop.GetExtendedType(u))? u: "";}
+    void SetExtendedType(Utf8StringCR ExtendedType) {m_prop.SetExtendedType(ExtendedType.c_str());}
+
+    Utf8String GetCategory() const {Utf8String u; return (ECN::AdHocJsonPropertyValue::GetStatus::Found == m_prop.GetCategory(u))? u: "";}
+    void SetCategory(Utf8StringCR Category) {m_prop.SetCategory(Category.c_str());}
+
+    bool GetHidden() const {bool u; return (ECN::AdHocJsonPropertyValue::GetStatus::Found == m_prop.GetHidden(u))? u: false;}
+    void SetHidden(bool v) {m_prop.SetHidden(v);}
+
+    bool GetReadOnly() const {bool u; return (ECN::AdHocJsonPropertyValue::GetStatus::Found == m_prop.GetReadOnly(u))? u: false;}
+    void SetReadOnly(bool v) {m_prop.SetReadOnly(v);}
+
+    int32_t GetPriority() const {int32_t u; return (ECN::AdHocJsonPropertyValue::GetStatus::Found == m_prop.GetPriority(u))? u: false;}
+    void SetPriority(int32_t v) {m_prop.SetPriority(v);}
+
+    JsECValueP GetValueEC() const {ECN::ECValue v = m_prop.GetValueEC(); return v.IsNull()? nullptr: new JsECValue(v);}
+    int32_t SetValueEC(JsECValueP value) {DGNJSAPI_VALIDATE_ARGS(DGNJSAPI_IS_VALID_JSOBJ(value), -1); return (int32_t)m_prop.SetValueEC(value->m_value);}
+    
+    ECPropertyPrimitiveType GetType() const {ECN::PrimitiveType t; return (ECN::AdHocJsonPropertyValue::GetStatus::Found == m_prop.GetType(t))? (ECPropertyPrimitiveType)t: ECPropertyPrimitiveType::Unknown;}
+    STUB_OUT_SET_METHOD(Type,ECPropertyPrimitiveType)
+
 };
 
 //=======================================================================================
