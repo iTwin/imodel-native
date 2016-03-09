@@ -659,21 +659,25 @@ TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
     bvector<PhenomenonCP> phenomena;
     UnitRegistry::Instance().AllPhenomena(phenomena);
 
-    WriteLine(file, "PhenomenonName;PhenomenonDefinition;PhenomenonDimension;(first row in every table)");
-    WriteLine(file, "UnitName;UnitDefinition;UnitDimension;(all following rows)");
-
     for (auto const& phenomenon : phenomena)
         {
-        Utf8PrintfString line("%s;%s;%s", phenomenon->GetName(), phenomenon->GetDefinition(), phenomenon->GetPhenomenonDimension().c_str());
-        
+        Utf8PrintfString line("Units for Phenomenon:,%s", phenomenon->GetName());
         WriteLine(file, line.c_str());
+
+        line.Sprintf("Phenomenon Definition:,%s", phenomenon->GetDefinition());
+        WriteLine(file, line.c_str());
+
+        line.Sprintf("Phenomenon Dimension:,%s", phenomenon->GetPhenomenonDimension().c_str());
+        WriteLine(file, line.c_str());
+
+        WriteLine(file, "UnitName,UnitDefinition,UnitDimension");
+        
         for (auto const& unit : phenomenon->GetUnits())
             {
-            Utf8PrintfString unitLine("%s;%s;%s", unit->GetName(), unit->GetDefinition(), unit->GetUnitDimension().c_str());
-            WriteLine(file, unitLine.c_str());
+            line.Sprintf("%s,%s,%s", unit->GetName(), unit->GetDefinition(), unit->GetUnitDimension().c_str());
+            WriteLine(file, line.c_str());
             }
 
-        WriteLine(file);
         WriteLine(file);
         }
 

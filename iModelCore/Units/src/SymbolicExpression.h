@@ -111,6 +111,7 @@ public:
     int GetExponent() const { return m_exponent; }
     void AddToExponent(int toAdd) { m_exponent += toAdd; }
     void SetExponent(int exponent) { m_exponent = exponent; }
+    Utf8String ToString(bool includeFactors = true) const;
     };
 
 //=======================================================================================
