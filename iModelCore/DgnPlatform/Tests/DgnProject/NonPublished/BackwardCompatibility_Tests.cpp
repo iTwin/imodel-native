@@ -50,18 +50,14 @@ StatusInt BackwardsCompatibilityTests::CreateArbitraryElement(DgnElementPtr& out
 
     geomElement->SetCategoryId(categoryId);
 
-#ifdef WIP_MERGE_0600 // Must create elements differently in BIS.
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*geomElement);
+    GeometryBuilderPtr builder = GeometryBuilder::CreateWorld(*geomElement);
     ICurvePrimitivePtr line = ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1, 0, 0)));
     builder->Append(*line);
-    if (SUCCESS != builder->SetGeomStreamAndPlacement(*geomElement))
+    if (SUCCESS != builder->SetGeometryStreamAndPlacement(*geomElement))
         return ERROR;
 
     out = element;
     return SUCCESS;
-#else
-    return ERROR;
-#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -137,18 +133,18 @@ TEST_F(BackwardsCompatibilityTests, OpenDgndbInCurrent)
     BeTest::GetHost().GetDocumentsRoot(srcFilesPath);
     srcFilesPath.AppendToPath(L"DgnDb");
     srcFilesPath.AppendToPath(L"CompatibilityRoot");
-    srcFilesPath.AppendToPath(L"DgnDb0601");
+    srcFilesPath.AppendToPath(L"DgnDb06");
     srcFilesPath.AppendToPath(L"*.idgndb");
 
     BeFileName outputRoot;
     BeTest::GetHost().GetOutputRoot(outputRoot);
 
     BeFileName resultsFilePath = outputRoot;
-    resultsFilePath.AppendToPath(L"CompatibilityResults_06.txt");
+    resultsFilePath.AppendToPath(L"CompatibilityResults_0601.txt");
 
     FILE *f;
     f = fopen(resultsFilePath.GetNameUtf8().c_str(), "a");
-    fprintf(f, "Test Files Stream: DgnDb0601 \n");
+    fprintf(f, "Test Files Stream: DgnDb06 \n");
 
     BeFileListIterator filesIterator(srcFilesPath, false);
     BeFileName dbName;
