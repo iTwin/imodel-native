@@ -47,5 +47,4 @@ JsonTests.FieldEngineerStructArray
 
 MaterialTest.Iterate_WithFilter                         # Assertion on creating iterator. Unable to prepare statement
 MaterialTest.Iterate                                    # Assertion on creating iterator. Unable to prepare statement
-MaterialTest.Iterate_WithFilter                         # Assertion on creating iterator. Unable to prepare statement
 

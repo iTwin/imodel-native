@@ -202,6 +202,19 @@ TEST_F(DgnLinkTest, OtherIterators)
     
     checkIteratorCount(db.Links().MakeOnElementIterator(elementId1), 2);
     checkIteratorCount(db.Links().MakeOnElementIterator(elementId2), 3);
+    for (DgnLinks::OnElementIterator::Entry entry : db.Links().MakeOnElementIterator(elementId1))
+        {
+        if (link1->GetId() == entry.GetId())
+            {
+            EXPECT_STREQ( "link1" , entry.GetDisplayLabel());
+            EXPECT_EQ(DgnLinkType::EmbeddedFile, entry.GetType());
+            }
+        else if (link2->GetId() == entry.GetId())
+            {
+            EXPECT_STREQ("link2", entry.GetDisplayLabel());
+            EXPECT_EQ(DgnLinkType::EmbeddedFile, entry.GetType());
+            }
+        }
 
     checkIteratorCount(db.Links().MakeReferencesLinkIterator(link1->GetId()), 1);
     checkIteratorCount(db.Links().MakeReferencesLinkIterator(link2->GetId()), 2);

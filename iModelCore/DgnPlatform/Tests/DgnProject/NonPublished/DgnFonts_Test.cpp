@@ -335,15 +335,6 @@ TEST_F(FontTests, DbFaceDataDirect)
     // Query
     for (DgnFonts::DbFaceDataDirect::Iterator::Entry entry : faceData.MakeIterator())
         {
-        DgnFonts::DbFaceDataDirect::T_FaceMap faceMap = entry.GenerateFaceMap();
-        if (faceMap[0].m_familyName == "Exton Fonts")
-            {
-            EXPECT_EQ( 4 , faceMap.count(0) );
-            }
-        else if (faceMap[0].m_familyName == "Islamabad Fonts")
-            {
-            EXPECT_EQ( 4 , faceMap.count(0));
-            }
         count++;
         }
     EXPECT_EQ(3, count);
