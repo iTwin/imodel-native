@@ -147,7 +147,7 @@ struct WmsTileDataPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databas
         return SUCCESS;
         }
     };
-BeAtomic<bool> WmsTileDataPrepareAndCleanupHandler::s_isPrepared = false;
+std::atomic<bool> WmsTileDataPrepareAndCleanupHandler::s_isPrepared(false);
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015

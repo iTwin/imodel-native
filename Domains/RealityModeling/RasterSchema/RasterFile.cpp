@@ -51,8 +51,9 @@ HPMPool*  GetMemoryPool()
 #if defined(_WIN32) || defined(WIN32)
     static HPMPool  s_pool(256*1024); // 256 Mb
 #else
-    #error On other systems (Android,...), we need to define available RAM to define the pool size
-    static HPMPool  s_pool(32*1024); // 32 Mb
+    //TODO uint64_t availableRam = BeSystemInfo::GetAmountOfPhysicalMemory();
+    //#error On other systems (Android,...), we need to define available RAM to define the pool size
+    static HPMPool  s_pool(64*1024); // 64 Mb
 #endif
     return &s_pool;
     }
