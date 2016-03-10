@@ -19,6 +19,7 @@
 +----------------------------------------------------------------------*/
 
 #pragma once
+
 #include "ScalableMeshQuery.h"
 //#include "InternalUtilityFunctions.h"
 #include <ImagePP/all/h/HPMPooledVector.h>
@@ -1197,6 +1198,51 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
     //if (isStreaming) s_streamingMutex.unlock();
     if (meshP->GetNbFaces() == 0) return nullptr;
     return meshP;    
+    }
+
+
+template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnderClip(IScalableMeshMeshFlagsPtr& flags, uint64_t clipId) const
+    {
+    LOAD_NODE
+
+    if (m_node->size() == 0) return nullptr;
+    m_node->Pin();
+    IScalableMeshMeshPtr meshP;
+    ScalableMeshMeshPtr meshPtr = ScalableMeshMesh::Create();
+    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
+    bvector<DPoint3d> allPts(m_node->size());
+    memcpy(&allPts[0], &m_node->operator[](0), m_node->size()*sizeof(DPoint3d));
+    for (size_t i = 0; i < m_meshNode->m_nbClips; ++i)
+        {
+        DifferenceSet d = m_meshNode->GetClipSet(i);
+        if (d.clientID == clipId && d.toggledForID)
+            {
+            allPts.insert(allPts.end(), d.addedVertices.begin(), d.addedVertices.end());
+            int status = meshPtr->AppendMesh(allPts.size(), &allPts[0], 0, 0, 0, 0, 0, 0, 0, 0);
+
+            if (d.addedFaces.size() == 0) break;
+            bvector<int32_t> allIndices;
+            for (int i = 0; i + 2 < d.addedFaces.size(); i += 3)
+                {
+
+                for (size_t j = 0; j < 3; ++j)
+                    {
+                    int32_t idx = (int32_t)(d.addedFaces[i + j] >= d.firstIndex ? d.addedFaces[i + j] - d.firstIndex + m_node->size() + 1 : d.addedFaces[i + j]);
+                    assert(idx > 0 && idx <= m_node->size() + d.addedVertices.size());
+                    allIndices.push_back(idx);
+                    }
+                }
+
+            status = meshPtr->AppendMesh(0, 0, allIndices.size(), &allIndices[0], 0, 0, 0, 0, 0, 0);
+            meshP = meshPtr.get();
+            assert(status == SUCCESS);
+            break;
+            }
+        }
+
+    m_node->UnPin();
+    if (meshP.get() != nullptr && meshP->GetNbFaces() == 0) return nullptr;
+    return meshP;
     }
 
     template <class POINT> void ScalableMeshNode<POINT>::ComputeDiffSet(DifferenceSet& diffs, const bvector<bool>& clipsToShow, ScalableMeshTextureID texID, bool applyAllClips) const

@@ -1092,7 +1092,7 @@ DTMStatusInt ScalableMeshDTM::_GetRange(DRange3dR range)
 
 IDTMVolumeP ScalableMeshDTM::_GetDTMVolume()
     {
-    return new ScalableMeshVolume(m_scMesh);
+    return m_dtmVolume;
     }
 
 template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMesh<POINT>::_GetDTMInterface()

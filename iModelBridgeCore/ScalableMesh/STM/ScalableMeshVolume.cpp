@@ -162,9 +162,11 @@ DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolume(double* cut, double* fill
     meshQueryInterface->Query(returnedNodes, box, 4, params);
     for (auto& node : returnedNodes)
         {
+        if (hasRestrictions) if (!node->HasClip(m_restrictedId)) continue;
         bvector<bool> clips;
         IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
-        IScalableMeshMeshPtr scalableMesh = node->GetMesh(flags, clips);
+        IScalableMeshMeshPtr scalableMesh = hasRestrictions? node->GetMeshUnderClip(flags, m_restrictedId): node->GetMesh(flags,clips);
+        if (scalableMesh.get() == nullptr) continue;
         //ScalableMeshMeshWithGraphPtr scalableMeshWithGraph((ScalableMeshMeshWithGraph*)scalableMesh.get(), true);
         double tileCut, tileFill;
         bvector<PolyfaceHeaderPtr> volumeMeshVector;
@@ -192,11 +194,15 @@ DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolumeClosed(double* cut, double
 
 bool ScalableMeshVolume::_RestrictVolumeToRegion(uint64_t regionId)
     {
+    hasRestrictions = true;
+    m_restrictedId = regionId;
     return true;
     }
 
 void ScalableMeshVolume::_RemoveAllRestrictions()
-    {}
+    {
+    hasRestrictions = false;
+    }
 
 
 DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(PolyfaceHeaderPtr& terrainMesh, double& cut, double& fill, PolyfaceHeader& mesh, bool is2d, bvector<PolyfaceHeaderPtr>& volumeMeshVector)
@@ -1405,6 +1411,6 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(double& cut, double& f
     return DTMStatusInt::DTM_SUCCESS;
     }
 
-ScalableMeshVolume::ScalableMeshVolume(IScalableMeshPtr scMesh) : m_scmPtr(scMesh) {}
+ScalableMeshVolume::ScalableMeshVolume(IScalableMeshPtr scMesh) : m_scmPtr(scMesh), hasRestrictions(false){}
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
