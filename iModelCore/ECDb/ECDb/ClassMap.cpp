@@ -294,40 +294,40 @@ IClassMap const* IClassMap::FindSharedTableRootClassMap() const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String IClassMap::ToString() const
-    {
-    Utf8CP typeStr = nullptr;
-    switch (GetClassMapType())
-        {
-        case IClassMap::Type::Class:
-            typeStr = "Class";
-            break;
-        case IClassMap::Type::EmbeddedType:
-            typeStr = "EmbeddedType";
-            break;
-        case IClassMap::Type::RelationshipEndTable:
-            typeStr = "RelationshipEndTable";
-            break;
-        case IClassMap::Type::RelationshipLinkTable:
-            typeStr = "RelationshipLinkTable";
-            break;
-        case IClassMap::Type::SecondaryTable:
-            typeStr = "SecondaryTable";
-            break;
-        case IClassMap::Type::Unmapped:
-            typeStr = "Unmapped";
-            break;
-        default:
-            BeAssert(false && "Update ClassMap::ToString to handle new value in enum IClassMap::Type.");
-            typeStr = "Unrecognized class map type";
-            break;
-        }
-
-    Utf8String str;
-    str.Sprintf("ClassMap '%s' - Type: %s - Map strategy: %s", GetClass().GetFullName(), typeStr, GetMapStrategy().ToString().c_str());
-
-    return str;
-    }
+//Utf8String IClassMap::ToString() const
+//    {
+//    Utf8CP typeStr = nullptr;
+//    switch (GetClassMapType())
+//        {
+//        case IClassMap::Type::Class:
+//            typeStr = "Class";
+//            break;
+//        case IClassMap::Type::EmbeddedType:
+//            typeStr = "EmbeddedType";
+//            break;
+//        case IClassMap::Type::RelationshipEndTable:
+//            typeStr = "RelationshipEndTable";
+//            break;
+//        case IClassMap::Type::RelationshipLinkTable:
+//            typeStr = "RelationshipLinkTable";
+//            break;
+//        case IClassMap::Type::SecondaryTable:
+//            typeStr = "SecondaryTable";
+//            break;
+//        case IClassMap::Type::Unmapped:
+//            typeStr = "Unmapped";
+//            break;
+//        default:
+//            BeAssert(false && "Update ClassMap::ToString to handle new value in enum IClassMap::Type.");
+//            typeStr = "Unrecognized class map type";
+//            break;
+//        }
+//
+//    Utf8String str;
+//    str.Sprintf("ClassMap '%s' - Type: %s - Map strategy: %s", GetClass().GetFullName(), typeStr, GetMapStrategy().ToString().c_str());
+//
+//    return str;
+//    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      11/2015
@@ -1267,12 +1267,6 @@ ECDbSqlTable& ColumnFactory::GetTable() const
     return m_classMap.GetJoinedTable();
     }
 
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       08 / 2015
-//------------------------------------------------------------------------------------------
-IClassMap const& PropertyMapSet::GetClassMap () const { return m_classMap; }
-
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       08 / 2015
 //------------------------------------------------------------------------------------------
@@ -1281,21 +1275,6 @@ const PropertyMapSet::EndPoints  PropertyMapSet::GetEndPoints () const
     EndPoints endPoints;
     for (auto const& endPoint : m_orderedEndPoints)
         endPoints.push_back (endPoint.get ());
-
-    return endPoints;
-    }
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       08 / 2015
-//------------------------------------------------------------------------------------------
-const PropertyMapSet::EndPoints PropertyMapSet::FindEndPoints (ColumnKind filter) const
-    {
-    EndPoints endPoints;
-    for (auto const& endPoint : m_orderedEndPoints)
-        {
-        if (Enum::Contains(filter, endPoint->GetColumnKind()))
-            endPoints.push_back(endPoint.get());
-        }
 
     return endPoints;
     }

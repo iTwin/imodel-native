@@ -104,9 +104,7 @@ struct PropertyMapSet : NonCopyableClass
             {
             }
     public:
-        IClassMap const& GetClassMap () const;
         const EndPoints GetEndPoints () const;
-        const EndPoints FindEndPoints (ColumnKind filter) const;
         const EndPoint* GetEndPointByAccessString (Utf8CP accessString) const
             {
             auto itor = m_endPointByAccessString.find (accessString);
@@ -206,7 +204,7 @@ struct IClassMap : NonCopyableClass
         bool IsParentOfJoinedTable() const;
         bool MapsToStructArrayTable() const;
         static bool MapsToStructArrayTable(ECN::ECClassCR);
-        Utf8String ToString() const;
+        //Utf8String ToString() const;
         Utf8String GetPersistedViewName() const;
         bool HasPersistedView() const;
 
