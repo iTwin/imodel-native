@@ -652,7 +652,7 @@ protected:
 
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext);
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor);
-    SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, int ecXmlVersionMajor, bmap<Utf8CP, CharCP>* additionalAttributes=nullptr, bool writeType=true);
+    SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, int ecXmlVersionMajor, bvector<bpair<Utf8CP, Utf8CP>>* attributes=nullptr, bool writeType=true);
     virtual Utf8String                  _GetTypeNameForXml(int ecXmlVersionMajor) const { return GetTypeName(); }
 
     virtual bool                        _IsPrimitive () const { return false; }
@@ -829,13 +829,17 @@ struct ExtendedTypeECProperty : public ECProperty
  {
 private:
     Utf8String    m_extendedTypeName;
+    KindOfQuantityCP m_kindOfQuantity;
         
 protected:
-    ExtendedTypeECProperty(ECClassCR ecClass) : ECProperty(ecClass) {};
+    ExtendedTypeECProperty(ECClassCR ecClass) : ECProperty(ecClass), m_kindOfQuantity(nullptr) {};
     virtual bool  _HasExtendedType() const override { return GetExtendedTypeName().size() > 0; }
     virtual ExtendedTypeECPropertyCP _GetAsExtendedTypePropertyCP () const override { return this; }
     virtual ExtendedTypeECPropertyP  _GetAsExtendedTypePropertyP() override { return this; }
     bool ExtendedTypeLocallyDefined() const { return m_extendedTypeName.size() > 0; }
+
+    SchemaReadStatus ReadExtendedTypeAndKindOfQuantityXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext);
+    SchemaWriteStatus WriteExtendedTypeAndKindOfQuantityXml(bvector<bpair<Utf8CP, Utf8CP>>& attributes, int ecXmlVersionMajor) const;
 
 public:
     //! Gets the extended type name of this ECProperty
@@ -844,6 +848,10 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus SetExtendedTypeName(Utf8CP extendedTypeName);
     //! Resets the extended type on this property.
     ECOBJECTS_EXPORT bool RemoveExtendedTypeName();
+    //! Sets the KindOfQuantity of this property, provide nullptr to unset.
+    void SetKindOfQuantity(KindOfQuantityCP value) { m_kindOfQuantity = value; }
+    //! Gets the KindOfQuantity of this property or nullptr, if none has been set
+    KindOfQuantityCP GetKindOfQuantity() const { return m_kindOfQuantity; }
 };
 
 //=======================================================================================
@@ -858,7 +866,6 @@ private:
     PrimitiveType                               m_primitiveType;
     ECEnumerationCP                             m_enumeration;
     mutable CalculatedPropertySpecificationPtr  m_calculatedSpec;   // lazily-initialized
-    Utf8String                                  m_kindOfQuantity;
 
     PrimitiveECProperty(ECClassCR ecClass) : m_primitiveType(PRIMITIVETYPE_String), ExtendedTypeECProperty(ecClass), m_enumeration(nullptr) {};
 
@@ -885,10 +892,6 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus SetType(ECEnumerationCR value);
     //! Gets the Enumeration of this ECProperty or nullptr if none used.
     ECOBJECTS_EXPORT ECEnumerationCP GetEnumeration() const;
-    //! Sets the KindOfQuantity of this PrimitiveECProperty
-    ECOBJECTS_EXPORT ECObjectsStatus SetKindOfQuantity(Utf8StringCR value);
-    //! Gets the KindOfQuantity of this PrimitiveECProperty
-    ECOBJECTS_EXPORT Utf8StringCR GetKindOfQuantity() const;
 };
 
 //=======================================================================================
@@ -1246,6 +1249,7 @@ protected:
     virtual ~ECClass();
 
     ECObjectsStatus                     AddProperty(ECPropertyP pProperty, Utf8StringCR name);
+    virtual ECObjectsStatus             _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false);
 
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
     virtual ECSchemaCP                  _GetContainerSchema() const override;
@@ -1711,7 +1715,7 @@ struct KindOfQuantity : NonCopyableClass
         // schemas index KindOfQuantity by name so publicly name can not be reset
         void SetName(Utf8CP name);
 
-        /*SchemaReadStatus ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchemaReadContextR context);*/
+        SchemaReadStatus ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchemaReadContextR context);
         SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const;
 
     public:
@@ -1728,13 +1732,16 @@ struct KindOfQuantity : NonCopyableClass
         //! @param[out] kindOfQuantityName   The name of the KindOfQuantity
         //! @param[in]  stringToParse  The qualified name, in the format of {SchemaName}:{KindOfQuantityName}
         //! @return A status code indicating whether the qualified name was successfully parsed or not
-        ECOBJECTS_EXPORT static ECObjectsStatus ParseFullName(Utf8StringR prefix, Utf8StringR kindOfQuantityName, Utf8StringCR stringToParse);
+        ECOBJECTS_EXPORT static ECObjectsStatus ParseName(Utf8StringR prefix, Utf8StringR kindOfQuantityName, Utf8StringCR stringToParse);
+
+        //! Gets a qualified name of the enumeration, prefixed by the schema prefix if it does not match the primary schema.
+        ECOBJECTS_EXPORT Utf8String GetQualifiedName(ECSchemaCR primarySchema) const;
 
         //! Sets the display label of this KindOfQuantity
         //! @param[in]  value  The new value to apply
-        void SetDisplayLabel(Utf8CP value) { m_validatedName.SetDisplayLabel(value); }
+        ECOBJECTS_EXPORT void SetDisplayLabel(Utf8CP value);
         //! Gets the display label of this KindOfQuantity.  If no display label has been set explicitly, it will return the name of the KindOfQuantity
-        Utf8StringCR GetDisplayLabel() const { return m_validatedName.GetDisplayLabel(); }
+        ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
 
         //! Sets the description of this KindOfQuantity
         //! @param[in]  value  The new value to apply
@@ -1919,6 +1926,10 @@ public:
     //!     (1,n) cardinality. This static property can be used instead of a standard
     //!     constructor of RelationshipCardinality to reduce memory usage.
     ECOBJECTS_EXPORT static RelationshipCardinalityCR OneMany();
+
+    //! Compares the two Cardinalities and returns whether they are equal (0). Otherwise the
+    //! larger scope will be returned either rhs (1) or lhs (-1)
+    ECOBJECTS_EXPORT static int Compare(RelationshipCardinality const& lhs, RelationshipCardinality const& rhs);
 };
 //=======================================================================================
 //! This class holds a class in an ECRelationship constraint plus its key properties
@@ -2043,6 +2054,8 @@ private:
     SchemaWriteStatus           WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName) const;
     SchemaReadStatus            ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext);
 
+    ECObjectsStatus             ValidateClassConstraint(ECEntityClassCR constraintClass) const;
+    ECObjectsStatus             ValidateCardinalityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit) const;
 
 protected:
     virtual ECSchemaCP          _GetContainerSchema() const override;
@@ -2158,6 +2171,9 @@ private:
     ECObjectsStatus                     SetStrength (Utf8CP strength);
     ECObjectsStatus                     SetStrengthDirection (Utf8CP direction);
 
+    bool                                ValidateStrengthConstraint(StrengthType value, bool compareValue=true) const;
+    bool                                ValidateStrengthDirectionConstraint(ECRelatedInstanceDirection value, bool compareValue = true) const;
+
 protected:
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const override;
 
@@ -2165,7 +2181,8 @@ protected:
     virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties) override;
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const override {return this;};
     virtual ECRelationshipClassP        _GetRelationshipClassP ()  override {return this;};
-    virtual ECClassType _GetClassType() const override { return ECClassType::Relationship; }
+    virtual ECClassType                 _GetClassType() const override { return ECClassType::Relationship; }
+    virtual ECObjectsStatus             _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false) override;
 
 //__PUBLISH_SECTION_START__
 public:

@@ -68,6 +68,7 @@ capture this information.
 #include <ECObjects/ECDiff.h>
 #include <Bentley/ScopedArray.h>
 #include <ECObjects/AdHocJsonContainer.h>
+#include <ECObjects/ECJsonUtilities.h>
 
 /*__PUBLISH_SECTION_END__*/
 #include <ECObjects/DesignByContract.h>
