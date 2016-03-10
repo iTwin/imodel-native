@@ -695,6 +695,9 @@ TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
         
         for (auto const& unit : phenomenon->GetUnits())
             {
+            if (unit->IsConstant())
+                continue;
+
             line.Sprintf("%s,%s,%s", unit->GetName(), unit->GetDefinition(), unit->GetUnitDimension().c_str());
             WriteLine(file, line.c_str());
             }
