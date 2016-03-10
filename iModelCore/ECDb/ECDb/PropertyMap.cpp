@@ -582,48 +582,6 @@ StructPropertyMap::StructPropertyMap(ECDbMapCR ecdbMap, StructPropertyMap const&
         }
     }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan      09/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-PropertyMapCP StructPropertyMap::GetPropertyMap (Utf8CP propertyName) const
-    {
-    for(PropertyMapCP childPropMap : m_children)
-        {
-        //Following is slow but propertyName is expected to be a accessString relative to this struct
-        if (childPropMap->GetProperty().GetName().Equals (propertyName))
-            return childPropMap;
-        }
-
-    Utf8String accessString = propertyName;
-    auto n = accessString.find(".");
-    if (n != Utf8String::npos)
-        {
-        Utf8String first = accessString.substr(0, n);
-        Utf8String rest = accessString.substr(n + 1);
-        PropertyMapCP propertyMap = nullptr;
-        for(PropertyMapCP childPropMap : m_children)
-            {
-            //Following is slow but propertyName is expected to be a accessString relative to this struct
-            if (childPropMap->GetProperty ().GetName ().Equals (first))
-                {
-                propertyMap = childPropMap;
-                break;
-                }
-            }
-
-        if (propertyMap != nullptr)
-            {
-            if(rest.empty())
-                return propertyMap;
-
-            if (StructPropertyMap const* structPropertyMap = dynamic_cast<StructPropertyMap const*>(propertyMap))
-                return structPropertyMap->GetPropertyMap(rest.c_str());
-            }
-        }
-
-    return nullptr;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan     09/2013
 //---------------------------------------------------------------------------------------

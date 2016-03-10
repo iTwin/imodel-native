@@ -72,17 +72,13 @@ struct EditHandle : NonCopyableClass
     {
     private:
         bool m_canEdit : 1;
-        bool m_isModified : 2;
 
     public:
         EditHandle ();
         bool BeginEdit ();
-        bool IsModified () const;
-        bool SetModified ();
         bool EndEdit ();
         bool CanEdit () const;
         bool AssertNotInEditMode ();
-        bool AssertInEditMode () const;
         EditHandle (EditHandle const &&  eh);
         ~EditHandle ();
     };
@@ -165,33 +161,6 @@ struct NameGenerator
             }
     };
 
-//======================================================================================
-// @bsiclass                                                 Affan.Khan         09/2014
-//======================================================================================
-struct StringPool : NonCopyableClass
-    {
-    private:
-        std::set<Utf8CP, CompareUtf8> m_lookUp;
-
-    public:
-        StringPool ()
-            {
-            //Reserve (1024);
-            }
-        ~StringPool ()
-            {
-            for (auto str : m_lookUp)
-                {
-                free (const_cast<Utf8P>(str));
-                }
-
-            m_lookUp.clear ();
-            }
-        Utf8CP Set (Utf8CP str);
-        bool Exists (Utf8CP accessString) const;
-        Utf8CP Get (Utf8CP str) const;
-    };
-
 struct ECDbSqlColumn;
 struct ECDbSqlTable;
 struct ECDbSQLManager;
@@ -205,7 +174,6 @@ private:
     BeVersion m_version;
     NameGenerator m_nameGenerator;
     std::map<Utf8CP, std::unique_ptr<ECDbSqlTable>, CompareIUtf8> m_tables;
-    StringPool m_stringPool;
     ECDbSQLManager& m_sqlManager;
 
 public:
@@ -230,11 +198,6 @@ public:
     NameGenerator& GetNameGenerator() { return m_nameGenerator; }
 
     bool IsNameInUse(Utf8CP name) const;
-
-    StringPool const& GetStringPool () const { return m_stringPool; }
-    StringPool& GetStringPoolR () { return m_stringPool; }
-    BentleyStatus DropTable (Utf8CP name);
-    bool IsModified () const;
     void Reset ();
     };
 
@@ -431,7 +394,6 @@ struct ECDbSqlForeignKeyConstraint : ECDbSqlConstraint
         static Utf8CP ToSQL(ForeignKeyActionType actionType);
     };
 
-
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
@@ -464,7 +426,6 @@ public:
 
         BentleyStatus Create(ECDbR ecdb) const;
         BentleyStatus CreateOrUpdate(ECDbR ecdb) const;
-        bool Exist (ECDbR ecdb) const;
         };
 
     private:
@@ -800,7 +761,6 @@ struct ECDbSqlPersistence : NonCopyableClass
         DbResult ReadTables (ECDbMapDb&) const;
         DbResult ReadTable (Statement&, ECDbMapDb&) const;
         DbResult ReadColumns (ECDbSqlTable&) const;
-        DbResult ReadForeignKeys (ECDbMapDb&) const;
         DbResult ReadColumn (Statement&, ECDbSqlTable&, std::map<size_t, ECDbSqlColumn const*>& primaryKeys) const;
         DbResult ReadForeignKeys (ECDbSqlTable&) const;
         DbResult ReadForeignKey (Statement&, ECDbSqlTable&) const;
