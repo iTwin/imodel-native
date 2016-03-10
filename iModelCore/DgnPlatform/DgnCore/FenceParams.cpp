@@ -806,15 +806,10 @@ bool AcceptCurveVector(CurveVectorCR curves)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus GetContents(DgnElementIdSet& contents)
     {
-    if (!m_fp.GetFenceRange()->IsNull())
+    DRange3d npcRange = m_fp.GetFenceRangeNPC ();
+    if (!npcRange.IsNull ())
         {
-        DPoint3d corners[8];
-        DRange3d npcSubRect;
-
-        m_fp.GetFenceRange()->Get8Corners(corners);
-        m_fp.GetViewport()->WorldToNpc(corners, corners, 8);
-        npcSubRect.InitFrom(corners, 8);
-        SetSubRectNpc(npcSubRect);
+        SetSubRectNpc(npcRange);
         }
 
     if (SUCCESS != Attach(m_fp.GetViewport(), m_purpose) || !m_fp.GetClipVector().IsValid())
@@ -822,15 +817,6 @@ BentleyStatus GetContents(DgnElementIdSet& contents)
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     ClipVectorPtr transformedClip = ClipVector::CreateCopy(*m_fp.GetClipVector());
-
-    if (m_fp.IsCameraOn())
-        {
-        if (ERROR == transformedClip->ApplyCameraToPlanes(m_fp.GetFocalLength()))
-            {
-            BeAssert(false);
-            transformedClip = NULL;
-            }
-        }
 
     Transform clipToWorld;
 
@@ -857,7 +843,6 @@ BentleyStatus GetContents(DgnElementIdSet& contents)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            FenceParams::IsCameraOn() const {return m_camera;}
 double          FenceParams::GetFocalLength() const {return m_focalLength;}
 ClipVectorPtr   FenceParams::GetClipVector() const {return m_clip;}
 FenceClipMode   FenceParams::GetClipMode() const {return m_clipMode;}
@@ -887,22 +872,6 @@ void FenceParams::SetViewParams(DgnViewportP viewport)
     m_onTolerance = 1.5E-3; // Reduced from .25 for XM to 1.0E-4 (now that we use this uniformly I think smaller value makes sense).   RBB/RBB 03/06.
                             // Increased to 1.5E-3 to match/exceed CLIP_PLANE_BIAS.  - RBB 03/2011.  (TR# 293934).
 
-    if (nullptr == viewport || !viewport->IsCameraOn())
-        {
-        m_camera = false;
-        m_transform.InitIdentity();
-        return;
-        }
-
-    CameraInfo const& camera = viewport->GetCamera();
-    DPoint3d eyePoint = camera.GetEyePoint();
-
-    m_camera = true;
-    m_transform.InitFrom(viewport->GetRotMatrix());
-    m_transform.TranslateInLocalCoordinates(m_transform, -eyePoint.x, -eyePoint.y, -eyePoint.z);
-
-    m_focalLength = camera.GetFocusDistance();
-    m_zCameraLimit = -m_focalLength / fc_cameraPlaneRatio;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -995,12 +964,9 @@ StatusInt FenceParams::StoreClippingVector(ClipVectorCR clip, bool outside)
     if (!m_clip.IsValid())
         return ERROR;
 
-    m_camera = false;
-    m_transform.InitIdentity();
-    m_fenceRange.Init();
-
+    m_fenceRangeNPC.Init ();
     if (!outside)
-        setFenceRangeFromInsideClip(m_fenceRange, *m_clip, m_viewport);
+        setFenceRangeFromInsideClip(m_fenceRangeNPC, *m_clip, m_viewport);
 
     return SUCCESS;
     }
@@ -1010,7 +976,7 @@ StatusInt FenceParams::StoreClippingVector(ClipVectorCR clip, bool outside)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt FenceParams::StoreClippingPoints(DPoint3dCP points, size_t nPoints, bool outside)
     {
-    if (nullptr == m_viewport || !m_camera)
+    if (nullptr == m_viewport)
         {
         if (2 == nPoints) // Degenerate fence shape is used for crossing line selection...
             {
@@ -1053,143 +1019,54 @@ StatusInt FenceParams::StoreClippingPoints(DPoint3dCP points, size_t nPoints, bo
         return StoreClippingVector(*clip, outside);
         }
 
-#if !defined (NOT_NOW_CAMERA_FENCE)
-    // NEEDSWORK - COMPLETELY BROKEN - NEED HELP!
-    // NOTE: FenceParams::SetViewParams will have already set m_transform using eye point and view rotation.
-    //       ClipVector::ApplyCameraToPlanes can be used *somewhere* to adjust the clip planes for camera...
-    bvector<DPoint3d> tmpPoints;
-
-    tmpPoints.insert(tmpPoints.begin(), &points[0], &points[nPoints]);
-
-    if (2 == nPoints)
-        tmpPoints.push_back(points[0]); // Degenerate fence shape is used for crossing line selection...
-
-    bvector<DPoint2d> tmpPoints2d;
-    double focalPlaneNpc = m_viewport->GetFocusPlaneNpc();
-    
-    for (DPoint3dR tmpPt : tmpPoints)
+    DMap4dCP worldToNPC = m_viewport->GetWorldToNpcMap ();
+    bvector<DPoint2d> backPlaneUV;
+    DRange3d uvRange;
+    uvRange.Init ();
+    for (int i = 0; i < nPoints; i++)
         {
-        m_viewport->WorldToNpc(tmpPt);
-        tmpPt.z = focalPlaneNpc;
-        m_viewport->NpcToWorld(tmpPt);
-
-        tmpPt.DifferenceOf(tmpPt, m_viewport->GetCamera().GetEyePoint());
-        m_viewport->GetRotMatrix().Multiply(tmpPt);
-        tmpPoints2d.push_back(DPoint2d::From(tmpPt)); // Need to account for z using ClipFromShape tranform maybe???
+        DPoint3d uvw;
+        worldToNPC->M0.MultiplyAndRenormalize (&uvw, &points[i], 1);
+        backPlaneUV.push_back (DPoint2d::From (uvw.x, uvw.y));
+        uvRange.Extend (uvw.x, uvw.y, 0.0);
         }
-
-    m_clip = ClipVector::CreateFromPrimitive(ClipPrimitive::CreateFromShape(&tmpPoints2d.front(), tmpPoints2d.size(), outside, nullptr, nullptr, nullptr).get());
-
-    m_fenceRange.Init();
-
-    if (!outside)
-        {
-        setFenceRangeFromInsideClip(m_fenceRange, *m_clip, m_viewport);
-        m_transform.Multiply(m_fenceRange, m_fenceRange); // Account for m_transform...
-        }
-
-    return SUCCESS;
-#else
-    // The code below was distilled from what existed on DgnDb06 to handle camera...it's overly complicated and no 
-    // longer works anyway...leaving it here just in case it's useful to see what it did (probably better to look at Connect however)...
-
-    // Previously FenceParams::ClippingPointsFromRootPoints...
-    DPoint3d    viewOrigin = *m_viewport->GetViewOrigin(), rotatedViewOrigin, viewCenter = DPoint3d::From(0.5, 0.5, 0.5);
-    RotMatrix   viewRMatrix = m_viewport->GetRotMatrix();
-
-    rotatedViewOrigin = viewOrigin;
-    viewRMatrix.Multiply(rotatedViewOrigin);
-    m_viewport->NpcToWorld(&viewCenter, &viewCenter, 1);
-
-    bvector<DPoint3d> tmpPoints;
-
-    tmpPoints.insert(tmpPoints.begin(), &points[0], &points[nPoints]);
-
-    if (2 == nPoints)
-        tmpPoints.push_back(points[0]); // Degenerate fence for crossing line selection...
-
-    for (DPoint3dR tmpPt : tmpPoints)
-        {
-        viewRMatrix.Multiply(tmpPt);
-        tmpPt.z = rotatedViewOrigin.z + viewCenter.z;
-        viewRMatrix.MultiplyTranspose(tmpPt);
-        }
-
-    // convert to 2d, view oriented, world-units, relative to view origin, coordinates. Previously databaseToView2d.
-    bvector<DPoint2d> tmpPoints2d;
-
-    for (DPoint3dR tmpPt : tmpPoints)
-        {
-        DPoint3d pt = tmpPt;
-
-        pt.x -= viewOrigin.x;
-        pt.y -= viewOrigin.y;
-        pt.z -= viewOrigin.z;
-
-        viewRMatrix.Multiply(pt);
-        tmpPoints2d.push_back(DPoint2d::From(pt));
-        }
-
-    // Previously FenceParams::StoreClippingPoints required 2d points...
+    // Clipping is defined in npc space --- back plane is always z=0, front is z=1.0
     ClipMask    clipMask = ClipMask::XAndY;
     double      *pZLow = NULL, *pZHigh = NULL, zLow = -1.0e20, zHigh = 1.0e20;
 
-    m_transform.Multiply(rotatedViewOrigin, viewOrigin);
-
     if (!m_viewport->GetViewFlags().noFrontClip)
         {
-        zHigh = rotatedViewOrigin.z + m_viewport->GetViewDelta()->z;
+        zHigh = 1.0;
         clipMask = clipMask | ClipMask::ZHigh;
         pZHigh = &zHigh;
         }
 
     if (!m_viewport->GetViewFlags().noBackClip)
         {
-        zLow = rotatedViewOrigin.z;
+        zLow = 0.0;
         clipMask = clipMask | ClipMask::ZLow;
         pZLow = &zLow;
         }
 
-    DPoint3d delta;
-    CameraInfo const& camera = m_viewport->GetCamera();
-
-    if (zHigh > m_zCameraLimit)
+#define NPC_CAMERA_LIMIT 100.0
+    if (zHigh > NPC_CAMERA_LIMIT)
         {
-        zHigh = m_zCameraLimit;
+        zHigh = NPC_CAMERA_LIMIT;
         pZHigh = &zHigh;
         }
 
-    delta.DifferenceOf(viewOrigin, *(&camera.GetEyePoint()));
-    viewRMatrix.Multiply(delta);
+    m_clip = ClipVector::CreateFromPrimitive(ClipPrimitive::CreateFromShape(&backPlaneUV.front(), backPlaneUV.size(), outside, pZLow, pZHigh, nullptr).get());
+    m_clip->MultiplyPlanesTimesMatrix (worldToNPC->M0);
 
-    double cameraScale;
-    cameraScale = -camera.GetFocusDistance() / (viewCenter.z + delta.z);
-
-    for (DPoint2dR tmpPt2d : tmpPoints2d)
+    m_fenceRangeNPC.Init ();
+    if (!outside)
         {
-        tmpPt2d.x = cameraScale * (delta.x + tmpPt2d.x);
-        tmpPt2d.y = cameraScale * (delta.y + tmpPt2d.y);
+        m_fenceRange = uvRange;
+        m_fenceRangeNPC.low.z = zLow;
+        m_fenceRangeNPC.high.z = zHigh;
         }
 
-    m_clip = ClipVector::CreateFromPrimitive(ClipPrimitive::CreateFromShape(&tmpPoints2d.front(), tmpPoints2d.size(), outside, pZLow, pZHigh, nullptr).get());
-
-/* This happened in GetContents...but on a copt of m_clip which was then pushed...
-    if (SUCCESS != m_clip->ApplyCameraToPlanes(m_focalLength))
-        return ERROR;
-
-    Transform clipToWorld;
-
-    clipToWorld.InverseOf(m_transform);
-    m_clip->TransformInPlace(clipToWorld);
-*/
-
-    m_fenceRange.Init();
-
-    if (!outside)
-        setFenceRangeFromInsideClip(m_fenceRange, *m_clip, m_viewport); // NEEDWORK: Apply m_transform...
-
     return SUCCESS;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1260,19 +1137,7 @@ StatusInt FenceParams::GetClipToWorldTransform(TransformR clipToWorld, ClipPrimi
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool FenceParams::PointInside(DPoint3dCR testPoint)
     {
-    DPoint3d    chk = testPoint;
-
-    m_transform.Multiply(chk);
-
-    if (m_camera && chk.z < 0.0)
-        {
-        double  cameraScale = - m_focalLength / chk.z;
-
-        chk.x *= cameraScale;
-        chk.y *= cameraScale;
-        }
-
-    return PointInsideClip(chk);
+    return PointInsideClip(testPoint);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1737,36 +1602,14 @@ bool FenceParams::LinearFenceIntersect(ClipPrimitiveCR clipPrimitive, DPoint3dCP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool FenceParams::AcceptDEllipse3d(DEllipse3dCR ellipse)
+bool FenceParams::AcceptDEllipse3d(DEllipse3dCR arc)
     {
-    DPoint3d    testPoint;
-    DEllipse3d  localEllipse;
-
-    m_transform.Multiply(localEllipse, ellipse);
-    localEllipse.FractionParameterToPoint(testPoint, 0.5);
-
-    bool        pointIn, insideMode = !m_overlapMode && !static_cast<int>(m_clipMode);
-
-    if (pointIn = PointInsideClip(testPoint))
-        {
-        if (m_overlapMode)
-            return true;
-        }
+    if (m_overlapMode)
+        return m_clip->IsAnyPointInside(arc, false);
+    else if (0 == static_cast<int>(m_clipMode))
+        return m_clip->IsCompletelyContained(arc, false);
     else
-        {
-        if (insideMode)
-            return false;
-        }
-
-    for (ClipPrimitivePtr const& primitive: *m_clip)
-        {
-        if (ArcFenceIntersect(*primitive, localEllipse) && insideMode)
-            return false;
-        }
-
-    m_hasOverlaps |= (m_splitParams.size() > 0);
-
-    return pointIn || insideMode || m_hasOverlaps;
+        return !m_clip->IsAnyPointInside(arc, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1774,69 +1617,12 @@ bool FenceParams::AcceptDEllipse3d(DEllipse3dCR ellipse)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool FenceParams::AcceptLineSegments(DPoint3dP points, size_t numPoints, bool closed)
     {
-    DPoint3d    testPoint;
-
-    for (size_t iPoint = 0; iPoint < numPoints; iPoint++)
-        if (!points[iPoint].IsDisconnect())
-            m_transform.Multiply(points[iPoint]);
-
-    if (numPoints == 1)
-        {
-        numPoints = 0;
-        testPoint = points[0];
-        }
+    if (m_overlapMode)
+        return m_clip->IsAnyLineStringPointInside(points, numPoints, closed);
+    else if (0 == static_cast<int>(m_clipMode))
+        return m_clip->IsCompletelyContained (points, numPoints, closed);
     else
-        {
-        // Refined testpoint selection to use first nondegenerate section - RBB 03/2011 (TR# 300562).
-        DPoint3dCP  testSegment = points, endSegment = points + numPoints - 1;
-
-        for (; testSegment < endSegment; testSegment++)
-            {
-            if (testSegment->x == DISCONNECT || testSegment->y == DISCONNECT)
-                {
-                testSegment += 2;
-                }
-            else
-                {
-                if (!LegacyMath::RpntEqual(testSegment, testSegment+1))
-                    break;
-                }
-            }
-
-        if (testSegment >= endSegment)
-            {
-            /* for elements where all points coincide just use test point. */
-            testPoint = points[0];
-            numPoints = 0;
-            }
-        else
-            {
-            testPoint.SumOf(*testSegment, .5, testSegment[1], .5);
-            }
-        }
-
-    bool        pointIn, insideMode = !m_overlapMode && !static_cast<int>(m_clipMode);
-
-    if (pointIn = PointInsideClip(testPoint))
-        {
-        if (m_overlapMode)
-            return true;
-        }
-    else
-        {
-        if (insideMode)
-            return false;
-        }
-
-    for (ClipPrimitivePtr const& primitive: *m_clip)
-        {
-        if (LinearFenceIntersect(*primitive, points, numPoints, closed) && insideMode)
-            return false;
-        }
-
-    m_hasOverlaps |= (m_splitParams.size() > 0);
-
-    return insideMode || pointIn || m_hasOverlaps;
+        return !m_clip->IsAnyLineStringPointInside(points, numPoints, closed);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1974,71 +1760,8 @@ MSBsplineCurve* pCurve
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool FenceParams::AcceptCurve(MSBsplineCurve  *curveP)
     {
-    if (!m_camera)
-        {
-        curveP->TransformCurve(m_transform);
-        return AcceptTransformedCurve(curveP);
-        }
-
-    DPoint3d    testPoint;
-
     curveP->TransformCurve(m_transform);
-    bvector<double> params;
-    curveP->AddPlaneIntersections(NULL, &params, DPlane3d::FromOriginAndNormal(0,0, m_zCameraLimit, 0,0,1));
-
-    if (params.size() > 0)
-        {
-        bool        accept = false;
-
-        if (!m_overlapMode && !static_cast<int>(m_clipMode))
-            return false;
-
-        if (curveP->params.closed)
-            {
-            DoubleOps::Sort(params, true);
-            params.push_back(params[0] + 1.0);
-            }
-        else
-            {
-            params.push_back(0.0);
-            params.push_back(1.0);
-            DoubleOps::Sort(params);
-            }
-
-        for (size_t i = 0; i < params.size(); i++)
-            {
-            curveP->FractionToPoint(testPoint, params[i]);
-
-            if (m_clip->PointInside(testPoint, m_onTolerance))
-                StoreIntersectionIfInsideClip(params[i], &testPoint, NULL);
-            }
-
-        for (size_t i = 0; i < params.size() - 1; i++)
-            {
-            MSBsplineCurve      segment;
-            curveP->FractionToPoint(testPoint, (params[i] + params[i+1]) * 0.5);
-
-            if (testPoint.z < m_zCameraLimit && SUCCESS == segment.CopyFractionSegment(*curveP, params[i], params[i+1]))
-                {
-                size_t originalNSplitParams = m_splitParams.size();
-
-                accept |= AcceptCameraCurveSegment(&segment);
-                // The Accept step may have intersected the partial curve and generated more split points.
-                //  Map the new split points from the partial curve 0..1 into the params[i]..params[i+1] interval.
-                for (size_t j = originalNSplitParams; j < m_splitParams.size(); j++)
-                    m_splitParams[j] = params[i] + (m_splitParams[j] - params[i]) / (params[i + 1] - params[i]);
-
-                segment.ReleaseMem();
-                }
-            }
-
-        return accept;
-        }
-    else
-        {
-        curveP->FractionToPoint(testPoint, 0.5);
-        return testPoint.z < m_zCameraLimit ? AcceptCameraCurveSegment(curveP) : false;
-        }
+    return AcceptTransformedCurve(curveP);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2053,8 +1776,6 @@ bool FenceParams::AcceptCameraCurveSegment
 MSBsplineCurve  *curveP
 )
     {
-    curveP->ProjectToZFocalPlane(m_focalLength);
-
     return AcceptTransformedCurve(curveP);
     }
 
@@ -2063,8 +1784,6 @@ MSBsplineCurve  *curveP
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool FenceParams::AcceptByCurve()
     {
-    if (m_camera)               // Always use curves if camera on as we'll use weights to do perspective
-        return true;
 
     for (ClipPrimitivePtr const& primitive: *m_clip)
         {
@@ -2152,15 +1871,13 @@ FenceParams::FenceParams(TransformCP trans)
     else
         m_transform.InitIdentity();
 
-    m_camera            = false;
     m_overlapMode       = false;
     m_onTolerance       = .25;    // The traditional UOR tolerance...
-    m_zCameraLimit      = 0.0;
 
     m_viewport          = NULL;
     m_clipMode          = FenceClipMode::None;
 
-    m_fenceRange.Init();
+    m_fenceRangeNPC.Init();
     m_splitParams.clear();
 
     m_hasOverlaps       = false;
@@ -2174,14 +1891,12 @@ FenceParams::FenceParams(FenceParamsP fpP)
     {
     m_focalLength       = fpP->m_focalLength;
     m_transform         = fpP->m_transform;
-    m_camera            = fpP->m_camera;
     m_overlapMode       = fpP->m_overlapMode;
     m_onTolerance       = fpP->m_onTolerance;
-    m_zCameraLimit      = fpP->m_zCameraLimit;
     m_viewport          = fpP->m_viewport;
     m_clipMode          = fpP->m_clipMode;
     m_clip              = fpP->m_clip;
-    m_fenceRange        = fpP->m_fenceRange;
+    m_fenceRangeNPC     = fpP->m_fenceRangeNPC;
     m_locateInteriors   = fpP->m_locateInteriors;
     m_hasOverlaps       = false;
     m_splitParams.clear();
@@ -2262,11 +1977,6 @@ StatusInt FenceParams::PushClip(ViewContextR context, TransformCP localToRoot) c
 
     clipToLocal.InverseOf(localToClip);
 
-    if (context.IsCameraOn())
-        {
-        // Needs work - Handle rotating planes to account for camera projection.
-        }
-
     clip->TransformInPlace(clipToLocal);
     context.PushClip(*clip);
 #endif
@@ -2293,13 +2003,6 @@ static void pointFromParameter(DPoint3dR point, ICurvePrimitive* curvePrimitive,
 
     fp.GetTransform()->Multiply(point);
 
-    if (!fp.IsCameraOn() || point.z >= 0.0)
-        return;
-
-    double      cameraScale = -fp.GetFocalLength() / point.z;
-
-    point.x *= cameraScale;
-    point.y *= cameraScale;
     }
 
 /*---------------------------------------------------------------------------------**//**
