@@ -335,6 +335,31 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DRay3dP = cxx_pointer<DRay3d>;
 
+/**
+@description A plane defined by origin and vector normal
+*/
+    class DPlane3d implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsDPlane3d ***/ 
+        Clone(): DPlane3dP;
+        constructor (
+                Origin : DPoint3dP,
+                Normal: DVector3dP
+                );
+        
+        Origin: DPoint3dP;
+        Normal: DVector3dP;
+        OnDispose(): void;
+        Dispose(): void;
+        /** Evalate (xyz-origin) DOT normal. */
+        Evaluate (xyz : DPoint3dP) : cxx_double;
+    }
+
+    type DPlane3dP = cxx_pointer<DPlane3d>;
+
+
+
+
+
 
     type DPoint3dArrayP = cxx_pointer<DPoint3dArray>;
 
@@ -359,6 +384,56 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         OnDispose(): void;
         Dispose(): void;
     }
+
+    type GeometryNodeP = cxx_pointer<GeometryNode>;
+
+/**
+@description A GeoemtryNode is a a node in a tree or DAG structure.
+<ul>
+<li>Each node has two arrays of "children":
+<ul>
+<li>Geometry -- an array of geometry
+<li>Members -- an array of child GeometryNodes.  Each member has a transform to be applied to the chid node.
+</ul>
+<li>Recursively following the Member pointers traces the tree or directed acyclic graph (DAG).
+<li>The structure must be acyclic. (I.e. the recursive searches do not check for revisit, and will get stuck in endless loops if there are cycles.)
+<li>A single node with no child members is essentially an array of Geometry.
+</ul>
+*/
+    class GeometryNode implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsGeometryNode ***/ 
+        constructor();
+
+        /** Add a child geometry */
+        AddGeometry(value: GeometryP): void;
+        /** Add a child node */
+        AddMemberWithTransform (value: GeometryNodeP, transform: TransformP): void;
+        /** return the numer of child geometry */
+        GeometrySize(): cxx_double;
+        /** return the number of child nodes */
+        MemberSize(): cxx_double;
+        /** Clear the geometry array */
+        ClearGeometry (): void;
+        /** Clear the child node array*/
+        ClearMembers (): void;
+        /** access geometry by index */
+        GeometryAt(index: cxx_double): GeometryP;
+        /** access child nodes by index*/
+        MemberAt(index: cxx_double): GeometryNodeP;
+        /** access child transform by index */
+        MemberTransformAt(index: cxx_double): TransformP;
+
+        /** Collect transformed clones all geometry in the tree (or dag).  The geometry is returned in a geometry node
+            with identity transform and no node children.
+        **/            
+        Flatten ():GeometryNodeP;
+        /** Test for identical structure and coordinates */
+        IsSameStructureAndGeometry (other: GeometryNodeP) : cxx_bool;
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+
 
     type DoubleArrayP = cxx_pointer<DoubleArray>;
 
@@ -532,10 +607,13 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         static CreateTranslation (translation : DPoint3dP) : TransformP;
         static CreateTranslationXYZ (x : cxx_double, y : cxx_double, z : cxx_double) : TransformP;
         static CreateScaleAroundPoint (fixedPoint : DPoint3dP, scaleX : cxx_double, scaleY : cxx_double, scaleZ : cxx_double) : TransformP;
-
+        /** Create a coordinate frame with x,y,z columns given directly */
         static CreateOriginAndVectors (origin : DPoint3dP, xVector : DVector3dP, yVector : DVector3dP, zVector : DVector3dP) : TransformP;
-
+        /** Create a coordinate frame with x,y,z columns as vectors from origin to target points */
         static CreateOriginAnd3TargetPoints (origin : DPoint3dP, xPoint : DPoint3dP, yPoint : DPoint3dP, zPoint : DPoint3dP) : TransformP;
+        /** Create a transform that sweeps points along the sweepDirection to a point on the plane */
+        static CreateSweepToPlane (sweepDirection: DVector3dP, plane : DPlane3dP) : TransformP;
+
 
         static CreateOriginAnd2TargetPoints (origin : DPoint3dP, xPoint : DPoint3dP, yPoint : DPoint3dP) : TransformP;
 
@@ -711,6 +789,8 @@ class CurvePrimitive extends Geometry implements BeJsProjection_SuppressConstruc
         /*** NATIVE_TYPE_NAME = JsLineSegment ***/
         Clone(): LineSegmentP;
         constructor (pointA : DPoint3dP, pointB : DPoint3dP);
+        /** create with direct xyz values for start and end */
+        static CreateXYZ (ax: cxx_double, ay: cxx_double, az: cxx_double, bx: cxx_double, by: cxx_double, bz: cxx_double) : LineSegmentP;
 
     }
 

@@ -34,7 +34,7 @@ enum DgnDbSchemaValues : int32_t
     DGNDB_CURRENT_VERSION_Major = 6,
     DGNDB_CURRENT_VERSION_Minor = 0,
     DGNDB_CURRENT_VERSION_Sub1  = 1,
-    DGNDB_CURRENT_VERSION_Sub2  = 0,
+    DGNDB_CURRENT_VERSION_Sub2  = 1,
 
     DGNDB_SUPPORTED_VERSION_Major = 6,  // oldest version of the schema supported by the current api
     DGNDB_SUPPORTED_VERSION_Minor = 0,
@@ -242,7 +242,7 @@ public:
     DGNPLATFORM_EXPORT DictionaryModelR GetDictionaryModel(); //!< Return the dictionary model for this DgnDb.
 
     //! Ids for DgnPlatform threads
-    enum class ThreadId {Unknown=0, Client=100, Render=101, Query=102,};
+    enum class ThreadId {Unknown=0, Client=100, Render=101, Query=102, RealityData=103};
 
     DGNPLATFORM_EXPORT static ThreadId GetThreadId();        //!< Get the ThreadId for the current thread
     DGNPLATFORM_EXPORT static WCharCP GetThreadIdName();     //!< For debugging purposes, get the current ThreadId as a string

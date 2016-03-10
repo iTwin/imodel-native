@@ -33,7 +33,8 @@ USING_NAMESPACE_BENTLEY_DGN
         DebugTimer(Utf8CP msg) : m_msg(msg), m_timeBefore(BeTimeUtilities::GetCurrentTimeAsUnixMillis()) {}
         ~DebugTimer() {BeDebugLog(Utf8PrintfString("%s took %llu ms", m_msg.c_str(),(BeTimeUtilities::GetCurrentTimeAsUnixMillis() - m_timeBefore)).c_str());}
         };
- #endif
+#endif
+
 /*======================================================================================+
 |   RealityDataQueue
 +======================================================================================*/
@@ -245,18 +246,6 @@ template struct ThreadSafeQueue<int>;
 END_BENTLEY_DGN_NAMESPACE
 
 /*======================================================================================+
-|   IRealityData
-+======================================================================================*/
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               11/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP IRealityDataBase::GetId() const {return _GetId();}
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               11/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool IRealityDataBase::IsExpired() const {return _IsExpired();}
-
-/*======================================================================================+
 |   IRealityDataStorageBase
 +======================================================================================*/
 void IRealityDataStorageBase::Terminate() {_Terminate();}
@@ -417,8 +406,8 @@ void BeSQLiteRealityDataStorage::_Terminate()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BeSQLiteRealityDataStorage::wt_Prepare(DatabasePrepareAndCleanupHandler const& prepareHandler)
     {
+    BeMutexHolder lock(m_databaseCS);
     BeSQLite::DbResult result;
-    m_databaseCS.Enter();
     if (!m_initialized)
         {
         if (BeSQLite::BE_SQLITE_OK != (result = m_database->OpenBeSQLiteDb(m_filename.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes, m_retry.get()))))
@@ -426,7 +415,6 @@ void BeSQLiteRealityDataStorage::wt_Prepare(DatabasePrepareAndCleanupHandler con
             Db::CreateParams createParams(Db::PageSize::PAGESIZE_32K, Db::Encoding::Utf8, false, DefaultTxn::Yes, m_retry.get());
             if (BeSQLite::BE_SQLITE_OK != (result = m_database->CreateNewDb(m_filename.c_str(), BeSQLite::BeGuid(), createParams)))
                 {
-                m_databaseCS.Leave();
                 RDCLOG(LOG_ERROR, "%s: %s", m_filename.c_str(), BeSQLite::Db::InterpretDbResult(result));
                 BeAssert(false);
                 return;
@@ -446,12 +434,9 @@ void BeSQLiteRealityDataStorage::wt_Prepare(DatabasePrepareAndCleanupHandler con
         
         m_initialized = true;
         }
-    m_databaseCS.Leave();
 
     if (!prepareHandler._IsPrepared())
         {
-        BeMutexHolder lock(m_databaseCS);
-
         BentleyStatus preparationStatus = prepareHandler._PrepareDatabase(*m_database);
         BeAssert(SUCCESS == preparationStatus);
         BeAssert(m_cleanupHandlers.end() == m_cleanupHandlers.find(&prepareHandler) || typeid(prepareHandler).hash_code() == typeid(**m_cleanupHandlers.find(&prepareHandler)).hash_code());
@@ -752,7 +737,7 @@ private:
 public:
     SynchronousRequestPredicate(AsyncRealityDataSourceRequest const& request) : m_request(request) {}
     RealityDataSourceResult GetResult() const {return m_request.m_response->GetResult();}
-    virtual bool _TestCondition (BeConditionVariable &cv) override {BeMutexHolder lock(cv.GetMutex()); return m_request.m_response.IsValid();}
+    virtual bool _TestCondition(BeConditionVariable &cv) override {BeMutexHolder lock(cv.GetMutex()); return m_request.m_response.IsValid();}
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -804,7 +789,7 @@ template<class Derived>
 void AsyncRealityDataSource<Derived>::RequestHandler::_DoWork()
     {
     RefCountedPtr<RealityDataSourceResponse> response = m_request->Handle(m_source->m_synchronizationCV.GetMutex());
-    switch(response->GetResult())
+    switch (response->GetResult())
         {
         case RealityDataSourceResult::Error_CouldNotResolveHost:
         case RealityDataSourceResult::Error_NoConnection:
@@ -880,7 +865,7 @@ protected:
         BeFile configFile;
         if (BeFileStatus::Success != configFile.Open(m_filename.c_str(), BeFileAccess::Read))
             {
-            BeAssert (false);
+            BeAssert(false);
             return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_Unknown, m_filename.c_str(), *m_data);
             }
     
@@ -888,7 +873,7 @@ protected:
         ByteStream data;
         if (BeFileStatus::Success != configFile.ReadEntireFile(data))
             {
-            BeAssert (false);
+            BeAssert(false);
             return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_Unknown, m_filename.c_str(), *m_data);
             }
 
@@ -897,7 +882,7 @@ protected:
         
         if (SUCCESS != m_data->_InitFrom(m_filename.c_str(), data, *m_requestOptions))
             {
-            BeAssert (false);
+            BeAssert(false);
             return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_Unknown, m_filename.c_str(), *m_data);
             }
 
@@ -937,7 +922,7 @@ IRealityDataBase const* FileRealityDataSource::RequestHandler::_GetData() const 
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DateTime GetExpirationDateFromCacheControlStr(Utf8CP str)
     {
-    int maxage = 0, smaxage = 0;
+    int maxage = 0;
     int start = 0;
     int i = 0;
     while (true)
@@ -948,19 +933,13 @@ static DateTime GetExpirationDateFromCacheControlStr(Utf8CP str)
             Utf8String option(str + start, i - start);
             option.Trim();
 
-            if (option.Equals("private") || option.Equals("no-cache") || option.Equals("no-store"))
+            if (option.Equals("no-cache") || option.Equals("no-store"))
                 return DateTime::GetCurrentTimeUtc(); 
             
             if (option.length() >= 7 && 0 == strncmp("max-age", option.c_str(), 7))
                 {
                 Utf8CP value = option.c_str() + 8;
                 sscanf(value, "%d", &maxage);
-                }
-
-            if (option.length() >= 8 && 0 == strncmp("s-maxage", option.c_str(), 8))
-                {
-                Utf8CP value = option.c_str() + 9;
-                sscanf(value, "%d", &smaxage);
                 }
 
             if (str[i] == '\0')
@@ -975,7 +954,7 @@ static DateTime GetExpirationDateFromCacheControlStr(Utf8CP str)
     DateTime::GetCurrentTime().ToUnixMilliseconds(currentTime);
 
     DateTime expirationDate;
-    DateTime::FromUnixMilliseconds(expirationDate, currentTime + 1000 * (0 != smaxage ? smaxage : maxage));
+    DateTime::FromUnixMilliseconds(expirationDate, currentTime + 1000 * maxage);
     return expirationDate;
     }
 
@@ -985,7 +964,7 @@ static DateTime GetExpirationDateFromCacheControlStr(Utf8CP str)
 static Utf8String GetAnsiCFormattedDateTime(DateTime const& dateTime)
     {
     Utf8CP wkday = "";
-    switch(dateTime.GetDayOfWeek())
+    switch (dateTime.GetDayOfWeek())
         {
         case DateTime::DayOfWeek::Sunday:   wkday = "Sun"; break;
         case DateTime::DayOfWeek::Monday:   wkday = "Mon"; break;
@@ -997,7 +976,7 @@ static Utf8String GetAnsiCFormattedDateTime(DateTime const& dateTime)
         }
 
     Utf8CP month = "";
-    switch(dateTime.GetMonth())
+    switch (dateTime.GetMonth())
         {
         case 1:  month = "Jan"; break;
         case 2:  month = "Feb"; break;
@@ -1017,24 +996,13 @@ static Utf8String GetAnsiCFormattedDateTime(DateTime const& dateTime)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               10/2014
+* @bsimethod                                     Grigas.Petraitis               03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DateTime const& HttpRealityDataSource::Data::GetExpirationDate() const {return m_expirationDate;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               10/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP HttpRealityDataSource::Data::GetEntityTag() const {return m_entityTag.c_str();}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void HttpRealityDataSource::Data::SetExpirationDate(DateTime const& date) {m_expirationDate = date;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void HttpRealityDataSource::Data::SetEntityTag(Utf8CP eTag) {m_entityTag = eTag;}
+static DateTime GetDefaultExpirationDate()
+    {
+    DateTime now = DateTime::GetCurrentTimeUtc();
+    return DateTime(now.GetInfo().GetKind(), now.GetYear() + 1, now.GetMonth(), now.GetDay(), now.GetHour(), now.GetMinute(), now.GetSecond());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
@@ -1042,17 +1010,12 @@ void HttpRealityDataSource::Data::SetEntityTag(Utf8CP eTag) {m_entityTag = eTag;
 void HttpRealityDataSource::Data::ParseExpirationDateAndETag(bmap<Utf8String, Utf8String> const& header)
     {
     auto cacheControlIter = header.find("Cache-Control");
-    SetExpirationDate((cacheControlIter != header.end()) ? GetExpirationDateFromCacheControlStr(cacheControlIter->second.c_str()) : DateTime::GetCurrentTimeUtc());
+    SetExpirationDate((cacheControlIter != header.end()) ? GetExpirationDateFromCacheControlStr(cacheControlIter->second.c_str()) : GetDefaultExpirationDate());
 
     auto etagIter = header.find("ETag");
     if (header.end() != etagIter)
         SetEntityTag(etagIter->second.c_str());
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               10/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-HttpRealityDataSourcePtr HttpRealityDataSource::Create(int numThreads) {return new HttpRealityDataSource(numThreads);}
 
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            03/2015
@@ -1123,7 +1086,7 @@ protected:
             {
             case HttpResponseStatus::Success:
                 {
-                m_data->ParseExpirationDateAndETag(header);
+                m_data->ParseExpirationDateAndETag(response->GetHeader());
                 if (SUCCESS != m_data->_InitFrom(m_url.c_str(), response->GetHeader(), response->GetBody(), *m_requestOptions))
                     {
                     RDCLOG(LOG_INFO, "[%lld] response 200 but unable to initialize reality data",(uint64_t)BeThreadUtilities::GetCurrentThreadId());
@@ -1352,7 +1315,7 @@ RefCountedPtr<IRealityDataSourceRequestHandler> RealityDataCache::DequeueRequest
 void RealityDataCache::_OnResponseReceived(RealityDataSourceResponse const& response, IRealityDataSourceBase::RequestOptions const& options)
     {
     RefCountedPtr<IRealityDataStoragePersistHandler> persistHandler = DequeuePersistHandler(response.GetId(), response.GetData());
-    switch(response.GetResult())
+    switch (response.GetResult())
         {
         case RealityDataSourceResult::Success:
         case RealityDataSourceResult::NotModified:
@@ -1521,7 +1484,7 @@ RealityDataCacheResult RealityDataCache::ResolveResult(RealityDataStorageResult 
 +---------------+---------------+---------------+---------------+---------------+------*/
 static ThreadSafeQueue<IRealityDataBasePtr>::Iterator Find(ThreadSafeQueue<IRealityDataBasePtr> const& queue, Utf8CP id)
     {
-    BeMutexHolder lock (queue.GetConditionVariable().GetMutex());
+    BeMutexHolder lock(queue.GetConditionVariable().GetMutex());
     for (auto iter = queue.begin(); iter != queue.end(); ++iter)
         {
         IRealityDataBasePtr arrival = *iter;
@@ -1540,7 +1503,7 @@ void RealityDataCache::AddToArrivals(IRealityDataBase& data)
     if (0 == m_arrivalsQueueSize)
         return;
 
-    BeMutexHolder lock (m_arrivals.GetConditionVariable().GetMutex());
+    BeMutexHolder lock(m_arrivals.GetConditionVariable().GetMutex());
     auto iter = Find(m_arrivals, data.GetId());
     if (m_arrivals.end() != iter)
         m_arrivals.Erase(iter);
@@ -1563,7 +1526,7 @@ BentleyStatus RealityDataCache::GetFromArrivals(IRealityDataBase& data, Utf8CP i
     IRealityDataBasePtr arrival;
     if (true)
         {
-        BeMutexHolder lock (m_arrivals.GetConditionVariable().GetMutex());
+        BeMutexHolder lock(m_arrivals.GetConditionVariable().GetMutex());
         auto iter = Find(m_arrivals, id);
         if (m_arrivals.end() == iter)
             return ERROR;
@@ -1657,6 +1620,7 @@ void RealityDataThread::Run()
     if (!m_threadName.empty())
         BeThreadUtilities::SetCurrentThreadName(m_threadName.c_str());
 
+    DgnDb::SetThreadId(DgnDb::ThreadId::RealityData);
     _Run();
     }
 
@@ -1779,7 +1743,7 @@ RealityDataWorkerThreadPtr RealityDataThreadPool::GetIdleThread() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 RealityDataWorkerThreadPtr RealityDataThreadPool::CreateThread()
     {
-    auto thread = RealityDataWorkerThread::Create(this, "BentleyThreadPoolWorker");
+    auto thread = RealityDataWorkerThread::Create(this, "RealityData");
     thread->AddRef();
     thread->Start();
     BeMutexHolder lock(m_threadsCV.GetMutex());
@@ -1794,7 +1758,7 @@ RealityDataWorkerThreadPtr RealityDataThreadPool::CreateThread()
 int RealityDataThreadPool::GetThreadsCount() const
     {
     BeMutexHolder lock(m_threadsCV.GetMutex());
-    return(int) m_threads.size();
+    return (int) m_threads.size();
     }
 
 /*---------------------------------------------------------------------------------**//**

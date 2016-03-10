@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ValueFormat.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -69,19 +69,19 @@ private:
    bool                m_allowUnclamped;
 
 protected:  
-    WChar               m_decimalSeparator;
+    Utf8Char           m_decimalSeparator;
 
 private:
     AngleFormatter();
     AngleFormatter(AngleFormatterCR other);
 
     void Init();
-    void ConcatUnitLabel(WStringR, AngleUnit) const;
-    void ConcatIntegerString(WStringR, int value, AngleUnit) const;
-    void ConcatPrecisionString(WStringR, double value, AngleUnit, double delta) const;
+    void ConcatUnitLabel(Utf8StringR, AngleUnit) const;
+    void ConcatIntegerString(Utf8StringR, int value, AngleUnit) const;
+    void ConcatPrecisionString(Utf8StringR, double value, AngleUnit, double delta) const;
 
     bool UseTwoDigitMinWidth() const;
-    void PrependLeadingZeroIfNeeded(WStringR inString, double value) const;
+    void PrependLeadingZeroIfNeeded(Utf8StringR inString, double value) const;
 
 public: 
     void InitModelSettings(GeometricModelCR);
@@ -122,7 +122,7 @@ public:
     DGNPLATFORM_EXPORT void SetAnglePrecision(AnglePrecision newVal);
 
     //! Set the formatter's decimal separator.
-    DGNPLATFORM_EXPORT void SetDecimalSeparator(WChar newVal);
+    DGNPLATFORM_EXPORT void SetDecimalSeparator(Utf8Char newVal);
 
     //! Set the formatter's leading zero behavior.  A leading zero is only
     //! included for values less than 1.0.  Ex. "0.5" vs. ".5"
@@ -150,11 +150,11 @@ public:
 
     //! Use the settings defined in this formatter to convert an angle value to a string.
     //! @param[in] value Angle in degrees.
-    DGNPLATFORM_EXPORT WString ToString(double value) const;
+    DGNPLATFORM_EXPORT Utf8String ToString(double value) const;
 
     //! Use the settings defined in this formatter to convert an angle value to a string.
     //! @param[in]  value       Angle in radians.
-    DGNPLATFORM_EXPORT WString ToStringFromRadians(double value) const;
+    DGNPLATFORM_EXPORT Utf8String ToStringFromRadians(double value) const;
 }; // AngleFormatter
 
 //=======================================================================================
@@ -285,11 +285,11 @@ public:
 
     //! Use the settings defined in this formatter to convert a direction value to a string.
     //! @param[in]  value       Direction in degrees measured counter clockwise from the positive x-axis.
-    DGNPLATFORM_EXPORT WString ToString(double value) const;
+    DGNPLATFORM_EXPORT Utf8String ToString(double value) const;
 
     //! Use the settings defined in this formatter to convert a direction value to a string.
     //! @param[in]  value       Direction in radians measured counter clockwise from the positive x-axis.
-    DGNPLATFORM_EXPORT WString ToStringFromRadians(double value) const;
+    DGNPLATFORM_EXPORT Utf8String ToStringFromRadians(double value) const;
 
 }; // DirectionFormatter
 
@@ -332,7 +332,7 @@ private:
     bool                m_useDWGFormattingLogic;
     DwgUnitFormat       m_dwgUnitFormat;
 
-    WString             ToStringForDWG(double uors) const;
+    Utf8String          ToStringForDWG(double uors) const;
 
     DistanceFormatter();
     DistanceFormatter(DistanceFormatterCR other);
@@ -414,7 +414,7 @@ public:
 
     //! Use the settings defined in this formatter to convert a value in meters to a string.
     //! @param[in] uors uor value.
-    DGNPLATFORM_EXPORT WString ToString(double meters) const;
+    DGNPLATFORM_EXPORT Utf8String ToString(double meters) const;
 }; // DistanceFormatter
 
 //=======================================================================================
@@ -489,7 +489,7 @@ public:
 
     //! Use the settings defined in this formatter to convert a point value to a string.
     //! @param[in] point uor value.
-    DGNPLATFORM_EXPORT WString ToString(DPoint3dCR point) const;
+    DGNPLATFORM_EXPORT Utf8String ToString(DPoint3dCR point) const;
 }; // PointFormatter
 
 //=======================================================================================
@@ -560,7 +560,7 @@ private:
     AreaFormatter(AreaFormatterCR other);
     void Init();
 
-    WString ToStringForDWG(double uors) const;
+    Utf8String ToStringForDWG(double uors) const;
 
     DGNPLATFORM_EXPORT void SetPrecisionByte(Byte newVal);
 
@@ -582,7 +582,7 @@ public:
 
     //! Use the settings defined in this formatter to convert a value in meters to a string.
     //! @param[in] meters meter value.
-    DGNPLATFORM_EXPORT WString ToString(double meters) const;
+    DGNPLATFORM_EXPORT Utf8String ToString(double meters) const;
 
 }; // AreaFormatter
 
@@ -622,7 +622,7 @@ public:
 
     //! Use the settings defined in this formatter to convert a value in meters to a string.
     //! @param[in] meters value.
-    DGNPLATFORM_EXPORT WString ToString(double meters) const;
+    DGNPLATFORM_EXPORT Utf8String ToString(double meters) const;
 
 }; // VolumeFormatter
 
@@ -650,19 +650,19 @@ private:
     uint8_t                 m_fractionalPrecision;
     bool                    m_fractionalTrailingZeros;
     bool                    m_convertToLocalTime;
-    WChar                   m_dateSeparator;
-    WChar                   m_timeSeparator;
-    WChar                   m_decimalSeparator;
+    Utf8Char                m_dateSeparator;
+    Utf8Char                m_timeSeparator;
+    Utf8Char                m_decimalSeparator;
 
     DateTimeFormatter();
     DateTimeFormatter(DateTimeFormatterCR other);
 public:
     //! Get the character used as a decimal separator.
-    DGNPLATFORM_EXPORT WChar GetDecimalSeparator() const;
+    DGNPLATFORM_EXPORT Utf8Char GetDecimalSeparator() const;
     //! Get the character used to separate time components. Ex: ':' in "4:50"
-    DGNPLATFORM_EXPORT WChar GetTimeSeparator() const;
+    DGNPLATFORM_EXPORT Utf8Char GetTimeSeparator() const;
     //! Get the character used to separate date components. Ex: '/' in "4/5/2012"
-    DGNPLATFORM_EXPORT WChar GetDateSeparator() const;
+    DGNPLATFORM_EXPORT Utf8Char GetDateSeparator() const;
     //! Get the precision used when formatting fractional seconds
     DGNPLATFORM_EXPORT uint8_t GetFractionalSecondPrecision() const;
     //! Get whether trailing zeros are included when formatting fractional seconds in order to match the specified precision
@@ -671,11 +671,11 @@ public:
     DGNPLATFORM_EXPORT bool GetConvertToLocalTime() const;
 
     //! Set the character used as a decimal separator.
-    DGNPLATFORM_EXPORT void SetDecimalSeparator(WChar separator);
+    DGNPLATFORM_EXPORT void SetDecimalSeparator(Utf8Char separator);
     //! Set the character used to separate time components.
-    DGNPLATFORM_EXPORT void SetTimeSeparator(WChar separator);
+    DGNPLATFORM_EXPORT void SetTimeSeparator(Utf8Char separator);
     //! Set the character used to separate date components.
-    DGNPLATFORM_EXPORT void SetDateSeparator(WChar separator);
+    DGNPLATFORM_EXPORT void SetDateSeparator(Utf8Char separator);
     //! Set the precision used when formatting fractional seconds.
     DGNPLATFORM_EXPORT void SetFractionalSecondPrecision(uint8_t precision);
     //! Set whether trailing zeros should be included when formatting fractional seconds in order to match the specified precision.
@@ -696,7 +696,7 @@ public:
     DGNPLATFORM_EXPORT DateTimeFormatterPtr Clone() const;
     //! Format the time point value.
     //! If no components have been added to the formatting sequence, uses DATETIME_PART_General.
-    DGNPLATFORM_EXPORT WString ToString(DateTimeCR) const;
+    DGNPLATFORM_EXPORT Utf8String ToString(DateTimeCR) const;
     }; // DateTimeFormatter
 
 END_BENTLEY_DGN_NAMESPACE

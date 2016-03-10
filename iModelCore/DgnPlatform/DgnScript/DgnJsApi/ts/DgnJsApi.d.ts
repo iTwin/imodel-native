@@ -18,6 +18,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     class DgnSphere extends SolidPrimitive {/*** NATIVE_TYPE_NAME = JsDgnSphere ***/ }
     class DgnBox extends SolidPrimitive {/*** NATIVE_TYPE_NAME = JsDgnBpx ***/ }
     class Geometry { /*** NATIVE_TYPE_NAME = JsGeometry ***/ }
+    class GeometryNode { /*** NATIVE_TYPE_NAME = JsGeometryNode ***/ }
     /*** END_FORWARD_DECLARATIONS ***/
 
     type TransformP = cxx_pointer<Transform>;
@@ -27,6 +28,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     type DgnSphereP = cxx_pointer<DgnSphere>;
     type DgnBoxP = cxx_pointer<DgnBox>;
     type GeometryP = cxx_pointer<Geometry>;
+    type GeometryNodeP = cxx_pointer<GeometryNode>;
 
     enum ECPropertyPrimitiveType { }
 
@@ -728,6 +730,13 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         AppendGeometry(geometry: GeometryP): void;
 
         /**
+         * Append the geometry from a GeometryNode.
+         * @remark All leaf geometry is transformed to the node's root coordinates and saved as separate geometry items.
+         * @param node the root of the geometry.
+         */
+        AppendGeometryNode(node: GeometryNodeP): void;
+
+        /**
          * Append an instance of a DgnGeometryPart
          * @param geometryPart  The DgnGeometryPart
          * @param relativePlacement if not null, the offset and/or rotation of the instance
@@ -820,6 +829,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
         /** The name of the class */
         Name: Bentley_Utf8String;
+
+        /** The schema to which the class belongs */
+        Schema: ECSchemaP;
 
         /** The base classes of this class */
         BaseClasses: ECClassCollectionP;
