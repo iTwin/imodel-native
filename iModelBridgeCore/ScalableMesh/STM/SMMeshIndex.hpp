@@ -2690,8 +2690,14 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         bvector<bvector<PolyfaceHeaderPtr>> polyfaces;
         auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
         IScalableMeshNodePtr nodeP(new ScalableMeshNode<POINT>(nodePtr));
-        DTMPtr dtm = nodeP->GetBcDTM().get();
-        bool hasClip = dtm.get() != nullptr && clipNode.GetRegionsFromClipPolys(polyfaces, polys,dtm);
+        BcDTMPtr dtm = nodeP->GetBcDTM().get();
+        bool hasClip = false;
+        if (dtm.get() != nullptr)
+            {
+            BcDTMPtr toClipBcDTM = dtm->Clone();
+            DTMPtr toClipDTM = toClipBcDTM.get();
+            hasClip = clipNode.GetRegionsFromClipPolys(polyfaces, polys, toClipDTM);
+            }
        // m_differenceSets.clear();
        // m_nbClips = 0;
         UnPin();    
