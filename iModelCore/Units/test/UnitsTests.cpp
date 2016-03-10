@@ -309,7 +309,28 @@ TEST_F(UnitsTests, TestBasicConversion)
     TestUnitConversion(60, "GRAM_PER_MINUTE", 1.0, "GRAM_PER_SECOND", 1000, loadErrors, conversionErrors);
     TestUnitConversion(3.53146667214886e1, "KILONEWTON_PER_METRE_CUBED", 1.0, "KILONEWTON_PER_FOOT_CUBED", 1000, loadErrors, conversionErrors);
     TestUnitConversion(42.42, "KILOPASCAL_GAUGE", 6.15250086300203, "POUND_FORCE_PER_INCH_SQUARED_GAUGE", 100000000, loadErrors, conversionErrors); // Expected value from old system, difference is due to imprecise offset in old system.
+    }
+
+TEST_F(UnitsTests, TestInvertedSlopeUnits)
+    {
+    bvector<Utf8String> loadErrors;
+    bvector<Utf8String> conversionErrors;
     TestUnitConversion(42.42, "HORIZONTAL_PER_VERTICAL", 1.0 / 42.42, "VERTICAL_PER_HORIZONTAL", 10, loadErrors, conversionErrors);
+    TestUnitConversion(0.0, "HORIZONTAL_PER_VERTICAL", 0.0, "VERTICAL_PER_HORIZONTAL", 10, loadErrors, conversionErrors);
+    ASSERT_EQ(0, loadErrors.size()) << BeStringUtilities::Join(loadErrors, ", ");
+    }
+
+TEST_F(UnitsTests, TestLinearCostConversions)
+    {
+    bvector<Utf8String> loadErrors;
+    bvector<Utf8String> conversionErrors;
+    TestUnitConversion(4200.42, "$/M", 4.20042, "$/MM", 10, loadErrors, conversionErrors);
+    TestUnitConversion(4200.42, "$/M", 4200.42, "$/M", 10, loadErrors, conversionErrors);
+    TestUnitConversion(0.0, "$/M", 0.0, "$/MM", 10, loadErrors, conversionErrors);
+    TestUnitConversion(4200.42, "$/MM", 4200420.0, "$/M", 10, loadErrors, conversionErrors);
+    TestUnitConversion(4200.42, "$/MM", 4200.42, "$/MM", 10, loadErrors, conversionErrors);
+    TestUnitConversion(0.0, "$/MM", 0.0, "$/M", 10, loadErrors, conversionErrors);
+    ASSERT_EQ(0, loadErrors.size()) << BeStringUtilities::Join(loadErrors, ", ");
     }
 
 TEST_F(UnitsTests, CheckDimensionForEveryPhenomenon)

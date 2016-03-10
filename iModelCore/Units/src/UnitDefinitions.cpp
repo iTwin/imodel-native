@@ -139,6 +139,11 @@ void AddTemperatureGradient(UnitRegistry& reg)
     reg.AddSynonym("KELVIN/M", "DELTA_DEGREE_KELVIN_PER_METRE");
     }
 
+//void AddLinearThermalExpansionCoefficient(UnitRegistry& reg)
+//    {
+//    reg.AddUnit(LINEAR_COEFFICIENT_OF_THERMAL_EXPANSION, )
+//    }
+
 void AddLuminousFlux(UnitRegistry& reg)
     {
     reg.AddUnit(LUMINOUS_FLUX, SI, "LUMEN", "CANDELA*STERAD");
@@ -652,6 +657,33 @@ void AddLinearLoad(UnitRegistry& reg)
     reg.AddSynonym(unit, "POUND_FORCE_PER_INCH");
     }
 
+void AddLinearCost(UnitRegistry& reg)
+    {
+    reg.AddUnit(LINEAR_COST, FINANCE, "$/M", "US$*M(-1)");
+    reg.AddUnit(LINEAR_COST, FINANCE, "$/MM", "US$*MM(-1)");
+    }
+
+void AddLinearRate(UnitRegistry& reg)
+    {
+    reg.AddUnit(LINEAR_RATE, SI, "PER_M", "M(-1)");
+    reg.AddSynonym("PER_M", "ONE_PER_METRE");
+
+    reg.AddUnit(LINEAR_RATE, SI, "PER_MM", "MM(-1)");
+    reg.AddSynonym("PER_MM", "ONE_PER_MILLIMETRE");
+
+    reg.AddUnit(LINEAR_RATE, SI, "PER_KM", "KM(-1)");
+    reg.AddSynonym("PER_KM", "ONE_PER_KILOMETRE");
+
+    reg.AddUnit(LINEAR_RATE, USCUSTOM, "PER_FT", "FT(-1)");
+    reg.AddSynonym("PER_FT", "ONE_PER_FOOT");
+
+    reg.AddUnit(LINEAR_RATE, USCUSTOM, "PER_MILE", "MILE(-1)");
+    reg.AddSynonym("PER_MILE", "ONE_PER_MILE");
+
+    reg.AddUnit(LINEAR_RATE, USCUSTOM, "PER_THOUSAND_FT", "FT(-1)", 1.0e-3);
+    reg.AddSynonym("PER_THOUSAND_FT", "ONE_PER_THOUSAND_FOOT");
+    }
+
 void AddTorque(UnitRegistry& reg)
     {
     UnitCP unit = reg.AddUnit(TORQUE, SI, "N_M", "N*M*RAD");
@@ -1126,6 +1158,8 @@ void UnitRegistry::AddDefaultUnits ()
 
 
     AddLengths(reg);
+    AddLinearCost(reg);
+    AddLinearRate(reg);
     AddMass(reg);
     AddTime(reg);
     AddTemperature(reg);
