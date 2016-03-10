@@ -569,6 +569,7 @@ void RasterQuadTree::Draw (ViewContextR context)
 RasterProgressiveDisplay::RasterProgressiveDisplay(RasterQuadTreeR raster, ViewContextR context)
 :m_raster(raster)
     {
+    DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT
     }
 
 //----------------------------------------------------------------------------------------
