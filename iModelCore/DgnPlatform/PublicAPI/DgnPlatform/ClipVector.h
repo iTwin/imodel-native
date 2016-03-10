@@ -20,6 +20,8 @@ typedef bvector<ClipPrimitivePtr> T_ClipPrimitiveVector;
 +===============+===============+===============+===============+===============+======*/
 struct ClipVector : RefCounted<T_ClipPrimitiveVector>
 {
+    // scratch vector for use in clip steps -- prevent reallocation per geometry tested.
+    bvector<DSegment1d> m_clipIntervals;
     ClipVector() {}
     ClipVector(ClipPrimitiveP primitive) {push_back(primitive);}
     ClipVector(GPArrayCR gpa, double chordTolerance, double angleTolerance, double* zLow, double* zHigh, TransformCP transform);
@@ -41,7 +43,19 @@ struct ClipVector : RefCounted<T_ClipPrimitiveVector>
     DGNPLATFORM_EXPORT static BentleyStatus AppendShape(ClipVectorPtr& clip, DPoint2dCP points, size_t nPoints, bool outside, double const* zLow, double const* zHigh, TransformCP transform, bool invisible = false);
     DGNPLATFORM_EXPORT static BentleyStatus AppendPlanes(ClipVectorPtr& clip, ClipPlaneSetCR planes, bool invisible = false);
     DGNPLATFORM_EXPORT void ParseClipPlanes();
-    DGNPLATFORM_EXPORT BentleyStatus ApplyCameraToPlanes(double focalLength);
+    // Treat each plane as a homogeneous row vector ax,ay,az,aw.
+    // Multiply [ax,ay,az,aw]*matrix
+    DGNPLATFORM_EXPORT BentleyStatus MultiplyPlanesTimesMatrix (DMatrix4dCR matrix);
+
+    DGNPLATFORM_EXPORT bool IsAnyLineStringPointInside (DPoint3dCP points, size_t n, bool closed);
+    DGNPLATFORM_EXPORT bool IsCompletelyContained(DPoint3dCP points, size_t n, bool closed);
+
+    DGNPLATFORM_EXPORT bool IsAnyPointInside(DEllipse3dCR arc, bool closed);
+    DGNPLATFORM_EXPORT bool IsCompletelyContained (DEllipse3dCR, bool closed);
+
+    DGNPLATFORM_EXPORT bool IsAnyPointInside(MSBsplineCurveCR curve);
+    DGNPLATFORM_EXPORT bool IsCompletelyContained(MSBsplineCurveCR curve);
+
 };
 
 END_BENTLEY_DGN_NAMESPACE

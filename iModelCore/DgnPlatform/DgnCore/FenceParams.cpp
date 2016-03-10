@@ -1726,33 +1726,12 @@ bool FenceParams::AcceptTransformedCurve
 MSBsplineCurve* pCurve
 )
     {
-    DPoint3d    testPoint;
-
-    /* Arbitrarily select point at u=.5 for point inside check */
-    pCurve->FractionToPoint(testPoint, 0.5);
-
-    bool        pointIn, insideMode = !m_overlapMode && !static_cast<int>(m_clipMode);
-
-    if (pointIn = PointInsideClip(testPoint))
-        {
-        if (m_overlapMode)
-            return true;
-        }
+    if (m_overlapMode)
+        return m_clip->IsAnyPointInside(*pCurve);
+    else if (0 == static_cast<int>(m_clipMode))
+        return m_clip->IsCompletelyContained(*pCurve);
     else
-        {
-        if (insideMode)
-            return false;
-        }
-
-    for (ClipPrimitivePtr const& primitive: *m_clip)
-        {
-        if  (CurveFenceIntersect(*primitive, pCurve) && insideMode)
-            return false;
-        }
-
-    m_hasOverlaps |= (m_splitParams.size() > 0);
-
-    return insideMode || pointIn || m_hasOverlaps;
+        return !m_clip->IsAnyPointInside(*pCurve);
     }
 
 /*---------------------------------------------------------------------------------**//**
