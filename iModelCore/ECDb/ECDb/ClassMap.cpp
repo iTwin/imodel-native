@@ -13,8 +13,6 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 
-
-
 //********************* ClassMap ******************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                06/2012
@@ -782,38 +780,6 @@ ClassMap const* ClassMap::FindSharedTableRootClassMap() const
         }
 
     return parent->FindSharedTableRootClassMap();
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ClassMap::ToString() const
-    {
-    Utf8CP typeStr = nullptr;
-    switch (m_type)
-        {
-            case Type::Class:
-                typeStr = "Class";
-                break;
-            case Type::RelationshipEndTable:
-                typeStr = "RelationshipEndTable";
-                break;
-            case Type::RelationshipLinkTable:
-                typeStr = "RelationshipLinkTable";
-                break;
-            case Type::Unmapped:
-                typeStr = "Unmapped";
-                break;
-            default:
-                BeAssert(false && "Update ClassMap::ToString to handle new value in enum ClassMap::Type.");
-                typeStr = "Unrecognized class map type";
-                break;
-        }
-
-    Utf8String str;
-    str.Sprintf("ClassMap '%s' - Type: %s - Map strategy: %s", GetClass().GetFullName(), typeStr, GetMapStrategy().ToString().c_str());
-
-    return str;
     }
 
 //---------------------------------------------------------------------------------------

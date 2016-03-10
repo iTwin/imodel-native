@@ -78,7 +78,7 @@ struct PropertyMapSet : NonCopyableClass
         std::map<Utf8CP, EndPoint const*, CompareUtf8> m_endPointByAccessString;
         ClassMap const& m_classMap;
 
-        PropertyMapSet(ClassMap const& classMap) :m_classMap(classMap) {}
+        explicit PropertyMapSet(ClassMap const& classMap) :m_classMap(classMap) {}
 
     public:
         const EndPoints GetEndPoints() const;
@@ -236,8 +236,6 @@ struct ClassMap : RefCountedBase
         bool HasPersistedView() const;
 
         BentleyStatus GenerateSelectView(NativeSqlBuilder& viewSql, bool isPolymorphic, ECSqlPrepareContext const& prepareContext) const;
-
-        Utf8String ToString() const;
 
         static BentleyStatus DetermineTableName(Utf8StringR tableName, ECN::ECClassCR, Utf8CP tablePrefix = nullptr);
         static BentleyStatus DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR);
