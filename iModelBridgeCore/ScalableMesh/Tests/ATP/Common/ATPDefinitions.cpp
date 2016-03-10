@@ -1521,7 +1521,7 @@ void PerformVolumeTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     //PolyfaceQuery* poly = new PolyfaceQueryCarrier(3, false/*twoSided*/, pointIndexSize, pointSize, points, pointsIndex);
 
-    PolyfaceHeaderPtr meshData = PolyfaceHeader::CreateIndexedMesh(3, points, pointsIndex);
+    PolyfaceHeaderPtr meshData = PolyfaceHeader::CreateIndexedMesh(4, points, pointsIndex);
 
     //PolyfaceHeaderPtr meshData;
     //IFacetOptionsPtr options = IFacetOptions::Create();
@@ -1597,7 +1597,9 @@ void PerformVolumeTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         for (auto& node : returnedNodes)
             {
             bvector<bool> clips;
-            IScalableMeshMeshPtr scalableMesh = node->GetMesh(false, clips);
+            IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+            flags->SetLoadGraph(false);
+            IScalableMeshMeshPtr scalableMesh = node->GetMesh(flags, clips);
             const PolyfaceQuery* polyface = scalableMesh->GetPolyfaceQuery();
             builder->AddPolyface(*polyface);
             allPts.insert(allPts.end(), polyface->GetPointCP(), polyface->GetPointCP() + polyface->GetPointCount());
@@ -3370,7 +3372,9 @@ bool ValidateFeatureDefinition(size_t& nErrors, IScalableMesh* scMeshP, DTMFeatu
     for (auto& node : returnedNodes)
         {
         bvector<bool> clips;
-        auto mesh = node->GetMesh(false, clips);
+        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+        flags->SetLoadGraph(false);
+        auto mesh = node->GetMesh(flags, clips);
         auto polyfaceP = mesh->GetPolyfaceQuery();
         PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyfaceP, true);
         for (visitor->Reset(); visitor->AdvanceToNextFace();)
@@ -3832,11 +3836,13 @@ void PerformStreaming(BeXmlNodeP pTestNode, FILE* pResultFile)
         {
         //nodeExtent = node->GetNodeExtent();
         bvector<bool> clips;
-        IScalableMeshMeshPtr mesh = node->GetMesh(false, clips);
+        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+        flags->SetLoadGraph(false);
+        IScalableMeshMeshPtr mesh = node->GetMesh(flags, clips);
         const BENTLEY_NAMESPACE_NAME::PolyfaceQuery* polyface = mesh->GetPolyfaceQuery();
 
         bvector<bool> clipsStreaming;
-        IScalableMeshMeshPtr meshStreaming = returnedNodesStreaming[j]->GetMesh(false, clips);
+        IScalableMeshMeshPtr meshStreaming = returnedNodesStreaming[j]->GetMesh(flags, clips);
         const BENTLEY_NAMESPACE_NAME::PolyfaceQuery* polyfaceStreaming = meshStreaming->GetPolyfaceQuery();
 
         DPoint3d point;
