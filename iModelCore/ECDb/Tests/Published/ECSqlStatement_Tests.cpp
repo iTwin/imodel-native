@@ -2108,7 +2108,7 @@ void AssertColumnInfo (Utf8CP expectedPropertyName, bool expectedIsGenerated, Ut
 
     EXPECT_EQ (expectedIsGenerated, actualColumnInfo.IsGeneratedProperty ());
 
-    auto const& actualPropPath = actualColumnInfo.GetPropertyPath ();
+    ECSqlPropertyPath const& actualPropPath = actualColumnInfo.GetPropertyPath ();
     Utf8String actualPropPathStr = actualPropPath.ToString ();
     EXPECT_STREQ (expectedPropPathStr, actualPropPathStr.c_str ());
     LOG.tracev ("Property path: %s", actualPropPathStr.c_str ());

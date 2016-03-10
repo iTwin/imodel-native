@@ -133,7 +133,6 @@ struct SqlViewBuilder
 struct ECDbMapAnalyser
     {
     struct Class;
-    struct Struct;
     struct Relationship;
     struct Storage
         {
@@ -144,7 +143,6 @@ struct ECDbMapAnalyser
             std::set<Class*> m_classes;
             std::set<Relationship*> m_relationships;
             std::map<Storage*, std::set<Relationship*>> m_cascades;
-            std::set<Struct*> m_structCascades;
             SqlTriggerBuilder::TriggerList m_triggers;
 
         public:
@@ -155,10 +153,6 @@ struct ECDbMapAnalyser
             std::set<Class*> const& GetClasses() const { return m_classes; }
             std::set<Relationship*> & GetRelationshipsR();
             std::map<Storage*, std::set<Relationship*>> & CascadesTo();
-            std::set<Struct* > &StructCascadeTo()
-                {
-                return m_structCascades;
-                }
             SqlTriggerBuilder::TriggerList& GetTriggerListR();
             SqlTriggerBuilder::TriggerList const& GetTriggerList() const;
             void HandleCascadeLinkTable(std::vector<Relationship*> const& relationships);
@@ -182,10 +176,7 @@ struct ECDbMapAnalyser
             Class(ClassMapCR classMap, Storage& storage, Class* parent);
             Utf8CP GetSqlName() const;
             Storage& GetStorageR();
-            Storage const& GetStorage() const
-                {
-                return m_storage;
-                }
+            Storage const& GetStorage() const {return m_storage;}
             ClassMapCR GetClassMap() const;
             Class* GetParent();
             void SetParent(Class& cl) { m_parent = &cl; }
@@ -195,18 +186,6 @@ struct ECDbMapAnalyser
             std::vector<Storage const*> GetNoneVirtualStorages() const;
             bool IsAbstract() const;
             bool RequireView() const;
-        };
-    //=======================================================================================
-    //! Wrap up concept of a sturct array
-    // @bsiclass                                               Affan.Khan          09/2015
-    //+===============+===============+===============+===============+===============+======
-    struct Struct : Class
-        {
-        typedef  std::unique_ptr<Struct> Ptr;
-        public:
-            Struct(ClassMapCR classMap, Storage& storage, Class* parent)
-                :Class(classMap, storage, parent)
-                {}
         };
 
     //=======================================================================================
@@ -365,7 +344,8 @@ struct ECDbMapAnalyser
         Storage& GetStorage(ClassMapCR classMap);
         Class& GetClass(ClassMapCR classMap);
         Relationship&  GetRelationship(RelationshipClassMapCR classMap);
-        BentleyStatus AnalyseRelationshipClass(RelationshipClassMapCR ecRelationshipClassMap);
+        BentleyStatus AnalyseClass(ClassMapCR);
+        BentleyStatus AnalyseRelationshipClass(RelationshipClassMapCR);
         std::vector<ECN::ECClassId> GetRootClassIds() const;
         std::vector<ECN::ECClassId> GetRelationshipClassIds() const;
         std::set<ECN::ECClassId> const& GetDerivedClassIds(ECN::ECClassId baseClassId) const;

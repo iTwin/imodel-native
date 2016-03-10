@@ -461,14 +461,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
                 {
                 BeAssert(desc.HierarchyMapsToMultipleTables() && exp.IsPolymorphic() && "Returned partition is null only for a polymorphic ECSQL where subclasses are in a separate table");
                 //we need a view for it.
-                NativeSqlBuilder nativeSqlSnippet;
                 if (!classMap.HasPersistedView())
                     {
                     BeAssert (false && "[Programmer Error] Database view must exist for this class as it derive classes is map into its on table");
                     return ECSqlStatus::Error;
                     }
 
-                nativeSqlSnippet.AppendEscaped(classMap.GetPersistedViewName().c_str());            
+                NativeSqlBuilder nativeSqlSnippet;
+                nativeSqlSnippet.AppendEscaped(classMap.GetPersistedViewName().c_str());
                 nativeSqlSnippets.push_back(move(nativeSqlSnippet));
                 return ECSqlStatus::Success;
                 }

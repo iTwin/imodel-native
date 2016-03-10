@@ -95,28 +95,28 @@ public:
 
     typedef RefCountedPtr<Entry> EntryPtr;
     typedef Entry const& EntryCR;
+    typedef Entry const* EntryCP;
 
     //=======================================================================================
     //! Iterator over an ECSqlPropertyPath.
     //! The iterator iterates from the top-level entry to the leaf entry
     // @bsiclass                                                 Krischan.Eberle    06/2013
     //+===============+===============+===============+===============+===============+======
-    struct const_iterator : std::iterator<std::forward_iterator_tag, Entry const*>
+    struct const_iterator : std::iterator<std::forward_iterator_tag, EntryCP>
         {
     private:
         bvector<EntryPtr>::const_iterator m_innerIterator;
-
     public:
-    #if !defined (DOCUMENTATION_GENERATOR)
-        explicit const_iterator(bvector<EntryPtr>::const_iterator const&);
-    #endif
+#if !defined (DOCUMENTATION_GENERATOR)
+        explicit const_iterator(bvector<EntryPtr>::const_iterator);
+#endif
 
         ~const_iterator() {}
 
-        Entry const* operator* () const { return m_innerIterator->get(); }
-        const_iterator& operator++ () { m_innerIterator++; return *this; }
-        bool operator== (const_iterator const& rhs) const { return m_innerIterator == rhs.m_innerIterator; }
-        bool operator!= (const_iterator const& rhs) const { return !(*this == rhs); }
+        EntryCP operator*() const { return m_innerIterator->get(); }
+        const_iterator& operator++() { m_innerIterator++; return *this; }
+        bool operator==(const_iterator const& rhs) const { return m_innerIterator == rhs.m_innerIterator; }
+        bool operator!=(const_iterator const& rhs) const { return !(*this == rhs); }
         };
 
 
@@ -153,10 +153,10 @@ public:
 
     //! Gets an iterator pointing to the beginning of this property path.
     //! @return Iterator pointing to the beginning of this property path.
-    const_iterator begin() const { return const_iterator(m_entryList.begin()); }
+    ECDB_EXPORT const_iterator begin() const;
     //! Gets an iterator pointing to the end of this property path.
     //! @return Iterator pointing to the end of this property path.
-    const_iterator end() const { return const_iterator(m_entryList.end()); }
+    ECDB_EXPORT const_iterator end() const;
 
     //! Gets the property path formatted as a property access string.
     //! @param[in] option Specify one of the format option

@@ -899,10 +899,7 @@ ECDbMapAnalyser::Class& ECDbMapAnalyser::GetClass (ClassMapCR classMap)
         return *(itor->second);
 
     Storage& storage = GetStorage (classMap);
-    if (classMap.GetClass ().IsStructClass())
-        m_classes[classMap.GetClass ().GetId ()] = Struct::Ptr (new Struct (classMap, storage, nullptr));
-    else
-        m_classes[classMap.GetClass ().GetId ()] = Class::Ptr (new Class (classMap, storage, nullptr));
+    m_classes[classMap.GetClass ().GetId ()] = Class::Ptr (new Class (classMap, storage, nullptr));
 
     auto ptr = m_classes[classMap.GetClass ().GetId ()].get ();
     if (classMap.GetParentMapClassId () != 0LL)
@@ -1030,6 +1027,25 @@ ECDbMapAnalyser::Relationship&  ECDbMapAnalyser::GetRelationship(RelationshipCla
             }
         }
     return *ptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         09/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus ECDbMapAnalyser::AnalyseClass(ClassMapCR ecClassMap)
+    {
+    auto& ptr = GetClass(ecClassMap);
+    if (!ptr.InQueue())
+        return SUCCESS;
+
+    ptr.Done(); //mark it as done
+    for (auto derivedClassId : GetDerivedClassIds(ecClassMap.GetClass().GetId()))
+        {
+        if (AnalyseClass(*GetClassMap(derivedClassId)) != SUCCESS)
+            return ERROR;
+        }
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1498,6 +1514,17 @@ BentleyStatus ECDbMapAnalyser::Analyse(bool applyChanges)
     m_viewInfos.clear();
 
     SetupDerivedClassLookup();
+
+    for (ECClassId rootClassId : GetRootClassIds())
+        {
+        ClassMapCP classMap = GetClassMap(rootClassId);
+        if (classMap == nullptr)
+            return ERROR;
+
+        if (!classMap->GetMapStrategy().IsNotMapped())
+            if (AnalyseClass(*classMap) != SUCCESS)
+                return ERROR;
+        }
 
     for (ECClassId rootClassId : GetRelationshipClassIds())
         {

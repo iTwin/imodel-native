@@ -116,6 +116,16 @@ ECSqlPropertyPath::ECSqlPropertyPath() {}
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
+ECSqlPropertyPath::const_iterator ECSqlPropertyPath::begin() const { return const_iterator(m_entryList.begin()); }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 10/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+ECSqlPropertyPath::const_iterator ECSqlPropertyPath::end() const { return const_iterator(m_entryList.end()); }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 10/2013
+//+---------------+---------------+---------------+---------------+---------------+------
 void ECSqlPropertyPath::AddEntry(ECPropertyCR ecProperty)
     {
     m_entryList.push_back(Entry::Create(ecProperty));
@@ -226,7 +236,7 @@ BentleyStatus ECSqlPropertyPath::Entry::SetArrayIndex(int newArrayIndex)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlPropertyPath::const_iterator::const_iterator(bvector<EntryPtr>::const_iterator const& innerIterator) : m_innerIterator(innerIterator)
+ECSqlPropertyPath::const_iterator::const_iterator(bvector<EntryPtr>::const_iterator innerIterator) : m_innerIterator(innerIterator)
     {}
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
