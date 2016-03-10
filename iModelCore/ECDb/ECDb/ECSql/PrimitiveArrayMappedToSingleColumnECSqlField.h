@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/PrimitiveArrayMappedToSingleColumnECSqlField.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -70,7 +70,7 @@ private:
     mutable ArrayElementValue m_arrayElement;
 
     //IECSqlValue
-    virtual bool _IsNull() const override;
+    virtual bool _IsNull() const override { return false; } //arrays are always considered to be not-null (seems to be EC contract)
     virtual IECSqlPrimitiveValue const& _GetPrimitive() const override;
     virtual IECSqlStructValue const& _GetStruct() const override;
     virtual IECSqlArrayValue const& _GetArray() const override { return *this; }
@@ -82,8 +82,8 @@ private:
     virtual int _GetArrayLength() const override;
 
     //ECSqlField
-    virtual ECSqlStatus _Reset() override;
-    virtual ECSqlStatus _Init() override;
+    virtual ECSqlStatus _OnAfterReset() override;
+    virtual ECSqlStatus _OnAfterStep() override;
 
     void DoReset() const;
     ECN::IECInstanceCP GetArrayValueECInstance() const;

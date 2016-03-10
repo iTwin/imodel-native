@@ -43,14 +43,12 @@
     <ClCompile Include="ECSql\DeleteStatementExp.cpp" />
     <ClCompile Include="ECSql\ECInstanceDeleter.cpp" />
     <ClCompile Include="ECSql\ECInstanceUpdater.cpp" />
-    <ClCompile Include="ECSql\ECJsonUtility.cpp" />
     <ClCompile Include="ECSql\ECInstanceInserter.cpp" />
     <ClCompile Include="ECSql\ECRelationshipPath.cpp" />
     <ClCompile Include="ECSql\ECInstanceAdapterHelper.cpp" />
     <ClCompile Include="ECSql\ECSqlDeletePreparer.cpp" />
     <ClCompile Include="ECSql\ECSqlInsertPreparer.cpp" />
     <ClCompile Include="ECSql\ECSqlPropertyNameExpPreparer.cpp" />
-    <ClCompile Include="ECSql\ECSqlPropertyPathImpl.cpp" />
     <ClCompile Include="ECSql\ECSqlSelectPreparer.cpp" />
     <ClCompile Include="ECSql\ECSqlStatementBase.cpp" />
     <ClCompile Include="ECSql\ComputedExp.cpp" />
@@ -126,7 +124,6 @@
     <ClInclude Include="..\PublicAPI\ECDb\ECInstanceAdapter.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECInstanceId.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECInstanceFinder.h" />
-    <ClInclude Include="..\PublicAPI\ECDb\ECJsonUtility.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECRelationshipPath.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECSqlColumnInfo.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECSqlStatement.h" />
@@ -160,7 +157,6 @@
     <ClInclude Include="ECSql\ECSqlDeletePreparer.h" />
     <ClInclude Include="ECSql\ECSqlInsertPreparer.h" />
     <ClInclude Include="ECSql\ECSqlPropertyNameExpPreparer.h" />
-    <ClInclude Include="ECSql\ECSqlPropertyPathImpl.h" />
     <ClInclude Include="ECSql\ECSqlSelectPreparer.h" />
     <ClInclude Include="ECSql\ECSqlStatementBase.h" />
     <ClInclude Include="ECSql\ComputedExp.h" />

@@ -29,7 +29,6 @@ ECDbPublicHeaders =  \
                 $(publicApiDir)ECInstanceAdapter.h \
                 $(publicApiDir)JsonAdapter.h \
                 $(publicApiDir)ECRelationshipPath.h \
-                $(publicApiDir)ECJsonUtility.h \
                 $(publicApiDir)ChangeSummary.h \
                 $(publicApiDir)ECDbExpressionSymbolProviders.h
 
@@ -82,7 +81,6 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/OptionsExp.h \
                 $(baseDir)ECSql/ExpHelper.h \
                 $(baseDir)ECSql/ECSqlTypeInfo.h \
-                $(baseDir)ECSql/ECSqlPropertyPathImpl.h \
                 $(baseDir)ECSql/ECSqlPrepareContext.h \
                 $(baseDir)ECSql/NativeSqlBuilder.h \
                 $(baseDir)ECSql/ECSqlPreparer.h \
@@ -263,8 +261,6 @@ $(o)IECSqlValue$(oext):										$(baseDir)ECSql/IECSqlValue.cpp            $(EC
 
 $(o)IECSqlBinder$(oext):									$(baseDir)ECSql/IECSqlBinder.cpp           $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlPropertyPathImpl$(oext):							$(baseDir)ECSql/ECSqlPropertyPathImpl.cpp  $(ECDbAllHeaders) ${MultiCompileDepends}
-
 $(o)ECSqlColumnInfo$(oext):									$(baseDir)ECSql/ECSqlColumnInfo.cpp         $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlStatement$(oext):									$(baseDir)ECSql/ECSqlStatement.cpp          $(ECDbAllHeaders) ${MultiCompileDepends}
@@ -300,8 +296,6 @@ $(o)JsonUpdater$(oext):                                     $(baseDir)ECSql/Json
 $(o)JsonDeleter$(oext):                                     $(baseDir)ECSql/JsonDeleter.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECRelationshipPath$(oext):								$(baseDir)ECSql/ECRelationshipPath.cpp      $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)ECJsonUtility$(oext):				                    $(baseDir)ECSql/ECJsonUtility.cpp           $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlStatementNoopImpls$(oext):                         $(baseDir)ECSql/ECSqlStatementNoopImpls.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

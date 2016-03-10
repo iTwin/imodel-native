@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/PrimitiveArrayMappedToSingleColumnECSqlField.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -49,15 +49,15 @@ PrimitiveArrayMappedToSingleColumnECSqlField::PrimitiveArrayMappedToSingleColumn
         }
 
     m_arrayElement.Init (m_ecsqlColumnInfo);
-    Reset ();
+    OnAfterReset ();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_Init()
+ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_OnAfterStep()
     {
-    Reset();
+    OnAfterReset();
 
     Byte* arrayBlob = (Byte*) GetSqliteStatement().GetValueBlob(m_sqliteColumnIndex);
     const int arrayBlobSize = GetSqliteStatement().GetColumnBytes(m_sqliteColumnIndex);
@@ -102,7 +102,7 @@ ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_Init()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      10/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_Reset ()
+ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_OnAfterReset ()
     {
     DoReset ();
     return ECSqlStatus::Success;
@@ -116,15 +116,6 @@ void PrimitiveArrayMappedToSingleColumnECSqlField::DoReset () const
     m_arrayElement.Reset ();
     m_currentArrayIndex = -1;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      07/2013
-//---------------------------------------------------------------------------------------
-bool PrimitiveArrayMappedToSingleColumnECSqlField::_IsNull () const
-    {
-    return false; //arrays are always considered to be not-null (seems to be EC contract)
-    }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013

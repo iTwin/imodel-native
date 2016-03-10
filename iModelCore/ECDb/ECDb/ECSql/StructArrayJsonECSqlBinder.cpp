@@ -15,8 +15,8 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-#define DEBUG_JSON(header,json) {Json::FastWriter writer; printf("%s: %s\r\n", header, writer.write(json).c_str()); }
-
+//#define DEBUG_JSON(header,json) {Json::FastWriter writer; printf("%s: %s\r\n", header, writer.write(json).c_str()); }
+#define DEBUG_JSON(header,json)
 // ************************************************
 // JsonECSqlBinderFactory
 // ************************************************

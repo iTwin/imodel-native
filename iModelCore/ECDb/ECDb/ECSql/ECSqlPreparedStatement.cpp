@@ -223,7 +223,7 @@ DbResult ECSqlSelectPreparedStatement::Step()
     const DbResult stat = DoStep();
     if (BE_SQLITE_ROW == stat)
         {
-        if (!InitFields().IsSuccess())
+        if (!OnAfterStep().IsSuccess())
             return BE_SQLITE_ERROR;
         }
 
@@ -278,7 +278,7 @@ ECSqlStatus ECSqlSelectPreparedStatement::ResetFields() const
     {
     for (ECSqlField* field : m_fieldsRequiringReset)
         {
-        ECSqlStatus stat = field->Reset();
+        ECSqlStatus stat = field->OnAfterReset();
         if (!stat.IsSuccess())
             return stat;
         }
@@ -289,11 +289,11 @@ ECSqlStatus ECSqlSelectPreparedStatement::ResetFields() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        10/13
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlSelectPreparedStatement::InitFields() const
+ECSqlStatus ECSqlSelectPreparedStatement::OnAfterStep() const
     {
-    for (ECSqlField* field : m_fieldsRequiringInit)
+    for (ECSqlField* field : m_fieldsRequiringOnAfterStep)
         {
-        ECSqlStatus stat = field->Init();
+        ECSqlStatus stat = field->OnAfterStep();
         if (!stat.IsSuccess())
             return stat;
         }
@@ -309,10 +309,10 @@ void ECSqlSelectPreparedStatement::AddField(std::unique_ptr<ECSqlField> field)
     BeAssert(field != nullptr);
     if (field != nullptr)
         {
-        if (field->RequiresInit())
-            m_fieldsRequiringInit.push_back(field.get());
+        if (field->RequiresOnAfterStep())
+            m_fieldsRequiringOnAfterStep.push_back(field.get());
 
-        if (field->RequiresReset())
+        if (field->RequiresOnAfterReset())
             m_fieldsRequiringReset.push_back(field.get());
 
         m_fields.push_back(std::move(field));

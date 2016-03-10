@@ -27,34 +27,34 @@ protected:
 private:
     ECSqlStatementBase& m_ecsqlStatement;
 
-    virtual ECSqlColumnInfoCR _GetColumnInfo () const override;
+    virtual ECSqlColumnInfoCR _GetColumnInfo() const override;
 
-    virtual ECSqlStatus _Reset () { return ECSqlStatus::Success; }
-    virtual ECSqlStatus _Init () { return ECSqlStatus::Success; }
+    virtual ECSqlStatus _OnAfterReset() { return ECSqlStatus::Success; }
+    virtual ECSqlStatus _OnAfterStep() { return ECSqlStatus::Success; }
 
     static Collection s_emptyChildCollection;
 
 protected:
-    bool m_requiresInit;
-    bool m_requiresReset;
+    bool m_requiresOnAfterStep;
+    bool m_requiresOnAfterReset;
 
-    ECSqlField (ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo, bool needsInit, bool needsReset)
-        : m_ecsqlStatement(ecsqlStatement), m_ecsqlColumnInfo(std::move(ecsqlColumnInfo)), m_requiresInit(needsInit), m_requiresReset(needsReset)
+    ECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo, bool needsOnAfterStep, bool needsOnAfterReset)
+        : m_ecsqlStatement(ecsqlStatement), m_ecsqlColumnInfo(std::move(ecsqlColumnInfo)), m_requiresOnAfterStep(needsOnAfterStep), m_requiresOnAfterReset(needsOnAfterReset)
         {}
 
-    ECSqlStatus ReportError (ECSqlStatus status, Utf8CP errorMessage) const;
-    ECSqlStatementBase& GetECSqlStatementR () const;
-    Statement& GetSqliteStatement () const;
+    ECSqlStatus ReportError(ECSqlStatus status, Utf8CP errorMessage) const;
+    ECSqlStatementBase& GetECSqlStatementR() const;
+    Statement& GetSqliteStatement() const;
 
 public:
-    virtual ~ECSqlField () {}
+    virtual ~ECSqlField() {}
 
-    virtual Collection const& GetChildren () const {return s_emptyChildCollection;}
+    virtual Collection const& GetChildren() const { return s_emptyChildCollection; }
 
-    bool RequiresInit() const { return m_requiresInit; }
-    ECSqlStatus Init ();
-    bool RequiresReset() const { return m_requiresReset; }
-    ECSqlStatus Reset ();
+    bool RequiresOnAfterStep() const { return m_requiresOnAfterStep; }
+    ECSqlStatus OnAfterStep();
+    bool RequiresOnAfterReset() const { return m_requiresOnAfterReset; }
+    ECSqlStatus OnAfterReset();
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

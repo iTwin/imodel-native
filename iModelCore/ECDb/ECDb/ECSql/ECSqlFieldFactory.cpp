@@ -17,16 +17,11 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlFieldFactory::CreateField
-(
-ECSqlPrepareContext& ctx, 
-DerivedPropertyExp const* derivedProperty, 
-int startColumnIndex
-)
+ECSqlStatus ECSqlFieldFactory::CreateField(ECSqlPrepareContext& ctx, DerivedPropertyExp const* derivedProperty, int startColumnIndex)
     {
-    BeAssert (derivedProperty != nullptr && derivedProperty->IsComplete ());
+    BeAssert(derivedProperty != nullptr && derivedProperty->IsComplete());
 
-    ECSqlSelectPreparedStatement* selectPreparedState = ctx.GetECSqlStatementR ().GetPreparedStatementP <ECSqlSelectPreparedStatement> ();
+    ECSqlSelectPreparedStatement* selectPreparedState = ctx.GetECSqlStatementR().GetPreparedStatementP <ECSqlSelectPreparedStatement>();
 
     ValueExp const* valueExp = derivedProperty->GetExpression();
     PropertyNameExp const* propNameExp = nullptr;
@@ -43,47 +38,38 @@ int startColumnIndex
         ecsqlColumnInfo = CreateECSqlColumnInfoFromGeneratedProperty(ctx, *generatedProperty);
     else
         ecsqlColumnInfo = CreateECSqlColumnInfoFromPropertyNameExp(ctx, *propNameExp);
-    
-    auto const& valueTypeInfo = valueExp->GetTypeInfo ();
-    BeAssert (valueTypeInfo.GetKind () != ECSqlTypeInfo::Kind::Unset);
+
+    ECSqlTypeInfo const& valueTypeInfo = valueExp->GetTypeInfo();
+    BeAssert(valueTypeInfo.GetKind() != ECSqlTypeInfo::Kind::Unset);
 
     unique_ptr<ECSqlField> field = nullptr;
     stat = ECSqlStatus::Success;
-    switch (valueTypeInfo.GetKind ())
+    switch (valueTypeInfo.GetKind())
         {
-        case ECSqlTypeInfo::Kind::Primitive:
-        case ECSqlTypeInfo::Kind::Null:
-            stat = CreatePrimitiveField(field, startColumnIndex, ctx, move(ecsqlColumnInfo), propNameExp, valueTypeInfo.GetPrimitiveType());
-            break;
+            case ECSqlTypeInfo::Kind::Primitive:
+            case ECSqlTypeInfo::Kind::Null:
+                stat = CreatePrimitiveField(field, startColumnIndex, ctx, move(ecsqlColumnInfo), valueTypeInfo.GetPrimitiveType());
+                break;
 
-        case ECSqlTypeInfo::Kind::Struct:
-            stat = CreateStructField(field, startColumnIndex, ctx, move(ecsqlColumnInfo), propNameExp);
-            break;
+            case ECSqlTypeInfo::Kind::Struct:
+                stat = CreateStructField(field, startColumnIndex, ctx, move(ecsqlColumnInfo), propNameExp);
+                break;
 
-        case ECSqlTypeInfo::Kind::PrimitiveArray:
-            stat = CreatePrimitiveArrayField(field, startColumnIndex, ctx, move(ecsqlColumnInfo), propNameExp, valueTypeInfo.GetPrimitiveType());
-            break;
+            case ECSqlTypeInfo::Kind::PrimitiveArray:
+                stat = CreatePrimitiveArrayField(field, startColumnIndex, ctx, move(ecsqlColumnInfo), valueTypeInfo.GetPrimitiveType());
+                break;
 
-        case ECSqlTypeInfo::Kind::StructArray:
-            {
-            if (propNameExp == nullptr)
-                {
-                BeAssert(false && "Operations with struct array properties not supported in the select clause. This should have been caught by the parser already.");
-                ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Operations with struct array properties not supported in the select clause.");
-                return ECSqlStatus::InvalidECSql;
-                }
+            case ECSqlTypeInfo::Kind::StructArray:
+                stat = CreateStructArrayField(field, startColumnIndex, ctx, move(ecsqlColumnInfo));
+                break;
 
-            stat = CreateStructArrayField(field, startColumnIndex, ctx, move(ecsqlColumnInfo), propNameExp->GetPropertyMap());
-            break;
-            }
-
-        default:
-            BeAssert (false && "Unhandled property type in value reader factory");
-            return ECSqlStatus::Error;
+            default:
+                BeAssert(false && "Unhandled property type in value reader factory");
+                return ECSqlStatus::Error;
         }
 
     if (stat.IsSuccess())
-        selectPreparedState->AddField (move (field));
+        selectPreparedState->AddField(move(field));
 
     return stat;
     }
@@ -91,15 +77,8 @@ int startColumnIndex
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       09/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlFieldFactory::CreatePrimitiveField
-(
-std::unique_ptr<ECSqlField>& field,
-int& sqlColumnIndex,
-ECSqlPrepareContext& ctx,
-ECSqlColumnInfo&& ecsqlColumnInfo, 
-PropertyNameExp const* propertyName, //NOT USED
-PrimitiveType primitiveType
-)
+//static
+ECSqlStatus ECSqlFieldFactory::CreatePrimitiveField(unique_ptr<ECSqlField>& field, int& sqlColumnIndex, ECSqlPrepareContext& ctx, ECSqlColumnInfo&& ecsqlColumnInfo, PrimitiveType primitiveType)
     {
     auto& ecsqlStmt = ctx.GetECSqlStatementR ();
 
@@ -110,9 +89,7 @@ PrimitiveType primitiveType
             auto xColumnIndex = sqlColumnIndex++;
             auto yColumnIndex = sqlColumnIndex++;
 
-            field = unique_ptr<ECSqlField> (
-                new PointMappedToColumnsECSqlField (ecsqlStmt, move (ecsqlColumnInfo), 
-                xColumnIndex, yColumnIndex));
+            field = unique_ptr<ECSqlField> (new PointMappedToColumnsECSqlField (ecsqlStmt, move (ecsqlColumnInfo), xColumnIndex, yColumnIndex));
             break;
             }
         case PRIMITIVETYPE_Point3D:
@@ -121,15 +98,11 @@ PrimitiveType primitiveType
             auto yColumnIndex = sqlColumnIndex++;
             auto zColumnIndex = sqlColumnIndex++;
 
-            field = unique_ptr<ECSqlField> (
-                new PointMappedToColumnsECSqlField (ecsqlStmt, move (ecsqlColumnInfo), 
-                xColumnIndex, yColumnIndex, zColumnIndex));
+            field = unique_ptr<ECSqlField> (new PointMappedToColumnsECSqlField (ecsqlStmt, move (ecsqlColumnInfo), xColumnIndex, yColumnIndex, zColumnIndex));
             break;
             }
         default:
-            field = unique_ptr<ECSqlField> (
-                new PrimitiveMappedToSingleColumnECSqlField (ecsqlStmt, move (ecsqlColumnInfo), 
-                sqlColumnIndex++));
+            field = unique_ptr<ECSqlField> (new PrimitiveMappedToSingleColumnECSqlField (ecsqlStmt, move (ecsqlColumnInfo), sqlColumnIndex++));
             break;
         }
 
@@ -138,16 +111,9 @@ PrimitiveType primitiveType
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       09/2013
-// Struct can be mapped to blob or inline. We are only handling inline case here
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlFieldFactory::CreateStructField
-(
-std::unique_ptr<ECSqlField>& field,
-int& sqlColumnIndex,
-ECSqlPrepareContext& ctx, 
-ECSqlColumnInfo&& ecsqlColumnInfo, 
-PropertyNameExp const* propertyName
-)
+//static
+ECSqlStatus ECSqlFieldFactory::CreateStructField(unique_ptr<ECSqlField>& field, int& sqlColumnIndex, ECSqlPrepareContext& ctx, ECSqlColumnInfo&& ecsqlColumnInfo, PropertyNameExp const* propertyName)
     {
     PRECONDITION(propertyName != nullptr && "We donot expect computed expression in case of struct", ECSqlStatus::Error);
 
@@ -177,19 +143,10 @@ PropertyNameExp const* propertyName
     }
 
 //-----------------------------------------------------------------------------------------
-//! Arrays are not necessarily mapped to blob all the time. But this the case right now.
-//! If array is mapped to a different table we need to update this function to take care of that case.
 // @bsimethod                                    Affan.Khan                       09/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlFieldFactory::CreatePrimitiveArrayField
-(
-std::unique_ptr<ECSqlField>& field,
-int& sqlColumnIndex,
-ECSqlPrepareContext& ctx, 
-ECSqlColumnInfo&& ecsqlColumnInfo, 
-PropertyNameExp const* propertyName, //NOT USED
-PrimitiveType primitiveType
-)
+//static
+ECSqlStatus ECSqlFieldFactory::CreatePrimitiveArrayField(unique_ptr<ECSqlField>& field, int& sqlColumnIndex, ECSqlPrepareContext& ctx, ECSqlColumnInfo&& ecsqlColumnInfo, PrimitiveType primitiveType)
     {
     ECClassCP primArraySystemClass = ECDbSystemSchemaHelper::GetClassForPrimitiveArrayPersistence(ctx.GetECDb(), primitiveType);
     if (primArraySystemClass == nullptr)
@@ -198,58 +155,38 @@ PrimitiveType primitiveType
         return ECSqlStatus::Error;
         }
 
-    field = unique_ptr<ECSqlField> (
-        new PrimitiveArrayMappedToSingleColumnECSqlField (ctx.GetECSqlStatementR (), move (ecsqlColumnInfo), sqlColumnIndex++, *primArraySystemClass));  
+    field = unique_ptr<ECSqlField> (new PrimitiveArrayMappedToSingleColumnECSqlField (ctx.GetECSqlStatementR (), move (ecsqlColumnInfo), sqlColumnIndex++, *primArraySystemClass));  
     return ECSqlStatus::Success;
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlFieldFactory::CreateStructArrayField
-(
-std::unique_ptr<ECSqlField>& field,
-int& sqlColumnIndex,
-ECSqlPrepareContext& ctx, 
-ECSqlColumnInfo&& ecsqlColumnInfo, 
-PropertyMapCR propertyMap
-)
+//static
+ECSqlStatus ECSqlFieldFactory::CreateStructArrayField(unique_ptr<ECSqlField>& field, int& sqlColumnIndex, ECSqlPrepareContext& ctx, ECSqlColumnInfo&& ecsqlColumnInfo)
     {
-    /*ECDbCR ecdb = ctx.GetECSqlStatementR ().GetPreparedStatementP ()->GetECDb ();
-    StructArrayECPropertyCP structArrayProperty = propertyMap.GetProperty().GetAsStructArrayProperty();
-    if (!structArrayProperty)
-        {
-        BeAssert(false && "Expecting struct array property");
-        return ECSqlStatus::Error;
-        }
-        */
+    field = unique_ptr<ECSqlField>(new StructArrayJsonECSqlField(ctx.GetECSqlStatementR(), move(ecsqlColumnInfo), sqlColumnIndex++));
     return ECSqlStatus::Success;
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       09/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlFieldFactory::CreateStructMemberFields
-(
-std::unique_ptr<ECSqlField>& structField, 
-int& sqlColumnIndex, 
-ECSqlPrepareContext& ctx, 
-StructPropertyMap const& structPropertyMap,
-ECSqlColumnInfo&& structFieldColumnInfo
-)
+//static
+ECSqlStatus ECSqlFieldFactory::CreateStructMemberFields(unique_ptr<ECSqlField>& structField, int& sqlColumnIndex, ECSqlPrepareContext& ctx, StructPropertyMap const& structPropertyMap, ECSqlColumnInfo&& structFieldColumnInfo)
     {
-    auto const& childPropertyMaps = structPropertyMap.GetChildren ();
+    PropertyMapCollection const& childPropertyMaps = structPropertyMap.GetChildren ();
     if (childPropertyMaps.IsEmpty ())
         return ECSqlStatus::Success;
 
-    auto newStructField = unique_ptr<StructMappedToColumnsECSqlField>(new StructMappedToColumnsECSqlField(ctx.GetECSqlStatementR (), move(structFieldColumnInfo)));
+    unique_ptr<StructMappedToColumnsECSqlField> newStructField = unique_ptr<StructMappedToColumnsECSqlField>(new StructMappedToColumnsECSqlField(ctx.GetECSqlStatementR (), move(structFieldColumnInfo)));
 
     ECSqlStatus status = ECSqlStatus::Success;
     for (PropertyMapCP childPropertyMap : childPropertyMaps)
         {
         ECSqlColumnInfo childColumnInfo = ECSqlColumnInfo::CreateChild(newStructField->GetColumnInfo(), childPropertyMap->GetProperty());
 
-        std::unique_ptr<ECSqlField> childField = nullptr;
+        unique_ptr<ECSqlField> childField = nullptr;
         if (StructPropertyMap const* childStructPropMap = dynamic_cast<StructPropertyMap const*>(childPropertyMap))
             {
             status = CreateStructMemberFields(childField, sqlColumnIndex, ctx, *childStructPropMap, move(childColumnInfo));
@@ -259,7 +196,7 @@ ECSqlColumnInfo&& structFieldColumnInfo
         else if (childPropertyMap->GetProperty().GetIsPrimitive())
             {
             PrimitiveType primitiveType = childPropertyMap->GetProperty().GetAsPrimitiveProperty()->GetType();
-            status = CreatePrimitiveField(childField, sqlColumnIndex, ctx, move(childColumnInfo), nullptr, primitiveType);
+            status = CreatePrimitiveField(childField, sqlColumnIndex, ctx, move(childColumnInfo), primitiveType);
             }
         else if (childPropertyMap->GetProperty().GetIsArray())
             {
@@ -267,19 +204,19 @@ ECSqlColumnInfo&& structFieldColumnInfo
             if (arrayProperty->GetKind() == ArrayKind::ARRAYKIND_Primitive)
                 {
                 PrimitiveType primitiveType = arrayProperty->GetPrimitiveElementType();
-                status = CreatePrimitiveArrayField(childField, sqlColumnIndex, ctx, move(childColumnInfo), nullptr, primitiveType);
+                status = CreatePrimitiveArrayField(childField, sqlColumnIndex, ctx, move(childColumnInfo), primitiveType);
                 }
             else
-                status = CreateStructArrayField(childField, sqlColumnIndex, ctx, move(childColumnInfo), *childPropertyMap);
+                status = CreateStructArrayField(childField, sqlColumnIndex, ctx, move(childColumnInfo));
             }
         else if (childPropertyMap->GetProperty().GetIsNavigation())
             {
             NavigationECPropertyCP navProp = childPropertyMap->GetProperty().GetAsNavigationProperty();
             PrimitiveType navPropIdType = navProp->GetType();
             if (!navProp->IsMultiple())
-                status = CreatePrimitiveField(childField, sqlColumnIndex, ctx, move(childColumnInfo), nullptr, navPropIdType);
+                status = CreatePrimitiveField(childField, sqlColumnIndex, ctx, move(childColumnInfo), navPropIdType);
             else
-                status = CreatePrimitiveArrayField(childField, sqlColumnIndex, ctx, move(childColumnInfo), nullptr, navPropIdType);
+                status = CreatePrimitiveArrayField(childField, sqlColumnIndex, ctx, move(childColumnInfo), navPropIdType);
             }
 
         if (childField == nullptr)

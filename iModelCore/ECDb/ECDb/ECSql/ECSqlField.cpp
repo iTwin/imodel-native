@@ -21,15 +21,15 @@ ECSqlField::Collection ECSqlField::s_emptyChildCollection;
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlField::Init () 
+ECSqlStatus ECSqlField::OnAfterStep () 
     {
-    auto stat = _Init ();
+    auto stat = _OnAfterStep ();
     if (!stat.IsSuccess())
         return stat;
 
     for (unique_ptr<ECSqlField> const& child : GetChildren ())
         {
-        stat = child->Init ();
+        stat = child->OnAfterStep ();
         if (!stat.IsSuccess())
             return stat;
         }
@@ -48,15 +48,15 @@ ECSqlColumnInfoCR ECSqlField::_GetColumnInfo () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      10/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlField::Reset () 
+ECSqlStatus ECSqlField::OnAfterReset () 
     {
-    auto stat = _Reset ();
+    auto stat = _OnAfterReset ();
     if (!stat.IsSuccess())
         return stat;
 
     for (unique_ptr<ECSqlField> const& child : GetChildren ())
         {
-        stat = child->Reset ();
+        stat = child->OnAfterReset ();
         if (!stat.IsSuccess())
             return stat;
         }

@@ -87,14 +87,14 @@ struct ECSqlSelectPreparedStatement : public ECSqlPreparedStatement
 private:
     DynamicSelectClauseECClass m_dynamicSelectClauseECClass;
     ECSqlField::Collection m_fields;
-    //Calls to Init/Reset on ECSqlFields can be very many, so only call it on fields that require it.
-    std::vector<ECSqlField*> m_fieldsRequiringInit;
+    //Calls to OnAfterStep/Reset on ECSqlFields can be very many, so only call it on fields that require it.
+    std::vector<ECSqlField*> m_fieldsRequiringOnAfterStep;
     std::vector<ECSqlField*> m_fieldsRequiringReset;
 
     virtual ECSqlStatus _Reset () override;
 
     ECSqlStatus ResetFields () const;
-    ECSqlStatus InitFields () const;
+    ECSqlStatus OnAfterStep () const;
 
 public:
     explicit ECSqlSelectPreparedStatement (ECDbCR ecdb) : ECSqlPreparedStatement (ECSqlType::Select, ecdb) {}

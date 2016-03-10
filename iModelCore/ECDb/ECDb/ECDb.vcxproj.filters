@@ -185,9 +185,6 @@
     <ClInclude Include="ECSql\ECSqlStatementBase.h">
       <Filter>ECSql\ECSqlStatement</Filter>
     </ClInclude>
-    <ClInclude Include="ECSql\ECSqlPropertyPathImpl.h">
-      <Filter>ECSql\ECSqlStatement</Filter>
-    </ClInclude>
     <ClInclude Include="ECDbSchemaReader.h">
       <Filter>ECDbSchemaManager</Filter>
     </ClInclude>
@@ -252,9 +249,6 @@
     <ClInclude Include="ECSql\PrimitiveArrayToColumnECSqlBinder.h">
       <Filter>ECSql\ParameterBinding</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\ECDb\ECJsonUtility.h">
-      <Filter>PublicApi</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECInstanceId.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
@@ -316,9 +310,6 @@
     <ClInclude Include="..\PublicAPI\ECDb\ECInstanceId.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\ECDb\ECJsonUtility.h">
-      <Filter>PublicApi</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECRelationshipPath.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
@@ -337,7 +328,6 @@
     <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
     <ClInclude Include="ECDbSql.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
@@ -404,6 +394,9 @@
     </ClInclude>
     <ClInclude Include="ECSql\StructArrayJsonECSqlField.h">
       <Filter>ECSql\Fields</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h">
+      <Filter>PublicApi</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -545,9 +538,6 @@
     <ClCompile Include="ECSql\ECSqlStatementBase.cpp">
       <Filter>ECSql\ECSqlStatement</Filter>
     </ClCompile>
-    <ClCompile Include="ECSql\ECSqlPropertyPathImpl.cpp">
-      <Filter>ECSql\ECSqlStatement</Filter>
-    </ClCompile>
     <ClCompile Include="ECDbSchemaReader.cpp">
       <Filter>ECDbSchemaManager</Filter>
     </ClCompile>
@@ -654,9 +644,6 @@
     </ClCompile>
     <ClCompile Include="SchemaImportContext.cpp">
       <Filter>ECDbSchemaManager</Filter>
-    </ClCompile>
-    <ClCompile Include="ECSql\ECJsonUtility.cpp">
-      <Filter>ECSql\Adapters</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\ECInstanceAdapterHelper.cpp">
       <Filter>ECSql\Adapters</Filter>
