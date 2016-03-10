@@ -1315,9 +1315,6 @@ void dgn_TxnTable::ElementDep::_OnValidated()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_TxnTable::ElementDep::UpdateSummary(Changes::Change change, ChangeType changeType)
     {
-    if (ChangeType::Delete == changeType)
-        return; // Note: In DgnDb0601, we handle this by recording data and invoking a new callback.
-
     m_changes = true;
     
     if (ChangeType::Delete == changeType)
