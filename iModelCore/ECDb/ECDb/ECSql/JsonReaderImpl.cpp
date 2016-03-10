@@ -313,82 +313,6 @@ Utf8StringCR pathFromRelatedClassStr
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 01 / 2014
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonReader::Impl::AddInstancesFromAnyClassPath
-(
-JsonValueR allInstances,
-JsonValueR allDisplayInfo,
-const ECRelationshipPath& pathFromAnyClass,
-const ECInstanceId& ecInstanceId,
-const JsonECSqlSelectAdapter::FormatOptions& formatOptions
-)
-    {
-    BeAssert (pathFromAnyClass.IsAnyClassAtEnd (ECRelationshipPath::End::Root));
-
-    ECInstanceKeyMultiMap instanceKeys;
-    if (SUCCESS != GetRelatedInstanceKeys (instanceKeys, pathFromAnyClass, ecInstanceId))
-        return ERROR;
-
-    // See note on "hack" below
-    ECClassCP dgnElementClass = m_ecDb.Schemas ().GetECClass ("dgn", "Element");
-    bool isRootClassDgnElement = (m_ecClass == dgnElementClass);
-
-    ECInstanceKeyMultiMapConstIterator instanceIdIter;
-    for (ECInstanceKeyMultiMapConstIterator classIdIter = instanceKeys.begin (); classIdIter != instanceKeys.end (); classIdIter = instanceIdIter)
-        {
-        ECClassId ecRelatedClassId = classIdIter->first;
-        ECClassCP ecRelatedClass = m_ecDb.Schemas ().GetECClass (ecRelatedClassId);
-        POSTCONDITION (ecRelatedClass != nullptr, ERROR);
-
-        Utf8String ecsql("SELECT * FROM ");
-        ecsql.append(ecRelatedClass->GetECSqlName()).append(" WHERE ECInstanceId=?");
-        CachedECSqlStatementPtr statement = nullptr;
-        if (SUCCESS != PrepareECSql (statement, ecsql.c_str()))
-            return ERROR;
-
-        // Determine the fully specified path to the class found - this is recorded in the output JSON. 
-        ECRelationshipPath pathFromRelatedClass = pathFromAnyClass;
-        pathFromRelatedClass.ReplaceAnyClassAtEnd (*ecRelatedClass, ECRelationshipPath::End::Root);
-        Utf8String pathFromRelatedClassStr = pathFromRelatedClass.ToString ();
-
-        bpair<ECInstanceKeyMultiMapConstIterator, ECInstanceKeyMultiMapConstIterator> keyRange = instanceKeys.equal_range (ecRelatedClassId);
-        for (instanceIdIter = keyRange.first; instanceIdIter != keyRange.second; instanceIdIter++)
-            {
-            statement->Reset ();
-            ECInstanceId instanceId = instanceIdIter->second;
-            statement->BindId (1, instanceId);
-            if (SUCCESS != AddInstancesFromPreparedStatement (allInstances, allDisplayInfo, *statement, formatOptions, pathFromRelatedClassStr))
-                return ERROR;
-            }
-
-        statement = nullptr;
-
-        // Traverse any related items display specifications on the resolved classes
-        // 
-        // Note: A hard coded check for dgn:Element here looks positively ugly, but seemed like the best of options. 
-        // We are intentionally making a very special exception for ElementHasPrimaryInstance relationship with an AnyClass constraint at the 
-        // end here. 
-        //
-        // In the typical case we will not look further at (indirectly) related items that are resolved after traversing these AnyClass relationships, 
-        // just like we won't look further when it's *not* a AnyClass relationship. 
-        // 
-        // The user may not want to see the entire hierarchy of items. If they do, they can specify all the RelatedItemsDisplaySPecifications 
-        // they want exhaustively. 
-        // 
-        // Also, nobody else should be using "AnyClass" in their relationship path. ONLY we can!!! 
-        // That's our justification and we are sticking with it!!!
-        if (isRootClassDgnElement)
-            {
-            if (SUCCESS != AddInstancesFromRelatedItems (allInstances, allDisplayInfo, *ecRelatedClass, pathFromRelatedClass, ecInstanceId, formatOptions))
-                return ERROR;
-            }
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 05 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus JsonReader::Impl::AddInstancesFromRelatedItems
@@ -417,9 +341,6 @@ const JsonECSqlSelectAdapter::FormatOptions& formatOptions
         pathToRelatedClass.Reverse (pathFromRelatedClass);
 
         BentleyStatus status = SUCCESS;
-        if (pathFromRelatedClass.IsAnyClassAtEnd (ECRelationshipPath::End::Root))
-            status = AddInstancesFromAnyClassPath (allInstances, allDisplayInfo, pathFromRelatedClass, ecInstanceId, formatOptions);
-        else
             status = AddInstancesFromSpecifiedClassPath (allInstances, allDisplayInfo, pathFromRelatedClass, ecInstanceId, formatOptions);
 
         if (SUCCESS != status)
@@ -472,14 +393,6 @@ BentleyStatus JsonReader::Impl::GetTrivialPathToSelf (ECRelationshipPathR emptyP
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 01 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String ECClassHelper::GetUnqualifiedName (Utf8StringCR qualifiedClassName, Utf8Char delimiter)
-    {
-    return qualifiedClassName.substr (qualifiedClassName.find (delimiter) + 1);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 01 / 2014
-//+---------------+---------------+---------------+---------------+---------------+------
 void ECClassHelper::ParseQualifiedName (Utf8StringR schemaPrefixOrName, Utf8StringR className, Utf8StringCR qualifiedClassName, Utf8Char delimiter)
     {
     // [SchemaPrefix[.:]]<ClassName>
@@ -525,7 +438,7 @@ ECClassCP ECClassHelper::ResolveClass (Utf8StringCR possiblyQualifiedClassName, 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 01 / 2014
-//+---------------+---------------+---------------+---------------+---------------+------
+////+---------------+---------------+---------------+---------------+---------------+------
 bool ECClassHelper::IsAnyClass (ECClassCR ecClass)
     {
     return ClassMap::IsAnyClass (ecClass);
@@ -564,30 +477,6 @@ Utf8String ECClassHelper::GetQualifiedECSqlName (ECClassCR ecClass)
 void ECClassHelper::ParseQualifiedECObjectsName (Utf8StringR schemaPrefixOrName, Utf8StringR className, Utf8StringCR qualifiedClassName)
     {
     ParseQualifiedName (schemaPrefixOrName, className, qualifiedClassName, ':');
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 01 / 2014
-//+---------------+---------------+---------------+---------------+---------------+------
-void ECClassHelper::ParseQualifiedECSqlName (Utf8StringR schemaPrefixOrName, Utf8StringR className, Utf8StringCR qualifiedClassName)
-    {
-    ParseQualifiedName (schemaPrefixOrName, className, qualifiedClassName, '.');
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 01 / 2014
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String ECClassHelper::GetUnqualifiedECObjectsName (Utf8StringCR qualifiedClassName)
-    {
-    return GetUnqualifiedName (qualifiedClassName, ':');
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 01 / 2014
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String ECClassHelper::GetUnqualifiedECSqlName (Utf8StringCR qualifiedClassName)
-    {
-    return GetUnqualifiedName (qualifiedClassName, '.');
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

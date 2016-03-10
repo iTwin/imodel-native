@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/SelectStatementExp.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -89,7 +89,6 @@ public:
     // @bsimethod                                    Affan.Khan                       05/2013
     //For subquery it return "" if subquery has no alias
     //+---------------+---------------+---------------+---------------+---------------+------
-    RangeClassRefExp const* FindRangeClassRefById (Utf8StringCR id) const;
     void FindRangeClassRefs(RangeClassRefList&) const;
     };
 
@@ -399,9 +398,6 @@ struct SelectStatementExp : QueryExp
         virtual ~SelectStatementExp(){}
         SingleSelectStatementExp const& GetCurrent() const;
         SelectStatementExp const* GetNext() const;
-        SelectStatementExp const* GetPrevious() const;
-        SelectStatementExp const& GetLast() const;
-        SelectStatementExp const& GetFirst() const;
         bool IsAll()const;
         Operator GetOP() const;
         bool IsCompound() const;
