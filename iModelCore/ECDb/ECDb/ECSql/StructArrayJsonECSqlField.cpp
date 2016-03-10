@@ -429,10 +429,15 @@ ECSqlStatus StructArrayJsonECSqlField::_OnAfterStep()
 
     BeAssert(m_json.isArray());
 
-    Utf8String jsonStr(GetSqliteStatement().GetValueText(m_sqliteColumnIndex));
-    Json::Reader reader;
-    if (!reader.Parse(jsonStr, m_json, false))
-        return ReportError(ECSqlStatus::Error, "Could not deserialize struct array JSON.");
+    if (GetSqliteStatement().IsColumnNull(m_sqliteColumnIndex))
+        m_json = Json::Value(Json::arrayValue);
+    else
+        {
+        Utf8String jsonStr(GetSqliteStatement().GetValueText(m_sqliteColumnIndex));
+        Json::Reader reader;
+        if (!reader.Parse(jsonStr, m_json, false))
+            return ReportError(ECSqlStatus::Error, "Could not deserialize struct array JSON.");
+        }
 
     BeAssert(m_json.isArray());
     m_value = std::unique_ptr<ArrayJsonECSqlValue>(new ArrayJsonECSqlValue(*GetECSqlStatementR().GetECDb(), m_json, GetColumnInfo()));
