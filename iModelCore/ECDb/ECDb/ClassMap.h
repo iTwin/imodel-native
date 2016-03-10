@@ -81,9 +81,7 @@ struct PropertyMapSet : NonCopyableClass
         PropertyMapSet(ClassMap const& classMap) :m_classMap(classMap) {}
 
     public:
-        ClassMap const& GetClassMap() const;
         const EndPoints GetEndPoints() const;
-        const EndPoints FindEndPoints(ColumnKind filter) const;
         const EndPoint* GetEndPointByAccessString(Utf8CP accessString) const
             {
             auto itor = m_endPointByAccessString.find(accessString);

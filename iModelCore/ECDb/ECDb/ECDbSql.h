@@ -39,8 +39,6 @@ enum class ColumnKind
     NonRelSystemColumn = ECInstanceId | ECClassId
     };
 
-
-
 enum class TriggerType
     {
     Create,
@@ -190,13 +188,9 @@ public:
     ECDbSqlTable const* FindTable (Utf8CP name) const;
     ECDbSqlTable* FindTableP (Utf8CP name) const;
     const std::vector<ECDbSqlTable const*> GetTables () const;
-    const std::vector<ECDbSqlTable*> GetTablesR ();
-
     ECDbSQLManager& GetManager() const { return m_sqlManager; }
     ECDbSQLManager & GetManagerR() { return m_sqlManager; }
-
     NameGenerator& GetNameGenerator() { return m_nameGenerator; }
-
     bool IsNameInUse(Utf8CP name) const;
     void Reset ();
     };
@@ -563,10 +557,7 @@ private:
 public:
     static Utf8String GetCreateTableDDL(ECDbSqlTable const&, CreateOption);
     static Utf8String GetCreateTriggerDDL(ECDbSqlTrigger const&);
-
     static BentleyStatus AddColumns(ECDbR, ECDbSqlTable const&, std::vector<Utf8CP> const& newColumns);
-    static BentleyStatus CopyRows(ECDbR, Utf8CP sourceTable, bvector<Utf8String>& sourceColumns, Utf8CP targetTable, bvector<Utf8String>& targetColumns);
-
     static Utf8CP ColumnTypeToSql(ECDbSqlColumn::Type);
     };
 
@@ -668,7 +659,6 @@ struct ECDbClassMapInfo : NonCopyableClass
         ECDbMapStorage const& m_map;
 
     protected:
-        const std::map<Utf8CP, ECDbPropertyMapInfo const*, CompareIUtf8> GetPropertyMapByColumnName (bool onlyLocal) const;
         void GetPropertyMaps (std::vector<ECDbPropertyMapInfo const*>& propertyMaps, bool onlyLocal) const;
 
     public:
@@ -683,7 +673,6 @@ struct ECDbClassMapInfo : NonCopyableClass
         ECDbClassMapInfo const*  GetBaseClassMap () const;
         ECDbMapStrategy const& GetMapStrategy () const { return m_mapStrategy; }
         std::vector<ECDbClassMapInfo*> const& GetChildren () const { return m_childClassMaps; }
-        ECDbPropertyMapInfo const * FindPropertyMap (Utf8CP columnName) const;
         ECDbPropertyMapInfo const* FindPropertyMap (ECN::ECPropertyId rootPropertyId, Utf8CP accessString) const;
         ECDbPropertyMapInfo const* FindPropertyMapByAccessString(Utf8CP accessString) const;
         ECDbPropertyMapInfo* CreatePropertyMap (ECDbPropertyPath const& propertyPath);

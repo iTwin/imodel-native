@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/SelectStatementExp.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -242,27 +242,6 @@ BentleyStatus FromExp::TryAddClassRef(ECSqlParseContext& ctx, std::unique_ptr<Cl
     }
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-RangeClassRefExp const* FromExp::FindRangeClassRefById (Utf8StringCR id) const
-    {
-    if (!id.empty())           
-        {
-        RangeClassRefList rangeClassRefs;
-        FindRangeClassRefs(rangeClassRefs);
-        for(auto rangeClassRef : rangeClassRefs)
-            {
-            auto classRefId = rangeClassRef->GetId();
-            if (classRefId.empty())
-                continue;
-            if (id.Equals(classRefId))
-                return rangeClassRef;
-            }
-        }
-    return nullptr;
-    }
-
-//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 unique_ptr<RangeClassRefList> FromExp::FindRangeClassRefExpressions () const
@@ -487,9 +466,6 @@ ValueExp const* LimitOffsetExp::GetOffsetExp () const
 
     return GetChild<ValueExp> ((size_t) m_offsetExpIndex);
     }
-
-
-
 
 
 //************************* OrderBySpecExp *******************************************
@@ -998,55 +974,12 @@ SelectStatementExp const* SelectStatementExp::GetNext() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       09/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-SelectStatementExp const* SelectStatementExp::GetPrevious() const
-    {
-    auto parent = GetParent();
-    if (parent == nullptr)
-        return nullptr;
-
-    if (parent->GetType() != Exp::Type::Select)
-        return nullptr;
-
-    return static_cast<SelectStatementExp const*>(parent);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       09/2015
-//+---------------+---------------+---------------+---------------+---------------+------
 bool SelectStatementExp::IsAll()const { return m_isAll; }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       09/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 SelectStatementExp::Operator SelectStatementExp::GetOP() const { return m_operator; }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       09/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-SelectStatementExp const& SelectStatementExp::GetLast() const
-    {
-    auto current = this;
-    while (current->GetNext() != nullptr)
-        {
-        current = GetNext();
-        }
-
-    return *current;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       09/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-SelectStatementExp const& SelectStatementExp::GetFirst() const
-    {
-    auto current = this;
-    while (current->GetPrevious() != nullptr)
-        {
-        current = GetPrevious();
-        }
-
-    return *current;
-    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       09/2015

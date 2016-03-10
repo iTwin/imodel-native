@@ -77,7 +77,6 @@ bool EditHandle::AssertNotInEditMode()
 //---------------------------------------------------------------------------------------
 EditHandle::~EditHandle() {}
 
-
 //****************************************************************************************
 //ECDbSqlTable
 //****************************************************************************************
@@ -729,17 +728,6 @@ const std::vector<ECDbSqlTable const*> ECDbMapDb::GetTables() const
     tables.insert(tables.end(), joinedTables.begin(), joinedTables.end());
     return tables;
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
-//---------------------------------------------------------------------------------------
-const std::vector<ECDbSqlTable*> ECDbMapDb::GetTablesR()
-    {
-    std::vector<ECDbSqlTable*> tables;
-    for (auto const& key : m_tables)
-        tables.push_back(key.second.get());
-
-    return tables;
-    }
 
 //****************************************************************************************
 //ECDbSqlPrimaryKeyConstraint
@@ -1065,47 +1053,6 @@ bool ECDbSqlTrigger::ExistsInDb(ECDbR ecdb) const
 //****************************************************************************************
 // DDLGenerator
 //****************************************************************************************
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        01/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus DDLGenerator::CopyRows(ECDbR ecdb, Utf8CP sourceTable, bvector<Utf8String>& sourceColumns, Utf8CP targetTable, bvector<Utf8String>& targetColumns)
-    {
-    Utf8String sourceColumnList;
-    for (auto& column : sourceColumns)
-        {
-        sourceColumnList.append("[");
-        sourceColumnList.append(column);
-        sourceColumnList.append("]");
-        if (column != *(sourceColumns.end() - 1))
-            sourceColumnList.append(",");
-        }
-
-    Utf8String targetColumnList;
-    for (auto& column : targetColumns)
-        {
-        targetColumnList.append("[");
-        targetColumnList.append(column);
-        targetColumnList.append("]");
-        if (column != *(targetColumns.end() - 1))
-            targetColumnList.append(",");
-        }
-
-    Utf8String sql;
-    sql.Sprintf("INSERT INTO [%s] (%s) SELECT %s FROM %s", targetTable, targetColumnList.c_str(), sourceColumnList.c_str(), sourceTable);
-    if (BE_SQLITE_OK != ecdb.ExecuteSql(sql.c_str()))
-        {
-        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to copy rows from %s to %s: Error message: %s",
-                                                      sourceTable, targetTable, ecdb.GetLastError().c_str());
-        return ERROR;
-        }
-
-
-    if (LOG.isSeverityEnabled(NativeLogging::LOG_TRACE))
-        LOG.tracev("Copied rows from %s to %s.", sourceTable, targetTable);
-
-    return SUCCESS;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
@@ -2705,18 +2652,6 @@ DbResult ECDbMapStorage::ReadPropertyPaths() const
 //****************************************************************************************
 //ECDbMapStorage
 //****************************************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        01/2015
-//---------------------------------------------------------------------------------------
-ECDbPropertyMapInfo const * ECDbClassMapInfo::FindPropertyMap(Utf8CP columnName) const
-    {
-    auto& mapSet = GetPropertyMapByColumnName(false);
-    auto itor = mapSet.find(columnName);
-    if (itor == mapSet.end())
-        return nullptr;
-
-    return itor->second;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015::
@@ -2726,19 +2661,6 @@ const std::vector<ECDbPropertyMapInfo const*>  ECDbClassMapInfo::GetPropertyMaps
     std::vector<ECDbPropertyMapInfo const*> r;
     GetPropertyMaps(r, onlyLocal);
     return r;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        01/2015
-//---------------------------------------------------------------------------------------
-const std::map<Utf8CP, ECDbPropertyMapInfo const*, CompareIUtf8> ECDbClassMapInfo::GetPropertyMapByColumnName(bool onlyLocal) const
-    {
-    std::map<Utf8CP, ECDbPropertyMapInfo const*, CompareIUtf8> map;
-    for (auto propertyMap : GetPropertyMaps(onlyLocal))
-        for (auto column : propertyMap->GetColumns())
-            map[column->GetName().c_str()] = propertyMap;
-
-    return map;
     }
 
 //---------------------------------------------------------------------------------------

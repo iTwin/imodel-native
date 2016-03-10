@@ -13,6 +13,8 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 
+
+
 //********************* ClassMap ******************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                06/2012
@@ -1132,12 +1134,6 @@ ECDbSqlTable& ColumnFactory::GetTable() const
     return m_classMap.GetJoinedTable();
     }
 
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       08 / 2015
-//------------------------------------------------------------------------------------------
-ClassMap const& PropertyMapSet::GetClassMap () const { return m_classMap; }
-
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       08 / 2015
 //------------------------------------------------------------------------------------------
@@ -1146,21 +1142,6 @@ const PropertyMapSet::EndPoints  PropertyMapSet::GetEndPoints () const
     EndPoints endPoints;
     for (auto const& endPoint : m_orderedEndPoints)
         endPoints.push_back (endPoint.get ());
-
-    return endPoints;
-    }
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       08 / 2015
-//------------------------------------------------------------------------------------------
-const PropertyMapSet::EndPoints PropertyMapSet::FindEndPoints (ColumnKind filter) const
-    {
-    EndPoints endPoints;
-    for (auto const& endPoint : m_orderedEndPoints)
-        {
-        if (Enum::Contains(filter, endPoint->GetColumnKind()))
-            endPoints.push_back(endPoint.get());
-        }
 
     return endPoints;
     }

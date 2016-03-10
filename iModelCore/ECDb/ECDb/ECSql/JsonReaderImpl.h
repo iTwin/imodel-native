@@ -3,7 +3,7 @@
 |
 |     $Source: ECDb/ECSql/JsonReaderImpl.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -50,9 +50,6 @@ private:
     void AddInstances (JsonValueR allInstances, JsonValueR addInstances, int currentInstanceIndex);
     BentleyStatus AddInstancesFromPreparedStatement (JsonValueR jsonInstances, JsonValueR jsonDisplayInfo, ECSqlStatement& statement,
         const JsonECSqlSelectAdapter::FormatOptions& formatOptions, Utf8StringCR pathToClassStr);
-
-    BentleyStatus AddInstancesFromAnyClassPath (JsonValueR jsonInstances, JsonValueR jsonDisplayInfo, const ECRelationshipPath& pathToClass,
-        const ECInstanceId& ecInstanceId, const JsonECSqlSelectAdapter::FormatOptions& formatOptions);
     BentleyStatus AddInstancesFromSpecifiedClassPath (JsonValueR jsonInstances, JsonValueR jsonDisplayInfo, const ECRelationshipPath& pathToClass,
         const ECInstanceId& ecInstanceId, const JsonECSqlSelectAdapter::FormatOptions& formatOptions);
     BentleyStatus AddInstancesFromRelatedItems (JsonValueR allInstances, JsonValueR allDisplayInfo, ECN::ECClassCR parentClass,
@@ -81,7 +78,6 @@ private:
     ECClassHelper ();
     ~ECClassHelper ();
 
-    static Utf8String GetUnqualifiedName (Utf8StringCR qualifiedClassName, Utf8Char delimiter);
     static void ParseQualifiedName (Utf8StringR schemaPrefixOrName, Utf8StringR className, Utf8StringCR qualifiedClassName, Utf8Char delimiter);
 
 public:
@@ -93,9 +89,6 @@ public:
     static Utf8String GetQualifiedECObjectsName (ECN::ECClassCR ecClass);
     static Utf8String GetQualifiedECSqlName (ECN::ECClassCR ecClass);
     static void ParseQualifiedECObjectsName (Utf8StringR schemaPrefixOrName, Utf8StringR className, Utf8StringCR qualifiedClassName);
-    static void ParseQualifiedECSqlName (Utf8StringR schemaPrefixOrName, Utf8StringR className, Utf8StringCR qualifiedClassName);
-    static Utf8String GetUnqualifiedECObjectsName (Utf8StringCR qualifiedClassName);
-    static Utf8String GetUnqualifiedECSqlName (Utf8StringCR qualifiedClassName);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
