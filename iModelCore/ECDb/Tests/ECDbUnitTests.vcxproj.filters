@@ -211,6 +211,9 @@
     <ClCompile Include="Published\ECDbSymbolProviderTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="Published\JsonReaderTests.cpp">
+      <Filter>Published\ECSql</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">

@@ -43,11 +43,6 @@ NativeSqlBuilder& SqlViewBuilder::GetNameBuilder ()  { return m_name; }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-void SqlViewBuilder::SetTemporary (bool tmp) { m_isTmp = tmp; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
 NativeSqlBuilder& SqlViewBuilder::AddSelect ()
     {
     m_selectList.push_back (NativeSqlBuilder ());
@@ -95,11 +90,6 @@ bool SqlViewBuilder::IsTemporary () const { return m_isTmp; }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-bool SqlViewBuilder::IsCompound () const { return m_selectList.size () > 1; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
 Utf8String SqlViewBuilder::ToString(SqlOption option, bool escape, bool useUnionAll) const
     {
     if (!IsValid())
@@ -133,13 +123,7 @@ Utf8String SqlViewBuilder::ToString(SqlOption option, bool escape, bool useUnion
     }
 
 //=====================================SqlTriggerBuilder::TriggerList====================
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-SqlTriggerBuilder::TriggerList::TriggerList (SqlTriggerBuilder::TriggerList::List const&& list)
-:m_list (std::move (list))
-    {
-    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
@@ -261,34 +245,6 @@ NativeSqlBuilder& SqlTriggerBuilder::GetBodyBuilder () { return m_body; }
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
 NativeSqlBuilder& SqlTriggerBuilder::GetOnBuilder () { return m_on; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-SqlTriggerBuilder::Type SqlTriggerBuilder::GetType () const { return m_type; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-SqlTriggerBuilder::Condition SqlTriggerBuilder::GetCondition () const { return m_condition; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-std::vector<Utf8String> const& SqlTriggerBuilder::GetUpdateOfColumns () const
-    {
-    BeAssert (m_type == Type::UpdateOf);
-    return m_ofColumns;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-std::vector<Utf8String>& SqlTriggerBuilder::GetUpdateOfColumnsR ()
-    {
-    BeAssert (m_type == Type::UpdateOf);
-    return m_ofColumns;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
@@ -440,11 +396,6 @@ ClassMapCR ECDbMapAnalyser::Class::GetClassMap () const { return m_classMap; }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-ECDbMapAnalyser::Class* ECDbMapAnalyser::Class::GetParent () { return m_parent; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
 std::map <ECDbMapAnalyser::Storage const*, std::set<ECDbMapAnalyser::Class const*>>& ECDbMapAnalyser::Class::GetPartitionsR () { return m_partitions; }
 
 //---------------------------------------------------------------------------------------
@@ -472,14 +423,6 @@ std::vector<ECDbMapAnalyser::Storage const*> ECDbMapAnalyser::Class::GetNoneVirt
         }
 
     return std::move (tmp);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-bool ECDbMapAnalyser::Class::IsAbstract () const
-    {
-    return GetNoneVirtualStorages ().empty ();
     }
 
 //---------------------------------------------------------------------------------------
@@ -540,28 +483,6 @@ ECDbMapAnalyser::Relationship::EndInfo::EndInfo()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-ECDbMapAnalyser::Relationship::EndInfo& ECDbMapAnalyser::Relationship::EndInfo::operator = (EndInfo const&& rhs)
-    {
-    if (this != &rhs)
-        {
-        m_accessString = std::move(rhs.m_accessString);
-        m_column = std::move(rhs.m_column);
-        }
-
-    return *this;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-Utf8CP ECDbMapAnalyser::Relationship::EndInfo::GetAccessString() const 
-    { 
-    BeAssert(m_accessString != nullptr); return m_accessString; 
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
 ECDbSqlColumn const& ECDbMapAnalyser::Relationship::EndInfo::GetColumn() const
     {
     BeAssert(m_column != nullptr); return *m_column;
@@ -605,14 +526,6 @@ ECDbMapAnalyser::Relationship::EndPoint::EndPoint (Relationship const& parent, E
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-bool ECDbMapAnalyser::Relationship::EndPoint::Contains(Class const& constraintClass) const
-    {
-    return m_classes.find(const_cast<Class*>(&constraintClass)) != m_classes.end();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
 ECDbMapAnalyser::Relationship::EndInfo ECDbMapAnalyser::Relationship::EndPoint::GetResolvedInstanceId(Storage const& forStorage) const
     {
     if (m_parent.IsLinkTable())
@@ -624,22 +537,6 @@ ECDbMapAnalyser::Relationship::EndInfo ECDbMapAnalyser::Relationship::EndPoint::
         }
 
     return EndInfo(*GetInstanceId(), forStorage, ColumnKind::ECInstanceId);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-ECDbMapAnalyser::Relationship::EndInfo ECDbMapAnalyser::Relationship::EndPoint::GetResolvedClassId(Storage const& forStorage) const
-    {
-    if (m_parent.IsLinkTable())
-        return EndInfo(*GetClassId());
-
-    if (this == &(const_cast<Relationship&>(m_parent).ForeignEnd()))
-        {
-        return EndInfo(*GetClassId());
-        }
-
-    return EndInfo(*GetInstanceId(), forStorage, ColumnKind::ECClassId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -662,17 +559,15 @@ std::set<ECDbMapAnalyser::Storage const*> ECDbMapAnalyser::Relationship::EndPoin
     return std::move (storages);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         09/2015
+//---------------------------------------------------------------------------------------
 PropertyMapCP ECDbMapAnalyser::Relationship::EndPoint::GetInstanceId () const { return m_ecid; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
 ECClassIdRelationshipConstraintPropertyMap const* ECDbMapAnalyser::Relationship::EndPoint::GetClassId () const { return m_classId; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-ECDbMapAnalyser::Relationship::EndType ECDbMapAnalyser::Relationship::EndPoint::GetEnd () const { return m_type; }
 
 //=====================================ECDbMapAnalyser::Relationship=====================
 //---------------------------------------------------------------------------------------
@@ -792,16 +687,8 @@ std::map<ECDbMapAnalyser::Storage*, std::set<ECDbMapAnalyser::Relationship*>> & 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-
 SqlTriggerBuilder::TriggerList& ECDbMapAnalyser::Storage::GetTriggerListR () { return m_triggers; }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-SqlTriggerBuilder::TriggerList const& ECDbMapAnalyser::Storage::GetTriggerList () const
-    {
-    return m_triggers;
-    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
@@ -1386,7 +1273,6 @@ BentleyStatus ECDbMapAnalyser::BuildPolymorphicUpdateTrigger (Class& nclass)
 //---------------------------------------------------------------------------------------
 SqlViewBuilder ECDbMapAnalyser::BuildView (Class& nclass)
     {
-    //BeAssert (nclass.GetType ().)
     auto classMap = &nclass.GetClassMap ();
     auto rootPMS = PropertyMapSet::Create (*classMap);
     auto const& storageDescription = classMap->GetStorageDescription ();
@@ -1540,32 +1426,7 @@ DbResult ECDbMapAnalyser::ApplyChanges ()
                     return r;
                 }
             }
-
         }
-
-    //for (auto& i : m_storage)
-    //    {
-    //    Storage const& storage = *i.second;
-    //    if (storage.IsVirtual() || storage.GetTable ().GetTableType () == TableType::Existing)
-    //        continue;
-
-    //    for (SqlTriggerBuilder const& trigger : storage.GetTriggerList ().GetTriggers ())
-    //        {
-    //        sql = trigger.ToString (SqlOption::DropIfExists, true);
-    //        r = ExecuteDDL (sql.c_str ());
-    //        if (r != BE_SQLITE_OK)
-    //            return r;
-
-    //        //WIP: can't we catch this (the incompleteness of the trigger def) right when the trigger is defined?
-    //        if (trigger.IsEmpty())
-    //            continue;
-
-    //        sql = trigger.ToString (SqlOption::Create, true);
-    //        r = ExecuteDDL (sql.c_str ());
-    //        if (r != BE_SQLITE_OK)
-    //            return r;
-    //        }
-    //    }
 
     return r;
     }

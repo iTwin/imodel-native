@@ -54,16 +54,6 @@ Utf8String NaturalJoinExp::_ToECSql() const
     return GetFromClassRef().ToECSql() + " NATURAL " + ExpHelper::ToSql(m_appliedJoinType)+ " " + GetToClassRef().ToECSql();
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan       08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String NaturalJoinExp::_ToString() const 
-    {
-    Utf8String str ("NaturalJoin [Type: ");
-    str.append (ExpHelper::ToSql (m_appliedJoinType)).append ("]");
-    return str;
-    }
-
 //*************************** QualifiedJoinExp ******************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan       08/2013

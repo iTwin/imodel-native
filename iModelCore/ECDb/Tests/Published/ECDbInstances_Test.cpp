@@ -130,7 +130,8 @@ TEST_F (ECDbInstances, CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST)
     ASSERT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlFile (schema, dsCacheSchema1_4.GetName (), *context));
     ASSERT_EQ (SUCCESS, db.Schemas ().ImportECSchemas (context->GetCache ()));
 
-    ECClassCP rootClass = db.GetClassLocater ().LocateClass ("DSCacheSchema", "Root");
+    IECClassLocaterR classLocater = db.GetClassLocater();
+    ECClassCP rootClass = classLocater.LocateClass ("DSCacheSchema", "Root");
     ASSERT_NE (nullptr, rootClass);
 
     // Names

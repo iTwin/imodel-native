@@ -115,16 +115,12 @@ private:
     ECSqlJoinType m_appliedJoinType;
 
     virtual Utf8String _ToECSql() const override;
-    virtual Utf8String _ToString() const override;
 
 public:
     NaturalJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to, ECSqlJoinType appliedJoinType)
         :JoinExp(ECSqlJoinType::NaturalJoin, std::move(from), std::move(to)), m_appliedJoinType(appliedJoinType)
         {}
-
-    ECSqlJoinType GetAppliedJoinType() const {return m_appliedJoinType;}
     };
-
 
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      05/2013
