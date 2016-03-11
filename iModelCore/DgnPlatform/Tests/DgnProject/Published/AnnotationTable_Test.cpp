@@ -3972,7 +3972,7 @@ public:
         T_Super::TearDown();
         }
 
-    AnnotationTableElementPtr CreateLargeTable (double& time)
+    AnnotationTablePtr CreateLargeTable (double& time)
         {
         StopWatch timer;
         timer.Start();
@@ -3981,8 +3981,8 @@ public:
         DgnModelId      modelId     = GetModelId();
         DgnCategoryId   categoryId  = GetCategoryId();
 
-        AnnotationTableElement::CreateParams    createParams (db, modelId, AnnotationTableElement::QueryClassId(db), categoryId);
-        AnnotationTableElementPtr               tableElement = AnnotationTableElement::Create( m_numRows, m_numCols, GetTextStyleId(), 0, createParams);
+        AnnotationTable::CreateParams    createParams (db, modelId, AnnotationTable::QueryClassId(db), categoryId);
+        AnnotationTablePtr               tableElement = AnnotationTable::Create( m_numRows, m_numCols, GetTextStyleId(), 0, createParams);
 
         time = 1000.0 * timer.GetCurrentSeconds();
 
@@ -3993,7 +3993,7 @@ public:
         return tableElement;
         }
 
-    void FillTableWithText (double& time, AnnotationTableElementR table)
+    void FillTableWithText (double& time, AnnotationTableR table)
         {
         StopWatch timer;
         timer.Start();
@@ -4004,13 +4004,19 @@ public:
         time = 1000.0 * timer.GetCurrentSeconds();
         }
 
-    void ReadTable (double& time, AnnotationTableElementCPtr& table)
+    void ModifyCellText (AnnotationTableR table)
+        {
+        AnnotationTableCellP  cell = table.GetCell (AnnotationTableCellIndex (5,5));
+        cell->SetTextString ("Hello");
+        }
+
+    void ReadTable (double& time, AnnotationTableCPtr& table)
         {
         ASSERT_TRUE (m_tableElementId.IsValid());
 
         StopWatch timer;
         timer.Start();
-        table = AnnotationTableElement::Get(GetDgnDb(), m_tableElementId);
+        table = AnnotationTable::Get(GetDgnDb(), m_tableElementId);
         time = 1000.0 * timer.GetCurrentSeconds();
 
         EXPECT_TRUE (table.IsValid());
@@ -4019,13 +4025,13 @@ public:
         EXPECT_EQ (m_numCols, table->GetColumnCount ());
         }
 
-    void ReadEditableTable (double& time, AnnotationTableElementPtr& table)
+    void ReadEditableTable (double& time, AnnotationTablePtr& table)
         {
         ASSERT_TRUE (m_tableElementId.IsValid());
 
         StopWatch timer;
         timer.Start();
-        table = AnnotationTableElement::GetForEdit(GetDgnDb(), m_tableElementId);
+        table = AnnotationTable::GetForEdit(GetDgnDb(), m_tableElementId);
         time = 1000.0 * timer.GetCurrentSeconds();
 
         EXPECT_TRUE (table.IsValid());
@@ -4034,10 +4040,10 @@ public:
         EXPECT_EQ (m_numCols, table->GetColumnCount ());
         }
 
-    void AddTableToDb (double& time, AnnotationTableElementR table)
+    void AddTableToDb (double& time, AnnotationTableR table)
         {
         ASSERT_TRUE ( ! m_tableElementId.IsValid());
-        AnnotationTableElementCPtr  insertedElement;
+        AnnotationTableCPtr  insertedElement;
 
         StopWatch timer;
         timer.Start();
@@ -4050,7 +4056,19 @@ public:
         ASSERT_TRUE (m_tableElementId.IsValid());
         }
 
-    void DeleteTableFromModel (double& time, AnnotationTableElementCR table)
+    void ReplaceTableInDb (double& time, AnnotationTableR table)
+        {
+        ASSERT_EQ (m_tableElementId, table.GetElementId());
+
+        StopWatch timer;
+        timer.Start();
+        UpdateElement (table);
+        time = 1000.0 * timer.GetCurrentSeconds();
+
+        ASSERT_EQ (m_tableElementId, table.GetElementId());
+        }
+
+    void DeleteTableFromModel (double& time, AnnotationTableCR table)
         {
         StopWatch timer;
         timer.Start();
@@ -4060,9 +4078,9 @@ public:
 
     void DoCRUDTiming(uint32_t iter)
         {
-        double  createTime, fillTime, addTime, readTime, deleteTime;
+        double  createTime, fillTime, addTime, readTime, replaceTime, deleteTime;
 
-        AnnotationTableElementPtr createTable  = CreateLargeTable(createTime);
+        AnnotationTablePtr createTable  = CreateLargeTable(createTime);
 
         FillTableWithText (fillTime, *createTable);
 
@@ -4078,8 +4096,15 @@ public:
         // Purge the cache so that we don't get a cached element.
         GetDgnDb().Elements().Purge(0);
 
-        AnnotationTableElementCPtr   foundTable;
-        ReadTable (readTime, foundTable);
+        AnnotationTablePtr   tableToModify;
+        ReadEditableTable (readTime, tableToModify);
+
+        ModifyCellText (*tableToModify);
+        ReplaceTableInDb (replaceTime, *tableToModify);
+
+        double dummyTime;
+        AnnotationTableCPtr   foundTable;
+        ReadTable (dummyTime, foundTable);
 
         DeleteTableFromModel (deleteTime, *foundTable);
 
@@ -4093,7 +4118,7 @@ public:
 
         Reset();
 
-        printf ("%d: create: %fms, fill: %fms, add: %fms, read: %fms, delete: %fms\n", iter, createTime, fillTime, addTime, readTime, deleteTime);
+        printf ("%d: create: %fms, fill: %fms, add: %fms, read: %fms, replace: %fms, delete: %fms\n", iter, createTime, fillTime, addTime, readTime, replaceTime, deleteTime);
         }
 };
 
@@ -4104,23 +4129,23 @@ TEST_F (AnnotationTablePerformanceTest, CreateWriteReadLargeTable)
     {
     // The first call to Create is a lot slower than the rest.  Just make one
     // here and disregard the time it takes.
-    //AnnotationTableElementPtr table = AnnotationTable::Create (5, 3, GetTextStyleId(), 1000.0, *GetDgnModelP());
+    //AnnotationTablePtr table = AnnotationTable::Create (5, 3, GetTextStyleId(), 1000.0, *GetDgnModelP());
     //table = nullptr;
 
     // Prepopulate the file with lots of tables.
-    //uint32_t initialCount = 100;
-    //
-    //for (uint32_t iIter = 0; iIter < initialCount; ++iIter)
-    //    {
-    //    double  createTime, fillTime, addTime;
-    //
-    //    AnnotationTableElementPtr createTable  = CreateLargeTable(createTime);
-    //    FillTableWithText (fillTime, *createTable);
-    //    AddTableToDb (addTime, *createTable);
-    //    Reset();
-    //
-    //    printf ("%d: create: %fms, fill: %fms, add: %fms\n", iIter, createTime, fillTime, addTime);
-    //    }
+    uint32_t initialCount = 100;
+    
+    for (uint32_t iIter = 0; iIter < initialCount; ++iIter)
+        {
+        double  createTime, fillTime, addTime;
+    
+        AnnotationTablePtr createTable  = CreateLargeTable(createTime);
+        FillTableWithText (fillTime, *createTable);
+        AddTableToDb (addTime, *createTable);
+        Reset();
+    
+        printf ("%d: create: %fms, fill: %fms, add: %fms\n", iIter, createTime, fillTime, addTime);
+        }
 
     uint32_t numIters = 5;
 
@@ -4128,4 +4153,4 @@ TEST_F (AnnotationTablePerformanceTest, CreateWriteReadLargeTable)
         DoCRUDTiming(iIter);
     }
 
-#endif //PERFORMANCE_TEST
+//#endif //PERFORMANCE_TEST
