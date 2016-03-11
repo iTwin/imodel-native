@@ -317,9 +317,9 @@ void AddEnergy(UnitRegistry& reg)
     unit = reg.AddUnit(WORK, INTERNATIONAL, "CUB.YRD_ATM", "ATM*CUB.YRD");
     reg.AddSynonym(unit, "CUBIC_YARD_OF_ATMOSPHERE");
     reg.AddUnit(WORK, USCUSTOM, "WATT_SECOND", "W*S"); //, BISQSecUom);
-    unit = reg.AddUnit(WORK, INTERNATIONAL, "KWH", "KW*HOUR");
-    unit = reg.AddUnit(WORK, INTERNATIONAL, "MWH", "MW*HOUR");
-    unit = reg.AddUnit(WORK, INTERNATIONAL, "GWH", "GW*HOUR");
+    unit = reg.AddUnit(WORK, INTERNATIONAL, "KWH", "KW*HR");
+    unit = reg.AddUnit(WORK, INTERNATIONAL, "MWH", "MW*HR");
+    unit = reg.AddUnit(WORK, INTERNATIONAL, "GWH", "GW*HR");
     }
 
 
@@ -444,9 +444,9 @@ void AddMassFlowRate(UnitRegistry& reg)
     unit = reg.AddUnit(MASS_FLOW, SI, "KG/HR", "KG*HR(-1)");
     unit = reg.AddUnit(MASS_FLOW, SI, "KG/DAY", "KG*DAY(-1)");
 
-    unit = reg.AddUnit(MASS_FLOW, SI, "G/S", "GRAM*S(-1)");
-    unit = reg.AddUnit(MASS_FLOW, SI, "G/MIN", "GRAM*MIN(-1)");
-    unit = reg.AddUnit(MASS_FLOW, SI, "G/HR", "GRAM*HR(-1)");
+    unit = reg.AddUnit(MASS_FLOW, SI, "G/S", "G*S(-1)");
+    unit = reg.AddUnit(MASS_FLOW, SI, "G/MIN", "G*MIN(-1)");
+    unit = reg.AddUnit(MASS_FLOW, SI, "G/HR", "G*HR(-1)");
     unit = reg.AddUnit(MASS_FLOW, SI, "MG/S", "MG*S(-1)");
     unit = reg.AddUnit(MASS_FLOW, SI, "MG/MIN", "MG*MIN(-1)");
     unit = reg.AddUnit(MASS_FLOW, SI, "MG/HR", "MG*HR(-1)");
@@ -587,8 +587,8 @@ void AddPower(UnitRegistry& reg)
     unit = reg.AddUnit(POWER, INTERNATIONAL, "MW", "[MEGA]*W");
     unit = reg.AddUnit(POWER, INTERNATIONAL, "GW", "[GIGA]*W");
     unit = reg.AddUnit(POWER, INTERNATIONAL, "BTU/MONTH", "BTU*MONTH(-1)");
-    unit = reg.AddUnit(POWER, INTERNATIONAL, "BTU/HOUR", "BTU*HOUR(-1)");
-    unit = reg.AddUnit(POWER, USCUSTOM, "KILOBTU/HOUR", "[KILO]*BTU*HOUR(-1)");
+    unit = reg.AddUnit(POWER, INTERNATIONAL, "BTU/HOUR", "BTU*HR(-1)");
+    unit = reg.AddUnit(POWER, USCUSTOM, "KILOBTU/HOUR", "[KILO]*BTU*HR(-1)");
     unit = reg.AddUnit(POWER, USCUSTOM, "HP", "LBF*FT*S(-1)", 550.0);
 
     unit = reg.AddUnit(POWER, SI, "GJ/MONTH", "GJ*MONTH(-1)");
@@ -720,9 +720,9 @@ void AddThermalConductivity(UnitRegistry& reg)
 
 void AddThermalResistance(UnitRegistry& reg)
     {
-    reg.AddUnit(THERMAL_RESISTANCE, SI, "(SQ.M*KELVIN)/WATT", "M(2)*DELTA_KELVIN*WATT(-1)");
+    reg.AddUnit(THERMAL_RESISTANCE, SI, "(SQ.M*KELVIN)/WATT", "M(2)*DELTA_KELVIN*W(-1)");
 
-    reg.AddUnit(THERMAL_RESISTANCE, SI, "(SQ.M*CELSIUS)/WATT", "M(2)*DELTA_CELSIUS*WATT(-1)");
+    reg.AddUnit(THERMAL_RESISTANCE, SI, "(SQ.M*CELSIUS)/WATT", "M(2)*DELTA_CELSIUS*W(-1)");
 
     reg.AddUnit(THERMAL_RESISTANCE, USCUSTOM, "(SQ.FT*HR*FAHRENHEIT)/BTU", "FT(2)*HR*DELTA_FAHRENHEIT*BTU(-1)");
     }
@@ -794,7 +794,7 @@ void AddAngularVelocity(UnitRegistry& reg)
     reg.AddSynonym(unit, "RADIAN/HOUR");
     unit = reg.AddUnit(ANGULAR_VELOCITY, SI, "RPS", "[PI]*RAD*S(-1)", 2.0);
     unit = reg.AddUnit(ANGULAR_VELOCITY, SI, "RPM", "[PI]*RAD*MIN(-1)", 2.0);
-    unit = reg.AddUnit(ANGULAR_VELOCITY, SI, "RPH", "[PI]*RAD*HOUR(-1)", 2.0);
+    unit = reg.AddUnit(ANGULAR_VELOCITY, SI, "RPH", "[PI]*RAD*HR(-1)", 2.0);
     unit = reg.AddUnit(ANGULAR_VELOCITY, SI, "DEG/S", "ARC_DEG*S(-1)", 1.0);
     reg.AddSynonym(unit, "ARC_DEG/S");
     unit = reg.AddUnit(ANGULAR_VELOCITY, SI, "DEG/MIN", "ARC_DEG*MIN(-1)", 1.0);

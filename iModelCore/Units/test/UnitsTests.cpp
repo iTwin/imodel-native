@@ -148,8 +148,8 @@ bool UnitsTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double
     //if (fabs(convertedVal - expectedVal) > tolerance)
     if(!almost_equal<double>(expectedVal, convertedVal, ulp))
         {
-        Utf8PrintfString formattedText("Conversion from %s to %s. Input: %.17g \nOutput:   %.17g \nExpected: %.17g \nDiff:     %.17g   Diff/Exp: %.17g   ULP: %d\n", 
-                                       fromUnitName, targetUnitName, fromVal, convertedVal, expectedVal, convertedVal - expectedVal, (convertedVal - expectedVal)/expectedVal, ulp);
+        Utf8PrintfString formattedText("Conversion from %s (%s) to %s (%s). Input: %.17g \nOutput:   %.17g \nExpected: %.17g \nDiff:     %.17g   Diff/Exp: %.17g   ULP: %d\n", 
+                                       fromUnitName, fromUnit->GetName(), targetUnitName, targetUnit->GetName(), fromVal, convertedVal, expectedVal, convertedVal - expectedVal, (convertedVal - expectedVal)/expectedVal, ulp);
         conversionErrors.push_back(formattedText);
         EXPECT_FALSE(true) << formattedText;
         }
