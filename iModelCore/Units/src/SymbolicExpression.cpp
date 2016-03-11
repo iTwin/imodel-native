@@ -17,8 +17,8 @@ static const Utf8Char OpenParen = '(';
 static const Utf8Char CloseParen = ')';
 static const Utf8Char OpenBracket = '[';
 static const Utf8Char CloseBracket = ']';
-static const std::function<bool(SymbolCR, SymbolCR)> symbolsEqual = [] (SymbolCR a, SymbolCR b) { return a.GetId() == b.GetId(); };
-static const std::function<bool(SymbolCR, SymbolCR)> phenomenaEqual = [](SymbolCR a, SymbolCR b) { return a.GetPhenomenonId() == b.GetPhenomenonId(); };
+static const std::function<bool(UnitsSymbolCR, UnitsSymbolCR)> symbolsEqual = [] (UnitsSymbolCR a, UnitsSymbolCR b) { return a.GetId() == b.GetId(); };
+static const std::function<bool(UnitsSymbolCR, UnitsSymbolCR)> phenomenaEqual = [](UnitsSymbolCR a, UnitsSymbolCR b) { return a.GetPhenomenonId() == b.GetPhenomenonId(); };
 static const int maxRecursionDepth = 42;
 
 
@@ -115,7 +115,7 @@ bool Expression::DimensionallyCompatible(ExpressionCR fromExpression, Expression
     }
 
 // TODO: Consider how this could be combined with the merge step so we don't have to make two copies of the from expression
-bool Expression::DimensionallyCompatible(ExpressionCR fromExpression, ExpressionCR toExpression, std::function<bool(SymbolCR, SymbolCR)> areEqual)
+bool Expression::DimensionallyCompatible(ExpressionCR fromExpression, ExpressionCR toExpression, std::function<bool(UnitsSymbolCR, UnitsSymbolCR)> areEqual)
     {
     Expression fromBaseSymbols;
     CreateExpressionWithOnlyBaseSymbols(fromExpression, fromBaseSymbols);
@@ -139,7 +139,7 @@ bool Expression::DimensionallyCompatible(ExpressionCR fromExpression, Expression
     return true;
     }
 
-void Expression::MergeSymbol(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, SymbolCP symbol, int symbolExponent, std::function<bool(SymbolCR, SymbolCR)> areEqual)
+void Expression::MergeSymbol(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, UnitsSymbolCP symbol, int symbolExponent, std::function<bool(UnitsSymbolCR, UnitsSymbolCR)> areEqual)
     {
     auto it = find_if(targetExpression.begin(), targetExpression.end(), [&symbol, &areEqual] (ExpressionSymbolCR a) { return areEqual(*a.GetSymbol(), *symbol); });
     if (it != targetExpression.end())
@@ -161,7 +161,7 @@ void Expression::MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExp
     MergeExpressions(targetDefinition, targetExpression, sourceDefinition, sourceExpression, startingExponent, symbolsEqual);
     }
 
-void Expression::MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, ExpressionR sourceExpression, int startingExponent, std::function<bool(SymbolCR, SymbolCR)> areEqual)
+void Expression::MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, ExpressionR sourceExpression, int startingExponent, std::function<bool(UnitsSymbolCR, UnitsSymbolCR)> areEqual)
     {
     LOG.debugv("Merging Expressions %s --> %s", sourceDefinition, targetDefinition);
     for (auto it = sourceExpression.rbegin(); it != sourceExpression.rend(); ++it)
@@ -171,13 +171,13 @@ void Expression::MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExp
         }
     }
 
-BentleyStatus Expression::HandleToken(SymbolCR owner, int& depth, ExpressionR expression, 
-    Utf8CP definition, TokenCR token, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName)
+BentleyStatus Expression::HandleToken(UnitsSymbolCR owner, int& depth, ExpressionR expression, 
+    Utf8CP definition, TokenCR token, int startingExponent, std::function<UnitsSymbolCP(Utf8CP)> getSymbolByName)
     {
     LOG.debugv("%s - Handle Token: %s  TokenExp: %d  StartExp: %d", definition, token.GetName(), token.GetExponent(), startingExponent);
     int mergedExponent = token.GetExponent() * startingExponent;
 
-    SymbolCP symbol = getSymbolByName(token.GetName());
+    UnitsSymbolCP symbol = getSymbolByName(token.GetName());
     if (nullptr == symbol)
         {
         LOG.errorv("Failed to parse %s because the unit %s could not be found", definition, token.GetName());
@@ -210,8 +210,8 @@ BentleyStatus Expression::HandleToken(SymbolCR owner, int& depth, ExpressionR ex
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Colin.Kerr         02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Expression::ParseDefinition(SymbolCR owner, int& depth, Utf8CP definition,
-    ExpressionR expression, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName)
+BentleyStatus Expression::ParseDefinition(UnitsSymbolCR owner, int& depth, Utf8CP definition,
+    ExpressionR expression, int startingExponent, std::function<UnitsSymbolCP(Utf8CP)> getSymbolByName)
     {
     ++depth;
     if (Utf8String::IsNullOrEmpty(definition))
@@ -299,7 +299,7 @@ bool Expression::Contains(ExpressionSymbolCR symbol) const
     return true;
     }
 
-void Expression::Add(SymbolCP symbol, int exponent) 
+void Expression::Add(UnitsSymbolCP symbol, int exponent) 
     {
     m_symbolExpression.push_back(ExpressionSymbol(symbol, exponent));
     }

@@ -10,7 +10,7 @@
 
 #include <Units/Units.h>
 
-UNITS_TYPEDEFS(Symbol)
+UNITS_TYPEDEFS(UnitsSymbol)
 UNITS_TYPEDEFS(Unit)
 UNITS_TYPEDEFS(InverseUnit)
 UNITS_TYPEDEFS(Phenomenon)
@@ -33,7 +33,7 @@ struct Conversion
         }
     };
 
-struct Symbol
+struct UnitsSymbol
     {
     friend struct ExpressionSymbol;
     friend struct Expression;
@@ -51,12 +51,12 @@ private:
 
 
 protected:
-    Symbol(Utf8CP name, Utf8CP definition, Utf8Char dimensionSymbol, uint32_t id, double factor, double offset);
+    UnitsSymbol(Utf8CP name, Utf8CP definition, Utf8Char dimensionSymbol, uint32_t id, double factor, double offset);
     
-    ExpressionCR Evaluate(int depth, std::function<SymbolCP(Utf8CP)> getSymbolByName) const;
+    ExpressionCR Evaluate(int depth, std::function<UnitsSymbolCP(Utf8CP)> getSymbolByName) const;
     Utf8Char GetDimensionSymbol() const { return m_dimensionSymbol; }
 protected:
-    virtual ~Symbol();
+    virtual ~UnitsSymbol();
       
 public:
     Utf8CP  GetName() const { return m_name.c_str(); }
@@ -77,9 +77,9 @@ public:
 //! A base class for all units.
 // @bsiclass                                                    Chris.Tartamella   02/16
 //=======================================================================================
-struct Unit final : Symbol
+struct Unit final : UnitsSymbol
     {
-DEFINE_T_SUPER(Symbol)
+DEFINE_T_SUPER(UnitsSymbol)
 friend struct UnitRegistry;
 friend struct Expression;
 friend struct InverseUnit;
@@ -126,9 +126,9 @@ public:
     UnitCP DivideUnit(UnitCR rhs) const;
 };
 
-struct Phenomenon final : Symbol
+struct Phenomenon final : UnitsSymbol
     {
-DEFINE_T_SUPER(Symbol)
+DEFINE_T_SUPER(UnitsSymbol)
 friend struct Unit;
 friend struct UnitRegistry;
 friend struct Expression;
@@ -138,7 +138,7 @@ private:
 
     void AddUnit(UnitCR unit);
 
-    Phenomenon(Utf8CP name, Utf8CP definition, Utf8Char dimensionSymbol, uint32_t id) : Symbol(name, definition, dimensionSymbol, id, 0.0, 0) {}
+    Phenomenon(Utf8CP name, Utf8CP definition, Utf8Char dimensionSymbol, uint32_t id) : UnitsSymbol(name, definition, dimensionSymbol, id, 0.0, 0) {}
 
     Phenomenon() = delete;
     Phenomenon(PhenomenonCR phenomenon) = delete;

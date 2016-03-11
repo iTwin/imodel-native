@@ -45,7 +45,7 @@ struct Expression
     typedef SymbolList::reverse_iterator reverse_iterator;
     typedef SymbolList::const_reverse_iterator const_reverse_iterator;
     
-    friend struct Symbol;
+    friend struct UnitsSymbol;
     friend struct Unit;
     friend struct Phenomenon;
 
@@ -68,7 +68,7 @@ private:
     void erase(iterator deleteIterator, iterator end) { m_symbolExpression.erase(deleteIterator, end); }
     size_t size() const { return m_symbolExpression.size(); }
 
-    void Add(SymbolCP symbol, int exponent);
+    void Add(UnitsSymbolCP symbol, int exponent);
     void Add(ExpressionSymbolCR sWE) { m_symbolExpression.push_back(sWE); }
     static void Copy(ExpressionR source, ExpressionR target);
 
@@ -76,17 +76,17 @@ private:
     Utf8String ToString(bool includeFactors = true) const;
     bool Contains(ExpressionSymbolCR symbol) const;
 
-    static BentleyStatus ParseDefinition(SymbolCR owner, int& depth, Utf8CP definition, ExpressionR expression, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName);
-    static BentleyStatus HandleToken(SymbolCR owner, int& depth, ExpressionR expression, Utf8CP definition, TokenCR token, int startingExponent, std::function<SymbolCP(Utf8CP)> getSymbolByName);
-    static void MergeSymbol(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, SymbolCP symbol, int symbolExponent, std::function<bool(SymbolCR, SymbolCR)> areEqual);
+    static BentleyStatus ParseDefinition(UnitsSymbolCR owner, int& depth, Utf8CP definition, ExpressionR expression, int startingExponent, std::function<UnitsSymbolCP(Utf8CP)> getSymbolByName);
+    static BentleyStatus HandleToken(UnitsSymbolCR owner, int& depth, ExpressionR expression, Utf8CP definition, TokenCR token, int startingExponent, std::function<UnitsSymbolCP(Utf8CP)> getSymbolByName);
+    static void MergeSymbol(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, UnitsSymbolCP symbol, int symbolExponent, std::function<bool(UnitsSymbolCR, UnitsSymbolCR)> areEqual);
     static void MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, ExpressionR sourceExpression, int startingExponent);
     static void MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExpression,
                                  Utf8CP sourceDefinition, ExpressionR sourceExpression,
-                                 int startingExponent, std::function<bool(SymbolCR, SymbolCR)> areEqual);
+                                 int startingExponent, std::function<bool(UnitsSymbolCR, UnitsSymbolCR)> areEqual);
     static bool ShareDimensions(PhenomenonCR phenomenon, UnitCR unit);
     static bool ShareDimensions(PhenomenonCR phenomenon, ExpressionCR expression);
     static bool DimensionallyCompatible(ExpressionCR expressionA, ExpressionCR expressionB);
-    static bool DimensionallyCompatible(ExpressionCR expressionA, ExpressionCR expressionB, std::function<bool(SymbolCR, SymbolCR)> areEqual);
+    static bool DimensionallyCompatible(ExpressionCR expressionA, ExpressionCR expressionB, std::function<bool(UnitsSymbolCR, UnitsSymbolCR)> areEqual);
     static BentleyStatus GenerateConversionExpression(UnitCR from, UnitCR to, ExpressionR conversionExpression);
     static void CreateExpressionWithOnlyBaseSymbols(ExpressionCR source, ExpressionR target);
     };
@@ -97,15 +97,15 @@ private:
 struct ExpressionSymbol
     {
 private:
-    SymbolCP m_symbol;
+    UnitsSymbolCP m_symbol;
     int m_exponent;
 
 public:
-    ExpressionSymbol(SymbolCP symbol, int exponent) : m_exponent(exponent) { m_symbol = symbol; }
+    ExpressionSymbol(UnitsSymbolCP symbol, int exponent) : m_exponent(exponent) { m_symbol = symbol; }
     ExpressionSymbol(ExpressionSymbol const& swE) : ExpressionSymbol(swE.m_symbol, swE.m_exponent) {};
 
     Utf8CP GetName() const { return m_symbol->GetName(); }
-    SymbolCP GetSymbol() const { return m_symbol; }
+    UnitsSymbolCP GetSymbol() const { return m_symbol; }
     double GetSymbolFactor() const { return m_symbol->GetFactor(); }
     
     int GetExponent() const { return m_exponent; }

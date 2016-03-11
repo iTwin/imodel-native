@@ -11,20 +11,20 @@
 
 USING_NAMESPACE_BENTLEY_UNITS
 
-Symbol::Symbol(Utf8CP name, Utf8CP definition, Utf8Char dimensionSymbol, uint32_t id, double factor, double offset) :
+UnitsSymbol::UnitsSymbol(Utf8CP name, Utf8CP definition, Utf8Char dimensionSymbol, uint32_t id, double factor, double offset) :
     m_name(name), m_definition(definition), m_dimensionSymbol(dimensionSymbol), m_id(id), m_factor(factor), m_offset(offset), m_evaluated(false), 
     m_symbolExpression(new Expression())
     {
     m_dimensionless = strcmp("ONE", m_definition.c_str()) == 0;
     }
 
-Symbol::~Symbol()
+UnitsSymbol::~UnitsSymbol()
     {
     if (nullptr != m_symbolExpression)
         delete m_symbolExpression;
     }
 
-ExpressionCR Symbol::Evaluate(int depth, std::function<SymbolCP(Utf8CP)> getSymbolByName) const
+ExpressionCR UnitsSymbol::Evaluate(int depth, std::function<UnitsSymbolCP(Utf8CP)> getSymbolByName) const
     {
     if (!m_evaluated)
         {
@@ -47,7 +47,7 @@ Unit::Unit(UnitCR parent, Utf8CP unitName, uint32_t id) :
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Unit::Unit(Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char dimensonSymbol, double factor, double offset, bool isConstant) :
-    Symbol(name, definition, dimensonSymbol, id, factor, offset),
+    UnitsSymbol(name, definition, dimensonSymbol, id, factor, offset),
     m_system(system), m_parent(nullptr), m_isConstant(isConstant)
     {
     m_phenomenon = &phenomenon;

@@ -57,6 +57,8 @@ private:
     bool TryGetConversion(uint64_t index, Conversion& conversion);
     void AddConversion(uint64_t index, Conversion& conversion) { m_conversions.Insert(index, conversion); }
 
+    void AddMapping(Utf8CP oldName, Utf8CP newName);
+
 public:
     UNITS_EXPORT static UnitRegistry & Instance();
     UNITS_EXPORT static void Clear(); // TODO: Remove or hide so cannot be called from public API, only needed for performance testing
@@ -66,11 +68,11 @@ public:
     UNITS_EXPORT void AllPhenomena(bvector<PhenomenonCP>& allPhenomena) const;
     
     // Register methods.
-    UNITS_EXPORT UnitCP AddUnit(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor = 1, double offset = 0);
-    UNITS_EXPORT UnitCP AddInvertingUnit(Utf8CP parentUnitName, Utf8CP unitName);
-    UNITS_EXPORT UnitCP AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP definition, double factor);
-    UNITS_EXPORT BentleyStatus AddSynonym(UnitCP unit, Utf8CP synonymName);
-    UNITS_EXPORT BentleyStatus AddSynonym(Utf8CP unitName, Utf8CP synonymName);
+    UnitCP AddUnit(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor = 1, double offset = 0);
+    UnitCP AddInvertingUnit(Utf8CP parentUnitName, Utf8CP unitName);
+    UnitCP AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP definition, double factor);
+    BentleyStatus AddSynonym(UnitCP unit, Utf8CP synonymName);
+    BentleyStatus AddSynonym(Utf8CP unitName, Utf8CP synonymName);
     
     // Lookup methods
     UNITS_EXPORT UnitCP LookupUnit(Utf8CP name) const;
@@ -84,11 +86,9 @@ public:
     UNITS_EXPORT bool HasConstant (Utf8CP constantName) const;
 
     //Mapping methods
-    UNITS_EXPORT void AddMapping(Utf8CP oldName, Utf8CP newName);
     UNITS_EXPORT bool TryGetNewName(Utf8CP oldName, Utf8StringR newName) const;
     UNITS_EXPORT bool TryGetOldName(Utf8CP newName, Utf8StringR oldName) const;
     UNITS_EXPORT UnitCP LookupUnitUsingOldName(Utf8CP oldName) const;
-    // Probably some query methods. (Find base for phenomena and system probably).
     };
 
 END_BENTLEY_UNITS_NAMESPACE
