@@ -116,6 +116,7 @@ private:
     DgnDbR          m_sourceDb;
     DgnDbR          m_destDb;
     bmap<LsComponentId, uint32_t> m_importedComponents;
+    mutable bmap<ECN::ECClassCP, BeSQLite::EC::ECInstanceUpdater*> m_updaterCache;
 
     void ComputeGcsAdjustment();
 
@@ -184,6 +185,8 @@ public:
     //! Remap a font between databases. If it exists by-type and -name, the Id is simply remapped; if not, a deep copy is made. If a deep copy is made and the source database contained the font data, the font data is also deep copied.
     DGNPLATFORM_EXPORT DgnFontId RemapFont(DgnFontId);
     //! @}
+
+    BeSQLite::EC::ECInstanceUpdater const& GetUpdater(ECN::ECClassCR) const;
 
     //! @name GCS coordinate system shift
     //! @{

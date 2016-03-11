@@ -1240,6 +1240,7 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnDbStatus* outS
 
     if (typeid(element) != element.GetElementHandler()._ElementType())
         {
+        BeAssert(false && "you can only insert an element that has ITS OWN handler");
         stat = DgnDbStatus::WrongHandler; // they gave us an element with an invalid handler
         return nullptr;
         }

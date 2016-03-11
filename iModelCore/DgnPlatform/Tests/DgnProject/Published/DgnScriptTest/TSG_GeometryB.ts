@@ -113,6 +113,35 @@ module DgnScriptTests {
 
         }
         }
+
+    function t_GeometryNode ()
+    {
+        // create root with a transformed child.  The child has one line segment
+        var root = new Bentley.Dgn.GeometryNode ();
+        var child = new Bentley.Dgn.GeometryNode ();
+
+        var transform = Bentley.Dgn.Transform.CreateTranslationXYZ (1,2,3);
+        root.AddMemberWithTransform (child, transform);
+        var segment0 = Bentley.Dgn.LineSegment.CreateXYZ (1,2,3,4,5,6);
+        child.AddGeometry (segment0);
+        var segment0a = child.GeometryAt (0);
+
+        // Collect the flattened (and transformed) geometry
+        var flattened = root.Flatten ();
+
+        // Create another copy of the geometry and explicitly transform it.
+        // create a flat Geometry node that directly contains that (already transformed) geometry
+        // This should replicate what flatten just did ...
+        var segment1 = segment0.Clone ();
+        segment1.TryTransformInPlace (transform);
+        var expectedFlattened = new Bentley.Dgn.GeometryNode ();
+        expectedFlattened.AddGeometry (segment1);
+
+        checker.CheckBool (true,    
+                flattened.IsSameStructureAndGeometry (expectedFlattened));
+        }
+
+
     //debugger ;
     logMessage('TSG_GeometryB t_pointVectorOps3d');
     t_pointVectorOps3d(new Bentley.Dgn.DPoint3d(1, 2, 3),
@@ -136,7 +165,7 @@ module DgnScriptTests {
     t_pointDistances(new Bentley.Dgn.DPoint3d(1, 2, 3),
         new Bentley.Dgn.DVector3d(0.2, 0.4, 0.8));
     
-
+    t_GeometryNode ();
     logMessage('TSG_GeometryB B Exit');
 }
 
