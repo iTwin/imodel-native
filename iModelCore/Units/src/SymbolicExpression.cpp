@@ -73,19 +73,21 @@ void Expression::CreateExpressionWithOnlyBaseSymbols(ExpressionCR source, Expres
 
 BentleyStatus Expression::GenerateConversionExpression(UnitCR from, UnitCR to, ExpressionR conversionExpression)
     {
+    // TODO: Now that we are not checking if they are dimensionally compatible we will need to add some dimensionality checking 
+    // somewhere in the API when adding dynamic units.
+    if (from.GetPhenomenonId() != to.GetPhenomenonId())
+        {
+        LOG.errorv("Cannot convert from %s: (%s) to %s: (%s) because they are not belong to the same Phenomenon.",
+                   from.GetName(), from.GetDefinition(), to.GetName(), to.GetDefinition());
+        return BentleyStatus::ERROR;
+        }
+
     // TODO: USING A MAX RECRUSION DEPTH TO CATCH CYCLES IS SUPER HACKY AND MAKES CHRIS T. MAD.  Replace with something that actually detects cycles.
     Expression fromExpression = from.Evaluate();
     Expression toExpression = to.Evaluate();
 
     fromExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, from.GetName());
     toExpression.LogExpression(NativeLogging::SEVERITY::LOG_DEBUG, to.GetName());
-
-    if (!Expression::DimensionallyCompatible(fromExpression, toExpression))
-        {
-        LOG.errorv("Cannot convert from %s: (%s) to %s: (%s) because they are not dimensionally compatible.",
-                   from.GetName(), from.GetDefinition(), to.GetName(), to.GetDefinition());
-        return BentleyStatus::ERROR;
-        }
 
     Expression::Copy(fromExpression, conversionExpression);
     Expression::MergeExpressions(from.GetDefinition(), conversionExpression, to.GetDefinition(), toExpression, -1);
