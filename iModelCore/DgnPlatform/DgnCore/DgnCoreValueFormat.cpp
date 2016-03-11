@@ -271,7 +271,7 @@ void AngleFormatter::ConcatPrecisionString(Utf8StringR inString, double value, A
     if (!m_trailingZeros)
         DoubleFormatterBase::StripTrailingZeros(tmpString);
 
-    if (! m_leadingZero && '0' == tmpString[0])
+    if (! m_leadingZero && '0' == tmpString[(size_t)0])
         {
         if (1 < tmpString.size() && ! UseTwoDigitMinWidth())
             tmpString.erase(0, 1);

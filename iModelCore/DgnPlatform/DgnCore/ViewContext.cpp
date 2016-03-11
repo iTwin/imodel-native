@@ -313,53 +313,20 @@ StatusInt ViewContext::_OutputGeometry(GeometrySourceCR source)
     Render::GeometryParams rangeParams;
 
     rangeParams.SetCategoryId(source.GetCategoryId()); // Need category for pick...
-    rangeParams.SetLineColor(DgnViewport::MakeColorTransparency(m_viewport->AdjustColorForContrast(ColorDef::LightGrey(), m_viewport->GetBackgroundColor()), 0x96));
+    rangeParams.SetLineColor(DgnViewport::MakeColorTransparency(m_viewport->AdjustColorForContrast(ColorDef::LightGrey(), m_viewport->GetBackgroundColor()), 0x64));
     CookGeometryParams(rangeParams, *rangeGraphic);
-
-    DPoint3d      p[8], tmpPts[9];
-    BoundingBox3d range = (2 == s_drawRange ? BoundingBox3d(source.CalculateRange3d()) : (nullptr != source.ToGeometrySource3d() ? 
-                           BoundingBox3d(source.ToGeometrySource3d()->GetPlacement().GetElementBox()) : 
-                           BoundingBox3d(source.ToGeometrySource2d()->GetPlacement().GetElementBox())));
-
-    p[0].x = p[3].x = p[4].x = p[5].x = range.low.x;
-    p[1].x = p[2].x = p[6].x = p[7].x = range.high.x;
-    p[0].y = p[1].y = p[4].y = p[7].y = range.low.y;
-    p[2].y = p[3].y = p[5].y = p[6].y = range.high.y;
-    p[0].z = p[1].z = p[2].z = p[3].z = range.low.z;
-    p[4].z = p[5].z = p[6].z = p[7].z = range.high.z;
 
     if (nullptr != source.ToGeometrySource3d())
         {
-        tmpPts[0] = p[0];
-        tmpPts[1] = p[1];
-        tmpPts[2] = p[2];
-        tmpPts[3] = p[3];
+        BoundingBox3d range = (2 == s_drawRange ? BoundingBox3d(source.CalculateRange3d()) : BoundingBox3d(source.ToGeometrySource3d()->GetPlacement().GetElementBox()));
 
-        tmpPts[4] = p[5];
-        tmpPts[5] = p[6];
-        tmpPts[6] = p[7];
-        tmpPts[7] = p[4];
-
-        tmpPts[8] = p[0];
-
-        // Draw a "saddle" shape to accumulate correct dirty region, simple lines can be clipped out when zoomed in...
-        rangeGraphic->AddLineString(9, tmpPts);
-
-        // Draw missing connecting lines to complete box...
-        rangeGraphic->AddLineString(2, DSegment3d::From(p[0], p[3]).point);
-        rangeGraphic->AddLineString(2, DSegment3d::From(p[4], p[5]).point);
-        rangeGraphic->AddLineString(2, DSegment3d::From(p[1], p[7]).point);
-        rangeGraphic->AddLineString(2, DSegment3d::From(p[2], p[6]).point);
+        rangeGraphic->AddRangeBox(range);
         }
     else
         {
-        tmpPts[0] = p[0];
-        tmpPts[1] = p[1];
-        tmpPts[2] = p[2];
-        tmpPts[3] = p[3];
-        tmpPts[4] = p[0];
+        BoundingBox3d range = (2 == s_drawRange ? BoundingBox3d(source.CalculateRange3d()) : BoundingBox3d(source.ToGeometrySource2d()->GetPlacement().GetElementBox()));
 
-        rangeGraphic->AddLineString(5, tmpPts);
+        rangeGraphic->AddRangeBox2d(DRange2d::From(DPoint2d::From(range.low), DPoint2d::From(range.high)), 0.0);
         }
 
     _OutputGraphic(*rangeGraphic, &source);
@@ -1352,7 +1319,7 @@ enum
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      05/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int getGridPlaneViewIntersections(DPoint3dP intersections, DPoint3dCP planePoint, DPoint3dCP planeNormal, double spacing, DgnViewportCR vp)
+static int getGridPlaneViewIntersections(DPoint3dP intersections, DPoint3dCP planePoint, DPoint3dCP planeNormal, DgnViewportCR vp)
     {
     DRange3d range = vp.GetViewController().GetViewedExtents(); // Limit grid to project extents...
 
@@ -1423,8 +1390,8 @@ static bool getGridDimension(int& nRepetitions, double& min, DPoint3dCR org, DVe
     if (distHigh <= distLow)
         return false;
 
-    min = floor(distLow / gridSize);
-    double max = ceil(distHigh / gridSize);
+    min = ceil(distLow / gridSize); // NOTE: Don't let grid extend outside project extents or display can be clipped...
+    double max = floor(distHigh / gridSize);
     nRepetitions = (int)(max - min);
     min *= gridSize;
 
@@ -1670,24 +1637,27 @@ void DecorateContext::DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix,
     if (NULL == fixedRepetitions) // Compute grid origin and visible repetitions when not drawing a fixed sized grid...
         {
         DPoint3d intersections[12];
-        int nIntersections = getGridPlaneViewIntersections(intersections, &gridOrigin, &zVec, spacing.x, vp);
+        int nIntersections = getGridPlaneViewIntersections(intersections, &gridOrigin, &zVec, vp);
 
         if (nIntersections < 3)
             return;
 
-        DPoint3d min;
+        DPoint2d min;
 
         if (!getGridDimension(repetitions.x, min.x, gridOrigin, xVec, spacing.x, intersections, nIntersections) ||
             !getGridDimension(repetitions.y, min.y, gridOrigin, yVec, spacing.y, intersections, nIntersections))
             return;
 
-        gridOrg.SumOf(gridOrigin,xVec, min.x, yVec, min.y);
+        gridOrg.SumOf(gridOrigin, xVec, min.x, yVec, min.y);
         }
     else
         {
         gridOrg = gridOrigin;
         repetitions = *fixedRepetitions;
         }
+
+    if (0 == repetitions.x || 0 == repetitions.y)
+        return;
 
     DVec3d gridX, gridY;
     gridX.Scale(xVec, spacing.x);

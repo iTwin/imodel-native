@@ -35,7 +35,6 @@
 #include <DgnPlatform/DgnCoreEvent.h>
 #include <DgnPlatform/GPArray.h>
 #include <DgnPlatform/DgnRangeTree.h>
-#include <DgnPlatform/ITiledRaster.h>
 #include <DgnPlatform/MeasureGeom.h>
 #include <DgnPlatform/DgnDbTables.h>
 #include <DgnPlatform/DgnIModel.h>

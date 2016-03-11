@@ -115,6 +115,7 @@ private:
     DgnDbR          m_sourceDb;
     DgnDbR          m_destDb;
     bmap<LsComponentId, uint32_t> m_importedComponents;
+    mutable bmap<ECN::ECClassCP, BeSQLite::EC::ECInstanceUpdater*> m_updaterCache;
 
     void ComputeGcsAdjustment();
 
@@ -184,10 +185,12 @@ public:
     DGNPLATFORM_EXPORT DgnFontId RemapFont(DgnFontId);
     //! @}
 
+    BeSQLite::EC::ECInstanceUpdater const& GetUpdater(ECN::ECClassCR) const;
+
     //! @name GCS coordinate system shift
     //! @{
     //! Check if the source and destination GCSs are compatible, such that elements can be copied between them.
-    DgnDbStatus CheckCompatibleGCS() const {return m_areCompatibleDbs? DgnDbStatus::Success: DgnDbStatus::BadRequest;}
+    DgnDbStatus CheckCompatibleGCS() const {return m_areCompatibleDbs? DgnDbStatus::Success: DgnDbStatus::MismatchGcs;}
     //! When copying between different DgnDbs, X and Y coordinates may need to be offset
     DPoint2d GetOriginOffset() const {return m_xyOffset;}
     //! When copying between different DgnDbs, the Yaw angle may need to be adjusted.
