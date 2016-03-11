@@ -2,7 +2,7 @@
 |
 |     $Source: ext/MatrixFromTiePts/src/matrix.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*====================================================================
@@ -42,13 +42,8 @@
 #define __MATRIX_H__
 
 #include "oldhtypes.h"
-
-#ifndef __HMR_MDL
-#   if !defined(_INC_STDLIB)
-#      include <malloc.h>
-#   endif
-#   include <math.h>
-#endif
+#include <stdlib.h>
+#include <math.h>
 
 /******** Structures utilisees par matrix.c */
 

@@ -10,7 +10,7 @@
 #ifdef USE_GTEST        // TEST_P only available when using gtest.
 
 #include "HRAImageOpTester.h"
-#include <Logging\bentleylogging.h>
+#include <Logging/bentleylogging.h>
 
 USING_NAMESPACE_BENTLEY_LOGGING
 using namespace ::testing;

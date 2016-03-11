@@ -166,7 +166,7 @@
     #include "HRFWMSFile.h"
     #include <ImagePP/all/h/HRFWebFile.h>
     // Disable image server for now. It requires windows headers and We are not using it on DgnDb
-    //#include <ImagePP\IppImaging\HRFInternetImagingFile.h>
+    //#include <ImagePP/IppImaging/HRFInternetImagingFile.h>
     //HOST_REGISTER_FILEFORMAT(HRFInternetImagingFileCreator)
 
     #if defined(BENTLEY_WIN32) 

@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HRAImageOpShapingTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 #include "../imagepptestpch.h"
 
 #if 0  //&&MM TODO shaping has move to OutputMerger.  Need to find a way to test this. Maybe a full copyFrom operation?
-#include <ImagePP\all\h\HRAImageOpShaping.h>
+#include <ImagePP/all/h/HRAImageOpShaping.h>
 
 
 

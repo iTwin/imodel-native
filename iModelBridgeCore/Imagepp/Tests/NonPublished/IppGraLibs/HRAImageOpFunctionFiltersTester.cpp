@@ -7,7 +7,7 @@
 //:>+--------------------------------------------------------------------------------------
 
 #include "../imagepptestpch.h"
-#include <ImagePP\all\h\HRAImageOpFunctionFilters.h>
+#include <ImagePP/all/h/HRAImageOpFunctionFilters.h>
 
 //-----------------------------------------------------------------------------
 // Class : HRAImageOpFunctionFiltersTester

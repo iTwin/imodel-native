@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ImagePP/all/h/HCPGCoordLatLongModel.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,8 +10,8 @@
 /*----------------------------------------------------------------------------+
 |   Header File Dependencies
 +----------------------------------------------------------------------------*/
-#include <ImagePP\all\h\HGFException.h>
-#include <ImagePP\all\h\HGF2DLiteExtent.h>
+#include <ImagePP/all/h/HGFException.h>
+#include <ImagePP/all/h/HGF2DLiteExtent.h>
 #include <Imagepp/all/h/HGF2DTransfoModel.h>
 
 BEGIN_IMAGEPP_NAMESPACE

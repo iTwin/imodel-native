@@ -2,7 +2,7 @@
 |
 |     $Source: ext/MatrixFromTiePts/src/trfmoids.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*====================================================================
@@ -24,7 +24,7 @@
 #ifndef __TRFMOIDS_H__
 #define __TRFMOIDS_H__
 
-#include "..\h\MatrixFromTiePts.h"
+#include "../h/MatrixFromTiePts.h"
 
 #define N_PTS_NONE        0
 

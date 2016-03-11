@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: ext/MatrixFromTiePts/src/MatrixFromTiePts.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Function GetTransfoMatrixFromScaleAndTiePts
@@ -11,7 +11,7 @@
 //-----------------------------------------------------------------------------
 
 
-#include "..\h\MatrixFromTiePts.h"
+#include "../h/MatrixFromTiePts.h"
 #include "oldhtypes.h"
 #include "hcnvrtif.h"
 #include "matrix.h"

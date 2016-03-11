@@ -7,7 +7,7 @@
 //:>+--------------------------------------------------------------------------------------
 
 #include "../imagepptestpch.h"
-#include <ImagePP\all\h\HRAImageOpContrastStretchFilter.h>
+#include <ImagePP/all/h/HRAImageOpContrastStretchFilter.h>
 
 
 // Preparation of required environment

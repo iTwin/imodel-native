@@ -28,7 +28,7 @@
 //=======================================================================================
 // This is a macro you can use to declare and implement a default ImagePPLibHost when
 // no special processing is required.
-// You must also include <ImagePP\all\h\HRFFileFormats.h> where you call the macro
+// You must also include <ImagePP/all/h/HRFFileFormats.h> where you call the macro
 // @bsiclass                                                    Marc.Bedard   10/2012
 //=======================================================================================
 #define IMPLEMENT_DEFAULT_IMAGEPP_LIBHOST(pi_ClassName)                 \

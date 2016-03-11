@@ -50,8 +50,6 @@
 #   endif
 #endif
 
-#include <malloc.h>
-
 #include <Bentley/BeAssert.h>
 #include <stdlib.h>
 #include <time.h>
