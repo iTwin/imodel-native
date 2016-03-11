@@ -382,6 +382,12 @@ public:
     //! @return true if the model name is valid, false otherwise.
     //! @note Model names may also not start or end with a space.
     static bool IsValidName(Utf8StringCR name) {return DgnDbTable::IsValidName(name, GetIllegalCharacters());}
+
+    //! Tell all models to drop any cached graphics associated with the specified viewport.
+    //! This is typically invoked by applications when a viewport is closed or its attributes modified such that the cached graphics
+    //! no longer reflect its state.
+    //! @param[in]      viewport The viewport for which to drop graphics
+    DGNPLATFORM_EXPORT void DropGraphicsForViewport(DgnViewportCR viewport);
 };
 
 

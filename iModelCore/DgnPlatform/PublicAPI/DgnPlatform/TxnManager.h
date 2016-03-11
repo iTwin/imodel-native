@@ -497,7 +497,6 @@ namespace dgn_TxnTable
         bool m_changes;
         static Utf8CP MyTableName() {return DGN_TABLE(DGN_CLASSNAME_Element);}
         Utf8CP _GetTableName() const {return MyTableName();}
-        bvector<Render::GraphicPtr> m_deleted;
 
         Element(TxnManager& mgr) : TxnTable(mgr) {}
 

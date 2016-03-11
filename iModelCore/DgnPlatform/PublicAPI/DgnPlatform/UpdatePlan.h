@@ -147,7 +147,7 @@ struct UpdatePlan
     struct Query
     {
         uint32_t    m_maxTime = 2000;    // maximum time query should run (milliseconds)
-        double      m_frustumScale = 1.25;
+        double      m_frustumScale = 1.0;
         bool        m_onlyAlwaysDrawn = false;
         mutable bool m_wait = false;
         uint32_t    m_minElements = 3;
@@ -196,8 +196,8 @@ struct UpdatePlan
         bool WantMotionAbort() const {return 0 != m_motion.GetTolerance();}
     };
 
-    double      m_targetFPS = 20.0; // Frames Per second
-    uint32_t    m_timeout = 0; // seconds
+    double      m_targetFPS = 20.0; // target Frames Per Second
+    uint32_t    m_timeout = 0; // in milliseconds
     Query       m_query;
     AbortFlags  m_abortFlags;
 

@@ -396,6 +396,8 @@ protected:
     virtual DgnRangeTree* _GetRangeIndexP(bool create) const {return nullptr;}
     virtual void _OnValidate() { }
 
+    virtual void _DropGraphicsForViewport(DgnViewportCR viewport) {};
+
     virtual DgnCode const& _GetCode() const override final { return m_code; }
     virtual DgnDbR _GetDgnDb() const override final { return m_dgndb; }
     virtual DgnModelCP _ToDgnModel() const override final { return this; }

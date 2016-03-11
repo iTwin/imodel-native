@@ -256,12 +256,13 @@ public:
             template <typename CALLER> void CallMonitors(CALLER const& caller);
 
         public:
-
             virtual bool _OnPromptReverseAll() {return true;}
             virtual void _RestartTool() {}
             virtual void _OnNothingToUndo() {}
-            virtual void _OnPrepareForUndoRedo(){}
+            virtual void _OnPrepareForUndoRedo() {}
             virtual void _OnNothingToRedo() {}
+            virtual void _OnGraphicsRemoved(Render::GraphicSet&) {}
+            virtual void _OnGraphicElementAdded(DgnElementId) {}
             DGNPLATFORM_EXPORT virtual void _OnCommit(TxnManager&);
             DGNPLATFORM_EXPORT virtual void _OnReversedChanges(TxnManager&);
             DGNPLATFORM_EXPORT virtual void _OnUndoRedo(TxnManager&, TxnAction);

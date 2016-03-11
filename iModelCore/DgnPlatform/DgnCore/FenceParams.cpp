@@ -752,7 +752,7 @@ StatusInt FenceParams::StoreClippingPoints(DPoint3dCP points, size_t nPoints, bo
     bvector<DPoint2d> backPlaneUV;
     DRange3d uvRange = DRange3d::NullRange();
 
-    for (int i = 0; i < nPoints; i++)
+    for (size_t i = 0; i < nPoints; i++)
         {
         DPoint3d uvw;
         worldToNPC->M0.MultiplyAndRenormalize (&uvw, &points[i], 1);
