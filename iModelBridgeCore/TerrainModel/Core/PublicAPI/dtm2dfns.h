@@ -1318,7 +1318,7 @@ BENTLEYDTM_EXPORT                      int bcdtmObject_triangulateStmTrianglesDt
 BENTLEYDTM_Private                     int bcdtmObject_fixStmHullKnotPointDtmObject(BC_DTM_OBJ *dtmP,long hullPoint,long nextHullPoint) ;
 BENTLEYDTM_Private                     int bcdtmObject_logProblemStmTrianglesDtmObject(BC_DTM_OBJ *dtmP,BC_DTM_OBJ *tempDtmP) ;
 BENTLEYDTM_Private                     int bcdtmObject_checkAndFixTopologyStmTrianglesDtmObject(BC_DTM_OBJ *dtmP,BC_DTM_OBJ *trgDtmP) ;
-
+BENTLEYDTM_EXPORT                      DTMStatusInt bcdtmObject_storeTrianglesInDtmObject(BC_DTM_OBJ* dtmP, DTMFeatureType dtmFeatureType, DPoint3dCP points, int numPoints, int* pointIndex, int numTriangles);
 ///////// bcdtmPatch/////////
 BENTLEYDTM_Public                      int bcdtmPatch_loadBackSurfaceToPlaneIsoCells (DTM_LAT_OBJ *latticeP, double elevation, DTMFeatureCallback loadFunctionP); 
 BENTLEYDTM_Public                      int bcdtmPatch_loadBackSurfaceToPlaneIsoLines (DTM_LAT_OBJ *latticeP, double elevation, DTMFeatureCallback loadFunctionP); 

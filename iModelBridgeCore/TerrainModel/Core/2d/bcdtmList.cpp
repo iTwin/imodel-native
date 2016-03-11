@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmList.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -3104,7 +3104,7 @@ BENTLEYDTM_EXPORT int bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject(BC_DTM
 /*
 ** Test For Valid DTM Object
 */
- if( bcdtmObject_testForValidDtmObject(dtmP)) goto errexit ;
+ // if( bcdtmObject_testForValidDtmObject(dtmP)) goto errexit ;
 /*
 ** Get Points For Dtm Feature
 */
