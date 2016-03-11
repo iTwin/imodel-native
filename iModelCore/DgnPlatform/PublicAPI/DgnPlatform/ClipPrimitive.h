@@ -53,14 +53,13 @@ protected:
 
     virtual void _SetInvisible(bool invisible) = 0;
     virtual bool _GetRange(DRange3dR range, TransformCP transform, bool returnMaskRange) const = 0;
-    virtual BentleyStatus _ApplyCameraToPlanes(double focalLength) { return ERROR; }
     virtual void _SetIsMask(bool isMask) { BeAssert(false); }
     virtual void _SetZLow(double zLow) { BeAssert(false); } 
     virtual void _SetClipZLow(bool clipZLow) { BeAssert(!clipZLow); } 
     virtual void _SetZHigh(double zHigh) { BeAssert(false); }
     virtual void _SetClipZHigh(bool clipZHigh) { BeAssert(!clipZHigh); }
     virtual BentleyStatus _TransformInPlace(TransformCR transform) { BeAssert(false); return ERROR; }
-
+    virtual BentleyStatus _MultiplyPlanesTimesMatrix(DMatrix4dCR matrix) = 0;
 public:     
     DGNPLATFORM_EXPORT static ClipPrimitivePtr CreateCopy(ClipPrimitiveCR primitive); 
     DGNPLATFORM_EXPORT static ClipPrimitivePtr CreateFromBlock(DPoint3dCR low, DPoint3dCR high, bool outside, ClipMask clipMask, TransformCP transform, bool invisible = false);
@@ -93,7 +92,6 @@ public:
     void SetClipZHigh(bool clipZHigh) { _SetClipZHigh(clipZHigh); }
     void SetInvisible(bool invisible) { _SetInvisible(invisible); }
     BentleyStatus TransformInPlace(TransformCR transform) { return _TransformInPlace(transform); }
-    BentleyStatus ApplyCameraToPlanes(double focalLength) { return _ApplyCameraToPlanes(focalLength); }
     void ParseClipPlanes() const { GetClipPlanes(); GetMaskPlanes(); }
 
     DGNPLATFORM_EXPORT bool GetTransforms(TransformP forward, TransformP inverse);
@@ -104,6 +102,11 @@ public:
     DGNPLATFORM_EXPORT ClipPlaneContainment ClassifyPointContainment(DPoint3dCP points, size_t nPoints, bool ignoreMasks = false) const;
     DGNPLATFORM_EXPORT void TransformToClip(DPoint3dR point) const;
     DGNPLATFORM_EXPORT void TransformFromClip(DPoint3dR point) const;
+
+    // Treat each plane as a homogeneous row vector ax,ay,az,aw.
+    // Multiply [ax,ay,az,aw]*matrix
+    DGNPLATFORM_EXPORT BentleyStatus MultiplyPlanesTimesMatrix (DMatrix4dCR matrix) {return _MultiplyPlanesTimesMatrix (matrix);}
+
 };
 
 END_BENTLEY_DGN_NAMESPACE

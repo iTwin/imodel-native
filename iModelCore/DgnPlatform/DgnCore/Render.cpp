@@ -33,9 +33,8 @@ void Render::Target::Debug::Show()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Render::Target::RecordFrameTime(GraphicList& scene, double seconds, bool isFromProgressiveDisplay) 
+void Render::Target::RecordFrameTime(uint32_t count, double seconds, bool isFromProgressiveDisplay) 
     {
-    uint32_t count = scene.GetCount();
     if (0 == count)
         return;
 

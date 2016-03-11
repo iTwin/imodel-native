@@ -1341,7 +1341,8 @@ public:
 
     uint32_t GetGraphicsPerSecondScene() const {return m_graphicsPerSecondScene.load();}
     uint32_t GetGraphicsPerSecondNonScene() const {return m_graphicsPerSecondNonScene.load();}
-    DGNPLATFORM_EXPORT void RecordFrameTime(GraphicList&, double seconds, bool isFromProgressiveDisplay);
+    void RecordFrameTime(GraphicList& scene, double seconds, bool isFromProgressiveDisplay) { RecordFrameTime(scene.GetCount(), seconds, isFromProgressiveDisplay); }
+    DGNPLATFORM_EXPORT void RecordFrameTime(uint32_t numGraphicsInScene, double seconds, bool isFromProgressiveDisplay);
 };
 
 END_BENTLEY_RENDER_NAMESPACE
