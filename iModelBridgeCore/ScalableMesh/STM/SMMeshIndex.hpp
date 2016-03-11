@@ -832,6 +832,38 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Load() 
 #endif
 }
 
+template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveCloudReadyNode(const WString pi_pOutputDirPath) const
+    {
+    if (!IsLoaded())
+        Load();
+
+    // Save header and points
+    SMPointIndexNode<POINT, EXTENT>::SaveCloudReadyData(pi_pOutputDirPath);
+
+    // Save indices
+    //auto indices = m_ptsIndiceVec[textureID];
+
+    // Save UVs
+
+    // Save textures
+
+    // Save children nodes
+
+    if (!m_nodeHeader.m_IsLeaf)
+        {
+        if (m_pSubNodeNoSplit != NULL)
+            {
+            static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveCloudReadyNode(pi_pOutputDirPath);
+            }
+        else
+            {
+            for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
+                {
+                static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveCloudReadyNode(pi_pOutputDirPath);
+                }
+            }
+        }
+    }
 #ifdef INDEX_DUMPING_ACTIVATED
 template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::DumpOctTreeNode(FILE* pi_pOutputXmlFileStream,
                              bool pi_OnlyLoadedNode) const

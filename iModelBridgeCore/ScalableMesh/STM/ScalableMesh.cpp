@@ -272,6 +272,11 @@ uint64_t IScalableMesh::AddClip(const DPoint3d* pts, size_t ptsSize)
     return _AddClip(pts, ptsSize);
     }
 
+StatusInt IScalableMesh::ConvertToCloud(const WString& pi_pOutputDirPath) const
+    {
+    return _ConvertToCloud(pi_pOutputDirPath);
+    }
+
 #ifdef SCALABLE_MESH_ATP
 int IScalableMesh::LoadAllNodeHeaders(size_t& nbLoadedNodes) const
     {
@@ -602,6 +607,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
         HFCPtr<SMStreamingPointTaggedTileStore<int32_t, YProtPtExtentType >> pStreamingIndiceTileStore;
         HFCPtr<SMStreamingPointTaggedTileStore<DPoint2d, YProtPtExtentType >> pStreamingUVTileStore;
         HFCPtr<SMStreamingPointTaggedTileStore<int32_t, YProtPtExtentType >> pStreamingUVsIndicesTileStore;
+        HFCPtr<StreamingTextureTileStore> pStreamingTextureTileStore;
 
         HFCPtr<SMPointTileStore<int32_t, YProtPtExtentType >> pIndiceTileStore;
         HFCPtr<SMPointTileStore<DPoint2d, YProtPtExtentType >> pUVTileStore;
@@ -643,7 +649,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     pStreamingIndiceTileStore = new SMStreamingPointTaggedTileStore< Int32, YProtPtExtentType>(indice_store_path, groupedStreamingFilePath, AreDataCompressed());
                     pStreamingUVTileStore = new SMStreamingPointTaggedTileStore< DPoint2d, YProtPtExtentType>(uv_store_path, groupedStreamingFilePath, AreDataCompressed());
                     pStreamingUVsIndicesTileStore = new SMStreamingPointTaggedTileStore<int32_t, YProtPtExtentType >(uvIndice_store_path, groupedStreamingFilePath, AreDataCompressed());
-                    pTextureTileStore = new StreamingTextureTileStore(texture_store_path.c_str(), 4);
+                    pStreamingTextureTileStore = new StreamingTextureTileStore(texture_store_path.c_str());
                     m_scmIndexPtr = new PointIndexType(ScalableMeshMemoryPools<POINT>::Get()->GetPointPool(),
                                                             &*pStreamingTileStore,
                                                             ScalableMeshMemoryPools<POINT>::Get()->GetPtsIndicePool(),
@@ -653,7 +659,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
                                                             ScalableMeshMemoryPools<POINT>::Get()->GetTexturePool(),
 
-                                                            pTextureTileStore,
+                                                            &*pStreamingTextureTileStore,
 
                                                             ScalableMeshMemoryPools<POINT>::Get()->GetUVPool(),
                                                             &*pStreamingUVTileStore,
@@ -670,7 +676,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                         {
 
                         auto groupedStreamingFilePath = m_path.substr(0, position - 3) + L"_grouped_stream\\";
-                        m_scmIndexPtr->SaveCloudReady(groupedStreamingFilePath, point_store_path);
+                        m_scmIndexPtr->SaveCloudReady(groupedStreamingFilePath, HFCPtr<SMNodeGroupMasterHeader>(new SMNodeGroupMasterHeader(point_store_path)));
                         }
 
                     }
@@ -728,6 +734,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                 {                                        
               //  m_scmIndexPtr->DumpOctTree("D:\\MyDoc\\Scalable Mesh Iteration 8\\PartialUpdate\\Neighbor\\Log\\nodeAfterOpen.xml", false); 
                 m_scmIndexPtr->DumpOctTree("e:\\output\\scmesh\\nodeAfterOpen.xml", false);      
+                //m_scmIndexPtr->DumpOctTree("C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\QuebecCityMini\\nodeAfterOpen.xml", false);      
            //     m_scmMPointIndexPtr->ValidateNeighbors();
                 }
 #endif
@@ -1443,6 +1450,16 @@ template <class POINT> bool ScalableMesh<POINT>::_IsShareable() const
         return true;
 
     } 
+
+/*----------------------------------------------------------------------------+
+|ScalableMesh::_ConvertToCloud
++----------------------------------------------------------------------------*/
+template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WString& pi_pOutputDirPath) const
+    {
+    if (m_scmIndexPtr == nullptr) return ERROR;
+
+    return m_scmIndexPtr->SaveCloudReady(pi_pOutputDirPath);
+    }
 
 /*----------------------------------------------------------------------------+
 |MrDTM::_LoadAllNodeHeaders

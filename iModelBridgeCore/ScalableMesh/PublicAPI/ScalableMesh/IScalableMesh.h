@@ -99,6 +99,8 @@ struct IScalableMesh abstract:  IRefCounted //Bentley::TerrainModel::IDTM
 
         virtual int                                 _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, Bentley::GeoCoordinates::BaseGCSPtr& targetGCS) const = 0;
 
+        virtual StatusInt                           _ConvertToCloud(const WString& pi_pOutputDirPath) const = 0;
+
 #ifdef SCALABLE_MESH_ATP
         virtual int                                 _LoadAllNodeHeaders(size_t& nbLoadedNodes) const = 0; 
 #endif
@@ -172,7 +174,8 @@ struct IScalableMesh abstract:  IRefCounted //Bentley::TerrainModel::IDTM
 
         BENTLEYSTM_EXPORT uint64_t               AddClip(const DPoint3d* pts, size_t ptsSize);
 
-    
+        BENTLEYSTM_EXPORT StatusInt              ConvertToCloud(const WString& pi_pOutputDirPath) const;
+
         BENTLEYSTM_EXPORT static IScalableMeshPtr        GetFor                 (const WChar*          filePath,
                                                                     bool                    openReadOnly,
                                                                     bool                    openShareable,

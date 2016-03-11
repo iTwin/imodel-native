@@ -626,6 +626,7 @@ public:
 
     virtual void         SerializeHeaderToBinary(std::unique_ptr<Byte>& pi_pData, uint32_t& pi_pDataSize) const;
 
+    virtual void         SaveCloudReadyNode(const WString pi_pOutputDirPath) const;
     virtual void         SaveCloudReadyNode(SMNodeGroup* pi_pNodes, SMNodeGroupMasterHeader* pi_pGroupsHeader) const;
 
 #ifdef INDEX_DUMPING_ACTIVATED
@@ -1083,6 +1084,12 @@ protected:
     -----------------------------------------------------------------------------*/
     virtual bool NeedsFiltering() const;
 
+    /**----------------------------------------------------------------------------
+     Saves node header and point data in files that can be used for streaming
+     point data from a cloud server.
+    -----------------------------------------------------------------------------*/
+    virtual void SaveCloudReadyData(const WString& pi_pOutputDirPath) const;
+    
    
 
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;
@@ -1335,7 +1342,7 @@ public:
     bool                Clear(HFCPtr<HVEShape> pi_shapeToClear);    
     bool                RemovePoints(const EXTENT& pi_extentToClear);    
 
-    void                SaveCloudReady(const WString pi_pOutputDirectoryName, const WString pi_pMasterHeaderPath) const;
+    StatusInt           SaveCloudReady(const WString pi_pOutputDirectoryName, HFCPtr<SMNodeGroupMasterHeader> pi_pGroupMasterHeader = nullptr) const;
             
 #ifdef INDEX_DUMPING_ACTIVATED    
     virtual void                DumpOctTree(char* pi_pOutputXMLFileName, bool pi_OnlyLoadedNode) const;

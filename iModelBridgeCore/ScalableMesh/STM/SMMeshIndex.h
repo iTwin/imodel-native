@@ -434,6 +434,8 @@ size_t GetNbPtsIndices(size_t texture_id) const
         }
 
 
+    virtual void         SaveCloudReadyNode(const WString pi_pOutputDirPath) const override;
+
 #ifdef INDEX_DUMPING_ACTIVATED
     virtual void         DumpOctTreeNode(FILE* pi_pOutputXmlFileStream,
                                          bool pi_OnlyLoadedNode) const override;
