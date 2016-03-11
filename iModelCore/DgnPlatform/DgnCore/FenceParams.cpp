@@ -11,6 +11,7 @@
 #define     CIRCLE_ClipPoints           60
 #define     fc_cameraPlaneRatio         300.0
 #define     MINIMUM_CLIPSIZE            1.0E-3
+#define     NPC_CAMERA_LIMIT            100.0
 
 #if defined (NEEDSWORK_RENDER_GRAPHIC)
 /*=================================================================================**//**
@@ -871,7 +872,6 @@ void FenceParams::SetViewParams(DgnViewportP viewport)
     m_viewport = viewport;
     m_onTolerance = 1.5E-3; // Reduced from .25 for XM to 1.0E-4 (now that we use this uniformly I think smaller value makes sense).   RBB/RBB 03/06.
                             // Increased to 1.5E-3 to match/exceed CLIP_PLANE_BIAS.  - RBB 03/2011.  (TR# 293934).
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -976,53 +976,13 @@ StatusInt FenceParams::StoreClippingVector(ClipVectorCR clip, bool outside)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt FenceParams::StoreClippingPoints(DPoint3dCP points, size_t nPoints, bool outside)
     {
-    if (nullptr == m_viewport)
-        {
-        if (2 == nPoints) // Degenerate fence shape is used for crossing line selection...
-            {
-            if (m_viewport->Is3dView()) // Can't use CreateFromCurveVector, need to setup transform using view...
-                {
-                DPoint3d  tmpPt;
-                DPoint2d  tmpPts2d[3];
-
-                m_viewport->GetRotMatrix().Multiply(&tmpPt, &points[0], 1);
-                tmpPts2d[0] = DPoint2d::From(tmpPt);
-                m_viewport->GetRotMatrix().Multiply(&tmpPt, &points[1], 1);
-                tmpPts2d[1] = DPoint2d::From(tmpPt);
-                tmpPts2d[2] = tmpPts2d[0];
-
-                Transform transform = Transform::From(m_viewport->GetRotMatrix());
-                transform.InverseOf(transform);
-
-                ClipVectorPtr clip = ClipVector::CreateFromPrimitive(ClipPrimitive::CreateFromShape(tmpPts2d, 3, outside, nullptr, nullptr, &transform).get());
-
-                return StoreClippingVector(*clip, outside);
-                }
-            else
-                {
-                DPoint3d tmpPts[3];
-        
-                tmpPts[0] = points[0];
-                tmpPts[1] = points[1];
-                tmpPts[2] = tmpPts[0];
-
-                CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(tmpPts, nPoints));
-                ClipVectorPtr  clip = ClipVector::CreateFromCurveVector(*curve, 0.0, 0.0);
-
-                return StoreClippingVector(*clip, outside);
-                }
-            }
-
-        CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(points, nPoints));
-        ClipVectorPtr  clip = ClipVector::CreateFromCurveVector(*curve, 0.0, 0.0);
-
-        return StoreClippingVector(*clip, outside);
-        }
+    if (nullptr == m_viewport || nPoints < 2)
+        return ERROR;
 
     DMap4dCP worldToNPC = m_viewport->GetWorldToNpcMap ();
     bvector<DPoint2d> backPlaneUV;
-    DRange3d uvRange;
-    uvRange.Init ();
+    DRange3d uvRange = DRange3d::NullRange();
+
     for (int i = 0; i < nPoints; i++)
         {
         DPoint3d uvw;
@@ -1030,6 +990,10 @@ StatusInt FenceParams::StoreClippingPoints(DPoint3dCP points, size_t nPoints, bo
         backPlaneUV.push_back (DPoint2d::From (uvw.x, uvw.y));
         uvRange.Extend (uvw.x, uvw.y, 0.0);
         }
+
+    if (2 == nPoints) // Degenerate fence shape is used for crossing line selection...
+        backPlaneUV.push_back(backPlaneUV.front());
+
     // Clipping is defined in npc space --- back plane is always z=0, front is z=1.0
     ClipMask    clipMask = ClipMask::XAndY;
     double      *pZLow = NULL, *pZHigh = NULL, zLow = -1.0e20, zHigh = 1.0e20;
@@ -1048,7 +1012,6 @@ StatusInt FenceParams::StoreClippingPoints(DPoint3dCP points, size_t nPoints, bo
         pZLow = &zLow;
         }
 
-#define NPC_CAMERA_LIMIT 100.0
     if (zHigh > NPC_CAMERA_LIMIT)
         {
         zHigh = NPC_CAMERA_LIMIT;
