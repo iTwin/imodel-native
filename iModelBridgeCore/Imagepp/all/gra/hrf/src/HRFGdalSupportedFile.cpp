@@ -10,7 +10,7 @@
 //-----------------------------------------------------------------------------
 
 #include <ImageppInternal.h>
-
+#ifdef IPP_HAVE_GDAL_SUPPORT
 
 #include <ImagePP/all/h/ImageppLib.h>
 
@@ -2357,3 +2357,4 @@ int HRFGdalSupportedFile::GetBlockHeight() const
     {
     return m_BlockHeight;
     }
+#endif

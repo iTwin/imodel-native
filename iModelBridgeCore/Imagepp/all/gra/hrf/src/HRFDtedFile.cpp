@@ -10,7 +10,7 @@
 //-----------------------------------------------------------------------------
 
 #include <ImageppInternal.h>
-
+#ifdef IPP_HAVE_GDAL_SUPPORT
 
 #include <Imagepp/all/h/HRFDtedFile.h>
 #include <Imagepp/all/h/HRFDtedEditor.h>
@@ -436,3 +436,4 @@ void HRFDtedFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
     {
     //The units is implicitly specified in the specification.
     }
+#endif

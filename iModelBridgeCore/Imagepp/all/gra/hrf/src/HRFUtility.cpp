@@ -712,7 +712,7 @@ HFCPtr<HRFRasterFile>  ImagePP::GenericImprove(HFCPtr<HRFRasterFile>       pi_rp
     if ((pRasterFile->IsCompatibleWith(HRFIntergraphFile::CLASS_ID)) ||
         (pRasterFile->IsCompatibleWith(HRFCalsFile::CLASS_ID))       ||
         (pRasterFile->IsCompatibleWith(HRFLRDFile::CLASS_ID))        ||
-        (pRasterFile->IsCompatibleWith(HRFDtedFile::CLASS_ID))      )
+        (pRasterFile->IsCompatibleWith(HRFFileId_Dted/*HRFDtedFile::CLASS_ID*/))      )
         {
         if (HRFSLOStripAdapter::NeedSLOAdapterFor(pRasterFile))
             {

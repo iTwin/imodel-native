@@ -11,6 +11,8 @@
 
 #include <ImageppInternal.h>
 
+#ifdef IPP_HAVE_GDAL_SUPPORT
+
 #include <Imagepp/all/h/HRFDtedEditor.h>
 #include <Imagepp/all/h/HRFDtedFile.h>
 
@@ -99,3 +101,4 @@ HSTATUS HRFDtedEditor::ReadBlock(uint64_t                 pi_PosBlockX,
 
     return H_SUCCESS;
     }
+#endif

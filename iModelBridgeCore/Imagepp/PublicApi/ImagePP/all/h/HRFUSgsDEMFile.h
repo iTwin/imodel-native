@@ -10,6 +10,7 @@
 // This class describes a File Raster image.
 #pragma once
 
+#ifdef IPP_HAVE_GDAL_SUPPORT
 #include "HFCAccessMode.h"
 #include "HFCBinStream.h"
 #include "HFCMacros.h"
@@ -108,3 +109,4 @@ private:
     HRFUSgsDEMFile& operator=(const HRFUSgsDEMFile& pi_rObj);
     };
 END_IMAGEPP_NAMESPACE
+#endif

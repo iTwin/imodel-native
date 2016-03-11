@@ -11,6 +11,7 @@
 
 #include <ImageppInternal.h>
 
+#ifdef IPP_HAVE_GDAL_SUPPORT
 
 #include <Imagepp/all/h/HRFArcInfoGridFile.h>
 #include <Imagepp/all/h/HFCURLFile.h>
@@ -390,3 +391,4 @@ HRFScanlineOrientation HRFArcInfoGridFile::GetScanLineOrientation() const
     }
 
 
+#endif

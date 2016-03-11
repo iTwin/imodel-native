@@ -11,6 +11,8 @@
 
 #pragma once
 
+#ifdef IPP_HAVE_GDAL_SUPPORT
+
 #include "HRFResolutionEditor.h"
 #include "HRFGdalSupportedFileEditor.h"
 
@@ -56,3 +58,4 @@ private:
     HRFDtedEditor& operator=(const HRFDtedEditor& pi_rObj);
     };
 END_IMAGEPP_NAMESPACE
+#endif

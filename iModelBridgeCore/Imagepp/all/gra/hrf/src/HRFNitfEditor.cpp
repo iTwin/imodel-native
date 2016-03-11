@@ -11,6 +11,8 @@
 
 #include <ImageppInternal.h>
 
+#ifdef IPP_HAVE_GDAL_SUPPORT
+
 #include <Imagepp/all/h/HRFNitfEditor.h>
 #include <Imagepp/all/h/HRFNitfFile.h>
 #include <Imagepp/all/h/HTIFFUtils.h>
@@ -179,3 +181,5 @@ void HRFNitfEditor::Masking8BitsBlock(Byte* po_pData)
             }
         }
     }
+
+#endif

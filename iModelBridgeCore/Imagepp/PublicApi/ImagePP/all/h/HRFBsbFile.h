@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFBsbFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFBsbFile
@@ -10,6 +10,7 @@
 // This class describes a File Raster image.
 #pragma once
 
+#ifdef IPP_HAVE_GDAL_SUPPORT
 #include "HRFGdalSupportedFile.h"
 #include "HFCMacros.h"
 #include "HFCAccessMode.h"
@@ -99,3 +100,4 @@ private:
     HRFBsbFile& operator=(const HRFBsbFile& pi_rObj);
     };
 END_IMAGEPP_NAMESPACE
+#endif

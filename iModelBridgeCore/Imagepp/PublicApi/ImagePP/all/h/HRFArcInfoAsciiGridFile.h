@@ -2,13 +2,15 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFArcInfoAsciiGridFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFArcInfoAsciiGridFile
 //-----------------------------------------------------------------------------
 // This class describes a File Raster image.
 #pragma once
+
+#ifdef IPP_HAVE_GDAL_SUPPORT
 
 #include "HRFGdalSupportedFile.h"
 #include "HRFRasterFileCapabilities.h"
@@ -96,3 +98,4 @@ private:
     HRFArcInfoAsciiGridFile&                     operator=                  (const HRFArcInfoAsciiGridFile&       pi_rObj);
     };
 END_IMAGEPP_NAMESPACE
+#endif

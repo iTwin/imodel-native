@@ -10,7 +10,7 @@
 //-----------------------------------------------------------------------------
 
 #include <ImageppInternal.h>
-
+#ifdef IPP_HAVE_GDAL_SUPPORT
 
 #include <Imagepp/all/h/HRFNitfFile.h>
 #include <Imagepp/all/h/HFCURLFile.h>
@@ -529,3 +529,4 @@ const HFCPtr<HRFRasterFileCapabilities>& HRFNitfFile::GetCapabilities () const
     }
 
 
+#endif

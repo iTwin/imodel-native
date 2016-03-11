@@ -16,6 +16,14 @@
 #include <Bentley/NonCopyableClass.h>
 #include <ImagePP/h/HmrMacro.h>
 
+//----------------------------------------------------------------------------------------
+//              File format availability
+//----------------------------------------------------------------------------------------
+// To much of a hassle to support on non-windows platform and for now we do not require it.
+#if defined (BENTLEY_WIN32)
+    #define IPP_HAVE_GDAL_SUPPORT
+#endif
+
 
 //=======================================================================================
 // This is a macro you can use to declare and implement a default ImagePPLibHost when

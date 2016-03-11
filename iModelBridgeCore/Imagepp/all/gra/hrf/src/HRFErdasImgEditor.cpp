@@ -11,6 +11,8 @@
 
 #include <ImageppInternal.h>
 
+#ifdef IPP_HAVE_GDAL_SUPPORT
+
 #include <Imagepp/all/h/HRFErdasImgEditor.h>
 #include <Imagepp/all/h/HRFErdasImgFile.h>
 #include <Imagepp/all/h/HTIFFUtils.h>
@@ -184,3 +186,4 @@ HRFErdasImgEditor::HRFErdasImgEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
 HRFErdasImgEditor::~HRFErdasImgEditor()
     {
     }
+#endif

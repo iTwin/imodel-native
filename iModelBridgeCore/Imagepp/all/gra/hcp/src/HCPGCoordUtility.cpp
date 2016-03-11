@@ -123,6 +123,7 @@ GeoCoordinates::BaseGCSPtr HCPGCoordUtility::CreateRasterGcsFromERSIDS(uint32_t 
             {
             // First attempt from geotiff keys failed ... we use a fallback solution
             // using GDAL we convert ECW ids into WKT
+#ifdef IPP_HAVE_GDAL_SUPPORT
             WString wkt;
             HRFGdalUtilities::ConvertERMToOGCWKT(wkt, pi_rErmProjection, pi_rErmDatum, pi_rErmUnits);
         
@@ -139,6 +140,7 @@ GeoCoordinates::BaseGCSPtr HCPGCoordUtility::CreateRasterGcsFromERSIDS(uint32_t 
                         return NULL; // Too bad!
                     }
                 }
+#endif
             }
         }
     else 

@@ -10,6 +10,8 @@
 //-----------------------------------------------------------------------------
 //#pragma once
 
+#include <ImagePP/all/h/ImageppLib.h>   // To get IPP_HAVE_XXX defines 
+
 // To include the creators in the factory
 #include "HRFMacros.h"
 #include "HRFRasterFileFactory.h"
@@ -46,8 +48,6 @@
 #include "HRFPngFile.h"
 #include "HRFTiffFile.h"
 #include "HRFGifFile.h"
-// Disable image server for now. It requires windows headers and We are not using it on DgnDb
-//#include <ImagePP\IppImaging\HRFInternetImagingFile.h>
 #include "HRFcTiffFile.h"
 #include "HRFTgaFile.h"
 #include "HRFRawFile.h"
@@ -65,10 +65,9 @@
 #include "HRFSpotDimapFile.h"
 #include "HRFPWRasterFile.h"
 #include "HRFErdasImgFile.h"
-#include "HRFWMSFile.h"
 #include "HRFNitfFile.h"
 #include "HRFDtedFile.h"
-#include "HRFVirtualEarthFile.h"
+
 #include "HRFErMapperSupportedFile.h"
 #include "HRFMrSIDFile.h"
 #include "HRFGeoRasterFile.h"
@@ -80,134 +79,126 @@
 #include <Imagepp/all/h/HRFERSPageFile.h>
 #include <Imagepp/all/h/HRFPRJPageFile.h>
 
+// We used to have a mess of ifdef for every application(most of them legacy apps) that had specific file format list.  
+// All this logic was removed in favor of a fit most approach.  Rework when required. 
+#if defined(PROJECTWISE_FILE_FORMATS)
+    #error PROJECTWISE_FILE_FORMATS Deprecated macro
+#endif
+
+#if defined(BENTLEYPUBLISHER_FILE_FORMATS)
+#error BENTLEYPUBLISHER_FILE_FORMATS Deprecated macro
+#endif
+
+#if defined(RASTERLIB_FILE_FORMATS)
+#error RASTERLIB_FILE_FORMATS Deprecated macro
+#endif
+
+#if defined(IPPSTATICLIB_FILE_FORMATS)
+#error IPPSTATICLIB_FILE_FORMATS Deprecated macro
+#endif
+
+#if defined(BENTLEYACTIVEXPRO_FILE_FORMATS)
+#error BENTLEYACTIVEXPRO_FILE_FORMATS Deprecated macro
+#endif
+
+#if defined(PREVIEWHANDLER_FILE_FORMATS)
+#error PREVIEWHANDLER_FILE_FORMATS Deprecated macro
+#endif
+
+#if defined(EXCLUDE_WINDOWS_FILE_FORMATS)
+#error EXCLUDE_WINDOWS_FILE_FORMATS Deprecated macro
+#endif
+
 
 //***********************************************
 // REGISTER_FILEFORMAT_AT_HOST_INITIALIZATION
 //***********************************************
-#if !defined(BENTLEYPUBLISHER_FILE_FORMATS) && !defined(RASTERLIB_FILE_FORMATS)
-#define HOST_REGISTER_cTiff_FILEFORMAT       HOST_REGISTER_FILEFORMAT(HRFcTiffCreator)
-#else
-#define HOST_REGISTER_cTiff_FILEFORMAT      
+// By default we register our cache format. If you do not want it, define HOST_REGISTER_cTiff_FILEFORMAT prior to include this file.
+#ifndef HOST_REGISTER_cTiff_FILEFORMAT
+    #define HOST_REGISTER_cTiff_FILEFORMAT       HOST_REGISTER_FILEFORMAT(HRFcTiffCreator)
 #endif
 
+//----------------------------------------------------------------------------------------
+//              External library file formats
+//----------------------------------------------------------------------------------------
 #if defined(IPP_HAVE_ERMAPPER_SUPPORT)
-#define HOST_REGISTER_ERMAPPER_FILEFORMAT       \
-    HOST_REGISTER_FILEFORMAT(HRFEcwCreator)     \
-    HOST_REGISTER_FILEFORMAT(HRFJpeg2000Creator)
+    #define HOST_REGISTER_ERMAPPER_FILEFORMAT           \
+            HOST_REGISTER_FILEFORMAT(HRFEcwCreator)     \
+            HOST_REGISTER_FILEFORMAT(HRFJpeg2000Creator)
 #else
-#define HOST_REGISTER_ERMAPPER_FILEFORMAT 
+    #define HOST_REGISTER_ERMAPPER_FILEFORMAT 
 #endif      
 
 #if defined(IPP_HAVE_MRSID_SUPPORT)
-#define HOST_REGISTER_MRSID_FILEFORMAT   HOST_REGISTER_FILEFORMAT(HRFMrSIDCreator) 
+    #define HOST_REGISTER_MRSID_FILEFORMAT   HOST_REGISTER_FILEFORMAT(HRFMrSIDCreator) 
 #else
-#define HOST_REGISTER_MRSID_FILEFORMAT       
+    #define HOST_REGISTER_MRSID_FILEFORMAT       
 #endif                                       
 
-// disable by defaut on DGNDB
-//HOST_REGISTER_FILEFORMAT(HRFInternetImagingFileCreator)
+// Need Oracle
+//#define HOST_REGISTER_GeoRaster_FILEFORMAT      HOST_REGISTER_FILEFORMAT(HRFGeoRasterCreator)
 
-#if !defined(BENTLEYACTIVEXPRO_FILE_FORMATS)     // Technical problem with the ActiveX and Gdal library
-
-#if !defined(PREVIEWHANDLER_FILE_FORMATS)
-#define HOST_REGISTER_GDAL_FILEFORMAT               \
-    HOST_REGISTER_FILEFORMAT(HRFBsbCreator)         \
-    HOST_REGISTER_FILEFORMAT(HRFUSgsNDFCreator)     \
-    HOST_REGISTER_FILEFORMAT(HRFUSgsFastL7ACreator) \
-    HOST_REGISTER_FILEFORMAT(HRFNitfCreator)        \
-    HOST_REGISTER_FILEFORMAT(HRFCalsCreator)        \
-    HOST_REGISTER_FILEFORMAT(HRFLRDCreator)         \
-    HOST_REGISTER_FILEFORMAT(HRFWMSCreator)         \
-    HOST_REGISTER_FILEFORMAT(HRFxChCreator)         \
-    HOST_REGISTER_FILEFORMAT(HRFBilCreator)         \
-    HOST_REGISTER_FILEFORMAT(HRFFliCreator)         \
-    HOST_REGISTER_FILEFORMAT(HRFDoqCreator)         \
-    HOST_REGISTER_FILEFORMAT(HRFSpotCAPCreator)     \
-    HOST_REGISTER_FILEFORMAT(HRFSpotDimapCreator)   \
-    HOST_REGISTER_FILEFORMAT(HRFErdasImgCreator)    \
-    HOST_REGISTER_FILEFORMAT(HRFDtedCreator)        \
-    HOST_REGISTER_FILEFORMAT(HRFUSgsSDTSDEMCreator) \
-    HOST_REGISTER_FILEFORMAT(HRFUSgsDEMCreator)     \
-    HOST_REGISTER_FILEFORMAT(HRFArcInfoGridCreator) \
-    HOST_REGISTER_FILEFORMAT(HRFArcInfoAsciiGridCreator)
+#if defined(IPP_HAVE_GDAL_SUPPORT)
+    #define HOST_REGISTER_GDAL_FILEFORMAT               \
+        HOST_REGISTER_FILEFORMAT(HRFArcInfoAsciiGridCreator)    \
+        HOST_REGISTER_FILEFORMAT(HRFArcInfoGridCreator)         \
+        HOST_REGISTER_FILEFORMAT(HRFBsbCreator)                 \
+        HOST_REGISTER_FILEFORMAT(HRFDtedCreator)                \
+        HOST_REGISTER_FILEFORMAT(HRFErdasImgCreator)            \
+        HOST_REGISTER_FILEFORMAT(HRFNitfCreator)                \
+        HOST_REGISTER_FILEFORMAT(HRFUSgsDEMCreator)             \
+        HOST_REGISTER_FILEFORMAT(HRFUSgsSDTSDEMCreator)
 #else
-#define HOST_REGISTER_GDAL_FILEFORMAT               \
-    HOST_REGISTER_FILEFORMAT(HRFBsbCreator)         \
-    HOST_REGISTER_FILEFORMAT(HRFUSgsNDFCreator)     \
-    HOST_REGISTER_FILEFORMAT(HRFUSgsFastL7ACreator) \
-    HOST_REGISTER_FILEFORMAT(HRFNitfCreator)        \
-    HOST_REGISTER_FILEFORMAT(HRFCalsCreator)        \
-    HOST_REGISTER_FILEFORMAT(HRFLRDCreator)         \
-    HOST_REGISTER_FILEFORMAT(HRFxChCreator)         \
-    HOST_REGISTER_FILEFORMAT(HRFBilCreator)         \
-    HOST_REGISTER_FILEFORMAT(HRFFliCreator)         \
-    HOST_REGISTER_FILEFORMAT(HRFDoqCreator)         \
-    HOST_REGISTER_FILEFORMAT(HRFSpotCAPCreator)     \
-    HOST_REGISTER_FILEFORMAT(HRFSpotDimapCreator)   \
-    HOST_REGISTER_FILEFORMAT(HRFErdasImgCreator)    \
-    HOST_REGISTER_FILEFORMAT(HRFDtedCreator)        \
-    HOST_REGISTER_FILEFORMAT(HRFUSgsSDTSDEMCreator) \
-    HOST_REGISTER_FILEFORMAT(HRFUSgsDEMCreator)     \
-    HOST_REGISTER_FILEFORMAT(HRFArcInfoGridCreator) \
-    HOST_REGISTER_FILEFORMAT(HRFArcInfoAsciiGridCreator)
+    #define HOST_REGISTER_GDAL_FILEFORMAT            
 #endif
 
+#if defined(IPP_HAVE_PDF_SUPPORT) 
+    #define HOST_REGISTER_PDF_FILEFORMAT    HOST_REGISTER_FILEFORMAT(HRFPDFCreator)
 #else
-#define HOST_REGISTER_GDAL_FILEFORMAT            
+    #define HOST_REGISTER_PDF_FILEFORMAT   
 #endif
 
-// RasterLib exclusion
-#if !defined(RASTERLIB_FILE_FORMATS) 
-#if !defined(PROJECTWISE_FILE_FORMATS)
-#define HOST_REGISTER_Irasb_FILEFORMAT  HOST_REGISTER_FILEFORMAT(HRFIrasbRSTCreator)     
+//----------------------------------------------------------------------------------------
+//              Remote file formats
+//----------------------------------------------------------------------------------------
+#if !defined(IPP_NO_REMOTE_FILE_FORMAT) && !defined(BENTLEY_WINRT)
+    #include "HRFVirtualEarthFile.h"
+    #include "HRFWMSFile.h"
+    #include <ImagePP/all/h/HRFWebFile.h>
+    // Disable image server for now. It requires windows headers and We are not using it on DgnDb
+    //#include <ImagePP\IppImaging\HRFInternetImagingFile.h>
+    //HOST_REGISTER_FILEFORMAT(HRFInternetImagingFileCreator)
+
+    #if defined(BENTLEY_WIN32) 
+        #define HOST_REGISTER_Remote_FILEFORMAT \
+                    HOST_REGISTER_FILEFORMAT(HRFVirtualEarthCreator)\
+                    HOST_REGISTER_FILEFORMAT(HRFWebFileCreator) \
+                    HOST_REGISTER_FILEFORMAT(HRFWMSCreator)
+    #else
+        #define HOST_REGISTER_Remote_FILEFORMAT \
+                    HOST_REGISTER_FILEFORMAT(HRFVirtualEarthCreator)\
+                    HOST_REGISTER_FILEFORMAT(HRFWMSCreator)
+    #endif
 #else
-#define HOST_REGISTER_Irasb_FILEFORMAT   
+    #define HOST_REGISTER_Remote_FILEFORMAT
 #endif
 
-#define HOST_REGISTER_Raw_FILEFORMAT    HOST_REGISTER_FILEFORMAT(HRFRawCreator)       
-#define HOST_REGISTER_Eps_FILEFORMAT    HOST_REGISTER_FILEFORMAT(HRFEpsCreator)     
+//----------------------------------------------------------------------------------------
+//              Disabled
+//----------------------------------------------------------------------------------------
+#if 0
+    #define HOST_REGISTER_Irasb_FILEFORMAT          HOST_REGISTER_FILEFORMAT(HRFIrasbRSTCreator)     
+    #define HOST_REGISTER_Raw_FILEFORMAT            HOST_REGISTER_FILEFORMAT(HRFRawCreator)       
+    #define HOST_REGISTER_Eps_FILEFORMAT            HOST_REGISTER_FILEFORMAT(HRFEpsCreator)  
+    #define HOST_REGISTER_ProjectWise_FILEFORMAT    HOST_REGISTER_FILEFORMAT(HRFPWCreator)
 #else
-#define HOST_REGISTER_Irasb_FILEFORMAT
-#define HOST_REGISTER_Raw_FILEFORMAT              
-#define HOST_REGISTER_Eps_FILEFORMAT              
+    #define HOST_REGISTER_Irasb_FILEFORMAT
+    #define HOST_REGISTER_Raw_FILEFORMAT              
+    #define HOST_REGISTER_Eps_FILEFORMAT              
+    #define HOST_REGISTER_GeoRaster_FILEFORMAT
+    #define HOST_REGISTER_ProjectWise_FILEFORMAT
 #endif
 
-#if !defined(PROJECTWISE_FILE_FORMATS) && !defined(IPPSTATICLIB_FILE_FORMATS) && !defined(PREVIEWHANDLER_FILE_FORMATS) && !defined(_DEBUG) && defined(__IPP_EXTERNAL_THIRD_PARTY_SUPPORTED)
-#define HOST_REGISTER_PDF_FILEFORMAT    HOST_REGISTER_FILEFORMAT(HRFPDFCreator)       
-#else
-#define HOST_REGISTER_PDF_FILEFORMAT   
-#endif
-
-#if !defined(PROJECTWISE_FILE_FORMATS) && !defined(IPPSTATICLIB_FILE_FORMATS) && !defined(PREVIEWHANDLER_FILE_FORMATS) && !defined(_DEBUG) && defined(__IPP_EXTERNAL_THIRD_PARTY_SUPPORTED)
-#define HOST_REGISTER_GeoRaster_FILEFORMAT  HOST_REGISTER_FILEFORMAT(HRFGeoRasterCreator)
-#else
-#define HOST_REGISTER_GeoRaster_FILEFORMAT  
-#endif
-
-#if !defined(PROJECTWISE_FILE_FORMATS) && !defined(BENTLEYPUBLISHER_FILE_FORMATS) && !defined(IPPSTATICLIB_FILE_FORMATS) && !defined(PREVIEWHANDLER_FILE_FORMATS)
-#define HOST_REGISTER_VirtualEarth_FILEFORMAT   HOST_REGISTER_FILEFORMAT(HRFVirtualEarthCreator)
-#else
-#define HOST_REGISTER_VirtualEarth_FILEFORMAT   
-#endif
-
-#if !defined(PREVIEWHANDLER_FILE_FORMATS)
-#define HOST_REGISTER_ProjectWise_FILEFORMAT  HOST_REGISTER_FILEFORMAT(HRFPWCreator)              
-#else
-#define HOST_REGISTER_ProjectWise_FILEFORMAT                
-
-#endif
-
-
-#ifndef EXCLUDE_WINDOWS_FILE_FORMATS
-#   if !defined(BENTLEYPUBLISHER_FILE_FORMATS) && !defined(PROJECTWISE_FILE_FORMATS) && !defined(IPPSTATICLIB_FILE_FORMATS) && !defined(PREVIEWHANDLER_FILE_FORMATS)
-#       include <ImagePP/all/h/HRFWebFile.h>
-#define HOST_REGISTER_WebFile_FILEFORMAT    HOST_REGISTER_FILEFORMAT(HRFWebFileCreator) 
-#   else
-#define HOST_REGISTER_WebFile_FILEFORMAT   
-#   endif
-#else
-#define HOST_REGISTER_WebFile_FILEFORMAT   
-#endif
 
 #ifdef EXCLUDE_PAGE_FILES
     #define HOST_REGISTER_PAGEFILES
@@ -235,18 +226,28 @@
     HOST_REGISTER_FILEFORMAT(HRFTiffCreator)     \
     HOST_REGISTER_FILEFORMAT(HRFGeoTiffCreator)  \
     HOST_REGISTER_FILEFORMAT(HRFJpegCreator)     \
-    HOST_REGISTER_FILEFORMAT(HRFPictCreator)     \
+    HOST_REGISTER_FILEFORMAT(HRFPngCreator)      \
     HOST_REGISTER_FILEFORMAT(HRFGifCreator)      \
+    HOST_REGISTER_FILEFORMAT(HRFPictCreator)     \
     HOST_REGISTER_FILEFORMAT(HRFTgaCreator)      \
     HOST_REGISTER_FILEFORMAT(HRFSunRasterCreator)\
     HOST_REGISTER_FILEFORMAT(HRFImgMappedCreator)\
     HOST_REGISTER_FILEFORMAT(HRFImgRGBCreator)   \
     HOST_REGISTER_FILEFORMAT(HRFRLCCreator)      \
     HOST_REGISTER_FILEFORMAT(HRFBmpCreator)      \
-    HOST_REGISTER_FILEFORMAT(HRFPngCreator)      \
     HOST_REGISTER_FILEFORMAT(HRFPcxCreator)      \
     HOST_REGISTER_ERMAPPER_FILEFORMAT            \
     HOST_REGISTER_MRSID_FILEFORMAT               \
+    HOST_REGISTER_FILEFORMAT(HRFUSgsFastL7ACreator) \
+    HOST_REGISTER_FILEFORMAT(HRFUSgsNDFCreator)     \
+    HOST_REGISTER_FILEFORMAT(HRFCalsCreator)        \
+    HOST_REGISTER_FILEFORMAT(HRFFliCreator)         \
+    HOST_REGISTER_FILEFORMAT(HRFLRDCreator)         \
+    HOST_REGISTER_FILEFORMAT(HRFxChCreator)         \
+    HOST_REGISTER_FILEFORMAT(HRFBilCreator)         \
+    HOST_REGISTER_FILEFORMAT(HRFDoqCreator)         \
+    HOST_REGISTER_FILEFORMAT(HRFSpotCAPCreator)     \
+    HOST_REGISTER_FILEFORMAT(HRFSpotDimapCreator)   \
     HOST_REGISTER_FILEFORMAT(HRFIntergraphMPFCreator)   \
     HOST_REGISTER_FILEFORMAT(HRFIntergraphCitCreator)   \
     HOST_REGISTER_FILEFORMAT(HRFIntergraphCot29Creator) \
@@ -265,9 +266,6 @@
     HOST_REGISTER_Eps_FILEFORMAT                        \
     HOST_REGISTER_PDF_FILEFORMAT                        \
     HOST_REGISTER_GeoRaster_FILEFORMAT                  \
-    HOST_REGISTER_VirtualEarth_FILEFORMAT               \
-    HOST_REGISTER_ProjectWise_FILEFORMAT                \
-    HOST_REGISTER_WebFile_FILEFORMAT             
-
-
+    HOST_REGISTER_Remote_FILEFORMAT                     \
+    HOST_REGISTER_ProjectWise_FILEFORMAT
 

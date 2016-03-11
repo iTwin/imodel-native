@@ -11,6 +11,8 @@
 
 #include <ImageppInternal.h>
 
+#ifdef IPP_HAVE_GDAL_SUPPORT
+
 #include <Imagepp/all/h/HPMAttributeSet.h>
 #include <Imagepp/all/h/HRFGdalUtilities.h>
 #include <Imagepp/all/h/HCPGeoTiffKeys.h>
@@ -600,3 +602,4 @@ bool HRFGdalUtilities::ConvertERMToOGCWKT(  WStringR  po_rOGCWKT,
         }
     return false;
     }
+#endif

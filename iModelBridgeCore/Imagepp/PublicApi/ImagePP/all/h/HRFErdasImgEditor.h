@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFErdasImgEditor.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -11,6 +11,7 @@
 
 #pragma once
 
+#ifdef IPP_HAVE_GDAL_SUPPORT
 #include "HRFGdalSupportedFileEditor.h"
 
 BEGIN_IMAGEPP_NAMESPACE
@@ -41,3 +42,4 @@ private:
     HRFErdasImgEditor& operator=(const HRFErdasImgEditor& pi_rObj);
     };
 END_IMAGEPP_NAMESPACE
+#endif

@@ -10,7 +10,7 @@
 //-----------------------------------------------------------------------------
 
 #include <ImageppInternal.h>
-
+#ifdef IPP_HAVE_GDAL_SUPPORT
 
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 
@@ -427,3 +427,4 @@ HRPChannelType::ChannelRole HRFUSgsDEMFile::GetBandRole(int32_t pi_RasterBand) c
 
     return HRPChannelType::ELEVATION;
     }
+#endif

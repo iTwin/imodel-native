@@ -10,6 +10,7 @@
 // This class describes a File Raster image.
 #pragma once
 
+#ifdef IPP_HAVE_GDAL_SUPPORT
 #include "HFCMacros.h"
 #include "HFCAccessMode.h"
 #include "HFCURL.h"
@@ -131,3 +132,4 @@ private:
     HRFErdasImgFile& operator=(const HRFErdasImgFile& pi_rObj);
     };
 END_IMAGEPP_NAMESPACE
+#endif

@@ -11,6 +11,7 @@
 
 #include <ImageppInternal.h>
 
+#ifdef IPP_HAVE_GDAL_SUPPORT
 #include <Imagepp/all/h/HRFUSgsSDTSDEMEditor.h>
 
 /*
@@ -180,3 +181,4 @@ void HRFUSgsSDTSDEMEditor::ReplacePixelsWithNoDataValueIf(Byte* pio_pData, Pred 
 
     std::replace_if(pData, pData + m_NbPixelsPerBlock, pi_Predicate, NoDataValue);
     }
+#endif

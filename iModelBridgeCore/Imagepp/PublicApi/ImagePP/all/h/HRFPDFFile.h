@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFPDFFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
 //-----------------------------------------------------------------------------
 #pragma once
 
-#if !defined(_DEBUG) // We do not support this format when using the debug version of the C run-time library
+#if defined(__IPP_EXTERNAL_THIRD_PARTY_SUPPORTED) && !defined(_DEBUG) // We do not support this format when using the debug version of the C run-time library
     #define IPP_HAVE_PDF_SUPPORT
 #endif
 

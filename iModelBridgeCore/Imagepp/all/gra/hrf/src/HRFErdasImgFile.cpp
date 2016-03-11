@@ -10,6 +10,7 @@
 //-----------------------------------------------------------------------------
 
 #include <ImageppInternal.h>
+#ifdef IPP_HAVE_GDAL_SUPPORT
 
 
 #include <Imagepp/all/h/ImageppLib.h>
@@ -920,3 +921,4 @@ void HRFErdasImgFile::CreateUnitNameToEPSGCodeMap()
     m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("device_pixels",(unsigned short) 0));
     m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("gold_coast_foot",(unsigned short) 9094));
     }
+#endif

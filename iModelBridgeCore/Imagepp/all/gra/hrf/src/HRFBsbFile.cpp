@@ -12,7 +12,7 @@
 
 #include <ImageppInternal.h>
 
-
+#ifdef IPP_HAVE_GDAL_SUPPORT
 #include <Imagepp/all/h/HRFBsbFile.h>
 #include <Imagepp/all/h/HFCURLFile.h>
 #include <Imagepp/all/h/HRPPixelTypeFactory.h>
@@ -381,3 +381,4 @@ HRFScanlineOrientation HRFBsbFile::GetScanLineOrientation()const
     {
     return HRFScanlineOrientation::UPPER_LEFT_HORIZONTAL;
     }
+#endif

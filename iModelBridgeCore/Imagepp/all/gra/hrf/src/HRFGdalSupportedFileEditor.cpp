@@ -11,6 +11,8 @@
 
 #include <ImageppInternal.h>
 
+#ifdef IPP_HAVE_GDAL_SUPPORT
+
 #include <Imagepp/all/h/HRFGdalSupportedFile.h>
 #include <Imagepp/all/h/HRFGdalSupportedFileEditor.h>
 #include <Imagepp/all/h/HTIFFUtils.h>
@@ -1041,3 +1043,4 @@ HSTATUS HRFGdalSupportedFileEditor::WriteBandBlock (const Byte*    pi_pInBuffer,
     return Status;
 
     }
+#endif

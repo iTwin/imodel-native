@@ -11,6 +11,7 @@
 
 #pragma once
 
+#ifdef IPP_HAVE_GDAL_SUPPORT
 #include "HRFResolutionEditor.h"
 
 // From GdalLib
@@ -180,3 +181,4 @@ private:
 
     };
 END_IMAGEPP_NAMESPACE
+#endif

@@ -12,7 +12,7 @@
     <!-- ////////////////////////////// IPP external libs  ////////////////////////////////////// -->
     <Part Name="Base64Lib"  BentleyBuildMakeFile="ext/Base64/Base64.mke"> </Part>
     
-    <Part Name="GdalLib"  BentleyBuildMakeFile="ext/gdal/gdal.mke" ExcludePlatforms="WinRT*">
+    <Part Name="GdalLib"  BentleyBuildMakeFile="ext/gdal/gdal.mke" OnlyPlatforms="x86,x64">
         <SubPart PartName="png"                     PartFile="png"              Repository="libsrc-png"/>
         <SubPart PartName="Zlib"                    PartFile="Zlib"             Repository="Libsrc-Compress" />
         <SubPart PartName="BeLibJpegTurbo"          PartFile="BeLibJpegTurbo"   Repository="libsrc-libjpegturbo"/>
@@ -26,7 +26,7 @@
 
     </Part>
     <!-- The following parts allow to share gdal with Vortex using older compilers -->
-    <Part Name="GdalLibVC11"  BentleyBuildMakeFile="ext/gdal/gdal.mke" BMakeOptions="+dBUILD_USING_VS2012=1" ExcludePlatforms="Android*">
+    <Part Name="GdalLibVC11"  BentleyBuildMakeFile="ext/gdal/gdal.mke" BMakeOptions="+dBUILD_USING_VS2012=1" OnlyPlatforms="x86,x64">
         <SubPart PartName="ZLib" />
         <SubPart PartName="JpegLib" />
         <SubPart PartName="PngLib" />
@@ -37,7 +37,7 @@
             <Libs>Delivery/$(stlibprefix)IppGdalLibVC11$(stlibdebugext)</Libs>
         </Bindings>
     </Part>
-    <Part Name="GdalLibVC8"  BentleyBuildMakeFile="ext/gdal/gdal.mke" BMakeOptions="+dBUILD_USING_VS2005=1" ExcludePlatforms="Android*">
+    <Part Name="GdalLibVC8"  BentleyBuildMakeFile="ext/gdal/gdal.mke" BMakeOptions="+dBUILD_USING_VS2005=1" OnlyPlatforms="x86,x64">
         <SubPart PartName="ZLib" />
         <SubPart PartName="JpegLib" />
         <SubPart PartName="PngLib" />
@@ -49,7 +49,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="GdalData" BentleyBuildMakeFile="ext/gdal/GdalData.mke">
+    <Part Name="GdalData" BentleyBuildMakeFile="ext/gdal/GdalData.mke" OnlyPlatforms="x86,x64">
         <Bindings>
             <Directory  ProductDirectoryName="GdalData"  SourceName="Delivery\GdalData"    />
         </Bindings>
@@ -163,8 +163,10 @@
     </Part>    
             
     <Part Name="ImagePP-Dev">
-        <SubPart PartName= "ImagePP" />
+        <!--NEEDSWORK: 'ImagePP-Tested' must build before 'ImagePP' create imagepp.lib and add it to the buildContext 
+            since it will be inconditionnaly added to the link cmd by buildGTest.mke -->
         <SubPart PartName= "ImagePP-Tested" />
+        <SubPart PartName= "ImagePP" />        
         <SubProduct ProductName="ImageppApps" PartFile="ImageppApps" Repository="ImageppApps" />
     </Part>
 

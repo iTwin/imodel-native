@@ -2,13 +2,15 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFNitfFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFNitfFile
 //-----------------------------------------------------------------------------
 // This class describes a File Raster image.
 #pragma once
+
+#ifdef IPP_HAVE_GDAL_SUPPORT
 
 #include "HRFGdalSupportedFile.h"
 #include "HFCMacros.h"
@@ -111,3 +113,5 @@ private:
     HRFNitfFile& operator=(const HRFNitfFile& pi_rObj);
     };
 END_IMAGEPP_NAMESPACE
+
+#endif

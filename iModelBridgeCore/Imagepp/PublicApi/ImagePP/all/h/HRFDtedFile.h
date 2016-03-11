@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFDtedFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFDtedFile
@@ -10,6 +10,7 @@
 // This class describes a File Raster image.
 #pragma once
 
+#ifdef IPP_HAVE_GDAL_SUPPORT
 #include "HRFGdalSupportedFile.h"
 #include "HFCMacros.h"
 #include "HFCAccessMode.h"
@@ -116,3 +117,4 @@ private:
 END_IMAGEPP_NAMESPACE
 
 
+#endif

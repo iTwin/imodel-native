@@ -10,6 +10,8 @@
 // This class describes a raster file which is accessed by using GDAL.
 #pragma once
 
+#ifdef IPP_HAVE_GDAL_SUPPORT
+
 #include "HFCMacros.h"
 #include "HFCAccessMode.h"
 #include "HFCURL.h"
@@ -240,3 +242,5 @@ private:
     HRFGdalSupportedFile& operator=(const HRFGdalSupportedFile& pi_rObj);
     };
 END_IMAGEPP_NAMESPACE
+
+#endif

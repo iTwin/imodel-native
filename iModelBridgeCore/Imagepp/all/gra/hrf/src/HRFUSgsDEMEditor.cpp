@@ -11,6 +11,7 @@
 
 #include <ImageppInternal.h>
 
+#ifdef IPP_HAVE_GDAL_SUPPORT
 #include <Imagepp/all/h/HRFUSgsDEMEditor.h>
 
 
@@ -80,3 +81,4 @@ HRFUSgsDEMEditor::~HRFUSgsDEMEditor()
 
 
 
+#endif
