@@ -82,6 +82,20 @@ virtual BentleyStatus   _TransformInPlace(TransformCR transform) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
+virtual BentleyStatus   _MultiplyPlanesTimesMatrix(DMatrix4dCR matrix) override
+    {
+    if (NULL != m_clipPlanes)
+        m_clipPlanes->MultiplyPlanesTimesMatrix (matrix);  
+
+    if (NULL != m_maskPlanes)
+        m_maskPlanes->MultiplyPlanesTimesMatrix (matrix);  
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
 virtual bool    _GetRange(DRange3dR range, TransformCP pTransform, bool returnMaskRange) const override
     {
     return (NULL == m_clipPlanes) ? false : m_clipPlanes->GetRange(range, pTransform); 
@@ -762,23 +776,6 @@ virtual ClipPlaneSetCP           _GetClipPlanes() const override
     return m_clipPlanes;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      11/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus _ApplyCameraToPlanes(double focalLength)
-    {
-    if (m_isMask)
-        return ERROR;
-
-    DELETE_AND_CLEAR (m_clipPlanes);
-    m_clipPlanes = new ClipPlaneSet();
-
-    parseClipPlanes(*m_clipPlanes, m_points, m_zLowValid ? &m_zLow : NULL, m_zHighValid ? &m_zHigh : NULL, m_isMask, GetInvisible(), &focalLength); 
-    if (m_transformValid)
-        m_clipPlanes->TransformInPlace(m_transformFromClip);
-
-    return SUCCESS;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
@@ -861,6 +858,24 @@ virtual BentleyStatus   _TransformInPlace(TransformCR transform) override
 
     return SUCCESS;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual BentleyStatus   _MultiplyPlanesTimesMatrix(DMatrix4dCR matrix) override
+    {
+    if (m_isMask)
+        return ERROR;
+
+    DELETE_AND_CLEAR (m_clipPlanes);
+    m_clipPlanes = new ClipPlaneSet();
+    parseClipPlanes(*m_clipPlanes, m_points, m_zLowValid ? &m_zLow : NULL, m_zHighValid ? &m_zHigh : NULL, m_isMask, GetInvisible(), nullptr); 
+    m_clipPlanes->MultiplyPlanesTimesMatrix (matrix);
+
+    return SUCCESS;
+    }
+
+
 
 };  // ClipShapePrimitive
 
