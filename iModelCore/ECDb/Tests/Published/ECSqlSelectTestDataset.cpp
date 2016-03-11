@@ -2916,7 +2916,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::UnionTests(int rowCountPerClass)
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 8, rowCountPerClass*2);
 
     ecsql = "SELECT PStruct_Array FROM ecsql.PSA UNION SELECT SAStructProp.PStruct_Array FROM ecsql.SA";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1,  20);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1,  2);
 
     ecsql = "SELECT ECClassId, COUNT(*) FROM (SELECT GetECClassId() ECClassId, ECInstanceId FROM ecsql.PSA UNION ALL SELECT GetECClassId() ECClassId, ECInstanceId FROM ecsql.SA) GROUP BY ECClassId";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2, 2);

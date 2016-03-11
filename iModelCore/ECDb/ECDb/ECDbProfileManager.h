@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbProfileManager.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -19,32 +19,31 @@ struct ECDbProfileManager
 private:
     typedef std::vector<std::unique_ptr<ECDbProfileUpgrader>> ECDbProfileUpgraderSequence;
     static Utf8CP const PROFILENAME;
+
     static const PropertySpec PROFILEVERSION_PROPSPEC;
-    //! Oldest version supported by this version of ECDb.
+    //! Minimum version of the ECDb profile which can still be auto-upgraded to the latest profile version.
     static const SchemaVersion MINIMUM_SUPPORTED_VERSION;
+    //!Version expected by this version of the ECDb software
+    static const SchemaVersion EXPECTED_VERSION;
 
     static ECDbProfileUpgraderSequence s_upgraderSequence;
 
     //non-instantiable class
-    ECDbProfileManager ();
-    ~ECDbProfileManager ();
+    ECDbProfileManager();
+    ~ECDbProfileManager();
 
     static DbResult CreateECProfileTables(ECDbR);
     //! Reads the version of the ECDb profile of the given ECDb file
     //! @return BE_SQLITE_OK in case of success or error code if the SQLite database is no
     //! ECDb file, i.e. does not have the ECDb profile
-    static DbResult ReadProfileVersion (SchemaVersion& profileVersion, ECDbCR, Savepoint& defaultTransaction);
-    static DbResult AssignProfileVersion (ECDbR);
+    static DbResult ReadProfileVersion(SchemaVersion& profileVersion, ECDbCR, Savepoint& defaultTransaction);
+    static DbResult AssignProfileVersion(ECDbR);
 
-    //! Version of the ECDb Profile expected by the ECDb API.
-    static SchemaVersion GetExpectedProfileVersion ();
-    //! Minimum version of the ECDb profile which can still be auto-upgraded to the latest profile version.
-    static SchemaVersion GetMinimumAutoUpgradableProfileVersion ();
+    static ECDbProfileUpgrader const& GetLatestUpgrader() { return *GetUpgraderSequence().back(); }
+    static bool HasUpgradersForExpectedVersion() { return !GetUpgraderSequence().empty() && GetLatestUpgrader().GetTargetVersion() == EXPECTED_VERSION; }
 
-    static ECDbProfileUpgrader const& GetLatestUpgrader ();
-
-    static ECDbProfileManager::ECDbProfileUpgraderSequence::const_iterator GetUpgraderSequenceFor (SchemaVersion const& currentProfileVersion);
-    static ECDbProfileManager::ECDbProfileUpgraderSequence const& GetUpgraderSequence ();
+    static ECDbProfileManager::ECDbProfileUpgraderSequence::const_iterator GetUpgraderSequenceFor(SchemaVersion const& currentProfileVersion);
+    static ECDbProfileManager::ECDbProfileUpgraderSequence const& GetUpgraderSequence();
 
 public:
     //! Creates the ECDb profile in the specified ECDb file.
@@ -52,7 +51,7 @@ public:
     //!     In case of error, the outermost transaction is rolled back.
     //! @param[in] ecdb ECDb file handle to create the profile in.
     //! @return BE_SQLITE_OK if successful. Error code otherwise.
-    static DbResult CreateECProfile (ECDbR ecdb);
+    static DbResult CreateECProfile(ECDbR ecdb);
 
     //! Upgrades the ECDb profile in the specified ECDb file to the latest version (if the file's profile
     //! is not up-to-date).
@@ -62,7 +61,7 @@ public:
     //! @param[in] ecdb ECDb file handle to upgrade
     //! @param[in] openParams Open params passed by the client
     //! @return BE_SQLITE_OK if successful. Error code otherwise.
-    static DbResult UpgradeECProfile (ECDbR ecdb, Db::OpenParams const& openParams);
+    static DbResult UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& openParams);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -8,13 +8,13 @@
 #include "ECDbPch.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                07/2013
-//---------------+---------------+---------------+---------------+---------------+------
 //static
 Utf8CP const ECDbProfileManager::PROFILENAME = "ECDb";
 //static
 const PropertySpec ECDbProfileManager::PROFILEVERSION_PROPSPEC = PropertySpec("SchemaVersion", "ec_Db");
+
+//static
+const SchemaVersion ECDbProfileManager::EXPECTED_VERSION = SchemaVersion(3, 2, 0, 0);
 //static
 const SchemaVersion ECDbProfileManager::MINIMUM_SUPPORTED_VERSION = SchemaVersion(3, 0, 0, 0);
 
@@ -119,11 +119,19 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
         return stat;       //File is no ECDb file, i.e. doesn't have the ECDb profile
 
     bool profileNeedsUpgrade = false;
-    stat = ECDb::CheckProfileVersion(profileNeedsUpgrade, GetExpectedProfileVersion(), actualProfileVersion, GetMinimumAutoUpgradableProfileVersion(), openParams.IsReadonly(), PROFILENAME);
+    stat = ECDb::CheckProfileVersion(profileNeedsUpgrade, EXPECTED_VERSION, actualProfileVersion, MINIMUM_SUPPORTED_VERSION, openParams.IsReadonly(), PROFILENAME);
     if (!profileNeedsUpgrade)
         return stat;
 
-    LOG.infov("Version of file's %s profile is too old. Upgrading '%s' now...", PROFILENAME, ecdb.GetDbFileName());
+    if (!HasUpgradersForExpectedVersion())
+        {
+        if (BE_SQLITE_OK != stat)
+            LOG.errorv("Version of file's %s profile is too old and an auto-upgrade is not available.", PROFILENAME, ecdb.GetDbFileName());
+
+        return stat;
+        }
+
+    LOG.infov("Version of file's %s profile is too old. Upgrading file now...", PROFILENAME, ecdb.GetDbFileName());
 
     //if ECDb file is readonly, reopen it in read-write mode
     if (!openParams._ReopenForSchemaUpgrade(ecdb))
@@ -144,7 +152,6 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
     //Call upgrader sequence and let upgraders incrementally upgrade the profile
     //to the latest state
     auto upgraderIterator = GetUpgraderSequenceFor(actualProfileVersion);
-    BeAssert(upgraderIterator != GetUpgraderSequence().end() && "Upgrader sequence is not expected to be empty as the profile status is 'requires upgrade'");
     for (;upgraderIterator != GetUpgraderSequence().end(); ++upgraderIterator)
         {
         std::unique_ptr<ECDbProfileUpgrader> const& upgrader = *upgraderIterator;
@@ -169,12 +176,11 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
     context.SetCommitAfterUpgrade(); //change context dtor behavior to commit changes
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         {
-        const auto expectedProfileVersion = GetExpectedProfileVersion();
         LOG.infov("Upgraded %s profile from version %d.%d.%d.%d to version %d.%d.%d.%d (in %.4lf seconds) in file '%s'.",
-            PROFILENAME,
-            actualProfileVersion.GetMajor(), actualProfileVersion.GetMinor(), actualProfileVersion.GetSub1(), actualProfileVersion.GetSub2(),
-            expectedProfileVersion.GetMajor(), expectedProfileVersion.GetMinor(), expectedProfileVersion.GetSub1(), expectedProfileVersion.GetSub2(),
-            timer.GetElapsedSeconds(), ecdb.GetDbFileName());
+                  PROFILENAME,
+                  actualProfileVersion.GetMajor(), actualProfileVersion.GetMinor(), actualProfileVersion.GetSub1(), actualProfileVersion.GetSub2(),
+                  EXPECTED_VERSION.GetMajor(), EXPECTED_VERSION.GetMinor(), EXPECTED_VERSION.GetSub1(), EXPECTED_VERSION.GetSub2(),
+                  timer.GetElapsedSeconds(), ecdb.GetDbFileName());
         }
 
     return BE_SQLITE_OK; //context dtor ensures that changes are committed
@@ -187,7 +193,7 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
 DbResult ECDbProfileManager::AssignProfileVersion(ECDbR ecdb)
     {
     //Save the profile version as string (JSON format)
-    const Utf8String profileVersionStr = GetExpectedProfileVersion().ToJson();
+    const Utf8String profileVersionStr = EXPECTED_VERSION.ToJson();
     return ecdb.SavePropertyString(PROFILEVERSION_PROPSPEC, profileVersionStr);
     }
 
@@ -222,39 +228,6 @@ DbResult ECDbProfileManager::AssignProfileVersion(ECDbR ecdb)
         defaultTransaction.Commit(nullptr);
 
     return stat;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle    07/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-//static
-SchemaVersion ECDbProfileManager::GetExpectedProfileVersion()
-    {
-    //if there are no upgraders yet, the current version is the minimally supported version
-    if (GetUpgraderSequence().empty())
-        return GetMinimumAutoUpgradableProfileVersion();
-
-    //Version of latest upgrader is the version currently required by the API
-    return GetLatestUpgrader().GetTargetVersion();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle    11/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-//static
-SchemaVersion ECDbProfileManager::GetMinimumAutoUpgradableProfileVersion()
-    {
-    //Auto-upgradable back to this version
-    return MINIMUM_SUPPORTED_VERSION;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle    07/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-//static
-ECDbProfileUpgrader const& ECDbProfileManager::GetLatestUpgrader()
-    {
-    return *GetUpgraderSequence().back();
     }
 
 //-----------------------------------------------------------------------------------------
