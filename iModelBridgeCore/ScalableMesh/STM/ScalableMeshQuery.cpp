@@ -1577,7 +1577,7 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
     else return DTM_ERROR;
     DPoint3d triangle[4];
 
-    for (unsigned int t = 0; t < m_nbFaceIndexes; t += 3)
+   /* for (unsigned int t = 0; t < m_nbFaceIndexes; t += 3)
         {
         for (int i = 0; i < 3; i++)
             triangle[i] = m_points[m_faceIndexes[i + t] - 1];
@@ -1594,10 +1594,33 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
         if (closestPt.AlmostEqualXY(triangle[2])) continue;
 
         bcdtmObject_storeDtmFeatureInDtmObject(bcdtm->GetTinHandle(), DTMFeatureType::GraphicBreak, bcdtm->GetTinHandle()->nullUserTag, 1, &bcdtm->GetTinHandle()->nullFeatureId, &triangle[0], 4);
+        }*/
+
+    bvector<int> indices;
+    for (unsigned int t = 0; t < m_nbFaceIndexes; t += 3)
+        {
+        for (int i = 0; i < 3; i++)
+            triangle[i] = m_points[m_faceIndexes[i + t] - 1];
+
+        triangle[3] = triangle[0];
+
+        std::swap(triangle[1], triangle[2]);
+        //colinearity test
+        if (triangle[0].AlmostEqualXY(triangle[1]) || triangle[1].AlmostEqualXY(triangle[2]) || triangle[2].AlmostEqualXY(triangle[0])) continue;
+        DSegment3d triSeg = DSegment3d::From(triangle[0], triangle[1]);
+        double param;
+        DPoint3d closestPt;
+        triSeg.ProjectPointXY(closestPt, param, triangle[2]);
+        if (closestPt.AlmostEqualXY(triangle[2])) continue;
+        indices.push_back(m_faceIndexes[t] - 1);
+        indices.push_back(m_faceIndexes[t+1] - 1);
+        indices.push_back(m_faceIndexes[t+2] - 1);
         }
+    int status = bcdtmObject_storeTrianglesInDtmObject(bcdtm->GetTinHandle(), DTMFeatureType::GraphicBreak, m_points, (int)m_nbPoints, &indices[0], (int)indices.size() / 3);
+    assert(status == SUCCESS);
 
     //int status = bcdtmObject_triangulateStmTrianglesDtmObjectOld(bcdtm->GetTinHandle(), m_points, (int)m_nbPoints, m_faceIndexes, (int)m_nbFaceIndexes);
-    int status = bcdtmObject_triangulateStmTrianglesDtmObject(bcdtm->GetTinHandle());
+    status = bcdtmObject_triangulateStmTrianglesDtmObject(bcdtm->GetTinHandle());
     assert(status == SUCCESS);
     return status == SUCCESS? DTM_SUCCESS : DTM_ERROR;
     }
