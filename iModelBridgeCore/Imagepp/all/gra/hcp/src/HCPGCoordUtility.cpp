@@ -17,6 +17,8 @@
 #include <Imagepp/all/h/HRFRasterFile.h>
 #include <Imagepp/all/h/HCPGeoTiffKeys.h>
 #include <Imagepp/all/h/HRFGdalUtilities.h>
+#include <Imagepp/all/h/HGF2DProjective.h>
+#include <Imagepp/all/h/HGFPolynomialModelAdapter.h>
 
 #define MAX_GRIDSIZE (300)
 
@@ -371,6 +373,228 @@ HFCPtr<HGF2DTransfoModel> HCPGCoordUtility::CreateAdaptedModel
     return (pResultModel);
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                           Laurent.Robert-Veillette  03/2016
+// Redirection to HCPGCoordUtility::CreateBestAdaptedModel
+//----------------------------------------------------------------------------------------
+HFCPtr<HGF2DTransfoModel> HCPGCoordUtility::CreateGCoordBestAdaptedModel
+(
+    GeoCoordinates::BaseGCSCR pi_SourceProjection,
+    GeoCoordinates::BaseGCSCR pi_DestinationProjection,
+    const HGF2DLiteExtent& pi_rExtent,
+    double  pi_Step,
+    double  pi_ExpectedMeanError,
+    double  pi_ExpectedMaxError,
+    double* po_pAdaptationMeanError,
+    double* po_pAdaptationMaxError,
+    double* po_pReversibilityMeanError,
+    double* po_pReversibilityMaxError
+    )
+    {
+    HCPGCoordModel GCoordModel(pi_SourceProjection, pi_DestinationProjection);
+    return HCPGCoordUtility::CreateBestAdaptedModel(GCoordModel,
+                                                    pi_rExtent,
+                                                    pi_Step,
+                                                    pi_ExpectedMeanError,
+                                                    pi_ExpectedMaxError,
+                                                    po_pAdaptationMeanError,
+                                                    po_pAdaptationMaxError,
+                                                    po_pReversibilityMeanError,
+                                                    po_pReversibilityMaxError);
+    }
+
+/** -----------------------------------------------------------------------------
+This methods creates the best adapted GCoord model based on given projection.
+The method creates a HGF2DLinearModelAdapter only once but then uses the matrix
+of the transformation with well placed zeros to test the following models in 
+complexity order : Stretch, Affine and Projective. If none of these respect the
+given expected errors, we then try to adapt with a HGFPolynomialModelAdapter.
+If this model also does not respect the expected errors, the method returns 
+nullptr. 
+
+The purpose of the method is to create a adapted model in order to linearize 
+and accelerate the transformation model for performance reason. Since adaptation 
+implies an approximation of the GCoord exact model, the caller must provide
+an extent representing the normal region of application of the model
+as well an an expected step in source projection units (usually meters)
+of linearity. In addition, the caller gives threshold values for the
+approximation to be perfomed.
+
+@param pi_rTransforModel reference to a model to approximate. WARNING! Pay
+attention to the direction of the transformation. The INVERSE conversion MUST
+REPRESENT THE CONVERSION OF THE PIXELS. This restriction comes from the 
+polynomial model which is nos bijective (not valid in both directions).
+
+@param pi_rExtent   Constant reference to HGF2DLiteExtent containing
+the expected area of application of the model. This
+extent may not be empty.
+
+@param pi_Step      The step in X and Y in source coordinate system normal
+units. This step is used for the sampling in the creation
+of the adapters as well as for the check in precision. It must be
+at least twice as small as both the height and width of the area to insure 
+that at least 4 points are included in the sampling.
+
+@param pi_ExpectedMeanError The threshold value for the mean of errors introduced by the
+approximation. If this condition is not met then no model is
+returned. This value must be greater or equal to 0.0.
+
+@param pi_ExpectedMaxError  The threshold value for the maximum error introduced by the
+approximation. If this condition is not met, then no model is
+returned. This value must be greater or equal to 0.0.
+
+@param po_pAdaptationMeanError Optional parameter. Returns the mean error introduced by
+the transformation model adapter. This value is expressed
+in the target projection units. This value is returned even
+if expected precisions are not met and no model is created.
+If this value is not needed, nullptr can be provided.
+
+@param po_pAdatationMaxError Optional Parameter. Returns the maximum error introduced by
+the transformation model adapter. This value is expressed
+in the target projection units.This value is returned even
+if expected precisions are not met and no model is created.
+If this value is not needed, nullptr can be provided.
+
+@param po_pReversibilityMeanError Optional parameter. Returns the mean error between
+transformation of a coordintate direct then back
+by the GCoord model only. This is an indication
+of the applicability of the reprojection in the
+specified area. This value is expressed
+in the source projection units.This value is returned even
+if expected precisions are not met and no model is created.
+If this value is not needed, nullptr can be provided.
+
+@param po_pReversibilityMaxError Optional parameter. Returns the maximum error between
+transformation of a coordintate direct then back
+by the GCoord model only. This is an indication
+of the applicability of the reprojection in the
+specified area. This value is expressed
+in the source projection units.This value is returned even
+if expected precisions are not met and no model is created.
+If this value is not needed, nullptr can be provided.
+
+@return a smart pointer to transformation model of some appropriate kind or nullptr
+if the model could not be created such as when precision is not met.
+
+@see HCPGCoordModel
+                                        Laurent Robert-Veillette     03/2016
+-----------------------------------------------------------------------------
+*/
+HFCPtr<HGF2DTransfoModel> HCPGCoordUtility::CreateBestAdaptedModel(const HGF2DTransfoModel& pi_rTransforModel,
+                                                 const HGF2DLiteExtent& pi_rExtent,
+                                                 double  pi_Step,
+                                                 double  pi_ExpectedMeanError,
+                                                 double  pi_ExpectedMaxError,
+                                                 double* po_pAdaptationMeanError,
+                                                 double* po_pAdaptationMaxError,
+                                                 double* po_pReversibilityMeanError,
+                                                 double* po_pReversibilityMaxError)
+    {
+    // The expected error must be greater or equal to 0.0
+    HPRECONDITION(pi_ExpectedMeanError >= 0.0);
+    HPRECONDITION(pi_ExpectedMaxError >= 0.0);
+    HPRECONDITION(pi_Step > 0);
+
+    HFCPtr<HGF2DTransfoModel> pResultModel;
+    try
+        {
+        // Check if reversibility must be studied
+        if (po_pReversibilityMeanError && po_pReversibilityMaxError)
+            {
+            // The caller desires knowledge about reversibility. study
+            double ReverseMeanError;
+            double ReverseMaxError;
+            double ScaleChangeMean;
+            double ScaleChangeMax;
+            pi_rTransforModel.StudyReversibilityPrecisionOver(pi_rExtent, pi_Step,
+                                                          &ReverseMeanError, &ReverseMaxError,
+                                                          &ScaleChangeMean, &ScaleChangeMax);
+
+            // If mean error is desired ... set it
+            if (po_pReversibilityMeanError != 0)
+                *po_pReversibilityMeanError = ReverseMeanError;
+
+            // If max error is desired ... set it
+            if (po_pReversibilityMaxError != 0)
+                *po_pReversibilityMaxError = ReverseMaxError;
+            }
+
+        // Create the Linear model adapter to extract his parameters (scale, translation, rotation, etc.)
+        HFCPtr<HGF2DLinearModelAdapter> pLinearModel = new HGF2DLinearModelAdapter(pi_rTransforModel, pi_rExtent, pi_Step);
+        HFCMatrix<3, 3> linearMatrix = pLinearModel->GetMatrix();
+        HFCPtr<HGF2DProjective> pProjectiveModel = new HGF2DProjective(linearMatrix);
+
+        //Create the STRETCH and test the precision
+        HFCPtr<HGF2DStretch> pStretchModel = new HGF2DStretch(pProjectiveModel->GetTranslation(),
+                                                              pProjectiveModel->GetXScaling(),
+                                                              pProjectiveModel->GetYScaling());
+
+        double MeanError, MaxError;
+        CompareModelsOver(pi_rTransforModel, *pStretchModel, pi_rExtent, pi_Step, &MeanError, &MaxError);
+        if ((MeanError > pi_ExpectedMeanError) || (MaxError > pi_ExpectedMaxError))
+            {
+            //Create the AFFINE model and test the precision
+            HFCPtr<HGF2DAffine> pAffineModel = new HGF2DAffine(pProjectiveModel->GetTranslation(),
+                                                               pProjectiveModel->GetRotation(),
+                                                               pProjectiveModel->GetXScaling(),
+                                                               pProjectiveModel->GetYScaling(),
+                                                               pProjectiveModel->GetAnorthogonality());
+
+            CompareModelsOver(pi_rTransforModel, *pAffineModel, pi_rExtent, pi_Step, &MeanError, &MaxError);
+
+            if ((MeanError > pi_ExpectedMeanError) || (MaxError > pi_ExpectedMaxError))
+                {
+                //Test the precision of the PROJECTIVE model
+                CompareModelsOver(pi_rTransforModel, *pProjectiveModel, pi_rExtent, pi_Step, &MeanError, &MaxError);
+
+                if ((MeanError > pi_ExpectedMeanError) || (MaxError > pi_ExpectedMaxError))
+                    {
+                    //Create the extent in the destination
+                    double minX, minY, maxX, maxY;
+                    pi_rTransforModel.ConvertDirect(pi_rExtent.GetXMin(), pi_rExtent.GetYMin(), &minX, &minY);
+                    pi_rTransforModel.ConvertDirect(pi_rExtent.GetXMax(), pi_rExtent.GetYMax(), &maxX, &maxY);
+                    HGF2DRectangle rectangle(minX, minY, maxX, maxY);
+                    //Create the POLYNOMIAL model and test the precision
+                    HFCPtr<HGFPolynomialModelAdapter> pPolynomialModel = new HGFPolynomialModelAdapter(pi_rTransforModel,
+                                                                                                       rectangle,
+                                                                                                       pi_rExtent.GetWidth() / 15,
+                                                                                                       pi_rExtent.GetHeight() / 15,
+                                                                                                       false);
+
+                    HGF2DPosition MaxErrorPosition, MinErrorPosition;
+                    double MinError;
+                    pPolynomialModel->GetMeanError(&MeanError, &MaxError, &MaxErrorPosition, &MinError, &MinErrorPosition);
+
+                    if ((MeanError > pi_ExpectedMeanError) || (MaxError > pi_ExpectedMaxError))
+                        pResultModel = nullptr;
+                    else
+                        pResultModel = pPolynomialModel;
+                    }
+                else
+                    pResultModel = pProjectiveModel;
+                }
+            else
+                pResultModel = pAffineModel;
+            }
+        else
+            pResultModel = pStretchModel;
+
+        // Check if adaptation errors must be returned and set if needed
+        if (po_pAdaptationMeanError)
+            *po_pAdaptationMeanError = MeanError;
+
+        if (po_pAdaptationMaxError)
+            *po_pAdaptationMaxError = MaxError;
+        }
+    catch (...)
+        {
+        HASSERT(!"Error in HCPGCoordUtility::CreateBestAdaptedModel");
+        pResultModel = nullptr;
+        }
+
+    return pResultModel;
+    }
+
 /** -----------------------------------------------------------------------------
     This methods creates an adapted GCoord model based on given projection.
     an provided parameters. The model returned will describe the full transformation
@@ -723,4 +947,68 @@ bool*                            po_pDefaultUnitWasFound
         }
 
     return pTransfo;
+    }
+
+/*---------------------------------------------------------------------------------**//*
+//* @bsimethod                                    Laurent.Robert-Veillette        03/2016
+//Private method to compare two models over a specified area in the direct direction
+//+---------------+---------------+---------------+---------------+---------------+------*/
+void     HCPGCoordUtility::CompareModelsOver(const HGF2DTransfoModel& ExactModel,
+                           const HGF2DTransfoModel& ModelToTest,
+                           const HGF2DLiteExtent& pi_PrecisionArea,
+                           double                pi_Step,
+                           double*               po_pMeanError,
+                           double*               po_pMaxError)
+    {
+    // The extent of area must not be empty
+    HPRECONDITION(pi_PrecisionArea.GetWidth() != 0.0);
+    HPRECONDITION(pi_PrecisionArea.GetHeight() != 0.0);
+
+    // The step may not be null nor negative
+    HPRECONDITION(pi_Step > 0.0);
+
+    // Recipient variables must be provided
+    HPRECONDITION(po_pMeanError != nullptr);
+    HPRECONDITION(po_pMaxError != nullptr);
+
+    // Convert in temporary variables
+    double TempX;
+    double TempY;
+
+    double MaxDirectError = 0.0;
+    double DirectStatSumX = 0.0;
+    double DirectStatSumY = 0.0;
+    uint32_t DirectStatNumSamples = 0;
+
+    double TempX1;
+    double TempY1;
+
+    double CurrentX;
+    double CurrentY;
+
+    for (CurrentY = pi_PrecisionArea.GetYMin(); CurrentY < pi_PrecisionArea.GetYMax(); CurrentY += pi_Step)
+        {
+        for (CurrentX = pi_PrecisionArea.GetXMin(); CurrentX < pi_PrecisionArea.GetXMax(); CurrentX += pi_Step)
+            {
+            //Ignore point that cannot be converted, we don't want to compute model precision using point outside valid domain
+            if ((SUCCESS == ExactModel.ConvertDirect(CurrentX, CurrentY, &TempX, &TempY)) &&
+                (SUCCESS == ModelToTest.ConvertDirect(CurrentX, CurrentY, &TempX1, &TempY1)))
+                {
+                // Compute difference
+                double DeltaX = fabs(TempX - TempX1);
+                double DeltaY = fabs(TempY - TempY1);
+
+                // Add deltas
+                DirectStatSumX += DeltaX;
+                DirectStatSumY += DeltaY;
+                DirectStatNumSamples++;
+
+                MaxDirectError = MAX(MaxDirectError, MAX(DeltaX, DeltaY));
+                }               
+            }
+        }
+
+    // Assign precision results
+    *po_pMaxError = MaxDirectError;
+    *po_pMeanError = (DirectStatNumSamples > 0 ? (DirectStatSumX + DirectStatSumY) / (2 * DirectStatNumSamples) : 0.0);
     }

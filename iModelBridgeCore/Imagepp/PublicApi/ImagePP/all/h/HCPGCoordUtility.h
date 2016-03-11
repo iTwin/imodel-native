@@ -52,6 +52,31 @@ public:
                                                                    double* po_pReversibilityMeanError,
                                                                    double* po_pReversibilityMaxError);
 
+    //Redirection to CreateBestAdaptedModel
+    IMAGEPP_EXPORT static HFCPtr<HGF2DTransfoModel>
+        CreateGCoordBestAdaptedModel(GeoCoordinates::BaseGCSCR      pi_SourceProjection,
+                                     GeoCoordinates::BaseGCSCR      pi_DestinationProjection,
+                                     const HGF2DLiteExtent&         pi_rExtent,
+                                     double                         pi_Step,
+                                     double                         pi_ExpectedMeanError,
+                                     double                         pi_ExpectedMaxError,
+                                     double*                        po_pAdaptationMeanError = nullptr,
+                                     double*                        po_pAdaptationMaxError = nullptr,
+                                     double*                        po_pReversibilityMeanError = nullptr,
+                                     double*                        po_pReversibilityMaxError = nullptr);
+
+    // This method creates the best adapted GCoord model between Stretch, Affine, Projective and polynomial. 
+    // If the error target is not attained, then the nullptr is returned
+    IMAGEPP_EXPORT static HFCPtr<HGF2DTransfoModel> CreateBestAdaptedModel(const HGF2DTransfoModel& pi_rTransforModel,
+                                                                           const HGF2DLiteExtent& pi_rExtent,
+                                                                           double  pi_Step,
+                                                                           double  pi_ExpectedMeanError,
+                                                                           double  pi_ExpectedMaxError,
+                                                                           double* po_pAdaptationMeanError = nullptr,
+                                                                           double* po_pAdaptationMaxError = nullptr,
+                                                                           double* po_pReversibilityMeanError = nullptr,
+                                                                           double* po_pReversibilityMaxError = nullptr);
+
     // This method creates an adapted GCoord model from projection description
     // raster file extent and threshold errors.
     static HFCPtr<HGF2DTransfoModel>
@@ -123,6 +148,13 @@ public:
      static HFCPtr<HGF2DTransfoModel> TranslateFromMeter (const HFCPtr<HGF2DTransfoModel>& pi_pModel,
                                                           double                           pi_FactorModelToMeter,
                                                           bool*                            po_DefaultUnitWasFound=0);
+private:
+    static void     CompareModelsOver( const HGF2DTransfoModel& ExactModel,
+                                const HGF2DTransfoModel& ModelToTest,
+                                const HGF2DLiteExtent& pi_PrecisionArea,
+                                double                pi_Step,
+                                double*               po_pMeanError,
+                                double*               po_pMaxError);
 
     };
 
