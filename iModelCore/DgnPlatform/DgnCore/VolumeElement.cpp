@@ -310,12 +310,6 @@ FenceParams VolumeElement::CreateFence(DgnViewportP viewport, bool allowPartialO
     fence.SetOverlapMode (allowPartialOverlaps);
     fence.SetViewParams (viewport);
     
-    // Note: Setting view params from the viewport sets up the transform from the view, which is
-    // not what we want since our clips are in the project's (world) coordinate system
-    Transform identity;
-    identity.InitIdentity();
-    fence.SetTransform (identity);
-
     return fence;
     }
     

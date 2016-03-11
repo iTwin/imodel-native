@@ -14,31 +14,6 @@
 #define     NPC_CAMERA_LIMIT            100.0
 
 #if defined (NEEDSWORK_RENDER_GRAPHIC)
-/*=================================================================================**//**
-* Output to determine if element should be accepted for fence processing..
-* @bsiclass                                                     Brien.Bastings  09/04
-+===============+===============+===============+===============+===============+======*/
-struct FenceAcceptOutput : SimplifyGraphic
-{
-    DEFINE_T_SUPER(SimplifyGraphic)
-protected:
-
-FenceParamsP    m_fp;
-bool            m_abort;
-bool            m_currentAccept;
-bool            m_accept;
-bool            m_firstAccept;
-
-public:
-
-FenceAcceptOutput()      { m_fp = NULL; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool    _DoClipping() const override {return m_inSymbolDraw;} // Only need clip for symbols...
-virtual bool    _DoSymbolGeometry() const override {return true;}
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -65,188 +40,9 @@ virtual void _SetDrawViewFlags (ViewFlags flags) override
             }
         }
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual void    _PushTransClip(TransformCP trans, ClipPlaneSetCP clip) override
-    {
-    T_Super::_PushTransClip(trans, clip);
-
-    if (m_viewOutput)
-        m_viewOutput->PushTransClip(trans, clip);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual void    _PopTransClip() override
-    {
-    T_Super::_PopTransClip();
-
-    if (m_viewOutput)
-        m_viewOutput->PopTransClip();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   11/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GetTestPointWorld(DPoint3dR fencePt, ClipPrimitiveCR clipPrimitive)
-    {
-    ClipPolygonCP   clipPolygon;
-
-    fencePt.Zero();
-
-    if (NULL == (clipPolygon = clipPrimitive.GetPolygon()) || clipPolygon->empty())
-        return;
-
-    fencePt = DPoint3d::From(clipPolygon->front().x, clipPolygon->front().y, 0.0);
-
-    Transform   invTransform;
-
-    invTransform.InverseOf(*(m_fp->GetTransform()));
-
-    if (NULL != clipPrimitive.GetTransformFromClip())
-        invTransform.InitProduct(invTransform, *(clipPrimitive.GetTransformFromClip()));
-
-    invTransform.Multiply(fencePt);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   11/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GetTestDirectionWorld(DVec3dR fenceDir)
-    {
-    Transform       invTransform;
-    ClipVectorPtr   clip = m_fp->GetClipVector();
-
-    invTransform.InverseOf(*(m_fp->GetTransform()));
-
-    if (clip.IsValid() && !clip->empty() && clip->front()->GetTransformFromClip())
-        invTransform.InitProduct(invTransform, *(clip->front()->GetTransformFromClip()));
-
-    invTransform.GetMatrixColumn(fenceDir, 2);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  05/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GetBoresiteLocations(bvector<DRay3d>& out)
-    {
-    // NOTE: Can't test a single loop point when there are masks...
-    ClipVectorPtr   clip = m_fp->GetClipVector();
-
-    if (!clip.IsValid())
-        return;
-
-    DMatrix4d       viewToLocal = m_context->GetViewToLocal();
-
-    for (ClipPrimitivePtr const& clipPrimitive: *clip)
-        {
-        DPoint3d    fencePt, localPt;
-        DRay3d      boresite;
-
-        GetTestPointWorld(fencePt, *clipPrimitive);
-        m_context->WorldToLocal(&localPt, &fencePt, 1);
-        PickContext::InitBoresite(boresite, localPt, viewToLocal);
-
-        out.push_back(boresite);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-TransformCP GetCurrentFenceAcceptTransform(TransformP transformP)
-    {
-    TransformCP placementTransP = m_context->GetCurrLocalToWorldTransformCP ();
-
-    if (placementTransP)
-        *transformP = *placementTransP;
-    else
-        transformP->InitIdentity();
-
-    return transformP;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Brien.Bastings                  07/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-static int      DrawQvElemCheckStop(void* arg)
-    {
-    FenceAcceptOutput  *output = (FenceAcceptOutput *) arg;
-    return (output->m_context->CheckStop() ? 1 : 0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual void    _DrawGraphic(Graphic* qvElem) override
-    {
-    if (!m_viewOutput || !m_context->GetViewport())
-        return;
-
-    if (m_fp->HasOverlaps())
-        return; // Already detected overlap, can skip interior check...
-
-    DVec3d      viewNormal, fenceNormal;
-
-    m_context->GetViewport()->GetRotMatrix().GetRow(viewNormal, 2);
-    GetTestDirectionWorld(fenceNormal);
-
-    bool        alignedToView = TO_BOOL (fenceNormal.IsParallelTo(viewNormal));
-
-    // Test 1 point in each loop in case clip is disjoint clip mask...
-    for (ClipPrimitivePtr const& primitive: *m_fp->GetClipVector())
-        {
-        DPoint3d    fencePt;
-
-        GetTestPointWorld(fencePt, *primitive);
-
-        // qvi_locateElementCB doesn't allow bore direction to be specified...must rotate view...
-        if (!alignedToView)
-            {
-            RotMatrix   rMatrix;
-            Transform   transform;
-
-            LegacyMath::RMatrix::FromVectorToVector(&rMatrix, &fenceNormal, &viewNormal);
-            transform.InitFromMatrixAndFixedPoint(rMatrix, fencePt);
-
-            m_context->PushTransform(transform);
-            }
-
-        DPoint3d    pickPt;
-        DPoint4d    pickPtView;
-
-        m_context->WorldToView(&pickPtView, &fencePt, 1);
-        pickPtView.GetProjectedXYZ (pickPt);
-
-        bool        gotHit = false;
-        DPoint3d    hitPt;
-
-        gotHit = m_viewOutput->LocateQvElem(qvElem, *((DPoint2dCP) &pickPt), 1.0, hitPt, NULL, DrawQvElemCheckStop, this);
-
-        if (!alignedToView)
-            m_context->PopTransformClip();
-
-        if (!gotHit)
-            continue;
-
-        m_fp->GetTransform()->Multiply(hitPt);
-        if (!m_fp->PointInOtherClips(hitPt, primitive.get()))
-            continue;
-
-        SetCurrentAccept(true);
-        m_fp->SetHasOverlaps(true);
-
-        CheckCurrentAccept();
-        break;
-        }
-    }
-
-}; // FenceAcceptOutput
 #endif
 
+BEGIN_BENTLEY_DGN_NAMESPACE
 /*=================================================================================**//**
 * Context to determine if element should be accepted for fence processing..
 * @bsiclass                                                     Brien.Bastings  09/04
@@ -258,29 +54,23 @@ private:
 
 FenceParamsR        m_fp;
 DgnElementIdSet     m_contents;
-bool                m_collectContents;  // true for GetContents, false for AcceptElement...
-DgnViewportP        m_nonVisibleViewport;
-bool                m_abort;
+bool                m_earlyDecision;
 bool                m_currentAccept;
 bool                m_accept;
 bool                m_firstAccept;
+FenceCheckStop*     m_checkStop;
 
 public:
 
-FenceAcceptContext(FenceParamsR fp) : m_fp(fp)
+FenceAcceptContext(FenceParamsR fp, FenceCheckStop* checkStop = nullptr) : m_fp(fp), m_checkStop(checkStop)
     {
-    m_purpose            = DrawPurpose::FenceAccept;
-    m_collectContents    = false;
-    m_nonVisibleViewport = nullptr;
-    m_ignoreViewRange    = true;
+    m_purpose = DrawPurpose::FenceAccept;
+    m_ignoreViewRange = true;
 
     OnNewGeometrySource();
     }
 
-~FenceAcceptContext()
-    {
-    DELETE_AND_CLEAR (m_nonVisibleViewport);
-    }
+~FenceAcceptContext() {}
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  02/16
@@ -305,24 +95,17 @@ void OnNewGeometrySource()
     m_fp.ClearSplitParams();
 
     m_firstAccept   = true;
-    m_abort         = false;
     m_currentAccept = false;
     m_accept        = false;
+    m_earlyDecision = false;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool GetCurrentAbort() {return m_abort;}
-bool GetCurrentAccept() {return m_accept;}
-void SetCurrentAccept(bool accept) {m_currentAccept = accept;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/04
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CheckCurrentAccept()
     {
-    if (m_abort) // accept status has already been determined...
+    if (m_earlyDecision) // accept status has already been determined...
         return;
 
     bool insideMode = !m_fp.AllowOverlaps() && FenceClipMode::None == m_fp.GetClipMode();
@@ -335,39 +118,33 @@ void CheckCurrentAccept()
     else if (insideMode)
         {
         m_accept = false;
-        m_abort  = true;
+        m_earlyDecision = true;
         }
 
     if (!insideMode && m_accept)
         {
-        // Fence can overlap a complex element w/o any component having an overlap...
+        // Fence can overlap an element that has disjoint geometric primitives w/o any single primitive having an overlap...
         if (hasOverlap)
             m_fp.SetHasOverlaps(true);
 
         // Need to look for ALL overlaps in clip mode...
         if (FenceClipMode::None == m_fp.GetClipMode())
-            m_abort = m_fp.HasOverlaps();
+            m_earlyDecision = m_fp.HasOverlaps();
         }
 
     m_firstAccept = false;
     }
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     05/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _PushFrustumClip() override
-    {
-    // Not necessary to push frustum clip - Fence clip is pushed below.
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual bool _CheckStop() override
     {
-    return GetCurrentAbort(); // Doesn't want abort flag set...not reset between elements...
+    // NOTE: Don't set abort flag set for "early decision", it's not reset between elements; only set for "user events"...    
+    if (WasAborted() || (nullptr != m_checkStop && AddAbortTest(m_checkStop->_CheckStopFenceContents())))
+        return true;
+
+    return m_earlyDecision;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -450,7 +227,7 @@ bool ProcessLinearSegments(DPoint3dCP points, int numPoints, bool closed, bool f
             return true;
 
         curve.TransformCurve(transform);
-        m_currentAccept = m_fp.AcceptCurve(&curve);
+        m_currentAccept = m_fp.AcceptCurve(curve);
         curve.ReleaseMem();
         }
     else
@@ -482,7 +259,7 @@ bool ProcessDEllipse3d(DEllipse3dCR ellipse, bool closed, bool filled, SimplifyG
         if (SUCCESS != curve.InitFromDEllipse3d(tmpEllipse))
             return true;
 
-        m_currentAccept = m_fp.AcceptCurve(&curve);
+        m_currentAccept = m_fp.AcceptCurve(curve);
         curve.ReleaseMem();
         }
     else
@@ -502,7 +279,7 @@ bool ProcessCurve(MSBsplineCurveCR geom, bool filled, SimplifyGraphic& graphic)
     Transform transform = graphic.GetLocalToWorldTransform();
     MSBsplineCurvePtr copy = geom.CreateCopyTransformed(transform);
 
-    m_currentAccept = m_fp.AcceptCurve(copy.get());
+    m_currentAccept = m_fp.AcceptCurve(*copy);
     CheckCurrentAccept();
     return true;
     }
@@ -597,7 +374,7 @@ virtual bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGrap
             if (CurveVector::INOUT_In != inOut && CurveVector::INOUT_On != inOut)
                 continue;
 
-            SetCurrentAccept(true);
+            m_currentAccept = true;
             m_fp.SetHasOverlaps(true);
             CheckCurrentAccept();
             break;
@@ -636,7 +413,7 @@ virtual bool _ProcessSolidPrimitive(ISolidPrimitiveCR solid, SimplifyGraphic& gr
         if (0 == intersectLocationDetail.size())
             continue;
 
-        SetCurrentAccept(true);
+        m_currentAccept = true;
         m_fp->SetHasOverlaps(true);
         CheckCurrentAccept();
         break;
@@ -675,7 +452,7 @@ virtual bool _ProcessSurface(MSBsplineSurfaceCR surface, SimplifyGraphic& graphi
         if (0 == nHits)
             continue;
 
-        SetCurrentAccept(true);
+        m_currentAccept = true;
         m_fp->SetHasOverlaps(true);
         CheckCurrentAccept();
         break;
@@ -725,7 +502,7 @@ virtual bool _ProcessPolyface(PolyfaceQueryCR polyface, bool filled, SimplifyGra
             if (!visitor->TryDRay3dIntersectionToFacetLocationDetail(boresite, facetDetail))
                 continue;
 
-            SetCurrentAccept(true);
+            m_currentAccept = true;
             m_fp->SetHasOverlaps(true);
             CheckCurrentAccept();
             break;
@@ -748,18 +525,13 @@ virtual bool _ProcessPolyface(PolyfaceQueryCR polyface, bool filled, SimplifyGra
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual StatusInt _VisitGeometry(GeometrySourceCR source) override
     {
-    if (!m_collectContents)
-        return T_Super::_VisitGeometry(source);
-
-    OnNewGeometrySource(); // Initialize accept status for top-level element...
-
-    if (SUCCESS == T_Super::_VisitGeometry(source) && GetCurrentAccept())
+    if (SUCCESS == T_Super::_VisitGeometry(source) && m_accept)
         {
         if (nullptr != source.ToElement())
             m_contents.insert(source.ToElement()->GetElementId());
         }
 
-    OnNewGeometrySource(); // Clear abort status and continue checking next element...
+    OnNewGeometrySource(); // Reset accept status and continue checking next element...
 
     return SUCCESS;
     }
@@ -784,7 +556,7 @@ bool AcceptGeometrySource(GeometrySourceCR source)
     if (SUCCESS != Attach(m_fp.GetViewport(), m_purpose))
         return false;
 
-    return (SUCCESS == _VisitGeometry(source) && GetCurrentAccept());
+    return (SUCCESS == T_Super::_VisitGeometry(source) && m_accept);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -795,11 +567,11 @@ bool AcceptCurveVector(CurveVectorCR curves)
     if (SUCCESS != Attach(m_fp.GetViewport(), m_purpose))
         return false;
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    m_graphic->AddCurveVector(curves, false);
-#endif
+    Render::GraphicPtr graphic = CreateGraphic(Graphic::CreateParams(GetViewport()));
 
-    return GetCurrentAccept();
+    graphic->AddCurveVector(curves, false);
+
+    return m_accept;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -808,10 +580,9 @@ bool AcceptCurveVector(CurveVectorCR curves)
 BentleyStatus GetContents(DgnElementIdSet& contents)
     {
     DRange3d npcRange = m_fp.GetFenceRangeNPC ();
+
     if (!npcRange.IsNull ())
-        {
         SetSubRectNpc(npcRange);
-        }
 
     if (SUCCESS != Attach(m_fp.GetViewport(), m_purpose) || !m_fp.GetClipVector().IsValid())
         return ERROR;
@@ -828,7 +599,7 @@ BentleyStatus GetContents(DgnElementIdSet& contents)
 
     GetTransformClipStack().PushClip(*transformedClip);
 #endif
-    m_collectContents = true;
+
     VisitAllViewElements();
 
     if (m_contents.empty())
@@ -840,20 +611,18 @@ BentleyStatus GetContents(DgnElementIdSet& contents)
     }
 
 }; // FenceAcceptContext
+END_BENTLEY_DGN_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-double          FenceParams::GetFocalLength() const {return m_focalLength;}
 ClipVectorPtr   FenceParams::GetClipVector() const {return m_clip;}
 FenceClipMode   FenceParams::GetClipMode() const {return m_clipMode;}
 DgnViewportP    FenceParams::GetViewport() const {BeAssert(m_viewport && "Fence viewport must not be NULL"); return m_viewport;}
 DgnModelP       FenceParams::GetDgnModel() const {BeAssert(m_viewport && "Fence viewport must not be NULL"); return m_viewport ? m_viewport->GetViewController().GetTargetModel() : NULL;}
-TransformP      FenceParams::GetTransform() {return &m_transform;}
 void            FenceParams::SetOverlapMode(bool val) {m_overlapMode = val;}
 void            FenceParams::SetClipMode(FenceClipMode val) {m_clipMode = val;}
 void            FenceParams::SetClip(ClipVectorCR clip) {m_clip = ClipVector::CreateCopy(clip);}
-void            FenceParams::SetTransform(TransformCR trans) {m_transform = trans;}
 void            FenceParams::SetLocateInteriors(LocateSurfacesPref interiors) {m_locateInteriors = interiors;}
 bool            FenceParams::HasOverlaps() const {return m_hasOverlaps;}
 bool            FenceParams::AllowOverlaps() const {return m_overlapMode;}
@@ -1024,7 +793,7 @@ StatusInt FenceParams::StoreClippingPoints(DPoint3dCP points, size_t nPoints, bo
     m_fenceRangeNPC.Init ();
     if (!outside)
         {
-        m_fenceRange = uvRange;
+        m_fenceRangeNPC = uvRange;
         m_fenceRangeNPC.low.z = zLow;
         m_fenceRangeNPC.high.z = zHigh;
         }
@@ -1074,7 +843,7 @@ bool FenceParams::PointInOtherClips(DPoint3dCR testPoint, ClipPrimitiveCP thisPr
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool FenceParams::PointInsideClip(DPoint3dCR testPoint)
     {
-    return  m_clip.IsValid() ? m_clip->PointInside(testPoint, m_onTolerance) : false;
+    return m_clip.IsValid() ? m_clip->PointInside(testPoint, m_onTolerance) : false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1082,14 +851,10 @@ bool FenceParams::PointInsideClip(DPoint3dCR testPoint)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt FenceParams::GetClipToWorldTransform(TransformR clipToWorld, ClipPrimitiveCR clip) const
     {
-    Transform worldToClip = m_transform;
-
-    if (!clipToWorld.InverseOf(worldToClip))
-        return ERROR;
-
-    // clip transform (if any) comes first: clipToWorld = fenceToWorld * clipToFence
-    if (NULL != clip.GetTransformFromClip())
-        clipToWorld.InitProduct(clipToWorld, *clip.GetTransformFromClip());
+    if (nullptr != clip.GetTransformFromClip())
+        clipToWorld = *clip.GetTransformFromClip();
+    else
+        clipToWorld.InitIdentity();
 
     return SUCCESS;
     }
@@ -1594,7 +1359,7 @@ bool FenceParams::AcceptLineSegments(DPoint3dP points, size_t numPoints, bool cl
 bool FenceParams::CurveClipPlaneIntersect
 (
 ClipPrimitiveCR     clipPrimitive,
-MSBsplineCurve*     curveP,
+MSBsplineCurveCR    curve,
 double              clipDistance
 )
     {
@@ -1604,11 +1369,11 @@ double              clipDistance
 
     // ??? Plane at z=clipDistance ???
     DPlane3d plane = DPlane3d::FromOriginAndNormal(0.0, 0.0, clipDistance, 0.0, 0.0, 1.0);
-    curveP->AddPlaneIntersections(NULL, &params, plane);
+    curve.AddPlaneIntersections(NULL, &params, plane);
 
     for (double u : params)
         {
-        curveP->FractionToPoint(point, u);
+        curve.FractionToPoint(point, u);
 
         clipPrimitive.TransformFromClip(point);
         if (clipPrimitive.PointInside(point, m_onTolerance))
@@ -1620,24 +1385,28 @@ double              clipDistance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      7/92
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool FenceParams::CurveFenceIntersect(ClipPrimitiveCR clipPrimitive, MSBsplineCurve  *curveP)
+bool FenceParams::CurveFenceIntersect(ClipPrimitiveCR clipPrimitive, MSBsplineCurveCR curve)
     {
-    bool            intersectFound = false;
-    MSBsplineCurve  rotatedCurve;
+    MSBsplineCurveCP  curveP = &curve;
+    MSBsplineCurvePtr rotatedCurve;
 
     if (NULL != clipPrimitive.GetTransformToClip())
         {
-        if (SUCCESS == rotatedCurve.CopyTransformed(*curveP, *clipPrimitive.GetTransformToClip()))
-            curveP = &rotatedCurve;
+        rotatedCurve = curve.CreateCopyTransformed(*clipPrimitive.GetTransformToClip());
+
+        if (rotatedCurve.IsValid())
+            curveP = rotatedCurve.get();
         else
             return false;
         }
 
+    bool intersectFound = false;
+
     if (clipPrimitive.ClipZLow())
-        intersectFound |= CurveClipPlaneIntersect(clipPrimitive, curveP, clipPrimitive.GetZLow()  - s_zPlaneToleranceRatio * m_onTolerance);
+        intersectFound |= CurveClipPlaneIntersect(clipPrimitive, *curveP, clipPrimitive.GetZLow()  - s_zPlaneToleranceRatio * m_onTolerance);
 
     if (clipPrimitive.ClipZHigh())
-        intersectFound |= CurveClipPlaneIntersect(clipPrimitive, curveP, clipPrimitive.GetZHigh() + s_zPlaneToleranceRatio * m_onTolerance);
+        intersectFound |= CurveClipPlaneIntersect(clipPrimitive, *curveP, clipPrimitive.GetZHigh() + s_zPlaneToleranceRatio * m_onTolerance);
 
     bvector<DPoint3d> point0, point1;
     bvector<double>   param0, param1;
@@ -1662,10 +1431,9 @@ bool FenceParams::CurveFenceIntersect(ClipPrimitiveCR clipPrimitive, MSBsplineCu
         return false;
         }
 
-
     for (size_t i = 0; i < point0.size(); i++)
         {
-        double      z = point0[i].z;
+        double  z = point0[i].z;
 
         if ((curveP->params.closed || (param0[i] > 0.0 && param0[i] < 1.0)) &&
             (! clipPrimitive.ClipZLow() || z >= clipPrimitive.GetZLow()) && (! clipPrimitive.ClipZHigh() || z <= clipPrimitive.GetZHigh()))
@@ -1675,50 +1443,20 @@ bool FenceParams::CurveFenceIntersect(ClipPrimitiveCR clipPrimitive, MSBsplineCu
             }
         }
 
-    if (curveP == &rotatedCurve)
-        rotatedCurve.ReleaseMem();
-
     return intersectFound;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      7/92
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool FenceParams::AcceptTransformedCurve
-(
-MSBsplineCurve* pCurve
-)
+bool FenceParams::AcceptCurve(MSBsplineCurveCR curve)
     {
     if (m_overlapMode)
-        return m_clip->IsAnyPointInside(*pCurve);
+        return m_clip->IsAnyPointInside(curve);
     else if (0 == static_cast<int>(m_clipMode))
-        return m_clip->IsCompletelyContained(*pCurve);
+        return m_clip->IsCompletelyContained(curve);
     else
-        return !m_clip->IsAnyPointInside(*pCurve);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      7/92
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool FenceParams::AcceptCurve(MSBsplineCurve  *curveP)
-    {
-    curveP->TransformCurve(m_transform);
-    return AcceptTransformedCurve(curveP);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      7/92
-*
-*   Accept segment of curve that is already transformed (but camera not applied)
-*   and completely in front of the eye plane.
-*
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool FenceParams::AcceptCameraCurveSegment
-(
-MSBsplineCurve  *curveP
-)
-    {
-    return AcceptTransformedCurve(curveP);
+        return !m_clip->IsAnyPointInside(curve);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1726,7 +1464,6 @@ MSBsplineCurve  *curveP
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool FenceParams::AcceptByCurve()
     {
-
     for (ClipPrimitivePtr const& primitive: *m_clip)
         {
         // If any clip is curved accept by curve...
@@ -1737,6 +1474,7 @@ bool FenceParams::AcceptByCurve()
     return false;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   07/04
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1757,7 +1495,6 @@ void FenceParams::PushClip(ViewContextP context, DgnViewportP vp, bool displayCu
 
     inverse.InverseOf(m_transform);
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // If we have a camera on we need to generate the planes that instersect the
     // camera point...
     if (m_camera)
@@ -1798,21 +1535,38 @@ void FenceParams::PushClip(ViewContextP context, DgnViewportP vp, bool displayCu
         transformedClip->SetInvisible(!displayCut);
         context->PushClip(*transformedClip);
         }
-#endif
    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      01/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt FenceParams::PushClip(ViewContextR context, TransformCP localToRoot) const
+    {
+    DgnViewportP   viewport;
+
+    if (NULL == (viewport = context.GetViewport()) || !m_clip.IsValid())
+        return ERROR;
+
+    ClipVectorPtr   clip = ClipVector::CreateCopy(*m_clip);
+
+    Transform       rootToClip  = viewport->Is3dView()   ? m_transform : Transform::FromIdentity();
+    Transform       localToClip = (NULL == localToRoot)  ? rootToClip  : Transform::FromProduct(rootToClip, *localToRoot);
+    Transform       clipToLocal;
+
+    clipToLocal.InverseOf(localToClip);
+
+    clip->TransformInPlace(clipToLocal);
+    context.PushClip(*clip);
+
+    return SUCCESS;
+    }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   07/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-FenceParams::FenceParams(TransformCP trans)
+FenceParams::FenceParams()
     {
-    m_focalLength = 0.0;
-
-    if (trans)
-        m_transform = *trans;
-    else
-        m_transform.InitIdentity();
-
     m_overlapMode       = false;
     m_onTolerance       = .25;    // The traditional UOR tolerance...
 
@@ -1831,8 +1585,6 @@ FenceParams::FenceParams(TransformCP trans)
 +---------------+---------------+---------------+---------------+---------------+------*/
 FenceParams::FenceParams(FenceParamsP fpP)
     {
-    m_focalLength       = fpP->m_focalLength;
-    m_transform         = fpP->m_transform;
     m_overlapMode       = fpP->m_overlapMode;
     m_onTolerance       = fpP->m_onTolerance;
     m_viewport          = fpP->m_viewport;
@@ -1841,6 +1593,7 @@ FenceParams::FenceParams(FenceParamsP fpP)
     m_fenceRangeNPC     = fpP->m_fenceRangeNPC;
     m_locateInteriors   = fpP->m_locateInteriors;
     m_hasOverlaps       = false;
+
     m_splitParams.clear();
     }
 
@@ -1903,48 +1656,11 @@ FenceParams::~FenceParams()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt FenceParams::PushClip(ViewContextR context, TransformCP localToRoot) const
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    DgnViewportP   viewport;
-
-    if (NULL == (viewport = context.GetViewport()) || !m_clip.IsValid())
-        return ERROR;
-
-    ClipVectorPtr   clip = ClipVector::CreateCopy(*m_clip);
-
-    Transform       rootToClip  = viewport->Is3dView()   ? m_transform : Transform::FromIdentity();
-    Transform       localToClip = (NULL == localToRoot)  ? rootToClip  : Transform::FromProduct(rootToClip, *localToRoot);
-    Transform       clipToLocal;
-
-    clipToLocal.InverseOf(localToClip);
-
-    clip->TransformInPlace(clipToLocal);
-    context.PushClip(*clip);
-#endif
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      01/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool FenceParams::IsOutsideClip() const
     {
     return m_clip.IsValid() &&
            1 == m_clip->size() &&
            m_clip->front()->IsMask();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void pointFromParameter(DPoint3dR point, ICurvePrimitive* curvePrimitive, double parameter, FenceParamsR fp)
-    {
-    curvePrimitive->FractionToPoint(parameter, point);
-
-    fp.GetTransform()->Multiply(point);
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2005,7 +1721,7 @@ static void calculateSegmentIntersections(FenceParamsR fp, ICurvePrimitive* curv
 
         size_t  originalNumSplitParams = fp.GetNumSplitParams();
 
-        fp.AcceptCurve(&curve);
+        fp.AcceptCurve(curve);
 
         // Defect 88045 - shift from spline to ellipse angle parameters. This should all be deprecated and work on CurveVectors directly.
         if (fp.GetNumSplitParams() > originalNumSplitParams && NULL != curvePrimitive->GetArcCP ())
@@ -2051,7 +1767,7 @@ static void calculateSegmentIntersections(FenceParamsR fp, ICurvePrimitive* curv
             if (!curvePrimitive->GetMSBsplineCurve(curve))
                 return;
 
-            fp.AcceptCurve(&curve);
+            fp.AcceptCurve(curve);
             curve.ReleaseMem();
             break;
             }
@@ -2147,18 +1863,18 @@ void FenceParams::ParseAcceptedGeometry(bvector<CurveVectorPtr>* inside, bvector
         tmpFp.SortSplitParams();
 
         tmpFp.GetSplitParam(0, u0);
-        pointFromParameter(segOrg, curvePrimitive.get(), u0, tmpFp);
+        curvePrimitive.get()->FractionToPoint(u0, segOrg);
 
         for (size_t i = 1; tmpFp.GetSplitParam(i, u1); i++, u0 = u1)
             {
-            pointFromParameter(segEnd, curvePrimitive.get(), u1, tmpFp);
+            curvePrimitive.get()->FractionToPoint(u1, segEnd);
 
             if (segOrg.IsEqual(segEnd, 1.0e-8) || (u1 - u0) <= MINIMUM_CLIPSIZE)
                 continue;
 
             DPoint3d    testPoint;
 
-            pointFromParameter(testPoint, curvePrimitive.get(), (u0 + u1)/2.0, tmpFp);
+            curvePrimitive.get()->FractionToPoint((u0 + u1)/2.0, testPoint);
 
             bool        isInside = tmpFp.PointInsideClip(testPoint);
 
@@ -2226,9 +1942,9 @@ bool FenceParams::AcceptElement(GeometrySourceCR source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus FenceParams::GetContents(DgnElementIdSet& contents)
+BentleyStatus FenceParams::GetContents(DgnElementIdSet& contents, FenceCheckStop* checkStop)
     {
-    FenceAcceptContext context(*this);
+    FenceAcceptContext context(*this, checkStop);
 
     return context.GetContents(contents);
     }
