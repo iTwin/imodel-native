@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DPolygonOfSegments.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DPolygonOfSegments
@@ -327,13 +327,13 @@ private:
                                                                 const HGF2DPositionCollection& pi_rPoly2) const;
     HVE2DShape*             DifferentiateFromPolygonSCS(const HVE2DPolygonOfSegments& pi_rPolygon) const;
 
-    void                    Decompose(const HVE2DPolygonOfSegments& pi_rPolygon,
+    bool                    Decompose(const HVE2DPolygonOfSegments& pi_rPolygon,
                                       const HGF2DPositionCollection& pi_rPoly1,
                                       const HGF2DPositionCollection& pi_rPoly2,
                                       HVE2DPolygonOfSegments::DecomposeOperation pi_Operation,
                                       HVE2DShape::SimpleShapeList& pi_rListOfShapes) const;
 
-    void                    SuperScan(const HVE2DPolygonOfSegments&  pi_rGiven,
+    bool                    SuperScan(const HVE2DPolygonOfSegments&  pi_rGiven,
                                       const HGF2DPositionCollection& pi_rPoly1,
                                       const HGF2DPositionCollection& pi_rPoly2,
                                       bool                          pi_WantInPtsOfShape1,
@@ -343,7 +343,7 @@ private:
                                       HVE2DShape::SimpleShapeList&   pi_rListOfShapes,
                                       bool*                         po_pAllOnPoints) const;
 
-    void                    SuperScan2(const HVE2DPolygonOfSegments&  pi_rGiven,
+    bool                    SuperScan2(const HVE2DPolygonOfSegments&  pi_rGiven,
                                        const HGF2DPositionCollection& pi_rPoly1,
                                        const HGF2DPositionCollection& pi_rPoly2,
                                        bool                          pi_WantInPtsOfShape1,
@@ -377,7 +377,7 @@ private:
     PointUsage*        InsertAutoContiguousPoints(HVE2DPolySegment& pio_rPolySegment) const;
     void               InsertAutoFlirtPoints(HGF2DPositionCollection& pio_rPoints) const;
 
-    void ChangeShape(const HVE2DPolygonOfSegments* const* apPoly,
+    bool ChangeShape(const HVE2DPolygonOfSegments* const* apPoly,
                      const HGF2DPositionCollection**  apPoints,
                      HGF2DLiteExtent* PolyExtents,
                      PointUsage** Flags,
