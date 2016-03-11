@@ -129,7 +129,7 @@ void AddLinearThermalExpansionCoefficient(UnitRegistry& reg)
 
 void AddLuminousFlux(UnitRegistry& reg)
     {
-    reg.AddUnit(LUMINOUS_FLUX, SI, "LUMEN", "CANDELA*STERAD");
+    reg.AddUnit(LUMINOUS_FLUX, SI, "LUMEN", "CD*STERAD");
     }
 
 void AddIlluminance(UnitRegistry& reg)
@@ -303,7 +303,7 @@ void AddEnergy(UnitRegistry& reg)
     unit = reg.AddUnit(WORK, SI, "KJ", "[KILO]*N*M");
     unit = reg.AddUnit(WORK, SI, "MJ", "[MEGA]*N*M");
     unit = reg.AddUnit(WORK, SI, "GJ", "[GIGA]*N*M");
-    reg.AddUnit(WORK, USCUSTOM, "FOOT_POUNDAL", "POUNDAL*FT"); //, BISQSecUom);
+    reg.AddUnit(WORK, USCUSTOM, "FOOT_POUNDAL", "PDL*FT"); //, BISQSecUom);
     unit = reg.AddUnit(WORK, INTERNATIONAL, "BTU", "J", 1.05505585262e3); // Is IT BTU.  http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.  See foot note #9: 
     reg.AddSynonym(unit, "BRITISH_THERMAL_UNIT");
     reg.AddUnit(WORK, USCUSTOM, "KILOBTU", "[KILO]*BTU"); //, BISQSecUom);
@@ -547,26 +547,26 @@ void AddTorque(UnitRegistry& reg)
 
 void AddMolarVolume(UnitRegistry& reg)
     {
-    UnitCP unit = reg.AddUnit(MOLAR_VOLUME, CHEMISTRY, "CUB.M/MOLE", "CUB.M*MOLE(-1)");
-    unit = reg.AddUnit(MOLAR_VOLUME, CHEMISTRY, "CUB.M/KMOL", "CUB.M*MOLE(-1)", 1.0e-3);
+    UnitCP unit = reg.AddUnit(MOLAR_VOLUME, CHEMISTRY, "CUB.M/MOLE", "CUB.M*MOL(-1)");
+    unit = reg.AddUnit(MOLAR_VOLUME, CHEMISTRY, "CUB.M/KMOL", "CUB.M*MOL(-1)", 1.0e-3);
     unit = reg.AddUnit(MOLAR_VOLUME, CHEMISTRY, "CUB.FT/LB-MOLE", "CUB.FT*LB-MOLE(-1)");
     }
 
 void AddMolarConcentration(UnitRegistry& reg)
     {
-    UnitCP unit = reg.AddUnit(MOLAR_CONCENTRATION, CHEMISTRY, "MOL/CUB.M", "MOLE*CUB.M(-1)");
+    UnitCP unit = reg.AddUnit(MOLAR_CONCENTRATION, CHEMISTRY, "MOL/CUB.M", "MOL*CUB.M(-1)");
     reg.AddSynonym(unit, "MILLIMOLAR");
-    unit = reg.AddUnit(MOLAR_CONCENTRATION, SI, "KMOL/CUB.M", "[KILO]*MOLE*CUB.M(-1)");
-    unit = reg.AddUnit(MOLAR_CONCENTRATION, CHEMISTRY, "MOL/CUB.DM", "MOLE*CUB.DM(-1)");
+    unit = reg.AddUnit(MOLAR_CONCENTRATION, SI, "KMOL/CUB.M", "[KILO]*MOL*CUB.M(-1)");
+    unit = reg.AddUnit(MOLAR_CONCENTRATION, CHEMISTRY, "MOL/CUB.DM", "MOL*CUB.DM(-1)");
     reg.AddSynonym(unit, "MOLE_PER_LITRE");
     reg.AddSynonym(unit, "MOLAR");
-    unit = reg.AddUnit(MOLAR_CONCENTRATION, CHEMISTRY, "MICROMOL/CUB.DM", "[MICRO]*MOLE*CUB.DM(-1)");
+    unit = reg.AddUnit(MOLAR_CONCENTRATION, CHEMISTRY, "MICROMOL/CUB.DM", "[MICRO]*MOL*CUB.DM(-1)");
     reg.AddSynonym(unit, "MICROMOLAR");
-    unit = reg.AddUnit(MOLAR_CONCENTRATION, CHEMISTRY, "NMOL/CUB.DM", "[NANO]*MOLE*CUB.DM(-1)");
+    unit = reg.AddUnit(MOLAR_CONCENTRATION, CHEMISTRY, "NMOL/CUB.DM", "[NANO]*MOL*CUB.DM(-1)");
     reg.AddSynonym(unit, "NANOMOLAR");
-    unit = reg.AddUnit(MOLAR_CONCENTRATION, CHEMISTRY, "PICOMOL/CUB.DM", "[PICO]*MOLE*CUB.DM(-1)");
+    unit = reg.AddUnit(MOLAR_CONCENTRATION, CHEMISTRY, "PICOMOL/CUB.DM", "[PICO]*MOL*CUB.DM(-1)");
     reg.AddSynonym(unit, "PICOMOLAR");
-    unit = reg.AddUnit(MOLAR_CONCENTRATION, CHEMISTRY, "MOL/CUB.FT", "MOLE*CUB.FT(-1)");
+    unit = reg.AddUnit(MOLAR_CONCENTRATION, CHEMISTRY, "MOL/CUB.FT", "MOL*CUB.FT(-1)");
     reg.AddSynonym(unit, "MOLE_PER_FOOT_CUBED");
     }
 

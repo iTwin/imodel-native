@@ -741,6 +741,33 @@ TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
     file.Close();
     }
 
+TEST_F(UnitsTests, TestUnitDefinitionsDoNotContainSynonyms)
+    {
+    bvector<UnitCP> allUnits;
+    UnitRegistry::Instance().AllUnits(allUnits);
+    for (auto const& unit : allUnits)
+        {
+        bvector<Utf8String> symbols;
+        BeStringUtilities::Split(unit->GetDefinition(), "*", symbols);
+        for (auto const& symbol : symbols)
+            {
+            auto index = symbol.find('(');
+            Utf8String unitName;
+            if (index < symbol.length())
+                unitName = symbol.substr(0, index).c_str();
+            else
+                unitName = symbol.c_str();
+
+            unitName.ReplaceAll("[", "");
+            unitName.ReplaceAll("]", "");
+
+            UnitCP subUnit = UnitRegistry::Instance().LookupUnit(unitName.c_str());
+            ASSERT_NE(nullptr, subUnit) << "Could not find subunit: " << unitName;
+            EXPECT_STREQ(unitName.c_str(), subUnit->GetName()) << "The Unit " << unit->GetName() << " has sub unit " << unitName << " in it's definition which is a Synonym for " << subUnit->GetName();
+            }
+        }
+    }
+
 struct UnitsPerformanceTests : UnitsTests {};
 
 TEST_F(UnitsPerformanceTests, InitUnitsHub)
