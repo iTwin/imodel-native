@@ -4153,4 +4153,4 @@ TEST_F (AnnotationTablePerformanceTest, CreateWriteReadLargeTable)
         DoCRUDTiming(iIter);
     }
 
-//#endif //PERFORMANCE_TEST
+#endif //PERFORMANCE_TEST
