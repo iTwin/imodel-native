@@ -2,14 +2,13 @@
 |
 |     $Source: RasterSchema/ImagePPAdmin.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RasterSchemaInternal.h>
 
 //Will ignore non local file format (WMS; GeoRaster, etc...)
-#define PREVIEWHANDLER_FILE_FORMATS       
-
+#define IPP_NO_REMOTE_FILE_FORMAT
 #include <ImagePP/all/h/HRFFileFormats.h>
 
 USING_NAMESPACE_BENTLEY_RASTERSCHEMA
