@@ -95,6 +95,9 @@
     </ClCompile>
     <ClCompile Include="DateTime.cpp" />
     <ClCompile Include="DateTimeConverter.cpp" />
+    <ClCompile Include="nonport\Base64Utilities.cpp">
+      <Filter>nonport</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BentleyInternal.h" />
@@ -240,6 +243,9 @@
       <Filter>PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="DateTimeConverter.h" />
+    <ClInclude Include="..\PublicAPI\Bentley\Base64Utilities.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\PublicAPI\Bentley\stg\__BENTLEY_INTERNAL_ONLY__">

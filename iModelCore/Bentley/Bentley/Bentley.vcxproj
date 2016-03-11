@@ -51,6 +51,7 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\PublicAPI\Bentley\Base64Utilities.h" />
     <ClInclude Include="..\PublicAPI\Bentley\BeAssert.h" />
     <ClInclude Include="..\PublicAPI\Bentley\BeDebugLog.h" />
     <ClInclude Include="..\PublicAPI\Bentley\BeDirectoryIterator.h" />
@@ -105,6 +106,7 @@
     <ClCompile Include="DateTime.cpp" />
     <ClCompile Include="DateTimeConverter.cpp" />
     <ClCompile Include="GlobalHandleContainer.cpp" />
+    <ClCompile Include="nonport\Base64Utilities.cpp" />
     <ClCompile Include="nonport\BeDebugLog.cpp" />
     <ClCompile Include="nonport\BeDirectoryIterator.cpp" />
     <ClCompile Include="nonport\BeFile.cpp" />
