@@ -7,10 +7,132 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
 #include <BeJsonCpp/BeJsonUtilities.h>
+#include <Bentley/Base64Utilities.h>
 #include <GeomSerialization/GeomLibsSerialization.h>
 #include <GeomSerialization/GeomLibsJsonSerialization.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      03/2016
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ECJsonUtilities::BinaryToJson(Json::Value& json, Byte const* binary, size_t binarySize)
+    {
+    if (binarySize == 0)
+        {
+        json = Json::nullValue;
+        return SUCCESS;
+        }
+
+    Utf8String str;
+    if (SUCCESS != Base64Utilities::Encode(str, binary, binarySize))
+        return ERROR;
+
+    json = Json::Value(str);
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      03/2016
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ECJsonUtilities::JsonToBinary(bvector<Byte>& binary, Json::Value const& json)
+    {
+    binary.clear();
+
+    if (json.isNull())
+        return SUCCESS;
+
+    if (!json.isString())
+        return ERROR;
+
+    Utf8String base64Str = json.asString();
+    return Base64Utilities::Decode(binary, base64Str);
+    }
+
+#define JSON_POINT_X_KEY "x"
+#define JSON_POINT_Y_KEY "y"
+#define JSON_POINT_Z_KEY "z"
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      03/2016
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ECJsonUtilities::Point2DToJson(Json::Value& json, DPoint2d pt)
+    {
+    json = Json::Value(Json::objectValue);
+    json[JSON_POINT_X_KEY] = pt.x;
+    json[JSON_POINT_Y_KEY] = pt.y;
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      03/2016
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ECJsonUtilities::JsonToPoint2D(DPoint2d& pt, Json::Value const& json)
+    {
+    double x = 0.0;
+    double y = 0.0;
+
+    if (SUCCESS != PointCoordinateFromJson(x, json, JSON_POINT_X_KEY) ||
+        SUCCESS != PointCoordinateFromJson(y, json, JSON_POINT_Y_KEY))
+        return ERROR;
+
+    pt = DPoint2d::From(x, y);
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      03/2016
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ECJsonUtilities::Point3DToJson(Json::Value& json, DPoint3d pt)
+    {
+    json = Json::Value(Json::objectValue);
+    json[JSON_POINT_X_KEY] = pt.x;
+    json[JSON_POINT_Y_KEY] = pt.y;
+    json[JSON_POINT_Z_KEY] = pt.z;
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      03/2016
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ECJsonUtilities::JsonToPoint3D(DPoint3d& pt, Json::Value const& json)
+    {
+    double x = 0.0;
+    double y = 0.0;
+    double z = 0.0;
+
+    if (SUCCESS != PointCoordinateFromJson(x, json, JSON_POINT_X_KEY) ||
+        SUCCESS != PointCoordinateFromJson(y, json, JSON_POINT_Y_KEY) ||
+        SUCCESS != PointCoordinateFromJson(z, json, JSON_POINT_Z_KEY))
+        return ERROR;
+
+    pt = DPoint3d::From(x, y, z);
+    return SUCCESS;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      03/2016
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ECJsonUtilities::PointCoordinateFromJson(double& coordinate, Json::Value const& json, Utf8CP coordinateKey)
+    {
+    if (json.isNull() || !json.isObject())
+        return ERROR;
+
+    Json::Value const& coordinateJson = json[coordinateKey];
+    if (coordinateJson.isNull() || !coordinateJson.isDouble())
+        return ERROR;
+
+    coordinate = coordinateJson.asDouble();
+    return SUCCESS;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 1/2013

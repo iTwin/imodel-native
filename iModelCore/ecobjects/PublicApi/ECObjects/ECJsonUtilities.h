@@ -10,6 +10,7 @@
 
 #include "ECSchema.h"
 #include "ECInstance.h"
+#include <Geom/GeomApi.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <rapidjson/BeRapidJson.h>
 
@@ -24,14 +25,21 @@ private:
     ECJsonUtilities();
     ~ECJsonUtilities();
 
-#if !defined (DOCUMENTATION_GENERATOR)
+    static BentleyStatus PointCoordinateFromJson(double&, Json::Value const&, Utf8CP coordinateKey);
+
     static BentleyStatus ECInstanceFromJsonValue(ECN::IECInstanceR, Json::Value const&, ECN::ECClassCR currentClass, Utf8StringCR currentAccessString);
     static BentleyStatus ECArrayValueFromJsonValue(ECN::IECInstanceR, Json::Value const&, ECN::ECPropertyCR, Utf8StringCR currentAccessString);
     static BentleyStatus ECPrimitiveValueFromJsonValue(ECN::ECValueR, Json::Value const&, ECN::PrimitiveType);
-#endif
 
 public:
     ECOBJECTS_EXPORT static BentleyStatus ECInstanceFromJsonValue(ECN::IECInstanceR, Json::Value const&);
+
+    ECOBJECTS_EXPORT static BentleyStatus BinaryToJson(Json::Value&, Byte const*, size_t binarySize);
+    ECOBJECTS_EXPORT static BentleyStatus JsonToBinary(bvector<Byte>&, Json::Value const&);
+    ECOBJECTS_EXPORT static BentleyStatus Point2DToJson(Json::Value&, DPoint2d);
+    ECOBJECTS_EXPORT static BentleyStatus JsonToPoint2D(DPoint2d&, Json::Value const&);
+    ECOBJECTS_EXPORT static BentleyStatus Point3DToJson(Json::Value&, DPoint3d);
+    ECOBJECTS_EXPORT static BentleyStatus JsonToPoint3D(DPoint3d&, Json::Value const&);
     };
 
 /*=================================================================================**//**
