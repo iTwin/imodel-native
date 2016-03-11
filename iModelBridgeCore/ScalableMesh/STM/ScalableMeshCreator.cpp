@@ -633,7 +633,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
     HFCPtr<SMStreamingPointTaggedTileStore<Int32, PointIndexExtentType>> pStreamingIndiceTileStore;
     HFCPtr<SMStreamingPointTaggedTileStore<DPoint2d, PointIndexExtentType>> pStreamingUVTileStore;
     HFCPtr<SMStreamingPointTaggedTileStore<int32_t, PointIndexExtentType>> pStreamingUVsIndicesTileStore;
-
+    HFCPtr<StreamingTextureTileStore> pStreamingTextureTileStore;
 
     HFCPtr<SMSQLiteIndiceTileStore<YProtPtExtentType >> pIndiceTileStore;
     HFCPtr<SMSQLiteUVTileStore<YProtPtExtentType >> pUVTileStore;
@@ -677,7 +677,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
             pStreamingIndiceTileStore = new SMStreamingPointTaggedTileStore< Int32, PointIndexExtentType>(indice_store_path, WString(), (SCM_COMPRESSION_DEFLATE == m_compressionType));
             pStreamingUVTileStore = new SMStreamingPointTaggedTileStore< DPoint2d, PointIndexExtentType>(uv_store_path, WString(), (SCM_COMPRESSION_DEFLATE == m_compressionType));
             pStreamingUVsIndicesTileStore = new SMStreamingPointTaggedTileStore< int32_t, PointIndexExtentType>(uvIndice_store_path, WString(), (SCM_COMPRESSION_DEFLATE == m_compressionType));
-            auto pStreamingTextureTileStore = new StreamingTextureTileStore(texture_store_path.c_str(), 4);
+            pStreamingTextureTileStore = new StreamingTextureTileStore(texture_store_path.c_str());
             pDataIndex = new IndexType(ScalableMeshMemoryPools<PointType>::Get()->GetPointPool(),
                                        &*pStreamingTileStore,
                                        ScalableMeshMemoryPools<PointType>::Get()->GetPtsIndicePool(),
@@ -688,7 +688,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
 
                                        ScalableMeshMemoryPools<PointType>::Get()->GetTexturePool(),
 
-                                       pStreamingTextureTileStore,
+                                       &*pStreamingTextureTileStore,
 
                                        ScalableMeshMemoryPools<PointType>::Get()->GetUVPool(),
                                        //pUVTileStore,
