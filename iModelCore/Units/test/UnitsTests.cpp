@@ -36,7 +36,13 @@ struct UnitsTests : UnitsTestFixture
 
     static UnitCP LocateUOM(Utf8CP unitName)
         {
-        return UnitRegistry::Instance().LookupUnit(unitName);
+        auto unit = UnitRegistry::Instance().LookupUnit(unitName);
+        if (unit == nullptr)
+            {
+            unit = UnitRegistry::Instance().LookupUnitUsingOldName(unitName);
+            }
+
+        return unit;
         }
 
     static void GetMapping(WCharCP file, bmap<Utf8String, Utf8String>& unitNameMap, bset<Utf8String>& notMapped)
@@ -555,7 +561,7 @@ void GetUnitsByName(UnitRegistry& hub, bvector<Utf8String>& unitNames)
     {
     for (auto const& unitName : unitNames)
         {
-        auto unit = hub.LookupUnit(unitName.c_str());
+        auto unit = hub.LookupUnitUsingOldName(unitName.c_str());
         ASSERT_TRUE(unit != nullptr) << "Failed to get unit: " << unitName;
         }
     }
@@ -621,7 +627,7 @@ void TestUnitAndConstantsExist(const bvector<Utf8String>& unitNames, Utf8CP unit
             }
         else
             {
-            UnitCP subUnit = reg.LookupUnit(subUnitName.c_str());
+            UnitCP subUnit = reg.LookupUnitUsingOldName(subUnitName.c_str());
             ASSERT_NE(nullptr, subUnit) << "Could not find Sub unit '" << subUnitName << "' for " << atorName << " of unit: " << unitName;
             }
         }
@@ -631,15 +637,26 @@ TEST_F(UnitsTests, AllUnitsNeededForFirstReleaseExist)
     {
     bvector<Utf8String> missingUnits;
     bvector<Utf8String> foundUnits;
-    auto lineProcessor = [&missingUnits, &foundUnits] (bvector<Utf8String>& lines)
+    bvector<Utf8String> foundMappedUnits;
+    auto lineProcessor = [&missingUnits, &foundUnits, &foundMappedUnits] (bvector<Utf8String>& lines)
         {
         for (auto const& unitName : lines)
             {
             UnitCP unit = UnitRegistry::Instance().LookupUnit(unitName.c_str());
-            if (nullptr == unit)
-                missingUnits.push_back(unitName);
-            else
+            if (nullptr != unit)
+                {
                 foundUnits.push_back(unitName);
+                continue;
+                }
+
+            unit = UnitRegistry::Instance().LookupUnitUsingOldName(unitName.c_str());
+            if (nullptr != unit)
+                {
+                foundMappedUnits.push_back(unitName);
+                continue;
+                }
+
+            missingUnits.push_back(unitName);
             }
         };
 
