@@ -88,7 +88,7 @@ public:
 };
 
 //=======================================================================================
-//! Context used by elements when they clone themselves
+//! Context used by elements when they are cloned
 //=======================================================================================
 struct DgnCloneContext
 {
@@ -601,16 +601,15 @@ protected:
     };
 
     mutable BeAtomic<uint32_t> m_refCount;
-    DgnDbR          m_dgndb;
-    DgnElementId    m_elementId;
-    DgnElementId    m_parentId;
-    DgnModelId      m_modelId;
-    DgnClassId      m_classId;
-    DgnCode         m_code;
-    Utf8String      m_label;
+    DgnDbR        m_dgndb;
+    DgnElementId  m_elementId;
+    DgnElementId  m_parentId;
+    DgnModelId    m_modelId;
+    DgnClassId    m_classId;
+    DgnCode       m_code;
+    Utf8String    m_label;
+    mutable Flags m_flags;
     mutable ECN::AdHocJsonContainerP m_userProperties;
-
-    mutable Flags   m_flags;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
     virtual Utf8CP _GetECClassName() const {return MyECClassName();}
@@ -1868,7 +1867,7 @@ public:
 
     //! Get an editable copy of an element by DgnElementId.
     //! @return Invalid if the element does not exist, or if it cannot be edited.
-    template<class T> RefCountedPtr<T> GetForEdit(DgnElementId id) const {RefCountedCPtr<T> orig=Get<T>(id); return orig.IsValid() ?(T*)orig->CopyForEdit().get() : nullptr;}
+    template<class T> RefCountedPtr<T> GetForEdit(DgnElementId id) const {RefCountedCPtr<T> orig=Get<T>(id); return orig.IsValid() ? (T*)orig->CopyForEdit().get() : nullptr;}
 
     //! Insert a copy of the supplied DgnElement into this DgnDb.
     //! @param[in] element The DgnElement to insert.

@@ -100,6 +100,9 @@ struct Task : RefCounted<NonCopyableClass>
         ChangeDecorations,
         DrawProgressive,
         DrawFrame,
+        Redraw,
+        BeginHeal,
+        FinishHeal,
     };
 
     //! The outcome of the processing of a Task.
@@ -180,7 +183,11 @@ public:
     //! to complete.
     void AddAndWait(Task& task) {AddTask(task); WaitForIdle();}
 
-    DGNPLATFORM_EXPORT bool HasPending(Task::Operation op);
+    //! @return true if the render queue is empty and no pending tasks are active.
+    //! @note This method may only be called from the main thread 
+    DGNPLATFORM_EXPORT bool IsIdle() const;
+
+    DGNPLATFORM_EXPORT bool HasPending(Task::Operation op) const;
 };
 
 //=======================================================================================
@@ -931,7 +938,7 @@ public:
         if (nullptr != m_vp && m_vp != &vp)
             return false;
 
-        if (0.0 == m_minSize && 0.0 == m_maxSize)
+        if (0.0 == metersPerPixel || (0.0 == m_minSize && 0.0 == m_maxSize))
             return true;
 
         return (metersPerPixel >= m_minSize && metersPerPixel <= m_maxSize);
@@ -1154,6 +1161,7 @@ struct GraphicList : RefCounted<NonCopyableClass>
     uint32_t GetCount() const {return (uint32_t) m_list.size();}
     bool IsEmpty() const {return m_list.empty();}
     void Clear() {m_list.clear();}
+    DGNPLATFORM_EXPORT void Drop(Graphic& graphic);
     DGNPLATFORM_EXPORT void Add(Graphic& graphic, void* ovr, uint32_t ovrFlags);
 };
 
@@ -1234,7 +1242,7 @@ public:
 };
 
 //=======================================================================================
-//! A Render::Device is the platform specific object that connects a render target to a the platform's rendering system.
+//! A Render::Device is the platform specific object that connects a render target to a rendering system.
 //! It holds a reference to a Render::Window.
 //! On Windows, for example, the default Render::Device maps to a "DC"
 // @bsiclass                                                    Keith.Bentley   11/15
@@ -1303,16 +1311,20 @@ public:
         DGNPLATFORM_EXPORT static void SaveProgressiveTarget(int);
         static void Show();
     };
-
     virtual void _ChangeScene(GraphicListR scene, ClipPrimitiveCP activeVolume) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
     virtual void _ChangeTerrain(GraphicListR terrain) {VerifyRenderThread(); m_terrain = !terrain.IsEmpty() ? &terrain : nullptr;}
     virtual void _ChangeDynamics(GraphicListR dynamics) {VerifyRenderThread(); m_dynamics = &dynamics;}
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
     virtual void _ChangeRenderPlan(PlanCR) = 0;
+    virtual void _Redraw(GraphicListR erases, GraphicListR draws) = 0;
+    virtual void _BeginHeal() = 0;
+    enum class HealAborted : bool {No=0, Yes=1};
+    virtual void _FinishHeal(HealAborted) = 0;
+    virtual bool _NeedsHeal(BSIRectR) const = 0;
     virtual void _DrawFrame(StopWatch&) = 0;
     virtual void _DrawProgressive(GraphicListR progressiveList, StopWatch&) = 0;
-    virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
+    virtual double _GetCameraFrustumNearScaleLimit() const = 0;
 
     void AbortProgressive() {m_abort=true;}
     Point2d GetScreenOrigin() const {return _GetScreenOrigin();}

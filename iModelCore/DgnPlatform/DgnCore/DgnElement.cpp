@@ -2452,6 +2452,7 @@ DgnDbStatus GeometricElement::_OnUpdate(DgnElementCR el)
 void GeometricElement::_OnInserted(DgnElementP copiedFrom) const 
     {
     T_Super::_OnInserted(copiedFrom);
+    T_HOST.GetTxnAdmin()._OnGraphicElementAdded(m_elementId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2486,6 +2487,7 @@ void GeometricElement::_OnReversedAdd() const
 void GeometricElement::_OnReversedDelete() const 
     {
     T_Super::_OnReversedDelete();
+    T_HOST.GetTxnAdmin()._OnGraphicElementAdded(m_elementId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2494,9 +2496,10 @@ void GeometricElement::_OnReversedDelete() const
 void GeometricElement::_OnUpdateFinished() const 
     {
     T_Super::_OnUpdateFinished(); 
+    T_HOST.GetTxnAdmin()._OnGraphicElementAdded(m_elementId);
+
     if (m_graphics.IsEmpty())
         return;
-        
     T_HOST.GetTxnAdmin()._OnGraphicsRemoved(m_graphics);
     m_graphics.Clear();
     }

@@ -989,7 +989,6 @@ double DgnViewport::GetPixelSizeAtPoint(DPoint3dCP rootPtP, DgnCoordSystem coord
     viewPts[1].x += viewPts[1].w;
 
     DPoint3d    rootPts[2];
-
     ViewToWorld(rootPts, viewPts, 2);
 
     switch (coordSys)
@@ -1097,7 +1096,7 @@ bool DgnViewport::UseClipVolume(DgnModelCP modelRef) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RichardTrefz    08/02
+* @bsimethod                                                    RayBentley  10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
 ColorDef DgnViewport::GetContrastToBackgroundColor() const
     {
@@ -1139,10 +1138,11 @@ ColorDef DgnViewport::GetBackgroundColor() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/14
+* @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::ScheduleProgressiveTask(ProgressiveTask& task)
     {
+    DgnDb::VerifyClientThread(); // this may only be called from the client thread.
     m_progressiveTasks.push_back(&task);
     }
 

@@ -338,9 +338,7 @@ public:
     void insert(const_iterator first, const_iterator last) {((T_SetType&)m_set).insert(first,last);}
     size_t erase(IdType const& val) {return ((T_SetType&)m_set).erase(val);}
     iterator erase(iterator it) {return ((T_SetType&)m_set).erase(it);}
-
     bool Contains(IdType id) const {return end() != find(id);}
-
     void FromJson(Json::Value const& in) {m_set.FromJson(in);}
     void ToJson(Json::Value& out) const {m_set.ToJson(out);}
 
@@ -837,6 +835,7 @@ enum class DrawPurpose
     Measure,
     VisibilityCalculation,
     Dynamics,
+    Redraw,
 };
 
 //! Used to communicate the result of handling an event from a GPS.

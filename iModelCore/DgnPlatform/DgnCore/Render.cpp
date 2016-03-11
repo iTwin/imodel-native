@@ -85,9 +85,19 @@ void Render::Queue::AddTask(Task& task)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Render::Queue::IsIdle() const
+    {
+    DgnDb::VerifyClientThread();
+    BeMutexHolder holder(m_cv.GetMutex());
+    return m_tasks.empty() && !m_currTask.IsValid();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Render::Queue::HasPending(Task::Operation op)
+bool Render::Queue::HasPending(Task::Operation op) const
     {
     DgnDb::VerifyClientThread();
 
@@ -260,6 +270,21 @@ void GraphicList::Add(Graphic& graphic, void* ovr, uint32_t ovrFlags)
     {
     graphic.Close(); 
     m_list.push_back(Node(graphic, ovr, ovrFlags));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void GraphicList::Drop(Graphic& graphic) 
+    {
+    for (auto it=m_list.begin(); it!=m_list.end(); ++it)
+        {
+        if (it->m_ptr.get() == &graphic)
+            {
+            m_list.erase(it);
+            return;
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

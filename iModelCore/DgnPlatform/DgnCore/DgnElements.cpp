@@ -1407,8 +1407,8 @@ DgnElementId DgnElements::QueryElementIdByCode(DgnCode const& code) const
     {
     if (!code.IsValid() || code.IsEmpty())
         return DgnElementId(); // An invalid code won't be found; an empty code won't be unique. So don't bother.
-    else
-        return QueryElementIdByCode(code.GetAuthority(), code.GetValue(), code.GetNamespace());
+
+    return QueryElementIdByCode(code.GetAuthority(), code.GetValue(), code.GetNamespace());
     }
 
 /*---------------------------------------------------------------------------------**//**
