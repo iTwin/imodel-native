@@ -76,7 +76,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
     auto assignmentListSnippets = NativeSqlBuilder::FlattenJaggedList(assignmentListSnippetLists, emptyIndexSkipList);
     nativeSqlBuilder.Append(" SET ").Append(assignmentListSnippets);
     if (assignmentListSnippets.size() == 0)
-        ctx.SetOnlyExecuteStepTasks();
+        ctx.SetNativeStatementIsNoop(true);
 
     //WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] WHERE (%s))
     NativeSqlBuilder topLevelWhereClause;
@@ -87,7 +87,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         if (!status.IsSuccess())
             return status;
 
-        //Following generate optimized WHERE depending on what was accessed in WHERE class of delete. It will avoid uncessary
+        //Following generate optimized WHERE depending on what was accessed in WHERE class of delete.
         auto const & currentClassMap = classMap;
         if (!currentClassMap.IsMappedToSingleTable())
             {

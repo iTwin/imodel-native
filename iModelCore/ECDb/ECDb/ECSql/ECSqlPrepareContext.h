@@ -377,7 +377,6 @@ struct ECSqlPrepareContext
         ECSqlColumnInfo const* m_parentColumnInfo;
         NativeSqlBuilder m_nativeSqlBuilder;
         bool m_nativeStatementIsNoop;
-        bool m_onlyExecuteStepTasks;
         ExpScopeStack m_scopes;
         SelectionOptions m_selectionOptions;
         std::unique_ptr<JoinedTableInfo> m_joinedTableInfo;
@@ -411,8 +410,6 @@ struct ECSqlPrepareContext
 
         bool NativeStatementIsNoop() const { return m_nativeStatementIsNoop; }
         void SetNativeStatementIsNoop(bool flag) { m_nativeStatementIsNoop = flag; }
-        bool OnlyExecuteStepTasks() const { return m_onlyExecuteStepTasks; }
-        void SetOnlyExecuteStepTasks() { m_onlyExecuteStepTasks = true; }
 
         ExpScope const& GetCurrentScope() const { return m_scopes.Current(); }
         ExpScope& GetCurrentScopeR() { return m_scopes.CurrentR(); }
