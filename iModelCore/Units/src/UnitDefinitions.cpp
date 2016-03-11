@@ -139,10 +139,20 @@ void AddTemperatureGradient(UnitRegistry& reg)
     reg.AddSynonym("KELVIN/M", "DELTA_DEGREE_KELVIN_PER_METRE");
     }
 
-//void AddLinearThermalExpansionCoefficient(UnitRegistry& reg)
-//    {
-//    reg.AddUnit(LINEAR_COEFFICIENT_OF_THERMAL_EXPANSION, )
-//    }
+void AddLinearThermalExpansionCoefficient(UnitRegistry& reg)
+    {
+    reg.AddUnit(LINEAR_COEFFICIENT_OF_THERMAL_EXPANSION, SI, "STRAIN/K", "DELTA_KELVIN(-1)");
+    reg.AddSynonym("STRAIN/K", "RECIPROCAL_DELTA_DEGREE_KELVIN");
+
+    reg.AddUnit(LINEAR_COEFFICIENT_OF_THERMAL_EXPANSION, SI, "STRAIN/C", "DELTA_CELSIUS(-1)");
+    reg.AddSynonym("STRAIN/CELSIUS", "RECIPROCAL_DELTA_DEGREE_CELSIUS");
+
+    reg.AddUnit(LINEAR_COEFFICIENT_OF_THERMAL_EXPANSION, USCUSTOM, "STRAIN/FAHRENHEIT", "DELTA_FAHRENHEIT(-1)");
+    reg.AddSynonym("STRAIN/FAHRENHEIT", "RECIPROCAL_DELTA_DEGREE_FAHRENHEIT");
+
+    reg.AddUnit(LINEAR_COEFFICIENT_OF_THERMAL_EXPANSION, USCUSTOM, "STRAIN/RANKINE", "DELTA_RANKINE(-1)");
+    reg.AddSynonym("STRAIN/RANKINE", "RECIPROCAL_DELTA_DEGREE_RANKINE");
+    }
 
 void AddLuminousFlux(UnitRegistry& reg)
     {
@@ -298,7 +308,9 @@ void AddDensity(UnitRegistry& reg)
     reg.AddSynonym(unit, "POUND_PER_IMPERIAL_GALLON");
     unit = reg.AddUnit(DENSITY, SI, "LBM/CUB.IN", "LBM*IN(-3)");
     reg.AddSynonym(unit, "POUND_PER_INCH_CUBED");
-    reg.AddUnit(DENSITY, USCUSTOM, "POUND_PER_MILLION_GALLON", "LBM*GALLON(-1)", 1.0e-6);
+    
+    reg.AddUnit(DENSITY, USCUSTOM, "LBM/MILLION_GALLON", "LBM*GALLON(-1)", 1.0e-6);
+    reg.AddSynonym("LBM/MILLION_GALLON", "POUND_PER_MILLION_GALLON");
 
     unit = reg.AddUnit(DENSITY, USCUSTOM, "SLUG/CUB.FT", "SLUG*FT(-3)");
     reg.AddSynonym(unit, "SLUG_PER_FOOT_CUBED");
@@ -395,13 +407,18 @@ void AddEnergyDensity(UnitRegistry& reg)
     {
     UnitCP unit = reg.AddUnit(HEATING_VALUE_VOLUMETRIC, SI, "J/CUB.M", "J*M(-3)");
     reg.AddSynonym(unit, "JOULE_PER_METRE_CUBED");
+
     unit = reg.AddUnit(HEATING_VALUE_VOLUMETRIC, SI, "KJ/CUB.M", "KJ*M(-3)");
     reg.AddSynonym(unit, "KILOJOULE_PER_METRE_CUBED");
+
     unit = reg.AddUnit(HEATING_VALUE_VOLUMETRIC, SI, "KWH/CUB.M", "KWH*M(-3)");
     reg.AddSynonym(unit, "KILOWATT_HOUR_PER_METRE_CUBED");
+
     unit = reg.AddUnit(HEATING_VALUE_VOLUMETRIC, USCUSTOM, "KWH/CUB.FT", "KWH*FT(-3)");
     reg.AddSynonym(unit, "KILOWATT_HOUR_PER_FOOT_CUBED");
-    unit = reg.AddUnit(HEATING_VALUE_VOLUMETRIC, USCUSTOM, "KILOWATT_HOUR_PER_MILLION_GALLON", "KWH*GALLON(-1)", 1.0e-6);
+
+    reg.AddUnit(HEATING_VALUE_VOLUMETRIC, USCUSTOM, "KWH/MILLION_GALLON", "KWH*GALLON(-1)", 1.0e-6);
+    reg.AddSynonym("KWH/MILLION_GALLON", "KILOWATT_HOUR_PER_MILLION_GALLON");
     }
 
 void AddHeatingValue(UnitRegistry& reg)
@@ -482,9 +499,16 @@ void AddVolumeFlowRate(UnitRegistry& reg)
     reg.AddSynonym(unit, "ACRE_INCH_PER_HOUR");
     unit = reg.AddUnit(FLOW, USCUSTOM, "ACRE_INCH/MIN", "ACRE_INCH*MIN(-1)");
     reg.AddSynonym(unit, "ACRE_INCH_PER_MINUTE");
-    reg.AddUnit(FLOW, USCUSTOM, "GALLON_IMPERIAL_PER_DAY", "GALLON_IMPERIAL*DAY(-1)"); //, BISQSecUom);
-    reg.AddUnit(FLOW, USCUSTOM, "GALLON_IMPERIAL_PER_MINUTE", "GALLON_IMPERIAL*MIN(-1)"); //, BISQSecUom);
-    reg.AddUnit(FLOW, USCUSTOM, "GALLON_IMPERIAL_PER_SECOND", "GALLON_IMPERIAL*S(-1)"); //, BISQSecUom);
+
+    reg.AddUnit(FLOW, USCUSTOM, "GALLON_IMPERIAL/DAY", "GALLON_IMPERIAL*DAY(-1)"); //, BISQSecUom);
+    reg.AddSynonym("GALLON_IMPERIAL/DAY", "GALLON_IMPERIAL_PER_DAY");
+
+    reg.AddUnit(FLOW, USCUSTOM, "GALLON_IMPERIAL/MINUTE", "GALLON_IMPERIAL*MIN(-1)"); //, BISQSecUom);
+    reg.AddSynonym("GALLON_IMPERIAL/MINUTE", "GALLON_IMPERIAL_PER_MINUTE");
+
+    reg.AddUnit(FLOW, USCUSTOM, "GALLON_IMPERIAL/SECOND", "GALLON_IMPERIAL*S(-1)"); //, BISQSecUom);
+    reg.AddSynonym("GALLON_IMPERIAL/SECOND", "GALLON_IMPERIAL_PER_SECOND");
+
     unit = reg.AddUnit(FLOW, USCUSTOM, "GALLON/S", "GALLON*S(-1)");
     reg.AddSynonym(unit, "GALLON_PER_SECOND");
     unit = reg.AddUnit(FLOW, USCUSTOM, "GALLON/MIN", "GALLON*MIN(-1)");
@@ -777,7 +801,8 @@ void AddPressure(UnitRegistry& reg)
     reg.AddUnit(PRESSURE, SI, "PA_GAUGE", "PA", 1, -101325); // TODO: Use constant for this
 
     // TODO: See if this is equal to another unit here.
-    reg.AddUnit(PRESSURE, SI, "NEWTON_PER_MILLIMETRE_SQUARED", "N*MM(-2)");
+    reg.AddUnit(PRESSURE, SI, "N/SQ.MM", "N*MM(-2)");
+    reg.AddSynonym("N/SQ.MM", "NEWTON_PER_MILLIMETRE_SQUARED");
 
     reg.AddUnit(PRESSURE, SI, "HECTOPASCAL", "[HECTO]*PA"); //, BISQSecUom);
 
@@ -815,8 +840,10 @@ void AddPressure(UnitRegistry& reg)
     unit = reg.AddUnit(PRESSURE, USCUSTOM, "PSIG", "LBF*IN(-2)", 1, -14.695948775513449); // TODO: double check, used 101325 PA -> PSI conversion
     reg.AddSynonym(unit, "POUND_FORCE_PER_INCH_SQUARED_GAUGE");
 
-    unit = reg.AddUnit(PRESSURE, USCUSTOM, "KSI", "[KILO]*LBF*IN(-2)");
-    reg.AddUnit(PRESSURE, USCUSTOM, "POUND_FORCE_PER_FOOT_SQUARED", "LBF*FT(-2)");
+    reg.AddUnit(PRESSURE, USCUSTOM, "KSI", "[KILO]*LBF*IN(-2)");
+
+    reg.AddUnit(PRESSURE, USCUSTOM, "LBF/SQ.FT", "LBF*FT(-2)");
+    reg.AddSynonym("LBF/SQ.FT", "POUND_FORCE_PER_FOOT_SQUARED");
 
     reg.AddUnit(PRESSURE, USCUSTOM, "TORR", "PA", 1.333224e2);   // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
 
@@ -1213,6 +1240,7 @@ void UnitRegistry::AddDefaultUnits ()
     AddThermalConductivity(reg);
     AddThermalResistance(reg);
     AddTemperatureGradient(reg);
+    AddLinearThermalExpansionCoefficient(reg);
     AddThreadPitch(reg);
     AddVelocity(reg);
     AddAngularVelocity(reg);

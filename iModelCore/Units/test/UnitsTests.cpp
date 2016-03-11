@@ -682,6 +682,9 @@ TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
 
     for (auto const& phenomenon : phenomena)
         {
+        if (phenomenon->GetUnits().size() == 0)
+            continue;
+
         Utf8PrintfString line("Units for Phenomenon:,%s", phenomenon->GetName());
         WriteLine(file, line.c_str());
 
@@ -691,14 +694,23 @@ TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
         line.Sprintf("Phenomenon Dimension:,%s", phenomenon->GetPhenomenonDimension().c_str());
         WriteLine(file, line.c_str());
 
-        WriteLine(file, "UnitName,UnitDefinition,UnitDimension");
+        WriteLine(file, "UnitName,UnitDefinition,UnitDimension,ParsedDefinition");
         
         for (auto const& unit : phenomenon->GetUnits())
             {
             if (unit->IsConstant())
                 continue;
 
-            line.Sprintf("%s,%s,%s", unit->GetName(), unit->GetDefinition(), unit->GetUnitDimension().c_str());
+            Utf8String parsedExpression = unit->GetParsedUnitExpression();
+            if (unit->HasOffset() && unit->GetFactor() != 1.0)
+                line.Sprintf("%s,%.10g * %s - %.10g,%s,%s", unit->GetName(), unit->GetFactor(), unit->GetDefinition(), unit->GetOffset(), unit->GetUnitDimension().c_str(), parsedExpression.c_str());
+            else if (unit->HasOffset())
+                line.Sprintf("%s,%s - %.10g,%s,%s", unit->GetName(), unit->GetDefinition(), unit->GetOffset(), unit->GetUnitDimension().c_str(), parsedExpression.c_str());
+            else if (unit->GetFactor() != 1.0)
+                line.Sprintf("%s,%.10g * %s,%s,%s", unit->GetName(), unit->GetFactor(), unit->GetDefinition(), unit->GetUnitDimension().c_str(), parsedExpression.c_str());
+            else
+                line.Sprintf("%s,%s,%s,%s", unit->GetName(), unit->GetDefinition(), unit->GetUnitDimension().c_str(), parsedExpression.c_str());
+
             WriteLine(file, line.c_str());
             }
 
@@ -777,5 +789,20 @@ TEST_F(UnitsPerformanceTests, GenerateEveryConversionValue)
     timer.Stop();
     PERFORMANCELOG.errorv("Time to Generate %d conversion factors: %.17g", numConversions, timer.GetElapsedSeconds());
     }
+
+//TEST_F(UnitsPerformanceTests, ConvertManyValues)
+//    {
+//    StopWatch timer("Do Many Conversions", false);
+//    UnitRegistry::Clear();
+//    UnitCP unitA = UnitRegistry::Instance().LookupUnit("CUB.M/(DAY*SQ.M)");
+//    UnitCP unitB = UnitRegistry::Instance().LookupUnit("CUB.FT/(ACRE*SEC)");
+//
+//    int numTimes = 1000000;
+//    timer.Start();
+//    for (int i = 0; i < numTimes; ++i)
+//        unitA->Convert(42.42, unitB);
+//    timer.Stop();
+//    PERFORMANCELOG.errorv("Time to covert between %s and %s %d times: %.15g", unitA->GetName(), unitB->GetName(), numTimes, timer.GetElapsedSeconds());
+//    }
 
 END_UNITS_UNITTESTS_NAMESPACE

@@ -323,6 +323,20 @@ bool UnitRegistry::NameConflicts(Utf8CP name)
     return false;
     }
 
+//---------------------------------------------------------------------------------------//
+// @bsimethod                                              Colin.Kerr           03/16
+//+---------------+---------------+---------------+---------------+---------------+------//
+bool UnitRegistry::TryGetConversion(uint64_t index, Conversion& conversion)
+    {
+    auto it = m_conversions.find(index);
+    if (it != m_conversions.end())
+        {
+        conversion = it->second;
+        return true;
+        }
+    return false;
+    }
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/

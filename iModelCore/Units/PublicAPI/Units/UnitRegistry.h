@@ -11,7 +11,6 @@
 #include <Units/Units.h>
 
 BEGIN_BENTLEY_UNITS_NAMESPACE
-
 //=======================================================================================
 //! A central place to store registered units with the system.  Users interact
 //! with the units system here.
@@ -19,15 +18,15 @@ BEGIN_BENTLEY_UNITS_NAMESPACE
 //=======================================================================================
 struct UnitRegistry
     {
+friend struct Unit;
 private:
     static UnitRegistry * s_instance;
 
     Utf8Vector m_systems;
     bmap<Utf8String, PhenomenonP> m_phenomena;
     bmap<Utf8String, UnitP> m_units;
-    int m_nextId = 0;
-
-    bmap<bpair<Utf8String, Utf8String>, double> m_conversions;
+    bmap<uint64_t, Conversion> m_conversions;
+    uint32_t m_nextId = 0;
 
     UnitRegistry();
     UnitRegistry(const UnitRegistry& rhs) = delete;
@@ -51,6 +50,9 @@ private:
     UnitP AddUnitP(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor = 1, double offset = 0);
 
     bool NameConflicts(Utf8CP name);
+
+    bool TryGetConversion(uint64_t index, Conversion& conversion);
+    void AddConversion(uint64_t index, Conversion& conversion) { m_conversions.Insert(index, conversion); }
 
 public:
     UNITS_EXPORT static UnitRegistry & Instance();

@@ -11,7 +11,7 @@
 
 USING_NAMESPACE_BENTLEY_UNITS
 
-Symbol::Symbol(Utf8CP name, Utf8CP definition, Utf8Char dimensionSymbol, int id, double factor, double offset) : 
+Symbol::Symbol(Utf8CP name, Utf8CP definition, Utf8Char dimensionSymbol, uint32_t id, double factor, double offset) :
     m_name(name), m_definition(definition), m_dimensionSymbol(dimensionSymbol), m_id(id), m_factor(factor), m_offset(offset), m_evaluated(false), 
     m_symbolExpression(new Expression())
     {
@@ -37,7 +37,7 @@ ExpressionCR Symbol::Evaluate(int depth, std::function<SymbolCP(Utf8CP)> getSymb
 
 // TODO: Is the definition correct here?
 // TODO: We should probably restrict inverting units to units which are unitless.  If we do not then the inverted unit would have a different dimension.
-Unit::Unit(UnitCR parent, Utf8CP unitName, int id) : 
+Unit::Unit(UnitCR parent, Utf8CP unitName, uint32_t id) :
     Unit(parent.GetUnitSystem(), *parent.GetPhenomenon(), unitName, id, parent.GetDefinition(), parent.GetDimensionSymbol(), 0, 0, false)
     {
     m_parent = &parent;
@@ -46,7 +46,7 @@ Unit::Unit(UnitCR parent, Utf8CP unitName, int id) :
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Unit::Unit(Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, int id, Utf8CP definition, Utf8Char dimensonSymbol, double factor, double offset, bool isConstant) :
+Unit::Unit(Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char dimensonSymbol, double factor, double offset, bool isConstant) :
     Symbol(name, definition, dimensonSymbol, id, factor, offset),
     m_system(system), m_parent(nullptr), m_isConstant(isConstant)
     {
@@ -56,15 +56,15 @@ Unit::Unit(Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, int id, Utf8CP d
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitP Unit::Create(Utf8CP sysName, PhenomenonCR phenomenon, Utf8CP unitName, int id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant)
+UnitP Unit::Create(Utf8CP sysName, PhenomenonCR phenomenon, Utf8CP unitName, uint32_t id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant)
     {
     LOG.debugv("Creating unit %s  Factor: %.17g  Offset: %d", unitName, factor, offset);
     return new Unit(sysName, phenomenon, unitName, id, definition, dimensionSymbol, factor, offset, isConstant);
     }
 
-int Unit::GetPhenomenonId() const { return GetPhenomenon()->GetId(); }
+uint32_t Unit::GetPhenomenonId() const { return GetPhenomenon()->GetId(); }
 
-UnitP Unit::Create(UnitCR parentUnit, Utf8CP unitName, int id)
+UnitP Unit::Create(UnitCR parentUnit, Utf8CP unitName, uint32_t id)
     {
     if (parentUnit.HasOffset())
         {
@@ -133,17 +133,16 @@ double Unit::Convert(double value, UnitCP toUnit) const
     return 1.0 / DoNumericConversion(value, *toUnit);
     }
 
-double Unit::DoNumericConversion(double value, UnitCR toUnit) const
+bool Unit::GenerateConversion(UnitCR toUnit, Conversion& conversion) const
     {
     Expression conversionExpression;
     if (BentleyStatus::SUCCESS != Expression::GenerateConversionExpression(*this, toUnit, conversionExpression))
         {
-        LOG.errorv("Cannot convert from %s to %s, units incompatible, returning a conversion factor of 0.0", this->GetName(), toUnit.GetName());
-        return 0.0;
+        LOG.errorv("Cannot convert from %s to %s, units incompatible", this->GetName(), toUnit.GetName());
+        return false;
         }
 
-    double factor = 1;
-    double offset = 0;
+    conversion.Factor = 1.0;
     for (auto const& toUnitExp : conversionExpression)
         {
         if (toUnitExp.GetExponent() == 0)
@@ -154,46 +153,69 @@ double Unit::DoNumericConversion(double value, UnitCR toUnit) const
         double unitFactor = FastIntegerPower(toUnitExp.GetSymbolFactor(), abs(toUnitExp.GetExponent()));
         if (toUnitExp.GetExponent() > 0)
             {
-            LOG.infov("Multiplying existing factor %.17g by %.17g", factor, unitFactor);
-            factor *= unitFactor;
-            LOG.infov("New factor %.17g", factor);
+            LOG.infov("Multiplying existing factor %.17g by %.17g", conversion.Factor, unitFactor);
+            conversion.Factor *= unitFactor;
+            LOG.infov("New factor %.17g", conversion.Factor);
             if (toUnitExp.GetSymbol()->HasOffset())
                 {
                 double unitOffset = toUnitExp.GetSymbol()->GetOffset() * toUnitExp.GetSymbol()->GetFactor();
-                LOG.infov("Adding %.17g to existing offset %.17g.", unitOffset, offset);
-                offset += unitOffset;
-                LOG.infov("New offset %.17g", offset);
+                LOG.infov("Adding %.17g to existing offset %.17g.", unitOffset, conversion.Offset);
+                conversion.Offset += unitOffset;
+                LOG.infov("New offset %.17g", conversion.Offset);
                 }
             else
                 {
-                LOG.infov("Multiplying offset %.17g by units conversion factor %.17g", offset, unitFactor);
-                offset *= unitFactor;
-                LOG.infov("New offset %.17g", offset);
+                LOG.infov("Multiplying offset %.17g by units conversion factor %.17g", conversion.Offset, unitFactor);
+                conversion.Offset *= unitFactor;
+                LOG.infov("New offset %.17g", conversion.Offset);
                 }
             }
         else
             {
-            LOG.infov("Dividing existing factor %.17g by %.17g", factor, unitFactor);
-            factor /= unitFactor;
-            LOG.infov("New factor %.17g", factor);
+            LOG.infov("Dividing existing factor %.17g by %.17g", conversion.Factor, unitFactor);
+            conversion.Factor /= unitFactor;
+            LOG.infov("New factor %.17g", conversion.Factor);
             if (toUnitExp.GetSymbol()->HasOffset())
                 {
                 double unitOffset = toUnitExp.GetSymbol()->GetOffset() * toUnitExp.GetSymbol()->GetFactor();
-                LOG.infov("Subtracting %.17g from existing offset %.17g.", unitOffset, offset);
-                offset -= unitOffset;
-                LOG.infov("New offset %l.17g", offset);
+                LOG.infov("Subtracting %.17g from existing offset %.17g.", unitOffset, conversion.Offset);
+                conversion.Offset -= unitOffset;
+                LOG.infov("New offset %l.17g", conversion.Offset);
                 }
 
-            LOG.infov("Dividing offset %.17g by units conversion factor %.17g", offset, unitFactor);
-            offset /= unitFactor;
-            LOG.infov("New offset %.17g", offset);
+            LOG.infov("Dividing offset %.17g by units conversion factor %.17g", conversion.Offset, unitFactor);
+            conversion.Offset /= unitFactor;
+            LOG.infov("New offset %.17g", conversion.Offset);
             }
         }
+    
+    return true;
+    }
 
-    LOG.infov("Conversion factor: %.17g, offset: %.17g", factor, offset);
-    value *= factor;
+double Unit::DoNumericConversion(double value, UnitCR toUnit) const
+    {
+    uint64_t index = GetId();
+    index = index << 32;
+    index |= toUnit.GetId();
 
-    value += offset;
+    Conversion conversion;
+    if (!UnitRegistry::Instance().TryGetConversion(index, conversion))
+        {
+        GenerateConversion(toUnit, conversion);
+        UnitRegistry::Instance().AddConversion(index, conversion);
+        }
+
+    if (conversion.Factor == 0.0)
+        {
+        LOG.errorv("Cannot convert from %s to %s, units incompatible, returning a conversion factor of 0.0", this->GetName(), toUnit.GetName());
+        return 0.0;
+        }
+
+
+    LOG.infov("Conversion factor: %.17g, offset: %.17g", conversion.Factor, conversion.Offset);
+    value *= conversion.Factor;
+
+    value += conversion.Offset;
 
     return value;
     }
@@ -204,6 +226,11 @@ Utf8String Unit::GetUnitDimension() const
     Expression baseExpression;
     Expression::CreateExpressionWithOnlyBaseSymbols(phenomenonExpression, baseExpression);
     return baseExpression.ToString(false);
+    }
+
+Utf8String Unit::GetParsedUnitExpression() const
+    {
+    return Evaluate().ToString(true);
     }
 
 UnitCP Unit::CombineWithUnit(UnitCR rhs, int factor) const

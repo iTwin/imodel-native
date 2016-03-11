@@ -310,16 +310,24 @@ void Expression::Copy(ExpressionR source, ExpressionR target)
 
 Utf8String ExpressionSymbol::ToString(bool includeFactors) const
     {
-    if (!includeFactors || GetSymbol()->GetFactor() == 0.0)
+    if (!includeFactors)
         {
         return Utf8PrintfString("%s^%d", GetName(), GetExponent());
         }
-    else if (GetSymbol()->HasOffset())
-        {
-        return Utf8PrintfString("(%.17g*%s^%d + %.17g)", GetSymbol()->GetFactor(), GetName(), GetExponent(), GetSymbol()->GetOffset());
-        }
     else
         {
-        return Utf8PrintfString("%.17g*%s^%d", GetSymbol()->GetFactor(), GetName(), GetExponent());
+        Utf8String factorAndUnit;
+        if (GetSymbol()->GetFactor() == 1.0)
+            factorAndUnit = GetName();
+        else
+            {
+            Utf8PrintfString temp("%.15g[%s]", GetSymbol()->GetFactor(), GetName());
+            factorAndUnit = temp.c_str();
+            }
+
+        if (GetSymbol()->HasOffset())
+            return Utf8PrintfString("(%s + %.15g)^%d", factorAndUnit.c_str(), GetSymbol()->GetOffset(), GetExponent());
+        
+        return Utf8PrintfString("%s^%d", factorAndUnit.c_str(), GetExponent());
         }
     }
