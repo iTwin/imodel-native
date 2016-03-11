@@ -71,6 +71,9 @@ typedef JsAdHocJsonPropertyValue* JsAdHocJsonPropertyValueP;
 struct JsECClass;
 typedef JsECClass* JsECClassP;
 
+struct JsECSchema;
+typedef JsECSchema* JsECSchemaP;
+
 struct JsECProperty;
 typedef JsECProperty* JsECPropertyP;
 
@@ -723,6 +726,22 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
         else if (geometry->GetISolidPrimitivePtr().IsValid())
             m_builder->Append(*geometry->GetISolidPrimitivePtr());
         }
+    void AppendGeometryNode (JsGeometryNodeP node)
+        {
+        DGNJSAPI_VALIDATE_ARGS_VOID(IsValid() && node);
+        auto nativeNode = node->GetGeometryNodePtr ();
+        if (nativeNode.IsValid ())
+            {
+            auto flatNode = node->Flatten ();
+            auto nativeFlatNode = flatNode->GetGeometryNodePtr ();
+            for (auto &geometry : nativeFlatNode->Geometry ())
+                {
+                m_builder->Append (*geometry);
+                }
+            }
+        }
+
+
 
     BentleyStatus SetGeometryStreamAndPlacement (JsDgnElementP el)
         {
@@ -864,13 +883,16 @@ struct JsECClass : RefCountedBaseWithCreate
         return new JsECPropertyCollection(m_ecClass->GetProperties());
         }
 
-    JsECPropertyP GetProperty(Utf8StringCR name);
+    JsECPropertyP GetProperty(Utf8StringCR name) const;
 
-    JsECInstanceP GetCustomAttribute(Utf8StringCR className);
+    JsECInstanceP GetCustomAttribute(Utf8StringCR className) const;
 
     JsECInstanceP MakeInstance();
 
+    JsECSchemaP GetSchema() const;
+
     STUB_OUT_SET_METHOD(Name,Utf8String)
+    STUB_OUT_SET_METHOD(Schema,JsECSchemaP)
     STUB_OUT_SET_METHOD(Properties,JsECPropertyCollectionP)
     STUB_OUT_SET_METHOD(BaseClasses,JsECClassCollectionP)
     STUB_OUT_SET_METHOD(DerivedClasses,JsECClassCollectionP)
@@ -935,7 +957,7 @@ struct JsECProperty : RefCountedBaseWithCreate
         }
 
     JsPrimitiveECPropertyP GetAsPrimitiveProperty() const;
-    JsECInstanceP GetCustomAttribute(Utf8StringCR className);
+    JsECInstanceP GetCustomAttribute(Utf8StringCR className) const;
     
     STUB_OUT_SET_METHOD(Name,Utf8String)
     STUB_OUT_SET_METHOD(IsPrimitive,bool)

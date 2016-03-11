@@ -1293,6 +1293,27 @@ void DgnModel::CreateParams::RelocateToDestinationDb(DgnImportContext& importer)
     m_classId = importer.RemapClassId(m_classId);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+static void LogPerformance(StopWatch& stopWatch, Utf8CP description, ...)
+    {
+    stopWatch.Stop();
+    const NativeLogging::SEVERITY severity = NativeLogging::LOG_INFO;
+    NativeLogging::ILogger& logger = *NativeLogging::LoggingManager::GetLogger(L"DgnCore.Performance");
+
+    if (logger.isSeverityEnabled(severity))
+        {
+        va_list args;
+        va_start(args, description);
+        Utf8String formattedDescription;
+        formattedDescription.VSprintf(description, args);
+        va_end(args);
+
+        logger.messagev(severity, "%s|%.0f millisecs", formattedDescription.c_str(), stopWatch.GetElapsedSeconds() * 1000.0);
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1437,15 +1458,29 @@ static DgnDbStatus importECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceMod
     for (auto othercolname : othercols)
         appendToColsLists(colsList, placeholderList, othercolname);
 
+    Utf8String selectList;
+    bvector<Utf8String> cols;
+    BeStringUtilities::Split(colsList.c_str(), ",", cols);
+    for (Utf8String col : cols)
+        {
+        if (!selectList.empty())
+            selectList.append(", ");
+        selectList.append("rel.").append(col);
+        }
     Statement sstmt(sourceModel.GetDgnDb(), Utf8PrintfString(
-        "WITH elems(id) AS (SELECT Id from " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE (ModelId=?))"
-        " SELECT %s FROM %s rel WHERE (rel.%s IN elems AND rel.%s IN elems)", colsList.c_str(), relname, sourcecol, targetcol));
+        "SELECT %s FROM %s rel, dgn_Element source, dgn_Element target WHERE rel.%s=source.Id AND rel.%s=target.Id AND source.ModelId=? AND target.ModelId=?",
+        selectList.c_str(), relname, sourcecol, targetcol));
+
     sstmt.BindId(1, sourceModel.GetModelId());
+    sstmt.BindId(2, sourceModel.GetModelId());
 
     Statement istmt(destDb, Utf8PrintfString(
         "INSERT INTO %s (%s) VALUES(%s)", relname, colsList.c_str(), placeholderList.c_str()));
 
-    while (BE_SQLITE_ROW == sstmt.Step())
+    StopWatch timer(true);
+    DbResult stepResult = sstmt.Step();
+    LogPerformance(timer, "Statement.Step for %s (ModelId=%d)", sstmt.GetSql(), sourceModel.GetModelId().GetValue());
+    while (BE_SQLITE_ROW == stepResult)
         {
         istmt.Reset();
         istmt.ClearBindings();
@@ -1470,6 +1505,10 @@ static DgnDbStatus importECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceMod
             {
             // *** TBD: Report error somehow
             }
+        timer.Start();
+        stepResult = sstmt.Step();
+        LogPerformance(timer, "Statement.Step for %s", sstmt.GetSql());
+
         }
 
     return DgnDbStatus::Success;
@@ -1485,8 +1524,12 @@ DgnDbStatus DgnModel::_ImportECRelationshipsFrom(DgnModelCR sourceModel, DgnImpo
 
     // ElementGeomUsesParts are created automatically as a side effect of inserting GeometricElements 
 
-    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, DGN_TABLE(DGN_RELNAME_ElementGroupsMembers), "GroupId", "MemberId");
+    StopWatch timer(true);
+    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, DGN_TABLE(DGN_RELNAME_ElementGroupsMembers), "GroupId", "MemberId", nullptr, {"MemberPriority"});
+    LogPerformance(timer, "Import ECRelationships %s", DGN_RELNAME_ElementGroupsMembers);
+    timer.Start();
     importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, DGN_TABLE(DGN_RELNAME_ElementDrivesElement), "SourceECInstanceId", "TargetECInstanceId", "ECClassId", {"Status", "Priority"});
+    LogPerformance(timer, "Import ECRelationships %s", DGN_RELNAME_ElementDrivesElement);
 
     // *** WIP_IMPORT *** ElementHasLinks -- should we deep-copy links?
 
@@ -1498,19 +1541,27 @@ DgnDbStatus DgnModel::_ImportECRelationshipsFrom(DgnModelCR sourceModel, DgnImpo
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_ImportContentsFrom(DgnModelCR sourceModel, DgnImportContext& importer)
     {
+    StopWatch totalTimer(true);
     BeAssert(&GetDgnDb() == &importer.GetDestinationDb());
     BeAssert(&sourceModel.GetDgnDb() == &importer.GetSourceDb());
 
     DgnDbStatus status;
-     
+    StopWatch timer(true);
     if (DgnDbStatus::Success != (status = _ImportElementsFrom(sourceModel, importer)))
         return status;
+    LogPerformance(timer, "Import elements time");
 
+    timer.Start();
     if (DgnDbStatus::Success != (status = _ImportElementAspectsFrom(sourceModel, importer)))
         return status;
+    LogPerformance(timer, "Import element aspects time");
 
+    timer.Start();
     if (DgnDbStatus::Success != (status = _ImportECRelationshipsFrom(sourceModel, importer)))
         return status;
+    LogPerformance(timer, "Import ECRelationships time");
+
+    LogPerformance(totalTimer, "Total contents import time");
 
     return DgnDbStatus::Success;
     }
@@ -1520,6 +1571,8 @@ DgnDbStatus DgnModel::_ImportContentsFrom(DgnModelCR sourceModel, DgnImportConte
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelPtr DgnModel::ImportModel(DgnDbStatus* statIn, DgnModelCR sourceModel, DgnImportContext& importer)
     {
+    StopWatch totalTimer(true);
+
     DgnDbStatus _stat;
     DgnDbStatus& stat = (nullptr != statIn)? *statIn: _stat;
 
@@ -1538,6 +1591,7 @@ DgnModelPtr DgnModel::ImportModel(DgnDbStatus* statIn, DgnModelCR sourceModel, D
         return nullptr;
 
     stat = DgnDbStatus::Success;
+    LogPerformance(totalTimer, "Total import time");
     return newModel;
     }
 

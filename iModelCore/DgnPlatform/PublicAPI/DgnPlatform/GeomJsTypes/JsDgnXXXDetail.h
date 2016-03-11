@@ -27,12 +27,13 @@ public:
 JsSolidPrimitive (ISolidPrimitivePtr const &solidPrimitive) : m_solidPrimitive (solidPrimitive){}
 // hmm ...this class is not instantiable but typescript wrapperw want it to be so ...
 virtual JsSolidPrimitiveP Clone ();
-
+static JsSolidPrimitiveP StronglyTypedJsSolidPrimitive (ISolidPrimitivePtr primitive);
 
     JsSolidPrimitive (){}
 
 
     virtual JsSolidPrimitiveP AsSolidPrimitive () override {return this;}
+    virtual IGeometryPtr GetIGeometryPtr (){return IGeometry::Create (m_solidPrimitive);}
 
     virtual JsDgnConeP AsDgnCone () {return nullptr;}
     virtual JsDgnSphereP AsDgnSphere () {return nullptr;}

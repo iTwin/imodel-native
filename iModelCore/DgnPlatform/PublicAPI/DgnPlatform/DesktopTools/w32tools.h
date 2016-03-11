@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DesktopTools/w32tools.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -35,9 +35,9 @@ uint32_t exceptionCode
 );
 
 #if defined(_WINBASE_)
-void    win32Tools_dumpExceptionCallStack           // WIP - Must implement
+DGNPLATFORM_EXPORT void    win32Tools_dumpExceptionCallStack           // WIP - Must implement
 (
-BeTextFilePtr                    stream,
+BeTextFile*                      stream,
 EXCEPTION_POINTERS const * const exceptionInfoP,
 int32_t                    const debugLevel
 );
@@ -54,7 +54,7 @@ STARTUPINFO const * const psiOption                 // => Optional STARTUPINFO f
 
 DGNPLATFORM_EXPORT int32_t    win32tools_processBSIExceptionLog        // WIP - Must implement
 (
-BeTextFilePtr           stream,                                 // => Optional
+BeTextFile*             stream,                                 // => Optional
 WChar   const * const   szDumpFile                              // => Optional
 );
 
