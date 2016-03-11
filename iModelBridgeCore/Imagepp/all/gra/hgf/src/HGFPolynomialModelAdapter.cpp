@@ -369,7 +369,7 @@ inline void HGFPolynomialModelAdapter::TransposePointsUsingPolynomial(double pi_
             + partial8_y * x
             + a9_y;
         }
-#endif HAVE_SIMD_INTRINSICS
+#endif // HAVE_SIMD_INTRINSICS
 
     }
 
@@ -470,7 +470,7 @@ inline void HGFPolynomialModelAdapter::TransposePointUsingPolynomial(double pi_X
         + m_CoefficientsY[8] * xy2
         + m_CoefficientsY[9] * y3;
 
-#endif HAVE_SIMD_INTRINSICS
+#endif // HAVE_SIMD_INTRINSICS
     }
 
 //---------------------------------------------------------------------------------------
