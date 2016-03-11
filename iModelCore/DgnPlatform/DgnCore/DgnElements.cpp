@@ -1012,7 +1012,9 @@ DgnElement::~DgnElement()
     {
     BeAssert(!IsPersistent());
     ClearAllAppData();
-    UnloadUserProperties();
+
+    if (m_userProperties)
+        UnloadUserProperties();
 
     --GetDgnDb().Elements().m_tree->m_totals.m_extant;
     }
@@ -1238,6 +1240,7 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnDbStatus* outS
 
     if (typeid(element) != element.GetElementHandler()._ElementType())
         {
+        BeAssert(false && "you can only insert an element that has ITS OWN handler");
         stat = DgnDbStatus::WrongHandler; // they gave us an element with an invalid handler
         return nullptr;
         }

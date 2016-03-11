@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/ValueParse_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -40,7 +40,7 @@ static DPoint3d     vp_createParsedPointValue (double x, double y, double z)    
 +===============+===============+===============+===============+===============+======*/
 struct  AngleParserTestDataSimple
     {
-    WCharCP       m_inputString;
+    Utf8CP      m_inputString;
     double      m_expectedValue;
     };
 
@@ -49,7 +49,7 @@ struct  AngleParserTestDataSimple
 +===============+===============+===============+===============+===============+======*/
 struct  ValueParserTestData 
     {
-    WCharCP       m_inputString;
+    Utf8CP      m_inputString;
     double      m_expectedValue;
     };
 
@@ -58,7 +58,7 @@ struct  ValueParserTestData
 +===============+===============+===============+===============+===============+======*/
 struct  DirectionParserTestData
     {
-    WCharCP       m_inputString;
+    Utf8CP        m_inputString;
     double        m_expectedValue;
     };
 
@@ -67,7 +67,7 @@ struct  DirectionParserTestData
 +===============+===============+===============+===============+===============+======*/
 struct  DistanceParserTestDataSimple
     {
-    WCharCP       m_inputString;
+    Utf8CP        m_inputString;
     double          m_expectedValue;
     size_t          m_szParsed;
     };
@@ -77,7 +77,7 @@ struct  DistanceParserTestDataSimple
 +===============+===============+===============+===============+===============+======*/
 struct  PointParserTestDataSimple 
     {
-    WCharCP         m_inputString;
+    Utf8CP          m_inputString;
     DPoint3d        m_expectedValue;
     bool            m_expectSuccess;
     bool            m_is3d;
@@ -89,7 +89,7 @@ struct  PointParserTestDataSimple
 +===============+===============+===============+===============+===============+======*/
 struct  AngleParserTestDataWithMode
     {
-    WCharCP             m_inputString;
+    Utf8CP              m_inputString;
     double              m_expectedValue;
     AngleMode           m_mode;
     BentleyStatus       m_expectedParseResult;
@@ -154,8 +154,8 @@ static void    vp_doParseUnitTest (DistanceParserTestDataSimple const& testData)
     {
     DistanceParserPtr parser = DistanceParser::Create();
 
-    parser->SetMasterUnitLabel   (L"m");
-    parser->SetSubUnitLabel      (L"mm");
+    parser->SetMasterUnitLabel   ("m");
+    parser->SetSubUnitLabel      ("mm");
     parser->SetMasterUnitScale   (1000.0);
     parser->SetSubUnitScale      (1.0);
 
@@ -185,8 +185,8 @@ static void    vp_doParsePointTest (PointParserTestDataSimple const& testData)
     {
     PointParserPtr parser = PointParser::Create();
 
-    parser->GetDistanceParser().SetMasterUnitLabel   (L"m");
-    parser->GetDistanceParser().SetSubUnitLabel      (L"mm");
+    parser->GetDistanceParser().SetMasterUnitLabel   ("m");
+    parser->GetDistanceParser().SetSubUnitLabel      ("mm");
     parser->GetDistanceParser().SetMasterUnitScale   (1000.0);
     parser->GetDistanceParser().SetSubUnitScale      (1.0);
     parser->GetDistanceParser().SetScale (testData.m_scale);
@@ -242,26 +242,26 @@ TEST_F (AngleParserTest, ParseSimple)
     {
     AngleParserTestDataSimple testDataArray[] = 
         {
-        { L"30",  vp_createAngleValueFromMDS (30, 0, 0)}, // not sure if this is valid
-        { L"30^",  vp_createAngleValueFromMDS (30, 0, 0)},
-        { L"30^20",  vp_createAngleValueFromMDS (30, 20, 0)},
-        { L"30^20'",  vp_createAngleValueFromMDS (30, 20, 0)},
-        { L"30^20'10",  vp_createAngleValueFromMDS (30, 20, 10)},
-        { L"30^20'10\"",  vp_createAngleValueFromMDS (30, 20, 10)},
+        { "30",         vp_createAngleValueFromMDS (30, 0, 0)}, // not sure if this is valid
+        { "30^",        vp_createAngleValueFromMDS (30, 0, 0)},
+        { "30^20",      vp_createAngleValueFromMDS (30, 20, 0)},
+        { "30^20'",     vp_createAngleValueFromMDS (30, 20, 0)},
+        { "30^20'10",   vp_createAngleValueFromMDS (30, 20, 10)},
+        { "30^20'10\"", vp_createAngleValueFromMDS (30, 20, 10)},
         
-        { L"30^10\"",  vp_createAngleValueFromMDS (30, 0, 10)},
+        { "30^10\"",    vp_createAngleValueFromMDS (30, 0, 10)},
 
-        { L"30",    vp_createAngleValueFromMDS (30, 0, 0)},
-        { L"30:",    vp_createAngleValueFromMDS (30, 0, 0)},
-        { L"30:20",    vp_createAngleValueFromMDS (30, 20, 0)},
-        { L"30:20:",    vp_createAngleValueFromMDS (30, 20, 0)},
-        { L"30:20:10",    vp_createAngleValueFromMDS (30, 20, 10)},
+        { "30",         vp_createAngleValueFromMDS (30, 0, 0)},
+        { "30:",        vp_createAngleValueFromMDS (30, 0, 0)},
+        { "30:20",      vp_createAngleValueFromMDS (30, 20, 0)},
+        { "30:20:",     vp_createAngleValueFromMDS (30, 20, 0)},
+        { "30:20:10",   vp_createAngleValueFromMDS (30, 20, 10)},
 
-        { L"30",   vp_createAngleValueFromMDS (30, 0, 0)},
-        { L"30d",   vp_createAngleValueFromMDS (30, 0, 0)},
-        { L"30d20",   vp_createAngleValueFromMDS (30, 20, 0)},
-        { L"30d20m",   vp_createAngleValueFromMDS (30, 20, 0)},
-        { L"30d20m10",    vp_createAngleValueFromMDS (30, 20, 10)},
+        { "30",         vp_createAngleValueFromMDS (30, 0, 0)},
+        { "30d",        vp_createAngleValueFromMDS (30, 0, 0)},
+        { "30d20",      vp_createAngleValueFromMDS (30, 20, 0)},
+        { "30d20m",     vp_createAngleValueFromMDS (30, 20, 0)},
+        { "30d20m10",   vp_createAngleValueFromMDS (30, 20, 10)},
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -281,39 +281,39 @@ TEST_F (DirectionParserTest, ParseSimple)
     {
     DirectionParserTestData testDataArray[] = 
         {
-        { L"north",  vp_createAngleValueFromMDS (90, 0, 0)},
-        { L"NORTH   ",  vp_createAngleValueFromMDS (90, 0, 0)},
-        { L"  north   ",  vp_createAngleValueFromMDS (90, 0, 0)},
-        { L"south",  vp_createAngleValueFromMDS (270, 0, 0)},
-        { L"sOUth ",  vp_createAngleValueFromMDS (270, 0, 0)},
-        { L"  south   ",  vp_createAngleValueFromMDS (270, 0, 0)},
+        { "north",          vp_createAngleValueFromMDS (90, 0, 0)},
+        { "NORTH   ",       vp_createAngleValueFromMDS (90, 0, 0)},
+        { "  north   ",     vp_createAngleValueFromMDS (90, 0, 0)},
+        { "south",          vp_createAngleValueFromMDS (270, 0, 0)},
+        { "sOUth ",         vp_createAngleValueFromMDS (270, 0, 0)},
+        { "  south   ",     vp_createAngleValueFromMDS (270, 0, 0)},
 
-        { L"East ",  vp_createAngleValueFromMDS (0, 0, 0)},
-        { L"10  east   ",  vp_createAngleValueFromMDS (10, 0, 0)},
+        { "East ",          vp_createAngleValueFromMDS (0, 0, 0)},
+        { "10  east         ",vp_createAngleValueFromMDS (10, 0, 0)},
 
-        { L"west ",  vp_createAngleValueFromMDS (180, 0, 0)},
-        { L"n 10  west   ",  vp_createAngleValueFromMDS (100, 0, 0)},
+        { "west ",          vp_createAngleValueFromMDS (180, 0, 0)},
+        { "n 10  west   ",  vp_createAngleValueFromMDS (100, 0, 0)},
 
-        { L"n=23West",  vp_createAngleValueFromMDS (113, 0, 0)},
-        { L"n/23Wes",  vp_createAngleValueFromMDS (113, 0, 0)},
+        { "n=23West",       vp_createAngleValueFromMDS (113, 0, 0)},
+        { "n/23Wes",        vp_createAngleValueFromMDS (113, 0, 0)},
 
-        { L"n=23East",  vp_createAngleValueFromMDS (67, 0, 0)},
-        { L"n/23Ea",  vp_createAngleValueFromMDS (67, 0, 0)},
+        { "n=23East",       vp_createAngleValueFromMDS (67, 0, 0)},
+        { "n/23Ea",         vp_createAngleValueFromMDS (67, 0, 0)},
 
-        { L"north 23W",  vp_createAngleValueFromMDS (113, 0, 0)},
-        { L"north 23^W",  vp_createAngleValueFromMDS (113, 0, 0)},
-        { L"South 3^20e",  vp_createAngleValueFromMDS (273, 20, 0)},
-        { L"South 3^20W",  vp_createAngleValueFromMDS (266, 40, 0)},
+        { "north 23W",      vp_createAngleValueFromMDS (113, 0, 0)},
+        { "north 23^W",     vp_createAngleValueFromMDS (113, 0, 0)},
+        { "South 3^20e",    vp_createAngleValueFromMDS (273, 20, 0)},
+        { "South 3^20W",    vp_createAngleValueFromMDS (266, 40, 0)},
 
-        { L"north 23W",  vp_createAngleValueFromMDS (113, 0, 0)},
-        { L"north 23^W",  vp_createAngleValueFromMDS (113, 0, 0)},
-        { L"South 3^20W",  vp_createAngleValueFromMDS (266, 40, 0)},
+        { "north 23W",      vp_createAngleValueFromMDS (113, 0, 0)},
+        { "north 23^W",     vp_createAngleValueFromMDS (113, 0, 0)},
+        { "South 3^20W",    vp_createAngleValueFromMDS (266, 40, 0)},
 
-        { L"north=23W",  vp_createAngleValueFromMDS (113, 0, 0)},
-        { L"north/23W",  vp_createAngleValueFromMDS (113, 0, 0)},
+        { "north=23W",      vp_createAngleValueFromMDS (113, 0, 0)},
+        { "north/23W",      vp_createAngleValueFromMDS (113, 0, 0)},
 
-        { L"north=23West",  vp_createAngleValueFromMDS (113, 0, 0)},
-        { L"north/23Wes",  vp_createAngleValueFromMDS (113, 0, 0)},
+        { "north=23West",   vp_createAngleValueFromMDS (113, 0, 0)},
+        { "north/23Wes",    vp_createAngleValueFromMDS (113, 0, 0)},
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -327,27 +327,27 @@ TEST_F (DirectionParserTest, ParseSimpleTrueNorth)
     {
     DirectionParserTestData testDataArray[] = 
         {
-        { L"north",  vp_createAngleValueFromMDS (91, 0, 0)},
-        { L"NORTH   ",  vp_createAngleValueFromMDS (91, 0, 0)},
-        { L"  north   ",  vp_createAngleValueFromMDS (91, 0, 0)},
-        { L"south",  vp_createAngleValueFromMDS (271, 0, 0)},
-        { L"sOUth ",  vp_createAngleValueFromMDS (271, 0, 0)},
-        { L"  south   ",  vp_createAngleValueFromMDS (271, 0, 0)},
+        { "north",          vp_createAngleValueFromMDS (91, 0, 0)},
+        { "NORTH   ",       vp_createAngleValueFromMDS (91, 0, 0)},
+        { "  north   ",     vp_createAngleValueFromMDS (91, 0, 0)},
+        { "south",          vp_createAngleValueFromMDS (271, 0, 0)},
+        { "sOUth ",         vp_createAngleValueFromMDS (271, 0, 0)},
+        { "  south   ",     vp_createAngleValueFromMDS (271, 0, 0)},
 
-        { L"East ",  vp_createAngleValueFromMDS (1, 0, 0)},
-        { L"10  east   ",  vp_createAngleValueFromMDS (11, 0, 0)},
+        { "East ",          vp_createAngleValueFromMDS (1, 0, 0)},
+        { "10  east   ",    vp_createAngleValueFromMDS (11, 0, 0)},
 
-        { L"west ",  vp_createAngleValueFromMDS (181, 0, 0)},
-        { L"n 10  west   ",  vp_createAngleValueFromMDS (101, 0, 0)},
+        { "west ",          vp_createAngleValueFromMDS (181, 0, 0)},
+        { "n 10  west   ",  vp_createAngleValueFromMDS (101, 0, 0)},
 
-        { L"n=23West",  vp_createAngleValueFromMDS (114, 0, 0)},
-        { L"n/23Wes",  vp_createAngleValueFromMDS (114, 0, 0)},
+        { "n=23West",       vp_createAngleValueFromMDS (114, 0, 0)},
+        { "n/23Wes",        vp_createAngleValueFromMDS (114, 0, 0)},
 
-        { L"n=23East",  vp_createAngleValueFromMDS (68, 0, 0)},
-        { L"n/23Ea",  vp_createAngleValueFromMDS (68, 0, 0)},
+        { "n=23East",       vp_createAngleValueFromMDS (68, 0, 0)},
+        { "n/23Ea",         vp_createAngleValueFromMDS (68, 0, 0)},
 
-        { L"north 23W",  vp_createAngleValueFromMDS (114, 0, 0)},
-        { L"north 23^W",  vp_createAngleValueFromMDS (114, 0, 0)},
+        { "north 23W",      vp_createAngleValueFromMDS (114, 0, 0)},
+        { "north 23^W",     vp_createAngleValueFromMDS (114, 0, 0)},
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -362,9 +362,9 @@ TEST_F (DirectionParserTest, ParseErrors)
     {
     DirectionParserTestData testDataArray[] = 
         {
-        { L"nrth",  0.0 },
-        { L"NORTH 30Est", 0.0}, 
-        { L"30Wst", 0.0}, 
+        { "nrth",  0.0 },
+        { "NORTH 30Est", 0.0}, 
+        { "30Wst", 0.0}, 
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -379,12 +379,12 @@ TEST_F (DirectionParserTest, ParseSimple_LegacyErrors)
     {
     DirectionParserTestData testDataArray[] = 
         {
-        { L"east",  0.0},       // this returns success.
-        { L" east", 0.0}, 
-        { L"  east ", 0.0}, 
-        { L"west",  180.0 },    // this returns success.
-        { L" west", 180.0}, 
-        { L"  west", 180.0}, 
+        { "east",  0.0},       // this returns success.
+        { " east", 0.0}, 
+        { "  east ", 0.0}, 
+        { "west",  180.0 },    // this returns success.
+        { " west", 180.0}, 
+        { "  west", 180.0}, 
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -398,25 +398,25 @@ TEST_F (DirectionParserTest, ParseSimpleAnglesOnly)
     {
     DirectionParserTestData testDataArray[] = 
         {
-        { L"30^",  vp_createAngleValueFromMDS (30, 0, 0)},
-        { L"30^20",  vp_createAngleValueFromMDS (30, 20, 0)},
-        { L"30^20'",  vp_createAngleValueFromMDS (30, 20, 0)},
-        { L"30^20'10",  vp_createAngleValueFromMDS (30, 20, 10)},
-        { L"30^20'10\"",  vp_createAngleValueFromMDS (30, 20, 10)},
-        
-        { L"30^10\"",  vp_createAngleValueFromMDS (30, 0, 10)},
+        { "30^",        vp_createAngleValueFromMDS (30, 0, 0)},
+        { "30^20",      vp_createAngleValueFromMDS (30, 20, 0)},
+        { "30^20'",     vp_createAngleValueFromMDS (30, 20, 0)},
+        { "30^20'10",   vp_createAngleValueFromMDS (30, 20, 10)},
+        { "30^20'10\"", vp_createAngleValueFromMDS (30, 20, 10)},
 
-        { L"30",    vp_createAngleValueFromMDS (30, 0, 0)},
-        { L"30:",    vp_createAngleValueFromMDS (30, 0, 0)},
-        { L"30:20",    vp_createAngleValueFromMDS (30, 20, 0)},
-        { L"30:20:",    vp_createAngleValueFromMDS (30, 20, 0)},
-        { L"30:20:10",    vp_createAngleValueFromMDS (30, 20, 10)},
+        { "30^10\"",    vp_createAngleValueFromMDS (30, 0, 10)},
 
-        { L"30",   vp_createAngleValueFromMDS (30, 0, 0)},
-        { L"30d",   vp_createAngleValueFromMDS (30, 0, 0)},
-        { L"30d20",   vp_createAngleValueFromMDS (30, 20, 0)},
-        { L"30d20m",   vp_createAngleValueFromMDS (30, 20, 0)},
-        { L"30d20m10",    vp_createAngleValueFromMDS (30, 20, 10)},
+        { "30",         vp_createAngleValueFromMDS (30, 0, 0)},
+        { "30:",        vp_createAngleValueFromMDS (30, 0, 0)},
+        { "30:20",      vp_createAngleValueFromMDS (30, 20, 0)},
+        { "30:20:",     vp_createAngleValueFromMDS (30, 20, 0)},
+        { "30:20:10",   vp_createAngleValueFromMDS (30, 20, 10)},
+
+        { "30",         vp_createAngleValueFromMDS (30, 0, 0)},
+        { "30d",        vp_createAngleValueFromMDS (30, 0, 0)},
+        { "30d20",      vp_createAngleValueFromMDS (30, 20, 0)},
+        { "30d20m",     vp_createAngleValueFromMDS (30, 20, 0)},
+        { "30d20m10",   vp_createAngleValueFromMDS (30, 20, 10)},
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -431,11 +431,11 @@ TEST_F (AngleParserTest, ParseSimple_Whitespace)
     {
     AngleParserTestDataSimple testDataArray[] = 
         {
-        { L"  30",  vp_createAngleValueFromMDS (30, 0, 0)}, // not sure if this is valid
-        { L" 30^",  vp_createAngleValueFromMDS (30, 0, 0)},
-        { L"30^20  ",  vp_createAngleValueFromMDS (30, 20, 0)},
-        { L" 30^20' ",  vp_createAngleValueFromMDS (30, 20, 0)},
-        { L"30^20'10  ",  vp_createAngleValueFromMDS (30, 20, 10)},
+        { "  30",       vp_createAngleValueFromMDS (30, 0, 0)}, // not sure if this is valid
+        { " 30^",       vp_createAngleValueFromMDS (30, 0, 0)},
+        { "30^20  ",    vp_createAngleValueFromMDS (30, 20, 0)},
+        { " 30^20' ",   vp_createAngleValueFromMDS (30, 20, 0)},
+        { "30^20'10  ", vp_createAngleValueFromMDS (30, 20, 10)},
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -449,17 +449,17 @@ TEST_F (AngleParserTest, ParseDecimalsInvolved)
     {
     AngleParserTestDataSimple testDataArray[] = 
         {
-        { L"30.5",  vp_createAngleValueFromMDS (30, 30, 0)}, // not sure if this is valid
-        { L"30.5^",  vp_createAngleValueFromMDS (30, 30, 0)},
-        { L"30.5^30",  vp_createAngleValueFromMDS (31, 0, 0)},
-        { L"30^20'",  vp_createAngleValueFromMDS (30, 20, 0)},
-        { L"30^20.5'10",  vp_createAngleValueFromMDS (30, 20, 40)},
-        { L"30.5^20'10.5\"",  vp_createAngleValueFromMDS (30, 50, 10.5)},
+        { "30.5",           vp_createAngleValueFromMDS (30, 30, 0)}, // not sure if this is valid
+        { "30.5^",          vp_createAngleValueFromMDS (30, 30, 0)},
+        { "30.5^30",        vp_createAngleValueFromMDS (31, 0, 0)},
+        { "30^20'",         vp_createAngleValueFromMDS (30, 20, 0)},
+        { "30^20.5'10",     vp_createAngleValueFromMDS (30, 20, 40)},
+        { "30.5^20'10.5\"", vp_createAngleValueFromMDS (30, 50, 10.5)},
         
-        { L"30.5:20:10.5",  vp_createAngleValueFromMDS (30, 50, 10.5)},
-        { L"30.5d20m10.5",  vp_createAngleValueFromMDS (30, 50, 10.5)},
-        { L"0d0m10 1/4",  vp_createAngleValueFromMDS (0, 0, 10.25)},
-        { L"30 1/2d20m10 1/4",  vp_createAngleValueFromMDS (30, 50, 10.25)},
+        { "30.5:20:10.5",   vp_createAngleValueFromMDS (30, 50, 10.5)},
+        { "30.5d20m10.5",   vp_createAngleValueFromMDS (30, 50, 10.5)},
+        { "0d0m10 1/4",     vp_createAngleValueFromMDS (0, 0, 10.25)},
+        { "30 1/2d20m10 1/4",  vp_createAngleValueFromMDS (30, 50, 10.25)},
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -473,10 +473,10 @@ TEST_F (AngleParserTest, ParseFractions)
     {
     AngleParserTestDataSimple testDataArray[] = 
         {
-        { L"1/2^2\"",  vp_createAngleValueFromMDS (0, 30, 2)},
-        { L"10 1/2^2\"",  vp_createAngleValueFromMDS (10, 30, 2)},
-        { L"1/2^2\"",  vp_createAngleValueFromMDS (0, 30, 2)},
-        { L"0^1/2\"",  vp_createAngleValueFromMDS (0, 0, 0.5)},
+        { "1/2^2\"",    vp_createAngleValueFromMDS (0, 30, 2)},
+        { "10 1/2^2\"", vp_createAngleValueFromMDS (10, 30, 2)},
+        { "1/2^2\"",    vp_createAngleValueFromMDS (0, 30, 2)},
+        { "0^1/2\"",    vp_createAngleValueFromMDS (0, 0, 0.5)},
        };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -490,10 +490,10 @@ TEST_F (AngleParserTest, ParseSimple_Radians)
     {
     AngleParserTestDataSimple testDataArray[] = 
         {
-        { L"0",    vp_createAngleValueFromMDS (0, 0, 0)}, 
-        { L"3.1415926535r",   vp_createAngleValueFromMDS (180, 0, 0)}, 
-        { L"3.1415926535",    180.0}, 
-        { L"3.1415926535",    vp_createAngleValueFromRadians (3.1415926535)}, 
+        { "0",              vp_createAngleValueFromMDS (0, 0, 0)}, 
+        { "3.1415926535r",  vp_createAngleValueFromMDS (180, 0, 0)}, 
+        { "3.1415926535",   180.0}, 
+        { "3.1415926535",   vp_createAngleValueFromRadians (3.1415926535)}, 
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -507,8 +507,8 @@ TEST_F (AngleParserTest, ParseSimple_Radians_Fractions)
     {
     AngleParserTestDataSimple testDataArray[] = 
         {
-        { L"0",    vp_createAngleValueFromMDS (0, 0, 0)}, 
-        { L"1 1/2",    vp_createAngleValueFromRadians (1.5)}, 
+        { "0",      vp_createAngleValueFromMDS (0, 0, 0)}, 
+        { "1 1/2",  vp_createAngleValueFromRadians (1.5)}, 
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -522,9 +522,9 @@ TEST_F (AngleParserTest, ParseSimple_Gradians)
     {
     AngleParserTestDataSimple testDataArray[] = 
         {
-        { L"0",    vp_createAngleValueFromMDS (0, 0, 0)}, 
-        { L"100.0",    vp_createAngleValueFromGradians (100.0)}, 
-        { L"100.0g",    vp_createAngleValueFromGradians (100.0)}, 
+        { "0",      vp_createAngleValueFromMDS (0, 0, 0)}, 
+        { "100.0",  vp_createAngleValueFromGradians (100.0)}, 
+        { "100.0g", vp_createAngleValueFromGradians (100.0)}, 
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -539,10 +539,10 @@ TEST_F (AngleParserTest, ParseSimple_Radians_Equations)
     {
     AngleParserTestDataSimple testDataArray[] = 
         {
-        { L"0",    vp_createAngleValueFromMDS (0, 0, 0)}, 
-        { L"PI",    vp_createAngleValueFromMDS (180, 0, 0)}, 
-        { L"PI/2.0",    vp_createAngleValueFromMDS (90, 0, 0)}, 
-        { L"-PI/2.0",    vp_createAngleValueFromMDS (-90, 0, 0)}, 
+        { "0",    vp_createAngleValueFromMDS (0, 0, 0)}, 
+        { "PI",    vp_createAngleValueFromMDS (180, 0, 0)}, 
+        { "PI/2.0",    vp_createAngleValueFromMDS (90, 0, 0)}, 
+        { "-PI/2.0",    vp_createAngleValueFromMDS (-90, 0, 0)}, 
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -556,11 +556,11 @@ TEST_F (AngleParserTest, ParseSimple_Inconsistency)
     {
     AngleParserTestDataSimple testDataArray[] = 
         {
-        { L"30d20m10s",    vp_createAngleValueFromMDS (30, 20, 10)}, // The s is not interpreted as seconds but instead as South - therefore the whole value gets negated.
-        { L"1 /2^2\"",  vp_createAngleValueFromMDS (0, 30, 2)}, // why is this one ok?
-        { L"0^ 1\"",  vp_createAngleValueFromMDS (0, 0, 1)}, // this isn't ok but...
-        { L"0^1 /2\"",  vp_createAngleValueFromMDS (0, 0, 0.5)}, // why is this one ok?
-        { L"0^1   /2\"",  vp_createAngleValueFromMDS (0, 0, 0.5)}, // this one isn't - more than one space.
+        { "30d20m10s",    vp_createAngleValueFromMDS (30, 20, 10)}, // The s is not interpreted as seconds but instead as South - therefore the whole value gets negated.
+        { "1 /2^2\"",  vp_createAngleValueFromMDS (0, 30, 2)}, // why is this one ok?
+        { "0^ 1\"",  vp_createAngleValueFromMDS (0, 0, 1)}, // this isn't ok but...
+        { "0^1 /2\"",  vp_createAngleValueFromMDS (0, 0, 0.5)}, // why is this one ok?
+        { "0^1   /2\"",  vp_createAngleValueFromMDS (0, 0, 0.5)}, // this one isn't - more than one space.
         // This seems like a bug in the function to me 
         };
 
@@ -575,9 +575,9 @@ TEST_F (AngleParserTest, ParseWithWrongTypes_Expected)
     {
     AngleParserTestDataWithMode testDataArray[] = 
         {
-        { L"0",                 vp_createAngleValueFromMDS (0, 0, 0),           AngleMode::Radians, SUCCESS}, 
-        { L"180^",              180.0,                                          AngleMode::Radians, ERROR}, 
-        { L"3.1415926535g",     180.0,                                          AngleMode::Radians, ERROR}, 
+        { "0",                 vp_createAngleValueFromMDS (0, 0, 0),           AngleMode::Radians, SUCCESS}, 
+        { "180^",              180.0,                                          AngleMode::Radians, ERROR}, 
+        { "3.1415926535g",     180.0,                                          AngleMode::Radians, ERROR}, 
         };
     
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -592,7 +592,7 @@ TEST_F (AngleParserTest, ParseSimpleWhiteSpaceInBetween)
     {
     AngleParserTestDataSimple testDataArray[] = 
         {
-        { L" 30^ 20' ",  vp_createAngleValueFromMDS (30, 0, 0)}, // This shows that the 20' gets disregarded because of the white space.
+        { " 30^ 20' ",  vp_createAngleValueFromMDS (30, 0, 0)}, // This shows that the 20' gets disregarded because of the white space.
         // This behavior should be questioned in the new api - spaces might be considered token separators so the Angle Parser is
         // not responsible for removing them anyway.
         };
@@ -615,8 +615,8 @@ TEST_F (AngleParserTest, ParseSimple_DegreeSymbol)
 
     AngleParserTestDataSimple testDataArray[] = 
         {
-        { deg1.c_str(),   vp_createAngleValueFromMDS (30, 20, 10)},     
-        { deg2.c_str(),     vp_createAngleValueFromMDS (30, 20, 10)},     
+        { Utf8String (deg1).c_str(),   vp_createAngleValueFromMDS (30, 20, 10)},
+        { Utf8String (deg2).c_str(),   vp_createAngleValueFromMDS (30, 20, 10)},
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -637,16 +637,16 @@ TEST_F (DistanceParserTest, ParseSimple)
     {
     DistanceParserTestDataSimple testDataArray[] = 
         {
-        { L"112",   vp_createUnitValue (112, 0, 0),            3},
-        { L"1..10..0",   vp_createUnitValue (1, 10, 0),        8},
-        { L"1:10:0",   vp_createUnitValue (1, 10, 0),          6},
-        { L"1;10;1",   vp_createUnitValue (1, 10, 1),          6},
-        { L"1m10mm1 ",   vp_createUnitValue (1, 10, 0),        7}, // I do not like the trailing 1 gets discarded.
-        { L" 1m-10mm",   vp_createUnitValue (1, 10, 0),        8}, 
-        { L"1:-10:0",   vp_createUnitValue (-1, -10, 0),       7}, // a negative unit turns all of them negative.
-        { L"-1:-10:0",   vp_createUnitValue (-1, -10, 0),      8}, // a negative unit turns all of them negative.
-        { L"1'10\"0",   vp_createUnitValue (1, 0, 0),          6}, // This seems wrong.
-        { L"1/10'",   vp_createUnitValue (0, 100, 0),          5}, // This seems wrong.
+        { "112",        vp_createUnitValue (112, 0, 0),         3},
+        { "1..10..0",   vp_createUnitValue (1, 10, 0),          8},
+        { "1:10:0",     vp_createUnitValue (1, 10, 0),          6},
+        { "1;10;1",     vp_createUnitValue (1, 10, 1),          6},
+        { "1m10mm1 ",   vp_createUnitValue (1, 10, 0),          7}, // I do not like the trailing 1 gets discarded.
+        { " 1m-10mm",   vp_createUnitValue (1, 10, 0),          8}, 
+        { "1:-10:0",    vp_createUnitValue (-1, -10, 0),        7}, // a negative unit turns all of them negative.
+        { "-1:-10:0",   vp_createUnitValue (-1, -10, 0),        8}, // a negative unit turns all of them negative.
+        { "1'10\"0",    vp_createUnitValue (1, 0, 0),           6}, // This seems wrong.
+        { "1/10'",      vp_createUnitValue (0, 100, 0),         5}, // This seems wrong.
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -661,9 +661,9 @@ TEST_F (DistanceParserTest, ParseSimple_Inconsistency)
     {
     DistanceParserTestDataSimple testDataArray[] = 
         {
-        { L" 1m     -10mm",   vp_createUnitValue (1, 10, 0),        -1},  // this is accepted - but it is not ok - inconsistent with all the other ways that white space is treated.
-        { L" 1m     -    10mm",   vp_createUnitValue (1, 10, 0),        -1},  // this is not accepted but is ok, consistant
-        { L" 1m      10mm",   vp_createUnitValue (1, 10, 0),        -1},  // this is not accepted but is ok, consistant
+        { " 1m     -10mm",      vp_createUnitValue (1, 10, 0),        -1},  // this is accepted - but it is not ok - inconsistent with all the other ways that white space is treated.
+        { " 1m     -    10mm",  vp_createUnitValue (1, 10, 0),        -1},  // this is not accepted but is ok, consistant
+        { " 1m      10mm",      vp_createUnitValue (1, 10, 0),        -1},  // this is not accepted but is ok, consistant
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -678,11 +678,11 @@ TEST_F (DistanceParserTest, ParseScientific)
     {
     DistanceParserTestDataSimple testDataArray[] = 
         {
-        { L" 1.5E0  ",   vp_createUnitValue (1.5, 0, 0), 6},
-        { L"1.5E",   vp_createUnitValue (1.5, 0, 0), (size_t)-1},
-        { L"1.5E1",   vp_createUnitValue (15.0, 0, 0), 5},
-        { L"1.5E-1",   vp_createUnitValue (0.15, 0, 0), 6},
-        { L"-1.5E-1",   vp_createUnitValue (-0.15, 0, 0), 7},
+        { " 1.5E0  ",   vp_createUnitValue (1.5, 0, 0), 6},
+        { "1.5E",       vp_createUnitValue (1.5, 0, 0), (size_t)-1},
+        { "1.5E1",      vp_createUnitValue (15.0, 0, 0), 5},
+        { "1.5E-1",     vp_createUnitValue (0.15, 0, 0), 6},
+        { "-1.5E-1",    vp_createUnitValue (-0.15, 0, 0), 7},
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -697,11 +697,11 @@ TEST_F (DistanceParserTest, ParseSimple_ShowingFailing)
     {
     DistanceParserTestDataSimple testDataArray[] = 
         {
-        { L"1M10MM",    vp_createUnitValue (1, 10, 0), 6}, 
-        { L"1:10MM",    vp_createUnitValue (1, 10, 0), 6}, 
-        { L"1m10mm1",   vp_createUnitValue (1, 10, 1), 7}, 
-        { L"2m 20mm 2",   vp_createUnitValue (2, 20, 2), 9},
-        { L"1:-10:0",   vp_createUnitValue (1, -10, 0), 7},
+        { "1M10MM",    vp_createUnitValue (1, 10, 0), 6}, 
+        { "1:10MM",    vp_createUnitValue (1, 10, 0), 6}, 
+        { "1m10mm1",   vp_createUnitValue (1, 10, 1), 7}, 
+        { "2m 20mm 2", vp_createUnitValue (2, 20, 2), 9},
+        { "1:-10:0",   vp_createUnitValue (1, -10, 0), 7},
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -723,10 +723,10 @@ TEST_F (PointParserTest, ParseSimple)
     {
     PointParserTestDataSimple testDataArray[] = 
         {
-        { L"0m0mm,0m0mm,0m0mm",    vp_createParsedPointValue  (0.0, 0.0, 0.0),     true, true, 1.0}, 
-        { L"0m0mm,0m0mm,1m0mm",    vp_createParsedPointValue  (0.0, 0.0, 1000.0),  true, true, 1.0}, 
-        { L"0m0mm,0m0mm,-1m1mm",   vp_createParsedPointValue  (0.0, 0.0, -1001.0), true, true, 1.0}, 
-        { L" 0m0mm,0m0mm,-1m1mm",  vp_createParsedPointValue  (0.0, 0.0, -1001.0), true, true, 1.0}, 
+        { "0m0mm,0m0mm,0m0mm",    vp_createParsedPointValue  (0.0, 0.0, 0.0),     true, true, 1.0}, 
+        { "0m0mm,0m0mm,1m0mm",    vp_createParsedPointValue  (0.0, 0.0, 1000.0),  true, true, 1.0}, 
+        { "0m0mm,0m0mm,-1m1mm",   vp_createParsedPointValue  (0.0, 0.0, -1001.0), true, true, 1.0}, 
+        { " 0m0mm,0m0mm,-1m1mm",  vp_createParsedPointValue  (0.0, 0.0, -1001.0), true, true, 1.0}, 
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -741,9 +741,9 @@ TEST_F (PointParserTest, ParseSimple2dLegacy)
     {
     PointParserTestDataSimple testDataArray[] = 
         {
-        { L"0m0mm,0m0mm",    vp_createParsedPointValue (0.0, 0.0, 0.0),      true, false, 1.0}, 
-        { L"0m1mm,1m0mm",    vp_createParsedPointValue (1.0, 1000.0, 0.0) ,  true, false, 0.5}, 
-        { L"0m1mm,-1m0mm",   vp_createParsedPointValue (1.0, -1000.0, 0.0) , true, false, 2.0}, 
+        { "0m0mm,0m0mm",    vp_createParsedPointValue (0.0, 0.0, 0.0),      true, false, 1.0}, 
+        { "0m1mm,1m0mm",    vp_createParsedPointValue (1.0, 1000.0, 0.0) ,  true, false, 0.5}, 
+        { "0m1mm,-1m0mm",   vp_createParsedPointValue (1.0, -1000.0, 0.0) , true, false, 2.0}, 
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -758,10 +758,10 @@ TEST_F (PointParserTest, ParseSimple2d)
     {
     PointParserTestDataSimple testDataArray[] = 
         {
-        { L"0m0mm,0m0mm,0m0mm",     vp_createParsedPointValue (0.0, 0.0, 0.0),    true, false, 1.0}, 
-        { L"0m0mm,0m0mm,1m0mm",     vp_createParsedPointValue (0.0, 0.0, 0.0),    true, false, 1.0}, 
-        { L"0m0mm,0m0mm,-1m1mm",    vp_createParsedPointValue (0.0, 0.0, 0.0),    true, false, 1.0}, 
-        { L"0m1mm,1m0mm,-1m1mm",    vp_createParsedPointValue (1.0, 1000.0, 0.0), true, false, 2.0}, 
+        { "0m0mm,0m0mm,0m0mm",     vp_createParsedPointValue (0.0, 0.0, 0.0),    true, false, 1.0}, 
+        { "0m0mm,0m0mm,1m0mm",     vp_createParsedPointValue (0.0, 0.0, 0.0),    true, false, 1.0}, 
+        { "0m0mm,0m0mm,-1m1mm",    vp_createParsedPointValue (0.0, 0.0, 0.0),    true, false, 1.0}, 
+        { "0m1mm,1m0mm,-1m1mm",    vp_createParsedPointValue (1.0, 1000.0, 0.0), true, false, 2.0}, 
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -777,14 +777,14 @@ TEST_F (PointParserTest, TestCoordSplitting)
     PointParserTestDataSimple testDataArray[] = 
         {
         // In String,       Expected Point                                          Expect Success, Is3d,   Scale
-        { L"1,2,3",         vp_createParsedPointValue (1000.0, 2000.0, 3000.0),     true,           true,   1.0}, 
-        { L" 1, 2, 3",      vp_createParsedPointValue (1000.0, 2000.0, 3000.0),     true,           true,   1.0}, 
-        { L" 1 , 2 , 3 ",   vp_createParsedPointValue (1000.0, 2000.0, 3000.0),     true,           true,   1.0}, 
-        { L"  1,  2,  3",   vp_createParsedPointValue (1000.0, 2000.0, 3000.0),     true,           true,   1.0}, 
-        { L"\t1,\t2,\t3",   vp_createParsedPointValue (1000.0, 2000.0, 3000.0),     true,           true,   1.0}, 
-        { L"1,2",           vp_createParsedPointValue (1000.0, 2000.0, 0),          true,           true,   1.0}, 
-        { L"1,2,",          vp_createParsedPointValue (1000.0, 2000.0, 0),          true,           true,   1.0}, 
-        { L" 1 , 2 , ",     vp_createParsedPointValue (1000.0, 2000.0, 0),          true,           true,   1.0}, 
+        { "1,2,3",         vp_createParsedPointValue (1000.0, 2000.0, 3000.0),     true,           true,   1.0}, 
+        { " 1, 2, 3",      vp_createParsedPointValue (1000.0, 2000.0, 3000.0),     true,           true,   1.0}, 
+        { " 1 , 2 , 3 ",   vp_createParsedPointValue (1000.0, 2000.0, 3000.0),     true,           true,   1.0}, 
+        { "  1,  2,  3",   vp_createParsedPointValue (1000.0, 2000.0, 3000.0),     true,           true,   1.0}, 
+        { "\t1,\t2,\t3",   vp_createParsedPointValue (1000.0, 2000.0, 3000.0),     true,           true,   1.0}, 
+        { "1,2",           vp_createParsedPointValue (1000.0, 2000.0, 0),          true,           true,   1.0}, 
+        { "1,2,",          vp_createParsedPointValue (1000.0, 2000.0, 0),          true,           true,   1.0}, 
+        { " 1 , 2 , ",     vp_createParsedPointValue (1000.0, 2000.0, 0),          true,           true,   1.0}, 
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -799,15 +799,15 @@ TEST_F (PointParserTest, TestUnusualInputs)
     PointParserTestDataSimple testDataArray[] = 
         {
         // In String,       Expected Point                                          Expect Success, Is3d,   Scale
-        { L"a,2,3",         vp_createParsedPointValue (0, 0, 0),                    false,          true,   1.0}, 
-        { L"1,b,3",         vp_createParsedPointValue (0, 0, 0),                    false,          true,   1.0}, 
-        { L"1,2,c",         vp_createParsedPointValue (0, 0, 0),                    false,          true,   1.0}, 
-        { L" a , 2 , 3 ",   vp_createParsedPointValue (0, 0, 0),                    false,          true,   1.0}, 
-        { L" 1 , b , 3 ",   vp_createParsedPointValue (0, 0, 0),                    false,          true,   1.0}, 
-        { L" 1 , 2 , c ",   vp_createParsedPointValue (0, 0, 0),                    false,          true,   1.0}, 
-        { L"1, 2, 3, ABC",  vp_createParsedPointValue (1000.0, 2000.0, 3000.0),     true,           true,   1.0}, 
-        { L"1, 2, 3,    ",  vp_createParsedPointValue (1000.0, 2000.0, 3000.0),     true,           true,   1.0}, 
-        { L"1, 2, 3,",      vp_createParsedPointValue (1000.0, 2000.0, 3000.0),     true,           true,   1.0}, 
+        { "a,2,3",         vp_createParsedPointValue (0, 0, 0),                    false,          true,   1.0}, 
+        { "1,b,3",         vp_createParsedPointValue (0, 0, 0),                    false,          true,   1.0}, 
+        { "1,2,c",         vp_createParsedPointValue (0, 0, 0),                    false,          true,   1.0}, 
+        { " a , 2 , 3 ",   vp_createParsedPointValue (0, 0, 0),                    false,          true,   1.0}, 
+        { " 1 , b , 3 ",   vp_createParsedPointValue (0, 0, 0),                    false,          true,   1.0}, 
+        { " 1 , 2 , c ",   vp_createParsedPointValue (0, 0, 0),                    false,          true,   1.0}, 
+        { "1, 2, 3, ABC",  vp_createParsedPointValue (1000.0, 2000.0, 3000.0),     true,           true,   1.0}, 
+        { "1, 2, 3,    ",  vp_createParsedPointValue (1000.0, 2000.0, 3000.0),     true,           true,   1.0}, 
+        { "1, 2, 3,",      vp_createParsedPointValue (1000.0, 2000.0, 3000.0),     true,           true,   1.0}, 
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -822,13 +822,13 @@ TEST_F (PointParserTest, TestUnusualInputs2d)
     PointParserTestDataSimple testDataArray[] = 
         {
         // In String,       Expected Point                                          Expect Success, Is3d,   Scale
-        { L"a,2",           vp_createParsedPointValue (0, 0, 0),                    false,          false,  1.0}, 
-        { L"1,b",           vp_createParsedPointValue (0, 0, 0),                    false,          false,  1.0}, 
-        { L" a , 2 ",       vp_createParsedPointValue (0, 0, 0),                    false,          false,  1.0}, 
-        { L" 1 , b ",       vp_createParsedPointValue (0, 0, 0),                    false,          false,  1.0}, 
-        { L"1, 2, ABC",     vp_createParsedPointValue (1000.0, 2000.0, 0),          true,           false,  1.0}, 
-        { L"1, 2,    ",     vp_createParsedPointValue (1000.0, 2000.0, 0),          true,           false,  1.0}, 
-        { L"1, 2,",         vp_createParsedPointValue (1000.0, 2000.0, 0),          true,           false,  1.0}, 
+        { "a,2",           vp_createParsedPointValue (0, 0, 0),                    false,          false,  1.0}, 
+        { "1,b",           vp_createParsedPointValue (0, 0, 0),                    false,          false,  1.0}, 
+        { " a , 2 ",       vp_createParsedPointValue (0, 0, 0),                    false,          false,  1.0}, 
+        { " 1 , b ",       vp_createParsedPointValue (0, 0, 0),                    false,          false,  1.0}, 
+        { "1, 2, ABC",     vp_createParsedPointValue (1000.0, 2000.0, 0),          true,           false,  1.0}, 
+        { "1, 2,    ",     vp_createParsedPointValue (1000.0, 2000.0, 0),          true,           false,  1.0}, 
+        { "1, 2,",         vp_createParsedPointValue (1000.0, 2000.0, 0),          true,           false,  1.0}, 
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -843,13 +843,13 @@ TEST (ValueParser, ParseSimple)
     ScopedDgnHost autoDgnHost;
     ValueParserTestData testDataArray[] = 
         {
-        { L"0",                 0.0},
-        { L"0.0",               0.0},
-        { L"0.25",              0.25},
-        { L"   20343.00   ",    20343.0},          // old behavior would have not parsed this.
-        { L"20343.00   ",       20343.0},
-        { L"100 1/4",           100.25},
-        { L"100.5 1/4",         100.75},
+        { "0",                 0.0},
+        { "0.0",               0.0},
+        { "0.25",              0.25},
+        { "   20343.00   ",    20343.0},          // old behavior would have not parsed this.
+        { "20343.00   ",       20343.0},
+        { "100 1/4",           100.25},
+        { "100.5 1/4",         100.75},
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -866,7 +866,7 @@ TEST (ValueParser, ParseThousandSeparaters)
     ScopedDgnHost autoDgnHost;
     ValueParserTestData testDataArray[] = 
         {
-        { L"1,000",             1000.0},
+        { "1,000",             1000.0},
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)

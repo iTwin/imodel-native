@@ -36,14 +36,13 @@ private:
     // Inputs
     double                  m_focalLength;
     Transform               m_transform;
-    bool                    m_camera;
     bool                    m_overlapMode;
     double                  m_onTolerance;
-    double                  m_zCameraLimit;
     DgnViewportP            m_viewport;
     FenceClipMode           m_clipMode;
     ClipVectorPtr           m_clip;
     DRange3d                m_fenceRange;
+    DRange3d                m_fenceRangeNPC;
     LocateSurfacesPref      m_locateInteriors;
 
     // Outputs
@@ -70,7 +69,7 @@ public:
 
     void SetHasOverlaps(bool hasOverlaps) {m_hasOverlaps = hasOverlaps;}
     LocateSurfacesPref GetLocateInteriors() {return m_locateInteriors;}
-    DRange3dCP GetFenceRange() {return &m_fenceRange;}
+    DRange3d GetFenceRangeNPC () { return m_fenceRangeNPC; }
 
     DGNPLATFORM_EXPORT bool PointInsideClip(DPoint3dCR testPoint);
     DGNPLATFORM_EXPORT bool PointInOtherClips(DPoint3dCR testPoint, ClipPrimitiveCP clip);

@@ -14,6 +14,8 @@ BEGIN_UNNAMED_NAMESPACE
     static int s_progressiveTarget;
 END_UNNAMED_NAMESPACE
 
+#define RENDER_LOGGING 1
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -23,7 +25,9 @@ void Render::Target::Debug::SaveSceneTarget(int val) {s_sceneTarget=val; Show();
 void Render::Target::Debug::SaveProgressiveTarget(int val) {s_progressiveTarget=val; Show();}
 void Render::Target::Debug::Show()
     {
+#if defined(RENDER_LOGGING) 
     NativeLogging::LoggingManager::GetLogger("GPS")->debugv("GPS=%d, Scene=%d, PD=%d", s_gps, s_sceneTarget, s_progressiveTarget);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

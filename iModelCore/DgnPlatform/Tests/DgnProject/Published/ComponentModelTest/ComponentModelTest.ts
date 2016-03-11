@@ -32,7 +32,7 @@ module ComponentModelTest
     //  Utility function that creates a new (non-persistent) PhysicalElement object in memory and assigns it to the correct category 
     function makeElement(model: be.DgnModel, cdef: be.ComponentDef): be.PhysicalElement
     {
-        return be.PhysicalElement.Create(model, cdef.Category.CategoryId, '');
+        return be.PhysicalElement.Create(model, cdef.Category.CategoryId, be.GENERIC_SCHEMA(be.GENERIC_CLASSNAME_PhysicalObject));
     }
 
     /**
@@ -88,6 +88,7 @@ module ComponentModelTest
             element.Insert();
 
 
+            /* WIP -- why am I calling Update on a new element?? That will always fail!
             var element3 = makeElement(componentModel, cdef);
 
             var builder = new be.GeometryBuilder(element, new be.DPoint3d(0,0,0), angles);
@@ -95,6 +96,7 @@ module ComponentModelTest
             builder.AppendGeometry(new be.LineSegment (new be.DPoint3d (0,0,0), new be.DPoint3d(1,0,0)));
             builder.SetGeometryStreamAndPlacement(element3);
             element3.Update ();
+            */
 
             return 0;
         }

@@ -329,31 +329,39 @@ module DgnScriptTests {
     //---------------------------------------------------------------------------------------
     function testUserProperties(el: be.DgnElement)
     {
-        var userprops = el.UserProperties;
-
-        if (userprops.GetValueEC('stuff'))
+        if (el.ContainsUserProperty('stuff'))
             be.Script.ReportError('no user props expected initially');
 
-        userprops.SetValueEC('stuff', be.ECValue.FromString('foo'));
-        el.UserProperties = userprops;
+        if (true)
+        {
+            var stuff_userprop = el.GetUserProperty('stuff');
+            stuff_userprop.ValueEC = be.ECValue.FromString('foo');
+            stuff_userprop.Units = 'm';
+            stuff_userprop.ReadOnly = true;
+            // *** TRICKY: stuff_userprop is magically connected to el. Setting stuff_userprop's value actually
+            //              updates data that is stored on el. That's why we don't need a "SetUserProperty" method.
+        }
 
-        var stuffValue = userprops.GetValueEC('stuff');
-        if (!stuffValue || stuffValue.GetString() != 'foo')
-            be.Script.ReportError('stuff userprop not found');
+        if (!el.ContainsUserProperty('stuff'))
+            be.Script.ReportError('stuff userprop should be there now');
+
+        var stuff_userprop = el.GetUserProperty('stuff');
+        if (stuff_userprop.ValueEC.GetString() != 'foo' || stuff_userprop.Units != 'm' || !stuff_userprop.ReadOnly)
+            be.Script.ReportError('stuff userprop value should have been set to foo with units m');
 
         el.Update();
 
-        userprops = el.UserProperties;
-        stuffValue = userprops.GetValueEC('stuff');
-        if (!stuffValue || stuffValue.GetString() != 'foo')
-            be.Script.ReportError('stuff userprop not preserved by update');
+        if (!el.ContainsUserProperty('stuff'))
+            be.Script.ReportError('stuff userprop should have been saved');
 
-        userprops.SetValueEC('nonsense', be.ECValue.FromString('bar'));
-        el.UserProperties = userprops;
+        el.GetUserProperty('nonsense').ValueEC = be.ECValue.FromString('bar');
+        var nonsenseValue = el.GetUserProperty('nonsense').ValueEC;
+        if (nonsenseValue.GetString() != 'bar')
+            be.Script.ReportError('nonsense userprop should have been set to bar');
 
-        var stuffValue = userprops.GetValueEC('nonsense');
-        if (!stuffValue || stuffValue.GetString() != 'bar')
-            be.Script.ReportError('nonsense userprop not found');
+        el.RemoveUserProperty('nonsense');
+        if (el.ContainsUserProperty('nonsense'))
+            be.Script.ReportError('nonsense userprop should have been removed');
     }
 
     //---------------------------------------------------------------------------------------

@@ -207,12 +207,15 @@ ChangeSet::ConflictResolution ChangeStreamFileReader::_OnConflict(ChangeSet::Con
     Utf8CP tableName;
     int nCols, indirect;
     DbOpcode opcode;
-    iter.GetOperation(&tableName, &nCols, &opcode, &indirect);
+    DbResult result = iter.GetOperation(&tableName, &nCols, &opcode, &indirect);
+    BeAssert(result == BE_SQLITE_OK);
+    UNUSED_VARIABLE(result);
 
     if (cause == ConflictCause::NotFound && opcode == DbOpcode::Delete) // a delete that is already gone. 
        return ConflictResolution::Skip; // This is caused by propagate delete on a foreign key. It is not a problem.
-       
-    iter.Dump(m_dgndb, false, 1);
+
+    if (tableName)
+        iter.Dump(m_dgndb, false, 1);
     BeAssert(false);
     return ChangeSet::ConflictResolution::Abort;
     }
@@ -536,14 +539,9 @@ Utf8String RevisionManager::GetInitialParentRevisionId() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-RevisionStatus RevisionManager::MergeRevisions(bvector<DgnRevisionPtr> const& mergeRevisions)
+RevisionStatus RevisionManager::MergeRevision(DgnRevisionCR revision)
     {
     TxnManagerR txnMgr = m_dgndb.Txns();
-    if (mergeRevisions.empty())
-        {
-        BeAssert(false && "Nothing to merge");
-        return RevisionStatus::NothingToMerge;
-        }
 
     if (!txnMgr.IsTracking())
         {
@@ -569,23 +567,17 @@ RevisionStatus RevisionManager::MergeRevisions(bvector<DgnRevisionPtr> const& me
         return RevisionStatus::IsCreatingRevision;
         }
 
-    Utf8String dbGuid = m_dgndb.GetDbGuid().ToString();
+    RevisionStatus status = revision.Validate(m_dgndb);
+    if (RevisionStatus::Success != status)
+        return status;
 
-    RevisionStatus status;
-    bvector<BeFileName> changeStreamFiles;
-    for (DgnRevisionPtr const& revision : mergeRevisions)
+    if (GetParentRevisionId() != revision.GetParentId())
         {
-        status = revision->Validate(m_dgndb);
-        if (RevisionStatus::Success != status)
-            return status;
-
-        changeStreamFiles.push_back(revision->GetChangeStreamFile());
+        BeAssert(false && "Parent of revision should match the parent revision id of the Db");
+        return RevisionStatus::ParentMismatch;
         }
-        
-    DgnRevisionPtr const& newParentRevision = *(mergeRevisions.end() - 1);
 
-    ChangeStreamFileReader revisionStream (changeStreamFiles, m_dgndb);
-    return txnMgr.MergeRevisionChanges(revisionStream, newParentRevision->GetId());
+    return txnMgr.MergeRevision(revision);
     }
 
 //---------------------------------------------------------------------------------------

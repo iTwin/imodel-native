@@ -160,14 +160,17 @@ void DgnQueryView::_OnUpdate(DgnViewportR vp, UpdatePlan const& plan)
     QueueQuery(vp, plan.GetQuery());
     }
 
+static double s_frustumScale = 1.00;
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2013
 //---------------------------------------------------------------------------------------
 void DgnQueryView::QueueQuery(DgnViewportR viewport, UpdatePlan::Query const& plan)
     {
     Frustum frust = viewport.GetFrustum(DgnCoordSystem::World, true);
-    if (plan.m_frustumScale != 1.0) // sometimes we want to expand the frustum to hold elements outside the current view frustum
-        frust.ScaleAboutCenter(plan.m_frustumScale);
+    double frustumScale = s_frustumScale; // plan.m_frustumScale
+    //  if (plan.m_frustumScale != 1.0) // sometimes we want to expand the frustum to hold elements outside the current view frustum
+    if (frustumScale != 1.0) // sometimes we want to expand the frustum to hold elements outside the current view frustum
+        frust.ScaleAboutCenter(frustumScale);
 
     RefCountedPtr<RangeQuery> query = new RangeQuery(*this, frust, viewport, plan);
     query->SetSizeFilter(viewport, GetSceneLODSize());
@@ -442,7 +445,10 @@ void DgnQueryView::_CreateScene(SceneContextR context)
                 members->insert(thisScore.second);
 
             if (context.WasAborted())
+                {
+                DEBUG_ERRORLOG("Create Scene aborted on element %ld", thisScore.second.GetValue());
                 break;
+                }
             }
         }
 
