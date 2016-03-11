@@ -18,8 +18,6 @@ DGNPLATFORM_REF_COUNTED_PTR(GenericSpatialGroup)
 DGNPLATFORM_REF_COUNTED_PTR(GenericSpatialLocation)
 DGNPLATFORM_REF_COUNTED_PTR(GenericPhysicalObject)
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
-
 #define GENERIC_DOMAIN_ECSCHEMA_PATH        L"ECSchemas/Dgn/Generic.01.00.ecschema.xml"
 #define GENERIC_DOMAIN_NAME                 "Generic"
 #define GENERIC_SCHEMA(className)           GENERIC_DOMAIN_NAME "." className
@@ -27,6 +25,8 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 #define GENERIC_CLASSNAME_PhysicalObject    "PhysicalObject"
 #define GENERIC_CLASSNAME_SpatialLocation   "SpatialLocation"
 #define GENERIC_CLASSNAME_SpatialGroup      "SpatialGroup"
+
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
 //! The Generic DgnDomain
