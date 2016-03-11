@@ -2889,7 +2889,6 @@ SQLITE_PRIVATE int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target)
       ExprList *pFarg;       /* List of function arguments */
       int nFarg;             /* Number of function arguments */
       FuncDef *pDef;         /* The function definition object */
-      int nId;               /* Length of the function name in bytes */
       const char *zId;       /* The function name */
       u32 constMask = 0;     /* Mask of function arguments that are constant */
       int i;                 /* Loop counter */
@@ -2905,10 +2904,9 @@ SQLITE_PRIVATE int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target)
       nFarg = pFarg ? pFarg->nExpr : 0;
       assert( !ExprHasProperty(pExpr, EP_IntValue) );
       zId = pExpr->u.zToken;
-      nId = sqlite3Strlen30(zId);
-      pDef = sqlite3FindFunction(db, zId, nId, nFarg, enc, 0);
+      pDef = sqlite3FindFunction(db, zId, nFarg, enc, 0);
       if( pDef==0 || pDef->xFinalize!=0 ){
-        sqlite3ErrorMsg(pParse, "unknown function: %.*s()", nId, zId);
+        sqlite3ErrorMsg(pParse, "unknown function: %s()", zId);
         break;
       }
 
@@ -3073,6 +3071,7 @@ SQLITE_PRIVATE int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target)
       sqlite3ReleaseTempReg(pParse, r4);
       break;
     }
+    case TK_SPAN:
     case TK_COLLATE: 
     case TK_UPLUS: {
       inReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft, target);
@@ -4133,7 +4132,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
             pItem->iMem = ++pParse->nMem;
             assert( !ExprHasProperty(pExpr, EP_IntValue) );
             pItem->pFunc = sqlite3FindFunction(pParse->db,
-                   pExpr->u.zToken, sqlite3Strlen30(pExpr->u.zToken),
+                   pExpr->u.zToken, 
                    pExpr->x.pList ? pExpr->x.pList->nExpr : 0, enc, 0);
             if( pExpr->flags & EP_Distinct ){
               pItem->iDistinct = pParse->nTab++;
@@ -4495,7 +4494,7 @@ static void renameTriggerFunc(
 ** Register built-in functions used to help implement ALTER TABLE
 */
 SQLITE_PRIVATE void sqlite3AlterFunctions(void){
-  static SQLITE_WSD FuncDef aAlterTableFuncs[] = {
+  static FuncDef aAlterTableFuncs[] = {
     FUNCTION(sqlite_rename_table,   2, 0, 0, renameTableFunc),
 #ifndef SQLITE_OMIT_TRIGGER
     FUNCTION(sqlite_rename_trigger, 2, 0, 0, renameTriggerFunc),
@@ -4504,13 +4503,7 @@ SQLITE_PRIVATE void sqlite3AlterFunctions(void){
     FUNCTION(sqlite_rename_parent,  3, 0, 0, renameParentFunc),
 #endif
   };
-  int i;
-  FuncDefHash *pHash = &GLOBAL(FuncDefHash, sqlite3GlobalFunctions);
-  FuncDef *aFunc = (FuncDef*)&GLOBAL(FuncDef, aAlterTableFuncs);
-
-  for(i=0; i<ArraySize(aAlterTableFuncs); i++){
-    sqlite3FuncDefInsert(pHash, &aFunc[i]);
-  }
+  sqlite3InsertBuiltinFuncs(aAlterTableFuncs, ArraySize(aAlterTableFuncs));
 }
 
 /*
@@ -4900,7 +4893,8 @@ SQLITE_PRIVATE void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   ** literal NULL, then set pDflt to 0. This simplifies checking
   ** for an SQL NULL default below.
   */
-  if( pDflt && pDflt->op==TK_NULL ){
+  assert( pDflt==0 || pDflt->op==TK_SPAN );
+  if( pDflt && pDflt->pLeft->op==TK_NULL ){
     pDflt = 0;
   }
 
@@ -5057,9 +5051,7 @@ SQLITE_PRIVATE void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
     Column *pCol = &pNew->aCol[i];
     pCol->zName = sqlite3DbStrDup(db, pCol->zName);
     pCol->zColl = 0;
-    pCol->zType = 0;
     pCol->pDflt = 0;
-    pCol->zDflt = 0;
   }
   pNew->pSchema = db->aDb[iDb].pSchema;
   pNew->addColOffset = pTab->addColOffset;
@@ -5562,8 +5554,7 @@ static const FuncDef statInitFuncdef = {
   statInit,        /* xSFunc */
   0,               /* xFinalize */
   "stat_init",     /* zName */
-  0,               /* pHash */
-  0                /* pDestructor */
+  {0}
 };
 
 #ifdef SQLITE_ENABLE_STAT4
@@ -5862,8 +5853,7 @@ static const FuncDef statPushFuncdef = {
   statPush,        /* xSFunc */
   0,               /* xFinalize */
   "stat_push",     /* zName */
-  0,               /* pHash */
-  0                /* pDestructor */
+  {0}
 };
 
 #define STAT_GET_STAT1 0          /* "stat" column of stat1 table */
@@ -6008,8 +5998,7 @@ static const FuncDef statGetFuncdef = {
   statGet,         /* xSFunc */
   0,               /* xFinalize */
   "stat_get",      /* zName */
-  0,               /* pHash */
-  0                /* pDestructor */
+  {0}
 };
 
 static void callStatGet(Vdbe *v, int regStat4, int iParam, int regOut){
@@ -6754,7 +6743,7 @@ static int loadStatTbl(
   assert( db->lookaside.bDisable );
   zSql = sqlite3MPrintf(db, zSql1, zDb);
   if( !zSql ){
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
   rc = sqlite3_prepare(db, zSql, -1, &pStmt, 0);
   sqlite3DbFree(db, zSql);
@@ -6794,7 +6783,7 @@ static int loadStatTbl(
     pIdx->aSample = sqlite3DbMallocZero(db, nByte);
     if( pIdx->aSample==0 ){
       sqlite3_finalize(pStmt);
-      return SQLITE_NOMEM;
+      return SQLITE_NOMEM_BKPT;
     }
     pSpace = (tRowcnt*)&pIdx->aSample[nSample];
     pIdx->aAvgEq = pSpace; pSpace += nIdxCol;
@@ -6810,7 +6799,7 @@ static int loadStatTbl(
 
   zSql = sqlite3MPrintf(db, zSql2, zDb);
   if( !zSql ){
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
   rc = sqlite3_prepare(db, zSql, -1, &pStmt, 0);
   sqlite3DbFree(db, zSql);
@@ -6848,7 +6837,7 @@ static int loadStatTbl(
     pSample->p = sqlite3DbMallocZero(db, pSample->n + 2);
     if( pSample->p==0 ){
       sqlite3_finalize(pStmt);
-      return SQLITE_NOMEM;
+      return SQLITE_NOMEM_BKPT;
     }
     memcpy(pSample->p, sqlite3_column_blob(pStmt, 4), pSample->n);
     pIdx->nSample++;
@@ -6937,7 +6926,7 @@ SQLITE_PRIVATE int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   zSql = sqlite3MPrintf(db, 
       "SELECT tbl,idx,stat FROM %Q.sqlite_stat1", sInfo.zDatabase);
   if( zSql==0 ){
-    rc = SQLITE_NOMEM;
+    rc = SQLITE_NOMEM_BKPT;
   }else{
     rc = sqlite3_exec(db, zSql, analysisLoader, &sInfo, 0);
     sqlite3DbFree(db, zSql);
@@ -7115,7 +7104,7 @@ static void attachFunc(
     Pager *pPager;
     aNew->pSchema = sqlite3SchemaGet(db, aNew->pBt);
     if( !aNew->pSchema ){
-      rc = SQLITE_NOMEM;
+      rc = SQLITE_NOMEM_BKPT;
     }else if( aNew->pSchema->file_format && aNew->pSchema->enc!=ENC(db) ){
       zErrDyn = sqlite3MPrintf(db, 
         "attached databases must use the same text encoding as main database");
@@ -7135,7 +7124,7 @@ static void attachFunc(
   aNew->safety_level = 3;
   aNew->zName = sqlite3DbStrDup(db, zName);
   if( rc==SQLITE_OK && aNew->zName==0 ){
-    rc = SQLITE_NOMEM;
+    rc = SQLITE_NOMEM_BKPT;
   }
 
 
@@ -7363,8 +7352,7 @@ SQLITE_PRIVATE void sqlite3Detach(Parse *pParse, Expr *pDbname){
     detachFunc,       /* xSFunc */
     0,                /* xFinalize */
     "sqlite_detach",  /* zName */
-    0,                /* pHash */
-    0                 /* pDestructor */
+    {0}
   };
   codeAttach(pParse, SQLITE_DETACH, &detach_func, pDbname, 0, 0, pDbname);
 }
@@ -7383,8 +7371,7 @@ SQLITE_PRIVATE void sqlite3Attach(Parse *pParse, Expr *p, Expr *pDbname, Expr *p
     attachFunc,       /* xSFunc */
     0,                /* xFinalize */
     "sqlite_attach",  /* zName */
-    0,                /* pHash */
-    0                 /* pDestructor */
+    {0}
   };
   codeAttach(pParse, SQLITE_ATTACH, &attach_func, p, p, pDbname, pKey);
 }
@@ -8391,8 +8378,6 @@ SQLITE_PRIVATE void sqlite3DeleteColumnNames(sqlite3 *db, Table *pTable){
     for(i=0; i<pTable->nCol; i++, pCol++){
       sqlite3DbFree(db, pCol->zName);
       sqlite3ExprDelete(db, pCol->pDflt);
-      sqlite3DbFree(db, pCol->zDflt);
-      sqlite3DbFree(db, pCol->zType);
       sqlite3DbFree(db, pCol->zColl);
     }
     sqlite3DbFree(db, pTable->aCol);
@@ -8530,12 +8515,8 @@ SQLITE_PRIVATE int sqlite3FindDbName(sqlite3 *db, const char *zName){
   int i = -1;         /* Database number */
   if( zName ){
     Db *pDb;
-    int n = sqlite3Strlen30(zName);
     for(i=(db->nDb-1), pDb=&db->aDb[i]; i>=0; i--, pDb--){
-      if( (!OMIT_TEMPDB || i!=1 ) && n==sqlite3Strlen30(pDb->zName) && 
-          0==sqlite3StrICmp(pDb->zName, zName) ){
-        break;
-      }
+      if( 0==sqlite3StrICmp(pDb->zName, zName) ) break;
     }
   }
   return i;
@@ -8747,7 +8728,7 @@ SQLITE_PRIVATE void sqlite3StartTable(
   pTable = sqlite3DbMallocZero(db, sizeof(Table));
   if( pTable==0 ){
     assert( db->mallocFailed );
-    pParse->rc = SQLITE_NOMEM;
+    pParse->rc = SQLITE_NOMEM_BKPT;
     pParse->nErr++;
     goto begin_table_error;
   }
@@ -8863,10 +8844,11 @@ SQLITE_PRIVATE void sqlite3ColumnPropertiesFromName(Table *pTab, Column *pCol){
 ** first to get things going.  Then this routine is called for each
 ** column.
 */
-SQLITE_PRIVATE void sqlite3AddColumn(Parse *pParse, Token *pName){
+SQLITE_PRIVATE void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
   Table *p;
   int i;
   char *z;
+  char *zType;
   Column *pCol;
   sqlite3 *db = pParse->db;
   if( (p = pParse->pNewTable)==0 ) return;
@@ -8876,8 +8858,14 @@ SQLITE_PRIVATE void sqlite3AddColumn(Parse *pParse, Token *pName){
     return;
   }
 #endif
-  z = sqlite3NameFromToken(db, pName);
+  z = sqlite3DbMallocRaw(db, pName->n + pType->n + 2);
   if( z==0 ) return;
+  memcpy(z, pName->z, pName->n);
+  z[pName->n] = 0;
+  sqlite3Dequote(z);
+  zType = z + sqlite3Strlen30(z) + 1;
+  memcpy(zType, pType->z, pType->n);
+  zType[pType->n] = 0;
   for(i=0; i<p->nCol; i++){
     if( sqlite3_stricmp(z, p->aCol[i].zName)==0 ){
       sqlite3ErrorMsg(pParse, "duplicate column name: %s", z);
@@ -8899,13 +8887,16 @@ SQLITE_PRIVATE void sqlite3AddColumn(Parse *pParse, Token *pName){
   pCol->zName = z;
   sqlite3ColumnPropertiesFromName(p, pCol);
  
-  /* If there is no type specified, columns have the default affinity
-  ** 'BLOB'. If there is a type specified, then sqlite3AddColumnType() will
-  ** be called next to set pCol->affinity correctly.
-  */
-  pCol->affinity = SQLITE_AFF_BLOB;
-  pCol->szEst = 1;
+  if( pType->n==0 ){
+    /* If there is no type specified, columns have the default affinity
+    ** 'BLOB'. */
+    pCol->affinity = SQLITE_AFF_BLOB;
+    pCol->szEst = 1;
+  }else{
+    pCol->affinity = sqlite3AffinityType(zType, &pCol->szEst);
+  }
   p->nCol++;
+  pParse->constraintName.n = 0;
 }
 
 /*
@@ -9009,28 +9000,6 @@ SQLITE_PRIVATE char sqlite3AffinityType(const char *zIn, u8 *pszEst){
 }
 
 /*
-** This routine is called by the parser while in the middle of
-** parsing a CREATE TABLE statement.  The pFirst token is the first
-** token in the sequence of tokens that describe the type of the
-** column currently under construction.   pLast is the last token
-** in the sequence.  Use this information to construct a string
-** that contains the typename of the column and store that string
-** in zType.
-*/ 
-SQLITE_PRIVATE void sqlite3AddColumnType(Parse *pParse, Token *pType){
-  Table *p;
-  Column *pCol;
-
-  p = pParse->pNewTable;
-  if( p==0 || NEVER(p->nCol<1) ) return;
-  pCol = &p->aCol[p->nCol-1];
-  assert( pCol->zType==0 || CORRUPT_DB );
-  sqlite3DbFree(pParse->db, pCol->zType);
-  pCol->zType = sqlite3NameFromToken(pParse->db, pType);
-  pCol->affinity = sqlite3AffinityType(pCol->zType, &pCol->szEst);
-}
-
-/*
 ** The expression is the default value for the most recently added column
 ** of the table currently under construction.
 **
@@ -9055,11 +9024,16 @@ SQLITE_PRIVATE void sqlite3AddDefaultValue(Parse *pParse, ExprSpan *pSpan){
       ** tokens that point to volatile memory. The 'span' of the expression
       ** is required by pragma table_info.
       */
+      Expr x;
       sqlite3ExprDelete(db, pCol->pDflt);
-      pCol->pDflt = sqlite3ExprDup(db, pSpan->pExpr, EXPRDUP_REDUCE);
-      sqlite3DbFree(db, pCol->zDflt);
-      pCol->zDflt = sqlite3DbStrNDup(db, (char*)pSpan->zStart,
-                                     (int)(pSpan->zEnd - pSpan->zStart));
+      memset(&x, 0, sizeof(x));
+      x.op = TK_SPAN;
+      x.u.zToken = sqlite3DbStrNDup(db, (char*)pSpan->zStart,
+                                    (int)(pSpan->zEnd - pSpan->zStart));
+      x.pLeft = pSpan->pExpr;
+      x.flags = EP_Skip;
+      pCol->pDflt = sqlite3ExprDup(db, &x, EXPRDUP_REDUCE);
+      sqlite3DbFree(db, x.u.zToken);
     }
   }
   sqlite3ExprDelete(db, pSpan->pExpr);
@@ -9115,7 +9089,7 @@ SQLITE_PRIVATE void sqlite3AddPrimaryKey(
   int sortOrder     /* SQLITE_SO_ASC or SQLITE_SO_DESC */
 ){
   Table *pTab = pParse->pNewTable;
-  char *zType = 0;
+  const char *zName = 0;
   int iCol = -1, i;
   int nTerm;
   if( pTab==0 || IN_DECLARE_VTAB ) goto primary_key_exit;
@@ -9128,7 +9102,7 @@ SQLITE_PRIVATE void sqlite3AddPrimaryKey(
   if( pList==0 ){
     iCol = pTab->nCol - 1;
     pTab->aCol[iCol].colFlags |= COLFLAG_PRIMKEY;
-    zType = pTab->aCol[iCol].zType;
+    zName = pTab->aCol[iCol].zName;
     nTerm = 1;
   }else{
     nTerm = pList->nExpr;
@@ -9141,7 +9115,7 @@ SQLITE_PRIVATE void sqlite3AddPrimaryKey(
         for(iCol=0; iCol<pTab->nCol; iCol++){
           if( sqlite3StrICmp(zCName, pTab->aCol[iCol].zName)==0 ){
             pTab->aCol[iCol].colFlags |= COLFLAG_PRIMKEY;
-            zType = pTab->aCol[iCol].zType;
+            zName = pTab->aCol[iCol].zName;
             break;
           }
         }
@@ -9149,7 +9123,8 @@ SQLITE_PRIVATE void sqlite3AddPrimaryKey(
     }
   }
   if( nTerm==1
-   && zType && sqlite3StrICmp(zType, "INTEGER")==0
+   && zName
+   && sqlite3StrICmp(sqlite3StrNext(zName), "INTEGER")==0
    && sortOrder!=SQLITE_SO_DESC
   ){
     pTab->iPKey = iCol;
@@ -9428,7 +9403,7 @@ static int resizeIndexObject(sqlite3 *db, Index *pIdx, int N){
   assert( pIdx->isResized==0 );
   nByte = (sizeof(char*) + sizeof(i16) + 1)*N;
   zExtra = sqlite3DbMallocZero(db, nByte);
-  if( zExtra==0 ) return SQLITE_NOMEM;
+  if( zExtra==0 ) return SQLITE_NOMEM_BKPT;
   memcpy(zExtra, pIdx->azColl, sizeof(char*)*pIdx->nColumn);
   pIdx->azColl = (const char**)zExtra;
   zExtra += sizeof(char*)*N;
@@ -11020,6 +10995,20 @@ SQLITE_PRIVATE Index *sqlite3CreateIndex(
   sqlite3DefaultRowEst(pIndex);
   if( pParse->pNewTable==0 ) estimateIndexWidth(pIndex);
 
+  /* If this index contains every column of its table, then mark
+  ** it as a covering index */
+  assert( HasRowid(pTab) 
+      || pTab->iPKey<0 || sqlite3ColumnOfIndex(pIndex, pTab->iPKey)>=0 );
+  if( pTblName!=0 && pIndex->nColumn>=pTab->nCol ){
+    pIndex->isCovering = 1;
+    for(j=0; j<pTab->nCol; j++){
+      if( j==pTab->iPKey ) continue;
+      if( sqlite3ColumnOfIndex(pIndex,j)>=0 ) continue;
+      pIndex->isCovering = 0;
+      break;
+    }
+  }
+
   if( pTab==pParse->pNewTable ){
     /* This routine has been called to create an automatic index as a
     ** result of a PRIMARY KEY or UNIQUE clause on a column definition, or
@@ -11057,7 +11046,7 @@ SQLITE_PRIVATE Index *sqlite3CreateIndex(
         if( pIdx->aiColumn[k]!=pIndex->aiColumn[k] ) break;
         z1 = pIdx->azColl[k];
         z2 = pIndex->azColl[k];
-        if( z1!=z2 && sqlite3StrICmp(z1, z2) ) break;
+        if( sqlite3StrICmp(z1, z2) ) break;
       }
       if( k==pIdx->nKeyCol ){
         if( pIdx->onError!=pIndex->onError ){
@@ -12510,14 +12499,12 @@ static int matchQuality(
 ** a pointer to the matching FuncDef if found, or 0 if there is no match.
 */
 static FuncDef *functionSearch(
-  FuncDefHash *pHash,  /* Hash table to search */
   int h,               /* Hash of the name */
-  const char *zFunc,   /* Name of function */
-  int nFunc            /* Number of bytes in zFunc */
+  const char *zFunc    /* Name of function */
 ){
   FuncDef *p;
-  for(p=pHash->a[h]; p; p=p->pHash){
-    if( sqlite3StrNICmp(p->zName, zFunc, nFunc)==0 && p->zName[nFunc]==0 ){
+  for(p=sqlite3BuiltinFunctions.a[h]; p; p=p->u.pHash){
+    if( sqlite3StrICmp(p->zName, zFunc)==0 ){
       return p;
     }
   }
@@ -12527,23 +12514,26 @@ static FuncDef *functionSearch(
 /*
 ** Insert a new FuncDef into a FuncDefHash hash table.
 */
-SQLITE_PRIVATE void sqlite3FuncDefInsert(
-  FuncDefHash *pHash,  /* The hash table into which to insert */
-  FuncDef *pDef        /* The function definition to insert */
+SQLITE_PRIVATE void sqlite3InsertBuiltinFuncs(
+  FuncDef *aDef,      /* List of global functions to be inserted */
+  int nDef            /* Length of the apDef[] list */
 ){
-  FuncDef *pOther;
-  int nName = sqlite3Strlen30(pDef->zName);
-  u8 c1 = (u8)pDef->zName[0];
-  int h = (sqlite3UpperToLower[c1] + nName) % ArraySize(pHash->a);
-  pOther = functionSearch(pHash, h, pDef->zName, nName);
-  if( pOther ){
-    assert( pOther!=pDef && pOther->pNext!=pDef );
-    pDef->pNext = pOther->pNext;
-    pOther->pNext = pDef;
-  }else{
-    pDef->pNext = 0;
-    pDef->pHash = pHash->a[h];
-    pHash->a[h] = pDef;
+  int i;
+  for(i=0; i<nDef; i++){
+    FuncDef *pOther;
+    const char *zName = aDef[i].zName;
+    int nName = sqlite3Strlen30(zName);
+    int h = (sqlite3UpperToLower[(u8)zName[0]] + nName) % SQLITE_FUNC_HASH_SZ;
+    pOther = functionSearch(h, zName);
+    if( pOther ){
+      assert( pOther!=&aDef[i] && pOther->pNext!=&aDef[i] );
+      aDef[i].pNext = pOther->pNext;
+      pOther->pNext = &aDef[i];
+    }else{
+      aDef[i].pNext = 0;
+      aDef[i].u.pHash = sqlite3BuiltinFunctions.a[h];
+      sqlite3BuiltinFunctions.a[h] = &aDef[i];
+    }
   }
 }
   
@@ -12570,8 +12560,7 @@ SQLITE_PRIVATE void sqlite3FuncDefInsert(
 */
 SQLITE_PRIVATE FuncDef *sqlite3FindFunction(
   sqlite3 *db,       /* An open database */
-  const char *zName, /* Name of the function.  Not null-terminated */
-  int nName,         /* Number of characters in the name */
+  const char *zName, /* Name of the function.  zero-terminated */
   int nArg,          /* Number of arguments.  -1 means any number */
   u8 enc,            /* Preferred text encoding */
   u8 createFlag      /* Create new entry if true and does not otherwise exist */
@@ -12580,14 +12569,15 @@ SQLITE_PRIVATE FuncDef *sqlite3FindFunction(
   FuncDef *pBest = 0; /* Best match found so far */
   int bestScore = 0;  /* Score of best match */
   int h;              /* Hash value */
+  int nName;          /* Length of the name */
 
   assert( nArg>=(-2) );
   assert( nArg>=(-1) || createFlag==0 );
-  h = (sqlite3UpperToLower[(u8)zName[0]] + nName) % ArraySize(db->aFunc.a);
+  nName = sqlite3Strlen30(zName);
 
   /* First search for a match amongst the application-defined functions.
   */
-  p = functionSearch(&db->aFunc, h, zName, nName);
+  p = (FuncDef*)sqlite3HashFind(&db->aFunc, zName);
   while( p ){
     int score = matchQuality(p, nArg, enc);
     if( score>bestScore ){
@@ -12610,9 +12600,9 @@ SQLITE_PRIVATE FuncDef *sqlite3FindFunction(
   ** So we must not search for built-ins when creating a new function.
   */ 
   if( !createFlag && (pBest==0 || (db->flags & SQLITE_PreferBuiltin)!=0) ){
-    FuncDefHash *pHash = &GLOBAL(FuncDefHash, sqlite3GlobalFunctions);
     bestScore = 0;
-    p = functionSearch(pHash, h, zName, nName);
+    h = (sqlite3UpperToLower[(u8)zName[0]] + nName) % SQLITE_FUNC_HASH_SZ;
+    p = functionSearch(h, zName);
     while( p ){
       int score = matchQuality(p, nArg, enc);
       if( score>bestScore ){
@@ -12629,12 +12619,19 @@ SQLITE_PRIVATE FuncDef *sqlite3FindFunction(
   */
   if( createFlag && bestScore<FUNC_PERFECT_MATCH && 
       (pBest = sqlite3DbMallocZero(db, sizeof(*pBest)+nName+1))!=0 ){
-    pBest->zName = (char *)&pBest[1];
+    FuncDef *pOther;
+    pBest->zName = (const char*)&pBest[1];
     pBest->nArg = (u16)nArg;
     pBest->funcFlags = enc;
-    memcpy(pBest->zName, zName, nName);
-    pBest->zName[nName] = 0;
-    sqlite3FuncDefInsert(&db->aFunc, pBest);
+    memcpy((char*)&pBest[1], zName, nName+1);
+    pOther = (FuncDef*)sqlite3HashInsert(&db->aFunc, pBest->zName, pBest);
+    if( pOther==pBest ){
+      sqlite3DbFree(db, pBest);
+      sqlite3OomFault(db);
+      return 0;
+    }else{
+      pBest->pNext = pOther;
+    }
   }
 
   if( pBest && (pBest->xSFunc || createFlag) ){
@@ -15226,7 +15223,7 @@ static void groupConcatFinalize(sqlite3_context *context){
 ** of the built-in functions above are part of the global function set.
 ** This routine only deals with those that are not global.
 */
-SQLITE_PRIVATE void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
+SQLITE_PRIVATE void sqlite3RegisterPerConnectionBuiltinFunctions(sqlite3 *db){
   int rc = sqlite3_overload_function(db, "MATCH", 2);
   assert( rc==SQLITE_NOMEM || rc==SQLITE_OK );
   if( rc==SQLITE_NOMEM ){
@@ -15239,8 +15236,7 @@ SQLITE_PRIVATE void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
 */
 static void setLikeOptFlag(sqlite3 *db, const char *zName, u8 flagVal){
   FuncDef *pDef;
-  pDef = sqlite3FindFunction(db, zName, sqlite3Strlen30(zName),
-                             2, SQLITE_UTF8, 0);
+  pDef = sqlite3FindFunction(db, zName, 2, SQLITE_UTF8, 0);
   if( ALWAYS(pDef) ){
     pDef->funcFlags |= flagVal;
   }
@@ -15288,9 +15284,7 @@ SQLITE_PRIVATE int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocas
     return 0;
   }
   assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
-  pDef = sqlite3FindFunction(db, pExpr->u.zToken, 
-                             sqlite3Strlen30(pExpr->u.zToken),
-                             2, SQLITE_UTF8, 0);
+  pDef = sqlite3FindFunction(db, pExpr->u.zToken, 2, SQLITE_UTF8, 0);
   if( NEVER(pDef==0) || (pDef->funcFlags & SQLITE_FUNC_LIKE)==0 ){
     return 0;
   }
@@ -15314,7 +15308,7 @@ SQLITE_PRIVATE int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocas
 **
 ** After this routine runs
 */
-SQLITE_PRIVATE void sqlite3RegisterGlobalFunctions(void){
+SQLITE_PRIVATE void sqlite3RegisterBuiltinFunctions(void){
   /*
   ** The following array holds FuncDef structures for all of the functions
   ** defined in this file.
@@ -15322,8 +15316,27 @@ SQLITE_PRIVATE void sqlite3RegisterGlobalFunctions(void){
   ** The array cannot be constant since changes are made to the
   ** FuncDef.pHash elements at start-time.  The elements of this array
   ** are read-only after initialization is complete.
+  **
+  ** For peak efficiency, put the most frequently used function last.
   */
-  static SQLITE_WSD FuncDef aBuiltinFunc[] = {
+  static FuncDef aBuiltinFunc[] = {
+#ifdef SQLITE_SOUNDEX
+    FUNCTION(soundex,            1, 0, 0, soundexFunc      ),
+#endif
+#ifndef SQLITE_OMIT_LOAD_EXTENSION
+    VFUNCTION(load_extension,    1, 0, 0, loadExt          ),
+    VFUNCTION(load_extension,    2, 0, 0, loadExt          ),
+#endif
+#if SQLITE_USER_AUTHENTICATION
+    FUNCTION(sqlite_crypt,       2, 0, 0, sqlite3CryptFunc ),
+#endif
+#ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
+    DFUNCTION(sqlite_compileoption_used,1, 0, 0, compileoptionusedFunc  ),
+    DFUNCTION(sqlite_compileoption_get, 1, 0, 0, compileoptiongetFunc  ),
+#endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */
+    FUNCTION2(unlikely,          1, 0, 0, noopFunc,  SQLITE_FUNC_UNLIKELY),
+    FUNCTION2(likelihood,        2, 0, 0, noopFunc,  SQLITE_FUNC_UNLIKELY),
+    FUNCTION2(likely,            1, 0, 0, noopFunc,  SQLITE_FUNC_UNLIKELY),
     FUNCTION(ltrim,              1, 1, 0, trimFunc         ),
     FUNCTION(ltrim,              2, 1, 0, trimFunc         ),
     FUNCTION(rtrim,              1, 2, 0, trimFunc         ),
@@ -15341,8 +15354,6 @@ SQLITE_PRIVATE void sqlite3RegisterGlobalFunctions(void){
     FUNCTION2(typeof,            1, 0, 0, typeofFunc,  SQLITE_FUNC_TYPEOF),
     FUNCTION2(length,            1, 0, 0, lengthFunc,  SQLITE_FUNC_LENGTH),
     FUNCTION(instr,              2, 0, 0, instrFunc        ),
-    FUNCTION(substr,             2, 0, 0, substrFunc       ),
-    FUNCTION(substr,             3, 0, 0, substrFunc       ),
     FUNCTION(printf,            -1, 0, 0, printfFunc       ),
     FUNCTION(unicode,            1, 0, 0, unicodeFunc      ),
     FUNCTION(char,              -1, 0, 0, charFunc         ),
@@ -15353,40 +15364,22 @@ SQLITE_PRIVATE void sqlite3RegisterGlobalFunctions(void){
 #endif
     FUNCTION(upper,              1, 0, 0, upperFunc        ),
     FUNCTION(lower,              1, 0, 0, lowerFunc        ),
-    FUNCTION(coalesce,           1, 0, 0, 0                ),
-    FUNCTION(coalesce,           0, 0, 0, 0                ),
-    FUNCTION2(coalesce,         -1, 0, 0, noopFunc,  SQLITE_FUNC_COALESCE),
     FUNCTION(hex,                1, 0, 0, hexFunc          ),
     FUNCTION2(ifnull,            2, 0, 0, noopFunc,  SQLITE_FUNC_COALESCE),
-    FUNCTION2(unlikely,          1, 0, 0, noopFunc,  SQLITE_FUNC_UNLIKELY),
-    FUNCTION2(likelihood,        2, 0, 0, noopFunc,  SQLITE_FUNC_UNLIKELY),
-    FUNCTION2(likely,            1, 0, 0, noopFunc,  SQLITE_FUNC_UNLIKELY),
     VFUNCTION(random,            0, 0, 0, randomFunc       ),
     VFUNCTION(randomblob,        1, 0, 0, randomBlob       ),
     FUNCTION(nullif,             2, 0, 1, nullifFunc       ),
     DFUNCTION(sqlite_version,    0, 0, 0, versionFunc      ),
     DFUNCTION(sqlite_source_id,  0, 0, 0, sourceidFunc     ),
     FUNCTION(sqlite_log,         2, 0, 0, errlogFunc       ),
-#if SQLITE_USER_AUTHENTICATION
-    FUNCTION(sqlite_crypt,       2, 0, 0, sqlite3CryptFunc ),
-#endif
-#ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
-    DFUNCTION(sqlite_compileoption_used,1, 0, 0, compileoptionusedFunc  ),
-    DFUNCTION(sqlite_compileoption_get, 1, 0, 0, compileoptiongetFunc  ),
-#endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */
     FUNCTION(quote,              1, 0, 0, quoteFunc        ),
     VFUNCTION(last_insert_rowid, 0, 0, 0, last_insert_rowid),
     VFUNCTION(changes,           0, 0, 0, changes          ),
     VFUNCTION(total_changes,     0, 0, 0, total_changes    ),
     FUNCTION(replace,            3, 0, 0, replaceFunc      ),
     FUNCTION(zeroblob,           1, 0, 0, zeroblobFunc     ),
-  #ifdef SQLITE_SOUNDEX
-    FUNCTION(soundex,            1, 0, 0, soundexFunc      ),
-  #endif
-  #ifndef SQLITE_OMIT_LOAD_EXTENSION
-    VFUNCTION(load_extension,    1, 0, 0, loadExt          ),
-    VFUNCTION(load_extension,    2, 0, 0, loadExt          ),
-  #endif
+    FUNCTION(substr,             2, 0, 0, substrFunc       ),
+    FUNCTION(substr,             3, 0, 0, substrFunc       ),
     AGGREGATE(sum,               1, 0, 0, sumStep,         sumFinalize    ),
     AGGREGATE(total,             1, 0, 0, sumStep,         totalFinalize    ),
     AGGREGATE(avg,               1, 0, 0, sumStep,         avgFinalize    ),
@@ -15404,21 +15397,33 @@ SQLITE_PRIVATE void sqlite3RegisterGlobalFunctions(void){
     LIKEFUNC(like, 2, &likeInfoNorm, SQLITE_FUNC_LIKE),
     LIKEFUNC(like, 3, &likeInfoNorm, SQLITE_FUNC_LIKE),
   #endif
+    FUNCTION(coalesce,           1, 0, 0, 0                ),
+    FUNCTION(coalesce,           0, 0, 0, 0                ),
+    FUNCTION2(coalesce,         -1, 0, 0, noopFunc,  SQLITE_FUNC_COALESCE),
   };
-
-  int i;
-  FuncDefHash *pHash = &GLOBAL(FuncDefHash, sqlite3GlobalFunctions);
-  FuncDef *aFunc = (FuncDef*)&GLOBAL(FuncDef, aBuiltinFunc);
-
-  for(i=0; i<ArraySize(aBuiltinFunc); i++){
-    sqlite3FuncDefInsert(pHash, &aFunc[i]);
-  }
-  sqlite3RegisterDateTimeFunctions();
 #ifndef SQLITE_OMIT_ALTERTABLE
   sqlite3AlterFunctions();
 #endif
 #if defined(SQLITE_ENABLE_STAT3) || defined(SQLITE_ENABLE_STAT4)
   sqlite3AnalyzeFunctions();
+#endif
+  sqlite3RegisterDateTimeFunctions();
+  sqlite3InsertBuiltinFuncs(aBuiltinFunc, ArraySize(aBuiltinFunc));
+
+#if 0  /* Enable to print out how the built-in functions are hashed */
+  {
+    int i;
+    FuncDef *p;
+    for(i=0; i<SQLITE_FUNC_HASH_SZ; i++){
+      printf("FUNC-HASH %02d:", i);
+      for(p=sqlite3BuiltinFunctions.a[i]; p; p=p->u.pHash){
+        int n = sqlite3Strlen30(p->zName);
+        int h = p->zName[0] + n;
+        printf(" %s(%d)", p->zName, h);
+      }
+      printf("\n");
+    }
+  }
 #endif
 }
 
@@ -16588,6 +16593,10 @@ static Trigger *fkActionTrigger(
   int iAction = (pChanges!=0);    /* 1 for UPDATE, 0 for DELETE */
 
   action = pFKey->aAction[iAction];
+  if( action==OE_Restrict && (db->flags & SQLITE_DeferFKs) ){
+    return 0;
+  }
+
   pTrigger = pFKey->apTrigger[iAction];
   if( (db->flags & SQLITE_DeferFKs) && action==OE_Restrict ){
     return 0;
@@ -18844,11 +18853,15 @@ static int xferOptimization(
       return 0;    /* tab2 must be NOT NULL if tab1 is */
     }
     /* Default values for second and subsequent columns need to match. */
-    if( i>0
-     && ((pDestCol->zDflt==0)!=(pSrcCol->zDflt==0) 
-         || (pDestCol->zDflt && strcmp(pDestCol->zDflt, pSrcCol->zDflt)!=0))
-    ){
-      return 0;    /* Default values must be the same for all columns */
+    if( i>0 ){
+      assert( pDestCol->pDflt==0 || pDestCol->pDflt->op==TK_SPAN );
+      assert( pSrcCol->pDflt==0 || pSrcCol->pDflt->op==TK_SPAN );
+      if( (pDestCol->pDflt==0)!=(pSrcCol->pDflt==0) 
+       || (pDestCol->pDflt && strcmp(pDestCol->pDflt->u.zToken,
+                                       pSrcCol->pDflt->u.zToken)!=0)
+      ){
+        return 0;    /* Default values must be the same for all columns */
+      }
     }
   }
   for(pDestIdx=pDest->pIndex; pDestIdx; pDestIdx=pDestIdx->pNext){
@@ -19153,7 +19166,7 @@ exec_out:
     if( *pzErrMsg ){
       memcpy(*pzErrMsg, sqlite3_errmsg(db), nErrMsg);
     }else{
-      rc = SQLITE_NOMEM;
+      rc = SQLITE_NOMEM_BKPT;
       sqlite3Error(db, SQLITE_NOMEM);
     }
   }else if( pzErrMsg ){
@@ -20193,7 +20206,7 @@ static int sqlite3LoadExtension(
 #if SQLITE_OS_UNIX || SQLITE_OS_WIN
   for(ii=0; ii<ArraySize(azEndings) && handle==0; ii++){
     char *zAltFile = sqlite3_mprintf("%s.%s", zFile, azEndings[ii]);
-    if( zAltFile==0 ) return SQLITE_NOMEM;
+    if( zAltFile==0 ) return SQLITE_NOMEM_BKPT;
     handle = sqlite3OsDlOpen(pVfs, zAltFile);
     sqlite3_free(zAltFile);
   }
@@ -20229,7 +20242,7 @@ static int sqlite3LoadExtension(
     zAltEntry = sqlite3_malloc64(ncFile+30);
     if( zAltEntry==0 ){
       sqlite3OsDlClose(pVfs, handle);
-      return SQLITE_NOMEM;
+      return SQLITE_NOMEM_BKPT;
     }
     memcpy(zAltEntry, "sqlite3_", 8);
     for(iFile=ncFile-1; iFile>=0 && zFile[iFile]!='/'; iFile--){}
@@ -20272,7 +20285,7 @@ static int sqlite3LoadExtension(
   /* Append the new shared library handle to the db->aExtension array. */
   aHandle = sqlite3DbMallocZero(db, sizeof(handle)*(db->nExtension+1));
   if( aHandle==0 ){
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
   if( db->nExtension>0 ){
     memcpy(aHandle, db->aExtension, sizeof(handle)*db->nExtension);
@@ -20394,7 +20407,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_auto_extension(void (*xInit)(void)){
       void (**aNew)(void);
       aNew = sqlite3_realloc64(wsdAutoext.aExt, nByte);
       if( aNew==0 ){
-        rc = SQLITE_NOMEM;
+        rc = SQLITE_NOMEM_BKPT;
       }else{
         wsdAutoext.aExt = aNew;
         wsdAutoext.aExt[wsdAutoext.nExt] = xInit;
@@ -22033,6 +22046,7 @@ SQLITE_PRIVATE void sqlite3Pragma(
       setAllColumnNames(v, 6, azCol); assert( 6==ArraySize(azCol) );
       sqlite3ViewGetColumnNames(pParse, pTab);
       for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
+        const char *zName;
         if( IsHiddenColumn(pCol) ){
           nHidden++;
           continue;
@@ -22044,12 +22058,14 @@ SQLITE_PRIVATE void sqlite3Pragma(
         }else{
           for(k=1; k<=pTab->nCol && pPk->aiColumn[k-1]!=i; k++){}
         }
+        assert( pCol->pDflt==0 || pCol->pDflt->op==TK_SPAN );
+        zName = pCol->zName;
         sqlite3VdbeMultiLoad(v, 1, "issisi",
                i-nHidden,
-               pCol->zName,
-               pCol->zType ? pCol->zType : "",
+               zName,
+               sqlite3StrNext(zName),
                pCol->notNull ? 1 : 0,
-               pCol->zDflt,
+               pCol->pDflt ? pCol->pDflt->u.zToken : 0,
                k);
         sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 6);
       }
@@ -22070,14 +22086,14 @@ SQLITE_PRIVATE void sqlite3Pragma(
       sqlite3VdbeMultiLoad(v, 1, "ssii",
            pTab->zName,
            0,
-           (int)sqlite3LogEstToInt(pTab->szTabRow),
-           (int)sqlite3LogEstToInt(pTab->nRowLogEst));
+           pTab->szTabRow,
+           pTab->nRowLogEst);
       sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 4);
       for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
         sqlite3VdbeMultiLoad(v, 2, "sii",
            pIdx->zName,
-           (int)sqlite3LogEstToInt(pIdx->szIdxRow),
-           (int)sqlite3LogEstToInt(pIdx->aiRowLogEst[0]));
+           pIdx->szIdxRow,
+           pIdx->aiRowLogEst[0]);
         sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 4);
       }
     }
@@ -22982,7 +22998,7 @@ static void corruptSchema(
     sqlite3DbFree(db, *pData->pzErrMsg);
     *pData->pzErrMsg = z;
   }
-  pData->rc = db->mallocFailed ? SQLITE_NOMEM : SQLITE_CORRUPT_BKPT;
+  pData->rc = db->mallocFailed ? SQLITE_NOMEM_BKPT : SQLITE_CORRUPT_BKPT;
 }
 
 /*
@@ -23256,7 +23272,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
 #endif
   }
   if( db->mallocFailed ){
-    rc = SQLITE_NOMEM;
+    rc = SQLITE_NOMEM_BKPT;
     sqlite3ResetAllSchemasOfConnection(db);
   }
   if( rc==SQLITE_OK || (db->flags&SQLITE_RecoveryMode)){
@@ -23473,7 +23489,7 @@ static int sqlite3Prepare(
   /* Allocate the parsing context */
   pParse = sqlite3StackAllocZero(db, sizeof(*pParse));
   if( pParse==0 ){
-    rc = SQLITE_NOMEM;
+    rc = SQLITE_NOMEM_BKPT;
     goto end_prepare;
   }
   pParse->pReprepare = pReprepare;
@@ -23550,7 +23566,7 @@ static int sqlite3Prepare(
     schemaIsValid(pParse);
   }
   if( db->mallocFailed ){
-    pParse->rc = SQLITE_NOMEM;
+    pParse->rc = SQLITE_NOMEM_BKPT;
   }
   if( pzTail ){
     *pzTail = pParse->zTail;
@@ -23913,7 +23929,7 @@ SQLITE_PRIVATE Select *sqlite3SelectNew(
   ExprList *pGroupBy,   /* the GROUP BY clause */
   Expr *pHaving,        /* the HAVING clause */
   ExprList *pOrderBy,   /* the ORDER BY clause */
-  u16 selFlags,         /* Flag parameters, such as SF_Distinct */
+  u32 selFlags,         /* Flag parameters, such as SF_Distinct */
   Expr *pLimit,         /* LIMIT value.  NULL means not used */
   Expr *pOffset         /* OFFSET value.  NULL means no offset */
 ){
@@ -25237,8 +25253,8 @@ static const char *columnTypeImpl(
           zType = "INTEGER";
           zOrigCol = "rowid";
         }else{
-          zType = pTab->aCol[iCol].zType;
           zOrigCol = pTab->aCol[iCol].zName;
+          zType = sqlite3StrNext(zOrigCol);
           estWidth = pTab->aCol[iCol].szEst;
         }
         zOrigTab = pTab->zName;
@@ -25250,7 +25266,7 @@ static const char *columnTypeImpl(
         if( iCol<0 ){
           zType = "INTEGER";
         }else{
-          zType = pTab->aCol[iCol].zType;
+          zType = sqlite3StrNext(pTab->aCol[iCol].zName);
           estWidth = pTab->aCol[iCol].szEst;
         }
 #endif
@@ -25496,7 +25512,7 @@ SQLITE_PRIVATE int sqlite3ColumnsFromExprList(
     sqlite3DbFree(db, aCol);
     *paCol = 0;
     *pnCol = 0;
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
   return SQLITE_OK;
 }
@@ -25535,10 +25551,7 @@ static void selectAddColumnTypeAndCollation(
   a = pSelect->pEList->a;
   for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
     p = a[i].pExpr;
-    if( pCol->zType==0 ){
-      pCol->zType = sqlite3DbStrDup(db, 
-                        columnType(&sNC, p,0,0,0, &pCol->szEst));
-    }
+    columnType(&sNC, p, 0, 0, 0, &pCol->szEst);
     szAll += pCol->szEst;
     pCol->affinity = sqlite3ExprAffinity(p);
     if( pCol->affinity==0 ) pCol->affinity = SQLITE_AFF_BLOB;
@@ -25653,8 +25666,9 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
       VdbeComment((v, "LIMIT counter"));
       if( n==0 ){
         sqlite3VdbeGoto(v, iBreak);
-      }else if( n>=0 && p->nSelectRow>(u64)n ){
-        p->nSelectRow = n;
+      }else if( n>=0 && p->nSelectRow>sqlite3LogEst((u64)n) ){
+        p->nSelectRow = sqlite3LogEst((u64)n);
+        p->selFlags |= SF_FixedLimit;
       }
     }else{
       sqlite3ExprCode(pParse, p->pLimit, iLimit);
@@ -26032,7 +26046,6 @@ static int multiSelect(
   if( dest.eDest==SRT_EphemTab ){
     assert( p->pEList );
     sqlite3VdbeAddOp2(v, OP_OpenEphemeral, dest.iSDParm, p->pEList->nExpr);
-    sqlite3VdbeChangeP5(v, BTREE_UNORDERED);
     dest.eDest = SRT_Table;
   }
 
@@ -26095,12 +26108,12 @@ static int multiSelect(
       testcase( rc!=SQLITE_OK );
       pDelete = p->pPrior;
       p->pPrior = pPrior;
-      p->nSelectRow += pPrior->nSelectRow;
+      p->nSelectRow = sqlite3LogEstAdd(p->nSelectRow, pPrior->nSelectRow);
       if( pPrior->pLimit
        && sqlite3ExprIsInteger(pPrior->pLimit, &nLimit)
-       && nLimit>0 && p->nSelectRow > (u64)nLimit 
+       && nLimit>0 && p->nSelectRow > sqlite3LogEst((u64)nLimit) 
       ){
-        p->nSelectRow = nLimit;
+        p->nSelectRow = sqlite3LogEst((u64)nLimit);
       }
       if( addr ){
         sqlite3VdbeJumpHere(v, addr);
@@ -26172,7 +26185,9 @@ static int multiSelect(
       pDelete = p->pPrior;
       p->pPrior = pPrior;
       p->pOrderBy = 0;
-      if( p->op==TK_UNION ) p->nSelectRow += pPrior->nSelectRow;
+      if( p->op==TK_UNION ){
+        p->nSelectRow = sqlite3LogEstAdd(p->nSelectRow, pPrior->nSelectRow);
+      }
       sqlite3ExprDelete(db, p->pLimit);
       p->pLimit = pLimit;
       p->pOffset = pOffset;
@@ -26307,7 +26322,7 @@ static int multiSelect(
     nCol = p->pEList->nExpr;
     pKeyInfo = sqlite3KeyInfoAlloc(db, nCol, 1);
     if( !pKeyInfo ){
-      rc = SQLITE_NOMEM;
+      rc = SQLITE_NOMEM_BKPT;
       goto multi_select_end;
     }
     for(i=0, apColl=pKeyInfo->aColl; i<nCol; i++, apColl++){
@@ -26662,7 +26677,7 @@ static int multiSelectOrderBy(
       }
       if( j==nOrderBy ){
         Expr *pNew = sqlite3Expr(db, TK_INTEGER, 0);
-        if( pNew==0 ) return SQLITE_NOMEM;
+        if( pNew==0 ) return SQLITE_NOMEM_BKPT;
         pNew->flags |= EP_IntValue;
         pNew->u.iValue = i;
         pOrderBy = sqlite3ExprListAppend(pParse, pOrderBy, pNew);
@@ -26809,7 +26824,7 @@ static int multiSelectOrderBy(
     addrEofA_noB = sqlite3VdbeAddOp2(v, OP_Yield, regAddrB, labelEnd);
                                      VdbeCoverage(v);
     sqlite3VdbeGoto(v, addrEofA);
-    p->nSelectRow += pPrior->nSelectRow;
+    p->nSelectRow = sqlite3LogEstAdd(p->nSelectRow, pPrior->nSelectRow);
   }
 
   /* Generate a subroutine to run when the results from select B
@@ -27899,7 +27914,7 @@ static int withExpand(
     pTab->nRowLogEst = 200; assert( 200==sqlite3LogEst(1048576) );
     pTab->tabFlags |= TF_Ephemeral | TF_NoVisibleRowid;
     pFrom->pSelect = sqlite3SelectDup(db, pCte->pSelect, 0);
-    if( db->mallocFailed ) return SQLITE_NOMEM;
+    if( db->mallocFailed ) return SQLITE_NOMEM_BKPT;
     assert( pFrom->pSelect );
 
     /* Check if this is a recursive CTE. */
@@ -28795,7 +28810,7 @@ SQLITE_PRIVATE int sqlite3Select(
       sqlite3SelectDestInit(&dest, SRT_Coroutine, pItem->regReturn);
       explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);
       sqlite3Select(pParse, pSub, &dest);
-      pItem->pTab->nRowLogEst = sqlite3LogEst(pSub->nSelectRow);
+      pItem->pTab->nRowLogEst = pSub->nSelectRow;
       pItem->fg.viaCoroutine = 1;
       pItem->regResult = dest.iSdst;
       sqlite3VdbeEndCoroutine(v, pItem->regReturn);
@@ -28826,7 +28841,7 @@ SQLITE_PRIVATE int sqlite3Select(
       sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
       explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);
       sqlite3Select(pParse, pSub, &dest);
-      pItem->pTab->nRowLogEst = sqlite3LogEst(pSub->nSelectRow);
+      pItem->pTab->nRowLogEst = pSub->nSelectRow;
       if( onceAddr ) sqlite3VdbeJumpHere(v, onceAddr);
       retAddr = sqlite3VdbeAddOp1(v, OP_Return, pItem->regReturn);
       VdbeComment((v, "end %s", pItem->pTab->zName));
@@ -28909,7 +28924,7 @@ SQLITE_PRIVATE int sqlite3Select(
   /* Set the limiter.
   */
   iEnd = sqlite3VdbeMakeLabel(v);
-  p->nSelectRow = LARGEST_INT64;
+  p->nSelectRow = 320;  /* 4 billion rows */
   computeLimitRegisters(pParse, p, iEnd);
   if( p->iLimit==0 && sSort.addrSortIndex>=0 ){
     sqlite3VdbeChangeOpcode(v, sSort.addrSortIndex, OP_SorterOpen);
@@ -28933,10 +28948,12 @@ SQLITE_PRIVATE int sqlite3Select(
   if( !isAgg && pGroupBy==0 ){
     /* No aggregate functions and no GROUP BY clause */
     u16 wctrlFlags = (sDistinct.isTnct ? WHERE_WANT_DISTINCT : 0);
+    assert( WHERE_USE_LIMIT==SF_FixedLimit );
+    wctrlFlags |= p->selFlags & SF_FixedLimit;
 
     /* Begin the database scan. */
     pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, sSort.pOrderBy,
-                               p->pEList, wctrlFlags, 0);
+                               p->pEList, wctrlFlags, p->nSelectRow);
     if( pWInfo==0 ) goto select_end;
     if( sqlite3WhereOutputRowCount(pWInfo) < p->nSelectRow ){
       p->nSelectRow = sqlite3WhereOutputRowCount(pWInfo);
@@ -28996,9 +29013,11 @@ SQLITE_PRIVATE int sqlite3Select(
       for(k=pGroupBy->nExpr, pItem=pGroupBy->a; k>0; k--, pItem++){
         pItem->u.x.iAlias = 0;
       }
-      if( p->nSelectRow>100 ) p->nSelectRow = 100;
+      assert( 66==sqlite3LogEst(100) );
+      if( p->nSelectRow>66 ) p->nSelectRow = 66;
     }else{
-      p->nSelectRow = 1;
+      assert( 0==sqlite3LogEst(1) );
+      p->nSelectRow = 0;
     }
 
     /* If there is both a GROUP BY and an ORDER BY clause and they are
@@ -29555,7 +29574,7 @@ static int sqlite3_get_table_cb(void *pArg, int nCol, char **argv, char **colv){
   return 0;
 
 malloc_failed:
-  p->rc = SQLITE_NOMEM;
+  p->rc = SQLITE_NOMEM_BKPT;
   return 1;
 }
 
@@ -29596,7 +29615,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_get_table(
   res.azResult = sqlite3_malloc64(sizeof(char*)*res.nAlloc );
   if( res.azResult==0 ){
      db->errCode = SQLITE_NOMEM;
-     return SQLITE_NOMEM;
+     return SQLITE_NOMEM_BKPT;
   }
   res.azResult[0] = 0;
   rc = sqlite3_exec(db, zSql, sqlite3_get_table_cb, &res, pzErrMsg);
@@ -29625,7 +29644,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_get_table(
     if( azNew==0 ){
       sqlite3_free_table(&res.azResult[1]);
       db->errCode = SQLITE_NOMEM;
-      return SQLITE_NOMEM;
+      return SQLITE_NOMEM_BKPT;
     }
     res.azResult = azNew;
   }
@@ -31623,7 +31642,7 @@ static int execSql(sqlite3 *db, char **pzErrMsg, const char *zSql){
   sqlite3_stmt *pStmt;
   VVA_ONLY( int rc; )
   if( !zSql ){
-    return SQLITE_NOMEM;
+    return SQLITE_NOMEM_BKPT;
   }
   if( SQLITE_OK!=sqlite3_prepare(db, zSql, -1, &pStmt, 0) ){
     sqlite3SetString(pzErrMsg, db, sqlite3_errmsg(db));
@@ -31804,7 +31823,7 @@ SQLITE_PRIVATE int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
    || (!isMemDb && sqlite3BtreeSetPageSize(pTemp, db->nextPagesize, nRes, 0))
    || NEVER(db->mallocFailed)
   ){
-    rc = SQLITE_NOMEM;
+    rc = SQLITE_NOMEM_BKPT;
     goto end_of_vacuum;
   }
 
