@@ -27,6 +27,8 @@ private:
     bmap<Utf8String, UnitP> m_units;
     bmap<uint64_t, Conversion> m_conversions;
     uint32_t m_nextId = 0;
+    bmap<Utf8String, Utf8String> m_oldNameNewNameMapping;
+    bmap<Utf8String, Utf8String> m_newNameOldNameMapping;
 
     UnitRegistry();
     UnitRegistry(const UnitRegistry& rhs) = delete;
@@ -36,6 +38,7 @@ private:
     void AddDefaultPhenomena ();
     void AddDefaultUnits ();
     void AddDefaultConstants();
+    void AddDefaultMappings();
 
     void InsertUnique (Utf8Vector &vec, Utf8String &str);
     void AddSystem(Utf8CP systemName);
@@ -80,6 +83,11 @@ public:
     UNITS_EXPORT bool HasUnit (Utf8CP unitName) const;
     UNITS_EXPORT bool HasConstant (Utf8CP constantName) const;
 
+    //Mapping methods
+    UNITS_EXPORT void AddMapping(Utf8CP oldName, Utf8CP newName);
+    UNITS_EXPORT bool TryGetNewName(Utf8CP oldName, Utf8StringR newName) const;
+    UNITS_EXPORT bool TryGetOldName(Utf8CP newName, Utf8StringR oldName) const;
+    UNITS_EXPORT UnitCP LookupUnitUsingOldName(Utf8CP oldName) const;
     // Probably some query methods. (Find base for phenomena and system probably).
     };
 
