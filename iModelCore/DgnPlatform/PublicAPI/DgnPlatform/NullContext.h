@@ -82,7 +82,7 @@ protected:
     virtual ScanCriteria::Result _CheckNodeRange(ScanCriteriaCR criteria, DRange3dCR range, bool is3d) override;
 
 public:
-    void ExtendFitRange(ElementAlignedBox3dCR box, TransformCR placement);
+    DGNPLATFORM_EXPORT void ExtendFitRange(ElementAlignedBox3dCR box, TransformCR placement);
     FitContext(FitViewParams const& params) : m_params(params) {m_fitRange.Init();}
 };
 
