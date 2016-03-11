@@ -147,7 +147,7 @@ struct UpdatePlan
     struct Query
     {
         uint32_t    m_maxTime = 2000;    // maximum time query should run (milliseconds)
-        double      m_frustumScale = 1.25;
+        double      m_frustumScale = 1.0;
         bool        m_onlyAlwaysDrawn = false;
         mutable bool m_wait = false;
         uint32_t    m_minElements = 3;

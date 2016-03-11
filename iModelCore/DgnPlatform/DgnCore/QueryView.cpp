@@ -61,6 +61,7 @@ DgnQueryView::~DgnQueryView()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* QueryViews decorate the copyright messages from reality models, if any.
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::_DrawDecorations(DecorateContextR context)
@@ -120,9 +121,8 @@ void DgnQueryView::_DrawDecorations(DecorateContextR context)
     textShape[1].Init(runningTextBounds.low.x, runningTextBounds.high.y);
     textShape[2].Init(runningTextBounds.high.x, runningTextBounds.high.y);
     textShape[3].Init(runningTextBounds.high.x, runningTextBounds.low.y);
-    
     graphic->AddShape(_countof(textShape), textShape, true);
-    
+
     context.AddViewOverlay(*graphic);
     }
 
@@ -150,7 +150,7 @@ void DgnQueryView::RequestAbort(bool wait)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/12
+* @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::_OnUpdate(DgnViewportR vp, UpdatePlan const& plan)
     {
@@ -160,17 +160,14 @@ void DgnQueryView::_OnUpdate(DgnViewportR vp, UpdatePlan const& plan)
     QueueQuery(vp, plan.GetQuery());
     }
 
-static double s_frustumScale = 1.00;
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    06/2013
-//---------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::QueueQuery(DgnViewportR viewport, UpdatePlan::Query const& plan)
     {
     Frustum frust = viewport.GetFrustum(DgnCoordSystem::World, true);
-    double frustumScale = s_frustumScale; // plan.m_frustumScale
-    //  if (plan.m_frustumScale != 1.0) // sometimes we want to expand the frustum to hold elements outside the current view frustum
-    if (frustumScale != 1.0) // sometimes we want to expand the frustum to hold elements outside the current view frustum
-        frust.ScaleAboutCenter(frustumScale);
+    if (plan.m_frustumScale != 1.0) // sometimes we want to expand the frustum to hold elements outside the current view frustum
+        frust.ScaleAboutCenter(plan.m_frustumScale);
 
     RefCountedPtr<RangeQuery> query = new RangeQuery(*this, frust, viewport, plan);
     query->SetSizeFilter(viewport, GetSceneLODSize());
@@ -485,78 +482,12 @@ void DgnQueryView::_VisitAllElements(ViewContextR context)
     while ((thisId = rangeQuery.StepRtree()).IsValid())
         {
         if (rangeQuery.TestElement(thisId))
-            {
             context.VisitElement(thisId, true);
-            }
 
         if (context.CheckStop())
             return;
         }
     }
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    12/2015
-//---------------------------------------------------------------------------------------
-uint64_t DgnQueryView::GetMaxElementMemory()
-    {
-    BeAssert(m_maxElementMemory != 0);
-    return m_maxElementMemory != 0 ? m_maxElementMemory : 20 * 1024 * 1024;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    02/2013
-//---------------------------------------------------------------------------------------
-#if defined (_X64_)
-uint64_t DgnQueryView::ComputeMaxElementMemory(DgnViewportCR vp)
-    {
-    uint64_t oneGig = 1024 * 1024 * 1024;
-    m_maxElementMemory = 8 * oneGig;
-    return m_maxElementMemory;
-    }
-#else
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    02/2013
-//---------------------------------------------------------------------------------------
-uint64_t DgnQueryView::ComputeMaxElementMemory(DgnViewportCR vp)
-    {
-    uint64_t oneMeg = 1024 * 1024;
-#if defined (BENTLEYCONFIG_VIRTUAL_MEMORY)
-    uint64_t baseValue = 2000;
-#else
-    uint64_t baseValue = BeSystemInfo::GetAmountOfPhysicalMemory() > (600 * oneMeg) ? 50 : 30;
-#endif
-    baseValue *= oneMeg;
-
-    int32_t inputFactor = 0; // NEEDS_WORK_CONTINUOUS_RENDER  _GetMaxElementFactor(vp);
-    bool decrease = false;
-    if (inputFactor < 0)
-        {
-        decrease = true;
-        inputFactor = -inputFactor;
-        }
-
-    if (inputFactor > 100)
-        inputFactor = 100;
-
-    double maxMemoryFactor = inputFactor/100.0;
-
-    if (decrease)
-        {
-        uint64_t decrementRange = baseValue - 7 * oneMeg;
-        baseValue -= static_cast <uint64_t> (static_cast <double> (decrementRange) * maxMemoryFactor);
-        }
-    else
-        {
-        uint64_t incrementRange = 70 * oneMeg;
-        baseValue += static_cast <uint64_t> (static_cast <double> (incrementRange) * maxMemoryFactor);
-        }
-
-    m_maxElementMemory = baseValue;
-    return baseValue;
-    }
-#endif
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
@@ -612,7 +543,7 @@ void DgnQueryQueue::RemovePending(DgnQueryViewCR view)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
+* @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryQueue::Add(Task& task)
     {
@@ -968,7 +899,7 @@ DgnQueryView::RangeQuery::RangeQuery(DgnQueryViewCR view, FrustumCR frustum, Dgn
         DPoint3d viewDirection[2] = {{0,0,0}, {0.0, 0.0, 1.0}};
         DPoint3d viewDirRoot[2];
         vp.NpcToWorld(viewDirRoot, viewDirection, 2);
-        viewDirRoot[1].Subtract (viewDirRoot[0]);
+        viewDirRoot[1].Subtract(viewDirRoot[0]);
 
         m_orthogonalProjectionIndex = ((viewDirRoot[1].x < 0.0) ? 1  : 0) +
                                       ((viewDirRoot[1].x > 0.0) ? 2  : 0) +
@@ -988,21 +919,20 @@ DgnQueryView::RangeQuery::RangeQuery(DgnQueryViewCR view, FrustumCR frustum, Dgn
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnQueryView::RangeQuery::ComputeNPC(DPoint3dR npcOut, DPoint3dCR localIn)
     {
-    double w;
-    if (m_cameraOn)
-        {
-        w = m_localToNpc.coff[3][0] * localIn.x + m_localToNpc.coff[3][1] * localIn.y + m_localToNpc.coff[3][2] * localIn.z + m_localToNpc.coff[3][3];
-        if (w < 1.0E-5)
-            return false;
-        }
-    else
-        {
-        w = 1.0;
-        }
+    npcOut.x = (m_localToNpc.coff[0][0] * localIn.x + m_localToNpc.coff[0][1] * localIn.y + m_localToNpc.coff[0][2] * localIn.z + m_localToNpc.coff[0][3]);
+    npcOut.y = (m_localToNpc.coff[1][0] * localIn.x + m_localToNpc.coff[1][1] * localIn.y + m_localToNpc.coff[1][2] * localIn.z + m_localToNpc.coff[1][3]);
+    npcOut.z = (m_localToNpc.coff[2][0] * localIn.x + m_localToNpc.coff[2][1] * localIn.y + m_localToNpc.coff[2][2] * localIn.z + m_localToNpc.coff[2][3]);
 
-    npcOut.x = (m_localToNpc.coff[0][0] * localIn.x + m_localToNpc.coff[0][1] * localIn.y + m_localToNpc.coff[0][2] * localIn.z + m_localToNpc.coff[0][3]) / w;
-    npcOut.y = (m_localToNpc.coff[1][0] * localIn.x + m_localToNpc.coff[1][1] * localIn.y + m_localToNpc.coff[1][2] * localIn.z + m_localToNpc.coff[1][3]) / w;
-    npcOut.z = (m_localToNpc.coff[2][0] * localIn.x + m_localToNpc.coff[2][1] * localIn.y + m_localToNpc.coff[2][2] * localIn.z + m_localToNpc.coff[2][3]) / w;
+    if (!m_cameraOn)
+        return true;
+
+    double w = m_localToNpc.coff[3][0] * localIn.x + m_localToNpc.coff[3][1] * localIn.y + m_localToNpc.coff[3][2] * localIn.z + m_localToNpc.coff[3][3];
+    if (w < 1.0E-5)
+        return false;
+
+    npcOut.x /= w;
+    npcOut.y /= w;
+    npcOut.z /= w;
     return true;
     }
 
@@ -1016,9 +946,9 @@ bool DgnQueryView::RangeQuery::ComputeOcclusionScore(double& score, FrustumCR bo
     // Note - This routine is VERY time critical - Most of the calls to the geomlib
     // functions have been replaced with inline code as VTune had showed them as bottlenecks.
 
-    static const short s_indexList[43][9] =
+    static const short s_indexList[43][7] =
         {
-        { 0, 3, 7, 6, 5, 1,   6,}, // 0 inside    (arbitrarily default to front, top, right.
+        { 0, 3, 7, 6, 5, 1,   6}, // 0 inside    (arbitrarily default to front, top, right.
         { 0, 4, 7, 3,-1,-1,   4}, // 1 left
         { 1, 2, 6, 5,-1,-1,   4}, // 2 right
         {-1,-1,-1,-1,-1,-1,   0}, // 3 -
@@ -1063,19 +993,7 @@ bool DgnQueryView::RangeQuery::ComputeOcclusionScore(double& score, FrustumCR bo
         { 1, 2, 3, 7, 4, 5,   6}, //42 back, top, right
         };
 
-    enum
-        {
-        OUTSIDE_Left   = (0x00001 << 0),
-        OUTSIDE_Right  = (0x00001 << 1),
-        OUTSIDE_Top    = (0x00001 << 2),
-        OUTSIDE_Bottom = (0x00001 << 3),
-        OUTSIDE_Front  = (0x00001 << 4),
-        OUTSIDE_Back   = (0x00001 << 5),
-        };
-
-    uint32_t npcComputedMask = 0, zComputedMask = 0;
     uint32_t projectionIndex;
-
     if (m_cameraOn)
         {
         projectionIndex = ((m_cameraPosition.x < box.m_pts[0].x) ? 1  : 0) +
@@ -1096,38 +1014,19 @@ bool DgnQueryView::RangeQuery::ComputeOcclusionScore(double& score, FrustumCR bo
         projectionIndex = m_orthogonalProjectionIndex;
         }
 
-    uint32_t    nVertices;
+    uint32_t nVertices= s_indexList[projectionIndex][6];
     DPoint3d    npcVertices[6];
 
     BeAssert(projectionIndex <= 42);
-    if (projectionIndex > 42 || 0 == (nVertices = s_indexList[projectionIndex][6]))
+    if (projectionIndex > 42 || 0 == nVertices)
         {
-        // Inside the box... Needs work.
+        BeAssert(false);
         return false;
         }
 
-    double  zTotal = 0.0;
-    for (uint32_t i=0, mask = 0x0001; i<nVertices; i++, mask <<= 1)
-        {
-        int  cornerIndex = s_indexList[projectionIndex][i];
-        if (0 == (mask & npcComputedMask) && !ComputeNPC(npcVertices[i], box.m_pts[cornerIndex]))
-            {
-            score = 2.0;  // range spans eye plane
-            return true;
-            }
-
-        zTotal +=  npcVertices[i].z;
-        zComputedMask |= (1 << cornerIndex);
-        }
-
-    if (zTotal < 0.0)
-        zTotal = 0.0;
-
+    uint32_t npcComputedMask = 0;
     if (m_testLOD && 0.0 != m_lodFilterNPCArea)
         {
-        // In the cases where this does exclude the element it would be faster to do the other filtering first. However, even when we exclude something due
-        // to LOD filtering we want to know if it should be drawn by the progressive display. We want progressive display to draw zero-length line strings
-        // and points.
         int        diagonalVertex = nVertices/2;
         DPoint3dR  diagonalNPC    = npcVertices[diagonalVertex];
 
@@ -1148,18 +1047,34 @@ bool DgnQueryView::RangeQuery::ComputeOcclusionScore(double& score, FrustumCR bo
         npcComputedMask |= (1 << diagonalVertex);
         }
 
+    double zTotal = 0.0;
+    for (uint32_t i=0, mask = 0x0001; i<nVertices; i++, mask <<= 1)
+        {
+        int cornerIndex = s_indexList[projectionIndex][i];
+        if (0 == (mask & npcComputedMask) && !ComputeNPC(npcVertices[i], box.m_pts[cornerIndex]))
+            {
+            score = 2.0;  // range spans eye plane
+            return true;
+            }
+
+        zTotal += npcVertices[i].z;
+        }
+
+    if (zTotal < 0.0)
+        zTotal = 0.0;
+
     score = (npcVertices[nVertices-1].x - npcVertices[0].x) * (npcVertices[nVertices-1].y + npcVertices[0].y);
-    for (uint32_t i=0; i<nVertices-1; i++)
+    for (uint32_t i=0; i<nVertices-1; ++i)
         score += (npcVertices[i].x - npcVertices[i+1].x) * (npcVertices[i].y + npcVertices[i+1].y);
+
+    // an area of 0.0 means that we have a line. Recalculate using length/1000 (assuming width of 1000th of npc)
+    if (score == 0.0)
+        score = npcVertices[0].DistanceSquaredXY(npcVertices[2]) * .001;
 
     // Multiply area by the Z total value (0 is the back of the view) so that the score is roughly
     // equivalent to the area swept by the range through the view which makes things closer to the eye more likely to display first.
     // Also by scoring based on swept volume we are proportional to occluded volume.
     score *= .5 * (zTotal / (double) nVertices);
-
-    // an area of 0.0 means that we have a line. Recalculate using length/1000 (assuming width of 1000th of npc)
-    if (score == 0.0)
-        score = npcVertices[0].DistanceXY(npcVertices[2]) * .001;
 
     if (score < 0.0)
         {
