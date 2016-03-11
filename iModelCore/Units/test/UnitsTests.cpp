@@ -309,6 +309,8 @@ TEST_F(UnitsTests, TestBasicConversion)
     TestUnitConversion(60, "GRAM_PER_MINUTE", 1.0, "GRAM_PER_SECOND", 1000, loadErrors, conversionErrors);
     TestUnitConversion(3.53146667214886e1, "KILONEWTON_PER_METRE_CUBED", 1.0, "KILONEWTON_PER_FOOT_CUBED", 1000, loadErrors, conversionErrors);
     TestUnitConversion(42.42, "KILOPASCAL_GAUGE", 6.15250086300203, "POUND_FORCE_PER_INCH_SQUARED_GAUGE", 100000000, loadErrors, conversionErrors); // Expected value from old system, difference is due to imprecise offset in old system.
+    TestUnitConversion(42.42, "PERCENT_SLOPE", 0.4242, "M/M", 10, loadErrors, conversionErrors);
+    TestUnitConversion(0.42, "M/M", 42.0, "PERCENT_SLOPE", 10, loadErrors, conversionErrors);
     }
 
 TEST_F(UnitsTests, TestInvertedSlopeUnits)
@@ -702,12 +704,14 @@ TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
                 continue;
 
             Utf8String parsedExpression = unit->GetParsedUnitExpression();
-            if (unit->HasOffset() && unit->GetFactor() != 1.0)
-                line.Sprintf("%s,%.10g * %s - %.10g,%s,%s", unit->GetName(), unit->GetFactor(), unit->GetDefinition(), unit->GetOffset(), unit->GetUnitDimension().c_str(), parsedExpression.c_str());
+            if (unit->GetFactor() == 0.0)
+                line.Sprintf("%s,Inverts(%s),%s,%s", unit->GetName(), unit->GetDefinition(), unit->GetUnitDimension(), parsedExpression.c_str());
+            else if (unit->HasOffset() && unit->GetFactor() != 1.0)
+                line.Sprintf("%s,(%s)/%.10g - %.10g,%s,%s", unit->GetName(), unit->GetDefinition(), unit->GetFactor(), unit->GetOffset(), unit->GetUnitDimension().c_str(), parsedExpression.c_str());
             else if (unit->HasOffset())
                 line.Sprintf("%s,%s - %.10g,%s,%s", unit->GetName(), unit->GetDefinition(), unit->GetOffset(), unit->GetUnitDimension().c_str(), parsedExpression.c_str());
             else if (unit->GetFactor() != 1.0)
-                line.Sprintf("%s,%.10g * %s,%s,%s", unit->GetName(), unit->GetFactor(), unit->GetDefinition(), unit->GetUnitDimension().c_str(), parsedExpression.c_str());
+                line.Sprintf("%s,(%s)/%.10g,%s,%s", unit->GetName(), unit->GetDefinition(), unit->GetFactor(), unit->GetUnitDimension().c_str(), parsedExpression.c_str());
             else
                 line.Sprintf("%s,%s,%s,%s", unit->GetName(), unit->GetDefinition(), unit->GetUnitDimension().c_str(), parsedExpression.c_str());
 
