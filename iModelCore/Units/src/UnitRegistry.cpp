@@ -25,6 +25,7 @@ UnitRegistry& UnitRegistry::Instance()
         s_instance->AddDefaultPhenomena();
         s_instance->AddDefaultUnits();
         s_instance->AddDefaultConstants();
+        s_instance->AddDefaultMappings();
         }
 
     return *s_instance;
@@ -498,3 +499,60 @@ bool UnitRegistry::HasConstant (Utf8CP constantName) const
     return nullptr != constant;
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Robert.Schili     03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void UnitRegistry::AddMapping(Utf8CP oldName, Utf8CP newName)
+    {
+    m_oldNameNewNameMapping[oldName] = newName;
+
+    Utf8String existingOldName;
+    if (!TryGetOldName(newName, existingOldName))
+        {
+        m_newNameOldNameMapping[newName] = oldName;
+        }
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Robert.Schili     03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool UnitRegistry::TryGetNewName(Utf8CP oldName, Utf8StringR newName) const
+    {
+    auto p = m_oldNameNewNameMapping.find(oldName);
+    if (p != m_oldNameNewNameMapping.end())
+        {
+        newName = p->second;
+        return true;
+        }
+
+    return false;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Robert.Schili     03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool UnitRegistry::TryGetOldName(Utf8CP newName, Utf8StringR oldName) const
+    {
+    auto p = m_newNameOldNameMapping.find(newName);
+    if (p != m_newNameOldNameMapping.end())
+        {
+        oldName = p->second;
+        return true;
+        }
+
+    return false;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              Robert.Schili     03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+UnitCP UnitRegistry::LookupUnitUsingOldName(Utf8CP oldName) const
+    {
+    Utf8String newName;
+    if (TryGetNewName(oldName, newName))
+        {
+        return LookupUnitP(newName.c_str());
+        }
+
+    return LookupUnitP(oldName);
+    }
