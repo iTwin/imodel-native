@@ -1068,67 +1068,6 @@ std::set<ECDbSqlTable const*> ECDbMap::GetTablesFromRelationshipEnd(ECRelationsh
     return finalListOfTables[PersistenceType::Persisted];
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Affan.Khan                      12/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-std::set<ECDbSqlTable const*> ECDbMap::GetTablesFromRelationshipEndWithColumn(ECRelationshipConstraintCR relationshipEnd, Utf8CP column) const
-    {
-    bool hasAnyClass = false;
-    std::set<ClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
-
-    if (hasAnyClass)
-        return std::set<ECDbSqlTable const*>();
-
-    std::map<PersistenceType, std::set<ECDbSqlTable const*>> tables;
-    std::vector<ECClassCP> classes = GetClassesFromRelationshipEnd(relationshipEnd);
-    for (ClassMap const* classMap : classMaps)
-        {
-        ECDbSqlTable const* table = classMap->GetPrimaryTable().FindColumnCP(column) != nullptr ? &classMap->GetPrimaryTable() : nullptr;
-        if (table == nullptr && !classMap->IsMappedToSingleTable())
-            table = classMap->GetJoinedTable().FindColumnCP(column) != nullptr ? &classMap->GetJoinedTable() : nullptr;
-
-        if (table)
-            tables[table->GetPersistenceType()].insert(table);
-        }
-
-
-    if (tables[PersistenceType::Persisted].size() > 0)
-        return tables[PersistenceType::Persisted];
-
-    return tables[PersistenceType::Virtual];
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Affan.Khan                      12/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-ECDbSqlTable const* ECDbMap::GetFirstTableFromRelationshipEnd(ECRelationshipConstraintCR relationshipEnd) const
-    {
-    std::map<PersistenceType, std::set<ECDbSqlTable const*>> tables;
-    bool hasAnyClass;
-    std::set<ClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
-
-    if (hasAnyClass)
-        return nullptr;
-        
-    for (ClassMap const* classMap : classMaps)
-        {
-        tables[classMap->GetJoinedTable().GetPersistenceType()].insert(&classMap->GetJoinedTable());
-        }
-
-    std::set<ECDbSqlTable const*>& persistedTables = tables[PersistenceType::Persisted];
-    std::set<ECDbSqlTable const*>& virtualTables = tables[PersistenceType::Virtual];
-
-    if (persistedTables.size() > 0)
-        {
-        return *persistedTables.begin();
-        }
-
-    if (tables[PersistenceType::Virtual].size() > 0)
-        return *virtualTables.begin();
-
-    return nullptr;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Affan Khan                          08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1423,46 +1362,6 @@ void ECDbMap::LightweightCache::LoadHorizontalPartitions ()  const
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
-void ECDbMap::LightweightCache::LoadRelationshipByTable()  const
-    {
-    if (m_loadedFlags.m_relationshipPerTableLoaded)
-        return;
-
-    Utf8String sql;
-    sql.Sprintf("SELECT DISTINCT ec_Class.Id, ec_Table.Name, ec_ClassMap.MapStrategy FROM ec_Column "
-                "INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-                "INNER JOIN ec_PropertyMap ON  ec_PropertyMap.ColumnId = ec_Column.Id "
-                "INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
-                "INNER JOIN ec_Property ON ec_PropertyPath.RootPropertyId = ec_Property.Id "
-                "INNER JOIN ec_ClassMap ON ec_PropertyMap.ClassMapId = ec_ClassMap.Id "
-                "INNER JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
-                "WHERE ec_ClassMap.MapStrategy  <> 0 AND "
-                "ec_Column.ColumnKind & %d = 0 AND "
-                "ec_Class.Type=%d AND ec_Table.IsVirtual = 0",
-                Enum::ToInt(Enum::Or(ColumnKind::ECInstanceId, ColumnKind::ECClassId)),
-                Enum::ToInt(ECClassType::Relationship));
-
-    auto stmt = m_map.GetECDbR().GetCachedStatement(sql.c_str());
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
-        auto relationshipClassId = stmt->GetValueInt64(0);
-        Utf8CP tableName = stmt->GetValueText(1);
-        RelationshipType type = RelationshipType::Link;
-        if (stmt->GetValueInt(2) == Enum::ToInt(RelationshipType::Source))
-            type = RelationshipType::Source;
-        else if (stmt->GetValueInt(2) == Enum::ToInt(RelationshipType::Target))
-            type = RelationshipType::Target;
-
-        auto table = m_map.GetSQLManager().GetDbSchema().FindTable(tableName);
-        BeAssert(table != nullptr);
-        m_relationshipPerTable[table][relationshipClassId] = type;
-        }
-
-    m_loadedFlags.m_relationshipPerTableLoaded = true;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      07/2015
 //--------------------------------------------------------------------------------------
 ECN::ECClassId ECDbMap::LightweightCache::GetAnyClassId () const
     {
@@ -1475,14 +1374,7 @@ ECN::ECClassId ECDbMap::LightweightCache::GetAnyClassId () const
 
     return m_anyClassId;
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
-ECDbMap::LightweightCache::RelationshipClassIds const& ECDbMap::LightweightCache::GetRelationshipsForConstraintClass(ECN::ECClassId constraintClassId) const
-    {
-    LoadRelationshipCache ();
-    return m_relationshipClassIdsPerConstraintClassIds[constraintClassId];
-    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
@@ -1503,45 +1395,10 @@ ECDbMap::LightweightCache::ConstraintClassIds const& ECDbMap::LightweightCache::
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-ECDbMap::LightweightCache::RelationshipClassIds const& ECDbMap::LightweightCache::GetAnyClassRelationships() const
-    {
-    LoadAnyClassRelationships ();
-    return m_anyClassRelationships;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
-ECDbMap::LightweightCache::RelationshipTypeByClassId ECDbMap::LightweightCache::GetRelationshipsMapToTable (ECDbSqlTable const& table) const
-    {
-    LoadRelationshipByTable ();
-    return m_relationshipPerTable[&table];
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
-ECDbMap::LightweightCache::RelationshipPerTable ECDbMap::LightweightCache::GetRelationshipsMapToTables () const
-    {
-    LoadRelationshipByTable ();
-    return m_relationshipPerTable;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
 std::vector<ECClassId> const& ECDbMap::LightweightCache::GetClassesForTable (ECDbSqlTable const& table) const
     {
     LoadClassIdsPerTable ();
     return m_classIdsPerTable[&table];
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
-std::vector<ECClassId> const& ECDbMap::LightweightCache::GetAnyClassReplacements() const
-    {
-    LoadAnyClassReplacements ();
-    return m_anyClassReplacements;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1629,34 +1486,6 @@ StorageDescription const& ECDbMap::LightweightCache::GetStorageDescription (Clas
 //****************************************************************************************
 // StorageDescription
 //****************************************************************************************
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    05 / 2015
-//------------------------------------------------------------------------------------------
-StorageDescription::StorageDescription(StorageDescription&& rhs)
-    : m_classId(std::move(rhs.m_classId)), m_horizontalPartitions(std::move(rhs.m_horizontalPartitions)),
-    m_nonVirtualHorizontalPartitionIndices(std::move(rhs.m_nonVirtualHorizontalPartitionIndices)),
-    m_rootHorizontalPartitionIndex(std::move(rhs.m_rootHorizontalPartitionIndex)),
-    m_rootVerticalPartitionIndex(std::move(rhs.m_rootVerticalPartitionIndex)), m_verticalPartitions(std::move(rhs.m_verticalPartitions))
-    {}
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    05 / 2015
-//------------------------------------------------------------------------------------------
-StorageDescription& StorageDescription::operator=(StorageDescription&& rhs)
-    {
-    if (this != &rhs)
-        {
-        m_classId = std::move(rhs.m_classId);
-        m_horizontalPartitions = std::move(rhs.m_horizontalPartitions);
-        m_nonVirtualHorizontalPartitionIndices = std::move(rhs.m_nonVirtualHorizontalPartitionIndices);
-        m_rootHorizontalPartitionIndex = std::move(rhs.m_rootHorizontalPartitionIndex);
-        m_rootVerticalPartitionIndex = std::move(rhs.m_rootVerticalPartitionIndex);
-        m_verticalPartitions = std::move(rhs.m_verticalPartitions);
-        }
-
-    return *this;
-    }
-
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    10 / 2015
@@ -1804,6 +1633,7 @@ Partition const* StorageDescription::GetHorizontalPartition(ECDbSqlTable const& 
 
     return nullptr;
     }
+
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.KHan    11 / 2015
 //------------------------------------------------------------------------------------------
@@ -1817,6 +1647,7 @@ Partition const* StorageDescription::GetVerticalPartition(ECDbSqlTable const& ta
 
     return nullptr;
     }
+
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    10 / 2015
 //------------------------------------------------------------------------------------------
@@ -1826,14 +1657,6 @@ Partition const& StorageDescription::GetRootHorizontalPartition() const
     return m_horizontalPartitions[m_rootHorizontalPartitionIndex];
     }
 
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan    11 / 2015
-//------------------------------------------------------------------------------------------
-Partition const& StorageDescription::GetRootVerticalPartition() const
-    {
-    BeAssert(m_rootVerticalPartitionIndex < m_verticalPartitions.size());
-    return m_verticalPartitions[m_rootVerticalPartitionIndex];
-    }
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    05 / 2015
 //------------------------------------------------------------------------------------------
@@ -1910,27 +1733,6 @@ Partition::Partition(Partition&& rhs)
     rhs.m_table = nullptr;
     }
 
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    05 / 2015
-//------------------------------------------------------------------------------------------
-Partition& Partition::operator=(Partition&& rhs)
-    {
-    if (this != &rhs)
-        {
-        m_table = std::move(rhs.m_table);
-        m_partitionClassIds = std::move(rhs.m_partitionClassIds);
-        m_inversedPartitionClassIds = std::move(rhs.m_inversedPartitionClassIds);
-        m_hasInversedPartitionClassIds = std::move(rhs.m_hasInversedPartitionClassIds);
-
-        //nulling out the RHS m_table pointer is defensive, even if the destructor doesn't
-        //free the table (as it is now owned by Partition). If the ownership ever changes,
-        //this method is safe.
-        rhs.m_table = nullptr;
-        }
-
-    return *this;
-    }
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    05 / 2015
 //------------------------------------------------------------------------------------------

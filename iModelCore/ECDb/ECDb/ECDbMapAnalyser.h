@@ -55,7 +55,6 @@ struct SqlTriggerBuilder
                 List m_list;
 
             public:
-                TriggerList (List const&& list);
                 TriggerList ();
                 SqlTriggerBuilder& Create (SqlTriggerBuilder::Type type, SqlTriggerBuilder::Condition condition, bool temprary);
                 List const& GetTriggers () const;
@@ -83,10 +82,6 @@ struct SqlTriggerBuilder
         NativeSqlBuilder& GetWhenBuilder ();
         NativeSqlBuilder& GetBodyBuilder ();
         NativeSqlBuilder& GetOnBuilder ();
-        Type GetType () const;
-        Condition GetCondition () const;
-        std::vector<Utf8String> const& GetUpdateOfColumns () const;
-        std::vector<Utf8String>& GetUpdateOfColumnsR ();
         Utf8CP GetName () const;
         Utf8CP GetWhen () const;
         Utf8CP GetBody () const;
@@ -115,14 +110,12 @@ struct SqlViewBuilder
         void MarkAsNullView ();
         bool IsNullView () const;
         NativeSqlBuilder& GetNameBuilder ();
-        void SetTemporary (bool tmp);
         NativeSqlBuilder& AddSelect ();
         void SetComment(Utf8CP comment) { m_sqlComment.assign(comment); }
         bool IsEmpty () const;
         bool IsValid () const;
         Utf8CP GetName () const;
         bool IsTemporary () const;
-        bool IsCompound () const;
         Utf8String ToString (SqlOption option, bool escape = false, bool useUnionAll = true) const;
     };
 
@@ -178,13 +171,11 @@ struct ECDbMapAnalyser
             Storage& GetStorageR();
             Storage const& GetStorage() const {return m_storage;}
             ClassMapCR GetClassMap() const;
-            Class* GetParent();
             void SetParent(Class& cl) { m_parent = &cl; }
             std::map <Storage const*, std::set<Class const*>>& GetPartitionsR();
             bool InQueue() const;
             void Done();
             std::vector<Storage const*> GetNoneVirtualStorages() const;
-            bool IsAbstract() const;
             bool RequireView() const;
         };
 
@@ -218,8 +209,6 @@ struct ECDbMapAnalyser
                 EndInfo(PropertyMapCR map, Storage const& storage, ColumnKind columnType);
                 EndInfo(EndInfo const&& rhs);
                 EndInfo();
-                EndInfo& operator = (EndInfo const&& rhs);
-                Utf8CP GetAccessString() const;
                 ECDbSqlColumn const& GetColumn() const;
             };
 
@@ -237,11 +226,7 @@ struct ECDbMapAnalyser
                 std::set<Storage const*> GetStorages() const;
                 PropertyMapCP GetInstanceId() const;
                 ECClassIdRelationshipConstraintPropertyMap const* GetClassId() const;
-                EndType GetEnd() const;
-                bool Contains(Class const& constraintClass) const;
                 EndInfo GetResolvedInstanceId(Storage const& forStorage) const;
-                EndInfo GetResolvedClassId(Storage const& forStorage) const;
-
             };
 
         private:
@@ -366,7 +351,6 @@ struct ECDbMapAnalyser
         explicit ECDbMapAnalyser(ECDbMapR ecdbMap) : m_map(ecdbMap) {}
         BentleyStatus Analyse(bool applyChanges);
     };
-
 
 //=======================================================================================
 // @bsiclass                                               Affan.Khan          09/2015
