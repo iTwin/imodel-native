@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 #include "SchemaImportTestFixture.h"
-#include "ECSqlStatementTestsSchemaHelper.h"
+#include "NestedStructArrayTestSchemaHelper.h"
 #include <initializer_list>
 #include <cmath>
 USING_NAMESPACE_BENTLEY_EC
@@ -2718,7 +2718,7 @@ void JoinedTableECSqlStatementsTests::SetUpECSqlStatementTestsDb ()
 
     ImportSchemaWithCA (schemaPtr, "Person");
 
-    ECSqlStatementTestsSchemaHelper::PopulateECSqlStatementTestsDb (GetECDb ());
+    NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb (GetECDb ());
     }
 
 //---------------------------------------------------------------------------------------
@@ -2733,7 +2733,7 @@ void JoinedTableECSqlStatementsTests::SetUpNestedStructArrayDb ()
 
     ImportSchemaWithCA (schemaPtr, "ClassA");
 
-    ECSqlStatementTestsSchemaHelper::PopulateNestedStructArrayDb (GetECDb (), true);
+    NestedStructArrayTestSchemaHelper::PopulateNestedStructArrayDb (GetECDb (), true);
     }
 
 struct PowSqlFunction : ScalarFunction
@@ -2966,7 +2966,7 @@ TEST_F (JoinedTableECSqlStatementsTests, PolymorphicDelete)
     statement.Finalize ();
     GetECDb ().SaveChanges ();
 
-    bvector<Utf8String> tableNames = { "ClassA", "DerivedA", "DerivedB", "S1", "S2", "S3", "S4", "BaseHasDerivedA", "DerivedBHasChildren" };
+    bvector<Utf8String> tableNames = { "ClassA", "DerivedA", "DerivedB", "BaseHasDerivedA", "DerivedBHasChildren" };
 
     for (Utf8StringCR tableName : tableNames)
         {

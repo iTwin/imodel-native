@@ -78,7 +78,7 @@ struct PropertyMapSet : NonCopyableClass
         std::map<Utf8CP, EndPoint const*, CompareUtf8> m_endPointByAccessString;
         ClassMap const& m_classMap;
 
-        explicit PropertyMapSet(ClassMap const& classMap) :m_classMap(classMap) {}
+        explicit PropertyMapSet(ClassMap const& classMap) : m_classMap(classMap) {}
 
     public:
         const EndPoints GetEndPoints() const;

@@ -184,6 +184,7 @@ TEST_F(ECDbTestFixture, OrderOfPropertyIsPreservedInTableColumns)
                          "   <ECProperty propertyName=\"d\" typeName=\"point3d\"/>"
                          "	 <ECProperty propertyName=\"u\" typeName=\"point2d\"/>"
                          "	 <ECProperty propertyName=\"f\" typeName=\"boolean\"/>"
+                         "	 <ECStructArrayProperty propertyName=\"sarray\" typeName=\"OrderedStruct\"/>"
                          "   <ECProperty propertyName=\"e\" typeName=\"double\"/>"
                          "	 <ECProperty propertyName=\"p\" typeName=\"string\"/>"
                          "	 <ECStructProperty propertyName=\"o\" typeName=\"OrderedStruct\"/>"
@@ -201,17 +202,9 @@ TEST_F(ECDbTestFixture, OrderOfPropertyIsPreservedInTableColumns)
         order_PropertyOrderTest.append (stmt1.GetValueText (1)).append (" ");
         }
 
-    ASSERT_STREQ("ECInstanceId x h i d_X d_Y d_Z u_X u_Y f e p o_a o_g o_c o_z_X o_z_Y o_z_Z o_y_X o_y_Y o_t o_u o_k o_r z ", order_PropertyOrderTest.c_str());
+    ASSERT_STREQ("ECInstanceId x h i d_X d_Y d_Z u_X u_Y f sarray e p o_a o_g o_c o_z_X o_z_Y o_z_Z o_y_X o_y_Y o_t o_u o_k o_r z ", order_PropertyOrderTest.c_str());
     
-    Statement stmt2;
-    stmt2.Prepare (GetECDb(), "PRAGMA table_info('os_OrderedStruct')");
-    Utf8String order_OrderedStruct;
-    while (stmt2.Step () == BE_SQLITE_ROW)
-        {
-        order_OrderedStruct.append (stmt2.GetValueText (1)).append (" ");
-        }
-
-    ASSERT_STREQ("ECInstanceId ParentECInstanceId ECPropertyPathId ECArrayIndex a g c z_X z_Y z_Z y_X y_Y t u k r ", order_OrderedStruct.c_str());
+    ASSERT_FALSE(GetECDb().TableExists("os_OrderedStruct"));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -540,30 +533,8 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "myColumn_point3dProp_Y"));
     EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "myColumn_point3dProp_Z"));
 
-    //========================[sc_StructWithPrimitiveProperties==================================
-    Utf8CP tblStructWithPrimitiveProperties = "sc_StructWithPrimitiveProperties";
-    EXPECT_TRUE (db.TableExists(tblStructWithPrimitiveProperties));
-    EXPECT_EQ   (16, GetColumnCount(db, tblStructWithPrimitiveProperties));
-    ASSERT_TRUE(db.ColumnExists(tblStructWithPrimitiveProperties, "ECInstanceId"));
-    ASSERT_TRUE(db.ColumnExists(tblStructWithPrimitiveProperties, "ParentECInstanceId"));
-    EXPECT_TRUE(db.ColumnExists(tblStructWithPrimitiveProperties, "ECPropertyPathId"));
-    EXPECT_TRUE(db.ColumnExists(tblStructWithPrimitiveProperties, "ECArrayIndex"));
-
-    //Verify columns
-    EXPECT_TRUE(db.ColumnExists(tblStructWithPrimitiveProperties, "intProp"));
-    EXPECT_TRUE(db.ColumnExists(tblStructWithPrimitiveProperties, "longProp"));
-    EXPECT_TRUE(db.ColumnExists(tblStructWithPrimitiveProperties, "doubleProp"));
-    EXPECT_TRUE(db.ColumnExists(tblStructWithPrimitiveProperties, "stringProp"));
-    EXPECT_TRUE (db.ColumnExists(tblStructWithPrimitiveProperties, "dateTimeProp"));
-    EXPECT_TRUE (db.ColumnExists(tblStructWithPrimitiveProperties, "binaryProp"));
-    EXPECT_TRUE (db.ColumnExists(tblStructWithPrimitiveProperties, "booleanProp"));
-    //point2Prop is stored as x,y 2 columns
-    EXPECT_TRUE (db.ColumnExists(tblStructWithPrimitiveProperties, "point2dProp_X"));
-    EXPECT_TRUE (db.ColumnExists(tblStructWithPrimitiveProperties, "point2dProp_Y"));
-    //point3Prop is stored as x,y,z 3 columns
-    EXPECT_TRUE (db.ColumnExists(tblStructWithPrimitiveProperties, "point3dProp_X"));
-    EXPECT_TRUE (db.ColumnExists(tblStructWithPrimitiveProperties, "point3dProp_Y"));
-    EXPECT_TRUE (db.ColumnExists(tblStructWithPrimitiveProperties, "point3dProp_Z"));
+    //========================[StructWithPrimitiveProperties==================================
+    EXPECT_FALSE (db.TableExists("sc_StructWithPrimitiveProperties"));
 
     //========================[sc_ClassWithPrimitiveArrayProperties==============================
     //Array properties doesnt take any column currently it will take in case of embeded senario but
@@ -584,27 +555,8 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (db.ColumnExists(tblClassWithPrimitiveArrayProperties, "point2dArrayProp"));
     EXPECT_TRUE  (db.ColumnExists(tblClassWithPrimitiveArrayProperties, "point3dArrayProp")); // MapStrategy=Blob
 
-    //========================[sc_StructWithPrimitiveArrayProperties=============================
-    //Array properties doesnt have any column currently it will take in case of embeded senario but
-    //we need to make sure it doesnt exist right now. They uses special System arrray tables 
-    Utf8CP tblStructWithPrimitiveArrayProperties = "sc_StructWithPrimitiveArrayProperties";
-    EXPECT_TRUE(db.TableExists(tblStructWithPrimitiveArrayProperties));
-    EXPECT_EQ   (13, GetColumnCount(db, tblStructWithPrimitiveArrayProperties));    
-    ASSERT_TRUE (db.ColumnExists(tblStructWithPrimitiveArrayProperties, "ECInstanceId"));
-    ASSERT_TRUE (db.ColumnExists(tblStructWithPrimitiveArrayProperties, "ParentECInstanceId"));
-    EXPECT_TRUE (db.ColumnExists(tblStructWithPrimitiveArrayProperties, "ECPropertyPathId"));
-    EXPECT_TRUE (db.ColumnExists(tblStructWithPrimitiveArrayProperties, "ECArrayIndex"));
-
-    //Verify columns
-    EXPECT_TRUE (db.ColumnExists(tblStructWithPrimitiveArrayProperties, "intArrayProp"));
-    EXPECT_TRUE (db.ColumnExists(tblStructWithPrimitiveArrayProperties, "longArrayProp"));
-    EXPECT_TRUE (db.ColumnExists(tblStructWithPrimitiveArrayProperties, "doubleArrayProp"));
-    EXPECT_TRUE (db.ColumnExists(tblStructWithPrimitiveArrayProperties, "stringArrayProp"));
-    EXPECT_TRUE (db.ColumnExists(tblStructWithPrimitiveArrayProperties, "dateTimeArrayProp"));
-    EXPECT_TRUE (db.ColumnExists(tblStructWithPrimitiveArrayProperties, "binaryArrayProp"));
-    EXPECT_TRUE (db.ColumnExists(tblStructWithPrimitiveArrayProperties, "booleanArrayProp"));
-    EXPECT_TRUE (db.ColumnExists(tblStructWithPrimitiveArrayProperties, "point2dArrayProp"));
-    EXPECT_TRUE (db.ColumnExists(tblStructWithPrimitiveArrayProperties, "point3dArrayProp"));
+    //========================[StructWithPrimitiveArrayProperties=============================
+    EXPECT_FALSE(db.TableExists("sc_StructWithPrimitiveArrayProperties"));
 
     //verify system array tables. They are created if  a primitive array property is ecounter in schema
 
@@ -664,7 +616,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     //Related to Furniture. Employee can have one or more furniture
     Utf8CP tblEmployee = "sc_Employee";
     EXPECT_TRUE (db.TableExists(tblEmployee));    
-    EXPECT_EQ   (31, GetColumnCount(db, tblEmployee));
+    EXPECT_EQ   (32, GetColumnCount(db, tblEmployee));
     EXPECT_TRUE (db.ColumnExists(tblEmployee, "ECInstanceId"));
     
     EXPECT_TRUE (db.ColumnExists(tblEmployee, "EmployeeID"));
@@ -679,12 +631,12 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (db.ColumnExists(tblEmployee, "EmployeeType")); 
     EXPECT_TRUE (db.ColumnExists(tblEmployee, "EmployeeRecordKey")); 
     EXPECT_TRUE (db.ColumnExists(tblEmployee, "Company__trg_11_id")); 
-    EXPECT_FALSE(db.ColumnExists(tblEmployee, "EmployeeCertification")); //struct array property
+    EXPECT_TRUE(db.ColumnExists(tblEmployee, "Certifications"));
 
     //========================[sc_Company]=======================================================
     Utf8CP tblCompany = "sc_Company";
     EXPECT_TRUE (db.TableExists(tblCompany));    
-    EXPECT_EQ   (14, GetColumnCount(db, tblCompany));
+    EXPECT_EQ   (15, GetColumnCount(db, tblCompany));
     EXPECT_TRUE (db.ColumnExists(tblCompany, "ECInstanceId"));
     
     EXPECT_TRUE (db.ColumnExists(tblCompany, "Name"));
@@ -692,22 +644,8 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (db.ColumnExists(tblCompany, "ContactAddress"));
     EXPECT_TRUE (db.ColumnExists(tblCompany, "RecordKey"));
 
-    //========================[sc_EmployeeCertifications]========================================
-    Utf8CP tblEmployeeCertification = "sc_EmployeeCertification";
-    EXPECT_TRUE (db.TableExists(tblEmployeeCertification));    
-    EXPECT_EQ   (9, GetColumnCount(db, tblEmployeeCertification));
-
-    ASSERT_TRUE (db.ColumnExists(tblEmployeeCertification, "ECInstanceId"));
-    ASSERT_TRUE (db.ColumnExists(tblEmployeeCertification, "ParentECInstanceId"));
-    EXPECT_TRUE (db.ColumnExists(tblEmployeeCertification, "ECPropertyPathId"));
-    EXPECT_TRUE (db.ColumnExists(tblEmployeeCertification, "ECArrayIndex"));
-    
-    EXPECT_TRUE (db.ColumnExists(tblEmployeeCertification, "Name"));
-    EXPECT_TRUE (db.ColumnExists(tblEmployeeCertification, "StartDate"));
-    EXPECT_TRUE (db.ColumnExists(tblEmployeeCertification, "ExpiryDate"));
-    EXPECT_TRUE (db.ColumnExists(tblEmployeeCertification, "Technology"));
-    EXPECT_TRUE (db.ColumnExists(tblEmployeeCertification, "Level"));
-            
+    //======================== EmployeeCertifications========================================
+    EXPECT_FALSE (db.TableExists("sc_EmployeeCertification")) << "struct don't get a table";
     //========================[sc_Widget]========================================================
     Utf8CP tblWidget = "sc_Widget"; 
     EXPECT_TRUE (db.TableExists(tblWidget));
@@ -758,27 +696,8 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     //struct array
     EXPECT_FALSE(db.ColumnExists(tblBuilding, "Location"));
     
-    //========================[sc_Location]======================================================
-    Utf8CP tblLocation = "sc_Location"; 
-    EXPECT_TRUE (db.TableExists(tblLocation));
-    EXPECT_EQ   (12, GetColumnCount(db, tblLocation));            
-
-    ASSERT_TRUE (db.ColumnExists(tblLocation, "ECInstanceId"));
-    ASSERT_TRUE (db.ColumnExists(tblLocation, "ParentECInstanceId"));
-    EXPECT_TRUE (db.ColumnExists(tblLocation, "ECPropertyPathId"));
-    EXPECT_TRUE (db.ColumnExists(tblLocation, "ECArrayIndex"));
-
-    //It must not have ECClassId to differentiate each row to see which class it belong to.
-    EXPECT_FALSE(db.ColumnExists(tblLocation, "ECClassId")); 
-
-    EXPECT_TRUE (db.ColumnExists(tblLocation, "Coordinate_X")); 
-    EXPECT_TRUE (db.ColumnExists(tblLocation, "Coordinate_Y")); 
-    EXPECT_TRUE (db.ColumnExists(tblLocation, "Coordinate_Z")); 
-    EXPECT_TRUE (db.ColumnExists(tblLocation, "Street")); 
-    EXPECT_TRUE (db.ColumnExists(tblLocation, "City")); 
-    EXPECT_TRUE (db.ColumnExists(tblLocation, "State")); 
-    EXPECT_TRUE (db.ColumnExists(tblLocation, "Country")); 
-    EXPECT_TRUE (db.ColumnExists(tblLocation, "Zip")); 
+    //========================[Location]======================================================
+    EXPECT_FALSE(db.TableExists("sc_Location")) << "no tables for structs";
     
     //========================[sc_BuildingFloor]=================================================
     Utf8CP tblBuildingFloor = "sc_BuildingFloor"; 
@@ -822,22 +741,8 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     //relation
     EXPECT_TRUE (db.ColumnExists(tblCubicle, "BuildingFloor__src_11_id")); 
         
-    //========================[sc_AnglesStruct]======================================================
-    Utf8CP tblAnglesStruct = "sc_AnglesStruct"; 
-    EXPECT_TRUE (db.TableExists(tblAnglesStruct));
-    EXPECT_EQ   (7, GetColumnCount(db, tblAnglesStruct));            
-
-    ASSERT_TRUE (db.ColumnExists(tblAnglesStruct, "ECInstanceId"));
-    ASSERT_TRUE (db.ColumnExists(tblAnglesStruct, "ParentECInstanceId"));
-    EXPECT_TRUE (db.ColumnExists(tblAnglesStruct, "ECPropertyPathId"));
-    EXPECT_TRUE (db.ColumnExists(tblAnglesStruct, "ECArrayIndex"));
-
-    //It must not have ECClassId to differentiate each row to see which class it belong to.
-    EXPECT_FALSE(db.ColumnExists(tblAnglesStruct, "ECClassId")); 
-
-    EXPECT_TRUE (db.ColumnExists(tblAnglesStruct, "Alpha")); 
-    EXPECT_TRUE (db.ColumnExists(tblAnglesStruct, "Beta")); 
-    EXPECT_TRUE (db.ColumnExists(tblAnglesStruct, "Theta")); 
+    //========================AnglesStruct======================================================
+    EXPECT_FALSE (db.TableExists("sc_AnglesStruct")) << "structs are not mapped to any tables";
 
     //========================[sc_ABFoo]======================================================
     Utf8CP tblABFoo = "sc_ABFoo"; 
@@ -854,7 +759,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     Utf8CP tblAAFoo = "sc_AAFoo"; 
     EXPECT_TRUE (db.TableExists(tblAAFoo));
     EXPECT_FALSE(db.TableExists("AFooChild")); //This child class of AAFoo which have TablePerHierarchy so table for its child classes should not be created
-    EXPECT_EQ   (25, GetColumnCount(db, tblAAFoo));
+    EXPECT_EQ   (26, GetColumnCount(db, tblAAFoo));
     EXPECT_TRUE (db.ColumnExists(tblAAFoo, "ECInstanceId"));
     //This a TablePerHieracrchy
     EXPECT_TRUE (db.ColumnExists(tblAAFoo, "ECClassId")); 
@@ -903,7 +808,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     //========================[sc_Foo]===========================================================
     Utf8CP tblFoo = "sc_Foo";
     EXPECT_TRUE (db.TableExists(tblFoo));
-    EXPECT_EQ   (19, GetColumnCount(db, tblFoo));
+    EXPECT_EQ (20, GetColumnCount(db, tblFoo));
     
     EXPECT_TRUE (db.ColumnExists(tblFoo, "ECInstanceId"));
     //This a TablePerHieracrchy
@@ -926,8 +831,10 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     
     // arrays/struct
     EXPECT_TRUE (db.ColumnExists(tblFoo, "arrayOfIntsFoo"));
-    EXPECT_FALSE (db.ColumnExists(tblFoo, "arrayOfAnglesStructsFoo"));
-    EXPECT_FALSE (db.ColumnExists(tblFoo, "anglesFoo"));
+    EXPECT_TRUE (db.ColumnExists(tblFoo, "arrayOfAnglesStructsFoo"));
+    EXPECT_TRUE (db.ColumnExists(tblFoo, "anglesFoo_Alpha"));
+    EXPECT_TRUE(db.ColumnExists(tblFoo, "anglesFoo_Beta"));
+    EXPECT_TRUE(db.ColumnExists(tblFoo, "anglesFoo_Theta"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1989,7 +1896,7 @@ TEST_F(ECDbSchemaFixture,ClassMapCustomAttributeSharedTablePolymorphic)
     ASSERT_EQ (SUCCESS, status);
     EXPECT_TRUE (db.TableExists ("sm_B"));
     EXPECT_TRUE(db.TableExists("sm_A"));
-    EXPECT_TRUE(db.TableExists("sm_C"));
+    EXPECT_FALSE(db.TableExists("sm_C")) << "structs are not mapped to tables";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2015,7 +1922,7 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeNotMappedPolymorphic)
     ASSERT_EQ (SUCCESS, status);
     EXPECT_FALSE(db.TableExists("sm_B"));
     EXPECT_TRUE(db.TableExists("sm_A"));
-    EXPECT_TRUE(db.TableExists("sm_C"));
+    EXPECT_FALSE(db.TableExists("sm_C")) << "structs are not mapped to tables";
     }
 
 /*---------------------------------------------------------------------------------**//**

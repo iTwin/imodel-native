@@ -32,6 +32,8 @@ private:
 protected:
     JsonECSqlValue(ECDbCR ecdb, Json::Value const& json, ECSqlColumnInfo const& columnInfo) : IECSqlValue(), m_ecdb(ecdb), m_json(json), m_columnInfo(columnInfo) {}
     Json::Value const& GetJson() const { return m_json; }
+
+    void ReportError(Utf8CP error) const { GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, error); }
     ECDbCR GetECDb() const { return m_ecdb; }
 
 public:
@@ -45,7 +47,7 @@ struct PrimitiveJsonECSqlValue : public JsonECSqlValue, public IECSqlPrimitiveVa
     {
 private:
     DateTime::Info m_datetimeMetadata;
-    mutable bvector<Byte> m_geometryBlobCache;
+    mutable bvector<Byte> m_blobCache;
 
     virtual IECSqlPrimitiveValue const& _GetPrimitive() const override { return *this; }
 
@@ -62,6 +64,7 @@ private:
     virtual IGeometryPtr _GetGeometry() const override;
     virtual void const* _GetGeometryBlob(int* blobSize) const override;
 
+    bool CanCallGetFor(ECN::PrimitiveType requestedType) const;
 public:
     PrimitiveJsonECSqlValue(ECDbCR ecdb, Json::Value const& json, ECSqlColumnInfo const& columnInfo, DateTime::Info const* dateTimeMetadata);
     ~PrimitiveJsonECSqlValue() {}
@@ -93,6 +96,8 @@ struct ArrayJsonECSqlValue : public JsonECSqlValue, public IECSqlArrayValue
 private:
     mutable Json::ValueConstIterator m_jsonIterator;
     mutable std::unique_ptr<JsonECSqlValue> m_currentElement;
+    DateTime::Info m_primitiveArrayDatetimeMetadata;
+    ECN::ECStructClassCP m_structArrayElementType;
 
     virtual IECSqlArrayValue const& _GetArray() const override { return *this; }
 

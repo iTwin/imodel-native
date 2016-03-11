@@ -364,7 +364,7 @@ BentleyStatus ECInstanceAdapterHelper::BindPrimitiveValue (IECSqlBinder& binder,
             case ECN::PRIMITIVETYPE_Binary:
                 {
                 size_t blobSize;
-                auto blob = value.GetBinary (blobSize);
+                Byte const* const blob = value.GetBinary (blobSize);
 
                 //if blob owner is IECInstance which will be alive until ECInstance adapter is done executing,
                 //we don't need to copy
@@ -693,8 +693,7 @@ void ECInstanceAdapterHelper::LogFailure (Utf8CP operationName, ECN::IECInstance
     {
     Utf8String displayLabel;
     instance.GetDisplayLabel (displayLabel);
-    LOG.errorv ("Failed to %s ECInstance '%s'. %s", operationName,
-        Utf8String (displayLabel).c_str (), errorMessage);
+    LOG.errorv ("Failed to %s ECInstance '%s'. %s", operationName, displayLabel.c_str (), errorMessage);
     }
 
 //---------------------------------------------------------------------------------------

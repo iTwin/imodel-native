@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlStatementTestFixture.h"
-#include "ECSqlStatementTestsSchemaHelper.h"
+#include "NestedStructArrayTestSchemaHelper.h"
 #include <cmath>
 #include <algorithm>
 
@@ -118,7 +118,7 @@ struct PowSqlFunction : ScalarFunction
 TEST_F (ECSqlStatementTestFixture, PopulateECSql_TestDbWithTestData)
     {
     ECDbR ecdb = SetupECDb("ECSqlStatementTests.ecdb", BeFileName(L"ECSqlStatementTests.01.00.ecschema.xml"));
-    ECSqlStatementTestsSchemaHelper::PopulateECSqlStatementTestsDb (ecdb);
+    NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb (ecdb);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -127,7 +127,7 @@ TEST_F (ECSqlStatementTestFixture, PopulateECSql_TestDbWithTestData)
 TEST_F (ECSqlStatementTestFixture, UnionTests)
     {
     ECDbR ecdb = SetupECDb("ECSqlStatementTests.ecdb", BeFileName(L"ECSqlStatementTests.01.00.ecschema.xml"));
-    ECSqlStatementTestsSchemaHelper::PopulateECSqlStatementTestsDb (ecdb);
+    NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb (ecdb);
 
     int rowCount;
     ECSqlStatement stmt;
@@ -225,7 +225,7 @@ TEST_F (ECSqlStatementTestFixture, UnionTests)
 TEST_F (ECSqlStatementTestFixture, ExceptTests)
     {
     ECDbR ecdb = SetupECDb("ECSqlStatementTests.ecdb", BeFileName(L"ECSqlStatementTests.01.00.ecschema.xml"));
-    ECSqlStatementTestsSchemaHelper::PopulateECSqlStatementTestsDb (ecdb);
+    NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb (ecdb);
 
     ECSqlStatement stmt;
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT CompanyName FROM ECST.Supplier EXCEPT SELECT CompanyName FROM ECST.Shipper"));
@@ -262,7 +262,7 @@ TEST_F (ECSqlStatementTestFixture, ExceptTests)
 TEST_F (ECSqlStatementTestFixture, IntersectTests)
     {
     ECDbR ecdb = SetupECDb("ECSqlStatementTests.ecdb", BeFileName(L"ECSqlStatementTests.01.00.ecschema.xml"));
-    ECSqlStatementTestsSchemaHelper::PopulateECSqlStatementTestsDb (ecdb);
+    NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb (ecdb);
 
     ECSqlStatement stmt;
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT CompanyName FROM ECST.Supplier INTERSECT SELECT CompanyName FROM ECST.Shipper ORDER BY CompanyName"));
@@ -297,7 +297,7 @@ TEST_F (ECSqlStatementTestFixture, IntersectTests)
 TEST_F (ECSqlStatementTestFixture, NestedSelectStatementsTests)
     {
     ECDbR ecdb = SetupECDb("ECSqlStatementTests.ecdb", BeFileName(L"ECSqlStatementTests.01.00.ecschema.xml"));
-    ECSqlStatementTestsSchemaHelper::PopulateECSqlStatementTestsDb (ecdb);
+    NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb (ecdb);
 
     ECSqlStatement stmt;
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ProductName, UnitPrice FROM ECST.Product WHERE UnitPrice > (SELECT AVG(UnitPrice) From ECST.Product) AND UnitPrice < 500"));
@@ -331,7 +331,7 @@ TEST_F (ECSqlStatementTestFixture, NestedSelectStatementsTests)
 TEST_F (ECSqlStatementTestFixture, PredicateFunctionsInNestedSelectStatement)
     {
     ECDbR ecdb = SetupECDb("ECSqlStatementTests.ecdb", BeFileName(L"ECSqlStatementTests.01.00.ecschema.xml"));
-    ECSqlStatementTestsSchemaHelper::PopulateECSqlStatementTestsDb (ecdb);
+    NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb (ecdb);
 
     ECSqlStatement stmt;
     //Using Predicate function in nexted select statement
@@ -354,7 +354,7 @@ TEST_F (ECSqlStatementTestFixture, PredicateFunctionsInNestedSelectStatement)
 TEST_F (ECSqlStatementTestFixture, GroupByClauseTests)
     {
     ECDbR ecdb = SetupECDb("ECSqlStatementTests.ecdb", BeFileName(L"ECSqlStatementTests.01.00.ecschema.xml"));
-    ECSqlStatementTestsSchemaHelper::PopulateECSqlStatementTestsDb (ecdb);
+    NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb (ecdb);
 
     Utf8CP expectedProductsNames;
     Utf8String actualProductsNames;
@@ -424,7 +424,7 @@ TEST_F (ECSqlStatementTestFixture, GroupByClauseTests)
 TEST_F (ECSqlStatementTestFixture, StructInGroupByClause)
     {
     ECDbR ecdb = SetupECDb ("ECSqlStatementTests.ecdb", BeFileName (L"ECSqlStatementTests.01.00.ecschema.xml"));
-    ECSqlStatementTestsSchemaHelper::PopulateECSqlStatementTestsDb (ecdb);
+    NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb (ecdb);
 
     ECSqlStatement statement;
     ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT AVG(Phone) FROM ECST.Customer GROUP BY PersonName"));
@@ -496,7 +496,7 @@ TEST_F (ECSqlStatementTestFixture, VerifyLiteralExpressionAsConstants)
 TEST_F (ECSqlStatementTestFixture, WrapWhereClauseInParams)
     {
     ECDbR ecdb = SetupECDb ("ECSqlStatementTests.ecdb", BeFileName (L"ECSqlStatementTests.01.00.ecschema.xml"));
-    ECSqlStatementTestsSchemaHelper::PopulateECSqlStatementTestsDb (ecdb);
+    NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb (ecdb);
 
     ECSqlStatement statement;
     ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT Phone FROM ECST.Customer WHERE Country='USA' OR Company='ABC'"));
@@ -520,7 +520,7 @@ TEST_F (ECSqlStatementTestFixture, WrapWhereClauseInParams)
 TEST_F (ECSqlStatementTestFixture, PolymorphicDelete_SharedTable)
     {
     ECDbR ecdb = SetupECDb ("PolymorphicDeleteSharedTable.ecdb", BeFileName (L"NestedStructArrayTest.01.00.ecschema.xml"));
-    ECSqlStatementTestsSchemaHelper::PopulateNestedStructArrayDb (ecdb, true);
+    NestedStructArrayTestSchemaHelper::PopulateNestedStructArrayDb (ecdb, true);
 
     ASSERT_FALSE(ecdb.TableExists("nsat_DerivedA"));
     ASSERT_FALSE(ecdb.TableExists("nsat_DoubleDerivedA"));
@@ -532,7 +532,7 @@ TEST_F (ECSqlStatementTestFixture, PolymorphicDelete_SharedTable)
     ASSERT_EQ (BE_SQLITE_DONE, statement.Step ());
     statement.Finalize ();
 
-    bvector<Utf8String> tableNames = { "ClassA", "S1", "S2", "S3", "S4", "BaseHasDerivedA", "DerivedBHasChildren"};
+    bvector<Utf8String> tableNames = { "ClassA", "BaseHasDerivedA", "DerivedBHasChildren"};
 
     for (Utf8StringCR tableName : tableNames)
         {
@@ -551,11 +551,11 @@ TEST_F (ECSqlStatementTestFixture, PolymorphicDelete_SharedTable)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlStatementTestFixture, PolymorphicDelete)
     {
-    SchemaItem testSchema (ECSqlStatementTestsSchemaHelper::s_testSchemaXml, true);
+    SchemaItem testSchema (NestedStructArrayTestSchemaHelper::s_testSchemaXml, true);
     ECDbR ecdb = SetupECDb ("PolymorphicDeleteTest.ecdb", testSchema);
     ASSERT_TRUE (ecdb.IsDbOpen ());
 
-    ECSqlStatementTestsSchemaHelper::PopulateNestedStructArrayDb (ecdb, false);
+    NestedStructArrayTestSchemaHelper::PopulateNestedStructArrayDb (ecdb, false);
 
     //Delete all Instances of the base class, all the structArrays should also be deleted.
     ECSqlStatement statement;
@@ -563,7 +563,7 @@ TEST_F (ECSqlStatementTestFixture, PolymorphicDelete)
     ASSERT_EQ (BE_SQLITE_DONE, statement.Step ());
     statement.Finalize ();
 
-    bvector<Utf8String> tableNames = { "ClassA" , "DerivedA", "DerivedB", "DoubleDerivedA", "DoubleDerivedB", "DoubleDerivedC", "S1", "S2", "S3", "S4"};
+    bvector<Utf8String> tableNames = { "ClassA" , "DerivedA", "DerivedB", "DoubleDerivedA", "DoubleDerivedB", "DoubleDerivedC"};
     
     for (Utf8StringCR tableName : tableNames)
         {
@@ -654,11 +654,11 @@ TEST_F(ECSqlStatementTestFixture, PolymorphicDeleteWithSubclassesInMultipleTable
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlStatementTestFixture, PolymorphicUpdate)
     {
-    SchemaItem testSchema (ECSqlStatementTestsSchemaHelper::s_testSchemaXml, true);
+    SchemaItem testSchema (NestedStructArrayTestSchemaHelper::s_testSchemaXml, true);
     ECDbR ecdb = SetupECDb ("PolymorphicUpdateTest.ecdb", testSchema);
     ASSERT_TRUE (ecdb.IsDbOpen ());
 
-    ECSqlStatementTestsSchemaHelper::PopulateNestedStructArrayDb (ecdb, false);
+    NestedStructArrayTestSchemaHelper::PopulateNestedStructArrayDb (ecdb, false);
 
     //Updates the instances of ClassA
     ECSqlStatement statement;
@@ -690,7 +690,7 @@ TEST_F(ECSqlStatementTestFixture, PolymorphicUpdate_SharedTable)
     {
     // Create and populate a sample project
     ECDbR ecdb = SetupECDb("PolymorphicUpdateSharedTable.ecdb", BeFileName(L"NestedStructArrayTest.01.00.ecschema.xml"));
-    ECSqlStatementTestsSchemaHelper::PopulateNestedStructArrayDb (ecdb, true);
+    NestedStructArrayTestSchemaHelper::PopulateNestedStructArrayDb (ecdb, true);
 
     //Updates the instances of ClassA all the Derived Classes Properties values should also be changed. 
     ECSqlStatement stmt;
@@ -713,7 +713,7 @@ TEST_F(ECSqlStatementTestFixture, PolymorphicUpdate_SharedTable)
 TEST_F (ECSqlStatementTestFixture, DeleteWithNestedSelectStatements)
     {
     ECDbR ecdb = SetupECDb("ECSqlStatementTests.ecdb", BeFileName(L"ECSqlStatementTests.01.00.ecschema.xml"));
-    ECSqlStatementTestsSchemaHelper::PopulateECSqlStatementTestsDb (ecdb);
+    NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb (ecdb);
 
     ECSqlStatement stmt;
 
@@ -738,7 +738,7 @@ TEST_F (ECSqlStatementTestFixture, DeleteWithNestedSelectStatements)
 TEST_F (ECSqlStatementTestFixture, UpdateWithNestedSelectStatments)
     {
     ECDbR ecdb = SetupECDb("ECSqlStatementTests.ecdb", BeFileName(L"ECSqlStatementTests.01.00.ecschema.xml"));
-    ECSqlStatementTestsSchemaHelper::PopulateECSqlStatementTestsDb (ecdb);
+    NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb (ecdb);
 
     ECSqlStatement stmt;
 
@@ -759,10 +759,10 @@ TEST_F (ECSqlStatementTestFixture, InsertStructArray)
     {
     ECDbR ecdb = SetupECDb("PolymorphicUpdateTest.ecdb", BeFileName(L"NestedStructArrayTest.01.00.ecschema.xml"));
 
-    auto in = ECSqlStatementTestsSchemaHelper::CreateECInstance (ecdb, 1, "ClassP");
+    ECInstanceList instanceList = NestedStructArrayTestSchemaHelper::CreateECInstances (ecdb, 1, "ClassP");
 
     Utf8String inXml, outXml;
-    for (auto inst : in)
+    for (IECInstancePtr inst : instanceList)
         {
         ECInstanceInserter inserter (ecdb, inst->GetClass ());
         ASSERT_TRUE (inserter.IsValid ());
@@ -784,96 +784,47 @@ TEST_F (ECSqlStatementTestFixture, InsertStructArray)
         outXml += "\r\n";
         }
 
-    ASSERT_EQ (in.size (), out.size ());
+    ASSERT_EQ (instanceList.size (), out.size ());
     ASSERT_TRUE (inXml == outXml);
-
-    //Verify Values have also been Inserted for StructArray properties of the Class
-    bmap<Utf8String, int> selectStatements;
-    int i = 2;
-    int j = 1;
-    ECSchemaCP ecSchema = ecdb.Schemas ().GetECSchema ("NestedStructArrayTest", true);
-    for (ECClassCP testClass : ecSchema->GetClasses ())
-        {
-        if (testClass->IsStructClass())
-            {
-            Utf8String selectSql = "SELECT COUNT(*) FROM nsat_";
-            selectSql.append (testClass->GetName ());
-            selectStatements[selectSql] = i*j;
-            j = i*j;
-            i++;
-            }
-        }
-
-    BeSQLite::Statement readStmt;
-    for (auto kvPair : selectStatements)
-        {
-        Utf8String selectSql = kvPair.first;
-        int noOfRows = kvPair.second;
-        ASSERT_EQ (DbResult::BE_SQLITE_OK, readStmt.Prepare (ecdb, selectSql.c_str ())) << "Preparation failed for " << selectSql.c_str ();
-        ASSERT_EQ (readStmt.Step (), DbResult::BE_SQLITE_ROW) << "step failed for " << selectSql.c_str ();
-        ASSERT_EQ (readStmt.GetValueInt (0), noOfRows) << "No of Rows Mis-Match: Expected = " << readStmt.GetValueInt (0) << "Actual = " << noOfRows;
-        readStmt.Finalize ();
-        }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad Hassan                    02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlStatementTestFixture, DeleteStructArray)
+TEST_F(ECSqlStatementTestFixture, DeleteStructArray)
     {
     ECDbR ecdb = SetupECDb("PolymorphicUpdateTest.ecdb", BeFileName(L"NestedStructArrayTest.01.00.ecschema.xml"));
 
-    auto in = ECSqlStatementTestsSchemaHelper::CreateECInstance (ecdb, 1, "ClassP");
+    auto in = NestedStructArrayTestSchemaHelper::CreateECInstances(ecdb, 1, "ClassP");
 
     int insertCount = 0;
     for (auto inst : in)
         {
-        ECInstanceInserter inserter (ecdb, inst->GetClass ());
-        auto st = inserter.Insert (*inst);
-        ASSERT_TRUE (st == BentleyStatus::SUCCESS);
+        ECInstanceInserter inserter(ecdb, inst->GetClass());
+        auto st = inserter.Insert(*inst);
+        ASSERT_TRUE(st == BentleyStatus::SUCCESS);
         insertCount++;
         }
 
-    ECClassCP classP = ecdb. Schemas ().GetECClass ("NestedStructArrayTest", "ClassP");
-    ASSERT_TRUE (classP != nullptr);
+    ECClassCP classP = ecdb.Schemas().GetECClass("NestedStructArrayTest", "ClassP");
+    ASSERT_TRUE(classP != nullptr);
 
     ECInstanceDeleter deleter(ecdb, *classP);
 
     int deleteCount = 0;
     for (auto& inst : in)
         {
-        ASSERT_TRUE (deleter.Delete (*inst) == BentleyStatus::SUCCESS);
+        ASSERT_TRUE(deleter.Delete(*inst) == BentleyStatus::SUCCESS);
         deleteCount++;
         }
 
     //Verify Inserted Instance have been deleted.
     bvector<IECInstancePtr> out;
     ECSqlStatement stmt;
-    auto prepareStatus = stmt.Prepare (ecdb, "SELECT * FROM ONLY nsat.ClassP ORDER BY ECInstanceId");
-    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
-    ECInstanceECSqlSelectAdapter classPReader (stmt);
-    ASSERT_FALSE (stmt.Step () == BE_SQLITE_ROW);
-
-    //Verify Nested StructArray values have also been deleted.
-    bvector<Utf8String> selectStatements;
-    ECSchemaCP ecSchema = ecdb.Schemas ().GetECSchema ("NestedStructArrayTest", true);
-    for (ECClassCP testClass : ecSchema->GetClasses ())
-        {
-        if (testClass->IsStructClass())
-            {
-            Utf8String selectSql = "SELECT count(*) FROM nsat_";
-            selectSql.append (testClass->GetName ());
-            selectStatements.push_back (selectSql);
-            }
-        }
-
-    for (Utf8StringCR selectSql : selectStatements)
-        {
-        Statement stmt;
-        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, selectSql.c_str())) << "Select prepare failed for " << selectSql.c_str();
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "step failed for " << selectSql.c_str();
-        ASSERT_EQ(0, stmt.GetValueInt(0)) << "Table [" << selectSql.c_str() << "] is expected to be empty after DELETE FROM nsat.ClassA";
-        }
+    auto prepareStatus = stmt.Prepare(ecdb, "SELECT * FROM ONLY nsat.ClassP ORDER BY ECInstanceId");
+    ASSERT_TRUE(prepareStatus == ECSqlStatus::Success);
+    ECInstanceECSqlSelectAdapter classPReader(stmt);
+    ASSERT_FALSE(stmt.Step() == BE_SQLITE_ROW);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2376,6 +2327,7 @@ TEST_F (ECSqlStatementTestFixture, Step)
     {
     const auto perClassRowCount = 10;
     ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
         {
         ECSqlStatement statement;

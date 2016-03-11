@@ -341,7 +341,7 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceIncrementationTest)
     ECInstanceKey id4;
     IECInstancePtr instance4 = InsertInstance(id4, ecdb, *(schema->GetClassCP ("ClassWithPrimitiveArrayProperties")));
 
-    EXPECT_EQ (id3.GetECInstanceId().GetValue() + 1LL + 3LL, id4.GetECInstanceId().GetValue()) << "Instance id for instance with five array properties inserted right after another is expected to be greater by 1.";
+    EXPECT_EQ (id3.GetECInstanceId().GetValue() + 1LL, id4.GetECInstanceId().GetValue()) << "Instance id for instance with five array properties inserted right after another is expected to be greater by 1.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -360,12 +360,12 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceIncrementationWithOneToManyR
     //insert first child instance
     ECInstanceKey child1Id;
     IECInstancePtr child1Instance = InsertInstance(child1Id, ecdb, *(schema->GetClassCP ("Employee")));
-    EXPECT_EQ (parentId.GetECInstanceId().GetValue() + 4LL, child1Id.GetECInstanceId().GetValue()) << "Instance id for child #1 is expected to be greater by 1 than the id of the parent.";
+    EXPECT_EQ (parentId.GetECInstanceId().GetValue() + 1LL, child1Id.GetECInstanceId().GetValue()) << "Instance id for child #1 is expected to be greater by 1 than the id of the parent.";
 
     //insert second child instance
     ECInstanceKey child2Id;
     IECInstancePtr child2Instance = InsertInstance(child2Id, ecdb, *(schema->GetClassCP ("Employee")));
-    EXPECT_EQ (parentId.GetECInstanceId().GetValue() + 8LL, child2Id.GetECInstanceId().GetValue()) << "Instance id for child #2 is expected to be greater by 2 than the id of the parent.";
+    EXPECT_EQ (parentId.GetECInstanceId().GetValue() + 2LL, child2Id.GetECInstanceId().GetValue()) << "Instance id for child #2 is expected to be greater by 2 than the id of the parent.";
 
     ECInstanceKey lastId = child2Id;
 
@@ -383,7 +383,7 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceIncrementationWithOneToManyR
     //finally create an ordinary instance to check that the above relationship inserts didn't increment the sequence
     ECInstanceKey id;
     InsertInstance(id, ecdb, *(schema->GetClassCP ("AAA")));
-    EXPECT_EQ (lastId.GetECInstanceId().GetValue() + 4LL, id.GetECInstanceId().GetValue()) << "Instance id of instance is expected to be greater by one than the previously inserted one-to-many relationship.";
+    EXPECT_EQ (lastId.GetECInstanceId().GetValue() + 1LL, id.GetECInstanceId().GetValue()) << "Instance id of instance is expected to be greater by one than the previously inserted one-to-many relationship.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -404,13 +404,13 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceIncrementationWithManyToMany
 
     //insert source instance #1
     IECInstancePtr source2Instance = InsertInstance(id, ecdb, *sourceClass);
-    EXPECT_EQ (lastId.GetECInstanceId().GetValue() + 4LL, id.GetECInstanceId().GetValue()) << "Instance id for source #2 is expected to be greater by 1 than the id of the previously inserted instance.";
+    EXPECT_EQ (lastId.GetECInstanceId().GetValue() + 1LL, id.GetECInstanceId().GetValue()) << "Instance id for source #2 is expected to be greater by 1 than the id of the previously inserted instance.";
     lastId = id;
 
     //insert target instance #1
     ECClassCP targetClass = schema->GetClassCP ("Hardware");
     IECInstancePtr target1Instance = InsertInstance(id, ecdb, *targetClass);
-    EXPECT_EQ (lastId.GetECInstanceId().GetValue() + 4LL, id.GetECInstanceId().GetValue()) << "Instance id for target #1 is expected to be greater by 1 than the id of the previously inserted instance.";
+    EXPECT_EQ (lastId.GetECInstanceId().GetValue() + 1LL, id.GetECInstanceId().GetValue()) << "Instance id for target #1 is expected to be greater by 1 than the id of the previously inserted instance.";
     lastId = id;
 
     //insert target instance #2

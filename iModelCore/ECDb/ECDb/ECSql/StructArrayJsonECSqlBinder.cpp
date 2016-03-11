@@ -24,45 +24,45 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
 //static
-std::unique_ptr<JsonECSqlBinder> JsonECSqlBinderFactory::Create(ECDbCR ecdb, ECPropertyCR prop, bool isRoot)
+std::unique_ptr<JsonECSqlBindValue> JsonECSqlBindValueFactory::CreateValue(ECDbCR ecdb, ECPropertyCR prop, bool isRoot)
     {
     ECSqlTypeInfo typeInfo(prop);
     Utf8CP propName = prop.GetName().c_str();
     if (typeInfo.IsPrimitive())
-        return CreatePrimitive(ecdb, typeInfo, propName, isRoot);
+        return CreatePrimitiveValue(ecdb, typeInfo, propName, isRoot);
 
     if (typeInfo.IsStruct())
-        return CreateStruct(ecdb, typeInfo, propName, isRoot);
+        return CreateStructValue(ecdb, typeInfo, propName, isRoot);
 
     BeAssert(typeInfo.IsArray());
-    return CreateArray(ecdb, typeInfo, propName, isRoot);
+    return CreateArrayValue(ecdb, typeInfo, propName, isRoot);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
 //static
-std::unique_ptr<JsonECSqlBinder> JsonECSqlBinderFactory::CreateStruct(ECDbCR ecdb, ECSqlTypeInfo const& typeInfo, Utf8CP propName, bool isRoot)
+std::unique_ptr<JsonECSqlBindValue> JsonECSqlBindValueFactory::CreateStructValue(ECDbCR ecdb, ECSqlTypeInfo const& typeInfo, Utf8CP propName, bool isRoot)
     {
-    return std::unique_ptr<JsonECSqlBinder>(new StructJsonECSqlBinder(ecdb, typeInfo, propName, isRoot));
+    return std::unique_ptr<JsonECSqlBindValue>(new StructJsonECSqlBindValue(ecdb, typeInfo, propName, isRoot));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
 //static
-std::unique_ptr<JsonECSqlBinder> JsonECSqlBinderFactory::CreatePrimitive(ECDbCR ecdb, ECSqlTypeInfo const& typeInfo, Utf8CP propName, bool isRoot)
+std::unique_ptr<JsonECSqlBindValue> JsonECSqlBindValueFactory::CreatePrimitiveValue(ECDbCR ecdb, ECSqlTypeInfo const& typeInfo, Utf8CP propName, bool isRoot)
     {
-    return std::unique_ptr<JsonECSqlBinder>(new PrimitiveJsonECSqlBinder(ecdb, typeInfo, propName, isRoot));
+    return std::unique_ptr<JsonECSqlBindValue>(new PrimitiveJsonECSqlBindValue(ecdb, typeInfo, propName, isRoot));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      04/2016
 //---------------------------------------------------------------------------------------
 //static
-std::unique_ptr<ArrayJsonECSqlBinder> JsonECSqlBinderFactory::CreateArray(ECDbCR ecdb, ECSqlTypeInfo const& typeInfo, Utf8CP propName, bool isRoot)
+std::unique_ptr<ArrayJsonECSqlBindValue> JsonECSqlBindValueFactory::CreateArrayValue(ECDbCR ecdb, ECSqlTypeInfo const& typeInfo, Utf8CP propName, bool isRoot)
     {
-    return std::unique_ptr<ArrayJsonECSqlBinder>(new ArrayJsonECSqlBinder(ecdb, typeInfo, propName, isRoot));
+    return std::unique_ptr<ArrayJsonECSqlBindValue>(new ArrayJsonECSqlBindValue(ecdb, typeInfo, propName, isRoot));
     }
 
 //*****************************************************
@@ -71,7 +71,7 @@ std::unique_ptr<ArrayJsonECSqlBinder> JsonECSqlBinderFactory::CreateArray(ECDbCR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus JsonECSqlBinder::BuildJson(Json::Value& json) const
+ECSqlStatus JsonECSqlBindValue::BuildJson(Json::Value& json) const
     {
     Json::Value& val = IgnorePropertyNameInJson() ? json : json[m_propertyName];
     ECSqlStatus stat = _BuildJson(val);
@@ -83,7 +83,7 @@ ECSqlStatus JsonECSqlBinder::BuildJson(Json::Value& json) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-IECSqlPrimitiveBinder& JsonECSqlBinder::_BindPrimitive()
+IECSqlPrimitiveBinder& JsonECSqlBindValue::_BindPrimitive()
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind primitive value to non-primitive parameter.");
     return NoopECSqlBinderFactory::GetBinder(ECSqlStatus::Error).BindPrimitive();
@@ -92,7 +92,7 @@ IECSqlPrimitiveBinder& JsonECSqlBinder::_BindPrimitive()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-IECSqlStructBinder& JsonECSqlBinder::_BindStruct()
+IECSqlStructBinder& JsonECSqlBindValue::_BindStruct()
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind struct value to non-struct parameter.");
     return NoopECSqlBinderFactory::GetBinder(ECSqlStatus::Error).BindStruct();
@@ -101,7 +101,7 @@ IECSqlStructBinder& JsonECSqlBinder::_BindStruct()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-IECSqlArrayBinder& JsonECSqlBinder::_BindArray(uint32_t initialCapacity)
+IECSqlArrayBinder& JsonECSqlBindValue::_BindArray(uint32_t initialCapacity)
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind array value to non-array parameter.");
     return NoopECSqlBinderFactory::GetBinder(ECSqlStatus::Error).BindArray(initialCapacity);
@@ -114,7 +114,7 @@ IECSqlArrayBinder& JsonECSqlBinder::_BindArray(uint32_t initialCapacity)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveJsonECSqlBinder::_BindNull()
+ECSqlStatus PrimitiveJsonECSqlBindValue::_BindNull()
     {
     _Clear();
     return ECSqlStatus::Success;
@@ -123,7 +123,7 @@ ECSqlStatus PrimitiveJsonECSqlBinder::_BindNull()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveJsonECSqlBinder::_BindBoolean(bool value)
+ECSqlStatus PrimitiveJsonECSqlBindValue::_BindBoolean(bool value)
     {
     if (GetTypeInfo().GetPrimitiveType() != PRIMITIVETYPE_Boolean)
         {
@@ -138,7 +138,7 @@ ECSqlStatus PrimitiveJsonECSqlBinder::_BindBoolean(bool value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveJsonECSqlBinder::_BindBinary(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy)
+ECSqlStatus PrimitiveJsonECSqlBindValue::_BindBinary(void const* value, int binarySize, IECSqlBinder::MakeCopy makeCopy)
     {
     if (GetTypeInfo().GetPrimitiveType() != PRIMITIVETYPE_Binary)
         {
@@ -146,15 +146,15 @@ ECSqlStatus PrimitiveJsonECSqlBinder::_BindBinary(const void* value, int binaryS
         return ECSqlStatus::Error;
         }
 
-    //JSON_TODO
-    return ECSqlStatus::Error;
+    Byte const* blob = static_cast<Byte const*> (value);
+    return SUCCESS == ECJsonUtilities::BinaryToJson(m_value, blob, binarySize) ? ECSqlStatus::Success : ECSqlStatus::Error;
     }
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveJsonECSqlBinder::_BindDateTime(double julianDay, DateTime::Info const* metadata)
+ECSqlStatus PrimitiveJsonECSqlBindValue::_BindDateTime(double julianDay, DateTime::Info const* metadata)
     {
     if (GetTypeInfo().GetPrimitiveType() != PRIMITIVETYPE_DateTime)
         {
@@ -182,7 +182,7 @@ ECSqlStatus PrimitiveJsonECSqlBinder::_BindDateTime(double julianDay, DateTime::
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveJsonECSqlBinder::_BindDateTime(uint64_t julianDayHns, DateTime::Info const* metadata)
+ECSqlStatus PrimitiveJsonECSqlBindValue::_BindDateTime(uint64_t julianDayHns, DateTime::Info const* metadata)
     {
     const double jd = DateTime::HnsToRationalDay(julianDayHns);
     return _BindDateTime(jd, metadata);
@@ -191,7 +191,7 @@ ECSqlStatus PrimitiveJsonECSqlBinder::_BindDateTime(uint64_t julianDayHns, DateT
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveJsonECSqlBinder::_BindDouble(double value)
+ECSqlStatus PrimitiveJsonECSqlBindValue::_BindDouble(double value)
     {
     if (GetTypeInfo().GetPrimitiveType() != PRIMITIVETYPE_Double)
         {
@@ -207,7 +207,7 @@ ECSqlStatus PrimitiveJsonECSqlBinder::_BindDouble(double value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveJsonECSqlBinder::_BindGeometryBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy)
+ECSqlStatus PrimitiveJsonECSqlBindValue::_BindGeometryBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy)
     {
     if (GetTypeInfo().GetPrimitiveType() != PRIMITIVETYPE_IGeometry)
         {
@@ -246,7 +246,7 @@ ECSqlStatus PrimitiveJsonECSqlBinder::_BindGeometryBlob(const void* value, int b
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveJsonECSqlBinder::_BindInt(int value)
+ECSqlStatus PrimitiveJsonECSqlBindValue::_BindInt(int value)
     {
     if (GetTypeInfo().GetPrimitiveType() != PRIMITIVETYPE_Integer)
         {
@@ -261,7 +261,7 @@ ECSqlStatus PrimitiveJsonECSqlBinder::_BindInt(int value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveJsonECSqlBinder::_BindInt64(int64_t value)
+ECSqlStatus PrimitiveJsonECSqlBindValue::_BindInt64(int64_t value)
     {
     if (GetTypeInfo().GetPrimitiveType() != PRIMITIVETYPE_Long)
         {
@@ -276,7 +276,7 @@ ECSqlStatus PrimitiveJsonECSqlBinder::_BindInt64(int64_t value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveJsonECSqlBinder::_BindPoint2D(DPoint2dCR value)
+ECSqlStatus PrimitiveJsonECSqlBindValue::_BindPoint2D(DPoint2dCR value)
     {
     if (GetTypeInfo().GetPrimitiveType() != PRIMITIVETYPE_Point2D)
         {
@@ -284,18 +284,13 @@ ECSqlStatus PrimitiveJsonECSqlBinder::_BindPoint2D(DPoint2dCR value)
         return ECSqlStatus::Error;
         }
 
-    Json::Value pointJsonValue(Json::objectValue);
-    pointJsonValue["x"] = value.x;
-    pointJsonValue["y"] = value.y;
-
-    m_value = pointJsonValue;
-    return ECSqlStatus::Success;
+    return SUCCESS == ECJsonUtilities::Point2DToJson(m_value, value) ? ECSqlStatus::Success : ECSqlStatus::Error;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveJsonECSqlBinder::_BindPoint3D(DPoint3dCR value)
+ECSqlStatus PrimitiveJsonECSqlBindValue::_BindPoint3D(DPoint3dCR value)
     {
     if (GetTypeInfo().GetPrimitiveType() != PRIMITIVETYPE_Point3D)
         {
@@ -303,19 +298,13 @@ ECSqlStatus PrimitiveJsonECSqlBinder::_BindPoint3D(DPoint3dCR value)
         return ECSqlStatus::Error;
         }
 
-    Json::Value pointJsonValue(Json::objectValue);
-    pointJsonValue["x"] = value.x;
-    pointJsonValue["y"] = value.y;
-    pointJsonValue["z"] = value.z;
-
-    m_value = pointJsonValue;
-    return ECSqlStatus::Success;
+    return SUCCESS == ECJsonUtilities::Point3DToJson(m_value, value) ? ECSqlStatus::Success : ECSqlStatus::Error;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveJsonECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount)
+ECSqlStatus PrimitiveJsonECSqlBindValue::_BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount)
     {
     if (GetTypeInfo().GetPrimitiveType() != PRIMITIVETYPE_String)
         {
@@ -330,7 +319,7 @@ ECSqlStatus PrimitiveJsonECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::Make
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveJsonECSqlBinder::_BuildJson(Json::Value& json) const
+ECSqlStatus PrimitiveJsonECSqlBindValue::_BuildJson(Json::Value& json) const
     {
     json = m_value;
     return ECSqlStatus::Success;
@@ -342,13 +331,13 @@ ECSqlStatus PrimitiveJsonECSqlBinder::_BuildJson(Json::Value& json) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-StructJsonECSqlBinder::StructJsonECSqlBinder(ECDbCR ecdb, ECSqlTypeInfo const& typeInfo, Utf8CP propName, bool isRoot)
-    : JsonECSqlBinder(ecdb, typeInfo, propName, isRoot), IECSqlStructBinder()
+StructJsonECSqlBindValue::StructJsonECSqlBindValue(ECDbCR ecdb, ECSqlTypeInfo const& typeInfo, Utf8CP propName, bool isRoot)
+    : JsonECSqlBindValue(ecdb, typeInfo, propName, isRoot), IECSqlStructBinder()
     {
     //initialize member parameter values only once and reuse them after each ClearBindings
     for (ECPropertyCP memberProp : GetTypeInfo().GetStructType().GetProperties(true))
         {
-        m_members[memberProp->GetId()] = JsonECSqlBinderFactory::Create(ecdb, *memberProp, false);
+        m_members[memberProp->GetId()] = JsonECSqlBindValueFactory::CreateValue(ecdb, *memberProp, false);
         }
     }
 
@@ -356,7 +345,7 @@ StructJsonECSqlBinder::StructJsonECSqlBinder(ECDbCR ecdb, ECSqlTypeInfo const& t
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructJsonECSqlBinder::_BindNull()
+ECSqlStatus StructJsonECSqlBindValue::_BindNull()
     {
     Clear();
     return ECSqlStatus::Success;
@@ -365,7 +354,7 @@ ECSqlStatus StructJsonECSqlBinder::_BindNull()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-IECSqlBinder& StructJsonECSqlBinder::_GetMember(Utf8CP structMemberPropertyName)
+IECSqlBinder& StructJsonECSqlBindValue::_GetMember(Utf8CP structMemberPropertyName)
     {
     ECPropertyCP memberProp = GetTypeInfo().GetStructType().GetPropertyP(structMemberPropertyName, true);
     if (memberProp == nullptr)
@@ -381,7 +370,7 @@ IECSqlBinder& StructJsonECSqlBinder::_GetMember(Utf8CP structMemberPropertyName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-IECSqlBinder& StructJsonECSqlBinder::_GetMember(ECN::ECPropertyId structMemberPropertyId)
+IECSqlBinder& StructJsonECSqlBindValue::_GetMember(ECN::ECPropertyId structMemberPropertyId)
     {
     auto it = m_members.find(structMemberPropertyId);
     if (it != m_members.end())
@@ -404,7 +393,7 @@ IECSqlBinder& StructJsonECSqlBinder::_GetMember(ECN::ECPropertyId structMemberPr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructJsonECSqlBinder::_BuildJson(Json::Value& json) const
+ECSqlStatus StructJsonECSqlBindValue::_BuildJson(Json::Value& json) const
     {
     for (ECPropertyCP prop : GetTypeInfo().GetStructType().GetProperties(true))
         {
@@ -412,7 +401,7 @@ ECSqlStatus StructJsonECSqlBinder::_BuildJson(Json::Value& json) const
         if (it == m_members.end())
             continue;
 
-        JsonECSqlBinder& member = *it->second;
+        JsonECSqlBindValue& member = *it->second;
 
         ECSqlStatus stat = member.BuildJson(json);
         if (!stat.IsSuccess())
@@ -426,9 +415,9 @@ ECSqlStatus StructJsonECSqlBinder::_BuildJson(Json::Value& json) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-void StructJsonECSqlBinder::_Clear()
+void StructJsonECSqlBindValue::_Clear()
     {
-    for (std::pair<const ECPropertyId, std::unique_ptr<JsonECSqlBinder>>& kvPair : m_members)
+    for (std::pair<const ECPropertyId, std::unique_ptr<JsonECSqlBindValue>>& kvPair : m_members)
         {
         kvPair.second->Clear();
         }
@@ -440,7 +429,7 @@ void StructJsonECSqlBinder::_Clear()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-IECSqlArrayBinder& ArrayJsonECSqlBinder::_BindArray(uint32_t initialCapacity)
+IECSqlArrayBinder& ArrayJsonECSqlBindValue::_BindArray(uint32_t initialCapacity)
     {
     Clear();
     return *this;
@@ -449,7 +438,7 @@ IECSqlArrayBinder& ArrayJsonECSqlBinder::_BindArray(uint32_t initialCapacity)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus ArrayJsonECSqlBinder::_BindNull()
+ECSqlStatus ArrayJsonECSqlBindValue::_BindNull()
     {
     Clear();
     return ECSqlStatus::Success;
@@ -458,7 +447,7 @@ ECSqlStatus ArrayJsonECSqlBinder::_BindNull()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-IECSqlBinder& ArrayJsonECSqlBinder::_AddArrayElement()
+IECSqlBinder& ArrayJsonECSqlBindValue::_AddArrayElement()
     {
     const size_t newIndex = GetLength() + 1;
     const ECSqlStatus stat = ArrayConstraintValidator::ValidateMaximum(GetECDb(), GetTypeInfo(), (uint32_t) newIndex);
@@ -466,11 +455,11 @@ IECSqlBinder& ArrayJsonECSqlBinder::_AddArrayElement()
         return NoopECSqlBinderFactory::GetBinder(stat).AddArrayElement();
 
     //array elements are added to the JSON without their prop names
-    std::unique_ptr<JsonECSqlBinder> arrayElement = nullptr;
+    std::unique_ptr<JsonECSqlBindValue> arrayElement = nullptr;
     if (GetTypeInfo().GetKind() == ECSqlTypeInfo::Kind::PrimitiveArray)
-        arrayElement = JsonECSqlBinderFactory::CreatePrimitive(GetECDb(), ECSqlTypeInfo(GetTypeInfo().GetPrimitiveType()), nullptr, false);
+        arrayElement = JsonECSqlBindValueFactory::CreatePrimitiveValue(GetECDb(), ECSqlTypeInfo(GetTypeInfo().GetPrimitiveType()), nullptr, false);
     else
-        arrayElement = JsonECSqlBinderFactory::CreateStruct(GetECDb(), ECSqlTypeInfo(GetTypeInfo().GetStructType()), nullptr, false);
+        arrayElement = JsonECSqlBindValueFactory::CreateStructValue(GetECDb(), ECSqlTypeInfo(GetTypeInfo().GetStructType()), nullptr, false);
 
     IECSqlBinder* arrayElementP = arrayElement.get(); //cache raw pointer to return it as smart pointer will be nulled out after push_back
     m_elements.push_back(std::move(arrayElement));
@@ -480,9 +469,9 @@ IECSqlBinder& ArrayJsonECSqlBinder::_AddArrayElement()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus ArrayJsonECSqlBinder::_BuildJson(Json::Value& json) const
+ECSqlStatus ArrayJsonECSqlBindValue::_BuildJson(Json::Value& json) const
     {
-    for (std::unique_ptr<JsonECSqlBinder>& element : m_elements)
+    for (std::unique_ptr<JsonECSqlBindValue>& element : m_elements)
         {
         Json::Value elementJson;
         ECSqlStatus stat = element->BuildJson(elementJson);
@@ -507,7 +496,7 @@ StructArrayJsonECSqlBinder::StructArrayJsonECSqlBinder(ECSqlStatementBase& stmt,
     {
     BeAssert(GetTypeInfo().GetKind() == ECSqlTypeInfo::Kind::StructArray);
     //top-level prop doesn't get a prop name in the JSON
-    m_binder = JsonECSqlBinderFactory::CreateArray(*stmt.GetECDb(), typeInfo, nullptr, true);
+    m_binder = JsonECSqlBindValueFactory::CreateArrayValue(*stmt.GetECDb(), typeInfo, nullptr, true);
     }
 
 //---------------------------------------------------------------------------------------

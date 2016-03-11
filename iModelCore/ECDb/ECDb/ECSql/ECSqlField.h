@@ -55,6 +55,8 @@ public:
     ECSqlStatus OnAfterStep();
     bool RequiresOnAfterReset() const { return m_requiresOnAfterReset; }
     ECSqlStatus OnAfterReset();
+
+    static Utf8CP GetPrimitiveGetMethodName(ECN::PrimitiveType getMethodType);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

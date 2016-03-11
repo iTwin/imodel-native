@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/ECSqlAsserter.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -79,15 +79,15 @@ private:
     void AssertStep (ECSqlTestItem const& testItem, ECSqlStatement& statement, ResultCountECSqlExpectedResult const& expectedResult) const;
 
     void AssertCurrentRow (ECSqlTestItem const& testItem, ECSqlStatement const& statement) const;
-    void AssertCurrentCell (ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlValue const& ecsqlValue, ECN::ECTypeDescriptor const* parentDataType) const;
-    void AssertCurrentCell (ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlValue const& ecsqlValue, ECN::ECTypeDescriptor const& columnDataType, std::function<bool (ECN::ECTypeDescriptor const&)> isExpectedToSucceedDelegate) const;
-    void AssertArrayCell (ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlArrayValue const& ecsqlArrayValue, ECN::ECTypeDescriptor const& arrayType) const;
+    void AssertCurrentCell (ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlValue const& ecsqlValue, ECN::ECTypeDescriptor const* parentDataType, bool isInStructArray) const;
+    void AssertCurrentCell (ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlValue const& ecsqlValue, ECN::ECTypeDescriptor const& columnDataType, bool isInStructArray, std::function<bool (ECN::ECTypeDescriptor const&)> isExpectedToSucceedDelegate) const;
+    void AssertArrayCell (ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlArrayValue const& ecsqlArrayValue, ECN::ECTypeDescriptor const& arrayType, bool isInStructArray) const;
 
     void AssertColumnInfo (ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlValue const& ecsqlValue, ECN::ECTypeDescriptor const* parentDataType) const;
 
     DbResult Step (ECSqlStatement& statement, bool disableBeAsserts) const;
 
-    static std::function<bool (ECN::ECTypeDescriptor const&)> CreateIsExpectedToSucceedDelegateForAssertCurrentRow (ECN::ECTypeDescriptor const* parentDataType, ECN::ECTypeDescriptor const& dataType);
+    static std::function<bool (ECN::ECTypeDescriptor const&)> CreateIsExpectedToSucceedDelegateForAssertCurrentRow (ECN::ECTypeDescriptor const* parentDataType, ECN::ECTypeDescriptor const& dataType, bool isInStructArray);
     static GetValueCallList CreateGetValueCallList (IECSqlValue const& ecsqlValue);
     static Utf8String GetValueCallToString (ECN::ECTypeDescriptor const& dataType);
     static Utf8String DataTypeToString (ECN::ECTypeDescriptor const& dataType);

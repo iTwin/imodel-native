@@ -65,7 +65,6 @@
     <ClCompile Include="Published\ECSqlStatementCache_Test.cpp" />
     <ClCompile Include="Published\ECSqlExpectedResultImpls.cpp" />
     <ClCompile Include="Published\ECSqlStatementTestFixture.cpp" />
-    <ClCompile Include="Published\ECSqlStatementTestsSchemaHelper.cpp" />
     <ClCompile Include="Published\ECSqlStatement_FunctionTests.cpp" />
     <ClCompile Include="Published\ECSqlStatement_Tests.cpp" />
     <ClCompile Include="Published\ECSqlTestDataset.cpp" />
@@ -79,6 +78,7 @@
     <ClCompile Include="Published\JsonInserterTests.cpp" />
     <ClCompile Include="Published\JsonLibrary_Test.cpp" />
     <ClCompile Include="Published\JsonUpdaterTests.cpp" />
+    <ClCompile Include="Published\NestedStructArrayTestSchemaHelper.cpp" />
     <ClCompile Include="Published\RandomECInstanceGenerator.cpp" />
     <ClCompile Include="Published\SchemaImportTestFixture.cpp" />
   </ItemGroup>
@@ -101,11 +101,11 @@
     <ClInclude Include="Published\ECSqlInsertTestDataset.h" />
     <ClInclude Include="Published\ECSqlSelectTestDataset.h" />
     <ClInclude Include="Published\ECSqlStatementTestFixture.h" />
-    <ClInclude Include="Published\ECSqlStatementTestsSchemaHelper.h" />
     <ClInclude Include="Published\ECSqlTestDataset.h" />
     <ClInclude Include="Published\ECSqlTestFrameworkFixture.h" />
     <ClInclude Include="Published\ECSqlTestFrameworkHelper.h" />
     <ClInclude Include="Published\ECSqlUpdateTestDataset.h" />
+    <ClInclude Include="Published\NestedStructArrayTestSchemaHelper.h" />
     <ClInclude Include="Published\RandomECInstanceGenerator.h" />
     <ClInclude Include="Published\SchemaImportTestFixture.h" />
   </ItemGroup>

@@ -754,7 +754,7 @@ TEST_F(ECDbInstances, FindECInstancesFromSelectWithMultipleClasses)
 TEST_F(ECDbInstances, SelectClause)
     {
     ECDb& db = SetupECDb ("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"), 3);
-
+    ASSERT_TRUE(db.IsDbOpen());
     ECClassCP employee = db.Schemas().GetECClass("StartupCompany", "Employee");
     ASSERT_TRUE (employee != nullptr);
 
@@ -764,8 +764,8 @@ TEST_F(ECDbInstances, SelectClause)
     int managerId1;
         {
         // ECSQL should honor the order of the ecColumns from the select clause
-        ASSERT_TRUE (ECSqlStatus::Success == ecStatement.Prepare (db, "SELECT JobTitle, ManagerID FROM [StartupCompany].[Employee]"));
-        ASSERT_TRUE (BE_SQLITE_ROW == ecStatement.Step());
+        ASSERT_EQ(ECSqlStatus::Success, ecStatement.Prepare (db, "SELECT JobTitle, ManagerID FROM [StartupCompany].[Employee]"));
+        ASSERT_EQ(BE_SQLITE_ROW, ecStatement.Step());
         jobTitle1  = ecStatement.GetValueText(0);
         managerId1 = ecStatement.GetValueInt(1);
         EXPECT_TRUE (ecStatement.GetColumnInfo(0).GetProperty()->GetName().Equals("JobTitle"));
@@ -774,8 +774,8 @@ TEST_F(ECDbInstances, SelectClause)
         }
 
         {
-        ASSERT_TRUE (ECSqlStatus::Success == ecStatement.Prepare (db, "SELECT JobTitle, ManagerID FROM [StartupCompany].[Employee]"));
-        ASSERT_TRUE (BE_SQLITE_ROW == ecStatement.Step());
+        ASSERT_EQ(ECSqlStatus::Success, ecStatement.Prepare (db, "SELECT JobTitle, ManagerID FROM [StartupCompany].[Employee]"));
+        ASSERT_EQ(BE_SQLITE_ROW, ecStatement.Step());
         Utf8String jobTitle2  = ecStatement.GetValueText(0);
         int        managerId2 = ecStatement.GetValueInt(1);
         EXPECT_TRUE (ecStatement.GetColumnInfo(0).GetProperty()->GetName().Equals("JobTitle"));

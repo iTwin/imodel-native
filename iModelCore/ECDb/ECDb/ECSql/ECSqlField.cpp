@@ -93,4 +93,40 @@ ECSqlStatus ECSqlField::ReportError (ECSqlStatus status, Utf8CP errorMessage) co
     return status;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+Utf8CP ECSqlField::GetPrimitiveGetMethodName(ECN::PrimitiveType getMethodType)
+    {
+    switch (getMethodType)
+        {
+            case PRIMITIVETYPE_Binary:
+                return "GetBinary";
+            case PRIMITIVETYPE_Boolean:
+                return "GetBoolean";
+            case PRIMITIVETYPE_DateTime:
+                return "GetDateTime";
+            case PRIMITIVETYPE_Double:
+                return "GetDouble";
+            case PRIMITIVETYPE_IGeometry:
+                return "GetGeometry";
+            case PRIMITIVETYPE_Integer:
+                return "GetInt";
+            case PRIMITIVETYPE_Long:
+                return "GetInt64";
+            case PRIMITIVETYPE_Point2D:
+                return "GetPoint2D";
+            case PRIMITIVETYPE_Point3D:
+                return "GetPoint3D";
+            case PRIMITIVETYPE_String:
+                return "GetText";
+
+            default:
+                BeAssert(false && "ECSqlField::GetPrimitiveGetMethodName needs to be adjusted to new ECN::PrimitiveType value");
+                return "";
+        }
+    }
+
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -15,7 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle    03/2016
 //+===============+===============+===============+===============+===============+======
-struct JsonECSqlBinder : public IECSqlBinder
+struct JsonECSqlBindValue : public IECSqlBinder
     {
 private:
     ECDbCR m_ecdb;
@@ -33,13 +33,13 @@ private:
     bool IgnorePropertyNameInJson() const { return m_isRoot || Utf8String::IsNullOrEmpty(m_propertyName); }
 
 protected:
-    JsonECSqlBinder(ECDbCR ecdb, ECSqlTypeInfo const& typeInfo, Utf8CP propertyName, bool isRoot) : IECSqlBinder(), m_ecdb(ecdb), m_typeInfo(typeInfo), m_propertyName(propertyName), m_isRoot(isRoot) {}
+    JsonECSqlBindValue(ECDbCR ecdb, ECSqlTypeInfo const& typeInfo, Utf8CP propertyName, bool isRoot) : IECSqlBinder(), m_ecdb(ecdb), m_typeInfo(typeInfo), m_propertyName(propertyName), m_isRoot(isRoot) {}
 
     ECDbCR GetECDb() const { return m_ecdb; }
     ECSqlTypeInfo const& GetTypeInfo() const { return m_typeInfo; }
 
 public:
-    virtual ~JsonECSqlBinder() {}
+    virtual ~JsonECSqlBindValue() {}
 
     void Clear() { _Clear(); }
     ECSqlStatus BuildJson(Json::Value& json) const;
@@ -49,7 +49,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle    03/2016
 //+===============+===============+===============+===============+===============+======
-struct PrimitiveJsonECSqlBinder : JsonECSqlBinder, public IECSqlPrimitiveBinder
+struct PrimitiveJsonECSqlBindValue : JsonECSqlBindValue, public IECSqlPrimitiveBinder
     {
 private:
     Json::Value m_value;
@@ -76,18 +76,18 @@ private:
     bool CanBindValue(ECN::PrimitiveType actualType) const { return actualType == GetTypeInfo().GetPrimitiveType(); }
 
 public:
-    PrimitiveJsonECSqlBinder(ECDbCR ecdb, ECSqlTypeInfo const& typeInfo, Utf8CP propertyName, bool isRoot) : JsonECSqlBinder(ecdb, typeInfo, propertyName, isRoot), IECSqlPrimitiveBinder(), m_value(Json::nullValue) {}
-    ~PrimitiveJsonECSqlBinder() {}
+    PrimitiveJsonECSqlBindValue(ECDbCR ecdb, ECSqlTypeInfo const& typeInfo, Utf8CP propertyName, bool isRoot) : JsonECSqlBindValue(ecdb, typeInfo, propertyName, isRoot), IECSqlPrimitiveBinder(), m_value(Json::nullValue) {}
+    ~PrimitiveJsonECSqlBindValue() {}
     };
 
 
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle    03/2016
 //+===============+===============+===============+===============+===============+======
-struct StructJsonECSqlBinder : JsonECSqlBinder, public IECSqlStructBinder
+struct StructJsonECSqlBindValue : JsonECSqlBindValue, public IECSqlStructBinder
     {
 private:
-    std::map<ECN::ECPropertyId, std::unique_ptr<JsonECSqlBinder>> m_members;
+    std::map<ECN::ECPropertyId, std::unique_ptr<JsonECSqlBindValue>> m_members;
 
     virtual ECSqlStatus _BindNull() override;
     virtual IECSqlStructBinder& _BindStruct() override { return *this; }
@@ -98,17 +98,17 @@ private:
     virtual void _Clear() override;
 
 public:
-    StructJsonECSqlBinder(ECDbCR, ECSqlTypeInfo const&, Utf8CP propertyName, bool isRoot);
-    ~StructJsonECSqlBinder() {}
+    StructJsonECSqlBindValue(ECDbCR, ECSqlTypeInfo const&, Utf8CP propertyName, bool isRoot);
+    ~StructJsonECSqlBindValue() {}
     };
 
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle    03/2016
 //+===============+===============+===============+===============+===============+======
-struct ArrayJsonECSqlBinder : JsonECSqlBinder, IECSqlArrayBinder
+struct ArrayJsonECSqlBindValue : JsonECSqlBindValue, IECSqlArrayBinder
     {
 private:
-    mutable std::vector<std::unique_ptr<JsonECSqlBinder>> m_elements;
+    mutable std::vector<std::unique_ptr<JsonECSqlBindValue>> m_elements;
     virtual ECSqlStatus _BindNull() override;
     virtual IECSqlArrayBinder& _BindArray(uint32_t initialCapacity) override;
     virtual IECSqlBinder& _AddArrayElement() override;
@@ -117,24 +117,24 @@ private:
     virtual void _Clear() override { return m_elements.clear(); }
 
 public:
-    ArrayJsonECSqlBinder(ECDbCR ecdb, ECSqlTypeInfo const& typeInfo, Utf8CP propertyName, bool isRoot) : JsonECSqlBinder(ecdb, typeInfo, propertyName, isRoot), IECSqlArrayBinder() {}
+    ArrayJsonECSqlBindValue(ECDbCR ecdb, ECSqlTypeInfo const& typeInfo, Utf8CP propertyName, bool isRoot) : JsonECSqlBindValue(ecdb, typeInfo, propertyName, isRoot), IECSqlArrayBinder() {}
     size_t GetLength() const {return m_elements.size(); }
     };
 
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle    03/2016
 //+===============+===============+===============+===============+===============+======
-struct JsonECSqlBinderFactory
+struct JsonECSqlBindValueFactory
     {
-    private:
-        JsonECSqlBinderFactory();
-        ~JsonECSqlBinderFactory();
+private:
+    JsonECSqlBindValueFactory();
+    ~JsonECSqlBindValueFactory();
 
-    public:
-        static std::unique_ptr<JsonECSqlBinder> Create(ECDbCR, ECN::ECPropertyCR, bool isRoot);
-        static std::unique_ptr<JsonECSqlBinder> CreatePrimitive(ECDbCR, ECSqlTypeInfo const&, Utf8CP propertyName, bool isRoot);
-        static std::unique_ptr<JsonECSqlBinder> CreateStruct(ECDbCR, ECSqlTypeInfo const&, Utf8CP propertyName, bool isRoot);
-        static std::unique_ptr<ArrayJsonECSqlBinder> CreateArray(ECDbCR, ECSqlTypeInfo const&, Utf8CP propertyName, bool isRoot);
+public:
+    static std::unique_ptr<JsonECSqlBindValue> CreateValue(ECDbCR, ECN::ECPropertyCR, bool isRoot);
+    static std::unique_ptr<JsonECSqlBindValue> CreatePrimitiveValue(ECDbCR, ECSqlTypeInfo const&, Utf8CP propertyName, bool isRoot);
+    static std::unique_ptr<JsonECSqlBindValue> CreateStructValue(ECDbCR, ECSqlTypeInfo const&, Utf8CP propertyName, bool isRoot);
+    static std::unique_ptr<ArrayJsonECSqlBindValue> CreateArrayValue(ECDbCR, ECSqlTypeInfo const&, Utf8CP propertyName, bool isRoot);
     };
 
 //=======================================================================================
@@ -144,7 +144,7 @@ struct StructArrayJsonECSqlBinder : public ECSqlBinder, public IECSqlArrayBinder
     {
 private:
     int m_sqliteIndex;
-    std::unique_ptr<ArrayJsonECSqlBinder> m_binder;
+    std::unique_ptr<ArrayJsonECSqlBindValue> m_binder;
 
     virtual void _SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteParameterIndex) override { m_sqliteIndex = (int) sqliteParameterIndex; }
     virtual void _OnClearBindings() override { m_binder->Clear(); }

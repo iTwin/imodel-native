@@ -199,9 +199,6 @@
     <ClCompile Include="Published\ECSqlInsertTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECSqlStatementTestsSchemaHelper.cpp">
-      <Filter>Published\ECSql</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ECSqlSelectTests.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>
@@ -210,6 +207,9 @@
     </ClCompile>
     <ClCompile Include="Published\ECDbSymbolProviderTests.cpp">
       <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\NestedStructArrayTestSchemaHelper.cpp">
+      <Filter>Published\ECSql</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -282,7 +282,7 @@
     <ClInclude Include="Published\ECDbTestHelper.h">
       <Filter>Published</Filter>
     </ClInclude>
-    <ClInclude Include="Published\ECSqlStatementTestsSchemaHelper.h">
+    <ClInclude Include="Published\NestedStructArrayTestSchemaHelper.h">
       <Filter>Published\ECSql</Filter>
     </ClInclude>
   </ItemGroup>
