@@ -24,6 +24,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 #define GENERIC_DOMAIN_NAME                 "Generic"
 #define GENERIC_SCHEMA(className)           GENERIC_DOMAIN_NAME "." className
 
+#define GENERIC_CLASSNAME_Graphic3d         "Graphic3d"
 #define GENERIC_CLASSNAME_PhysicalObject    "PhysicalObject"
 #define GENERIC_CLASSNAME_SpatialLocation   "SpatialLocation"
 #define GENERIC_CLASSNAME_SpatialGroup      "SpatialGroup"
@@ -42,6 +43,20 @@ public:
     
     //! Import the ECSchema for the GenericDomain into the specified DgnDb
     DGNPLATFORM_EXPORT static DgnDbStatus ImportSchema(DgnDbR, ImportSchemaOptions);
+};
+
+//=======================================================================================
+//! A generic GenericGraphic3d is used by a conversion process when:
+//! - It did not have enough information to pick another domain
+//! - It determined the element is 3d but does not represent a SpatialLocation
+// @bsiclass
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GenericGraphic3d : GraphicalElement3d
+{
+    DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASSNAME_Graphic3d, GraphicalElement3d);
+
+public:
+    explicit GenericGraphic3d(CreateParams const& params) : T_Super(params) {} 
 };
 
 //=======================================================================================
@@ -102,6 +117,13 @@ public:
 //=======================================================================================
 namespace generic_ElementHandler
 {
+    //! The ElementHandler for GenericGraphic3d
+    //! @private
+    struct EXPORT_VTABLE_ATTRIBUTE GenericGraphic3dHandler : dgn_ElementHandler::Geometric3d
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASSNAME_Graphic3d, GenericGraphic3d, GenericGraphic3dHandler, dgn_ElementHandler::Geometric3d, DGNPLATFORM_EXPORT)
+    };
+
     //! The ElementHandler for GenericPhysicalObject
     //! @private
     struct EXPORT_VTABLE_ATTRIBUTE GenericPhysicalObjectHandler : dgn_ElementHandler::Geometric3d
