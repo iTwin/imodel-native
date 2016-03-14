@@ -1604,7 +1604,6 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
 
         triangle[3] = triangle[0];
 
-        std::swap(triangle[1], triangle[2]);
         //colinearity test
         if (triangle[0].AlmostEqualXY(triangle[1]) || triangle[1].AlmostEqualXY(triangle[2]) || triangle[2].AlmostEqualXY(triangle[0])) continue;
         DSegment3d triSeg = DSegment3d::From(triangle[0], triangle[1]);
@@ -1613,15 +1612,56 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
         triSeg.ProjectPointXY(closestPt, param, triangle[2]);
         if (closestPt.AlmostEqualXY(triangle[2])) continue;
         indices.push_back(m_faceIndexes[t] - 1);
-        indices.push_back(m_faceIndexes[t+1] - 1);
-        indices.push_back(m_faceIndexes[t+2] - 1);
+        if (bsiGeom_getXYPolygonArea(&triangle[0], 3) < 0)
+            {
+            indices.push_back(m_faceIndexes[t + 2] - 1);
+            indices.push_back(m_faceIndexes[t + 1] - 1);
+            }
+        else
+            {
+            indices.push_back(m_faceIndexes[t + 1] - 1);
+            indices.push_back(m_faceIndexes[t + 2] - 1);
+            }
         }
     int status = bcdtmObject_storeTrianglesInDtmObject(bcdtm->GetTinHandle(), DTMFeatureType::GraphicBreak, m_points, (int)m_nbPoints, &indices[0], (int)indices.size() / 3);
+
+    bool dbg = false;
+    if (dbg)
+        {
+        for (auto& idx : indices) idx += 1;
+        size_t nIndices = indices.size();
+        WString nameBefore = WString(L"E:\\output\\scmesh\\2016-03-14\\") + L"fpostgetmesh_";
+        DRange3d range;
+        bcdtm->GetRange(range);
+        nameBefore.append(to_wstring(range.low.x).c_str());
+        nameBefore.append(L"_");
+        nameBefore.append(to_wstring(range.low.y).c_str());
+        nameBefore.append(L".m");
+        FILE* meshBeforeClip = _wfopen(nameBefore.c_str(), L"wb");
+        fwrite(&m_nbPoints, sizeof(size_t), 1, meshBeforeClip);
+        fwrite(m_points, sizeof(DPoint3d), m_nbPoints, meshBeforeClip);
+        fwrite(&nIndices, sizeof(size_t), 1, meshBeforeClip);
+        fwrite(&indices[0], sizeof(int32_t), nIndices, meshBeforeClip);
+        fclose(meshBeforeClip);
+        }
     assert(status == SUCCESS);
 
     //int status = bcdtmObject_triangulateStmTrianglesDtmObjectOld(bcdtm->GetTinHandle(), m_points, (int)m_nbPoints, m_faceIndexes, (int)m_nbFaceIndexes);
     status = bcdtmObject_triangulateStmTrianglesDtmObject(bcdtm->GetTinHandle());
     assert(status == SUCCESS);
+
+    bvector<DTMFeatureId> listIds;
+    DTMFeatureCallback browseVoids = [] (DTMFeatureType dtmFeatureType, DTMUserTag userTag, DTMFeatureId featureId, DPoint3d *points, size_t numPoints, void* userArg) ->int
+        {
+        if (dtmFeatureType == DTMFeatureType::Void && numPoints <= 4)
+            {
+            ((bvector<DTMFeatureId>*)userArg)->push_back(featureId);
+            }
+        return 0;
+        };
+
+    bcdtm->BrowseFeatures(DTMFeatureType::Void, 20, &listIds, browseVoids);
+    for (auto& id : listIds) bcdtm->DeleteFeatureById(id);
     return status == SUCCESS? DTM_SUCCESS : DTM_ERROR;
     }
 

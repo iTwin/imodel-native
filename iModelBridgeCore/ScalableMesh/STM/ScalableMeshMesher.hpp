@@ -1362,8 +1362,8 @@ template<class POINT, class EXTENT> void ScalableMesh2DDelaunayMesher<POINT, EXT
 template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXTENT>::Stitch(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const
     {
     //return true;
-    LOG_SET_PATH("E:\\output\\scmesh\\2015-12-15\\")
-    LOG_SET_PATH_W("E:\\output\\scmesh\\2015-12-15\\")
+    LOG_SET_PATH("E:\\output\\scmesh\\2016-03-11\\")
+    LOG_SET_PATH_W("E:\\output\\scmesh\\2016-03-11\\")
     //LOGSTRING_NODE_INFO(node, LOG_PATH_STR)
     //LOGSTRING_NODE_INFO_W(node, LOG_PATH_STR_W)
 
@@ -1835,10 +1835,10 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
             //assert(status == SUCCESS);
             }
         }
-#if 1
-    if (node->GetBlockID().m_integerID == 628)
+#if SM_OUTPUT_MESHES_STITCHING
+   // if (node->GetBlockID().m_integerID == 628)
         {
-        WString dtmFileName(L"E:\\output\\scmesh\\2016-01-28\\meshtile_");
+        WString dtmFileName(L"E:\\output\\scmesh\\2016-03-11\\meshtile_");
         dtmFileName.append(std::to_wstring(node->GetBlockID().m_integerID).c_str());
         dtmFileName.append(L"_");
         dtmFileName.append(std::to_wstring(node->m_nodeHeader.m_level).c_str());
