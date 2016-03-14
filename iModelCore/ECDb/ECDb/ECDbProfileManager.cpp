@@ -134,9 +134,9 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
     //Creating the context performs some preparational steps in the SQLite database required for table modifications (e.g. foreign key
     //enforcement is disabled). When the context goes out of scope its destructor automatically performs the clean-up so that the ECDb file is
     //in the same state as before the upgrade.
-    ProfileUpgradeContext context(ecdb, *ecdb.GetDefaultTransaction()); //also commits the transaction (if active) right now
-    if (BE_SQLITE_BUSY == context.GetBeginTransError())
-        return BE_SQLITE_BUSY;
+    //ProfileUpgradeContext context(ecdb, *ecdb.GetDefaultTransaction()); //also commits the transaction (if active) right now
+    //if (BE_SQLITE_BUSY == context.GetBeginTransError())
+    //    return BE_SQLITE_BUSY;
 
     //Call upgrader sequence and let upgraders incrementally upgrade the profile
     //to the latest state
@@ -146,11 +146,11 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
         std::unique_ptr<ECDbProfileUpgrader> const& upgrader = *upgraderIterator;
         stat = upgrader->Upgrade(ecdb);
         if (BE_SQLITE_OK != stat)
-            return stat; //context dtor ensures that changes are rolled back
+            return stat;
         }
 
     if (BE_SQLITE_OK != ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ecdb))
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed; //context dtor ensures that changes are rolled back
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
 
     //after upgrade procedure set new profile version in ECDb file
     stat = AssignProfileVersion(ecdb);
@@ -160,10 +160,10 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
         {
         LOG.errorv("Failed to upgrade %s profile in file '%s'. Could not assign new profile version. %s",
             PROFILENAME, ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed; //context dtor ensures that changes are rolled back
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
     
-    context.SetCommitAfterUpgrade(); //change context dtor behavior to commit changes
+    //context.SetCommitAfterUpgrade(); //change context dtor behavior to commit changes
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         {
         LOG.infov("Upgraded %s profile from version %d.%d.%d.%d to version %d.%d.%d.%d (in %.4lf seconds) in file '%s'.",
@@ -173,7 +173,7 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
                   timer.GetElapsedSeconds(), ecdb.GetDbFileName());
         }
 
-    return BE_SQLITE_OK; //context dtor ensures that changes are committed
+    return BE_SQLITE_OK;
     }
 
 //-----------------------------------------------------------------------------------------
