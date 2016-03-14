@@ -1,12 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECDbExpressionSymbolProviders.cpp $
+|     $Source: ECDb/ECDbExpressionSymbolProvider.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include <ECDb/ECDbExpressionSymbolProviders.h>
+#include <ECDb/ECDbExpressionSymbolProvider.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 

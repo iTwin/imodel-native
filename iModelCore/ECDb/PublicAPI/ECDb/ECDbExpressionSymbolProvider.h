@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/ECDb/ECDbExpressionSymbolProviders.h $
+|     $Source: PublicAPI/ECDb/ECDbExpressionSymbolProvider.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |

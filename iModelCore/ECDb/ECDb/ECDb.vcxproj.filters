@@ -383,9 +383,6 @@
     <ClInclude Include="ECDbSchemaEditor.h">
       <Filter>ECDbSchemaManager\Editor</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\ECDb\ECDbExpressionSymbolProviders.h">
-      <Filter>PublicApi</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
@@ -396,6 +393,9 @@
       <Filter>ECSql\Fields</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbExpressionSymbolProvider.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
   </ItemGroup>
@@ -719,13 +719,13 @@
     <ClCompile Include="ECDbSchemaEditor.cpp">
       <Filter>ECDbSchemaManager\Editor</Filter>
     </ClCompile>
-    <ClCompile Include="ECDbExpressionSymbolProviders.cpp" />
     <ClCompile Include="ECSql\StructArrayJsonECSqlBinder.cpp">
       <Filter>ECSql\ParameterBinding</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\StructArrayJsonECSqlField.cpp">
       <Filter>ECSql\Fields</Filter>
     </ClCompile>
+    <ClCompile Include="ECDbExpressionSymbolProvider.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="ECSchemas\ECDb_FileInfo.02.00.ecschema.xml">

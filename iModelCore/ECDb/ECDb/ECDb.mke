@@ -30,7 +30,7 @@ ECDbPublicHeaders =  \
                 $(publicApiDir)JsonAdapter.h \
                 $(publicApiDir)ECRelationshipPath.h \
                 $(publicApiDir)ChangeSummary.h \
-                $(publicApiDir)ECDbExpressionSymbolProviders.h
+                $(publicApiDir)ECDbExpressionSymbolProvider.h
 
 ECDbAllHeaders = \
                 $(ECDbPublicHeaders) \
@@ -335,7 +335,7 @@ $(o)ECDbSql$(oext):	                                        $(baseDir)ECDbSql.cp
 
 $(o)ECDbSchemaEditor$(oext):	                            $(baseDir)ECDbSchemaEditor.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbExpressionSymbolProviders$(oext):                   $(baseDir)ECDbExpressionSymbolProviders.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECDbExpressionSymbolProvider$(oext):                    $(baseDir)ECDbExpressionSymbolProvider.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 
 %include MultiCppCompileGo.mki

@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
-#include <ECDb/ECDbExpressionSymbolProviders.h>
+#include <ECDb/ECDbExpressionSymbolProvider.h>
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
