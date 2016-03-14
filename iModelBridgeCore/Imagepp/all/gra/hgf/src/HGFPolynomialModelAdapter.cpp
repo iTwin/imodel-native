@@ -227,36 +227,42 @@ inline void HGFPolynomialModelAdapter::TransposePointsUsingPolynomial(double pi_
     {
 
     #if defined HAVE_SIMD_INTRINSICS
-        //Pre-compute some factors that are the same for every pixel
         double y2 = pi_YIn * pi_YIn;
         double y3 = pi_YIn * y2;
-    
-        //loading coefficients for the dot product in SSE registers
-        __m128d storedCoeffX[3] = {_mm_set_pd(m_CoefficientsX[1], m_CoefficientsX[3]),
-                                   _mm_set_pd(m_CoefficientsX[4] * pi_YIn, m_CoefficientsX[6]),
-                                   _mm_set_pd(m_CoefficientsX[7] * pi_YIn, m_CoefficientsX[8] * y2)};
-    
-        //loading constant coefficients in SSE registers
-        __m128d storedConstCoeffX[2] = {_mm_set_pd(m_CoefficientsX[0], m_CoefficientsX[2] * pi_YIn),
-                                         _mm_set_pd(m_CoefficientsX[5] * y2, m_CoefficientsX[9] * y3)};
-    
-        //Addition of the constant coefficients
-        storedConstCoeffX[0] = _mm_add_pd(storedConstCoeffX[0], storedConstCoeffX[1]);
-        storedConstCoeffX[0] = _mm_hadd_pd(storedConstCoeffX[0], storedConstCoeffX[0]); //Horizontal addition
-    
-        //--------------------------------------------------------------------------------------------------
-        //Same principle for Y coefficients
-        //--------------------------------------------------------------------------------------------------
-    
-        __m128d storedCoeffY[3] = {_mm_set_pd(m_CoefficientsY[1], m_CoefficientsY[3]),
-                                   _mm_set_pd(m_CoefficientsY[4] * pi_YIn, m_CoefficientsY[6]),
-                                   _mm_set_pd(m_CoefficientsY[7] * pi_YIn, m_CoefficientsY[8] * y2)};
 
-        __m128d storedConstCoeffY[2] = {_mm_set_pd(m_CoefficientsY[0], m_CoefficientsY[2] * pi_YIn),
-                                         _mm_set_pd(m_CoefficientsY[5] * y2, m_CoefficientsY[9] * y3)};
-    
-        storedConstCoeffY[0] = _mm_add_pd(storedConstCoeffY[0], storedConstCoeffY[1]);
-        storedConstCoeffY[0] = _mm_hadd_pd(storedConstCoeffY[0], storedConstCoeffY[0]); //Horizontal addition
+        //Loading factors to pre compute some numbers that are the same for every pixel
+        __m128d InitialFactor[6] = {_mm_set1_pd(pi_YIn),
+            _mm_set1_pd(pi_YIn),
+            _mm_set1_pd(y2),
+            _mm_set1_pd(pi_YIn),
+            _mm_set1_pd(y2),
+            _mm_set1_pd(y3)};
+
+        //Loading the coefficient of the pre multiplication
+        __m128d InitialCoeff[6] = {_mm_set_pd(m_CoefficientsX[2], m_CoefficientsY[2]),
+            _mm_set_pd(m_CoefficientsX[4], m_CoefficientsY[4]),
+            _mm_set_pd(m_CoefficientsX[5], m_CoefficientsY[5]),
+            _mm_set_pd(m_CoefficientsX[7], m_CoefficientsY[7]),
+            _mm_set_pd(m_CoefficientsX[8], m_CoefficientsY[8]),
+            _mm_set_pd(m_CoefficientsX[9], m_CoefficientsY[9])};
+
+        //Pre computing
+        for (size_t i = 0; i < 6; ++i)
+            {
+            InitialCoeff[i] = _mm_mul_pd(InitialFactor[i], InitialCoeff[i]);            
+            }
+
+        //Loading the coefficient for the multiplication in the for statement
+        __m128d storedCoeff[10] = {_mm_set_pd(m_CoefficientsX[0], m_CoefficientsY[0]),
+            _mm_set_pd(m_CoefficientsX[1], m_CoefficientsY[1]),
+            InitialCoeff[0],
+            _mm_set_pd(m_CoefficientsX[3], m_CoefficientsY[3]),
+            InitialCoeff[1],
+            InitialCoeff[2],
+            _mm_set_pd(m_CoefficientsX[6], m_CoefficientsY[6]),
+            InitialCoeff[3],
+            InitialCoeff[4],
+            InitialCoeff[5]};
     
         uint32_t index;
         double x, x2, x3;
@@ -267,28 +273,28 @@ inline void HGFPolynomialModelAdapter::TransposePointsUsingPolynomial(double pi_
             x3 = x2 * x;
     
             //loading factors (x, x2, x, x3, x2, x) in SSE registers
-            __m128d storedFactor[3] = {_mm_set_pd(x, x2),
-                                       _mm_set_pd(x, x3),
-                                       _mm_set_pd(x2, x)};
-    
-            //Dot product in X
-            __m128d dotProduct1 = _mm_dp_pd(storedFactor[0], storedCoeffX[0], 0x31);
-            __m128d dotProduct2 = _mm_dp_pd(storedFactor[1], storedCoeffX[1], 0x31);
-            __m128d dotProduct3 = _mm_dp_pd(storedFactor[2], storedCoeffX[2], 0x31);
-    
-            //Addition of the dot product results
-            __m128d addition = _mm_add_sd(_mm_add_sd(dotProduct1, dotProduct2), _mm_add_sd(dotProduct3, storedConstCoeffX[0]));
+            __m128d storedFactor[6] = {_mm_set1_pd(x),
+                                       _mm_set1_pd(x2),
+                                       _mm_set1_pd(x),
+                                       _mm_set1_pd(x3),
+                                       _mm_set1_pd(x2),
+                                       _mm_set1_pd(x)};
+
+            //Multiplication and addition on the X and Y coordinates at the same time
+            __m128d result = _mm_add_pd(_mm_add_pd(_mm_add_pd(_mm_add_pd(_mm_add_pd(_mm_add_pd(_mm_add_pd(_mm_add_pd(_mm_add_pd(
+                storedCoeff[0], _mm_mul_pd(storedCoeff[1], storedFactor[0])),
+                storedCoeff[2]),
+                _mm_mul_pd(storedCoeff[3], storedFactor[1])),
+                _mm_mul_pd(storedCoeff[4], storedFactor[2])),
+                storedCoeff[5]),
+                _mm_mul_pd(storedCoeff[6], storedFactor[3])),
+                _mm_mul_pd(storedCoeff[7], storedFactor[4])),
+                _mm_mul_pd(storedCoeff[8], storedFactor[5])),
+                storedCoeff[9]);
     
             //Move final result out of SSE register
-            *(po_pXOut + index) = _mm_cvtsd_f64(addition);
-    
-            //Dot product in Y
-            dotProduct1 = _mm_dp_pd(storedFactor[0], storedCoeffY[0], 0x31);
-            dotProduct2 = _mm_dp_pd(storedFactor[1], storedCoeffY[1], 0x31);
-            dotProduct3 = _mm_dp_pd(storedFactor[2], storedCoeffY[2], 0x31);
-    
-            addition = _mm_add_sd(_mm_add_sd(dotProduct1, dotProduct2), _mm_add_sd(dotProduct3, storedConstCoeffY[0]));
-            *(po_pYOut + index) = _mm_cvtsd_f64(addition);
+            *(po_pXOut + index) = _mm_cvtsd_f64(_mm_unpackhi_pd(result, result));
+            *(po_pYOut + index) = _mm_cvtsd_f64(result);
         }
     
     #else
