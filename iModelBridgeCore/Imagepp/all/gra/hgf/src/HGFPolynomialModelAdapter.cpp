@@ -226,91 +226,79 @@ inline void HGFPolynomialModelAdapter::TransposePointsUsingPolynomial(double pi_
                                                                       double* po_pXOut, double* po_pYOut) const
     {
 
-#if defined HAVE_SIMD_INTRINSICS
-    //Pre-compute some factors that are the same for every pixel
-    double y2 = pi_YIn * pi_YIn;
-    double y3 = pi_YIn * y2;
+    #if defined HAVE_SIMD_INTRINSICS
+        double y2 = pi_YIn * pi_YIn;
+        double y3 = pi_YIn * y2;
 
-    //Coefficients for the dot product
-    __declspec(align(16)) double coeffX[6] = {m_CoefficientsX[1],
-                                              m_CoefficientsX[3],
-                                              m_CoefficientsX[4] * pi_YIn,
-                                              m_CoefficientsX[6],
-                                              m_CoefficientsX[7] * pi_YIn,
-                                              m_CoefficientsX[8] * y2};
+        //Loading factors to pre compute some numbers that are the same for every pixel
+        __m128d InitialFactor[6] = {_mm_set1_pd(pi_YIn),
+            _mm_set1_pd(pi_YIn),
+            _mm_set1_pd(y2),
+            _mm_set1_pd(pi_YIn),
+            _mm_set1_pd(y2),
+            _mm_set1_pd(y3)};
 
-    //Coefficient not in the dot product
-    __declspec(align(16)) double ConstantCoeffX[4] = {m_CoefficientsX[0],
-                                                      m_CoefficientsX[2] * pi_YIn,
-                                                      m_CoefficientsX[5] * y2,
-                                                      m_CoefficientsX[9] * y3};
+        //Loading the coefficient of the pre multiplication
+        __m128d InitialCoeff[6] = {_mm_set_pd(m_CoefficientsX[2], m_CoefficientsY[2]),
+            _mm_set_pd(m_CoefficientsX[4], m_CoefficientsY[4]),
+            _mm_set_pd(m_CoefficientsX[5], m_CoefficientsY[5]),
+            _mm_set_pd(m_CoefficientsX[7], m_CoefficientsY[7]),
+            _mm_set_pd(m_CoefficientsX[8], m_CoefficientsY[8]),
+            _mm_set_pd(m_CoefficientsX[9], m_CoefficientsY[9])};
 
-    //loading coefficients for the dot product in SSE registers
-    __m128d* storedCoeffX = (__m128d*)coeffX;
+        //Pre computing
+        for (size_t i = 0; i < 6; ++i)
+            {
+            InitialCoeff[i] = _mm_mul_pd(InitialFactor[i], InitialCoeff[i]);            
+            }
 
-    //loading constant coefficients in SSE registers
-    __m128d* storedConstCoeffX = (__m128d*)ConstantCoeffX;
+        //Loading the coefficient for the multiplication in the for statement
+        __m128d storedCoeff[10] = {_mm_set_pd(m_CoefficientsX[0], m_CoefficientsY[0]),
+            _mm_set_pd(m_CoefficientsX[1], m_CoefficientsY[1]),
+            InitialCoeff[0],
+            _mm_set_pd(m_CoefficientsX[3], m_CoefficientsY[3]),
+            InitialCoeff[1],
+            InitialCoeff[2],
+            _mm_set_pd(m_CoefficientsX[6], m_CoefficientsY[6]),
+            InitialCoeff[3],
+            InitialCoeff[4],
+            InitialCoeff[5]};
+    
+        uint32_t index;
+        double x, x2, x3;
+    
+        for (index = 0, x = pi_XInStart; index < pi_NumLoc; ++index, x += pi_XInStep)
+            {
+            x2 = x * x;
+            x3 = x2 * x;
+    
+            //loading factors (x, x2, x, x3, x2, x) in SSE registers
+            __m128d storedFactor[6] = {_mm_set1_pd(x),
+                                       _mm_set1_pd(x2),
+                                       _mm_set1_pd(x),
+                                       _mm_set1_pd(x3),
+                                       _mm_set1_pd(x2),
+                                       _mm_set1_pd(x)};
 
-    //Addition of the constant coefficients
-    storedConstCoeffX[0] = _mm_add_pd(storedConstCoeffX[0], storedConstCoeffX[1]);
-    storedConstCoeffX[0] = _mm_hadd_pd(storedConstCoeffX[0], storedConstCoeffX[0]); //Horizontal addition
+            //Multiplication and addition on the X and Y coordinates at the same time
+            __m128d result = _mm_add_pd(_mm_add_pd(_mm_add_pd(_mm_add_pd(_mm_add_pd(_mm_add_pd(_mm_add_pd(_mm_add_pd(_mm_add_pd(
+                storedCoeff[0], _mm_mul_pd(storedCoeff[1], storedFactor[0])),
+                storedCoeff[2]),
+                _mm_mul_pd(storedCoeff[3], storedFactor[1])),
+                _mm_mul_pd(storedCoeff[4], storedFactor[2])),
+                storedCoeff[5]),
+                _mm_mul_pd(storedCoeff[6], storedFactor[3])),
+                _mm_mul_pd(storedCoeff[7], storedFactor[4])),
+                _mm_mul_pd(storedCoeff[8], storedFactor[5])),
+                storedCoeff[9]);
+    
+            //Move final result out of SSE register
+            *(po_pXOut + index) = _mm_cvtsd_f64(_mm_unpackhi_pd(result, result));
+            *(po_pYOut + index) = _mm_cvtsd_f64(result);
+        }
+    
+    #else
 
-    //--------------------------------------------------------------------------------------------------
-    //Same principle for Y coefficients
-    //--------------------------------------------------------------------------------------------------
-    __declspec(align(16)) double coeffY[6] {m_CoefficientsY[1],
-                                            m_CoefficientsY[3],
-                                            m_CoefficientsY[4] * pi_YIn,
-                                            m_CoefficientsY[6],
-                                            m_CoefficientsY[7] * pi_YIn,
-                                            m_CoefficientsY[8] * y2};
-
-    __declspec(align(16)) double ConstantCoeffY[4] = {m_CoefficientsY[0],
-                                                      m_CoefficientsY[2] * pi_YIn,
-                                                      m_CoefficientsY[5] * y2,
-                                                      m_CoefficientsY[9] * y3};
-
-    __m128d* storedCoeffY = (__m128d*)coeffY;
-    __m128d* storedConstCoeffY = (__m128d*)ConstantCoeffY;
-
-    storedConstCoeffY[0] = _mm_add_pd(storedConstCoeffY[0], storedConstCoeffY[1]);
-    storedConstCoeffY[0] = _mm_hadd_pd(storedConstCoeffY[0], storedConstCoeffY[0]); //Horizontal addition
-
-    uint32_t index;
-    __declspec(align(16)) double factor[6]; //Factor of the dot product
-
-    for (index = 0, factor[0] = pi_XInStart; index < pi_NumLoc; ++index, factor[0] += pi_XInStep)
-        {
-        factor[1] = factor[0] * factor[0];
-        factor[2] = factor[0];
-        factor[3] = factor[1] * factor[0];
-        factor[4] = factor[1];
-        factor[5] = factor[0];
-
-        //loading factors (x, x2, x, x3, x2, x) in SSE registers
-        __m128d* storedFactor = (__m128d*)factor;
-
-        //Dot product in X
-        __m128d dotProduct1 = _mm_dp_pd(storedFactor[0], storedCoeffX[0], 0x31);
-        __m128d dotProduct2 = _mm_dp_pd(storedFactor[1], storedCoeffX[1], 0x31);
-        __m128d dotProduct3 = _mm_dp_pd(storedFactor[2], storedCoeffX[2], 0x31);
-
-        //Addition of the dot product results
-        __m128d addition = _mm_add_pd(_mm_add_pd(dotProduct1, dotProduct2), _mm_add_pd(dotProduct3, storedConstCoeffX[0]));
-
-        //Move final result out of SSE register
-        *(po_pXOut + index) = _mm_cvtsd_f64(addition);
-
-        //Dot product in Y
-        dotProduct1 = _mm_dp_pd(storedFactor[0], storedCoeffY[0], 0x31);
-        dotProduct2 = _mm_dp_pd(storedFactor[1], storedCoeffY[1], 0x31);
-        dotProduct3 = _mm_dp_pd(storedFactor[2], storedCoeffY[2], 0x31);
-
-        addition = _mm_add_pd(_mm_add_pd(dotProduct1, dotProduct2), _mm_add_pd(dotProduct3, storedConstCoeffY[0]));
-        *(po_pYOut + index) = _mm_cvtsd_f64(addition);
-    }
-
-#else
     //Pre-compute some factors that are the same for every pixel
     double y = pi_YIn;
     double y2 = y * y;
