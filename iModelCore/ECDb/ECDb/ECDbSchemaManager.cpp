@@ -7,9 +7,11 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include <ECUnits/Units.h>
+#include <ECDb/ECDbExpressionSymbolProviders.h>
 #include "SchemaImportContext.h"
 
 USING_NAMESPACE_BENTLEY_EC
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 
@@ -288,6 +290,7 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext const&
         return ERROR;
 
     ECDbSchemaWriter schemaWriter(m_ecdb);
+    ECDbExpressionSymbolContext symbolsContext(m_ecdb);
     for (ECSchemaCP schema : dependencyOrderedPrimarySchemas)
         {
         importedSchemas.push_back(schema);

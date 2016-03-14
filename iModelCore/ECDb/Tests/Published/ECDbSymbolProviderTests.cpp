@@ -349,7 +349,6 @@ TEST_F(ECDbExpressionSymbolProviderRelatedInstanceTests, FollowsRelationshipWhen
     ASSERT_STREQ(instanceB->GetInstanceId().c_str(), (*result.GetInstanceList())[0]->GetInstanceId().c_str());
     }
 
-#ifdef wip
 //---------------------------------------------------------------------------------------
 // @bsitest                                       Grigas.Petraitis              02/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -411,7 +410,7 @@ TEST_F(ECDbExpressionSymbolProviderRelatedInstanceTests, SymbolsAreInjectedWhenI
 //---------------------------------------------------------------------------------------
 // @bsitest                                       Grigas.Petraitis              02/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbExpressionSymbolProviderRelatedInstanceTests, SymbolsAreInjectedWhenOpeningECDb)
+TEST_F(ECDbExpressionSymbolProviderRelatedInstanceTests, SymbolsAreInjectedWhenDeserializingSchemas)
     {
     Utf8CP schemaXml = ""
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
@@ -460,11 +459,13 @@ TEST_F(ECDbExpressionSymbolProviderRelatedInstanceTests, SymbolsAreInjectedWhenO
     insertStmt.BindText(3, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
     insertStmt.BindInt64(4, classA->GetId());    
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, insertStmt.Step());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    ECDbInstancesExpressionSymbolsContext symbolsContext(GetECDb());
-    SetupECDb(Utf8String(BeFileName(GetECDb().GetDbFileName(), true).GetFileNameAndExtension().c_str()).c_str());
-    symbolsContext.LeaveContext();
-
+    // reopen ECDb
+    BeFileName ecdbPath(GetECDb().GetDbFileName(), true);
+    GetECDb().CloseDb();
+    GetECDb().OpenBeSQLiteDb(ecdbPath, BeSQLite::Db::OpenParams(BeSQLite::Db::OpenMode::Readonly));
+    
     ECSqlStatement selectStmt;
     ASSERT_TRUE(selectStmt.Prepare(GetECDb(), "SELECT * FROM test2.ClassC WHERE ECInstanceId = ?").IsSuccess());
     ASSERT_TRUE(selectStmt.BindText(1, instanceC->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No).IsSuccess());
@@ -478,7 +479,6 @@ TEST_F(ECDbExpressionSymbolProviderRelatedInstanceTests, SymbolsAreInjectedWhenO
     selectedInstanceC->GetValue(v, "label");
     EXPECT_STREQ("ClassA Label", v.GetUtf8CP());
     }
-#endif
 
 END_ECDBUNITTESTS_NAMESPACE
 

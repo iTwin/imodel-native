@@ -6,6 +6,7 @@
 |
 +-------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include <ECDb/ECDbExpressionSymbolProviders.h>
 USING_NAMESPACE_BENTLEY_EC
 using namespace std;
 
@@ -122,6 +123,7 @@ ECClassP ECDbSchemaReader::GetECClass(Context& ctx, ECClassId ecClassId) const
         return nullptr;
 
     BeMutexHolder lock (m_criticalSection);
+    ECDbExpressionSymbolContext symbolsContext(m_db);
 
     DbECClassEntryMap::const_iterator classKeyIterator = m_ecClassCache.find (ecClassId);
     if (classKeyIterator != m_ecClassCache.end())
@@ -793,6 +795,11 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
 
         if (SUCCESS != LoadCAFromDb(*prop, ctx, id, ECContainerType::Property))
             return ERROR;
+
+        // For ECDb symbol provider ensure the calculated property specification is created (must do that after
+        // custom attributes are loaded)
+        if (prop->IsCalculated())
+            prop->GetCalculatedPropertySpecification(); 
         }
 
     return SUCCESS;
