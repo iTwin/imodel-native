@@ -334,24 +334,26 @@ bool ECDbSqlTable::DeleteColumn(Utf8CP name)
     auto itor = m_columns.find(name);
     if (itor != m_columns.end())
         {
-        for (auto& constraint : m_constraints)
+        ECDbSqlColumn& col = *itor->second;
+        for (auto const& constraint : m_constraints)
             {
             if (constraint->GetType() == ECDbSqlConstraint::Type::ForeignKey)
                 {
                 auto fkc = static_cast<ECDbSqlForeignKeyConstraint*>(constraint.get());
-                fkc->Remove(itor->second->GetName().c_str(), nullptr);
+                fkc->Remove(col.GetName().c_str(), nullptr);
                 }
             else if (constraint->GetType() == ECDbSqlConstraint::Type::PrimaryKey)
                 {
                 auto pkc = static_cast<ECDbSqlPrimaryKeyConstraint*>(constraint.get());
-                pkc->Remove(itor->second->GetName().c_str());
+                pkc->Remove(col.GetName().c_str());
                 }
             }
 
         for (auto& eh : m_columnEvents)
-            eh(ColumnEvent::Deleted, *itor->second);
+            eh(ColumnEvent::Deleted, col);
 
-        m_orderedColumns.erase(std::find_if(m_orderedColumns.begin(), m_orderedColumns.end(), [itor] (ECDbSqlColumn const* column) { return column == itor->second.get(); }));
+        auto columnsAreEqual = [&col] (ECDbSqlColumn const* column) { return column == &col; };
+        m_orderedColumns.erase(std::find_if(m_orderedColumns.begin(), m_orderedColumns.end(), columnsAreEqual));
         m_columns.erase(itor);
         return true;
         }

@@ -911,7 +911,7 @@ ECDbSqlColumn* ColumnFactory::ApplyDefaultStrategy(Utf8CP requestedColumnName, P
     BeAssert(!Utf8String::IsNullOrEmpty(requestedColumnName) && "Column name must not be null for default strategy");
 
     ECDbSqlColumn* existingColumn = GetTable().FindColumnP(requestedColumnName);
-    if (existingColumn != nullptr && !IsColumnInUseByThisClassMap(*existingColumn) &&
+    if (existingColumn != nullptr && !IsColumnInUseByClassMap(*existingColumn) &&
         ECDbSqlColumn::IsCompatible(existingColumn->GetType(), colType))
         {
         if (!GetTable().IsOwnedByECDb() || (existingColumn->GetConstraint().IsNotNull() == addNotNullConstraint &&
@@ -998,7 +998,7 @@ BentleyStatus ColumnFactory::ResolveColumnName(Utf8StringR resolvedColumName, Ut
         }
 
     ECDbSqlColumn const* existingColumn = GetTable().FindColumnP(requestedColumnName);
-    if (existingColumn != nullptr && IsColumnInUseByThisClassMap(*existingColumn))
+    if (existingColumn != nullptr && IsColumnInUseByClassMap(*existingColumn))
         resolvedColumName.Sprintf("c%lld_%s", classId, requestedColumnName);
     else
         resolvedColumName.assign(requestedColumnName);
@@ -1041,7 +1041,7 @@ bool ColumnFactory::TryFindReusableSharedDataColumn(ECDbSqlColumn const*& reusab
     std::vector<ECDbSqlColumn const*> reusableColumns;
     for (ECDbSqlColumn const* column : GetTable().GetColumns())
         {
-        if (column->IsShared() && !IsColumnInUseByThisClassMap(*column))
+        if (column->IsShared() && !IsColumnInUseByClassMap(*column))
             reusableColumns.push_back(column);
         }
 
@@ -1057,17 +1057,15 @@ bool ColumnFactory::TryFindReusableSharedDataColumn(ECDbSqlColumn const*& reusab
 //------------------------------------------------------------------------------------------
 void ColumnFactory::CacheUsedColumn(ECDbSqlColumn const& column) const
     {
-    m_columnsInUse.insert(column.GetFullName());
-    //m_idsOfColumnsInUseByClassMap.insert(column.GetId());
+    m_idsOfColumnsInUseByClassMap.insert(column.GetId());
     }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-bool ColumnFactory::IsColumnInUseByThisClassMap(ECDbSqlColumn const& column) const
+bool ColumnFactory::IsColumnInUseByClassMap(ECDbSqlColumn const& column) const
     {
-    return m_columnsInUse.find(column.GetFullName()) != m_columnsInUse.end();
-    //return m_idsOfColumnsInUseByClassMap.find(column.GetId()) != m_idsOfColumnsInUseByClassMap.end();
+    return m_idsOfColumnsInUseByClassMap.find(column.GetId()) != m_idsOfColumnsInUseByClassMap.end();
     }
 
 //------------------------------------------------------------------------------------------
@@ -1075,7 +1073,7 @@ bool ColumnFactory::IsColumnInUseByThisClassMap(ECDbSqlColumn const& column) con
 //------------------------------------------------------------------------------------------
 void ColumnFactory::Update()
     {
-    m_columnsInUse.clear();
+    m_idsOfColumnsInUseByClassMap.clear();
     std::vector<ECDbSqlColumn const*> columnsInUse;
     m_classMap.GetPropertyMaps().Traverse(
         [&] (TraversalFeedback& feedback, PropertyMapCP propMap)
