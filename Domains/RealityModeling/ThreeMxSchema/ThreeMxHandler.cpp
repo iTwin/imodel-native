@@ -23,7 +23,7 @@ struct ThreeMxSchema::ThreeMxProgressiveDisplay : Dgn::IProgressiveDisplay, NonC
 protected:
     ThreeMxModelR        m_model;
 
-    ThreeMxProgressiveDisplay (ThreeMxModelR model) : m_model (model) { }
+    ThreeMxProgressiveDisplay (ThreeMxModelR model) : m_model (model) {DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT }
 
 public:
     virtual bool _WantTimeoutSet(uint32_t& limit)   {return false; }
