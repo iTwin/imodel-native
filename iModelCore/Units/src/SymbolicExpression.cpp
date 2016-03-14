@@ -17,10 +17,17 @@ static const Utf8Char OpenParen = '(';
 static const Utf8Char CloseParen = ')';
 static const Utf8Char OpenBracket = '[';
 static const Utf8Char CloseBracket = ']';
-static const std::function<bool(UnitsSymbolCR, UnitsSymbolCR)> symbolsEqual = [] (UnitsSymbolCR a, UnitsSymbolCR b) { return a.GetId() == b.GetId(); };
-static const std::function<bool(UnitsSymbolCR, UnitsSymbolCR)> phenomenaEqual = [](UnitsSymbolCR a, UnitsSymbolCR b) { return a.GetPhenomenonId() == b.GetPhenomenonId(); };
 static const int maxRecursionDepth = 42;
 
+bool Expression::IdsMatch(UnitsSymbolCR a, UnitsSymbolCR b)
+    {
+    return a.GetId() == b.GetId();
+    }
+
+bool Expression::PhenomenonIdsMatch(UnitsSymbolCR a, UnitsSymbolCR b)
+    {
+    return a.GetPhenomenonId() == b.GetPhenomenonId();
+    }
 
 void Token::Clear()
     {
@@ -99,23 +106,23 @@ BentleyStatus Expression::GenerateConversionExpression(UnitCR from, UnitCR to, E
     return BentleyStatus::SUCCESS;
     }
 
-bool Expression::ShareDimensions(PhenomenonCR phenomenon, UnitCR unit)
+bool Expression::ShareSignatures(PhenomenonCR phenomenon, UnitCR unit)
     {
-    return DimensionallyCompatible(phenomenon.Evaluate(), unit.Evaluate(), phenomenaEqual);
+    return SignaturesCompatible(phenomenon.Evaluate(), unit.Evaluate(), PhenomenonIdsMatch);
     }
 
-bool Expression::ShareDimensions(PhenomenonCR phenomenon, ExpressionCR expression)
+bool Expression::ShareSignatures(PhenomenonCR phenomenon, ExpressionCR expression)
     {
-    return DimensionallyCompatible(phenomenon.Evaluate(), expression, phenomenaEqual);
+    return SignaturesCompatible(phenomenon.Evaluate(), expression, PhenomenonIdsMatch);
     }
 
-bool Expression::DimensionallyCompatible(ExpressionCR fromExpression, ExpressionCR toExpression)
+bool Expression::SignaturesCompatible(ExpressionCR fromExpression, ExpressionCR toExpression)
     {
-    return DimensionallyCompatible(fromExpression, toExpression, symbolsEqual);
+    return SignaturesCompatible(fromExpression, toExpression, IdsMatch);
     }
 
 // TODO: Consider how this could be combined with the merge step so we don't have to make two copies of the from expression
-bool Expression::DimensionallyCompatible(ExpressionCR fromExpression, ExpressionCR toExpression, std::function<bool(UnitsSymbolCR, UnitsSymbolCR)> areEqual)
+bool Expression::SignaturesCompatible(ExpressionCR fromExpression, ExpressionCR toExpression, std::function<bool(UnitsSymbolCR, UnitsSymbolCR)> areEqual)
     {
     Expression fromBaseSymbols;
     CreateExpressionWithOnlyBaseSymbols(fromExpression, fromBaseSymbols);
@@ -158,7 +165,7 @@ void Expression::MergeSymbol(Utf8CP targetDefinition, ExpressionR targetExpressi
 
 void Expression::MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, ExpressionR sourceExpression, int startingExponent)
     {
-    MergeExpressions(targetDefinition, targetExpression, sourceDefinition, sourceExpression, startingExponent, symbolsEqual);
+    MergeExpressions(targetDefinition, targetExpression, sourceDefinition, sourceExpression, startingExponent, IdsMatch);
     }
 
 void Expression::MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, ExpressionR sourceExpression, int startingExponent, std::function<bool(UnitsSymbolCR, UnitsSymbolCR)> areEqual)
@@ -189,7 +196,7 @@ BentleyStatus Expression::HandleToken(UnitsSymbolCR owner, int& depth, Expressio
 
     if (symbol->IsBaseSymbol())
         {
-        MergeSymbol(definition, expression, symbol->GetDefinition(), symbol, mergedExponent, symbolsEqual);
+        MergeSymbol(definition, expression, symbol->GetDefinition(), symbol, mergedExponent, IdsMatch);
         }
     else
         {

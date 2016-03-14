@@ -62,7 +62,6 @@ private:
     const_reverse_iterator rbegin() const { return m_symbolExpression.rbegin(); }
     const_reverse_iterator rend() const { return m_symbolExpression.rend(); }
 
-
     ExpressionSymbolCR FirstSymbol() const { return m_symbolExpression.front(); }
 
     void erase(iterator deleteIterator, iterator end) { m_symbolExpression.erase(deleteIterator, end); }
@@ -83,12 +82,15 @@ private:
     static void MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExpression,
                                  Utf8CP sourceDefinition, ExpressionR sourceExpression,
                                  int startingExponent, std::function<bool(UnitsSymbolCR, UnitsSymbolCR)> areEqual);
-    static bool ShareDimensions(PhenomenonCR phenomenon, UnitCR unit);
-    static bool ShareDimensions(PhenomenonCR phenomenon, ExpressionCR expression);
-    static bool DimensionallyCompatible(ExpressionCR expressionA, ExpressionCR expressionB);
-    static bool DimensionallyCompatible(ExpressionCR expressionA, ExpressionCR expressionB, std::function<bool(UnitsSymbolCR, UnitsSymbolCR)> areEqual);
+    static bool ShareSignatures(PhenomenonCR phenomenon, UnitCR unit);
+    static bool ShareSignatures(PhenomenonCR phenomenon, ExpressionCR expression);
+    static bool SignaturesCompatible(ExpressionCR expressionA, ExpressionCR expressionB);
+    static bool SignaturesCompatible(ExpressionCR expressionA, ExpressionCR expressionB, std::function<bool(UnitsSymbolCR, UnitsSymbolCR)> areEqual);
     static BentleyStatus GenerateConversionExpression(UnitCR from, UnitCR to, ExpressionR conversionExpression);
     static void CreateExpressionWithOnlyBaseSymbols(ExpressionCR source, ExpressionR target);
+
+    static bool IdsMatch(UnitsSymbolCR a, UnitsSymbolCR b);
+    static bool PhenomenonIdsMatch(UnitsSymbolCR a, UnitsSymbolCR b);
     };
 
 //=======================================================================================

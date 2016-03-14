@@ -340,17 +340,17 @@ TEST_F(UnitsTests, TestLinearCostConversions)
     ASSERT_EQ(0, conversionErrors.size()) << BeStringUtilities::Join(conversionErrors, ", ");
     }
 
-TEST_F(UnitsTests, CheckDimensionForEveryPhenomenon)
+TEST_F(UnitsTests, CheckSignatureForEveryPhenomenon)
     {
     bvector<PhenomenonCP> allPhenomena;
     UnitRegistry::Instance().AllPhenomena(allPhenomena);
     for (auto const& phenomenon : allPhenomena)
         {
-        PERFORMANCELOG.errorv("Dimension string for %s: %s", phenomenon->GetName(), phenomenon->GetPhenomenonDimension().c_str());
+        PERFORMANCELOG.errorv("Dimension string for %s: %s", phenomenon->GetName(), phenomenon->GetPhenomenonSignature().c_str());
         }
     }
 
-TEST_F(UnitsTests, PhenomenonAndUnitDimensionsMatch)
+TEST_F(UnitsTests, PhenomenonAndUnitSignaturesMatch)
     {
     bvector<PhenomenonCP> allPhenomena;
     UnitRegistry::Instance().AllPhenomena(allPhenomena);
@@ -826,10 +826,10 @@ TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
         line.Sprintf("Phenomenon Definition:,%s", phenomenon->GetDefinition());
         WriteLine(file, line.c_str());
 
-        line.Sprintf("Phenomenon Dimension:,%s", phenomenon->GetPhenomenonDimension().c_str());
+        line.Sprintf("Phenomenon Dimension:,%s", phenomenon->GetPhenomenonSignature().c_str());
         WriteLine(file, line.c_str());
 
-        WriteLine(file, "UnitName,UnitDefinition,UnitDimension,ParsedDefinition");
+        WriteLine(file, "UnitName,UnitDefinition,UnitSignature,ParsedDefinition");
         
         for (auto const& unit : phenomenon->GetUnits())
             {
@@ -838,15 +838,15 @@ TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
 
             Utf8String parsedExpression = unit->GetParsedUnitExpression();
             if (unit->GetFactor() == 0.0)
-                line.Sprintf("%s,Inverts(%s),%s,%s", unit->GetName(), unit->GetDefinition(), unit->GetUnitDimension(), parsedExpression.c_str());
+                line.Sprintf("%s,Inverts(%s),%s,%s", unit->GetName(), unit->GetDefinition(), unit->GetUnitSignature(), parsedExpression.c_str());
             else if (unit->HasOffset() && unit->GetFactor() != 1.0)
-                line.Sprintf("%s,(%s)/%.10g - %.10g,%s,%s", unit->GetName(), unit->GetDefinition(), unit->GetFactor(), unit->GetOffset(), unit->GetUnitDimension().c_str(), parsedExpression.c_str());
+                line.Sprintf("%s,(%s)/%.10g - %.10g,%s,%s", unit->GetName(), unit->GetDefinition(), unit->GetFactor(), unit->GetOffset(), unit->GetUnitSignature().c_str(), parsedExpression.c_str());
             else if (unit->HasOffset())
-                line.Sprintf("%s,%s - %.10g,%s,%s", unit->GetName(), unit->GetDefinition(), unit->GetOffset(), unit->GetUnitDimension().c_str(), parsedExpression.c_str());
+                line.Sprintf("%s,%s - %.10g,%s,%s", unit->GetName(), unit->GetDefinition(), unit->GetOffset(), unit->GetUnitSignature().c_str(), parsedExpression.c_str());
             else if (unit->GetFactor() != 1.0)
-                line.Sprintf("%s,(%s)/%.10g,%s,%s", unit->GetName(), unit->GetDefinition(), unit->GetFactor(), unit->GetUnitDimension().c_str(), parsedExpression.c_str());
+                line.Sprintf("%s,(%s)/%.10g,%s,%s", unit->GetName(), unit->GetDefinition(), unit->GetFactor(), unit->GetUnitSignature().c_str(), parsedExpression.c_str());
             else
-                line.Sprintf("%s,%s,%s,%s", unit->GetName(), unit->GetDefinition(), unit->GetUnitDimension().c_str(), parsedExpression.c_str());
+                line.Sprintf("%s,%s,%s,%s", unit->GetName(), unit->GetDefinition(), unit->GetUnitSignature().c_str(), parsedExpression.c_str());
 
             WriteLine(file, line.c_str());
             }

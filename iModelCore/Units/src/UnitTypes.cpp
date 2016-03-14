@@ -11,8 +11,8 @@
 
 USING_NAMESPACE_BENTLEY_UNITS
 
-UnitsSymbol::UnitsSymbol(Utf8CP name, Utf8CP definition, Utf8Char dimensionSymbol, uint32_t id, double factor, double offset) :
-    m_name(name), m_definition(definition), m_dimensionSymbol(dimensionSymbol), m_id(id), m_factor(factor), m_offset(offset), m_evaluated(false), 
+UnitsSymbol::UnitsSymbol(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id, double factor, double offset) :
+    m_name(name), m_definition(definition), m_baseSymbol(baseSymbol), m_id(id), m_factor(factor), m_offset(offset), m_evaluated(false), 
     m_symbolExpression(new Expression())
     {
     m_dimensionless = strcmp("ONE", m_definition.c_str()) == 0;
@@ -36,9 +36,9 @@ ExpressionCR UnitsSymbol::Evaluate(int depth, std::function<UnitsSymbolCP(Utf8CP
     }
 
 // TODO: Is the definition correct here?
-// TODO: We should probably restrict inverting units to units which are unitless.  If we do not then the inverted unit would have a different dimension.
+// TODO: We should probably restrict inverting units to units which are unitless.  If we do not then the inverted unit would have a different signature.
 Unit::Unit(UnitCR parent, Utf8CP unitName, uint32_t id) :
-    Unit(parent.GetUnitSystem(), *parent.GetPhenomenon(), unitName, id, parent.GetDefinition(), parent.GetDimensionSymbol(), 0, 0, false)
+    Unit(parent.GetUnitSystem(), *parent.GetPhenomenon(), unitName, id, parent.GetDefinition(), parent.GetBaseSymbol(), 0, 0, false)
     {
     m_parent = &parent;
     }
@@ -56,10 +56,10 @@ Unit::Unit(Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitP Unit::Create(Utf8CP sysName, PhenomenonCR phenomenon, Utf8CP unitName, uint32_t id, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant)
+UnitP Unit::Create(Utf8CP sysName, PhenomenonCR phenomenon, Utf8CP unitName, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant)
     {
     LOG.debugv("Creating unit %s  Factor: %.17g  Offset: %d", unitName, factor, offset);
-    return new Unit(sysName, phenomenon, unitName, id, definition, dimensionSymbol, factor, offset, isConstant);
+    return new Unit(sysName, phenomenon, unitName, id, definition, baseSymbol, factor, offset, isConstant);
     }
 
 uint32_t Unit::GetPhenomenonId() const { return GetPhenomenon()->GetId(); }
@@ -220,7 +220,7 @@ double Unit::DoNumericConversion(double value, UnitCR toUnit) const
     return value;
     }
 
-Utf8String Unit::GetUnitDimension() const
+Utf8String Unit::GetUnitSignature() const
     {
     Expression phenomenonExpression = Evaluate();
     Expression baseExpression;
@@ -247,7 +247,7 @@ UnitCP Unit::CombineWithUnit(UnitCR rhs, int factor) const
     UnitRegistry::Instance().AllPhenomena(phenomList);
     for (const auto p : phenomList)
         {
-        if (!Expression::ShareDimensions(*p, expression))
+        if (!Expression::ShareSignatures(*p, expression))
             continue;
 
         matchingPhenom = p;
@@ -289,7 +289,7 @@ UnitCP Unit::DivideUnit(UnitCR rhs) const
     return CombineWithUnit(rhs, -1);
     }
 
-Utf8String Phenomenon::GetPhenomenonDimension() const
+Utf8String Phenomenon::GetPhenomenonSignature() const
     {
     Expression phenomenonExpression = Evaluate();
     Expression baseExpression;
@@ -311,5 +311,5 @@ ExpressionCR Phenomenon::Evaluate() const
 
 bool Phenomenon::IsCompatible(UnitCR unit) const
     {
-    return Expression::ShareDimensions(*this, unit);
+    return Expression::ShareSignatures(*this, unit);
     }

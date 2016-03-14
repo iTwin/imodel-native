@@ -43,10 +43,10 @@ private:
     void InsertUnique (Utf8Vector &vec, Utf8String &str);
     void AddSystem(Utf8CP systemName);
     void AddPhenomena(Utf8CP phenomenaName, Utf8CP definition);
-    void AddBasePhenomena(Utf8Char dimensionalSymbol);
-    UnitCP AddDimensionBaseUnit(Utf8CP unitName, Utf8Char dimensionSymbol);
+    void AddBasePhenomena(Utf8Char baseSymbol);
+    UnitCP AddUnitForBasePhenomenon(Utf8CP unitName, Utf8Char baseSymbol);
 
-    UnitP AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant);
+    UnitP AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant);
 
     PhenomenonP LookupPhenomenonP(Utf8CP name) const;
     UnitP LookupUnitP(Utf8CP name) const;

@@ -871,25 +871,25 @@ void AddWarpingConstant(UnitRegistry& reg)
 void UnitRegistry::AddDefaultUnits()
     {
     UnitRegistry& reg = UnitRegistry::Instance();
-    reg.AddDimensionBaseUnit("M", BasePhenomena::Length);
-    reg.AddDimensionBaseUnit("KG", BasePhenomena::Mass);
-    reg.AddDimensionBaseUnit("S", BasePhenomena::Time);
-    reg.AddDimensionBaseUnit("K", BasePhenomena::Temperature);
+    reg.AddUnitForBasePhenomenon("M", BasePhenomena::Length);
+    reg.AddUnitForBasePhenomenon("KG", BasePhenomena::Mass);
+    reg.AddUnitForBasePhenomenon("S", BasePhenomena::Time);
+    reg.AddUnitForBasePhenomenon("K", BasePhenomena::Temperature);
     reg.AddSynonym("K", "KELVIN");
 
-    reg.AddDimensionBaseUnit("DELTA_KELVIN", BasePhenomena::TemperatureChange);
+    reg.AddUnitForBasePhenomenon("DELTA_KELVIN", BasePhenomena::TemperatureChange);
 
-    reg.AddDimensionBaseUnit("A", BasePhenomena::ElectricCurrent);
-    reg.AddDimensionBaseUnit("MOL", BasePhenomena::Mole); // Where mol is the SI gram mol or gmol.
+    reg.AddUnitForBasePhenomenon("A", BasePhenomena::ElectricCurrent);
+    reg.AddUnitForBasePhenomenon("MOL", BasePhenomena::Mole); // Where mol is the SI gram mol or gmol.
     reg.AddSynonym("MOL", "MOLE");
-    reg.AddDimensionBaseUnit("CD", BasePhenomena::Luminosity);
+    reg.AddUnitForBasePhenomenon("CD", BasePhenomena::Luminosity);
     reg.AddSynonym("CD", "CANDELA");
-    reg.AddDimensionBaseUnit("RAD", BasePhenomena::PlaneAngle);
-    reg.AddDimensionBaseUnit("STERAD", BasePhenomena::SolidAngle);
+    reg.AddUnitForBasePhenomenon("RAD", BasePhenomena::PlaneAngle);
+    reg.AddUnitForBasePhenomenon("STERAD", BasePhenomena::SolidAngle);
     reg.AddSynonym("STERAD", "STERADIAN");
-    reg.AddDimensionBaseUnit("US$", BasePhenomena::Finance);
-    reg.AddDimensionBaseUnit("PERSON", BasePhenomena::Capita);
-    reg.AddDimensionBaseUnit("ONE", BasePhenomena::Ratio); // TODO: I don't like that Ratio has base unit of ONE and all unitless unit will have a phenomenon of Ratio ...
+    reg.AddUnitForBasePhenomenon("US$", BasePhenomena::Finance);
+    reg.AddUnitForBasePhenomenon("PERSON", BasePhenomena::Capita);
+    reg.AddUnitForBasePhenomenon("ONE", BasePhenomena::Ratio); // TODO: I don't like that Ratio has base unit of ONE and all unitless unit will have a phenomenon of Ratio ...
 
 
 

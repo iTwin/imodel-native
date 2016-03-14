@@ -69,9 +69,9 @@ void UnitRegistry::AddSystem (Utf8CP systemName)
     InsertUnique (m_systems, str);
     }
 
-Utf8CP GetBasePhenomenonName(Utf8Char dimensionSymbol)
+Utf8CP GetBasePhenomenonName(Utf8Char baseSymbol)
     {
-    switch (dimensionSymbol)
+    switch (baseSymbol)
         {
             case BasePhenomena::Capita:
                 return CAPITA;
@@ -106,9 +106,9 @@ Utf8CP GetBasePhenomenonName(Utf8Char dimensionSymbol)
 //-------------------------------------------------------------------------------------//
 // @bsimethod                                              Colin.Kerr     02/16
 //+---------------+---------------+---------------+---------------+---------------+----//
-void UnitRegistry::AddBasePhenomena(Utf8Char dimensionalSymbol)
+void UnitRegistry::AddBasePhenomena(Utf8Char baseSymbol)
     {
-    Utf8CP phenomenaName = GetBasePhenomenonName(dimensionalSymbol);
+    Utf8CP phenomenaName = GetBasePhenomenonName(baseSymbol);
     if (Utf8String::IsNullOrEmpty(phenomenaName))
         return;
 
@@ -118,7 +118,7 @@ void UnitRegistry::AddBasePhenomena(Utf8Char dimensionalSymbol)
         return;
         }
 
-    auto phenomena = new Phenomenon(phenomenaName, phenomenaName, dimensionalSymbol, m_nextId);
+    auto phenomena = new Phenomenon(phenomenaName, phenomenaName, baseSymbol, m_nextId);
     ++m_nextId;
 
     m_phenomena.insert(bpair<Utf8String, PhenomenonP>(phenomenaName, phenomena));
@@ -183,7 +183,7 @@ void UnitRegistry::AddDefaultSystems ()
 //---------------------------------------------------------------------------------------//
 // @bsimethod                                              Colin.Kerr           02/16
 //+---------------+---------------+---------------+---------------+---------------+------//
-UnitP UnitRegistry::AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, Utf8Char dimensionSymbol, double factor, double offset, bool isConstant)
+UnitP UnitRegistry::AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant)
     {
     if (Utf8String::IsNullOrEmpty(unitName))
         {
@@ -206,7 +206,7 @@ UnitP UnitRegistry::AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP
         return nullptr;
         }
 
-    auto unit = Unit::Create(systemName, *phenomenon, unitName, m_nextId, definition, dimensionSymbol, factor, offset, isConstant);
+    auto unit = Unit::Create(systemName, *phenomenon, unitName, m_nextId, definition, baseSymbol, factor, offset, isConstant);
     if (nullptr == unit)
         return nullptr;
 
@@ -222,7 +222,7 @@ UnitP UnitRegistry::AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP
 //---------------------------------------------------------------------------------------//
 // @bsimethod                                              Colin.Kerr           02/16
 //+---------------+---------------+---------------+---------------+---------------+------//
-UnitCP UnitRegistry::AddDimensionBaseUnit(Utf8CP unitName, Utf8Char dimensionSymbol)
+UnitCP UnitRegistry::AddUnitForBasePhenomenon(Utf8CP unitName, Utf8Char baseSymbol)
     {
     if (Utf8String::IsNullOrEmpty(unitName))
         {
@@ -230,14 +230,14 @@ UnitCP UnitRegistry::AddDimensionBaseUnit(Utf8CP unitName, Utf8Char dimensionSym
         return nullptr;
         }
 
-    Utf8CP phenomenonName = GetBasePhenomenonName(dimensionSymbol);
+    Utf8CP phenomenonName = GetBasePhenomenonName(baseSymbol);
     if (Utf8String::IsNullOrEmpty(phenomenonName))
         {
-        LOG.errorv("Cannot create base unit '%s' because the input dimension symbol '%c' does not map to a base phenomenon", unitName, dimensionSymbol);
+        LOG.errorv("Cannot create base unit '%s' because the input base symbol '%c' does not map to a base phenomenon", unitName, baseSymbol);
         return nullptr;
         }
     
-    return AddUnitInternal(phenomenonName, SI, unitName, unitName, dimensionSymbol, 1, 0, false);
+    return AddUnitInternal(phenomenonName, SI, unitName, unitName, baseSymbol, 1, 0, false);
     }
 
 /*--------------------------------------------------------------------------------**//**
