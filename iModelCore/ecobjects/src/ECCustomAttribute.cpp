@@ -630,7 +630,14 @@ BeXmlWriterR xmlWriter
     xmlWriter.WriteElementStart(EC_CUSTOM_ATTRIBUTES_ELEMENT);
     for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
         {
-        (*iter)->WriteToBeXmlNode (xmlWriter);
+        Utf8CP className = (*iter)->GetClass().GetName().c_str();
+        
+        if (0 == BeStringUtilities::Stricmp(className, "UnitSpecificationAttr"))
+            className = "UnitSpecification";
+        else if (0 == BeStringUtilities::Stricmp(className, "DisplayUnitSpecificationAttr"))
+            className = "DisplayUnitSpecification";
+
+        (*iter)->WriteToBeXmlNode (xmlWriter, className);
         }
     xmlWriter.WriteElementEnd();
 
