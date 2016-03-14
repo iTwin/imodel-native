@@ -115,32 +115,24 @@ struct WmsTileDataPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databas
     //----------------------------------------------------------------------------------------
     // @bsimethod                                                   Mathieu.Marchand  6/2015
     //----------------------------------------------------------------------------------------
-    virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db, double percentage) const override
+    virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db) const override
         {
-        CachedStatementPtr sumStatement;
-        if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(sumStatement, "select sum(RasterSize) from " TABLE_NAME_WmsTileData))
-            return ERROR;
+        static uint64_t allowedSize = 1024 * 1024 * 1024; // 1 GB
 
-        if (BeSQLite::BE_SQLITE_ROW != sumStatement->Step()) 
-            return ERROR;
-            
-        auto rasterSize = sumStatement->GetValueInt(0);         
-        uint64_t overHead = (uint64_t)(rasterSize * percentage) / 100;
-    
         CachedStatementPtr selectStatement;
-        if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(selectStatement, "select RasterSize, Created from " TABLE_NAME_WmsTileData " ORDER BY Created ASC"))
+        if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(selectStatement, "SELECT RasterSize,Created FROM " TABLE_NAME_WmsTileData " ORDER BY Created ASC"))
             return ERROR;
     
-        uint64_t runningSum = 0;
-        while ((runningSum < overHead) &&(BeSQLite::BE_SQLITE_ROW == selectStatement->Step()))
-            runningSum += selectStatement->GetValueInt(0);
+        uint64_t accumulatedSize = 0;
+        while ((accumulatedSize < allowedSize) && (BeSQLite::BE_SQLITE_ROW == selectStatement->Step()))
+            accumulatedSize += selectStatement->GetValueUInt64(0);
+        uint64_t date = selectStatement->GetValueUInt64(1);
             
-        CachedStatementPtr deleteStatement;
-        uint64_t creationDate = selectStatement->GetValueInt64(1);
+        CachedStatementPtr deleteStatement;        
         if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(deleteStatement, "DELETE FROM " TABLE_NAME_WmsTileData " WHERE Created  <= ? "))
             return ERROR;
 
-        deleteStatement->BindInt64(1, creationDate);
+        deleteStatement->BindUInt64(1, date);
         if (BeSQLite::BE_SQLITE_DONE != deleteStatement->Step())
             return ERROR;
             
@@ -468,7 +460,7 @@ Render::ImagePtr WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
     //     Maybe one table per server?  and use TileId or hash the url ?
     //     BeSQLiteRealityDataStorage::wt_Prepare call to "VACCUUM" is the reason why we have such a big slowdown.
     RefCountedPtr<WmsTileData> pWmsTileData;
-    if(RealityDataCacheResult::Success != T_HOST.GetRealityDataAdmin().GetCache().Get<WmsTileData>(pWmsTileData, tileUrl.c_str(), *pOptions))
+    if(RealityDataCacheResult::Success != GetRealityDataCache().Get<WmsTileData>(pWmsTileData, tileUrl.c_str(), *pOptions))
         return NULL;
 
     BeAssert(pWmsTileData.IsValid());
@@ -554,4 +546,20 @@ Utf8String WmsSource::BuildTileUrl(TileId const& tileId)
         }
     
     return tileUrl;   
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+RealityDataCache& WmsSource::GetRealityDataCache() const
+    {
+    if (m_realityDataCache.IsNull())
+        {
+        RealityDataCachePtr cache = RealityDataCache::Create(100);
+        BeFileName storageFileName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
+        storageFileName.AppendToPath(L"WMS");
+        cache->RegisterStorage(*BeSQLiteRealityDataStorage::Create(storageFileName));
+        cache->RegisterSource(*HttpRealityDataSource::Create(8));
+        }
+    return *m_realityDataCache;
     }
