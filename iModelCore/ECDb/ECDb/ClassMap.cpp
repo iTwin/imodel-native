@@ -1058,6 +1058,7 @@ bool ColumnFactory::TryFindReusableSharedDataColumn(ECDbSqlColumn const*& reusab
 void ColumnFactory::CacheUsedColumn(ECDbSqlColumn const& column) const
     {
     m_columnsInUse.insert(column.GetFullName());
+    //m_idsOfColumnsInUseByClassMap.insert(column.GetId());
     }
 
 //------------------------------------------------------------------------------------------
@@ -1066,7 +1067,7 @@ void ColumnFactory::CacheUsedColumn(ECDbSqlColumn const& column) const
 bool ColumnFactory::IsColumnInUseByThisClassMap(ECDbSqlColumn const& column) const
     {
     return m_columnsInUse.find(column.GetFullName()) != m_columnsInUse.end();
-    //return m_ids
+    //return m_idsOfColumnsInUseByClassMap.find(column.GetId()) != m_idsOfColumnsInUseByClassMap.end();
     }
 
 //------------------------------------------------------------------------------------------

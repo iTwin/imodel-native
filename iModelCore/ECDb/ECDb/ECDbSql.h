@@ -475,7 +475,7 @@ public:
         ECDbMapDb & GetDbDefR () { return m_dbDef; }
         ECDbSqlColumn* CreateColumn(Utf8CP name, ECDbSqlColumn::Type type, ColumnKind kind, PersistenceType persistenceType) { return CreateColumn(name, type, -1, kind, persistenceType); }
         ECDbSqlColumn* CreateSharedColumn() { return CreateColumn(nullptr, ECDbSqlColumn::Type::Any, ColumnKind::SharedDataColumn, PersistenceType::Persisted); }
-        ECDbSqlColumn* CreateColumn(Utf8CP name, ECDbSqlColumn::Type type, int position, ColumnKind kind, PersistenceType persType) { return CreateColumn(-1LL, name, type, -1, kind, persType); }
+        ECDbSqlColumn* CreateColumn(Utf8CP name, ECDbSqlColumn::Type type, int position, ColumnKind kind, PersistenceType persType) { return CreateColumn(-1LL, name, type, position, kind, persType); }
         ECDbSqlColumn* CreateColumn(ECDbColumnId id, Utf8CP name, ECDbSqlColumn::Type type, ColumnKind kind, PersistenceType persType) { return CreateColumn(id, name, type, -1, kind, persType); }
         BentleyStatus SetMinimumSharedColumnCount(int minimumSharedColumnCount);
         BentleyStatus EnsureMinimumNumberOfSharedColumns();

@@ -103,8 +103,8 @@ struct ColumnFactory : NonCopyableClass
     private:
         ClassMapCR m_classMap;
         bool m_usesSharedColumnStrategy;
-        mutable std::set<Utf8String, CompareIUtf8> m_columnsInUse;
         //mutable bset<ECDbColumnId> m_idsOfColumnsInUseByClassMap;
+        mutable std::set<Utf8String, CompareIUtf8> m_columnsInUse;
 
         BentleyStatus ResolveColumnName(Utf8StringR resolvedColumName, Utf8CP requestedColumnName, ECN::ECClassId, int retryCount) const;
 
