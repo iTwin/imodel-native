@@ -44,7 +44,23 @@ DbResult ECDbProfileUpgrader_3201::_Upgrade(ECDbR ecdb) const
 //+---------------+---------------+---------------+---------------+---------------+--------
 DbResult ECDbProfileUpgrader_3200::_Upgrade(ECDbR ecdb) const
     {
-    LOG.errorv("Version of file's ECDb profile is too old and an auto-upgrade is not available.", ecdb.GetDbFileName());
+    Utf8String structArrayPropsSql;
+    structArrayPropsSql.Sprintf("SELECT NULL from ec_Property p, ec_ClassMap cm WHERE p.ClassId=cm.ClassId AND cm.MapStrategy<>%d AND p.Kind=%d",
+                                Enum::ToInt(ECDbMapStrategy::Strategy::NotMapped), Enum::ToInt(ECPropertyKind::StructArray));
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, structArrayPropsSql.c_str()))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Preparing SQL to find struct array properties failed. SQL: %s. Error: ", structArrayPropsSql.c_str(), ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (BE_SQLITE_DONE != stmt.Step())
+        { 
+        LOG.error("Version of file's ECDb profile is too old: ECDb file has ECSchemas with ECClasses with struct array properties mapped to separate tables. Auto-upgrade not available yet to migrate struct array properties to the JSON based persistence.");
+        return BE_SQLITE_ERROR_ProfileTooOld;
+        }
+
+    LOG.error("Version of file's ECDb profile is too old and an auto-upgrade is not available.");
     return BE_SQLITE_ERROR_ProfileTooOld;
     }
 
