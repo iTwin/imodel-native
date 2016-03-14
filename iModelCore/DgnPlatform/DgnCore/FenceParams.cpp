@@ -602,7 +602,7 @@ BentleyStatus GetContents(DgnElementIdSet& contents)
 
     VisitAllViewElements();
 
-    if (m_contents.empty())
+    if (m_contents.empty() || WasAborted())
         return ERROR;
 
     contents = m_contents;
