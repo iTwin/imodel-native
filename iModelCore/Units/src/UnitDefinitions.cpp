@@ -19,26 +19,32 @@ void AddLengths(UnitRegistry& reg)
     reg.AddUnit(LENGTH, SI, "KM", "[KILO]*M");
     reg.AddUnit(LENGTH, SI, "MU", "[MICRO]*M");
     reg.AddSynonym("MU", "MICRON");
-    reg.AddUnit(LENGTH, SI, "ANGSTROM", "M", 1e-10);
-    reg.AddUnit(LENGTH, SI, "FERMI", "[FEMTO]*M");
-    reg.AddSynonym("FERMI", "FEMTOMETRE");
-    reg.AddUnit(LENGTH, IMPERIAL, "IN", "MM", 25.4); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
-    reg.AddUnit(LENGTH, IMPERIAL, "FT", "IN", 12.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
+
     reg.AddUnit(LENGTH, USCUSTOM, "MILLIINCH", "[MILLI]*IN");
     reg.AddUnit(LENGTH, USCUSTOM, "MICROINCH", "[MICRO]*IN");
     reg.AddUnit(LENGTH, IMPERIAL, "MILLIFOOT", "[MILLI]*FT");
+
+    reg.AddUnit(LENGTH, IMPERIAL, "IN", "MM", 25.4); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
+    reg.AddUnit(LENGTH, IMPERIAL, "FT", "IN", 12.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
     reg.AddUnit(LENGTH, IMPERIAL, "YRD", "FT", 3.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
-    reg.AddUnit(LENGTH, SURVEYOR, "CHAIN", "FT", 66.0);
-    reg.AddUnit(LENGTH, IMPERIAL, "MILE", "YRD", 1760.0);
-    reg.AddUnit(LENGTH, IMPERIAL, "NAUT_MILE", "M", 1852.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
-    reg.AddSynonym("NAUT_MILE", "NAUTICAL_MILE_INTERNATIONAL");
-    reg.AddUnit(LENGTH, IMPERIAL, "NAUT_MILE_IMPERIAL", "M", 1853.0);
-    reg.AddSynonym("NAUT_MILE_IMPERIAL", "ADMIRALTY_MILE");
+    reg.AddUnit(LENGTH, SURVEYOR, "CHAIN", "FT", 66.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-8
+    reg.AddUnit(LENGTH, IMPERIAL, "MILE", "YRD", 1760.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-8
+
     reg.AddUnit(LENGTH, USCUSTOM, "US_SURVEY_INCH", "CM", 10000.0 / 3937.0);
     reg.AddUnit(LENGTH, USCUSTOM, "US_SURVEY_FOOT", "US_SURVEY_INCH", 12.0);
     reg.AddUnit(LENGTH, USCUSTOM, "US_SURVEY_YARD", "US_SURVEY_FOOT", 3.0);
+    reg.AddUnit(LENGTH, SURVEYOR, "US_SURVEY_CHAIN", "US_SURVEY_FOOT", 66.0);
     reg.AddUnit(LENGTH, USCUSTOM, "US_SURVEY_MILE", "US_SURVEY_YARD", 1760.0);
 
+    reg.AddUnit(LENGTH, IMPERIAL, "NAUT_MILE", "M", 1852.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
+    reg.AddSynonym("NAUT_MILE", "NAUTICAL_MILE_INTERNATIONAL");
+    
+    reg.AddUnit(LENGTH, IMPERIAL, "NAUT_MILE_IMPERIAL", "M", 1853.0);
+    reg.AddSynonym("NAUT_MILE_IMPERIAL", "ADMIRALTY_MILE");
+
+    reg.AddUnit(LENGTH, SI, "ANGSTROM", "M", 1e-10);
+    reg.AddUnit(LENGTH, SI, "FERMI", "[FEMTO]*M");
+    reg.AddSynonym("FERMI", "FEMTOMETRE");
     reg.AddUnit(LENGTH, IMPERIAL, "BARLEYCORN", "IN", (1.0 / 3.0));
     reg.AddUnit(LENGTH, HISTORICAL, "CUBIT", "IN", 18.0);
     reg.AddUnit(LENGTH, HISTORICAL, "ELL", "IN", 45.0);
@@ -78,7 +84,7 @@ void AddTime(UnitRegistry& reg)
     reg.AddUnit(TIME, SI, "DAY", "HR", 24.0);
     reg.AddUnit(TIME, SI, "WEEK", "DAY", 7.0);
     reg.AddUnit(TIME, SI, "MONTH", "DAY", 30.0);
-    reg.AddUnit(TIME, SI, "YR", "DAY", 365);  //  http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B. Year is 3.1536 E+07 seconds
+    reg.AddUnit(TIME, SI, "YR", "DAY", 365);  //  http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B. Year is 3.1536 E+07 seconds which is equal to 365 * 24 * 60 * 60
     reg.AddUnit(TIME, SI, "YEAR_SIDEREAL", "S", 3.155815e7); //  http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
     reg.AddUnit(TIME, SI, "YEAR_TROPICAL", "S", 3.155693e7); //  http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
     reg.AddUnit(TIME, SI, "MS", "[MILLI]*S");
@@ -96,9 +102,6 @@ void AddTemperature(UnitRegistry& reg)
 
     reg.AddUnit(TEMPERATURE, USCUSTOM, "ROMER", "CELSIUS", 40.0 / 21.0, -7.5);
     reg.AddSynonym("ROMER", "DEGREE_ROMER");
-    //reg.AddUnit(TEMPERATURE, USCUSTOM, "REAMUR", "CELSIUS", 0.8);
-    //reg.AddSynonym(unit, "DEGREE_REAMUR");
-
     }
 
 void AddTemperatureChange(UnitRegistry& reg)
@@ -157,7 +160,7 @@ void AddCapita(UnitRegistry& reg)
     reg.AddUnit(CAPITA, STATISTICS, "STUDENT", "PERSON");
     reg.AddUnit(CAPITA, STATISTICS, "GUEST", "PERSON");
     reg.AddUnit(CAPITA, STATISTICS, "RESIDENT", "PERSON");
-    reg.AddUnit(CAPITA, STATISTICS, "HUNDRED_CAPITA", "PERSON", 100.0);
+    reg.AddUnit(CAPITA, STATISTICS, "HUNDRED_CAPITA", "[HECTO]*PERSON");
     reg.AddUnit(CAPITA, STATISTICS, "THOUSAND_CAPITA", "[KILO]*PERSON");
     }
 
@@ -210,12 +213,21 @@ void AddArea(UnitRegistry& reg)
     reg.AddUnit(AREA, SI, "SQ.KM", "KM(2)");
     reg.AddUnit(AREA, SI, "ARE", "[HECTO]*M(2)");
     reg.AddUnit(AREA, SI, "HECTARE", "[HECTO]*ARE");
+
     reg.AddUnit(AREA, IMPERIAL, "SQ.IN", "IN(2)");
     reg.AddUnit(AREA, IMPERIAL, "SQ.FT", "FT(2)");
-    reg.AddUnit(AREA, IMPERIAL, "THOUSAND_FOOT_SQUARED", "[KILO]*FT(2)"); // TODO: Make consistant name.
+    reg.AddUnit(AREA, IMPERIAL, "THOUSAND_SQ.FT", "[KILO]*FT(2)");
     reg.AddUnit(AREA, IMPERIAL, "SQ.YRD", "YRD(2)");
     reg.AddUnit(AREA, IMPERIAL, "SQ.MILE", "MILE(2)");
-    reg.AddUnit(AREA, IMPERIAL, "ACRE", "CHAIN(2)", 10.0);
+    reg.AddUnit(AREA, IMPERIAL, "SQ.CHAIN", "CHAIN(2)");
+    reg.AddUnit(AREA, IMPERIAL, "ACRE", "CHAIN(2)", 10.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-9
+
+    reg.AddUnit(AREA, IMPERIAL, "SQ.US_SURVEY_IN", "US_SURVEY_INCH(2)");
+    reg.AddUnit(AREA, IMPERIAL, "SQ.US_SURVEY_FT", "US_SURVEY_FOOT(2)");
+    reg.AddUnit(AREA, IMPERIAL, "SQ.US_SURVEY_YRD", "US_SURVEY_YARD(2)");
+    reg.AddUnit(AREA, SURVEYOR, "SQ.US_SURVEY_MILE", "US_SURVEY_MILE(2)");
+    reg.AddUnit(AREA, SURVEYOR, "SQ.US_SURVEY_CHAIN", "US_SURVEY_CHAIN(2)");
+    reg.AddUnit(AREA, SURVEYOR, "US_SURVEY_ACRE", "US_SURVEY_CHAIN(2)", 10.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-9
     }
 
 void AddSizeLengthRate(UnitRegistry& reg)
@@ -824,11 +836,13 @@ void AddVolume(UnitRegistry& reg)
     reg.AddUnit(VOLUME, INDUSTRIAL, "MILLION_LITRE", "[MEGA]*LITRE");
     reg.AddUnit(VOLUME, SI, "MICROLITRE", "[MICRO]*LITRE");
     reg.AddSynonym("MICROLITRE", "LAMBDA"); // TODO: Check this out
+
     reg.AddUnit(VOLUME, IMPERIAL, "CUB.IN", "IN(3)");
     reg.AddUnit(VOLUME, IMPERIAL, "CUB.FT", "FT(3)");
     reg.AddUnit(VOLUME, IMPERIAL, "CUB.YRD", "YRD(3)");
     reg.AddUnit(VOLUME, IMPERIAL, "CUB.MILE", "MILE(3)");
     reg.AddSynonym("CUB.MILE", "MILE_CUBED");
+
     reg.AddUnit(VOLUME, IMPERIAL, "ACRE_INCH", "ACRE*IN");
     reg.AddUnit(VOLUME, IMPERIAL, "ACRE_FOOT", "ACRE*FT");
     reg.AddUnit(VOLUME, USCUSTOM, "GALLON", "IN(3)", 231.0);
@@ -1240,6 +1254,7 @@ void UnitRegistry::AddDefaultMappings ()
     m_oldNameNewNameMapping["DOLLAR"] = "US$";
     m_oldNameNewNameMapping["NONE"] = "ONE";
     m_oldNameNewNameMapping["UNITLESS_UNIT"] = "ONE";
+    m_oldNameNewNameMapping["THOUSAND_FOOT_SQUARED"] = "THOUSAND_SQ.FT";
 
     m_newNameOldNameMapping["MM"] = "MILLIMETRE";
     m_newNameOldNameMapping["CM"] = "CENTIMETRE";
@@ -1524,4 +1539,5 @@ void UnitRegistry::AddDefaultMappings ()
     m_newNameOldNameMapping["RAD"] = "RADIAN";
     m_newNameOldNameMapping["US$"] = "DOLLAR";
     m_newNameOldNameMapping["ONE"] = "UNITLESS_UNIT";
+    m_oldNameNewNameMapping["THOUSAND_FOOT_SQUARED"] = "THOUSAND_SQ.FT";
     }
