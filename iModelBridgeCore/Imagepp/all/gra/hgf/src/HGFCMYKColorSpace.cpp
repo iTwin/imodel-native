@@ -60,7 +60,7 @@ inline void HGFCMYKColorSpace::ConvertToRGB (Byte pi_Cyan, Byte pi_Magenta, Byte
     {
     // Functionnal but the not appropriate for imaging application
     // should be use only for "pie chart" color conversion
-    unsigned short Black;
+    uint16_t Black;
 
     Byte Red;
     Byte Green;
@@ -108,12 +108,12 @@ inline void HGFCMYKColorSpace::ConvertToRGB (Byte pi_Cyan, Byte pi_Magenta, Byte
 
 void HGFCMYKColorSpace::ConvertArrayToRGB (Byte const* pi_pCyan, Byte const* pi_pMagenta, Byte const* pi_pYellow, Byte const* pi_pBlack,
                                            Byte* po_pRed,  Byte* po_pGreen,   Byte* po_pBlue,
-                                           unsigned long pi_ArraySize)
+                                           size_t pi_ArraySize)
     {
     // Not yet implement.
     HPRECONDITION(false);
 
-    for (unsigned long ArrayIndex = 0; ArrayIndex < pi_ArraySize; ArrayIndex++)
+    for (size_t ArrayIndex = 0; ArrayIndex < pi_ArraySize; ArrayIndex++)
         {
         ++po_pRed;
         ++po_pGreen;
@@ -170,7 +170,7 @@ inline void HGFCMYKColorSpace::ConvertFromRGB (Byte pi_Red,   Byte pi_Green,    
 
 void HGFCMYKColorSpace::ConvertArrayFromRGB (Byte const* pi_pRed, Byte const* pi_pGreen, Byte const* pi_pBlue,
                                              Byte* pi_pCyan, Byte* pi_pMagenta, Byte* pi_pYellow, Byte* pi_pBlack,
-                                             unsigned long  pi_ArraySize)
+                                             size_t pi_ArraySize)
     {
     // Not yet implement.
     HPRECONDITION(false);
@@ -182,7 +182,7 @@ void HGFCMYKColorSpace::ConvertArrayFromRGB (Byte const* pi_pRed, Byte const* pi
 
 void HGFCMYKColorSpace::ConvertArrayFromRGB (Byte const* pi_pRBGData,
                                              Byte* po_pCMYKData,
-                                             unsigned long  pi_ArraySizeInPixel)
+                                             size_t pi_ArraySizeInPixel)
     {
     // For optimization, the user may use the same buffer for conversion,
     // To do allow this, we have just convert the buffer from the end to the begining.
@@ -197,8 +197,8 @@ void HGFCMYKColorSpace::ConvertArrayFromRGB (Byte const* pi_pRBGData,
     // We do single color funtion call.  But for efficiency, we MUST recode
     // the conversion here to improve performance.
 
-    unsigned int RGBBufferOffset  = 0;
-    unsigned int CMYKBufferOffset = 0;
+    size_t RGBBufferOffset  = 0;
+    size_t CMYKBufferOffset = 0;
 
     while(pi_ArraySizeInPixel)
         {
@@ -223,7 +223,7 @@ void HGFCMYKColorSpace::ConvertArrayFromRGB (Byte const* pi_pRBGData,
 
 void HGFCMYKColorSpace::ConvertArrayToRGB (Byte const* pi_pCMYKData,
                                            Byte* po_pRBGData,
-                                           unsigned long  pi_ArraySizeInPixel)
+                                           size_t pi_ArraySizeInPixel)
     {
     // The input buffer format must be : C1, M1, Y1, K1, C2, M2, Y2, K2, ...., Cn, Mn, Yn, Kn
     // And
@@ -234,12 +234,10 @@ void HGFCMYKColorSpace::ConvertArrayToRGB (Byte const* pi_pCMYKData,
     // We do single color funtion call.  But for efficiency, we MUST recode
     // the conversion here to improve performance.
 
-    unsigned int RGBBufferOffset  = 0;
-    unsigned int CMYKBufferOffset = 0;
+    size_t RGBBufferOffset  = 0;
+    size_t CMYKBufferOffset = 0;
 
-    unsigned long Iterator = 0;
-
-    for (Iterator = 0; Iterator < pi_ArraySizeInPixel; Iterator++)
+    for (size_t Iterator = 0; Iterator < pi_ArraySizeInPixel; Iterator++)
         {
         // 4 is the size in byte of a single element into the CMYK color space.
         CMYKBufferOffset = Iterator * 4;

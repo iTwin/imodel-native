@@ -303,7 +303,7 @@ void HRFRasterFilePageDecorator::Save(bool pi_IsToBeClosed)
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFRasterFilePageDecorator::CreateResolutionEditor(
     uint32_t        pi_Page,
-    unsigned short pi_Resolution,
+    uint16_t pi_Resolution,
     HFCAccessMode   pi_AccessMode)
     {
     // Create the original editor
@@ -397,7 +397,7 @@ void HRFRasterFilePageDecorator::CreateDescriptors ()
 
         // Add all resolutions descriptor from original file to the Decorator
         HRFPageDescriptor::ListOfResolutionDescriptor  ListOfResolutionDescriptor;
-        for (unsigned short Resolution=0; Resolution < pOriginalPageDescriptor->CountResolutions(); Resolution++)
+        for (uint16_t Resolution=0; Resolution < pOriginalPageDescriptor->CountResolutions(); Resolution++)
             {
             // Create a copy of this resolution descriptor for the ResBooster
             HFCPtr<HRFResolutionDescriptor> pResolution = new HRFResolutionDescriptor(

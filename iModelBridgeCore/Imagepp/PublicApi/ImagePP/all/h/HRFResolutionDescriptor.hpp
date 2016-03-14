@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFResolutionDescriptor.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Inline methods for class HRFResolutionDescriptor
@@ -76,7 +76,7 @@ inline Byte HRFResolutionDescriptor::GetNumberOfPass () const
 // public
 // Get padding bits
 //-----------------------------------------------------------------------------
-inline unsigned short HRFResolutionDescriptor::GetPaddingBits () const
+inline uint16_t HRFResolutionDescriptor::GetPaddingBits () const
     {
     return m_PaddingBits;
     }

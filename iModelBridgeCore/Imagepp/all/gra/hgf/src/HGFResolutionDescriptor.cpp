@@ -90,7 +90,7 @@ HGFResolutionDescriptor::HGFResolutionDescriptor(const HGFResolutionDescriptor& 
 
     try
         {
-        for (unsigned short SubImage = 0; SubImage < pi_rObj.CountResolutions(); SubImage++)
+        for (uint16_t SubImage = 0; SubImage < pi_rObj.CountResolutions(); SubImage++)
             {
             // Obtain the current resolution information.
             pi_rObj.GetDescription(SubImage, &Resolution, &Width, &Height);
@@ -130,7 +130,7 @@ HGFResolutionDescriptor& HGFResolutionDescriptor::operator=(
     RemoveResolutions();
 
     // Copy all resolution description.
-    for (unsigned short SubImage = 0; SubImage < pi_rObj.CountResolutions(); SubImage++)
+    for (uint16_t SubImage = 0; SubImage < pi_rObj.CountResolutions(); SubImage++)
         {
         // Obtain the current resolution information.
         pi_rObj.GetDescription(SubImage, &Resolution, &Width, &Height);
@@ -147,16 +147,16 @@ HGFResolutionDescriptor& HGFResolutionDescriptor::operator=(
 // Public
 // Return the number of resolutions.
 //-----------------------------------------------------------------------------
-unsigned short HGFResolutionDescriptor::CountResolutions() const
+uint16_t HGFResolutionDescriptor::CountResolutions() const
     {
-    return (unsigned short)m_ListOfResolution.size();
+    return (uint16_t)m_ListOfResolution.size();
     }
 
 //-----------------------------------------------------------------------------
 // Public
 // Return the resolution for the specified SubImage.
 //-----------------------------------------------------------------------------
-void HGFResolutionDescriptor::GetDescription (  unsigned short pi_SubImage,
+void HGFResolutionDescriptor::GetDescription (  uint16_t pi_SubImage,
                                                 double*   po_pResolution,
                                                 uint32_t*    po_pWidth,
                                                 uint32_t*    po_pHeight)  const
@@ -165,7 +165,7 @@ void HGFResolutionDescriptor::GetDescription (  unsigned short pi_SubImage,
 
     // Search the specified sub-image.
     HGFListOfResolution::const_iterator Itr = m_ListOfResolution.begin();
-    for (unsigned short SubImage = (unsigned short)m_ListOfResolution.size()-1 ; SubImage != pi_SubImage ; SubImage--)
+    for (auto SubImage = m_ListOfResolution.size()-1 ; SubImage != pi_SubImage ; SubImage--)
         {
         // Increment the iterator position;
         Itr++;
@@ -187,7 +187,7 @@ void HGFResolutionDescriptor::GetDescription (  unsigned short pi_SubImage,
 // Public
 // Return the resolution for the specified SubImage.
 //-----------------------------------------------------------------------------
-double HGFResolutionDescriptor::GetResolution(unsigned short pi_SubImage) const
+double HGFResolutionDescriptor::GetResolution(uint16_t pi_SubImage) const
     {
     HPRECONDITION(pi_SubImage < m_ListOfResolution.size());
 
@@ -202,7 +202,7 @@ double HGFResolutionDescriptor::GetResolution(unsigned short pi_SubImage) const
 // Public
 // Return the width for the specified SubImage.
 //-----------------------------------------------------------------------------
-uint32_t HGFResolutionDescriptor::GetWidth(unsigned short pi_SubImage) const
+uint32_t HGFResolutionDescriptor::GetWidth(uint16_t pi_SubImage) const
     {
     HPRECONDITION(pi_SubImage < m_ListOfResolution.size());
 
@@ -217,7 +217,7 @@ uint32_t HGFResolutionDescriptor::GetWidth(unsigned short pi_SubImage) const
 // Public
 // Return the height for the specified SubImage.
 //-----------------------------------------------------------------------------
-uint32_t HGFResolutionDescriptor::GetHeight(unsigned short pi_SubImage) const
+uint32_t HGFResolutionDescriptor::GetHeight(uint16_t pi_SubImage) const
     {
     HPRECONDITION(pi_SubImage < m_ListOfResolution.size());
 
@@ -316,13 +316,13 @@ void HGFResolutionDescriptor::AddResolutionThatSupports(uint32_t pi_Width,
 // Public
 // This method remove the resolution information for the specified SubImage.
 //-----------------------------------------------------------------------------
-void HGFResolutionDescriptor::RemoveResolution(unsigned short pi_SubImage)
+void HGFResolutionDescriptor::RemoveResolution(uint16_t pi_SubImage)
     {
     HPRECONDITION(pi_SubImage < m_ListOfResolution.size());
 
     // Search the sub-image to remove.
     HGFListOfResolution::iterator Itr = m_ListOfResolution.begin();
-    for (unsigned short SubImage = (unsigned short)m_ListOfResolution.size()-1 ; SubImage != pi_SubImage ; SubImage--)
+    for (auto SubImage = m_ListOfResolution.size()-1 ; SubImage != pi_SubImage ; SubImage--)
         {
         // Increment the iterator position.
         Itr++;

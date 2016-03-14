@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIDXAListRelativeIndex.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HIDXAListRelativeIndex
@@ -98,7 +98,7 @@ template<class O, class SI> void HIDXAListRelativeIndex<O, SI>::AddIndexable(
     // that the insert will succeed.
     // 0 : We really think it will
     // 1 : We already tried to reorganize. Try to insert a last time.
-    int ConfidenceLevel = 0;
+    int32_t ConfidenceLevel = 0;
 
     // This loop will be controled by continue and break statements.
     // It is coded this way to save tests in the normal flow
@@ -225,7 +225,7 @@ template<class O, class SI> void HIDXAListRelativeIndex<O, SI>::RemoveIndexable(
 
                     // Find new values for the free space and
                     // first element markers
-                    int i = 0;
+                    int32_t i = 0;
                     m_List.m_FirstElementPos = BLOCK_CAPACITY;
                     m_List.m_FirstFreePos = BLOCK_CAPACITY;
 
@@ -511,7 +511,7 @@ template<class O, class SI> void HIDXAListRelativeIndex<O, SI>::Back(const O pi_
         // that the operation will succeed.
         // 0 : We really think it will
         // 1 : We already tried to reorganize. Try a last time.
-        int ConfidenceLevel = 0;
+        int32_t ConfidenceLevel = 0;
 
         // This loop will be controled by continue and break statements.
         // It is coded this way to save tests in the normal flow
@@ -525,7 +525,7 @@ template<class O, class SI> void HIDXAListRelativeIndex<O, SI>::Back(const O pi_
                 if (m_List.m_FirstFreePos < BLOCK_CAPACITY / 2)
                     {
                     // We will shift a few elements...
-                    for (int i = m_List.m_FirstFreePos ; i > 0 ; i--)
+                    for (int32_t i = m_List.m_FirstFreePos ; i > 0 ; i--)
                         {
                         (*m_List.GetHead())[i] = (*m_List.GetHead())[i-1];
                         ((Attribute*)(*m_List.GetHead())[i]->GetAttribute(this))->SetRelativePosition(i);
@@ -944,7 +944,7 @@ template<class O, class SI> void HIDXAListRelativeIndex<O, SI>::TryToMakeSpaceAt
                 // Move block
                 pCurrentBlock->SetBlockOffset(pCurrentBlock->GetBlockOffset() - BLOCK_CAPACITY);
 
-                for (int i = 0 ; i < BLOCK_CAPACITY ; i++)
+                for (int32_t i = 0 ; i < BLOCK_CAPACITY ; i++)
                     {
                     // Relative position didn't change, but this is enough to get
                     // the attribute recalculate its absolute position based on
@@ -1063,7 +1063,7 @@ template<class O, class SI> void HIDXAListRelativeIndex<O, SI>::TryToMakeSpaceAt
                 // Move block
                 pCurrentBlock->SetBlockOffset(pCurrentBlock->GetBlockOffset() + BLOCK_CAPACITY);
 
-                for (int i = 0 ; i < BLOCK_CAPACITY ; i++)
+                for (int32_t i = 0 ; i < BLOCK_CAPACITY ; i++)
                     {
                     // Relative position didn't change, but this is enough to get
                     // the attribute recalculate its absolute position based on
@@ -1088,7 +1088,7 @@ template<class O, class SI> void HIDXAListRelativeIndex<O, SI>::TryToMakeSpaceAt
 template<class O, class SI> inline void HIDXAListRelativeIndex<O, SI>::ValidateInvariants() const
     {
     // Check blocks (count, etc...)
-    int BlockCount = 0;
+    int32_t BlockCount = 0;
     HIDXAListBlock<O, BLOCK_CAPACITY>* pCurrentBlock = m_List.GetHead();
     while (pCurrentBlock != 0)
         {
@@ -1106,7 +1106,7 @@ template<class O, class SI> inline void HIDXAListRelativeIndex<O, SI>::ValidateI
         {
         // Check m_FirstElementPos
         pCurrentBlock = m_List.GetHead();
-        int Position = 0;
+        int32_t Position = 0;
         while (Position < BLOCK_CAPACITY)
             {
             if ((*pCurrentBlock)[Position] != 0)
@@ -1144,8 +1144,8 @@ template<class O, class SI> inline void HIDXAListRelativeIndex<O, SI>::ValidateI
         pCurrentBlock = m_List.GetHead();
         while (pCurrentBlock != 0)
             {
-            int ElementCount = 0;
-            for (int i = 0 ; i < BLOCK_CAPACITY ; ++i)
+            int32_t ElementCount = 0;
+            for (int32_t i = 0 ; i < BLOCK_CAPACITY ; ++i)
                 {
                 if ((*pCurrentBlock)[i] != 0)
                     {

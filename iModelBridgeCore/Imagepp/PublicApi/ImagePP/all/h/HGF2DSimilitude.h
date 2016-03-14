@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DSimilitude.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DSimilitude
@@ -43,7 +43,7 @@ public:
                                                  double                   pi_rRotation,
                                                  double                   pi_Scaling);
                                 HGF2DSimilitude (const HGF2DSimilitude& pi_rObj);
-                                HGF2DSimilitude(unsigned short pi_NumberOfPoints,
+                                HGF2DSimilitude(uint16_t pi_NumberOfPoints,
                                                 const double*  pi_pTiePoints);
     virtual                     ~HGF2DSimilitude();
     HGF2DSimilitude&            operator= (const HGF2DSimilitude& pi_rObj);

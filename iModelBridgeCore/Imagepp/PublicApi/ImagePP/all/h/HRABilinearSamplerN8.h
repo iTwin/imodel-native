@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRABilinearSamplerN8.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>-----------------------------------------------------------------------------
@@ -82,7 +82,7 @@ private:
 
     Byte*         ComputeAddress(HUINTX  pi_PosX,
                                    HUINTX  pi_PosY,
-                                   size_t  pi_NeededPixels = ULONG_MAX) const;
+                                   size_t  pi_NeededPixels = UINT32_MAX) const;
 
 
     class Sample

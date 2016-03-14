@@ -97,7 +97,7 @@ template <typename T> struct RemoveReference<T&> {
 /*
 ** --------------------------------------------------------------------------
 **  Destroy and zero initialize ptr functor.
-** e.g. vector<int*> m_MyVector;
+** e.g. vector<int32_t*> m_MyVector;
 **      for_each(m_MyVector.begin(), m_MyVector.end(), DestroyReinitPtr());
 ** --------------------------------------------------------------------------
 */
@@ -117,7 +117,7 @@ struct DestroyReinitPtr
 /*
 ** --------------------------------------------------------------------------
 **  Destroy only ptr functor. Pointers will not be zero initialized.
-** e.g. vector<int*> m_MyVector;
+** e.g. vector<int32_t*> m_MyVector;
 **      for_each(m_MyVector.begin(), m_MyVector.end(), DestroyPtr());
 ** --------------------------------------------------------------------------
 */
@@ -176,7 +176,7 @@ public:
     iterator_type&              operator++()                        {
         return (*this);
         }
-    iterator_type               operator++(int)                     {
+    iterator_type               operator++(int32_t)                     {
         return (*this);
         }
 
@@ -243,7 +243,7 @@ public:
         ++m_WrappedIterator;
         return (*this);
         }
-    iterator_type               operator++(int)                     {
+    iterator_type               operator++(int32_t)                     {
         iterator_type Tmp(*this);
         ++(*this);
         return Tmp;
@@ -318,7 +318,7 @@ struct CaseInsensitiveStringCompareA : public std::binary_function<std::string, 
         {
         const std::ctype<char>& ct = std::use_facet< std::ctype<char> >(L);
 
-        for (int i = CHAR_MIN ; i <= CHAR_MAX ; ++i)
+        for (int32_t i = CHAR_MIN ; i <= CHAR_MAX ; ++i)
             CharMap[i - CHAR_MIN] = (char) i;
 
         ct.toupper(CharMap, CharMap + (CHAR_MAX - CHAR_MIN + 1));
@@ -368,7 +368,7 @@ struct CaseInsensitiveStringToolsA
         {
         return ct.toupper(pi_rChar1) < ct.toupper(pi_rChar2);
         }
-    int traitscompare(const char* pi_pStr1, const char* pi_pStr2, size_t pi_n) const
+    int32_t traitscompare(const char* pi_pStr1, const char* pi_pStr2, size_t pi_n) const
         {
         while ((pi_n > 0) && (traitseq(*pi_pStr1, *pi_pStr2)))
             {
@@ -510,7 +510,7 @@ struct CaseInsensitiveStringToolsW
         {
         return ct.toupper(pi_rChar1) < ct.toupper(pi_rChar2);
         }
-    int traitscompare(const WChar* pi_pStr1, const WChar* pi_pStr2, size_t pi_n) const
+    int32_t traitscompare(const WChar* pi_pStr1, const WChar* pi_pStr2, size_t pi_n) const
         {
         while ((pi_n > 0) && (traitseq(*pi_pStr1, *pi_pStr2)))
             {

@@ -202,7 +202,7 @@ void HRPColorBalanceFilter::InitializeMap( int32_t pi_RedVar,
                 break;
             }
 
-        for(unsigned short ByteIndex = 0; ByteIndex < 256; ByteIndex++)
+        for(uint16_t ByteIndex = 0; ByteIndex < 256; ByteIndex++)
             {
             if((ByteIndex + Var) < 0)
                 Map[ByteIndex] = 0;
@@ -422,9 +422,9 @@ HRPHistogramScalingFilter::~HRPHistogramScalingFilter()
 // GetInterval
 //-----------------------------------------------------------------------------
 
-void HRPHistogramScalingFilter::GetInterval(unsigned short pi_ChannelIndex,
-                                            unsigned short*    po_pMinValue,
-                                            unsigned short*    po_pMaxValue)
+void HRPHistogramScalingFilter::GetInterval(uint16_t pi_ChannelIndex,
+                                            uint16_t*    po_pMinValue,
+                                            uint16_t*    po_pMaxValue)
     {
     HPRECONDITION(po_pMinValue != 0);
     HPRECONDITION(po_pMaxValue != 0);
@@ -433,11 +433,11 @@ void HRPHistogramScalingFilter::GetInterval(unsigned short pi_ChannelIndex,
 
     if(m_ScalingMode == HRPHistogramScalingFilter::INPUT_RANGE_CLIPPING)
         {
-        unsigned short minvalue = 0;
+        uint16_t minvalue = 0;
         while(pMap[minvalue] == 0 && minvalue != 255)
             ++minvalue;
 
-        unsigned short maxvalue = 255;
+        uint16_t maxvalue = 255;
         while(pMap[maxvalue] == 255 && maxvalue != 0)
             --maxvalue;
 
@@ -456,9 +456,9 @@ void HRPHistogramScalingFilter::GetInterval(unsigned short pi_ChannelIndex,
 // SetMap
 //-----------------------------------------------------------------------------
 
-void HRPHistogramScalingFilter::SetInterval(unsigned short pi_ChannelIndex,
-                                            unsigned short pi_MinValue,
-                                            unsigned short pi_MaxValue)
+void HRPHistogramScalingFilter::SetInterval(uint16_t pi_ChannelIndex,
+                                            uint16_t pi_MinValue,
+                                            uint16_t pi_MaxValue)
     {
     HPRECONDITION(pi_MinValue <= pi_MaxValue);
     HPRECONDITION(pi_MinValue < 256);
@@ -468,7 +468,7 @@ void HRPHistogramScalingFilter::SetInterval(unsigned short pi_ChannelIndex,
     Byte Map[256];
     if (m_ScalingMode == HRPHistogramScalingFilter::INPUT_RANGE_CLIPPING)
         {
-        unsigned short i;
+        uint16_t i;
         for (i = 0; i < pi_MinValue; i++)
             Map[i] = 0;
 
@@ -481,7 +481,7 @@ void HRPHistogramScalingFilter::SetInterval(unsigned short pi_ChannelIndex,
     else
         {
         double Step = (double)(pi_MaxValue - pi_MinValue) / 255.0;
-        for (unsigned short i = 0; i < 256; i++)
+        for (uint16_t i = 0; i < 256; i++)
             {
             Map[i] = (Byte)((double)pi_MinValue + (i*Step));
             }
@@ -536,13 +536,13 @@ HRPGammaFilter::HRPGammaFilter(double pi_Gamma)
         {
         Byte Map[256];
         double Power = 1.0 / pi_Gamma;
-        for (int Index = 0; Index < 256; ++Index)
+        for (int32_t Index = 0; Index < 256; ++Index)
             {
             double Intensity = static_cast<double>(Index) / 255.0;
             Map[Index] = (Byte)((255.0 * pow(Intensity, Power) + .499999));
             }
 
-        for(int Channel = 0; Channel < 3; ++Channel)
+        for(int32_t Channel = 0; Channel < 3; ++Channel)
             SetMap(Channel, Map);
         }
     }
@@ -593,7 +593,7 @@ HRPInvertFilter::HRPInvertFilter()
 
     for(unsigned Channel = 0; Channel < 3; ++Channel)
         {
-        for(unsigned short Index = 0; Index < 256; ++Index)
+        for(uint16_t Index = 0; Index < 256; ++Index)
             {
             Map[Index] = (Byte)(255 - Index);
             }
@@ -650,7 +650,7 @@ HRPTintFilter::HRPTintFilter(Byte pi_TintColor[3])
         {
         Byte Map[256];
 
-        for(unsigned short Index = 0; Index < 256; ++Index)
+        for(uint16_t Index = 0; Index < 256; ++Index)
             Map[Index] = (Byte)((Index * pi_TintColor[Channel]) / 255U);
 
         SetMap((Byte)Channel, Map);

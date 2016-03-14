@@ -33,8 +33,8 @@ HRPPixelTypeGray::HRPPixelTypeGray ()
 //-----------------------------------------------------------------------------
 // Constructor for straight Gray
 //-----------------------------------------------------------------------------
-HRPPixelTypeGray::HRPPixelTypeGray(unsigned short pi_BitsGray,
-                                   unsigned short pi_IndexBits)
+HRPPixelTypeGray::HRPPixelTypeGray(uint16_t pi_BitsGray,
+                                   uint16_t pi_IndexBits)
     : HRPPixelType(HRPChannelOrgGray(pi_BitsGray,
                                      HRPChannelType::UNUSED,
                                      HRPChannelType::VOID_CH,
@@ -47,11 +47,11 @@ HRPPixelTypeGray::HRPPixelTypeGray(unsigned short pi_BitsGray,
 // Constructor for Gray channels plus a 4th channel.
 // Useful for creating GrayA or GrayU pixel types.
 //-----------------------------------------------------------------------------
-HRPPixelTypeGray::HRPPixelTypeGray(unsigned short             pi_BitsGray,
+HRPPixelTypeGray::HRPPixelTypeGray(uint16_t             pi_BitsGray,
                                    HRPChannelType::ChannelRole pi_RoleChannel4,
                                    HRPChannelType::DataType    pi_DataTypeChannel4,
-                                   unsigned short             pi_BitsChannel4,
-                                   unsigned short             pi_IndexBits)
+                                   uint16_t             pi_BitsChannel4,
+                                   uint16_t             pi_IndexBits)
     : HRPPixelType(HRPChannelOrgGray(pi_BitsGray,
                                      pi_RoleChannel4,
                                      pi_DataTypeChannel4,

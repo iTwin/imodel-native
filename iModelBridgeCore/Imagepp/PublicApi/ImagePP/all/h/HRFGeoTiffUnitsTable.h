@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFGeoTiffUnitsTable.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -44,10 +44,10 @@ public:
     */
     typedef struct
         {
-        short Code;
+        int16_t Code;
         string      EPSGName;
         string      EPSGAbbr;
-        short TargetUnitCode;
+        int16_t TargetUnitCode;
         double     FactorB;
         double     FactorC;
         } HRFGeoTiffUnitsRecord;
@@ -57,7 +57,7 @@ public:
     // this class is a singleton, use Instanciate to create the class
     virtual                 ~HRFGeoTiffUnitsTable();
 
-    IMAGEPP_EXPORT bool                   GetRecord(short pi_Code,
+    IMAGEPP_EXPORT bool                   GetRecord(int16_t pi_Code,
                                              HRFGeoTiffUnitsRecord*    po_pRecord) const;
 
 private:
@@ -68,7 +68,7 @@ private:
     static Byte                                    s_CompressedTable[];
     static uint32_t                                 s_CompressedTableSize;
     static uint32_t                                 s_UncompressedTableSize;
-    static unsigned short                          s_RecordSize;
+    static uint16_t                          s_RecordSize;
 
     // constructor
     HRFGeoTiffUnitsTable(const HFCPtr<HFCURL>& pi_rpUnitsTableFile = 0);

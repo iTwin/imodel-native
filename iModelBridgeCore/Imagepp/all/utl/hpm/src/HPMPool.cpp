@@ -563,7 +563,7 @@ HPMMemoryMgrExport::~HPMMemoryMgrExport()
     if (m_IndexFreeBlock != -1)
         delete[] m_MemMgrList[0].Offset;
 
-    for (int i=0; i<MgrExportMaxEntry; ++i)
+    for (int32_t i=0; i<MgrExportMaxEntry; ++i)
         {
         if (m_MemMgrList[i].State == SysAllocated ||
             m_MemMgrList[i].State == SysFree)
@@ -626,7 +626,7 @@ Byte* HPMMemoryMgrExport::AllocMemory(size_t pi_MemorySize)
     Byte* pMemory = 0;
     bool    MemAlreadyAllocated;
 
-    int BestBlockToAlloc = FindEntry(pi_MemorySize, MemAlreadyAllocated);
+    int32_t BestBlockToAlloc = FindEntry(pi_MemorySize, MemAlreadyAllocated);
 
     // No memory available, try to alloc system memory
     if (BestBlockToAlloc == -1)
@@ -694,7 +694,7 @@ void HPMMemoryMgrExport::FreeMemory(Byte* pi_MemPtr, size_t pi_MemorySize)
     {
     if (pi_MemPtr != 0)
         {
-        int i=0;
+        int32_t i=0;
         for(; i<MgrExportMaxEntry; ++i)
             {
             if (m_MemMgrList[i].Offset == pi_MemPtr)
@@ -721,14 +721,14 @@ void HPMMemoryMgrExport::FreeMemory(Byte* pi_MemPtr, size_t pi_MemorySize)
         }
     }
 
-int HPMMemoryMgrExport::FindEntry(size_t pi_MemorySize, bool& po_MemAlreadyAllocated)
+int32_t HPMMemoryMgrExport::FindEntry(size_t pi_MemorySize, bool& po_MemAlreadyAllocated)
     {
-    int BestBlockToAlloc = -1;
+    int32_t BestBlockToAlloc = -1;
 
     po_MemAlreadyAllocated = false;
 
     // Check if the block already allocated
-    for (int i=0; i<MgrExportMaxEntry; ++i)
+    for (int32_t i=0; i<MgrExportMaxEntry; ++i)
         {
         if (m_MemMgrList[i].Size == pi_MemorySize)
             {
@@ -782,7 +782,7 @@ HPMMemoryMgrKeepLastEntry::~HPMMemoryMgrKeepLastEntry()
 #endif
 
     // cleanup the memory cached by the MemoryManager
-    for (int i=0; i<MgrKeepLastEntryMaxEntry; ++i)
+    for (int32_t i=0; i<MgrKeepLastEntryMaxEntry; ++i)
         {
         if (m_MemMgrList[i].Offset != 0)
             {
@@ -800,8 +800,8 @@ HPMMemoryMgrKeepLastEntry::~HPMMemoryMgrKeepLastEntry()
 
 Byte* HPMMemoryMgrKeepLastEntry::AllocMemory(size_t pi_MemorySize)
     {
-    int     Entry = -1;
-    for (int i=0; i<MgrKeepLastEntryMaxEntry; ++i)
+    int32_t     Entry = -1;
+    for (int32_t i=0; i<MgrKeepLastEntryMaxEntry; ++i)
         {
         if (m_MemMgrList[i].Size == pi_MemorySize)
             {
@@ -834,8 +834,8 @@ void HPMMemoryMgrKeepLastEntry::FreeMemory(Byte* pi_MemPtr, size_t pi_MemorySize
     {
     if (pi_MemPtr != 0)
         {
-        int     Entry = -1;
-        for (int i=0; i<MgrKeepLastEntryMaxEntry; ++i)
+        int32_t     Entry = -1;
+        for (int32_t i=0; i<MgrKeepLastEntryMaxEntry; ++i)
             {
             if (m_MemMgrList[i].Offset == 0)
                 {

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAUnlimitedResolutionRaster.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -60,7 +60,7 @@ public:
                                                      HFCAccessMode   pi_Mode);
     virtual HRARasterEditor*        CreateEditorUnShaped (HFCAccessMode pi_Mode);
 
-    virtual unsigned short         GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms);
+    virtual uint16_t         GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms);
 
     virtual void                    ComputeHistogram(HRAHistogramOptions* pio_pOptions,
                                                      bool                pi_ForceRecompute = false);

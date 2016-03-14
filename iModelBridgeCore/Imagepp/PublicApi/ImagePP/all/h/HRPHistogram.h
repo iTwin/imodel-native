@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPHistogram.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPHistogram
@@ -79,7 +79,7 @@ private:
                                      uint32_t  pi_EntryFrequenciesSize,
                                      uint32_t  pi_ChannelCount);
 
-    void ConstructUsingLightnessColorSpace(unsigned int pi_EntryFrequenciesSize);
+    void ConstructUsingLightnessColorSpace(uint32_t pi_EntryFrequenciesSize);
 
     HRPHistogram::COLOR_SPACE AutoSelectColorSpace(uint32_t pi_ChannelCount);
 

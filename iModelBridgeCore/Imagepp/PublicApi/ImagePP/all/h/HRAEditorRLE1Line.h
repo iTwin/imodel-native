@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAEditorRLE1Line.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>-----------------------------------------------------------------------------
@@ -82,10 +82,10 @@ public:
 
 protected:
 
-    unsigned short*        ComputeAddress(HUINTX   pi_PosX,
+    uint16_t*        ComputeAddress(HUINTX   pi_PosX,
                                    HUINTX   pi_PosY,
-                                   unsigned short* po_pPixelsToSkipInFirstLen,
-                                   unsigned short* po_pPixelsToSkipInSecondLen) const;
+                                   uint16_t* po_pPixelsToSkipInFirstLen,
+                                   uint16_t* po_pPixelsToSkipInSecondLen) const;
 
 private:
 
@@ -97,10 +97,10 @@ private:
 
 
     // State information for GetPixel, GetNextPixel methods
-    mutable unsigned short*    m_pCurrentCount;
-    mutable unsigned short m_RemainingCount;
+    mutable uint16_t*    m_pCurrentCount;
+    mutable uint16_t m_RemainingCount;
     mutable HUINTX      m_CurrentLine;
-    mutable unsigned short m_aData[2];
+    mutable uint16_t m_aData[2];
 
 
     bool               m_SLO4;
@@ -108,11 +108,11 @@ private:
     HFCPtr<HCDPacketRLE> m_pPacketRLE;
 
     // temporary buffer
-    HArrayAutoPtr<unsigned short>
+    HArrayAutoPtr<uint16_t>
     m_pTmpRun;
-    HArrayAutoPtr<unsigned short>
+    HArrayAutoPtr<uint16_t>
     m_pWorkingRun;
-    HArrayAutoPtr<unsigned short>
+    HArrayAutoPtr<uint16_t>
     m_pClearRun;
 
     bool               m_Edited;
@@ -126,7 +126,7 @@ private:
     void            GetRun      (HUINTX         pi_PosX,
                                  HUINTX         pi_PosY,
                                  size_t         pi_PixelCount,
-                                 unsigned short*       po_pBuffer) const;
+                                 uint16_t*       po_pBuffer) const;
 
 
     // disabled methods

@@ -88,11 +88,11 @@ size_t HCDCodecLRDRLE::CompressSubset(const void* pi_pInData,
         }
 
     Byte*  pSrc  = (Byte* )pi_pInData;
-    unsigned short* pDest = (unsigned short*)po_pOutBuffer;
+    uint16_t* pDest = (uint16_t*)po_pOutBuffer;
 
-    unsigned short BytePosition     = 0;
-    unsigned short StartRunPosition = 0;
-    unsigned short StopRunPosition  = 0;
+    uint16_t BytePosition     = 0;
+    uint16_t StartRunPosition = 0;
+    uint16_t StopRunPosition  = 0;
 
     uint32_t LineBytesCount = (uint32_t)((GetSubsetWidth() + 7.0) / 8.0);
 
@@ -111,7 +111,7 @@ size_t HCDCodecLRDRLE::CompressSubset(const void* pi_pInData,
                 BytePosition++;
                 StartRunPosition += 8;
                 }
-            StartRunPosition = (unsigned short)(MIN(GetSubsetWidth(), StartRunPosition));
+            StartRunPosition = (uint16_t)(MIN(GetSubsetWidth(), StartRunPosition));
             }
         HASSERT(StartRunPosition <= GetSubsetWidth());
 
@@ -119,8 +119,8 @@ size_t HCDCodecLRDRLE::CompressSubset(const void* pi_pInData,
         if (BytePosition < LineBytesCount)
             {
             // Find the first pixel position from the StartRunPosition.
-            int BitPosition = StartRunPosition %8;
-            int PixelState = 0;
+            int32_t BitPosition = StartRunPosition %8;
+            int32_t PixelState = 0;
 
             while (!PixelState && (BytePosition < LineBytesCount) )
                 {
@@ -161,7 +161,7 @@ size_t HCDCodecLRDRLE::CompressSubset(const void* pi_pInData,
                         }
                     }
 
-                StopRunPosition = (unsigned short)(MIN(GetSubsetWidth(), StopRunPosition));
+                StopRunPosition = (uint16_t)(MIN(GetSubsetWidth(), StopRunPosition));
 
                 HASSERT(StopRunPosition >= StartRunPosition);
                 HASSERT(StartRunPosition <= GetSubsetWidth());
@@ -181,7 +181,7 @@ size_t HCDCodecLRDRLE::CompressSubset(const void* pi_pInData,
                 if (StartRunPosition >  GetSubsetWidth())
                     {
                     // Break the loop!
-                    BytePosition = (unsigned short)LineBytesCount;
+                    BytePosition = (uint16_t)LineBytesCount;
                     }
                 }
             }
@@ -227,11 +227,11 @@ size_t HCDCodecLRDRLE::DecompressSubset(const void* pi_pInData,
         SetCurrentState(STATE_DECOMPRESS);
         }
 
-    unsigned short* pSrc  = (unsigned short*)pi_pInData;
+    uint16_t* pSrc  = (uint16_t*)pi_pInData;
     Byte*  pDest = (Byte*)po_pOutBuffer;
 
-    unsigned short RunStartPosition;
-    unsigned short RunStopPosition;
+    uint16_t RunStartPosition;
+    uint16_t RunStopPosition;
 
     uint32_t   FullByteCount;
     uint32_t   StartingBit = 0;
@@ -246,11 +246,11 @@ size_t HCDCodecLRDRLE::DecompressSubset(const void* pi_pInData,
     do
         {
         // Start position in bits of the run into the line buffer.
-        RunStartPosition = *((unsigned short*)pSrc);
+        RunStartPosition = *((uint16_t*)pSrc);
         pSrc++;
 
         // Stop position in bits of the run into the line buffer.
-        RunStopPosition = *((unsigned short*)pSrc);
+        RunStopPosition = *((uint16_t*)pSrc);
         pSrc++;
 
         // Fill all bits from RunStartPosition to RunStartPosition.

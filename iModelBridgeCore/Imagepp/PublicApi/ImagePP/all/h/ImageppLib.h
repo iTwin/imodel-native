@@ -191,12 +191,12 @@ struct ChannelToBandIndexMapping
         BLUE    =2,
         ALPHA   =3
         };
-    unsigned short GetIndex(ChannelType channel) const          { return m_index[channel];   }
-    void   SetIndex(ChannelType channel, unsigned short value)  { m_index[channel] = value;  }
+    uint16_t GetIndex(ChannelType channel) const          { return m_index[channel];   }
+    void   SetIndex(ChannelType channel, uint16_t value)  { m_index[channel] = value;  }
     bool   IsAlphaChannelDefined() const                { return m_index[ALPHA] != 0;}
 
     private:
-        unsigned short m_index[4];
+        uint16_t m_index[4];
     };
 
 enum CCITT_PHOTOMETRIC_INTERPRETATION
@@ -215,7 +215,7 @@ struct ImageppLibAdmin : ImagePPHost::IHostObject
 private:
 
 
-    virtual int  _GetVersion() const {return 1;} // Do not override!
+    virtual int32_t  _GetVersion() const {return 1;} // Do not override!
     virtual void _OnHostTermination (bool isProcessShutdown)  {delete this;}
 
     IMAGEPP_EXPORT virtual bool _Initialize();

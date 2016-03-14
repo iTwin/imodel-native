@@ -22,7 +22,7 @@ HMDVolatileLayers::HMDVolatileLayers(const HFCPtr<HMDLayers>& pi_rpLayers)
     m_NbVolatileLayers = pi_rpLayers->GetNbLayers();
     m_ppVolatileLayers = new HAutoPtr<HMDVolatileLayerInfo>[m_NbVolatileLayers];
 
-    for (unsigned short LayerInd = 0; LayerInd < m_NbVolatileLayers; LayerInd++)
+    for (uint16_t LayerInd = 0; LayerInd < m_NbVolatileLayers; LayerInd++)
         {
         m_ppVolatileLayers[LayerInd] = new HMDVolatileLayerInfo(pi_rpLayers->GetLayer(LayerInd));
         }
@@ -59,7 +59,7 @@ HFCPtr<HMDMetaDataContainer> HMDVolatileLayers::Clone() const
 // Public
 // Get the number of volatile layers
 //-----------------------------------------------------------------------------
-unsigned short HMDVolatileLayers::GetNbVolatileLayers() const
+uint16_t HMDVolatileLayers::GetNbVolatileLayers() const
     {
     return m_NbVolatileLayers;
     }
@@ -68,7 +68,7 @@ unsigned short HMDVolatileLayers::GetNbVolatileLayers() const
 // Public
 // Get a volatile layer info
 //-----------------------------------------------------------------------------
-HMDVolatileLayerInfo* HMDVolatileLayers::GetVolatileLayerInfo(unsigned short pi_Index)
+HMDVolatileLayerInfo* HMDVolatileLayers::GetVolatileLayerInfo(uint16_t pi_Index)
     {
     HPRECONDITION(pi_Index < m_NbVolatileLayers);
 
@@ -79,7 +79,7 @@ HMDVolatileLayerInfo* HMDVolatileLayers::GetVolatileLayerInfo(unsigned short pi_
 // Public
 // Get the persistent layer info
 //-----------------------------------------------------------------------------
-const HMDLayerInfo* HMDVolatileLayers::GetLayerInfo(unsigned short pi_Index) const
+const HMDLayerInfo* HMDVolatileLayers::GetLayerInfo(uint16_t pi_Index) const
     {
     HPRECONDITION(pi_Index < m_NbVolatileLayers);
 
@@ -91,7 +91,7 @@ const HMDLayerInfo* HMDVolatileLayers::GetLayerInfo(unsigned short pi_Index) con
 // GetIndexFromKey
 //-----------------------------------------------------------------------------
 bool HMDVolatileLayers::GetIndexFromKey(const WString& pi_rKey,
-                                                unsigned short&       po_rIndex) const
+                                                uint16_t&       po_rIndex) const
     {
     for (po_rIndex = 0; po_rIndex < m_NbVolatileLayers; po_rIndex++)
         {
@@ -117,7 +117,7 @@ bool HMDVolatileLayers::SameLayersOn(const HMDVolatileLayers& pi_rObj) const
 
     if (this != &pi_rObj)
         {
-        for (unsigned short LayerInd = 0; LayerInd < GetNbVolatileLayers(); LayerInd++)
+        for (uint16_t LayerInd = 0; LayerInd < GetNbVolatileLayers(); LayerInd++)
             {
             if ((const_cast<HMDVolatileLayers*>(this))->GetVolatileLayerInfo(LayerInd)->GetVisibleState() !=
                 (const_cast<HMDVolatileLayers*>(&pi_rObj))->GetVolatileLayerInfo(LayerInd)->GetVisibleState())
@@ -139,7 +139,7 @@ void HMDVolatileLayers::ResetInitialVisibleState()
     {
     bool InitialVisibleState;
 
-    for (unsigned short LayerInd = 0; LayerInd < GetNbVolatileLayers(); LayerInd++)
+    for (uint16_t LayerInd = 0; LayerInd < GetNbVolatileLayers(); LayerInd++)
         {
         InitialVisibleState = m_ppVolatileLayers[LayerInd]->GetLayerInfo()
                               ->GetInitialVisibleState();
@@ -159,7 +159,7 @@ void HMDVolatileLayers::CopyMemberData(const HMDVolatileLayers& pi_rObj)
 
     HMDVolatileLayers* pVolatileLayers = const_cast<HMDVolatileLayers*>(&pi_rObj);
 
-    for (unsigned short LayerInd = 0; LayerInd < m_NbVolatileLayers; LayerInd++)
+    for (uint16_t LayerInd = 0; LayerInd < m_NbVolatileLayers; LayerInd++)
         {
         m_ppVolatileLayers[LayerInd] = new HMDVolatileLayerInfo(*(pVolatileLayers->
                                                                   GetVolatileLayerInfo(LayerInd)));

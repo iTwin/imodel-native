@@ -364,8 +364,8 @@ void HRAEditorN8::ClearRun(HUINTX       pi_PosX,
             {
             case 2:
                 {
-                unsigned short* pPixels = (unsigned short*)pData;
-                unsigned short Value   = *(unsigned short const*)pi_pValue;
+                uint16_t* pPixels = (uint16_t*)pData;
+                uint16_t Value   = *(uint16_t const*)pi_pValue;
                 for (size_t i = 0; i < pi_PixelCount; ++i)
                     pPixels[i] = Value;
                 }

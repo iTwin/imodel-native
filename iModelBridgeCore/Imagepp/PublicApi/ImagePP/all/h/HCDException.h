@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDException.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -62,15 +62,15 @@ typedef HCDException_T<ImagePPExceptions::HCDCorruptedPackbitsData> HCDCorrupted
 class HCDIJLErrorException : public HCDException
 {
 public:
-    HCDIJLErrorException(short pi_IJLErrorCode);
+    HCDIJLErrorException(int16_t pi_IJLErrorCode);
     virtual ~HCDIJLErrorException();
-    const short GetErrorCode() const;
+    const int16_t GetErrorCode() const;
     HCDIJLErrorException (const HCDIJLErrorException&     pi_rObj); 
     virtual WString GetExceptionMessage() const override; 
     virtual HFCException* Clone() const override; 
     virtual void ThrowMyself() const override {throw *this;} 
 protected: 
-    short m_IJLErrorCode;  
+    int16_t m_IJLErrorCode;  
 };
 
 END_IMAGEPP_NAMESPACE

@@ -1783,11 +1783,11 @@ otherwise.
 @param pi_GeoKey The geocoding key to test
 -----------------------------------------------------------------------------
 */
-unsigned short HRFGeocodingCapability::GetNbGeotiffKeys() const
+uint16_t HRFGeocodingCapability::GetNbGeotiffKeys() const
     {
     HPRECONDITION(m_SupportedGeoKeys.size() <= USHRT_MAX);
 
-    return (unsigned short)m_SupportedGeoKeys.size();
+    return (uint16_t)m_SupportedGeoKeys.size();
     }
 
 /** -----------------------------------------------------------------------------
@@ -1797,7 +1797,7 @@ This method return the geotiff key at the given index
 @param pi_KeyIndex The index of the requested geocoding key
 -----------------------------------------------------------------------------
 */
-TIFFGeoKey HRFGeocodingCapability::GetGeotiffKey(unsigned short pi_KeyIndex) const
+TIFFGeoKey HRFGeocodingCapability::GetGeotiffKey(uint16_t pi_KeyIndex) const
     {
     HPRECONDITION(pi_KeyIndex < m_SupportedGeoKeys.size());
 

@@ -314,7 +314,7 @@ void HVE2DEllipse::ResetTolerance()
 // the centered coordinate system's X axis or above
 //-----------------------------------------------------------------------------
 double HVE2DEllipse::ComputeY(double pi_X,
-                               short pi_SignFactor) const
+                               int16_t pi_SignFactor) const
     {
     HPRECONDITION(m_IsVertical == false);
     HPRECONDITION((pi_SignFactor == -1) || (pi_SignFactor == 1));
@@ -335,7 +335,7 @@ double HVE2DEllipse::ComputeY(double pi_X,
 // the centered coordinate system's Y axis or above
 //-----------------------------------------------------------------------------
 double HVE2DEllipse::ComputeX(double pi_Y,
-                               short pi_SignFactor) const
+                               int16_t pi_SignFactor) const
     {
     HPRECONDITION(m_IsVertical == true);
     HPRECONDITION((pi_SignFactor == -1) || (pi_SignFactor == 1));

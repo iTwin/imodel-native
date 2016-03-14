@@ -52,7 +52,7 @@ HRFBlockAdapterCapabilities* HRFAdaptTileToImageCreator::GetCapabilities() const
 //-----------------------------------------------------------------------------
 HRFBlockAdapter* HRFAdaptTileToImageCreator::Create(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                                     uint32_t              pi_Page,
-                                                    unsigned short       pi_Resolution,
+                                                    uint16_t       pi_Resolution,
                                                     HFCAccessMode         pi_AccessMode) const
     {
     return new HRFAdaptTileToImage(GetCapabilities(),
@@ -70,7 +70,7 @@ HRFAdaptTileToImage::HRFAdaptTileToImage(
     HRFBlockAdapterCapabilities* pi_pCapabilities,
     HFCPtr<HRFRasterFile>        pi_rpRasterFile,
     uint32_t                     pi_Page,
-    unsigned short              pi_Resolution,
+    uint16_t              pi_Resolution,
     HFCAccessMode                pi_AccessMode)
     : HRFBlockAdapter(pi_pCapabilities,
                       pi_rpRasterFile,
@@ -85,16 +85,16 @@ HRFAdaptTileToImage::HRFAdaptTileToImage(
     m_TileWidth          = m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBlockWidth();
     m_TileHeight         = m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBlockHeight();
 
-    HASSERT(m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBlocksPerWidth() <= ULONG_MAX);
+    HASSERT(m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBlocksPerWidth() <= UINT32_MAX);
 
     m_TilePerWidth       = (uint32_t)m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBlocksPerWidth();
     m_TileSize           = m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBlockSizeInBytes();
 
-    HASSERT(m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBlocksPerHeight() <= ULONG_MAX);
+    HASSERT(m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBlocksPerHeight() <= UINT32_MAX);
 
     m_TilePerHeight      = (uint32_t)m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBlocksPerHeight();
 
-    HASSERT(m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetHeight() <= ULONG_MAX);
+    HASSERT(m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetHeight() <= UINT32_MAX);
 
     m_Height             = (uint32_t)m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetHeight();
 

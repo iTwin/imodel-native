@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HGF2DLinearModelAdapterTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -306,7 +306,7 @@ TEST_F(HGF2DLinearModelAdapterTester, ConversionTestAdaptedAsProjective)
 
 TEST_F(HGF2DLinearModelAdapterTester, ConversionInOutArraysTestAdaptedAsProjective)
     {
-    const int NUMBER_OF_POINTS = 10;
+    const int32_t NUMBER_OF_POINTS = 10;
     double XArrayInOut[NUMBER_OF_POINTS];
     double YArrayInOut[NUMBER_OF_POINTS];
     for(uint32_t i = 0; i < NUMBER_OF_POINTS; i++)
@@ -714,7 +714,7 @@ TEST_F(HGF2DLinearModelAdapterTester, ConversionTestAdaptedAsSimpleAffine)
 
 TEST_F(HGF2DLinearModelAdapterTester, ConversionInOutArraysTestAdaptedAsSimpleAffine)
     {
-    const int NUMBER_OF_POINTS = 10;
+    const int32_t NUMBER_OF_POINTS = 10;
     double XArrayInOut[NUMBER_OF_POINTS];
     double YArrayInOut[NUMBER_OF_POINTS];
     for(uint32_t i = 0; i < NUMBER_OF_POINTS; i++)

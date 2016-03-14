@@ -50,7 +50,7 @@ protected:
     //:> Constructor
     HRFxChEditor (HFCPtr<HRFRasterFile> pi_rpRasterFile,
                   uint32_t              pi_Page,
-                  unsigned short       pi_Resolution,
+                  uint16_t       pi_Resolution,
                   HFCAccessMode         pi_AccessMode);
 private:
     //:> Methods Disabled

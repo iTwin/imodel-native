@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIDXAList.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -18,7 +18,7 @@ BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------
-template<class T, int C> HIDXAList<T, C>::HIDXAList()
+template<class T, int32_t C> HIDXAList<T, C>::HIDXAList()
     {
     HASSERT(C > 0);
 
@@ -35,7 +35,7 @@ template<class T, int C> HIDXAList<T, C>::HIDXAList()
 //-----------------------------------------------------------------------------
 // Destructor
 //-----------------------------------------------------------------------------
-template<class T, int C> HIDXAList<T, C>::~HIDXAList()
+template<class T, int32_t C> HIDXAList<T, C>::~HIDXAList()
     {
     // Delete all the blocks in the list
     HIDXAListBlock<T, C>* pCurrentBlock = m_pHead;
@@ -55,7 +55,7 @@ template<class T, int C> HIDXAList<T, C>::~HIDXAList()
 //-----------------------------------------------------------------------------
 // Get the first block
 //-----------------------------------------------------------------------------
-template<class T, int C> inline HIDXAListBlock<T, C>* HIDXAList<T, C>::GetHead() const
+template<class T, int32_t C> inline HIDXAListBlock<T, C>* HIDXAList<T, C>::GetHead() const
     {
     return m_pHead;
     }
@@ -64,7 +64,7 @@ template<class T, int C> inline HIDXAListBlock<T, C>* HIDXAList<T, C>::GetHead()
 //-----------------------------------------------------------------------------
 // Get the last block
 //-----------------------------------------------------------------------------
-template<class T, int C> inline HIDXAListBlock<T, C>* HIDXAList<T, C>::GetTail() const
+template<class T, int32_t C> inline HIDXAListBlock<T, C>* HIDXAList<T, C>::GetTail() const
     {
     return m_pTail;
     }
@@ -73,7 +73,7 @@ template<class T, int C> inline HIDXAListBlock<T, C>* HIDXAList<T, C>::GetTail()
 //-----------------------------------------------------------------------------
 // Test underflow condition
 //-----------------------------------------------------------------------------
-template<class T, int C> inline bool HIDXAList<T, C>::InsertWouldCauseUnderflow() const
+template<class T, int32_t C> inline bool HIDXAList<T, C>::InsertWouldCauseUnderflow() const
     {
     // Two returns are for optimization...
     if (m_pHead == 0)
@@ -91,7 +91,7 @@ template<class T, int C> inline bool HIDXAList<T, C>::InsertWouldCauseUnderflow(
 //-----------------------------------------------------------------------------
 // Test overflow condition
 //-----------------------------------------------------------------------------
-template<class T, int C> inline bool HIDXAList<T, C>::InsertWouldCauseOverflow() const
+template<class T, int32_t C> inline bool HIDXAList<T, C>::InsertWouldCauseOverflow() const
     {
     // Two returns are for optimization...
     if (m_pTail == 0)
@@ -100,8 +100,8 @@ template<class T, int C> inline bool HIDXAList<T, C>::InsertWouldCauseOverflow()
         }
     else
         {
-        // Overflow happens if we try to go over ULONG_MAX
-        return (C > ULONG_MAX - m_pTail->GetBlockOffset());
+        // Overflow happens if we try to go over UINT32_MAX
+        return (C > UINT32_MAX - m_pTail->GetBlockOffset());
         }
     }
 
@@ -113,7 +113,7 @@ template<class T, int C> inline bool HIDXAList<T, C>::InsertWouldCauseOverflow()
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------
-template<class T, int C> HIDXAListBlock<T, C>::HIDXAListBlock(
+template<class T, int32_t C> HIDXAListBlock<T, C>::HIDXAListBlock(
     uint32_t              pi_BlockOffset,
     HIDXAListBlock<T, C>* pi_pPreviousBlock,
     HIDXAListBlock<T, C>* pi_pNextBlock)
@@ -133,7 +133,7 @@ template<class T, int C> HIDXAListBlock<T, C>::HIDXAListBlock(
 //-----------------------------------------------------------------------------
 // Retrieve block's absolute offset
 //-----------------------------------------------------------------------------
-template<class T, int C> inline uint32_t HIDXAListBlock<T, C>::GetBlockOffset() const
+template<class T, int32_t C> inline uint32_t HIDXAListBlock<T, C>::GetBlockOffset() const
     {
     return m_BlockOffset;
     }
@@ -142,7 +142,7 @@ template<class T, int C> inline uint32_t HIDXAListBlock<T, C>::GetBlockOffset() 
 //-----------------------------------------------------------------------------
 // Set the block's absolute offset
 //-----------------------------------------------------------------------------
-template<class T, int C> inline void HIDXAListBlock<T, C>::SetBlockOffset(uint32_t pi_NewBlockOffset)
+template<class T, int32_t C> inline void HIDXAListBlock<T, C>::SetBlockOffset(uint32_t pi_NewBlockOffset)
     {
     m_BlockOffset = pi_NewBlockOffset;
     }
@@ -151,7 +151,7 @@ template<class T, int C> inline void HIDXAListBlock<T, C>::SetBlockOffset(uint32
 //-----------------------------------------------------------------------------
 // Get prev. block in deque
 //-----------------------------------------------------------------------------
-template<class T, int C> inline HIDXAListBlock<T, C>* HIDXAListBlock<T, C>::GetPreviousBlock() const
+template<class T, int32_t C> inline HIDXAListBlock<T, C>* HIDXAListBlock<T, C>::GetPreviousBlock() const
     {
     return m_pPreviousBlock;
     }
@@ -160,7 +160,7 @@ template<class T, int C> inline HIDXAListBlock<T, C>* HIDXAListBlock<T, C>::GetP
 //-----------------------------------------------------------------------------
 // Get next block in deque
 //-----------------------------------------------------------------------------
-template<class T, int C> inline HIDXAListBlock<T, C>* HIDXAListBlock<T, C>::GetNextBlock() const
+template<class T, int32_t C> inline HIDXAListBlock<T, C>* HIDXAListBlock<T, C>::GetNextBlock() const
     {
     return m_pNextBlock;
     }
@@ -169,7 +169,7 @@ template<class T, int C> inline HIDXAListBlock<T, C>* HIDXAListBlock<T, C>::GetN
 //-----------------------------------------------------------------------------
 // Retrieve an element
 //-----------------------------------------------------------------------------
-template<class T, int C> inline HFCPtr< HIDXIndexable<T> >& HIDXAListBlock<T, C>::operator[](size_t pi_RelativePosition) const
+template<class T, int32_t C> inline HFCPtr< HIDXIndexable<T> >& HIDXAListBlock<T, C>::operator[](size_t pi_RelativePosition) const
     {
     return m_Elements[pi_RelativePosition];
     }
@@ -178,7 +178,7 @@ template<class T, int C> inline HFCPtr< HIDXIndexable<T> >& HIDXAListBlock<T, C>
 //-----------------------------------------------------------------------------
 // Retrieve an element
 //-----------------------------------------------------------------------------
-template<class T, int C> inline HFCPtr< HIDXIndexable<T> >& HIDXAListBlock<T, C>::ElementAt(uint32_t pi_AbsolutePosition) const
+template<class T, int32_t C> inline HFCPtr< HIDXIndexable<T> >& HIDXAListBlock<T, C>::ElementAt(uint32_t pi_AbsolutePosition) const
     {
     HASSERT(pi_AbsolutePosition >= m_BlockOffset);
     HASSERT(pi_AbsolutePosition - m_BlockOffset < C);
@@ -189,7 +189,7 @@ template<class T, int C> inline HFCPtr< HIDXIndexable<T> >& HIDXAListBlock<T, C>
 //-----------------------------------------------------------------------------
 // Insertion at front
 //-----------------------------------------------------------------------------
-template<class T, int C> void HIDXAList<T, C>::InsertBlockAtBeginning()
+template<class T, int32_t C> void HIDXAList<T, C>::InsertBlockAtBeginning()
     {
     if (m_pHead != 0)
         {
@@ -219,7 +219,7 @@ template<class T, int C> void HIDXAList<T, C>::InsertBlockAtBeginning()
 //-----------------------------------------------------------------------------
 // Insertion at back
 //-----------------------------------------------------------------------------
-template<class T, int C> void HIDXAList<T, C>::InsertBlockAtEnd()
+template<class T, int32_t C> void HIDXAList<T, C>::InsertBlockAtEnd()
     {
     if (m_pTail != 0)
         {
@@ -248,7 +248,7 @@ template<class T, int C> void HIDXAList<T, C>::InsertBlockAtEnd()
 //-----------------------------------------------------------------------------
 // Deletion of a block
 //-----------------------------------------------------------------------------
-template<class T, int C> void HIDXAList<T, C>::DeleteBlock(HIDXAListBlock<T, C>* pi_pBlock)
+template<class T, int32_t C> void HIDXAList<T, C>::DeleteBlock(HIDXAListBlock<T, C>* pi_pBlock)
     {
     HASSERT(pi_pBlock != 0);
 
@@ -286,9 +286,9 @@ template<class T, int C> void HIDXAList<T, C>::DeleteBlock(HIDXAListBlock<T, C>*
 //-----------------------------------------------------------------------------
 // Check if 2 blocks can be merged
 //-----------------------------------------------------------------------------
-template<class T, int C> bool HIDXAList<T, C>::CanBlockBeMerged(
+template<class T, int32_t C> bool HIDXAList<T, C>::CanBlockBeMerged(
     HIDXAListBlock<T, C>*  pi_pBlock,
-    unsigned short  pi_MaxCombinedSize,
+    uint16_t  pi_MaxCombinedSize,
     HIDXAListBlock<T, C>** po_ppOtherBlock) const
     {
     HASSERT(pi_pBlock != 0);
@@ -325,7 +325,7 @@ template<class T, int C> bool HIDXAList<T, C>::CanBlockBeMerged(
 //-----------------------------------------------------------------------------
 // Get the number of blocks in the list
 //-----------------------------------------------------------------------------
-template<class T, int C> inline uint32_t HIDXAList<T, C>::GetBlockCount() const
+template<class T, int32_t C> inline uint32_t HIDXAList<T, C>::GetBlockCount() const
     {
     return m_BlockCount;
     }

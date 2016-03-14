@@ -75,7 +75,7 @@ HRFBlockAdapterFactory::~HRFBlockAdapterFactory()
 bool HRFBlockAdapterFactory::FindBestAdapterTypeFor(
     HFCPtr<HRFRasterFile>  pi_rpForRasterFile,
     uint32_t               pi_AtPage,
-    unsigned short        pi_AtResolution,
+    uint16_t        pi_AtResolution,
     HRFBlockType*          po_ToBlockType,
     uint32_t*                po_ToBlockWidth,
     uint32_t*                po_ToBlockHeight) const
@@ -240,7 +240,7 @@ bool HRFBlockAdapterFactory::FindBestAdapterTypeFor(
 bool HRFBlockAdapterFactory::CanAdapt(
     HFCPtr<HRFRasterFile>  pi_rpFromRasterFile,
     uint32_t               pi_AtPage,
-    unsigned short        pi_AtResolution,
+    uint16_t        pi_AtResolution,
     HRFBlockType           pi_ToBlockType,
     uint32_t               pi_ToWidth,
     uint32_t               pi_ToHeight) const
@@ -272,7 +272,7 @@ bool HRFBlockAdapterFactory::CanAdapt(
 HRFBlockAdapter* HRFBlockAdapterFactory::New(
     HFCPtr<HRFRasterFile> pi_rpForRasterFile,
     uint32_t              pi_AtPage,
-    unsigned short       pi_AtResolution,
+    uint16_t       pi_AtResolution,
     HFCAccessMode         pi_WithAccessMode) const
     {
     const HRFBlockAdapterCreator* pCreator      = 0;
@@ -307,7 +307,7 @@ void HRFBlockAdapterFactory::Register(const HRFBlockAdapterCreator* pi_pCreator)
 const HRFBlockAdapterCreator* HRFBlockAdapterFactory::FindCreator(
     HFCPtr<HRFRasterFile> pi_rpForRasterFile,
     uint32_t              pi_AtPage,
-    unsigned short       pi_AtResolution) const
+    uint16_t       pi_AtResolution) const
     {
     const HRFBlockAdapterCreator* pCreator = 0;
 

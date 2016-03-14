@@ -24,11 +24,11 @@ class HRPPixelType;
 #define PIXELTYPESPEC_BGR  1
 
 // List of Const. added here so they can be shared between HMR and iTiff
-static const int HMR_LgStringDescriptor     = 128;
-static const int HMR_LgStringSystemCoord    = 128;
-static const int HMR_LgStringDateTime       = 20;
-//static const int HMR_DimTile                = 256;
-//static const int HMR_SizeHeader             = 2800; // Approx. dimension
+static const int32_t HMR_LgStringDescriptor     = 128;
+static const int32_t HMR_LgStringSystemCoord    = 128;
+static const int32_t HMR_LgStringDateTime       = 20;
+//static const int32_t HMR_DimTile                = 256;
+//static const int32_t HMR_SizeHeader             = 2800; // Approx. dimension
 
 //-----------------------------------------------------------------------------
 // Data types used to store/pass along all channels No Data Value
@@ -51,7 +51,7 @@ public:
 
         // Tile Capability
         Add(new HRFTileCapability(HFC_READ_WRITE_CREATE, // AccessMode
-                                  LONG_MAX,              // MaxSizeInBytes
+                                  INT32_MAX,              // MaxSizeInBytes
                                   32,                    // MinWidth
                                   1024,                  // MaxWidth
                                   16,                    // WidthIncrement
@@ -61,27 +61,27 @@ public:
                                   false));               // Not Square
         // Tile Capability
         Add(new HRFTileCapability(HFC_READ_WRITE,        // AccessMode
-                                  LONG_MAX,              // MaxSizeInBytes
+                                  INT32_MAX,              // MaxSizeInBytes
                                   1,                     // MinWidth
-                                  LONG_MAX,              // MaxWidth
+                                  INT32_MAX,              // MaxWidth
                                   1,                     // WidthIncrement
                                   1,                     // MinHeight
-                                  LONG_MAX,              // MaxHeight
+                                  INT32_MAX,              // MaxHeight
                                   1,                     // HeightIncrement
                                   false));               // Not Square
 
         // Strip Capability
         Add(new HRFStripCapability(HFC_READ_WRITE_CREATE,  // AccessMode
-                                   LONG_MAX,               // MaxSizeInBytes
+                                   INT32_MAX,               // MaxSizeInBytes
                                    32,                     // MinHeight
-                                   LONG_MAX,               // MaxHeight
+                                   INT32_MAX,               // MaxHeight
                                    16));                   // HeightIncrement
 
         // Strip Capability
         Add(new HRFStripCapability(HFC_READ_WRITE,         // AccessMode
-                                   LONG_MAX,               // MaxSizeInBytes
+                                   INT32_MAX,               // MaxSizeInBytes
                                    1,                      // MinHeight
-                                   LONG_MAX,               // MaxHeight
+                                   INT32_MAX,               // MaxHeight
                                    1));                    // HeightIncrement
         }
     };
@@ -101,27 +101,27 @@ public:
 
         // Tile Capability
         Add(new HRFTileCapability(HFC_READ_WRITE,        // AccessMode
-                                  LONG_MAX,              // MaxSizeInBytes
+                                  INT32_MAX,              // MaxSizeInBytes
                                   1,                     // MinWidth
-                                  LONG_MAX,              // MaxWidth
+                                  INT32_MAX,              // MaxWidth
                                   1,                     // WidthIncrement
                                   1,                     // MinHeight
-                                  LONG_MAX,              // MaxHeight
+                                  INT32_MAX,              // MaxHeight
                                   1,                     // HeightIncrement
                                   false));               // Not Square
 
         // Strip Capability
         Add(new HRFStripCapability(HFC_READ_WRITE_CREATE,  // AccessMode
-                                   LONG_MAX,               // MaxSizeInBytes
+                                   INT32_MAX,               // MaxSizeInBytes
                                    32,                     // MinHeight
-                                   LONG_MAX,               // MaxHeight
+                                   INT32_MAX,               // MaxHeight
                                    16));                   // HeightIncrement
 
         // Strip Capability
         Add(new HRFStripCapability(HFC_READ_WRITE,         // AccessMode
-                                   LONG_MAX,               // MaxSizeInBytes
+                                   INT32_MAX,               // MaxSizeInBytes
                                    1,                      // MinHeight
-                                   LONG_MAX,               // MaxHeight
+                                   INT32_MAX,               // MaxHeight
                                    1));                    // HeightIncrement
         }
     };
@@ -148,7 +148,7 @@ public:
     static HFCPtr<HRPPixelType> CreatePixelTypeFromFile(HTIFFFile*                          pi_pTIFFFile,
                                                         uint32_t                            pi_Page = 0,
                                                         Byte*                             pi_pAlphaPalette = 0,
-                                                        unsigned short                     pi_HMRPixelTypeSpec = PIXELTYPESPEC_RGB,
+                                                        uint16_t                     pi_HMRPixelTypeSpec = PIXELTYPESPEC_RGB,
                                                         const ListOfChannelIndex*           pi_pChannelsWithNoDataValue = 0,
                                                         const ListOfChannelNoDataValue*     pi_pChannelsNoDataValue = 0);
 
@@ -177,7 +177,7 @@ public:
     virtual bool                         AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage);
 
     virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
-                                                                 unsigned short           pi_Resolution,
+                                                                 uint16_t           pi_Resolution,
                                                                  HFCAccessMode             pi_AccessMode);
 
     virtual void                          Save();
@@ -215,7 +215,7 @@ protected:
     void                                SetDirectory          (uint32_t pi_DirIndex);
     void                                SetImageInSubImage    (uint32_t pi_IndexImage);
     uint32_t                            CalcNumberOfPage      () const;
-    unsigned short                     CalcNumberOfSubResolution(uint32_t pi_IndexImage) const;
+    uint16_t                     CalcNumberOfSubResolution(uint32_t pi_IndexImage) const;
     uint32_t                            GetIndexOfPage        (uint32_t pi_Page) const;
 
     // Thumbnail interface
@@ -223,7 +223,7 @@ protected:
     void                                AddThumbnailToFile    (uint32_t pi_Page);
 
     void                                AddResolutionToFile   (uint32_t pi_Page,
-                                                               unsigned short pi_Resolution);
+                                                               uint16_t pi_Resolution);
 
     void                                WritePixelTypeAndCodecToFile(
         uint32_t                    pi_Page,

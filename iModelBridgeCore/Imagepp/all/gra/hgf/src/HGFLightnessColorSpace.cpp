@@ -17,7 +17,7 @@
 //
 //----------------------------------------------------------------------------
 
-HGFLightnessColorSpace::HGFLightnessColorSpace(double pi_GammaCorrection, unsigned short pi_BitsPerPixel)
+HGFLightnessColorSpace::HGFLightnessColorSpace(double pi_GammaCorrection, uint16_t pi_BitsPerPixel)
     :HGFBasicColorSpace(pi_GammaCorrection, pi_BitsPerPixel)
     {
     BuildLookupTableLUVToRGB();
@@ -46,7 +46,7 @@ void HGFLightnessColorSpace::BuildLookupTableLUVToRGB()
 //
 //----------------------------------------------------------------------------
 
-double HGFLightnessColorSpace::ConvertFromRGB (unsigned short pi_Red, unsigned short pi_Green, unsigned short pi_Blue) const
+double HGFLightnessColorSpace::ConvertFromRGB (uint16_t pi_Red, uint16_t pi_Green, uint16_t pi_Blue) const
     {
     double Y = m_pRGBToYRed[pi_Red] + m_pRGBToYGreen[pi_Green] + m_pRGBToYBlue[pi_Blue];
 
@@ -97,7 +97,7 @@ void HGFLightnessColorSpace::ConvertArrayFromRGB (double* po_pL,
 //----------------------------------------------------------------------------
 
 void HGFLightnessColorSpace::ConvertArrayFromRGB (double* po_pL,
-                                                  unsigned short* pi_pRed, unsigned short*  pi_pGreen, unsigned short*  pi_pBlue,
+                                                  uint16_t* pi_pRed, uint16_t*  pi_pGreen, uint16_t*  pi_pBlue,
                                                   uint32_t pi_SampleCount) const
     {
     double Y;

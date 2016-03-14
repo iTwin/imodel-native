@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelTypeV1GrayWhite1.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPPixelTypeV1GrayWhite1
@@ -29,7 +29,7 @@ public:
     virtual HPMPersistentObject*
     Clone() const;
 
-    virtual unsigned short CountValueBits() const;
+    virtual uint16_t CountValueBits() const;
 
     // Not a const method because it returns a non const pointer to this.
     virtual HRPPixelType1BitInterface*

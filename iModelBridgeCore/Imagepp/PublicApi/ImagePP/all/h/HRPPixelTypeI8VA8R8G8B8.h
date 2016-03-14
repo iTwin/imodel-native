@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelTypeI8VA8R8G8B8.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPPixelTypeI8VA8R8G8B8
@@ -32,7 +32,7 @@ public:
         return 16;
         };
 
-    virtual unsigned short CountValueBits() const;
+    virtual uint16_t CountValueBits() const;
 
     virtual void    SetDefaultCompositeValue(const void* pi_pValue);
 

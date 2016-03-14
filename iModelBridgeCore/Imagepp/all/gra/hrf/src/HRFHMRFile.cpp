@@ -69,7 +69,7 @@ public:
         {
         // Tile Capability
         Add(new HRFTileCapability(HFC_READ_WRITE_CREATE, // AccessMode
-                                  LONG_MAX,              // MaxSizeInBytes
+                                  INT32_MAX,              // MaxSizeInBytes
                                   256,                   // MinWidth
                                   256,                   // MaxWidth
                                   0,                     // WidthIncrement
@@ -382,7 +382,7 @@ HRFHMRFile::~HRFHMRFile()
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFHMRFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                        unsigned short pi_Resolution,
+                                                        uint16_t pi_Resolution,
                                                         HFCAccessMode  pi_AccessMode)
     {
     HPRECONDITION(pi_Page < CountPages());
@@ -581,7 +581,7 @@ bool HRFHMRFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
         m_aPaddingByRes = new uint32_t[pi_pPage->CountResolutions()];
 
         uint32_t Height;
-        for (unsigned short Resolution=0; Resolution < pi_pPage->CountResolutions(); Resolution++)
+        for (uint16_t Resolution=0; Resolution < pi_pPage->CountResolutions(); Resolution++)
             {
             Height = (uint32_t)ceil((double)pi_pPage->GetResolutionDescriptor(Resolution)->GetHeight() /
                                   (double)pi_pPage->GetResolutionDescriptor(Resolution)->GetBlockHeight()) *
@@ -715,7 +715,7 @@ void HRFHMRFile::CreateDescriptors()
 
         // Instantiation of Resolution descriptor
         HRFPageDescriptor::ListOfResolutionDescriptor  ListOfResolutionDescriptor;
-        for (unsigned short Resolution=0; Resolution < CalcNumberOfSubResolution(GetIndexOfPage(Page))+1; Resolution++)
+        for (uint16_t Resolution=0; Resolution < CalcNumberOfSubResolution(GetIndexOfPage(Page))+1; Resolution++)
             {
             // Obtain Resolution Information
 
@@ -829,7 +829,7 @@ void HRFHMRFile::CreateDescriptors()
             }
 
         // RESOLUTIONUNIT Tag
-        unsigned short UnitValue;
+        uint16_t UnitValue;
         if (GetFilePtr()->GetField(RESOLUTIONUNIT, &UnitValue))
             {
             pTag = new HRFAttributeResolutionUnit(UnitValue);
@@ -905,7 +905,7 @@ HFCPtr<HGF2DTransfoModel> HRFHMRFile::CreateTransfoModelFromTiffMatrix() const
 // GetResolutionRatio - Return resolution ratio for the specified page and resolution
 //-----------------------------------------------------------------------------
 double HRFHMRFile::GetResolutionRatio(uint32_t pi_Page,
-                                       unsigned short pi_Resolution) const
+                                       uint16_t pi_Resolution) const
     {
     return (1.0 / pow(2.0, (double)pi_Resolution));
     }
@@ -1011,7 +1011,7 @@ void HRFHMRFile::InitPrivateTagDefault ()
     memset (m_HistoDateTime, ' ', HMR_LgStringDateTime);
     m_HistoDateTime[HMR_LgStringDateTime-1] = '\0';
     m_pHistogram = new uint32_t[HISTOGRAM_ENTRY];
-    for (int i=0; i<HISTOGRAM_ENTRY; i++)
+    for (int32_t i=0; i<HISTOGRAM_ENTRY; i++)
         m_pHistogram[i] = 1L;
     m_PaddingLines  = 0L;
 
@@ -1087,7 +1087,7 @@ bool HRFHMRFile::ReadPrivateDirectory ()
             HASSERT(Count == HISTOGRAM_ENTRY);
             m_pHistogram = new uint32_t[HISTOGRAM_ENTRY];
 
-            for (int i=0; i<HISTOGRAM_ENTRY; i++)
+            for (int32_t i=0; i<HISTOGRAM_ENTRY; i++)
                 m_pHistogram[i] = pHisto[i];
             }
 

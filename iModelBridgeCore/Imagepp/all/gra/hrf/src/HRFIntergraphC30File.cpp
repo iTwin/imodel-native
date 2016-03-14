@@ -44,12 +44,12 @@ public:
         {
         // Line Capability
         Add(new HRFLineCapability(HFC_READ_ONLY,                // HFC_READ_WRITE_CREATE,        // AccessMode
-                                  LONG_MAX,                     // MaxWidth
+                                  INT32_MAX,                     // MaxWidth
                                   HRFBlockAccess::SEQUENTIAL)); // BlockAccess
 
         // Tile Capability
         Add(new HRFTileCapability(HFC_READ_ONLY,          // AccessMode
-                                  LONG_MAX,               // MaxSizeInBytes
+                                  INT32_MAX,               // MaxSizeInBytes
                                   32,                     // MinWidth
                                   4096,                   // MaxWidth
                                   32,                     // WidthIncrement
@@ -202,9 +202,9 @@ bool HRFIntergraphC30Creator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
     bool   Result = false;
     HAutoPtr<HFCBinStream> pFile;
-    unsigned short HeaderTypeCode;
-    unsigned short DataTypeCode;
-    unsigned short WordToFollow;
+    uint16_t HeaderTypeCode;
+    uint16_t DataTypeCode;
+    uint16_t WordToFollow;
     uint32_t HeaderLen;
 
     // Open the Cot30 File & place file pointer at the start of the file
@@ -214,15 +214,15 @@ bool HRFIntergraphC30Creator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         {
         // Check if the file was a valid Intergraph Cot30...
         pFile->SeekToBegin();
-        if (pFile->Read(&HeaderTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
+        if (pFile->Read(&HeaderTypeCode, sizeof(uint16_t)) != sizeof(uint16_t))
             goto WRAPUP;
 
         if (HeaderTypeCode == 0x0908)
             {
-            if (pFile->Read(&WordToFollow, sizeof(unsigned short)) != sizeof(unsigned short))
+            if (pFile->Read(&WordToFollow, sizeof(uint16_t)) != sizeof(uint16_t))
                 goto WRAPUP;
 
-            if (pFile->Read(&DataTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
+            if (pFile->Read(&DataTypeCode, sizeof(uint16_t)) != sizeof(uint16_t))
                 goto WRAPUP;
 
             if ((DataTypeCode == 30) && (pi_Offset || !IsMultiPage(*pFile, (WordToFollow + 2)/256)) )
@@ -236,7 +236,7 @@ bool HRFIntergraphC30Creator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                         HeaderLen = ((WordToFollow + 2) /256) * 512;
                         HeaderLen += 18;
                         pFile->SeekToPos(HeaderLen);
-                        if (pFile->Read(&DataTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
+                        if (pFile->Read(&DataTypeCode, sizeof(uint16_t)) != sizeof(uint16_t))
                             goto WRAPUP;
 
                         if ((DataTypeCode == 30) && (pi_Offset || !IsMultiPage(*pFile, (WordToFollow + 2)/256)) )
@@ -333,7 +333,7 @@ void HRFIntergraphC30File::CreateDescriptors()
 
         // Instantiation of Resolution descriptor
         HRFPageDescriptor::ListOfResolutionDescriptor  ListOfResolutionDescriptor;
-        for (unsigned short Resolution=0; Resolution < CountSubResolution() + 1; Resolution++)
+        for (uint16_t Resolution=0; Resolution < CountSubResolution() + 1; Resolution++)
             {
             uint32_t BlockWidth  = GetWidth(Resolution);
             uint32_t BlockHeight = 1;
@@ -385,7 +385,7 @@ void HRFIntergraphC30File::CreateDescriptors()
 
         if (m_IntergraphHeader.IBlock1.drs != 0)
             {
-            unsigned short UnitValue;
+            uint16_t UnitValue;
             double Resolution;
 
             if (m_IntergraphHeader.IBlock1.drs < 0)

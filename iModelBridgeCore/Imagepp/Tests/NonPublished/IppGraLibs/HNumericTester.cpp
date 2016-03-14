@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HNumericTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -27,14 +27,14 @@ TEST (HNumericTester, EQUAL)
     ASSERT_FALSE(HNumeric<uint32_t>::EQUAL(Au, Au + 2 * Au, Au));
 
     //Short
-    short B=1;
-    ASSERT_TRUE(HNumeric<short>::EQUAL(B, B, B));
-    ASSERT_FALSE(HNumeric<short>::EQUAL(B, B + 2 * B, B));
+    int16_t B=1;
+    ASSERT_TRUE(HNumeric<int16_t>::EQUAL(B, B, B));
+    ASSERT_FALSE(HNumeric<int16_t>::EQUAL(B, B + 2 * B, B));
 
     //UShort
-    unsigned short Bu=1;
-    ASSERT_TRUE(HNumeric<unsigned short>::EQUAL(Bu, Bu, Bu));
-    ASSERT_FALSE(HNumeric<unsigned short>::EQUAL(Bu, Bu + 2 * Bu, Bu));
+    uint16_t Bu=1;
+    ASSERT_TRUE(HNumeric<uint16_t>::EQUAL(Bu, Bu, Bu));
+    ASSERT_FALSE(HNumeric<uint16_t>::EQUAL(Bu, Bu + 2 * Bu, Bu));
 
     //int32_t
     int32_t C=1;
@@ -80,9 +80,9 @@ TEST (HNumericTester, EQUAL_EPSILON)
     ASSERT_FALSE(HNumeric<int32_t>::EQUAL_EPSILON(A, A + A));
 
     //Short
-    short B=1;
-    ASSERT_TRUE(HNumeric<short>::EQUAL_EPSILON(B, B));
-    ASSERT_FALSE(HNumeric<short>::EQUAL_EPSILON(B, B + B));
+    int16_t B=1;
+    ASSERT_TRUE(HNumeric<int16_t>::EQUAL_EPSILON(B, B));
+    ASSERT_FALSE(HNumeric<int16_t>::EQUAL_EPSILON(B, B + B));
 
     //int32_t
     int32_t C=1;
@@ -119,9 +119,9 @@ TEST (HNumericTester, EQUAL_AUTO_EPSILON)
     ASSERT_FALSE(HNumeric<int32_t>::EQUAL_AUTO_EPSILON(A, A + A));
 
     //Short
-    short B=1;
-    ASSERT_TRUE(HNumeric<short>::EQUAL_AUTO_EPSILON(B, B));
-    ASSERT_FALSE(HNumeric<short>::EQUAL_AUTO_EPSILON(B, B + B));
+    int16_t B=1;
+    ASSERT_TRUE(HNumeric<int16_t>::EQUAL_AUTO_EPSILON(B, B));
+    ASSERT_FALSE(HNumeric<int16_t>::EQUAL_AUTO_EPSILON(B, B + B));
 
     //int32_t
     int32_t C=1;
@@ -164,16 +164,16 @@ TEST (HNumericTester, GREATER_OR_EQUAL)
     ASSERT_TRUE(HNumeric<int32_t>::GREATER_OR_EQUAL(Au, -3 * Au, Au));
 
     //Short
-    short B=1;
-    ASSERT_TRUE(HNumeric<short>::GREATER_OR_EQUAL(B, B, B));
-    ASSERT_FALSE(HNumeric<short>::GREATER_OR_EQUAL(B, B + 2 * B, B));
-    ASSERT_TRUE(HNumeric<short>::GREATER_OR_EQUAL(B, -3 * B, B));
+    int16_t B=1;
+    ASSERT_TRUE(HNumeric<int16_t>::GREATER_OR_EQUAL(B, B, B));
+    ASSERT_FALSE(HNumeric<int16_t>::GREATER_OR_EQUAL(B, B + 2 * B, B));
+    ASSERT_TRUE(HNumeric<int16_t>::GREATER_OR_EQUAL(B, -3 * B, B));
 
     //UShort
-    unsigned short Bu=1;
-    ASSERT_TRUE(HNumeric<short>::GREATER_OR_EQUAL(Bu, Bu, Bu));
-    ASSERT_FALSE(HNumeric<short>::GREATER_OR_EQUAL(Bu, Bu + 2 * Bu, Bu));
-    ASSERT_TRUE(HNumeric<short>::GREATER_OR_EQUAL(Bu, -3 * Bu, Bu));
+    uint16_t Bu=1;
+    ASSERT_TRUE(HNumeric<int16_t>::GREATER_OR_EQUAL(Bu, Bu, Bu));
+    ASSERT_FALSE(HNumeric<int16_t>::GREATER_OR_EQUAL(Bu, Bu + 2 * Bu, Bu));
+    ASSERT_TRUE(HNumeric<int16_t>::GREATER_OR_EQUAL(Bu, -3 * Bu, Bu));
 
     //int32_t
     int32_t C=1;
@@ -226,10 +226,10 @@ TEST (HNumericTester, GREATER_OR_EQUAL_EPSILON)
     ASSERT_TRUE(HNumeric<int32_t>::GREATER_OR_EQUAL_EPSILON(A, -3 * A));
 
     //Short
-    short B=1;
-    ASSERT_TRUE(HNumeric<short>::GREATER_OR_EQUAL_EPSILON(B, B));
-    ASSERT_FALSE(HNumeric<short>::GREATER_OR_EQUAL_EPSILON(B, B + 2 * B));
-    ASSERT_TRUE(HNumeric<short>::GREATER_OR_EQUAL_EPSILON(B, -3 * B));
+    int16_t B=1;
+    ASSERT_TRUE(HNumeric<int16_t>::GREATER_OR_EQUAL_EPSILON(B, B));
+    ASSERT_FALSE(HNumeric<int16_t>::GREATER_OR_EQUAL_EPSILON(B, B + 2 * B));
+    ASSERT_TRUE(HNumeric<int16_t>::GREATER_OR_EQUAL_EPSILON(B, -3 * B));
 
     //int32_t
     int32_t C=1;
@@ -276,16 +276,16 @@ TEST (HNumericTester, SMALLER_OR_EQUAL)
     ASSERT_FALSE(HNumeric<int32_t>::SMALLER_OR_EQUAL(Au, -3 * Au, Au));
 
     //Short
-    short B=1;
-    ASSERT_TRUE(HNumeric<short>::SMALLER_OR_EQUAL(B, B, B));
-    ASSERT_TRUE(HNumeric<short>::SMALLER_OR_EQUAL(B, B + 2 * B, B));
-    ASSERT_FALSE(HNumeric<short>::SMALLER_OR_EQUAL(B, -3 * B, B));
+    int16_t B=1;
+    ASSERT_TRUE(HNumeric<int16_t>::SMALLER_OR_EQUAL(B, B, B));
+    ASSERT_TRUE(HNumeric<int16_t>::SMALLER_OR_EQUAL(B, B + 2 * B, B));
+    ASSERT_FALSE(HNumeric<int16_t>::SMALLER_OR_EQUAL(B, -3 * B, B));
 
     //UShort
-    unsigned short Bu=1;
-    ASSERT_TRUE(HNumeric<short>::SMALLER_OR_EQUAL(Bu, Bu, Bu));
-    ASSERT_TRUE(HNumeric<short>::SMALLER_OR_EQUAL(Bu, Bu + 2 * Bu, Bu));
-    ASSERT_FALSE(HNumeric<short>::SMALLER_OR_EQUAL(Bu, -3 * Bu, Bu));
+    uint16_t Bu=1;
+    ASSERT_TRUE(HNumeric<int16_t>::SMALLER_OR_EQUAL(Bu, Bu, Bu));
+    ASSERT_TRUE(HNumeric<int16_t>::SMALLER_OR_EQUAL(Bu, Bu + 2 * Bu, Bu));
+    ASSERT_FALSE(HNumeric<int16_t>::SMALLER_OR_EQUAL(Bu, -3 * Bu, Bu));
 
     //int32_t
     int32_t C=1;
@@ -338,10 +338,10 @@ TEST (HNumericTester, SMALLER_OR_EQUAL_EPSILON)
     ASSERT_FALSE(HNumeric<int32_t>::SMALLER_OR_EQUAL_EPSILON(A, -3 * A));
 
     //Short
-    short B=1;
-    ASSERT_TRUE(HNumeric<short>::SMALLER_OR_EQUAL_EPSILON(B, B));
-    ASSERT_TRUE(HNumeric<short>::SMALLER_OR_EQUAL_EPSILON(B, B + 2 * B));
-    ASSERT_FALSE(HNumeric<short>::SMALLER_OR_EQUAL_EPSILON(B, -3 * B));
+    int16_t B=1;
+    ASSERT_TRUE(HNumeric<int16_t>::SMALLER_OR_EQUAL_EPSILON(B, B));
+    ASSERT_TRUE(HNumeric<int16_t>::SMALLER_OR_EQUAL_EPSILON(B, B + 2 * B));
+    ASSERT_FALSE(HNumeric<int16_t>::SMALLER_OR_EQUAL_EPSILON(B, -3 * B));
 
     //int32_t
     int32_t C=1;
@@ -388,16 +388,16 @@ TEST (HNumericTester, GREATER)
     ASSERT_TRUE(HNumeric<int32_t>::GREATER(Au, -3 * Au, Au));
 
     //Short
-    short B=1;
-    ASSERT_FALSE(HNumeric<short>::GREATER(B, B, B));
-    ASSERT_FALSE(HNumeric<short>::GREATER(B, B + 2 * B, B));
-    ASSERT_TRUE(HNumeric<short>::GREATER(B, -3 * B, B));
+    int16_t B=1;
+    ASSERT_FALSE(HNumeric<int16_t>::GREATER(B, B, B));
+    ASSERT_FALSE(HNumeric<int16_t>::GREATER(B, B + 2 * B, B));
+    ASSERT_TRUE(HNumeric<int16_t>::GREATER(B, -3 * B, B));
 
     //UShort
-    unsigned short Bu=1;
-    ASSERT_FALSE(HNumeric<short>::GREATER(Bu, Bu, Bu));
-    ASSERT_FALSE(HNumeric<short>::GREATER(Bu, Bu + 2 * Bu, Bu));
-    ASSERT_TRUE(HNumeric<short>::GREATER(Bu, -3 * Bu, Bu));
+    uint16_t Bu=1;
+    ASSERT_FALSE(HNumeric<int16_t>::GREATER(Bu, Bu, Bu));
+    ASSERT_FALSE(HNumeric<int16_t>::GREATER(Bu, Bu + 2 * Bu, Bu));
+    ASSERT_TRUE(HNumeric<int16_t>::GREATER(Bu, -3 * Bu, Bu));
 
     //int32_t
     int32_t C=1;
@@ -450,10 +450,10 @@ TEST (HNumericTester, GREATER_EPSILON)
     ASSERT_TRUE(HNumeric<int32_t>::GREATER_EPSILON(A, -3 * A));
 
     //Short
-    short B=1;
-    ASSERT_FALSE(HNumeric<short>::GREATER_EPSILON(B, B));
-    ASSERT_FALSE(HNumeric<short>::GREATER_EPSILON(B, B + 2 * B));
-    ASSERT_TRUE(HNumeric<short>::GREATER_EPSILON(B, -3 * B));
+    int16_t B=1;
+    ASSERT_FALSE(HNumeric<int16_t>::GREATER_EPSILON(B, B));
+    ASSERT_FALSE(HNumeric<int16_t>::GREATER_EPSILON(B, B + 2 * B));
+    ASSERT_TRUE(HNumeric<int16_t>::GREATER_EPSILON(B, -3 * B));
 
     //int32_t
     int32_t C=1;
@@ -500,16 +500,16 @@ TEST (HNumericTester, SMALLER)
     ASSERT_FALSE(HNumeric<int32_t>::SMALLER(Au, -3 * Au, Au));
 
     //Short
-    short B=1;
-    ASSERT_FALSE(HNumeric<short>::SMALLER(B, B, B));
-    ASSERT_TRUE(HNumeric<short>::SMALLER(B, B + 2 * B, B));
-    ASSERT_FALSE(HNumeric<short>::SMALLER(B, -3 * B, B));
+    int16_t B=1;
+    ASSERT_FALSE(HNumeric<int16_t>::SMALLER(B, B, B));
+    ASSERT_TRUE(HNumeric<int16_t>::SMALLER(B, B + 2 * B, B));
+    ASSERT_FALSE(HNumeric<int16_t>::SMALLER(B, -3 * B, B));
 
     //UShort
-    unsigned short Bu=1;
-    ASSERT_FALSE(HNumeric<short>::SMALLER(Bu, Bu, Bu));
-    ASSERT_TRUE(HNumeric<short>::SMALLER(Bu, Bu + 2 * Bu, Bu));
-    ASSERT_FALSE(HNumeric<short>::SMALLER(Bu, -3 * Bu, Bu));
+    uint16_t Bu=1;
+    ASSERT_FALSE(HNumeric<int16_t>::SMALLER(Bu, Bu, Bu));
+    ASSERT_TRUE(HNumeric<int16_t>::SMALLER(Bu, Bu + 2 * Bu, Bu));
+    ASSERT_FALSE(HNumeric<int16_t>::SMALLER(Bu, -3 * Bu, Bu));
 
     //int32_t
     int32_t C=1;
@@ -562,10 +562,10 @@ TEST (HNumericTester, SMALLER_EPSILON)
     ASSERT_FALSE(HNumeric<int32_t>::SMALLER_EPSILON(A, -3 * A));
 
     //Short
-    short B=1;
-    ASSERT_TRUE(HNumeric<short>::SMALLER_EPSILON(B, B));
-    ASSERT_TRUE(HNumeric<short>::SMALLER_EPSILON(B, B + 2 * B));
-    ASSERT_FALSE(HNumeric<short>::SMALLER_EPSILON(B, -3 * B));
+    int16_t B=1;
+    ASSERT_TRUE(HNumeric<int16_t>::SMALLER_EPSILON(B, B));
+    ASSERT_TRUE(HNumeric<int16_t>::SMALLER_EPSILON(B, B + 2 * B));
+    ASSERT_FALSE(HNumeric<int16_t>::SMALLER_EPSILON(B, -3 * B));
 
     //int32_t
     int32_t C=1;

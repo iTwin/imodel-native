@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HTIFFTagEntry.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HTIFFTagEntry
@@ -60,29 +60,29 @@ public:
     void                GetConvertedValues (vector<double>& po_rValues);
 
     void                GetValues (Byte* po_pVal);
-    void                GetValues (unsigned short* po_pVal);
+    void                GetValues (uint16_t* po_pVal);
     void                GetValues (uint32_t* po_pVal);
     void                GetValues (double* po_pVal);
     void                GetValues (uint64_t* po_pVal);
     void                GetValues (char** po_ppVal);
     void                GetValues (WChar** po_ppVal);
-    void                GetValues (unsigned short* po_pVal1, unsigned short* po_pVal2);
+    void                GetValues (uint16_t* po_pVal1, uint16_t* po_pVal2);
     void                GetValues (uint32_t* po_pVal1, uint32_t* po_pVal2);                     // RATIONAL
-    void                GetValues (uint32_t* po_pCount, unsigned short** po_ppVal);
+    void                GetValues (uint32_t* po_pCount, uint16_t** po_ppVal);
     void                GetValues (uint32_t* po_pCount, uint32_t** po_ppVal);
     void                GetValues (uint32_t* po_pCount, uint64_t** po_ppVal);
     void                GetValues (uint32_t* po_pCount, double** po_ppVal);
     void                GetValues (const HTagInfo& pi_rTagInfo, uint32_t* po_pCount, Byte** po_ppVal);
 
-    bool               SetValues (unsigned short pi_Val);
+    bool               SetValues (uint16_t pi_Val);
     bool               SetValues (uint32_t pi_Val);
     bool               SetValues (double pi_Val);
     bool               SetValues (uint64_t pi_Val);
     bool               SetValuesA (const char*  pi_pVal);
     bool               SetValuesW (const WChar*  pi_pVal);
-    bool               SetValues (unsigned short pi_Val1,  unsigned short pi_Val2);
+    bool               SetValues (uint16_t pi_Val1,  uint16_t pi_Val2);
     bool               SetValues (uint32_t pi_pVal1, uint32_t pi_pVal2);     // RATIONAL
-    bool               SetValues (uint32_t pi_Count, const unsigned short* pi_pVal);
+    bool               SetValues (uint32_t pi_Count, const uint16_t* pi_pVal);
     bool               SetValues (uint32_t pi_Count, const uint32_t* pi_pVal);
     bool               SetValues (uint32_t pi_Count, const uint64_t* pi_pVal);
     bool               SetValues (uint32_t pi_Count, const double* pi_pVal);

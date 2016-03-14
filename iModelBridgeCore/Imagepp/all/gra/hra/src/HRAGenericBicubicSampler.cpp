@@ -107,9 +107,9 @@ void* HRAGenericBicubicSampler<T>::GetPixel(double pi_PosX,
                                       MIN(CurrentSample.GetLine3(), m_Height-1));
 
     // Compute byte offsets for each column
-    int OffsetColumn1;
-    int OffsetColumn2;
-    int OffsetColumn3;
+    int32_t OffsetColumn1;
+    int32_t OffsetColumn2;
+    int32_t OffsetColumn3;
     if (Column1 > Column0)
         {
         HASSERT(Column0 < m_Width - 1);
@@ -156,7 +156,7 @@ void* HRAGenericBicubicSampler<T>::GetPixel(double pi_PosX,
 
     double ChannelResult;
 
-    for (unsigned short ChannelInd = 0; ChannelInd < m_NbChannels; ChannelInd++)
+    for (uint16_t ChannelInd = 0; ChannelInd < m_NbChannels; ChannelInd++)
         {
         Horiz0 = pSrcLine0[ChannelInd] * CoefX0 +
                  pSrcLine0[ChannelInd + OffsetColumn1] * CoefX1 +
@@ -220,9 +220,9 @@ void HRAGenericBicubicSampler<T>::GetPixels(const double* pi_pPositionsX,
     T*      pSrcLine2;
     T*      pSrcLine3;
     Sample  CurrentSample;
-    int     OffsetColumn1;
-    int     OffsetColumn2;
-    int     OffsetColumn3;
+    int32_t     OffsetColumn1;
+    int32_t     OffsetColumn2;
+    int32_t     OffsetColumn3;
 
     while (pi_PixelCount)
         {
@@ -346,9 +346,9 @@ void HRAGenericBicubicSampler<T>::GetPixels(double pi_PositionX,
         double Horiz0, Horiz1, Horiz2, Horiz3;
         double Dx;
         double ChannelResult;
-        int     OffsetColumn1;
-        int     OffsetColumn2;
-        int     OffsetColumn3;
+        int32_t     OffsetColumn1;
+        int32_t     OffsetColumn2;
+        int32_t     OffsetColumn3;
 
         Sample  CurrentSample(pi_PositionX, pi_PositionY);
 
@@ -370,8 +370,8 @@ void HRAGenericBicubicSampler<T>::GetPixels(double pi_PositionX,
                                           Column0,
                                           MIN(CurrentSample.GetLine3(), m_Height-1));
 
-        int NextPixelOffset = m_NbChannels;
-        int BytesToAdd;
+        int32_t NextPixelOffset = m_NbChannels;
+        int32_t BytesToAdd;
 
         double Dy = CurrentSample.GetYDelta();
         HASSERT(Dy >= 0.0 && Dy <= 1.0);
@@ -414,7 +414,7 @@ void HRAGenericBicubicSampler<T>::GetPixels(double pi_PositionX,
             CoefX2 = T2 * s_2aP3 - T3 * s_aP2 - s_a * Dx;
             CoefX3 = s_a * (T2 - T3);
 
-            for (unsigned short ChannelInd = 0; ChannelInd < m_NbChannels; ChannelInd++)
+            for (uint16_t ChannelInd = 0; ChannelInd < m_NbChannels; ChannelInd++)
                 {
                 Horiz0 = pSrcLine0[ChannelInd] * CoefX0 +
                          pSrcLine0[ChannelInd + OffsetColumn1] * CoefX1 +

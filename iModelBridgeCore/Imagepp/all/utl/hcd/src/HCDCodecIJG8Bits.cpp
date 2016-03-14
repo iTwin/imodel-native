@@ -494,7 +494,7 @@ void IJG12BITS(HCDCodecIJG)::DeepCopy(const IJG12BITS(HCDCodecIJG)& pi_rObj)
     m_ExternalQuantizationTablesUse = pi_rObj.m_ExternalQuantizationTablesUse;
     if(m_ExternalQuantizationTablesUse)
         {
-        int tblno;
+        int32_t tblno;
 
         m_QuantizationTables.resize(NUM_QUANT_TBLS , HUINTVector());
 
@@ -502,7 +502,7 @@ void IJG12BITS(HCDCodecIJG)::DeepCopy(const IJG12BITS(HCDCodecIJG)& pi_rObj)
         for (tblno = 0; tblno < NUM_QUANT_TBLS; tblno++)
             {
             if(pi_rObj.m_QuantizationTables[tblno].size() != 0)
-                SetQuantizationTable(tblno, (const unsigned int*)&pi_rObj.m_QuantizationTables[tblno][0], false);
+                SetQuantizationTable(tblno, &pi_rObj.m_QuantizationTables[tblno][0], false);
             else
                 m_QuantizationTables[tblno].clear();
             }
@@ -567,7 +567,7 @@ void IJG12BITS(HCDCodecIJG)::SetQuality(Byte pi_Percentage)
 
     if (m_ExternalQuantizationTablesUse)
         {
-        for (int tblno = 0; tblno < NUM_QUANT_TBLS; tblno++)
+        for (int32_t tblno = 0; tblno < NUM_QUANT_TBLS; tblno++)
             {
             if(m_QuantizationTables[tblno].size() != 0)
                 {
@@ -695,11 +695,11 @@ void IJG12BITS(HCDCodecIJG)::SetColorMode(HCDCodecIJG::ColorModes pi_Mode)
         }
 
 #ifdef JPEGLIB_SUPPORT_12BITS
-    cinfocomp->input_components = static_cast<int>(GetBitsPerPixel() / 16);
-    cinfodec->output_components = static_cast<int>(GetBitsPerPixel() / 16);
+    cinfocomp->input_components = static_cast<int32_t>(GetBitsPerPixel() / 16);
+    cinfodec->output_components = static_cast<int32_t>(GetBitsPerPixel() / 16);
 #else
-    cinfocomp->input_components = static_cast<int>(GetBitsPerPixel() / 8);
-    cinfodec->output_components = static_cast<int>(GetBitsPerPixel() / 8);
+    cinfocomp->input_components = static_cast<int32_t>(GetBitsPerPixel() / 8);
+    cinfodec->output_components = static_cast<int32_t>(GetBitsPerPixel() / 8);
 #endif
 
     jpeg_set_defaults(cinfocomp);
@@ -828,7 +828,7 @@ void IJG12BITS(HCDCodecIJG)::SetSubsamplingMode(HCDCodecIJG::SubsamplingModes pi
 // SetQuantizationTable
 // PLEASE CALL FOR SLOT 0 BEFORE SLOT 1
 //-----------------------------------------------------------------------------
-void IJG12BITS(HCDCodecIJG)::SetQuantizationTable(int pi_Slot, const unsigned int* pi_pTable, bool pi_UnZigZag)
+void IJG12BITS(HCDCodecIJG)::SetQuantizationTable(int32_t pi_Slot, const uint32_t* pi_pTable, bool pi_UnZigZag)
     {
     if(!m_ExternalQuantizationTablesUse)
         {
@@ -899,7 +899,7 @@ void IJG12BITS(HCDCodecIJG)::CopyTablesFromDecoderToEncoder()
         * Fix it to get the right header markers for the image colorspace.
         */
     JQUANT_TBL** qtblptr;
-    int tblno;
+    int32_t tblno;
 
     /*jpeg_set_colorspace(cinfocomp, cinfodec->jpeg_color_space);
     cinfocomp->data_precision = cinfodec->data_precision;
@@ -1019,7 +1019,7 @@ size_t IJG12BITS(HCDCodecIJG)::MergeDQT_DHT(const Byte* pi_pInData,
 
 
     /* Specify data destination for compression */
-    unsigned long outBufferSize = (unsigned long)po_OutBufferSize;
+    uint32_t outBufferSize = (uint32_t)po_OutBufferSize;
     jpeg_mem_dest(&dstinfo, &po_pOutBuffer, &outBufferSize);
 
     /* Start compressor (note no image data is actually written here) */
@@ -1272,8 +1272,8 @@ skip_input_data (j_decompress_ptr cinfo, long num_bytes)
      * any trouble anyway --- large skips are infrequent.
      */
     if (num_bytes > 0) {
-        while (num_bytes > (long) src->pub.bytes_in_buffer) {
-            num_bytes -= (long) src->pub.bytes_in_buffer;
+        while (num_bytes > (int32_t) src->pub.bytes_in_buffer) {
+            num_bytes -= (int32_t) src->pub.bytes_in_buffer;
             (void) fill_input_buffer(cinfo);
             /* note we assume that fill_input_buffer will never return false,
              * so suspension need not be handled.

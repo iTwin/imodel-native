@@ -121,7 +121,7 @@ void const* HRABilinearSamplerN8::GetPixel(double pi_PosX, double pi_PosY) const
     HASSERT(Dy >= 0.0 && Dy <= 1.0);
     double DxComplement = 1.0 - Dx;
     double DyComplement = 1.0 - Dy;
-    int     NextPixelOffset;
+    int32_t     NextPixelOffset;
 
     pSrcFirstLine = ComputeAddress(XPosition, CurrentSample.GetFirstLine());
     pSrcSecondLine = ComputeAddress(XPosition, MIN(CurrentSample.GetSecondLine(), m_Height-1));
@@ -177,7 +177,7 @@ void HRABilinearSamplerN8::GetPixels(const double*  pi_pPositionsX,
     double Dy;
     double DyComplement;
     Byte  ChannelResult;
-    int     NextPixelOffset;
+    int32_t     NextPixelOffset;
 
     while (pi_PixelCount)
         {
@@ -254,8 +254,8 @@ void HRABilinearSamplerN8::GetPixels(double         pi_PositionX,
         HASSERT(Dy >= 0.0 && Dy <= 1.0);
         double DyComplement = 1.0 - Dy;
         Byte  ChannelResult;
-        int NextPixelOffset = m_BytesPerPixel;
-        int BytesToAdd;
+        int32_t NextPixelOffset = m_BytesPerPixel;
+        int32_t BytesToAdd;
 
         while (pi_PixelCount)
             {
@@ -368,7 +368,7 @@ Byte* HRABilinearSamplerN8::ComputeAddress(HUINTX  pi_PosX,
 
     // For N1 sources, convert full lines only
     if (m_SourceBytesPerPixel == 0)
-        pi_NeededPixels = ULONG_MAX;
+        pi_NeededPixels = UINT32_MAX;
 
     // Compute start of source line
     Byte* pSrcData = m_pPacket->GetBufferAddress();
@@ -381,7 +381,7 @@ Byte* HRABilinearSamplerN8::ComputeAddress(HUINTX  pi_PosX,
 
     if (m_pWorkingPixelType != 0)
         {
-        if (pi_NeededPixels == ULONG_MAX)
+        if (pi_NeededPixels == UINT32_MAX)
             {
             // Convert and store full lines.
 

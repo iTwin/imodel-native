@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPMAttribute.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // HPMAttribute inline methods 
@@ -111,9 +111,9 @@ inline WString ExpressAsString(WString const& data)
 inline WString ExpressAsString(const HFCMatrix<4,4, double>& pi_rMatrix)
    {
    WString result;
-   for(unsigned short i = 0 ; i < 4 ; ++i)
+   for(uint16_t i = 0 ; i < 4 ; ++i)
        {
-       for(unsigned short j = 0; j < 3 ; ++j)
+       for(uint16_t j = 0; j < 3 ; ++j)
            ExpressAsString(pi_rMatrix[i][j]) + L", ";
            
        result += ExpressAsString(pi_rMatrix[i][3]) + L"\n";

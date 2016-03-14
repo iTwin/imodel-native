@@ -99,7 +99,7 @@ HCDCodec* HCDCodecHMRRLE1::Clone() const
         pRun++; \
         p -= 32767; \
     } \
-    (*pRun) = (unsigned short)p; \
+    (*pRun) = (uint16_t)p; \
     ++pRun; \
     OnState = !OnState;
 
@@ -117,7 +117,7 @@ size_t HCDCodecHMRRLE1::CompressSubset(const void* pi_pInData,
     size_t LongsCount;
     size_t BytesCount;
     size_t BitsCount;
-    unsigned short* pCurLine = NULL;
+    uint16_t* pCurLine = NULL;
     size_t Pixels;
     size_t LongsPerLine;
     size_t ExtraBytesPerLine;
@@ -130,7 +130,7 @@ size_t HCDCodecHMRRLE1::CompressSubset(const void* pi_pInData,
     Byte ByteValue;
 
     Byte* pSrcRawData = (Byte*)pi_pInData;
-    unsigned short* pRun = (unsigned short*)po_pOutBuffer;
+    uint16_t* pRun = (uint16_t*)po_pOutBuffer;
 
     // is it the first packet?
     if(GetSubsetPosY() == 0)
@@ -328,10 +328,10 @@ size_t HCDCodecHMRRLE1::CompressSubset(const void* pi_pInData,
             *pCurLine = 0x5900;
             pCurLine++;
             // words to follow
-            *pCurLine = (unsigned short)(pRun - (pCurLine + 1));
+            *pCurLine = (uint16_t)(pRun - (pCurLine + 1));
             pCurLine++;
             // line number
-            *pCurLine = (unsigned short)(LineNumber + 1);
+            *pCurLine = (uint16_t)(LineNumber + 1);
             pCurLine++;
             // pixel offset
             *pCurLine = 0;
@@ -368,7 +368,7 @@ size_t HCDCodecHMRRLE1::DecompressSubset(const void* pi_pInData,
         SetCurrentState(STATE_DECOMPRESS);
         }
 
-    unsigned short* pRun = (unsigned short*)pi_pInData;
+    uint16_t* pRun = (uint16_t*)pi_pInData;
 
     // test if we simply want to skip the lines
     if(pi_OutBufferSize == 0)
@@ -420,7 +420,7 @@ size_t HCDCodecHMRRLE1::DecompressSubset(const void* pi_pInData,
             }
 
         size_t WordsToFollow = 0;
-        unsigned short* pStartLine = NULL;
+        uint16_t* pStartLine = NULL;
 
         // parse each line
         while(LinesCount != 0)
@@ -614,7 +614,7 @@ size_t HCDCodecHMRRLE1::CompressSubsetFromRLE(HFCPtr<HCDPacketRLE> const& pi_rpP
         m_LastCompressionIndex = 0;
         }
 
-    unsigned short* pOutRuns = (unsigned short*)po_pOutBuffer;
+    uint16_t* pOutRuns = (uint16_t*)po_pOutBuffer;
 
     // Compress subset
     for(uint32_t Line=0; Line < GetSubsetHeight(); ++Line)
@@ -626,7 +626,7 @@ size_t HCDCodecHMRRLE1::CompressSubsetFromRLE(HFCPtr<HCDPacketRLE> const& pi_rpP
             m_pLineIndexesTable[Line] = (uint32_t)((((Byte*)pOutRuns - (Byte*)po_pOutBuffer) >> 1) + m_LastCompressionIndex);
             }
 
-        unsigned short* pLineHead = pOutRuns;    // Keep track of the beginning of the line in case we need to add an header and to determine if we ended with blacks.
+        uint16_t* pLineHead = pOutRuns;    // Keep track of the beginning of the line in case we need to add an header and to determine if we ended with blacks.
 
         // Skip header if we have one.
         if(m_LineHeader)
@@ -635,7 +635,7 @@ size_t HCDCodecHMRRLE1::CompressSubsetFromRLE(HFCPtr<HCDPacketRLE> const& pi_rpP
             pOutRuns+=4;                        // Skip header: 4 WORD.
             }
 
-        unsigned short const* pCurrentLine = (unsigned short const*)pi_rpPacketRLE->GetLineBuffer(Line);
+        uint16_t const* pCurrentLine = (uint16_t const*)pi_rpPacketRLE->GetLineBuffer(Line);
         size_t         CurrRunIndex = 0;
         size_t         MaxCurrRunIndex = pi_rpPacketRLE->GetLineDataSize(Line) >> 1;
 
@@ -659,7 +659,7 @@ size_t HCDCodecHMRRLE1::CompressSubsetFromRLE(HFCPtr<HCDPacketRLE> const& pi_rpP
                 PixelsFromCurrRun -= 32767;
                 pOutRuns+=2;
                 }
-            pOutRuns[0] = (unsigned short)PixelsFromCurrRun;
+            pOutRuns[0] = (uint16_t)PixelsFromCurrRun;
             ++pOutRuns;
             }
 
@@ -676,9 +676,9 @@ size_t HCDCodecHMRRLE1::CompressSubsetFromRLE(HFCPtr<HCDPacketRLE> const& pi_rpP
             // scanline header
             pLineHead[0] = 0x5900;
             // words to follow
-            pLineHead[1] = (unsigned short)(pOutRuns - (pLineHead + 2));
+            pLineHead[1] = (uint16_t)(pOutRuns - (pLineHead + 2));
             // line number
-            pLineHead[2] = (unsigned short)(Line + 1);
+            pLineHead[2] = (uint16_t)(Line + 1);
             // pixel offset
             pLineHead[3] = 0;
             }
@@ -714,7 +714,7 @@ void HCDCodecHMRRLE1::DecompressSubsetToRLE(const void* pi_pInData, size_t pi_In
         SetCurrentState(STATE_DECOMPRESS);
         }
 
-    unsigned short const* pRunLine = (unsigned short const*)pi_pInData;
+    uint16_t const* pRunLine = (uint16_t const*)pi_pInData;
 
     // Decompress subset
     for(uint32_t Line(0); Line < GetSubsetHeight(); ++Line)
@@ -743,7 +743,7 @@ void HCDCodecHMRRLE1::DecompressSubsetToRLE(const void* pi_pInData, size_t pi_In
         HASSERT(WordsToNextLine ? RunLineIndex <= WordsToNextLine : true);
 
         // We start and end with blacks so we always have an odd number of entries. Make sure it is true in case we need a trailing empty black.
-        size_t LineDataSize = (RunLineIndex | 0x1) * sizeof(unsigned short);
+        size_t LineDataSize = (RunLineIndex | 0x1) * sizeof(uint16_t);
 
         // Alloc buffer if it is not large enough.
         if(pio_rpRLEPacket->GetLineBufferSize(Line) < LineDataSize)
@@ -753,12 +753,12 @@ void HCDCodecHMRRLE1::DecompressSubsetToRLE(const void* pi_pInData, size_t pi_In
             }
 
         // Copy RLE runs from source.
-        unsigned short* pOutLineBuffer = (unsigned short*)pio_rpRLEPacket->GetLineBuffer(Line);
-        memcpy(pOutLineBuffer, pRunLine, RunLineIndex * sizeof (unsigned short));
+        uint16_t* pOutLineBuffer = (uint16_t*)pio_rpRLEPacket->GetLineBuffer(Line);
+        memcpy(pOutLineBuffer, pRunLine, RunLineIndex * sizeof (uint16_t));
 
         // !!!! PATCH buggy encoded lines
         if(PixelsFromCurrentRun > GetSubsetWidth())
-            pOutLineBuffer[RunLineIndex-1] -= (unsigned short)(PixelsFromCurrentRun - GetSubsetWidth());
+            pOutLineBuffer[RunLineIndex-1] -= (uint16_t)(PixelsFromCurrentRun - GetSubsetWidth());
 
         // We must end with a black run. So if current entry would be black that means the last entry we wrote is white and thus we must add an empty black to close the RLE run.
         if(!(RunLineIndex & 0x1))     // black runs are ON even number: 0,2,4,6...
@@ -768,7 +768,7 @@ void HCDCodecHMRRLE1::DecompressSubsetToRLE(const void* pi_pInData, size_t pi_In
             }
 
         // Packet is filled with data.
-        HASSERT(LineDataSize == RunLineIndex * sizeof (unsigned short));
+        HASSERT(LineDataSize == RunLineIndex * sizeof (uint16_t));
         pio_rpRLEPacket->SetLineDataSize(Line, LineDataSize);
 
         // adjust buffer to the next line
@@ -926,7 +926,7 @@ size_t HCDCodecHMRRLE1::GetSizeOf(const void*   pi_pCompressedData,
     {
     HPRECONDITION(pi_pCompressedData != 0);
 
-    unsigned short* pRun((unsigned short*)pi_pCompressedData);
+    uint16_t* pRun((uint16_t*)pi_pCompressedData);
     size_t BufferSize = 0;
     uint32_t PixelCount = 0;
     while (pi_Height != 0)
@@ -938,7 +938,7 @@ size_t HCDCodecHMRRLE1::GetSizeOf(const void*   pi_pCompressedData,
             }
         HPOSTCONDITION(PixelCount == pi_Width);
 
-        if (((pRun - (unsigned short*)pi_pCompressedData) & 0x01) == 0)
+        if (((pRun - (uint16_t*)pi_pCompressedData) & 0x01) == 0)
             {
             HPRECONDITION(*pRun == 0);
             ++BufferSize;
@@ -949,5 +949,5 @@ size_t HCDCodecHMRRLE1::GetSizeOf(const void*   pi_pCompressedData,
         --pi_Height;
         }
 
-    return BufferSize * sizeof(unsigned short);
+    return BufferSize * sizeof(uint16_t);
     }

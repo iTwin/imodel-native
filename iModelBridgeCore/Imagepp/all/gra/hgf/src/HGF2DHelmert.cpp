@@ -81,7 +81,7 @@ HGF2DHelmert::HGF2DHelmert(const HGF2DDisplacement& pi_rTranslation,
 
     -----------------------------------------------------------------------------
 */
-HGF2DHelmert::HGF2DHelmert(unsigned short pi_NumberOfPoints,
+HGF2DHelmert::HGF2DHelmert(uint16_t pi_NumberOfPoints,
                            const double* pi_pTiePoints)
     : HGF2DTransfoModel()
     {

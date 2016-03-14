@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCProfiler.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -37,12 +37,12 @@ public:
 
     size_t          RegisterCounter(const WString& pi_rName);
 
-    LARGE_INTEGER   Start(int pi_CounterID);
-    void            Stop(int pi_CounterID, LARGE_INTEGER);
+    LARGE_INTEGER   Start(int32_t pi_CounterID);
+    void            Stop(int32_t pi_CounterID, LARGE_INTEGER);
 
     void            DumpStatistics();
 
-    typedef vector<int> IntVector;
+    typedef vector<int32_t> IntVector;
 
 private:
 
@@ -83,8 +83,8 @@ private:
             }
 
         WString m_Name;
-        int     m_Calls;
-        int     m_Overheads;
+        int32_t     m_Calls;
+        int32_t     m_Overheads;
         double  m_TotalMilliSeconds;
         double  m_ChildrenMilliSeconds;
 

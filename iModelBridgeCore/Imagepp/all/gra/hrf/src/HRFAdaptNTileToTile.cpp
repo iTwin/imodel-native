@@ -52,7 +52,7 @@ HRFBlockAdapterCapabilities* HRFAdaptNTileToTileCreator::GetCapabilities() const
 //-----------------------------------------------------------------------------
 HRFBlockAdapter* HRFAdaptNTileToTileCreator::Create(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                                     uint32_t              pi_Page,
-                                                    unsigned short       pi_Resolution,
+                                                    uint16_t       pi_Resolution,
                                                     HFCAccessMode         pi_AccessMode) const
     {
     return new HRFAdaptNTileToTile(GetCapabilities(),
@@ -69,7 +69,7 @@ HRFBlockAdapter* HRFAdaptNTileToTileCreator::Create(HFCPtr<HRFRasterFile> pi_rpR
 HRFAdaptNTileToTile::HRFAdaptNTileToTile(  HRFBlockAdapterCapabilities* pi_pCapabilities,
                                            HFCPtr<HRFRasterFile>        pi_rpRasterFile,
                                            uint32_t                     pi_Page,
-                                           unsigned short              pi_Resolution,
+                                           uint16_t              pi_Resolution,
                                            HFCAccessMode                pi_AccessMode)
 
     : HRFBlockAdapter(pi_pCapabilities,
@@ -117,7 +117,7 @@ HSTATUS HRFAdaptNTileToTile::ReadBlock(uint64_t pi_PosBlockX,
     // Adjust if necessary the number of Tile at the resolution height
     if (pi_PosBlockY + (m_TilePerBlockHeight*m_TileHeight) >= m_pResolutionDescriptor->GetHeight())
         {
-        HASSERT(m_pResolutionDescriptor->GetHeight() <= ULONG_MAX);
+        HASSERT(m_pResolutionDescriptor->GetHeight() <= UINT32_MAX);
 
         NumberOfBlockToAccessPerHeight = (((uint32_t)m_pResolutionDescriptor->GetHeight() + m_TileHeight -1) - (uint32_t)pi_PosBlockY) / m_TileHeight;
         }
@@ -125,7 +125,7 @@ HSTATUS HRFAdaptNTileToTile::ReadBlock(uint64_t pi_PosBlockX,
     // Adjust if necessary the number of Tile at the resolution width
     if (pi_PosBlockX + (m_TilePerBlockWidth*m_TileWidth) >= m_pResolutionDescriptor->GetWidth())
         {
-        HASSERT(m_pResolutionDescriptor->GetWidth() <= ULONG_MAX);
+        HASSERT(m_pResolutionDescriptor->GetWidth() <= UINT32_MAX);
 
         NumberOfBlockToAccessPerWidth = (((uint32_t)m_pResolutionDescriptor->GetWidth() + m_TileWidth -1) - (uint32_t)pi_PosBlockX) / m_TileWidth;
         }
@@ -186,7 +186,7 @@ HSTATUS HRFAdaptNTileToTile::WriteBlock(uint64_t     pi_PosBlockX,
     // Adjust if necessary the number of Tile at the resolution height
     if (pi_PosBlockY + (m_TilePerBlockHeight*m_TileHeight) >= m_pResolutionDescriptor->GetHeight())
         {
-        HASSERT(m_pResolutionDescriptor->GetHeight() <= ULONG_MAX);
+        HASSERT(m_pResolutionDescriptor->GetHeight() <= UINT32_MAX);
 
         NumberOfBlockToAccessPerHeight = (((uint32_t)m_pResolutionDescriptor->GetHeight() + m_TileHeight -1) - (uint32_t)pi_PosBlockY) / m_TileHeight;
         }
@@ -194,7 +194,7 @@ HSTATUS HRFAdaptNTileToTile::WriteBlock(uint64_t     pi_PosBlockX,
     // Adjust if necessary the number of Tile at the resolution width
     if (pi_PosBlockX + (m_TilePerBlockWidth*m_TileWidth) >= m_pResolutionDescriptor->GetWidth())
         {
-        HASSERT(m_pResolutionDescriptor->GetWidth() <= ULONG_MAX);
+        HASSERT(m_pResolutionDescriptor->GetWidth() <= UINT32_MAX);
 
         NumberOfBlockToAccessPerWidth = (((uint32_t)m_pResolutionDescriptor->GetWidth() + m_TileWidth -1) - (uint32_t)pi_PosBlockX) / m_TileWidth;
         }

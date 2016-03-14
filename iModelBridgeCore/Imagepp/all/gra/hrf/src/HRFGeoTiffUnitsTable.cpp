@@ -73,7 +73,7 @@ HRFGeoTiffUnitsTable::~HRFGeoTiffUnitsTable()
 /**----------------------------------------------------------------------------
  Get a record from the table.
 
- @param pi_Code     A short value that containt the search key
+ @param pi_Code     A int16_t value that containt the search key
  @param po_pRecord  An HRFGeoTiffUnitsRecord pointer that receive the
                     record value.
 
@@ -82,7 +82,7 @@ HRFGeoTiffUnitsTable::~HRFGeoTiffUnitsTable()
  @see HRFGeoTiffCompressedTable::GetValues()
  @see HRFGeoTiffUnitsRecord
 -----------------------------------------------------------------------------*/
-bool HRFGeoTiffUnitsTable::GetRecord(short pi_Code,
+bool HRFGeoTiffUnitsTable::GetRecord(int16_t pi_Code,
                                       HRFGeoTiffUnitsRecord*    po_pRecord) const
     {
     HPRECONDITION(po_pRecord != 0);
@@ -134,7 +134,7 @@ HRFGeoTiffUnitsTable::HRFGeoTiffUnitsTable(const HFCPtr<HFCURL>& pi_rpUnitsTable
                                        s_CompressedTableSize);
 
     //:> initialize the table definition
-    for (unsigned short i = 0; i < s_NbColumns; i++)
+    for (uint16_t i = 0; i < s_NbColumns; i++)
         m_ColumnsArray.push_back(s_TableDef[i]);
 
     //:> set the size of the uncompressed data

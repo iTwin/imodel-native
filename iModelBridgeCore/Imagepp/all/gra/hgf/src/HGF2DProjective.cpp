@@ -218,7 +218,7 @@ HGF2DProjective::HGF2DProjective(const HGF2DProjective& pi_rObj)
 
     -----------------------------------------------------------------------------
 */
-HGF2DProjective::HGF2DProjective(unsigned short pi_NumberOfPoints,
+HGF2DProjective::HGF2DProjective(uint16_t pi_NumberOfPoints,
                                  const double*  pi_pTiePoints)
     : HGF2DTransfoModel()
     {

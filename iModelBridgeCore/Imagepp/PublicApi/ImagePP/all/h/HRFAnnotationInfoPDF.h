@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFAnnotationInfoPDF.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -40,7 +40,7 @@ public :
 
     //Methods returning information about the selection zone
     IMAGEPP_EXPORT const PointCollections& GetSelectZonePoints() const;
-    IMAGEPP_EXPORT unsigned short          GetLineWidth() const;
+    IMAGEPP_EXPORT uint16_t          GetLineWidth() const;
     IMAGEPP_EXPORT bool                    IsFilled() const;
 
 protected:

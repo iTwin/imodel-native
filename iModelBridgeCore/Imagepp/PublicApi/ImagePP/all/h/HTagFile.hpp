@@ -90,7 +90,7 @@ inline uint32_t HTagFile::GetCount(size_t pi_Index) const
     {
     if (IsTiff64())
         {
-        HASSERT(m_pCount64[pi_Index] < ULONG_MAX);
+        HASSERT(m_pCount64[pi_Index] < UINT32_MAX);
         return (uint32_t)m_pCount64[pi_Index];
         }
     else
@@ -186,7 +186,7 @@ inline bool HTagFile::RemoveTag(HTagID pi_Tag)
 
 // Get/Set Values Methods
 //
-inline bool HTagFile::GetField (HTagID pi_Tag, unsigned short* po_pVal) const
+inline bool HTagFile::GetField (HTagID pi_Tag, uint16_t* po_pVal) const
     {
     HPRECONDITION(po_pVal != 0);
     HFCMonitor Monitor(m_Key);
@@ -230,7 +230,7 @@ inline bool HTagFile::GetField (HTagID pi_Tag, WChar** po_ppVal) const
     return m_pCurDir->GetValues(pi_Tag, po_ppVal);
     }
 
-inline bool HTagFile::GetField (HTagID pi_Tag, unsigned short* po_pVal1, unsigned short* po_pVal2) const
+inline bool HTagFile::GetField (HTagID pi_Tag, uint16_t* po_pVal1, uint16_t* po_pVal2) const
     {
     HPRECONDITION(po_pVal1 != 0);
     HPRECONDITION(po_pVal2 != 0);
@@ -246,7 +246,7 @@ inline bool HTagFile::GetField (HTagID pi_Tag, uint32_t* po_pCount, Byte** po_pp
     return m_pCurDir->GetValues(pi_Tag, po_pCount, po_ppVal);
     }
 
-inline bool HTagFile::GetField (HTagID pi_Tag, uint32_t* po_pCount, unsigned short** po_ppVal) const
+inline bool HTagFile::GetField (HTagID pi_Tag, uint32_t* po_pCount, uint16_t** po_ppVal) const
     {
     HPRECONDITION(po_pCount != 0);
     HPRECONDITION(po_ppVal != 0);
@@ -279,7 +279,7 @@ inline bool HTagFile::GetField (HTagID pi_Tag, uint32_t* po_pCount, uint64_t** p
     }
 
 
-inline bool HTagFile::SetField (HTagID pi_Tag, unsigned short pi_Val)
+inline bool HTagFile::SetField (HTagID pi_Tag, uint16_t pi_Val)
     {
     HFCMonitor Monitor(m_Key);
     return m_pCurDir->SetValues(pi_Tag, pi_Val);
@@ -316,7 +316,7 @@ inline bool HTagFile::SetFieldW (HTagID pi_Tag, const WChar* pi_pVal)
     return m_pCurDir->SetValuesW(pi_Tag, pi_pVal);
     }
 
-inline bool HTagFile::SetField (HTagID pi_Tag, unsigned short pi_Val1, unsigned short pi_Val2)
+inline bool HTagFile::SetField (HTagID pi_Tag, uint16_t pi_Val1, uint16_t pi_Val2)
     {
     HFCMonitor Monitor(m_Key);
     return m_pCurDir->SetValues(pi_Tag, pi_Val1, pi_Val2);
@@ -328,7 +328,7 @@ inline bool HTagFile::SetField (HTagID pi_Tag, uint32_t pi_Count, const Byte* pi
     return m_pCurDir->SetValues(pi_Tag, pi_Count, pi_pVal);
     }
 
-inline bool HTagFile::SetField (HTagID pi_Tag, uint32_t pi_Count, const unsigned short* pi_pVal)
+inline bool HTagFile::SetField (HTagID pi_Tag, uint32_t pi_Count, const uint16_t* pi_pVal)
     {
     HFCMonitor Monitor(m_Key);
     return m_pCurDir->SetValues(pi_Tag, pi_Count, pi_pVal);

@@ -29,7 +29,7 @@
 // #endif
 
 extern "C" char CPL_DLL* GTIFGetOGISDefn(GTIF*, GTIFDefn*);
-extern "C" int  CPL_DLL  GTIFSetFromOGISDefn(GTIF*, const char*);
+extern "C" int32_t  CPL_DLL  GTIFSetFromOGISDefn(GTIF*, const char*);
 
 //-----------------------------------------------------------------------------
 // Public
@@ -305,12 +305,12 @@ bool HRFGdalUtilities::ConvertGeotiffKeysToOGCWKT(const HFCPtr<HCPGeoTiffKeys>& 
 
     if (pi_rpGeoTiffKeys->GetValue(GTModelTypeGeoKey, &ULongVal))
         {
-        GTIFKeySet(pGTIF, GTModelTypeGeoKey, TYPE_SHORT, 1, (short)ULongVal);
+        GTIFKeySet(pGTIF, GTModelTypeGeoKey, TYPE_SHORT, 1, (int16_t)ULongVal);
         }
 
     if (pi_rpGeoTiffKeys->GetValue(GTRasterTypeGeoKey, &ULongVal))
         {
-        GTIFKeySet(pGTIF, GTRasterTypeGeoKey, TYPE_SHORT, 1, (short)ULongVal);
+        GTIFKeySet(pGTIF, GTRasterTypeGeoKey, TYPE_SHORT, 1, (int16_t)ULongVal);
         }
 
     if (pi_rpGeoTiffKeys->GetValue(GTCitationGeoKey, &CharVal))
@@ -324,7 +324,7 @@ bool HRFGdalUtilities::ConvertGeotiffKeysToOGCWKT(const HFCPtr<HCPGeoTiffKeys>& 
 
     if (pi_rpGeoTiffKeys->GetValue(GeographicTypeGeoKey, &ULongVal))
         {
-        GTIFKeySet(pGTIF, GeographicTypeGeoKey, TYPE_SHORT, 1, (short)ULongVal);
+        GTIFKeySet(pGTIF, GeographicTypeGeoKey, TYPE_SHORT, 1, (int16_t)ULongVal);
         }
 
     if (pi_rpGeoTiffKeys->GetValue(GeogCitationGeoKey, &CharVal))
@@ -338,17 +338,17 @@ bool HRFGdalUtilities::ConvertGeotiffKeysToOGCWKT(const HFCPtr<HCPGeoTiffKeys>& 
 
     if (pi_rpGeoTiffKeys->GetValue(GeogGeodeticDatumGeoKey, &ULongVal))
         {
-        GTIFKeySet(pGTIF, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, (short)ULongVal);
+        GTIFKeySet(pGTIF, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, (int16_t)ULongVal);
         }
 
     if (pi_rpGeoTiffKeys->GetValue(GeogPrimeMeridianGeoKey, &ULongVal))
         {
-        GTIFKeySet(pGTIF, GeogPrimeMeridianGeoKey, TYPE_SHORT, 1, (short)ULongVal);
+        GTIFKeySet(pGTIF, GeogPrimeMeridianGeoKey, TYPE_SHORT, 1, (int16_t)ULongVal);
         }
 
     if (pi_rpGeoTiffKeys->GetValue(GeogLinearUnitsGeoKey, &ULongVal))
         {
-        GTIFKeySet(pGTIF, GeogLinearUnitsGeoKey, TYPE_SHORT, 1, (short)ULongVal);
+        GTIFKeySet(pGTIF, GeogLinearUnitsGeoKey, TYPE_SHORT, 1, (int16_t)ULongVal);
         }
 
     if (pi_rpGeoTiffKeys->GetValue(GeogLinearUnitSizeGeoKey, &DoubleVal))
@@ -358,7 +358,7 @@ bool HRFGdalUtilities::ConvertGeotiffKeysToOGCWKT(const HFCPtr<HCPGeoTiffKeys>& 
 
     if (pi_rpGeoTiffKeys->GetValue(GeogAngularUnitsGeoKey, &ULongVal))
         {
-        GTIFKeySet(pGTIF, GeogAngularUnitsGeoKey, TYPE_SHORT, 1, (short)ULongVal);
+        GTIFKeySet(pGTIF, GeogAngularUnitsGeoKey, TYPE_SHORT, 1, (int16_t)ULongVal);
         }
 
     if (pi_rpGeoTiffKeys->GetValue(GeogAngularUnitSizeGeoKey, &DoubleVal))
@@ -368,7 +368,7 @@ bool HRFGdalUtilities::ConvertGeotiffKeysToOGCWKT(const HFCPtr<HCPGeoTiffKeys>& 
 
     if (pi_rpGeoTiffKeys->GetValue(GeogEllipsoidGeoKey, &ULongVal))
         {
-        GTIFKeySet(pGTIF, GeogEllipsoidGeoKey, TYPE_SHORT, 1, (short)ULongVal);
+        GTIFKeySet(pGTIF, GeogEllipsoidGeoKey, TYPE_SHORT, 1, (int16_t)ULongVal);
         }
 
     if (pi_rpGeoTiffKeys->GetValue(GeogSemiMajorAxisGeoKey, &DoubleVal))
@@ -378,7 +378,7 @@ bool HRFGdalUtilities::ConvertGeotiffKeysToOGCWKT(const HFCPtr<HCPGeoTiffKeys>& 
 
     if (pi_rpGeoTiffKeys->GetValue(GeogSemiMinorAxisGeoKey, &ULongVal))
         {
-        GTIFKeySet(pGTIF, GeogSemiMinorAxisGeoKey, TYPE_SHORT, 1, (short)ULongVal);
+        GTIFKeySet(pGTIF, GeogSemiMinorAxisGeoKey, TYPE_SHORT, 1, (int16_t)ULongVal);
         }
 
     if (pi_rpGeoTiffKeys->GetValue(GeogInvFlatteningGeoKey, &DoubleVal))
@@ -388,7 +388,7 @@ bool HRFGdalUtilities::ConvertGeotiffKeysToOGCWKT(const HFCPtr<HCPGeoTiffKeys>& 
 
     if (pi_rpGeoTiffKeys->GetValue(GeogAzimuthUnitsGeoKey, &ULongVal))
         {
-        GTIFKeySet(pGTIF, GeogAzimuthUnitsGeoKey, TYPE_SHORT, 1, (short)ULongVal);
+        GTIFKeySet(pGTIF, GeogAzimuthUnitsGeoKey, TYPE_SHORT, 1, (int16_t)ULongVal);
         }
 
     if (pi_rpGeoTiffKeys->GetValue(GeogPrimeMeridianLongGeoKey, &DoubleVal))
@@ -398,7 +398,7 @@ bool HRFGdalUtilities::ConvertGeotiffKeysToOGCWKT(const HFCPtr<HCPGeoTiffKeys>& 
 
     if (pi_rpGeoTiffKeys->GetValue(ProjectedCSTypeGeoKey, &ULongVal))
         {
-        GTIFKeySet(pGTIF, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, (short)ULongVal);
+        GTIFKeySet(pGTIF, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, (int16_t)ULongVal);
         }
 
     if (pi_rpGeoTiffKeys->GetValue(PCSCitationGeoKey, &CharVal))
@@ -412,17 +412,17 @@ bool HRFGdalUtilities::ConvertGeotiffKeysToOGCWKT(const HFCPtr<HCPGeoTiffKeys>& 
 
     if (pi_rpGeoTiffKeys->GetValue(ProjectionGeoKey, &ULongVal))
         {
-        GTIFKeySet(pGTIF, ProjectionGeoKey, TYPE_SHORT, 1, (short)ULongVal);
+        GTIFKeySet(pGTIF, ProjectionGeoKey, TYPE_SHORT, 1, (int16_t)ULongVal);
         }
 
     if (pi_rpGeoTiffKeys->GetValue(ProjCoordTransGeoKey, &ULongVal))
         {
-        GTIFKeySet(pGTIF, ProjCoordTransGeoKey, TYPE_SHORT, 1, (short)ULongVal);
+        GTIFKeySet(pGTIF, ProjCoordTransGeoKey, TYPE_SHORT, 1, (int16_t)ULongVal);
         }
 
     if (pi_rpGeoTiffKeys->GetValue(ProjLinearUnitsGeoKey, &ULongVal))
         {
-        GTIFKeySet(pGTIF, ProjLinearUnitsGeoKey, TYPE_SHORT, 1, (short)ULongVal);
+        GTIFKeySet(pGTIF, ProjLinearUnitsGeoKey, TYPE_SHORT, 1, (int16_t)ULongVal);
         }
 
     if (pi_rpGeoTiffKeys->GetValue(ProjLinearUnitSizeGeoKey, &DoubleVal))
@@ -527,7 +527,7 @@ bool HRFGdalUtilities::ConvertGeotiffKeysToOGCWKT(const HFCPtr<HCPGeoTiffKeys>& 
 
     if (pi_rpGeoTiffKeys->GetValue(VerticalCSTypeGeoKey, &ULongVal))
         {
-        GTIFKeySet(pGTIF, VerticalCSTypeGeoKey, TYPE_SHORT, 1, (short)ULongVal);
+        GTIFKeySet(pGTIF, VerticalCSTypeGeoKey, TYPE_SHORT, 1, (int16_t)ULongVal);
         }
 
     if (pi_rpGeoTiffKeys->GetValue(VerticalCitationGeoKey, &CharVal))
@@ -541,12 +541,12 @@ bool HRFGdalUtilities::ConvertGeotiffKeysToOGCWKT(const HFCPtr<HCPGeoTiffKeys>& 
 
     if (pi_rpGeoTiffKeys->GetValue(VerticalDatumGeoKey, &ULongVal))
         {
-        GTIFKeySet(pGTIF, VerticalDatumGeoKey, TYPE_SHORT, 1, (short)ULongVal);
+        GTIFKeySet(pGTIF, VerticalDatumGeoKey, TYPE_SHORT, 1, (int16_t)ULongVal);
         }
 
     if (pi_rpGeoTiffKeys->GetValue(VerticalUnitsGeoKey, &ULongVal))
         {
-        GTIFKeySet(pGTIF, VerticalUnitsGeoKey, TYPE_SHORT, 1, (short)ULongVal);
+        GTIFKeySet(pGTIF, VerticalUnitsGeoKey, TYPE_SHORT, 1, (int16_t)ULongVal);
         }
 
     GTIFGetDefn(pGTIF, &GTIFDefn);

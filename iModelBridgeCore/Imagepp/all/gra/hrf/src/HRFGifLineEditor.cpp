@@ -25,7 +25,7 @@
 //-----------------------------------------------------------------------------
 HRFGifLineEditor::HRFGifLineEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                    uint32_t              pi_Page,
-                                   unsigned short       pi_Resolution,
+                                   uint16_t       pi_Resolution,
                                    HFCAccessMode         pi_AccessMode)
     : HRFResolutionEditor(pi_rpRasterFile,
                           pi_Page,
@@ -195,7 +195,7 @@ HSTATUS HRFGifLineEditor::ReadBlock(uint64_t  pi_PosBlockX,
 
             if (pi_PosBlockY+1 != m_pResolutionDescriptor->GetHeight())
                 {
-                HASSERT_X64(m_pCodec->GetCompressedImageIndex() - ImageCompressedIndex < ULONG_MAX);
+                HASSERT_X64(m_pCodec->GetCompressedImageIndex() - ImageCompressedIndex < UINT32_MAX);
                 BufferCompressedIndex = (int32_t)(m_pCodec->GetCompressedImageIndex() - ImageCompressedIndex);
 
                 HASSERT(BufferCompressedIndex >= 0);

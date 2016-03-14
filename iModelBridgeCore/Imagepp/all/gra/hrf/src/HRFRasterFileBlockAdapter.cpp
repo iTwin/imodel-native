@@ -31,7 +31,7 @@ HRFRasterFileBlockAdapterBlockCapabilities::HRFRasterFileBlockAdapterBlockCapabi
     {
     // Tile Capability
     Add(new HRFTileCapability  (HFC_READ_WRITE_CREATE, // AccessMode
-                                LONG_MAX,              // MaxSizeInBytes
+                                INT32_MAX,              // MaxSizeInBytes
                                 2,                     // MinWidth
                                 4096,                  // MaxWidth
                                 1,                     // WidthIncrement
@@ -41,21 +41,21 @@ HRFRasterFileBlockAdapterBlockCapabilities::HRFRasterFileBlockAdapterBlockCapabi
 
     // Strip Capability
     Add(new HRFStripCapability(HFC_READ_WRITE_CREATE,  // AccessMode
-                               LONG_MAX,               // MaxSizeInBytes
+                               INT32_MAX,               // MaxSizeInBytes
                                1,                      // MinHeight
-                               LONG_MAX,               // MaxHeight
+                               INT32_MAX,               // MaxHeight
                                1));                    // HeightIncrement
     // Line Capability
     Add(new HRFLineCapability(HFC_READ_WRITE_CREATE,   // AccessMode
-                              LONG_MAX));              // MaxWidth
+                              INT32_MAX));              // MaxWidth
 
     // Image Capability
     Add(new HRFImageCapability(HFC_READ_WRITE_CREATE,  // AccessMode
-                               LONG_MAX,               // MaxSizeInBytes
+                               INT32_MAX,               // MaxSizeInBytes
                                1,                      // MinWidth
-                               LONG_MAX,               // MaxWidth
+                               INT32_MAX,               // MaxWidth
                                1,                      // MinHeight
-                               LONG_MAX));             // MaxHeight
+                               INT32_MAX));             // MaxHeight
     }
 
 
@@ -289,7 +289,7 @@ bool HRFRasterFileBlockAdapter::CanAdapt(const HFCPtr<HRFRasterFile>&  pi_rpFrom
             HPRECONDITION(Itr->first < pi_rpFromRasterFile->CountPages());
             HFCPtr<HRFPageDescriptor> pPageDescriptor = pi_rpFromRasterFile->GetPageDescriptor(Itr->first);
 
-            for (unsigned short Resolution = 0; Resolution < pPageDescriptor->CountResolutions() && CanAdapt; Resolution++)
+            for (uint16_t Resolution = 0; Resolution < pPageDescriptor->CountResolutions() && CanAdapt; Resolution++)
                 {
                 if (!HRFBlockAdapterFactory::GetInstance()->CanAdapt(pi_rpFromRasterFile,
                                                                      Itr->first,        // page
@@ -388,7 +388,7 @@ HRFRasterFileBlockAdapter::~HRFRasterFileBlockAdapter()
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFRasterFileBlockAdapter::CreateResolutionEditor(uint32_t        pi_Page,
-                                                                       unsigned short pi_Resolution,
+                                                                       uint16_t pi_Resolution,
                                                                        HFCAccessMode   pi_AccessMode)
     {
     // Create the editor for the specified resolution
@@ -478,7 +478,7 @@ void HRFRasterFileBlockAdapter::CreateDescriptors(const BlockDescriptorMap& pi_r
             HFCPtr<HRFPageDescriptor>  pAdaptedPageDescriptor  = m_pOriginalFile->GetPageDescriptor(Page);
 
             // Adapt each resolutions from adapted file when their access is different of tile
-            for (unsigned short Resolution=0; Resolution < pAdaptedPageDescriptor->CountResolutions(); Resolution++)
+            for (uint16_t Resolution=0; Resolution < pAdaptedPageDescriptor->CountResolutions(); Resolution++)
                 {
                 HFCPtr<HRFResolutionDescriptor> pAdaptedResDescriptor = pAdaptedPageDescriptor->GetResolutionDescriptor(Resolution);
 
@@ -539,22 +539,22 @@ void HRFRasterFileBlockAdapter::CreateDescriptors(const BlockDescriptorMap& pi_r
                     }
                 else if (BlockDesc.m_BlockType == HRFBlockType::IMAGE)
                     {
-                    HASSERT(pAdaptedResDescriptor->GetWidth() <= ULONG_MAX);
-                    HASSERT(pAdaptedResDescriptor->GetHeight() <= ULONG_MAX);
+                    HASSERT(pAdaptedResDescriptor->GetWidth() <= UINT32_MAX);
+                    HASSERT(pAdaptedResDescriptor->GetHeight() <= UINT32_MAX);
 
                     BlockWidth  = (uint32_t)pAdaptedResDescriptor->GetWidth();
                     BlockHeight = (uint32_t)pAdaptedResDescriptor->GetHeight();
                     }
                 else if (BlockDesc.m_BlockType == HRFBlockType::STRIP)
                     {
-                    HASSERT(pAdaptedResDescriptor->GetWidth() <= ULONG_MAX);
+                    HASSERT(pAdaptedResDescriptor->GetWidth() <= UINT32_MAX);
 
                     BlockWidth  = (uint32_t)pAdaptedResDescriptor->GetWidth();
 
                     // Adjust to a multiple of adapted blocks
                     if (BlockDesc.m_BlockHeight > pAdaptedResDescriptor->GetHeight())
                         {
-                        HASSERT(pAdaptedResDescriptor->GetBlocksPerHeight() <= ULONG_MAX);
+                        HASSERT(pAdaptedResDescriptor->GetBlocksPerHeight() <= UINT32_MAX);
 
                         BlockHeight = (uint32_t)pAdaptedResDescriptor->GetBlocksPerHeight() * pAdaptedResDescriptor->GetBlockHeight();
                         }
@@ -585,7 +585,7 @@ void HRFRasterFileBlockAdapter::CreateDescriptors(const BlockDescriptorMap& pi_r
                     }
                 else if (BlockDesc.m_BlockType == HRFBlockType::LINE)
                     {
-                    HASSERT(pAdaptedResDescriptor->GetWidth() <= ULONG_MAX);
+                    HASSERT(pAdaptedResDescriptor->GetWidth() <= UINT32_MAX);
 
                     BlockWidth  = (uint32_t)pAdaptedResDescriptor->GetWidth();
                     BlockHeight = 1;

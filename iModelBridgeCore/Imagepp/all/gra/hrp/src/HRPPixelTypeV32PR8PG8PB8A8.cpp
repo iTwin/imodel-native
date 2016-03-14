@@ -192,7 +192,7 @@ public:
             }
         };
 
-    virtual const short* GetLostChannels() const override
+    virtual const int16_t* GetLostChannels() const override
         {
         return m_LostChannels;
         }
@@ -210,7 +210,7 @@ protected:
 
         // fill the octree with the destination palette entries
         int32_t NbIndex(rPalette.CountUsedEntries());
-        for(int Index = 0; Index < NbIndex; Index++)
+        for(int32_t Index = 0; Index < NbIndex; Index++)
             m_QuantizedPalette.AddCompositeValue(rPalette.GetCompositeValue(Index),(Byte) Index);
 
         m_GoodIndexForBlack = m_QuantizedPalette.GetIndex(0,0,0);
@@ -218,9 +218,9 @@ protected:
 
 private:
 
-    static short m_LostChannels[];
+    static int16_t m_LostChannels[];
     };
-short ConverterV32PR8PG8PB8A8_I8R8G8B8::m_LostChannels[] = {3, -1};
+int16_t ConverterV32PR8PG8PB8A8_I8R8G8B8::m_LostChannels[] = {3, -1};
 static ConverterV32PR8PG8PB8A8_I8R8G8B8        s_V32PR8PG8PB8A8_I8R8G8B8;
 
 //-----------------------------------------------------------------------------
@@ -287,7 +287,7 @@ public:
             }
         };
 
-    virtual const short* GetLostChannels() const override
+    virtual const int16_t* GetLostChannels() const override
         {
         return m_LostChannels;
         }
@@ -298,9 +298,9 @@ public:
 
 private:
 
-    static short m_LostChannels[];
+    static int16_t m_LostChannels[];
     };
-short ConverterV32PR8PG8PB8A8_V24B8G8R8::m_LostChannels[] = {3, -1};
+int16_t ConverterV32PR8PG8PB8A8_V24B8G8R8::m_LostChannels[] = {3, -1};
 static struct ConverterV32PR8PG8PB8A8_V24B8G8R8        s_V32PR8PG8PB8A8_V24B8G8R8;
 
 //-----------------------------------------------------------------------------
@@ -367,7 +367,7 @@ public:
             }
         };
 
-    virtual const short* GetLostChannels() const override
+    virtual const int16_t* GetLostChannels() const override
         {
         return m_LostChannels;
         }
@@ -377,9 +377,9 @@ public:
         }
 
 private:
-    static short m_LostChannels[];
+    static int16_t m_LostChannels[];
     };
-short ConverterV32PR8PG8PB8A8_V24R8G8B8::m_LostChannels[] = {3, -1};
+int16_t ConverterV32PR8PG8PB8A8_V24R8G8B8::m_LostChannels[] = {3, -1};
 static struct ConverterV32PR8PG8PB8A8_V24R8G8B8        s_V32PR8PG8PB8A8_V24R8G8B8;
 
 //-----------------------------------------------------------------------------
@@ -654,7 +654,7 @@ of this pixel type.
       @end
       -----------------------------------------------------------------------------
 */
-unsigned short HRPPixelTypeV32PR8PG8PB8A8::CountValueBits() const
+uint16_t HRPPixelTypeV32PR8PG8PB8A8::CountValueBits() const
     {
     return 32;
     }

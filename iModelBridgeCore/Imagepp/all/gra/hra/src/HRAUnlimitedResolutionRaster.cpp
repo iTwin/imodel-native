@@ -254,11 +254,11 @@ void HRAUnlimitedResolutionRaster::SetTransfoModel(const HGF2DTransfoModel& pi_r
 //-----------------------------------------------------------------------------
 // GetRepresentativePalette
 //-----------------------------------------------------------------------------
-unsigned short HRAUnlimitedResolutionRaster::GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms)
+uint16_t HRAUnlimitedResolutionRaster::GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms)
     {
     HPRECONDITION(pio_pRepPalParms != 0);
 
-    unsigned short NumberOfEntries = HRAStoredRaster::GetRepresentativePalette(pio_pRepPalParms);
+    uint16_t NumberOfEntries = HRAStoredRaster::GetRepresentativePalette(pio_pRepPalParms);
 
     // if no operation has been done at the parent level or if the cache is not
     // updated

@@ -63,7 +63,7 @@ public:
     virtual bool                         AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage);
 
     virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
-                                                                 unsigned short           pi_Resolution,
+                                                                 uint16_t           pi_Resolution,
                                                                  HFCAccessMode             pi_AccessMode);
 
     virtual void                          Save();
@@ -88,43 +88,43 @@ private:
     struct LRDHeaderBlock
         {
         char MagicWord[4];
-        long VecLevel;
-        long Recordcount;
+        int32_t VecLevel;
+        int32_t Recordcount;
         char Date[10];
         char Time[10];
         char rFile[40];
-        long bStart;
-        long bStop;
-        long BitsCount;
-        long rStart;
-        long rStop;
-        long maxmis;
-        long minwid;
-        long eps;
-        long mintr0;
-        long maxtr0;
-        long fuzz;
-        long widfly;
-        long widhol;
-        long talhol;
-        long newtop;
-        long botmin;
-        long hmod;
-        long corsys;
-        long xpdens;
-        long ypdens;
-        long vsmin;
-        long vsmax;
-        long vxmin;
-        long vxmax;                     // 168 bytes from the begining.
+        int32_t bStart;
+        int32_t bStop;
+        int32_t BitsCount;
+        int32_t rStart;
+        int32_t rStop;
+        int32_t maxmis;
+        int32_t minwid;
+        int32_t eps;
+        int32_t mintr0;
+        int32_t maxtr0;
+        int32_t fuzz;
+        int32_t widfly;
+        int32_t widhol;
+        int32_t talhol;
+        int32_t newtop;
+        int32_t botmin;
+        int32_t hmod;
+        int32_t corsys;
+        int32_t xpdens;
+        int32_t ypdens;
+        int32_t vsmin;
+        int32_t vsmax;
+        int32_t vxmin;
+        int32_t vxmax;                     // 168 bytes from the begining.
         Byte TheExpense[208];  // Unknow space... 512 - (168 + 136)
-        long valid;
-        long slo;
+        int32_t valid;
+        int32_t slo;
         double Matrix[16];              // 128 bytes used.
         };
 
     bool                   m_HasHeaderFilled;
-    unsigned short         m_BitPerPixel;
+    uint16_t         m_BitPerPixel;
     uint32_t                m_Width;
     uint32_t                m_Height;
 
@@ -157,8 +157,8 @@ private:
 
     void            WriteTransfoModel(const HFCPtr<HGF2DTransfoModel>& pi_pModel);
 
-    int             swaplong   ( char buf[] );
-    int             swapdouble ( char buf[] );
+    int32_t             swaplong   ( char buf[] );
+    int32_t             swapdouble ( char buf[] );
 
     HFCPtr<HRPPixelType>
     GetPixelType() const;

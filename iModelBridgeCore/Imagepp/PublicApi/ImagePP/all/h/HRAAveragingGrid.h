@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAAveragingGrid.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -22,8 +22,8 @@ public:
                       double pi_YMin,
                       double pi_XMax,
                       double pi_YMax,
-                      uint32_t pi_XLimit = ULONG_MAX,
-                      uint32_t pi_YLimit = ULONG_MAX);
+                      uint32_t pi_XLimit = UINT32_MAX,
+                      uint32_t pi_YLimit = UINT32_MAX);
 
     ~HRAAveragingGrid();
 

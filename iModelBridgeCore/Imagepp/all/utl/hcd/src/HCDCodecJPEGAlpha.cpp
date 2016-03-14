@@ -174,7 +174,7 @@ size_t HCDCodecJPEGAlpha::CompressSubset(const void* pi_pInData,
     // Set the RLE8 offset in the first 4 bytes
     if (Result != 0)
         {
-        HASSERT_X64(RLEOffset < ULONG_MAX);
+        HASSERT_X64(RLEOffset < UINT32_MAX);
         *((uint32_t*)po_pOutBuffer) = (uint32_t)RLEOffset;
         }
 
@@ -241,9 +241,9 @@ size_t HCDCodecJPEGAlpha::DecompressSubset(const void* pi_pInData,
             Byte* pAlphaData = pRLE8Data + SrcStart;
             for (; pSrcData >= po_pOutBuffer; pSrcData-=1, pDestData-=2, pAlphaData - 1)
                 {
-                *((unsigned short*)pDestData)  = 0x00FF;
-                *((unsigned short*)pDestData) |= *((unsigned short*)pSrcData);
-                *((unsigned short*)pDestData) |= *((Byte*)pAlphaData);
+                *((uint16_t*)pDestData)  = 0x00FF;
+                *((uint16_t*)pDestData) |= *((uint16_t*)pSrcData);
+                *((uint16_t*)pDestData) |= *((Byte*)pAlphaData);
                 }
             }
 
@@ -547,7 +547,7 @@ void HCDCodecJPEGAlpha::CopyTablesFromDecoderToEncoder()
 // Public
 //
 //------------------------------------------------------------------------------
-void HCDCodecJPEGAlpha::SetQuantizationTable(int pi_Slot, const unsigned int* pi_pTable)
+void HCDCodecJPEGAlpha::SetQuantizationTable(int32_t pi_Slot, const uint32_t* pi_pTable)
     {
     HPRECONDITION(m_pCodecJpeg != 0);
 

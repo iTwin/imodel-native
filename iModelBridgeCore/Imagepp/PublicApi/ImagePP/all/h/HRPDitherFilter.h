@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPDitherFilter.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -65,10 +65,10 @@ private:
     HRPPaletteOctreeR8G8B8                m_QuantizedPalette;
     //HRPQuantizedPaletteR8G8B8                m_QuantizedPalette;
 
-    short m_RightError[512];
-    short m_BottomLeftError[512];
-    short m_BottomError[512];
-    short m_BottomRightError[512];
+    int16_t m_RightError[512];
+    int16_t m_BottomLeftError[512];
+    int16_t m_BottomError[512];
+    int16_t m_BottomRightError[512];
 
     Byte                              m_MinMaxTable[480];
 

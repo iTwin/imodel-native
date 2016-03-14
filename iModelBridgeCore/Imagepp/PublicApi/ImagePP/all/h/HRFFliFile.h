@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFFliFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -30,26 +30,26 @@ BEGIN_IMAGEPP_NAMESPACE
 typedef struct FliFileHeader
     {
     uint32_t size;          /* Size of FLIC including this header */
-    unsigned short type;          /* File type 0xAF11, 0xAF12, 0xAF30, 0xAF44, ... */
-    unsigned short frames;        /* Number of frames in first segment */
-    unsigned short width;         /* FLIC width in pixels */
-    unsigned short height;        /* FLIC height in pixels */
-    unsigned short depth;         /* Bits per pixel (usually 8) */
-    unsigned short flags;         /* Set to zero or to three */
+    uint16_t type;          /* File type 0xAF11, 0xAF12, 0xAF30, 0xAF44, ... */
+    uint16_t frames;        /* Number of frames in first segment */
+    uint16_t width;         /* FLIC width in pixels */
+    uint16_t height;        /* FLIC height in pixels */
+    uint16_t depth;         /* Bits per pixel (usually 8) */
+    uint16_t flags;         /* Set to zero or to three */
     uint32_t speed;         /* Delay between frames */
-    unsigned short reserved1;     /* Set to zero */
+    uint16_t reserved1;     /* Set to zero */
     uint32_t created;       /* Date of FLIC creation (FLC only) */
     uint32_t creator;       /* Serial number or compiler id (FLC only) */
     uint32_t updated;       /* Date of FLIC update (FLC only) */
     uint32_t updater;       /* Serial number (FLC only), see creator */
-    unsigned short aspect_dx;     /* Width of square rectangle (FLC only) */
-    unsigned short aspect_dy;     /* Height of square rectangle (FLC only) */
-    unsigned short ext_flags;     /* EGI: flags for specific EGI extensions */
-    unsigned short keyframes;     /* EGI: key-image frequency */
-    unsigned short totalframes;   /* EGI: total number of frames (segments) */
+    uint16_t aspect_dx;     /* Width of square rectangle (FLC only) */
+    uint16_t aspect_dy;     /* Height of square rectangle (FLC only) */
+    uint16_t ext_flags;     /* EGI: flags for specific EGI extensions */
+    uint16_t keyframes;     /* EGI: key-image frequency */
+    uint16_t totalframes;   /* EGI: total number of frames (segments) */
     uint32_t req_memory;    /* EGI: maximum chunk size (uncompressed) */
-    unsigned short max_regions;   /* EGI: max. number of regions in a CHK_REGION chunk */
-    unsigned short transp_num;    /* EGI: number of transparent levels */
+    uint16_t max_regions;   /* EGI: max. number of regions in a CHK_REGION chunk */
+    uint16_t transp_num;    /* EGI: number of transparent levels */
     Byte  reserved2[24]; /* Set to zero */
     uint32_t oframe1;       /* Offset to frame 1 (FLC only) */
     uint32_t oframe2;       /* Offset to frame 2 (FLC only) */
@@ -59,15 +59,15 @@ typedef struct FliFileHeader
 typedef struct FliFilePrefixHeader
     {
     uint32_t size;           /* Size of the chunk, including subchunks */
-    unsigned short type;           /* Chunk type: 0xF1FA */
-    unsigned short chunks;         /* Number of subchunks */
+    uint16_t type;           /* Chunk type: 0xF1FA */
+    uint16_t chunks;         /* Number of subchunks */
     Byte  reserved[8];    /* Reserved, set to 0 */
     } FliFilePrefixHeader;
 
 typedef struct FliChunkHeader
     {
     uint32_t chunkSize;      /*Bytes in this chunk.*/
-    unsigned short chunkType;      /*Type of chunk.*/
+    uint16_t chunkType;      /*Type of chunk.*/
     } FliChunkHeader;
 
 typedef struct FliRGBColor
@@ -116,7 +116,7 @@ public:
     virtual bool                         AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage);
 
     virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
-                                                                 unsigned short           pi_Resolution,
+                                                                 uint16_t           pi_Resolution,
                                                                  HFCAccessMode             pi_AccessMode);
 
     virtual const HFCMemoryBinStream*     GetMemoryFilePtr() const;
@@ -142,8 +142,8 @@ protected:
     virtual bool               Open();
     virtual void                CreateDescriptors();
     HFCBinStream*               GetFilePtr();
-    int                         GetChunkSize  (int chunkNb);
-    int                         GetChunkHeaderSize();
+    int32_t                         GetChunkSize  (int32_t chunkNb);
+    int32_t                         GetChunkHeaderSize();
 
 private:
 

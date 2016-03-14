@@ -182,7 +182,7 @@ HRFRasterFileResBooster::~HRFRasterFileResBooster()
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFRasterFileResBooster::CreateResolutionEditor(uint32_t        pi_Page,
-                                                                     unsigned short pi_Resolution,
+                                                                     uint16_t pi_Resolution,
                                                                      HFCAccessMode   pi_AccessMode)
     {
     // Create the original editor and the booster editor
@@ -347,7 +347,7 @@ void HRFRasterFileResBooster::CreateDescriptors ()
 
         // Add all resolutions descriptor from Booster file to the ResBooster
         HRFPageDescriptor::ListOfResolutionDescriptor  ListOfResolutionDescriptor;
-        for (unsigned short Resolution=0; Resolution < pBoosterPageDescriptor->CountResolutions(); Resolution++)
+        for (uint16_t Resolution=0; Resolution < pBoosterPageDescriptor->CountResolutions(); Resolution++)
             {
             // DEBUG MODE ONLY
             // JPEG ISO Compression
@@ -588,7 +588,7 @@ void HRFRasterFileResBooster::SynchronizeFiles()
                 HFCPtr<HRFPageDescriptor> pOriginalPageDescriptor = m_pOriginalFile->GetPageDescriptor(Page);
 
                 // Update original resolution only
-                for (unsigned short Resolution=0; Resolution < pOriginalPageDescriptor->CountResolutions(); Resolution++)
+                for (uint16_t Resolution=0; Resolution < pOriginalPageDescriptor->CountResolutions(); Resolution++)
                     {
                     // Obtain the resolution descriptor
                     HFCPtr<HRFResolutionDescriptor> pResolution = pPageDescriptor->GetResolutionDescriptor(Resolution);
@@ -676,7 +676,7 @@ void HRFRasterFileResBooster::SynchronizeFiles()
                 HFCPtr<HRFPageDescriptor> pBoosterPageDescriptor = m_pBoosterFile->GetPageDescriptor(Page);
 
                 // Update original resolution only
-                for (unsigned short BoosterResolution=0; BoosterResolution < pBoosterPageDescriptor->CountResolutions(); BoosterResolution++)
+                for (uint16_t BoosterResolution=0; BoosterResolution < pBoosterPageDescriptor->CountResolutions(); BoosterResolution++)
                     {
                     // Obtain the resolution descriptor
                     HFCPtr<HRFResolutionDescriptor> pResolution(pPageDescriptor->GetResolutionDescriptor(BoosterResolution));
@@ -743,7 +743,7 @@ bool HRFRasterFileResBooster::Create(const WantedResolutionsMap* pi_pWantedResol
             (pOriginalPageDescriptor->GetResolutionDescriptor(0)->GetBlockType() != HRFBlockType::IMAGE))
             {
             // Here we cache each resolution to the Booster file
-            for (unsigned short Resolution=0; Resolution < pOriginalPageDescriptor->CountResolutions(); Resolution++)
+            for (uint16_t Resolution=0; Resolution < pOriginalPageDescriptor->CountResolutions(); Resolution++)
                 {
                 HFCPtr<HRFResolutionDescriptor> pOriginalResDescriptor = pOriginalPageDescriptor->GetResolutionDescriptor(Resolution);
 
@@ -869,8 +869,8 @@ bool HRFRasterFileResBooster::Create(const WantedResolutionsMap* pi_pWantedResol
             const HGFResolutionDescriptor* pPyramidDescriptor;
             if (pWantedResolutions == 0)
                 {
-                HASSERT(OriginalResolutionDescriptor1_1->GetWidth() <= ULONG_MAX);
-                HASSERT(OriginalResolutionDescriptor1_1->GetHeight() <= ULONG_MAX);
+                HASSERT(OriginalResolutionDescriptor1_1->GetWidth() <= UINT32_MAX);
+                HASSERT(OriginalResolutionDescriptor1_1->GetHeight() <= UINT32_MAX);
 
                 pLocalPyramidDescriptor = new HGFResolutionDescriptor((uint32_t)OriginalResolutionDescriptor1_1->GetWidth(),
                                                                       (uint32_t)OriginalResolutionDescriptor1_1->GetHeight(),
@@ -925,7 +925,7 @@ bool HRFRasterFileResBooster::Create(const WantedResolutionsMap* pi_pWantedResol
                 if (Is1Bit && pWantedResolutions == 0)
                     {
                     // just keep sub res x/4 until a size of 1024x1024
-                    for (unsigned short PyramidResolution = 1; PyramidResolution < pPyramidDescriptor->CountResolutions(); PyramidResolution++)
+                    for (uint16_t PyramidResolution = 1; PyramidResolution < pPyramidDescriptor->CountResolutions(); PyramidResolution++)
                         {
                         // Obtain the resolution size near of 256x256
                         uint32_t Width  = pPyramidDescriptor->GetWidth(PyramidResolution);
@@ -996,7 +996,7 @@ bool HRFRasterFileResBooster::Create(const WantedResolutionsMap* pi_pWantedResol
                         DownSamplingMethod = m_pCreator->GetDownSamplingMethodForIndexedPixelType();
 
                     // Generate all sub-resolutons for N8 bit
-                    for (unsigned short PyramidResolution=1; PyramidResolution < pPyramidDescriptor->CountResolutions(); PyramidResolution++)
+                    for (uint16_t PyramidResolution=1; PyramidResolution < pPyramidDescriptor->CountResolutions(); PyramidResolution++)
                         {
                         // When the storage type is strip we resize the BlockWidth to the resolution width
                         if (BoosterBlockType == HRFBlockType::STRIP)

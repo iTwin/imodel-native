@@ -14,11 +14,11 @@
 #include <ImagePP/all/h/HTagDefinition.h>
 #include <ImagePP/all/h/HTIFFUtils.h>
 
-const short HTagInfo::TAG_IO_ANY         = 0;
-const short HTagInfo::TAG_IO_VARIABLE    = -1;
-const short HTagInfo::TAG_IO_USE_SPP     = -2;
+const int16_t HTagInfo::TAG_IO_ANY         = 0;
+const int16_t HTagInfo::TAG_IO_VARIABLE    = -1;
+const int16_t HTagInfo::TAG_IO_USE_SPP     = -2;
 
-const int   HTagInfo::sDataLen[] =           {1,    // nothing
+const int32_t   HTagInfo::sDataLen[] =           {1,    // nothing
                                               1,    // BYTE
                                               1,    // ASCII
                                               2,    // SHORT
@@ -52,7 +52,7 @@ const char* HTagInfo::sConvertDataTypetoText (DataType pi_DataType)
         case HTagInfo::ASCII:
             return ("ASCII");
         case HTagInfo::SHORT:
-            return ("short");
+            return ("int16_t");
         case HTagInfo::LONG:
             return ("Long");
         case HTagInfo::RATIONAL:

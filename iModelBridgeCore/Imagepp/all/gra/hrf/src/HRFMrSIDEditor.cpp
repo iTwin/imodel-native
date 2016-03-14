@@ -36,7 +36,7 @@ using namespace LizardTech;
 //-----------------------------------------------------------------------------
 // Constants
 //-----------------------------------------------------------------------------
-static const unsigned short m_LinePadBits = 32;
+static const uint16_t m_LinePadBits = 32;
 
 //-----------------------------------------------------------------------------
 // public
@@ -44,7 +44,7 @@ static const unsigned short m_LinePadBits = 32;
 //-----------------------------------------------------------------------------
 HRFMrSIDEditor::HRFMrSIDEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                uint32_t              pi_Page,
-                               unsigned short       pi_Resolution,
+                               uint16_t       pi_Resolution,
                                HFCAccessMode         pi_AccessMode)
     : HRFResolutionEditor(pi_rpRasterFile,
                           pi_Page,
@@ -86,7 +86,7 @@ HSTATUS HRFMrSIDEditor::ReadBlock(uint64_t pi_PosBlockX,
     {
     HPRECONDITION(po_pData != 0);
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
-    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+    HPRECONDITION (pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);
 
     HSTATUS Status = H_ERROR;
     HRFMrSIDFile* pMrSIDFile = (HRFMrSIDFile*)m_pRasterFile.GetPtr();
@@ -105,8 +105,8 @@ HSTATUS HRFMrSIDEditor::ReadBlock(uint64_t pi_PosBlockX,
             {
             LT_STATUS sts = LT_STS_Uninit;
 
-            int BlockHeight = MIN(MAX((int)pMrSIDFile->m_pStdViewHeight[m_ResNb] - (int)pi_PosBlockY, 0), BLOCK_HEIGHT);
-            int BlockWidth  = MIN(MAX((int)pMrSIDFile->m_pStdViewWidth[m_ResNb]  - (int)pi_PosBlockX, 0), BLOCK_WIDTH);
+            int32_t BlockHeight = MIN(MAX((int32_t)pMrSIDFile->m_pStdViewHeight[m_ResNb] - (int32_t)pi_PosBlockY, 0), BLOCK_HEIGHT);
+            int32_t BlockWidth  = MIN(MAX((int32_t)pMrSIDFile->m_pStdViewWidth[m_ResNb]  - (int32_t)pi_PosBlockX, 0), BLOCK_WIDTH);
 
             delete pMrSIDFile->m_pSceneBuffer;
             pMrSIDFile->m_pSceneBuffer = new LTISceneBuffer(pMrSIDFile->m_pImageReader->getPixelProps(), BlockWidth, BlockHeight, 0);

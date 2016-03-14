@@ -93,7 +93,7 @@ HRFResolutionDescriptor::HRFResolutionDescriptor(
     const HRFDataFlag*                       pi_pBlocksDataFlag,
     HRFBlockType                             pi_BlockType,
     Byte                                    pi_NumberOfPass,
-    unsigned short                          pi_PaddingBits,
+    uint16_t                          pi_PaddingBits,
     HRFDownSamplingMethod                    pi_DownSamplingMethod)
     {
     // We don't accept a null codec
@@ -238,7 +238,7 @@ HRFResolutionDescriptor::HRFResolutionDescriptor(
     if ((m_pResolutionCapabilities->GetCapabilityOfType(HRFBlocksDataFlagCapability::CLASS_ID, pi_AccessMode) != 0) &&
         (pi_pBlocksDataFlag))
         {
-        HASSERT((m_BlocksPerWidth * m_BlocksPerHeight) <= ULONG_MAX);
+        HASSERT((m_BlocksPerWidth * m_BlocksPerHeight) <= UINT32_MAX);
         m_BlocksDataFlagSize = (uint32_t)(m_BlocksPerWidth * m_BlocksPerHeight);
         m_pBlocksDataFlag    = new HRFDataFlag[m_BlocksDataFlagSize];
         memcpy(m_pBlocksDataFlag, pi_pBlocksDataFlag, m_BlocksDataFlagSize * sizeof(HRFDataFlag));
@@ -449,7 +449,7 @@ HRFResolutionDescriptor::HRFResolutionDescriptor(const HRFResolutionDescriptor& 
 
     if (pi_rObj.m_pBlocksDataFlag)
         {
-        HASSERT((m_BlocksPerWidth * m_BlocksPerHeight) <= ULONG_MAX);
+        HASSERT((m_BlocksPerWidth * m_BlocksPerHeight) <= UINT32_MAX);
         m_BlocksDataFlagSize  = (uint32_t)(m_BlocksPerWidth * m_BlocksPerHeight);
         m_pBlocksDataFlag     = new HRFDataFlag[m_BlocksDataFlagSize];
         memcpy(m_pBlocksDataFlag, pi_rObj.m_pBlocksDataFlag, m_BlocksDataFlagSize * sizeof(HRFDataFlag));
@@ -523,7 +523,7 @@ HRFResolutionDescriptor& HRFResolutionDescriptor::operator=(const HRFResolutionD
 
     if (pi_rObj.m_pBlocksDataFlag)
         {
-        HASSERT((m_BlocksPerWidth * m_BlocksPerHeight) <= ULONG_MAX);
+        HASSERT((m_BlocksPerWidth * m_BlocksPerHeight) <= UINT32_MAX);
         m_BlocksDataFlagSize  = (uint32_t)(m_BlocksPerWidth * m_BlocksPerHeight);
         m_pBlocksDataFlag     = new HRFDataFlag[m_BlocksDataFlagSize];
         memcpy(m_pBlocksDataFlag, pi_rObj.m_pBlocksDataFlag, m_BlocksDataFlagSize * sizeof(HRFDataFlag));
@@ -825,7 +825,7 @@ bool HRFResolutionDescriptor::SetBlocksDataFlag(const HRFDataFlag* pi_pBlocksDat
     // If we have no flag we create the flags buffer
     if (!HasBlocksDataFlag())
         {
-        HASSERT(m_BlocksPerWidth* m_BlocksPerHeight <= ULONG_MAX);
+        HASSERT(m_BlocksPerWidth* m_BlocksPerHeight <= UINT32_MAX);
         m_BlocksDataFlagSize = (uint32_t)(m_BlocksPerWidth * m_BlocksPerHeight);
         m_pBlocksDataFlag    = new HRFDataFlag[m_BlocksDataFlagSize];
         }
@@ -863,7 +863,7 @@ void HRFResolutionDescriptor::SetBlockDataFlag(uint64_t pi_Index, HRFDataFlag pi
     // If we have no flag we create the flags buffer
     if (!HasBlocksDataFlag())
         {
-        HASSERT(m_BlocksPerWidth* m_BlocksPerHeight <= ULONG_MAX);
+        HASSERT(m_BlocksPerWidth* m_BlocksPerHeight <= UINT32_MAX);
         m_BlocksDataFlagSize = (uint32_t)(m_BlocksPerWidth * m_BlocksPerHeight);
         m_pBlocksDataFlag    = new HRFDataFlag[m_BlocksDataFlagSize];
         memset(m_pBlocksDataFlag, HRFDATAFLAG_EMPTY, m_BlocksDataFlagSize * sizeof(HRFDataFlag));
@@ -891,7 +891,7 @@ void HRFResolutionDescriptor::ClearBlockDataFlag(uint64_t pi_Index, HRFDataFlag 
     // If we have no flag we create the flags buffer
     if (!HasBlocksDataFlag())
         {
-        HASSERT(m_BlocksPerWidth* m_BlocksPerHeight <= ULONG_MAX);
+        HASSERT(m_BlocksPerWidth* m_BlocksPerHeight <= UINT32_MAX);
         m_BlocksDataFlagSize = (uint32_t)(m_BlocksPerWidth * m_BlocksPerHeight);
         m_pBlocksDataFlag    = new HRFDataFlag[m_BlocksDataFlagSize];
         memset(m_pBlocksDataFlag, HRFDATAFLAG_EMPTY, m_BlocksDataFlagSize * sizeof(HRFDataFlag));

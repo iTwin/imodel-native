@@ -41,8 +41,8 @@ struct ConverterV64R16G16B16A16_V64R16G16B16A16 : public HRPPixelConverter
 
     virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        unsigned short* pSrc  = (unsigned short*)pi_pSourceRawData;
-        unsigned short* pDest = (unsigned short*)pio_pDestRawData;
+        uint16_t* pSrc  = (uint16_t*)pi_pSourceRawData;
+        uint16_t* pDest = (uint16_t*)pio_pDestRawData;
 
         for(size_t i(0); i < pi_PixelsCount*4; i+=4)
             {
@@ -60,13 +60,13 @@ struct ConverterV64R16G16B16A16_V64R16G16B16A16 : public HRPPixelConverter
                     // premul = ((Adst * Cdst)/MaxAlpha)
                     // Cdst'  = ((Asrc * (Csrc - premul)) / MaxAlpha) + premul
                     int64_t PremultDestColor = (pDest[i+3] * pDest[i]) / 0xFFFF;
-                    pDest[i] = (unsigned short)(((pSrc[i + 3] * (pSrc[i] - PremultDestColor)) / 0xFFFF) + PremultDestColor);
+                    pDest[i] = (uint16_t)(((pSrc[i + 3] * (pSrc[i] - PremultDestColor)) / 0xFFFF) + PremultDestColor);
 
                     PremultDestColor = (pDest[i+3] * pDest[i+1]) / 0xFFFF;
-                    pDest[i + 1] = (unsigned short)(((pSrc[i + 3] * (pSrc[i + 1] - PremultDestColor)) / 0xFFFF) + PremultDestColor);
+                    pDest[i + 1] = (uint16_t)(((pSrc[i + 3] * (pSrc[i + 1] - PremultDestColor)) / 0xFFFF) + PremultDestColor);
 
                     PremultDestColor = (pDest[i+3] * pDest[i+2]) / 0xFFFF;
-                    pDest[i + 2] = (unsigned short)(((pSrc[i + 3] * (pSrc[i + 2] - PremultDestColor)) / 0xFFFF) + PremultDestColor);
+                    pDest[i + 2] = (uint16_t)(((pSrc[i + 3] * (pSrc[i + 2] - PremultDestColor)) / 0xFFFF) + PremultDestColor);
 
                     // Adst' = MaxAlpha - (( (MaxAlpha - Asrc) * (MaxAlpha - Adst) ) / MaxAlpha
                     // --> Transparency percentages are multiplied
@@ -93,7 +93,7 @@ struct ConverterV24R8G8B8_V64R16G16B16A16 : public HRPPixelConverter
     void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte*  pSrc  = (Byte*)pi_pSourceRawData;
-        unsigned short* pDest = (unsigned short*)pio_pDestRawData;
+        uint16_t* pDest = (uint16_t*)pio_pDestRawData;
 
         for(size_t i(0); i < pi_PixelsCount*3; i+=3)
             {
@@ -123,7 +123,7 @@ struct ConverterV32R8G8B8A8_V64R16G16B16A16 : public HRPPixelConverter
     void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte*  pSrc  = (Byte*)pi_pSourceRawData;
-        unsigned short* pDest = (unsigned short*)pio_pDestRawData;
+        uint16_t* pDest = (uint16_t*)pio_pDestRawData;
 
         for(uint32_t i(0); i < pi_PixelsCount*4; i+=4)
             {
@@ -137,14 +137,14 @@ struct ConverterV32R8G8B8A8_V64R16G16B16A16 : public HRPPixelConverter
     virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte*  pV32Src  = (Byte*)pi_pSourceRawData;
-        unsigned short* pV64Dest = (unsigned short*)pio_pDestRawData;
+        uint16_t* pV64Dest = (uint16_t*)pio_pDestRawData;
 
         while(pi_PixelsCount)
             {
             // If source pixel is fully transparent, destination is unaltered
             if(pV32Src[3] != 0)
                 {
-                unsigned short V64Src[4];
+                uint16_t V64Src[4];
 
                 V64Src[0] = CONVERT_8BIT_TO_16BIT(pV32Src[0]);
                 V64Src[1] = CONVERT_8BIT_TO_16BIT(pV32Src[1]);
@@ -162,13 +162,13 @@ struct ConverterV32R8G8B8A8_V64R16G16B16A16 : public HRPPixelConverter
                     // premul = ((Adst * Cdst)/MaxAlpha)
                     // Cdst'  = ((Asrc * (Csrc - premul)) / MaxAlpha) + premul
                     int64_t PremultDestColor = (pV64Dest[3] * pV64Dest[0]) / 0xFFFF;
-                    pV64Dest[0] = (unsigned short)(((V64Src[3] * (V64Src[0] - PremultDestColor)) / 0xFFFF) + PremultDestColor);
+                    pV64Dest[0] = (uint16_t)(((V64Src[3] * (V64Src[0] - PremultDestColor)) / 0xFFFF) + PremultDestColor);
 
                     PremultDestColor = (pV64Dest[3] * pV64Dest[1]) / 0xFFFF;
-                    pV64Dest[1] = (unsigned short)(((V64Src[3] * (V64Src[1] - PremultDestColor)) / 0xFFFF) + PremultDestColor);
+                    pV64Dest[1] = (uint16_t)(((V64Src[3] * (V64Src[1] - PremultDestColor)) / 0xFFFF) + PremultDestColor);
 
                     PremultDestColor = (pV64Dest[3] * pV64Dest[2]) / 0xFFFF;
-                    pV64Dest[2] = (unsigned short)(((V64Src[3] * (V64Src[2] - PremultDestColor)) / 0xFFFF) + PremultDestColor);
+                    pV64Dest[2] = (uint16_t)(((V64Src[3] * (V64Src[2] - PremultDestColor)) / 0xFFFF) + PremultDestColor);
 
                     // Adst' = MaxAlpha - (( (MaxAlpha - Asrc) * (MaxAlpha - Adst) ) / MaxAlpha
                     // --> Transparency percentages are multiplied
@@ -198,8 +198,8 @@ struct ConverterV48R16G16B16_V64R16G16B16A16 : public HRPPixelConverter
 
     void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        unsigned short* pSrc = (unsigned short*)pi_pSourceRawData;
-        unsigned short* pDst = (unsigned short*)pio_pDestRawData;
+        uint16_t* pSrc = (uint16_t*)pi_pSourceRawData;
+        uint16_t* pDst = (uint16_t*)pio_pDestRawData;
 
         for(size_t i(0); i < pi_PixelsCount*3; i+=3)
             {
@@ -228,7 +228,7 @@ struct ConverterV64R16G16B16A16_V24R8G8B8 : public HRPPixelConverter
 
     void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        unsigned short* pSrc  = (unsigned short*)pi_pSourceRawData;
+        uint16_t* pSrc  = (uint16_t*)pi_pSourceRawData;
         Byte*  pDest = (Byte*)pio_pDestRawData;
 
         for(size_t i(0); i < pi_PixelsCount*3; i+=3)
@@ -244,7 +244,7 @@ struct ConverterV64R16G16B16A16_V24R8G8B8 : public HRPPixelConverter
 
     virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        unsigned short const* pSrc = (unsigned short const*)pi_pSourceRawData;
+        uint16_t const* pSrc = (uint16_t const*)pi_pSourceRawData;
         Byte*        pDst = (Byte*)pio_pDestRawData;
 
         HFCMath const* pQuotients = HFCMath::GetInstance();
@@ -284,7 +284,7 @@ struct ConverterV64R16G16B16A16_V32R8G8B8A8 : public HRPPixelConverter
 
     void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        unsigned short* pSrc  = (unsigned short*)pi_pSourceRawData;
+        uint16_t* pSrc  = (uint16_t*)pi_pSourceRawData;
         Byte*  pDest = (Byte*)pio_pDestRawData;
 
         for(size_t i(0); i < pi_PixelsCount*4; i+=4)
@@ -298,7 +298,7 @@ struct ConverterV64R16G16B16A16_V32R8G8B8A8 : public HRPPixelConverter
 
     virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        unsigned short* pV64Src  = (unsigned short*)pi_pSourceRawData;
+        uint16_t* pV64Src  = (uint16_t*)pi_pSourceRawData;
         Byte*  pV32Dest = (Byte*)pio_pDestRawData;
         HFCMath (*pQuotients) (HFCMath::GetInstance());
 
@@ -361,8 +361,8 @@ struct ConverterV64R16G16B16A16_V48R16G16B16 : public HRPPixelConverter
 
         void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        unsigned short* pSrc = (unsigned short*)pi_pSourceRawData;
-        unsigned short* pDst = (unsigned short*)pio_pDestRawData;
+        uint16_t* pSrc = (uint16_t*)pi_pSourceRawData;
+        uint16_t* pDst = (uint16_t*)pio_pDestRawData;
 
         for(size_t i(0); i < pi_PixelsCount*3; i+=3)
             {
@@ -376,8 +376,8 @@ struct ConverterV64R16G16B16A16_V48R16G16B16 : public HRPPixelConverter
 
     virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        unsigned short* pSrc = (unsigned short*)pi_pSourceRawData;
-        unsigned short* pDst = (unsigned short*)pio_pDestRawData;
+        uint16_t* pSrc = (uint16_t*)pi_pSourceRawData;
+        uint16_t* pDst = (uint16_t*)pio_pDestRawData;
 
         // Dst has 3 channel per pixel
         for(size_t i(0); i < pi_PixelsCount*3; i+=3)
@@ -392,7 +392,7 @@ struct ConverterV64R16G16B16A16_V48R16G16B16 : public HRPPixelConverter
             }
         };
 
-    virtual const short* GetLostChannels() const override
+    virtual const int16_t* GetLostChannels() const override
         {
         return m_LostChannels;
         };
@@ -403,9 +403,9 @@ struct ConverterV64R16G16B16A16_V48R16G16B16 : public HRPPixelConverter
 
 private:
 
-    static short m_LostChannels[];
+    static int16_t m_LostChannels[];
     };
-short ConverterV64R16G16B16A16_V48R16G16B16::m_LostChannels[] = {3, -1};
+int16_t ConverterV64R16G16B16A16_V48R16G16B16::m_LostChannels[] = {3, -1};
 static ConverterV64R16G16B16A16_V48R16G16B16 s_V64R16G16B16A16_V48R16G16B16;
 
 //-----------------------------------------------------------------------------
@@ -483,7 +483,7 @@ HPMPersistentObject* HRPPixelTypeV64R16G16B16A16::Clone() const
     @end
     -----------------------------------------------------------------------------
  */
-unsigned short HRPPixelTypeV64R16G16B16A16::CountValueBits() const
+uint16_t HRPPixelTypeV64R16G16B16A16::CountValueBits() const
     {
     return 64;
     }

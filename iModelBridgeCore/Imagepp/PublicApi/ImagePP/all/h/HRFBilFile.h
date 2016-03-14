@@ -49,13 +49,13 @@ BEGIN_IMAGEPP_NAMESPACE
 typedef struct RawPixelFileHeader
     {
     Byte identifier[4];    /* Always "RPIX" */
-    unsigned long hdrlength;        /* Length of this header in bytes    */
+    uint32_t hdrlength;    /* Length of this header in bytes    */
 
     Byte majorversion;        /* Major revision # of RPIX format    */
     Byte minorversion;        /* Minor revision # of RPIX format    */
 
-    unsigned long width;            /* Image width in pixels                    */
-    unsigned long height;            /* Image height in pixels                    */
+    uint32_t width;            /* Image width in pixels                    */
+    uint32_t height;            /* Image height in pixels                    */
     Byte comptype;            /* Compression (none, FAXG3, FAXG4, ... )    */
     Byte pixelorder;        /* Pixel order                                */
     Byte scnlorder;        /* Scanline order                            */
@@ -138,7 +138,7 @@ public:
     virtual bool                         AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage);
 
     virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
-                                                                 unsigned short           pi_Resolution,
+                                                                 uint16_t           pi_Resolution,
                                                                  HFCAccessMode             pi_AccessMode);
 
 

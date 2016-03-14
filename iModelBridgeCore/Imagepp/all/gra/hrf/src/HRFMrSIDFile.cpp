@@ -82,12 +82,12 @@ public:
         // Tile Capability
 
         Add(new HRFTileCapability(HFC_READ_ONLY,         // AccessMode
-                                  LONG_MAX,            // MaxSizeInBytes
+                                  INT32_MAX,            // MaxSizeInBytes
                                   1,                   // MinWidth
-                                  LONG_MAX,            // MaxWidth
+                                  INT32_MAX,            // MaxWidth
                                   1,                   // WidthIncrement
                                   1,                   // MinHeight
-                                  LONG_MAX,            // MaxHeight
+                                  INT32_MAX,            // MaxHeight
                                   1,                   // HeightIncrement
                                   true));              // Not Square
         }
@@ -509,7 +509,7 @@ void HRFMrSIDFile::Close()
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFMrSIDFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                          unsigned short pi_Resolution,
+                                                          uint16_t pi_Resolution,
                                                           HFCAccessMode  pi_AccessMode)
     {
     // Verify that the page number is 0, because we have one image per file
@@ -586,7 +586,7 @@ void HRFMrSIDFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
     GeoCoordinates::BaseGCSCP pBaseGCS = pPageDescriptor->GetGeocodingCP();
 
     // In addition to the georeference, for some weird reason the fact the original georeference possesed an indication that of
-    // the model type is used int he creation of the transformation matrix below
+    // the model type is used int32_t he creation of the transformation matrix below
     if (pBaseGCS != nullptr && pBaseGCS->IsValid())
         {
         HFCPtr<HGF2DTransfoModel> pTransfoModel;
@@ -677,7 +677,7 @@ bool HRFMrSIDFile::Open()
 // Sets the LookAhead for a shape
 //-----------------------------------------------------------------------------
 void HRFMrSIDFile::SetLookAhead(uint32_t               pi_Page,
-                                unsigned short        pi_Resolution,
+                                uint16_t        pi_Resolution,
                                 const HVEShape&        pi_rShape,
                                 uint32_t               pi_ConsumerID,
                                 bool                  pi_Async)
@@ -708,8 +708,8 @@ void HRFMrSIDFile::SetLookAhead(uint32_t               pi_Page,
                                      BlockWidth,
                                      BlockHeight);
 
-        uint32_t MinX = ULONG_MAX;
-        uint32_t MinY = ULONG_MAX;
+        uint32_t MinX = UINT32_MAX;
+        uint32_t MinY = UINT32_MAX;
         uint32_t MaxX = 0;
         uint32_t MaxY = 0;
 
@@ -725,8 +725,8 @@ void HRFMrSIDFile::SetLookAhead(uint32_t               pi_Page,
             while (BlockIndex != HGFTileIDDescriptor::INDEX_NOT_FOUND)
                 {
                 TileDesc.GetPositionFromIndex(BlockIndex, &PosX, &PosY);
-                HASSERT(PosX <= ULONG_MAX);
-                HASSERT(PosY <= ULONG_MAX);
+                HASSERT(PosX <= UINT32_MAX);
+                HASSERT(PosY <= UINT32_MAX);
 
                 MinX = MIN(MinX, (uint32_t)PosX);
                 MinY = MIN(MinY, (uint32_t)PosY);
@@ -837,7 +837,7 @@ void HRFMrSIDFile::CreateDescriptors ()
     {
     lt_uint32 Width;
     lt_uint32 Height;
-    unsigned int ResCount = 0;
+    uint32_t ResCount = 0;
 
     // Get pixel type
     HRPPixelType* pRawPixelType;
@@ -847,7 +847,7 @@ void HRFMrSIDFile::CreateDescriptors ()
     // Calculate resolution count
     m_pImageReader->getDimsAtMag (1.0, Width, Height);
 
-    int ZoomRatio = (int)(1.0 / m_pImageReader->getMinMagnification());
+    int32_t ZoomRatio = (int32_t)(1.0 / m_pImageReader->getMinMagnification());
 
     do
         {
@@ -866,14 +866,14 @@ void HRFMrSIDFile::CreateDescriptors ()
     m_pRatio         = new double[m_ResCount];
 
     // Fill resolution descriptors
-    unsigned int Denominator = 1;
+    uint32_t Denominator = 1;
     LT_STATUS    sts = LT_STS_Uninit;
 
     HRFPageDescriptor::ListOfResolutionDescriptor  ListOfResolutionDescriptor;
 
     HFCPtr<HRFResolutionDescriptor> pResolutionDesc;
 
-    for(unsigned int Count=0; Count < m_ResCount; ++Count)
+    for(uint32_t Count=0; Count < m_ResCount; ++Count)
         {
         m_pRatio[Count]                  = 1.0 / (double)(Denominator);
         sts = m_pImageReader->getDimsAtMag (m_pRatio[Count], Width, Height);
@@ -1000,11 +1000,11 @@ void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
                     HASSERT(pMetaRecord->getDataType() == LTI_METADATA_DATATYPE_UINT16);
                     pData = pMetaRecord->getScalarData();
 
-                    po_rpGeoTiffKeys->AddKey(GTModelType, (uint32_t)*((unsigned short*)pData));
+                    po_rpGeoTiffKeys->AddKey(GTModelType, (uint32_t)*((uint16_t*)pData));
                     }
                 }
 
-            if (MyMetaDataReader.has("GEOTIFF_NUM::3072::ProjectedCSTypeGeoKey")) // unsigned short
+            if (MyMetaDataReader.has("GEOTIFF_NUM::3072::ProjectedCSTypeGeoKey")) // uint16_t
                 {
                 MyMetaDataReader.get("GEOTIFF_NUM::3072::ProjectedCSTypeGeoKey", pMetaRecord);
                 if (pMetaRecord)
@@ -1012,11 +1012,11 @@ void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
                     HASSERT(pMetaRecord->getDataType() == LTI_METADATA_DATATYPE_UINT16);
                     pData = pMetaRecord->getScalarData();
 
-                    po_rpGeoTiffKeys->AddKey(ProjectedCSType, (uint32_t)*((unsigned short*)pData));
+                    po_rpGeoTiffKeys->AddKey(ProjectedCSType, (uint32_t)*((uint16_t*)pData));
                     }
                 }
 
-            if (MyMetaDataReader.has("GEOTIFF_NUM::3073::PCSCitationGeoKey")) // unsigned short
+            if (MyMetaDataReader.has("GEOTIFF_NUM::3073::PCSCitationGeoKey")) // uint16_t
                 {
                 MyMetaDataReader.get("GEOTIFF_NUM::3073::PCSCitationGeoKey", pMetaRecord);
                 if (pMetaRecord)
@@ -1028,7 +1028,7 @@ void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
                     }
                 }
 
-            if (MyMetaDataReader.has("GEOTIFF_NUM::3074::ProjectionGeoKey")) // unsigned short
+            if (MyMetaDataReader.has("GEOTIFF_NUM::3074::ProjectionGeoKey")) // uint16_t
                 {
                 MyMetaDataReader.get("GEOTIFF_NUM::3074::ProjectionGeoKey", pMetaRecord);
                 if (pMetaRecord)
@@ -1036,11 +1036,11 @@ void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
                     HASSERT(pMetaRecord->getDataType() == LTI_METADATA_DATATYPE_UINT16);
                     pData = pMetaRecord->getScalarData();
 
-                    po_rpGeoTiffKeys->AddKey(Projection, (uint32_t)*((unsigned short*)pData));
+                    po_rpGeoTiffKeys->AddKey(Projection, (uint32_t)*((uint16_t*)pData));
                     }
                 }
 
-            if (MyMetaDataReader.has("GEOTIFF_NUM::4099::VerticalUnitsGeoKey")) // unsigned short
+            if (MyMetaDataReader.has("GEOTIFF_NUM::4099::VerticalUnitsGeoKey")) // uint16_t
                 {
                 MyMetaDataReader.get("GEOTIFF_NUM::4099::VerticalUnitsGeoKey", pMetaRecord);
                 if (pMetaRecord)
@@ -1048,7 +1048,7 @@ void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
                     HASSERT(pMetaRecord->getDataType() == LTI_METADATA_DATATYPE_UINT16);
                     pData = pMetaRecord->getScalarData();
 
-                    po_rpGeoTiffKeys->AddKey(VerticalUnits, (uint32_t)*((unsigned short*)pData));
+                    po_rpGeoTiffKeys->AddKey(VerticalUnits, (uint32_t)*((uint16_t*)pData));
                     }
                 }
 
@@ -1072,7 +1072,7 @@ void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
                     HASSERT(pMetaRecord->getDataType() == LTI_METADATA_DATATYPE_UINT16);
                     pData = pMetaRecord->getScalarData();
 
-                    po_rpGeoTiffKeys->AddKey(GeogAngularUnits, (uint32_t)*((unsigned short*)pData));
+                    po_rpGeoTiffKeys->AddKey(GeogAngularUnits, (uint32_t)*((uint16_t*)pData));
                     }
                 }
 
@@ -1084,12 +1084,12 @@ void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
                     HASSERT(pMetaRecord->getDataType() == LTI_METADATA_DATATYPE_UINT16);
                     pData = pMetaRecord->getScalarData();
 
-                    po_rpGeoTiffKeys->AddKey(ProjLinearUnits, (uint32_t)*((unsigned short*)pData));
+                    po_rpGeoTiffKeys->AddKey(ProjLinearUnits, (uint32_t)*((uint16_t*)pData));
                     po_UnitsInFile = true;
                     }
                 }
 
-            if (MyMetaDataReader.has("GEOTIFF_NUM::3077::ProjLinearUnitSizeGeoKey")) // unsigned short
+            if (MyMetaDataReader.has("GEOTIFF_NUM::3077::ProjLinearUnitSizeGeoKey")) // uint16_t
                 {
                 MyMetaDataReader.get("GEOTIFF_NUM::3077::ProjLinearUnitSizeGeoKey", pMetaRecord);
                 if (pMetaRecord)
@@ -1397,7 +1397,7 @@ bool HRFMrSIDFile::CreateFilter_CreatePixelType(LizardTech::LTIImageStage* pi_pI
 //
 //-----------------------------------------------------------------------------
 /*
-void* MrSidFileImpl::ExtraMetaItem(const void* pData, int idx, LTIMetadataDataType type)
+void* MrSidFileImpl::ExtraMetaItem(const void* pData, int32_t idx, LTIMetadataDataType type)
 {
     void* pExtractedData = 0;
 

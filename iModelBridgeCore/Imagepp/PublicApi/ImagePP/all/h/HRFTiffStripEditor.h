@@ -62,13 +62,13 @@ protected:
     HRFTiffStripEditor
     (HFCPtr<HRFRasterFile> pi_rpRasterFile,
      uint32_t              pi_Page,
-     unsigned short       pi_Resolution,
+     uint16_t       pi_Resolution,
      HFCAccessMode         pi_AccessMode);
 
 private:
 
     // Pointer to runs Compression/Decompression RLE1
-    unsigned short*        m_pRuns;
+    uint16_t*        m_pRuns;
     size_t          m_NumberOfRuns;
     bool           m_HasDecompressToRLE;
 

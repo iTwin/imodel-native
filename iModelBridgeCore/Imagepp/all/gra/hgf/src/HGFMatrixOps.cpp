@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGFMatrixOps.cpp $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -61,7 +61,7 @@ double CalculateDeterminant(const HFCMatrix<4, 4, double>& pi_rMatrix)
         HFCMatrix<3, 3> TempSubMatrix = ExtractSubMatrix(pi_rMatrix, 0, Column);
 
         // Compute sign (either added or subtracted)
-        int Sign = (((Column % 2) == 0) ? 1 : -1);
+        int32_t Sign = (((Column % 2) == 0) ? 1 : -1);
 
         // Add to previous result
         ResDet += Sign * pi_rMatrix[0][Column] * CalculateDeterminant(TempSubMatrix);
@@ -91,7 +91,7 @@ double CalculateDeterminant(const HFCMatrix<3, 3, double>& pi_rMatrix)
         HFCMatrix<2, 2> TempSubMatrix = ExtractSubMatrix(pi_rMatrix, 0, Column);
 
         // Compute sign (either added or subtracted)
-        int Sign = (((Column % 2) == 0) ? 1 : -1);
+        int32_t Sign = (((Column % 2) == 0) ? 1 : -1);
 
         // Add to previous result
         ResDet += Sign * pi_rMatrix[0][Column] * CalculateDeterminant(TempSubMatrix);

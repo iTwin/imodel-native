@@ -30,7 +30,7 @@
 //-----------------------------------------------------------------------------
 HRFiTiffStripEditor::HRFiTiffStripEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                          uint32_t              pi_Page,
-                                         unsigned short       pi_Resolution,
+                                         uint16_t       pi_Resolution,
                                          HFCAccessMode         pi_AccessMode)
     : HRFResolutionEditor(pi_rpRasterFile,
                           pi_Page,
@@ -40,7 +40,7 @@ HRFiTiffStripEditor::HRFiTiffStripEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
     m_IndexOfPage  = RASTER_FILE->GetIndexOfPage(m_Page);
     m_IscTiff = pi_rpRasterFile->IsCompatibleWith(HRFcTiffFile::CLASS_ID);
 
-    unsigned short Compression;
+    uint16_t Compression;
     TIFF_FILE->GetField(COMPRESSION, &Compression);
     m_HasDecompressToRLE = COMPRESSION_CCITTFAX4 == Compression || COMPRESSION_HMR_RLE1 == Compression;
     }
@@ -71,8 +71,8 @@ HSTATUS HRFiTiffStripEditor::ReadBlock(uint64_t pi_PosBlockX,
     RASTER_FILE->SetImageInSubImage (m_IndexOfPage+m_Resolution);
 
     // read the strip
-    HASSERT_X64(m_pResolutionDescriptor->ComputeBlockIndex(pi_PosBlockX, pi_PosBlockY) <= ULONG_MAX);
-    HASSERT(m_pResolutionDescriptor->ComputeBlockIndex(pi_PosBlockX, pi_PosBlockY) <= ULONG_MAX);
+    HASSERT_X64(m_pResolutionDescriptor->ComputeBlockIndex(pi_PosBlockX, pi_PosBlockY) <= UINT32_MAX);
+    HASSERT(m_pResolutionDescriptor->ComputeBlockIndex(pi_PosBlockX, pi_PosBlockY) <= UINT32_MAX);
     Status = TIFF_FILE->StripRead(po_pData, (uint32_t)m_pResolutionDescriptor->ComputeBlockIndex(pi_PosBlockX, pi_PosBlockY));
 
     // Empty block: - First data access when we are in creation mode
@@ -113,7 +113,7 @@ HSTATUS HRFiTiffStripEditor::ReadBlock(uint64_t           pi_PosBlockX,
         }
 
     // read the data
-    HASSERT_X64(m_pResolutionDescriptor->ComputeBlockIndex(pi_PosBlockX, pi_PosBlockY) <= ULONG_MAX);
+    HASSERT_X64(m_pResolutionDescriptor->ComputeBlockIndex(pi_PosBlockX, pi_PosBlockY) <= UINT32_MAX);
     Status = TIFF_FILE->StripRead (po_rpPacket, (uint32_t)m_pResolutionDescriptor->ComputeBlockIndex(pi_PosBlockX, pi_PosBlockY));
 
 
@@ -151,9 +151,9 @@ HSTATUS HRFiTiffStripEditor::ReadBlockRLE(uint64_t                 pi_PosBlockX,
     HPRECONDITION(po_rpPacketRLE->HasBufferOwnership());    // Must be owner of buffers.
     HPRECONDITION(po_rpPacketRLE->GetCodec()->GetWidth() == m_pResolutionDescriptor->GetBlockWidth());
     HPRECONDITION(po_rpPacketRLE->GetCodec()->GetHeight() >= m_pResolutionDescriptor->GetBlockHeight());
-    HPRECONDITION(m_pResolutionDescriptor->GetHeight() <= ULONG_MAX);
-    HPRECONDITION(m_pResolutionDescriptor->GetWidth() <= ULONG_MAX);
-    HPRECONDITION(m_pResolutionDescriptor->GetBytesPerBlockWidth() <= ULONG_MAX);
+    HPRECONDITION(m_pResolutionDescriptor->GetHeight() <= UINT32_MAX);
+    HPRECONDITION(m_pResolutionDescriptor->GetWidth() <= UINT32_MAX);
+    HPRECONDITION(m_pResolutionDescriptor->GetBytesPerBlockWidth() <= UINT32_MAX);
     HPRECONDITION (m_pResolutionDescriptor->GetBlockType() == HRFBlockType::STRIP);
 
     if(m_HasDecompressToRLE)
@@ -224,7 +224,7 @@ HSTATUS HRFiTiffStripEditor::WriteBlock(uint64_t     pi_PosBlockX,
         RASTER_FILE->SetImageInSubImage (m_IndexOfPage+m_Resolution);
 
         // write the strip
-        HASSERT_X64(m_pResolutionDescriptor->ComputeBlockIndex(pi_PosBlockX, pi_PosBlockY) <= ULONG_MAX);
+        HASSERT_X64(m_pResolutionDescriptor->ComputeBlockIndex(pi_PosBlockX, pi_PosBlockY) <= UINT32_MAX);
         if ((Status = TIFF_FILE->StripWrite(pi_pData, (uint32_t)m_pResolutionDescriptor->ComputeBlockIndex(pi_PosBlockX, pi_PosBlockY))) == H_SUCCESS)
             {
             if (GetResolutionDescriptor()->GetBlockDataFlag(GetResolutionDescriptor()->ComputeBlockIndex(pi_PosBlockX, pi_PosBlockY)) & HRFDATAFLAG_EMPTY || !m_IscTiff)
@@ -279,7 +279,7 @@ HSTATUS HRFiTiffStripEditor::WriteBlock(uint64_t                 pi_PosBlockX,
             // create a new buffer
             size_t LineIndexesTableSize = pCodec->GetHeight() * sizeof(uint32_t);
             HArrayAutoPtr<Byte> pTmpBuffer;
-            HASSERT_X64(pi_rpPacket->GetDataSize() + LineIndexesTableSize < ULONG_MAX);
+            HASSERT_X64(pi_rpPacket->GetDataSize() + LineIndexesTableSize < UINT32_MAX);
             uint32_t BufferSize = (uint32_t)(pi_rpPacket->GetDataSize() + LineIndexesTableSize);
             pTmpBuffer = new Byte[BufferSize];
 
@@ -289,12 +289,12 @@ HSTATUS HRFiTiffStripEditor::WriteBlock(uint64_t                 pi_PosBlockX,
             // copy the image data itself
             memcpy(pTmpBuffer + LineIndexesTableSize, pi_rpPacket->GetBufferAddress(), pi_rpPacket->GetDataSize());
 
-            HASSERT_X64(m_pResolutionDescriptor->ComputeBlockIndex(pi_PosBlockX, pi_PosBlockY) <= ULONG_MAX);
+            HASSERT_X64(m_pResolutionDescriptor->ComputeBlockIndex(pi_PosBlockX, pi_PosBlockY) <= UINT32_MAX);
             Status = TIFF_FILE->StripWriteCompress(pTmpBuffer, BufferSize, (uint32_t)m_pResolutionDescriptor->ComputeBlockIndex(pi_PosBlockX, pi_PosBlockY));
             }
         else
             {
-            HASSERT_X64(m_pResolutionDescriptor->ComputeBlockIndex(pi_PosBlockX, pi_PosBlockY) <= ULONG_MAX);
+            HASSERT_X64(m_pResolutionDescriptor->ComputeBlockIndex(pi_PosBlockX, pi_PosBlockY) <= UINT32_MAX);
             Status = TIFF_FILE->StripWriteCompress(pi_rpPacket->GetBufferAddress(), (uint32_t)pi_rpPacket->GetDataSize(), (uint32_t)m_pResolutionDescriptor->ComputeBlockIndex(pi_PosBlockX, pi_PosBlockY));
             }
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPChannelOrg.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Inline methods for class HRPChannelOrg
@@ -21,7 +21,7 @@ inline uint32_t HRPChannelOrg::CountChannels() const
 // GetChannelIndex
 //-----------------------------------------------------------------------------
 inline uint32_t HRPChannelOrg::GetChannelIndex(   HRPChannelType::ChannelRole pi_Role,
-                                                unsigned short             pi_Id) const
+                                                uint16_t             pi_Id) const
     {
     // We use two returns because this is faster
 

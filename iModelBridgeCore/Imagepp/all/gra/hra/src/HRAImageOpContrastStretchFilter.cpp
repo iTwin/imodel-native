@@ -293,7 +293,7 @@ ImagePPStatus HRAImageOpLightnessContrastStretchFilter::_GetAvailableInputPixelT
     if (pixelTypeToMatch != NULL)
         {
         // Try to find the best match for pixelTypeToMatch. Try to preserve alpha and pixel depth.
-        unsigned short pixelDepth = pixelTypeToMatch->GetChannelOrg().GetChannelPtr(0)->GetSize();
+        uint16_t pixelDepth = pixelTypeToMatch->GetChannelOrg().GetChannelPtr(0)->GetSize();
         if (pixelTypeToMatch->GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) != HRPChannelType::FREE)
             {
             if (pixelDepth <= 8)
@@ -348,7 +348,7 @@ ImagePPStatus HRAImageOpLightnessContrastStretchFilter::_GetAvailableOutputPixel
     // Try to find the best match for pixelTypeToMatch. Try to preserve alpha and pixel depth.
     if (pixelTypeToMatch != NULL)
         {
-        unsigned short pixelDepth = pixelTypeToMatch->GetChannelOrg().GetChannelPtr(0)->GetSize();
+        uint16_t pixelDepth = pixelTypeToMatch->GetChannelOrg().GetChannelPtr(0)->GetSize();
         if (pixelTypeToMatch->GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) != HRPChannelType::FREE)
             {
             if (pixelDepth <= 8)

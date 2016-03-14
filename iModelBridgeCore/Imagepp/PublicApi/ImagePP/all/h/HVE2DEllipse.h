@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DEllipse.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DEllipse
@@ -95,10 +95,10 @@ public:
 private:
 
     double       ComputeX(double pi_X,
-                           short pi_SignFactor = 1) const;
+                           int16_t pi_SignFactor = 1) const;
 
     double       ComputeY(double pi_X,
-                           short pi_SignFactor = 1) const;
+                           int16_t pi_SignFactor = 1) const;
     IMAGEPP_EXPORT void  ResetTolerance();
 
     bool          m_IsVertical;

@@ -756,8 +756,8 @@ bool HRFTiffCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
             double*    pTiePoint;
             double*    pScale;
             uint32_t    Count;
-            unsigned short* pKeyDirectory;
-            unsigned short*    pTagRagBag;
+            uint16_t* pKeyDirectory;
+            uint16_t*    pTagRagBag;
             uint32_t KeyCount;
 
             if (pTiff->GetField(INTERGRAPH_MATRIX, &Count, &pMat4by4))
@@ -848,7 +848,7 @@ HRFTiffFile::~HRFTiffFile()
 //-----------------------------------------------------------------------------
 
 HRFResolutionEditor* HRFTiffFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                         unsigned short pi_Resolution,
+                                                         uint16_t pi_Resolution,
                                                          HFCAccessMode  pi_AccessMode)
     {
     HPRECONDITION(pi_Page < CountPages());
@@ -900,7 +900,7 @@ bool HRFTiffFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
         AddResolutionToFile(CountPages() - 1, 0);
 
     // Add subresolution
-    for (unsigned short Resolution=1; Resolution < pi_pPage->CountResolutions(); Resolution++)
+    for (uint16_t Resolution=1; Resolution < pi_pPage->CountResolutions(); Resolution++)
         AddResolutionToFile(CountPages() - 1, Resolution);
 
     return true;
@@ -921,7 +921,7 @@ const HFCPtr<HRFRasterFileCapabilities>& HRFTiffFile::GetCapabilities () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 HRFScanlineOrientation HRFTiffFile::GetScanLineOrientation() const
     {
-    unsigned short Orientation;
+    uint16_t Orientation;
     if (!GetFilePtr()->GetField(ORIENTATION, &Orientation))
         Orientation = 1;    // by default, UPPER LEFT HORIZONTAL (SLO4)
 
@@ -1008,9 +1008,9 @@ uint32_t HRFTiffFile::CalcNumberOfPage () const
 // protected CalcNumberOfSubResolution
 //-----------------------------------------------------------------------------
 
-unsigned short HRFTiffFile::CalcNumberOfSubResolution(uint32_t pi_IndexImage) const
+uint16_t HRFTiffFile::CalcNumberOfSubResolution(uint32_t pi_IndexImage) const
     {
-    unsigned short NbSubResolution (0);
+    uint16_t NbSubResolution (0);
 
     HPRECONDITION (pi_IndexImage < (uint32_t)m_NumberDir);
 
@@ -1053,7 +1053,7 @@ uint32_t HRFTiffFile::GetIndexOfPage(uint32_t pi_Page) const
             PageNumber++;
             }
         }
-    return ((i >= m_NumberDir) ? ULONG_MAX : i);
+    return ((i >= m_NumberDir) ? UINT32_MAX : i);
     }
 
 //-----------------------------------------------------------------------------
@@ -1085,9 +1085,9 @@ void HRFTiffFile::SetImageInSubImage  (uint32_t pi_IndexImage)
 void HRFTiffFile::Set1BitPhotometric(bool pi_MinIsWhite)
     {
     if (pi_MinIsWhite)
-        GetFilePtr()->SetField(PHOTOMETRIC, (unsigned short)PHOTOMETRIC_MINISWHITE);
+        GetFilePtr()->SetField(PHOTOMETRIC, (uint16_t)PHOTOMETRIC_MINISWHITE);
     else
-        GetFilePtr()->SetField(PHOTOMETRIC, (unsigned short)PHOTOMETRIC_MINISBLACK);
+        GetFilePtr()->SetField(PHOTOMETRIC, (uint16_t)PHOTOMETRIC_MINISBLACK);
     }
 
 //-----------------------------------------------------------------------------
@@ -1176,7 +1176,7 @@ void HRFTiffFile::GetSystemDateTime (char* datetime)
 // AddResolutionToFile -
 //-----------------------------------------------------------------------------
 void HRFTiffFile::AddResolutionToFile(uint32_t pi_Page,
-                                      unsigned short pi_Resolution)
+                                      uint16_t pi_Resolution)
     {
     // Validate the file access
     HPRECONDITION(GetAccessMode().m_HasWriteAccess || GetAccessMode().m_HasCreateAccess );
@@ -1205,7 +1205,7 @@ void HRFTiffFile::AddResolutionToFile(uint32_t pi_Page,
 
     // Info standard
     m_pTiff->SetField (SUBFILETYPE, (uint32_t)ResolutionType);
-    m_pTiff->SetField (PLANARCONFIG, (unsigned short)PLANARCONFIG_CONTIG);
+    m_pTiff->SetField (PLANARCONFIG, (uint16_t)PLANARCONFIG_CONTIG);
 
     if (ResolutionType == FILETYPE_EMPTYPAGE)
         {
@@ -1307,7 +1307,7 @@ HFCPtr<HRFThumbnail> HRFTiffFile::ReadThumbnailFromFile(uint32_t pi_Page)
     // Check if the private tag is present
     //
     // check if the Thumbnail is Present
-    unsigned short IsThumbnailComposed = false;
+    uint16_t IsThumbnailComposed = false;
 
     if (m_pTiff->SetDirectory(HTIFFFile::MakeDirectoryID(HTIFFFile::HMR, pi_Page)) && m_pTiff->GetField(HMR_THUMBNAIL_COMPOSED, &IsThumbnailComposed))
         {
@@ -1318,7 +1318,7 @@ HFCPtr<HRFThumbnail> HRFTiffFile::ReadThumbnailFromFile(uint32_t pi_Page)
         // Select the page
 #if 0
         HDEBUGCODE(
-            unsigned short TESTJPEGISOCompression =  = COMPRESSION_NONE;
+            uint16_t TESTJPEGISOCompression =  = COMPRESSION_NONE;
             GetFilePtr()->GetField(COMPRESSION, &TESTJPEGISOCompression);
 
             if (TESTJPEGISOCompression == COMPRESSION_JPEG)
@@ -1408,14 +1408,14 @@ void HRFTiffFile::AddThumbnailToFile(uint32_t pi_Page)
             //if (!m_pTiff->AppendDirectory())
             //    HASSERT(false);
 
-            m_pTiff->SetField(HMR_THUMBNAIL_COMPOSED, (unsigned short)pThumbnail->IsComposed());
+            m_pTiff->SetField(HMR_THUMBNAIL_COMPOSED, (uint16_t)pThumbnail->IsComposed());
 
             // Write the thumbnail descriptor
             //UInt32 ResolutionType = FILETYPE_THUMBNAIL;
 
             // Info standard
             //m_pTiff->SetField (SUBFILETYPE, (UInt32)ResolutionType);
-            m_pTiff->SetField (PLANARCONFIG, (unsigned short)PLANARCONFIG_CONTIG);
+            m_pTiff->SetField (PLANARCONFIG, (uint16_t)PLANARCONFIG_CONTIG);
 
             // Set the image size
             m_pTiff->SetField (IMAGEWIDTH, pThumbnail->GetWidth());
@@ -1465,7 +1465,7 @@ void HRFTiffFile::WritePixelTypeAndCodecToFile(uint32_t                    pi_Pa
                                                uint32_t                    pi_BlockHeight)
     {
     // Find the compression tag that fit with the specified codec.
-    unsigned short Compression = COMPRESSION_NONE;
+    uint16_t Compression = COMPRESSION_NONE;
     uint32_t Quality     = 0;
 
     if (pi_rpCodec != 0)
@@ -1475,8 +1475,8 @@ void HRFTiffFile::WritePixelTypeAndCodecToFile(uint32_t                    pi_Pa
             Compression = COMPRESSION_JPEG;
             Quality     = ((HFCPtr<HCDCodecIJG>&)pi_rpCodec)->GetQuality();
 
-            unsigned short HorizontalSub;
-            unsigned short VerticalSub;
+            uint16_t HorizontalSub;
+            uint16_t VerticalSub;
             if(((HFCPtr<HCDCodecIJG>&)pi_rpCodec)->GetSubsamplingMode() == HCDCodecIJG::SNONE)
                 {
                 HorizontalSub = 1;
@@ -1498,7 +1498,7 @@ void HRFTiffFile::WritePixelTypeAndCodecToFile(uint32_t                    pi_Pa
 
             if(((HFCPtr<HCDCodecIJG>&)pi_rpCodec)->GetOptimizeCoding())
                 {
-                unsigned short ShortVal = 0;
+                uint16_t ShortVal = 0;
                 m_pTiff->SetField(COMPRESSION_JPEGOPTIMIZECODING, ShortVal);
                 }
 
@@ -1558,7 +1558,7 @@ void HRFTiffFile::WritePixelTypeAndCodecToFile(uint32_t                    pi_Pa
 
     // Set the compression
     HASSERT(Compression <= USHRT_MAX);
-    m_pTiff->SetField (COMPRESSION, (unsigned short)Compression);
+    m_pTiff->SetField (COMPRESSION, (uint16_t)Compression);
     if (Quality != 0)
         m_pTiff->SetField (COMPRESSION_QUALITY, Quality);
 
@@ -1566,245 +1566,245 @@ void HRFTiffFile::WritePixelTypeAndCodecToFile(uint32_t                    pi_Pa
     if (pi_rpPixelType->CountIndexBits() == 0)
         {
         // Image RGB
-        m_pTiff->SetField (PHOTOMETRIC, (unsigned short)PHOTOMETRIC_RGB);
+        m_pTiff->SetField (PHOTOMETRIC, (uint16_t)PHOTOMETRIC_RGB);
 
         if (pi_rpPixelType->GetClassID() == HRPPixelTypeV24R8G8B8::CLASS_ID ||
             pi_rpPixelType->GetClassID() == HRPPixelTypeV24B8G8R8::CLASS_ID)
             {
-            unsigned short BitPerSample[3];
+            uint16_t BitPerSample[3];
             BitPerSample[0] = 8;
             BitPerSample[1] = 8;
             BitPerSample[2] = 8;
 
             if(Compression == COMPRESSION_JPEG || Compression == COMPRESSION_HMR_FLASHPIX)
-                m_pTiff->SetField (PHOTOMETRIC, (unsigned short)PHOTOMETRIC_YCBCR);
+                m_pTiff->SetField (PHOTOMETRIC, (uint16_t)PHOTOMETRIC_YCBCR);
 
             m_pTiff->SetField (BITSPERSAMPLE, (uint32_t) 3, BitPerSample);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)3);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)3);
             }
         else if (pi_rpPixelType->GetClassID() == HRPPixelTypeV32R8G8B8A8::CLASS_ID ||
                  pi_rpPixelType->GetClassID() == HRPPixelTypeV32R8G8B8X8::CLASS_ID ||
                  pi_rpPixelType->GetClassID() == HRPPixelTypeV32B8G8R8X8::CLASS_ID)
             {
-            unsigned short ExtraSample = EXTRASAMPLE_UNASSALPHA;
+            uint16_t ExtraSample = EXTRASAMPLE_UNASSALPHA;
             if ((pi_rpPixelType->GetClassID() == HRPPixelTypeV32R8G8B8X8::CLASS_ID) ||
                 (pi_rpPixelType->GetClassID() == HRPPixelTypeV32B8G8R8X8::CLASS_ID))
                 ExtraSample = EXTRASAMPLE_UNSPECIFIED;
 
-            unsigned short BitPerSample[4];
+            uint16_t BitPerSample[4];
             BitPerSample[0] = 8;
             BitPerSample[1] = 8;
             BitPerSample[2] = 8;
             BitPerSample[3] = 8;
 
             if(Compression == COMPRESSION_JPEG || Compression == COMPRESSION_HMR_FLASHPIX)
-                m_pTiff->SetField (PHOTOMETRIC, (unsigned short)PHOTOMETRIC_YCBCR);
+                m_pTiff->SetField (PHOTOMETRIC, (uint16_t)PHOTOMETRIC_YCBCR);
 
             m_pTiff->SetField (BITSPERSAMPLE, (uint32_t) 4, BitPerSample);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)4);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)4);
             m_pTiff->SetField (EXTRASAMPLES, (uint32_t) 1, &ExtraSample);
             }
         else if (pi_rpPixelType->GetClassID() == HRPPixelTypeV24PhotoYCC::CLASS_ID)
             {
-            unsigned short BitPerSample[3];
+            uint16_t BitPerSample[3];
             BitPerSample[0] = 8;
             BitPerSample[1] = 8;
             BitPerSample[2] = 8;
 
             m_pTiff->SetField (BITSPERSAMPLE, (uint32_t) 3, BitPerSample);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)3);
-            m_pTiff->SetField (PHOTOMETRIC, (unsigned short)PHOTOMETRIC_YCBCR);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)3);
+            m_pTiff->SetField (PHOTOMETRIC, (uint16_t)PHOTOMETRIC_YCBCR);
             }
         else if (pi_rpPixelType->GetClassID() == HRPPixelTypeV32PR8PG8PB8A8::CLASS_ID)
             {
-            unsigned short ExtraSample = EXTRASAMPLE_ASSOCALPHA;
+            uint16_t ExtraSample = EXTRASAMPLE_ASSOCALPHA;
 
-            unsigned short BitPerSample[4];
+            uint16_t BitPerSample[4];
             BitPerSample[0] = 8;
             BitPerSample[1] = 8;
             BitPerSample[2] = 8;
             BitPerSample[3] = 8;
 
             if(Compression == COMPRESSION_JPEG || Compression == COMPRESSION_HMR_FLASHPIX)
-                m_pTiff->SetField (PHOTOMETRIC, (unsigned short)PHOTOMETRIC_YCBCR);
+                m_pTiff->SetField (PHOTOMETRIC, (uint16_t)PHOTOMETRIC_YCBCR);
 
             m_pTiff->SetField (BITSPERSAMPLE, (uint32_t) 4, BitPerSample);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)4);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)4);
             m_pTiff->SetField (EXTRASAMPLES, (uint32_t) 1, &ExtraSample);
             }
         else if (pi_rpPixelType->GetClassID() == HRPPixelTypeV32PRPhotoYCCA8::CLASS_ID)
             {
-            unsigned short ExtraSample = EXTRASAMPLE_ASSOCALPHA;
+            uint16_t ExtraSample = EXTRASAMPLE_ASSOCALPHA;
 
-            unsigned short BitPerSample[4];
+            uint16_t BitPerSample[4];
             BitPerSample[0] = 8;
             BitPerSample[1] = 8;
             BitPerSample[2] = 8;
             BitPerSample[3] = 8;
 
             m_pTiff->SetField (BITSPERSAMPLE, (uint32_t) 4, BitPerSample);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)4);
-            m_pTiff->SetField (PHOTOMETRIC, (unsigned short)PHOTOMETRIC_YCBCR);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)4);
+            m_pTiff->SetField (PHOTOMETRIC, (uint16_t)PHOTOMETRIC_YCBCR);
             m_pTiff->SetField (EXTRASAMPLES, (uint32_t) 1, &ExtraSample);
             }
         else if (pi_rpPixelType->GetClassID() == HRPPixelTypeV16B5G5R5::CLASS_ID)
             {
-            unsigned short BitPerSample[4];
+            uint16_t BitPerSample[4];
             BitPerSample[0] = 5;
             BitPerSample[1] = 5;
             BitPerSample[2] = 5;
             BitPerSample[3] = 1;
 
             m_pTiff->SetField (BITSPERSAMPLE, (uint32_t) 4, BitPerSample);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)4);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)4);
             }
 
         else if (pi_rpPixelType->GetClassID() == HRPPixelTypeV16R5G6B5::CLASS_ID)
             {
-            unsigned short BitPerSample[3];
+            uint16_t BitPerSample[3];
             BitPerSample[0] = 5;
             BitPerSample[1] = 6;
             BitPerSample[2] = 5;
 
             m_pTiff->SetField (BITSPERSAMPLE, (uint32_t) 3, BitPerSample);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)3);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)3);
             }
 
         else if (pi_rpPixelType->GetClassID() == HRPPixelTypeV8Gray8::CLASS_ID)
             {
-            unsigned short BitPerSample = 8;
+            uint16_t BitPerSample = 8;
 
             m_pTiff->SetField (BITSPERSAMPLE, (uint32_t) 1, &BitPerSample);
-            m_pTiff->SetField (PHOTOMETRIC, (unsigned short)PHOTOMETRIC_MINISBLACK);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)1);
+            m_pTiff->SetField (PHOTOMETRIC, (uint16_t)PHOTOMETRIC_MINISBLACK);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)1);
             }
         else if (pi_rpPixelType->GetClassID() == HRPPixelTypeV8GrayWhite8::CLASS_ID)
             {
-            unsigned short BitPerSample = 8;
+            uint16_t BitPerSample = 8;
 
             m_pTiff->SetField (BITSPERSAMPLE, (uint32_t) 1, &BitPerSample);
-            m_pTiff->SetField (PHOTOMETRIC, (unsigned short)PHOTOMETRIC_MINISWHITE);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)1);
+            m_pTiff->SetField (PHOTOMETRIC, (uint16_t)PHOTOMETRIC_MINISWHITE);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)1);
             }
         else if (pi_rpPixelType->GetClassID() == HRPPixelTypeV16PRGray8A8::CLASS_ID)
             {
-            unsigned short ExtraSample = EXTRASAMPLE_ASSOCALPHA;
+            uint16_t ExtraSample = EXTRASAMPLE_ASSOCALPHA;
 
-            unsigned short BitPerSample[2];
+            uint16_t BitPerSample[2];
             BitPerSample[0] = 8;
             BitPerSample[1] = 8;
 
             m_pTiff->SetField (BITSPERSAMPLE, (uint32_t) 2, BitPerSample);
-            m_pTiff->SetField (PHOTOMETRIC, (unsigned short)PHOTOMETRIC_MINISBLACK);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)2);
+            m_pTiff->SetField (PHOTOMETRIC, (uint16_t)PHOTOMETRIC_MINISBLACK);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)2);
             m_pTiff->SetField (EXTRASAMPLES, (uint32_t) 1, &ExtraSample);
             }
         else if (pi_rpPixelType->GetClassID() == HRPPixelTypeV1Gray1::CLASS_ID)
             {
-            unsigned short BitPerSample = 1;
+            uint16_t BitPerSample = 1;
 
             m_pTiff->SetField (BITSPERSAMPLE, (uint32_t) 1, &BitPerSample);
-            m_pTiff->SetField (PHOTOMETRIC, (unsigned short)PHOTOMETRIC_MINISBLACK);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)1);
+            m_pTiff->SetField (PHOTOMETRIC, (uint16_t)PHOTOMETRIC_MINISBLACK);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)1);
             }
         else if (pi_rpPixelType->GetClassID() == HRPPixelTypeV1GrayWhite1::CLASS_ID)
             {
-            unsigned short BitPerSample = 1;
+            uint16_t BitPerSample = 1;
 
             m_pTiff->SetField (BITSPERSAMPLE, (uint32_t)1, &BitPerSample);
-            m_pTiff->SetField (PHOTOMETRIC, (unsigned short)PHOTOMETRIC_MINISWHITE);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)1);
+            m_pTiff->SetField (PHOTOMETRIC, (uint16_t)PHOTOMETRIC_MINISWHITE);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)1);
             }
         else if (pi_rpPixelType->GetClassID() == HRPPixelTypeV48R16G16B16::CLASS_ID)
             {
-            unsigned short BitPerSample[3];
+            uint16_t BitPerSample[3];
             BitPerSample[0] = 16;
             BitPerSample[1] = 16;
             BitPerSample[2] = 16;
 
             m_pTiff->SetField (BITSPERSAMPLE, (uint32_t)3, BitPerSample);
-            m_pTiff->SetField (PHOTOMETRIC, (unsigned short)PHOTOMETRIC_RGB);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)3);
+            m_pTiff->SetField (PHOTOMETRIC, (uint16_t)PHOTOMETRIC_RGB);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)3);
             }
         else if (pi_rpPixelType->GetClassID() == HRPPixelTypeV64R16G16B16A16::CLASS_ID)
             {
-            unsigned short ExtraSample = EXTRASAMPLE_UNASSALPHA;
-            unsigned short BitPerSample[4];
+            uint16_t ExtraSample = EXTRASAMPLE_UNASSALPHA;
+            uint16_t BitPerSample[4];
             BitPerSample[0] = 16;
             BitPerSample[1] = 16;
             BitPerSample[2] = 16;
             BitPerSample[3] = 16;
 
             m_pTiff->SetField (BITSPERSAMPLE, (uint32_t)4, BitPerSample);
-            m_pTiff->SetField (PHOTOMETRIC, (unsigned short)PHOTOMETRIC_RGB);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)4);
+            m_pTiff->SetField (PHOTOMETRIC, (uint16_t)PHOTOMETRIC_RGB);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)4);
             m_pTiff->SetField (EXTRASAMPLES, (uint32_t) 1, &ExtraSample);
             }
         else if (pi_rpPixelType->GetClassID() == HRPPixelTypeV64R16G16B16X16::CLASS_ID)
             {
-            unsigned short ExtraSample = EXTRASAMPLE_UNSPECIFIED;
-            unsigned short BitPerSample[4];
+            uint16_t ExtraSample = EXTRASAMPLE_UNSPECIFIED;
+            uint16_t BitPerSample[4];
             BitPerSample[0] = 16;
             BitPerSample[1] = 16;
             BitPerSample[2] = 16;
             BitPerSample[3] = 16;
 
             m_pTiff->SetField (BITSPERSAMPLE, (uint32_t)4, BitPerSample);
-            m_pTiff->SetField (PHOTOMETRIC, (unsigned short)PHOTOMETRIC_RGB);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)4);
+            m_pTiff->SetField (PHOTOMETRIC, (uint16_t)PHOTOMETRIC_RGB);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)4);
             m_pTiff->SetField (EXTRASAMPLES, (uint32_t) 1, &ExtraSample);
             }
         else if (pi_rpPixelType->GetClassID() == HRPPixelTypeV16Gray16::CLASS_ID)
             {
-            unsigned short BitPerSample = 16;
+            uint16_t BitPerSample = 16;
 
             m_pTiff->SetField (BITSPERSAMPLE, (uint32_t)1, &BitPerSample);
-            m_pTiff->SetField (PHOTOMETRIC, (unsigned short)PHOTOMETRIC_MINISBLACK);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)1);
+            m_pTiff->SetField (PHOTOMETRIC, (uint16_t)PHOTOMETRIC_MINISBLACK);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)1);
             }
         else if (pi_rpPixelType->GetClassID() == HRPPixelTypeV16Int16::CLASS_ID)
             {
-            unsigned short BitPerSample = 16;
-            unsigned short SampleFormat = SAMPLEFORMAT_INT;
+            uint16_t BitPerSample = 16;
+            uint16_t SampleFormat = SAMPLEFORMAT_INT;
 
             m_pTiff->SetField (BITSPERSAMPLE, (uint32_t)1, &BitPerSample);
-            m_pTiff->SetField (PHOTOMETRIC, (unsigned short)PHOTOMETRIC_MINISBLACK);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)1);
+            m_pTiff->SetField (PHOTOMETRIC, (uint16_t)PHOTOMETRIC_MINISBLACK);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)1);
             m_pTiff->SetField (SAMPLEFORMAT, (uint32_t)1, &SampleFormat);
             }
         else if (pi_rpPixelType->GetClassID() == HRPPixelTypeV32Float32::CLASS_ID)
             {
-            unsigned short BitPerSample = 32;
-            unsigned short SampleFormat = SAMPLEFORMAT_IEEEFP;
+            uint16_t BitPerSample = 32;
+            uint16_t SampleFormat = SAMPLEFORMAT_IEEEFP;
 
             m_pTiff->SetField (BITSPERSAMPLE, (uint32_t)1, &BitPerSample);
-            m_pTiff->SetField (PHOTOMETRIC, (unsigned short)PHOTOMETRIC_MINISBLACK);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)1);
+            m_pTiff->SetField (PHOTOMETRIC, (uint16_t)PHOTOMETRIC_MINISBLACK);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)1);
             m_pTiff->SetField (SAMPLEFORMAT, (uint32_t)1, &SampleFormat);
             }
         else if (pi_rpPixelType->GetClassID() == HRPPixelTypeV96R32G32B32::CLASS_ID)
             {
-            unsigned short BitPerSample[3];
+            uint16_t BitPerSample[3];
             BitPerSample[0] = 32;
             BitPerSample[1] = 32;
             BitPerSample[2] = 32;
 
             m_pTiff->SetField (BITSPERSAMPLE, (uint32_t)3, BitPerSample);
-            m_pTiff->SetField (PHOTOMETRIC, (unsigned short)PHOTOMETRIC_RGB);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)3);
+            m_pTiff->SetField (PHOTOMETRIC, (uint16_t)PHOTOMETRIC_RGB);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)3);
             }
         else if (pi_rpPixelType->GetClassID() == HRPPixelTypeV32CMYK::CLASS_ID)
             {
-            unsigned short BitPerSample[4];
+            uint16_t BitPerSample[4];
             BitPerSample[0] = 8;
             BitPerSample[1] = 8;
             BitPerSample[2] = 8;
             BitPerSample[3] = 8;
 
             m_pTiff->SetField (BITSPERSAMPLE, (uint32_t)4, BitPerSample);
-            m_pTiff->SetField (PHOTOMETRIC, (unsigned short)PHOTOMETRIC_SEPARATED);
-            m_pTiff->SetField (INKSET, (unsigned short)1);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)4);
+            m_pTiff->SetField (PHOTOMETRIC, (uint16_t)PHOTOMETRIC_SEPARATED);
+            m_pTiff->SetField (INKSET, (uint16_t)1);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)4);
             }
         else
             {
@@ -1814,48 +1814,48 @@ void HRFTiffFile::WritePixelTypeAndCodecToFile(uint32_t                    pi_Pa
     else
         {
         // Image Set Pixel Type
-        m_pTiff->SetField (PHOTOMETRIC, (unsigned short)PHOTOMETRIC_PALETTE);
+        m_pTiff->SetField (PHOTOMETRIC, (uint16_t)PHOTOMETRIC_PALETTE);
 
         if (pi_rpPixelType->GetClassID() == HRPPixelTypeI8R8G8B8::CLASS_ID ||
             pi_rpPixelType->GetClassID() == HRPPixelTypeI8Gray8::CLASS_ID)
             {
-            m_pTiff->SetField (BITSPERSAMPLE, (unsigned short)8);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)1);
+            m_pTiff->SetField (BITSPERSAMPLE, (uint16_t)8);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)1);
             }
         else if (pi_rpPixelType->GetClassID() == HRPPixelTypeI4R8G8B8::CLASS_ID)
             {
-            m_pTiff->SetField (BITSPERSAMPLE, (unsigned short)4);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)1);
+            m_pTiff->SetField (BITSPERSAMPLE, (uint16_t)4);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)1);
             }
         else if (pi_rpPixelType->GetClassID() == HRPPixelTypeId_I2R8G8B8)
             {
-            m_pTiff->SetField (BITSPERSAMPLE, (unsigned short)2);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)1);
+            m_pTiff->SetField (BITSPERSAMPLE, (uint16_t)2);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)1);
             }
         else if (pi_rpPixelType->GetClassID() == HRPPixelTypeI1R8G8B8::CLASS_ID)
             {
-            m_pTiff->SetField (BITSPERSAMPLE, (unsigned short)1);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)1);
+            m_pTiff->SetField (BITSPERSAMPLE, (uint16_t)1);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)1);
             }
         else if (pi_rpPixelType->GetClassID() == HRPPixelTypeI1R8G8B8A8::CLASS_ID)
             {
-            m_pTiff->SetField (BITSPERSAMPLE, (unsigned short)1);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)1);
+            m_pTiff->SetField (BITSPERSAMPLE, (uint16_t)1);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)1);
             }
         else if (pi_rpPixelType->GetClassID() == HRPPixelTypeI4R8G8B8A8::CLASS_ID)
             {
-            m_pTiff->SetField (BITSPERSAMPLE, (unsigned short)4);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)1);
+            m_pTiff->SetField (BITSPERSAMPLE, (uint16_t)4);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)1);
             }
         else if (pi_rpPixelType->GetClassID() == HRPPixelTypeI8R8G8B8A8::CLASS_ID)
             {
-            m_pTiff->SetField (BITSPERSAMPLE, (unsigned short)8);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)1);
+            m_pTiff->SetField (BITSPERSAMPLE, (uint16_t)8);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)1);
             }
         else if (pi_rpPixelType->GetClassID() == HRPPixelTypeI8VA8R8G8B8::CLASS_ID)
             {
-            m_pTiff->SetField (BITSPERSAMPLE, (unsigned short)8);
-            m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)2);
+            m_pTiff->SetField (BITSPERSAMPLE, (uint16_t)8);
+            m_pTiff->SetField (SAMPLESPERPIXEL, (uint16_t)2);
             }
         else
             {
@@ -1879,9 +1879,9 @@ void HRFTiffFile::WritePaletteToFile(uint32_t pi_Page, const HRPPixelPalette&  p
     bool            HasAlpha           = pi_rPalette.GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) != HRPChannelType::FREE;
 
     Byte*           pPaletteEntry;
-    unsigned short*         rm = NULL;         // Store the Red Channel
-    unsigned short*         gm = NULL;         // Store the Green Channel
-    unsigned short*         bm = NULL;         // Store the Blue Channel
+    uint16_t*         rm = NULL;         // Store the Red Channel
+    uint16_t*         gm = NULL;         // Store the Green Channel
+    uint16_t*         bm = NULL;         // Store the Blue Channel
     Byte*           am = NULL;         // Store the Alpha Channel
 
     // Validate the file access
@@ -1891,9 +1891,9 @@ void HRFTiffFile::WritePaletteToFile(uint32_t pi_Page, const HRPPixelPalette&  p
     if (GetAccessMode().m_HasWriteAccess || GetAccessMode().m_HasCreateAccess )
         {
         // Create RGB buffer to convert the palette entry
-        rm = new unsigned short[MaxPaletteEntries];
-        gm = new unsigned short[MaxPaletteEntries];
-        bm = new unsigned short[MaxPaletteEntries];
+        rm = new uint16_t[MaxPaletteEntries];
+        gm = new uint16_t[MaxPaletteEntries];
+        bm = new uint16_t[MaxPaletteEntries];
         if(HasAlpha)
             am = new Byte[MaxPaletteEntries];
 
@@ -1901,9 +1901,9 @@ void HRFTiffFile::WritePaletteToFile(uint32_t pi_Page, const HRPPixelPalette&  p
             {
             if (MaxPaletteEntries != pi_rPalette.CountUsedEntries())
                 {
-                memset(rm, 0, MaxPaletteEntries * sizeof(unsigned short));
-                memset(gm, 0, MaxPaletteEntries * sizeof(unsigned short));
-                memset(bm, 0, MaxPaletteEntries * sizeof(unsigned short));
+                memset(rm, 0, MaxPaletteEntries * sizeof(uint16_t));
+                memset(gm, 0, MaxPaletteEntries * sizeof(uint16_t));
+                memset(bm, 0, MaxPaletteEntries * sizeof(uint16_t));
                 if (HasAlpha)
                     memset(am, 0, MaxPaletteEntries * sizeof(Byte));
                 }
@@ -1911,9 +1911,9 @@ void HRFTiffFile::WritePaletteToFile(uint32_t pi_Page, const HRPPixelPalette&  p
             for (uint32_t i=0; i<pi_rPalette.CountUsedEntries(); i++)
                 {
                 pPaletteEntry = (Byte*)pi_rPalette.GetCompositeValue(i);
-                rm[i] = (unsigned short)(pPaletteEntry[0] * 257);
-                gm[i] = (unsigned short)(pPaletteEntry[1] * 257);
-                bm[i] = (unsigned short)(pPaletteEntry[2] * 257);
+                rm[i] = (uint16_t)(pPaletteEntry[0] * 257);
+                gm[i] = (uint16_t)(pPaletteEntry[1] * 257);
+                bm[i] = (uint16_t)(pPaletteEntry[2] * 257);
                 if(HasAlpha)
                     am[i] = pPaletteEntry[3];
                 }
@@ -2096,7 +2096,7 @@ void HRFTiffFile::GetBaselineTags(HPMAttributeSet* po_pTagList, const HRPPixelTy
         }
 
     // RESOLUTIONUNIT Tag
-    unsigned short UnitValue;
+    uint16_t UnitValue;
     if (GetFilePtr()->GetField(RESOLUTIONUNIT, &UnitValue))
         {
         pTag = new HRFAttributeResolutionUnit(UnitValue);
@@ -2157,7 +2157,7 @@ void HRFTiffFile::GetBaselineTags(HPMAttributeSet* po_pTagList, const HRPPixelTy
         }
 
     // Sample Minimum Value Tag
-    unsigned short* pSampleLimitValue;
+    uint16_t* pSampleLimitValue;
     uint32_t NbLimitValues;
 
     if (!IsSMinSampleValueFound && GetFilePtr()->GetField(MINSAMPLEVALUE, &NbLimitValues, &pSampleLimitValue))
@@ -2202,8 +2202,8 @@ void HRFTiffFile::CreateDescriptors()
     // (should'nt but happen..)
     if (TESTJPEGISOCompression == COMPRESSION_JPEG)
         {
-        unsigned short SamplePerPixel = 0;
-        unsigned short Photometric    = 0;
+        uint16_t SamplePerPixel = 0;
+        uint16_t Photometric    = 0;
 
         GetFilePtr()->GetField(SAMPLESPERPIXEL, &SamplePerPixel);
         GetFilePtr()->GetField(PHOTOMETRIC    , &Photometric);
@@ -2247,8 +2247,8 @@ void HRFTiffFile::CreateDescriptors()
 
         // Instantiation of Resolution descriptor
         HRFPageDescriptor::ListOfResolutionDescriptor  ListOfResolutionDescriptor;
-        unsigned short SubResCount = CalcNumberOfSubResolution(PageDirectoryIndex);
-        for (unsigned short Resolution=0; Resolution <= SubResCount; Resolution++)
+        uint16_t SubResCount = CalcNumberOfSubResolution(PageDirectoryIndex);
+        for (uint16_t Resolution=0; Resolution <= SubResCount; Resolution++)
             {
             // Obtain Resolution Information
 
@@ -2260,7 +2260,7 @@ void HRFTiffFile::CreateDescriptors()
             // Select the page
 #if 0
             HDEBUGCODE(
-                unsigned short TESTJPEGISOCompression = COMPRESSION_NONE;
+                uint16_t TESTJPEGISOCompression = COMPRESSION_NONE;
                 GetFilePtr()->GetField(COMPRESSION, &TESTJPEGISOCompression);
 
                 if (TESTJPEGISOCompression == COMPRESSION_JPEG)
@@ -2356,7 +2356,7 @@ void HRFTiffFile::CreateDescriptors()
             }
 
         // SLO
-        pTag = new HRFAttributeImageSlo((unsigned short)GetScanLineOrientation().m_ScanlineOrientation);
+        pTag = new HRFAttributeImageSlo((uint16_t)GetScanLineOrientation().m_ScanlineOrientation);
         TagList.Set(pTag);
 
         //Get the EXIF related GPS tags if any
@@ -2541,15 +2541,15 @@ bool HRFTiffFile::WriteTransfoModelToTiffMatrix(const HFCPtr<HGF2DTransfoModel>&
 HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*                        pi_pTIFFFile,
                                                           uint32_t                         pi_Page,
                                                           Byte*                             pi_pAlphaPalette,
-                                                          unsigned short                    pi_HMRPixelTypeSpec,
+                                                          uint16_t                    pi_HMRPixelTypeSpec,
                                                           const ListOfChannelIndex*         pi_pChannelsWithNoDataValue,
                                                           const ListOfChannelNoDataValue*   pi_pChannelsNoDataValue)
     {
-    unsigned short*                pBitPerSample;
-    unsigned short         BitPerSample (1);
-    unsigned short         SamplePerPixel (1);
-    unsigned short         Photometric (0);
-    unsigned short*                pExtraSample;
+    uint16_t*                pBitPerSample;
+    uint16_t         BitPerSample (1);
+    uint16_t         SamplePerPixel (1);
+    uint16_t         Photometric (0);
+    uint16_t*                pExtraSample;
     HFCPtr<HRPPixelType>    pPixelType;
 
     bool             HasNoDataValues  = (0 != pi_pChannelsWithNoDataValue &&
@@ -2598,9 +2598,9 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
                     int32_t             Index;
                     HRPPixelPalette*    pPalette;
                     Byte               Value[3];
-                    unsigned short*             rm = 0;
-                    unsigned short*             gm = 0;
-                    unsigned short*             bm = 0;
+                    uint16_t*             rm = 0;
+                    uint16_t*             gm = 0;
+                    uint16_t*             bm = 0;
                     bool               HasPalette = 0;
 
                     HasPalette = pi_pTIFFFile->GetField(TCOLORMAP, &rm, &gm, &bm);
@@ -2677,9 +2677,9 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
                     int32_t             Index;
                     HRPPixelPalette*    pPalette;
                     Byte               Value[3];
-                    unsigned short*             rm = 0;
-                    unsigned short*             gm = 0;
-                    unsigned short*             bm = 0;
+                    uint16_t*             rm = 0;
+                    uint16_t*             gm = 0;
+                    uint16_t*             bm = 0;
                     bool               HasPalette = 0;
 
                     HasPalette = pi_pTIFFFile->GetField(TCOLORMAP, &rm, &gm, &bm);
@@ -2728,7 +2728,7 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
                             }
 
                         // Get the nb of bit per pixel (FOR EACH SAMPLE)
-                        unsigned short SampleFormat;
+                        uint16_t SampleFormat;
                         bool   IsSampleFormatTag = false;
 
                         IsSampleFormatTag = pi_pTIFFFile->GetField(SAMPLEFORMAT, &SampleFormat);
@@ -2845,7 +2845,7 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
                     // the problem is coming from the two levels of decompression, for example if the subsampling tag is 4:2:0 there will be four Y for one Cb and one Cr.
                     // the data packing in the stream is Y_0_0, Y_0_1, Y_1_0, Y_1_1, Cb, Cr... So those pixels are shape like a small window.
                     // To fix this, we first need decompress the data (lzw, jpeg..) to half the final size of a strip. And then, we place each Y, Cb, Cb to their respective place so the final count of a strip is correct.
-                    unsigned short val1, val2;
+                    uint16_t val1, val2;
                     if (pi_pTIFFFile->GetField(YCBCRSUBSAMPLING, &val1, &val2) && (val1 != 1 || val2 != 1))
                         throw HRFPixelTypeNotSupportedException(pi_pTIFFFile->GetURL()->GetURL());
 
@@ -2985,7 +2985,7 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
             case PHOTOMETRIC_SEPARATED:
                 if (SamplePerPixel == 4 && NbSample == 4)
                     {
-                    unsigned short InkSet = 0;
+                    uint16_t InkSet = 0;
                     bool   IsInkSetTag = 0;
                     IsInkSetTag = pi_pTIFFFile->GetField(INKSET, &InkSet);
 
@@ -3016,7 +3016,7 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
                     int32_t             Index;
                     HRPPixelPalette*    pPalette;
                     Byte               Value[3];
-                    unsigned short*             rm, *gm, *bm;
+                    uint16_t*             rm, *gm, *bm;
                     int32_t             MaxColor;
 
                     pPalette = (HRPPixelPalette*)&(pPixelType->GetPalette());
@@ -3049,7 +3049,7 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
                         int32_t             Index;
                         HRPPixelPalette*    pPalette;
                         Byte               Value[4];
-                        unsigned short*             rm, *gm, *bm;
+                        uint16_t*             rm, *gm, *bm;
                         int32_t             MaxColor;
 
                         pPalette = (HRPPixelPalette*)&(pPixelType->GetPalette());
@@ -3084,7 +3084,7 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
                         int32_t             Index;
                         HRPPixelPalette*    pPalette;
                         Byte               Value[3];
-                        unsigned short*             rm, *gm, *bm;
+                        uint16_t*             rm, *gm, *bm;
                         int32_t             MaxColor;
 
                         pPalette = (HRPPixelPalette*)&(pPixelType->GetPalette());
@@ -3179,12 +3179,12 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
                             {
                             for (uint32_t Res = 0; Res < pPageDescriptor->CountResolutions(); Res ++)
                                 {
-                                if (pPageDescriptor->GetResolutionDescriptor((unsigned short)Res)->PaletteHasChanged())
+                                if (pPageDescriptor->GetResolutionDescriptor((uint16_t)Res)->PaletteHasChanged())
                                     {
                                     WritePaletteToFile(Page,
-                                                       pPageDescriptor->GetResolutionDescriptor((unsigned short)Res)->GetPixelType()->GetPalette());
+                                                       pPageDescriptor->GetResolutionDescriptor((uint16_t)Res)->GetPixelType()->GetPalette());
                                     }
-                                pPageDescriptor->GetResolutionDescriptor((unsigned short)Res)->Saved();
+                                pPageDescriptor->GetResolutionDescriptor((uint16_t)Res)->Saved();
                                 }
                             }
 
@@ -3310,16 +3310,16 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
                             if (!geoTiffKeys.HasValidGeoTIFFKeysList ())
                                 {
                                 // the list of geotiffkeys is not valid, write minimum values
-                                GetFilePtr()->GetGeoKeyInterpretation().SetValue(GTModelType, (unsigned short)TIFFGeo_ModelTypeProjected);
-                                GetFilePtr()->GetGeoKeyInterpretation().SetValue(GeographicType, (unsigned short)TIFFGeo_UserDefined);
-                                GetFilePtr()->GetGeoKeyInterpretation().SetValue(ProjectedCSType, (unsigned short)TIFFGeo_UserDefined);
+                                GetFilePtr()->GetGeoKeyInterpretation().SetValue(GTModelType, (uint16_t)TIFFGeo_ModelTypeProjected);
+                                GetFilePtr()->GetGeoKeyInterpretation().SetValue(GeographicType, (uint16_t)TIFFGeo_UserDefined);
+                                GetFilePtr()->GetGeoKeyInterpretation().SetValue(ProjectedCSType, (uint16_t)TIFFGeo_UserDefined);
                                 GetFilePtr()->GetGeoKeyInterpretation().SetValues(PCSCitation, "User defined (Default value)");
-                                GetFilePtr()->GetGeoKeyInterpretation().SetValue(Projection, (unsigned short)TIFFGeo_UserDefined);
-                                GetFilePtr()->GetGeoKeyInterpretation().SetValue(ProjCoordTrans, (unsigned short)TIFFGeo_UserDefined);
+                                GetFilePtr()->GetGeoKeyInterpretation().SetValue(Projection, (uint16_t)TIFFGeo_UserDefined);
+                                GetFilePtr()->GetGeoKeyInterpretation().SetValue(ProjCoordTrans, (uint16_t)TIFFGeo_UserDefined);
 
                                 uint32_t UnitsKey = 0;
                                 geoTiffKeys.GetValue (ProjLinearUnits, &UnitsKey);
-                                GetFilePtr()->GetGeoKeyInterpretation().SetValue(ProjLinearUnits, (unsigned short)UnitsKey);
+                                GetFilePtr()->GetGeoKeyInterpretation().SetValue(ProjLinearUnits, (uint16_t)UnitsKey);
                                 }
                             else if (geoTiffKeys.GetFirstKey(&GeoTiffKey) == true)
                                 {
@@ -3327,11 +3327,11 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
                                     {
                                     // GTModelType
                                     if (GeoTiffKey.KeyID == GTModelType)
-                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(GTModelType, (unsigned short)GeoTiffKey.KeyValue.LongVal);
+                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(GTModelType, (uint16_t)GeoTiffKey.KeyValue.LongVal);
 
                                     // GTRasterType
                                     else if (GeoTiffKey.KeyID == GTRasterType)
-                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(GTRasterType, (unsigned short)GeoTiffKey.KeyValue.LongVal);
+                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(GTRasterType, (uint16_t)GeoTiffKey.KeyValue.LongVal);
 
                                     // PCSCitation
                                     else if (GeoTiffKey.KeyID == PCSCitation)
@@ -3339,7 +3339,7 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
 
                                     // ProjectedCSType
                                     else if (GeoTiffKey.KeyID == ProjectedCSType)
-                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(ProjectedCSType, (unsigned short)GeoTiffKey.KeyValue.LongVal);
+                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(ProjectedCSType, (uint16_t)GeoTiffKey.KeyValue.LongVal);
 
                                     // GTCitation
                                     else if (GeoTiffKey.KeyID == GTCitation)
@@ -3347,15 +3347,15 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
 
                                     // Projection
                                     else if (GeoTiffKey.KeyID == Projection)
-                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(Projection, (unsigned short)GeoTiffKey.KeyValue.LongVal);
+                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(Projection, (uint16_t)GeoTiffKey.KeyValue.LongVal);
 
                                     // ProjCoordTrans
                                     else if (GeoTiffKey.KeyID == ProjCoordTrans)
-                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(ProjCoordTrans, (unsigned short)GeoTiffKey.KeyValue.LongVal);
+                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(ProjCoordTrans, (uint16_t)GeoTiffKey.KeyValue.LongVal);
 
                                     // ProjLinearUnits
                                     else if (GeoTiffKey.KeyID == ProjLinearUnits)
-                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(ProjLinearUnits, (unsigned short)GeoTiffKey.KeyValue.LongVal);
+                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(ProjLinearUnits, (uint16_t)GeoTiffKey.KeyValue.LongVal);
 
                                     // ProjLinearUnitSize
                                     else if (GeoTiffKey.KeyID == ProjLinearUnitSize)
@@ -3363,7 +3363,7 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
 
                                     // GeographicType
                                     else if (GeoTiffKey.KeyID == GeographicType)
-                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(GeographicType, (unsigned short)GeoTiffKey.KeyValue.LongVal);
+                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(GeographicType, (uint16_t)GeoTiffKey.KeyValue.LongVal);
 
                                     // GeogCitation
                                     else if (GeoTiffKey.KeyID == GeogCitation)
@@ -3371,15 +3371,15 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
 
                                     // GeogGeodeticDatum
                                     else if (GeoTiffKey.KeyID == GeogGeodeticDatum)
-                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(GeogGeodeticDatum, (unsigned short)GeoTiffKey.KeyValue.LongVal);
+                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(GeogGeodeticDatum, (uint16_t)GeoTiffKey.KeyValue.LongVal);
 
                                     // GeogPrimeMeridian
                                     else if (GeoTiffKey.KeyID == GeogPrimeMeridian)
-                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(GeogPrimeMeridian, (unsigned short)GeoTiffKey.KeyValue.LongVal);
+                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(GeogPrimeMeridian, (uint16_t)GeoTiffKey.KeyValue.LongVal);
 
                                     // GeogLinearUnits
                                     else if (GeoTiffKey.KeyID == GeogLinearUnits)
-                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(GeogLinearUnits, (unsigned short)GeoTiffKey.KeyValue.LongVal);
+                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(GeogLinearUnits, (uint16_t)GeoTiffKey.KeyValue.LongVal);
 
                                     // GeogLinearUnitSize
                                     else if (GeoTiffKey.KeyID == GeogLinearUnitSize)
@@ -3387,7 +3387,7 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
 
                                     // GeogAngularUnits
                                     else if (GeoTiffKey.KeyID == GeogAngularUnits)
-                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(GeogAngularUnits, (unsigned short)GeoTiffKey.KeyValue.LongVal);
+                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(GeogAngularUnits, (uint16_t)GeoTiffKey.KeyValue.LongVal);
 
                                     // GeogAngularUnitSize
                                     else if (GeoTiffKey.KeyID == GeogAngularUnitSize)
@@ -3395,7 +3395,7 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
 
                                     // GeogEllipsoid
                                     else if (GeoTiffKey.KeyID == GeogEllipsoid)
-                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(GeogEllipsoid, (unsigned short)GeoTiffKey.KeyValue.LongVal);
+                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(GeogEllipsoid, (uint16_t)GeoTiffKey.KeyValue.LongVal);
 
                                     // GeogSemiMajorAxis
                                     else if (GeoTiffKey.KeyID == GeogSemiMajorAxis)
@@ -3411,7 +3411,7 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
 
                                     // GeogAzimuthUnits
                                     else if (GeoTiffKey.KeyID == GeogAzimuthUnits)
-                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(GeogAzimuthUnits, (unsigned short)GeoTiffKey.KeyValue.LongVal);
+                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(GeogAzimuthUnits, (uint16_t)GeoTiffKey.KeyValue.LongVal);
 
                                     // GeogPrimeMeridianLong
                                     else if (GeoTiffKey.KeyID == GeogPrimeMeridianLong)
@@ -3495,7 +3495,7 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
 
                                     // VerticalCSType
                                     else if (GeoTiffKey.KeyID == VerticalCSType)
-                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(VerticalCSType, (unsigned short)GeoTiffKey.KeyValue.LongVal);
+                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(VerticalCSType, (uint16_t)GeoTiffKey.KeyValue.LongVal);
 
                                     // VerticalCitation
                                     else if (GeoTiffKey.KeyID == VerticalCitation)
@@ -3503,11 +3503,11 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
 
                                     // VerticalDatum
                                     else if (GeoTiffKey.KeyID == VerticalDatum)
-                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(VerticalDatum, (unsigned short)GeoTiffKey.KeyValue.LongVal);
+                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(VerticalDatum, (uint16_t)GeoTiffKey.KeyValue.LongVal);
 
                                     // VerticalUnits
                                     else if (GeoTiffKey.KeyID == VerticalUnits)
-                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(VerticalUnits, (unsigned short)GeoTiffKey.KeyValue.LongVal);
+                                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(VerticalUnits, (uint16_t)GeoTiffKey.KeyValue.LongVal);
 
                                     }
                                 while(geoTiffKeys.GetNextKey(&GeoTiffKey));
@@ -3590,7 +3590,7 @@ HFCPtr<HCDCodec> HRFTiffFile::CreateCodecFromFile(HTIFFFile* pi_pTIFFFile,
             case COMPRESSION_OJPEG :
             case COMPRESSION_JPEG:
                 {
-                unsigned short*  pBitPerSample = 0;
+                uint16_t*  pBitPerSample = 0;
                 uint32_t  NbSample=0;
                 pi_pTIFFFile->GetField(BITSPERSAMPLE, &NbSample, &pBitPerSample);
 
@@ -3607,8 +3607,8 @@ HFCPtr<HCDCodec> HRFTiffFile::CreateCodecFromFile(HTIFFFile* pi_pTIFFFile,
 
                 pCodec = new HCDCodecIJG();
 
-                unsigned short SamplePerPixel = 0;
-                unsigned short Photometric    = 0;
+                uint16_t SamplePerPixel = 0;
+                uint16_t Photometric    = 0;
 
                 pi_pTIFFFile->GetField(SAMPLESPERPIXEL, &SamplePerPixel);
                 pi_pTIFFFile->GetField(PHOTOMETRIC    , &Photometric);
@@ -3739,7 +3739,7 @@ void HRFTiffFile::WriteSampleLimitValueToDir(vector<double> const&  pi_rSampleVa
     const double Max = *max_element(pi_rSampleValues.begin(), pi_rSampleValues.end());
     const double Min = *min_element(pi_rSampleValues.begin(), pi_rSampleValues.end());
 
-    // Determine whether a case to short is possible
+    // Determine whether a case to int16_t is possible
     const bool IsCastToShortPossible = (Max <= USHRT_MAX) || (Min >= 0);
 
 
@@ -3778,8 +3778,8 @@ void HRFTiffFile::WriteSampleLimitValueToDir(vector<double> const&  pi_rSampleVa
     if (IsCastToShortPossible)
         {
         // Cast values to MINSAMPLEVALUE's/MAXSAMPLEVALUE's storage type to an array
-        HAutoPtr<unsigned short> pUShortSampleLimitValues(new unsigned short[pi_rSampleValues.size()]);
-        transform(pi_rSampleValues.begin(), pi_rSampleValues.end(), pUShortSampleLimitValues.get(), StaticCast<unsigned short>());
+        HAutoPtr<uint16_t> pUShortSampleLimitValues(new uint16_t[pi_rSampleValues.size()]);
+        transform(pi_rSampleValues.begin(), pi_rSampleValues.end(), pUShortSampleLimitValues.get(), StaticCast<uint16_t>());
 
 
         po_pTIFFFile->SetField(BaselineTagID,

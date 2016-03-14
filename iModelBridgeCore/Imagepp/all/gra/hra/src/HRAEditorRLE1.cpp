@@ -50,8 +50,8 @@ HRAEditorRLE1::HRAEditorRLE1(HGSMemorySurfaceDescriptor& pi_rDescriptor)
     HPRECONDITION(pCodec->HasLineIndexesTable());
     m_pLineIndexes  = pCodec->GetLineIndexesTable();
 
-    m_pTmpRun = new unsigned short[m_Width * 2 + 2]; // we allocate the worst case
-    m_pWorkingRun = new unsigned short[m_Width * 2 + 2]; // we allocate the worst case
+    m_pTmpRun = new uint16_t[m_Width * 2 + 2]; // we allocate the worst case
+    m_pWorkingRun = new uint16_t[m_Width * 2 + 2]; // we allocate the worst case
     m_pCurrentCount = 0;
     }
 
@@ -65,14 +65,14 @@ HRAEditorRLE1::~HRAEditorRLE1()
         // alloc a new buffer
         Byte* pNewBuffer = new Byte[m_pPacket->GetDataSize()];
 
-        unsigned short* pNewLine = (unsigned short*)pNewBuffer;
-        unsigned short* pLinePtr;
-        unsigned short* pRun;
+        uint16_t* pNewLine = (uint16_t*)pNewBuffer;
+        uint16_t* pLinePtr;
+        uint16_t* pRun;
         uint32_t PixelCount;
         bool OnState;
         size_t LineSize;
         size_t DataSize = 0;
-        unsigned short* pBuffer = (unsigned short*)m_pPacket->GetBufferAddress();
+        uint16_t* pBuffer = (uint16_t*)m_pPacket->GetBufferAddress();
 
         for (uint32_t i = 0; i < m_Height; i++)
             {
@@ -98,20 +98,20 @@ HRAEditorRLE1::~HRAEditorRLE1()
             LineSize = pRun - pLinePtr;
 
             // write into the new buffer
-            memcpy(pNewLine, pLinePtr, LineSize * sizeof(unsigned short));
+            memcpy(pNewLine, pLinePtr, LineSize * sizeof(uint16_t));
 
             DataSize += LineSize;
 
             // set the new index for this line
-            HASSERT_X64(pNewLine - (unsigned short*)pNewBuffer < ULONG_MAX);
-            m_pLineIndexes[i] = (uint32_t)(pNewLine - (unsigned short*)pNewBuffer);
+            HASSERT_X64(pNewLine - (uint16_t*)pNewBuffer < UINT32_MAX);
+            m_pLineIndexes[i] = (uint32_t)(pNewLine - (uint16_t*)pNewBuffer);
             pNewLine += LineSize;
             }
 
         // set packet
         m_pPacket->SetBuffer(pNewBuffer, m_pPacket->GetDataSize());
         m_pPacket->SetBufferOwnership(true);
-        m_pPacket->SetDataSize(DataSize * sizeof(unsigned short));
+        m_pPacket->SetDataSize(DataSize * sizeof(uint16_t));
         m_pPacket->ShrinkBufferToDataSize();
         }
     }
@@ -139,9 +139,9 @@ void* HRAEditorRLE1::GetRun(HUINTX  pi_StartPosX,
         return 0;
 
     // get the address
-    unsigned short PixelsToSkipInFirstLen;
-    unsigned short PixelsToSkipInSecondLen;
-    unsigned short* pRawData = ComputeAddress(pi_StartPosX,
+    uint16_t PixelsToSkipInFirstLen;
+    uint16_t PixelsToSkipInSecondLen;
+    uint16_t* pRawData = ComputeAddress(pi_StartPosX,
                                        pi_StartPosY,
                                        &PixelsToSkipInFirstLen,
                                        &PixelsToSkipInSecondLen);
@@ -150,14 +150,14 @@ void* HRAEditorRLE1::GetRun(HUINTX  pi_StartPosX,
         return pRawData;
 
     int32_t PixelCount = 0 - (PixelsToSkipInFirstLen + PixelsToSkipInSecondLen);
-    unsigned short* pEndRun = pRawData;
+    uint16_t* pEndRun = pRawData;
 
     while (PixelCount < (int32_t)pi_PixelCount)
         {
         PixelCount += *pEndRun;
         pEndRun++;
         }
-    memcpy(m_pTmpRun, pRawData, (pEndRun - pRawData) * sizeof(unsigned short));
+    memcpy(m_pTmpRun, pRawData, (pEndRun - pRawData) * sizeof(uint16_t));
 
     // remove the pixels to skip
     *(m_pTmpRun)       -= PixelsToSkipInFirstLen;
@@ -185,17 +185,17 @@ void HRAEditorRLE1::SetRun(HUINTX       pi_StartPosX,
     HPRECONDITION(pi_StartPosX + pi_PixelCount <= m_Width);
     HPRECONDITION(pi_pTransaction == 0);
 
-    unsigned short* pRun = (unsigned short*)pi_pRun;
+    uint16_t* pRun = (uint16_t*)pi_pRun;
 
     HPRECONDITION(m_pPacket->GetBufferAddress() != 0);
-    unsigned short* pCurrentRun = &((unsigned short*)m_pPacket->GetBufferAddress())[m_pLineIndexes[pi_StartPosY]];
-    HPOSTCONDITION(pCurrentRun <= (unsigned short*)(m_pPacket->GetBufferAddress() + m_pPacket->GetDataSize()));
+    uint16_t* pCurrentRun = &((uint16_t*)m_pPacket->GetBufferAddress())[m_pLineIndexes[pi_StartPosY]];
+    HPOSTCONDITION(pCurrentRun <= (uint16_t*)(m_pPacket->GetBufferAddress() + m_pPacket->GetDataSize()));
 
     bool CurrentRunState = false;
 
     uint32_t PixelsFromRun = 0;
 
-    unsigned short* pNewRun = (unsigned short*)m_pWorkingRun.get();
+    uint16_t* pNewRun = (uint16_t*)m_pWorkingRun.get();
     bool NewRunState = false;
 
     // copy the first segment from the run into the new run
@@ -206,14 +206,14 @@ void HRAEditorRLE1::SetRun(HUINTX       pi_StartPosX,
         NewRunState = !NewRunState;
         pCurrentRun++;
         pNewRun++;
-        HPOSTCONDITION(pCurrentRun <= (unsigned short*)(m_pPacket->GetBufferAddress() + m_pPacket->GetDataSize()));
+        HPOSTCONDITION(pCurrentRun <= (uint16_t*)(m_pPacket->GetBufferAddress() + m_pPacket->GetDataSize()));
         }
 
     CurrentRunState = NewRunState;
 
     // adjust the last entry
     if (PixelsFromRun > pi_StartPosX)
-        *(pNewRun - 1) -= (unsigned short)(PixelsFromRun - pi_StartPosX);
+        *(pNewRun - 1) -= (uint16_t)(PixelsFromRun - pi_StartPosX);
 
     // the pi_pRun start with the OFF run
     if (NewRunState)
@@ -236,7 +236,7 @@ void HRAEditorRLE1::SetRun(HUINTX       pi_StartPosX,
 
     // adjust the last entry
     if (PixelCount > pi_PixelCount)
-        *(pNewRun - 1) -= (unsigned short)(PixelCount - pi_PixelCount);
+        *(pNewRun - 1) -= (uint16_t)(PixelCount - pi_PixelCount);
 
     // complete the run
     size_t RunLen = pi_StartPosX + pi_PixelCount;
@@ -245,7 +245,7 @@ void HRAEditorRLE1::SetRun(HUINTX       pi_StartPosX,
         PixelsFromRun += *pCurrentRun;
         pCurrentRun++;
         CurrentRunState = !CurrentRunState;
-        HPOSTCONDITION(pCurrentRun <= (unsigned short*)(m_pPacket->GetBufferAddress() + m_pPacket->GetDataSize()));
+        HPOSTCONDITION(pCurrentRun <= (uint16_t*)(m_pPacket->GetBufferAddress() + m_pPacket->GetDataSize()));
         }
 
     // if we are not in the same state, change the state
@@ -255,14 +255,14 @@ void HRAEditorRLE1::SetRun(HUINTX       pi_StartPosX,
             {
             *pNewRun = 0;
             pNewRun++;
-            *pNewRun = (unsigned short)(PixelsFromRun - RunLen);
+            *pNewRun = (uint16_t)(PixelsFromRun - RunLen);
             RunLen += *pNewRun;
             pNewRun++;
             NewRunState = !NewRunState;
             }
         else
             {
-            *pNewRun = (unsigned short)(PixelsFromRun - RunLen);
+            *pNewRun = (uint16_t)(PixelsFromRun - RunLen);
             RunLen += *pNewRun;
             pNewRun++;
             }
@@ -285,7 +285,7 @@ void HRAEditorRLE1::SetRun(HUINTX       pi_StartPosX,
         pNewRun++;
         pCurrentRun++;
         NewRunState = !NewRunState;
-        HPOSTCONDITION(pCurrentRun <= (unsigned short*)(m_pPacket->GetBufferAddress() + m_pPacket->GetDataSize()));
+        HPOSTCONDITION(pCurrentRun <= (uint16_t*)(m_pPacket->GetBufferAddress() + m_pPacket->GetDataSize()));
         }
 
     // we must end with the OFF run
@@ -295,20 +295,20 @@ void HRAEditorRLE1::SetRun(HUINTX       pi_StartPosX,
         pNewRun++;
         }
 
-    *(pNewRun-1) -= (unsigned short)(RunLen - m_Width);
+    *(pNewRun-1) -= (uint16_t)(RunLen - m_Width);
     HPOSTCONDITION(RunLen == m_Width);
 
     // now, add the run at the end of the buffer
-    size_t RunLenInByte = (pNewRun - m_pWorkingRun.get()) * sizeof(unsigned short);
-    unsigned short* pNewOffset = PrepareToAppendDataInBuffer(RunLenInByte);
+    size_t RunLenInByte = (pNewRun - m_pWorkingRun.get()) * sizeof(uint16_t);
+    uint16_t* pNewOffset = PrepareToAppendDataInBuffer(RunLenInByte);
     memcpy(pNewOffset, m_pWorkingRun.get(), RunLenInByte);
 
     // now set the new buffer size
     m_pPacket->SetDataSize(m_pPacket->GetDataSize() + RunLenInByte);
 
     // update the new offset
-    HASSERT_X64(pNewOffset - (unsigned short*)(m_pPacket->GetBufferAddress()) < ULONG_MAX);
-    m_pLineIndexes[pi_StartPosY] = (uint32_t)(pNewOffset - (unsigned short*)(m_pPacket->GetBufferAddress()));
+    HASSERT_X64(pNewOffset - (uint16_t*)(m_pPacket->GetBufferAddress()) < UINT32_MAX);
+    m_pLineIndexes[pi_StartPosY] = (uint32_t)(pNewOffset - (uint16_t*)(m_pPacket->GetBufferAddress()));
 
     m_Edited = true;
     }
@@ -333,8 +333,8 @@ void* HRAEditorRLE1::GetPixel(HUINTX    pi_PosX,
 
     // get the address of the line
     HPRECONDITION(m_pPacket->GetBufferAddress() != 0);
-    m_pCurrentCount = &((unsigned short*)m_pPacket->GetBufferAddress())[m_pLineIndexes[pi_PosY]];
-    HPOSTCONDITION(m_pCurrentCount <= (unsigned short*)(m_pPacket->GetBufferAddress() + m_pPacket->GetDataSize()));
+    m_pCurrentCount = &((uint16_t*)m_pPacket->GetBufferAddress())[m_pLineIndexes[pi_PosY]];
+    HPOSTCONDITION(m_pCurrentCount <= (uint16_t*)(m_pPacket->GetBufferAddress() + m_pPacket->GetDataSize()));
 
     // parse all the pixels
     while (pi_PosX > *m_pCurrentCount || *m_pCurrentCount == 0)
@@ -342,11 +342,11 @@ void* HRAEditorRLE1::GetPixel(HUINTX    pi_PosX,
         pi_PosX -= *m_pCurrentCount;
         OnState = !OnState;
         m_pCurrentCount++;
-        HPOSTCONDITION(m_pCurrentCount <= (unsigned short*)(m_pPacket->GetBufferAddress() + m_pPacket->GetDataSize()));
+        HPOSTCONDITION(m_pCurrentCount <= (uint16_t*)(m_pPacket->GetBufferAddress() + m_pPacket->GetDataSize()));
         }
 
     HPRECONDITION(*m_pCurrentCount >= pi_PosX);
-    m_RemainingCount = (unsigned short)(*m_pCurrentCount - pi_PosX);
+    m_RemainingCount = (uint16_t)(*m_pCurrentCount - pi_PosX);
 
     // compute the address
     if(OnState)
@@ -392,13 +392,13 @@ void* HRAEditorRLE1::GetNextPixel() const
             // Fetch the next non-zero run count
             ++m_pCurrentCount;
             bool SameState = false;
-            HPOSTCONDITION(m_pCurrentCount <= (unsigned short*)(m_pPacket->GetBufferAddress() + m_pPacket->GetDataSize()));
+            HPOSTCONDITION(m_pCurrentCount <= (uint16_t*)(m_pPacket->GetBufferAddress() + m_pPacket->GetDataSize()));
 
             while (*m_pCurrentCount == 0)
                 {
                 SameState = !SameState;
                 ++m_pCurrentCount;
-                HPOSTCONDITION(m_pCurrentCount <= (unsigned short*)(m_pPacket->GetBufferAddress() + m_pPacket->GetDataSize()));
+                HPOSTCONDITION(m_pCurrentCount <= (uint16_t*)(m_pPacket->GetBufferAddress() + m_pPacket->GetDataSize()));
                 }
 
             m_RemainingCount = *m_pCurrentCount - 1;
@@ -462,7 +462,7 @@ void HRAEditorRLE1::GetPixels(const HUINTX* pi_pPositionsX,
 
 
     // get the individual pixels
-    unsigned short* pBuffer = (unsigned short*)po_pBuffer;
+    uint16_t* pBuffer = (uint16_t*)po_pBuffer;
     bool OnMode = false;
     *pBuffer = 0;
     for(uint32_t PixelIndex = 0; PixelIndex < pi_PixelCount; PixelIndex++)
@@ -520,14 +520,14 @@ void HRAEditorRLE1::GetPixels(HUINTX    pi_PosX,
     HPRECONDITION(pi_PixelCount > 0);
     HPRECONDITION(po_pBuffer != 0);
 
-    unsigned short* pBuffer = (unsigned short*)po_pBuffer;
+    uint16_t* pBuffer = (uint16_t*)po_pBuffer;
     bool OnMode = false;
     *pBuffer = 0;
     if (pi_DeltaX == 1 && pi_DeltaY == 0)
         {
         HPRECONDITION(pi_PosX + pi_PixelCount <= m_Width);
 
-        GetRun(pi_PosX, pi_PosY, pi_PixelCount, (unsigned short*)po_pBuffer);
+        GetRun(pi_PosX, pi_PosY, pi_PixelCount, (uint16_t*)po_pBuffer);
         }
     else
         {
@@ -589,15 +589,15 @@ void HRAEditorRLE1::Clear(const void*   pi_pValue,
     if (*((Byte*)pi_pValue) == 1)
         RunsPerLine += 2; // we clear in white, add 2 bytes because we need to end with black
 
-    size_t DataSize = RunsPerLine * m_Height * sizeof(unsigned short);
+    size_t DataSize = RunsPerLine * m_Height * sizeof(uint16_t);
     m_pPacket->SetDataSize(0);
     if (m_pPacket->GetBufferSize() < DataSize)
         m_pPacket->ChangeBufferSize(DataSize);
 
-    unsigned short* pRawData = (unsigned short*)m_pPacket->GetBufferAddress();
+    uint16_t* pRawData = (uint16_t*)m_pPacket->GetBufferAddress();
 
     // clear the first line
-    unsigned short* pRun = pRawData;
+    uint16_t* pRun = pRawData;
     bool OnState;
     if (*((Byte*)pi_pValue) == 0)
         OnState = false;
@@ -605,7 +605,7 @@ void HRAEditorRLE1::Clear(const void*   pi_pValue,
         {
         OnState = true;
 
-        HPRECONDITION(pRun <= (unsigned short*)(m_pPacket->GetBufferAddress() + m_pPacket->GetBufferSize()));
+        HPRECONDITION(pRun <= (uint16_t*)(m_pPacket->GetBufferAddress() + m_pPacket->GetBufferSize()));
         *pRun = 0;
         pRun++;
         }
@@ -616,7 +616,7 @@ void HRAEditorRLE1::Clear(const void*   pi_pValue,
         {
         if (PixelCount > 32767)
             {
-            HPOSTCONDITION(pRun <= (unsigned short*)(m_pPacket->GetBufferAddress() + m_pPacket->GetBufferSize() + 1));
+            HPOSTCONDITION(pRun <= (uint16_t*)(m_pPacket->GetBufferAddress() + m_pPacket->GetBufferSize() + 1));
             *pRun = 32767;
             PixelCount -= 32767;
             pRun++;
@@ -626,8 +626,8 @@ void HRAEditorRLE1::Clear(const void*   pi_pValue,
             }
         else
             {
-            HPOSTCONDITION(pRun <= (unsigned short*)(m_pPacket->GetBufferAddress() + m_pPacket->GetBufferSize()));
-            *pRun = (unsigned short)PixelCount;
+            HPOSTCONDITION(pRun <= (uint16_t*)(m_pPacket->GetBufferAddress() + m_pPacket->GetBufferSize()));
+            *pRun = (uint16_t)PixelCount;
             pRun++;
 
             PixelCount = 0;
@@ -636,7 +636,7 @@ void HRAEditorRLE1::Clear(const void*   pi_pValue,
 
     if (OnState)
         {
-        HPOSTCONDITION(pRun <= (unsigned short*)(m_pPacket->GetBufferAddress() + m_pPacket->GetBufferSize()));
+        HPOSTCONDITION(pRun <= (uint16_t*)(m_pPacket->GetBufferAddress() + m_pPacket->GetBufferSize()));
         *pRun = 0;
         pRun++;
         }
@@ -647,8 +647,8 @@ void HRAEditorRLE1::Clear(const void*   pi_pValue,
     // use the first line to clear all bitmap
     for (uint32_t LineIndex = 1; LineIndex < m_Height; LineIndex++, pRun += RunsPerLine)
         {
-        memcpy(pRun, pRawData, RunsPerLine * sizeof(unsigned short));
-        HASSERT_X64(m_pLineIndexes[LineIndex - 1] + RunsPerLine < ULONG_MAX);
+        memcpy(pRun, pRawData, RunsPerLine * sizeof(uint16_t));
+        HASSERT_X64(m_pLineIndexes[LineIndex - 1] + RunsPerLine < UINT32_MAX);
         m_pLineIndexes[LineIndex] = (uint32_t)(m_pLineIndexes[LineIndex - 1] + RunsPerLine);
         }
 
@@ -678,11 +678,11 @@ void HRAEditorRLE1::ClearRun(HUINTX         pi_PosX,
     // Add 1 to end with Off value
     size_t BufferSize = ((pi_PixelCount / 32767) + 1) * 2 + 1;
 
-    HArrayAutoPtr<unsigned short> pRunBuffer(new unsigned short[BufferSize]);
-    unsigned short* pRun = pRunBuffer;
+    HArrayAutoPtr<uint16_t> pRunBuffer(new uint16_t[BufferSize]);
+    uint16_t* pRun = pRunBuffer;
 
     // initialize the buffer with 0
-    memset(pRun, 0, BufferSize * sizeof(unsigned short));
+    memset(pRun, 0, BufferSize * sizeof(uint16_t));
 
     if (*((Byte*)pi_pValue) == 1) // clear with the On
         pRun++; // skip the off value
@@ -698,7 +698,7 @@ void HRAEditorRLE1::ClearRun(HUINTX         pi_PosX,
             }
         else
             {
-            *pRun = (unsigned short)PixelCount;
+            *pRun = (uint16_t)PixelCount;
             PixelCount = 0;
             }
         }
@@ -740,10 +740,10 @@ void HRAEditorRLE1::MergeRuns(HUINTX        pi_StartPosX,
 
  @return UShort*
 -----------------------------------------------------------------------------*/
-unsigned short* HRAEditorRLE1::ComputeAddress(HUINTX   pi_PosX,
+uint16_t* HRAEditorRLE1::ComputeAddress(HUINTX   pi_PosX,
                                        HUINTX   pi_PosY,
-                                       unsigned short* po_pPixelsToSkipInFirstLen,
-                                       unsigned short* po_pPixelsToSkipInSecondLen) const
+                                       uint16_t* po_pPixelsToSkipInFirstLen,
+                                       uint16_t* po_pPixelsToSkipInSecondLen) const
     {
     HPRECONDITION(pi_PosX < m_Width);
     HPRECONDITION(pi_PosY < m_Height);
@@ -753,7 +753,7 @@ unsigned short* HRAEditorRLE1::ComputeAddress(HUINTX   pi_PosX,
 
 
     // pointer at the beginning of a line
-    unsigned short* pOffRun = &((unsigned short*)m_pPacket->GetBufferAddress())[m_pLineIndexes[pi_PosY]];
+    uint16_t* pOffRun = &((uint16_t*)m_pPacket->GetBufferAddress())[m_pLineIndexes[pi_PosY]];
 
     HUINTX PixelsFromRun = pi_PosX;
 
@@ -763,7 +763,7 @@ unsigned short* HRAEditorRLE1::ComputeAddress(HUINTX   pi_PosX,
         {
         if (PixelsFromRun < *pOffRun)
             {
-            *po_pPixelsToSkipInFirstLen   = (unsigned short)PixelsFromRun;
+            *po_pPixelsToSkipInFirstLen   = (uint16_t)PixelsFromRun;
             *po_pPixelsToSkipInSecondLen  = 0;
 
             PixelFound = true;
@@ -771,7 +771,7 @@ unsigned short* HRAEditorRLE1::ComputeAddress(HUINTX   pi_PosX,
         else if (PixelsFromRun < (uint32_t)(*pOffRun + *(pOffRun + 1)))
             {
             *po_pPixelsToSkipInFirstLen   = *pOffRun;
-            *po_pPixelsToSkipInSecondLen  = (unsigned short)(PixelsFromRun - *pOffRun);
+            *po_pPixelsToSkipInSecondLen  = (uint16_t)(PixelsFromRun - *pOffRun);
 
             PixelFound = true;
             }
@@ -784,7 +784,7 @@ unsigned short* HRAEditorRLE1::ComputeAddress(HUINTX   pi_PosX,
 
     //:> This post condition is use to verify if we read a initialized data
     //:> call Clear() to initialize the buffer
-    HPOSTCONDITION(pOffRun <= (unsigned short*)(m_pPacket->GetBufferAddress() + m_pPacket->GetDataSize()));
+    HPOSTCONDITION(pOffRun <= (uint16_t*)(m_pPacket->GetBufferAddress() + m_pPacket->GetDataSize()));
     return pOffRun;
     }
 
@@ -803,7 +803,7 @@ unsigned short* HRAEditorRLE1::ComputeAddress(HUINTX   pi_PosX,
 void HRAEditorRLE1::GetRun(HUINTX   pi_StartPosX,
                            HUINTX   pi_StartPosY,
                            size_t   pi_PixelCount,
-                           unsigned short* po_pBuffer) const
+                           uint16_t* po_pBuffer) const
     {
     HPRECONDITION(pi_StartPosX < m_Width);
     HPRECONDITION(pi_StartPosY < m_Height);
@@ -812,22 +812,22 @@ void HRAEditorRLE1::GetRun(HUINTX   pi_StartPosX,
     HPRECONDITION(po_pBuffer != 0);
 
     // get the address
-    unsigned short PixelsToSkipInFirstLen;
-    unsigned short PixelsToSkipInSecondLen;
-    unsigned short* pRawData = ComputeAddress((uint32_t)pi_StartPosX,
+    uint16_t PixelsToSkipInFirstLen;
+    uint16_t PixelsToSkipInSecondLen;
+    uint16_t* pRawData = ComputeAddress((uint32_t)pi_StartPosX,
                                        (uint32_t)pi_StartPosY,
                                        &PixelsToSkipInFirstLen,
                                        &PixelsToSkipInSecondLen);
 
     int32_t PixelCount = 0 - (PixelsToSkipInFirstLen + PixelsToSkipInSecondLen);
-    unsigned short* pEndRun = pRawData;
+    uint16_t* pEndRun = pRawData;
 
     while (PixelCount < (int32_t)pi_PixelCount)
         {
         PixelCount += *pEndRun;
         pEndRun++;
         }
-    memcpy(po_pBuffer, pRawData, (pEndRun - pRawData) * sizeof(unsigned short));
+    memcpy(po_pBuffer, pRawData, (pEndRun - pRawData) * sizeof(uint16_t));
 
     // remove the pixels to skip
     *(po_pBuffer)       -= PixelsToSkipInFirstLen;
@@ -844,7 +844,7 @@ void HRAEditorRLE1::GetRun(HUINTX   pi_StartPosX,
 
  @return UShort*
 -----------------------------------------------------------------------------*/
-unsigned short* HRAEditorRLE1::PrepareToAppendDataInBuffer(size_t pi_DataSize)
+uint16_t* HRAEditorRLE1::PrepareToAppendDataInBuffer(size_t pi_DataSize)
     {
     // test if the buffer is large enough
     if ((m_pPacket->GetBufferSize() - m_pPacket->GetDataSize()) <= pi_DataSize)
@@ -855,7 +855,7 @@ unsigned short* HRAEditorRLE1::PrepareToAppendDataInBuffer(size_t pi_DataSize)
         m_pPacket->ChangeBufferSize(BufferSize);
         }
 
-    return (unsigned short*)(m_pPacket->GetBufferAddress() + m_pPacket->GetDataSize());
+    return (uint16_t*)(m_pPacket->GetBufferAddress() + m_pPacket->GetDataSize());
     }
 
 /**----------------------------------------------------------------------------
@@ -871,8 +871,8 @@ bool HRAEditorRLE1::IsPixelOn(HUINTX pi_PosX, HUINTX pi_PosY) const
     bool OnState = false;
 
     // get the address of the line
-    unsigned short* pRun = &((unsigned short*)m_pPacket->GetBufferAddress())[m_pLineIndexes[pi_PosY]];
-    HPOSTCONDITION(pRun < (unsigned short*)(m_pPacket->GetBufferAddress() + m_pPacket->GetDataSize()));
+    uint16_t* pRun = &((uint16_t*)m_pPacket->GetBufferAddress())[m_pLineIndexes[pi_PosY]];
+    HPOSTCONDITION(pRun < (uint16_t*)(m_pPacket->GetBufferAddress() + m_pPacket->GetDataSize()));
 
     // parse all the pixels
     while(pi_PosX >= *pRun)

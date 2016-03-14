@@ -22,7 +22,7 @@
 bool ImagePP::ConvertDegMinSecToDeg(WString& pi_rDegMinSec,
                             double& po_rResultigDegreeValue)
     {
-    unsigned short ValueComponentInd   = 0;
+    uint16_t ValueComponentInd   = 0;
     WChar   Sep[] = L":";
     WCharP  pNextToken=NULL;
     WCharP  pToken = BeStringUtilities::Wcstok((WChar*)pi_rDegMinSec.c_str(), Sep, &pNextToken);

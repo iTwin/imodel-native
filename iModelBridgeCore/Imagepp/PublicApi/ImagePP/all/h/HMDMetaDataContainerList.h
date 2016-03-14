@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMDMetaDataContainerList.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -23,7 +23,7 @@ public :
     IMAGEPP_EXPORT HMDMetaDataContainerList& operator=(const HMDMetaDataContainerList& pi_rObj);
 
 
-    IMAGEPP_EXPORT unsigned short                     GetNbContainers      () const;
+    IMAGEPP_EXPORT uint16_t                     GetNbContainers      () const;
     IMAGEPP_EXPORT void                               GetMetaDataContainer (uint32_t                      pi_MDContainerInd,
                                                                     HFCPtr<HMDMetaDataContainer>& po_rpMDContainer) const;
     IMAGEPP_EXPORT const HFCPtr<HMDMetaDataContainer> GetMetaDataContainer (HMDMetaDataContainer::Type    pi_ContainerType) const;

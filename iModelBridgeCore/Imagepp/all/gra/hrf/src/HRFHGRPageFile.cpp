@@ -156,8 +156,8 @@ HFCPtr<HRFPageFile> HRFHGRPageFileCreator::CreateFor(const HFCPtr<HRFRasterFile>
 
         pResDesc = pi_rpForRasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(0);
 
-        HASSERT(pResDesc->GetWidth() <= ULONG_MAX);
-        HASSERT(pResDesc->GetHeight() <= ULONG_MAX);
+        HASSERT(pResDesc->GetWidth() <= UINT32_MAX);
+        HASSERT(pResDesc->GetHeight() <= UINT32_MAX);
 
         pPageFile = new HRFHGRPageFile(ComposeURLFor(pi_rpForRasterFile->GetURL()),
                                        (uint32_t)pResDesc->GetWidth(),

@@ -70,7 +70,7 @@ void HMDLayers::AddLayer(const HMDLayerInfo* pi_pLayer)
 // Public
 // Get a layer
 //-----------------------------------------------------------------------------
-const HMDLayerInfo* HMDLayers::GetLayer(unsigned short pi_Index) const
+const HMDLayerInfo* HMDLayers::GetLayer(uint16_t pi_Index) const
     {
     HPRECONDITION(pi_Index < m_layerInfoVec.size());
 
@@ -81,16 +81,16 @@ const HMDLayerInfo* HMDLayers::GetLayer(unsigned short pi_Index) const
 // Public
 // Get the number of layers
 //-----------------------------------------------------------------------------
-unsigned short HMDLayers::GetNbLayers() const
+uint16_t HMDLayers::GetNbLayers() const
     {
-    return static_cast<unsigned short>(m_layerInfoVec.size());
+    return static_cast<uint16_t>(m_layerInfoVec.size());
     }
 
 //-----------------------------------------------------------------------------
 // Public
 // GetIndexFromKey
 //-----------------------------------------------------------------------------
-bool HMDLayers::GetIndexFromKey(const WString& pi_rKey, unsigned short&  po_rIndex) const
+bool HMDLayers::GetIndexFromKey(const WString& pi_rKey, uint16_t&  po_rIndex) const
     {
     po_rIndex = 0;
     for (LayerInfoVec::const_iterator Itr = m_layerInfoVec.begin(); Itr != m_layerInfoVec.end(); Itr++)
@@ -112,8 +112,8 @@ bool HMDLayers::GetIndexFromKey(const WString& pi_rKey, unsigned short&  po_rInd
 //-----------------------------------------------------------------------------
 void HMDLayers::CopyMemberData(const HMDLayers& pi_rObj)
     {
-    unsigned short InputNbLayers = pi_rObj.GetNbLayers();
-    for (unsigned short LayerInd = 0; LayerInd < InputNbLayers; LayerInd++)
+    uint16_t InputNbLayers = pi_rObj.GetNbLayers();
+    for (uint16_t LayerInd = 0; LayerInd < InputNbLayers; LayerInd++)
         {
         m_layerInfoVec.push_back(new HMDLayerInfo(*(pi_rObj.GetLayer(LayerInd))));
         }
@@ -126,9 +126,9 @@ void HMDLayers::CopyMemberData(const HMDLayers& pi_rObj)
 //-----------------------------------------------------------------------------
 void HMDLayers::Merge(const HFCPtr<HMDLayers>& pi_rLayers)
     {
-    for (unsigned short LayerInd = 0; LayerInd < pi_rLayers->GetNbLayers(); LayerInd++)
+    for (uint16_t LayerInd = 0; LayerInd < pi_rLayers->GetNbLayers(); LayerInd++)
         {
-        unsigned short ThisLayerIndex;
+        uint16_t ThisLayerIndex;
 
         if (GetIndexFromKey(pi_rLayers->GetLayer(LayerInd)->GetKeyName(), ThisLayerIndex))
             {

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAPyramidRaster.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -59,9 +59,9 @@ inline HRARasterEditor* HRAPyramidRaster::CreateEditorUnShaped (HFCAccessMode pi
 // CountSubImages - Returns the number of sub resolution(image)
 //                  The main image is included.
 //-----------------------------------------------------------------------------
-inline unsigned short HRAPyramidRaster::CountSubImages () const
+inline uint16_t HRAPyramidRaster::CountSubImages () const
     {
-    return (unsigned short)m_pSubImageList.BufSize;
+    return (uint16_t)m_pSubImageList.BufSize;
     }
 
 
@@ -69,7 +69,7 @@ inline unsigned short HRAPyramidRaster::CountSubImages () const
 // public
 // GetSubImagesResolution - Returns the resolution for a specify sub-image.
 //-----------------------------------------------------------------------------
-inline double HRAPyramidRaster::GetSubImagesResolution (unsigned short pi_SubImageIndex) const
+inline double HRAPyramidRaster::GetSubImagesResolution (uint16_t pi_SubImageIndex) const
     {
     HPRECONDITION (pi_SubImageIndex < m_pSubImageList.BufSize);
 
@@ -91,7 +91,7 @@ inline bool HRAPyramidRaster::HasSinglePixelType  () const
 // private
 // GetSubImage - Get a Raster pointer for a specify sub-image.
 //-----------------------------------------------------------------------------
-inline  HFCPtr<HRATiledRaster> HRAPyramidRaster::GetSubImage (unsigned short pi_Index) const
+inline  HFCPtr<HRATiledRaster> HRAPyramidRaster::GetSubImage (uint16_t pi_Index) const
     {
     if (pi_Index < m_pSubImageList.BufSize)
         return m_pSubImageList.pData[pi_Index].m_pSubImage;
@@ -118,7 +118,7 @@ inline HRAPyramidRaster::SubImageDescription* HRAPyramidRaster::MakeSubImageDesc
 
     double ImgWidth  = (double)BitmapWidth;
 
-    for (unsigned short i=1; i<m_pSubImageList.BufSize; i++)
+    for (uint16_t i=1; i<m_pSubImageList.BufSize; i++)
         {
         uint64_t BitmapWidth;
         uint64_t BitmapHeight;
@@ -148,7 +148,7 @@ inline void HRAPyramidRaster::UseOnlyFirstResolution(bool pi_UseOnlyFirstRes)
 inline void HRAPyramidRaster::InvalidateRaster()
     {
     //Should set the volatile layers to each tiled raster
-    for (unsigned short ResInd = 0; ResInd < m_pSubImageList.BufSize; ResInd++)
+    for (uint16_t ResInd = 0; ResInd < m_pSubImageList.BufSize; ResInd++)
         {
         m_pSubImageList.pData[ResInd].m_pSubImage->InvalidateRaster();
         }

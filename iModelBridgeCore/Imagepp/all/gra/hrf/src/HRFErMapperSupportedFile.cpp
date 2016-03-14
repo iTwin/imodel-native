@@ -58,7 +58,7 @@ struct NCSObjects
     NCSFileViewFileInfoEx* m_pFileInfo;
     };
 
-#define round(a) ((long)((a)<0.0?(a)-0.5:(a)+0.5))
+#define round(a) ((int32_t)((a)<0.0?(a)-0.5:(a)+0.5))
 
 
 //Ensure that the .objs related to these object are included in the final
@@ -80,12 +80,12 @@ public:
         // Block Capability
         // Tile Capability
         Add(new HRFTileCapability(HFC_READ_CREATE,         // AccessMode
-                                  LONG_MAX,            // MaxSizeInBytes
+                                  INT32_MAX,            // MaxSizeInBytes
                                   1,                   // MinWidth
-                                  LONG_MAX,            // MaxWidth
+                                  INT32_MAX,            // MaxWidth
                                   0,                   // WidthIncrement
                                   1,                   // MinHeight
-                                  LONG_MAX,            // MaxHeight
+                                  INT32_MAX,            // MaxHeight
                                   0,                   // HeightIncrement
                                   true));              // IsSquare
         }
@@ -596,12 +596,12 @@ public:
         // Block Capability
         // Tile Capability
         Add(new HRFTileCapability(HFC_READ_CREATE,         // AccessMode
-                                  LONG_MAX,            // MaxSizeInBytes
+                                  INT32_MAX,            // MaxSizeInBytes
                                   1,                   // MinWidth
-                                  LONG_MAX,            // MaxWidth
+                                  INT32_MAX,            // MaxWidth
                                   0,                   // WidthIncrement
                                   1,                   // MinHeight
-                                  LONG_MAX,            // MaxHeight
+                                  INT32_MAX,            // MaxHeight
                                   0,                   // HeightIncrement
                                   true));              // IsSquare
         }
@@ -855,7 +855,7 @@ void HRFErMapperSupportedFile::Close()
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFErMapperSupportedFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                                      unsigned short pi_Resolution,
+                                                                      uint16_t pi_Resolution,
                                                                       HFCAccessMode  pi_AccessMode)
     {
     // Verify that the page number is 0, because we have one image per file
@@ -983,7 +983,7 @@ bool HRFErMapperSupportedFile::Open()
             {
             // Prepare bands (optimization)
             m_pBandList = new uint32_t[m_pNcsObjs->m_pFileInfo->nBands];
-            for (unsigned short Band = 0; Band < m_pNcsObjs->m_pFileInfo->nBands; Band++)
+            for (uint16_t Band = 0; Band < m_pNcsObjs->m_pFileInfo->nBands; Band++)
                 m_pBandList[Band] = Band;
 
             HasFileBeenOpened = true;
@@ -1001,7 +1001,7 @@ bool HRFErMapperSupportedFile::Open()
 // Sets the LookAhead for a shape
 //-----------------------------------------------------------------------------
 void HRFErMapperSupportedFile::SetLookAhead(uint32_t        pi_Page,
-                                            unsigned short pi_Resolution,
+                                            uint16_t pi_Resolution,
                                             const HVEShape& pi_rShape,
                                             uint32_t        pi_ConsumerID,
                                             bool           pi_Async)
@@ -1034,8 +1034,8 @@ void HRFErMapperSupportedFile::SetLookAhead(uint32_t        pi_Page,
                                      BlockWidth,
                                      BlockHeight);
 
-        uint32_t MinX = ULONG_MAX;
-        uint32_t MinY = ULONG_MAX;
+        uint32_t MinX = UINT32_MAX;
+        uint32_t MinY = UINT32_MAX;
         uint32_t MaxX = 0;
         uint32_t MaxY = 0;
 
@@ -1051,8 +1051,8 @@ void HRFErMapperSupportedFile::SetLookAhead(uint32_t        pi_Page,
             while (BlockIndex != HGFTileIDDescriptor::INDEX_NOT_FOUND)
                 {
                 TileDesc.GetPositionFromIndex(BlockIndex, &PosX, &PosY);
-                HASSERT(PosX <= ULONG_MAX);
-                HASSERT(PosY <= ULONG_MAX);
+                HASSERT(PosX <= UINT32_MAX);
+                HASSERT(PosY <= UINT32_MAX);
 
                 MinX = MIN(MinX, (uint32_t)PosX);
                 MinY = MIN(MinY, (uint32_t)PosY);
@@ -1185,18 +1185,18 @@ bool HRFErMapperSupportedFile::Create()
 void HRFErMapperSupportedFile::CreateDescriptors ()
     {
     // Get image dimensions.
-    unsigned long Width  = m_pNcsObjs->m_pFileInfo->nSizeX;
-    unsigned long Height = m_pNcsObjs->m_pFileInfo->nSizeY;
+    uint32_t Width  = m_pNcsObjs->m_pFileInfo->nSizeX;
+    uint32_t Height = m_pNcsObjs->m_pFileInfo->nSizeY;
 
     // Calculate resolution count
-    unsigned int  ResCount = 1;
-    unsigned long ResWidth = Width;
-    unsigned long ResHeight = Height;
+    uint32_t  ResCount = 1;
+    uint32_t ResWidth = Width;
+    uint32_t ResHeight = Height;
 
     while ((ResWidth > BLOCK_WIDTH_ERMAPPER) && (ResHeight > BLOCK_HEIGHT_ERMAPPER))
         {
-        ResWidth = (unsigned long)ceil(ResWidth / 2.0);
-        ResHeight= (unsigned long)ceil(ResHeight / 2.0);
+        ResWidth = (uint32_t)ceil(ResWidth / 2.0);
+        ResHeight= (uint32_t)ceil(ResHeight / 2.0);
         ResCount++;
         }
     ResCount = MIN(ResCount, 254);  // don't use 255, 255 means Unlimited resolution.
@@ -1245,7 +1245,7 @@ void HRFErMapperSupportedFile::CreateDescriptors ()
     ResWidth = Width;
     ResHeight = Height;
 
-    for (unsigned int count = 0; count < ResCount; count++)
+    for (uint32_t count = 0; count < ResCount; count++)
         {
         // At the same time init StdViewWidth and StdViewHeight (optimization)
         // This avoid to compute these values each time ReadBlock() is called
@@ -1269,8 +1269,8 @@ void HRFErMapperSupportedFile::CreateDescriptors ()
                                                        BLOCK_HEIGHT_ERMAPPER                  // BlockHeight,
                                                       );
 
-        ResWidth = (unsigned long)ceil(ResWidth / 2.0);
-        ResHeight= (unsigned long)ceil(ResHeight / 2.0);
+        ResWidth = (uint32_t)ceil(ResWidth / 2.0);
+        ResHeight= (uint32_t)ceil(ResHeight / 2.0);
 
         ListOfResolutionDescriptor.push_back(pResolutionDesc);
         }
@@ -1394,7 +1394,7 @@ void HRFErMapperSupportedFile::BuildTransfoModelMatrix(HFCPtr<HGF2DTransfoModel>
 #if 0       //DMx ECW SDK 5.0 support Geotiff Tag
             // If we want to use Geotiff tag, we need to update the code below to support it.    
     double         *pFileMatrix=nullptr;
-    int            NbPoints;
+    int32_t            NbPoints;
     if (NCSGetGeotiffTag((NCSFileView *)GetFileView(), GTIFF_TRANSMATRIX, &NbPoints, &pFileMatrix) == NCS_SUCCESS &&
         (NbPoints == 16))
         {
@@ -1489,15 +1489,15 @@ void HRFErMapperSupportedFile::Save()
 // Protected
 // Round ratio. Try to round to multiple of 2, if possible --> at 1 pixel.
 //-----------------------------------------------------------------------------
-double HRFErMapperSupportedFile::RoundRatio(unsigned long pi_MainImageSize, unsigned long pi_ResImageSize)
+double HRFErMapperSupportedFile::RoundRatio(uint32_t pi_MainImageSize, uint32_t pi_ResImageSize)
     {
     double ResCurrent = (double)pi_ResImageSize / (double)pi_MainImageSize;
 
-    unsigned long Exposent = round(log(1.0 / ResCurrent) / log(2.0));
+    uint32_t Exposent = round(log(1.0 / ResCurrent) / log(2.0));
     double Val2Exposent = pow(2.0, (double)Exposent);
     double ResSize = pi_MainImageSize / Val2Exposent;
 
-    if (abs((int)(ResSize - (double)pi_ResImageSize)) < 1.0)
+    if (abs((int32_t)(ResSize - (double)pi_ResImageSize)) < 1.0)
         ResCurrent = 1.0 / Val2Exposent;
 
     return ResCurrent;
@@ -1755,7 +1755,7 @@ void HRFErMapperSupportedFile::StopLookAhead(uint32_t pi_Page,
 // GetRatio
 // Get the main resolution to requested sub-resolution ratio.
 //-----------------------------------------------------------------------------
-double HRFErMapperSupportedFile::GetRatio(unsigned short pi_ResolutionNb)
+double HRFErMapperSupportedFile::GetRatio(uint16_t pi_ResolutionNb)
     {
     return m_pRatio[pi_ResolutionNb];
     }

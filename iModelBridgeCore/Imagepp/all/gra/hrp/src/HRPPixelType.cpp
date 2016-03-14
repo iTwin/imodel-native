@@ -39,7 +39,7 @@ HRPPixelType::HRPPixelType()
 // create a pixel palette internally
 //-----------------------------------------------------------------------------
 HRPPixelType::HRPPixelType(const HRPChannelOrg& pi_rChannelOrg,
-                           unsigned short pi_IndexBits)
+                           uint16_t pi_IndexBits)
     : m_PixelPalette((pi_IndexBits ? 2 << (pi_IndexBits-1) : 0),pi_rChannelOrg),
       m_ChannelOrg(pi_rChannelOrg)
     {
@@ -59,13 +59,13 @@ HRPPixelType::HRPPixelType(const HRPChannelOrg& pi_rChannelOrg,
 // pixeltype original orgnanization.
 //-----------------------------------------------------------------------------
 HRPPixelType::HRPPixelType(const HRPChannelOrg& pi_rChannelOrg,
-                           unsigned short pi_IndexBits,
+                           uint16_t pi_IndexBits,
                            const HRPChannelOrg& pi_rPaletteChannelOrg)
     : m_PixelPalette((pi_IndexBits ? 2 << (pi_IndexBits-1) : 0),pi_rPaletteChannelOrg),
       m_ChannelOrg(pi_rChannelOrg)
     {
     uint32_t ValueBits = MAX(pi_rChannelOrg.CountPixelCompositeValueBits() - pi_rPaletteChannelOrg.CountPixelCompositeValueBits(), 0);
-    m_IndexBits = (unsigned short)(pi_IndexBits + ValueBits);
+    m_IndexBits = (uint16_t)(pi_IndexBits + ValueBits);
 
     uint32_t NumberOfBytes = (m_IndexBits + 7) / 8;
     m_pDefaultRawData = new Byte[NumberOfBytes];
@@ -79,7 +79,7 @@ HRPPixelType::HRPPixelType(const HRPPixelPalette& pi_rPixelPalette)
     : m_PixelPalette(pi_rPixelPalette),
       m_ChannelOrg(pi_rPixelPalette.GetChannelOrg())
     {
-    m_IndexBits = (unsigned short)(log((double)m_PixelPalette.GetMaxEntries()) / log(2.0));
+    m_IndexBits = (uint16_t)(log((double)m_PixelPalette.GetMaxEntries()) / log(2.0));
 
     uint32_t NumberOfBytes = (CountPixelRawDataBits() + 7) / 8;
     m_pDefaultRawData = new Byte[NumberOfBytes];

@@ -15,9 +15,9 @@
 //
 //-----------------------------------------------------------------------------
 
-int main(int argc, char* argv[])
+int32_t main(int32_t argc, char* argv[])
     {
-    int ExitCode = 0;
+    int32_t ExitCode = 0;
 
 
     HRFGeoTiffCoordSysTable GeoTiffCoordSysTable;

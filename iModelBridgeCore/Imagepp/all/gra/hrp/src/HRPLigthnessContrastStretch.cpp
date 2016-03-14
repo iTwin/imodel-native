@@ -32,10 +32,10 @@ HRPLigthnessContrastStretch::HRPLigthnessContrastStretch()
     m_ChannelWidth   = 8;
     m_MaxSampleValue = 255;
 
-    m_pMinValue         = new int   [m_Channels];
-    m_pMaxValue         = new int   [m_Channels];
-    m_pMinContrastValue = new int   [m_Channels];
-    m_pMaxContrastValue = new int   [m_Channels];
+    m_pMinValue         = new int32_t   [m_Channels];
+    m_pMaxValue         = new int32_t   [m_Channels];
+    m_pMinContrastValue = new int32_t   [m_Channels];
+    m_pMaxContrastValue = new int32_t   [m_Channels];
     m_pGammaFactor      = new double[m_Channels];
 
     for (uint32_t ChannelIndex = 0; ChannelIndex < m_Channels; ChannelIndex++)
@@ -71,10 +71,10 @@ HRPLigthnessContrastStretch::HRPLigthnessContrastStretch(const HFCPtr<HRPPixelTy
 
     m_MaxSampleValue = (1 << m_ChannelWidth) - 1;
 
-    m_pMinValue         = new int   [m_Channels];
-    m_pMaxValue         = new int   [m_Channels];
-    m_pMinContrastValue = new int   [m_Channels];
-    m_pMaxContrastValue = new int   [m_Channels];
+    m_pMinValue         = new int32_t   [m_Channels];
+    m_pMaxValue         = new int32_t   [m_Channels];
+    m_pMinContrastValue = new int32_t   [m_Channels];
+    m_pMaxContrastValue = new int32_t   [m_Channels];
     m_pGammaFactor      = new double[m_Channels];
 
     for (uint32_t ChannelIndex = 0; ChannelIndex < m_Channels; ChannelIndex++)
@@ -363,8 +363,8 @@ void HRPLigthnessContrastStretch::FunctionN16( const void*  pi_pSrcRawData,
     HPRECONDITION(pi_PixelsCount > 0);
     HPRECONDITION(m_Channels > 0 && m_Channels <= 4);
 
-    unsigned short* pSrcRawData  = (unsigned short*)pi_pSrcRawData;
-    unsigned short* pDestRawData = (unsigned short*)po_pDestRawData;
+    uint16_t* pSrcRawData  = (uint16_t*)pi_pSrcRawData;
+    uint16_t* pDestRawData = (uint16_t*)po_pDestRawData;
 
     double L;
     double U;
@@ -399,7 +399,7 @@ void HRPLigthnessContrastStretch::FunctionN16( const void*  pi_pSrcRawData,
             // Process gamme adjustement if required.
             if (!HDOUBLE_EQUAL_EPSILON(m_pGammaFactor[0], 1.0))
                 {
-                L = (unsigned int)(100.0 * pow( L / 100.0, 1 / m_pGammaFactor[0]));
+                L = (uint32_t)(100.0 * pow( L / 100.0, 1 / m_pGammaFactor[0]));
                 }
 
             //----------------------------------------
@@ -546,10 +546,10 @@ void HRPLigthnessContrastStretch::DeepCopy(const HRPLigthnessContrastStretch& pi
     m_ChannelWidth   = pi_rSrc.m_ChannelWidth;
     m_MaxSampleValue = pi_rSrc.m_MaxSampleValue;
 
-    m_pMinValue         = new int   [m_Channels];
-    m_pMaxValue         = new int   [m_Channels];
-    m_pMinContrastValue = new int   [m_Channels];
-    m_pMaxContrastValue = new int   [m_Channels];
+    m_pMinValue         = new int32_t   [m_Channels];
+    m_pMaxValue         = new int32_t   [m_Channels];
+    m_pMinContrastValue = new int32_t   [m_Channels];
+    m_pMaxContrastValue = new int32_t   [m_Channels];
     m_pGammaFactor      = new double[m_Channels];
 
     m_pColorSpaceConverter = new HGFLuvColorSpace(DEFAULT_GAMMA_FACTOR, m_ChannelWidth);
@@ -572,15 +572,15 @@ void HRPLigthnessContrastStretch::DeepCopy(const HRPLigthnessContrastStretch& pi
 //-----------------------------------------------------------------------------
 
 void HRPLigthnessContrastStretch::GetInterval(uint32_t pi_ChannelIndex,
-                                              int* po_pMinValue,
-                                              int* po_pMaxValue) const
+                                              int32_t* po_pMinValue,
+                                              int32_t* po_pMaxValue) const
     {
     HPRECONDITION(pi_ChannelIndex < m_Channels);
     HPRECONDITION(po_pMinValue != 0);
     HPRECONDITION(po_pMaxValue != 0);
 
-    *po_pMinValue = (int)(ceil((double)m_pMinValue[pi_ChannelIndex] / 100.0 * m_MaxSampleValue));
-    *po_pMaxValue = (int)(ceil((double)m_pMaxValue[pi_ChannelIndex] / 100.0 * m_MaxSampleValue));
+    *po_pMinValue = (int32_t)(ceil((double)m_pMinValue[pi_ChannelIndex] / 100.0 * m_MaxSampleValue));
+    *po_pMaxValue = (int32_t)(ceil((double)m_pMaxValue[pi_ChannelIndex] / 100.0 * m_MaxSampleValue));
     }
 
 //-----------------------------------------------------------------------------
@@ -589,16 +589,16 @@ void HRPLigthnessContrastStretch::GetInterval(uint32_t pi_ChannelIndex,
 //-----------------------------------------------------------------------------
 
 void HRPLigthnessContrastStretch::SetInterval(uint32_t pi_ChannelIndex,
-                                              int pi_MinValue,
-                                              int pi_MaxValue)
+                                              int32_t pi_MinValue,
+                                              int32_t pi_MaxValue)
     {
     HPRECONDITION(pi_ChannelIndex < m_Channels);
     HPRECONDITION(pi_MinValue <= pi_MaxValue);
     HPRECONDITION(pi_MinValue <= m_MaxSampleValue && pi_MinValue >= 0);
     HPRECONDITION(pi_MaxValue <= m_MaxSampleValue && pi_MaxValue >= 0);
 
-    m_pMinValue[pi_ChannelIndex] = (int)(((double)pi_MinValue / m_MaxSampleValue) * 100.0);
-    m_pMaxValue[pi_ChannelIndex] = (int)(((double)pi_MaxValue / m_MaxSampleValue) * 100.0);
+    m_pMinValue[pi_ChannelIndex] = (int32_t)(((double)pi_MinValue / m_MaxSampleValue) * 100.0);
+    m_pMaxValue[pi_ChannelIndex] = (int32_t)(((double)pi_MaxValue / m_MaxSampleValue) * 100.0);
     }
 
 //-----------------------------------------------------------------------------
@@ -606,15 +606,15 @@ void HRPLigthnessContrastStretch::SetInterval(uint32_t pi_ChannelIndex,
 //-----------------------------------------------------------------------------
 
 void HRPLigthnessContrastStretch::SetContrastInterval(uint32_t pi_ChannelIndex,
-                                                      int pi_MinContrastValue,
-                                                      int pi_MaxContrastValue)
+                                                      int32_t pi_MinContrastValue,
+                                                      int32_t pi_MaxContrastValue)
     {
     HPRECONDITION(pi_ChannelIndex < m_Channels);
     HPRECONDITION(pi_MinContrastValue <= m_MaxSampleValue && pi_MinContrastValue >= 0);
     HPRECONDITION(pi_MaxContrastValue <= m_MaxSampleValue && pi_MaxContrastValue >= 0);
 
-    m_pMinContrastValue[pi_ChannelIndex] = (int)(((double)pi_MinContrastValue / m_MaxSampleValue) * 100.0);
-    m_pMaxContrastValue[pi_ChannelIndex] = (int)(((double)pi_MaxContrastValue / m_MaxSampleValue) * 100.0);
+    m_pMinContrastValue[pi_ChannelIndex] = (int32_t)(((double)pi_MinContrastValue / m_MaxSampleValue) * 100.0);
+    m_pMaxContrastValue[pi_ChannelIndex] = (int32_t)(((double)pi_MaxContrastValue / m_MaxSampleValue) * 100.0);
     }
 
 //-----------------------------------------------------------------------------
@@ -622,15 +622,15 @@ void HRPLigthnessContrastStretch::SetContrastInterval(uint32_t pi_ChannelIndex,
 //-----------------------------------------------------------------------------
 
 void HRPLigthnessContrastStretch::GetContrastInterval(uint32_t pi_ChannelIndex,
-                                                      int* po_MinContrastValue,
-                                                      int* po_MaxContrastValue) const
+                                                      int32_t* po_MinContrastValue,
+                                                      int32_t* po_MaxContrastValue) const
     {
     HPRECONDITION(pi_ChannelIndex < m_Channels);
     HPRECONDITION(po_MinContrastValue != 0);
     HPRECONDITION(po_MaxContrastValue != 0);
 
-    *po_MinContrastValue = (int)(ceil((double)m_pMinContrastValue[pi_ChannelIndex] / 100.0 * m_MaxSampleValue));
-    *po_MaxContrastValue = (int)(ceil((double)m_pMaxContrastValue[pi_ChannelIndex] / 100.0 * m_MaxSampleValue));
+    *po_MinContrastValue = (int32_t)(ceil((double)m_pMinContrastValue[pi_ChannelIndex] / 100.0 * m_MaxSampleValue));
+    *po_MaxContrastValue = (int32_t)(ceil((double)m_pMaxContrastValue[pi_ChannelIndex] / 100.0 * m_MaxSampleValue));
     }
 
 //-----------------------------------------------------------------------------

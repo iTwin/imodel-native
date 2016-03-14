@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPDEMFilter.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -65,19 +65,19 @@ public:
     struct  HillShadingSettings
         {
         IMAGEPP_EXPORT HillShadingSettings();
-        IMAGEPP_EXPORT HillShadingSettings(unsigned short pi_AltitudeAngle, unsigned short pi_AzimuthDegree);
+        IMAGEPP_EXPORT HillShadingSettings(uint16_t pi_AltitudeAngle, uint16_t pi_AzimuthDegree);
 
         IMAGEPP_EXPORT bool       GetHillShadingState() const;
         IMAGEPP_EXPORT void       SetHillShadingState(bool state);
-        IMAGEPP_EXPORT unsigned short GetAltitudeAngle() const;
-        IMAGEPP_EXPORT void       SetAltitudeAngle(unsigned short pi_AltitudeAngle);
-        IMAGEPP_EXPORT unsigned short GetAzimuthDegree() const;
-        IMAGEPP_EXPORT void       SetAzimuthDegree(unsigned short pi_AltitudeAngle);
+        IMAGEPP_EXPORT uint16_t GetAltitudeAngle() const;
+        IMAGEPP_EXPORT void       SetAltitudeAngle(uint16_t pi_AltitudeAngle);
+        IMAGEPP_EXPORT uint16_t GetAzimuthDegree() const;
+        IMAGEPP_EXPORT void       SetAzimuthDegree(uint16_t pi_AltitudeAngle);
 
 
     private:
-        unsigned short m_AltitudeAngle;
-        unsigned short m_AzimuthDegree;
+        uint16_t m_AltitudeAngle;
+        uint16_t m_AzimuthDegree;
         bool   m_HillShadingState;
         };
 
@@ -94,8 +94,8 @@ public:
 
     IMAGEPP_EXPORT const HillShadingSettings& GetHillShadingSettings() const;
     IMAGEPP_EXPORT void                    SetHillShadingSettings(const HillShadingSettings& pi_HillShading);
-    IMAGEPP_EXPORT unsigned short          GetVerticalExaggeration() const;
-    IMAGEPP_EXPORT void                    SetVerticalExaggeration(unsigned short pi_VerticalExaggeration);
+    IMAGEPP_EXPORT uint16_t          GetVerticalExaggeration() const;
+    IMAGEPP_EXPORT void                    SetVerticalExaggeration(uint16_t pi_VerticalExaggeration);
 
     IMAGEPP_EXPORT Style                    GetStyle() const;
     IMAGEPP_EXPORT void                     SetStyle(Style pi_Style);
@@ -130,7 +130,7 @@ private:
     UpperRangeValues        m_RangeValues;
     Byte                  m_DefaultRGBAColor[4];
 
-    unsigned short         m_VerticalExaggeration;
+    uint16_t         m_VerticalExaggeration;
 
     bool                   m_ClipToEndValues;
 
@@ -160,8 +160,8 @@ public:
     Byte const* GetDefaultRGBA() const;
     void        SetDefaultRGBA(Byte const* rgba);
 
-    unsigned short GetVerticalExaggeration() const;
-    void        SetVerticalExaggeration(unsigned short newExaggeration);
+    uint16_t GetVerticalExaggeration() const;
+    void        SetVerticalExaggeration(uint16_t newExaggeration);
 
     bool        GetClipToEndValue() const;
     void        SetClipToEndValue(bool clipToEnd);
@@ -204,7 +204,7 @@ private:
     std::unique_ptr<DEMFilterProcessor> m_pDEMFilterProcessor;
 
     HRPDEMFilter::UpperRangeValues    m_upperRangeValues;
-    unsigned short              m_verticalExaggeration;
+    uint16_t              m_verticalExaggeration;
     HRPDEMFilter::HillShadingSettings m_hillShadingSettings;
     bool                        m_clipToEndValue;
     };

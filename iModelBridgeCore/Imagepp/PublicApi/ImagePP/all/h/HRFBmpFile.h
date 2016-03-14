@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFBmpFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -29,10 +29,10 @@ public:
 
 typedef struct BmpFileHeader
     {
-    unsigned short m_Type;
+    uint16_t m_Type;
     uint32_t m_FileSize;
-    unsigned short m_Reserved1;
-    unsigned short m_Reserved2;
+    uint16_t m_Reserved1;
+    uint16_t m_Reserved2;
     uint32_t m_OffBitsToData;
     } BmpFileHeader;
 
@@ -41,8 +41,8 @@ typedef struct BmpInfoHeader
     uint32_t m_StructSize;
     uint32_t m_Width;
     uint32_t m_Height;
-    unsigned short m_Planes;             // Must be set to 1
-    unsigned short m_BitCount;           // Number of bits-per-pixels
+    uint16_t m_Planes;             // Must be set to 1
+    uint16_t m_BitCount;           // Number of bits-per-pixels
     uint32_t m_Compression;        // Type of compression (BI_RGB=0, BI_RLE8=1, BI_RLE4=2)
     uint32_t m_SizeImage;          // Size in bytes of the image
     uint32_t m_XPelsPerMeter;
@@ -54,20 +54,20 @@ typedef struct BmpInfoHeader
 typedef struct BitMapCoreHeader
     {
     uint32_t m_HeaderSize;
-    unsigned short m_Width;
-    unsigned short m_Height;
-    unsigned short m_ColorPlanes;
-    unsigned short m_BitsPerPixel;
+    uint16_t m_Width;
+    uint16_t m_Height;
+    uint16_t m_ColorPlanes;
+    uint16_t m_BitsPerPixel;
     } BitMapCoreHeader;
 
 
 typedef struct BitMapArrayHeader
     {
-    unsigned short m_Type;
+    uint16_t m_Type;
     uint32_t m_HeaderSize;
     uint32_t m_NextOffset;
-    unsigned short m_XDisplay;
-    unsigned short m_YDisplay;
+    uint16_t m_XDisplay;
+    uint16_t m_YDisplay;
     } BmpArrayHeader;
 
 typedef struct RGBColor {
@@ -154,7 +154,7 @@ public:
     virtual bool                         AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage);
 
     virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
-                                                                 unsigned short           pi_Resolution,
+                                                                 uint16_t           pi_Resolution,
                                                                  HFCAccessMode             pi_AccessMode);
 
     virtual void                          Save();
@@ -194,7 +194,7 @@ private:
     uint32_t*     m_pLinesOffsetBuffer;
 
     // Number of bits to use for line padding per row
-    unsigned short         m_PaddingBitsPerRow;
+    uint16_t         m_PaddingBitsPerRow;
 
 
     // Create the file

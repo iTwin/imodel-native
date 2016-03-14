@@ -130,7 +130,7 @@ HRFOGCServiceBlockCapabilities::HRFOGCServiceBlockCapabilities ()
     :HRFRasterFileCapabilities()
     {
     Add(new HRFTileCapability(HFC_READ_ONLY,    // AccessMode
-                              LONG_MAX,          // MaxSizeInBytes
+                              INT32_MAX,          // MaxSizeInBytes
                               256,              // MinWidth
                               256,              // MaxWidth
                               0,                // WidthIncrement
@@ -167,7 +167,7 @@ HRFOGCService::~HRFOGCService()
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFOGCService::CreateResolutionEditor(uint32_t       pi_Page,
-                                                           unsigned short pi_Resolution,
+                                                           uint16_t pi_Resolution,
                                                            HFCAccessMode  pi_AccessMode)
     {
     HASSERT(0);
@@ -308,7 +308,7 @@ void HRFOGCService::RequestLookAhead(uint32_t              pi_Page,
     HGFTileIDList::const_iterator Itr(pi_rBlocks.begin());
     if (Itr != pi_rBlocks.end())
         {
-        unsigned short Resolution = (unsigned short)HRFRasterFile::s_TileDescriptor.GetLevel(*Itr);   // the maximum level is 255
+        uint16_t Resolution = (uint16_t)HRFRasterFile::s_TileDescriptor.GetLevel(*Itr);   // the maximum level is 255
 
         // find the resolution editor into the ResolutionEditorRegistry
         ResolutionEditorRegistry::const_iterator ResItr(m_ResolutionEditorRegistry.begin());
@@ -472,7 +472,7 @@ void HRFOGCService::ValidateConnection(bool authenticate)
 
         if (pCallback != nullptr)
             {
-            const unsigned short MaxRetryCount = pCallback->RetryCount(HFCAuthenticationCallback::CLASS_ID);
+            const uint16_t MaxRetryCount = pCallback->RetryCount(HFCAuthenticationCallback::CLASS_ID);
 
             if (HFCInternetConnectionException::PERMISSION_DENIED == connectErrorType)
                 {

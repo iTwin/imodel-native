@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelTypeV16Gray16.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -28,7 +28,7 @@ public:
     virtual HPMPersistentObject*
     Clone() const;
 
-    virtual unsigned short CountValueBits() const;
+    virtual uint16_t CountValueBits() const;
 
 protected:
 

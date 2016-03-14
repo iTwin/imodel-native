@@ -49,7 +49,7 @@ HRFBlockAdapterCapabilities* HRFAdaptStripToTileCreator::GetCapabilities() const
 //-----------------------------------------------------------------------------
 HRFBlockAdapter* HRFAdaptStripToTileCreator::Create(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                                     uint32_t              pi_Page,
-                                                    unsigned short       pi_Resolution,
+                                                    uint16_t       pi_Resolution,
                                                     HFCAccessMode         pi_AccessMode) const
     {
     return new HRFAdaptStripToTile(GetCapabilities(),
@@ -67,7 +67,7 @@ HRFAdaptStripToTile::HRFAdaptStripToTile(
     HRFBlockAdapterCapabilities* pi_pCapabilities,
     HFCPtr<HRFRasterFile>        pi_rpRasterFile,
     uint32_t                     pi_Page,
-    unsigned short              pi_Resolution,
+    uint16_t              pi_Resolution,
     HFCAccessMode                pi_AccessMode)
     : HRFBlockAdapter(pi_pCapabilities,
                       pi_rpRasterFile,
@@ -77,9 +77,9 @@ HRFAdaptStripToTile::HRFAdaptStripToTile(
     {
     // Resolution dimension
 
-    HASSERT(m_pResolutionDescriptor->GetHeight() <= ULONG_MAX);
-    HASSERT(m_pResolutionDescriptor->GetWidth() <= ULONG_MAX);
-    HASSERT(m_pResolutionDescriptor->GetBytesPerWidth() <= ULONG_MAX);
+    HASSERT(m_pResolutionDescriptor->GetHeight() <= UINT32_MAX);
+    HASSERT(m_pResolutionDescriptor->GetWidth() <= UINT32_MAX);
+    HASSERT(m_pResolutionDescriptor->GetBytesPerWidth() <= UINT32_MAX);
 
     m_Height             = (uint32_t)m_pResolutionDescriptor->GetHeight();
     m_Width              = (uint32_t)m_pResolutionDescriptor->GetWidth();
@@ -130,7 +130,7 @@ HSTATUS HRFAdaptStripToTile::ReadBlock(uint64_t pi_PosBlockX,
                                        Byte* po_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
-    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+    HPRECONDITION (pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);
 
     HSTATUS Status = H_SUCCESS;
 
@@ -171,7 +171,7 @@ HSTATUS HRFAdaptStripToTile::WriteBlock(uint64_t     pi_PosBlockX,
                                         const Byte* pi_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
-    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+    HPRECONDITION (pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);
 
     HSTATUS Status = H_SUCCESS;
 

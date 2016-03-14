@@ -55,7 +55,7 @@ public:
         {
         // Block Capability
         Add(new HRFLineCapability(HFC_READ_ONLY,
-                                  LONG_MAX,
+                                  INT32_MAX,
                                   HRFBlockAccess::RANDOM));
         }
     };
@@ -243,7 +243,7 @@ bool HRFBilCreator::IsKindOfFileWithExternalHeader(const HFCPtr<HFCURL>& pi_rpUR
             if (NULL != ValueStartPos)
                 {
                 ValueStartPos += 7;
-                int i = 0;
+                int32_t i = 0;
                 while (((' ' == ValueStartPos[i]) || ('\t' == ValueStartPos[i])) && ('\0' != ValueStartPos[i]))
                     i ++;
 
@@ -278,7 +278,7 @@ bool HRFBilCreator::IsKindOfFileWithExternalHeader(const HFCPtr<HFCURL>& pi_rpUR
                 }
             else
                 {
-                int NbBands = 0;
+                int32_t NbBands = 0;
                 ValueStartPos = strstr(Header, "NBANDS");
                 if (NULL != ValueStartPos)
                     {
@@ -413,7 +413,7 @@ bool HRFBilCreator::IsKindOfFileOpenFromExternalHeader(const HFCPtr<HFCURL>& pi_
     if (NULL != ValueStartPos)
         {
         ValueStartPos += 7;
-        int i = 0;
+        int32_t i = 0;
         while (((' ' == ValueStartPos[i]) || ('\t' == ValueStartPos[i])) && ('\0' != ValueStartPos[i]))
             i ++;
 
@@ -442,7 +442,7 @@ bool HRFBilCreator::IsKindOfFileOpenFromExternalHeader(const HFCPtr<HFCURL>& pi_
         }
     else
         {
-        int NbBands = 0;
+        int32_t NbBands = 0;
         ValueStartPos = strstr(Header, "NBANDS");
         if (NULL != ValueStartPos)
             {
@@ -735,7 +735,7 @@ const HGF2DWorldIdentificator HRFBilFile::GetWorldIdentificator () const
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFBilFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                        unsigned short pi_Resolution,
+                                                        uint16_t pi_Resolution,
                                                         HFCAccessMode  pi_AccessMode)
     {
     // Verify that the page number is 0, because we have one image per file
@@ -848,7 +848,7 @@ bool HRFBilFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
     // Compute the standard deviation to bring back the color adjustment factor to 1.
     m_bilFileInfo.RedStdDeviation   =
         m_bilFileInfo.GreenStdDeviation =
-            m_bilFileInfo.BlueStdDeviation  = (pow(2.0, (int)m_bilFileInfo.NbBitsPerBandPerPixel) - 1) / 3;
+            m_bilFileInfo.BlueStdDeviation  = (pow(2.0, (int32_t)m_bilFileInfo.NbBitsPerBandPerPixel) - 1) / 3;
 
     // Create the ".hdr" file.
     sprintf(Header, "BYTEORDER     M\r\nLAYOUT        BIL\r\nNROWS         %i\r\nNCOLS         %i\r\nNBANDS        %i\r\nNBITS         %i\r\nBANDROWBYTES  %i\r\nTOTALROWBYTES %i\r\nBANDGAPBYTES  0",
@@ -1486,7 +1486,7 @@ void HRFBilFile::ReadLine
     HPRECONDITION(pi_pFile != 0);
     HPRECONDITION(po_pString != 0);
 
-    const int BufferSize = 64;
+    const int32_t BufferSize = 64;
     char      Buffer[BufferSize];
     char*     Comment;
     string    CurrentLine;
@@ -1496,7 +1496,7 @@ void HRFBilFile::ReadLine
     while (!EndOfLine)
         {
         memset(Buffer, 0, BufferSize);
-        for (unsigned short i = 0; i < BufferSize && !EndOfLine; i++)
+        for (uint16_t i = 0; i < BufferSize && !EndOfLine; i++)
             {
             pi_pFile->Read(&Buffer[i], 1);
             EndOfLine = Buffer[i] == '\n' || pi_pFile->EndOfFile();

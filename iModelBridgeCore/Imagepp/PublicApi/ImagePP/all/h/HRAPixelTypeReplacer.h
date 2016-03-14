@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAPixelTypeReplacer.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRAPixelTypeReplacer
@@ -41,7 +41,7 @@ public:
     virtual HPMPersistentObject* Clone () const;
     virtual HFCPtr<HRARaster> Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const override;
 
-    virtual unsigned short GetRepresentativePalette(
+    virtual uint16_t GetRepresentativePalette(
         HRARepPalParms* pio_pRepPalParms);
 
     virtual void    ComputeHistogram(HRAHistogramOptions* pio_pOptions,

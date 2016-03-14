@@ -24,7 +24,7 @@ HRFCacheController::HRFCacheController(const HFCPtr<HFCURL> & pi_CachePath,
     :m_DirCachePath(pi_CachePath),
      m_ScanSubDir(pi_ScanSubDir),
      m_MaxCacheSize(UINT64_MAX),
-     m_FilesOlderThan(ULONG_MAX)       // ~68 years
+     m_FilesOlderThan(UINT32_MAX)       // ~68 years
     {
     HPRECONDITION(pi_CachePath->IsCompatibleWith(HFCURLFile::CLASS_ID));
     }
@@ -90,7 +90,7 @@ void HRFCacheController::SetMoveFolderList(const HRFCacheController::MoveFolderL
 /**-----------------------------------------------------------------------------
 This method control the cache directory using the specified flags.
 ------------------------------------------------------------------------------*/
-void HRFCacheController::Control(int pi_CacheControlFlags)
+void HRFCacheController::Control(int32_t pi_CacheControlFlags)
     {
 
     if(0 == pi_CacheControlFlags)

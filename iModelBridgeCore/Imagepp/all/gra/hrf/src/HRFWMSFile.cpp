@@ -435,7 +435,7 @@ void HRFWMSFile::SetContext(uint32_t                 pi_Page,
         WString Layers;
         WString Styles;
         const HMDLayerInfoWMS* pLayer;
-        for (unsigned short Index = 0; Index < pVolatileLayers->GetNbVolatileLayers(); ++Index)
+        for (uint16_t Index = 0; Index < pVolatileLayers->GetNbVolatileLayers(); ++Index)
             {
             if (pVolatileLayers->GetVolatileLayerInfo(Index)->GetVisibleState())
                 {

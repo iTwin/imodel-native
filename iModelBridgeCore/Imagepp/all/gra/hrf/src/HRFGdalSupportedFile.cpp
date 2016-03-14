@@ -158,7 +158,7 @@ HRFGdalSupportedFile::~HRFGdalSupportedFile()
     //Close the file
     if (m_poDataset != 0)
         {
-        int Ref = m_poDataset->Dereference();
+        int32_t Ref = m_poDataset->Dereference();
 
         if (Ref <= 0)
             {
@@ -217,7 +217,7 @@ void HRFGdalSupportedFile::Save()
 // WriteColorTable Write the color table in the dataset
 //-----------------------------------------------------------------------------
 void HRFGdalSupportedFile::WriteColorTable(uint32_t              pi_Page,
-                                           unsigned short       pi_Resolution)
+                                           uint16_t       pi_Resolution)
     {
     HPRECONDITION(GetPageDescriptor(pi_Page) != 0);
     HPRECONDITION(GetPageDescriptor(pi_Page)->GetResolutionDescriptor(pi_Resolution) != 0);
@@ -395,7 +395,7 @@ void HRFGdalSupportedFile::DetectPixelType()
 
     m_NbBands = m_poDataset->GetRasterCount();
 
-    for (int bandInd = 1; bandInd <= m_NbBands; bandInd++)
+    for (int32_t bandInd = 1; bandInd <= m_NbBands; bandInd++)
         {
         bandColorType = m_poDataset->GetRasterBand(bandInd)->GetColorInterpretation();
 
@@ -560,7 +560,7 @@ void HRFGdalSupportedFile::DetectPixelTypeMono()
             break;
         case GDT_Int16 :
             {
-            int Success;
+            int32_t Success;
             double NoDataValue = GetRasterBand(m_GrayBandInd)->GetNoDataValue(&Success);
 
             if (Success != false)
@@ -582,7 +582,7 @@ void HRFGdalSupportedFile::DetectPixelTypeMono()
         break;
         case GDT_Float32 :
             {
-            int Success;
+            int32_t Success;
             double NoDataValue = GetRasterBand(m_GrayBandInd)->GetNoDataValue(&Success);
 
             if (Success != false)
@@ -823,7 +823,7 @@ void HRFGdalSupportedFile::DetectPixelTypeYCbCr()
 // Protected
 // GetMinimumPossibleValue
 //-----------------------------------------------------------------------------
-double HRFGdalSupportedFile::GetMinimumPossibleValue(unsigned short pi_DataType)
+double HRFGdalSupportedFile::GetMinimumPossibleValue(uint16_t pi_DataType)
     {
     double MinVal = (-LDBL_MAX);
 
@@ -864,7 +864,7 @@ double HRFGdalSupportedFile::GetMinimumPossibleValue(unsigned short pi_DataType)
 // Protected
 // GetMaximumPossibleValue
 //-----------------------------------------------------------------------------
-double HRFGdalSupportedFile::GetMaximumPossibleValue(unsigned short pi_DataType)
+double HRFGdalSupportedFile::GetMaximumPossibleValue(uint16_t pi_DataType)
     {
     double MaxVal = LDBL_MAX;
 
@@ -949,7 +949,7 @@ void HRFGdalSupportedFile::CreateDescriptorsWith(const HFCPtr<HCDCodec>& pi_rpCo
                                                0,                                                  // BlocksDataFlag
                                                HRFBlockType::AUTO_DETECT,
                                                1,
-                                               (unsigned short)GetBitsPerPixelPerBand());
+                                               (uint16_t)GetBitsPerPixelPerBand());
 
     HFCPtr<HGF2DTransfoModel> pBuildTransfoModel;
 
@@ -1327,7 +1327,7 @@ HFCPtr<HGF2DTransfoModel> HRFGdalSupportedFile::BuildTransfoModel()
                                                                  m_GeoRefInfo.m_A11);
 
     /*
-    static int z = 1;
+    static int32_t z = 1;
     if(z && (m_GeoRefInfo.m_A11 > 0 && m_GTModelType == TIFFGeo_UserDefined))
     {
         // Flip the Y Axe because the origin of ModelSpace is lower-left
@@ -1360,7 +1360,7 @@ HFCPtr<HGF2DTransfoModel> HRFGdalSupportedFile::BuildTransfoModel()
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFGdalSupportedFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                                  unsigned short pi_Resolution,
+                                                                  uint16_t pi_Resolution,
                                                                   HFCAccessMode  pi_AccessMode)
     {
     // Verify that the page number is 0, because we have one image per file
@@ -1471,7 +1471,7 @@ void HRFGdalSupportedFile::SetColorAttributes()
 // GetNbBands
 // Get the number of bands
 //-----------------------------------------------------------------------------
-int HRFGdalSupportedFile::GetNbBands() const
+int32_t HRFGdalSupportedFile::GetNbBands() const
     {
     HASSERT(m_poDataset != 0);
 
@@ -1484,7 +1484,7 @@ int HRFGdalSupportedFile::GetNbBands() const
 // GetImageWidth
 // Get the number samples per line
 //-----------------------------------------------------------------------------
-int HRFGdalSupportedFile::GetImageWidth() const
+int32_t HRFGdalSupportedFile::GetImageWidth() const
     {
     if (m_poDataset != 0)
         {
@@ -1520,7 +1520,7 @@ int HRFGdalSupportedFile::GetImageWidth() const
 // GetImageHeight
 // Get the number of rows
 //-----------------------------------------------------------------------------
-int HRFGdalSupportedFile::GetImageHeight() const
+int32_t HRFGdalSupportedFile::GetImageHeight() const
     {
     if (m_poDataset != 0)
         {
@@ -1542,7 +1542,7 @@ int HRFGdalSupportedFile::GetImageHeight() const
         HASSERT(GetPageDescriptor(0) != 0);
         HASSERT(GetPageDescriptor(0)->GetResolutionDescriptor(0) != 0);
 
-        return (int)GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight();
+        return (int32_t)GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight();
         }
     else
         {
@@ -1556,7 +1556,7 @@ int HRFGdalSupportedFile::GetImageHeight() const
 // GetRasterBand
 //
 //-----------------------------------------------------------------------------
-GDALRasterBand* HRFGdalSupportedFile::GetRasterBand(int i) const
+GDALRasterBand* HRFGdalSupportedFile::GetRasterBand(int32_t i) const
     {
     HPRECONDITION(m_poDataset != 0);
     HPRECONDITION(i > 0 && i <= GetNbBands());
@@ -1581,7 +1581,7 @@ HRPChannelType::ChannelRole HRFGdalSupportedFile::GetBandRole(int32_t pi_RasterB
 // Get the number of bands containing information about displayed image (multiband)
 //-----------------------------------------------------------------------------
 
-int HRFGdalSupportedFile::GetNbImgBands() const
+int32_t HRFGdalSupportedFile::GetNbImgBands() const
     {
     return m_NbBands;
     }
@@ -1697,7 +1697,7 @@ bool HRFGdalSupportedFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
                 IsFloat  = false;
                 }
 
-            m_BitsPerPixelPerBand = (unsigned short)(BitsPerPixel/m_NbBands);
+            m_BitsPerPixelPerBand = (uint16_t)(BitsPerPixel/m_NbBands);
 
             char** ppCreationOptions = 0;
 
@@ -2216,9 +2216,9 @@ DISPLAY_REP HRFGdalSupportedFile::GetDispRep() const
 // GetNbDisplayableBands
 // Get the numbers of displayable bands.
 //-----------------------------------------------------------------------------
-int HRFGdalSupportedFile::GetNbDisplayableBands() const
+int32_t HRFGdalSupportedFile::GetNbDisplayableBands() const
     {
-    int NbDisplayableBands = 0;
+    int32_t NbDisplayableBands = 0;
     switch (m_DisplayRep)
         {
         case MONO :
@@ -2344,7 +2344,7 @@ bool HRFGdalSupportedFile::HasPalette() const
 // Protected
 // GetBlockWidth
 //-----------------------------------------------------------------------------
-int HRFGdalSupportedFile::GetBlockWidth() const
+int32_t HRFGdalSupportedFile::GetBlockWidth() const
     {
     return m_BlockWidth;
     }
@@ -2353,7 +2353,7 @@ int HRFGdalSupportedFile::GetBlockWidth() const
 // Protected
 // GetBlockHeight
 //-----------------------------------------------------------------------------
-int HRFGdalSupportedFile::GetBlockHeight() const
+int32_t HRFGdalSupportedFile::GetBlockHeight() const
     {
     return m_BlockHeight;
     }

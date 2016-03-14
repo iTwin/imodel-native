@@ -329,7 +329,7 @@ private:
 //-----------------------------------------------------------------------------
 // ComputeSlopeRad
 //-----------------------------------------------------------------------------
-inline double ComputeSlopeRad(double const& pi_rRateX, double const& pi_rRateY, unsigned short const& pi_rZFactor = 1)
+inline double ComputeSlopeRad(double const& pi_rRateX, double const& pi_rRateY, uint16_t const& pi_rZFactor = 1)
     {
     // rise_run = ( (dz/dx)^2 + (dz/dy)^2 )^0.5
     // slope_rad = ATAN(rise_run)
@@ -377,7 +377,7 @@ inline double ComputeCompassDirectionDeg(double const& pi_rRateX, double const& 
 //-----------------------------------------------------------------------------
 // ComputeZenithRad
 //-----------------------------------------------------------------------------
-inline double ComputeZenithRad(unsigned short const& pi_AltitudeAngle)
+inline double ComputeZenithRad(uint16_t const& pi_AltitudeAngle)
     {
     // Altitude                                 >> The altitude of the illumination source is specified in degrees above horizontal.
     // Zenith_deg = 90 - Altitude               >> Change altitude to zenith angle
@@ -388,7 +388,7 @@ inline double ComputeZenithRad(unsigned short const& pi_AltitudeAngle)
 //-----------------------------------------------------------------------------
 // ComputeAzimuthRad
 //-----------------------------------------------------------------------------
-inline double ComputeAzimuthRad(unsigned short const& pi_AzimuthDeg)
+inline double ComputeAzimuthRad(uint16_t const& pi_AzimuthDeg)
     {
     // Azimuth                                  >> The direction of the illumination in degrees(compass direction).
     // Azimuth_math = 360.0 - m_Azimuth + 90    >> Change azimuth to mathematic unit (right angle)
@@ -409,7 +409,7 @@ inline double ComputeAzimuthRad(unsigned short const& pi_AzimuthDeg)
 class ImagePP::DEMFilterImplementation
     {
 public:
-    DEMFilterImplementation(double const& pi_UnitSizeX, double const& pi_UnitSizeY, const HRPDEMFilter::HillShadingSettings& pi_HillShadingSettings, unsigned short const& pi_rVerticalExaggeration, Byte const* pi_pDefaultRGBA)
+    DEMFilterImplementation(double const& pi_UnitSizeX, double const& pi_UnitSizeY, const HRPDEMFilter::HillShadingSettings& pi_HillShadingSettings, uint16_t const& pi_rVerticalExaggeration, Byte const* pi_pDefaultRGBA)
         :m_UnitSizeX(pi_UnitSizeX),
          m_UnitSizeY(pi_UnitSizeY),
          m_HillShadingSettings(pi_HillShadingSettings),
@@ -466,7 +466,7 @@ protected:
     double     m_UnitSizeY;                // Size of a pixels. In pixel elevation unit (usually, meters or feet)
     uint32_t   m_DefaultRGBA;              // Default color
     HRPDEMFilter::HillShadingSettings m_HillShadingSettings;
-    unsigned short m_VerticalExaggeration;     // HillShading option.
+    uint16_t m_VerticalExaggeration;     // HillShading option.
     HFCPtr<HGF2DTransfoModel>   m_pOrientationTransfo;
 
     double      m_00;
@@ -514,7 +514,7 @@ template<class _SrcT, class _RangeT>
 class FilterImplTyped : public DEMFilterImplementation
     {
 public:
-    FilterImplTyped(double const& pi_UnitSizeX, double const& pi_UnitSizeY, const HRPDEMFilter::HillShadingSettings& pi_HillShadingSetting, unsigned short const& pi_rVerticalExaggeration, bool pi_ClipToEndValues, Byte const* pi_pDefaultRGB, HRPDEMFilter::UpperRangeValues const& pi_rUpperRangeValues)
+    FilterImplTyped(double const& pi_UnitSizeX, double const& pi_UnitSizeY, const HRPDEMFilter::HillShadingSettings& pi_HillShadingSetting, uint16_t const& pi_rVerticalExaggeration, bool pi_ClipToEndValues, Byte const* pi_pDefaultRGB, HRPDEMFilter::UpperRangeValues const& pi_rUpperRangeValues)
         :DEMFilterImplementation(pi_UnitSizeX, pi_UnitSizeY, pi_HillShadingSetting, pi_rVerticalExaggeration, pi_pDefaultRGB),
          m_HasNoDataValue(false)
         {
@@ -563,7 +563,7 @@ template<class _SrcT>
 class ElevationFilterImpl : public FilterImplTyped<_SrcT, _SrcT>
     {
 public:
-    ElevationFilterImpl(double const& pi_UnitSizeX, double const& pi_UnitSizeY, const HRPDEMFilter::HillShadingSettings& pi_HillShadingSetting, unsigned short const& pi_rVerticalExaggeration, bool pi_ClipToEndValues, Byte const* pi_pDefaultRGB, HRPDEMFilter::UpperRangeValues const& pi_rUpperRangeValues)
+    ElevationFilterImpl(double const& pi_UnitSizeX, double const& pi_UnitSizeY, const HRPDEMFilter::HillShadingSettings& pi_HillShadingSetting, uint16_t const& pi_rVerticalExaggeration, bool pi_ClipToEndValues, Byte const* pi_pDefaultRGB, HRPDEMFilter::UpperRangeValues const& pi_rUpperRangeValues)
         : FilterImplTyped<_SrcT, _SrcT>(pi_UnitSizeX, pi_UnitSizeY, pi_HillShadingSetting, pi_rVerticalExaggeration, pi_ClipToEndValues, pi_pDefaultRGB, pi_rUpperRangeValues)
         {
         }
@@ -727,7 +727,7 @@ template<class _SrcT>
 class SlopePercentFilterImpl : public FilterImplTyped<_SrcT, double>
     {
 public:
-    SlopePercentFilterImpl(double const& pi_UnitSizeX, double const& pi_UnitSizeY, const HRPDEMFilter::HillShadingSettings& pi_HillShadingSetting, unsigned short const& pi_rVerticalExaggeration, bool pi_ClipToEndValues, Byte const* pi_pDefaultRGB, HRPDEMFilter::UpperRangeValues const& pi_rUpperRangeValues)
+    SlopePercentFilterImpl(double const& pi_UnitSizeX, double const& pi_UnitSizeY, const HRPDEMFilter::HillShadingSettings& pi_HillShadingSetting, uint16_t const& pi_rVerticalExaggeration, bool pi_ClipToEndValues, Byte const* pi_pDefaultRGB, HRPDEMFilter::UpperRangeValues const& pi_rUpperRangeValues)
         :FilterImplTyped<_SrcT, double>(pi_UnitSizeX, pi_UnitSizeY, pi_HillShadingSetting, pi_rVerticalExaggeration, pi_ClipToEndValues, pi_pDefaultRGB, pi_rUpperRangeValues)
         {
         }
@@ -929,7 +929,7 @@ template<class _SrcT>
 class AspectFilterImpl : public FilterImplTyped<_SrcT, double>
     {
 public:
-    AspectFilterImpl(double const& pi_UnitSizeX, double const& pi_UnitSizeY, const HRPDEMFilter::HillShadingSettings& pi_HillShadingSetting, unsigned short const& pi_rVerticalExaggeration, bool pi_ClipToEndValues, Byte const* pi_pDefaultRGB, HRPDEMFilter::UpperRangeValues const& pi_rUpperRangeValues)
+    AspectFilterImpl(double const& pi_UnitSizeX, double const& pi_UnitSizeY, const HRPDEMFilter::HillShadingSettings& pi_HillShadingSetting, uint16_t const& pi_rVerticalExaggeration, bool pi_ClipToEndValues, Byte const* pi_pDefaultRGB, HRPDEMFilter::UpperRangeValues const& pi_rUpperRangeValues)
         :FilterImplTyped<_SrcT, double>(pi_UnitSizeX, pi_UnitSizeY, pi_HillShadingSetting, pi_rVerticalExaggeration, pi_ClipToEndValues, pi_pDefaultRGB, pi_rUpperRangeValues)
         {
         }
@@ -1188,7 +1188,7 @@ template<class _SrcT>
 class IntensityFilterImpl : public ElevationFilterImpl<_SrcT>
     {
 public:
-    IntensityFilterImpl(double const& pi_UnitSizeX, double const& pi_UnitSizeY, const HRPDEMFilter::HillShadingSettings& pi_HillShadingSetting, unsigned short const& pi_rVerticalExaggeration, bool pi_ClipToEndValues, Byte const* pi_pDefaultRGB, HRPDEMFilter::UpperRangeValues const& pi_rUpperRangeValues) 
+    IntensityFilterImpl(double const& pi_UnitSizeX, double const& pi_UnitSizeY, const HRPDEMFilter::HillShadingSettings& pi_HillShadingSetting, uint16_t const& pi_rVerticalExaggeration, bool pi_ClipToEndValues, Byte const* pi_pDefaultRGB, HRPDEMFilter::UpperRangeValues const& pi_rUpperRangeValues) 
         :ElevationFilterImpl<_SrcT>(pi_UnitSizeX, pi_UnitSizeY, pi_HillShadingSetting, pi_rVerticalExaggeration, pi_ClipToEndValues, pi_pDefaultRGB, pi_rUpperRangeValues)
         {
         }
@@ -1207,7 +1207,7 @@ HRPDEMFilter::HillShadingSettings::HillShadingSettings()
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------
-HRPDEMFilter::HillShadingSettings::HillShadingSettings(unsigned short pi_AltitudeAngle, unsigned short pi_AzimuthDegree)
+HRPDEMFilter::HillShadingSettings::HillShadingSettings(uint16_t pi_AltitudeAngle, uint16_t pi_AzimuthDegree)
     :m_HillShadingState(false),
      m_AltitudeAngle(pi_AltitudeAngle),
      m_AzimuthDegree(pi_AzimuthDegree)
@@ -1234,7 +1234,7 @@ void HRPDEMFilter::HillShadingSettings::SetHillShadingState(bool state)
 //-----------------------------------------------------------------------------
 // GetAltitudeAngle
 //-----------------------------------------------------------------------------
-unsigned short HRPDEMFilter::HillShadingSettings::GetAltitudeAngle() const
+uint16_t HRPDEMFilter::HillShadingSettings::GetAltitudeAngle() const
     {
     return m_AltitudeAngle;
     }
@@ -1242,7 +1242,7 @@ unsigned short HRPDEMFilter::HillShadingSettings::GetAltitudeAngle() const
 //-----------------------------------------------------------------------------
 // SetAltitudeAngle
 //-----------------------------------------------------------------------------
-void        HRPDEMFilter::HillShadingSettings::SetAltitudeAngle(unsigned short pi_AltitudeAngle)
+void        HRPDEMFilter::HillShadingSettings::SetAltitudeAngle(uint16_t pi_AltitudeAngle)
     {
     m_AltitudeAngle = pi_AltitudeAngle;
     }
@@ -1250,7 +1250,7 @@ void        HRPDEMFilter::HillShadingSettings::SetAltitudeAngle(unsigned short p
 //-----------------------------------------------------------------------------
 // GetAzimuthDegree
 //-----------------------------------------------------------------------------
-unsigned short HRPDEMFilter::HillShadingSettings::GetAzimuthDegree() const
+uint16_t HRPDEMFilter::HillShadingSettings::GetAzimuthDegree() const
     {
     return m_AzimuthDegree;
     }
@@ -1258,7 +1258,7 @@ unsigned short HRPDEMFilter::HillShadingSettings::GetAzimuthDegree() const
 //-----------------------------------------------------------------------------
 // SetAzimuthDegree
 //-----------------------------------------------------------------------------
-void        HRPDEMFilter::HillShadingSettings::SetAzimuthDegree(unsigned short pi_AltitudeAngle)
+void        HRPDEMFilter::HillShadingSettings::SetAzimuthDegree(uint16_t pi_AltitudeAngle)
     {
     m_AzimuthDegree = pi_AltitudeAngle;
     }
@@ -1336,7 +1336,7 @@ void HRPDEMFilter::SetHillShadingSettings(const HRPDEMFilter::HillShadingSetting
 //-----------------------------------------------------------------------------
 // GetVerticalExaggeration
 //-----------------------------------------------------------------------------
-unsigned short HRPDEMFilter::GetVerticalExaggeration() const
+uint16_t HRPDEMFilter::GetVerticalExaggeration() const
     {
     return m_VerticalExaggeration;
     }
@@ -1344,7 +1344,7 @@ unsigned short HRPDEMFilter::GetVerticalExaggeration() const
 //-----------------------------------------------------------------------------
 // SetVerticalExaggeration
 //-----------------------------------------------------------------------------
-void HRPDEMFilter::SetVerticalExaggeration(unsigned short pi_VerticalExaggeration)
+void HRPDEMFilter::SetVerticalExaggeration(uint16_t pi_VerticalExaggeration)
     {
     m_VerticalExaggeration = pi_VerticalExaggeration;
     }
@@ -1639,7 +1639,7 @@ protected:
     HRPDEMFilter::HillShadingSettings const& GetHillShadingSettings() const {return m_DEMImageOPRef.GetHillShadingSettings();}
     double GetUnitSizeX() const {return m_DEMImageOPRef.GetUnitSizeX();}
     double GetUnitSizeY() const {return m_DEMImageOPRef.GetUnitSizeY();}
-    unsigned short GetVerticalExaggeration() const {return m_DEMImageOPRef.GetVerticalExaggeration();}
+    uint16_t GetVerticalExaggeration() const {return m_DEMImageOPRef.GetVerticalExaggeration();}
     HRPPixelNeighbourhood const& GetNeighbourhood() const {return m_DEMImageOPRef.GetNeighbourhood();}
     
 
@@ -1699,7 +1699,7 @@ struct ElevationFilterProcessorT : public DEMFilterProcessor_T<Src_T, Src_T, Has
 
         HRPPixelNeighbourhood const& neighbourhood = DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::GetNeighbourhood();
 
-        unsigned short verticalExaggeration = DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::GetVerticalExaggeration();
+        uint16_t verticalExaggeration = DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::GetVerticalExaggeration();
 
         for(uint32_t Line=neighbourhood.GetYOrigin(); Line < Heigh + neighbourhood.GetYOrigin(); ++Line)
             {
@@ -1841,7 +1841,7 @@ public:
 
         HRPPixelNeighbourhood const& neighbourhood = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetNeighbourhood();
 
-        unsigned short verticalExaggeration = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetVerticalExaggeration();
+        uint16_t verticalExaggeration = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetVerticalExaggeration();
 
         for(uint32_t Line=neighbourhood.GetYOrigin(); Line < Heigh + neighbourhood.GetYOrigin(); ++Line)
             {
@@ -2012,7 +2012,7 @@ public:
 
         HRPPixelNeighbourhood const& neighbourhood = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetNeighbourhood();
 
-        unsigned short verticalExaggeration = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetVerticalExaggeration();
+        uint16_t verticalExaggeration = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetVerticalExaggeration();
 
         for(uint32_t Line=neighbourhood.GetYOrigin(); Line < Heigh + neighbourhood.GetYOrigin(); ++Line)
             {
@@ -2209,8 +2209,8 @@ HRAImageOpDEMFilter::~HRAImageOpDEMFilter()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Byte const* HRAImageOpDEMFilter::GetDefaultRGBA() const             {return (Byte*)&m_defaultRGBA;}
 void        HRAImageOpDEMFilter::SetDefaultRGBA(Byte const* rgba)   {memcpy(&m_defaultRGBA, rgba, sizeof(m_defaultRGBA));}
-unsigned short HRAImageOpDEMFilter::GetVerticalExaggeration() const                 {return m_verticalExaggeration;}
-void        HRAImageOpDEMFilter::SetVerticalExaggeration(unsigned short newExaggeration) {m_verticalExaggeration=newExaggeration;}
+uint16_t HRAImageOpDEMFilter::GetVerticalExaggeration() const                 {return m_verticalExaggeration;}
+void        HRAImageOpDEMFilter::SetVerticalExaggeration(uint16_t newExaggeration) {m_verticalExaggeration=newExaggeration;}
 bool        HRAImageOpDEMFilter::GetClipToEndValue() const          {return m_clipToEndValue;}
 void        HRAImageOpDEMFilter::SetClipToEndValue(bool clipToEnd)  {m_clipToEndValue=clipToEnd;}
 double      HRAImageOpDEMFilter::GetUnitSizeX() const               {return m_unitSizeX;}

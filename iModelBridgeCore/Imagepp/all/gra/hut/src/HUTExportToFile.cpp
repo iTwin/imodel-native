@@ -581,7 +581,7 @@ void HUTExportToFile::Export()
                 // copy the palette to the HRF
                 HRPPixelPalette Palette = pDstPixelType->GetPalette();
                 HAutoPtr<HRFResolutionEditor> pDstResolutionEditor;
-                for (unsigned short i = 0; i < pDstPageDesc->CountResolutions(); i++)
+                for (uint16_t i = 0; i < pDstPageDesc->CountResolutions(); i++)
                     {
                     pDstResolutionEditor = m_pDestinationFile->CreateResolutionEditor(0, i, HFC_CREATE_ONLY);
                     pDstResolutionEditor->SetPalette(Palette);
@@ -603,8 +603,8 @@ void HUTExportToFile::Export()
         bool  Is1BitRLE=false;
         for (uint32_t ResNumber=0; ResNumber < m_pDestinationFile->GetPageDescriptor(0)->CountResolutions(); ResNumber++)
             {
-            uint32_t ResSize  = m_pDestinationFile->GetPageDescriptor(0)->GetResolutionDescriptor((unsigned short)ResNumber)->GetBlockSizeInBytes();
-            if (m_pDestinationFile->GetPageDescriptor(0)->GetResolutionDescriptor((unsigned short)ResNumber)->GetPixelType()->CountPixelRawDataBits() == 1)
+            uint32_t ResSize  = m_pDestinationFile->GetPageDescriptor(0)->GetResolutionDescriptor((uint16_t)ResNumber)->GetBlockSizeInBytes();
+            if (m_pDestinationFile->GetPageDescriptor(0)->GetResolutionDescriptor((uint16_t)ResNumber)->GetPixelType()->CountPixelRawDataBits() == 1)
                 {
                 ResSize  *= 16; // Compression RLE1 bad case
                 Is1BitRLE = true;
@@ -623,7 +623,7 @@ void HUTExportToFile::Export()
         HPMPool::MemoryMgrType SelectedMemMgr = HPMPool::KeepLastBlock;
         if (Is1BitRLE)
             SelectedMemMgr = HPMPool::None;         // Disable Mgr for 1 bit output
-        else if (m_pDestinationFile->GetPageDescriptor(0)->GetResolutionDescriptor((unsigned short)0)->GetBlockType() == HRFBlockType::STRIP)
+        else if (m_pDestinationFile->GetPageDescriptor(0)->GetResolutionDescriptor((uint16_t)0)->GetBlockType() == HRFBlockType::STRIP)
             SelectedMemMgr = HPMPool::ExportRaster; // Optimize - Stripped output
 
         // Disable memory manager if 1bitRLE,  because the editor replace the buffer in the packet...
@@ -768,7 +768,7 @@ void HUTExportToFile::Export()
 
             HRFPageDescriptor* pPageDescriptor = m_pDestinationFile->GetPageDescriptor(0);
 
-            for (unsigned short ResInd = 0; ResInd < pPageDescriptor->CountResolutions(); ResInd++)
+            for (uint16_t ResInd = 0; ResInd < pPageDescriptor->CountResolutions(); ResInd++)
                 {
                 TotalNbBlocks += pPageDescriptor->GetResolutionDescriptor(ResInd)->CountBlocks();
                 }
@@ -940,7 +940,7 @@ void HUTExportToFile::InitSourceFile()
         HRFRasterFileBlockAdapter::BlockDescriptor    BlockDesc;
         BlockDesc.m_BlockType   = HRFBlockType(HRFBlockType::STRIP);
 
-        HASSERT(m_pSourceFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth() <= ULONG_MAX);
+        HASSERT(m_pSourceFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth() <= UINT32_MAX);
         BlockDesc.m_BlockWidth  = (uint32_t)m_pSourceFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth();
         BlockDesc.m_BlockHeight = AdaptHeight;
         BlockDescMap.insert(HRFRasterFileBlockAdapter::BlockDescriptorMap::value_type(0, BlockDesc));
@@ -1142,7 +1142,7 @@ HUTExportToFile::ExportSizeEstimator::ExportSizeEstimator(HFCPtr<HRFRasterFile>&
 
     m_NbPixelsPerBlock.resize(pPageDescriptor->CountResolutions(), 0);
 
-    for (unsigned short ResInd = 0; ResInd < pPageDescriptor->CountResolutions(); ResInd++)
+    for (uint16_t ResInd = 0; ResInd < pPageDescriptor->CountResolutions(); ResInd++)
         {
         m_TotalNbOfPixelsAllRes += pPageDescriptor->GetResolutionDescriptor(ResInd)->GetWidth() *
                                    pPageDescriptor->GetResolutionDescriptor(ResInd)->GetHeight();
@@ -1197,7 +1197,7 @@ uint64_t HUTExportToFile::ExportSizeEstimator::EstimateCompressedFileSize()
         {
         uint64_t NbExportedPixels = 0;
 
-        for (int ResInd = 0; ResInd < m_NbRes; ResInd++)
+        for (int32_t ResInd = 0; ResInd < m_NbRes; ResInd++)
             {
             NbExportedPixels += HUTExportProgressIndicator::GetInstance()->GetNbExportedBlocks(ResInd) *
                                 m_NbPixelsPerBlock[ResInd];

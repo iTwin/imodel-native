@@ -132,15 +132,15 @@ HRPColorBalanceFilter16::HRPColorBalanceFilter16(int32_t pi_GlobalVar, const HFC
 
     InitializeMap(pi_GlobalVar, pi_GlobalVar, pi_GlobalVar);
 
-    int AlphaIndex;
+    int32_t AlphaIndex;
     if ((AlphaIndex = pi_pFilterPixelType->GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0)) != HRPChannelType::FREE)
         {
-        unsigned short map[65536];
+        uint16_t map[65536];
 
         //Don't apply color balance on alpha channel if present
-        for(int index = 0; index < 65536; index++)
+        for(int32_t index = 0; index < 65536; index++)
             {
-            map[index] = (unsigned short)index;
+            map[index] = (uint16_t)index;
             }
         SetMap((Byte)AlphaIndex, map);
         }
@@ -183,7 +183,7 @@ void HRPColorBalanceFilter16::InitializeMap(int32_t pi_RedVar,
                                             int32_t pi_GreenVar,
                                             int32_t pi_BlueVar)
     {
-    unsigned short Map[65536];
+    uint16_t Map[65536];
     int32_t Var=0;
 
     for(Byte ChannelIndex = 0; ChannelIndex < 3; ChannelIndex++)
@@ -201,14 +201,14 @@ void HRPColorBalanceFilter16::InitializeMap(int32_t pi_RedVar,
                 break;
             }
 
-        for(int SampleIndex = 0; SampleIndex < 65536; SampleIndex++)
+        for(int32_t SampleIndex = 0; SampleIndex < 65536; SampleIndex++)
             {
             if((SampleIndex + Var) < 0)
                 Map[SampleIndex] = 0;
             else if((SampleIndex + Var) > 65535)
                 Map[SampleIndex] = 65535;
             else
-                Map[SampleIndex] = (unsigned short)(SampleIndex + Var);
+                Map[SampleIndex] = (uint16_t)(SampleIndex + Var);
             }
         SetMap(ChannelIndex, Map);
         }
@@ -259,7 +259,7 @@ HRPContrastFilter16::HRPContrastFilter16()
 //
 //-----------------------------------------------------------------------------
 
-HRPContrastFilter16::HRPContrastFilter16(short pi_Var)
+HRPContrastFilter16::HRPContrastFilter16(int16_t pi_Var)
     :HRPMapFilter16()
     {
     Init(pi_Var);
@@ -269,7 +269,7 @@ HRPContrastFilter16::HRPContrastFilter16(short pi_Var)
 //
 //-----------------------------------------------------------------------------
 
-HRPContrastFilter16::HRPContrastFilter16(short pi_Var,const HFCPtr<HRPPixelType>& pi_pFilterPixelType)
+HRPContrastFilter16::HRPContrastFilter16(int16_t pi_Var,const HFCPtr<HRPPixelType>& pi_pFilterPixelType)
     :HRPMapFilter16(pi_pFilterPixelType)
     {
     Init(pi_Var);
@@ -277,12 +277,12 @@ HRPContrastFilter16::HRPContrastFilter16(short pi_Var,const HFCPtr<HRPPixelType>
     uint32_t AlphaIndex;
     if ((AlphaIndex = pi_pFilterPixelType->GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0)) != HRPChannelType::FREE)
         {
-        unsigned short map[65536];
+        uint16_t map[65536];
 
         //Don't apply color balance on alpha channel if present
-        for(int index = 0; index < 65536; index++)
+        for(int32_t index = 0; index < 65536; index++)
             {
-            map[index] = (unsigned short)index;
+            map[index] = (uint16_t)index;
             }
         SetMap((Byte)AlphaIndex, map);
         }
@@ -311,9 +311,9 @@ HRPFilter* HRPContrastFilter16::Clone() const
 //
 //-----------------------------------------------------------------------------
 
-void HRPContrastFilter16::Init(short pi_Var)
+void HRPContrastFilter16::Init(int16_t pi_Var)
     {
-    unsigned short Map[65536];
+    uint16_t Map[65536];
     int32_t X;
 
     if(pi_Var > 0)
@@ -322,7 +322,7 @@ void HRPContrastFilter16::Init(short pi_Var)
             Map[X] = 0;
 
         for(X = pi_Var; X <= 65535 - pi_Var; X++)
-            Map[X] = (unsigned short)(65535.0 * ((X - pi_Var) / (65535 - 2.0 * pi_Var)));
+            Map[X] = (uint16_t)(65535.0 * ((X - pi_Var) / (65535 - 2.0 * pi_Var)));
 
         for(X = 65536 - pi_Var; X <= 65535; X++)
             Map[X] = 65535;
@@ -330,7 +330,7 @@ void HRPContrastFilter16::Init(short pi_Var)
     else
         {
         for(X = 0; X <= 65535; X++)
-            Map[X] = (unsigned short)((65535 - (-2 * pi_Var)) * X / 65535 - pi_Var);
+            Map[X] = (uint16_t)((65535 - (-2 * pi_Var)) * X / 65535 - pi_Var);
         }
 
     for(Byte ChannelIndex = 0; ChannelIndex < 3; ChannelIndex++)
@@ -351,9 +351,9 @@ HRPContrastFilter16::~HRPContrastFilter16()
 //
 //-----------------------------------------------------------------------------
 
-short HRPContrastFilter16::GetIntensity() const
+int16_t HRPContrastFilter16::GetIntensity() const
     {
-    return (short)m_Intensity;
+    return (int16_t)m_Intensity;
     }
 
 //-----------------------------------------------------------------------------
@@ -419,13 +419,13 @@ HRPHistogramScalingFilter16::~HRPHistogramScalingFilter16()
 //-----------------------------------------------------------------------------
 
 void HRPHistogramScalingFilter16::GetInterval(Byte   pi_ChannelIndex,
-                                              unsigned short* po_pMinValue,
-                                              unsigned short* po_pMaxValue)
+                                              uint16_t* po_pMinValue,
+                                              uint16_t* po_pMaxValue)
     {
     HPRECONDITION(po_pMinValue != 0);
     HPRECONDITION(po_pMaxValue != 0);
 
-    unsigned short* pMap = GetMap(pi_ChannelIndex);
+    uint16_t* pMap = GetMap(pi_ChannelIndex);
     *po_pMinValue = pMap[0];
     *po_pMaxValue = pMap[255];
     }
@@ -436,23 +436,23 @@ void HRPHistogramScalingFilter16::GetInterval(Byte   pi_ChannelIndex,
 //-----------------------------------------------------------------------------
 
 void HRPHistogramScalingFilter16::SetInterval(Byte  pi_ChannelIndex,
-                                              unsigned short pi_MinValue,
-                                              unsigned short pi_MaxValue)
+                                              uint16_t pi_MinValue,
+                                              uint16_t pi_MaxValue)
     {
     HPRECONDITION(pi_MinValue <= pi_MaxValue);
     HPRECONDITION(pi_MinValue < 65536);
     HPRECONDITION(pi_MaxValue < 65536);
 
     // Build the map
-    unsigned short Map[65536];
+    uint16_t Map[65536];
     if (m_ScalingMode == HRPHistogramScalingFilter16::INPUT_RANGE_CLIPPING)
         {
-        int i;
+        int32_t i;
         for (i = 0; i < pi_MinValue; i++)
             Map[i] = 0;
 
         for (i = pi_MinValue; i < pi_MaxValue; i++)
-            Map[i] = (unsigned short)(((double)(i - pi_MinValue) / (double)(pi_MaxValue - pi_MinValue)) * 65535.0);
+            Map[i] = (uint16_t)(((double)(i - pi_MinValue) / (double)(pi_MaxValue - pi_MinValue)) * 65535.0);
 
         for (i = pi_MaxValue; i < 65536; i++)
             Map[i] = 65535;
@@ -461,9 +461,9 @@ void HRPHistogramScalingFilter16::SetInterval(Byte  pi_ChannelIndex,
         {
         double Step = (double)(pi_MaxValue - pi_MinValue) / 65536.0;
         double Factor = 0;
-        for (int i = 0; i < 65536; i++)
+        for (int32_t i = 0; i < 65536; i++)
             {
-            Map[i] = (unsigned short)((double)pi_MinValue + Factor);
+            Map[i] = (uint16_t)((double)pi_MinValue + Factor);
             Factor += Step;
             }
         }
@@ -512,14 +512,14 @@ HRPGammaFilter16::HRPGammaFilter16(double pi_Gamma)
     // If gamma == 1, there is nothing to do.
     if(pi_Gamma != 1.0)
         {
-        unsigned short Map[65536];
+        uint16_t Map[65536];
         double Power = 1.0 / pi_Gamma;
-        for (int Index = 0; Index < 65536; ++Index)
+        for (int32_t Index = 0; Index < 65536; ++Index)
             {
             HASSERT(Index < GetMapSize());
 
             double Intensity = static_cast<double>(Index) / 65535.0;
-            Map[Index] = (unsigned short)((65535.0 * pow(Intensity, Power) + .499999));
+            Map[Index] = (uint16_t)((65535.0 * pow(Intensity, Power) + .499999));
             }
 
         for(Byte Channel = 0; Channel < 3; ++Channel)
@@ -571,13 +571,13 @@ HRPGammaFilter16::~HRPGammaFilter16()
 
 HRPInvertFilter16::HRPInvertFilter16()
     {
-    unsigned short Map[65536];
+    uint16_t Map[65536];
 
     for(Byte Channel = 0; Channel < 3; ++Channel)
         {
-        for(int Index = 0; Index < 65536; ++Index)
+        for(int32_t Index = 0; Index < 65536; ++Index)
             {
-            Map[Index] = (unsigned short)(65535 - Index);
+            Map[Index] = (uint16_t)(65535 - Index);
             }
         SetMap(Channel, Map);
         }
@@ -626,14 +626,14 @@ HRPTintFilter16::HRPTintFilter16()
 //
 //-----------------------------------------------------------------------------
 
-HRPTintFilter16::HRPTintFilter16(unsigned short pi_TintColor[3])
+HRPTintFilter16::HRPTintFilter16(uint16_t pi_TintColor[3])
     {
     for(Byte Channel = 0; Channel < 3; ++Channel)
         {
-        unsigned short Map[65556];
+        uint16_t Map[65556];
 
-        for(int Index = 0; Index < 65556; ++Index)
-            Map[Index] = (unsigned short)((Index * pi_TintColor[Channel]) / 65555U);
+        for(int32_t Index = 0; Index < 65556; ++Index)
+            Map[Index] = (uint16_t)((Index * pi_TintColor[Channel]) / 65555U);
 
         SetMap(Channel, Map);
         }

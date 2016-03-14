@@ -146,15 +146,15 @@ void s_AddHRPFilterToPipeline(ImageOpList& imageOpList, HRPFilter& filter)
 
         uint32_t channelCount = pHRPHistoFilter->GetFilterPixelType()->GetChannelOrg().CountChannels();
 
-        for(unsigned short i=0; i < channelCount; ++i)
+        for(uint32_t i=0; i < channelCount; ++i)
             {
-            unsigned short minValue, maxValue;
-            pHRPHistoFilter->GetInterval(i, &minValue, &maxValue);
+            uint16_t minValue, maxValue;
+            pHRPHistoFilter->GetInterval((uint16_t)i, &minValue, &maxValue);
 
             if(pHRPHistoFilter->GetScalingMode() == HRPHistogramScalingFilter::INPUT_RANGE_CLIPPING)
-                pNewOp->SetInterval(i, minValue, maxValue);
+                pNewOp->SetInterval((uint16_t)i, minValue, maxValue);
             else
-                pNewOp->SetContrastInterval(i, minValue, maxValue);
+                pNewOp->SetContrastInterval((uint16_t)i, minValue, maxValue);
             }
 
         imageOpList.push_back(pNewOp);
@@ -413,7 +413,7 @@ void s_AddHRPFilterToPipeline(ImageOpList& imageOpList, HRPFilter& filter)
         }
     else if(filter.IsCompatibleWith(HRPContrastFilter16::CLASS_ID))
         {
-        short contrast = static_cast<HRPContrastFilter16*>(&filter)->GetIntensity();
+        int16_t contrast = static_cast<HRPContrastFilter16*>(&filter)->GetIntensity();
         double normalizedContrast = contrast < 0 ? contrast/32768.0 : contrast/32512.0;  
         HRAImageOpPtr pNewOp = HRAImageOpContrastFilter::CreateContrastFilter(normalizedContrast);
         imageOpList.push_back(pNewOp);

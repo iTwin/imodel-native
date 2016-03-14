@@ -404,7 +404,7 @@ ImagePPStatus HRAImageOpMapFilter::GetMatchingPixelType(HFCPtr<HRPPixelType>& pi
     if (pixelTypeToMatch != NULL)
         {
         // Try to find the best match for pixelTypeToMatch. Try to preserve alpha and pixel depth.
-        unsigned short pixelDepth = pixelTypeToMatch->GetChannelOrg().GetChannelPtr(0)->GetSize();
+        uint16_t pixelDepth = pixelTypeToMatch->GetChannelOrg().GetChannelPtr(0)->GetSize();
         if (pixelTypeToMatch->GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) != HRPChannelType::FREE)
             {
             // Pixel type to match has an alpha channel.

@@ -64,7 +64,7 @@ HGF2DWorldIdentificator HPSNode::GetWorldID() const
     }
 
 //---------------------------------------------------------------------------
-short HPSNode::CountPages() const
+int16_t HPSNode::CountPages() const
     {
     if (static_cast<HPSSession*>(GetSession().GetPtr())->CountPages() == 0)
         {
@@ -72,7 +72,7 @@ short HPSNode::CountPages() const
                                        GetSubNodes(),
                                        GetSession()));
         }
-    return (short)static_cast<HPSSession*>(GetSession().GetPtr())->CountPages();
+    return (int16_t)static_cast<HPSSession*>(GetSession().GetPtr())->CountPages();
     }
 
 //---------------------------------------------------------------------------

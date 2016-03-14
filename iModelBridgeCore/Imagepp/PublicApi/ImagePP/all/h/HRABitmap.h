@@ -54,7 +54,7 @@ public:
     virtual HRARasterEditor*
                     CreateEditorUnShaped (HFCAccessMode pi_Mode) override;
 
-    virtual unsigned short GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms) override;
+    virtual uint16_t GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms) override;
 
     virtual void    ComputeHistogram(HRAHistogramOptions* pio_pHistogramOptions,
                                      bool                pi_ForceRecompute = false) override;

@@ -54,9 +54,9 @@ HMDMetaDataContainerList& HMDMetaDataContainerList::operator=(const HMDMetaDataC
 // Public
 // Get the number of metadata containers
 //-----------------------------------------------------------------------------
-unsigned short HMDMetaDataContainerList::GetNbContainers() const
+uint16_t HMDMetaDataContainerList::GetNbContainers() const
     {
-    return (unsigned short)m_MetaDataContainers.size();
+    return (uint16_t)m_MetaDataContainers.size();
     }
 
 //-----------------------------------------------------------------------------

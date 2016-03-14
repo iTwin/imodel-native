@@ -76,7 +76,7 @@ bool HRFGeoTiffTable::IsClientTxtFileUsed(bool pi_CoordSysTable,
 // public
 // FindUnitsRecord
 //-----------------------------------------------------------------------------
-const bool HRFGeoTiffTable::FindUnits(unsigned short          pi_UnitKey,
+const bool HRFGeoTiffTable::FindUnits(uint16_t          pi_UnitKey,
                                        HRFGeoTiffUnitsTable::HRFGeoTiffUnitsRecord*
                                        po_pRecord)
     {
@@ -89,7 +89,7 @@ const bool HRFGeoTiffTable::FindUnits(unsigned short          pi_UnitKey,
 // public
 // FindGeotifcsRecord
 //-----------------------------------------------------------------------------
-const bool HRFGeoTiffTable::FindCoordSysUnits(unsigned short  pi_GeoKey,
+const bool HRFGeoTiffTable::FindCoordSysUnits(uint16_t  pi_GeoKey,
                                                HRFGeoTiffUnitsTable::HRFGeoTiffUnitsRecord*
                                                po_pRecord)
     {
@@ -108,7 +108,7 @@ const bool HRFGeoTiffTable::FindCoordSysUnits(unsigned short  pi_GeoKey,
 // public
 // FindGeotifcsProjectionRecord
 //-----------------------------------------------------------------------------
-const bool HRFGeoTiffTable::FindProjectionUnits(unsigned short        pi_GeoKey,
+const bool HRFGeoTiffTable::FindProjectionUnits(uint16_t        pi_GeoKey,
                                                  HRFGeoTiffUnitsTable::HRFGeoTiffUnitsRecord*
                                                  po_pRecord)
     {

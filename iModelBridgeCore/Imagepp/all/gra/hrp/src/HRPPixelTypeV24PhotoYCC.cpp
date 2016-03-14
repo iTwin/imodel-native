@@ -101,7 +101,7 @@ static const Byte s_LookUpTable[] =
    Values have been rounded.
 */
 
-static const unsigned short s_RGBGammaTable[] =
+static const uint16_t s_RGBGammaTable[] =
     {
     0,5,9,14,18,23,27,30,34,37,
     40,43,46,48,51,53,55,58,60,62,
@@ -520,7 +520,7 @@ protected:
 
         // fill the octree with the destination palette entries
         int32_t NbIndex(rPalette.CountUsedEntries());
-        for(int Index = 0; Index < NbIndex; Index++)
+        for(int32_t Index = 0; Index < NbIndex; Index++)
             m_QuantizedPalette.AddCompositeValue(rPalette.GetCompositeValue(Index),
                                                  (Byte)Index);
         }
@@ -553,9 +553,9 @@ public:
         double C1;
         double C2;
 
-        short LS;
-        short C1S;
-        short C2S;
+        int16_t LS;
+        int16_t C1S;
+        int16_t C2S;
 
         // Copy entire bytes
         while(pi_PixelsCount)
@@ -579,9 +579,9 @@ public:
             C2 = 0.701 * RCorrected - GMult - BMult;
 
             // Scale in [0, 255]
-            LS  = (short)(L / 1.402);
-            C1S = (short)(C1 * 0.436862745 + 156);   // 0.436862745 = 111.4 / 255
-            C2S = (short)(C2 * 0.531921569 + 137);   // 0.531921569 = 135.64 / 255
+            LS  = (int16_t)(L / 1.402);
+            C1S = (int16_t)(C1 * 0.436862745 + 156);   // 0.436862745 = 111.4 / 255
+            C2S = (int16_t)(C2 * 0.531921569 + 137);   // 0.531921569 = 135.64 / 255
 
             pDestComposite[0] = CLAMPINVTABLE(LS);
             pDestComposite[1] = CLAMPINVTABLE(C1S);
@@ -634,9 +634,9 @@ public:
         double C1;
         double C2;
 
-        short LS;
-        short C1S;
-        short C2S;
+        int16_t LS;
+        int16_t C1S;
+        int16_t C2S;
 
         // Copy entire bytes
         while(pi_PixelsCount)
@@ -666,9 +666,9 @@ public:
             C2 = 0.701 * RCorrected - GMult - BMult;
 
             // Scale in [0, 255]
-            LS  = (short)(L / 1.402);
-            C1S = (short)(C1 * 0.436862745 + 156);   // 0.436862745 = 111.4 / 255
-            C2S = (short)(C2 * 0.531921569 + 137);   // 0.531921569 = 135.64 / 255
+            LS  = (int16_t)(L / 1.402);
+            C1S = (int16_t)(C1 * 0.436862745 + 156);   // 0.436862745 = 111.4 / 255
+            C2S = (int16_t)(C2 * 0.531921569 + 137);   // 0.531921569 = 135.64 / 255
 
             pDestComposite[0] = CLAMPINVTABLE(LS);
             pDestComposite[1] = CLAMPINVTABLE(C1S);
@@ -725,7 +725,7 @@ public:
         }
 
 
-    virtual const short* GetLostChannels() const override
+    virtual const int16_t* GetLostChannels() const override
         {
         return m_LostChannels;
         }
@@ -736,9 +736,9 @@ public:
 
 private:
 
-    static short m_LostChannels[];
+    static int16_t m_LostChannels[];
     };
-short ConverterV32R8G8B8A8_V24PhotoYCC::m_LostChannels[] = {3, -1};
+int16_t ConverterV32R8G8B8A8_V24PhotoYCC::m_LostChannels[] = {3, -1};
 static ConverterV32R8G8B8A8_V24PhotoYCC        s_V32R8G8B8A8_V24PhotoYCC;
 
 //-----------------------------------------------------------------------------
@@ -767,9 +767,9 @@ public:
         double C1;
         double C2;
 
-        short LS;
-        short C1S;
-        short C2S;
+        int16_t LS;
+        int16_t C1S;
+        int16_t C2S;
 
         // Copy entire bytes
         while(pi_PixelsCount)
@@ -801,9 +801,9 @@ public:
             C2 = 0.701 * RCorrected - GMult - BMult;
 
             // Scale in [0, 255]
-            LS =  (short)(L / 1.402);
-            C1S = (short)(C1 * 0.436862745 + 156);   // 0.436862745 = 111.4 / 255
-            C2S = (short)(C2 * 0.531921569 + 137);   // 0.531921569 = 135.64 / 255
+            LS =  (int16_t)(L / 1.402);
+            C1S = (int16_t)(C1 * 0.436862745 + 156);   // 0.436862745 = 111.4 / 255
+            C2S = (int16_t)(C2 * 0.531921569 + 137);   // 0.531921569 = 135.64 / 255
 
             pDestComposite[0] = CLAMPINVTABLE(LS);
             pDestComposite[1] = CLAMPINVTABLE(C1S);
@@ -878,7 +878,7 @@ public:
         };
 
 
-    virtual const short* GetLostChannels() const override
+    virtual const int16_t* GetLostChannels() const override
         {
         return m_LostChannels;
         }
@@ -889,9 +889,9 @@ public:
 
 private:
 
-    static short m_LostChannels[];
+    static int16_t m_LostChannels[];
     };
-short ConverterV32PR8PG8PB8A8_V24PhotoYCC::m_LostChannels[] = {3, -1};
+int16_t ConverterV32PR8PG8PB8A8_V24PhotoYCC::m_LostChannels[] = {3, -1};
 static struct ConverterV32PR8PG8PB8A8_V24PhotoYCC        s_V32PR8PG8PB8A8_V24PhotoYCC;
 
 
@@ -1033,7 +1033,7 @@ HPMPersistentObject* HRPPixelTypeV24PhotoYCC::Clone() const
     @end
     -----------------------------------------------------------------------------
  */
-unsigned short HRPPixelTypeV24PhotoYCC::CountValueBits() const
+uint16_t HRPPixelTypeV24PhotoYCC::CountValueBits() const
     {
     return 24;
     }

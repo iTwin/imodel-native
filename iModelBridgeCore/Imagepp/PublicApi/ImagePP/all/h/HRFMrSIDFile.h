@@ -79,7 +79,7 @@ public:
     virtual bool                         AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage);
 
     virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
-                                                                 unsigned short           pi_Resolution,
+                                                                 uint16_t           pi_Resolution,
                                                                  HFCAccessMode             pi_AccessMode);
 
     // TR 246254 - Patch for MrSID for backward compatibility purpose.
@@ -104,7 +104,7 @@ public:
 
     // Sets the LookAhead for a shape
     virtual void                        SetLookAhead            (uint32_t                   pi_Page,
-                                                                 unsigned short            pi_Resolution,
+                                                                 uint16_t            pi_Resolution,
                                                                  const HVEShape&            pi_rShape,
                                                                  uint32_t                   pi_ConsumerID,
                                                                  bool                      pi_Async);
@@ -133,8 +133,8 @@ protected:
     void                                BuildTransfoModelMatrix(bool pi_HasModelType, HFCPtr<HGF2DTransfoModel>& po_prTranfoModel);
 
     size_t                       m_ResCount;
-    unsigned int*                m_pStdViewWidth;
-    unsigned int*                m_pStdViewHeight;
+    uint32_t*                    m_pStdViewWidth;
+    uint32_t*                    m_pStdViewHeight;
     double*                      m_pRatio;
 
     LizardTech::LTISceneBuffer* m_pSceneBuffer;

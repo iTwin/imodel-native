@@ -94,34 +94,34 @@ public:
 
 
 
-    IMAGEPP_EXPORT bool             GetValue (unsigned short pi_Key, uint32_t*  po_pVal) const;
-    IMAGEPP_EXPORT bool             GetValue (unsigned short pi_Key, double* po_pVal) const;
-    IMAGEPP_EXPORT bool             GetValue (unsigned short pi_Key, WString* po_pVal) const;
+    IMAGEPP_EXPORT bool             GetValue (uint16_t pi_Key, uint32_t*  po_pVal) const;
+    IMAGEPP_EXPORT bool             GetValue (uint16_t pi_Key, double* po_pVal) const;
+    IMAGEPP_EXPORT bool             GetValue (uint16_t pi_Key, WString* po_pVal) const;
 
-    IMAGEPP_EXPORT bool             SetValue (unsigned short pi_Key, uint32_t pi_Val);
-    IMAGEPP_EXPORT bool             SetValue (unsigned short pi_Key, double pi_Val);
-    IMAGEPP_EXPORT bool             SetValue (unsigned short pi_Key, WString& pi_Val);
+    IMAGEPP_EXPORT bool             SetValue (uint16_t pi_Key, uint32_t pi_Val);
+    IMAGEPP_EXPORT bool             SetValue (uint16_t pi_Key, double pi_Val);
+    IMAGEPP_EXPORT bool             SetValue (uint16_t pi_Key, WString& pi_Val);
 
     // From IGeoTiffKeysList
     IMAGEPP_EXPORT virtual bool     GetFirstKey(GeoKeyItem* po_Key) const override;
     IMAGEPP_EXPORT virtual bool     GetNextKey(GeoKeyItem* po_Key) const override;
 
-    IMAGEPP_EXPORT virtual void     AddKey (unsigned short pi_KeyID, uint32_t pi_value) override;
-    IMAGEPP_EXPORT virtual void     AddKey (unsigned short pi_KeyID, double pi_value) override;
-    IMAGEPP_EXPORT virtual void     AddKey (unsigned short pi_KeyID, const std::string& pi_value) override;
+    IMAGEPP_EXPORT virtual void     AddKey (uint16_t pi_KeyID, uint32_t pi_value) override;
+    IMAGEPP_EXPORT virtual void     AddKey (uint16_t pi_KeyID, double pi_value) override;
+    IMAGEPP_EXPORT virtual void     AddKey (uint16_t pi_KeyID, const std::string& pi_value) override;
     IMAGEPP_EXPORT virtual void     AddKey (const GeoKeyItem& key) override;
 
-    IMAGEPP_EXPORT size_t           EraseKey(unsigned short pi_KeyID);
+    IMAGEPP_EXPORT size_t           EraseKey(uint16_t pi_KeyID);
 
     // Utility methods
-    IMAGEPP_EXPORT bool             HasKey (unsigned short pi_KeyID) const;
-    IMAGEPP_EXPORT unsigned short   GetNbKeys() const;
+    IMAGEPP_EXPORT bool             HasKey (uint16_t pi_KeyID) const;
+    IMAGEPP_EXPORT uint16_t   GetNbKeys() const;
 
 
 
 
     //Static methods
-    IMAGEPP_EXPORT static unsigned short DecodeGeoKeyIDFromString(const WString& pi_rGeoTagLabel);
+    IMAGEPP_EXPORT static uint16_t DecodeGeoKeyIDFromString(const WString& pi_rGeoTagLabel);
 
     IMAGEPP_EXPORT static HFCPtr<HGF2DTransfoModel> GetTransfoModelForReprojection(const HFCPtr<HGF2DCoordSys>&        pi_rpRasterCoordSys,
                                                                                   const HGF2DExtent&                   pi_rRasterExtent,
@@ -185,7 +185,7 @@ private:
     // Members
 
     // The key is the GeoKey.
-    typedef map<unsigned short, GeoKeyItem> GeoKeyList;
+    typedef map<uint16_t, GeoKeyItem> GeoKeyList;
     GeoKeyList                              m_GeoKeyList;
     mutable GeoKeyList::const_iterator      m_GeoKeyListItr;
 

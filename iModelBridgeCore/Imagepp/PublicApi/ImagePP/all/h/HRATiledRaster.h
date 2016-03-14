@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRATiledRaster.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -209,7 +209,7 @@ public:
     // (Used by the HRSObjectStore)
     IMAGEPP_EXPORT /*IppImaging_Needs*/ const HFCPtr<HRATile> GetTile(uint64_t pi_PosX, uint64_t pi_PosY) const;
 
-    virtual unsigned short GetRepresentativePalette(
+    virtual uint16_t GetRepresentativePalette(
         HRARepPalParms* pio_pRepPalParms);
 
     virtual void    ComputeHistogram(HRAHistogramOptions* pio_pOptions,

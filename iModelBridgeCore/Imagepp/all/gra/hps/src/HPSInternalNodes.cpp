@@ -615,7 +615,7 @@ void StatementInstanciationNode::Calculate()
 
     if (GetSubNodes().size() == 4)
         {
-        unsigned short Pos = 0;
+        uint16_t Pos = 0;
         HPANode* pNode = GetSubNodes()[2];
         while (pNode)
             {
@@ -755,9 +755,9 @@ void ImageFileExpressionNode::Calculate()
             HFCPtr<HMDLayers>           pLayersFromPSS((HFCPtr<HMDLayers>&)pMDContainerFromPSS);
             HFCPtr<HMDVolatileLayers>   pVolatileLayersFromRaster((HFCPtr<HMDVolatileLayers>&)pMDContainerFromRaster);
             HMDVolatileLayerInfo*       pVolatileLayerInfo;
-            unsigned short             LayerIndex;
+            uint16_t             LayerIndex;
 
-            for (unsigned short LayerInd = 0; LayerInd < pVolatileLayersFromRaster->GetNbVolatileLayers(); LayerInd++)
+            for (uint16_t LayerInd = 0; LayerInd < pVolatileLayersFromRaster->GetNbVolatileLayers(); LayerInd++)
                 {
                 pVolatileLayerInfo = pVolatileLayersFromRaster->GetVolatileLayerInfo(LayerInd);
 
@@ -1542,29 +1542,29 @@ RGBCubeExpressionNode::~RGBCubeExpressionNode()
 
 void RGBCubeExpressionNode::Calculate()
     {
-    short Rmin, Rmax, Gmin, Gmax, Bmin, Bmax;
+    int16_t Rmin, Rmax, Gmin, Gmax, Bmin, Bmax;
 
-    Rmin = (short)CalculateNumber(GetSubNodes()[2], true);
+    Rmin = (int16_t)CalculateNumber(GetSubNodes()[2], true);
     if ((Rmin < 0) || (Rmin > 255))
         throw HPSOutOfRangeException(GetSubNodes()[2], 0, 255);
 
-    Rmax = (short)CalculateNumber(GetSubNodes()[4], true);
+    Rmax = (int16_t)CalculateNumber(GetSubNodes()[4], true);
     if ((Rmax < 0) || (Rmax > 255))
         throw HPSOutOfRangeException(GetSubNodes()[4], 0, 255);
 
-    Gmin = (short)CalculateNumber(GetSubNodes()[6], true);
+    Gmin = (int16_t)CalculateNumber(GetSubNodes()[6], true);
     if ((Gmin < 0) || (Gmin > 255))
         throw HPSOutOfRangeException(GetSubNodes()[6], 0, 255);
 
-    Gmax = (short)CalculateNumber(GetSubNodes()[8], true);
+    Gmax = (int16_t)CalculateNumber(GetSubNodes()[8], true);
     if ((Gmax < 0) || (Gmax > 255))
         throw HPSOutOfRangeException(GetSubNodes()[8], 0, 255);
 
-    Bmin = (short)CalculateNumber(GetSubNodes()[10], true);
+    Bmin = (int16_t)CalculateNumber(GetSubNodes()[10], true);
     if ((Bmin < 0) || (Bmin > 255))
         throw HPSOutOfRangeException(GetSubNodes()[10], 0, 255);
 
-    Bmax = (short)CalculateNumber(GetSubNodes()[12], true);
+    Bmax = (int16_t)CalculateNumber(GetSubNodes()[12], true);
     if ((Bmax < 0) || (Bmax > 255))
         throw HPSOutOfRangeException(GetSubNodes()[12], 0, 255);
 
@@ -2119,7 +2119,7 @@ void ContrastExpressionNode::Calculate()
     double ModifLevel = CalculateNumber(GetSubNodes()[2]);
     if ((ModifLevel < -100.0) || (ModifLevel > 100.0))
         throw HPSOutOfRangeException(GetSubNodes()[2], -100, 100);
-    short Param = (short)((ModifLevel < 0) ? (ModifLevel * 128 / 100 ) : (ModifLevel * 127 / 100));
+    int16_t Param = (int16_t)((ModifLevel < 0) ? (ModifLevel * 128 / 100 ) : (ModifLevel * 127 / 100));
     HFCPtr<HRPFilter> pFilter(new HRPContrastFilter((int8_t)Param));
 
     HPSFilterObjectValue* pObjectValue = new HPSFilterObjectValue(pFilter); 
@@ -2234,7 +2234,7 @@ void AutoContrastStretchExpressionNode::Calculate()
     pRasterObjectValue->m_pObject->ComputeHistogram(&HistogramOptions);
 
     uint32_t Total = 0;
-    for (unsigned short j = 0; j < 256; j++)
+    for (auto j = 0; j < 256; j++)
         Total += pHistogram->GetEntryCount(j);
 
     // calculate the MIN range pos
@@ -2259,8 +2259,8 @@ void AutoContrastStretchExpressionNode::Calculate()
     HRPHistogramScalingFilter* pFilter;
 
     pFilter = new HRPHistogramScalingFilter();
-    for (unsigned short i = 0; i < 3; i++)  // 24-bit pixel size
-        pFilter->SetInterval(i,(unsigned short)MinValue, (unsigned short)MaxValue);
+    for (uint16_t i = 0; i < 3; i++)  // 24-bit pixel size
+        pFilter->SetInterval(i,(uint16_t)MinValue, (uint16_t)MaxValue);
 
     HPSFilterObjectValue* pObjectValue = new HPSFilterObjectValue(pFilter); 
     pObjectValue->AddHFCPtr();
@@ -2285,8 +2285,8 @@ void ContrastStretchExpressionNode::Calculate()
 
     HFCPtr<HRPHistogramScalingFilter> pFilter(new HRPHistogramScalingFilter());
 
-    for (unsigned short i = 0; i < 3; i++)  // 24-bit pixel size
-        pFilter->SetInterval(i, (unsigned short)CutOffLeft, (unsigned short)CutOffRight);
+    for (uint16_t i = 0; i < 3; i++)  // 24-bit pixel size
+        pFilter->SetInterval(i, (uint16_t)CutOffLeft, (uint16_t)CutOffRight);
 
     HPSFilterObjectValue* pObjectValue = new HPSFilterObjectValue(pFilter.GetPtr()); 
     pObjectValue->AddHFCPtr();

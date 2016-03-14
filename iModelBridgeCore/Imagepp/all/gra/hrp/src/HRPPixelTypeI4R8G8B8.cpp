@@ -281,7 +281,7 @@ public:
             *pDest &= 0xF0;
         };
 
-    virtual const short* GetLostChannels() const override
+    virtual const int16_t* GetLostChannels() const override
         {
         return m_LostChannels;
         }
@@ -306,10 +306,10 @@ protected:
 
 private:
 
-    static short m_LostChannels[];
+    static int16_t m_LostChannels[];
 
     };
-short ConverterV32R8G8B8A8_I4R8G8B8::m_LostChannels[] = {3, -1};
+int16_t ConverterV32R8G8B8A8_I4R8G8B8::m_LostChannels[] = {3, -1};
 static ConverterV32R8G8B8A8_I4R8G8B8 s_V32R8G8B8A8_I4R8G8B8;
 
 
@@ -393,7 +393,7 @@ private:
     size_t GetClosestEntryIndexInPalette(Byte* pi_pValue, const HRPPixelPalette& pi_rPixelPalette) const
         {
         Byte* pValue;
-        int RDist, GDist, BDist;
+        int32_t RDist, GDist, BDist;
         uint32_t Dist;
         size_t IndexForSmallerDist=0;
 
@@ -531,7 +531,7 @@ HPMPersistentObject* HRPPixelTypeI4R8G8B8::Clone() const
     @end
     -----------------------------------------------------------------------------
  */
-unsigned short HRPPixelTypeI4R8G8B8::CountValueBits() const
+uint16_t HRPPixelTypeI4R8G8B8::CountValueBits() const
     {
     return 0;
     }

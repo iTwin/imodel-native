@@ -52,7 +52,7 @@ HRFBlockAdapterCapabilities* HRFAdaptTileToStripCreator::GetCapabilities() const
 //-----------------------------------------------------------------------------
 HRFBlockAdapter* HRFAdaptTileToStripCreator::Create(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                                     uint32_t              pi_Page,
-                                                    unsigned short       pi_Resolution,
+                                                    uint16_t       pi_Resolution,
                                                     HFCAccessMode         pi_AccessMode) const
     {
     return new HRFAdaptTileToStrip(GetCapabilities(),
@@ -70,7 +70,7 @@ HRFAdaptTileToStrip::HRFAdaptTileToStrip(
     HRFBlockAdapterCapabilities* pi_pCapabilities,
     HFCPtr<HRFRasterFile>        pi_rpRasterFile,
     uint32_t                     pi_Page,
-    unsigned short              pi_Resolution,
+    uint16_t              pi_Resolution,
     HFCAccessMode                pi_AccessMode)
 
     : HRFBlockAdapter(pi_pCapabilities,
@@ -86,7 +86,7 @@ HRFAdaptTileToStrip::HRFAdaptTileToStrip(
     m_TileWidth          = m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBlockWidth();
     m_TileHeight         = m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBlockHeight();
 
-    HASSERT(m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBlocksPerWidth() <= ULONG_MAX);
+    HASSERT(m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBlocksPerWidth() <= UINT32_MAX);
 
     m_TilePerWidth       = (uint32_t)m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBlocksPerWidth();
     m_TileSize           = m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBlockSizeInBytes();
@@ -131,7 +131,7 @@ HSTATUS HRFAdaptTileToStrip::ReadBlock(uint64_t pi_PosBlockX,
 
     uint32_t CurrentTilePerBlock = m_TilePerBlock;
 
-    HASSERT(m_pResolutionDescriptor->GetHeight() <= ULONG_MAX);
+    HASSERT(m_pResolutionDescriptor->GetHeight() <= UINT32_MAX);
 
     if (pi_PosBlockY+(m_TilePerBlock*m_TileHeight) > m_pResolutionDescriptor->GetHeight())
         CurrentTilePerBlock = ((uint32_t)m_pResolutionDescriptor->GetHeight() - (uint32_t)pi_PosBlockY + m_TileHeight - 1) / m_TileHeight;
@@ -190,7 +190,7 @@ HSTATUS HRFAdaptTileToStrip::WriteBlock(uint64_t     pi_PosBlockX,
     const Byte*    pPosInBlock = pi_pData;
     uint32_t        CurrentTilePerBlock = m_TilePerBlock;
 
-    HASSERT(m_pResolutionDescriptor->GetHeight() <= ULONG_MAX);
+    HASSERT(m_pResolutionDescriptor->GetHeight() <= UINT32_MAX);
 
     uint32_t        ResolutionHeight = (uint32_t)m_pResolutionDescriptor->GetHeight();
     bool           LastLineOfTile = false;

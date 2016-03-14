@@ -18,7 +18,7 @@
 //
 //----------------------------------------------------------------------------
 
-HGFLabColorSpace::HGFLabColorSpace(unsigned short pi_BitsPerPixel)
+HGFLabColorSpace::HGFLabColorSpace(uint16_t pi_BitsPerPixel)
     :HGFBasicColorSpace(pi_BitsPerPixel)
     {
     // Nothing to do here at this time.

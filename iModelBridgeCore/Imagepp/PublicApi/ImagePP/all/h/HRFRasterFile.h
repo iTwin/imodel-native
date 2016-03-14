@@ -90,7 +90,7 @@ public:
     IMAGEPP_EXPORT virtual bool                  AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage);
 
     virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t      pi_Page,
-                                                                 unsigned short pi_Resolution,
+                                                                 uint16_t pi_Resolution,
                                                                  HFCAccessMode pi_AccessMode) = 0;
 
     virtual HRFResolutionEditor*          CreateUnlimitedResolutionEditor(uint32_t      pi_Page,
@@ -143,7 +143,7 @@ public:
 
     // Sets the LookAhead for a shape
     IMAGEPP_EXPORT virtual void    SetLookAhead        (uint32_t               pi_Page,
-                                                unsigned short        pi_Resolution,
+                                                uint16_t        pi_Resolution,
                                                 const HVEShape&        pi_rShape,
                                                 uint32_t               pi_ConsumerID,
                                                 bool                  pi_Async);
@@ -182,7 +182,7 @@ protected:
     void                       SetUnitFoundInFile(bool  pi_UnitFound,
                                                   uint32_t pi_Page = 0);
 
-    const HRFResolutionEditor* GetResolutionEditor(unsigned short pi_Resolution);
+    const HRFResolutionEditor* GetResolutionEditor(uint16_t pi_Resolution);
 
     // The key
     mutable HFCExclusiveKey             m_Key;
@@ -251,7 +251,7 @@ protected:
 
     // this methods converts a region into a list of tiles
     void                    SnapRegionToGrid    (uint32_t               pi_Page,
-                                                 unsigned short        pi_Resolution,
+                                                 uint16_t        pi_Resolution,
                                                  const HVEShape&        pi_rShape,
                                                  HGFTileIDList*         po_pBlocks) const;
 

@@ -449,7 +449,7 @@ void HRSObjectStore::Save(HPMPersistentObject* pi_pObj)
                 {
                 if (((HRAStoredRaster*)pi_pObj)->GetPixelType()->CountIndexBits() > 0)
                     SavePalette((HRAStoredRaster*)pi_pObj,
-                                (unsigned short)(pi_pObj->GetID() - ID_TiledRaster));
+                                (uint16_t)(pi_pObj->GetID() - ID_TiledRaster));
                 }
             }
         // Here, all pyramid are a TiledRaster.
@@ -457,9 +457,9 @@ void HRSObjectStore::Save(HPMPersistentObject* pi_pObj)
             {
             // Dump the PyramidRaster
 
-            unsigned short NumberOfImage(((HRAPyramidRaster*)pi_pObj)->CountSubImages());
+            uint16_t NumberOfImage(((HRAPyramidRaster*)pi_pObj)->CountSubImages());
 
-            for(unsigned short i = 0; i < NumberOfImage; i++)
+            for(uint16_t i = 0; i < NumberOfImage; i++)
                 ((HRAPyramidRaster*)pi_pObj)->GetSubImage(i)->Save();
 
             SaveHistogram((HRAPyramidRaster*)pi_pObj);
@@ -722,7 +722,7 @@ uint32_t HRSObjectStore::CreateResolution(double pi_Scale)
 // This method is used in conjonction with a HRAUnlimitedResolutionRaster.
 //
 //-----------------------------------------------------------------------------
-void HRSObjectStore::RemoveResolution(unsigned short pi_Resolution)
+void HRSObjectStore::RemoveResolution(uint16_t pi_Resolution)
     {
     HPRECONDITION(m_RasterObjectID == ID_UnlimitedResolutionRaster);
     HPRECONDITION(pi_Resolution > 0);           // resolution editor 0 cannot be removed
@@ -738,7 +738,7 @@ void HRSObjectStore::RemoveResolution(unsigned short pi_Resolution)
 // This method is used in conjunction with a HRAUnlimitedResolutionRaster.
 //
 //-----------------------------------------------------------------------------
-void HRSObjectStore::ChangeResolution(unsigned short pi_Resolution,
+void HRSObjectStore::ChangeResolution(uint16_t pi_Resolution,
                                       double   pi_NewScaling,
                                       uint64_t*   po_pResWidth,
                                       uint64_t*   po_pResHeight)
@@ -930,8 +930,8 @@ void HRSObjectStore::Constructor (uint32_t pi_Page,
             }
         else
             {
-            unsigned short CountRes = m_pPageDescriptor->CountResolutions();
-            for (unsigned short i = 0; i < CountRes; i++)
+            uint16_t CountRes = m_pPageDescriptor->CountResolutions();
+            for (uint16_t i = 0; i < CountRes; i++)
                 {
                 if (SupportMultiPixelType)
                     m_MultiPixelType = m_MultiPixelType ||
@@ -1072,8 +1072,8 @@ HFCPtr<HRABitmapBase> HRSObjectStore::MakeBitmap(uint32_t                      p
             HPRECONDITION(pi_rpPixelType->CountValueBits() == 0);
             HPRECONDITION(!m_Resizable);    // resizable supported only for 1 bit image for now
 
-            int     ShiftValue(0);
-            unsigned short NbColor(0);  
+            int32_t     ShiftValue(0);
+            uint16_t NbColor(0);  
               
             if (pi_rpPixelType->GetClassID() == HRPPixelTypeId_I2R8G8B8)
                 {
@@ -1170,7 +1170,7 @@ HFCPtr<HRAPyramidRaster> HRSObjectStore::LoadRaster (HPMObjectID* po_pRasterID)
 
     // Check if MultiResolution
     //
-    unsigned short NbSubImage;
+    uint16_t NbSubImage;
     if ((NbSubImage = m_pPageDescriptor->CountResolutions() - 1) != 0)
         {
         // when the raster file is read only and contains the original data,
@@ -1183,7 +1183,7 @@ HFCPtr<HRAPyramidRaster> HRSObjectStore::LoadRaster (HPMObjectID* po_pRasterID)
         bool                           HasSubResDirtyFlag = false;
         HFCPtr<HRFResolutionDescriptor> pResDescriptor;
 
-        for (unsigned short i = 0; i < NbSubImage; i++)
+        for (uint16_t i = 0; i < NbSubImage; i++)
             {
             HRFDataFlag DataFlag;
             bool       HasDirtyFlag = false;
@@ -1239,8 +1239,8 @@ HFCPtr<HRAPyramidRaster> HRSObjectStore::LoadRaster (HPMObjectID* po_pRasterID)
 
             pSubImageDesc[i].UseDimension   = true;
 
-            HASSERT(pResDescriptor->GetWidth() <= ULONG_MAX);
-            HASSERT(pResDescriptor->GetHeight() <= ULONG_MAX);
+            HASSERT(pResDescriptor->GetWidth() <= UINT32_MAX);
+            HASSERT(pResDescriptor->GetHeight() <= UINT32_MAX);
 
             pSubImageDesc[i].DimX           = (uint32_t)pResDescriptor->GetWidth();
             pSubImageDesc[i].DimY           = (uint32_t)pResDescriptor->GetHeight();
@@ -1277,8 +1277,8 @@ HFCPtr<HRAPyramidRaster> HRSObjectStore::LoadRaster (HPMObjectID* po_pRasterID)
         else
             pModel = new HRATiledRaster(m_pTileTemplate.GetPtr(), m_pResDescriptor->GetBlockWidth(), m_pResDescriptor->GetBlockHeight(), 1, 1);
 
-        HASSERT(m_pResDescriptor->GetWidth() <= ULONG_MAX);
-        HASSERT(m_pResDescriptor->GetHeight() <= ULONG_MAX);
+        HASSERT(m_pResDescriptor->GetWidth() <= UINT32_MAX);
+        HASSERT(m_pResDescriptor->GetHeight() <= UINT32_MAX);
 
         pOutputRaster = new HRAPyramidRaster(pModel,
                                              m_pResDescriptor->GetWidth(),
@@ -1327,8 +1327,8 @@ HFCPtr<HRAPyramidRaster> HRSObjectStore::LoadRaster (HPMObjectID* po_pRasterID)
         else
             pModel = new HRATiledRaster(m_pTileTemplate.GetPtr(), m_pResDescriptor->GetBlockWidth(), m_pResDescriptor->GetBlockHeight(), 1, 1);
 
-        HASSERT(m_pResDescriptor->GetWidth() <= ULONG_MAX);
-        HASSERT(m_pResDescriptor->GetHeight() <= ULONG_MAX);
+        HASSERT(m_pResDescriptor->GetWidth() <= UINT32_MAX);
+        HASSERT(m_pResDescriptor->GetHeight() <= UINT32_MAX);
 
         pOutputRaster = new HRAPyramidRaster (pModel,
                                               m_pResDescriptor->GetWidth(),
@@ -1385,10 +1385,10 @@ HFCPtr<HRAPyramidRaster> HRSObjectStore::LoadRaster (HPMObjectID* po_pRasterID)
     // Check if MultiResolution
     if (*po_pRasterID == ID_PyramidRaster)
         {
-        unsigned short NumberOfImage(pOutputRaster->CountSubImages());
+        uint16_t NumberOfImage(pOutputRaster->CountSubImages());
         HFCPtr<HRAStoredRaster> pSubImage;
 
-        for (unsigned short i = 0; i < NumberOfImage; i++)
+        for (uint16_t i = 0; i < NumberOfImage; i++)
             {
             pSubImage = pOutputRaster->GetSubImage(i);
 
@@ -1514,7 +1514,7 @@ HFCPtr<HRABitmapRLE> HRSObjectStore::LoadResizableRaster(HPMObjectID* po_pRaster
     HFCPtr<HRABitmapRLE> pOutputRaster;
     *po_pRasterID = ID_ResizableRaster;
 
-    HPRECONDITION(m_RasterWidth <= ULONG_MAX && m_RasterHeight <= ULONG_MAX);
+    HPRECONDITION(m_RasterWidth <= UINT32_MAX && m_RasterHeight <= UINT32_MAX);
     m_pTileTemplate = MakeBitmap(1,
                                  1,
                                  m_pResDescriptor->GetPixelType());
@@ -1761,7 +1761,7 @@ void HRSObjectStore::SaveTiledRaster(HRATiledRaster* pi_pRaster)
 // SavePalette - Save the Palette.
 //-----------------------------------------------------------------------------
 void HRSObjectStore::SavePalette(HRAStoredRaster*   pi_pRaster,
-                                 unsigned short    pi_Resolution)
+                                 uint16_t    pi_Resolution)
     {
     HPRECONDITION(pi_pRaster != 0);
     HPRECONDITION(pi_Resolution < m_ResolutionEditor.size());
@@ -1911,7 +1911,7 @@ void HRSObjectStore::SaveResamplingMethod(HRAPyramidRaster* pi_pObj)
         HFCPtr<HRFResolutionDescriptor> pResDescriptor;
         for (uint32_t Res = 0; Res < m_pPageDescriptor->CountResolutions(); Res++)
             {
-            pResDescriptor = m_pPageDescriptor->GetResolutionDescriptor((unsigned short)Res);
+            pResDescriptor = m_pPageDescriptor->GetResolutionDescriptor((uint16_t)Res);
             DownSamplingMethod = ResamplingMethodChangeType(pRaster->GetResamplingForSubResolution(Res));
 
             if (DownSamplingMethod != pResDescriptor->GetDownSamplingMethod())
@@ -1937,12 +1937,12 @@ void HRSObjectStore::SaveDataFlag(HRAPyramidRaster* pi_pObj)
         HFCPtr<HRFResolutionDescriptor> pResDescriptor;
         uint64_t                       NbFlag;
 
-        unsigned short                 NumberOfImage(pi_pObj->CountSubImages());
+        uint16_t                 NumberOfImage(pi_pObj->CountSubImages());
 
         HASSERT(m_pPageDescriptor->CountResolutions() == NumberOfImage);
 
         // For each Resolution...
-        for (unsigned short i=0; i<m_pPageDescriptor->CountResolutions(); i++)
+        for (uint16_t i=0; i<m_pPageDescriptor->CountResolutions(); i++)
             {
             pResDescriptor                  = m_pPageDescriptor->GetResolutionDescriptor(i);
             HRATileStatus& rTileFlags = pi_pObj->GetSubImage(i)->GetInternalTileStatusList(&NbFlag);
@@ -1989,12 +1989,12 @@ void HRSObjectStore::LoadDataFlag (HRAPyramidRaster* pi_pObj)
     HFCPtr<HRFResolutionDescriptor> pResDescriptor;
     uint64_t                       NbFlag;
 
-    unsigned short                 NumberOfImage(pi_pObj->CountSubImages());
+    uint16_t                 NumberOfImage(pi_pObj->CountSubImages());
 
     HASSERT(m_pPageDescriptor->CountResolutions() == NumberOfImage);
 
     // For each Resolution...
-    for (unsigned short i=0; i<m_pPageDescriptor->CountResolutions(); i++)
+    for (uint16_t i=0; i<m_pPageDescriptor->CountResolutions(); i++)
         {
         pResDescriptor                  = m_pPageDescriptor->GetResolutionDescriptor(i);
         const HRFDataFlag* pFlags       = pResDescriptor->GetBlocksDataFlag();
@@ -2052,7 +2052,7 @@ void HRSObjectStore::SetResamplingForDecimationInRaster (HRAPyramidRaster* pio_p
     {
     HPRECONDITION(pio_pRaster != 0);
 
-    for (unsigned short i = 0; i < m_pPageDescriptor->CountResolutions(); i++)
+    for (uint16_t i = 0; i < m_pPageDescriptor->CountResolutions(); i++)
         pio_pRaster->SetResamplingForSubResolution(
             ResamplingMethodChangeType(m_pPageDescriptor->GetResolutionDescriptor(i)->
                                        GetDownSamplingMethod()),
@@ -2279,9 +2279,9 @@ HSTATUS HRSObjectStore::ExceptionsSafeWriteBlock(HRFResolutionEditor* pi_pEditor
                                                  Byte*                pi_pBuffer)
     {
     HPRECONDITION((pi_PosX +
-                   pi_pEditor->GetResolutionDescriptor()->GetBlockWidth() <= ULONG_MAX) &&
+                   pi_pEditor->GetResolutionDescriptor()->GetBlockWidth() <= UINT32_MAX) &&
                   (pi_PosY +
-                   pi_pEditor->GetResolutionDescriptor()->GetBlockHeight() <= ULONG_MAX));
+                   pi_pEditor->GetResolutionDescriptor()->GetBlockHeight() <= UINT32_MAX));
 
     HSTATUS Result = H_SUCCESS;
 
@@ -2333,9 +2333,9 @@ HSTATUS HRSObjectStore::ExceptionsSafeWriteBlockRLE(HRFResolutionEditor* pi_pEdi
                                                     HFCPtr<HCDPacketRLE> pi_pPacket)
     {
     HPRECONDITION((pi_PosX +
-                   pi_pEditor->GetResolutionDescriptor()->GetBlockWidth() <= ULONG_MAX) &&
+                   pi_pEditor->GetResolutionDescriptor()->GetBlockWidth() <= UINT32_MAX) &&
                   (pi_PosY +
-                   pi_pEditor->GetResolutionDescriptor()->GetBlockHeight() <= ULONG_MAX));
+                   pi_pEditor->GetResolutionDescriptor()->GetBlockHeight() <= UINT32_MAX));
 
     HSTATUS Result = H_SUCCESS;
 
@@ -2369,7 +2369,7 @@ void HRSObjectStore::CheckCurrentSubImageForLoad (uint32_t pi_SubImage)
         {
         m_LoadCurSubImage = pi_SubImage;
 
-        HFCPtr<HRFResolutionDescriptor> pResDescriptor = m_pPageDescriptor->GetResolutionDescriptor((unsigned short)pi_SubImage);
+        HFCPtr<HRFResolutionDescriptor> pResDescriptor = m_pPageDescriptor->GetResolutionDescriptor((uint16_t)pi_SubImage);
 
         m_pLoadTileDescriptor = new HGFTileIDDescriptor (pResDescriptor->GetWidth (),
                                                          pResDescriptor->GetHeight (),
@@ -2394,7 +2394,7 @@ void HRSObjectStore::CheckCurrentSubImageForSave(uint32_t pi_SubImage)
         {
         m_SaveCurSubImage = pi_SubImage;
 
-        HFCPtr<HRFResolutionDescriptor> pResDescriptor = m_pPageDescriptor->GetResolutionDescriptor((unsigned short)pi_SubImage);
+        HFCPtr<HRFResolutionDescriptor> pResDescriptor = m_pPageDescriptor->GetResolutionDescriptor((uint16_t)pi_SubImage);
 
         m_pSaveTileDescriptor = new HGFTileIDDescriptor (pResDescriptor->GetWidth (),
                                                          pResDescriptor->GetHeight (),

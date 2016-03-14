@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCProfiler.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -10,7 +10,7 @@ BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Start counting
 //-----------------------------------------------------------------------------
-__forceinline LARGE_INTEGER HFCProfiler::Start(int pi_CounterID)
+__forceinline LARGE_INTEGER HFCProfiler::Start(int32_t pi_CounterID)
     {
     // Increment call count
     m_Counters[pi_CounterID].m_CounterKey.ClaimKey();
@@ -40,7 +40,7 @@ __forceinline LARGE_INTEGER HFCProfiler::Start(int pi_CounterID)
 //-----------------------------------------------------------------------------
 // Stop counting
 //-----------------------------------------------------------------------------
-__forceinline void HFCProfiler::Stop(int pi_CounterID, LARGE_INTEGER pi_Start)
+__forceinline void HFCProfiler::Stop(int32_t pi_CounterID, LARGE_INTEGER pi_Start)
     {
     // *** This must be the first task ***
     LARGE_INTEGER Finish;
@@ -51,7 +51,7 @@ __forceinline void HFCProfiler::Stop(int pi_CounterID, LARGE_INTEGER pi_Start)
 
 #if 1
     // Unstack this function call
-    int OverheadCount = s_pOverheads->back();
+    int32_t OverheadCount = s_pOverheads->back();
     s_pFunctionStack->pop_back();
     s_pOverheads->pop_back();
 
@@ -59,7 +59,7 @@ __forceinline void HFCProfiler::Stop(int pi_CounterID, LARGE_INTEGER pi_Start)
 
     // Use this code to troubleshoot mismatched START/STOP pairs.
 
-    int OverheadCount = 0;
+    int32_t OverheadCount = 0;
     if (s_pFunctionStack->empty())
         {
         HDEBUGTEXT("STOP without matching START!\n");
@@ -112,7 +112,7 @@ __forceinline void HFCProfiler::Stop(int pi_CounterID, LARGE_INTEGER pi_Start)
 
 
 #define HFCPROFILER_START(Name) \
-    static int HFC_PROFILER_Counter_ID = HFCProfiler::GetInstance()->RegisterCounter(Name); \
+    static int32_t HFC_PROFILER_Counter_ID = HFCProfiler::GetInstance()->RegisterCounter(Name); \
     LARGE_INTEGER HFC_PROFILER_Counter_Start = HFCProfiler::GetInstance()->Start(HFC_PROFILER_Counter_ID); \
     try {
 

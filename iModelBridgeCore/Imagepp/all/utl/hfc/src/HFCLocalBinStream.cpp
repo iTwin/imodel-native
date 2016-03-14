@@ -24,7 +24,7 @@ static struct LocalBinStreamCreator : public HFCBinStream::Creator
         {
         HFCLocalBinStream::GetStreamTypeList().insert(HFCLocalBinStream::StreamTypeList::value_type(HFCURLFile::s_SchemeName(), this));
         }
-    virtual HFCBinStream* Create(HFCPtr<HFCURL> pi_pURL, uint64_t pi_offSet, HFCAccessMode pi_AccessMode, short pi_NbRetry=0) const override
+    virtual HFCBinStream* Create(HFCPtr<HFCURL> pi_pURL, uint64_t pi_offSet, HFCAccessMode pi_AccessMode, int16_t pi_NbRetry=0) const override
         {
         HPRECONDITION(pi_pURL != 0);
         HPRECONDITION(pi_pURL->GetSchemeType() == HFCURLFile::s_SchemeName());
@@ -52,7 +52,7 @@ HFCLocalBinStream::HFCLocalBinStream(const WString&  pi_Filename,
     HFCAccessMode   pi_AccessMode,
     bool            pi_AutoRemove,
     uint64_t        pi_OriginOffset,
-    short pi_NbRetry)
+    int16_t pi_NbRetry)
 {
     SetMaxFileSizeSupported(OffsetIs32Bits);
 
@@ -77,7 +77,7 @@ HFCLocalBinStream::HFCLocalBinStream(const WString&  pi_Filename,
     bool           pi_CreateFile,
     bool           pi_AutoRemove,
     uint64_t       pi_OriginOffset,
-    short pi_NbRetry)
+    int16_t pi_NbRetry)
 {
     SetMaxFileSizeSupported(OffsetIs32Bits);
 
@@ -103,7 +103,7 @@ HFCLocalBinStream::HFCLocalBinStream(const WString&  pi_Filename,
     bool           pi_CreateFile,
     bool           pi_AutoRemove,
     uint64_t       pi_OriginOffset,
-    short pi_NbRetry)
+    int16_t pi_NbRetry)
 {
     SetMaxFileSizeSupported(OffsetIs32Bits);
 
@@ -143,7 +143,7 @@ void HFCLocalBinStream::Open(const WString& pi_Filename,
                              uint64_t pi_OriginOffset,
                              bool    pi_IgnoreMode,
                              bool    pi_AutoRemove,
-                             short pi_NbRetry)
+                             int16_t pi_NbRetry)
     {
     m_AutoRemove        = pi_AutoRemove;
     m_AccessMode        = HFC_NO_ACCESS;
@@ -292,12 +292,12 @@ void HFCLocalBinStream::SetMaxFileSizeSupported(MaxOffsetBitsSupported pi_Offset
     switch(pi_OffsetBits)
         {
         case OffsetIs64Bits:            // SetFilePointer is 64bits signed --> / 2
-            m_MaxOffsetAcceptable = (UINT64_MAX / 2) - ULONG_MAX;
+            m_MaxOffsetAcceptable = (UINT64_MAX / 2) - UINT32_MAX;
             break;
 
         case OffsetIs32Bits:
         default:
-            m_MaxOffsetAcceptable = ULONG_MAX - (ULONG_MAX / 20);
+            m_MaxOffsetAcceptable = UINT32_MAX - (UINT32_MAX / 20);
             break;
         }
     }

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFGifFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -48,8 +48,8 @@ typedef struct GifHeader                // Offset   Description.
     {
     Byte              Signature[3];   //  00h     ID Signature.
     Byte              Version[3];     //  03h     Version Number.
-    unsigned short     ScreenWidth;    //  06h     Logical Screen Width.
-    unsigned short     ScreenHeight;   //  08h     Logical Screen Height.
+    uint16_t     ScreenWidth;    //  06h     Logical Screen Width.
+    uint16_t     ScreenHeight;   //  08h     Logical Screen Height.
     Byte              PackedField;    //  0Ah     Color Information.
     Byte              ColorIndex;     //  0Bh     Background Color Index.
     Byte              AspectRatio;    //  0Ch     Pixel Aspect Ratio.
@@ -63,10 +63,10 @@ typedef struct GifHeader                // Offset   Description.
 typedef struct GifImageDescriptor
     {
     Byte              ImageSeparator; // Image Descriptor identifier.
-    unsigned short     ImageLeft;      // X position of image on the display.
-    unsigned short     ImageTop;       // Y position of image on the display.
-    unsigned short     ImageWidth;     // Width of the image in pixels.
-    unsigned short     ImageHeight;    // Height of the image in pixels.
+    uint16_t     ImageLeft;      // X position of image on the display.
+    uint16_t     ImageTop;       // Y position of image on the display.
+    uint16_t     ImageWidth;     // Width of the image in pixels.
+    uint16_t     ImageHeight;    // Height of the image in pixels.
     Byte              PackedField;    // Image and Color Table Data Information.
     GifColorTable       LocalCT;        // Local Color Table.
     uint32_t            LineIndex;      // Internal information about the current line index.
@@ -82,7 +82,7 @@ typedef struct GifGraphicControl
     Byte              Label;              // Extension Label (always F9h).
     Byte              BlockSize;          // Size of Extension Block (always 04h).
     Byte              PackedField;        // Graphic Data Information.
-    unsigned short     DelayTime;          // Delay time in hundredths of a second.
+    uint16_t     DelayTime;          // Delay time in hundredths of a second.
     Byte              ColorIndex;         // Transparent Color Index.
     Byte              Terminator;         // Block Terminator (always 0).
     } GifGraphicControl;
@@ -105,10 +105,10 @@ typedef struct GifPlainText
     Byte              Introducer;         /* Extension Introducer (always 21h)    */
     Byte              Label;              /* Extension Label (always 01h)         */
     Byte              BlockSize;          /* Size of Extension Block (always 0Ch) */
-    unsigned short     TextGridLeft;       /* X position of text grid in pixels    */
-    unsigned short     TextGridTop;        /* Y position of text grid in pixels    */
-    unsigned short     TextGridWidth;      /* Width of the text grid in pixels     */
-    unsigned short     TextGridHeight;     /* Height of the text grid in pixels    */
+    uint16_t     TextGridLeft;       /* X position of text grid in pixels    */
+    uint16_t     TextGridTop;        /* Y position of text grid in pixels    */
+    uint16_t     TextGridWidth;      /* Width of the text grid in pixels     */
+    uint16_t     TextGridHeight;     /* Height of the text grid in pixels    */
     Byte              CellWidth;          /* Width of a grid cell in pixels       */
     Byte              CellHeight;         /* Height of a grid cell in pixels      */
     Byte              TextFgColorIndex;   /* Text foreground color index value    */
@@ -168,7 +168,7 @@ public:
     virtual bool                         AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage);
 
     virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
-                                                                 unsigned short           pi_Resolution,
+                                                                 uint16_t           pi_Resolution,
                                                                  HFCAccessMode             pi_AccessMode);
 
     virtual void                          Save();
@@ -196,8 +196,8 @@ private:
     // Members.
     HAutoPtr<HFCBinStream>  m_pGifFile;
     // Count of the number of images in the file.
-    unsigned short         m_ImageCount;
-    short m_AlphaColorIndex;
+    uint16_t         m_ImageCount;
+    int16_t m_AlphaColorIndex;
 
     bool                   m_HasComment;
     bool                   m_HasApplication;
@@ -216,7 +216,7 @@ private:
     vector<int32_t>           m_ListPageDataOffset;
 
     // List of min code size use for decompression.
-    vector<short>          m_ListPageDecompressMinCodeSize;
+    vector<int16_t>          m_ListPageDecompressMinCodeSize;
 
     // List usedfull information to create the image descriptor.
     vector<GifGraphicBlock> m_ListGifGraphicBlock;
@@ -272,32 +272,32 @@ private:
                                                    uint32_t             pi_TableSize,
                                                    HFCBinStream*       pio_pGifFile);
 
-    void  SetHeader(unsigned short   pi_Width,
-                    unsigned short   pi_Height,
-                    unsigned short   pi_BitsColorResolution,
-                    unsigned short   pi_BackgroundColor,
-                    unsigned short   pi_BitsByPixel,
+    void  SetHeader(uint16_t   pi_Width,
+                    uint16_t   pi_Height,
+                    uint16_t   pi_BitsColorResolution,
+                    uint16_t   pi_BackgroundColor,
+                    uint16_t   pi_BitsByPixel,
                     Byte            pi_AspectRatio,                     // TO DO
                     HRPPixelPalette*  pi_pPalette);
 
-    void  SetGraphicControl(unsigned short    pi_DelayTime,              // TO DO
+    void  SetGraphicControl(uint16_t    pi_DelayTime,              // TO DO
                             Byte             pi_TransparentColorIndex,
                             Byte             pi_DisposalMethode,        // TO DO
                             Byte             pi_UserInput,              // TO DO
                             GifGraphicControl* po_pGraphicControl);
 
-    void  SetImageDesc(unsigned short     pi_LeftEdge,
-                       unsigned short     pi_TopEdge,
-                       unsigned short     pi_Width,
-                       unsigned short     pi_Height,
-                       unsigned short     pi_BitsColorResolution,
+    void  SetImageDesc(uint16_t     pi_LeftEdge,
+                       uint16_t     pi_TopEdge,
+                       uint16_t     pi_Width,
+                       uint16_t     pi_Height,
+                       uint16_t     pi_BitsColorResolution,
                        bool               pi_Interlaced,
-                       unsigned short     pi_BitsByPixel,
+                       uint16_t     pi_BitsByPixel,
                        HRPPixelPalette*    pi_pPalette,
                        GifImageDescriptor* po_pImageDescriptor);
 
-    void  SetPalette (unsigned short   pi_BitsColorResolution,
-                      unsigned short   pi_BitsByPixel,
+    void  SetPalette (uint16_t   pi_BitsColorResolution,
+                      uint16_t   pi_BitsByPixel,
                       HRPPixelPalette*  pi_pPalette,
                       GifColorTable     po_ColorTable);
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGeoTiffTable.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -29,15 +29,15 @@ public:
     HRFGeoTiffTable();
     ~HRFGeoTiffTable();
 
-    const bool     FindUnits           (unsigned short pi_UnitKey,
+    const bool     FindUnits           (uint16_t pi_UnitKey,
                                          HRFGeoTiffUnitsTable::HRFGeoTiffUnitsRecord*
                                          po_pRecord);
 
-    const bool     FindCoordSysUnits   (unsigned short pi_GeoKey,
+    const bool     FindCoordSysUnits   (uint16_t pi_GeoKey,
                                          HRFGeoTiffUnitsTable::HRFGeoTiffUnitsRecord*
                                          po_pRecord);
 
-    const bool     FindProjectionUnits (unsigned short pi_GeoKey,
+    const bool     FindProjectionUnits (uint16_t pi_GeoKey,
                                          HRFGeoTiffUnitsTable::HRFGeoTiffUnitsRecord*
                                          po_pRecord);
 

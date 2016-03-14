@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPMapFilters8.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -144,13 +144,13 @@ public:
     virtual HRPFilter* Clone() const override;
 
     // Get/Set methods
-    IMAGEPP_EXPORT void            SetInterval(unsigned short pi_ChannelIndex,
-                                       unsigned short pi_MinValue,
-                                       unsigned short pi_MaxValue);
+    IMAGEPP_EXPORT void            SetInterval(uint16_t pi_ChannelIndex,
+                                       uint16_t pi_MinValue,
+                                       uint16_t pi_MaxValue);
 
-    void            GetInterval(unsigned short pi_ChannelIndex,
-                                unsigned short*    po_pMinValue,
-                                unsigned short*    po_pMaxValue);
+    void            GetInterval(uint16_t pi_ChannelIndex,
+                                uint16_t*    po_pMinValue,
+                                uint16_t*    po_pMaxValue);
 
     void                    SetScalingMode(HistogramScalingMode pi_ScalingMode);
     HistogramScalingMode    GetScalingMode() const;

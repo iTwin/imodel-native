@@ -37,9 +37,9 @@ public:
         {
         // Strip Capability
         Add(new HRFStripCapability(HFC_READ_WRITE_CREATE, // AccessMode
-                                   LONG_MAX,              // MaxSizeInBytes
+                                   INT32_MAX,              // MaxSizeInBytes
                                    32,                    // MinHeight
-                                   LONG_MAX,              // MaxHeight
+                                   INT32_MAX,              // MaxHeight
                                    1));                   // HeightIncrement
         }
     };
@@ -129,7 +129,7 @@ HRFSLOStripAdapter::HRFSLOStripAdapter(HFCPtr<HRFRasterFile>&  pi_rpAdaptedFile)
         NeedLineAdapter = false;
         HFCPtr<HRFPageDescriptor> pPageDescriptor = m_pOriginalFile->GetPageDescriptor(Page);
 
-        for (unsigned short Resolution = 0; (Resolution < pPageDescriptor->CountResolutions()) && (NeedLineAdapter == false); Resolution++)
+        for (uint16_t Resolution = 0; (Resolution < pPageDescriptor->CountResolutions()) && (NeedLineAdapter == false); Resolution++)
             {
             if (pPageDescriptor->GetResolutionDescriptor(Resolution)->GetBlockType() != HRFBlockType::LINE)
                 NeedLineAdapter = true;
@@ -139,7 +139,7 @@ HRFSLOStripAdapter::HRFSLOStripAdapter(HFCPtr<HRFRasterFile>&  pi_rpAdaptedFile)
             {
             BlockDesc.m_BlockType   = HRFBlockType::LINE;
 
-            HASSERT(m_pOriginalFile->GetPageDescriptor(Page)->GetResolutionDescriptor(0)->GetWidth() <= ULONG_MAX);
+            HASSERT(m_pOriginalFile->GetPageDescriptor(Page)->GetResolutionDescriptor(0)->GetWidth() <= UINT32_MAX);
 
             BlockDesc.m_BlockWidth  = (uint32_t)m_pOriginalFile->GetPageDescriptor(Page)->GetResolutionDescriptor(0)->GetWidth();
             BlockDesc.m_BlockHeight = 1;
@@ -177,7 +177,7 @@ HRFSLOStripAdapter::~HRFSLOStripAdapter()
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFSLOStripAdapter::CreateResolutionEditor( uint32_t pi_Page,
-                                                                 unsigned short pi_Resolution,
+                                                                 uint16_t pi_Resolution,
                                                                  HFCAccessMode pi_AccessMode)
     {
     HRFResolutionEditor* pAdapterResolutionEditor;
@@ -262,12 +262,12 @@ void HRFSLOStripAdapter::CreateDescriptors ()
 
         // Adapt each resolutions from adapted file when their access is different of Strip
         // for (UShort Resolution=0; Resolution < pAdaptedPageDescriptor->CountResolutions(); Resolution++)
-        for (unsigned short Resolution=0; Resolution < 1; Resolution++)  // HChkSebG Purpose: Disable unsupported sub-res.
+        for (uint16_t Resolution=0; Resolution < 1; Resolution++)  // HChkSebG Purpose: Disable unsupported sub-res.
             {
             HFCPtr<HRFResolutionDescriptor> pAdaptedResDescriptor = pAdaptedPageDescriptor->GetResolutionDescriptor(Resolution);
 
-            HASSERT(pAdaptedResDescriptor->GetHeight() <= ULONG_MAX);
-            HASSERT(pAdaptedResDescriptor->GetWidth() <= ULONG_MAX);
+            HASSERT(pAdaptedResDescriptor->GetHeight() <= UINT32_MAX);
+            HASSERT(pAdaptedResDescriptor->GetWidth() <= UINT32_MAX);
 
             if (pAdaptedResDescriptor->GetScanlineOrientation().IsScanlineVertical())
                 {
@@ -352,8 +352,8 @@ void HRFSLOStripAdapter::CreateDescriptors ()
         // Change the raster file origin according it's slo.
         HFCPtr<HRFResolutionDescriptor> pAdaptedResDescriptor = pAdaptedPageDescriptor->GetResolutionDescriptor(0);
 
-        HASSERT(ListOfResolutionDescriptor[0]->GetWidth() <= ULONG_MAX);
-        HASSERT(ListOfResolutionDescriptor[0]->GetHeight() <= ULONG_MAX);
+        HASSERT(ListOfResolutionDescriptor[0]->GetWidth() <= UINT32_MAX);
+        HASSERT(ListOfResolutionDescriptor[0]->GetHeight() <= UINT32_MAX);
 
         RasterWidth  = (uint32_t)ListOfResolutionDescriptor[0]->GetWidth();
         RasterHeight = (uint32_t)ListOfResolutionDescriptor[0]->GetHeight();
@@ -458,8 +458,8 @@ void HRFSLOStripAdapter::SynchronizeFiles()
     // If original file has transfo model and the adapter model has changed.
     if (pOriginalPageDescriptor->HasTransfoModel() && (GetPageDescriptor(0)->TransfoModelHasChanged()))
         {
-        HASSERT(GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth() <= ULONG_MAX);
-        HASSERT(GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight() <= ULONG_MAX);
+        HASSERT(GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth() <= UINT32_MAX);
+        HASSERT(GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight() <= UINT32_MAX);
 
         // Remove adaptation from model.
         HFCPtr<HGF2DTransfoModel> pSLOTransfoModel = CreateSLOTransfoModel(pOriginalPageDescriptor->GetResolutionDescriptor(0)->GetScanlineOrientation(),
@@ -503,7 +503,7 @@ bool HRFSLOStripAdapter::NeedSLOAdapterFor(HFCPtr<HRFRasterFile> const& pi_rpFor
         {
         HFCPtr<HRFPageDescriptor> pPageDescriptor = pi_rpForRasterFile->GetPageDescriptor(Page);
 
-        for (unsigned short Resolution = 0; (Resolution < pPageDescriptor->CountResolutions()) && (NeedAdapter == false); Resolution++)
+        for (uint16_t Resolution = 0; (Resolution < pPageDescriptor->CountResolutions()) && (NeedAdapter == false); Resolution++)
             {
             // Having SLO different than UPPER_LEFT_HORIZONTAL and 1 bit only
             if (pPageDescriptor->GetResolutionDescriptor(Resolution)->GetScanlineOrientation() != HRFScanlineOrientation::UPPER_LEFT_HORIZONTAL &&

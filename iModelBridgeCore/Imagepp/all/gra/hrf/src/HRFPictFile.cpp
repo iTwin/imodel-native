@@ -988,7 +988,7 @@ HRFPictFile::~HRFPictFile()
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFPictFile::CreateResolutionEditor   (uint32_t            pi_Page,
-                                                            unsigned short     pi_Resolution,
+                                                            uint16_t     pi_Resolution,
                                                             HFCAccessMode       pi_AccessMode)
     {
     HPRECONDITION(pi_Page < CountPages());
@@ -1029,8 +1029,8 @@ bool HRFPictFile::AddPage                     (HFCPtr<HRFPageDescriptor>   pi_pP
     HASSERT((numeric_limits<int16_t>::max()) >= pResolutionDescriptor->GetHeight());
     HASSERT(0 < pResolutionDescriptor->GetHeight());
 
-    unsigned short Width    = static_cast<unsigned short>(pResolutionDescriptor->GetWidth());
-    unsigned short Heigth   = static_cast<unsigned short>(pResolutionDescriptor->GetHeight());
+    uint16_t Width    = static_cast<uint16_t>(pResolutionDescriptor->GetWidth());
+    uint16_t Heigth   = static_cast<uint16_t>(pResolutionDescriptor->GetHeight());
 
 
     // Initialize image dimensions
@@ -1056,7 +1056,7 @@ bool HRFPictFile::AddPage                     (HFCPtr<HRFPageDescriptor>   pi_pP
         {
         m_DataHeaderType = HEADER_PACKBITS;
         m_FileHeader.m_OpCode = 0x0098;
-        m_DataHeader.m_PackBitHeader.m_RowBytes = ((Width * (unsigned short)pPixelType->CountPixelRawDataBits() + 7)/8)  | 0x8000;
+        m_DataHeader.m_PackBitHeader.m_RowBytes = ((Width * (uint16_t)pPixelType->CountPixelRawDataBits() + 7)/8)  | 0x8000;
         }
     else
         {
@@ -1462,7 +1462,7 @@ void HRFPictFile::SetPixelTypeToPage       (const HFCPtr<HRPPixelType>          
                 ColorQty = 256;
 
                 m_pColorTableItemsList = new PictRGBColor[ColorQty];
-                for (unsigned short i = 0; i < ColorQty; i++)
+                for (uint16_t i = 0; i < ColorQty; i++)
                     {
                     m_pColorTableItemsList[i].m_rgbRed      = i;
                     m_pColorTableItemsList[i].m_rgbGreen    = i;
@@ -1473,7 +1473,7 @@ void HRFPictFile::SetPixelTypeToPage       (const HFCPtr<HRPPixelType>          
             else
                 {
                 // Set the file palette values
-                m_ColorTable.m_CtSize = static_cast<unsigned short>(ColorQty) - 1;
+                m_ColorTable.m_CtSize = static_cast<uint16_t>(ColorQty) - 1;
                 m_pColorTableItemsList = new PictRGBColor[ColorQty];
 
                 Byte* pPaletteValue;
@@ -1488,7 +1488,7 @@ void HRFPictFile::SetPixelTypeToPage       (const HFCPtr<HRPPixelType>          
                 }
 
             // Set the palette size field
-            m_ColorTable.m_CtSize = static_cast<unsigned short>(ColorQty) - 1;
+            m_ColorTable.m_CtSize = static_cast<uint16_t>(ColorQty) - 1;
 
             }
         else if (pi_pPixelType->GetClassID() == HRPPixelTypeI4R8G8B8::CLASS_ID)

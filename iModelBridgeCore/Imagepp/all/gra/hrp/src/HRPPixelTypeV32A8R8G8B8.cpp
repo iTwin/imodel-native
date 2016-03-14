@@ -432,7 +432,7 @@ HPMPersistentObject* HRPPixelTypeV32A8R8G8B8::Clone() const
     @end
     -----------------------------------------------------------------------------
  */
-unsigned short HRPPixelTypeV32A8R8G8B8::CountValueBits() const
+uint16_t HRPPixelTypeV32A8R8G8B8::CountValueBits() const
     {
     return 32;
     }

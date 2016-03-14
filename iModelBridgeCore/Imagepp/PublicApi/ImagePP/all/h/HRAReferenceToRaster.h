@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAReferenceToRaster.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRAReferenceToRaster
@@ -84,7 +84,7 @@ public:
 
     virtual HRARasterIterator*  CreateIterator  (const HRAIteratorOptions& pi_rOptions = HRAIteratorOptions()) const;
 
-    virtual unsigned short      GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms);
+    virtual uint16_t      GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms);
 
     virtual void                ComputeHistogram(HRAHistogramOptions* pio_pOptions,
                                      bool                pi_ForceRecompute = false);

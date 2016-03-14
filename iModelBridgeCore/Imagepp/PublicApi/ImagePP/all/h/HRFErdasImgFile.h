@@ -74,7 +74,7 @@ public:
     friend HRFErdasImgCreator;
     friend HRFErdasImgEditor;
 
-    typedef map<string, unsigned short> UnitNameToEPSGCodeMap;
+    typedef map<string, uint16_t> UnitNameToEPSGCodeMap;
 
     // Class ID for this class.
     HDECLARE_CLASS_ID(HRFFileId_ErdasImg, HRFGdalSupportedFile)
@@ -92,7 +92,7 @@ public:
 
     // File manipulation
     virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
-                                                                 unsigned short           pi_Resolution,
+                                                                 uint16_t           pi_Resolution,
                                                                  HFCAccessMode             pi_AccessMode);
 
 protected:

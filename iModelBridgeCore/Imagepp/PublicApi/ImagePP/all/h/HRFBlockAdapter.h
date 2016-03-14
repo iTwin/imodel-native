@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFBlockAdapter.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ public:
         HRFBlockAdapterCapabilities* pi_pCapabilities,
         HFCPtr<HRFRasterFile>        pi_rpRasterFile,
         uint32_t                     pi_Page,
-        unsigned short              pi_Resolution,
+        uint16_t              pi_Resolution,
         HFCAccessMode                pi_AccessMode);
 
     virtual                            ~HRFBlockAdapter();
@@ -121,7 +121,7 @@ public:
     // Creation of this specific instance
     virtual HRFBlockAdapter*             Create(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                                 uint32_t              pi_Page,
-                                                unsigned short       pi_Resolution,
+                                                uint16_t       pi_Resolution,
                                                 HFCAccessMode         pi_AccessMode) const = 0;
     };
 END_IMAGEPP_NAMESPACE

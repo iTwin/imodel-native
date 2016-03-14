@@ -89,9 +89,9 @@ typedef struct {
 } lzw_dec_t;
 
 
-// Byte* lzw_encode(Byte *in, int max_bits)
+// Byte* lzw_encode(Byte *in, int32_t max_bits)
 // {
-// 	int len = (int)_len(in), bits = 9, next_shift = 512;
+// 	int32_t len = (int32_t)_len(in), bits = 9, next_shift = 512;
 // 	ushort code, c, nc, next_code = M_NEW;
 // 	lzw_enc_t *d = (lzw_enc_t*)_new(lzw_enc_t, 512);
 // 
@@ -99,14 +99,14 @@ typedef struct {
 // 	if (max_bits < 9 ) max_bits = 12;
 // 
 // 	Byte *out = (Byte *)_new(ushort, 4);
-// 	int out_len = 0, o_bits = 0;
+// 	int32_t out_len = 0, o_bits = 0;
 // 	uint32_t tmp = 0;
 // 
 // 	inline void write_bits(ushort x) 
 //         {
 // 		tmp = (tmp << bits) | x;
 // 		o_bits += bits;
-// 		if ((int)_len(out) <= out_len) _extend(out);
+// 		if ((int32_t)_len(out) <= out_len) _extend(out);
 // 		while (o_bits >= 8) 
 //             {
 // 			o_bits -= 8;
@@ -181,16 +181,16 @@ typedef struct {
 Byte* lzw_decode(Byte *in)
 {
 	Byte *out = (Byte *)_new(Byte, 4);
-	int out_len = 0;
+	int32_t out_len = 0;
 
     lzw_dec_t *d = (lzw_dec_t *)_new(lzw_dec_t, 512);
-	int len, j, next_shift = 512, bits = 9, n_bits = 0;
+	int32_t len, j, next_shift = 512, bits = 9, n_bits = 0;
 	ushort code, c, t, next_code = M_NEW;
 
 	uint32_t tmp = 0;
 	
     clear_table(); /* in case encoded bits didn't start with M_CLR */
-	for (len = (int)_len(in); len;) {
+	for (len = (int32_t)_len(in); len;) {
 		get_code();
 		if (code == M_EOD) break;
 		if (code == M_CLR) {
@@ -236,9 +236,9 @@ bail:	_del(d);
 	return out;
 }
 
-// int main()
+// int32_t main()
 // {
-// 	int i, fd = open("unixdict.txt", O_RDONLY);
+// 	int32_t i, fd = open("unixdict.txt", O_RDONLY);
 // 
 // 	if (fd == -1) {
 // 		fprintf(stderr, "Can't read file\n");
@@ -295,7 +295,7 @@ HCDCodecLZW::HCDCodecLZW()
 HCDCodecLZW::HCDCodecLZW(size_t     pi_Width,
                          size_t     pi_Height,
                          size_t     pi_BitsPerPixel,
-                         unsigned short pi_Predictor)
+                         uint16_t pi_Predictor)
     : HCDCodecImage(HCD_CODEC_NAME,
                     pi_Width,
                     pi_Height,

@@ -27,7 +27,7 @@ static struct EmbedBinStreamCreator : public HFCBinStream::Creator
         }
 
     // The parameter pi_NbRetryBeforeThrow is not used presently
-    virtual HFCBinStream* Create(HFCPtr<HFCURL> pi_pURL, uint64_t pi_offSet, HFCAccessMode pi_AccessMode, short pi_NbRetryBeforeThrow=0) const override
+    virtual HFCBinStream* Create(HFCPtr<HFCURL> pi_pURL, uint64_t pi_offSet, HFCAccessMode pi_AccessMode, int16_t pi_NbRetryBeforeThrow=0) const override
         {
         HPRECONDITION(pi_pURL != 0);
         HPRECONDITION(pi_offSet == 0); // not supported.

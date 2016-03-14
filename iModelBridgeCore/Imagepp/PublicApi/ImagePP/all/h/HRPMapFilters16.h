@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPMapFilters16.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -96,16 +96,16 @@ class HRPContrastFilter16 : public HRPMapFilter16
 
 public:
     IMAGEPP_EXPORT                HRPContrastFilter16();
-    IMAGEPP_EXPORT                HRPContrastFilter16(short pi_Var);
-    IMAGEPP_EXPORT                HRPContrastFilter16(short pi_Var,const HFCPtr<HRPPixelType>& pi_pFilterPixelType);
+    IMAGEPP_EXPORT                HRPContrastFilter16(int16_t pi_Var);
+    IMAGEPP_EXPORT                HRPContrastFilter16(int16_t pi_Var,const HFCPtr<HRPPixelType>& pi_pFilterPixelType);
     IMAGEPP_EXPORT virtual         ~HRPContrastFilter16();
 
     virtual HRPFilter* Clone() const override;
 
-    short GetIntensity() const;
+    int16_t GetIntensity() const;
 
 protected:
-    void            Init(short pi_Var);
+    void            Init(int16_t pi_Var);
 
     HRPContrastFilter16(const HRPContrastFilter16& pi_rObj);
 
@@ -143,12 +143,12 @@ public:
 
     // Get/Set methods
     void            SetInterval(Byte      pi_ChannelIndex,
-                                unsigned short pi_MinValue,
-                                unsigned short pi_MaxValue);
+                                uint16_t pi_MinValue,
+                                uint16_t pi_MaxValue);
 
     void            GetInterval(Byte      pi_ChannelIndex,
-                                unsigned short*    po_pMinValue,
-                                unsigned short*    po_pMaxValue);
+                                uint16_t*    po_pMinValue,
+                                uint16_t*    po_pMaxValue);
 
     void                    SetScalingMode(HistogramScalingMode pi_ScalingMode);
     HistogramScalingMode    GetScalingMode() const;
@@ -227,7 +227,7 @@ class HRPTintFilter16 : public HRPMapFilter16
 public:
 
     IMAGEPP_EXPORT          HRPTintFilter16();
-    IMAGEPP_EXPORT          HRPTintFilter16(unsigned short pi_TintColor[3]);
+    IMAGEPP_EXPORT          HRPTintFilter16(uint16_t pi_TintColor[3]);
     IMAGEPP_EXPORT virtual ~HRPTintFilter16();
 
     virtual HRPFilter* Clone() const override;

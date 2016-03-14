@@ -675,7 +675,7 @@ HRFSpotDimapFile::~HRFSpotDimapFile()
     ---------------------------------------------------------------------------
  */
 HRFResolutionEditor* HRFSpotDimapFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                              unsigned short pi_Resolution,
+                                                              uint16_t pi_Resolution,
                                                               HFCAccessMode  pi_AccessMode)
     {
     HPRECONDITION(pi_Page < CountPages());
@@ -909,7 +909,7 @@ is equivalent to the matrix
 ---------------------------------------------------------------------------
 */
 
-bool   HRFSpotDimapFile::IsXMLGeoRefSimilarToGeoTiff(double* pi_TiePointsMatrix, unsigned short pi_NbVal_GeoTiePoint)
+bool   HRFSpotDimapFile::IsXMLGeoRefSimilarToGeoTiff(double* pi_TiePointsMatrix, uint16_t pi_NbVal_GeoTiePoint)
     {
     bool Result = false;
 

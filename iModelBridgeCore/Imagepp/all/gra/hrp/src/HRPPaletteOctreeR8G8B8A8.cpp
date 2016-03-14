@@ -87,7 +87,7 @@ struct HRPPaletteOctreeR8G8B8A8Node* HRPPaletteOctreeR8G8B8A8::AddColor(
         pi_pNode->IsLeaf = true;
         pi_pNode->Index = pi_Index;
 
-        for(int i=0; i<16; i++)
+        for(int32_t i=0; i<16; i++)
             pi_pNode->pChild[i] = 0;
         }
     else
@@ -146,7 +146,7 @@ void HRPPaletteOctreeR8G8B8A8::DeleteTree(
     struct HRPPaletteOctreeR8G8B8A8Node* pNode)
     {
     // we delete each child of the tree
-    for(int i=0; i < 16; i++)
+    for(int32_t i=0; i < 16; i++)
         {
         if(pNode->pChild[i])
             DeleteTree(pNode->pChild[i]);

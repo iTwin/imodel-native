@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFiTiffFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFiTiffFile
@@ -50,7 +50,7 @@ public:
     virtual bool                          AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage);
 
     virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
-                                                                 unsigned short           pi_Resolution,
+                                                                 uint16_t           pi_Resolution,
                                                                  HFCAccessMode             pi_AccessMode);
 
     virtual void                         Save();
@@ -111,7 +111,7 @@ protected:
         size_t                  m_TransPaletteCount;
 
         // RGB or BGR
-        unsigned short         m_HMRPixelTypeSpec;         // see HRFTiffFile.h
+        uint16_t         m_HMRPixelTypeSpec;         // see HRFTiffFile.h
 
         string                  m_SourceFileCreationTime;
 

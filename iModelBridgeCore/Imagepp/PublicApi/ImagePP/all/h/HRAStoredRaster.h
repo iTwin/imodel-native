@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAStoredRaster.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -111,7 +111,7 @@ public:
 
 
 
-    virtual unsigned short          GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms);
+    virtual uint16_t          GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms);
 
     // Debug function
     virtual void                    PrintState(ostream& po_rOutput) const;

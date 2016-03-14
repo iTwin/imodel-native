@@ -26,8 +26,8 @@ class  HRFRasterFileCapabilities;
 class  HCDCodecHMRRLE1;
 
 #define RESOLUTION_EDITOR_NOT_64_BITS_READY \
-    HPRECONDITION(pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);  \
-    HPRECONDITION(GetResolutionDescriptor()->GetWidth() <= ULONG_MAX && GetResolutionDescriptor()->GetHeight() <= ULONG_MAX);
+    HPRECONDITION(pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);  \
+    HPRECONDITION(GetResolutionDescriptor()->GetWidth() <= UINT32_MAX && GetResolutionDescriptor()->GetHeight() <= UINT32_MAX);
 
 
 class HRFResolutionEditor
@@ -89,7 +89,7 @@ public:
 
     virtual void                    NoMoreRead();
 
-    unsigned short                 GetResolutionIndex() const;
+    uint16_t                 GetResolutionIndex() const;
     uint32_t                        GetPage() const;
 
     // Used by HRSObjectStore to synchronize TileDataFlag before the save.
@@ -107,13 +107,13 @@ protected:
     HFCPtr<HRFRasterFileCapabilities>   m_pResolutionCapabilities; // Use the capabilities for test
     HFCAccessMode                       m_AccessMode;
     uint32_t                           m_Page;
-    unsigned short                      m_Resolution;
+    uint16_t                      m_Resolution;
     double                              m_ResolutionFactor;
 
     // Constructor
     IMAGEPP_EXPORT                          HRFResolutionEditor(HFCPtr<HRFRasterFile>     pi_rpRasterFile,
                                                         uint32_t                  pi_Page,
-                                                        unsigned short           pi_Resolution,
+                                                        uint16_t           pi_Resolution,
                                                         HFCAccessMode             pi_AccessMode);
 
     IMAGEPP_EXPORT                          HRFResolutionEditor(HFCPtr<HRFRasterFile>     pi_rpRasterFile,

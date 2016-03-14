@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAGenericAverageSampler.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>-----------------------------------------------------------------------------
@@ -70,7 +70,7 @@ protected:
 
     uint32_t   m_BytesPerPixel;
     uint32_t   m_NbChannels;
-    unsigned short m_NbBytesPerChannel;
+    uint16_t m_NbBytesPerChannel;
 
     // Pixel type used to average and return results
     // (if different from source pixel type)
@@ -86,7 +86,7 @@ protected:
     Byte* ComputeAddress(const HFCPtr<HCDPacket>& pi_rpPacket,
                           HUINTX                   pi_PosX,
                           HUINTX                   pi_PosY,
-                          size_t                   pi_NeededPixels = ULONG_MAX) const;
+                          size_t                   pi_NeededPixels = UINT32_MAX) const;
 
 private:
     // disabled methods

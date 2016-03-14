@@ -658,10 +658,10 @@ bool ImagePP::ErrorMsg (HTIFFError** pio_pError, HTIFFError& pi_rNewError)
 //
 //-----------------------------------------------------------------------------
 
-void ImagePP::SwabArrayOfShort (unsigned short* pio_pData, register size_t pi_Count)
+void ImagePP::SwabArrayOfShort (uint16_t* pio_pData, register size_t pi_Count)
     {
     register unsigned char*    pData;
-    register int        Tmp;
+    register int32_t        Tmp;
 
     /* XXX unroll loop some */
     while (pi_Count-- > 0)
@@ -681,7 +681,7 @@ void ImagePP::SwabArrayOfShort (unsigned short* pio_pData, register size_t pi_Co
 void ImagePP::SwabArrayOfLong(register uint32_t* pio_pData, register size_t pi_Count)
     {
     register unsigned char*    pData;
-    register int        Tmp;
+    register int32_t        Tmp;
 
     /* XXX unroll loop some */
     while (pi_Count-- > 0)
@@ -761,7 +761,7 @@ bool ImagePP::IsValidDoubleArray(const double* pi_pValues, int32_t pi_ArraySize)
 
     bool IsValid = true;
 
-    for (int ArrayIndex = 0; ArrayIndex < pi_ArraySize; ArrayIndex++)
+    for (int32_t ArrayIndex = 0; ArrayIndex < pi_ArraySize; ArrayIndex++)
         {
         if (BeNumerical::BeIsnan(pi_pValues[ArrayIndex]) || !BeNumerical::BeFinite(pi_pValues[ArrayIndex]))
             {
@@ -818,7 +818,7 @@ size_t HTIFFStream::Write(const void* pi_pBuffer, size_t pi_Size, size_t pi_Coun
     return result;
     }
 
-bool HTIFFStream::Seek (uint64_t pi_Offset, int pi_Origin)
+bool HTIFFStream::Seek (uint64_t pi_Offset, int32_t pi_Origin)
     {
     HPRECONDITION(m_pStream != 0);
 

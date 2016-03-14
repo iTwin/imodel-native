@@ -361,7 +361,7 @@ HRFImgMappedFile::~HRFImgMappedFile()
     ---------------------------------------------------------------------------
  */
 HRFResolutionEditor* HRFImgMappedFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                              unsigned short pi_Resolution,
+                                                              uint16_t pi_Resolution,
                                                               HFCAccessMode  pi_AccessMode)
     {
     HPRECONDITION(GetPageDescriptor(pi_Page) != 0);

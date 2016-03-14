@@ -836,7 +836,7 @@ HFCPtr<HRPPixelType> HIMMosaic::GetPixelType() const
                     {
                     HRPChannelOrg TempOrg1(CurrentOrg);
                     HRPChannelOrg TempOrg2((*Itr)->GetObject()->GetPixelType()->GetChannelOrg());
-                    unsigned short ContainsAlpha = 0;
+                    uint16_t ContainsAlpha = 0;
 
                     uint32_t ChannelIndex = TempOrg1.GetChannelIndex(HRPChannelType::ALPHA, 0);
                     if (ChannelIndex != HRPChannelType::FREE)
@@ -897,7 +897,7 @@ HFCPtr<HRPPixelType> HIMMosaic::GetPixelType() const
             if (IndexBits > 1)
                 IndexBits = 8;
 
-            pPixelType = HRPPixelTypeFactory::GetInstance()->Create(CurrentOrg, (unsigned short)IndexBits);
+            pPixelType = HRPPixelTypeFactory::GetInstance()->Create(CurrentOrg, (uint16_t)IndexBits);
 
             if (pPixelType == 0)
                 pPixelType = new HRPPixelTypeV32R8G8B8A8();

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelTypeFactory.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPPixelTypeFactory
@@ -27,7 +27,7 @@ class HRPPixelTypeFactory
 public:
 
     // PixelType creation
-    IMAGEPP_EXPORT HFCPtr<HRPPixelType> Create(const HRPChannelOrg& pi_rChannelOrg, unsigned short pi_IndexBits) const;
+    IMAGEPP_EXPORT HFCPtr<HRPPixelType> Create(const HRPChannelOrg& pi_rChannelOrg, uint16_t pi_IndexBits) const;
     IMAGEPP_EXPORT HFCPtr<HRPPixelType> Create(const HRPPixelPalette& pi_rPixelPalette) const;
     IMAGEPP_EXPORT HFCPtr<HRPPixelType> Create(const HCLASS_ID& pi_rClassKey) const;
     

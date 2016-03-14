@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DProjectiveMeshAdapter.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DProjectiveMeshAdapter
@@ -219,10 +219,10 @@ protected:
 #endif
     mutable HFCPtr<HGF2DTransfoModel> m_pDefaultModel;
 
-    mutable long m_NumConverted;
+    mutable int32_t m_NumConverted;
 
     mutable bool m_LastDirectFacetInitialized;
-    mutable long m_LastDirectHit;
+    mutable int32_t m_LastDirectHit;
     mutable bool m_LastDirectModelPresent;
     mutable bool m_LastTransformedDirectFacetPresent;
     mutable HFCPtr<HVE2DFacet<HFCPtr<HGF2DTransfoModel> > > m_pLastDirectFacet;
@@ -230,7 +230,7 @@ protected:
     mutable HFCPtr<HVE2DFacet<HFCPtr<HGF2DTransfoModel> > > m_pLastTransformedDirectFacet;
 
     mutable bool m_LastInverseFacetInitialized;
-    mutable long m_LastInverseHit;
+    mutable int32_t m_LastInverseHit;
     mutable bool m_LastInverseModelPresent;
     mutable bool m_LastTransformedInverseFacetPresent;
     mutable HFCPtr<HVE2DFacet<HFCPtr<HGF2DTransfoModel> > > m_pLastInverseFacet;

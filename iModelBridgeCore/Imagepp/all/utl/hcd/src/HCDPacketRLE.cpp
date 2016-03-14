@@ -100,7 +100,7 @@ void HCDPacketRLE::SetLineDataSize(HUINTX pi_PosY, size_t pi_DataSize)
 #ifdef DEBUG_RLE_PACKET
     if(pi_DataSize)
         {
-        unsigned short* pRLERuns = (unsigned short*)m_RunBuffers[pi_PosY].m_pBuffer;
+        uint16_t* pRLERuns = (uint16_t*)m_RunBuffers[pi_PosY].m_pBuffer;
         uint32_t PixelCountInLine = 0;
         for(size_t i=0; i < (pi_DataSize >> 1); ++i)
             PixelCountInLine += pRLERuns[i];
@@ -135,7 +135,7 @@ void HCDPacketRLE::SetLineBuffer(HUINTX     pi_PosY,
 #ifdef DEBUG_RLE_PACKET
     if(pi_pBuffer && pi_DataSize)
         {
-        unsigned short* pRLERuns = (unsigned short*)pi_pBuffer;
+        uint16_t* pRLERuns = (uint16_t*)pi_pBuffer;
         uint32_t PixelCountInLine = 0;
         for(size_t i=0; i < (pi_DataSize >> 1); ++i)
             PixelCountInLine += pRLERuns[i];
@@ -180,7 +180,7 @@ void HCDPacketRLE::SetLineData(HUINTX           pi_PosY,
 #ifdef DEBUG_RLE_PACKET
     if (pi_pData && pi_DataSize)
         {
-        unsigned short* pRLERuns = (unsigned short*)pi_pData;
+        uint16_t* pRLERuns = (uint16_t*)pi_pData;
         uint32_t PixelCountInLine = 0;
         for (size_t i=0; i < (pi_DataSize >> 1); ++i)
             PixelCountInLine += pRLERuns[i];
@@ -364,7 +364,7 @@ bool HCDPacketRLE::ValidateLineIntegrity(HUINTX pi_NoLine) const
 
     RunBuffer const& runBuffer = m_RunBuffers[pi_NoLine];
 
-    unsigned short const* pRleBuffer = (unsigned short const*)runBuffer.m_pBuffer;
+    uint16_t const* pRleBuffer = (uint16_t const*)runBuffer.m_pBuffer;
 
     if(pRleBuffer == 0 || runBuffer.m_DataSize == 0)
         return true; // Consider an empty buffer or runs as valid.

@@ -270,9 +270,9 @@ HRFAnnotationInfoPDF::HRFAnnotationInfoPDF(const HRFAnnotationInfoPDF& pi_rObj)
 // Public
 // Return the width in image pixel of each linear segment composing the shape
 //-----------------------------------------------------------------------------
-unsigned short HRFAnnotationInfoPDF::GetLineWidth() const
+uint16_t HRFAnnotationInfoPDF::GetLineWidth() const
     {
-    return ((unsigned short)m_p2DSelectionZone->GetTolerance()) * 2;
+    return ((uint16_t)m_p2DSelectionZone->GetTolerance()) * 2;
     }
 
 //-----------------------------------------------------------------------------

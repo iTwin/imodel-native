@@ -202,7 +202,7 @@ uint32_t HRPHistogram::FindEntryWithMinimumCount(uint32_t pi_Channel) const
     {
     HPRECONDITION(pi_Channel < m_ChannelCount);
 
-    uint32_t MinimumCount = ULONG_MAX;
+    uint32_t MinimumCount = UINT32_MAX;
     uint32_t Entry = 0;
 
     for(uint32_t EntryIndex = 0; EntryIndex < m_EntryFrequenciesSize; EntryIndex++)
@@ -250,7 +250,7 @@ void HRPHistogram::ConstructUsingRGBColorSpace(uint32_t**  pi_pEntryFrequencies,
 //
 //-----------------------------------------------------------------------------
 
-void HRPHistogram::ConstructUsingLightnessColorSpace(unsigned int pi_EntryFrequenciesSize)
+void HRPHistogram::ConstructUsingLightnessColorSpace(uint32_t pi_EntryFrequenciesSize)
     {
     m_ColorSpace           = LIGHTNESS;
     m_ChannelCount         = 1;
@@ -279,7 +279,7 @@ void HRPHistogram::SetSamplingColorSpace(HRPHistogram::COLOR_SPACE pi_ColorSpace
     // Don't waste any time if there is real change..
     if (m_ColorSpace != pi_ColorSpace && pi_ColorSpace != NATIVE)
         {
-        unsigned int EntryFrequenciesSize = m_EntryFrequenciesSize;
+        uint32_t EntryFrequenciesSize = m_EntryFrequenciesSize;
 
         // When changing the current color space, invalidate and
         // destroy the current Histogram.

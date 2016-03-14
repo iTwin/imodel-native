@@ -54,7 +54,7 @@ inline Byte HRFSLOStripEditor::GetBit (Byte* pByte, int32_t bit)
 //-----------------------------------------------------------------------------
 HRFSLOStripEditor::HRFSLOStripEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                      uint32_t              pi_Page,
-                                     unsigned short       pi_Resolution,
+                                     uint16_t       pi_Resolution,
                                      HFCAccessMode         pi_AccessMode,
                                      HRFResolutionEditor*  pi_pResolutionEditor)
     : HRFResolutionEditor( pi_rpRasterFile, pi_Page, pi_Resolution, pi_AccessMode)
@@ -66,17 +66,17 @@ HRFSLOStripEditor::HRFSLOStripEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
     m_BitsPerPixel          = (Byte)GetResolutionDescriptor()->GetPixelType()->CountPixelRawDataBits();
     m_ScanLineOrientation   = m_pSrcResolutionEditor->GetResolutionDescriptor()->GetScanlineOrientation();
 
-    HASSERT(m_pSrcResolutionEditor->GetResolutionDescriptor()->GetWidth() <= ULONG_MAX);
-    HASSERT(m_pSrcResolutionEditor->GetResolutionDescriptor()->GetHeight() <= ULONG_MAX);
-    HASSERT(m_pSrcResolutionEditor->GetResolutionDescriptor()->GetBytesPerWidth() <= ULONG_MAX);
+    HASSERT(m_pSrcResolutionEditor->GetResolutionDescriptor()->GetWidth() <= UINT32_MAX);
+    HASSERT(m_pSrcResolutionEditor->GetResolutionDescriptor()->GetHeight() <= UINT32_MAX);
+    HASSERT(m_pSrcResolutionEditor->GetResolutionDescriptor()->GetBytesPerWidth() <= UINT32_MAX);
 
     m_SrcImageWidth         = (uint32_t)m_pSrcResolutionEditor->GetResolutionDescriptor()->GetWidth();
     m_SrcImageHeight        = (uint32_t)m_pSrcResolutionEditor->GetResolutionDescriptor()->GetHeight();
     m_SrcImageBlockHeight   = m_pSrcResolutionEditor->GetResolutionDescriptor()->GetBlockHeight();
     m_SrcImageBytesPerWidth = (uint32_t)m_pSrcResolutionEditor->GetResolutionDescriptor()->GetBytesPerWidth();
 
-    HASSERT(GetResolutionDescriptor()->GetWidth() <= ULONG_MAX);
-    HASSERT(GetResolutionDescriptor()->GetHeight() <= ULONG_MAX);
+    HASSERT(GetResolutionDescriptor()->GetWidth() <= UINT32_MAX);
+    HASSERT(GetResolutionDescriptor()->GetHeight() <= UINT32_MAX);
 
     m_AdaptorWidth          = (uint32_t)GetResolutionDescriptor()->GetWidth();
     m_AdaptorHeight         = (uint32_t)GetResolutionDescriptor()->GetHeight();
@@ -166,7 +166,7 @@ HSTATUS HRFSLOStripEditor::ReadBlock(uint64_t            pi_PosBlockX,
                                      HFCPtr<HCDPacket>&  po_rpPacket)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
-    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+    HPRECONDITION (pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);
 
     HSTATUS Status      = H_SUCCESS;
     uint32_t ColumnIndex;
@@ -259,7 +259,7 @@ HSTATUS HRFSLOStripEditor::WriteBlock(uint64_t      pi_PosBlockX,
                                       const Byte*   pi_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
-    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+    HPRECONDITION (pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);
 
     HSTATUS Status = H_SUCCESS;
 
@@ -301,7 +301,7 @@ HSTATUS HRFSLOStripEditor::WriteBlock(uint64_t            pi_PosBlockX,
                                       const HFCPtr<HCDPacket>&  pi_rpPacket)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess );
-    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+    HPRECONDITION (pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);
 
     HSTATUS Status = H_SUCCESS;
 
@@ -801,8 +801,8 @@ void HRFSLOStripEditor::TransposeRLE1Packet(HFCPtr<HCDPacket>& pio_pPacket,
     memset(pTransposedData, 0, NewPaketSize * sizeof (Byte));
 
     uint32_t*         LineIndexTable = ((HFCPtr<HCDCodecHMRRLE1>&)pio_pPacket->GetCodec())->GetLineIndexesTable();
-    unsigned short* pSourceBuffer  = reinterpret_cast<unsigned short*>(pio_pPacket->GetBufferAddress());
-    unsigned short* pSourceLine;
+    uint16_t* pSourceBuffer  = reinterpret_cast<uint16_t*>(pio_pPacket->GetBufferAddress());
+    uint16_t* pSourceLine;
 
     // Transpose the source packet.
     if (!pi_Flip && !pi_Swap)
@@ -874,12 +874,12 @@ void HRFSLOStripEditor::TransposeRLE1Packet(HFCPtr<HCDPacket>& pio_pPacket,
 // The transposed is returned uncompressed
 //-----------------------------------------------------------------------------
 void HRFSLOStripEditor::TransposeRLE1Line(Byte*   po_pTransposedData,
-                                          unsigned short*  pi_pSourceRLE1Line,
+                                          uint16_t*  pi_pSourceRLE1Line,
                                           uint32_t  pi_LineNumber,
                                           uint32_t  pi_NumberOfPixels,
                                           uint32_t  pi_TransposedDataWidthInBytes)
     {
-    unsigned short* pRun           = pi_pSourceRLE1Line;
+    uint16_t* pRun           = pi_pSourceRLE1Line;
     uint32_t NumberOfPixels = pi_NumberOfPixels;
     Byte*  pByte          = po_pTransposedData + pi_LineNumber / 8;
     bool    State          = false;
@@ -918,12 +918,12 @@ void HRFSLOStripEditor::TransposeRLE1Line(Byte*   po_pTransposedData,
 // TransposeAndFlipRLE1Line
 //-----------------------------------------------------------------------------
 void HRFSLOStripEditor::TransposeAndFlipRLE1Line    (Byte*   po_pTransposedData,
-                                                     unsigned short*  pi_pSourceRLE1Line,
+                                                     uint16_t*  pi_pSourceRLE1Line,
                                                      uint32_t  pi_LineNumber,
                                                      uint32_t  pi_NumberOfPixels,
                                                      uint32_t  pi_TransposedDataWidthInBytes)
     {
-    unsigned short* pRun           = pi_pSourceRLE1Line;
+    uint16_t* pRun           = pi_pSourceRLE1Line;
     uint32_t NumberOfPixels = pi_NumberOfPixels;
     Byte*  pByte          =   (po_pTransposedData)
                                 + (pi_NumberOfPixels - 1) * (pi_TransposedDataWidthInBytes)
@@ -972,8 +972,8 @@ void HRFSLOStripEditor::HorizontalSwapRLE1Packet(HFCPtr<HCDPacket>& pio_pPacket)
 
     uint32_t PacketHeight = static_cast<uint32_t>(((HFCPtr<HCDCodecHMRRLE1>&) pio_pPacket->GetCodec())->GetHeight());
 
-    // Use pre-define "unsigned short" to be sure to have an unsigned 16bits data type.
-    unsigned short* BufferAdress = reinterpret_cast<unsigned short*>(pio_pPacket->GetBufferAddress());
+    // Use pre-define "uint16_t" to be sure to have an unsigned 16bits data type.
+    uint16_t* BufferAdress = reinterpret_cast<uint16_t*>(pio_pPacket->GetBufferAddress());
     uint32_t* LineIndexTable = ((HFCPtr<HCDCodecHMRRLE1>&)pio_pPacket->GetCodec())->GetLineIndexesTable();
 
     // Invert data horizontaly into a block
@@ -985,8 +985,8 @@ void HRFSLOStripEditor::HorizontalSwapRLE1Packet(HFCPtr<HCDPacket>& pio_pPacket)
     //
     for (uint32_t LineIndex = 0; LineIndex < PacketHeight; ++LineIndex)
         {
-        unsigned short* pStart;
-        unsigned short* pEnd;
+        uint16_t* pStart;
+        uint16_t* pEnd;
 
         // Take the address of the beginning of the line
         pStart = BufferAdress + LineIndexTable[LineIndex];
@@ -1000,7 +1000,7 @@ void HRFSLOStripEditor::HorizontalSwapRLE1Packet(HFCPtr<HCDPacket>& pio_pPacket)
         // Swap values
         while (pEnd > pStart)
             {
-            unsigned short Run;
+            uint16_t Run;
 
             Run    = *pStart;
             *pStart = *pEnd;
@@ -1064,7 +1064,7 @@ HSTATUS HRFSLOStripEditor::BuildHorizontalStrips (BlockTable& po_rpppBlocks,
                 HFCPtr<HCDPacket>       pVertStrip      = pi_rpppBlocks[VertStripIndex][0];
                 HFCPtr<HCDCodecHMRRLE1> pVertCodec      = ((HFCPtr<HCDCodecHMRRLE1>&)pVertStrip->GetCodec());
                 uint32_t*                 VertStripLIT    = pVertCodec->GetLineIndexesTable();
-                Byte*                 PosToCopyFrom   = pVertStrip->GetBufferAddress() + VertStripLIT[IndexOfLineToCopy] * sizeof(unsigned short);
+                Byte*                 PosToCopyFrom   = pVertStrip->GetBufferAddress() + VertStripLIT[IndexOfLineToCopy] * sizeof(uint16_t);
                 uint32_t                VertStripHeight = static_cast<uint32_t>(pVertCodec->GetHeight());
                 Byte*                 PosToCopy;
                 size_t                  SizeOfLineToCopy;
@@ -1072,15 +1072,15 @@ HSTATUS HRFSLOStripEditor::BuildHorizontalStrips (BlockTable& po_rpppBlocks,
                 // Compute the size of the current line to copy
                 if (IndexOfLineToCopy != VertStripHeight-1)
                     {
-                    SizeOfLineToCopy = (VertStripLIT[IndexOfLineToCopy + 1] - VertStripLIT[IndexOfLineToCopy]) * sizeof (unsigned short);
+                    SizeOfLineToCopy = (VertStripLIT[IndexOfLineToCopy + 1] - VertStripLIT[IndexOfLineToCopy]) * sizeof (uint16_t);
                     }
                 else
                     {
-                    SizeOfLineToCopy = pVertStrip->GetDataSize() - VertStripLIT[IndexOfLineToCopy] * sizeof (unsigned short);
+                    SizeOfLineToCopy = pVertStrip->GetDataSize() - VertStripLIT[IndexOfLineToCopy] * sizeof (uint16_t);
                     }
 
                 // Check if there is enough space to copy the current line
-                if (NewBufferSize < CurrentDataSize + SizeOfLineToCopy + 3 * sizeof (unsigned short))
+                if (NewBufferSize < CurrentDataSize + SizeOfLineToCopy + 3 * sizeof (uint16_t))
                     {
                     // realloc the buffer
                     Byte* pTmpBuffer;
@@ -1102,8 +1102,8 @@ HSTATUS HRFSLOStripEditor::BuildHorizontalStrips (BlockTable& po_rpppBlocks,
                 // Append two RLE1 lines
                 if (VertStripIndex)
                     {
-                    unsigned short* pRun = (unsigned short*)PosToCopyFrom;
-                    unsigned short* pPreviousRun = (unsigned short*)PosToCopy - 1;
+                    uint16_t* pRun = (uint16_t*)PosToCopyFrom;
+                    uint16_t* pPreviousRun = (uint16_t*)PosToCopy - 1;
                     uint32_t length;
 
                     // check if last line section end with a zero length run and
@@ -1113,10 +1113,10 @@ HSTATUS HRFSLOStripEditor::BuildHorizontalStrips (BlockTable& po_rpppBlocks,
                         // remove zero run from current and previous line section
                         pRun++;
                         pPreviousRun--;
-                        CurrentDataSize  -= sizeof(unsigned short);
-                        PosToCopyFrom    += sizeof(unsigned short);
-                        SizeOfLineToCopy -= sizeof(unsigned short);
-                        TotalLineSize    -= sizeof(unsigned short);
+                        CurrentDataSize  -= sizeof(uint16_t);
+                        PosToCopyFrom    += sizeof(uint16_t);
+                        SizeOfLineToCopy -= sizeof(uint16_t);
+                        TotalLineSize    -= sizeof(uint16_t);
                         }
 
                     // add the length of the last line section and the
@@ -1129,15 +1129,15 @@ HSTATUS HRFSLOStripEditor::BuildHorizontalStrips (BlockTable& po_rpppBlocks,
                         (*pPreviousRun) = 0;
                         pPreviousRun++;
                         length -= 32767;
-                        CurrentDataSize += 2 * sizeof(unsigned short);
-                        TotalLineSize   += 2 * sizeof(unsigned short);
+                        CurrentDataSize += 2 * sizeof(uint16_t);
+                        TotalLineSize   += 2 * sizeof(uint16_t);
                         }
 
                     // adjust the last value of the previous line section
-                    (*pPreviousRun) = (unsigned short)length;
+                    (*pPreviousRun) = (uint16_t)length;
 
-                    PosToCopyFrom += sizeof(unsigned short);
-                    SizeOfLineToCopy -= sizeof(unsigned short);
+                    PosToCopyFrom += sizeof(uint16_t);
+                    SizeOfLineToCopy -= sizeof(uint16_t);
                     }
 
                 PosToCopy = pBuffer + CurrentDataSize;
@@ -1150,7 +1150,7 @@ HSTATUS HRFSLOStripEditor::BuildHorizontalStrips (BlockTable& po_rpppBlocks,
                 }
 
             // Adjust LineIndexTable of the new horizontal strip
-            HASSERT_X64(((CurrentDataSize - TotalLineSize) >> 1) < ULONG_MAX);
+            HASSERT_X64(((CurrentDataSize - TotalLineSize) >> 1) < UINT32_MAX);
             pLit[Line] = (uint32_t)((CurrentDataSize - TotalLineSize) >> 1);
             }
         pNewCodec->SetLineIndexesTable(pLit);
@@ -1172,7 +1172,7 @@ HSTATUS HRFSLOStripEditor::BuildHorizontalStrips (BlockTable& po_rpppBlocks,
             {
             uint32_t* LineIndexTable;
             LineIndexTable = ((HFCPtr<HCDCodecHMRRLE1>&) pi_rpppBlocks[Index][0]->GetCodec())->GetLineIndexesTable();
-            pi_rpppBlocks[Index][0]->SetDataSize(LineIndexTable[SourceLineIndex] * sizeof(unsigned short));
+            pi_rpppBlocks[Index][0]->SetDataSize(LineIndexTable[SourceLineIndex] * sizeof(uint16_t));
             pi_rpppBlocks[Index][0]->ShrinkBufferToDataSize();
             }
         }

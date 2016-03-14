@@ -64,13 +64,13 @@ public:
     virtual bool                         AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage);
 
     virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
-                                                                 unsigned short           pi_Resolution,
+                                                                 uint16_t           pi_Resolution,
                                                                  HFCAccessMode             pi_AccessMode);
 
     virtual void                          Save();
 
     void                                  Close();
-    void                                  Open(WCharCP pi_pFileName, unsigned int pi_AsReadOnly);
+    void                                  Open(WCharCP pi_pFileName, uint32_t pi_AsReadOnly);
 
     virtual void                          SetDefaultRatioToMeter(double pi_RatioToMeter,
                                                                  uint32_t pi_Page,
@@ -90,7 +90,7 @@ public:
 
     // Sets the LookAhead for a shape
     virtual void                        SetLookAhead(uint32_t        pi_Page,
-                                                     unsigned short pi_Resolution,
+                                                     uint16_t pi_Resolution,
                                                      const HVEShape& pi_rShape,
                                                      uint32_t        pi_ConsumerID,
                                                      bool           pi_Async);
@@ -111,7 +111,7 @@ protected:
     virtual bool            Open                ();
     virtual void            CreateDescriptors   ();
 
-    double                  GetRatio(unsigned short pi_ResolutionNb);
+    double                  GetRatio(uint16_t pi_ResolutionNb);
     void*                   GetFileView();
     const void*             GetFileViewFileInfoEx();
     uint32_t*                 GetBandList();
@@ -121,7 +121,7 @@ protected:
     GeoCoordinates::BaseGCSPtr
                             ExtractGeocodingInformation(double & factorModelToMeter) const;
 
-    double                  RoundRatio(unsigned long pi_MainImageSize, unsigned long pi_ResImageSize);
+    double                  RoundRatio(uint32_t pi_MainImageSize, uint32_t pi_ResImageSize);
 
     // members
     unique_ptr<NCSObjects>  m_pNcsObjs; 
@@ -132,7 +132,7 @@ protected:
 
 private:
 
-    typedef vector<unsigned short> BandList;
+    typedef vector<uint16_t> BandList;
     typedef map<uint64_t, Byte*> TilePool;
     HFCExclusiveKey              m_TilePoolKey;
     TilePool                     m_TilePool;

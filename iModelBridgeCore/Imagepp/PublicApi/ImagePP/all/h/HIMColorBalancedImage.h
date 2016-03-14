@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMColorBalancedImage.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -98,7 +98,7 @@ public:
             return *this;
             }
 
-        RGBDispersion& operator/=(int pi_Divider)
+        RGBDispersion& operator/=(int32_t pi_Divider)
             {
             MeanRed     /= pi_Divider;
             StddevRed   /= pi_Divider;

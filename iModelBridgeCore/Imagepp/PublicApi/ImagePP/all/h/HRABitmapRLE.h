@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRABitmapRLE.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -51,7 +51,7 @@ public:
     virtual HRARasterEditor*
     CreateEditorUnShaped (HFCAccessMode pi_Mode) override;
 
-    virtual unsigned short GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms) override;
+    virtual uint16_t GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms) override;
 
     virtual void        ComputeHistogram(HRAHistogramOptions* pio_pHistogramOptions,
                                          bool                pi_ForceRecompute = false) override;

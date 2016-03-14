@@ -25,11 +25,11 @@
 
 
 
-const unsigned int JPegTileTrailerSize     =   2;
-const unsigned int JPegColorTileHeaderSize =  33;  // 35
-const unsigned int JPegGrayTileHeaderSize  =  23;  // 25
-const unsigned int JpegColorTablesSize     = 572;  // 574 - JPegTileTrailerSize
-const unsigned int JpegGrayTablesSize      = 287;  // 289 - JPegTileTrailerSize
+const uint32_t JPegTileTrailerSize     =   2;
+const uint32_t JPegColorTileHeaderSize =  33;  // 35
+const uint32_t JPegGrayTileHeaderSize  =  23;  // 25
+const uint32_t JpegColorTablesSize     = 572;  // 574 - JPegTileTrailerSize
+const uint32_t JpegGrayTablesSize      = 287;  // 289 - JPegTileTrailerSize
 
 //-----------------------------------------------------------------------------
 // public
@@ -38,7 +38,7 @@ const unsigned int JpegGrayTablesSize      = 287;  // 289 - JPegTileTrailerSize
 
 HRFIntergraphLineEditor::HRFIntergraphLineEditor(HFCPtr<HRFRasterFile>                     pi_rpRasterFile,
                                                  uint32_t                                  pi_Page,
-                                                 unsigned short                           pi_Resolution,
+                                                 uint16_t                           pi_Resolution,
                                                  HFCAccessMode                             pi_AccessMode,
                                                  HRFIntergraphFile::IntergraphResolutionDescriptor&
                                                  pi_rIntergraphResolutionDescriptor)
@@ -172,9 +172,9 @@ HSTATUS HRFIntergraphLineEditor::ReadBlock(uint64_t  pi_PosBlockX,
                 // Special case for JPEG compression (Type 30 and 31)
                 if (static_cast<HRFIntergraphFile*>(GetRasterFile().GetPtr())->m_DataTypeCode == 30 || static_cast<HRFIntergraphFile*>(GetRasterFile().GetPtr())->m_DataTypeCode == 31)
                     {
-                    unsigned int JPegTileHeaderSize;
-                    unsigned int JPegTableSize;
-                    unsigned int QualityFactor = 15; // Default value for Intergraph File.
+                    uint32_t JPegTileHeaderSize;
+                    uint32_t JPegTableSize;
+                    uint32_t QualityFactor = 15; // Default value for Intergraph File.
 
                     if (static_cast<HRFIntergraphFile*>(GetRasterFile().GetPtr())->m_DataTypeCode == 30)
                         JPegTileHeaderSize = JPegGrayTileHeaderSize;
@@ -186,7 +186,7 @@ HSTATUS HRFIntergraphLineEditor::ReadBlock(uint64_t  pi_PosBlockX,
                     else
                         JPegTableSize = JpegColorTablesSize;
 
-                    unsigned int TotalJpegHeaderSize  = JPegTileHeaderSize + JPegTileTrailerSize + JPegTableSize;
+                    uint32_t TotalJpegHeaderSize  = JPegTileHeaderSize + JPegTileTrailerSize + JPegTableSize;
 
                     if (static_cast<HRFIntergraphFile*>(GetRasterFile().GetPtr())->m_pJpegPacketPacket)
                         {
@@ -292,9 +292,9 @@ HSTATUS HRFIntergraphLineEditor::ReadBlockRLE(uint64_t pi_PosBlockX,
     HPRECONDITION(pio_rpPacketRLE->HasBufferOwnership());    // Must be owner of buffer.
     HPRECONDITION(pio_rpPacketRLE->GetCodec()->GetWidth() == GetResolutionDescriptor()->GetBlockWidth());
     HPRECONDITION(pio_rpPacketRLE->GetCodec()->GetHeight() >= GetResolutionDescriptor()->GetBlockHeight());
-    HPRECONDITION(GetResolutionDescriptor()->GetHeight() <= ULONG_MAX);
-    HPRECONDITION(GetResolutionDescriptor()->GetWidth() <= ULONG_MAX);
-    HPRECONDITION(GetResolutionDescriptor()->GetBytesPerBlockWidth() <= ULONG_MAX);
+    HPRECONDITION(GetResolutionDescriptor()->GetHeight() <= UINT32_MAX);
+    HPRECONDITION(GetResolutionDescriptor()->GetWidth() <= UINT32_MAX);
+    HPRECONDITION(GetResolutionDescriptor()->GetBytesPerBlockWidth() <= UINT32_MAX);
 
     HSTATUS Status = H_ERROR;
 
@@ -479,7 +479,7 @@ HSTATUS HRFIntergraphLineEditor::WriteBlock(uint64_t       pi_PosBlockX,
             // For compress data, compress it into the correct codec,
             // then write it into the file.
             uint32_t CompressedSize = 0;
-            HASSERT_X64(m_IntergraphResolutionDescriptor.pCodec->GetSubsetMaxCompressedSize() * 3 < ULONG_MAX);
+            HASSERT_X64(m_IntergraphResolutionDescriptor.pCodec->GetSubsetMaxCompressedSize() * 3 < UINT32_MAX);
             uint32_t MaxCompressedSize = (uint32_t)m_IntergraphResolutionDescriptor.pCodec->GetSubsetMaxCompressedSize() * 3;
             pRasterData = new Byte[MaxCompressedSize];
 
@@ -629,7 +629,7 @@ HSTATUS HRFIntergraphLineEditor::WriteBlockRLE(uint64_t               pi_PosBloc
         {
         // For compress data, compress it into the correct codec, then write it into the file.
         uint32_t CompressedSize = 0;
-        HASSERT_X64(m_IntergraphResolutionDescriptor.pCodec->GetSubsetMaxCompressedSize() * 3 < ULONG_MAX);
+        HASSERT_X64(m_IntergraphResolutionDescriptor.pCodec->GetSubsetMaxCompressedSize() * 3 < UINT32_MAX);
         uint32_t MaxCompressedSize = (uint32_t)m_IntergraphResolutionDescriptor.pCodec->GetSubsetMaxCompressedSize() * 3;
         pRasterData = new Byte[MaxCompressedSize];
 
@@ -934,8 +934,8 @@ void HRFIntergraphLineEditor::BuildJpegLumiChromaTable(double pi_QualityFactor, 
     // Give at least one valid outup data pointer.
     HASSERT( po_pLuminance || po_pChroma);
 
-    const unsigned int TableWidth  = 8;
-    const unsigned int TableHeight = 8;
+    const uint32_t TableWidth  = 8;
+    const uint32_t TableHeight = 8;
 
     uint32_t Line;
     uint32_t Column;

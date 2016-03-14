@@ -31,7 +31,7 @@
 ------------------------------------------------------------------------------*/
 HRFTgaLineEditor::HRFTgaLineEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                    uint32_t              pi_Page,
-                                   unsigned short       pi_Resolution,
+                                   uint16_t       pi_Resolution,
                                    HFCAccessMode         pi_AccessMode)
     : HRFResolutionEditor(pi_rpRasterFile,
                           pi_Page,
@@ -82,7 +82,7 @@ HSTATUS HRFTgaLineEditor::ReadBlock(uint64_t pi_PosBlockX,
     HFCPtr<HRFTgaFile>  pTgaFile    = TGA_RASTERFILE;
     HSTATUS             Status = H_ERROR;
     Byte                BytePerPixel;
-    unsigned short      Input;
+    uint16_t      Input;
     uint64_t            Offset;
     uint64_t            Line;
     uint32_t           i;
@@ -123,7 +123,7 @@ HSTATUS HRFTgaLineEditor::ReadBlock(uint64_t pi_PosBlockX,
 
             for (i = 0, j = 0; j < GetResolutionDescriptor()->GetBlockSizeInBytes(); i++, j+=3)
                 {
-                Input = ((unsigned short*)m_pLineBuffer.get())[i];
+                Input = ((uint16_t*)m_pLineBuffer.get())[i];
 
                 *po_pData++ = CONVERT_TO_BYTE(((Input & 0x7C00) >> 10) * 0xFF / 0x1F);
                 *po_pData++ = CONVERT_TO_BYTE(((Input & 0x3E0) >> 5)   * 0xFF / 0x1F);
@@ -185,7 +185,7 @@ HSTATUS HRFTgaLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
     uint32_t                         i;
     Byte                            Swap;
     HSTATUS                         Status = H_ERROR;
-    HArrayAutoPtr<unsigned short>           pLineBuffer;
+    HArrayAutoPtr<uint16_t>           pLineBuffer;
     HFCPtr<HRFTgaFile>              pTgaFile   = TGA_RASTERFILE;
     HFCPtr<HRFResolutionDescriptor> pResolutionDescriptor = GetResolutionDescriptor();
     uint64_t                        Offset      = pTgaFile->GetRasterDataOffset();
@@ -221,7 +221,7 @@ HSTATUS HRFTgaLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
                 HASSERT (!GetAccessMode().m_HasCreateAccess);
 
                 uint32_t LineWidthInByte = (uint32_t)pResolutionDescriptor->GetWidth() << 1;
-                unsigned short pOutput;
+                uint16_t pOutput;
                 m_pLineBuffer = new Byte[LineWidthInByte];
                 Byte* pBufferPtr = m_pLineBuffer;
                 for (i = 0; i < pResolutionDescriptor->GetBytesPerBlockWidth(); i+=3)

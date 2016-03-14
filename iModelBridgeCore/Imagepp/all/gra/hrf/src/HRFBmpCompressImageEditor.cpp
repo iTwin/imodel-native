@@ -20,7 +20,7 @@
 //-----------------------------------------------------------------------------
 // Constants
 //-----------------------------------------------------------------------------
-static const unsigned short m_LinePadBits = 32;
+static const uint16_t m_LinePadBits = 32;
 
 //-----------------------------------------------------------------------------
 // public
@@ -28,7 +28,7 @@ static const unsigned short m_LinePadBits = 32;
 //-----------------------------------------------------------------------------
 HRFBmpCompressImageEditor::HRFBmpCompressImageEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                                      uint32_t              pi_Page,
-                                                     unsigned short       pi_Resolution,
+                                                     uint16_t       pi_Resolution,
                                                      HFCAccessMode         pi_AccessMode)
     : HRFResolutionEditor(pi_rpRasterFile,
                           pi_Page,
@@ -178,7 +178,7 @@ HSTATUS HRFBmpCompressImageEditor::WriteBlock(uint64_t                  pi_PosBl
     if (pi_PosBlockY == 0)
         m_pRasterFile->m_pBmpFile->SeekToPos(m_pRasterFile->m_BmpFileHeader.m_OffBitsToData);
 
-    HASSERT_X64(pi_rpPacket->GetDataSize() < ULONG_MAX);
+    HASSERT_X64(pi_rpPacket->GetDataSize() < UINT32_MAX);
     uint32_t DataSize = (uint32_t)pi_rpPacket->GetDataSize();
 
     if(m_pRasterFile->m_pBmpFile->Write(pi_rpPacket->GetBufferAddress(), DataSize) == DataSize)

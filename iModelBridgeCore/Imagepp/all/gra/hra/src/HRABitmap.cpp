@@ -317,7 +317,7 @@ void HRABitmap::Clear(const HRAClearOptions& pi_rOptions)
                            (pPixelTypeRLE1->IsCompatibleWith(HRPPixelTypeI1R8G8B8RLE::CLASS_ID) || pPixelTypeRLE1->IsCompatibleWith(HRPPixelTypeI1R8G8B8A8RLE::CLASS_ID)));
 
             HFCPtr<HRPPixelConverter> pConverter(GetPixelType()->GetConverterTo(pPixelTypeRLE1));
-            unsigned short OutData[4];
+            uint16_t OutData[4];
             pConverter->Convert((pi_rOptions.GetRawDataValue() != 0 ?
                                  pi_rOptions.GetRawDataValue() :
                                  GetPixelType()->GetDefaultRawData()),
@@ -343,12 +343,12 @@ void HRABitmap::Clear(const HRAClearOptions& pi_rOptions)
 // public
 // GetRepresentativePalette
 //-----------------------------------------------------------------------------
-unsigned short HRABitmap::GetRepresentativePalette(
+uint16_t HRABitmap::GetRepresentativePalette(
     HRARepPalParms* pio_pRepPalParms)
     {
     HPRECONDITION(pio_pRepPalParms != 0);
 
-    unsigned short CountUsed = HRABitmapBase::GetRepresentativePalette(pio_pRepPalParms);
+    uint16_t CountUsed = HRABitmapBase::GetRepresentativePalette(pio_pRepPalParms);
 
     // if no operation has been done at the parent level or if the cache is not
     // updated
@@ -742,8 +742,8 @@ void HRABitmap::InitSize(uint64_t pi_WidthPixels, uint64_t pi_HeightPixels)
     HFCPtr<HRPPixelType> pPixelType(GetPixelType());
 
     // set the codec if there is one
-    HASSERT(pi_WidthPixels <= ULONG_MAX);
-    HASSERT(pi_HeightPixels <= ULONG_MAX);
+    HASSERT(pi_WidthPixels <= UINT32_MAX);
+    HASSERT(pi_HeightPixels <= UINT32_MAX);
 
     uint32_t BytesPerRow = ((uint32_t)pi_WidthPixels * pPixelType->CountPixelRawDataBits() + m_BitsAlignment - 1) / m_BitsAlignment;
     BytesPerRow = (BytesPerRow * m_BitsAlignment + 7) / 8;
@@ -773,8 +773,8 @@ size_t HRABitmap::GetAdditionalSize() const
         uint64_t Height;
         GetSize(&Width, &Height);
 
-        HASSERT(Width <= ULONG_MAX);
-        HASSERT(Height <= ULONG_MAX);
+        HASSERT(Width <= UINT32_MAX);
+        HASSERT(Height <= UINT32_MAX);
 
         HFCPtr<HRPPixelType> pPixelType(GetPixelType());
         size_t BytesPerRow = ComputeBytesPerWidth();
@@ -869,15 +869,15 @@ const HFCPtr<HCDPacket>& HRABitmap::GetPacket() const
             uint64_t Height;
             GetSize(&Width, &Height);
 
-            HASSERT(Width <= ULONG_MAX);
-            HASSERT(Height <= ULONG_MAX);
+            HASSERT(Width <= UINT32_MAX);
+            HASSERT(Height <= UINT32_MAX);
 
             uint32_t RunsPerLine = ((uint32_t)Width / 32767) * 2 + 1;
             size_t BufferSize = RunsPerLine * (uint32_t)Height * 2;
 
             m_pPacket->SetBuffer(new Byte[BufferSize], BufferSize);
             m_pPacket->SetBufferOwnership(true);
-            unsigned short* pData = (unsigned short*)m_pPacket->GetBufferAddress();
+            uint16_t* pData = (uint16_t*)m_pPacket->GetBufferAddress();
             // create an offset table
             HArrayAutoPtr<uint32_t> pTmpLineOffsets(new uint32_t[(uint32_t)Height]);
             uint32_t* pLineOffset = pTmpLineOffsets;
@@ -898,7 +898,7 @@ const HFCPtr<HCDPacket>& HRABitmap::GetPacket() const
                         }
                     else
                         {
-                        *pData = (unsigned short)PixelCount;
+                        *pData = (uint16_t)PixelCount;
                         pData++;
 
                         PixelCount = 0;
@@ -922,8 +922,8 @@ const HFCPtr<HCDPacket>& HRABitmap::GetPacket() const
             uint64_t Height;
             GetSize(&Width, &Height);
 
-            HASSERT(Width <= ULONG_MAX);
-            HASSERT(Height <= ULONG_MAX);
+            HASSERT(Width <= UINT32_MAX);
+            HASSERT(Height <= UINT32_MAX);
 
             HFCPtr<HRPPixelType> pPixelType(GetPixelType());
 
@@ -1141,8 +1141,8 @@ HFCPtr<HGSSurfaceDescriptor> HRABitmap::CreateSurfaceDescriptor(const HFCPtr<HRP
     uint64_t Height;
     GetSize(&Width, &Height);
 
-    HASSERT(Width <= ULONG_MAX);
-    HASSERT(Height <= ULONG_MAX);
+    HASSERT(Width <= UINT32_MAX);
+    HASSERT(Height <= UINT32_MAX);
 
     HFCPtr<HRPPixelType> pSrcPixelType;
 
@@ -1382,9 +1382,9 @@ void HRABitmap::ComputeHistogramRLE(HRAHistogramOptions* pio_pOptions)
                 Scanlines.GetCurrentRun(&RunPosX, &RunPosY, &RunLen);
                 HPOSTCONDITION(RunPosX >= 0);
                 HPOSTCONDITION(RunPosY >= 0);
-                HPOSTCONDITION(RunLen < ULONG_MAX);
+                HPOSTCONDITION(RunLen < UINT32_MAX);
 
-                unsigned short* pRun = &((unsigned short*)m_pPacket->GetBufferAddress())[pLineIndexes[RunPosY]];
+                uint16_t* pRun = &((uint16_t*)m_pPacket->GetBufferAddress())[pLineIndexes[RunPosY]];
                 bool RunState = false;
                 size_t PixelFromRun = (size_t)RunPosX;
                 while (PixelFromRun >= *pRun)
@@ -1425,16 +1425,16 @@ void HRABitmap::ComputeHistogramRLE(HRAHistogramOptions* pio_pOptions)
             uint64_t Height;
             GetSize(&Width, &Height);
 
-            HASSERT(Width <= ULONG_MAX);
-            HASSERT(Height <= ULONG_MAX);
+            HASSERT(Width <= UINT32_MAX);
+            HASSERT(Height <= UINT32_MAX);
 
             uint32_t PixelCount;
             bool RunState;
-            unsigned short* pRun;
+            uint16_t* pRun;
 
             for (uint32_t i = 0; i < (uint32_t)Height; i++)
                 {
-                pRun = &((unsigned short*)m_pPacket->GetBufferAddress())[pLineIndexes[i]];
+                pRun = &((uint16_t*)m_pPacket->GetBufferAddress())[pLineIndexes[i]];
                 PixelCount = (uint32_t)Width;
                 RunState = false;
                 while (PixelCount > 0)
@@ -1680,7 +1680,7 @@ void HRABitmap::ComputeLightnessHistogram(HRAHistogramOptions* pio_pOptions)
                     {
                     //16 bits histogram
                     HRPPixelTypeV48R16G16B16 ConvertedPixelType;
-                    unsigned short Value[3];
+                    uint16_t Value[3];
                     pConverter = ConvertedPixelType.GetConverterFrom(pSrcPixelType);
 
                     HGFLightnessColorSpace ColorSpaceConverter(DEFAULT_GAMMA_FACTOR, 16);
@@ -2037,7 +2037,7 @@ protected:
         m_bitmap.GetSize(&width64, &height64);
         m_physicalExtent = HGF2DExtent(0, 0, (double)width64, (double)height64, pPhysicalCoordSys);
 
-        BeAssert(width64 <= ULONG_MAX && height64 <= ULONG_MAX);
+        BeAssert(width64 <= UINT32_MAX && height64 <= UINT32_MAX);
         m_width = (uint32_t)width64;
         m_height = (uint32_t)height64;
 

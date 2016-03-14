@@ -28,7 +28,7 @@
  */
 HRFImgMappedLineEditor::HRFImgMappedLineEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                                uint32_t              pi_Page,
-                                               unsigned short       pi_Resolution,
+                                               uint16_t       pi_Resolution,
                                                HFCAccessMode         pi_AccessMode)
     : HRFResolutionEditor(pi_rpRasterFile,
                           pi_Page,
@@ -59,7 +59,7 @@ HSTATUS HRFImgMappedLineEditor::ReadBlock(uint64_t pi_PosBlockX,
                                           uint64_t pi_PosBlockY,
                                           Byte*   po_pData)
     {
-    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+    HPRECONDITION (pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);
 
     HSTATUS Status = H_SUCCESS;
 
@@ -104,7 +104,7 @@ HSTATUS HRFImgMappedLineEditor::WriteBlock(uint64_t       pi_PosBlockX,
     {
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION(pi_pData != 0);
-    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+    HPRECONDITION (pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);
 
     HSTATUS     Status = H_SUCCESS;
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRARaster.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -179,7 +179,7 @@ public:
     virtual HFCPtr<HRARaster> Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const =0;
 
 
-    virtual unsigned short GetRepresentativePalette(
+    virtual uint16_t GetRepresentativePalette(
         HRARepPalParms* pio_pRepPalParms);
 
     virtual void    ComputeHistogram(HRAHistogramOptions* pio_pOptions,
@@ -258,9 +258,9 @@ protected:
     virtual void    SetShapeImpl                (const HVEShape& pi_rShape);
     virtual void    RecalculateEffectiveShape   ();
 
-    void            UpdateRepPalCache           (unsigned short pi_CountUsed, const HRPPixelPalette& pi_rPalette);
+    void            UpdateRepPalCache           (uint16_t pi_CountUsed, const HRPPixelPalette& pi_rPalette);
     void            InvalidateRepPalCache       ();
-    unsigned short GetRepresentativePaletteCache(
+    uint16_t GetRepresentativePaletteCache(
         HRARepPalParms* pio_pRepPalParms);
 
     void            SetHistogram(const HRAHistogramOptions* pi_pHistogram);
@@ -274,7 +274,7 @@ private:
     // Representative palette cache  (Not persistent)
     HAutoPtr<HRPPixelPalette>   m_pRepPalCache;
     bool                       m_RepPalValide;
-    unsigned short             m_RepPalCountUsed;
+    uint16_t             m_RepPalCountUsed;
 
     // (Not persistent) for the moment.
     // Cache the Histogram, for optimize, or for load from a file.

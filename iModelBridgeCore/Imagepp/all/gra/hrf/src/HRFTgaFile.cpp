@@ -51,7 +51,7 @@ public :
         {
         // Block capability
         Add (new HRFLineCapability (HFC_READ_WRITE_CREATE,
-                                    LONG_MAX,
+                                    INT32_MAX,
                                     HRFBlockAccess::RANDOM));
         }
     };
@@ -70,15 +70,15 @@ public :
         {
         // Block capability
         Add (new HRFLineCapability (HFC_READ_WRITE_CREATE,
-                                    LONG_MAX,
+                                    INT32_MAX,
                                     HRFBlockAccess::SEQUENTIAL));
 
         Add(new HRFImageCapability(HFC_READ_ONLY,          // AccessMode
-                                   LONG_MAX,               // MaxSizeInBytes
+                                   INT32_MAX,               // MaxSizeInBytes
                                    0,                      // MinWidth
-                                   LONG_MAX,               // MaxWidth
+                                   INT32_MAX,               // MaxWidth
                                    0,                      // MinHeight
-                                   LONG_MAX));             // MaxHeight
+                                   INT32_MAX));             // MaxHeight
         }
     };
 
@@ -137,7 +137,7 @@ HRFTgaCapabilities::HRFTgaCapabilities()
         new HRFTgaCodecCapabilities()));
 
     // Block Access Capability
-    //Add(new HRFLineCapability(HFC_READ_WRITE_CREATE, LONG_MAX, HRFBlockAccess::RANDOM));
+    //Add(new HRFLineCapability(HFC_READ_WRITE_CREATE, INT32_MAX, HRFBlockAccess::RANDOM));
 
     // Thumbnail capability
     Add(new HRFThumbnailCapability(HFC_READ_WRITE_CREATE,
@@ -277,7 +277,7 @@ bool HRFTgaCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         goto WRAPUP;
 
     // seek for the footer
-    pFile->SeekToPos(pFile->GetSize() - (long)(sizeof(HRFTgaFile::TgaFileFooter)));
+    pFile->SeekToPos(pFile->GetSize() - (int32_t)(sizeof(HRFTgaFile::TgaFileFooter)));
 
     // read footer
     if (sizeof(HRFTgaFile::TgaFileFooter) != pFile->Read (&TgaFtr, sizeof(HRFTgaFile::TgaFileFooter)))
@@ -443,7 +443,7 @@ void HRFTgaFile::CreateDescriptors ()
     if ((m_pTgaExtTableArea != 0) && (m_pTgaExtentionArea->m_PostageStampOffset != 0))
         {
         uint32_t NbPixel        = m_pTgaExtTableArea->m_StampWidth * m_pTgaExtTableArea->m_StampHeight;
-        unsigned short NbBytePerPixel = DIVROUNDUP (m_pTgaFileHeader->m_PixelDepth, 8);
+        uint16_t NbBytePerPixel = DIVROUNDUP (m_pTgaFileHeader->m_PixelDepth, 8);
         if (NbBytePerPixel == 2)
             NbBytePerPixel++;
 
@@ -730,7 +730,7 @@ void HRFTgaFile::SaveTgaFile(bool pi_CloseFile)
                                                 &m_pTgaExtentionArea->m_Hour,
                                                 &m_pTgaExtentionArea->m_Minute,
                                                 &m_pTgaExtentionArea->m_Second);
-                    m_pTgaExtentionArea->m_Year = (unsigned short)BeStringUtilities::Wtoi (((HFCPtr<HRFAttributeDateTime>&)pTag)->GetData().c_str());
+                    m_pTgaExtentionArea->m_Year = (uint16_t)BeStringUtilities::Wtoi (((HFCPtr<HRFAttributeDateTime>&)pTag)->GetData().c_str());
                     HasExt = true;
                     }
 
@@ -772,7 +772,7 @@ void HRFTgaFile::SaveTgaFile(bool pi_CloseFile)
                                                 &temp,
                                                 &m_pTgaExtentionArea->m_SoftwareVersionLetter);
                     //temp = (float)atof (((HFCPtr<HRFAttributeVersion>&)pTag)->GetData().c_str());
-                    m_pTgaExtentionArea->m_SoftwareVersion = (unsigned short)(temp * 100);
+                    m_pTgaExtentionArea->m_SoftwareVersion = (uint16_t)(temp * 100);
                     HasExt = true;
                     }
 
@@ -854,7 +854,7 @@ void HRFTgaFile::SaveTgaFile(bool pi_CloseFile)
  @param pi_AccessMode The access and sharing mode of the opened file.
 ------------------------------------------------------------------------------*/
 HRFResolutionEditor* HRFTgaFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                        unsigned short pi_Resolution,
+                                                        uint16_t pi_Resolution,
                                                         HFCAccessMode  pi_AccessMode)
     {
     HRFBlockType BlockType = GetPageDescriptor(pi_Page)->GetResolutionDescriptor(pi_Resolution)->GetBlockType();
@@ -1056,7 +1056,7 @@ void HRFTgaFile::GetFileFooterFromFile()
     HPRECONDITION (m_pTgaFile != 0);
 
     // Seek for 26 caracters from the end of the file.
-    m_pTgaFile->SeekToPos(m_pTgaFile->GetSize() - (long)(sizeof(HRFTgaFile::TgaFileFooter)));
+    m_pTgaFile->SeekToPos(m_pTgaFile->GetSize() - (int32_t)(sizeof(HRFTgaFile::TgaFileFooter)));
 
     m_pTgaFileFooter = new TgaFileFooter;
 
@@ -1113,7 +1113,7 @@ void HRFTgaFile::GetMapInfoFromFile()
         uint32_t                 ColorMapSizeInPixel     = m_pTgaFileHeader->m_ColorMapLength;
         Byte                  PixelSizeInByte;
         Byte                  Swap;
-        HArrayAutoPtr<unsigned short>   pBuffer;
+        HArrayAutoPtr<uint16_t>   pBuffer;
 
         switch (m_pTgaFileHeader->m_ColorMapEntrySize)
             {
@@ -1121,10 +1121,10 @@ void HRFTgaFile::GetMapInfoFromFile()
             case 16 :
                 {
                 PixelSizeInByte = 3;
-                pBuffer = new unsigned short[ColorMapSizeInPixel];
+                pBuffer = new uint16_t[ColorMapSizeInPixel];
                 m_pTgaImageData->m_pColorMap = new Byte[ColorMapSizeInPixel * PixelSizeInByte];
 
-                if (sizeof(unsigned short)*ColorMapSizeInPixel != m_pTgaFile->Read (pBuffer, ColorMapSizeInPixel * sizeof(unsigned short)))
+                if (sizeof(uint16_t)*ColorMapSizeInPixel != m_pTgaFile->Read (pBuffer, ColorMapSizeInPixel * sizeof(uint16_t)))
                     throw HFCCorruptedFileException(m_pURL->GetURL());
 
                 // Conversion
@@ -1205,7 +1205,7 @@ void HRFTgaFile::GetExtensionAreaFromFile()
             uint32_t                 StampSizeInPixel;
             Byte                  PixelSizeInByte;
             Byte                  Swap;
-            HArrayAutoPtr<unsigned short>   pBuffer;
+            HArrayAutoPtr<uint16_t>   pBuffer;
 
             m_pTgaFile->SeekToPos (m_pTgaExtentionArea->m_PostageStampOffset);
             m_pTgaFile->Read (&m_pTgaExtTableArea->m_StampWidth, sizeof(unsigned char));
@@ -1224,10 +1224,10 @@ void HRFTgaFile::GetExtensionAreaFromFile()
                     break;
                 case 15 :
                 case 16 :
-                    pBuffer = new unsigned short[StampSizeInPixel];
+                    pBuffer = new uint16_t[StampSizeInPixel];
                     m_pTgaExtTableArea->m_pStampData = new Byte[StampSizeInPixel * 3];
 
-                    if ((StampSizeInPixel * sizeof(unsigned short)) != m_pTgaFile->Read (pBuffer, StampSizeInPixel * sizeof(unsigned short)))
+                    if ((StampSizeInPixel * sizeof(uint16_t)) != m_pTgaFile->Read (pBuffer, StampSizeInPixel * sizeof(uint16_t)))
                         throw HFCCorruptedFileException(GetURL()->GetURL());
 
                     // Conversion
@@ -1267,7 +1267,7 @@ void HRFTgaFile::GetExtensionAreaFromFile()
         if (0 != m_pTgaExtentionArea->m_ColorCorrectionOffset)
             {
             m_pTgaFile->SeekToPos(m_pTgaExtentionArea->m_ColorCorrectionOffset);
-            m_pTgaExtTableArea->m_pColorCorrectionTable = new unsigned short[COLOR_CORECTION_TABLE_ENTRY_SIZE];
+            m_pTgaExtTableArea->m_pColorCorrectionTable = new uint16_t[COLOR_CORECTION_TABLE_ENTRY_SIZE];
             if ((COLOR_CORECTION_TABLE_ENTRY_SIZE*2) != m_pTgaFile->Read(m_pTgaExtTableArea->m_pColorCorrectionTable,
                                                                          COLOR_CORECTION_TABLE_ENTRY_SIZE * 2))
                 throw HFCCorruptedFileException(GetURL()->GetURL());
@@ -1352,8 +1352,8 @@ void HRFTgaFile::SetFileHeaderToFile()
         m_pTgaFileHeader->m_IdLength    = 0;               // Could be improve
         m_pTgaFileHeader->m_XOrigin     = 0;               // Could be improve
         m_pTgaFileHeader->m_YOrigin     = 0;               // Could be improve
-        m_pTgaFileHeader->m_ImageWidth  = (unsigned short)pResolutionDescriptor->GetWidth();
-        m_pTgaFileHeader->m_ImageHeight = (unsigned short)pResolutionDescriptor->GetHeight();
+        m_pTgaFileHeader->m_ImageWidth  = (uint16_t)pResolutionDescriptor->GetWidth();
+        m_pTgaFileHeader->m_ImageHeight = (uint16_t)pResolutionDescriptor->GetHeight();
 
         m_pTgaFileHeader->m_PixelDepth  = (Byte)pResolutionDescriptor->GetBitsPerPixel();
         m_pTgaFileHeader->m_ImageDescriptor = 0x20;        // Origin is top-left
@@ -1365,7 +1365,7 @@ void HRFTgaFile::SetFileHeaderToFile()
             Palette                   = pPixelType->GetPalette();
             m_pTgaFileHeader->m_ColorMapType = 1;
             m_pTgaFileHeader->m_ColorMapFirstEntryIndex = 0;
-            m_pTgaFileHeader->m_ColorMapLength          = (unsigned short)Palette.CountUsedEntries();
+            m_pTgaFileHeader->m_ColorMapLength          = (uint16_t)Palette.CountUsedEntries();
             m_pTgaFileHeader->m_ColorMapEntrySize       = 24;
             }
         else
@@ -1375,7 +1375,7 @@ void HRFTgaFile::SetFileHeaderToFile()
                 Palette                              = pPixelType->GetPalette();
                 m_pTgaFileHeader->m_ColorMapType            = 1;
                 m_pTgaFileHeader->m_ColorMapFirstEntryIndex = 0;
-                m_pTgaFileHeader->m_ColorMapLength          = (unsigned short)Palette.CountUsedEntries();
+                m_pTgaFileHeader->m_ColorMapLength          = (uint16_t)Palette.CountUsedEntries();
                 m_pTgaFileHeader->m_ColorMapEntrySize       = 32;
                 }
             else
@@ -1590,7 +1590,7 @@ bool HRFTgaFile::SetThumbnailToFile()
     uint32_t                    Width           = pThumbnail->GetWidth();
     uint32_t                    Height          = pThumbnail->GetHeight();
     uint32_t                    NbPixel         = Width * Height;
-    unsigned short              BytesPerPixel;
+    uint16_t              BytesPerPixel;
     Byte                      Swap;
     bool                       Result          = true;
 
@@ -1700,12 +1700,12 @@ void HRFTgaFile::InitializeFileFooter()
     // Get the time and hour of the file creation
     time (&Timer);
     Gm = *localtime (&Timer);
-    m_pTgaExtentionArea->m_Year                       = (unsigned short)(1900 + Gm.tm_year);
-    m_pTgaExtentionArea->m_Month                      = (unsigned short)(1 + Gm.tm_mon);
-    m_pTgaExtentionArea->m_Day                        = (unsigned short)Gm.tm_mday;
-    m_pTgaExtentionArea->m_Hour                       = (unsigned short)Gm.tm_hour;
-    m_pTgaExtentionArea->m_Minute                     = (unsigned short)Gm.tm_min;
-    m_pTgaExtentionArea->m_Second                     = (unsigned short)Gm.tm_sec;
+    m_pTgaExtentionArea->m_Year                       = (uint16_t)(1900 + Gm.tm_year);
+    m_pTgaExtentionArea->m_Month                      = (uint16_t)(1 + Gm.tm_mon);
+    m_pTgaExtentionArea->m_Day                        = (uint16_t)Gm.tm_mday;
+    m_pTgaExtentionArea->m_Hour                       = (uint16_t)Gm.tm_hour;
+    m_pTgaExtentionArea->m_Minute                     = (uint16_t)Gm.tm_min;
+    m_pTgaExtentionArea->m_Second                     = (uint16_t)Gm.tm_sec;
 
     memset (m_pTgaExtentionArea->m_JobNameId, 0x00, 41);
 
@@ -1904,7 +1904,7 @@ uint32_t HRFTgaFile::GetRasterDataEndOffset() const
 
   @return UShort The number of bits per pixel given by the file header.
 ------------------------------------------------------------------------------*/
-unsigned short HRFTgaFile::GetBitsPerPixel() const
+uint16_t HRFTgaFile::GetBitsPerPixel() const
     {
     return m_pTgaFileHeader->m_PixelDepth;
     }

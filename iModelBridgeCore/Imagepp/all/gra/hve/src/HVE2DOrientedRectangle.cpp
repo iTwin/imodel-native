@@ -562,7 +562,7 @@ bool HVE2DOrientedRectangle::Crosses(const HVE2DVector& pi_rVector) const
 // Intersect
 // This method checks if the intersects with given vector and returns cross points
 //-----------------------------------------------------------------------------
-int HVE2DOrientedRectangle::Intersect(const HVE2DVector& pi_rVector,
+int32_t HVE2DOrientedRectangle::Intersect(const HVE2DVector& pi_rVector,
                                       HGF2DLocationCollection* po_pCrossPoints) const
     {
     // Since intersect computations are so complicated, we tel HVE2DPolygonOfSegments to perform

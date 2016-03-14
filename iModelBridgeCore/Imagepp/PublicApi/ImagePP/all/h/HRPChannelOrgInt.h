@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPChannelOrgInt.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRPChannelOrgInt
@@ -15,7 +15,7 @@ BEGIN_IMAGEPP_NAMESPACE
 class HRPChannelOrgInt : public HRPChannelOrg
     {
 public:
-    HRPChannelOrgInt(unsigned short             pi_NbBits,
+    HRPChannelOrgInt(uint16_t             pi_NbBits,
                      HRPChannelType::ChannelRole pi_ChannelRole,
                      const double*             pi_pNoDataValue = 0)
         : HRPChannelOrg()

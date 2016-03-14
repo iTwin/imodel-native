@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPMPool.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HPMPool
@@ -621,12 +621,12 @@ public:
     virtual void        FreeMemory(Byte* pi_MemPtr, size_t pi_MemorySize);
     virtual bool        NeedMemory(size_t pi_DataSize, size_t pi_ObjectSize);
 
-    int         FindEntry(size_t pi_MemorySize, bool& po_MemAlreadyAllocated);
+    int32_t         FindEntry(size_t pi_MemorySize, bool& po_MemAlreadyAllocated);
 
 private:
 
-    int      m_IndexFreeBlock;
-    int      m_NextEmptyBlock;
+    int32_t      m_IndexFreeBlock;
+    int32_t      m_NextEmptyBlock;
     MemEntry m_MemMgrList[MgrExportMaxEntry];
 
     HPMPool* m_pPool;
@@ -654,7 +654,7 @@ public:
 private:
 
     MemEntry    m_MemMgrList[MgrKeepLastEntryMaxEntry];
-    int         m_Indexfree;
+    int32_t         m_Indexfree;
     HPMPool*    m_pPool;
 };
 

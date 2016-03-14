@@ -1129,12 +1129,12 @@ HFCPtr<HGF2DTransfoModel> HGF2DLocalProjectiveGrid::ComputeDirectModelFromPoints
 
     if (pi_ModelType == AFFINE)
         {
-        GetAffineTransfoMatrixFromScaleAndTiePts(FlatMatrix, (unsigned short)pi_nbPoints, pi_pPoints);
+        GetAffineTransfoMatrixFromScaleAndTiePts(FlatMatrix, (uint16_t)pi_nbPoints, pi_pPoints);
         }
     else
         {
         HASSERT(pi_ModelType == PROJECTIVE);
-        GetProjectiveTransfoMatrixFromScaleAndTiePts(FlatMatrix, (unsigned short)pi_nbPoints, pi_pPoints);
+        GetProjectiveTransfoMatrixFromScaleAndTiePts(FlatMatrix, (uint16_t)pi_nbPoints, pi_pPoints);
         }
 
     HFCMatrix<3, 3> MyMatrix;

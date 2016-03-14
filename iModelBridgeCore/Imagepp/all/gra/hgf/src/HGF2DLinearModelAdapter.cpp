@@ -921,12 +921,12 @@ HFCPtr<HGF2DTransfoModel> HGF2DLinearModelAdapter::CreateDirectModelFromExtent(c
     if (m_AdaptAsAffine)
         {
         // Create matrix
-        GetAffineTransfoMatrixFromScaleAndTiePts(MyFlatMatrix, (unsigned short) CurrentTiePointVal, pTiePoints);
+        GetAffineTransfoMatrixFromScaleAndTiePts(MyFlatMatrix, (uint16_t) CurrentTiePointVal, pTiePoints);
         }
     else
         {
         // Create matrix
-        GetProjectiveTransfoMatrixFromScaleAndTiePts(MyFlatMatrix, (unsigned short) CurrentTiePointVal, pTiePoints);
+        GetProjectiveTransfoMatrixFromScaleAndTiePts(MyFlatMatrix, (uint16_t) CurrentTiePointVal, pTiePoints);
         }
 
     HFCMatrix<3, 3> MyMatrix;

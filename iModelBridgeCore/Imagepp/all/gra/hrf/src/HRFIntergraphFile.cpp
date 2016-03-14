@@ -82,12 +82,12 @@ bool HRFIntergraphFile::Creator::IsMultiPage(HFCBinStream& pi_rSrcFile, uint32_t
 
     if (pi_HeaderBlockcount > 1)
         {
-        unsigned short ConcatenateFilePtr;
+        uint16_t ConcatenateFilePtr;
 
         // The position of the cfp field (concatenate file ptr) is always 528 if there is
         // more than one block.
         pi_rSrcFile.SeekToPos(528);
-        pi_rSrcFile.Read(&ConcatenateFilePtr, sizeof(unsigned short));
+        pi_rSrcFile.Read(&ConcatenateFilePtr, sizeof(uint16_t));
 
         // Replace the file cursor where it was.
         pi_rSrcFile.SeekToPos(CursorFilePosition);
@@ -250,7 +250,7 @@ uint32_t HRFIntergraphFile::CalcNumberOfPage () const
 //-----------------------------------------------------------------------------
 
 HRFResolutionEditor* HRFIntergraphFile::CreateResolutionEditor(uint32_t       pi_PageIndex,
-                                                               unsigned short pi_Resolution,
+                                                               uint16_t pi_Resolution,
                                                                HFCAccessMode  pi_AccessMode)
     {
     HPRECONDITION(GetPageDescriptor(pi_PageIndex) != 0);
@@ -414,7 +414,7 @@ void HRFIntergraphFile::IntergraphTagUpdate(HFCPtr<HRFPageDescriptor> pi_pPageDe
     bool RasterFileNeedUpdate = false;
 
     // Unkown unit
-    unsigned short Unit = 2;
+    uint16_t Unit = 2;
     double XResolution = 0;
     double YResolution = 0;
 
@@ -455,18 +455,18 @@ void HRFIntergraphFile::IntergraphTagUpdate(HFCPtr<HRFPageDescriptor> pi_pPageDe
                 if (Unit == 3)
                     {
                     // Write in micron.
-                    m_IntergraphHeader.IBlock1.drs = (short) (1.0 / XResolution / 0.0001);
+                    m_IntergraphHeader.IBlock1.drs = (int16_t) (1.0 / XResolution / 0.0001);
                     }
                 // Unit is inch
                 else if (Unit == 2)
                     {
                     // Write dpi.
-                    m_IntergraphHeader.IBlock1.drs = (short)(-XResolution);
+                    m_IntergraphHeader.IBlock1.drs = (int16_t)(-XResolution);
                     }
                 else
                     {
                     // Write dpi.
-                    m_IntergraphHeader.IBlock1.drs = (short) 0;
+                    m_IntergraphHeader.IBlock1.drs = (int16_t) 0;
                     }
                 }
             }
@@ -538,7 +538,7 @@ bool HRFIntergraphFile::WriteTransfoModel(const HFCPtr<HGF2DTransfoModel>& pi_rp
 // GetWidth
 //-----------------------------------------------------------------------------
 
-uint32_t HRFIntergraphFile::GetWidth (unsigned short pi_SubImage) const
+uint32_t HRFIntergraphFile::GetWidth (uint16_t pi_SubImage) const
     {
     // We assume that we have check the header file integrity in the
     // constructor for the release version.
@@ -562,7 +562,7 @@ uint32_t HRFIntergraphFile::GetWidth (unsigned short pi_SubImage) const
 // GetHeight
 //-----------------------------------------------------------------------------
 
-uint32_t HRFIntergraphFile::GetHeight (unsigned short pi_SubImage) const
+uint32_t HRFIntergraphFile::GetHeight (uint16_t pi_SubImage) const
     {
     // We assume that we have check the header file integrity in the
     // constructor for the release version.
@@ -665,7 +665,7 @@ bool HRFIntergraphFile::Set8BitsPalette(uint32_t          pi_PaletteType,
 // Public
 // Return the height of a tile.
 //-----------------------------------------------------------------------------
-uint32_t HRFIntergraphFile::GetTileHeight(unsigned short pi_SubImage) const
+uint32_t HRFIntergraphFile::GetTileHeight(uint16_t pi_SubImage) const
     {
     // We assume that we have check the header file integrity in the
     // constructor for the release version.
@@ -683,7 +683,7 @@ uint32_t HRFIntergraphFile::GetTileHeight(unsigned short pi_SubImage) const
 // Return the width of a tile.
 //-----------------------------------------------------------------------------
 
-uint32_t HRFIntergraphFile::GetTileWidth(unsigned short pi_SubImage) const
+uint32_t HRFIntergraphFile::GetTileWidth(uint16_t pi_SubImage) const
     {
     // We assume that we have check the header file integrity in the
     // constructor for the release version.
@@ -709,7 +709,7 @@ void HRFIntergraphFile::CheckNotNullTransfoModel()
 
     bool NonZeroFound = false;
 
-    for (int i=0; i< 16; i++)
+    for (int32_t i=0; i< 16; i++)
         {
         if (!HDOUBLE_EQUAL_EPSILON(m_IntergraphHeader.IBlock1.trn[i],0.0))
             NonZeroFound = true;
@@ -733,7 +733,7 @@ void HRFIntergraphFile::GetTransfoModel()
     // constructor for the release version.
     HPRECONDITION(m_HasHeaderFilled);
 
-    unsigned short SubImage = 0;
+    uint16_t SubImage = 0;
 
     // Delete the previous transformation.
     HFCPtr<HGF2DTransfoModel> pTransfo;
@@ -1025,12 +1025,12 @@ bool HRFIntergraphFile::InitOpenedFile(HFCPtr<HRFPageDescriptor> pi_pPage)
                 // build a Codec
                 for (i = 0; i <= m_SubResolution; i++)
                     {
-                    if (HasTileAccess((unsigned short)i))
+                    if (HasTileAccess((uint16_t)i))
                         {
-                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecHMRRLE1(GetTileWidth((unsigned short)i), GetTileHeight((unsigned short)i));
+                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecHMRRLE1(GetTileWidth((uint16_t)i), GetTileHeight((uint16_t)i));
                         // We set the padding bit if necessary...
-                        if ((GetTileWidth((unsigned short)i) % 8) != 0)
-                            m_IntergraphResDescriptors[i]->pCodec->SetLinePaddingBits(8 - (GetTileWidth((unsigned short)i) % 8));
+                        if ((GetTileWidth((uint16_t)i) % 8) != 0)
+                            m_IntergraphResDescriptors[i]->pCodec->SetLinePaddingBits(8 - (GetTileWidth((uint16_t)i) % 8));
                         else
                             m_IntergraphResDescriptors[i]->pCodec->SetLinePaddingBits(0);
                         // Check if we have a scanline header before the data. If it's the case
@@ -1042,12 +1042,12 @@ bool HRFIntergraphFile::InitOpenedFile(HFCPtr<HRFPageDescriptor> pi_pPage)
                         {
                         // Instead of giving the width of the line, we give the new width
                         // previously calculated.
-                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecHMRRLE1(GetWidth((unsigned short)i), GetHeight((unsigned short)i));
-                        m_IntergraphResDescriptors[i]->pCodec->SetSubset(GetWidth((unsigned short)i),1);
+                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecHMRRLE1(GetWidth((uint16_t)i), GetHeight((uint16_t)i));
+                        m_IntergraphResDescriptors[i]->pCodec->SetSubset(GetWidth((uint16_t)i),1);
 
                         // We set the padding bit if necessary...
-                        if ((GetWidth((unsigned short)i) % 8) != 0)
-                            m_IntergraphResDescriptors[i]->pCodec->SetLinePaddingBits(8 - (GetWidth((unsigned short)i) % 8));
+                        if ((GetWidth((uint16_t)i) % 8) != 0)
+                            m_IntergraphResDescriptors[i]->pCodec->SetLinePaddingBits(8 - (GetWidth((uint16_t)i) % 8));
                         else
                             m_IntergraphResDescriptors[i]->pCodec->SetLinePaddingBits(0);
                         // Check if we have a scanline header before the data. If it's the case
@@ -1076,9 +1076,9 @@ bool HRFIntergraphFile::InitOpenedFile(HFCPtr<HRFPageDescriptor> pi_pPage)
                 // build a Codec
                 for (i = 0; i <= m_SubResolution; i++)
                     {
-                    if (HasTileAccess((unsigned short)i))
+                    if (HasTileAccess((uint16_t)i))
                         {
-                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecCRL8(GetTileWidth((unsigned short)i), GetTileHeight((unsigned short)i));
+                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecCRL8(GetTileWidth((uint16_t)i), GetTileHeight((uint16_t)i));
                         // Check if we have a scanline header before the data. If it's the case
                         // inform the codec of this particularity.
                         if (m_IntergraphHeader.IBlock1.scn == 1)
@@ -1088,8 +1088,8 @@ bool HRFIntergraphFile::InitOpenedFile(HFCPtr<HRFPageDescriptor> pi_pPage)
                         {
                         // Instead of giving the width of the line, we give the new width
                         // previously calculated.
-                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecCRL8(GetWidth((unsigned short)i), GetHeight((unsigned short)i));
-                        m_IntergraphResDescriptors[i]->pCodec->SetSubset(GetWidth((unsigned short)i),1);
+                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecCRL8(GetWidth((uint16_t)i), GetHeight((uint16_t)i));
+                        m_IntergraphResDescriptors[i]->pCodec->SetSubset(GetWidth((uint16_t)i),1);
                         // Check if we have a scanline header before the data. If it's the case
                         // inform the codec of this particularity.
                         if (m_IntergraphHeader.IBlock1.scn == 1)
@@ -1111,24 +1111,24 @@ bool HRFIntergraphFile::InitOpenedFile(HFCPtr<HRFPageDescriptor> pi_pPage)
                 // build a Codec
                 for (i = 0; i <= m_SubResolution; i++)
                     {
-                    if (HasTileAccess((unsigned short)i))
+                    if (HasTileAccess((uint16_t)i))
                         {
-                        uint32_t IntergraphRasterFileWidth = GetTileWidth((unsigned short)i);
+                        uint32_t IntergraphRasterFileWidth = GetTileWidth((uint16_t)i);
                         if ((IntergraphRasterFileWidth % 32) != 0)
                             IntergraphRasterFileWidth += 32 - (IntergraphRasterFileWidth % 32);
 
-                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecCCITTFax4(IntergraphRasterFileWidth, GetTileHeight((unsigned short)i));
+                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecCCITTFax4(IntergraphRasterFileWidth, GetTileHeight((uint16_t)i));
 
                         ((HFCPtr<HCDCodecCCITTFax4> &)m_IntergraphResDescriptors[i]->pCodec)->SetBitRevTable(true);
                         }
                     else
                         {
-                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecCCITTFax4(GetWidth((unsigned short)i), GetHeight((unsigned short)i));
-                        m_IntergraphResDescriptors[i]->pCodec->SetSubset(GetWidth((unsigned short)i),1);
+                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecCCITTFax4(GetWidth((uint16_t)i), GetHeight((uint16_t)i));
+                        m_IntergraphResDescriptors[i]->pCodec->SetSubset(GetWidth((uint16_t)i),1);
 
                         // We set the padding bit if necessary...
-                        if ((GetWidth((unsigned short)i) % 8) != 0)
-                            m_IntergraphResDescriptors[i]->pCodec->SetLinePaddingBits(8 - (GetWidth((unsigned short)i) % 8));
+                        if ((GetWidth((uint16_t)i) % 8) != 0)
+                            m_IntergraphResDescriptors[i]->pCodec->SetLinePaddingBits(8 - (GetWidth((uint16_t)i) % 8));
                         else
                             m_IntergraphResDescriptors[i]->pCodec->SetLinePaddingBits(0);
 
@@ -1154,9 +1154,9 @@ bool HRFIntergraphFile::InitOpenedFile(HFCPtr<HRFPageDescriptor> pi_pPage)
                 // build a Codec
                 for (i = 0; i <= m_SubResolution; i++)
                     {
-                    if (HasTileAccess((unsigned short)i))
+                    if (HasTileAccess((uint16_t)i))
                         {
-                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecRLE8(GetTileWidth((unsigned short)i), GetTileHeight((unsigned short)i), 8);
+                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecRLE8(GetTileWidth((uint16_t)i), GetTileHeight((uint16_t)i), 8);
                         // Check if we have a scanline header before the data. If it's the case
                         // inform the codec of this particularity.
                         if (m_IntergraphHeader.IBlock1.scn == 1)
@@ -1166,8 +1166,8 @@ bool HRFIntergraphFile::InitOpenedFile(HFCPtr<HRFPageDescriptor> pi_pPage)
                         {
                         // Instead of giving the width of the line, we give the new width
                         // previously calculated.
-                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecRLE8(GetWidth((unsigned short)i), GetHeight((unsigned short)i), 8);
-                        m_IntergraphResDescriptors[i]->pCodec->SetSubset(GetWidth((unsigned short)i),1);
+                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecRLE8(GetWidth((uint16_t)i), GetHeight((uint16_t)i), 8);
+                        m_IntergraphResDescriptors[i]->pCodec->SetSubset(GetWidth((uint16_t)i),1);
                         // Check if we have a scanline header before the data. If it's the case
                         // inform the codec of this particularity.
                         if (m_IntergraphHeader.IBlock1.scn == 1)
@@ -1204,9 +1204,9 @@ bool HRFIntergraphFile::InitOpenedFile(HFCPtr<HRFPageDescriptor> pi_pPage)
                 // Build a Codec
                 for (i = 0; i <= m_SubResolution; i++)
                     {
-                    if (HasTileAccess((unsigned short)i))
+                    if (HasTileAccess((uint16_t)i))
                         {
-                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecRLE8(GetTileWidth((unsigned short)i), GetTileHeight((unsigned short)i), 24);
+                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecRLE8(GetTileWidth((uint16_t)i), GetTileHeight((uint16_t)i), 24);
                         // Check if we have a scanline header before the data. If it's the case
                         // inform the codec of this particularity.
                         if (m_IntergraphHeader.IBlock1.scn == 1)
@@ -1216,8 +1216,8 @@ bool HRFIntergraphFile::InitOpenedFile(HFCPtr<HRFPageDescriptor> pi_pPage)
                         {
                         // Instead of giving the width of the line, we give the new width
                         // previously calculated.
-                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecRLE8(GetWidth((unsigned short)i), GetHeight((unsigned short)i), 24);
-                        m_IntergraphResDescriptors[i]->pCodec->SetSubset(GetWidth((unsigned short)i),1);
+                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecRLE8(GetWidth((uint16_t)i), GetHeight((uint16_t)i), 24);
+                        m_IntergraphResDescriptors[i]->pCodec->SetSubset(GetWidth((uint16_t)i),1);
                         // Check if we have a scanline header before the data. If it's the case
                         // inform the codec of this particularity.
                         if (m_IntergraphHeader.IBlock1.scn == 1)
@@ -1240,13 +1240,13 @@ bool HRFIntergraphFile::InitOpenedFile(HFCPtr<HRFPageDescriptor> pi_pPage)
                 // build a Codec
                 for (i = 0; i <= m_SubResolution; i++)
                     {
-                    if (HasTileAccess((unsigned short)i))
-                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecIJG(GetTileWidth ((unsigned short)i),
-                                                                                GetTileHeight((unsigned short)i),
+                    if (HasTileAccess((uint16_t)i))
+                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecIJG(GetTileWidth ((uint16_t)i),
+                                                                                GetTileHeight((uint16_t)i),
                                                                                 8);
                     else
-                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecIJG(GetWidth ((unsigned short)i),
-                                                                                GetHeight((unsigned short)i),
+                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecIJG(GetWidth ((uint16_t)i),
+                                                                                GetHeight((uint16_t)i),
                                                                                 8);
 
                     ((HFCPtr<HCDCodecIJG> &)m_IntergraphResDescriptors[i]->pCodec)->SetBitsPerPixel(8);
@@ -1268,13 +1268,13 @@ bool HRFIntergraphFile::InitOpenedFile(HFCPtr<HRFPageDescriptor> pi_pPage)
                 // build a Codec
                 for (i = 0; i <= m_SubResolution; i++)
                     {
-                    if (HasTileAccess((unsigned short)i))
-                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecIJG(GetTileWidth ((unsigned short)i),
-                                                                                GetTileHeight((unsigned short)i),
+                    if (HasTileAccess((uint16_t)i))
+                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecIJG(GetTileWidth ((uint16_t)i),
+                                                                                GetTileHeight((uint16_t)i),
                                                                                 24);
                     else
-                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecIJG(GetWidth ((unsigned short)i),
-                                                                                GetHeight((unsigned short)i),
+                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecIJG(GetWidth ((uint16_t)i),
+                                                                                GetHeight((uint16_t)i),
                                                                                 24);
 
                     ((HFCPtr<HCDCodecIJG> &)m_IntergraphResDescriptors[i]->pCodec)->SetBitsPerPixel(24);
@@ -1318,7 +1318,7 @@ bool HRFIntergraphFile::InitOpenedFile(HFCPtr<HRFPageDescriptor> pi_pPage)
 // HasTileAccess
 //-----------------------------------------------------------------------------
 
-bool HRFIntergraphFile::HasTileAccess(unsigned short pi_SubImage) const
+bool HRFIntergraphFile::HasTileAccess(uint16_t pi_SubImage) const
     {
     HPRECONDITION(m_HasHeaderFilled);
     HPRECONDITION(pi_SubImage <= m_SubResolution);
@@ -1341,7 +1341,7 @@ bool HRFIntergraphFile::HasTileAccess(unsigned short pi_SubImage) const
 // HasLineAccess
 //-----------------------------------------------------------------------------
 
-bool HRFIntergraphFile::HasLineAccess(unsigned short pi_SubImage) const
+bool HRFIntergraphFile::HasLineAccess(uint16_t pi_SubImage) const
     {
     HPRECONDITION(m_HasHeaderFilled);
     HPRECONDITION(pi_SubImage <= m_SubResolution);
@@ -1439,8 +1439,8 @@ bool HRFIntergraphFile::FillFileHeader()
 
         for (uint32_t ImageRes=0; ImageRes <= m_SubResolution; ImageRes++)
             {
-            if (HasTileAccess((unsigned short)ImageRes))
-                ReadTileDirectory((unsigned short)ImageRes);
+            if (HasTileAccess((uint16_t)ImageRes))
+                ReadTileDirectory((uint16_t)ImageRes);
             }
         }
 
@@ -1453,7 +1453,7 @@ bool HRFIntergraphFile::FillFileHeader()
 // On error return false.
 //-----------------------------------------------------------------------------
 
-void HRFIntergraphFile::ReadTileDirectory(unsigned short pi_SubImage)
+void HRFIntergraphFile::ReadTileDirectory(uint16_t pi_SubImage)
     {
     // We assume that we have check the header file integrity in the
     // constructor for the release version.
@@ -1494,7 +1494,7 @@ void HRFIntergraphFile::ReadTileDirectory(unsigned short pi_SubImage)
 // public
 // CountSubResolution
 //-----------------------------------------------------------------------------
-unsigned short HRFIntergraphFile::CountSubResolution() const
+uint16_t HRFIntergraphFile::CountSubResolution() const
     {
     HPRECONDITION(m_HasHeaderFilled);
 
@@ -1502,7 +1502,7 @@ unsigned short HRFIntergraphFile::CountSubResolution() const
     //        So that we do is: we support multi resolution file (we can read file with
     //        multi-res), but do not take any account of the sub-resolution data.
     //        Which mean that we re-calculate the sub-resolution and store it in a cache file
-    return (unsigned short)m_SubResolution;
+    return (uint16_t)m_SubResolution;
     // return 0;
     }
 
@@ -1510,7 +1510,7 @@ unsigned short HRFIntergraphFile::CountSubResolution() const
 // public
 // GetResolution
 //-----------------------------------------------------------------------------
-double HRFIntergraphFile::GetResolution(unsigned short pi_SubImage)
+double HRFIntergraphFile::GetResolution(uint16_t pi_SubImage)
     {
     // We assume that a Intergraph file as only one image
     HPRECONDITION(m_HasHeaderFilled);
@@ -1601,7 +1601,7 @@ void HRFIntergraphFile::GenerateHeader8BitsPalette(IntergraphColorTable    Color
 
     pTempPalette = new Byte[m_IntergraphHeader.IBlock2.cte * BytePerEntry];
     memset(pTempPalette, 0, m_IntergraphHeader.IBlock2.cte * BytePerEntry);
-    m_IntergraphHeader.IBlock2.ctv = (unsigned short)ColorTableValue;
+    m_IntergraphHeader.IBlock2.ctv = (uint16_t)ColorTableValue;
     if (ColorTableValue == IGDS)                       // We've got an IGDS color table
         {
         // If we create a palette but the palette given by parameter does not contain any entry...
@@ -1804,7 +1804,7 @@ bool HRFIntergraphFile::CreateFileHeader(HFCPtr<HRFPageDescriptor> pi_pPage)
         {
         HFCPtr<HPMGenericAttribute> pTag = (*TagIterator);
             
-        unsigned short Unit = 2; // Unkown unit
+        uint16_t Unit = 2; // Unkown unit
         double XResolution = 0;
         double YResolution = 0;
 
@@ -1831,18 +1831,18 @@ bool HRFIntergraphFile::CreateFileHeader(HFCPtr<HRFPageDescriptor> pi_pPage)
             if (Unit == 3)
                 {
                 // Write in micron.
-                m_IntergraphHeader.IBlock1.drs = (short) (1.0 / XResolution / 0.0001);
+                m_IntergraphHeader.IBlock1.drs = (int16_t) (1.0 / XResolution / 0.0001);
                 }
             // Unit is inch
             else if (Unit == 2)
                 {
                 // Write dpi.
-                m_IntergraphHeader.IBlock1.drs = (short)(-XResolution);
+                m_IntergraphHeader.IBlock1.drs = (int16_t)(-XResolution);
                 }
             else
                 {
                 // Write dpi.
-                m_IntergraphHeader.IBlock1.drs = (short) 0;
+                m_IntergraphHeader.IBlock1.drs = (int16_t) 0;
                 }
             }
         }
@@ -1891,7 +1891,7 @@ bool HRFIntergraphFile::CreateFileHeader(HFCPtr<HRFPageDescriptor> pi_pPage)
 
             // Init Sub-resolution info, fill the vector m_IntergraphResDescriptors[]
             // THe res 0 is done by WriteTileDirectory(0);
-            for (unsigned short i=1; i<pi_pPage->CountResolutions(); ++i)
+            for (uint16_t i=1; i<pi_pPage->CountResolutions(); ++i)
                 {
                 HFCPtr<HRFResolutionDescriptor> pResDescriptor = pi_pPage->GetResolutionDescriptor(i);
                 CreateTileDirectory(i, pResDescriptor);
@@ -1987,7 +1987,7 @@ bool HRFIntergraphFile::WriteFileHeader(HFCPtr<HRFPageDescriptor> pi_pPage)
     m_pIntergraphFile->SeekToPos(GetpageOffset(m_CurentPageIndex));
 
     // Update the word to follow according newly added BlockNumInHeader.
-    m_IntergraphHeader.IBlock1.wtf = (unsigned short)((m_BlockNumInHeader * (HRF_INTERGRAGH_HEADER_BLOCK_LENGTH / 2)) - 2);
+    m_IntergraphHeader.IBlock1.wtf = (uint16_t)((m_BlockNumInHeader * (HRF_INTERGRAGH_HEADER_BLOCK_LENGTH / 2)) - 2);
 
     // Afterall flush theses HeaderBlocks on the disk...
     m_pIntergraphFile->Write(&m_IntergraphHeader.IBlock1, sizeof(IntergraphHeaderBlock1));
@@ -2095,7 +2095,7 @@ void HRFIntergraphFile::CreateHeaderBlock2(IntergraphHeaderBlocks& po_rIntergrap
 // Private
 //-----------------------------------------------------------------------------
 
-bool HRFIntergraphFile::CreateTileDirectory(unsigned short             pi_SubImage,
+bool HRFIntergraphFile::CreateTileDirectory(uint16_t             pi_SubImage,
                                              HRFResolutionDescriptor*  pi_pResolutionDescriptor)
     {
     HPRECONDITION(pi_SubImage <= m_SubResolution);
@@ -2172,7 +2172,7 @@ bool HRFIntergraphFile::CreateTileDirectory(unsigned short             pi_SubIma
 // Private
 //-----------------------------------------------------------------------------
 
-bool HRFIntergraphFile::WriteTileDirectory(unsigned short pi_SubImage)
+bool HRFIntergraphFile::WriteTileDirectory(uint16_t pi_SubImage)
     {
     // We assume that we have check the header file integrity in the
     // constructor for the release version.
@@ -2280,7 +2280,7 @@ bool HRFIntergraphFile::CreatePacketOverview(HFCPtr<HRFPageDescriptor> pi_pPage)
         m_IntergraphResDescriptors[Index + 1]->pOverview->NumberLines    = 1;   // Height in Line
         m_IntergraphResDescriptors[Index + 1]->pOverview->NumberPixels   = 1;   // Width in pixel
         m_IntergraphResDescriptors[Index + 1]->pOverview->SamplingMethod = 0;   // 0:Subsample, 1:Logical 'Or', 2:Avaraging
-        if (pi_pPage->GetResolutionDescriptor((unsigned short)(Index+1))->GetBlockType() == HRFBlockType::TILE)
+        if (pi_pPage->GetResolutionDescriptor((uint16_t)(Index+1))->GetBlockType() == HRFBlockType::TILE)
             m_IntergraphResDescriptors[Index + 1]->pOverview->Flag = 1;
         else
             m_IntergraphResDescriptors[Index + 1]->pOverview->Flag = 0;
@@ -2334,14 +2334,14 @@ bool HRFIntergraphFile::UpdatePacketOverview(uint32_t pi_FileCursorPosition, uin
         HASSERT(m_IntergraphResDescriptors[pi_Resolution]->pOverviewEntry != 0);
 
         m_IntergraphResDescriptors[pi_Resolution]->pOverview->NumberLines  =
-            (uint32_t)pPage->GetResolutionDescriptor((unsigned short)pi_Resolution)->GetHeight();
+            (uint32_t)pPage->GetResolutionDescriptor((uint16_t)pi_Resolution)->GetHeight();
         m_IntergraphResDescriptors[pi_Resolution]->pOverview->NumberPixels =
-            (uint32_t)pPage->GetResolutionDescriptor((unsigned short)pi_Resolution)->GetWidth();
+            (uint32_t)pPage->GetResolutionDescriptor((uint16_t)pi_Resolution)->GetWidth();
 
         // 0:Subsample, 1:Logical 'Or', 2:Avaraging
         m_IntergraphResDescriptors[pi_Resolution]->pOverview->SamplingMethod = 0;
 
-        if (pPage->GetResolutionDescriptor((unsigned short)pi_Resolution)->GetBlockType() == HRFBlockType::TILE)
+        if (pPage->GetResolutionDescriptor((uint16_t)pi_Resolution)->GetBlockType() == HRFBlockType::TILE)
             m_IntergraphResDescriptors[pi_Resolution]->pOverview->Flag = 1;
         else
             m_IntergraphResDescriptors[pi_Resolution]->pOverview->Flag = 0;
@@ -2389,12 +2389,12 @@ uint32_t HRFIntergraphFile::GetFullResolutionSize()
 // Protected
 // UpdateOffsetNextResolution
 //-----------------------------------------------------------------------------
-void HRFIntergraphFile::UpdateOffsetNextResolutions  (unsigned short pi_CurrentSubImage,
+void HRFIntergraphFile::UpdateOffsetNextResolutions  (uint16_t pi_CurrentSubImage,
                                                       uint32_t pi_NbByteToAdd)
     {
     if (pi_CurrentSubImage <= m_SubResolution)
         {
-        for(unsigned short i=pi_CurrentSubImage+1; i<=m_SubResolution; ++i)
+        for(uint16_t i=pi_CurrentSubImage+1; i<=m_SubResolution; ++i)
             m_IntergraphResDescriptors[i]->pOverviewEntry->S += pi_NbByteToAdd;
         }
     }
@@ -2543,7 +2543,7 @@ bool HRFIntergraphFile::IsIdentityLUT() const
     bool IsIdentity = true;
 
     // First, verrify the first LUT
-    for (int ColorIndex = 0; ColorIndex < 256 && IsIdentity; ColorIndex++)
+    for (int32_t ColorIndex = 0; ColorIndex < 256 && IsIdentity; ColorIndex++)
         {
         IsIdentity = m_pRedLUTColorTable[ColorIndex] == ColorIndex;
         }
@@ -2576,7 +2576,7 @@ bool HRFIntergraphFile::ResetLUT()
     if (m_LUTColorCorrected)
         {
         // Reset the LUT
-        for (int ColorIndex = 0; ColorIndex < 256; ColorIndex++)
+        for (int32_t ColorIndex = 0; ColorIndex < 256; ColorIndex++)
             m_pRedLUTColorTable[ColorIndex] = (Byte)ColorIndex;
 
         if (GetAccessMode().m_HasWriteAccess)
@@ -2837,7 +2837,7 @@ bool HRFIntergraphFile::ReadAllApplicationPacket()
 // File information
 //-----------------------------------------------------------------------------
 
-unsigned short HRFIntergraphFile::GetBitPerPixel() const
+uint16_t HRFIntergraphFile::GetBitPerPixel() const
     {
     return m_BitPerPixel;
     }
@@ -2871,7 +2871,7 @@ uint32_t HRFIntergraphFile::GetBlockNumInHeader() const
 // File information
 //-----------------------------------------------------------------------------
 
-void HRFIntergraphFile::SetBitPerPixel(unsigned short pi_BitPerPixel)
+void HRFIntergraphFile::SetBitPerPixel(uint16_t pi_BitPerPixel)
     {
     m_BitPerPixel = pi_BitPerPixel;
     }
@@ -2882,7 +2882,7 @@ void HRFIntergraphFile::SetBitPerPixel(unsigned short pi_BitPerPixel)
 // File information
 //-----------------------------------------------------------------------------
 
-void HRFIntergraphFile::SetDatatypeCode(unsigned short pi_DataTypeCode)
+void HRFIntergraphFile::SetDatatypeCode(uint16_t pi_DataTypeCode)
     {
     m_DataTypeCode = pi_DataTypeCode;
     }
@@ -2893,7 +2893,7 @@ void HRFIntergraphFile::SetDatatypeCode(unsigned short pi_DataTypeCode)
 // File information
 //-----------------------------------------------------------------------------
 
-const unsigned short HRFIntergraphFile::GetDatatypeCode() const
+const uint16_t HRFIntergraphFile::GetDatatypeCode() const
     {
     HPRECONDITION(-1 != m_DataTypeCode);
     return m_DataTypeCode;

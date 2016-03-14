@@ -50,7 +50,7 @@ HRFBlockAdapterCapabilities* HRFAdaptImageToLineCreator::GetCapabilities() const
 //-----------------------------------------------------------------------------
 HRFBlockAdapter* HRFAdaptImageToLineCreator::Create(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                                     uint32_t              pi_Page,
-                                                    unsigned short       pi_Resolution,
+                                                    uint16_t       pi_Resolution,
                                                     HFCAccessMode         pi_AccessMode) const
     {
     return new HRFAdaptImageToLine(GetCapabilities(),
@@ -68,7 +68,7 @@ HRFAdaptImageToLine::HRFAdaptImageToLine(
     HRFBlockAdapterCapabilities* pi_pCapabilities,
     HFCPtr<HRFRasterFile>        pi_rpRasterFile,
     uint32_t                     pi_Page,
-    unsigned short              pi_Resolution,
+    uint16_t              pi_Resolution,
     HFCAccessMode                pi_AccessMode)
 
     : HRFBlockAdapter(pi_pCapabilities,
@@ -78,8 +78,8 @@ HRFAdaptImageToLine::HRFAdaptImageToLine(
                       pi_AccessMode)
     {
 
-    HASSERT(m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBlocksPerWidth() <= ULONG_MAX);
-    HASSERT(m_pResolutionDescriptor->GetHeight() <= ULONG_MAX);
+    HASSERT(m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBlocksPerWidth() <= UINT32_MAX);
+    HASSERT(m_pResolutionDescriptor->GetHeight() <= UINT32_MAX);
 
     m_RasterHeight       = (uint32_t)m_pResolutionDescriptor->GetHeight();
     m_NextLineToWrite  = 0;

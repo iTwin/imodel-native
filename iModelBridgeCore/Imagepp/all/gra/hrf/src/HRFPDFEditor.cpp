@@ -75,7 +75,7 @@ public:
     {
         HPRECONDITION(m_pPDFEditor->m_pPDDoc != 0);
         HPRECONDITION(po_pData != 0);
-        HPRECONDITION(pi_PosX <= ULONG_MAX && pi_PosY <= ULONG_MAX);
+        HPRECONDITION(pi_PosX <= UINT32_MAX && pi_PosY <= UINT32_MAX);
 
         return HRFPDFLibInterface::ReadBlock(m_pPDFEditor,
                                              m_UseDrawContentToMem,
@@ -96,7 +96,7 @@ public:
     {
         HPRECONDITION(m_pPDFEditor->m_pPDDoc != 0);
         HPRECONDITION(po_pData != 0);
-        HPRECONDITION(pi_MinX <= ULONG_MAX && pi_MinY <= ULONG_MAX);
+        HPRECONDITION(pi_MinX <= UINT32_MAX && pi_MinY <= UINT32_MAX);
 
         ASInt32 Width = (uint32_t)pi_MaxX - (uint32_t)pi_MinX;
         ASInt32 Height = (uint32_t)pi_MaxY - (uint32_t)pi_MinY;

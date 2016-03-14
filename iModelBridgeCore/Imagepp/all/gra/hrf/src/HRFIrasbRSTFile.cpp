@@ -84,14 +84,14 @@ void ReadLine(const HAutoPtr<HFCBinStream>& pi_pFile,
     HPRECONDITION(pi_pFile != 0);
     HPRECONDITION(po_pString != 0);
 
-    const int BufferSize = MAX_PATH*3;
+    const int32_t BufferSize = MAX_PATH*3;
     char      Buffer[BufferSize + 1];
     // WString    CurrentLine;
 
     bool EndOfLine = false;
     po_pString->erase();
     memset(Buffer, 0, BufferSize + 1);
-    for (unsigned short i = 0; i < BufferSize && !EndOfLine; i++)
+    for (uint16_t i = 0; i < BufferSize && !EndOfLine; i++)
         {
         if (pi_pFile->Read(&Buffer[i], 1) != 1)
             EndOfLine = true;
@@ -281,7 +281,7 @@ void HRFIrasbRSTCreator::OpenFile(const HFCPtr<HFCURL>& pi_rpURL,
                     pFoundSettings[4] = info.lock;
 
                     // Move pointer position until the beginning of the filename is reached
-                    for (int i = 0; i < 5; i++)
+                    for (int32_t i = 0; i < 5; i++)
                         {
                         char settings[MAX_PATH];
                         sprintf (settings, "%ld", pFoundSettings[i]);
@@ -419,7 +419,7 @@ const HFCPtr<HRFRasterFileCapabilities>& HRFIrasbRSTFile::GetCapabilities () con
     ---------------------------------------------------------------------------
  */
 HRFResolutionEditor* HRFIrasbRSTFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                             unsigned short pi_Resolution,
+                                                             uint16_t pi_Resolution,
                                                              HFCAccessMode  pi_AccessMode)
     {
     HPRECONDITION(GetPageDescriptor(pi_Page) != 0);

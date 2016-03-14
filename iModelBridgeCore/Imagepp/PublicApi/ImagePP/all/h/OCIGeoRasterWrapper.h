@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/OCIGeoRasterWrapper.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a oracle SDOGeoRaster.
@@ -30,22 +30,22 @@ public:
     virtual             ~OCIGeoRasterWrapper  ();
 
 
-    virtual void                GetBlock   (unsigned short pi_Resolution,
-                                            unsigned short pi_Band,
+    virtual void                GetBlock   (uint16_t pi_Resolution,
+                                            uint16_t pi_Band,
                                             uint32_t       pi_PosX,
                                             uint32_t       pi_PosY,
                                             Byte*         po_pBuffer,
                                             size_t         pi_BufferSize) override;
 
-    virtual void                GetBlock   (unsigned short pi_Resolution,
-                                            unsigned short pi_Band,
+    virtual void                GetBlock   (uint16_t pi_Resolution,
+                                            uint16_t pi_Band,
                                             uint32_t       pi_PosX,
                                             uint32_t       pi_PosY,
                                             Byte**        po_ppBuffer,
                                             size_t*        po_pBufferSize) override;
 
-    virtual bool                SetBlock   (unsigned short pi_Resolution,
-                                            unsigned short pi_Band,
+    virtual bool                SetBlock   (uint16_t pi_Resolution,
+                                            uint16_t pi_Band,
                                             uint32_t       pi_PosX,
                                             uint32_t       pi_PosY,
                                             const Byte*   pi_pBuffer,

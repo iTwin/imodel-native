@@ -5797,7 +5797,7 @@ void HGF2DPolySegment::RecomposeClosedPolySegments(list<HFCPtr<HGF2DPolySegment>
                                     }
                                 else
                                     {
-                                    for (long j = (long)((*FoundItr)->GetSize() - 2) ; j >= 0 ; --j)
+                                    for (int32_t j = (int32_t) ((*FoundItr)->GetSize() - 2); j >= 0; --j)
                                         TempPolySegment.AppendPoint((*FoundItr)->GetPoint(j));
                                     }
 
@@ -5843,7 +5843,7 @@ void HGF2DPolySegment::RecomposeClosedPolySegments(list<HFCPtr<HGF2DPolySegment>
                     }
                 else
                     {
-                    for (long j = (long)((*FoundItr)->GetSize() - 2) ; j >= 0 ; --j)
+                    for (int32_t j = (int32_t)((*FoundItr)->GetSize() - 2) ; j >= 0 ; --j)
                         pNewPolySegment->AppendPoint((*FoundItr)->GetPoint(j));
                     }
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hps/src/HPSParserScope.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -60,7 +60,7 @@ inline void HPSParserScope::Reset()
     }
 
 //---------------------------------------------------------------------------
-inline void HPSParserScope::SetParameterValue(short pi_Pos, ExpressionNode* pi_pNode)
+inline void HPSParserScope::SetParameterValue(int16_t pi_Pos, ExpressionNode* pi_pNode)
     {
     m_ParameterList[pi_Pos]->ResetExpression(pi_pNode);
     }

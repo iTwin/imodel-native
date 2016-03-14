@@ -92,7 +92,7 @@ HFCPtr<HRFRasterFile> HRFPWRasterFile::Create(const HFCPtr<HRFRasterFile>&  pi_r
     HRFPageDescriptor::ListOfResolutionDescriptor  ListOfResolutionDescriptor;
 
     bool Supported = true;
-    for (unsigned short Res = 0; Res < pPage->CountResolutions() && Supported; Res++)
+    for (uint16_t Res = 0; Res < pPage->CountResolutions() && Supported; Res++)
         {
         pSrcResDesc = pPage->GetResolutionDescriptor(Res);
         // create a new page with HRFPWCapabilities
@@ -168,7 +168,7 @@ HFCPtr<HRFRasterFile> HRFPWRasterFile::Create(const HFCPtr<HRFRasterFile>&  pi_r
             HArrayAutoPtr<Byte> pBuffer1(new Byte[Buffer1Size]);
 
             time_t FileTimestamps = HFCStat(pi_rpRasterFile->GetURL()).GetModificationTime();
-            HASSERT_X64(FileTimestamps < ULONG_MAX);  // see the cast below
+            HASSERT_X64(FileTimestamps < UINT32_MAX);  // see the cast below
             __time32_t FileTimestamps32 = (__time32_t)FileTimestamps;
 
             // create the header
@@ -233,7 +233,7 @@ bool HRFPWRasterFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
     }
 
 HRFResolutionEditor* HRFPWRasterFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                             unsigned short pi_Resolution,
+                                                             uint16_t pi_Resolution,
                                                              HFCAccessMode  pi_AccessMode)
     {
     m_pPWHandler = (m_pPWHandler == 0 ? HRFRasterFileFactory::GetInstance()->GetPWHandler() : m_pPWHandler);

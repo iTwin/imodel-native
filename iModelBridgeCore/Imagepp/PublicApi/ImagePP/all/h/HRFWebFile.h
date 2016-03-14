@@ -66,7 +66,7 @@ public:
     virtual bool   AddPage(HFCPtr<HRFPageDescriptor> pi_pPage);
 
     // Editing
-    virtual HRFResolutionEditor* CreateResolutionEditor(uint32_t pi_Page, unsigned short pi_Resolution, HFCAccessMode pi_AccessMode);
+    virtual HRFResolutionEditor* CreateResolutionEditor(uint32_t pi_Page, uint16_t pi_Resolution, HFCAccessMode pi_AccessMode);
 
     // Save
     virtual void    Save();

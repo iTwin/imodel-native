@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAHistogramOptions.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -20,7 +20,7 @@ class HRPPixelType;
 
     @note This class makes use of an HRASamplingOptions object. This latter
     object has restrictions on its use: we should not keep it for a long time.
-    Therefore, an HRAHistogramOptions object should also have a short life.
+    Therefore, an HRAHistogramOptions object should also have a int16_t life.
     Please refer to HRASamplingOptions documentation for details.
 
   @see HRASamplingOptions

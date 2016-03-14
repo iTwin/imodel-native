@@ -173,7 +173,7 @@ inline void RedirectedAssert(bool pi_Success, WCharCP pi_pExpr, WCharCP pi_pFile
         FILE* Exist = fopen(ASSERT_LOG_FILE_PATH, "r");
         if (0 == Exist)
             {
-            _wassert(pi_pExpr, pi_pFile, static_cast<unsigned int>(pi_Line));
+            _wassert(pi_pExpr, pi_pFile, static_cast<unsigned>(pi_Line));
             return;
             }
         fclose(Exist);
@@ -189,7 +189,7 @@ inline void RedirectedAssert(bool pi_Success, WCharCP pi_pExpr, WCharCP pi_pFile
         }
     }
 
-#       define REDIRECTED_ASSERT(expr) RedirectedAssert((int)(expr), _CRT_WIDE(#expr), _CRT_WIDE(__FILE__), __LINE__)
+#       define REDIRECTED_ASSERT(expr) RedirectedAssert((int32_t)(expr), _CRT_WIDE(#expr), _CRT_WIDE(__FILE__), __LINE__)
 #       define  HASSERT(expr) REDIRECTED_ASSERT(expr)
 #       define  HASSERT_X64(expr) REDIRECTED_ASSERT(expr)
 #       define  HASSERT_DATA(expr) REDIRECTED_ASSERT(expr)
@@ -335,7 +335,7 @@ inline void RedirectedAssert(bool pi_Success, WCharCP pi_pExpr, WCharCP pi_pFile
 **  HDEBUGCODE(expr) - Allows to enter a line of code that compiles only
 **                     in debug mode
 **
-**  Example:  HDEBUGCODE(int i=0;);
+**  Example:  HDEBUGCODE(int32_t i=0;);
 **            HDEBUGCODE(printf("I: %d\n",i););
 ** -----------------------------------------------------------------------
 */
@@ -584,7 +584,7 @@ inline void RedirectedAssert(bool pi_Success, WCharCP pi_pExpr, WCharCP pi_pFile
 */
 
 #if defined(__HMR_DEBUG)
-#define HWARNING(condition, text)  if (!(int)(condition))     \
+#define HWARNING(condition, text)  if (!(int32_t)(condition))     \
                                        {                          \
                                            HDEBUGTEXT(text)       \
                                        }
@@ -620,44 +620,44 @@ inline void RedirectedAssert(bool pi_Success, WCharCP pi_pExpr, WCharCP pi_pFile
 // that use DOUBLE2INT_Fast instead of DOUBLE2INT_Round.
 #define DOUBLE2INT_Fast(i, d) \
         { \
-        HASSERT(sizeof(d) == sizeof(double)); HASSERT(sizeof(i) == sizeof(int)); \
+        HASSERT(sizeof(d) == sizeof(double)); HASSERT(sizeof(i) == sizeof(int32_t)); \
         double double2IntTempVar(((d)+6755399441055744.0)); \
-        i = *((int *)(&double2IntTempVar)); \
+        i = *((int32_t *)(&double2IntTempVar)); \
         }
 
 // This routine tries to match the result of round(d) but in a more efficient way.
 // The result may differ by 1 when the value is very close to .5(epsilon 1E-300).
 #define DOUBLE2INT_Round(i, d) \
         { \
-        HASSERT(sizeof(d) == sizeof(double)); HASSERT(sizeof(i) == sizeof(int)); \
+        HASSERT(sizeof(d) == sizeof(double)); HASSERT(sizeof(i) == sizeof(int32_t)); \
         double double2IntTempVar; \
         if((d) > 0.0) \
             double2IntTempVar = (((d)+(1E-300))+6755399441055744.0); \
         else \
             double2IntTempVar = (((d)-(1E-300))+6755399441055744.0); \
-        HASSERT(*((int *)(&double2IntTempVar)) == round(d)); \
-        i = *((int *)(&double2IntTempVar)); \
+        HASSERT(*((int32_t *)(&double2IntTempVar)) == round(d)); \
+        i = *((int32_t *)(&double2IntTempVar)); \
         }
 
-// Same thing as i = (int)d, but faster.
+// Same thing as i = (int32_t)d, but faster.
 // The result may differ by 1 when the value is very close to 1.0. ex. 4.99998542 will give 5.0 instead of 4.0
 #define DOUBLE2INT_Trunc(i, d) \
         { \
-        HASSERT(sizeof(d) == sizeof(double)); HASSERT(sizeof(i) == sizeof(int)); \
+        HASSERT(sizeof(d) == sizeof(double)); HASSERT(sizeof(i) == sizeof(int32_t)); \
         double double2IntTempVar; \
         if((d) > 0.0) \
             double2IntTempVar = (((d)-0.49999)+6755399441055744.0); \
         else \
             double2IntTempVar = (((d)+0.49999)+6755399441055744.0); \
-        HASSERT(*((int *)(&double2IntTempVar)) == (int)d); \
-        i = *((int *)(&double2IntTempVar)); \
+        HASSERT(*((int32_t *)(&double2IntTempVar)) == (int32_t)d); \
+        i = *((int32_t *)(&double2IntTempVar)); \
         }
 #else
-#define DOUBLE2INT_Fast(i, d) i=(int)d
+#define DOUBLE2INT_Fast(i, d) i=(int32_t)d
 
 #define DOUBLE2INT_Round(i, d) i=round(d)
 
-#define DOUBLE2INT_Trunc(i, d) i=(int)d;
+#define DOUBLE2INT_Trunc(i, d) i=(int32_t)d;
 #endif
 
 /*

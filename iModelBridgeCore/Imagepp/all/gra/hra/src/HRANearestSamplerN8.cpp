@@ -195,7 +195,7 @@ void HRANearestSamplerN8::GetPixels(double         pi_PositionX,
             Byte* pLastPixel = pFirstPixel + m_DataWidth - 1;
             Byte* pSrcData = pFirstPixel + (uint32_t)MAX(MIN(pi_PositionX, (double)m_DataWidth - HGLOBAL_EPSILON), 0.0);
             Byte* pDstData = (Byte*)po_pBuffer;
-            short SrcStep = m_DeltaX < 0.0 ? -2 : 2;
+            int16_t SrcStep = m_DeltaX < 0.0 ? -2 : 2;
             while (pi_PixelCount != 0)
                 {
                 *pDstData++ = *pSrcData;
@@ -206,9 +206,9 @@ void HRANearestSamplerN8::GetPixels(double         pi_PositionX,
             Byte* pFirstPixel = (Byte*)ComputeAddress(0,
                                                           (uint32_t)pi_PositionY);
             Byte* pLastPixel = pFirstPixel + m_DataWidth - 1;
-            register Byte* pSrcData = pFirstPixel + (uint32_t)MAX(MIN(pi_PositionX, (double)m_DataWidth - HGLOBAL_EPSILON), 0.0);
-            register Byte* pDstData = (Byte*)po_pBuffer;
-            short SrcStep = m_DeltaX < 0.0 ? -2 : 2;
+            Byte* pSrcData = pFirstPixel + (uint32_t)MAX(MIN(pi_PositionX, (double)m_DataWidth - HGLOBAL_EPSILON), 0.0);
+            Byte* pDstData = (Byte*)po_pBuffer;
+            int16_t SrcStep = m_DeltaX < 0.0 ? -2 : 2;
 
             uint32_t PixelCount = pi_PixelCount;
             if ((m_DataWidth < (pi_PixelCount<<1)))
@@ -246,15 +246,15 @@ void HRANearestSamplerN8::GetPixels(double         pi_PositionX,
             }
         else if (m_BytesPerPixel == 2)
             {
-            HPRECONDITION(sizeof(unsigned short) == 2);
+            HPRECONDITION(sizeof(uint16_t) == 2);
 
-            unsigned short* pFirstPixel = (unsigned short*)ComputeAddress(0,
+            uint16_t* pFirstPixel = (uint16_t*)ComputeAddress(0,
                                                             (uint32_t)pi_PositionY);
-            unsigned short* pLastPixel = pFirstPixel + m_DataWidth - 1;
-            unsigned short* pSrcData = pFirstPixel + (uint32_t)MAX(MIN(pi_PositionX, (double)m_DataWidth - HGLOBAL_EPSILON), 0.0);
+            uint16_t* pLastPixel = pFirstPixel + m_DataWidth - 1;
+            uint16_t* pSrcData = pFirstPixel + (uint32_t)MAX(MIN(pi_PositionX, (double)m_DataWidth - HGLOBAL_EPSILON), 0.0);
 
-            unsigned short* pDstData = (unsigned short*)po_pBuffer;
-            short SrcStep = m_DeltaX < 0.0 ? -2 : 2;
+            uint16_t* pDstData = (uint16_t*)po_pBuffer;
+            int16_t SrcStep = m_DeltaX < 0.0 ? -2 : 2;
             while (pi_PixelCount != 0)
                 {
                 *pDstData++ = *pSrcData;
@@ -269,7 +269,7 @@ void HRANearestSamplerN8::GetPixels(double         pi_PositionX,
             Byte* pLastPixel = pFirstPixel + ((m_DataWidth - 1) * 3);
             Byte* pSrcData = pFirstPixel + (uint32_t)MAX(MIN(pi_PositionX, (double)m_DataWidth - HGLOBAL_EPSILON), 0.0) * 3;
             Byte* pDstData = (Byte*)po_pBuffer;
-            short SrcStep = m_DeltaX < 0.0 ? -6 : 3;
+            int16_t SrcStep = m_DeltaX < 0.0 ? -6 : 3;
             while (pi_PixelCount != 0)
                 {
                 *pDstData++ = *pSrcData++;
@@ -289,7 +289,7 @@ void HRANearestSamplerN8::GetPixels(double         pi_PositionX,
             uint32_t* pSrcData = pFirstPixel + (uint32_t)MAX(MIN(pi_PositionX, (double)m_DataWidth - HGLOBAL_EPSILON), 0.0);
 
             uint32_t* pDstData = (uint32_t*)po_pBuffer;
-            short SrcStep = m_DeltaX < 0.0 ? -2 : 2;
+            int16_t SrcStep = m_DeltaX < 0.0 ? -2 : 2;
             while (pi_PixelCount != 0)
                 {
                 *pDstData++ = *pSrcData;
@@ -302,7 +302,7 @@ void HRANearestSamplerN8::GetPixels(double         pi_PositionX,
             Byte* pSrcData = (Byte*)ComputeAddress((uint32_t)pi_PositionX,
                                                      (uint32_t)pi_PositionY);
             Byte* pDstData = (Byte*)po_pBuffer;
-            short SrcStep = (short)(m_DeltaX * m_BytesPerPixel);
+            int16_t SrcStep = (int16_t)(m_DeltaX * m_BytesPerPixel);
             while (pi_PixelCount != 0)
                 {
                 memcpy(pDstData, pSrcData, m_BytesPerPixel);
@@ -334,10 +334,10 @@ void HRANearestSamplerN8::GetPixels(double         pi_PositionX,
                 }
             else if (m_BytesPerPixel == 2)
                 {
-                HPRECONDITION(sizeof(unsigned short) == 2);
+                HPRECONDITION(sizeof(uint16_t) == 2);
 
-                unsigned short* pDstData = (unsigned short*)po_pBuffer;
-                unsigned short* pSrcData = (unsigned short*)ComputeAddress(0,
+                uint16_t* pDstData = (uint16_t*)po_pBuffer;
+                uint16_t* pSrcData = (uint16_t*)ComputeAddress(0,
                                                              (uint32_t)pi_PositionY);
 
                 while (pi_PixelCount > 0)
@@ -409,10 +409,10 @@ void HRANearestSamplerN8::GetPixels(double         pi_PositionX,
                 }
             else if (m_BytesPerPixel == 2)
                 {
-                short* pDstData = (short*)po_pBuffer;
+                int16_t* pDstData = (int16_t*)po_pBuffer;
                 while (pi_PixelCount > 0)
                     {
-                    *pDstData++ = *(short*)ComputeAddress((uint32_t)pi_PositionX,
+                    *pDstData++ = *(int16_t*)ComputeAddress((uint32_t)pi_PositionX,
                                                            (uint32_t)pi_PositionY);
                     pi_PositionX += m_DeltaX;
                     pi_PositionY += m_DeltaY;

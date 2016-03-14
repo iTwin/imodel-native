@@ -77,7 +77,7 @@ public:
         {
         // Block Capability
         Add(new HRFLineCapability(HFC_READ_ONLY,
-                                  LONG_MAX,
+                                  INT32_MAX,
                                   HRFBlockAccess::RANDOM));
         }
     };
@@ -350,7 +350,7 @@ bool HRFSpotCAPCreator::GetRelatedURLs(const HFCPtr<HFCURL>& pi_rpURL,
     if (SlashPos != WString::npos)
         Path = Path.substr(0, SlashPos);
 
-    for(int SceneNumber = 0; SceneNumber < 1; SceneNumber++)
+    for(int32_t SceneNumber = 0; SceneNumber < 1; SceneNumber++)
         {
         stringstream Result;
 
@@ -938,7 +938,7 @@ const HGF2DWorldIdentificator HRFSpotCAPFile::GetWorldIdentificator () const
 // File manipulation
 //-------------------------------------------------------------------------------
 HRFResolutionEditor* HRFSpotCAPFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                            unsigned short pi_Resolution,
+                                                            uint16_t pi_Resolution,
                                                             HFCAccessMode  pi_AccessMode)
     {
     // Verify that the page number is 0, because we have one image per file
@@ -1155,7 +1155,7 @@ const HFCPtr<HRPHistogram>   HRFSpotCAPFile::GetHistogramFromFile()const
         pEntryFrequencies = new uint32_t*[3];
         //reset the file
         m_pLeadFile->SeekToBegin();
-        for (int ChannelIndex = 0; ChannelIndex < 3; ChannelIndex++)
+        for (int32_t ChannelIndex = 0; ChannelIndex < 3; ChannelIndex++)
             {
             pEntryFrequencies   [ChannelIndex]  = new uint32_t[256];
             memcpy(pEntryFrequencies[ChannelIndex],
@@ -1168,7 +1168,7 @@ const HFCPtr<HRPHistogram>   HRFSpotCAPFile::GetHistogramFromFile()const
             }
         pHistogram = new HRPHistogram(pEntryFrequencies, 256, 3);
 
-        for (int ChannelIndex = 0; ChannelIndex < 3; ChannelIndex++)
+        for (int32_t ChannelIndex = 0; ChannelIndex < 3; ChannelIndex++)
             delete pEntryFrequencies[ChannelIndex];
         delete pEntryFrequencies;
 
@@ -1392,8 +1392,8 @@ HFCPtr<HGF2DTransfoModel> HRFSpotCAPFile::CreateTransfoModel()const
 
     HFCPtr<HGF2DTransfoModel> pTransfoModel = new HGF2DIdentity();
 
-    unsigned short NbTiePoints  = 24;
-    unsigned short NbPixelScale = 0;
+    uint16_t NbTiePoints  = 24;
+    uint16_t NbPixelScale = 0;
 
 
     double pMatrix[4][4];

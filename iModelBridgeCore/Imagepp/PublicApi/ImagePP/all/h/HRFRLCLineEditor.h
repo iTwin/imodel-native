@@ -63,7 +63,7 @@ protected:
     // Constructor
     HRFRLCLineEditor(HFCPtr<HRFRasterFile>  pi_rpRasterFile,
                      uint32_t        pi_Page,
-                     unsigned short pi_Resolution,
+                     uint16_t pi_Resolution,
                      HFCAccessMode   pi_AccessMode);
 private:
     HFCBinStream*       m_pRLCFile;
@@ -72,7 +72,7 @@ private:
     uint32_t            m_BytesPerRow;
     uint32_t            m_CurrentLine;
     HTIFFByteOrdering   m_ByteOrdering;
-    HArrayAutoPtr<unsigned short>
+    HArrayAutoPtr<uint16_t>
     m_pBuffer;
 
     // Methods Disabled

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HTagDefinition.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HTIFFTagDefinition
@@ -64,8 +64,8 @@ public:
         uint32_t        FileTag;        // TAG File number
         HTagID          TagID;          // Sequential Number associate to FileTag
         // Use internally only.
-        short ReadCount;      // read count see TAG_IO_...
-        short WriteCount;     // write count see TAG_IO... unknown)
+        int16_t ReadCount;      // read count see TAG_IO_...
+        int16_t WriteCount;     // write count see TAG_IO... unknown)
         DataType        Type;           // Data type
         unsigned char          ReadWriteTag;   // false, ReadOnly Tag
         unsigned char          PassDirCount;   // if true, pass dir count on set
@@ -74,9 +74,9 @@ public:
 
 
     // Read/Write field definition
-    static const short TAG_IO_ANY;         // field descriptor
-    IMAGEPP_EXPORT static const short TAG_IO_VARIABLE;    // Variable, use lenght
-    static const short TAG_IO_USE_SPP;     // use SamplePerPixel
+    static const int16_t TAG_IO_ANY;         // field descriptor
+    IMAGEPP_EXPORT static const int16_t TAG_IO_VARIABLE;    // Variable, use lenght
+    static const int16_t TAG_IO_USE_SPP;     // use SamplePerPixel
 
     static size_t                   sGetDataLen                        (DataType                pi_Type);
     static const char*             sConvertDataTypetoText             (DataType                pi_DataType);
@@ -108,7 +108,7 @@ public:
     virtual const Info*             GetTagDefinitionArray              () const = 0;
 
 private:
-    static const int                sDataLen[];        // Len in bytes of each DataType.
+    static const int32_t                sDataLen[];        // Len in bytes of each DataType.
 
     };
 
@@ -120,8 +120,8 @@ public:
 #define FileDirEntry32_size 12
 #define FileDirEntry64_size 20
     typedef    struct {
-        unsigned short FileTag;        // TAG File number
-        unsigned short DataType;        // see HTIFFTagDefinition
+        uint16_t FileTag;        // TAG File number
+        uint16_t DataType;        // see HTIFFTagDefinition
         uint64_t DirCount64;        // Number of items
         uint32_t DirCount32;
         uint64_t Offset64;        // Byte offset to field data
@@ -145,8 +145,8 @@ public:
 
     uint32_t            GetFileTag() const;
     HTagID              GetID() const;
-    short GetReadCount() const;
-    short GetWriteCount() const;
+    int16_t GetReadCount() const;
+    int16_t GetWriteCount() const;
     HTagInfo::DataType  GetDataType() const;
     uint32_t            GetDataLen() const;
     bool               IsReadOnly() const;

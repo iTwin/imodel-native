@@ -45,12 +45,12 @@ public:
         {
         // Line Capability
         Add(new HRFLineCapability(HFC_READ_WRITE_CREATE,        // AccessMode
-                                  LONG_MAX,                     // MaxWidth
+                                  INT32_MAX,                     // MaxWidth
                                   HRFBlockAccess::SEQUENTIAL)); // BlockAccess
         // Image Capability
         // ReadOnly, because some problem with the codec...
         Add(new HRFImageCapability(HFC_READ_ONLY,   // AccessMode
-                                   LONG_MAX,        // MaxSizeInBytes
+                                   INT32_MAX,        // MaxSizeInBytes
                                    1,               // MinWidth
                                    32000,           // MaxWidth
                                    1,               // MinHeight
@@ -213,7 +213,7 @@ bool HRFGifCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         goto WRAPUP;
 
     // Count of the number of table lines displayed.
-    unsigned short ImageCount;
+    uint16_t ImageCount;
     // Extension block identifier holder.
     Byte  Identifier;
     // Size of data sub-block holder.
@@ -250,7 +250,7 @@ bool HRFGifCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                     Byte LZWMinimumCodeSize;
                     pFile->Read(&LZWMinimumCodeSize, sizeof(Byte));
                     while ((pFile->Read(&DataSize, 1) == 1) && (DataSize != 0))
-                        pFile->SeekToPos(pFile->GetCurrentPos() + (long) DataSize);
+                        pFile->SeekToPos(pFile->GetCurrentPos() + (int32_t) DataSize);
 
                     break;
 
@@ -364,7 +364,7 @@ uint64_t HRFGifFile::GetFileCurrentSize() const
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFGifFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                        unsigned short pi_Resolution,
+                                                        uint16_t pi_Resolution,
                                                         HFCAccessMode  pi_AccessMode)
     {
     // Verify that the page number is 0, because we have one image per file
@@ -442,15 +442,15 @@ bool HRFGifFile::AssignStructTo(HFCPtr<HRFPageDescriptor> pi_pPage)
     // Gif Graphic Block to be add in the list.
     GifGraphicBlock     gifGraphicBlock;
 
-    unsigned short BitsByPixel((unsigned short)pResolutionDescriptor->GetPixelType()->CountPixelRawDataBits());
+    uint16_t BitsByPixel((uint16_t)pResolutionDescriptor->GetPixelType()->CountPixelRawDataBits());
 
     // First Page
     if (CountPages() == 1)
         {
         m_pGlobalPalette = (HRPPixelPalette*) &pResolutionDescriptor->GetPixelType()->GetPalette();
 
-        SetHeader((unsigned short)pResolutionDescriptor->GetWidth(),
-                  (unsigned short)pResolutionDescriptor->GetHeight(),
+        SetHeader((uint16_t)pResolutionDescriptor->GetWidth(),
+                  (uint16_t)pResolutionDescriptor->GetHeight(),
                   BitsByPixel,
                   0,
                   BitsByPixel,
@@ -463,8 +463,8 @@ bool HRFGifFile::AssignStructTo(HFCPtr<HRFPageDescriptor> pi_pPage)
 
     SetImageDesc(0,                                     // LeftEdge
                  0,                                     // TopEdge
-                 (unsigned short)pResolutionDescriptor->GetWidth(),
-                 (unsigned short)pResolutionDescriptor->GetHeight(),
+                 (uint16_t)pResolutionDescriptor->GetWidth(),
+                 (uint16_t)pResolutionDescriptor->GetHeight(),
                  BitsByPixel,
                  pResolutionDescriptor->IsInterlace(),
                  BitsByPixel,
@@ -688,9 +688,9 @@ void HRFGifFile::SaveGifFile(bool pi_CloseFile)
             gifApp.Label           = 0xff;
             gifApp.BlockSize       = 11;
 
-            unsigned short IdenLength = (unsigned short)MIN(Software.size(), 8);
+            uint16_t IdenLength = (uint16_t)MIN(Software.size(), 8);
 
-            for (unsigned short i = 0; i < IdenLength; i++)
+            for (uint16_t i = 0; i < IdenLength; i++)
                 {
                 gifApp.Identifier[i]  = Software.at(i);
                 }
@@ -702,12 +702,12 @@ void HRFGifFile::SaveGifFile(bool pi_CloseFile)
 
             if (ApplicationCode != "")
                 {
-                for (unsigned short i = 0; i<3; i++)
+                for (uint16_t i = 0; i<3; i++)
                     gifApp.AuthentCode[i]  = ApplicationCode.at(i);
                 }
             else
                 {
-                for (unsigned short i = 0; i<3; i++)
+                for (uint16_t i = 0; i<3; i++)
                     gifApp.AuthentCode[i]  = 0;
                 }
             gifApp.ApplicationData = NULL;
@@ -756,13 +756,13 @@ void HRFGifFile::SaveGifFile(bool pi_CloseFile)
                 {
                 m_pGlobalPalette = (HRPPixelPalette*) &pResolutionDescriptor->GetPixelType()->GetPalette();
 
-                SetPalette((unsigned short)pResolutionDescriptor->GetPixelType()->CountPixelRawDataBits(),
-                           (unsigned short)pResolutionDescriptor->GetPixelType()->CountPixelRawDataBits(),
+                SetPalette((uint16_t)pResolutionDescriptor->GetPixelType()->CountPixelRawDataBits(),
+                           (uint16_t)pResolutionDescriptor->GetPixelType()->CountPixelRawDataBits(),
                            (HRPPixelPalette*) &pResolutionDescriptor->GetPixelType()->GetPalette(),
                            m_ListGifGraphicBlock[nbPages].ImageDescriptor.LocalCT);
 
                 // Get number of color table entries.
-                unsigned short tableSize = (unsigned short) (1L << ((m_GifHeader.PackedField & 0x07) + 1));
+                uint16_t tableSize = (uint16_t) (1L << ((m_GifHeader.PackedField & 0x07) + 1));
 
                 // Move the file pointer to the begining of the local color table.
                 m_pGifFile->SeekToPos(m_ListPageDataOffset[nbPages] - 3*tableSize);
@@ -964,11 +964,11 @@ bool HRFGifFile::LookUpBlocks()
     {
     bool Status       = false;
     bool EndOfGifFile = false; // Boolean that indicate if the end of the file has been reach.
-    unsigned short LineCount;          // Count of the number of table lines displayed.
-    unsigned short BlockCount;         // Running count of the number of data blocks.
+    uint16_t LineCount;          // Count of the number of table lines displayed.
+    uint16_t BlockCount;         // Running count of the number of data blocks.
     Byte  Identifier;         // Extension block identifier holder.
     Byte  DataSize;           // Size of data sub-block holder.
-    unsigned short GlobalTableSize;    // Number of entires in the global color table.
+    uint16_t GlobalTableSize;    // Number of entires in the global color table.
 
     m_ValidGraphicControl = false;
 
@@ -1015,7 +1015,7 @@ bool HRFGifFile::LookUpBlocks()
                 if (gifGraphicBlock.ImageDescriptor.PackedField & 0x80)
                     {
                     LineCount = 0;  /* Count of the number of lines displayed */
-                    GlobalTableSize = (unsigned short) (1L << ((gifGraphicBlock.ImageDescriptor.PackedField & 0x07) + 1));
+                    GlobalTableSize = (uint16_t) (1L << ((gifGraphicBlock.ImageDescriptor.PackedField & 0x07) + 1));
                     }
 
                 // Adding the offset to the list
@@ -1024,13 +1024,13 @@ bool HRFGifFile::LookUpBlocks()
                     goto WRAPUP;
 
                 m_ListPageDataOffset.push_back((int32_t)m_pGifFile->GetCurrentPos());
-                m_ListPageDecompressMinCodeSize.push_back((short)DecompressMinCodeSize);
+                m_ListPageDecompressMinCodeSize.push_back(DecompressMinCodeSize);
 
                 BlockCount = 0;
                 while ((m_pGifFile->Read(&DataSize, 1) == 1) && (DataSize != 0))
                     {
                     BlockCount++;
-                    m_pGifFile->SeekToPos(m_pGifFile->GetCurrentPos() + (long) DataSize);
+                    m_pGifFile->SeekToPos(m_pGifFile->GetCurrentPos() + DataSize);
                     }
 
                 // Adding the GifGraphicControl if present for this block.
@@ -1228,7 +1228,7 @@ bool HRFGifFile::ReadGifHeader(GifHeader* pio_pGifHeader, HFCBinStream* pi_pGifF
     if (pio_pGifHeader->PackedField & 0x80)
         {
         // Read number of color table entries.
-        unsigned short tableSize = (unsigned short) (1L << ((pio_pGifHeader->PackedField & 0x07) + 1));
+        uint16_t tableSize = (uint16_t) (1L << ((pio_pGifHeader->PackedField & 0x07) + 1));
 
         if (pi_pGifFile->Read(&pio_pGifHeader->GlobalCT, tableSize*3) != tableSize*3)
             goto WRAPUP;
@@ -1269,7 +1269,7 @@ bool HRFGifFile::ReadGifImageDesc(GifImageDescriptor* pio_pGifImageDesc, HFCBinS
     if (pio_pGifImageDesc->PackedField & 0x80)
         {
         // Read number of color table entries.
-        unsigned short tableSize = (unsigned short) (1L << ((pio_pGifImageDesc->PackedField & 0x07) + 1));
+        uint16_t tableSize = (uint16_t) (1L << ((pio_pGifImageDesc->PackedField & 0x07) + 1));
 
         if (pi_pGifFile->Read(&pio_pGifImageDesc->LocalCT, tableSize*3) != tableSize*3)
             goto WRAPUP;
@@ -1465,7 +1465,7 @@ bool HRFGifFile::WriteGifHeader(GifHeader* pi_pGifHeader, HFCBinStream* pio_pGif
     bool Status = false;
 
     // Number of entires in the Global Color Table.
-    unsigned short tableSize;
+    uint16_t tableSize;
 
     if ((pio_pGifFile->Write(&pi_pGifHeader->Signature,     sizeof(Byte) * 3)                  != (sizeof(Byte) * 3)) ||
         (pio_pGifFile->Write(&pi_pGifHeader->Version,       sizeof(Byte) * 3)                  != (sizeof(Byte) * 3)) ||
@@ -1480,7 +1480,7 @@ bool HRFGifFile::WriteGifHeader(GifHeader* pi_pGifHeader, HFCBinStream* pio_pGif
     if (pi_pGifHeader->PackedField & 0x80)
         {
         // Write number of color table entries.
-        tableSize = (unsigned short) (1L << ((pi_pGifHeader->PackedField & 0x07) + 1));
+        tableSize = (uint16_t) (1L << ((pi_pGifHeader->PackedField & 0x07) + 1));
 
         // Write the Global Color Table.
         if (!WritePalette(pi_pGifHeader->GlobalCT, tableSize, pio_pGifFile))
@@ -1500,7 +1500,7 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 bool HRFGifFile::WritePalette(GifColorTable pi_pColorTable, uint32_t pi_TableSize, HFCBinStream* pio_pGifFile)
     {
-    for (unsigned short i = 0; i < pi_TableSize; i++)
+    for (uint16_t i = 0; i < pi_TableSize; i++)
         {
         if (pio_pGifFile->Write(&pi_pColorTable[i].Red,   sizeof pi_pColorTable[i].Red)   != sizeof(Byte) ||
             pio_pGifFile->Write(&pi_pColorTable[i].Green, sizeof pi_pColorTable[i].Green) != sizeof(Byte) ||
@@ -1523,7 +1523,7 @@ bool HRFGifFile::WriteGifImageDesc(GifImageDescriptor* pi_pGifImageDesc, HFCBinS
     bool Status = false;
 
     // Number of entries in the Local Color Table.
-    unsigned short tableSize;
+    uint16_t tableSize;
 
     if ((pio_pGifFile->Write(&pi_pGifImageDesc->ImageSeparator, sizeof pi_pGifImageDesc->ImageSeparator)    != (sizeof pi_pGifImageDesc->ImageSeparator)) ||
         (pio_pGifFile->Write(&pi_pGifImageDesc->ImageLeft,      sizeof pi_pGifImageDesc->ImageLeft)         != (sizeof pi_pGifImageDesc->ImageLeft)) ||
@@ -1537,7 +1537,7 @@ bool HRFGifFile::WriteGifImageDesc(GifImageDescriptor* pi_pGifImageDesc, HFCBinS
     if (pi_pGifImageDesc->PackedField & 0x80)
         {
         // Read number of color table entries.
-        tableSize = (unsigned short) (1L << ((pi_pGifImageDesc->PackedField & 0x07) + 1));
+        tableSize = (uint16_t) (1L << ((pi_pGifImageDesc->PackedField & 0x07) + 1));
 
         // Write the Global Color Table.
         if (!WritePalette(pi_pGifImageDesc->LocalCT, tableSize, pio_pGifFile))
@@ -1715,11 +1715,11 @@ WRAPUP:
 //    color map.
 //
 //-----------------------------------------------------------------------------
-void HRFGifFile::SetHeader(unsigned short  pi_Width,
-                           unsigned short  pi_Height,
-                           unsigned short  pi_BitsColorResolution,
-                           unsigned short  pi_BackgroundColor,
-                           unsigned short  pi_BitsByPixel,
+void HRFGifFile::SetHeader(uint16_t  pi_Width,
+                           uint16_t  pi_Height,
+                           uint16_t  pi_BitsColorResolution,
+                           uint16_t  pi_BackgroundColor,
+                           uint16_t  pi_BitsByPixel,
                            Byte           pi_AspectRatio,          // TO DO
                            HRPPixelPalette* pi_pPalette)
     {
@@ -1747,7 +1747,7 @@ void HRFGifFile::SetHeader(unsigned short  pi_Width,
 //    Write the graphic control and optional local color map.
 //
 //-----------------------------------------------------------------------------
-void HRFGifFile::SetGraphicControl(unsigned short    pi_DelayTime,              // TO DO
+void HRFGifFile::SetGraphicControl(uint16_t    pi_DelayTime,              // TO DO
                                    Byte             pi_TransparentColorIndex,
                                    Byte             pi_DisposalMethode,        // TO DO
                                    Byte             pi_UserInput,              // TO DO
@@ -1776,17 +1776,17 @@ void HRFGifFile::SetGraphicControl(unsigned short    pi_DelayTime,              
 //    Write the image description and optional local color map.
 //
 //-----------------------------------------------------------------------------
-void HRFGifFile::SetImageDesc(unsigned short     pi_LeftEdge,
-                              unsigned short     pi_TopEdge,
-                              unsigned short     pi_Width,
-                              unsigned short     pi_Height,
-                              unsigned short     pi_BitsColorResolution,
+void HRFGifFile::SetImageDesc(uint16_t     pi_LeftEdge,
+                              uint16_t     pi_TopEdge,
+                              uint16_t     pi_Width,
+                              uint16_t     pi_Height,
+                              uint16_t     pi_BitsColorResolution,
                               bool               pi_Interlaced,
-                              unsigned short     pi_BitsByPixel,
+                              uint16_t     pi_BitsByPixel,
                               HRPPixelPalette*    pi_pPalette,
                               GifImageDescriptor* po_pImageDescriptor)
     {
-    unsigned short interlace = 0;
+    uint16_t interlace = 0;
     if (pi_Interlaced)
         interlace = 1;
 
@@ -1818,8 +1818,8 @@ void HRFGifFile::SetImageDesc(unsigned short     pi_LeftEdge,
 // Returns:
 //    0 = OK, else error code
 //-----------------------------------------------------------------------------
-void HRFGifFile::SetPalette (unsigned short  pi_BitsColorResolution,
-                             unsigned short  pi_BitsByPixel,
+void HRFGifFile::SetPalette (uint16_t  pi_BitsColorResolution,
+                             uint16_t  pi_BitsByPixel,
                              HRPPixelPalette* pi_pPalette,
                              GifColorTable    po_ColorTable)
     {
@@ -1863,11 +1863,11 @@ void HRFGifFile::SetPalette (unsigned short  pi_BitsColorResolution,
                 if (m_pHistoCreationMode[Index] > MaxHistoEntry)
                     {
                     MaxHistoEntry = m_pHistoCreationMode[Index];
-                    m_AlphaColorIndex = (short)Index;
+                    m_AlphaColorIndex = (int16_t) Index;
                     }
                 }
             else
-                m_AlphaColorIndex = (short)Index;
+                m_AlphaColorIndex = (int16_t)Index;
             }
         }
     }

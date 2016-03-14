@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIDXAList.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -31,7 +31,7 @@ BEGIN_IMAGEPP_NAMESPACE
 // HIDXAListBlock
 ////////////////////////
 
-template<class T, int C> class HNOVTABLEINIT HIDXAListBlock
+template<class T, int32_t C> class HNOVTABLEINIT HIDXAListBlock
     {
 public:
 
@@ -96,7 +96,7 @@ private:
 // HIDXAList
 ////////////////////////
 
-template<class T, int C> class HNOVTABLEINIT HIDXAList
+template<class T, int32_t C> class HNOVTABLEINIT HIDXAList
     {
 public:
 
@@ -126,7 +126,7 @@ public:
     // the HIDXAListBlock class. The user must be usre that
     // the member has been maintained properly.
     bool           CanBlockBeMerged(HIDXAListBlock<T, C>*  pi_pBlock,
-                                     unsigned short        pi_MaxCombinedSize,
+                                     uint16_t        pi_MaxCombinedSize,
                                      HIDXAListBlock<T, C>** po_ppOtherBlock) const;
 
     //
@@ -143,7 +143,7 @@ public:
 
     enum
         {
-        // ULONG_MAX / 2, rounded to a multiple of 32
+        // UINT32_MAX / 2, rounded to a multiple of 32
         // Can be put in enum since it's a little bit
         // smaller than INT_MAX
         START_OFFSET = 2147483616

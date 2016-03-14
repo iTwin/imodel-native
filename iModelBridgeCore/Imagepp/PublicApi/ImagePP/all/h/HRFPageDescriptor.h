@@ -141,8 +141,8 @@ public:
                        bool                                     pi_UnlimitedResolution = false,
                        uint64_t                                 pi_MinWidth = 1,            // use only when pi_UnlimitedResolution is true
                        uint64_t                                 pi_MinHeight = 1,           // use only when pi_UnlimitedResolution is true
-                       uint64_t                                 pi_MaxWidth = ULONG_MAX,    // use only when pi_UnlimitedResolution is true
-                       uint64_t                                 pi_MaxHeight = ULONG_MAX);  // use only when pi_UnlimitedResolution is true
+                       uint64_t                                 pi_MaxWidth = UINT32_MAX,    // use only when pi_UnlimitedResolution is true
+                       uint64_t                                 pi_MaxHeight = UINT32_MAX);  // use only when pi_UnlimitedResolution is true
 
     // Combined two page descriptor
     HRFPageDescriptor (HFCAccessMode                            pi_AccessMode,
@@ -168,9 +168,9 @@ public:
                         const ListOfResolutionDescriptor&        pi_rResolutionDescriptors) const;
 
     // Page information
-    unsigned short                         CountResolutions        () const;
+    uint16_t                         CountResolutions        () const;
     uint64_t                               CountBlocksForAllRes    () const;
-    const HFCPtr<HRFResolutionDescriptor>&  GetResolutionDescriptor (unsigned short pi_Resolution) const;
+    const HFCPtr<HRFResolutionDescriptor>&  GetResolutionDescriptor (uint16_t pi_Resolution) const;
     bool                                   AddResolutionDescriptor (const HFCPtr<HRFResolutionDescriptor>& pi_rpResolutionDescriptor);
     HFCAccessMode                           GetAccessMode          () const;
     bool                                   IsEmpty                 () const;

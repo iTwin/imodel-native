@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hps/src/HPSParserScope.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Header for class : HPSParserScope
@@ -38,7 +38,7 @@ public:
     void                AddStatement(const WString& pi_rString, StatementDefinitionNode* pi_pNode);
 
     void                Reset();
-    void                SetParameterValue(short pi_Pos, ExpressionNode* pi_pNode);
+    void                SetParameterValue(int16_t pi_Pos, ExpressionNode* pi_pNode);
     StatementDefinitionNode*
     FindStatement(const WString& pi_rString);
     VariableTokenNode*  FindVariable(const WString& pi_rString);

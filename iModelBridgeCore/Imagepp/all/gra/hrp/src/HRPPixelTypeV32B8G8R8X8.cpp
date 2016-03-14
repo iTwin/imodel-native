@@ -140,7 +140,7 @@ public:
             }
         };
 
-    virtual const short* GetLostChannels() const override
+    virtual const int16_t* GetLostChannels() const override
         {
         return m_LostChannels;
         }
@@ -150,9 +150,9 @@ public:
         }
 
 private:
-    static short m_LostChannels[];
+    static int16_t m_LostChannels[];
     };
-short ConverterV32B8G8R8X8_V24B8G8R8::m_LostChannels[] = {3, -1};
+int16_t ConverterV32B8G8R8X8_V24B8G8R8::m_LostChannels[] = {3, -1};
 static ConverterV32B8G8R8X8_V24B8G8R8        s_V32B8G8R8X8_V24B8G8R8;
 
 //-----------------------------------------------------------------------------
@@ -304,7 +304,7 @@ public:
             }
         };
 
-    virtual const short* GetLostChannels() const override
+    virtual const int16_t* GetLostChannels() const override
         {
         return m_LostChannels;
         }
@@ -316,10 +316,10 @@ public:
 
 private:
 
-    static short m_LostChannels[];
+    static int16_t m_LostChannels[];
 
     };
-short ConverterV32B8G8R8X8_V24R8G8B8::m_LostChannels[] = {3, -1};
+int16_t ConverterV32B8G8R8X8_V24R8G8B8::m_LostChannels[] = {3, -1};
 static struct ConverterV32B8G8R8X8_V24R8G8B8        s_V32B8G8R8X8_V24R8G8B8;
 
 //-----------------------------------------------------------------------------
@@ -399,7 +399,7 @@ HPMPersistentObject* HRPPixelTypeV32B8G8R8X8::Clone() const
     @end
     -----------------------------------------------------------------------------
  */
-unsigned short HRPPixelTypeV32B8G8R8X8::CountValueBits() const
+uint16_t HRPPixelTypeV32B8G8R8X8::CountValueBits() const
     {
     return 32;
     }

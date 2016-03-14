@@ -41,7 +41,7 @@ public :
         {
         // Block capability
         Add (new HRFLineCapability (HFC_READ_WRITE_CREATE,
-                                    LONG_MAX,
+                                    INT32_MAX,
                                     HRFBlockAccess::RANDOM));
         }
     };
@@ -320,7 +320,7 @@ void HRFRawCreator::AutoDetectFileSize (const HFCPtr<HFCURL>& pi_rpURL,
             {
             po_Height = Size;
 
-            HASSERT_X64((FileSize / Size) < ULONG_MAX);
+            HASSERT_X64((FileSize / Size) < UINT32_MAX);
             po_Width = (uint32_t)(FileSize / Size);
             }
         }
@@ -514,7 +514,7 @@ HRFRawFile::~HRFRawFile()
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFRawFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                        unsigned short pi_Resolution,
+                                                        uint16_t pi_Resolution,
                                                         HFCAccessMode  pi_AccessMode)
     {
     HRFResolutionEditor* pEditor = 0;

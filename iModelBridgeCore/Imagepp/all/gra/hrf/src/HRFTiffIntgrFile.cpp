@@ -428,8 +428,8 @@ bool HRFTiffIntgrCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
             {
             // Check if this is not a Geo tiff
             double*    pMat4by4;
-            unsigned short*    pTagRagBag;
-            unsigned short*    pKeyDirectory;
+            uint16_t*    pTagRagBag;
+            uint16_t*    pKeyDirectory;
             uint32_t    Count;
             uint32_t    KeyCount;
 
@@ -510,12 +510,12 @@ const HFCPtr<HRFRasterFileCapabilities>& HRFTiffIntgrCreator::GetCapabilities()
 // Private
 //-----------------------------------------------------------------------------
 inline void s_ConvertFromDoubleToUShortBuffer(double    pi_In,
-                                              unsigned short*   po_pOut)
+                                              uint16_t*   po_pOut)
     {
     HPRECONDITION(po_pOut != 0);
 
-    unsigned short* pIn  = (unsigned short*)&pi_In;
-    unsigned short* pOut = po_pOut;
+    uint16_t* pIn  = (uint16_t*)&pi_In;
+    uint16_t* pOut = po_pOut;
 
     *pOut++ = *pIn++;
     *pOut++ = *pIn++;
@@ -526,14 +526,14 @@ inline void s_ConvertFromDoubleToUShortBuffer(double    pi_In,
 //-----------------------------------------------------------------------------
 // Private
 //-----------------------------------------------------------------------------
-inline void s_ConvertFromUShortBufferToDouble(unsigned short*   pi_pIn,
+inline void s_ConvertFromUShortBufferToDouble(uint16_t*   pi_pIn,
                                               double*   po_pOut)
     {
     HPRECONDITION(pi_pIn != 0);
     HPRECONDITION(po_pOut != 0);
 
-    unsigned short* pIn  = pi_pIn;
-    unsigned short* pOut = (unsigned short*)po_pOut;
+    uint16_t* pIn  = pi_pIn;
+    uint16_t* pOut = (uint16_t*)po_pOut;
 
     *pOut++ = *pIn++;
     *pOut++ = *pIn++;
@@ -630,7 +630,7 @@ void HRFTiffIntgrFile::CreateDescriptors()
 
         // Instantiation of Resolution descriptor
         HRFPageDescriptor::ListOfResolutionDescriptor  ListOfResolutionDescriptor;
-        for (unsigned short Resolution=0; Resolution < CalcNumberOfSubResolution(GetIndexOfPage(Page))+1; Resolution++)
+        for (uint16_t Resolution=0; Resolution < CalcNumberOfSubResolution(GetIndexOfPage(Page))+1; Resolution++)
             {
             // Obtain Resolution Information
 
@@ -772,7 +772,7 @@ void HRFTiffIntgrFile::CreateDescriptors()
             }
 
         // RESOLUTIONUNIT Tag
-        unsigned short UnitValue;
+        uint16_t UnitValue;
         if (GetFilePtr()->GetField(RESOLUTIONUNIT, &UnitValue))
             {
             pTag = new HRFAttributeResolutionUnit(UnitValue);
@@ -800,7 +800,7 @@ void HRFTiffIntgrFile::CreateDescriptors()
             }
 
         // SLO
-        pTag = new HRFAttributeImageSlo((unsigned short)GetScanLineOrientation().m_ScanlineOrientation);
+        pTag = new HRFAttributeImageSlo((uint16_t)GetScanLineOrientation().m_ScanlineOrientation);
         TagList.Set(pTag);
 
         HFCPtr<HRFPageDescriptor> pPage;
@@ -854,7 +854,7 @@ bool HRFTiffIntgrFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
         AddResolutionToFile(CountPages() - 1, 0);
 
     // Add subresolution
-    for (unsigned short Resolution=1; Resolution < pi_pPage->CountResolutions(); Resolution++)
+    for (uint16_t Resolution=1; Resolution < pi_pPage->CountResolutions(); Resolution++)
         AddResolutionToFile(CountPages() - 1, Resolution);
 
     // allways we have a transfo model with Intgr Tiff file
@@ -889,12 +889,12 @@ const HFCPtr<HRFRasterFileCapabilities>& HRFTiffIntgrFile::GetCapabilities () co
 HFCPtr<HGF2DTransfoModel> HRFTiffIntgrFile::CreateTransfoModelFromTiffMatrix(double pi_Width,
                                                                              double pi_Height) const
     {
-    HPRECONDITION(sizeof(double) % sizeof(unsigned short) == 0 && sizeof(double) / sizeof(unsigned short) == 4);
+    HPRECONDITION(sizeof(double) % sizeof(uint16_t) == 0 && sizeof(double) / sizeof(uint16_t) == 4);
     HPRECONDITION(!HDOUBLE_EQUAL_EPSILON(pi_Width, 0.0) && !HDOUBLE_EQUAL_EPSILON(pi_Height, 0.0));
 
     HFCMatrix<3, 3>             Matrix;
     HFCPtr<HGF2DTransfoModel>   pTransfoModel;
-    unsigned short*                    pTagRagBag;
+    uint16_t*                    pTagRagBag;
     uint32_t                    Count;
     double*                    pMat4by4;
 
@@ -906,7 +906,7 @@ HFCPtr<HGF2DTransfoModel> HRFTiffIntgrFile::CreateTransfoModelFromTiffMatrix(dou
 
         // this code is adapted from ImageManager.
         // I don't know why but the first DOUBLE is not use
-        unsigned short* pTagRagBagPtr = pTagRagBag + 4;
+        uint16_t* pTagRagBagPtr = pTagRagBag + 4;
         for (i = 0; i < 16; i++, pTagRagBagPtr += 4)
             s_ConvertFromUShortBufferToDouble(pTagRagBagPtr, &aMat4by4[i]);
 
@@ -963,12 +963,12 @@ HFCPtr<HGF2DTransfoModel> HRFTiffIntgrFile::CreateTransfoModelFromTiffMatrix(dou
 
     if (pTransfoModel != 0)
         {
-        unsigned short Orientation;
+        uint16_t Orientation;
         if (!GetFilePtr()->GetField(ORIENTATION, &Orientation))
             Orientation = 1;    // by default, UPPER LEFT HORIZONTAL (SLO4)
 
         // this convert is made by IRasB
-        unsigned short SLO;
+        uint16_t SLO;
         switch(Orientation)
             {
             case 1:
@@ -1045,15 +1045,15 @@ bool HRFTiffIntgrFile::WriteTransfoModelToTiffMatrix(const HFCPtr<HGF2DTransfoMo
     // Validate the file access
     HPRECONDITION(GetAccessMode().m_HasWriteAccess || GetAccessMode().m_HasCreateAccess);
     HPRECONDITION(pi_rpTransfoModel != 0);
-    HPRECONDITION(sizeof(double) % sizeof(unsigned short) == 0 && sizeof(double) / sizeof(unsigned short) == 4);
+    HPRECONDITION(sizeof(double) % sizeof(uint16_t) == 0 && sizeof(double) / sizeof(uint16_t) == 4);
 
     bool Ret = false;
 
     // Check if the transformation can be represented by a matrix.
     if (pi_rpTransfoModel->CanBeRepresentedByAMatrix())
         {
-        unsigned short Orientation;
-        unsigned short*  pTagRagBag;
+        uint16_t Orientation;
+        uint16_t*  pTagRagBag;
         double*  pMat4by4;
         uint32_t  Count;
         double   aMat[16];
@@ -1062,7 +1062,7 @@ bool HRFTiffIntgrFile::WriteTransfoModelToTiffMatrix(const HFCPtr<HGF2DTransfoMo
             Orientation = 4;    // by default, UPPER LEFT HORIZONTAL (SLO4)
 
         // this convert is made by IRasB
-        unsigned short SLO;
+        uint16_t SLO;
         switch(Orientation)
             {
             case 1:
@@ -1193,18 +1193,18 @@ bool HRFTiffIntgrFile::WriteTransfoModelToTiffMatrix(const HFCPtr<HGF2DTransfoMo
                 // Fill the affine matrix.
                 aMat[0]  = TheMatrix[0][0];
                 aMat[1]  = TheMatrix[0][1];
-                s_ConvertFromUShortBufferToDouble(&pTagRagBag[3 * 4], &aMat[2]);  // skip the first double, 4 short by double ((1 + 3) * 4)
+                s_ConvertFromUShortBufferToDouble(&pTagRagBag[3 * 4], &aMat[2]);  // skip the first double, 4 int16_t by double ((1 + 3) * 4)
                 aMat[3]  = TheMatrix[0][2];
                 aMat[4]  = TheMatrix[1][0];
                 aMat[5]  = TheMatrix[1][1];
-                s_ConvertFromUShortBufferToDouble(&pTagRagBag[7 * 4], &aMat[6]);  // skip the first double, 4 short by double ((1 + 3) * 4)
+                s_ConvertFromUShortBufferToDouble(&pTagRagBag[7 * 4], &aMat[6]);  // skip the first double, 4 int16_t by double ((1 + 3) * 4)
                 aMat[7]  = TheMatrix[1][2];
-                s_ConvertFromUShortBufferToDouble(&pTagRagBag[10 * 4], &aMat[9]); // skip the first double, 4 short by double ((1 + 3) * 4)
-                s_ConvertFromUShortBufferToDouble(&pTagRagBag[11 * 4], &aMat[10]);// skip the first double, 4 short by double ((1 + 3) * 4)
-                s_ConvertFromUShortBufferToDouble(&pTagRagBag[12 * 4], &aMat[11]);// skip the first double, 4 short by double ((1 + 3) * 4)
+                s_ConvertFromUShortBufferToDouble(&pTagRagBag[10 * 4], &aMat[9]); // skip the first double, 4 int16_t by double ((1 + 3) * 4)
+                s_ConvertFromUShortBufferToDouble(&pTagRagBag[11 * 4], &aMat[10]);// skip the first double, 4 int16_t by double ((1 + 3) * 4)
+                s_ConvertFromUShortBufferToDouble(&pTagRagBag[12 * 4], &aMat[11]);// skip the first double, 4 int16_t by double ((1 + 3) * 4)
                 aMat[12] = TheMatrix[2][0];
                 aMat[13] = TheMatrix[2][1];
-                s_ConvertFromUShortBufferToDouble(&pTagRagBag[15 * 4], &aMat[14]);// skip the first double, 4 short by double ((1 + 3) * 4)
+                s_ConvertFromUShortBufferToDouble(&pTagRagBag[15 * 4], &aMat[14]);// skip the first double, 4 int16_t by double ((1 + 3) * 4)
                 aMat[15] = TheMatrix[2][2];
 
                 if (memcmp((double*)aMat, pTagRagBag + 4, 16 * sizeof(double)) != 0)
@@ -1213,7 +1213,7 @@ bool HRFTiffIntgrFile::WriteTransfoModelToTiffMatrix(const HFCPtr<HGF2DTransfoMo
 
                     // this code is adapted from ImageManager.
                     // I don't know why but the first DOUBLE is not use
-                    unsigned short* pTagRagBagPtr = pTagRagBag + 4;
+                    uint16_t* pTagRagBagPtr = pTagRagBag + 4;
                     for (i = 0; i < 16; i++, pTagRagBagPtr += 4)
                         s_ConvertFromDoubleToUShortBuffer(aMat[i], pTagRagBagPtr);
 

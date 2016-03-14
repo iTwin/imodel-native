@@ -90,9 +90,9 @@ void HPANode::DeleteSubNodes()
 
 #ifdef __HMR_DEBUG_MEMBER
 
-void HPANode::PrintState(int pi_Level)
+void HPANode::PrintState(int32_t pi_Level)
     {
-    for (int i = 0; i < pi_Level; i++) wcout << L"  ";
+    for (int32_t i = 0; i < pi_Level; i++) wcout << L"  ";
     wcout << m_pGrammarObject->GetName() << endl;
     HPANodeList::iterator itr = m_SubNodes.begin();
     while (itr != m_SubNodes.end())

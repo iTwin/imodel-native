@@ -138,7 +138,7 @@ size_t HCDLZWDecoder::Decode(Byte const* pi_pInputBuffer, size_t pi_inputBytesCo
             {
             LZW_DEBUG_TRACE
             (
-                sprintf(msg, "***** Clear Code Case : \n      Pos = %d pi_outputBytesCount = %d m_pInputBuffer[m_CurrentPos] = %d m_CurrentPos = %d\n      m_BitBuffer = %d m_BitCount = %d m_NextCode = %d m_NumBits = %d m_MaxCode = %d\n", Pos, pi_outputBytesCount, (int)m_pInputBuffer[m_CurrentPos], m_CurrentPos, m_BitBuffer, m_BitCount, m_NextCode, m_NumBits, m_MaxCode);
+                sprintf(msg, "***** Clear Code Case : \n      Pos = %d pi_outputBytesCount = %d m_pInputBuffer[m_CurrentPos] = %d m_CurrentPos = %d\n      m_BitBuffer = %d m_BitCount = %d m_NextCode = %d m_NumBits = %d m_MaxCode = %d\n", Pos, pi_outputBytesCount, (int32_t)m_pInputBuffer[m_CurrentPos], m_CurrentPos, m_BitBuffer, m_BitCount, m_NextCode, m_NumBits, m_MaxCode);
                 m_pfile->Write(msg, strlen(msg));
             )
 
@@ -169,7 +169,7 @@ size_t HCDLZWDecoder::Decode(Byte const* pi_pInputBuffer, size_t pi_inputBytesCo
             {
             LZW_DEBUG_TRACE
             (
-                sprintf(msg, "@@@@@ NOT Clear Code Case : \n     Pos = %d pi_outputBytesCount = %d m_pInputBuffer[m_CurrentPos] = %d m_CurrentPos = %d\n      m_BitBuffer = %d m_BitCount = %d m_NextCode = %d m_NumBits = %d m_MaxCode = %d\n", Pos, pi_outputBytesCount, (int)m_pInputBuffer[m_CurrentPos], m_CurrentPos, m_BitBuffer, m_BitCount, m_NextCode, m_NumBits, m_MaxCode);
+                sprintf(msg, "@@@@@ NOT Clear Code Case : \n     Pos = %d pi_outputBytesCount = %d m_pInputBuffer[m_CurrentPos] = %d m_CurrentPos = %d\n      m_BitBuffer = %d m_BitCount = %d m_NextCode = %d m_NumBits = %d m_MaxCode = %d\n", Pos, pi_outputBytesCount, (int32_t)m_pInputBuffer[m_CurrentPos], m_CurrentPos, m_BitBuffer, m_BitCount, m_NextCode, m_NumBits, m_MaxCode);
                 m_pfile->Write(msg, strlen(msg));
             )
 
@@ -290,7 +290,7 @@ void writeData(Byte* buffer, size_t count)
 
 void HCDLZWDecoder::InitDecodeTable()
     {
-    for(int i(0); i < 256; ++i)
+    for(int32_t i(0); i < 256; ++i)
         {
         m_decodeCodeTable[i] = i;
         }

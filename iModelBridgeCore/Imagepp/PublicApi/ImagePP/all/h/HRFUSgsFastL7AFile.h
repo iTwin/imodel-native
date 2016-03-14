@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFUSgsFastL7AFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -200,7 +200,7 @@ public:
     virtual const HGF2DWorldIdentificator GetWorldIdentificator () const;
 
     virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t      pi_Page,
-                                                                 unsigned short pi_Resolution,
+                                                                 uint16_t pi_Resolution,
                                                                  HFCAccessMode pi_AccessMode);
 
     virtual void                          Save();
@@ -233,7 +233,7 @@ private:
                                                                  const WString& pi_rFileName);
     bool                        Create                          ();
 
-    bool                        GetCoordSystem                  (short& po_rCode);
+    bool                        GetCoordSystem                  (int16_t& po_rCode);
 
     HFCPtr<HGF2DTransfoModel>   CreateTransfoModelFromFastL7A   ();
 

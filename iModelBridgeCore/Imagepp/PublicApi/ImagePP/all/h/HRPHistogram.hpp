@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPHistogram.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Inline methods for class HRPHistogram
@@ -40,7 +40,7 @@ inline void HRPHistogram::IncrementEntryCount(uint32_t pi_EntryIndex, uint32_t p
     HPRECONDITION(pi_Channel    < m_ChannelCount);
 
     // increment the count if it is not the maximum for a UInt32
-    if(m_pEntryFrequencies[pi_Channel][pi_EntryIndex] <= (ULONG_MAX - pi_Count))
+    if(m_pEntryFrequencies[pi_Channel][pi_EntryIndex] <= (UINT32_MAX - pi_Count))
         (m_pEntryFrequencies[pi_Channel][pi_EntryIndex]) += pi_Count;
     }
 

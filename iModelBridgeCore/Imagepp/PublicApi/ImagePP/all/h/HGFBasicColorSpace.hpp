@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFBasicColorSpace.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -50,7 +50,7 @@ inline void HGFBasicColorSpace::ConvertToXYZ(Byte    pi_Red,Byte   pi_Green, Byt
 //
 //----------------------------------------------------------------------------
 
-inline void HGFBasicColorSpace::ConvertToXYZ(unsigned short pi_Red,unsigned short pi_Green, unsigned short pi_Blue,
+inline void HGFBasicColorSpace::ConvertToXYZ(uint16_t pi_Red,uint16_t pi_Green, uint16_t pi_Blue,
                                              double*  po_pX, double* po_pY,    double* po_pZ)
     {
     // Domain value according sRGB Rec 709 (D65 white point) to CIE XYZ
@@ -134,7 +134,7 @@ inline void HGFBasicColorSpace::ConvertFromXYZ(double  pi_X,   double  pi_Y,    
 //----------------------------------------------------------------------------
 
 inline void HGFBasicColorSpace::ConvertFromXYZ(double  pi_X,   double  pi_Y,      double  pi_Z,
-                                               unsigned short* po_pRed,unsigned short* po_pGreen, unsigned short* po_pBlue)
+                                               uint16_t* po_pRed,uint16_t* po_pGreen, uint16_t* po_pBlue)
     {
     // Should used a HGFGrid, but at this time, an EPSILON should be correct.
     double PRECISION_EPSILON = 0.0001999;
@@ -153,7 +153,7 @@ inline void HGFBasicColorSpace::ConvertFromXYZ(double  pi_X,   double  pi_Y,    
         NormalizedColor = pow(NormalizedColor, GammaCorrectionInverse);
 
         // Convert the processed value to the standard domain [0,255]
-        *po_pRed = (unsigned short)((NormalizedColor * MaxChannelValue) + PRECISION_EPSILON);
+        *po_pRed = (uint16_t)((NormalizedColor * MaxChannelValue) + PRECISION_EPSILON);
 
         //--- Green ----------------------------------------------------
         // Get the green component normalized (value within [0,1] range)
@@ -163,7 +163,7 @@ inline void HGFBasicColorSpace::ConvertFromXYZ(double  pi_X,   double  pi_Y,    
         NormalizedColor = pow(NormalizedColor, GammaCorrectionInverse);
 
         // Convert the processed value to the standard domain [0,255]
-        *po_pGreen = (unsigned short)((NormalizedColor * MaxChannelValue) + PRECISION_EPSILON);
+        *po_pGreen = (uint16_t)((NormalizedColor * MaxChannelValue) + PRECISION_EPSILON);
 
         //--- Blue -----------------------------------------------------
         // Get the blue component normalized (value within [0,1] range)
@@ -173,7 +173,7 @@ inline void HGFBasicColorSpace::ConvertFromXYZ(double  pi_X,   double  pi_Y,    
         NormalizedColor = pow(NormalizedColor, GammaCorrectionInverse);
 
         // Convert the processed value to the standard domain [0,255]
-        *po_pBlue = (unsigned short)((NormalizedColor * MaxChannelValue) + PRECISION_EPSILON);
+        *po_pBlue = (uint16_t)((NormalizedColor * MaxChannelValue) + PRECISION_EPSILON);
         }
     else
         {
@@ -181,19 +181,19 @@ inline void HGFBasicColorSpace::ConvertFromXYZ(double  pi_X,   double  pi_Y,    
         NormalizedColor = (m_RGBToXYZMatrix[0][0] * pi_X) + (m_RGBToXYZMatrix[0][1] * pi_Y) + (m_RGBToXYZMatrix[0][2] * pi_Z);
 
         // Convert the processed value to the standard domain [0,255]
-        *po_pRed = (unsigned short)((NormalizedColor * MaxChannelValue) + PRECISION_EPSILON);
+        *po_pRed = (uint16_t)((NormalizedColor * MaxChannelValue) + PRECISION_EPSILON);
 
         // Get the green component normalized (value within [0,1] range)
         NormalizedColor = (m_RGBToXYZMatrix[1][0] * pi_X) + (m_RGBToXYZMatrix[1][1] * pi_Y) + (m_RGBToXYZMatrix[1][2] * pi_Z);
 
         // Convert the processed value to the standard domain [0,255]
-        *po_pGreen = (unsigned short)((NormalizedColor * MaxChannelValue) + PRECISION_EPSILON);
+        *po_pGreen = (uint16_t)((NormalizedColor * MaxChannelValue) + PRECISION_EPSILON);
 
         // Get the blue component normalized (value within [0,1] range)
         NormalizedColor  = (m_RGBToXYZMatrix[2][0] * pi_X) + (m_RGBToXYZMatrix[2][1] * pi_Y) + (m_RGBToXYZMatrix[2][2] * pi_Z);
 
         // Convert the processed value to the standard domain [0,255]
-        *po_pBlue = (unsigned short)((NormalizedColor * MaxChannelValue) + PRECISION_EPSILON);
+        *po_pBlue = (uint16_t)((NormalizedColor * MaxChannelValue) + PRECISION_EPSILON);
         }
     }
 

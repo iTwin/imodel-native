@@ -31,14 +31,14 @@ public:
                                                      HFCAccessMode     pi_AccessMode,
                                                      bool              pi_AutoRemove = false,
                                                      uint64_t          pi_OriginOffset = 0,
-                                                     short pi_NbRetry = 0);
+                                                     int16_t pi_NbRetry = 0);
 
     IMAGEPP_EXPORT                         HFCLocalBinStream(const WString&    pi_Filename,
                                                      HFCAccessMode     pi_AccessMode,
                                                      bool              pi_CreateFile,
                                                      bool              pi_AutoRemove,
                                                      uint64_t          pi_OriginOffset,
-                                                     short pi_NbRetry=0);
+                                                     int16_t pi_NbRetry=0);
 
     IMAGEPP_EXPORT                         HFCLocalBinStream(const WString&    pi_Filename,
                                                      bool              pi_ShareWrite = false,
@@ -46,7 +46,7 @@ public:
                                                      bool              pi_CreateFile = true,
                                                      bool              pi_AutoRemove = false,
                                                      uint64_t          pi_OriginOffset = 0,
-                                                     short pi_NbRetry = 0);
+                                                     int16_t pi_NbRetry = 0);
     IMAGEPP_EXPORT virtual                 ~HFCLocalBinStream();
 
     // Information methods
@@ -94,7 +94,7 @@ protected:
                                         uint64_t          pi_OriginOffset,
                                         bool              pi_IgnoreMode,
                                         bool              pi_AutoRemove,
-                                        short pi_NbRetry=0);
+                                        int16_t pi_NbRetry=0);
 
 private:
 

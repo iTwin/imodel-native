@@ -186,8 +186,8 @@ bool HRFGeoTiffCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
             // Check for matrix and/or GeoKeys
             double*    pMat4by4;
             uint32_t    Count;
-            unsigned short*    pKeyDirectory;
-            unsigned short*    pTagRagBag;
+            uint16_t*    pKeyDirectory;
+            uint16_t*    pTagRagBag;
             uint32_t    KeyCount;
 
 //             bool IsTiffIntergraphTags = pTiff->GetField(INTERGRAPH_MATRIX, &Count, &pMat4by4) ||
@@ -302,7 +302,7 @@ bool HRFGeoTiffCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                         }
 
                     bResult = IsValidModel;
-                    unsigned short GeoShortValue;
+                    uint16_t GeoShortValue;
 
                     if (pTiff->GetGeoKeyInterpretation().GetValue(GTModelType, &GeoShortValue))
                         {
@@ -418,7 +418,7 @@ void HRFGeoTiffFile::GetDefaultInterpretationGeoRef(double* po_RatioToMeter,
 //-----------------------------------------------------------------------------
 
 HRFResolutionEditor* HRFGeoTiffFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                            unsigned short pi_Resolution,
+                                                            uint16_t pi_Resolution,
                                                             HFCAccessMode  pi_AccessMode)
     {
     HPRECONDITION(pi_Page < CountPages());
@@ -634,7 +634,7 @@ void HRFGeoTiffFile::SaveGeoTiffFile()
                     // Look if GeographicType is present if not the a default value is set to the file.
                     if (!(pGeoTiffKeys->HasKey(GeographicType)))
                         {
-                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(GeographicType, (unsigned short) TIFFGeo_UserDefined);
+                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(GeographicType, (uint16_t) TIFFGeo_UserDefined);
 
                         // add the tag into the page descriptor
                         pGeoTiffKeys->AddKey(GeographicType, (uint32_t)TIFFGeo_UserDefined);
@@ -644,7 +644,7 @@ void HRFGeoTiffFile::SaveGeoTiffFile()
                     // Look if Projection is present if not the a default value is set to the file.
                     if (!(pGeoTiffKeys->HasKey(Projection)))
                         {
-                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(Projection, (unsigned short) TIFFGeo_UserDefined);
+                        GetFilePtr()->GetGeoKeyInterpretation().SetValue(Projection, (uint16_t) TIFFGeo_UserDefined);
 
                         // add the tag into the page descriptor
                         pGeoTiffKeys->AddKey(Projection, (uint32_t)TIFFGeo_UserDefined);
@@ -658,7 +658,7 @@ void HRFGeoTiffFile::SaveGeoTiffFile()
                         // Look if ProjCoorTrans is present if not the a default value is set to the file.
                         if (!(pGeoTiffKeys->HasKey(ProjCoordTrans)))
                             {
-                            GetFilePtr()->GetGeoKeyInterpretation().SetValue(ProjCoordTrans, (unsigned short) TIFFGeo_UserDefined);
+                            GetFilePtr()->GetGeoKeyInterpretation().SetValue(ProjCoordTrans, (uint16_t) TIFFGeo_UserDefined);
 
                             // add the tag into the page descriptor
                             pGeoTiffKeys->AddKey(ProjCoordTrans, (uint32_t)TIFFGeo_UserDefined);
@@ -671,7 +671,7 @@ void HRFGeoTiffFile::SaveGeoTiffFile()
                             //For now we never write Geotiff file in UOR, if we want to do so, enable line below (See TR 97326)
                             //if (!(m_sDefaultCoordSysIsIntergraphIfUnitNotResolved && !m_DefaultUnitWasFound))
                                 {
-                                GetFilePtr()->GetGeoKeyInterpretation().SetValue(ProjLinearUnits, (unsigned short) TIFFGeo_Linear_Meter);
+                                GetFilePtr()->GetGeoKeyInterpretation().SetValue(ProjLinearUnits, (uint16_t) TIFFGeo_Linear_Meter);
 
                                 // add the tag into the page descriptor
                                 pGeoTiffKeys->AddKey(ProjLinearUnits, (uint32_t)TIFFGeo_Linear_Meter);
@@ -743,7 +743,7 @@ bool HRFGeoTiffFile::Open(bool pi_CreateBigTifFormat)
             // Check if the GeoTiff Directory is present
             double*    pMat4by4;
             uint32_t    Count;
-            unsigned short* pKeyDirectory;
+            uint16_t* pKeyDirectory;
             uint32_t KeyCount;
             if (!(GetFilePtr()->GetField(GEOTRANSMATRIX, &Count, &pMat4by4) ||
                   GetFilePtr()->GetField(GEOTIEPOINTS, &Count, &pMat4by4) ||
@@ -774,7 +774,7 @@ bool HRFGeoTiffFile::Open(const HFCPtr<HFCURL>& pi_rpURL)
             // Check if the GeoTiff Directory is present
             double*    pMat4by4;
             uint32_t    Count;
-            unsigned short* pKeyDirectory;
+            uint16_t* pKeyDirectory;
             uint32_t KeyCount;
             if (!(GetFilePtr()->GetField(GEOTRANSMATRIX, &Count, &pMat4by4) ||
                   GetFilePtr()->GetField(GEOTIEPOINTS, &Count, &pMat4by4) ||
@@ -803,8 +803,8 @@ void HRFGeoTiffFile::CreateDescriptors()
     // (should'nt but happen..)
     if (TESTJPEGISOCompression == COMPRESSION_JPEG)
         {
-        unsigned short SamplePerPixel = 0;
-        unsigned short Photometric    = 0;
+        uint16_t SamplePerPixel = 0;
+        uint16_t Photometric    = 0;
 
         GetFilePtr()->GetField(SAMPLESPERPIXEL, &SamplePerPixel);
         GetFilePtr()->GetField(PHOTOMETRIC    , &Photometric);
@@ -837,7 +837,7 @@ void HRFGeoTiffFile::CreateDescriptors()
 
         // Instantiation of Resolution descriptor
         HRFPageDescriptor::ListOfResolutionDescriptor  ListOfResolutionDescriptor;
-        for (unsigned short Resolution=0; Resolution < CalcNumberOfSubResolution(GetIndexOfPage(Page))+1; Resolution++)
+        for (uint16_t Resolution=0; Resolution < CalcNumberOfSubResolution(GetIndexOfPage(Page))+1; Resolution++)
             {
             // Obtain Resolution Information
 
@@ -910,7 +910,7 @@ void HRFGeoTiffFile::CreateDescriptors()
             }
 
         // SLO
-        pTag = new HRFAttributeImageSlo((unsigned short)GetScanLineOrientation().m_ScanlineOrientation);
+        pTag = new HRFAttributeImageSlo((uint16_t)GetScanLineOrientation().m_ScanlineOrientation);
         TagList.Set(pTag);
 
         // GeoRef Tag
@@ -1103,8 +1103,8 @@ void HRFGeoTiffFile::GetGeoTiffKeys(HFCPtr<HCPGeoTiffKeys>& po_rpGeoTiffKeys)
 
     HFCPtr<HPMGenericAttribute> pTag;
     char* pString;
-    unsigned short GeoShortValue;
-    unsigned short GTModelTypeValue;
+    uint16_t GeoShortValue;
+    uint16_t GTModelTypeValue;
     double GeoDoubleValue;
 
     po_rpGeoTiffKeys = new HCPGeoTiffKeys();
@@ -1414,7 +1414,7 @@ const HGF2DWorldIdentificator HRFGeoTiffFile::GetWorldIdentificator () const
     HGF2DWorldIdentificator World = HGF2DWorld_GEOTIFFUNKNOWN;
 
     // Change world id if GTModelType is ModelTypeGeographic.
-    unsigned short GeoShortValue;
+    uint16_t GeoShortValue;
     if (GetFilePtr()->GetGeoKeyInterpretation().GetValue(GTModelType, &GeoShortValue))
         {
         switch (GeoShortValue)

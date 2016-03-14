@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrp/src/v24rgb.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #include <Imagepp/all/h/HRPPaletteOctreeR8G8B8.h>
@@ -82,7 +82,7 @@ inline Byte Blend_src_PRdst(uint32_t src, uint32_t PRdst, uint32_t Asrc) { retur
 //-----------------------------------------------------------------------------
 //  s_V24R8G8B8_V24R8G8B8 - Converter between g_PixelTypeFingerprintV24R8G8B8
 //-----------------------------------------------------------------------------
-template<int RTo, int BTo, int RFrom, int BFrom>
+template<int32_t RTo, int32_t BTo, int32_t RFrom, int32_t BFrom>
 struct ConverterV24R8G8B8_V24R8G8B8 : public HRPPixelConverter
     {
     DEFINE_T_SUPER(HRPPixelConverter)
@@ -153,7 +153,7 @@ struct ConverterV8Gray8_V24R8G8B8 : public HRPPixelConverter
 //-----------------------------------------------------------------------------
 //  s_V24R8G8B8_V8Gray8 - Converter
 //-----------------------------------------------------------------------------
-template<int RFrom, int BFrom>
+template<int32_t RFrom, int32_t BFrom>
 struct ConverterV24R8G8B8_V8Gray8 : public HRPPixelConverter
     {
     DEFINE_T_SUPER(HRPPixelConverter)
@@ -217,7 +217,7 @@ struct ConverterV8GrayWhite8_V24R8G8B8 : public HRPPixelConverter
 //-----------------------------------------------------------------------------
 //  s_V24R8G8B8_V8GrayWhite8 - Converter
 //-----------------------------------------------------------------------------
-template<int RFrom, int BFrom>
+template<int32_t RFrom, int32_t BFrom>
 struct ConverterV24R8G8B8_V8GrayWhite8 : public HRPPixelConverter
     {
     DEFINE_T_SUPER(HRPPixelConverter)
@@ -348,7 +348,7 @@ struct ConverterV1Gray1_V24R8G8B8 : public HRPPixelConverter
 //-----------------------------------------------------------------------------
 //  s_V24R8G8B8_V1Gray1 - Converter
 //-----------------------------------------------------------------------------
-template<int RFrom, int BFrom>
+template<int32_t RFrom, int32_t BFrom>
 struct ConverterV24R8G8B8_V1Gray1 : public HRPPixelConverter
     {
     DEFINE_T_SUPER(HRPPixelConverter)
@@ -492,7 +492,7 @@ struct ConverterV1GrayWhite1_V24R8G8B8 : public HRPPixelConverter
 //-----------------------------------------------------------------------------
 //  s_V24R8G8B8_V1GrayWhite1 - Converter
 //-----------------------------------------------------------------------------
-template<int RFrom, int BFrom>
+template<int32_t RFrom, int32_t BFrom>
 struct ConverterV24R8G8B8_V1GrayWhite1 : public HRPPixelConverter
     {
     DEFINE_T_SUPER(HRPPixelConverter)
@@ -538,7 +538,7 @@ struct ConverterV24R8G8B8_V1GrayWhite1 : public HRPPixelConverter
 //-----------------------------------------------------------------------------
 //  s_I8R8G8B8_V24R8G8B8 - Converter
 //-----------------------------------------------------------------------------
-template<int RTo, int BTo>
+template<int32_t RTo, int32_t BTo>
 struct ConverterI8R8G8B8_V24R8G8B8 : public HRPPixelConverter
     {
     DEFINE_T_SUPER(HRPPixelConverter)
@@ -578,7 +578,7 @@ struct ConverterI8R8G8B8_V24R8G8B8 : public HRPPixelConverter
 //-----------------------------------------------------------------------------
 //  s_V24R8G8B8_I8R8G8B8 - Converter
 //-----------------------------------------------------------------------------
-template<int RFrom, int BFrom>
+template<int32_t RFrom, int32_t BFrom>
 class ConverterV24R8G8B8_I8R8G8B8 : public HRPPixelConverter
     {
     HRPPaletteOctreeR8G8B8 m_QuantizedPalette;
@@ -626,11 +626,10 @@ protected:
         const HRPPixelPalette& rPalette = GetDestinationPixelType()->GetPalette();
 
         // fill the octree with the destination palette entries
-        long nbIndex = rPalette.CountUsedEntries();
-        for(int Index = 0; Index < nbIndex; Index++)
+        uint32_t nbIndex = rPalette.CountUsedEntries();
+        for(uint32_t Index = 0; Index < nbIndex; Index++)
             {
-            m_QuantizedPalette.AddCompositeValue(rPalette.GetCompositeValue(Index),
-                                                 (Byte)Index);
+            m_QuantizedPalette.AddCompositeValue(rPalette.GetCompositeValue(Index), (Byte)Index);
             }
         }
 

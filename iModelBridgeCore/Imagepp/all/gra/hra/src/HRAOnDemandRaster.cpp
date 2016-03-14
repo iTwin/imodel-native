@@ -354,7 +354,7 @@ void HRAOnDemandRaster::GetURLsFromChildrenNode(const HPANode*     pi_pParentNod
 
   GetSerializationXMLNode
 
-  XML Schema - The node names are kept short since many on-demand raster could be 
+  XML Schema - The node names are kept int16_t since many on-demand raster could be 
   in a on-demand mosaic.
   
   <ODR>             <!--OnDemandRaster-->                           

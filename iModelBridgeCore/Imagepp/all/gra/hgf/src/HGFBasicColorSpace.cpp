@@ -13,7 +13,7 @@
 
 #include <Imagepp/all/h/HGFBasicColorSpace.h>
 
-HGFBasicColorSpace::HGFBasicColorSpace(unsigned short pi_BitsPerPixel)
+HGFBasicColorSpace::HGFBasicColorSpace(uint16_t pi_BitsPerPixel)
     {
     m_BitsPerPixel = pi_BitsPerPixel;
     m_ChannelSize  = 1 << m_BitsPerPixel;
@@ -42,7 +42,7 @@ HGFBasicColorSpace::HGFBasicColorSpace(unsigned short pi_BitsPerPixel)
 //
 //----------------------------------------------------------------------------
 
-HGFBasicColorSpace::HGFBasicColorSpace(double pi_GammaCorrection, unsigned short pi_BitsPerPixel)
+HGFBasicColorSpace::HGFBasicColorSpace(double pi_GammaCorrection, uint16_t pi_BitsPerPixel)
     {
     m_BitsPerPixel = pi_BitsPerPixel;
     m_ChannelSize  = 1 << m_BitsPerPixel;
@@ -189,9 +189,9 @@ void HGFBasicColorSpace::BuildLookupTableFromXYZ()
         }
 
     // Compute reference white from RGB(255, 255, 255) to XYZ
-    ConvertToXYZ((unsigned short)(m_ChannelSize - 1),
-                 (unsigned short)(m_ChannelSize - 1),
-                 (unsigned short)(m_ChannelSize - 1),
+    ConvertToXYZ((uint16_t)(m_ChannelSize - 1),
+                 (uint16_t)(m_ChannelSize - 1),
+                 (uint16_t)(m_ChannelSize - 1),
                  &m_ReferenceWhiteXYZ[0],
                  &m_ReferenceWhiteXYZ[1],
                  &m_ReferenceWhiteXYZ[2]);

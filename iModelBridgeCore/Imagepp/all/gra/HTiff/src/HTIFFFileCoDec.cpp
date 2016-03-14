@@ -93,7 +93,7 @@ void HTIFFFile::SetDeflateAlgo()
 //                                               m_pUncompressFunc
 //-----------------------------------------------------------------------------
 
-void HTIFFFile::SetLZWAlgo(uint32_t pi_BitsPerPixel, unsigned short pi_Predictor, uint32_t pi_SamplesPerPixel)
+void HTIFFFile::SetLZWAlgo(uint32_t pi_BitsPerPixel, uint16_t pi_Predictor, uint32_t pi_SamplesPerPixel)
     {
     HFCMonitor Monitor(m_Key);
 
@@ -191,7 +191,7 @@ void HTIFFFile::SetJPEGAlgo(uint32_t pi_BitsPerPixel)
     // if the pixelType is 48 (RGB) or 64(RGBA), 16 bits by sample, we will use JPEG 12bits
     m_pPacket->SetCodec(new HCDCodecIJG(Width, Height, pi_BitsPerPixel));
 
-    unsigned short ShortVal;
+    uint16_t ShortVal;
     if(GetField (PHOTOMETRIC, &ShortVal))
         {
         if (ShortVal == PHOTOMETRIC_MINISBLACK || ShortVal == PHOTOMETRIC_MINISWHITE)
@@ -209,8 +209,8 @@ void HTIFFFile::SetJPEGAlgo(uint32_t pi_BitsPerPixel)
         ((HFCPtr<HCDCodecIJG>&)(m_pPacket->GetCodec()))->SetSourceColorMode(HCDCodecIJG::RGB);
         }
 
-    unsigned short HorizontalSub;
-    unsigned short VerticalSub;
+    uint16_t HorizontalSub;
+    uint16_t VerticalSub;
 
     if (((HFCPtr<HCDCodecIJG>&)(m_pPacket->GetCodec()))->GetColorMode() != HCDCodecIJG::GRAYSCALE)
         {
@@ -258,7 +258,7 @@ void HTIFFFile::SetFlashpixAlgo(uint32_t pi_BitsPerPixel)
     uint32_t Height;
     ExtractWidthHeight (&Width, &Height);
 
-    unsigned short ShortVal;
+    uint16_t ShortVal;
 
     HCDCodecFlashpix::ColorModes ColorMode;
     if(GetField (PHOTOMETRIC, &ShortVal) && ShortVal == PHOTOMETRIC_YCBCR)
@@ -343,7 +343,7 @@ void HTIFFFile::SetCCITTAlgo(uint32_t pi_CompressMode, bool pi_BitRev)
     pCCITTCodec->SetBitRevTable(pi_BitRev);
 
     // Check for special setting
-    unsigned short ShortVal;
+    uint16_t ShortVal;
     uint32_t    LongVal;
     RATIONAL    RationalVal;
 
@@ -506,7 +506,7 @@ HSTATUS HTIFFFile::UncompressBlockRLE1 (const HFCPtr<HCDPacket>& pi_rpPacket,
         }
     else
         {
-        HASSERT_X64(NewSize < ULONG_MAX);
+        HASSERT_X64(NewSize < UINT32_MAX);
         *po_pDstLen = (uint32_t)NewSize;
         return H_SUCCESS;
         }

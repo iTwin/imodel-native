@@ -85,7 +85,7 @@ void* HRAGenericBilinearSampler<T>::GetPixel(double pi_PosX,
     HASSERT(Dy >= 0.0 && Dy <= 1.0);
     double DxComplement = 1.0 - Dx;
     double DyComplement = 1.0 - Dy;
-    int     NextPixelOffset;
+    int32_t     NextPixelOffset;
 
     pSrcFirstLine = ComputeAddress(m_pPacket,
                                    XPosition,
@@ -149,7 +149,7 @@ void HRAGenericBilinearSampler<T>::GetPixels(const double* pi_pPositionsX,
     double Dy;
     double DyComplement;
     T       ChannelResult;
-    int     NextPixelOffset;
+    int32_t     NextPixelOffset;
 
     while (pi_PixelCount)
         {
@@ -238,8 +238,8 @@ void HRAGenericBilinearSampler<T>::GetPixels(double pi_PositionX,
         HASSERT(Dy >= 0.0 && Dy <= 1.0);
         double DyComplement = 1.0 - Dy;
         T       ChannelResult;
-        int     NextPixelOffset = m_BytesPerPixel;
-        int     BytesToAdd;
+        int32_t     NextPixelOffset = m_BytesPerPixel;
+        int32_t     BytesToAdd;
 
         while (pi_PixelCount)
             {

@@ -55,7 +55,7 @@ HRAGenericAverageSampler<T, TS>::HRAGenericAverageSampler(HGSMemorySurfaceDescri
     m_BytesPerPixel       = m_SourceBytesPerPixel;
     m_SourceBytesPerLine  = pi_rMemorySurface.GetBytesPerRow();
     m_NbChannels          = pSourcePixelType->GetChannelOrg().CountChannels();
-    m_NbBytesPerChannel   = (unsigned short)(m_BytesPerPixel / m_NbChannels);
+    m_NbBytesPerChannel   = (uint16_t)(m_BytesPerPixel / m_NbChannels);
 
     m_SLO4                = pi_rMemorySurface.GetSLO() == HGF_UPPER_LEFT_HORIZONTAL;
 
@@ -126,7 +126,7 @@ Byte* HRAGenericAverageSampler<T, TS>::ComputeAddress(const HFCPtr<HCDPacket>& p
 
     // For N1 sources, convert full lines only
     if (m_SourceBytesPerPixel == 0)
-        pi_NeededPixels = ULONG_MAX;
+        pi_NeededPixels = UINT32_MAX;
 
     // Compute start of source line
     Byte* pSrcData = pi_rpPacket->GetBufferAddress();
@@ -139,7 +139,7 @@ Byte* HRAGenericAverageSampler<T, TS>::ComputeAddress(const HFCPtr<HCDPacket>& p
 
     if (m_pWorkingPixelType != 0)
         {
-        if (pi_NeededPixels == ULONG_MAX)
+        if (pi_NeededPixels == UINT32_MAX)
             {
             // Convert and store full lines.
 
@@ -725,7 +725,7 @@ void HRAGenericAverageSamplerInteger<T, TS>::StretchByTwo(uint32_t pi_PositionX,
         }
     else
         {
-        unsigned short ChannelInd;
+        uint16_t ChannelInd;
         while(pi_PixelCount > 0)
             {
             for (ChannelInd = 0; ChannelInd < HRAGenericAverageSampler<T, TS>::m_NbChannels; ChannelInd++)
@@ -1134,7 +1134,7 @@ void HRAGenericAverageSparseDataSampler<T, TS>::GetPixels(double pi_PositionX,
     }
 
 
-template class HRAGenericAverageSamplerInteger<short, int64_t>;
+template class HRAGenericAverageSamplerInteger<int16_t, int64_t>;
 template class HRAGenericAverageSampler<float,  double>;
 template class HRAGenericAverageSparseDataSampler<float,  double>;
-template class HRAGenericAverageSparseDataSampler<short,  int64_t>;
+template class HRAGenericAverageSparseDataSampler<int16_t,  int64_t>;

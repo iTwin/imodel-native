@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMDLayersWMS.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -19,7 +19,7 @@ public :
     IMAGEPP_EXPORT HMDLayersWMS();
     IMAGEPP_EXPORT virtual                ~HMDLayersWMS();
 
-    IMAGEPP_EXPORT const HMDLayerInfoWMS* GetLayer(unsigned short pi_Index) const;
+    IMAGEPP_EXPORT const HMDLayerInfoWMS* GetLayer(uint16_t pi_Index) const;
 
 private :
 

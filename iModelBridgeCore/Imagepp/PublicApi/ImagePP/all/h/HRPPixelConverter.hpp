@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelConverter.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -30,7 +30,7 @@ inline const HRPPixelType* HRPPixelConverter::GetSourcePixelType      () const
 //-----------------------------------------------------------------------------
 // GetLostChannels
 //-----------------------------------------------------------------------------
-inline const short* HRPPixelConverter::GetLostChannels() const
+inline const int16_t* HRPPixelConverter::GetLostChannels() const
     {
     return 0;
     }

@@ -80,13 +80,13 @@ public:
         {
         // Strip Capability
         Add(new HRFStripCapability(HFC_READ_WRITE_CREATE,  // AccessMode
-                                   LONG_MAX,               // MaxSizeInBytes
+                                   INT32_MAX,               // MaxSizeInBytes
                                    32,                     // MinHeight
-                                   LONG_MAX,               // MaxHeight
+                                   INT32_MAX,               // MaxHeight
                                    16));                   // HeightIncrement
         // Tile Capability
         Add(new HRFTileCapability(HFC_READ_WRITE,        // AccessMode
-                                  LONG_MAX,              // MaxSizeInBytes
+                                  INT32_MAX,              // MaxSizeInBytes
                                   256,                   // MinWidth
                                   256,                   // MaxWidth
                                   0,                     // WidthIncrement
@@ -109,7 +109,7 @@ public:
         {
         // Tile Capability
         Add(new HRFTileCapability(HFC_READ_WRITE_CREATE, // AccessMode
-                                  LONG_MAX,              // MaxSizeInBytes
+                                  INT32_MAX,              // MaxSizeInBytes
                                   256,                   // MinWidth
                                   256,                   // MaxWidth
                                   0,                     // WidthIncrement
@@ -119,9 +119,9 @@ public:
                                   false));               // Not Square
         // Strip Capability
         Add(new HRFStripCapability(HFC_READ_WRITE,       // AccessMode
-                                   LONG_MAX,             // MaxSizeInBytes
+                                   INT32_MAX,             // MaxSizeInBytes
                                    32,                   // MinHeight
-                                   LONG_MAX,             // MaxHeight
+                                   INT32_MAX,             // MaxHeight
                                    16));                 // HeightIncrement
         }
     };
@@ -817,7 +817,7 @@ bool HRFiTiffCreatorBase::ValidateHMRDirectory(HTIFFFile*  pi_pTiffFilePtr,
 
     // Get HMR directirie information.
     uint32_t Version;
-    unsigned short PixelSpec;
+    uint16_t PixelSpec;
     bool    IsValid = true;
 
     HTIFFFile::DirectoryID CurDir = pi_pTiffFilePtr->CurrentDirectory();
@@ -1060,7 +1060,7 @@ void HRFiTiffFile::Save()
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFiTiffFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                          unsigned short pi_Resolution,
+                                                          uint16_t pi_Resolution,
                                                           HFCAccessMode  pi_AccessMode)
     {
     HPRECONDITION(pi_Page < CountPages());
@@ -1095,7 +1095,7 @@ bool HRFiTiffFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
     HPRECONDITION(pi_pPage->CountResolutions() > 0);
 
     // Change the flags to empty for each each resolution
-    for (unsigned short Resolution=0; Resolution < pi_pPage->CountResolutions(); Resolution++)
+    for (uint16_t Resolution=0; Resolution < pi_pPage->CountResolutions(); Resolution++)
         {
         // Obtain the resolution descriptor
         HFCPtr<HRFResolutionDescriptor> pResolution = pi_pPage->GetResolutionDescriptor(Resolution);
@@ -1221,7 +1221,7 @@ void HRFiTiffFile::CreateDescriptors()
         HFCPtr<HRPPixelType> PixelType;
         // Instantiation of Resolution descriptor
         HRFPageDescriptor::ListOfResolutionDescriptor  ListOfResolutionDescriptor;
-        for (unsigned short Resolution=0; Resolution < CalcNumberOfSubResolution(GetIndexOfPage(Page))+1; Resolution++)
+        for (uint16_t Resolution=0; Resolution < CalcNumberOfSubResolution(GetIndexOfPage(Page))+1; Resolution++)
             {
             // Obtain Resolution Information
 
@@ -1233,7 +1233,7 @@ void HRFiTiffFile::CreateDescriptors()
             // Select the page
 #if 0
             HDEBUGCODE(
-                unsigned short TESTJPEGISOCompression;
+                uint16_t TESTJPEGISOCompression;
                 GetFilePtr()->GetField(COMPRESSION, &TESTJPEGISOCompression);
 
                 if (TESTJPEGISOCompression == COMPRESSION_JPEG)
@@ -1281,18 +1281,18 @@ void HRFiTiffFile::CreateDescriptors()
 
             // convert PHOTOMETRIC value
             // if the compression is FLASHPIX or JPEG, the PHOTOMETRIC must be set to YCbCr
-            unsigned short Compression;
+            uint16_t Compression;
             GetFilePtr()->GetField(COMPRESSION, &Compression);
             if (GetAccessMode().m_HasWriteAccess)
                 {
                 if (Compression == COMPRESSION_HMR_FLASHPIX && PixelType->IsCompatibleWith(HRPPixelTypeV24R8G8B8::CLASS_ID))
                     throw HRFAccessModeForCodeNotSupportedException(GetURL()->GetURL());
 
-                unsigned short Photometric;
+                uint16_t Photometric;
                 GetFilePtr()->GetField(PHOTOMETRIC, &Photometric);
                 if ((Compression == COMPRESSION_HMR_FLASHPIX || Compression == COMPRESSION_JPEG) &&
                     (Photometric == PHOTOMETRIC_RGB))
-                    GetFilePtr()->SetField (PHOTOMETRIC, (unsigned short)PHOTOMETRIC_YCBCR);
+                    GetFilePtr()->SetField (PHOTOMETRIC, (uint16_t)PHOTOMETRIC_YCBCR);
                 }
 
             // resolution dimension
@@ -1377,7 +1377,7 @@ void HRFiTiffFile::CreateDescriptors()
             {
             uint32_t** pEntryFrequencies;
             pEntryFrequencies = new uint32_t*[3];
-            for (int ChannelIndex = 0; ChannelIndex < 3; ChannelIndex++)
+            for (int32_t ChannelIndex = 0; ChannelIndex < 3; ChannelIndex++)
                 {
                 pEntryFrequencies   [ChannelIndex]  = new uint32_t[256];
                 memcpy(pEntryFrequencies[ChannelIndex],
@@ -1386,7 +1386,7 @@ void HRFiTiffFile::CreateDescriptors()
                 }
             pHistogram = new HRPHistogram(pEntryFrequencies, 256, 3);
 
-            for (int ChannelIndex = 0; ChannelIndex < 3; ChannelIndex++)
+            for (int32_t ChannelIndex = 0; ChannelIndex < 3; ChannelIndex++)
                 delete pEntryFrequencies[ChannelIndex];
             delete pEntryFrequencies;
             }
@@ -1433,8 +1433,8 @@ void HRFiTiffFile::CreateDescriptors()
         if (pBaseGCS == nullptr || !pBaseGCS->IsValid())
             {
             char*  pString;
-            unsigned short GeoShortValue;
-            unsigned short GTModelTypeValue;
+            uint16_t GeoShortValue;
+            uint16_t GTModelTypeValue;
             double GeoDoubleValue;
 
             pGeoTiffKeys = new HCPGeoTiffKeys();
@@ -1894,7 +1894,7 @@ void HRFiTiffFile::SaveiTiffFile()
                     HFCPtr<HRFResolutionDescriptor> pResDesc;
                     for (uint32_t Res=0; Res < pPageDescriptor->CountResolutions(); Res++)
                         {
-                        pResDesc = pPageDescriptor->GetResolutionDescriptor((unsigned short)Res);
+                        pResDesc = pPageDescriptor->GetResolutionDescriptor((uint16_t)Res);
                         pHMRHeader->m_pDecimationMethod[Res] = GetDownSamplingMethodCode(pResDesc->GetDownSamplingMethod());
 
                         pHMRHeader->m_HMRDirDirty = pHMRHeader->m_HMRDirDirty ||
@@ -2193,7 +2193,7 @@ bool HRFiTiffFile::ReadPrivateDirectory(uint32_t pi_Page, HMRHeader* po_pHMRHead
             po_pHMRHeader->m_DecimationMethodCount = 1;
 
         // HMRPixelTypeSpec
-        unsigned short PixelSpec;
+        uint16_t PixelSpec;
         if (GetFilePtr()->GetField(HMR_PIXEL_TYPE_SPEC, &PixelSpec))
             po_pHMRHeader->m_HMRPixelTypeSpec = PixelSpec;
         else
@@ -2277,7 +2277,7 @@ void HRFiTiffFile::WritePrivateDirectory (uint32_t pi_Page)
         // For each Resolution...
         for (uint32_t i = 0; i < pPageDesc->CountResolutions(); i++)
             {
-            pResDescriptor            = pPageDesc->GetResolutionDescriptor((unsigned short)i);
+            pResDescriptor            = pPageDesc->GetResolutionDescriptor((uint16_t)i);
             const HRFDataFlag* pFlags = pResDescriptor->GetBlocksDataFlag();
             uint32_t NbResFlags         = (uint32_t)pResDescriptor->GetBlocksPerWidth() *
                                         (uint32_t)pResDescriptor->GetBlocksPerHeight();
@@ -2446,7 +2446,7 @@ void HRFiTiffFile::SetClipShape(HMRHeader*          pio_pHMRHeader,
     pio_pHMRHeader->m_HMRDirDirty   = true;
 
     pio_pHMRHeader->m_pHMRClipShape = ExportClipShapeToArrayOfDouble(pi_rShape, &NbPoints);
-    HASSERT_X64(NbPoints < LONG_MAX);
+    HASSERT_X64(NbPoints < INT32_MAX);
     pio_pHMRHeader->m_HMRClipShapeLength = (int32_t)NbPoints;
     }
 
@@ -2612,7 +2612,7 @@ void HRFiTiffFile::ReloadDescriptors()
                     // Select the page and resolution
                     SetImageInSubImage (GetIndexOfPage(Page)+i);
 
-                    HFCPtr<HRFResolutionDescriptor> pResDescriptor = pPageDescriptor->GetResolutionDescriptor((unsigned short)i);
+                    HFCPtr<HRFResolutionDescriptor> pResDescriptor = pPageDescriptor->GetResolutionDescriptor((uint16_t)i);
                     pResDescriptor->SetBlocksDataFlag((HRFDataFlag*)&(pHMRHeader->m_piTiffTileFlags[CurDataFlagsResolution]));
 
                     // Incr list of DataFlag
@@ -2667,7 +2667,7 @@ void HRFiTiffFile::SaveDescriptor(uint32_t pi_Page)
         // For each Resolution...
         for (uint32_t Res = 0; Res < pPageDescriptor->CountResolutions(); Res++)
             {
-            pResDescriptor            = pPageDescriptor->GetResolutionDescriptor((unsigned short)Res);
+            pResDescriptor            = pPageDescriptor->GetResolutionDescriptor((uint16_t)Res);
             const HRFDataFlag* pFlags = pResDescriptor->GetBlocksDataFlag();
             uint32_t NbResFlags         = (uint32_t)pResDescriptor->GetBlocksPerWidth() *
                                         (uint32_t)pResDescriptor->GetBlocksPerHeight();
@@ -2715,7 +2715,7 @@ bool HRFiTiffFile::IsSamePixelTypeForAllResolutions (HFCPtr<HRFPageDescriptor> p
     bool                       AreAllPixelTypesHomogeneous = true;
     const HFCPtr<HRPPixelType>  pReferencePixelType         = pi_pPage->GetResolutionDescriptor(0)->GetPixelType();
 
-    for (unsigned short Resolution=0; Resolution < pi_pPage->CountResolutions(); Resolution++)
+    for (uint16_t Resolution=0; Resolution < pi_pPage->CountResolutions(); Resolution++)
         {
         const HFCPtr<HRPPixelType> pCurrentPixelType = pi_pPage->GetResolutionDescriptor(Resolution)->GetPixelType();
 

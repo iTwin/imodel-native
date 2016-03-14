@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMGMacros.h $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Macros for the HMG messaging mechanism
@@ -52,7 +52,7 @@
     { \
         bool Processed = false; \
         bool NeedToPropagate = true; \
-        int i = 0; \
+        int32_t i = 0; \
         while (!Processed && pi_ClassName##s_MessageMap[i].MessageID != 0) \
         { \
             if (pi_rMessage.IsCompatibleWith(pi_ClassName##s_MessageMap[i].MessageID)) \
@@ -82,7 +82,7 @@
     bool pi_ClassName::ProcessMessage(const HMGMessage& pi_rMessage) { \
         bool Processed = false; \
         bool NeedToPropagate = true; \
-        int i = 0; \
+        int32_t i = 0; \
         while (!Processed && pi_ClassName##s_MessageMap[i].MessageID != 0) \
             { \
             if (pi_rMessage.IsCompatibleWith(pi_ClassName##s_MessageMap[i].MessageID)) { \

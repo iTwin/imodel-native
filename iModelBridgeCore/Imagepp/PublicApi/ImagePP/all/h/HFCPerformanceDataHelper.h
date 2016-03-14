@@ -51,7 +51,7 @@
 
 BEGIN_IMAGEPP_NAMESPACE
 
-const int NUM_STAT_SAMPLES = 100;
+const int32_t NUM_STAT_SAMPLES = 100;
 
 class HFCPerformanceDataHelper
     {

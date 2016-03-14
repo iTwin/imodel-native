@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDPacketRLE.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -30,7 +30,7 @@ public:
     class RLEScanlineGenerator
         {
     public:
-        RLEScanlineGenerator    (const unsigned short* pi_pRun,
+        RLEScanlineGenerator    (const uint16_t* pi_pRun,
                                  HUINTX         pi_Width,
                                  bool          pi_State);
         virtual ~RLEScanlineGenerator   ();
@@ -40,7 +40,7 @@ public:
         HUINTX GetCurrentScanline   (HUINTX* po_pPosX);
 
     private:
-        const unsigned short*  m_pRun;
+        const uint16_t*  m_pRun;
         bool           m_State;
         HUINTX          m_PixelCount;
         size_t          m_Index;

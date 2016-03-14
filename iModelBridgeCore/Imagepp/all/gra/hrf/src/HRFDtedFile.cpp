@@ -52,7 +52,7 @@ public:
         {
         // Block Capability
         Add (new HRFLineCapability (HFC_READ_ONLY,
-                                    ULONG_MAX,
+                                    UINT32_MAX,
                                     HRFBlockAccess::RANDOM));
 
         // Note : The value of MaxSizeInBytes should depends on the organization,
@@ -60,13 +60,13 @@ public:
 
         // Strip Capability
         Add(new HRFStripCapability(HFC_READ_ONLY,          // AccessMode
-                                   LONG_MAX,               // MaxSizeInBytes
+                                   INT32_MAX,               // MaxSizeInBytes
                                    2,                      // MinHeight
                                    8192,                   // MaxHeight
                                    1));                    // HeightIncrement
         // Tile Capability
         Add(new HRFTileCapability(HFC_READ_ONLY,        // AccessMode
-                                  LONG_MAX,             // MaxSizeInBytes
+                                  INT32_MAX,             // MaxSizeInBytes
                                   1,                   // MinWidth
                                   8192,                 // MaxWidth
                                   1,                   // WidthIncrement
@@ -77,11 +77,11 @@ public:
 
         // Image Capability
         Add(new HRFImageCapability(HFC_READ_ONLY,          // AccessMode
-                                   LONG_MAX,               // MaxSizeInBytes
+                                   INT32_MAX,               // MaxSizeInBytes
                                    0,                      // MinWidth
-                                   LONG_MAX,               // MaxWidth
+                                   INT32_MAX,               // MaxWidth
                                    0,                      // MinHeight
-                                   LONG_MAX));             // MaxHeight
+                                   INT32_MAX));             // MaxHeight
         }
     };
 
@@ -326,7 +326,7 @@ void HRFDtedFile::CreateDescriptors()
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFDtedFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                         unsigned short pi_Resolution,
+                                                         uint16_t pi_Resolution,
                                                          HFCAccessMode  pi_AccessMode)
     {
     // Verify that the page number is 0, because we have one image per file

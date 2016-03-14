@@ -138,8 +138,8 @@ static HFCPtr<HGSMemorySurfaceDescriptor> sf1BitBestQualityStretcher (HGSMemoryS
 
 static HFCPtr<HGSMemorySurfaceDescriptor> sfBestQualityStretcher(HGSMemorySurfaceDescriptor const& pi_SrcSurfaceDesc, uint32_t pi_PreferedHeight);
 
-static WString sfHRFGeoKeyTagToString     (const HFCPtr<HPMGenericAttribute>& pi_rpGeoKeyTag, unsigned short pi_GeoKey);
-static unsigned short sfHRFDecodeGeoKeyFromString(const HFCPtr<HPMGenericAttribute>& pi_rpTag);
+static WString sfHRFGeoKeyTagToString     (const HFCPtr<HPMGenericAttribute>& pi_rpGeoKeyTag, uint16_t pi_GeoKey);
+static uint16_t sfHRFDecodeGeoKeyFromString(const HFCPtr<HPMGenericAttribute>& pi_rpTag);
 
 
 
@@ -774,7 +774,7 @@ Byte* ImagePP::HRFStretcher(HFCPtr<HRFRasterFile>& pi_rpSource,
     {
     // Init Source descriptor, editor, and buffer of pixels
     HFCPtr<HRFPageDescriptor>       pPageDescriptor = pi_rpSource->GetPageDescriptor(pi_Page);
-    unsigned short                 Resolution = 0;
+    uint16_t                 Resolution = 0;
     double                         ResolutionFactor;
     HFCPtr<HRFResolutionDescriptor> pSrcResolutionDescriptor;
     HAutoPtr<HRFResolutionEditor>   pSrcResolutionEditor;
@@ -1391,7 +1391,7 @@ void ImagePP::WriteEmptyFile(HFCPtr<HRFRasterFile>& pi_prFile,
     {
     HPRECONDITION(pi_prFile->CountPages() == 1);
 
-    unsigned short                     NbRes = pi_prFile->GetPageDescriptor(0)->CountResolutions();
+    uint16_t                     NbRes = pi_prFile->GetPageDescriptor(0)->CountResolutions();
     HFCPtr<HRFResolutionDescriptor>     pResolutionDesc = 0;
     HAutoPtr<HRFResolutionEditor>       pResolutionEditor;
     HFCPtr<HRPPixelType>                pPixelType;
@@ -1406,7 +1406,7 @@ void ImagePP::WriteEmptyFile(HFCPtr<HRFRasterFile>& pi_prFile,
     HUTExportProgressIndicator::GetInstance()->Restart(NbBlock);
     HUTExportProgressIndicator::GetInstance()->SetExportedFile(pi_prFile);
 
-    for (unsigned short ResInd = 0; ResInd < NbRes; ResInd++)
+    for (uint16_t ResInd = 0; ResInd < NbRes; ResInd++)
         {
         pResolutionDesc = pi_prFile->GetPageDescriptor(0)->GetResolutionDescriptor(ResInd);
         pResolutionEditor = pi_prFile->CreateResolutionEditor(0, ResInd, HFC_READ_CREATE);

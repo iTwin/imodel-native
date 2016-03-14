@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DAffine.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DAffine
@@ -64,7 +64,7 @@ public:
                                                 double                   pi_ScalingY,
                                                 double                   pi_rAnorthogonality);
     IMAGEPP_EXPORT                   HGF2DAffine(const HGF2DAffine& pi_rObj);
-    IMAGEPP_EXPORT                   HGF2DAffine(unsigned short pi_NumberOfPoints,
+    IMAGEPP_EXPORT                   HGF2DAffine(uint16_t pi_NumberOfPoints,
                                                 const double*  pi_pTiePoints);
     IMAGEPP_EXPORT virtual           ~HGF2DAffine ();
     HGF2DAffine&                    operator=(const HGF2DAffine& pi_rObj);

@@ -734,7 +734,7 @@ void HRFTWFPageFile::ReadLine(string*   po_pString)
     HPRECONDITION(m_pFile != 0);
     HPRECONDITION(po_pString != 0);
 
-    const int BufferSize = 64;
+    const int32_t BufferSize = 64;
     char      Buffer[BufferSize+1];
     string    CurrentLine;
 
@@ -743,7 +743,7 @@ void HRFTWFPageFile::ReadLine(string*   po_pString)
     while (!EndOfLine)
         {
         memset(Buffer, 0, BufferSize+1);
-        for (unsigned short i = 0; i < BufferSize && !EndOfLine; i++)
+        for (uint16_t i = 0; i < BufferSize && !EndOfLine; i++)
             {
             m_pFile->Read(&Buffer[i], 1);
             EndOfLine = Buffer[i] == '\n' || m_pFile->EndOfFile();

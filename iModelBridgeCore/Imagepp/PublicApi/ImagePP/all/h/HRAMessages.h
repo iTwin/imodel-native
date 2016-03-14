@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAMessages.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -129,11 +129,11 @@ public:
     HRALookAheadMsg();
     HRALookAheadMsg(const HRALookAheadMsg& pi_rObj);
     HRALookAheadMsg(const HGFTileIDList& pi_rTileIDList,
-                    unsigned short      pi_Resolution,
+                    uint16_t      pi_Resolution,
                     uint32_t             pi_ConsumerID,
                     bool                pi_Async);
     HRALookAheadMsg(const HVEShape& pi_rShape,
-                    unsigned short pi_Resolution,
+                    uint16_t pi_Resolution,
                     uint32_t        pi_ConsumerID,
                     bool           pi_Async);
     IMAGEPP_EXPORT virtual ~HRALookAheadMsg();
@@ -144,7 +144,7 @@ public:
     const HGFTileIDList&
     GetTileIDList() const;
     const HVEShape& GetShape() const;
-    unsigned short GetResolution() const;
+    uint16_t GetResolution() const;
     uint32_t        GetConsumerID() const;
     bool           IsAsynchronous() const;
 
@@ -152,7 +152,7 @@ private:
 
     HGFTileIDList   m_TileIDList;
     HVEShape        m_Shape;
-    unsigned short m_Resolution;
+    uint16_t m_Resolution;
     uint32_t        m_ConsumerID;
     bool           m_Asynchronous;
     };
@@ -168,18 +168,18 @@ class HRAModifiedTileNotSavedMsg : public HMGSynchronousMessage
 public:
     HRAModifiedTileNotSavedMsg  ();
     HRAModifiedTileNotSavedMsg  (const HRAModifiedTileNotSavedMsg& pi_rObj);
-    HRAModifiedTileNotSavedMsg  (unsigned short           pi_Resolution,
+    HRAModifiedTileNotSavedMsg  (uint16_t           pi_Resolution,
                                  uint64_t                 pi_TileIndex);
     IMAGEPP_EXPORT virtual ~HRAModifiedTileNotSavedMsg();
 
     IMAGEPP_EXPORT virtual HMGMessage* Clone() const override;
 
-    unsigned short GetResolution() const;
+    uint16_t GetResolution() const;
     uint64_t       GetTileIndex() const;
 
 private:
 
-    unsigned short m_Resolution;
+    uint16_t m_Resolution;
     uint64_t       m_TileIndex;
     };
 END_IMAGEPP_NAMESPACE

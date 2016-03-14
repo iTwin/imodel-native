@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMDLayers.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -25,10 +25,10 @@ public :
 
     IMAGEPP_EXPORT void                          AddLayer       (const HMDLayerInfo*      pi_pLayer);
 
-    IMAGEPP_EXPORT const HMDLayerInfo*           GetLayer       (unsigned short          pi_Index) const;
-    IMAGEPP_EXPORT unsigned short                GetNbLayers    () const;
+    IMAGEPP_EXPORT const HMDLayerInfo*           GetLayer       (uint16_t          pi_Index) const;
+    IMAGEPP_EXPORT uint16_t                GetNbLayers    () const;
     IMAGEPP_EXPORT bool                          GetIndexFromKey(const WString&           pi_rKey,
-                                                         unsigned short&                 po_rIndex) const;
+                                                         uint16_t&                 po_rIndex) const;
     IMAGEPP_EXPORT void                          Merge          (const HFCPtr<HMDLayers>& pi_rLayers);
 
 protected:

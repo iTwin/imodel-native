@@ -58,9 +58,9 @@ static void hmr_png_read_data(png_structp png_ptr, png_bytep data, png_size_t le
     png_size_t check;
 
     /* fread() returns 0 on error, so it is OK to store this in a png_size_t
-     * instead of an int, which is what fread() actually returns.
+     * instead of an int32_t, which is what fread() actually returns.
      */
-    HASSERT_X64(length < ULONG_MAX);
+    HASSERT_X64(length < UINT32_MAX);
     check = (png_size_t) ((HFCBinStream*)png_ptr->io_ptr)->Read(data, length);
     if (check != length)
         {
@@ -72,7 +72,7 @@ static void hmr_png_write_data(png_structp png_ptr, png_bytep data, png_size_t l
     {
     png_size_t check;
 
-    HASSERT_X64(length < ULONG_MAX);
+    HASSERT_X64(length < UINT32_MAX);
     check = (png_size_t) ((HFCBinStream*)png_ptr->io_ptr)->Write(data, length);
     if (check != length)
         {
@@ -97,16 +97,16 @@ public:
         {
         // Line Capability
         Add(new HRFLineCapability(HFC_READ_WRITE_CREATE,        // AccessMode
-                                  LONG_MAX,                     // MaxWidth
+                                  INT32_MAX,                     // MaxWidth
                                   HRFBlockAccess::SEQUENTIAL)); // BlockAccess
 
         // Image Capability
         Add(new HRFImageCapability(HFC_READ_WRITE,  // AccessMode
-                                   LONG_MAX,        // MaxSizeInBytes
+                                   INT32_MAX,        // MaxSizeInBytes
                                    0,               // MinWidth
-                                   LONG_MAX,        // MaxWidth
+                                   INT32_MAX,        // MaxWidth
                                    0,               // MinHeight
-                                   LONG_MAX));      // MaxHeight
+                                   INT32_MAX));      // MaxHeight
         }
     };
 
@@ -327,7 +327,7 @@ bool HRFPngCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                 (pPngEndInfo = png_create_info_struct(pPngFileStruct)))
                 {
                 // Set png error handeling
-                int JmpRes = setjmp(pPngFileStruct->jmpbuf);
+                int32_t JmpRes = setjmp(pPngFileStruct->jmpbuf);
 
                 if (JmpRes == 0)
                     {
@@ -439,7 +439,7 @@ HRFPngFile::~HRFPngFile()
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFPngFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                        unsigned short pi_Resolution,
+                                                        uint16_t pi_Resolution,
                                                         HFCAccessMode  pi_AccessMode)
     {
     // Verify that the page number is 0, because we have one image per file
@@ -506,7 +506,7 @@ bool HRFPngFile::AssignStructTo(HFCPtr<HRFPageDescriptor> pi_pPage)
     // Display each tag.
     HPMAttributeSet::HPMASiterator TagIterator;
 
-    unsigned short Unit = 1; // Unkown unit
+    uint16_t Unit = 1; // Unkown unit
     double XResolution = 0;
     double YResolution = 0;
 
@@ -676,7 +676,7 @@ bool HRFPngFile::AssignStructTo(HFCPtr<HRFPageDescriptor> pi_pPage)
         {
         uint32_t* hist = new uint32_t[pi_pPage->GetHistogram()->GetEntryFrequenciesSize()];
         pi_pPage->GetHistogram()->GetEntryFrequencies(hist);
-        png_set_hIST(m_pPngFileStruct, m_pPngInfo, (unsigned short*) hist);
+        png_set_hIST(m_pPngFileStruct, m_pPngInfo, (uint16_t*) hist);
         delete[] hist;
         }
 
@@ -731,7 +731,7 @@ bool HRFPngFile::Open()
            (m_pPngEndInfo     = png_create_info_struct(m_pPngFileStruct)))
             {
             // Set png error handeling
-            int JmpRes = setjmp(m_pPngFileStruct->jmpbuf);
+            int32_t JmpRes = setjmp(m_pPngFileStruct->jmpbuf);
 
             if(JmpRes == 0)
                 {
@@ -818,7 +818,7 @@ void HRFPngFile::CreateDescriptors ()
     // Resolution Tag
     if (m_pPngInfo->valid & PNG_INFO_pHYs)
         {
-        unsigned short Unit = 1;      // Unkown
+        uint16_t Unit = 1;      // Unkown
         double XResolution = m_pPngInfo->x_pixels_per_unit;
         double YResolution = m_pPngInfo->y_pixels_per_unit;
 
@@ -968,12 +968,12 @@ void HRFPngFile::CreateDescriptors ()
     // Get Histogram Info
     if (m_pPngInfo->num_palette > 0)
         {
-        unsigned short* pHistogram;
+        uint16_t* pHistogram;
         if (png_get_hIST(m_pPngFileStruct, m_pPngInfo, &pHistogram))
             {
             HArrayAutoPtr<uint32_t> pTmpHisto;
             pTmpHisto = new uint32_t[m_pPngInfo->num_palette];
-            for (unsigned short i = 0; i < m_pPngInfo->num_palette; i++)
+            for (uint16_t i = 0; i < m_pPngInfo->num_palette; i++)
                 pTmpHisto[i] = (uint32_t)pHistogram[i];
 
             m_pHistogram = new HRPHistogram(pTmpHisto, m_pPngInfo->num_palette);
@@ -1039,7 +1039,7 @@ void HRFPngFile::SavePngFile(bool pi_CloseFile)
             if (m_pPngFileStruct->num_rows == m_pPngFileStruct->height)
                 {
                 // Set png error handeling
-                int JmpRes = setjmp(m_pPngFileStruct->jmpbuf);
+                int32_t JmpRes = setjmp(m_pPngFileStruct->jmpbuf);
 
                 if (JmpRes == 0)
                     {
@@ -1097,7 +1097,7 @@ bool HRFPngFile::Create()
        (m_pPngInfo       = png_create_info_struct(m_pPngFileStruct)))
         {
         // Set png error handeling
-        int JmpRes = setjmp(m_pPngFileStruct->jmpbuf);
+        int32_t JmpRes = setjmp(m_pPngFileStruct->jmpbuf);
 
         if (JmpRes == 0)
             {
@@ -1766,7 +1766,7 @@ BentleyStatus HRFPngFile::ReadToBuffer(bvector<Byte>& outPixels, uint32_t& width
     {
     png_structp png_ptr;
     png_infop info_ptr;
-    unsigned int sig_read = 0;
+    uint32_t sig_read = 0;
 
     PngReadData reader(pData, dataSize);
 

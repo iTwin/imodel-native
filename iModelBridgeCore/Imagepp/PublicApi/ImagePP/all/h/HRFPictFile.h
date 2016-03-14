@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFPictFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -27,17 +27,17 @@ public:
 
 typedef struct PictRect
     {
-    unsigned short m_Top;
-    unsigned short m_Left;
-    unsigned short m_Bottom;
-    unsigned short m_Right;
+    uint16_t m_Top;
+    uint16_t m_Left;
+    uint16_t m_Bottom;
+    uint16_t m_Right;
     } PictRect;
 #define PictRect_Size 8
 
 typedef struct OpHeaderV2
     {
-    unsigned short m_Version;      /* Always -1 */
-    unsigned short m_Reserved1;    /* Always -1 */
+    uint16_t m_Version;      /* Always -1 */
+    uint16_t m_Reserved1;    /* Always -1 */
     uint32_t   m_HRes;         /* Ignored */
     uint32_t   m_VRes;         /* Ignored */
     PictRect    m_SrcRect;      /* Ignored */
@@ -47,33 +47,33 @@ typedef struct OpHeaderV2
 
 typedef struct PictFileHeader
     {
-    unsigned short m_FileSize;     /* Always 0x0000 */
+    uint16_t m_FileSize;     /* Always 0x0000 */
     PictRect    m_Rect;
-    unsigned short m_VersionOpcode;/* Always 0x0011 */
-    unsigned short m_Version;      /* Always 0x02ff, PICT 2 */
-    unsigned short m_HeaderOpcode; /* Always 0x0C00 */
+    uint16_t m_VersionOpcode;/* Always 0x0011 */
+    uint16_t m_Version;      /* Always 0x02ff, PICT 2 */
+    uint16_t m_HeaderOpcode; /* Always 0x0C00 */
     OpHeaderV2  m_OpHeader;
-    unsigned short m_DefHilite;    /* Always 0x001E */
-    unsigned short m_ClipOpcode;   /* Always 0x0001 */
-    unsigned short m_ClipSize;     /* Always 0x000A */
+    uint16_t m_DefHilite;    /* Always 0x001E */
+    uint16_t m_ClipOpcode;   /* Always 0x0001 */
+    uint16_t m_ClipSize;     /* Always 0x000A */
     PictRect    m_ClipRect;     /* Same as rect above */
-    unsigned short m_OpCode;       /* Always 0x0098 (PictPackBitsHeader) Or  0x009A (PictPixelMapHeader) */
+    uint16_t m_OpCode;       /* Always 0x0098 (PictPackBitsHeader) Or  0x009A (PictPixelMapHeader) */
     } PictFileHeader;
 #define PictFileHeader_Size 56
 
 typedef struct PictPackBitsHeader
     {
-    unsigned short m_RowBytes;     /* Row bytes (unpacked). Its value is given by (width*4)|0x8000 and the 0x8000 part must be removed */
+    uint16_t m_RowBytes;     /* Row bytes (unpacked). Its value is given by (width*4)|0x8000 and the 0x8000 part must be removed */
     PictRect    m_Bounds;       /* Same as rect below */
-    unsigned short m_Version;      /* Always 0 */
-    unsigned short m_PackType;     /* Always 4 (PackBits) */
+    uint16_t m_Version;      /* Always 0 */
+    uint16_t m_PackType;     /* Always 4 (PackBits) */
     uint32_t   m_PackSize;     /* Always 0 */
     uint32_t   m_HRes;         /* Always 0x00480000 */
     uint32_t   m_VRes;         /* Always 0x00480000 */
-    unsigned short m_PixelType;    /* 16(24 bit), 0 otherwise */
-    unsigned short m_PixelSize;    /* 32(24-bit), 8 (256Col+GrayScale) 0(16Col) */
-    unsigned short m_CmpCount;     /* 3 (24-bit), 1 (256Col+GrayScale) 0(16Col) */
-    unsigned short m_CmpSize;      /* 8 (24-bit), 8 (256Col+GrayScale) 0(16Col) */
+    uint16_t m_PixelType;    /* 16(24 bit), 0 otherwise */
+    uint16_t m_PixelSize;    /* 32(24-bit), 8 (256Col+GrayScale) 0(16Col) */
+    uint16_t m_CmpCount;     /* 3 (24-bit), 1 (256Col+GrayScale) 0(16Col) */
+    uint16_t m_CmpSize;      /* 8 (24-bit), 8 (256Col+GrayScale) 0(16Col) */
     uint32_t   m_PlaneBytes;   /* Always 0 */
     uint32_t   m_PmTable;      /* Always 0 */
     uint32_t   m_PmReserved;   /* Always 0 */
@@ -87,24 +87,24 @@ typedef struct PictPixelMapHeader
     PictPackBitsHeader  m_PackBitHeader;
     PictRect            m_SrcRect;      /* Same as bounds above */
     PictRect            m_DstRect;      /* Same as bounds above */
-    unsigned short      m_CopyMode;     /* Always 0 */
+    uint16_t      m_CopyMode;     /* Always 0 */
     } PictPixelMapHeader;
 #define PictPixelMapHeader_Size 68
 
 typedef struct PictColorTable
     {
     uint32_t           m_CtSeed;       /* Always 0xffff0000 */
-    unsigned short      m_CtFlags;      /* Always 0x8000 */
-    unsigned short      m_CtSize;
+    uint16_t      m_CtFlags;      /* Always 0x8000 */
+    uint16_t      m_CtSize;
     } PictColorTable;
 #define PictColorTable_Size 8
 
 typedef struct PictRGBColor
     {
-    unsigned short m_rgbReserved;
-    unsigned short m_rgbRed;
-    unsigned short m_rgbGreen;
-    unsigned short m_rgbBlue;
+    uint16_t m_rgbReserved;
+    uint16_t m_rgbRed;
+    uint16_t m_rgbGreen;
+    uint16_t m_rgbBlue;
     } PictRGBColor;
 #define PictRGBColor_Size 8
 
@@ -136,7 +136,7 @@ public:
     virtual bool                         AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage);
 
     virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
-                                                                 unsigned short           pi_Resolution,
+                                                                 uint16_t           pi_Resolution,
                                                                  HFCAccessMode             pi_AccessMode);
 
     virtual void                          Save();

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFGeoTiffProjectionTable.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -44,15 +44,15 @@ public:
 
     typedef struct
         {
-        short Code;
-        short UnitsCode;
+        int16_t Code;
+        int16_t UnitsCode;
         } HRFGeoTiffProjectionRecord;
 
     //:> Primary methods.
     // this class is a singleton, use method Instanciate to create the class
     virtual                 ~HRFGeoTiffProjectionTable();
 
-    bool                   GetRecord(short pi_Code,
+    bool                   GetRecord(int16_t pi_Code,
                                       HRFGeoTiffProjectionRecord*   po_pRecord) const;
 
 private:
@@ -63,7 +63,7 @@ private:
     static Byte                                    s_CompressedTable[];
     static uint32_t                                 s_CompressedTableSize;
     static uint32_t                                 s_UncompressedTableSize;
-    static unsigned short                          s_RecordSize;
+    static uint16_t                          s_RecordSize;
 
     // constructor
     HRFGeoTiffProjectionTable(const HFCPtr<HFCURL>& pi_rpProjectionTableFile = 0);

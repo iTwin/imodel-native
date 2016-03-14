@@ -109,20 +109,20 @@ public:
 
         // Tile Capability
         Add(new HRFTileCapability(HFC_READ_WRITE_CREATE, // AccessMode
-                                  LONG_MAX,              // MaxSizeInBytes
+                                  INT32_MAX,              // MaxSizeInBytes
                                   1,                     // MinWidth
-                                  LONG_MAX,              // MaxWidth
+                                  INT32_MAX,              // MaxWidth
                                   1,                     // WidthIncrement
                                   1,                     // MinHeight
-                                  LONG_MAX,              // MaxHeight
+                                  INT32_MAX,              // MaxHeight
                                   1,                     // HeightIncrement
                                   false));               // Not Square
 
         // Strip Capability
         Add(new HRFStripCapability(HFC_READ_WRITE_CREATE,  // AccessMode
-                                   LONG_MAX,               // MaxSizeInBytes
+                                   INT32_MAX,               // MaxSizeInBytes
                                    1,                      // MinHeight
-                                   LONG_MAX,               // MaxHeight
+                                   INT32_MAX,               // MaxHeight
                                    1));                    // HeightIncrement
 
         }
@@ -921,7 +921,7 @@ bool HRFcTiffCreator::ValidatePageDirectory(HTIFFFile* pi_pTiffFilePtr, uint32_t
             {
             // validate each pages
             Byte* pTransPalette = 0;
-            unsigned short HMRPixelTypeSpec;
+            uint16_t HMRPixelTypeSpec;
             bResult = ValidateHMRDirectory(pi_pTiffFilePtr, pi_Page, pi_HMRVersion, &pTransPalette, &HMRPixelTypeSpec);
 
             if (bResult)
@@ -978,7 +978,7 @@ bool HRFcTiffCreator::ValidateHMRDirectory(HTIFFFile*  pi_pTiffFilePtr,
                                             uint32_t    pi_Page,
                                             uint32_t    pi_HMRVersion,
                                             Byte**    po_pTransPalette,
-                                            unsigned short*    po_pHMRPixelTypeSpec) const
+                                            uint16_t*    po_pHMRPixelTypeSpec) const
     {
     HPRECONDITION (pi_pTiffFilePtr != 0);
 
@@ -1094,7 +1094,7 @@ bool HRFcTiffFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
     if (!pi_pPage->IsEmpty())
         {
         // Change the flags to empty for each each resolution
-        for (unsigned short Resolution=0; Resolution < pi_pPage->CountResolutions(); Resolution++)
+        for (uint16_t Resolution=0; Resolution < pi_pPage->CountResolutions(); Resolution++)
             {
             // Obtain the resolution descriptor
             HFCPtr<HRFResolutionDescriptor> pResolution = pi_pPage->GetResolutionDescriptor(Resolution);
@@ -1278,8 +1278,8 @@ void HRFcTiffFile::CreateDescriptors()
 
             // Instantiation of Resolution descriptor
             HRFPageDescriptor::ListOfResolutionDescriptor  ListOfResolutionDescriptor;
-            unsigned short ResCount = CalcNumberOfSubResolution(PageIndex);
-            for (unsigned short Resolution=0; Resolution <= ResCount; Resolution++)
+            uint16_t ResCount = CalcNumberOfSubResolution(PageIndex);
+            for (uint16_t Resolution=0; Resolution <= ResCount; Resolution++)
                 {
                 // Obtain Resolution Information
 
@@ -1291,7 +1291,7 @@ void HRFcTiffFile::CreateDescriptors()
                 // Select the page
 #if 0
                 HDEBUGCODE(
-                    unsigned short TESTJPEGISOCompression;
+                    uint16_t TESTJPEGISOCompression;
                     GetFilePtr()->GetField(COMPRESSION, &TESTJPEGISOCompression);
 
                     if (TESTJPEGISOCompression == COMPRESSION_JPEG)
@@ -1334,15 +1334,15 @@ void HRFcTiffFile::CreateDescriptors()
 
                 // convert PHOTOMETRIC value
                 // if the compression is FLASHPIX or JPEG, the PHOTOMETRIC must be set to YCbCr
-                unsigned short Compression;
+                uint16_t Compression;
                 GetFilePtr()->GetField(COMPRESSION, &Compression);
                 if (GetAccessMode().m_HasWriteAccess || GetAccessMode().m_HasCreateAccess )
                     {
-                    unsigned short Photometric;
+                    uint16_t Photometric;
                     GetFilePtr()->GetField(PHOTOMETRIC, &Photometric);
                     if ((Compression == COMPRESSION_HMR_FLASHPIX || Compression == COMPRESSION_JPEG) &&
                         (Photometric == PHOTOMETRIC_RGB))
-                        GetFilePtr()->SetField (PHOTOMETRIC, (unsigned short)PHOTOMETRIC_YCBCR);
+                        GetFilePtr()->SetField (PHOTOMETRIC, (uint16_t)PHOTOMETRIC_YCBCR);
                     }
 
                 // resolution dimension
@@ -1418,14 +1418,14 @@ void HRFcTiffFile::CreateDescriptors()
                 {
                 uint32_t**  pEntryFrequencies;
                 pEntryFrequencies = new uint32_t*[3];
-                for (int ChannelIndex = 0; ChannelIndex < 3; ChannelIndex++)
+                for (int32_t ChannelIndex = 0; ChannelIndex < 3; ChannelIndex++)
                     {
                     pEntryFrequencies   [ChannelIndex]  = new uint32_t[256];
                     memcpy(pEntryFrequencies[ChannelIndex], pHMRHeader->m_pHistogram + (ChannelIndex * 256), 256 * sizeof(uint32_t));
                     }
                 pHistogram = new HRPHistogram(pEntryFrequencies, 256, 3);
 
-                for (int ChannelIndex = 0; ChannelIndex < 3; ChannelIndex++)
+                for (int32_t ChannelIndex = 0; ChannelIndex < 3; ChannelIndex++)
                     delete pEntryFrequencies[ChannelIndex];
                 delete pEntryFrequencies;
                 }
@@ -1511,7 +1511,7 @@ void HRFcTiffFile::CreateDescriptors()
                 }
 
             // RESOLUTIONUNIT Tag
-            unsigned short UnitValue;
+            uint16_t UnitValue;
             if (GetFilePtr()->GetField(RESOLUTIONUNIT, &UnitValue))
                 {
                 pTag = new HRFAttributeResolutionUnit(UnitValue);
@@ -1753,7 +1753,7 @@ void HRFcTiffFile::WritePrivateDirectory (uint32_t pi_Page)
         // Set pixel type specification.
         if ((pPixelType->GetClassID() == HRPPixelTypeV24B8G8R8::CLASS_ID) ||
             (pPixelType->GetClassID() == HRPPixelTypeV32B8G8R8X8::CLASS_ID))
-            GetFilePtr()->SetField(HMR_PIXEL_TYPE_SPEC, (unsigned short)PIXELTYPESPEC_BGR);
+            GetFilePtr()->SetField(HMR_PIXEL_TYPE_SPEC, (uint16_t)PIXELTYPESPEC_BGR);
 
         // Set transparency palette.
         if (pPixelType->CountIndexBits() != 0 &&

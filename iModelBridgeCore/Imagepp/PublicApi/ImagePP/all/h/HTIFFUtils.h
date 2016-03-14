@@ -257,7 +257,7 @@ public:
 
     struct UnknownCompressionErInfo : ErInfo
         {
-        unsigned short m_CompressionType;
+        uint16_t m_CompressionType;
 
         virtual ~UnknownCompressionErInfo() {}
 
@@ -347,7 +347,7 @@ public:
 
     struct WrongTagDataTypeErInfo : ErInfo
         {
-        short m_Type;
+        int16_t m_Type;
         WString m_TagName;
         int32_t m_TagFileNb;
 
@@ -452,7 +452,7 @@ public:
         {
         WString m_TagName;
         int64_t m_Count;
-        short m_ExpectedCount;
+        int16_t m_ExpectedCount;
 
         virtual ~BadTagCountIOErInfo() {}
 
@@ -627,7 +627,7 @@ public:
 
     IMAGEPP_EXPORT size_t              Read        (void* po_pBuffer, size_t pi_Size, size_t pi_Count);
     IMAGEPP_EXPORT size_t              Write       (const void* pi_pBuffer, size_t pi_Size, size_t pi_Count);
-    IMAGEPP_EXPORT bool               Seek        (uint64_t pi_Offset, int pi_Origin);
+    IMAGEPP_EXPORT bool               Seek        (uint64_t pi_Offset, int32_t pi_Origin);
     uint64_t           Tell        ();
     bool               SetEOF      ();
 
@@ -672,10 +672,10 @@ private:
 
 // Swap Functions
 //
-void    SwabArrayOfShort    (unsigned short* pio_pData, register size_t pi_Count);
-void    SwabArrayOfLong     (register uint32_t* pio_pData, register size_t pi_Count);
-void    SwabArrayOfDouble   (double* pio_pData, register size_t pi_Count);
-void    SwabArrayOfUInt64   (uint64_t* pio_pData, register size_t pi_Count);
+void    SwabArrayOfShort    (uint16_t* pio_pData, size_t pi_Count);
+void    SwabArrayOfLong     (uint32_t* pio_pData, size_t pi_Count);
+void    SwabArrayOfDouble   (double* pio_pData, size_t pi_Count);
+void    SwabArrayOfUInt64   (uint64_t* pio_pData, size_t pi_Count);
 
 bool   SystemIsBigEndian   ();
 bool   IsValidDoubleArray  (const double* pi_pValues, int32_t pi_ArraySize);

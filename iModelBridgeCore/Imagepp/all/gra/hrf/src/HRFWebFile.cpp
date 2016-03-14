@@ -83,7 +83,7 @@ public:
         {
         // Tile Capability
         Add(new HRFTileCapability(HFC_READ_ONLY,  // AccessMode
-                                  LONG_MAX,       // MaxSizeInBytes
+                                  INT32_MAX,       // MaxSizeInBytes
                                   64,             // MinWidth
                                   256,            // MaxWidth
                                   8,              // WidthIncrement
@@ -332,7 +332,7 @@ bool HRFWebFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
 //
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFWebFile::CreateResolutionEditor(uint32_t      pi_Page,
-                                                        unsigned short pi_Resolution,
+                                                        uint16_t pi_Resolution,
                                                         HFCAccessMode pi_AccessMode)
     {
     HPRECONDITION(m_pLocalRasterFile != 0);

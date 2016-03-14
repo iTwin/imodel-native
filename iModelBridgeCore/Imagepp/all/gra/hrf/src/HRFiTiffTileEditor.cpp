@@ -27,7 +27,7 @@
 //-----------------------------------------------------------------------------
 HRFiTiffTileEditor::HRFiTiffTileEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                        uint32_t              pi_Page,
-                                       unsigned short       pi_Resolution,
+                                       uint16_t       pi_Resolution,
                                        HFCAccessMode         pi_AccessMode)
     : HRFResolutionEditor(pi_rpRasterFile,
                           pi_Page,
@@ -58,7 +58,7 @@ HSTATUS HRFiTiffTileEditor::ReadBlock(uint64_t pi_PosBlockX,
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (po_pData != 0);
     HPRECONDITION (m_pResolutionDescriptor->GetBlockType() == HRFBlockType::TILE);
-    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+    HPRECONDITION (pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);
 
     HSTATUS Status = H_SUCCESS;
 
@@ -95,7 +95,7 @@ HSTATUS HRFiTiffTileEditor::ReadBlock(uint64_t           pi_PosBlockX,
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (po_rpPacket != 0);
     HPRECONDITION (m_pResolutionDescriptor->GetBlockType() == HRFBlockType::TILE);
-    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+    HPRECONDITION (pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);
 
     HSTATUS Status = H_SUCCESS;
 
@@ -146,7 +146,7 @@ HSTATUS HRFiTiffTileEditor::WriteBlock(uint64_t     pi_PosBlockX,
     HPRECONDITION (pi_pData != 0);
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (m_pResolutionDescriptor->GetBlockType() == HRFBlockType::TILE);
-    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+    HPRECONDITION (pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);
 
     HSTATUS Status = H_SUCCESS;
 
@@ -201,7 +201,7 @@ HSTATUS HRFiTiffTileEditor::WriteBlock(uint64_t                 pi_PosBlockX,
     HPRECONDITION (pi_rpPacket != 0);
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (m_pResolutionDescriptor->GetBlockType() == HRFBlockType::TILE);
-    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+    HPRECONDITION (pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);
 
     HSTATUS Status = H_SUCCESS;
 
@@ -253,7 +253,7 @@ HSTATUS HRFiTiffTileEditor::WriteBlock(uint64_t                 pi_PosBlockX,
             // create a new buffer
             size_t LineIndexesTableSize = pCodec->GetHeight() * sizeof(uint32_t);
             HArrayAutoPtr<Byte> pTmpBuffer;
-            HASSERT_X64(pi_rpPacket->GetDataSize() + LineIndexesTableSize < ULONG_MAX);
+            HASSERT_X64(pi_rpPacket->GetDataSize() + LineIndexesTableSize < UINT32_MAX);
             uint32_t BufferSize = (uint32_t)(pi_rpPacket->GetDataSize() + LineIndexesTableSize);
             pTmpBuffer = new Byte[BufferSize];
 
@@ -268,7 +268,7 @@ HSTATUS HRFiTiffTileEditor::WriteBlock(uint64_t                 pi_PosBlockX,
             }
         else
             {
-            HASSERT_X64(pi_rpPacket->GetDataSize() < ULONG_MAX);
+            HASSERT_X64(pi_rpPacket->GetDataSize() < UINT32_MAX);
             Status = RASTER_FILE->GetFilePtr()->TileWriteCompress(pi_rpPacket->GetBufferAddress(),
                      (uint32_t)pi_rpPacket->GetDataSize(), (uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY);
             }

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/interface/IHRFPWFileHandler.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -24,10 +24,10 @@ public:
 
     virtual GETTILE_STATUS GetTile(GUID             pi_DocumentID,
                                    __time32_t       pi_pDocumentTimestamp,
-                                   unsigned long    pi_Page,
-                                   unsigned short   pi_Res,
-                                   unsigned long    pi_PosX,
-                                   unsigned long    pi_PosY,
+                                   uint32_t         pi_Page,
+                                   uint16_t         pi_Res,
+                                   uint32_t         pi_PosX,
+                                   uint32_t         pi_PosY,
                                    Byte*            po_pData) = 0;
 
 

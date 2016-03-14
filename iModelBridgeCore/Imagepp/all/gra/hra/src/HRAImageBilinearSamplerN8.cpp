@@ -234,7 +234,7 @@ void HRAImageBilinearSamplerN8<ChannelCount_T, Data_T>::Stretch_T(HRAImageSample
         {
         // The -0.5 is to select a window of the 4 closest pixels.
         float pixelOffset = (float)((m_offsetX + ((w + outOffset.x + 0.5) * m_scaleX) - inOffset.x) - 0.5);
-        pPixelsOffsetInt[w] = (int)floor(pixelOffset);
+        pPixelsOffsetInt[w] = (int32_t)floor(pixelOffset);
 
         pPixelsfx[w] = pixelOffset - pPixelsOffsetInt[w];
         }
@@ -246,7 +246,7 @@ void HRAImageBilinearSamplerN8<ChannelCount_T, Data_T>::Stretch_T(HRAImageSample
         // The -0.5 is to select a window of the 4 closest pixels.
         float rowInSrcRaw = (float)((m_offsetY + ((row + outOffset.y + 0.5) * m_scaleY) - inOffset.y) - 0.5);
 
-        int rowInSrcInt = (int)floor(rowInSrcRaw);
+        int32_t rowInSrcInt = (int32_t)floor(rowInSrcRaw);
 
         Data_T* pOutBufferLine = (Data_T*)(pOutBuffer + row * outPitch);
 
@@ -258,8 +258,8 @@ void HRAImageBilinearSamplerN8<ChannelCount_T, Data_T>::Stretch_T(HRAImageSample
             }
         else
             {
-            pInBufferLine1 = (Data_T const*)(pInBuffer + MIN(rowInSrcInt, (int)inHeight - 1) * inPitch);
-            pInBufferLine2 = (Data_T const*)(pInBuffer + MIN(rowInSrcInt + 1, (int)inHeight - 1) * inPitch);
+            pInBufferLine1 = (Data_T const*)(pInBuffer + MIN(rowInSrcInt, (int32_t)inHeight - 1) * inPitch);
+            pInBufferLine2 = (Data_T const*)(pInBuffer + MIN(rowInSrcInt + 1, (int32_t)inHeight - 1) * inPitch);
             }
 
         float fy = rowInSrcRaw - rowInSrcInt;
@@ -274,7 +274,7 @@ void HRAImageBilinearSamplerN8<ChannelCount_T, Data_T>::Stretch_T(HRAImageSample
                 }
             else
                 {
-                pxData = MIN(pPixelsOffsetInt[column], (int)inWidth - 1);
+                pxData = MIN(pPixelsOffsetInt[column], (int32_t)inWidth - 1);
                 pxData2 = MIN(pxData + 1, inWidth - 1);
                 }
 
@@ -394,16 +394,16 @@ void HRAImageBilinearSamplerN8<ChannelCount_T, Data_T>::Warp_T(HRAImageSampleR o
 
         for (uint32_t column = 0; column < outWidth; ++column)
             {
-            int pxData, pyData;
-            int pxData2, pyData2;
-            int px, py;
+            int32_t pxData, pyData;
+            int32_t pxData2, pyData2;
+            int32_t px, py;
 
             // The -0.5 is to select a window of the 4 closest pixels.
             float x = (float)((pXPositions[column] - inOffset.x) - 0.5);
             float y = (float)((pYPositions[column] - inOffset.y) - 0.5);
 
-            px = (int)floor(x);
-            py = (int)floor(y);
+            px = (int32_t)floor(x);
+            py = (int32_t)floor(y);
 
             if (px < 0)
                 {
@@ -411,8 +411,8 @@ void HRAImageBilinearSamplerN8<ChannelCount_T, Data_T>::Warp_T(HRAImageSampleR o
                 }
             else
                 {
-                pxData = MIN(px, (int)inWidth - 1);
-                pxData2 = MIN(pxData + 1, (int)inWidth - 1);
+                pxData = MIN(px, (int32_t)inWidth - 1);
+                pxData2 = MIN(pxData + 1, (int32_t)inWidth - 1);
                 }
 
             if (py < 0)
@@ -421,8 +421,8 @@ void HRAImageBilinearSamplerN8<ChannelCount_T, Data_T>::Warp_T(HRAImageSampleR o
                 }
             else
                 {
-                pyData = MIN(py, (int)inHeight - 1);
-                pyData2 = MIN(pyData + 1, (int)inHeight - 1);
+                pyData = MIN(py, (int32_t)inHeight - 1);
+                pyData2 = MIN(pyData + 1, (int32_t)inHeight - 1);
                 }
 
             float fx = x - px;

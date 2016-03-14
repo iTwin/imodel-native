@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFRLCFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -50,53 +50,53 @@ struct rlc_image_parms
     double scale;           /* always 1.0 */
     double density;         /* pixel density image in world */
     double skew;            /* skew angle of image in world */
-    short  skip;            /* line skipping factor */
-    short  speckle;         /* 0 - 255 */
-    short  rotate;          /* 0=0; 1=90; 2=180; 3=270 */
-    short  mode;            /* bitwise image mode */
-    short  color;           /* 1-255 */
-    short  split;           /* always 0 */
-    long   reserved;        /* always 0 */
+    int16_t  skip;            /* line skipping factor */
+    int16_t  speckle;         /* 0 - 255 */
+    int16_t  rotate;          /* 0=0; 1=90; 2=180; 3=270 */
+    int16_t  mode;            /* bitwise image mode */
+    int16_t  color;           /* 1-255 */
+    int16_t  split;           /* always 0 */
+    int32_t   reserved;        /* always 0 */
     char   filename[144];       /* original name of file */
     };
 
 typedef struct rlc_raster_header
     {
-    unsigned short byteorder;   /* always 0x4d4d (mc68k) */
-    unsigned short orientation; /* always 0 */
-    unsigned short length;      /* pixel height of raster data */
-    unsigned short width;       /* pixel width of raster data */
+    uint16_t byteorder;   /* always 0x4d4d (mc68k) */
+    uint16_t orientation; /* always 0 */
+    uint16_t length;      /* pixel height of raster data */
+    uint16_t width;       /* pixel width of raster data */
     struct rlc_image_parms iparms;  /* raster data information */
     } RLC_RASTER_HEADER;
 
 struct rlc_seghdr
     {
-    short seg_type;         /* type of this segment */
-    short format;           /* segment format (2 = standard RLC) */
-    short version;          /* always 2 */
-    short data_count;       /* number of fixed-length data items */
-    long  offset;           /* offset in file to segment data */
-    long  size;         /* segment size in bytes */
+    int16_t seg_type;         /* type of this segment */
+    int16_t format;           /* segment format (2 = standard RLC) */
+    int16_t version;          /* always 2 */
+    int16_t data_count;       /* number of fixed-length data items */
+    int32_t  offset;           /* offset in file to segment data */
+    int32_t  size;         /* segment size in bytes */
     };
 
 typedef struct rlc_file_description
     {
     char magic[16];         /* \000\000\000\000\000\000\000\000 */
     /* \032\032\0x55\0x64\0x73\0x82\0x43\0x4a */
-    short byteorder;        /* always 0x4949 */
-    short seg_type;         /* always -1 */
-    short version;          /* always 2 */
-    short seg_count;        /* number of segments in file */
+    int16_t byteorder;        /* always 0x4949 */
+    int16_t seg_type;         /* always -1 */
+    int16_t version;          /* always 2 */
+    int16_t seg_count;        /* number of segments in file */
     struct rlc_seghdr segment[20];  /* segment tables */
     } RLC_FILE_DESCRIPTION;
 
 typedef struct rlc_raster_index
     {
-    short strip_cnt;        /* always 256 */
-    short strip_size;       /* image_length / 256 - 1 */
-    short strip_last;       /* # lines in last strip */
-    short reserved;         /* reserved */
-    long  strip_offset[256];    /* strip offsets */
+    int16_t strip_cnt;        /* always 256 */
+    int16_t strip_size;       /* image_length / 256 - 1 */
+    int16_t strip_last;       /* # lines in last strip */
+    int16_t reserved;         /* reserved */
+    int32_t  strip_offset[256];    /* strip offsets */
     } RLC_RASTER_INDEX;
 
 struct rlc_image_parms_8
@@ -106,36 +106,36 @@ struct rlc_image_parms_8
     double density;         /* pixel density image in world */
     double skew;            /* skew angle of image in world */
     double contrast;        /* contrast enhancement for image */
-    short  brightness;      /* brightness setting for image */
-    short  skip;            /* line skipping factor */
-    short  rotate;          /* 0=0; 1=90; 2=180; 3=270 */
-    short  mode;            /* bitwise image mode */
-    short  hrange;          /* histogram data range */
-    short  border;          /* color of border */
-    short  annotation;      /* color of annotations */
+    int16_t  brightness;      /* brightness setting for image */
+    int16_t  skip;            /* line skipping factor */
+    int16_t  rotate;          /* 0=0; 1=90; 2=180; 3=270 */
+    int16_t  mode;            /* bitwise image mode */
+    int16_t  hrange;          /* histogram data range */
+    int16_t  border;          /* color of border */
+    int16_t  annotation;      /* color of annotations */
     char   reserved[50];        /* all 0 */
     char   filename[144];       /* original name of file */
     };
 
 typedef struct rlc_raster_header_8
     {
-    unsigned short byteorder;   /* always 0x4d4d (mc68k) */
-    unsigned short orientation; /* always 0 */
-    unsigned short length;      /* pixel height of raster data */
-    unsigned short width;       /* pixel width of raster data */
+    uint16_t byteorder;   /* always 0x4d4d (mc68k) */
+    uint16_t orientation; /* always 0 */
+    uint16_t length;      /* pixel height of raster data */
+    uint16_t width;       /* pixel width of raster data */
     struct rlc_image_parms_8 iparms;/* raster data information */
     } RLC_RASTER_HEADER_8;
 
 typedef struct rlc_raster_histogram_8
     {
-    unsigned short colors;      /* number of colors in table */
-    unsigned short reserved;    /* alignment variable */
-    unsigned long  count[256];  /* histogram data */
+    uint16_t colors;      /* number of colors in table */
+    uint16_t reserved;    /* alignment variable */
+    uint32_t       count[256];  /* histogram data */
     } RLC_RASTER_HISTOGRAM_8;
 
 typedef struct rlc_raster_palette_8
     {
-    unsigned short colors;      /* number of valid entries */
+    uint16_t colors;      /* number of valid entries */
     Byte palette[256];    /* lookup table entries */
     } RLC_RASTER_PALETTE_8;
 
@@ -186,7 +186,7 @@ public:
     virtual bool                         AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage);
 
     virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
-                                                                 unsigned short           pi_Resolution,
+                                                                 uint16_t           pi_Resolution,
                                                                  HFCAccessMode             pi_AccessMode);
 
     virtual void                          Save();

@@ -42,11 +42,11 @@ HRPPixelTypeRGB::HRPPixelTypeRGB()
 //-----------------------------------------------------------------------------
 // Constructor for straight RGB
 //-----------------------------------------------------------------------------
-HRPPixelTypeRGB::HRPPixelTypeRGB(unsigned short pi_BitsRed,
-                                 unsigned short pi_BitsGreen,
-                                 unsigned short pi_BitsBlue,
-                                 unsigned short pi_BitsExtra,
-                                 unsigned short pi_IndexBits,
+HRPPixelTypeRGB::HRPPixelTypeRGB(uint16_t pi_BitsRed,
+                                 uint16_t pi_BitsGreen,
+                                 uint16_t pi_BitsBlue,
+                                 uint16_t pi_BitsExtra,
+                                 uint16_t pi_IndexBits,
                                  bool   pi_IsBitsExtraAlpha)
     : HRPPixelType(HRPChannelOrgRGB(pi_BitsRed,
                                     pi_BitsGreen,
@@ -63,15 +63,15 @@ HRPPixelTypeRGB::HRPPixelTypeRGB(unsigned short pi_BitsRed,
 //-----------------------------------------------------------------------------
 // Constructor for straight RGB, with a partial palette
 //-----------------------------------------------------------------------------
-HRPPixelTypeRGB::HRPPixelTypeRGB(unsigned short pi_BitsRed,
-                                 unsigned short pi_BitsGreen,
-                                 unsigned short pi_BitsBlue,
-                                 unsigned short pi_BitsAlpha,
-                                 unsigned short pi_IndexBits,
-                                 unsigned short pi_IndexBitsRed,
-                                 unsigned short pi_IndexBitsGreen,
-                                 unsigned short pi_IndexBitsBlue,
-                                 unsigned short pi_IndexBitsAlpha)
+HRPPixelTypeRGB::HRPPixelTypeRGB(uint16_t pi_BitsRed,
+                                 uint16_t pi_BitsGreen,
+                                 uint16_t pi_BitsBlue,
+                                 uint16_t pi_BitsAlpha,
+                                 uint16_t pi_IndexBits,
+                                 uint16_t pi_IndexBitsRed,
+                                 uint16_t pi_IndexBitsGreen,
+                                 uint16_t pi_IndexBitsBlue,
+                                 uint16_t pi_IndexBitsAlpha)
     : HRPPixelType(HRPChannelOrgRGB(pi_BitsRed,
                                     pi_BitsGreen,
                                     pi_BitsBlue,
@@ -100,14 +100,14 @@ HRPPixelTypeRGB::HRPPixelTypeRGB(unsigned short pi_BitsRed,
 // Constructor for RGB channels plus a 4th channel.
 // Useful for creating RGBA or RGBU pixel types.
 //-----------------------------------------------------------------------------
-HRPPixelTypeRGB::HRPPixelTypeRGB(unsigned short             pi_BitsRed,
-                                 unsigned short             pi_BitsGreen,
-                                 unsigned short             pi_BitsBlue,
-                                 unsigned short             pi_BitsAlpha,
+HRPPixelTypeRGB::HRPPixelTypeRGB(uint16_t             pi_BitsRed,
+                                 uint16_t             pi_BitsGreen,
+                                 uint16_t             pi_BitsBlue,
+                                 uint16_t             pi_BitsAlpha,
                                  HRPChannelType::ChannelRole pi_RoleChannel5,
                                  HRPChannelType::DataType    pi_DataTypeChannel5,
-                                 unsigned short             pi_BitsChannel5,
-                                 unsigned short             pi_IndexBits)
+                                 uint16_t             pi_BitsChannel5,
+                                 uint16_t             pi_IndexBits)
     : HRPPixelType(HRPChannelOrgRGB(pi_BitsRed,
                                     pi_BitsGreen,
                                     pi_BitsBlue,
@@ -154,11 +154,11 @@ HRPQuantizedPalette* HRPPixelTypeRGB::CreateQuantizedPalette(uint32_t pi_MaxEntr
             GetPalette().GetChannelOrg().CountPixelCompositeValueBits() == 32 &&
             GetPalette().GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) != HRPChannelType::FREE)
             {
-            pQuantizedPalette = new HRPQuantizedPaletteR8G8B8A8((unsigned short)pi_MaxEntries, 8);
+            pQuantizedPalette = new HRPQuantizedPaletteR8G8B8A8((uint16_t)pi_MaxEntries, 8);
             }
         else
             {
-            pQuantizedPalette = new HRPQuantizedPaletteR8G8B8((unsigned short)pi_MaxEntries, 8);
+            pQuantizedPalette = new HRPQuantizedPaletteR8G8B8((uint16_t)pi_MaxEntries, 8);
             }
         }
 

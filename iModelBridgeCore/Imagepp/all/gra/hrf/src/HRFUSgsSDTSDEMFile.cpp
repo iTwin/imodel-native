@@ -58,7 +58,7 @@ public:
         {
         // Block Capability
         Add (new HRFLineCapability (HFC_READ_ONLY,
-                                    ULONG_MAX,
+                                    UINT32_MAX,
                                     HRFBlockAccess::RANDOM));
         }
     };
@@ -305,7 +305,7 @@ HRFUSgsSDTSDEMFile::HRFUSgsSDTSDEMFile(const HFCPtr<HFCURL>& pi_rURL,
 // Create the resolution editor
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFUSgsSDTSDEMFile::CreateResolutionEditor(uint32_t      pi_Page,
-                                                                       unsigned short pi_Resolution,
+                                                                       uint16_t pi_Resolution,
                                                                        HFCAccessMode pi_AccessMode)
     {
     // Verify that the page number is 0, because we have one image per file
@@ -355,7 +355,7 @@ void HRFUSgsSDTSDEMFile::CreateDescriptors()
     HPMAttributeSet                         TagList;
 
     // Background Tag
-    uint32_t BackgroundValue = (unsigned short)USGS_SDTS_BACKGROUND_VALUE;
+    uint32_t BackgroundValue = (uint16_t)USGS_SDTS_BACKGROUND_VALUE;
     TagList.Set(new HRFAttributeBackground(BackgroundValue));
 
     HFCPtr<HFCURLFile> pURL(new HFCURLFile(GetURL()->GetURL()));

@@ -87,8 +87,8 @@ HRAPyramidRasterIterator& HRAPyramidRasterIterator::operator=(const HRAPyramidRa
 
 void HRAPyramidRasterIterator::CreateIteratorResolution ()
     {
-    unsigned short NbSubImage      = m_pRaster->CountSubImages();
-    unsigned short i = 0;
+    uint16_t NbSubImage      = m_pRaster->CountSubImages();
+    uint16_t i = 0;
 
     if (NbSubImage > 1)
         {

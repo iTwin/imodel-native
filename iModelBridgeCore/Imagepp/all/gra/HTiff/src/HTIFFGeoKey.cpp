@@ -17,10 +17,10 @@
 
 
 
-static const int KEYVALUE       = 0;
-static const int TAGVALUE       = 1;
-static const int COUNTVALUE     = 2;
-static const int OFFSETVALUE    = 3;
+static const int32_t KEYVALUE       = 0;
+static const int32_t TAGVALUE       = 1;
+static const int32_t COUNTVALUE     = 2;
+static const int32_t OFFSETVALUE    = 3;
 
 const HTIFFGeoKey::GeoKeyDefinition HTIFFGeoKey::sGeoKeyInfo[] = {
         {GTModelType              , HTagInfo::SHORT  },
@@ -80,7 +80,7 @@ const uint32_t HTIFFGeoKey::sNumberOfDefs = (sizeof (sGeoKeyInfo) / sizeof (sGeo
 //-----------------------------------------------------------------------------
 HTagInfo::DataType HTIFFGeoKey::sGetExpectedDataType(GeoKeyID pi_Key)
     {
-    for (long Index = 0 ; Index < HTIFFGeoKey::sNumberOfDefs ; ++Index)
+    for (auto Index = 0 ; Index < HTIFFGeoKey::sNumberOfDefs ; ++Index)
         {
         if (sGeoKeyInfo[Index].Key == pi_Key)
             return sGeoKeyInfo[Index].Type;
@@ -100,7 +100,7 @@ HTIFFGeoKey::HTIFFGeoKey ()
     m_pError     = 0;
     }
 
-HTIFFGeoKey::HTIFFGeoKey (const unsigned short* pi_pGeoKeyDirectory, uint32_t pi_GeoKeyCount,
+HTIFFGeoKey::HTIFFGeoKey (const uint16_t* pi_pGeoKeyDirectory, uint32_t pi_GeoKeyCount,
                           const double* pi_pGeoDoubleParams, uint32_t pi_GeoDoubleCount,
                           const char* pi_pGeoASCIIParams)
     {
@@ -117,17 +117,17 @@ HTIFFGeoKey::HTIFFGeoKey (const unsigned short* pi_pGeoKeyDirectory, uint32_t pi
         ErrorMsg(&m_pError, HTIFFError::UNSUPPORTED_GEOTIFF_VERSION, 0, false);
         }
 
-    // the 4 short is the number of entry.
-    unsigned short Count = pi_pGeoKeyDirectory[3];
+    // the 4 int16_t is the number of entry.
+    uint16_t Count = pi_pGeoKeyDirectory[3];
     uint32_t ASCIIParamsLen = 0;
     if (pi_pGeoASCIIParams != 0)
         ASCIIParamsLen = (uint32_t)strlen(pi_pGeoASCIIParams);
 
     // Each entry has 4 shorts: GeoKey, [NoTag | 0], Count, [Offset | Value]
     //   NoTag == TIFFTAG_GEODOUBLEPARAMS | TIFFTAG_GEOASCIIPARAMS
-    const unsigned short* geoKeyDirectoryEnd = pi_pGeoKeyDirectory + pi_GeoKeyCount;
+    const uint16_t* geoKeyDirectoryEnd = pi_pGeoKeyDirectory + pi_GeoKeyCount;
 
-    for (unsigned short i=0; i < Count; ++i)
+    for (uint16_t i=0; i < Count; ++i)
         {
         pi_pGeoKeyDirectory += 4;       // Next Entry
 
@@ -247,7 +247,7 @@ void HTIFFGeoKey::Reset()
 //  - User must delete the parameters.
 //  po_ppGeoDoubleParams and po_ppGeoASCIIParams can be 0 if not present
 //-----------------------------------------------------------------------------
-void HTIFFGeoKey::GetGeoParams(unsigned short** po_ppGeoKeyDirectory, uint32_t* po_pGeoKeyCount,
+void HTIFFGeoKey::GetGeoParams(uint16_t** po_ppGeoKeyDirectory, uint32_t* po_pGeoKeyCount,
                                double** po_ppGeoDoubleParams, uint32_t* po_pGeoDoubleCount,
                                char** po_ppGeoASCIIParams)
     {
@@ -282,8 +282,8 @@ void HTIFFGeoKey::GetGeoParams(unsigned short** po_ppGeoKeyDirectory, uint32_t* 
         }
 
     // Alloc Param...
-    *po_ppGeoKeyDirectory   = new unsigned short[*po_pGeoKeyCount];
-    unsigned short* pShort         = *po_ppGeoKeyDirectory;
+    *po_ppGeoKeyDirectory   = new uint16_t[*po_pGeoKeyCount];
+    uint16_t* pShort         = *po_ppGeoKeyDirectory;
 
     if (*po_pGeoDoubleCount == 0)
         *po_ppGeoDoubleParams   = 0;
@@ -304,7 +304,7 @@ void HTIFFGeoKey::GetGeoParams(unsigned short** po_ppGeoKeyDirectory, uint32_t* 
     pShort[0] = TIFFGEO_VERSION;
     pShort[1] = TIFFGEO_REV_MAJOR;
     pShort[2] = TIFFGEO_REV_MINOR;
-    pShort[3] = (unsigned short)m_KeyList.size();
+    pShort[3] = (uint16_t)m_KeyList.size();
 
     // Copy in Params
     for (Itr = m_KeyList.begin(); Itr != m_KeyList.end(); ++Itr)
@@ -319,7 +319,7 @@ void HTIFFGeoKey::GetGeoParams(unsigned short** po_ppGeoKeyDirectory, uint32_t* 
             {
             case HTagInfo::ASCII:
                 pShort[TAGVALUE]    = HTIFFTAG_GEOASCIIPARAMS;
-                pShort[OFFSETVALUE] = (unsigned short)ASCIICount;
+                pShort[OFFSETVALUE] = (uint16_t)ASCIICount;
                 ASCIICount += ((*Itr).second).Count;
 
                 if (((*Itr).second).Count == 2)
@@ -332,7 +332,7 @@ void HTIFFGeoKey::GetGeoParams(unsigned short** po_ppGeoKeyDirectory, uint32_t* 
 
             case HTagInfo::DOUBLE:
                 pShort[TAGVALUE]    = HTIFFTAG_GEODOUBLEPARAMS;
-                pShort[OFFSETVALUE] = (unsigned short)(DoubleCount);
+                pShort[OFFSETVALUE] = (uint16_t)(DoubleCount);
 
                 if (((*Itr).second).Count > 1)
                     {
@@ -409,7 +409,7 @@ uint32_t HTIFFGeoKey::GetCount (GeoKeyID pi_Key) const
 // public
 // GetValues
 //-----------------------------------------------------------------------------
-bool HTIFFGeoKey::GetValue (GeoKeyID pi_Key, unsigned short* po_pVal) const
+bool HTIFFGeoKey::GetValue (GeoKeyID pi_Key, uint16_t* po_pVal) const
     {
     HPRECONDITION(po_pVal != 0);
 
@@ -536,7 +536,7 @@ bool HTIFFGeoKey::GetValues (GeoKeyID pi_Key, char** po_ppVal, uint32_t pi_Index
 // SetValues
 //  Only one value possibly, for the moment
 //-----------------------------------------------------------------------------
-bool HTIFFGeoKey::SetValue (GeoKeyID pi_Key, unsigned short pi_Val)
+bool HTIFFGeoKey::SetValue (GeoKeyID pi_Key, uint16_t pi_Val)
     {
     bool   Ret         = true;
 
@@ -579,7 +579,7 @@ bool HTIFFGeoKey::SetValues (GeoKeyID pi_Key, const double* pi_pVal, uint32_t pi
             // Need to realloc
             size_t PrevCount = ((*Itr).second).Count;
 
-            ((*Itr).second).Count = (unsigned short)(pi_Index+pi_Count);
+            ((*Itr).second).Count = (uint16_t)(pi_Index+pi_Count);
             pData = (Byte*)new double[((*Itr).second).Count];
 
             // Copy previous Data
@@ -635,7 +635,7 @@ bool HTIFFGeoKey::SetValue (GeoKeyID pi_Key, double pi_Val, uint32_t pi_Index)
             // Need to realloc
             size_t PrevCount = ((*Itr).second).Count;
 
-            ((*Itr).second).Count = (unsigned short)(pi_Index+((*Itr).second).Count);
+            ((*Itr).second).Count = (uint16_t)(pi_Index+((*Itr).second).Count);
             pData = (Byte*)new double[((*Itr).second).Count];
 
             // Copy previous Data
@@ -692,7 +692,7 @@ bool HTIFFGeoKey::SetValues (GeoKeyID pi_Key, const char* pi_pVal, uint32_t pi_I
             // Need to realloc
             size_t PrevCount = ((*Itr).second).Count;
 
-            ((*Itr).second).Count = (unsigned short)(pi_Index+Count);
+            ((*Itr).second).Count = (uint16_t)(pi_Index+Count);
             pData = (Byte*)new char[((*Itr).second).Count];
 
             // Copy previous Data
@@ -710,7 +710,7 @@ bool HTIFFGeoKey::SetValues (GeoKeyID pi_Key, const char* pi_pVal, uint32_t pi_I
         // If count is 2 (that means string with 1 car. + 0), stock the value directly
         //      in the same way, the Index must be 0
         if ((((*Itr).second).Count == 2) && (pi_Index == 0))
-            ((*Itr).second).DataShort = *((unsigned short*)pi_pVal);
+            ((*Itr).second).DataShort = *((uint16_t*)pi_pVal);
         else
             {
             memcpy (((*Itr).second).pData + (HTagInfo::sGetDataLen(HTagInfo::DOUBLE) *
@@ -755,7 +755,7 @@ void HTIFFGeoKey::InsertNewKey(GeoKeyID pi_Key, HTagInfo::DataType pi_Type, cons
 
     GeoKeyInfo  KeyData;
 
-    KeyData.Count   = (unsigned short)pi_Count;
+    KeyData.Count   = (uint16_t)pi_Count;
     KeyData.Type    = pi_Type;
 
     if (KeyData.Count == 1 && KeyData.Type != HTagInfo::ASCII)
@@ -763,7 +763,7 @@ void HTIFFGeoKey::InsertNewKey(GeoKeyID pi_Key, HTagInfo::DataType pi_Type, cons
         switch(pi_Type)
             {
             case HTagInfo::SHORT:
-                KeyData.DataShort = *((unsigned short*)pi_pVal);
+                KeyData.DataShort = *((uint16_t*)pi_pVal);
                 break;
 
             case HTagInfo::DOUBLE:
@@ -773,7 +773,7 @@ void HTIFFGeoKey::InsertNewKey(GeoKeyID pi_Key, HTagInfo::DataType pi_Type, cons
         }
     else if ((KeyData.Count == 2) && (KeyData.Type == HTagInfo::ASCII))
         {
-        KeyData.DataShort = *((unsigned short*)pi_pVal);
+        KeyData.DataShort = *((uint16_t*)pi_pVal);
         }
     else
         {

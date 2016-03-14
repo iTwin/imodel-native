@@ -39,7 +39,7 @@ HRPChannelOrg::HRPChannelOrg()
 HRPChannelOrg::HRPChannelOrg(const HRPChannelOrg& pi_rObj)
     : m_ChannelsByPosition()
     {
-    unsigned short i;
+    uint16_t i;
 
     // Initialize the index of channels by role
     for (i=0; i< HRPCHANNELTYPE_NB_CHANNEL_ROLES; ++i)
@@ -73,7 +73,7 @@ uint32_t HRPChannelOrg::AddChannel(const HRPChannelType& pi_rChannelType)
     HASSERT(m_ChannelsByRole[Role] == HRPChannelType::FREE);
     m_ChannelsByRole[Role] = Index;
 
-    unsigned short Id = pi_rChannelType.GetId();
+    uint16_t Id = pi_rChannelType.GetId();
     if(Id != 0)
         {
         HASSERT(m_ChannelsById[Id] != HRPChannelType::FREE);
@@ -109,7 +109,7 @@ void HRPChannelOrg::DeepCopy(const HRPChannelOrg& pi_rObj)
 //-----------------------------------------------------------------------------
 void HRPChannelOrg::DeepDelete()
     {
-    unsigned short i;
+    uint16_t i;
 
     m_ChannelsByPosition.clear();
 

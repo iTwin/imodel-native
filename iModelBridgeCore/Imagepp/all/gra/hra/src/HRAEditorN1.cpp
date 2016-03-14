@@ -449,16 +449,16 @@ void HRAEditorN1::ClearRun(HUINTX       pi_PosX,
         }
 
     Byte ClearByte = 0;
-    unsigned short BitIndex;
+    uint16_t BitIndex;
 
     // set the first byte if the beginning
     if (PixelIndex != 0)
         {
-        unsigned short PixelPos = (unsigned short)(PixelIndex * m_BitsPerPixel);
+        uint16_t PixelPos = (uint16_t)(PixelIndex * m_BitsPerPixel);
         *pData &= ~(0xFF >> PixelIndex * m_BitsPerPixel);
 
         ClearByte = 0;
-        for (BitIndex = PixelPos; BitIndex < 8; BitIndex += (unsigned short)m_BitsPerPixel)
+        for (BitIndex = PixelPos; BitIndex < 8; BitIndex += (uint16_t)m_BitsPerPixel)
             ClearByte |= (Value >> BitIndex);
 
         *pData |= ClearByte;
@@ -470,7 +470,7 @@ void HRAEditorN1::ClearRun(HUINTX       pi_PosX,
         {
         // compute the byte to copy
         ClearByte = 0;
-        for (BitIndex = 0; BitIndex < 8; BitIndex += (unsigned short)m_BitsPerPixel)
+        for (BitIndex = 0; BitIndex < 8; BitIndex += (uint16_t)m_BitsPerPixel)
             {
             ClearByte |= (Value >> BitIndex);
             }
@@ -486,7 +486,7 @@ void HRAEditorN1::ClearRun(HUINTX       pi_PosX,
         *pData &= 0xFF >> (pi_PixelCount * m_BitsPerPixel);
 
         ClearByte = 0;
-        for (BitIndex = 0; BitIndex < pi_PixelCount * m_BitsPerPixel; BitIndex += (unsigned short)m_BitsPerPixel)
+        for (BitIndex = 0; BitIndex < pi_PixelCount * m_BitsPerPixel; BitIndex += (uint16_t)m_BitsPerPixel)
             ClearByte |= (Value >> BitIndex);
 
         *pData |= ClearByte;

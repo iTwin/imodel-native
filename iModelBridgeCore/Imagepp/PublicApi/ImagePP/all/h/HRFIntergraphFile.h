@@ -67,7 +67,7 @@ public:
                                                            uint64_t pi_NewHeight);
 
     virtual     HRFResolutionEditor*            CreateResolutionEditor (uint32_t      pi_Page,
-                                                                        unsigned short pi_Resolution,
+                                                                        uint16_t pi_Resolution,
                                                                         HFCAccessMode pi_AccessMode);
 
     virtual void                                Save();
@@ -130,19 +130,19 @@ protected:
     // Intergraph Palette Environ-V structure...
     struct EnvironV                                    // Palette x colors, not ordered
         {
-        unsigned short Slot;                           // Palette index
-        unsigned short Red;                            // Red   component value
-        unsigned short Green;                          // Green component value
-        unsigned short Blue;                           // Blue  component value
+        uint16_t Slot;                           // Palette index
+        uint16_t Red;                            // Red   component value
+        uint16_t Green;                          // Green component value
+        uint16_t Blue;                           // Blue  component value
         };
 
     // Intergraph Header Block 1 File structure...
     struct IntergraphHeaderBlock1
         {
-        unsigned short htc;                                   // Header type code
-        unsigned short wtf;                                   // Word to follow
-        unsigned short dtc;                                   // Data type code
-        unsigned short utc;                                   // Application type
+        uint16_t htc;                                   // Header type code
+        uint16_t wtf;                                   // Word to follow
+        uint16_t dtc;                                   // Data type code
+        uint16_t utc;                                   // Application type
         double xori;                                  // X view origin          xor generate a conflict in Android.
         double yor;                                   // Y view origin
         double zor;                                   // Z view origin
@@ -152,12 +152,12 @@ protected:
         double trn[16];                               // Transformation matrix
         uint32_t ppl;                                   // Pixel per line
         uint32_t nol;                                   // Number of line
-        short drs;                                   // Device resolution
+        int16_t drs;                                   // Device resolution
         Byte  slo;                                   // Scan line orietation
         Byte  scn;                                   // Scannable flag
         double rot;                                   // Rotation angle
         double skw;                                   // Skew angle (anorthogonality)
-        unsigned short dtm;                                   // Data type modifier
+        uint16_t dtm;                                   // Data type modifier
         Byte   dgn[66];                               // Design file name
         Byte   dbs[66];                               // Database file name
         Byte   prn[66];                               // Parent grid file name
@@ -176,16 +176,16 @@ protected:
         Byte  vf2;                                   // View # - Screen #2
         Byte  vno;                                   // View Number
         Byte  rv2;                                   // Reserved
-        unsigned short rv3;                                   // Reserved
+        uint16_t rv3;                                   // Reserved
         double asr;                                   // Aspect ratio
         uint32_t cfp;                                   // Concatenate file pointer
-        unsigned short ctv;                                   // Color table type
-        unsigned short rv8;                                   // Reserved
+        uint16_t ctv;                                   // Color table type
+        uint16_t rv8;                                   // Reserved
         uint32_t cte;                                   // Number of Color table type entires
         uint32_t app;                                   // Application packet pointer
         uint32_t apl;                                   // Application packet length
-        unsigned short rv9[110];                              // Reserved
-        unsigned short use[128];                              // Application data
+        uint16_t rv9[110];                              // Reserved
+        uint16_t use[128];                              // Application data
         };
 
     struct IntergraphHeaderBlocks
@@ -205,14 +205,14 @@ protected:
     // Intergraph Tile Directory structure...
     struct TileDirectoryInfo
         {
-        unsigned short ApplicationType;
-        unsigned short SubTypeCode;
+        uint16_t ApplicationType;
+        uint16_t SubTypeCode;
         uint32_t WordsToFollow;
-        unsigned short PacketVersion;
-        unsigned short Identifier;
-        unsigned short Reserved1[2];
-        unsigned short Properties;
-        unsigned short DataTypeCode;
+        uint16_t PacketVersion;
+        uint16_t Identifier;
+        uint16_t Reserved1[2];
+        uint16_t Properties;
+        uint16_t DataTypeCode;
         Byte Reserved2[100];
         uint32_t TileSize;
         uint32_t Reserved3;
@@ -221,32 +221,32 @@ protected:
     // Intergraph application packet structure...
     struct ApplicationPacket
         {
-        unsigned short ApplicationType;
-        unsigned short SubTypeCode;
+        uint16_t ApplicationType;
+        uint16_t SubTypeCode;
         uint32_t WordsToFollow;
-        unsigned short PacketVersion;
-        unsigned short Identifier;
+        uint16_t PacketVersion;
+        uint16_t Identifier;
         uint32_t Reserved;
         uint32_t NumberOverview;
         };
 
     struct GenericApplicationPacket
         {
-        unsigned short ApplicationType;
-        unsigned short SubTypeCode;
+        uint16_t ApplicationType;
+        uint16_t SubTypeCode;
         uint32_t WordsToFollow;
         };
 
     // Intergraph JPEG packet structure...
     struct JpegPacketPacket
         {
-        unsigned short ApplicationType;
-        unsigned short SubTypeCode;
+        uint16_t ApplicationType;
+        uint16_t SubTypeCode;
         uint32_t WordsToFollow;
-        unsigned short Mode;
-        unsigned short QualityFactor;
-        unsigned short Precision;
-        unsigned short NumTables;
+        uint16_t Mode;
+        uint16_t QualityFactor;
+        uint16_t Precision;
+        uint16_t NumTables;
         Byte   Reserved[56];
         Byte   QTables[1];
         };
@@ -256,8 +256,8 @@ protected:
         {
         uint32_t NumberLines;
         uint32_t NumberPixels;
-        unsigned short SamplingMethod;
-        unsigned short Flag;
+        uint16_t SamplingMethod;
+        uint16_t Flag;
         uint32_t Reserved;
         };
 
@@ -337,9 +337,9 @@ protected:
     virtual bool   Open ();
     virtual bool   Create ();
     bool           InitOpenedFile      (HFCPtr<HRFPageDescriptor> pi_pPage);
-    bool           HasTileAccess       (unsigned short pi_SubImage) const;
-    bool           HasImageAccess      (unsigned short pi_SubImage) const;
-    bool           HasLineAccess       (unsigned short pi_SubImage) const;
+    bool           HasTileAccess       (uint16_t pi_SubImage) const;
+    bool           HasImageAccess      (uint16_t pi_SubImage) const;
+    bool           HasLineAccess       (uint16_t pi_SubImage) const;
 
     bool           GetLUTColorCorrection(uint32_t pi_FileOffset, const GenericApplicationPacket& pi_PacketHeader);
 
@@ -348,26 +348,26 @@ protected:
     const Byte*   GetBlueLUTColorTablePtr () const;
 
     uint32_t        CalcNumberOfPage    () const;
-    uint32_t        GetWidth            (unsigned short pi_SubImage) const;
-    uint32_t        GetHeight           (unsigned short pi_SubImage) const;
-    uint32_t        GetTileWidth        (unsigned short pi_SubImage) const;
-    uint32_t        GetTileHeight       (unsigned short pi_SubImage) const;
+    uint32_t        GetWidth            (uint16_t pi_SubImage) const;
+    uint32_t        GetHeight           (uint16_t pi_SubImage) const;
+    uint32_t        GetTileWidth        (uint16_t pi_SubImage) const;
+    uint32_t        GetTileHeight       (uint16_t pi_SubImage) const;
     uint32_t        GetBlockNumInHeader () const;
 
-    unsigned short CountSubResolution  () const;
-    unsigned short GetBitPerPixel      () const;
-    const unsigned short GetDatatypeCode     () const;
+    uint16_t CountSubResolution  () const;
+    uint16_t GetBitPerPixel      () const;
+    const uint16_t GetDatatypeCode     () const;
 
-    double         GetResolution       (unsigned short pi_SubImage);
+    double         GetResolution       (uint16_t pi_SubImage);
 
-    void            SetBitPerPixel      (unsigned short pi_BitPerPixel);
-    void            SetDatatypeCode     (unsigned short pi_DataTypeCode);
-    void            GetTileDirectory    (unsigned short     pi_Resolution,
+    void            SetBitPerPixel      (uint16_t pi_BitPerPixel);
+    void            SetDatatypeCode     (uint16_t pi_DataTypeCode);
+    void            GetTileDirectory    (uint16_t     pi_Resolution,
                                          TileDirectoryInfo  pi_TileDirectory,
                                          TileEntry*         pi_pTileDirectoryEntry);
 
     uint32_t         GetFullResolutionSize       ();
-    void            UpdateOffsetNextResolutions (unsigned short pi_CurrentSubImage, uint32_t pi_NbByteToAdd);
+    void            UpdateOffsetNextResolutions (uint16_t pi_CurrentSubImage, uint32_t pi_NbByteToAdd);
 
     HFCPtr<HRPPixelType>
     GetPixelType        () const;
@@ -386,9 +386,9 @@ protected:
                                            HRPPixelPalette* po_pPalette);
 
     bool           CreateFileHeader      (HFCPtr<HRFPageDescriptor> pi_pPage);
-    bool           CreateTileDirectory   (unsigned short pi_SubImage,
+    bool           CreateTileDirectory   (uint16_t pi_SubImage,
                                            HRFResolutionDescriptor* pi_pResolutionDescriptor);
-    bool           WriteTileDirectory    (unsigned short pi_SubImage);
+    bool           WriteTileDirectory    (uint16_t pi_SubImage);
     bool           CreatePacketOverview  (HFCPtr<HRFPageDescriptor> pi_pPage);
     bool           UpdatePacketOverview  (uint32_t pi_FileCursorPosition, uint32_t pi_Resolution);
     bool           HasCompression ();
@@ -399,7 +399,7 @@ protected:
     AnalysePalette        (const HRPPixelPalette& po_pPalette);
 
     void            CheckNotNullTransfoModel ();
-    void            ReadTileDirectory     (unsigned short pi_SubImage);
+    void            ReadTileDirectory     (uint16_t pi_SubImage);
     void            GenerateHeader8BitsPalette
     (IntergraphColorTable   ColorTableValue,
      const HRPPixelPalette& po_pPalette);
@@ -436,7 +436,7 @@ protected:
     HFCPtr<HRPPixelType>            m_pPixelType;
     HFCPtr <HGF2DTransfoModel>      m_SLOModel;
 
-    unsigned short                 m_BitPerPixel;
+    uint16_t                 m_BitPerPixel;
     uint32_t                         m_CurentPageIndex;
 
     bool                           m_HasLineAcess;
@@ -450,7 +450,7 @@ protected:
     int32_t                         m_BlockNumInHeader;
     int32_t                         m_BlockHeaderAddition;
 
-    unsigned short                 m_DataTypeCode;
+    uint16_t                 m_DataTypeCode;
 
     bool                           m_OverviewCountChanged;
     bool                           m_LUTColorCorrected;

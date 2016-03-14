@@ -1551,14 +1551,14 @@ void HRFImportExport::SetScaleFactorX(double pi_ScaleX)
         {
         // Update the image width.
         HFCGrid WidthGrid(0.0, 0.0, ClipShape.GetExtent().GetWidth() * pi_ScaleX, 1.0);
-        HASSERT(WidthGrid.GetWidth() <= ULONG_MAX);
+        HASSERT(WidthGrid.GetWidth() <= UINT32_MAX);
         m_ExportOptions.SetImageWidth((uint32_t)WidthGrid.GetWidth());
 
         if (m_MaintainAspectRatio)
             {
             // Update the image height.
             HFCGrid HeightGrid(0.0, 0.0, 1.0, ClipShape.GetExtent().GetHeight() * pi_ScaleX);
-            HASSERT(WidthGrid.GetHeight() <= ULONG_MAX);
+            HASSERT(WidthGrid.GetHeight() <= UINT32_MAX);
             m_ExportOptions.SetImageHeight((uint32_t)HeightGrid.GetHeight());
             }
         }
@@ -1612,7 +1612,7 @@ void HRFImportExport::SetScaleFactorY(double pi_ScaleY)
         // Update the image height.
         HFCGrid HeightGrid(0.0, 0.0, 1.0, ClipShape.GetExtent().GetHeight() * pi_ScaleY);
 
-        HASSERT(HeightGrid.GetHeight() <= ULONG_MAX);
+        HASSERT(HeightGrid.GetHeight() <= UINT32_MAX);
         m_ExportOptions.SetImageHeight((uint32_t)HeightGrid.GetHeight());
 
         if (m_MaintainAspectRatio)
@@ -1620,7 +1620,7 @@ void HRFImportExport::SetScaleFactorY(double pi_ScaleY)
             // Update the image width.
             HFCGrid WidthGrid(0.0, 0.0, ClipShape.GetExtent().GetWidth() * pi_ScaleY, 1.0);
 
-            HASSERT(HeightGrid.GetWidth() <= ULONG_MAX);
+            HASSERT(HeightGrid.GetWidth() <= UINT32_MAX);
             m_ExportOptions.SetImageWidth((uint32_t)WidthGrid.GetWidth());
             }
         }
@@ -2504,7 +2504,7 @@ HFCPtr<HRFPageDescriptor> HRFImportExport::CreatePageFromSelectedValues()
         pMainCodec = GetSelectedCodecSample();
 
         if (pMainCodec->IsCompatibleWith(HCDCodecErMapperSupported::CLASS_ID))
-            ((HFCPtr<HCDCodecErMapperSupported>&)pMainCodec)->SetCompressionRatio((unsigned short)m_ExportOptions.GetCompressionRatio());
+            ((HFCPtr<HCDCodecErMapperSupported>&)pMainCodec)->SetCompressionRatio((uint16_t)m_ExportOptions.GetCompressionRatio());
         if (pMainCodec->GetClassID() == HCDCodecIJG::CLASS_ID)
             ((HFCPtr<HCDCodecIJG>&)pMainCodec)->SetQuality((Byte)m_ExportOptions.GetCompressionQuality());
         else if (pMainCodec->GetClassID() == HCDCodecFlashpix::CLASS_ID)
@@ -2525,7 +2525,7 @@ HFCPtr<HRFPageDescriptor> HRFImportExport::CreatePageFromSelectedValues()
         pSubResCodec = GetSelectedSubResCodecSample();
 
         if (pSubResCodec->IsCompatibleWith(HCDCodecErMapperSupported::CLASS_ID))
-            ((HFCPtr<HCDCodecErMapperSupported>&)pSubResCodec)->SetCompressionRatio((unsigned short)m_ExportOptions.GetSubResCompressionRatio());
+            ((HFCPtr<HCDCodecErMapperSupported>&)pSubResCodec)->SetCompressionRatio((uint16_t)m_ExportOptions.GetSubResCompressionRatio());
         else if (pSubResCodec->GetClassID() == HCDCodecIJG::CLASS_ID)
             ((HFCPtr<HCDCodecIJG>&)pSubResCodec)->SetQuality((Byte)m_ExportOptions.GetSubResCompressionQuality());
         else if (pSubResCodec->GetClassID() == HCDCodecFlashpix::CLASS_ID)
@@ -2537,7 +2537,7 @@ HFCPtr<HRFPageDescriptor> HRFImportExport::CreatePageFromSelectedValues()
         }
 
     // Create the resolution list.
-    for (unsigned short ResCount = 0 ; ResCount < pPyramidDesc->CountResolutions() ; ResCount++)
+    for (uint16_t ResCount = 0 ; ResCount < pPyramidDesc->CountResolutions() ; ResCount++)
         {
         HFCPtr<HRFResolutionDescriptor> pResDesc;
 
@@ -2755,8 +2755,8 @@ uint32_t HRFImportExport::ExportToAllOptions(const HFCPtr<HFCURL>& pi_rpURLPath)
                 if (CountCompressionStep() > 1)
                     {
                     // By default we test 4 quality of compression
-                    int NumberOfLevels = MIN(3, CountCompressionStep() - 1);
-                    for (int Level = 1; Level <= NumberOfLevels; Level ++)
+                    int32_t NumberOfLevels = MIN(3, CountCompressionStep() - 1);
+                    for (int32_t Level = 1; Level <= NumberOfLevels; Level ++)
                         {
                         SelectCompressionQuality(MIN(CountCompressionStep() - 1, (CountCompressionStep() / NumberOfLevels) * Level));
 
@@ -2783,8 +2783,8 @@ uint32_t HRFImportExport::ExportToAllOptions(const HFCPtr<HFCURL>& pi_rpURLPath)
                 else if (CountCompressionRatioStep() > 1)
                     {
                     // By default we test 4 quality of compression
-                    int NumberOfLevels = MIN(3, CountCompressionRatioStep() - 1);
-                    for (int Level = 1; Level <= NumberOfLevels; Level ++)
+                    int32_t NumberOfLevels = MIN(3, CountCompressionRatioStep() - 1);
+                    for (int32_t Level = 1; Level <= NumberOfLevels; Level ++)
                         {
                         SelectCompressionRatio(MIN(CountCompressionRatioStep() - 1, (CountCompressionRatioStep() / NumberOfLevels) * Level));
 
@@ -3500,7 +3500,7 @@ void HRFImportExport::ValidateUncompressedExportSize(HFCPtr<HRFRasterFile>& pi_p
 
     uint64_t MaxImgDataSize = pi_prDstRasterFile->GetMaxFileSizeInBytes() - sMaximumHeaderSize;
 
-    for (unsigned short ResNumber=0; ResNumber < pi_prDstRasterFile->GetPageDescriptor(0)->CountResolutions(); ++ResNumber)
+    for (uint16_t ResNumber=0; ResNumber < pi_prDstRasterFile->GetPageDescriptor(0)->CountResolutions(); ++ResNumber)
         {
         const HFCPtr<HCDCodec>& pCodec = pi_prDstRasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetCodec();
 
@@ -3525,7 +3525,7 @@ void HRFImportExport::ValidateUncompressedExportSize(HFCPtr<HRFRasterFile>& pi_p
         HFCPtr<HCDCodec>        pFirstResCodec      = pi_prDstRasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetCodec();
         uint64_t                SubResTotalSize     = 0;
 
-        for (unsigned short ResNumber=1; (ResNumber < pi_prDstRasterFile->GetPageDescriptor(0)->CountResolutions()) && IsOnlyOneCodecUsed; ResNumber++)
+        for (uint16_t ResNumber=1; (ResNumber < pi_prDstRasterFile->GetPageDescriptor(0)->CountResolutions()) && IsOnlyOneCodecUsed; ResNumber++)
             {
             if (pFirstResCodec->GetClassID() == pi_prDstRasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(ResNumber)->GetCodec().GetClassID())
                 {

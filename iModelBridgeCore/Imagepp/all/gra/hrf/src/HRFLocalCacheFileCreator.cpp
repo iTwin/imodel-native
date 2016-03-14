@@ -158,7 +158,7 @@ bool HRFLocalCacheFileCreator::IsValidCache(const HFCPtr<HRFRasterFile>& pi_rpFi
 
         for (uint32_t Res = 0; (!Is32bitsWithAlpha) && (Res < pPage->CountResolutions()); Res++)
             {
-            HFCPtr<HRPPixelType> pPixel(pPage->GetResolutionDescriptor((unsigned short)Res)->GetPixelType());
+            HFCPtr<HRPPixelType> pPixel(pPage->GetResolutionDescriptor((uint16_t)Res)->GetPixelType());
 
             // if it is a 32-bit type with an alpha channel, this source cannot handle it, so
             // use a 24-bit pixel type.

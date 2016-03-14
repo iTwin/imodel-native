@@ -56,29 +56,29 @@ public:
         {
         // Strip Capability
         Add(new HRFStripCapability( HFC_READ_ONLY,          // AccessMode
-                                    LONG_MAX,               // MaxSizeInBytes
+                                   INT32_MAX,               // MaxSizeInBytes
                                     0,                      // MinHeight
-                                    LONG_MAX,               // MaxHeight
+                                   INT32_MAX,               // MaxHeight
                                     1));                    // HeightIncrement
 
         // Tile Capability
         Add(new HRFTileCapability(  HFC_READ_ONLY,            // AccessMode
-                                    LONG_MAX,                 // MaxSizeInBytes
+                                  INT32_MAX,                 // MaxSizeInBytes
                                     0,                        // MinWidth
-                                    LONG_MAX,                 // MaxWidth
+                                  INT32_MAX,                 // MaxWidth
                                     1,                        // WidthIncrement
                                     0,                        // MinHeight
-                                    LONG_MAX,                 // MaxHeight
+                                  INT32_MAX,                 // MaxHeight
                                     1,                        // HeightIncrement
                                     false));                  // Not Square
 
         // Image Capability
         Add(new HRFImageCapability( HFC_READ_ONLY,           // AccessMode
-                                    LONG_MAX,                // MaxSizeInBytes
+                                   INT32_MAX,                // MaxSizeInBytes
                                     0,                       // MinWidth
-                                    LONG_MAX,                // MaxWidth
+                                   INT32_MAX,                // MaxWidth
                                     0,                       // MinHeight
-                                    LONG_MAX));              // MaxHeight
+                                   INT32_MAX));              // MaxHeight
 
         }
     };

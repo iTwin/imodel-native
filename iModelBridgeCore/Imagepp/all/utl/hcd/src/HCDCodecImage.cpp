@@ -128,7 +128,7 @@ void HCDCodecImage::SetSubsetSize(size_t pi_Size)
     size_t pi_NumberOfLines = pi_Size / ImageWidthInBytes;
 
     HASSERT(pi_NumberOfLines != 0);
-    HASSERT_X64(pi_NumberOfLines <  ULONG_MAX);
+    HASSERT_X64(pi_NumberOfLines <  UINT32_MAX);
 
     SetSubset(m_Width, pi_NumberOfLines, m_SubsetPosX, m_SubsetPosY);
     }

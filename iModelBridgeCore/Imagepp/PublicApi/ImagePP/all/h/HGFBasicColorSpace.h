@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFBasicColorSpace.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -21,8 +21,8 @@ class HGFBasicColorSpace
     {
 public:
 
-    HGFBasicColorSpace(unsigned short pi_BitsPerPixel = 8);
-    HGFBasicColorSpace(double pi_GammaCorrection, unsigned short pi_BitsPerPixel = 8);
+    HGFBasicColorSpace(uint16_t pi_BitsPerPixel = 8);
+    HGFBasicColorSpace(double pi_GammaCorrection, uint16_t pi_BitsPerPixel = 8);
 
     virtual ~HGFBasicColorSpace();
 
@@ -32,14 +32,14 @@ public:
     double GetGammaCorrectionFactor();
 
     // Conversion both side between RGB and CIE XYZ
-    void ConvertToXYZ(unsigned short Red,  unsigned short Green, unsigned short Blue,
+    void ConvertToXYZ(uint16_t Red,  uint16_t Green, uint16_t Blue,
                       double* po_pX, double* po_Y,  double* po_pZ);
 
     void ConvertFromXYZ(double  pi_X,   double   pi_Y,     double   pi_Z,
                         Byte*  po_pRed,Byte*   po_pGreen, Byte*  po_pBlue);
 
     void ConvertFromXYZ(double  pi_X,   double   pi_Y,     double   pi_Z,
-                        unsigned short* po_pRed,unsigned short*  po_pGreen, unsigned short* po_pBlue);
+                        uint16_t* po_pRed,uint16_t*  po_pGreen, uint16_t* po_pBlue);
 
     // Color properties.
     void GetPureColor(double  pi_X, double  pi_Y, double pi_Z,
@@ -90,7 +90,7 @@ protected:
     double m_GammaCorrectionFactor;
     bool   m_UseGammaCorrection;
 
-    unsigned short m_BitsPerPixel;
+    uint16_t m_BitsPerPixel;
     uint32_t m_ChannelSize;
 
 private:

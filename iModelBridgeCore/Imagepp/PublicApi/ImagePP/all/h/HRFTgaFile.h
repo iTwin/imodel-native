@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFTgaFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -113,7 +113,7 @@ public:
     virtual bool                         AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage);
 
     virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
-                                                                 unsigned short           pi_Resolution,
+                                                                 uint16_t           pi_Resolution,
                                                                  HFCAccessMode             pi_AccessMode);
 
     virtual void                          Save();
@@ -135,7 +135,7 @@ protected:
     HFCBinStream*               GetFilePtr              () const;
     uint32_t                    GetRasterDataOffset     () const;
     uint32_t                    GetRasterDataEndOffset  () const;
-    unsigned short             GetBitsPerPixel         () const;
+    uint16_t             GetBitsPerPixel         () const;
     bool                       HasPalette              () const;
     bool                       IsCompressed            () const;
 
@@ -150,15 +150,15 @@ private:
         Byte  m_ImageType;                    //:> 0, 1, 2, 3, 9, 10, 11... Supported image type
 
         //:> Color Map Specification (5 bytes)
-        unsigned short m_ColorMapFirstEntryIndex;      //:> if not 0
-        unsigned short m_ColorMapLength;               //:> number of color in color-map
+        uint16_t m_ColorMapFirstEntryIndex;      //:> if not 0
+        uint16_t m_ColorMapLength;               //:> number of color in color-map
         Byte  m_ColorMapEntrySize;            //:> number of bits per entry in color-map
 
         //:> Image Specification (10 bytes)
-        unsigned short m_XOrigin;                      //:> Lower Left corner
-        unsigned short m_YOrigin;                      //:> Lower Left corner
-        unsigned short m_ImageWidth;
-        unsigned short m_ImageHeight;
+        uint16_t m_XOrigin;                      //:> Lower Left corner
+        uint16_t m_YOrigin;                      //:> Lower Left corner
+        uint16_t m_ImageWidth;
+        uint16_t m_ImageHeight;
         Byte  m_PixelDepth;                   //:> Number of bits per pixels (8,16,24,32)
         Byte  m_ImageDescriptor;              //:> Bit flag...
         };
@@ -178,37 +178,37 @@ private:
 
     struct TgaExtensionArea
         {
-        unsigned short m_ExtensionSize;
+        uint16_t m_ExtensionSize;
         unsigned char  m_AuthorName[41];               //:> [41] must be 0x00
         unsigned char  m_AuthorComments[324];          //:> 4 line of 81 char where [81] must be 0x00
 
         //:> Date/Time Stamp (12 bytes)
-        unsigned short m_Month;
-        unsigned short m_Day;
-        unsigned short m_Year;
-        unsigned short m_Hour;
-        unsigned short m_Minute;
-        unsigned short m_Second;
+        uint16_t m_Month;
+        uint16_t m_Day;
+        uint16_t m_Year;
+        uint16_t m_Hour;
+        uint16_t m_Minute;
+        uint16_t m_Second;
 
         unsigned char  m_JobNameId[41];                //:> [41] must be 0x00
 
         //:> Job Time
-        unsigned short m_JobHours;
-        unsigned short m_JobMinutes;
-        unsigned short m_JobSeconds;
+        uint16_t m_JobHours;
+        uint16_t m_JobMinutes;
+        uint16_t m_JobSeconds;
 
         unsigned char  m_SoftwareId[41];               //:> [41] must be 0x00
-        unsigned short m_SoftwareVersion;              //:> Version number * 100 - e.g. v4.27b is 427
+        uint16_t m_SoftwareVersion;              //:> Version number * 100 - e.g. v4.27b is 427
         unsigned char  m_SoftwareVersionLetter;        //:> e.g. v4.27b -> this field is "b"
         uint32_t m_BackgroundColor;              //:> format is A:R:G:B where A is the alpha channel color.
 
         //:> Pixel Aspect Ration
-        unsigned short m_PixelRatioNum;               //:> Numerator
-        unsigned short m_PixelRatioDen;               //:> Denominator
+        uint16_t m_PixelRatioNum;               //:> Numerator
+        uint16_t m_PixelRatioDen;               //:> Denominator
 
         //:> Gamma Value - Should be between 0.0 and 10.0 with only one decimal
-        unsigned short m_GammaNum;                     //:> Numerator
-        unsigned short m_GammaDen;                     //:> Denominator
+        uint16_t m_GammaNum;                     //:> Numerator
+        uint16_t m_GammaDen;                     //:> Denominator
 
         uint32_t m_ColorCorrectionOffset;        //:> Offset for the color correction table in the file
         uint32_t m_PostageStampOffset;           //:> Offset for the postage stamp image in the file
@@ -224,7 +224,7 @@ private:
         Byte                  m_StampWidth;
         Byte                  m_StampHeight;
         HArrayAutoPtr<Byte>   m_pStampData;               //:> Same data type than image data but without compression
-        HArrayAutoPtr<unsigned short>  m_pColorCorrectionTable;    //:> If it exist, it is 256*4 short long.
+        HArrayAutoPtr<uint16_t>  m_pColorCorrectionTable;    //:> If it exist, it is 256*4 int16_t long.
         };
 
     //:>--------------------------------------------------

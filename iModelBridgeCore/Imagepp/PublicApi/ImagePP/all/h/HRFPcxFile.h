@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFPcxFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -106,7 +106,7 @@ public:
     virtual bool                         AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage);
 
     virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
-                                                                 unsigned short           pi_Resolution,
+                                                                 uint16_t           pi_Resolution,
                                                                  HFCAccessMode             pi_AccessMode);
     virtual void                          Save();
 
@@ -141,19 +141,19 @@ private:
         Byte Version;                     // Version Number
         Byte Encoding;                    // Encoding Format
         Byte BitsPerPixel;                // Bits per Pixel
-        unsigned short XStart;                      // Left of Image
-        unsigned short YStart;                      // Top of Image
-        unsigned short XEnd;                        // Right of Image
-        unsigned short YEnd;                        // Bottom Of Image
-        unsigned short HorzRes;                     // Horizontal Resolution
-        unsigned short VertRes;                     // Vertical Resolution
+        uint16_t XStart;                      // Left of Image
+        uint16_t YStart;                      // Top of Image
+        uint16_t XEnd;                        // Right of Image
+        uint16_t YEnd;                        // Bottom Of Image
+        uint16_t HorzRes;                     // Horizontal Resolution
+        uint16_t VertRes;                     // Vertical Resolution
         Byte Palette[48];                 // 16-Color EGA Palette
         Byte Reserved1;                   // Reserved (Always 0)
         Byte NumBitPlanes;                // Number of Bit Planes
-        unsigned short BytesPerLine;                // Bytes per Scanline
-        unsigned short PaletteType;                 // Palette Type
-        unsigned short HorzScreenSize;              // Horizontal Screen Size
-        unsigned short VertScreenSize;              // Vertical Screen Size
+        uint16_t BytesPerLine;                // Bytes per Scanline
+        uint16_t PaletteType;                 // Palette Type
+        uint16_t HorzScreenSize;              // Horizontal Screen Size
+        uint16_t VertScreenSize;              // Vertical Screen Size
         Byte Reserved2[54];               // Reserved (Always 0)
         } PcxFileHeader;
 

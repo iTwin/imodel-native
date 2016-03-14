@@ -306,7 +306,7 @@ HFCPtr<HRARaster> HPSObjectStore::LoadRaster(uint32_t pi_PageID)
 #ifdef __HMR_DEBUG
 
         //Only support cTIFF cache file whose decimation method are the same for all resolutions.
-        for (unsigned short resolutionInd = 1; resolutionInd < m_pCacheFileForPSS->GetPageDescriptor(0)->CountResolutions(); resolutionInd++)
+        for (uint16_t resolutionInd = 1; resolutionInd < m_pCacheFileForPSS->GetPageDescriptor(0)->CountResolutions(); resolutionInd++)
             {
             HASSERT(m_pCacheFileForPSS->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetDownSamplingMethod().m_DownSamplingMethod == 
                     m_pCacheFileForPSS->GetPageDescriptor(0)->GetResolutionDescriptor(resolutionInd)->GetDownSamplingMethod().m_DownSamplingMethod);

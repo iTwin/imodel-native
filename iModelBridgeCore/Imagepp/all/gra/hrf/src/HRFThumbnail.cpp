@@ -34,7 +34,7 @@ HRFThumbnail::HRFThumbnail(uint32_t                     pi_Width,
                                   const Byte*                 pi_pData,
                                   HFCAccessMode                pi_AccessMode,
                                   bool                        pi_IsComposed,
-                                  unsigned short              pi_BitsAlignment)
+                                  uint16_t              pi_BitsAlignment)
     {
     // Storage information
     m_pPixelType    = pi_rpPixelType;
@@ -112,7 +112,7 @@ uint32_t HRFThumbnail::GetHeight() const
 // public
 // Return the size of the data.
 //-----------------------------------------------------------------------------
-unsigned short HRFThumbnail::GetBitsAlignment() const
+uint16_t HRFThumbnail::GetBitsAlignment() const
     {
     return m_BitsAlignment;
     }

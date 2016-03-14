@@ -74,7 +74,7 @@ HRFGeoTiffProjectionTable::~HRFGeoTiffProjectionTable()
 /**----------------------------------------------------------------------------
  Get a record from the table.
 
- @param pi_Code     A short value that containt the search key
+ @param pi_Code     A int16_t value that containt the search key
  @param po_pRecord  An HRFGeoTiffProjectionRecord pointer that receive the
                     record value.
 
@@ -83,7 +83,7 @@ HRFGeoTiffProjectionTable::~HRFGeoTiffProjectionTable()
  @see HRFGeoTiffCompressedTable::GetValues()
  @see HRFGeoTiffProjectionRecord
 -----------------------------------------------------------------------------*/
-bool HRFGeoTiffProjectionTable::GetRecord(short pi_Code,
+bool HRFGeoTiffProjectionTable::GetRecord(int16_t pi_Code,
                                            HRFGeoTiffProjectionRecord*  po_pRecord) const
     {
     HPRECONDITION(po_pRecord != 0);
@@ -107,7 +107,7 @@ bool HRFGeoTiffProjectionTable::GetRecord(short pi_Code,
         if ((Result = (sscanf(RecordValues[1].c_str(), "%d", &Value)) == 1))
             {
             HPOSTCONDITION(Value >= SHRT_MIN && Value <= SHRT_MAX);
-            po_pRecord->UnitsCode = (short)Value;
+            po_pRecord->UnitsCode = (int16_t)Value;
             }
         }
     return Result;
@@ -137,7 +137,7 @@ HRFGeoTiffProjectionTable::HRFGeoTiffProjectionTable(const HFCPtr<HFCURL>& pi_rp
                                        s_CompressedTableSize);
 
     //:> initialize the table definition
-    for (unsigned short i = 0; i < s_NbColumns; i++)
+    for (uint16_t i = 0; i < s_NbColumns; i++)
         m_ColumnsArray.push_back(s_TableDef[i]);
 
     //:> set the size of the uncompressed data

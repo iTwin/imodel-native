@@ -867,7 +867,7 @@ Byte* HRABlitter::CreateWorkingBuffer(const HRPPixelType&  pi_rPixelType,
     // In 1 bit RLE, allocate worst case
     if (pi_rPixelType.IsCompatibleWith(HRPPixelTypeI1R8G8B8A8RLE::CLASS_ID) ||
         pi_rPixelType.IsCompatibleWith(HRPPixelTypeI1R8G8B8RLE::CLASS_ID))
-        BytesPerLine = (pi_Width * 2 + 2) * sizeof(unsigned short);
+        BytesPerLine = (pi_Width * 2 + 2) * sizeof(uint16_t);
     else
         BytesPerLine = ((pi_Width * pi_rPixelType.CountPixelRawDataBits()) + 7) / 8;
 

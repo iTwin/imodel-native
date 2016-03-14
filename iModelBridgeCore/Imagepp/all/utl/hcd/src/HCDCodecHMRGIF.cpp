@@ -139,7 +139,7 @@ size_t HCDCodecHMRGIF::CompressSubset(const  void* pi_pInData,
         {
         SetCurrentState(STATE_COMPRESS);
 
-        m_CompresionStruct.MinCodeSize = (short)GetBitsPerPixel();
+        m_CompresionStruct.MinCodeSize = (int16_t)GetBitsPerPixel();
         if (m_CompresionStruct.MinCodeSize < 2 || m_CompresionStruct.MinCodeSize > 9)
             {
             if (m_CompresionStruct.MinCodeSize == 1)
@@ -266,7 +266,7 @@ size_t HCDCodecHMRGIF::CompressSubset(const  void* pi_pInData,
         // Make sure the code buffer is flushed
         if (m_BitOffset > 0 && Status)
             {
-            unsigned short LastBlockSize = (m_BitOffset + 7)/8;
+            uint16_t LastBlockSize = (m_BitOffset + 7)/8;
             if (LastBlockSize <= MAXIMUM_BLOCK_SIZE)
                 {
                 Status = WriteBlock(LastBlockSize, (Byte*)po_pOutBuffer, OutDataBufferPos, po_OutBufferSize);
@@ -518,7 +518,7 @@ bool HCDCodecHMRGIF::HasLineIndexesTable() const
 // Initialize the table.
 // (Used in compression and decompression mode)
 //-----------------------------------------------------------------------------
-void HCDCodecHMRGIF::InitTable(short pi_MinCodeSize)
+void HCDCodecHMRGIF::InitTable(int16_t pi_MinCodeSize)
     {
     m_CodeSize  = pi_MinCodeSize + 1;
     m_ClearCode = 1 << pi_MinCodeSize;
@@ -529,7 +529,7 @@ void HCDCodecHMRGIF::InitTable(short pi_MinCodeSize)
 
     if (GetCurrentState() == STATE_COMPRESS)
         {
-        for (unsigned short i = 0; i < TABLE_SIZE; i++)
+        for (uint16_t i = 0; i < TABLE_SIZE; i++)
             m_pCodeTableCompress[i].code_id = 0;
         }
     }
@@ -551,20 +551,20 @@ size_t HCDCodecHMRGIF::GetSubsetMaxCompressedSize() const
 // Read a code.
 // (Used in decompression mode)
 //-----------------------------------------------------------------------------
-short HCDCodecHMRGIF::ReadCode(Byte* po_pDataBuffer,
+int16_t HCDCodecHMRGIF::ReadCode(Byte* po_pDataBuffer,
                                 size_t& pi_rPosBuffer,
                                 size_t& pi_rBufferSize)
     {
     HPRECONDITION(po_pDataBuffer != 0);
 
-    short m_ByteOffset;
-    short m_BitsLeft;
+    int16_t m_ByteOffset;
+    int16_t m_BitsLeft;
 
-    short BytesToMove, i;
-    short NewByte;
+    int16_t BytesToMove, i;
+    int16_t NewByte;
     int32_t temp;
 
-    static short mask[12] =
+    static int16_t mask[12] =
         {   0x001, 0x003, 0x007, 0x00F,
         0x01F, 0x03F, 0x07F, 0x0FF,
         0x1FF, 0x3FF, 0x7FF, 0xFFF
@@ -608,14 +608,14 @@ short HCDCodecHMRGIF::ReadCode(Byte* po_pDataBuffer,
         }
 
     m_BitOffset += m_CodeSize;
-    temp = (long) m_pCodeBuffer[m_ByteOffset] |
-           (long) m_pCodeBuffer[m_ByteOffset + 1] << 8  |
-           (long) m_pCodeBuffer[m_ByteOffset + 2] << 16;
+    temp = (int32_t) m_pCodeBuffer[m_ByteOffset] |
+           (int32_t) m_pCodeBuffer[m_ByteOffset + 1] << 8  |
+           (int32_t) m_pCodeBuffer[m_ByteOffset + 2] << 16;
 
     if (m_BitsLeft > 0)
-        temp >>= (long) m_BitsLeft;
+        temp >>= (int32_t) m_BitsLeft;
 
-    return (int) (temp) & mask[m_CodeSize - 1];
+    return (int32_t) (temp) & mask[m_CodeSize - 1];
     }
 
 
@@ -625,11 +625,11 @@ short HCDCodecHMRGIF::ReadCode(Byte* po_pDataBuffer,
 // Get a byte for the input buffer.
 // (Used in compression and decompression mode)
 //-----------------------------------------------------------------------------
-short HCDCodecHMRGIF::GetByte(Byte* po_pDataBuffer,
+int16_t HCDCodecHMRGIF::GetByte(Byte* po_pDataBuffer,
                                size_t& pi_rPosBuffer,
                                size_t& pi_rBufferSize)
     {
-    short Value = 0;
+    int16_t Value = 0;
 
     if (pi_rPosBuffer < pi_rBufferSize)
         {
@@ -712,7 +712,7 @@ bool HCDCodecHMRGIF::SetByte(uint32_t pi_Code,
 // SetDecompressMinCodeSize
 // Set LZW min code size that should be used for decompression
 //-----------------------------------------------------------------------------
-void HCDCodecHMRGIF::SetDecompressMinCodeSize(short pi_MinCodeSize)
+void HCDCodecHMRGIF::SetDecompressMinCodeSize(int16_t pi_MinCodeSize)
     {
     m_DecompressMinCodeSize = pi_MinCodeSize;
     }
@@ -723,7 +723,7 @@ void HCDCodecHMRGIF::SetDecompressMinCodeSize(short pi_MinCodeSize)
 // Write a block of maximum 255 bytes in the output buffer.
 // (Used in compression mode)
 //-----------------------------------------------------------------------------
-bool HCDCodecHMRGIF::WriteBlock(short pi_NbByte,
+bool HCDCodecHMRGIF::WriteBlock(int16_t pi_NbByte,
                                  Byte* po_pDataBuffer,
                                  size_t& pi_rPosBuffer,
                                  size_t& pi_rBufferSize)
@@ -735,7 +735,7 @@ bool HCDCodecHMRGIF::WriteBlock(short pi_NbByte,
     Status = SetByte(pi_NbByte, po_pDataBuffer, pi_rPosBuffer, pi_rBufferSize);
     if (Status)
         {
-        for (short i = 0; i < pi_NbByte; i++)
+        for (int16_t i = 0; i < pi_NbByte; i++)
             Status = SetByte(m_pCodeBufferCompress[i], po_pDataBuffer, pi_rPosBuffer, pi_rBufferSize);
         }
     return Status;
@@ -748,7 +748,7 @@ bool HCDCodecHMRGIF::WriteBlock(short pi_NbByte,
 // Write a code generate by the Compress method.
 // (Used in compression mode)
 //-----------------------------------------------------------------------------
-bool HCDCodecHMRGIF::WriteCode(short pi_Code,
+bool HCDCodecHMRGIF::WriteCode(int16_t pi_Code,
                                 Byte* po_pDataBuffer,
                                 size_t& pi_rPosBuffer,
                                 size_t& pi_rBufferSize)
@@ -756,8 +756,8 @@ bool HCDCodecHMRGIF::WriteCode(short pi_Code,
     bool Status = true;
 
     int32_t temp;
-    short ByteOffset;
-    short BitsLeft;
+    int16_t ByteOffset;
+    int16_t BitsLeft;
 
     ByteOffset = m_BitOffset >> 3;
     BitsLeft   = m_BitOffset & 7;
@@ -773,7 +773,7 @@ bool HCDCodecHMRGIF::WriteCode(short pi_Code,
 
     if (BitsLeft > 0)
         {
-        temp = ((long)pi_Code << BitsLeft) | m_pCodeBufferCompress[ByteOffset];
+        temp = ((int32_t)pi_Code << BitsLeft) | m_pCodeBufferCompress[ByteOffset];
         m_pCodeBufferCompress[ByteOffset] = CONVERT_TO_BYTE(temp);
         m_pCodeBufferCompress[ByteOffset + 1] = CONVERT_TO_BYTE(temp >> 8);
         m_pCodeBufferCompress[ByteOffset + 2] = CONVERT_TO_BYTE(temp >> 16);

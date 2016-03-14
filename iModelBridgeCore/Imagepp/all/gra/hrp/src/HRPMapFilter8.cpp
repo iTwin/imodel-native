@@ -106,7 +106,7 @@ HRPFilter* HRPMapFilter8::ComposeWith(const HRPFilter* pi_pFilter)
 
         // merge the tables
         for(uint32_t Channel = 0; Channel < m_Channels; Channel++)
-            for(unsigned short Index = 0; Index < 256; Index++)
+            for(uint16_t Index = 0; Index < 256; Index++)
                 {
                 pComposedFilter->m_pMap[(Channel << 8) + Index] =
                     pMapFilter->m_pMap[(Channel << 8) +

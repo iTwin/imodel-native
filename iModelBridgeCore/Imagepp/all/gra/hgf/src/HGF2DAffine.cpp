@@ -115,7 +115,7 @@ HGF2DAffine::HGF2DAffine(const HGF2DAffine& pi_rObj)
 
     -----------------------------------------------------------------------------
 */
-HGF2DAffine::HGF2DAffine(unsigned short pi_NumberOfPoints,
+HGF2DAffine::HGF2DAffine(uint16_t pi_NumberOfPoints,
                          const double*  pi_pTiePoints)
     : HGF2DTransfoModel()
     {

@@ -110,7 +110,7 @@ HRPPixelTypeFactory::~HRPPixelTypeFactory()
 // CreatePixelType
 //-----------------------------------------------------------------------------
 HFCPtr<HRPPixelType> HRPPixelTypeFactory::Create(  const HRPChannelOrg& pi_rChannelOrg,
-                                                   unsigned short pi_IndexBits) const
+                                                   uint16_t pi_IndexBits) const
     {
     // parse the list to find a similar channel org with the same index bits
     for(PixelTypeMap::const_iterator itr = m_PixelTypes.begin(); itr != m_PixelTypes.end(); ++itr)

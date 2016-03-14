@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF3DCoord.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF3DCoord
@@ -135,7 +135,7 @@ public:
     void               SetX(DataType pi_X);
     void               SetY(DataType pi_Y);
     void               SetZ(DataType pi_Y);
-    DataType&          operator[](int pi_CoordinateRef);
+    DataType&          operator[](int32_t pi_CoordinateRef);
 
     // MICROSOFT BUG ... DEFINITION MUST BE INSIDE DECLARATION
     /** -----------------------------------------------------------------------------
@@ -171,7 +171,7 @@ public:
                 (pi_CoordinateRef == HGF3DCoord<DataType>::Y) ? m_YValue : m_ZValue);
         }
 
-    const DataType&    operator[](int pi_CoordinateRef) const;
+    const DataType&    operator[](int32_t pi_CoordinateRef) const;
 
     // MICROSOFT BUG ... DEFINITION MUST BE INSIDE DECLARATION
     /** -----------------------------------------------------------------------------

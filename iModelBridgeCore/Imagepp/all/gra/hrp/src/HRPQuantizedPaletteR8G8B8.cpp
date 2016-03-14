@@ -31,7 +31,7 @@ HRPQuantizedPaletteR8G8B8::HRPQuantizedPaletteR8G8B8()
    Constructor for HRPQuantizedPaletteR8G8B8
    ----------------------------------------------------------------------------
 */
-HRPQuantizedPaletteR8G8B8::HRPQuantizedPaletteR8G8B8(unsigned short pi_MaxEntries,
+HRPQuantizedPaletteR8G8B8::HRPQuantizedPaletteR8G8B8(uint16_t pi_MaxEntries,
                                                      Byte pi_Precision)
     : HRPQuantizedPalette(pi_MaxEntries)
     {
@@ -40,7 +40,7 @@ HRPQuantizedPaletteR8G8B8::HRPQuantizedPaletteR8G8B8(unsigned short pi_MaxEntrie
     m_pTree = NULL;
 
     // reset to NULL reducible nodes
-    for(int i=0; i < 9; i++)
+    for(int32_t i=0; i < 9; i++)
         m_ReducibleNodes[i].clear();
 
     m_LeafCount = 0;
@@ -74,7 +74,7 @@ bool HRPQuantizedPaletteR8G8B8::AddCompositeValue(const void* pi_pValue,
     // Check if the color is in the ignore colors list
     //
     size_t NbIgnoreValues = m_IgnoreValues.size();
-    int  DontSkipTheValue(true);
+    int32_t  DontSkipTheValue(true);
     if (NbIgnoreValues > 0)
         {
         if (NbIgnoreValues == 1)
@@ -266,7 +266,7 @@ void HRPQuantizedPaletteR8G8B8::FlushEntries()
     m_pTree = NULL;
 
     // reset to NULL reducible nodes
-    for(int i=0; i < 9; i++)
+    for(int32_t i=0; i < 9; i++)
         m_ReducibleNodes[i].clear();
 
     m_LeafCount = 0;
@@ -281,7 +281,7 @@ void HRPQuantizedPaletteR8G8B8::FlushEntries()
          Can be NULL.
    ----------------------------------------------------------------------------
 */
-unsigned short HRPQuantizedPaletteR8G8B8::GetPalette(HRPPixelPalette*  po_pPixelPalette,
+uint16_t HRPQuantizedPaletteR8G8B8::GetPalette(HRPPixelPalette*  po_pPixelPalette,
                                               HRPHistogram*     po_pHistogram) const
     {
 
@@ -303,7 +303,7 @@ unsigned short HRPQuantizedPaletteR8G8B8::GetPalette(HRPPixelPalette*  po_pPixel
     if(m_pTree)
         EntryIndex = GetColors(m_pTree, po_pPixelPalette, EntryIndex, po_pHistogram);
 
-    return (unsigned short)m_LeafCount;
+    return (uint16_t)m_LeafCount;
     }
 
 
@@ -414,7 +414,7 @@ struct HRPQuantizedPaletteR8G8B8Node* HRPQuantizedPaletteR8G8B8::AddColor(
         pi_pNode->GreenSum = 0;
         pi_pNode->BlueSum = 0;
         pi_pNode->IsLeaf = false;
-        for(int i=0; i<8; i++)
+        for(int32_t i=0; i<8; i++)
             pi_pNode->pChild[i]=NULL;
 #else
         memset(pi_pNode, 0, sizeof(HRPQuantizedPaletteR8G8B8Node));
@@ -436,13 +436,13 @@ struct HRPQuantizedPaletteR8G8B8Node* HRPQuantizedPaletteR8G8B8::AddColor(
         {
         // if yes, update the content
 
-        if(pi_Count > (ULONG_MAX / 255))
-            pi_Count = ULONG_MAX / 255;
+        if(pi_Count > (UINT32_MAX / 255))
+            pi_Count = UINT32_MAX / 255;
 
-        if(pi_pNode->PixelCount < ((ULONG_MAX / 255) - pi_Count))
+        if(pi_pNode->PixelCount < ((UINT32_MAX / 255) - pi_Count))
             pi_pNode->PixelCount += pi_Count;
         else
-            pi_Count = ((ULONG_MAX / 255) - pi_pNode->PixelCount);
+            pi_Count = ((UINT32_MAX / 255) - pi_pNode->PixelCount);
 
         pi_pNode->RedSum += (pi_Red * pi_Count);
         pi_pNode->GreenSum += (pi_Green * pi_Count);
@@ -456,8 +456,8 @@ struct HRPQuantizedPaletteR8G8B8Node* HRPQuantizedPaletteR8G8B8::AddColor(
                         (((pi_Green & Mask[pi_Levels])  >> Shift) << 2) |
                         (((pi_Blue  & Mask[pi_Levels])  >> Shift) << 0);
 
-        int Children=0;
-        for(int i=0; i < 8; i++)
+        int32_t Children=0;
+        for(int32_t i=0; i < 8; i++)
             {
             if(pi_pNode->pChild[i] != NULL)
                 Children++;
@@ -491,7 +491,7 @@ void HRPQuantizedPaletteR8G8B8::DeleteTree(
     struct HRPQuantizedPaletteR8G8B8Node* pNode)
     {
     // we delete each child of the tree
-    for(int i=0; i < 8; i++)
+    for(int32_t i=0; i < 8; i++)
         {
         if(pNode->pChild[i])
             DeleteTree(pNode->pChild[i]);
@@ -523,7 +523,7 @@ void HRPQuantizedPaletteR8G8B8::ReduceNextNode()
 
     if (m_LeafCount < (uint32_t)(GetMaxEntries() << 3))
         {
-        uint32_t CurrentPixelCount = ULONG_MAX;
+        uint32_t CurrentPixelCount = UINT32_MAX;
         while (CurrentItr != m_ReducibleNodes[i].end())
             {
             uint32_t PixelCount = (*CurrentItr)->GetTotalPixelCount();

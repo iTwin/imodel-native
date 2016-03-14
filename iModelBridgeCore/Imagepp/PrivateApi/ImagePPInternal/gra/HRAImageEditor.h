@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PrivateApi/ImagePPInternal/gra/HRAImageEditor.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -448,7 +448,7 @@ protected:
 
         // cut previous run. So pWorkingRuns pos == posX
         if (PixelsFromCurrentRun > posX)
-            pWorkingRuns[WorkRunIndex - 1] -= (unsigned short)(PixelsFromCurrentRun - posX);
+            pWorkingRuns[WorkRunIndex - 1] -= (uint16_t)(PixelsFromCurrentRun - posX);
 
         // If we are not on the same state we must adjust with previous.
         if (ON_BLACK_STATE(NewRunIndex) != ON_BLACK_STATE(WorkRunIndex))
@@ -464,7 +464,7 @@ protected:
                     ToWrite -= RLE_RUN_LIMIT;
                     WorkRunIndex += 2;
                     }
-                pWorkingRuns[WorkRunIndex - 1] = (unsigned short)ToWrite;
+                pWorkingRuns[WorkRunIndex - 1] = (uint16_t)ToWrite;
 
                 // Append to previous run
                 PixelsFromNewRun = pNewData[NewRunIndex];
@@ -486,7 +486,7 @@ protected:
             PixelsFromNewRun += pNewData[NewRunIndex];
             ++NewRunIndex;
             }
-        memcpy(&pWorkingRuns[WorkRunIndex], &pNewData[RunIndexStart], (NewRunIndex - RunIndexStart)*sizeof(unsigned short));
+        memcpy(&pWorkingRuns[WorkRunIndex], &pNewData[RunIndexStart], (NewRunIndex - RunIndexStart)*sizeof(uint16_t));
         WorkRunIndex += (NewRunIndex - RunIndexStart);
 
         // I don't know if that can happen but adjust last run in case where pi_pRun encoded more that pixelCount
@@ -495,7 +495,7 @@ protected:
             HPOSTCONDITION(!"Number of pixels in pi_pRun is NOT equal to pixelCount");
 
             // cut previous run.
-            pWorkingRuns[WorkRunIndex - 1] -= (unsigned short)(PixelsFromNewRun - pixelCount);
+            pWorkingRuns[WorkRunIndex - 1] -= (uint16_t)(PixelsFromNewRun - pixelCount);
             PixelsFromNewRun = pixelCount;
             }
 
@@ -512,7 +512,7 @@ protected:
 
             // cut previous run. So pCurrentRun pos == posX + pixelCount
             if (PixelsFromCurrentRun > skipTo)
-                pCurrentRun[--CurrentRunIndex] = (unsigned short)(PixelsFromCurrentRun - skipTo);
+                pCurrentRun[--CurrentRunIndex] = (uint16_t)(PixelsFromCurrentRun - skipTo);
 
             size_t currentPos = skipTo;
 
@@ -528,7 +528,7 @@ protected:
                     ToWrite -= RLE_RUN_LIMIT;
                     WorkRunIndex += 2;
                     }
-                pWorkingRuns[WorkRunIndex - 1] = (unsigned short)ToWrite;
+                pWorkingRuns[WorkRunIndex - 1] = (uint16_t)ToWrite;
 
                 // Append to previous run
                 currentPos += pCurrentRun[CurrentRunIndex];
@@ -544,14 +544,14 @@ protected:
                 currentPos += pCurrentRun[CurrentRunIndex];
                 ++CurrentRunIndex;
                 }
-            memcpy(&pWorkingRuns[WorkRunIndex], &pCurrentRun[CurrentRunIndexStart], (CurrentRunIndex - CurrentRunIndexStart)*sizeof(unsigned short));
+            memcpy(&pWorkingRuns[WorkRunIndex], &pCurrentRun[CurrentRunIndexStart], (CurrentRunIndex - CurrentRunIndexStart)*sizeof(uint16_t));
             WorkRunIndex += (CurrentRunIndex - CurrentRunIndexStart);
 
             HPOSTCONDITION(currentPos == width);
 
             // Make sure we have the right number of pixels.
             if (currentPos > width)
-                pWorkingRuns[WorkRunIndex - 1] -= (unsigned short)(currentPos - width);
+                pWorkingRuns[WorkRunIndex - 1] -= (uint16_t)(currentPos - width);
             }
         else
             {
@@ -566,7 +566,7 @@ protected:
             }
 
         // Copy runs to real buffer.
-        size_t RunLenInBytes = WorkRunIndex * sizeof(unsigned short);
+        size_t RunLenInBytes = WorkRunIndex * sizeof(uint16_t);
 
         BeAssert(Rle1Manip::ValidateLineIntegrity(pWorkingRuns, width, RunLenInBytes));
         return RunLenInBytes;

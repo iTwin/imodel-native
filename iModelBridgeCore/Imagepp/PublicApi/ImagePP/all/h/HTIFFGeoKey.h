@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HTIFFGeoKey.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -18,24 +18,24 @@ BEGIN_IMAGEPP_NAMESPACE
 class HTIFFGeoKey
     {
 public:
-    typedef unsigned short GeoKeyID;
+    typedef uint16_t GeoKeyID;
 
     // Primary methods
 
     HTIFFGeoKey();
-    HTIFFGeoKey(const unsigned short* pi_pGeoKeyDirectory, uint32_t pi_GeoKeyCount,
+    HTIFFGeoKey(const uint16_t* pi_pGeoKeyDirectory, uint32_t pi_GeoKeyCount,
                 const double* pi_pGeoDoubleParams, uint32_t pi_GeoDoubleCount,
                 const char* pi_pGeoASCIIParams);
     virtual         ~HTIFFGeoKey();
 
     void            Reset();
 
-    bool           GetValue  (GeoKeyID pi_Key, unsigned short* po_pVal) const;
+    bool           GetValue  (GeoKeyID pi_Key, uint16_t* po_pVal) const;
     bool           GetValues (GeoKeyID pi_Key, double* po_pVal, uint32_t pi_Index=0, uint32_t pi_Count=1) const;
     bool           GetValues (GeoKeyID pi_Key, char* po_pVal, uint32_t pi_Index=0) const;
     bool           GetValues (GeoKeyID pi_Key, char** po_pVal, uint32_t pi_Index=0) const;
 
-    bool           SetValue  (GeoKeyID pi_Key, unsigned short pi_Val);
+    bool           SetValue  (GeoKeyID pi_Key, uint16_t pi_Val);
     bool           SetValue  (GeoKeyID pi_Key, double pi_Val, uint32_t pi_Index=0);
     bool           SetValues (GeoKeyID pi_Key, const double* pi_pVal, uint32_t pi_Index=0, uint32_t pi_Count=1);
     bool           SetValues (GeoKeyID pi_Key, const char* pi_pVal, uint32_t pi_Index=0);
@@ -43,7 +43,7 @@ public:
 
     // Remark! This method reset the Dirty flag...
     // and you must delete param...
-    void            GetGeoParams(unsigned short** po_ppGeoKeyDirectory, uint32_t* po_pGeoKeyCount,
+    void            GetGeoParams(uint16_t** po_ppGeoKeyDirectory, uint32_t* po_pGeoKeyCount,
                                  double** po_ppGeoDoubleParams, uint32_t* po_pGeoDoubleCount,
                                  char** po_ppGeoASCIIParams);
 
@@ -65,14 +65,14 @@ private:
 
     struct GeoKeyInfo
         {
-        unsigned short                 Count;
+        uint16_t                 Count;
         HTagInfo::DataType              Type;
 
         // If Count==1 then, the data is store directly in the
         // struct.
         union
             {
-            unsigned short DataShort;
+            uint16_t DataShort;
             double DataDouble;
             Byte*  pData;
             };

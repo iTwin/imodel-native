@@ -57,7 +57,7 @@ enum DoqColorType {DoqUndefinedColor, DoqBlackAndWhite, DoqRGB };
 
 string StringToLower(string strToConvert)
     {   //change each element of the string to lower case
-    for(unsigned int i=0; i<strToConvert.length(); i++)
+    for(string::size_type i=0; i<strToConvert.length(); i++)
         {
         strToConvert[i] = (char)tolower(strToConvert[i]);
         }
@@ -77,7 +77,7 @@ public:
         {
         // Block Capability
         Add (new HRFLineCapability (HFC_READ_ONLY,
-                                    ULONG_MAX,
+                                    UINT32_MAX,
                                     HRFBlockAccess::RANDOM));
 
         }
@@ -421,7 +421,7 @@ void HRFDoqFile::ReadHeader()
 // GetField
 // Find and stores the Field associated with the Keyword
 //-----------------------------------------------------------------------------
-bool HRFDoqFile::GetField(KeywordName pi_Keyword, uint32_t pi_ArgNb, unsigned short* po_pValReturn )const
+bool HRFDoqFile::GetField(KeywordName pi_Keyword, uint32_t pi_ArgNb, uint16_t* po_pValReturn )const
     {
     HPRECONDITION (m_pDoqFile != 0);
 
@@ -444,7 +444,7 @@ bool HRFDoqFile::GetField(KeywordName pi_Keyword, uint32_t pi_ArgNb, unsigned sh
             FoundKeyword = true;
         else
             FoundKeyword = false;
-        *po_pValReturn = (unsigned short) atoi(GetFieldString(KeywordLength, pi_ArgNb).c_str());
+        *po_pValReturn = (uint16_t) atoi(GetFieldString(KeywordLength, pi_ArgNb).c_str());
 
         }
 
@@ -520,7 +520,7 @@ string HRFDoqFile::GetField(KeywordName pi_Keyword, uint32_t pi_ArgNb )const
 // GetFieldString
 //
 //-----------------------------------------------------------------------------
-string HRFDoqFile::GetFieldString(int pi_Offset, uint32_t pi_ArgNb)const
+string HRFDoqFile::GetFieldString(int32_t pi_Offset, uint32_t pi_ArgNb)const
     {
     HPRECONDITION (m_pDoqFile != 0);
 
@@ -613,7 +613,7 @@ bool HRFDoqFile::GetKeywordLine(KeywordName pi_Keyword)const
     bool FoundKeyword = false;
     bool ReachEndHeader = false;
     uint32_t KeywordLength = 0;
-    unsigned short CurrentKeywordNb = 0;
+    uint16_t CurrentKeywordNb = 0;
 
     KeywordMap::const_iterator loc_end = m_KeywordMap.find(END);
     KeywordMap::const_iterator loc_keyword = m_KeywordMap.find(pi_Keyword);
@@ -858,8 +858,8 @@ void HRFDoqFile::CreateDescriptors()
 
     string ValueString;
     string ValueString2;
-    unsigned short GeoShortValue;
-    unsigned short GeoShortValue2;
+    uint16_t GeoShortValue;
+    uint16_t GeoShortValue2;
 
     // RESOLUTIONUNIT Tag
 
@@ -1188,7 +1188,7 @@ double HRFDoqFile::CalculateFactorModelToMeter()const
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFDoqFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                        unsigned short pi_Resolution,
+                                                        uint16_t pi_Resolution,
                                                         HFCAccessMode  pi_AccessMode)
     {
     HRFResolutionEditor* pEditor = 0;

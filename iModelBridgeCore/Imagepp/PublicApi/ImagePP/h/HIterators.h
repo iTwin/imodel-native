@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/h/HIterators.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -280,7 +280,7 @@ public:
     typename BaseIterator<IteratorType, BasePolicy>::iterator_t&                 operator++             ()                                               {
         return BaseIterator<IteratorType, BasePolicy>::_Increment();
         }
-    typename BaseIterator<IteratorType, BasePolicy>::iterator_t                  operator++             (int)                                            {
+    typename BaseIterator<IteratorType, BasePolicy>::iterator_t                  operator++             (int32_t)                                            {
         typename BasePolicy::iterator_t _Tmp = BaseIterator<IteratorType, BasePolicy>::_GetIter();
         ++BaseIterator<IteratorType, BasePolicy>::_GetIter();
         return (_Tmp);
@@ -379,7 +379,7 @@ public:
     typename BaseIteratorWithAutoRerverseConst<IteratorType, ReverseConstIteratorType, BasePolicy>::iterator_t&                 operator++             ()                                               {
         return BaseIteratorWithAutoRerverseConst<IteratorType, ReverseConstIteratorType, BasePolicy>::_Increment();
         }
-    typename BaseIteratorWithAutoRerverseConst<IteratorType, ReverseConstIteratorType, BasePolicy>::iterator_t                  operator++             (int)                                            {
+    typename BaseIteratorWithAutoRerverseConst<IteratorType, ReverseConstIteratorType, BasePolicy>::iterator_t                  operator++             (int32_t)                                            {
         typename BaseIteratorWithAutoRerverseConst<IteratorType, ReverseConstIteratorType, BasePolicy>::iterator_t _Tmp = BaseIteratorWithAutoRerverseConst<IteratorType, ReverseConstIteratorType, BasePolicy>::_GetIter();
         ++BaseIteratorWithAutoRerverseConst<IteratorType, ReverseConstIteratorType, BasePolicy>::_GetIter();
         return (_Tmp);
@@ -450,7 +450,7 @@ public:
     typename ForwardIterator<IteratorType, T, IsScalar, BasePolicy>::iterator_t&                 operator--             ()                                               {
         return ForwardIterator<IteratorType, T, IsScalar, BasePolicy>::_Decrement();
         }
-    typename ForwardIterator<IteratorType, T, IsScalar, BasePolicy>::iterator_t                  operator--             (int)                                            {
+    typename ForwardIterator<IteratorType, T, IsScalar, BasePolicy>::iterator_t                  operator--             (int32_t)                                            {
         typename ForwardIterator<IteratorType, T, IsScalar, BasePolicy>::iterator_t _Tmp = ForwardIterator<IteratorType, T, IsScalar, BasePolicy>::_GetIter();
         --ForwardIterator<IteratorType, T, IsScalar, BasePolicy>::_GetIter();
         return (_Tmp);
@@ -526,7 +526,7 @@ public:
     typename ForwardIteratorWithAutoReverseConst<IteratorType, ReverseConstIteratorType, T, IsScalar, BasePolicy>::iterator_t&                 operator--             ()                                               {
         return ForwardIteratorWithAutoReverseConst<IteratorType, ReverseConstIteratorType, T, IsScalar, BasePolicy>::_Decrement();
         }
-    typename ForwardIteratorWithAutoReverseConst<IteratorType, ReverseConstIteratorType, T, IsScalar, BasePolicy>::iterator_t                  operator--             (int)                                            {
+    typename ForwardIteratorWithAutoReverseConst<IteratorType, ReverseConstIteratorType, T, IsScalar, BasePolicy>::iterator_t                  operator--             (int32_t)                                            {
         typename ForwardIteratorWithAutoReverseConst<IteratorType, ReverseConstIteratorType, T, IsScalar, BasePolicy>::iterator_t _Tmp = ForwardIteratorWithAutoReverseConst<IteratorType, ReverseConstIteratorType, T, IsScalar, BasePolicy>::_GetIter();
         --ForwardIteratorWithAutoReverseConst<IteratorType, ReverseConstIteratorType, T, IsScalar, BasePolicy>::_GetIter();
         return (_Tmp);
@@ -772,9 +772,9 @@ typedef BidirectionalIteratorWithAutoReverseConst<IteratorType, ReverseConstIter
 *   E.g. (for an iterator that iterates on elements of "MyContainer"):
 *
 *   class MyContainer{
-*   vector<int*> MyIntArray;
+*   vector<int32_t*> MyIntArray;
 *
-*   typedef DereferenceForwardIterator<MyContainer, vector<int*>::const_iterator, const int>
+*   typedef DereferenceForwardIterator<MyContainer, vector<int32_t*>::const_iterator, const int32_t>
 *                                                   const_iterator;
 *
 *   const_iterator Begin () {return const_iterator(MyIntArray.begin());};
@@ -861,11 +861,11 @@ typedef ForwardIterator<DereferenceForwardIterator<ContainerType, WrappedIterato
 *   E.g. (for an iterator that iterates on elements of "MyContainer"):
 *
 *   class MyContainer{
-*   vector<int*> MyIntArray;
+*   vector<int32_t*> MyIntArray;
 *
-*   typedef DereferenceForwardIteratorWithAutoReverseConst<MyContainer, vector<int*>::iterator, vector<int*>::const_iterator, int>
+*   typedef DereferenceForwardIteratorWithAutoReverseConst<MyContainer, vector<int32_t*>::iterator, vector<int32_t*>::const_iterator, int32_t>
 *                                                   iterator;
-*   typedef DereferenceForwardIteratorWithAutoReverseConst<MyContainer, vector<int*>::const_iterator, vector<int*>::iterator, const int>
+*   typedef DereferenceForwardIteratorWithAutoReverseConst<MyContainer, vector<int32_t*>::const_iterator, vector<int32_t*>::iterator, const int32_t>
 *                                                   const_iterator;
 *
 *   const_iterator Begin () const {return const_iterator(MyIntArray.begin());};
@@ -977,9 +977,9 @@ public:
 *   E.g. (for an iterator that iterates on elements of "MyContainer"):
 *
 *   class MyContainer{
-*   vector<int*> MyIntArray;
+*   vector<int32_t*> MyIntArray;
 *
-*   typedef DereferenceRandomAccessIterator<MyContainer, vector<int*>::const_iterator, const int>
+*   typedef DereferenceRandomAccessIterator<MyContainer, vector<int32_t*>::const_iterator, const int32_t>
 *                                                   const_iterator;
 *
 *   const_iterator Begin () const {return const_iterator(MyIntArray.begin());};
@@ -1104,11 +1104,11 @@ public:
 *   E.g. (for an iterator that iterates on elements of "MyContainer"):
 *
 *   class MyContainer{
-*   vector<int*> MyIntArray;
+*   vector<int32_t*> MyIntArray;
 *
-*   typedef DereferenceRandomAccessIteratorWithAutoReverseConst<MyContainer, vector<int*>::iterator, vector<int*>::const_iterator, int>
+*   typedef DereferenceRandomAccessIteratorWithAutoReverseConst<MyContainer, vector<int32_t*>::iterator, vector<int32_t*>::const_iterator, int32_t>
 *                                                   iterator;
-*   typedef DereferenceRandomAccessIteratorWithAutoReverseConst<MyContainer, vector<int*>::const_iterator, vector<int*>::iterator, const int>
+*   typedef DereferenceRandomAccessIteratorWithAutoReverseConst<MyContainer, vector<int32_t*>::const_iterator, vector<int32_t*>::iterator, const int32_t>
 *                                                   const_iterator;
 *
 *   const_iterator Begin () const {return const_iterator(MyIntArray.begin());};

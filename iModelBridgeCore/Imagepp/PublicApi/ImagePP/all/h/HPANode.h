@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPANode.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -88,7 +88,7 @@ private:
 
 #ifdef __HMR_DEBUG_MEMBER
 public:
-    IMAGEPP_EXPORT virtual void        PrintState(int pi_Level = 0);
+    IMAGEPP_EXPORT virtual void        PrintState(int32_t pi_Level = 0);
 #endif
     };
 

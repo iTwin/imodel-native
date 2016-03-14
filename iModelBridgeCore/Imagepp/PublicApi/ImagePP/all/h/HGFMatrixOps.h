@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ImagePP/all/h/HGFMatrixOps.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //-----------------------------------------------------------------------------
@@ -25,7 +25,7 @@ double CalculateDeterminant(const HFCMatrix<Rows, Rows, NumericType>& pi_rMatrix
 template<class NumericType>
 double CalculateDeterminant(const HFCMatrix<2, 2, NumericType>& pi_rMatrix);
 
-template<int Rows, class NumericType>
+template<int32_t Rows, class NumericType>
 HFCMatrix<Rows - 1, Rows - 1, NumericType> ExtractSubMatrix(const HFCMatrix<Rows, Rows, NumericType>& pi_rMatrix,
                                                             size_t pi_Row,
                                                             size_t pi_Column);

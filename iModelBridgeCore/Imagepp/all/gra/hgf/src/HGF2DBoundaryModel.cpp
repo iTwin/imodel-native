@@ -368,7 +368,7 @@ HFCPtr<HGF2DTransfoModel> HGF2DBoundaryModel::ComputeDirectModelFromPoints (vect
     double MyMat[4][4];
     double pt[18];
 
-    for (int x=0; x<3; x++)
+    for (int32_t x=0; x<3; x++)
         {
         pt[x*6]   = pi_srcPts[x*2];
         pt[x*6+1] = pi_srcPts[x*2+1];

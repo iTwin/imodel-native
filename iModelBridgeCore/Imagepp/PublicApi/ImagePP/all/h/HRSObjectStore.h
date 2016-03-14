@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRSObjectStore.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRSObjectStore
@@ -81,8 +81,8 @@ public:
 
     // Method for the HRAUnlimitedResolutionRaster
     uint32_t       CreateResolution        (double pi_Scale);
-    void            RemoveResolution        (unsigned short pi_Resolution);
-    void            ChangeResolution        (unsigned short pi_ResIndex,
+    void            RemoveResolution        (uint16_t pi_Resolution);
+    void            ChangeResolution        (uint16_t pi_ResIndex,
                                              double pi_Resolution,
                                              uint64_t* po_pResWidth,
                                              uint64_t* po_pResHeight);
@@ -230,7 +230,7 @@ private:
     void                    SaveModel               (HRAStoredRaster*   pi_pRaster);
     void                    SaveLogicalShape        (HRAStoredRaster*   pi_pRaster);
     void                    SavePalette             (HRAStoredRaster*   pi_pRaster,
-                                                     unsigned short    pi_Resolution = 0);
+                                                     uint16_t    pi_Resolution = 0);
     void                    SaveHistogram           (HRAPyramidRaster*  pi_pRaster);
 
     void                    SaveResamplingMethod    (HRAPyramidRaster*  pi_pRaster);

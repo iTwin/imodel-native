@@ -48,7 +48,7 @@ enum DISPLAY_REP
 
 /*
 void GDALErrorHandler(UShort     pi_ErrClass,
-                      int         pi_ErrNo,
+                      int32_t         pi_ErrNo,
                       const char* pi_Msg);
 */
 
@@ -61,14 +61,14 @@ public:
     friend class HRFGdalSupportedFileEditor;
     /*
         friend void  GDALErrorHandler(UShort     pi_ErrClass,
-                                      int         pi_ErrNo,
+                                      int32_t         pi_ErrNo,
                                       const char* pi_Msg);
       */
     // Class ID for this class.
     HDECLARE_CLASS_ID(HRFFileId_GdalSupported, HRFRasterFile)
 
     virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
-                                                                 unsigned short           pi_Resolution,
+                                                                 uint16_t           pi_Resolution,
                                                                  HFCAccessMode             pi_AccessMode);
 
     virtual void                          Save();
@@ -112,9 +112,9 @@ protected:
     bool                   GetGeoRefMatrix();
     bool                   SetGeoRefMatrix();
 
-    GDALRasterBand*         GetRasterBand(int i)const;
+    GDALRasterBand*         GetRasterBand(int32_t i)const;
     GDALDataset*            GetDataSet() const;
-    int                     GetNbImgBands() const;
+    int32_t                     GetNbImgBands() const;
     signed char                  GetBandInd(Byte pi_ColorType) const;
 
     //access
@@ -125,12 +125,12 @@ protected:
     bool                   IsReadPixelSigned() const;
     bool                   IsGrayScale()const;
     bool                   HasPalette()const;
-    int                     GetNbBands()const;
-    int                     GetNbDisplayableBands()const;
-    int                     GetImageWidth()const;
-    int                     GetImageHeight()const;
-    int                     GetBlockWidth()const;
-    int                     GetBlockHeight()const;
+    int32_t                     GetNbBands()const;
+    int32_t                     GetNbDisplayableBands()const;
+    int32_t                     GetImageWidth()const;
+    int32_t                     GetImageHeight()const;
+    int32_t                     GetBlockWidth()const;
+    int32_t                     GetBlockHeight()const;
     uint32_t                GetTotalRowBytes() const;
     void                    SetHasPalette(bool pi_hasPalette);
     void                    SetColorAttributes();
@@ -170,8 +170,8 @@ protected:
 
     virtual bool AreDataNeedToBeScaled();
 
-    static double GetMinimumPossibleValue(unsigned short pi_DataType);
-    static double GetMaximumPossibleValue(unsigned short pi_DataType);
+    static double GetMinimumPossibleValue(uint16_t pi_DataType);
+    static double GetMaximumPossibleValue(uint16_t pi_DataType);
 
 
     typedef struct GeoRefInfo
@@ -187,12 +187,12 @@ protected:
     bool                                m_IsGeoReference;
     GeoRefInfo                          m_GeoRefInfo;
     uint32_t                           m_GTModelType;
-    unsigned short                      m_GTRasterType;
+    uint16_t                      m_GTRasterType;
 
     HFCPtr<HRPPixelType>                m_pPixelType;
-    int                                 m_NbBands;
-    int                                 m_BlockWidth;
-    int                                 m_BlockHeight;
+    int32_t                                 m_NbBands;
+    int32_t                                 m_BlockWidth;
+    int32_t                                 m_BlockHeight;
     Byte                                m_ShiftSize;
     signed char                         m_GrayBandInd;
     signed char                         m_RedBandInd;
@@ -209,7 +209,7 @@ protected:
     //TR 244928, CR 247184
     //- Temporary patch - These variables should be private
     bool                                m_Signed;
-    unsigned short                      m_BitsPerPixelPerBand;
+    uint16_t                      m_BitsPerPixelPerBand;
     DISPLAY_REP                         m_DisplayRep;
 
 private:
@@ -231,7 +231,7 @@ private:
     void DetectPixelTypeYCbCr();
 
     void WriteColorTable(uint32_t              pi_Page = 0,
-                         unsigned short       pi_Resolution = 0);
+                         uint16_t       pi_Resolution = 0);
 
     void AddSupportedGeoTag(HFCPtr<HRFRasterFileCapabilities>& pi_rpSupportedGeoTags,
                             HFCPtr<HPMGenericAttribute>&       pi_rpGdalObtainedTag,

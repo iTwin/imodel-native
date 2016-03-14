@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/h/HTraits.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -130,7 +130,7 @@ struct SameConstAsTrait
 template <typename Base, typename Derived>
 class IsBaseOfTrait
     {
-    typedef int _TRUE_TYPE;
+    typedef int32_t _TRUE_TYPE;
     typedef char _FASE_TYPE;
 
     static _TRUE_TYPE _TestBase (const Base*);

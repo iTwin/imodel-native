@@ -78,7 +78,7 @@ HRFGeoTiffCoordSysTable::~HRFGeoTiffCoordSysTable()
 /**----------------------------------------------------------------------------
  Get a record from the table.
 
- @param pi_Code     A short value that containt the search key
+ @param pi_Code     A int16_t value that containt the search key
  @param po_pRecord  An HRFGeoTiffCoordSysRecord pointer that receive the
                     record value.
 
@@ -87,7 +87,7 @@ HRFGeoTiffCoordSysTable::~HRFGeoTiffCoordSysTable()
  @see HRFGeoTiffCompressedTable::GetValues()
  @see HRFGeoTiffCoordSysRecord
 -----------------------------------------------------------------------------*/
-bool HRFGeoTiffCoordSysTable::GetRecord(short pi_Code,
+bool HRFGeoTiffCoordSysTable::GetRecord(int16_t pi_Code,
                                          HRFGeoTiffCoordSysRecord* po_pRecord) const
     {
     HPRECONDITION(po_pRecord != 0);
@@ -111,19 +111,19 @@ bool HRFGeoTiffCoordSysTable::GetRecord(short pi_Code,
         if ((Result = (sscanf(RecordValues[1].c_str(), "%d", &Value)) == 1))
             {
             HPOSTCONDITION(Value >= SHRT_MIN && Value <= SHRT_MAX);
-            po_pRecord->ProjectionCode = (short)Value;
+            po_pRecord->ProjectionCode = (int16_t)Value;
             }
 
         if (Result && (Result = (sscanf(RecordValues[2].c_str(), "%d", &Value)) == 1))
             {
             HPOSTCONDITION(Value >= SHRT_MIN && Value <= SHRT_MAX);
-            po_pRecord->UnitsCode = (short)Value;
+            po_pRecord->UnitsCode = (int16_t)Value;
             }
 
         if (Result && (Result = (sscanf(RecordValues[3].c_str(), "%d", &Value)) == 1))
             {
             HPOSTCONDITION(Value >= SHRT_MIN && Value <= SHRT_MAX);
-            po_pRecord->GeographicSourceCSCode = (short)Value;
+            po_pRecord->GeographicSourceCSCode = (int16_t)Value;
             }
 
         po_pRecord->HorizCS_EPSG_Name = RecordValues[4];
@@ -242,7 +242,7 @@ HRFGeoTiffCoordSysTable::HRFGeoTiffCoordSysTable(const HFCPtr<HFCURL>& pi_rpCoor
                                        s_CompressedTableSize);
 
     //:> initialize the table definition
-    for (unsigned short i = 0; i < s_NbColumns; i++)
+    for (uint16_t i = 0; i < s_NbColumns; i++)
         m_ColumnsArray.push_back(s_TableDef[i]);
 
     //:> set the size of the uncompressed data
@@ -271,28 +271,28 @@ void HRFGeoTiffCoordSysTable::FillRecord(size_t                    pi_IndexRecor
     memcpy(m_pWorkingBuffer, pTable+TableColumnsItr->m_ColumnStartPos, TableColumnsItr->m_ColumnSize);
     m_pWorkingBuffer[TableColumnsItr->m_ColumnSize] = 0;
     if (sscanf((const char*)m_pWorkingBuffer.get(), "%d", &Value) == 1)
-        po_pRecord->CSCode = (short)Value;
+        po_pRecord->CSCode = (int16_t)Value;
 
     // Field TransfoModel Code
     TableColumnsItr++;
     memcpy(m_pWorkingBuffer, pTable+TableColumnsItr->m_ColumnStartPos, TableColumnsItr->m_ColumnSize);
     m_pWorkingBuffer[TableColumnsItr->m_ColumnSize] = 0;
     if (sscanf((const char*)m_pWorkingBuffer.get(), "%d", &Value) == 1)
-        po_pRecord->ProjectionCode = (short)Value;
+        po_pRecord->ProjectionCode = (int16_t)Value;
 
     // Field Units Code
     TableColumnsItr++;
     memcpy(m_pWorkingBuffer, pTable+TableColumnsItr->m_ColumnStartPos, TableColumnsItr->m_ColumnSize);
     m_pWorkingBuffer[TableColumnsItr->m_ColumnSize] = 0;
     if (sscanf((const char*)m_pWorkingBuffer.get(), "%d", &Value) == 1)
-        po_pRecord->UnitsCode = (short)Value;
+        po_pRecord->UnitsCode = (int16_t)Value;
 
     // Field Source CS Code
     TableColumnsItr++;
     memcpy(m_pWorkingBuffer, pTable+TableColumnsItr->m_ColumnStartPos, TableColumnsItr->m_ColumnSize);
     m_pWorkingBuffer[TableColumnsItr->m_ColumnSize] = 0;
     if (sscanf((const char*)m_pWorkingBuffer.get(), "%d", &Value) == 1)
-        po_pRecord->GeographicSourceCSCode = (short)Value;
+        po_pRecord->GeographicSourceCSCode = (int16_t)Value;
 
     // Field HorizCS - EPSG Name
     TableColumnsItr++;

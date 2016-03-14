@@ -171,7 +171,7 @@ struct cTiffPyramidCreator : RasterCreator
             HRFBlockType blockType = m_pPixelType->CountPixelRawDataBits() == 1 ? HRFBlockType::STRIP : HRFBlockType::TILE;
 
             // Create the resolution list.
-            for (unsigned short ResCount = 0 ; ResCount < pPyramidDesc->CountResolutions(); ++ResCount)
+            for (uint16_t ResCount = 0 ; ResCount < pPyramidDesc->CountResolutions(); ++ResCount)
                 {
                 // Create a resolution descriptor.
                 HFCPtr<HRFResolutionDescriptor> pResDesc = 
@@ -795,7 +795,7 @@ TEST_F(HRARasterCopyFromTesterNonLinear, TestAllTilesAreCopied)
     {
     // Create binary bitmap filled with black. The size of the bitmap is chosen so that 
     // ParabolaTransfoModel creates a 256x256 empty tile in the middle of the strip
-    int IMAGE_WIDTH = 2000;
+    int32_t IMAGE_WIDTH = 2000;
     HFCPtr<HGF2DCoordSys> pCoordSys = s_pHMRWorld->GetCoordSysReference(HGF2DWorld_UNKNOWNWORLD);
     HFCPtr<HRABitmap> pSourceBitmap = HRABitmap::Create(IMAGE_WIDTH, 300, NULL, pCoordSys, new HRPPixelTypeV8Gray8(), 32).GetPtr();
 

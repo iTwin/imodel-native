@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HTIFFDirectory.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HTIFFDirectory
@@ -61,30 +61,30 @@ public:
     bool               GetConvertedValues (HTagID pi_Tag, vector<double>& po_rValues);
 
     bool               GetValues (HTagID pi_Tag, Byte* po_pVal);
-    IMAGEPP_EXPORT bool        GetValues (HTagID pi_Tag, unsigned short* po_pVal);
+    IMAGEPP_EXPORT bool        GetValues (HTagID pi_Tag, uint16_t* po_pVal);
     IMAGEPP_EXPORT bool        GetValues (HTagID pi_Tag, uint32_t* po_pVal);
     bool               GetValues (HTagID pi_Tag, double* po_pVal);
     IMAGEPP_EXPORT bool               GetValues (HTagID pi_Tag, uint64_t* po_pVal);
     bool               GetValues (HTagID pi_Tag, char** po_ppVal);
     IMAGEPP_EXPORT bool               GetValues (HTagID pi_Tag, WChar** po_ppVal);
-    bool               GetValues (HTagID pi_Tag, unsigned short* po_pVal1, unsigned short* po_pVal2);
+    bool               GetValues (HTagID pi_Tag, uint16_t* po_pVal1, uint16_t* po_pVal2);
     bool               GetValues (HTagID pi_Tag, uint32_t* po_pVal1, uint32_t* po_pVal2);     // RATIONAL
-    bool               GetValues (HTagID pi_Tag, uint32_t* po_pCount, unsigned short** po_ppVal);
+    bool               GetValues (HTagID pi_Tag, uint32_t* po_pCount, uint16_t** po_ppVal);
     IMAGEPP_EXPORT bool               GetValues (HTagID pi_Tag, uint32_t* po_pCount, uint32_t** po_ppVal);
     bool               GetValues (HTagID pi_Tag, uint32_t* po_pCount, double** po_ppVal);
     IMAGEPP_EXPORT bool        GetValues (HTagID pi_Tag, uint32_t* po_pCount, Byte** po_ppVal);
     IMAGEPP_EXPORT bool               GetValues (HTagID pi_Tag, uint32_t* po_pCount, uint64_t** po_ppVal);
 
 
-    bool               SetValues (HTagID pi_Tag, unsigned short pi_Val);
+    bool               SetValues (HTagID pi_Tag, uint16_t pi_Val);
     IMAGEPP_EXPORT bool               SetValues (HTagID pi_Tag, uint32_t pi_Val);
     bool               SetValues (HTagID pi_Tag, double pi_Val);
     IMAGEPP_EXPORT bool               SetValues (HTagID pi_Tag, uint64_t pi_Val);
     IMAGEPP_EXPORT bool      SetValuesA (HTagID pi_Tag, const char*  pi_pVal);
     IMAGEPP_EXPORT bool      SetValuesW (HTagID pi_Tag, const WChar*  pi_pVal);
-    bool               SetValues (HTagID pi_Tag, unsigned short pi_Val1,  unsigned short pi_Val2);
+    bool               SetValues (HTagID pi_Tag, uint16_t pi_Val1,  uint16_t pi_Val2);
     IMAGEPP_EXPORT bool               SetValues (HTagID pi_Tag, uint32_t pi_pVal1, uint32_t pi_pVal2);     // RATIONAL
-    bool               SetValues (HTagID pi_Tag, uint32_t pi_Count, const unsigned short* pi_pVal);
+    bool               SetValues (HTagID pi_Tag, uint32_t pi_Count, const uint16_t* pi_pVal);
     IMAGEPP_EXPORT bool               SetValues (HTagID pi_Tag, uint32_t pi_Count, const uint32_t* pi_pVal);
     bool               SetValues (HTagID pi_Tag, uint32_t pi_Count, const double* pi_pVal);
     IMAGEPP_EXPORT bool               SetValues (HTagID pi_Tag, uint32_t pi_Count, const Byte* pi_pVal);

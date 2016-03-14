@@ -57,7 +57,7 @@ struct JpegMarkerReader
     struct Marker
         {
         Byte const* pData;          // A pointer to the marker, including 0xFFnn Marker.
-        int         length;         // The total length of the marker. Including jpegMarker(0xFFnn) and length header.
+        int32_t         length;         // The total length of the marker. Including jpegMarker(0xFFnn) and length header.
         };
 
     struct JpegException
@@ -76,7 +76,7 @@ struct JpegMarkerReader
         m_DataSize = jpegDataSize;
         }    
 
-    int NEXTBYTE() 
+    int32_t NEXTBYTE() 
         {
         if(m_Offset >= m_DataSize)
             return EOF; 
@@ -85,9 +85,9 @@ struct JpegMarkerReader
         }
 
     /* Read one byte, testing for EOF */
-    int read_1_byte (void)
+    int32_t read_1_byte (void)
         {
-        int c;
+        int32_t c;
         c = NEXTBYTE();
         if (c == EOF)
             throw JpegException(L"Premature EOF in JPEG file"); 
@@ -95,11 +95,11 @@ struct JpegMarkerReader
         return c;
         }
 
-    /* Read 2 bytes, convert to unsigned int */
+    /* Read 2 bytes, convert to uint32_t */
     /* All 2-byte quantities in JPEG markers are MSB first */
-    unsigned int read_2_bytes (void)
+    uint32_t read_2_bytes (void)
         {
-        int c1, c2;
+        int32_t c1, c2;
 
         c1 = NEXTBYTE();
         if (c1 == EOF)
@@ -107,7 +107,7 @@ struct JpegMarkerReader
         c2 = NEXTBYTE();
         if (c2 == EOF)
             throw JpegException(L"Premature EOF in JPEG file"); 
-        return (((unsigned int) c1) << 8) + ((unsigned int) c2);
+        return (((uint32_t) c1) << 8) + ((uint32_t) c2);
         }
 
     /*
@@ -119,10 +119,10 @@ struct JpegMarkerReader
     * NB: this routine must not be used after seeing SOS marker, since it will
     * not deal correctly with FF/00 sequences in the compressed image data...
     */
-    int next_marker (void)
+    int32_t next_marker (void)
         {
-        int c;
-        int discarded_bytes = 0;
+        int32_t c;
+        int32_t discarded_bytes = 0;
 
         /* Find 0xFF byte; count and skip any non-FFs. */
         c = read_1_byte();
@@ -151,9 +151,9 @@ struct JpegMarkerReader
     * input file weren't actually JPEG at all, next_marker might read the whole
     * file and then return a misleading error message...
     */
-    int first_marker (void)
+    int32_t first_marker (void)
         {
-        int c1, c2;
+        int32_t c1, c2;
 
         c1 = NEXTBYTE();
         c2 = NEXTBYTE();
@@ -170,10 +170,10 @@ struct JpegMarkerReader
      * be fooled by 0xFF bytes that might appear within the parameter segment;
      * such bytes do NOT introduce new markers.
      */
-    unsigned int skip_variable (void)
+    uint32_t skip_variable (void)
         /* Skip over an unknown or uninteresting variable-length marker */
         {
-        unsigned int length, lengthRet;
+        uint32_t length, lengthRet;
 
         /* Get the marker parameter length count */
         length = lengthRet = read_2_bytes();
@@ -193,14 +193,14 @@ struct JpegMarkerReader
     /*
      * Parse the marker stream until SOS or EOI is seen.
      */
-    int scan_JPEG_header(vector<Marker>& DQT, Marker& SOF, vector<Marker>& DHT, Marker& SOS)
+    int32_t scan_JPEG_header(vector<Marker>& DQT, Marker& SOF, vector<Marker>& DHT, Marker& SOS)
         {
         DQT.clear();
         DHT.clear();
         SOF.length = SOS.length = 0;
         SOF.pData = SOS.pData = NULL;
 
-        int marker;
+        int32_t marker;
 
         /* Expect SOI at start of file */
         if (first_marker() != M_SOI)
@@ -281,7 +281,7 @@ struct JpegMarkerReader
         {
         try
             {
-            int marker = scan_JPEG_header(DQT, SOF, DHT, SOS);
+            int32_t marker = scan_JPEG_header(DQT, SOF, DHT, SOS);
 
             if(M_SOS != marker && M_EOI != marker)
                 return BSIERROR;
@@ -833,7 +833,7 @@ void HCDCodecIJG::SetSubsamplingMode(SubsamplingModes pi_Mode)
 // SetQuantizationTable
 // PLEASE CALL FOR SLOT 0 BEFORE SLOT 1
 //-----------------------------------------------------------------------------
-void HCDCodecIJG::SetQuantizationTable(int pi_Slot, const unsigned int* pi_pTable, bool pi_UnZigZag)
+void HCDCodecIJG::SetQuantizationTable(int32_t pi_Slot, const uint32_t* pi_pTable, bool pi_UnZigZag)
     {
     HPRECONDITION (m_pJpegCodec8Bits == 0 || m_pJpegCodec12Bits == 0);
 

@@ -66,7 +66,7 @@ typedef struct
     {
     WString                          FileName;
     const HFCAuthenticationCallback* pPasswordCallback;
-    unsigned short                  RetryCount;
+    uint16_t                  RetryCount;
     bool                            Canceled;
     bool                            HasPassword;
     } OpenPasswordCallbackInfo;
@@ -505,7 +505,7 @@ public:
 
 private:
 
-    unsigned short            m_CurrentInd;
+    uint16_t            m_CurrentInd;
     PDDoc                     m_Document;
 
     uint32_t                 m_MainThreadId;
@@ -784,7 +784,7 @@ HRFPDFFile::~HRFPDFFile()
 // Public
 // Function for initializing the PDF library
 //-----------------------------------------------------------------------------
-int HRFPDFFile::InitializePDFLibraryInThread()
+int32_t HRFPDFFile::InitializePDFLibraryInThread()
     {
     //BEIJING_WIP_THREADS.
     if (!PdfLibInitializerManager::Initialize())
@@ -816,7 +816,7 @@ void HRFPDFFile::TerminatePDFLibraryInThread()
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFPDFFile::CreateResolutionEditor(uint32_t        pi_Page,
-                                                        unsigned short pi_Resolution,
+                                                        uint16_t pi_Resolution,
                                                         HFCAccessMode   pi_AccessMode)
     {
     HPRECONDITION(pi_Page < CountPages());
@@ -981,7 +981,7 @@ HFCPtr<HRFPageDescriptor> HRFPDFFile::GetPageDescriptor(uint32_t pi_Page) const
         HFCPtr<HPMGenericAttribute> pTag;
 
         //The resolution is always expressed in inches (DPI)
-        unsigned short             ResolutionUnit = 2;
+        uint16_t             ResolutionUnit = 2;
 
         pTag = new HRFAttributeResolutionUnit(ResolutionUnit);
         TagList.Set(pTag);
@@ -1134,7 +1134,7 @@ void HRFPDFFile::SetLookAhead(uint32_t               pi_Page,
 // Sets the LookAhead for a shape
 //-----------------------------------------------------------------------------
 void HRFPDFFile::SetLookAhead(uint32_t               pi_Page,
-                              unsigned short        pi_Resolution,
+                              uint16_t        pi_Resolution,
                               const HVEShape&        pi_rShape,
                               uint32_t               pi_ConsumerID,
                               bool                  pi_Async)
@@ -1201,8 +1201,8 @@ void HRFPDFFile::SetLookAhead(uint32_t               pi_Page,
                                      BlockWidth,
                                      BlockHeight);
 
-        uint32_t MinX        = ULONG_MAX;
-        uint32_t MinY        = ULONG_MAX;
+        uint32_t MinX        = UINT32_MAX;
+        uint32_t MinY        = UINT32_MAX;
         uint32_t MaxX        = 0;
         uint32_t MaxY        = 0;
         bool  IsTileFound = false;
@@ -1220,8 +1220,8 @@ void HRFPDFFile::SetLookAhead(uint32_t               pi_Page,
             while (BlockIndex != HGFTileIDDescriptor::INDEX_NOT_FOUND)
                 {
                 TileDesc.GetPositionFromIndex(BlockIndex, &PosX, &PosY);
-                HASSERT(PosX <= ULONG_MAX);
-                HASSERT(PosY <= ULONG_MAX);
+                HASSERT(PosX <= UINT32_MAX);
+                HASSERT(PosY <= UINT32_MAX);
 
                 MinX = MIN(MinX, (uint32_t)PosX);
                 MinY = MIN(MinY, (uint32_t)PosY);
@@ -1392,7 +1392,7 @@ void* HRFPDFFile::GetDocument(uint32_t pi_Page) const
 // Remove the LookAhead entries for this editor
 //-----------------------------------------------------------------------------
 void HRFPDFFile::RemoveLookAhead(uint32_t   pi_Page,
-                                 unsigned short pi_Resolution)
+                                 uint16_t pi_Resolution)
     {
     //Something with more bits than UInt64 should be used on architecture with pointer greater than 64 bits.
     HPRECONDITION(sizeof(GetContext(pi_Page).GetPtr()) <= 8);

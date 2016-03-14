@@ -105,7 +105,7 @@ size_t HCDCodecTGARLE::CompressSubset(const void* pi_pInData,
     // else, we use the raster data in pi_pInData without conversion.
     if (BytesPerPixel == 2)
         {
-        unsigned short pOutput;
+        uint16_t pOutput;
         for (i = 0, j = 0; j < pi_InDataSize; j+=3)
             {
             pOutput = ((Byte*)pi_pInData)[j] >> 3;
@@ -201,7 +201,7 @@ size_t HCDCodecTGARLE::DecompressSubset(const void* pi_pInData,
     {
     uint32_t i;
     uint32_t j;
-    unsigned short Input;
+    uint16_t Input;
     Byte  Count;
     Byte* pPixel = 0;
     size_t  NbBytes = 0;
@@ -243,7 +243,7 @@ size_t HCDCodecTGARLE::DecompressSubset(const void* pi_pInData,
                 if (((Byte*)pi_pInData)[i++] & 0x80)
                     {
                     // RunLength packet
-                    Input = *(unsigned short*)((Byte*)pi_pInData + i);
+                    Input = *(uint16_t*)((Byte*)pi_pInData + i);
                     i += 2;
                     pPixel[0] = ((Input & 0x7c00) >> 10) * 0xff / 0x1f;
                     pPixel[1] = (Byte)(((Input & 0x3e0) >> 5)   * 0xff / 0x1f);
@@ -259,7 +259,7 @@ size_t HCDCodecTGARLE::DecompressSubset(const void* pi_pInData,
                     // RawData packet
                     for (j = 0; j < Count; j++)
                         {
-                        Input = *(unsigned short*)((Byte*)pi_pInData + i);
+                        Input = *(uint16_t*)((Byte*)pi_pInData + i);
                         i += 2;
                         ((Byte*)po_pOutBuffer)[NbBytes++] = ((Input & 0x7c00) >> 10) * 0xff / 0x1f;
                         ((Byte*)po_pOutBuffer)[NbBytes++] = (Byte)(((Input & 0x3e0) >> 5)   * 0xff / 0x1f);
