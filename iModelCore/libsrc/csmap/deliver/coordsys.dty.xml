@@ -6982,9 +6982,6 @@
                     <KeyName>GRMNY-S5</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>DHDN/BeTA2010.Gauss3d-1</KeyName>
-                  </Member>
-                  <Member>
                     <KeyName>DHDN/BeTA2010.Gauss3d-2</KeyName>
                   </Member>
                   <Member>
@@ -6995,9 +6992,6 @@
                   </Member>
                   <Member>
                     <KeyName>DHDN/BeTA2010.Gauss3d-5</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>DHDN/BeTA.Gauss3d-1</KeyName>
                   </Member>
                   <Member>
                     <KeyName>DHDN/BeTA.Gauss3d-2</KeyName>
@@ -7043,21 +7037,6 @@
                   </Member>
                   <Member>
                     <KeyName>EPSG:31469-A</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:31491</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:31492</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:31493</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:31494</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:31495</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:3396</KeyName>
@@ -14133,15 +14112,6 @@
                                 <KeyName>EPSG:2809</KeyName>
                               </Member>
                               <Member>
-                                <KeyName>MICHIGAN.East</KeyName>
-                              </Member>
-                              <Member>
-                                <KeyName>MICHIGAN.OldCentral</KeyName>
-                              </Member>
-                              <Member>
-                                <KeyName>MICHIGAN.West</KeyName>
-                              </Member>
-                              <Member>
                                 <KeyName>MichiganGeoRefHP</KeyName>
                               </Member>
                               <Member>
@@ -14197,24 +14167,6 @@
                               </Member>
                               <Member>
                                 <KeyName>EPSG:3078</KeyName>
-                              </Member>
-                              <Member>
-                                <KeyName>EPSG:26801</KeyName>
-                              </Member>
-                              <Member>
-                                <KeyName>EPSG:26802</KeyName>
-                              </Member>
-                              <Member>
-                                <KeyName>EPSG:26803</KeyName>
-                              </Member>
-                              <Member>
-                                <KeyName>EPSG:26811</KeyName>
-                              </Member>
-                              <Member>
-                                <KeyName>EPSG:26812</KeyName>
-                              </Member>
-                              <Member>
-                                <KeyName>EPSG:26813</KeyName>
                               </Member>
                               <Member>
                                 <KeyName>NAD27.MichiganEast</KeyName>
@@ -27702,6 +27654,27 @@
                   <Member>
                     <KeyName>EPSG:31465</KeyName>
                   </Member>
+                  <Member>
+                    <KeyName>DHDN/BeTA.Gauss3d-1</KeyName>
+                  </Member>                    
+                  <Member>
+                    <KeyName>DHDN/BeTA2010.Gauss3d-1</KeyName>
+                  </Member>                    
+                  <Member>
+                    <KeyName>EPSG:31491</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:31492</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:31493</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:31494</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:31495</KeyName>
+                  </Member>                    
                 </Members>
               </Group>
               <Group>
@@ -28560,6 +28533,33 @@
                        </Member>
                        <Member>
                          <KeyName>MIHP-S</KeyName>
+                       </Member>
+                       <Member>
+                         <KeyName>MICHIGAN.East</KeyName>
+                       </Member>
+                       <Member>
+                         <KeyName>MICHIGAN.OldCentral</KeyName>
+                       </Member>
+                       <Member>
+                         <KeyName>MICHIGAN.West</KeyName>
+                       </Member>
+                       <Member>
+                         <KeyName>EPSG:26801</KeyName>
+                       </Member>
+                       <Member>
+                         <KeyName>EPSG:26802</KeyName>
+                       </Member>
+                       <Member>
+                         <KeyName>EPSG:26803</KeyName>
+                       </Member>
+                       <Member>
+                         <KeyName>EPSG:26811</KeyName>
+                       </Member>
+                       <Member>
+                         <KeyName>EPSG:26812</KeyName>
+                       </Member>
+                       <Member>
+                         <KeyName>EPSG:26813</KeyName>
                        </Member>
                      </Members>
                    </Group>
