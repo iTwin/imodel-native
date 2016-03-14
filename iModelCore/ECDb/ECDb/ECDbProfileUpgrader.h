@@ -78,6 +78,28 @@ private:
     };
 
 //=======================================================================================
+// @bsiclass                                                 Krischan.Eberle      03/2016
+//+===============+===============+===============+===============+===============+======
+struct ECDbProfileUpgrader_3200 : ECDbProfileUpgrader
+    {
+//intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
+private:
+    virtual SchemaVersion _GetTargetVersion() const override { return SchemaVersion(3, 2, 0, 0); }
+    virtual DbResult _Upgrade(ECDbR) const override;
+    };
+
+//=======================================================================================
+// @bsiclass                                                 Krischan.Eberle      03/2016
+//+===============+===============+===============+===============+===============+======
+struct ECDbProfileUpgrader_3201 : ECDbProfileUpgrader
+    {
+    //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
+    private:
+        virtual SchemaVersion _GetTargetVersion() const override { return SchemaVersion(3, 2, 0, 1); }
+        virtual DbResult _Upgrade(ECDbR) const override;
+    };
+
+//=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      07/2013
 //+===============+===============+===============+===============+===============+======
 struct ECDbProfileECSchemaUpgrader

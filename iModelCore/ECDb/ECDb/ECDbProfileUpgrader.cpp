@@ -12,6 +12,41 @@ using namespace std;
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //*************************************** ECDbProfileUpgrader_XXX *********************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle        03/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3201::_Upgrade(ECDbR ecdb) const
+    {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "DELETE FROM ec_Property WHERE lower(Name) IN ('parentecinstanceid','ecpropertypathid','ecarrayindex') AND "
+                                     "ClassId IN (SELECT c.Id FROM ec_Class c, ec_Schema s "
+                                     "WHERE c.SchemaId=s.Id AND lower(s.Name) LIKE 'ecdb_system' AND lower(c.Name) LIKE 'ecsqlsystemproperties')"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Preparing SQL to delete obsolete ECProperties 'ParentECInstanceId', 'ECPropertyPathId' and 'ECArrayIndex' "
+                   "from ECClass 'ECDb_System.ECSqlSystemProperties' failed. SQL: %s. Error: ", stmt.GetSql(), ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (BE_SQLITE_DONE != stmt.Step())
+        {
+        LOG.errorv("ECDb profile upgrade failed: Executing SQL to delete obsolete ECProperties 'ParentECInstanceId', 'ECPropertyPathId' and 'ECArrayIndex' "
+                   "from ECClass 'ECDb_System.ECSqlSystemProperties' failed. SQL: %s. Error: ", stmt.GetSql(), ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debugv("ECDb profile upgrade: Deleted obsolete ECProperties obsolete ECProperties 'ParentECInstanceId', 'ECPropertyPathId' and 'ECArrayIndex' "
+               "from ECClass 'ECDb_System.ECSqlSystemProperties'. %d rows deleted.", ecdb.GetModifiedRowCount());
+    return BE_SQLITE_OK;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle        03/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3200::_Upgrade(ECDbR ecdb) const
+    {
+    LOG.errorv("Version of file's ECDb profile is too old and an auto-upgrade is not available.", ecdb.GetDbFileName());
+    return BE_SQLITE_ERROR_ProfileTooOld;
+    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle        02/2016
@@ -148,7 +183,7 @@ DbResult ECDbProfileUpgrader::AlterColumnsInView (ECDbR ecdb, Utf8CP viewName, U
         return stat;
 
     bvector<Utf8String> columnNameList;
-    BeStringUtilities::Split(allColumnNamesAfter, ",", NULL, columnNameList);
+    BeStringUtilities::Split(allColumnNamesAfter, ",", nullptr, columnNameList);
 
     Utf8String columnsDdl;
     const size_t columnCount = columnNameList.size ();
@@ -385,9 +420,6 @@ Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml ()
         "        <ECProperty propertyName='SourceECClassId' typeName='long' description='Represents the SourceECClassId system property of an ECRelationship used by the EC->DB Mapping.' />"
         "        <ECProperty propertyName='TargetECInstanceId' typeName='long' description='Represents the TargetECInstanceId system property of an ECRelationship used by the EC->DB Mapping.' />"
         "        <ECProperty propertyName='TargetECClassId' typeName='long' description='Represents the TargetECClassId system property of an ECRelationship used by the EC->DB Mapping.' />"
-        "        <ECProperty propertyName='ParentECInstanceId' typeName='long' description='For ECClasses mapped to secondary table storage (e.g. ECStructs), this system property represents the ECInstanceId of the parent (embedding) ECInstance.' />"
-        "        <ECProperty propertyName='ECPropertyPathId' typeName='long' description='For ECClasses mapped to secondary table storage, this system property represents the id of the ECProperty in the owning ECClass to which a row in the secondary table refers to.' />"
-        "        <ECProperty propertyName='ECArrayIndex' typeName='int' description='For EC arrays mapped to secondary table storage, this system property represents the index of the array element which a row in the secondary table represents.' />"
         "    </ECEntityClass> "
         "</ECSchema>";
     }

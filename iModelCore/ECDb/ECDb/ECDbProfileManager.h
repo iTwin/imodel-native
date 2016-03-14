@@ -17,14 +17,13 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ECDbProfileManager
     {
 private:
+    //! Minimum version of the ECDb profile which can still be auto-upgraded to the latest profile version.
+    static const SchemaVersion MINIMUM_SUPPORTED_VERSION;
+
     typedef std::vector<std::unique_ptr<ECDbProfileUpgrader>> ECDbProfileUpgraderSequence;
     static Utf8CP const PROFILENAME;
 
     static const PropertySpec PROFILEVERSION_PROPSPEC;
-    //! Minimum version of the ECDb profile which can still be auto-upgraded to the latest profile version.
-    static const SchemaVersion MINIMUM_SUPPORTED_VERSION;
-    //!Version expected by this version of the ECDb software
-    static const SchemaVersion EXPECTED_VERSION;
 
     static ECDbProfileUpgraderSequence s_upgraderSequence;
 
@@ -39,8 +38,8 @@ private:
     static DbResult ReadProfileVersion(SchemaVersion& profileVersion, ECDbCR, Savepoint& defaultTransaction);
     static DbResult AssignProfileVersion(ECDbR);
 
+    static SchemaVersion GetExpectedVersion() { return GetLatestUpgrader().GetTargetVersion(); }
     static ECDbProfileUpgrader const& GetLatestUpgrader() { return *GetUpgraderSequence().back(); }
-    static bool HasUpgradersForExpectedVersion() { return !GetUpgraderSequence().empty() && GetLatestUpgrader().GetTargetVersion() == EXPECTED_VERSION; }
 
     static ECDbProfileManager::ECDbProfileUpgraderSequence::const_iterator GetUpgraderSequenceFor(SchemaVersion const& currentProfileVersion);
     static ECDbProfileManager::ECDbProfileUpgraderSequence const& GetUpgraderSequence();

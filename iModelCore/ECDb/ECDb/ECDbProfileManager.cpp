@@ -14,8 +14,6 @@ Utf8CP const ECDbProfileManager::PROFILENAME = "ECDb";
 const PropertySpec ECDbProfileManager::PROFILEVERSION_PROPSPEC = PropertySpec("SchemaVersion", "ec_Db");
 
 //static
-const SchemaVersion ECDbProfileManager::EXPECTED_VERSION = SchemaVersion(3, 2, 0, 0);
-//static
 const SchemaVersion ECDbProfileManager::MINIMUM_SUPPORTED_VERSION = SchemaVersion(3, 0, 0, 0);
 
 //static
@@ -118,20 +116,11 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
     if (stat != BE_SQLITE_OK)
         return stat;       //File is no ECDb file, i.e. doesn't have the ECDb profile
 
+    const SchemaVersion expectedVersion = GetExpectedVersion();
     bool profileNeedsUpgrade = false;
-    stat = ECDb::CheckProfileVersion(profileNeedsUpgrade, EXPECTED_VERSION, actualProfileVersion, MINIMUM_SUPPORTED_VERSION, openParams.IsReadonly(), PROFILENAME);
+    stat = ECDb::CheckProfileVersion(profileNeedsUpgrade, expectedVersion, actualProfileVersion, MINIMUM_SUPPORTED_VERSION, openParams.IsReadonly(), PROFILENAME);
     if (!profileNeedsUpgrade)
         return stat;
-
-    if (!HasUpgradersForExpectedVersion())
-        {
-        if (BE_SQLITE_OK != stat)
-            LOG.errorv("Version of file's %s profile is too old and an auto-upgrade is not available.", PROFILENAME, ecdb.GetDbFileName());
-
-        return stat;
-        }
-
-    LOG.infov("Version of file's %s profile is too old. Upgrading file now...", PROFILENAME, ecdb.GetDbFileName());
 
     //if ECDb file is readonly, reopen it in read-write mode
     if (!openParams._ReopenForSchemaUpgrade(ecdb))
@@ -155,8 +144,9 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
     for (;upgraderIterator != GetUpgraderSequence().end(); ++upgraderIterator)
         {
         std::unique_ptr<ECDbProfileUpgrader> const& upgrader = *upgraderIterator;
-        if (BE_SQLITE_OK != upgrader->Upgrade(ecdb))
-            return BE_SQLITE_ERROR_ProfileUpgradeFailed; //context dtor ensures that changes are rolled back
+        stat = upgrader->Upgrade(ecdb);
+        if (BE_SQLITE_OK != stat)
+            return stat; //context dtor ensures that changes are rolled back
         }
 
     if (BE_SQLITE_OK != ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ecdb))
@@ -179,7 +169,7 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
         LOG.infov("Upgraded %s profile from version %d.%d.%d.%d to version %d.%d.%d.%d (in %.4lf seconds) in file '%s'.",
                   PROFILENAME,
                   actualProfileVersion.GetMajor(), actualProfileVersion.GetMinor(), actualProfileVersion.GetSub1(), actualProfileVersion.GetSub2(),
-                  EXPECTED_VERSION.GetMajor(), EXPECTED_VERSION.GetMinor(), EXPECTED_VERSION.GetSub1(), EXPECTED_VERSION.GetSub2(),
+                  expectedVersion.GetMajor(), expectedVersion.GetMinor(), expectedVersion.GetSub1(), expectedVersion.GetSub2(),
                   timer.GetElapsedSeconds(), ecdb.GetDbFileName());
         }
 
@@ -193,7 +183,7 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
 DbResult ECDbProfileManager::AssignProfileVersion(ECDbR ecdb)
     {
     //Save the profile version as string (JSON format)
-    const Utf8String profileVersionStr = EXPECTED_VERSION.ToJson();
+    const Utf8String profileVersionStr = GetExpectedVersion().ToJson();
     return ecdb.SavePropertyString(PROFILEVERSION_PROPSPEC, profileVersionStr);
     }
 
@@ -258,6 +248,8 @@ ECDbProfileManager::ECDbProfileUpgraderSequence const& ECDbProfileManager::GetUp
         //upgraders must be listed in ascending order
         s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3001()));
         s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3100()));
+        s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3200()));
+        s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3201()));
         }
 
     return s_upgraderSequence;
