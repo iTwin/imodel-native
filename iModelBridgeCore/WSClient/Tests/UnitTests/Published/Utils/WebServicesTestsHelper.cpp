@@ -9,6 +9,20 @@
 #include "WebServicesTestsHelper.h"
 #include "../../../../Cache/Util/JsonUtil.h"
 
+bool operator <= (const DateTime& lhs, const DateTime& rhs)
+    {
+    DateTime::CompareResult result = DateTime::Compare(lhs, rhs);
+    EXPECT_TRUE(DateTime::CompareResult::Error != result);
+    return result == DateTime::CompareResult::Equals || result == DateTime::CompareResult::EarlierThan;
+    }
+
+bool operator >= (const DateTime& lhs, const DateTime& rhs)
+    {
+    DateTime::CompareResult result = DateTime::Compare(lhs, rhs);
+    EXPECT_TRUE(DateTime::CompareResult::Error != result);
+    return result == DateTime::CompareResult::Equals || result == DateTime::CompareResult::LaterThan;
+    }
+
 bool rapidjson::operator==(const rapidjson::Value& a, const rapidjson::Value& b)
     {
     return JsonUtil::AreValuesEqual(a, b);

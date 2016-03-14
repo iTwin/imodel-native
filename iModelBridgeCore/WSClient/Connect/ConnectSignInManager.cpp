@@ -107,13 +107,7 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(SamlTokenPtr to
         ->Then<SignInResult>([=] (SamlTokenResult result)
         {
         if (!result.IsSuccess())
-            {
-            // TODO: return error directly and avoid additonal localized strings
-            if (HttpStatus::Unauthorized == result.GetError().GetHttpStatus())
-                return SignInResult::Error(ConnectLocalizedString(ALERT_SignInFailed_Message));
-
-            return SignInResult::Error(ConnectLocalizedString(ALERT_SignInFailed_ServerError));
-            }
+            return SignInResult::Error(result.GetError());
 
         BeMutexHolder lock(m_cs);
 
@@ -144,13 +138,7 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithCredentials(Credentia
         ->Then<SignInResult>([=] (SamlTokenResult result)
         {
         if (!result.IsSuccess())
-            {
-            // TODO: return error directly and avoid additonal localized strings
-            if (HttpStatus::Unauthorized == result.GetError().GetHttpStatus())
-                return SignInResult::Error(ConnectLocalizedString(ALERT_SignInFailed_Message));
-
-            return SignInResult::Error(ConnectLocalizedString(ALERT_SignInFailed_ServerError));
-            }
+            return SignInResult::Error(result.GetError());
 
         BeMutexHolder lock(m_cs);
 
@@ -300,7 +288,7 @@ IConnectTokenProviderPtr ConnectSignInManager::GetCachedTokenProvider(Utf8String
     IConnectTokenProviderPtr baseProvider = GetBaseTokenProviderMatchingAuthenticationType();
 
     auto delegationProvider = std::make_shared<DelegationTokenProvider>(m_client, rpUri, baseProvider);
-    delegationProvider->Configure(m_config.delegationTokenLifetime);
+    delegationProvider->Configure(m_config.delegationTokenLifetime, m_config.delegationTokenExpirationThreshold);
 
     m_tokenProviders[rpUri] = delegationProvider;
     return delegationProvider;

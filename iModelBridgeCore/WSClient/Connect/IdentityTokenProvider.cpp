@@ -43,7 +43,7 @@ IdentityTokenProviderPtr IdentityTokenProvider::Create(IImsClientPtr client, ITo
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IdentityTokenProvider::Configure(uint64_t tokenLifetime, uint64_t tokenRefreshRate)
+void IdentityTokenProvider::Configure(uint32_t tokenLifetime, uint32_t tokenRefreshRate)
     {
     m_tokenLifetime = tokenLifetime;
     m_tokenRefreshRate = tokenRefreshRate;

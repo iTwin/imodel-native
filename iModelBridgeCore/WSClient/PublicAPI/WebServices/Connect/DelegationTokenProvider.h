@@ -25,11 +25,18 @@ struct DelegationTokenProvider : public IConnectTokenProvider
         IImsClientPtr m_client;
         Utf8String m_rpUri;
         IConnectTokenProviderPtr m_parentTokenProvider;
+
         SamlTokenPtr m_token;
+        uint32_t m_tokenLifetime;
+        DateTime m_tokenUpdateDate;
+
         UniqueTaskHolder<SamlTokenResult> m_tokenRetriever;
-        uint64_t m_tokenLifetime;
+
+        uint32_t m_tokenRequestLifetime;
+        uint32_t m_tokenExpirationThreshold;
 
     private:
+        void ValidateToken();
         AsyncTaskPtr<SamlTokenResult> RetrieveNewToken(bool updateParentTokenIfFailed = true);
 
     public:
@@ -39,8 +46,8 @@ struct DelegationTokenProvider : public IConnectTokenProvider
         //! @param parentTokenProvider token provider for parent/identity token to be used to delegate new token
         WSCLIENT_EXPORT DelegationTokenProvider(IImsClientPtr client, Utf8String rpUri, IConnectTokenProviderPtr parentTokenProvider);
 
-        //! Set new token lifetime
-        WSCLIENT_EXPORT void Configure(uint64_t tokenLifetime);
+        //! Set new token lifetime and expiration threshold in minutes
+        WSCLIENT_EXPORT void Configure(uint32_t tokenLifetime, uint32_t tokenExpirationThreshold);
 
         WSCLIENT_EXPORT SamlTokenPtr UpdateToken() override;
         WSCLIENT_EXPORT SamlTokenPtr GetToken() override;
