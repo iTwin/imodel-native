@@ -724,7 +724,6 @@ RasterProgressiveDisplay::RasterProgressiveDisplay(RasterQuadTreeR raster, Rende
 :m_raster(raster),
  m_viewport(context.GetViewportR())
     {
-    DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT
     }
 
 //----------------------------------------------------------------------------------------
