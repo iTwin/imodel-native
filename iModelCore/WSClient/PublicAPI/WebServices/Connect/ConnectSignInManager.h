@@ -43,11 +43,13 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         struct Configuration
             {
             //! Identity token lifetime to be requested in minutes 
-            uint64_t identityTokenLifetime = 7 * 24 * 60;
+            uint32_t identityTokenLifetime = 7 * 24 * 60;
             //! Identity token lifetime refresh rate in minutes 
-            uint64_t identityTokenRefreshRate = 60;
+            uint32_t identityTokenRefreshRate = 60;
             //! Delegation token lifetime to be requested in minutes
-            uint64_t delegationTokenLifetime = 60;
+            uint32_t delegationTokenLifetime = 60;
+            //! Renew delegation token 5 minutes (or other) before it expires
+            uint32_t delegationTokenExpirationThreshold = 5;
             };
 
     private:

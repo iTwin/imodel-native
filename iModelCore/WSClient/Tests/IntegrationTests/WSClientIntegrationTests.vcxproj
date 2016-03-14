@@ -71,6 +71,7 @@
     <ClCompile Include="Cache\CachingDataSourceTests.cpp" />
     <ClCompile Include="Cache\ECDbAdapterTests.cpp" />
     <ClCompile Include="Configuration\BuddiClientTests.cpp" />
+    <ClCompile Include="Examples\ExampleTests.cpp" />
     <ClCompile Include="Repository\Extensions\HierarchicalSearchTests.cpp" />
     <ClCompile Include="Repository\Extensions\NavigationTests.cpp" />
     <ClCompile Include="Repository\Extensions\WorkflowStateManagerTests.cpp" />
@@ -88,6 +89,7 @@
     <ClInclude Include="Cache\CachingDataSourceTests.h" />
     <ClInclude Include="Cache\ECDbAdapterTests.h" />
     <ClInclude Include="Configuration\BuddiClientTests.h" />
+    <ClInclude Include="Examples\ExampleTests.h" />
     <ClInclude Include="Repository\Extensions\HierarchicalSearchTests.h" />
     <ClInclude Include="Repository\Extensions\NavigationTests.h" />
     <ClInclude Include="Repository\Extensions\WorkflowStateManagerTests.h" />

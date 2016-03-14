@@ -12,20 +12,6 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-bool operator <= (const DateTime& lhs, const DateTime& rhs)
-    {
-    DateTime::CompareResult result = DateTime::Compare(lhs, rhs);
-    EXPECT_TRUE(DateTime::CompareResult::Error != result);
-    return result == DateTime::CompareResult::Equals || result == DateTime::CompareResult::EarlierThan;
-    }
-
-bool operator >= (const DateTime& lhs, const DateTime& rhs)
-    {
-    DateTime::CompareResult result = DateTime::Compare(lhs, rhs);
-    EXPECT_TRUE(DateTime::CompareResult::Error != result);
-    return result == DateTime::CompareResult::Equals || result == DateTime::CompareResult::LaterThan;
-    }
-
 bool VerifyHasRelationship
 (
 std::shared_ptr<DataSourceCache> cache,

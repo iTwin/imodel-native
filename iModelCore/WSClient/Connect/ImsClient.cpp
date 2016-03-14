@@ -214,7 +214,7 @@ Utf8String ImsClient::GetClientRelyingPartyUriForWtrealm(ClientInfoCR info)
     {
     if (info.GetApplicationProductId().empty())
         {
-        BeAssert(false);
+        BeAssert(false && "Application ProductId is missing in ClientInfo");
         return nullptr;
         }
 

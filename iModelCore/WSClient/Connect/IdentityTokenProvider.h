@@ -25,8 +25,8 @@ struct IdentityTokenProvider : IConnectTokenProvider, std::enable_shared_from_th
         ITokenStorePtr m_store;
         std::function<void()> m_tokenExpiredHandler;
 
-        uint64_t m_tokenLifetime;
-        uint64_t m_tokenRefreshRate;
+        uint32_t m_tokenLifetime;
+        uint32_t m_tokenRefreshRate;
 
     private:
         IdentityTokenProvider(IImsClientPtr client, ITokenStorePtr store, std::function<void()> tokenExpiredHandler);
@@ -43,7 +43,7 @@ struct IdentityTokenProvider : IConnectTokenProvider, std::enable_shared_from_th
             );
 
         //! Set new token lifetime and refresh rate in minutes
-        WSCLIENT_EXPORT void Configure(uint64_t tokenLifetime, uint64_t tokenRefreshRate);
+        WSCLIENT_EXPORT void Configure(uint32_t tokenLifetime, uint32_t tokenRefreshRate);
 
         WSCLIENT_EXPORT SamlTokenPtr UpdateToken() override;
         WSCLIENT_EXPORT SamlTokenPtr GetToken() override;

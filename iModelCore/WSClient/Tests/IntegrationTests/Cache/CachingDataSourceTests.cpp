@@ -65,6 +65,17 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectGlobal_Succeeds)
 
     auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
     ASSERT_FALSE(nullptr == result.GetValue());
+    auto ds = result.GetValue();
+
+    auto txn = ds->StartCacheTransaction();
+    CachedResponseKey key(txn.GetCache().FindOrCreateRoot(nullptr), "Foo");
+    txn.Commit();
+
+    WSQuery query("GlobalSchema", "Project");
+    query.SetTop(100);
+    auto objResult = ds->GetObjects(key, query,
+                                    ICachingDataSource::DataOrigin::RemoteOrCachedData, nullptr, nullptr)->GetResult();
+    ASSERT_TRUE(objResult.IsSuccess());
     }
 
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectSharedContent_Succeeds)
@@ -236,7 +247,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG24SharePointPluginRepository_Succ
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest2-8.bentley.com/ws24";
+    Utf8String serverUrl = "https://viltest2-5.bentley.com/ws24";
     Utf8String repositoryId = "Bentley.SP--http~3A~2F~2Fviltest2-10";
     Credentials creds(R"(.\administrator)", "Q!w2e3r4");
     BeFileName cachePath = GetTestCachePath();

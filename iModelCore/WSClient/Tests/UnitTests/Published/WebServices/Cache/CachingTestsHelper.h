@@ -15,10 +15,6 @@
 #include "../../Utils/WebServicesTestsHelper.h"
 #include "../../Utils/SeedFile.h"
 
-// Operator for comparisons
-bool operator <= (const DateTime& lhs, const DateTime& rhs);
-bool operator >= (const DateTime& lhs, const DateTime& rhs);
-
 // Returns true if relationship between instances exist
 
 bool VerifyHasRelationship(

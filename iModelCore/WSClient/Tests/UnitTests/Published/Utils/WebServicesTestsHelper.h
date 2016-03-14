@@ -42,7 +42,10 @@ USING_NAMESPACE_WSCLIENT_UNITTESTS
     EXPECT_LE(smallerValue, value);                                             \
     EXPECT_GE(biggerValue, value);
 
-// Comparsion operator for testing equality
+// Operator for comparisons
+bool operator <= (const DateTime& lhs, const DateTime& rhs);
+bool operator >= (const DateTime& lhs, const DateTime& rhs);
+
 namespace rapidjson
     {
     bool operator==(const Value& a, const Value& b);
