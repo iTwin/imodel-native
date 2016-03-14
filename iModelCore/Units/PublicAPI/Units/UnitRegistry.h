@@ -58,6 +58,7 @@ private:
     void AddConversion(uint64_t index, Conversion& conversion) { m_conversions.Insert(index, conversion); }
 
     void AddMapping(Utf8CP oldName, Utf8CP newName);
+    bool HasConstant (Utf8CP constantName) const;
 
 public:
     UNITS_EXPORT static UnitRegistry & Instance();
@@ -83,7 +84,6 @@ public:
     UNITS_EXPORT bool HasSystem (Utf8CP systemName) const;
     UNITS_EXPORT bool HasPhenomena (Utf8CP phenomenaName) const;
     UNITS_EXPORT bool HasUnit (Utf8CP unitName) const;
-    UNITS_EXPORT bool HasConstant (Utf8CP constantName) const;
 
     //Mapping methods
     UNITS_EXPORT bool TryGetNewName(Utf8CP oldName, Utf8StringR newName) const;

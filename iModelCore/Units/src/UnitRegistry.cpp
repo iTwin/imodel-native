@@ -553,6 +553,6 @@ UnitCP UnitRegistry::LookupUnitUsingOldName(Utf8CP oldName) const
         {
         return LookupUnitP(newName.c_str());
         }
-
-    return LookupUnitP(oldName);
+    return nullptr;
     }
+

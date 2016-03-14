@@ -22,7 +22,7 @@ struct UnitsTests : UnitsTestFixture
 
     static bool TestUnitConversion(double fromVal, Utf8CP fromUnitName, double expectedVal, Utf8CP targetUnitName, int ulp, 
                                    bvector<Utf8String>& loadErrors, bvector<Utf8String>& conversionErrors, bool useLegacyNames = false, bool showDetailLogs = false);
-    static void TestConversionsLoadedFromCvsFile(Utf8CP fileName);
+    static void TestConversionsLoadedFromCvsFile(Utf8CP fileName, int expectedMissingUnits);
 
     static Utf8String ParseUOM(Utf8CP unitName, bset<Utf8String>& notMapped)
         {
@@ -284,8 +284,8 @@ TEST_F(UnitsTests, TestBasicConversion)
     {
     bvector<Utf8String> loadErrors;
     bvector<Utf8String> conversionErrors;
-    TestUnitConversion(10, "FT", 3048, "MM", 1000, loadErrors, conversionErrors, true);
-    TestUnitConversion(1, "GALLON", 3.785411784, "LITRE", 1000, loadErrors, conversionErrors, true);
+    TestUnitConversion(10, "FT", 3048, "MM", 1000, loadErrors, conversionErrors);
+    TestUnitConversion(1, "GALLON", 3.785411784, "LITRE", 1000, loadErrors, conversionErrors);
     TestUnitConversion(100000, "FOOT_SQUARED", 100, "THOUSAND_FOOT_SQUARED", 1000, loadErrors, conversionErrors, true);
     TestUnitConversion(836127.36, "MILLIMETRE_SQUARED", 1.0, "YARD_SQUARED", 1000, loadErrors, conversionErrors, true);
     TestUnitConversion(3.17097919837647e-7, "YEAR", 10000.0, "MILLISECOND", 1000, loadErrors, conversionErrors, true);
@@ -312,7 +312,7 @@ TEST_F(UnitsTests, TestBasicConversion)
     TestUnitConversion(42.42, "KILOPASCAL_GAUGE", 6.15250086300203, "POUND_FORCE_PER_INCH_SQUARED_GAUGE", 100000000, loadErrors, conversionErrors, true); // Expected value from old system, difference is due to imprecise offset in old system.
     TestUnitConversion(42.42, "PERCENT_SLOPE", 0.4242, "METRE_PER_METRE", 10, loadErrors, conversionErrors, true);
     TestUnitConversion(0.42, "METRE_PER_METRE", 42.0, "PERCENT_SLOPE", 10, loadErrors, conversionErrors, true);
-    ASSERT_GE(3, loadErrors.size()) << BeStringUtilities::Join(loadErrors, ", "); // 3 known missing units : LITRE_PER_KILOMETRE_SQUARED_PER_DAY, GALLON_PER_DAY_PER_PERSON, LITRE_PER_SECOND_PER_PERSON
+    ASSERT_EQ(3, loadErrors.size()) << BeStringUtilities::Join(loadErrors, ", "); // 3 known missing units : LITRE_PER_KILOMETRE_SQUARED_PER_DAY, GALLON_PER_DAY_PER_PERSON, LITRE_PER_SECOND_PER_PERSON
     ASSERT_EQ(0, conversionErrors.size()) << BeStringUtilities::Join(conversionErrors, ", ");
     }
 
@@ -615,21 +615,11 @@ TEST_F(UnitsTests, UnitsConversions_Complex)
     TestUnitConversion(1.0 / 0.42992261392949271, "KILOJOULE_PER_KILOMOLE", 1.0, "BTU_PER_POUND_MOLE", 1000, loadErrors, conversionErrors, true);
     TestUnitConversion(1.0e6 / 0.42992261392949271, "KILOJOULE_PER_KILOMOLE", 1.0e6, "BTU_PER_POUND_MOLE", 1000, loadErrors, conversionErrors, true);
     
-    Utf8String loadErrorString("The following units were not found:\n");
-    for (auto const& val : loadErrors)
-        loadErrorString.append(val + "\n");
-    
-    Utf8String conversionErrorString("Failed to convert between the following units:\n");
-    for (auto const& val : conversionErrors)
-        conversionErrorString.append(val + "\n");
-    
-    if (loadErrors.size() > 0)
-        PERFORMANCELOG.error(loadErrorString.c_str());
-    //EXPECT_EQ(0, loadErrors.size()) << loadErrorString;
-    EXPECT_EQ(0, conversionErrors.size()) << conversionErrorString;
+    EXPECT_EQ(11, loadErrors.size()) << "The following units were not found: " << BeStringUtilities::Join(loadErrors, ", ");
+    EXPECT_EQ(0, conversionErrors.size()) << "Failed to convert between the following units: " << BeStringUtilities::Join(conversionErrors, ", ");
     }
 
-void UnitsTests::TestConversionsLoadedFromCvsFile(Utf8CP fileName)
+void UnitsTests::TestConversionsLoadedFromCvsFile(Utf8CP fileName, int expectedMissingUnits)
     {
     bvector<Utf8String> loadErrors;
     bvector<Utf8String> conversionErrors;
@@ -652,9 +642,7 @@ void UnitsTests::TestConversionsLoadedFromCvsFile(Utf8CP fileName)
     for (auto const& val : loadErrors)
         loadErrorString.append(val + "\n");
 
-    if (loadErrors.size() > 0)
-        PERFORMANCELOG.error(loadErrorString.c_str());
-    //EXPECT_EQ(0, loadErrors.size()) << loadErrorString;
+    EXPECT_EQ(expectedMissingUnits, loadErrors.size()) << loadErrorString;
 
     Utf8PrintfString conversionErrorString("%s - Total number of conversions %d, units found for %d, %d passed, %d failed, %d skipped because of %d missing units, error Converting :\n",
                                             fileName, numberConversions, numberWhereUnitsFound, numberWhereUnitsFound - conversionErrors.size(), conversionErrors.size(), numberConversions - numberWhereUnitsFound, loadErrors.size());
@@ -667,19 +655,19 @@ void UnitsTests::TestConversionsLoadedFromCvsFile(Utf8CP fileName)
 
 TEST_F(UnitsTests, UnitsConversion_CompareToRawOutputFromOldSystem)
     {
-    TestConversionsLoadedFromCvsFile("ConversionsBetweenAllOldUnits.csv");
+    TestConversionsLoadedFromCvsFile("ConversionsBetweenAllOldUnits.csv", 106);
     }
 
 TEST_F(UnitsTests, UnitsConversion)
     {
-    TestConversionsLoadedFromCvsFile("unitcomparisondata.csv");
+    TestConversionsLoadedFromCvsFile("unitcomparisondata.csv", 94);
     }
 
 void GetUnitsByName(UnitRegistry& hub, bvector<Utf8String>& unitNames)
     {
     for (auto const& unitName : unitNames)
         {
-        auto unit = hub.LookupUnitUsingOldName(unitName.c_str());
+        auto unit = hub.LookupUnit(unitName.c_str());
         ASSERT_TRUE(unit != nullptr) << "Failed to get unit: " << unitName;
         }
     }
@@ -729,25 +717,6 @@ TEST_F(UnitsTests, TestEveryUnitIsAddedToItsPhenomenon)
         auto it = find_if(unitPhenomenon->GetUnits().begin(), unitPhenomenon->GetUnits().end(),
                        [&unit] (UnitCP unitInPhenomenon) { return 0 == strcmp(unitInPhenomenon->GetName(), unit->GetName()); });
         ASSERT_NE(unitPhenomenon->GetUnits().end(), it) << "Unit " << unit->GetName() << " is not registered with it's phenomenon";
-        }
-    }
-
-void TestUnitAndConstantsExist(const bvector<Utf8String>& unitNames, Utf8CP unitName, Utf8CP atorName)
-    {
-    UnitRegistry& reg = UnitRegistry::Instance();
-    for (auto const& subUnitName : unitNames)
-        {
-        if (subUnitName.StartsWith("["))
-            {
-            Utf8String constantName = Utf8String(subUnitName.begin() + 1, subUnitName.end() - 1);
-            UnitCP constant = reg.LookupConstant(constantName.c_str());
-            ASSERT_NE(nullptr, constant) << "Could not find constant '" << constantName << "' for " << atorName << " of unit: " << unitName;
-            }
-        else
-            {
-            UnitCP subUnit = reg.LookupUnitUsingOldName(subUnitName.c_str());
-            ASSERT_NE(nullptr, subUnit) << "Could not find Sub unit '" << subUnitName << "' for " << atorName << " of unit: " << unitName;
-            }
         }
     }
 
