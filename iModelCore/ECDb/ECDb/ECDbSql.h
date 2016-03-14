@@ -258,14 +258,13 @@ struct ECDbSqlColumn : NonCopyableClass
         PersistenceType m_persistenceType;
 
     public:
-        ECDbSqlColumn(ECDbSqlTable& table, Utf8CP name, Type type, ColumnKind kind, PersistenceType persistenceType, ECDbColumnId id)
+        ECDbSqlColumn(ECDbColumnId id, ECDbSqlTable& table, Utf8CP name, Type type, ColumnKind kind, PersistenceType persistenceType)
             : m_id(id), m_table(table), m_name(name), m_type(type), m_persistenceType(persistenceType), m_kind(kind)
             {}
 
         ~ECDbSqlColumn() {}
 
         ECDbColumnId GetId() const { return m_id; }
-        void SetId(ECDbColumnId id) { m_id = id; }
         PersistenceType GetPersistenceType() const { return m_persistenceType; }
         Utf8StringCR GetName() const { return m_name; }
         Type GetType() const { return m_type; };
@@ -454,6 +453,9 @@ public:
                 const_cast<ECDbSqlTable*>(parentOfJoinedTable)->m_childTables.push_back(this);
             }
 
+
+        ECDbSqlColumn* CreateColumn(ECDbColumnId, Utf8CP name, ECDbSqlColumn::Type, int position, ColumnKind, PersistenceType);
+
         std::weak_ptr<ECDbSqlColumn> GetColumnWeakPtr (Utf8CP name) const;
 
     public:
@@ -471,9 +473,10 @@ public:
         bool IsOwnedByECDb() const { return m_tableType != TableType::Existing; }
         ECDbMapDb const& GetDbDef () const{ return m_dbDef; }
         ECDbMapDb & GetDbDefR () { return m_dbDef; }
-        ECDbSqlColumn* CreateColumn(Utf8CP name, ECDbSqlColumn::Type, int position, ColumnKind, PersistenceType);
         ECDbSqlColumn* CreateColumn(Utf8CP name, ECDbSqlColumn::Type type, ColumnKind kind, PersistenceType persistenceType) { return CreateColumn(name, type, -1, kind, persistenceType); }
         ECDbSqlColumn* CreateSharedColumn() { return CreateColumn(nullptr, ECDbSqlColumn::Type::Any, ColumnKind::SharedDataColumn, PersistenceType::Persisted); }
+        ECDbSqlColumn* CreateColumn(Utf8CP name, ECDbSqlColumn::Type type, int position, ColumnKind kind, PersistenceType persType) { return CreateColumn(-1LL, name, type, -1, kind, persType); }
+        ECDbSqlColumn* CreateColumn(ECDbColumnId id, Utf8CP name, ECDbSqlColumn::Type type, ColumnKind kind, PersistenceType persType) { return CreateColumn(id, name, type, -1, kind, persType); }
         BentleyStatus SetMinimumSharedColumnCount(int minimumSharedColumnCount);
         BentleyStatus EnsureMinimumNumberOfSharedColumns();
 

@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include <ECDb/ECDbExpressionSymbolProvider.h>
+#include "ECDbExpressionSymbolProvider.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
@@ -20,11 +20,6 @@ ECDbExpressionSymbolContext::ECDbExpressionSymbolContext(ECDbCR ecdb)
     m_provider = new ECDbExpressionSymbolProvider(ecdb);
     InternalECSymbolProviderManager::GetManager().RegisterSymbolProvider(*m_provider);
     }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Grigas.Petraitis                02/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-ECDbExpressionSymbolContext::~ECDbExpressionSymbolContext() { LeaveContext(); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Grigas.Petraitis                02/2016

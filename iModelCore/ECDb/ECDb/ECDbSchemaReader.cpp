@@ -6,19 +6,11 @@
 |
 +-------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include <ECDb/ECDbExpressionSymbolProviders.h>
+#include "ECDbExpressionSymbolProvider.h"
+
 USING_NAMESPACE_BENTLEY_EC
-using namespace std;
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECDbSchemaReaderPtr ECDbSchemaReader::Create(ECDbCR db)
-    {
-    return new ECDbSchemaReader(db);
-    }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
@@ -225,7 +217,7 @@ ECClassP ECDbSchemaReader::GetECClass(Context& ctx, ECClassId ecClassId) const
 
     //cache the class, before loading properties and base classes, because the class can be referenced by other classes (e.g. via nav props)
     schemaKey->m_loadedTypeCount++;
-    m_ecClassCache[ecClassId] = unique_ptr<DbECClassEntry>(new DbECClassEntry(*ecClass));
+    m_ecClassCache[ecClassId] = std::unique_ptr<DbECClassEntry>(new DbECClassEntry(*ecClass));
 
     if (SUCCESS != LoadBaseClassesFromDb(ecClass, ctx, ecClassId))
         return nullptr;
@@ -329,7 +321,7 @@ BentleyStatus ECDbSchemaReader::ReadECEnumeration(ECEnumerationP& ecEnum, Contex
         return ERROR;
 
     //cache the enum
-    m_ecEnumCache[enumId] = unique_ptr<DbECEnumEntry>(new DbECEnumEntry(enumId, *ecEnum));
+    m_ecEnumCache[enumId] = std::unique_ptr<DbECEnumEntry>(new DbECEnumEntry(enumId, *ecEnum));
 
     schemaKey->m_loadedTypeCount++;
     return SUCCESS;
@@ -478,7 +470,7 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaFromDb(DbECSchemaEntry*& schemaEntry
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT S.Name, S.DisplayLabel,S.Description,S.NamespacePrefix,S.VersionDigit1,S.VersionDigit2,S.VersionDigit3, "
         "(SELECT COUNT(*) FROM ec_Class C WHERE S.Id = C.SchemaID) + (SELECT COUNT(*) FROM ec_Enumeration e WHERE S.Id = e.SchemaID) "
-        "FROM ec_Schema S WHERE S.Id = ?"))
+        "FROM ec_Schema S WHERE S.Id=?"))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindInt64(1, ecSchemaId))
@@ -508,11 +500,10 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaFromDb(DbECSchemaEntry*& schemaEntry
     if (!Utf8String::IsNullOrEmpty(description))
         schema->SetDescription(description);
 
-    unique_ptr<DbECSchemaEntry> schemaEntryPtr = unique_ptr<DbECSchemaEntry>(new DbECSchemaEntry(schema, typesInSchema));
+    std::unique_ptr<DbECSchemaEntry> schemaEntryPtr = std::unique_ptr<DbECSchemaEntry>(new DbECSchemaEntry(schema, typesInSchema));
     schemaEntry = schemaEntryPtr.get();
-    m_ecSchemaCache[ecSchemaId] = move(schemaEntryPtr);
+    m_ecSchemaCache[ecSchemaId] = std::move(schemaEntryPtr);
     m_cache.AddSchema(*schemaEntry->m_cachedECSchema);
-
     return SUCCESS;
     }
 
@@ -972,5 +963,18 @@ void ECDbSchemaReader::ClearCache ()
     }
 
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  12/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus ECDbSchemaReader::Context::Postprocess() const
+    {
+    for (ECN::NavigationECProperty* navProp : m_navProps)
+        {
+        if (!navProp->Verify())
+            return ERROR;
+        }
+    return SUCCESS;
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

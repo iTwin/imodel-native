@@ -911,7 +911,7 @@ ECDbSqlColumn* ColumnFactory::ApplyDefaultStrategy(Utf8CP requestedColumnName, P
     BeAssert(!Utf8String::IsNullOrEmpty(requestedColumnName) && "Column name must not be null for default strategy");
 
     ECDbSqlColumn* existingColumn = GetTable().FindColumnP(requestedColumnName);
-    if (existingColumn != nullptr && !IsColumnInUse(*existingColumn) &&
+    if (existingColumn != nullptr && !IsColumnInUseByThisClassMap(*existingColumn) &&
         ECDbSqlColumn::IsCompatible(existingColumn->GetType(), colType))
         {
         if (!GetTable().IsOwnedByECDb() || (existingColumn->GetConstraint().IsNotNull() == addNotNullConstraint &&
@@ -998,7 +998,7 @@ BentleyStatus ColumnFactory::ResolveColumnName(Utf8StringR resolvedColumName, Ut
         }
 
     ECDbSqlColumn const* existingColumn = GetTable().FindColumnP(requestedColumnName);
-    if (existingColumn != nullptr && IsColumnInUse(*existingColumn))
+    if (existingColumn != nullptr && IsColumnInUseByThisClassMap(*existingColumn))
         resolvedColumName.Sprintf("c%lld_%s", classId, requestedColumnName);
     else
         resolvedColumName.assign(requestedColumnName);
@@ -1041,7 +1041,7 @@ bool ColumnFactory::TryFindReusableSharedDataColumn(ECDbSqlColumn const*& reusab
     std::vector<ECDbSqlColumn const*> reusableColumns;
     for (ECDbSqlColumn const* column : GetTable().GetColumns())
         {
-        if (column->IsShared() && !IsColumnInUse(*column))
+        if (column->IsShared() && !IsColumnInUseByThisClassMap(*column))
             reusableColumns.push_back(column);
         }
 
@@ -1063,9 +1063,10 @@ void ColumnFactory::CacheUsedColumn(ECDbSqlColumn const& column) const
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-bool ColumnFactory::IsColumnInUse(ECDbSqlColumn const& column) const
+bool ColumnFactory::IsColumnInUseByThisClassMap(ECDbSqlColumn const& column) const
     {
     return m_columnsInUse.find(column.GetFullName()) != m_columnsInUse.end();
+    //return m_ids
     }
 
 //------------------------------------------------------------------------------------------

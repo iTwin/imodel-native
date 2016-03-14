@@ -7,8 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include <ECUnits/Units.h>
-#include <ECDb/ECDbExpressionSymbolProviders.h>
 #include "SchemaImportContext.h"
+#include "ECDbExpressionSymbolProvider.h"
 
 USING_NAMESPACE_BENTLEY_EC
 

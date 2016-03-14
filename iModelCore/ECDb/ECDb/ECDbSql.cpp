@@ -272,23 +272,24 @@ BentleyStatus ECDbSqlTable::RemoveConstraint(ECDbSqlConstraint const& constraint
 
     return ERROR;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-ECDbSqlColumn* ECDbSqlTable::CreateColumn(Utf8CP name, ECDbSqlColumn::Type type, int position, ColumnKind kind, PersistenceType persistenceType)
+ECDbSqlColumn* ECDbSqlTable::CreateColumn(ECDbColumnId id, Utf8CP name, ECDbSqlColumn::Type type, int position, ColumnKind kind, PersistenceType persistenceType)
     {
     if (GetEditHandleR().AssertNotInEditMode())
         return nullptr;
 
     auto resolvePersistenceType = persistenceType;
     if (GetPersistenceType() == PersistenceType::Virtual)
-        {
-        //BeAssert (false && "Cannot create persisted columns in none persisted table");
         resolvePersistenceType = PersistenceType::Virtual;
-        }
 
-    std::shared_ptr<ECDbSqlColumn> newColumn;
-    if (name)
+    if (id < 0)
+        id = GetDbDefR().GetManagerR().GetIdGenerator().NextColumnId();
+
+    std::shared_ptr<ECDbSqlColumn> newColumn = nullptr;
+    if (!Utf8String::IsNullOrEmpty(name))
         {
         if (FindColumnCP(name))
             {
@@ -296,7 +297,7 @@ ECDbSqlColumn* ECDbSqlTable::CreateColumn(Utf8CP name, ECDbSqlColumn::Type type,
             return nullptr;
             }
 
-        newColumn = std::make_shared<ECDbSqlColumn>(*this, name, type, kind, resolvePersistenceType, GetDbDefR().GetManagerR().GetIdGenerator().NextColumnId());
+        newColumn = std::make_shared<ECDbSqlColumn>(id, *this, name, type, kind, resolvePersistenceType);
         }
     else
         {
@@ -306,7 +307,7 @@ ECDbSqlColumn* ECDbSqlTable::CreateColumn(Utf8CP name, ECDbSqlColumn::Type type,
             m_nameGeneratorForColumn.Generate(generatedName);
             } while (FindColumnCP(generatedName.c_str()));
 
-            newColumn = std::make_shared<ECDbSqlColumn>(*this, generatedName.c_str(), type, kind, resolvePersistenceType, GetDbDefR().GetManagerR().GetIdGenerator().NextColumnId());
+            newColumn = std::make_shared<ECDbSqlColumn>(id, *this, generatedName.c_str(), type, kind, resolvePersistenceType);
         }
 
     if (position < 0)
@@ -1860,40 +1861,39 @@ DbResult ECDbSqlPersistence::ReadColumns(ECDbSqlTable& o) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-DbResult ECDbSqlPersistence::ReadColumn(Statement& stmt, ECDbSqlTable& o, std::map<size_t, ECDbSqlColumn const*>& primaryKeys) const
+DbResult ECDbSqlPersistence::ReadColumn(Statement& stmt, ECDbSqlTable& table, std::map<size_t, ECDbSqlColumn const*>& primaryKeys) const
     {
-    auto id = stmt.GetValueInt64(0);
-    auto name = stmt.GetValueText(1);
-    auto type = static_cast<ECDbSqlColumn::Type>(stmt.GetValueInt(2));
-    auto persistenceType = stmt.GetValueInt(3) == 1 ? PersistenceType::Virtual : PersistenceType::Persisted;
-    auto constraintNotNull = stmt.GetValueInt(4) == 1;
-    auto constraintUnique = stmt.GetValueInt(5) == 1;
-    auto constraintCheck = !stmt.IsColumnNull(6) ? stmt.GetValueText(6) : nullptr;
-    auto constraintDefault = !stmt.IsColumnNull(7) ? stmt.GetValueText(7) : nullptr;
-    auto constraintCollate = static_cast<ECDbSqlColumn::Constraint::Collation>(stmt.GetValueInt(8));
-    auto primaryKey_Ordianal = stmt.IsColumnNull(9) ? -1 : stmt.GetValueInt(9);
-    auto columnKind = Enum::FromInt<ColumnKind>(stmt.GetValueInt(10));
+    ECDbColumnId id = stmt.GetValueInt64(0);
+    Utf8CP name = stmt.GetValueText(1);
+    const ECDbSqlColumn::Type type = Enum::FromInt<ECDbSqlColumn::Type>(stmt.GetValueInt(2));
+    const PersistenceType persistenceType = stmt.GetValueInt(3) == 1 ? PersistenceType::Virtual : PersistenceType::Persisted;
+    const bool constraintNotNull = stmt.GetValueInt(4) == 1;
+    const bool constraintUnique = stmt.GetValueInt(5) == 1;
+    Utf8CP constraintCheck = !stmt.IsColumnNull(6) ? stmt.GetValueText(6) : nullptr;
+    Utf8CP constraintDefault = !stmt.IsColumnNull(7) ? stmt.GetValueText(7) : nullptr;
+    const ECDbSqlColumn::Constraint::Collation constraintCollate = Enum::FromInt<ECDbSqlColumn::Constraint::Collation>(stmt.GetValueInt(8));
+    int primaryKeyOrdinal = stmt.IsColumnNull(9) ? -1 : stmt.GetValueInt(9);
+    const ColumnKind columnKind = Enum::FromInt<ColumnKind>(stmt.GetValueInt(10));
 
-    ECDbSqlColumn* n = o.CreateColumn(name, type, columnKind, persistenceType);
-    if (!n)
+    ECDbSqlColumn* column = table.CreateColumn(id, name, type, columnKind, persistenceType);
+    if (column == nullptr)
         {
-        BeAssert(false && "Failed to create table definition");
+        BeAssert(false);
         return BE_SQLITE_ERROR;
         }
 
-    n->SetId(id);
-    n->GetConstraintR().SetIsNotNull(constraintNotNull);
-    n->GetConstraintR().SetIsUnique(constraintUnique);
-    n->GetConstraintR().SetCollation(constraintCollate);
+    column->GetConstraintR().SetIsNotNull(constraintNotNull);
+    column->GetConstraintR().SetIsUnique(constraintUnique);
+    column->GetConstraintR().SetCollation(constraintCollate);
 
-    if (constraintCheck)
-        n->GetConstraintR().SetCheckExpression(constraintCheck);
+    if (!Utf8String::IsNullOrEmpty(constraintCheck))
+        column->GetConstraintR().SetCheckExpression(constraintCheck);
 
-    if (constraintDefault)
-        n->GetConstraintR().SetDefaultExpression(constraintDefault);
+    if (!Utf8String::IsNullOrEmpty(constraintDefault))
+        column->GetConstraintR().SetDefaultExpression(constraintDefault);
 
-    if (primaryKey_Ordianal > -1)
-        primaryKeys[primaryKey_Ordianal] = n;
+    if (primaryKeyOrdinal >= 0)
+        primaryKeys[primaryKeyOrdinal] = column;
 
     return BE_SQLITE_OK;
     }

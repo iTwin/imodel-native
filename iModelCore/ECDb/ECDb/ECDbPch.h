@@ -70,5 +70,4 @@
 #include "ECSql/ECInstanceAdapterHelper.h"
 #include "ECSql/ECSqlPrepareContext.h"
 #include "ECDbSql.h"
-#include "ECDbSchemaEditor.h"
 

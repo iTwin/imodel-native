@@ -23,7 +23,6 @@
     <ClCompile Include="ECDbLogger.cpp" />
     <ClCompile Include="ECDbMapAnalyser.cpp" />
     <ClCompile Include="ECDbPolicyManager.cpp" />
-    <ClCompile Include="ECDbSchemaEditor.cpp" />
     <ClCompile Include="ECDbSchemaManager.cpp" />
     <ClCompile Include="ECDbSchemaPersistenceHelper.cpp" />
     <ClCompile Include="ECDbSql.cpp" />
@@ -118,7 +117,6 @@
     <ClInclude Include="..\PublicAPI\ECDb\ChangeSummary.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDb.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
-    <ClInclude Include="..\PublicAPI\ECDb\ECDbExpressionSymbolProvider.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDbSchemaManager.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDbTypes.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECInstanceAdapter.h" />
@@ -134,6 +132,7 @@
     <ClInclude Include="BeBriefcaseBasedIdSequence.h" />
     <ClInclude Include="ClassMap.h" />
     <ClInclude Include="ClassMapInfo.h" />
+    <ClInclude Include="ECDbExpressionSymbolProvider.h" />
     <ClInclude Include="ECDbImpl.h" />
     <ClInclude Include="ECDbInternalTypes.h" />
     <ClInclude Include="ECDbLogger.h" />
@@ -141,7 +140,6 @@
     <ClInclude Include="ECDbMapAnalyser.h" />
     <ClInclude Include="ECDbPch.h" />
     <ClInclude Include="ECDbPolicyManager.h" />
-    <ClInclude Include="ECDbSchemaEditor.h" />
     <ClInclude Include="ECDbSchemaPersistenceHelper.h" />
     <ClInclude Include="ECDbSchemaReader.h" />
     <ClInclude Include="ECDbSchemaWriter.h" />

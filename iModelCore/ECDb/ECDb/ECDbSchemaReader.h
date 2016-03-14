@@ -73,23 +73,13 @@ struct ECDbSchemaReader: public RefCountedBase
 private:
     struct Context : NonCopyableClass
         {
-        private:
-            std::vector<ECN::NavigationECProperty*> m_navProps;
+    private:
+        std::vector<ECN::NavigationECProperty*> m_navProps;
 
-        public:
-            Context() {}
-
-            void AddNavigationProperty(ECN::NavigationECProperty& navProp) { m_navProps.push_back(&navProp); }
-
-            BentleyStatus Postprocess() const
-                {
-                for (ECN::NavigationECProperty* navProp : m_navProps)
-                    {
-                    if (!navProp->Verify())
-                        return ERROR;
-                    }
-                return SUCCESS;
-                }
+    public:
+        Context() {}
+        void AddNavigationProperty(ECN::NavigationECProperty& navProp) { m_navProps.push_back(&navProp); }
+        BentleyStatus Postprocess() const;
         };
 
     ECDbCR m_db;
@@ -130,7 +120,7 @@ public:
     bool                  TryGetECClassId(ECN::ECClassId& id, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema) const;
     void                  ClearCache ();
 
-    static ECDbSchemaReaderPtr Create(ECDbCR);
+    static ECDbSchemaReaderPtr Create(ECDbCR ecdb) { return new ECDbSchemaReader(ecdb); }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

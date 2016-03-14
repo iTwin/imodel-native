@@ -104,6 +104,7 @@ struct ColumnFactory : NonCopyableClass
         ClassMapCR m_classMap;
         bool m_usesSharedColumnStrategy;
         mutable std::set<Utf8String, CompareIUtf8> m_columnsInUse;
+        //mutable bset<ECDbColumnId> m_idsOfColumnsInUseByClassMap;
 
         BentleyStatus ResolveColumnName(Utf8StringR resolvedColumName, Utf8CP requestedColumnName, ECN::ECClassId, int retryCount) const;
 
@@ -112,7 +113,7 @@ struct ColumnFactory : NonCopyableClass
 
         ECN::ECClassId GetPersistenceClassId(PropertyMapCR) const;
         bool TryFindReusableSharedDataColumn(ECDbSqlColumn const*& reusableColumn) const;
-        bool IsColumnInUse(ECDbSqlColumn const&) const;
+        bool IsColumnInUseByThisClassMap(ECDbSqlColumn const&) const;
         void CacheUsedColumn(ECDbSqlColumn const&) const;
 
         ECDbSqlTable& GetTable() const;
