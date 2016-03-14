@@ -147,8 +147,9 @@
         <ProductDirectory Name="GdalData"                   Deliver="false"/>
         <ProductDirectory Name="csmapmergemodules"          Deliver="false" />
         <ProductDirectory Name="LoggingManagedAssemblies"   Deliver="false"/>
+        <ProductDirectory Name="managedtests"               Deliver="false"/>
 
-         <!--notices/ review if notices need to be delivered--> 
+        <!--notices/ review if notices need to be delivered--> 
         <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="dynamic"   Path="notices"/>
         <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="static"    Path="notices"/>
 
@@ -199,10 +200,89 @@
         <Directories DirectoryListName="RealityModFrameworkDirList" />
     </Product>
 
-    <Product Name="RealityContextServices">
+    <Product Name="RealityContextServices" PrgOutputDir="RealityContextServices">
         <SubPart PartName="RealityDbECPluginCNuGet"/>
-        <!--<SubPart PartName="RealityModFrameworkTested"/>-->
         <Directories DirectoryListName="RealityModFrameworkDirList" />
+    </Product>
+
+    <!-- ********************************************************************************************** -->
+    <!-- Nunit tests -->
+    <!-- ********************************************************************************************** -->
+    <ProductDirectoryList ListName="RealityDbECPluginTestsDirList" >
+        <ProductDirectory Name="PublicAPI"                  Deliver="false" />
+        <ProductDirectory Name="VendorAPI"                  Deliver="false" />
+        <ProductDirectory Name="Libs"                       Deliver="false" />
+        <ProductDirectory Name="OracleNativeAssemblies"     Deliver="false"/>
+        <ProductDirectory Name="GdalData"                   Deliver="false"/>
+        <ProductDirectory Name="csmapmergemodules"          Deliver="false" />
+
+        <!--notices/ review if notices need to be delivered-->
+        <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="dynamic"   Path="notices"/>
+        <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="static"    Path="notices"/>
+
+        <ProductDirectory   Name="PublicAPI"                    LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="VendorAPI"                    LibType="Static"    Deliver="false" />
+        <ProductDirectory   Name="libs"                         LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="BentleyNativeAssemblies"      LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="GeomNativeAssemblies"         LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="RmgrToolsNativeAssemblies"    LibType="Static"    Deliver="false"/>
+
+        <ProductDirectory Name="BentleyNativeAssemblies"        Path=""/>
+        <ProductDirectory Name="RealityAssemblies"              Path=""/>
+        <ProductDirectory Name="LoggingNativeAssemblies"        Path=""/>
+        <ProductDirectory Name="PointoolsAssemblies"            Path=""/>
+        <ProductDirectory Name="PointoolsAssemblies32Ext"       Path="Pointools32Ext" RelativeTo="PointoolsAssemblies"/>
+        <ProductDirectory Name="GeomNativeAssemblies"           Path="" />
+        <ProductDirectory Name="GeoCoordData"                   Path="GeoCoordinateData" />
+        <ProductDirectory Name="GeoCoordNativeAssemblies"       Path="" />
+        <ProductDirectory Name="MrSidAssemblies"                Path="" />
+        <ProductDirectory Name="ErdasEcwJpeg2000Assemblies"     Path="" />
+        <ProductDirectory Name="BeOpenSSLAssemblies"            Path="" />
+        <ProductDirectory Name="PlatformTechAssemblies"         Path=""/>
+        <ProductDirectory Name="ECObjectsNativeAssemblies"      Path="" />
+        <ProductDirectory Name="ECObjectsManagedAssemblies"     Path="" />
+        <ProductDirectory Name="ECServicesManagedAssemblies"    Path=""/>
+        <ProductDirectory Name="ECSchemas"                      Path="ECSchemas" />
+        <ProductDirectory Name="ImagePPAssemblies"              Path=""/>
+        <ProductDirectory Name="BeCurlAssemblies"               Path="" />
+        <ProductDirectory Name="BentleyGeometryNetAssemblies"   Path=""/>
+        <ProductDirectory Name="JsonNetAssemblies"              Path=""/>
+        <ProductDirectory Name="IdentityModelAssemblies"        Path=""/>
+
+        <ProductDirectory Name="NUnit 2.6.4 binaries"           Path=""/>
+        <ProductDirectory Name="NUnit 2.6.4 core references"    Path=""/>
+        <ProductDirectory Name="managedtests"                   Path=""/>
+        <ProductDirectory Name="LoggingManagedAssemblies"       Path=""/>
+        <ProductDirectory Name="RhinoMockAssemblies"            Path=""/>
+    </ProductDirectoryList>
+
+
+    <Part Name="RealityDbECPluginUnitTests" BMakeFile="Tests/RealityDbECPlugin/RealityDbECPluginTests.mke">
+        <SubPart PartName="RealityDbECPlugin" />
+        <SubPart PartName="nunit_2.6.4" PartFile="${SrcRoot}bsicommon/CvsPartFiles\bsitools" Repository="Bsitools-Nunit_2.6.4" />
+        <SubPart PartName="rhinomocks_3.5" PartFile="${SrcRoot}bsicommon/CvsPartFiles\bsitools" Repository="Bsitools-Rhinomocks_3.5" />
+        <Bindings>
+            <Assemblies ProductDirectoryName="managedtests">
+                Delivery\Bentley.RealityDbECPlugin.Tests.dll
+            </Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="RunRealityDbECPluginTests" BMakeFile="Tests\RealityDbECPlugin\RunRealityDbECPluginTests.mke" />
+
+    <Product Name="RealityContextServicesTests" PrgOutputDir="RealityContextServicesTests">
+        <SubProduct ProductName="RealityContextServices"/>
+        <SubPart PartName="RealityDbECPluginUnitTests"/>
+        <Directories DirectoryListName="RealityDbECPluginTestsDirList" />
+    </Product>
+
+    <ProductDirectoryList ListName="RealityDbECPluginUnitTested">
+    </ProductDirectoryList>
+
+    <Product Name="RealityContextServicesTested" PrgOutputDir="RealityContextServices">
+        <SubProduct ProductName="RealityContextServicesTests" />
+        <SubPart PartName="RunRealityDbECPluginTests" />
+        <Directories DirectoryListName="RealityDbECPluginUnitTested" />
     </Product>
 
     <!-- ********************************************************************************************** -->
@@ -241,14 +321,6 @@
         </Bindings>
     </Part>
 
-    <Part Name="RealityDbECPluginUnitTests" BMakeFile="Tests/RealityDbECPlugin/RealityDbECPluginTests.mke">
-        <SubPart PartName="RealityDbECPlugin" />
-        <SubPart PartName="nunit_2.6.4" PartFile="${SrcRoot}bsicommon/CvsPartFiles\bsitools" Repository="Bsitools-Nunit_2.6.4" />
-        <SubPart PartName="rhinomocks_3.5" PartFile="${SrcRoot}bsicommon/CvsPartFiles\bsitools" Repository="Bsitools-Rhinomocks_3.5" />
-        
-        
-    </Part>
-    
     <!-- Define a test collection product -->
     <Part Name="Tests">
         <SubPart PartName="RealityPackageUnitTests"/>
