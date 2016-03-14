@@ -176,10 +176,8 @@ TEST_F (UnitsTests, UnitsMapping)
         {
         guess += i + ", ";
         }
-    
-    if (notMapped.size() > 0)
-        PERFORMANCELOG.error(guess.c_str());
-    //EXPECT_EQ (0, notMapped.size() ) << guess;
+
+    EXPECT_EQ (100, notMapped.size() ) << guess;
     }
 
 // TODO: Make this test pass when conversions fail and add more conversions to test a wide spectrum of dimenions.
@@ -277,7 +275,6 @@ TEST_F(UnitsTests, TestOffsetConversions)
 
     EXPECT_EQ(0, loadErrors.size()) << loadErrorString;
     EXPECT_EQ(0, conversionErrors.size()) << conversionErrorString;
-
     }
 
 TEST_F(UnitsTests, TestBasicConversion)
