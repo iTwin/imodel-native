@@ -113,9 +113,6 @@
       <Component Id="BeLibxml2G06.dll" Directory="bin" Guid="{A34FE1FE-E8E3-4731-8EAA-493570A6792F}">
         <File Id="BeLibxml2G06.dll" KeyPath="yes" Source="$(var.ProductDir)BeLibxml2G06.dll" />
       </Component>
-      <Component Id="BentleyAllocator.dll" Directory="bin" Guid="{6F9F3CAA-DD42-466C-8F07-EF1E9E41C1A0}">
-        <File Id="BentleyAllocator.dll" KeyPath="yes" Source="$(var.ProductDir)BentleyAllocator.dll" />
-      </Component>
       <Component Id="BentleyG06.dll" Directory="bin" Guid="{761EFBFA-783D-4641-BFCD-D3BC2F465F4B}">
         <File Id="BentleyG06.dll" KeyPath="yes" Source="$(var.ProductDir)BentleyG06.dll" />
       </Component>
