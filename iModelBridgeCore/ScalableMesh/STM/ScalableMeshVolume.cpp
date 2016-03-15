@@ -164,7 +164,8 @@ DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolume(double* cut, double* fill
         {
         if (hasRestrictions) if (!node->HasClip(m_restrictedId)) continue;
         bvector<bool> clips;
-        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(); 
+        if (hasRestrictions) node->RefreshMergedClip();
         IScalableMeshMeshPtr scalableMesh = hasRestrictions? node->GetMeshUnderClip(flags, m_restrictedId): node->GetMesh(flags,clips);
         if (scalableMesh.get() == nullptr) continue;
         //ScalableMeshMeshWithGraphPtr scalableMeshWithGraph((ScalableMeshMeshWithGraph*)scalableMesh.get(), true);
