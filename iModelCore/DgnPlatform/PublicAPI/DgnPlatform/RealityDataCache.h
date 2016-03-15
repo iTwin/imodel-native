@@ -816,7 +816,7 @@ public:
 //! Reality data storage which uses a SQLite database for storing cached data.
 // @bsiclass                                        Grigas.Petraitis            10/2014
 //=======================================================================================
-struct BeSQLiteRealityDataStorage : IRealityDataStorage<BeSQLiteRealityDataStorage>, NonCopyableClass
+struct EXPORT_VTABLE_ATTRIBUTE BeSQLiteRealityDataStorage : IRealityDataStorage<BeSQLiteRealityDataStorage>, NonCopyableClass
 {
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        03/2015
@@ -1042,7 +1042,7 @@ public:
 //! Reality data storage which stores reality data in memory.
 // @bsiclass                                        Grigas.Petraitis            04/2015
 //=======================================================================================
-struct InMemoryRealityDataStorage : IRealityDataStorage<InMemoryRealityDataStorage>, NonCopyableClass
+struct EXPORT_VTABLE_ATTRIBUTE InMemoryRealityDataStorage : IRealityDataStorage<InMemoryRealityDataStorage>, NonCopyableClass
     {
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        04/2015
@@ -1176,7 +1176,7 @@ public:
 // @bsiclass                                        Grigas.Petraitis            10/2014
 //=======================================================================================
 template<class Derived>
-struct AsyncRealityDataSource : IRealityDataSource<Derived>, NonCopyableClass
+struct EXPORT_VTABLE_ATTRIBUTE AsyncRealityDataSource : IRealityDataSource<Derived>, NonCopyableClass
 {
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        10/2014
@@ -1233,7 +1233,7 @@ protected:
 //! Reality data source which uses files (on the disc) as the source of reality data.
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
-struct FileRealityDataSource : AsyncRealityDataSource<FileRealityDataSource>
+struct EXPORT_VTABLE_ATTRIBUTE FileRealityDataSource : AsyncRealityDataSource<FileRealityDataSource>
 {
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        03/2015
@@ -1316,7 +1316,7 @@ public:
 //! the source of reality data.
 // @bsiclass                                        Grigas.Petraitis            10/2014
 //=======================================================================================
-struct HttpRealityDataSource : AsyncRealityDataSource<HttpRealityDataSource>
+struct EXPORT_VTABLE_ATTRIBUTE HttpRealityDataSource : AsyncRealityDataSource<HttpRealityDataSource>
 {
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        03/2015
