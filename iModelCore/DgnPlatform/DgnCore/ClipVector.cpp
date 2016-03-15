@@ -41,6 +41,7 @@ ClipVector::ClipVector(GPArrayCR gpa, double chordTolerance, double angleToleran
         }
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -313,23 +314,129 @@ void ClipVector::ParseClipPlanes()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      04/2013
+* @bsimethod                                                    EarlinLutz      03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ClipVector::ApplyCameraToPlanes(double focalLength)
+BentleyStatus ClipVector::MultiplyPlanesTimesMatrix (DMatrix4dCR matrix)
     {
+    int numErrors = 0;
     for (ClipPrimitivePtr& primitive: *this)
-        if (SUCCESS != primitive->ApplyCameraToPlanes(focalLength))
-            return ERROR;
+        if (SUCCESS != primitive->MultiplyPlanesTimesMatrix (matrix))
+            numErrors++;
+    return numErrors == 0 ? SUCCESS : ERROR;
+    }
 
-    return SUCCESS;
+bool ClipVector::IsAnyLineStringPointInside (DPoint3dCP points, size_t n, bool closed)
+    {
+    DSegment3d segment;
+    for (ClipPrimitivePtr const& primitive : *this)
+        {
+        auto clipPlaneSet = primitive->GetClipPlanes ();
+        for (size_t i = 0; i + 1 < n; i++)
+            {
+            segment.Init (points[i], points[i+1]);
+            if (clipPlaneSet->IsAnyPointInOrOn (segment))
+                return true;
+            }
+        }
+    return false;
+    }
+double SumSizes (bvector<DSegment1d> &intervals, size_t iBegin, size_t iEnd)
+    {
+    double s = 0.0;
+    for (size_t i = iBegin; i < iEnd; i++)
+        s += intervals[i].Delta ();
+    return s;
+    }
+#define TARGET_FRACTION_SUM (0.99999999)
+bool ClipVector::IsCompletelyContained (DPoint3dCP points, size_t n, bool closed)
+    {
+    DSegment3d segment;
+    for (size_t i = 0; i + 1 < n; i++)
+        {
+        segment.Init(points[i], points[i + 1]);
+        m_clipIntervals.clear();
+        double fractionSum = 0.0;
+        size_t index0 = 0;
+
+        for (ClipPrimitivePtr const& primitive : *this)
+            {
+            auto clipPlaneSet = primitive->GetClipPlanes();
+            clipPlaneSet->AppendIntervals(segment, m_clipIntervals);
+            size_t index1 = m_clipIntervals.size ();
+            fractionSum += SumSizes (m_clipIntervals, index0, index1);
+            index0 = index1;
+            // ASSUME primitives are non-overlapping ...
+            if (fractionSum >= TARGET_FRACTION_SUM)
+                break;
+            }
+        if (fractionSum < TARGET_FRACTION_SUM)
+            return false;
+        }
+    return true;
+    }
+
+bool ClipVector::IsAnyPointInside(DEllipse3dCR arc, bool closed)
+    {
+    for (ClipPrimitivePtr const& primitive : *this)
+        {
+        auto clipPlaneSet = primitive->GetClipPlanes();
+        if (clipPlaneSet->IsAnyPointInOrOn(arc))
+            return true;
+        }
+    return false;
+    }
+
+bool ClipVector::IsCompletelyContained(DEllipse3dCR arc, bool closed)
+    {
+    m_clipIntervals.clear();
+    double fractionSum = 0.0;
+    size_t index0 = 0;
+
+    for (ClipPrimitivePtr const& primitive : *this)
+        {
+        auto clipPlaneSet = primitive->GetClipPlanes();
+        clipPlaneSet->AppendIntervals(arc, m_clipIntervals);
+        size_t index1 = m_clipIntervals.size();
+        fractionSum += SumSizes(m_clipIntervals, index0, index1);
+        index0 = index1;
+        // ASSUME primitives are non-overlapping ...
+        if (fractionSum >= TARGET_FRACTION_SUM)
+            break;
+        }
+    return fractionSum >= TARGET_FRACTION_SUM;
     }
 
 
+bool ClipVector::IsAnyPointInside(MSBsplineCurveCR arc)
+    {
+    for (ClipPrimitivePtr const& primitive : *this)
+        {
+        auto clipPlaneSet = primitive->GetClipPlanes();
+        if (clipPlaneSet->IsAnyPointInOrOn(arc))
+            return true;
+        }
+    return false;
+    }
 
+bool ClipVector::IsCompletelyContained(MSBsplineCurveCR arc)
+    {
+    m_clipIntervals.clear();
+    double fractionSum = 0.0;
+    size_t index0 = 0;
 
-
-
-
+    for (ClipPrimitivePtr const& primitive : *this)
+        {
+        auto clipPlaneSet = primitive->GetClipPlanes();
+        clipPlaneSet->AppendIntervals(arc, m_clipIntervals);
+        size_t index1 = m_clipIntervals.size();
+        fractionSum += SumSizes(m_clipIntervals, index0, index1);
+        index0 = index1;
+        // ASSUME primitives are non-overlapping ...
+        if (fractionSum >= TARGET_FRACTION_SUM)
+            break;
+        }
+    return fractionSum >= TARGET_FRACTION_SUM;
+    }
 
 
 

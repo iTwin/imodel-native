@@ -167,7 +167,7 @@ protected:
     DGNPLATFORM_EXPORT ViewContext();
 
 public:
-    StatusInt VisitElement(DgnElementId elementId, bool allowLoad);
+    DGNPLATFORM_EXPORT StatusInt VisitElement(DgnElementId elementId, bool allowLoad);
     DMap4dCR GetWorldToView() const {return m_worldToView;}
     DMap4dCR GetWorldToNpc() const {return m_worldToNpc;}
     bool GetWantMaterials() {return m_wantMaterials;};
@@ -430,6 +430,16 @@ private:
 
 public:
     SceneContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan);
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   03/16
+//=======================================================================================
+struct RedrawContext : RenderListContext
+{
+    DEFINE_T_SUPER(RenderListContext);
+public:
+    RedrawContext(DgnViewportR vp, Render::GraphicListR draws, UpdatePlan const& plan) : RenderListContext(vp, DrawPurpose::Redraw, draws, plan) {}
 };
 
 //=======================================================================================

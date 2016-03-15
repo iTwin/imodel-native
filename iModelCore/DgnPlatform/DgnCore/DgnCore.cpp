@@ -368,18 +368,18 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
         return;
         }
 
-    TERMINATE_HOST_OBJECT(m_txnAdmin, onProgramExit);
-    TERMINATE_HOST_OBJECT(m_acsManager, onProgramExit);
-    TERMINATE_HOST_OBJECT(m_realityDataAdmin, onProgramExit);
+    ON_HOST_TERMINATE(m_txnAdmin, onProgramExit);
+    ON_HOST_TERMINATE(m_acsManager, onProgramExit);
+    ON_HOST_TERMINATE(m_realityDataAdmin, onProgramExit);
 
     for (ObjEntry& obj : m_hostObj)
-        TERMINATE_HOST_OBJECT(obj.m_val, onProgramExit);
+        ON_HOST_TERMINATE(obj.m_val, onProgramExit);
 
     m_hostObj.clear();
     m_hostVar.clear();
 
-    TERMINATE_HOST_OBJECT(m_exceptionHandler, onProgramExit);
-    TERMINATE_HOST_OBJECT(m_knownLocationsAdmin, onProgramExit);
+    ON_HOST_TERMINATE(m_exceptionHandler, onProgramExit);
+    ON_HOST_TERMINATE(m_knownLocationsAdmin, onProgramExit);
 
     ForgetHost();
     BeAssert(NULL == DgnPlatformLib::QueryHost());

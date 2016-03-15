@@ -35,6 +35,7 @@ struct GraphicSet
     DGNPLATFORM_EXPORT void DropFor(DgnViewportCR viewport);
     void Save(Render::Graphic& graphic) {m_graphics.insert(&graphic);}
     void Clear() {m_graphics.clear();}
+    bool IsEmpty() const {return m_graphics.empty();}
 };
 END_BENTLEY_RENDER_NAMESPACE
 
@@ -87,7 +88,7 @@ public:
 };
 
 //=======================================================================================
-//! Context used by elements when they clone themselves
+//! Context used by elements when they are cloned
 //=======================================================================================
 struct DgnCloneContext
 {
@@ -603,16 +604,15 @@ protected:
     };
 
     mutable BeAtomic<uint32_t> m_refCount;
-    DgnDbR          m_dgndb;
-    DgnElementId    m_elementId;
-    DgnElementId    m_parentId;
-    DgnModelId      m_modelId;
-    DgnClassId      m_classId;
-    DgnCode         m_code;
-    Utf8String      m_label;
+    DgnDbR        m_dgndb;
+    DgnElementId  m_elementId;
+    DgnElementId  m_parentId;
+    DgnModelId    m_modelId;
+    DgnClassId    m_classId;
+    DgnCode       m_code;
+    Utf8String    m_label;
+    mutable Flags m_flags;
     mutable ECN::AdHocJsonContainerP m_userProperties;
-
-    mutable Flags   m_flags;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
     virtual Utf8CP _GetECClassName() const {return MyECClassName();}
@@ -1301,9 +1301,14 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT virtual void _OnInserted(DgnElementP copiedFrom) const override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR) override;
+    DGNPLATFORM_EXPORT virtual void _OnDeleted() const override;
+    DGNPLATFORM_EXPORT virtual void _OnReversedAdd() const override;
+    DGNPLATFORM_EXPORT virtual void _OnReversedDelete() const override;
+    DGNPLATFORM_EXPORT virtual void _OnUpdateFinished() const override;
     DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext&) override;
-    virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + static_cast<uint32_t>(sizeof(m_categoryId) + sizeof(m_geom)) + m_geom.GetAllocSize();}
+    virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + static_cast<uint32_t>(sizeof(m_categoryId) + sizeof(m_geom)) + sizeof(m_graphics) + m_geom.GetAllocSize();}
 
     static void AddBaseClassParams(ECSqlClassParams& params);
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
@@ -1370,7 +1375,6 @@ protected:
     virtual GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
     virtual Placement3dCR _GetPlacement() const override final {return m_placement;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement3dCR placement) override;
-    virtual void _OnUpdateFinished() const override {T_Super::_OnUpdateFinished(); m_graphics.Clear();}
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT virtual void _AdjustPlacementForImport(DgnImportContext const&) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
@@ -1437,7 +1441,6 @@ protected:
     virtual Placement2dCR _GetPlacement() const override final {return m_placement;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement2dCR placement) override;
     virtual Render::GraphicSet& _Graphics() const override final {return m_graphics;}
-    virtual void _OnUpdateFinished() const override {T_Super::_OnUpdateFinished(); m_graphics.Clear();}
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT virtual void _AdjustPlacementForImport(DgnImportContext const&) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
@@ -1867,7 +1870,7 @@ public:
 
     //! Get an editable copy of an element by DgnElementId.
     //! @return Invalid if the element does not exist, or if it cannot be edited.
-    template<class T> RefCountedPtr<T> GetForEdit(DgnElementId id) const {RefCountedCPtr<T> orig=Get<T>(id); return orig.IsValid() ?(T*)orig->CopyForEdit().get() : nullptr;}
+    template<class T> RefCountedPtr<T> GetForEdit(DgnElementId id) const {RefCountedCPtr<T> orig=Get<T>(id); return orig.IsValid() ? (T*)orig->CopyForEdit().get() : nullptr;}
 
     //! Insert a copy of the supplied DgnElement into this DgnDb.
     //! @param[in] element The DgnElement to insert.

@@ -830,6 +830,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         /** The name of the class */
         Name: Bentley_Utf8String;
 
+        /** The schema to which the class belongs */
+        Schema: ECSchemaP;
+
         /** The base classes of this class */
         BaseClasses: ECClassCollectionP;
 

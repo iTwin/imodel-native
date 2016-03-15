@@ -71,6 +71,9 @@ typedef JsAdHocJsonPropertyValue* JsAdHocJsonPropertyValueP;
 struct JsECClass;
 typedef JsECClass* JsECClassP;
 
+struct JsECSchema;
+typedef JsECSchema* JsECSchemaP;
+
 struct JsECProperty;
 typedef JsECProperty* JsECPropertyP;
 
@@ -880,13 +883,16 @@ struct JsECClass : RefCountedBaseWithCreate
         return new JsECPropertyCollection(m_ecClass->GetProperties());
         }
 
-    JsECPropertyP GetProperty(Utf8StringCR name);
+    JsECPropertyP GetProperty(Utf8StringCR name) const;
 
-    JsECInstanceP GetCustomAttribute(Utf8StringCR className);
+    JsECInstanceP GetCustomAttribute(Utf8StringCR className) const;
 
     JsECInstanceP MakeInstance();
 
+    JsECSchemaP GetSchema() const;
+
     STUB_OUT_SET_METHOD(Name,Utf8String)
+    STUB_OUT_SET_METHOD(Schema,JsECSchemaP)
     STUB_OUT_SET_METHOD(Properties,JsECPropertyCollectionP)
     STUB_OUT_SET_METHOD(BaseClasses,JsECClassCollectionP)
     STUB_OUT_SET_METHOD(DerivedClasses,JsECClassCollectionP)
@@ -951,7 +957,7 @@ struct JsECProperty : RefCountedBaseWithCreate
         }
 
     JsPrimitiveECPropertyP GetAsPrimitiveProperty() const;
-    JsECInstanceP GetCustomAttribute(Utf8StringCR className);
+    JsECInstanceP GetCustomAttribute(Utf8StringCR className) const;
     
     STUB_OUT_SET_METHOD(Name,Utf8String)
     STUB_OUT_SET_METHOD(IsPrimitive,bool)

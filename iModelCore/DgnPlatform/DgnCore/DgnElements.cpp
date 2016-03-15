@@ -1240,6 +1240,7 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnDbStatus* outS
 
     if (typeid(element) != element.GetElementHandler()._ElementType())
         {
+        BeAssert(false && "you can only insert an element that has ITS OWN handler");
         stat = DgnDbStatus::WrongHandler; // they gave us an element with an invalid handler
         return nullptr;
         }
@@ -1407,8 +1408,8 @@ DgnElementId DgnElements::QueryElementIdByCode(DgnCode const& code) const
     {
     if (!code.IsValid() || code.IsEmpty())
         return DgnElementId(); // An invalid code won't be found; an empty code won't be unique. So don't bother.
-    else
-        return QueryElementIdByCode(code.GetAuthority(), code.GetValue(), code.GetNamespace());
+
+    return QueryElementIdByCode(code.GetAuthority(), code.GetValue(), code.GetNamespace());
     }
 
 /*---------------------------------------------------------------------------------**//**
