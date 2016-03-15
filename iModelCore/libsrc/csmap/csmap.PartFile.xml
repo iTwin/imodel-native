@@ -44,7 +44,6 @@
     </Part>
 
     <Part Name="GeoCoordDataMinimal" BentleyBuildMakeFile="GeoCoordData.mke" BMakeOptions="+dMinimal">
-        <SubPart PartName="CsmapCompiler"/>
         <Bindings>
             <Files ProductDirectoryName="GeoCoordData" SubPartDirectory="GeoCoordData">
                 Delivery/GeoCoordDataMinimal/datum.dty
