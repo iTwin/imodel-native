@@ -50,7 +50,7 @@
         </util:XmlConfig>
         <util:XmlConfig Id="CreateElementwebconfig13" Action="create" Node="element" ElementPath="//microsoft.identityModel/service/federatedAuthentication" Name="wsFederation" File="[INSTALLDIR]web.config" On="install" Sequence="12">
           <util:XmlConfig Id="CreateElementwebconfig14" ElementId="CreateElementwebconfig13" Name="passiveRedirectEnabled" Value="false" File="[INSTALLDIR]web.config" />
-          <util:XmlConfig Id="CreateElementwebconfig15" ElementId="CreateElementwebconfig13" Name="issuer" Value="https://ims-testing.bentley.com/" File="[INSTALLDIR]web.config" />
+          <util:XmlConfig Id="CreateElementwebconfig15" ElementId="CreateElementwebconfig13" Name="issuer" Value="https://ims.bentley.com/" File="[INSTALLDIR]web.config" />
           <util:XmlConfig Id="CreateElementwebconfig16" ElementId="CreateElementwebconfig13" Name="realm" Value="https://dev-wsg20-eus.cloudapp.net/" File="[INSTALLDIR]web.config" />
           <util:XmlConfig Id="CreateElementwebconfig17" ElementId="CreateElementwebconfig13" Name="requireHttps" Value="true" File="[INSTALLDIR]web.config" />
         </util:XmlConfig>
@@ -62,7 +62,7 @@
         </util:XmlConfig>
         <util:XmlConfig Id="CreateElementwebconfig22" Action="create" Node="element" ElementPath="//microsoft.identityModel/service/issuerNameRegistry" Name="trustedIssuers" File="[INSTALLDIR]web.config" On="install" Sequence="15" />
         <util:XmlConfig Id="CreateElementwebconfig23" Action="create" Node="element" ElementPath="//microsoft.identityModel/service/issuerNameRegistry/trustedIssuers" Name="add" File="[INSTALLDIR]web.config" On="install" Sequence="16">
-          <util:XmlConfig Id="CreateElementwebconfig24" ElementId="CreateElementwebconfig23" Name="thumbprint" Value="74dcf3da6dc654bceae79403d7848db29e350f10" File="[INSTALLDIR]web.config" />
+          <util:XmlConfig Id="CreateElementwebconfig24" ElementId="CreateElementwebconfig23" Name="thumbprint" Value="043349d0e3890dbb83208b52ad2b135a3d2c5042" File="[INSTALLDIR]web.config" />
           <util:XmlConfig Id="CreateElementwebconfig25" ElementId="CreateElementwebconfig23" Name="name" Value="https://auth.bentley.com/" File="[INSTALLDIR]web.config" />
         </util:XmlConfig>
       </Component>
@@ -112,9 +112,6 @@
       </Component>
       <Component Id="BeLibxml2G06.dll" Directory="bin" Guid="{A34FE1FE-E8E3-4731-8EAA-493570A6792F}">
         <File Id="BeLibxml2G06.dll" KeyPath="yes" Source="$(var.ProductDir)BeLibxml2G06.dll" />
-      </Component>
-      <Component Id="BentleyAllocator.dll" Directory="bin" Guid="{6F9F3CAA-DD42-466C-8F07-EF1E9E41C1A0}">
-        <File Id="BentleyAllocator.dll" KeyPath="yes" Source="$(var.ProductDir)BentleyAllocator.dll" />
       </Component>
       <Component Id="BentleyG06.dll" Directory="bin" Guid="{761EFBFA-783D-4641-BFCD-D3BC2F465F4B}">
         <File Id="BentleyG06.dll" KeyPath="yes" Source="$(var.ProductDir)BentleyG06.dll" />

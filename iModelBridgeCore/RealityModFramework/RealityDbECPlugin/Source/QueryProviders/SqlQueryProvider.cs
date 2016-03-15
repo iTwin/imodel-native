@@ -16,6 +16,7 @@ using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Reflection;
 
 namespace IndexECPlugin.Source.QueryProviders
     {
@@ -174,12 +175,21 @@ namespace IndexECPlugin.Source.QueryProviders
                         int? streamDataColumn = dataReadingHelper.getStreamDataColumn();
                         if ( streamDataColumn.HasValue )
                             {
-                            Byte[] byteArray = (byte[]) reader[streamDataColumn.Value];
+                            Byte[] byteArray = reader[streamDataColumn.Value] as byte[];
 
-                            MemoryStream mStream = new MemoryStream(byteArray);
+                            MemoryStream mStream;
 
-                            StreamBackedDescriptor desc = new StreamBackedDescriptor(mStream, "Thumbnail", mStream.Length, DateTime.UtcNow);
-                            StreamBackedDescriptorAccessor.SetIn(instance, desc);
+                            if ( byteArray != null )
+                                {
+                                mStream = new MemoryStream(byteArray);
+                                }
+                            else
+                                {
+                                mStream = new MemoryStream();
+                                Assembly.GetExecutingAssembly().GetManifestResourceStream("NoImage.jpg").CopyTo(mStream);
+                                }
+                                StreamBackedDescriptor desc = new StreamBackedDescriptor(mStream, "Thumbnail", mStream.Length, DateTime.UtcNow);
+                                StreamBackedDescriptorAccessor.SetIn(instance, desc);
                             }
 
                         int? relatedInstanceIdColumn = dataReadingHelper.getRelatedInstanceIdColumn();

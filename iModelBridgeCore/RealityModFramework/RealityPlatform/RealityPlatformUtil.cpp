@@ -33,31 +33,6 @@ void GetBaseDirOfExecutingModule(WStringR baseDir)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsiclass                                     Marc.Bedard                     11/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct FactoryScanOnOpenGuard
-    {
-    private:
-        bool              m_oldValue;
-
-        // Disabled
-        FactoryScanOnOpenGuard(FactoryScanOnOpenGuard const & object);
-        FactoryScanOnOpenGuard& operator=(FactoryScanOnOpenGuard const & object);
-
-    public:
-        FactoryScanOnOpenGuard(bool newValue)
-            {
-            m_oldValue = HRFRasterFileFactory::GetInstance()->GetFactoryScanOnOpen();
-            HRFRasterFileFactory::GetInstance()->SetFactoryScanOnOpen(newValue);
-            }
-        ~FactoryScanOnOpenGuard()
-            {
-            //&&MM remove this patch from the the factory. It could be a method param but not a setting guard thing.
-            HRFRasterFileFactory::GetInstance()->SetFactoryScanOnOpen(m_oldValue);
-            }
-    };
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SessionManager::InitBaseGCS()
@@ -251,7 +226,6 @@ HFCPtr<HRFRasterFile> RasterFacility::GetRasterFile(Utf8CP inFilename)
         // Open Raster file
         {
         // HFCMonitor __keyMonitor(m_KeyByMethod);
-        FactoryScanOnOpenGuard __wantScan(false);
 
         // Create URL
         HFCPtr<HFCURL>  srcFilename(HFCURL::Instanciate(filename));

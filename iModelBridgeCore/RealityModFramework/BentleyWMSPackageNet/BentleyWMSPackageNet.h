@@ -2,7 +2,7 @@
 |
 |     $Source: BentleyWMSPackageNet/BentleyWMSPackageNet.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -138,6 +138,7 @@ namespace RealityDataPackageWrapper
             static RealityDataSourceNet^ Create(System::String^ uri,
                                                 System::String^ type,
                                                 System::String^ copyright,
+                                                System::String^ id,
                                                 System::String^ provider,
                                                 uint64_t filesize,
                                                 System::String^ fileInCompound,
@@ -152,6 +153,9 @@ namespace RealityDataPackageWrapper
 
             //! Get the copyright. Might be empty.
             System::String^ GetCopyright() { return m_copyright; }
+
+            //! Get the id. Might be empty.
+            System::String^ GetId() { return m_id; }
 
             //! Get the provider. Might be empty.
             System::String^ GetProvider() { return m_provider; }
@@ -172,6 +176,7 @@ namespace RealityDataPackageWrapper
             RealityDataSourceNet(System::String^ uri,
                                  System::String^ type,
                                  System::String^ copyright,
+                                 System::String^ id,
                                  System::String^ provider,
                                  uint64_t filesize,
                                  System::String^ fileInCompound,
@@ -183,7 +188,8 @@ namespace RealityDataPackageWrapper
         private:
             System::String^ m_uri;
             System::String^ m_type;
-            System::String^ m_copyright;  
+            System::String^ m_copyright;
+            System::String^ m_id;
             System::String^ m_provider;
             uint64_t m_filesize;
             System::String^ m_fileInCompound;
@@ -200,10 +206,12 @@ namespace RealityDataPackageWrapper
             //! Create WMS data source.
             static WmsSourceNet^ Create(System::String^ uri,
                                         System::String^ copyright,
+                                        System::String^ id,
                                         System::String^ provider,
                                         uint64_t filesize,
                                         System::String^ metadata,
                                         List<System::String^>^ sisterFiles,
+                                        System::String^ mapUri,
                                         double bboxMinX,
                                         double bboxMinY,
                                         double bboxMaxX,
@@ -225,10 +233,12 @@ namespace RealityDataPackageWrapper
         private:
             WmsSourceNet(System::String^ uri,
                          System::String^ copyright,
+                         System::String^ id,
                          System::String^ provider,
                          uint64_t filesize,
                          System::String^ metadata,
                          List<System::String^>^ sisterFiles,
+                         System::String^ mapUri,
                          double bboxMinX,
                          double bboxMinY,
                          double bboxMaxX,
@@ -258,6 +268,7 @@ namespace RealityDataPackageWrapper
             //! Create OSM data source.
             static OsmSourceNet^ Create(System::String^ uri,
                                         System::String^ copyright,
+                                        System::String^ id,
                                         System::String^ provider,
                                         uint64_t filesize,
                                         System::String^ metadata,
@@ -271,6 +282,7 @@ namespace RealityDataPackageWrapper
         private:
             OsmSourceNet(System::String^ uri,
                          System::String^ copyright,
+                         System::String^ id,
                          System::String^ provider,
                          uint64_t filesize,
                          System::String^ metadata,

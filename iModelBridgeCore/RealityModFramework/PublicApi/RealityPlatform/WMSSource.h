@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityPlatform/WMSSource.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,8 +18,12 @@ struct WmsMapSettings : public RefCountedBase
     {
 public:
     //! Create WMS MapRequest info with all the required information. 
-    REALITYDATAPLATFORM_EXPORT static WmsMapSettingsPtr Create(DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel);
+    REALITYDATAPLATFORM_EXPORT static WmsMapSettingsPtr Create(Utf8CP uri, DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel);
     REALITYDATAPLATFORM_EXPORT static WmsMapSettingsPtr CreateFromXml(Utf8CP xmlFragment);
+
+    //! Get/Set the server uri. 
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetUri() const;
+    REALITYDATAPLATFORM_EXPORT void         SetUri(Utf8CP uri);
 
     //! Get/Set the bounding box.
     REALITYDATAPLATFORM_EXPORT DRange2dCR   GetBBox() const;
@@ -75,10 +79,10 @@ public:
     REALITYDATAPLATFORM_EXPORT void ToXml(Utf8StringR xmlFragment) const;
     
 private:
-    WmsMapSettings(DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel);
+    WmsMapSettings(Utf8CP uri, DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel);
     ~WmsMapSettings();
 
-    Utf8String  m_url;                  //! GetMap url. Up to but excluding the query char '?'
+    Utf8String  m_uri;                  //! GetMap url. Up to but excluding the query char '?'
 
     // Map window
     //&&JFC Reproject bbox in cs unit.

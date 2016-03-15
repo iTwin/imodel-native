@@ -1,7 +1,7 @@
 <package>
   <metadata>
     <id>Bentley.RealityDbECPluginC</id>
-    <version>1.0.0.0</version>
+    <version>$version$</version>
     <title>Bentley RealityDbECPlugin</title>
     <authors>Bentley Systems, Incorporated</authors>
     <owners>Bentley Systems, Incorporated</owners>
@@ -10,10 +10,10 @@
     <copyright>(c) Bentley Systems, Incorporated. All rights reserved.</copyright>
     <language>en-US</language>
     <dependencies>
-        <dependency id="Newtonsoft.Json" version="6.0.6" />
-        <dependency id="Bentley.ECF" version="9.5.2.32" />
-        <dependency id="Bentley.Logging" version="9.5.2.38" />
-        <dependency id="Bentley.PlatformTech" version="9.5.2.38" />
+        <dependency id="Newtonsoft.Json" version="#Json_version#" />
+        <dependency id="Bentley.ECF" version="#ECF_version#" />
+        <dependency id="Bentley.Logging" version="#Logging_version#" />
+        <dependency id="Bentley.PlatformTech" version="#PlatformTech_version#" />
     </dependencies>
   </metadata>
   <files>
@@ -21,7 +21,6 @@
     <file src="Assemblies\BeCurlG06.dll" target="build" />
     <file src="Assemblies\BeIcu4cG06.dll" target="build" />
     <file src="Assemblies\BeLibxml2G06.dll" target="build" />
-    <file src="Assemblies\BentleyAllocator.dll" target="build" />
     <file src="Assemblies\BentleyG06.dll" target="build" />
     <file src="Assemblies\BentleyGeomG06.dll" target="build" />
     <file src="Assemblies\BeOpenSSLG06.dll" target="build" />
@@ -32,7 +31,7 @@
     <file src="Assemblies\RealityPackage.dll" target="build" />
     <file src="Assemblies\RealityPlatform.dll" target="build" />
     <file src="Files\Bentley.RealityDbECPluginC.targets" target="build" />
-    <file src="Assemblies\Bentley.RealityDbECPluginC.dll" target="lib\Bentley.RealityDbECPluginC.dll" />
-    <file src="Assemblies\BentleyWMSPackageNet.dll" target="lib\BentleyWMSPackageNet.dll" />
+    <file src="Assemblies\Bentley.RealityDbECPluginC.dll" target="lib\net40\Bentley.RealityDbECPluginC.dll" />
+    <file src="Assemblies\BentleyWMSPackageNet.dll" target="lib\net40\BentleyWMSPackageNet.dll" />
   </files>
 </package>

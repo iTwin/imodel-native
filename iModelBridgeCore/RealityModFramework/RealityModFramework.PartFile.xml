@@ -99,11 +99,12 @@
         <RequiredRepository>Bsitools-NuGet</RequiredRepository>
         <SubPart PartName="RealityDbECPluginC" />
         <Bindings>
-            <Files ProductDirectoryName="RealityDbECPluginNuGetPackages">Delivery/Bentley.RealityDbECPluginC.1.0.0.0.nupkg</Files>
+            <Files ProductDirectoryName="RealityDbECPluginNuGetPackages" Required="false">Install\Bentley.RealityDbECPluginC.*.nupkg</Files>
         </Bindings>
     </Part>
     
-    <Part Name="BentleyWMSPackageNet" BentleyBuildMakeFile="BentleyWMSPackageNet\BentleyWMSPackageNet.mke">
+    <Part Name="BentleyWMSPackageNet" BMakeFile="BentleyWMSPackageNet\BentleyWMSPackageNet.mke" BMakeOptions="-dTranskitLink=1">
+        <SubPart PartName="TransKitToolsSub"    PartFile="TransKitTools" Repository="TransKitTools" />
         <SubPart PartName="RealityPackage"/>
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="PublicAPI" />
@@ -117,6 +118,7 @@
     <Part Name="RealityDbECPluginInstaller" BMakeFile="RealityDbECPlugin/Install/Install.mke">
       <RequiredRepository>bsitools-wix_3.10.2103.0</RequiredRepository>
       <RequiredRepository>Miscdev-Eula</RequiredRepository>
+      <RequiredRepository>Mergemodule-Microsoft_VC_14.0</RequiredRepository>
       <SubPart PartName="RealityDbECPlugin"/>
       <Bindings>
         <Files ProductDirectoryName="ApplicationInstallRoot" Required="true" IfNotPresent="Warn">Delivery/Setup_RealityDbECPlugin.msi</Files>

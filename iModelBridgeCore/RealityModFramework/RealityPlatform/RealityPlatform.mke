@@ -2,7 +2,7 @@
 #
 #     $Source: RealityPlatform/RealityPlatform.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -91,7 +91,6 @@ DLM_NO_SIGN         = 1
 
 
 LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
-                       $(ContextSubpartsLibs)$(libprefix)BentleyAllocator$(libext) \
                        $(ContextSubpartsLibs)ImagePP$(libext) \
                        $(ContextSubpartsLibs)BentleyGeom$(libext) \
                        $(ContextSubpartsLibs)BaseGeoCoord$(libext) \

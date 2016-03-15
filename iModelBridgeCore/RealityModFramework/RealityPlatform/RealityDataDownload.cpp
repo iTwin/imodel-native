@@ -87,7 +87,16 @@ static int callback_progress_func(void *pClient,
             else
                 pFileTrans->downloadedSizeStep += (size_t)(pFileTrans->filesize * pFileTrans->progressStep);
 
-            return (pFileTrans->pProgressFunc)((int)pFileTrans->index, pClient, (size_t)dlnow, pFileTrans->filesize);
+            int statusCode = (pFileTrans->pProgressFunc)((int) pFileTrans->index, pClient, (size_t) dlnow, pFileTrans->filesize);
+            if (0 != statusCode)
+                {
+                // An error occurred, delete incomplete file.
+                pFileTrans->fileStream.Close();
+                BeFileName::BeDeleteFile(pFileTrans->filename.c_str());
+                }
+                
+
+            return statusCode;
             }
         }
 
@@ -308,7 +317,7 @@ bool RealityDataDownload::SetupCurlandFile(size_t pi_index)
         /* Set a pointer to our struct to pass to the callback */
         curl_easy_setopt(pCurl, CURLOPT_WRITEDATA, &(m_pEntries[pi_index]));
 
-        curl_easy_setopt(pCurl, CURLOPT_FTPPORT, "-");
+//        curl_easy_setopt(pCurl, CURLOPT_FTPPORT, "-");    // FTP active
 
         /* Switch on full protocol/debug output set 1L*/
         curl_easy_setopt(pCurl, CURLOPT_VERBOSE, 0L);

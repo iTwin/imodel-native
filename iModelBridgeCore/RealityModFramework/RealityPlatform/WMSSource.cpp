@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatform/WMSSource.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -13,6 +13,7 @@
 #define WMSSOURCE_PREFIX                        "wms"
 
 #define WMSSOURCE_ELEMENT_Root                  "WmsMapSettings"
+#define WMSSOURCE_ELEMENT_Uri                   "Uri"
 #define WMSSOURCE_ELEMENT_BoundingBox           "BoundingBox"
 #define WMSSOURCE_ELEMENT_MetaWidth             "MetaWidth"
 #define WMSSOURCE_ELEMENT_MetaHeight            "MetaHeight"
@@ -31,9 +32,9 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 5/2015
 //-------------------------------------------------------------------------------------
-WmsMapSettingsPtr WmsMapSettings::Create(DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel)
+WmsMapSettingsPtr WmsMapSettings::Create(Utf8CP uri, DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel)
     {
-    return new WmsMapSettings(bbox, version, layers, csType, csLabel);
+    return new WmsMapSettings(uri, bbox, version, layers, csType, csLabel);
     }
 
 //-------------------------------------------------------------------------------------
@@ -55,13 +56,18 @@ WmsMapSettingsPtr WmsMapSettings::CreateFromXml(Utf8CP xmlFragment)
         return 0;
 
     // Mandatory GetMap parameters
+    Utf8String uri;
     DRange2d bbox;
     Utf8String version;
     Utf8String layers;
     Utf8String csType;
     Utf8String csLabel;
 
-    BeXmlNodeP pChildNode = pMapSettingsNode->SelectSingleNode(WMSSOURCE_ELEMENT_BoundingBox);
+    BeXmlNodeP pChildNode = pMapSettingsNode->SelectSingleNode(WMSSOURCE_ELEMENT_Uri);
+    if (NULL != pChildNode)
+        pChildNode->GetContent(uri);
+
+    pChildNode = pMapSettingsNode->SelectSingleNode(WMSSOURCE_ELEMENT_BoundingBox);
     if (NULL != pChildNode)
         {
         WString bboxCorners;
@@ -93,7 +99,7 @@ WmsMapSettingsPtr WmsMapSettings::CreateFromXml(Utf8CP xmlFragment)
         pChildNode->GetAttributeStringValue(csType, WMSSOURCE_ATTRIBUTE_CoordSysType);
         }
 
-    WmsMapSettingsPtr pMapSettings = WmsMapSettings::Create(bbox, version.c_str(), layers.c_str(), csType.c_str(), csLabel.c_str());
+    WmsMapSettingsPtr pMapSettings = WmsMapSettings::Create(uri.c_str(), bbox, version.c_str(), layers.c_str(), csType.c_str(), csLabel.c_str());
 
     // Optional GetMap parameters
     Utf8String styles;
@@ -151,6 +157,9 @@ WmsMapSettingsPtr WmsMapSettings::CreateFromXml(Utf8CP xmlFragment)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 6/2015
 //-------------------------------------------------------------------------------------
+Utf8StringCR    WmsMapSettings::GetUri() const { return m_uri; }
+void            WmsMapSettings::SetUri(Utf8CP uri) { m_uri = uri; }
+
 DRange2dCR  WmsMapSettings::GetBBox() const { return m_boundingBox; }
 void        WmsMapSettings::SetBBox(DRange2dCP bbox) { m_boundingBox = *bbox; }
 
@@ -199,6 +208,10 @@ void WmsMapSettings::ToXml(Utf8StringR xmlFragment) const
     //pRootNode->SetNamespace(WMSSOURCE_PREFIX, NULL);
 
     WString temp;
+
+    // [Required] Uri  
+    BeStringUtilities::Utf8ToWChar(temp, m_uri.c_str());
+    pRootNode->AddElementStringValue(WMSSOURCE_ELEMENT_Uri, temp.c_str());
 
     // [Required] Bounding Box
     WString bboxCorners;
@@ -261,8 +274,9 @@ void WmsMapSettings::ToXml(Utf8StringR xmlFragment) const
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 5/2015
 //-------------------------------------------------------------------------------------
-WmsMapSettings::WmsMapSettings(DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel)
-    : m_boundingBox(bbox), 
+WmsMapSettings::WmsMapSettings(Utf8CP uri, DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel)
+    : m_uri(uri),
+      m_boundingBox(bbox), 
       m_metaWidth(10),          // Default.
       m_metaHeight(10),         // Default.
       m_version(version), 

@@ -61,7 +61,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Bentley.lib;BentleyAllocator.lib;RealityPlatform.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Bentley.lib;RealityPlatform.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>D:\Output\dgndb06\Winx64\BuildContexts\RealityModFramework\SubParts\Libs;D:\Output\dgndb06\Winx64\BuildContexts\RealityModFramework\Delivery;D:\Output\dgndb06\Winx64\BuildContexts\Bentley\SubParts\Libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -73,7 +73,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Bentley.lib;BentleyAllocator.lib;RealityPlatform.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Bentley.lib;RealityPlatform.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>D:\Output\dgndb06\Winx64\BuildContexts\RealityModFramework\SubParts\Libs;D:\Output\dgndb06\Winx64\BuildContexts\RealityModFramework\Delivery;D:\Output\dgndb06\Winx64\BuildContexts\Bentley\SubParts\Libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
@@ -81,7 +81,6 @@
 copy D:\Output\dgndb06\Winx64\build\BeCurl\BeCurl.dll $(TargetDir)
 copy D:\Output\dgndb06\Winx64\build\BeIcu4c\BeIcu4c.dll $(TargetDir)
 copy D:\Output\dgndb06\Winx64\build\BeLibxml2\BeLibxml2.dll $(TargetDir)
-copy D:\Output\dgndb06\Winx64\build\BentleyAllocator\BentleyAllocator.dll $(TargetDir)
 copy D:\Output\dgndb06\Winx64\build\Bentley\BentleyG.dll $(TargetDir)
 copy D:\Output\dgndb06\Winx64\build\GeomLibs\delivery\basegeom\bin\BentleyGeomG.dll $(TargetDir)
 copy D:\Output\dgndb06\Winx64\build\BeOpenSSL\BeOpenSSL.dll $(TargetDir)

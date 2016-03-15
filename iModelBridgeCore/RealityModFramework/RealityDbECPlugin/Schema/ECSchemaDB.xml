@@ -932,10 +932,10 @@
             </ECCustomAttributes>
         </ECProperty>
         
-        <ECProperty propertyName="DataSourceTypesAvailable" typeName="string">
+        <ECProperty propertyName="DataSourceType" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
-                    <ColumnName>DataSourceTypesAvailable</ColumnName>
+                    <ColumnName>DataSourceType</ColumnName>
                 </DBColumn>
             </ECCustomAttributes>
         </ECProperty>
@@ -964,6 +964,22 @@
             </ECCustomAttributes>
         </ECProperty>
         
+        <ECProperty propertyName="FileSize" typeName="long" >
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>FileSize</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="SpatialDataSourceId" typeName="string" >
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>SpatialDataSourceId</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
         <ECProperty propertyName="ResolutionInMeters" typeName="string" />
         <!--ECProperty propertyName="ParentDatasetIdStr" typeName="string" /-->
         <ECProperty propertyName="DataProvider" typeName="string" />
@@ -973,6 +989,7 @@
         <ECProperty propertyName="RawMetadataURL" typeName="string" />
         <ECProperty propertyName="RawMetadataFormat" typeName="string" />
         <ECProperty propertyName="SubAPI" typeName="string" />
+        
     </ECClass>
     
 <!--     <ECClass typeName="USGSEntity" isDomainClass="true">
@@ -1195,6 +1212,7 @@
         
     <ECClass typeName="RequestedEntity" isStruct="true" isDomainClass="true">
         <ECProperty propertyName="ID" typeName="string" />
+        <ECProperty propertyName="SpatialDataSourceID" typeName="string" />
         <ECProperty propertyName="SelectedFormat" typeName="string" />
         <ECProperty propertyName="SelectedStyle" typeName="string" />
     </ECClass>

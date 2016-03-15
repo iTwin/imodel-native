@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--
+#  $Source: RealityDbECPlugin/Install/Product_MergeModules.wxs $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+-->
+<?include Defines.wxi?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Fragment>
+      <DirectoryRef Id="TARGETDIR">
+          <Merge Id="Microsoft_VC140_CRT"
+             Language="0"
+             SourceFile="$(env.SrcRoot)bin\merge_modules\Microsoft_VC_14.0/Microsoft_VC140_CRT_$(var.PACKAGE_TARGETPLATFORM).msm"
+             DiskId="1" />
+      </DirectoryRef>
+</Fragment>
+</Wix>

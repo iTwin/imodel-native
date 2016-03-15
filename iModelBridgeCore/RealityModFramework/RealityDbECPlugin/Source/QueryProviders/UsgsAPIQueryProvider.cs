@@ -258,11 +258,11 @@ namespace IndexECPlugin.Source.QueryProviders
 
             if ( type == null )
                 {
-                instance["DataSourceTypesAvailable"].SetToNull();
+                instance["DataSourceType"].SetToNull();
                 }
             else
                 {
-                instance["DataSourceTypesAvailable"].StringValue = type;
+                instance["DataSourceType"].StringValue = type;
                 }
 
             instance["ThumbnailURL"].SetToNull();
@@ -922,7 +922,8 @@ namespace IndexECPlugin.Source.QueryProviders
                     JToken jtoken = item.jToken;
 
                     instance.InstanceId = jtoken.TryToGetString("sourceId");
-                    instance["Id"].StringValue = jtoken.TryToGetString("sourceId");
+                    instance["Id"].StringValue = instance.InstanceId;
+                    instance["SpatialDataSourceId"].StringValue = instance.InstanceId;
 
                     //instance["Name"].StringValue = jtoken.TryToGetString("title");
                     instance["Name"].StringValue = item.Title;
@@ -933,7 +934,7 @@ namespace IndexECPlugin.Source.QueryProviders
                         {
                         instance["Footprint"].StringValue = "{ \"points\" : " + String.Format("[[{0},{1}],[{2},{1}],[{2},{3}],[{0},{3}],[{0},{1}]]", bbox.TryToGetString("minX"), bbox.TryToGetString("minY"), bbox.TryToGetString("maxX"), bbox.TryToGetString("maxY")) + ", \"coordinate_system\" : \"4326\" }";
                         }
-                    instance["DataSourceTypesAvailable"].StringValue = jtoken.TryToGetString("format");
+                    instance["DataSourceType"].StringValue = jtoken.TryToGetString("format");
                     instance["ThumbnailURL"].StringValue = jtoken.TryToGetString("previewGraphicURL");
                     instance["MetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/" + instance.InstanceId;
                     instance["RawMetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/download/" + instance.InstanceId + "?format=fgdc";
@@ -971,7 +972,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
                         }
 
-
+                    instance["FileSize"].NativeValue = jtoken["sizeInBytes"].Value<long>() / 1024;
 
                     instanceList.Add(instance);
                     }

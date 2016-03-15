@@ -6,7 +6,7 @@
 #       $Date: 2007/03/07 13:34:13 $
 #     $Author: Bern.McCarty $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -59,7 +59,6 @@ DLM_OBJECT_FILES    = $(MultiCompileObjectList)
 
 
 LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
-                       $(ContextSubpartsLibs)$(libprefix)BentleyAllocator$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
 
