@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/RefCounted.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -34,19 +34,22 @@ public:
 // You can use this macro to add an implementation of IRefCounted, i.e., the reference-counted pattern, directly into your class.
 // You must also put the DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT below into your constructor.
 // You should normally make your class non-copyable. If not, you must define a copy constructor and assignment operator, as shown in the RefCounted template below.
-#define DEFINE_BENTLEY_REF_COUNTED_MEMBERS \
-private:\
-    mutable BeAtomic<uint32_t> m_refCount;        \
-protected:\
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS           \
-public:\
-    uint32_t AddRef() const {return ++m_refCount;}\
-    uint32_t Release() const                      \
-        {                                         \
-        if (1 < m_refCount--)                     \
-            return  m_refCount.load();            \
-        delete this;                              \
-        return  0;                                \
+// Warning: the Release method implementation decreases the value of m_refCount atomically and must not use any member variables after that - other
+// threads see the decreased value and can potentially delete the object.
+#define DEFINE_BENTLEY_REF_COUNTED_MEMBERS              \
+private:                                                \
+    mutable BeAtomic<uint32_t> m_refCount;              \
+protected:                                              \
+    DEFINE_BENTLEY_NEW_DELETE_OPERATORS                 \
+public:                                                 \
+    uint32_t AddRef() const {return ++m_refCount;}      \
+    uint32_t Release() const                            \
+        {                                               \
+        uint32_t refCount = m_refCount--;               \
+        if (1 < refCount)                               \
+            return refCount - 1;                        \
+        delete this;                                    \
+        return 0;                                       \
         }
 
 // If you put DEFINE_BENTLEY_REF_COUNTED_MEMBERS in your class definition, also put the following macro into your constructor:
