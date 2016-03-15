@@ -600,7 +600,7 @@ void AddPower(UnitRegistry& reg)
     reg.AddUnit(POWER, INTERNATIONAL, "BTU/MONTH", "BTU*MONTH(-1)");
     reg.AddUnit(POWER, INTERNATIONAL, "BTU/HOUR", "BTU*HR(-1)");
     reg.AddUnit(POWER, USCUSTOM, "KILOBTU/HOUR", "[KILO]*BTU*HR(-1)");
-    reg.AddUnit(POWER, USCUSTOM, "HP", "LBF*FT*S(-1)", 550.0);
+    reg.AddUnit(POWER, USCUSTOM, "HP", "LBF*FT*S(-1)", 550.0);  // Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
 
     reg.AddUnit(POWER, SI, "GJ/MONTH", "GJ*MONTH(-1)");
     }
@@ -615,7 +615,7 @@ void AddPressure(UnitRegistry& reg)
     {
     reg.AddUnit(PRESSURE, SI, "PA", "N*M(-2)");
 
-    reg.AddUnit(PRESSURE, SI, "PA_GAUGE", "PA", 1, -101325); // TODO: Use constant for this
+    reg.AddUnit(PRESSURE, SI, "PA_GAUGE", "PA", 1, -101325);  // Offset is one standard atmosphere in PA.  Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
 
     // TODO: See if this is equal to another unit here.
     reg.AddUnit(PRESSURE, SI, "N/SQ.MM", "N*MM(-2)");
@@ -623,22 +623,22 @@ void AddPressure(UnitRegistry& reg)
     reg.AddUnit(PRESSURE, SI, "HECTOPASCAL", "[HECTO]*PA");
 
     reg.AddUnit(PRESSURE, SI, "KILOPASCAL", "[KILO]*PA");
-    reg.AddUnit(PRESSURE, SI, "KILOPASCAL_GAUGE", "[KILO]*PA", 1, -101325e-3); // TODO: Use constant for this
+    reg.AddUnit(PRESSURE, SI, "KILOPASCAL_GAUGE", "[KILO]*PA", 1, -101325e-3);  // Offset is one standard atmosphere converted to KiloPA.  Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
 
     reg.AddUnit(PRESSURE, SI, "MEGAPASCAL", "[MEGA]*PA");
-    reg.AddUnit(PRESSURE, SI, "MEGAPASCAL_GAUGE", "[MEGA]*PA", 1, -101325e-6); // TODO: Use constant for this
+    reg.AddUnit(PRESSURE, SI, "MEGAPASCAL_GAUGE", "[MEGA]*PA", 1, -101325e-6);  // Offset is one standard atmosphere converted to MegaPA.  Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
 
-    reg.AddUnit(PRESSURE, INTERNATIONAL, "AT", "KGF*CM(-2)");  // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+    reg.AddUnit(PRESSURE, INTERNATIONAL, "AT", "KGF*CM(-2)");  // Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
     reg.AddSynonym("AT", "ATMOSPHERE_TECHNIAL");
 
     reg.AddUnit(PRESSURE, INDUSTRIAL, "AT_GAUGE", "AT", 1.0, -1.0332274527998859); // TODO: double check, used 101325 PA -> AT conversion
 
     reg.AddUnit(PRESSURE, INTERNATIONAL, "KGF/SQ.M", "KGF*M(-2)");
 
-    reg.AddUnit(PRESSURE, SI, "ATM", "PA", 101325);  // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  Is standard atmosphere
+    reg.AddUnit(PRESSURE, SI, "ATM", "PA", 101325);  // Is standard atmosphere.  Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
 
-    reg.AddUnit(PRESSURE, SI, "BAR", "PA", 1.0e5); //, BISQNoDescript);
-    reg.AddUnit(PRESSURE, INDUSTRIAL, "BAR_GAUGE", "PA", 1.0e5, -1.01325); //, BISQNoDescript);
+    reg.AddUnit(PRESSURE, SI, "BAR", "PA", 1.0e5); // Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
+    reg.AddUnit(PRESSURE, INDUSTRIAL, "BAR_GAUGE", "PA", 1.0e5, -1.01325); // Offset is one standard atmosphere converted to BAR.  Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
 
     reg.AddUnit(PRESSURE, SI, "MBAR", "[MILLI]*BAR");
 
