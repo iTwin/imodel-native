@@ -1163,6 +1163,7 @@ struct GraphicList : RefCounted<NonCopyableClass>
     void Clear() {m_list.clear();}
     DGNPLATFORM_EXPORT void Drop(Graphic& graphic);
     DGNPLATFORM_EXPORT void Add(Graphic& graphic, void* ovr, uint32_t ovrFlags);
+    DGNPLATFORM_EXPORT void ChangeOverride(Graphic& graphic, void* ovr, uint32_t ovrFlags);
 };
 
 //=======================================================================================
@@ -1176,6 +1177,16 @@ struct Decorations
     GraphicListPtr m_world;          // drawn with zbuffer, with default lighting, smooth shading
     GraphicListPtr m_worldOverlay;   // drawn in overlay mode, world units
     GraphicListPtr m_viewOverlay;    // drawn in overlay mode, view units
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   03/16
+//=======================================================================================
+struct Redraws
+{
+    GraphicListPtr m_erase;
+    GraphicListPtr m_draw;
+    GraphicListPtr m_change;
 };
 
 //=======================================================================================
@@ -1316,7 +1327,7 @@ public:
     virtual void _ChangeDynamics(GraphicListR dynamics) {VerifyRenderThread(); m_dynamics = &dynamics;}
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
     virtual void _ChangeRenderPlan(PlanCR) = 0;
-    virtual void _Redraw(GraphicListR erases, GraphicListR draws) = 0;
+    virtual void _Redraw(Redraws&) = 0;
     virtual void _BeginHeal() = 0;
     enum class HealAborted : bool {No=0, Yes=1};
     virtual void _FinishHeal(HealAborted) = 0;

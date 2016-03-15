@@ -1315,7 +1315,6 @@ BentleyStatus TiledRaster::_Persist(Db& db, BeMutex& cs) const
     if (SUCCESS != GetExpirationDate().ToUnixMilliseconds(expirationDate))
         return ERROR;
 
-
     CachedStatementPtr selectStatement;
     if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(selectStatement, "SELECT Url FROM " TABLE_NAME_TiledRaster " WHERE Url=?"))
         return ERROR;
