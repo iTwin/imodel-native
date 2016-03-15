@@ -28,7 +28,7 @@ struct WmsTileData : IRealityData<WmsTileData, BeSQLiteRealityDataStorage, HttpR
     {
     DEFINE_BENTLEY_REF_COUNTED_MEMBERS
     private:
-        RequestOptions(bool allowExpired, bool requestFromSource) :RealityDataCacheOptions(allowExpired, requestFromSource) {DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT}        
+        RequestOptions(bool allowExpired, bool requestFromSource) :RealityDataCacheOptions(allowExpired, requestFromSource) {}        
     public:
         ~RequestOptions() {}
         //! Creates the options object.
@@ -92,7 +92,7 @@ struct WmsTileDataPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databas
         {
         if (db.TableExists(TABLE_NAME_WmsTileData))
             {
-            s_isPrepared = true;
+            s_isPrepared.store(true);
             return SUCCESS;
             }
     
@@ -106,7 +106,7 @@ struct WmsTileDataPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databas
 
         if (BeSQLite::BE_SQLITE_OK == db.CreateTable(TABLE_NAME_WmsTileData, ddl))
             {
-            s_isPrepared = true;
+            s_isPrepared.store(true);
             return SUCCESS;
             }
         return ERROR;
@@ -139,7 +139,8 @@ struct WmsTileDataPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databas
         return SUCCESS;
         }
     };
-std::atomic<bool> WmsTileDataPrepareAndCleanupHandler::s_isPrepared(false);
+
+BeAtomic<bool> WmsTileDataPrepareAndCleanupHandler::s_isPrepared(false);
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
