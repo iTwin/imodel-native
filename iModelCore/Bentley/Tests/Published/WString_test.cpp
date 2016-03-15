@@ -225,6 +225,13 @@ TEST(WStringTest, Utils)
     WString str3(L"");
     VERIFY( 0 == str3.Trim().length());
     VERIFY(0 == str3.Trim(L"; .").length());
+
+    WString newValue(L"New Test String");
+    Utf16Buffer newValueUtf16;
+    BeStringUtilities::WCharToUtf16(newValueUtf16, newValue.c_str(), BeStringUtilities::AsManyAsPossible);
+    WString str4((Utf16CP)newValueUtf16.data());
+    VERIFY(str4 == L"New Test String");
+
     }
 
 TEST(WStringTest, Operators)

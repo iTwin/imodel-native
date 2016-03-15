@@ -180,11 +180,11 @@ TEST (BeDirectoryIterator, Test1)
     }
 
 //---------------------------------------------------------------------------------------
-// @betest                                      Sam.Wilson  05/2013
+// @betest                                          Umar.Hayat                  02/2016
 //---------------------------------------------------------------------------------------
 TEST(BeDirectoryIterator, FileNamePattern_Parse)
     {
-    BeFileName wildcard (NULL, L"C:\\abc\\bca\\", L"a*.txt", NULL);
+    BeFileName wildcard (NULL, L"C:\\abc\\bca", L"a*.txt", NULL);
     BeFileName dir;
     WString glob;
     FileNamePattern::Parse(dir, glob, wildcard);

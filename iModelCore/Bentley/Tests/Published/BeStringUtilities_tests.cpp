@@ -227,21 +227,30 @@ TEST (BeStringUtilitiesTests, LexicographicCompare)
     wchar_t string1[] = L"Helloo";
     wchar_t string2[] = L"Hello9";
     wchar_t string3[] = L"Hello10";
+    wchar_t string4[] = L"001";
+    wchar_t string5[] = L"0001";
+    wchar_t string6[] = L"000000000000000000";
 
     int status = BeStringUtilities::LexicographicCompare(string0, string0);
-    EXPECT_EQ(0, status) << status;
+    EXPECT_TRUE(0 == status) << status;
 
     status = BeStringUtilities::LexicographicCompare(string0, string1);
-    EXPECT_GT(0, status) << status;
+    EXPECT_TRUE(status < 0) << status;
 
     status = BeStringUtilities::LexicographicCompare(string1, string0);
-    EXPECT_LT(0, status) << status;
+    EXPECT_TRUE(status > 0) << status;
 
     status = BeStringUtilities::LexicographicCompare(string2, string3);
-    EXPECT_GT(0, status) << status;
+    EXPECT_TRUE(status < 0) << status;
 
     status = BeStringUtilities::LexicographicCompare(string3, string2);
-    EXPECT_LT(0, status) << status;
+    EXPECT_TRUE(status > 0) << status;
+
+    status = BeStringUtilities::LexicographicCompare(string4, string5);
+    EXPECT_TRUE(0 == status) << status;
+
+    status = BeStringUtilities::LexicographicCompare(string5, string6);
+    EXPECT_TRUE(status > 0) << status;
     }
 //---------------------------------------------------------------------------------------
 // @betest                                     Umar.Hayat                  12/15
@@ -575,6 +584,10 @@ TEST(BeStringUtilitiesTests, RoundtripUtf8)
     BeStringUtilities::Utf8ToWChar(strWString, strUtf8.c_str());
 
     ASSERT_EQ(0, wcscmp(TESTDATA_StringW, strWString.c_str()));
+
+    WCharP strW = new WChar[30];
+    BeStringUtilities::Utf8ToWChar(strW, strUtf8.c_str(), 30);
+    ASSERT_STREQ(TESTDATA_StringW, strW);
 
     SUCCEED();
     }
@@ -923,10 +936,10 @@ TEST (BeStringUtilitiesTests, HexFormatOptions)
         {
         uint64_t number = 65297ULL;
         WString str;
-        str.reserve (10); //max length in hex format for an UInt64 (incl. trailing \0)
-        int opts = (int)HexFormatOptions::LeftJustify | (int)HexFormatOptions::Uppercase | (int)HexFormatOptions::UsePrecision;
-        BeStringUtilities::FormatUInt64((WCharP)str.data(), 10, number, (HexFormatOptions)opts, 8, 6);
-        EXPECT_STREQ (L"00FF11  ", str.c_str ());
+        str.reserve (12); //max length in hex format for an UInt64 (incl. trailing \0)
+        int opts = (int)HexFormatOptions::LeftJustify | (int)HexFormatOptions::Uppercase | (int)HexFormatOptions::UsePrecision | (int)HexFormatOptions::IncludePrefix;
+        BeStringUtilities::FormatUInt64((WCharP)str.data(), 12, number, (HexFormatOptions)opts, 10, 6);
+        EXPECT_STREQ (L"0X00FF11  ", str.c_str ());
         }
     }
 //---------------------------------------------------------------------------------------
@@ -969,10 +982,10 @@ TEST (BeStringUtilitiesTests, HexFormatOptionsUtf8)
         {
         uint64_t number = 65297ULL;
         Utf8String str;
-        str.reserve (10); //max length in hex format for an UInt64 (incl. trailing \0)
-        int opts = (int)HexFormatOptions::LeftJustify | (int)HexFormatOptions::Uppercase | (int)HexFormatOptions::UsePrecision;
-        BeStringUtilities::FormatUInt64 ((Utf8P)str.data(), 10, number, (HexFormatOptions)opts, 8, 6);
-        EXPECT_STREQ ("00FF11  ", str.c_str ());
+        str.reserve (12); //max length in hex format for an UInt64 (incl. trailing \0)
+        int opts = (int)HexFormatOptions::LeftJustify | (int)HexFormatOptions::Uppercase | (int)HexFormatOptions::UsePrecision | (int)HexFormatOptions::IncludePrefix;
+        BeStringUtilities::FormatUInt64 ((Utf8P)str.data(), 12, number, (HexFormatOptions)opts, 10, 6);
+        EXPECT_STREQ ("0X00FF11  ", str.c_str ());
         }
     }
 
