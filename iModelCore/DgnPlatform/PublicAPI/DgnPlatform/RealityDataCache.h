@@ -1206,7 +1206,7 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncRealityDataSource : IRealityDataSource<Deriv
 
 private:
     RealityDataThreadPoolPtr m_threadPool;
-    BeMutex        m_requestsCS;
+    BeMutex                  m_requestsCS;
     bset<Utf8String>         m_activeRequests;
     bset<Utf8String>         m_notFoundRequests;
     BeAtomic<uint64_t>       m_ignoreRequestsUntil;
@@ -1218,7 +1218,12 @@ private:
     bool ShouldIgnoreRequests() const;
 
 protected:
-    DGNPLATFORM_EXPORT virtual void _Terminate() override;
+    virtual void _Terminate() override
+        {
+        m_terminateRequested = true;
+        m_threadPool->Terminate();
+        m_threadPool->WaitUntilAllThreadsIdle();
+        }
     AsyncRealityDataSource(int numThreads) 
         : m_threadPool(RealityDataThreadPool::Create(numThreads, 0, SchedulingMethod::LIFO)), m_ignoreRequestsUntil(0), m_terminateRequested(false)
         {}

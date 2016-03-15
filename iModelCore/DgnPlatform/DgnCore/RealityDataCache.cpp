@@ -649,17 +649,6 @@ IRealityDataSourceBase::~IRealityDataSourceBase() {Terminate();}
 |   AsyncRealityDataSource
 +======================================================================================*/
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<class Derived>
-void AsyncRealityDataSource<Derived>::_Terminate()
-    {
-    m_terminateRequested = true;
-    m_threadPool->Terminate();
-    m_threadPool->WaitUntilAllThreadsIdle();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP AsyncRealityDataSourceRequest::GetId() const {return _GetId();}
