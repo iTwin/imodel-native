@@ -25,9 +25,9 @@ struct  DateTimeFormatterTestData
     uint8_t         m_fractionalPrecision;
     bool            m_fractionalTrailingZeros;
     bool            m_convertToLocalTime;
-    WChar           m_dateSeparator;
-    WChar           m_timeSeparator;
-    WChar           m_decimalSeparator;
+    Utf8Char        m_dateSeparator;
+    Utf8Char        m_timeSeparator;
+    Utf8Char        m_decimalSeparator;
     bool            m_usePart;
     DateTimeFormatPart m_dateTimePart;
     };
@@ -54,8 +54,8 @@ void    doFormatDateTimeTest(DateTimeFormatterTestData & testData)
     if (testData.m_usePart)
         formatter->AppendFormatPart(testData.m_dateTimePart);
 
-    WString outputStr = formatter->ToString (testData.m_inputValue);    
-    WString expectStr = testData.m_expectedString;
+    Utf8String outputStr = formatter->ToString (testData.m_inputValue);
+    Utf8String expectStr(testData.m_expectedString);
 
     ASSERT_STREQ (expectStr.c_str(), outputStr.c_str());
     }
@@ -76,12 +76,12 @@ TEST_F (DateTimeFormatterTest, TestGeneral)
     DateTimeFormatterTestData testDataArray[] =
         {
         // expected                     value       precision   zeros   toLocal     
-        { L"9/4/2023 5:12:45 AM",       testTime,   2,          true,    false,      L'/',   L':',   L'.'   , false},
-        { L"9-4-2023 5:12:45 AM",       testTime,   2,          true,    false,      L'-',   L':',   L'.'   , false},
-        { L"9 4 2023 5:12:45 AM",       testTime,   2,          true,    false,      L' ',   L':',   L'.'   , false},
-        { L"9-4-2023 5-12-45 AM",       testTime,   2,          true,    false,      L'-',   L'-',   L'.'   , false},
-        { L"9-4-2023 5-12-45 AM",       testTime,   2,          true,    false,      L'-',   L'-',   L' '   , false},
-        { L"9-4-2023 5-12-45 AM",       testTime,   2,          true,    false,      L'-',   L'-',   L' '   , false}
+        { L"9/4/2023 5:12:45 AM",       testTime,   2,          true,    false,      '/',   ':',   '.'   , false},
+        { L"9-4-2023 5:12:45 AM",       testTime,   2,          true,    false,      '-',   ':',   '.'   , false},
+        { L"9 4 2023 5:12:45 AM",       testTime,   2,          true,    false,      ' ',   ':',   '.'   , false},
+        { L"9-4-2023 5-12-45 AM",       testTime,   2,          true,    false,      '-',   '-',   '.'   , false},
+        { L"9-4-2023 5-12-45 AM",       testTime,   2,          true,    false,      '-',   '-',   ' '   , false},
+        { L"9-4-2023 5-12-45 AM",       testTime,   2,          true,    false,      '-',   '-',   ' '   , false}
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -94,8 +94,8 @@ TEST_F (DateTimeFormatterTest, AM_PM)
     {
     DateTimeFormatterTestData testDataArray[] =
         {
-        { L"9/4/2023 5:12:45 AM",          DateTime(DateTime::Kind::Utc, 2023, 9, 4, 5 , 12, 45)    , 1, true,   false, L'/', L':', L'.', false},
-        { L"9/4/2023 5:12:45 PM",          DateTime(DateTime::Kind::Utc, 2023, 9, 4, 17, 12, 45)    , 1, true,   false, L'/', L':', L'.', false}
+        { L"9/4/2023 5:12:45 AM",          DateTime(DateTime::Kind::Utc, 2023, 9, 4, 5 , 12, 45)    , 1, true,   false, '/', ':', '.', false},
+        { L"9/4/2023 5:12:45 PM",          DateTime(DateTime::Kind::Utc, 2023, 9, 4, 17, 12, 45)    , 1, true,   false, '/', ':', '.', false}
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -112,54 +112,54 @@ TEST_F (DateTimeFormatterTest, IndividualParts)
         {
         //                                                                          Date     Time   Decimal
         // expected                     value       precision   zeros   toLocal              Separter         usepart   part
-        { L"Saturday",      testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_DayOfWeek},
-        { L"Sat",           testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_DoW},
-        { L"5",             testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_D},
-        { L"05",            testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_DD},
-        { L"August",        testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_Month},
-        { L"Aug",           testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_Mon},
-        { L"8",             testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_M},
-        { L"08",            testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_MM},
-        { L"217",           testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_d},
-        { L"217",           testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_ddd},
-        { L"2023",          testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_YYYY},
-        { L"23",            testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_YY},
-        { L"5",             testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_h},
-        { L"05",            testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_hh},
-        { L"3",             testTime2,  2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_h},
-        { L"03",            testTime2,  2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_hh},
-        { L"5",             testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_H},
-        { L"05",            testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_HH},
-        { L"15",            testTime2,  2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_H},
-        { L"15",            testTime2,  2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_HH},
-        { L"2",             testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_m},
-        { L"02",            testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_mm},
-        { L"7",             testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_s},
-        { L"07",            testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_ss},
-        { L"0",             testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_FractionalSeconds},
-        { L",",             testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_Comma},
-        { L"/",             testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_DateSeparator},
-        { L":",             testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_TimeSeparator},
-        { L".",             testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_DecimalSeparator},
-        { L" ",             testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_Space},
-        { L"AM",            testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_AMPM},
-        { L"PM",            testTime2,  2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_AMPM},
-        { L"A",             testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_AP},
-        { L"P",             testTime2,  2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_AP},
+        { L"Saturday",      testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_DayOfWeek},
+        { L"Sat",           testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_DoW},
+        { L"5",             testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_D},
+        { L"05",            testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_DD},
+        { L"August",        testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_Month},
+        { L"Aug",           testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_Mon},
+        { L"8",             testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_M},
+        { L"08",            testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_MM},
+        { L"217",           testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_d},
+        { L"217",           testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_ddd},
+        { L"2023",          testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_YYYY},
+        { L"23",            testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_YY},
+        { L"5",             testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_h},
+        { L"05",            testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_hh},
+        { L"3",             testTime2,  2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_h},
+        { L"03",            testTime2,  2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_hh},
+        { L"5",             testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_H},
+        { L"05",            testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_HH},
+        { L"15",            testTime2,  2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_H},
+        { L"15",            testTime2,  2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_HH},
+        { L"2",             testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_m},
+        { L"02",            testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_mm},
+        { L"7",             testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_s},
+        { L"07",            testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_ss},
+        { L"0",             testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_FractionalSeconds},
+        { L",",             testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_Comma},
+        { L"/",             testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_DateSeparator},
+        { L":",             testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_TimeSeparator},
+        { L".",             testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_DecimalSeparator},
+        { L" ",             testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_Space},
+        { L"AM",            testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_AMPM},
+        { L"PM",            testTime2,  2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_AMPM},
+        { L"A",             testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_AP},
+        { L"P",             testTime2,  2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_AP},
 
-        { L"5:02 AM",               testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_h_mm_AMPM},
-        { L"3:11 PM",               testTime2,  2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_h_mm_AMPM},
-        { L"5:02:07 AM",            testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_h_mm_ss_AMPM},
-        { L"3:11:17 PM",            testTime2,  2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_h_mm_ss_AMPM},
+        { L"5:02 AM",               testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_h_mm_AMPM},
+        { L"3:11 PM",               testTime2,  2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_h_mm_AMPM},
+        { L"5:02:07 AM",            testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_h_mm_ss_AMPM},
+        { L"3:11:17 PM",            testTime2,  2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_h_mm_ss_AMPM},
 
-        { L"8/5/2023",                              testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_M_D_YYYY},
-        { L"08/05/2023",                            testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_MM_DD_YYYY},
-        { L"Saturday, 5 August, 2023",              testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_Day_D_Month_YYYY},
-        { L"Saturday, August 5, 2023",              testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_Day_Month_D_YYYY},
-        { L"Saturday, August 5, 2023, 5:02 AM",     testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_Full},
-        { L"Tuesday, August 15, 2023, 3:11 PM",     testTime2,  2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_Full},
-        { L"8/5/2023 5:02:07 AM",                   testTime,   2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_General},
-        { L"8/15/2023 3:11:17 PM",                  testTime2,  2,          true,    false,      L'/',   L':',   L'.'   , true,     DATETIME_PART_General}
+        { L"8/5/2023",                              testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_M_D_YYYY},
+        { L"08/05/2023",                            testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_MM_DD_YYYY},
+        { L"Saturday, 5 August, 2023",              testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_Day_D_Month_YYYY},
+        { L"Saturday, August 5, 2023",              testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_Day_Month_D_YYYY},
+        { L"Saturday, August 5, 2023, 5:02 AM",     testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_Full},
+        { L"Tuesday, August 15, 2023, 3:11 PM",     testTime2,  2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_Full},
+        { L"8/5/2023 5:02:07 AM",                   testTime,   2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_General},
+        { L"8/15/2023 3:11:17 PM",                  testTime2,  2,          true,    false,      '/',   ':',   '.'   , true,     DATETIME_PART_General}
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)

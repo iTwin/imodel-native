@@ -4,6 +4,7 @@
 //-------------------------------------------------------------------------------------- 
 
 #include "DgnHandlersTests.h"
+#include <DgnPlatform/TextStyleInterop.h>
 
 // Rebuild API:             bb re DgnPlatform:PublicAPI DgnPlatform:PublishedApi
 // Rebuild code:            bb re DgnPlatformDLL
@@ -58,4 +59,18 @@ TEST_F(TextStringTest, BoundingShape)
     DPoint3d point[4];
     text->ComputeBoundingShape(point, 0, 0);
     printf("%f , %f , %f \n", point[1].x, point[1].y, point[1].z);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                            Umar.Hayat                 02/16
+//---------------------------------------------------------------------------------------
+TEST_F(TextStringTest, TextStringToAnnotation)
+    {
+    TextStringStylePtr tss = TextStringStyle::Create();
+    tss->SetFont(DgnFontManager::GetLastResortTrueTypeFont());
+    tss->SetSize(DPoint2d::From(1000.0, 1000.0));
+    AnnotationTextStyle ats(GetProjectR());
+    ASSERT_TRUE(SUCCESS == TextStyleInterop::TextStringToAnnotation(GetProjectR(), ats, *tss));
+    EXPECT_TRUE(GetProjectR().Fonts().FindId(tss->GetFont()) == ats.GetFontId());
+    
     }

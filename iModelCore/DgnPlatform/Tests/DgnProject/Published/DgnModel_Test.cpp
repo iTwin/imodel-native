@@ -428,6 +428,8 @@ TEST_F (DgnModelTests, ModelsIterator)
             EXPECT_STREQ ("Model1", entry.GetCodeValue ());
             EXPECT_STREQ ("Test Model 1", entry.GetLabel());
             EXPECT_EQ (true, entry.GetInGuiList ());
+            EXPECT_STREQ(Utf8PrintfString("%" PRId64,db.Authorities().GetAuthority("DgnModels")->GetAuthorityId()), entry.GetCodeNamespace());
+            EXPECT_TRUE(db.Authorities().QueryAuthorityId("dgn") == entry.GetCodeAuthorityId());
             }
         else if (entry.GetModelId () == m2id)
             {
@@ -435,6 +437,8 @@ TEST_F (DgnModelTests, ModelsIterator)
             EXPECT_STREQ ("Model2", entry.GetCodeValue ());
             EXPECT_STREQ("Test Model 2", entry.GetLabel());
             EXPECT_EQ(true, entry.GetInGuiList());
+            EXPECT_STREQ(Utf8PrintfString("%" PRId64, db.Authorities().GetAuthority("DgnModels")->GetAuthorityId()), entry.GetCodeNamespace());
+            EXPECT_TRUE(db.Authorities().QueryAuthorityId("dgn") == entry.GetCodeAuthorityId());
             }
         else if (entry.GetModelId () == m3id)
             {
@@ -442,6 +446,8 @@ TEST_F (DgnModelTests, ModelsIterator)
             EXPECT_STREQ ("Model3", entry.GetCodeValue ());
             EXPECT_STREQ("Test Model 3", entry.GetLabel());
             EXPECT_EQ(true, entry.GetInGuiList());
+            EXPECT_STREQ(Utf8PrintfString("%" PRId64, db.Authorities().GetAuthority("DgnModels")->GetAuthorityId()), entry.GetCodeNamespace());
+            EXPECT_TRUE(db.Authorities().QueryAuthorityId("dgn") == entry.GetCodeAuthorityId());
             }
         i++;
         }
@@ -514,12 +520,18 @@ TEST_F (DgnModelTests, AddAppData)
     EXPECT_TRUE (m1 != nullptr);
     EXPECT_TRUE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
 
-    static DgnModel::AppData::Key m_key;
-    TestAppData *m_AppData = new TestAppData ();
-    m1->AddAppData (m_key, m_AppData);
+    // Add Appdata
+    static DgnModel::AppData::Key key;
+    TestAppData *AppData = new TestAppData ();
+    m1->AddAppData (key, AppData);
     m1->FillModel ();
-    EXPECT_TRUE (m_AppData->isFilled);
-    EXPECT_TRUE (m1->FindAppData (m_key) != nullptr);
+    EXPECT_TRUE (AppData->isFilled);
+    EXPECT_TRUE (m1->FindAppData (key) != nullptr);
+
+   // Add appdata again with same key
+    TestAppData *AppData2 = new TestAppData();
+    m1->AddAppData(key, AppData2);
+
     }
 
 /*---------------------------------------------------------------------------------**//**
