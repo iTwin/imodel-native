@@ -29,8 +29,8 @@
 template<class T> struct BeAtomic : std::atomic<T>
 {
     explicit BeAtomic(T val=0) : std::atomic<T>(val){}
-    T IncrementAtomicPre() {return fetch_add(1)+1;}
-    T DecrementAtomicPost() {return fetch_sub(1);}
+    T IncrementAtomicPre() {return this->fetch_add(1)+1;}
+    T DecrementAtomicPost() {return this->fetch_sub(1);}
 };
 
 #else
