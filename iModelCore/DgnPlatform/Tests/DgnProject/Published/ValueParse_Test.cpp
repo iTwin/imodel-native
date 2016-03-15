@@ -972,7 +972,7 @@ TEST (ValueParser, ParseSimple)
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
         vp_doParseValueTest (testDataArray[iTest]);
     }
-
+#ifdef KN_WIP_Parsing
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -987,7 +987,7 @@ TEST (ValueParser, ParseThousandSeparaters)
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
         vp_doParseValueTest (testDataArray[iTest]);
     }
-
+#endif
 
 //=======================================================================================
 // @bsiclass                                                    Majd.Uddin     03/2016
