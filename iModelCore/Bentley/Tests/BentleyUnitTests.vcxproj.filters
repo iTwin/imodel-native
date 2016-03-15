@@ -111,9 +111,6 @@
     <ClInclude Include="Published\DateTimeTestDataset.h">
       <Filter>Published</Filter>
     </ClInclude>
-    <ClInclude Include="Published\Base64UtilitiesTests.h">
-      <Filter>Published</Filter>
-    </ClInclude>
     <ClInclude Include="Published\bunique_ptr_test.h">
       <Filter>Published</Filter>
     </ClInclude>

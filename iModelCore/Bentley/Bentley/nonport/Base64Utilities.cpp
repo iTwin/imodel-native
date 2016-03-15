@@ -212,7 +212,8 @@ BentleyStatus Base64Utilities::Decode(bvector<Byte>& byteArray, Utf8StringCR enc
 
         char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
         char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
-        char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
+        char_array_3[2] = 0xFF & (((char_array_4[2] & 0x3) << 6) + char_array_4[3]);
+
 
         for (j = 0; (j < i - 1); j++)
             byteArray.push_back(char_array_3[j]);

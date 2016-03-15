@@ -47,16 +47,16 @@ TEST_F (Base64UtilitiesTests, Decode_Base64EncodedString_ReturnsDecoded)
 
 TEST_F (Base64UtilitiesTests, Decode_Base64EncodedString_ReturnsDecodedBytes)
     {
-    Utf8String input("Foo123!");
-    Utf8String encoded;
-    encoded = Base64Utilities::Encode(input);
+    Utf8String expectedStr("Foo123!");
+    Utf8String encoded = Base64Utilities::Encode(expectedStr);
     EXPECT_STREQ("Rm9vMTIzIQ==", encoded.c_str());
 
-    bvector<Byte> out;
-    EXPECT_EQ(SUCCESS, Base64Utilities::Decode(out, encoded));
-    ASSERT_TRUE(0 != out.size());
-    //EXPECT_STREQ("Foo123!", (Utf8CP) out.data());
-
-    SUCCEED();
+    bvector<Byte> byteArray;
+    ASSERT_EQ(SUCCESS, Base64Utilities::Decode(byteArray, encoded));
+    ASSERT_EQ(expectedStr.size(), byteArray.size());
+    for (size_t i = 0; i < expectedStr.size(); i++)
+        {
+        ASSERT_EQ(expectedStr[i], (Utf8Char) byteArray[i]);
+        }
     }
 
