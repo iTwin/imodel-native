@@ -177,7 +177,7 @@ TEST_F (UnitsTests, UnitsMapping)
         guess += i + ", ";
         }
 
-    EXPECT_EQ (100, notMapped.size() ) << guess;
+    EXPECT_EQ (101, notMapped.size() ) << guess;
     }
 
 // TODO: Make this test pass when conversions fail and add more conversions to test a wide spectrum of dimenions.
@@ -612,7 +612,8 @@ TEST_F(UnitsTests, UnitsConversions_Complex)
     TestUnitConversion(1.0 / 0.42992261392949271, "KILOJOULE_PER_KILOMOLE", 1.0, "BTU_PER_POUND_MOLE", 1000, loadErrors, conversionErrors, true);
     TestUnitConversion(1.0e6 / 0.42992261392949271, "KILOJOULE_PER_KILOMOLE", 1.0e6, "BTU_PER_POUND_MOLE", 1000, loadErrors, conversionErrors, true);
     
-    EXPECT_EQ(11, loadErrors.size()) << "The following units were not found: " << BeStringUtilities::Join(loadErrors, ", ");
+    //Missing Units: KNOT, MEGAJOULE_PER_METRE_CUBED, GRAM_PER_DAY, ONE_OVER_SLOPE, KILOGRAM_PER_KILOGRAM, GRAIN_MASS_PER_POUND_MASS, ONE_PER_HOUR, ONE_PER_YEAR, ONE_PER_DAY, ONE_PER_MINUTE, KILOJOULE_PER_KILOMOLE, BTU_PER_POUND_MOLE
+    EXPECT_EQ(12, loadErrors.size()) << "The following units were not found: " << BeStringUtilities::Join(loadErrors, ", ");
     EXPECT_EQ(0, conversionErrors.size()) << "Failed to convert between the following units: " << BeStringUtilities::Join(conversionErrors, ", ");
     }
 
@@ -652,7 +653,7 @@ void UnitsTests::TestConversionsLoadedFromCvsFile(Utf8CP fileName, int expectedM
 
 TEST_F(UnitsTests, UnitsConversion_CompareToRawOutputFromOldSystem)
     {
-    TestConversionsLoadedFromCvsFile("ConversionsBetweenAllOldUnits.csv", 106);
+    TestConversionsLoadedFromCvsFile("ConversionsBetweenAllOldUnits.csv", 107);
     }
 
 TEST_F(UnitsTests, UnitsConversion)
@@ -820,6 +821,61 @@ TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
         WriteLine(file);
         }
 
+    file.Close();
+    }
+
+TEST_F(UnitsTests, UnitNamesByReferencedComponents)
+    {
+    bmap<Utf8String, bvector<Utf8String>> unitNamesByReferencedComponent;
+    bvector<UnitCP> allUnits;
+    UnitRegistry::Instance().AllUnits(allUnits);
+    for (auto const& unit : allUnits)
+        {
+        bvector<Utf8String> symbols;
+        BeStringUtilities::Split(unit->GetDefinition(), "*", symbols);
+        for (auto const& symbol : symbols)
+            {
+            auto index = symbol.find('(');
+            Utf8String unitName;
+            if (index < symbol.length())
+                unitName = symbol.substr(0, index).c_str();
+            else
+                unitName = symbol.c_str();
+
+            unitName.ReplaceAll("[", "");
+            unitName.ReplaceAll("]", "");
+
+            UnitCP subUnit = UnitRegistry::Instance().LookupUnit(unitName.c_str());
+            ASSERT_NE(nullptr, subUnit) << "Could not find subunit: " << unitName;
+
+            auto it = unitNamesByReferencedComponent.find(unitName);
+            if (it == unitNamesByReferencedComponent.end())
+                {
+                bvector<Utf8String> unitsWhichReferenceSubUnit;
+                unitsWhichReferenceSubUnit.push_back(unit->GetName());
+                unitNamesByReferencedComponent.Insert(unitName, unitsWhichReferenceSubUnit);
+                }
+            else
+                {
+                it->second.push_back(unit->GetName());
+                }
+            }
+        }
+
+    Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"UnitNamesByReferencedComponents.csv");
+    BeFile file;
+    EXPECT_EQ(file.Create(fileName, true), BeFileStatus::Success);
+    EXPECT_EQ(file.Open(fileName, BeFileAccess::Write), BeFileStatus::Success);
+    for (auto const& unitsWhichRefUnit : unitNamesByReferencedComponent)
+        {
+        WriteLine(file, unitsWhichRefUnit.first.c_str());
+        for (auto const& unit : unitsWhichRefUnit.second)
+            {
+            Utf8PrintfString unitString("    %s", unit.c_str());
+            WriteLine(file, unitString);
+            }
+        }
+    WriteLine(file);
     file.Close();
     }
 

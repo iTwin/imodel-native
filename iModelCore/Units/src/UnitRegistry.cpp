@@ -504,13 +504,9 @@ bool UnitRegistry::HasConstant (Utf8CP constantName) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UnitRegistry::AddMapping(Utf8CP oldName, Utf8CP newName)
     {
+    // NOTE: New mappings overwrite previously added mappings
     m_oldNameNewNameMapping[oldName] = newName;
-
-    Utf8String existingOldName;
-    if (!TryGetOldName(newName, existingOldName))
-        {
-        m_newNameOldNameMapping[newName] = oldName;
-        }
+    m_newNameOldNameMapping[newName] = oldName;
     }
 
 /*--------------------------------------------------------------------------------**//**
