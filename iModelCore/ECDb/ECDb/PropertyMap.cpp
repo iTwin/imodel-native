@@ -197,23 +197,6 @@ BentleyStatus PropertyMap::DetermineColumnInfo(Utf8StringR columnName, bool& isN
     return SUCCESS;
     }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle     06/2013
-//---------------------------------------------------------------------------------------
-bool PropertyMap::IsECInstanceIdPropertyMap () const
-    {
-    return _IsECInstanceIdPropertyMap ();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle     06/2013
-//---------------------------------------------------------------------------------------
-bool PropertyMap::IsSystemPropertyMap () const
-    {
-    return _IsSystemPropertyMap ();
-    }
-
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -230,30 +213,6 @@ BentleyStatus PropertyMap::_Save(ECDbClassMapInfo & classMapInfo) const
 
     m_propertyPathId = mapInfo->GetPropertyPath().GetId();
     return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    affan.khan      08/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PropertyMap::Save(ECDbClassMapInfo & classMapInfo) const
-    {
-    return _Save (classMapInfo);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyCR PropertyMap::GetProperty() const
-    {
-    return m_ecProperty;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    casey.mullen      11/2012
-//---------------------------------------------------------------------------------------
-Utf8CP PropertyMap::GetPropertyAccessString() const
-    {
-    return m_propertyAccessString.c_str();
     }
 
 //---------------------------------------------------------------------------------------
@@ -304,26 +263,10 @@ BentleyStatus PropertyMap::FindOrCreateColumnsInTable(ClassMap const& classMap)
     return _FindOrCreateColumnsInTable(classMap);
     }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String PropertyMap::ToString() const
-    {
-    return _ToString();
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
 void PropertyMap::_GetColumns (std::vector<ECDbSqlColumn const*>& columns) const {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    casey.mullen      11/2012
-//---------------------------------------------------------------------------------------
-void PropertyMap::GetColumns (std::vector<ECDbSqlColumn const*>& columns) const
-    {
-    _GetColumns (columns);
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan      02/2015

@@ -118,7 +118,8 @@ public:
     NavigationPropertyMap const* GetAsNavigationPropertyMap() const { return _GetAsNavigationPropertyMap(); }
     StructArrayJsonPropertyMap const* GetAsStructArrayPropertyMap() const { return _GetAsStructArrayPropertyMap(); }
     ECClassIdRelationshipConstraintPropertyMap const* GetAsECClassIdRelationshipConstraintPropertyMap() const { return _GetAsECClassIdRelationshipConstraintPropertyMapRelationship(); }
-    ECN::ECPropertyCR GetProperty() const;
+    ECN::ECPropertyCR GetProperty() const { return m_ecProperty; }
+    Utf8CP GetPropertyAccessString() const { return m_propertyAccessString.c_str(); }
     PropertyMapCollection const& GetChildren() const { return m_children; }
 
     //! Gets a value indicating whether this property map is a virtual mapping, i.e. maps
@@ -132,7 +133,7 @@ public:
     bool MapsToTable(ECDbSqlTable const&) const;
 
     //! Gets the columns (if any) mapped to this property
-    void GetColumns(std::vector<ECDbSqlColumn const*>&) const;
+    void GetColumns(std::vector<ECDbSqlColumn const*>& columns) const { return _GetColumns(columns); }
     void GetColumns(std::vector<ECDbSqlColumn const*>&, ECDbSqlTable const&) const;
     ECDbSqlColumn const* GetSingleColumn() const;
     ECDbSqlColumn const* GetSingleColumn(ECDbSqlTable const&, bool alwaysFilterByTable) const;
@@ -150,25 +151,23 @@ public:
     //! @return List of native SQL snippets, one snippet per column this PropertyMap maps to.
     NativeSqlBuilder::List ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses, ECDbSqlTable const* tableFilter = nullptr) const;
 
-
     //! Saves the base column name, if it differs from the property name
-    BentleyStatus Save(ECDbClassMapInfo&) const;
+    BentleyStatus Save(ECDbClassMapInfo& info) const { return _Save(info); }
     BentleyStatus Load(ECDbClassMapInfo const& classMapInfo) { return _Load(classMapInfo); }
 
-    Utf8CP GetPropertyAccessString() const;
 
     //! Make sure our table has the necessary columns, if any
     BentleyStatus FindOrCreateColumnsInTable(ClassMap const&);
 
     //! Returns whether this property map refers to the ECInstanceId system property or not.
     //! @return true if the property map refers to the ECInstanceId system property. false otherwise.
-    bool IsECInstanceIdPropertyMap() const;
+    bool IsECInstanceIdPropertyMap() const { return _IsECInstanceIdPropertyMap(); }
 
     //! Returns whether this property map refers to an ECSQL system property or not.
     //! @return true if the property map refers to an ECSQL system property. false otherwise.
-    bool IsSystemPropertyMap() const;
+    bool IsSystemPropertyMap() const { return _IsSystemPropertyMap(); }
 
-    Utf8String ToString() const;
+    Utf8String ToString() const { return _ToString(); }
 
     static BentleyStatus DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, ECDbSqlColumn::Constraint::Collation&, ECDbCR, ECN::ECPropertyCR, Utf8CP propAccessString);
     };

@@ -75,9 +75,9 @@ DbResult ECDbProfileManager::CreateECProfile(ECDbR ecdb)
     }
 
 //=======================================================================================
-//! Whenever a profile upgrade is performed a context is created which prepares SQLite
-//! for the performing table and column alterations.
-//! E.g. foreign key enforcement is disabled during upgrade to not invalidate foreign key
+//! Whenever a profile upgrade needs to rename or remove tables/columns
+//! a ProfileUpgradeContext is needed which prepares SQLite accordingly, 
+//! e.g. foreign key enforcement is disabled during upgrade to not invalidate foreign key
 //! constraints when altering tables.
 // @bsiclass                                                 Krischan.Eberle      07/2013
 //+===============+===============+===============+===============+===============+======
@@ -131,13 +131,6 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
 
     BeAssert(!ecdb.IsReadonly());
 
-    //Creating the context performs some preparational steps in the SQLite database required for table modifications (e.g. foreign key
-    //enforcement is disabled). When the context goes out of scope its destructor automatically performs the clean-up so that the ECDb file is
-    //in the same state as before the upgrade.
-    //ProfileUpgradeContext context(ecdb, *ecdb.GetDefaultTransaction()); //also commits the transaction (if active) right now
-    //if (BE_SQLITE_BUSY == context.GetBeginTransError())
-    //    return BE_SQLITE_BUSY;
-
     //Call upgrader sequence and let upgraders incrementally upgrade the profile
     //to the latest state
     auto upgraderIterator = GetUpgraderSequenceFor(actualProfileVersion);
@@ -163,7 +156,6 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
     
-    //context.SetCommitAfterUpgrade(); //change context dtor behavior to commit changes
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         {
         LOG.infov("Upgraded %s profile from version %d.%d.%d.%d to version %d.%d.%d.%d (in %.4lf seconds) in file '%s'.",
