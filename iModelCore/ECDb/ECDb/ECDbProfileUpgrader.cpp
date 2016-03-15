@@ -60,15 +60,15 @@ DbResult ECDbProfileUpgrader_3200::_Upgrade(ECDbR ecdb) const
     Utf8String sql;
     for (Utf8StringCR triggerName : triggerNames)
         {
-        sql.Sprintf(dropTriggerSql, triggerName);
+        sql.Sprintf(dropTriggerSql, triggerName.c_str());
         if (BE_SQLITE_DONE != ecdb.ExecuteSql(sql.c_str()))
             {
             LOG.errorv("ECDb profile upgrade failed for '%s'. Deleting struct array trigger %s failed. Error: %s",
-                       ecdb.GetDbFileName(), triggerName, ecdb.GetLastError().c_str());
+                       ecdb.GetDbFileName(), triggerName.c_str(), ecdb.GetLastError().c_str());
             return BE_SQLITE_ERROR_ProfileUpgradeFailed;
             }
 
-        LOG.debugv("ECDb profile upgrade: Dropped trigger %s.", triggerName);
+        LOG.debugv("ECDb profile upgrade: Dropped trigger %s.", triggerName.c_str());
         }
 
 
@@ -98,7 +98,7 @@ DbResult ECDbProfileUpgrader_3200::_Upgrade(ECDbR ecdb) const
             return BE_SQLITE_ERROR_ProfileUpgradeFailed;
             }
 
-        LOG.debugv("ECDb profile upgrade: Dropped struct array table %s.", structArrayTableName);
+        LOG.debugv("ECDb profile upgrade: Dropped struct array table %s.", structArrayTableName.c_str());
         }
 
     //delete entries in ec_Table. This also deletes respective entries in ec_Column, ec_PropertyMap and ec_PropertyPath (via FK)
