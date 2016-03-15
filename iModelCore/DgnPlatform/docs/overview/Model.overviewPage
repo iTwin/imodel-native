@@ -2,7 +2,7 @@
 |
 |     $Source: docs/overview/Model.overviewPage $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -33,7 +33,7 @@ Some of the most common model classes are described below:
         <td>The base class for all models.</td>
     </tr>
     <tr>
-        <td><a href="structBentleyApi_1_1Dgn_1_1PhysicalModel.html">PhysicalModel</a></td>
+        <td><a href="structBentleyApi_1_1Dgn_1_1SpatialModel.html">SpatialModel</a></td>
         <td>The base class for models that contain 3D PhysicalElements.</td>
     </tr>
 </table>

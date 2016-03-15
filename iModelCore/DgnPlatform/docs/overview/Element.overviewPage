@@ -2,7 +2,7 @@
 |
 |     $Source: docs/overview/Element.overviewPage $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -70,11 +70,11 @@ Some of the most common element classes are described below:
         <td>The base class for all 3D physical elements (modeled real-world objects contained in a PhysicalModel).</td>
     </tr>
     <tr>
-        <td><a href="structBentleyApi_1_1Dgn_1_1DrawingElement.html">DrawingElement</a></td>
+        <td><a href="structBentleyApi_1_1Dgn_1_1GraphicalElement2d.html">DrawingElement</a></td>
         <td>The base class for all 2D drawing elements.</td>
     </tr>
     <tr>
-        <td><a href="structBentleyApi_1_1Dgn_1_1ElementGroup.html">ElementGroup</a></td>
+        <td><a href="structBentleyApi_1_1Dgn_1_1IElementGroup.html">ElementGroup</a></td>
         <td>The base class for logical groups that reference, but do not own, their member elements.</td>
     </tr>
 </table>
