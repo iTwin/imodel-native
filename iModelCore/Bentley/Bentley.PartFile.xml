@@ -48,6 +48,34 @@
             <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/Bentley"/>
         </Bindings>
     </Part>
+	
+	<Part Name="BeHttpPublicAPI" BentleyBuildMakeFile="BeHttp/prewire.mke" ApiNumber="G06">
+		<SubPart PartName="Base" />
+		<SubPart PartName="PublicAPI"		PartFile="BeJsonCpp"	Repository="Libsrc-JsonCpp"/>
+		<SubPart PartName="rapidjson"       PartFile="rapidjson" 	Repository="Libsrc-RapidJson"/>
+		<SubPart PartName="PublicAPI"		PartFile="BeOpenSSL"	Repository="Libsrc-openssl"/>
+		<SubPart PartName="PublicAPI"		PartFile="BeCasablanca"	Repository="Libsrc-casablanca"/>
+		<SubPart PartName="PublicAPI"		PartFile="BeSQLite"		Repository="BeSQLite"/>
+		<SubPart PartName="PublicAPI"       PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+		<Bindings>
+            <PublicAPI Domain="BeHttp" />
+        </Bindings>
+	</Part>
+	
+	<Part Name="BeHttpLibrary" BentleyBuildMakeFile="BeHttp/BeHttp.mke" ApiNumber="G06">
+		<SubPart PartName="BeHttpPublicAPI" />
+		<SubPart PartName="BentleyDll"/>
+		<SubPart PartName="BeJsonCpp"		PartFile="BeJsonCpp"	Repository="Libsrc-JsonCpp"/>
+		<SubPart PartName="rapidjson"       PartFile="rapidjson" 	Repository="Libsrc-RapidJson"/>
+		<SubPart PartName="BeCurl"          PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+		<SubPart PartName="BeCasablanca"	PartFile="BeCasablanca"	Repository="Libsrc-casablanca"/>
+		<SubPart PartName="BeSQLite"		PartFile="BeSQLite"		Repository="BeSQLite"/>
+		<Bindings>
+            <Libs ProductDirectoryName="BeHttpLibs" Required="false">Delivery/BeHttp/$(libprefix)BeHttp$(libext)</Libs>
+            <Assemblies ProductDirectoryName="BeHttpNativeAssemblies">Delivery/BeHttp/$(shlibprefix)BeHttp$(ApiNumber)$(shlibext)</Assemblies>
+			<Directory ProductDirectoryName="BeHttpAssets" SourceName="Delivery/BeHttp/http" />
+        </Bindings>
+	</Part>
 
     <!-- ******************************** Unit Tests ************************************** -->
     <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
