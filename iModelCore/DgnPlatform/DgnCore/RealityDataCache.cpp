@@ -463,7 +463,7 @@ void BeSQLiteRealityDataStorage::wt_SaveChanges()
     BeMutexHolder lock(m_databaseCS);
     auto result = m_database->SaveChanges();
     BeAssert(BeSQLite::BE_SQLITE_OK == result);
-    m_hasChanges = false;
+    m_hasChanges.store(false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -525,7 +525,7 @@ void BeSQLiteRealityDataStorage::wt_Persist(Data const& data)
 
     BentleyStatus result = data._Persist(*m_database, m_databaseCS);
     BeAssert(SUCCESS == result);
-    m_hasChanges = true;
+    m_hasChanges.store(true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -680,7 +680,7 @@ bool AsyncRealityDataSourceRequest::ShouldCancelRequest() const {return nullptr 
 template<class Derived>
 void AsyncRealityDataSource<Derived>::SetIgnoreRequests(uint32_t ignoreTime)
     {
-    m_ignoreRequestsUntil = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + ignoreTime;
+    m_ignoreRequestsUntil.store(BeTimeUtilities::GetCurrentTimeAsUnixMillis() + ignoreTime);
     }
 
 /*---------------------------------------------------------------------------------**//**

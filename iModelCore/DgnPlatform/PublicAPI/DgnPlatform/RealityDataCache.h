@@ -105,7 +105,7 @@ struct IRealityData : _StorageType::Data, _SourceType::Data
         {
         };
     
-    IRealityData() {DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT}
+    IRealityData() {}
 
     //! The virtual destructor which provides some compile-time assertions for the
     //! implementing type.
@@ -729,7 +729,7 @@ enum class RealityDataCacheResult
 //=======================================================================================
 struct RealityDataCache : NonCopyableClass, IRealityDataStorageResponseReceiver, IRealityDataSourceResponseReceiver
 {    
-DEFINE_BENTLEY_REF_COUNTED_MEMBERS
+    DEFINE_BENTLEY_REF_COUNTED_MEMBERS
 
     template<typename T> struct RefCountedPtrComparer
         {
@@ -748,7 +748,7 @@ private:
     mutable bmap<void const*, RealityDataCacheResult> m_results;
     mutable BeMutex m_resultsCS;
     
-    RealityDataCache(int arrivalsQueueSize) : m_arrivalsQueueSize(arrivalsQueueSize) {DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT}
+    RealityDataCache(int arrivalsQueueSize) : m_arrivalsQueueSize(arrivalsQueueSize) {}
     ~RealityDataCache();
 
     // note: these might be called from any thread!

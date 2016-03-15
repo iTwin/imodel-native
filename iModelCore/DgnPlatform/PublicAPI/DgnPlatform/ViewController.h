@@ -587,7 +587,7 @@ This is what the parameters to the camera methods, and the values stored by Came
                v-- {origin}
           -----+-------------------------------------- -   [back plane]
           ^\   .                                    /  ^
-          | \  .                                   /   |        p
+          | \  .            /   |        p
         d |  \ .                                  /    |        o
         e |   \.         {targetPoint}           /     |        s
         l |    |---------------+----------------|      |        i    [focus plane]

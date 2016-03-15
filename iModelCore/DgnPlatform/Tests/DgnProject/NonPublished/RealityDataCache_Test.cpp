@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/DgnProject/NonPublished/RealityDataCache_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -169,7 +169,7 @@ TEST (RealityDataWorkerThread, IsBusy)
     thread->Start ();
     thread->DoWork (*work);
     ASSERT_TRUE (thread->IsBusy (&workingTime));        // Thread is busy with task
-    stop = true;
+    stop.store(true);
     ASSERT_TRUE (cv.WaitOnCondition (&predicate, 5000));// no timeout
     ASSERT_EQ   (1, work->m_nCalls);                // work item executed
     thread->Terminate ();
@@ -260,7 +260,7 @@ TEST (RealityDataThreadPool, Queueing)
             }));
         }
 
-    block = false;
+    block.store(false);
 
     WorkItemsCountPredicate predicate(nCalls, workItemsCount);
     ASSERT_TRUE (cv.WaitOnCondition (&predicate, 5000));// no timeout
@@ -325,7 +325,7 @@ TEST (RealityDataThreadPool, SpawnsThreads)
             }));
         }
     
-    block = false;
+    block.store(false);
 
     WorkItemsCountPredicate predicate (nCalls, workItemsCount);
     ASSERT_TRUE (cv.WaitOnCondition (&predicate, 5000));    // no timeout
@@ -364,7 +364,7 @@ TEST (RealityDataThreadPool, TerminatesSpawnedThreads)
             }));
         }
     
-    block = false;
+    block.store(false);
 
     WorkItemsCountPredicate predicate (nCalls, workItemsCount);
     ASSERT_TRUE (cv.WaitOnCondition (&predicate, 5000));                // no timeout

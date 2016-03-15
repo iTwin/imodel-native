@@ -91,8 +91,8 @@ struct TiledRaster : IRealityData<TiledRaster, BeSQLiteRealityDataStorage, HttpR
     private:
         RgbImageInfo m_expectedImageInfo;
     public:
-        RequestOptions() : RealityDataCacheOptions(false,false) {DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT}
-        RequestOptions(RgbImageInfo const& expectedImageInfo) : m_expectedImageInfo(expectedImageInfo), RealityDataCacheOptions(true, true) {DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT}
+        RequestOptions() : RealityDataCacheOptions(false,false) {}
+        RequestOptions(RgbImageInfo const& expectedImageInfo) : m_expectedImageInfo(expectedImageInfo), RealityDataCacheOptions(true, true) {}
         RgbImageInfo const& GetExpectedImageInfo() const {return m_expectedImageInfo;}
     };
 
@@ -1174,14 +1174,14 @@ struct TiledRasterPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databas
         {
         if (db.TableExists(TABLE_NAME_TiledRaster))
             {
-            s_isPrepared = true;
+            s_isPrepared.store(true);
             return SUCCESS;
             }
 
         Utf8CP ddl = "Url CHAR PRIMARY KEY,Raster BLOB,RasterSize INT,RasterInfo CHAR,ContentType CHAR,Created BIGINT,Expires BIGINT,ETag CHAR";
         if (BeSQLite::BE_SQLITE_OK == db.CreateTable(TABLE_NAME_TiledRaster, ddl))
             {
-            s_isPrepared = true;
+            s_isPrepared.store(true);
             return SUCCESS;
             }
         return ERROR;
