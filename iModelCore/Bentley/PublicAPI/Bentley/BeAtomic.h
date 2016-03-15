@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeAtomic.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,9 +20,18 @@
 
 #if defined (BENTLEY_HAVE_STD_ATOMIC)
 
-    #include <atomic>
+#include <atomic>
 
-    #define BeAtomic std::atomic
+#ifdef BeAtomic
+#undef BeAtomic
+#endif
+
+template<class T> struct BeAtomic : std::atomic<T>
+{
+    explicit BeAtomic(T val=0) : std::atomic<T>(val){}
+    T IncrementAtomicPre() {return fetch_add(1)+1;}
+    T DecrementAtomicPost() {return fetch_sub(1);}
+};
 
 #else
 
@@ -49,12 +58,13 @@
             BeAtomic& operator= (BeAtomic const&);\
             BeAtomic (BeAtomic const&);\
         public:\
-            BeAtomic() {;}\
-            BeAtomic (UTYPE v) : m_value(v) {;}\
+            explicit BeAtomic (UTYPE v=0) : m_value(v) {}\
             UTYPE operator++() volatile {return _InterlockedIncrement ## TYPE_SUFFIX ((CAST_TYPE volatile*)&m_value);}\
             UTYPE operator++(int) volatile {return _InterlockedIncrement ## TYPE_SUFFIX ((CAST_TYPE volatile*)&m_value)-1;}\
             UTYPE operator--()    volatile {return _InterlockedDecrement ## TYPE_SUFFIX ((CAST_TYPE volatile*)&m_value);}\
             UTYPE operator--(int) volatile {return _InterlockedDecrement ## TYPE_SUFFIX ((CAST_TYPE volatile*)&m_value)+1;}\
+            UTYPE IncrementAtomicPre() {return ++(*this);} \
+            UTYPE DecrementAtomicPost() {return (*this)--;} \
             UTYPE load() const {return _InterlockedCompareExchange ## TYPE_SUFFIX ((CAST_TYPE volatile*)&m_value,0,0);}\
             void store (UTYPE v) const {_InterlockedExchange ## TYPE_SUFFIX ((CAST_TYPE volatile*)&m_value,v);}
 
@@ -62,25 +72,21 @@
     //! std::atomic<UTYPE> work-alike for use by C++/CLI managed code
     //  @bsiclass 
     //=======================================================================================
-    template <typename T>
-    struct BeAtomic
+    template<typename T> struct BeAtomic
         {
         };
 
-    template <>
-    struct BeAtomic<uint64_t>
+    template<> struct BeAtomic<uint64_t>
         {
         BE_ATOMIC_IMPL(uint64_t,64,long long)
         };
 
-    template <>
-    struct BeAtomic<uint32_t>
+    template<> struct BeAtomic<uint32_t>
         {
         BE_ATOMIC_IMPL(uint32_t,,long)
         };
 
-    template <>
-    struct BeAtomic<int>
+    template<> struct BeAtomic<int>
         {
         BE_ATOMIC_IMPL(int,,long)
         };

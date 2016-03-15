@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 #include "BentleyAllocator.h"
 #include "BeAtomic.h"
+#include "BeAssert.h"
 
 // For std::move on Android.
 #include <utility>
@@ -23,7 +24,6 @@ struct  IRefCounted
     {
 protected:
     virtual ~IRefCounted() {}         // force virtual destructor for subclasses
-
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
 public:
@@ -31,28 +31,30 @@ public:
     virtual uint32_t Release() const = 0;
     };
 
-// You can use this macro to add an implementation of IRefCounted, i.e., the reference-counted pattern, directly into your class.
-// You must also put the DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT below into your constructor.
+// define this macro to catch calls to Release without matching calls to AddRef
+#define DEBUG_REF_COUNTING
+#if defined DEBUG_REF_COUNTING
+    # define REFCOUNT_RELASE_CHECK(val) BeAssert(0!=val)
+    #else
+    # define REFCOUNT_RELASE_CHECK(val)
+#endif
+
+// You can use this macro to implement IRefCounted directly on your class.
 // You should normally make your class non-copyable. If not, you must define a copy constructor and assignment operator, as shown in the RefCounted template below.
-// Warning: the Release method implementation decreases the value of m_refCount atomically and must not use any member variables after that - other
-// threads see the decreased value and can potentially delete the object.
+// Warning: Release reads and decrements the value of m_refCount atomically. It must not use member variables after that since the object may be deleted on another thread.
 #define DEFINE_BENTLEY_REF_COUNTED_MEMBERS              \
 private:                                                \
     mutable BeAtomic<uint32_t> m_refCount;              \
 public:                                                 \
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS                 \
-    uint32_t AddRef() const {return ++m_refCount;}      \
+    uint32_t AddRef() const {return m_refCount.IncrementAtomicPre();} \
     uint32_t Release() const                            \
         {                                               \
-        uint32_t refCount = m_refCount--;               \
-        if (1 < refCount)                               \
-            return refCount;                            \
-        delete this;                                    \
-        return 0;                                       \
+        uint32_t countWas = m_refCount.DecrementAtomicPost(); REFCOUNT_RELASE_CHECK(countWas); \
+        if (1 == countWas)                              \
+            delete this;                                \
+        return countWas-1;                              \
         }
-
-// If you put DEFINE_BENTLEY_REF_COUNTED_MEMBERS in your class definition, also put the following macro into your constructor:
-#define DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT m_refCount.store(0);
 
 #define DEFINE_REF_COUNTED_PTR(_sname_) typedef RefCountedPtr<_sname_> _sname_##Ptr; typedef RefCountedCPtr<_sname_> _sname_##CPtr;
 
@@ -70,7 +72,6 @@ struct ISomeInterface : IRefCounted {...};
 struct MyClass : RefCounted<ISomeInterface> {...};
 \endcode
 * @bsiclass                                                     Keith.Bentley   09/07
-* This is an application of the http://en.wikipedia.org/wiki/Curiously_recurring_template_pattern
 +===============+===============+===============+===============+===============+======*/
 template <class Base> class RefCounted : public Base
     {
@@ -80,9 +81,9 @@ protected:
     virtual ~RefCounted() {}    // force virtual destructor for subclasses
 
 public:
-    RefCounted() {DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT}
-    RefCounted(RefCounted const& rhs) {DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT} // Initialize my ref count to zero. Adopting rhs' data does not add a *reference* to me.
-    RefCounted& operator=(RefCounted const& rhs) {if (this != &rhs) {Base::operator=(rhs);} return *this;} // NB: Preserve my ref count! Assigning rhs' data to me does not add a *reference* to me.
+    RefCounted() : m_refCount(0) {}
+    RefCounted(RefCounted const& rhs) {m_refCount.store(0);} // Initialize my ref count to zero. Adopting rhs' data does not add a *reference* to me.
+    RefCounted& operator=(RefCounted const& rhs) {if (this != &rhs) {Base::operator=(rhs);} return *this;} // NB: Preserve my ref count! Copying rhs' data to me does not add a *reference* to me.
     uint32_t GetRefCount() const {return m_refCount.load();}
     };
 
