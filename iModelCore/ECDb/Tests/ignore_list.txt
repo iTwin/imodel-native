@@ -32,6 +32,3 @@ ECSqlSelectTestFramework.StructTests
 
 #TFS 383266
 JsonReaderTests.ReadInstanceAlongWithRelatedInstances
-
-#TFS 384134 (Grigas)
-ECDbExpressionSymbolProvider*Tests*
