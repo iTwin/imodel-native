@@ -317,6 +317,7 @@ void ScalableMeshProgressiveDisplay::DrawView(ViewContextR context)
 
 ScalableMeshProgressiveDisplay::ScalableMeshProgressiveDisplay(ScalableMeshModel& model, DgnViewportR vp) : m_model(model)
     {
+    DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT
     DgnGCS* gcsP = vp.GetViewController().GetDgnDb().Units().GetDgnGCS();
     if ((model.m_scMeshPtr->GetBaseGCS() == NULL) || (gcsP == NULL) || model.m_scMeshPtr->GetBaseGCS()->IsEquivalent(*(BentleyApi::GeoCoordinates::BaseGCS*)gcsP))
         {
