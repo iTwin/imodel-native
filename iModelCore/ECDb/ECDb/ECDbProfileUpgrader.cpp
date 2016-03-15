@@ -12,6 +12,113 @@ using namespace std;
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //*************************************** ECDbProfileUpgrader_XXX *********************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle        03/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3201::_Upgrade(ECDbR ecdb) const
+    {
+    if (BE_SQLITE_DONE != ecdb.ExecuteSql("DELETE FROM ec_Property WHERE lower(Name) IN ('parentecinstanceid','ecpropertypathid','ecarrayindex') AND "
+                                     "ClassId IN (SELECT c.Id FROM ec_Class c, ec_Schema s "
+                                     "WHERE c.SchemaId=s.Id AND lower(s.Name) LIKE 'ecdb_system' AND lower(c.Name) LIKE 'ecsqlsystemproperties')"))
+        {
+        LOG.errorv("ECDb profile upgrade failed for '%s': Executing SQL to delete obsolete ECProperties 'ParentECInstanceId', 'ECPropertyPathId' and 'ECArrayIndex' "
+                   "from ECClass 'ECDb_System.ECSqlSystemProperties' failed. Error: %s", ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debugv("ECDb profile upgrade: Deleted obsolete ECProperties obsolete ECProperties 'ParentECInstanceId', 'ECPropertyPathId' and 'ECArrayIndex' "
+               "from ECClass 'ECDb_System.ECSqlSystemProperties'. %d rows deleted.", ecdb.GetModifiedRowCount());
+    return BE_SQLITE_OK;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle        03/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3200::_Upgrade(ECDbR ecdb) const
+    {
+    //Detect struct array properties
+/*    Utf8String structArrayPropsSql;
+    structArrayPropsSql.Sprintf("SELECT NULL from ec_Property p, ec_ClassMap cm WHERE p.ClassId=cm.ClassId AND cm.MapStrategy<>%d AND p.Kind=%d",
+                                Enum::ToInt(ECDbMapStrategy::Strategy::NotMapped), Enum::ToInt(ECPropertyKind::StructArray));
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, structArrayPropsSql.c_str()))
+        {
+        LOG.errorv("ECDb profile upgrade failed for '%s': Preparing SQL to find struct array properties failed. SQL: %s. Error: %s", ecdb.GetDbFileName(), structArrayPropsSql.c_str(), ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (BE_SQLITE_DONE != stmt.Step())
+        { 
+        LOG.errorv("Version of ECDb profile of file '%s' is too old: ECDb file has ECSchemas with struct array properties mapped to separate tables. Auto-upgrade not available yet to migrate struct array properties to the JSON based persistence.",
+                   ecdb.GetDbFileName());
+        return BE_SQLITE_ERROR_ProfileTooOld;
+        }
+
+    stmt.Finalize();
+
+    //Delete struct array delete triggers
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT Name FROM sqlite_master WHERE type='trigger' AND Name LIKE '%_StructArray_Delete'"))
+        {
+        LOG.errorv("ECDb profile upgrade failed for '%s'. Preparing SQL to find struct array delete triggers failed. SQL: %s. Error: %s", 
+                   ecdb.GetDbFileName(), stmt.GetSql(), ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    Utf8CP dropTriggerSql = "DROP TRIGGER %s";
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        Utf8CP triggerName = stmt.GetValueText(0);
+        Utf8String sql;
+        sql.Sprintf(dropTriggerSql, triggerName);
+        if (BE_SQLITE_DONE != ecdb.ExecuteSql(sql.c_str()))
+            {
+            LOG.errorv("ECDb profile upgrade failed for '%s'. Deleting struct array trigger %s failed. Error: %s",
+                       ecdb.GetDbFileName(), triggerName, ecdb.GetLastError().c_str());
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            }
+
+        LOG.debugv("ECDb profile upgrade: Dropped trigger %s.", triggerName);
+        }
+
+    stmt.Finalize();
+
+    //Delete struct array tables
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT Name FROM ec_Table WHERE Type=3"))
+        {
+        LOG.errorv("ECDb profile upgrade failed for '%s'. Preparing SQL to delete struct array tables failed. SQL: %s. Error: %s",
+                   ecdb.GetDbFileName(), stmt.GetSql(), ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        Utf8CP tableName = stmt.GetValueText(0);
+        if (BE_SQLITE_OK != ecdb.DropTable(tableName))
+            {
+            LOG.errorv("ECDb profile upgrade failed for '%s'. Deleting struct array table %s failed. Error: %s",
+                       ecdb.GetDbFileName(), tableName, ecdb.GetLastError().c_str());
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            }
+
+        LOG.debugv("ECDb profile upgrade: Drop struct array table %s.", tableName);
+        }
+
+    stmt.Finalize();
+
+    //delete entries in ec_Table. This also deletes respective entries in ec_Column, ec_PropertyMap and ec_PropertyPath (via FK)
+    if (BE_SQLITE_DONE != ecdb.ExecuteSql("DELETE FROM ec_Table WHERE Type=3"))
+        {
+        LOG.errorv("ECDb profile upgrade failed for '%s'. Executing SQL to delete struct array entries in ec_Table failed: %s", 
+                   ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debugv("ECDb profile upgrade: Deleted struct array entries from ec_Table. Rows deleted: %d", ecdb.GetModifiedRowCount());
+    return BE_SQLITE_OK;
+    */
+    LOG.errorv("Version of ECDb profile of file '%s' is too old and an auto-upgrade is not available.", ecdb.GetDbFileName());
+    return BE_SQLITE_ERROR_ProfileTooOld;
+    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle        02/2016
@@ -148,7 +255,7 @@ DbResult ECDbProfileUpgrader::AlterColumnsInView (ECDbR ecdb, Utf8CP viewName, U
         return stat;
 
     bvector<Utf8String> columnNameList;
-    BeStringUtilities::Split(allColumnNamesAfter, ",", NULL, columnNameList);
+    BeStringUtilities::Split(allColumnNamesAfter, ",", nullptr, columnNameList);
 
     Utf8String columnsDdl;
     const size_t columnCount = columnNameList.size ();
@@ -385,9 +492,6 @@ Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml ()
         "        <ECProperty propertyName='SourceECClassId' typeName='long' description='Represents the SourceECClassId system property of an ECRelationship used by the EC->DB Mapping.' />"
         "        <ECProperty propertyName='TargetECInstanceId' typeName='long' description='Represents the TargetECInstanceId system property of an ECRelationship used by the EC->DB Mapping.' />"
         "        <ECProperty propertyName='TargetECClassId' typeName='long' description='Represents the TargetECClassId system property of an ECRelationship used by the EC->DB Mapping.' />"
-        "        <ECProperty propertyName='ParentECInstanceId' typeName='long' description='For ECClasses mapped to secondary table storage (e.g. ECStructs), this system property represents the ECInstanceId of the parent (embedding) ECInstance.' />"
-        "        <ECProperty propertyName='ECPropertyPathId' typeName='long' description='For ECClasses mapped to secondary table storage, this system property represents the id of the ECProperty in the owning ECClass to which a row in the secondary table refers to.' />"
-        "        <ECProperty propertyName='ECArrayIndex' typeName='int' description='For EC arrays mapped to secondary table storage, this system property represents the index of the array element which a row in the secondary table represents.' />"
         "    </ECEntityClass> "
         "</ECSchema>";
     }
