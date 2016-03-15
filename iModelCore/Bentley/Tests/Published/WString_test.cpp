@@ -1359,7 +1359,7 @@ TEST(WStringTest, ReplaceI)
     EXPECT_STREQ(L"ABC", str.c_str());
 
     str.assign(L"ABC");
-    EXPECT_FALSE(str.ReplaceI(L"ABCD", false));
+    EXPECT_FALSE(str.ReplaceI(L"ABCD", L""));
     EXPECT_STREQ(L"ABC", str.c_str());
     }
 //---------------------------------------------------------------------------------------
