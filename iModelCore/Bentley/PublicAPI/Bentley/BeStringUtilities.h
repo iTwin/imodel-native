@@ -602,9 +602,9 @@ public:
     //! Do a lexicographic comparison of specified strings.  This is an alphabetical sort that also takes numbers into account,
     //!   such that "file9" will come before "file11" in the sort order (even though alphabetically 1 is before 9).  This method
     //!   always ignores case.
-    //! param[in]    pszName1                IN first string
-    //! param[in]    pszName2                IN second string
-    //! return   0 if strings are equal, < 0 if pszName1 is less than pszName2, else > 0
+    //! param[in]    value0                first string
+    //! param[in]    value1                second string
+    //! return   0 if strings are equal, < 0 if value0 is less than value1, else > 0
     BENTLEYDLL_EXPORT static int LexicographicCompare (WCharCP value0, WCharCP value1);
 
     //! Attempts to detect if a string contains any invalid UTF-8 sequences.
