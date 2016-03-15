@@ -809,7 +809,7 @@ ProgressiveTask::Completion WebMercatorDisplay::_DoProgressive(ProgressiveContex
     if (BeTimeUtilities::GetCurrentTimeAsUnixMillis() < m_nextRetryTime)
         return Completion::Aborted;
 
-    auto& realityCache = T_HOST.GetRealityDataAdmin().GetCache();
+    RealityDataCache& realityCache = m_model.GetRealityDataCache();
 
     // First, see if the RealityDataCache has the missing tiles. If so, draw them. If not, request downloads.
     // NOTE: It might take more than one pass to do this for each missing tile.
@@ -1133,6 +1133,22 @@ void WebMercatorModel::_ReadJsonProperties(Json::Value const& val)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+RealityDataCache& WebMercatorModel::GetRealityDataCache() const
+    {
+    if (m_realityDataCache.IsNull())
+        {
+        RealityDataCachePtr cache = RealityDataCache::Create(100);
+        BeFileName storageFileName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
+        storageFileName.AppendToPath(WString(m_properties.m_mapService.c_str(), true).c_str());
+        cache->RegisterStorage(*BeSQLiteRealityDataStorage::Create(storageFileName));
+        cache->RegisterSource(*HttpRealityDataSource::Create(8));
+        }
+    return *m_realityDataCache;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TiledRaster::_IsExpired() const 
@@ -1174,32 +1190,24 @@ struct TiledRasterPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databas
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                     Grigas.Petraitis           03/2015
     +---------------+---------------+---------------+---------------+---------------+--*/
-    virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db, double percentage) const override
+    virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db) const override
         {
-        CachedStatementPtr sumStatement;
-        if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(sumStatement, "SELECT sum(RasterSize) FROM " TABLE_NAME_TiledRaster))
-            return ERROR;
+        static uint64_t allowedSize = 1024 * 1024 * 1024; // 1 GB
 
-        if (BeSQLite::BE_SQLITE_ROW != sumStatement->Step()) 
-            return ERROR;
-            
-        auto rasterSize = sumStatement->GetValueInt(0);         
-        uint64_t overHead = (uint64_t)(rasterSize * percentage) / 100;
-    
         CachedStatementPtr selectStatement;
         if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(selectStatement, "SELECT RasterSize,Created FROM " TABLE_NAME_TiledRaster " ORDER BY Created ASC"))
             return ERROR;
     
-        uint64_t runningSum = 0;
-        while ((runningSum < overHead) &&(BeSQLite::BE_SQLITE_ROW == selectStatement->Step()))
-            runningSum += selectStatement->GetValueInt(0);
+        uint64_t accumulatedSize = 0;
+        while ((accumulatedSize < allowedSize) && (BeSQLite::BE_SQLITE_ROW == selectStatement->Step()))
+            accumulatedSize += selectStatement->GetValueUInt64(0);
+        uint64_t date = selectStatement->GetValueUInt64(1);
             
-        CachedStatementPtr deleteStatement;
-        uint64_t creationDate = selectStatement->GetValueInt64(1);
+        CachedStatementPtr deleteStatement;        
         if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(deleteStatement, "DELETE FROM " TABLE_NAME_TiledRaster " WHERE Created  <= ? "))
             return ERROR;
 
-        deleteStatement->BindInt64(1, creationDate);
+        deleteStatement->BindUInt64(1, date);
         if (BeSQLite::BE_SQLITE_DONE != deleteStatement->Step())
             return ERROR;
             
