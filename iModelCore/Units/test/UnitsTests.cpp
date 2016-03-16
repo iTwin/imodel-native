@@ -236,42 +236,42 @@ TEST_F(UnitsTests, TestOffsetConversions)
     // Kelvin = ((Fahrenheit–32)×5/9)+273.15
     // Rankine = Fahrenheit+459.67
     // Rømer = (Fahrenheit–32)×7/24+7.5
-    TestUnitConversion(32, "FAHRENHEIT", 0, "CELSIUS", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(20, "FAHRENHEIT", -6.666666666666666666666666666, "CELSIUS", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(122, "FAHRENHEIT", 50, "CELSIUS", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(60, "FAHRENHEIT", 288.705555555555, "KELVIN", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(60, "FAHRENHEIT", 519.67, "RANKINE", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(61.1, "FAHRENHEIT", 15.9875, "ROMER", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "FAHRENHEIT", -17.777777777777777777777777777778, "CELSIUS", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "FAHRENHEIT", 255.37222222222222222222222222222, "KELVIN", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "FAHRENHEIT", 459.67, "RANKINE", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "FAHRENHEIT", -1.8333333333333, "ROMER", 1000, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(32, "FAHRENHEIT", 0, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(20, "FAHRENHEIT", -6.666666666666666666666666666, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(122, "FAHRENHEIT", 50, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(60, "FAHRENHEIT", 288.70555555555555555555555555556, "KELVIN", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(60, "FAHRENHEIT", 519.67, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(61.1, "FAHRENHEIT", 15.9875, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0, "FAHRENHEIT", -17.777777777777777777777777777778, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0, "FAHRENHEIT", 255.37222222222222222222222222222, "KELVIN", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0, "FAHRENHEIT", 459.67, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0, "FAHRENHEIT", -1.8333333333333333333333333333333, "ROMER", 10, loadErrors, conversionErrors, handledUnits);
 
     // Expected values generated using the following equations and windows calculator
     // Fahrenheit = Celsius×9÷5+32
     // Kelvin = Celsius+273.15
     // Rankine = Celsius×9/5+32+459.67
     // Rømer = Celsius×21/40+7.5
-    TestUnitConversion(1, "CELSIUS", 33.8, "FAHRENHEIT", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(-15, "CELSIUS", 5, "FAHRENHEIT", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(-25, "CELSIUS", -13, "FAHRENHEIT", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(60, "CELSIUS", 140, "FAHRENHEIT", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(60, "CELSIUS", 333.15, "KELVIN", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(60, "CELSIUS", 599.67, "RANKINE", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(-14.3, "CELSIUS", -0.0075, "ROMER", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "CELSIUS", 32, "FAHRENHEIT", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "CELSIUS", 273.15, "KELVIN", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "CELSIUS", 491.67, "RANKINE", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "CELSIUS", 7.5, "ROMER", 1000, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1, "CELSIUS", 33.8, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(-15, "CELSIUS", 5, "FAHRENHEIT", 10, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(-25, "CELSIUS", -13, "FAHRENHEIT", 10, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(60, "CELSIUS", 140, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(60, "CELSIUS", 333.15, "KELVIN", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(60, "CELSIUS", 599.67, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(-14.3, "CELSIUS", -0.0075, "ROMER", 100, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0, "CELSIUS", 32, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0, "CELSIUS", 273.15, "KELVIN", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0, "CELSIUS", 491.67, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0, "CELSIUS", 7.5, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
 
-    TestUnitConversion(42, "KELVIN", -231.15, "CELSIUS", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42, "KELVIN", -384.07, "FAHRENHEIT", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42, "KELVIN", 75.6, "RANKINE", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(571.2, "KELVIN", 163.97625, "ROMER", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "KELVIN", -273.15, "CELSIUS", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "KELVIN", -459.67, "FAHRENHEIT", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "KELVIN", 0, "RANKINE", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "KELVIN", -135.90375, "ROMER", 1000, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42, "KELVIN", -231.15, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42, "KELVIN", -384.07, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42, "KELVIN", 75.6, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(571.2, "KELVIN", 163.97625, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0, "KELVIN", -273.15, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0, "KELVIN", -459.67, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0, "KELVIN", 0, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0, "KELVIN", -135.90375, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
 
 
     // Expected values generated using the following equations and windows calculator
@@ -279,28 +279,28 @@ TEST_F(UnitsTests, TestOffsetConversions)
     // Fahrenheit = Rankine–459.67
     // Kelvin = (Rankine–459.67–32)×5/9+273.15
     // Rømer = (Rankine–491.67)×7/24+7.5
-    TestUnitConversion(42, "RANKINE", -249.81666666666, "CELSIUS", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42, "RANKINE", -417.67, "FAHRENHEIT", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42, "RANKINE", 23.333333333333333, "KELVIN", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(630, "RANKINE", 47.84625, "ROMER", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "RANKINE", -273.15, "CELSIUS", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "RANKINE", -459.67, "FAHRENHEIT", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "RANKINE", 0, "KELVIN", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "RANKINE", -135.90375, "ROMER", 1000, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42, "RANKINE", -249.81666666666666666666666666667, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42, "RANKINE", -417.67, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42, "RANKINE", 23.333333333333333, "KELVIN", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(630, "RANKINE", 47.84625, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0, "RANKINE", -273.15, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0, "RANKINE", -459.67, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0, "RANKINE", 0, "KELVIN", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0, "RANKINE", -135.90375, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
     
     // Expected values generated using the following equations and windows calculator
     // Celsius = (Rømer–7.5)×40/21
     // Fahrenheit = (Rømer–7.5)×24/7+32
     // Kelvin = (Rømer–7.5)×40/21+273.15
     // Rankine = (Rømer–7.5)×24/7+491.67
-    TestUnitConversion(42, "ROMER", 65.714285714285714285714285714286, "CELSIUS", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42, "ROMER", 150.28571428571428571428571428571, "FAHRENHEIT", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42, "ROMER", 338.86428571428571428571428571429, "KELVIN", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42, "ROMER", 609.95571428571428571428571428571, "RANKINE", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "ROMER", -14.285714285714285714285714285714, "CELSIUS", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "ROMER", 6.285714285714285714, "FAHRENHEIT", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "ROMER", 258.8642857142857142, "KELVIN", 1000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "ROMER", 465.9557142857142857, "RANKINE", 1000, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42, "ROMER", 65.714285714285714285714285714286, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42, "ROMER", 150.28571428571428571428571428571, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42, "ROMER", 338.86428571428571428571428571429, "KELVIN", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42, "ROMER", 609.95571428571428571428571428571, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0, "ROMER", -14.285714285714285714285714285714, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0, "ROMER", 6.285714285714285714, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0, "ROMER", 258.8642857142857142, "KELVIN", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0, "ROMER", 465.9557142857142857, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
 
 
     Utf8String loadErrorString("The following units were not found:\n");
@@ -322,7 +322,7 @@ TEST_F(UnitsTests, TestBasicConversion)
     bvector<Utf8String> loadErrors;
     bvector<Utf8String> conversionErrors;
     bvector<bpair<Utf8String, Utf8String>> handledUnits;
-    TestUnitConversion(10, "FT", 3048, "MM", 1000, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(10, "FT", 3048, "MM", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(1, "GALLON", 3.785411784, "LITRE", 1000, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(100000, "FOOT_SQUARED", 100, "THOUSAND_FOOT_SQUARED", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(836127.36, "MILLIMETRE_SQUARED", 1.0, "YARD_SQUARED", 1000, loadErrors, conversionErrors, handledUnits, true);
@@ -348,8 +348,8 @@ TEST_F(UnitsTests, TestBasicConversion)
     TestUnitConversion(60, "GRAM_PER_MINUTE", 1.0, "GRAM_PER_SECOND", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(3.53146667214886e1, "KILONEWTON_PER_METRE_CUBED", 1.0, "KILONEWTON_PER_FOOT_CUBED", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(42.42, "KILOPASCAL_GAUGE", 6.15250086300203, "POUND_FORCE_PER_INCH_SQUARED_GAUGE", 100000000, loadErrors, conversionErrors, handledUnits, true); // Expected value from old system, difference is due to imprecise offset in old system.
-    TestUnitConversion(42.42, "PERCENT_SLOPE", 0.4242, "METRE_PER_METRE", 10, loadErrors, conversionErrors, handledUnits, true);
-    TestUnitConversion(0.42, "METRE_PER_METRE", 42.0, "PERCENT_SLOPE", 10, loadErrors, conversionErrors, handledUnits, true);
+    TestUnitConversion(42.42, "PERCENT_SLOPE", 0.4242, "METRE_PER_METRE", 1, loadErrors, conversionErrors, handledUnits, true);
+    TestUnitConversion(0.42, "METRE_PER_METRE", 42.0, "PERCENT_SLOPE", 1, loadErrors, conversionErrors, handledUnits, true);
     ASSERT_EQ(3, loadErrors.size()) << BeStringUtilities::Join(loadErrors, ", "); // 3 known missing units : LITRE_PER_KILOMETRE_SQUARED_PER_DAY, GALLON_PER_DAY_PER_PERSON, LITRE_PER_SECOND_PER_PERSON
     ASSERT_EQ(0, conversionErrors.size()) << BeStringUtilities::Join(conversionErrors, ", ");
     Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"TestBasicConversion_handledUnits.csv");
@@ -361,8 +361,8 @@ TEST_F(UnitsTests, TestInvertedSlopeUnits)
     bvector<Utf8String> loadErrors;
     bvector<Utf8String> conversionErrors;
     bvector<bpair<Utf8String, Utf8String>> handledUnits;
-    TestUnitConversion(42.42, "HORIZONTAL_PER_VERTICAL", 1.0 / 42.42, "VERTICAL_PER_HORIZONTAL", 10, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0.0, "HORIZONTAL_PER_VERTICAL", 0.0, "VERTICAL_PER_HORIZONTAL", 10, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "HORIZONTAL_PER_VERTICAL", 1.0 / 42.42, "VERTICAL_PER_HORIZONTAL", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0.0, "HORIZONTAL_PER_VERTICAL", 0.0, "VERTICAL_PER_HORIZONTAL", 1, loadErrors, conversionErrors, handledUnits);
     ASSERT_EQ(0, loadErrors.size()) << BeStringUtilities::Join(loadErrors, ", ");
     ASSERT_EQ(0, conversionErrors.size()) << BeStringUtilities::Join(conversionErrors, ", ");
     Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"TestInvertedSlopeUnits_handledUnits.csv");
@@ -374,12 +374,12 @@ TEST_F(UnitsTests, TestLinearCostConversions)
     bvector<Utf8String> loadErrors;
     bvector<Utf8String> conversionErrors;
     bvector<bpair<Utf8String, Utf8String>> handledUnits;
-    TestUnitConversion(4200.42, "$/M", 4.20042, "$/MM", 10, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(4200.42, "$/M", 4200.42, "$/M", 10, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0.0, "$/M", 0.0, "$/MM", 10, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(4200.42, "$/MM", 4200420.0, "$/M", 10, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(4200.42, "$/MM", 4200.42, "$/MM", 10, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0.0, "$/MM", 0.0, "$/M", 10, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(4200.42, "$/M", 4.20042, "$/MM", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(4200.42, "$/M", 4200.42, "$/M", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0.0, "$/M", 0.0, "$/MM", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(4200.42, "$/MM", 4200420.0, "$/M", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(4200.42, "$/MM", 4200.42, "$/MM", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0.0, "$/MM", 0.0, "$/M", 1, loadErrors, conversionErrors, handledUnits);
     ASSERT_EQ(0, loadErrors.size()) << BeStringUtilities::Join(loadErrors, ", ");
     ASSERT_EQ(0, conversionErrors.size()) << BeStringUtilities::Join(conversionErrors, ", ");
     Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"TestLinearCostConversions_handledUnits.csv");
