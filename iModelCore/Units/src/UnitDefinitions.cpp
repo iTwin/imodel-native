@@ -417,8 +417,8 @@ void AddFrequency(UnitRegistry& reg)
     {
     reg.AddUnit(FREQUENCY, SI, "HZ", "S(-1)");
     reg.AddSynonym("HZ", "HERTZ");
-    reg.AddUnit(FREQUENCY, SI, "KH", "[KILO]*S(-1)");
-    reg.AddSynonym("KH", "KILOHERTZ");
+    reg.AddUnit(FREQUENCY, SI, "KHZ", "[KILO]*S(-1)");
+    reg.AddSynonym("KHZ", "KILOHERTZ");
     reg.AddUnit(FREQUENCY, SI, "MHZ", "[MEGA]*S(-1)");
     reg.AddSynonym("MHZ", "MEGAHERTZ");
     }
@@ -703,8 +703,8 @@ void AddSlope(UnitRegistry& reg)
     reg.AddUnit(SLOPE, INTERNATIONAL, "PERCENT_SLOPE", "M/M", 1.0e-2);
 
     reg.AddInvertingUnit("VERTICAL_PER_HORIZONTAL", "HORIZONTAL_PER_VERTICAL");
-    reg.AddInvertingUnit("FT/FT", "FOOT_HORIZONTAL_PER_FOOT_VERTICAL");
-    reg.AddInvertingUnit("M/M", "METRE_HORIZONTAL_PER_METRE_VERTICAL");
+    reg.AddInvertingUnit("FT/FT", "FT_HORIZONTAL_PER_FT_VERTICAL");
+    reg.AddInvertingUnit("M/M", "M_HORIZONTAL_PER_M_VERTICAL");
     }
 
 void AddSurfaceDensity(UnitRegistry& reg)
@@ -1304,8 +1304,8 @@ void UnitRegistry::AddDefaultMappings ()
     AddMapping("RESIDENT", "RESIDENT");
     AddMapping("STUDENT", "STUDENT");
     AddMapping("VERTICAL_PER_HORIZONTAL", "VERTICAL_PER_HORIZONTAL");
-    AddMapping("FOOT_HORIZONTAL_PER_FOOT_VERTICAL", "FOOT_HORIZONTAL_PER_FOOT_VERTICAL");
-    AddMapping("METRE_HORIZONTAL_PER_METRE_VERTICAL", "METRE_HORIZONTAL_PER_METRE_VERTICAL");
+    AddMapping("FOOT_HORIZONTAL_PER_FOOT_VERTICAL", "FT_HORIZONTAL_PER_FT_VERTICAL");
+    AddMapping("METRE_HORIZONTAL_PER_METRE_VERTICAL", "M_HORIZONTAL_PER_M_VERTICAL");
     AddMapping("HORIZONTAL_PER_VERTICAL", "HORIZONTAL_PER_VERTICAL");
     AddMapping("FOOT_PER_1000_FOOT", "FT/THOUSAND_FOOT");
     AddMapping("CENTIPOISE", "CENTIPOISE");
