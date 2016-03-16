@@ -43,18 +43,18 @@ void AddLengths(UnitRegistry& reg)
     //reg.AddUnit(LENGTH, IMPERIAL, "NAUT_MILE_IMPERIAL", "M", 1853.0);
     //reg.AddSynonym("NAUT_MILE_IMPERIAL", "ADMIRALTY_MILE");
 
-    reg.AddUnit(LENGTH, SI, "ANGSTROM", "M", 1e-10);
-    reg.AddUnit(LENGTH, SI, "FERMI", "[FEMTO]*M");
-    reg.AddSynonym("FERMI", "FEMTOMETRE");
-    reg.AddUnit(LENGTH, IMPERIAL, "BARLEYCORN", "IN", (1.0 / 3.0));
-    reg.AddUnit(LENGTH, HISTORICAL, "CUBIT", "IN", 18.0);
-    reg.AddUnit(LENGTH, HISTORICAL, "ELL", "IN", 45.0);
-    reg.AddUnit(LENGTH, HISTORICAL, "FATHOM", "FT", 6.0);
-    reg.AddUnit(LENGTH, ASTRONOMY, "LIGHT_SEC", "[C]*S");
+    //reg.AddUnit(LENGTH, SI, "ANGSTROM", "M", 1e-10);
+    //reg.AddUnit(LENGTH, SI, "FERMI", "[FEMTO]*M");
+    //reg.AddSynonym("FERMI", "FEMTOMETRE");
+    //reg.AddUnit(LENGTH, IMPERIAL, "BARLEYCORN", "IN", (1.0 / 3.0));
+    //reg.AddUnit(LENGTH, HISTORICAL, "CUBIT", "IN", 18.0);
+    //reg.AddUnit(LENGTH, HISTORICAL, "ELL", "IN", 45.0);
+    //reg.AddUnit(LENGTH, HISTORICAL, "FATHOM", "FT", 6.0);
+    /*reg.AddUnit(LENGTH, ASTRONOMY, "LIGHT_SEC", "[C]*S");
     reg.AddUnit(LENGTH, ASTRONOMY, "LIGHT_MIN", "[C]*MIN");
     reg.AddUnit(LENGTH, ASTRONOMY, "LIGHT_HOUR", "[C]*HR");
     reg.AddUnit(LENGTH, ASTRONOMY, "LIGHT_YEAR", "[C]*YR");
-    reg.AddUnit(LENGTH, ASTRONOMY, "AU", "M", 1.495978707e11);
+    reg.AddUnit(LENGTH, ASTRONOMY, "AU", "M", 1.495978707e11);*/
     }
 
 void AddMass(UnitRegistry& reg)
