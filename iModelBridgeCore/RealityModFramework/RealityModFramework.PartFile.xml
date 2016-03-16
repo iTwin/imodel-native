@@ -64,6 +64,14 @@
         </Bindings>
     </Part>
 
+    <Part Name="DataHandlerTool" BMakeFile="RealityPlatform\Example\DataHandlerTool.mke">
+        <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="RealityPlatform" />
+        <Bindings>
+            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/DataHandlerTool.exe</Assemblies>
+        </Bindings>
+    </Part>
+
     
    
     <Part Name="Reality-Examples">
@@ -72,6 +80,7 @@
         <SubPart PartName="RealityDbECPluginC"/>
         <SubPart PartName="CrawlerLibExample"/>
         <SubPart PartName="RealityDbECPluginInstaller" />
+        <SubPart PartName="DataHandlerTool" />
         <!--<SubPart PartName="RealityCrawler"/>-->
     </Part>
 
