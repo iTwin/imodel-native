@@ -850,13 +850,13 @@ template<class O, class SI> void HIDXAListRelativeIndex<O, SI>::TryToMakeSpaceAt
     //
 
     HIDXAListBlock<O, BLOCK_CAPACITY>* pCurrentBlock = m_List.GetTail();
-    int32_t CurrentIndex = m_List.m_LastElementPos;
+    uint32_t CurrentIndex = m_List.m_LastElementPos;
     bool Found         = false;
 
     // Look for an empty space
     while (!Found && pCurrentBlock)
         {
-        while (!Found && CurrentIndex >= 0)
+        while (!Found)
             {
             if ((*pCurrentBlock)[CurrentIndex] == 0)
                 {
