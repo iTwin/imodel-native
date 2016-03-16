@@ -2061,6 +2061,20 @@ wchar_t* BeStringUtilities::Wcsupr(wchar_t* s)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
+int BeStringUtilities::StricmpAscii(const char* s1, const char* s2)
+    {
+#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
+    return _stricmp(s1, s2);
+#elif defined (__unix__)
+    return strcasecmp(s1, s2);
+#else
+#error unknown runtime
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/2011
++---------------+---------------+---------------+---------------+---------------+------*/
 int BeStringUtilities::Stricmp(const char* s1, const char* s2)
     {
     if (!isAscii(s1) || !isAscii(s2))
