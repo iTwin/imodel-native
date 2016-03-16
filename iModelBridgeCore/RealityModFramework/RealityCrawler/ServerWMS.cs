@@ -2,7 +2,7 @@
 |
 |     $Source: RealityCrawler/ServerWMS.cs $
 | 
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 using System;
@@ -200,17 +200,22 @@ namespace Bentley.RealityPlatform.RealityCrawler
                 wmsServer.OldServerId = OldServerId;
 
             // Get the first coordinate system found if default one are not found.
+            wmsServer.CoordinateSystem = null;
             if ( m_capabilities.GetCapabilityGroup ().GetLayerList ().Count > 0 )
                 {
-                wmsServer.CoordinateSystem = m_capabilities.GetCapabilityGroup ().GetLayerList ().First<WMSLayerNet>().GetCRSList ().First<String> ();
-                foreach ( String DefaultCS in DefaultCSArray )
+                if (m_capabilities.GetCapabilityGroup().GetLayerList().First<WMSLayerNet>().GetCRSList().Count > 0)
                     {
-                    if ( m_capabilities.GetCapabilityGroup ().GetLayerList ().First<WMSLayerNet> ().GetCRSList ().Contains (DefaultCS) )
+                    wmsServer.CoordinateSystem = m_capabilities.GetCapabilityGroup().GetLayerList().First<WMSLayerNet>().GetCRSList().First<String>();
+                    foreach (String DefaultCS in DefaultCSArray)
                         {
-                        wmsServer.CoordinateSystem = DefaultCS;
-                        break;
+                        if (m_capabilities.GetCapabilityGroup().GetLayerList().First<WMSLayerNet>().GetCRSList().Contains(DefaultCS))
+                            {
+                            wmsServer.CoordinateSystem = DefaultCS;
+                            break;
+                            }
                         }
                     }
+                
                 }
 
             SaveExtendedProperties (context, wmsServer);
@@ -743,8 +748,9 @@ namespace Bentley.RealityPlatform.RealityCrawler
             if (ToUpdate)
                 ServerURL = context.ServerSet.Where (Server => Server.Type == ServerType.WMS).Where(Server => Server.State > ServerState.Reject).Where(Server => Server.State != ServerState.Modify).ToDictionary (Server => Server.ServerId, Server => Server.URL);
             else
-                ServerURL = context.ServerSet.Where (Server => Server.Type == ServerType.WMS).Where (Server => Server.State != ServerState.Modify).ToDictionary (Server => Server.ServerId, Server => Server.URL.Split('?')[0]);
-            return ServerURL;
+                ServerURL = context.ServerSet.Where(Server => Server.Type == ServerType.WMS).Where(Server => Server.State != ServerState.Modify).ToDictionary(Server => Server.ServerId, Server => Server.URL.Split('?')[0]);
+
+            return ServerURL;       
             }
 
         /// <summary>

@@ -2,7 +2,7 @@
 |
 |     $Source: CrawlerLib/PageDownloader.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PageDownloader.h"
@@ -10,6 +10,10 @@
 USING_NAMESPACE_BENTLEY_CRAWLERLIB
 using namespace std;
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    2/2016
+//-------------------------------------------------------------------------------------
+IPageDownloader::~IPageDownloader() {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
@@ -20,6 +24,8 @@ PageDownloader::PageDownloader(CrawlDelaySleeperPtr sleeper)
     m_pSleeper = sleeper;
     m_CurlHandle = curl_easy_init();
     SetDefaultSettings();
+
+    m_pParser = PageParser::Create();
     }
 
 //---------------------------------------------------------------------------------------
@@ -33,9 +39,9 @@ PageDownloader::~PageDownloader()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-PageContentPtr PageDownloader::DownloadPage(DownloadJobPtr const& p_DownloadJob)
+PageContentPtr PageDownloader::DownloadPage(DownloadJobPtr p_DownloadJob)
     {
-    WaitToRespectCrawlDelay(p_DownloadJob);
+    WaitToRespectCrawlDelay(*p_DownloadJob);
 
     PageContentPtr content;
     SetResourceUrl(p_DownloadJob->GetUrlToDownload()->GetUrlWString());
@@ -46,12 +52,12 @@ PageContentPtr PageDownloader::DownloadPage(DownloadJobPtr const& p_DownloadJob)
         SetDataWritingSettings(&buffer, CurlWriteCallback);
         response = curl_easy_perform(m_CurlHandle);
         if(response == CURLE_OK)
-            content = m_Parser.ParsePage(buffer, p_DownloadJob->GetUrlToDownload());
+            content = m_pParser->ParsePage(buffer, *p_DownloadJob->GetUrlToDownload());
         else
-            content = m_Parser.GetEmptyPageContent(p_DownloadJob->GetUrlToDownload());
+            content = m_pParser->GetEmptyPageContent(*p_DownloadJob->GetUrlToDownload());
         }
     else
-        content = m_Parser.GetEmptyPageContent(p_DownloadJob->GetUrlToDownload());
+        content = m_pParser->GetEmptyPageContent(*p_DownloadJob->GetUrlToDownload());
 
     return content;
     }
@@ -233,7 +239,7 @@ void PageDownloader::SetListOfValidContentType(bvector<WString> const& types)
 //+---------------+---------------+---------------+---------------+---------------+------
 void PageDownloader::SetParseLinksRelNoFollow(bool parse)
     {
-    m_Parser.SetParseLinksRelNoFollow(parse);
+    m_pParser->SetParseLinksRelNoFollow(parse);
     }
 
 //---------------------------------------------------------------------------------------
@@ -241,16 +247,16 @@ void PageDownloader::SetParseLinksRelNoFollow(bool parse)
 //+---------------+---------------+---------------+---------------+---------------+------
 void PageDownloader::SetParsePagesWithNoFollowMetaTag(bool parse)
     {
-    m_Parser.SetParsePagesWithNoFollowMetaTag(parse);
+    m_pParser->SetParsePagesWithNoFollowMetaTag(parse);
     }
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PageDownloader::WaitToRespectCrawlDelay(DownloadJobPtr p_DownloadJob)
+void PageDownloader::WaitToRespectCrawlDelay(DownloadJobCR p_DownloadJob)
     {
-    m_pSleeper->Sleep(p_DownloadJob->GetCrawlDelay(), p_DownloadJob->GetUrlToDownload()->GetDomainName());
+    m_pSleeper->Sleep(p_DownloadJob.GetCrawlDelay(), p_DownloadJob.GetUrlToDownload()->GetDomainName());
     }
 
 //---------------------------------------------------------------------------------------

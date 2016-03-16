@@ -27,7 +27,7 @@ class UrlQueueMock : public UrlQueue
     public:
     UrlQueueMock(IPoliteness* politeness) : UrlQueue(politeness) {}
     MOCK_CONST_METHOD0(NumberOfUrls, size_t());
-    MOCK_METHOD1(AddUrl, void(UrlPtr const& url));
+    MOCK_METHOD1(AddUrl, void(UrlCR url));
     MOCK_METHOD0(NextDownloadJob, DownloadJobPtr());
     MOCK_METHOD1(SetMaxNumberOfVisitedUrls, void(size_t n));
     MOCK_METHOD1(SetAcceptExternalLinks, void(bool accept));
@@ -40,7 +40,7 @@ class UrlQueueMock : public UrlQueue
 
     //Spy methods (execute the UrlQueue real behavior)
     size_t NumberOfUrlsRealFunction() {return UrlQueue::NumberOfUrls();}
-    void AddUrlRealFunction(UrlPtr const& url) {return UrlQueue::AddUrl(url);}
+    void AddUrlRealFunction(UrlCR url) {return UrlQueue::AddUrl(url);}
     DownloadJobPtr NextDownloadJobRealFunction() {return UrlQueue::NextDownloadJob();}
     };
 
@@ -53,7 +53,7 @@ class CrawlerObserverMock : public ICrawlerObserver
 class PageDownloaderMock : public IPageDownloader
     {
     public:
-    MOCK_METHOD1(DownloadPage, PageContentPtr(DownloadJobPtr const& p_DownloadJob));
+    MOCK_METHOD1(DownloadPage, PageContentPtr(DownloadJobPtr p_DownloadJob));
     MOCK_METHOD1(SetUserAgent, void(WString const& agent));
     MOCK_METHOD1(SetRequestTimeoutInSeconds, void(long timeout));
     MOCK_METHOD1(SetFollowAutoRedirects, void(bool follow));
@@ -84,7 +84,7 @@ class SingleDownloaderCrawlerTester : public ::testing::Test
         linkInPage = new UrlMock(L"http://link.com");
         pageWithoutLinks = new PageContent(*seed, L"This is a page without links");
         pageWithALink = new PageContent(*seed, L"This is page that contains a link");
-        pageWithALink->AddLink(linkInPage);
+        pageWithALink->AddLink(*linkInPage);
 
         //Default mock functions return values and behaviors
         ON_CALL(*queue, NumberOfUrls()).WillByDefault(Invoke(queue, &UrlQueueMock::NumberOfUrlsRealFunction));
@@ -116,30 +116,30 @@ class SingleDownloaderCrawlerTester : public ::testing::Test
 
 TEST_F(SingleDownloaderCrawlerTester, WhenCrawlingTheSeedIsAddedToTheQueueDownloaded)
     {
-    DownloadJobPtr job = new DownloadJob(0, seed);
+    DownloadJobPtr job = new DownloadJob(0, *seed);
 
-    EXPECT_CALL(*queue, AddUrl(Pointee(*seed)));
-    EXPECT_CALL(*downloader, DownloadPage(Pointee(*job))).WillOnce(Return(pageWithoutLinks));
+    EXPECT_CALL(*queue, AddUrl(*seed));
+    EXPECT_CALL(*downloader, DownloadPage(job)).WillOnce(Return(pageWithoutLinks));
 
-    crawler->Crawl(seed);
+    crawler->Crawl(*seed);
     }
 
 TEST_F(SingleDownloaderCrawlerTester, LinksParsedFromAPageAreAddedToTheQueueAndDownloaded)
     {
     //The seed is downloaded and parsed
-    DownloadJobPtr seedJob = new DownloadJob(0, seed);
-    EXPECT_CALL(*queue, AddUrl(Pointee(*seed)));
-    EXPECT_CALL(*downloader, DownloadPage(Pointee(*seedJob))).WillOnce(Return(pageWithALink));
+    DownloadJobPtr seedJob = new DownloadJob(0, *seed);
+    EXPECT_CALL(*queue, AddUrl(*seed));
+    EXPECT_CALL(*downloader, DownloadPage(seedJob)).WillOnce(Return(pageWithALink));
 
     //The link in the seed page is added
-    EXPECT_CALL(*queue, AddUrl(Pointee(*linkInPage)));
+    EXPECT_CALL(*queue, AddUrl(*linkInPage));
 
     //The link in the seed is also downloaded and parsed
-    DownloadJobPtr linkInPageJob = new DownloadJob(0, linkInPage);
-    EXPECT_CALL(*downloader, DownloadPage(Pointee(*linkInPageJob))).WillOnce(Return(pageWithoutLinks));
+    DownloadJobPtr linkInPageJob = new DownloadJob(0, *linkInPage);
+    EXPECT_CALL(*downloader, DownloadPage(linkInPageJob)).WillOnce(Return(pageWithoutLinks));
 
     //Execute
-    crawler->Crawl(seed);
+    crawler->Crawl(*seed);
     }
 
 TEST_F(SingleDownloaderCrawlerTester, AfterEachDownloadTheResultIsReturnedToTheObserver)
@@ -147,13 +147,13 @@ TEST_F(SingleDownloaderCrawlerTester, AfterEachDownloadTheResultIsReturnedToTheO
     CrawlerObserverMock observer;
     crawler->SetObserver(static_cast<ICrawlerObserver*>(&observer));
 
-    DownloadJobPtr seedJob = new DownloadJob(0, seed);
-    DownloadJobPtr linkInPageJob = new DownloadJob(0, linkInPage);
-    EXPECT_CALL(*downloader, DownloadPage(Pointee(*seedJob))).WillOnce(Return(pageWithALink));
-    EXPECT_CALL(*downloader, DownloadPage(Pointee(*linkInPageJob))).WillOnce(Return(pageWithALink));
+    DownloadJobPtr seedJob = new DownloadJob(0, *seed);
+    DownloadJobPtr linkInPageJob = new DownloadJob(0, *linkInPage);
+    EXPECT_CALL(*downloader, DownloadPage(seedJob)).WillOnce(Return(pageWithALink));
+    EXPECT_CALL(*downloader, DownloadPage(linkInPageJob)).WillOnce(Return(pageWithALink));
     EXPECT_CALL(observer, OnPageCrawled(_)).Times(2);
 
-    crawler->Crawl(seed);
+    crawler->Crawl(*seed);
     }
 
 TEST_F(SingleDownloaderCrawlerTester, SettingTheMaxNumberOfLinksToCrawlsUpdatesTheQueue)

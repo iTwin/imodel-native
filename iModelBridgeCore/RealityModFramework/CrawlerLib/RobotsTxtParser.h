@@ -2,7 +2,7 @@
 |
 |     $Source: CrawlerLib/RobotsTxtParser.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -28,14 +28,17 @@ BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 struct UserAgent : public RefCountedBase
     {
     public:
-    CRAWLERLIB_EXPORT UserAgent(WString const& agentName) : m_AgentName(agentName) {}
-    CRAWLERLIB_EXPORT virtual ~UserAgent() {}
+    CRAWLERLIB_EXPORT static UserAgentPtr Create(WString const& agentName);
+    CRAWLERLIB_EXPORT UserAgent(WString const& agentName);
+    CRAWLERLIB_EXPORT virtual ~UserAgent();
 
-    CRAWLERLIB_EXPORT inline bool operator==(UserAgent const& other) const;
-    CRAWLERLIB_EXPORT inline bool operator<(UserAgent const& other) const;
+    CRAWLERLIB_EXPORT WString GetName() const;
+
+    CRAWLERLIB_EXPORT bool operator==(UserAgentCR other) const;
+    CRAWLERLIB_EXPORT bool operator<(UserAgentCR other) const;
 
     private:
-    WString m_AgentName;
+    WString m_agentName;
     };
 
 //=======================================================================================
@@ -54,41 +57,43 @@ struct RobotsTxtContent : public RefCountedBase
     // Create a robot text content object. The content of the robot.txt file raw is provided
     // along with the URL from which the robot.txt file was downloaded.
     //=======================================================================================
-    CRAWLERLIB_EXPORT RobotsTxtContent(WString const& robotsTxtFile, UrlPtr const& robotsTxtUrl);
+    CRAWLERLIB_EXPORT static RobotsTxtContentPtr Create(WString const& robotsTxtFile, UrlCR robotsTxtUrl);
     RobotsTxtContent() = delete;
 
     //=======================================================================================
     // Returns the content of the robot.txt file
     //=======================================================================================
     CRAWLERLIB_EXPORT WString const& GetRobotsTxtFile() const;
-    CRAWLERLIB_EXPORT UrlPtr const& GetBaseUrl() const;
+    CRAWLERLIB_EXPORT UrlCPtr GetBaseUrl() const;
 
 
-    CRAWLERLIB_EXPORT bool IsUrlDisallowed(UrlPtr url, UserAgent const& agent) const;
+    CRAWLERLIB_EXPORT bool IsUrlDisallowed(UrlCR url, UserAgentCR agent) const;
 
     //=======================================================================================
     // Get 
     //=======================================================================================
     CRAWLERLIB_EXPORT void GetUserAgents(std::vector<UserAgent>& agentVector) const;
-    CRAWLERLIB_EXPORT void AddUserAgent(UserAgent const& agent);
+    CRAWLERLIB_EXPORT void AddUserAgent(UserAgentCR agent);
 
-    CRAWLERLIB_EXPORT void AddDisallowedUrl(UserAgent const& agent, UrlPtr const& url);
-    CRAWLERLIB_EXPORT void AddAllowedUrl(UserAgent const& agent, UrlPtr const& url);
+    CRAWLERLIB_EXPORT void AddDisallowedUrl(UserAgentCR agent, UrlPtr url);
+    CRAWLERLIB_EXPORT void AddAllowedUrl(UserAgentCR agent, UrlPtr url);
 
     
-    CRAWLERLIB_EXPORT uint32_t GetCrawlDelay(UserAgent const& agent) const;
-    CRAWLERLIB_EXPORT void SetCrawlDelay(UserAgent const& agent, uint32_t delay);
+    CRAWLERLIB_EXPORT uint32_t GetCrawlDelay(UserAgentCR agent) const;
+    CRAWLERLIB_EXPORT void SetCrawlDelay(UserAgentCR agent, uint32_t delay);
 
-    CRAWLERLIB_EXPORT bool IsRootDisallowed(UserAgent const& agent) const;
+    CRAWLERLIB_EXPORT bool IsRootDisallowed(UserAgentCR agent) const;
 
     private:
-    void GetDisallowedUrlsOf(UrlPtrSet& urlSet, UserAgent const& agent) const;
-    void GetAllowedUrlsOf(UrlPtrSet& urlSet, UserAgent const& agent) const;
-    void AddAllDisallowedUrlsOfAgentToSet(UrlPtrSet& urlSet, UserAgent const& agent) const;
-    void AddAllAllowedUrlsOfAgentToSet(UrlPtrSet& urlSet, UserAgent const& agent) const;
+    RobotsTxtContent(WString const& robotsTxtFile, UrlCR robotsTxtUrl);
+
+    void GetDisallowedUrlsOf(UrlPtrSet& urlSet, UserAgentCR agent) const;
+    void GetAllowedUrlsOf(UrlPtrSet& urlSet, UserAgentCR agent) const;
+    void AddAllDisallowedUrlsOfAgentToSet(UrlPtrSet& urlSet, UserAgentCR agent) const;
+    void AddAllAllowedUrlsOfAgentToSet(UrlPtrSet& urlSet, UserAgentCR agent) const;
 
     WString m_RobotTxtFile;
-    UrlPtr m_BaseUrl;
+    UrlCPtr m_BaseUrl;
     std::map<UserAgent, UrlPtrSet> m_DisallowedUrls;
     std::map<UserAgent, UrlPtrSet> m_AllowedUrls;
     std::map<UserAgent, uint32_t> m_CrawlDelays;
@@ -100,8 +105,8 @@ struct RobotsTxtContent : public RefCountedBase
 class RobotsTxtParser
     {
     public:
-    CRAWLERLIB_EXPORT RobotsTxtContentPtr ParseRobotsTxt(WString const& robotTxtFileContent, UrlPtr const& baseUrl) const;
-    CRAWLERLIB_EXPORT RobotsTxtContentPtr GetEmptyRobotTxt(UrlPtr const& baseUrl) const;
+    CRAWLERLIB_EXPORT RobotsTxtContentPtr ParseRobotsTxt(WString const& robotTxtFileContent, UrlCR baseUrl) const;
+    CRAWLERLIB_EXPORT RobotsTxtContentPtr GetEmptyRobotTxt(UrlCR baseUrl) const;
 
     private:
     static const std::wregex s_UserAgentRegex;

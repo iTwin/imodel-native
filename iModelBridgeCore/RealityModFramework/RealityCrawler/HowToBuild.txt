@@ -9,7 +9,7 @@ How to build the Reality Crawler
 7. In the dialog click "< Previous" then click "New Connection...".
 8. Click on the button "Change..." next to the "Data source:" field.
 9. Select "Microsoft SQL Server" and click "OK".
-10. In the Server name field type "(localdb)\ProjectsV12" (assuming you use the local SQL server V12, if not type the correct name of your SQL server).
+10. In the Server name field type "(localdb)\ProjectsV12" (assuming you use the local SQL server V12, if not type the correct name of your SQL server)(You can create it with 'sqllocaldb create "v12.0"' in a cmd prompt).
 11. In the "Connect to a database" section type "RealityCrawlerDB" in the "Select or enter a database name" field and then click "Ok".
 12. When prompted click "Yes" to create the database.
 13. Click "Next >" and then "Finish".

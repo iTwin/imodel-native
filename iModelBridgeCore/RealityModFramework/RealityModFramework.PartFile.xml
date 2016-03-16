@@ -10,20 +10,22 @@
     </Part>
     
     <Part Name="RealityPlatform" BentleyBuildMakeFile="RealityPlatform\RealityPlatform.mke">
-      <SubPart PartName="PublicAPI" />
-      <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
-      <SubPart PartName="PointoolsVortexAPI_VS2012"  PartFile="PointoolsVortexAPI_VS2012" Repository="PointoolsVortexAPI" />
-      <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
-      <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>
-      <Bindings>
-          <Libs>Delivery/$(stlibprefix)RealityPlatform$(stlibext)</Libs>
-          <Assemblies ProductDirectoryName="RealityAssemblies">delivery/$(shlibprefix)RealityPlatform$(shlibext)</Assemblies>
-      </Bindings>
+        <SubPart PartName="PublicAPI" />
+        <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
+        <SubPart PartName="PointoolsVortexAPI_VS2012"  PartFile="PointoolsVortexAPI_VS2012" Repository="PointoolsVortexAPI" />
+        <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
+        <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>
+        <Bindings>
+            <Libs>Delivery/$(stlibprefix)RealityPlatform$(stlibext)</Libs>
+            <Assemblies ProductDirectoryName="RealityAssemblies">delivery/$(shlibprefix)RealityPlatform$(shlibext)</Assemblies>
+        </Bindings>
     </Part>
 
     <Part Name="RealityCrawler" BMakeFile="RealityCrawler\RealityCrawler.mke">
-        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="BentleyCrawlerLibNet"/>
         <SubPart PartName="WMSCapabilitiesNET"/>
+        <SubPart PartName="CrawlerLib"/>
+        <SubPart PartName="CrawlerLibExample"/>
     </Part>
 
     <Part Name="RealityPackage" BentleyBuildMakeFile="RealityPackage\RealityPackage.mke">
@@ -40,7 +42,7 @@
     <Part Name="CrawlerLib" BentleyBuildMakeFile="CrawlerLib\CrawlerLib.mke">
         <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
         <SubPart PartName="BeXmlDll"            PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
-        <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
         <Bindings>
             <PublicAPI Domain="CrawlerLib" />
             <Libs>Delivery/$(stlibprefix)CrawlerLib$(stlibext)</Libs>
@@ -141,7 +143,13 @@
         <Bindings>
             <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/WMSCapabilitiesNET$(shlibext)</Assemblies>
         </Bindings>
-
+    </Part>
+    
+    <Part Name="BentleyCrawlerLibNet" BentleyBuildMakeFile="BentleyCrawlerLibNet\BentleyCrawlerLibNet.mke">
+        <SubPart PartName="CrawlerLib"/>
+        <Bindings>
+            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/BentleyCrawlerLibNet$(shlibext)</Assemblies>
+        </Bindings>
     </Part>
 
   
@@ -263,7 +271,7 @@
     <Part Name="Tests">
         <SubPart PartName="RealityPackageUnitTests"/>
         <SubPart PartName="RealityPlatformUnitTests"/>
-        <SubPart PartName="CrawlerLibUnitTests"/>
+        <!--&&JFC TODO: Update tests <SubPart PartName="CrawlerLibUnitTests"/> -->
     </Part>
 
     <!-- Put the unit tests into the form of a product. This product will be consumed by a platform-specific "runner" product. -->

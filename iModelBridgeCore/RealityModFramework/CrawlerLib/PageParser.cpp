@@ -2,7 +2,7 @@
 |
 |     $Source: CrawlerLib/PageParser.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PageParser.h"
@@ -28,6 +28,14 @@ const wregex PageParser::s_NoFollowMetaTagRegex = wregex(L"<\\s*meta\\s+"
                                                          L"\".*nofollow.*\""
                                                          L"[^<]*>", icase);
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    2/2016
+//-------------------------------------------------------------------------------------
+PageParserPtr PageParser::Create()
+    {
+    return new PageParser();
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -37,16 +45,30 @@ PageParser::PageParser()
     m_ParsePagesWithNoFollowMetaTag = true;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    2/2016
+//-------------------------------------------------------------------------------------
+void PageParser::SetParseLinksRelNoFollow(bool parse) 
+    { 
+    m_ParseLinksRelNoFollow = parse; 
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    2/2016
+//-------------------------------------------------------------------------------------
+void PageParser::SetParsePagesWithNoFollowMetaTag(bool parse) 
+    { 
+    m_ParsePagesWithNoFollowMetaTag = parse; 
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-PageContentPtr PageParser::ParsePage(WString const& text, UrlPtr const& url) const
+PageContentPtr PageParser::ParsePage(WString const& text, UrlCR url) const
     {
-    BeAssert(url != NULL);
+    PageContentPtr content = PageContent::Create(url, text);
 
-    PageContentPtr content = new PageContent(*url, text);
-
-    AddLinksFromText(text, url, content);
+    AddLinksFromText(text, url, *content);
 
     return content;
     }
@@ -54,13 +76,16 @@ PageContentPtr PageParser::ParsePage(WString const& text, UrlPtr const& url) con
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PageParser::AddLinksFromText(WString const& text, UrlPtr const& url, PageContentPtr content) const
+void PageParser::AddLinksFromText(WString const& text, UrlCR url, PageContentR content) const
     {
-    BeAssert(content != NULL);
-    BeAssert(url != NULL);
-
-    if(!m_ParsePagesWithNoFollowMetaTag && regex_search(text.c_str(), PageParser::s_NoFollowMetaTagRegex))
+    if (!m_ParsePagesWithNoFollowMetaTag) 
         return;
+
+    if (regex_search(text.c_str(), PageParser::s_NoFollowMetaTagRegex))
+        return;
+
+    //if(!m_ParsePagesWithNoFollowMetaTag && regex_search(text.c_str(), PageParser::s_NoFollowMetaTagRegex))
+    //    return;
 
     wcregex_iterator words_begin(text.begin(), text.end(), PageParser::s_LinkRegex);
     wcregex_iterator words_end;
@@ -73,19 +98,17 @@ void PageParser::AddLinksFromText(WString const& text, UrlPtr const& url, PageCo
             WString linkString = match[1].str().c_str();
             try
                 {
-                UrlPtr pNewLink = new Url(linkString, url);
-                content->AddLink(pNewLink);
+                UrlCPtr pNewLink = Url::Create(linkString, url);
+                content.AddLink(*pNewLink);
                 }
             catch(InvalidUrlException const&) { }
             }
         }
     }
 
-PageContentPtr PageParser::GetEmptyPageContent(UrlPtr const& url) const
+PageContentPtr PageParser::GetEmptyPageContent(UrlCR url) const
     {
-    BeAssert(url != NULL);
-
-    PageContentPtr content = new PageContent(*url, L"");
+    PageContentPtr content = PageContent::Create(url, L"");
 
     return content;
     }

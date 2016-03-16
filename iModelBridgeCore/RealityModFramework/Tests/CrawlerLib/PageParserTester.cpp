@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/CrawlerLib/PageParserTester.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -85,7 +85,7 @@ class PageParserTester : public ::testing::Test
     };
 
 
-bool bvectorContains(bvector<UrlPtr> vector, UrlPtr element)
+bool bvectorContains(bvector<UrlCPtr> vector, UrlCPtr element)
     {
     for(auto e : vector)
         {
@@ -97,21 +97,21 @@ bool bvectorContains(bvector<UrlPtr> vector, UrlPtr element)
 
 TEST_F(PageParserTester, ThePageContentReturnedHasTheRightURL)
     {
-    PageContentPtr content = parser.ParsePage(htmlPage, pageURL);
+    PageContentPtr content = parser.ParsePage(htmlPage, *pageURL);
 
     ASSERT_EQ(*pageURL, content->GetUrl());
     }
 
 TEST_F(PageParserTester, ThePageContentReturnedHasTheRightText)
     {
-    PageContentPtr content = parser.ParsePage(htmlPage, pageURL);
+    PageContentPtr content = parser.ParsePage(htmlPage, *pageURL);
 
     ASSERT_STREQ(htmlPage.c_str(), content->GetText().c_str());
     }
 
 TEST_F(PageParserTester, ThePageContentReturnedContainsAllLinks)
     {
-    PageContentPtr content = parser.ParsePage(htmlPage, pageURL);
+    PageContentPtr content = parser.ParsePage(htmlPage, *pageURL);
     size_t numberOfLinks = content->GetLinks().size();
 
     ASSERT_EQ(3, numberOfLinks);
@@ -123,7 +123,7 @@ TEST_F(PageParserTester, ThePageContentReturnedContainsAllLinks)
 TEST_F(PageParserTester, CanIgnoreLinksMarkedNoFollow)
     {
     parser.SetParseLinksRelNoFollow(true);
-    PageContentPtr contentWithAllLinks = parser.ParsePage(htmlPageWithRelNoFollow, pageURL);
+    PageContentPtr contentWithAllLinks = parser.ParsePage(htmlPageWithRelNoFollow, *pageURL);
 
     size_t numberOfLinks = contentWithAllLinks->GetLinks().size();
     ASSERT_EQ(2, numberOfLinks);
@@ -131,7 +131,7 @@ TEST_F(PageParserTester, CanIgnoreLinksMarkedNoFollow)
     ASSERT_TRUE(bvectorContains(contentWithAllLinks->GetLinks(), linkB));
 
     parser.SetParseLinksRelNoFollow(false);
-    PageContentPtr contentWithoutNoFollowLinks = parser.ParsePage(htmlPageWithRelNoFollow, pageURL);
+    PageContentPtr contentWithoutNoFollowLinks = parser.ParsePage(htmlPageWithRelNoFollow, *pageURL);
 
     numberOfLinks = contentWithoutNoFollowLinks->GetLinks().size();
     ASSERT_EQ(0, numberOfLinks);
@@ -140,12 +140,12 @@ TEST_F(PageParserTester, CanIgnoreLinksMarkedNoFollow)
 TEST_F(PageParserTester, CanIgnoreAllLinksIfPageHasRobotsNoFollowMetaTag)
     {
     parser.SetParsePagesWithNoFollowMetaTag(true);
-    PageContentPtr content = parser.ParsePage(htmlPageWithNoFollowMetaTag, pageURL);
+    PageContentPtr content = parser.ParsePage(htmlPageWithNoFollowMetaTag, *pageURL);
     size_t numberOfLinks = content->GetLinks().size();
     ASSERT_EQ(3, numberOfLinks);
     
     parser.SetParsePagesWithNoFollowMetaTag(false);
-    content = parser.ParsePage(htmlPageWithNoFollowMetaTag, pageURL);
+    content = parser.ParsePage(htmlPageWithNoFollowMetaTag, *pageURL);
     numberOfLinks = content->GetLinks().size();
     ASSERT_EQ(0, numberOfLinks);
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/CrawlerLib/UrlTester.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -53,19 +53,19 @@ TEST_F(UrlTester, AnUrlIsOneStepDeeperThanItsParent)
     {
     SeedPtr seed = new Seed(aValidUrlString);
 
-    UrlPtr urlWithDepthOfOne = new Url(aValidUrlString, seed);
+    UrlPtr urlWithDepthOfOne = Url::Create(aValidUrlString, *seed);
     ASSERT_EQ(1, urlWithDepthOfOne->GetDepth());
 
-    UrlPtr urlWithDepthOfTwo = new Url(aValidRelativeLink, urlWithDepthOfOne);
+    UrlPtr urlWithDepthOfTwo = Url::Create(aValidRelativeLink, *urlWithDepthOfOne);
     ASSERT_EQ(2, urlWithDepthOfTwo->GetDepth());
     }
 
 TEST_F(UrlTester, WhenAnUrlHasADifferentDomainThanItsParentItIsMarkedAsExternal)
     {
     SeedPtr seed = new Seed(L"http://some-domain.com");
-    UrlPtr linkedInternalUrl = new Url(L"http://some-domain.com/foo.html", seed);
-    UrlPtr linkedInternalRelativeUrl = new Url(L"/toto.html", seed);
-    UrlPtr linkedExternalUrl = new Url(L"http://some-other-domain.com", seed);
+    UrlPtr linkedInternalUrl = Url::Create(L"http://some-domain.com/foo.html", *seed);
+    UrlPtr linkedInternalRelativeUrl = Url::Create(L"/toto.html", *seed);
+    UrlPtr linkedExternalUrl = Url::Create(L"http://some-other-domain.com", *seed);
 
     ASSERT_FALSE(linkedInternalUrl->IsExternalPage());
     ASSERT_FALSE(linkedInternalRelativeUrl->IsExternalPage());
@@ -74,64 +74,64 @@ TEST_F(UrlTester, WhenAnUrlHasADifferentDomainThanItsParentItIsMarkedAsExternal)
 
 TEST_F(UrlTester, TheParentIsCorrectlySet)
     {
-    Url url(aValidRelativeLink, parentUrl);
-    ASSERT_EQ(*parentUrl, *url.GetParent());
+    UrlPtr url = Url::Create(aValidRelativeLink, *parentUrl);
+    ASSERT_EQ(*parentUrl, *url->GetParent());
     }
 
 TEST_F(UrlTester, CanParseUrlDomain)
     {
-    Url url(aValidUrlString, parentUrl);
-    ASSERT_STREQ(L"the-domain.com", url.GetDomainName().GetWString().c_str());
+    UrlPtr url = Url::Create(aValidUrlString, *parentUrl);
+    ASSERT_STREQ(L"the-domain.com", url->GetDomainName().GetWString().c_str());
     }
 
 TEST_F(UrlTester, CanParseUrlWithWwwDomain)
     {
-    Url url(aValidUrlStringWith_www, parentUrl);
-    ASSERT_STREQ(L"the-domain.com", url.GetDomainName().GetWString().c_str());
+    UrlPtr url = Url::Create(aValidUrlStringWith_www, *parentUrl);
+    ASSERT_STREQ(L"the-domain.com", url->GetDomainName().GetWString().c_str());
     }
 
 TEST_F(UrlTester, CanParseARelativeUrl)
     {
-    Url finalUrl(aValidRelativeLink, parentUrl);
-    Url expectedUrl = Url(L"http://seed.com/relative_link", parentUrl);
+    UrlPtr finalUrl = Url::Create(aValidRelativeLink, *parentUrl);
+    UrlPtr expectedUrl = Url::Create(L"http://seed.com/relative_link", *parentUrl);
     ASSERT_EQ(expectedUrl, finalUrl);
     }
 
 TEST_F(UrlTester, CanParseARelativeUrlThatRepresentsTheRoot)
     {
-    Url finalUrl(L"/", parentUrl);
-    Url expectedUrl = Url(L"http://seed.com", parentUrl);
+    UrlPtr finalUrl = Url::Create(L"/", *parentUrl);
+    UrlPtr expectedUrl = Url::Create(L"http://seed.com", *parentUrl);
     ASSERT_EQ(expectedUrl, finalUrl);
     }
 
 TEST_F(UrlTester, CanParseARelativeUrlWithDot)
     {
-    Url finalUrl(aValidRelativeLinkWithDot, parentUrl);
-    Url expectedUrl = Url(L"http://seed.com/relative_link", parentUrl);
+    UrlPtr finalUrl = Url::Create(aValidRelativeLinkWithDot, *parentUrl);
+    UrlPtr expectedUrl = Url::Create(L"http://seed.com/relative_link", *parentUrl);
     ASSERT_EQ(expectedUrl, finalUrl);
     }
 
 TEST_F(UrlTester, TrailingSlashIsRemoved)
     {
-    Url anUrlWithTrailingSlash(L"http://toto.com/hello_world/", parentUrl);
-    Url expectedUrl(L"http://toto.com/hello_world", parentUrl);
+    UrlPtr anUrlWithTrailingSlash = Url::Create(L"http://toto.com/hello_world/", *parentUrl);
+    UrlPtr expectedUrl = Url::Create(L"http://toto.com/hello_world", *parentUrl);
     ASSERT_EQ(expectedUrl, anUrlWithTrailingSlash);
     }
 
 TEST_F(UrlTester, SubUrlTester)
     {
-    Url folder(L"http://www.toto.com/foo", parentUrl);
-    ASSERT_TRUE(folder.IsSubUrlOf(folder)); //An url is a sub url of ifself
+    UrlPtr folder = Url::Create(L"http://www.toto.com/foo", *parentUrl);
+    ASSERT_TRUE(folder->IsSubUrlOf(*folder)); //An url is a sub url of ifself
 
-    Url fileInFolder(L"http://www.toto.com/foo/bar.html", parentUrl);
-    ASSERT_TRUE(fileInFolder.IsSubUrlOf(folder));
+    UrlPtr fileInFolder = Url::Create(L"http://www.toto.com/foo/bar.html", *parentUrl);
+    ASSERT_TRUE(fileInFolder->IsSubUrlOf(*folder));
 
-    Url root(L"http://www.toto.com", parentUrl);
-    ASSERT_TRUE(folder.IsSubUrlOf(root));
+    UrlPtr root = Url::Create(L"http://www.toto.com", *parentUrl);
+    ASSERT_TRUE(folder->IsSubUrlOf(*root));
 
-    Url unrelated(L"http://www.tata.com/foo", parentUrl);
-    ASSERT_FALSE(fileInFolder.IsSubUrlOf(unrelated));
+    UrlPtr unrelated = Url::Create(L"http://www.tata.com/foo", *parentUrl);
+    ASSERT_FALSE(fileInFolder->IsSubUrlOf(*unrelated));
 
-    ASSERT_FALSE(root.IsSubUrlOf(fileInFolder));
-    ASSERT_FALSE(folder.IsSubUrlOf(fileInFolder));
+    ASSERT_FALSE(root->IsSubUrlOf(*fileInFolder));
+    ASSERT_FALSE(folder->IsSubUrlOf(*fileInFolder));
     }
