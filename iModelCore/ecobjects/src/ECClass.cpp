@@ -503,6 +503,11 @@ ECObjectsStatus ECClass::OnBaseClassPropertyAdded (ECPropertyCR baseProperty, bo
             {
             if (ECObjectsStatus::Success == (status = CanPropertyBeOverridden (baseProperty, *derivedProperty)))
                 derivedProperty->SetBaseProperty (&baseProperty);
+            else if (ECObjectsStatus::DataTypeMismatch == status && resolveConflicts)
+                {
+                LOG.debugv("DataTypeMismatch when adding base property '%s:%s' to '%s:%s;", baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), GetFullName(), GetName().c_str());
+                RenameConflictProperty(derivedProperty, true);
+                }
             }
         }
     for (ECClassP derivedClass : m_derivedClasses)
