@@ -396,8 +396,8 @@ TEST_F(UnitsTests, TestMiscConversions)
     TestUnitConversion(9, "MHZ", 9000, "KHZ", 3, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(9, "KHZ", 9000, "HZ", 3, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(5, "TONNE", 5000, "KG", 3, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(4200.0, "POISE", 420.0, "PA-S", 3, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(1000.0, "PDL", 138.254954, "N", 3, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(4200.0, "POISE", 420.0, "PA-S", 10, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1000.0, "PDL", 138.254954376, "N", 10, loadErrors, conversionErrors, handledUnits);
     
     ASSERT_EQ(0, loadErrors.size()) << BeStringUtilities::Join(loadErrors, ", ");
     ASSERT_EQ(0, conversionErrors.size()) << BeStringUtilities::Join(conversionErrors, ", ");
