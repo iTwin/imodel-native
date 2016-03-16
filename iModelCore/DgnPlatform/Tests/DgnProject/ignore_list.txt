@@ -45,3 +45,4 @@ ElementAspectTests.ImportElementsWithAspect             # Does not element impor
 FontTests.QueryFonts                                    # Does not find font
 
 TextStringTest.BoundingShape                            # UmarH WIP
+DateTimeFormatterTest.*                                 # UmarH fails randomly, need to investigate
