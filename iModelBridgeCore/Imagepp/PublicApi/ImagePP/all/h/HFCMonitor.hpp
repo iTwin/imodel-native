@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCMonitor.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -116,8 +116,6 @@ inline void HFCGenericMonitor<T>::Assign(T* pi_pMonitor, bool pi_IsClaimed)
 template<class T>
 inline void HFCGenericMonitor<T>::Assign(T& pi_rMonitor, bool pi_IsClaimed)
     {
-    HPRECONDITION(&pi_rMonitor != 0);
-
     // Release the previous object
     ReleaseKey();
 

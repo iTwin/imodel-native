@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HGFModelSimplificationTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -19,7 +19,7 @@ HGFModelSimplificationTester::HGFModelSimplificationTester()
     Stretch2 = HGF2DStretch(HGF2DDisplacement(0.0, 0.3), 1.0, 1.0);
 
     // Projective with perspective
-    Projective10;
+    (void)Projective10;
     TheMatrix[0][0] = 1.0;
     TheMatrix[0][1] = 0.0;
     TheMatrix[0][2] = 0.0;

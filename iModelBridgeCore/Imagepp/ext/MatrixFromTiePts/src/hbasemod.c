@@ -2,7 +2,7 @@
 |
 |     $Source: ext/MatrixFromTiePts/src/hbasemod.c $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*mh================================================================== HMR
@@ -82,10 +82,6 @@ static HSTATUS sAddRotation                    (pMAT_           *matrix,
                                                 const DCOORD    *pi_pRotationPoint,
                                                 double          pi_Rotation);
 
-static HSTATUS sAddAffinity                    (pMAT_           *matrix,
-                                                const DCOORD    *pi_pAffinityPoint,
-                                                double          pi_Affinity);
-
 static HSTATUS sAddTransformation              (pMAT_           *A,
                                                 pMAT_           *B);
 
@@ -102,9 +98,6 @@ static HSTATUS sSetBasicRotationMatrix         (pMAT_            RMatrix,
 static HSTATUS sSetBasicTranslationMatrix      (pMAT_            TransformMatrix,
                                                 double          pi_XOffset,
                                                 double          pi_YOffset);
-
-static HSTATUS sSetBasicAffinityMatrix         (pMAT_            SHMatrix,
-                                                double          pi_Affinity);
 
 static HSTATUS sInvertMatrix                   (pMAT_            pi_pInputMatrix,
                                                 pMAT_            po_pOutputMatrix);
@@ -2594,55 +2587,6 @@ WRAPUP:
     HRET(Status);
 }
 
-/*===========================================================================
-**  sSetBasicAffinityMatrix
-**
-**  DESCRIPTION
-**
-**    Set a basic Affinity matrix in the X direction.
-**
-**  PARAMETERS
-**
-**      ScalingMatrix   -> Matrix
-**      pi_Affinity     -> Affinity angle in radians
-**
-**  Return Value
-**
-**      H_SUCCESS   if successful
-**      H_ERROR     otherwise
-**
-**  Stephane Poulin   13/11/1997  Original version
-**=========================================================================*/
-HSTATUS sSetBasicAffinityMatrix(pMAT_          SHMatrix,
-                                double        pi_Affinity)
-{
-    HDEF (Status, H_SUCCESS);
-
-    if(SHMatrix == MAT_NULL)
-    {
-        HSET(Status, HERROR);
-        goto WRAPUP;
-    }
-
-        /*
-        ** Do not allow affinity to be PI/2 or -PI/2
-        */
-        if (HBM_IS_ZERO_RADIANS(cos(pi_Affinity)))
-        {
-                HSET (Status, HERROR);
-                goto WRAPUP;
-        }
-
-    if (HISERROR(HSET(Status, mat_setIdentity(SHMatrix))))
-        goto WRAPUP;
-
-    mat_v((SHMatrix), 0, 1) = -sin(pi_Affinity);
-    mat_v((SHMatrix), 1, 1) =  cos(pi_Affinity);
-
-
-WRAPUP:
-    HRET(Status);
-}
 
 /*===========================================================================
 **  sAddTransformation

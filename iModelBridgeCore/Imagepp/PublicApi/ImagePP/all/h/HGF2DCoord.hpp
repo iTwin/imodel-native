@@ -517,7 +517,7 @@ template<> inline void HGF2DCoord<int32_t>::PrintState(ostream& po_rOutput) cons
     {
 #ifdef __HMR_PRINTSTATE
     char    DumString[256];
-    sprintf(DumString, "Object is a HGF2DCoord<int32_t> X = %15ld , Y = %15ld", m_XValue, m_YValue);
+    sprintf(DumString, "Object is a HGF2DCoord<int32_t> X = %15d , Y = %15d", m_XValue, m_YValue);
     HDUMP0(DumString);
     HDUMP0("\n");
     po_rOutput << DumString << endl;
@@ -533,7 +533,7 @@ template<> inline void HGF2DCoord<uint32_t>::PrintState(ostream& po_rOutput) con
     {
 #ifdef __HMR_PRINTSTATE
     char    DumString[256];
-    sprintf(DumString, "Object is a HGF2DCoord<uint32_t> X = %15lu , Y = %15lu", m_XValue, m_YValue);
+    sprintf(DumString, "Object is a HGF2DCoord<uint32_t> X = %15u , Y = %15u", m_XValue, m_YValue);
     HDUMP0(DumString);
     HDUMP0("\n");
     po_rOutput << DumString << endl;

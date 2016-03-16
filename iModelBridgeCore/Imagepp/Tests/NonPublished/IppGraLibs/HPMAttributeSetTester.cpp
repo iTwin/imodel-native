@@ -181,136 +181,136 @@ TEST_F (HPMAttributeSetTester, FindAttributeTest)
     //String
     HRFAttributeImageDescription const* pImage = AttributeSet.FindAttributeCP<HRFAttributeImageDescription>();
     ASSERT_TRUE(WStringValue == pImage->GetData());
-    ASSERT_EQ(HRFAttributeImageDescription::ATTRIBUTE_ID, pImage->GetID());
-
+    ASSERT_EQ((ImagePP::HPMAttributesID) HRFAttributeImageDescription::ATTRIBUTE_ID, pImage->GetID());
+        
     HRFAttributeImageDescription* pImage2 = AttributeSet.FindAttributeP<HRFAttributeImageDescription>();
     ASSERT_TRUE(WStringValue == pImage2->GetData());
-    ASSERT_EQ(HRFAttributeImageDescription::ATTRIBUTE_ID, pImage2->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeImageDescription::ATTRIBUTE_ID, pImage2->GetID());
 
     //Vector<double>
     HRFAttributeMinSampleValue const* pSample = AttributeSet.FindAttributeCP<HRFAttributeMinSampleValue>();
     ASSERT_DOUBLE_EQ(VectorDouble.front(), pSample->GetData().front());
     ASSERT_DOUBLE_EQ(VectorDouble.back(), pSample->GetData().back());
-    ASSERT_EQ(HRFAttributeMinSampleValue::ATTRIBUTE_ID, pSample->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeMinSampleValue::ATTRIBUTE_ID, pSample->GetID());
 
     HRFAttributeMinSampleValue* pSample2 = AttributeSet.FindAttributeP<HRFAttributeMinSampleValue>();
     ASSERT_DOUBLE_EQ(VectorDouble.front(), pSample2->GetData().front());
     ASSERT_DOUBLE_EQ(VectorDouble.back(), pSample2->GetData().back());
-    ASSERT_EQ(HRFAttributeMinSampleValue::ATTRIBUTE_ID, pSample2->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeMinSampleValue::ATTRIBUTE_ID, pSample2->GetID());
 
     //UShort
     HRFAttributeResolutionUnit const* pResUnit = AttributeSet.FindAttributeCP<HRFAttributeResolutionUnit>();
     ASSERT_DOUBLE_EQ(UShortValue, pResUnit->GetData());
-    ASSERT_EQ(HRFAttributeResolutionUnit::ATTRIBUTE_ID, pResUnit->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeResolutionUnit::ATTRIBUTE_ID, pResUnit->GetID());
 
     HRFAttributeResolutionUnit* pResUnit2 = AttributeSet.FindAttributeP<HRFAttributeResolutionUnit>();
     ASSERT_DOUBLE_EQ(UShortValue, pResUnit2->GetData());
-    ASSERT_EQ(HRFAttributeResolutionUnit::ATTRIBUTE_ID, pResUnit2->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeResolutionUnit::ATTRIBUTE_ID, pResUnit2->GetID());
 
     //HFCMatrix<4,4, double>
     HRFAttribute3DTransformationMatrix const* p3dTransfo = AttributeSet.FindAttributeCP<HRFAttribute3DTransformationMatrix>();
     ASSERT_TRUE(Matrix.IsEqualTo(p3dTransfo->GetData()));
-    ASSERT_EQ(HRFAttribute3DTransformationMatrix::ATTRIBUTE_ID, p3dTransfo->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttribute3DTransformationMatrix::ATTRIBUTE_ID, p3dTransfo->GetID());
 
     HRFAttribute3DTransformationMatrix* p3dTransfo2 = AttributeSet.FindAttributeP<HRFAttribute3DTransformationMatrix>();
     ASSERT_TRUE(Matrix.IsEqualTo(p3dTransfo2->GetData()));
-    ASSERT_EQ(HRFAttribute3DTransformationMatrix::ATTRIBUTE_ID, p3dTransfo2->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttribute3DTransformationMatrix::ATTRIBUTE_ID, p3dTransfo2->GetID());
 
     //UInt32
     HRFAttributeForeground const* pForeground = AttributeSet.FindAttributeCP<HRFAttributeForeground>(); 
     ASSERT_DOUBLE_EQ(UInt32Value, pForeground->GetData());
-    ASSERT_EQ(HRFAttributeForeground::ATTRIBUTE_ID, pForeground->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeForeground::ATTRIBUTE_ID, pForeground->GetID());
 
     HRFAttributeForeground* pForeground2 = AttributeSet.FindAttributeP<HRFAttributeForeground>(); 
     ASSERT_DOUBLE_EQ(UInt32Value, pForeground2->GetData());
-    ASSERT_EQ(HRFAttributeForeground::ATTRIBUTE_ID, pForeground2->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeForeground::ATTRIBUTE_ID, pForeground2->GetID());
 
     //bool
     HRFAttributeDontSupportPersistentColor const* pColor = AttributeSet.FindAttributeCP<HRFAttributeDontSupportPersistentColor>();
     ASSERT_TRUE(pColor->GetData());
-    ASSERT_EQ(HRFAttributeDontSupportPersistentColor::ATTRIBUTE_ID, pColor->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeDontSupportPersistentColor::ATTRIBUTE_ID, pColor->GetID());
 
     HRFAttributeDontSupportPersistentColor* pColor2 = AttributeSet.FindAttributeP<HRFAttributeDontSupportPersistentColor>();
     ASSERT_TRUE(pColor2->GetData());
-    ASSERT_EQ(HRFAttributeDontSupportPersistentColor::ATTRIBUTE_ID, pColor2->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeDontSupportPersistentColor::ATTRIBUTE_ID, pColor2->GetID());
 
     //double
     HRFAttributeYResolution const* pYRes = AttributeSet.FindAttributeCP<HRFAttributeYResolution>();
     ASSERT_DOUBLE_EQ(DoubleValue, pYRes->GetData());
-    ASSERT_EQ(HRFAttributeYResolution::ATTRIBUTE_ID, pYRes->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeYResolution::ATTRIBUTE_ID, pYRes->GetID());
 
     HRFAttributeYResolution* pYRes2 = AttributeSet.FindAttributeP<HRFAttributeYResolution>();
     ASSERT_DOUBLE_EQ(DoubleValue, pYRes2->GetData());
-    ASSERT_EQ(HRFAttributeYResolution::ATTRIBUTE_ID, pYRes2->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeYResolution::ATTRIBUTE_ID, pYRes2->GetID());
 
     //uint32_t
     HRFAttributeProjectedCSTypeLong const* pCSLong = AttributeSet.FindAttributeCP<HRFAttributeProjectedCSTypeLong>();
     ASSERT_DOUBLE_EQ(uint32_tValue, pCSLong->GetData());
-    ASSERT_EQ(HRFAttributeProjectedCSTypeLong::ATTRIBUTE_ID, pCSLong->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeProjectedCSTypeLong::ATTRIBUTE_ID, pCSLong->GetID());
 
     HRFAttributeProjectedCSTypeLong* pCSLong2 = AttributeSet.FindAttributeP<HRFAttributeProjectedCSTypeLong>();
     ASSERT_DOUBLE_EQ(uint32_tValue, pCSLong2->GetData());
-    ASSERT_EQ(HRFAttributeProjectedCSTypeLong::ATTRIBUTE_ID, pCSLong2->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeProjectedCSTypeLong::ATTRIBUTE_ID, pCSLong2->GetID());
 
     //vector<Byte>
     HRFAttributeGPSVersionID const* pVersionID = AttributeSet.FindAttributeCP<HRFAttributeGPSVersionID>();
     ASSERT_TRUE(VectorByte.front() == pVersionID->GetData().front());
     ASSERT_TRUE(VectorByte.back() == pVersionID->GetData().back());
-    ASSERT_EQ(HRFAttributeGPSVersionID::ATTRIBUTE_ID, pVersionID->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeGPSVersionID::ATTRIBUTE_ID, pVersionID->GetID());
 
     HRFAttributeGPSVersionID* pVersionID2 = AttributeSet.FindAttributeP<HRFAttributeGPSVersionID>();
     ASSERT_TRUE(VectorByte.front() == pVersionID2->GetData().front());
     ASSERT_TRUE(VectorByte.back() == pVersionID2->GetData().back());
-    ASSERT_EQ(HRFAttributeGPSVersionID::ATTRIBUTE_ID, pVersionID2->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeGPSVersionID::ATTRIBUTE_ID, pVersionID2->GetID());
 
     //Byte 
     HRFAttributeGPSAltitudeRef const* pAltRef = AttributeSet.FindAttributeCP<HRFAttributeGPSAltitudeRef>();
     ASSERT_TRUE(ByteValue == pAltRef->GetData());
-    ASSERT_EQ(HRFAttributeGPSAltitudeRef::ATTRIBUTE_ID, pAltRef->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeGPSAltitudeRef::ATTRIBUTE_ID, pAltRef->GetID());
 
     HRFAttributeGPSAltitudeRef* pAltRef2 = AttributeSet.FindAttributeP<HRFAttributeGPSAltitudeRef>();
     ASSERT_TRUE(ByteValue == pAltRef2->GetData());
-    ASSERT_EQ(HRFAttributeGPSAltitudeRef::ATTRIBUTE_ID, pAltRef2->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeGPSAltitudeRef::ATTRIBUTE_ID, pAltRef2->GetID());
 
     //vector<UShort>
     HRFAttributeISOSpeedRatings const* pIsoSpeed = AttributeSet.FindAttributeCP<HRFAttributeISOSpeedRatings>();
     ASSERT_DOUBLE_EQ(VectorUShort.front(), pIsoSpeed->GetData().front());
     ASSERT_DOUBLE_EQ(VectorUShort.back(), pIsoSpeed->GetData().back());  
-    ASSERT_EQ(HRFAttributeISOSpeedRatings::ATTRIBUTE_ID, pIsoSpeed->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeISOSpeedRatings::ATTRIBUTE_ID, pIsoSpeed->GetID());
 
     HRFAttributeISOSpeedRatings* pIsoSpeed2 = AttributeSet.FindAttributeP<HRFAttributeISOSpeedRatings>();
     ASSERT_DOUBLE_EQ(VectorUShort.front(), pIsoSpeed2->GetData().front());
     ASSERT_DOUBLE_EQ(VectorUShort.back(), pIsoSpeed2->GetData().back());  
-    ASSERT_EQ(HRFAttributeISOSpeedRatings::ATTRIBUTE_ID, pIsoSpeed2->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeISOSpeedRatings::ATTRIBUTE_ID, pIsoSpeed2->GetID());
 
     //<vector<char>
     HRFAttributeExifVersion const* pExif = AttributeSet.FindAttributeCP<HRFAttributeExifVersion>();
     ASSERT_TRUE(VectorChar.front() == pExif->GetData().front());
     ASSERT_TRUE(VectorChar.back() == pExif->GetData().back());  
-    ASSERT_EQ(HRFAttributeExifVersion::ATTRIBUTE_ID, pExif->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeExifVersion::ATTRIBUTE_ID, pExif->GetID());
 
     HRFAttributeExifVersion* pExif2 = AttributeSet.FindAttributeP<HRFAttributeExifVersion>();
     ASSERT_TRUE(VectorChar.front() == pExif2->GetData().front());
     ASSERT_TRUE(VectorChar.back() == pExif2->GetData().back());  
-    ASSERT_EQ(HRFAttributeExifVersion::ATTRIBUTE_ID, pExif2->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeExifVersion::ATTRIBUTE_ID, pExif2->GetID());
 
     //WString
     HRFAttributeOriginalFileFormat const* pFFormat = AttributeSet.FindAttributeCP<HRFAttributeOriginalFileFormat>();
     ASSERT_TRUE(WStringValue == pFFormat->GetData());
-    ASSERT_EQ(HRFAttributeOriginalFileFormat::ATTRIBUTE_ID, pFFormat->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeOriginalFileFormat::ATTRIBUTE_ID, pFFormat->GetID());
 
     HRFAttributeOriginalFileFormat* pFFormat2 = AttributeSet.FindAttributeP<HRFAttributeOriginalFileFormat>();
     ASSERT_TRUE(WStringValue == pFFormat2->GetData());
-    ASSERT_EQ(HRFAttributeOriginalFileFormat::ATTRIBUTE_ID, pFFormat2->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeOriginalFileFormat::ATTRIBUTE_ID, pFFormat2->GetID());
 
     //UInt64
     HRFAttributeOriginalFileSize const* pFileSize = AttributeSet.FindAttributeCP<HRFAttributeOriginalFileSize>();
     ASSERT_EQ(UInt64Value,  pFileSize->GetData());  
-    ASSERT_EQ(HRFAttributeOriginalFileSize::ATTRIBUTE_ID, pFileSize->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeOriginalFileSize::ATTRIBUTE_ID, pFileSize->GetID());
 
     HRFAttributeOriginalFileSize* pFileSize2 = AttributeSet.FindAttributeP<HRFAttributeOriginalFileSize>();
     ASSERT_EQ(UInt64Value,  pFileSize2->GetData());  
-    ASSERT_EQ(HRFAttributeOriginalFileSize::ATTRIBUTE_ID, pFileSize2->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeOriginalFileSize::ATTRIBUTE_ID, pFileSize2->GetID());
 
     }
 
@@ -399,76 +399,76 @@ TEST_F (HPMAttributeSetTester, GetAttributeTest)
     //String 
     HFCPtr<HPMGenericAttribute> pImage = AttributeSet.GetAttribute(static_cast<HPMAttributesID>(HRFAttributeImageDescription::ATTRIBUTE_ID));
     ASSERT_TRUE(WStringValue == static_cast<HRFAttributeImageDescription*>(pImage.GetPtr())->GetData());
-    ASSERT_EQ(HRFAttributeImageDescription::ATTRIBUTE_ID, pImage->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeImageDescription::ATTRIBUTE_ID, pImage->GetID());
 
     //Vector<double>
     HFCPtr<HPMGenericAttribute> pSample = AttributeSet.GetAttribute(static_cast<HPMAttributesID>(HRFAttributeMinSampleValue::ATTRIBUTE_ID)); 
     ASSERT_DOUBLE_EQ(VectorDouble.front(), static_cast<HRFAttributeMinSampleValue*>(pSample.GetPtr())->GetData().front());
     ASSERT_DOUBLE_EQ(VectorDouble.back(), static_cast<HRFAttributeMinSampleValue*>(pSample.GetPtr())->GetData().back());
-    ASSERT_EQ(HRFAttributeMinSampleValue::ATTRIBUTE_ID, pSample->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeMinSampleValue::ATTRIBUTE_ID, pSample->GetID());
 
     //UShort
     HFCPtr<HPMGenericAttribute> pResUnit = AttributeSet.GetAttribute(static_cast<HPMAttributesID>(HRFAttributeResolutionUnit::ATTRIBUTE_ID));
     ASSERT_DOUBLE_EQ(UShortValue, static_cast<HRFAttributeResolutionUnit*>(pResUnit.GetPtr())->GetData());
-    ASSERT_EQ(HRFAttributeResolutionUnit::ATTRIBUTE_ID, pResUnit->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeResolutionUnit::ATTRIBUTE_ID, pResUnit->GetID());
 
     //HFCMatrix<4,4, double>
     HFCPtr<HPMGenericAttribute> p3dTransfo = AttributeSet.GetAttribute(static_cast<HPMAttributesID>(HRFAttribute3DTransformationMatrix::ATTRIBUTE_ID));
     ASSERT_TRUE(Matrix.IsEqualTo(static_cast<HRFAttribute3DTransformationMatrix*>(p3dTransfo.GetPtr())->GetData()));
-    ASSERT_EQ(HRFAttribute3DTransformationMatrix::ATTRIBUTE_ID, p3dTransfo->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttribute3DTransformationMatrix::ATTRIBUTE_ID, p3dTransfo->GetID());
 
     //UInt32
     HFCPtr<HPMGenericAttribute> pForeground = AttributeSet.GetAttribute(static_cast<HPMAttributesID>(HRFAttributeForeground::ATTRIBUTE_ID)); 
     ASSERT_DOUBLE_EQ(UInt32Value, static_cast<HRFAttributeForeground*>(pForeground.GetPtr())->GetData());
-    ASSERT_EQ(HRFAttributeForeground::ATTRIBUTE_ID, pForeground->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeForeground::ATTRIBUTE_ID, pForeground->GetID());
 
     //bool
     HFCPtr<HPMGenericAttribute> pColor = AttributeSet.GetAttribute(static_cast<HPMAttributesID>(HRFAttributeDontSupportPersistentColor::ATTRIBUTE_ID));
     ASSERT_TRUE(static_cast<HRFAttributeDontSupportPersistentColor*>(pColor.GetPtr())->GetData());
-    ASSERT_EQ(HRFAttributeDontSupportPersistentColor::ATTRIBUTE_ID, pColor->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeDontSupportPersistentColor::ATTRIBUTE_ID, pColor->GetID());
 
     //double
     HFCPtr<HPMGenericAttribute> pYRes = AttributeSet.GetAttribute(static_cast<HPMAttributesID>(HRFAttributeYResolution::ATTRIBUTE_ID));
     ASSERT_DOUBLE_EQ(DoubleValue, static_cast<HRFAttributeYResolution*>(pYRes.GetPtr())->GetData());
-    ASSERT_EQ(HRFAttributeYResolution::ATTRIBUTE_ID, pYRes->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeYResolution::ATTRIBUTE_ID, pYRes->GetID());
 
     //uint32_t
     HFCPtr<HPMGenericAttribute> pCSLong = AttributeSet.GetAttribute(static_cast<HPMAttributesID>(HRFAttributeProjectedCSTypeLong::ATTRIBUTE_ID));
     ASSERT_DOUBLE_EQ(uint32_tValue, static_cast<HRFAttributeProjectedCSTypeLong*>(pCSLong.GetPtr())->GetData());
-    ASSERT_EQ(HRFAttributeProjectedCSTypeLong::ATTRIBUTE_ID, pCSLong->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeProjectedCSTypeLong::ATTRIBUTE_ID, pCSLong->GetID());
 
     //vector<Byte>
     HFCPtr<HPMGenericAttribute> pVersionID = AttributeSet.GetAttribute(static_cast<HPMAttributesID>(HRFAttributeGPSVersionID::ATTRIBUTE_ID));
     ASSERT_TRUE(VectorByte.front() == static_cast<HRFAttributeGPSVersionID*>(pVersionID.GetPtr())->GetData().front());
     ASSERT_TRUE(VectorByte.back() == static_cast<HRFAttributeGPSVersionID*>(pVersionID.GetPtr())->GetData().back());
-    ASSERT_EQ(HRFAttributeGPSVersionID::ATTRIBUTE_ID, pVersionID->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeGPSVersionID::ATTRIBUTE_ID, pVersionID->GetID());
 
     //Byte 
     HFCPtr<HPMGenericAttribute> pAltRef = AttributeSet.GetAttribute(static_cast<HPMAttributesID>(HRFAttributeGPSAltitudeRef::ATTRIBUTE_ID));
     ASSERT_TRUE(ByteValue == static_cast<HRFAttributeGPSAltitudeRef*>(pAltRef.GetPtr())->GetData());
-    ASSERT_EQ(HRFAttributeGPSAltitudeRef::ATTRIBUTE_ID, pAltRef->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeGPSAltitudeRef::ATTRIBUTE_ID, pAltRef->GetID());
 
     //vector<UShort>
     HFCPtr<HPMGenericAttribute> pIsoSpeed = AttributeSet.GetAttribute(static_cast<HPMAttributesID>(HRFAttributeISOSpeedRatings::ATTRIBUTE_ID));
     ASSERT_DOUBLE_EQ(VectorUShort.front(), static_cast<HRFAttributeISOSpeedRatings*>(pIsoSpeed.GetPtr())->GetData().front());
     ASSERT_DOUBLE_EQ(VectorUShort.back(), static_cast<HRFAttributeISOSpeedRatings*>(pIsoSpeed.GetPtr())->GetData().back());  
-    ASSERT_EQ(HRFAttributeISOSpeedRatings::ATTRIBUTE_ID, pIsoSpeed->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeISOSpeedRatings::ATTRIBUTE_ID, pIsoSpeed->GetID());
 
     //<vector<char>
     HFCPtr<HPMGenericAttribute> pExif = AttributeSet.GetAttribute(static_cast<HPMAttributesID>(HRFAttributeExifVersion::ATTRIBUTE_ID));
     ASSERT_TRUE(VectorChar.front() == static_cast<HRFAttributeExifVersion*>(pExif.GetPtr())->GetData().front());
     ASSERT_TRUE(VectorChar.back() == static_cast<HRFAttributeExifVersion*>(pExif.GetPtr())->GetData().back());  
-    ASSERT_EQ(HRFAttributeExifVersion::ATTRIBUTE_ID, pExif->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeExifVersion::ATTRIBUTE_ID, pExif->GetID());
 
     //WString
     HFCPtr<HPMGenericAttribute> pFileFormat2 = AttributeSet.GetAttribute(static_cast<HPMAttributesID>(HRFAttributeOriginalFileFormat::ATTRIBUTE_ID));
     ASSERT_TRUE(WStringValue == static_cast<HRFAttributeOriginalFileFormat*>(pFileFormat2.GetPtr())->GetData());
-    ASSERT_EQ(HRFAttributeOriginalFileFormat::ATTRIBUTE_ID, pFileFormat2->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeOriginalFileFormat::ATTRIBUTE_ID, pFileFormat2->GetID());
 
     //UInt64
     HFCPtr<HPMGenericAttribute> pFileSize = AttributeSet.GetAttribute(static_cast<HPMAttributesID>(HRFAttributeOriginalFileSize::ATTRIBUTE_ID));
     ASSERT_EQ(UInt64Value,  static_cast<HRFAttributeOriginalFileSize*>(pFileSize.GetPtr())->GetData());  
-    ASSERT_EQ(HRFAttributeOriginalFileSize::ATTRIBUTE_ID, pFileSize->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeOriginalFileSize::ATTRIBUTE_ID, pFileSize->GetID());
 
     }
 

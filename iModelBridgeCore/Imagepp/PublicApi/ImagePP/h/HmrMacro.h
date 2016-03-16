@@ -103,7 +103,7 @@
 
 // Validate that every classID is defined in ImagePPClassId.
 //#if defined(__IMAGEPP_BUILD__) || defined(__IPPIMAGING_BUILD__)
-    #define IPPCLASSIDVALIDATE(ClassID) HDEBUGCODE(ImagePPClassId t=ClassID;t;);
+    #define IPPCLASSIDVALIDATE(ClassID) HDEBUGCODE(ImagePPClassId t=ClassID; (void)t;);
 //#else
 //    #define IPPCLASSIDVALIDATE(ClassID)
 //#endif

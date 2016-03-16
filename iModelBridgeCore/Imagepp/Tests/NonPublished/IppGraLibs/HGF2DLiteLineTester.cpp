@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HGF2DLiteLineTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -190,19 +190,18 @@ TEST_F (HGF2DLiteLineTester, IntersectLineTest)
     
     HGF2DPosition DumpLocation;
 
-    ASSERT_EQ(HGF2DLine::PARALLEL, Line1.IntersectLine(Line1, &DumpLocation));
-
-    ASSERT_EQ(HGF2DLine::CROSS_FOUND, Line1.IntersectLine(Line3, &DumpLocation));
+    ASSERT_EQ(HGF2DLiteLine::PARALLEL, Line1.IntersectLine(Line1, &DumpLocation));
+    ASSERT_EQ(HGF2DLiteLine::CROSS_FOUND, Line1.IntersectLine(Line3, &DumpLocation));
     ASSERT_NEAR(0.0, DumpLocation.GetX(), MYEPSILON);
     ASSERT_NEAR(0.0, DumpLocation.GetY(), MYEPSILON);
 
-    ASSERT_EQ(HGF2DLine::PARALLEL, Line1.IntersectLine(Line4, &DumpLocation));
+    ASSERT_EQ(HGF2DLiteLine::PARALLEL, Line1.IntersectLine(Line4, &DumpLocation));
  
-    ASSERT_EQ(HGF2DLine::CROSS_FOUND, Line1.IntersectLine(Line5, &DumpLocation));
+    ASSERT_EQ(HGF2DLiteLine::CROSS_FOUND, Line1.IntersectLine(Line5, &DumpLocation));
     ASSERT_NEAR(0.0, DumpLocation.GetX(), MYEPSILON);
     ASSERT_NEAR(0.0, DumpLocation.GetY(), MYEPSILON);
 
-    ASSERT_EQ(HGF2DLine::CROSS_FOUND, Line1.IntersectLine(Line6, &DumpLocation));
+    ASSERT_EQ(HGF2DLiteLine::CROSS_FOUND, Line1.IntersectLine(Line6, &DumpLocation));
     ASSERT_NEAR(0.0, DumpLocation.GetX(), MYEPSILON);
     ASSERT_NEAR(0.0, DumpLocation.GetY(), MYEPSILON);
 

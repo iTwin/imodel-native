@@ -2,7 +2,7 @@
 #
 #  $Source: Tests/BuildTests.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 %include mdl.mki
@@ -16,6 +16,7 @@ baseDir = $(_MakeFilePath)
 # since we aggreate imagepp dll objs, define __IMAGEPP_BUILD__ so we have the same dll import/export tag.
 nameToDefine=__IMAGEPP_BUILD__
 %include cdefapnd.mki
+
 
 # Compile and Link the unit tests
 BEGTEST_NAME  = $(TestDir)ImagePP
