@@ -494,23 +494,23 @@ ClassMapPtr ECDbMap::DoGetClassMap (ECClassCR ecClass) const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext* schemaImportContext, Utf8CP tableName, TableType tableType, bool isVirtual, Utf8CP primaryKeyColumnName, ECDbSqlTable const* baseTable)
+ECDbSqlTable* ECDbMap::FindOrCreateTable(SchemaImportContext* schemaImportContext, Utf8CP tableName, TableType tableType, bool isVirtual, Utf8CP primaryKeyColumnName, ECDbSqlTable const* baseTable)
     {
-    if (AssertIfIsNotImportingSchema ())
+    if (AssertIfIsNotImportingSchema())
         return nullptr;
 
-    BeMutexHolder lock (m_mutex);
-    ECDbSqlTable* table = GetSQLManager ().GetDbSchema ().FindTableP (tableName);
+    BeMutexHolder lock(m_mutex);
+    ECDbSqlTable* table = GetSQLManager().GetDbSchema().FindTableP(tableName);
     if (table != nullptr)
         {
         if (table->GetTableType() != tableType)
             {
-            std::function<Utf8CP (bool)> toStr = [] (bool val) {return val ? "true" : "false"; };
-            LOG.warningv ("Multiple classes are mapped to the table %s although the classes require mismatching table metadata: "
-                "Metadata IsMappedToExistingTable: Expected=%s - Actual=%s. Actual value is ignored.",
-                tableName,
-                toStr (tableType == TableType::Existing), toStr (!table->IsOwnedByECDb()));
-            BeAssert (false && "ECDb uses a table for two classes although the classes require mismatching table metadata.");
+            std::function<Utf8CP(bool)> toStr = [] (bool val) { return val ? "true" : "false"; };
+            LOG.warningv("Multiple classes are mapped to the table %s although the classes require mismatching table metadata: "
+                         "Metadata IsMappedToExistingTable: Expected=%s - Actual=%s. Actual value is ignored.",
+                         tableName,
+                         toStr(tableType == TableType::Existing), toStr(!table->IsOwnedByECDb()));
+            BeAssert(false && "ECDb uses a table for two classes although the classes require mismatching table metadata.");
             }
 
         return table;
@@ -519,14 +519,14 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext* schemaImportConte
     if (tableType != TableType::Existing)
         {
         table = GetSQLManager().GetDbSchemaR().CreateTable(tableName, tableType, isVirtual ? PersistenceType::Virtual : PersistenceType::Persisted, baseTable);
-        if (Utf8String::IsNullOrEmpty (primaryKeyColumnName))
+        if (Utf8String::IsNullOrEmpty(primaryKeyColumnName))
             primaryKeyColumnName = ECDB_COL_ECInstanceId;
 
-        auto column = table->CreateColumn (primaryKeyColumnName, ECDbSqlColumn::Type::Integer, ColumnKind::ECInstanceId, PersistenceType::Persisted);
-        if (table->GetPersistenceType () == PersistenceType::Persisted)
+        auto column = table->CreateColumn(primaryKeyColumnName, ECDbSqlColumn::Type::Integer, ColumnKind::ECInstanceId, PersistenceType::Persisted);
+        if (table->GetPersistenceType() == PersistenceType::Persisted)
             {
-            column->GetConstraintR ().SetIsNotNull (true);
-            table->GetPrimaryKeyConstraint ()->Add (primaryKeyColumnName);
+            column->GetConstraintR().SetIsNotNull(true);
+            table->GetPrimaryKeyConstraint()->Add(primaryKeyColumnName);
             }
         }
     else
@@ -535,26 +535,26 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext* schemaImportConte
         if (table == nullptr)
             return nullptr;
 
-        if (!Utf8String::IsNullOrEmpty (primaryKeyColumnName))
+        if (!Utf8String::IsNullOrEmpty(primaryKeyColumnName))
             {
-            auto editMode = table->GetEditHandle ().CanEdit ();
+            auto editMode = table->GetEditHandle().CanEdit();
             if (!editMode)
-                table->GetEditHandleR ().BeginEdit ();
+                table->GetEditHandleR().BeginEdit();
 
-            auto systemColumn = table->FindColumnP (primaryKeyColumnName);
+            auto systemColumn = table->FindColumnP(primaryKeyColumnName);
             if (systemColumn == nullptr)
                 {
                 LOG.errorv("Primary key column '%s' does not exist in table '%s' which was specified in ClassMap custom attribute together with ExistingTable MapStrategy. Specify the column name in the ECInstanceIdColumn property in the ClassMap custom attribute, if it is not ECDb's default primary key column name.", primaryKeyColumnName, tableName);
                 return nullptr;
                 }
 
-            systemColumn->SetKind (ColumnKind::ECInstanceId);
+            systemColumn->SetKind(ColumnKind::ECInstanceId);
             if (!editMode)
-                table->GetEditHandleR ().EndEdit ();
+                table->GetEditHandleR().EndEdit();
             }
         }
 
-    return table;   
+    return table;
     }
 
 //---------------------------------------------------------------------------------------

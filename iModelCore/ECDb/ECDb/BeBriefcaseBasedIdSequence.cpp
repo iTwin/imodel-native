@@ -2,28 +2,12 @@
 |
 |     $Source: ECDb/BeBriefcaseBasedIdSequence.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
-//-----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2013
-//+---------------+---------------+---------------+---------------+---------------+--
-BeBriefcaseBasedIdSequence::BeBriefcaseBasedIdSequence (Db& db, Utf8CP briefcaseLocalValueName)
-: m_db (db), m_briefcaseLocalValueName (briefcaseLocalValueName)
-    {
-    BeAssert (!Utf8String::IsNullOrEmpty (briefcaseLocalValueName));
-    }
-
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2013
-//+---------------+---------------+---------------+---------------+---------------+-
-BeBriefcaseBasedIdSequence::~BeBriefcaseBasedIdSequence ()
-    {
-    }
 
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                07/2014

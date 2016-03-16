@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/OptionsExp.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -44,7 +44,7 @@ struct OptionsExp : Exp
     static Utf8CP const NOECCLASSIDFILTER_OPTION;
 
 private:
-    bmap<Utf8CP, size_t, CompareIUtf8> m_optionsByName;
+    bmap<Utf8CP, size_t, CompareIUtf8Ascii> m_optionsByName;
 
     virtual Utf8String _ToECSql() const override;
     virtual Utf8String _ToString() const override { return "OptionsExp"; }

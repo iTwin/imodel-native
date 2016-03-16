@@ -493,7 +493,7 @@ Utf8CP GetPointCoordinateFunctionExp::CoordinateToString(Coordinate coordinate)
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bmap<Utf8CP, ECN::PrimitiveType, CompareIUtf8> FunctionCallExp::s_builtinFunctionNonDefaultReturnTypes;
+bmap<Utf8CP, ECN::PrimitiveType, CompareIUtf8Ascii> FunctionCallExp::s_builtinFunctionNonDefaultReturnTypes;
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013

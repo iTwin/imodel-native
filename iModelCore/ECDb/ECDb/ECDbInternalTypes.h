@@ -200,23 +200,21 @@ struct CompareUtf8
 
 
 //=======================================================================================
-// For case-insensitive UTF-8 string comparisons in STL collections.
+// For case-insensitive UTF-8 string comparisons in STL collections that only use ASCII
+// strings
 // @bsistruct
 //+===============+===============+===============+===============+===============+======
-struct CompareIUtf8
+struct CompareIUtf8Ascii
     {
-    bool operator()(Utf8CP s1, Utf8CP s2) const { return BeStringUtilities::Stricmp(s1, s2) < 0; }
-
-    bool operator()(Utf8StringCR s1, Utf8StringCR s2) const
-        {
-        return BeStringUtilities::Stricmp(s1.c_str(), s2.c_str()) < 0;
-        }
+    bool operator()(Utf8CP s1, Utf8CP s2) const { return BeStringUtilities::StricmpAscii(s1, s2) < 0; }
+    bool operator()(Utf8StringCR s1, Utf8StringCR s2) const {  return BeStringUtilities::StricmpAscii(s1.c_str(), s2.c_str()) < 0;  }
     };
 
 enum class EndTablesOptimizationOptions
     {
     Skip, //!NOP or do nothing
     ReferencedEnd, //Select base table over joined table
-    ForeignEnd //select subset of joinedTable if possiable instead of base table.
+    ForeignEnd //select subset of joinedTable if possible instead of base table.
     };
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

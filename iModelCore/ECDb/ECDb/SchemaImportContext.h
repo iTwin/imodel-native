@@ -61,7 +61,7 @@ private:
     ECDbMapDb& m_coreMapDb;
 
     mutable std::vector<std::unique_ptr<ECDbSqlIndex>> m_indexes;
-    mutable bset<Utf8CP, CompareIUtf8> m_usedIndexNames;
+    mutable bset<Utf8CP, CompareIUtf8Ascii> m_usedIndexNames;
 
     BentleyStatus BuildCreateIndexDdl(NativeSqlBuilder&, Utf8StringR comparableIndexDef, ECDbCR, ECDbSqlIndex const&) const;
     BentleyStatus GenerateIndexWhereClause(NativeSqlBuilder&, ECDbCR, ECDbSqlIndex const&) const;

@@ -751,26 +751,18 @@ void ECDbMapAnalyser::Storage::Generate ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-ECDbMapAnalyser::Storage& ECDbMapAnalyser::GetStorage (Utf8CP tableName)
+ECDbMapAnalyser::Storage& ECDbMapAnalyser::GetStorage(Utf8CP tableName)
     {
-    auto itor = m_storage.find (tableName);
-    if (itor != m_storage.end ())
+    auto itor = m_storage.find(tableName);
+    if (itor != m_storage.end())
         return *(itor->second);
 
-    auto table = m_map.GetSQLManager ().GetDbSchema ().FindTable (tableName);
-    BeAssert (table != nullptr);
-    auto ptr = Storage::Ptr (new Storage (*table));
-    auto p = ptr.get ();
-    m_storage[table->GetName ().c_str ()] = std::move (ptr);
+    ECDbSqlTable const* table = m_map.GetSQLManager().GetDbSchema().FindTable(tableName);
+    BeAssert(table != nullptr);
+    Storage::Ptr ptr = Storage::Ptr(new Storage(*table));
+    Storage* p = ptr.get();
+    m_storage[table->GetName().c_str()] = std::move(ptr);
     return *p;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-ECDbMapAnalyser::Storage& ECDbMapAnalyser::GetStorage(ClassMapCR classMap)
-    {
-    return GetStorage(classMap.GetJoinedTable().GetName().c_str());
     }
 
 //---------------------------------------------------------------------------------------

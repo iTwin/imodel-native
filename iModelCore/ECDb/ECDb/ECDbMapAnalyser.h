@@ -319,14 +319,14 @@ struct ECDbMapAnalyser
         ECDbMapR m_map;
         std::map<ECN::ECClassId, Class::Ptr> m_classes;
         std::map<ECN::ECClassId, Relationship::Ptr> m_relationships;
-        std::map<Utf8CP, Storage::Ptr, CompareIUtf8> m_storage;
+        std::map<Utf8CP, Storage::Ptr, CompareIUtf8Ascii> m_storage;
         std::map<Class const*, ViewInfo> m_viewInfos;
 
     private:
         ECDbMapR GetMapR() { return m_map; }
         ECDbMapCR GetMap() const { return m_map; }
         Storage& GetStorage(Utf8CP tableName);
-        Storage& GetStorage(ClassMapCR classMap);
+        Storage& GetStorage(ClassMapCR classMap) { return GetStorage(classMap.GetJoinedTable().GetName().c_str()); }
         Class& GetClass(ClassMapCR classMap);
         Relationship&  GetRelationship(RelationshipClassMapCR classMap);
         BentleyStatus AnalyseClass(ClassMapCR);

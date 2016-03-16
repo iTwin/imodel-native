@@ -455,7 +455,7 @@ BentleyStatus ECDbSqlTable::PersistenceManager::CreateOrUpdate(ECDbR ecdb) const
     std::vector<ECDbSqlColumn const*>  persistedColumns;
     m_table.GetFilteredColumnList(persistedColumns, PersistenceType::Persisted);
 
-    std::map<Utf8CP, ECDbSqlColumn const*, CompareIUtf8> modifiedColumnSet;
+    std::map<Utf8CP, ECDbSqlColumn const*, CompareIUtf8Ascii> modifiedColumnSet;
 
     for (auto column : persistedColumns)
         {
@@ -1718,7 +1718,7 @@ bool ECDbSQLManager::IsTableChanged(ECDbSqlTable const& table) const
         }
 
     //Create a fast hash set of in-memory column list;
-    std::map<Utf8CP, ECDbSqlColumn const*, CompareIUtf8> modifiedColumnSet;
+    std::map<Utf8CP, ECDbSqlColumn const*, CompareIUtf8Ascii> modifiedColumnSet;
     for (auto column : table.GetColumns())
         {
         modifiedColumnSet[column->GetName().c_str()] = column;

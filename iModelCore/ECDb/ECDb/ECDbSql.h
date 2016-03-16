@@ -171,7 +171,7 @@ struct ECDbMapDb : NonCopyableClass
 private:
     BeVersion m_version;
     NameGenerator m_nameGenerator;
-    std::map<Utf8CP, std::unique_ptr<ECDbSqlTable>, CompareIUtf8> m_tables;
+    std::map<Utf8CP, std::unique_ptr<ECDbSqlTable>, CompareIUtf8Ascii> m_tables;
     ECDbSQLManager& m_sqlManager;
 
 public:
@@ -429,8 +429,8 @@ public:
         NameGenerator m_nameGeneratorForColumn;
         TableType m_tableType;
         PersistenceType m_persistenceType;
-        std::map<Utf8CP, std::shared_ptr<ECDbSqlColumn>, CompareIUtf8> m_columns;
-        std::map<Utf8CP, std::unique_ptr<ECDbSqlTrigger>, CompareIUtf8> m_triggers;
+        std::map<Utf8CP, std::shared_ptr<ECDbSqlColumn>, CompareIUtf8Ascii> m_columns;
+        std::map<Utf8CP, std::unique_ptr<ECDbSqlTrigger>, CompareIUtf8Ascii> m_triggers;
         std::vector<ECDbSqlColumn const*> m_orderedColumns;
 
         int m_minimumSharedColumnCount;
