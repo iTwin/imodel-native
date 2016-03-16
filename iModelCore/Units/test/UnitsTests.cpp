@@ -214,7 +214,7 @@ TEST_F (UnitsTests, UnitsMapping)
         guess += i + ", ";
         }
 
-    EXPECT_EQ (101, notMapped.size() ) << guess;
+    EXPECT_EQ (103, notMapped.size() ) << guess;
     }
 
 // TODO: Make this test pass when conversions fail and add more conversions to test a wide spectrum of dimenions.
@@ -394,27 +394,162 @@ TEST_F(UnitsTests, TestMiscConversions)
     bvector<bpair<Utf8String, Utf8String>> handledUnits;
 
     //Frequency
-    TestUnitConversion(9, "MHZ", 9000, "KHZ", 3, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(9, "KHZ", 9000, "HZ", 3, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(4.2, "HZ", 4.2e-3, "KHZ", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(4.2, "HZ", 4.2e-6, "MHZ", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(9, "MHZ", 9000, "KHZ", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(9, "KHZ", 9000, "HZ", 1, loadErrors, conversionErrors, handledUnits);
 
     //MASS
-    TestUnitConversion(5, "TONNE", 5000, "KG", 3, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(5, "TONNE", 5000, "KG", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "TONNE", 42.42e15, "NG", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "TONNE", 42.42e3 / 0.45359237, "LBM", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "NG", 42.42e-12 / 0.45359237, "LBM", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "MKG", 42.42e-12 / 0.45359237, "KIP", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "SLUG", (42.42 * 1000 * 0.45359237 * 9.80665) / 0.3048, "G", 1, loadErrors, conversionErrors, handledUnits); // 0.45359237 is conversion between LBM and KG, 9.80665 is std g
+    TestUnitConversion(42.43, "SLUG", 6.1921930163e5, "G", 100000, loadErrors, conversionErrors, handledUnits); // conversion from http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    TestUnitConversion(42.42, "KIP", (42.42 * 1000 * 0.3048) / 9.80665, "SLUG", 1, loadErrors, conversionErrors, handledUnits);
 
     //DYNAMIC_VISCOSITY
-    TestUnitConversion(4200.0, "POISE", 420.0, "PA-S", 10, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(4200.0, "POISE", 420.0, "PA-S", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "CENTIPOISE", 42.42e-2, "POISE", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "PA-S", 42.42e3, "CENTIPOISE", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "LBM/(FT*S)", (42.42 * 0.45359237) / 0.3048, "PA-S", 1, loadErrors, conversionErrors, handledUnits); // 0.45359237 is conversion between LBM and KG
+    TestUnitConversion(42.43, "LBM/(FT*S)", 63.142796126, "PA-S", 100000, loadErrors, conversionErrors, handledUnits); // conversion from http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
 
     //FORCE
     TestUnitConversion(1000.0, "PDL", 138.254954376, "N", 10, loadErrors, conversionErrors, handledUnits);
-    
+    TestUnitConversion(42.42, "PDL", 6.5922695314e-4, "SHORT_TON_FORCE", 10000, loadErrors, conversionErrors, handledUnits); // conversion from http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    TestUnitConversion(42.42, "PDL", 5.8859549387e-4,"LONG_TON_FORCE", 100000, loadErrors, conversionErrors, handledUnits);  // conversion from http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    TestUnitConversion(42.42, "PDL", 42.42 / 32.174048556430442 / 2000, "SHORT_TON_FORCE", 1, loadErrors, conversionErrors, handledUnits); // 32.174048556430442 is 9.80665 converted to ft/s^2 using out system, 2000 is the number of pounds in a short ton
+    TestUnitConversion(42.42, "PDL", 42.42 / 32.174048556430442 / 2240, "LONG_TON_FORCE", 1, loadErrors, conversionErrors, handledUnits); // 32.174048556430442 is 9.80665 converted to ft/s^2 using out system, 2240 is the number of pounds in a long ton
+    TestUnitConversion(42.42, "LBF", 42.42 * 32.174048556430442, "PDL", 1, loadErrors, conversionErrors, handledUnits); // 32.174048556430442 is 9.80665 converted to ft/s^2 using out system
+    TestUnitConversion(42.43, "LBF", 42.43 * 32.174048556, "PDL", 100000, loadErrors, conversionErrors, handledUnits); //32.174048556 is 9.80665 converted to ft/s^2 using http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+
     //LENGTH
     //LIGHT_XXX units dropped from framework as they are not needed
     /*TestUnitConversion(0.0042, "LIGHT_YEAR", 2.469023e10, "MILE", 10, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(0.003, "LIGHT_HOUR", 3237758.5, "KM", 10, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(0.013, "LIGHT_MIN", 2.55728e8, "YARD", 10, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(1.0, "LIGHT_SEC", 186282, "MILE", 10, loadErrors, conversionErrors, handledUnits);*/
+    TestUnitConversion(42.42, "NAUT_MILE", 42.42 * 1852.0, "M", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "KM", 42.42 * 1000.0 / 1852.0, "NAUT_MILE", 1, loadErrors, conversionErrors, handledUnits);
 
     //MOLE
-    TestUnitConversion(0.3, "MOL", 0.0003, "KMOL", 10, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0.3, "MOL", 0.0003, "KMOL", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "KMOL", 42420.0, "MOL", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "LB-MOLE", 42.42 * 453.59237, "MOL", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "KMOL", 42.42e3 / 453.59237, "LB-MOLE", 1, loadErrors, conversionErrors, handledUnits);
+
+    //ACCELERATION
+    TestUnitConversion(42.42, "M/SEC.SQUARED", 4242.0, "CM/SEC.SQUARED", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "M/SEC.SQUARED", 42.42 / 0.3048, "FT/SEC.SQUARED", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "M/SEC.SQUARED", 42.42, "M/SEC.SQUARED", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "FT/SEC.SQUARED", 42.42 * 0.3048, "M/SEC.SQUARED", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "FT/SEC.SQUARED", 42.42 * 30.48, "CM/SEC.SQUARED", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "FT/SEC.SQUARED", 42.42 , "FT/SEC.SQUARED", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "CM/SEC.SQUARED", 0.4242, "M/SEC.SQUARED", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "CM/SEC.SQUARED", 42.42 / 30.48, "FT/SEC.SQUARED", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "CM/SEC.SQUARED", 42.42, "CM/SEC.SQUARED", 1, loadErrors, conversionErrors, handledUnits);
+
+    TestUnitConversion(1.0, "STD_G", 9.80665, "M/SEC.SQUARED", 1, loadErrors, conversionErrors, handledUnits); // Exact constant value for standard gravity
+    TestUnitConversion(1.0, "STD_G", 32.174048556, "FT/SEC.SQUARED", 100000, loadErrors, conversionErrors, handledUnits); // Documented value for standard gravity in m/s^2 converted to ft/s^2 using http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    TestUnitConversion(1.0, "STD_G", 32.174048556430446194225721784777, "FT/SEC.SQUARED", 1, loadErrors, conversionErrors, handledUnits); // Expected value is the result of 9.80665 / 0.3048 done on windows calculator
+
+    //AREA
+    TestUnitConversion(42.42, "SQ.MU", 42.42e-6, "SQ.MM", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "SQ.MU", 42.42e-10, "SQ.DM", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "SQ.MU", 42.42e-12 / 0.3048 / 0.3048, "SQ.FT", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "SQ.DM", 42.42e4, "SQ.MM", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "SQ.DM", 42.42e10, "SQ.MU", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "SQ.DM", 42.42e-2 / 0.3048 / 0.3048, "SQ.FT", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.43, "SQ.DM", 4.5671271898, "SQ.FT", 100000, loadErrors, conversionErrors, handledUnits);  // conversion from http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    TestUnitConversion(42.42, "ARE", 42.42e-2, "HECTARE", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "HECTARE", 4242.0, "ARE", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "ARE", (42.42 * 10) / (66 * 66 * 0.3048 * 0.3048), "ACRE", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.43, "ARE", 1.0484681336, "ACRE", 100000, loadErrors, conversionErrors, handledUnits);  // conversion from http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+
+    //ELECTRIC CURRENT
+    TestUnitConversion(42.42, "A", 42.42e-3, "KILOAMPERE", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "A", 42.42e3, "MILLIAMPERE", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "A", 42.42e6, "MICROAMPERE", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "KILOAMPERE", 42.42e9, "MICROAMPERE", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "MILLIAMPERE", 42.42e3, "MICROAMPERE", 1, loadErrors, conversionErrors, handledUnits);
+
+    //Volume Flow Rate
+    TestUnitConversion(42.42, "CUB.IN/MIN", 42.42 / 60.0, "CUB.IN/SEC", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "CUB.IN/MIN", 42.42 / pow(12.0, 3) , "CUB.FT/MIN", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "ACRE_IN/DAY", 42.42 / 12.0, "ACRE_FT/DAY", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "ACRE_IN/DAY", (42.42 * 43560.0 * 144.0) / (24.0 * 60.0), "CUB.IN/MIN", 1, loadErrors, conversionErrors, handledUnits); // 43560 is number of sq ft in an acre
+    TestUnitConversion(42.43, "ACRE_IN/DAY", 1.8482508e5, "CUB.IN/MIN", 1, loadErrors, conversionErrors, handledUnits);  // conversion from http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    TestUnitConversion(42.42, "CUB.M/SEC", (42.42 * 60.0 * pow(12, 3)) / pow(0.3048, 3) , "CUB.IN/MIN", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.43, "CUB.M/SEC", 1.5535424772e8, "CUB.IN/MIN", 100000, loadErrors, conversionErrors, handledUnits);  // conversion from http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    TestUnitConversion(42.42, "CUB.M/MIN", (42.42 * 24.0 * 60.0 * 12.0) / (pow(0.3048, 3) * 43560.0), "ACRE_IN/DAY", 1, loadErrors, conversionErrors, handledUnits); // 43560 is number of sq ft in an acre
+    TestUnitConversion(42.43, "CUB.M/MIN", 594.40713084, "ACRE_IN/DAY", 10000, loadErrors, conversionErrors, handledUnits);  // conversion from http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+
+    //Force Density
+    TestUnitConversion(42.42, "N/CUB.FT", 42.42 / pow(0.3048, 3), "N/CUB.M", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "KN/CUB.FT", 42.42e3, "N/CUB.FT", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "N/CUB.M", 42.42 * pow(0.3048, 3), "N/CUB.FT", 1, loadErrors, conversionErrors, handledUnits);
+
+    // Heating Value
+    TestUnitConversion(42.42, "J/KG", 42.42e-3, "KJ/KG", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "MEGAJ/KG", 42.42e6, "J/KG", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "J/KG", 42.42 * 0.45359237 / 1.05505585262e3, "BTU/LBM", 1, loadErrors, conversionErrors, handledUnits); // 1.05505585262e3 is J/BTU conversion, 0.45359237 is KG/LBM conversion
+
+    //Molar Concentration
+    TestUnitConversion(42.42, "MOL/CUB.DM", 42.42e6, "MICROMOL/CUB.DM", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "MOL/CUB.DM", 42.42e9, "NMOL/CUB.DM", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "MICROMOL/CUB.DM", 42.42e6, "PICOMOL/CUB.DM", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "PICOMOL/CUB.DM", 42.42e-12, "MOL/CUB.DM", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "MOL/CUB.FT", 42.42 / (pow(0.3048, 3) * 1000), "MOL/CUB.DM", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "NMOL/CUB.DM", 42.42e-6 * pow(0.3048, 3), "MOL/CUB.FT", 2, loadErrors, conversionErrors, handledUnits);
+
+    //Pressure
+    //TestUnitConversion(42.42, "PA_GAUGE", 42.42 + 101325.0, "PA", 1, loadErrors, conversionErrors, handledUnits);
+    //TestUnitConversion(42.42, "PA", 42.42 - 101325.0, "PA_GAUGE", 1, loadErrors, conversionErrors, handledUnits);
+    //TestUnitConversion(42.42, "KILOPASCAL_GAUGE", 42.42e3, "PA_GAUGE", 1, loadErrors, conversionErrors, handledUnits);
+    //TestUnitConversion(42.42, "KILOPASCAL_GAUGE", 42.42 + 101.325, "KILOPASCAL", 1, loadErrors, conversionErrors, handledUnits);
+    //TestUnitConversion(42.42, "KILOPASCAL", 42.42 - 101.325, "KILOPASCAL_GAUGE", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "KSI", 42.42e3, "PSI", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "PSI", 42.42e-3, "KSI", 1, loadErrors, conversionErrors, handledUnits);
+
+    // Surface Flow Rate
+    TestUnitConversion(42.42, "CUB.M/(SEC*SQ.M)", 42.42 * 60.0 * 60.0 * 24.0, "CUB.M/(DAY*SQ.M)", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "CUB.FT/(SQ.FT*S)", 42.42 * 0.3048, "CUB.M/(SEC*SQ.M)", 1, loadErrors, conversionErrors, handledUnits);
+
+    //Thread Pitch
+    TestUnitConversion(42.42, "CM/REVOLUTION", 42.42e-2, "M/REVOLUTION", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "FT/REVOLUTION", 42.42 * 0.3048 * 100.0, "CM/REVOLUTION", 1, loadErrors, conversionErrors, handledUnits);
+
+    //Time
+    TestUnitConversion(1.0, "WEEK", 7.0, "DAY", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(14.0, "DAY", 2.0, "WEEK", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "YR", 3.1536e7, "S", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "YEAR_SIDEREAL", 3.155815e7, "S", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "YEAR_TROPICAL", 3.155693e7, "S", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(3.155693e13, "MKS", 1.0, "YEAR_TROPICAL", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(3.155815e10, "MS", 1.0, "YEAR_SIDEREAL", 1, loadErrors, conversionErrors, handledUnits);
+
+    // Torque
+    TestUnitConversion(42.42, "N_CM", 0.4242, "N_M", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "LBF_FT", 42.42 * 9.80665 * 0.45359237 * 0.3048 * 100, "N_CM", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.43, "LBF_FT", 5752.7355548, "N_CM", 100000, loadErrors, conversionErrors, handledUnits);
+
+    // Velocity
+    TestUnitConversion(42.42, "MM/S", 42.42e-3, "M/S", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "KM/S", 42.42e6, "MM/S", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "YRD/SEC", 42.42 * 0.3048 * 3.0, "M/S", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "FT/MIN", 42.42 / (60.0 * 3.0), "YRD/SEC", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.43, "FT/MIN", 0.23572222222, "YRD/SEC", 100000, loadErrors, conversionErrors, handledUnits);
+
+    //Volume
+    TestUnitConversion(42.42, "CUB.MU", 42.42e-9, "CUB.MM", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "CUB.DM", 42.42e15, "CUB.MU", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "CUB.MM", 42.42e-18, "CUB.KM", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "CUB.KM", 42.42e18, "MICROLITRE", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "MICROLITRE", 42.42e-6, "CUB.DM", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "CUB.MILE", 42.42 * pow(5280.0 * 0.3048, 3) / 1.0e9, "CUB.KM", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.43, "CUB.MILE", 176.85595485, "CUB.KM", 100000, loadErrors, conversionErrors, handledUnits);
 
     ASSERT_EQ(0, loadErrors.size()) << BeStringUtilities::Join(loadErrors, ", ");
     ASSERT_EQ(0, conversionErrors.size()) << BeStringUtilities::Join(conversionErrors, ", ");
@@ -465,6 +600,8 @@ TEST_F(UnitsTests, USCustomaryLengths)
 
     ASSERT_EQ(0, loadErrors.size()) << BeStringUtilities::Join(loadErrors, ", ");
     ASSERT_EQ(0, conversionErrors.size()) << BeStringUtilities::Join(conversionErrors, ", ");
+    Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"TestUsCustomaryLengths_handledUnits.csv");
+    WriteToFile(fileName.c_str(), handledUnits);
     }
 
 TEST_F(UnitsTests, UsSurveyLengths)
@@ -755,12 +892,12 @@ void UnitsTests::TestConversionsLoadedFromCvsFile(Utf8CP fileName, int expectedM
 
 TEST_F(UnitsTests, UnitsConversion_CompareToRawOutputFromOldSystem)
     {
-    TestConversionsLoadedFromCvsFile("ConversionsBetweenAllOldUnits.csv", 107);
+    TestConversionsLoadedFromCvsFile("ConversionsBetweenAllOldUnits.csv", 109); // went from 107 to 109 because work per month units were removed
     }
 
 TEST_F(UnitsTests, UnitsConversion)
     {
-    TestConversionsLoadedFromCvsFile("unitcomparisondata.csv", 94);
+    TestConversionsLoadedFromCvsFile("unitcomparisondata.csv", 96); // went from 94 to 96 because work per month units were removed
     }
 
 void GetUnitsByName(UnitRegistry& hub, bvector<Utf8String>& unitNames)

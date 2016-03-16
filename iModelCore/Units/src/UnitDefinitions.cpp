@@ -84,7 +84,7 @@ void AddTime(UnitRegistry& reg)
     reg.AddUnit(TIME, SI, "HR", "MIN", 60.0);
     reg.AddUnit(TIME, SI, "DAY", "HR", 24.0);
     reg.AddUnit(TIME, SI, "WEEK", "DAY", 7.0);
-    reg.AddUnit(TIME, SI, "MONTH", "DAY", 30.0);
+    //reg.AddUnit(TIME, SI, "MONTH", "DAY", 30.0); // TODO: No standard definition of month
     reg.AddUnit(TIME, SI, "YR", "DAY", 365);  //  http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B. Year is 3.1536 E+07 seconds which is equal to 365 * 24 * 60 * 60
     reg.AddUnit(TIME, SI, "YEAR_SIDEREAL", "S", 3.155815e7); //  http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
     reg.AddUnit(TIME, SI, "YEAR_TROPICAL", "S", 3.155693e7); //  http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
@@ -94,7 +94,6 @@ void AddTime(UnitRegistry& reg)
 
     }
 
-//TODO: Handle temperature and delta temperature
 void AddTemperature(UnitRegistry& reg)
     {
     reg.AddUnit(TEMPERATURE, SI, "CELSIUS", "K", 1.0, 273.15);
@@ -320,14 +319,14 @@ void AddEnergy(UnitRegistry& reg)
     reg.AddSynonym("BTU", "BRITISH_THERMAL_UNIT");
     reg.AddUnit(WORK, USCUSTOM, "KILOBTU", "[KILO]*BTU");
 
-    reg.AddUnit(WORK, INTERNATIONAL, "CAL", "J", 4.1868);
-    reg.AddSynonym("CAL", "CALORIE");
-    reg.AddUnit(WORK, INTERNATIONAL, "KCAL", "[KILO]*CAL");
-    reg.AddSynonym("KCAL", "KILOCALORIE");
-    reg.AddUnit(WORK, INTERNATIONAL, "CUB.FT_ATM", "ATM*CUB.FT");
-    reg.AddSynonym("CUB.FT_ATM", "CUBIC_FOOT_OF_ATMOSPHERE");
-    reg.AddUnit(WORK, INTERNATIONAL, "CUB.YRD_ATM", "ATM*CUB.YRD");
-    reg.AddSynonym("CUB.YRD_ATM", "CUBIC_YARD_OF_ATMOSPHERE");
+    //reg.AddUnit(WORK, INTERNATIONAL, "CAL", "J", 4.1868);
+    //reg.AddSynonym("CAL", "CALORIE");
+    //reg.AddUnit(WORK, INTERNATIONAL, "KCAL", "[KILO]*CAL");
+    //reg.AddSynonym("KCAL", "KILOCALORIE");
+    //reg.AddUnit(WORK, INTERNATIONAL, "CUB.FT_ATM", "ATM*CUB.FT");
+    //reg.AddSynonym("CUB.FT_ATM", "CUBIC_FOOT_OF_ATMOSPHERE");
+    //reg.AddUnit(WORK, INTERNATIONAL, "CUB.YRD_ATM", "ATM*CUB.YRD");
+    //reg.AddSynonym("CUB.YRD_ATM", "CUBIC_YARD_OF_ATMOSPHERE");
     reg.AddUnit(WORK, USCUSTOM, "WATT_SECOND", "W*S");
     reg.AddUnit(WORK, INTERNATIONAL, "KWH", "KW*HR");
     reg.AddUnit(WORK, INTERNATIONAL, "MWH", "MW*HR");
@@ -389,11 +388,11 @@ void AddVolumeFlowRate(UnitRegistry& reg)
     reg.AddUnit(FLOW, SI, "LITRE/MIN", "LITRE*MIN(-1)");
     reg.AddUnit(FLOW, SI, "LITRE/HR", "LITRE*HR(-1)");
     reg.AddUnit(FLOW, SI, "LITRE/DAY", "LITRE*DAY(-1)");
-    reg.AddUnit(FLOW, IMPERIAL, "CUB.IN/SEC", "CUB.IN*S(-1)");
-    reg.AddUnit(FLOW, IMPERIAL, "CUB.IN/MIN", "CUB.IN*MIN(-1)");
-    reg.AddUnit(FLOW, IMPERIAL, "CUB.FT/SEC", "CUB.FT*S(-1)");
-    reg.AddUnit(FLOW, IMPERIAL, "CUB.FT/MIN", "CUB.FT*MIN(-1)");
-    reg.AddUnit(FLOW, IMPERIAL, "CUB.FT/DAY", "CUB.FT*DAY(-1)");
+    reg.AddUnit(FLOW, USCUSTOM, "CUB.IN/SEC", "CUB.IN*S(-1)");
+    reg.AddUnit(FLOW, USCUSTOM, "CUB.IN/MIN", "CUB.IN*MIN(-1)");
+    reg.AddUnit(FLOW, USCUSTOM, "CUB.FT/SEC", "CUB.FT*S(-1)");
+    reg.AddUnit(FLOW, USCUSTOM, "CUB.FT/MIN", "CUB.FT*MIN(-1)");
+    reg.AddUnit(FLOW, USCUSTOM, "CUB.FT/DAY", "CUB.FT*DAY(-1)");
     reg.AddUnit(FLOW, USCUSTOM, "ACRE_FT/DAY", "ACRE_FT*DAY(-1)");
     reg.AddUnit(FLOW, USCUSTOM, "ACRE_FT/HR", "ACRE_FT*HR(-1)");
     reg.AddUnit(FLOW, USCUSTOM, "ACRE_FT/MIN", "ACRE_FT*MIN(-1)");
@@ -424,8 +423,7 @@ void AddFrequency(UnitRegistry& reg)
 
 void AddSurfaceFlowRate(UnitRegistry& reg)
     {
-    reg.AddUnit(SURFACE_FLOW_RATE, INDUSTRIAL, "CUB.M/(SECOND*SQ.M)", "M*S(-1)");
-    reg.AddSynonym("CUB.M/(SECOND*SQ.M)", "METRE_CUBED_PER_METRE_SQUARED_PER_SECOND");
+    reg.AddUnit(SURFACE_FLOW_RATE, INDUSTRIAL, "CUB.M/(SEC*SQ.M)", "M*S(-1)");
     reg.AddUnit(SURFACE_FLOW_RATE, INDUSTRIAL, "CUB.M/(DAY*SQ.M)", "M*DAY(-1)");
     reg.AddUnit(SURFACE_FLOW_RATE, SI, "CUB.M/(DAY*HECTARE)", "CUB.M*HECTARE(-1)*DAY(-1)");
     reg.AddUnit(SURFACE_FLOW_RATE, SI, "CUB.M/(DAY*SQ.KM)", "CUB.M*KM(-2)*DAY(-1)");
@@ -596,12 +594,13 @@ void AddPower(UnitRegistry& reg)
     reg.AddUnit(POWER, INTERNATIONAL, "KW", "[KILO]*W");
     reg.AddUnit(POWER, INTERNATIONAL, "MW", "[MEGA]*W");
     reg.AddUnit(POWER, INTERNATIONAL, "GW", "[GIGA]*W");
-    reg.AddUnit(POWER, INTERNATIONAL, "BTU/MONTH", "BTU*MONTH(-1)");
     reg.AddUnit(POWER, INTERNATIONAL, "BTU/HOUR", "BTU*HR(-1)");
     reg.AddUnit(POWER, USCUSTOM, "KILOBTU/HOUR", "[KILO]*BTU*HR(-1)");
     reg.AddUnit(POWER, USCUSTOM, "HP", "LBF*FT*S(-1)", 550.0);  // Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
 
-    reg.AddUnit(POWER, SI, "GJ/MONTH", "GJ*MONTH(-1)");
+    // TODO: No standard definition of a month ... 
+    //reg.AddUnit(POWER, INTERNATIONAL, "BTU/MONTH", "BTU*MONTH(-1)");
+    //reg.AddUnit(POWER, SI, "GJ/MONTH", "GJ*MONTH(-1)");
     }
 
 // TODO: Wrong
@@ -800,7 +799,7 @@ void AddDynamicViscosity(UnitRegistry& reg)
     reg.AddUnit(DYNAMIC_VISCOSITY, SI, "PA-S", "PA*S");
     reg.AddUnit(DYNAMIC_VISCOSITY, SI, "POISE", "PA-S", 0.1); // Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
     reg.AddUnit(DYNAMIC_VISCOSITY, SI, "CENTIPOISE", "[CENTI]*POISE");
-    reg.AddUnit(DYNAMIC_VISCOSITY, SI, "LBM/FT*S", "LBM*FT(-1)*S(-1)");
+    reg.AddUnit(DYNAMIC_VISCOSITY, SI, "LBM/(FT*S)", "LBM*FT(-1)*S(-1)");
     }
 
 void AddKinematicViscosity(UnitRegistry& reg)
@@ -1136,11 +1135,11 @@ void UnitRegistry::AddDefaultMappings ()
     AddMapping("KILOWATT", "KW");
     AddMapping("MEGAWATT", "MW");
     AddMapping("GIGAWATT", "GW");
-    AddMapping("BTU_PER_MONTH", "BTU/MONTH");
+    //AddMapping("BTU_PER_MONTH", "BTU/MONTH");
     AddMapping("BTU_PER_HOUR", "BTU/HOUR");
     AddMapping("KILOBTU_PER_HOUR", "KILOBTU/HOUR");
     AddMapping("HORSEPOWER", "HP");
-    AddMapping("GIGAJOULE_PER_MONTH", "GJ/MONTH");
+    //AddMapping("GIGAJOULE_PER_MONTH", "GJ/MONTH");
     AddMapping("PASCAL", "PA");
     AddMapping("NEWTON_PER_METRE_SQUARED", "PA");
     AddMapping("NEWTON_PER_MILLIMETRE_SQUARED", "N/SQ.MM");
