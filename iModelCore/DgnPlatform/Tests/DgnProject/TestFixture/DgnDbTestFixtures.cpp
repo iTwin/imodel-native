@@ -9,6 +9,7 @@
 #include "DgnDbTestFixtures.h"
 
 USING_NAMESPACE_BENTLEY_DPTEST
+USING_NAMESPACE_BENTLEY_SQLITE
 
 /*---------------------------------------------------------------------------------**//**
 * Inserts TestElement
@@ -118,8 +119,11 @@ void DgnDbTestFixture::SetupProject(WCharCP baseProjFile, WCharCP testProjFile, 
         ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
         }
 
-    auto status = DgnPlatformTestDomain::GetDomain().ImportSchema(*m_db);
-    ASSERT_TRUE(DgnDbStatus::Success == status);
+    if (BeSQLite::Db::OpenMode::ReadWrite == mode )
+        {
+        auto status = DgnPlatformTestDomain::GetDomain().ImportSchema(*m_db);
+        ASSERT_TRUE(DgnDbStatus::Success == status);
+        }
 
     m_defaultModelId = m_db->Models().QueryFirstModelId();
     m_defaultModelP = m_db->Models().GetModel(m_defaultModelId);

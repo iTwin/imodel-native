@@ -56,8 +56,7 @@ void    doFormatDateTimeTest(DateTimeFormatterTestData & testData)
 
     Utf8String outputStr = formatter->ToString (testData.m_inputValue);
     Utf8String expectStr(testData.m_expectedString);
-
-    ASSERT_STREQ (expectStr.c_str(), outputStr.c_str());
+    ASSERT_TRUE (expectStr.Equals(outputStr));
     }
 
 //=======================================================================================

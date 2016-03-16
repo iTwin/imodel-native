@@ -52,13 +52,15 @@ TEST_F(TextStringTest, BoundingShape)
     TextStringStylePtr style = TextStringStyle::Create();
     style->SetFont(DgnFontManager::GetLastResortTrueTypeFont());
     style->SetSize(DPoint2d::From(1000.0, 1000.0));
-    
-    TextStringPtr text = TextString::Create();
-    text->SetText("lorem ipsum");
-    text->SetStyle(*style);
-    DPoint3d point[4];
-    text->ComputeBoundingShape(point, 0, 0);
-    printf("%f , %f , %f \n", point[1].x, point[1].y, point[1].z);
+
+        {
+        TextStringPtr text = TextString::Create();
+        text->SetText("lorem ipsum");
+        text->SetStyle(*style);
+        DPoint3d point[4];
+        text->ComputeBoundingShape(point, 0, 0);
+        printf("%f , %f , %f \n", point[1].x, point[1].y, point[1].z);
+        }
     }
 
 //---------------------------------------------------------------------------------------

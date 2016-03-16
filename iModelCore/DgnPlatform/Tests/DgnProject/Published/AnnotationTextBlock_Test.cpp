@@ -347,7 +347,6 @@ TEST_F(AnnotationTextBlockTest, Unicode)
     ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
     DgnDbR project = *m_testDgnManager.GetDgnProjectP();
 
-
     //.............................................................................................
     // Text Style
     AnnotationTextStylePtr testStyle = AnnotationTextStyle::Create(project);
@@ -369,7 +368,7 @@ TEST_F(AnnotationTextBlockTest, Unicode)
     ASSERT_TRUE(doc6.IsValid());
     
     EXPECT_TRUE(testStyle->GetElementId() == doc6->GetStyleId());
-    ASSERT_TRUE(2 == doc6->GetParagraphsR().at(0)->GetRunsR().size());
+    ASSERT_EQ(1 , doc6->GetParagraphsR().at(0)->GetRunsR().size());
     AnnotationTextRunP textRun = dynamic_cast<AnnotationTextRunP>(doc6->GetParagraphsR().at(0)->GetRunsR().at(0).get());
     ASSERT_STREQ(contents, textRun->GetContent().c_str());
 }

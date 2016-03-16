@@ -365,7 +365,7 @@ TEST_F(ElementAspectTests, ExternalKeyAspect_WrongAuthorityId)
 
 }
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Umar.Hayat            02/2016
+// @bsimethod                               Umar.Hayat                            02/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ElementAspectTests, ExternalKeyAspect_Delete)
     {
@@ -407,54 +407,75 @@ TEST_F(ElementAspectTests, ExternalKeyAspect_Delete)
 
     }
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      05/15
+// @bsimethod                               Umar.Hayat                            03/2016
 //---------------------------------------------------------------------------------------
 TEST_F(ElementAspectTests, ImportElementsWithAspect)
-{
-    SetupProject(L"3dMetricGeneral.idgndb", "DestinationDb.idgndb", Db::OpenMode::ReadWrite);
-    DgnDbPtr destDb = m_db;
-    SetupSeedProject();
-
-    TestElementCPtr el1;
-    TestElementPtr tempEl1 = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement1");
-
-    //Create aspect
-    DgnAuthorityId auth1Id = Create("Auth1")->GetAuthorityId();
-    static DgnElement::AppData::Key s_appDataKey1;
-
-    DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(auth1Id, "TestExtKey");
-    ASSERT_TRUE(extkeyAspect.IsValid());
-
-    //Add aspect 
-    tempEl1->AddAppData(s_appDataKey1, extkeyAspect.get());
-
-    //Insert Elements and aspects should be added
-    el1 = m_db->Elements().Insert(*tempEl1);
-    ASSERT_TRUE(el1.IsValid());
-
-    m_db->SaveChanges();
-
-    //  *******************************
-    //  Import element into separate db
-    if (true)
     {
-        DgnImportContext import3(*m_db, *destDb);
+    // Open Source Db
+    SetupProject(L"3dMetricGeneral.idgndb", L"SourceDb.idgndb", Db::OpenMode::ReadWrite);
+    DgnAuthorityId auth1Id;
+    TestElementCPtr el1;
+    if (true)
+        {
+        TestElementPtr tempEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement1");
+
+        //Create aspect
+        auth1Id = Create("Auth1")->GetAuthorityId();
+        static DgnElement::AppData::Key s_appDataKey1;
+
+        DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(auth1Id, "TestExtKey");
+        ASSERT_TRUE(extkeyAspect.IsValid());
+
+        //Add aspect 
+        tempEl->AddAppData(s_appDataKey1, extkeyAspect.get());
+        tempEl->SetCode(DgnCode(auth1Id, "TestCode", ""));
+        DgnElement::UniqueAspect::SetAspect(*tempEl, *TestUniqueAspect::Create("Initial Value"));
+
+        //Insert Elements and aspects should be added
+        el1 = m_db->Elements().Insert(*tempEl);
+        ASSERT_TRUE(el1.IsValid());
+
+        m_db->SaveChanges();
+        }
+    //  *******************************
+    //  Import element having aspect into separate db
+    if (true)
+        {        
+        // Open Destination DB
+        //SetupProject(L"3dMetricGeneral.idgndb", L"DestinationDb.idgndb", Db::OpenMode::ReadWrite);
+       // DgnDbPtr db2 = m_db;
+        DgnDbPtr db2;
+        DgnDbTestFixture::OpenDb(db2, DgnDbTestFixture::CopyDb(L"DgnDb/3dMetricGeneral.idgndb", L"DestinationDb.idgndb"), DgnDb::OpenMode::ReadWrite, true);
+        ASSERT_TRUE(db2.IsValid());
+        auto status = DgnPlatformTestDomain::GetDomain().ImportSchema(*db2);
+        ASSERT_TRUE(DgnDbStatus::Success == status);
+
+        DgnImportContext importContext(*m_db, *db2);
         DgnDbStatus stat;
-        DgnAuthority::Import(&stat, *m_db->Authorities().GetAuthority(auth1Id), import3);
-        DgnElementCPtr el1Dest = el1->Import(&stat, *destDb->Models().GetModel(destDb->Models().QueryFirstModelId()), import3);
+        DgnAuthority::Import(&stat, *m_db->Authorities().GetAuthority(auth1Id), importContext);
+        ASSERT_EQ(DgnDbStatus::Success, stat);
+        ASSERT_EQ(DbResult::BE_SQLITE_OK , db2->SaveChanges());
+
+        DgnElementCPtr el1Dest = el1->Import(&stat, *db2->Models().GetModel(db2->Models().QueryFirstModelId()), importContext);
         ASSERT_TRUE(el1Dest.IsValid());
         ASSERT_EQ(DgnDbStatus::Success, stat);
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, db2->SaveChanges());
 
-        DgnElementCPtr el = destDb->Elements().Get<DgnElement>(el1Dest->GetElementId());
+        DgnElementCPtr el = db2->Elements().Get<DgnElement>(el1Dest->GetElementId());
         ASSERT_TRUE(el.IsValid());
-        DgnAuthorityId authIdb = destDb->Authorities().QueryAuthorityId(el->GetCodeAuthority()->GetName().c_str());
+
+        // Verify that Authority was copied over
+        DgnAuthorityId authIdb = db2->Authorities().QueryAuthorityId(el->GetCodeAuthority()->GetName().c_str());
         ASSERT_TRUE(authIdb.IsValid());
         
-        // Verify that Authority was copied over
         Utf8String insertedExternalKey;
         EXPECT_TRUE(DgnDbStatus::Success == DgnElement::ExternalKeyAspect::Query(insertedExternalKey, *el, authIdb));
-        EXPECT_STREQ("TestExtKey", insertedExternalKey.c_str());
+        EXPECT_TRUE(insertedExternalKey.Equals("TestExtKey"));
 
-        destDb->SaveChanges();
+        ECN::ECClassCR aclass = *TestUniqueAspect::GetECClass(*m_db);
+        TestUniqueAspectCP aspect = DgnElement::UniqueAspect::Get<TestUniqueAspect>(*el, aclass);
+        EXPECT_TRUE(nullptr != aspect) << "element should have a peristent aspect in destination db";
+        if (aspect)
+            EXPECT_TRUE(aspect->GetTestUniqueAspectProperty().Equals("Initial Value"));
+        }
     }
-}

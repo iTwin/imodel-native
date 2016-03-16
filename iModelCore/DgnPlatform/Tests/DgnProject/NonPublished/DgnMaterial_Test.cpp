@@ -64,7 +64,7 @@ TEST_F(MaterialTest, CRUD)
     EXPECT_TRUE(updatedMat.IsValid());
     Compare(*mat, *updatedMat);
 
-    EXPECT_TRUE(DgnDbStatus::DeletionProhibited == mat->Delete());
+    EXPECT_TRUE(DgnDbStatus::DeletionProhibited == updatedMat->Delete());
     }
 
 /*---------------------------------------------------------------------------------**//**

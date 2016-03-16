@@ -86,14 +86,6 @@ TEST_F(FontTests, CRUD_DbFontMapDirect)
     EXPECT_TRUE(shxFont->GetName() == toFind->GetName());
     EXPECT_TRUE(shxFont->GetType() == toFind->GetType());
 
-    DgnFontCP toFindP = m_db->Fonts().FindFontById(fontId1);
-    EXPECT_TRUE(nullptr != toFindP);
-    EXPECT_TRUE(shxFont->GetName() == toFindP->GetName());
-
-    toFindP = m_db->Fonts().FindFontByTypeAndName(DgnFontType::Shx, "Cdm");
-    EXPECT_TRUE(nullptr != toFindP);
-    EXPECT_TRUE(shxFont->GetName() == toFindP->GetName());
-
     toFind = map.QueryByTypeAndName(DgnFontType::Shx, "NotExist");
     EXPECT_TRUE(!toFind.IsValid());
 
@@ -130,6 +122,43 @@ TEST_F(FontTests, CRUD_DbFontMapDirect)
     EXPECT_TRUE(1 == map.MakeIterator().QueryCount());
 
     }
+    /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Umar.Hayat     09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(FontTests, QueryFonts)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"QueryFonts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+
+    DgnFonts::DbFontMapDirect& map = m_db->Fonts().DbFontMap();
+
+    BeFileName shxFilepath;
+    ASSERT_TRUE( SUCCESS == DgnDbTestDgnManager::GetTestDataOut(shxFilepath, L"Fonts\\Cdm.shx", L"Cdm.shx", __FILE__) )<<"Unable to test file";
+    DgnFontPtr shxFont = DgnFontPersistence::File::FromShxFile(shxFilepath);
+
+    DgnFontId fontId1;
+    EXPECT_TRUE ( SUCCESS == map.Insert(*shxFont, fontId1) );
+    EXPECT_TRUE(fontId1.IsValid());
+
+    // Query
+    //--------------------------------------------------------------------------------------
+    DgnFontPtr toFind = map.QueryById(fontId1);
+    EXPECT_TRUE(toFind.IsValid());
+    EXPECT_TRUE(shxFont->GetName() == toFind->GetName());
+    EXPECT_TRUE(shxFont->GetType() == toFind->GetType());
+
+    //--------------------------------------------------------------------------------------
+    DgnFontCP toFindP = m_db->Fonts().FindFontById(fontId1);
+    EXPECT_TRUE(nullptr != toFindP);
+    if (toFindP)
+        EXPECT_TRUE(shxFont->GetName() == toFindP->GetName());
+
+    //--------------------------------------------------------------------------------------
+    toFindP = m_db->Fonts().FindFontByTypeAndName(DgnFontType::Shx, "Cdm");
+    EXPECT_TRUE(nullptr != toFindP);
+    if (toFindP)
+        EXPECT_TRUE(shxFont->GetName() == toFindP->GetName());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat     09/15
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -529,8 +529,8 @@ TEST_F (DgnModelTests, AddAppData)
     EXPECT_TRUE (m1->FindAppData (key) != nullptr);
 
    // Add appdata again with same key
-    TestAppData *AppData2 = new TestAppData();
-    m1->AddAppData(key, AppData2);
+    //TestAppData *AppData2 = new TestAppData();
+    //m1->AddAppData(key, AppData2);
 
     }
 

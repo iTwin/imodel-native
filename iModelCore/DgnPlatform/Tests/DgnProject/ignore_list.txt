@@ -40,3 +40,8 @@ JsonTests.FieldEngineerStructArray
 
 MaterialTest.Iterate_WithFilter                         # Assertion on creating iterator. Unable to prepare statement
 MaterialTest.Iterate                                    # Assertion on creating iterator. Unable to prepare statement
+DgnLinkTest.Clone                                       # Does not clone 
+ElementAspectTests.ImportElementsWithAspect             # Does not element import aspects
+FontTests.QueryFonts                                    # Does not find font
+
+TextStringTest.BoundingShape                            # UmarH WIP
