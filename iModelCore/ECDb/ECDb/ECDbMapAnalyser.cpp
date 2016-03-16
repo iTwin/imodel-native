@@ -1681,6 +1681,7 @@ BentleyStatus ECClassViewGenerator::BuildViews(std::vector<ClassMap const*> cons
 
     DropExistingViews();
 
+    BentleyStatus returnStatus = SUCCESS;
     for (ClassMap const* classMap : classMaps)
         {
         SqlViewBuilder builder;
@@ -1691,17 +1692,17 @@ BentleyStatus ECClassViewGenerator::BuildViews(std::vector<ClassMap const*> cons
             continue;
 
         Utf8String ddl = builder.ToString(SqlOption::Create);
-        const DbResult stat = m_map.GetECDbR().ExecuteSql(ddl.c_str());
+        const DbResult stat = m_map.GetECDbR().TryExecuteSql(ddl.c_str());
         if (BE_SQLITE_OK != stat)
             {
             Utf8String message;
             message.Sprintf("Failed to create ECClass view for ECClass %s.", classMap->GetClass().GetFullName());
             m_map.GetECDb().GetECDbImplR().GetIssueReporter().ReportSqliteIssue(ECDbIssueSeverity::Error, stat, message.c_str());
-            return ERROR;
+            returnStatus = ERROR;
             }
         }
 
-    return SUCCESS;
+    return returnStatus;
     }
 
 //---------------------------------------------------------------------------------------
