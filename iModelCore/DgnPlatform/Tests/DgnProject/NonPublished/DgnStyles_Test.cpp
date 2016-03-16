@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/DgnStyles_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -61,7 +61,7 @@ struct DgnLineStyleTest : public ::testing::Test
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnLineStyleTest::SetupProject(WCharCP projFile, Db::OpenMode mode)
     {
-    DgnDbTestDgnManager tdm (projFile, __FILE__, mode);
+    DgnDbTestDgnManager tdm (projFile, __FILE__, mode,true);
     project = tdm.GetDgnProjectP();
     ASSERT_TRUE( project != NULL);
     }
@@ -156,7 +156,8 @@ TEST_F(DgnLineStyleTest, InsertLineStyle)
 
     // Add new line style
     DgnStyleId newStyleId;
-    EXPECT_EQ(BE_SQLITE_DONE, styleTable.Insert(newStyleId, "ATestLineStyle", LsComponentId(6), LsComponentType::LineCode, 53, 0.0)) << "Insert line style return value should be BE_SQLITE_DONE";
+    LsComponentId componentId(LsComponentType::LineCode, 6);
+    EXPECT_EQ(BE_SQLITE_DONE, styleTable.Insert(newStyleId, "ATestLineStyle", componentId, 53, 0.0)) << "Insert line style return value should be BE_SQLITE_DONE";
     EXPECT_TRUE((int32_t)newStyleId.GetValue() > 0) << "Inserted line style id should be more than 0";
 
     // Assure that now we have 5 line styles
@@ -191,7 +192,8 @@ TEST_F(DgnLineStyleTest, InsertLineStyleWithId)
 
     // Add new line style
     DgnStyleId newStyleId;
-    EXPECT_EQ(SUCCESS, styleTable.Insert(newStyleId, "ATestLineStyle", LsComponentId(6), LsComponentType::LineCode, 53, 0.0)) << "Insert line style return value should be BE_SQLITE_DONE";
+    LsComponentId componentId(LsComponentType::LineCode, 6);
+    EXPECT_EQ(SUCCESS, styleTable.Insert(newStyleId, "ATestLineStyle", componentId, 53, 0.0)) << "Insert line style return value should be BE_SQLITE_DONE";
     
     // Assure that now we have 5 line styles
     LsCacheStyleIterator iterAddedLineStyles = cache->begin();
@@ -227,10 +229,11 @@ TEST_F(DgnLineStyleTest, InsertLineStyleWithExistingName)
     
     // Add new line style
     DgnStyleId newStyleId;
+    LsComponentId componentId(LsComponentType::LineCode, 6);
     BentleyStatus insertResult = ERROR;
     
     BeTest::SetFailOnAssert (false);
-    insertResult = styleTable.Insert(newStyleId, "Continuous", LsComponentId(6), LsComponentType::LineCode, 53, 0.0);
+    insertResult = styleTable.Insert(newStyleId, "Continuous", componentId, 53, 0.0);
     BeTest::SetFailOnAssert (true);
     
     EXPECT_NE(BE_SQLITE_OK, insertResult) << "Line style with existing name insertion must return not BE_SQLITE_OK";
@@ -255,7 +258,8 @@ TEST_F(DgnLineStyleTest, UpdateLineStyleTable)
     EXPECT_STREQ("Continuous", entry.GetStyleName());
 
     // Update style name and other data
-    EXPECT_EQ(SUCCESS, styleTable.Update(entry.GetLineStyleP()->GetStyleId(), "ATestLineStyle", LsComponentId(8), LsComponentType::LineCode, 54, 1.0)) << "UpdateLineStyle must return value SUCCESS";
+    LsComponentId componentId(LsComponentType::LineCode, 8);
+    EXPECT_EQ(SUCCESS, styleTable.Update(entry.GetLineStyleP()->GetStyleId(), "ATestLineStyle", componentId, 54, 1.0)) << "UpdateLineStyle must return value SUCCESS";
 
     // Check if line style name changed
     LsCacheStyleIterator iterUpdated = cache->begin();
@@ -279,8 +283,9 @@ TEST_F(DgnLineStyleTest, UpdateLineStyleWithExistingName)
     EXPECT_STREQ("Continuous", entry.GetStyleName());
     
     // This would normally trigger an assertion failure.
+    LsComponentId componentId(LsComponentType::LineCode, 7);
     BeTest::SetFailOnAssert (false);
-    BentleyStatus updateResult = styleTable.Update(entry.GetLineStyleP()->GetStyleId(), "DGN Style 4", LsComponentId(7), LsComponentType::LineCode, 53, 0.0);
+    BentleyStatus updateResult = styleTable.Update(entry.GetLineStyleP()->GetStyleId(), "DGN Style 4", componentId, 53, 0.0);
     BeTest::SetFailOnAssert (true);
 
     EXPECT_NE(SUCCESS, updateResult) << "UpdateLineStyle with existing name must not be successfull";

@@ -572,7 +572,7 @@ TEST_F (CategoryTests, UpdateSubCategory)
 
 //=======================================================================================
 //! Test for Quering a category.using elementID
-// @bsiclass                                                     Umar.Hayat      09/15
+// @betest                                                     Umar.Hayat      09/15
 //=======================================================================================
 TEST_F (CategoryTests, QueryByElementId)
     {
@@ -604,3 +604,26 @@ TEST_F (CategoryTests, QueryByElementId)
     auto elem = m_db->Elements().Insert(*el);
     EXPECT_TRUE(elem.IsValid());
     }
+////=======================================================================================
+//// @betest                                                     Umar.Hayat      02/16
+////=======================================================================================
+//TEST_F (CategoryTests, SubCateOverridesJsonRoundTrip)
+//    {
+//    DgnSubCategory::Override overrides;
+//    overrides.SetColor(ColorDef::Red());
+//    overrides.SetDisplayPriority(2);
+//    overrides.SetInvisible(false);
+//    //overrides.SetMaterial((DgnMaterialId(6));
+//    overrides.SetStyle(DgnStyleId());
+//    overrides.SetTransparency(0.9);
+//    overrides.SetWeight(3);
+//
+//    Json::Value jsonVal;
+//    overrides.ToJson(jsonVal);
+//
+//    DgnSubCategory::Override overridesFromJson;
+//    overridesFromJson.FromJson(jsonVal);
+//
+//    //EXPECT_TRUE(overrides == overridesFromJson);
+//
+//    }

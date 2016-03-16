@@ -57,14 +57,18 @@ TEST_F(AnnotationLeaderTest, DefaultsAndAccessors)
     AnnotationLeaderPtr leader2 = AnnotationLeader::Create(project, style->GetElementId());
     ASSERT_TRUE(leader2.IsValid());
 
-    // Basics
     EXPECT_TRUE(&project == &leader->GetDbR());
     leader->SetStyleId(style->GetElementId(),SetAnnotationLeaderStyleOptions::Default);
     EXPECT_TRUE(style->GetElementId() == leader->GetStyleId());
     leader->SetTargetAttachmentType(AnnotationLeaderTargetAttachmentType::PhysicalPoint);
     EXPECT_TRUE(AnnotationLeaderTargetAttachmentType::PhysicalPoint == leader->GetTargetAttachmentType());
-    
-    
+    DPoint3d attachementPoint = DPoint3d::FromOne();
+    leader->SetTargetAttachmentDataForPhysicalPoint(attachementPoint);
+    EXPECT_TRUE(attachementPoint.IsEqual(leader->GetTargetAttachmentDataForPhysicalPoint()));
+    leader->SetSourceAttachmentType(AnnotationLeaderSourceAttachmentType::Id);
+    EXPECT_TRUE(AnnotationLeaderSourceAttachmentType::Id == leader->GetSourceAttachmentType());
+    leader->SetSourceAttachmentDataForId(5);
+    EXPECT_TRUE(5 == leader->GetSourceAttachmentDataForId());
     }
 
 //---------------------------------------------------------------------------------------

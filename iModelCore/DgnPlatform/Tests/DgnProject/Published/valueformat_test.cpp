@@ -146,7 +146,8 @@ TEST_F (AngleFormatterTest, FormatDegMin_TestPrecision)
         { "35^35.12346'",     35 + 35.123456789 * MIN_TO_DEG, AngleMode::DegMin, AnglePrecision::Use5Places, true, true, true},
         { "35^35.123457'",    35 + 35.123456789 * MIN_TO_DEG, AngleMode::DegMin, AnglePrecision::Use6Places, true, true, true},
         { "35^35.1234568'",   35 + 35.123456789 * MIN_TO_DEG, AngleMode::DegMin, AnglePrecision::Use7Places, true, true, true},
-        { "35^35.12345679'",  35 + 35.123456789 * MIN_TO_DEG, AngleMode::DegMin, AnglePrecision::Use8Places, true, true, true},
+        { "35^35.12345679'", 35 + 35.123456789 * MIN_TO_DEG, AngleMode::DegMin, AnglePrecision::Use8Places, true, true, true },
+        { "36^35.12345679'", 35 + 95.123456789 * MIN_TO_DEG, AngleMode::DegMin, AnglePrecision::Use8Places, true, true, true }, /* min > 60 */
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
@@ -168,7 +169,9 @@ TEST_F (AngleFormatterTest, FormatDegMinSec_TestPrecision)
         { "35^00'35.12346\"",     35 + 35.123456789 * SEC_TO_DEG, AngleMode::DegMinSec, AnglePrecision::Use5Places, true, true, true},
         { "35^00'35.123457\"",    35 + 35.123456789 * SEC_TO_DEG, AngleMode::DegMinSec, AnglePrecision::Use6Places, true, true, true},
         { "35^00'35.1234568\"",   35 + 35.123456789 * SEC_TO_DEG, AngleMode::DegMinSec, AnglePrecision::Use7Places, true, true, true},
-        { "35^00'35.12345679\"",  35 + 35.123456789 * SEC_TO_DEG, AngleMode::DegMinSec, AnglePrecision::Use8Places, true, true, true},
+        { "35^00'35.12345679\"", 35 + 35.123456789 * SEC_TO_DEG, AngleMode::DegMinSec, AnglePrecision::Use8Places, true, true, true },
+        { "35^01'35.12345679\"", 35 + 95.123456789 * SEC_TO_DEG, AngleMode::DegMinSec, AnglePrecision::Use8Places, true, true, true }, /* sec > 60 */
+        { "36^00'35.12345679\"", 35 + 59 * MIN_TO_DEG + 95.123456789 * SEC_TO_DEG, AngleMode::DegMinSec, AnglePrecision::Use8Places, true, true, true }, /* sec > 60 then min > 60*/
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)
