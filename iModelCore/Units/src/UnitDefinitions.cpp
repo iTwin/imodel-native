@@ -233,16 +233,16 @@ void AddArea(UnitRegistry& reg)
 
 void AddSizeLengthRate(UnitRegistry& reg)
     {
-    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "INCH_MILE", "IN*MILE");
-    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "FOOT_MILE", "FT*MILE");
-    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "FOOT_FOOT", "FT*FT");
-    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "INCH_FOOT", "IN*FT");
-    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "INCH_METRE", "IN*M");
-    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "MILLIMETRE_KILOMETRE", "MM*KM");
-    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "MILLIMETRE_METRE", "MM*M");
-    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "MILLIMETRE_MILE", "MM*MILE");
-    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "METRE_KILOMETRE", "M*KM");
-    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "METRE_METRE", "M*M");
+    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "IN_MILE", "IN*MILE");
+    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "FT_MILE", "FT*MILE");
+    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "FT_FT", "FT*FT");
+    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "IN_FT", "IN*FT");
+    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "IN_M", "IN*M");
+    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "MM_KM", "MM*KM");
+    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "MM_M", "MM*M");
+    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "MM_MILE", "MM*MILE");
+    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "M_KM", "M*KM");
+    reg.AddUnit(SIZE_LENGTH_RATE, INDUSTRIAL, "M_M", "M*M");
     }
 
 void AddDensity(UnitRegistry& reg)
@@ -394,13 +394,12 @@ void AddVolumeFlowRate(UnitRegistry& reg)
     reg.AddUnit(FLOW, IMPERIAL, "CUB.FT/SEC", "CUB.FT*S(-1)");
     reg.AddUnit(FLOW, IMPERIAL, "CUB.FT/MIN", "CUB.FT*MIN(-1)");
     reg.AddUnit(FLOW, IMPERIAL, "CUB.FT/DAY", "CUB.FT*DAY(-1)");
-    reg.AddUnit(FLOW, USCUSTOM, "ACRE_FOOT/DAY", "ACRE_FOOT*DAY(-1)");
-    reg.AddUnit(FLOW, USCUSTOM, "ACRE_FOOT/HR", "ACRE_FOOT*HR(-1)");
-    reg.AddUnit(FLOW, USCUSTOM, "ACRE_FOOT/MIN", "ACRE_FOOT*MIN(-1)");
-    reg.AddUnit(FLOW, USCUSTOM, "ACRE_INCH/DAY", "ACRE_INCH*DAY(-1)");
-    reg.AddSynonym("ACRE_INCH/DAY", "ACRE_INCH_PER_DAY");
-    reg.AddUnit(FLOW, USCUSTOM, "ACRE_INCH/HOUR", "ACRE_INCH*HR(-1)");
-    reg.AddUnit(FLOW, USCUSTOM, "ACRE_INCH/MIN", "ACRE_INCH*MIN(-1)");
+    reg.AddUnit(FLOW, USCUSTOM, "ACRE_FT/DAY", "ACRE_FT*DAY(-1)");
+    reg.AddUnit(FLOW, USCUSTOM, "ACRE_FT/HR", "ACRE_FT*HR(-1)");
+    reg.AddUnit(FLOW, USCUSTOM, "ACRE_FT/MIN", "ACRE_FT*MIN(-1)");
+    reg.AddUnit(FLOW, USCUSTOM, "ACRE_IN/DAY", "ACRE_IN*DAY(-1)");
+    reg.AddUnit(FLOW, USCUSTOM, "ACRE_IN/HOUR", "ACRE_IN*HR(-1)");
+    reg.AddUnit(FLOW, USCUSTOM, "ACRE_IN/MIN", "ACRE_IN*MIN(-1)");
 
     reg.AddUnit(FLOW, USCUSTOM, "GALLON_IMPERIAL/DAY", "GALLON_IMPERIAL*DAY(-1)");
 
@@ -485,7 +484,7 @@ void AddForce(UnitRegistry& reg)
     {
     reg.AddUnit(FORCE, SI, "N", "KG*M*S(-2)");
     reg.AddUnit(FORCE, SI, "KN", "[KILO]*N");
-    reg.AddUnit(FORCE, SI, "mN", "[MILLI]*N");
+    reg.AddUnit(FORCE, SI, "MN", "[MILLI]*N");
     reg.AddUnit(FORCE, SI, "KGF", "[STD_G]*KG");
     reg.AddSynonym("KGF", "KILOPOND");
     reg.AddUnit(FORCE, SI, "LBF", "[STD_G]*LBM");
@@ -744,8 +743,8 @@ void AddThreadPitch(UnitRegistry& reg)
 
     reg.AddUnit(THREAD_PITCH, USCUSTOM, "IN/REVOLUTION", "IN*REVOLUTION(-1)");
     reg.AddUnit(THREAD_PITCH, USCUSTOM, "FT/REVOLUTION", "FT*REVOLUTION(-1)");
-    reg.AddUnit(THREAD_PITCH, USCUSTOM, "INCH/DEGREE", "IN*ARC_DEG(-1)");
-    reg.AddUnit(THREAD_PITCH, USCUSTOM, "INCH/RAD", "IN*RAD(-1)");
+    reg.AddUnit(THREAD_PITCH, USCUSTOM, "IN/DEGREE", "IN*ARC_DEG(-1)");
+    reg.AddUnit(THREAD_PITCH, USCUSTOM, "IN/RAD", "IN*RAD(-1)");
     }
 
 void AddVelocity(UnitRegistry& reg)
@@ -832,8 +831,8 @@ void AddVolume(UnitRegistry& reg)
     reg.AddUnit(VOLUME, IMPERIAL, "CUB.YRD", "YRD(3)");
     reg.AddUnit(VOLUME, IMPERIAL, "CUB.MILE", "MILE(3)");
 
-    reg.AddUnit(VOLUME, IMPERIAL, "ACRE_INCH", "ACRE*IN");
-    reg.AddUnit(VOLUME, IMPERIAL, "ACRE_FOOT", "ACRE*FT");
+    reg.AddUnit(VOLUME, IMPERIAL, "ACRE_IN", "ACRE*IN");
+    reg.AddUnit(VOLUME, IMPERIAL, "ACRE_FT", "ACRE*FT");
     reg.AddUnit(VOLUME, USCUSTOM, "GALLON", "IN(3)", 231.0);  // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-11
     reg.AddUnit(VOLUME, IMPERIAL, "GALLON_IMPERIAL", "LITRE", 4.54609); // Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
     }
@@ -1053,11 +1052,11 @@ void UnitRegistry::AddDefaultMappings ()
     AddMapping("FOOT_CUBED_PER_SECOND", "CUB.FT/SEC");
     AddMapping("FOOT_CUBED_PER_MINUTE", "CUB.FT/MIN");
     AddMapping("FOOT_CUBED_PER_DAY", "CUB.FT/DAY");
-    AddMapping("ACRE_FOOT_PER_DAY", "ACRE_FOOT/DAY");
-    AddMapping("ACRE_FOOT_PER_HOUR", "ACRE_FOOT/HR");
-    AddMapping("ACRE_FOOT_PER_MINUTE", "ACRE_FOOT/MIN");
-    AddMapping("ACRE_INCH_PER_HOUR", "ACRE_INCH/HOUR");
-    AddMapping("ACRE_INCH_PER_MINUTE", "ACRE_INCH/MIN");
+    AddMapping("ACRE_FOOT_PER_DAY", "ACRE_FT/DAY");
+    AddMapping("ACRE_FOOT_PER_HOUR", "ACRE_FT/HR");
+    AddMapping("ACRE_FOOT_PER_MINUTE", "ACRE_FT/MIN");
+    AddMapping("ACRE_INCH_PER_HOUR", "ACRE_IN/HOUR");
+    AddMapping("ACRE_INCH_PER_MINUTE", "ACRE_IN/MIN");
     AddMapping("GALLON_IMPERIAL_PER_DAY", "GALLON_IMPERIAL/DAY");
     AddMapping("GALLON_IMPERIAL_PER_MINUTE", "GALLON_IMPERIAL/MINUTE");
     AddMapping("GALLON_IMPERIAL_PER_SECOND", "GALLON_IMPERIAL/SECOND");
@@ -1102,7 +1101,7 @@ void UnitRegistry::AddDefaultMappings ()
     AddMapping("KILOMOLE_PER_SECOND", "KMOL/S");
     AddMapping("NEWTON", "N");
     AddMapping("KILONEWTON", "KN");
-    AddMapping("MILLINEWTON", "mN");
+    AddMapping("MILLINEWTON", "MN");
     AddMapping("KILOGRAM_FORCE", "KGF");
     AddMapping("POUND_FORCE", "LBF");
     AddMapping("KILOPOUND_FORCE", "KPF");
@@ -1184,8 +1183,8 @@ void UnitRegistry::AddDefaultMappings ()
     AddMapping("MILLIMETRE_PER_RADIAN", "MM/RAD");
     AddMapping("INCH_PER_REVOLUTION", "IN/REVOLUTION");
     AddMapping("FOOT_PER_REVOLUTION", "FT/REVOLUTION");
-    AddMapping("INCH_PER_DEGREE", "INCH/DEGREE");
-    AddMapping("INCH_PER_RADIAN", "INCH/RAD");
+    AddMapping("INCH_PER_DEGREE", "IN/DEGREE");
+    AddMapping("INCH_PER_RADIAN", "IN/RAD");
     AddMapping("METRE_PER_SECOND", "M/S");
     AddMapping("METRE_PER_MINUTE", "M/MIN");
     AddMapping("METRE_PER_HOUR", "M/HR");
@@ -1258,18 +1257,18 @@ void UnitRegistry::AddDefaultMappings ()
     AddMapping("US_SURVEY_MILE", "US_SURVEY_MILE");
     AddMapping("HECTARE", "HECTARE");
     AddMapping("ACRE", "ACRE");
-    AddMapping("INCH_MILE", "INCH_MILE");
-    AddMapping("INCH_FOOT", "INCH_FOOT");
-    AddMapping("FOOT_MILE", "FOOT_MILE");
-    AddMapping("FOOT_FOOT", "FOOT_FOOT");
-    AddMapping("MILLIMETRE_METRE", "MILLIMETRE_METRE");
-    AddMapping("MILLIMETRE_KILOMETRE", "MILLIMETRE_KILOMETRE");
-    AddMapping("METRE_METRE", "METRE_METRE");
-    AddMapping("METRE_KILOMETRE", "METRE_KILOMETRE");
-    AddMapping("INCH_METRE", "INCH_METRE");
-    AddMapping("MILLIMETRE_MILE", "MILLIMETRE_MILE");
-    AddMapping("ACRE_FOOT", "ACRE_FOOT");
-    AddMapping("ACRE_INCH", "ACRE_INCH");
+    AddMapping("INCH_MILE", "IN_MILE");
+    AddMapping("INCH_FOOT", "IN_FT");
+    AddMapping("FOOT_MILE", "FT_MILE");
+    AddMapping("FOOT_FOOT", "FT_FT");
+    AddMapping("MILLIMETRE_METRE", "MM_M");
+    AddMapping("MILLIMETRE_KILOMETRE", "MM_KM");
+    AddMapping("METRE_METRE", "M_M");
+    AddMapping("METRE_KILOMETRE", "M_KM");
+    AddMapping("INCH_METRE", "IN_M");
+    AddMapping("MILLIMETRE_MILE", "MM_MILE");
+    AddMapping("ACRE_FOOT", "ACRE_FT");
+    AddMapping("ACRE_INCH", "ACRE_IN");
     AddMapping("GALLON", "GALLON");
     AddMapping("GALLON_IMPERIAL", "GALLON_IMPERIAL");
     AddMapping("LITRE", "LITRE");
