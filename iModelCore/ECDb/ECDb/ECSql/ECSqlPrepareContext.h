@@ -184,7 +184,7 @@ struct ECSqlPrepareContext
                             for (auto& param : m_parameters)
                                 {
                                 if (param->IsNamed())
-                                    if (BeStringUtilities::Stricmp(param->GetName(), name) == 0)
+                                    if (BeStringUtilities::StricmpAscii(param->GetName(), name) == 0)
                                         return param.get();
                                 }
 

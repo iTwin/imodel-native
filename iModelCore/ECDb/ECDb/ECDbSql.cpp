@@ -829,19 +829,19 @@ Utf8CP ECDbSqlForeignKeyConstraint::ToSQL(ForeignKeyActionType actionType)
 //---------------------------------------------------------------------------------------
 ForeignKeyActionType ECDbSqlForeignKeyConstraint::ToActionType(Utf8CP str)
     {
-    if (BeStringUtilities::Stricmp(str, "Cascade") == 0)
+    if (BeStringUtilities::StricmpAscii(str, "Cascade") == 0)
         return ForeignKeyActionType::Cascade;
 
-    if (BeStringUtilities::Stricmp(str, "SetNull") == 0)
+    if (BeStringUtilities::StricmpAscii(str, "SetNull") == 0)
         return ForeignKeyActionType::SetNull;
 
-    if (BeStringUtilities::Stricmp(str, "SetDefault") == 0)
+    if (BeStringUtilities::StricmpAscii(str, "SetDefault") == 0)
         return ForeignKeyActionType::SetDefault;
 
-    if (BeStringUtilities::Stricmp(str, "Restrict") == 0)
+    if (BeStringUtilities::StricmpAscii(str, "Restrict") == 0)
         return ForeignKeyActionType::Restrict;
 
-    if (BeStringUtilities::Stricmp(str, "NoAction") == 0)
+    if (BeStringUtilities::StricmpAscii(str, "NoAction") == 0)
         return ForeignKeyActionType::NoAction;
 
     return ForeignKeyActionType::NotSpecified;
@@ -1606,11 +1606,11 @@ bool ECDbSqlColumn::Constraint::TryParseCollationString(Collation& collation, Ut
         return true;
         }
 
-    if (BeStringUtilities::Stricmp(str, "Binary") == 0)
+    if (BeStringUtilities::StricmpAscii(str, "Binary") == 0)
         collation = Collation::Binary;
-    else if (BeStringUtilities::Stricmp(str, "NoCase") == 0)
+    else if (BeStringUtilities::StricmpAscii(str, "NoCase") == 0)
         collation = Collation::NoCase;
-    else if (BeStringUtilities::Stricmp(str, "RTrim") == 0)
+    else if (BeStringUtilities::StricmpAscii(str, "RTrim") == 0)
         collation = Collation::RTrim;
     else
         return false;

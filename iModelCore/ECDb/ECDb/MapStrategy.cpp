@@ -85,13 +85,13 @@ BentleyStatus UserECDbMapStrategy::TryParse(Strategy& mapStrategy, Utf8CP mapStr
     {
     if (Utf8String::IsNullOrEmpty(mapStrategyStr))
         mapStrategy = Strategy::None;
-    else if (BeStringUtilities::Stricmp(mapStrategyStr, "NotMapped") == 0)
+    else if (BeStringUtilities::StricmpAscii(mapStrategyStr, "NotMapped") == 0)
         mapStrategy = Strategy::NotMapped;
-    else if (BeStringUtilities::Stricmp(mapStrategyStr, "OwnTable") == 0)
+    else if (BeStringUtilities::StricmpAscii(mapStrategyStr, "OwnTable") == 0)
         mapStrategy = Strategy::OwnTable;
-    else if (BeStringUtilities::Stricmp(mapStrategyStr, "SharedTable") == 0)
+    else if (BeStringUtilities::StricmpAscii(mapStrategyStr, "SharedTable") == 0)
         mapStrategy = Strategy::SharedTable;
-    else if (BeStringUtilities::Stricmp(mapStrategyStr, "ExistingTable") == 0)
+    else if (BeStringUtilities::StricmpAscii(mapStrategyStr, "ExistingTable") == 0)
         mapStrategy = Strategy::ExistingTable;
     else
         {

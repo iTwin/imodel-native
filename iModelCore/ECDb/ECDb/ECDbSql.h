@@ -818,15 +818,15 @@ struct DbMetaDataHelper
     static ObjectType GetObjectType(Db& db, Utf8CP name)
         {
         BeSQLite::CachedStatementPtr stmt;
-        db.GetCachedStatement(stmt, "SELECT type FROM sqlite_master WHERE name =?");
+        db.GetCachedStatement(stmt, "SELECT type FROM sqlite_master WHERE name=?");
         stmt->BindText(1, name, BeSQLite::Statement::MakeCopy::No);
         if (stmt->Step() == BE_SQLITE_ROW)
             {
-            if (BeStringUtilities::Stricmp(stmt->GetValueText(0), "table") == 0)
+            if (BeStringUtilities::StricmpAscii(stmt->GetValueText(0), "table") == 0)
                 return ObjectType::Table;
-            if (BeStringUtilities::Stricmp(stmt->GetValueText(0), "view") == 0)
+            if (BeStringUtilities::StricmpAscii(stmt->GetValueText(0), "view") == 0)
                 return ObjectType::View;
-            if (BeStringUtilities::Stricmp(stmt->GetValueText(0), "index") == 0)
+            if (BeStringUtilities::StricmpAscii(stmt->GetValueText(0), "index") == 0)
                 return ObjectType::Index;
             }
         return ObjectType::None;

@@ -2213,7 +2213,7 @@ BentleyStatus ECClassViewGenerator::BuildColumnExpression(NativeSqlBuilder::List
         }
 
     //with cast we always add the alias. Otherwise only if it differs from column name
-    if (!Utf8String::IsNullOrEmpty(columnAlias) && (castTargetType != nullptr || BeStringUtilities::Stricmp(columnName, columnAlias) != 0))
+    if (!Utf8String::IsNullOrEmpty(columnAlias) && (castTargetType != nullptr || BeStringUtilities::StricmpAscii(columnName, columnAlias) != 0))
         colExp.AppendSpace().AppendEscaped(columnAlias);
 
     colExpList.push_back(std::move(colExp));
@@ -2263,7 +2263,7 @@ Utf8CP ECClassViewGenerator::DetermineCastTargetType(ECDbSqlColumn const& col, E
     {
     Utf8CP actualSqlType = DDLGenerator::ColumnTypeToSql(col.GetType());
     Utf8CP targetSqlType = DDLGenerator::ColumnTypeToSql(targetType);
-    if (BeStringUtilities::Stricmp(actualSqlType, targetSqlType) == 0)
+    if (BeStringUtilities::StricmpAscii(actualSqlType, targetSqlType) == 0)
         return nullptr;
 
     return targetSqlType;
@@ -2274,7 +2274,7 @@ Utf8CP ECClassViewGenerator::DetermineCastTargetType(ECDbSqlColumn const& col, E
 //---------------------------------------------------------------------------------------
 void ECClassViewGenerator::DropExistingViews() const
     {
-    BeAssert(!m_map.GetECDb().IsReadonly() && "Db is readonly the opertion will fail");
+    BeAssert(!m_map.GetECDb().IsReadonly() && "Db is readonly the operation will fail");
 
     Statement stmt;
     stmt.Prepare(m_map.GetECDb(), "select 'DROP VIEW [' || name || '];'  from sqlite_master where type = 'view' and instr(name, '.') and instr(sql, '--### ECCLASS VIEW')");

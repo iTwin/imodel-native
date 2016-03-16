@@ -849,7 +849,7 @@ BentleyStatus ECSqlParser::parse_opt_ecsqloptions_clause(std::unique_ptr<Options
 
      unique_ptr<FunctionCallExp> functionCallExp = unique_ptr<FunctionCallExp>(new FunctionCallExp(functionName, setQuantifier, isStandardSetFunction));
 
-     if (BeStringUtilities::Stricmp(functionName, "count") == 0 && Exp::IsAsteriskToken(parseNode.getChild(2)->getTokenValue().c_str()))
+     if (BeStringUtilities::StricmpAscii(functionName, "count") == 0 && Exp::IsAsteriskToken(parseNode.getChild(2)->getTokenValue().c_str()))
          {
          unique_ptr<ValueExp> argExp = nullptr;
          if (SUCCESS != LiteralValueExp::Create(argExp, *m_context, Exp::ASTERISK_TOKEN, ECSqlTypeInfo(ECSqlTypeInfo::Kind::Varies)))

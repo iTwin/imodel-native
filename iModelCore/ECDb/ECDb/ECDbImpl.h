@@ -61,7 +61,7 @@ private:
             {
             bool operator() (DbFunctionKey const& lhs, DbFunctionKey const& rhs) const
                 {
-                int nameCompareResult = BeStringUtilities::Stricmp(lhs.m_functionName, rhs.m_functionName);
+                int nameCompareResult = BeStringUtilities::StricmpAscii(lhs.m_functionName, rhs.m_functionName);
                 return nameCompareResult < 0 || nameCompareResult == 0 && lhs.m_argCount < rhs.m_argCount;
                 }
             };

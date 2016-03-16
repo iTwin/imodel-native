@@ -234,6 +234,25 @@ BentleyStatus ClassMapInfo::EvaluateSharedTableMapStrategy(ClassMap const& paren
         options = options | ECDbMapStrategy::Options::ParentOfJoinedTable;
     else if (Enum::Intersects(parentStrategy.GetOptions(), ECDbMapStrategy::Options::JoinedTable | ECDbMapStrategy::Options::ParentOfJoinedTable))
         {
+        /*options = options | ECDbMapStrategy::Options::JoinedTable;
+        if (Enum::Contains(parentUserStrategy->GetOptions(), UserECDbMapStrategy::Options::JoinedTablePerDirectSubclass))
+            {
+            //Joined tables are named after the class which becomes the root class of classes in the joined table
+            if (SUCCESS != IClassMap::DetermineTableName(m_tableName, m_ecClass))
+                return ERROR;
+
+            //For classes in the joined table the id column name is determined like this:
+            //"<Rootclass name><Rootclass ECInstanceId column name>"
+            ClassMap const* rootClassMap = m_parentClassMap->FindSharedTableRootClassMap();
+            if (rootClassMap == nullptr)
+            {
+            BeAssert(false && "There should always be a root class map which defines the shared table strategy");
+            return ERROR;
+            }
+
+            m_ecInstanceIdColumnName.Sprintf("%s%s", rootClassMap->GetClass().GetName().c_str(), m_ecInstanceIdColumnName.c_str());
+            }
+            */
         //! Find out if there is any property that need mapping. Simply looking at local property count does not work with multi inheritance
         bool requiresJoinedTable = false;
         for (ECPropertyCP property : GetECClass().GetProperties(true))
@@ -944,8 +963,8 @@ ClassIndexInfoPtr ClassIndexInfo::Create(ECDbCR ecdb, ECN::ECDbClassMap::DbIndex
     Utf8CP whereClause = dbIndex.GetWhereClause();
     if (!Utf8String::IsNullOrEmpty(whereClause))
         {
-        if (BeStringUtilities::Stricmp(whereClause, "IndexedColumnsAreNotNull") == 0 ||
-            BeStringUtilities::Stricmp(whereClause, "ECDB_NOTNULL") == 0) //legacy support
+        if (BeStringUtilities::StricmpAscii(whereClause, "IndexedColumnsAreNotNull") == 0 ||
+            BeStringUtilities::StricmpAscii(whereClause, "ECDB_NOTNULL") == 0) //legacy support
             addPropsAreNotNullWhereExp = true;
         else
             {
