@@ -52,6 +52,7 @@
 
     
     <Part Name="GeoCoord-Dev">
+        <SubPart PartName="CsmapCompiler"  PartFile="csmap"          Repository="libsrc-csmap" />
         <SubPart PartName= "GeoCoord-Tested" />
     </Part>
     <!-- ******************************** Unit Tests ************************************** -->
