@@ -24,14 +24,15 @@ private:
 
 public:
     static Utf8String Encode(Utf8StringCR stringToEncode) { return Encode(stringToEncode.c_str(), stringToEncode.size()); }
-    BENTLEYDLL_EXPORT static Utf8String Encode (Utf8CP bytesToEncode, size_t length);
+    BENTLEYDLL_EXPORT static Utf8String Encode (Utf8CP bytesToEncode, size_t byteCount);
     BENTLEYDLL_EXPORT static BentleyStatus Encode(Utf8StringR encodedString, Byte const* bytesToEncode, size_t byteCount);
 
+    static BentleyStatus Decode(bvector<Byte>& byteArray, Utf8StringCR encodedString) { return Decode(byteArray, encodedString.c_str(), encodedString.size()); }
+    BENTLEYDLL_EXPORT static BentleyStatus Decode(bvector<Byte>& byteArray, Utf8CP encodedString, size_t encodedStringLength);
     static Utf8String Decode(Utf8StringCR encodedString) { return Decode(encodedString.c_str(), encodedString.size()); }
-    BENTLEYDLL_EXPORT static Utf8String Decode(Utf8CP encodedBytes, size_t length);
-    BENTLEYDLL_EXPORT static BentleyStatus Decode(bvector<Byte>& byteArray, Utf8StringCR encodedString);
+    BENTLEYDLL_EXPORT static Utf8String Decode(Utf8CP encodedString, size_t encodedStringLength);
 
-    BENTLEYDLL_EXPORT static Utf8StringCR Alphabet ();
+    BENTLEYDLL_EXPORT static Utf8StringCR Alphabet();
     };
 
 END_BENTLEY_NAMESPACE
