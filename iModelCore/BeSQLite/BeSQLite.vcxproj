@@ -12,16 +12,21 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BeSQLiteProfileManager.h" />
-    <ClInclude Include="PublicAPI\BeSQLite\BeAppData.h" />
     <ClInclude Include="PublicAPI\BeSQLite\BeSQLite.h" />
+    <ClInclude Include="PublicAPI\BeSQLite\ChangeSet.h" />
     <ClInclude Include="PublicAPI\BeSQLite\DownloadAdmin.h" />
+    <ClInclude Include="PublicAPI\BeSQLite\IModelDb.h" />
     <ClInclude Include="PublicAPI\BeSQLite\L10N.h" />
+    <ClInclude Include="PublicAPI\BeSQLite\md5.h" />
     <ClInclude Include="PublicAPI\BeSQLite\RTreeMatch.h" />
-    <ClInclude Include="PublicAPI\BeSQLite\SQLiteAPI.h" />
+    <ClInclude Include="PublicAPI\BeSQLite\SHA1.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BeSQLite.cpp" />
     <ClCompile Include="BeSQLiteProfileManager.cpp" />
+    <ClCompile Include="ChangeSet.cpp" />
+    <ClCompile Include="Crypt\md5.cpp" />
+    <ClCompile Include="Crypt\sha1.cpp" />
     <ClCompile Include="L10N.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
