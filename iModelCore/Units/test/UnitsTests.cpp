@@ -386,6 +386,25 @@ TEST_F(UnitsTests, TestLinearCostConversions)
     WriteToFile(fileName.c_str(), handledUnits);
     }
 
+//This test is an open pot to add conversion tests which don't deserve their own method
+TEST_F(UnitsTests, TestMiscConversions)
+    {
+    bvector<Utf8String> loadErrors;
+    bvector<Utf8String> conversionErrors;
+    bvector<bpair<Utf8String, Utf8String>> handledUnits;
+
+    TestUnitConversion(9, "MHZ", 9000, "KHZ", 3, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(9, "KHZ", 9000, "HZ", 3, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(5, "TONNE", 5000, "KG", 3, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(4200.0, "POISE", 420.0, "PA-S", 3, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1000.0, "PDL", 138.254954, "N", 3, loadErrors, conversionErrors, handledUnits);
+    
+    ASSERT_EQ(0, loadErrors.size()) << BeStringUtilities::Join(loadErrors, ", ");
+    ASSERT_EQ(0, conversionErrors.size()) << BeStringUtilities::Join(conversionErrors, ", ");
+    Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"TestMiscConversions_handledUnits.csv");
+    WriteToFile(fileName.c_str(), handledUnits);
+    }
+
 TEST_F(UnitsTests, CheckSignatureForEveryPhenomenon)
     {
     bvector<PhenomenonCP> allPhenomena;
