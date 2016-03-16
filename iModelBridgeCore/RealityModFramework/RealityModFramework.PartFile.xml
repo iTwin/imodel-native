@@ -64,7 +64,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="DataHandlerTool" BMakeFile="RealityPlatform\Example\DataHandlerTool.mke">
+    <Part Name="DataHandlerTool" BentleyBuildMakeFile="RealityPlatform\Example\DataHandlerTool.mke">
         <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="RealityPlatform" />
         <Bindings>
@@ -113,7 +113,7 @@
     </Part>
     
     <Part Name="BentleyWMSPackageNet" BMakeFile="BentleyWMSPackageNet\BentleyWMSPackageNet.mke" BMakeOptions="-dTranskitLink=1">
-        <SubPart PartName="TransKitToolsSub"    PartFile="TransKitTools" Repository="TransKitTools" />
+        <SubPart PartName="TranskitTools"    PartFile="TransKitTools" Repository="TransKitTools" />
         <SubPart PartName="RealityPackage"/>
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="PublicAPI" />
