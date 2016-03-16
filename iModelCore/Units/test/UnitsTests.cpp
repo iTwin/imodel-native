@@ -393,12 +393,29 @@ TEST_F(UnitsTests, TestMiscConversions)
     bvector<Utf8String> conversionErrors;
     bvector<bpair<Utf8String, Utf8String>> handledUnits;
 
+    //Frequency
     TestUnitConversion(9, "MHZ", 9000, "KHZ", 3, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(9, "KHZ", 9000, "HZ", 3, loadErrors, conversionErrors, handledUnits);
+
+    //MASS
     TestUnitConversion(5, "TONNE", 5000, "KG", 3, loadErrors, conversionErrors, handledUnits);
+
+    //DYNAMIC_VISCOSITY
     TestUnitConversion(4200.0, "POISE", 420.0, "PA-S", 10, loadErrors, conversionErrors, handledUnits);
+
+    //FORCE
     TestUnitConversion(1000.0, "PDL", 138.254954376, "N", 10, loadErrors, conversionErrors, handledUnits);
     
+    //LENGTH
+    //LIGHT_XXX units dropped from framework as they are not needed
+    /*TestUnitConversion(0.0042, "LIGHT_YEAR", 2.469023e10, "MILE", 10, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0.003, "LIGHT_HOUR", 3237758.5, "KM", 10, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0.013, "LIGHT_MIN", 2.55728e8, "YARD", 10, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "LIGHT_SEC", 186282, "MILE", 10, loadErrors, conversionErrors, handledUnits);*/
+
+    //MOLE
+    TestUnitConversion(0.3, "MOL", 0.0003, "KMOL", 10, loadErrors, conversionErrors, handledUnits);
+
     ASSERT_EQ(0, loadErrors.size()) << BeStringUtilities::Join(loadErrors, ", ");
     ASSERT_EQ(0, conversionErrors.size()) << BeStringUtilities::Join(conversionErrors, ", ");
     Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"TestMiscConversions_handledUnits.csv");

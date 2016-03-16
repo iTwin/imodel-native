@@ -159,7 +159,7 @@ void UnitRegistry::AddDefaultSystems ()
     AddSystem (PHYSICS);
     AddSystem (CHEMISTRY);
     AddSystem (THERMODYNAMICS);
-    AddSystem (ASTRONOMY);
+    //AddSystem (ASTRONOMY);
     AddSystem (MARITIME);
     AddSystem (SURVEYOR);
     AddSystem (TYPOGRAPHY);
@@ -172,7 +172,7 @@ void UnitRegistry::AddDefaultSystems ()
     AddSystem (USCUSTOM);
     AddSystem (BRITISH);
     AddSystem (JAPANESE);
-    AddSystem (HISTORICAL);
+    //AddSystem (HISTORICAL);
     AddSystem (STATISTICS);
     AddSystem (BENTLEY);
     AddSystem (CUSTOMARY);
