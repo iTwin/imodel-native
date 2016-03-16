@@ -89,6 +89,8 @@ $(o)BeTimeUtilities$(oext)      : $(nonportDir)BeTimeUtilities.cpp $(BentleyAPIS
 
 $(o)BeIconUtilities$(oext)      : $(nonportDir)BeIconUtilities.cpp $(BentleyAPISrc)BeIconUtilities.h ${MultiCompileDepends}
 
+$(o)DirectoryObserver$(oext)    : $(bentleyDir)DirectoryObserver.cpp $(BentleyAPISrc)DirectoryObserver.h ${MultiCompileDepends}
+
 $(o)BeThread$(oext)             : $(nonportDir)BeThread.cpp $(BentleyAPISrc)BeThreadLocalStorage.h $(BentleyAPISrc)BeThread.h ${MultiCompileDepends}
 
 $(o)BeDebugLog$(oext)           : $(nonportDir)BeDebugLog.cpp $(BentleyAPISrc)BeDebugLog.h ${MultiCompileDepends}
