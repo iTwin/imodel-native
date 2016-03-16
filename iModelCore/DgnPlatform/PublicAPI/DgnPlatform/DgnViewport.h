@@ -161,7 +161,7 @@ protected:
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
     void QueueDrawFrame();
-    void ShowChanges(bvector<Render::GraphicPtr>&, DgnElementIdSet&);
+    void ShowChanges(ViewManagerCR);
     void CalcTargetNumElements(UpdatePlan const& plan, bool isForProgressive);
     void CreateTerrain(UpdatePlan const& plan);
     StatusInt CreateScene(UpdatePlan const& plan);

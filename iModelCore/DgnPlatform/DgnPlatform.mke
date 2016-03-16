@@ -169,6 +169,8 @@ CPchOpts            = $(UsePrecompiledHeaderOptions)
 MultiCompileDepends =$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
+$(CoreObjs)GraphiteResourceURI$(oext) :             $(DgnCoreDir)GraphiteResourceURI.cpp ${MultiCompileDepends} 
+
 $(CoreObjs)DgnElement$(oext) :                      $(DgnCoreDir)DgnElement.cpp ${MultiCompileDepends} $(DgnFileIOPubH)  $(toolsHeaders)
 
 $(CoreObjs)DgnModel$(oext) :                        $(DgnCoreDir)DgnModel.cpp ${MultiCompileDepends} $(DgnFileIOPubH) $(DgnPlatformAPISrc)ScanCriteria.h

@@ -274,16 +274,16 @@ struct RealityDataStorageBusyRetry : BeSQLite::BusyRetry
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLiteRealityDataStoragePtr BeSQLiteRealityDataStorage::Create(BeFileName const& filename, uint32_t idleTime, uint64_t cacheSize)
+BeSQLiteRealityDataStoragePtr BeSQLiteRealityDataStorage::Create(BeFileName const& filename, uint32_t idleTime)
     {
-    return new BeSQLiteRealityDataStorage(filename, idleTime, cacheSize);
+    return new BeSQLiteRealityDataStorage(filename, idleTime);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLiteRealityDataStorage::BeSQLiteRealityDataStorage(BeFileName const& filename, uint32_t idleTime, uint64_t cacheSize)
-    : m_filename(filename), m_database(new BeSQLite::Db()), m_initialized(false), m_hasChanges(false), m_idleTime(idleTime), m_cacheSize(cacheSize)
+BeSQLiteRealityDataStorage::BeSQLiteRealityDataStorage(BeFileName const& filename, uint32_t idleTime)
+    : m_filename(filename), m_database(new BeSQLite::Db()), m_initialized(false), m_hasChanges(false), m_idleTime(idleTime)
     {
     m_retry = new RealityDataStorageBusyRetry();
     m_threadPool = BeSQLiteStorageThreadPool::Create(*this);
@@ -419,19 +419,7 @@ void BeSQLiteRealityDataStorage::wt_Prepare(DatabasePrepareAndCleanupHandler con
                 BeAssert(false);
                 return;
                 }
-            }
-
-        // Stop all current transactions with savepoint <commit>. Enable auto VACUUM for database. Resume operations with <begin>.
-        BeSQLite::Savepoint* savepoint = m_database->GetSavepoint(0);
-        if (NULL != savepoint)
-            savepoint->Commit();
-
-        m_database->TryExecuteSql("PRAGMA auto_vacuum = FULL");
-        m_database->TryExecuteSql("VACUUM");
-
-        if (NULL != savepoint)
-            savepoint->Begin();
-        
+            }        
         m_initialized = true;
         }
 
@@ -459,24 +447,12 @@ void BeSQLiteRealityDataStorage::wt_Prepare(DatabasePrepareAndCleanupHandler con
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BeSQLiteRealityDataStorage::wt_Cleanup()
     {
-    uint64_t realCacheSize;
-    auto realFileSizeResult = BeFileName::GetFileSize(realCacheSize, WString(m_filename.c_str(), true).c_str());
-    BeAssert(BeFileNameStatus::Success == realFileSizeResult);
-   
-    if ((0 != m_cacheSize) && (realCacheSize > m_cacheSize))
+    BeMutexHolder lock(m_databaseCS);
+    for (auto const& cleanupHandler : m_cleanupHandlers)
         {
-        // percentage of cache to delete
-        double pct = 100.0 * (realCacheSize - m_cacheSize) / realCacheSize;
-        if (pct > 100)
-            pct = 100;
-
-        BeMutexHolder lock(m_databaseCS);
-        for (auto const& cleanupHandler : m_cleanupHandlers)
-            {
-            BentleyStatus result = cleanupHandler->_CleanupDatabase(*m_database, pct);
-            BeAssert(SUCCESS == result);
-            }
-        }                                 
+        BentleyStatus result = cleanupHandler->_CleanupDatabase(*m_database);
+        BeAssert(SUCCESS == result);
+        }                                
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -487,7 +463,7 @@ void BeSQLiteRealityDataStorage::wt_SaveChanges()
     BeMutexHolder lock(m_databaseCS);
     auto result = m_database->SaveChanges();
     BeAssert(BeSQLite::BE_SQLITE_OK == result);
-    m_hasChanges = false;
+    m_hasChanges.store(false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -549,7 +525,7 @@ void BeSQLiteRealityDataStorage::wt_Persist(Data const& data)
 
     BentleyStatus result = data._Persist(*m_database, m_databaseCS);
     BeAssert(SUCCESS == result);
-    m_hasChanges = true;
+    m_hasChanges.store(true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -673,17 +649,6 @@ IRealityDataSourceBase::~IRealityDataSourceBase() {Terminate();}
 |   AsyncRealityDataSource
 +======================================================================================*/
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<class Derived>
-void AsyncRealityDataSource<Derived>::_Terminate()
-    {
-    m_terminateRequested = true;
-    m_threadPool->Terminate();
-    m_threadPool->WaitUntilAllThreadsIdle();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP AsyncRealityDataSourceRequest::GetId() const {return _GetId();}
@@ -715,7 +680,7 @@ bool AsyncRealityDataSourceRequest::ShouldCancelRequest() const {return nullptr 
 template<class Derived>
 void AsyncRealityDataSource<Derived>::SetIgnoreRequests(uint32_t ignoreTime)
     {
-    m_ignoreRequestsUntil = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + ignoreTime;
+    m_ignoreRequestsUntil.store(BeTimeUtilities::GetCurrentTimeAsUnixMillis() + ignoreTime);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1559,27 +1524,6 @@ void RealityDataCache::Cleanup()
     }
 
 /*======================================================================================+
-|   RealityDataAdmin
-+======================================================================================*/
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               10/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataCache& DgnPlatformLib::Host::RealityDataAdmin::GetCache()
-    {
-    if (m_cache.IsNull())
-        {
-        m_cache = RealityDataCache::Create(100);
-
-        m_cache->RegisterSource(*HttpRealityDataSource::Create(8));
-
-        BeFileName storageFileName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
-        storageFileName.AppendToPath(L"RealityDataCache.db");
-        m_cache->RegisterStorage(*BeSQLiteRealityDataStorage::Create(storageFileName));
-        }
-    return *m_cache;
-    }
-
-/*======================================================================================+
 |   RealityDataThread
 +======================================================================================*/
 /*---------------------------------------------------------------------------------**//**
@@ -1603,10 +1547,8 @@ void RealityDataThread::Start()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RealityDataThread::ThreadRunner(void* arg)
     {
-    auto& thread = * (RealityDataThread*) arg;
-    thread.AddRef();
-    thread.Run();
-    thread.Release();
+    RealityDataThreadPtr thread = (RealityDataThread*)arg;
+    thread->Run();
     }
 
 /*---------------------------------------------------------------------------------**//**
