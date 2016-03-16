@@ -1347,13 +1347,13 @@ ExpressionStatus EvaluationResult::GetBoolean(bool& result, bool requireBoolean)
         case PRIMITIVETYPE_String:
             {
             Utf8CP value = m_ecValue.GetUtf8CP();
-            if (!strcmp("1", value) || !BeStringUtilities::Stricmp("true", value))
+            if (!strcmp("1", value) || !BeStringUtilities::StricmpAscii("true", value))
                 {
                 result = true;
                 return ExpressionStatus::Success;
                 }
 
-            if (!strcmp("0", value) || !BeStringUtilities::Stricmp("false", value))
+            if (!strcmp("0", value) || !BeStringUtilities::StricmpAscii("false", value))
                 {
                 result = false;
                 return ExpressionStatus::Success;

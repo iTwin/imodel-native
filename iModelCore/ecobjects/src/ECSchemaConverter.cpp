@@ -474,7 +474,7 @@ void ECSchemaConverter::SortClassesByName(bvector<T>& ecClasses, bool ascending)
     {
     auto classComparer = [](T ecClass1, T ecClass2)
         {
-        return BeStringUtilities::Stricmp(ecClass1->GetName().c_str(), ecClass2->GetName().c_str()) < 0 ;
+        return BeStringUtilities::StricmpAscii(ecClass1->GetName().c_str(), ecClass2->GetName().c_str()) < 0 ;
         };
     std::sort(ecClasses.begin(), ecClasses.end(), classComparer);
     if (!ascending)

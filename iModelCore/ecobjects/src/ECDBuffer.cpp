@@ -596,7 +596,7 @@ bool            ClassLayout::IsCompatible (ClassLayoutCR classLayout) const
     if (m_compatibleClassLayouts.end() != compatibeLayoutIter)
         return compatibeLayoutIter->second;
 
-    if (0 != BeStringUtilities::Stricmp (GetECClassName().c_str(), classLayout.GetECClassName().c_str()))
+    if (0 != BeStringUtilities::StricmpAscii(GetECClassName().c_str(), classLayout.GetECClassName().c_str()))
         return false;
 
     bool isCompatible = areLayoutsCompatible (*this, classLayout);
@@ -1487,7 +1487,7 @@ BentleyStatus   SchemaLayout::FindClassIndex (ClassIndex& classIndex, Utf8CP cla
     {
     for (size_t i = 0; i < m_classLayouts.size(); i++)
         {
-        if (NULL != m_classLayouts[i].get() && 0 == BeStringUtilities::Stricmp(m_classLayouts[i]->GetECClassName().c_str(), className))
+        if (NULL != m_classLayouts[i].get() && 0 == BeStringUtilities::StricmpAscii(m_classLayouts[i]->GetECClassName().c_str(), className))
             {
             classIndex = (ClassIndex)i;
             return SUCCESS;

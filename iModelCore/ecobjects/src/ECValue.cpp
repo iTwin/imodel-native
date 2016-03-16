@@ -1695,9 +1695,9 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
         }
         break;
     case PRIMITIVETYPE_Boolean:
-        if (0 == BeStringUtilities::Stricmp("true", str) || 0 == strcmp("1", str))
+        if (0 == BeStringUtilities::StricmpAscii("true", str) || 0 == strcmp("1", str))
             SetBoolean (true);
-        else if (0 == BeStringUtilities::Stricmp("false", str) || 0 == strcmp("0", str))
+        else if (0 == BeStringUtilities::StricmpAscii("false", str) || 0 == strcmp("0", str))
             SetBoolean (false);
         else
             return false;

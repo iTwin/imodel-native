@@ -542,10 +542,10 @@ bool ECSchema::IsSamePrimarySchema
 ECSchemaR primarySchema
 ) const
     {
-    if (0 != BeStringUtilities::Stricmp(this->GetNamespacePrefix().c_str(), primarySchema.GetNamespacePrefix().c_str()))
+    if (0 != BeStringUtilities::StricmpAscii(this->GetNamespacePrefix().c_str(), primarySchema.GetNamespacePrefix().c_str()))
         return false;
 
-    if (0 != BeStringUtilities::Stricmp(this->GetFullSchemaName().c_str(), primarySchema.GetFullSchemaName().c_str()))
+    if (0 != BeStringUtilities::StricmpAscii(this->GetFullSchemaName().c_str(), primarySchema.GetFullSchemaName().c_str()))
         return false;
 
     return (GetClassCount() == primarySchema.GetClassCount());
@@ -591,7 +591,7 @@ bool ECSchema::ShouldNotBeStored (SchemaKeyCR key)
             return true;
 
     // We don't want to import any version of the Units_Schema
-    if (BeStringUtilities::Stricmp("Units_Schema", key.m_schemaName.c_str()) == 0)
+    if (BeStringUtilities::StricmpAscii("Units_Schema", key.m_schemaName.c_str()) == 0)
         return true;
 
     return false;
