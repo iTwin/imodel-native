@@ -69,7 +69,7 @@ HRPMapFilter16::HRPMapFilter16(const HRPMapFilter16& pi_rFilter)
     HASSERT(m_MapSize > 0);
 
     // copy the map
-    memcpy(m_pMap, pi_rFilter.m_pMap, m_MapSize * sizeof(unsigned short));
+    memcpy(m_pMap, pi_rFilter.m_pMap, m_MapSize * sizeof(uint16_t));
     }
 
 //-----------------------------------------------------------------------------
@@ -105,9 +105,9 @@ HRPFilter* HRPMapFilter16::ComposeWith(const HRPFilter* pi_pFilter)
         HRPMapFilter16* pMapFilter      = (HRPMapFilter16*)pi_pFilter;
 
         // merge the tables
-        for(unsigned int Channel = 0; Channel < m_Channels; Channel++)
+        for(size_t Channel = 0; Channel < m_Channels; Channel++)
             {
-            for(int Index = 0; Index < 65536; Index++)
+            for(size_t Index = 0; Index < 65536; Index++)
                 {
                 HASSERT( ((Channel << 16) + Index) < m_MapSize );
                 pComposedFilter->m_pMap[(Channel << 16) + Index] = pMapFilter->m_pMap[(Channel << 16) + m_pMap[(Channel << 16) + Index]];
@@ -130,8 +130,8 @@ void HRPMapFilter16::Function( const void*  pi_pSrcRawData,
     HPRECONDITION(po_pDestRawData != 0);
     HPRECONDITION(PixelsCount > 0);
 
-    unsigned short* pSrcComposite = (unsigned short*)pi_pSrcRawData;
-    unsigned short* pDstComposite = (unsigned short*)po_pDestRawData;
+    uint16_t* pSrcComposite = (uint16_t*)pi_pSrcRawData;
+    uint16_t* pDstComposite = (uint16_t*)po_pDestRawData;
 
     if (m_Channels == 4)
         {
@@ -199,26 +199,26 @@ void HRPMapFilter16::Function( const void*  pi_pSrcRawData,
 // public
 // GetMap
 //-----------------------------------------------------------------------------
-unsigned short* HRPMapFilter16::GetMap(Byte pi_ChannelIndex)
+uint16_t* HRPMapFilter16::GetMap(Byte pi_ChannelIndex)
     {
     HPRECONDITION(pi_ChannelIndex < m_Channels);
 
-    return (m_pMap + ((unsigned int)pi_ChannelIndex << 16));
+    return (m_pMap + ((uint32_t)pi_ChannelIndex << 16));
     }
 
 //-----------------------------------------------------------------------------
 // public
 // SetMap
 //-----------------------------------------------------------------------------
-void HRPMapFilter16::SetMap(Byte pi_ChannelIndex, const unsigned short* pi_pMap)
+void HRPMapFilter16::SetMap(Byte pi_ChannelIndex, const uint16_t* pi_pMap)
     {
     HPRECONDITION(pi_pMap != 0);
     HPRECONDITION(pi_ChannelIndex < m_Channels);
 
-    HASSERT((((unsigned int)pi_ChannelIndex << 16) + 65535U) < m_MapSize);
+    HASSERT((((uint32_t)pi_ChannelIndex << 16) + 65535U) < m_MapSize);
 
     // copy the map
-    memcpy(m_pMap + ((unsigned int)pi_ChannelIndex << 16), pi_pMap, 65536U * sizeof(unsigned short));
+    memcpy(m_pMap + ((uint32_t)pi_ChannelIndex << 16), pi_pMap, 65536U * sizeof(uint16_t));
     }
 
 //-----------------------------------------------------------------------------
@@ -241,15 +241,15 @@ void HRPMapFilter16::Initialize()
     HPRECONDITION(m_Channels > 0);
 
     // create a map
-    m_MapSize = (unsigned int)m_Channels << 16;
-    m_pMap    = new unsigned short[m_MapSize];
+    m_MapSize = (uint32_t)m_Channels << 16;
+    m_pMap    = new uint16_t[m_MapSize];
     }
 
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
 
-int HRPMapFilter16::GetMapSize() const
+int32_t HRPMapFilter16::GetMapSize() const
     {
     return m_MapSize;
     }

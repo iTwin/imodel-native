@@ -55,7 +55,7 @@ HRF_REGISTER_FILEFORMAT(HRFIntergraphTG4Creator)
 //HRF_REGISTER_FILEFORMAT(HRFInternetFileSocketCreator)
 //HRF_REGISTER_FILEFORMAT(HRFInternetFileHTTPCreator)
 
-int _tmain(int argc, _TCHAR* argv[])
+int32_t _tmain(int32_t argc, _TCHAR* argv[])
     {
     // Source
     HFCPtr<HRFRasterFile>           pSource;
@@ -137,7 +137,7 @@ int _tmain(int argc, _TCHAR* argv[])
         pDestination->AddPage(pPageDescriptor);
 
         // Copy all resolutions.
-        for (unsigned short Resolution=0 ; Resolution<pPageDescriptor->CountResolutions() ; Resolution++)
+        for (uint16_t Resolution=0 ; Resolution<pPageDescriptor->CountResolutions() ; Resolution++)
             {
             // Create the destination and source editor.
             pSrcResolutionEditor     = pSource->CreateResolutionEditor(Page, Resolution, SrcEditorAccess);

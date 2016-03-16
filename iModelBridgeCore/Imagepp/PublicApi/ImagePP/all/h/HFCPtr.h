@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCPtr.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:> Class: HFCPtr<T>
@@ -208,7 +208,7 @@ public:
 
     T&              operator*() const;
     T*              operator->() const;
-    T*              operator->*(int) const;
+    T*              operator->*(int32_t) const;
     operator T* () const;
 
     //:> Other methods

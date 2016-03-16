@@ -49,7 +49,7 @@ protected:
 
     HRFSLOStripEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                       uint32_t pi_Page,
-                      unsigned short pi_Resolution,
+                      uint16_t pi_Resolution,
                       HFCAccessMode pi_AccessMode,
                       HRFResolutionEditor* pi_pResolutionEditor);
 
@@ -113,13 +113,13 @@ private:
                                                  bool              pi_Swap);
 
     void            TransposeRLE1Line           (Byte*   po_pTransposedData,
-                                                 unsigned short*  pi_pSourceRLE1Line,
+                                                 uint16_t*  pi_pSourceRLE1Line,
                                                  uint32_t  pi_LineNumber,
                                                  uint32_t  pi_NumberOfPixels,
                                                  uint32_t  pi_TransposedDataWidthInBytes);
 
     void            TransposeAndFlipRLE1Line    (Byte*   po_pTransposedData,
-                                                 unsigned short*  pi_pSourceRLE1Line,
+                                                 uint16_t*  pi_pSourceRLE1Line,
                                                  uint32_t  pi_LineNumber,
                                                  uint32_t  pi_NumberOfPixels,
                                                  uint32_t  pi_TransposedDataWidthInBytes);

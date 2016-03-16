@@ -143,7 +143,7 @@ public:
     virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         unsigned char* pSource = (unsigned char*)pi_pSourceRawData;
-        long*    pDest   = (long*)pio_pDestRawData;
+        int32_t*    pDest   = (int32_t*)pio_pDestRawData;
 
         for(size_t i(0); i < pi_PixelsCount; ++i)
             {

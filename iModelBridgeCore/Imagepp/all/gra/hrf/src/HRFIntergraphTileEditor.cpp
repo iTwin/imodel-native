@@ -20,12 +20,12 @@
 #include <Imagepp/all/h/HCDCodecIJG.h>
 #include <Imagepp/all/h/HFCMath.h>
 
-const unsigned int JPegTileTrailerSize     =   2;
-const unsigned int JPegColorTileHeaderSize =  33;
-const unsigned int JPegGrayTileHeaderSize  =  23;
+const uint32_t JPegTileTrailerSize     =   2;
+const uint32_t JPegColorTileHeaderSize =  33;
+const uint32_t JPegGrayTileHeaderSize  =  23;
 
-const unsigned int JpegColorTablesSize     = 572;
-const unsigned int JpegGrayTablesSize      = 287;
+const uint32_t JpegColorTablesSize     = 572;
+const uint32_t JpegGrayTablesSize      = 287;
 
 
 //-----------------------------------------------------------------------------
@@ -36,7 +36,7 @@ const unsigned int JpegGrayTablesSize      = 287;
 HRFIntergraphTileEditor::HRFIntergraphTileEditor(
     HFCPtr<HRFRasterFile>                     pi_rpRasterFile,
     uint32_t                                  pi_Page,
-    unsigned short                           pi_Resolution,
+    uint16_t                           pi_Resolution,
     HFCAccessMode                             pi_AccessMode,
     HRFIntergraphFile::IntergraphResolutionDescriptor&
     pi_rIntergraphResolutionDescriptor,
@@ -114,7 +114,7 @@ HSTATUS HRFIntergraphTileEditor::ReadBlock(uint64_t pi_PosBlockX,
     HPRECONDITION(m_pResolutionDescriptor->GetBlockType() == HRFBlockType::TILE);
     HPRECONDITION(pi_PosBlockX <= m_pResolutionDescriptor->GetWidth());
     HPRECONDITION(pi_PosBlockY <= m_pResolutionDescriptor->GetHeight());
-    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+    HPRECONDITION (pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);
 
     // For performance reason and code clarity, we initialize Status to success
     // because we dont have many event who will invalidate it.
@@ -222,9 +222,9 @@ HSTATUS HRFIntergraphTileEditor::ReadBlock(uint64_t pi_PosBlockX,
                 // Special case for JPEG compression (Type 30 and 31)
                 if (static_cast<HRFIntergraphFile*>(GetRasterFile().GetPtr())->m_DataTypeCode == 30 || static_cast<HRFIntergraphFile*>(GetRasterFile().GetPtr())->m_DataTypeCode == 31)
                     {
-                    unsigned int JPegTileHeaderSize;
-                    unsigned int JPegTableSize;
-                    unsigned int QualityFactor = 15; // Default value for Intergraph File.
+                    uint32_t JPegTileHeaderSize;
+                    uint32_t JPegTableSize;
+                    uint32_t QualityFactor = 15; // Default value for Intergraph File.
 
                     if (static_cast<HRFIntergraphFile*>(GetRasterFile().GetPtr())->m_DataTypeCode == 30)
                         JPegTileHeaderSize = JPegGrayTileHeaderSize;
@@ -236,7 +236,7 @@ HSTATUS HRFIntergraphTileEditor::ReadBlock(uint64_t pi_PosBlockX,
                     else
                         JPegTableSize = JpegColorTablesSize;
 
-                    unsigned int TotalJpegHeaderSize  = JPegTileHeaderSize + JPegTileTrailerSize + JPegTableSize;
+                    uint32_t TotalJpegHeaderSize  = JPegTileHeaderSize + JPegTileTrailerSize + JPegTableSize;
                     pTempBuffer = new Byte[BufferSize + TotalJpegHeaderSize];
 
                     if (static_cast<HRFIntergraphFile*>(GetRasterFile().GetPtr())->m_pJpegPacketPacket)
@@ -337,7 +337,7 @@ HSTATUS HRFIntergraphTileEditor::WriteBlock(uint64_t     pi_PosBlockX,
     HPRECONDITION (pi_pData != 0);
     HPRECONDITION (pi_PosBlockX <= m_pResolutionDescriptor->GetWidth());
     HPRECONDITION (pi_PosBlockY <= m_pResolutionDescriptor->GetHeight());
-    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+    HPRECONDITION (pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);
 
     HSTATUS Status = H_ERROR;
 
@@ -352,7 +352,7 @@ HSTATUS HRFIntergraphTileEditor::WriteBlock(uint64_t     pi_PosBlockX,
     HArrayAutoPtr<Byte> pTempRasterBuffer;
 
     // Retrieve the right tile entry info
-    HASSERT_X64(m_pTileIdDescriptor->ComputeIndex(pi_PosBlockX, pi_PosBlockY) <= ULONG_MAX);
+    HASSERT_X64(m_pTileIdDescriptor->ComputeIndex(pi_PosBlockX, pi_PosBlockY) <= UINT32_MAX);
     TileIndex = (uint32_t)m_pTileIdDescriptor->ComputeIndex(pi_PosBlockX, pi_PosBlockY);
 
     HRFIntergraphFile::TileEntry& TileEntryInformation = m_IntergraphResolutionDescriptor.pTileDirectoryEntry[TileIndex];
@@ -457,7 +457,7 @@ HSTATUS HRFIntergraphTileEditor::WriteBlock(uint64_t     pi_PosBlockX,
 
             // Compress the data and get it's new size.
             UnCompress.Compress(&Compress);
-            HASSERT_X64(Compress.GetDataSize() < ULONG_MAX);
+            HASSERT_X64(Compress.GetDataSize() < UINT32_MAX);
             TileSizeInByte = (uint32_t)Compress.GetDataSize();
 
             // Write the line need into the file...
@@ -502,7 +502,7 @@ HSTATUS HRFIntergraphTileEditor::WriteBlock(uint64_t     pi_PosBlockX,
 
             // Compress the data and get it's new size.
             UnCompress.Compress(&Compress);
-            HASSERT_X64(Compress.GetDataSize() < ULONG_MAX);
+            HASSERT_X64(Compress.GetDataSize() < UINT32_MAX);
             TileSizeInByte = (uint32_t)Compress.GetDataSize();
 
             // Write the line need into the file...
@@ -694,7 +694,7 @@ void HRFIntergraphTileEditor::FindFileFreeSpace(uint32_t& pio_rOldBlockOffset, u
 //
 //-----------------------------------------------------------------------------
 
-void HRFIntergraphTileEditor::InitializeJpegDecompTable(double pi_QualityFactor, Byte* po_pTileBuffer, unsigned int pi_DataSize)
+void HRFIntergraphTileEditor::InitializeJpegDecompTable(double pi_QualityFactor, Byte* po_pTileBuffer, uint32_t pi_DataSize)
     {
     static const Byte ColorTileHeader[JPegColorTileHeaderSize] =
         {   0xff, 0xc0,         // Marker SOF : Base line DCT
@@ -923,8 +923,8 @@ void HRFIntergraphTileEditor::BuildJpegLumiChromaTable(double pi_QualityFactor, 
     // Give at least one valid outup data pointer.
     HASSERT( po_pLuminance || po_pChroma);
 
-    const unsigned int TableWidth  = 8;
-    const unsigned int TableHeight = 8;
+    const uint32_t TableWidth  = 8;
+    const uint32_t TableHeight = 8;
 
     uint32_t Line;
     uint32_t Column;
@@ -1321,7 +1321,7 @@ void HRFIntergraphTileEditor::MapStreamHole()
     HRFIntergraphFile::ListOfFreeBlock ListOfUsedBlock;
     HRFIntergraphFile::TileEntry* pTileEntryInformation;
 
-    HASSERT_X64(m_pTileIdDescriptor->GetTileCount() < ULONG_MAX);
+    HASSERT_X64(m_pTileIdDescriptor->GetTileCount() < UINT32_MAX);
     uint32_t TotalTileCount   = (uint32_t)m_pTileIdDescriptor->GetTileCount();
 
     uint32_t OverviewOutbound = (uint32_t)m_pIntergraphFile->GetSize();
@@ -1448,7 +1448,7 @@ bool HRFIntergraphTileEditor::VerrifyBlockOverlap()
     HRFIntergraphFile::TileEntry* pTileEntryInformation;
     HRFIntergraphFile::TileEntry* pOverlappedTileEntryInformation;
 
-    HASSERT_X64(m_pTileIdDescriptor->GetTileCount() <= ULONG_MAX);
+    HASSERT_X64(m_pTileIdDescriptor->GetTileCount() <= UINT32_MAX);
     uint32_t TotalTileCount = (uint32_t)m_pTileIdDescriptor->GetTileCount();
     uint32_t OverlapTileIndex;
     uint32_t TileIndex;

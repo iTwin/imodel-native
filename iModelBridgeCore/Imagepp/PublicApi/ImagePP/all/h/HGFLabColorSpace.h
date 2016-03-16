@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFLabColorSpace.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -18,7 +18,7 @@ class HGFLabColorSpace : public HGFBasicColorSpace
     {
 public:
 
-    HGFLabColorSpace(unsigned short pi_BitsPerPixel = 8);
+    HGFLabColorSpace(uint16_t pi_BitsPerPixel = 8);
     virtual ~HGFLabColorSpace();
 
     // Conversion both side between RGB and CIE LAB (Not done yet)

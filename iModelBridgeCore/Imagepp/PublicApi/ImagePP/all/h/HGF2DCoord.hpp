@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DCoord.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -338,7 +338,7 @@ template<class DataType> inline bool HGF2DCoord<DataType>::IsEqualToAutoEpsilon(
     @see SetY()
     -----------------------------------------------------------------------------
 */
-template<class DataType> inline DataType& HGF2DCoord<DataType>::operator[](int pi_CoordinateRef)
+template<class DataType> inline DataType& HGF2DCoord<DataType>::operator[](int32_t pi_CoordinateRef)
     {
     HPRECONDITION((pi_CoordinateRef == 0) || (pi_CoordinateRef == 1));
 
@@ -369,7 +369,7 @@ template<class DataType> inline DataType& HGF2DCoord<DataType>::operator[](int p
     @see GetY()
     -----------------------------------------------------------------------------
 */
-template<class DataType> inline const DataType& HGF2DCoord<DataType>::operator[](int pi_CoordinateRef) const
+template<class DataType> inline const DataType& HGF2DCoord<DataType>::operator[](int32_t pi_CoordinateRef) const
     {
     HPRECONDITION((pi_CoordinateRef == 0) || (pi_CoordinateRef == 1));
 
@@ -462,11 +462,11 @@ template<> inline void HGF2DCoord<unsigned char>::PrintState(ostream& po_rOutput
 // This method dumps the content of the object in the given output stream
 // in text format
 //-----------------------------------------------------------------------------
-template<> inline void HGF2DCoord<short>::PrintState(ostream& po_rOutput) const
+template<> inline void HGF2DCoord<int16_t>::PrintState(ostream& po_rOutput) const
     {
 #ifdef __HMR_PRINTSTATE
     char    DumString[256];
-    sprintf(DumString, "Object is a HGF2DCoord<short> X = %5hd , Y = %5hd", m_XValue, m_YValue);
+    sprintf(DumString, "Object is a HGF2DCoord<int16_t> X = %5hd , Y = %5hd", m_XValue, m_YValue);
     HDUMP0(DumString);
     HDUMP0("\n");
     po_rOutput << DumString << endl;
@@ -478,11 +478,11 @@ template<> inline void HGF2DCoord<short>::PrintState(ostream& po_rOutput) const
 // This method dumps the content of the object in the given output stream
 // in text format
 //-----------------------------------------------------------------------------
-template<> inline void HGF2DCoord<unsigned short>::PrintState(ostream& po_rOutput) const
+template<> inline void HGF2DCoord<uint16_t>::PrintState(ostream& po_rOutput) const
     {
 #ifdef __HMR_PRINTSTATE
     char    DumString[256];
-    sprintf(DumString, "Object is a HGF2DCoord<unsigned short> X = %5hu , Y = %5hu", m_XValue, m_YValue);
+    sprintf(DumString, "Object is a HGF2DCoord<uint16_t> X = %5hu , Y = %5hu", m_XValue, m_YValue);
     HDUMP0(DumString);
     HDUMP0("\n");
     po_rOutput << DumString << endl;
@@ -517,7 +517,7 @@ template<> inline void HGF2DCoord<int32_t>::PrintState(ostream& po_rOutput) cons
     {
 #ifdef __HMR_PRINTSTATE
     char    DumString[256];
-    sprintf(DumString, "Object is a HGF2DCoord<int32_t> X = %15ld , Y = %15ld", m_XValue, m_YValue);
+    sprintf(DumString, "Object is a HGF2DCoord<int32_t> X = %15d , Y = %15d", m_XValue, m_YValue);
     HDUMP0(DumString);
     HDUMP0("\n");
     po_rOutput << DumString << endl;
@@ -533,7 +533,7 @@ template<> inline void HGF2DCoord<uint32_t>::PrintState(ostream& po_rOutput) con
     {
 #ifdef __HMR_PRINTSTATE
     char    DumString[256];
-    sprintf(DumString, "Object is a HGF2DCoord<uint32_t> X = %15lu , Y = %15lu", m_XValue, m_YValue);
+    sprintf(DumString, "Object is a HGF2DCoord<uint32_t> X = %15u , Y = %15u", m_XValue, m_YValue);
     HDUMP0(DumString);
     HDUMP0("\n");
     po_rOutput << DumString << endl;

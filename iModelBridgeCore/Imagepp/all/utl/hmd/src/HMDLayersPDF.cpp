@@ -32,7 +32,7 @@ HMDLayersPDF::~HMDLayersPDF()
 // Public
 // Get a PDF layer
 //-----------------------------------------------------------------------------
-const HMDLayerInfoPDF* HMDLayersPDF::GetLayer(unsigned short pi_Index) const
+const HMDLayerInfoPDF* HMDLayersPDF::GetLayer(uint16_t pi_Index) const
     {
     HPRECONDITION(pi_Index < GetNbLayers());
     HPRECONDITION(dynamic_cast<const HMDLayerInfoPDF*>(HMDLayers::GetLayer(pi_Index)) != 0);

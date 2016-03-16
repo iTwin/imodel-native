@@ -8947,7 +8947,7 @@ void HVE2DPolySegment::RecomposeClosedPolySegments(list<HFCPtr<HVE2DPolySegment>
                                     }
                                 else
                                     {
-                                    for (long j = (long)((*FoundItr)->GetSize() - 2) ; j >= 0 ; --j)
+                                    for (int32_t j = (int32_t)((*FoundItr)->GetSize() - 2) ; j >= 0 ; --j)
                                         TempPolySegment.AppendPosition((*FoundItr)->GetPosition(j));
                                     }
 
@@ -8993,7 +8993,7 @@ void HVE2DPolySegment::RecomposeClosedPolySegments(list<HFCPtr<HVE2DPolySegment>
                     }
                 else
                     {
-                    for (long j = (long)((*FoundItr)->GetSize() - 2) ; j >= 0 ; --j)
+                    for (int32_t j = (int32_t)((*FoundItr)->GetSize() - 2) ; j >= 0 ; --j)
                         pNewPolySegment->AppendPosition((*FoundItr)->GetPosition(j));
                     }
 

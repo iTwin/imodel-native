@@ -208,7 +208,7 @@ public:
             }
         };
 
-    virtual const short* GetLostChannels() const override
+    virtual const int16_t* GetLostChannels() const override
         {
         return m_LostChannels;
         }
@@ -219,9 +219,9 @@ public:
 
 private:
 
-    static short m_LostChannels[];
+    static int16_t m_LostChannels[];
     };
-short ConverterI4R8G8B8A8_V24R8G8B8::m_LostChannels[] = {3, -1};
+int16_t ConverterI4R8G8B8A8_V24R8G8B8::m_LostChannels[] = {3, -1};
 static ConverterI4R8G8B8A8_V24R8G8B8 s_I4R8G8B8A8_V24R8G8B8;
 
 //-----------------------------------------------------------------------------
@@ -301,7 +301,7 @@ public:
             }
         };
 
-    virtual const short* GetLostChannels() const override
+    virtual const int16_t* GetLostChannels() const override
         {
         return m_LostChannels;
         }
@@ -312,9 +312,9 @@ public:
 
 private:
 
-    static short m_LostChannels[];
+    static int16_t m_LostChannels[];
     };
-short ConverterI4R8G8B8A8_V24B8G8R8::m_LostChannels[] = {3, -1};
+int16_t ConverterI4R8G8B8A8_V24B8G8R8::m_LostChannels[] = {3, -1};
 static ConverterI4R8G8B8A8_V24B8G8R8 s_I4R8G8B8A8_V24B8G8R8;
 
 //-----------------------------------------------------------------------------
@@ -605,7 +605,7 @@ public:
             }
         };
 
-    virtual const short* GetLostChannels() const override
+    virtual const int16_t* GetLostChannels() const override
         {
         return m_LostChannels;
         }
@@ -652,7 +652,7 @@ protected:
 
         // fill the octree with the destination palette entries
         int32_t NbIndex(rPalette.CountUsedEntries());
-        for(int Index = 0; Index < NbIndex; Index++)
+        for(int32_t Index = 0; Index < NbIndex; Index++)
             m_QuantizedPalette.AddCompositeValue(rPalette.GetCompositeValue(Index),
                                                  (Byte)Index);
         };
@@ -663,7 +663,7 @@ private:
     size_t GetClosestEntryIndexInPalette(Byte* pi_pValue, const HRPPixelPalette& pi_rPixelPalette) const
         {
         Byte* pValue;
-        int RDist, GDist, BDist;
+        int32_t RDist, GDist, BDist;
         uint32_t Dist;
         size_t IndexForSmallerDist=0;
 
@@ -701,9 +701,9 @@ private:
 
         };
 
-    static short m_LostChannels[];
+    static int16_t m_LostChannels[];
     };
-short ConverterI4R8G8B8A8_I8R8G8B8::m_LostChannels[] = {3, -1};
+int16_t ConverterI4R8G8B8A8_I8R8G8B8::m_LostChannels[] = {3, -1};
 static ConverterI4R8G8B8A8_I8R8G8B8 s_I4R8G8B8A8_I8R8G8B8;
 
 //-----------------------------------------------------------------------------
@@ -807,7 +807,7 @@ HPMPersistentObject* HRPPixelTypeI4R8G8B8A8::Clone() const
     @end
     -----------------------------------------------------------------------------
  */
-unsigned short HRPPixelTypeI4R8G8B8A8::CountValueBits() const
+uint16_t HRPPixelTypeI4R8G8B8A8::CountValueBits() const
     {
     return 0;
     }

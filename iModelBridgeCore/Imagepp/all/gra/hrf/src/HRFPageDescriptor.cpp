@@ -1006,7 +1006,7 @@ HRFPageDescriptor::HRFPageDescriptor(HFCAccessMode                            pi
         {
         m_pListOfMetaDataContainer = new HMDMetaDataContainerList();
 
-        for (unsigned short ContainerInd = 0; ContainerInd < pSecondPageMDs->GetNbContainers(); ContainerInd++)
+        for (uint16_t ContainerInd = 0; ContainerInd < pSecondPageMDs->GetNbContainers(); ContainerInd++)
             {
             pSecondPageMDs->GetMetaDataContainer(ContainerInd, pMDContainer);
             m_pListOfMetaDataContainer->SetMetaDataContainer(pMDContainer);
@@ -1022,7 +1022,7 @@ HRFPageDescriptor::HRFPageDescriptor(HFCAccessMode                            pi
             m_pListOfMetaDataContainer = new HMDMetaDataContainerList();
             }
 
-        for (unsigned short ContainerInd = 0; ContainerInd < pPriorityPageMDs->GetNbContainers(); ContainerInd++)
+        for (uint16_t ContainerInd = 0; ContainerInd < pPriorityPageMDs->GetNbContainers(); ContainerInd++)
             {
 
             //MST MD HPRECONDITION(m_pPageCapabilities->GetCapabilityOfType(HRFRepresentativePaletteCapability::CLASS_ID, m_AccessMode) != 0);
@@ -1104,7 +1104,7 @@ uint64_t HRFPageDescriptor::CountBlocksForAllRes() const
     uint32_t                        NbRes = (uint32_t)m_ListOfResolutionDescriptor.size();
     HFCPtr<HRFResolutionDescriptor> pResolutionDesc;
 
-    for (unsigned short ResInd = 0; ResInd < NbRes; ResInd++)
+    for (uint16_t ResInd = 0; ResInd < NbRes; ResInd++)
         {
         pResolutionDesc = GetResolutionDescriptor(ResInd);
         NbBlocks += pResolutionDesc->GetBlocksPerHeight() *

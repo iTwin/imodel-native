@@ -77,12 +77,12 @@ void HFCCallbackRegistry::RemoveCallback(const HFCCallback* pi_pCallback)
 // GetCallback
 //-----------------------------------------------------------------------------
 HFCCallback* HFCCallbackRegistry::GetCallback(HCLASS_ID pi_CallbackID,
-    unsigned short pi_CallbackInd) const
+    uint16_t pi_CallbackInd) const
     {
     HFCCallback*                      pRetCallback;
     CallbacksMultiMap::const_iterator Itr(m_Callbacks.find(pi_CallbackID));
 
-    for (unsigned short Ind = 0; (Ind < pi_CallbackInd) && (Itr != m_Callbacks.end()); Ind++)
+    for (uint16_t Ind = 0; (Ind < pi_CallbackInd) && (Itr != m_Callbacks.end()); Ind++)
         {
         Itr++;
         }
@@ -103,8 +103,8 @@ HFCCallback* HFCCallbackRegistry::GetCallback(HCLASS_ID pi_CallbackID,
 // Public
 // GetCallback
 //-----------------------------------------------------------------------------
-unsigned short HFCCallbackRegistry::GetNbCallbacks(HCLASS_ID pi_CallbackID) const
+uint16_t HFCCallbackRegistry::GetNbCallbacks(HCLASS_ID pi_CallbackID) const
     {
-    return (unsigned short)m_Callbacks.count(pi_CallbackID);
+    return (uint16_t)m_Callbacks.count(pi_CallbackID);
     }
 

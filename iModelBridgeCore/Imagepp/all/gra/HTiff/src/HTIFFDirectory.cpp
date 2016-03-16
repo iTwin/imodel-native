@@ -88,7 +88,7 @@ uint64_t HTIFFDirectory::ReadDirectory (HTIFFStream* pi_pFile, uint64_t pi_Offse
             SwabArrayOfUInt64(&Count, 1);
 
         // The standard support Count64, not me
-        HASSERT(Count < ULONG_MAX);
+        HASSERT(Count < UINT32_MAX);
         m_DirCount = (uint32_t)Count;
 
         // Support old tiff file, without marker for next directory
@@ -99,15 +99,15 @@ uint64_t HTIFFDirectory::ReadDirectory (HTIFFStream* pi_pFile, uint64_t pi_Offse
         }
     else
         {
-        unsigned short Count;
-        ReadFail |= (pi_pFile->Read(&Count, sizeof(unsigned short), 1) != 1);
+        uint16_t Count;
+        ReadFail |= (pi_pFile->Read(&Count, sizeof(uint16_t), 1) != 1);
         if (m_pByteOrder->NeedSwapByte())
             SwabArrayOfShort(&Count, 1);
         m_DirCount = Count;
 
         // Support old tiff file, without marker for next directory
         // Compute the adresse of the pointer on the next directory
-        OffsetNextDir = pi_Offset + sizeof(unsigned short) +
+        OffsetNextDir = pi_Offset + sizeof(uint16_t) +
                         (m_DirCount*FileDirEntry32_size);
 
         }
@@ -201,7 +201,7 @@ uint64_t HTIFFDirectory::ReadDirectory (HTIFFStream* pi_pFile, uint64_t pi_Offse
     //
     if (TagIsPresent(m_rTagInfo.GetGeoKeyDirectoryTagID()))
         {
-        unsigned short* pKeyDirectory  = 0;
+        uint16_t* pKeyDirectory  = 0;
         uint32_t KeyCount       = 0;
         double* pDoubleParams  = 0;
         uint32_t DoubleCount    = 0;
@@ -256,7 +256,7 @@ uint64_t HTIFFDirectory::WriteDirectory (HTIFFStream* pio_pFile,
     // GeoTiff information
     if ((m_pGeoKeys != 0) && m_pGeoKeys->IsDirty())
         {
-        unsigned short* pKeyDirectory;
+        uint16_t* pKeyDirectory;
         uint32_t KeyCount;
         double* pDoubleParams;
         uint32_t DoubleCount;
@@ -316,7 +316,7 @@ uint64_t HTIFFDirectory::WriteDirectory (HTIFFStream* pio_pFile,
             TmpBufSize = sizeof(uint64_t) + sizeof(uint64_t) +    // Count and Link fields
                          (m_DirCount*FileDirEntry64_size);
         else
-            TmpBufSize = sizeof(unsigned short) + sizeof(uint32_t) +     // Count and Link fields
+            TmpBufSize = sizeof(uint16_t) + sizeof(uint32_t) +     // Count and Link fields
                          (m_DirCount*FileDirEntry32_size);
 
         HArrayAutoPtr<Byte> pTmpBuffer(new Byte[TmpBufSize]);
@@ -360,11 +360,11 @@ uint64_t HTIFFDirectory::WriteDirectory (HTIFFStream* pio_pFile,
             }
         else
             {
-            unsigned short DirCount = (unsigned short)m_DirCount;
+            uint16_t DirCount = (uint16_t)m_DirCount;
             if (m_pByteOrder->NeedSwapByte())
                 SwabArrayOfShort(&DirCount, 1);
 
-            WriteFail |= (pio_pFile->Write(&DirCount, sizeof(unsigned short), 1) != 1);
+            WriteFail |= (pio_pFile->Write(&DirCount, sizeof(uint16_t), 1) != 1);
             }
         if (WriteFail)
             {
@@ -453,7 +453,7 @@ uint64_t HTIFFDirectory::WriteDirectory (HTIFFStream* pio_pFile,
         if (pio_pFile->m_IsTiff64)
             LinkDirOffset = *pio_pOffset + sizeof(uint64_t) + (m_DirCount*FileDirEntry64_size);
         else
-            LinkDirOffset = *pio_pOffset + sizeof(unsigned short) + (m_DirCount*FileDirEntry32_size);
+            LinkDirOffset = *pio_pOffset + sizeof(uint16_t) + (m_DirCount*FileDirEntry32_size);
         }
 
 
@@ -468,7 +468,7 @@ void HTIFFDirectory::ConvertRationalToDblValues (uint32_t   pi_Count,
                                                  double*   po_pVal,
                                                  bool      pi_IsSigned /*false*/)
     {
-    for (unsigned short ValInd = 0; ValInd < pi_Count; ValInd++)
+    for (uint16_t ValInd = 0; ValInd < pi_Count; ValInd++)
         {
         if ((((uint32_t*)pi_RationalVals)[0] == 0) &&
             (((uint32_t*)pi_RationalVals)[1] == 0))
@@ -529,7 +529,7 @@ bool HTIFFDirectory::GetValues (HTagID pi_Tag, Byte* po_pVal)
         return false;
     }
 
-bool HTIFFDirectory::GetValues (HTagID pi_Tag, unsigned short* po_pVal)
+bool HTIFFDirectory::GetValues (HTagID pi_Tag, uint16_t* po_pVal)
     {
     HPRECONDITION(m_ppDirEntry != 0);
     HPRECONDITION(po_pVal != 0);
@@ -616,7 +616,7 @@ bool HTIFFDirectory::GetValues (HTagID pi_Tag, WChar** po_ppVal)
         return false;
     }
 
-bool HTIFFDirectory::GetValues (HTagID pi_Tag, unsigned short* po_pVal1, unsigned short* po_pVal2)
+bool HTIFFDirectory::GetValues (HTagID pi_Tag, uint16_t* po_pVal1, uint16_t* po_pVal2)
     {
     HPRECONDITION(m_ppDirEntry != 0);
     HPRECONDITION(po_pVal1 != 0);
@@ -646,7 +646,7 @@ bool HTIFFDirectory::GetValues (HTagID pi_Tag, uint32_t* po_pVal1, uint32_t* po_
         return false;
     }
 
-bool HTIFFDirectory::GetValues (HTagID pi_Tag, uint32_t* po_pCount, unsigned short** po_ppVal)
+bool HTIFFDirectory::GetValues (HTagID pi_Tag, uint32_t* po_pCount, uint16_t** po_ppVal)
     {
     HPRECONDITION(m_ppDirEntry != 0);
     HPRECONDITION(po_pCount != 0);
@@ -737,7 +737,7 @@ bool HTIFFDirectory::GetValues (HTagID pi_Tag, uint32_t* po_pCount, Byte** po_pp
     }
 
 
-bool HTIFFDirectory::SetValues (HTagID pi_Tag, unsigned short pi_Val)
+bool HTIFFDirectory::SetValues (HTagID pi_Tag, uint16_t pi_Val)
     {
     HPRECONDITION(m_ppDirEntry != 0);
 
@@ -849,7 +849,7 @@ WRAPUP:
     return false;
     }
 
-bool HTIFFDirectory::SetValues (HTagID pi_Tag, unsigned short pi_Val1,  unsigned short pi_Val2)
+bool HTIFFDirectory::SetValues (HTagID pi_Tag, uint16_t pi_Val1,  uint16_t pi_Val2)
     {
     HPRECONDITION(m_ppDirEntry != 0);
 
@@ -886,7 +886,7 @@ WRAPUP:
     }
 
 
-bool HTIFFDirectory::SetValues (HTagID pi_Tag, uint32_t pi_Count, const unsigned short* pi_pVal)
+bool HTIFFDirectory::SetValues (HTagID pi_Tag, uint32_t pi_Count, const uint16_t* pi_pVal)
     {
     HPRECONDITION(m_ppDirEntry != 0);
     HPRECONDITION(pi_pVal != 0);
@@ -1063,7 +1063,7 @@ bool HTIFFDirectory::AddEntry (HTagID pi_Tag)
             m_Status.Resize = true;
 
             // Increment number of entry
-            HASSERT(m_DirCount < ULONG_MAX);
+            HASSERT(m_DirCount < UINT32_MAX);
             m_DirCount++;
             }
 
@@ -1094,7 +1094,7 @@ void HTIFFDirectory::ConvertSHORTtoULONG (HTagID pi_Tag)
         //
         if (HTagInfo::LONG == pEntry->GetTagType())
             {
-            unsigned short* pVal;
+            uint16_t* pVal;
             uint32_t Count;
             m_ppDirEntry[pi_Tag]->GetValues(&Count, &pVal);
 
@@ -1133,7 +1133,7 @@ void HTIFFDirectory::ConvertToLONG64 (HTagID pi_Tag)
 
             if (HTagInfo::SHORT == m_ppDirEntry[pi_Tag]->GetTagType())
                 {
-                unsigned short* pVal;
+                uint16_t* pVal;
                 m_ppDirEntry[pi_Tag]->GetValues(&Count, &pVal);
 
                 pLong64 = new uint64_t[Count];
@@ -1191,7 +1191,7 @@ uint64_t HTIFFDirectory::GetDirectorySize(HTIFFStream* pi_pFile, uint64_t pi_Off
             SwabArrayOfUInt64(&Count, 1);
 
         // The standard support Count64, not me
-        HASSERT(Count < ULONG_MAX);
+        HASSERT(Count < UINT32_MAX);
         m_DirCount = (uint32_t)Count;
 
         // Support old tiff file, without marker for next directory
@@ -1202,13 +1202,13 @@ uint64_t HTIFFDirectory::GetDirectorySize(HTIFFStream* pi_pFile, uint64_t pi_Off
         }
     else
         {
-        unsigned short Count;
-        ReadFail |= (pi_pFile->Read(&Count, sizeof(unsigned short), 1) != 1);
+        uint16_t Count;
+        ReadFail |= (pi_pFile->Read(&Count, sizeof(uint16_t), 1) != 1);
         if (m_pByteOrder->NeedSwapByte())
             SwabArrayOfShort(&Count, 1);
         m_DirCount = (uint32_t)Count;
 
-        DirectorySize = sizeof(uint32_t) + sizeof(unsigned short) +
+        DirectorySize = sizeof(uint32_t) + sizeof(uint16_t) +
                         (m_DirCount*FileDirEntry32_size);
 
         }

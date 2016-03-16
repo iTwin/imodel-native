@@ -105,10 +105,10 @@ bool HRFGeoTiffCompressedTable::GetValue(const string&   pi_rKeyColumnName,
     HPRECONDITION(po_pSearchValue != 0);
 
     //:> Get the columns position
-    unsigned short KeyColumnStartPos=0;
-    unsigned short KeyColumnSize=0;
-    unsigned short SearchColumnStartPos=0;
-    unsigned short SearchColumnSize=0;
+    uint16_t KeyColumnStartPos=0;
+    uint16_t KeyColumnSize=0;
+    uint16_t SearchColumnStartPos=0;
+    uint16_t SearchColumnSize=0;
     bool   KeyColumnFound = false;
     bool   SearchColumnFound = false;
     bool   RecordFound = false;
@@ -483,7 +483,7 @@ size_t HRFGeoTiffCompressedTable::GetColumnCount() const
 
  @see HFCCompressedTable::ColumnInfo
 -----------------------------------------------------------------------------*/
-const HRFGeoTiffCompressedTable::ColumnInfo& HRFGeoTiffCompressedTable::GetColumnInfo(unsigned short pi_ColumnIdx) const
+const HRFGeoTiffCompressedTable::ColumnInfo& HRFGeoTiffCompressedTable::GetColumnInfo(uint16_t pi_ColumnIdx) const
     {
     HPRECONDITION(pi_ColumnIdx < m_ColumnsArray.size());
 

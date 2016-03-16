@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFIntergraphMPFFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -65,7 +65,7 @@ protected:
 
     virtual HRFResolutionEditor*
     CreateResolutionEditor (uint32_t      pi_Page,
-                            unsigned short pi_Resolution,
+                            uint16_t pi_Resolution,
                             HFCAccessMode pi_AccessMode);
 
 private:

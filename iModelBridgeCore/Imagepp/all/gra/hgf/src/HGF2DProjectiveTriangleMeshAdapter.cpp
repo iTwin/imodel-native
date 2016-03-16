@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DProjectiveTriangleMeshAdapter.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DProjectiveTriangleMeshAdapter
@@ -144,7 +144,7 @@ StatusInt HGF2DProjectiveTriangleMeshAdapter::ConvertDirect(double    pi_YIn,
             m_pLastTransformedDirectFacet->IsPointIn(HGF2DPosition(X, pi_YIn)))
             {
 
-            long NumToDo = 0;
+            int32_t NumToDo = 0;
             while ((pi_NumLoc - Index +NumToDo > TOTO) &&
                    m_pLastTransformedDirectFacet->IsPointIn(HGF2DPosition(X + ((NumToDo + TOTO) * pi_XInStep), pi_YIn)))
                 {
@@ -216,7 +216,7 @@ StatusInt HGF2DProjectiveTriangleMeshAdapter::ConvertInverse(double    pi_YIn,
         if (m_LastTransformedInverseFacetPresent &&
             m_pLastTransformedInverseFacet->IsPointIn(HGF2DPosition(X, pi_YIn)))
             {
-            long NumToDo = 0;
+            int32_t NumToDo = 0;
             while ((pi_NumLoc - Index + NumToDo > TOTO) &&
                    m_pLastTransformedInverseFacet->IsPointIn(HGF2DPosition(X + ((NumToDo + TOTO) * pi_XInStep), pi_YIn)))
                 {
@@ -408,9 +408,9 @@ bool HGF2DProjectiveTriangleMeshAdapter::CreateModels() const
     pTriangleMeshOfInverseModels->SetFacetValidation(false);
 
     // For every facet part of the mesh ...
-    long NumberOfFacets = m_pBaseMesh->CountFacets();
+    int32_t NumberOfFacets = m_pBaseMesh->CountFacets();
 
-    for (long i = 0 ; i < NumberOfFacets ; ++i)
+    for (int32_t i = 0 ; i < NumberOfFacets ; ++i)
         {
         // Obtain the facet
         HFCPtr<HVE2DRawFacet> pFacet = m_pBaseMesh->GetFacet(i);
@@ -438,7 +438,7 @@ bool HGF2DProjectiveTriangleMeshAdapter::CreateModels() const
 
         // Add the centroid
         // This is because of a bug concerning model generation using tie points
-        long k;
+        int32_t k;
         double MeanX = 0.0;
         double MeanY = 0.0;
 
@@ -464,7 +464,7 @@ bool HGF2DProjectiveTriangleMeshAdapter::CreateModels() const
         double CurrentY;
         double TempX;
         double TempY;
-        long CurrentTiePointVal = 0;
+        int32_t CurrentTiePointVal = 0;
 
         HGF2DLocationCollection::iterator ShapePointItr;
         for (ShapePointItr = ShapePoints.begin(); ShapePointItr != ShapePoints.end() ; ++ShapePointItr)

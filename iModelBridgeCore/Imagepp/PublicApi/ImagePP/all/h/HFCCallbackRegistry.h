@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCCallbackRegistry.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -23,9 +23,9 @@ public:
 
     IMAGEPP_EXPORT void             RemoveCallback(const HFCCallback* pi_pCallback);
 
-    IMAGEPP_EXPORT HFCCallback*     GetCallback(HCLASS_ID pi_CallbackID, unsigned short pi_CallbackInd = 0) const;
+    IMAGEPP_EXPORT HFCCallback*     GetCallback(HCLASS_ID pi_CallbackID, uint16_t pi_CallbackInd = 0) const;
 
-    IMAGEPP_EXPORT unsigned short   GetNbCallbacks(HCLASS_ID pi_CallbackID) const;
+    IMAGEPP_EXPORT uint16_t   GetNbCallbacks(HCLASS_ID pi_CallbackID) const;
 
 private:
 

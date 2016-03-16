@@ -30,9 +30,9 @@ HRPBlurFilterV24PhotoYCC::HRPBlurFilterV24PhotoYCC(Byte pi_Intensity)
 
     int32_t WeightMatrix[5][5];
 
-    for(unsigned short Y = 0; Y < 5; Y++)
+    for(uint16_t Y = 0; Y < 5; Y++)
         {
-        for(unsigned short X = 0; X < 5; X++)
+        for(uint16_t X = 0; X < 5; X++)
             {
             if(X == 0 || X == 4 || Y == 0 || Y == 4)
                 WeightMatrix[Y][X] = 1;
@@ -83,8 +83,8 @@ HRPSharpenFilterV24PhotoYCC::HRPSharpenFilterV24PhotoYCC(Byte pi_Intensity)
 
     int32_t WeightMatrix[3][3];
 
-    for(unsigned short Y = 0; Y < 3; Y++)
-        for(unsigned short X = 0; X < 3; X++)
+    for(uint16_t Y = 0; Y < 3; Y++)
+        for(uint16_t X = 0; X < 3; X++)
             WeightMatrix[Y][X] = -2;
 
     // we can see "shrapen" effect with a center weight of 48 to 17 (observation)

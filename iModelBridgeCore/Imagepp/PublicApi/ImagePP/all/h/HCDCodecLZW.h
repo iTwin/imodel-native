@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecLZW.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecLZW
@@ -26,7 +26,7 @@ public:
     IMAGEPP_EXPORT                 HCDCodecLZW(size_t pi_Width,
                                        size_t pi_Height,
                                        size_t pi_BitsPerPixel,
-                                       unsigned short pi_Predictor);
+                                       uint16_t pi_Predictor);
 
     HCDCodecLZW(const HCDCodecLZW& pi_rObj);
 
@@ -47,7 +47,7 @@ protected:
 
 private:
 
-    unsigned short m_Predictor;
+    uint16_t m_Predictor;
     };
 
 

@@ -87,7 +87,7 @@ HGSRegion::HGSRegion(const double*                pi_pPoints,
     {
     HPRECONDITION(pi_pPoints != 0);
     HPRECONDITION(pi_BufferSize > 2);
-    HPRECONDITION(pi_BufferSize <= LONG_MAX);
+    HPRECONDITION(pi_BufferSize <= INT32_MAX);
 
     // create a default coordsys
     m_pCoordSys = new HGF2DWorld(HGF2DWorld_UNKNOWNWORLD);

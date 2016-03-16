@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFTypes.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -39,9 +39,9 @@ public:
         return !operator==(pi_rObj);
         };
 
-    explicit operator int() const
+    explicit operator int32_t() const
     {
-        return (int)m_BlockType;
+        return (int32_t)m_BlockType;
     };
 
     IMAGEPP_EXPORT HRFBlockType();
@@ -225,9 +225,9 @@ public:
         return !operator==(pi_rObj);
         };
 
-    explicit operator int() const
+    explicit operator int32_t() const
         {
-        return (int)m_ScanlineOrientation;
+        return (int32_t)m_ScanlineOrientation;
         };
 
     IMAGEPP_EXPORT bool IsScanlineVertical() const;
@@ -345,7 +345,7 @@ typedef Byte   HRFDataFlag;
 #define HRFDATAFLAG_DIRTYFORSUBRES  0x10    // or
 
 #define HRF_EQUAL_TO_RESOLUTION_WIDTH    0
-#define HRF_EQUAL_TO_RESOLUTION_HEIGHT   LONG_MAX
+#define HRF_EQUAL_TO_RESOLUTION_HEIGHT   INT32_MAX
 END_IMAGEPP_NAMESPACE
 
 

@@ -79,7 +79,7 @@ protected:
         m_bitmap.GetSize(&width64, &height64);
         m_physicalExtent = HGF2DExtent(0, 0, (double)width64, (double)height64, pPhysicalCoordSys);
 
-        BeAssert(width64 <= ULONG_MAX && height64 <= ULONG_MAX);
+        BeAssert(width64 <= UINT32_MAX && height64 <= UINT32_MAX);
         m_width = (uint32_t)width64;
         m_height = (uint32_t)height64;
         }
@@ -269,7 +269,7 @@ void HRABitmapRLE::Clear(const HRAClearOptions& pi_rOptions)
                        (pPixelTypeRLE1->IsCompatibleWith(HRPPixelTypeI1R8G8B8RLE::CLASS_ID) || pPixelTypeRLE1->IsCompatibleWith(HRPPixelTypeI1R8G8B8A8RLE::CLASS_ID)));
 
         HFCPtr<HRPPixelConverter> pConverter(GetPixelType()->GetConverterTo(pPixelTypeRLE1));
-        unsigned short OutData[4];
+        uint16_t OutData[4];
 
         if (pi_rOptions.GetRawDataValue() != 0)
             pConverter->Convert(pi_rOptions.GetRawDataValue(), &OutData);
@@ -346,11 +346,11 @@ HRARasterEditor* HRABitmapRLE::CreateEditorUnShaped (HFCAccessMode pi_Mode)
 // public
 // GetRepresentativePalette
 //-----------------------------------------------------------------------------
-unsigned short HRABitmapRLE::GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms)
+uint16_t HRABitmapRLE::GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms)
     {
     HPRECONDITION(pio_pRepPalParms != 0);
 
-    unsigned short CountUsed = HRABitmapBase::GetRepresentativePalette(pio_pRepPalParms);
+    uint16_t CountUsed = HRABitmapBase::GetRepresentativePalette(pio_pRepPalParms);
 
     return CountUsed;
     }
@@ -518,8 +518,8 @@ void HRABitmapRLE::DeepCopy(const HRABitmapRLE& pi_rBitmap)
 //-----------------------------------------------------------------------------
 void HRABitmapRLE::InitSize(uint64_t pi_WidthPixels, uint64_t pi_HeightPixels)
     {
-    HASSERT(pi_WidthPixels <= ULONG_MAX);
-    HASSERT(pi_HeightPixels <= ULONG_MAX);
+    HASSERT(pi_WidthPixels <= UINT32_MAX);
+    HASSERT(pi_HeightPixels <= UINT32_MAX);
 
     m_pPacketRLE = new HCDPacketRLE((uint32_t)pi_WidthPixels, (uint32_t)pi_HeightPixels);
     m_pSurfaceDescriptor = 0;
@@ -542,8 +542,8 @@ size_t HRABitmapRLE::GetAdditionalSize() const
         uint64_t Height;
         GetSize(&Width, &Height);
 
-        HASSERT(Width <= ULONG_MAX);
-        HASSERT(Height <= ULONG_MAX);
+        HASSERT(Width <= UINT32_MAX);
+        HASSERT(Height <= UINT32_MAX);
 
         HFCPtr<HRPPixelType> pPixelType(GetPixelType());
         size_t BytesPerRow = ((uint32_t)Width * pPixelType->CountPixelRawDataBits() + 8 - 1) / 8;
@@ -631,29 +631,29 @@ const HFCPtr<HCDPacketRLE>& HRABitmapRLE::GetPacket() const
         uint64_t Height;
         GetSize(&Width, &Height);
 
-        HASSERT(Width <= ULONG_MAX);
-        HASSERT(Height <= ULONG_MAX);
+        HASSERT(Width <= UINT32_MAX);
+        HASSERT(Height <= UINT32_MAX);
 
         uint32_t RunsPerLine = ((uint32_t)Width / 32767) * 2 + 1;
 
-        HArrayAutoPtr<unsigned short> pTemplateLine(new unsigned short[RunsPerLine]);
+        HArrayAutoPtr<uint16_t> pTemplateLine(new uint16_t[RunsPerLine]);
         uint32_t PixelCount = (uint32_t)Width;
-        unsigned short* pTLineItr = pTemplateLine;
+        uint16_t* pTLineItr = pTemplateLine;
         for(; PixelCount > 32767; PixelCount-=32767)
             {
             *pTLineItr++ = 32767;
             *pTLineItr++ = 0;
             }
-        *pTLineItr = (unsigned short)PixelCount;    // remaining blacks.
+        *pTLineItr = (uint16_t)PixelCount;    // remaining blacks.
 
         // packet is owner of buffers.
         m_pPacketRLE->SetBufferOwnership(true);
 
         for(uint32_t i=0; i < Height; ++i)
             {
-            unsigned short* pLine = new unsigned short[RunsPerLine];
-            memcpy(pLine, pTemplateLine, RunsPerLine*sizeof(unsigned short));
-            m_pPacketRLE->SetLineBuffer(i, (Byte*)pLine, RunsPerLine*sizeof(unsigned short), RunsPerLine*sizeof(unsigned short));
+            uint16_t* pLine = new uint16_t[RunsPerLine];
+            memcpy(pLine, pTemplateLine, RunsPerLine*sizeof(uint16_t));
+            m_pPacketRLE->SetLineBuffer(i, (Byte*)pLine, RunsPerLine*sizeof(uint16_t), RunsPerLine*sizeof(uint16_t));
             }
         }
 
@@ -887,8 +887,8 @@ HFCPtr<HGSSurfaceDescriptor> HRABitmapRLE::CreateSurfaceDescriptor(const HFCPtr<
     uint64_t Height;
     GetSize(&Width, &Height);
 
-    HASSERT(Width <= ULONG_MAX);
-    HASSERT(Height <= ULONG_MAX);
+    HASSERT(Width <= UINT32_MAX);
+    HASSERT(Height <= UINT32_MAX);
 
     HFCPtr<HRPPixelType> pSrcPixelType;
 
@@ -1062,9 +1062,9 @@ void HRABitmapRLE::ComputeHistogramRLE(HRAHistogramOptions* pio_pOptions)
                 Scanlines.GetCurrentRun(&RunPosX, &RunPosY, &RunLen);
                 HPOSTCONDITION(RunPosX >= 0);
                 HPOSTCONDITION(RunPosY >= 0);
-                HPOSTCONDITION(RunLen < ULONG_MAX);
+                HPOSTCONDITION(RunLen < UINT32_MAX);
 
-                unsigned short* pRun = (unsigned short*)m_pPacketRLE->GetLineBuffer(RunPosY);
+                uint16_t* pRun = (uint16_t*)m_pPacketRLE->GetLineBuffer(RunPosY);
                 bool RunState = false;
                 size_t PixelFromRun = (size_t)RunPosX;
                 while (PixelFromRun >= *pRun)
@@ -1103,16 +1103,16 @@ void HRABitmapRLE::ComputeHistogramRLE(HRAHistogramOptions* pio_pOptions)
             uint64_t Height;
             GetSize(&Width, &Height);
 
-            HASSERT(Width <= ULONG_MAX);
-            HASSERT(Height <= ULONG_MAX);
+            HASSERT(Width <= UINT32_MAX);
+            HASSERT(Height <= UINT32_MAX);
 
             uint32_t PixelCount;
             bool RunState;
-            unsigned short* pRun;
+            uint16_t* pRun;
 
             for (uint32_t i = 0; i < Height; i++)
                 {
-                pRun = (unsigned short*)m_pPacketRLE->GetLineBuffer(i);
+                pRun = (uint16_t*)m_pPacketRLE->GetLineBuffer(i);
                 PixelCount = (uint32_t)Width;
                 RunState = false;
                 while (PixelCount > 0)

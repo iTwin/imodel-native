@@ -145,8 +145,8 @@ void HIMStripAdapterIterator::InitObject()
     // compute the width of a strip
     HFCGrid Grid(Extent.GetXMin(), Extent.GetYMin(), Extent.GetXMax(), Extent.GetYMax());
 
-    HASSERT(Grid.GetWidth() <= ULONG_MAX);
-    HASSERT(Grid.GetHeight() <= ULONG_MAX);
+    HASSERT(Grid.GetWidth() <= UINT32_MAX);
+    HASSERT(Grid.GetHeight() <= UINT32_MAX);
 
     m_StripWidth = (uint32_t)Grid.GetWidth();
 

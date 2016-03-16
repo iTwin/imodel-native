@@ -549,7 +549,7 @@ void HRFPDFLibInterface::GetLayers(const PDDoc        pi_pDoc,
         //No high level function returning the number of OCG for a given page has been
         //found and the function PDPageEnumOCGs doesn't seem to work
         //correctly
-        int OCGind = 0;
+        int32_t OCGind = 0;
 
         while (pDOCG[OCGind] != 0)
             {
@@ -625,7 +625,7 @@ void HRFPDFLibInterface::GetAnnotations(const PDDoc             pi_pDoc,
 
         po_rAnnotations = new HRFAnnotationsPDF();
 
-        for (unsigned short AnnotInd = 0; AnnotInd < NbAnnotations; AnnotInd++)
+        for (uint16_t AnnotInd = 0; AnnotInd < NbAnnotations; AnnotInd++)
             {
             Annot = PDPageGetAnnot(Page, AnnotInd);
 
@@ -906,10 +906,10 @@ bool HRFPDFLibInterface::IsOpRestrictedPDF(const PDDoc pi_pDoc)
         };
 
     bool   IsOpRestricted = false;
-    unsigned short NbOfOpPerms    = sizeof(OpRelatedPerms) / sizeof(PDPermReqOpr);
+    uint16_t NbOfOpPerms    = sizeof(OpRelatedPerms) / sizeof(PDPermReqOpr);
 
     DURING
-    for (unsigned short OpPermInd = 0; OpPermInd < NbOfOpPerms; OpPermInd++)
+    for (uint16_t OpPermInd = 0; OpPermInd < NbOfOpPerms; OpPermInd++)
         {
         PDPermReqStatus PerReqStatus = PDDocPermRequest(pi_pDoc,
                                                         PDPermReqObjDoc,
@@ -1722,7 +1722,7 @@ bool HRFPDFLibInterface::GetGeoreference(const CosObj&                  pi_rMeas
 
             double pMatrix[4][4];
             HRESULT Res = GetTransfoMatrixFromScaleAndTiePts(pMatrix,
-                                                             (unsigned short)(NbTiePoints * 6),
+                                                             (uint16_t)(NbTiePoints * 6),
                                                              pTiePointArray,
                                                              0,
                                                              0);
@@ -2405,9 +2405,9 @@ void HRFPDFLibInterface::SetLayerVisibility(PDDoc                      pi_pDoc,
 
     PDOCContext pContext = PDDocGetOCContext(pi_pDoc);
 
-    for (unsigned short LayerInd = 0; LayerInd < pi_rpVolatileLayers->GetNbVolatileLayers(); LayerInd++)
+    for (uint16_t LayerInd = 0; LayerInd < pi_rpVolatileLayers->GetNbVolatileLayers(); LayerInd++)
         {
-        int LayerKey = BeStringUtilities::Wtoi(pi_rpVolatileLayers->GetLayerInfo(LayerInd)->GetKeyName().c_str());
+        int32_t LayerKey = BeStringUtilities::Wtoi(pi_rpVolatileLayers->GetLayerInfo(LayerInd)->GetKeyName().c_str());
         if(LayerKey >= 0)
             PDOCGSetCurrentState(pDOGCs[LayerKey], pContext, pi_rpVolatileLayers->GetVolatileLayerInfo(LayerInd)->GetVisibleState());
         }

@@ -117,25 +117,25 @@ public:
         {
         // Line Capability
         Add (new HRFLineCapability(HFC_READ_ONLY,            // AccessMode
-                                   LONG_MAX,                 // MaxWidth
+                                   INT32_MAX,                 // MaxWidth
                                    HRFBlockAccess::RANDOM)); // BlockAccess
 
         // Tile Capability
         Add(new HRFTileCapability(HFC_READ_ONLY, // AccessMode
-                                  LONG_MAX,      // MaxSizeInBytes
+                                  INT32_MAX,      // MaxSizeInBytes
                                   1,             // MinWidth
-                                  LONG_MAX,      // MaxWidth
+                                  INT32_MAX,      // MaxWidth
                                   1,             // WidthIncrement
                                   1,             // MinHeight
-                                  LONG_MAX,      // MaxHeight
+                                  INT32_MAX,      // MaxHeight
                                   1,             // HeightIncrement
                                   false));       // Not Square
 
         // Strip Capability
         Add(new HRFStripCapability(HFC_READ_ONLY,  // AccessMode
-                                   LONG_MAX,       // MaxSizeInBytes
+                                   INT32_MAX,       // MaxSizeInBytes
                                    1,              // MinHeight
-                                   LONG_MAX,       // MaxHeight
+                                   INT32_MAX,       // MaxHeight
                                    1));            // HeightIncrement
         }
     };
@@ -746,7 +746,7 @@ HRFxChFile::~HRFxChFile()
     ---------------------------------------------------------------------------
  */
 HRFResolutionEditor* HRFxChFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                        unsigned short pi_Resolution,
+                                                        uint16_t pi_Resolution,
                                                         HFCAccessMode  pi_AccessMode)
     {
     HPRECONDITION(pi_Page < CountPages());
@@ -1145,7 +1145,7 @@ void HRFxChFile::CreateDescriptors()
 
     // Compose resolution descriptors
     HRFPageDescriptor::ListOfResolutionDescriptor  ListOfResolutionDescriptor;
-    for (unsigned short Resolution=0; Resolution < pChannelPageDescriptor->CountResolutions(); Resolution++)
+    for (uint16_t Resolution=0; Resolution < pChannelPageDescriptor->CountResolutions(); Resolution++)
         {
         HFCPtr<HRFResolutionDescriptor> pChannelResolutionDescriptor = pChannelPageDescriptor->GetResolutionDescriptor(Resolution);
 
@@ -1221,7 +1221,7 @@ void HRFxChFile::CreateDescriptors()
 void HRFxChFile::CreateChannelResolutionEditors()
     {
     // Create editors for each channel
-    for (unsigned short i=0; i<m_pRedFile->GetPageDescriptor(0)->CountResolutions(); i++)
+    for (uint16_t i=0; i<m_pRedFile->GetPageDescriptor(0)->CountResolutions(); i++)
         {
         m_RedFileResolutionEditor.push_back(m_pRedFile->CreateResolutionEditor(0, i, HFC_READ_ONLY));
         HASSERT(m_RedFileResolutionEditor[i] != 0);
@@ -1232,7 +1232,7 @@ void HRFxChFile::CreateChannelResolutionEditors()
         }
 
     if (m_ChannelCount == 4) // 32bits
-        for (unsigned short i=0; i<m_pRedFile->GetPageDescriptor(0)->CountResolutions(); i++)
+        for (uint16_t i=0; i<m_pRedFile->GetPageDescriptor(0)->CountResolutions(); i++)
             {
             m_AlphaFileResolutionEditor.push_back(m_pAlphaFile->CreateResolutionEditor(0, i, HFC_READ_ONLY));
             HASSERT(m_AlphaFileResolutionEditor[i] != 0);

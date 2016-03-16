@@ -89,11 +89,11 @@ struct ConverterV48R16G16B16_V96R32G32B32 : public HRPPixelConverter
 
     void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        unsigned short* pSrc = (unsigned short*)pi_pSourceRawData;
+        uint16_t* pSrc = (uint16_t*)pi_pSourceRawData;
         uint32_t* pDst = (uint32_t*)pio_pDestRawData;
 
         // 3 Channels per pixel
-        for(unsigned short i(0); i < pi_PixelsCount*3; i+=3)
+        for(uint16_t i(0); i < pi_PixelsCount*3; i+=3)
             {
             pDst[i]   = CONVERT_16BIT_TO_32BIT(pSrc[i]);
             pDst[i+1] = CONVERT_16BIT_TO_32BIT(pSrc[i+1]);
@@ -150,7 +150,7 @@ struct ConverterV32R8G8B8A8_V96R32G32B332 : public HRPPixelConverter
             }
         };
 
-    virtual const short* GetLostChannels() const override
+    virtual const int16_t* GetLostChannels() const override
         {
         return m_LostChannels;
         }
@@ -161,9 +161,9 @@ struct ConverterV32R8G8B8A8_V96R32G32B332 : public HRPPixelConverter
 
 private:
 
-    static short m_LostChannels[];
+    static int16_t m_LostChannels[];
     };
-short ConverterV32R8G8B8A8_V96R32G32B332::m_LostChannels[] = {3, -1};
+int16_t ConverterV32R8G8B8A8_V96R32G32B332::m_LostChannels[] = {3, -1};
 static ConverterV32R8G8B8A8_V96R32G32B332 s_V32R8G8B8A8_V96R32G32B332;
 
 //-----------------------------------------------------------------------------
@@ -235,7 +235,7 @@ struct ConverterV96R32G32B32_V48R16G16B16 : public HRPPixelConverter
     void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         uint32_t* pSrc = (uint32_t*)pi_pSourceRawData;
-        unsigned short*  pDst = (unsigned short*)pio_pDestRawData;
+        uint16_t*  pDst = (uint16_t*)pio_pDestRawData;
 
         // 3 Channels per pixel.
         for(uint32_t i(0); i < pi_PixelsCount*3; i+=3)
@@ -327,7 +327,7 @@ HPMPersistentObject* HRPPixelTypeV96R32G32B32::Clone() const
     @end
     -----------------------------------------------------------------------------
  */
-unsigned short HRPPixelTypeV96R32G32B32::CountValueBits() const
+uint16_t HRPPixelTypeV96R32G32B32::CountValueBits() const
     {
     return 96;
     }

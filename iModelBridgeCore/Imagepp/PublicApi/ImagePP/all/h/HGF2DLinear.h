@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DLinear.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DLinear
@@ -454,7 +454,7 @@ public:
         -----------------------------------------------------------------------------
     */
     virtual bool      AutoCrosses() const = 0;
-//        virtual int        AutoIntersect(HGF2DPositionCollection* po_pPoints) const = 0;
+//        virtual int32_t        AutoIntersect(HGF2DPositionCollection* po_pPoints) const = 0;
 
     // From HGF2DVector
     virtual HGF2DVectorTypeId

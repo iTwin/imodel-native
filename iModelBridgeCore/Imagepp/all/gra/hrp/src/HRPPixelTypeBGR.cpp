@@ -32,11 +32,11 @@ HRPPixelTypeBGR::HRPPixelTypeBGR()
 //-----------------------------------------------------------------------------
 // Constructor for straight BGR
 //-----------------------------------------------------------------------------
-HRPPixelTypeBGR::HRPPixelTypeBGR(unsigned short pi_BitsBlue,
-                                 unsigned short pi_BitsGreen,
-                                 unsigned short pi_BitsRed,
-                                 unsigned short pi_BitsExtra,
-                                 unsigned short pi_IndexBits,
+HRPPixelTypeBGR::HRPPixelTypeBGR(uint16_t pi_BitsBlue,
+                                 uint16_t pi_BitsGreen,
+                                 uint16_t pi_BitsRed,
+                                 uint16_t pi_BitsExtra,
+                                 uint16_t pi_IndexBits,
                                  bool   pi_IsBitsExtraAlpha)
     : HRPPixelType(HRPChannelOrgBGR(pi_BitsBlue,
                                     pi_BitsGreen,
@@ -54,14 +54,14 @@ HRPPixelTypeBGR::HRPPixelTypeBGR(unsigned short pi_BitsBlue,
 // Constructor for BGR channels plus a 4th channel.
 // Useful for creating BGRA or BGRU pixel types.
 //-----------------------------------------------------------------------------
-HRPPixelTypeBGR::HRPPixelTypeBGR(unsigned short             pi_BitsBlue,
-                                 unsigned short             pi_BitsGreen,
-                                 unsigned short             pi_BitsRed,
-                                 unsigned short             pi_BitsAlpha,
+HRPPixelTypeBGR::HRPPixelTypeBGR(uint16_t             pi_BitsBlue,
+                                 uint16_t             pi_BitsGreen,
+                                 uint16_t             pi_BitsRed,
+                                 uint16_t             pi_BitsAlpha,
                                  HRPChannelType::ChannelRole pi_RoleChannel4,
                                  HRPChannelType::DataType    pi_DataTypeChannel4,
-                                 unsigned short             pi_BitsChannel4,
-                                 unsigned short             pi_IndexBits)
+                                 uint16_t             pi_BitsChannel4,
+                                 uint16_t             pi_IndexBits)
     : HRPPixelType(HRPChannelOrgBGR(pi_BitsBlue,
                                     pi_BitsGreen,
                                     pi_BitsRed,

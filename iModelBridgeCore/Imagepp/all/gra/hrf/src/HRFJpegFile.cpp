@@ -360,8 +360,8 @@ skip_input_data (j_decompress_ptr cinfo, long num_bytes)
      * any trouble anyway --- large skips are infrequent.
      */
     if (num_bytes > 0) {
-        while (num_bytes > (long) src->pub.bytes_in_buffer) {
-            num_bytes -= (long) src->pub.bytes_in_buffer;
+        while (num_bytes > (int32_t) src->pub.bytes_in_buffer) {
+            num_bytes -= (int32_t) src->pub.bytes_in_buffer;
             (void) fill_input_buffer(cinfo);
             /* note we assume that fill_input_buffer will never return false,
              * so suspension need not be handled.
@@ -544,7 +544,7 @@ METHODDEF (void)
 term_destination (j_compress_ptr cinfo)
     {
     my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
-    HASSERT_X64(OUTPUT_BUF_SIZE - dest->pub.free_in_buffer < ULONG_MAX);
+    HASSERT_X64(OUTPUT_BUF_SIZE - dest->pub.free_in_buffer < UINT32_MAX);
     uint32_t datacount = (uint32_t)(OUTPUT_BUF_SIZE - dest->pub.free_in_buffer);
 
     /* Write any data remaining in the buffer */
@@ -880,7 +880,7 @@ HRFJpegFile::~HRFJpegFile()
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFJpegFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                         unsigned short pi_Resolution,
+                                                         uint16_t pi_Resolution,
                                                          HFCAccessMode  pi_AccessMode)
     {
     // verify that the page number is 0, because we have one image per file
@@ -972,7 +972,7 @@ bool HRFJpegFile::AssignPageToStruct2 (jpeg_compress_struct* pi_pTable)
 
     /*
     HFCPtr<HRFLineCapability> pLineCapability = (HFCPtr<HRFLineCapability>& )GetCapabilities()->GetCapabilityOfType(HRFLineCapability::CLASS_ID, HFC_CREATE_ONLY);
-    unsigned long MaxSizeInPixel = pLineCapability()->GetMaxSizeInBytes() / m_Jpeg.m_pCompress->input_components;
+    uint32_t MaxSizeInPixel = pLineCapability()->GetMaxSizeInBytes() / m_Jpeg.m_pCompress->input_components;
 
     if ((m_Jpeg.m_pCompress->image_width  > MaxSizeInPixel) ||
         (m_Jpeg.m_pCompress->image_height > MaxSizeInPixel))
@@ -1028,7 +1028,7 @@ bool HRFJpegFile::AssignPageToStruct2 (jpeg_compress_struct* pi_pTable)
     if(pi_pTable != 0)
     {
         JQUANT_TBL** qtblptr;
-        int tblno;
+        int32_t tblno;
         for (tblno = 0; tblno < NUM_QUANT_TBLS; tblno++) 
         {
             if (pi_pTable->quant_tbl_ptrs[tblno] != 0) 
@@ -1190,7 +1190,7 @@ void HRFJpegFile::CreateDescriptors ()
         HFCPtr<HPMGenericAttribute> pTag;
 
         // RESOLUTIONUNIT Tag
-        pTag = new HRFAttributeResolutionUnit((unsigned short)(m_Jpeg.m_pDecompress->density_unit + 1));
+        pTag = new HRFAttributeResolutionUnit((uint16_t)(m_Jpeg.m_pDecompress->density_unit + 1));
         TagList.Set(pTag);
 
         // XRESOLUTION Tag

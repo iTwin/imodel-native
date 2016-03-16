@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDPacketRLE.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -70,7 +70,7 @@ inline HCDPacketRLE::RLEScanlineGenerator* HCDPacketRLE::GetRLEScanlineGenerator
     {
     HPRECONDITION(pi_PosY < m_pCodec->GetHeight());
 
-    return new RLEScanlineGenerator((const unsigned short*)GetLineBuffer(pi_PosY),
+    return new RLEScanlineGenerator((const uint16_t*)GetLineBuffer(pi_PosY),
                                     m_pCodec->GetWidth(),
                                     pi_State);
     }
@@ -80,7 +80,7 @@ inline HCDPacketRLE::RLEScanlineGenerator* HCDPacketRLE::GetRLEScanlineGenerator
 // Inline methods for class HCDPacketRLE::RLEScanlineGenerator
 //-----------------------------------------------------------------------------
 
-inline HCDPacketRLE::RLEScanlineGenerator::RLEScanlineGenerator(const unsigned short*  pi_pRun,
+inline HCDPacketRLE::RLEScanlineGenerator::RLEScanlineGenerator(const uint16_t*  pi_pRun,
                                                                 HUINTX          pi_Width,
                                                                 bool           pi_State)
     : m_pRun(pi_pRun),

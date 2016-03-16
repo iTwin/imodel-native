@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAAverageSamplerN8.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>-----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ private:
 
     Byte*         ComputeAddress(HUINTX  pi_PosX,
                                    HUINTX  pi_PosY,
-                                   uint32_t pi_NeededPixels = ULONG_MAX) const;
+                                   uint32_t pi_NeededPixels = UINT32_MAX) const;
 
     void            StretchByTwo(uint32_t pi_PositionX,
                                  uint32_t pi_PositionY,

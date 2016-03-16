@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF3DCoord.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Inline methods for class HGF3DCoord
@@ -509,7 +509,7 @@ template<class DataType> inline bool HGF3DCoord<DataType>::IsEqualTo2DAutoEpsilo
     @see SetZ()
     -----------------------------------------------------------------------------
 */
-template<class DataType> inline DataType& HGF3DCoord<DataType>::operator[](int pi_CoordinateRef)
+template<class DataType> inline DataType& HGF3DCoord<DataType>::operator[](int32_t pi_CoordinateRef)
     {
     HPRECONDITION((pi_CoordinateRef == 0) || (pi_CoordinateRef == 1) || (pi_CoordinateRef == 2));
 
@@ -539,7 +539,7 @@ template<class DataType> inline DataType& HGF3DCoord<DataType>::operator[](int p
     @see GetZ()
     -----------------------------------------------------------------------------
 */
-template<class DataType> inline const DataType& HGF3DCoord<DataType>::operator[](int pi_CoordinateRef) const
+template<class DataType> inline const DataType& HGF3DCoord<DataType>::operator[](int32_t pi_CoordinateRef) const
     {
     HPRECONDITION((pi_CoordinateRef == 0) || (pi_CoordinateRef == 1) || (pi_CoordinateRef == 2));
 
@@ -710,11 +710,11 @@ template<> inline void HGF3DCoord<unsigned char>::PrintState(ostream& po_rOutput
 // This method dumps the content of the object in the given output stream
 // in text format
 //-----------------------------------------------------------------------------
-template<> inline void HGF3DCoord<short>::PrintState(ostream& po_rOutput) const
+template<> inline void HGF3DCoord<int16_t>::PrintState(ostream& po_rOutput) const
     {
 #ifdef __HMR_PRINTSTATE
     char       DumString[256];
-    sprintf(DumString, "Object is a HGF3DCoord<short> X = %5hd , Y = %5hd , Z = %5hd", m_XValue, m_YValue, m_ZValue);
+    sprintf(DumString, "Object is a HGF3DCoord<int16_t> X = %5hd , Y = %5hd , Z = %5hd", m_XValue, m_YValue, m_ZValue);
     HDUMP0(DumString);
     HDUMP0("\n");
     po_rOutput << DumString << endl;
@@ -726,11 +726,11 @@ template<> inline void HGF3DCoord<short>::PrintState(ostream& po_rOutput) const
 // This method dumps the content of the object in the given output stream
 // in text format
 //-----------------------------------------------------------------------------
-template<> inline void HGF3DCoord<unsigned short>::PrintState(ostream& po_rOutput) const
+template<> inline void HGF3DCoord<uint16_t>::PrintState(ostream& po_rOutput) const
     {
 #ifdef __HMR_PRINTSTATE
     char       DumString[256];
-    sprintf(DumString, "Object is a HGF3DCoord<unsigned short> X = %5hu , Y = %5hu , Z = %5hu", m_XValue, m_YValue, m_ZValue);
+    sprintf(DumString, "Object is a HGF3DCoord<uint16_t> X = %5hu , Y = %5hu , Z = %5hu", m_XValue, m_YValue, m_ZValue);
     HDUMP0(DumString);
     HDUMP0("\n");
     po_rOutput << DumString << endl;

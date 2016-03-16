@@ -48,7 +48,7 @@ public:
         {
         // Block Capability
         Add(new HRFLineCapability(HFC_READ_WRITE_CREATE,        // AccessMode
-                                  LONG_MAX,                     // MaxWidth
+                                  INT32_MAX,                     // MaxWidth
                                   HRFBlockAccess::SEQUENTIAL)); // BlockAccess
         }
     };
@@ -254,7 +254,7 @@ bool HRFCalsCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
             // Be sure to exclude anything like : "1, B" where there is more than a
             // digit to describe the document type.
-            for (int CarIndex = 0; (CarIndex < 6) && bResult; CarIndex++)
+            for (int32_t CarIndex = 0; (CarIndex < 6) && bResult; CarIndex++)
                 {
                 if (StringBuffer[CarIndex] && (!isdigit(StringBuffer[CarIndex]) && !isspace(StringBuffer[CarIndex])))
                     goto WRAPUP;
@@ -285,7 +285,7 @@ bool HRFCalsCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
             // Be sure to exclude anything like : "1, B" where there is more than a
             // digit to describe the document type.
-            for (int CarIndex = 0; (CarIndex < 6) && bResult; CarIndex++)
+            for (int32_t CarIndex = 0; (CarIndex < 6) && bResult; CarIndex++)
                 {
                 if (StringBuffer[CarIndex] && (!isdigit(StringBuffer[CarIndex]) && !isspace(StringBuffer[CarIndex])))
                     goto WRAPUP;
@@ -382,7 +382,7 @@ HRFCalsFile::~HRFCalsFile()
 //-----------------------------------------------------------------------------
 
 HRFResolutionEditor* HRFCalsFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                         unsigned short pi_Resolution,
+                                                         uint16_t pi_Resolution,
                                                          HFCAccessMode  pi_AccessMode)
     {
     // verify that the page number is 0, because we have one image per file
@@ -603,8 +603,8 @@ bool HRFCalsFile::ConstructSlo()
     char StringBuffer[4];
 
     // Initialise to an SLO HRFScanlineOrientation::UPPER_LEFT_HORIZONTAL.
-    unsigned short PelPath  = 0;
-    unsigned short LineProg = 270;
+    uint16_t PelPath  = 0;
+    uint16_t LineProg = 270;
 
     char* Orientation = 0;
 
@@ -622,12 +622,12 @@ bool HRFCalsFile::ConstructSlo()
         // Get the raster Width from the header record entry
         strncpy(StringBuffer, &Orientation[9], 3);
         StringBuffer[3] = 0;
-        PelPath = (unsigned short)atoi(StringBuffer);
+        PelPath = (uint16_t)atoi(StringBuffer);
 
         // Get the raster Width from the header record entry
         strncpy(StringBuffer, &Orientation[13], 3);
         StringBuffer[3] = 0;
-        LineProg = (unsigned short)atoi(StringBuffer);
+        LineProg = (uint16_t)atoi(StringBuffer);
 
         Status = true;
         }
@@ -874,7 +874,7 @@ void HRFCalsFile::InitOpenedFile()
 
         // Create and initialise a new codec
         m_pCodec = new HCDCodecCCITTFax4(m_Width, m_Height);
-        m_pCodec->SetPhotometric((unsigned short)ImageppLib::GetHost().GetImageppLibAdmin()._GetDefaultPhotometricInterpretation());
+        m_pCodec->SetPhotometric((uint16_t)ImageppLib::GetHost().GetImageppLibAdmin()._GetDefaultPhotometricInterpretation());
         m_pCodec->SetSubset(m_Width,1);
 
         m_BitPerPixel     = 1;

@@ -264,7 +264,7 @@ void HCDCodecFlashpixOLDForMSI10::InitObject(HCDCodecFlashpixOLDForMSI10::ColorM
         m_Tables[i].pData   = 0;
         m_Tables[i].BufSize = 0;
         }
-    m_LastTable         = ULONG_MAX;
+    m_LastTable         = UINT32_MAX;
     m_TableSelection    = 0;
 
     //HLX.. Not used Set default settings
@@ -363,7 +363,7 @@ void HCDCodecFlashpixOLDForMSI10::SetTable(uint32_t pi_Table,
     // If the table to set is the last table used,
     // then invalidate the last table
     if (pi_Table == m_LastTable)
-        m_LastTable = ULONG_MAX;
+        m_LastTable = UINT32_MAX;
 
     // destroy the current table data if availabe
     delete[] m_Tables[pi_Table].pData;

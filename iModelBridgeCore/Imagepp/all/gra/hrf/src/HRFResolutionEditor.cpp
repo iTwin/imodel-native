@@ -29,7 +29,7 @@
 //-----------------------------------------------------------------------------
 HRFResolutionEditor::HRFResolutionEditor(HFCPtr<HRFRasterFile>    pi_rpRasterFile,
                                          uint32_t                 pi_Page,
-                                         unsigned short          pi_Resolution,
+                                         uint16_t          pi_Resolution,
                                          HFCAccessMode            pi_AccessMode)
     {
     HPRECONDITION (pi_rpRasterFile != 0);
@@ -118,8 +118,8 @@ HSTATUS HRFResolutionEditor::ReadBlock(uint64_t             pi_PosBlockX,
                                        uint64_t             pi_PosBlockY,
                                        Byte*                po_pData)
     {
-    HPRECONDITION((pi_PosBlockX + m_pResolutionDescriptor->GetBlockWidth()  <= ULONG_MAX) &&
-                  (pi_PosBlockY + m_pResolutionDescriptor->GetBlockHeight() <= ULONG_MAX));
+    HPRECONDITION((pi_PosBlockX + m_pResolutionDescriptor->GetBlockWidth()  <= UINT32_MAX) &&
+                  (pi_PosBlockY + m_pResolutionDescriptor->GetBlockHeight() <= UINT32_MAX));
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
 
     HSTATUS Status = H_SUCCESS;
@@ -152,8 +152,8 @@ HSTATUS HRFResolutionEditor::ReadBlock(uint64_t             pi_PosBlockX,
                                          uint64_t             pi_PosBlockY,
                                          HFCPtr<HCDPacket>&    po_rpPacket)
     {
-    HPRECONDITION((pi_PosBlockX + m_pResolutionDescriptor->GetBlockWidth()  <= ULONG_MAX) &&
-                  (pi_PosBlockY + m_pResolutionDescriptor->GetBlockHeight() <= ULONG_MAX));
+    HPRECONDITION((pi_PosBlockX + m_pResolutionDescriptor->GetBlockWidth()  <= UINT32_MAX) &&
+                  (pi_PosBlockY + m_pResolutionDescriptor->GetBlockHeight() <= UINT32_MAX));
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
 
     // Display a message that we pass through the default ReadBlock with
@@ -186,14 +186,14 @@ HSTATUS HRFResolutionEditor::ReadBlockRLE(uint64_t                pi_PosBlockX,
                                           uint64_t                pi_PosBlockY,
                                           HFCPtr<HCDPacketRLE>&   po_rpPacketRLE)
     {
-    HPRECONDITION((pi_PosBlockX + m_pRasterFile->GetPageDescriptor(m_Page)->GetResolutionDescriptor(m_Resolution)->GetBlockWidth() <= ULONG_MAX) &&
-                  (pi_PosBlockY + m_pRasterFile->GetPageDescriptor(m_Page)->GetResolutionDescriptor(m_Resolution)->GetBlockHeight() <= ULONG_MAX));
+    HPRECONDITION((pi_PosBlockX + m_pRasterFile->GetPageDescriptor(m_Page)->GetResolutionDescriptor(m_Resolution)->GetBlockWidth() <= UINT32_MAX) &&
+                  (pi_PosBlockY + m_pRasterFile->GetPageDescriptor(m_Page)->GetResolutionDescriptor(m_Resolution)->GetBlockHeight() <= UINT32_MAX));
     HPRECONDITION(po_rpPacketRLE->HasBufferOwnership());    // Must be owner of buffer.
     HPRECONDITION(po_rpPacketRLE->GetCodec()->GetWidth() == GetResolutionDescriptor()->GetBlockWidth());
     HPRECONDITION(po_rpPacketRLE->GetCodec()->GetHeight() >= GetResolutionDescriptor()->GetBlockHeight());
-    HPRECONDITION(GetResolutionDescriptor()->GetHeight() <= ULONG_MAX);
-    HPRECONDITION(GetResolutionDescriptor()->GetWidth() <= ULONG_MAX);
-    HPRECONDITION(GetResolutionDescriptor()->GetBytesPerBlockWidth() <= ULONG_MAX);
+    HPRECONDITION(GetResolutionDescriptor()->GetHeight() <= UINT32_MAX);
+    HPRECONDITION(GetResolutionDescriptor()->GetWidth() <= UINT32_MAX);
+    HPRECONDITION(GetResolutionDescriptor()->GetBytesPerBlockWidth() <= UINT32_MAX);
 
     // Display a message that we pass through the default ReadBlock with
     // a packet, which decompressed the data into an Identify packet
@@ -221,7 +221,7 @@ HSTATUS HRFResolutionEditor::ReadBlockRLE(uint64_t                pi_PosBlockX,
             }
 
         HFCPtr<HCDCodecHMRRLE1> pCodecRLE = new HCDCodecHMRRLE1((uint32_t)GetResolutionDescriptor()->GetBlockWidth(), 1);              // Compress one line at a time.
-        size_t                  WorkLineBufferSize = ((uint32_t)GetResolutionDescriptor()->GetBlockWidth() * 2 + 2)*sizeof(unsigned short);   // Worst case for one line.
+        size_t                  WorkLineBufferSize = ((uint32_t)GetResolutionDescriptor()->GetBlockWidth() * 2 + 2)*sizeof(uint16_t);   // Worst case for one line.
         HArrayAutoPtr<Byte>   pWorkLineBuffer (new Byte[WorkLineBufferSize]);
         uint32_t                BytesPerBlockWidth = GetResolutionDescriptor()->GetBytesPerBlockWidth();
 
@@ -259,16 +259,16 @@ HSTATUS HRFResolutionEditor::WriteBlockRLE(uint64_t             pi_PosBlockX,
                                            uint64_t             pi_PosBlockY,
                                            HFCPtr<HCDPacketRLE>& pi_rpPacketRLE)
     {
-    HPRECONDITION((pi_PosBlockX + m_pRasterFile->GetPageDescriptor(m_Page)->GetResolutionDescriptor(m_Resolution)->GetBlockWidth() <= ULONG_MAX) &&
-                  (pi_PosBlockY + m_pRasterFile->GetPageDescriptor(m_Page)->GetResolutionDescriptor(m_Resolution)->GetBlockHeight() <= ULONG_MAX));
+    HPRECONDITION((pi_PosBlockX + m_pRasterFile->GetPageDescriptor(m_Page)->GetResolutionDescriptor(m_Resolution)->GetBlockWidth() <= UINT32_MAX) &&
+                  (pi_PosBlockY + m_pRasterFile->GetPageDescriptor(m_Page)->GetResolutionDescriptor(m_Resolution)->GetBlockHeight() <= UINT32_MAX));
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (m_pResolutionDescriptor->GetCodec() != 0);
     HPRECONDITION(pi_rpPacketRLE->GetCodec()->GetWidth() == GetResolutionDescriptor()->GetBlockWidth());
     HPRECONDITION(pi_rpPacketRLE->GetCodec()->GetHeight() >= GetResolutionDescriptor()->GetBlockHeight() ||             // Must contains block height,
         pi_PosBlockY + pi_rpPacketRLE->GetCodec()->GetHeight() >= GetResolutionDescriptor()->GetHeight());    // except for last block.
-    HPRECONDITION(GetResolutionDescriptor()->GetHeight() <= ULONG_MAX);
-    HPRECONDITION(GetResolutionDescriptor()->GetWidth() <= ULONG_MAX);
-    HPRECONDITION(GetResolutionDescriptor()->GetBytesPerBlockWidth() <= ULONG_MAX);
+    HPRECONDITION(GetResolutionDescriptor()->GetHeight() <= UINT32_MAX);
+    HPRECONDITION(GetResolutionDescriptor()->GetWidth() <= UINT32_MAX);
+    HPRECONDITION(GetResolutionDescriptor()->GetBytesPerBlockWidth() <= UINT32_MAX);
 
     // Alloc buffer for uncompress data.
     HCDPacket UncompressPacket(new Byte[GetResolutionDescriptor()->GetBlockSizeInBytes()], GetResolutionDescriptor()->GetBlockSizeInBytes());

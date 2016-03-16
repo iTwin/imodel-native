@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecIJG.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecIJG
@@ -106,7 +106,7 @@ public:
     IMAGEPP_EXPORT ColorModes      GetSourceColorMode() const;
 
     // third parameter applies only for IJL, internal use :)
-    IMAGEPP_EXPORT void            SetQuantizationTable(int pi_Slot, const unsigned int* pi_pTable, bool pi_UnZigZag = true);
+    IMAGEPP_EXPORT void            SetQuantizationTable(int32_t pi_Slot, const uint32_t* pi_pTable, bool pi_UnZigZag = true);
 
     // There is 3 kinds of jpeg stream:
     //  1) (default) Interchange format. A standalone jpeg stream.

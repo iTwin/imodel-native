@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelType.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPPixelType
@@ -73,8 +73,8 @@ public:
     uint32_t                                   CountPixelRawDataBits() const;
 
     // Other methods
-    virtual unsigned short                      CountIndexBits()        const;
-    virtual unsigned short                      CountValueBits()        const = 0;
+    virtual uint16_t                      CountIndexBits()        const;
+    virtual uint16_t                      CountValueBits()        const = 0;
 
     IMAGEPP_EXPORT const void*        GetDefaultRawData() const;
     IMAGEPP_EXPORT void            SetDefaultRawData(const void* pi_pValue);
@@ -94,9 +94,9 @@ protected:
     // primary methods
     HRPPixelType();
     HRPPixelType(const HRPChannelOrg& pi_rChannelOrg,
-                 unsigned short pi_IndexBits);
+                 uint16_t pi_IndexBits);
     HRPPixelType(const HRPChannelOrg& pi_rChannelOrg,
-                 unsigned short pi_IndexBits,
+                 uint16_t pi_IndexBits,
                  const HRPChannelOrg& pi_rPaletteChannelOrg);
     HRPPixelType(const HRPPixelPalette& pi_rPixelPalette);
     HRPPixelType(const HRPPixelType& pi_rObj);
@@ -121,7 +121,7 @@ private:
                                                      const HRPPixelType* pi_pPixelType) const;
 
     // greater than 0 if pixels are indices, equal to 0 if pixels are values.
-    unsigned short                  m_IndexBits;
+    uint16_t                  m_IndexBits;
 
     HRPPixelPalette                 m_PixelPalette;
 

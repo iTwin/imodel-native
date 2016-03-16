@@ -833,13 +833,13 @@ void HIMBlendCorridor::PrecomputeBlendCorridorParameters()
 
     if (CorridorGrid.GetWidth() <= MAX_TILE_SIZE_X)
         {
-        HASSERT(CorridorGrid.GetWidth() <= ULONG_MAX);
+        HASSERT(CorridorGrid.GetWidth() <= UINT32_MAX);
         TileSizeX = (uint32_t)CorridorGrid.GetWidth();
         }
 
     if (CorridorGrid.GetHeight() <= MAX_TILE_SIZE_Y)
         {
-        HASSERT(CorridorGrid.GetHeight() <= ULONG_MAX);
+        HASSERT(CorridorGrid.GetHeight() <= UINT32_MAX);
         TileSizeY = (uint32_t)CorridorGrid.GetHeight();
         }
 
@@ -874,8 +874,8 @@ void HIMBlendCorridor::PrecomputeBlendCorridorParameters()
     //
     // Allocate the base tile
     //
-    HASSERT(m_pTileDescriptor->GetTileWidth() <= ULONG_MAX);
-    HASSERT(m_pTileDescriptor->GetTileHeight() <= ULONG_MAX);
+    HASSERT(m_pTileDescriptor->GetTileWidth() <= UINT32_MAX);
+    HASSERT(m_pTileDescriptor->GetTileHeight() <= UINT32_MAX);
 
     m_pBaseTile = new HRABitmap((uint32_t)m_pTileDescriptor->GetTileWidth(),
                                 (uint32_t)m_pTileDescriptor->GetTileHeight(),
@@ -983,7 +983,7 @@ HFCPtr<HRARaster> HIMBlendCorridor::CreateTile(uint64_t pi_Index) const
                     // Only process valid lines
                     if (YPhysical < m_pTileDescriptor->GetImageHeight())
                         {
-                        HASSERT(m_pTileDescriptor->GetImageWidth() <= ULONG_MAX);
+                        HASSERT(m_pTileDescriptor->GetImageWidth() <= UINT32_MAX);
                         NumPixels = MIN(NumPixels, (uint32_t)m_pTileDescriptor->GetImageWidth() - XPhysical);
 
                         // Obtain pointer to first pixel to process
@@ -1031,7 +1031,7 @@ HFCPtr<HRARaster> HIMBlendCorridor::CreateTile(uint64_t pi_Index) const
                     // Only process valid lines
                     if (YPhysical < m_pTileDescriptor->GetImageHeight())
                         {
-                        HASSERT(m_pTileDescriptor->GetImageWidth() <= ULONG_MAX);
+                        HASSERT(m_pTileDescriptor->GetImageWidth() <= UINT32_MAX);
                         NumPixels = MIN(NumPixels, (uint32_t)m_pTileDescriptor->GetImageWidth() - XPhysical);
 
                         // Obtain pointer to first pixel to process

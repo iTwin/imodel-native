@@ -118,7 +118,7 @@ public:
     DataType           GetY() const;
     void               SetX(DataType pi_X);
     void               SetY(DataType pi_Y);
-    DataType&          operator[](int pi_CoordinateRef);
+    DataType&          operator[](int32_t pi_CoordinateRef);
 
     // MICROSOFT BUG ... DEFINITION MUST BE INSIDE DECLARATION
     /** -----------------------------------------------------------------------------
@@ -152,7 +152,7 @@ public:
         return ((pi_CoordinateRef == HGF2DCoord<DataType>::X) ? m_XValue : m_YValue);
         }
 
-    const DataType&    operator[](int pi_CoordinateRef) const;
+    const DataType&    operator[](int32_t pi_CoordinateRef) const;
 
     // MICROSOFT BUG ... DEFINITION MUST BE INSIDE DECLARATION
     /** -----------------------------------------------------------------------------

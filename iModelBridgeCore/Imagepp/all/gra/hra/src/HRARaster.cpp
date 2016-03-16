@@ -202,7 +202,7 @@ bool HRARaster::NotifyContentChanged (const HMGMessage& pi_rMessage)
 //
 // UpdateRepPalCache - Update the representative palette cache
 //-----------------------------------------------------------------------------
-void HRARaster::UpdateRepPalCache(unsigned short pi_CountUsed, const HRPPixelPalette& pi_rPalette)
+void HRARaster::UpdateRepPalCache(uint16_t pi_CountUsed, const HRPPixelPalette& pi_rPalette)
     {
     // create a new palette cache; a copy of the input palette
     if((m_pRepPalCache = new HRPPixelPalette(pi_rPalette)))
@@ -397,11 +397,11 @@ void HRARaster::ComputeHistogram(HRAHistogramOptions* pio_pOptions,
 //-----------------------------------------------------------------------------
 // GetRepresentativePaletteCache
 //-----------------------------------------------------------------------------
-unsigned short HRARaster::GetRepresentativePaletteCache(HRARepPalParms* pio_pRepPalParms)
+uint16_t HRARaster::GetRepresentativePaletteCache(HRARepPalParms* pio_pRepPalParms)
     {
     HPRECONDITION(pio_pRepPalParms != 0);
 
-    unsigned short CountUsed = 0;
+    uint16_t CountUsed = 0;
 
     if(pio_pRepPalParms->UseCache())
         {
@@ -457,11 +457,11 @@ unsigned short HRARaster::GetRepresentativePaletteCache(HRARepPalParms* pio_pRep
 //-----------------------------------------------------------------------------
 // GetRepresentativePalette
 //-----------------------------------------------------------------------------
-unsigned short HRARaster::GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms)
+uint16_t HRARaster::GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms)
     {
     HPRECONDITION(pio_pRepPalParms != 0);
 
-    unsigned short CountUsed = GetRepresentativePaletteCache(pio_pRepPalParms);
+    uint16_t CountUsed = GetRepresentativePaletteCache(pio_pRepPalParms);
 
     // test if not updated
     if(CountUsed == 0)

@@ -101,13 +101,14 @@ template <typename ChannelType_T, uint32_t ChannelCount_T, typename TileSize_T> 
 * ChannelTypeResolver_T
 * @bsimethod                                    Stephane.Poulin                 08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-template 
+template
 <
-uint32_t ChannelCount_T, 
-typename TileSize_T, 
-template < typename ChannelType_T, uint32_t ChannelCount_T, typename TileSize_T > class Creator_T,
+uint32_t ChannelCount_T,
+typename TileSize_T,
+template < typename ChannelType_T, uint32_t ChannelCountCreator_T, typename TileSizeCreator_T > class Creator_T,
 typename ReturnType_T
 >
+
 struct ChannelTypeResolver_T
     {
     enum { ChannelCount = ChannelCount_T };
@@ -157,10 +158,10 @@ struct ChannelTypeResolver_T
 * ChannelCountResolver_T
 * @bsimethod                                    Stephane.Poulin                 08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-template 
+template
 <
 typename TileSize_T, 
-template < typename ChannelType_T, uint32_t ChannelCount_T, typename TileSize_T > class Creator_T,
+template < typename ChannelType_T, uint32_t ChannelCount_T, typename TileSizeCreator_T > class Creator_T,
 typename ReturnType_T
 > struct ChannelCountResolver_T
     {

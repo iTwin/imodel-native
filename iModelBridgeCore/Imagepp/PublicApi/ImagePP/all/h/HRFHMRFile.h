@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFHMRFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -52,7 +52,7 @@ public:
     virtual bool                         AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage);
 
     virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
-                                                                 unsigned short           pi_Resolution,
+                                                                 uint16_t           pi_Resolution,
                                                                  HFCAccessMode             pi_AccessMode);
 
     virtual void                          Save();
@@ -82,7 +82,7 @@ protected:
 
     virtual void                          CreateDescriptors               ();
     virtual double                       GetResolutionRatio    (uint32_t pi_Page,
-                                                                 unsigned short pi_Resolution) const;
+                                                                 uint16_t pi_Resolution) const;
 
     HFCPtr<HGF2DTransfoModel> CreateTransfoModelFromTiffMatrix() const;
 

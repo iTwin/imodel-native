@@ -42,7 +42,7 @@ HFCProfiler::HFCProfiler()
     LARGE_INTEGER BValue;
     double MinimumOverhead = 1000.0;  // 1 second :-)
     double CurrentOverhead;
-    for (int i = 0 ; i < 1000 ; ++i)
+    for (int32_t i = 0 ; i < 1000 ; ++i)
         {
         QueryPerformanceCounter(&StartStamp);
         BValue = Start(1);
@@ -89,7 +89,7 @@ size_t HFCProfiler::RegisterCounter(const WString& pi_rName)
 void HFCProfiler::DumpStatistics()
     {
     double TotalTime = 0.0;
-    int TotalCalls = 0;
+    int32_t TotalCalls = 0;
 
     Counters::iterator Itr(m_Counters.begin());
     while (Itr != m_Counters.end())

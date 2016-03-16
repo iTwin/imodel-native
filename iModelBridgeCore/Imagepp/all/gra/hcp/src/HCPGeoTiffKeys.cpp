@@ -100,7 +100,7 @@ void HCPGeoTiffKeys::SetErrorCode(HCPGeoTiffKeys::ErrorCode pi_ErrorCode)
 // public
 // GetValue methods
 //-----------------------------------------------------------------------------
-bool HCPGeoTiffKeys::GetValue (unsigned short pi_Key, uint32_t* po_pVal) const
+bool HCPGeoTiffKeys::GetValue (uint16_t pi_Key, uint32_t* po_pVal) const
     {
     HPRECONDITION(po_pVal != 0);
 
@@ -116,7 +116,7 @@ bool HCPGeoTiffKeys::GetValue (unsigned short pi_Key, uint32_t* po_pVal) const
     return false;
     }
 
-bool HCPGeoTiffKeys::GetValue (unsigned short pi_Key, double* po_pVal) const
+bool HCPGeoTiffKeys::GetValue (uint16_t pi_Key, double* po_pVal) const
     {
     HPRECONDITION(po_pVal != 0);
 
@@ -132,7 +132,7 @@ bool HCPGeoTiffKeys::GetValue (unsigned short pi_Key, double* po_pVal) const
     return false;
     }
 
-bool HCPGeoTiffKeys::GetValue (unsigned short pi_Key, WString* po_pVal) const
+bool HCPGeoTiffKeys::GetValue (uint16_t pi_Key, WString* po_pVal) const
     {
     HPRECONDITION(po_pVal != 0);
 
@@ -152,7 +152,7 @@ bool HCPGeoTiffKeys::GetValue (unsigned short pi_Key, WString* po_pVal) const
 // public
 // SetValue methods
 //-----------------------------------------------------------------------------
-bool HCPGeoTiffKeys::SetValue (unsigned short pi_Key, uint32_t pi_Val)
+bool HCPGeoTiffKeys::SetValue (uint16_t pi_Key, uint32_t pi_Val)
     {
     //InvalidateCachedInfo should be called before modifying the list of keys
 
@@ -169,7 +169,7 @@ bool HCPGeoTiffKeys::SetValue (unsigned short pi_Key, uint32_t pi_Val)
     return false;
     }
 
-bool HCPGeoTiffKeys::SetValue (unsigned short pi_Key, double pi_Val)
+bool HCPGeoTiffKeys::SetValue (uint16_t pi_Key, double pi_Val)
     {
     //InvalidateCachedInfo should be called before modifying the list of keys
 
@@ -186,7 +186,7 @@ bool HCPGeoTiffKeys::SetValue (unsigned short pi_Key, double pi_Val)
     return false;
     }
 
-bool HCPGeoTiffKeys::SetValue (unsigned short pi_Key, WString& pi_Val)
+bool HCPGeoTiffKeys::SetValue (uint16_t pi_Key, WString& pi_Val)
     {
     //InvalidateCachedInfo should be called before modifying the list of keys
 
@@ -238,12 +238,12 @@ bool HCPGeoTiffKeys::GetNextKey(GeoKeyItem* po_Key) const
     return false;
     }
 
-void HCPGeoTiffKeys::AddKey (unsigned short pi_KeyID, uint32_t pi_value)
+void HCPGeoTiffKeys::AddKey (uint16_t pi_KeyID, uint32_t pi_value)
     {
     //Currently BaseGCS has no knowledge of what a vertical datum is, so adding a
     //vertical unit key won't changed its definition or behavior.
 
-    //In the GeoTIFF standard the integer data are stored as a unsigned short data.
+    //In the GeoTIFF standard the integer data are stored as a uint16_t data.
     //ProjectedCSTypeLong is a private key that is used to represent EPSG code for
     //projected coordinate systems whose value is greater than 65535.
     HPRECONDITION((pi_value <= USHRT_MAX) || (pi_KeyID == ProjectedCSTypeLong));
@@ -261,7 +261,7 @@ void HCPGeoTiffKeys::AddKey (unsigned short pi_KeyID, uint32_t pi_value)
         m_HasValidGeoTIFFKeysList = false;
     }
 
-void HCPGeoTiffKeys::AddKey (unsigned short pi_KeyID, double pi_value)
+void HCPGeoTiffKeys::AddKey (uint16_t pi_KeyID, double pi_value)
     {
     //InvalidateCachedInfo should be called before modifying the list of keys
 
@@ -275,7 +275,7 @@ void HCPGeoTiffKeys::AddKey (unsigned short pi_KeyID, double pi_value)
 
     }
 
-void HCPGeoTiffKeys::AddKey (unsigned short pi_KeyID, const std::string& pi_value)
+void HCPGeoTiffKeys::AddKey (uint16_t pi_KeyID, const std::string& pi_value)
     {
     //InvalidateCachedInfo should be called before modifying the list of keys
 
@@ -305,7 +305,7 @@ void HCPGeoTiffKeys::AddKey (const GeoKeyItem& key)
 // public
 // Return true if the requested key is found, otherwise false
 //-----------------------------------------------------------------------------
-bool HCPGeoTiffKeys::HasKey(unsigned short pi_KeyID) const
+bool HCPGeoTiffKeys::HasKey(uint16_t pi_KeyID) const
     {
     return m_GeoKeyList.find(pi_KeyID) != m_GeoKeyList.end();
     }
@@ -313,7 +313,7 @@ bool HCPGeoTiffKeys::HasKey(unsigned short pi_KeyID) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t HCPGeoTiffKeys::EraseKey(unsigned short pi_KeyID)
+size_t HCPGeoTiffKeys::EraseKey(uint16_t pi_KeyID)
     {
     return m_GeoKeyList.erase(pi_KeyID);
     }
@@ -322,9 +322,9 @@ size_t HCPGeoTiffKeys::EraseKey(unsigned short pi_KeyID)
 // public
 // Return the number of GeoTiff keys
 //-----------------------------------------------------------------------------
-unsigned short HCPGeoTiffKeys::GetNbKeys() const
+uint16_t HCPGeoTiffKeys::GetNbKeys() const
     {
-    return (unsigned short)m_GeoKeyList.size();
+    return (uint16_t)m_GeoKeyList.size();
     }
 
 
@@ -335,9 +335,9 @@ unsigned short HCPGeoTiffKeys::GetNbKeys() const
 //
 //  Note : These Geokeys value are define by an enum into HTIFFTag.h
 //-----------------------------------------------------------------------------
-unsigned short HCPGeoTiffKeys::DecodeGeoKeyIDFromString(const WString& pi_rGeoTagLabel)
+uint16_t HCPGeoTiffKeys::DecodeGeoKeyIDFromString(const WString& pi_rGeoTagLabel)
     {
-    unsigned short GeoKey;
+    uint16_t GeoKey;
 
     if (pi_rGeoTagLabel == L"GTModelType")
         GeoKey = GTModelType;
@@ -592,7 +592,7 @@ HCPGeoTiffKeys::GetTransfoModelForReprojection(const HFCPtr<HGF2DCoordSys>&     
     HGF2DLiteExtent ImageLiteExtent(pi_rRasterExtent.GetXMin(), pi_rRasterExtent.GetYMin(), pi_rRasterExtent.GetXMax(), pi_rRasterExtent.GetYMax());
     
     // Compute step
-    long   NbPoints (5);
+    int32_t   NbPoints (5);
     double Step(MIN(pi_rRasterExtent.GetHeight(),pi_rRasterExtent.GetWidth()) / NbPoints);
 
     // Compute the expected mean error
@@ -873,7 +873,7 @@ HFCPtr<HGF2DTransfoModel> HCPGeoTiffKeys::CreateTransfoModelFromGeoTiff(
 
         double pMatrix[4][4];
 
-        GetTransfoMatrixFromScaleAndTiePts(pMatrix, (unsigned short)pi_NbTiePoints, pi_pTiePoints, 0, 0);
+        GetTransfoMatrixFromScaleAndTiePts(pMatrix, (uint16_t)pi_NbTiePoints, pi_pTiePoints, 0, 0);
 
         HFCMatrix<3, 3> TheMatrix;
 
@@ -910,7 +910,7 @@ HFCPtr<HGF2DTransfoModel> HCPGeoTiffKeys::CreateTransfoModelFromGeoTiff(
 
         double pMatrix[4][4];
 
-        GetTransfoMatrixFromScaleAndTiePts(pMatrix, (unsigned short)pi_NbTiePoints, pi_pTiePoints, (unsigned short)pi_NbPixelScale, pi_pPixelScale);
+        GetTransfoMatrixFromScaleAndTiePts(pMatrix, (uint16_t)pi_NbTiePoints, pi_pTiePoints, (uint16_t)pi_NbPixelScale, pi_pPixelScale);
         HFCMatrix<3, 3> TheMatrix;
 
         TheMatrix[0][0] = pMatrix[0][0];

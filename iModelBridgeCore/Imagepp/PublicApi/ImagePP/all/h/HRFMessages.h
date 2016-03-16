@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFMessages.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -31,14 +31,14 @@ public:
     HRFProgressImageChangedMsg();
     HRFProgressImageChangedMsg(const HRFProgressImageChangedMsg& pi_rObj);
     IMAGEPP_EXPORT HRFProgressImageChangedMsg(uint32_t pi_Page,
-                               unsigned short pi_SubResolution,
+                               uint16_t pi_SubResolution,
                                uint64_t pi_XPos,
                                uint64_t pi_YPos,
                                bool    pi_Ended = false);
     IMAGEPP_EXPORT virtual ~HRFProgressImageChangedMsg();
 
     uint32_t GetPage() const;
-    unsigned short GetSubResolution () const;
+    uint16_t GetSubResolution () const;
     uint64_t GetPosX () const;
     uint64_t GetPosY () const;
     bool   IsEnded() const;
@@ -49,7 +49,7 @@ private:
 
     // Message Data
     uint32_t    m_Page;
-    unsigned short m_SubResolution;
+    uint16_t m_SubResolution;
     uint64_t   m_XPos;
     uint64_t   m_YPos;
     bool       m_Ended;

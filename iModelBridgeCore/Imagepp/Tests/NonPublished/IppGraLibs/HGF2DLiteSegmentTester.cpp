@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HGF2DLiteSegmentTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -177,7 +177,8 @@ HGF2DLiteSegmentTester::HGF2DLiteSegmentTester()
 // HGF2DLiteSegment(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
 // HGF2DLiteSegment(const HGF2DLiteSegment&    pi_rObject);
 //==================================================================================
-#pragma optimize( "", off )                             // Disable optimization to solve a potential compiler bug?
+//&&ep fix - pragma unrecognized on iOS
+//#pragma optimize( "", off )                             // Disable optimization to solve a potential compiler bug?
 TEST_F (HGF2DLiteSegmentTester, ConstructionTest)
     {
 
@@ -208,7 +209,9 @@ TEST_F (HGF2DLiteSegmentTester, ConstructionTest)
     ASSERT_NEAR(100.3000, Segment4.GetEndPoint().GetY(), MYEPSILON);
 
     }
-#pragma optimize( "", on )
+//&&ep fix - pragma unrecognized on iOS
+//#pragma optimize( "", on )
+
 //==================================================================================
 // operator= test
 // operator=(const HGF2DLiteSegment& pi_rObj);

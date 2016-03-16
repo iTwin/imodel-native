@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DProjective.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DProjective
@@ -84,7 +84,7 @@ public:
                                                     double                   pi_rAnorthogonality);
                                     HGF2DProjective(const HGF2DProjective& pi_rObj);
     IMAGEPP_EXPORT                   HGF2DProjective(const HFCMatrix<3, 3>& pi_rMatrix);
-                                    HGF2DProjective(unsigned short pi_NumberOfPoints,
+                                    HGF2DProjective(uint16_t pi_NumberOfPoints,
                                                     const double*  pi_pTiePoints);
     IMAGEPP_EXPORT                   HGF2DProjective(double const           pi_pMatrix[3][3]);
 

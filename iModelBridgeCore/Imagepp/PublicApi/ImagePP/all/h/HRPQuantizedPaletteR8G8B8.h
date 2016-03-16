@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPQuantizedPaletteR8G8B8.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPQuantizedPaletteR8G8B8
@@ -47,7 +47,7 @@ struct HRPQuantizedPaletteR8G8B8Node
             {
             PixelCount = 0;
 
-            for (int i = 0 ; i < 8 ; i++)
+            for (int32_t i = 0 ; i < 8 ; i++)
                 if (pChild[i] != 0)
                     {
                     // Save some recursion
@@ -73,7 +73,7 @@ struct HRPQuantizedPaletteR8G8B8Node
             {
             uint32_t Result = 0;
 
-            for (int i = 0 ; i < 8 ; i++)
+            for (int32_t i = 0 ; i < 8 ; i++)
                 if (pChild[i] != 0)
                     {
                     // Save some recursion
@@ -98,7 +98,7 @@ struct HRPQuantizedPaletteR8G8B8Node
             GreenSum = 0;
             BlueSum = 0;
 
-            for (int i = 0 ; i < 8 ; i++)
+            for (int32_t i = 0 ; i < 8 ; i++)
                 {
                 if (pChild[i] != 0)
                     {
@@ -129,7 +129,7 @@ public:
 
     // Primary methods
     HRPQuantizedPaletteR8G8B8();
-    HRPQuantizedPaletteR8G8B8(unsigned short pi_MaxEntries,
+    HRPQuantizedPaletteR8G8B8(uint16_t pi_MaxEntries,
                               Byte pi_Precision);
 
     virtual         ~HRPQuantizedPaletteR8G8B8();
@@ -137,7 +137,7 @@ public:
     virtual bool   AddCompositeValue(  const void* pi_pValue,
                                         uint32_t    pi_Count=1);
 
-    virtual unsigned short GetPalette( HRPPixelPalette* po_pPixelPalette,
+    virtual uint16_t GetPalette( HRPPixelPalette* po_pPixelPalette,
                                 HRPHistogram*    po_pHistogram) const;
 
     virtual void    FlushEntries();

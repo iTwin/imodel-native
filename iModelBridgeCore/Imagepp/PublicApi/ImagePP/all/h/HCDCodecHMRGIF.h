@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecHMRGIF.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -24,37 +24,37 @@ BEGIN_IMAGEPP_NAMESPACE
 
 typedef struct CodeCompressEntry
     {
-    short prior_code;
-    short code_id;
+    int16_t prior_code;
+    int16_t code_id;
     unsigned char added_char;
     } CodeCompressEntry;
 
 
 typedef struct DecompressionStruct
     {
-    short OldCode;
-    short InputCode;
-    short Code;
-    short SuffixChar;
-    short FinalChar;
-    short StackPtr;
-    short MinCodeSize;
+    int16_t OldCode;
+    int16_t InputCode;
+    int16_t Code;
+    int16_t SuffixChar;
+    int16_t FinalChar;
+    int16_t StackPtr;
+    int16_t MinCodeSize;
     } DecompressionStruct;
 
 
 typedef struct CompressionStruct
     {
-    short PrefixCode;
-    short SuffixChar;
-    short hx;
-    short d;
-    short MinCodeSize;
+    int16_t PrefixCode;
+    int16_t SuffixChar;
+    int16_t hx;
+    int16_t d;
+    int16_t MinCodeSize;
     } CompressionStruct;
 
 
 typedef struct CodeEntry
     {
-    short prefix;            /* prefix code */
+    int16_t prefix;            /* prefix code */
     Byte  suffix;            /* suffix character */
     Byte  stack;
 
@@ -86,7 +86,7 @@ public:
                                      void*  po_pOutBuffer,
                                      size_t pi_OutBufferSize);
 
-    IMAGEPP_EXPORT void            SetDecompressMinCodeSize(short pi_MinCodeSize);
+    IMAGEPP_EXPORT void            SetDecompressMinCodeSize(int16_t pi_MinCodeSize);
 
     virtual void    SetDimensions(size_t pi_Width, size_t pi_Height);
 
@@ -107,13 +107,13 @@ public:
 protected:
 
 private:
-    void        InitTable(short pi_MinCodeSize);
+    void        InitTable(int16_t pi_MinCodeSize);
 
-    short ReadCode (Byte* po_pDataBuffer,
+    int16_t ReadCode (Byte* po_pDataBuffer,
                           size_t& pi_rPosBuffer,
                           size_t& pi_rBufferSize);
 
-    short GetByte  (Byte* po_pDataBuffer,
+    int16_t GetByte  (Byte* po_pDataBuffer,
                           size_t& pi_rPosBuffer,
                           size_t& pi_rBufferSize);
 
@@ -122,12 +122,12 @@ private:
                           size_t& pi_rPosBuffer,
                           size_t& pi_rBufferSize);
 
-    bool       WriteBlock(short pi_NbByte,
+    bool       WriteBlock(int16_t pi_NbByte,
                            Byte* po_pDataBuffer,
                            size_t& pi_rPosBuffer,
                            size_t& pi_rBufferSize);
 
-    bool       WriteCode(short pi_Code,
+    bool       WriteCode(int16_t pi_Code,
                           Byte* po_pDataBuffer,
                           size_t& pi_rPosBuffer,
                           size_t& pi_rBufferSize);
@@ -136,15 +136,15 @@ private:
 
     Byte m_BitsPerPixel;
 
-    short m_BytesUnread;
-    short m_MaxCode;
-    short m_CodeSize;
-    short m_ClearCode;
-    short m_EofCode;
-    short m_FirstFree;
-    short m_BitOffset;
-    short m_FreeCode;
-    short m_DecompressMinCodeSize;
+    int16_t m_BytesUnread;
+    int16_t m_MaxCode;
+    int16_t m_CodeSize;
+    int16_t m_ClearCode;
+    int16_t m_EofCode;
+    int16_t m_FirstFree;
+    int16_t m_BitOffset;
+    int16_t m_FreeCode;
+    int16_t m_DecompressMinCodeSize;
 
     // Decompression
     Byte* m_pCodeBuffer;

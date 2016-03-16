@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAMessages.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -193,7 +193,7 @@ inline HRALookAheadMsg::HRALookAheadMsg(const HRALookAheadMsg& pi_rObj)
 // Constructor
 //-----------------------------------------------------------------------------
 inline HRALookAheadMsg::HRALookAheadMsg(const HGFTileIDList& pi_rTileIDList,
-                                        unsigned short      pi_Resolution,
+                                        uint16_t      pi_Resolution,
                                         uint32_t             pi_ConsumerID,
                                         bool                pi_Async)
     : m_TileIDList(pi_rTileIDList)
@@ -210,7 +210,7 @@ inline HRALookAheadMsg::HRALookAheadMsg(const HGFTileIDList& pi_rTileIDList,
 // Constructor
 //-----------------------------------------------------------------------------
 inline HRALookAheadMsg::HRALookAheadMsg(const HVEShape& pi_rShape,
-                                        unsigned short pi_Resolution,
+                                        uint16_t pi_Resolution,
                                         uint32_t        pi_ConsumerID,
                                         bool           pi_Async)
     : m_Shape(pi_rShape)
@@ -257,7 +257,7 @@ inline const HVEShape& HRALookAheadMsg::GetShape() const
 //-----------------------------------------------------------------------------
 // Get the resolution in the message
 //-----------------------------------------------------------------------------
-inline unsigned short HRALookAheadMsg::GetResolution() const
+inline uint16_t HRALookAheadMsg::GetResolution() const
     {
     HPRECONDITION(UseShape());
 
@@ -309,7 +309,7 @@ inline HRAModifiedTileNotSavedMsg::HRAModifiedTileNotSavedMsg(const HRAModifiedT
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------
-inline HRAModifiedTileNotSavedMsg::HRAModifiedTileNotSavedMsg(unsigned short pi_Resolution,
+inline HRAModifiedTileNotSavedMsg::HRAModifiedTileNotSavedMsg(uint16_t pi_Resolution,
                                                               uint64_t pi_TileIndex)
     : m_Resolution(pi_Resolution),
       m_TileIndex(pi_TileIndex)
@@ -321,7 +321,7 @@ inline HRAModifiedTileNotSavedMsg::HRAModifiedTileNotSavedMsg(unsigned short pi_
 //-----------------------------------------------------------------------------
 // get the resolution in the message
 //-----------------------------------------------------------------------------
-inline unsigned short HRAModifiedTileNotSavedMsg::GetResolution() const
+inline uint16_t HRAModifiedTileNotSavedMsg::GetResolution() const
     {
     return m_Resolution;
     }

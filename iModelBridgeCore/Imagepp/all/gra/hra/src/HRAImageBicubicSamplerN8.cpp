@@ -234,12 +234,12 @@ ImagePPStatus HRAImageBicubicSamplerN8<ChannelCount_T, Data_T>::Stretch_T(HRAIma
         Data_T* pOutBufferLine = (Data_T*)(pOutBuffer + row * outPitch);
 
         // Bound reference point in case we are way outside the src area. We use the bounded value to compute our neighborhood.
-        int32_t py_ref = BOUND(rowInSrcInt, -1, (int)inHeight);
+        int32_t py_ref = BOUND(rowInSrcInt, -1, (int32_t)inHeight);
         uint32_t pyData[4];            
-        pyData[1] = BOUND(py_ref,     0, (int)inHeight-1);
-        pyData[0] = BOUND(py_ref - 1, 0, (int)inHeight-1);
-        pyData[2] = BOUND(py_ref + 1, 0, (int)inHeight-1);
-        pyData[3] = BOUND(py_ref + 2, 0, (int)inHeight-1);
+        pyData[1] = BOUND(py_ref,     0, (int32_t)inHeight-1);
+        pyData[0] = BOUND(py_ref - 1, 0, (int32_t)inHeight-1);
+        pyData[2] = BOUND(py_ref + 1, 0, (int32_t)inHeight-1);
+        pyData[3] = BOUND(py_ref + 2, 0, (int32_t)inHeight-1);
 
         Data_T const* pInBufferFirstLine  =  (Data_T const*)(pInBuffer + pyData[0] * inPitch);
         Data_T const* pInBufferSecondLine  = (Data_T const*)(pInBuffer + pyData[1] * inPitch);
@@ -257,12 +257,12 @@ ImagePPStatus HRAImageBicubicSamplerN8<ChannelCount_T, Data_T>::Stretch_T(HRAIma
         for(uint32_t column=0; column < outWidth; ++column)
             {
             // Bound reference point in case we are way outside the src area. We use the bounded value to compute our neighborhood.
-            int32_t px_ref = BOUND((int32_t)pPixelsOffsetInt[column], -1, (int)inWidth);
+            int32_t px_ref = BOUND((int32_t)pPixelsOffsetInt[column], -1, (int32_t)inWidth);
             uint32_t pxData[4];
-            pxData[1] = BOUND(px_ref,     0, (int)inWidth-1);
-            pxData[0] = BOUND(px_ref - 1, 0, (int)inWidth-1);
-            pxData[2] = BOUND(px_ref + 1, 0, (int)inWidth-1);
-            pxData[3] = BOUND(px_ref + 2, 0, (int)inWidth-1);
+            pxData[1] = BOUND(px_ref,     0, (int32_t)inWidth-1);
+            pxData[0] = BOUND(px_ref - 1, 0, (int32_t)inWidth-1);
+            pxData[2] = BOUND(px_ref + 1, 0, (int32_t)inWidth-1);
+            pxData[3] = BOUND(px_ref + 2, 0, (int32_t)inWidth-1);
 
             float Dx = pPixelsDeltas[column];
             float T2x = Dx * Dx;
@@ -371,24 +371,24 @@ ImagePPStatus HRAImageBicubicSamplerN8<ChannelCount_T, Data_T>::Warp_T(HRAImageS
             float x  = (float)((pXPositions[column] - inOffset.x) - 0.5);
             float y  = (float)((pYPositions[column] - inOffset.y) - 0.5);
 
-            int px = (int)floor(x);
-            int py = (int)floor(y);
+            int32_t px = (int32_t)floor(x);
+            int32_t py = (int32_t)floor(y);
 
             // Bound reference point in case we are way outside the src area. We use the bounded value to compute our neighborhood.
-            int px_ref = BOUND(px, -1, (int)inWidth);   // Ref point can be outside by 1.
+            int32_t px_ref = BOUND(px, -1, (int32_t)inWidth);   // Ref point can be outside by 1.
             uint32_t pxData[4];
-            pxData[1] = BOUND(px_ref,     0, (int)inWidth-1);
-            pxData[0] = BOUND(px_ref - 1, 0, (int)inWidth-1);
-            pxData[2] = BOUND(px_ref + 1, 0, (int)inWidth-1);
-            pxData[3] = BOUND(px_ref + 2, 0, (int)inWidth-1);
+            pxData[1] = BOUND(px_ref,     0, (int32_t)inWidth-1);
+            pxData[0] = BOUND(px_ref - 1, 0, (int32_t)inWidth-1);
+            pxData[2] = BOUND(px_ref + 1, 0, (int32_t)inWidth-1);
+            pxData[3] = BOUND(px_ref + 2, 0, (int32_t)inWidth-1);
 
             // Bound reference point in case we are way outside the src area. We use the bounded value to compute our neighborhood.
-            int py_ref = BOUND(py, -1, (int)inHeight);  // Ref point can be outside by 1.
+            int32_t py_ref = BOUND(py, -1, (int32_t)inHeight);  // Ref point can be outside by 1.
             uint32_t pyData[4];            
-            pyData[1] = BOUND(py_ref,     0, (int)inHeight-1);
-            pyData[0] = BOUND(py_ref - 1, 0, (int)inHeight-1);
-            pyData[2] = BOUND(py_ref + 1, 0, (int)inHeight-1);
-            pyData[3] = BOUND(py_ref + 2, 0, (int)inHeight-1);
+            pyData[1] = BOUND(py_ref,     0, (int32_t)inHeight-1);
+            pyData[0] = BOUND(py_ref - 1, 0, (int32_t)inHeight-1);
+            pyData[2] = BOUND(py_ref + 1, 0, (int32_t)inHeight-1);
+            pyData[3] = BOUND(py_ref + 2, 0, (int32_t)inHeight-1);
 
             float Dy = y - py;
             float T2y = Dy * Dy;

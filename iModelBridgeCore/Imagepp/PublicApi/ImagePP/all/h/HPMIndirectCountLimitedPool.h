@@ -199,9 +199,9 @@ inline void HPMIndirectCountLimitedPoolItem<MTGGraph>::RecomputeCount() const
         {
         MTGGraph* g = m_memory + i;
         m_deepCount += sizeof(*g);
-        m_deepCount += (sizeof(MTGLabelMask)+2*sizeof(int))*g->GetLabelCount();
+        m_deepCount += (sizeof(MTGLabelMask)+2*sizeof(int32_t))*g->GetLabelCount();
         m_deepCount += sizeof(MTG_Node)*g->GetNodeIdCount();
-        m_deepCount += sizeof(int)*g->GetNodeIdCount()* g->GetLabelCount();
+        m_deepCount += sizeof(int32_t)*g->GetNodeIdCount()* g->GetLabelCount();
         }
     }
 END_IMAGEPP_NAMESPACE

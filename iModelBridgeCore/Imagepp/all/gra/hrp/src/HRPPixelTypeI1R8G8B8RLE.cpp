@@ -52,8 +52,8 @@ public:
 
     virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        unsigned short* pSrc = (unsigned short*)pi_pSourceRawData;
-        unsigned short* pDst = (unsigned short*)pio_pDestRawData;
+        uint16_t* pSrc = (uint16_t*)pi_pSourceRawData;
+        uint16_t* pDst = (uint16_t*)pio_pDestRawData;
 
         bool DstOnState = false;
         bool SrcOnState = (EntryConversion[DstOnState] != 0);
@@ -83,11 +83,11 @@ public:
                     pDst++;
                     *pDst = 0;
                     pDst++;
-                    *pDst = (unsigned short)(*pSrc - PixelsCopied);
+                    *pDst = (uint16_t)(*pSrc - PixelsCopied);
                     }
                 else
                     {
-                    *pDst = (unsigned short)NewValue;
+                    *pDst = (uint16_t)NewValue;
                     }
 
                 pi_PixelsCount -= MIN(*pSrc, pi_PixelsCount);
@@ -151,7 +151,7 @@ private:
     size_t GetClosestEntryIndexInPalette(Byte* pi_pValue, const HRPPixelPalette& pi_rPixelPalette) const
         {
         Byte* pValue;
-        int RDist, GDist, BDist;
+        int32_t RDist, GDist, BDist;
         uint32_t Dist;
         size_t IndexForSmallerDist=0;
 
@@ -204,7 +204,7 @@ public:
 
     void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        unsigned short* pSrcRun  = (unsigned short*)pi_pSourceRawData;
+        uint16_t* pSrcRun  = (uint16_t*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
 
         bool OnState = false;
@@ -250,7 +250,7 @@ public:
             *pDest &= ~(0xFF >> Index);
         }
 
-    virtual const short* GetLostChannels() const override
+    virtual const int16_t* GetLostChannels() const override
         {
         return m_LostChannels;
         }
@@ -299,7 +299,7 @@ private:
     size_t GetClosestEntryIndexInPalette(Byte* pi_pValue, const HRPPixelPalette& pi_rPixelPalette) const
         {
         Byte* pValue;
-        int RDist, GDist, BDist;
+        int32_t RDist, GDist, BDist;
         uint32_t Dist;
         size_t IndexForSmallerDist=0;
 
@@ -336,11 +336,11 @@ private:
 
         };
 
-    static short m_LostChannels[];
+    static int16_t m_LostChannels[];
     // conversion table
     Byte EntryConversion[2];
     };
-short ConverterI1R8G8B8RLE_I1R8G8B8::m_LostChannels[] = {-1};
+int16_t ConverterI1R8G8B8RLE_I1R8G8B8::m_LostChannels[] = {-1};
 static ConverterI1R8G8B8RLE_I1R8G8B8 s_I1R8G8B8RLE_I1R8G8B8;
 
 //-----------------------------------------------------------------------------
@@ -354,7 +354,7 @@ public:
     void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         const Byte* pSrc = (const Byte*)pi_pSourceRawData;
-        unsigned short* pDest = (unsigned short*)pio_pDestRawData;
+        uint16_t* pDest = (uint16_t*)pio_pDestRawData;
         size_t PixelCount(0);
         bool OnState(false);
         size_t Index = 0;
@@ -385,7 +385,7 @@ public:
                 pDest+=2;
                 BitCount -= 32767;
                 }
-            *pDest = (unsigned short)BitCount;
+            *pDest = (uint16_t)BitCount;
             ++pDest;
             OnState = !OnState;
             }
@@ -439,7 +439,7 @@ private:
     size_t GetClosestEntryIndexInPalette(Byte* pi_pValue, const HRPPixelPalette& pi_rPixelPalette) const
         {
         Byte* pValue;
-        int RDist, GDist, BDist;
+        int32_t RDist, GDist, BDist;
         uint32_t Dist;
         size_t IndexForSmallerDist=0;
 
@@ -492,7 +492,7 @@ public:
 
     void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        unsigned short* pSrcRun  = (unsigned short*)pi_pSourceRawData;
+        uint16_t* pSrcRun  = (uint16_t*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
 
         bool OnState = false;
@@ -581,7 +581,7 @@ private:
     size_t GetClosestEntryIndexInPalette(Byte* pi_pValue, const HRPPixelPalette& pi_rPixelPalette) const
         {
         Byte* pValue;
-        int RDist, GDist, BDist;
+        int32_t RDist, GDist, BDist;
         uint32_t Dist;
         size_t IndexForSmallerDist=0;
 
@@ -635,7 +635,7 @@ public:
 
     void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        unsigned short* pSrcRun  = (unsigned short*)pi_pSourceRawData;
+        uint16_t* pSrcRun  = (uint16_t*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
 
         bool OnState = false;
@@ -694,7 +694,7 @@ public:
 
     void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        unsigned short* pSrcRun  = (unsigned short*)pi_pSourceRawData;
+        uint16_t* pSrcRun  = (uint16_t*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
 
         bool OnState = false;
@@ -788,7 +788,7 @@ public:
     void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte*  pSrc  = (Byte*)pi_pSourceRawData;
-        unsigned short* pDestRun = (unsigned short*)pio_pDestRawData;
+        uint16_t* pDestRun = (uint16_t*)pio_pDestRawData;
 
         uint32_t CurrentRunLen = 0;
         bool  OnState = false;
@@ -805,7 +805,7 @@ public:
                     *pDestRun++ = 0;
                     CurrentRunLen -= 32767;
                     }
-                *pDestRun++ = (unsigned short)CurrentRunLen;
+                *pDestRun++ = (uint16_t)CurrentRunLen;
 
                 // Start new a new run.
                 CurrentRunLen = 1;
@@ -823,7 +823,7 @@ public:
             *pDestRun++ = 0;
             CurrentRunLen -= 32767;
             }
-        *pDestRun++ = (unsigned short)CurrentRunLen;
+        *pDestRun++ = (uint16_t)CurrentRunLen;
 
         // Must end with blacks.
         if(OnState)
@@ -880,7 +880,7 @@ public:
     virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc = (Byte*)pi_pSourceRawData;
-        unsigned short* pDest = (unsigned short*)pio_pDestRawData;
+        uint16_t* pDest = (uint16_t*)pio_pDestRawData;
 
         *pDest = 0;
         bool DstState = false;
@@ -958,7 +958,7 @@ public:
     virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc = (Byte*)pi_pSourceRawData;
-        unsigned short* pDest = (unsigned short*)pio_pDestRawData;
+        uint16_t* pDest = (uint16_t*)pio_pDestRawData;
         Byte ColorIndex;
 
         *pDest = 0;
@@ -1009,16 +1009,16 @@ public:
         // we will assume 0 to be black and 1 to be white. This is not the real pixel value
         // since the black and white position is determined by the pixel type.
         Byte*  pSourceComposite = (Byte*)pi_pSourceRawData;
-        unsigned short* pFinalDst = (unsigned short*)pio_pDestRawData;
+        uint16_t* pFinalDst = (uint16_t*)pio_pDestRawData;
 
         // Alloc a buffer able to hold the original destination.
         size_t RunCount = 0;
         for(size_t i(0); i < pi_PixelsCount; i+=pFinalDst[RunCount++]);
-        HArrayAutoPtr<unsigned short> pTempDst(new unsigned short[RunCount]);
+        HArrayAutoPtr<uint16_t> pTempDst(new uint16_t[RunCount]);
 
         // Copy the dest.
-        unsigned short* pDst = pTempDst.get();
-        memcpy(pDst, pFinalDst, sizeof(unsigned short)*RunCount);
+        uint16_t* pDst = pTempDst.get();
+        memcpy(pDst, pFinalDst, sizeof(uint16_t)*RunCount);
 
         // We start on black
         uint32_t DstIndex = 0;
@@ -1085,7 +1085,7 @@ public:
                         *pFinalDst++ = 0;
                         }
 
-                    *pFinalDst++ = (unsigned short)FinalDstRunLen;
+                    *pFinalDst++ = (uint16_t)FinalDstRunLen;
                     // FinalDstRunLen = 0;    It should be 0 at this stage but we will set it to 1 below
                     FinalDstOnState = !FinalDstOnState;
 
@@ -1111,12 +1111,12 @@ public:
             }
 
         // Write the last run
-        *pFinalDst = (unsigned short)FinalDstRunLen;
+        *pFinalDst = (uint16_t)FinalDstRunLen;
         //++pFinalDst;
         //FinalDstOnState = !FinalDstOnState;
         }
 
-    virtual const short* GetLostChannels() const override
+    virtual const int16_t* GetLostChannels() const override
         {
         return m_LostChannels;
         }
@@ -1139,9 +1139,9 @@ protected:
             }
         }
 
-    static short m_LostChannels[];
+    static int16_t m_LostChannels[];
     };
-short ConverterV32R8G8B8A8_I1R8G8B8RLE::m_LostChannels[] = {3, -1};
+int16_t ConverterV32R8G8B8A8_I1R8G8B8RLE::m_LostChannels[] = {3, -1};
 static ConverterV32R8G8B8A8_I1R8G8B8RLE s_V32R8G8B8A8_I1R8G8B8RLE;
 
 
@@ -1252,7 +1252,7 @@ HPMPersistentObject* HRPPixelTypeI1R8G8B8RLE::Clone() const
     @end
     -----------------------------------------------------------------------------
  */
-unsigned short HRPPixelTypeI1R8G8B8RLE::CountValueBits() const
+uint16_t HRPPixelTypeI1R8G8B8RLE::CountValueBits() const
     {
     return 0;
     }

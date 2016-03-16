@@ -124,7 +124,7 @@ HPMPersistentObject* HRPPixelTypeV24R8G8B8::Clone() const
     @end
     -----------------------------------------------------------------------------
  */
-unsigned short HRPPixelTypeV24R8G8B8::CountValueBits() const
+uint16_t HRPPixelTypeV24R8G8B8::CountValueBits() const
     {
     return 24;
     }

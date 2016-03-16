@@ -192,7 +192,7 @@ public:
         return WString(GetBlockRequest.str().c_str());
         }
 
-    void BindGetBlockVariables(OCIStmt *stmtp, OraText* pRasterID, sb4 bufLen, unsigned short* pi_Resolution, unsigned short* pi_Band, uint32_t* pi_PosX, uint32_t* pi_PosY)
+    void BindGetBlockVariables(OCIStmt *stmtp, OraText* pRasterID, sb4 bufLen, uint16_t* pi_Resolution, uint16_t* pi_Band, uint32_t* pi_PosX, uint32_t* pi_PosY)
         {
         SDOGeoRasterWrapper::OracleError OraError;
 
@@ -539,8 +539,8 @@ OCIGeoRasterWrapper::~OCIGeoRasterWrapper()
 // note : this method is normally use when the image is not compressed. The
 //        output buffer must be allocated be the caller
 //-----------------------------------------------------------------------------
-void OCIGeoRasterWrapper::GetBlock(unsigned short pi_Resolution,
-                                    unsigned short pi_Band,
+void OCIGeoRasterWrapper::GetBlock(uint16_t pi_Resolution,
+                                    uint16_t pi_Band,
                                     uint32_t   pi_PosX,
                                     uint32_t   pi_PosY,
                                     Byte*     po_pBuffer,
@@ -586,8 +586,8 @@ void OCIGeoRasterWrapper::GetBlock(unsigned short pi_Resolution,
 // note : this method can be use when the image is compressed, the method will
 //        allocate the output buffer with the right size
 //-----------------------------------------------------------------------------
-void OCIGeoRasterWrapper::GetBlock(unsigned short pi_Resolution,
-                                    unsigned short pi_Band,
+void OCIGeoRasterWrapper::GetBlock(uint16_t pi_Resolution,
+                                    uint16_t pi_Band,
                                     uint32_t   pi_PosX,
                                     uint32_t   pi_PosY,
                                     Byte**    po_ppBuffer,
@@ -647,8 +647,8 @@ void OCIGeoRasterWrapper::GetBlock(unsigned short pi_Resolution,
 // public
 // SetBlock
 //-----------------------------------------------------------------------------
-bool OCIGeoRasterWrapper::SetBlock(unsigned short pi_Resolution,
-                                    unsigned short pi_Band,
+bool OCIGeoRasterWrapper::SetBlock(uint16_t pi_Resolution,
+                                    uint16_t pi_Band,
                                     uint32_t     pi_PosX,
                                     uint32_t     pi_PosY,
                                     const Byte* pi_pBuffer,

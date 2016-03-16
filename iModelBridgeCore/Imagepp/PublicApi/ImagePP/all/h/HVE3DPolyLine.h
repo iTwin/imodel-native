@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE3DPolyLine.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE3DPolyLine
@@ -121,7 +121,7 @@ private:
 
 
     // Private methods
-    void               Reserve(unsigned long i_PointsToPreAllocate);
+    void               Reserve(uint32_t i_PointsToPreAllocate);
     void               MakeEmpty();
     };
 END_IMAGEPP_NAMESPACE

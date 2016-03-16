@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPMDataStore.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -23,14 +23,14 @@ typedef unsigned long  uLong; /* 32 bits or more */
 
 #if defined (_HDLL_SUPPORT)
 
-inline int compress2 (Byte* dest,   uLong* destLen,
-                      const Byte* source, uLong sourceLen, int level)
+inline int32_t compress2 (Byte* dest,   uLong* destLen,
+                      const Byte* source, uLong sourceLen, int32_t level)
     {
     HASSERT(!"Fix me");
     return 1;
     }
 
-inline int uncompress (Byte* dest,   uLong* destLen,
+inline int32_t uncompress (Byte* dest,   uLong* destLen,
                        const Byte* source, uLong sourceLen)
     {
     HASSERT(!"Fix me");
@@ -50,10 +50,10 @@ inline int uncompress (Byte* dest,   uLong* destLen,
 
 extern "C" {
 
-    ZEXTERN int ZEXPORT compress2 (Byte* dest,   uLong* destLen,
+    ZEXTERN int32_t ZEXPORT compress2 (Byte* dest,   uLong* destLen,
                                    const Byte* source, uLong sourceLen,
-                                   int level);
-    ZEXTERN int ZEXPORT uncompress (Byte* dest,   uLong* destLen,
+                                   int32_t level);
+    ZEXTERN int32_t ZEXPORT uncompress (Byte* dest,   uLong* destLen,
                                     const Byte* source, uLong sourceLen);
     }
 
@@ -249,7 +249,7 @@ public:
     };
 
 /** --------------------------------------------------------------------------------------------------------
- This interface defines the methods required for a base data store. In short, a base data store uses block
+ This interface defines the methods required for a base data store. In int16_t, a base data store uses block
  IDs (HPMBlockID) to identify blocks of data of type DataType. Blocks of data can be stored, loaded
  or removed from store.
     --------------------------------------------------------------------------------------------------------
@@ -763,7 +763,7 @@ protected:
 template <class DataType> class HPMGenericCompressedDataStore : public HPMGenericDataStore<DataType>
     {
 public:
-    HPMGenericCompressedDataStore(const char* fileName, size_t tileHeaderSize, int compressionFactor)
+    HPMGenericCompressedDataStore(const char* fileName, size_t tileHeaderSize, int32_t compressionFactor)
         : HPMGenericDataStore (tileHeaderSize)
         {
         // Open
@@ -840,7 +840,7 @@ public:
             return HPMBlockID();
 
         uint32_t OutLen = (uint32_t)sizeof(DataType)*countData + 100;
-        int err;
+        int32_t err;
 
 
         // Use level 5 compression. Varies from 1 to 9, 6 being the default.
@@ -901,7 +901,7 @@ public:
                 return HPMBlockID();
 
             uint32_t OutLen = (uint32_t)sizeof(DataType)*countData + 100;
-            int err;
+            int32_t err;
 
 
             // Use level 5 compression. Varies from 1 to 9, 6 being the default.
@@ -1004,17 +1004,17 @@ public:
             return 0;
 
         // Allocated Compressmemory
-        Byte* compressedMemory = (Byte*)malloc ((long)sizedOutLen + 100);
+        Byte* compressedMemory = (Byte*)malloc (sizedOutLen + 100);
         if (compressedMemory == NULL)
             return 0;
 
         // Load the compressed data
-        if ((long)sizedOutLen != fread(compressedMemory, sizeof(Byte), (long)sizedOutLen, m_File))
+        if (sizedOutLen != fread(compressedMemory, sizeof(Byte), sizedOutLen, m_File))
             return 0;
 
         // Uncompress
         uint32_t OutLen = (uint32_t)currentCount*sizeof(DataType);
-        int err = uncompress((Byte*)DataTypeArray, &OutLen, (Byte*)compressedMemory, (uint32_t)sizedOutLen);
+        int32_t err = uncompress((Byte*)DataTypeArray, &OutLen, (Byte*)compressedMemory, (uint32_t)sizedOutLen);
 
 
         // free compressed memory
@@ -1027,7 +1027,7 @@ public:
         return currentCount;
         }
 
-    int m_compressionFactor;
+    int32_t m_compressionFactor;
     };
 
 END_IMAGEPP_NAMESPACE

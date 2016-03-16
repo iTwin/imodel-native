@@ -85,15 +85,15 @@ size_t HCDCodecCRL8::CompressSubset(const void* pi_pInData,
         }
 
     Byte*  pSrc  = (Byte* )pi_pInData;
-    unsigned short* pDest = (unsigned short*)po_pOutBuffer;
+    uint16_t* pDest = (uint16_t*)po_pOutBuffer;
 
-    unsigned short* pCurLine = NULL;
+    uint16_t* pCurLine = NULL;
 
     size_t   LinesCount = GetSubsetHeight();
 
     size_t   LineBytesCount;
     Byte   ColorIndex;
-    unsigned short Count;
+    uint16_t Count;
 
     while(LinesCount != 0)
         {
@@ -126,7 +126,7 @@ size_t HCDCodecCRL8::CompressSubset(const void* pi_pInData,
                 Count++;
                 }
 
-            *pDest = (unsigned short)ColorIndex;
+            *pDest = (uint16_t)ColorIndex;
             pDest++;
 
             // if the len is longer than 1, store the repetitiv pattern
@@ -142,11 +142,11 @@ size_t HCDCodecCRL8::CompressSubset(const void* pi_pInData,
             pCurLine++;
 
             // words to follow
-            *pCurLine = (unsigned short)(pDest - (pCurLine + 1));
+            *pCurLine = (uint16_t)(pDest - (pCurLine + 1));
             pCurLine++;
 
             // line number
-            *pCurLine = (unsigned short)(GetSubsetPosY() + 1);
+            *pCurLine = (uint16_t)(GetSubsetPosY() + 1);
             pCurLine++;
 
             // pixel offset
@@ -182,10 +182,10 @@ size_t HCDCodecCRL8::DecompressSubset(const void* pi_pInData,
 
     size_t   BytesCount;
 
-    unsigned short* pSrc  = (unsigned short*)pi_pInData;
+    uint16_t* pSrc  = (uint16_t*)pi_pInData;
     Byte*  pDest = (Byte*)po_pOutBuffer;
 
-    unsigned short Count;
+    uint16_t Count;
     Byte   ColorIndex;
 
     size_t LinesCount = GetSubsetHeight();
@@ -213,7 +213,7 @@ size_t HCDCodecCRL8::DecompressSubset(const void* pi_pInData,
             ColorIndex = (Byte)(*pSrc);
             pSrc++;
 
-            Count = *((unsigned short*)pSrc);
+            Count = *((uint16_t*)pSrc);
             pSrc++;
 
             HASSERT(Count > 0);

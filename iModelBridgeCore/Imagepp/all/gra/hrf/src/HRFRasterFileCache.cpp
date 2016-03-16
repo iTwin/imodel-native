@@ -52,7 +52,7 @@ bool HRFRasterFileCache::NeedCacheFor(HFCPtr<HRFRasterFile>& pi_rpForRasterFile)
 
             HASSERT(!pPageDescriptor->IsUnlimitedResolution());
             uint32_t ResCount = pPageDescriptor->CountResolutions();
-            for (unsigned short Resolution = 0; (Resolution < ResCount) && (NeedCache == false); Resolution++)
+            for (uint16_t Resolution = 0; (Resolution < ResCount) && (NeedCache == false); Resolution++)
                 {
                 if ((pPageDescriptor->GetResolutionDescriptor(Resolution)->GetBlockType() != HRFBlockType::IMAGE) &&
                     ((pPageDescriptor->GetResolutionDescriptor(Resolution)->GetReaderBlockAccess() == HRFBlockAccess::SEQUENTIAL) ||
@@ -389,7 +389,7 @@ void HRFRasterFileCache::SynchronizeFiles()
                 {
                 //TR 109180 (we need to copy all the source data to the cache, before to begin to rewrite in the source
                 HArrayAutoPtr<bool> aToUpdate(new bool[pPageDescriptor->CountResolutions()]);
-                for (unsigned short Resolution=0; Resolution < pPageDescriptor->CountResolutions(); Resolution++)
+                for (uint16_t Resolution=0; Resolution < pPageDescriptor->CountResolutions(); Resolution++)
                     {
                     // Obtain the resolution descriptor
                     HFCPtr<HRFResolutionDescriptor> pResolution = pPageDescriptor->GetResolutionDescriptor(Resolution);
@@ -456,7 +456,7 @@ void HRFRasterFileCache::SynchronizeFiles()
 
                 if (m_CacheInvalidate)
                     {
-                    for (unsigned short Resolution=0; Resolution < pCachedPage->CountResolutions(); Resolution++)
+                    for (uint16_t Resolution=0; Resolution < pCachedPage->CountResolutions(); Resolution++)
                         {
                         // Obtain the resolution descriptor
                         HFCPtr<HRFResolutionDescriptor> pCacheResolutionDescriptor = pCachedPage->GetResolutionDescriptor(Resolution);
@@ -471,7 +471,7 @@ void HRFRasterFileCache::SynchronizeFiles()
                     }
                 else
                     {
-                    for (unsigned short Resolution=0; Resolution < pPageDescriptor->CountResolutions() && aToUpdate[Resolution]; Resolution++)
+                    for (uint16_t Resolution=0; Resolution < pPageDescriptor->CountResolutions() && aToUpdate[Resolution]; Resolution++)
                         {
                         // Obtain the resolution descriptor
                         HFCPtr<HRFResolutionDescriptor> pResolution = pPageDescriptor->GetResolutionDescriptor(Resolution);
@@ -574,7 +574,7 @@ bool HRFRasterFileCache::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
 // Editor creation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFRasterFileCache::CreateResolutionEditor(uint32_t      pi_Page,
-                                                                unsigned short pi_Resolution,
+                                                                uint16_t pi_Resolution,
                                                                 HFCAccessMode pi_AccessMode)
     {
     HPRECONDITION((m_OriginalPageID == -1 &&  pi_Page < CountPages()) || pi_Page == m_OriginalPageID);
@@ -715,7 +715,7 @@ void HRFRasterFileCache::SetLookAhead(uint32_t               pi_Page,
         // Get the res descriptor for that res
         HASSERT(pi_Page < CountPages());
         HASSERT(TileResolution < GetPageDescriptor(pi_Page)->CountResolutions());
-        pRes = GetPageDescriptor(pi_Page)->GetResolutionDescriptor((unsigned short)TileResolution);
+        pRes = GetPageDescriptor(pi_Page)->GetResolutionDescriptor((uint16_t)TileResolution);
 
         // Verify the data flag of the current tile.  If it is empty, add it
         // to the block list to request from the source
@@ -740,7 +740,7 @@ void HRFRasterFileCache::SetLookAhead(uint32_t               pi_Page,
 // Sets the LookAhead for a whole extent
 //------------------------------------------------------------------------------
 void HRFRasterFileCache::SetLookAhead(uint32_t           pi_Page,
-                                      unsigned short    pi_Resolution,
+                                      uint16_t    pi_Resolution,
                                       const HVEShape&    pi_rShape,
                                       uint32_t           pi_ConsumerID,
                                       bool              pi_Async)
@@ -793,7 +793,7 @@ bool HRFRasterFileCache::NotifyProgressImageChanged (const HMGMessage& pi_rMessa
 
     // Convert the message
     uint32_t Page       = rMessage.GetPage();
-    unsigned short Resolution = rMessage.GetSubResolution();
+    uint16_t Resolution = rMessage.GetSubResolution();
     uint64_t PosX       = rMessage.GetPosX();
     uint64_t PosY       = rMessage.GetPosY();
 
@@ -863,7 +863,7 @@ void HRFRasterFileCache::BuildDescriptors(uint32_t pi_Page)
     // a temporary cache file.
     // see SetEnable1BitMultiresCacheSupport()
     //
-    unsigned short OriginalResolutionCount = pOriginalPageDesc->CountResolutions();
+    uint16_t OriginalResolutionCount = pOriginalPageDesc->CountResolutions();
     if ((pOriginalPageDesc->GetResolutionDescriptor(0)->GetPixelType()->CountPixelRawDataBits() == 1) &&
         !(m_AutoErase || ImageppLib::GetHost().GetImageppLibAdmin()._Is1BitMultiresCacheSupportEnable()))
         {
@@ -876,7 +876,7 @@ void HRFRasterFileCache::BuildDescriptors(uint32_t pi_Page)
             OriginalResolutionCount = 1;
         }
 
-    for (unsigned short Resolution = 0; Resolution < OriginalResolutionCount; Resolution++)
+    for (uint16_t Resolution = 0; Resolution < OriginalResolutionCount; Resolution++)
         {
         if ((pOriginalPageDesc->GetResolutionDescriptor(Resolution)->GetBlockType() != HRFBlockType::IMAGE) &&
             ((pOriginalPageDesc->GetResolutionDescriptor(Resolution)->GetReaderBlockAccess() == HRFBlockAccess::SEQUENTIAL) ||
@@ -1114,7 +1114,7 @@ HFCPtr<HRFPageDescriptor> HRFRasterFileCache::BuildPageDescriptor(const HFCPtr<H
         // Add all resolutions descriptor from Cache file
         HRFPageDescriptor::ListOfResolutionDescriptor  ListOfResolutionDescriptor;
 
-        for (unsigned short Resolution=0; Resolution < pi_rpCachePage->CountResolutions(); Resolution++)
+        for (uint16_t Resolution=0; Resolution < pi_rpCachePage->CountResolutions(); Resolution++)
             {
             HASSERT(pi_rpCachePage->GetResolutionDescriptor(Resolution)->HasBlocksDataFlag());
 

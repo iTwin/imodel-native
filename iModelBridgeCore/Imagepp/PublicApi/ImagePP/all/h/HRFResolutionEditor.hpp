@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFResolutionEditor.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ inline void HRFResolutionEditor::NoMoreRead()
 // resolution index is use on HGFTileID when HRFInternetImagingFile is an
 // unlimited resolution.
 //-----------------------------------------------------------------------------
-inline unsigned short HRFResolutionEditor::GetResolutionIndex() const
+inline uint16_t HRFResolutionEditor::GetResolutionIndex() const
     {
     return m_Resolution;
     }

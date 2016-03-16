@@ -50,7 +50,7 @@ public:
         {
         // Block Capability
         Add(new HRFLineCapability(HFC_READ_WRITE_CREATE,
-                                  LONG_MAX,
+                                  INT32_MAX,
                                   HRFBlockAccess::RANDOM));
         }
     };
@@ -67,11 +67,11 @@ public:
         {
         // Block Capability
         Add(new HRFImageCapability(HFC_READ_WRITE_CREATE,  // AccessMode
-                                   LONG_MAX,               // MaxSizeInBytes
+                                   INT32_MAX,               // MaxSizeInBytes
                                    0,                      // MinWidth
-                                   LONG_MAX,               // MaxWidth
+                                   INT32_MAX,               // MaxWidth
                                    0,                      // MinHeight
-                                   LONG_MAX));             // MaxHeight
+                                   INT32_MAX));             // MaxHeight
         }
     };
 
@@ -268,9 +268,9 @@ void HRFBmpCreator::CreateBmpFileFromImageData(HFCPtr<HFCURL>&       pi_rpFileNa
 
     pRasterFile->AddPage(pPage);
 
-    HAutoPtr<HRFResolutionEditor> pResolutionEditor(pRasterFile->CreateResolutionEditor(0, (unsigned short)0, HFC_READ_WRITE_CREATE));
+    HAutoPtr<HRFResolutionEditor> pResolutionEditor(pRasterFile->CreateResolutionEditor(0, (uint16_t)0, HFC_READ_WRITE_CREATE));
     Byte*                       pImageLine = pi_ImageData;
-    unsigned short               BytesPerPixel = (unsigned short)(pi_rpImageDataPixelType->CountPixelRawDataBits() / 8);
+    uint16_t               BytesPerPixel = (uint16_t)(pi_rpImageDataPixelType->CountPixelRawDataBits() / 8);
 
     for (uint32_t pi_LineInd = 0; pi_LineInd < pi_ImageDataHeight; pi_LineInd++)
         {
@@ -550,7 +550,7 @@ HFCBinStream* HRFBmpFile::GetFilePtr  ()
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFBmpFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                        unsigned short pi_Resolution,
+                                                        uint16_t pi_Resolution,
                                                         HFCAccessMode  pi_AccessMode)
     {
     // Verify that the page number is 0, because we have one image per file
@@ -589,7 +589,7 @@ bool HRFBmpFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
     // Display each tag.
     HPMAttributeSet::HPMASiterator TagIterator;
 
-    unsigned short Unit = 1; // Unkown unit
+    uint16_t Unit = 1; // Unkown unit
     double XResolution = 0;
     double YResolution = 0;
 
@@ -653,7 +653,7 @@ bool HRFBmpFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
     uint32_t LinePadBits                  = 32;
     uint32_t UsedBitsPerRow               = pResolutionDescriptor->GetPixelType()->CountPixelRawDataBits() *
                                          m_BmpInfo.m_BmpInfoHeader.m_Width;
-    m_PaddingBitsPerRow                = (unsigned short)(LinePadBits - (UsedBitsPerRow % LinePadBits)) % LinePadBits;
+    m_PaddingBitsPerRow                = (uint16_t)(LinePadBits - (UsedBitsPerRow % LinePadBits)) % LinePadBits;
 
     // Caculate image size including padding.
     m_BmpInfo.m_BmpInfoHeader.m_SizeImage   =  m_BmpInfo.m_BmpInfoHeader.m_Height *
@@ -781,7 +781,7 @@ void HRFBmpFile::CreateDescriptors ()
     uint32_t LinePadBits     = 32;
     uint32_t UsedBitsPerRow  = pPixelType->CountPixelRawDataBits() *
                             m_BmpInfo.m_BmpInfoHeader.m_Width;
-    m_PaddingBitsPerRow   = (unsigned short)(LinePadBits - (UsedBitsPerRow % LinePadBits)) % LinePadBits;
+    m_PaddingBitsPerRow   = (uint16_t)(LinePadBits - (UsedBitsPerRow % LinePadBits)) % LinePadBits;
 
     // Create codec for compression.
     HFCPtr<HCDCodec> pCodec;
@@ -886,7 +886,7 @@ void HRFBmpFile::SaveBmpFile(bool pi_CloseFile)
         if ( (GetAccessMode().m_HasWriteAccess) || (GetAccessMode().m_HasCreateAccess) )
             {
             bool   SaveHeader = false;
-            unsigned short Unit = 1; // Unknown Unit
+            uint16_t Unit = 1; // Unknown Unit
             double XResolution = 0;
             double YResolution = 0;
 
@@ -1371,7 +1371,7 @@ bool HRFBmpFile::GetBmpInfoHeaderFromFile()
         BitsPerWord  = 32 / m_BmpInfo.m_BmpInfoHeader.m_BitCount;
         LongsPerLine = m_BmpInfo.m_BmpInfoHeader.m_Width / BitsPerWord +
                        (m_BmpInfo.m_BmpInfoHeader.m_Width % BitsPerWord != 0);
-        BytesPerLine = LongsPerLine * sizeof(long);
+        BytesPerLine = LongsPerLine * sizeof(int32_t);
         m_BmpInfo.m_BmpInfoHeader.m_SizeImage = BytesPerLine * m_BmpInfo.m_BmpInfoHeader.m_Height;
         }
 

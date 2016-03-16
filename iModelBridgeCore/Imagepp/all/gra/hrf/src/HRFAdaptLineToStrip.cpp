@@ -52,7 +52,7 @@ HRFBlockAdapterCapabilities* HRFAdaptLineToStripCreator::GetCapabilities() const
 //-----------------------------------------------------------------------------
 HRFBlockAdapter* HRFAdaptLineToStripCreator::Create(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                                     uint32_t              pi_Page,
-                                                    unsigned short       pi_Resolution,
+                                                    uint16_t       pi_Resolution,
                                                     HFCAccessMode         pi_AccessMode) const
     {
     return new HRFAdaptLineToStrip(GetCapabilities(),
@@ -69,7 +69,7 @@ HRFBlockAdapter* HRFAdaptLineToStripCreator::Create(HFCPtr<HRFRasterFile> pi_rpR
 HRFAdaptLineToStrip::HRFAdaptLineToStrip(HRFBlockAdapterCapabilities*   pi_pCapabilities,
                                          HFCPtr<HRFRasterFile>          pi_rpRasterFile,
                                          uint32_t                       pi_Page,
-                                         unsigned short                pi_Resolution,
+                                         uint16_t                pi_Resolution,
                                          HFCAccessMode                  pi_AccessMode)
     : HRFBlockAdapter(  pi_pCapabilities,
                         pi_rpRasterFile,
@@ -78,7 +78,7 @@ HRFAdaptLineToStrip::HRFAdaptLineToStrip(HRFBlockAdapterCapabilities*   pi_pCapa
                         pi_AccessMode)
     {
     // Resolution dimension
-    HASSERT(m_pResolutionDescriptor->GetHeight() <= ULONG_MAX);
+    HASSERT(m_pResolutionDescriptor->GetHeight() <= UINT32_MAX);
     m_Height             = (uint32_t)m_pResolutionDescriptor->GetHeight();
 
     // block dimension
@@ -160,8 +160,8 @@ HSTATUS HRFAdaptLineToStrip::ReadBlockRLE(uint64_t pi_PosBlockX,
     HPRECONDITION(po_rpPacketRLE->HasBufferOwnership());    // Must be owner of buffer.
     HPRECONDITION(po_rpPacketRLE->GetCodec()->GetWidth() == GetResolutionDescriptor()->GetBlockWidth());
     HPRECONDITION(po_rpPacketRLE->GetCodec()->GetHeight() >= GetResolutionDescriptor()->GetBlockHeight());
-    HPRECONDITION(GetResolutionDescriptor()->GetBytesPerBlockWidth() <= ULONG_MAX);
-    HPRECONDITION(m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBytesPerBlockWidth() <= ULONG_MAX);
+    HPRECONDITION(GetResolutionDescriptor()->GetBytesPerBlockWidth() <= UINT32_MAX);
+    HPRECONDITION(m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBytesPerBlockWidth() <= UINT32_MAX);
 
     HSTATUS Status       = H_SUCCESS;
     uint32_t ImageWidth    = (uint32_t)m_pResolutionDescriptor->GetWidth();
@@ -171,7 +171,7 @@ HSTATUS HRFAdaptLineToStrip::ReadBlockRLE(uint64_t pi_PosBlockX,
     if (pi_PosBlockY+m_BlockHeight > m_Height)
         NumberOfLines = m_Height - (uint32_t)pi_PosBlockY;
 
-    size_t               workBufferSize = (ImageWidth* 2 + 2)*sizeof(unsigned short);     // Worst case for one line.
+    size_t               workBufferSize = (ImageWidth* 2 + 2)*sizeof(uint16_t);     // Worst case for one line.
     HFCPtr<HCDPacketRLE> pLinePacket(new HCDPacketRLE(ImageWidth, 1));
     pLinePacket->SetLineBuffer(0, new Byte[workBufferSize], workBufferSize, 0);
     pLinePacket->SetBufferOwnership(true);

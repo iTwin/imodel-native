@@ -53,7 +53,7 @@ HFCBinStream::~HFCBinStream()
 +---------------+---------------+---------------+---------------+---------------+------*/
 HFCBinStream* HFCBinStream::Instanciate(HFCPtr<HFCURL> pi_pURL,
                                         HFCAccessMode  pi_AccessMode,
-                                        short pi_NbRetry, bool pi_ThrowOnError)
+                                        int16_t pi_NbRetry, bool pi_ThrowOnError)
     {
     return Instanciate(pi_pURL, 0/*offset*/, pi_AccessMode, pi_NbRetry, pi_ThrowOnError);
     }
@@ -69,7 +69,7 @@ HFCBinStream* HFCBinStream::Instanciate(HFCPtr<HFCURL> pi_pURL,
 HFCBinStream* HFCBinStream::Instanciate(HFCPtr<HFCURL> pi_pURL,
                                                   uint64_t pi_offSet,
                                                   HFCAccessMode  pi_AccessMode,
-                                                  short pi_NbRetry, bool pi_ThrowOnError)
+                                                  int16_t pi_NbRetry, bool pi_ThrowOnError)
     {
     HFCBinStream* pNewObj = 0;
     WString SchemeType((pi_pURL != 0) ? pi_pURL->GetSchemeType() : WString());

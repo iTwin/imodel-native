@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HTagDefinition.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Static method used by external module.
@@ -43,14 +43,14 @@ inline HTagID HTagDefinition::GetID() const
     return m_pTagInfo->TagID;
     }
 
-inline short HTagDefinition::GetReadCount() const
+inline int16_t HTagDefinition::GetReadCount() const
     {
     HPRECONDITION(m_pTagInfo != 0);
 
     return m_pTagInfo->ReadCount;
     }
 
-inline short HTagDefinition::GetWriteCount() const
+inline int16_t HTagDefinition::GetWriteCount() const
     {
     HPRECONDITION(m_pTagInfo != 0);
 

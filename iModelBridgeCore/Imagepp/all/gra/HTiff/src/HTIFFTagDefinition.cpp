@@ -169,8 +169,8 @@ const HTagInfo::Info HTIFFTagInfo::sTagInfo[] = {
         SHORT,    false,false, "Compression"
         },
     //TR 312623 : The long definition for the TIFFTAG_COMPRESSION should be
-    //after the short definition to ensure that Image++ writes a short
-    //instead of long value (i.e. : the standard is short).
+    //after the int16_t definition to ensure that Image++ writes a int16_t
+    //instead of long value (i.e. : the standard is int16_t).
         {   TIFFTAG_COMPRESSION, COMPRESSION,         TAG_IO_VARIABLE,1,
         LONG,    false,false, "Compression"
         },

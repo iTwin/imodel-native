@@ -766,7 +766,7 @@ HFCPtr<HGF2DTransfoModel>  HGFPolynomialModelAdapter::ComposeYourself(const HGF2
 // - f_xprime(x, y) = f_x(s_x(x), s_y(y)) which maps from (x, y) to x'
 // - f_yprime(x, y) = f_y(s_x(x), s_y(y)) which maps from (x, y) to y'
 //
-// The formulas below can be obtained using a symbolic math tool, like Wolfram Alpha, Maple, SymPy, etc. Here is a short script written
+// The formulas below can be obtained using a symbolic math tool, like Wolfram Alpha, Maple, SymPy, etc. Here is a int16_t script written
 // in python using SymPy that generates the coefficients:
 //
 //        import sympy

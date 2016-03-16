@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DDCTransfoModel.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -34,19 +34,19 @@ public:
     IMAGEPP_EXPORT ~HGF2DDCTransfoModel();
 
     IMAGEPP_EXPORT static uint32_t GetAlignTransfoMatrixFromScaleAndTiePts (double        po_pMatrix[4][4],
-                                                                   unsigned short pi_NbVal_GeoTiePoint,
+                                                                   uint16_t pi_NbVal_GeoTiePoint,
                                                                    const double* pi_pVal_GeoTiePoint);
     IMAGEPP_EXPORT static uint32_t GetHelmertTransfoMatrixFromScaleAndTiePts (double        po_pMatrix[4][4],
-                                                                     unsigned short pi_NbVal_GeoTiePoint,
+                                                                     uint16_t pi_NbVal_GeoTiePoint,
                                                                      const double* pi_pVal_GeoTiePoint);
     IMAGEPP_EXPORT static uint32_t GetSimilitudeTransfoMatrixFromScaleAndTiePts (double        po_pMatrix[4][4],
-                                                                        unsigned short pi_NbVal_GeoTiePoint,
+                                                                        uint16_t pi_NbVal_GeoTiePoint,
                                                                         const double* pi_pVal_GeoTiePoint);
     IMAGEPP_EXPORT static uint32_t GetAffineTransfoMatrixFromScaleAndTiePts (double        po_pMatrix[4][4],
-                                                                    unsigned short pi_NbVal_GeoTiePoint,
+                                                                    uint16_t pi_NbVal_GeoTiePoint,
                                                                     const double* pi_pVal_GeoTiePoint);
     IMAGEPP_EXPORT static uint32_t GetProjectiveTransfoMatrixFromScaleAndTiePts (double        po_pMatrix[4][4],
-                                                                        unsigned short pi_NbVal_GeoTiePoint,
+                                                                        uint16_t pi_NbVal_GeoTiePoint,
                                                                         const double* pi_pVal_GeoTiePoint);
 
 

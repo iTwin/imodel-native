@@ -24,7 +24,7 @@
 //-----------------------------------------------------------------------------
 HRFPWEditor::HRFPWEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                          uint32_t              pi_Page,
-                         unsigned short       pi_Resolution,
+                         uint16_t       pi_Resolution,
                          HFCAccessMode         pi_AccessMode)
     : HRFResolutionEditor(pi_rpRasterFile, pi_Page, pi_Resolution, pi_AccessMode)
     {
@@ -53,11 +53,11 @@ HSTATUS HRFPWEditor::ReadBlock(uint64_t pi_PosBlockX,
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (po_pData != 0);
-    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+    HPRECONDITION (pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);
 
     HSTATUS RetValue = H_SUCCESS;
     // must call IHRFPWFileHandler interface
-    HASSERT_X64(m_DocumentTimestamp < ULONG_MAX);  // see the cast below
+    HASSERT_X64(m_DocumentTimestamp < UINT32_MAX);  // see the cast below
     if (((HFCPtr<HRFPWRasterFile>&)m_pRasterFile)->m_pPWHandler->GetTile(m_DocumentID,
                                                                          (__time32_t)m_DocumentTimestamp,
                                                                          m_Page,
@@ -131,7 +131,7 @@ HRFPWHandler::~HRFPWHandler()
     }
 
 IHRFPWFileHandler::GETTILE_STATUS HRFPWHandler::GetTile(uint32_t pi_Page,
-                                                        unsigned short pi_Res,
+                                                        uint16_t pi_Res,
                                                         uint32_t pi_PosX,
                                                         uint32_t pi_PosY,
                                                         Byte*  po_pData)

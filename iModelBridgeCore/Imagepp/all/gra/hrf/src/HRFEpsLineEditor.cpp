@@ -22,7 +22,7 @@
 */
 HRFEpsLineEditor::HRFEpsLineEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                    uint32_t              pi_Page,
-                                   unsigned short       pi_Resolution,
+                                   uint16_t       pi_Resolution,
                                    HFCAccessMode         pi_AccessMode)
     : HRFResolutionEditor(pi_rpRasterFile,
                           pi_Page,
@@ -109,14 +109,14 @@ HSTATUS HRFEpsLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
 
         uint32_t BytesToProcess = m_OutputBytesPerLine;
         uint32_t CurrentPositionInBuffer = 0;
-        unsigned short BytesLeftInLine;
-        unsigned short BytesToWrite;
+        uint16_t BytesLeftInLine;
+        uint16_t BytesToWrite;
 
         // Write lines in output. Maximum 254 characters per line.
         while (BytesToProcess > 0)
             {
             BytesLeftInLine = 254 - m_CurrentOutputPosition;
-            BytesToWrite = (unsigned short)MIN(BytesLeftInLine, BytesToProcess);
+            BytesToWrite = (uint16_t)MIN(BytesLeftInLine, BytesToProcess);
 
             if(m_pRasterFile->m_pFile->Write(&m_pLineBuffer[CurrentPositionInBuffer], BytesToWrite) != BytesToWrite)
                 goto WRAPUP;    // H_ERROR

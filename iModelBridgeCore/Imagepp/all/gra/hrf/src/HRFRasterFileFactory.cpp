@@ -299,7 +299,7 @@ HFCAccessMode HRFRasterFileFactory::DetectAccessMode(const HFCPtr<HFCURL>& pi_rp
         FileName += ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
 
         // Try to find the access mode of the specified file.
-        if (static_cast<int>(BeFileName::CheckAccess(FileName.c_str(), BeFileNameAccess::ReadWrite)) == 0) 
+        if (static_cast<int32_t>(BeFileName::CheckAccess(FileName.c_str(), BeFileNameAccess::ReadWrite)) == 0) 
             AccessMode = HFC_READ_WRITE_OPEN | HFC_SHARE_READ_ONLY;
         else
             AccessMode = HFC_READ_ONLY | HFC_SHARE_READ_WRITE;

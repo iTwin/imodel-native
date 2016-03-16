@@ -143,7 +143,7 @@ size_t HCDCodecJBIG::DecompressSubset(const void*  pi_pInData,
     struct jbg_dec_state sjd;
 
     jbg_dec_init(&sjd);
-    int Result = jbg_dec_in(&sjd, (unsigned char*)pi_pInData, pi_InDataSize, NULL);
+    int32_t Result = jbg_dec_in(&sjd, (unsigned char*)pi_pInData, pi_InDataSize, NULL);
 
     HASSERT(Result == JBG_EOK);
     HASSERT(sjd.planes == 1);

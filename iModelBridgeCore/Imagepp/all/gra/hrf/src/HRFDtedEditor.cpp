@@ -56,7 +56,7 @@
 //-----------------------------------------------------------------------------
 HRFDtedEditor::HRFDtedEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                              uint32_t             pi_Page,
-                             unsigned short        pi_Resolution,
+                             uint16_t        pi_Resolution,
                              HFCAccessMode         pi_AccessMode)
     : HRFGdalSupportedFileEditor(pi_rpRasterFile,
                                  pi_Page,
@@ -82,7 +82,7 @@ HSTATUS HRFDtedEditor::ReadBlock(uint64_t                 pi_PosBlockX,
                                  uint64_t                 pi_PosBlockY,
                                  Byte*                    po_pData)
     {
-    HPRECONDITION(pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+    HPRECONDITION(pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);
 
     //TR 210848 Reverse the image by returning columns instead
     //of lines of the underlying image

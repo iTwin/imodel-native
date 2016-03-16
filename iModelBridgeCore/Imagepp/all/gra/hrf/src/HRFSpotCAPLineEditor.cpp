@@ -25,7 +25,7 @@
 
 HRFSpotCAPLineEditor::HRFSpotCAPLineEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                            uint32_t              pi_Page,
-                                           unsigned short       pi_Resolution,
+                                           uint16_t       pi_Resolution,
                                            HFCAccessMode         pi_AccessMode)
     : HRFResolutionEditor(pi_rpRasterFile,
                           pi_Page,
@@ -84,7 +84,7 @@ HSTATUS HRFSpotCAPLineEditor::ReadBlock(uint64_t pi_PosBlockX,
     HPRECONDITION (po_pData != 0);
     HPRECONDITION (pi_PosBlockY >= 0);
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
-    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+    HPRECONDITION (pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);
 
     HSTATUS Status = H_ERROR;
 

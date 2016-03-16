@@ -71,14 +71,14 @@ public:
                                uint64_t pi_PosBlockY,
                                const HFCPtr<HCDPacket>& pi_rpPacket) override;
 
-    int GetLevelOfDetail() const;
+    int32_t GetLevelOfDetail() const;
 
     Utf8String BuildTileUri(uint64_t tileId);
 
 protected:
 
     //Constructor
-    HRFVirtualEarthEditor    (HFCPtr<HRFRasterFile> pi_rpRasterFile, uint32_t pi_Page, unsigned short pi_Resolution, HFCAccessMode pi_AccessMode);
+    HRFVirtualEarthEditor    (HFCPtr<HRFRasterFile> pi_rpRasterFile, uint32_t pi_Page, uint16_t pi_Resolution, HFCAccessMode pi_AccessMode);
 
     //Request look ahead
     virtual void                    RequestLookAhead(const HGFTileIDList& pi_rTileIDList);       
@@ -102,16 +102,16 @@ private:
 
     public :
         static double  Clip(double n, double minValue, double maxValue);
-        static unsigned int MapSize(int levelOfDetail);
-        static double  GroundResolution(double latitude, int levelOfDetail);
-        static double  MapScale(double latitude, int levelOfDetail, int screenDpi);
-        static void    LatLongToPixelXY(double latitude, double longitude, int levelOfDetail, int* pixelX, int* pixelY);
-        static void    PixelXYToLatLong(int pixelX, int pixelY, int levelOfDetail, double* latitude, double* longitude);
-        static void    PixelXYToTileXY(int pixelX, int pixelY, int* tileX, int* tileY);
-        static void    TileXYToPixelXY(int tileX, int tileY, int* pixelX, int* pixelY);
-        static string  TileXYToQuadKey(int tileX, int tileY, int levelOfDetail);
-        static string  PixelXYToQuadKey(int pi_PixelX, int pi_PixelY, int pi_LevelOfDetail);
-        static void    QuadKeyToTileXY(string quadKey, int* tileX, int* tileY, int* levelOfDetail);
+        static uint32_t MapSize(int32_t levelOfDetail);
+        static double  GroundResolution(double latitude, int32_t levelOfDetail);
+        static double  MapScale(double latitude, int32_t levelOfDetail, int32_t screenDpi);
+        static void    LatLongToPixelXY(double latitude, double longitude, int32_t levelOfDetail, int32_t* pixelX, int32_t* pixelY);
+        static void    PixelXYToLatLong(int32_t pixelX, int32_t pixelY, int32_t levelOfDetail, double* latitude, double* longitude);
+        static void    PixelXYToTileXY(int32_t pixelX, int32_t pixelY, int32_t* tileX, int32_t* tileY);
+        static void    TileXYToPixelXY(int32_t tileX, int32_t tileY, int32_t* pixelX, int32_t* pixelY);
+        static string  TileXYToQuadKey(int32_t tileX, int32_t tileY, int32_t levelOfDetail);
+        static string  PixelXYToQuadKey(int32_t pi_PixelX, int32_t pi_PixelY, int32_t pi_LevelOfDetail);
+        static void    QuadKeyToTileXY(string quadKey, int32_t* tileX, int32_t* tileY, int32_t* levelOfDetail);
         };
 //-----------------------------------------------------------------------------//
 //                         End of VirtualEarthTileSystem API                   //

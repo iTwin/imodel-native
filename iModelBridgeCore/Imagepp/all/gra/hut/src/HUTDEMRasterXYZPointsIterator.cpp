@@ -332,10 +332,10 @@ const PixelToPointConverter* CreatePixelToPointConverter   (const HRABitmap&    
             return new FastPixToPtConverter<uint8_t>();
 
         if (pi_rBitmap.GetPixelType()->IsCompatibleWith(HRPPixelTypeV16Int16::CLASS_ID))
-            return new FastPixToPtConverter<short>();
+            return new FastPixToPtConverter<int16_t>();
 
         if (pi_rBitmap.GetPixelType()->IsCompatibleWith(HRPPixelTypeV16Gray16::CLASS_ID))
-            return new FastPixToPtConverter<unsigned short>();
+            return new FastPixToPtConverter<uint16_t>();
 
         if (pi_rBitmap.GetPixelType()->IsCompatibleWith(HRPPixelTypeV32Float32::CLASS_ID))
             return new FastPixToPtConverter<float>();
@@ -352,9 +352,9 @@ const PixelToPointConverter* CreatePixelToPointConverter   (const HRABitmap&    
         return new PixToPtConverter<uint8_t>();
 
     if (pi_rBitmap.GetPixelType()->IsCompatibleWith(HRPPixelTypeV16Int16::CLASS_ID))
-        return new PixToPtConverter<short>();
+        return new PixToPtConverter<int16_t>();
     if (pi_rBitmap.GetPixelType()->IsCompatibleWith(HRPPixelTypeV16Gray16::CLASS_ID))
-        return new PixToPtConverter<unsigned short>();
+        return new PixToPtConverter<uint16_t>();
 
     if (pi_rBitmap.GetPixelType()->IsCompatibleWith(HRPPixelTypeV32Float32::CLASS_ID))
         return new PixToPtConverter<float>();
@@ -397,10 +397,10 @@ const PixelToPointConverter* CreateLegacyPixelToPointConverter (const HRABitmap&
          (pTransfoModel->IsCompatibleWith(HGF2DTranslation::CLASS_ID) == true)))
     {                   
         if (pi_rBitmap.GetPixelType()->IsCompatibleWith(HRPPixelTypeV16Int16::CLASS_ID))
-            return new FastPixToPtConverter<short>();
+            return new FastPixToPtConverter<int16_t>();
 
         if (pi_rBitmap.GetPixelType()->IsCompatibleWith(HRPPixelTypeV16Gray16::CLASS_ID))
-            return new FastPixToPtConverter<unsigned short>();
+            return new FastPixToPtConverter<uint16_t>();
 
         if (pi_rBitmap.GetPixelType()->IsCompatibleWith(HRPPixelTypeV32Float32::CLASS_ID))
             return new FastPixToPtConverter<float>();
@@ -413,9 +413,9 @@ const PixelToPointConverter* CreateLegacyPixelToPointConverter (const HRABitmap&
         pTransfoModel = pTransfoModel->ComposeInverseWithDirectOf(*pi_rpReprojectionTransfoModel);
     
     if (pi_rBitmap.GetPixelType()->IsCompatibleWith(HRPPixelTypeV16Int16::CLASS_ID))
-        return new PixToPtConverter<short>();
+        return new PixToPtConverter<int16_t>();
     if (pi_rBitmap.GetPixelType()->IsCompatibleWith(HRPPixelTypeV16Gray16::CLASS_ID))
-        return new PixToPtConverter<unsigned short>();
+        return new PixToPtConverter<uint16_t>();
 
     if (pi_rBitmap.GetPixelType()->IsCompatibleWith(HRPPixelTypeV32Float32::CLASS_ID))
         return new PixToPtConverter<float>();
@@ -888,14 +888,14 @@ void HUTDEMRasterXYZPointsIterator::InitStripForDebug ()
     else
     if (m_pStrip->GetPixelType()->IsCompatibleWith(HRPPixelTypeV16Gray16::CLASS_ID))
     {
-        pRawDataValue = new Byte[sizeof(unsigned short)];
-        *((unsigned short*)pRawDataValue.get()) = 65535;            
+        pRawDataValue = new Byte[sizeof(uint16_t)];
+        *((uint16_t*)pRawDataValue.get()) = 65535;            
     }
     else
     if (m_pStrip->GetPixelType()->IsCompatibleWith(HRPPixelTypeV16Int16::CLASS_ID))
     {            
-        pRawDataValue = new Byte[sizeof(short)];
-        *((short*)pRawDataValue.get()) = 32765;            
+        pRawDataValue = new Byte[sizeof(int16_t)];
+        *((int16_t*)pRawDataValue.get()) = 32765;            
     }
     else
     if (m_pStrip->GetPixelType()->IsCompatibleWith(HRPPixelTypeV32Float32::CLASS_ID))

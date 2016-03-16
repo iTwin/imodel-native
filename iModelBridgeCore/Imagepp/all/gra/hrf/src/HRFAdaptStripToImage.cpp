@@ -70,7 +70,7 @@ HRFBlockAdapterCapabilities* HRFAdaptStripToImageCreator::GetCapabilities() cons
 //-----------------------------------------------------------------------------
 HRFBlockAdapter* HRFAdaptStripToImageCreator::Create(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                                      uint32_t              pi_Page,
-                                                     unsigned short       pi_Resolution,
+                                                     uint16_t       pi_Resolution,
                                                      HFCAccessMode         pi_AccessMode) const
     {
     return new HRFAdaptStripToImage(GetCapabilities(),
@@ -87,7 +87,7 @@ HRFBlockAdapter* HRFAdaptStripToImageCreator::Create(HFCPtr<HRFRasterFile> pi_rp
 HRFAdaptStripToImage::HRFAdaptStripToImage(HRFBlockAdapterCapabilities* pi_pCapabilities,
                                            HFCPtr<HRFRasterFile>        pi_rpRasterFile,
                                            uint32_t                     pi_Page,
-                                           unsigned short              pi_Resolution,
+                                           uint16_t              pi_Resolution,
                                            HFCAccessMode                pi_AccessMode)
     : HRFBlockAdapter(pi_pCapabilities,
                       pi_rpRasterFile,
@@ -95,8 +95,8 @@ HRFAdaptStripToImage::HRFAdaptStripToImage(HRFBlockAdapterCapabilities* pi_pCapa
                       pi_Resolution,
                       pi_AccessMode)
     {
-    HASSERT(m_pResolutionDescriptor->GetHeight() <= ULONG_MAX);
-    HASSERT(m_pResolutionDescriptor->GetBytesPerWidth() <= ULONG_MAX);
+    HASSERT(m_pResolutionDescriptor->GetHeight() <= UINT32_MAX);
+    HASSERT(m_pResolutionDescriptor->GetBytesPerWidth() <= UINT32_MAX);
 
     m_ImageHeight = (uint32_t)m_pResolutionDescriptor->GetHeight();
 
@@ -110,7 +110,7 @@ HRFAdaptStripToImage::HRFAdaptStripToImage(HRFBlockAdapterCapabilities* pi_pCapa
     m_ExactBytesPerStrip = m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBlockSizeInBytes();
 
     // Calc the number of Strip by tile Image height
-    HASSERT(m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBlocksPerHeight() <= ULONG_MAX);
+    HASSERT(m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBlocksPerHeight() <= UINT32_MAX);
 
     m_NumberOfStripByImageHeight = (uint32_t)m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBlocksPerHeight();
     }
@@ -171,7 +171,7 @@ HSTATUS HRFAdaptStripToImage::ReadBlock(uint64_t pi_PosBlockX,
             Status = m_pAdaptedResolutionEditor->ReadBlock((uint32_t)0, (uint32_t)0, m_pStripsData);
             if (Status == H_SUCCESS)
                 {
-                HASSERT(m_pResolutionDescriptor->GetSizeInBytes() <= ULONG_MAX);
+                HASSERT(m_pResolutionDescriptor->GetSizeInBytes() <= UINT32_MAX);
                 memcpy(po_pData, m_pStripsData, (uint32_t)m_pResolutionDescriptor->GetSizeInBytes());
                 }
             }
@@ -244,7 +244,7 @@ HSTATUS HRFAdaptStripToImage::WriteBlock(uint64_t     pi_PosBlockX,
 
             memset(m_pStripsData, 0, m_ExactBytesPerStrip);
 
-            HASSERT(m_pResolutionDescriptor->GetSizeInBytes() <= ULONG_MAX);
+            HASSERT(m_pResolutionDescriptor->GetSizeInBytes() <= UINT32_MAX);
             memcpy(m_pStripsData, pi_pData, (uint32_t)m_pResolutionDescriptor->GetSizeInBytes());
             // Read these strip from file and copy their data to the output buffer
             Status = m_pAdaptedResolutionEditor->WriteBlock(0, 0, m_pStripsData);
@@ -328,10 +328,10 @@ HSTATUS HRFAdaptStripToImage::ReadBlockRLE(uint64_t                 pi_PosBlockX
     HPRECONDITION(po_rpPacketRLE->HasBufferOwnership());    // Must be owner of buffers.
     HPRECONDITION(po_rpPacketRLE->GetCodec()->GetWidth() == GetResolutionDescriptor()->GetBlockWidth());
     HPRECONDITION(po_rpPacketRLE->GetCodec()->GetHeight() >= GetResolutionDescriptor()->GetBlockHeight());
-    HPRECONDITION(GetResolutionDescriptor()->GetHeight() <= ULONG_MAX);
-    HPRECONDITION(GetResolutionDescriptor()->GetWidth() <= ULONG_MAX);
-    HPRECONDITION(GetResolutionDescriptor()->GetBytesPerBlockWidth() <= ULONG_MAX);
-    HPRECONDITION(m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBytesPerBlockWidth() <= ULONG_MAX);
+    HPRECONDITION(GetResolutionDescriptor()->GetHeight() <= UINT32_MAX);
+    HPRECONDITION(GetResolutionDescriptor()->GetWidth() <= UINT32_MAX);
+    HPRECONDITION(GetResolutionDescriptor()->GetBytesPerBlockWidth() <= UINT32_MAX);
+    HPRECONDITION(m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBytesPerBlockWidth() <= UINT32_MAX);
 
     HSTATUS Status = H_SUCCESS;
 

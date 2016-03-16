@@ -119,11 +119,11 @@ HFCPtr<HRPPixelType> HRAPixelTypeReplacer::GetPixelType() const
 // public
 // GetRepresentativePalette
 //-----------------------------------------------------------------------------
-unsigned short HRAPixelTypeReplacer::GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms)
+uint16_t HRAPixelTypeReplacer::GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms)
     {
     HPRECONDITION(pio_pRepPalParms != 0);
 
-    unsigned short CountUsed;
+    uint16_t CountUsed;
 
     if(pio_pRepPalParms->UseCache())
         // call the parent method

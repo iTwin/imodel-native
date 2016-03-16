@@ -23,7 +23,7 @@
 
 HRFCalsLineEditor::HRFCalsLineEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                      uint32_t              pi_Page,
-                                     unsigned short       pi_Resolution,
+                                     uint16_t       pi_Resolution,
                                      HFCAccessMode         pi_AccessMode)
     : HRFResolutionEditor(pi_rpRasterFile, pi_Page, pi_Resolution, pi_AccessMode),
       m_CompressPacket()
@@ -166,9 +166,9 @@ HSTATUS HRFCalsLineEditor::ReadBlockRLE(uint64_t              pi_PosBlockX,
     HPRECONDITION(pio_rpPacketRLE->HasBufferOwnership());    // Must be owner of buffer.
     HPRECONDITION(pio_rpPacketRLE->GetCodec()->GetWidth() == GetResolutionDescriptor()->GetBlockWidth());
     HPRECONDITION(pio_rpPacketRLE->GetCodec()->GetHeight() >= GetResolutionDescriptor()->GetBlockHeight());
-    HPRECONDITION(GetResolutionDescriptor()->GetHeight() <= ULONG_MAX);
-    HPRECONDITION(GetResolutionDescriptor()->GetWidth() <= ULONG_MAX);
-    HPRECONDITION(GetResolutionDescriptor()->GetBytesPerBlockWidth() <= ULONG_MAX);
+    HPRECONDITION(GetResolutionDescriptor()->GetHeight() <= UINT32_MAX);
+    HPRECONDITION(GetResolutionDescriptor()->GetWidth() <= UINT32_MAX);
+    HPRECONDITION(GetResolutionDescriptor()->GetBytesPerBlockWidth() <= UINT32_MAX);
     HPRECONDITION(m_pCodec->GetRLEInterface() != 0);    // CCITTFax4 should have RLEInterface
 
     if(m_pCodec->GetRLEInterface() == 0)

@@ -19,7 +19,7 @@
 //-----------------------------------------------------------------------------
 HRFRLCLineEditor::HRFRLCLineEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                    uint32_t              pi_Page,
-                                   unsigned short       pi_Resolution,
+                                   uint16_t       pi_Resolution,
                                    HFCAccessMode         pi_AccessMode)
     : HRFResolutionEditor(pi_rpRasterFile, pi_Page, pi_Resolution, pi_AccessMode)
     {
@@ -30,7 +30,7 @@ HRFRLCLineEditor::HRFRLCLineEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
 
     m_Width = (uint32_t)m_pResolutionDescriptor->GetWidth();
 
-    m_pBuffer = new unsigned short[m_Width * 2];
+    m_pBuffer = new uint16_t[m_Width * 2];
     m_BytesPerRow = (m_Width + 7) / 8;
     m_CurrentLine = 0;
     }
@@ -68,23 +68,23 @@ HSTATUS HRFRLCLineEditor::ReadBlock(uint64_t  pi_PosBlockX,
 
     HSTATUS Status = H_SUCCESS;
 
-    unsigned short NbRuns;
+    uint16_t NbRuns;
     if (pi_PosBlockY < m_CurrentLine || m_CurrentLine == 0)
         {
-        m_pRLCFile->SeekToPos(2 * sizeof(unsigned short)); // skip the image size
+        m_pRLCFile->SeekToPos(2 * sizeof(uint16_t)); // skip the image size
         m_CurrentLine = 0;
         }
 
     // skip the pi_PosBlockY - 1 lines
     while (Status == H_SUCCESS && m_CurrentLine < pi_PosBlockY)
         {
-        if (m_pRLCFile->Read(&NbRuns, sizeof(unsigned short)) != sizeof(unsigned short)) // read the nb run for this line
+        if (m_pRLCFile->Read(&NbRuns, sizeof(uint16_t)) != sizeof(uint16_t)) // read the nb run for this line
             Status = H_ERROR;
         else
             {
             SwabArrayOfShort(&NbRuns, 1);
 
-            m_pRLCFile->Seek(NbRuns * 2 * sizeof(unsigned short)); // skip runs
+            m_pRLCFile->Seek(NbRuns * 2 * sizeof(uint16_t)); // skip runs
 
             m_CurrentLine++;
             }
@@ -92,13 +92,13 @@ HSTATUS HRFRLCLineEditor::ReadBlock(uint64_t  pi_PosBlockX,
 
     if (Status == H_SUCCESS)
         {
-        if (m_pRLCFile->Read(&NbRuns, sizeof(unsigned short)) != sizeof(unsigned short)) // the the nb runs into this line
+        if (m_pRLCFile->Read(&NbRuns, sizeof(uint16_t)) != sizeof(uint16_t)) // the the nb runs into this line
             Status = H_ERROR;
         else
             {
             SwabArrayOfShort(&NbRuns, 1);
 
-            uint32_t ReadSize = NbRuns * 2 * sizeof(unsigned short);
+            uint32_t ReadSize = NbRuns * 2 * sizeof(uint16_t);
             if (m_pRLCFile->Read(m_pBuffer, ReadSize) != ReadSize)
                 Status = H_ERROR;
             }
@@ -111,12 +111,12 @@ HSTATUS HRFRLCLineEditor::ReadBlock(uint64_t  pi_PosBlockX,
 
             // clear the buffer in black
             memset(po_pData, 0, m_BytesPerRow);
-            unsigned short* pRun = m_pBuffer;
+            uint16_t* pRun = m_pBuffer;
             Byte Mask;
             Byte* pBytePtr;
-            unsigned short j;
+            uint16_t j;
 
-            for (unsigned short i = 0; i < NbRuns; i++)
+            for (uint16_t i = 0; i < NbRuns; i++)
                 {
                 HPRECONDITION(pRun[1] <= m_Width);
 
@@ -133,12 +133,12 @@ HSTATUS HRFRLCLineEditor::ReadBlock(uint64_t  pi_PosBlockX,
                     // At the beginning of a byte
                     if (Mask == 0x01)
                         {
-                        unsigned short Count;
+                        uint16_t Count;
                         // Check if we can fill a least one byte completly
                         if ((Count = pRun[1] - j + 1) >= 8)
                             {
                             // Can fill a least one byte
-                            unsigned short NbByte = Count / 8;
+                            uint16_t NbByte = Count / 8;
                             pBytePtr -= NbByte;
 
                             memset((pBytePtr+1), 0xff, NbByte);

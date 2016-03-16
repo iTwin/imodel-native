@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DSpatialIndex.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -302,7 +302,7 @@ public:
             return false;
 
         uint32_t OutLen = (uint32_t)sizeof(DataType)*m_allocatedCount + 100;
-        int err;
+        int32_t err;
 
 
         // Use level 5 compression. Varies from 1 to 9, 6 being the default.
@@ -337,7 +337,7 @@ public:
 
     bool Inflate() const // Intentionaly const ... only mutable members are modified
         {
-        int err;
+        int32_t err;
 
         HPRECONDITION(m_compressedMemory!= NULL);
 
@@ -1349,7 +1349,7 @@ public:
             {
             // Attempt to add in one of the subnodes
             bool Added = false;
-            for (int i = 0 ; i < 4 && !Added ; ++ i)
+            for (int32_t i = 0 ; i < 4 && !Added ; ++ i)
                 {
                 // Check if object is contained in this sub-node
                 if (m_apSubNodes[i]->GetExtent().IsPointIn(HGFIndexGeometryOpProvider<SPATIAL, COORD, EXTENT>::ExtentExtract(pi_rpSpatialObject).GetOrigin()) &&
@@ -1414,7 +1414,7 @@ public:
             // Attempt to remove in one of the subnodes
             bool RemovalShouldHaveBeenPerformed = false;
 
-            for (int i = 0 ; i < 4 && !RemovalShouldHaveBeenPerformed ; ++ i)
+            for (int32_t i = 0 ; i < 4 && !RemovalShouldHaveBeenPerformed ; ++ i)
                 {
                 // Check if object is contained in this sub-node
                 if (m_apSubNodes[i]->GetExtent().IsPointIn(HGFIndexGeometryOpProvider<SPATIAL, COORD, EXTENT>::ExtentExtract(pi_rpSpatialObject).GetOrigin()) &&
@@ -1687,7 +1687,7 @@ protected:
             {
             // Attempt to add in one of the subnodes
             bool Added = false;
-            for (int i = 0 ; i < 4 && !Added ; ++ i)
+            for (int32_t i = 0 ; i < 4 && !Added ; ++ i)
                 {
                 // Check if object is contained in this sub-node
                 if (m_apSubNodes[i]->GetExtent().IsPointIn(HGFIndexGeometryOpProvider<SPATIAL, COORD, EXTENT>::ExtentExtract(*Itr).GetOrigin()) &&
@@ -2054,7 +2054,7 @@ public:
             {
             // Attempt to add in one of the subnodes
             bool Added = false;
-            for (int i = 0 ; i < 4 && !Added ; ++ i)
+            for (int32_t i = 0 ; i < 4 && !Added ; ++ i)
                 {
                 // Check if object is contained in this sub-node
                 if (HGFIndexGeometryOpProvider<SPATIAL, COORD, EXTENT>::IsSpatialInExtent(pi_rpSpatialObject, m_apSubNodes[i]->GetExtent()))
@@ -2136,7 +2136,7 @@ public:
             // Attempt to remove in one of the subnodes
             bool RemovalShouldHaveBeenPerformed = false;
 
-            for (int i = 0 ; i < 4 && !RemovalShouldHaveBeenPerformed ; ++ i)
+            for (int32_t i = 0 ; i < 4 && !RemovalShouldHaveBeenPerformed ; ++ i)
                 {
                 // Check if object is contained in this sub-node
                 if (HGFIndexGeometryOpProvider<SPATIAL, COORD, EXTENT>::IsSpatialInExtent(pi_rpSpatialObject, m_apSubNodes[i]->GetExtent()))
@@ -2419,7 +2419,7 @@ protected:
             {
             // Attempt to add in one of the subnodes
             bool Added = false;
-            for (int i = 0 ; i < 4 && !Added ; ++ i)
+            for (int32_t i = 0 ; i < 4 && !Added ; ++ i)
                 {
                 // Check if object is contained in this sub-node
                 if (HGFIndexGeometryOpProvider<SPATIAL, COORD, EXTENT>::IsSpatialInExtent((m_VectorOfPoints[currentIndex]), m_apSubNodes[i]->GetExtent()))
@@ -2798,7 +2798,7 @@ public:
             {
             // Attempt to add in one of the subnodes
             bool Added = false;
-            for (int i = 0 ; i < 4 && !Added ; ++ i)
+            for (int32_t i = 0 ; i < 4 && !Added ; ++ i)
                 {
                 // Check if object is contained in this sub-node
                 if (HGFIndexGeometryOpProvider<SPATIAL, COORD, EXTENT>::IsSpatialInExtent(pi_rpSpatialObject, m_apSubNodes[i]->GetExtent()))
@@ -2880,7 +2880,7 @@ public:
             // Attempt to remove in one of the subnodes
             bool RemovalShouldHaveBeenPerformed = false;
 
-            for (int i = 0 ; i < 4 && !RemovalShouldHaveBeenPerformed ; ++ i)
+            for (int32_t i = 0 ; i < 4 && !RemovalShouldHaveBeenPerformed ; ++ i)
                 {
                 // Check if object is contained in this sub-node
                 if (HGFIndexGeometryOpProvider<SPATIAL, COORD, EXTENT>::IsSpatialInExtent(pi_rpSpatialObject, m_apSubNodes[i]->GetExtent()))
@@ -3163,7 +3163,7 @@ protected:
             {
             // Attempt to add in one of the subnodes
             bool Added = false;
-            for (int i = 0 ; i < 4 && !Added ; ++ i)
+            for (int32_t i = 0 ; i < 4 && !Added ; ++ i)
                 {
                 // Check if object is contained in this sub-node
                 if (HGFIndexGeometryOpProvider<SPATIAL, COORD, EXTENT>::IsSpatialInExtent((m_VectorOfPoints[currentIndex]), m_apSubNodes[i]->GetExtent()))

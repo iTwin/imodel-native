@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFThumbnail.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -33,7 +33,7 @@ public:
                  const Byte*                 pi_pData,
                  HFCAccessMode                pi_AccessMode,
                  bool                        pi_IsComposed = false,
-                 unsigned short              pi_BitsAlignment = 8);
+                 uint16_t              pi_BitsAlignment = 8);
 
     HRFThumbnail(const HRFThumbnail& pi_rObj);
 
@@ -42,7 +42,7 @@ public:
     // Thumbnail data size
     IMAGEPP_EXPORT uint32_t                GetWidth         () const;
     IMAGEPP_EXPORT uint32_t                GetHeight        () const;
-    unsigned short                  GetBitsAlignment () const;
+    uint16_t                  GetBitsAlignment () const;
     size_t                          GetBytesPerWidth () const;
     IMAGEPP_EXPORT size_t                          GetSizeInBytes   () const;
 
@@ -69,7 +69,7 @@ private:
     // The thumbnail size
     uint32_t                m_Width;
     uint32_t                m_Height;
-    unsigned short         m_BitsAlignment;
+    uint16_t         m_BitsAlignment;
     size_t                  m_BytesPerWidth;
     size_t                  m_SizeInBytes;
 

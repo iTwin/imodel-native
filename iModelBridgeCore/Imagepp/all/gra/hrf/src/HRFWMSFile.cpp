@@ -371,8 +371,8 @@ HRFWMSFile::HRFWMSFile(const HFCPtr<HFCURL>& pi_rpURL,
     // create the transfo model to map pixel into the bbox
     // the model set into the page descriptor contains the units ratio. This model
     // can't be use by the editor to map the tile into the bbox.
-    double PixelScaleX = abs(m_BBoxMaxX - m_BBoxMinX) / (double)m_Width;
-    double PixelScaleY = abs(m_BBoxMaxY - m_BBoxMinY) / (double)m_Height;
+    double PixelScaleX = fabs(m_BBoxMaxX - m_BBoxMinX) / (double)m_Width;
+    double PixelScaleY = fabs(m_BBoxMaxY - m_BBoxMinY) / (double)m_Height;
 
     m_pModel = new HGF2DStretch(HGF2DDisplacement (m_BBoxMinX, m_BBoxMinY + (m_Height * PixelScaleY)),
                                 PixelScaleX,
@@ -435,7 +435,7 @@ void HRFWMSFile::SetContext(uint32_t                 pi_Page,
         WString Layers;
         WString Styles;
         const HMDLayerInfoWMS* pLayer;
-        for (unsigned short Index = 0; Index < pVolatileLayers->GetNbVolatileLayers(); ++Index)
+        for (uint16_t Index = 0; Index < pVolatileLayers->GetNbVolatileLayers(); ++Index)
             {
             if (pVolatileLayers->GetVolatileLayerInfo(Index)->GetVisibleState())
                 {
@@ -1158,7 +1158,7 @@ void HRFWMSFile::ReadWMS_1_2(BeXmlNodeP pi_pBentleyWMSFileNode, WString const& v
         m_Width = 1000;
         }
 
-    m_Height = (uint32_t)((double)m_Width * abs((m_BBoxMaxY - m_BBoxMinY) / (m_BBoxMaxX - m_BBoxMinX)));
+    m_Height = (uint32_t)((double)m_Width * fabs((m_BBoxMaxY - m_BBoxMinY) / (m_BBoxMaxX - m_BBoxMinX)));
 
     // tag SERVICE (optional)
     if ((pChildNode = pi_pBentleyWMSFileNode->SelectSingleNode("SERVICE")) != 0)

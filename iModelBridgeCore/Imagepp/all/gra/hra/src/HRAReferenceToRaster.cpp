@@ -1194,7 +1194,7 @@ void HRAReferenceToRaster::ComputeHistogram(HRAHistogramOptions* pio_pOptions,
 //-----------------------------------------------------------------------------
 // GetRepresentativePalette
 //-----------------------------------------------------------------------------
-unsigned short HRAReferenceToRaster::GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms)
+uint16_t HRAReferenceToRaster::GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms)
     {
     HPRECONDITION(IsStoredRaster());
 

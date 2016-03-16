@@ -885,8 +885,8 @@ void HIMColorBalancedImage::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOpti
                                     ToDrawExtent.GetXMax(),
                                     ToDrawExtent.GetYMax());
 
-                HASSERT(ToDrawGrid.GetXMin() <= LONG_MAX);
-                HASSERT(ToDrawGrid.GetYMin() <= LONG_MAX);
+                HASSERT(ToDrawGrid.GetXMin() <= INT32_MAX);
+                HASSERT(ToDrawGrid.GetYMin() <= INT32_MAX);
 
                 int32_t X = (int32_t)ToDrawGrid.GetXMin();
                 int32_t Y = (int32_t)ToDrawGrid.GetYMin();
@@ -1019,9 +1019,9 @@ void HIMColorBalancedImage::ApplyColorBalanceRGB(HRPPixelBuffer* pi_pSourcePixel
     double Red;
     double Green;
     double Blue;
-    unsigned short SourceRed;
-    unsigned short SourceGreen;
-    unsigned short SourceBlue;
+    uint16_t SourceRed;
+    uint16_t SourceGreen;
+    uint16_t SourceBlue;
 
     double TotalWeight;
     double InvertedTotalWeight;
@@ -1179,9 +1179,9 @@ void HIMColorBalancedImage::ApplyColorBalanceRGB4(HRPPixelBuffer* pi_pSourcePixe
     double Red;
     double Green;
     double Blue;
-    unsigned short SourceRed;
-    unsigned short SourceGreen;
-    unsigned short SourceBlue;
+    uint16_t SourceRed;
+    uint16_t SourceGreen;
+    uint16_t SourceBlue;
 
     // Work with increments for weights instead of
     // computing each time.
@@ -1294,9 +1294,9 @@ void HIMColorBalancedImage::ApplyColorBalanceRGBPositionalOnly(HRPPixelBuffer* p
     double Red;
     double Green;
     double Blue;
-    unsigned short SourceRed;
-    unsigned short SourceGreen;
-    unsigned short SourceBlue;
+    uint16_t SourceRed;
+    uint16_t SourceGreen;
+    uint16_t SourceBlue;
 
     double TotalWeight;
     double InvertedTotalWeight;
@@ -1454,9 +1454,9 @@ void HIMColorBalancedImage::ApplyColorBalanceRGB4PositionalOnly(HRPPixelBuffer* 
     double Red;
     double Green;
     double Blue;
-    unsigned short SourceRed;
-    unsigned short SourceGreen;
-    unsigned short SourceBlue;
+    uint16_t SourceRed;
+    uint16_t SourceGreen;
+    uint16_t SourceBlue;
 
     // Work with increments for weights instead of
     // computing each time.
@@ -1605,7 +1605,7 @@ void HIMColorBalancedImage::ApplyColorBalanceGray(HRPPixelBuffer* pi_pSourcePixe
     Byte* pDst = (Byte*) pi_pDestPixels->GetBufferPtr();
 
     double Gray;
-    unsigned short SourceGray;
+    uint16_t SourceGray;
 
     double TotalWeight;
     double InvertedTotalWeight;
@@ -1747,7 +1747,7 @@ void HIMColorBalancedImage::ApplyColorBalanceGray4(HRPPixelBuffer* pi_pSourcePix
     Byte* pDst = (Byte*) pi_pDestPixels->GetBufferPtr();
 
     double Gray;
-    unsigned short SourceGray;
+    uint16_t SourceGray;
 
     // Work with increments for weights instead of
     // computing each time.
@@ -1844,7 +1844,7 @@ void HIMColorBalancedImage::ApplyColorBalanceGrayPositionalOnly(HRPPixelBuffer* 
     Byte* pDst = (Byte*) pi_pDestPixels->GetBufferPtr();
 
     double Gray;
-    unsigned short SourceGray;
+    uint16_t SourceGray;
 
     double TotalWeight;
     double InvertedTotalWeight;
@@ -1986,7 +1986,7 @@ void HIMColorBalancedImage::ApplyColorBalanceGray4PositionalOnly(HRPPixelBuffer*
     Byte* pDst = (Byte*) pi_pDestPixels->GetBufferPtr();
 
     double Gray;
-    unsigned short SourceGray;
+    uint16_t SourceGray;
 
     // Work with increments for weights instead of
     // computing each time.

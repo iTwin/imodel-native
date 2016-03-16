@@ -426,8 +426,8 @@ bool OGCBlockQuery::ReadBlocksFromServer(uint64_t pi_MinX,
                                          uint64_t pi_MaxX,
                                          uint64_t pi_MaxY)
     {
-    HASSERT((pi_MaxX - pi_MinX) <= ULONG_MAX);
-    HASSERT((pi_MaxY - pi_MinY) <= ULONG_MAX);
+    HASSERT((pi_MaxX - pi_MinX) <= UINT32_MAX);
+    HASSERT((pi_MaxY - pi_MinY) <= UINT32_MAX);
 
     uint32_t MapWidth = (uint32_t)(pi_MaxX - pi_MinX);
     uint32_t MapHeight = (uint32_t)(pi_MaxY - pi_MinY);
@@ -660,7 +660,7 @@ bool OGCBlockQuery::UncompressBuffer(HFCPtr<HFCBuffer>&         pi_rpBuffer,
             pFile = new HRFGifFile(pURL, HFC_READ_ONLY);
 
         HAutoPtr<HRFResolutionEditor> pEditor(pFile->CreateResolutionEditor(0,
-                                                                            (unsigned short)0,
+                                                                            (uint16_t)0,
                                                                             HFC_READ_ONLY));
         HFCPtr<HRFResolutionDescriptor> pResDesc(pEditor->GetResolutionDescriptor());
 

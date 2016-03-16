@@ -104,7 +104,7 @@ private:
     size_t GetClosestEntryIndexInPalette(Byte* pi_pValue, const HRPPixelPalette& pi_rPixelPalette) const
         {
         Byte* pValue;
-        int RDist, GDist, BDist;
+        int32_t RDist, GDist, BDist;
         uint32_t Dist;
         size_t IndexForSmallerDist=0;
 
@@ -227,7 +227,7 @@ protected:
 
         // fill the octree with the destination palette entries
         int32_t NbIndex(rPalette.CountUsedEntries());
-        for(int Index = 0; Index < NbIndex; Index++)
+        for(int32_t Index = 0; Index < NbIndex; Index++)
             {
             m_QuantizedPalette.AddCompositeValue(rPalette.GetCompositeValue(Index),
                                                  (Byte)Index);
@@ -308,7 +308,7 @@ private:
     size_t GetClosestEntryIndexInPalette(Byte* pi_pValue, const HRPPixelPalette& pi_rPixelPalette) const
         {
         Byte* pValue;
-        int RDist, GDist, BDist;
+        int32_t RDist, GDist, BDist;
         uint32_t Dist;
         size_t IndexForSmallerDist=0;
 
@@ -384,7 +384,7 @@ HRPPixelTypeI8R8G8B8::HRPPixelTypeI8R8G8B8()
 
     // create a grayscale palette
     int32_t NbIndex(rPixelPalette.GetMaxEntries());
-    for(int gray = 0; gray < NbIndex; gray++)
+    for(int32_t gray = 0; gray < NbIndex; gray++)
         {
         Value = (gray << 16) | (gray << 8) | gray;
         rPixelPalette.AddEntry(&Value);
@@ -445,7 +445,7 @@ HPMPersistentObject* HRPPixelTypeI8R8G8B8::Clone() const
     @end
     -----------------------------------------------------------------------------
  */
-unsigned short HRPPixelTypeI8R8G8B8::CountValueBits() const
+uint16_t HRPPixelTypeI8R8G8B8::CountValueBits() const
     {
     return 0;
     }

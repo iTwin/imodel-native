@@ -29,7 +29,7 @@ public:
                                                HFCAccessMode        pi_AccessMode,
                                                bool                 pi_AutoRemove = false,
                                                uint64_t             pi_OriginOffset = 0,
-                                               short pi_NbRetryBeforeThrow = 0,
+                                               int16_t pi_NbRetryBeforeThrow = 0,
                                                const HFCPtr<HFCBuffer>&   pi_rpBuffer = HFCPtr<HFCBuffer>());
 
     IMAGEPP_EXPORT                  HFCMemoryBinStream(const WString&       pi_Filename,
@@ -37,7 +37,7 @@ public:
                                                bool                 pi_CreateFile,
                                                bool                 pi_AutoRemove,
                                                uint64_t             pi_OriginOffset,
-                                               short pi_NbRetryBeforeThrow = 0,
+                                               int16_t pi_NbRetryBeforeThrow = 0,
                                                const HFCPtr<HFCBuffer>&   pi_rpBuffer = HFCPtr<HFCBuffer>());
 
 
@@ -47,7 +47,7 @@ public:
                                                bool                 pi_CreateFile = true,
                                                bool                 pi_AutoRemove = false,
                                                uint64_t             pi_OriginOffset = 0,
-                                               short pi_NbRetryBeforeThrow = 0,
+                                               int16_t pi_NbRetryBeforeThrow = 0,
                                                const HFCPtr<HFCBuffer>&   pi_rpBuffer = HFCPtr<HFCBuffer>());
 
     IMAGEPP_EXPORT virtual          ~HFCMemoryBinStream();

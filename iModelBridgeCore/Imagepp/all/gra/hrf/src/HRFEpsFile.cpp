@@ -54,7 +54,7 @@ public:
         {
         // Block Capability
         Add(new HRFLineCapability(HFC_WRITE_AND_CREATE,
-                                  LONG_MAX,
+                                  INT32_MAX,
                                   HRFBlockAccess::SEQUENTIAL));
         }
     };
@@ -261,7 +261,7 @@ const HGF2DWorldIdentificator HRFEpsFile::GetWorldIdentificator () const
     -----------------------------------------------------------------------------
 */
 HRFResolutionEditor* HRFEpsFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                        unsigned short pi_Resolution,
+                                                        uint16_t pi_Resolution,
                                                         HFCAccessMode  pi_AccessMode)
     {
     HPRECONDITION(GetPageDescriptor(pi_Page) != 0);

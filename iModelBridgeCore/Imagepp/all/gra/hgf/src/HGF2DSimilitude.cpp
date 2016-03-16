@@ -99,7 +99,7 @@ HGF2DSimilitude::HGF2DSimilitude(const HGF2DSimilitude& pi_rObj)
 
     -----------------------------------------------------------------------------
 */
-HGF2DSimilitude::HGF2DSimilitude(unsigned short pi_NumberOfPoints,
+HGF2DSimilitude::HGF2DSimilitude(uint16_t pi_NumberOfPoints,
                                  const double*  pi_pTiePoints)
     : HGF2DTransfoModel()
     {

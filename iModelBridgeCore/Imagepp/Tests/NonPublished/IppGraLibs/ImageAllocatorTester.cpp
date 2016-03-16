@@ -6,7 +6,7 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 #include "../imagepptestpch.h"
-#include <Logging\bentleylogging.h>
+#include <Logging/bentleylogging.h>
 
 struct AllocationJob : public WorkerPool::Task
 {

@@ -15,7 +15,7 @@
 #pragma once
 
 #include "HFCURL.h"
-#include "interface\IFileReaderHandler.h"
+#include "interface/IFileReaderHandler.h"
 
 // URL specification at this level is:
 // embed:{//Path}

@@ -100,7 +100,7 @@ bool HCDCodecErMapperSupported::IsBitsPerPixelSupported(size_t pi_Bits) const
 // public
 // SetCompressionRatio
 //-----------------------------------------------------------------------------
-void HCDCodecErMapperSupported::SetCompressionRatio(unsigned short pi_Ratio)
+void HCDCodecErMapperSupported::SetCompressionRatio(uint16_t pi_Ratio)
     {
     if (pi_Ratio == 0)
         m_CompressionRatio = 10;    // 0 is not a good value.  Use default suggested by the library
@@ -112,7 +112,7 @@ void HCDCodecErMapperSupported::SetCompressionRatio(unsigned short pi_Ratio)
 // public
 // SetCompressionRatio
 //-----------------------------------------------------------------------------
-unsigned short HCDCodecErMapperSupported::GetCompressionRatio() const
+uint16_t HCDCodecErMapperSupported::GetCompressionRatio() const
     {
     return m_CompressionRatio;
     }

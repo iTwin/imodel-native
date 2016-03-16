@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPQuantizedPalette.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -13,7 +13,7 @@ BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Returns the maximum number of entries in the quantized palette
 //-----------------------------------------------------------------------------
-inline unsigned short HRPQuantizedPalette::GetMaxEntries() const
+inline uint16_t HRPQuantizedPalette::GetMaxEntries() const
     {
     return(m_MaxEntries);
     }

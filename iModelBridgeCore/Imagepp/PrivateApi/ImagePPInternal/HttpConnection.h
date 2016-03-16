@@ -31,7 +31,7 @@ enum class HttpRequestStatus
 //----------------------------------------------------------------------------------------
 // @bsiclass                                                   Mathieu.Marchand  1/2016
 //----------------------------------------------------------------------------------------
-enum class HttpResponseStatus : long
+enum class HttpResponseStatus : int32_t
     {
     Unknown = -1,
 

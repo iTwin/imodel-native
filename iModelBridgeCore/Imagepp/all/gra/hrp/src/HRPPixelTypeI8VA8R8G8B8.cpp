@@ -185,7 +185,7 @@ protected:
 
         // Fill the octree with the destination palette entries
         int32_t NbIndex(rPalette.CountUsedEntries());
-        for(int Index = 0; Index < NbIndex; Index++)
+        for(int32_t Index = 0; Index < NbIndex; Index++)
             m_QuantizedPalette.AddCompositeValue(rPalette.GetCompositeValue(Index),
                                                  (Byte)Index);
 
@@ -196,7 +196,7 @@ protected:
         if(rSrcPixelPalette == rDestPixelPalette)
             {
             // If src and dest palettes are the same, make an index-index map
-            for(unsigned short Index = 0; Index < 256; Index++)
+            for(uint16_t Index = 0; Index < 256; Index++)
                 EntryConversion[Index] = static_cast<Byte>(Index);
             }
         else
@@ -233,7 +233,7 @@ private:
     size_t GetClosestEntryIndexInPalette(Byte* pi_pValue, const HRPPixelPalette& pi_rPixelPalette) const
         {
         Byte* pValue;
-        int RDist, GDist, BDist;
+        int32_t RDist, GDist, BDist;
         uint32_t Dist;
         size_t IndexForSmallerDist=0;
 
@@ -680,7 +680,7 @@ protected:
 
         // Fill the octree with the destination palette entries
         int32_t NbIndex(rPalette.CountUsedEntries());
-        for(int Index = 0; Index < NbIndex; Index++)
+        for(int32_t Index = 0; Index < NbIndex; Index++)
             m_QuantizedPalette.AddCompositeValue(rPalette.GetCompositeValue(Index),
                                                  (Byte)Index);
         };
@@ -771,7 +771,7 @@ protected:
 
         // Fill the octree with the destination palette entries
         int32_t NbIndex(rPalette.CountUsedEntries());
-        for(int Index = 0; Index < NbIndex; Index++)
+        for(int32_t Index = 0; Index < NbIndex; Index++)
             m_QuantizedPalette.AddCompositeValue(rPalette.GetCompositeValue(Index),
                                                  (Byte)Index);
         };
@@ -937,7 +937,7 @@ protected:
         // for searching in an RGB octree. Blakc is used because its value is 0, so
         // the destination part isn't meaningful.
         int32_t NbIndex(rPalette.CountUsedEntries());
-        for(int Index = 0; Index < NbIndex; Index++)
+        for(int32_t Index = 0; Index < NbIndex; Index++)
             {
             Byte* pComposite = (Byte*) rPalette.GetCompositeValue(Index);
             m_QuantizedPalette.AddCompositeValue(pComposite,
@@ -997,7 +997,7 @@ HRPPixelTypeI8VA8R8G8B8::HRPPixelTypeI8VA8R8G8B8()
 
     // create a grayscale palette
     int32_t NbIndex(rPixelPalette.GetMaxEntries());
-    for(int gray = 0; gray < NbIndex; gray++)
+    for(int32_t gray = 0; gray < NbIndex; gray++)
         {
         Value = (0xFF << 24) | (gray << 16) | (gray << 8) | gray;
         rPixelPalette.AddEntry(&Value);
@@ -1065,7 +1065,7 @@ HPMPersistentObject* HRPPixelTypeI8VA8R8G8B8::Clone() const
     @end
     -----------------------------------------------------------------------------
  */
-unsigned short HRPPixelTypeI8VA8R8G8B8::CountValueBits() const
+uint16_t HRPPixelTypeI8VA8R8G8B8::CountValueBits() const
     {
     return 8;
     }
@@ -1105,7 +1105,7 @@ HRPQuantizedPalette* HRPPixelTypeI8VA8R8G8B8::CreateQuantizedPalette(uint32_t pi
     HRPQuantizedPalette* pQuantizedPalette = 0;
 
     // return an appropriate quantized palette
-    pQuantizedPalette = new HRPQuantizedPaletteR8G8B8((unsigned short)pi_MaxEntries, 8);
+    pQuantizedPalette = new HRPQuantizedPaletteR8G8B8((uint16_t)pi_MaxEntries, 8);
 
     return pQuantizedPalette;
     }

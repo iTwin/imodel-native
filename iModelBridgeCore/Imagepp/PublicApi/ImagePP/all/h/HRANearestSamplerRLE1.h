@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRANearestSamplerRLE1.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -60,7 +60,7 @@ private:
     bool               m_ForegroundState;
 
     // Temporary data used in GetPixel()
-    mutable unsigned short m_aData[2];
+    mutable uint16_t m_aData[2];
 
     // optimization
     bool               m_StretchByLine;
@@ -71,7 +71,7 @@ private:
     mutable HArrayAutoPtr<RLEBufferPosition>
     m_pLastRLEBufferPosition;
 
-    unsigned short* ComputeAddress(HUINTX   pi_PosX,
+    uint16_t* ComputeAddress(HUINTX   pi_PosX,
                             HUINTX   pi_PosY,
                             uint32_t*  po_pPixelsToSkipInFirstLen,
                             uint32_t*  po_pPixelsToSkipInSecondLen,

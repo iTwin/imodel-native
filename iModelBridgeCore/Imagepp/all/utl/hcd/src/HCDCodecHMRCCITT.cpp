@@ -26,9 +26,9 @@ void build_null_mode_tables();
  */
 typedef struct
     {
-    Byte  data;       // short   data;        /* current i/o byte             */
-    Byte  bit;        // short   bit          /* current i/o bit in byte      */
-    Byte  white;      // short   white;       /* value of the color ``white'' */
+    Byte  data;       // int16_t   data;        /* current i/o byte             */
+    Byte  bit;        // int16_t   bit          /* current i/o bit in byte      */
+    Byte  white;      // int16_t   white;       /* value of the color ``white'' */
     uint32_t rowbytes;   // u_long  rowbytes;    /* XXX maybe should be a long?  */
     uint32_t rowpixels;  // u_long  rowpixels;   /* XXX maybe should be a long?  */
     enum
@@ -124,8 +124,8 @@ typedef struct {
     Fax3BaseState b;
     Byte* wruns; //u_char    *wruns;
     Byte* bruns; //u_char    *bruns;
-    short    k;            /* #rows left that can be 2d encoded */
-    short    maxk;            /* max #rows that can be 2d encoded */
+    int16_t    k;            /* #rows left that can be 2d encoded */
+    int16_t    maxk;            /* max #rows that can be 2d encoded */
     } Fax3EncodeState;
 
 #define    is2DEncoding() \
@@ -363,7 +363,7 @@ void HCDCodecHMRCCITT::SetYResolution(float pi_Res)
 // public
 // SetResolutionUnit
 //-----------------------------------------------------------------------------
-void HCDCodecHMRCCITT::SetResolutionUnit(unsigned short pi_Unit)
+void HCDCodecHMRCCITT::SetResolutionUnit(uint16_t pi_Unit)
     {
     m_resolutionunit = pi_Unit;
     }
@@ -535,11 +535,11 @@ Byte oneruns[256] = {
 //           zeros starting from the msb and is indexed by byte
 //           value.
 //-----------------------------------------------------------------------------
-inline int HCDCodecHMRCCITT::findspan(Byte** bpp, int bs, int be, register Byte const* tab)
+inline int32_t HCDCodecHMRCCITT::findspan(Byte** bpp, int32_t bs, int32_t be, register Byte const* tab)
     {
     register Byte* bp = *bpp;
-    register int bits = be - bs;
-    register int n, span;
+    register int32_t bits = be - bs;
+    register int32_t n, span;
 
     /*
      * Check partial byte on lhs.
@@ -589,7 +589,7 @@ done:
 //           exists.
 //-----------------------------------------------------------------------------
 
-inline int HCDCodecHMRCCITT::finddiff(Byte* cp, int bs, int be, int color)
+inline int32_t HCDCodecHMRCCITT::finddiff(Byte* cp, int32_t bs, int32_t be, int32_t color)
     {
     cp += bs >> 3;            /* adjust Byte offset */
     return (bs + findspan(&cp, bs, be, color ? oneruns : zeroruns));
@@ -662,10 +662,10 @@ void HCDCodecHMRCCITT::Fax3SetupState(size_t space)
     {
     Fax3BaseState* sp;
     size_t cc = space;
-    long rowbytes, rowpixels;
+    int32_t rowbytes, rowpixels;
 
-    rowbytes = static_cast<long>((GetSubsetWidth() * GetBitsPerPixel() + 7) / 8);
-    rowpixels = static_cast<long>(GetSubsetWidth());
+    rowbytes = static_cast<int32_t>((GetSubsetWidth() * GetBitsPerPixel() + 7) / 8);
+    rowpixels = static_cast<int32_t>(GetSubsetWidth());
 
     if (is2DEncoding() || !m_CCITT3)
         cc += rowbytes + 1;
@@ -954,16 +954,16 @@ static const CCITTtableentry TIFFFaxBlackCodes[] = {
 void HCDCodecHMRCCITT::Fax3Encode2DRow(Byte* bp, Byte* rp, int32_t bits)
     {
 #define    PIXEL(buf,ix)    ((((buf)[(ix)>>3]) >> (7-((ix)&7))) & 1)
-    short white = ((Fax3BaseState*)m_pStateBlock)->white;
-    int a0 = 0;
-    int a1 = (PIXEL(bp, 0) != white ? 0 : finddiff(bp, 0, bits, white));
-    int b1 = (PIXEL(rp, 0) != white ? 0 : finddiff(rp, 0, bits, white));
-    int a2, b2;
+    int16_t white = ((Fax3BaseState*)m_pStateBlock)->white;
+    int32_t a0 = 0;
+    int32_t a1 = (PIXEL(bp, 0) != white ? 0 : finddiff(bp, 0, bits, white));
+    int32_t b1 = (PIXEL(rp, 0) != white ? 0 : finddiff(rp, 0, bits, white));
+    int32_t a2, b2;
 
     for (;;) {
         b2 = finddiff(rp, b1, bits, PIXEL(rp,b1));
         if (b2 >= a1) {
-            int d = b1 - a1;
+            int32_t d = b1 - a1;
             if (!(-3 <= d && d <= 3)) {    /* horizontal mode */
                 a2 = (a1 >= bits) ? a1 : finddiff(bp, a1, bits, PIXEL(bp,a1));
                 putcode(&horizcode);
@@ -1010,7 +1010,7 @@ void HCDCodecHMRCCITT::putcode(CCITTtableentry const* te)
  * appropriate table that holds the make-up and
  * terminating codes is supplied.
  */
-void HCDCodecHMRCCITT::putspan(int span, CCITTtableentry const* tab)
+void HCDCodecHMRCCITT::putspan(int32_t span, CCITTtableentry const* tab)
     {
     while (span >= 2624) {
         CCITTtableentry const* te = &tab[63 + (2560>>6)];
@@ -1041,10 +1041,10 @@ void HCDCodecHMRCCITT::putspan(int span, CCITTtableentry const* tab)
  * the output stream.  Values are
  * assumed to be at most 16 bits.
  */
-void HCDCodecHMRCCITT::putbits(unsigned short bits, unsigned short length)
+void HCDCodecHMRCCITT::putbits(uint16_t bits, uint16_t length)
     {
     Fax3BaseState* sp = (Fax3BaseState*)m_pStateBlock;
-    static const int mask[9] =
+    static const int32_t mask[9] =
         { 0x00, 0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f, 0xff };
 
     while (length > sp->bit) {
@@ -1074,7 +1074,7 @@ void HCDCodecHMRCCITT::Fax3PutEOL()
          * a byte boundary.  That is, force the bit alignment
          * to 16-12 = 4 before putting out the EOL code.
          */
-        unsigned short align = 8 - 4;
+        uint16_t align = 8 - 4;
         if (align != sp->bit) {
             if (align > sp->bit)
                 align = sp->bit + (8 - align);
@@ -1154,12 +1154,12 @@ void HCDCodecHMRCCITT::Fax3PreDecode()
  * an EOL because we can't assume much of anything
  * about our state (e.g. bit position).
  */
-void HCDCodecHMRCCITT::skiptoeol(int len)
+void HCDCodecHMRCCITT::skiptoeol(int32_t len)
     {
     Fax3DecodeState* sp = (Fax3DecodeState*)m_pStateBlock;
-    register int bit = sp->b.bit;
-    register int data = sp->b.data;
-    int code = 0;
+    register int32_t bit = sp->b.bit;
+    register int32_t data = sp->b.data;
+    int32_t code = 0;
 
     /*
      * Our handling of ``bit'' is painful because
@@ -1206,10 +1206,10 @@ static Byte bitMask[8] =
  * used to extract 2D tag values and the color tag
  * at the end of a terminating uncompressed data code.
  */
-int HCDCodecHMRCCITT::nextbit()
+int32_t HCDCodecHMRCCITT::nextbit()
     {
     Fax3DecodeState* sp = (Fax3DecodeState*)m_pStateBlock;
-    int bit;
+    int32_t bit;
 
     if (sp->b.bit == 0 && m_rawcc > 0)
         sp->b.data = fetchByte(sp);
@@ -1287,7 +1287,7 @@ HorizModeTable horiz_mode_next_state;
 // fillspan: Fill a span with ones.
 //-----------------------------------------------------------------------------
 
-inline void HCDCodecHMRCCITT::fillspan(Byte* cp, int x, int count)
+inline void HCDCodecHMRCCITT::fillspan(Byte* cp, int32_t x, int32_t count)
     {
     static const unsigned char masks[] =  { 0, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff };
 
@@ -1320,15 +1320,15 @@ inline void HCDCodecHMRCCITT::fillspan(Byte* cp, int x, int count)
 *
  * Process one row of 2d encoded data.
  */
-int HCDCodecHMRCCITT::Fax3Decode2DRow(Byte* buf, int npels)
+int32_t HCDCodecHMRCCITT::Fax3Decode2DRow(Byte* buf, int32_t npels)
     {
 #define    PIXEL(buf,ix)    ((((buf)[(ix)>>3]) >> (7-((ix)&7))) & 1)
     Fax3DecodeState* sp = (Fax3DecodeState*)m_pStateBlock;
-    int a0 = -1;
-    int b1, b2;
-    int run1, run2;        /* for horizontal mode */
-    short mode;
-    short color = sp->b.white;
+    int32_t a0 = -1;
+    int32_t b1, b2;
+    int32_t run1, run2;        /* for horizontal mode */
+    int16_t mode;
+    int16_t color = sp->b.white;
     static char module[] = "Fax3Decode2D";
 
     do {
@@ -1412,7 +1412,7 @@ int HCDCodecHMRCCITT::Fax3Decode2DRow(Byte* buf, int npels)
                 if (a0 < 0)
                     a0 = 0;
                 do {
-                    mode = (short)decode_uncomp_code();
+                    mode = (int16_t)decode_uncomp_code();
                     switch (mode) {
                         case UNCOMP_RUN1:
                         case UNCOMP_RUN2:
@@ -1488,7 +1488,7 @@ bad:
  * Fill a span with ones.
  */
 /********************************************************** To be place elsewhre SEB...
-void HCDCodecHMRCCITT::fillspan(Byte* cp, int x, int count)
+void HCDCodecHMRCCITT::fillspan(Byte* cp, int32_t x, int32_t count)
 {
     static const unsigned char masks[] =  { 0, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff };
 
@@ -1532,12 +1532,12 @@ void HCDCodecHMRCCITT::fillspan(Byte* cp, int x, int count)
 /*
 * Decode a run of white.
 */
-int HCDCodecHMRCCITT::decode_white_run()
+int32_t HCDCodecHMRCCITT::decode_white_run()
     {
     Fax3DecodeState* sp = (Fax3DecodeState*)m_pStateBlock;
-    short state = sp->b.bit;
-    short action;
-    int runlen = 0;
+    int16_t state = sp->b.bit;
+    int16_t action;
+    int32_t runlen = 0;
 
     for (;;) {
         if (sp->b.bit == 0) {
@@ -1571,12 +1571,12 @@ NullModeTable uncomp_mode_next_state;
 /*
  * Decode a run of black.
  */
-int HCDCodecHMRCCITT::decode_black_run()
+int32_t HCDCodecHMRCCITT::decode_black_run()
     {
     Fax3DecodeState* sp = (Fax3DecodeState*)m_pStateBlock;
-    short state = sp->b.bit + 8;
-    short action;
-    int runlen = 0;
+    int16_t state = sp->b.bit + 8;
+    int16_t action;
+    int32_t runlen = 0;
 
     for (;;) {
         if (sp->b.bit == 0) {
@@ -1606,10 +1606,10 @@ nextbyte:
 /*
  * Return the next uncompressed mode code word.
  */
-int HCDCodecHMRCCITT::decode_uncomp_code()
+int32_t HCDCodecHMRCCITT::decode_uncomp_code()
     {
     Fax3DecodeState* sp = (Fax3DecodeState*)m_pStateBlock;
-    short code;
+    int16_t code;
 
     do {
         if (sp->b.bit == 0 || sp->b.bit > 7) {
@@ -1624,7 +1624,7 @@ int HCDCodecHMRCCITT::decode_uncomp_code()
     return (code);
     }
 
-int HCDCodecHMRCCITT::Fax3PostEncode()
+int32_t HCDCodecHMRCCITT::Fax3PostEncode()
     {
     Fax3BaseState* sp = (Fax3BaseState*)m_pStateBlock;
 
@@ -1638,10 +1638,10 @@ int HCDCodecHMRCCITT::Fax3PostEncode()
  * a sequence of all-white or all-black spans
  * of pixels encoded with Huffman codes.
  */
-int HCDCodecHMRCCITT::Fax3Encode1DRow(Byte* bp, int bits)
+int32_t HCDCodecHMRCCITT::Fax3Encode1DRow(Byte* bp, int32_t bits)
     {
     Fax3EncodeState* sp = (Fax3EncodeState*)m_pStateBlock;
-    int bs = 0, span;
+    int32_t bs = 0, span;
 
     for (;;) {
         span = findspan(&bp, bs, bits, sp->wruns);    /* white span */
@@ -1661,13 +1661,13 @@ int HCDCodecHMRCCITT::Fax3Encode1DRow(Byte* bp, int bits)
 /*
  * Process one row of 1d Huffman-encoded data.
  */
-int HCDCodecHMRCCITT::Fax3Decode1DRow(Byte* buf, int npels)
+int32_t HCDCodecHMRCCITT::Fax3Decode1DRow(Byte* buf, int32_t npels)
     {
     Fax3DecodeState* sp = (Fax3DecodeState*)m_pStateBlock;
-    int x = 0;
-    int runlen;
-    //short action;
-    short color = sp->b.white;
+    int32_t x = 0;
+    int32_t runlen;
+    //int16_t action;
+    int16_t color = sp->b.white;
     static char module[] = "Fax3Decode1D";
 
     for (;;) {
@@ -1731,27 +1731,27 @@ done:
     return (x == npels);
     }
 
-long    null_mode_prefix[MAX_NULLPREFIX];
+int32_t    null_mode_prefix[MAX_NULLPREFIX];
 
 /* number of prefixes or rows in the G4 decoding tables */
-short    null_mode_prefix_count = 0;
+int16_t    null_mode_prefix_count = 0;
 
 static    unsigned char bit_mask[8] =
     { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
 
 #define    DECLARE1(f,t1,a1)        f(t1 a1)
 
-unsigned long
-DECLARE1(append_0, unsigned long, prefix)
+uint32_t
+DECLARE1(append_0, uint32_t, prefix)
     {
     return (prefix + (1L<<16));
     }
 
 
-unsigned long
-DECLARE1(append_1, unsigned long, prefix)
+uint32_t
+DECLARE1(append_1, uint32_t, prefix)
     {
-    static unsigned short prefix_bit[16] = {
+    static uint16_t prefix_bit[16] = {
         0x8000, 0x4000, 0x2000, 0x1000,
         0x0800, 0x0400, 0x0200, 0x0100,
         0x0080, 0x0040, 0x0020, 0x0010,
@@ -1761,8 +1761,8 @@ DECLARE1(append_1, unsigned long, prefix)
     return (append_0(prefix) + prefix_bit[len]);
     }
 
-short
-DECLARE1(null_mode_type, long, prefix)
+int16_t
+DECLARE1(null_mode_type, int32_t, prefix)
     {
     switch (prefix) {
         case 0x18000L:
@@ -1804,13 +1804,13 @@ DECLARE1(null_mode_type, long, prefix)
 
 #define    BASESTATE(b)    ((unsigned char) ((b) & 0x7))
 
-int verbose = false;
+int32_t verbose = false;
 
 
-short
-DECLARE1(find_null_mode_prefix, long, prefix)
+int16_t
+DECLARE1(find_null_mode_prefix, int32_t, prefix)
     {
-    short j1;
+    int16_t j1;
 
     if (prefix == 0L)
         return (0);
@@ -1823,7 +1823,7 @@ DECLARE1(find_null_mode_prefix, long, prefix)
         }
     if (verbose)
         fprintf(stderr, "adding null mode prefix[%d] 0x%lx\n",
-                (int) null_mode_prefix_count, prefix);
+                (int32_t) null_mode_prefix_count, prefix);
     null_mode_prefix[null_mode_prefix_count++] = prefix;
     return (null_mode_prefix_count-1);
     }
@@ -1832,7 +1832,7 @@ DECLARE1(find_null_mode_prefix, long, prefix)
 void
 build_null_mode_tables()
     {
-    short prefix;
+    int16_t prefix;
 
     /*
      * Note: the first eight entries correspond to
@@ -1840,11 +1840,11 @@ build_null_mode_tables()
      */
     null_mode_prefix_count = 8;
     for (prefix = 0; prefix < null_mode_prefix_count; prefix++) {
-        short Byte;
+        int16_t Byte;
         for (Byte = 0; Byte < 256; Byte++) {
-            short firstbit;
-            short bit;
-            long curprefix;
+            int16_t firstbit;
+            int16_t bit;
+            int32_t curprefix;
             char found_code = false;
 
             if (prefix < 8) {
@@ -1856,7 +1856,7 @@ build_null_mode_tables()
                 firstbit = 0;
                 }
             for (bit = firstbit; bit < 8 && !found_code; bit++) {
-                short mode;
+                int16_t mode;
 
                 if (bit_mask[bit] & Byte)
                     curprefix = append_1(curprefix);
@@ -1899,8 +1899,8 @@ build_null_mode_tables()
         }
     }
 
-long    horiz_mode_prefix[MAX_HORIZPREFIX];
-short    horiz_mode_prefix_count = 0;
+int32_t    horiz_mode_prefix[MAX_HORIZPREFIX];
+int16_t    horiz_mode_prefix_count = 0;
 char    horiz_mode_color[MAX_HORIZPREFIX];
 
 #define WHITE   0
@@ -1908,15 +1908,15 @@ char    horiz_mode_color[MAX_HORIZPREFIX];
 
 #define    DECLARE3(f,t1,a1,t2,a2,t3,a3)    f(t1 a1, t2 a2, t3 a3)
 
-short
-DECLARE3(search_table, unsigned long, prefix, CCITTtableentry const*, tab, int, n)
+int16_t
+DECLARE3(search_table, uint32_t, prefix, CCITTtableentry const*, tab, int32_t, n)
     {
-    unsigned short len = (unsigned short)((prefix >> 16) & 0xf);
-    unsigned short code = (unsigned short)((prefix & 0xffff) >> (16 - len));
+    uint16_t len = (uint16_t)((prefix >> 16) & 0xf);
+    uint16_t code = (uint16_t)((prefix & 0xffff) >> (16 - len));
 
     while (n-- > 0) {
         if (tab->length == len && tab->code == code)
-            return ((short) tab->runlen);
+            return ((int16_t) tab->runlen);
         tab++;
         }
     return (G3CODE_INCOMP);
@@ -1924,36 +1924,36 @@ DECLARE3(search_table, unsigned long, prefix, CCITTtableentry const*, tab, int, 
 
 #define    NCODES(a)    (sizeof (a) / sizeof (a[0]))
 
-short
-DECLARE1(white_run_length, unsigned long, prefix)
+int16_t
+DECLARE1(white_run_length, uint32_t, prefix)
     {
     return (search_table(prefix, TIFFFaxWhiteCodes, NCODES(TIFFFaxWhiteCodes)));
     }
 
-short
-DECLARE1(horiz_mode_code_white, short, runlen)
+int16_t
+DECLARE1(horiz_mode_code_white, int16_t, runlen)
     {
     return (runlen < 64 ? runlen + ACT_WRUNT : (runlen / 64) + ACT_WRUN);
     }
 
-short
-DECLARE1(black_run_length, unsigned long, prefix)
+int16_t
+DECLARE1(black_run_length, uint32_t, prefix)
     {
     return (search_table(prefix, TIFFFaxBlackCodes, NCODES(TIFFFaxBlackCodes)));
     }
 
-short
-DECLARE1(horiz_mode_code_black, short, runlen)
+int16_t
+DECLARE1(horiz_mode_code_black, int16_t, runlen)
     {
     return (runlen < 64 ? runlen + ACT_BRUNT : (runlen / 64) + ACT_BRUN);
     }
 
 #define    DECLARE2(f,t1,a1,t2,a2)        f(t1 a1, t2 a2)
 
-short
-DECLARE2(find_horiz_mode_prefix, long, prefix, char, color)
+int16_t
+DECLARE2(find_horiz_mode_prefix, int32_t, prefix, char, color)
     {
-    short j1;
+    int16_t j1;
 
     for (j1 = 0; j1 < horiz_mode_prefix_count; j1++)
         if (prefix == horiz_mode_prefix[j1] && horiz_mode_color[j1] == color)
@@ -1968,7 +1968,7 @@ DECLARE2(find_horiz_mode_prefix, long, prefix, char, color)
     /* OK, there's room... */
     if (verbose)
         fprintf(stderr, "\nhoriz mode prefix %d, color %c = 0x%lx ",
-                (int) horiz_mode_prefix_count, "WB"[color], prefix);
+                (int32_t) horiz_mode_prefix_count, "WB"[color], prefix);
     horiz_mode_prefix[horiz_mode_prefix_count] = prefix;
     horiz_mode_color[horiz_mode_prefix_count] = color;
     horiz_mode_prefix_count++;
@@ -1979,8 +1979,8 @@ DECLARE2(find_horiz_mode_prefix, long, prefix, char, color)
 void
 build_horiz_mode_tables()
     {
-    unsigned short Byte;
-    short prefix;
+    uint16_t Byte;
+    int16_t prefix;
 
     /*
      * The first 8 are for white,
@@ -1990,11 +1990,11 @@ build_horiz_mode_tables()
     horiz_mode_prefix_count = 16;
     for (prefix = 0; prefix < horiz_mode_prefix_count; prefix++)
         for (Byte = 0; Byte < 256; Byte++) {
-            short bits_digested = 0;
-            short bit;
-            short firstbit;
+            int16_t bits_digested = 0;
+            int16_t bit;
+            int16_t firstbit;
             char color;
-            unsigned long curprefix;
+            uint32_t curprefix;
 
             if (prefix < 8) {
                 color = WHITE;
@@ -2029,7 +2029,7 @@ build_horiz_mode_tables()
                 if (curprefix == 0xC0000L)
                     curprefix = 0xB0000L;
                 if (color == WHITE) {
-                    short runlength = white_run_length(curprefix);
+                    int16_t runlength = white_run_length(curprefix);
 
                     if (runlength == G3CODE_INVALID) {
                         horiz_mode[prefix][Byte] = (unsigned char) ACT_INVALID;
@@ -2049,7 +2049,7 @@ build_horiz_mode_tables()
                         }
                     }
                 else {          /* color == BLACK */
-                    short runlength = black_run_length(curprefix);
+                    int16_t runlength = black_run_length(curprefix);
 
                     if (runlength == G3CODE_INVALID) {
                         horiz_mode[prefix][Byte] = (unsigned char) ACT_INVALID;
@@ -2077,14 +2077,14 @@ build_horiz_mode_tables()
             }
     }
 
-short    uncomp_mode_prefix_count = 0;
-long    uncomp_mode_prefix[MAX_NULLPREFIX];
+int16_t    uncomp_mode_prefix_count = 0;
+int32_t    uncomp_mode_prefix[MAX_NULLPREFIX];
 
-short
-DECLARE1(uncomp_mode_type, long, prefix)
+int16_t
+DECLARE1(uncomp_mode_type, int32_t, prefix)
     {
-    short code;
-    short len;
+    int16_t code;
+    int16_t len;
     switch (prefix) {
         case 0x18000L:
             return (UNCOMP_RUN1);    /* 1 */
@@ -2109,15 +2109,15 @@ DECLARE1(uncomp_mode_type, long, prefix)
         case 0xB0020L:
             return (UNCOMP_TRUN4);    /* 0000 0000 001 */
         }
-    code = (short)(prefix & 0xffffL);
-    len = (short)((prefix >> 16) & 0xf);
+    code = (int16_t)(prefix & 0xffffL);
+    len = (int16_t)((prefix >> 16) & 0xf);
     return ((code || len > 10) ? UNCOMP_INVALID : -1);
     }
 
-short
-DECLARE1(find_uncomp_mode_prefix, long, prefix)
+int16_t
+DECLARE1(find_uncomp_mode_prefix, int32_t, prefix)
     {
-    short j1;
+    int16_t j1;
 
     if (prefix == 0L)
         return (0);
@@ -2130,7 +2130,7 @@ DECLARE1(find_uncomp_mode_prefix, long, prefix)
         }
     if (verbose)
         fprintf(stderr, "adding uncomp mode prefix[%d] 0x%lx\n",
-                (int) uncomp_mode_prefix_count, prefix);
+                (int32_t) uncomp_mode_prefix_count, prefix);
     uncomp_mode_prefix[uncomp_mode_prefix_count++] = prefix;
     return (uncomp_mode_prefix_count-1);
     }
@@ -2139,7 +2139,7 @@ DECLARE1(find_uncomp_mode_prefix, long, prefix)
 void
 build_uncomp_mode_tables()
     {
-    short prefix;
+    int16_t prefix;
 
     /*
      * Note: the first eight entries correspond to
@@ -2147,11 +2147,11 @@ build_uncomp_mode_tables()
      */
     uncomp_mode_prefix_count = 8;
     for (prefix = 0; prefix < uncomp_mode_prefix_count; prefix++) {
-        short Byte;
+        int16_t Byte;
         for (Byte = 0; Byte < 256; Byte++) {
-            short firstbit;
-            short bit;
-            long curprefix;
+            int16_t firstbit;
+            int16_t bit;
+            int32_t curprefix;
             char found_code = false;
 
             if (prefix < 8) {
@@ -2163,7 +2163,7 @@ build_uncomp_mode_tables()
                 firstbit = 0;
                 }
             for (bit = firstbit; bit < 8 && !found_code; bit++) {
-                short mode;
+                int16_t mode;
 
                 if (bit_mask[bit] & Byte)
                     curprefix = append_1(curprefix);

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DHelmert.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DHelmert
@@ -41,7 +41,7 @@ public:
                                     HGF2DHelmert (const HGF2DDisplacement& pi_rTranslation,
                                                   double                   pi_rRotation);
                                     HGF2DHelmert (const HGF2DHelmert& pi_rObj);
-                                    HGF2DHelmert(unsigned short pi_NumberOfPoints,
+                                    HGF2DHelmert(uint16_t pi_NumberOfPoints,
                                                  const double* const pi_pTiePoints);
     virtual                         ~HGF2DHelmert();
     HGF2DHelmert&                   operator= (const HGF2DHelmert& pi_rObj);

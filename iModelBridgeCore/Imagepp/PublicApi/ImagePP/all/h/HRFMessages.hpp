@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFMessages.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -37,7 +37,7 @@ inline HRFProgressImageChangedMsg::HRFProgressImageChangedMsg(const HRFProgressI
 
 
 inline HRFProgressImageChangedMsg::HRFProgressImageChangedMsg(uint32_t  pi_Page,
-                                                              unsigned short pi_SubResolution,
+                                                              uint16_t pi_SubResolution,
                                                               uint64_t pi_XPos,
                                                               uint64_t pi_YPos,
                                                               bool     pi_Ended)
@@ -56,7 +56,7 @@ inline uint32_t HRFProgressImageChangedMsg::GetPage() const
     }
 
 
-inline unsigned short HRFProgressImageChangedMsg::GetSubResolution () const
+inline uint16_t HRFProgressImageChangedMsg::GetSubResolution () const
     {
     return m_SubResolution;
     }

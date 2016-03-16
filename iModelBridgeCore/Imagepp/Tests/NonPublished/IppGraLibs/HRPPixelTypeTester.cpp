@@ -18,7 +18,7 @@ typedef std::vector<HRPPixelTypeNamePair>           HRPPixelTypeVector;
 uint8_t UInt8Seeds[]   = {0, 1, 127, 254, 255};
 uint16_t UInt16Seeds[]  = {0, 16384, 32767, 32768, 49151, USHRT_MAX};
 int16_t Int16Seeds[]   = {SHRT_MIN, SHRT_MIN/2, SHRT_MIN/4, -1, 0, 1, SHRT_MAX/4, SHRT_MAX/2, SHRT_MAX};
-uint32_t UInt32Seeds[]  = {0, 500, 1078, 1689, 500001, 2147483647, 2147483648, ULONG_MAX};
+uint32_t UInt32Seeds[]  = {0, 500, 1078, 1689, 500001, 2147483647, 2147483648, UINT32_MAX};
 float   FloatSeeds[]   = {FLT_MIN, -32767.0, -100.0, 1, 0, -1, 120, 1258, 6897, 3659811, FLT_MAX};
 
 #define SEEDS_COUNT(s) (sizeof(s) / sizeof(s[0]))

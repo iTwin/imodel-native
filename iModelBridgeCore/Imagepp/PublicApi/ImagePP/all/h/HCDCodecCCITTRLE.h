@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecCCITTRLE.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -60,7 +60,7 @@ private:
         CCITTRLEState(const CCITTRLEState& pi_rObj);
         ~CCITTRLEState();
 
-        void Pre(long pi_Width, long pi_Height, bool pi_Decode, bool pi_UseBitRevTable, bool pi_InvertResult);
+        void Pre(int32_t pi_Width, int32_t pi_Height, bool pi_Decode, bool pi_UseBitRevTable, bool pi_InvertResult);
         void Post();
         void Reset();
         void GrowMaxLRS();
@@ -72,10 +72,10 @@ private:
         void DecodeLineRLE();
 
         // Buffer use for RLE decode/encode routines.
-        void SetupForRLEMode(Byte* pio_pCCITTRLEBuffer, size_t pi_CCITTRLEBufferSize, unsigned short* pio_pRLEBuffer, size_t pi_RLEBufferSize);
+        void SetupForRLEMode(Byte* pio_pCCITTRLEBuffer, size_t pi_CCITTRLEBufferSize, uint16_t* pio_pRLEBuffer, size_t pi_RLEBufferSize);
 
         // Buffer use for RLE decode/encode routines. Must have setup for RLEMode before calling this method.
-        void SetRLEBuffer(unsigned short* pio_pRLEBuffer, size_t pi_RLEBufferSize);
+        void SetRLEBuffer(uint16_t* pio_pRLEBuffer, size_t pi_RLEBufferSize);
 
         // Buffer use for uncompress decode/encode routines.
         void SetupForUncompressMode(Byte* pio_pCCITTRLEBuffer, size_t pi_CCITTRLEBufferSize, Byte* pio_pUncompressBuffer, size_t pi_UncompressBufferSize, size_t pi_UncompressLineSize);
@@ -89,54 +89,54 @@ private:
         // Byte(s) write(decode) or read(encode) in m_UncompressBuffer.
         size_t GetUncompressBufferDataSize() const;
 
-        long   GetCCITTRLEError() const {
+        int32_t   GetCCITTRLEError() const {
             return m_ccittrleError;
             };
 
     private:
-        void GetCode(long pi_color);
+        void GetCode(int32_t pi_color);
 
         void GetWhite();
         void GetBlack();
 
-        void CodeWhite(long value);
-        void CodeBlack(long value);
-        void OutputBits(long word, long nbits);
+        void CodeWhite(int32_t value);
+        void CodeBlack(int32_t value);
+        void OutputBits(int32_t word, int32_t nbits);
 
         void CreateLRSForEncode();
 
         void EncodeLine();
 
-        void FillSpan(Byte* cp, int x, int count);
-        int  FindSpan(Byte** bpp, int bs, int be, register Byte const* tab) const;
-        int  FindDiff(Byte* cp, int bitStart, int bitEnd, int color) const;
+        void FillSpan(Byte* cp, int32_t x, int32_t count);
+        int32_t  FindSpan(Byte** bpp, int32_t bs, int32_t be, register Byte const* tab) const;
+        int32_t  FindDiff(Byte* cp, int32_t bitStart, int32_t bitEnd, int32_t color) const;
 
-        long            m_max_lrs;                    /*  max lrs allowed per scan line */
+        int32_t            m_max_lrs;                    /*  max lrs allowed per scan line */
         Byte m_ccittrleMask;                     /*  mask word used to get next bit in g4word */
 
         Byte m_ccittrleWord;                     /*  current Byte that is being disassembled */
 
-        long            m_ccittrleError;                    /*  error flag for getting red_code */
+        int32_t            m_ccittrleError;                    /*  error flag for getting red_code */
 
-        long            m_code;                       /*  value of code returned by red_getcode () */
+        int32_t            m_code;                       /*  value of code returned by red_getcode () */
 
-        long            m_lrsCount;
+        int32_t            m_lrsCount;
 
         bool  m_eol;
-        long* m_buf1;       /* buffer of transitions */
+        int32_t* m_buf1;       /* buffer of transitions */
         char* m_buf1c;      /* color of transitions */
-        long* m_buf2;       /* buffer of transitions */
+        int32_t* m_buf2;       /* buffer of transitions */
         char* m_buf2c;      /* color of transitions */
 
-        long* m_a;          /* pointer to buffer of transitions */
+        int32_t* m_a;          /* pointer to buffer of transitions */
         char* m_acolor;     /* pointer to colors of transitions */
-        long* m_b;          /* pointer to buffer of transitions */
+        int32_t* m_b;          /* pointer to buffer of transitions */
         char* m_bcolor;     /* pointer to colors of transitions */
 
-        long m_bstop;
-        long m_bstopp1;
-        long m_width;
-        long m_height;
+        int32_t m_bstop;
+        int32_t m_bstopp1;
+        int32_t m_width;
+        int32_t m_height;
         bool m_bufcode;
 
         // input/ouput buffers. Set via SetupForRLEMode() or SetupForUncompressMode().
@@ -144,7 +144,7 @@ private:
         size_t m_ccittrleBufferSize;
         size_t m_ccittrleBufferIndex;
 
-        unsigned short* m_RLEBuffer;
+        uint16_t* m_RLEBuffer;
         size_t   m_RLEBufferSize;
         size_t   m_RLEBufferIndex;
 

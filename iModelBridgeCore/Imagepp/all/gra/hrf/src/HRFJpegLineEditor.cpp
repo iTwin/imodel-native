@@ -23,7 +23,7 @@
 //-----------------------------------------------------------------------------
 HRFJpegLineEditor::HRFJpegLineEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                      uint32_t              pi_Page,
-                                     unsigned short       pi_Resolution,
+                                     uint16_t       pi_Resolution,
                                      HFCAccessMode         pi_AccessMode)
     : HRFResolutionEditor(pi_rpRasterFile,
                           pi_Page,
@@ -217,7 +217,7 @@ HSTATUS HRFJpegLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
             memset(&Saved_quant_tbl, 0, sizeof(struct jpeg_compress_struct));
             jpeg_create_compress(&Saved_quant_tbl);
             JQUANT_TBL** qtblptr;
-            int tblno;
+            int32_t tblno;
             for (tblno = 0; tblno < NUM_QUANT_TBLS; tblno++) 
             	{
                 if (pJpeg->m_pDecompress->quant_tbl_ptrs[tblno] != 0) 
@@ -279,7 +279,7 @@ HSTATUS HRFJpegLineEditor::WriteCMYKBlock(uint64_t     pi_PosBlockX,
         memset(&Saved_quant_tbl, 0, sizeof(struct jpeg_compress_struct));
         jpeg_create_compress(&Saved_quant_tbl);
         JQUANT_TBL** qtblptr;
-        int tblno;
+        int32_t tblno;
         for (tblno = 0; tblno < NUM_QUANT_TBLS; tblno++) 
         	{
             if (pJpeg->m_pDecompress->quant_tbl_ptrs[tblno] != 0) 

@@ -28,18 +28,18 @@ protected :
     HFCMatrix<4,4, double>  Matrix;
     vector<Byte>            VectorByte;
     vector<double>          VectorDouble;
-    vector<unsigned short>          VectorUShort;
+    vector<uint16_t>          VectorUShort;
     vector<char>            VectorChar;
 
     HFCMatrix<4,4, double>  MatrixTest;
     vector<Byte>            VectorByteTest;
     vector<double>          VectorDoubleTest;
-    vector<unsigned short>          VectorUShortTest;
+    vector<uint16_t>          VectorUShortTest;
     vector<char>            VectorCharTest;
 
     string                  StringValue;
     double                  DoubleValue;
-    unsigned short          UShortValue;
+    uint16_t          UShortValue;
     uint32_t                UInt32Value;
     Byte                    ByteValue;
     uint32_t                 uint32_tValue;

@@ -242,7 +242,7 @@ bool HRFPcxCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     Control += pFile->Read(&PcxHdr.Reserved1,      sizeof(Byte));
     Control += pFile->Read(&PcxHdr.NumBitPlanes,   sizeof(Byte));
     pFile->Seek(2);
-    Control += pFile->Read(&PcxHdr.PaletteType,    sizeof(unsigned short));
+    Control += pFile->Read(&PcxHdr.PaletteType,    sizeof(uint16_t));
     pFile->Seek(4);
     Control += pFile->Read(PcxHdr.Reserved2, RESERVEDSIZE*sizeof(Byte));
 
@@ -463,7 +463,7 @@ void HRFPcxFile::SavePcxFile()
  @param pi_AccessMode The access and sharing mode of the opened file.
 ------------------------------------------------------------------------------*/
 HRFResolutionEditor* HRFPcxFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                        unsigned short pi_Resolution,
+                                                        uint16_t pi_Resolution,
                                                         HFCAccessMode  pi_AccessMode)
     {
     return new HRFPcxLineEditor(this, pi_Page, pi_Resolution, pi_AccessMode);
@@ -535,8 +535,8 @@ void HRFPcxFile::GetHeaderFromPageDesc()
     m_pPcxHdr->Encoding         = 1;
     m_pPcxHdr->XStart           = 0;                                //:> Could be improve
     m_pPcxHdr->YStart           = 0;                                //:> Could be improve
-    m_pPcxHdr->XEnd             = (unsigned short)pResDesc->GetWidth() -1;  //:> Could be improve
-    m_pPcxHdr->YEnd             = (unsigned short)pResDesc->GetHeight() -1; //:> Could be improve
+    m_pPcxHdr->XEnd             = (uint16_t)pResDesc->GetWidth() -1;  //:> Could be improve
+    m_pPcxHdr->YEnd             = (uint16_t)pResDesc->GetHeight() -1; //:> Could be improve
     m_pPcxHdr->HorzRes          = 0;                                //:> Could be improve
     m_pPcxHdr->VertRes          = 0;                                //:> Could be improve
     m_pPcxHdr->Reserved1        = 0x00;
@@ -601,7 +601,7 @@ void HRFPcxFile::GetHeaderFromPageDesc()
     // m_pPcxHdr->BytesPerLine = (UShort)(((pResDesc->GetWidth() * m_pPcxHdr->BitsPerPixel) + 15) / 16);
     // m_pPcxHdr->BytesPerLine <<= 2;
 
-    m_pPcxHdr->BytesPerLine = (unsigned short)(((pResDesc->GetWidth() * m_pPcxHdr->BitsPerPixel) + 7) / 8);
+    m_pPcxHdr->BytesPerLine = (uint16_t)(((pResDesc->GetWidth() * m_pPcxHdr->BitsPerPixel) + 7) / 8);
     m_pPcxHdr->BytesPerLine += m_pPcxHdr->BytesPerLine % 2;
 
     SetHeaderToFile();
@@ -681,19 +681,19 @@ void HRFPcxFile::GetFileHeaderFromFile()
     m_pPcxFile->Read(&m_pPcxHdr->Version,        sizeof(Byte));
     m_pPcxFile->Read(&m_pPcxHdr->Encoding,       sizeof(Byte));
     m_pPcxFile->Read(&m_pPcxHdr->BitsPerPixel,   sizeof(Byte));
-    m_pPcxFile->Read(&m_pPcxHdr->XStart,         sizeof(unsigned short));
-    m_pPcxFile->Read(&m_pPcxHdr->YStart,         sizeof(unsigned short));
-    m_pPcxFile->Read(&m_pPcxHdr->XEnd,           sizeof(unsigned short));
-    m_pPcxFile->Read(&m_pPcxHdr->YEnd,           sizeof(unsigned short));
-    m_pPcxFile->Read(&m_pPcxHdr->HorzRes,        sizeof(unsigned short));
-    m_pPcxFile->Read(&m_pPcxHdr->VertRes,        sizeof(unsigned short));
+    m_pPcxFile->Read(&m_pPcxHdr->XStart,         sizeof(uint16_t));
+    m_pPcxFile->Read(&m_pPcxHdr->YStart,         sizeof(uint16_t));
+    m_pPcxFile->Read(&m_pPcxHdr->XEnd,           sizeof(uint16_t));
+    m_pPcxFile->Read(&m_pPcxHdr->YEnd,           sizeof(uint16_t));
+    m_pPcxFile->Read(&m_pPcxHdr->HorzRes,        sizeof(uint16_t));
+    m_pPcxFile->Read(&m_pPcxHdr->VertRes,        sizeof(uint16_t));
     m_pPcxFile->Read( m_pPcxHdr->Palette,        sizeof(Byte)*EGAPALETTESIZE);
     m_pPcxFile->Read(&m_pPcxHdr->Reserved1,      sizeof(Byte));
     m_pPcxFile->Read(&m_pPcxHdr->NumBitPlanes,   sizeof(Byte));
-    m_pPcxFile->Read(&m_pPcxHdr->BytesPerLine,   sizeof(unsigned short));
-    m_pPcxFile->Read(&m_pPcxHdr->PaletteType,    sizeof(unsigned short));
-    m_pPcxFile->Read(&m_pPcxHdr->HorzScreenSize, sizeof(unsigned short));
-    m_pPcxFile->Read(&m_pPcxHdr->VertScreenSize, sizeof(unsigned short));
+    m_pPcxFile->Read(&m_pPcxHdr->BytesPerLine,   sizeof(uint16_t));
+    m_pPcxFile->Read(&m_pPcxHdr->PaletteType,    sizeof(uint16_t));
+    m_pPcxFile->Read(&m_pPcxHdr->HorzScreenSize, sizeof(uint16_t));
+    m_pPcxFile->Read(&m_pPcxHdr->VertScreenSize, sizeof(uint16_t));
     m_pPcxFile->Read( m_pPcxHdr->Reserved2,       sizeof(Byte)*RESERVEDSIZE);
     }
 
@@ -856,19 +856,19 @@ void HRFPcxFile::SetHeaderToFile()
     m_pPcxFile->Write(&m_pPcxHdr->Version,        sizeof(Byte));
     m_pPcxFile->Write(&m_pPcxHdr->Encoding,       sizeof(Byte));
     m_pPcxFile->Write(&m_pPcxHdr->BitsPerPixel,   sizeof(Byte));
-    m_pPcxFile->Write(&m_pPcxHdr->XStart,         sizeof(unsigned short));
-    m_pPcxFile->Write(&m_pPcxHdr->YStart,         sizeof(unsigned short));
-    m_pPcxFile->Write(&m_pPcxHdr->XEnd,           sizeof(unsigned short));
-    m_pPcxFile->Write(&m_pPcxHdr->YEnd,           sizeof(unsigned short));
-    m_pPcxFile->Write(&m_pPcxHdr->HorzRes,        sizeof(unsigned short));
-    m_pPcxFile->Write(&m_pPcxHdr->VertRes,        sizeof(unsigned short));
+    m_pPcxFile->Write(&m_pPcxHdr->XStart,         sizeof(uint16_t));
+    m_pPcxFile->Write(&m_pPcxHdr->YStart,         sizeof(uint16_t));
+    m_pPcxFile->Write(&m_pPcxHdr->XEnd,           sizeof(uint16_t));
+    m_pPcxFile->Write(&m_pPcxHdr->YEnd,           sizeof(uint16_t));
+    m_pPcxFile->Write(&m_pPcxHdr->HorzRes,        sizeof(uint16_t));
+    m_pPcxFile->Write(&m_pPcxHdr->VertRes,        sizeof(uint16_t));
     m_pPcxFile->Write( m_pPcxHdr->Palette,        sizeof(Byte)*EGAPALETTESIZE);
     m_pPcxFile->Write(&m_pPcxHdr->Reserved1,      sizeof(Byte));
     m_pPcxFile->Write(&m_pPcxHdr->NumBitPlanes,   sizeof(Byte));
-    m_pPcxFile->Write(&m_pPcxHdr->BytesPerLine,   sizeof(unsigned short));
-    m_pPcxFile->Write(&m_pPcxHdr->PaletteType,    sizeof(unsigned short));
-    m_pPcxFile->Write(&m_pPcxHdr->HorzScreenSize, sizeof(unsigned short));
-    m_pPcxFile->Write(&m_pPcxHdr->VertScreenSize, sizeof(unsigned short));
+    m_pPcxFile->Write(&m_pPcxHdr->BytesPerLine,   sizeof(uint16_t));
+    m_pPcxFile->Write(&m_pPcxHdr->PaletteType,    sizeof(uint16_t));
+    m_pPcxFile->Write(&m_pPcxHdr->HorzScreenSize, sizeof(uint16_t));
+    m_pPcxFile->Write(&m_pPcxHdr->VertScreenSize, sizeof(uint16_t));
     m_pPcxFile->Write( m_pPcxHdr->Reserved2,      sizeof(Byte)*RESERVEDSIZE);
     }
 

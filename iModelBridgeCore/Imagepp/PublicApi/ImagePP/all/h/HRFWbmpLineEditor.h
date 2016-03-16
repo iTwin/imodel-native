@@ -56,7 +56,7 @@ protected:
     // Constructor
     HRFWbmpLineEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                       uint32_t              pi_Page,
-                      unsigned short       pi_Resolution,
+                      uint16_t       pi_Resolution,
                       HFCAccessMode         pi_AccessMode);
 private:
 
@@ -65,7 +65,7 @@ private:
     HArrayAutoPtr<Byte>   m_pLineBuffer;
 
     // Number of bits to use for line padding per row
-    unsigned short m_PaddingBitsPerRow;
+    uint16_t m_PaddingBitsPerRow;
 
     // The number of bits per row in the buffer
     uint32_t m_BitsPerRow;

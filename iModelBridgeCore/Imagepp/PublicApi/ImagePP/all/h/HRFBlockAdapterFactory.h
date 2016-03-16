@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFBlockAdapterFactory.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFBlockAdapterFactory
@@ -29,7 +29,7 @@ public:
     virtual bool FindBestAdapterTypeFor(
         HFCPtr<HRFRasterFile>  pi_rpForRasterFile,
         uint32_t               pi_AtPage,
-        unsigned short        pi_AtResolution,
+        uint16_t        pi_AtResolution,
         HRFBlockType*          po_ToBlockType,
         uint32_t*                po_ToBlockWidth,
         uint32_t*                po_ToBlockHeight) const;
@@ -38,7 +38,7 @@ public:
     virtual bool CanAdapt(
         HFCPtr<HRFRasterFile>  pi_rpFromRasterFile,
         uint32_t               pi_AtPage,
-        unsigned short        pi_AtResolution,
+        uint16_t        pi_AtResolution,
         HRFBlockType           pi_ToBlockType,
         uint32_t               pi_ToWidth,
         uint32_t               pi_ToHeight) const;
@@ -47,7 +47,7 @@ public:
     virtual HRFBlockAdapter* New(
         HFCPtr<HRFRasterFile> pi_rpForRasterFile,
         uint32_t              pi_AtPage,
-        unsigned short       pi_AtResolution,
+        uint16_t       pi_AtResolution,
         HFCAccessMode         pi_WithAccessMode) const;
 
     // Add the creators to the registry
@@ -64,7 +64,7 @@ protected:
     virtual const HRFBlockAdapterCreator* FindCreator(
         HFCPtr<HRFRasterFile>  pi_rpForRasterFile,
         uint32_t               pi_AtPage,
-        unsigned short        pi_AtResolution) const;
+        uint16_t        pi_AtResolution) const;
 
     virtual const HRFBlockAdapterCreator* FindCreator(
         HRFBlockType           pi_FromBlockType,

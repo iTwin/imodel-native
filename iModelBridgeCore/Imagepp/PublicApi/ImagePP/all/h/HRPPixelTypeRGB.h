@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelTypeRGB.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -35,29 +35,29 @@ protected:
 
     // Primary methods
     HRPPixelTypeRGB ();
-    HRPPixelTypeRGB(unsigned short pi_BitsRed,
-                    unsigned short pi_BitsGreen,
-                    unsigned short pi_BitsBlue,
-                    unsigned short pi_BitsExtra,
-                    unsigned short pi_IndexBits,
+    HRPPixelTypeRGB(uint16_t pi_BitsRed,
+                    uint16_t pi_BitsGreen,
+                    uint16_t pi_BitsBlue,
+                    uint16_t pi_BitsExtra,
+                    uint16_t pi_IndexBits,
                     bool   pi_IsBitsExtraAlpha = true);
-    HRPPixelTypeRGB(unsigned short pi_BitsRed,
-                    unsigned short pi_BitsGreen,
-                    unsigned short pi_BitsBlue,
-                    unsigned short pi_BitsAlpha,
-                    unsigned short pi_IndexBits,
-                    unsigned short pi_IndexBitsRed,
-                    unsigned short pi_IndexBitsGreen,
-                    unsigned short pi_IndexBitsBlue,
-                    unsigned short pi_IndexBitsAlpha);
-    HRPPixelTypeRGB(unsigned short             pi_BitsRed,
-                    unsigned short             pi_BitsGreen,
-                    unsigned short             pi_BitsBlue,
-                    unsigned short             pi_BitsAlpha,
+    HRPPixelTypeRGB(uint16_t pi_BitsRed,
+                    uint16_t pi_BitsGreen,
+                    uint16_t pi_BitsBlue,
+                    uint16_t pi_BitsAlpha,
+                    uint16_t pi_IndexBits,
+                    uint16_t pi_IndexBitsRed,
+                    uint16_t pi_IndexBitsGreen,
+                    uint16_t pi_IndexBitsBlue,
+                    uint16_t pi_IndexBitsAlpha);
+    HRPPixelTypeRGB(uint16_t             pi_BitsRed,
+                    uint16_t             pi_BitsGreen,
+                    uint16_t             pi_BitsBlue,
+                    uint16_t             pi_BitsAlpha,
                     HRPChannelType::ChannelRole pi_RoleChannel5,
                     HRPChannelType::DataType    pi_DataTypeChannel5,
-                    unsigned short             pi_BitsChannel5,
-                    unsigned short             pi_IndexBits);
+                    uint16_t             pi_BitsChannel5,
+                    uint16_t             pi_IndexBits);
     HRPPixelTypeRGB(const HRPPixelTypeRGB& pi_rObj);
 
 private:

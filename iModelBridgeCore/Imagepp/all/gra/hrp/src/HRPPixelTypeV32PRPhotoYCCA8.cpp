@@ -103,7 +103,7 @@ static const Byte s_LookUpTable[] =
 
    Values have been rounded.
 */
-static const unsigned short s_RGBGammaTable[] =
+static const uint16_t s_RGBGammaTable[] =
     {
     0,5,9,14,18,23,27,30,34,37,
     40,43,46,48,51,53,55,58,60,62,
@@ -282,7 +282,7 @@ public:
             }
         };
 
-    virtual const short* GetLostChannels() const override
+    virtual const int16_t* GetLostChannels() const override
         {
         return m_LostChannels;
         }
@@ -294,10 +294,10 @@ public:
 
 private:
 
-    static short m_LostChannels[];
+    static int16_t m_LostChannels[];
 
     };
-short ConverterV32PRPhotoYCCA8_V24PhotoYCC::m_LostChannels[] = {3, -1};
+int16_t ConverterV32PRPhotoYCCA8_V24PhotoYCC::m_LostChannels[] = {3, -1};
 static struct ConverterV32PRPhotoYCCA8_V24PhotoYCC        s_V32PRPhotoYCCA8_V24PhotoYCC;
 
 //-----------------------------------------------------------------------------
@@ -359,9 +359,9 @@ public:
         Byte* pDestComposite = (Byte*)pio_pDestRawData;
 
 #if oldYCC
-        short R;
-        short G;
-        short B;
+        int16_t R;
+        int16_t G;
+        int16_t B;
 
         float PreMultY;
         float AlphaPercent;
@@ -371,9 +371,9 @@ public:
             PreMultY = (float)(1.3586 * pSourceComposite[0]);
             AlphaPercent = ((float) pSourceComposite[3]) / (float)255.0;
 
-            R = (short)(PreMultY + (1.82187 * pSourceComposite[2]) + (-249.571 * AlphaPercent));
-            G = (short)(PreMultY + (-0.43 * pSourceComposite[1]) + (-0.927 * pSourceComposite[2]) + (194.44 * AlphaPercent));
-            B = (short)(PreMultY + (2.218 * pSourceComposite[1]) + (-345.94 * AlphaPercent));
+            R = (int16_t)(PreMultY + (1.82187 * pSourceComposite[2]) + (-249.571 * AlphaPercent));
+            G = (int16_t)(PreMultY + (-0.43 * pSourceComposite[1]) + (-0.927 * pSourceComposite[2]) + (194.44 * AlphaPercent));
+            B = (int16_t)(PreMultY + (2.218 * pSourceComposite[1]) + (-345.94 * AlphaPercent));
 
             // (S * alpha) + (D * (1 - alpha))
             pDestComposite[0] = ((s_LookUpTable[CLAMPTABLE(R)] * pSourceComposite[3]) +
@@ -428,9 +428,9 @@ public:
         Byte* pDestComposite = (Byte*)pio_pDestRawData;
 
 #if oldYCC
-        short R;
-        short G;
-        short B;
+        int16_t R;
+        int16_t G;
+        int16_t B;
 
         float PreMultY;
         float AlphaPercent;
@@ -441,9 +441,9 @@ public:
             PreMultY = (float)(1.3586 * pSourceComposite[0]);
             AlphaPercent = ((float) pSourceComposite[3]) / (float)255.0;
 
-            R = (short)(PreMultY + (1.82187 * pSourceComposite[2]) + (-249.571 * AlphaPercent));
-            G = (short)(PreMultY + (-0.43 * pSourceComposite[1]) + (-0.927 * pSourceComposite[2]) + (194.44 * AlphaPercent));
-            B = (short)(PreMultY + (2.218 * pSourceComposite[1]) + (-345.94 * AlphaPercent));
+            R = (int16_t)(PreMultY + (1.82187 * pSourceComposite[2]) + (-249.571 * AlphaPercent));
+            G = (int16_t)(PreMultY + (-0.43 * pSourceComposite[1]) + (-0.927 * pSourceComposite[2]) + (194.44 * AlphaPercent));
+            B = (int16_t)(PreMultY + (2.218 * pSourceComposite[1]) + (-345.94 * AlphaPercent));
 
             pDestComposite[0] = s_LookUpTable[CLAMPTABLE(R)];
             pDestComposite[1] = s_LookUpTable[CLAMPTABLE(G)];
@@ -482,7 +482,7 @@ public:
 #endif
         };
 
-    virtual const short* GetLostChannels() const override
+    virtual const int16_t* GetLostChannels() const override
         {
         return m_LostChannels;
         }
@@ -493,15 +493,15 @@ public:
 
 private:
 
-    static short m_LostChannels[];
+    static int16_t m_LostChannels[];
     };
-template<> short ConverterV32PRPhotoYCCA8_V24R8G8B8<0,1,2>::m_LostChannels[] = {3, -1};
+template<> int16_t ConverterV32PRPhotoYCCA8_V24R8G8B8<0,1,2>::m_LostChannels[] = {3, -1};
 static struct ConverterV32PRPhotoYCCA8_V24R8G8B8<0,1,2>        s_V32PRPhotoYCCA8_V24R8G8B8; // RGB
 
 //-----------------------------------------------------------------------------
 //  s_V32PRPhotoYCCA8_V24B8G8R8 - Converter
 //-----------------------------------------------------------------------------
-template<> short ConverterV32PRPhotoYCCA8_V24R8G8B8<2,1,0>::m_LostChannels[] = {3, -1};
+template<> int16_t ConverterV32PRPhotoYCCA8_V24R8G8B8<2,1,0>::m_LostChannels[] = {3, -1};
 static struct ConverterV32PRPhotoYCCA8_V24R8G8B8<2,1,0>        s_V32PRPhotoYCCA8_V24B8G8R8; // BGR
 
 //-----------------------------------------------------------------------------
@@ -528,9 +528,9 @@ public:
         const HRPPixelPalette& rPalette = GetDestinationPixelType()->GetPalette();
 
 #if oldYCC
-        short R;
-        short G;
-        short B;
+        int16_t R;
+        int16_t G;
+        int16_t B;
 
         float PreMultY;
         float AlphaPercent;
@@ -545,9 +545,9 @@ public:
             PreMultY = (float)(1.3586 * pSourceComposite[0]);
             AlphaPercent = ((float) pSourceComposite[3]) / (float)255.0;
 
-            R = (short)(PreMultY + (1.82187 * pSourceComposite[2]) + (-249.571 * AlphaPercent));
-            G = (short)(PreMultY + (-0.43 * pSourceComposite[1]) + (-0.927 * pSourceComposite[2]) + (194.44 * AlphaPercent));
-            B = (short)(PreMultY + (2.218 * pSourceComposite[1]) + (-345.94 * AlphaPercent));
+            R = (int16_t)(PreMultY + (1.82187 * pSourceComposite[2]) + (-249.571 * AlphaPercent));
+            G = (int16_t)(PreMultY + (-0.43 * pSourceComposite[1]) + (-0.927 * pSourceComposite[2]) + (194.44 * AlphaPercent));
+            B = (int16_t)(PreMultY + (2.218 * pSourceComposite[1]) + (-345.94 * AlphaPercent));
 
             // (S * alpha) + (D * (1 - alpha))
             Blend[0] = ((s_LookUpTable[CLAMPTABLE(R)] * pSourceComposite[3]) +
@@ -615,9 +615,9 @@ public:
         Byte* pDestRawData = (Byte*)pio_pDestRawData;
 
 #if oldYCC
-        short R;
-        short G;
-        short B;
+        int16_t R;
+        int16_t G;
+        int16_t B;
 
         float PreMultY;
         float AlphaPercent;
@@ -628,9 +628,9 @@ public:
             PreMultY = (float)(1.3586 * pSourceComposite[0]);
             AlphaPercent = ((float) pSourceComposite[3]) / (float)255.0;
 
-            R = (short)(PreMultY + (1.82187 * pSourceComposite[2]) + (-249.571 * AlphaPercent));
-            G = (short)(PreMultY + (-0.43 * pSourceComposite[1]) + (-0.927 * pSourceComposite[2]) + (194.44 * AlphaPercent));
-            B = (short)(PreMultY + (2.218 * pSourceComposite[1]) + (-345.94 * AlphaPercent));
+            R = (int16_t)(PreMultY + (1.82187 * pSourceComposite[2]) + (-249.571 * AlphaPercent));
+            G = (int16_t)(PreMultY + (-0.43 * pSourceComposite[1]) + (-0.927 * pSourceComposite[2]) + (194.44 * AlphaPercent));
+            B = (int16_t)(PreMultY + (2.218 * pSourceComposite[1]) + (-345.94 * AlphaPercent));
 
             // get a good index for the R,G,B blend values
             *pDest = m_QuantizedPalette.GetIndex(
@@ -672,7 +672,7 @@ public:
 #endif
         };
 
-   virtual const short* GetLostChannels() const override
+   virtual const int16_t* GetLostChannels() const override
         {
         return m_LostChannels;
         }
@@ -689,14 +689,14 @@ protected:
 
         // fill the octree with the destination palette entries
         int32_t NbIndex(rPalette.CountUsedEntries());
-        for(int Index = 0; Index < NbIndex; Index++)
+        for(int32_t Index = 0; Index < NbIndex; Index++)
             m_QuantizedPalette.AddCompositeValue(rPalette.GetCompositeValue(Index), (Byte)Index);
         }
 
 private:
-    static short m_LostChannels[];
+    static int16_t m_LostChannels[];
     };
-short ConverterV32PRPhotoYCCA8_I8R8G8B8::m_LostChannels[] = {3, -1};
+int16_t ConverterV32PRPhotoYCCA8_I8R8G8B8::m_LostChannels[] = {3, -1};
 static struct ConverterV32PRPhotoYCCA8_I8R8G8B8        s_V32PRPhotoYCCA8_I8R8G8B8;
 
 //-----------------------------------------------------------------------------
@@ -725,9 +725,9 @@ public:
         double C1;
         double C2;
 
-        short LS;
-        short C1S;
-        short C2S;
+        int16_t LS;
+        int16_t C1S;
+        int16_t C2S;
 
         // Copy entire bytes
         while(pi_PixelsCount)
@@ -750,9 +750,9 @@ public:
             C2 = 0.701 * RCorrected - GMult - BMult;
 
             // Scale in [0, 255]
-            LS  = (short)(L / 1.402);
-            C1S = (short)(C1 * 0.436862745 + 156);   // 0.436862745 = 111.4 / 255
-            C2S = (short)(C2 * 0.531921569 + 137);   // 0.531921569 = 135.64 / 255
+            LS  = (int16_t)(L / 1.402);
+            C1S = (int16_t)(C1 * 0.436862745 + 156);   // 0.436862745 = 111.4 / 255
+            C2S = (int16_t)(C2 * 0.531921569 + 137);   // 0.531921569 = 135.64 / 255
 
             pDestComposite[0] = CLAMPINVTABLE(LS);
             pDestComposite[1] = CLAMPINVTABLE(C1S);
@@ -795,9 +795,9 @@ public:
         Byte* pDestComposite = (Byte*)pio_pDestRawData;
 
 #if oldYCC
-        short R;
-        short G;
-        short B;
+        int16_t R;
+        int16_t G;
+        int16_t B;
 
         float PreMultY;
         float AlphaPercent;
@@ -808,9 +808,9 @@ public:
             PreMultY = (float)(1.3586 * pSourceComposite[0]);
             AlphaPercent = ((float) pSourceComposite[3]) / (float)255.0;
 
-            R = (short)(PreMultY + (1.82187 * pSourceComposite[2]) + (-249.571 * AlphaPercent));
-            G = (short)(PreMultY + (-0.43 * pSourceComposite[1]) + (-0.927 * pSourceComposite[2]) + (194.44 * AlphaPercent));
-            B = (short)(PreMultY + (2.218 * pSourceComposite[1]) + (-345.94 * AlphaPercent));
+            R = (int16_t)(PreMultY + (1.82187 * pSourceComposite[2]) + (-249.571 * AlphaPercent));
+            G = (int16_t)(PreMultY + (-0.43 * pSourceComposite[1]) + (-0.927 * pSourceComposite[2]) + (194.44 * AlphaPercent));
+            B = (int16_t)(PreMultY + (2.218 * pSourceComposite[1]) + (-345.94 * AlphaPercent));
 
             pDestComposite[0] = s_LookUpTable[CLAMPTABLE(R)];
             pDestComposite[1] = s_LookUpTable[CLAMPTABLE(G)];
@@ -857,9 +857,9 @@ public:
         Byte* pDestComposite = (Byte*)pio_pDestRawData;
 
 #if oldYCC
-        short R;
-        short G;
-        short B;
+        int16_t R;
+        int16_t G;
+        int16_t B;
 
         float PreMultY;
         float AlphaPercent;
@@ -875,9 +875,9 @@ public:
                 PreMultY = (float)(1.3586 * pSourceComposite[0]);
                 AlphaPercent = ((float) pSourceComposite[3]) / (float)255.0;
 
-                R = (short)(PreMultY + (1.82187 * pSourceComposite[2]) + (-249.571 * AlphaPercent));
-                G = (short)(PreMultY + (-0.43 * pSourceComposite[1]) + (-0.927 * pSourceComposite[2]) + (194.44 * AlphaPercent));
-                B = (short)(PreMultY + (2.218 * pSourceComposite[1]) + (-345.94 * AlphaPercent));
+                R = (int16_t)(PreMultY + (1.82187 * pSourceComposite[2]) + (-249.571 * AlphaPercent));
+                G = (int16_t)(PreMultY + (-0.43 * pSourceComposite[1]) + (-0.927 * pSourceComposite[2]) + (194.44 * AlphaPercent));
+                B = (int16_t)(PreMultY + (2.218 * pSourceComposite[1]) + (-345.94 * AlphaPercent));
 
                 if (pDestComposite[3] == 0 || pSourceComposite[3] == 255)
                     {
@@ -977,9 +977,9 @@ public:
         double C1;
         double C2;
 
-        short LS;
-        short C1S;
-        short C2S;
+        int16_t LS;
+        int16_t C1S;
+        int16_t C2S;
 
         // Copy entire bytes
         while(pi_PixelsCount)
@@ -1002,9 +1002,9 @@ public:
             C2 = 0.701 * RCorrected - GMult - BMult;
 
             // Scale in [0, 255]
-            LS  = (short)(L / 1.402);
-            C1S = (short)(C1 * 0.436862745 + 156);   // 0.436862745 = 111.4 / 255
-            C2S = (short)(C2 * 0.531921569 + 137);   // 0.531921569 = 135.64 / 255
+            LS  = (int16_t)(L / 1.402);
+            C1S = (int16_t)(C1 * 0.436862745 + 156);   // 0.436862745 = 111.4 / 255
+            C2S = (int16_t)(C2 * 0.531921569 + 137);   // 0.531921569 = 135.64 / 255
 
             pDestComposite[0] = CLAMPINVTABLE(LS) * pSourceComposite[3] / 255;
             pDestComposite[1] = CLAMPINVTABLE(C1S) * pSourceComposite[3] / 255;
@@ -1146,7 +1146,7 @@ HPMPersistentObject* HRPPixelTypeV32PRPhotoYCCA8::Clone() const
     @end
     -----------------------------------------------------------------------------
  */
-unsigned short HRPPixelTypeV32PRPhotoYCCA8::CountValueBits() const
+uint16_t HRPPixelTypeV32PRPhotoYCCA8::CountValueBits() const
     {
     return 32;
     }

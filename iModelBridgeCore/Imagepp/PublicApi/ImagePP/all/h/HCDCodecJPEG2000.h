@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecJPEG2000.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecJPEG2000
@@ -101,7 +101,7 @@ protected:
 
     HAutoPtr<JPEG2000Codec> m_pCodec;
 
-    unsigned short         m_CellType;
+    uint16_t         m_CellType;
     UINT16                  m_NbBands;
 
     HFCBinStream*           m_pJP2Stream;

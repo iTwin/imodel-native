@@ -29,7 +29,7 @@ public:
     HRFIntergraphTileEditor
     (HFCPtr<HRFRasterFile> pi_rpRasterFile,
      uint32_t              pi_Page,
-     unsigned short       pi_Resolution,
+     uint16_t       pi_Resolution,
      HFCAccessMode         pi_AccessMode,
      HRFIntergraphFile::IntergraphResolutionDescriptor&
      pi_rIntergraphResolutionDescriptor,
@@ -74,7 +74,7 @@ private:
 
     void  FindFileFreeSpace        (uint32_t& pio_rOldBlockOffset, uint32_t& pio_rOldBlockSize, uint32_t pi_RequestedSize);
 
-    void  InitializeJpegDecompTable(double pi_QualityFactor, Byte* po_pTileBuffer, unsigned int pi_DataSize);
+    void  InitializeJpegDecompTable(double pi_QualityFactor, Byte* po_pTileBuffer, uint32_t pi_DataSize);
     void  BuildJpegLumiChromaTable (double pi_QualityFactor, Byte* po_pLuminance,  Byte* po_pChroma);
 
     void  ApplyLUTColorCorrection  (Byte* pio_pData, uint32_t pi_pixelCount);
@@ -99,7 +99,7 @@ private:
     bool                               m_ListDirty;
 
     // Members
-    unsigned short m_BitPerPixel;
+    uint16_t m_BitPerPixel;
 
     uint32_t        m_RasterOffset;
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCMath.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -40,7 +40,7 @@ inline Byte HFCMath::DivideBy255ToByte(int32_t pi_Numerator) const
     DivideBy255
     -----------------------------------------------------------------------------
 */
-inline Byte HFCMath::UnsignedDivideBy255 (unsigned short pi_Numerator) const
+inline Byte HFCMath::UnsignedDivideBy255 (uint16_t pi_Numerator) const
     {
     return m_QuotientsShort[pi_Numerator];
     }

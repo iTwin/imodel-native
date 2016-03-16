@@ -290,7 +290,7 @@ WString HFCURL::FindPath(const WString& pi_Source, const WString& pi_Dest)
     // the beginning, removing them from the destination path
 
     WString Result(pi_Dest);
-    unsigned short Count = 0;
+    uint16_t Count = 0;
     if (EntryList.size() > 0)
         {
         list<WString>::iterator itr = EntryList.begin();

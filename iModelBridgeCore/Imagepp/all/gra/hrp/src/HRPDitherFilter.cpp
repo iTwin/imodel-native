@@ -119,7 +119,7 @@ void HRPDitherFilter::Convert(HRPPixelBuffer* pi_pInputBuffer,
 
     // Declare work variables
     Byte* pApproximation;
-    short Error;
+    int16_t Error;
     uint32_t ChannelsCount;
     Byte EntryIndex;
 
@@ -352,7 +352,7 @@ void HRPDitherFilter::InitObject()
     FillQuantizedPalette();
 
     // Create four pre-calculated tables for the error
-    short Error = -256;
+    int16_t Error = -256;
 
     for(uint32_t EntryIndex = 0; EntryIndex < 512; EntryIndex++)
         {

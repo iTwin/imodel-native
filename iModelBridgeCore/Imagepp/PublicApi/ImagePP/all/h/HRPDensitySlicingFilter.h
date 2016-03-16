@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPDensitySlicingFilter.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -85,9 +85,9 @@ protected:
     // members
     vector<SliceInfo > m_SliceList;
 
-    int                m_Channels;
-    int                m_ChannelWidth;
-    int                m_MaxSampleValue;
+    int32_t                m_Channels;
+    int32_t                m_ChannelWidth;
+    int32_t                m_MaxSampleValue;
 
     double            m_DesaturationFactor;
 

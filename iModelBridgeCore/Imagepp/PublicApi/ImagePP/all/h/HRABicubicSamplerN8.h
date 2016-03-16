@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRABicubicSamplerN8.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -106,7 +106,7 @@ private:
 
     Byte*         ComputeAddress(HUINTX  pi_PosX,
                                    HUINTX  pi_PosY,
-                                   size_t  pi_NeededPixels = ULONG_MAX) const;
+                                   size_t  pi_NeededPixels = UINT32_MAX) const;
 
 
     // Store information about the 4x4 required for

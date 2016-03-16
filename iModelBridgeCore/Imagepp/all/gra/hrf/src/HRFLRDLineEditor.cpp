@@ -21,7 +21,7 @@
 
 HRFLRDLineEditor::HRFLRDLineEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                    uint32_t             pi_Page,
-                                   unsigned short      pi_Resolution,
+                                   uint16_t      pi_Resolution,
                                    HFCAccessMode        pi_AccessMode)
     : HRFResolutionEditor(pi_rpRasterFile, pi_Page, pi_Resolution, pi_AccessMode),
       m_CompressPacket()
@@ -220,8 +220,8 @@ HSTATUS HRFLRDLineEditor::WriteBlock(uint64_t              pi_PosBlockX,
 
             if (pi_PosBlockY == m_pResolutionDescriptor->GetHeight() - 1)
                 {
-                unsigned short EndOfRasterMarker = 0x8000;
-                if (m_pLRDFile->Write(&EndOfRasterMarker, sizeof(unsigned short)) != sizeof(unsigned short))
+                uint16_t EndOfRasterMarker = 0x8000;
+                if (m_pLRDFile->Write(&EndOfRasterMarker, sizeof(uint16_t)) != sizeof(uint16_t))
                     goto WRAPUP;
                 }
             }

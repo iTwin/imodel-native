@@ -788,12 +788,12 @@ void HRAStoredRaster::Scale(double pi_ScaleFactorX,
 // public
 // GetRepresentativePalette .
 //-----------------------------------------------------------------------------
-unsigned short HRAStoredRaster::GetRepresentativePalette(
+uint16_t HRAStoredRaster::GetRepresentativePalette(
     HRARepPalParms* pio_pRepPalParms)
     {
     HPRECONDITION(pio_pRepPalParms != 0);
 
-    unsigned short CountUsed;
+    uint16_t CountUsed;
 
     // get the representative palette cache if updated
     if(pio_pRepPalParms->UseCache() && (pio_pRepPalParms->GetHistogram() == 0))
@@ -831,7 +831,7 @@ unsigned short HRAStoredRaster::GetRepresentativePalette(
                     const HRPPixelPalette& rSrcPalette = pSrcType->GetPalette();
 
                     // get the number of entries in the palette
-                    CountUsed = (unsigned short)rSrcPalette.CountUsedEntries();
+                    CountUsed = (uint16_t)rSrcPalette.CountUsedEntries();
 
                     Byte Value[HRPPixelType::MAX_PIXEL_BYTES];
 
@@ -855,11 +855,11 @@ unsigned short HRAStoredRaster::GetRepresentativePalette(
                     // TR 159986: RLE need a raw value in RLE.
                     if(pSrcType->IsCompatibleWith(HRPPixelTypeI1R8G8B8RLE::CLASS_ID) || pSrcType->IsCompatibleWith(HRPPixelTypeI1R8G8B8A8RLE::CLASS_ID))
                         {
-                        unsigned short IndexToConvert = 0;
-                        unsigned short IndexDst = 0;
+                        uint16_t IndexToConvert = 0;
+                        uint16_t IndexDst = 0;
                         for (; IndexToConvert < 2; ++IndexToConvert,++IndexDst)
                             {
-                            unsigned short SourceRawValue = IndexToConvert ? 0 : 1;
+                            uint16_t SourceRawValue = IndexToConvert ? 0 : 1;
                             pSrcIndexToDestCompositeValue->Convert(&SourceRawValue, Value);
 
                             // Palette destination has a locked entry ?
@@ -894,8 +894,8 @@ unsigned short HRAStoredRaster::GetRepresentativePalette(
                         }
                     else if (pSrcType->CountIndexBits() < 8)
                         {
-                        unsigned short IndexToConvert = 0;
-                        unsigned short IndexDst = 0;
+                        uint16_t IndexToConvert = 0;
+                        uint16_t IndexDst = 0;
                         for (; IndexToConvert < CountUsed; ++IndexToConvert,++IndexDst)
                             {
                             Byte SourceRawValue = CONVERT_TO_BYTE(IndexToConvert << (8 - pSrcType->CountIndexBits()));
@@ -933,8 +933,8 @@ unsigned short HRAStoredRaster::GetRepresentativePalette(
                         }
                     else
                         {
-                        unsigned short IndexToConvert = 0;
-                        unsigned short IndexDst = 0;
+                        uint16_t IndexToConvert = 0;
+                        uint16_t IndexDst = 0;
                         for (; IndexToConvert < CountUsed; ++IndexToConvert,++IndexDst)
                             {
                             pSrcIndexToDestCompositeValue->Convert(&IndexToConvert, Value);

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HGF2DStretchTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -576,7 +576,7 @@ TEST_F(HGF2DStretchTester, ConversionTest)
 
 TEST_F(HGF2DStretchTester, ConversionInOutArraysTest)
     {
-    const int NUMBER_OF_POINTS = 10;
+    const int32_t NUMBER_OF_POINTS = 10;
     double XArrayInOut[NUMBER_OF_POINTS];
     double YArrayInOut[NUMBER_OF_POINTS];
 
@@ -974,7 +974,7 @@ TEST_F(HGF2DStretchTester, ConversionTest3)
 
 TEST_F(HGF2DStretchTester, ConversionInOutArraysTest3)
     {
-    const int NUMBER_OF_POINTS = 10;
+    const int32_t NUMBER_OF_POINTS = 10;
     double XArrayInOut[NUMBER_OF_POINTS];
     double YArrayInOut[NUMBER_OF_POINTS];
 

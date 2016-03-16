@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFCMYKColorSpace.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -30,14 +30,14 @@ public:
     // Conversion both side between an array of RGB and and array of CMYK
     void ConvertArrayFromRGB (Byte const* pi_pRed, Byte const* pi_pGreen, Byte const* pi_pBlue,
                               Byte* pi_pCyan, Byte* pi_pMagenta, Byte* pi_pYellow, Byte* pi_pBlack,
-                              unsigned long  pi_ArraySize);
+                              size_t  pi_ArraySize);
 
     void ConvertArrayToRGB (Byte const* pi_pCyan, Byte const* pi_pMagenta, Byte const* pi_pYellow, Byte const* pi_pBlack,
                             Byte* po_pRed,  Byte* po_pGreen,   Byte* po_pBlue,
-                            unsigned long pi_ArraySize);
+                            size_t pi_ArraySize);
 
-    void ConvertArrayFromRGB (Byte const* pi_pRBGData, Byte* po_pCMYKData, unsigned long  pi_ArraySizeInPixel);
-    void ConvertArrayToRGB   (Byte const* pi_pCMYKData, Byte* po_pRBGData, unsigned long  pi_ArraySizeInPixel);
+    void ConvertArrayFromRGB (Byte const* pi_pRBGData, Byte* po_pCMYKData, size_t pi_ArraySizeInPixel);
+    void ConvertArrayToRGB   (Byte const* pi_pCMYKData, Byte* po_pRBGData, size_t pi_ArraySizeInPixel);
 
 protected:
 

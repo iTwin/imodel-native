@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFLightnessColorSpace.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // L*u*v* ColorSpace converter class declaration.
@@ -17,12 +17,12 @@ BEGIN_IMAGEPP_NAMESPACE
 class HGFLightnessColorSpace : public HGFBasicColorSpace
     {
 public:
-    HGFLightnessColorSpace(double pi_GammaCorrection, unsigned short pi_BitsPerPixel);
+    HGFLightnessColorSpace(double pi_GammaCorrection, uint16_t pi_BitsPerPixel);
 
     virtual ~HGFLightnessColorSpace();
 
     // Conversion from RGB to CIE L ( L*u*v* ColorSpace )
-    double ConvertFromRGB (unsigned short pi_Red, unsigned short pi_Green, unsigned short pi_Blue) const;
+    double ConvertFromRGB (uint16_t pi_Red, uint16_t pi_Green, uint16_t pi_Blue) const;
 
     // Conversion between an array of RGB 8 bits/channel and and array of CIE L ( L*u*v* ColorSpace )
     void ConvertArrayFromRGB (double* po_pL,
@@ -31,7 +31,7 @@ public:
 
     // Conversion between an array of RGB 16 bits/channel and and array of CIE L ( L*u*v* ColorSpace )
     void ConvertArrayFromRGB (double* po_pL,
-                              unsigned short* pi_pRed, unsigned short*  pi_pGreen, unsigned short*  pi_pBlue,
+                              uint16_t* pi_pRed, uint16_t*  pi_pGreen, uint16_t*  pi_pBlue,
                               uint32_t pi_SampleCount) const;
 
 #if 0

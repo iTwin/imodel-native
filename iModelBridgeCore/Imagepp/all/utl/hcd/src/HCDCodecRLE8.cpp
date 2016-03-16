@@ -195,7 +195,7 @@ size_t HCDCodecRLE8::CompressSubsetN8(const void* pi_pInData,
     Byte* pColorPlan      = new Byte[GetSubsetWidth()];
     Byte* pColorPlanBegin = pColorPlan;
 
-    unsigned short ColorPlanCount = (unsigned short)(GetBitsPerPixel() / 8);
+    uint16_t ColorPlanCount = (uint16_t)(GetBitsPerPixel() / 8);
 
     int8_t* pLen;
 
@@ -210,7 +210,7 @@ size_t HCDCodecRLE8::CompressSubsetN8(const void* pi_pInData,
         LineBytesCount = GetSubsetWidth();
 
         // Decompress every color plan (R,G and B)
-        for(unsigned short colorPlan=0; colorPlan < ColorPlanCount; ++colorPlan)
+        for(uint16_t colorPlan=0; colorPlan < ColorPlanCount; ++colorPlan)
             {
             // Construct the Color Plan buffer
             for(uint32_t i = 0; i < GetSubsetWidth(); ++i)
@@ -388,14 +388,14 @@ size_t HCDCodecRLE8::DecompressSubsetN8(const void* pi_pInData,
     Byte* pColorPlanBegin = pColorPlan;
 
     int32_t Count;
-    unsigned short ColorPlanCount = (unsigned short)(GetBitsPerPixel() / 8);
+    uint16_t ColorPlanCount = (uint16_t)(GetBitsPerPixel() / 8);
 
     size_t LinesCount = GetSubsetHeight();
 
     while(LinesCount != 0)
         {
         // Decompress every color plan (R,G and B)
-        for(unsigned short colorPlan=0; colorPlan < ColorPlanCount; ++colorPlan)
+        for(uint16_t colorPlan=0; colorPlan < ColorPlanCount; ++colorPlan)
             {
             // Get the number of pixel by Width
             BytesCount = GetSubsetWidth();

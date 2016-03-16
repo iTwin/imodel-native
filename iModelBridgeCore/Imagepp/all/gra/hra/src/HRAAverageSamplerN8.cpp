@@ -551,10 +551,9 @@ void HRAAverageSamplerN8::StretchByTwo(uint32_t pi_PositionX,
         }
     else
         {
-        unsigned short i;
         while(pi_PixelCount > 0)
             {
-            for (i = 0; i < m_BytesPerPixel; ++i)
+            for (size_t i = 0; i < m_BytesPerPixel; ++i)
                 {
                 po_pBuffer[i] = (pSrcFirstLineLeftPixel[i] +
                                  pSrcFirstLineLeftPixel[m_BytesPerPixel + i] +
@@ -571,7 +570,7 @@ void HRAAverageSamplerN8::StretchByTwo(uint32_t pi_PositionX,
 
         if (LastPixelOutside)
             {
-            for (i = 0; i < m_BytesPerPixel; ++i)
+            for (size_t i = 0; i < m_BytesPerPixel; ++i)
                 {
                 po_pBuffer[i] = (pSrcFirstLineSecondToLastPixel[i] +
                                  pSrcFirstLineLastPixel[i] +
@@ -601,7 +600,7 @@ Byte* HRAAverageSamplerN8::ComputeAddress(HUINTX  pi_PosX,
 
     // For N1 sources, convert full lines only
     if (m_SourceBytesPerPixel == 0)
-        pi_NeededPixels = ULONG_MAX;
+        pi_NeededPixels = UINT32_MAX;
 
     // Compute start of source line
     Byte* pSrcData = m_pPacket->GetBufferAddress();
@@ -614,7 +613,7 @@ Byte* HRAAverageSamplerN8::ComputeAddress(HUINTX  pi_PosX,
 
     if (m_pWorkingPixelType != 0)
         {
-        if (pi_NeededPixels == ULONG_MAX)
+        if (pi_NeededPixels == UINT32_MAX)
             {
             // Convert and store full lines.
 

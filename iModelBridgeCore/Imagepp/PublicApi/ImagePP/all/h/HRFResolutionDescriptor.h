@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFResolutionDescriptor.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFResolutionDescriptor
@@ -44,7 +44,7 @@ public:
                                    const HRFDataFlag*                          pi_pBlocksDataFlag = 0,
                                    HRFBlockType                                pi_BlockType = HRFBlockType::AUTO_DETECT,
                                    Byte                                       pi_NumberOfPass = 1,
-                                   unsigned short                             pi_PaddingBits = 8, // for now always to 8 bit
+                                   uint16_t                             pi_PaddingBits = 8, // for now always to 8 bit
                                    HRFDownSamplingMethod                       pi_DownSamplingMethod = HRFDownSamplingMethod::NEAREST_NEIGHBOUR);
 
 
@@ -67,7 +67,7 @@ public:
     // Get number of pass to complete a resolution data - prossive format        = n pass
     //                                                  - non-progressive format = 1 pass
     Byte                                   GetNumberOfPass         () const;
-    unsigned short                         GetPaddingBits          () const;
+    uint16_t                         GetPaddingBits          () const;
 
     // Storage information
     const HFCPtr<HCDCodec>&                GetCodec                () const;
@@ -154,7 +154,7 @@ private:
     double                             m_ResolutionXRatio;
     double                             m_ResolutionYRatio;
     Byte                               m_NumberOfPass;
-    unsigned short                     m_PaddingBits;
+    uint16_t                     m_PaddingBits;
 
     // Storage information
     HFCPtr<HRPPixelType>                m_pPixelType;

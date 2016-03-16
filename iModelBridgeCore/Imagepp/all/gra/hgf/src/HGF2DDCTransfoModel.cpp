@@ -55,7 +55,7 @@ HGF2DDCTransfoModel::~HGF2DDCTransfoModel()
 // Projective transformation
 //-----------------------------------------------------------------------------
 uint32_t HGF2DDCTransfoModel::GetAlignTransfoMatrixFromScaleAndTiePts(double        po_pMatrix[4][4],
-                                                                     unsigned short pi_NbVal_GeoTiePoint,
+                                                                     uint16_t pi_NbVal_GeoTiePoint,
                                                                      const double* pi_pVal_GeoTiePoint)
     {
     // Code was moved from MS, this is equivalent to >> mdlMath_DUorEqual (value, 0.0). Which use 0.25 epsilon.
@@ -131,7 +131,7 @@ uint32_t HGF2DDCTransfoModel::GetAlignTransfoMatrixFromScaleAndTiePts(double    
 // Projective transformation
 //-----------------------------------------------------------------------------
 uint32_t HGF2DDCTransfoModel::GetHelmertTransfoMatrixFromScaleAndTiePts(double          po_pMatrix[4][4],
-                                                                       unsigned short  pi_NbVal_GeoTiePoint,
+                                                                       uint16_t  pi_NbVal_GeoTiePoint,
                                                                        const double*   pi_pVal_GeoTiePoint)
     {
     return GetTransfoMatrixFromTiePts(po_pMatrix, pi_NbVal_GeoTiePoint, pi_pVal_GeoTiePoint, TRANSFO_HELM_2D);
@@ -141,7 +141,7 @@ uint32_t HGF2DDCTransfoModel::GetHelmertTransfoMatrixFromScaleAndTiePts(double  
 // Projective transformation
 //-----------------------------------------------------------------------------
 uint32_t HGF2DDCTransfoModel::GetSimilitudeTransfoMatrixFromScaleAndTiePts(double           po_pMatrix[4][4],
-                                                                          unsigned short   pi_NbVal_GeoTiePoint,
+                                                                          uint16_t   pi_NbVal_GeoTiePoint,
                                                                           const double*    pi_pVal_GeoTiePoint)
     {
     return GetTransfoMatrixFromTiePts(po_pMatrix, pi_NbVal_GeoTiePoint, pi_pVal_GeoTiePoint, TRANSFO_SIMI_2D);
@@ -151,7 +151,7 @@ uint32_t HGF2DDCTransfoModel::GetSimilitudeTransfoMatrixFromScaleAndTiePts(doubl
 // Projective transformation
 //-----------------------------------------------------------------------------
 uint32_t HGF2DDCTransfoModel::GetAffineTransfoMatrixFromScaleAndTiePts(double           po_pMatrix[4][4],
-                                                                      unsigned short   pi_NbVal_GeoTiePoint,
+                                                                      uint16_t   pi_NbVal_GeoTiePoint,
                                                                       const double*    pi_pVal_GeoTiePoint)
     {
     return GetTransfoMatrixFromTiePts(po_pMatrix, pi_NbVal_GeoTiePoint, pi_pVal_GeoTiePoint, TRANSFO_AFFI_2D);
@@ -161,7 +161,7 @@ uint32_t HGF2DDCTransfoModel::GetAffineTransfoMatrixFromScaleAndTiePts(double   
 // Projective transformation
 //-----------------------------------------------------------------------------
 uint32_t HGF2DDCTransfoModel::GetProjectiveTransfoMatrixFromScaleAndTiePts(double           po_pMatrix[4][4],
-                                                                          unsigned short   pi_NbVal_GeoTiePoint,
+                                                                          uint16_t   pi_NbVal_GeoTiePoint,
                                                                           const double*    pi_pVal_GeoTiePoint)
     {
     return GetTransfoMatrixFromTiePts(po_pMatrix, pi_NbVal_GeoTiePoint, pi_pVal_GeoTiePoint, TRANSFO_PROJ_2D);

@@ -56,7 +56,7 @@ protected:
     // Constructor
     HRFBilLineEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                      uint32_t              pi_Page,
-                     unsigned short       pi_Resolution,
+                     uint16_t       pi_Resolution,
                      HFCAccessMode         pi_AccessMode);
 
     HSTATUS Read24BitRgbBlock ( uint64_t                 pi_PosBlockX,

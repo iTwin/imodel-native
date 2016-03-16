@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPLigthnessContrastStretch.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -40,21 +40,21 @@ public:
 
     // Get/Set methods
     IMAGEPP_EXPORT void    SetInterval(uint32_t pi_ChannelIndex,
-                        int pi_MinValue,
-                        int pi_MaxValue);
+                        int32_t pi_MinValue,
+                        int32_t pi_MaxValue);
 
     IMAGEPP_EXPORT void    GetInterval(uint32_t pi_ChannelIndex,
-                        int* po_pMinValue,
-                        int* po_pMaxValue) const;
+                        int32_t* po_pMinValue,
+                        int32_t* po_pMaxValue) const;
 
 
     IMAGEPP_EXPORT void    SetContrastInterval(uint32_t pi_ChannelIndex,
-                                int pi_MinContrastValue,
-                                int pi_MaxContrastValue);
+                                int32_t pi_MinContrastValue,
+                                int32_t pi_MaxContrastValue);
 
     IMAGEPP_EXPORT void    GetContrastInterval(uint32_t pi_ChannelIndex,
-                                int* po_MinContrastValue,
-                                int* po_MaxContrastValue) const;
+                                int32_t* po_MinContrastValue,
+                                int32_t* po_MaxContrastValue) const;
 
     IMAGEPP_EXPORT void    GetGammaFactor(uint32_t pi_ChannelIndex, double* po_pGammaFactor) const;
 
@@ -84,13 +84,13 @@ private:
                                      uint32_t pi_PixelsCount) const;
     // members
     uint32_t    m_Channels;
-    unsigned short m_ChannelWidth;
+    uint16_t m_ChannelWidth;
     double      m_MaxSampleValue;
 
-    int*         m_pMinValue;
-    int*         m_pMaxValue;
-    int*         m_pMinContrastValue;
-    int*         m_pMaxContrastValue;
+    int32_t*         m_pMinValue;
+    int32_t*         m_pMaxValue;
+    int32_t*         m_pMinContrastValue;
+    int32_t*         m_pMaxContrastValue;
 
     double*      m_pGammaFactor;
 

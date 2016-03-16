@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HTIFFFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -96,19 +96,19 @@ public:
     using HTagFile::GetField;
     using HTagFile::SetField;
 
-    IMAGEPP_EXPORT bool        GetField (HTagID pi_Tag, unsigned short* po_pVal) const;
+    IMAGEPP_EXPORT bool        GetField (HTagID pi_Tag, uint16_t* po_pVal) const;
     IMAGEPP_EXPORT bool        GetField (HTagID pi_Tag, uint32_t* po_pVal) const;
-    bool               GetField (HTagID pi_Tag, uint32_t* po_pCount, unsigned short** po_ppVal) const;
+    bool               GetField (HTagID pi_Tag, uint32_t* po_pCount, uint16_t** po_ppVal) const;
 
-    bool               GetField (HTagID pi_Tag, unsigned short** po_ppVal1, unsigned short** po_ppVal2, unsigned short** po_ppVal3) const;
+    bool               GetField (HTagID pi_Tag, uint16_t** po_ppVal1, uint16_t** po_ppVal2, uint16_t** po_ppVal3) const;
     bool               GetField (HTagID pi_Tag, RATIONAL* po_pVal) const;
     bool               GetField (HTagID pi_Tag, uint32_t* po_pCount, RATIONAL* po_pVal) const;
 
 
-    bool               SetField (HTagID pi_Tag, unsigned short pi_Val);
+    bool               SetField (HTagID pi_Tag, uint16_t pi_Val);
     bool               SetField (HTagID pi_Tag, uint32_t pi_Val);
-    bool               SetField (HTagID pi_Tag, uint32_t pi_Count, const unsigned short* pi_pVal);
-    bool               SetField (HTagID pi_Tag, const unsigned short* pi_pVal1, const unsigned short* pi_pVal2, const unsigned short* pi_pVal3);
+    bool               SetField (HTagID pi_Tag, uint32_t pi_Count, const uint16_t* pi_pVal);
+    bool               SetField (HTagID pi_Tag, const uint16_t* pi_pVal1, const uint16_t* pi_pVal2, const uint16_t* pi_pVal3);
     bool               SetField (HTagID pi_Tag, RATIONAL pi_Val);
 
     void                SetInterpretMaxSampleValue(bool    pi_Interpret);
@@ -165,8 +165,8 @@ protected:
     bool                ValidateAndCorrectBlocInfo();
 
 private:
-    unsigned short     m_FillOrder;    // System Bit ordering.
-    unsigned short*            m_pBitsBySample;
+    uint16_t     m_FillOrder;    // System Bit ordering.
+    uint16_t*            m_pBitsBySample;
     uint32_t            m_NbSampleFromFile; // Sample store in file... can be
     // diff from m_SamplesByPixel
     uint32_t            m_SamplesByPixel;
@@ -174,9 +174,9 @@ private:
     uint32_t            m_ImageWidth;       // Image width update when the resoltion change.
     uint32_t            m_ImageLength;      // Image length update when the resoltion change.
     uint32_t            m_CompressionQuality;
-    unsigned short     m_BitsByPixel;      // Number of Bits by pixel.
-    unsigned short     m_PlanarConfig;
-    unsigned short     m_Photometric;
+    uint16_t     m_BitsByPixel;      // Number of Bits by pixel.
+    uint16_t     m_PlanarConfig;
+    uint16_t     m_Photometric;
 
     bool               m_IsCompress;       // Data is compressed.
     uint32_t            m_StripTileSize;    // Size in Bytes
@@ -192,7 +192,7 @@ private:
     bool               m_StripAreSimulated;    // true if the strips are simulated
 
     bool               m_InterpretMaxSampleValue;
-    unsigned short     m_NbBitUsed;            // Only use with 16 bits per channel
+    uint16_t     m_NbBitUsed;            // Only use with 16 bits per channel
 
     HFCPtr<HCDPacket>   m_pPacket;              // a packet for the compression
 
@@ -293,7 +293,7 @@ private:
     void            SetCCITTAlgo        (uint32_t pi_CompressMode, bool pi_BitRev);
     void            SetFlashpixAlgo     (uint32_t pi_BitsPerPixel);
     void            SetQualityToCodec   ();
-    void            SetLZWAlgo(uint32_t pi_BitsPerPixel, unsigned short pi_Predictor, uint32_t pi_SamplesPerPixel);
+    void            SetLZWAlgo(uint32_t pi_BitsPerPixel, uint16_t pi_Predictor, uint32_t pi_SamplesPerPixel);
     void            SetJPEGKodakAlgo    ();
 
     
@@ -328,8 +328,8 @@ private:
 
     bool           IsAllSamplesWithSameBitsCount() const;
 
-    void            Treat16bitPerChannelForRead(unsigned short* pio_pData, size_t pi_DataCoutn) const;
-    void            Treat16bitPerChannelForWrite(unsigned short* pio_pData, size_t pi_DataCoutn) const;
+    void            Treat16bitPerChannelForRead(uint16_t* pio_pData, size_t pi_DataCoutn) const;
+    void            Treat16bitPerChannelForWrite(uint16_t* pio_pData, size_t pi_DataCoutn) const;
     void            Treat32bitPerChannelForRead(uint32_t* pio_pData, size_t pi_DataCount) const;
 
     void            ComputeNbBitUsed();

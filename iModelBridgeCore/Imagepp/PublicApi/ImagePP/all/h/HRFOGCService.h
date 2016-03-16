@@ -76,7 +76,7 @@ public:
                                                                               HFCAccessMode              pi_AccessMode);
 
     virtual HRFResolutionEditor*            CreateResolutionEditor  (uint32_t                   pi_Page,
-                                                                     unsigned short            pi_Resolution,
+                                                                     uint16_t            pi_Resolution,
                                                                      HFCAccessMode              pi_AccessMode);
 
     virtual void                            Save();
@@ -138,7 +138,7 @@ protected:
     BitmapDimension             m_MaxBitmapSize;
 
     HFCPtr<HRPPixelType>        m_pPixelType;
-    unsigned short             m_GTModelType;
+    uint16_t             m_GTModelType;
     HFCPtr<HGF2DTransfoModel>   m_pModel;
 
     bool                       m_NeedAuthentification;

@@ -81,14 +81,14 @@ HRASampler::HRASampler(HGSResampling const&                   pi_SamplingMode,
                 {
                 if (pi_rMemorySurface.GetPixelType()->GetChannelOrg().GetChannelPtr(0)->GetNoDataValue() != 0)
                     {
-                    m_pSampler = new HRAGenericAverageSparseDataSampler<short, int64_t>(rMemorySurface,
+                    m_pSampler = new HRAGenericAverageSparseDataSampler<int16_t, int64_t>(rMemorySurface,
                                                                                          pi_rSampleDimension,
                                                                                          pi_DeltaX,
                                                                                          pi_DeltaY);
                     }
                 else
                     {
-                    m_pSampler = new HRAGenericAverageSamplerInteger<short, int64_t>(rMemorySurface,
+                    m_pSampler = new HRAGenericAverageSamplerInteger<int16_t, int64_t>(rMemorySurface,
                                                                                       pi_rSampleDimension,
                                                                                       pi_DeltaX,
                                                                                       pi_DeltaY);

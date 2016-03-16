@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFCacheController.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFCacheController
@@ -51,7 +51,7 @@ public:
     IMAGEPP_EXPORT const MoveFolderList& GetMoveFolderList() const;
     IMAGEPP_EXPORT void                  SetMoveFolderList(const MoveFolderList& pi_MoveFolderList);
 
-    IMAGEPP_EXPORT void                Control(int pi_CacheControlFlags);
+    IMAGEPP_EXPORT void                Control(int32_t pi_CacheControlFlags);
 
 private:
 

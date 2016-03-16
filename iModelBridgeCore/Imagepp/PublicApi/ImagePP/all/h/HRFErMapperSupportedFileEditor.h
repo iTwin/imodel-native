@@ -56,7 +56,7 @@ protected:
     // Constructor
     HRFErMapperSupportedFileEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                    uint32_t              pi_Page,
-                                   unsigned short       pi_Resolution,
+                                   uint16_t       pi_Resolution,
                                    HFCAccessMode         pi_AccessMode);
 
     HSTATUS ReadBlock(uint64_t                pi_PosBlockX,
@@ -67,7 +67,7 @@ protected:
 
 private:
 
-    unsigned short                 m_ResNb;
+    uint16_t                 m_ResNb;
     HAutoPtr<HGFTileIDDescriptor>   m_pTileIDDesc;
     HArrayAutoPtr<Byte>            m_LineBuffer;
     HArrayAutoPtr<Byte*>           m_ppLineChannelsBuffers;

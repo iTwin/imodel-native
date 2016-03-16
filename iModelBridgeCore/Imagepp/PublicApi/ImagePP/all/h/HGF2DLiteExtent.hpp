@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DLiteExtent.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 BEGIN_IMAGEPP_NAMESPACE
@@ -198,7 +198,7 @@ inline void HGF2DLiteExtent::SetXMin(double pi_XMin)
     // Set XMin
     m_XMin = pi_XMin;
 
-    HDEBUGCODE(m_initializedXMin;)
+    HDEBUGCODE(m_initializedXMin = true;)
     }
 
 //-----------------------------------------------------------------------------

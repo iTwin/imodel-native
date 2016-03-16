@@ -61,7 +61,7 @@ protected:
     // Constructor
     HRFEpsLineEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                      uint32_t              pi_Page,
-                     unsigned short       pi_Resolution,
+                     uint16_t       pi_Resolution,
                      HFCAccessMode         pi_AccessMode);
 private:
     //:> Methods Disabled
@@ -82,7 +82,7 @@ private:
     HAutoPtr<char>  m_pLineBuffer;
 
     // Current position in line of output file
-    unsigned short m_CurrentOutputPosition;
+    uint16_t m_CurrentOutputPosition;
 
     HFCPtr<HRFEpsFile>
     m_pRasterFile;

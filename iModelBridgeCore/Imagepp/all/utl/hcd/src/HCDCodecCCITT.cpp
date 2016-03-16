@@ -101,7 +101,7 @@ double HCDCodecCCITT::GetEstimatedCompressionRatio() const
 // public
 // SetPhotometric
 //-----------------------------------------------------------------------------
-void HCDCodecCCITT::SetPhotometric(unsigned short pi_Photo)
+void HCDCodecCCITT::SetPhotometric(uint16_t pi_Photo)
     {
     m_photometric = pi_Photo;
     }
@@ -110,7 +110,7 @@ void HCDCodecCCITT::SetPhotometric(unsigned short pi_Photo)
 // public
 // GetPhotometric
 //-----------------------------------------------------------------------------
-unsigned short HCDCodecCCITT::GetPhotometric() const
+uint16_t HCDCodecCCITT::GetPhotometric() const
     {
     return (m_photometric);
     }

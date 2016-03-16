@@ -27,7 +27,7 @@
 //-----------------------------------------------------------------------------
 HRFHMRTileEditor::HRFHMRTileEditor( HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                     uint32_t              pi_Page,
-                                    unsigned short       pi_Resolution,
+                                    uint16_t       pi_Resolution,
                                     HFCAccessMode         pi_AccessMode,
                                     uint32_t              pi_PaddingLines)
     : HRFTiffTileEditor  (pi_rpRasterFile, pi_Page, pi_Resolution, pi_AccessMode)
@@ -59,7 +59,7 @@ HSTATUS HRFHMRTileEditor::ReadBlock(uint64_t pi_PosBlockX,
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (po_pData != 0);
     HPRECONDITION (m_pResolutionDescriptor->GetBlockType() == HRFBlockType::TILE);
-    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+    HPRECONDITION (pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);
 
     HSTATUS Status = H_SUCCESS;
 

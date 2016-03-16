@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ImagePP/all/h/HGFMatrixOps.hpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //-----------------------------------------------------------------------------
@@ -93,7 +93,7 @@ template<size_t Rows, class NumericType> CalculateDeterminant(const HFCMatrix<Ro
         HFCMatrix<Rows - 1, Rows - 1> TempSubMatrix = ExtractSubMatrix(pi_rMatrix, 0, Column);
 
         // Compute sign (either added or subtracted)
-        int Sign = (((Column % 2) == 0) ? 1 : -1);
+        int32_t Sign = (((Column % 2) == 0) ? 1 : -1);
 
         // Add to previous result
         ResDet += Sign * pi_rMatrix[0][Column] * CalculateDeterminant(TempSubMatrix);

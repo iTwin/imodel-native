@@ -38,13 +38,13 @@ public:
     virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
 
-        unsigned short* pSourceComposite =  (unsigned short*)pi_pSourceRawData;
-        unsigned short*  pDestComposite = (unsigned short*)pio_pDestRawData;
+        uint16_t* pSourceComposite =  (uint16_t*)pi_pSourceRawData;
+        uint16_t*  pDestComposite = (uint16_t*)pio_pDestRawData;
 
         // Copy entire bytes
         while(pi_PixelsCount)
             {
-            memcpy(pDestComposite, pSourceComposite, sizeof(unsigned short)); // 2 * sizeof(Byte)
+            memcpy(pDestComposite, pSourceComposite, sizeof(uint16_t)); // 2 * sizeof(Byte)
 
             pi_PixelsCount--;
             pDestComposite++;
@@ -69,7 +69,7 @@ public:
     virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
 
-        unsigned short* pSourceComposite =  (unsigned short*)pi_pSourceRawData;
+        uint16_t* pSourceComposite =  (uint16_t*)pi_pSourceRawData;
         Byte*  pDestComposite = (Byte*)pio_pDestRawData;
 
         // Copy entire bytes
@@ -101,7 +101,7 @@ public:
 
     virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        unsigned short* pSourceComposite =  (unsigned short*)pi_pSourceRawData;
+        uint16_t* pSourceComposite =  (uint16_t*)pi_pSourceRawData;
         Byte*  pDestComposite = (Byte*)pio_pDestRawData;
 
         // Copy entire bytes
@@ -134,7 +134,7 @@ public:
         {
 
         Byte*  pSourceComposite =  (Byte*)pi_pSourceRawData;
-        unsigned short* pDestComposite = (unsigned short*)pio_pDestRawData;
+        uint16_t* pDestComposite = (uint16_t*)pio_pDestRawData;
 
         // Copy entire bytes
         while(pi_PixelsCount)
@@ -168,7 +168,7 @@ public:
     virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte*  pSourceComposite =  (Byte*)pi_pSourceRawData;
-        unsigned short* pDestComposite = (unsigned short*)pio_pDestRawData;
+        uint16_t* pDestComposite = (uint16_t*)pio_pDestRawData;
 
         // Copy entire bytes
         while(pi_PixelsCount)
@@ -190,7 +190,7 @@ public:
         HFCMath (*pQuotients) (HFCMath::GetInstance());
 
         Byte const*  pSourceComposite =  (Byte const*)pi_pSourceRawData;
-        unsigned short*       pDestComposite = (unsigned short*)pio_pDestRawData;
+        uint16_t*       pDestComposite = (uint16_t*)pio_pDestRawData;
 
         // Copy entire bytes
         while(pi_PixelsCount)
@@ -243,7 +243,7 @@ public:
     virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte*  pSrc =  (Byte*)pi_pSourceRawData;
-        unsigned short* pDestComposite = (unsigned short*)pio_pDestRawData;
+        uint16_t* pDestComposite = (uint16_t*)pio_pDestRawData;
         Byte* pSourceComposite;
 
         const HRPPixelPalette& rPalette = GetSourcePixelType()->GetPalette();
@@ -346,7 +346,7 @@ HPMPersistentObject* HRPPixelTypeV16B5G5R5::Clone() const
     @end
     -----------------------------------------------------------------------------
  */
-unsigned short HRPPixelTypeV16B5G5R5::CountValueBits() const
+uint16_t HRPPixelTypeV16B5G5R5::CountValueBits() const
     {
     return 16;
     }

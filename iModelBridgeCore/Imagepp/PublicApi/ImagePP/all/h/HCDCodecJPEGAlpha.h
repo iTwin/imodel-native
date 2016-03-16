@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecJPEGAlpha.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecJPEGAlpha
@@ -84,7 +84,7 @@ public:
     IMAGEPP_EXPORT void    SetAbbreviateMode(bool pi_Enable);
     IMAGEPP_EXPORT bool    GetAbbreviateMode() const;
     IMAGEPP_EXPORT void    CopyTablesFromDecoderToEncoder();
-    void            SetQuantizationTable(int pi_Slot, const unsigned int* pi_pTable);
+    void            SetQuantizationTable(int32_t pi_Slot, const uint32_t* pi_pTable);
     HCDCodecIJG::SubsamplingModes
     GetSubsamplingMode() const;
     void            SetSubsamplingMode(HCDCodecIJG::SubsamplingModes pi_Mode);

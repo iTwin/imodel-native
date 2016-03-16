@@ -119,8 +119,8 @@ bool HTIFFTagEntry::ReadTagEntry (const HTagInfo&      pi_rTagInfo,
     HTagDefinition::FileDirEntry64 TagDescriptor;
 
     bool ReadFail = false;
-    ReadFail |= (pio_pFile->Read(&TagDescriptor.FileTag, sizeof(unsigned short), 1) != 1);
-    ReadFail |= (pio_pFile->Read(&TagDescriptor.DataType, sizeof(unsigned short), 1) != 1);
+    ReadFail |= (pio_pFile->Read(&TagDescriptor.FileTag, sizeof(uint16_t), 1) != 1);
+    ReadFail |= (pio_pFile->Read(&TagDescriptor.DataType, sizeof(uint16_t), 1) != 1);
 
     if (pio_pFile->m_IsTiff64)
         {
@@ -185,7 +185,7 @@ bool HTIFFTagEntry::ReadTagEntry (const HTagInfo&      pi_rTagInfo,
         {
         // The standard support Count64, not me
 
-        HASSERT(TagDescriptor.DirCount64 < ULONG_MAX);
+        HASSERT(TagDescriptor.DirCount64 < UINT32_MAX);
         m_pEntry->DirCount = (uint32_t)TagDescriptor.DirCount64;
         m_pEntry->Offset64 = TagDescriptor.Offset64;
         }
@@ -420,8 +420,8 @@ bool HTIFFTagEntry::WriteTagEntry (const HTagInfo&     pi_rTagInfo,
 
     HTagDefinition::FileDirEntry64 TagDescriptor;
 
-    TagDescriptor.FileTag   = (unsigned short)m_pTagDef->GetFileTag();
-    TagDescriptor.DataType  = (unsigned short)m_pTagDef->GetDataType();
+    TagDescriptor.FileTag   = (uint16_t)m_pTagDef->GetFileTag();
+    TagDescriptor.DataType  = (uint16_t)m_pTagDef->GetDataType();
     if (pio_pFile->m_IsTiff64)
         {
         TagDescriptor.DirCount64  = m_pEntry->DirCount;
@@ -566,8 +566,8 @@ bool HTIFFTagEntry::WriteTagEntry (const HTagInfo&     pi_rTagInfo,
         }
 
     bool WriteFail = false;
-    WriteFail |= (pio_pFile->Write(&TagDescriptor.FileTag, sizeof(unsigned short), 1) != 1);
-    WriteFail |= (pio_pFile->Write(&TagDescriptor.DataType, sizeof(unsigned short), 1) != 1);
+    WriteFail |= (pio_pFile->Write(&TagDescriptor.FileTag, sizeof(uint16_t), 1) != 1);
+    WriteFail |= (pio_pFile->Write(&TagDescriptor.DataType, sizeof(uint16_t), 1) != 1);
     if (pio_pFile->m_IsTiff64)
         {
         WriteFail |= (pio_pFile->Write(&TagDescriptor.DirCount64, sizeof(uint64_t), 1) != 1);
@@ -673,7 +673,7 @@ void HTIFFTagEntry::GetConvertedValues(vector<double>& po_rValues)
             po_rValues.assign(((Byte*)m_pEntry->pData), ((Byte*)m_pEntry->pData) + Count);
             break;
         case HTagInfo::SHORT:
-            po_rValues.assign(((unsigned short*)m_pEntry->pData), ((unsigned short*)m_pEntry->pData) + Count);
+            po_rValues.assign(((uint16_t*)m_pEntry->pData), ((uint16_t*)m_pEntry->pData) + Count);
             break;
         case HTagInfo::LONG:
             po_rValues.assign(((int32_t*)m_pEntry->pData), ((int32_t*)m_pEntry->pData) + Count);
@@ -716,7 +716,7 @@ void HTIFFTagEntry::GetValues (Byte* po_pVal)
     }
 
 
-void HTIFFTagEntry::GetValues (unsigned short* po_pVal)
+void HTIFFTagEntry::GetValues (uint16_t* po_pVal)
     {
     HPRECONDITION(m_pEntry != 0);
     HPRECONDITION(m_pTagDef != 0);
@@ -728,7 +728,7 @@ void HTIFFTagEntry::GetValues (unsigned short* po_pVal)
         SwapData (m_pEntry->pData);
         }
 
-    *po_pVal = *((unsigned short*)m_pEntry->pData);
+    *po_pVal = *((uint16_t*)m_pEntry->pData);
     }
 
 
@@ -747,7 +747,7 @@ void HTIFFTagEntry::GetValues (uint32_t* po_pVal)
 
 
     if (HTagInfo::SHORT == m_pTagDef->GetDataType())
-        *po_pVal = (uint32_t)(*((unsigned short*)m_pEntry->pData));
+        *po_pVal = (uint32_t)(*((uint16_t*)m_pEntry->pData));
     else
         *po_pVal = *((uint32_t*)m_pEntry->pData);
     }
@@ -816,7 +816,7 @@ void HTIFFTagEntry::GetValues (WChar** po_ppVal)
     *po_ppVal = (WChar*)m_pEntry->pData;
     }
 
-void HTIFFTagEntry::GetValues (unsigned short* po_pVal1, unsigned short* po_pVal2)
+void HTIFFTagEntry::GetValues (uint16_t* po_pVal1, uint16_t* po_pVal2)
     {
     HPRECONDITION(m_pEntry != 0);
     HPRECONDITION(m_pTagDef != 0);
@@ -828,8 +828,8 @@ void HTIFFTagEntry::GetValues (unsigned short* po_pVal1, unsigned short* po_pVal
         SwapData (m_pEntry->pData);
         }
 
-    *po_pVal1 = ((unsigned short*)m_pEntry->pData)[0];
-    *po_pVal2 = ((unsigned short*)m_pEntry->pData)[1];
+    *po_pVal1 = ((uint16_t*)m_pEntry->pData)[0];
+    *po_pVal2 = ((uint16_t*)m_pEntry->pData)[1];
     }
 
 void HTIFFTagEntry::GetValues (uint32_t* po_pVal1, uint32_t* po_pVal2)
@@ -850,7 +850,7 @@ void HTIFFTagEntry::GetValues (uint32_t* po_pVal1, uint32_t* po_pVal2)
     }
 
 
-void HTIFFTagEntry::GetValues (uint32_t* po_pCount, unsigned short** po_ppVal)
+void HTIFFTagEntry::GetValues (uint32_t* po_pCount, uint16_t** po_ppVal)
     {
     HPRECONDITION(m_pEntry != 0);
     HPRECONDITION(m_pTagDef != 0);
@@ -863,7 +863,7 @@ void HTIFFTagEntry::GetValues (uint32_t* po_pCount, unsigned short** po_ppVal)
         }
 
     *po_pCount = m_pEntry->DirCount;
-    *po_ppVal  = (unsigned short*)m_pEntry->pData;
+    *po_ppVal  = (uint16_t*)m_pEntry->pData;
     }
 
 
@@ -943,7 +943,7 @@ void HTIFFTagEntry::GetValues (const HTagInfo& pi_rTagInfo, uint32_t* po_pCount,
 
 
 
-bool HTIFFTagEntry::SetValues (unsigned short pi_Val)
+bool HTIFFTagEntry::SetValues (uint16_t pi_Val)
     {
     HPRECONDITION(m_pEntry != 0);
     HPRECONDITION(m_pTagDef != 0);
@@ -954,7 +954,7 @@ bool HTIFFTagEntry::SetValues (unsigned short pi_Val)
     if (!ValidateDataLen(1, false))
         goto WRAPUP;
 
-    *((unsigned short*)m_pEntry->pData) = pi_Val;
+    *((uint16_t*)m_pEntry->pData) = pi_Val;
 
     // Status, Dirty and Data is always in the current platform.
     m_pEntry->Status.Dirty          = true;
@@ -1062,7 +1062,7 @@ bool HTIFFTagEntry::SetValuesW (const WChar* pi_pVal)
     return true;
     }
 
-bool HTIFFTagEntry::SetValues (unsigned short pi_Val1,  unsigned short pi_Val2)
+bool HTIFFTagEntry::SetValues (uint16_t pi_Val1,  uint16_t pi_Val2)
     {
     HPRECONDITION(m_pEntry != 0);
     HPRECONDITION(m_pTagDef != 0);
@@ -1073,8 +1073,8 @@ bool HTIFFTagEntry::SetValues (unsigned short pi_Val1,  unsigned short pi_Val2)
     if (!ValidateDataLen(2, false))
         goto WRAPUP;
 
-    ((unsigned short*)m_pEntry->pData)[0] = pi_Val1;
-    ((unsigned short*)m_pEntry->pData)[1] = pi_Val2;
+    ((uint16_t*)m_pEntry->pData)[0] = pi_Val1;
+    ((uint16_t*)m_pEntry->pData)[1] = pi_Val2;
 
     // Status, Dirty and Data is always in the current platform.
     m_pEntry->Status.Dirty          = true;
@@ -1109,7 +1109,7 @@ WRAPUP:
     return false;
     }
 
-bool HTIFFTagEntry::SetValues (uint32_t pi_Count, const unsigned short* pi_pVal)
+bool HTIFFTagEntry::SetValues (uint32_t pi_Count, const uint16_t* pi_pVal)
     {
     HPRECONDITION(m_pEntry != 0);
     HPRECONDITION(m_pTagDef != 0);
@@ -1242,7 +1242,7 @@ bool HTIFFTagEntry::ValidateDataLen (uint64_t pi_Count, bool pi_Read)
             }
         else
             // The standard support Count64, not me
-            HASSERT(pi_Count < ULONG_MAX);
+            HASSERT(pi_Count < UINT32_MAX);
         m_pEntry->DirCount = (uint32_t)pi_Count;
         }
 
@@ -1259,7 +1259,7 @@ void HTIFFTagEntry::SwapData (void* pio_pData)
         case HTagInfo::SHORT:
         case HTagInfo::SSHORT:
         case HTagInfo::ASCIIW:
-            SwabArrayOfShort((unsigned short*)pio_pData, m_pEntry->DirCount);
+            SwabArrayOfShort((uint16_t*)pio_pData, m_pEntry->DirCount);
             break;
         case HTagInfo::LONG:
         case HTagInfo::SLONG:

@@ -38,7 +38,7 @@ public:
         {
         // Block Capability
         Add(new HRFLineCapability(HFC_READ_WRITE_CREATE,
-                                  ULONG_MAX,
+                                  UINT32_MAX,
                                   HRFBlockAccess::RANDOM));
         }
     };
@@ -302,7 +302,7 @@ HRFWbmpFile::~HRFWbmpFile()
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFWbmpFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                         unsigned short pi_Resolution,
+                                                         uint16_t pi_Resolution,
                                                          HFCAccessMode  pi_AccessMode)
     {
     // Verify that the page number is 0, because we have one image per file
@@ -341,8 +341,8 @@ bool HRFWbmpFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
         m_WbmpFileHeader.m_FixHeaderField = 0;
         m_WbmpFileHeader.m_pExtFields = 0;
 
-        HASSERT(pResolutionDescriptor->GetWidth() <= ULONG_MAX);
-        HASSERT(pResolutionDescriptor->GetHeight() <= ULONG_MAX);
+        HASSERT(pResolutionDescriptor->GetWidth() <= UINT32_MAX);
+        HASSERT(pResolutionDescriptor->GetHeight() <= UINT32_MAX);
 
         m_WbmpFileHeader.m_Width = (uint32_t)pResolutionDescriptor->GetWidth();
         m_WbmpFileHeader.m_Height = (uint32_t)pResolutionDescriptor->GetHeight();
@@ -352,7 +352,7 @@ bool HRFWbmpFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
         uint32_t UsedBitsPerRow               = pResolutionDescriptor->GetPixelType()->CountPixelRawDataBits() *
                                              m_WbmpFileHeader.m_Width;
 
-        m_PaddingBitsPerRow   = (unsigned short)(LinePadBits - (UsedBitsPerRow % LinePadBits));
+        m_PaddingBitsPerRow   = (uint16_t)(LinePadBits - (UsedBitsPerRow % LinePadBits));
         if (m_PaddingBitsPerRow == LinePadBits)
             {
             m_PaddingBitsPerRow = 0;
@@ -418,7 +418,7 @@ void HRFWbmpFile::CreateDescriptors ()
     // Find Padding Bits Per Row
     uint32_t LinePadBits     = 8;
     uint32_t UsedBitsPerRow  = pPixelType->CountPixelRawDataBits() * m_WbmpFileHeader.m_Width;
-    m_PaddingBitsPerRow   = (unsigned short)(LinePadBits - (UsedBitsPerRow % LinePadBits));
+    m_PaddingBitsPerRow   = (uint16_t)(LinePadBits - (UsedBitsPerRow % LinePadBits));
     if (m_PaddingBitsPerRow == LinePadBits)
         {
         m_PaddingBitsPerRow = 0;
@@ -488,7 +488,7 @@ void HRFWbmpFile::SaveWbmpFile(bool pi_CloseFile)
 
             if (m_WbmpFileHeader.m_Width != pPageDescriptor->GetResolutionDescriptor(0)->GetWidth())
                 {
-                HASSERT(pPageDescriptor->GetResolutionDescriptor(0)->GetWidth() <= ULONG_MAX);
+                HASSERT(pPageDescriptor->GetResolutionDescriptor(0)->GetWidth() <= UINT32_MAX);
 
                 m_WbmpFileHeader.m_Width = (uint32_t)pPageDescriptor->GetResolutionDescriptor(0)->GetWidth();
                 SaveHeader = true;
@@ -496,7 +496,7 @@ void HRFWbmpFile::SaveWbmpFile(bool pi_CloseFile)
 
             if (m_WbmpFileHeader.m_Height != pPageDescriptor->GetResolutionDescriptor(0)->GetHeight())
                 {
-                HASSERT(pPageDescriptor->GetResolutionDescriptor(0)->GetHeight() <= ULONG_MAX);
+                HASSERT(pPageDescriptor->GetResolutionDescriptor(0)->GetHeight() <= UINT32_MAX);
 
                 m_WbmpFileHeader.m_Height = (uint32_t)pPageDescriptor->GetResolutionDescriptor(0)->GetHeight();
                 SaveHeader = true;
@@ -636,7 +636,7 @@ size_t HRFWbmpFile::WriteNextMultiByteInteger(HFCBinStream& pi_rFile, uint32_t p
     Byte                aByte = 0;
     size_t              NbByteWritten = 0;
     Byte                ByteBuffer[5]; //There is a maximum of 5 byte needed to encode an int32.
-    short NbBytes = 0;
+    int16_t             NbBytes = 0;
 
     memset(ByteBuffer, 0, sizeof(Byte) * 5);
 
@@ -662,7 +662,7 @@ size_t HRFWbmpFile::WriteNextMultiByteInteger(HFCBinStream& pi_rFile, uint32_t p
         while (pi_valToWrite != 0);
 
 
-        for (int ByteInd = NbBytes - 1; ByteInd >= 0; ByteInd--)
+        for (int32_t ByteInd = NbBytes - 1; ByteInd >= 0; ByteInd--)
             {
             NbByteWritten += pi_rFile.Write(&ByteBuffer[ByteInd], sizeof(Byte));
             }

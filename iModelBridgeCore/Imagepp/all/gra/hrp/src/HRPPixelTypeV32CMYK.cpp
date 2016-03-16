@@ -79,13 +79,13 @@ inline void s_V24RGB_to_V32CMYK(Byte const* pSrc, Byte* pDest)
     pDest[2] = Blue - pDest[3];  // (Yellow   * Divider) * 255;
 #else
 
-	int C = 255 - pSrc[0];
-	int M = 255 - pSrc[1];
-	int Y = 255 - pSrc[2];
+	int32_t C = 255 - pSrc[0];
+	int32_t M = 255 - pSrc[1];
+	int32_t Y = 255 - pSrc[2];
 	
-    //int K = 255;
+    //int32_t K = 255;
     //K = C < K ? C : K;
-    int K = C < 255 ? C : 255;
+    int32_t K = C < 255 ? C : 255;
 
 	K = M < K ? M : K;
 	K = Y < K ? Y : K;
@@ -288,7 +288,7 @@ public:
             }
         };
 
-    virtual const short* GetLostChannels() const override
+    virtual const int16_t* GetLostChannels() const override
         {
         return m_LostChannels;
         }
@@ -299,9 +299,9 @@ public:
 
 private:
 
-    static short m_LostChannels[];
+    static int16_t m_LostChannels[];
     };
-short ConverterV32R8G8B8A8_V32CMYK::m_LostChannels[] = {3, -1};
+int16_t ConverterV32R8G8B8A8_V32CMYK::m_LostChannels[] = {3, -1};
 static ConverterV32R8G8B8A8_V32CMYK        s_V32R8G8B8A8_V32CMYK;
 
 
@@ -379,7 +379,7 @@ HPMPersistentObject* HRPPixelTypeV32CMYK::Clone() const
     @end
     -----------------------------------------------------------------------------
  */
-unsigned short HRPPixelTypeV32CMYK::CountValueBits() const
+uint16_t HRPPixelTypeV32CMYK::CountValueBits() const
     {
     return 32;
     }

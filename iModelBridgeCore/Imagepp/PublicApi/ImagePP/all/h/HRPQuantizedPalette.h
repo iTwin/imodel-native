@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPQuantizedPalette.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -23,19 +23,19 @@ class HNOVTABLEINIT HRPQuantizedPalette
 public:
     // Primary methods
     HRPQuantizedPalette();
-    HRPQuantizedPalette(unsigned short pi_MaxEntries);
+    HRPQuantizedPalette(uint16_t pi_MaxEntries);
 
     virtual         ~HRPQuantizedPalette();
 
     virtual bool   AddCompositeValue(  const void* pi_pValue,
                                         uint32_t    pi_Count=1) = 0;
 
-    virtual unsigned short GetPalette(HRPPixelPalette* po_pPixelPalette,
+    virtual uint16_t GetPalette(HRPPixelPalette* po_pPixelPalette,
                                HRPHistogram*    po_pHistogram = 0) const = 0;
 
     virtual void    FlushEntries() = 0;
 
-    unsigned short GetMaxEntries() const;
+    uint16_t GetMaxEntries() const;
 
     virtual void    AddIgnoreValue (const void* pi_pValue) = 0;
 
@@ -47,7 +47,7 @@ protected:
 
 private:
 
-    unsigned short  m_MaxEntries;
+    uint16_t  m_MaxEntries;
     };
 END_IMAGEPP_NAMESPACE
 

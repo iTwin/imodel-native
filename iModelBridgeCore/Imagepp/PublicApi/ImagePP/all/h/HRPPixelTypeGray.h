@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelTypeGray.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -30,13 +30,13 @@ protected:
 
     // Primary methods
     HRPPixelTypeGray ();
-    HRPPixelTypeGray(unsigned short pi_BitsGray,
-                     unsigned short pi_IndexBits);
-    HRPPixelTypeGray(unsigned short             pi_BitsGray,
+    HRPPixelTypeGray(uint16_t pi_BitsGray,
+                     uint16_t pi_IndexBits);
+    HRPPixelTypeGray(uint16_t             pi_BitsGray,
                      HRPChannelType::ChannelRole pi_RoleChannel4,
                      HRPChannelType::DataType    pi_DataTypeChannel4,
-                     unsigned short             pi_BitsChannel4,
-                     unsigned short             pi_IndexBits);
+                     uint16_t             pi_BitsChannel4,
+                     uint16_t             pi_IndexBits);
     HRPPixelTypeGray(const HRPPixelTypeGray& pi_rObj);
 private:
     };

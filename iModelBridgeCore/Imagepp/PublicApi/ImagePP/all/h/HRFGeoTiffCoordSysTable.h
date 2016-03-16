@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFGeoTiffCoordSysTable.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -44,10 +44,10 @@ public:
     */
     typedef struct
         {
-        short CSCode;
-        short ProjectionCode;
-        short UnitsCode;
-        short GeographicSourceCSCode;
+        int16_t CSCode;
+        int16_t ProjectionCode;
+        int16_t UnitsCode;
+        int16_t GeographicSourceCSCode;
         string      HorizCS_EPSG_Name;
 
         } HRFGeoTiffCoordSysRecord;
@@ -56,7 +56,7 @@ public:
     // this class is a singleton, use the method Instanciate to create this class
     virtual                 ~HRFGeoTiffCoordSysTable();
 
-    IMAGEPP_EXPORT bool                   GetRecord(short pi_Code,
+    IMAGEPP_EXPORT bool                   GetRecord(int16_t pi_Code,
                                              HRFGeoTiffCoordSysRecord* po_pRecord) const;
     IMAGEPP_EXPORT bool                   GetRecord(string pi_Datum,
                                              string pi_ProjName,
@@ -73,7 +73,7 @@ private:
     static Byte                                    s_CompressedTable[];
     static uint32_t                                 s_CompressedTableSize;
     static uint32_t                                 s_UncompressedTableSize;
-    static unsigned short                          s_RecordSize;
+    static uint16_t                          s_RecordSize;
 
     mutable size_t                                  m_CurrentIndex;
     size_t                                          m_NbRecord;

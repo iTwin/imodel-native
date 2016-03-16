@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMSeamlessMosaic.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -195,7 +195,7 @@ public:
 
     //:> Color balancing
 
-    void            SetSamplingResolution(unsigned short pi_SamplingResolution);
+    void            SetSamplingResolution(uint16_t pi_SamplingResolution);
     void            SetBlendWidth(double pi_BlendWidth);
     double         GetBlendWidth() const;
 

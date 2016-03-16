@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFGeoTiffCompressedTable.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFGeoTiffCompressedTable
@@ -45,11 +45,11 @@ public:
     */
     struct ColumnInfo
         {
-        unsigned short m_ColumnStartPos;
-        unsigned short m_ColumnSize;
+        uint16_t m_ColumnStartPos;
+        uint16_t m_ColumnSize;
         string      m_ColumnName;
 
-        ColumnInfo(unsigned short pi_StartPos, unsigned short pi_ColumnSize, const string& pi_ColumnName)
+        ColumnInfo(uint16_t pi_StartPos, uint16_t pi_ColumnSize, const string& pi_ColumnName)
             {
             m_ColumnStartPos    = pi_StartPos;
             m_ColumnSize        = pi_ColumnSize;
@@ -72,7 +72,7 @@ public:
     //:> Column information
     virtual size_t          GetColumnCount() const;
     virtual const HRFGeoTiffCompressedTable::ColumnInfo&
-    GetColumnInfo(unsigned short pi_ColumnIdx) const;
+    GetColumnInfo(uint16_t pi_ColumnIdx) const;
     virtual const HRFGeoTiffCompressedTable::ColumnsInfo&
     GetColumnsInfo() const;
 
@@ -125,7 +125,7 @@ protected:
     ColumnsInfo             m_ColumnsArray;
     HFCPtr<HCDPacket>       m_pCompressedTable;
     uint32_t                m_UncompressedDataSize;
-    unsigned short         m_RecordSize;
+    uint16_t         m_RecordSize;
 
 
 private:

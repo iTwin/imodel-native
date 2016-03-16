@@ -77,7 +77,7 @@ HRAPyramidRaster::HRAPyramidRaster  (HFCPtr<HRATiledRaster>& pi_pRasterModel,
                                      uint64_t                pi_WidthPixels,
                                      uint64_t                pi_HeightPixels,
                                      SubImageDescription*     pi_pSubImageDesc,
-                                     unsigned short          pi_NumberOfSubImage,
+                                     uint16_t          pi_NumberOfSubImage,
                                      HPMObjectStore*          pi_pStore,
                                      HPMPool*                 pi_pLog,
                                      HFCPtr<HRATiledRaster>  pi_pMainImageRasterModel,
@@ -198,7 +198,7 @@ void HRAPyramidRaster::InitSize(uint64_t pi_WidthPixels, uint64_t pi_HeightPixel
                                                                 pi_WidthPixels,
                                                                 pi_HeightPixels,
                                                                 pSubImageDesc,
-                                                                (unsigned short)m_pSubImageList.BufSize-1,
+                                                                (uint16_t)m_pSubImageList.BufSize-1,
                                                                 GetStore(),
                                                                 m_pLog);
     delete[] pSubImageDesc;
@@ -225,7 +225,7 @@ void HRAPyramidRaster::SetShape (const HVEShape& pi_rShape)
     //
     HRAStoredRaster::SetShape(pi_rShape);
 
-    for (unsigned short i=0; i<m_pSubImageList.BufSize; i++)
+    for (uint16_t i=0; i<m_pSubImageList.BufSize; i++)
         m_pSubImageList.pData[i].m_pSubImage->SetShape(pi_rShape);
 
     }
@@ -244,7 +244,7 @@ void HRAPyramidRaster::SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi
     m_pRasterModel->SetCoordSys (GetCoordSys());
 
     // Change all sub-Image
-    for (unsigned short i=0; i<m_pSubImageList.BufSize; i++)
+    for (uint16_t i=0; i<m_pSubImageList.BufSize; i++)
         {
         m_pSubImageList.pData[i].m_pSubImage->SetCoordSys(GetCoordSys());
         }
@@ -260,7 +260,7 @@ void HRAPyramidRaster::SetTransfoModel (const HGF2DTransfoModel& pi_rModelCSp_CS
     m_pRasterModel->SetTransfoModel (pi_rModelCSp_CSl);
 
     // Change all sub-Image
-    for (unsigned short i=0; i<m_pSubImageList.BufSize; i++)
+    for (uint16_t i=0; i<m_pSubImageList.BufSize; i++)
         {
         // Create scaling transfo
         // Set scaling to the SubImages.
@@ -280,13 +280,13 @@ void HRAPyramidRaster::SetTransfoModel (const HGF2DTransfoModel& pi_rModelCSp_CS
 //-----------------------------------------------------------------------------
 // GetRepresentativePalette
 //-----------------------------------------------------------------------------
-unsigned short HRAPyramidRaster::GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms)
+uint16_t HRAPyramidRaster::GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms)
     {
     HPRECONDITION(pio_pRepPalParms != 0);
 
     HASSERT(m_pSubImageList.pData[m_pSubImageList.BufSize-1].m_pSubImage != NULL);
 
-    unsigned short NumberOfEntries = HRAStoredRaster::GetRepresentativePalette(pio_pRepPalParms);
+    uint16_t NumberOfEntries = HRAStoredRaster::GetRepresentativePalette(pio_pRepPalParms);
 
     // if no operation has been done at the parent level or if the cache is not
     // updated
@@ -503,7 +503,7 @@ void HRAPyramidRaster::SetLookAheadImpl(const HVEShape& pi_rShape,
     {
     HPRECONDITION(HasLookAhead());
 
-    unsigned short ResIndex;
+    uint16_t ResIndex;
 
     if (pi_ResIndex < 0)
         {
@@ -518,9 +518,9 @@ void HRAPyramidRaster::SetLookAheadImpl(const HVEShape& pi_rShape,
         else
             {
             // find at what index is that resolution
-            ResIndex = (unsigned short)m_pSubImageList.BufSize - 1;   // last res of the pyramid
+            ResIndex = (uint16_t)m_pSubImageList.BufSize - 1;   // last res of the pyramid
             bool   ResFound = false;
-            for (unsigned short Res = 0; (!ResFound) && (Res < m_pSubImageList.BufSize - 1); Res++)
+            for (uint16_t Res = 0; (!ResFound) && (Res < m_pSubImageList.BufSize - 1); Res++)
                 {
                 // if the res is between the current res and the next, use that res
                 if (HDOUBLE_SMALLER_OR_EQUAL_EPSILON(Resolution, m_pSubImageList.pData[Res].m_PhysicalImageResolution) &&
@@ -534,7 +534,7 @@ void HRAPyramidRaster::SetLookAheadImpl(const HVEShape& pi_rShape,
         }
     else
         {
-        ResIndex = (unsigned short)pi_ResIndex;
+        ResIndex = (uint16_t)pi_ResIndex;
         }
 
     // Bring the extent to the found resolution's coord sys
@@ -616,7 +616,7 @@ void HRAPyramidRaster::Clear(const HRAClearOptions& pi_rOptions)
 // Mark as "dirty" all tiles in all resolutions corresponding to specified
 // shape, in order to force a further update of sub-res for them.
 //-----------------------------------------------------------------------------
-void HRAPyramidRaster::UpdateDirtyFlags(const HVEShape& pi_rShape, short pi_Res)
+void HRAPyramidRaster::UpdateDirtyFlags(const HVEShape& pi_rShape, uint16_t pi_Res)
     {
     HASSERT(!m_DisableTileStatus);
 
@@ -634,7 +634,7 @@ void HRAPyramidRaster::UpdateDirtyFlags(const HVEShape& pi_rShape, short pi_Res)
 
 //        HASSERT(DestTileIndex != HGFTileIDDescriptor::INDEX_NOT_FOUND);
         // This hassert has been replace by a if because of a double conversion bug.
-        // in some cases pi_rShape was to short to be treaded as a shape.
+        // in some cases pi_rShape was to int16_t to be treaded as a shape.
         if(DestTileIndex != HGFTileIDDescriptor::INDEX_NOT_FOUND)
             m_pSubImageList.pData[i].m_SubResolutionIsDirty = true;
 
@@ -751,7 +751,7 @@ bool HRAPyramidRaster::NotifyProgressImageChanged (const HMGMessage& pi_rMessage
 
 
     HRFProgressImageChangedMsg& rMessage((HRFProgressImageChangedMsg&)pi_rMessage);
-    unsigned short Res = ((HRFProgressImageChangedMsg&)pi_rMessage).GetSubResolution();
+    uint16_t Res = ((HRFProgressImageChangedMsg&)pi_rMessage).GetSubResolution();
 
     HFCPtr<HRATiledRaster> pResRaster(m_pSubImageList.pData[Res].m_pSubImage);
 
@@ -771,7 +771,7 @@ bool HRAPyramidRaster::NotifyProgressImageChanged (const HMGMessage& pi_rMessage
                         (double)rMessage.GetPosY() + pResRaster->GetTileSizeY(),
                         pResRaster->GetPhysicalCoordSys());
 
-    UpdateDirtyFlags(TileShape, (short)Res);
+    UpdateDirtyFlags(TileShape, Res);
     SetModificationState();
 
     return false;
@@ -900,7 +900,7 @@ void HRAPyramidRaster::UpdateNextRes(int32_t       pi_SubResolution,
 
             HFCPtr<HGSSurfaceDescriptor> pSrcSurfaceDesc(pi_pTile->GetSurfaceDescriptor());
 
-            double Resolution = GetSubImagesResolution((unsigned short)pi_SubResolution) / GetSubImagesResolution((unsigned short)pi_SubResolution + 1);
+            double Resolution = GetSubImagesResolution((uint16_t)pi_SubResolution) / GetSubImagesResolution((uint16_t)pi_SubResolution + 1);
 
             // get the stretch model between resolution
             HGF2DStretch Stretch(HGF2DDisplacement(0.0, 0.0),
@@ -1017,7 +1017,7 @@ void HRAPyramidRaster::UpdateNextRes(int32_t       pi_SubResolution,
                     HGFTileIDDescriptor PrevTileDescriptor(*(pPrevTiledRaster->GetPtrTileDescription()));
                     HRATileStatus& rPrevTileStatus = pPrevTiledRaster->GetInternalTileStatusList();
 
-                    double Resolution = GetSubImagesResolution((unsigned short)pi_SubResolution) / GetSubImagesResolution((unsigned short)pi_SubResolution - 1);
+                    double Resolution = GetSubImagesResolution((uint16_t)pi_SubResolution) / GetSubImagesResolution((uint16_t)pi_SubResolution - 1);
                     HGF2DStretch Stretch(HGF2DDisplacement(0.0, 0.0), Resolution, Resolution);
                     HFCPtr<HGF2DCoordSys> pResCoordSys = new HGF2DCoordSys(Stretch, pSrcPhysicalCoordSys);
 
@@ -1163,7 +1163,7 @@ void HRAPyramidRaster::UpdateSubResolution (int32_t            pi_SubResolution,
 
             // Create a CoordSys between resolution
             HFCPtr<HGF2DCoordSys> pDstPhysicalCoordSys = pDestTiledRaster->GetPhysicalCoordSys();
-            double Resolution = GetSubImagesResolution((unsigned short)pi_SubResolution - 1) / GetSubImagesResolution((unsigned short)pi_SubResolution);
+            double Resolution = GetSubImagesResolution((uint16_t)pi_SubResolution - 1) / GetSubImagesResolution((uint16_t)pi_SubResolution);
             HGF2DStretch Stretch(HGF2DDisplacement(0.0, 0.0), Resolution, Resolution);
 
             Continue = !HRADrawProgressIndicator::GetInstance()->IsIterationStopped();
@@ -1604,7 +1604,7 @@ void HRAPyramidRaster::Constructor (const HFCPtr<HRATiledRaster>&  pi_rpRasterMo
                                     uint64_t                       pi_WidthPixels,
                                     uint64_t                       pi_HeightPixels,
                                     SubImageDescription*            pi_pSubImageDesc,
-                                    unsigned short                 pi_NumberOfSubImage)
+                                    uint16_t                 pi_NumberOfSubImage)
     {
     HPRECONDITION (pi_rpRasterModel != 0);
 
@@ -1806,9 +1806,9 @@ HFCPtr<HRATiledRaster> HRAPyramidRaster::CreateSubResRaster (const HFCPtr<HRATil
 
     if (pi_rpRasterModel->IsCompatibleWith(HRAStripedRaster::CLASS_ID))
         {
-        HASSERT(pi_Width <= ULONG_MAX);
-        HASSERT(pi_Height <= ULONG_MAX);
-        HASSERT(BlockHeight <= ULONG_MAX);
+        HASSERT(pi_Width <= UINT32_MAX);
+        HASSERT(pi_Height <= UINT32_MAX);
+        HASSERT(BlockHeight <= UINT32_MAX);
 
         pResult = new HRAStripedRaster(pi_rpRasterModel->m_pBitmapModel,
                                        (uint32_t)BlockHeight,
@@ -1862,7 +1862,7 @@ void HRAPyramidRaster::DeepCopy(const HRAPyramidRaster& pi_rRaster,
         m_pSubImageList.BufSize = pi_rRaster.m_pSubImageList.BufSize;
         m_pSubImageList.pData = new ResolutionInfo[m_pSubImageList.BufSize];
 
-        for (unsigned short i = 0; i < m_pSubImageList.BufSize; ++i)
+        for (uint16_t i = 0; i < m_pSubImageList.BufSize; ++i)
             {
             m_pSubImageList.pData[i].m_ImageResolution = pi_rRaster.m_pSubImageList.pData[i].m_ImageResolution;
             m_pSubImageList.pData[i].m_PhysicalImageResolution = pi_rRaster.m_pSubImageList.pData[i].m_PhysicalImageResolution;
@@ -1992,13 +1992,13 @@ double HRAPyramidRaster::FindTheBestResolution (const HFCPtr<HGF2DCoordSys>& pi_
 // Important Note: we assume the HRATiledRaster TileStatus are set to false
 //-----------------------------------------------------------------------------
 void HRAPyramidRaster::SetSubImageNotComputed (SubImageDescription*  pi_pSubImageDesc,
-                                               unsigned short       pi_NumberOfSubImage)
+                                               uint16_t       pi_NumberOfSubImage)
     {
     // Don't set any resolution dirty if we have m_DisableTileStatus == true
     // Normally m_DisableTileStatus == true if the file is ReadOnly.
     if (!m_DisableTileStatus)
         {
-        unsigned short i;
+        uint16_t i;
         for (i = 0; i < pi_NumberOfSubImage; i++)
             {
             // Rem: pi_NumberOfSubImage don't include the main image.
@@ -2057,7 +2057,7 @@ ImagePPStatus HRAPyramidRaster::_BuildCopyToContext(ImageTransformNodeR imageNod
     BeAssert(NULL != pi_Options.GetShape()); // Required to update sub-res
     BeAssert(NULL != pi_Options.GetShape()->GetShapePtr()); // Required to update sub-res
 
-    unsigned short resolutionIndex = -1;
+    uint16_t resolutionIndex = -1;
 
     // Do you have sub-resolution and the image is not a binary image
     //completely loaded in memory (optimization)
@@ -2074,9 +2074,9 @@ ImagePPStatus HRAPyramidRaster::_BuildCopyToContext(ImageTransformNodeR imageNod
         else
             {
             // find at what index is that resolution
-            resolutionIndex  = (unsigned short)m_pSubImageList.BufSize - 1;   // last res of the pyramid
+            resolutionIndex  = (uint16_t)m_pSubImageList.BufSize - 1;   // last res of the pyramid
             bool   ResFound = false;
-            for (unsigned short Res = 0; (!ResFound) && (Res < m_pSubImageList.BufSize - 1); Res++)
+            for (uint16_t Res = 0; (!ResFound) && (Res < m_pSubImageList.BufSize - 1); Res++)
                 {
                 // if the res is between the current res and the next, use that res
                 if (HDOUBLE_SMALLER_OR_EQUAL_EPSILON(Resolution, m_pSubImageList.pData[Res].m_PhysicalImageResolution) &&
@@ -2159,9 +2159,9 @@ void HRAPyramidRaster::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions c
         else
             {
             // find at what index is that resolution
-            resolutionIndex  = (unsigned short)m_pSubImageList.BufSize - 1;   // last res of the pyramid
+            resolutionIndex  = (uint16_t)m_pSubImageList.BufSize - 1;   // last res of the pyramid
             bool   ResFound = false;
-            for (unsigned short Res = 0; (!ResFound) && (Res < m_pSubImageList.BufSize - 1); Res++)
+            for (uint16_t Res = 0; (!ResFound) && (Res < m_pSubImageList.BufSize - 1); Res++)
                 {
                 // if the res is between the current res and the next, use that res
                 if (HDOUBLE_SMALLER_OR_EQUAL_EPSILON(Resolution, m_pSubImageList.pData[Res].m_PhysicalImageResolution) &&
@@ -2211,7 +2211,7 @@ void HRAPyramidRaster::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions c
 // public
 // GetNbSubResTilesToUpdate
 //-----------------------------------------------------------------------------
-uint64_t HRAPyramidRaster::GetNbSubResTilesToUpdate(unsigned short pi_ResIndex, HGF2DExtent& pi_rSurfaceExtent)
+uint64_t HRAPyramidRaster::GetNbSubResTilesToUpdate(uint16_t pi_ResIndex, HGF2DExtent& pi_rSurfaceExtent)
     {
     HPRECONDITION(pi_ResIndex > 0);
 
@@ -2220,7 +2220,7 @@ uint64_t HRAPyramidRaster::GetNbSubResTilesToUpdate(unsigned short pi_ResIndex, 
     double                    CutTileSize = 0;
     uint64_t                  NbTilesToUpdate = 0;
 
-    for (int SubResInd = pi_ResIndex; SubResInd > 0; SubResInd--)
+    for (int32_t SubResInd = pi_ResIndex; SubResInd > 0; SubResInd--)
         {
         pDestTiledRaster = m_pSubImageList.pData[SubResInd].m_pSubImage;
 
@@ -2235,8 +2235,8 @@ uint64_t HRAPyramidRaster::GetNbSubResTilesToUpdate(unsigned short pi_ResIndex, 
 
         if (SubResInd > 1)
             {
-            HASSERT(pDestTiledRaster->GetPtrTileDescription()->GetTileWidth() <= ULONG_MAX);
-            HASSERT(pDestTiledRaster->GetPtrTileDescription()->GetTileHeight() <= ULONG_MAX);
+            HASSERT(pDestTiledRaster->GetPtrTileDescription()->GetTileWidth() <= UINT32_MAX);
+            HASSERT(pDestTiledRaster->GetPtrTileDescription()->GetTileHeight() <= UINT32_MAX);
 
             uint32_t TileWidth = (uint32_t)pDestTiledRaster->GetPtrTileDescription()->GetTileWidth();
             uint32_t TileHeight = (uint32_t)pDestTiledRaster->GetPtrTileDescription()->GetTileHeight();
@@ -2273,7 +2273,7 @@ void HRAPyramidRaster::SetContext(const HFCPtr<HMDContext>& pi_rpContext)
     HRAStoredRaster::SetContext(pi_rpContext);
 
     //Should set the context to each tiled raster
-    for (unsigned short ResInd = 0; ResInd < m_pSubImageList.BufSize; ResInd++)
+    for (uint16_t ResInd = 0; ResInd < m_pSubImageList.BufSize; ResInd++)
         {
         m_pSubImageList.pData[ResInd].m_pSubImage->SetContext(pi_rpContext);
         }
@@ -2308,14 +2308,14 @@ HPMPersistentObject* HRAPyramidRaster::Clone () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.Marchand  06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-unsigned short HRAPyramidRaster::EvaluateResolution(double Resolution) const
+uint16_t HRAPyramidRaster::EvaluateResolution(double Resolution) const
     {
     // if the resolution is bigger than the first one use the first one
     if (HDOUBLE_GREATER_OR_EQUAL_EPSILON(Resolution, m_pSubImageList.pData[0].m_PhysicalImageResolution))
         return 0;
 
     // find at what index is that resolution
-    for (unsigned short Res = 0; Res < m_pSubImageList.BufSize - 1; ++Res)
+    for (uint16_t Res = 0; Res < m_pSubImageList.BufSize - 1; ++Res)
         {
         // if the res is between the current res and the next, use that res
         if (HDOUBLE_SMALLER_OR_EQUAL_EPSILON(Resolution, m_pSubImageList.pData[Res].m_PhysicalImageResolution) &&
@@ -2323,7 +2323,7 @@ unsigned short HRAPyramidRaster::EvaluateResolution(double Resolution) const
             return Res;
         }
 
-    return (unsigned short)m_pSubImageList.BufSize - 1;   // last res of the pyramid
+    return (uint16_t)m_pSubImageList.BufSize - 1;   // last res of the pyramid
     }
 
 

@@ -373,9 +373,9 @@ void HFCIniFileBrowser::ReadLine(WString& po_rString,
                                  bool    pi_KeepLineSeparator,
                                  uint32_t pi_MaxSize)
     {
-    HPRECONDITION(pi_MaxSize == -1 || pi_MaxSize < ULONG_MAX - 512);
+    HPRECONDITION(pi_MaxSize == -1 || pi_MaxSize < UINT32_MAX - 512);
 
-    const int BufferSize = 512;
+    const size_t BufferSize = 512;
     char     Buffer[BufferSize + 1];
     WString   CurrentLine;
 
@@ -388,7 +388,7 @@ void HFCIniFileBrowser::ReadLine(WString& po_rString,
         bool EndOfLine = false;
         if (pi_MaxSize == -1)
             {
-            for (unsigned short i = 0; i < BufferSize && !EndOfLine; i++)
+            for (size_t i = 0; i < BufferSize && !EndOfLine; i++)
                 {
                 m_pFile->Read(&Buffer[i], 1);
                 EndOfLine = Buffer[i] == '\n' || m_pFile->EndOfFile();
@@ -396,8 +396,8 @@ void HFCIniFileBrowser::ReadLine(WString& po_rString,
             }
         else    
             {
-            unsigned short ReadSize = (unsigned short)MIN(BufferSize, (long unsigned int)(pi_MaxSize - CurrentLine.length() - 1));
-            for (unsigned short i = 0; i < ReadSize && !EndOfLine; i++)
+            size_t ReadSize = MIN(BufferSize, (pi_MaxSize - CurrentLine.length() - 1));
+            for (size_t i = 0; i < ReadSize && !EndOfLine; i++)
                 {
                 m_pFile->Read(&Buffer[i], 1);
                 EndOfLine = Buffer[i] == '\n' || m_pFile->EndOfFile();

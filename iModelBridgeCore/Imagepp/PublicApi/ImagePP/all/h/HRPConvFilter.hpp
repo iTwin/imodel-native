@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPConvFilter.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -65,9 +65,8 @@ inline bool HRPConvFilter::IsHorizontallySymetric() const
     if(XOrigin == (Width - 1 - XOrigin))
         {
         int32_t YOrigin = rNeighbourhood.GetYOrigin();
-
-        for(uint32_t X = -1 * XOrigin; X < 0; X++)
-            for(uint32_t Y = -1 * YOrigin; Y < 0; Y++)
+        for(int32_t X = -1 * XOrigin; X < 0; X++)
+            for(int32_t Y = -1 * YOrigin; Y < 0; Y++)
                 if(m_pWeightMatrix[(Y + YOrigin) * Width + (X + XOrigin)] !=
                    m_pWeightMatrix[(-1 * Y + YOrigin) * Width + (X + XOrigin)])
                     return false;
@@ -105,8 +104,8 @@ inline bool HRPConvFilter::IsVerticallySymetric() const
         int32_t XOrigin = rNeighbourhood.GetXOrigin();
         int32_t Width = rNeighbourhood.GetWidth();
 
-        for(uint32_t Y = -1 * YOrigin; Y < 0; Y++)
-            for(uint32_t X = -1 * XOrigin; X < 0; X++)
+        for(int32_t Y = -1 * YOrigin; Y < 0; Y++)
+            for(int32_t X = -1 * XOrigin; X < 0; X++)
                 if(m_pWeightMatrix[(Y + YOrigin) * Width + (X + XOrigin)] !=
                    m_pWeightMatrix[(Y + YOrigin) * Width + (-1 * X + XOrigin)])
                     return false;

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFSpotDimapFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -70,7 +70,7 @@ public:
     //:> File manipulation
     virtual HRFResolutionEditor*
     CreateResolutionEditor (uint32_t      pi_Page,
-                            unsigned short pi_Resolution,
+                            uint16_t pi_Resolution,
                             HFCAccessMode pi_AccessMode);
 protected:
     //:> Open main file (xml)
@@ -96,7 +96,7 @@ protected:
 #ifdef __HMR_DEBUG_MEMBER
     bvector<double>        m_pTiePoints;
     bool                   XMLGeoRefSimilarToGeoTiff;
-    bool                   IsXMLGeoRefSimilarToGeoTiff(double* pi_TiePointsMatrix, unsigned short pi_NbVal_GeoTiePoint);
+    bool                   IsXMLGeoRefSimilarToGeoTiff(double* pi_TiePointsMatrix, uint16_t pi_NbVal_GeoTiePoint);
 #endif
 
 

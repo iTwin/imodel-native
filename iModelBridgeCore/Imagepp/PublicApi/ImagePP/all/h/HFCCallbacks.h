@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCCallbacks.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -55,20 +55,20 @@ public:
     IMAGEPP_EXPORT void                             PushLastError          (const HFCPtr<HFCAuthenticationError>&
                                                                     pi_pLastError);
 
-    IMAGEPP_EXPORT unsigned short                  IncrementRetryCount    ();
-    IMAGEPP_EXPORT unsigned short                  GetRetryCount          () const;
+    IMAGEPP_EXPORT uint16_t                  IncrementRetryCount    ();
+    IMAGEPP_EXPORT uint16_t                  GetRetryCount          () const;
 
 protected:
     typedef stack<HFCPtr<HFCAuthenticationError> > ErrorStack;
 
-    explicit                                HFCAuthentication      (const unsigned short       pi_RetryCount = 1);
+    explicit                                HFCAuthentication      (const uint16_t       pi_RetryCount = 1);
 
 
 private:
     virtual ErrorStack&                     _GetErrorStack         ()       {return m_LastErrors;};
     virtual const ErrorStack&               _GetErrorStack         () const {return m_LastErrors;};
 
-    unsigned short                         m_RetryCount;
+    uint16_t                         m_RetryCount;
     ErrorStack                             m_LastErrors;
 
     };
@@ -83,7 +83,7 @@ public:
     virtual             ~HFCAuthenticationCallback() {};
 
     virtual bool       GetAuthentication (HFCAuthentication* pio_Authentication) const = 0;
-    virtual unsigned short RetryCount(HCLASS_ID pi_AuthenticationType) const = 0;
+    virtual uint16_t RetryCount(HCLASS_ID pi_AuthenticationType) const = 0;
     virtual bool       IsCancelled() const = 0;
     virtual bool       CanAuthenticate(HCLASS_ID pi_AuthenticationType) const = 0;
 
@@ -101,7 +101,7 @@ public:
     IMAGEPP_EXPORT explicit         HFCInternetAuthentication  (const WString&          pi_Server,
                                                         const WString&          pi_User = L"",
                                                         const WString&          pi_Password = L"",
-                                                        const unsigned short   pi_RetryCount = 0);
+                                                        const uint16_t   pi_RetryCount = 0);
     IMAGEPP_EXPORT virtual          ~HFCInternetAuthentication ();
 
     IMAGEPP_EXPORT virtual void     SetByString                (const WString&          pi_rAuthenticationString);
@@ -126,7 +126,7 @@ struct HFCOracleAuthentication : HFCAuthentication
 
 public:
 
-    IMAGEPP_EXPORT explicit         HFCOracleAuthentication    (const unsigned short   pi_RetryCount = 0);
+    IMAGEPP_EXPORT explicit         HFCOracleAuthentication    (const uint16_t   pi_RetryCount = 0);
     IMAGEPP_EXPORT virtual          ~HFCOracleAuthentication   ();
 
     IMAGEPP_EXPORT virtual void     SetByString                (const WString&          pi_rAuthenticationString);
@@ -156,7 +156,7 @@ struct HFCProxyAuthentication : HFCAuthentication
 public:
     IMAGEPP_EXPORT                  HFCProxyAuthentication     (const WString&          pi_User = L"",
                                                         const WString&          pi_Password = L"",
-                                                        const unsigned short   pi_RetryCount = 0);
+                                                        const uint16_t   pi_RetryCount = 0);
     IMAGEPP_EXPORT virtual          ~HFCProxyAuthentication    ();
 
     IMAGEPP_EXPORT virtual void     SetByString                (const WString&          pi_rAuthenticationString);
@@ -189,7 +189,7 @@ public:
 
     IMAGEPP_EXPORT                  HFCPDFAuthentication       (const WString&          pi_FileName,
                                                         const PasswordType      pi_PasswordType,
-                                                        const unsigned short   pi_RetryCount = 0);
+                                                        const uint16_t   pi_RetryCount = 0);
     IMAGEPP_EXPORT virtual          ~HFCPDFAuthentication      ();
 
     IMAGEPP_EXPORT const WString&   GetFileName                () const;

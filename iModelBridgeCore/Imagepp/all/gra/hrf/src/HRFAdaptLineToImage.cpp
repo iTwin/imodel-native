@@ -54,7 +54,7 @@ HRFBlockAdapterCapabilities* HRFAdaptLineToImageCreator::GetCapabilities() const
 //-----------------------------------------------------------------------------
 HRFBlockAdapter* HRFAdaptLineToImageCreator::Create(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                                     uint32_t              pi_Page,
-                                                    unsigned short       pi_Resolution,
+                                                    uint16_t       pi_Resolution,
                                                     HFCAccessMode         pi_AccessMode) const
     {
     return new HRFAdaptLineToImage(GetCapabilities(),
@@ -71,7 +71,7 @@ HRFBlockAdapter* HRFAdaptLineToImageCreator::Create(HFCPtr<HRFRasterFile> pi_rpR
 HRFAdaptLineToImage::HRFAdaptLineToImage(HRFBlockAdapterCapabilities*   pi_pCapabilities,
                                          HFCPtr<HRFRasterFile>          pi_rpRasterFile,
                                          uint32_t                       pi_Page,
-                                         unsigned short                pi_Resolution,
+                                         uint16_t                pi_Resolution,
                                          HFCAccessMode                  pi_AccessMode)
     : HRFBlockAdapter(pi_pCapabilities,
                       pi_rpRasterFile,
@@ -103,7 +103,7 @@ HSTATUS HRFAdaptLineToImage::ReadBlock(uint64_t pi_PosBlockX,
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HSTATUS Status      = H_SUCCESS;
 
-    HASSERT(m_pResolutionDescriptor->GetHeight() <= ULONG_MAX);
+    HASSERT(m_pResolutionDescriptor->GetHeight() <= UINT32_MAX);
 
     uint32_t ImageHeight = (uint32_t)m_pResolutionDescriptor->GetHeight();
 
@@ -139,16 +139,16 @@ HSTATUS HRFAdaptLineToImage::ReadBlockRLE(uint64_t                 pi_PosBlockX,
     HPRECONDITION(po_rpPacketRLE->HasBufferOwnership());    // Must be owner of buffer.
     HPRECONDITION(po_rpPacketRLE->GetCodec()->GetWidth() == GetResolutionDescriptor()->GetBlockWidth());
     HPRECONDITION(po_rpPacketRLE->GetCodec()->GetHeight() >= GetResolutionDescriptor()->GetBlockHeight());
-    HPRECONDITION(GetResolutionDescriptor()->GetHeight() <= ULONG_MAX);
-    HPRECONDITION(GetResolutionDescriptor()->GetWidth() <= ULONG_MAX);
-    HPRECONDITION(GetResolutionDescriptor()->GetBytesPerBlockWidth() <= ULONG_MAX);
+    HPRECONDITION(GetResolutionDescriptor()->GetHeight() <= UINT32_MAX);
+    HPRECONDITION(GetResolutionDescriptor()->GetWidth() <= UINT32_MAX);
+    HPRECONDITION(GetResolutionDescriptor()->GetBytesPerBlockWidth() <= UINT32_MAX);
 
     HSTATUS Status      = H_SUCCESS;
 
     uint32_t ImageHeight = (uint32_t)m_pResolutionDescriptor->GetHeight();
     uint32_t ImageWidth  = (uint32_t)m_pResolutionDescriptor->GetWidth();
 
-    size_t               workBufferSize = (ImageWidth* 2 + 2)*sizeof(unsigned short);     // Worst case for one line.
+    size_t               workBufferSize = (ImageWidth* 2 + 2)*sizeof(uint16_t);     // Worst case for one line.
     HFCPtr<HCDPacketRLE> pLinePacket(new HCDPacketRLE(ImageWidth, 1));
     pLinePacket->SetLineBuffer(0, new Byte[workBufferSize], workBufferSize, 0);
     pLinePacket->SetBufferOwnership(true);
@@ -189,7 +189,7 @@ HSTATUS HRFAdaptLineToImage::WriteBlock(uint64_t        pi_PosBlockX,
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess );
     HSTATUS Status      = H_SUCCESS;
 
-    HASSERT(m_pResolutionDescriptor->GetHeight() <= ULONG_MAX);
+    HASSERT(m_pResolutionDescriptor->GetHeight() <= UINT32_MAX);
 
     uint32_t  ImageHeight = (uint32_t)m_pResolutionDescriptor->GetHeight();
 
@@ -212,8 +212,8 @@ HSTATUS HRFAdaptLineToImage::WriteBlockRLE(uint64_t              pi_PosBlockX,
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess );
     HSTATUS Status      = H_SUCCESS;
 
-    HASSERT(m_pResolutionDescriptor->GetHeight() <= ULONG_MAX);
-    HASSERT(m_pResolutionDescriptor->GetWidth() <= ULONG_MAX);
+    HASSERT(m_pResolutionDescriptor->GetHeight() <= UINT32_MAX);
+    HASSERT(m_pResolutionDescriptor->GetWidth() <= UINT32_MAX);
 
     uint32_t  ImageHeight = (uint32_t)m_pResolutionDescriptor->GetHeight();
 

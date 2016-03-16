@@ -80,12 +80,12 @@ struct SDORasterInfo
     {
     uint32_t        TotalDimension;
     HAutoPtr<HRFInterleaveType> pInterleave;
-    unsigned short  CellDepth;
+    uint16_t  CellDepth;
     bool            CellDepthSigned;
     bool            CellDepthReal;
     uint32_t        Width;
     uint32_t        Height;
-    unsigned short  Band;
+    uint16_t  Band;
     uint32_t        BlockWidth;
     uint32_t        BlockHeight;
     uint32_t        BandBlockSize;
@@ -112,9 +112,9 @@ struct SDOSpatialReferenceInfo
 
 struct SDOLayerInfo
     {
-    unsigned short LayerNumber;
+    uint16_t LayerNumber;
     Byte           pPalette[256*4];     // at most 256 entry RGBA.
-    unsigned short PaletteEntryCount;
+    uint16_t PaletteEntryCount;
     bool           IsValid;
     bool           IsSupported;
     };
@@ -163,28 +163,28 @@ public:
         {
         // Strip Capability
         Add(new HRFStripCapability(HFC_READ_ONLY,   // AccessMode
-                                   LONG_MAX,        // MaxSizeInBytes
+                                   INT32_MAX,        // MaxSizeInBytes
                                    1,               // MinHeight
-                                   LONG_MAX,        // MaxHeight
+                                   INT32_MAX,        // MaxHeight
                                    1));             // HeightIncrement
 
         // Tile Capability
         Add(new HRFTileCapability(HFC_READ_ONLY,    // AccessMode
-                                  ULONG_MAX,       // MaxSizeInBytes
+                                  UINT32_MAX,       // MaxSizeInBytes
                                   1,                // MinWidth
-                                  ULONG_MAX,       // MaxWidth
+                                  UINT32_MAX,       // MaxWidth
                                   2,                // WidthIncrement
                                   1,                // MinHeight
-                                  ULONG_MAX,       // MaxHeight
+                                  UINT32_MAX,       // MaxHeight
                                   2));              // HeightIncrement
 
         // Image Capability
         Add(new HRFImageCapability(HFC_READ_ONLY,   // AccessMode
-                                   ULONG_MAX,      // MaxSizeInBytes
+                                   UINT32_MAX,      // MaxSizeInBytes
                                    1,               // MinWidth
-                                   ULONG_MAX,      // MaxWidth
+                                   UINT32_MAX,      // MaxWidth
                                    1,               // MinHeight
-                                   ULONG_MAX));    // MaxHeight
+                                   UINT32_MAX));    // MaxHeight
         }
     };
 
@@ -324,8 +324,8 @@ HRFGeoRasterCapabilities::HRFGeoRasterCapabilities()
                                          true,              // XYRatioLocked, default value
                                          256,               // smallest res width, default value
                                          256,               // smallest res height, default value
-                                         ULONG_MAX,        // biggest res width
-                                         ULONG_MAX,        // biggest res height
+                                         UINT32_MAX,        // biggest res width
+                                         UINT32_MAX,        // biggest res height
                                          false));           // UnlimitesResolution
 
     // Media type capability
@@ -539,7 +539,7 @@ HRFGeoRasterFile::~HRFGeoRasterFile()
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFGeoRasterFile::CreateResolutionEditor(uint32_t      pi_Page,
-                                                              unsigned short pi_Resolution,
+                                                              uint16_t pi_Resolution,
                                                               HFCAccessMode pi_AccessMode)
     {
     HPRECONDITION(pi_Page < CountPages());
@@ -807,7 +807,7 @@ void HRFGeoRasterFile::CreateDescriptors()
                     {
                     pPixelType = new HRPPixelTypeI1R8G8B8A8;
                     (const_cast<HRPPixelPalette&>(pPixelType->GetPalette())).SetPalette(pLayerInfo->pPalette,
-                                                                                        std::min<unsigned short>(pLayerInfo->PaletteEntryCount, 2));
+                                                                                        std::min<uint16_t>(pLayerInfo->PaletteEntryCount, 2));
                     }
                 else
                     {
@@ -836,7 +836,7 @@ void HRFGeoRasterFile::CreateDescriptors()
                     {
                     pPixelType = new HRPPixelTypeI4R8G8B8A8;
                     (const_cast<HRPPixelPalette&>(pPixelType->GetPalette())).SetPalette(pLayerInfo->pPalette,
-                                                                                        std::min<unsigned short>(pLayerInfo->PaletteEntryCount, 16));
+                                                                                        std::min<uint16_t>(pLayerInfo->PaletteEntryCount, 16));
                     }
                 else
                     {
@@ -859,7 +859,7 @@ void HRFGeoRasterFile::CreateDescriptors()
 
                 switch (RasterInfo.Band)
                     {
-                    case (unsigned short)-1:   // no band specified
+                    case (uint16_t)-1:   // no band specified
                         if (pLayerInfo->PaletteEntryCount != 0 && pLayerInfo)
                             {
                             pPixelType = new HRPPixelTypeI8R8G8B8A8;
@@ -1009,7 +1009,7 @@ void HRFGeoRasterFile::CreateDescriptors()
     double      ResScale = 1.0;
     uint32_t     ResFactor = 1;
 
-    for (unsigned short Res = 0; Res < RasterInfo.ResolutionCount; Res++)
+    for (uint16_t Res = 0; Res < RasterInfo.ResolutionCount; Res++)
         {
         // compute resolution size
         // according to Oracle documentation
@@ -1531,7 +1531,7 @@ void HRFGeoRasterFile::ReadRasterInfo(BeXmlNodeP     pi_pRasterInfoNode,
                     po_pSDORasterInfo->IsValid = false;
                     }
                 else
-                    po_pSDORasterInfo->Band = (unsigned short)po_pSDORasterInfo->Band;
+                    po_pSDORasterInfo->Band = (uint16_t)po_pSDORasterInfo->Band;
                 }
             else
                 {

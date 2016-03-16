@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPLigthnessDensitySlicingFilter.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -89,8 +89,8 @@ protected:
     vector<SliceInfo > m_SliceList;
 
     uint32_t           m_Channels;
-    unsigned short     m_ChannelWidth;
-    int                m_MaxSampleValue;
+    uint16_t     m_ChannelWidth;
+    int32_t                m_MaxSampleValue;
 
     double            m_DesaturationFactor;
     HGFLightnessColorSpace* m_pColorSpaceConverter;

@@ -213,7 +213,7 @@ void HRPContrastStretchFilter16::GetGammaFactor(int32_t   pi_ChannelIndex,
 void HRPContrastStretchFilter16::BuildMap(int32_t pi_ChannelIndex)
     {
     int32_t i;
-    unsigned short* pMap = GetMap((Byte)pi_ChannelIndex);
+    uint16_t* pMap = GetMap((Byte)pi_ChannelIndex);
 
     //----------------------------------------
     // Input clipping.
@@ -221,7 +221,7 @@ void HRPContrastStretchFilter16::BuildMap(int32_t pi_ChannelIndex)
         pMap[i] = 0;
 
     for (i = m_pMinValue[pi_ChannelIndex]; i < m_pMaxValue[pi_ChannelIndex]; i++)
-        pMap[i] = (unsigned short)(((double)(i - m_pMinValue[pi_ChannelIndex]) / (double)(m_pMaxValue[pi_ChannelIndex] - m_pMinValue[pi_ChannelIndex])) * 65535.0);
+        pMap[i] = (uint16_t)(((double)(i - m_pMinValue[pi_ChannelIndex]) / (double)(m_pMaxValue[pi_ChannelIndex] - m_pMinValue[pi_ChannelIndex])) * 65535.0);
 
     for (i = m_pMaxValue[pi_ChannelIndex]; i <= 65535; i++)
         pMap[i] = 65535;
@@ -232,7 +232,7 @@ void HRPContrastStretchFilter16::BuildMap(int32_t pi_ChannelIndex)
         {
         for (i = 0; i <= 65535; i++)
             {
-            pMap[i] = (unsigned short)(65535.0 * pow( pMap[i] / 65535.0, 1 / m_pGammaFactor[pi_ChannelIndex]));
+            pMap[i] = (uint16_t)(65535.0 * pow( pMap[i] / 65535.0, 1 / m_pGammaFactor[pi_ChannelIndex]));
             }
         }
 
@@ -244,12 +244,12 @@ void HRPContrastStretchFilter16::BuildMap(int32_t pi_ChannelIndex)
         if ( m_pMaxContrastValue[pi_ChannelIndex] > m_pMinContrastValue[pi_ChannelIndex] )
             {
             for (i = 0; i <= 65535; i++)
-                pMap[i] = (unsigned short)((double)(pMap[i] /65535.0) * (m_pMaxContrastValue[pi_ChannelIndex] - m_pMinContrastValue[pi_ChannelIndex]) + m_pMinContrastValue[pi_ChannelIndex]);
+                pMap[i] = (uint16_t)((double)(pMap[i] /65535.0) * (m_pMaxContrastValue[pi_ChannelIndex] - m_pMinContrastValue[pi_ChannelIndex]) + m_pMinContrastValue[pi_ChannelIndex]);
             }
         else
             {
             for (i = 0; i <= 65535; i++)
-                pMap[i] = (unsigned short)(( (65535.0 - (double)(pMap[i])) /65535.0) * (m_pMinContrastValue[pi_ChannelIndex] - m_pMaxContrastValue[pi_ChannelIndex]) + m_pMaxContrastValue[pi_ChannelIndex]);
+                pMap[i] = (uint16_t)(( (65535.0 - (double)(pMap[i])) /65535.0) * (m_pMinContrastValue[pi_ChannelIndex] - m_pMaxContrastValue[pi_ChannelIndex]) + m_pMaxContrastValue[pi_ChannelIndex]);
             }
         }
     }
@@ -297,7 +297,7 @@ HRPFilter* HRPContrastStretchFilter16::Clone() const
 
 void HRPContrastStretchFilter16::MapDump(int32_t pi_ChannelIndex)
     {
-    unsigned short* pMap = GetMap(pi_ChannelIndex);
+    uint16_t* pMap = GetMap(pi_ChannelIndex);
 
     for (int32_t i = 0; i <= 65535; i++)
         {

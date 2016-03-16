@@ -56,8 +56,8 @@ public:
 
     struct CoverageArea
         {
-        int     levelOfDetailMin;   // from 1 (lowest detail)
-        int     levelOfDetailMax;   // from 1 (lowest detail)
+        int32_t     levelOfDetailMin;   // from 1 (lowest detail)
+        int32_t     levelOfDetailMax;   // from 1 (lowest detail)
         double   southLatitude;
         double   westLongitude;
         double   northLatitude;
@@ -87,7 +87,7 @@ public:
 
     //File manipulation
     virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t      pi_Page,
-                                                                 unsigned short pi_Resolution,
+                                                                 uint16_t pi_Resolution,
                                                                  HFCAccessMode pi_AccessMode);
 
     virtual void                          Save();
@@ -146,7 +146,7 @@ private:
     friend struct HRFVirtualEarthCreator;
 
     void                QueryImageURI(WStringCR bingMapKey);
-    WString             GetTileURI(unsigned int pixelX, unsigned int pixelY, int levelOfDetail) const;
+    WString             GetTileURI(uint32_t pixelX, uint32_t pixelY, int32_t levelOfDetail) const;
 
     WString             m_ImageURI;               // ex: "http://{subdomain}.tiles.virtualearth.net/tiles/r{quadkey}.jpeg?g=266&mkt={culture}"
     bvector<WString>    m_ImageURISubdomains;     // ex: "t0","t1","t2","t3"

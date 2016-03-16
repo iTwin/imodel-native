@@ -67,10 +67,10 @@ size_t HCDCodecZlib::CompressSubset(const void* pi_pInData,
                                     void* po_pOutBuffer,
                                     size_t pi_OutBufferSize)
     {
-    HASSERT_X64(pi_InDataSize < ULONG_MAX);
-    HASSERT_X64(pi_OutBufferSize < ULONG_MAX);
+    HASSERT_X64(pi_InDataSize < UINT32_MAX);
+    HASSERT_X64(pi_OutBufferSize < UINT32_MAX);
 
-    int err;
+    int32_t err;
 
     uLongf OutLen = (uLongf)pi_OutBufferSize;
 
@@ -94,10 +94,10 @@ size_t HCDCodecZlib::DecompressSubset(const void* pi_pInData,
                                       void* po_pOutBuffer,
                                       size_t pi_OutBufferSize)
     {
-    HASSERT_X64(pi_InDataSize < ULONG_MAX);
-    HASSERT_X64(pi_OutBufferSize < ULONG_MAX);
+    HASSERT_X64(pi_InDataSize < UINT32_MAX);
+    HASSERT_X64(pi_OutBufferSize < UINT32_MAX);
 
-    int err;
+    int32_t err;
 
     uLongf OutLen = (uLongf)pi_OutBufferSize;
 

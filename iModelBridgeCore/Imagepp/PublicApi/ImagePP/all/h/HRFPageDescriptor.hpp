@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFPageDescriptor.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Inline methods for class HRFPageDescriptor
@@ -99,9 +99,9 @@ inline bool HRFPageDescriptor::IsResizable() const
 // CountResolution
 // Page information
 //-----------------------------------------------------------------------------
-inline unsigned short HRFPageDescriptor::CountResolutions() const
+inline uint16_t HRFPageDescriptor::CountResolutions() const
     {
-    return (unsigned short)m_ListOfResolutionDescriptor.size();
+    return (uint16_t)m_ListOfResolutionDescriptor.size();
     }
 
 //-----------------------------------------------------------------------------
@@ -109,7 +109,7 @@ inline unsigned short HRFPageDescriptor::CountResolutions() const
 // GetResolutionDescriptor
 // Page information
 //-----------------------------------------------------------------------------
-inline const HFCPtr<HRFResolutionDescriptor>&  HRFPageDescriptor::GetResolutionDescriptor(unsigned short pi_Resolution) const
+inline const HFCPtr<HRFResolutionDescriptor>&  HRFPageDescriptor::GetResolutionDescriptor(uint16_t pi_Resolution) const
     {
     HPRECONDITION(!m_EmptyPage);
     HPRECONDITION(pi_Resolution <= (CountResolutions() -1));

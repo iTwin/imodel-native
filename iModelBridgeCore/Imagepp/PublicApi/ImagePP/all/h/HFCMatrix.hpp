@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCMatrix.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -62,7 +62,7 @@ template<size_t Columns, class NumericType>
 inline HFCMatrixRow<Columns, NumericType>::HFCMatrixRow()
     {
     // Set all values to 0.0
-    for(register size_t i = 0; i < Columns ; ++i)
+    for(size_t i = 0; i < Columns ; ++i)
         m_Values[i] = 0;
     }
 
@@ -76,7 +76,7 @@ template<size_t Columns, class NumericType>
 inline HFCMatrixRow<Columns, NumericType>::HFCMatrixRow(const NumericType* pi_pRawValues)
     {
     // Set all values to 0.0
-    for(register size_t i = 0; i < Columns ; ++i)
+    for(size_t i = 0; i < Columns ; ++i)
         m_Values[i] = pi_pRawValues[i];
     }
 
@@ -88,7 +88,7 @@ template<size_t Columns, class NumericType>
 inline HFCMatrixRow<Columns, NumericType>::HFCMatrixRow(const HFCMatrixRow<Columns, NumericType>& pi_rObj)
     {
     // Duplicate all positions
-    for(register size_t i = 0; i < Columns ; ++i)
+    for(size_t i = 0; i < Columns ; ++i)
         m_Values[i] = pi_rObj.m_Values[i];
     }
 
@@ -114,7 +114,7 @@ HFCMatrixRow<Columns, NumericType>::operator=(const HFCMatrixRow<Columns, Numeri
     if (this != &pi_rObj)
         {
         // Duplicate all values of given row
-        for(register size_t i = 0; i < Columns ; ++i)
+        for(size_t i = 0; i < Columns ; ++i)
             m_Values[i] = pi_rObj.m_Values[i];
         }
 
@@ -132,7 +132,7 @@ inline HFCMatrixRow<Columns, NumericType>&
 HFCMatrixRow<Columns, NumericType>::operator=(const NumericType* pi_pRawValues)
     {
     // Duplicate all values of given row
-    for(register size_t i = 0; i < Columns ; ++i)
+    for(size_t i = 0; i < Columns ; ++i)
         m_Values[i] = pi_pRawValues[i];
 
     // Return reference to self
@@ -153,7 +153,7 @@ HFCMatrixRow<Columns, NumericType>::operator==(const HFCMatrixRow<Columns, Numer
     bool   ReturnValue = true;
 
     // Check if all values are equal
-    for(register size_t i = 0; i < Columns && ReturnValue ; ++i)
+    for(size_t i = 0; i < Columns && ReturnValue ; ++i)
         ReturnValue = (m_Values[i] == pi_rObj.m_Values[i]);
 
     // Return answer
@@ -172,7 +172,7 @@ HFCMatrixRow<Columns, NumericType>::IsEqualTo(const HFCMatrixRow<Columns, Numeri
     bool   ReturnValue = true;
 
     // Check if all values are equal
-    for(register size_t i = 0; i < Columns && ReturnValue ; ++i)
+    for(size_t i = 0; i < Columns && ReturnValue ; ++i)
         ReturnValue = HDOUBLE_EQUAL_EPSILON(m_Values[i], pi_rObj.m_Values[i]);
 
     // Return answer
@@ -198,7 +198,7 @@ HFCMatrixRow<Columns, NumericType>::IsEqualTo(const HFCMatrixRow<Columns, Numeri
     bool   ReturnValue = true;
 
     // Check if all values are equal
-    for(register size_t i = 0; i < Columns && ReturnValue ; ++i)
+    for(size_t i = 0; i < Columns && ReturnValue ; ++i)
         ReturnValue = HDOUBLE_EQUAL(m_Values[i], pi_rObj.m_Values[i], pi_Tolerance);
 
     // Return answer
@@ -263,7 +263,7 @@ HFCMatrixRow<Columns, NumericType>::operator+(const HFCMatrixRow<Columns, Numeri
     HFCMatrixRow<Columns, NumericType>   NewRow(*this);
 
     // Increment all positions of copy by values of given
-    for(register size_t i = 0; i < Columns ; ++i)
+    for(size_t i = 0; i < Columns ; ++i)
         NewRow.m_Values[i] += pi_rObj.m_Values[i];
 
     // return recipient
@@ -282,7 +282,7 @@ HFCMatrixRow<Columns, NumericType>::operator-(const HFCMatrixRow<Columns, Numeri
     HFCMatrixRow<Columns, NumericType>   NewRow(*this);
 
     // Decrement all positions of copy by values of given
-    for(register size_t i = 0; i < Columns ; ++i)
+    for(size_t i = 0; i < Columns ; ++i)
         NewRow.m_Values[i] -= pi_rObj.m_Values[i];
 
     // return recipient
@@ -302,7 +302,7 @@ HFCMatrixRow<Columns, NumericType>::operator-() const
     HFCMatrixRow<Columns, NumericType>   NewRow;
 
     // Set values negated
-    for(register size_t i = 0; i < Columns ; ++i)
+    for(size_t i = 0; i < Columns ; ++i)
         NewRow.m_Values[i] = - m_Values[i];
 
     // return recipient
@@ -325,7 +325,7 @@ HFCMatrixRow<Columns, NumericType>::operator/(NumericType pi_Divisor) const
     HFCMatrixRow<Columns, NumericType>   NewRow;
 
     // Set proper values
-    for(register size_t i = 0; i < Columns ; ++i)
+    for(size_t i = 0; i < Columns ; ++i)
         NewRow.m_Values[i] = m_Values[i] / pi_Divisor;
 
     // return recipient
@@ -345,7 +345,7 @@ HFCMatrixRow<Columns, NumericType>::operator*(NumericType pi_RawNumber) const
     HFCMatrixRow<Columns, NumericType>   NewRow;
 
     // Set proper values
-    for(register size_t i = 0; i < Columns ; ++i)
+    for(size_t i = 0; i < Columns ; ++i)
         NewRow.m_Values[i] = m_Values[i] * pi_RawNumber;
 
     // Return recipient
@@ -363,7 +363,7 @@ HFCMatrixRow<Columns, NumericType>::operator+=(const HFCMatrixRow<Columns,  Nume
     {
     // Increment all values of self row by values at same position
     // in given row
-    for(register size_t i = 0; i < Columns ; ++i)
+    for(size_t i = 0; i < Columns ; ++i)
         m_Values[i] += pi_rObj.m_Values[i];
 
     // Return reference to self
@@ -380,7 +380,7 @@ HFCMatrixRow<Columns, NumericType>::operator-=(const HFCMatrixRow<Columns, Numer
     {
     // Decrement all values of self row by values at same position
     // in given row
-    for(register size_t i = 0; i < Columns ; ++i)
+    for(size_t i = 0; i < Columns ; ++i)
         m_Values[i] -= pi_rObj.m_Values[i];
 
     // Return reference to self
@@ -397,7 +397,7 @@ inline HFCMatrixRow<Columns, NumericType>&
 HFCMatrixRow<Columns, NumericType>::operator*=(NumericType pi_RawValue)
     {
     // Scale all values of self row by given factor
-    for(register size_t i = 0; i < Columns ; ++i)
+    for(size_t i = 0; i < Columns ; ++i)
         m_Values[i] *= pi_RawValue;
 
     // Return reference to self
@@ -417,7 +417,7 @@ HFCMatrixRow<Columns, NumericType>::operator/=(NumericType pi_RawValue)
     HPRECONDITION (pi_RawValue != 0);
 
     // Scale all values of self row by given factor
-    for(register size_t i = 0; i < Columns ; ++i)
+    for(size_t i = 0; i < Columns ; ++i)
         m_Values[i] /= pi_RawValue;
 
     // Return reference to self
@@ -455,7 +455,7 @@ template<size_t Rows, size_t Columns, class NumericType>
 inline HFCMatrix<Rows, Columns, NumericType>::HFCMatrix(const HFCMatrix<Rows, Columns, NumericType>& pi_rObj)
     {
     // Copy all rows
-    for(register size_t i = 0 ; i < Rows ; ++i)
+    for(size_t i = 0 ; i < Rows ; ++i)
         m_Rows[i] = pi_rObj.m_Rows[i];
     }
 
@@ -470,7 +470,7 @@ inline HFCMatrix<Rows, Columns, NumericType>::HFCMatrix(const HFCMatrix<Rows, Co
 template<size_t Rows, size_t Columns, class NumericType>
 inline HFCMatrix<Rows, Columns, NumericType>::HFCMatrix(const NumericType* pi_pRawValues)
     {
-    for (register size_t i = 0 ; i < Rows ; ++i)
+    for (size_t i = 0 ; i < Rows ; ++i)
         m_Rows = pi_pRawValues[i];
     }
 
@@ -485,7 +485,7 @@ inline HFCMatrix<Rows, Columns, NumericType>::HFCMatrix(const NumericType* pi_pR
 template<size_t Rows, size_t Columns, class NumericType>
 inline HFCMatrix<Rows, Columns, NumericType>::HFCMatrix(const HFCMatrixRow<Columns, NumericType>* pi_pRows)
     {
-    for (register size_t i = 0 ; i < Rows ; ++i)
+    for (size_t i = 0 ; i < Rows ; ++i)
         m_Rows = pi_pRows[i];
     }
 
@@ -533,7 +533,7 @@ HFCMatrix<Rows, Columns, NumericType>::operator=(const HFCMatrix<Rows, Columns, 
     if (this != &pi_rObj)
         {
         // Copy all rows
-        for(register size_t i = 0 ; i < Rows ; ++i)
+        for(size_t i = 0 ; i < Rows ; ++i)
             m_Rows[i] = pi_rObj.m_Rows[i];
         }
 
@@ -555,7 +555,7 @@ inline HFCMatrix<Rows, Columns, NumericType>&
 HFCMatrix<Rows, Columns, NumericType>::operator=(const NumericType* pi_pRawValues)
     {
     // Copy all rows
-    for(register size_t i = 0 ; i < Rows ; ++i)
+    for(size_t i = 0 ; i < Rows ; ++i)
         m_Rows[i] = pi_pRawValues[i];
 
     // Return reference to self
@@ -577,7 +577,7 @@ inline HFCMatrix<Rows, Columns, NumericType>&
 HFCMatrix<Rows, Columns, NumericType>::operator=(const HFCMatrixRow<Columns, NumericType>* pi_pRows)
     {
     // Copy all rows
-    for(register size_t i = 0 ; i < Rows ; ++i)
+    for(size_t i = 0 ; i < Rows ; ++i)
         m_Rows[i] = pi_pRows[i];
 
     // Return reference to self
@@ -628,7 +628,7 @@ inline bool HFCMatrix<Rows, Columns, NumericType>::operator==(const HFCMatrix<Ro
     bool   ReturnValue = true;
 
     // Check if all rows are equal
-    for(register size_t i = 0; i < Columns && ReturnValue ; ++i)
+    for(size_t i = 0; i < Columns && ReturnValue ; ++i)
         ReturnValue = (m_Rows[i] == pi_rObj.m_Rows[i]);
 
     // Return answer
@@ -675,7 +675,7 @@ inline bool HFCMatrix<Rows, Columns, NumericType>::IsEqualTo(const HFCMatrix<Row
     bool   ReturnValue = true;
 
     // Check if all rows are equal
-    for(register size_t i = 0; i < Columns && ReturnValue ; ++i)
+    for(size_t i = 0; i < Columns && ReturnValue ; ++i)
         ReturnValue = m_Rows[i].IsEqualTo(pi_rObj.m_Rows[i]);
 
     // Return answer
@@ -796,7 +796,7 @@ HFCMatrix<Rows, Columns, NumericType>::operator+(const HFCMatrix<Rows, Columns, 
     HFCMatrix<Rows, Columns, NumericType>   NewMatrix(*this);
 
     // Increment all rows by rows of given matrix
-    for(register size_t i = 0 ; i < Rows ; ++i)
+    for(size_t i = 0 ; i < Rows ; ++i)
         NewMatrix.m_Rows[i] += pi_rObj.m_Rows[i];
 
     // Return recipient
@@ -824,7 +824,7 @@ HFCMatrix<Rows, Columns, NumericType>::operator-(const HFCMatrix<Rows, Columns, 
     HFCMatrix<Rows, Columns, NumericType>   NewMatrix(*this);
 
     // Decrement all rows by rows of given matrix
-    for(register size_t i = 0 ; i < Rows ; ++i)
+    for(size_t i = 0 ; i < Rows ; ++i)
         NewMatrix.m_Rows[i] -= pi_rObj.m_Rows[i];
 
     // Return recipient
@@ -848,7 +848,7 @@ HFCMatrix<Rows, Columns, NumericType>::operator-() const
     HFCMatrix<Rows, Columns, NumericType>   NewMatrix;
 
     // Set all values negated
-    for(register size_t i = 0 ; i < Rows ; ++i)
+    for(size_t i = 0 ; i < Rows ; ++i)
         NewMatrix.m_Rows[i] = -m_Rows[i];
 
     // Return recipient
@@ -875,7 +875,7 @@ HFCMatrix<Rows, Columns, NumericType>::operator*(NumericType pi_Factor) const
     HFCMatrix<Rows, Columns, NumericType>   NewMatrix;
 
     // Set rows of new matrix to scaled rows of self
-    for(register size_t i = 0 ; i < Rows ; ++i)
+    for(size_t i = 0 ; i < Rows ; ++i)
         NewMatrix.m_Rows[i] = m_Rows[i] * pi_Factor;
 
     // Return recipient
@@ -902,7 +902,7 @@ HFCMatrix<Rows, Columns, NumericType>::operator/(NumericType pi_Divisor) const
     HFCMatrix<Rows, Columns, NumericType>   NewMatrix;
 
     // Set rows of new matrix to scaled rows of self
-    for(register size_t i = 0 ; i < Rows ; ++i)
+    for(size_t i = 0 ; i < Rows ; ++i)
         NewMatrix.m_Rows[i] = m_Rows[i] / pi_Divisor;
 
     // Return recipient
@@ -927,7 +927,7 @@ inline HFCMatrix<Rows, Columns, NumericType>&
 HFCMatrix<Rows, Columns, NumericType>::operator+=(const HFCMatrix<Rows, Columns, NumericType>& pi_rObj)
     {
     // Each row is incremented by rows of same position of given matrix
-    for(register size_t i = 0 ; i < Rows ; ++i)
+    for(size_t i = 0 ; i < Rows ; ++i)
         m_Rows[i] += pi_rObj.m_Rows[i];
 
     // Return reference to self
@@ -950,7 +950,7 @@ inline HFCMatrix<Rows, Columns, NumericType>&
 HFCMatrix<Rows, Columns, NumericType>::operator-=(const HFCMatrix<Rows, Columns, NumericType>& pi_rObj)
     {
     // Each row is decremented by rows of same position of given matrix
-    for(register size_t i = 0 ; i < Rows ; ++i)
+    for(size_t i = 0 ; i < Rows ; ++i)
         m_Rows[i] -= pi_rObj.m_Rows[i];
 
     // Return reference to self
@@ -970,7 +970,7 @@ inline HFCMatrix<Rows, Columns, NumericType>&
 HFCMatrix<Rows, Columns, NumericType>::operator*=(NumericType pi_RawValue)
     {
     // Scale each row
-    for(register size_t i = 0 ; i < Rows ; ++i)
+    for(size_t i = 0 ; i < Rows ; ++i)
         m_Rows[i] *= pi_RawValue;
 
     // Return reference to self
@@ -993,7 +993,7 @@ HFCMatrix<Rows, Columns, NumericType>::operator/=(NumericType pi_RawValue)
     HPRECONDITION (pi_RawValue != 0);
 
     // Scale each row
-    for(register size_t i = 0 ; i < Rows ; ++i)
+    for(size_t i = 0 ; i < Rows ; ++i)
         m_Rows[i] /= pi_RawValue;
 
     // Return reference to self
@@ -1018,8 +1018,8 @@ HFCMatrix<Rows, Columns, NumericType>::CalculateTranspose() const
     HFCMatrix<Columns, Rows, NumericType>   NewMatrix;
 
     // Declare required index counters
-    register size_t i;
-    register size_t j;
+    size_t i;
+    size_t j;
 
     // For each row of result
     for (i = 0 ; i < Columns ; ++i)

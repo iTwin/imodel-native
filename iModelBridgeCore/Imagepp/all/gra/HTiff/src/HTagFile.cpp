@@ -272,8 +272,8 @@ bool HTagFile::OpenTiffFile (const HFCPtr<HFCURL>* pi_pURL,       // by URL
         }
 
     // Read TIFF Header
-    ReadFail = (m_pFile->Read(&m_Header.Magic, sizeof(unsigned short), 1) != 1);
-    ReadFail |= (m_pFile->Read(&m_Header.Version, sizeof(unsigned short), 1) != 1);
+    ReadFail = (m_pFile->Read(&m_Header.Magic, sizeof(uint16_t), 1) != 1);
+    ReadFail |= (m_pFile->Read(&m_Header.Version, sizeof(uint16_t), 1) != 1);
     if (ReadFail)
         {
         ErrorMsg(&m_pError, HTIFFError::CANNOT_READ_HEADER, 0, true);
@@ -313,9 +313,9 @@ bool HTagFile::OpenTiffFile (const HFCPtr<HFCURL>* pi_pURL,       // by URL
 
         // We can ignore the next 2 UShort
         //                                  Should be set to 8
-        ReadFail |= (m_pFile->Read(&m_Header.BytesizeOfOffset, sizeof(unsigned short), 1) != 1);
+        ReadFail |= (m_pFile->Read(&m_Header.BytesizeOfOffset, sizeof(uint16_t), 1) != 1);
         //                                  Should be set to 0
-        ReadFail |= (m_pFile->Read(&m_Header.Reserved, sizeof(unsigned short), 1) != 1);
+        ReadFail |= (m_pFile->Read(&m_Header.Reserved, sizeof(uint16_t), 1) != 1);
         ReadFail |= (m_pFile->Read(&m_Header.DirOffset64, sizeof(uint64_t), 1) != 1);
 
         if (m_ByteOrder.NeedSwapByte())
@@ -445,10 +445,10 @@ bool HTagFile::CreateTiffFile (const HFCPtr<HFCURL>*  pi_pURL,
         m_Header.Reserved           = 0;
         m_Header.DirOffset64        = 0;
 
-        WriteFail = (m_pFile->Write(&m_Header.Magic, sizeof(unsigned short), 1) != 1);
-        WriteFail |= (m_pFile->Write(&m_Header.Version, sizeof(unsigned short), 1) != 1);
-        WriteFail |= (m_pFile->Write(&m_Header.BytesizeOfOffset, sizeof(unsigned short), 1) != 1);
-        WriteFail |= (m_pFile->Write(&m_Header.Reserved, sizeof(unsigned short), 1) != 1);
+        WriteFail = (m_pFile->Write(&m_Header.Magic, sizeof(uint16_t), 1) != 1);
+        WriteFail |= (m_pFile->Write(&m_Header.Version, sizeof(uint16_t), 1) != 1);
+        WriteFail |= (m_pFile->Write(&m_Header.BytesizeOfOffset, sizeof(uint16_t), 1) != 1);
+        WriteFail |= (m_pFile->Write(&m_Header.Reserved, sizeof(uint16_t), 1) != 1);
         WriteFail |= (m_pFile->Write(&m_Header.DirOffset64, sizeof(uint64_t), 1) != 1);
         }
     else
@@ -458,8 +458,8 @@ bool HTagFile::CreateTiffFile (const HFCPtr<HFCURL>*  pi_pURL,
         m_Header.DirOffset64  = 0;                // Create File
 
         uint32_t Offset=0;
-        WriteFail = (m_pFile->Write(&m_Header.Magic, sizeof(unsigned short), 1) != 1);
-        WriteFail |= (m_pFile->Write(&m_Header.Version, sizeof(unsigned short), 1) != 1);
+        WriteFail = (m_pFile->Write(&m_Header.Magic, sizeof(uint16_t), 1) != 1);
+        WriteFail |= (m_pFile->Write(&m_Header.Version, sizeof(uint16_t), 1) != 1);
         WriteFail |= (m_pFile->Write(&Offset, sizeof(uint32_t), 1) != 1);
         }
     if (WriteFail)
@@ -616,7 +616,7 @@ void HTagFile::SetOffsetCountData(uint32_t pi_NbData, uint64_t* pi_pOffset, uint
             m_pOffset32 = new uint32_t[pi_NbData];
             for(uint32_t i=0; i<pi_NbData; ++i)
                 {
-                HASSERT(pi_pOffset[i] < ULONG_MAX);
+                HASSERT(pi_pOffset[i] < UINT32_MAX);
                 m_pOffset32[i] = (uint32_t)pi_pOffset[i];
                 }
 
@@ -648,7 +648,7 @@ bool HTagFile::SetOffset(size_t pi_Index, uint64_t pi_Offset)
         m_pOffset64[pi_Index] = pi_Offset;
     else
         {
-        HASSERT(pi_Offset < ULONG_MAX);
+        HASSERT(pi_Offset < UINT32_MAX);
         m_pOffset32[pi_Index] = (uint32_t)pi_Offset;
         }
 
@@ -663,7 +663,7 @@ bool HTagFile::SetCount(size_t pi_Index, uint64_t pi_Count)
         m_pCount64[pi_Index] = pi_Count;
     else
         {
-        HASSERT(pi_Count < ULONG_MAX);
+        HASSERT(pi_Count < UINT32_MAX);
         m_pCount32[pi_Index] = (uint32_t)pi_Count;
         }
 
@@ -1035,7 +1035,7 @@ bool HTagFile::ReadDirectories (bool pi_ValidateDir)
     HFCMonitor Monitor(m_Key);
 
     // Force reload in SetDirectory
-    m_CurDir = ULONG_MAX;
+    m_CurDir = UINT32_MAX;
 
     uint64_t DirOffset = m_Header.DirOffset64; // 0 if create a new file
 
@@ -1246,8 +1246,8 @@ void HTagFile::WriteDirectories()
             bool WriteFail = !m_pFile->Seek(0, SEEK_SET);
             if (IsTiff64())
                 {
-                unsigned short Version = m_Header.Version;
-                unsigned short BytesizeOfOffset = m_Header.BytesizeOfOffset;
+                uint16_t Version = m_Header.Version;
+                uint16_t BytesizeOfOffset = m_Header.BytesizeOfOffset;
                 uint64_t Offset = m_Header.DirOffset64;
                 // Swap if needed before Write
                 if (m_ByteOrder.NeedSwapByte())
@@ -1257,15 +1257,15 @@ void HTagFile::WriteDirectories()
                     SwabArrayOfUInt64(&Offset, 1);
                     }
 
-                WriteFail |= (m_pFile->Write(&m_Header.Magic, sizeof(unsigned short), 1) != 1);
-                WriteFail |= (m_pFile->Write(&Version, sizeof(unsigned short), 1) != 1);
-                WriteFail |= (m_pFile->Write(&BytesizeOfOffset, sizeof(unsigned short), 1) != 1);
-                WriteFail |= (m_pFile->Write(&m_Header.Reserved, sizeof(unsigned short), 1) != 1);
+                WriteFail |= (m_pFile->Write(&m_Header.Magic, sizeof(uint16_t), 1) != 1);
+                WriteFail |= (m_pFile->Write(&Version, sizeof(uint16_t), 1) != 1);
+                WriteFail |= (m_pFile->Write(&BytesizeOfOffset, sizeof(uint16_t), 1) != 1);
+                WriteFail |= (m_pFile->Write(&m_Header.Reserved, sizeof(uint16_t), 1) != 1);
                 WriteFail |= (m_pFile->Write(&Offset, sizeof(uint64_t), 1) != 1);
                 }
             else
                 {
-                unsigned short Version = m_Header.Version;
+                uint16_t Version = m_Header.Version;
                 uint32_t Offset = (uint32_t)m_Header.DirOffset64;
                 // Swap if needed before Write
                 if (m_ByteOrder.NeedSwapByte())
@@ -1274,8 +1274,8 @@ void HTagFile::WriteDirectories()
                     SwabArrayOfLong(&Offset, 1);
                     }
 
-                WriteFail |= (m_pFile->Write(&m_Header.Magic, sizeof(unsigned short), 1) != 1);
-                WriteFail |= (m_pFile->Write(&Version, sizeof(unsigned short), 1) != 1);
+                WriteFail |= (m_pFile->Write(&m_Header.Magic, sizeof(uint16_t), 1) != 1);
+                WriteFail |= (m_pFile->Write(&Version, sizeof(uint16_t), 1) != 1);
                 WriteFail |= (m_pFile->Write(&Offset, sizeof(uint32_t), 1) != 1);
                 }
             if (WriteFail)

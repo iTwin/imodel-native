@@ -66,19 +66,19 @@ public:
         {
         // Block Capability
         Add (new HRFLineCapability (HFC_READ_WRITE,
-                                    ULONG_MAX,
+                                    UINT32_MAX,
                                     HRFBlockAccess::RANDOM));
 
         // Strip Capability
         Add(new HRFStripCapability(HFC_READ_WRITE,         // AccessMode
-                                   LONG_MAX,               // MaxSizeInBytes
+                                   INT32_MAX,               // MaxSizeInBytes
                                    1,                      // MinHeight
                                    8192,                   // MaxHeight
                                    1));                    // HeightIncrement
 
         // Tile Capability
         Add(new HRFTileCapability(HFC_READ_WRITE_CREATE,        // AccessMode
-                                  LONG_MAX,             // MaxSizeInBytes
+                                  INT32_MAX,             // MaxSizeInBytes
                                   2,                   // MinWidth
                                   8192,                 // MaxWidth
                                   1,                   // WidthIncrement
@@ -89,11 +89,11 @@ public:
 
         // Image Capability
         Add(new HRFImageCapability(HFC_READ_ONLY,          // AccessMode
-                                   LONG_MAX,               // MaxSizeInBytes
+                                   INT32_MAX,               // MaxSizeInBytes
                                    0,                      // MinWidth
-                                   LONG_MAX,               // MaxWidth
+                                   INT32_MAX,               // MaxWidth
                                    0,                      // MinHeight
-                                   LONG_MAX));             // MaxHeight
+                                   INT32_MAX));             // MaxHeight
         }
     };
 
@@ -392,7 +392,7 @@ HRFErdasImgFile::~HRFErdasImgFile()
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFErdasImgFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                             unsigned short pi_Resolution,
+                                                             uint16_t pi_Resolution,
                                                              HFCAccessMode  pi_AccessMode)
     {
     // Verify that the page number is 0, because we have one image per file
@@ -514,7 +514,7 @@ void HRFErdasImgFile::DetectPixelType()
 
     if (IsBandSpecDefined)
         {
-        unsigned short NbBands = (unsigned short)GetNbBands();
+        uint16_t NbBands = (uint16_t)GetNbBands();
 
         m_IsBandSpecValid = ((specifiedBand.GetIndex(ChannelToBandIndexMapping::RED)   <= NbBands) &&
                              (specifiedBand.GetIndex(ChannelToBandIndexMapping::GREEN) <= NbBands) &&
@@ -599,7 +599,7 @@ bool HRFErdasImgFile::AreDataNeedToBeScaled()
             pGDALRasterBand = GetRasterBand(*BandIndIter);
 
             if ((pGDALRasterBand->GetMetadataItem("STATISTICS_MINIMUM") != NULL) &&
-                (pGDALRasterBand->GetMinimum(&Err) != GetMinimumPossibleValue((unsigned short)pGDALRasterBand->
+                (pGDALRasterBand->GetMinimum(&Err) != GetMinimumPossibleValue((uint16_t)pGDALRasterBand->
                                                                               GetRasterDataType())))
                 {
                 IsABandNeedToBeScaled = true;
@@ -607,7 +607,7 @@ bool HRFErdasImgFile::AreDataNeedToBeScaled()
                 }
 
             if ((pGDALRasterBand->GetMetadataItem("STATISTICS_MAXIMUM") != NULL) &&
-                (pGDALRasterBand->GetMaximum(&Err) != GetMaximumPossibleValue((unsigned short)pGDALRasterBand->
+                (pGDALRasterBand->GetMaximum(&Err) != GetMaximumPossibleValue((uint16_t)pGDALRasterBand->
                                                                               GetRasterDataType())))
                 {
                 IsABandNeedToBeScaled = true;
@@ -630,7 +630,7 @@ void HRFErdasImgFile::HandleNoDisplayBands()
     {
     bool HasColorTable = true;
 
-    for(int i=1; (i <= m_NbBands) && (HasColorTable == true); i++)
+    for(int32_t i=1; (i <= m_NbBands) && (HasColorTable == true); i++)
         {
         if (GetDataSet()->GetRasterBand(i)->GetColorInterpretation() == GCI_PaletteIndex ||
             GetDataSet()->GetRasterBand(i)->GetColorTable() == NULL)
@@ -720,11 +720,11 @@ void HRFErdasImgFile::GetHistogramFromImgHeader(HFCPtr<HRPHistogram>& po_rHistog
 
     if (m_BitsPerPixelPerBand <= 16)
         {
-        unsigned short      BandInd=0;
+        uint16_t      BandInd=0;
         const char*         pHistogramInImg;
         char                FreqSeparator[] = "|";
-        int32_t               NbFrequencyVals = (int)pow(2.0, m_BitsPerPixelPerBand);
-        unsigned short      NbHistoCh = (unsigned short)MIN(3, m_NbBands);
+        int32_t               NbFrequencyVals = (int32_t)pow(2.0, m_BitsPerPixelPerBand);
+        uint16_t      NbHistoCh = (uint16_t)MIN(3, m_NbBands);
 
         pHistogram = new HRPHistogram(NbFrequencyVals, NbHistoCh);
 
@@ -732,7 +732,7 @@ void HRFErdasImgFile::GetHistogramFromImgHeader(HFCPtr<HRPHistogram>& po_rHistog
         if (m_IsBandSpecValid)
             ImageppLib::GetHost().GetImageppLibAdmin()._GetChannelToBandIndexMapping(specifiedBand);
 
-        for (unsigned short ChannelIndex = 0; ChannelIndex < NbHistoCh; ChannelIndex++)
+        for (uint16_t ChannelIndex = 0; ChannelIndex < NbHistoCh; ChannelIndex++)
             {
             if (m_IsBandSpecValid == true)
                 {
@@ -763,7 +763,7 @@ void HRFErdasImgFile::GetHistogramFromImgHeader(HFCPtr<HRPHistogram>& po_rHistog
                 {
                 const char*          pFrequency;
                 int64_t              Frequency;
-                int                  FreqInd = 0;
+                int32_t                  FreqInd = 0;
                 HArrayAutoPtr<char> pHistogramInImgDup(new char[strlen(pHistogramInImg) + 1]);
 
                 strcpy(pHistogramInImgDup.get(), pHistogramInImg);
@@ -840,85 +840,85 @@ void HRFErdasImgFile::CreateUnitNameToEPSGCodeMap()
 
     m_pUnitToNameToEPSGCodeMap = new UnitNameToEPSGCodeMap;
 
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("meters", (unsigned short)9001));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("meter", (unsigned short)9001));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("m", (unsigned short)9001));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("centimeters", (unsigned short)0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("centimeter", (unsigned short)0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("cm", (unsigned short)0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("millimeters", (unsigned short)0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("millimeter", (unsigned short)0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("mm", (unsigned short)0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("kilometers", (unsigned short)0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("kilometer", (unsigned short)0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("km", (unsigned short)0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("nanometers", (unsigned short)0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("nanometer", (unsigned short)0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("nm", (unsigned short)0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("micron", (unsigned short)0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("microns", (unsigned short)0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("micrometers", (unsigned short)0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("micrometer", (unsigned short)0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("other", (unsigned short)9001));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("meters", (uint16_t)9001));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("meter", (uint16_t)9001));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("m", (uint16_t)9001));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("centimeters", (uint16_t)0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("centimeter", (uint16_t)0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("cm", (uint16_t)0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("millimeters", (uint16_t)0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("millimeter", (uint16_t)0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("mm", (uint16_t)0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("kilometers", (uint16_t)0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("kilometer", (uint16_t)0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("km", (uint16_t)0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("nanometers", (uint16_t)0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("nanometer", (uint16_t)0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("nm", (uint16_t)0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("micron", (uint16_t)0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("microns", (uint16_t)0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("micrometers", (uint16_t)0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("micrometer", (uint16_t)0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("other", (uint16_t)9001));
     /*
     ** following items are U.S. Survey foot.
     */
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("us_survey_feet", (unsigned short)9003));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("us_survey_foot", (unsigned short)9003));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("feet",(unsigned short) 9003));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("foot", (unsigned short)9003));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("ft", (unsigned short)9003));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("us_survey_feet", (uint16_t)9003));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("us_survey_foot", (uint16_t)9003));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("feet",(uint16_t) 9003));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("foot", (uint16_t)9003));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("ft", (uint16_t)9003));
     /*
     ** following items are related to Standard foot (0.3048).
     */
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("international_feet", (unsigned short)9002));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("international_foot", (unsigned short)9002));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("inches", (unsigned short)0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("inch", (unsigned short)0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("in", (unsigned short)0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("points", (unsigned short)0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("point", (unsigned short)0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("pt", (unsigned short)0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("yards", (unsigned short)9096));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("yard", (unsigned short)9096));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("yd", (unsigned short)9096));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("miles", (unsigned short)9093));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("mile", (unsigned short)9093));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("mi", (unsigned short)9093));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("international_feet", (uint16_t)9002));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("international_foot", (uint16_t)9002));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("inches", (uint16_t)0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("inch", (uint16_t)0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("in", (uint16_t)0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("points", (uint16_t)0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("point", (uint16_t)0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("pt", (uint16_t)0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("yards", (uint16_t)9096));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("yard", (uint16_t)9096));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("yd", (uint16_t)9096));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("miles", (uint16_t)9093));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("mile", (uint16_t)9093));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("mi", (uint16_t)9093));
     /*
     ** variants
     */
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("modified_american_feet", (unsigned short)9004));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("modified_american_foot", (unsigned short)9004));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("clarke_feet",(unsigned short) 9005));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("clarke_foot", (unsigned short)9005));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("indian_feet", (unsigned short)9080));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("indian_foot", (unsigned short)9080));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("links", (unsigned short)9039));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("link", (unsigned short)9039));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("benoit_links", (unsigned short)9063));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("benoit_link", (unsigned short)9063));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("clarke_link", (unsigned short)9039));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("sears_links", (unsigned short)9043));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("sears_link", (unsigned short)9043));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("benoit_chains", (unsigned short)9062));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("benoit_chain", (unsigned short)9062));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("sears_foot", (unsigned short)9041));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("benoit_chain_1895_b", (unsigned short)9062));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("sears_chain", (unsigned short)9042));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("sears_chains", (unsigned short)9042));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("sears_yards", (unsigned short)9040));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("sears_yard", (unsigned short)9040));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("sears_yd", (unsigned short)9040));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("indian_yards", (unsigned short)0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("indian_yard", (unsigned short)0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("indian_yd", (unsigned short)0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("fathoms", (unsigned short)0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("fathom",(unsigned short) 0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("international_nautical_miles", (unsigned short)9030));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("international_nautical_mile", (unsigned short)9030));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("nautical_mile_international", (unsigned short)9030));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("device_pixels",(unsigned short) 0));
-    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("gold_coast_foot",(unsigned short) 9094));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("modified_american_feet", (uint16_t)9004));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("modified_american_foot", (uint16_t)9004));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("clarke_feet",(uint16_t) 9005));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("clarke_foot", (uint16_t)9005));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("indian_feet", (uint16_t)9080));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("indian_foot", (uint16_t)9080));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("links", (uint16_t)9039));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("link", (uint16_t)9039));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("benoit_links", (uint16_t)9063));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("benoit_link", (uint16_t)9063));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("clarke_link", (uint16_t)9039));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("sears_links", (uint16_t)9043));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("sears_link", (uint16_t)9043));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("benoit_chains", (uint16_t)9062));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("benoit_chain", (uint16_t)9062));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("sears_foot", (uint16_t)9041));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("benoit_chain_1895_b", (uint16_t)9062));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("sears_chain", (uint16_t)9042));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("sears_chains", (uint16_t)9042));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("sears_yards", (uint16_t)9040));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("sears_yard", (uint16_t)9040));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("sears_yd", (uint16_t)9040));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("indian_yards", (uint16_t)0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("indian_yard", (uint16_t)0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("indian_yd", (uint16_t)0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("fathoms", (uint16_t)0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("fathom",(uint16_t) 0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("international_nautical_miles", (uint16_t)9030));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("international_nautical_mile", (uint16_t)9030));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("nautical_mile_international", (uint16_t)9030));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("device_pixels",(uint16_t) 0));
+    m_pUnitToNameToEPSGCodeMap->insert(UnitNameToEPSGCodeMap::value_type("gold_coast_foot",(uint16_t) 9094));
     }
 #endif

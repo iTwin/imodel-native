@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPMAttributeSet.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // HPMAttributeSet
@@ -77,7 +77,7 @@ public:
             return m_Itr != pi_Obj.m_Itr;
             }
 
-        void operator++(int)
+        void operator++(int32_t)
             {
             m_Itr++;
             }

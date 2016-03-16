@@ -28,7 +28,7 @@ public:
 
     friend class HRFIntergraphFile;
 
-    HRFIntergraphLineEditor (HFCPtr<HRFRasterFile>  pi_rpRasterFile, uint32_t pi_Page, unsigned short pi_Resolution, HFCAccessMode pi_AccessMode,
+    HRFIntergraphLineEditor (HFCPtr<HRFRasterFile>  pi_rpRasterFile, uint32_t pi_Page, uint16_t pi_Resolution, HFCAccessMode pi_AccessMode,
                              HRFIntergraphFile::IntergraphResolutionDescriptor& pi_rIntergraphResolutionDescriptor);
 
     virtual         ~HRFIntergraphLineEditor  ();
@@ -77,7 +77,7 @@ private:
     void ApplyLUTColorCorrection  (Byte* po_pData, uint32_t pi_pixelCount);
 
     // Members
-    unsigned short m_BitPerPixel;
+    uint16_t m_BitPerPixel;
 
     uint64_t         m_CurrentReadLine;
     uint32_t         m_RasterOffset;

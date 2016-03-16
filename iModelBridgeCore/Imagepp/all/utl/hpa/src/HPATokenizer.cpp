@@ -44,7 +44,7 @@ WString& utf8_to_wchar_t(InputIterator begin, InputIterator end, WString& result
     {
     for (; begin != end; ++begin, ++result)
         {
-        int      count = 0;       // the number of bytes in the UTF-8 sequence
+        int32_t      count = 0;       // the number of bytes in the UTF-8 sequence
         unsigned c     = (unsigned char)*begin;
         unsigned i     = 0x80;
 

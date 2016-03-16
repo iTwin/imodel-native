@@ -7,7 +7,7 @@
 //:>+--------------------------------------------------------------------------------------
 
 #include "../imagepptestpch.h"
-#include <ImagePP\all\h\HRAImageOpDensitySlicingFilter.h>
+#include <ImagePP/all/h/HRAImageOpDensitySlicingFilter.h>
 
 
 // Preparation of required environment

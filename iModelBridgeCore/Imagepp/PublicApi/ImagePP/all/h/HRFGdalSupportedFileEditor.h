@@ -86,7 +86,7 @@ protected:
     // Constructor
     HRFGdalSupportedFileEditor                 (HFCPtr<HRFRasterFile>       pi_rpRasterFile,
                                                 uint32_t                   pi_Page,
-                                                unsigned short              pi_Resolution,
+                                                uint16_t              pi_Resolution,
                                                 HFCAccessMode               pi_AccessMode);
 
     HSTATUS        ReadIntegerBlock            (uint64_t                    pi_PosBlockX,
@@ -143,16 +143,16 @@ protected:
     ReadBlockFncPtr                 m_pReadBlockFnc;
     ScalePixelFncPtr                m_pScalePixelFnc;
 
-    unsigned short                  m_GdalDataType;
+    uint16_t                  m_GdalDataType;
     HArrayAutoPtr<GDALRasterBand*>  m_pRasterBands;
     HRFBlockType                    m_pBlockType;
     uint32_t                       m_NbBands;
     HArrayAutoPtr<double>           m_pBandMinimum;
     HArrayAutoPtr<double>           m_pBandScaling;
-    int                             m_BlockWidth;
-    int                             m_BlockHeight;
-    int                             m_WidthToRead;
-    int                             m_HeightToRead;
+    int32_t                             m_BlockWidth;
+    int32_t                             m_BlockHeight;
+    int32_t                             m_WidthToRead;
+    int32_t                             m_HeightToRead;
 
     //Optimization
     uint32_t                       m_PixelPerLineBand;

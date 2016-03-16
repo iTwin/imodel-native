@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPMClassKey.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -23,7 +23,7 @@ typedef uint64_t HPMObjectID;
 
 // This is the object ID to use to establish the absence of an object ID.
 
-#define INVALID_OBJECT_ID ULONG_MAX
+#define INVALID_OBJECT_ID UINT32_MAX
 
 
 

@@ -258,7 +258,7 @@ void HRFVirtualEarthFile::QueryImageURI(WStringCR bingMapKey)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.Marchand  03/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString HRFVirtualEarthFile::GetTileURI(unsigned int pixelX, unsigned int pixelY, int levelOfDetail) const
+WString HRFVirtualEarthFile::GetTileURI(uint32_t pixelX, uint32_t pixelY, int32_t levelOfDetail) const
     {
     HASSERT(levelOfDetail >=1 && levelOfDetail <= 23); // 1 (lowest detail) to 23 (highest detail).
 
@@ -286,7 +286,7 @@ public:
 
         // Tile Capability
         Add(new HRFTileCapability(HFC_READ_ONLY, // AccessMode
-                                  LONG_MAX,             // MaxSizeInBytes
+                                  INT32_MAX,             // MaxSizeInBytes
                                   256,                  // MinWidth
                                   256,                  // MaxWidth
                                   0,                    // WidthIncrement
@@ -623,7 +623,7 @@ bool HRFVirtualEarthFile::IsURLVirtualEarth(HFCURL const& bingURL)
 // Create a resolution editor
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFVirtualEarthFile::CreateResolutionEditor(uint32_t      pi_Page,
-                                                                 unsigned short pi_Resolution,
+                                                                 uint16_t pi_Resolution,
                                                                  HFCAccessMode pi_AccessMode)
     {
     HPRECONDITION(pi_Page < CountPages());
@@ -745,7 +745,7 @@ void HRFVirtualEarthFile::CreateDescriptors()
 
     ListOfResolutionDescriptor.push_back(pResolution);
 
-    for (unsigned short Resolution = 1; Resolution < VE_MAP_RESOLUTION; ++Resolution)
+    for (uint16_t Resolution = 1; Resolution < VE_MAP_RESOLUTION; ++Resolution)
         {
         Width /= 2;
         Height /= 2;
@@ -830,7 +830,7 @@ void HRFVirtualEarthFile::RequestLookAhead(uint32_t             pi_Page,
     HGFTileIDList::const_iterator Itr(pi_rBlocks.begin());
     if (Itr != pi_rBlocks.end())
         {
-        unsigned short Resolution = (unsigned short)HRFRasterFile::s_TileDescriptor.GetLevel(*Itr);
+        uint16_t Resolution = (uint16_t)HRFRasterFile::s_TileDescriptor.GetLevel(*Itr);
 
         //Find the resolution editor into the ResolutionEditorRegistry
         ResolutionEditorRegistry::const_iterator ResItr(m_ResolutionEditorRegistry.begin());

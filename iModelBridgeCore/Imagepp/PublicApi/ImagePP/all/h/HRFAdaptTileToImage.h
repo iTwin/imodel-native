@@ -46,7 +46,7 @@ public:
     // Creation of implementator
     virtual HRFBlockAdapter*             Create(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                                 uint32_t              pi_Page,
-                                                unsigned short       pi_Resolution,
+                                                uint16_t       pi_Resolution,
                                                 HFCAccessMode         pi_AccessMode) const;
     };
 
@@ -63,7 +63,7 @@ public:
         HRFBlockAdapterCapabilities*   pi_pCapabilities,
         HFCPtr<HRFRasterFile>          pi_rpRasterFile,
         uint32_t                       pi_Page,
-        unsigned short                pi_Resolution,
+        uint16_t                pi_Resolution,
         HFCAccessMode                  pi_AccessMode);
 
     virtual                ~HRFAdaptTileToImage();

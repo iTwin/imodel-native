@@ -1016,7 +1016,7 @@ bool HGF2DPolygonOfSegments::IsConvex() const
         ++SecondItr;
         HGF2DPositionCollection::const_iterator ThirdItr(SecondItr);
         ++ThirdItr;
-        short Direction = 0;
+        int16_t Direction = 0;
 
         // Check for possible winding side change
         while (Result && ThirdItr != m_PolySegment.m_Points.end())
@@ -1422,7 +1422,7 @@ void HGF2DPolygonOfSegments::ObtainContiguousnessPointsAt(const HGF2DVector& pi_
         else
             {
             // This should not happen but it occasionally does ...
-            HDEBUGCODE(int a = 0; a++); //  located there for breakpoint purposes
+            HDEBUGCODE(int32_t a = 0; a++); //  located there for breakpoint purposes
             }
         }
     }
@@ -4945,8 +4945,8 @@ bool HGF2DPolygonOfSegments::ChangeToShape(const HGF2DPolygonOfSegments* const* 
     bool PointIsCorrect = false;
 
     HGF2DShape::SpatialPosition MyPartPosition;
-    long LastIndex = -1;
-    long LastDesesperateIndex = -1;
+    int32_t LastIndex = -1;
+    int32_t LastDesesperateIndex = -1;
 
     // Change shape followed
     std::swap(ShapeIndex, TestShapeIndex);
@@ -4957,7 +4957,7 @@ bool HGF2DPolygonOfSegments::ChangeToShape(const HGF2DPolygonOfSegments* const* 
         // Find the first point that is equat to previous point and has not been used yet
         for (Index = LastIndex + 1;
              ((Index < (apPoints[ShapeIndex]->size() - 1)) &&
-              (((long)Index <= LastIndex) || (Flags[ShapeIndex][Index] == USED) || !PreviousPoint.IsEqualTo((*(apPoints[ShapeIndex]))[Index], Tolerance))) ;
+              (((int32_t)Index <= LastIndex) || (Flags[ShapeIndex][Index] == USED) || !PreviousPoint.IsEqualTo((*(apPoints[ShapeIndex]))[Index], Tolerance))) ;
              Index++)
             ;
 
@@ -4991,7 +4991,7 @@ bool HGF2DPolygonOfSegments::ChangeToShape(const HGF2DPolygonOfSegments* const* 
                             }
                         }
                     }
-                LastDesesperateIndex = (long)Index;
+                LastDesesperateIndex = (int32_t)Index;
                 }
             if (FoundPoint)
                 Index = FoundIndex;
@@ -5010,12 +5010,12 @@ bool HGF2DPolygonOfSegments::ChangeToShape(const HGF2DPolygonOfSegments* const* 
                 {
                 // Tentative previous is next to last point (last non-dup point) ...
                 TentativeCurrentPoint = (*(apPoints[ShapeIndex]))[0];
-                LastIndex = (long)apPoints[ShapeIndex]->size() - 2;
+                LastIndex = (int32_t)apPoints[ShapeIndex]->size() - 2;
                 }
             else
                 {
                 TentativeCurrentPoint = (*(apPoints[ShapeIndex]))[Index+1];
-                LastIndex = (long)Index;
+                LastIndex = (int32_t)Index;
                 }
 
             // Obtain spatial position

@@ -49,7 +49,7 @@ HRFBlockAdapterCapabilities* HRFAdaptLineToTileCreator::GetCapabilities() const
 //-----------------------------------------------------------------------------
 HRFBlockAdapter* HRFAdaptLineToTileCreator::Create(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                                    uint32_t              pi_Page,
-                                                   unsigned short       pi_Resolution,
+                                                   uint16_t       pi_Resolution,
                                                    HFCAccessMode         pi_AccessMode) const
     {
     return new HRFAdaptLineToTile(GetCapabilities(),
@@ -66,7 +66,7 @@ HRFBlockAdapter* HRFAdaptLineToTileCreator::Create(HFCPtr<HRFRasterFile> pi_rpRa
 HRFAdaptLineToTile::HRFAdaptLineToTile(HRFBlockAdapterCapabilities* pi_pCapabilities,
                                        HFCPtr<HRFRasterFile>        pi_rpRasterFile,
                                        uint32_t                     pi_Page,
-                                       unsigned short              pi_Resolution,
+                                       uint16_t              pi_Resolution,
                                        HFCAccessMode                pi_AccessMode)
 
     : HRFBlockAdapter(pi_pCapabilities,
@@ -76,9 +76,9 @@ HRFAdaptLineToTile::HRFAdaptLineToTile(HRFBlockAdapterCapabilities* pi_pCapabili
                       pi_AccessMode)
     {
     // Resolution dimension
-    HASSERT(m_pResolutionDescriptor->GetHeight() <= ULONG_MAX);
-    HASSERT(m_pResolutionDescriptor->GetWidth() <= ULONG_MAX);
-    HASSERT(m_pResolutionDescriptor->GetBlocksPerWidth() <= ULONG_MAX);
+    HASSERT(m_pResolutionDescriptor->GetHeight() <= UINT32_MAX);
+    HASSERT(m_pResolutionDescriptor->GetWidth() <= UINT32_MAX);
+    HASSERT(m_pResolutionDescriptor->GetBlocksPerWidth() <= UINT32_MAX);
 
     m_Height             = (uint32_t)m_pResolutionDescriptor->GetHeight();
     m_Width              = (uint32_t)m_pResolutionDescriptor->GetWidth();
@@ -126,7 +126,7 @@ HSTATUS HRFAdaptLineToTile::ReadBlock(uint64_t pi_PosBlockX,
                                       Byte*  po_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
-    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+    HPRECONDITION (pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);
 
     HSTATUS Status = H_SUCCESS;
 
@@ -167,7 +167,7 @@ HSTATUS HRFAdaptLineToTile::WriteBlock(uint64_t    pi_PosBlockX,
                                        const Byte* pi_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
-    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+    HPRECONDITION (pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);
     
     HSTATUS Status = H_SUCCESS;
 

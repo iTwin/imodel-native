@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DTemplateExtent.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -38,8 +38,8 @@ public:
     bool                operator!=(const HGF2DTemplateExtent& pi_rObj) const;
 
     // Compare methods with epsilon
-    int                IsEqualTo(const HGF2DTemplateExtent& pi_rObj) const;
-    int                IsEqualTo(const HGF2DTemplateExtent& pi_rObj, DataType pi_Epsilon) const;
+    int32_t                IsEqualTo(const HGF2DTemplateExtent& pi_rObj) const;
+    int32_t                IsEqualTo(const HGF2DTemplateExtent& pi_rObj, DataType pi_Epsilon) const;
 
     // Information
     bool              IsPointIn(const COORD& pi_rPoint) const;

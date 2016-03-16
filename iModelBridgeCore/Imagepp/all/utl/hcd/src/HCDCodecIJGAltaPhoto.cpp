@@ -37,7 +37,7 @@ HCDCodecIJGAltaPhoto::~HCDCodecIJGAltaPhoto()
 void HCDCodecIJGAltaPhoto::SetAltaPhotoCodecParameters()
     {
     // 1:6 zigzagged table
-    static unsigned int KodakQuantTable6x[8 * 8] =
+    static uint32_t KodakQuantTable6x[8 * 8] =
         {
         10, 10, 10, 10, 10, 10, 10, 10,
         10, 10, 11, 10, 10, 10, 10, 11,
@@ -50,7 +50,7 @@ void HCDCodecIJGAltaPhoto::SetAltaPhotoCodecParameters()
         };
 
     /* Old 1:6 non-zigzagged table
-        static unsigned int KodakQuantTable6x[8 * 8] =
+        static uint32_t KodakQuantTable6x[8 * 8] =
         {
             10,    10,    10,    10,    10,    11,    15,    20,
             10,    10,    10,    10,    10,    12,    16,    21,
@@ -63,7 +63,7 @@ void HCDCodecIJGAltaPhoto::SetAltaPhotoCodecParameters()
         };
     */
     /* Old 1:8 non-zigzagged table
-        static unsigned int KodakQuantTable8x[8 * 8] =
+        static uint32_t KodakQuantTable8x[8 * 8] =
         {
             8,    8,    8,    12,    19,    31,    50,    83,
             8,    8,    11,    15,    23,    35,    57,    93,

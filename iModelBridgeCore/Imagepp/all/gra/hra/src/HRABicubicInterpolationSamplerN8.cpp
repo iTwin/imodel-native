@@ -226,7 +226,7 @@ void HRABiCubicInterpolationSamplerN8::GetPixels(double         pi_PositionX,
 
             // Compute source data pointers for each line
             Byte** ppSrcData = new Byte*[NumberOfLines];
-            for (int Line = 0 ; Line < NumberOfLines ; ++Line)
+            for (int32_t Line = 0 ; Line < NumberOfLines ; ++Line)
                 {
                 ppSrcData[Line] = ComputeAddress(CurrentSourcePositionX, Grid.GetYMin() + Line);
                 }
@@ -405,7 +405,7 @@ Byte* HRABiCubicInterpolationSamplerN8::ComputeAddress(uint32_t pi_PosX,
 
     // For N1 sources, convert full lines only
     if (m_SourceBytesPerPixel == 0)
-        pi_NeededPixels = ULONG_MAX;
+        pi_NeededPixels = UINT32_MAX;
 
     // Compute start of source line
     Byte* pSrcData = m_pPacket->GetBufferAddress();
@@ -418,7 +418,7 @@ Byte* HRABiCubicInterpolationSamplerN8::ComputeAddress(uint32_t pi_PosX,
 
     if (m_pWorkingPixelType != 0)
         {
-        if (pi_NeededPixels == ULONG_MAX)
+        if (pi_NeededPixels == UINT32_MAX)
             {
             // Convert and store full lines.
 

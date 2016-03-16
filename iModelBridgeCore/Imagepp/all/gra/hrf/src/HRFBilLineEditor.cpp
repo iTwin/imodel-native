@@ -22,7 +22,7 @@
 
 HRFBilLineEditor::HRFBilLineEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                    uint32_t              pi_Page,
-                                   unsigned short       pi_Resolution,
+                                   uint16_t       pi_Resolution,
                                    HFCAccessMode         pi_AccessMode)
     : HRFResolutionEditor(pi_rpRasterFile,
                           pi_Page,
@@ -243,9 +243,9 @@ HSTATUS HRFBilLineEditor::Read48BitRgbBlock(uint64_t pi_PosBlockX,
     if(GetBilRasterFile()->m_pBilFile->Read(m_pBlueLineBuffer, m_LineWidth) != m_LineWidth)
         goto WRAPUP;
 
-    unsigned short* pRedBuffer = (unsigned short*)m_pRedLineBuffer;
-    unsigned short* pGreenBuffer = (unsigned short*)m_pGreenLineBuffer;
-    unsigned short* pBlueBuffer = (unsigned short*)m_pBlueLineBuffer;
+    uint16_t* pRedBuffer = (uint16_t*)m_pRedLineBuffer;
+    uint16_t* pGreenBuffer = (uint16_t*)m_pGreenLineBuffer;
+    uint16_t* pBlueBuffer = (uint16_t*)m_pBlueLineBuffer;
     uint32_t PixelCount = m_LineWidth / 2;
 
     if (GetBilRasterFile()->IsMsByteFirst())
@@ -355,7 +355,7 @@ HSTATUS HRFBilLineEditor::Read16BitGrayBlock(uint64_t pi_PosBlockX,
 
     if (GetBilRasterFile()->IsMsByteFirst())
         {
-        unsigned short* pBuffer = (unsigned short*)po_pData;
+        uint16_t* pBuffer = (uint16_t*)po_pData;
         uint32_t PixelCount = m_LineWidth / 2;
 
         // Big endian

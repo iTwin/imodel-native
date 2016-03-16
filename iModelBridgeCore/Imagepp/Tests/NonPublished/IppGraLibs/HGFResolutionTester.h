@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HGFResolutionTester.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGFResolutionTester
@@ -15,7 +15,7 @@ class HGFResolutionTester : public testing::Test
     {   
 protected :
 
-    unsigned short SubImage;
+    uint16_t SubImage;
     double   Resolution;
     uint32_t    Width;
     uint32_t    Height;

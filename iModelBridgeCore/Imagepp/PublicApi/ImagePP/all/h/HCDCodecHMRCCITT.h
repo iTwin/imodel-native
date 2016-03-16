@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecHMRCCITT.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecHMRCCITT
@@ -21,9 +21,9 @@ BEGIN_IMAGEPP_NAMESPACE
  * worthwhile to make code & length 8 bits.
  */
 typedef struct cciitt3tableentry {
-    unsigned short length;    /* bit length of g3 code */
-    unsigned short code;    /* g3 code */
-    short    runlen;        /* run length in bits */
+    uint16_t length;    /* bit length of g3 code */
+    uint16_t code;    /* g3 code */
+    int16_t    runlen;        /* run length in bits */
     } CCITTtableentry;
 
 #define        CCITT_RESUNIT_NONE        1    /* no meaningful units */
@@ -74,7 +74,7 @@ public:
 
     IMAGEPP_EXPORT void            SetYResolution(float pi_Res);
 
-    IMAGEPP_EXPORT void            SetResolutionUnit(unsigned short pi_Unit);
+    IMAGEPP_EXPORT void            SetResolutionUnit(uint16_t pi_Unit);
 
     IMAGEPP_EXPORT void            SetGroup3Options(int32_t pi_Options);
 
@@ -95,15 +95,15 @@ private:
 
     void            Fax3Encode2DRow(Byte* bp, Byte* rp, int32_t bits);
 
-    int             finddiff(Byte* cp, int bs, int be, int color);
+    int32_t             finddiff(Byte* cp, int32_t bs, int32_t be, int32_t color);
 
     void            putcode(CCITTtableentry const* te);
 
-    void            putspan(int span, CCITTtableentry const* tab);
+    void            putspan(int32_t span, CCITTtableentry const* tab);
 
-    int             findspan(Byte** bpp, int bs, int be, register Byte const* tab);
+    int32_t             findspan(Byte** bpp, int32_t bs, int32_t be, register Byte const* tab);
 
-    void            putbits(unsigned short bits, unsigned short length);
+    void            putbits(uint16_t bits, uint16_t length);
 
     void            Fax4PostEncode();
 
@@ -111,28 +111,28 @@ private:
 
     void            Fax3PreDecode();
 
-    void            skiptoeol(int len);
+    void            skiptoeol(int32_t len);
 
-    int             nextbit();
+    int32_t             nextbit();
 
-    int             Fax3Decode2DRow(Byte* buf, int npels);
+    int32_t             Fax3Decode2DRow(Byte* buf, int32_t npels);
 
-    void            fillspan(Byte* cp, int x, int count);
+    void            fillspan(Byte* cp, int32_t x, int32_t count);
 
-    int             decode_white_run();
+    int32_t             decode_white_run();
 
-    int             decode_black_run();
+    int32_t             decode_black_run();
 
-    int             decode_uncomp_code();
+    int32_t             decode_uncomp_code();
 
-    int             Fax3PostEncode();
+    int32_t             Fax3PostEncode();
 
-    int             Fax3Encode1DRow(Byte* bp, int bits);
+    int32_t             Fax3Encode1DRow(Byte* bp, int32_t bits);
 
-    int             Fax3Decode1DRow(Byte* buf, int npels);
+    int32_t             Fax3Decode1DRow(Byte* buf, int32_t npels);
 
     float          m_yresolution;
-    unsigned short m_resolutionunit;
+    uint16_t m_resolutionunit;
     int32_t        m_group3options;
     int8_t         m_options;
 

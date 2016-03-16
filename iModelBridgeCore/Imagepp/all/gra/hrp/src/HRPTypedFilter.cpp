@@ -171,7 +171,7 @@ void HRPTypedFilter::UpdateLostChannelsProcessing()
         {
         // first, we must have an input converter to have the possibility of having
         // lost channels
-        const short* pLostChannels;
+        const int16_t* pLostChannels;
         if((pLostChannels = m_pInputConverter->GetLostChannels()) != NULL)
             {
             const HRPChannelOrg& rInputChannelOrg = GetInputPixelType()->GetChannelOrg();
@@ -183,12 +183,12 @@ void HRPTypedFilter::UpdateLostChannelsProcessing()
                 m_CopyLostChannelsMask[ChannelIndex] = false;
 
             // get the lost channel in the input conversion
-            const short* pLostChannels = m_pInputConverter->GetLostChannels();
+            const int16_t* pLostChannels = m_pInputConverter->GetLostChannels();
 
             // for each channel lost, we verify if this channel is in the output pixel type
             const HRPChannelOrg& rOutputChannelOrg = GetOutputPixelType()->GetChannelOrg();
             HRPChannelType::ChannelRole ChannelRole;
-            unsigned short ChannelId=0;
+            uint16_t ChannelId=0;
             ChannelIndex = 0;
             while(pLostChannels[ChannelIndex] != -1)
                 {

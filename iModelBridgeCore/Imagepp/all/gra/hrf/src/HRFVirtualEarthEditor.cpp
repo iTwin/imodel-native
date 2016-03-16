@@ -84,7 +84,7 @@ void VirtualEarthTileQuery::_Run()
 //-----------------------------------------------------------------------------
 HRFVirtualEarthEditor::HRFVirtualEarthEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                              uint32_t              pi_Page,
-                                             unsigned short       pi_Resolution,
+                                             uint16_t       pi_Resolution,
                                              HFCAccessMode         pi_AccessMode)
     : HRFResolutionEditor(pi_rpRasterFile,
                           pi_Page,
@@ -242,7 +242,7 @@ void HRFVirtualEarthEditor::RequestLookAhead(const HGFTileIDList& pi_rTileIDList
 //-----------------------------------------------------------------------------
 // Translate resolution index to Virtual earth level of detail.
 //-----------------------------------------------------------------------------
-int HRFVirtualEarthEditor::GetLevelOfDetail() const
+int32_t HRFVirtualEarthEditor::GetLevelOfDetail() const
     {
     return m_pRasterFile->GetPageDescriptor(m_Page)->CountResolutions() - GetResolutionIndex();
     }
@@ -255,7 +255,7 @@ Utf8String HRFVirtualEarthEditor::BuildTileUri(uint64_t tileId)
 
     uint64_t tilePosX, tilePosY;
     m_TileIDDescriptor.GetPositionFromID(tileId, &tilePosX, &tilePosY);
-    Utf8String tileUri(rasterFile.GetTileURI((int)tilePosX, (int)tilePosY, GetLevelOfDetail()));
+    Utf8String tileUri(rasterFile.GetTileURI((int32_t)tilePosX, (int32_t)tilePosY, GetLevelOfDetail()));
     return tileUri;
     }
 
@@ -290,9 +290,9 @@ double HRFVirtualEarthEditor::VirtualEarthTileSystem::Clip(double n, double minV
 /// <param name="levelOfDetail">Level of detail, from 1 (lowest detail)
 /// to 23 (highest detail).</param>
 /// <returns>The map width and height in pixels.</returns>
-unsigned int HRFVirtualEarthEditor::VirtualEarthTileSystem::MapSize(int levelOfDetail)
+uint32_t HRFVirtualEarthEditor::VirtualEarthTileSystem::MapSize(int32_t levelOfDetail)
     {
-    return (unsigned int) 256 << levelOfDetail;
+    return (uint32_t) 256 << levelOfDetail;
     }
 
 /// <summary>
@@ -304,7 +304,7 @@ unsigned int HRFVirtualEarthEditor::VirtualEarthTileSystem::MapSize(int levelOfD
 /// <param name="levelOfDetail">Level of detail, from 1 (lowest detail)
 /// to 23 (highest detail).</param>
 /// <returns>The ground resolution, in meters per pixel.</returns>
-double HRFVirtualEarthEditor::VirtualEarthTileSystem::GroundResolution(double latitude, int levelOfDetail)
+double HRFVirtualEarthEditor::VirtualEarthTileSystem::GroundResolution(double latitude, int32_t levelOfDetail)
     {
     latitude = Clip(latitude, MinLatitude, MaxLatitude);
     return cos(latitude * PI / 180) * 2 * PI * EarthRadius /
@@ -321,7 +321,7 @@ double HRFVirtualEarthEditor::VirtualEarthTileSystem::GroundResolution(double la
 /// to 23 (highest detail).</param>
 /// <param name="screenDpi">Resolution of the screen, in dots per inch.</param>
 /// <returns>The map scale, expressed as the denominator N of the ratio 1 : N.</returns>
-double HRFVirtualEarthEditor::VirtualEarthTileSystem::MapScale(double latitude, int levelOfDetail, int screenDpi)
+double HRFVirtualEarthEditor::VirtualEarthTileSystem::MapScale(double latitude, int32_t levelOfDetail, int32_t screenDpi)
     {
     return GroundResolution(latitude, levelOfDetail) * screenDpi / 0.0254;
     }
@@ -336,8 +336,8 @@ double HRFVirtualEarthEditor::VirtualEarthTileSystem::MapScale(double latitude, 
 /// to 23 (highest detail).</param>
 /// <param name="pixelX">Output parameter receiving the X coordinate in pixels.</param>
 /// <param name="pixelY">Output parameter receiving the Y coordinate in pixels.</param>
-void HRFVirtualEarthEditor::VirtualEarthTileSystem::LatLongToPixelXY(double latitude, double longitude, int levelOfDetail,
-                                                                     int* pixelX, int* pixelY)
+void HRFVirtualEarthEditor::VirtualEarthTileSystem::LatLongToPixelXY(double latitude, double longitude, int32_t levelOfDetail,
+                                                                     int32_t* pixelX, int32_t* pixelY)
     {
     latitude = Clip(latitude, MinLatitude, MaxLatitude);
     longitude = Clip(longitude, MinLongitude, MaxLongitude);
@@ -346,9 +346,9 @@ void HRFVirtualEarthEditor::VirtualEarthTileSystem::LatLongToPixelXY(double lati
     double sinLatitude = sin(latitude * PI / 180);
     double y = 0.5 - log((1 + sinLatitude) / (1 - sinLatitude)) / (4 * PI);
 
-    unsigned int mapSize = MapSize(levelOfDetail);
-    *pixelX = (int) Clip(x * mapSize + 0.5, 0, mapSize - 1);
-    *pixelY = (int) Clip(y * mapSize + 0.5, 0, mapSize - 1);
+    uint32_t mapSize = MapSize(levelOfDetail);
+    *pixelX = (int32_t) Clip(x * mapSize + 0.5, 0, mapSize - 1);
+    *pixelY = (int32_t) Clip(y * mapSize + 0.5, 0, mapSize - 1);
     }
 
 /// <summary>
@@ -361,7 +361,7 @@ void HRFVirtualEarthEditor::VirtualEarthTileSystem::LatLongToPixelXY(double lati
 /// to 23 (highest detail).</param>
 /// <param name="latitude">Output parameter receiving the latitude in degrees.</param>
 /// <param name="longitude">Output parameter receiving the longitude in degrees.</param>
-void HRFVirtualEarthEditor::VirtualEarthTileSystem::PixelXYToLatLong(int pixelX, int pixelY, int levelOfDetail,
+void HRFVirtualEarthEditor::VirtualEarthTileSystem::PixelXYToLatLong(int32_t pixelX, int32_t pixelY, int32_t levelOfDetail,
                                                                      double* latitude, double* longitude)
     {
     double mapSize = MapSize(levelOfDetail);
@@ -380,8 +380,8 @@ void HRFVirtualEarthEditor::VirtualEarthTileSystem::PixelXYToLatLong(int pixelX,
 /// <param name="pixelY">Pixel Y coordinate.</param>
 /// <param name="tileX">Output parameter receiving the tile X coordinate.</param>
 /// <param name="tileY">Output parameter receiving the tile Y coordinate.</param>
-void HRFVirtualEarthEditor::VirtualEarthTileSystem::PixelXYToTileXY(int pixelX, int pixelY,
-                                                                    int* tileX, int* tileY)
+void HRFVirtualEarthEditor::VirtualEarthTileSystem::PixelXYToTileXY(int32_t pixelX, int32_t pixelY,
+                                                                    int32_t* tileX, int32_t* tileY)
     {
     *tileX = pixelX / 256;
     *tileY = pixelY / 256;
@@ -395,8 +395,8 @@ void HRFVirtualEarthEditor::VirtualEarthTileSystem::PixelXYToTileXY(int pixelX, 
 /// <param name="tileY">Tile Y coordinate.</param>
 /// <param name="pixelX">Output parameter receiving the pixel X coordinate.</param>
 /// <param name="pixelY">Output parameter receiving the pixel Y coordinate.</param>
-void HRFVirtualEarthEditor::VirtualEarthTileSystem::TileXYToPixelXY(int tileX, int tileY,
-                                                                    int* pixelX, int* pixelY)
+void HRFVirtualEarthEditor::VirtualEarthTileSystem::TileXYToPixelXY(int32_t tileX, int32_t tileY,
+                                                                    int32_t* pixelX, int32_t* pixelY)
     {
     *pixelX = tileX * 256;
     *pixelY = tileY * 256;
@@ -410,13 +410,13 @@ void HRFVirtualEarthEditor::VirtualEarthTileSystem::TileXYToPixelXY(int tileX, i
 /// <param name="levelOfDetail">Level of detail, from 1 (lowest detail)
 /// to 23 (highest detail).</param>
 /// <returns>A string containing the QuadKey.</returns>
-string HRFVirtualEarthEditor::VirtualEarthTileSystem::TileXYToQuadKey(int tileX, int tileY, int levelOfDetail)
+string HRFVirtualEarthEditor::VirtualEarthTileSystem::TileXYToQuadKey(int32_t tileX, int32_t tileY, int32_t levelOfDetail)
     {
     string quadKey;
-    for (int i = levelOfDetail; i > 0; i--)
+    for (int32_t i = levelOfDetail; i > 0; i--)
         {
         char digit = '0';
-        int mask = 1 << (i - 1);
+        int32_t mask = 1 << (i - 1);
         if ((tileX & mask) != 0)
             {
             digit++;
@@ -439,17 +439,17 @@ string HRFVirtualEarthEditor::VirtualEarthTileSystem::TileXYToQuadKey(int tileX,
 /// <param name="levelOfDetail">Level of detail, from 1 (lowest detail)
 /// to 23 (highest detail).</param>
 /// <returns>A string containing the QuadKey.</returns>
-string HRFVirtualEarthEditor::VirtualEarthTileSystem::PixelXYToQuadKey(int pi_PixelX, int pi_PixelY, int pi_LevelOfDetail)
+string HRFVirtualEarthEditor::VirtualEarthTileSystem::PixelXYToQuadKey(int32_t pi_PixelX, int32_t pi_PixelY, int32_t pi_LevelOfDetail)
     {
     string quadKey;
 
     pi_PixelX /= 256;
     pi_PixelY /= 256;
 
-    for (int i = pi_LevelOfDetail; i > 0; i--)
+    for (int32_t i = pi_LevelOfDetail; i > 0; i--)
         {
         char digit = '0';
-        int mask = 1 << (i - 1);
+        int32_t mask = 1 << (i - 1);
         if ((pi_PixelX & mask) != 0)
             {
             digit++;
@@ -472,13 +472,13 @@ string HRFVirtualEarthEditor::VirtualEarthTileSystem::PixelXYToQuadKey(int pi_Pi
 /// <param name="tileY">Output parameter receiving the tile Y coordinate.</param>
 /// <param name="levelOfDetail">Output parameter receiving the level of detail.</param>
 void HRFVirtualEarthEditor::VirtualEarthTileSystem::QuadKeyToTileXY(string quadKey,
-                                                                    int* tileX, int* tileY, int* levelOfDetail)
+                                                                    int32_t* tileX, int32_t* tileY, int32_t* levelOfDetail)
     {
     *tileX = *tileY = 0;
-    *levelOfDetail = (int)quadKey.size();
-    for (int i = *levelOfDetail; i > 0; i--)
+    *levelOfDetail = (int32_t)quadKey.size();
+    for (int32_t i = *levelOfDetail; i > 0; i--)
         {
-        int mask = 1 << (i - 1);
+        int32_t mask = 1 << (i - 1);
         switch (quadKey[*levelOfDetail - i])
             {
             case '0':

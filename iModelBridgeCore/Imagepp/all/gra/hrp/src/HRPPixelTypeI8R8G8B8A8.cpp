@@ -134,7 +134,7 @@ protected:
 
         // fill the octree with the destination palette entries.
         int32_t NbIndex(rPalette.CountUsedEntries());
-        for(int Index = 0; Index < NbIndex; Index++)
+        for(int32_t Index = 0; Index < NbIndex; Index++)
             {
             Byte* pComposite = (Byte*) rPalette.GetCompositeValue(Index);
             m_QuantizedPalette.AddCompositeValue(pComposite,
@@ -148,7 +148,7 @@ protected:
         if(rSrcPixelPalette == rDestPixelPalette)
             {
             // if src and dest palettes are the same, make an index-index map
-            for(unsigned short Index = 0; Index < 256; Index++)
+            for(uint16_t Index = 0; Index < 256; Index++)
                 EntryConversion[Index] =static_cast<Byte>(Index);
             }
         else
@@ -229,7 +229,7 @@ protected:
 
         // fill the octree with the destination palette entries
         int32_t NbIndex(rPalette.CountUsedEntries());
-        for(int Index = 0; Index < NbIndex; Index++)
+        for(int32_t Index = 0; Index < NbIndex; Index++)
             m_QuantizedPalette.AddCompositeValue(rPalette.GetCompositeValue(Index),
                                                  (Byte)Index);
         }
@@ -297,7 +297,7 @@ public:
             }
         };
 
-    virtual const short* GetLostChannels() const override
+    virtual const int16_t* GetLostChannels() const override
         {
         return m_LostChannels;
         }
@@ -308,9 +308,9 @@ public:
 
 private:
 
-    static short m_LostChannels[];
+    static int16_t m_LostChannels[];
     };
-short ConverterI8R8G8B8A8_V8Gray8::m_LostChannels[] = {3, -1};
+int16_t ConverterI8R8G8B8A8_V8Gray8::m_LostChannels[] = {3, -1};
 static ConverterI8R8G8B8A8_V8Gray8 s_I8R8G8B8A8_V8Gray8;
 
 //-----------------------------------------------------------------------------
@@ -375,7 +375,7 @@ protected:
 
         // fill the octree with the destination palette entries
         int32_t NbIndex(rPalette.CountUsedEntries());
-        for(int Index = 0; Index < NbIndex; Index++)
+        for(int32_t Index = 0; Index < NbIndex; Index++)
             m_QuantizedPalette.AddCompositeValue(rPalette.GetCompositeValue(Index),
                                                  (Byte)Index);
 
@@ -454,7 +454,7 @@ public:
             }
         };
 
-    virtual const short* GetLostChannels() const override
+    virtual const int16_t* GetLostChannels() const override
         {
         return m_LostChannels;
         }
@@ -471,7 +471,7 @@ protected:
 
         // fill the octree with the destination palette entries
         int32_t NbIndex(rPalette.CountUsedEntries());
-        for(int Index = 0; Index < NbIndex; Index++)
+        for(int32_t Index = 0; Index < NbIndex; Index++)
             m_QuantizedPalette.AddCompositeValue(rPalette.GetCompositeValue(Index),
                                                  (Byte)Index);
 
@@ -482,7 +482,7 @@ protected:
         if(rSrcPixelPalette == rDestPixelPalette)
             {
             // if src and dest palettes are the same, make an index-index map
-            for(unsigned short Index = 0; Index < 256; Index++)
+            for(uint16_t Index = 0; Index < 256; Index++)
                 EntryConversion[Index] = static_cast<Byte>(Index);
             }
         else
@@ -511,7 +511,7 @@ private:
     size_t GetClosestEntryIndexInPalette(Byte* pi_pValue, const HRPPixelPalette& pi_rPixelPalette) const
         {
         Byte* pValue;
-        int RDist, GDist, BDist;
+        int32_t RDist, GDist, BDist;
         uint32_t Dist;
         size_t IndexForSmallerDist=0;
 
@@ -552,9 +552,9 @@ private:
     // conversion table
     Byte EntryConversion[256];
 
-    static short m_LostChannels[];
+    static int16_t m_LostChannels[];
     };
-short ConverterI8R8G8B8A8_I8R8G8B8::m_LostChannels[] = {3, -1};
+int16_t ConverterI8R8G8B8A8_I8R8G8B8::m_LostChannels[] = {3, -1};
 static ConverterI8R8G8B8A8_I8R8G8B8        s_I8R8G8B8A8_I8R8G8B8;
 
 //-----------------------------------------------------------------------------
@@ -601,7 +601,7 @@ protected:
         if(rSrcPixelPalette == rDestPixelPalette)
             {
             // if src and dest palettes are the same, make an index-index map
-            for(unsigned short Index = 0; Index < 256; Index++)
+            for(uint16_t Index = 0; Index < 256; Index++)
                 EntryConversion[Index] = static_cast<Byte>(Index);
             }
         else
@@ -629,7 +629,7 @@ private:
     size_t GetClosestEntryIndexInPalette(Byte* pi_pValue, const HRPPixelPalette& pi_rPixelPalette) const
         {
         Byte* pValue;
-        int RDist, GDist, BDist;
+        int32_t RDist, GDist, BDist;
         uint32_t Dist;
         size_t IndexForSmallerDist=0;
 
@@ -731,7 +731,7 @@ public:
             }
         };
 
-    virtual const short* GetLostChannels() const override
+    virtual const int16_t* GetLostChannels() const override
         {
         return m_LostChannels;
         }
@@ -742,9 +742,9 @@ public:
 
 private:
 
-    static short m_LostChannels[];
+    static int16_t m_LostChannels[];
     };
-short ConverterI8R8G8B8A8_V24B8G8R8::m_LostChannels[] = {3, -1};
+int16_t ConverterI8R8G8B8A8_V24B8G8R8::m_LostChannels[] = {3, -1};
 static struct ConverterI8R8G8B8A8_V24B8G8R8 s_I8R8G8B8A8_V24B8G8R8;
 
 //-----------------------------------------------------------------------------
@@ -810,16 +810,16 @@ public:
         return(new ConverterI8R8G8B8A8_V24R8G8B8(*this));
         }
 
-    virtual const short* GetLostChannels() const override
+    virtual const int16_t* GetLostChannels() const override
         {
         return m_LostChannels;
         }
 
 private:
 
-    static short m_LostChannels[];
+    static int16_t m_LostChannels[];
     };
-short ConverterI8R8G8B8A8_V24R8G8B8::m_LostChannels[] = {3, -1};
+int16_t ConverterI8R8G8B8A8_V24R8G8B8::m_LostChannels[] = {3, -1};
 static struct ConverterI8R8G8B8A8_V24R8G8B8 s_I8R8G8B8A8_V24R8G8B8;
 
 
@@ -875,7 +875,7 @@ protected:
 
         // fill the octree with the destination palette entries
         int32_t NbIndex(rPalette.CountUsedEntries());
-        for(int Index = 0; Index < NbIndex; Index++)
+        for(int32_t Index = 0; Index < NbIndex; Index++)
             m_QuantizedPalette.AddCompositeValue(rPalette.GetCompositeValue(Index),
                                                  (Byte)Index);
         }
@@ -935,7 +935,7 @@ protected:
 
         // fill the octree with the destination palette entries
         int32_t NbIndex(rPalette.CountUsedEntries());
-        for(int Index = 0; Index < NbIndex; Index++)
+        for(int32_t Index = 0; Index < NbIndex; Index++)
             m_QuantizedPalette.AddCompositeValue(rPalette.GetCompositeValue(Index),
                                                  (Byte)Index);
         }
@@ -1141,7 +1141,7 @@ protected:
 
         // fill the octree with the destination palette entries.
         int32_t NbIndex(rPalette.CountUsedEntries());
-        for(int Index = 0; Index < NbIndex; Index++)
+        for(int32_t Index = 0; Index < NbIndex; Index++)
             {
             Byte* pComposite = (Byte*) rPalette.GetCompositeValue(Index);
             m_QuantizedPalette.AddCompositeValue(pComposite,
@@ -1198,7 +1198,7 @@ HRPPixelTypeI8R8G8B8A8::HRPPixelTypeI8R8G8B8A8()
 
     // create a grayscale palette
     int32_t NbIndex(rPixelPalette.GetMaxEntries());
-    for(int gray = 0; gray < NbIndex; gray++)
+    for(int32_t gray = 0; gray < NbIndex; gray++)
         {
         Value = (0xFF << 24) | (gray << 16) | (gray << 8) | gray;
         rPixelPalette.AddEntry(&Value);
@@ -1258,7 +1258,7 @@ HPMPersistentObject* HRPPixelTypeI8R8G8B8A8::Clone() const
     @end
     -----------------------------------------------------------------------------
  */
-unsigned short HRPPixelTypeI8R8G8B8A8::CountValueBits() const
+uint16_t HRPPixelTypeI8R8G8B8A8::CountValueBits() const
     {
     return 0;
     }

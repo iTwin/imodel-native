@@ -21,10 +21,10 @@ const HFCAuthenticationCallback* HFCAuthenticationCallback::GetCallbackFromRegis
     {
     HFCAuthenticationCallback* pRetCallback = 0;
 
-    unsigned short NbCallbacks = HFCCallbackRegistry::GetInstance()->
+    uint16_t NbCallbacks = HFCCallbackRegistry::GetInstance()->
                           GetNbCallbacks(HFCAuthenticationCallback::CLASS_ID);
 
-    for (unsigned short CallbackInd = 0; CallbackInd < NbCallbacks; CallbackInd++)
+    for (uint16_t CallbackInd = 0; CallbackInd < NbCallbacks; CallbackInd++)
         {
         pRetCallback = (HFCAuthenticationCallback*)HFCCallbackRegistry::GetInstance()->
                        GetCallback(HFCAuthenticationCallback::CLASS_ID,
@@ -99,7 +99,7 @@ void HFCAuthenticationError::Throw () const
 // Protected
 // constructor
 //-----------------------------------------------------------------------------
-HFCAuthentication::HFCAuthentication(const unsigned short pi_RetryCount)
+HFCAuthentication::HFCAuthentication(const uint16_t pi_RetryCount)
     : m_RetryCount(pi_RetryCount)
     {
 
@@ -117,12 +117,12 @@ HFCAuthentication::~HFCAuthentication()
 //-----------------------------------------------------------------------------
 // Accessors
 //-----------------------------------------------------------------------------
-unsigned short HFCAuthentication::IncrementRetryCount()
+uint16_t HFCAuthentication::IncrementRetryCount()
     {
     return ++m_RetryCount;
     };
 
-unsigned short HFCAuthentication::GetRetryCount() const
+uint16_t HFCAuthentication::GetRetryCount() const
     {
     return m_RetryCount;
     }
@@ -200,7 +200,7 @@ void HFCAuthentication::ResetAllErrors ()
 HFCInternetAuthentication::HFCInternetAuthentication(const WString&          pi_Server,
                                                      const WString&          pi_User,
                                                      const WString&          pi_Password,
-                                                     const unsigned short   pi_RetryCount)
+                                                     const uint16_t   pi_RetryCount)
     :   HFCAuthentication(pi_RetryCount),
         m_User(pi_User),
         m_Password(pi_Password),
@@ -291,7 +291,7 @@ void HFCInternetAuthentication::SetByString(const WString& pi_rAuthenticationStr
 // Public
 // constructor
 //-----------------------------------------------------------------------------
-HFCOracleAuthentication::HFCOracleAuthentication(const unsigned short pi_RetryCount)
+HFCOracleAuthentication::HFCOracleAuthentication(const uint16_t pi_RetryCount)
     :   HFCAuthentication(pi_RetryCount)
     {
 
@@ -383,7 +383,7 @@ void HFCOracleAuthentication::SetByString(const WString& pi_rAuthenticationStrin
 //-----------------------------------------------------------------------------
 HFCProxyAuthentication::HFCProxyAuthentication  (const WString&          pi_User,
                                                  const WString&          pi_Password,
-                                                 const unsigned short   pi_RetryCount)
+                                                 const uint16_t   pi_RetryCount)
     :   HFCAuthentication(pi_RetryCount),
         m_User(pi_User),
         m_Password(pi_Password)
@@ -456,7 +456,7 @@ void HFCProxyAuthentication::SetByString(const WString& pi_rAuthenticationString
 //-----------------------------------------------------------------------------
 HFCPDFAuthentication::HFCPDFAuthentication (const WString&          pi_FileName,
                                             const PasswordType      pi_PasswordType,
-                                            const unsigned short   pi_RetryCount)
+                                            const uint16_t   pi_RetryCount)
     :   HFCAuthentication(pi_RetryCount),
         m_FileName(pi_FileName),
         m_PasswordType(pi_PasswordType),

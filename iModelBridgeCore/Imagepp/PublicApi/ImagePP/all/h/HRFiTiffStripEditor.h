@@ -63,7 +63,7 @@ protected:
     HRFiTiffStripEditor
     (HFCPtr<HRFRasterFile>  pi_rpRasterFile,
      uint32_t              pi_Page,
-     unsigned short         pi_Resolution,
+     uint16_t         pi_Resolution,
      HFCAccessMode          pi_AccessMode);
 
 private:
@@ -71,7 +71,7 @@ private:
     bool           m_IscTiff;
 
     // Pointer to runs Compression/Decompression RLE1
-    unsigned short*         m_pRuns;
+    uint16_t*         m_pRuns;
     size_t          m_NumberOfRuns;
     uint32_t       m_EmptyBlockCount;
     bool            m_HasDecompressToRLE;

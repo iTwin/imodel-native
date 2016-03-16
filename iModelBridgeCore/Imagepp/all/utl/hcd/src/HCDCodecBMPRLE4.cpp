@@ -175,7 +175,7 @@ size_t HCDCodecBMPRLE4::DecompressSubset(const void* pi_pInData,
                 Count = (*pSrc);
                 pSrc++;
 
-                unsigned short PadingByte = (unsigned short)((2 - ((Count/2) % 2)) % 2);
+                uint16_t PadingByte = (uint16_t)((2 - ((Count/2) % 2)) % 2);
 
                 if(NeedToBePack)
                     {

@@ -49,7 +49,7 @@ WString HCDException::_BuildMessage(const ImagePPExceptions::StringId& pi_rsID) 
 // public
 // Constructor
 //-----------------------------------------------------------------------------
-HCDIJLErrorException::HCDIJLErrorException(short pi_IJLErrorCode)
+HCDIJLErrorException::HCDIJLErrorException(int16_t pi_IJLErrorCode)
     : HCDException()
     {
     m_IJLErrorCode = pi_IJLErrorCode;
@@ -92,7 +92,7 @@ WString HCDIJLErrorException::GetExceptionMessage() const
 // public
 // Get the exception information, if any.
 //-----------------------------------------------------------------------------
-const short HCDIJLErrorException::GetErrorCode() const
+const int16_t HCDIJLErrorException::GetErrorCode() const
     {
     return m_IJLErrorCode;
     }

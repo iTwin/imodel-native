@@ -365,60 +365,60 @@ TEST_F (HPMAttributeTester, GetIDTest)
     {
 
     //string
-    ASSERT_EQ(HRFAttributeImageDescription::ATTRIBUTE_ID, pHRFAttributeImageDescription->GetID());
-    ASSERT_EQ(HRFAttributeImageDescription::ATTRIBUTE_ID, (new HRFAttributeImageDescription)->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeImageDescription::ATTRIBUTE_ID, pHRFAttributeImageDescription->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeImageDescription::ATTRIBUTE_ID, (new HRFAttributeImageDescription)->GetID());
 
     //vector<double>
-    ASSERT_EQ(HRFAttributeMinSampleValue::ATTRIBUTE_ID, pHRFAttributeMinSampleValue->GetID());
-    ASSERT_EQ(HRFAttributeMinSampleValue::ATTRIBUTE_ID, (new HRFAttributeMinSampleValue)->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeMinSampleValue::ATTRIBUTE_ID, pHRFAttributeMinSampleValue->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeMinSampleValue::ATTRIBUTE_ID, (new HRFAttributeMinSampleValue)->GetID());
 
     //UShort    
-    ASSERT_EQ(HRFAttributeResolutionUnit::ATTRIBUTE_ID, pHRFAttributeResolutionUnit->GetID());
-    ASSERT_EQ(HRFAttributeResolutionUnit::ATTRIBUTE_ID, (new HRFAttributeResolutionUnit)->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeResolutionUnit::ATTRIBUTE_ID, pHRFAttributeResolutionUnit->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeResolutionUnit::ATTRIBUTE_ID, (new HRFAttributeResolutionUnit)->GetID());
 
     //HFCMatrix<4,4, double>
-    ASSERT_EQ(HRFAttribute3DTransformationMatrix::ATTRIBUTE_ID, pHRFAttribute3DTranformationMatrix->GetID());
-    ASSERT_EQ(HRFAttribute3DTransformationMatrix::ATTRIBUTE_ID, (new HRFAttribute3DTransformationMatrix)->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttribute3DTransformationMatrix::ATTRIBUTE_ID, pHRFAttribute3DTranformationMatrix->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttribute3DTransformationMatrix::ATTRIBUTE_ID, (new HRFAttribute3DTransformationMatrix)->GetID());
 
     //UInt32
-    ASSERT_EQ(HRFAttributeForeground::ATTRIBUTE_ID, pHRFAttributeForeground->GetID());
-    ASSERT_EQ(HRFAttributeForeground::ATTRIBUTE_ID, (new HRFAttributeForeground)->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeForeground::ATTRIBUTE_ID, pHRFAttributeForeground->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeForeground::ATTRIBUTE_ID, (new HRFAttributeForeground)->GetID());
 
     //bool
-    ASSERT_EQ(HRFAttributeDontSupportPersistentColor::ATTRIBUTE_ID, pHRFAttributeDontSupportPersistentColor->GetID());
-    ASSERT_EQ(HRFAttributeDontSupportPersistentColor::ATTRIBUTE_ID, (new HRFAttributeDontSupportPersistentColor)->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeDontSupportPersistentColor::ATTRIBUTE_ID, pHRFAttributeDontSupportPersistentColor->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeDontSupportPersistentColor::ATTRIBUTE_ID, (new HRFAttributeDontSupportPersistentColor)->GetID());
 
     //double
-    ASSERT_EQ(HRFAttributeYResolution::ATTRIBUTE_ID, pHRFAttributeYResolution->GetID());
-    ASSERT_EQ(HRFAttributeYResolution::ATTRIBUTE_ID, (new HRFAttributeYResolution)->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeYResolution::ATTRIBUTE_ID, pHRFAttributeYResolution->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeYResolution::ATTRIBUTE_ID, (new HRFAttributeYResolution)->GetID());
 
     //uint32_t
-    ASSERT_EQ(HRFAttributeProjectedCSTypeLong::ATTRIBUTE_ID, pHRFAttributeProjectedCSTypeLong->GetID());
-    ASSERT_EQ(HRFAttributeProjectedCSTypeLong::ATTRIBUTE_ID, (new HRFAttributeProjectedCSTypeLong)->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeProjectedCSTypeLong::ATTRIBUTE_ID, pHRFAttributeProjectedCSTypeLong->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeProjectedCSTypeLong::ATTRIBUTE_ID, (new HRFAttributeProjectedCSTypeLong)->GetID());
 
     //vector<Byte>
-    ASSERT_EQ(HRFAttributeGPSVersionID::ATTRIBUTE_ID, pHRFAttributeGPSVersionID->GetID());
-    ASSERT_EQ(HRFAttributeGPSVersionID::ATTRIBUTE_ID, (new HRFAttributeGPSVersionID)->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeGPSVersionID::ATTRIBUTE_ID, pHRFAttributeGPSVersionID->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeGPSVersionID::ATTRIBUTE_ID, (new HRFAttributeGPSVersionID)->GetID());
 
     //Byte
-    ASSERT_EQ(HRFAttributeGPSAltitudeRef::ATTRIBUTE_ID, pHRFAttributeGPSAltitudeRef->GetID());
-    ASSERT_EQ(HRFAttributeGPSAltitudeRef::ATTRIBUTE_ID, (new HRFAttributeGPSAltitudeRef)->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeGPSAltitudeRef::ATTRIBUTE_ID, pHRFAttributeGPSAltitudeRef->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeGPSAltitudeRef::ATTRIBUTE_ID, (new HRFAttributeGPSAltitudeRef)->GetID());
 
     //vector<UShort>
-    ASSERT_EQ(HRFAttributeISOSpeedRatings::ATTRIBUTE_ID, pHRFAttributeISOSpeedRatings->GetID());
-    ASSERT_EQ(HRFAttributeISOSpeedRatings::ATTRIBUTE_ID, (new HRFAttributeISOSpeedRatings)->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeISOSpeedRatings::ATTRIBUTE_ID, pHRFAttributeISOSpeedRatings->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeISOSpeedRatings::ATTRIBUTE_ID, (new HRFAttributeISOSpeedRatings)->GetID());
 
     //<vector<char>
-    ASSERT_EQ(HRFAttributeExifVersion::ATTRIBUTE_ID, pHRFAttributeExifVersion->GetID());
-    ASSERT_EQ(HRFAttributeExifVersion::ATTRIBUTE_ID, (new HRFAttributeExifVersion)->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeExifVersion::ATTRIBUTE_ID, pHRFAttributeExifVersion->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeExifVersion::ATTRIBUTE_ID, (new HRFAttributeExifVersion)->GetID());
 
     //WString
-    ASSERT_EQ(HRFAttributeOriginalFileFormat::ATTRIBUTE_ID, pHRFAttributeOriginalFileFormat->GetID());
-    ASSERT_EQ(HRFAttributeOriginalFileFormat::ATTRIBUTE_ID, (new HRFAttributeOriginalFileFormat)->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeOriginalFileFormat::ATTRIBUTE_ID, pHRFAttributeOriginalFileFormat->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeOriginalFileFormat::ATTRIBUTE_ID, (new HRFAttributeOriginalFileFormat)->GetID());
 
     //UInt64
-    ASSERT_EQ(HRFAttributeOriginalFileSize::ATTRIBUTE_ID, pHRFAttributeOriginalFileSize->GetID());
-    ASSERT_EQ(HRFAttributeOriginalFileSize::ATTRIBUTE_ID, (new HRFAttributeOriginalFileSize)->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeOriginalFileSize::ATTRIBUTE_ID, pHRFAttributeOriginalFileSize->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeOriginalFileSize::ATTRIBUTE_ID, (new HRFAttributeOriginalFileSize)->GetID());
 
     }
 
@@ -483,89 +483,89 @@ TEST_F (HPMAttributeTester, CloneTest)
     //string
     HPMGenericAttribute* pHRFAttributeImageDescriptionClone = pHRFAttributeImageDescription->Clone();
 
-    ASSERT_EQ(HRFAttributeImageDescription::ATTRIBUTE_ID, pHRFAttributeImageDescriptionClone->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeImageDescription::ATTRIBUTE_ID, pHRFAttributeImageDescriptionClone->GetID());
     ASSERT_STREQ(WStringValue.c_str(), static_cast<HRFAttributeImageDescription*> (pHRFAttributeImageDescriptionClone)->GetData().c_str());
 
     //vector<double>
     HPMGenericAttribute* pHRFAttributeSampleValueClone = pHRFAttributeMinSampleValue->Clone();
 
-    ASSERT_EQ(HRFAttributeMinSampleValue::ATTRIBUTE_ID, pHRFAttributeSampleValueClone->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeMinSampleValue::ATTRIBUTE_ID, pHRFAttributeSampleValueClone->GetID());
     ASSERT_DOUBLE_EQ(VectorDouble.front(), static_cast<HRFAttributeMinSampleValue*> (pHRFAttributeSampleValueClone)->GetData().front());
     ASSERT_DOUBLE_EQ(VectorDouble.back(), static_cast<HRFAttributeMinSampleValue*> (pHRFAttributeSampleValueClone)->GetData().back());
 
     //UShort
     HPMGenericAttribute* pHRFAttributeResolutionUnitClone = pHRFAttributeResolutionUnit->Clone();
 
-    ASSERT_EQ(HRFAttributeResolutionUnit::ATTRIBUTE_ID, pHRFAttributeResolutionUnitClone->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeResolutionUnit::ATTRIBUTE_ID, pHRFAttributeResolutionUnitClone->GetID());
     ASSERT_DOUBLE_EQ(UShortValue, static_cast<HRFAttributeResolutionUnit*> (pHRFAttributeResolutionUnitClone)->GetData());
 
     //HFCMatrix<4,4, double>
     HPMGenericAttribute* pHRFAttribute3DTranformationMatrixClone = pHRFAttribute3DTranformationMatrix->Clone();
 
-    ASSERT_EQ(HRFAttribute3DTransformationMatrix::ATTRIBUTE_ID, pHRFAttribute3DTranformationMatrixClone->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttribute3DTransformationMatrix::ATTRIBUTE_ID, pHRFAttribute3DTranformationMatrixClone->GetID());
     ASSERT_TRUE(Matrix.IsEqualTo(static_cast<HRFAttribute3DTransformationMatrix*> (pHRFAttribute3DTranformationMatrixClone)->GetData()));
 
     //UInt32
     HPMGenericAttribute* pHRFAttributeForegroundClone = pHRFAttributeForeground->Clone();
     
-    ASSERT_EQ(HRFAttributeForeground::ATTRIBUTE_ID, pHRFAttributeForegroundClone->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeForeground::ATTRIBUTE_ID, pHRFAttributeForegroundClone->GetID());
     ASSERT_EQ(UInt32Value, static_cast<HRFAttributeImageSlo*> (pHRFAttributeForegroundClone)->GetData());
 
     //bool
     HPMGenericAttribute* pHRFAttributeDontSupportPersistentColorClone = pHRFAttributeDontSupportPersistentColor->Clone();
 
-    ASSERT_EQ(HRFAttributeDontSupportPersistentColor::ATTRIBUTE_ID, pHRFAttributeDontSupportPersistentColorClone->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeDontSupportPersistentColor::ATTRIBUTE_ID, pHRFAttributeDontSupportPersistentColorClone->GetID());
     ASSERT_TRUE(static_cast<HRFAttributeDontSupportPersistentColor*> (pHRFAttributeDontSupportPersistentColorClone)->GetData());
 
     //double
     HPMGenericAttribute* pHRFAttributeYResolutionClone = pHRFAttributeYResolution->Clone();
 
-    ASSERT_EQ(HRFAttributeYResolution::ATTRIBUTE_ID, pHRFAttributeYResolutionClone->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeYResolution::ATTRIBUTE_ID, pHRFAttributeYResolutionClone->GetID());
     ASSERT_DOUBLE_EQ(DoubleValue, static_cast<HRFAttributeYResolution*> (pHRFAttributeYResolutionClone)->GetData());
 
     //uint32_t
     HPMGenericAttribute* pHRFAttributeProjectedCSTypeLongClone = pHRFAttributeProjectedCSTypeLong->Clone();
 
-    ASSERT_EQ(HRFAttributeProjectedCSTypeLong::ATTRIBUTE_ID, pHRFAttributeProjectedCSTypeLongClone->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeProjectedCSTypeLong::ATTRIBUTE_ID, pHRFAttributeProjectedCSTypeLongClone->GetID());
     ASSERT_EQ(uint32_tValue, static_cast<HRFAttributeProjectedCSTypeLong*> (pHRFAttributeProjectedCSTypeLongClone)->GetData());
     
     //vector<Byte>
     HPMGenericAttribute* pHRFAttributeGPSVersionIDClone = pHRFAttributeGPSVersionID->Clone();
 
-    ASSERT_EQ(HRFAttributeGPSVersionID::ATTRIBUTE_ID, pHRFAttributeGPSVersionIDClone->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeGPSVersionID::ATTRIBUTE_ID, pHRFAttributeGPSVersionIDClone->GetID());
     ASSERT_EQ(VectorByte.front(), static_cast<HRFAttributeGPSVersionID*> (pHRFAttributeGPSVersionIDClone)->GetData().front());
     ASSERT_EQ(VectorByte.back(), static_cast<HRFAttributeGPSVersionID*> (pHRFAttributeGPSVersionIDClone)->GetData().back());
 
     //Byte
     HPMGenericAttribute* pHRFAttributeGPSAltitudeRefClone = pHRFAttributeGPSAltitudeRef->Clone();
 
-    ASSERT_EQ(HRFAttributeGPSAltitudeRef::ATTRIBUTE_ID, pHRFAttributeGPSAltitudeRefClone->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeGPSAltitudeRef::ATTRIBUTE_ID, pHRFAttributeGPSAltitudeRefClone->GetID());
     ASSERT_EQ(ByteValue, static_cast<HRFAttributeGPSAltitudeRef*> (pHRFAttributeGPSAltitudeRefClone)->GetData());
 
     //vector<UShort>
     HPMGenericAttribute* pHRFAttributeISOSpeedRatingsClone = pHRFAttributeISOSpeedRatings->Clone();
     
-    ASSERT_EQ(HRFAttributeISOSpeedRatings::ATTRIBUTE_ID, pHRFAttributeISOSpeedRatings->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeISOSpeedRatings::ATTRIBUTE_ID, pHRFAttributeISOSpeedRatings->GetID());
     ASSERT_EQ(VectorUShort.front(), static_cast<HRFAttributeISOSpeedRatings*> (pHRFAttributeISOSpeedRatingsClone)->GetData().front());
     ASSERT_EQ(VectorUShort.back(), static_cast<HRFAttributeISOSpeedRatings*> (pHRFAttributeISOSpeedRatingsClone)->GetData().back());
 
     //<vector<char>
     HPMGenericAttribute* pHRFAttributeExifVersionClone = pHRFAttributeExifVersion->Clone();
 
-    ASSERT_EQ(HRFAttributeExifVersion::ATTRIBUTE_ID, pHRFAttributeExifVersion->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeExifVersion::ATTRIBUTE_ID, pHRFAttributeExifVersion->GetID());
     ASSERT_EQ(VectorChar.front(), static_cast<HRFAttributeExifVersion*> (pHRFAttributeExifVersionClone)->GetData().front());
     ASSERT_EQ(VectorChar.back(), static_cast<HRFAttributeExifVersion*> (pHRFAttributeExifVersionClone)->GetData().back());
 
     //WString
     HPMGenericAttribute* pHRFAttributeOriginalFileFormatClone = pHRFAttributeOriginalFileFormat->Clone();
 
-    ASSERT_EQ(HRFAttributeOriginalFileFormat::ATTRIBUTE_ID, pHRFAttributeOriginalFileFormatClone->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeOriginalFileFormat::ATTRIBUTE_ID, pHRFAttributeOriginalFileFormatClone->GetID());
     ASSERT_STREQ(WStringValue.c_str(), static_cast<HRFAttributeOriginalFileFormat*> (pHRFAttributeOriginalFileFormatClone)->GetData().c_str());
 
     //UInt64
     HPMGenericAttribute* pHRFAttributeOriginalFileSizeClone = pHRFAttributeOriginalFileSize->Clone();
 
-    ASSERT_EQ(HRFAttributeOriginalFileSize::ATTRIBUTE_ID, pHRFAttributeOriginalFileSizeClone->GetID());
+    ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeOriginalFileSize::ATTRIBUTE_ID, pHRFAttributeOriginalFileSizeClone->GetID());
     ASSERT_EQ(UInt64Value, static_cast<HRFAttributeOriginalFileSize*> (pHRFAttributeOriginalFileSizeClone)->GetData());
 
     }

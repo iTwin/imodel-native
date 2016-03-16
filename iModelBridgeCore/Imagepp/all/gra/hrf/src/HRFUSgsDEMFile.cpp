@@ -56,11 +56,11 @@ public:
 
         // Image Capability
         Add(new HRFImageCapability(HFC_READ_ONLY,          // AccessMode
-                                   LONG_MAX,               // MaxSizeInBytes
+                                   INT32_MAX,               // MaxSizeInBytes
                                    0,                      // MinWidth
-                                   LONG_MAX,               // MaxWidth
+                                   INT32_MAX,               // MaxWidth
                                    0,                      // MinHeight
-                                   LONG_MAX));             // MaxHeight
+                                   INT32_MAX));             // MaxHeight
 
         }
     };
@@ -323,7 +323,7 @@ HRFUSgsDEMFile::HRFUSgsDEMFile(const HFCPtr<HFCURL>& pi_rURL,
 // Create the resolution editor
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFUSgsDEMFile::CreateResolutionEditor(uint32_t      pi_Page,
-                                                                   unsigned short pi_Resolution,
+                                                                   uint16_t pi_Resolution,
                                                                    HFCAccessMode pi_AccessMode)
     {
     // Verify that the page number is 0, because we have one image per file

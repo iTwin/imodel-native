@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAPyramidRaster.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRAPyramidRaster
@@ -74,7 +74,7 @@ public:
                                                   uint64_t                pi_WidthPixels,
                                                   uint64_t                pi_HeightPixels,
                                                   SubImageDescription*     pi_pSubImageDesc,
-                                                  unsigned short          pi_NumberOfSubImage,
+                                                  uint16_t          pi_NumberOfSubImage,
                                                   HPMObjectStore*          pi_pStore=0,
                                                   HPMPool*                 pi_pLog=0,
                                                   HFCPtr<HRATiledRaster>  pi_pMainImageRasterModel = 0,
@@ -101,7 +101,7 @@ public:
     virtual HRARasterEditor*
     CreateEditorUnShaped (HFCAccessMode pi_Mode);
 
-    virtual unsigned short GetRepresentativePalette(
+    virtual uint16_t GetRepresentativePalette(
         HRARepPalParms* pio_pRepPalParms);
 
     virtual void    ComputeHistogram(HRAHistogramOptions* pio_pOptions,
@@ -127,8 +127,8 @@ public:
     void            UseOnlyFirstResolution(bool pi_UseOnlyFirst);
 
     // Include the main image.
-    virtual unsigned short CountSubImages              () const;
-    virtual double GetSubImagesResolution      (unsigned short pi_SubImageIndex) const;
+    virtual uint16_t CountSubImages              () const;
+    virtual double GetSubImagesResolution      (uint16_t pi_SubImageIndex) const;
     IMAGEPP_EXPORT    HGSResampling::ResamplingMethod
     GetResamplingForSubResolution(int32_t pi_SubImageIndex = -1) const;
     virtual bool   SetResamplingForSubResolution(const HGSResampling::ResamplingMethod pi_ResamplingType,
@@ -140,7 +140,7 @@ public:
     IMAGEPP_EXPORT void     UpdateSubResolution         (int32_t           pi_SubResolution = -1,
                                                  const HGF2DExtent* pi_pExtent=0);
 
-    uint64_t       GetNbSubResTilesToUpdate(unsigned short pi_ResIndex, HGF2DExtent& pi_rSurfaceExtent);
+    uint64_t       GetNbSubResTilesToUpdate(uint16_t pi_ResIndex, HGF2DExtent& pi_rSurfaceExtent);
 
     virtual void    Clear() override;
     virtual void    Clear(const HRAClearOptions& pi_rOptions) override;
@@ -178,7 +178,7 @@ public:
     // STx: Think of MultiResRaster for the future
     // GetSubImage should be private.
     IMAGEPP_EXPORT /*IppImaging_Needs*/ void            EnableSubImageComputing(bool pi_Enable);
-    HFCPtr<HRATiledRaster> GetSubImage (unsigned short pi_Index) const;
+    HFCPtr<HRATiledRaster> GetSubImage (uint16_t pi_Index) const;
 
     IMAGEPP_EXPORT void            SaveAndFlushAllTiles();
 
@@ -187,7 +187,7 @@ protected:
 
     ImagePPStatus _BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR options) override;
 
-    unsigned short EvaluateResolution(double Resolution) const;
+    uint16_t EvaluateResolution(double Resolution) const;
 
     virtual ImageSinkNodePtr _GetSinkNode(ImagePPStatus& status, HVEShape const& sinkShape, HFCPtr<HRPPixelType>& pReplacingPixelType) override;
 
@@ -260,7 +260,7 @@ private:
                                     uint64_t                        pi_WidthPixels,
                                     uint64_t                        pi_HeightPixels,
                                     SubImageDescription*            pi_pSubImageDesc,
-                                    unsigned short                 pi_NumberOfSubImage);
+                                    uint16_t                 pi_NumberOfSubImage);
 
     HFCPtr<HRATiledRaster> CreateSubResRaster (const HFCPtr<HRATiledRaster>& pi_rpRasterModel,
                                                uint64_t             pi_Width,
@@ -279,9 +279,9 @@ private:
     void            ReplaceObject   (HFCPtr<HRAPyramidRaster>& pio_pRaster);
 
     void            SetSubImageNotComputed  (SubImageDescription*  pi_pSubImageDesc,
-                                             unsigned short       pi_NumberOfSubImage);
+                                             uint16_t       pi_NumberOfSubImage);
 
-    void            UpdateDirtyFlags(const HVEShape& pi_rShape, short pi_Res);
+    void            UpdateDirtyFlags(const HVEShape& pi_rShape, uint16_t pi_Res);
 
     void            UpdateResolution(int32_t           pi_Resolution,
                                      const HGF2DExtent* pi_pExtent);

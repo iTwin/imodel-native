@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCPtr.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:> Inline method for class HFCShareableObject
@@ -344,7 +344,7 @@ template<class T> inline T* HFCPtr<T>::operator->() const
 
  @return A plain pointer to the object pointed to by this smart pointer.
 -----------------------------------------------------------------------------*/
-template<class T> inline T* HFCPtr<T>::operator->*(int) const
+template<class T> inline T* HFCPtr<T>::operator->*(int32_t) const
     {
     HPRECONDITION(m_pObject != 0);
     return m_pObject;

@@ -328,7 +328,7 @@ bool HRFRasterFile::ResizePage(uint32_t pi_Page,
 
     if (pRes->GetBlockType() == HRFBlockType::LINE)
         {
-        HPRECONDITION(pi_Width <= ULONG_MAX);
+        HPRECONDITION(pi_Width <= UINT32_MAX);
         BlockWidth = (uint32_t)pi_Width;
         BlockHeight = pRes->GetBlockHeight();
         }
@@ -339,13 +339,13 @@ bool HRFRasterFile::ResizePage(uint32_t pi_Page,
         }
     else if (pRes->GetBlockType() == HRFBlockType::STRIP)
         {
-        HPRECONDITION(pi_Width <= ULONG_MAX);
+        HPRECONDITION(pi_Width <= UINT32_MAX);
         BlockWidth = (uint32_t)pi_Width;
         BlockHeight = pRes->GetBlockHeight();
         }
     else if (pRes->GetBlockType() == HRFBlockType::IMAGE)
         {
-        HPRECONDITION(pi_Width <= ULONG_MAX && pi_Height <= ULONG_MAX);
+        HPRECONDITION(pi_Width <= UINT32_MAX && pi_Height <= UINT32_MAX);
 
         BlockWidth = (uint32_t)pi_Width;
         BlockHeight = (uint32_t)pi_Height;
@@ -558,7 +558,7 @@ void HRFRasterFile::SetLookAhead(uint32_t              pi_Page,
 // Prefetch data in a given region
 //-----------------------------------------------------------------------------
 void HRFRasterFile::SetLookAhead(uint32_t          pi_Page,
-                                 unsigned short     pi_Resolution,
+                                 uint16_t     pi_Resolution,
                                  const HVEShape&    pi_rShape,
                                  uint32_t          pi_ConsumerID,
                                  bool               pi_Async)
@@ -748,7 +748,7 @@ void HRFRasterFile::CancelLookAhead(uint32_t pi_Page)
 // this methods converts a region into a list of tiles
 //-----------------------------------------------------------------------------
 void HRFRasterFile::SnapRegionToGrid(uint32_t                   pi_Page,
-                                     unsigned short            pi_Resolution,
+                                     uint16_t            pi_Resolution,
                                      const HVEShape&            pi_rShape,
                                      HGFTileIDList*             po_pBlocks) const
     {
@@ -812,7 +812,7 @@ void HRFRasterFile::SnapRegionToGrid(uint32_t                   pi_Page,
 // GetResolutionEditor
 // Get the resolution editor.
 //-----------------------------------------------------------------------------
-const HRFResolutionEditor* HRFRasterFile::GetResolutionEditor(unsigned short pi_Resolution)
+const HRFResolutionEditor* HRFRasterFile::GetResolutionEditor(uint16_t pi_Resolution)
     {
     ResolutionEditorRegistry::const_iterator Itr(m_ResolutionEditorRegistry.begin());
     const HRFResolutionEditor* pResEditor = 0;
@@ -1078,7 +1078,7 @@ void HRFRasterFile::InitializeDefaultRatioToMeter()
     {
     if (m_DefaultRatioToMeter.size() < CountPages())
         {
-        for (unsigned short PageInd = 0; PageInd < CountPages(); PageInd++)
+        for (uint16_t PageInd = 0; PageInd < CountPages(); PageInd++)
             {
             m_DefaultRatioToMeter.push_back(1.0);
             }

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFScanlines.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -16,6 +16,7 @@ BEGIN_IMAGEPP_NAMESPACE
 class HNOVTABLEINIT IPixelSelectionStrategy
     {
 public:
+    virtual ~IPixelSelectionStrategy() {};
     virtual int32_t ConvertXMin(double pi_XMin) const = 0;
     virtual int32_t ConvertXMax(double pi_XMax) const = 0;
     virtual int32_t ConvertYMin(double pi_YMin) const = 0;

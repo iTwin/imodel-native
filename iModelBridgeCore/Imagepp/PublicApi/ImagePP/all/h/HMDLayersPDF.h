@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMDLayersPDF.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -19,7 +19,7 @@ public :
     IMAGEPP_EXPORT  HMDLayersPDF();
     IMAGEPP_EXPORT  virtual ~HMDLayersPDF();
 
-    IMAGEPP_EXPORT  const HMDLayerInfoPDF* GetLayer(unsigned short pi_Index) const;
+    IMAGEPP_EXPORT  const HMDLayerInfoPDF* GetLayer(uint16_t pi_Index) const;
 
 private :
 

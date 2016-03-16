@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCBuffer.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -75,7 +75,7 @@ BEGIN_IMAGEPP_NAMESPACE
 
     @code{
     MyClass::MyClass
-      : MyBuffer(1, ULONG_MAX) // grows by 1 and max value of size_t as limit
+      : MyBuffer(1, UINT32_MAX) // grows by 1 and max value of size_t as limit
     {
         ...
     }

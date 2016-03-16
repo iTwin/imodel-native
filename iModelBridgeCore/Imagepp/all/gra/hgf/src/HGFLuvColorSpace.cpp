@@ -20,7 +20,7 @@
 //
 //----------------------------------------------------------------------------
 
-HGFLuvColorSpace::HGFLuvColorSpace(unsigned short pi_BitsPerPixel)
+HGFLuvColorSpace::HGFLuvColorSpace(uint16_t pi_BitsPerPixel)
     :HGFBasicColorSpace(pi_BitsPerPixel)
     {
     m_pXRed_x4   = new double[m_ChannelSize];
@@ -42,7 +42,7 @@ HGFLuvColorSpace::HGFLuvColorSpace(unsigned short pi_BitsPerPixel)
 //
 //----------------------------------------------------------------------------
 
-HGFLuvColorSpace::HGFLuvColorSpace(double pi_GammaCorrection, unsigned short pi_BitsPerPixel)
+HGFLuvColorSpace::HGFLuvColorSpace(double pi_GammaCorrection, uint16_t pi_BitsPerPixel)
     :HGFBasicColorSpace(pi_GammaCorrection, pi_BitsPerPixel)
     {
     m_pXRed_x4   = new double[m_ChannelSize];
@@ -133,7 +133,7 @@ void HGFLuvColorSpace::BuildLookupTableLUVToRGB()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.Marchand  03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-unsigned short HGFLuvColorSpace::GrayFromLuminance(double pi_L) const
+uint16_t HGFLuvColorSpace::GrayFromLuminance(double pi_L) const
     {
     double X;
     double Y;
@@ -168,10 +168,10 @@ unsigned short HGFLuvColorSpace::GrayFromLuminance(double pi_L) const
     NormalizedColor = MAX(NormalizedColor, 0.0);
 
     if (m_UseGammaCorrection)
-        return (unsigned short)(ChannelMaxValue * pow( NormalizedColor, 1.0/m_GammaCorrectionFactor));
+        return (uint16_t)(ChannelMaxValue * pow( NormalizedColor, 1.0/m_GammaCorrectionFactor));
         
     // Convert the processed value to the standard domain
-    return (unsigned short)((NormalizedColor * ChannelMaxValue) + PRECISION_EPSILON);
+    return (uint16_t)((NormalizedColor * ChannelMaxValue) + PRECISION_EPSILON);
     }
 
 //----------------------------------------------------------------------------
@@ -273,7 +273,7 @@ void HGFLuvColorSpace::ConvertToRGB (double   pi_L,    double   pi_U,      doubl
 //----------------------------------------------------------------------------
 
 void HGFLuvColorSpace::ConvertToRGB (double   pi_L,    double   pi_U,      double   pi_V,
-                                     unsigned short*  po_pRed, unsigned short*  po_pGreen, unsigned short*  po_pBlue) const
+                                     uint16_t*  po_pRed, uint16_t*  po_pGreen, uint16_t*  po_pBlue) const
     {
     double UPrime;
     double VPrime;
@@ -318,12 +318,12 @@ void HGFLuvColorSpace::ConvertToRGB (double   pi_L,    double   pi_U,      doubl
 
     if (m_UseGammaCorrection)
         {
-        *po_pRed = (unsigned short)(ChannelMaxValue * pow( NormalizedColor, 1.0/m_GammaCorrectionFactor));
+        *po_pRed = (uint16_t)(ChannelMaxValue * pow( NormalizedColor, 1.0/m_GammaCorrectionFactor));
         }
     else
         {
         // Convert the processed value to the standard domain [0,255]
-        *po_pRed = (unsigned short)((NormalizedColor * ChannelMaxValue) + PRECISION_EPSILON);
+        *po_pRed = (uint16_t)((NormalizedColor * ChannelMaxValue) + PRECISION_EPSILON);
         }
 
     //--- Green ----------------------------------------------------
@@ -335,12 +335,12 @@ void HGFLuvColorSpace::ConvertToRGB (double   pi_L,    double   pi_U,      doubl
 
     if (m_UseGammaCorrection)
         {
-        *po_pGreen = (unsigned short)(ChannelMaxValue * pow( NormalizedColor, 1.0/m_GammaCorrectionFactor));
+        *po_pGreen = (uint16_t)(ChannelMaxValue * pow( NormalizedColor, 1.0/m_GammaCorrectionFactor));
         }
     else
         {
         // Convert the processed value to the standard domain [0,255]
-        *po_pGreen = (unsigned short)((NormalizedColor * ChannelMaxValue) + PRECISION_EPSILON);
+        *po_pGreen = (uint16_t)((NormalizedColor * ChannelMaxValue) + PRECISION_EPSILON);
         }
 
     //--- Blue -----------------------------------------------------
@@ -352,12 +352,12 @@ void HGFLuvColorSpace::ConvertToRGB (double   pi_L,    double   pi_U,      doubl
 
     if (m_UseGammaCorrection)
         {
-        *po_pBlue = (unsigned short)(ChannelMaxValue * pow( NormalizedColor, 1.0/m_GammaCorrectionFactor));
+        *po_pBlue = (uint16_t)(ChannelMaxValue * pow( NormalizedColor, 1.0/m_GammaCorrectionFactor));
         }
     else
         {
         // Convert the processed value to the standard domain [0,255]
-        *po_pBlue = (unsigned short)((NormalizedColor * ChannelMaxValue) + PRECISION_EPSILON);
+        *po_pBlue = (uint16_t)((NormalizedColor * ChannelMaxValue) + PRECISION_EPSILON);
         }
     }
 
@@ -427,7 +427,7 @@ void HGFLuvColorSpace::ConvertArrayToRGB (double*  pi_L,   double*  pi_U,     do
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.Marchand  03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-double HGFLuvColorSpace::LuminanceFromGray (unsigned short pi_gray) const
+double HGFLuvColorSpace::LuminanceFromGray (uint16_t pi_gray) const
     {
     HPRECONDITION(pi_gray < m_ChannelSize); 
 
@@ -491,7 +491,7 @@ void HGFLuvColorSpace::ConvertFromRGB (Byte   pi_Red, Byte   pi_Green, Byte   pi
 //
 //----------------------------------------------------------------------------
 
-void HGFLuvColorSpace::ConvertFromRGB (unsigned short pi_Red, unsigned short pi_Green, unsigned short pi_Blue,
+void HGFLuvColorSpace::ConvertFromRGB (uint16_t pi_Red, uint16_t pi_Green, uint16_t pi_Blue,
                                        double* pi_pL,  double* pi_pU,    double* pi_pV) const
     {
     double Y = m_pRGBToYRed[pi_Red] + m_pRGBToYGreen[pi_Green] + m_pRGBToYBlue[pi_Blue];
@@ -718,7 +718,7 @@ bool HGFLuvColorSpace::SafeConvertToRGB (double  pi_L,      double  pi_U,       
 //----------------------------------------------------------------------------
 
 bool HGFLuvColorSpace::SafeConvertToRGB (double   pi_L,    double   pi_U,      double   pi_V,
-                                          unsigned short*  po_pRed, unsigned short*  po_pGreen, unsigned short*  po_pBlue) const
+                                          uint16_t*  po_pRed, uint16_t*  po_pGreen, uint16_t*  po_pBlue) const
     {
     double UPrime;
     double VPrime;
@@ -770,12 +770,12 @@ bool HGFLuvColorSpace::SafeConvertToRGB (double   pi_L,    double   pi_U,      d
 
     if (m_UseGammaCorrection)
         {
-        *po_pRed = (unsigned short)(ChannelMaxValue * pow( NormalizedColor, 1.0/m_GammaCorrectionFactor));
+        *po_pRed = (uint16_t)(ChannelMaxValue * pow( NormalizedColor, 1.0/m_GammaCorrectionFactor));
         }
     else
         {
         // Convert the processed value to the standard domain [0,255]
-        *po_pRed = (unsigned short)((NormalizedColor * ChannelMaxValue) + PRECISION_EPSILON);
+        *po_pRed = (uint16_t)((NormalizedColor * ChannelMaxValue) + PRECISION_EPSILON);
         }
 
     //--- Green ----------------------------------------------------
@@ -790,12 +790,12 @@ bool HGFLuvColorSpace::SafeConvertToRGB (double   pi_L,    double   pi_U,      d
 
     if (m_UseGammaCorrection)
         {
-        *po_pGreen = (unsigned short)(ChannelMaxValue * pow( NormalizedColor, 1.0/m_GammaCorrectionFactor));
+        *po_pGreen = (uint16_t)(ChannelMaxValue * pow( NormalizedColor, 1.0/m_GammaCorrectionFactor));
         }
     else
         {
         // Convert the processed value to the standard domain [0,255]
-        *po_pGreen = (unsigned short)((NormalizedColor * ChannelMaxValue) + PRECISION_EPSILON);
+        *po_pGreen = (uint16_t)((NormalizedColor * ChannelMaxValue) + PRECISION_EPSILON);
         }
 
     //--- Blue -----------------------------------------------------
@@ -810,12 +810,12 @@ bool HGFLuvColorSpace::SafeConvertToRGB (double   pi_L,    double   pi_U,      d
 
     if (m_UseGammaCorrection)
         {
-        *po_pBlue = (unsigned short)(ChannelMaxValue * pow( NormalizedColor, 1.0/m_GammaCorrectionFactor));
+        *po_pBlue = (uint16_t)(ChannelMaxValue * pow( NormalizedColor, 1.0/m_GammaCorrectionFactor));
         }
     else
         {
         // Convert the processed value to the standard domain [0,255]
-        *po_pBlue = (unsigned short)((NormalizedColor * ChannelMaxValue) + PRECISION_EPSILON);
+        *po_pBlue = (uint16_t)((NormalizedColor * ChannelMaxValue) + PRECISION_EPSILON);
         }
     return ConversionDone;
     }

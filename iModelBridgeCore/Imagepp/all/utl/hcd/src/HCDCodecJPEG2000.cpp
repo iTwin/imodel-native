@@ -605,7 +605,7 @@ void HCDCodecJPEG2000::OpenJP2Stream()
             HASSERT(0);
         }
 
-    unsigned short BitsPerPixelPerBand = (unsigned short)GetBitsPerPixel() / Info.nBands;
+    uint16_t BitsPerPixelPerBand = (uint16_t)GetBitsPerPixel() / Info.nBands;
 
     switch (BitsPerPixelPerBand)
         {
@@ -687,7 +687,7 @@ size_t HCDCodecJPEG2000::CompressSubset(const void* pi_pInData,
 
         if (m_ColorMode == GRAYSCALE)
             {
-            for (unsigned int LineInd = 0; LineInd < StripHeight; LineInd++)
+            for (uint32_t LineInd = 0; LineInd < StripHeight; LineInd++)
                 {
                 Error = m_pCodec->WriteLineBIL((NCSEcwCellType)m_CellType,
                                                m_NbBands,
@@ -707,14 +707,14 @@ size_t HCDCodecJPEG2000::CompressSubset(const void* pi_pInData,
 
             pInputBufferPtr = pInputBuffer.get();
 
-            for (unsigned int LineInd = 0; LineInd < StripHeight; LineInd++)
+            for (uint32_t LineInd = 0; LineInd < StripHeight; LineInd++)
                 {
                 LineOffset = (BytesPerLine * LineInd);
 
-                for (int BandInd = 0; BandInd < 3; BandInd++)
+                for (int32_t BandInd = 0; BandInd < 3; BandInd++)
                     {
                     pDataBuffer = ((Byte*)pi_pInData) + LineOffset + BandInd;
-                    for (unsigned int PixelIndex = 0; PixelIndex < GetWidth(); PixelIndex++)
+                    for (uint32_t PixelIndex = 0; PixelIndex < GetWidth(); PixelIndex++)
                         {
                         *pInputBufferPtr = *pDataBuffer;
                         pInputBufferPtr++;
@@ -799,7 +799,7 @@ size_t HCDCodecJPEG2000::CompressSubset(const void* pi_pInData,
                 HASSERT(0);
             }
 
-        unsigned short BitsPerPixelPerBand = (unsigned short)GetBitsPerPixel() / Info.nBands;
+        uint16_t BitsPerPixelPerBand = (uint16_t)GetBitsPerPixel() / Info.nBands;
 
         switch (BitsPerPixelPerBand)
             {
@@ -848,7 +848,7 @@ size_t HCDCodecJPEG2000::CompressSubset(const void* pi_pInData,
                 uint32_t BytesPerLine = (uint32_t)ceil(GetBitsPerPixel() / 8.0) * GetSubsetWidth();
                 void* pInData = pi_pInData;
 
-                for (unsigned int LineInd = 0; LineInd < GetSubsetHeight(); LineInd++)
+                for (uint32_t LineInd = 0; LineInd < GetSubsetHeight(); LineInd++)
                     {
                     Error = Codec.WriteLineBIL(Info.eCellType,
                                                Info.nBands,
@@ -885,11 +885,11 @@ size_t HCDCodecJPEG2000::CompressSubset(const void* pi_pInData,
         uint32_t BytesPerLine = (uint32_t)ceil(m_BitsPerPixel / 8.0) * m_Width;
         uint64_t LineIndex = (BytesPerLine * nNextLine);
 
-        for (int BandInd = 0; BandInd < 3; BandInd++)
+        for (int32_t BandInd = 0; BandInd < 3; BandInd++)
             {
             pInputBuffer = (Byte*)ppInputArray[BandInd];
             pDataBuffer = m_pInData + LineIndex + BandInd;
-            for (unsigned int PixelIndex = 0; PixelIndex < m_Width; PixelIndex++)
+            for (uint32_t PixelIndex = 0; PixelIndex < m_Width; PixelIndex++)
                 {
                 *pInputBuffer = *pDataBuffer;
                 pInputBuffer++;
@@ -1430,7 +1430,7 @@ void HCDCodecIJG::DeepCopy(const HCDCodecIJG& pi_rObj)
     m_ExternalQuantizationTablesUse = pi_rObj.m_ExternalQuantizationTablesUse;
     if(m_ExternalQuantizationTablesUse)
         {
-        int tblno;
+        int32_t tblno;
 
         m_QuantizationTables.resize(NUM_QUANT_TBLS , HUINTVector());
 
@@ -1438,7 +1438,7 @@ void HCDCodecIJG::DeepCopy(const HCDCodecIJG& pi_rObj)
         for (tblno = 0; tblno < NUM_QUANT_TBLS; tblno++)
             {
             if(pi_rObj.m_QuantizationTables[tblno].size() != 0)
-                SetQuantizationTable(tblno, (const unsigned int*)&pi_rObj.m_QuantizationTables[tblno][0], false);
+                SetQuantizationTable(tblno, &pi_rObj.m_QuantizationTables[tblno][0], false);
             else
                 m_QuantizationTables[tblno].clear();
             }
@@ -1466,13 +1466,13 @@ void HCDCodecIJG::UpdateInternalState()
     // copy the compressor info
     if(m_ExternalQuantizationTablesUse)
         {
-        int tblno;
+        int32_t tblno;
 
         /* Copy the source's quantization tables. */
         for (tblno = 0; tblno < NUM_QUANT_TBLS; tblno++)
             {
             if(m_QuantizationTables[tblno].size() != 0)
-                SetQuantizationTable(tblno, (const unsigned int*)&m_QuantizationTables[tblno][0], false);
+                SetQuantizationTable(tblno, &m_QuantizationTables[tblno][0], false);
             }
         }
     SetSubsamplingMode(m_SubsamplingMode);
@@ -1549,7 +1549,7 @@ void HCDCodecIJG::SetQuality(Byte pi_Percentage)
 
     if (m_ExternalQuantizationTablesUse)
         {
-        for (int tblno = 0; tblno < NUM_QUANT_TBLS; tblno++)
+        for (int32_t tblno = 0; tblno < NUM_QUANT_TBLS; tblno++)
             {
             if(m_QuantizationTables[tblno].size() != 0)
                 {
@@ -1656,14 +1656,14 @@ void HCDCodecIJG::ReadHeader(const void* pi_pInData, size_t pi_InDataSize)
         memcpy(m_pHeader, pi_pInData, m_HeaderSize);
 
         m_pIJLInfoDec->JPGBytes = m_pHeader;
-        m_pIJLInfoDec->JPGSizeBytes = (int)m_HeaderSize;
+        m_pIJLInfoDec->JPGSizeBytes = (int32_t)m_HeaderSize;
         m_pIJLInfoDec->jprops.use_external_qtables = 1;
         m_pIJLInfoDec->jprops.use_external_htables = 1;
 
-        for (int i=0; i<4; ++i)
+        for (int32_t i=0; i<4; ++i)
             m_pIJLInfoDec->jprops.rawquanttables[i].quantizer = &m_QuantTable[i][0];
 
-        for (int i=0; i<8; ++i)
+        for (int32_t i=0; i<8; ++i)
             {
             m_pIJLInfoDec->jprops.rawhufftables[i].bits = &m_HuffBits[i][0];
             m_pIJLInfoDec->jprops.rawhufftables[i].vals = &m_HuffVals[i][0];
@@ -1672,7 +1672,7 @@ void HCDCodecIJG::ReadHeader(const void* pi_pInData, size_t pi_InDataSize)
         IJLERR IJLErrorCode = ijlRead(m_pIJLInfoDec, IJL_JBUFF_READHEADER);
 
         if (IJLErrorCode < IJL_OK)
-            throw HCDIJLErrorException((short)IJLErrorCode);
+            throw HCDIJLErrorException((int16_t)IJLErrorCode);
 
         // Resetting parameters cleared by read header operation
         //SetQuality(m_Quality);
@@ -1786,7 +1786,7 @@ void HCDCodecIJG::SetSubsamplingMode(SubsamplingModes pi_Mode)
 // SetQuantizationTable
 // PLEASE CALL FOR SLOT 0 BEFORE SLOT 1
 //-----------------------------------------------------------------------------
-void HCDCodecIJG::SetQuantizationTable(int pi_Slot, const unsigned int* pi_pTable, bool pi_UnZigZag)
+void HCDCodecIJG::SetQuantizationTable(int32_t pi_Slot, const uint32_t* pi_pTable, bool pi_UnZigZag)
     {
     if (m_UseIJLWrite)
         {
@@ -1803,7 +1803,7 @@ void HCDCodecIJG::SetQuantizationTable(int pi_Slot, const unsigned int* pi_pTabl
         if (pi_pTable != pNatural)
             {
             if (pi_UnZigZag)
-                for (register int r=0; r<64; pNatural[s_NaturalOrderIndexes[r++]] = pi_pTable[r]);
+                for (auto r=0; r<64; pNatural[s_NaturalOrderIndexes[r++]] = pi_pTable[r]);
             else
                 memcpy(pNatural, pi_pTable, 64 * sizeof(uint32_t));
             }
@@ -1814,10 +1814,10 @@ void HCDCodecIJG::SetQuantizationTable(int pi_Slot, const unsigned int* pi_pTabl
             m_pIJLInfoEnc->jprops.nqtables = pi_Slot;
             }
         Byte ByteArray[64];
-        for (register int r=0; r<64; ByteArray[r++] = pNatural[r]); // Converts from int[] to uchar[]
+        for (auto r=0; r<64; ByteArray[r++] = pNatural[r]); // Converts from int32_t[] to uchar[]
         m_pIJLInfoEnc->jprops.rawquanttables[pi_Slot].quantizer = &ByteArray[0];
         m_pIJLInfoEnc->jprops.rawquanttables[pi_Slot].ident = pi_Slot;
-        for (int j = pi_Slot; j < m_pIJLInfoEnc->JPGChannels; j++)
+        for (int32_t j = pi_Slot; j < m_pIJLInfoEnc->JPGChannels; j++)
             m_pIJLInfoEnc->jprops.jframe.comps[j].quant_sel = pi_Slot;
         }
     else
@@ -1904,7 +1904,7 @@ void HCDCodecIJG::CopyTablesFromDecoderToEncoder()
         m_pIJLInfoEnc->jprops.use_external_qtables = 1;
         m_pIJLInfoEnc->jprops.maxquantindex = m_pIJLInfoDec->jprops.maxquantindex;
         m_pIJLInfoEnc->jprops.nqtables = m_pIJLInfoDec->jprops.nqtables;
-        for (int i = 0; i < 4; i++)
+        for (int32_t i = 0; i < 4; i++)
             {
             m_pIJLInfoEnc->jprops.rawquanttables[i].quantizer = m_pIJLInfoDec->jprops.rawquanttables[i].quantizer;
             m_pIJLInfoEnc->jprops.rawquanttables[i].ident = m_pIJLInfoDec->jprops.rawquanttables[i].ident;
@@ -1914,7 +1914,7 @@ void HCDCodecIJG::CopyTablesFromDecoderToEncoder()
         m_pIJLInfoEnc->jprops.nhuffActables = m_pIJLInfoDec->jprops.nhuffActables;
         m_pIJLInfoEnc->jprops.nhuffDctables = m_pIJLInfoDec->jprops.nhuffDctables;
         m_pIJLInfoEnc->jprops.maxhuffindex = m_pIJLInfoDec->jprops.maxhuffindex;
-        for (int i=0; i < 8; i++)
+        for (int32_t i=0; i < 8; i++)
             {
             m_pIJLInfoEnc->jprops.rawhufftables[i].vals = m_pIJLInfoDec->jprops.rawhufftables[i].vals;
             m_pIJLInfoEnc->jprops.rawhufftables[i].hclass = m_pIJLInfoDec->jprops.rawhufftables[i].hclass;
@@ -1928,7 +1928,7 @@ void HCDCodecIJG::CopyTablesFromDecoderToEncoder()
          * Fix it to get the right header markers for the image colorspace.
          */
         JQUANT_TBL** qtblptr;
-        int tblno;
+        int32_t tblno;
 
         /*jpeg_set_colorspace(cinfocomp, cinfodec->jpeg_color_space);
         cinfocomp->data_precision = cinfodec->data_precision;

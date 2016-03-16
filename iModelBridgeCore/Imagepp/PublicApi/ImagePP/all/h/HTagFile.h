@@ -104,37 +104,37 @@ public:
     bool                       IsVariableSizeTag              (HTagID pi_Tag) const;
     bool                       RemoveTag                      (HTagID pi_Tag);
 
-    bool                       GetField                       (HTagID pi_Tag, unsigned short* po_pVal) const;
+    bool                       GetField                       (HTagID pi_Tag, uint16_t* po_pVal) const;
     bool                       GetField                       (HTagID pi_Tag, uint32_t* po_pVal) const;
     bool                       GetField                       (HTagID pi_Tag, double* po_pVal) const;
     bool                       GetField                       (HTagID pi_Tag, uint64_t* po_pVal) const;
     bool                       GetField                       (HTagID pi_Tag, char** po_ppVal) const;
     bool                       GetField                       (HTagID pi_Tag, WChar** po_ppVal) const;
-    bool                       GetField                       (HTagID pi_Tag, unsigned short* po_pVal1, unsigned short* po_pVal2) const;
+    bool                       GetField                       (HTagID pi_Tag, uint16_t* po_pVal1, uint16_t* po_pVal2) const;
 
-    bool                       GetField                       (HTagID pi_Tag, uint32_t* po_pCount, unsigned short** po_ppVal) const;
+    bool                       GetField                       (HTagID pi_Tag, uint32_t* po_pCount, uint16_t** po_ppVal) const;
     bool                       GetField                       (HTagID pi_Tag, uint32_t* po_pCount, uint32_t** po_ppVal) const;
     bool                       GetField                       (HTagID pi_Tag, uint32_t* po_pCount, double** po_ppVal) const;
     bool                       GetField                       (HTagID pi_Tag, uint32_t* po_pCount, Byte** po_ppVal) const;
     bool                       GetField                       (HTagID pi_Tag, uint32_t* po_pCount, uint64_t** po_ppVal) const;
 
-    bool                       SetField                       (HTagID pi_Tag, unsigned short pi_Val);
+    bool                       SetField                       (HTagID pi_Tag, uint16_t pi_Val);
     bool                       SetField                       (HTagID pi_Tag, uint32_t pi_Val);
     bool                       SetField                       (HTagID pi_Tag, double pi_Val);
     bool                       SetField                       (HTagID pi_Tag, uint64_t pi_Val);
     bool                       SetFieldA                      (HTagID pi_Tag, const char* pi_pVal);
     bool                       SetFieldW                      (HTagID pi_Tag, const WChar* pi_pVal);
-    bool                       SetField                       (HTagID pi_Tag, unsigned short pi_Val1, unsigned short pi_Val2);
+    bool                       SetField                       (HTagID pi_Tag, uint16_t pi_Val1, uint16_t pi_Val2);
 
     bool                       SetField                       (HTagID pi_Tag, uint32_t pi_Count, const Byte* pi_pVal);
-    bool                       SetField                       (HTagID pi_Tag, uint32_t pi_Count, const unsigned short* pi_pVal);
+    bool                       SetField                       (HTagID pi_Tag, uint32_t pi_Count, const uint16_t* pi_pVal);
     bool                       SetField                       (HTagID pi_Tag, uint32_t pi_Count, const uint32_t* pi_pVal);
     bool                       SetField                       (HTagID pi_Tag, uint32_t pi_Count, const double* pi_pVal);
     bool                       SetField                       (HTagID pi_Tag, uint32_t pi_Count, const uint64_t* pi_pVal);
 
 protected:
 
-    typedef unsigned short     MagicNumber;
+    typedef uint16_t     MagicNumber;
 
     IMAGEPP_EXPORT explicit    HTagFile                       (const WString&          pi_rFilename,
                                                                 const HTagInfo&         pi_rTagInfo,
@@ -222,9 +222,9 @@ protected:
     typedef    struct                   // Big Tiff support (> 4Gig)
         {
         MagicNumber Magic;              // Magic number (defines byte order)
-        unsigned short Version;            // TIFF version (42 or 43 for BigTiff)
-        unsigned short BytesizeOfOffset;   // BigTiff only - Always 8 in BigTiff
-        unsigned short Reserved;           // BigTiff only - Always 0
+        uint16_t Version;            // TIFF version (42 or 43 for BigTiff)
+        uint16_t BytesizeOfOffset;   // BigTiff only - Always 8 in BigTiff
+        uint16_t Reserved;           // BigTiff only - Always 0
         uint64_t   DirOffset64;        // Offset to first directory
         } HeaderFile64;
 

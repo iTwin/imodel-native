@@ -156,7 +156,7 @@ class DownSamplingTester : public ::testing::TestWithParam< ::std::tr1::tuple<HF
         uint8_t SeedsUInt8[] = { 255, 255, 255, 255, 255, 255, 0, 0, 0, 255, 255, 0, 0};
         uint16_t SeedsUInt16[] = { 0, USHRT_MAX / 3, USHRT_MAX / 3 * 2, USHRT_MAX, USHRT_MAX / 2 };
         int16_t SeedsInt16[] = { SHRT_MIN, 0, -(SHRT_MAX-1) / 2, SHRT_MAX, -SHRT_MAX / 3 };
-        uint32_t SeedsUInt32[] = { 0, ULONG_MAX / 3, ULONG_MAX / 3 * 2, ULONG_MAX, ULONG_MAX / 2 };
+        uint32_t SeedsUInt32[] = { 0, UINT32_MAX / 3, UINT32_MAX / 3 * 2, UINT32_MAX, UINT32_MAX / 2 };
 
         switch (pPixelType->GetClassID())
             {

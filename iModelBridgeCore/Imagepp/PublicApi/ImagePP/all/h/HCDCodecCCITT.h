@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecCCITT.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -33,8 +33,8 @@ public:
 
     virtual double GetEstimatedCompressionRatio() const;
 
-    IMAGEPP_EXPORT void     SetPhotometric(unsigned short pi_Photo);
-    unsigned short GetPhotometric() const;
+    IMAGEPP_EXPORT void     SetPhotometric(uint16_t pi_Photo);
+    uint16_t GetPhotometric() const;
 
     IMAGEPP_EXPORT void     SetBitRevTable(bool pi_Reverse);
 
@@ -48,7 +48,7 @@ protected:
                   size_t pi_Height);
 
     bool           m_bitrevtable;
-    unsigned short m_photometric;
+    uint16_t m_photometric;
     };
 
 END_IMAGEPP_NAMESPACE

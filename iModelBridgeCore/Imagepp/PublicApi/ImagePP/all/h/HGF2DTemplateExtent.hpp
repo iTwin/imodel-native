@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DTemplateExtent.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -104,7 +104,7 @@ template <class DataType, class COORD> bool HGF2DTemplateExtent<DataType, COORD>
 // IsEqualTo
 // Equality evaluation operator with epsilon.
 //-----------------------------------------------------------------------------
-template <class DataType, class COORD> int HGF2DTemplateExtent<DataType, COORD>::IsEqualTo(const HGF2DTemplateExtent<DataType, COORD>& pi_rObj) const
+template <class DataType, class COORD> int32_t HGF2DTemplateExtent<DataType, COORD>::IsEqualTo(const HGF2DTemplateExtent<DataType, COORD>& pi_rObj) const
     {
     // Compare origin and corners
     return((HNumeric<DataType>::EQUAL_EPSILON(pi_rObj.m_XMin, m_XMin) &&
@@ -118,7 +118,7 @@ template <class DataType, class COORD> int HGF2DTemplateExtent<DataType, COORD>:
 // IsEqualTo
 // Equality evaluation operator with epsilon.
 //-----------------------------------------------------------------------------
-template <class DataType, class COORD> int HGF2DTemplateExtent<DataType, COORD>::IsEqualTo(const HGF2DTemplateExtent<DataType, COORD>& pi_rObj, DataType pi_Epsilon) const
+template <class DataType, class COORD> int32_t HGF2DTemplateExtent<DataType, COORD>::IsEqualTo(const HGF2DTemplateExtent<DataType, COORD>& pi_rObj, DataType pi_Epsilon) const
     {
     // Tolerance provided must be positive or null
     HPRECONDITION(pi_Epsilon >= 0.0);

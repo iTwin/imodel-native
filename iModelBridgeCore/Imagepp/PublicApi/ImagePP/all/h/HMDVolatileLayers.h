@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMDVolatileLayers.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -30,18 +30,18 @@ public :
 
     IMAGEPP_EXPORT bool                                SameLayersOn        (const HMDVolatileLayers& pi_rObj) const;
 
-    IMAGEPP_EXPORT unsigned short                      GetNbVolatileLayers () const;
-    IMAGEPP_EXPORT HMDVolatileLayerInfo*                GetVolatileLayerInfo(unsigned short pi_Index);
-    IMAGEPP_EXPORT const HMDLayerInfo*                  GetLayerInfo        (unsigned short pi_Index) const;
+    IMAGEPP_EXPORT uint16_t                      GetNbVolatileLayers () const;
+    IMAGEPP_EXPORT HMDVolatileLayerInfo*                GetVolatileLayerInfo(uint16_t pi_Index);
+    IMAGEPP_EXPORT const HMDLayerInfo*                  GetLayerInfo        (uint16_t pi_Index) const;
     IMAGEPP_EXPORT bool                                GetIndexFromKey     (const WString& pi_rKey,
-                                                              unsigned short&       po_rIndex) const;
+                                                              uint16_t&       po_rIndex) const;
 
     IMAGEPP_EXPORT void                                 ResetInitialVisibleState();
 
 protected:
 
     HArrayAutoPtr<HAutoPtr<HMDVolatileLayerInfo> > m_ppVolatileLayers;
-    unsigned short                                 m_NbVolatileLayers;
+    uint16_t                                 m_NbVolatileLayers;
 
 private:
     HMDVolatileLayers& operator=(const HMDVolatileLayers& pi_rObj);

@@ -383,7 +383,7 @@ bool   HVE2DReferenceToVector::IsPointOnSCS(const HGF2DLocation& pi_rTestPoint,
 // ObtainContiguousnessPoints
 // Finds contiguousness points with vector
 //-----------------------------------------------------------------------------
-int HVE2DReferenceToVector::ObtainContiguousnessPoints(const HVE2DVector& pi_rVector,
+int32_t HVE2DReferenceToVector::ObtainContiguousnessPoints(const HVE2DVector& pi_rVector,
                                                        HGF2DLocationCollection* po_pContiguousnessPoints) const
     {
     HPRECONDITION(po_pContiguousnessPoints);
@@ -396,7 +396,7 @@ int HVE2DReferenceToVector::ObtainContiguousnessPoints(const HVE2DVector& pi_rVe
 
     HGF2DLocationCollection  ContiguousPoints;
     // Obtain contiguousness points
-    int NumPoints = m_pSource->ObtainContiguousnessPoints(*pVector, &ContiguousPoints);
+    int32_t NumPoints = m_pSource->ObtainContiguousnessPoints(*pVector, &ContiguousPoints);
 
     // If any points were found
     if (NumPoints > 0)
@@ -466,7 +466,7 @@ void HVE2DReferenceToVector::ObtainContiguousnessPointsAt(const HVE2DVector& pi_
 // Intersect
 // Finds intersection points with vector
 //-----------------------------------------------------------------------------
-int HVE2DReferenceToVector::Intersect(const HVE2DVector& pi_rVector,
+int32_t HVE2DReferenceToVector::Intersect(const HVE2DVector& pi_rVector,
                                       HGF2DLocationCollection* po_pCrossPoints) const
     {
     int32_t NumberOfNewPoints = 0;
@@ -481,7 +481,7 @@ int HVE2DReferenceToVector::Intersect(const HVE2DVector& pi_rVector,
     HGF2DLocationCollection  CrossPoints;
 
     // Obtain cross points
-    int NumPoints = m_pSource->Intersect(*pVector,
+    int32_t NumPoints = m_pSource->Intersect(*pVector,
                                          &CrossPoints);
 
     // If any points were found

@@ -536,7 +536,7 @@ class ConverterI1R8G8B8A8_V24R8G8B8 : public HRPPixelConverter
             }
         };
 
-    virtual const short* GetLostChannels() const override
+    virtual const int16_t* GetLostChannels() const override
         {
         return m_LostChannels;
         }
@@ -547,9 +547,9 @@ class ConverterI1R8G8B8A8_V24R8G8B8 : public HRPPixelConverter
 
 private:
 
-    static short m_LostChannels[];
+    static int16_t m_LostChannels[];
     };
-short ConverterI1R8G8B8A8_V24R8G8B8::m_LostChannels[] = {3, -1};
+int16_t ConverterI1R8G8B8A8_V24R8G8B8::m_LostChannels[] = {3, -1};
 static ConverterI1R8G8B8A8_V24R8G8B8 s_I1R8G8B8A8_V24R8G8B8;
 
 //-----------------------------------------------------------------------------
@@ -809,7 +809,7 @@ public:
             }
         };
 
-    virtual const short* GetLostChannels() const override
+    virtual const int16_t* GetLostChannels() const override
         {
         return m_LostChannels;
         }
@@ -837,9 +837,9 @@ protected:
 private:
 
 
-    static short m_LostChannels[];
+    static int16_t m_LostChannels[];
     };
-short ConverterI1R8G8B8A8_V24B8G8R8::m_LostChannels[] = {3, -1};
+int16_t ConverterI1R8G8B8A8_V24B8G8R8::m_LostChannels[] = {3, -1};
 static ConverterI1R8G8B8A8_V24B8G8R8 s_I1R8G8B8A8_V24B8G8R8;
 
 //-----------------------------------------------------------------------------
@@ -1228,7 +1228,7 @@ protected:
 
         // fill the octree with the destination palette entries
         int32_t NbIndex(rDestPixelPalette.CountUsedEntries());
-        for(int Index = 0; Index < NbIndex; Index++)
+        for(int32_t Index = 0; Index < NbIndex; Index++)
             m_QuantizedPalette.AddCompositeValue(rDestPixelPalette.GetCompositeValue(Index),
                                                  (Byte)Index);
 
@@ -1254,7 +1254,7 @@ private:
     size_t GetClosestEntryIndexInPalette(Byte* pi_pValue, const HRPPixelPalette& pi_rPixelPalette) const
         {
         Byte* pValue;
-        int RDist, GDist, BDist;
+        int32_t RDist, GDist, BDist;
         uint32_t Dist;
         size_t IndexForSmallerDist=0;
 
@@ -1402,7 +1402,7 @@ HPMPersistentObject* HRPPixelTypeI1R8G8B8A8::Clone() const
     @end
     -----------------------------------------------------------------------------
  */
-unsigned short HRPPixelTypeI1R8G8B8A8::CountValueBits() const
+uint16_t HRPPixelTypeI1R8G8B8A8::CountValueBits() const
     {
     return 0;
     }

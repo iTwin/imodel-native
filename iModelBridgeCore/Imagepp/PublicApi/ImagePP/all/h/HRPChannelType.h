@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPChannelType.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPChannelType
@@ -57,8 +57,8 @@ public:
     HRPChannelType();
     IMAGEPP_EXPORT                 HRPChannelType(ChannelRole     pi_Role,
                                           DataType        pi_DataType,
-                                          unsigned short pi_SizeBits,
-                                          unsigned short pi_Id,
+                                          uint16_t pi_SizeBits,
+                                          uint16_t pi_Id,
                                           const double* pi_pNoDataValue = 0);
 
     IMAGEPP_EXPORT                 HRPChannelType(const HRPChannelType& pi_rObj);
@@ -78,15 +78,15 @@ public:
 
     IMAGEPP_EXPORT ChannelRole      GetRole() const;
     IMAGEPP_EXPORT DataType         GetDataType() const;
-    IMAGEPP_EXPORT unsigned short   GetSize() const;
-    IMAGEPP_EXPORT unsigned short   GetId() const;
+    IMAGEPP_EXPORT uint16_t   GetSize() const;
+    IMAGEPP_EXPORT uint16_t   GetId() const;
 
 private:
 
     ChannelRole        m_Role;
     DataType           m_DataType;
-    unsigned short     m_SizeBits;
-    unsigned short     m_Id;
+    uint16_t     m_SizeBits;
+    uint16_t     m_Id;
     HAutoPtr<double>   m_pNoDataValue;
     };
 END_IMAGEPP_NAMESPACE

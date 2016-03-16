@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFcTiffFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFcTiffFile
@@ -124,7 +124,7 @@ protected:
 
     virtual bool ValidateHMRDirectory(HTIFFFile* pi_pTiffFilePtr, uint32_t pi_Page,
                                        uint32_t pi_HMRVersion, Byte** pTransPalette,
-                                       unsigned short*    po_pHMRPixelTypeSpec) const;
+                                       uint16_t*    po_pHMRPixelTypeSpec) const;
     virtual bool ValidatePageDirectory(HTIFFFile* pi_pTiffFilePtr, uint32_t pi_Page, uint32_t pi_HMRVersion) const;
 
 private:

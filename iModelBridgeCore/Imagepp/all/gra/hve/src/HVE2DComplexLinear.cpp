@@ -1476,7 +1476,7 @@ bool HVE2DComplexLinear::AutoCrosses() const
 // Finds and returns all auto intersection points of linear
 // INCOMPLETE ????
 //-----------------------------------------------------------------------------
-inline int HVE2DComplexLinear::AutoIntersect(HGF2DLocationCollection* po_pPoints) const
+inline int32_t HVE2DComplexLinear::AutoIntersect(HGF2DLocationCollection* po_pPoints) const
     {
     HPRECONDITION(po_pPoints);
 

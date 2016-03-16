@@ -428,7 +428,7 @@ string HFCURLCommonInternet::EscapeURLParamValue(const string& pi_rURLPart)
         if ((isalnum((Byte)*CharIter) == 0) &&
             (UnreservedChars.find_first_of(*CharIter) == string::npos))
             {
-            int charCount = BeStringUtilities::Snprintf(EscapedChar, sizeof(EscapedChar), "%x", (Byte)*CharIter);
+            int32_t charCount = BeStringUtilities::Snprintf(EscapedChar, sizeof(EscapedChar), "%x", (Byte)*CharIter);
             HASSERT(charCount > 0);
 
             if ((isascii(EscapedChar[0]) != 0) && (islower(EscapedChar[0]) != 0))

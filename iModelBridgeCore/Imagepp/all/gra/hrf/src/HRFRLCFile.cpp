@@ -49,7 +49,7 @@ public:
         {
         // Block Capability
         Add(new HRFLineCapability(HFC_READ_ONLY,                // AccessMode
-                                  LONG_MAX,                     // MaxWidth
+                                  INT32_MAX,                     // MaxWidth
                                   HRFBlockAccess::SEQUENTIAL)); // BlockAccess
         }
     };
@@ -259,7 +259,7 @@ HRFRLCFile::~HRFRLCFile()
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFRLCFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                        unsigned short pi_Resolution,
+                                                        uint16_t pi_Resolution,
                                                         HFCAccessMode  pi_AccessMode)
     {
     // verify that the page number is 0, because we have one image per file
@@ -328,8 +328,8 @@ bool HRFRLCFile::Open()
 void HRFRLCFile::CreateDescriptors ()
     {
     // read the image size
-    unsigned short aBuffer[2];
-    m_pRLCFile->Read(aBuffer, 2 * sizeof(unsigned short));
+    uint16_t aBuffer[2];
+    m_pRLCFile->Read(aBuffer, 2 * sizeof(uint16_t));
 
     // The file was write in little endian, we must swap bytes for big endian
     // this method come from HTIFFUtils
@@ -445,20 +445,20 @@ void HRFRLCFile::FindImageParams()
         double scale;           /* always 1.0 */
         double density;         /* pixel density image in world */
         double skew;            /* skew angle of image in world */
-        short  skip;            /* line skipping factor */
-        short  speckle;         /* 0 - 255 */
-        short  rotate;          /* 0=0; 1=90; 2=180; 3=270 */
-        short  mode;            /* bitwise image mode */
-        short  color;           /* 1-255 */
-        short  split;           /* always 0 */
-        long   reserved;        /* always 0 */
+        int16_t  skip;            /* line skipping factor */
+        int16_t  speckle;         /* 0 - 255 */
+        int16_t  rotate;          /* 0=0; 1=90; 2=180; 3=270 */
+        int16_t  mode;            /* bitwise image mode */
+        int16_t  color;           /* 1-255 */
+        int16_t  split;           /* always 0 */
+        int32_t   reserved;        /* always 0 */
         char   filename[144];       /* original name of file */
 #endif
         //The image paramaters are in little endian order, so swap them.
         //Swaps first five double parameters
         SwabArrayOfDouble(&RasterHeader.iparms, 5);
 
-        //Swap next five short parameters
+        //Swap next five int16_t parameters
         SwabArrayOfShort(&(RasterHeader.iparms.skip), 5);
 
         //The split and reserved fields don't have to be swapped,

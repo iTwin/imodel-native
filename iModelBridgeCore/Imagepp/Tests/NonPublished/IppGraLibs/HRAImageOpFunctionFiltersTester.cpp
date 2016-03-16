@@ -7,7 +7,7 @@
 //:>+--------------------------------------------------------------------------------------
 
 #include "../imagepptestpch.h"
-#include <ImagePP\all\h\HRAImageOpFunctionFilters.h>
+#include <ImagePP/all/h/HRAImageOpFunctionFilters.h>
 
 //-----------------------------------------------------------------------------
 // Class : HRAImageOpFunctionFiltersTester
@@ -46,10 +46,10 @@ class HRAImageOpFunctionFiltersTester : public testing::Test
 //==================================================================================
 TEST_F(HRAImageOpFunctionFiltersTester, ColortwistFilterTest)
     {
-    double pColortwistMatrix[4][4] = {.3333, .3333, .3333,    0,
-                                          0,     1,     0,    0,
-                                          0,     0,     1,    0,
-                                          0,     0,     0,    1};
+    double pColortwistMatrix[4][4] = {{.3333, .3333, .3333,    0},
+                                      {0,     1,     0,    0},
+                                      {0,     0,     1,    0},
+                                      {0,     0,     0,    1}};
     HRAImageOpPtr pNewOp = HRAImageOpColortwistFilter::CreateColortwistFilter(pColortwistMatrix);
 
     // Test available input with no output set

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFResolutionDescriptor.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -46,12 +46,12 @@ public:
     operator=(const HGFResolutionDescriptor& pi_rObj);
 
     // Resolution information methods.
-    IMAGEPP_EXPORT unsigned short CountResolutions() const;
+    IMAGEPP_EXPORT uint16_t CountResolutions() const;
 
-    IMAGEPP_EXPORT double       GetResolution   (unsigned short pi_SubImage) const;
-    IMAGEPP_EXPORT uint32_t    GetWidth        (unsigned short pi_SubImage) const;
-    IMAGEPP_EXPORT uint32_t    GetHeight       (unsigned short pi_SubImage) const;
-    void                GetDescription  (unsigned short pi_SubImage,
+    IMAGEPP_EXPORT double       GetResolution   (uint16_t pi_SubImage) const;
+    IMAGEPP_EXPORT uint32_t    GetWidth        (uint16_t pi_SubImage) const;
+    IMAGEPP_EXPORT uint32_t    GetHeight       (uint16_t pi_SubImage) const;
+    void                GetDescription  (uint16_t pi_SubImage,
                                          double*   po_pResolution,
                                          uint32_t*    po_pWidth,
                                          uint32_t*    po_pHeight)  const;
@@ -71,7 +71,7 @@ public:
                                                  uint32_t pi_MinHeight,
                                                  uint32_t pi_ResolutionFactor = 2);
 
-    void                RemoveResolution(unsigned short pi_SubImage);
+    void                RemoveResolution(uint16_t pi_SubImage);
     IMAGEPP_EXPORT void                RemoveResolutions();
 
 private:

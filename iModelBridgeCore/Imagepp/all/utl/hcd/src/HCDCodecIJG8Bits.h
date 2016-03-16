@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecIJG8Bits.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecIJG
@@ -84,7 +84,7 @@ public:
     HCDCodecIJG::ColorModes      GetSourceColorMode() const;
 
     // third parameter applies only for IJL, internal use :)
-    void            SetQuantizationTable(int pi_Slot, const unsigned int* pi_pTable, bool pi_UnZigZag = true);
+    void            SetQuantizationTable(int32_t pi_Slot, const uint32_t* pi_pTable, bool pi_UnZigZag = true);
 
     Byte const* GetAbbreviateTableHeader(size_t& headerSize) const;
 

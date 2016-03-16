@@ -27,17 +27,17 @@
         m_RLEBufferIndex+=2;\
         count-=32767;\
     }\
-    m_RLEBuffer[m_RLEBufferIndex] = (unsigned short)count;\
+    m_RLEBuffer[m_RLEBufferIndex] = (uint16_t)count;\
     ++m_RLEBufferIndex;
 
 // Assume black state at start and white at the end
 #define FillBlack(pixels) \
-    { int BlackCount(pixels); \
+    { int32_t BlackCount(pixels); \
     FillPixels(BlackCount); } \
  
 // Assume white state at start and black at the end
 #define FillWhite(pixels) \
-    { int WhiteCount(pixels); \
+    { int32_t WhiteCount(pixels); \
     FillPixels(WhiteCount); } \
  
 #define GP4_MAXLRS_GROW_RATE 2048
@@ -54,13 +54,13 @@ extern Byte        oneruns[256];
 
 struct White
     {
-    HArrayAutoPtr<unsigned short>   table;
+    HArrayAutoPtr<uint16_t>   table;
     HArrayAutoPtr<char>             cnt;
     };
 
 struct Black
     {
-    HArrayAutoPtr<unsigned short>   table;
+    HArrayAutoPtr<uint16_t>   table;
     HArrayAutoPtr<char>             cnt;
     };
 
@@ -115,14 +115,14 @@ HCDCodecCCITTFax4::CCITT4State::CCITT4State(const CCITT4State& pi_rObj)
     // Copy internal state buffer.
     if(m_bufferAllocated)
         {
-        m_buf1  = (long*)malloc((m_max_lrs*2+12)*sizeof(long));
+        m_buf1  = (int32_t*)malloc((m_max_lrs*2+12)*sizeof(int32_t));
         m_buf1c = (char*)malloc((m_max_lrs*2+12)*sizeof(char));
-        m_buf2  = (long*)malloc((m_max_lrs*2+12)*sizeof(long));
+        m_buf2  = (int32_t*)malloc((m_max_lrs*2+12)*sizeof(int32_t));
         m_buf2c = (char*)malloc((m_max_lrs*2+12)*sizeof(char));
 
-        memcpy(m_buf1, pi_rObj.m_buf1, m_max_lrs*2+12*sizeof(long));
+        memcpy(m_buf1, pi_rObj.m_buf1, m_max_lrs*2+12*sizeof(int32_t));
         memcpy(m_buf1c, pi_rObj.m_buf1c, m_max_lrs*2+12*sizeof(char));
-        memcpy(m_buf2, pi_rObj.m_buf2, m_max_lrs*2+12*sizeof(long));
+        memcpy(m_buf2, pi_rObj.m_buf2, m_max_lrs*2+12*sizeof(int32_t));
         memcpy(m_buf2c, pi_rObj.m_buf2c, m_max_lrs*2+12*sizeof(char));
         }
     else
@@ -188,7 +188,7 @@ HCDCodecCCITTFax4::CCITT4State::~CCITT4State()
 //-----------------------------------------------------------------------------
 // public
 //-----------------------------------------------------------------------------
-void HCDCodecCCITTFax4::CCITT4State::Pre(long pi_Width, long pi_Height, bool pi_Decode,
+void HCDCodecCCITTFax4::CCITT4State::Pre(int32_t pi_Width, int32_t pi_Height, bool pi_Decode,
                                          bool pi_UseBitRevTable, bool pi_InvertResult)
     {
     Reset();
@@ -208,9 +208,9 @@ void HCDCodecCCITTFax4::CCITT4State::Pre(long pi_Width, long pi_Height, bool pi_
     m_bstop  = pi_Width;
     m_bstopp1= pi_Width + 1;
 
-    m_buf1  = (long*)malloc((m_max_lrs*2+12)*sizeof(long));
+    m_buf1  = (int32_t*)malloc((m_max_lrs*2+12)*sizeof(int32_t));
     m_buf1c = (char*)malloc((m_max_lrs*2+12)*sizeof(char));
-    m_buf2  = (long*)malloc((m_max_lrs*2+12)*sizeof(long));
+    m_buf2  = (int32_t*)malloc((m_max_lrs*2+12)*sizeof(int32_t));
     m_buf2c = (char*)malloc((m_max_lrs*2+12)*sizeof(char));
 
     m_a      = m_buf1;
@@ -315,9 +315,9 @@ void HCDCodecCCITTFax4::CCITT4State::GrowMaxLRS()
     // Buffers can be inverted, make sure they point to the right buffer after the reallocation.
     bool inverted(m_buf1 == m_a ? false : true);
 
-    m_buf1   = (long*)realloc(m_buf1, (m_max_lrs*2+12)*sizeof(long));
+    m_buf1   = (int32_t*)realloc(m_buf1, (m_max_lrs*2+12)*sizeof(int32_t));
     m_buf1c  = (char*)realloc(m_buf1c, (m_max_lrs*2+12)*sizeof(char));
-    m_buf2   = (long*)realloc(m_buf2, (m_max_lrs*2+12)*sizeof(long));
+    m_buf2   = (int32_t*)realloc(m_buf2, (m_max_lrs*2+12)*sizeof(int32_t));
     m_buf2c  = (char*)realloc(m_buf2c, (m_max_lrs*2+12)*sizeof(char));
 
     // Reassign buffer pointer. It is OK since we are indexing these buffers.
@@ -339,7 +339,7 @@ void HCDCodecCCITTFax4::CCITT4State::GrowMaxLRS()
 // Set buffers use for input(decode) or output(encode)
 //-----------------------------------------------------------------------------
 void HCDCodecCCITTFax4::CCITT4State::SetupForRLEMode(Byte* pio_pG4Buffer, size_t pi_G4BufferSize,
-                                                     unsigned short* pio_pRLEBuffer, size_t pi_RLEBufferSize)
+                                                     uint16_t* pio_pRLEBuffer, size_t pi_RLEBufferSize)
     {
     m_g4Buffer      = pio_pG4Buffer;
     m_g4BufferSize  = pi_G4BufferSize;
@@ -354,7 +354,7 @@ void HCDCodecCCITTFax4::CCITT4State::SetupForRLEMode(Byte* pio_pG4Buffer, size_t
 // public
 // Set buffers use for input(decode) or output(encode)
 //-----------------------------------------------------------------------------
-void HCDCodecCCITTFax4::CCITT4State::SetRLEBuffer(unsigned short* pio_pRLEBuffer, size_t pi_RLEBufferSize)
+void HCDCodecCCITTFax4::CCITT4State::SetRLEBuffer(uint16_t* pio_pRLEBuffer, size_t pi_RLEBufferSize)
     {
     m_RLEBuffer        = pio_pRLEBuffer;
     m_RLEBufferSize    = pi_RLEBufferSize;
@@ -410,7 +410,7 @@ size_t HCDCodecCCITTFax4::CCITT4State::GetG4BufferDataSize() const
 //-----------------------------------------------------------------------------
 size_t HCDCodecCCITTFax4::CCITT4State::GetRLEBufferDataSize() const
     {
-    HASSERT(sizeof(short) == 2);
+    HASSERT(sizeof(int16_t) == 2);
     // Short index * 2.
     return m_RLEBufferIndex << 1;
     }
@@ -430,7 +430,7 @@ size_t HCDCodecCCITTFax4::CCITT4State::GetUncompressBufferDataSize() const
 //-----------------------------------------------------------------------------
 void HCDCodecCCITTFax4::CCITT4State::GetCode()
     {
-    unsigned short word, wmask;
+    uint16_t word, wmask;
     unsigned char g4mask, g4word;
 
     g4mask = m_g4mask;
@@ -890,8 +890,8 @@ void HCDCodecCCITTFax4::CCITT4State::GetWhite()
         {
         size_t length = 0x10000L;
 
-        s_White.table = new unsigned short[length];
-        memset(s_White.table, 0, length * sizeof (unsigned short));
+        s_White.table = new uint16_t[length];
+        memset(s_White.table, 0, length * sizeof (uint16_t));
 
         s_White.cnt = new char[length];
         memset(s_White.cnt, 0, length*sizeof(char));
@@ -1123,8 +1123,8 @@ void HCDCodecCCITTFax4::CCITT4State::GetWhite()
 
     unsigned char  g4mask = m_g4mask;
     unsigned char  g4word = m_g4word;
-    unsigned short word   = 0;
-    unsigned short wmask  = 0x8000L;
+    uint16_t word   = 0;
+    uint16_t wmask  = 0x8000L;
 
     for (char bit(1); bit<=12; ++bit)
         {
@@ -1179,8 +1179,8 @@ void HCDCodecCCITTFax4::CCITT4State::GetBlack()
         {
         size_t length = 0x10000L;
 
-        s_Black.table = new unsigned short[length];
-        memset(s_Black.table, 0, length*sizeof(unsigned short));
+        s_Black.table = new uint16_t[length];
+        memset(s_Black.table, 0, length*sizeof(uint16_t));
 
         s_Black.cnt = new char[length];
         memset(s_Black.cnt, 0, length*sizeof(char));
@@ -1420,8 +1420,8 @@ void HCDCodecCCITTFax4::CCITT4State::GetBlack()
 
     unsigned char  g4mask = m_g4mask;
     unsigned char  g4word = m_g4word;
-    unsigned short word   = 0;
-    unsigned short wmask  = 0x8000L;
+    uint16_t word   = 0;
+    uint16_t wmask  = 0x8000L;
 
     for (char bit(1); bit <= 13; ++bit)
         {
@@ -1469,9 +1469,9 @@ void HCDCodecCCITTFax4::CCITT4State::GetBlack()
 // public
 // Output bits from word to output buffer
 //-----------------------------------------------------------------------------
-void HCDCodecCCITTFax4::CCITT4State::OutputBits(long word, long nbits)
+void HCDCodecCCITTFax4::CCITT4State::OutputBits(int32_t word, int32_t nbits)
     {
-    long wmask;
+    int32_t wmask;
     unsigned char g4word, g4mask;
 
     g4word = m_g4word;
@@ -1479,7 +1479,7 @@ void HCDCodecCCITTFax4::CCITT4State::OutputBits(long word, long nbits)
 
     wmask = 0x8000L;
 
-    for (long i(0); i<nbits; ++i)
+    for (int32_t i(0); i<nbits; ++i)
         {
         if (word & wmask)
             {
@@ -1517,13 +1517,13 @@ void HCDCodecCCITTFax4::CCITT4State::OutputBits(long word, long nbits)
 //-----------------------------------------------------------------------------
 // public
 // Output code for white run length
-// long value;    // length of run length
+// int32_t value;    // length of run length
 //-----------------------------------------------------------------------------
-void HCDCodecCCITTFax4::CCITT4State::CodeWhite(long value)
+void HCDCodecCCITTFax4::CCITT4State::CodeWhite(int32_t value)
     {
-    long makeup;
+    int32_t makeup;
 
-    static const long white[ 64 ] = {
+    static const int32_t white[ 64 ] = {
         0x3500L, /*  0, 0011 0101 ---- ---- */
         0x1c00L, /*  1, 0001 11-- ---- ---- */
         0x7000L, /*  2, 0111 ---- ---- ---- */
@@ -1590,7 +1590,7 @@ void HCDCodecCCITTFax4::CCITT4State::CodeWhite(long value)
         0x3400L  /* 63, 0011 0100 ---- ---- */
         };
 
-    static const long lwhite[ 64 ] = {
+    static const int32_t lwhite[ 64 ] = {
         8, /*  0 */
         6, /*  1 */
         4, /*  2 */
@@ -1657,7 +1657,7 @@ void HCDCodecCCITTFax4::CCITT4State::CodeWhite(long value)
         8  /* 63 */
         };
 
-    static const long mwhite[ 40 ] = {
+    static const int32_t mwhite[ 40 ] = {
         0xd800L, /*   64, 1101 1--- ---- ---- */
         0x9000L, /*  128, 1001 0--- ---- ---- */
         0x5c00L, /*  192, 0101 11-- ---- ---- */
@@ -1700,7 +1700,7 @@ void HCDCodecCCITTFax4::CCITT4State::CodeWhite(long value)
         0x01f0L  /* 2560, 0000 0001 1111 ---- */
         };
 
-    static const long lmwhite[ 40 ] = {
+    static const int32_t lmwhite[ 40 ] = {
         5, /*   64 */
         5, /*  128 */
         6, /*  192 */
@@ -1782,13 +1782,13 @@ void HCDCodecCCITTFax4::CCITT4State::CodeWhite(long value)
 //-----------------------------------------------------------------------------
 // public
 // Output code for black run length
-// long value;    // length of run length
+// int32_t value;    // length of run length
 //-----------------------------------------------------------------------------
-void HCDCodecCCITTFax4::CCITT4State::CodeBlack(long value)
+void HCDCodecCCITTFax4::CCITT4State::CodeBlack(int32_t value)
     {
-    long makeup;
+    int32_t makeup;
 
-    static long black[ 64 ] = {
+    static int32_t black[ 64 ] = {
         0x0dc0L, /*  0, 0000 1101 11-- ---- */
         0x4000L, /*  1, 010- ---- ---- ---- */
         0xc000L, /*  2, 11-- ---- ---- ---- */
@@ -1855,7 +1855,7 @@ void HCDCodecCCITTFax4::CCITT4State::CodeBlack(long value)
         0x0670L  /* 63, 0000 0110 0111 ---- */
         };
 
-    static long lblack[ 64 ] = {
+    static int32_t lblack[ 64 ] = {
         10, /*  0 */
         3, /*  1 */
         2, /*  2 */
@@ -1922,7 +1922,7 @@ void HCDCodecCCITTFax4::CCITT4State::CodeBlack(long value)
         12  /* 63 */
         };
 
-    static long mblack[ 40 ] = {
+    static int32_t mblack[ 40 ] = {
         0x03c0L, /*   64, 0000 0011 11-- ---- */
         0x0c80L, /*  128, 0000 1100 1000 ---- */
         0x0c90L, /*  192, 0000 1100 1001 ---- */
@@ -1965,7 +1965,7 @@ void HCDCodecCCITTFax4::CCITT4State::CodeBlack(long value)
         0x01f0L  /* 2560, 0000 0001 1111 ---- */
         };
 
-    static long lmblack[ 40 ] = {
+    static int32_t lmblack[ 40 ] = {
         10, /*   64 */
         12, /*  128 */
         12, /*  192 */
@@ -2048,7 +2048,7 @@ void HCDCodecCCITTFax4::CCITT4State::CodeBlack(long value)
 //-----------------------------------------------------------------------------
 void HCDCodecCCITTFax4::CCITT4State::GetWhiteCodes()
     {
-    long value;
+    int32_t value;
 
     GetWhite();
     if (m_code <= 63)
@@ -2073,7 +2073,7 @@ void HCDCodecCCITTFax4::CCITT4State::GetWhiteCodes()
 //-----------------------------------------------------------------------------
 void HCDCodecCCITTFax4::CCITT4State::GetBlackCodes()
     {
-    register long value;
+    register int32_t value;
 
     GetBlack();
     if (m_code <= 63)
@@ -2101,17 +2101,17 @@ void HCDCodecCCITTFax4::CCITT4State::DecodeLine()
     HPRECONDITION(m_UncompressBuffer != 0);
     HPRECONDITION(m_UncompressBufferSize != 0);
 
-    long  apt;         /* index into a buffer of transitions */
-    long  bpt;         /* index into b buffer of transitions */
-    long  a0;          /* value of a0 */
+    int32_t  apt;         /* index into a buffer of transitions */
+    int32_t  bpt;         /* index into b buffer of transitions */
+    int32_t  a0;          /* value of a0 */
     char  a0color;     /* color of a0 */
-    long  a1;          /* value of a1 */
-    long  a2;          /* value of a2 */
-    long  b1;          /* value of b1 */
-    long  b2;          /* value of b2 */
+    int32_t  a1;          /* value of a1 */
+    int32_t  a2;          /* value of a2 */
+    int32_t  b1;          /* value of b1 */
+    int32_t  b2;          /* value of b2 */
 
-    long  a0a1,a1a2,r;
-    long l=0;
+    int32_t  a0a1,a1a2,r;
+    int32_t l=0;
 
     Byte* pLineBuffer = &m_UncompressBuffer[m_UncompressBufferIndex];
 
@@ -2533,19 +2533,19 @@ void HCDCodecCCITTFax4::CCITT4State::DecodeLineRLE()
     HPRECONDITION(m_RLEBuffer != 0);
     HPRECONDITION(m_RLEBufferSize);
 
-    long  apt;         /* index into a buffer of transitions */
-    long  bpt;         /* index into b buffer of transitions */
-    long  a0;          /* value of a0 */
+    int32_t  apt;         /* index into a buffer of transitions */
+    int32_t  bpt;         /* index into b buffer of transitions */
+    int32_t  a0;          /* value of a0 */
     char  a0color;     /* color of a0 */
-    long  a1;          /* value of a1 */
-    long  a2;          /* value of a2 */
-    long  b1;          /* value of b1 */
-    long  b2;          /* value of b2 */
+    int32_t  a1;          /* value of a1 */
+    int32_t  a2;          /* value of a2 */
+    int32_t  b1;          /* value of b1 */
+    int32_t  b2;          /* value of b2 */
 
-    long  a0a1,a1a2,r;
-    long  l=0;
+    int32_t  a0a1,a1a2,r;
+    int32_t  l=0;
 
-    long  lastRightValue = 0;
+    int32_t  lastRightValue = 0;
 
     m_g4error = GP4_NOERROR;
 
@@ -3012,9 +3012,9 @@ void HCDCodecCCITTFax4::CCITT4State::EncodeLineFromRLE()
 
     m_a[0] = 0;
     m_acolor[0] = 0;
-    long apt = 1;
+    int32_t apt = 1;
 
-    long PixelsFromRun = 0;
+    int32_t PixelsFromRun = 0;
 
     if(m_invertResult)
         {
@@ -3027,7 +3027,7 @@ void HCDCodecCCITTFax4::CCITT4State::EncodeLineFromRLE()
                 continue;
                 }
 
-            long StartRun = PixelsFromRun;
+            int32_t StartRun = PixelsFromRun;
 
             PixelsFromRun += m_RLEBuffer[m_RLEBufferIndex];
             ++m_RLEBufferIndex;
@@ -3072,7 +3072,7 @@ void HCDCodecCCITTFax4::CCITT4State::EncodeLineFromRLE()
                 continue;
                 }
 
-            long StartRun = PixelsFromRun;
+            int32_t StartRun = PixelsFromRun;
 
             PixelsFromRun += m_RLEBuffer[m_RLEBufferIndex];
             ++m_RLEBufferIndex;
@@ -3134,18 +3134,18 @@ void HCDCodecCCITTFax4::CCITT4State::EncodeLineFromBit()
 //-----------------------------------------------------------------------------
 void HCDCodecCCITTFax4::CCITT4State::EncodeLine()
     {
-    long  apt;         /* index into a buffer of transitions */
-    long  bpt;         /* index into b buffer of transitions */
+    int32_t  apt;         /* index into a buffer of transitions */
+    int32_t  bpt;         /* index into b buffer of transitions */
 
-    long  a0;          /* value of a0 */
+    int32_t  a0;          /* value of a0 */
     char  a0color;     /* color of a0 */
-    long  a1;          /* value of a1 */
-    long  a2;          /* value of a2 */
-    long  b1;          /* value of b1 */
-    long  b2;          /* value of b2 */
-    long  a0a1;
-    long  a1a2;
-    long  a1b1;
+    int32_t  a1;          /* value of a1 */
+    int32_t  a2;          /* value of a2 */
+    int32_t  b1;          /* value of b1 */
+    int32_t  b2;          /* value of b2 */
+    int32_t  a0a1;
+    int32_t  a1a2;
+    int32_t  a1b1;
 
     apt = 0;
     a0 = m_a[apt];
@@ -3292,11 +3292,11 @@ ERRORX:
 //           zeros starting from the msb and is indexed by byte
 //           value.
 //-----------------------------------------------------------------------------
-int HCDCodecCCITTFax4::CCITT4State::FindSpan(Byte** bpp, int bs, int be, register Byte const* tab) const
+int32_t HCDCodecCCITTFax4::CCITT4State::FindSpan(Byte** bpp, int32_t bs, int32_t be, register Byte const* tab) const
     {
     register Byte* bp = *bpp;
-    register int bits = be - bs;
-    register int n, span;
+    register int32_t bits = be - bs;
+    register int32_t n, span;
 
     /*
     * Check partial byte on lhs.
@@ -3345,7 +3345,7 @@ done:
 //           color.  The end, be, is returned if no such bit
 //           exists.
 //-----------------------------------------------------------------------------
-int HCDCodecCCITTFax4::CCITT4State::FindDiff(Byte* cp, int bitStart, int bitEnd, int color) const
+int32_t HCDCodecCCITTFax4::CCITT4State::FindDiff(Byte* cp, int32_t bitStart, int32_t bitEnd, int32_t color) const
     {
     cp += bitStart >> 3;            /* adjust Byte offset */
     return (bitStart + FindSpan(&cp, bitStart, bitEnd, color ? oneruns : zeroruns));
@@ -3357,7 +3357,7 @@ int HCDCodecCCITTFax4::CCITT4State::FindDiff(Byte* cp, int bitStart, int bitEnd,
 // x     = position in the line
 // count = number of white starting at x
 //-----------------------------------------------------------------------------
-void HCDCodecCCITTFax4::CCITT4State::FillSpan(Byte* cp, int x, int count)
+void HCDCodecCCITTFax4::CCITT4State::FillSpan(Byte* cp, int32_t x, int32_t count)
     {
     static const unsigned char masks[] =  { 0, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff };
 
@@ -3423,13 +3423,13 @@ void HCDCodecCCITTFax4::CCITT4State::CreateLRSForEncode()
 
     m_a[0] = 0;
     m_acolor[0] = 0;
-    long apt = 1;
+    int32_t apt = 1;
 
     Byte* pLineBuffer = &m_UncompressBuffer[m_UncompressBufferIndex];
 
     if(m_invertResult)
         {
-        for(int i(0); i < m_width; ++i)
+        for(int32_t i(0); i < m_width; ++i)
             {
             // Left entry
             m_a[apt+0] = FindDiff(pLineBuffer, i, m_width, 1);
@@ -3459,7 +3459,7 @@ void HCDCodecCCITTFax4::CCITT4State::CreateLRSForEncode()
         }
     else
         {
-        for(int i(0); i < m_width; ++i)
+        for(int32_t i(0); i < m_width; ++i)
             {
             // Left entry
             m_a[apt+0] = FindDiff(pLineBuffer, i, m_width, 0);
@@ -3560,7 +3560,7 @@ size_t HCDCodecCCITTFax4::CompressSubset(const void* pi_pInData, size_t pi_InDat
     if(GetSubsetPosY() == 0)
         {
         SetCurrentState(STATE_COMPRESS);
-        m_CCITT4State.Pre(static_cast<long>(GetWidth()), static_cast<long>(GetHeight()), false, m_bitrevtable, CCITT_PHOTOMETRIC_MINISBLACK == m_photometric);
+        m_CCITT4State.Pre(static_cast<int32_t>(GetWidth()), static_cast<int32_t>(GetHeight()), false, m_bitrevtable, CCITT_PHOTOMETRIC_MINISBLACK == m_photometric);
         }
 
     size_t  LineSize(((GetSubsetWidth() * GetBitsPerPixel() + 7) / 8) + GetLinePaddingBits() / 8);
@@ -3617,19 +3617,19 @@ size_t HCDCodecCCITTFax4::CompressSubsetFromRLE(HFCPtr<HCDPacketRLE> const& pi_r
     if(GetSubsetPosY() == 0)
         {
         SetCurrentState(STATE_COMPRESS);
-        m_CCITT4State.Pre(static_cast<long>(GetWidth()), static_cast<long>(GetHeight()), false, m_bitrevtable, CCITT_PHOTOMETRIC_MINISBLACK == m_photometric);
+        m_CCITT4State.Pre(static_cast<int32_t>(GetWidth()), static_cast<int32_t>(GetHeight()), false, m_bitrevtable, CCITT_PHOTOMETRIC_MINISBLACK == m_photometric);
         }
 
     //size_t  LineSize(((GetSubsetWidth() * GetBitsPerPixel() + 7) / 8) + GetLinePaddingBits() / 8);
 
     // Set read/write buffers for the current line(s)
-    m_CCITT4State.SetupForRLEMode((Byte*)po_pOutBuffer, po_OutBufferSize, (unsigned short*)pi_rpPacketRLE->GetLineBuffer(0), pi_rpPacketRLE->GetLineDataSize(0));
+    m_CCITT4State.SetupForRLEMode((Byte*)po_pOutBuffer, po_OutBufferSize, (uint16_t*)pi_rpPacketRLE->GetLineBuffer(0), pi_rpPacketRLE->GetLineDataSize(0));
 
     // Compress subset
     for(uint32_t Line(0); Line < GetSubsetHeight(); ++Line)
         {
         // Set input RLE buffer for current line
-        m_CCITT4State.SetRLEBuffer((unsigned short*)pi_rpPacketRLE->GetLineBuffer(Line), pi_rpPacketRLE->GetLineDataSize(Line));
+        m_CCITT4State.SetRLEBuffer((uint16_t*)pi_rpPacketRLE->GetLineBuffer(Line), pi_rpPacketRLE->GetLineDataSize(Line));
 
         m_CCITT4State.EncodeLineFromRLE();
 
@@ -3670,15 +3670,15 @@ void HCDCodecCCITTFax4::DecompressSubsetToRLE(const void* pi_pInData, size_t pi_
     if(GetSubsetPosY() == 0)
         {
         SetCurrentState(STATE_DECOMPRESS);
-        m_CCITT4State.Pre(static_cast<long>(GetWidth()), static_cast<long>(GetHeight()), true, m_bitrevtable, CCITT_PHOTOMETRIC_MINISBLACK == m_photometric);
+        m_CCITT4State.Pre(static_cast<int32_t>(GetWidth()), static_cast<int32_t>(GetHeight()), true, m_bitrevtable, CCITT_PHOTOMETRIC_MINISBLACK == m_photometric);
         }
 
     // Alloc a working buffer
-    size_t                  WorkLineBufferSize = (GetSubsetWidth()* 2 + 2)*sizeof(unsigned short);   // Worst case for one line.
+    size_t                  WorkLineBufferSize = (GetSubsetWidth()* 2 + 2)*sizeof(uint16_t);   // Worst case for one line.
     HArrayAutoPtr<Byte>   pWorkLineBuffer (new Byte[WorkLineBufferSize]);
 
     // Set read buffer for the current line(s)
-    m_CCITT4State.SetupForRLEMode((Byte*)pi_pInData, pi_InDataSize, (unsigned short*)pWorkLineBuffer.get(), WorkLineBufferSize);
+    m_CCITT4State.SetupForRLEMode((Byte*)pi_pInData, pi_InDataSize, (uint16_t*)pWorkLineBuffer.get(), WorkLineBufferSize);
 
     // Decompress subset
     for(uint32_t Line(0); Line < GetSubsetHeight(); ++Line)
@@ -3704,7 +3704,7 @@ void HCDCodecCCITTFax4::DecompressSubsetToRLE(const void* pi_pInData, size_t pi_
         HASSERT(m_CCITT4State.GetG4Error() == GP4_NOERROR);
 
         // Reset RLE buffer for next line.
-        m_CCITT4State.SetRLEBuffer((unsigned short*)pWorkLineBuffer.get(), WorkLineBufferSize);
+        m_CCITT4State.SetRLEBuffer((uint16_t*)pWorkLineBuffer.get(), WorkLineBufferSize);
         }
 
     SetSubsetPosY(GetSubsetPosY() + GetSubsetHeight());
@@ -3740,7 +3740,7 @@ size_t HCDCodecCCITTFax4::DecompressSubset(const void* pi_pInData, size_t pi_InD
     if(GetSubsetPosY() == 0)
         {
         SetCurrentState(STATE_DECOMPRESS);
-        m_CCITT4State.Pre(static_cast<long>(GetWidth()), static_cast<long>(GetHeight()), true, m_bitrevtable, CCITT_PHOTOMETRIC_MINISBLACK == m_photometric);
+        m_CCITT4State.Pre(static_cast<int32_t>(GetWidth()), static_cast<int32_t>(GetHeight()), true, m_bitrevtable, CCITT_PHOTOMETRIC_MINISBLACK == m_photometric);
         }
 
     // Set read buffer for the current line(s)

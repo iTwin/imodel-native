@@ -25,7 +25,7 @@
 //-----------------------------------------------------------------------------
 // Constants
 //-----------------------------------------------------------------------------
-static const unsigned short m_LinePadBits = 32;
+static const uint16_t m_LinePadBits = 32;
 static const uint64_t MAX_ECW_IMAGE_SIZE = 10000000000; //NCSEcw support 10Go uncompressed images
 
 enum Jpeg2000VisibleBand
@@ -67,7 +67,7 @@ uint64_t   s_RemapXChannelsToRGBA                             (Byte* const      
 //-----------------------------------------------------------------------------
 HRFErMapperSupportedFileEditor::HRFErMapperSupportedFileEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                                                uint32_t              pi_Page,
-                                                               unsigned short       pi_Resolution,
+                                                               uint16_t       pi_Resolution,
                                                                HFCAccessMode         pi_AccessMode)
     : HRFResolutionEditor(pi_rpRasterFile,
                             pi_Page,
@@ -186,18 +186,18 @@ HSTATUS HRFErMapperSupportedFileEditor::ReadBlock(uint64_t pi_PosBlockX,
                                                   Byte*   po_pData)
     {
     HSTATUS                   Status = H_SUCCESS;
-    unsigned short            i;
+    uint16_t            i;
     unsigned char*            pData;
-    unsigned long             LineSize;
-    unsigned long             BlockWidth;
-    unsigned long             BlockHeight;
+    uint32_t             LineSize;
+    uint32_t             BlockWidth;
+    uint32_t             BlockHeight;
     HRFErMapperSupportedFile* pRasterFile = (HRFErMapperSupportedFile*) m_pRasterFile.GetPtr();
-    unsigned long             PosX = (unsigned long) ((double) pi_PosBlockX / pRasterFile->GetRatio(m_ResNb));
-    unsigned long             PosY = (unsigned long) ((double) pi_PosBlockY / pRasterFile->GetRatio(m_ResNb));
-    unsigned long             StdViewWidth = (unsigned long) ((double) pi_BlockWidth / pRasterFile->GetRatio(m_ResNb));
-    unsigned long             StdViewHeight = (unsigned long) ((double) pi_BlockHeight / pRasterFile->GetRatio(m_ResNb));
+    uint32_t             PosX = (uint32_t) ((double) pi_PosBlockX / pRasterFile->GetRatio(m_ResNb));
+    uint32_t             PosY = (uint32_t) ((double) pi_PosBlockY / pRasterFile->GetRatio(m_ResNb));
+    uint32_t             StdViewWidth = (uint32_t) ((double) pi_BlockWidth / pRasterFile->GetRatio(m_ResNb));
+    uint32_t             StdViewHeight = (uint32_t) ((double) pi_BlockHeight / pRasterFile->GetRatio(m_ResNb));
 
-    unsigned long ViewWidth = MIN((uint32_t)pRasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth() - PosX,
+    uint32_t ViewWidth = MIN((uint32_t)pRasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth() - PosX,
                                   StdViewWidth);
 
 
@@ -206,7 +206,7 @@ HSTATUS HRFErMapperSupportedFileEditor::ReadBlock(uint64_t pi_PosBlockX,
     else
         BlockWidth = (uint32_t)pi_BlockWidth;
 
-    unsigned long ViewHeight = MIN((uint32_t)pRasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight() - PosY,
+    uint32_t ViewHeight = MIN((uint32_t)pRasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight() - PosY,
                                    StdViewHeight);
 
     if (ViewHeight < StdViewHeight)
@@ -630,7 +630,7 @@ class ERMapperExporter
                                         break;
 
                                     case IGeoTiffKeysList::LONG:
-                                        NCSCompressSetGeotiffKey(m_pCompressClient, (geokey_t) GeoTiffKey.KeyID, TYPE_SHORT, 1, (short) GeoTiffKey.KeyValue.LongVal);
+                                        NCSCompressSetGeotiffKey(m_pCompressClient, (geokey_t) GeoTiffKey.KeyID, TYPE_SHORT, 1, (int16_t) GeoTiffKey.KeyValue.LongVal);
                                         break;
                                 }
                             } while (m_rCompressReadInfo.m_pGeotiffKeys->GetNextKey(&GeoTiffKey));
@@ -745,8 +745,8 @@ class ERMapperExporter
                 HFCPtr<HRFResolutionDescriptor> pDstResDesc = pDstPageDesc->GetResolutionDescriptor(0);
 
                 // Set up the input dimensions
-                HASSERT(pDstResDesc->GetWidth() <= ULONG_MAX);
-                HASSERT(pDstResDesc->GetHeight() <= ULONG_MAX);
+                HASSERT(pDstResDesc->GetWidth() <= UINT32_MAX);
+                HASSERT(pDstResDesc->GetHeight() <= UINT32_MAX);
 
             m_pCompressClient->nInOutSizeX = (uint32_t)pDstResDesc->GetWidth();
             m_pCompressClient->nInOutSizeY = (uint32_t)pDstResDesc->GetHeight();
@@ -978,15 +978,12 @@ static BOOLEAN ReadCallback(NCSEcwCompressClient* pClient,
 
     const Byte* pData = pReadInfo->m_pDestinationBitmap->GetPacket()->GetBufferAddress() + (nNextLine - pReadInfo->m_CurrentStripPos) * pReadInfo->m_LineWidthInByte;
 
-    unsigned int ValueIndex;
-    IEEE4* pOutputValue;
-
-    for (unsigned int Channel = 0; Channel < pClient->nInputBands; Channel++)
+    for (uint32_t Channel = 0; Channel < pClient->nInputBands; Channel++)
         {
-        pOutputValue = ppOutputBandBufferArray[Channel];
-        ValueIndex = Channel;
+        IEEE4* pOutputValue = ppOutputBandBufferArray[Channel];
+        uint32_t ValueIndex = Channel;
 
-        for (unsigned int PixelIndex = 0; PixelIndex < pClient->nInOutSizeX; PixelIndex++)
+        for (uint32_t PixelIndex = 0; PixelIndex < pClient->nInOutSizeX; PixelIndex++)
             {
             // Be sure to remain inbound.
             HASSERT(ValueIndex < pReadInfo->m_pDestinationBitmap->GetPacket()->GetBufferSize());

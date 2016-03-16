@@ -48,9 +48,9 @@ public:
 
         // Strip Capability
         Add(new HRFStripCapability(HFC_READ_ONLY,          // AccessMode
-                                   LONG_MAX,               // MaxSizeInBytes
+                                   INT32_MAX,               // MaxSizeInBytes
                                    1,                      // MinHeight
-                                   LONG_MAX,               // MaxHeight
+                                   INT32_MAX,               // MaxHeight
                                    1,                      // HeightIncrement
                                    HRFBlockAccess::SEQUENTIAL));
         }
@@ -250,7 +250,7 @@ HRFIG4File::~HRFIG4File()
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFIG4File::CreateResolutionEditor(uint32_t       pi_Page,
-                                                        unsigned short pi_Resolution,
+                                                        uint16_t pi_Resolution,
                                                         HFCAccessMode  pi_AccessMode)
     {
     // verify that the page number is 0, because we have one image per file
@@ -310,8 +310,8 @@ bool HRFIG4File::Open()
     m_IsOpen = true;
 
     // read the image size
-    unsigned short aBuffer[2];
-    m_pIG4File->Read(aBuffer, 2 * sizeof(unsigned short));
+    uint16_t aBuffer[2];
+    m_pIG4File->Read(aBuffer, 2 * sizeof(uint16_t));
 
     // The file was write in little endian, we must swap bytes for big endian
     // this method come from HTIFFUtils

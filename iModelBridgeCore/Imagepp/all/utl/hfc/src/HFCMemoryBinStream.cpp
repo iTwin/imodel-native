@@ -28,7 +28,7 @@ static struct MemoryBinStreamCreator : public HFCBinStream::Creator
         }
 
     // The parameter pi_NbRetryBeforeThrow is not used presently
-    virtual HFCBinStream* Create(HFCPtr<HFCURL> pi_pURL, uint64_t pi_offSet, HFCAccessMode pi_AccessMode, short pi_NbRetryBeforeThrow=0) const override
+    virtual HFCBinStream* Create(HFCPtr<HFCURL> pi_pURL, uint64_t pi_offSet, HFCAccessMode pi_AccessMode, int16_t pi_NbRetryBeforeThrow=0) const override
         {
         HPRECONDITION(pi_pURL != 0);
         HPRECONDITION(pi_pURL->GetSchemeType() == HFCURLMemFile::s_SchemeName());
@@ -69,7 +69,7 @@ HFCMemoryBinStream::HFCMemoryBinStream(const WString&        pi_Filename,
     HFCAccessMode         pi_AccessMode,
     bool                  pi_AutoRemove,
     uint64_t              pi_OriginOffset,
-    short pi_NbRetryBeforeThrow,
+    int16_t pi_NbRetryBeforeThrow,
     const HFCPtr<HFCBuffer>&    pi_rpBuffer)
 {
     m_AutoRemove      = pi_AutoRemove;
@@ -97,7 +97,7 @@ HFCMemoryBinStream::HFCMemoryBinStream(const WString&        pi_Filename,
     bool                 pi_CreateFile,
     bool                 pi_AutoRemove,
     uint64_t             pi_OriginOffset,
-    short pi_NbRetryBeforeThrow,
+    int16_t pi_NbRetryBeforeThrow,
     const HFCPtr<HFCBuffer>&     pi_rpBuffer)
 {
     m_AutoRemove      = pi_AutoRemove;
@@ -126,7 +126,7 @@ HFCMemoryBinStream::HFCMemoryBinStream(const WString&        pi_Filename,
     bool                 pi_CreateFile,
     bool                 pi_AutoRemove,
     uint64_t             pi_OriginOffset,
-    short pi_NbRetryBeforeThrow,
+    int16_t pi_NbRetryBeforeThrow,
     const HFCPtr<HFCBuffer>&     pi_rpBuffer)
 {
     m_AccessMode                    = HFC_READ_WRITE_OPEN;
@@ -182,7 +182,7 @@ void HFCMemoryBinStream::DumpToFile() const
     HFCLocalBinStream PhysicalFile(TempFileName,  false, true, true, false, 0, 0);
 
     // Dump the buffer into the file.
-    HASSERT_X64(m_BinStreamBuffer->GetDataSize() < ULONG_MAX);
+    HASSERT_X64(m_BinStreamBuffer->GetDataSize() < UINT32_MAX);
     PhysicalFile.Write(m_BinStreamBuffer->GetData(), (DWORD)m_BinStreamBuffer->GetDataSize());
     PhysicalFile.Flush();
     }

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPChannelOrgBGR.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRPChannelOrgBGR
@@ -15,13 +15,13 @@ BEGIN_IMAGEPP_NAMESPACE
 class HRPChannelOrgBGR : public HRPChannelOrg
     {
 public:
-    HRPChannelOrgBGR(unsigned short pi_BitsBlue,
-                     unsigned short pi_BitsGreen,
-                     unsigned short pi_BitsRed,
-                     unsigned short pi_BitsExtra,
+    HRPChannelOrgBGR(uint16_t pi_BitsBlue,
+                     uint16_t pi_BitsGreen,
+                     uint16_t pi_BitsRed,
+                     uint16_t pi_BitsExtra,
                      HRPChannelType::ChannelRole pi_RoleChannel5,
                      HRPChannelType::DataType    pi_DataTypeChannel5,
-                     unsigned short             pi_BitsChannel5,
+                     uint16_t             pi_BitsChannel5,
                      bool                       pi_IsExtraBitsAlpha = true)
         : HRPChannelOrg()
         {

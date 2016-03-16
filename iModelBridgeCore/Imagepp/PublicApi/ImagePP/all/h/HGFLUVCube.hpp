@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFLUVCube.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -99,7 +99,7 @@ inline double HGFLUVCube::LimitedFastCubicRoot(double pi_Number) const
         pi_Number *= 8;
         }
 
-    int k;
+    int32_t k;
 
     if (pi_Number < 2)
         {

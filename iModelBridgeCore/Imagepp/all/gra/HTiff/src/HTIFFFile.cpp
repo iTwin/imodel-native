@@ -48,8 +48,8 @@
 #define DEF_MAX_SIMULATESTRIPSIZE   (64*1024)
 
 // default value
-static unsigned short s_a1BitBySample[4]   = {1,1,1,1};
-static unsigned short s_a16BitBySample[4]  = {16,16,16,16};
+static uint16_t s_a1BitBySample[4]   = {1,1,1,1};
+static uint16_t s_a16BitBySample[4]  = {16,16,16,16};
 
 #define IDENTIFY_UNDOREDO_FILE      "Imagepp Undo-Redo file"
 
@@ -173,7 +173,7 @@ bool HTIFFFile::GetEXIFDefinedGPSTags(uint32_t pi_PageDirInd, HPMAttributeSet& p
     HTIFFError*     pTIFFError = 0;
     double         ConvRationalToDblVals[3];
     Byte*          pByteVal;
-    unsigned short*        pShortVal;
+    uint16_t*        pShortVal;
     double*        pDblVal;
     char*          pCharVal;
     uint32_t        NbVals;
@@ -482,18 +482,18 @@ bool HTIFFFile::GetEXIFTags(uint32_t pi_PageDirInd, HPMAttributeSet& po_rExifGps
     double                  ConvRationalToDblVals[3];
 
     Byte                   UByteVal;
-    unsigned short          UShortVal;
+    uint16_t          UShortVal;
     uint32_t                 ULongVal;
 
     Byte*                   pByteVal;
-    unsigned short*                 pUShortVal;
+    uint16_t*                 pUShortVal;
     double*                 pDblVal;
     char*                   pCharVal;
     uint32_t                 NbVals;
     vector<char>            CharVec;
     vector<Byte>            ByteVec;
     vector<double>          DblVec;
-    vector<unsigned short>          UShortVec;
+    vector<uint16_t>          UShortVec;
 
     //By default, search the EXIF tags in the base directory
     HTIFFDirectory*          pDirToSearch(m_ppListDir[pi_PageDirInd]);
@@ -979,7 +979,7 @@ uint32_t HTIFFFile::TileSize() const
 
 
 // Get and Set methods
-bool HTIFFFile::GetField (HTagID pi_Tag, unsigned short** po_ppVal1, unsigned short** po_ppVal2, unsigned short** po_ppVal3) const
+bool HTIFFFile::GetField (HTagID pi_Tag, uint16_t** po_ppVal1, uint16_t** po_ppVal2, uint16_t** po_ppVal3) const
     {
     HPRECONDITION(po_ppVal1 != 0);
     HPRECONDITION(po_ppVal2 != 0);
@@ -992,7 +992,7 @@ bool HTIFFFile::GetField (HTagID pi_Tag, unsigned short** po_ppVal1, unsigned sh
         {
         case TCOLORMAP:
             {
-            unsigned short*     pBuf;
+            uint16_t*     pBuf;
             uint32_t    Count;
             uint32_t    Len = (1L<<m_pBitsBySample[0]);
 
@@ -1000,9 +1000,9 @@ bool HTIFFFile::GetField (HTagID pi_Tag, unsigned short** po_ppVal1, unsigned sh
                 {
                 Ret = true;
 
-                *po_ppVal1 = (unsigned short*)pBuf;
-                *po_ppVal2 = (unsigned short*)(pBuf + Len);
-                *po_ppVal3 = (unsigned short*)(pBuf + Len + Len);
+                *po_ppVal1 = (uint16_t*)pBuf;
+                *po_ppVal2 = (uint16_t*)(pBuf + Len);
+                *po_ppVal3 = (uint16_t*)(pBuf + Len + Len);
                 }
             }
         break;
@@ -1018,7 +1018,7 @@ bool HTIFFFile::GetField (HTagID pi_Tag, unsigned short** po_ppVal1, unsigned sh
     return (Ret);
     }
 
-bool HTIFFFile::SetField (HTagID pi_Tag, const unsigned short* pi_pVal1, const unsigned short* pi_pVal2, const unsigned short* pi_pVal3)
+bool HTIFFFile::SetField (HTagID pi_Tag, const uint16_t* pi_pVal1, const uint16_t* pi_pVal2, const uint16_t* pi_pVal3)
     {
     HPRECONDITION(pi_pVal1 != 0);
     HPRECONDITION(pi_pVal2 != 0);
@@ -1033,12 +1033,12 @@ bool HTIFFFile::SetField (HTagID pi_Tag, const unsigned short* pi_pVal1, const u
             {
             uint32_t    Len     = (1L<<m_pBitsBySample[0]);
             uint32_t    Count   = Len * 3; // RGB
-            unsigned short*     pBuf   = new unsigned short[Count];
+            uint16_t*     pBuf   = new uint16_t[Count];
             HASSERT(pBuf != 0);
 
-            memcpy(pBuf,            pi_pVal1, Len*sizeof(unsigned short));
-            memcpy((pBuf+ Len),     pi_pVal2, Len*sizeof(unsigned short));
-            memcpy((pBuf+ Len+ Len),pi_pVal3, Len*sizeof(unsigned short));
+            memcpy(pBuf,            pi_pVal1, Len*sizeof(uint16_t));
+            memcpy((pBuf+ Len),     pi_pVal2, Len*sizeof(uint16_t));
+            memcpy((pBuf+ Len+ Len),pi_pVal3, Len*sizeof(uint16_t));
 
             Ret = m_pCurDir->SetValues(pi_Tag, Count, pBuf);
 
@@ -1147,7 +1147,7 @@ WRAPUP:
     return false;
     }
 
-bool HTIFFFile::SetField (HTagID pi_Tag, unsigned short pi_Val)
+bool HTIFFFile::SetField (HTagID pi_Tag, uint16_t pi_Val)
     {
     bool Ret;
     HFCMonitor Monitor(m_Key);
@@ -1651,30 +1651,30 @@ bool HTIFFFile::IsValidReducedImage(HTIFFDirectory* pi_ReducedImageDir, HTIFFDir
     HPRECONDITION(pi_ReducedImageDir->TagIsPresent(SUBFILETYPE));
 
     // PHOTOMETRIC
-    unsigned short Photometric_Main        = 0;
+    uint16_t Photometric_Main        = 0;
     pi_pCurPageDir->GetValues(PHOTOMETRIC, &Photometric_Main);
-    unsigned short Photometric_SubRes      = Photometric_Main;             // Init from main res in case tag is not defined in sub-res.
+    uint16_t Photometric_SubRes      = Photometric_Main;             // Init from main res in case tag is not defined in sub-res.
     pi_ReducedImageDir->GetValues(PHOTOMETRIC, &Photometric_SubRes);
     if(Photometric_Main != Photometric_SubRes)
         return false;
 
     // SAMPLESPERPIXEL
-    unsigned short SamplePerPixel_Main     = 0;
+    uint16_t SamplePerPixel_Main     = 0;
     pi_pCurPageDir->GetValues(SAMPLESPERPIXEL, &SamplePerPixel_Main);
-    unsigned short SamplePerPixel_SubRes   = SamplePerPixel_Main;          // Init from main res in case tag is not defined in sub-res.
+    uint16_t SamplePerPixel_SubRes   = SamplePerPixel_Main;          // Init from main res in case tag is not defined in sub-res.
     pi_ReducedImageDir->GetValues(SAMPLESPERPIXEL, &SamplePerPixel_SubRes);
     if(SamplePerPixel_Main != SamplePerPixel_SubRes)
         return false;
 
     // BITSPERSAMPLE
     uint32_t    NbSample                = SamplePerPixel_Main;
-    unsigned short*    pBitPerSample_Main      = 0;
+    uint16_t*    pBitPerSample_Main      = 0;
     pi_pCurPageDir->GetValues(BITSPERSAMPLE, &NbSample, &pBitPerSample_Main);
-    unsigned short*    pBitPerSample_SubRes    = pBitPerSample_Main;           // Init from main res in case tag is not defined in sub-res.
+    uint16_t*    pBitPerSample_SubRes    = pBitPerSample_Main;           // Init from main res in case tag is not defined in sub-res.
     pi_ReducedImageDir->GetValues(BITSPERSAMPLE, &NbSample, &pBitPerSample_SubRes);
     if(pBitPerSample_Main != 0)
         {
-        for(unsigned short i=0; i < NbSample; ++i)
+        for(uint16_t i=0; i < NbSample; ++i)
             {
             if(pBitPerSample_Main[i] != pBitPerSample_SubRes[i])
                 return false;
@@ -2087,7 +2087,7 @@ void HTIFFFile::SimulateStripList(uint32_t pi_CompressMode)
     }
 
 #if 0  // not use presently
-void HTIFFFile::SimulateCountList(unsigned short pi_CompressMode)
+void HTIFFFile::SimulateCountList(uint16_t pi_CompressMode)
     {
     HFCMonitor Monitor(m_Key);
 
@@ -2222,7 +2222,7 @@ HSTATUS HTIFFFile::ReadData (Byte* po_pData, uint32_t pi_StripTile)
         {
         case 16:
             HASSERT(m_StripTileSize % 2 == 0);
-            Treat16bitPerChannelForRead((unsigned short*)po_pData, m_StripTileSize/2);
+            Treat16bitPerChannelForRead((uint16_t*)po_pData, m_StripTileSize/2);
             break;
         case 32:
             HASSERT(m_StripTileSize % 4 == 0);
@@ -2300,14 +2300,14 @@ HSTATUS HTIFFFile::WriteSeparateData (const Byte* pi_pData, uint32_t pi_StripTil
 
             // Position input buffer itr
             const Byte* pInputItr = pi_pData + (BytesPerSample*SampleItr);
-            unsigned short* pPlaneBufferItr = (unsigned short*)pPlanePacket->GetBufferAddress();
-            unsigned short* pPlaneBufferEnd = (unsigned short*)(pPlanePacket->GetBufferAddress() + pPlanePacket->GetBufferSize());
+            uint16_t* pPlaneBufferItr = (uint16_t*)pPlanePacket->GetBufferAddress();
+            uint16_t* pPlaneBufferEnd = (uint16_t*)(pPlanePacket->GetBufferAddress() + pPlanePacket->GetBufferSize());
 
             // Extract plane from input buffer
             while(pPlaneBufferItr < pPlaneBufferEnd)
                 {
                 // Copy one sample
-                *pPlaneBufferItr = *(unsigned short*)pInputItr;
+                *pPlaneBufferItr = *(uint16_t*)pInputItr;
 
                 ++pPlaneBufferItr;                  // Next sample
                 pInputItr+=BytesPerPixel;           // Next Pixel
@@ -2411,19 +2411,19 @@ HSTATUS HTIFFFile::WriteData (const Byte* pi_pData, uint32_t pi_StripTile, uint3
         {
         // Swap 16 bit per canal before the compression starts
         HASSERT(16 == m_pBitsBySample[0] ? m_pPacket->GetCodec()->GetDataSize() % 2 == 0 : true);
-        Treat16bitPerChannelForWrite((unsigned short*)pi_pData, m_pPacket->GetCodec()->GetDataSize()/2);
+        Treat16bitPerChannelForWrite((uint16_t*)pi_pData, m_pPacket->GetCodec()->GetDataSize()/2);
 
         // Alloc the Working buffer
         m_pPacket->SetDataSize(0);
 
         // Compress
-        HASSERT_X64(m_pPacket->GetCodec()->GetDataSize() < ULONG_MAX);
+        HASSERT_X64(m_pPacket->GetCodec()->GetDataSize() < UINT32_MAX);
         if((Ret = (this->*m_pCompressFunc)(pi_pData, (uint32_t)m_pPacket->GetCodec()->GetDataSize(), m_pPacket)) != H_SUCCESS)
             {
             HASSERT(0);
             }
 
-        HASSERT_X64(m_pPacket->GetDataSize() < ULONG_MAX);
+        HASSERT_X64(m_pPacket->GetDataSize() < UINT32_MAX);
         CompressSize = (uint32_t)m_pPacket->GetDataSize();
 
         // Need to Bit Rev.
@@ -2468,7 +2468,7 @@ HSTATUS HTIFFFile::WriteData (const Byte* pi_pData, uint32_t pi_StripTile, uint3
         HASSERT(16 == m_pBitsBySample[0] ? CompressSize % 2 == 0 : true);
         if(!m_IsCompress)
             {
-            Treat16bitPerChannelForWrite((unsigned short*)pi_pData, CompressSize/2);
+            Treat16bitPerChannelForWrite((uint16_t*)pi_pData, CompressSize/2);
             }
         }
 
@@ -2623,15 +2623,15 @@ HSTATUS HTIFFFile::ReadSeparateData (HFCPtr<HCDPacket>& po_rpPacket, uint32_t pi
 
             // Position output buffer itr
             Byte* pOutputItr = po_rpPacket->GetBufferAddress() + (BytesPerSample*SampleItr);
-            unsigned short* pPlaneBufferItr = (unsigned short*)pPlanePacket->GetBufferAddress();
-            unsigned short* pPlaneBufferEnd = (unsigned short*)(pPlanePacket->GetBufferAddress() + pPlanePacket->GetDataSize());
+            uint16_t* pPlaneBufferItr = (uint16_t*)pPlanePacket->GetBufferAddress();
+            uint16_t* pPlaneBufferEnd = (uint16_t*)(pPlanePacket->GetBufferAddress() + pPlanePacket->GetDataSize());
 
             // Copy current plane into the output buffer
             while(pPlaneBufferItr < pPlaneBufferEnd)
                 {
                 HASSERT(pOutputItr < po_rpPacket->GetBufferAddress() + po_rpPacket->GetBufferSize());
 
-                *(unsigned short*)pOutputItr = *pPlaneBufferItr;
+                *(uint16_t*)pOutputItr = *pPlaneBufferItr;
 
                 ++pPlaneBufferItr;
                 pOutputItr+=BytesPerPixel;
@@ -2901,7 +2901,7 @@ bool HTIFFFile::OnCurrentDirectoryChanged (HTagFile::DirectoryID pi_DirID, bool 
             if (m_NbSampleFromFile == 1)
                 {
                 // Same value by channel...
-                m_BitsByPixel = (unsigned short)(m_pBitsBySample[0] * m_SamplesByPixel);
+                m_BitsByPixel = (uint16_t)(m_pBitsBySample[0] * m_SamplesByPixel);
                 }
             else
                 HASSERT(false);
@@ -2925,12 +2925,12 @@ bool HTIFFFile::OnCurrentDirectoryChanged (HTagFile::DirectoryID pi_DirID, bool 
 
         // Bit ordering
         //
-        unsigned short FillOrder = FILLORDER_MSB2LSB;
+        uint16_t FillOrder = FILLORDER_MSB2LSB;
         m_pCurDir->GetValues (FILLORDER,        &FillOrder);
         m_ByteOrder.SetBitRev(m_FillOrder != FillOrder);
 
         // Compression...
-        unsigned short Compress = COMPRESSION_NONE;
+        uint16_t Compress = COMPRESSION_NONE;
         m_pCurDir->GetValues (COMPRESSION, &Compress);
 
         // Free the list allocated internally, else do nothing.
@@ -3056,7 +3056,7 @@ bool HTIFFFile::OnCurrentDirectoryChanged (HTagFile::DirectoryID pi_DirID, bool 
                 case COMPRESSION_LZW:
                     m_IsCompress = true;
 
-                    unsigned short Predictor;
+                    uint16_t Predictor;
 
                     if( !GetField(PREDICTOR, &Predictor) )
                         Predictor = 1;
@@ -3079,7 +3079,7 @@ bool HTIFFFile::OnCurrentDirectoryChanged (HTagFile::DirectoryID pi_DirID, bool 
 
                 case COMPRESSION_HMR_FLASHPIX_OLD:
                     // Remove the old value
-                    m_pCurDir->SetValues (COMPRESSION, (unsigned short)COMPRESSION_HMR_FLASHPIX);
+                    m_pCurDir->SetValues (COMPRESSION, (uint16_t)COMPRESSION_HMR_FLASHPIX);
 
                 case COMPRESSION_HMR_FLASHPIX:
                     if(m_PlanarConfig == PLANARCONFIG_SEPARATE && m_SamplesByPixel > 1)
@@ -3096,7 +3096,7 @@ bool HTIFFFile::OnCurrentDirectoryChanged (HTagFile::DirectoryID pi_DirID, bool 
 
                 case COMPRESSION_HMR_RLE1_OLD:
                     // Remove the old value
-                    m_pCurDir->SetValues (COMPRESSION, (unsigned short)COMPRESSION_HMR_RLE1);
+                    m_pCurDir->SetValues (COMPRESSION, (uint16_t)COMPRESSION_HMR_RLE1);
 
                 case COMPRESSION_HMR_RLE1:
                     SetRLE1Algo();
@@ -3215,7 +3215,7 @@ void HTIFFFile::PrepareForJPEG(Byte* pio_pData,
 // This methods handle the big endian/little endian problem and the nb bit used for
 // 16 bit per channel.
 //-----------------------------------------------------------------------------
-void HTIFFFile::Treat16bitPerChannelForRead(unsigned short* pio_pData, size_t pi_DataCount) const
+void HTIFFFile::Treat16bitPerChannelForRead(uint16_t* pio_pData, size_t pi_DataCount) const
     {
     // Special treatment for 16 bit per canal
     // We don't want to modify 16 bit mono channel because it is normally used by DEM module.
@@ -3272,7 +3272,7 @@ void HTIFFFile::Treat32bitPerChannelForRead(uint32_t* pio_pData, size_t pi_DataC
 // This methods handle the big endian/little endian problem and the nb bit used for
 // 16 bit per channel.
 //-----------------------------------------------------------------------------
-void HTIFFFile::Treat16bitPerChannelForWrite(unsigned short* pio_pData, size_t pi_DataCount) const
+void HTIFFFile::Treat16bitPerChannelForWrite(uint16_t* pio_pData, size_t pi_DataCount) const
     {
     // Special treatment for 16 bit per canal
     // We don't want to modify 16 bit mono channel because it is normally used by DEM module.
@@ -3325,7 +3325,7 @@ void HTIFFFile::SetInterpretMaxSampleValue(bool interpret)
 //-----------------------------------------------------------------------------
 void HTIFFFile::ComputeNbBitUsed()
     {
-    unsigned short SampleFormat;
+    uint16_t SampleFormat;
 
     //If the data are signed (possibly representing elevation measurements),
     //don't modify the data (see the functions Treat16bitPerChannelForRead,
@@ -3337,12 +3337,12 @@ void HTIFFFile::ComputeNbBitUsed()
         // Use all bits by default
         m_NbBitUsed = 16;
 
-        unsigned short MaxSampleValue;
+        uint16_t MaxSampleValue;
         if(m_InterpretMaxSampleValue && GetField(MAXSAMPLEVALUE, &MaxSampleValue))
             {
-            int RequiredBitPerPixel = (int)floor(log10( (double)(MaxSampleValue + 1)) / log10(2.0) + 0.9999);
+            int32_t RequiredBitPerPixel = (int32_t)floor(log10( (double)(MaxSampleValue + 1)) / log10(2.0) + 0.9999);
             HASSERT((RequiredBitPerPixel <= 16) && (RequiredBitPerPixel > 0));
-            m_NbBitUsed = (unsigned short)MAX (MIN( RequiredBitPerPixel, 16), 8);
+            m_NbBitUsed = (uint16_t)MAX (MIN( RequiredBitPerPixel, 16), 8);
             }
         }
     }
@@ -3481,7 +3481,7 @@ bool HTIFFFile::ValidateAndCorrectBlocInfo()
                 HASSERT(false);
                 }
             pFile->SetField (SUBFILETYPE, (uint32_t)ResolutionType);
-            pFile->SetField (PLANARCONFIG, (unsigned short)PLANARCONFIG_CONTIG);
+            pFile->SetField (PLANARCONFIG, (uint16_t)PLANARCONFIG_CONTIG);
             pFile->SetFieldA (SOFTWARE, IDENTIFY_UNDOREDO_FILE);
                 {
                 char aDateTime[20];
@@ -3500,15 +3500,15 @@ bool HTIFFFile::ValidateAndCorrectBlocInfo()
                 pFile->SetFieldA (DATETIME, aDateTime);
                 }
 
-            unsigned short BitPerSample = 8;
+            uint16_t BitPerSample = 8;
             pFile->SetField (BITSPERSAMPLE, (uint32_t) 1, &BitPerSample);
-            pFile->SetField (PHOTOMETRIC, (unsigned short)PHOTOMETRIC_MINISBLACK);
-            pFile->SetField (SAMPLESPERPIXEL, (unsigned short)1);
+            pFile->SetField (PHOTOMETRIC, (uint16_t)PHOTOMETRIC_MINISBLACK);
+            pFile->SetField (SAMPLESPERPIXEL, (uint16_t)1);
 
             pFile->SetField (IMAGEWIDTH, (uint32_t)0);
             pFile->SetField (IMAGELENGTH, (uint32_t)3);
             pFile->SetField (ROWSPERSTRIP, (uint32_t)1);
-            pFile->SetField (COMPRESSION, (unsigned short)COMPRESSION_DEFLATE);
+            pFile->SetField (COMPRESSION, (uint16_t)COMPRESSION_DEFLATE);
             uint64_t DirOffset = 0;
             pFile->SetField (HMR2_IMAGEINFORMATION, 1, &DirOffset);
             pFile->SetDirectory(0);
@@ -3603,7 +3603,7 @@ void HTIFFFile::ReadWriteNewPosition(uint64_t& p_CountFreeBlockTotal,
                                      uint64_t p_CountFreeBlock)
     {
     uint64_t*   DataToMove;
-    unsigned short IteratorLoopBigStrip  = 0;
+    uint16_t IteratorLoopBigStrip  = 0;
 
     p_CountFreeBlockTotal          += p_CountFreeBlock;
 
@@ -3794,7 +3794,7 @@ void HTIFFFile::SetDirectoryTouched()
 
 // GetValues Methods
 //
-bool HTIFFFile::GetField (HTagID pi_Tag, unsigned short* po_pVal) const
+bool HTIFFFile::GetField (HTagID pi_Tag, uint16_t* po_pVal) const
     {
     HPRECONDITION(po_pVal != 0);
     HFCMonitor Monitor(const_cast<HTIFFFile*>(this)->m_Key);
@@ -3802,16 +3802,16 @@ bool HTIFFFile::GetField (HTagID pi_Tag, unsigned short* po_pVal) const
     switch (pi_Tag)
         {
     case BITSPERSAMPLE:
-        *po_pVal = (unsigned short)m_pBitsBySample[0];
+        *po_pVal = (uint16_t)m_pBitsBySample[0];
         break;
     case PHOTOMETRIC:
-        *po_pVal = (unsigned short)m_Photometric;
+        *po_pVal = (uint16_t)m_Photometric;
         break;
     case SAMPLESPERPIXEL:
-        *po_pVal = (unsigned short)m_SamplesByPixel;
+        *po_pVal = (uint16_t)m_SamplesByPixel;
         break;
     case PLANARCONFIG:
-        *po_pVal = (unsigned short)m_PlanarConfig;
+        *po_pVal = (uint16_t)m_PlanarConfig;
         break;
 
     default:
@@ -3851,7 +3851,7 @@ bool HTIFFFile::GetField (HTagID pi_Tag, uint32_t* po_pVal) const
     return true;
     }
 
-bool HTIFFFile::GetField (HTagID pi_Tag, uint32_t* po_pCount, unsigned short** po_ppVal) const
+bool HTIFFFile::GetField (HTagID pi_Tag, uint32_t* po_pCount, uint16_t** po_ppVal) const
     {
     HPRECONDITION(po_pCount != 0);
     HPRECONDITION(po_ppVal != 0);
@@ -3877,7 +3877,7 @@ bool HTIFFFile::GetField (HTagID pi_Tag, uint32_t* po_pCount, unsigned short** p
     }
 
 
-bool HTIFFFile::SetField (HTagID pi_Tag, uint32_t pi_Count, const unsigned short* pi_pVal)
+bool HTIFFFile::SetField (HTagID pi_Tag, uint32_t pi_Count, const uint16_t* pi_pVal)
     {
     HFCMonitor Monitor(m_Key);
     bool Ret(true);

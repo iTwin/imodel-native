@@ -64,16 +64,16 @@ public:
         {
         // Line Capability
         Add(new HRFLineCapability(HFC_READ_ONLY,        // AccessMode
-                                  LONG_MAX,                                           // MaxWidth
+                                  INT32_MAX,                                           // MaxWidth
                                   HRFBlockAccess::SEQUENTIAL));                       // BlockAccess
 
         // Image Capability
         Add(new HRFImageCapability(HFC_READ_ONLY,  // AccessMode
-                                   LONG_MAX,        // MaxSizeInBytes
+                                   INT32_MAX,        // MaxSizeInBytes
                                    0,               // MinWidth
-                                   LONG_MAX,        // MaxWidth
+                                   INT32_MAX,        // MaxWidth
                                    0,               // MinHeight
-                                   LONG_MAX));      // MaxHeight
+                                   INT32_MAX));      // MaxHeight
         }
     };
 
@@ -86,16 +86,16 @@ public:
         {
         // Line Capability
         Add(new HRFLineCapability(HFC_READ_ONLY,        // AccessMode
-                                  LONG_MAX,                                           // MaxWidth
+                                  INT32_MAX,                                           // MaxWidth
                                   HRFBlockAccess::SEQUENTIAL));                       // BlockAccess
 
         // Image Capability
         Add(new HRFImageCapability(HFC_READ_ONLY,  // AccessMode
-                                   LONG_MAX,        // MaxSizeInBytes
+                                   INT32_MAX,        // MaxSizeInBytes
                                    0,               // MinWidth
-                                   LONG_MAX,        // MaxWidth
+                                   INT32_MAX,        // MaxWidth
                                    0,               // MinHeight
-                                   LONG_MAX));      // MaxHeight
+                                   INT32_MAX));      // MaxHeight
         }
     };
 
@@ -331,7 +331,7 @@ HRFFliFile::~HRFFliFile()
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFFliFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                        unsigned short pi_Resolution,
+                                                        uint16_t pi_Resolution,
                                                         HFCAccessMode  pi_AccessMode)
     {
     // Verify that the page number is 0, because we have one image per file
@@ -530,7 +530,7 @@ bool HRFFliFile::GetColorChunk()
     {
     HPRECONDITION(m_pFliFile != 0);
 
-    unsigned short nbPackets;
+    uint16_t nbPackets;
     Byte    skipCount;
     Byte    copyCount;
 
@@ -715,7 +715,7 @@ void HRFFliFile::GetPaletteFromFile()
 
     uint32_t maxColor;
 
-    maxColor = (uint32_t)pow(2.0, (int)m_FliFileHeader.depth);
+    maxColor = (uint32_t)pow(2.0, (int32_t)m_FliFileHeader.depth);
 
     m_RgbColors = new FliRGBColor[maxColor];
 
@@ -770,7 +770,7 @@ HFCPtr<HRPPixelType> HRFFliFile::CreatePixelTypeFromFile() const
     uint32_t              maxColor;
 
 
-    maxColor = (uint32_t)pow(2.0, (int)m_FliFileHeader.depth);
+    maxColor = (uint32_t)pow(2.0, (int32_t)m_FliFileHeader.depth);
 
 
     switch (m_FliFileHeader.depth)
@@ -910,9 +910,9 @@ HFCBinStream* HRFFliFile::GetFilePtr  ()
 
 //-----------------------------------------------------------------------------
 // protected
-// GetChunkSize( int n)   - Get the n Chunk size
+// GetChunkSize( int32_t n)   - Get the n Chunk size
 //-----------------------------------------------------------------------------
-int HRFFliFile::GetChunkSize  (int chunkNb)
+int32_t HRFFliFile::GetChunkSize  (int32_t chunkNb)
     {
     return m_FliChunkHeader[chunkNb].chunkSize;
     }
@@ -921,7 +921,7 @@ int HRFFliFile::GetChunkSize  (int chunkNb)
 // protected
 // GetChunkHeaderSize()   - Get the n Chunk size
 //-----------------------------------------------------------------------------
-int HRFFliFile::GetChunkHeaderSize()
+int32_t HRFFliFile::GetChunkHeaderSize()
     {
     return FLIC_CHUNK_HEADER_LENGTH;
     }

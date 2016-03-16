@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDLZWDecoder.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -68,7 +68,7 @@ private:
     Byte const* m_pInputBuffer;      // compressed data
     size_t m_pInputBytesCount;
     uint32_t m_CurrentPos;
-    unsigned short m_Predictor;
+    uint16_t m_Predictor;
 
 #ifdef LZW_A_SLOW_DECODER
     string  m_decodeCodeTable[LZW_TABLE_SIZE];

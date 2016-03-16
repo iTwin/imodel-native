@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFDoqFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFDoqFile
@@ -119,7 +119,7 @@ public:
     virtual bool                         AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage);
 
     virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
-                                                                 unsigned short           pi_Resolution,
+                                                                 uint16_t           pi_Resolution,
                                                                  HFCAccessMode             pi_AccessMode);
 
     virtual void                          Save();
@@ -156,11 +156,11 @@ public:
     uint32_t                GetImageHeight()const;
     size_t                  GetTotalRowBytes() const;
     bool                   GetKeywordLine(KeywordName pi_Keyword)const;
-    bool                   GetField( KeywordName pi_Keyword, uint32_t pi_NbArgs, unsigned short* po_pReturnVal)const;
+    bool                   GetField( KeywordName pi_Keyword, uint32_t pi_NbArgs, uint16_t* po_pReturnVal)const;
     string                  GetField( KeywordName pi_Keyword, uint32_t pi_NbArgs)const;
     bool                   GetField( KeywordName pi_Keyword, uint32_t pi_NbArgs, double* po_pReturnVal)const;
     bool                   GetField( KeywordName pi_Keyword, uint32_t pi_NbArgs, uint32_t* po_pReturnVal)const;
-    string                  GetFieldString(int pi_Offset, uint32_t pi_ArgNb)const;
+    string                  GetFieldString(int32_t pi_Offset, uint32_t pi_ArgNb)const;
 
     bool                   IsValidGeoRefInfo() const;
     HFCPtr<HGF2DTransfoModel> BuildTransfoModel() const;
@@ -194,7 +194,7 @@ private:
     // Attributs
     uint32_t                           m_ImageWidth;
     uint32_t                           m_ImageHeight;
-    unsigned short                      m_BitsPerPixel;
+    uint16_t                      m_BitsPerPixel;
     double                              m_RatioToMeter;
     HRFScanlineOrientation              m_SLO;
     uint32_t                           m_DataSize;

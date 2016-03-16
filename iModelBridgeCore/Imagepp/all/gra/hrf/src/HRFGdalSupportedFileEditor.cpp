@@ -63,7 +63,7 @@
 
 HRFGdalSupportedFileEditor::HRFGdalSupportedFileEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                                        uint32_t              pi_Page,
-                                                       unsigned short       pi_Resolution,
+                                                       uint16_t       pi_Resolution,
                                                        HFCAccessMode         pi_AccessMode)
     : HRFResolutionEditor(pi_rpRasterFile,
                           pi_Page,
@@ -146,7 +146,7 @@ HRFGdalSupportedFileEditor::HRFGdalSupportedFileEditor(HFCPtr<HRFRasterFile> pi_
             }
         }
 
-    m_GdalDataType =(unsigned short) m_pRasterBands[0]->GetRasterDataType();
+    m_GdalDataType =(uint16_t) m_pRasterBands[0]->GetRasterDataType();
 
     if (RASTER_FILE->IsUnsignedPixelTypeForSignedData() == true)
         {
@@ -310,16 +310,16 @@ void HRFGdalSupportedFileEditor::DetermineGdalDataType()
                 m_GdalDataType = GDT_Byte;
                 break;
             case 16 :
-                m_GdalDataType = (unsigned short)(RASTER_FILE->IsReadPixelSigned() ? GDT_Int16 : GDT_UInt16);
+                m_GdalDataType = (uint16_t)(RASTER_FILE->IsReadPixelSigned() ? GDT_Int16 : GDT_UInt16);
                 break;
             case 32 :
-                m_GdalDataType = (unsigned short)(RASTER_FILE->IsReadPixelSigned() ? GDT_Int32 : GDT_UInt32);
+                m_GdalDataType = (uint16_t)(RASTER_FILE->IsReadPixelSigned() ? GDT_Int32 : GDT_UInt32);
                 break;
             }
         }
     else
         {
-        m_GdalDataType = (unsigned short)m_pRasterBands[GRAY_BAND]->GetRasterDataType();
+        m_GdalDataType = (uint16_t)m_pRasterBands[GRAY_BAND]->GetRasterDataType();
         }
     }
 
@@ -365,7 +365,7 @@ HSTATUS HRFGdalSupportedFileEditor::ReadIntegerBlock(uint64_t pi_PosBlockX,
     {
     HPRECONDITION(po_pData != 0);
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
-    HPRECONDITION(pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+    HPRECONDITION(pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);
 
     HSTATUS Status = H_SUCCESS;
 
@@ -398,7 +398,7 @@ HSTATUS HRFGdalSupportedFileEditor::ReadIntegerBlock(uint64_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 void HRFGdalSupportedFileEditor::ComputeIOblockSize(uint32_t pi_PosBlockX, uint32_t pi_PosBlockY)
     {
-    HPRECONDITION(pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+    HPRECONDITION(pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);
 
     if ((pi_PosBlockX + RASTER_FILE->GetBlockWidth()) > (uint32_t)RASTER_FILE->GetImageWidth())
         {
@@ -431,7 +431,7 @@ HSTATUS HRFGdalSupportedFileEditor::ReadRealBlock(uint64_t pi_PosBlockX,
     {
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
     HPRECONDITION(RASTER_FILE->IsReadPixelReal() == true); //INT not tested
-    HPRECONDITION(pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+    HPRECONDITION(pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);
 
     HSTATUS Status = H_SUCCESS;
 
@@ -545,14 +545,14 @@ void HRFGdalSupportedFileEditor::Scaling16BitsBlock(Byte* po_pData)
 
     if(RASTER_FILE->IsReadPixelSigned())
         {
-        short*  pOriData    = (short*)po_pData;
-        unsigned short* pScaledData = (unsigned short*)po_pData;
+        int16_t*  pOriData    = (int16_t*)po_pData;
+        uint16_t* pScaledData = (uint16_t*)po_pData;
 
         for (uint64_t PixelIndex = 0; PixelIndex < m_NbPixelsPerBlock; PixelIndex++)
             {
             for (uint32_t BandInd = 0; BandInd < m_NbBands; BandInd++)
                 {
-                *pScaledData = (unsigned short)((*pOriData - m_pBandMinimum[BandInd])* m_pBandScaling[BandInd]);
+                *pScaledData = (uint16_t)((*pOriData - m_pBandMinimum[BandInd])* m_pBandScaling[BandInd]);
                 pScaledData++;
                 pOriData++;
                 }
@@ -560,13 +560,13 @@ void HRFGdalSupportedFileEditor::Scaling16BitsBlock(Byte* po_pData)
         }
     else
         {
-        unsigned short* pData = (unsigned short*)po_pData;
+        uint16_t* pData = (uint16_t*)po_pData;
 
         for (uint64_t PixelIndex = 0; PixelIndex < m_NbPixelsPerBlock; PixelIndex++)
             {
             for (uint32_t BandInd = 0; BandInd < m_NbBands; BandInd++)
                 {
-                *pData = (unsigned short)((*pData - m_pBandMinimum[BandInd])* m_pBandScaling[BandInd]);
+                *pData = (uint16_t)((*pData - m_pBandMinimum[BandInd])* m_pBandScaling[BandInd]);
                 ++pData;
                 }
             }
@@ -583,14 +583,14 @@ void HRFGdalSupportedFileEditor::RevertScaling16BitsBlock(Byte* po_pData)
     HPRECONDITION(po_pData != 0);
     HPRECONDITION(RASTER_FILE->IsReadPixelSigned());
 
-    unsigned short* pScaledData   = (unsigned short*)po_pData;
-    short*  pUnscaledData = (short*)po_pData;
+    uint16_t* pScaledData   = (uint16_t*)po_pData;
+    int16_t*  pUnscaledData = (int16_t*)po_pData;
 
     for (uint64_t PixelIndex = 0; PixelIndex < m_NbPixelsPerBlock; PixelIndex++)
         {
         for (uint32_t BandInd = 0; BandInd < m_NbBands; BandInd++)
             {
-            *pUnscaledData = (short)((*pScaledData / m_pBandScaling[BandInd]) + m_pBandMinimum[BandInd]);
+            *pUnscaledData = (int16_t)((*pScaledData / m_pBandScaling[BandInd]) + m_pBandMinimum[BandInd]);
             pScaledData++;
             pUnscaledData++;
             }
@@ -792,11 +792,11 @@ void HRFGdalSupportedFileEditor::FindRealPVminMax(double*   po_pMin,
 
             if (m_GdalDataType == GDT_Float32)
                 {
-                for (int RowIndex = 0; RowIndex < m_HeightToRead; RowIndex++)
+                for (int32_t RowIndex = 0; RowIndex < m_HeightToRead; RowIndex++)
                     {
                     PixelInd = RowIndex * m_BlockWidth * m_NbBands;
 
-                    for (int ColIndex = 0; ColIndex < m_WidthToRead; ColIndex++)
+                    for (int32_t ColIndex = 0; ColIndex < m_WidthToRead; ColIndex++)
                         {
                         for (uint32_t BandInd = 0; BandInd < m_NbBands; BandInd++)
                             {
@@ -819,11 +819,11 @@ void HRFGdalSupportedFileEditor::FindRealPVminMax(double*   po_pMin,
                 }
             else
                 {
-                for (int RowIndex = 0; RowIndex < m_HeightToRead; RowIndex++)
+                for (int32_t RowIndex = 0; RowIndex < m_HeightToRead; RowIndex++)
                     {
                     PixelInd = RowIndex * m_BlockWidth * m_NbBands;
 
-                    for (int ColIndex = 0; ColIndex < m_WidthToRead; ColIndex++)
+                    for (int32_t ColIndex = 0; ColIndex < m_WidthToRead; ColIndex++)
                         {
                         for (uint32_t BandInd = 0; BandInd < m_NbBands; BandInd++)
                             {
@@ -865,7 +865,7 @@ HSTATUS HRFGdalSupportedFileEditor::WriteBlock(uint64_t              pi_PosBlock
     {
     HPRECONDITION(pi_pData != 0);
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
-    HPRECONDITION(pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+    HPRECONDITION(pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);
 
     HSTATUS Status = H_SUCCESS;
 
@@ -939,7 +939,7 @@ HSTATUS HRFGdalSupportedFileEditor::ReadBandBlock  (Byte*           po_pOutBuffe
                                                     const uint64_t  pi_PosBlockX,
                                                     const uint64_t  pi_PosBlockY)
     {
-    HPRECONDITION(pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+    HPRECONDITION(pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);
 
     HSTATUS Status = H_SUCCESS;
 
@@ -996,7 +996,7 @@ HSTATUS HRFGdalSupportedFileEditor::WriteBandBlock (const Byte*    pi_pInBuffer,
                                                     const uint64_t  pi_PosBlockX,
                                                     const uint64_t  pi_PosBlockY)
     {
-    HPRECONDITION(pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+    HPRECONDITION(pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);
 
     HSTATUS Status = H_SUCCESS;
 

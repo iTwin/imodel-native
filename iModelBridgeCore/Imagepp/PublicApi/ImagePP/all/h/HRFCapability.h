@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFCapability.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -439,8 +439,8 @@ public:
         bool               pi_XYRatioLocked        = true,
         uint32_t            pi_SmallestResWidth     = 256,
         uint32_t            pi_SmallestResHeight    = 256,
-        uint64_t           pi_BiggestResWidth      = ULONG_MAX,
-        uint64_t           pi_BiggestResHeight     = ULONG_MAX,
+        uint64_t           pi_BiggestResWidth      = UINT32_MAX,
+        uint64_t           pi_BiggestResHeight     = UINT32_MAX,
         bool               pi_UnlimitedResolution  = false);
 
     virtual bool   SameAs(const HFCPtr<HRFCapability>& pi_rpCapability) const;
@@ -1482,8 +1482,8 @@ public:
 
     IMAGEPP_EXPORT void AddSupportedKey 	(TIFFGeoKey pi_GeoKey);
     IMAGEPP_EXPORT bool 		IsKeySupported  	(TIFFGeoKey pi_GeoKey) const;
-    IMAGEPP_EXPORT unsigned short GetNbGeotiffKeys	() const;
-    IMAGEPP_EXPORT TIFFGeoKey   GetGeotiffKey		(unsigned short pi_KeyIndex) const;
+    IMAGEPP_EXPORT uint16_t GetNbGeotiffKeys	() const;
+    IMAGEPP_EXPORT TIFFGeoKey   GetGeotiffKey		(uint16_t pi_KeyIndex) const;
 
     virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
         return T_Super::IsCompatibleWith(pi_rpCapability);

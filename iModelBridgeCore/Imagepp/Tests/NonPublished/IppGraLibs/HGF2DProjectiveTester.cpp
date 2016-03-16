@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HGF2DProjectiveTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -368,7 +368,7 @@ TEST_F (HGF2DProjectiveTester, SpecialConstructorTest)
     MyMatrix1[2][1] = 0.0;
     MyMatrix1[2][2] = 1.0;
 
-    double MyMatrix2[3][3] = {1.0, 0.0, 10.0, 0.0, 1.0, 10.0, 0.0, 0.0, 1.0};
+    double MyMatrix2[3][3] = {{1.0, 0.0, 10.0}, {0.0, 1.0, 10.0}, {0.0, 0.0, 1.0}};
     
     HGF2DProjective     ProjectiveTranslation1(MyMatrix1);
     HGF2DProjective     ProjectiveTranslation2(MyMatrix2);
@@ -966,7 +966,7 @@ TEST_F(HGF2DProjectiveTester, ConversionTest)
 
 TEST_F(HGF2DProjectiveTester, ConversionInOutArraysTest)
     {
-    const int NUMBER_OF_POINTS = 10;
+    const int32_t NUMBER_OF_POINTS = 10;
     double XArrayInOut[NUMBER_OF_POINTS];
     double YArrayInOut[NUMBER_OF_POINTS];
     for(uint32_t i = 0; i < NUMBER_OF_POINTS; i++)
@@ -1382,7 +1382,7 @@ TEST_F(HGF2DProjectiveTester, ConversionTestTest3)
 
 TEST_F(HGF2DProjectiveTester, ConversionInOutArraysTest3)
     {
-    const int NUMBER_OF_POINTS = 10;
+    const int32_t NUMBER_OF_POINTS = 10;
     double XArrayInOut[NUMBER_OF_POINTS];
     double YArrayInOut[NUMBER_OF_POINTS];
     for(uint32_t i = 0; i < NUMBER_OF_POINTS; i++)

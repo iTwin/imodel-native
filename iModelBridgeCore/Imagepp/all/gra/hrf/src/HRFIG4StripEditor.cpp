@@ -22,14 +22,14 @@
 
 HRFIG4StripEditor::HRFIG4StripEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                      uint32_t              pi_Page,
-                                     unsigned short       pi_Resolution,
+                                     uint16_t       pi_Resolution,
                                      HFCAccessMode         pi_AccessMode)
     : HRFResolutionEditor(pi_rpRasterFile, pi_Page, pi_Resolution, pi_AccessMode),
       m_CompressPacket()
     {
     HPRECONDITION(m_pResolutionDescriptor != 0);
-    HPRECONDITION(m_pResolutionDescriptor->GetWidth() <= ULONG_MAX);
-    HPRECONDITION(m_pResolutionDescriptor->GetHeight() <= ULONG_MAX);
+    HPRECONDITION(m_pResolutionDescriptor->GetWidth() <= UINT32_MAX);
+    HPRECONDITION(m_pResolutionDescriptor->GetHeight() <= UINT32_MAX);
 
     m_pIG4File = const_cast<HFCBinStream*>(((HFCPtr<HRFIG4File >&)GetRasterFile())->GetIG4FilePtr());
     m_pCodec    = ((HFCPtr<HRFIG4File >&)GetRasterFile())->GetIG4CodecPtr();

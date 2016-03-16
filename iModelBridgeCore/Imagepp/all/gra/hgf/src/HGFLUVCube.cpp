@@ -91,7 +91,7 @@ inline void HGFLUVCube::ConvertRBGToXYZ(Byte pi_Red, Byte pi_Green, Byte pi_Blue
 //----------------------------------------------------------------------------
 void HGFLUVCube::BuildLookupTable()
     {
-    int    TableIndex;
+    int32_t    TableIndex;
 
     double NormalizedValue;
 

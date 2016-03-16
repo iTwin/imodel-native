@@ -36,10 +36,10 @@ public:
 
     IMAGEPP_EXPORT static HFCBinStream*    Instanciate(HFCPtr<HFCURL> pi_pURL,
                                                HFCAccessMode  pi_AccessMode = HFC_NO_ACCESS,
-                                               short pi_NbRetry=0 , bool pi_ThrowOnError = false);
+                                               int16_t pi_NbRetry=0 , bool pi_ThrowOnError = false);
 
     IMAGEPP_EXPORT static HFCBinStream* Instanciate(HFCPtr<HFCURL> pi_pURL, uint64_t pi_offSet, HFCAccessMode  pi_AccessMode = HFC_NO_ACCESS,
-                                                    short pi_NbRetry=0, bool pi_ThrowOnError = false);
+                                                    int16_t pi_NbRetry=0, bool pi_ThrowOnError = false);
 
     // Information methods
 
@@ -74,7 +74,7 @@ public:
         virtual HFCBinStream* Create(HFCPtr<HFCURL> pi_pURL,
                                      uint64_t pi_offSet,
                                      HFCAccessMode  pi_AccessMode,
-                                     short pi_NbRetryBeforeThrow=0) const = 0;
+                                     int16_t pi_NbRetryBeforeThrow=0) const = 0;
         };
 
 

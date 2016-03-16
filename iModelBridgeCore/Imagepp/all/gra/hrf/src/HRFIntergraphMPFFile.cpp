@@ -51,12 +51,12 @@ public:
         {
         // Line Capability
         Add(new HRFLineCapability(HFC_READ_ONLY,                // AccessMode
-                                  LONG_MAX,                     // MaxWidth
+                                  INT32_MAX,                     // MaxWidth
                                   HRFBlockAccess::SEQUENTIAL)); // BlockAccess
 
         // Tile Capability
         Add(new HRFTileCapability(HFC_READ_ONLY,   // AccessMode
-                                  LONG_MAX,        // MaxSizeInBytes
+                                  INT32_MAX,        // MaxSizeInBytes
                                   32,              // MinWidth
                                   4096,            // MaxWidth
                                   32,              // WidthIncrement
@@ -216,9 +216,9 @@ bool HRFIntergraphMPFCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
     bool   Result = false;
     HAutoPtr<HFCBinStream> pFile;
-    unsigned short HeaderTypeCode;
-    unsigned short DataTypeCode;
-    unsigned short WordToFollow;
+    uint16_t HeaderTypeCode;
+    uint16_t DataTypeCode;
+    uint16_t WordToFollow;
 
     pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
@@ -227,13 +227,13 @@ bool HRFIntergraphMPFCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
     // Check if the file was a valid Intergraph Cit...
     pFile->SeekToBegin();
-    if (pFile->Read(&HeaderTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
+    if (pFile->Read(&HeaderTypeCode, sizeof(uint16_t)) != sizeof(uint16_t))
         goto WRAPUP;
 
     if (HeaderTypeCode == 0x0908)
         {
-        if (pFile->Read(&WordToFollow, sizeof(unsigned short)) != sizeof(unsigned short) ||
-            pFile->Read(&DataTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
+        if (pFile->Read(&WordToFollow, sizeof(uint16_t)) != sizeof(uint16_t) ||
+            pFile->Read(&DataTypeCode, sizeof(uint16_t)) != sizeof(uint16_t))
             goto WRAPUP;
 
         // If it's a tiled raster retreive the proper data type code.
@@ -244,7 +244,7 @@ bool HRFIntergraphMPFCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                 uint32_t HeaderLen = ((WordToFollow + 2) /256) * 512;
                 HeaderLen += 18;
                 pFile->SeekToPos(HeaderLen);
-                if (pFile->Read(&DataTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
+                if (pFile->Read(&DataTypeCode, sizeof(uint16_t)) != sizeof(uint16_t))
                     goto WRAPUP;
                 }
             }
@@ -444,7 +444,7 @@ const HFCPtr<HRFRasterFileCapabilities>& HRFIntergraphMPFFile::GetCapabilities (
 //-----------------------------------------------------------------------------
 
 HRFResolutionEditor* HRFIntergraphMPFFile::CreateResolutionEditor(uint32_t       pi_PageIndex,
-                                                                  unsigned short pi_Resolution,
+                                                                  uint16_t pi_Resolution,
                                                                   HFCAccessMode  pi_AccessMode)
     {
     HPRECONDITION(GetPageDescriptor(pi_PageIndex) != 0);

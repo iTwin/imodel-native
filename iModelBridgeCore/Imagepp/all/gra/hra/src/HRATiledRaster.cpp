@@ -488,7 +488,7 @@ void HRATiledRaster::SetLookAhead(const HVEShape& pi_rShape,
     if (m_LookAheadByExtent)
         {
         Propagate(HRALookAheadMsg(*pShape,
-                                  (unsigned short)(GetID() - HRSObjectStore::ID_TiledRaster),
+                                  (uint16_t)(GetID() - HRSObjectStore::ID_TiledRaster),
                                   pi_ConsumerID,
                                   pi_Async));
         }
@@ -504,12 +504,12 @@ void HRATiledRaster::SetLookAhead(const HVEShape& pi_rShape,
             // send the LookAhead
             if (AllTilesMissing)  // all tiles are missing, use the shape
                 Propagate(HRALookAheadMsg(*pShape,
-                                          (unsigned short)(GetID() - HRSObjectStore::ID_TiledRaster),
+                                          (uint16_t)(GetID() - HRSObjectStore::ID_TiledRaster),
                                           pi_ConsumerID,
                                           pi_Async));
             else
                 Propagate(HRALookAheadMsg(TileList,
-                                          (unsigned short)(GetID() - HRSObjectStore::ID_TiledRaster),
+                                          (uint16_t)(GetID() - HRSObjectStore::ID_TiledRaster),
                                           pi_ConsumerID,
                                           pi_Async));
             }
@@ -625,11 +625,11 @@ void HRATiledRaster::SetTransfoModel(const HGF2DTransfoModel& pi_rModelCSp_CSl)
 // public
 // GetRepresentativePalette
 //-----------------------------------------------------------------------------
-unsigned short HRATiledRaster::GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms)
+uint16_t HRATiledRaster::GetRepresentativePalette(HRARepPalParms* pio_pRepPalParms)
     {
     HPRECONDITION(pio_pRepPalParms != 0);
 
-    unsigned short CountUsed = HRAStoredRaster::GetRepresentativePalette(pio_pRepPalParms);
+    uint16_t CountUsed = HRAStoredRaster::GetRepresentativePalette(pio_pRepPalParms);
 
     // if no operation has been done at the parent level or if the cache is not
     // updated
@@ -647,7 +647,7 @@ unsigned short HRATiledRaster::GetRepresentativePalette(HRARepPalParms* pio_pRep
         const HRPPixelPalette& rPalette = (RepPalParms.GetPixelType())->GetPalette();
 
         HFCPtr<HRABitmapBase> pRaster;
-        unsigned short Entries;
+        uint16_t Entries;
         uint32_t Index;
 
         // create a quantized palette object
@@ -1509,7 +1509,7 @@ void HRATiledRaster::GetMissingTilesInRegion(const HFCPtr<HVEShape>& pi_rpRegion
     HVETileIDIterator TileIterator(m_pTileDescriptor, pi_rpRegion);
     *po_pAllTilesMissing = true;
     uint64_t Index = TileIterator.GetFirstTileIndex();
-    HASSERT_X64(GetID() - HRSObjectStore::ID_TiledRaster <= ULONG_MAX);
+    HASSERT_X64(GetID() - HRSObjectStore::ID_TiledRaster <= UINT32_MAX);
     uint32_t Resolution = (uint32_t)(GetID() - HRSObjectStore::ID_TiledRaster);
     HFCMonitor Monitor(m_TileMapKey);
     TileMapItr Itr;
@@ -1673,7 +1673,7 @@ void HRATiledRaster::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions con
 
                     m_pTileDescriptor->GetTileDataSize(Index, dataWidth, dataHeight);
 
-                    HASSERT((dataWidth <= ULONG_MAX) && (dataHeight <= ULONG_MAX));
+                    HASSERT((dataWidth <= UINT32_MAX) && (dataHeight <= UINT32_MAX));
 
                     HFCPtr<HGSSurfaceDescriptor> pSurfaceDescriptor(pTile->GetTile()->GetSurfaceDescriptor());
 
@@ -1878,7 +1878,7 @@ void HRATiledRaster::SaveTiles()
         else
             {
             // with this message, HRAPyramidRaster will set all parents of this tile to dirty for sub res
-            Propagate(HRAModifiedTileNotSavedMsg((unsigned short)(GetID() - HRSObjectStore::ID_TiledRaster),
+            Propagate(HRAModifiedTileNotSavedMsg((uint16_t)(GetID() - HRSObjectStore::ID_TiledRaster),
                                                  Itr->first));
 
             // the tile is undiscartable,
@@ -1907,7 +1907,7 @@ void HRATiledRaster::RemoveTile(HRATiledRaster::TileMapItr& pi_rItr, bool pi_Wil
     {
     if (pi_WillBeNotSaved)
         {
-        Propagate(HRAModifiedTileNotSavedMsg((unsigned short)(GetID() - HRSObjectStore::ID_TiledRaster),
+        Propagate(HRAModifiedTileNotSavedMsg((uint16_t)(GetID() - HRSObjectStore::ID_TiledRaster),
                                              pi_rItr->first));
         }
 
@@ -1935,7 +1935,7 @@ void HRATiledRaster::ClearWithRLEMask(const HRAClearOptions& pi_rOptions)
 #endif
 
     void* pRawData = const_cast<void*>((pi_rOptions.GetRawDataValue() == 0 ? GetPixelType()->GetDefaultRawData() : pi_rOptions.GetRawDataValue()));
-    unsigned short OutData[4];
+    uint16_t OutData[4];
     uint64_t ImageWidth;
     uint64_t ImageHeight;
     GetSize(&ImageWidth, &ImageHeight);
@@ -2522,7 +2522,7 @@ protected:
     +---------------+---------------+---------------+---------------+---------------+------*/
     ImagePPStatus GenerateSampleData(HRAImageSampleR outSample, HFCInclusiveGrid const& srcGrid)
         {
-        HPRECONDITION(srcGrid.GetWidth() < ULONG_MAX && srcGrid.GetHeight() < ULONG_MAX);
+        HPRECONDITION(srcGrid.GetWidth() < UINT32_MAX && srcGrid.GetHeight() < UINT32_MAX);
         HPRECONDITION(srcGrid.GetWidth() <= outSample.GetWidth() && srcGrid.GetHeight() <= outSample.GetHeight());
 
         if(m_CopyPixelMethod == NULL || m_ClampPixelMethod == NULL)

@@ -80,7 +80,7 @@ public:
     HFCPtr<HRFPageDescriptor>           GetPageDescriptor   (uint32_t pi_Page) const;
 
     virtual HRFResolutionEditor*        CreateResolutionEditor  (uint32_t                   pi_Page,
-                                                                 unsigned short            pi_Resolution,
+                                                                 uint16_t            pi_Resolution,
                                                                  HFCAccessMode              pi_AccessMode);
 
     virtual HRFResolutionEditor*        CreateUnlimitedResolutionEditor  (uint32_t                   pi_Page,
@@ -101,7 +101,7 @@ public:
 
     // Sets the LookAhead for a shape
     virtual void                        SetLookAhead            (uint32_t                   pi_Page,
-                                                                 unsigned short            pi_Resolution,
+                                                                 uint16_t            pi_Resolution,
                                                                  const HVEShape&            pi_rShape,
                                                                  uint32_t                   pi_ConsumerID,
                                                                  bool                      pi_Async);
@@ -119,7 +119,7 @@ public:
 
 
     //Function used to initialize the PDF library
-    IMAGEPP_EXPORT static int                   InitializePDFLibraryInThread();
+    IMAGEPP_EXPORT static int32_t                   InitializePDFLibraryInThread();
 
     IMAGEPP_EXPORT static void                  TerminatePDFLibraryInThread();
 
@@ -158,7 +158,7 @@ private:
 
     // called by HRFPDFEditor destructor
     void                    RemoveLookAhead(uint32_t pi_Page,
-                                            unsigned short pi_Resolution);
+                                            uint16_t pi_Resolution);
 
     // Methods Disabled
     HRFPDFFile(const HRFPDFFile& pi_rObj);

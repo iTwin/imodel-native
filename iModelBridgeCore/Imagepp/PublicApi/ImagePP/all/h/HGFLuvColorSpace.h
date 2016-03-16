@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFLuvColorSpace.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // L*u*v* ColorSpace converter class declaration.
@@ -16,8 +16,8 @@ BEGIN_IMAGEPP_NAMESPACE
 class HGFLuvColorSpace : public HGFBasicColorSpace
     {
 public:
-    IMAGEPP_EXPORT HGFLuvColorSpace(unsigned short pi_BitsPerPixel = 8);
-    IMAGEPP_EXPORT HGFLuvColorSpace(double pi_GammaCorrection, unsigned short pi_BitsPerPixel = 8);
+    IMAGEPP_EXPORT HGFLuvColorSpace(uint16_t pi_BitsPerPixel = 8);
+    IMAGEPP_EXPORT HGFLuvColorSpace(double pi_GammaCorrection, uint16_t pi_BitsPerPixel = 8);
     IMAGEPP_EXPORT virtual ~HGFLuvColorSpace();
 
     // Conversion both side between RGB and CIE LUV Pixel by Pixel
@@ -25,19 +25,19 @@ public:
                                 double* pi_pL,  double* pi_pU,    double* pi_pV) const;
 
     // The 8/16 bits version depending of the BitsPerPixel used at creation. 
-    double LuminanceFromGray (unsigned short pi_gray) const;
+    double LuminanceFromGray (uint16_t pi_gray) const;
 
     // The 8/16 bits version depending of the BitsPerPixel used at creation. 
-    unsigned short GrayFromLuminance(double pi_L) const;
+    uint16_t GrayFromLuminance(double pi_L) const;
 
-    IMAGEPP_EXPORT void ConvertFromRGB (unsigned short pi_Red, unsigned short pi_Green, unsigned short pi_Blue,
+    IMAGEPP_EXPORT void ConvertFromRGB (uint16_t pi_Red, uint16_t pi_Green, uint16_t pi_Blue,
                                 double* pi_pL,  double* pi_pU,    double* pi_pV) const;
 
     IMAGEPP_EXPORT void ConvertToRGB (double  pi_L,    double  pi_U,      double  pi_V,
                               Byte*  po_pRed, Byte*  po_pGreen, Byte*  po_pBlue) const;
 
     IMAGEPP_EXPORT void ConvertToRGB (double  pi_L,    double  pi_U,       double  pi_V,
-                              unsigned short*  po_pRed,unsigned short*  po_pGreen, unsigned short*  po_pBlue) const;
+                              uint16_t*  po_pRed,uint16_t*  po_pGreen, uint16_t*  po_pBlue) const;
 
 
     // These method are slower BUT take care of the RGB values when out of gammut.
@@ -45,7 +45,7 @@ public:
                                   Byte*  po_pRed,   Byte*  po_pGreen,   Byte*  po_pBlue) const;
 
     IMAGEPP_EXPORT bool SafeConvertToRGB (double   pi_L,    double   pi_U,      double   pi_V,
-                                  unsigned short*  po_pRed, unsigned short*  po_pGreen, unsigned short*  po_pBlue) const;
+                                  uint16_t*  po_pRed, uint16_t*  po_pGreen, uint16_t*  po_pBlue) const;
 
     // Conversion both side between an array of RGB and and array of CIE LUV
     void ConvertArrayFromRGB (Byte*  pi_pRed, Byte*  pi_pGreen, Byte*  pi_pBlue,

@@ -31,8 +31,8 @@ HRPChannelType::HRPChannelType()
 //-----------------------------------------------------------------------------
 HRPChannelType::HRPChannelType(HRPChannelType::ChannelRole pi_Role,
                                HRPChannelType::DataType    pi_DataType,
-                               unsigned short             pi_SizeBits,
-                               unsigned short             pi_Id,
+                               uint16_t             pi_SizeBits,
+                               uint16_t             pi_Id,
                                const double*             pi_pNoDataValue)
     {
     m_Role     = pi_Role;
@@ -114,7 +114,7 @@ HRPChannelType& HRPChannelType::operator=(const HRPChannelType& pi_rObj)
 //-----------------------------------------------------------------------------
 // Returns the Id of this channel.
 //-----------------------------------------------------------------------------
-unsigned short HRPChannelType::GetId() const
+uint16_t HRPChannelType::GetId() const
     {
     return m_Id;
     }
@@ -138,7 +138,7 @@ HRPChannelType::DataType HRPChannelType::GetDataType() const
 //-----------------------------------------------------------------------------
 // Returns the size, in bits, of data for this channel.
 //-----------------------------------------------------------------------------
-unsigned short HRPChannelType::GetSize() const
+uint16_t HRPChannelType::GetSize() const
     {
     return m_SizeBits;
     }

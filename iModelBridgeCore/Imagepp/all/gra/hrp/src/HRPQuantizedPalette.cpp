@@ -24,7 +24,7 @@ HRPQuantizedPalette::HRPQuantizedPalette()
 //-----------------------------------------------------------------------------
 // Constructor for HRPQuantizedPalette
 //-----------------------------------------------------------------------------
-HRPQuantizedPalette::HRPQuantizedPalette(unsigned short pi_MaxEntries)
+HRPQuantizedPalette::HRPQuantizedPalette(uint16_t pi_MaxEntries)
     {
     m_MaxEntries = pi_MaxEntries;
     }

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DProjectiveMeshAdapter.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DProjectiveMeshAdapter
@@ -1077,9 +1077,9 @@ bool HGF2DProjectiveMeshAdapter::CreateModels() const
 
 
     // For every facet part of the mesh ...
-    long NumberOfFacets = m_pBaseMesh->CountFacets();
+    auto NumberOfFacets = m_pBaseMesh->CountFacets();
 
-    for (long i = 0 ; i < NumberOfFacets ; ++i)
+    for (auto i = 0 ; i < NumberOfFacets ; ++i)
         {
         // Obtain the facet
         HFCPtr<HVE2DRawFacet> pFacet = m_pBaseMesh->GetFacet(i);
@@ -1102,8 +1102,8 @@ bool HGF2DProjectiveMeshAdapter::CreateModels() const
 
 
         // Remove points that are equal one to the other
-        long i2;
-        long j;
+        int32_t i2;
+        int32_t j;
         for (i2 = 0 ; i2 < ShapePoints.size() - 1 ; ++i2)
             {
             for(j = i2+1 ; j < ShapePoints.size() ; ++ j)
@@ -1126,11 +1126,10 @@ bool HGF2DProjectiveMeshAdapter::CreateModels() const
 
         // Add the centroid
         // This is because of a bug concerning model generation using tie points
-        unsigned long k;
         double MeanX = 0.0;
         double MeanY = 0.0;
 
-        for (k = 0 ; k < ShapePoints.size() ; ++k)
+        for (auto k = 0 ; k < ShapePoints.size() ; ++k)
             {
             MeanX += ShapePoints[k].GetX();
             MeanY += ShapePoints[k].GetY();
@@ -1152,7 +1151,7 @@ bool HGF2DProjectiveMeshAdapter::CreateModels() const
         double CurrentY;
         double TempX;
         double TempY;
-        unsigned short CurrentTiePointVal = 0;
+        uint16_t CurrentTiePointVal = 0;
 
         HGF2DLocationCollection::iterator ShapePointItr;
         for (ShapePointItr = ShapePoints.begin(); ShapePointItr != ShapePoints.end() ; ++ShapePointItr)
@@ -1620,7 +1619,7 @@ bool HGF2DProjectiveMeshAdapter::CreateDefaultModel() const
 
     // Allocate Tie Points (6 double per tie points pair which are 4 in this particular case)
     HArrayAutoPtr<double> pTiePoints(new double[4 * 6]);
-    unsigned short CurrentTiePointVal = 0;
+    uint16_t CurrentTiePointVal = 0;
     double TempX;
     double TempY;
 #if (0)

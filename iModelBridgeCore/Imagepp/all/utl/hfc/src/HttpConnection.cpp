@@ -17,7 +17,7 @@ struct HttpHandler : NonCopyableClass
 {
     static size_t HttpBodyParser(void* ptr, size_t size, size_t nmemb, void* userp);
     static size_t HttpHeaderParser(char* buffer, size_t size, size_t nItems, void* userData);
-    static int    HttpProgressCallback(void* clientp, int64_t dltotal, int64_t dlnow, int64_t ultotal, int64_t ulnow);
+    static int32_t    HttpProgressCallback(void* clientp, int64_t dltotal, int64_t dlnow, int64_t ultotal, int64_t ulnow);
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -67,7 +67,7 @@ size_t HttpHandler::HttpHeaderParser(char* buffer, size_t size, size_t nItems, v
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-int HttpHandler::HttpProgressCallback(void* clientp, int64_t dltotal, int64_t dlnow, int64_t ultotal, int64_t ulnow)
+int32_t HttpHandler::HttpProgressCallback(void* clientp, int64_t dltotal, int64_t dlnow, int64_t ultotal, int64_t ulnow)
     {
     BeAssert(nullptr != clientp);
     IHttpRequestCancellationToken* cancellationToken = (IHttpRequestCancellationToken*)clientp;

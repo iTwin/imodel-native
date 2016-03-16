@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFCalsFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -64,7 +64,7 @@ public:
     virtual bool                         AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage);
 
     virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
-                                                                 unsigned short           pi_Resolution,
+                                                                 uint16_t           pi_Resolution,
                                                                  HFCAccessMode             pi_AccessMode);
 
 
@@ -157,7 +157,7 @@ private:
         };
 
     bool                   m_HasHeaderFilled;
-    unsigned short         m_BitPerPixel;
+    uint16_t         m_BitPerPixel;
     uint32_t                m_Width;
     uint32_t                m_Height;
 

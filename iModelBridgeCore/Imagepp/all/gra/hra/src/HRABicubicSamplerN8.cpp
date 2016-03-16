@@ -128,9 +128,9 @@ void const* HRABicubicSamplerN8::GetPixel(double     pi_PosX,
     Byte* pSrcLine3 = ComputeAddress(Column0, MIN(CurrentSample.GetLine3(), m_Height-1));
 
     // Compute byte offsets for each column
-    int OffsetColumn1;
-    int OffsetColumn2;
-    int OffsetColumn3;
+    int32_t OffsetColumn1;
+    int32_t OffsetColumn2;
+    int32_t OffsetColumn3;
     if (Column1 > Column0)
         {
         HASSERT(Column0 < m_Width - 1);
@@ -240,9 +240,9 @@ void HRABicubicSamplerN8::GetPixels(const double*  pi_pPositionsX,
     Byte* pSrcLine2;
     Byte* pSrcLine3;
     Sample  CurrentSample;
-    int     OffsetColumn1;
-    int     OffsetColumn2;
-    int     OffsetColumn3;
+    int32_t     OffsetColumn1;
+    int32_t     OffsetColumn2;
+    int32_t     OffsetColumn3;
 
     while (pi_PixelCount)
         {
@@ -357,9 +357,9 @@ void HRABicubicSamplerN8::GetPixels(double         pi_PositionX,
         double Horiz0, Horiz1, Horiz2, Horiz3;
         double Dx;
         double ChannelResult;
-        int     OffsetColumn1;
-        int     OffsetColumn2;
-        int     OffsetColumn3;
+        int32_t     OffsetColumn1;
+        int32_t     OffsetColumn2;
+        int32_t     OffsetColumn3;
 
         Sample  CurrentSample(pi_PositionX, pi_PositionY);
 
@@ -373,7 +373,7 @@ void HRABicubicSamplerN8::GetPixels(double         pi_PositionX,
         Byte* pSrcLine2 = ComputeAddress(Column0, MIN(CurrentSample.GetLine2(), m_Height-1));
         Byte* pSrcLine3 = ComputeAddress(Column0, MIN(CurrentSample.GetLine3(), m_Height-1));
 
-        int BytesToAdd;
+        int32_t BytesToAdd;
 
         double Dy = CurrentSample.GetYDelta();
         HASSERT(Dy >= 0.0 && Dy <= 1.0);
@@ -535,7 +535,7 @@ Byte* HRABicubicSamplerN8::ComputeAddress(HUINTX  pi_PosX,
 
     // For N1 sources, convert full lines only
     if (m_SourceBytesPerPixel == 0)
-        pi_NeededPixels = ULONG_MAX;
+        pi_NeededPixels = UINT32_MAX;
 
     // Compute start of source line
     Byte* pSrcData = m_pPacket->GetBufferAddress();
@@ -548,7 +548,7 @@ Byte* HRABicubicSamplerN8::ComputeAddress(HUINTX  pi_PosX,
 
     if (m_pWorkingPixelType != 0)
         {
-        if (pi_NeededPixels == ULONG_MAX)
+        if (pi_NeededPixels == UINT32_MAX)
             {
             // Convert and store full lines.
 

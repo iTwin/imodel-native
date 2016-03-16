@@ -52,7 +52,7 @@ public :
         {
         // Block capability
         Add (new HRFLineCapability (HFC_READ_ONLY,
-                                    LONG_MAX,
+                                    INT32_MAX,
                                     HRFBlockAccess::SEQUENTIAL));
         }
     };
@@ -655,7 +655,7 @@ int32_t HRFUSgsNDFCreator::GetBlueBand ()
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFUSgsNDFFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                            unsigned short pi_Resolution,
+                                                            uint16_t pi_Resolution,
                                                             HFCAccessMode  pi_AccessMode)
     {
     HRFResolutionEditor* pEditor = 0;
@@ -1158,7 +1158,7 @@ void HRFUSgsNDFFile::GetGeoKeyTag(HFCPtr<HCPGeoTiffKeys>& po_rpGeoTiffKeys)
     {
     HASSERT(po_rpGeoTiffKeys == 0);
 
-    short Code;
+    int16_t Code;
 
     po_rpGeoTiffKeys = new HCPGeoTiffKeys();
 
@@ -1209,7 +1209,7 @@ bool HRFUSgsNDFFile::GetBandNumber(int32_t& pio_rBand,
 // GetCoordSystem
 // Get the coordonate system code
 //-----------------------------------------------------------------------------
-bool HRFUSgsNDFFile::GetCoordSystem(short& po_rCode)
+bool HRFUSgsNDFFile::GetCoordSystem(int16_t& po_rCode)
     {
     bool Found = false;
 

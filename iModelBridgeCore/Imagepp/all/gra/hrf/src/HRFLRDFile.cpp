@@ -49,7 +49,7 @@ public:
         {
         // Block Capability
         Add(new HRFLineCapability(HFC_READ_WRITE_CREATE,        // AccessMode
-                                  LONG_MAX,                     // MaxWidth
+                                  INT32_MAX,                     // MaxWidth
                                   HRFBlockAccess::SEQUENTIAL)); // BlockAccess
         }
     };
@@ -310,7 +310,7 @@ HRFLRDFile::~HRFLRDFile()
 //-----------------------------------------------------------------------------
 
 HRFResolutionEditor* HRFLRDFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                        unsigned short pi_Resolution,
+                                                        uint16_t pi_Resolution,
                                                         HFCAccessMode  pi_AccessMode)
     {
     // verify that the page number is 0, because we have one image per file
@@ -470,7 +470,7 @@ void HRFLRDFile::SaveLRDFile(bool pi_CloseFile)
 
             if (BufferSize < 512)
                 {
-                unsigned short* pPaddingBuffer = new unsigned short[BufferSize / 2];
+                uint16_t* pPaddingBuffer = new uint16_t[BufferSize / 2];
                 memset(pPaddingBuffer, 0, BufferSize / 2);
 
                 m_pLRDFile->Write(pPaddingBuffer, BufferSize);
@@ -797,7 +797,7 @@ void HRFLRDFile::InitOpenedFile()
 // swap long word
 //-----------------------------------------------------------------------------
 
-int HRFLRDFile::swaplong ( char buf[] )
+int32_t HRFLRDFile::swaplong ( char buf[] )
     {
     char temp[4];
 
@@ -818,7 +818,7 @@ int HRFLRDFile::swaplong ( char buf[] )
 // swap double word
 //-----------------------------------------------------------------------------
 
-int HRFLRDFile::swapdouble ( char buf[] )
+int32_t HRFLRDFile::swapdouble ( char buf[] )
     {
     char temp[8];
 
@@ -1070,7 +1070,7 @@ void HRFLRDFile::AsciiTime (char atime[])
     {
     time_t t;
     char* s;
-    long i;
+    int32_t i;
 
     uint64_t tt = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
     tt = (uint64_t)(tt / 1000.0);   // Convert in second

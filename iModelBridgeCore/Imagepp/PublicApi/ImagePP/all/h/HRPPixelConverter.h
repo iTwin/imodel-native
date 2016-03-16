@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelConverter.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPPixelConverter
@@ -37,7 +37,7 @@ public:
 
     //&&Backlog Seems to used only by filtering to restore alpha. To be remove after the move to HRAImageOp.
     virtual void ConvertLostChannel(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount, const bool* pi_pChannelsMask) const;
-    virtual const short* GetLostChannels() const;
+    virtual const int16_t* GetLostChannels() const;
 
     // Pixel type methods
     virtual void SetDestinationPixelType(const HRPPixelType* pi_pDestPixelType);

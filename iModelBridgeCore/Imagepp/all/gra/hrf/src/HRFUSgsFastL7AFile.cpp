@@ -51,7 +51,7 @@ public :
         {
         // Block capability
         Add (new HRFLineCapability (HFC_READ_ONLY,
-                                    LONG_MAX,
+                                    INT32_MAX,
                                     HRFBlockAccess::SEQUENTIAL));
         }
     };
@@ -578,7 +578,7 @@ const HFCPtr<HRFRasterFileCapabilities>& HRFUSgsFastL7ACreator::GetCapabilities(
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFUSgsFastL7AFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                                unsigned short pi_Resolution,
+                                                                uint16_t pi_Resolution,
                                                                 HFCAccessMode  pi_AccessMode)
     {
     HRFResolutionEditor* pEditor = 0;
@@ -1126,7 +1126,7 @@ HFCPtr<HGF2DTransfoModel> HRFUSgsFastL7AFile::CreateTransfoModelFromFastL7A()
 void HRFUSgsFastL7AFile::GetGeoKeyTag(HFCPtr<HCPGeoTiffKeys>& po_rpGeoTiffKeys)
     {
     HASSERT(po_rpGeoTiffKeys == 0);
-    short Code;
+    int16_t Code;
 
     po_rpGeoTiffKeys = new HCPGeoTiffKeys();
 
@@ -1180,7 +1180,7 @@ bool HRFUSgsFastL7AFile::GetBandNumber(int32_t& pio_rBand,
 // GetCoordSystem
 // Get the coordonate system code
 //-----------------------------------------------------------------------------
-bool HRFUSgsFastL7AFile::GetCoordSystem(short& po_rCode)
+bool HRFUSgsFastL7AFile::GetCoordSystem(int16_t& po_rCode)
     {
     bool Found = false;
 
