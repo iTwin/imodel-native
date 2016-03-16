@@ -260,7 +260,7 @@ void AddDensity(UnitRegistry& reg)
     reg.AddUnit(DENSITY, USCUSTOM, "LBM/CUB.FT", "LBM*FT(-3)");
     reg.AddUnit(DENSITY, USCUSTOM, "LBM/GALLON", "LBM*GALLON(-1)");
     reg.AddUnit(DENSITY, USCUSTOM, "LBM/GALLON_IMPERIAL", "LBM*GALLON_IMPERIAL(-1)");
-    reg.AddUnit(DENSITY, SI, "LBM/CUB.IN", "LBM*IN(-3)");
+    reg.AddUnit(DENSITY, USCUSTOM, "LBM/CUB.IN", "LBM*IN(-3)");
 
     reg.AddUnit(DENSITY, USCUSTOM, "LBM/MILLION_GALLON", "LBM*GALLON(-1)", 1.0e-6);
 
@@ -690,7 +690,7 @@ void AddSlope(UnitRegistry& reg)
     reg.AddUnit(SLOPE, SI, "CM/M", "CM*M(-1)");
     reg.AddUnit(SLOPE, SI, "MM/M", "MM*M(-1)");
     reg.AddUnit(SLOPE, SI, "M/KM", "M*KM(-1)");
-    reg.AddUnit(SLOPE, USCUSTOM, "FOOT_PER_1000_FOOT", "FT*FT(-1)", 1.0e-3);
+    reg.AddUnit(SLOPE, USCUSTOM, "FT/THOUSAND_FOOT", "FT*FT(-1)", 1.0e-3);
     reg.AddUnit(SLOPE, USCUSTOM, "FT/FT", "FT*FT(-1)");
 
 
@@ -1307,7 +1307,7 @@ void UnitRegistry::AddDefaultMappings ()
     AddMapping("FOOT_HORIZONTAL_PER_FOOT_VERTICAL", "FOOT_HORIZONTAL_PER_FOOT_VERTICAL");
     AddMapping("METRE_HORIZONTAL_PER_METRE_VERTICAL", "METRE_HORIZONTAL_PER_METRE_VERTICAL");
     AddMapping("HORIZONTAL_PER_VERTICAL", "HORIZONTAL_PER_VERTICAL");
-    AddMapping("FOOT_PER_1000_FOOT", "FOOT_PER_1000_FOOT");
+    AddMapping("FOOT_PER_1000_FOOT", "FT/THOUSAND_FOOT");
     AddMapping("CENTIPOISE", "CENTIPOISE");
     AddMapping("LUX", "LUX");
     AddMapping("KILOAMPERE", "KILOAMPERE");
