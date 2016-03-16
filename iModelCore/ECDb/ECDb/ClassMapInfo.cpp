@@ -234,11 +234,11 @@ BentleyStatus ClassMapInfo::EvaluateSharedTableMapStrategy(ClassMap const& paren
         options = options | ECDbMapStrategy::Options::ParentOfJoinedTable;
     else if (Enum::Intersects(parentStrategy.GetOptions(), ECDbMapStrategy::Options::JoinedTable | ECDbMapStrategy::Options::ParentOfJoinedTable))
         {
-        /*options = options | ECDbMapStrategy::Options::JoinedTable;
+        options = options | ECDbMapStrategy::Options::JoinedTable;
         if (Enum::Contains(parentUserStrategy->GetOptions(), UserECDbMapStrategy::Options::JoinedTablePerDirectSubclass))
             {
             //Joined tables are named after the class which becomes the root class of classes in the joined table
-            if (SUCCESS != IClassMap::DetermineTableName(m_tableName, m_ecClass))
+            if (SUCCESS != ClassMap::DetermineTableName(m_tableName, m_ecClass))
                 return ERROR;
 
             //For classes in the joined table the id column name is determined like this:
@@ -251,55 +251,6 @@ BentleyStatus ClassMapInfo::EvaluateSharedTableMapStrategy(ClassMap const& paren
             }
 
             m_ecInstanceIdColumnName.Sprintf("%s%s", rootClassMap->GetClass().GetName().c_str(), m_ecInstanceIdColumnName.c_str());
-            }
-            */
-        //! Find out if there is any property that need mapping. Simply looking at local property count does not work with multi inheritance
-        bool requiresJoinedTable = false;
-        for (ECPropertyCP property : GetECClass().GetProperties(true))
-            {
-            if (parentClassMap.GetPropertyMap(property->GetName().c_str()) == nullptr)
-                {
-                requiresJoinedTable = true; //There is at least one property local or inherited that require mapping.
-                break;
-                }
-            }
-
-        const bool parentIsParentOfJoinedTable = Enum::Contains(parentStrategy.GetOptions(), ECDbMapStrategy::Options::ParentOfJoinedTable);
-        if (parentIsParentOfJoinedTable && !requiresJoinedTable)
-            options = options | ECDbMapStrategy::Options::ParentOfJoinedTable;
-        else
-            {
-            options = options | ECDbMapStrategy::Options::JoinedTable;
-            if (parentIsParentOfJoinedTable)
-                {
-                std::vector<ClassMap const*> path;
-                if (SUCCESS != parentClassMap.GetPathToParentOfJoinedTable(path))
-                    {
-                    BeAssert(false && "Path should never be empty for joinedTable");
-                    return ERROR;
-                    }
-
-                if (path.empty())
-                    {
-                    BeAssert(false && "Path is invalid");
-                    return ERROR;
-                    }
-
-                ECClassCR tableNameAfterClass = path.size() > 1 ? path[1]->GetClass() : m_ecClass;
-                if (SUCCESS != ClassMap::DetermineTableName(m_tableName, tableNameAfterClass))
-                    return ERROR;
-
-                //For classes in the joined table the id column name is determined like this:
-                //"<Rootclass name><Rootclass ECInstanceId column name>"
-                ClassMap const* rootClassMap = m_parentClassMap->FindSharedTableRootClassMap();
-                if (rootClassMap == nullptr)
-                    {
-                    BeAssert(false && "There should always be a root class map which defines the shared table strategy");
-                    return ERROR;
-                    }
-
-                m_ecInstanceIdColumnName.Sprintf("%s%s", rootClassMap->GetClass().GetName().c_str(), m_ecInstanceIdColumnName.c_str());
-                }
             }
         }
 
