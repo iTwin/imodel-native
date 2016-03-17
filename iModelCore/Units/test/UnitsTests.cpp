@@ -55,7 +55,7 @@ struct UnitsTests : UnitsTestFixture
     static bool TestUnitConversion(double fromVal, Utf8CP fromUnitName, double expectedVal, Utf8CP targetUnitName, int ulp, 
                                    bvector<Utf8String>& loadErrors, bvector<Utf8String>& conversionErrors, bvector<bpair<Utf8String, Utf8String>>& handledUnits,
                                    bool useLegacyNames = false, bool showDetailLogs = false);
-    static void TestConversionsLoadedFromCvsFile(Utf8CP fileName, int expectedMissingUnits);
+    static void TestConversionsLoadedFromCvsFile(Utf8CP fileName, WCharCP outputFileName, int expectedMissingUnits);
 
     static Utf8String ParseUOM(Utf8CP unitName, bset<Utf8String>& notMapped)
         {
@@ -852,7 +852,7 @@ TEST_F(UnitsTests, UnitsConversions_Complex)
     WriteToFile(fileName.c_str(), handledUnits);
     }
 
-void UnitsTests::TestConversionsLoadedFromCvsFile(Utf8CP fileName, int expectedMissingUnits)
+void UnitsTests::TestConversionsLoadedFromCvsFile(Utf8CP fileName, WCharCP outputFileName, int expectedMissingUnits)
     {
     bvector<Utf8String> loadErrors;
     bvector<Utf8String> conversionErrors;
@@ -886,18 +886,18 @@ void UnitsTests::TestConversionsLoadedFromCvsFile(Utf8CP fileName, int expectedM
 
     EXPECT_EQ(0, conversionErrors.size()) << conversionErrorString;
 
-    Utf8String outputfile = UnitsTestFixture::GetOutputDataPath(L"TestConversionsLoadedFromCvsFile_handledUnits.csv");
+    Utf8String outputfile = UnitsTestFixture::GetOutputDataPath(outputFileName);
     WriteToFile(outputfile.c_str(), handledUnits);
     }
 
 TEST_F(UnitsTests, UnitsConversion_CompareToRawOutputFromOldSystem)
     {
-    TestConversionsLoadedFromCvsFile("ConversionsBetweenAllOldUnits.csv", 109); // went from 107 to 109 because work per month units were removed
+    TestConversionsLoadedFromCvsFile("ConversionsBetweenAllOldUnits.csv", L"TestConversionsBetweenAllOldUnits_handledUnits.csv", 109); // went from 107 to 109 because work per month units were removed;
     }
 
 TEST_F(UnitsTests, UnitsConversion)
     {
-    TestConversionsLoadedFromCvsFile("unitcomparisondata.csv", 96); // went from 94 to 96 because work per month units were removed
+    TestConversionsLoadedFromCvsFile("unitcomparisondata.csv", L"Testunitcomparisondata_handledUnits.csv", 96);// went from 94 to 96 because work per month units were removed
     }
 
 void GetUnitsByName(UnitRegistry& hub, bvector<Utf8String>& unitNames)
