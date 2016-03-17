@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 #include <Bentley/Bentley.h>
 #include <Bentley/bset.h>
+#include <Bentley/BeId.h>
 
 #ifndef NDEBUG
 #include <Logging/bentleylogging.h>
@@ -77,7 +78,7 @@ tables, GUIDs can add significant overhead for lookups and are much more expensi
 makes them a <i>poor choice for primary keys.</i> However, as the name implies, when you use a GUID, you never need to
 worry about uniqueness.
 
-    -# Use #BriefcaseBasedIds. A BriefcaseBasedId is an 8-byte number that is designed to be unique by combining the
+    -# Use #BeBriefcaseBasedIds. A BeBriefcaseBasedId is an 8-byte number that is designed to be unique by combining the
 4-byte BeBriefcaseId with a unique-within-the-briefcase 4-byte value. This limits the number of potential values
 within a BeBriefcase to 2^32 (4 billion). Of course it permits 4 billion different BeRepositories. It is often the best
 compromise of performance and flexibility for tables with lots of activity.
@@ -271,65 +272,6 @@ public:
 };
 
 //=======================================================================================
-// Base class for 2-part 64 bit Ids. Subclasses must supply Validate and Invalidate methods.
-// @bsiclass                                                    Keith.Bentley   02/11
-//=======================================================================================
-struct BeInt64Id
-{
-protected:
-    uint64_t m_id;
-
-public:
-    //! Construct an invalid BeInt64Id
-    BeInt64Id() {Invalidate();}
-
-    //! Construct a BeInt64Id from a 64 bit value.
-    explicit BeInt64Id(uint64_t u) : m_id(u) {}
-
-    //! Move constructor.
-    BeInt64Id(BeInt64Id&& rhs) {m_id = rhs.m_id;}
-
-    //! Construct a copy.
-    BeInt64Id(BeInt64Id const& rhs) {m_id = rhs.m_id;}
-
-    BeInt64Id& operator=(BeInt64Id const& rhs) {m_id = rhs.m_id; return *this;}
-
-    bool IsValid() const {return Validate();}
-
-    //! Compare two BeInt64Id for equality
-    bool operator==(BeInt64Id const& rhs) const {return rhs.m_id==m_id;}
-
-    //! Compare two BeInt64Id for inequality
-    bool operator!=(BeInt64Id const& rhs) const {return !(*this==rhs);}
-
-    //! Compare two BeInt64Id
-    bool operator<(BeInt64Id const& rhs) const  {return m_id<rhs.m_id;}
-    bool operator<=(BeInt64Id const& rhs) const {return m_id<=rhs.m_id;}
-    bool operator>(BeInt64Id const& rhs) const  {return m_id>rhs.m_id;}
-    bool operator>=(BeInt64Id const& rhs) const {return m_id>=rhs.m_id;}
-
-    //! Get the 64 bit value of this BeInt64Id
-    uint64_t GetValue() const {BeAssert(IsValid()); return m_id;}
-
-    //! Get the 64 bit value of this BeGuid. Does not check for valid value in debug builds.
-    uint64_t GetValueUnchecked() const {return m_id;}
-
-    //! Test to see whether this BeInt64Id is valid. 0 is not a valid id.
-    bool Validate() const {return m_id != 0;}
-
-    //! Set this BeInt64Id to an invalid value (0).
-    void Invalidate() {m_id = 0;}
-};
-
-#define BEINT64_ID_DECLARE_MEMBERS(classname,superclass) \
-    classname() {Invalidate();}\
-    explicit classname(uint64_t v) : superclass(v) {} \
-    classname(classname&& rhs) : superclass(std::move(rhs)) {} \
-    classname(classname const& rhs) : superclass(rhs) {} \
-    classname& operator=(classname const& rhs) {m_id = rhs.m_id; return *this;} \
-    private: explicit classname(int32_t v) : superclass() {} /* private to catch int vs. Id issues */
-
-//=======================================================================================
 //! A 8-byte value that is locally unique within a BeBriefcase. Since BeBriefcaseId's are forced to be unique externally, a BeBriefcaseBasedId
 //! can be assumed to be globally unique. This provides a more efficient strategy for id values than using true 128-bit GUIDs.
 // @bsiclass                                                    Keith.Bentley   02/11
@@ -377,47 +319,6 @@ struct BeServerIssuedId : BeInt64Id
 
 #define BESERVER_ISSUED_ID_SUBCLASS(classname,superclass) struct classname : superclass {BEINT64_ID_DECLARE_MEMBERS(classname,superclass)};
 #define BESERVER_ISSUED_ID_CLASS(classname) BESERVER_ISSUED_ID_SUBCLASS(classname,BeSQLite::BeServerIssuedId)
-
-//=======================================================================================
-// Base class for 32 bit Ids. Subclasses must supply GetInvalidValue.
-// @bsiclass                                                    Keith.Bentley   02/11
-//=======================================================================================
-template <typename Derived, uint32_t s_invalidValue> struct BeUInt32Id
-{
-    uint32_t m_id;
-
-    //! Construct an invalid BeUInt32Id
-    BeUInt32Id() {Invalidate();}
-
-    //! Construct a BeUInt32Id from a 32 bit value.
-    explicit BeUInt32Id(uint32_t u) : m_id(u) {}
-
-    bool IsValid() const {return Validate();}
-
-    //! Compare two BeUInt32Id's for equality
-    bool operator==(BeUInt32Id const& rhs) const {return rhs.m_id==m_id;}
-
-    //! Compare two BeUInt32Id's for inequality
-    bool operator!=(BeUInt32Id const& rhs) const {return !(*this==rhs);}
-
-    //! Compare two BeUInt32Id's
-    bool operator<(BeUInt32Id const& rhs) const  {return m_id<rhs.m_id;}
-    bool operator<=(BeUInt32Id const& rhs) const {return m_id<=rhs.m_id;}
-    bool operator>(BeUInt32Id const& rhs) const  {return m_id>rhs.m_id;}
-    bool operator>=(BeUInt32Id const& rhs) const {return m_id>=rhs.m_id;}
-
-    //! Get the 32 bit value of this BeUInt32Id
-    uint32_t GetValue() const {static_cast<Derived const*>(this)->CheckValue(); return m_id;}
-
-    //! Test to see whether this BeServerIssuedId is valid.
-    bool Validate() const {return m_id!=s_invalidValue;}
-
-    //! Set this BeBriefcaseBasedId to the invalid value).
-    void Invalidate() {m_id = s_invalidValue;}
-
-    //! only for internal callers that understand the semantics of invalid IDs.
-    uint32_t GetValueUnchecked() const {return m_id;}
-};
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/11
