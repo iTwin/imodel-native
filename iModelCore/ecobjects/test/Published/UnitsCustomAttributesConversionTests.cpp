@@ -76,6 +76,10 @@ struct UnitsCustomAttributesConversionTests : ECTestFixture
         }
     };
 
+//---------------------------------------------------------------------------------------//
+// Serializes the schema and checks for the presence of Custom Attributes
+// @bsimethod                             Prasanna.Prakash                       03/2016
+//+---------------+---------------+---------------+---------------+---------------+------//
 void SerializeAndCheck(ECSchemaPtr &outputSchema, ECSchemaPtr inputSchema, Utf8CP customAttributeName, Utf8CP customAttributeInMemory = "")
     {
     Utf8String schemaXmlString;
@@ -92,6 +96,10 @@ void SerializeAndCheck(ECSchemaPtr &outputSchema, ECSchemaPtr inputSchema, Utf8C
            << "Failed to read the test reference schema from xml string";
     }
 
+//---------------------------------------------------------------------------------------//
+// Serializes the schema and checks for the presence of Custom Attributes
+// @bsimethod                             Prasanna.Prakash                       03/2016
+//+---------------+---------------+---------------+---------------+---------------+------//
 void SerializeAndCheck(ECSchemaPtr inputSchema, bvector<Utf8CP> customAttributeNames)
     {
     Utf8String schemaXmlString;
