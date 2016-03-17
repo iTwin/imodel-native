@@ -99,7 +99,7 @@ public:
 //! A SpatialElement that groups other SpatialElements using the ElementGroupsMembers relationship
 // @bsiclass                                                    Shaun.Sewall    12/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialGroup : SpatialElement, IElementGroupOf<SpatialElement>
+struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialGroup : SpatialElement, IElementGroupOf<GeometricElement3d>
 {
     DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASSNAME_SpatialGroup, SpatialElement)
 
