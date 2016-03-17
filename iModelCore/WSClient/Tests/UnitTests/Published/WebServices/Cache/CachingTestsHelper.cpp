@@ -302,12 +302,12 @@ IECInstancePtr StubInstance(ECClassCP ecClass)
     return ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
     }
 
-ECInstanceKey StubECInstanceKey(int64_t classId, int64_t instanceId)
+ECInstanceKey StubECInstanceKey(uint64_t classId, uint64_t instanceId)
     {
     return ECInstanceKey(classId, ECInstanceId(instanceId));
     }
 
-bpair<ECClassId, ECInstanceId> StubECInstanceKeyPair(int64_t classId, int64_t instanceId)
+bpair<ECClassId, ECInstanceId> StubECInstanceKeyPair(uint64_t classId, uint64_t instanceId)
     {
     return bpair <ECClassId, ECInstanceId>(classId, ECInstanceId(instanceId));
     }

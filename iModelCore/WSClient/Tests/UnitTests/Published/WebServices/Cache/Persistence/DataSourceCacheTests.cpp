@@ -1087,11 +1087,11 @@ TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_NewInstnaces_ReturnsCac
     instances.Add({"TestSchema.TestClass2", "B"});
 
     ECInstanceKeyMultiMap instanceKeys;
-    instanceKeys.insert({1, ECInstanceId(1234)});
+    instanceKeys.insert({1, ECInstanceId(UINT64_C(1234))});
     ASSERT_EQ(SUCCESS, cache->CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), "root", &instanceKeys));
 
     EXPECT_THAT(instanceKeys, SizeIs(3));
-    EXPECT_THAT(instanceKeys, Contains(ECDbHelper::ToPair(ECInstanceKey(1, ECInstanceId(1234)))));
+    EXPECT_THAT(instanceKeys, Contains(ECDbHelper::ToPair(ECInstanceKey(1, ECInstanceId(UINT64_C(1234))))));
     EXPECT_THAT(instanceKeys, Contains(ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "A"}))));
     EXPECT_THAT(instanceKeys, Contains(ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass2", "B"}))));
     }
@@ -4278,11 +4278,11 @@ TEST_F(DataSourceCacheTests, CacheFile_FileCached_CorrectECDbFileInfoStructureCr
 
     ECInstanceKey ownershipOwnerKey(
         ECClassId(BeJsonUtilities::Int64FromValue(fileInfoOwnerships[0]["OwnerECClassId"], -42)),
-        ECInstanceId(BeJsonUtilities::Int64FromValue(fileInfoOwnerships[0]["OwnerId"], -42)));
+        ECInstanceId((uint64_t) BeJsonUtilities::Int64FromValue(fileInfoOwnerships[0]["OwnerId"], -42)));
 
     ECInstanceKey ownershipFileInfoKey(
         ECClassId(BeJsonUtilities::Int64FromValue(fileInfoOwnerships[0]["FileInfoECClassId"], -42)),
-        ECInstanceId(BeJsonUtilities::Int64FromValue(fileInfoOwnerships[0]["FileInfoId"], -42)));
+        ECInstanceId((uint64_t) BeJsonUtilities::Int64FromValue(fileInfoOwnerships[0]["FileInfoId"], -42)));
 
     EXPECT_EQ(fileKey, ownershipOwnerKey);
     EXPECT_EQ(externalFileInfoKey, ownershipFileInfoKey);
@@ -4342,7 +4342,7 @@ TEST_F(DataSourceCacheTests, FindInstance_ECInstanceKeyAndNotCached_InvalidObjec
     auto cache = GetTestCache();
     ECClassCP ecClass = cache->GetAdapter().GetECClass("TestSchema.TestClass");
 
-    ObjectId objectId = cache->FindInstance(ECInstanceKey(ecClass->GetId(), ECInstanceId(1)));
+    ObjectId objectId = cache->FindInstance(ECInstanceKey(ecClass->GetId(), ECInstanceId(UINT64_C(1))));
 
     EXPECT_FALSE(objectId.IsValid());
     }
