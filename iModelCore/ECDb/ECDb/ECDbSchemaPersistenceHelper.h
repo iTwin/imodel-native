@@ -39,7 +39,7 @@ public:
 
     static ECSchemaId GetECSchemaId(ECDbCR, Utf8CP schemaName);
     static ECClassId GetECClassId(ECDbCR, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema);
-    static uint64_t GetECEnumerationId(ECDbCR, Utf8CP schemaName, Utf8CP enumName);
+    static ECEnumerationId GetECEnumerationId(ECDbCR, Utf8CP schemaName, Utf8CP enumName);
     static ECPropertyId GetECPropertyId(ECDbCR, Utf8CP schemaName, Utf8CP className, Utf8CP propertyName);
 
     static BentleyStatus GetECSchemaKeys(ECSchemaKeys&, ECDbCR);

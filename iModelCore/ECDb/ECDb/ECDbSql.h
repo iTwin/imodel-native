@@ -8,8 +8,9 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 #include "ECDbInternalTypes.h"
-#include <BeXml/BeXml.h>
+#include <Bentley/BeId.h>
 #include <Bentley/BeVersion.h>
+#include <BeXml/BeXml.h>
 
 #include <unordered_map>
 #include <unordered_set>
@@ -18,12 +19,37 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-typedef uint64_t ECDbTableId;
-typedef uint64_t ECDbColumnId;
-typedef uint64_t ECDbIndexId;
-typedef uint64_t ECDbConstraintId;
-typedef uint64_t ECDbPropertyPathId;
-typedef uint64_t ECDbClassMapId;
+struct ECDbClassMapId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(ECDbClassMapId, BeInt64Id)
+    };
+
+struct ECDbPropertyPathId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(ECDbPropertyPathId, BeInt64Id)
+    };
+
+struct ECDbTableId : BeInt64Id
+    {
+        BEINT64_ID_DECLARE_MEMBERS(ECDbTableId, BeInt64Id)
+    };
+
+struct ECDbColumnId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(ECDbColumnId, BeInt64Id)
+    };
+
+
+struct ECDbIndexId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(ECDbIndexId, BeInt64Id)
+    };
+
+struct ECDbConstraintId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(ECDbConstraintId, BeInt64Id)
+    };
+
 
 enum class ColumnKind
     {
@@ -39,17 +65,6 @@ enum class ColumnKind
     NonRelSystemColumn = ECInstanceId | ECClassId
     };
 
-enum class TriggerType
-    {
-    Create,
-    Update,
-    Delete
-    };
-enum class TriggerSubType
-    {
-    Before,
-    After
-    };
 enum class PersistenceType
     {
     Persisted, //! Persisted in DB
@@ -61,6 +76,31 @@ enum class TableType
     Primary = 0,
     Joined = 1,
     Existing = 2
+    };
+
+//=======================================================================================
+//! @bsiclass                                                Affan.Khan      03/2015
+//+===============+===============+===============+===============+===============+======
+enum class ForeignKeyActionType
+    {
+    NotSpecified,
+    Cascade,
+    NoAction,
+    SetNull,
+    SetDefault,
+    Restrict,
+    };
+
+enum class TriggerType
+    {
+    Create,
+    Update,
+    Delete
+    };
+enum class TriggerSubType
+    {
+    Before,
+    After
     };
 
 //======================================================================================
@@ -95,30 +135,27 @@ enum class ECDbSqlTypeAffinity
 //======================================================================================
 struct IdGenerator
     {
-public:
-    static const uint64_t UNSET_ID = INT64_C(0);
-
 private: 
     bool m_enabled;
 
-    virtual ECDbTableId _NextTableId() { return UNSET_ID; }
-    virtual ECDbColumnId _NextColumnId() { return UNSET_ID; }
-    virtual ECDbIndexId _NextIndexId() { return UNSET_ID; }
-    virtual ECDbConstraintId _NextConstraintId() { return UNSET_ID; }
-    virtual ECDbClassMapId _NextClassMapId() { return UNSET_ID; }
-    virtual ECDbPropertyPathId _NextPropertyPathId() { return UNSET_ID; }
+    virtual ECDbTableId _NextTableId() = 0;
+    virtual ECDbColumnId _NextColumnId() = 0;
+    virtual ECDbIndexId _NextIndexId() = 0;
+    virtual ECDbConstraintId _NextConstraintId() = 0;
+    virtual ECDbClassMapId _NextClassMapId() = 0;
+    virtual ECDbPropertyPathId _NextPropertyPathId() = 0;
 
 protected:
     IdGenerator() : m_enabled(true) {}
 
 public:
     virtual ~IdGenerator (){}
-    ECDbTableId NextTableId() { return  m_enabled ? _NextTableId() : UNSET_ID; }
-    ECDbColumnId NextColumnId() { return  m_enabled ? _NextColumnId() : UNSET_ID; }
-    ECDbIndexId NextIndexId() { return  m_enabled ? _NextIndexId() : UNSET_ID; }
-    ECDbConstraintId NextConstraintId() { return  m_enabled ? _NextConstraintId() : UNSET_ID; }
-    ECDbClassMapId NextClassMapId() { return  m_enabled ? _NextClassMapId() : UNSET_ID; }
-    ECDbPropertyPathId NextPropertyPathId() { return  m_enabled ? _NextPropertyPathId() : UNSET_ID; }
+    ECDbTableId NextTableId() { return  m_enabled ? _NextTableId() : ECDbTableId(); }
+    ECDbColumnId NextColumnId() { return  m_enabled ? _NextColumnId() : ECDbColumnId(); }
+    ECDbIndexId NextIndexId() { return  m_enabled ? _NextIndexId() : ECDbIndexId(); }
+    ECDbConstraintId NextConstraintId() { return  m_enabled ? _NextConstraintId() : ECDbConstraintId(); }
+    ECDbClassMapId NextClassMapId() { return  m_enabled ? _NextClassMapId() : ECDbClassMapId(); }
+    ECDbPropertyPathId NextPropertyPathId() { return  m_enabled ? _NextPropertyPathId() : ECDbPropertyPathId(); }
 
     void SetEnabled (bool enabled) { m_enabled = enabled; }
 
@@ -476,7 +513,7 @@ public:
         ECDbMapDb & GetDbDefR () { return m_dbDef; }
         ECDbSqlColumn* CreateColumn(Utf8CP name, ECDbSqlColumn::Type type, ColumnKind kind, PersistenceType persistenceType) { return CreateColumn(name, type, -1, kind, persistenceType); }
         ECDbSqlColumn* CreateSharedColumn() { return CreateColumn(nullptr, ECDbSqlColumn::Type::Any, ColumnKind::SharedDataColumn, PersistenceType::Persisted); }
-        ECDbSqlColumn* CreateColumn(Utf8CP name, ECDbSqlColumn::Type type, int position, ColumnKind kind, PersistenceType persType) { return CreateColumn(IdGenerator::UNSET_ID, name, type, position, kind, persType); }
+        ECDbSqlColumn* CreateColumn(Utf8CP name, ECDbSqlColumn::Type type, int position, ColumnKind kind, PersistenceType persType) { return CreateColumn(ECDbColumnId(), name, type, position, kind, persType); }
         ECDbSqlColumn* CreateColumn(ECDbColumnId id, Utf8CP name, ECDbSqlColumn::Type type, ColumnKind kind, PersistenceType persType) { return CreateColumn(id, name, type, -1, kind, persType); }
         BentleyStatus SetMinimumSharedColumnCount(int minimumSharedColumnCount);
         BentleyStatus EnsureMinimumNumberOfSharedColumns();
@@ -666,7 +703,7 @@ struct ECDbClassMapInfo : NonCopyableClass
         void GetPropertyMaps (std::vector<ECDbPropertyMapInfo const*>& propertyMaps, bool onlyLocal) const;
 
     public:
-        ECDbClassMapInfo (ECDbMapStorage const& map, ECDbClassMapId id, ECN::ECClassId classId, ECDbMapStrategy mapStrategy, ECDbClassMapId baseClassMap = 0LL)
+        ECDbClassMapInfo (ECDbMapStorage const& map, ECDbClassMapId id, ECN::ECClassId classId, ECDbMapStrategy mapStrategy, ECDbClassMapId baseClassMap = ECDbClassMapId())
             :m_map (map), m_id (id), m_ecClassId (classId), m_mapStrategy (mapStrategy), m_ecBaseClassMap (nullptr), m_ecBaseClassMapId (baseClassMap)
             {}
 
@@ -716,7 +753,7 @@ struct ECDbMapStorage
         std::vector<ECDbClassMapInfo const*> const* FindClassMapsByClassId(ECN::ECClassId id) const;
 
         ECDbPropertyPath* CreatePropertyPath(ECN::ECPropertyId rootPropertyId, Utf8CP accessString) const;
-        ECDbClassMapInfo* CreateClassMap(ECN::ECClassId classId, ECDbMapStrategy const& mapStrategy, ECDbClassMapId baseClassMapId = 0LL) const;
+        ECDbClassMapInfo* CreateClassMap(ECN::ECClassId classId, ECDbMapStrategy const& mapStrategy, ECDbClassMapId baseClassMapId = ECDbClassMapId()) const;
 
         BentleyStatus Load() const { return Read() != BE_SQLITE_OK ? ERROR : SUCCESS; }
         BentleyStatus Save() const { return InsertOrReplace() != BE_SQLITE_OK ? ERROR : SUCCESS; }

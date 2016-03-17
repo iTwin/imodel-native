@@ -23,29 +23,20 @@ struct ECDbInstances : ECDbTestFixture {};
 TEST(ECInstanceIdHelper, ECInstanceIdInstanceIdConversion)
     {
     //ToString
-    ECInstanceId ecInstanceId (123456789LL);
+    ECInstanceId ecInstanceId (UINT64_C(123456789));
     Utf8CP expectedInstanceId = "123456789";
     Utf8Char actualInstanceId[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
     bool success = ECInstanceIdHelper::ToString (actualInstanceId, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ecInstanceId);
     EXPECT_TRUE (success);
     EXPECT_STREQ (expectedInstanceId, actualInstanceId) << "Unexpected InstanceId generated from ECInstanceId " << ecInstanceId.GetValue ();
 
-    ecInstanceId = ECInstanceId (0LL);
+    ecInstanceId = ECInstanceId(UINT64_C(0));
     expectedInstanceId = "0";
     actualInstanceId[0] = '\0';
     success = ECInstanceIdHelper::ToString (actualInstanceId, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ecInstanceId);
     EXPECT_FALSE (success);
 
-    //ECInstanceId are not allowed to be negative, but compiler doesn't catch it. So conversion succeeds
-    ecInstanceId = ECInstanceId (-1LL);
-    success = ECInstanceIdHelper::ToString (actualInstanceId, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ecInstanceId);
-    EXPECT_TRUE (success) << "ECInstanceIds are not allowed to be negative, but compiler doesn't catch it. So conversion succeeds";
-
-    ecInstanceId = ECInstanceId(-100LL);
-    success = ECInstanceIdHelper::ToString(actualInstanceId, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ecInstanceId);
-    EXPECT_TRUE(success) << "ECInstanceIds are not allowed to be negative, but compiler doesn't catch it. So conversion succeeds";
-
-    ecInstanceId = ECInstanceId (123LL);
+    ecInstanceId = ECInstanceId (UINT64_C(123));
     Utf8Char smallIdBuffer[10];
     ASSERT_FALSE (ECInstanceIdHelper::ToString (smallIdBuffer, (size_t) 10, ecInstanceId)) << "Expected to fail if buffer is to small to take max uint64_t as string";
 
@@ -54,20 +45,20 @@ TEST(ECInstanceIdHelper, ECInstanceIdInstanceIdConversion)
 
     //FromString
     Utf8CP instanceId = "123456789";
-    ECInstanceId expectedECInstanceId (123456789LL);
+    ECInstanceId expectedECInstanceId (UINT64_C(123456789));
     ECInstanceId actualECInstanceId;
     success = ECInstanceIdHelper::FromString (actualECInstanceId, instanceId);
     EXPECT_TRUE (success) << "Unexpected failure of ECInstanceIdHelper::FromString";
     EXPECT_EQ (expectedECInstanceId.GetValue (), actualECInstanceId.GetValue ()) << L"Unexpected ECInstanceId parsed from InstanceId " << instanceId;
 
     instanceId = "0";
-    expectedECInstanceId = ECInstanceId(0LL);
+    expectedECInstanceId = ECInstanceId(UINT64_C(0));
     actualECInstanceId = ECInstanceId ();
     success = ECInstanceIdHelper::FromString (actualECInstanceId, instanceId);
     EXPECT_FALSE (success) << "Unexpected failure of ECInstanceIdHelper::FromString";
 
     instanceId = "0000";
-    expectedECInstanceId = ECInstanceId (0LL);
+    expectedECInstanceId = ECInstanceId(UINT64_C(0));
     actualECInstanceId = ECInstanceId ();
     success = ECInstanceIdHelper::FromString (actualECInstanceId, instanceId);
     EXPECT_FALSE (success) << "Unexpected failure of ECInstanceIdHelper::FromString";
@@ -84,7 +75,7 @@ TEST(ECInstanceIdHelper, ECInstanceIdInstanceIdConversion)
     BeTest::SetFailOnAssert(false);
 
     instanceId = "0x75BCD15";
-    expectedECInstanceId = ECInstanceId (123456789LL);
+    expectedECInstanceId = ECInstanceId (UINT64_C(123456789));
     actualECInstanceId = ECInstanceId ();
     success = ECInstanceIdHelper::FromString (actualECInstanceId, instanceId);
     EXPECT_FALSE (success) << L"InstanceId with hex formatted number '" << instanceId << L"' is not expected to be supported by ECInstanceIdHelper::FromString";
@@ -155,7 +146,7 @@ TEST_F (ECDbInstances, CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST)
     statement.ClearBindings ();
     ASSERT_EQ (ECSqlStatus::Success, statement.BindText (1, rootName.c_str (), IECSqlBinder::MakeCopy::No));
     EXPECT_EQ (BE_SQLITE_ROW, statement.Step ());
-    EXPECT_EQ (ECInstanceId (1), statement.GetValueId <ECInstanceId> (0));
+    EXPECT_EQ (1, statement.GetValueId <ECInstanceId> (0).GetValue());
     }
 
 TEST_F(ECDbInstances, QuoteTest)

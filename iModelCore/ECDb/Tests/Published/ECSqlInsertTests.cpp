@@ -515,11 +515,11 @@ TEST (ECSqlStatementTests, MiscTests)
     STATEMENT_EXECUTE_SUCCESS ();
 
     STATEMENT_PREPARE_SUCCESS ("INSERT INTO ecsql.P (ECInstanceId) VALUES (?)");
-    BIND_ID (1, ECInstanceId (141231498LL));
+    BIND_ID (1, ECInstanceId (UINT64_C(141231498)));
     STATEMENT_EXECUTE_SUCCESS ();
 
     STATEMENT_PREPARE_SUCCESS ("INSERT INTO ecsql.TH2 (ECInstanceId) VALUES (?)");//table per hierarchy mapping->class id must be populated
-    BIND_ID (1, ECInstanceId (141231498LL));
+    BIND_ID (1, ECInstanceId (UINT64_C(141231498)));
     STATEMENT_EXECUTE_SUCCESS ();
 
     ASSERT_STATEMENT_PREPARE ("INSERT INTO ecsql.PSAHasP (ECInstanceId) VALUES (NULL)", ECSqlStatus::InvalidECSql);

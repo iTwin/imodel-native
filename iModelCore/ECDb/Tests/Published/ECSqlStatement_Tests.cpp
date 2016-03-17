@@ -600,7 +600,7 @@ TEST_F(ECSqlStatementTestFixture, PolymorphicDeleteWithSubclassesInMultipleTable
     fi1Id = key.GetECInstanceId();
     }
 
-    ECInstanceId fi2Id;
+    BeBriefcaseBasedId fi2Id;
     {
     BeFileName testFilePath;
     BeTest::GetHost().GetDocumentsRoot(testFilePath);
@@ -1097,8 +1097,8 @@ TEST_F (ECSqlStatementTestFixture, BindSourceAndTargetECInstanceId)
     ASSERT_EQ(ECSqlStatus::Success, stat);
 
         {
-        ASSERT_EQ(ECSqlStatus::Success, statement.BindId (1, ECInstanceId (111LL)));
-        ASSERT_EQ(ECSqlStatus::Success, statement.BindId (2, ECInstanceId (222LL)));
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindId (1, ECInstanceId(UINT64_C(111))));
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindId (2, ECInstanceId(UINT64_C(222))));
 
         ECInstanceKey key;
         ASSERT_EQ (BE_SQLITE_DONE, statement.Step (key));

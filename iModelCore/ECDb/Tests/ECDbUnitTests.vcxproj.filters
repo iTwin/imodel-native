@@ -196,9 +196,6 @@
     <ClCompile Include="Published\ECDbTestHelper.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECSqlInsertTests.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ECSqlSelectTests.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>
@@ -212,6 +209,9 @@
       <Filter>Published\ECSql</Filter>
     </ClCompile>
     <ClCompile Include="Published\JsonReaderTests.cpp">
+      <Filter>Published\ECSql</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlInsertTests.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>
   </ItemGroup>

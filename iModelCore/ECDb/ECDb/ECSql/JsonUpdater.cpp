@@ -70,7 +70,7 @@ IECInstancePtr JsonUpdater::CreateEmptyRelInstance(ECRelationshipClassCR ecRelCl
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus JsonUpdater::Update(JsonValueCR jsonValue) const
     {
-    ECInstanceId instanceId = ECInstanceId(BeJsonUtilities::Int64FromValue(jsonValue["$ECInstanceId"]));
+    ECInstanceId instanceId = ECInstanceId((uint64_t) BeJsonUtilities::Int64FromValue(jsonValue["$ECInstanceId"]));
     if (!instanceId.IsValid())
         return ERROR;
 

@@ -152,19 +152,19 @@ ECClassId ECDbSchemaPersistenceHelper::GetECClassId(ECDbCR db, Utf8CP schemaName
 // @bsimethod                                                    Casey.Mullen      01/2013
 //---------------------------------------------------------------------------------------
 //static
-uint64_t ECDbSchemaPersistenceHelper::GetECEnumerationId(ECDbCR ecdb, Utf8CP schemaName, Utf8CP enumName)
+ECEnumerationId ECDbSchemaPersistenceHelper::GetECEnumerationId(ECDbCR ecdb, Utf8CP schemaName, Utf8CP enumName)
     {
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != ecdb.GetCachedStatement(stmt, "SELECT e.Id FROM ec_Enumeration e, ec_Schema s WHERE e.SchemaId=s.Id AND s.Name=? AND e.Name=?"))
-        return 0LL;
+        return ECEnumerationId();
 
     stmt->BindText(1, schemaName, Statement::MakeCopy::No);
     stmt->BindText(2, enumName, Statement::MakeCopy::No);
 
     if (BE_SQLITE_ROW != stmt->Step())
-        return 0LL;
+        return ECEnumerationId();
 
-    return stmt->GetValueInt64(0);
+    return stmt->GetValueId<ECEnumerationId>(0);
     }
 
 //---------------------------------------------------------------------------------------

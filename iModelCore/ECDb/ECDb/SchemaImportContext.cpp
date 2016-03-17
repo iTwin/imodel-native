@@ -425,7 +425,7 @@ BentleyStatus SchemaImportECDbMapDb::ReadIndexInfosFromDb(ECDbCR ecdb) const
 
     while (stmt->Step() == BE_SQLITE_ROW)
         {
-        ECDbIndexId id = stmt->GetValueInt64(0);
+        ECDbIndexId id = stmt->GetValueId<ECDbIndexId>(0);
         Utf8CP tableName = stmt->GetValueText(1);
         Utf8CP name = stmt->GetValueText(2);
         bool isUnique = stmt->GetValueInt(3) == 1;
@@ -446,7 +446,7 @@ BentleyStatus SchemaImportECDbMapDb::ReadIndexInfosFromDb(ECDbCR ecdb) const
         if (indexColStmt == nullptr)
             return ERROR;
 
-        indexColStmt->BindInt64(1, id);
+        indexColStmt->BindId(1, id);
         std::vector<ECDbSqlColumn const*> columns;
         while (indexColStmt->Step() == BE_SQLITE_ROW)
             {
@@ -475,8 +475,8 @@ BentleyStatus SchemaImportECDbMapDb::InsertIndexInfoIntoDb(ECDbCR ecdb, ECDbSqlI
     if (stmt == nullptr)
         return ERROR;
 
-    stmt->BindInt64(1, index.GetId());
-    stmt->BindInt64(2, index.GetTable().GetId());
+    stmt->BindId(1, index.GetId());
+    stmt->BindId(2, index.GetTable().GetId());
     stmt->BindText(3, index.GetName().c_str(), Statement::MakeCopy::No);
     stmt->BindInt(4, index.GetIsUnique() ? 1 : 0);
     stmt->BindInt(5, index.IsAddColumnsAreNotNullWhereExp() ? 1 : 0);
@@ -503,9 +503,9 @@ BentleyStatus SchemaImportECDbMapDb::InsertIndexInfoIntoDb(ECDbCR ecdb, ECDbSqlI
     int i = 0;
     for (ECDbSqlColumn const* col : index.GetColumns())
         {
-        indexColStmt->BindInt64(1, index.GetId());
-        indexColStmt->BindInt64(2, col->GetId());
-        indexColStmt->BindInt64(3, i);
+        indexColStmt->BindId(1, index.GetId());
+        indexColStmt->BindId(2, col->GetId());
+        indexColStmt->BindInt(3, i);
 
         stat = indexColStmt->Step();
         if (stat != BE_SQLITE_DONE)

@@ -471,7 +471,7 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetRelationshipSource(ECN::IECInstan
     if (nullptr == standaloneRelationship)
         return ERROR;
 
-    IECInstancePtr endpoint = FindRelationshipEndpoint(value.GetId<ECInstanceId>(), m_ecSqlStatement.GetValueInt64(m_sourceECClassIdColumnIndex), standaloneRelationship, true);
+    IECInstancePtr endpoint = FindRelationshipEndpoint(value.GetId<ECInstanceId>(), m_ecSqlStatement.GetValueUInt64(m_sourceECClassIdColumnIndex), standaloneRelationship, true);
     if (endpoint.IsValid())
         {
         standaloneRelationship->SetSource(&(*endpoint));
@@ -490,7 +490,7 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetRelationshipTarget(ECN::IECInstan
     if (nullptr == standaloneRelationship)
         return ERROR;
 
-    IECInstancePtr endpoint = FindRelationshipEndpoint (value.GetId<ECInstanceId>(), m_ecSqlStatement.GetValueInt64 (m_targetECClassIdColumnIndex), standaloneRelationship, false);
+    IECInstancePtr endpoint = FindRelationshipEndpoint (value.GetId<ECInstanceId>(), m_ecSqlStatement.GetValueUInt64 (m_targetECClassIdColumnIndex), standaloneRelationship, false);
     if (endpoint.IsValid ())
         {
         standaloneRelationship->SetTarget (&(*endpoint));

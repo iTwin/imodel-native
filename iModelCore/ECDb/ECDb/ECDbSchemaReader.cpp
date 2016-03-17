@@ -225,7 +225,7 @@ ECClassP ECDbSchemaReader::GetECClass(Context& ctx, ECClassId ecClassId) const
     if (SUCCESS != LoadECPropertiesFromDb(ecClass, ctx, ecClassId))
         return nullptr;
 
-    if (SUCCESS != LoadCAFromDb(*ecClass, ctx, ecClassId, ECContainerType::Class))
+    if (SUCCESS != LoadCAFromDb(*ecClass, ctx, ECContainerId(ecClassId), ECContainerType::Class))
         return nullptr;
 
     ECRelationshipClassP relClass = ecClass->GetRelationshipClassP();
@@ -246,8 +246,8 @@ ECClassP ECDbSchemaReader::GetECClass(Context& ctx, ECClassId ecClassId) const
 //+---------------+---------------+---------------+---------------+---------------+------
 ECEnumerationCP ECDbSchemaReader::GetECEnumeration(Context& ctx, Utf8CP schemaName, Utf8CP enumName) const
     {
-    uint64_t enumId = ECDbSchemaPersistenceHelper::GetECEnumerationId(m_db, schemaName, enumName);
-    if (enumId == INT64_C(0))
+    ECEnumerationId enumId = ECDbSchemaPersistenceHelper::GetECEnumerationId(m_db, schemaName, enumName);
+    if (!enumId.IsValid())
         return nullptr;
 
     ECEnumerationP ecEnum = nullptr;
@@ -283,7 +283,7 @@ BentleyStatus ECDbSchemaReader::ReadECEnumeration(ECEnumerationP& ecEnum, Contex
     if (stmt == nullptr)
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindInt64(1, enumId))
+    if (BE_SQLITE_OK != stmt->BindId(1, enumId))
         return ERROR;
 
     if (BE_SQLITE_ROW != stmt->Step())
@@ -381,7 +381,7 @@ BentleyStatus ECDbSchemaReader::ReadECSchema(DbECSchemaEntry*& outECSchemaKey, C
     for (DbECSchemaEntry* newlyLoadedSchema : newlyLoadedSchemas)
         {
         ECSchemaR schema = *newlyLoadedSchema->m_cachedECSchema;
-        if (SUCCESS != LoadCAFromDb(schema, ctx, schema.GetId(), ECContainerType::Schema))
+        if (SUCCESS != LoadCAFromDb(schema, ctx, ECContainerId(schema.GetId()), ECContainerType::Schema))
             return ERROR;
         }
 
@@ -452,7 +452,7 @@ BentleyStatus ECDbSchemaReader::LoadClassesAndEnumsFromDb(DbECSchemaEntry* ecSch
     while (BE_SQLITE_ROW == stmt->Step())
         {
         ECEnumerationP ecEnum = nullptr;
-        if (SUCCESS != ReadECEnumeration(ecEnum, ctx, (uint64_t) stmt->GetValueInt64(0)))
+        if (SUCCESS != ReadECEnumeration(ecEnum, ctx, stmt->GetValueId<ECEnumerationId>(0)))
             return ERROR;
 
         if (ecSchemaKey->IsFullyLoaded())
@@ -570,7 +570,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
             if (stmt.IsColumnNull(enumIx))
                 return ERROR;
 
-            const ECEnumerationId enumTypeId = stmt.GetValueInt64(enumIx);
+            const ECEnumerationId enumTypeId = stmt.GetValueId<ECEnumerationId>(enumIx);
             if (!stmt.IsColumnNull(extendedTypeIx))
                 extendedType = stmt.GetValueText(extendedTypeIx);
 
@@ -782,7 +782,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
         if (displayLabel != nullptr)
             prop->SetDisplayLabel(displayLabel);
 
-        if (SUCCESS != LoadCAFromDb(*prop, ctx, id, ECContainerType::Property))
+        if (SUCCESS != LoadCAFromDb(*prop, ctx, ECContainerId(id), ECContainerType::Property))
             return ERROR;
 
         // For ECDb symbol provider ensure the calculated property specification is created (must do that after
@@ -828,7 +828,7 @@ BentleyStatus ECDbSchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR  
     if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT ClassId,Instance FROM ec_CustomAttribute WHERE ContainerId=? AND ContainerType=? ORDER BY Ordinal"))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindInt64(1, containerId))
+    if (BE_SQLITE_OK != stmt->BindId(1, containerId))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindInt(2, Enum::ToInt(containerType)))
@@ -885,7 +885,7 @@ BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintFromDb(ECRelationshi
     ECContainerType containerType = 
         relationshipEnd == ECRelationshipEnd_Target ? ECContainerType::RelationshipConstraintTarget : ECContainerType::RelationshipConstraintSource;
 
-    return LoadCAFromDb(constraint, ctx, relationshipClassId, containerType);
+    return LoadCAFromDb(constraint, ctx, ECContainerId(relationshipClassId), containerType);
     }
 
 /*---------------------------------------------------------------------------------------

@@ -134,14 +134,14 @@ protected:
                         else
                             {
                             DbResult stat = BE_SQLITE_OK;
-                            ECInstanceId newId = GetECDb().EmbeddedFiles().Import(&stat, fileInfoName.c_str(), testFilePath.GetNameUtf8().c_str(), "dummy");
+                            BeBriefcaseBasedId newId = GetECDb().EmbeddedFiles().Import(&stat, fileInfoName.c_str(), testFilePath.GetNameUtf8().c_str(), "dummy");
                             if (BE_SQLITE_OK != stat)
                                 {
                                 LOG.fatal(GetECDb().GetLastError().c_str());
                                 return ERROR;
                                 }
 
-                            newKey = ECInstanceKey(embeddedFileInfoClassId, newId);
+                            newKey = ECInstanceKey(embeddedFileInfoClassId, ECInstanceId(newId.GetValue()));
                             }
 
                         insertOwnershipStmt.BindId(1, ownerId);
@@ -290,7 +290,7 @@ TEST_F(PerformanceECDbFileInfoTests, PurgeAfterSingleDeletion)
     FileInfoStats beforePurgeStats;
     ASSERT_EQ(SUCCESS, RetrieveFileInfoStats(beforePurgeStats));
     ASSERT_EQ(beforeDeleteStats.m_fileInfoCount, beforePurgeStats.m_fileInfoCount) << "FileInfo count after deleting one owner without purging";
-    ASSERT_EQ(beforeDeleteStats.m_ownershipCount, beforePurgeStats.m_ownershipCount) << "Onwership count after deleting one owner without purging";
+    ASSERT_EQ(beforeDeleteStats.m_ownershipCount, beforePurgeStats.m_ownershipCount) << "Ownership count after deleting one owner without purging";
     ASSERT_EQ(beforePurgeStats.m_fileInfoCount, beforePurgeStats.m_ownershipCount) << "Before purging";
 
     BentleyStatus purgeStat = SUCCESS;

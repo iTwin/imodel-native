@@ -506,7 +506,7 @@ BentleyStatus ClassMap::_Save(std::set<ClassMap const*>& savedGraph)
     savedGraph.insert(this);
     std::set<PropertyMapCP> baseProperties;
 
-    if (GetId() == 0ULL)
+    if (!GetId().IsValid())
         {
         //auto baseClassMap = GetParentMapClassId () == 
         auto baseClass = GetECDbMap().GetECDbR ().Schemas().GetECClass(GetParentMapClassId());
@@ -524,7 +524,7 @@ BentleyStatus ClassMap::_Save(std::set<ClassMap const*>& savedGraph)
             }
 
         
-        auto mapInfo = m_ecDbMap.GetSQLManager().GetMapStorage().CreateClassMap(GetClass().GetId(), m_mapStrategy, baseClassMap == nullptr ? ECClass::UNSET_ECCLASSID : baseClassMap->GetId());
+        auto mapInfo = m_ecDbMap.GetSQLManager().GetMapStorage().CreateClassMap(GetClass().GetId(), m_mapStrategy, baseClassMap == nullptr ? ECDbClassMapId() : baseClassMap->GetId());
         for (auto propertyMap : GetPropertyMaps())
             {
             if (baseProperties.find(propertyMap) != baseProperties.end())

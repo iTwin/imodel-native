@@ -441,13 +441,13 @@ ECSqlTestDataset ECSqlInsertTestDataset::MiscTests (ECDbR ecdb)
         {
         ecsql = "INSERT INTO ecsql.P (ECInstanceId) VALUES (?)";
         auto& testItem = ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsql, true);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECInstanceId (141231498LL)));
+        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECInstanceId (UINT64_C(141231498))));
         }
 
         {
         ecsql = "INSERT INTO ecsql.TH2 (ECInstanceId) VALUES (?)";//table per hierarchy mapping->class id must be populated
         auto& testItem = ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsql, true);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECInstanceId (141231498LL)));
+        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECInstanceId (UINT64_C(141231498))));
         }
 
     ecsql = "INSERT INTO ecsql.PSAHasP (ECInstanceId) VALUES (NULL)";
@@ -476,7 +476,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::MiscTests (ECDbR ecdb)
         {
         ecsql = "INSERT INTO ecsql.PSAHasPSA (ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES (?, 127, 131)";
         auto& testItem = ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsql, true);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECInstanceId (145)));
+        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECInstanceId (UINT64_C(145))));
         }
 
 

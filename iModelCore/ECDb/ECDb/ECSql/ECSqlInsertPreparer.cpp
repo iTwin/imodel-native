@@ -690,7 +690,7 @@ ECSqlInsertPreparer::ECInstanceIdMode ECSqlInsertPreparer::ValidateUserProvidedE
         if (!isEndTableRelationship)
             {
             LiteralValueExp const* constValueExp = static_cast<LiteralValueExp const*> (valueExp);
-            ECInstanceId instanceId(constValueExp->GetValueAsInt64());
+            ECInstanceId instanceId((uint64_t) constValueExp->GetValueAsInt64());
             preparedStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement::ECInstanceKeyInfo(classId, instanceId));
             }
         }

@@ -1148,11 +1148,11 @@ void ECDbMap::LightweightCache::LoadClassIdsPerTable() const
                 Enum::ToInt(ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable));
 
     CachedStatementPtr stmt = m_map.GetECDbR().GetCachedStatement(sql.c_str());
-    ECDbTableId currentTableId = -1;
+    ECDbTableId currentTableId;
     ECDbSqlTable const* currentTable = nullptr;
     while (stmt->Step() == BE_SQLITE_ROW)
         {
-        ECDbTableId tableId = stmt->GetValueInt64(0);
+        ECDbTableId tableId = stmt->GetValueId<ECDbTableId>(0);
         if (currentTableId != tableId)
             {
             Utf8CP tableName = stmt->GetValueText(1);

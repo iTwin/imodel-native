@@ -68,7 +68,7 @@ struct ECDbSchemaReader: public RefCountedBase
     {
     typedef std::map<ECSchemaId, std::unique_ptr<DbECSchemaEntry>> DbECSchemaMap;
     typedef std::map<ECClassId, std::unique_ptr<DbECClassEntry>> DbECClassEntryMap;
-    typedef std::map<uint64_t, std::unique_ptr<DbECEnumEntry>> DbECEnumEntryMap;
+    typedef std::map<ECEnumerationId, std::unique_ptr<DbECEnumEntry>> DbECEnumEntryMap;
 
 private:
     struct Context : NonCopyableClass

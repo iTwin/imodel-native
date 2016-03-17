@@ -8,6 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 #include <ECDb/ECDbTypes.h>
+#include <Bentley/BeId.h>
 #include <limits>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -17,7 +18,14 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! @see @ref ECInstanceIdInECDb, ECInstanceIdHelper
 //! @ingroup ECDbGroup
 //+===============+===============+===============+===============+===============+======
-typedef BeInt64Id ECInstanceId;
+struct ECInstanceId : BeInt64Id
+    {
+public:
+    BEINT64_ID_DECLARE_MEMBERS(ECInstanceId, BeInt64Id)
+
+public:
+    explicit ECInstanceId(BeBriefcaseBasedId id) : ECInstanceId(id.GetValue()) {}
+    };
 
 //=======================================================================================
 //! An ECInstanceKey of an ECInstance is made up of the ECInstance's ECInstanceId and the ECN::ECClassId 
@@ -61,7 +69,7 @@ public:
     ECInstanceId GetECInstanceId() const { return m_ecInstanceId; }
     
     //! Test if this key is valid
-    bool IsValid() const { return (m_ecClassId > ECN::ECClass::UNSET_ECCLASSID && m_ecInstanceId.IsValid()); }
+    bool IsValid() const { return (m_ecClassId != ECN::ECClass::UNSET_ECCLASSID && m_ecInstanceId.IsValid()); }
     };
 
 typedef ECInstanceKey const& ECInstanceKeyCR;
@@ -119,7 +127,7 @@ private:
     virtual bool _IsInSet(int nVals, DbValue const* vals) const
         {
         BeAssert(nVals == 1);
-        return this->end() != this->find(ECInstanceId(vals[0].GetValueInt64()));
+        return this->end() != this->find(vals[0].GetValueId<ECInstanceId>());
         }
 };
 

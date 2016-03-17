@@ -15,6 +15,16 @@ struct ClassMap;
 struct ClassMapInfo;
 struct SchemaImportContext;
 
+enum class MapStatus
+    {
+    Success = 0,
+    BaseClassesNotMapped = 1,    // We have temporarily stopped mapping a given branch of the class hierarchy because
+                                 // we haven't mapped one or more of its base classes. This can happen in the case 
+                                 // of multiple inheritance, where we attempt to map a child class for which 
+                                 // not all parent classes have been mapped
+    Error = 666
+    };
+
 //======================================================================================
 // @bsiclass                                                 Krischan.Eberle  02/2014
 //+===============+===============+===============+===============+===============+======
@@ -95,6 +105,13 @@ public:
     RelationshipEndColumns(Utf8CP ecInstanceIdColumnName, Utf8CP ecClassIdColumnName = nullptr) : m_ecInstanceIdColumnName(ecInstanceIdColumnName), m_ecClassIdColumnName(ecClassIdColumnName) {}
     Utf8CP GetECInstanceIdColumnName() const { return m_ecInstanceIdColumnName.c_str(); }
     Utf8CP GetECClassIdColumnName() const { return m_ecClassIdColumnName.c_str(); }
+    };
+
+enum class EndTablesOptimizationOptions
+    {
+    Skip, //!NOP or do nothing
+    ReferencedEnd, //Select base table over joined table
+    ForeignEnd //select subset of joinedTable if possible instead of base table.
     };
 
 //======================================================================================

@@ -370,7 +370,7 @@ TEST(FieldEngineer, Workflow)
     /*
      * Read the instance from the Db by ECInstanceId (lesser code by using a helper)
      */
-    ECInstanceId ecInstanceId(BeJsonUtilities::Int64FromValue(currentObject["$ECInstanceId"]));
+    ECInstanceId ecInstanceId((uint64_t) BeJsonUtilities::Int64FromValue(currentObject["$ECInstanceId"]));
     JsonReader reader(ecDb, employeeClass->GetId());
     auto readStatus = reader.ReadInstance(currentObject, ecInstanceId, ECValueFormat::RawNativeValues);
     ASSERT_EQ(SUCCESS, readStatus);
@@ -402,7 +402,7 @@ TEST(FieldEngineer, Workflow)
     ecSqlWithoutSelect = "FROM sico.Employee WHERE LastName = 'Fish' AND FirstName = 'Bronze'";
     int afterInsertCount = CountRows(ecDb, ecSqlWithoutSelect);
     ASSERT_EQ(1, afterInsertCount);
-    ECInstanceId bronzeFishId(BeJsonUtilities::Int64FromValue(currentObject["$ECInstanceId"]));
+    ECInstanceId bronzeFishId((uint64_t) BeJsonUtilities::Int64FromValue(currentObject["$ECInstanceId"]));
     ASSERT_TRUE(bronzeFishId.IsValid());
     statement.Finalize();
 

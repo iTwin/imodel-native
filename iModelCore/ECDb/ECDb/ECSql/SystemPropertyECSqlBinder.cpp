@@ -187,7 +187,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindInt64(int64_t value)
 
     auto onBindEventHandler = GetOnBindBriefcaseBasedIdEventHandler();
     if (onBindEventHandler != nullptr)
-        onBindEventHandler(ECInstanceId(value));
+        onBindEventHandler(ECInstanceId((uint64_t) value));
 
     m_bindValueIsNull = false;
     return ECSqlStatus::Success;

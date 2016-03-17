@@ -103,7 +103,7 @@ private:
     virtual Utf8String _ToString() const = 0;
 
 protected:
-    PropertyMap(ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap) : m_ecProperty(ecProperty), m_propertyAccessString(propertyAccessString), m_parentPropertyMap(parentPropertyMap), m_propertyPathId(0) {}
+    PropertyMap(ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap) : m_ecProperty(ecProperty), m_propertyAccessString(propertyAccessString), m_parentPropertyMap(parentPropertyMap), m_propertyPathId(ECDbPropertyPathId()) {}
     PropertyMap(PropertyMapCR rhs, PropertyMapCP parentPropertyMap) : m_ecProperty(rhs.m_ecProperty), m_parentPropertyMap(parentPropertyMap), m_propertyAccessString(rhs.m_propertyAccessString),
         m_mappedTables(rhs.m_mappedTables), m_propertyPathId(rhs.m_propertyPathId)
         {}
@@ -114,7 +114,7 @@ protected:
 
 public:
     virtual ~PropertyMap() {}
-    ECDbPropertyPathId GetPropertyPathId() const { BeAssert(m_propertyPathId != 0); return m_propertyPathId; }
+    ECDbPropertyPathId GetPropertyPathId() const { BeAssert(m_propertyPathId.IsValid()); return m_propertyPathId; }
     NavigationPropertyMap const* GetAsNavigationPropertyMap() const { return _GetAsNavigationPropertyMap(); }
     StructArrayJsonPropertyMap const* GetAsStructArrayPropertyMap() const { return _GetAsStructArrayPropertyMap(); }
     ECClassIdRelationshipConstraintPropertyMap const* GetAsECClassIdRelationshipConstraintPropertyMap() const { return _GetAsECClassIdRelationshipConstraintPropertyMapRelationship(); }

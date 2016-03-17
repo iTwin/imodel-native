@@ -112,7 +112,7 @@ BentleyStatus ECDbSchemaWriter::InsertCAEntry(IECInstanceP customAttribute, ECCl
     if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_CustomAttribute(ContainerId,ContainerType,ClassId,Ordinal,Instance) VALUES(?,?,?,?,?)"))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindInt64(1, containerId))
+    if (BE_SQLITE_OK != stmt->BindId(1, containerId))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindInt(2, Enum::ToInt(containerType)))
@@ -213,7 +213,7 @@ BentleyStatus ECDbSchemaWriter::Import(ECN::ECSchemaCR ecSchema)
             }
         }
 
-    if (SUCCESS != ImportCustomAttributes(ecSchema, ecSchemaId, ECContainerType::Schema))
+    if (SUCCESS != ImportCustomAttributes(ecSchema, ECContainerId(ecSchemaId), ECContainerType::Schema))
         {
         m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import custom attributes of ECSchema '%s'.", ecSchema.GetFullSchemaName().c_str());
         return ERROR;
@@ -406,7 +406,7 @@ BentleyStatus ECDbSchemaWriter::ImportECClass(ECN::ECClassCR ecClass)
             return ERROR;
         }
 
-    return ImportCustomAttributes(ecClass, ecClassId, ECContainerType::Class);
+    return ImportCustomAttributes(ecClass, ECContainerId(ecClassId), ECContainerType::Class);
     }
 
 //---------------------------------------------------------------------------------------
@@ -523,7 +523,7 @@ BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId relClas
     stmt = nullptr;
 
     ECContainerType containerType = end == ECRelationshipEnd_Source ? ECContainerType::RelationshipConstraintSource : ECContainerType::RelationshipConstraintTarget;
-    return ImportCustomAttributes(relationshipConstraint, relClassId, containerType);
+    return ImportCustomAttributes(relationshipConstraint, ECContainerId(relClassId), containerType);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -692,7 +692,7 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
     if (BE_SQLITE_DONE != stmt->Step())
         return ERROR;   
 
-    return ImportCustomAttributes(ecProperty, ecPropertyId, ECContainerType::Property);
+    return ImportCustomAttributes(ecProperty, ECContainerId(ecPropertyId), ECContainerType::Property);
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
