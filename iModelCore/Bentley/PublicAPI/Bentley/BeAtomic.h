@@ -19,20 +19,21 @@
 #endif
 
 #if defined (BENTLEY_HAVE_STD_ATOMIC)
+    #include <atomic>
 
-#include <atomic>
+    #ifdef BeAtomic
+    #undef BeAtomic
+    #endif
 
-#ifdef BeAtomic
-#undef BeAtomic
-#endif
-
-template<class T> struct BeAtomic : std::atomic<T>
-{
-    explicit BeAtomic(T val=0) : std::atomic<T>(val){}
+    //=======================================================================================
+    // @bsiclass                                                    Keith.Bentley   03/16
+    //=======================================================================================
+    template<class T> struct BeAtomic : std::atomic<T>
+    {
+        explicit BeAtomic(T val=0) : std::atomic<T>(val){}
     T IncrementAtomicPre() {return this->fetch_add(1)+1;}
     T DecrementAtomicPost() {return this->fetch_sub(1);}
-};
-
+    };
 #else
 
     #define INTERLOCKED_FUNCTIONS(TYPE_SUFFIX,TYPE)\
@@ -42,9 +43,6 @@ template<class T> struct BeAtomic : std::atomic<T>
         extern "C" TYPE __cdecl _InterlockedExchangeAdd ## TYPE_SUFFIX (TYPE volatile*, TYPE);\
         extern "C" TYPE __cdecl _InterlockedCompareExchange ## TYPE_SUFFIX (TYPE volatile *, TYPE, TYPE);\
         
-    extern "C" void* __cdecl _InterlockedExchangePointer (void* volatile*, void*);
-    extern "C" void* __cdecl _InterlockedCompareExchangePointer (void* volatile*, void*, void*);
-    
     INTERLOCKED_FUNCTIONS (, long)
     INTERLOCKED_FUNCTIONS (64, __int64)
 
@@ -73,23 +71,23 @@ template<class T> struct BeAtomic : std::atomic<T>
     //  @bsiclass 
     //=======================================================================================
     template<typename T> struct BeAtomic
-        {
-        };
+    {
+    };
 
     template<> struct BeAtomic<uint64_t>
-        {
+    {
         BE_ATOMIC_IMPL(uint64_t,64,long long)
-        };
+    };
 
     template<> struct BeAtomic<uint32_t>
-        {
+    {
         BE_ATOMIC_IMPL(uint32_t,,long)
-        };
+    };
 
     template<> struct BeAtomic<int>
-        {
+    {
         BE_ATOMIC_IMPL(int,,long)
-        };
+    };
 
     END_BENTLEY_NAMESPACE
 
