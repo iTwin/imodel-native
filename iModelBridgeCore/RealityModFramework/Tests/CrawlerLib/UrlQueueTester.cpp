@@ -22,15 +22,11 @@ class UrlQueueTester : public ::testing::Test
     void SetUp()
         {
         politeness = new PolitenessMock;
-        queue = new UrlQueue(politeness);
+        queue = UrlQueue::Create(politeness);
         ON_CALL(*politeness, CanDownloadUrl(_)).WillByDefault(Return(true));
         }
-    void TearDown()
-        {
-        delete queue;
-        }
     PolitenessMock* politeness;
-    UrlQueue* queue;
+    UrlQueuePtr queue;
     };
 
 TEST_F(UrlQueueTester, TheQueueIsInitiallyEmpy)
@@ -215,7 +211,7 @@ TEST_F(UrlQueueTester, WhenAnUrlHasADepthLargerThanTheMaximumDepthItIsIgnored)
 
 TEST_F(UrlQueueTester, TheQueueAlternatesBetweenDomains)
     {
-    UrlPtr seed = new Seed(L"http://a-seed.com");
+    UrlPtr seed = Seed::Create(L"http://a-seed.com");
     UrlPtr url1_domain1 = Url::Create(L"http://domain1.com/1", *seed);
     UrlPtr url2_domain1 = Url::Create(L"http://domain1.com/2", *seed);
     UrlPtr url1_domain2 = Url::Create(L"http://domain2.com/1", *seed);

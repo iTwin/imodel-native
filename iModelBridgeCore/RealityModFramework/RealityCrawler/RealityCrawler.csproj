@@ -175,21 +175,21 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy D:\BSI\DgnDb06Dev_RMF_3\out\Winx64\build\BeCurl\BeCurlG.dll $(TargetDir)
-copy D:\BSI\DgnDb06Dev_RMF_3\out\Winx64\build\BeIcu4c\BeIcu4cG.dll $(TargetDir)
-copy D:\BSI\DgnDb06Dev_RMF_3\out\Winx64\build\BeLibxml2\BeLibxml2G.dll $(TargetDir)
-copy D:\BSI\DgnDb06Dev_RMF_3\out\Winx64\build\RealityModFramework\CrawlerLib\CrawlerLib.dll $(TargetDir)
-copy D:\BSI\DgnDb06Dev_RMF_3\out\Winx64\build\BeOpenSSL\BeOpenSSLG.dll $(TargetDir)
-copy D:\BSI\DgnDb06Dev_RMF_3\out\Winx64\build\RealityModFramework\RealityCrawler\BaseGeoCoordG.dll $(TargetDir)
-copy D:\BSI\DgnDb06Dev_RMF_3\out\Winx64\build\RealityModFramework\RealityCrawler\BentleyAllocator.dll $(TargetDir)
-copy D:\BSI\DgnDb06Dev_RMF_3\out\Winx64\build\RealityModFramework\RealityCrawler\BentleyG.dll $(TargetDir)
-copy D:\BSI\DgnDb06Dev_RMF_3\out\Winx64\build\RealityModFramework\RealityCrawler\BentleyGeomG.dll $(TargetDir)
-copy D:\BSI\DgnDb06Dev_RMF_3\out\Winx64\build\RealityModFramework\RealityCrawler\BeSQLiteG.dll $(TargetDir)
-copy D:\BSI\DgnDb06Dev_RMF_3\out\Winx64\build\RealityModFramework\RealityCrawler\BeXmlG.dll $(TargetDir)
-copy D:\BSI\DgnDb06Dev_RMF_3\out\Winx64\build\RealityModFramework\RealityCrawler\ImagePPG.dll $(TargetDir)
-copy D:\BSI\DgnDb06Dev_RMF_3\out\Winx64\build\RealityModFramework\RealityCrawler\NCSEcw.dll $(TargetDir)
-copy D:\BSI\DgnDb06Dev_RMF_3\out\Winx64\build\RealityModFramework\RealityPlatform\RealityPlatform.dll $(TargetDir)
-copy D:\BSI\DgnDb06Dev_RMF_3\out\Winx64\build\RealityModFramework\RealityPlatform\RealityPlatform.pdb $(TargetDir)</PostBuildEvent>
+    <PostBuildEvent>copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\build\BeCurl\BeCurlG06.dll $(TargetDir)
+copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\build\BeIcu4c\BeIcu4cG06.dll $(TargetDir)
+copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\build\BeLibxml2\BeLibxml2G06.dll $(TargetDir)
+copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\build\RealityModFramework\CrawlerLib\CrawlerLib.dll $(TargetDir)
+copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\build\BeOpenSSL\BeOpenSSLG06.dll $(TargetDir)
+copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\build\BaseGeoCoord\BaseGeoCoordG06.dll $(TargetDir)
+copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\build\Bentley\BentleyG06.dll $(TargetDir)
+copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\build\BeSQLite\BeSQLiteG06.dll $(TargetDir)
+copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\build\BeXml\BeXml_dll\BeXmlG06.dll $(TargetDir)
+copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\build\ImagePP\ImagePP\ImagePPG06.dll $(TargetDir)
+copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\build\RealityModFramework\RealityCrawler\NCSEcw.dll $(TargetDir)
+copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\build\RealityModFramework\RealityPlatform\RealityPlatform.dll $(TargetDir)
+copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\build\RealityModFramework\RealityPlatform\RealityPlatform.pdb $(TargetDir)
+copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\BuildContexts\geomlibs\Delivery\BentleyGeomG06.dll $(TargetDir)
+</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

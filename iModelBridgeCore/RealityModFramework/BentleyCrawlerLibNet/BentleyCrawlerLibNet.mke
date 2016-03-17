@@ -49,7 +49,6 @@ $(o)BentleyCrawlerLibNet$(oext):     $(baseDir)BentleyCrawlerLibNet.cpp  $(baseD
 BuildContextSubPartsLibDir = $(BuildContext)SubParts/Libs/
 
 BuildContextSubPartsLibraries = $(BuildContextSubPartsLibDir)Bentley.lib \
-                                $(BuildContextSubPartsLibDir)BentleyAllocator.lib \
                                 $(BuildContextSubPartsLibDir)RealityPlatform.lib \
 								$(BuildContextSubPartsLibDir)CrawlerLib.lib
 

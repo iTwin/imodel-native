@@ -17,7 +17,7 @@ class RobotsTxtParserTester : public ::testing::Test
     public:
     RobotsTxtParserTester()
         {
-        siteBaseUrl = new Seed(L"http://some-site.com");
+        siteBaseUrl = Seed::Create(L"http://some-site.com");
         disallowAllRobotFile = L"User-agent: *\n"
                                L"Disallow: /";
         }

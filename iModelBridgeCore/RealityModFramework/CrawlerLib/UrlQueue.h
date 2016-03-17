@@ -29,6 +29,7 @@ struct UrlQueue : public RefCountedBase
     // A valid IPoliteness object must be provided. The UrlQueue takes ownership of the 
     // politeness object and is responsible of destroying it.
     //=======================================================================================
+    CRAWLERLIB_EXPORT UrlQueue(IPoliteness* politeness);
     CRAWLERLIB_EXPORT static UrlQueuePtr Create(IPoliteness* politeness);
     CRAWLERLIB_EXPORT virtual ~UrlQueue();
 
@@ -56,8 +57,6 @@ struct UrlQueue : public RefCountedBase
     CRAWLERLIB_EXPORT virtual DownloadJobPtr NextDownloadJob();
 
     private:
-    UrlQueue(IPoliteness* politeness);
-
     bool HaveAlreadyVisited(UrlCR url) const;
     bool IsAcceptedUrl(UrlCR url) const;
 

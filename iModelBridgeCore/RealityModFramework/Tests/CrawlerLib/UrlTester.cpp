@@ -22,7 +22,7 @@ class UrlTester : public ::testing::Test
         aValidRelativeLink = L"/relative_link";
         aValidRelativeLinkWithDot = L"./relative_link";
 
-        parentUrl = new Seed(L"http://seed.com");
+        parentUrl = Seed::Create(L"http://seed.com");
         }
 
     WString aValidUrlString;
@@ -39,19 +39,19 @@ class UrlTester : public ::testing::Test
 
 TEST_F(UrlTester, TheSeedHasNoParent)
     {
-    Seed seed(aValidUrlString);
-    ASSERT_TRUE(seed.GetParent().IsNull());
+    SeedPtr seed = Seed::Create(aValidUrlString);
+    ASSERT_TRUE(seed->GetParent().IsNull());
     }
 
 TEST_F(UrlTester, TheSeedHasADepthOfZero)
     {
-    Seed seed(aValidUrlString);
-    ASSERT_EQ(0, seed.GetDepth());
+    SeedPtr seed = Seed::Create(aValidUrlString);
+    ASSERT_EQ(0, seed->GetDepth());
     }
 
 TEST_F(UrlTester, AnUrlIsOneStepDeeperThanItsParent)
     {
-    SeedPtr seed = new Seed(aValidUrlString);
+    SeedPtr seed = Seed::Create(aValidUrlString);
 
     UrlPtr urlWithDepthOfOne = Url::Create(aValidUrlString, *seed);
     ASSERT_EQ(1, urlWithDepthOfOne->GetDepth());
@@ -62,7 +62,7 @@ TEST_F(UrlTester, AnUrlIsOneStepDeeperThanItsParent)
 
 TEST_F(UrlTester, WhenAnUrlHasADifferentDomainThanItsParentItIsMarkedAsExternal)
     {
-    SeedPtr seed = new Seed(L"http://some-domain.com");
+    SeedPtr seed = Seed::Create(L"http://some-domain.com");
     UrlPtr linkedInternalUrl = Url::Create(L"http://some-domain.com/foo.html", *seed);
     UrlPtr linkedInternalRelativeUrl = Url::Create(L"/toto.html", *seed);
     UrlPtr linkedExternalUrl = Url::Create(L"http://some-other-domain.com", *seed);
@@ -94,28 +94,28 @@ TEST_F(UrlTester, CanParseARelativeUrl)
     {
     UrlPtr finalUrl = Url::Create(aValidRelativeLink, *parentUrl);
     UrlPtr expectedUrl = Url::Create(L"http://seed.com/relative_link", *parentUrl);
-    ASSERT_EQ(expectedUrl, finalUrl);
+    ASSERT_EQ(*expectedUrl, *finalUrl);
     }
 
 TEST_F(UrlTester, CanParseARelativeUrlThatRepresentsTheRoot)
     {
     UrlPtr finalUrl = Url::Create(L"/", *parentUrl);
     UrlPtr expectedUrl = Url::Create(L"http://seed.com", *parentUrl);
-    ASSERT_EQ(expectedUrl, finalUrl);
+    ASSERT_EQ(*expectedUrl, *finalUrl);
     }
 
 TEST_F(UrlTester, CanParseARelativeUrlWithDot)
     {
     UrlPtr finalUrl = Url::Create(aValidRelativeLinkWithDot, *parentUrl);
     UrlPtr expectedUrl = Url::Create(L"http://seed.com/relative_link", *parentUrl);
-    ASSERT_EQ(expectedUrl, finalUrl);
+    ASSERT_EQ(*expectedUrl, *finalUrl);
     }
 
 TEST_F(UrlTester, TrailingSlashIsRemoved)
     {
     UrlPtr anUrlWithTrailingSlash = Url::Create(L"http://toto.com/hello_world/", *parentUrl);
     UrlPtr expectedUrl = Url::Create(L"http://toto.com/hello_world", *parentUrl);
-    ASSERT_EQ(expectedUrl, anUrlWithTrailingSlash);
+    ASSERT_EQ(*expectedUrl, *anUrlWithTrailingSlash);
     }
 
 TEST_F(UrlTester, SubUrlTester)

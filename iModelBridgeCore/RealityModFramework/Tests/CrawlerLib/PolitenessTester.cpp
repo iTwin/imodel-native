@@ -28,10 +28,10 @@ class PolitenessTester : public ::testing::Test
     public:
     PolitenessTester()
         {
-        seed = new Seed(L"http://some-domain.com/index.html");
+        seed = Seed::Create(L"http://some-domain.com/index.html");
         downloader = new RobotsTxtDownloaderMock;
         politeness = new Politeness(downloader);
-        emptyRobotsTxt = new RobotsTxtContent(L"", *seed);
+        emptyRobotsTxt = RobotsTxtContent::Create(L"", *seed);
 
         ON_CALL(*downloader, DownloadRobotsTxt(_)).WillByDefault(Return(emptyRobotsTxt));
         }
@@ -41,17 +41,17 @@ class PolitenessTester : public ::testing::Test
         delete politeness;
         }
 
-    RobotsTxtContentPtr GetRobotsTxtContentThatDisallows(UrlPtr const& url)
+    RobotsTxtContentPtr GetRobotsTxtContentThatDisallows(UrlPtr url)
         {
-        RobotsTxtContentPtr content = new RobotsTxtContent(L"", *Url::Create(L"http://some-domain.com", *seed));
+        RobotsTxtContentPtr content = RobotsTxtContent::Create(L"", *Url::Create(L"http://some-domain.com", *seed));
         content->AddUserAgent(UserAgent(L"*"));
-        content->AddDisallowedUrl(UserAgent(L"*"), *url);
+        content->AddDisallowedUrl(*UserAgent::Create(L"*"), url);
         return content;
         }
 
     RobotsTxtContentPtr GetRobotsTxtContentThatHasCrawlDelay(uint32_t delay)
         {
-        RobotsTxtContentPtr content = new RobotsTxtContent(L"", *Url::Create(L"http://some-domain.com", *seed));
+        RobotsTxtContentPtr content = RobotsTxtContent::Create(L"", *Url::Create(L"http://some-domain.com", *seed));
         content->AddUserAgent(UserAgent(L"*"));
         content->SetCrawlDelay(UserAgent(L"*"), delay);
         return content;

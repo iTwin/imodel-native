@@ -83,7 +83,7 @@
         <SubPart PartName="CrawlerLibExample"/>
         <SubPart PartName="RealityDbECPluginInstaller" />
         <SubPart PartName="DataHandlerTool" />
-        <!--<SubPart PartName="RealityCrawler"/>-->
+        <SubPart PartName="RealityCrawler"/>
     </Part>
 
     <Part Name="RealityDbECPlugin" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" OnlyPlatforms="x86,x64">
@@ -271,7 +271,7 @@
     <Part Name="Tests">
         <SubPart PartName="RealityPackageUnitTests"/>
         <SubPart PartName="RealityPlatformUnitTests"/>
-        <!--&&JFC TODO: Update tests <SubPart PartName="CrawlerLibUnitTests"/> -->
+        <SubPart PartName="CrawlerLibUnitTests"/>
     </Part>
 
     <!-- Put the unit tests into the form of a product. This product will be consumed by a platform-specific "runner" product. -->
