@@ -55,7 +55,7 @@ public:
 
     // Return the native ICurvePrimitive wrapped as the strongest Js type possible.
     // optionally let child CurveVector return as (true,false)==>(nullptr, JsCurvePrimitive)
-    static JsCurvePrimitiveP StronglyTypedJsCurvePrimitive (ICurvePrimitivePtr &data, bool nullifyCurveVector);
+    static JsCurvePrimitiveP StronglyTypedJsCurvePrimitive (ICurvePrimitivePtr const &data, bool nullifyCurveVector);
 
 
     double CurvePrimitiveType (){return (double)(int)m_curvePrimitive->GetCurvePrimitiveType ();}
@@ -207,7 +207,12 @@ public:
         {
         return new JsEllipticArc (DEllipse3d::FromPointsOnArc (pointA->Get (), pointB->Get (), pointC->Get ()));
         }
+    //! return the complement of this arc.  Returns null if this arc is a full 360 degree sweep.
+    JsEllipticArc *Complement () const;
 
+    // Construct (possbily many) tangent arcs as viewed in XY
+    // Returned arcs are always the smaller of two possible arcs.
+    static JsUnstructuredCurveVector *CreateXYTangentArcs (JsCurvePrimitiveP curveA, bool extendA, JsCurvePrimitiveP curveB, bool extendB);
 
 JsDPoint3dDVector3dDVector3d * GetBasisPlane () const
     {
