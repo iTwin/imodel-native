@@ -35,26 +35,31 @@ void SetLockStates (IBriefcaseManager::Response& response, IBriefcaseManager::Re
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Karolis.Dziedzelis              12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbResult DgnDbRepositoryManager::Connect (DgnDbCR db)
+DgnDbServerResult DgnDbRepositoryManager::Connect (DgnDbCR db)
     {
-    auto repository = RepositoryInfo::ReadRepositoryInfo(db);
+    RepositoryInfo repositoryInfo;
+    auto readResult = RepositoryInfo::ReadRepositoryInfo(repositoryInfo, db);
+
+    if (!readResult.IsSuccess())
+        return readResult;
+
     if (m_connection)
         {
-        if (*repository == m_connection->GetRepositoryInfo())
-            return DgnDbResult::Success();
+        if (repositoryInfo == m_connection->GetRepositoryInfo())
+            return DgnDbServerResult::Success();
         }
 
-    auto result = DgnDbRepositoryConnection::Create(RepositoryInfo::ReadRepositoryInfo(db), m_credentials, m_clientInfo, m_cancellationToken, m_authenticationHandler)->GetResult();
-    if (result.IsSuccess())
+    auto connectionResult = DgnDbRepositoryConnection::Create(repositoryInfo, m_credentials, m_clientInfo, m_cancellationToken, m_authenticationHandler)->GetResult();
+    if (connectionResult.IsSuccess())
         {
-        DgnDbRepositoryConnectionPtr connection = result.GetValue();
+        DgnDbRepositoryConnectionPtr connection = connectionResult.GetValue();
         m_connection = connection;
-        return DgnDbResult::Success();
+        return DgnDbServerResult::Success();
         }
     else
         {
         m_connection = nullptr;
-        return DgnDbResult::Error(result.GetError());
+        return DgnDbServerResult::Error(connectionResult.GetError());
         }
     }
 
