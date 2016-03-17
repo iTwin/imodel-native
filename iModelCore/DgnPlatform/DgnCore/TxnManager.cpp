@@ -1319,17 +1319,17 @@ void dgn_TxnTable::ElementDep::UpdateSummary(Changes::Change change, ChangeType 
     
     if (ChangeType::Delete == changeType)
         {
-        int64_t relid = change.GetOldValue(0).GetValueInt64();
+        ECInstanceId relid = change.GetOldValue(0).GetValueId<ECInstanceId>();
         int64_t relclsid = change.GetOldValue(1).GetValueInt64();
         int64_t srcelemid = change.GetOldValue(2).GetValueInt64();
         int64_t tgtelemid = change.GetOldValue(3).GetValueInt64();
-        BeSQLite::EC::ECInstanceKey relkey((ECN::ECClassId)relclsid, (BeSQLite::EC::ECInstanceId)relid);
+        BeSQLite::EC::ECInstanceKey relkey((ECN::ECClassId)relclsid, relid);
         m_deletedRels.push_back(DepRelData(relkey, DgnElementId((uint64_t)srcelemid), DgnElementId((uint64_t)tgtelemid)));
         }
     else
         {
         Changes::Change::Stage stage = (ChangeType::Insert == changeType) ? Changes::Change::Stage::New : Changes::Change::Stage::Old;
-        ECInstanceId instanceId(change.GetValue(0, stage).GetValueInt64()); // primary key is column 0
+        ECInstanceId instanceId = change.GetValue(0, stage).GetValueId<ECInstanceId>(); // primary key is column 0
         AddDependency(instanceId, changeType);
         }
     }
@@ -1340,7 +1340,7 @@ void dgn_TxnTable::ElementDep::UpdateSummary(Changes::Change change, ChangeType 
 void dgn_TxnTable::ModelDep::_OnValidateAdd(Changes::Change const& change)
     {
     SetChanges();
-    CheckDirection(change.GetNewValue(0).GetValueId<EC::ECInstanceId>());
+    CheckDirection(change.GetNewValue(0).GetValueId<ECInstanceId>());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1349,7 +1349,7 @@ void dgn_TxnTable::ModelDep::_OnValidateAdd(Changes::Change const& change)
 void dgn_TxnTable::ModelDep::_OnValidateUpdate(Changes::Change const& change)
     {
     SetChanges();
-    CheckDirection(change.GetOldValue(0).GetValueId<EC::ECInstanceId>());
+    CheckDirection(change.GetOldValue(0).GetValueId<ECInstanceId>());
     }
 
 /*---------------------------------------------------------------------------------**//**
