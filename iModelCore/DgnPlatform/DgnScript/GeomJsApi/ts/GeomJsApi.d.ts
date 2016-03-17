@@ -1362,5 +1362,59 @@ type DgnRuledSweepP=cxx_pointer<DgnRuledSweep>;
 
 
 
+//! A wrapper for an array of partial curve detail pairs such as returned from curve-curve intersection methods
+//!<ul>
+//! <li>Each detail pair has an "A" curve and "B" curve.
+//! <li>curve, start fraction, and end fraction can be indpendently accessed for each pair.
+//! <li>each pair can be tested to see if it is a single point (e.g. simple intersection) or not (e.g. colinear sections of lines)
+//!</ul>
+class PartialCurveDetailPairArray implements IDisposable, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsPartialCurveDetailPairArray ***/
+
+    //! @return the curve object for the "A" curve
+    GetCurveA (index: cxx_double) : CurvePrimitiveP;
+    //! @return the "start fraction" for the "A" curve of indexed detail.
+    GetFractionA0 (index: cxx_double) : cxx_double;
+    //! @return the "end fraction" for the "A" curve of indexed detail.
+    GetFractionA1 (index: cxx_double) : cxx_double;
+
+    //! @return the curve object for the "B" curve
+    GetCurveB (index: cxx_double) : CurvePrimitiveP;
+    //! @return the "start fraction" for the "B" curve of indexed detail.
+    GetFractionB0 (index: cxx_double) : cxx_double;
+    //! @return the "end fraction" for the "B" curve of indexed detail.
+    GetFractionB1 (index: cxx_double) : cxx_double;
+    //! test if the indexed detail is a single point (simple curve intersection).
+    IsSinglePointPair (index: cxx_double) : cxx_bool;
+
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+type PartialCurveDetailPairArrayP=cxx_pointer<PartialCurveDetailPairArray>;
+
+
+//! A static class for operations involving two curves.
+class CurveCurve implements IDisposable, BeJsProjection_SuppressConstructor
+    {
+    /*** NATIVE_TYPE_NAME = JsCurveCurve ***/
+    //! Compute all intersections among curves, as viewed in XY.  (Intersctions may be single point or overlap of curve sections)
+    //! @return array of descriptions of intersections.
+    IntersectPrimitivesXY (
+                curveA: CurvePrimitiveP,
+                curveB: CurvePrimitiveP,
+                extend: cxx_bool
+                ): PartialCurveDetailPairArrayP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+type CurveCurveP=cxx_pointer<CurveCurve>;
+
+
+
 
 }

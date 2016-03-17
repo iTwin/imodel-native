@@ -62,6 +62,7 @@ $(dgnScriptGen)GeomJsApiCallbacks.cpp : $(geomJsApiTsDir)GeomJsApi.d.ts\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsDPoint3dArray.h\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsPolyfaceMesh.h\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsPolyfaceVisitor.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsCurveLocationDetail.h\
                  $(DgnPlatformAPISrc)GeomJsApi.h
     $(msg)
     python $(BuildContext)SubParts/BeJavaScriptTools/createJavaScriptNativeProjection.py \
