@@ -217,7 +217,7 @@ BentleyStatus UpgraderFromV5ToCurrent::CopyData(DataSourceCache& newCache)
         bvector<ECInstanceKey> rootChildrenKeys;
         while (BE_SQLITE_ROW == statement->Step())
             {
-            rootChildrenKeys.push_back({statement->GetValueInt64(0), statement->GetValueId<ECInstanceId>(1)});
+            rootChildrenKeys.push_back({statement->GetValueUInt64(0), statement->GetValueId<ECInstanceId>(1)});
             }
 
         for (ECInstanceKeyCR childKey : rootChildrenKeys)
@@ -316,7 +316,7 @@ JsonValueCR oldParentInfo
     DbResult status;
     while (BE_SQLITE_ROW == (status = statement->Step()))
         {
-        childrenKeys.push_back({statement->GetValueInt64(0), statement->GetValueId<ECInstanceId>(1)});
+        childrenKeys.push_back({statement->GetValueUInt64(0), statement->GetValueId<ECInstanceId>(1)});
         }
 
     bvector<RawWSObjectsReader::RawInstance> navigationResponseInstances;

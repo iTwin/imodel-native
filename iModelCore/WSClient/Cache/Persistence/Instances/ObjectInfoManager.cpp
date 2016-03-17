@@ -439,7 +439,7 @@ BentleyStatus ObjectInfoManager::ReadCachedInstanceKeys(const ECInstanceKeyMulti
         if (BE_SQLITE_ROW != statement->Step())
             return ERROR;
 
-        instanceKeysOut.insert({statement->GetValueInt64(0), statement->GetValueId<ECInstanceId>(1)});
+        instanceKeysOut.insert({statement->GetValueUInt64(0), statement->GetValueId<ECInstanceId>(1)});
         }
 
     return SUCCESS;
