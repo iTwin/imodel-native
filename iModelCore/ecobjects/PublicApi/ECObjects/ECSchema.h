@@ -201,9 +201,9 @@ public:
 /*__PUBLISH_SECTION_START__*/
 };
 
-typedef int64_t ECClassId;
-typedef int64_t ECPropertyId;
-typedef int64_t ECSchemaId;
+typedef uint64_t ECClassId;
+typedef uint64_t ECPropertyId;
+typedef uint64_t ECSchemaId;
 
 typedef bvector<IECInstancePtr> ECCustomAttributeCollection;
 struct ECCustomAttributeInstanceIterable;
@@ -1197,7 +1197,7 @@ friend struct ECProperty; // for access to InvalidateDefaultStandaloneEnabler() 
 
 public:
     //! Value of unset ECClassId.
-    static const ECClassId UNSET_ECCLASSID = 0ULL;
+    static const ECClassId UNSET_ECCLASSID = INT64_C(0);
 
 private:
     mutable Utf8String              m_fullName;
