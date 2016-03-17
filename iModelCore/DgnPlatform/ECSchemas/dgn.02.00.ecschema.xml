@@ -387,9 +387,7 @@
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Options>SharedColumnsForSubclasses</Options>
-                    <!-- WIP: causes columns to be created in the dgn_Element table instead of the dgn_DefinitionElement table
                     <MinimumSharedColumnCount>16</MinimumSharedColumnCount>
-                    -->
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
