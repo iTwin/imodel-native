@@ -275,10 +275,11 @@ TEST_F(MaterialTest, Iterate_WithFilter)
         }
     ASSERT_EQ(2, count);
 
+    count = 0;
     for (DgnMaterial::Entry entry : DgnMaterial::MakeIterator(*m_db, DgnMaterial::Iterator::Options::ByParentId(mat2->GetMaterialId())))
     {
         if (entry.GetId() == mat3->GetMaterialId())
-            EXPECT_STREQ(mat1->GetMaterialName().c_str(), entry.GetName());
+            EXPECT_STREQ(mat3->GetMaterialName().c_str(), entry.GetName());
         else
             FAIL() << "This material should not exisit";
 
