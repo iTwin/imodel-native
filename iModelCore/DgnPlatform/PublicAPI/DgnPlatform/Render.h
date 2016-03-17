@@ -137,6 +137,8 @@ public:
     //! @return true if this Task should replace the other pending task.
     virtual bool _Replaces(Task& other) const {return m_operation == other.m_operation;}
 
+    virtual bool _DefinesScene() const = 0;
+
     virtual void _OnQueued() const {}
 
     Target* GetTarget() const {return m_target.get();} //!< Get the Target of this Task
@@ -146,6 +148,26 @@ public:
 
     Task(Target* target, Operation operation) : m_target(target), m_operation(operation) {}
 };
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   03/16
+//=======================================================================================
+struct SceneTask : Task
+{
+    bool _DefinesScene() const override {return true;}
+    bool _Replaces(Task& other) const override {return Render::Task::_Replaces(other) || !other._DefinesScene();}
+    using Task::Task;
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   03/16
+//=======================================================================================
+struct NonSceneTask : Task
+{
+    bool _DefinesScene() const override {return false;}
+    using Task::Task;
+};
+
 
 //=======================================================================================
 //! The Render::Queue is accessed through DgnViewport::GetRenderQueue. It holds an array of Render::Tasks waiting
@@ -1184,9 +1206,9 @@ struct Decorations
 //=======================================================================================
 struct Redraws
 {
-    GraphicListPtr m_erase;
-    GraphicListPtr m_draw;
-    GraphicListPtr m_change;
+    GraphicList m_erase;
+    GraphicList m_draw;
+    GraphicList m_change;
 };
 
 //=======================================================================================

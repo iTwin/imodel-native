@@ -395,6 +395,7 @@ struct RenderListContext : RenderContext
     friend struct DgnQueryView;
 
 protected:
+    bool m_wantStroke = true;
     int32_t m_checkStopInterval;
     int32_t m_checkStopElementSkip = 10;
     int32_t m_checkStopElementCount = 0;
@@ -402,12 +403,15 @@ protected:
     Render::GraphicListR m_list;
     UpdateAbort m_abortReason = UpdateAbort::None;
     UpdatePlan const& m_plan;
+
+    Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize) override {return m_wantStroke ? T_Super::_StrokeGeometry(source,pixelSize) : nullptr;}
     void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
     bool _CheckStop() override;
     int AccumulateMotion();
     bool DoCheckStop();
 
 public:    
+    void SetNoStroking(bool val) {m_wantStroke=!val;}
     UpdatePlan const& GetUpdatePlan() const {return m_plan;}
     RenderListContext(DgnViewportR vp, DrawPurpose purpose, Render::GraphicListR list, UpdatePlan const& plan) : RenderContext(vp, purpose), m_list(list), m_plan(plan) {}
 };
@@ -422,10 +426,7 @@ struct SceneContext : RenderListContext
     friend struct DgnQueryView;
 
 private:
-    bool m_wantStroke = true;
     bool _CheckStop() override;
-    void SetNoStroking(bool val) {m_wantStroke=!val;}
-    Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize) override {return m_wantStroke ? T_Super::_StrokeGeometry(source,pixelSize) : nullptr;}
     void EnableCheckStop(int stopInterval, int const* motionTolerance);
 
 public:
