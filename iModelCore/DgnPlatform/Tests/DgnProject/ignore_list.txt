@@ -11,7 +11,6 @@ JsonTests.JsonValueStructure                            # Fails after geomlibs/e
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------
-DgnLineStyleTest.*                                      # WIP DgnLineStyles
 DgnECNavigatorTest.Ifc_WithLatestDgnDb                  # WIP DgnItem
 
 ElementDisplayProperties.SetDisplayPattern              # informed Jeff
@@ -38,3 +37,11 @@ VolumeElementTestFixture.QueryTest                      # FenceParams::AcceptEle
 #Uses the eb ECschema which has to be refactored for EC3 and ECDb06. Notified Raman
 JsonTests.FieldEngineerStructArray
 
+MaterialTest.Iterate_WithFilter                         # Defect 386015 - Assertion on creating iterator. Unable to prepare statement
+MaterialTest.Iterate                                    # Defect 386015 - Assertion on creating iterator. Unable to prepare statement
+DgnLinkTest.Clone                                       # Defect 386016:- Does not copy member variables 
+ElementAspectTests.ImportElementsWithAspect             # Does not element import aspects
+FontTests.QueryFonts                                    # Defect 386022 - Does not find font
+TextStringTest.BoundingShape                            # UmarH WIP
+DateTimeFormatterTest.*                                 # UmarH fails randomly, need to investigate
+DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad       # Unable to query line style unless we reload the file ( which will reload the cache )

@@ -162,7 +162,7 @@ JsCurveVectorP JsCurveVector::MemberAsCurveVector (double doubleIndex) const
 //=======================================================================================
 //                                                                      Eariln.Lutz     12/15
 //=======================================================================================
-JsCurvePrimitiveP JsCurvePrimitive::StronglyTypedJsCurvePrimitive (ICurvePrimitivePtr &data, bool nullifyCurveVector)
+JsCurvePrimitiveP JsCurvePrimitive::StronglyTypedJsCurvePrimitive (ICurvePrimitivePtr const &data, bool nullifyCurveVector)
     {
     if (!data.IsValid ())
         return nullptr;

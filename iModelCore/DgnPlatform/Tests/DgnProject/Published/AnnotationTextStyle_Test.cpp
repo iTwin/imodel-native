@@ -37,34 +37,45 @@ TEST(BasicAnnotationTextStyleTest, PropertyBagTypes)
     {
     AnnotationTextStylePropertyBagPtr data = AnnotationTextStylePropertyBag::Create();
 
+    data->SetIntegerProperty(AnnotationTextStyleProperty::ColorType, (uint32_t)AnnotationColorType::RGBA);
     data->SetIntegerProperty(AnnotationTextStyleProperty::ColorValue, 2);
     data->SetIntegerProperty(AnnotationTextStyleProperty::FontId, 2);
     data->SetRealProperty(AnnotationTextStyleProperty::Height, 2.0);
+    data->SetRealProperty(AnnotationTextStyleProperty::LineSpacingFactor, 2.0);
     data->SetIntegerProperty(AnnotationTextStyleProperty::IsBold, 1);
-    data->SetIntegerProperty(AnnotationTextStyleProperty::IsBold, 1);
-    data->SetIntegerProperty(AnnotationTextStyleProperty::IsItalic, 2);
     data->SetIntegerProperty(AnnotationTextStyleProperty::IsItalic, 1);
     data->SetIntegerProperty(AnnotationTextStyleProperty::IsUnderlined, 1);
-    data->SetIntegerProperty(AnnotationTextStyleProperty::IsUnderlined, 1);
+    data->SetRealProperty(AnnotationTextStyleProperty::StackedFractionScale, 1.5);
     data->SetIntegerProperty(AnnotationTextStyleProperty::StackedFractionType, (uint32_t)AnnotationStackedFractionType::DiagonalBar);
+    data->SetRealProperty(AnnotationTextStyleProperty::SubScriptOffsetFactor, 1.5);
+    data->SetRealProperty(AnnotationTextStyleProperty::SubScriptScale, 1.5);
+    data->SetRealProperty(AnnotationTextStyleProperty::SuperScriptScale, 1.5);
     data->SetRealProperty(AnnotationTextStyleProperty::WidthFactor, 2.0);
-    }
+}
 
 #define DECLARE_AND_SET_DATA_1(STYLE_PTR)\
     Utf8String name = "MyStyle";                                                                STYLE_PTR->SetName(name.c_str());\
     Utf8String description = "MyDescription";                                                   STYLE_PTR->SetDescription(description.c_str());\
+    AnnotationColorType colorType = AnnotationColorType::RGBA;                                  STYLE_PTR->SetColorType(colorType);\
     ColorDef color(0xff, 0x00, 0x00);                                                           STYLE_PTR->SetColorValue(color);\
-    DgnFontId fontId((uint64_t)21);                                                              STYLE_PTR->SetFontId(fontId);\
+    DgnFontId fontId((uint64_t)21);                                                             STYLE_PTR->SetFontId(fontId);\
     double height = 31.31;                                                                      STYLE_PTR->SetHeight(height);\
     bool isBold = true;                                                                         STYLE_PTR->SetIsBold(isBold);\
     bool isItalic = true;                                                                       STYLE_PTR->SetIsItalic(isItalic);\
     bool isUnderlined = true;                                                                   STYLE_PTR->SetIsUnderlined(isUnderlined);\
     AnnotationStackedFractionType fractionType = AnnotationStackedFractionType::DiagonalBar;    STYLE_PTR->SetStackedFractionType(fractionType);\
-    double widthFactor = 41.41;                                                                 STYLE_PTR->SetWidthFactor(widthFactor);
+    double widthFactor = 41.41;                                                                 STYLE_PTR->SetWidthFactor(widthFactor);\
+    double lineSpaceFactor = 1.5;                                                               STYLE_PTR->SetLineSpacingFactor(lineSpaceFactor);\
+    double stackedFractionScale = 1.5;                                                          STYLE_PTR->SetStackedFractionScale(stackedFractionScale);\
+    double subScriptOffsetFactor = 1.5;                                                         STYLE_PTR->SetSubScriptOffsetFactor(subScriptOffsetFactor);\
+    double subScriptScale = 1.5;                                                                STYLE_PTR->SetSubScriptScale(subScriptScale);\
+    double superScriptOffsetFactor = 1.5;                                                       STYLE_PTR->SetSuperScriptOffsetFactor(superScriptOffsetFactor);\
+    double superScriptScale = 1.5;                                                              STYLE_PTR->SetSuperScriptScale(superScriptScale);
 
 #define VERIFY_DATA_1(STYLE_PTR)\
     EXPECT_TRUE(name.Equals(STYLE_PTR->GetName()));\
     EXPECT_TRUE(description.Equals(STYLE_PTR->GetDescription()));\
+    EXPECT_TRUE(colorType == STYLE_PTR->GetColorType());\
     EXPECT_TRUE(color == STYLE_PTR->GetColorValue());\
     EXPECT_TRUE(fontId == STYLE_PTR->GetFontId());\
     EXPECT_TRUE(height == STYLE_PTR->GetHeight());\
@@ -72,7 +83,13 @@ TEST(BasicAnnotationTextStyleTest, PropertyBagTypes)
     EXPECT_TRUE(isItalic == STYLE_PTR->IsItalic());\
     EXPECT_TRUE(isUnderlined == STYLE_PTR->IsUnderlined());\
     EXPECT_TRUE(fractionType == STYLE_PTR->GetStackedFractionType());\
-    EXPECT_TRUE(widthFactor == STYLE_PTR->GetWidthFactor());
+    EXPECT_TRUE(widthFactor == STYLE_PTR->GetWidthFactor());\
+    EXPECT_TRUE(lineSpaceFactor == STYLE_PTR->GetLineSpacingFactor());\
+    EXPECT_TRUE(stackedFractionScale == STYLE_PTR->GetStackedFractionScale());\
+    EXPECT_TRUE(subScriptOffsetFactor == STYLE_PTR->GetSubScriptOffsetFactor());\
+    EXPECT_TRUE(subScriptScale == STYLE_PTR->GetSubScriptScale());\
+    EXPECT_TRUE(superScriptOffsetFactor == STYLE_PTR->GetSuperScriptOffsetFactor());\
+    EXPECT_TRUE(superScriptScale == STYLE_PTR->GetSuperScriptScale());
 
 //---------------------------------------------------------------------------------------
 // Creates a style and tests accessors.

@@ -287,3 +287,70 @@ TEST_F(ElementGroupTests, DeleteElementGroup)
 
     EXPECT_TRUE(m_db->Elements().GetElement(member1->GetElementId()).IsValid());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Umar.Hayat      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementGroupTests, ElementGroupsMembersHelper)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"ElementGroupTests_CRUD.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+
+    DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
+    auto member1 = CreateAndInsertElement(model);
+    ASSERT_TRUE(member1.IsValid());
+    auto member2 = CreateAndInsertElement(model);
+    ASSERT_TRUE(member2.IsValid());
+
+    // Create Element Group
+    TestGroupPtr group = TestGroup::Create(*m_db, m_defaultModelId, m_defaultCategoryId);
+    ASSERT_TRUE(group.IsValid());
+    ASSERT_TRUE(group->Insert().IsValid());
+    DgnElementCR groupElement = *(m_db->Elements().GetElement(group->GetElementId()));
+    TestGroupPtr group2 = TestGroup::Create(*m_db, m_defaultModelId, m_defaultCategoryId);
+    ASSERT_TRUE(group2.IsValid());
+    ASSERT_TRUE(group2->Insert().IsValid());
+    DgnElementCR groupElement2 = *(m_db->Elements().GetElement(group2->GetElementId()));
+
+    // Insert Elements
+    ASSERT_TRUE(DgnDbStatus::Success == ElementGroupsMembers::Insert(groupElement, *member1->ToDgnElement(), 1));
+    ASSERT_TRUE(DgnDbStatus::Success == ElementGroupsMembers::Insert(groupElement, *member2->ToDgnElement(), 2));
+    ASSERT_TRUE(DgnDbStatus::Success == ElementGroupsMembers::Insert(groupElement2, *member1->ToDgnElement(), 2));
+
+    // Verify MemberPriority
+    EXPECT_EQ(1, ElementGroupsMembers::QueryMemberPriority(groupElement, *member1->ToDgnElement()));
+    EXPECT_EQ(2, ElementGroupsMembers::QueryMemberPriority(groupElement2, *member1->ToDgnElement()));
+
+    //  Query
+    EXPECT_TRUE(2 == ElementGroupsMembers::QueryMembers(groupElement).size());
+    
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " DGN_TABLE(DGN_RELNAME_ElementGroupsMembers)));
+    int relationshipCount = 0;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        ++relationshipCount;
+        }
+    EXPECT_TRUE(3 == relationshipCount);
+    m_db->SaveChanges();
+
+    DgnElementIdSet allMembers = ElementGroupsMembers::QueryMembers(groupElement);
+    for (DgnElementId id : allMembers)
+        {
+        if (id == member1->GetElementId() || id == member2->GetElementId() )
+            continue;
+        else
+            EXPECT_TRUE(false) << "This element id should not be here ";
+        }
+
+    // Delete Members
+    EXPECT_TRUE(DgnDbStatus::Success == ElementGroupsMembers::Delete(groupElement, *member2->ToDgnElement()));
+    EXPECT_TRUE(1 == ElementGroupsMembers::QueryMembers(groupElement).size());
+
+    // Has member
+    EXPECT_TRUE(ElementGroupsMembers::HasMember(groupElement, *member1->ToDgnElement()));
+    EXPECT_FALSE(ElementGroupsMembers::HasMember(groupElement, *member2->ToDgnElement()));
+
+    // Query Groups of element
+    DgnElementIdSet allGroups = ElementGroupsMembers::QueryGroups(*member1->ToDgnElement());
+    EXPECT_TRUE(2 == allGroups.size());
+    }
