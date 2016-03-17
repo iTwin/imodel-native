@@ -54,7 +54,7 @@ public:                                                 \
         if (1 == countWas)                              \
             delete this;                                \
         return countWas-1;                              \
-        }
+        ;}
 
 #define DEFINE_REF_COUNTED_PTR(_sname_) typedef RefCountedPtr<_sname_> _sname_##Ptr; typedef RefCountedCPtr<_sname_> _sname_##CPtr;
 
