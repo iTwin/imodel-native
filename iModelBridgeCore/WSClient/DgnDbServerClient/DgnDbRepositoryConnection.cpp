@@ -555,6 +555,16 @@ DgnDbServerRevisionPtr ParseRevision (JsonValueCR jsonValue)
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Eligijus.Mauragas              03/2016
+//---------------------------------------------------------------------------------------
+AsyncTaskPtr<DgnDbServerRevisionsResult> DgnDbRepositoryConnection::GetAllRevisions (ICancellationTokenPtr cancellationToken)
+    {
+    BeAssert (DgnDbServerHost::IsInitialized ());
+    WSQuery query (ServerSchema::Schema::Repository, ServerSchema::Class::Revision);
+    return RevisionsFromQuery (query, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 AsyncTaskPtr<DgnDbUInt64Result> DgnDbRepositoryConnection::GetRevisionIndex

@@ -38,28 +38,28 @@ DgnDbBriefcasePtr DgnDbBriefcase::Create(Dgn::DgnDbPtr db, DgnDbRepositoryConnec
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullAndMerge(HttpRequest::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken)
+AsyncTaskPtr<DgnDbServerRevisionMergeResult> DgnDbBriefcase::PullAndMerge(HttpRequest::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken)
     {
     BeAssert(DgnDbServerHost::IsInitialized());
     std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
-        return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(DgnDbServerError::Id::FileNotFound));
+        return CreateCompletedAsyncTask<DgnDbServerRevisionMergeResult>(DgnDbServerRevisionMergeResult::Error(DgnDbServerError::Id::FileNotFound));
         }
     if (!m_repositoryConnection)
         {
-        return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
+        return CreateCompletedAsyncTask<DgnDbServerRevisionMergeResult>(DgnDbServerRevisionMergeResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
         }
     if (m_db->IsReadonly())
         {
-        return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(DgnDbServerError::Id::BriefcaseIsReadOnly));
+        return CreateCompletedAsyncTask<DgnDbServerRevisionMergeResult>(DgnDbServerRevisionMergeResult::Error(DgnDbServerError::Id::BriefcaseIsReadOnly));
         }
     if (!m_db->Txns().IsTracking())
         {
-        return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(DgnDbServerError::Id::TrackingNotEnabled));
+        return CreateCompletedAsyncTask<DgnDbServerRevisionMergeResult> (DgnDbServerRevisionMergeResult::Error (DgnDbServerError::Id::TrackingNotEnabled));
         }
     Utf8String lastRevisionId = GetLastRevisionPulled ();
-    return m_repositoryConnection->Pull(lastRevisionId, callback, cancellationToken)->Then<DgnDbResult>([=] (const DgnDbServerRevisionsResult& result)
+    return m_repositoryConnection->Pull(lastRevisionId, callback, cancellationToken)->Then<DgnDbServerRevisionMergeResult>([=] (const DgnDbServerRevisionsResult& result)
         {
         if (result.IsSuccess())
             {
@@ -79,19 +79,19 @@ AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullAndMerge(HttpRequest::ProgressCall
                 DgnDbServerHost::Forget(host);
                 }
             if (RevisionStatus::Success == mergeStatus)
-                return DgnDbResult::Success();
+                return DgnDbServerRevisionMergeResult::Success(serverRevisions);
             else
-                return DgnDbResult::Error(mergeStatus);
+                return DgnDbServerRevisionMergeResult::Error(mergeStatus);
             }
         else
-            return DgnDbResult::Error(result.GetError());
+            return DgnDbServerRevisionMergeResult::Error(result.GetError());
         });
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullMergeAndPush(HttpRequest::ProgressCallbackCR downloadCallback,
+AsyncTaskPtr<DgnDbServerRevisionMergeResult> DgnDbBriefcase::PullMergeAndPush(HttpRequest::ProgressCallbackCR downloadCallback,
     HttpRequest::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken, int attemptsCount)
     {
     return PullMergeAndPushRepeated(downloadCallback, uploadCallback, cancellationToken, attemptsCount);
@@ -100,16 +100,16 @@ AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullMergeAndPush(HttpRequest::Progress
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Andrius.Zonys                  01/2016
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullMergeAndPushRepeated(HttpRequest::ProgressCallbackCR downloadCallback,
+AsyncTaskPtr<DgnDbServerRevisionMergeResult> DgnDbBriefcase::PullMergeAndPushRepeated(HttpRequest::ProgressCallbackCR downloadCallback,
     HttpRequest::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken, int attemptsCount, int attempt, int delay)
     {
-    std::shared_ptr<DgnDbResult> finalResult = std::make_shared<DgnDbResult>();
+    std::shared_ptr<DgnDbServerRevisionMergeResult> finalResult = std::make_shared<DgnDbServerRevisionMergeResult>();
     return PullMergeAndPushInternal(downloadCallback, uploadCallback, cancellationToken)
-        ->Then([=] (DgnDbResult& result)
+        ->Then([=] (DgnDbServerRevisionMergeResult& result)
         {
         if (result.IsSuccess())
             {
-            finalResult->SetSuccess();
+            finalResult->SetSuccess(result.GetValue ());
             return;
             }
 
@@ -149,14 +149,14 @@ AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullMergeAndPushRepeated(HttpRequest::
         std::this_thread::sleep_for(std::chrono::milliseconds(currentDelay));
 
         PullMergeAndPushRepeated(downloadCallback, uploadCallback, cancellationToken, attemptsCount, attempt + 1, delay)
-            ->Then([=] (const DgnDbResult& result)
+            ->Then([=] (const DgnDbServerRevisionMergeResult& result)
             {
             if (result.IsSuccess())
-                finalResult->SetSuccess();
+                finalResult->SetSuccess(result.GetValue ());
             else
                 finalResult->SetError(result.GetError());
             });
-        })->Then<DgnDbResult>([=]
+        })->Then<DgnDbServerRevisionMergeResult>([=]
             {
             return *finalResult;
             });
@@ -165,25 +165,25 @@ AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullMergeAndPushRepeated(HttpRequest::
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullMergeAndPushInternal(HttpRequest::ProgressCallbackCR downloadCallback,
+AsyncTaskPtr<DgnDbServerRevisionMergeResult> DgnDbBriefcase::PullMergeAndPushInternal(HttpRequest::ProgressCallbackCR downloadCallback,
     HttpRequest::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken)
     {
     BeAssert(DgnDbServerHost::IsInitialized());
     std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
-        return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(DgnDbServerError::Id::FileNotFound));
+        return CreateCompletedAsyncTask<DgnDbServerRevisionMergeResult>(DgnDbServerRevisionMergeResult::Error(DgnDbServerError::Id::FileNotFound));
         }
     if (!m_repositoryConnection)
         {
-        return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
+        return CreateCompletedAsyncTask<DgnDbServerRevisionMergeResult>(DgnDbServerRevisionMergeResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
         }
     if (m_db->IsReadonly())
         {
-        return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(DgnDbServerError::Id::BriefcaseIsReadOnly));
+        return CreateCompletedAsyncTask<DgnDbServerRevisionMergeResult>(DgnDbServerRevisionMergeResult::Error(DgnDbServerError::Id::BriefcaseIsReadOnly));
         }
-    std::shared_ptr<DgnDbResult> finalResult = std::make_shared<DgnDbResult>();
-    return PullAndMerge(downloadCallback, cancellationToken)->Then([=] (const DgnDbResult& result)
+    std::shared_ptr<DgnDbServerRevisionMergeResult> finalResult = std::make_shared<DgnDbServerRevisionMergeResult>();
+    return PullAndMerge(downloadCallback, cancellationToken)->Then([=] (const DgnDbServerRevisionMergeResult& result)
         {
         if (result.IsSuccess())
             {
@@ -192,7 +192,7 @@ AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullMergeAndPushInternal(HttpRequest::
             DgnDbServerHost::Forget (host, false);
             if (!revision.IsValid ())
                 {
-                finalResult->SetSuccess();
+                finalResult->SetSuccess(result.GetValue());
                 }
             else
                 {
@@ -209,7 +209,7 @@ AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullMergeAndPushInternal(HttpRequest::
                         DgnDbServerHost::Forget(host);
                         if (RevisionStatus::Success == status)
                             {
-                            finalResult->SetSuccess();
+                            finalResult->SetSuccess(result.GetValue());
                             }
                         else
                             finalResult->SetError(status);
@@ -226,9 +226,34 @@ AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullMergeAndPushInternal(HttpRequest::
             }
         else
             finalResult->SetError(result.GetError());
-        })->Then<DgnDbResult>([=] ()
+        })->Then<DgnDbServerRevisionMergeResult>([=] ()
         {
         return *finalResult;
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Eligijus.Mauragas              03/2016
+//---------------------------------------------------------------------------------------
+AsyncTaskPtr<DgnDbServerBoolResult> DgnDbBriefcase::IsBriefcaseUpToDate (ICancellationTokenPtr cancellationToken)
+    {
+    BeAssert (DgnDbServerHost::IsInitialized ());
+    if (!m_db.IsValid () || !m_db->IsDbOpen ())
+        {
+        return CreateCompletedAsyncTask<DgnDbServerBoolResult> (DgnDbServerBoolResult::Error (DgnDbServerError::Id::FileNotFound));
+        }
+    if (!m_repositoryConnection)
+        {
+        return CreateCompletedAsyncTask<DgnDbServerBoolResult> (DgnDbServerBoolResult::Error (DgnDbServerError::Id::InvalidRepositoryConnection));
+        }
+
+    //Needswork: think how to optimize this so that we would not need to download all revisions
+    return m_repositoryConnection->GetRevisionsAfterId (GetLastRevisionPulled (), cancellationToken)->Then<DgnDbServerBoolResult> ([=](const DgnDbServerRevisionsResult& result)
+        {
+        if (result.IsSuccess ())
+            return DgnDbServerBoolResult::Success (result.GetValue ().size () <= 0); //If there are not pending revisions we are up to date
+        else
+            return DgnDbServerBoolResult::Error (result.GetError ());
         });
     }
 

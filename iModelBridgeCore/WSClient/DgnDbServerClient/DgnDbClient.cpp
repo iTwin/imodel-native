@@ -409,18 +409,26 @@ AsyncTaskPtr<DgnDbBriefcaseResult> DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, 
         if (connectionResult.IsSuccess())
             {
             DgnDbBriefcasePtr briefcase = DgnDbBriefcase::Create(db, connectionResult.GetValue());
-            AsyncTaskPtr<DgnDbResult> task;
             if (doSync)
-                task = briefcase->PullAndMerge(callback, cancellationToken);
-            else
-                task = CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Success());
-            task->Then([=] (const DgnDbResult& result)
                 {
-                if (result.IsSuccess())
-                    finalResult->SetSuccess(briefcase);
-                else
-                    finalResult->SetError(result.GetError());
-                });
+                briefcase->PullAndMerge(callback, cancellationToken)->Then ([=](const DgnDbServerRevisionMergeResult& result)
+                    {
+                    if (result.IsSuccess ())
+                        finalResult->SetSuccess (briefcase);
+                    else
+                        finalResult->SetError (result.GetError ());
+                    });
+                }
+            else
+                {
+                CreateCompletedAsyncTask<DgnDbResult> (DgnDbResult::Success ())->Then ([=](const DgnDbResult& result)
+                    {
+                    if (result.IsSuccess ())
+                        finalResult->SetSuccess (briefcase);
+                    else
+                        finalResult->SetError (result.GetError ());
+                    });
+                }
             }
         else
             finalResult->SetError(connectionResult.GetError());

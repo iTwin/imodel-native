@@ -149,6 +149,11 @@ public:
 
 //__PUBLISH_SECTION_START__
 public:
+    //! Returns all revisions available in the server.
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has the collection of revision information as the result.
+    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbServerRevisionsResult> GetAllRevisions (ICancellationTokenPtr cancellationToken = nullptr);
+
     //! Get a revision for the specific revision id.
     //! @param[in] revisionId Id of the revision to retrieve.
     //! @param[in] cancellationToken
