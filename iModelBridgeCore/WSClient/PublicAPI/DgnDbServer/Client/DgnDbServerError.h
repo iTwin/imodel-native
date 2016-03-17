@@ -55,6 +55,7 @@ struct DgnDbServerError : public DgnClientFx::Utils::AsyncError
             FileIsNotBriefcase,
             CredentialsNotSet,
             FileNotFound,
+            FileAlreadyExists,
             DgnDbServerClientNotInitialized,
             InvalidServerURL,
             InvalidRepostioryName,
@@ -81,11 +82,16 @@ struct DgnDbServerError : public DgnClientFx::Utils::AsyncError
     public:
         DGNDBSERVERCLIENT_EXPORT DgnDbServerError();
         DGNDBSERVERCLIENT_EXPORT DgnDbServerError(DgnDbServerError::Id id);
-        DGNDBSERVERCLIENT_EXPORT DgnDbServerError(DgnDbServerError::Id id, Utf8CP message, Utf8CP description = nullptr);
+        DGNDBSERVERCLIENT_EXPORT DgnDbServerError(Dgn::DgnDbCR db, BeSQLite::DbResult result);
+        DGNDBSERVERCLIENT_EXPORT DgnDbServerError(Dgn::DgnDbPtr db, BeSQLite::DbResult result);
         DGNDBSERVERCLIENT_EXPORT DgnDbServerError(WebServices::WSErrorCR error);
         DGNDBSERVERCLIENT_EXPORT DgnDbServerError(Dgn::RevisionStatus const& status);
+
+        DGNDBSERVERCLIENT_EXPORT DgnDbServerError(DgnClientFx::Utils::HttpErrorCR error);
 
         JsonValueCR GetExtendedData();
         DGNDBSERVERCLIENT_EXPORT DgnDbServerError::Id GetId();
     };
+
+typedef DgnClientFx::Utils::AsyncResult<void, DgnDbServerError> DgnDbServerResult;
 END_BENTLEY_DGNDBSERVER_NAMESPACE

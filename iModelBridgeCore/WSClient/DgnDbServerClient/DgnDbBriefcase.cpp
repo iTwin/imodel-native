@@ -38,7 +38,7 @@ DgnDbBriefcasePtr DgnDbBriefcase::Create(Dgn::DgnDbPtr db, DgnDbRepositoryConnec
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbServerRevisionMergeResult> DgnDbBriefcase::PullAndMerge(HttpRequest::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken)
+AsyncTaskPtr<DgnDbServerRevisionMergeResult> DgnDbBriefcase::PullAndMerge(HttpRequest::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
     BeAssert(DgnDbServerHost::IsInitialized());
     std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
@@ -92,7 +92,7 @@ AsyncTaskPtr<DgnDbServerRevisionMergeResult> DgnDbBriefcase::PullAndMerge(HttpRe
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 AsyncTaskPtr<DgnDbServerRevisionMergeResult> DgnDbBriefcase::PullMergeAndPush(HttpRequest::ProgressCallbackCR downloadCallback,
-    HttpRequest::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken, int attemptsCount)
+    HttpRequest::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken, int attemptsCount) const
     {
     return PullMergeAndPushRepeated(downloadCallback, uploadCallback, cancellationToken, attemptsCount);
     }
@@ -101,7 +101,7 @@ AsyncTaskPtr<DgnDbServerRevisionMergeResult> DgnDbBriefcase::PullMergeAndPush(Ht
 //@bsimethod                                     Andrius.Zonys                  01/2016
 //---------------------------------------------------------------------------------------
 AsyncTaskPtr<DgnDbServerRevisionMergeResult> DgnDbBriefcase::PullMergeAndPushRepeated(HttpRequest::ProgressCallbackCR downloadCallback,
-    HttpRequest::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken, int attemptsCount, int attempt, int delay)
+    HttpRequest::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken, int attemptsCount, int attempt, int delay) const
     {
     std::shared_ptr<DgnDbServerRevisionMergeResult> finalResult = std::make_shared<DgnDbServerRevisionMergeResult>();
     return PullMergeAndPushInternal(downloadCallback, uploadCallback, cancellationToken)
@@ -166,7 +166,7 @@ AsyncTaskPtr<DgnDbServerRevisionMergeResult> DgnDbBriefcase::PullMergeAndPushRep
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 AsyncTaskPtr<DgnDbServerRevisionMergeResult> DgnDbBriefcase::PullMergeAndPushInternal(HttpRequest::ProgressCallbackCR downloadCallback,
-    HttpRequest::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken)
+    HttpRequest::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken) const
     {
     BeAssert(DgnDbServerHost::IsInitialized());
     std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
@@ -199,7 +199,7 @@ AsyncTaskPtr<DgnDbServerRevisionMergeResult> DgnDbBriefcase::PullMergeAndPushInt
                 Utf8String revisionId = revision->GetId();
                 BeFileName revisionFile(m_db->GetDbFileName());
                 m_repositoryConnection->Push(revision, m_db->GetBriefcaseId (), uploadCallback, cancellationToken)->Then
-                    ([=] (const DgnDbResult& pushResult)
+                    ([=] (const DgnDbServerResult& pushResult)
                     {
                     if (pushResult.IsSuccess())
                         {
@@ -235,7 +235,7 @@ AsyncTaskPtr<DgnDbServerRevisionMergeResult> DgnDbBriefcase::PullMergeAndPushInt
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              03/2016
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbServerBoolResult> DgnDbBriefcase::IsBriefcaseUpToDate (ICancellationTokenPtr cancellationToken)
+AsyncTaskPtr<DgnDbServerBoolResult> DgnDbBriefcase::IsBriefcaseUpToDate (ICancellationTokenPtr cancellationToken) const
     {
     BeAssert (DgnDbServerHost::IsInitialized ());
     if (!m_db.IsValid () || !m_db->IsDbOpen ())
@@ -260,7 +260,7 @@ AsyncTaskPtr<DgnDbServerBoolResult> DgnDbBriefcase::IsBriefcaseUpToDate (ICancel
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-Dgn::DgnDbR DgnDbBriefcase::GetDgnDb()
+Dgn::DgnDbR DgnDbBriefcase::GetDgnDb() const
     {
     return *m_db;
     }
@@ -268,15 +268,15 @@ Dgn::DgnDbR DgnDbBriefcase::GetDgnDb()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbRepositoryConnectionPtr DgnDbBriefcase::GetRepositoryConnection()
+DgnDbRepositoryConnectionCR DgnDbBriefcase::GetRepositoryConnection() const
     {
-    return m_repositoryConnection;
+    return *m_repositoryConnection;
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              01/2016
 //---------------------------------------------------------------------------------------
-BeBriefcaseId DgnDbBriefcase::GetBriefcaseId ()
+BeBriefcaseId DgnDbBriefcase::GetBriefcaseId () const
     {
     return GetDgnDb ().GetBriefcaseId ();
     }
@@ -284,7 +284,7 @@ BeBriefcaseId DgnDbBriefcase::GetBriefcaseId ()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              01/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbBriefcase::GetLastRevisionPulled ()
+Utf8String DgnDbBriefcase::GetLastRevisionPulled () const
     {
     return GetDgnDb ().Revisions ().GetParentRevisionId ();
     }

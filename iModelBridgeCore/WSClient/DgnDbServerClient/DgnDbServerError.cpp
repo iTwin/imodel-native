@@ -12,12 +12,6 @@
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-DgnDbServerError::DgnDbServerError(Id id, Utf8CP message, Utf8CP description)
-    {
-    m_id = id;
-    m_message = message;
-    m_description = description;
-    }
 
 DgnDbServerError::DgnDbServerError()
     {
@@ -58,7 +52,7 @@ DgnDbServerError::Id DgnDbServerError::ErrorIdFromString(Utf8StringCR errorIdStr
     return Id::Unknown;
     }
 
-DgnDbServerError::Id DgnDbServerError::ErrorIdFromWSError(WSErrorCR error)
+DgnDbServerError::Id DgnDbServerError::ErrorIdFromWSError(WebServices::WSErrorCR error)
     {
     if (WSError::Status::ReceivedError == error.GetStatus())
         switch (error.GetId())
@@ -104,7 +98,7 @@ DgnDbServerError::DgnDbServerError(Id id)
     m_id = id;
     }
 
-DgnDbServerError::DgnDbServerError(WSErrorCR error)
+DgnDbServerError::DgnDbServerError(WebServices::WSErrorCR error)
     {
     m_message = error.GetMessage();
     m_description = error.GetDescription();
@@ -121,12 +115,34 @@ DgnDbServerError::DgnDbServerError(WSErrorCR error)
         }
     }
 
+DgnDbServerError::DgnDbServerError(DgnDbCR db, BeSQLite::DbResult result)
+    {
+    m_id = Id::DgnDbError;
+    m_message = db.GetLastError(&result);
+    }
+
+DgnDbServerError::DgnDbServerError(DgnDbPtr db, BeSQLite::DbResult result)
+    {
+    m_id = Id::DgnDbError;
+    if (db.IsValid())
+        {
+        m_message = db->GetLastError(&result);
+        }
+    }
+
 DgnDbServerError::DgnDbServerError(RevisionStatus const& status)
     {
     if (RevisionStatus::MergeError == status)
         m_id = Id::MergeError;
     else
         m_id = Id::RevisionManagerError;
+    }
+
+DgnDbServerError::DgnDbServerError(HttpErrorCR error)
+    {
+    m_id = Id::AzureError;
+    m_message = error.AsyncError::GetMessage();
+    m_description = error.AsyncError::GetDescription();
     }
 
 JsonValueCR DgnDbServerError::GetExtendedData()

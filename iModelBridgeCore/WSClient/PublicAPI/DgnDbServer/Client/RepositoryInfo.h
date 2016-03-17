@@ -2,12 +2,13 @@
 |
 |     $Source: PublicAPI/DgnDbServer/Client/RepositoryInfo.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 #include <DgnDbServer/DgnDbServerCommon.h>
+#include <DgnDbServer/Client/DgnDbServerError.h>
 #include <Bentley/DateTime.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
@@ -26,30 +27,29 @@ private:
     Utf8String m_serverUrl;
     Utf8String m_fileUrl;
     Utf8String m_description;
+    Utf8String m_name;
     Utf8String m_id;
     Utf8String m_fileId;
     Utf8String m_userUploaded;
     DateTime   m_uploadedDate;
-protected:
-    RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id);
-    RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR fileId, Utf8StringCR fileUrl, Utf8StringCR description, Utf8StringCR user,
-    DateTimeCR date);
  //__PUBLISH_SECTION_START__
 public:
-    DGNDBSERVERCLIENT_EXPORT static RepositoryInfoPtr Create(Utf8StringCR serverUrl, Utf8StringCR id);
-    DGNDBSERVERCLIENT_EXPORT static RepositoryInfoPtr Create(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR fileId, Utf8StringCR fileUrl,
-    Utf8StringCR description, Utf8StringCR user, DateTimeCR date);
+    DGNDBSERVERCLIENT_EXPORT RepositoryInfo();
+    DGNDBSERVERCLIENT_EXPORT RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id);
+    DGNDBSERVERCLIENT_EXPORT RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR name, Utf8StringCR fileId, Utf8StringCR fileUrl, Utf8StringCR description,
+                   Utf8StringCR user, DateTimeCR date);
 
     //__PUBLISH_SECTION_END__
-    static RepositoryInfoPtr ReadRepositoryInfo(Dgn::DgnDbCR db);
-    static BeSQLite::DbResult WriteRepositoryInfo(Dgn::DgnDbR db, const RepositoryInfo& repositoryInfo, const BeSQLite::BeBriefcaseId& briefcaseId);
+    static DgnDbServerResult ReadRepositoryInfo(RepositoryInfo& repositoryInfo, Dgn::DgnDbCR db);
+    static DgnDbServerResult WriteRepositoryInfo(Dgn::DgnDbR db, RepositoryInfoCR repositoryInfo, BeSQLite::BeBriefcaseId const& briefcaseId);
     bool operator==(RepositoryInfoCR rhs) const;
     //__PUBLISH_SECTION_START__
 
     DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetDescription() const; //!< Description taken from dgn_Proj Description property of the master file.
     DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetServerURL() const; //!< URL of the server where the master file is stored.
     DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetFileURL() const; //!< URL of the master file.
-    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetId() const; //!< Repository Id taken from dgn_Proj Name property of the master file.
+    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetName() const; //!< Repository name taken from dgn_Proj Name property of the master file or supplied by user.
+    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetId() const; //!< Converted repository name, containing no illegal characters.
     DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetFileId() const; //!< Guid of the repository master file.
     DGNDBSERVERCLIENT_EXPORT Utf8String   GetWSRepositoryName() const; //!< Formatted WebServices repository id that is used in the address.
     DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetUserUploaded() const; //!< Name of the user that uploaded the master file.
