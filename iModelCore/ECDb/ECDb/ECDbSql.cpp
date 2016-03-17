@@ -285,8 +285,9 @@ ECDbSqlColumn* ECDbSqlTable::CreateColumn(ECDbColumnId id, Utf8CP name, ECDbSqlC
     if (GetPersistenceType() == PersistenceType::Virtual)
         resolvePersistenceType = PersistenceType::Virtual;
 
-    if (id < 0)
+    if (id == IdGenerator::UNSET_ID)
         id = GetDbDefR().GetManagerR().GetIdGenerator().NextColumnId();
+
 
     std::shared_ptr<ECDbSqlColumn> newColumn = nullptr;
     if (!Utf8String::IsNullOrEmpty(name))
@@ -1750,7 +1751,7 @@ bool ECDbSQLManager::IsTableChanged(ECDbSqlTable const& table) const
 //---------------------------------------------------------------------------------------
 DbResult ECDbSqlPersistence::Read(ECDbMapDb& o) const
     {
-    IIdGenerator::DisableGeneratorScope disableIdGenerator(o.GetManagerR().GetIdGenerator());
+    IdGenerator::DisableGeneratorScope disableIdGenerator(o.GetManagerR().GetIdGenerator());
     return ReadTables(o);
     }
 

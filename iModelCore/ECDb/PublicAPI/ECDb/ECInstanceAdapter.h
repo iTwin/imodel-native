@@ -48,7 +48,7 @@ private:
     BentleyStatus SetInstanceData(ECN::IECInstanceR instance, bool usesClassIdFilter) const;
     BentleyStatus SetStructArrayElement(ECN::ECValueR val, ECN::ECClassCR structType, IECSqlValue const& value) const;
     BentleyStatus SetPrimitiveValue(ECN::ECValueR val, ECN::PrimitiveType primitiveType, IECSqlValue const& value) const;
-    ECN::IECInstancePtr FindRelationshipEndpoint(int64_t endpointInstanceId, int64_t endpointClassId, ECN::StandaloneECRelationshipInstance*, bool isSource) const;
+    ECN::IECInstancePtr FindRelationshipEndpoint(ECInstanceId endpointInstanceId, ECN::ECClassId endpointClassId, ECN::StandaloneECRelationshipInstance*, bool isSource) const;
 
 public:
     //! Creates a new instance of the adapter

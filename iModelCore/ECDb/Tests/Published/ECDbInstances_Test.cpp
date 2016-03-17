@@ -36,14 +36,14 @@ TEST(ECInstanceIdHelper, ECInstanceIdInstanceIdConversion)
     success = ECInstanceIdHelper::ToString (actualInstanceId, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ecInstanceId);
     EXPECT_FALSE (success);
 
-    //ECInstanceId are allowed to be negative
+    //ECInstanceId are not allowed to be negative, but compiler doesn't catch it. So conversion succeeds
     ecInstanceId = ECInstanceId (-1LL);
     success = ECInstanceIdHelper::ToString (actualInstanceId, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ecInstanceId);
-    EXPECT_TRUE (success) << "ECInstanceIds can be negative, so ToString should succeed";
+    EXPECT_TRUE (success) << "ECInstanceIds are not allowed to be negative, but compiler doesn't catch it. So conversion succeeds";
 
     ecInstanceId = ECInstanceId(-100LL);
     success = ECInstanceIdHelper::ToString(actualInstanceId, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ecInstanceId);
-    EXPECT_TRUE(success) << "ECInstanceIds can be negative, so ToString should succeed";
+    EXPECT_TRUE(success) << "ECInstanceIds are not allowed to be negative, but compiler doesn't catch it. So conversion succeeds";
 
     ecInstanceId = ECInstanceId (123LL);
     Utf8Char smallIdBuffer[10];
@@ -74,13 +74,11 @@ TEST(ECInstanceIdHelper, ECInstanceIdInstanceIdConversion)
 
     instanceId = "-123456";
     success = ECInstanceIdHelper::FromString (actualECInstanceId, instanceId);
-    EXPECT_TRUE (success) << L"InstanceId with negative number '" << instanceId << L"' is expected to be supported by ECInstanceIdHelper::FromString";
-    EXPECT_EQ(actualECInstanceId.GetValue(), -123456LL);
+    EXPECT_FALSE (success) << L"InstanceId with negative number '" << instanceId << L"' is not expected to be supported by ECInstanceIdHelper::FromString";
 
     instanceId = "-12345678901234";
     success = ECInstanceIdHelper::FromString (actualECInstanceId, instanceId);
-    EXPECT_TRUE(success) << L"InstanceId with negative number '" << instanceId << L"' is expected to be supported by ECInstanceIdHelper::FromString";
-    EXPECT_EQ(actualECInstanceId.GetValue(), -12345678901234LL);
+    EXPECT_FALSE(success) << L"InstanceId with negative number '" << instanceId << L"' is not expected to be supported by ECInstanceIdHelper::FromString";
 
     //now test with invalid instance ids
     BeTest::SetFailOnAssert(false);

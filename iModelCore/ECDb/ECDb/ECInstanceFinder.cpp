@@ -253,13 +253,13 @@ DbResult ECInstanceFinder::FindRelationshipsOnEnd (QueryableRelationshipVector& 
     if (anyClass != nullptr)
         {
         int anyClassIdx = stmt->GetParameterIndex (":anyClassId");
-        stmt->BindInt64 (anyClassIdx, (int64_t) anyClass->GetId());
+        stmt->BindInt64 (anyClassIdx, anyClass->GetId());
         }
 
     ECClassCP foreignEndClass = ecDbSchemaManager.GetECClass (foreignEndClassId);
     BeAssert (foreignEndClass != nullptr);
     int endClassIdx = stmt->GetParameterIndex (":endClassId");
-    stmt->BindInt64 (endClassIdx, (int64_t) foreignEndClass->GetId());
+    stmt->BindInt64 (endClassIdx, foreignEndClass->GetId());
 
     while (BE_SQLITE_ROW == (result = stmt->Step()))
         {

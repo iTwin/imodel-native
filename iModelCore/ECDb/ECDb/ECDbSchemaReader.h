@@ -51,10 +51,10 @@ struct DbECClassEntry
 struct DbECEnumEntry
     {
     public:
-        uint64_t m_enumId;
+        ECEnumerationId m_enumId;
         ECN::ECEnumerationP m_cachedECEnum;
 
-        DbECEnumEntry(uint64_t enumId, ECN::ECEnumerationCR ecEnum) : m_enumId(enumId)
+        DbECEnumEntry(ECEnumerationId enumId, ECN::ECEnumerationCR ecEnum) : m_enumId(enumId)
             {
             m_cachedECEnum = const_cast<ECN::ECEnumerationP> (&ecEnum);
             }
@@ -104,8 +104,8 @@ private:
     BentleyStatus         LoadECRelationshipConstraintClassesFromDb(ECRelationshipConstraintR, Context&, ECClassId relationshipClassId, ECRelationshipEnd) const;
     BentleyStatus         LoadECSchemaDefinition(DbECSchemaEntry*&, bvector<DbECSchemaEntry*>& newlyLoadedSchemas, ECSchemaId ctxECSchemaId) const;
 
-    BentleyStatus         ReadECSchema(DbECSchemaEntry*&, Context&, ECSchemaId ctxECSchemaId, bool loadClasses) const;
-    BentleyStatus         ReadECEnumeration(ECEnumerationP&, Context&, uint64_t ecenumId) const;
+    BentleyStatus         ReadECSchema(DbECSchemaEntry*&, Context&, ECSchemaId, bool loadClasses) const;
+    BentleyStatus         ReadECEnumeration(ECEnumerationP&, Context&, ECEnumerationId) const;
 
     BentleyStatus         EnsureDerivedClassesExist(Context&, ECClassId baseClassId) const;
 

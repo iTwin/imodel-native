@@ -260,7 +260,7 @@ ECEnumerationCP ECDbSchemaReader::GetECEnumeration(Context& ctx, Utf8CP schemaNa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbSchemaReader::ReadECEnumeration(ECEnumerationP& ecEnum, Context& ctx, uint64_t enumId) const
+BentleyStatus ECDbSchemaReader::ReadECEnumeration(ECEnumerationP& ecEnum, Context& ctx, ECEnumerationId enumId) const
     {
     BeMutexHolder lock(m_criticalSection);
 
@@ -570,12 +570,10 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
             if (stmt.IsColumnNull(enumIx))
                 return ERROR;
 
-            const int64_t enumTypeId = stmt.GetValueInt64(enumIx);
-
+            const ECEnumerationId enumTypeId = stmt.GetValueInt64(enumIx);
             if (!stmt.IsColumnNull(extendedTypeIx))
                 extendedType = stmt.GetValueText(extendedTypeIx);
 
-            BeAssert(enumTypeId > 0);
             return schemaReader.ReadECEnumeration(enumeration, ctx, enumTypeId);
             }
 

@@ -136,46 +136,20 @@ void ECDb::Impl::ClearECDbCache () const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2014
 //---------------+---------------+---------------+---------------+---------------+------
-std::vector<BeBriefcaseBasedIdSequence const*> ECDb::Impl::GetSequences () const
+std::vector<BeBriefcaseBasedIdSequence const*> ECDb::Impl::GetSequences() const
     {
-    return std::move (std::vector < BeBriefcaseBasedIdSequence const* > 
-        {
-        &m_ecInstanceIdSequence, 
-        &m_ecSchemaIdSequence, 
-        &m_ecClassIdSequence, 
-        &m_ecPropertyIdSequence,
-        &m_ecEnumIdSequence,
-        &m_classmapIdSequence, 
-        &m_columnIdSequence, 
-        &m_constraintIdSequence, 
-        &m_tableIdSequence,
-        &m_propertypathIdSequence,
-        &m_indexIdSequence
-        });
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan       06/2012
-//+---------------+---------------+---------------+---------------+---------------+------
-ECDbSchemaManagerCR ECDb::Impl::Schemas() const
-    {
-    return *m_schemaManager;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  12/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-ECN::IECSchemaLocaterR ECDb::Impl::GetSchemaLocater() const
-    {
-    return *m_schemaManager;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  12/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-ECN::IECClassLocaterR ECDb::Impl::GetClassLocater() const
-    {
-    return *m_schemaManager;
+    return std::move(std::vector<BeBriefcaseBasedIdSequence const*>  {
+                                            &m_ecInstanceIdSequence,
+                                            &m_ecSchemaIdSequence,
+                                            &m_ecClassIdSequence,
+                                            &m_ecPropertyIdSequence,
+                                            &m_ecEnumIdSequence,
+                                            &m_classmapIdSequence,
+                                            &m_columnIdSequence,
+                                            &m_constraintIdSequence,
+                                            &m_tableIdSequence,
+                                            &m_propertypathIdSequence,
+                                            &m_indexIdSequence});
     }
 
 //---------------------------------------------------------------------------------------

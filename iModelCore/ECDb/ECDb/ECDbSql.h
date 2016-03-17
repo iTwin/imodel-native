@@ -18,12 +18,12 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-typedef int64_t ECDbTableId;
-typedef int64_t ECDbColumnId;
-typedef int64_t ECDbIndexId;
-typedef int64_t ECDbConstraintId;
-typedef int64_t ECDbPropertyPathId;
-typedef int64_t ECDbClassMapId;
+typedef uint64_t ECDbTableId;
+typedef uint64_t ECDbColumnId;
+typedef uint64_t ECDbIndexId;
+typedef uint64_t ECDbConstraintId;
+typedef uint64_t ECDbPropertyPathId;
+typedef uint64_t ECDbClassMapId;
 
 enum class ColumnKind
     {
@@ -93,10 +93,10 @@ enum class ECDbSqlTypeAffinity
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
-struct IIdGenerator
+struct IdGenerator
     {
 public:
-    static const int64_t UNSET_ID = 0ULL;
+    static const uint64_t UNSET_ID = INT64_C(0);
 
 private: 
     bool m_enabled;
@@ -109,10 +109,10 @@ private:
     virtual ECDbPropertyPathId _NextPropertyPathId() { return UNSET_ID; }
 
 protected:
-    IIdGenerator() : m_enabled(true) {}
+    IdGenerator() : m_enabled(true) {}
 
 public:
-    virtual ~IIdGenerator (){}
+    virtual ~IdGenerator (){}
     ECDbTableId NextTableId() { return  m_enabled ? _NextTableId() : UNSET_ID; }
     ECDbColumnId NextColumnId() { return  m_enabled ? _NextColumnId() : UNSET_ID; }
     ECDbIndexId NextIndexId() { return  m_enabled ? _NextIndexId() : UNSET_ID; }
@@ -125,9 +125,9 @@ public:
     struct DisableGeneratorScope
         {
         private:
-            IIdGenerator& m_ig;
+            IdGenerator& m_ig;
         public:
-            DisableGeneratorScope (IIdGenerator& ig)
+            DisableGeneratorScope (IdGenerator& ig)
                 :m_ig (ig)
                 {
                 m_ig.SetEnabled (false);
@@ -476,7 +476,7 @@ public:
         ECDbMapDb & GetDbDefR () { return m_dbDef; }
         ECDbSqlColumn* CreateColumn(Utf8CP name, ECDbSqlColumn::Type type, ColumnKind kind, PersistenceType persistenceType) { return CreateColumn(name, type, -1, kind, persistenceType); }
         ECDbSqlColumn* CreateSharedColumn() { return CreateColumn(nullptr, ECDbSqlColumn::Type::Any, ColumnKind::SharedDataColumn, PersistenceType::Persisted); }
-        ECDbSqlColumn* CreateColumn(Utf8CP name, ECDbSqlColumn::Type type, int position, ColumnKind kind, PersistenceType persType) { return CreateColumn(-1LL, name, type, position, kind, persType); }
+        ECDbSqlColumn* CreateColumn(Utf8CP name, ECDbSqlColumn::Type type, int position, ColumnKind kind, PersistenceType persType) { return CreateColumn(IdGenerator::UNSET_ID, name, type, position, kind, persType); }
         ECDbSqlColumn* CreateColumn(ECDbColumnId id, Utf8CP name, ECDbSqlColumn::Type type, ColumnKind kind, PersistenceType persType) { return CreateColumn(id, name, type, -1, kind, persType); }
         BentleyStatus SetMinimumSharedColumnCount(int minimumSharedColumnCount);
         BentleyStatus EnsureMinimumNumberOfSharedColumns();
@@ -726,7 +726,7 @@ struct ECDbMapStorage
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         01/2015
 //======================================================================================
-struct ECDbBriefcaseBasedId : IIdGenerator
+struct ECDbBriefcaseBasedId : IdGenerator
     {
 private:
     ECDbR m_ecdb;
@@ -739,7 +739,7 @@ private:
     virtual ECDbPropertyPathId _NextPropertyPathId () override;
 
 public:
-    explicit ECDbBriefcaseBasedId (ECDbR ecdb) :IIdGenerator (), m_ecdb (ecdb) {}
+    explicit ECDbBriefcaseBasedId (ECDbR ecdb) :IdGenerator (), m_ecdb (ecdb) {}
     virtual ~ECDbBriefcaseBasedId () {}
     };
 
@@ -800,7 +800,7 @@ struct ECDbSQLManager : public NonCopyableClass
         ECDbMapStorage const& GetMapStorage () const { return m_mapStorage; }
         void Reset () const;
         bool IsLoaded () const { return m_loaded; }
-        IIdGenerator& GetIdGenerator () {return m_idGenerator;}
+        IdGenerator& GetIdGenerator () {return m_idGenerator;}
     };
 
 //=================================================================================
