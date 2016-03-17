@@ -55,7 +55,6 @@
     <None Include="ignore_list.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Published\Base64UtilitiesTests.h" />
     <ClInclude Include="Published\bunique_ptr_test.h" />
     <ClInclude Include="Published\DateTimeTestDataset.h" />
     <ClInclude Include="Published\DateTimeTestHelpers.h" />

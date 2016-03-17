@@ -400,8 +400,12 @@ public:
     //! Convert all characters to uppercase.
     BENTLEYDLL_EXPORT static wchar_t* Wcsupr (wchar_t* s);
 
-    //! Compare two strings in a case-insensitive way. Equivalent to MSVC _wcsicmp and a character-by-character comparision in GCC. @return 0 if the strings are equal (ignoring case), otherwise a negative or positive number representing order.
+    //! Compare two strings in a case-insensitive way. Equivalent to MSVC _stricmp and a character-by-character comparision in GCC. @return 0 if the strings are equal (ignoring case), otherwise a negative or positive number representing order.
     BENTLEYDLL_EXPORT static int Stricmp (const char* s1, const char* s2);
+
+    //! Compare two strings in a case-insensitive way. Equivalent to MSVC _stricmp and a character-by-character comparision in GCC. @return 0 if the strings are equal (ignoring case), otherwise a negative or positive number representing order.
+    //! @note Use only if you know that both strings contain only ASCII characters. 
+    BENTLEYDLL_EXPORT static int StricmpAscii (const char* s1, const char* s2);
 
     //! Compare two strings in a case-insensitive way. Equivalent to MSVC _wcsicmp and a character-by-character comparision in GCC. @return 0 if the strings are equal (ignoring case), otherwise a negative or positive number representing order.
     BENTLEYDLL_EXPORT static int Wcsicmp (WCharCP lhs, WCharCP rhs);
