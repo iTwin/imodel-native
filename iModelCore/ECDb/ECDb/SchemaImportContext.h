@@ -36,7 +36,7 @@ public:
         BeAssert(!Utf8String::IsNullOrEmpty(name) && !m_columns.empty());
         }
 
-    ECDbIndexId GetId() const { BeAssert(m_id != IIdGenerator::UNSET_ID); return m_id; }
+    ECDbIndexId GetId() const { BeAssert(m_id != IdGenerator::UNSET_ID); return m_id; }
     Utf8StringCR GetName() const { return m_name; }
     ECDbSqlTable const& GetTable() const { BeAssert(m_table != nullptr); return *m_table; }
     bool GetIsUnique() const { return m_isUnique; }

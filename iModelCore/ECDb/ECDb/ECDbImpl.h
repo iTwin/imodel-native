@@ -27,10 +27,10 @@ public:
     explicit IssueReporter(ECDbCR ecdb) : m_ecdb(ecdb), m_issueListener(nullptr) {}
     ~IssueReporter() {}
 
-    BentleyStatus AddListener(ECDb::IIssueListener const& listener);
+    BentleyStatus AddListener(ECDb::IIssueListener const&);
     void RemoveListener();
 
-    bool IsSeverityEnabled(ECDbIssueSeverity severity) const;
+    bool IsSeverityEnabled(ECDbIssueSeverity) const;
 
     void Report(ECDbIssueSeverity, Utf8CP message, ...) const;
     void ReportSqliteIssue(ECDbIssueSeverity, DbResult, Utf8CP messageHeader = nullptr) const;
@@ -45,8 +45,8 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct ECDb::Impl : NonCopyableClass
     {
-    friend struct ECDb;
-        
+friend struct ECDb;
+
 private:
     struct DbFunctionKey
         {
@@ -69,18 +69,18 @@ private:
 
     struct ECSqlStatementRegistry : NonCopyableClass
         {
-    private:
-        mutable bset<ECSqlStatement::Impl*> m_statements;
-        mutable BeMutex m_mutex;
+        private:
+            mutable bset<ECSqlStatement::Impl*> m_statements;
+            mutable BeMutex m_mutex;
 
-    public:
-        ECSqlStatementRegistry() {}
+        public:
+            ECSqlStatementRegistry() {}
 
-        void Add(ECSqlStatement::Impl&) const;
-        void Remove(ECSqlStatement::Impl&) const;
+            void Add(ECSqlStatement::Impl&) const;
+            void Remove(ECSqlStatement::Impl&) const;
 
-        ECSqlStatus ReprepareStatements() const;
-        void FinalizeStatements() const;
+            ECSqlStatus ReprepareStatements() const;
+            void FinalizeStatements() const;
         };
 
     ECDbR m_ecdb;
@@ -105,12 +105,12 @@ private:
     IssueReporter m_issueReporter;
 
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
-    explicit Impl (ECDbR ecdb);
-    static DbResult Initialize (BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors);
+    explicit Impl(ECDbR ecdb);
+    static DbResult Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors);
 
-    ECDbSchemaManager const& Schemas () const;
-    ECN::IECSchemaLocaterR GetSchemaLocater () const;
-    ECN::IECClassLocaterR GetClassLocater () const;
+    ECDbSchemaManager const& Schemas() const { return *m_schemaManager; }
+    ECN::IECSchemaLocaterR GetSchemaLocater() const { return *m_schemaManager; }
+    ECN::IECClassLocaterR GetClassLocater() const { return *m_schemaManager; }
 
     BentleyStatus OnAddFunction(DbFunction&) const;
     void OnRemoveFunction(DbFunction&) const;
@@ -122,32 +122,32 @@ private:
     void RemoveIssueListener() { m_issueReporter.RemoveListener(); }
 
     void ClearECDbCache() const;
-    DbResult OnDbOpened () const;
-    DbResult OnDbCreated () const;
-    DbResult OnBriefcaseIdChanged (BeBriefcaseId newBriefcaseId);
-    void OnDbChangedByOtherConnection () const;
-    DbResult VerifySchemaVersion (Db::OpenParams const& params) const;
+    DbResult OnDbOpened() const;
+    DbResult OnDbCreated() const;
+    DbResult OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId);
+    void OnDbChangedByOtherConnection() const;
+    DbResult VerifySchemaVersion(Db::OpenParams const& params) const;
 
     //other private methods
-    std::vector<BeBriefcaseBasedIdSequence const*> GetSequences () const;
+    std::vector<BeBriefcaseBasedIdSequence const*> GetSequences() const;
 
 public:
     ~Impl() {}
 
-    ECDbMap const& GetECDbMap () const { return *m_ecdbMap; }
+    ECDbMap const& GetECDbMap() const { return *m_ecdbMap; }
 
-    DbResult ResetSequences (BeBriefcaseId* repoId = nullptr);
-    BeBriefcaseBasedIdSequence& GetECInstanceIdSequence () { return m_ecInstanceIdSequence; }
-    BeBriefcaseBasedIdSequence& GetECSchemaIdSequence () {return m_ecSchemaIdSequence; }
-    BeBriefcaseBasedIdSequence& GetECClassIdSequence () { return m_ecClassIdSequence; }
-    BeBriefcaseBasedIdSequence& GetECPropertyIdSequence () { return m_ecPropertyIdSequence; }
+    DbResult ResetSequences(BeBriefcaseId* repoId = nullptr);
+    BeBriefcaseBasedIdSequence& GetECInstanceIdSequence() { return m_ecInstanceIdSequence; }
+    BeBriefcaseBasedIdSequence& GetECSchemaIdSequence() { return m_ecSchemaIdSequence; }
+    BeBriefcaseBasedIdSequence& GetECClassIdSequence() { return m_ecClassIdSequence; }
+    BeBriefcaseBasedIdSequence& GetECPropertyIdSequence() { return m_ecPropertyIdSequence; }
     BeBriefcaseBasedIdSequence& GetECEnumIdSequence() { return m_ecEnumIdSequence; }
-    BeBriefcaseBasedIdSequence& GetTableIdSequence () { return m_tableIdSequence; }
-    BeBriefcaseBasedIdSequence& GetColumnIdSequence () { return m_columnIdSequence; }
-    BeBriefcaseBasedIdSequence& GetIndexIdSequence () { return m_indexIdSequence; }
-    BeBriefcaseBasedIdSequence& GetConstraintIdSequence () { return m_constraintIdSequence; }
-    BeBriefcaseBasedIdSequence& GetClassMapIdSequence () { return m_classmapIdSequence; }
-    BeBriefcaseBasedIdSequence& GetPropertyMapIdSequence () { return m_propertypathIdSequence; }
+    BeBriefcaseBasedIdSequence& GetTableIdSequence() { return m_tableIdSequence; }
+    BeBriefcaseBasedIdSequence& GetColumnIdSequence() { return m_columnIdSequence; }
+    BeBriefcaseBasedIdSequence& GetIndexIdSequence() { return m_indexIdSequence; }
+    BeBriefcaseBasedIdSequence& GetConstraintIdSequence() { return m_constraintIdSequence; }
+    BeBriefcaseBasedIdSequence& GetClassMapIdSequence() { return m_classmapIdSequence; }
+    BeBriefcaseBasedIdSequence& GetPropertyMapIdSequence() { return m_propertypathIdSequence; }
 
     bool TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) const;
 

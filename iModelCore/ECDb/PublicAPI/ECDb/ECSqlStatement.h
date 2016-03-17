@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ECSqlStatement.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -302,6 +302,14 @@ public:
     //!   those types can implicitly be converted into each other.
     //! - @p columnIndex is out of bounds
     ECDB_EXPORT int64_t GetValueInt64(int columnIndex) const;
+
+    //! Gets the value of the specific column as an uint64_t value.
+    //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
+    //! @return Column value as uint64_t
+    //! @note Possible errors:
+    //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
+    //!   those types can implicitly be converted into each other.
+    //! - @p columnIndex is out of bounds
     uint64_t GetValueUInt64(int columnIndex) const {return (uint64_t) GetValueInt64(columnIndex);}
 
     //! Gets the Point2D value of the specific column.

@@ -425,7 +425,7 @@ BentleyStatus SchemaImportECDbMapDb::ReadIndexInfosFromDb(ECDbCR ecdb) const
 
     while (stmt->Step() == BE_SQLITE_ROW)
         {
-        int64_t id = stmt->GetValueInt64(0);
+        ECDbIndexId id = stmt->GetValueInt64(0);
         Utf8CP tableName = stmt->GetValueText(1);
         Utf8CP name = stmt->GetValueText(2);
         bool isUnique = stmt->GetValueInt(3) == 1;

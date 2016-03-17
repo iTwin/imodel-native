@@ -127,7 +127,8 @@ enum class ForeignKeyActionType
     Restrict,
     };
 
-typedef int64_t ECContainerId;
+typedef uint64_t ECEnumerationId; //should actually be in ECObjects, but ECEnumeration doesn't have Id yet in ECObjects - only in ECDb
+typedef uint64_t ECContainerId;
 
 enum class MapStatus 
     {
