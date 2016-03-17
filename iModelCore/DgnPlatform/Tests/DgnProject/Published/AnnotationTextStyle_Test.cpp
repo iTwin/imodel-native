@@ -64,7 +64,13 @@ TEST(BasicAnnotationTextStyleTest, PropertyBagTypes)
     bool isItalic = true;                                                                       STYLE_PTR->SetIsItalic(isItalic);\
     bool isUnderlined = true;                                                                   STYLE_PTR->SetIsUnderlined(isUnderlined);\
     AnnotationStackedFractionType fractionType = AnnotationStackedFractionType::DiagonalBar;    STYLE_PTR->SetStackedFractionType(fractionType);\
-    double widthFactor = 41.41;                                                                 STYLE_PTR->SetWidthFactor(widthFactor);
+    double widthFactor = 41.41;                                                                 STYLE_PTR->SetWidthFactor(widthFactor);\
+    double lineSpaceFactor = 1.5;                                                               STYLE_PTR->SetLineSpacingFactor(lineSpaceFactor);\
+    double stackedFractionScale = 1.5;                                                          STYLE_PTR->SetStackedFractionScale(stackedFractionScale);\
+    double subScriptOffsetFactor = 1.5;                                                         STYLE_PTR->SetSubScriptOffsetFactor(subScriptOffsetFactor);\
+    double subScriptScale = 1.5;                                                                STYLE_PTR->SetSubScriptScale(subScriptScale);\
+    double superScriptOffsetFactor = 1.5;                                                       STYLE_PTR->SetSuperScriptOffsetFactor(superScriptOffsetFactor);\
+    double superScriptScale = 1.5;                                                              STYLE_PTR->SetSuperScriptScale(superScriptScale);
 
 #define VERIFY_DATA_1(STYLE_PTR)\
     EXPECT_TRUE(name.Equals(STYLE_PTR->GetName()));\
@@ -77,7 +83,13 @@ TEST(BasicAnnotationTextStyleTest, PropertyBagTypes)
     EXPECT_TRUE(isItalic == STYLE_PTR->IsItalic());\
     EXPECT_TRUE(isUnderlined == STYLE_PTR->IsUnderlined());\
     EXPECT_TRUE(fractionType == STYLE_PTR->GetStackedFractionType());\
-    EXPECT_TRUE(widthFactor == STYLE_PTR->GetWidthFactor());
+    EXPECT_TRUE(widthFactor == STYLE_PTR->GetWidthFactor());\
+    EXPECT_TRUE(lineSpaceFactor == STYLE_PTR->GetLineSpacingFactor());\
+    EXPECT_TRUE(stackedFractionScale == STYLE_PTR->GetStackedFractionScale());\
+    EXPECT_TRUE(subScriptOffsetFactor == STYLE_PTR->GetSubScriptOffsetFactor());\
+    EXPECT_TRUE(subScriptScale == STYLE_PTR->GetSubScriptScale());\
+    EXPECT_TRUE(superScriptOffsetFactor == STYLE_PTR->GetSuperScriptOffsetFactor());\
+    EXPECT_TRUE(superScriptScale == STYLE_PTR->GetSuperScriptScale());
 
 //---------------------------------------------------------------------------------------
 // Creates a style and tests accessors.
