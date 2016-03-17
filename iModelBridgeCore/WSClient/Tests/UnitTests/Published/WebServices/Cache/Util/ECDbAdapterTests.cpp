@@ -169,8 +169,8 @@ TEST_F(ECDbAdapterTests, GetECClasses_MapWithTwoSameClassInstances_ReturnsOneCla
     ECClassCP ecClass = ECDbAdapter(*db).GetECClass("TestSchema.TestClass");
 
     ECInstanceKeyMultiMap map;
-    map.insert({ecClass->GetId(), ECInstanceId(1)});
-    map.insert({ecClass->GetId(), ECInstanceId(2)});
+    map.insert({ecClass->GetId(), ECInstanceId(UINT64_C(1))});
+    map.insert({ecClass->GetId(), ECInstanceId(UINT64_C(2))});
 
     auto classes = ECDbAdapter(*db).GetECClasses(map);
 

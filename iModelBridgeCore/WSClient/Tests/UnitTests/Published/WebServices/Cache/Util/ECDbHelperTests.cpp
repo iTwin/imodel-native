@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Util/ECDbHelperTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -15,8 +15,8 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 TEST_F(ECDbHelperTests, Erase_MultipleInstanceKeysInMap_ErasesSpecificKeyFromMap)
     {
-    ECInstanceKey key1(1, ECInstanceId(2));
-    ECInstanceKey key2(1, ECInstanceId(3));
+    ECInstanceKey key1(1, ECInstanceId(UINT64_C(2)));
+    ECInstanceKey key2(1, ECInstanceId(UINT64_C(3)));
 
     ECInstanceKeyMultiMap map;
     map.insert(ECDbHelper::ToPair(key1));
@@ -26,15 +26,15 @@ TEST_F(ECDbHelperTests, Erase_MultipleInstanceKeysInMap_ErasesSpecificKeyFromMap
     ECDbHelper::Erase(map, key1);
 
     ASSERT_EQ(1, map.size());
-    ASSERT_EQ(ECInstanceId(3), map.begin()->second);
+    ASSERT_EQ(ECInstanceId(UINT64_C(3)), map.begin()->second);
     }
 
 TEST_F(ECDbHelperTests, ToECInstanceIdList_MultipleInstanceKeysInMap_CombinesToCommaSeperatedList)
     {
     ECInstanceKeyMultiMap map;
-    map.insert({1, ECInstanceId(4)});
-    map.insert({2, ECInstanceId(5)});
-    map.insert({2, ECInstanceId(6)});
+    map.insert({1, ECInstanceId(UINT64_C(4))});
+    map.insert({2, ECInstanceId(UINT64_C(5))});
+    map.insert({2, ECInstanceId(UINT64_C(6))});
 
     EXPECT_STREQ("4,5,6", ECDbHelper::ToECInstanceIdList(map.begin(), map.end()).c_str());
     }

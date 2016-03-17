@@ -92,9 +92,9 @@ IECInstancePtr StubInstance(ECSchemaPtr ecSchema);
 
 IECInstancePtr StubInstance(ECClassCP ecClass);
 
-ECInstanceKey StubECInstanceKey(int64_t classId = 1, int64_t instanceId = 1);
+ECInstanceKey StubECInstanceKey(uint64_t classId = 1, uint64_t instanceId = 1);
 
-bpair<ECClassId, ECInstanceId> StubECInstanceKeyPair(int64_t classId = 1, int64_t instanceId = 1);
+bpair<ECClassId, ECInstanceId> StubECInstanceKeyPair(uint64_t classId = 1, uint64_t instanceId = 1);
 
 ECInstanceKey StubInstanceInCache(
     IDataSourceCache& cache,

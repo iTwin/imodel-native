@@ -169,20 +169,20 @@ DgnPlatformLib::Host::IKnownLocationsAdmin& DgnDbServerHost::_SupplyIKnownLocati
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              01/2016
 //---------------------------------------------------------------------------------------
-bool BeInt64IdFromJson (BeSQLite::BeInt64Id& id, JsonValueCR value)
+bool BeInt64IdFromJson (BeInt64Id& id, JsonValueCR value)
     {
     if (value.isNull ())
         return false;
 
     if (value.isString ())
         {
-        uint64_t idParssed;
-        if (SUCCESS != BeStringUtilities::ParseUInt64 (idParssed, value.asCString ()))
+        uint64_t idParsed;
+        if (SUCCESS != BeStringUtilities::ParseUInt64 (idParsed, value.asCString ()))
             return false;
-        id = BeSQLite::BeInt64Id ((int64_t)idParssed);
+        id = BeInt64Id (idParsed);
         }
     else
-        id = BeSQLite::BeInt64Id (value.asInt64 ());
+        id = BeInt64Id((uint64_t) value.asInt64 ());
 
     return true;
     }
@@ -204,7 +204,7 @@ bool StringFromJson (Utf8StringR result, JsonValueCR value)
 //---------------------------------------------------------------------------------------
 bool GetLockFromServerJson (JsonValueCR serverJson, DgnLockR lock, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId)
     {
-    BeSQLite::BeInt64Id id;
+    BeInt64Id id;
     LockLevel           level;
     LockableType        type;
 
