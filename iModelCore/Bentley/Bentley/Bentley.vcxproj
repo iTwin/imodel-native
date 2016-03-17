@@ -59,6 +59,7 @@
     <ClInclude Include="..\PublicAPI\Bentley\BeFileListIterator.h" />
     <ClInclude Include="..\PublicAPI\Bentley\BeFileName.h" />
     <ClInclude Include="..\PublicAPI\Bentley\BeIconUtilities.h" />
+    <ClInclude Include="..\PublicAPI\Bentley\BeId.h" />
     <ClInclude Include="..\PublicAPI\Bentley\BeJStringUtilities.h" />
     <ClInclude Include="..\PublicAPI\Bentley\Bentley.h" />
     <ClInclude Include="..\PublicAPI\Bentley\Bentley.r.h" />
