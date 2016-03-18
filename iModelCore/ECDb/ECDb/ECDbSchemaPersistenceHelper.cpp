@@ -20,7 +20,7 @@ bool ECDbSchemaPersistenceHelper::ContainsECClass(ECDbCR db, ECClassCR ecClass)
 
     const ECClassId classId = GetECClassId(db, ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), ResolveSchema::BySchemaName);
 
-    return classId > ECClass::UNSET_ECCLASSID;
+    return classId != ECClass::UNSET_ECCLASSID;
     }
     
 //---------------------------------------------------------------------------------------

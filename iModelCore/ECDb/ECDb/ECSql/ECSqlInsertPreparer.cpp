@@ -156,14 +156,14 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoLinkTableRelationship(ECSqlPre
     {
     PreparePrimaryKey(ctx, nativeSqlSnippets, relationshipClassMap);
 
-    if (sourceECClassId >= ECClass::UNSET_ECCLASSID)
+    if (sourceECClassId != ECClass::UNSET_ECCLASSID)
         {
         ECSqlStatus stat = PrepareConstraintClassId(nativeSqlSnippets, ctx, *relationshipClassMap.GetSourceECClassIdPropMap(), sourceECClassId);
         if (!stat.IsSuccess())
             return stat;
         }
 
-    if (targetECClassId >= ECClass::UNSET_ECCLASSID)
+    if (targetECClassId != ECClass::UNSET_ECCLASSID)
         {
         ECSqlStatus stat = PrepareConstraintClassId(nativeSqlSnippets, ctx, *relationshipClassMap.GetTargetECClassIdPropMap(), targetECClassId);
         if (!stat.IsSuccess())
@@ -290,7 +290,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
     std::sort(expIndexSkipList.begin(), expIndexSkipList.end());
 
     auto referencedEndClassId = foreignEnd == ECRelationshipEnd_Source ? targetECClassId : sourceECClassId;
-    if (referencedEndClassId >= ECClass::UNSET_ECCLASSID)
+    if (referencedEndClassId != ECClass::UNSET_ECCLASSID)
         {
         if (referencedEndECClassIdIndex > 0)
             {
@@ -545,7 +545,7 @@ ECSqlStatus ECSqlInsertPreparer::GetConstraintClassIdExpValue(bool& isParameter,
 //static
 ECSqlStatus ECSqlInsertPreparer::PrepareConstraintClassId(NativeSqlSnippets& insertNativeSqlSnippets, ECSqlPrepareContext& ctx, ECClassIdRelationshipConstraintPropertyMap const& constraintClassIdPropMap, ECClassId constraintClassId)
     {
-    BeAssert(constraintClassId >= ECClass::UNSET_ECCLASSID);
+    BeAssert(constraintClassId != ECClass::UNSET_ECCLASSID);
     //if constraint class id maps to virtual column then ignore it as the column does not exist in the table.
     if (constraintClassIdPropMap.IsVirtual())
         return ECSqlStatus::Success;

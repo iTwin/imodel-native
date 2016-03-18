@@ -156,7 +156,7 @@ public:
             : m_ecClassId (ecClassId), m_ecInstanceIdBinder (nullptr), m_userProvidedECInstanceId (userProvidedLiteral)
             {}
 
-        ECN::ECClassId GetECClassId() const { BeAssert(m_ecClassId > ECN::ECClass::UNSET_ECCLASSID); return m_ecClassId; }
+        ECN::ECClassId GetECClassId() const { BeAssert(m_ecClassId != ECN::ECClass::UNSET_ECCLASSID); return m_ecClassId; }
 
         ECSqlBinder* GetECInstanceIdBinder () const { return m_ecInstanceIdBinder; }
         bool HasUserProvidedECInstanceId () const {return m_userProvidedECInstanceId.IsValid ();}
