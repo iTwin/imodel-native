@@ -845,7 +845,7 @@ public:
         {
         if (!s_streamingSM)
             {
-			//m_numWorkingThreads = std::thread::hardware_concurrency() - 1;
+            //m_numWorkingThreads = std::thread::hardware_concurrency() - 1;
             m_numWorkingThreads = 1;
             }
         else
@@ -1313,7 +1313,7 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
 
         CachedDisplayNodeManager::GetManager().ReleaseNodeListLock();
 
-        assert(lowerResOverviewNodes.size() > 0 || (nodesToSearch.GetNodes().size() - currentInd - 1)) == 0);
+        assert(lowerResOverviewNodes.size() > 0 || (nodesToSearch.GetNodes().size() - currentInd - 1) == 0);
         
         newQuery.m_overviewMeshNodes.insert(newQuery.m_overviewMeshNodes.end(), lowerResOverviewNodes.begin(), lowerResOverviewNodes.end());        
 
