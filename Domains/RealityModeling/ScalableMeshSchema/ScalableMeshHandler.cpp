@@ -15,9 +15,27 @@
 #include <ScalableMesh\GeoCoords\GCS.h>
 
 
+
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_SCHEMA
+
+
+//#define PRINT_SMDISPLAY_MSG
+
+/*
+#ifndef NDEBUG
+#define PRINT_TERRAIN_MSG 1
+#endif
+*/
+
+#ifdef PRINT_SMDISPLAY_MSG
+#define PRINT_MSG_IF(condition, ...) if(##condition##) printf(__VA_ARGS__);
+#define PRINT_MSG(...) printf(__VA_ARGS__);
+#else
+#define PRINT_MSG_IF(condition, ...)
+#define PRINT_MSG(...) 
+#endif
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
@@ -182,16 +200,23 @@ struct SmCachedGraphics : TransientCachedGraphics
     };
 
 
+static bool s_waitCheckStop = false;
 
 void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes,
-                              bvector<IScalableMeshCachedDisplayNodePtr>& overviewMeshNodes,                                                                                          
+                              bvector<IScalableMeshCachedDisplayNodePtr>& overviewMeshNodes,
                               ViewContextR                                context, 
                               const DMatrix4d&                            storageToUors)
     {    
+
+#ifdef PRINT_SMDISPLAY_MSG
+    PRINT_MSG("ProgressiveDrawMeshNode2 meshNode : %I64u overviewMeshNode : %I64u \n", meshNodes.size(), overviewMeshNodes.size());
+#endif
+
     static size_t s_callCount = 0;
     
     bool isOutputQuickVision = context.GetIViewDraw ().IsOutputQuickVision();
 
+    assert(overviewMeshNodes.size() > 0 || meshNodes.size() > 0);
     assert(isOutputQuickVision == true);
 
     /*ElemMatSymbP matSymbP = context.GetElemMatSymb ();
@@ -202,6 +227,15 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
     
     context.ResetContextOverrides(); // If not reset, last drawn override is applyed to dtm (Selected/Hide preview)
     context.GetIDrawGeom ().ActivateMatSymb (matSymbP);*/
+
+    if (s_waitCheckStop)
+        {
+        while (!context.CheckStop())
+            {
+            }
+        }
+
+
       
     Transform storageToUorsTransform;
     storageToUorsTransform.InitFrom(storageToUors);
@@ -209,7 +243,7 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
 
     bvector<IScalableMeshCachedDisplayNodePtr> requestedNodes;
     bvector<IScalableMeshCachedDisplayNodePtr> nodesWithoutQvElem;
-
+    
     if (overviewMeshNodes.size() > 0)
         {
         //NEEDS_WORK_SM : If kept needs clean up
@@ -446,6 +480,8 @@ protected:
                                     DMatrix4d&                              storageToUorsTransfo) 
     : m_storageToUorsTransfo(storageToUorsTransfo)
         { 
+        DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT
+
         m_progressiveQueryEngine = progressiveQueryEngine;
         m_currentDrawingInfoPtr = currentDrawingInfoPtr;        
         }
@@ -476,7 +512,11 @@ virtual Completion _Process(ViewContextR viewContext) override
 
             assert(status == SUCCESS);
 
-            completionStatus = Completion::HealRequired;            
+            completionStatus = Completion::HealRequired; 
+
+#ifdef PRINT_SMDISPLAY_MSG        
+            PRINT_MSG("Heal required  meshNode : %I64u overviewMeshNode : %I64u \n", m_currentDrawingInfoPtr->m_meshNodes.size(), m_currentDrawingInfoPtr->m_overviewNodes.size());       
+#endif
             }
         else
             {                                                
@@ -485,15 +525,15 @@ virtual Completion _Process(ViewContextR viewContext) override
             assert(status == SUCCESS);                                  
 
             completionStatus = Completion::Aborted;
+
+            if (s_drawInProcess)
+                ProgressiveDrawMeshNode2(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, viewContext, m_storageToUorsTransfo);                                                      
             }
         }
     else
         {
         completionStatus = Completion::Finished;
-        }
-
-    if (s_drawInProcess)
-        ProgressiveDrawMeshNode2(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, viewContext, m_storageToUorsTransfo);                              
+        }        
             
     return completionStatus;
     }
@@ -506,9 +546,9 @@ static void Schedule (IScalableMeshProgressiveQueryEnginePtr& progressiveQueryEn
                       DMatrix4d&                              storageToUorsTransfo, 
                       ViewContextR                            context) 
     {
-    ScalableMeshProgressiveDisplay* progressiveDisplay = new ScalableMeshProgressiveDisplay(progressiveQueryEngine,
-                                                                                            currentDrawingInfoPtr,
-                                                                                            storageToUorsTransfo);
+    RefCountedPtr<ScalableMeshProgressiveDisplay> progressiveDisplay(new ScalableMeshProgressiveDisplay(progressiveQueryEngine,
+                                                                                                        currentDrawingInfoPtr,
+                                                                                                        storageToUorsTransfo));
     
     context.GetViewport()->ScheduleProgressiveDisplay (*progressiveDisplay);
     }
@@ -540,6 +580,8 @@ bool ShouldDrawInContext (ViewContextR context)
     return true;
     }
 
+static bool s_loadTexture = true;
+static bool s_waitQueryComplete = false;
 
 void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     {    
@@ -640,12 +682,20 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     status = m_progressiveQueryEngine->StartQuery(queryId, 
                                                   viewDependentQueryParams, 
                                                   m_currentDrawingInfoPtr->m_meshNodes, 
-                                                  !IsWireframeRendering(context), 
+                                                  !IsWireframeRendering(context) && s_loadTexture, 
                                                   clips,
                                                   &m_currentDrawingInfoPtr->GetLocalToViewTransform(), 
                                                   &nextDrawingInfoPtr->GetLocalToViewTransform()); 
 
     assert(status == SUCCESS);
+
+
+    if (s_waitQueryComplete)
+        {
+        while (!m_progressiveQueryEngine->IsQueryComplete(queryId))
+            {
+            }
+        }
 
     bool needProgressive;
     
@@ -653,6 +703,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         {
         m_currentDrawingInfoPtr->m_meshNodes.clear();
         status = m_progressiveQueryEngine->GetQueriedNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
+        assert(m_currentDrawingInfoPtr->m_meshNodes.size() > 0);
         m_currentDrawingInfoPtr->m_overviewNodes.clear();
         assert(status == SUCCESS);
         needProgressive = false;
