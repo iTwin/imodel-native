@@ -549,7 +549,7 @@ struct ECObjectChange : ECChange
             }
     protected:
         template<typename T>
-        T& Get(ECChange::SystemId systemId)
+        T& Get(SystemId systemId)
             {
             static_assert(std::is_base_of<ECChange, T>::value, "T not derived from ECChange");
             Utf8CP customId = Convert(systemId).c_str();
