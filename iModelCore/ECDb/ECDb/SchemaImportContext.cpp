@@ -490,8 +490,8 @@ BentleyStatus SchemaImportECDbMapDb::InsertIndexInfoIntoDb(ECDbCR ecdb, ECDbSqlI
     DbResult stat = stmt->Step();
     if (stat != BE_SQLITE_DONE)
         {
-        LOG.errorv("Failed to insert index metadata into " EC_INDEX_TableName " for index %s (Id: %lld): %s",
-                   index.GetName().c_str(), index.GetId(), ecdb.GetLastError().c_str());
+        LOG.errorv("Failed to insert index metadata into " EC_INDEX_TableName " for index %s (Id: %llu): %s",
+                   index.GetName().c_str(), index.GetId().GetValue(), ecdb.GetLastError().c_str());
         return ERROR;
         }
 
@@ -510,8 +510,8 @@ BentleyStatus SchemaImportECDbMapDb::InsertIndexInfoIntoDb(ECDbCR ecdb, ECDbSqlI
         stat = indexColStmt->Step();
         if (stat != BE_SQLITE_DONE)
             {
-            LOG.errorv("Failed to insert index column metadata into " EC_INDEXCOLUMN_TableName " for index %s (Id: %lld) and column %s (Id: %lld): %s",
-                       index.GetName().c_str(), index.GetId(), col->GetName().c_str(), col->GetId(), ecdb.GetLastError().c_str());
+            LOG.errorv("Failed to insert index column metadata into " EC_INDEXCOLUMN_TableName " for index %s (Id: %llu) and column %s (Id: %llu): %s",
+                       index.GetName().c_str(), index.GetId().GetValue(), col->GetName().c_str(), col->GetId().GetValue(), ecdb.GetLastError().c_str());
             return ERROR;
             }
 
