@@ -37,7 +37,6 @@ enum class PropertyType
     Struct,
     StructArray,
     Navigation,
-    ExtendedType,
     };
 enum class ChangeMode
     {
@@ -293,80 +292,85 @@ struct Binary
             _free();
             }
     };
+    enum SystemId : uint32_t
+        {
+        NONE,
 
+        ALTERNATIVEPRESENTATIONUNITLIST,
+        ARRAY,
+        CARDINALITY,
+        CLASSES,
+        CLASS,
+        CLASSMODIFIER,
+        CLASSFULLNAME,
+        CONSTANTKEY,
+        CONSTRAINTCLASS,
+        CONSTRAINTCLASSES,
+        CONSTRAINT,
+        CUSTOMATTRIBTUES,
+        DEFAULTPRESENTATIONUNIT,
+        DESCRIPTION,
+        DIRECTION,
+        DISPLAYLABEL,
+        ENUMERATION,
+        ENUMERATIONS,
+        ENUMERATOERS,
+        ENUMERATOR,
+        ENUMERATORS,
+        EXTENDEDTYPENAME,
+        INSTANCE,
+        INSTANCES,
+        INTEGER,
+        ISCUSTOMATTRIBUTECLASS,
+        ISENTITYCLASS,
+        ISPOLYMORPHIC,
+        ISREADONLY,
+        ISRELATIONSHIPCLASS,
+        ISSTRICT,
+        ISSTRUCTCLASS,
+        ISSTRUCT,
+        ISSTRUCTARRAY,
+        ISPRIMITIVE,
+        ISPRIMITIVEARRAY,
+        ISNAVIGATION,        
+        KEYPROPERTIES,
+        KEYPROPERTY,
+        KINDOFQUANTITIES,
+        KINDOFQUANTITY,
+        MAXIMUMVALUE,
+        MAXOCCURS,
+        MINIMUMVALUE,
+        MINOCCURS,
+        NAME,
+        NAMESPACEPREFIX,
+        NAVIGATION,
+        PERSISTENCEUNIT,
+        PRECISION,
+        PROPERTIES,
+        PROPERTY,
+        PROPERTYTYPE,
+        REFERENCES,
+        REFERENCE,
+        RELATIONSHIP,
+        RELATIONSHIPNAME,
+        ROLELABEL,
+        SCHEMA,
+        SCHEMAS,
+        SOURCE,
+        STRENGTHDIRECTION,
+        STRENGTHTYPE,
+        STRING,
+        TARGET,
+        TYPENAME,
+        VERSIONMAJOR,
+        VERSIONMINOR,
+        VERSIONWRITE,
+        };
 struct ECChange
     {
     public:
         typedef std::unique_ptr<ECChange> Ptr;
-        enum SystemId : uint32_t
-            {
-            NONE,
-
-            ALTERNATIVEPRESENTATIONUNITLIST,
-            ARRAY,
-            CARDINALITY,
-            CLASSES,
-            CLASS,
-            CLASSMODIFIER,
-            CLASSFULLNAME,
-            CONSTANTKEY,
-            CONSTRAINTCLASS,
-            CONSTRAINTCLASSES,
-            CONSTRAINT,
-            CUSTOMATTRIBTUES,
-            DEFAULTPRESENTATIONUNIT,
-            DESCRIPTION,
-            DIRECTION,
-            DISPLAYLABEL,
-            ENUMERATION,
-            ENUMERATIONS,
-            ENUMERATOERS,
-            ENUMERATOR,
-            ENUMERATORS,
-            EXTENDEDTYPENAME,
-            INSTANCE,
-            INSTANCES,
-            INTEGER,
-            ISCUSTOMATTRIBUTECLASS,
-            ISENTITYCLASS,
-            ISPOLYMORPHIC,
-            ISREADONLY,
-            ISRELATIONSHIPCLASS,
-            ISSTRICT,
-            ISSTRUCTCLASS,
-            KEYPROPERTIES,
-            KEYPROPERTY,
-            KINDOFQUANTITIES,
-            KINDOFQUANTITY,
-            MAXIMUMVALUE,
-            MAXOCCURS,
-            MINIMUMVALUE,
-            MINOCCURS,
-            NAME,
-            NAMESPACEPREFIX,
-            NAVIGATION,
-            PERSISTENCEUNIT,
-            PRECISION,
-            PROPERTIES,
-            PROPERTY,
-            PROPERTYTYPE,
-            REFERENCES,
-            REFERENCE,
-            RELATIONSHIP,
-            RELATIONSHIPNAME,
-            ROLELABEL,
-            SCHEMA,
-            SCHEMAS,
-            SOURCE,
-            STRENGTHDIRECTION,
-            STRENGTHTYPE,
-            STRING,
-            TARGET,
-            TYPENAME,
-            VERSIONMAJOR,
-            VERSIONMINOR,
-            VERSIONWRITE,
-            };
+   
     private:
         static std::map<Utf8CP, SystemId, CompareUtf8> const& GetStringToTypeMap()
             {
@@ -417,6 +421,11 @@ struct ECChange
                         {ISRELATIONSHIPCLASS, "IsRelationshipClass"},
                         {ISSTRICT, "IsStict"},
                         {ISSTRUCTCLASS, "IsStructClass"},
+                        {ISSTRUCT, "IsStruct"},
+                        {ISSTRUCTARRAY, "IsStructArray"},
+                        {ISPRIMITIVE, "IsPrimitive"},
+                        {ISPRIMITIVEARRAY, "IsPrimitiveArray"},
+                        {ISNAVIGATION, "IsNavigation"},
                         {KEYPROPERTIES, "KeyProperties"},
                         {KEYPROPERTY, "KeyProperty"},
                         {KINDOFQUANTITIES, "KindOfQuantities"},
@@ -432,7 +441,6 @@ struct ECChange
                         {PRECISION, "Precision"},
                         {PROPERTIES, "Properties"},
                         {PROPERTY, "Property"},
-                        {PROPERTYTYPE, "PropertyType"},
                         {REFERENCE, "Reference"},
                         {REFERENCES, "References"},
                         {RELATIONSHIP, "Relationship"},
@@ -715,6 +723,8 @@ struct StringChanges : ECChangeArray<StringChange>
             {}
         virtual ~StringChanges() {}
     };
+
+
 template<typename T>
 struct ECPrimitiveChange : ECChange 
     {
@@ -894,14 +904,7 @@ struct Int64Change: ECPrimitiveChange<int64_t>
             {}
         virtual ~Int64Change() {}
     };
-struct PropertyTypeChange : ECPrimitiveChange<PropertyType>
-    {
-    public:
-        PropertyTypeChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECPrimitiveChange<PropertyType>(state, systemId, parent, customId)
-            {}
-        virtual ~PropertyTypeChange() {}
-    };
+
 struct StrengthTypeChange : ECPrimitiveChange<ECN::StrengthType>
     {
     public:
@@ -960,7 +963,6 @@ struct ECEnumeratorChange :ECObjectChange
             }
         virtual ~ECEnumeratorChange() {}
         StringChange& GetDisplayLabel() { return Get<StringChange>(DISPLAYLABEL); }
-        StringChange& GetDescription() { return Get<StringChange>(DESCRIPTION); }
         StringChange& GetString() { return Get<StringChange>(STRING); }
         Int32Change& GetInteger() { return Get<Int32Change>(INTEGER); }
     };
@@ -1116,7 +1118,13 @@ struct ECPropertyChange :ECObjectChange
         StringChange& GetTypeName() { return Get<StringChange>(TYPENAME); }
         StringChange& GetMaximumValue() { return Get<StringChange>(MAXIMUMVALUE); }
         StringChange& GetMinimumValue() { return Get<StringChange>(MINIMUMVALUE); }
-        PropertyTypeChange& GetPropertyType() { return Get<PropertyTypeChange>(PROPERTYTYPE); }
+        BooleanChange& IsStruct() { return Get<BooleanChange>(ISSTRICT); }
+        BooleanChange& IsStructArray() { return Get<BooleanChange>(ISSTRUCTARRAY); }
+        BooleanChange& IsPrimitive() { return Get<BooleanChange>(ISPRIMITIVE); }
+        BooleanChange& IsPrimitiveArray() { return Get<BooleanChange>(ISPRIMITIVEARRAY); }
+        BooleanChange& IsNavigation() { return Get<BooleanChange>(ISNAVIGATION); }
+
+
         ArrayChange& GetArray() { return Get<ArrayChange>(ARRAY); }
         NavigationChange& GetNavigation() { return Get<NavigationChange>(NAVIGATION); }
         StringChange& GetExtendedTypeName() { return Get<StringChange>(EXTENDEDTYPENAME); }
@@ -1161,7 +1169,6 @@ struct ECSchemaComparer
 
         return CompareCustomAttributes(change.CustomAttributes(), a, b);
         }
-
     BentleyStatus CompareECClass(ECClassChange& change, ECClassCR a, ECClassCR b)
         {
         if (a.GetName() != b.GetName())
@@ -1224,7 +1231,6 @@ struct ECSchemaComparer
 
          return CompareECRelationshipConstraint(change.GetTarget(), a.GetTarget(), b.GetTarget());
         }
-
     BentleyStatus CompareECRelationshipConstraint(ECRelationshipConstraintChange& change, ECRelationshipConstraintCR a, ECRelationshipConstraintCR b)
         {
         if (a.GetRoleLabel() != b.GetRoleLabel())
@@ -1238,107 +1244,491 @@ struct ECSchemaComparer
 
         return CompareECRelationshipConstraintClasses(change.ConstraintClasses(), a.GetConstraintClasses(), b.GetConstraintClasses());
         }
-    template<typename S>
-    S Union(const S& s1, const S& s2)
-        {
-        S result = s1;
-
-        result.insert(s2.cbegin(), s2.cend());
-
-        return result;
-        }
-
-    template<typename T, typename Y>
-    ChangeState Compare(T const& value,  std::map<T, Y>& s1,  std::map<T, Y>& s2, Y * s1Item, Y * s2Item)
-        {
-        *s1Item = nullptr;
-        *s2Item = nullptr;
-
-        auto itorA = s1.find(value);
-        auto itorB = s2.find(value);
-
-        bool existInA = itorA != s1.end();
-        bool existInB = itorB != s2.end();
-        if (existInA && existInB) 
-            {
-            *s1Item = itorA.second;
-            *s2Item = itorB.second;
-            return ChangeState::Modified;
-            }
-        else if (existInA && !existInB)
-            {
-            *s1Item = itorA.second;
-            return ChangeState::Deleted;
-            }
-        else if (!existInA && existInB)
-            {
-            *s2Item = itorB.second;
-            return ChangeState::New;
-            }
-        BeAssert(false && "value must exist in atleast one of the map");
-        return static_cast<ChangeState>(0);
-        }
     BentleyStatus CompareECRelationshipConstraintClassKeys(ECRelationshipConstraintClassChange& change, ECRelationshipConstraintClassCR const& a, ECRelationshipConstraintClassCR const& b)
         {
+        std::set<Utf8CP, CompareUtf8> aMap, bMap, cMap;
+        for (Utf8StringCR keyProperty : a.GetKeys())
+            aMap.insert(keyProperty.c_str());
 
-        }
-    BentleyStatus CompareECRelationshipConstraintClasses(ECRelationshipConstraintClassChanges& change, ECRelationshipConstraintClassList const& a, ECRelationshipConstraintClassList const& b)
-        {
-        //std::map<Utf8String, ECRelationshipConstraintClassCP> aMap, bMap;
-        //for (ECRelationshipConstraintClassCP constraintClassCP : a)
-        //    aMap[constraintClassCP->GetClass().GetFullName()] = constraintClassCP;
+        for (Utf8StringCR keyProperty : b.GetKeys())
+            bMap.insert(keyProperty.c_str());
 
-        //for (ECRelationshipConstraintClassCP constraintClassCP : b)
-        //    bMap[constraintClassCP->GetClass().GetFullName()] = constraintClassCP;
+        cMap.insert(aMap.cbegin(), aMap.cend());
+        cMap.insert(bMap.cbegin(), bMap.cend());
 
-        //ECRelationshipConstraintClassCP* aItem, *bItem;
-        //for (auto& u : Union(aMap, bMap))
-        //    {
-        //    switch (Compare<Utf8String, ECRelationshipConstraintClassCP>(u.first, aMap, bMap, aItem, bItem))
-        //        {
-        //        case ChangeState::Deleted:
-        //            {
-        //            if (AppendECRelationshipConstraintClass(change.Add(ChangeState::Deleted), **aItem, ValueId::Deleted) == ERROR)
-        //                return ERROR;
+        for (Utf8CP u : cMap)
+            {
+            auto itorA = aMap.find(u);
+            auto itorB = bMap.find(u);
 
-        //            break;
-        //            }
-        //        case ChangeState::New:
-        //            {
-        //            if (AppendECRelationshipConstraintClass(change.Add(ChangeState::New), **bItem, ValueId::New) == ERROR)
-        //                return ERROR;
-
-        //            break;
-        //            }
-        //        case ChangeState::Modified:
-        //            {
-        //            auto& constraintClass = change.Add(ChangeState::Modified);
-        //            if (CompareECRelationshipConstraintClassKeys(constraintClass, **aItem, **bItem) == ERROR)
-        //                return ERROR;
-        //            }
-        //            break;
-        //        default:
-        //            {
-        //            return ERROR;
-        //            }
-        //        }
-        //    }
+            bool existInA = itorA != aMap.end();
+            bool existInB = itorB != bMap.end();
+            if (existInA && existInB)
+                {
+                //Same
+                }
+            else if (existInA && !existInB)
+                {
+                if (change.KeyProperties().Add(ChangeState::Deleted).SetValue(ValueId::Deleted, u) == ERROR)
+                    return ERROR;
+                }
+            else if (!existInA && existInB)
+                {
+                if (change.KeyProperties().Add(ChangeState::New).SetValue(ValueId::New, u) == ERROR)
+                    return ERROR;
+                }
+            }
 
         return SUCCESS;
         }
+    BentleyStatus CompareECRelationshipConstraintClasses(ECRelationshipConstraintClassChanges& change, ECRelationshipConstraintClassList const& a, ECRelationshipConstraintClassList const& b)
+        {
+        std::map<Utf8CP, ECRelationshipConstraintClassCP, CompareUtf8> aMap, bMap, cMap;
+        for (ECRelationshipConstraintClassCP constraintClassCP : a)
+            aMap[constraintClassCP->GetClass().GetFullName()] = constraintClassCP;
 
-    BentleyStatus CompareECProperty(ECPropertyChange& change, ECPropertyCR a, ECPropertyCR b);
+        for (ECRelationshipConstraintClassCP constraintClassCP : b)
+            bMap[constraintClassCP->GetClass().GetFullName()] = constraintClassCP;
 
-    BentleyStatus CompareECInstance(ECInstanceChange& change, IECInstanceCR a, IECInstanceCR b);
+        cMap.insert(aMap.cbegin(), aMap.cend());
+        cMap.insert(bMap.cbegin(), bMap.cend());
 
-    BentleyStatus CompareECProperties (ECPropertyChanges& changes, ECPropertyIterableCR a, ECPropertyIterableCR b);
+        for (auto& u : cMap)
+            {
+            auto itorA = aMap.find(u.first);
+            auto itorB = bMap.find(u.first);
 
-    BentleyStatus CompareECClasses(ECClassChanges& changes, ECClassContainerCR a, ECClassContainerCR b);
-    BentleyStatus CompareECEnumerations(ECEnumerationChanges& changes, ECEnumerationContainerCR a, ECEnumerationContainerCR b);
-    BentleyStatus CompareKindOfQuantities(ECKindOfQuantityChanges& changes, KindOfQuantityContainerCR a, KindOfQuantityContainerCR b);
+            bool existInA = itorA != aMap.end();
+            bool existInB = itorB != bMap.end();
+            if (existInA && existInB)
+                {
+                auto& constraintClass = change.Add(ChangeState::Modified);
+                if (CompareECRelationshipConstraintClassKeys(constraintClass, *itorA->second, *itorB->second) == ERROR)
+                    return ERROR;
+                }
+            else if (existInA && !existInB)
+                {
+                if (AppendECRelationshipConstraintClass(change.Add(ChangeState::Deleted), *itorA->second, ValueId::Deleted) == ERROR)
+                    return ERROR;
+                }
+            else if (!existInA && existInB)
+                {
+                if (AppendECRelationshipConstraintClass(change.Add(ChangeState::New), *itorB->second, ValueId::New) == ERROR)
+                    return ERROR;
+                }
+            }
+
+        return SUCCESS;
+        }
+    BentleyStatus CompareECProperty(ECPropertyChange& change, ECPropertyCR a, ECPropertyCR b)
+        {
+        if (a.GetTypeName() != b.GetTypeName())
+            change.GetTypeName().SetValue(a.GetTypeName(), b.GetTypeName());
+
+        if (a.GetName() != b.GetName())
+            change.GetName().SetValue(a.GetName(), b.GetName());
+
+        if (a.GetDisplayLabel() != b.GetDisplayLabel())
+            change.GetDisplayLabel().SetValue(a.GetDisplayLabel(), b.GetDisplayLabel());
+
+        if (a.GetDescription() != b.GetDescription())
+            change.GetTypeName().SetValue(a.GetDescription(), b.GetDescription());
+
+        if (a.GetIsPrimitive() != b.GetIsPrimitive())
+            change.IsPrimitive().SetValue(a.GetIsPrimitive(), b.GetIsPrimitive());
+
+        if (a.GetIsStruct() != b.GetIsStruct())
+            change.IsStruct().SetValue(a.GetIsStruct(), b.GetIsStruct());
+
+        if (a.GetIsStructArray() != b.GetIsStructArray())
+            change.IsStructArray().SetValue(a.GetIsStructArray(), b.GetIsStructArray());
+
+        if (a.GetIsPrimitiveArray() != b.GetIsPrimitiveArray())
+            change.IsPrimitiveArray().SetValue(a.GetIsPrimitiveArray(), b.GetIsPrimitiveArray());
+
+        if (a.GetIsNavigation() != b.GetIsNavigation())
+            change.IsNavigation().SetValue(a.GetIsNavigation(), b.GetIsNavigation());
+
+        if (a.GetIsReadOnly() != b.GetIsReadOnly())
+            change.IsReadonly().SetValue(a.GetIsReadOnly(), b.GetIsReadOnly());
+
+        if (a.GetMaximumValue() != b.GetMaximumValue())
+            change.GetMaximumValue().SetValue(a.GetMaximumValue(), b.GetMaximumValue());
+
+        if (a.GetMinimumValue() != b.GetMinimumValue())
+            change.GetMinimumValue().SetValue(a.GetMinimumValue(), b.GetMinimumValue());
+
+        if (a.GetIsReadOnly() != b.GetIsReadOnly())
+            change.IsReadonly().SetValue(a.GetIsReadOnly(), b.GetIsReadOnly());
+
+
+        auto aNavigation = a.GetAsNavigationProperty();
+        auto bNavigation = b.GetAsNavigationProperty();
+        if (aNavigation && bNavigation)
+            {
+            if (aNavigation->GetDirection() != bNavigation->GetDirection())
+                change.GetNavigation().Direction().SetValue(aNavigation->GetDirection(), bNavigation->GetDirection());
+       
+            if (aNavigation->GetRelationshipClass() && bNavigation->GetRelationshipClass())
+                change.GetNavigation().GetRelationshipClassName().SetValue(
+                    Utf8String(aNavigation->GetRelationshipClass()->GetFullName()), 
+                    Utf8String(bNavigation->GetRelationshipClass()->GetFullName()));
+            else if (aNavigation->GetRelationshipClass() && !bNavigation->GetRelationshipClass())
+                change.GetNavigation().GetRelationshipClassName().SetValue(ValueId::Deleted, aNavigation->GetRelationshipClass()->GetFullName());
+            else if (!aNavigation->GetRelationshipClass() && bNavigation->GetRelationshipClass())
+                change.GetNavigation().GetRelationshipClassName().SetValue(ValueId::New, bNavigation->GetRelationshipClass()->GetFullName());
+            }
+
+        auto aArray = a.GetAsArrayProperty();
+        auto bArray = b.GetAsArrayProperty();
+        if (aArray && bArray)
+            {
+
+            if (aArray->GetMaxOccurs() != bArray->GetMaxOccurs())
+                change.GetArray().MaxOccurs().SetValue(aArray->GetMaxOccurs(), bArray->GetMaxOccurs());
+
+            if (aArray->GetMinOccurs() != bArray->GetMinOccurs())
+                change.GetArray().MinOccurs().SetValue(aArray->GetMinOccurs(), bArray->GetMinOccurs());
+            }
+        else if (aArray && !bArray)
+            {
+            change.GetArray().MaxOccurs().SetValue(ValueId::Deleted, aArray->GetMaxOccurs());
+            change.GetArray().MinOccurs().SetValue(ValueId::Deleted, bArray->GetMinOccurs());
+            }
+        else if (!aArray && bArray)
+            {
+            change.GetArray().MaxOccurs().SetValue(ValueId::New, aArray->GetMaxOccurs());
+            change.GetArray().MinOccurs().SetValue(ValueId::New, bArray->GetMinOccurs());
+            }
+
+        auto aExtendType = a.GetAsExtendedTypeProperty();
+        auto bExtendType = b.GetAsExtendedTypeProperty();
+        if (aExtendType && bExtendType)
+            {
+            if (aExtendType->GetExtendedTypeName() != bExtendType->GetExtendedTypeName())
+                change.GetExtendedTypeName().SetValue(aExtendType->GetExtendedTypeName(), bExtendType->GetExtendedTypeName());
+            }
+        else if (aExtendType && !bExtendType)
+            change.GetExtendedTypeName().SetValue(ValueId::Deleted, aExtendType->GetExtendedTypeName());
+        else if (!aExtendType && bExtendType)
+            change.GetExtendedTypeName().SetValue(ValueId::New, bExtendType->GetExtendedTypeName());
+
+        return CompareCustomAttributes(change.CustomAttributes(), a, b);
+        }    
+    BentleyStatus CompareECProperties(ECPropertyChanges& changes, ECPropertyIterableCR a, ECPropertyIterableCR b)
+        {
+        std::map<Utf8CP, ECPropertyCP, CompareUtf8> aMap, bMap, cMap;
+        for (ECPropertyCP propertyCP : a)
+            aMap[propertyCP->GetName().c_str()] = propertyCP;
+
+        for (ECPropertyCP propertyCP : b)
+            bMap[propertyCP->GetName().c_str()] = propertyCP;
+
+        cMap.insert(aMap.cbegin(), aMap.cend());
+        cMap.insert(bMap.cbegin(), bMap.cend());
+
+        for (auto& u : cMap)
+            {
+            auto itorA = aMap.find(u.first);
+            auto itorB = bMap.find(u.first);
+
+            bool existInA = itorA != aMap.end();
+            bool existInB = itorB != bMap.end();
+            if (existInA && existInB)
+                {
+                auto& propertyChange = changes.Add(ChangeState::Modified);
+                if (CompareECProperty(propertyChange, *itorA->second, *itorB->second) == ERROR)
+                    return ERROR;
+                }
+            else if (existInA && !existInB)
+                {
+                if (AppendECProperty(changes, *itorA->second, ValueId::Deleted) == ERROR)
+                    return ERROR;
+                }
+            else if (!existInA && existInB)
+                {
+                if (AppendECProperty(changes, *itorB->second, ValueId::New) == ERROR)
+                    return ERROR;
+                }
+            }
+
+        return SUCCESS;
+        }
+    BentleyStatus CompareECClasses(ECClassChanges& changes, ECClassContainerCR a, ECClassContainerCR b)
+        {
+        std::map<Utf8CP, ECClassCP, CompareUtf8> aMap, bMap, cMap;
+        for (ECClassCP classCP : a)
+            aMap[classCP->GetName().c_str()] = classCP;
+
+        for (ECClassCP classCP : b)
+            bMap[classCP->GetName().c_str()] = classCP;
+
+        cMap.insert(aMap.cbegin(), aMap.cend());
+        cMap.insert(bMap.cbegin(), bMap.cend());
+
+        for (auto& u : cMap)
+            {
+            auto itorA = aMap.find(u.first);
+            auto itorB = bMap.find(u.first);
+
+            bool existInA = itorA != aMap.end();
+            bool existInB = itorB != bMap.end();
+            if (existInA && existInB)
+                {
+                auto& classChange = changes.Add(ChangeState::Modified);
+                if (CompareECClass(classChange, *itorA->second, *itorB->second) == ERROR)
+                    return ERROR;
+                }
+            else if (existInA && !existInB)
+                {
+                if (AppendECClass(changes, *itorA->second, ValueId::Deleted) == ERROR)
+                    return ERROR;
+                }
+            else if (!existInA && existInB)
+                {
+                if (AppendECClass(changes, *itorB->second, ValueId::New) == ERROR)
+                    return ERROR;
+                }
+            }
+
+        return SUCCESS;
+        }
+    BentleyStatus CompareECEnumerations(ECEnumerationChanges& changes, ECEnumerationContainerCR a, ECEnumerationContainerCR b)
+        {
+        std::map<Utf8CP, ECEnumerationCP, CompareUtf8> aMap, bMap, cMap;
+        for (ECEnumerationCP enumCP : a)
+            aMap[enumCP->GetName().c_str()] = enumCP;
+
+        for (ECEnumerationCP enumCP : b)
+            bMap[enumCP->GetName().c_str()] = enumCP;
+
+        cMap.insert(aMap.cbegin(), aMap.cend());
+        cMap.insert(bMap.cbegin(), bMap.cend());
+
+        for (auto& u : cMap)
+            {
+            auto itorA = aMap.find(u.first);
+            auto itorB = bMap.find(u.first);
+
+            bool existInA = itorA != aMap.end();
+            bool existInB = itorB != bMap.end();
+            if (existInA && existInB)
+                {
+                auto& enumChange = changes.Add(ChangeState::Modified);
+                if (CompareECEnumeration(enumChange, *itorA->second, *itorB->second) == ERROR)
+                    return ERROR;
+                }
+            else if (existInA && !existInB)
+                {
+                if (AppendECEnumeration(changes, *itorA->second, ValueId::Deleted) == ERROR)
+                    return ERROR;
+                }
+            else if (!existInA && existInB)
+                {
+                if (AppendECEnumeration(changes, *itorB->second, ValueId::New) == ERROR)
+                    return ERROR;
+                }
+            }
+
+        return SUCCESS;
+        }
+    BentleyStatus CompareKindOfQuantities(ECKindOfQuantityChanges& changes, KindOfQuantityContainerCR a, KindOfQuantityContainerCR b)
+        {
+        std::map<Utf8CP, KindOfQuantityCP, CompareUtf8> aMap, bMap, cMap;
+        for (KindOfQuantityCP enumCP : a)
+            aMap[enumCP->GetName().c_str()] = enumCP;
+
+        for (KindOfQuantityCP enumCP : b)
+            bMap[enumCP->GetName().c_str()] = enumCP;
+
+        cMap.insert(aMap.cbegin(), aMap.cend());
+        cMap.insert(bMap.cbegin(), bMap.cend());
+
+        for (auto& u : cMap)
+            {
+            auto itorA = aMap.find(u.first);
+            auto itorB = bMap.find(u.first);
+
+            bool existInA = itorA != aMap.end();
+            bool existInB = itorB != bMap.end();
+            if (existInA && existInB)
+                {
+                auto& kindOfQuantityChange = changes.Add(ChangeState::Modified);
+                if (CompareKindOfQuantity(kindOfQuantityChange, *itorA->second, *itorB->second) == ERROR)
+                    return ERROR;
+                }
+            else if (existInA && !existInB)
+                {
+                if (AppendKindOfQuantity(changes, *itorA->second, ValueId::Deleted) == ERROR)
+                    return ERROR;
+                }
+            else if (!existInA && existInB)
+                {
+                if (AppendKindOfQuantity(changes, *itorB->second, ValueId::New) == ERROR)
+                    return ERROR;
+                }
+            }
+
+        return SUCCESS;
+        }
     BentleyStatus CompareCustomAttributes(ECInstanceChanges& changes, IECCustomAttributeContainerCR a, IECCustomAttributeContainerCR b);
+    BentleyStatus CompareECEnumeration(ECEnumerationChange& change, ECEnumerationCR a, ECEnumerationCR b)
+        {
+        if (a.GetName() != b.GetName())
+            change.GetName().SetValue(a.GetName(), b.GetName());
+
+        if (a.GetDisplayLabel() != b.GetDisplayLabel())
+            change.GetDisplayLabel().SetValue(a.GetDisplayLabel(), b.GetDisplayLabel());
+
+        if (a.GetDescription() != b.GetDescription())
+            change.GetDescription().SetValue(a.GetDescription(), b.GetDescription());
+
+        if (a.GetIsStrict() != b.GetIsStrict())
+            change.IsStrict().SetValue(a.GetIsStrict(), b.GetIsStrict());
+
+        if (a.GetType() != b.GetType())
+            {
+            change.GetTypeName().SetValue(a.GetTypeName(), b.GetTypeName());
+            }
+        else if (a.GetType() == b.GetType())
+            {
+            if (a.GetType() == PrimitiveType::PRIMITIVETYPE_Integer)
+                return CompareIntegerECEnumerators(change.Enumerators(), a.GetEnumerators(), b.GetEnumerators());
+
+            return CompareStringECEnumerators(change.Enumerators(), a.GetEnumerators(), b.GetEnumerators());
+            }    
+
+        return SUCCESS;
+        }
+    BentleyStatus CompareIntegerECEnumerators(ECEnumeratorChanges& changes, EnumeratorIterable const& a, EnumeratorIterable const& b)
+        {
+        std::map<int, ECEnumeratorCP> aMap, bMap, cMap;
+        for (ECEnumeratorCP enumCP : a)
+            aMap[enumCP->GetInteger()] = enumCP;
+
+        for (ECEnumeratorCP enumCP : b)
+            bMap[enumCP->GetInteger()] = enumCP;
+
+        cMap.insert(aMap.cbegin(), aMap.cend());
+        cMap.insert(bMap.cbegin(), bMap.cend());
+
+        for (auto& u : cMap)
+            {
+            auto itorA = aMap.find(u.first);
+            auto itorB = bMap.find(u.first);
+
+            bool existInA = itorA != aMap.end();
+            bool existInB = itorB != bMap.end();
+            if (existInA && existInB)
+                {
+                if (itorA->second->GetDisplayLabel() != itorB->second->GetDisplayLabel())
+                    changes.Add(ChangeState::Modified).GetDisplayLabel().SetValue(itorA->second->GetDisplayLabel(), itorB->second->GetDisplayLabel());
+                }
+            else if (existInA && !existInB)
+                {
+                auto& change = changes.Add(ChangeState::Deleted);
+                change.GetDisplayLabel().SetValue(ValueId::Deleted, itorA->second->GetDisplayLabel());
+                change.GetInteger().SetValue(ValueId::Deleted, itorA->second->GetInteger());
+                }
+            else if (!existInA && existInB)
+                {
+                auto& change = changes.Add(ChangeState::New);
+                change.GetDisplayLabel().SetValue(ValueId::New, itorB->second->GetDisplayLabel());
+                change.GetInteger().SetValue(ValueId::New, itorB->second->GetInteger());
+                }
+            }
+
+        return SUCCESS;
+        }
+    BentleyStatus CompareStringECEnumerators(ECEnumeratorChanges& changes, EnumeratorIterable const& a, EnumeratorIterable const& b)
+        {
+        std::map<Utf8CP, ECEnumeratorCP, CompareUtf8> aMap, bMap, cMap;
+        for (ECEnumeratorCP enumCP : a)
+            aMap[enumCP->GetString().c_str()] = enumCP;
+
+        for (ECEnumeratorCP enumCP : b)
+            bMap[enumCP->GetString().c_str()] = enumCP;
+
+        cMap.insert(aMap.cbegin(), aMap.cend());
+        cMap.insert(bMap.cbegin(), bMap.cend());
+
+        for (auto& u : cMap)
+            {
+            auto itorA = aMap.find(u.first);
+            auto itorB = bMap.find(u.first);
+
+            bool existInA = itorA != aMap.end();
+            bool existInB = itorB != bMap.end();
+            if (existInA && existInB)
+                {
+                if (itorA->second->GetDisplayLabel() != itorB->second->GetDisplayLabel())
+                    changes.Add(ChangeState::Modified).GetDisplayLabel().SetValue(itorA->second->GetDisplayLabel(), itorB->second->GetDisplayLabel());
+                }
+            else if (existInA && !existInB)
+                {
+                auto& change = changes.Add(ChangeState::Deleted);
+                change.GetDisplayLabel().SetValue(ValueId::Deleted, itorA->second->GetDisplayLabel());
+                change.GetString().SetValue(ValueId::Deleted, itorA->second->GetString());
+                }
+            else if (!existInA && existInB)
+                {
+                auto& change = changes.Add(ChangeState::New);
+                change.GetDisplayLabel().SetValue(ValueId::New, itorB->second->GetDisplayLabel());
+                change.GetString().SetValue(ValueId::New, itorB->second->GetString());
+                }
+            }
+
+        return SUCCESS;
+        }
+    BentleyStatus CompareKindOfQuantity(KindOfQuantityChange& change, KindOfQuantityCR a, KindOfQuantityCR b)
+        {
+        if (a.GetName() != b.GetName())
+            change.GetName().SetValue(a.GetName(), b.GetName());
+
+        if (a.GetDisplayLabel() != b.GetDisplayLabel())
+            change.GetDisplayLabel().SetValue(a.GetDisplayLabel(), b.GetDisplayLabel());
+
+        if (a.GetDescription() != b.GetDescription())
+            change.GetDescription().SetValue(a.GetDescription(), b.GetDescription());
+
+        if (a.GetPersistenceUnit() != b.GetPersistenceUnit())
+            change.GetPersistenceUnit().SetValue(a.GetPersistenceUnit(), b.GetPersistenceUnit());
+
+        if (a.GetPrecision() != b.GetPrecision())
+            change.GetPrecision().SetValue(a.GetPrecision(), b.GetPrecision());
+
+        if (a.GetDefaultPresentationUnit() != b.GetDefaultPresentationUnit())
+            change.GetDefaultPresentationUnit().SetValue(a.GetDefaultPresentationUnit(), b.GetDefaultPresentationUnit());
 
 
+        std::set<Utf8CP, CompareUtf8> aMap, bMap, cMap;
+        for (Utf8StringCR unit : a.GetAlternativePresentationUnitList())
+            aMap.insert(unit.c_str());
+
+        for (Utf8StringCR unit : b.GetAlternativePresentationUnitList())
+            bMap.insert(unit.c_str());
+
+        cMap.insert(aMap.cbegin(), aMap.cend());
+        cMap.insert(bMap.cbegin(), bMap.cend());
+
+        for (auto u : cMap)
+            {
+            auto itorA = aMap.find(u);
+            auto itorB = bMap.find(u);
+
+            bool existInA = itorA != aMap.end();
+            bool existInB = itorB != bMap.end();
+            if (existInA && existInB)
+                {
+                }
+            else if (existInA && !existInB)
+                change.GetAlternativePresentationUnitList().Add(ChangeState::Deleted).SetValue(ValueId::Deleted, *itorA);
+            else if (!existInA && existInB)
+                change.GetAlternativePresentationUnitList().Add(ChangeState::New).SetValue(ValueId::New, *itorB);
+            }
+        return SUCCESS;
+        }
+    BentleyStatus CompareECInstance(ECInstanceChange& change, IECInstanceCR a, IECInstanceCR b);
     BentleyStatus AppendECSchema(ECSchemaChanges& changes, ECSchemaCR v, ValueId appendType)
         {
         ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
@@ -1436,7 +1826,6 @@ struct ECSchemaComparer
             }
         return SUCCESS;
         }
-
     BentleyStatus AppendECEnumeration(ECEnumerationChanges& changes, ECEnumerationCR v, ValueId appendType)
         {
         ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
@@ -1486,12 +1875,11 @@ struct ECSchemaComparer
    
         if (auto prop = v.GetAsExtendedTypeProperty())
             {
-            propertyChange.GetPropertyType().SetValue(appendType, PropertyType::ExtendedType);
             propertyChange.GetExtendedTypeName().SetValue(appendType, prop->GetExtendedTypeName());
             }
         else if (auto prop = v.GetAsNavigationProperty())
             {
-            propertyChange.GetPropertyType().SetValue(appendType, PropertyType::Navigation);
+            propertyChange.IsNavigation().SetValue(appendType, true);
             NavigationChange& navigationChange = propertyChange.GetNavigation();
             navigationChange.Direction().SetValue(appendType, prop->GetDirection());
             if (prop->GetRelationshipClass())
@@ -1499,19 +1887,19 @@ struct ECSchemaComparer
             }
         else if (v.GetIsPrimitive())
             {
-            propertyChange.GetPropertyType().SetValue(appendType, PropertyType::Primitive);
+            propertyChange.IsPrimitive().SetValue(appendType, true);
             }
         else if (v.GetIsStruct())
             {
-            propertyChange.GetPropertyType().SetValue(appendType, PropertyType::Struct);
+            propertyChange.IsStruct().SetValue(appendType, true);
             }
         else if (v.GetIsStructArray())
             {
-            propertyChange.GetPropertyType().SetValue(appendType, PropertyType::StructArray);
+            propertyChange.IsStructArray().SetValue(appendType, true);
             }
         else if (v.GetIsPrimitiveArray())
             {
-            propertyChange.GetPropertyType().SetValue(appendType, PropertyType::PrimitiveArray);
+            propertyChange.IsPrimitiveArray().SetValue(appendType, true);
             }
         else
             {
@@ -1545,7 +1933,6 @@ struct ECSchemaComparer
         //return AppendPropertyValues(instanceChange.Instance(), *propertyValues, appendType);
         return SUCCESS;
         }
-    //std::map<Path,ECValueCR>
     BentleyStatus AppendCustomAttributes(ECInstanceChanges& changes, IECCustomAttributeContainerCR v, ValueId appendType)
         {
         for (auto& instance : v.GetPrimaryCustomAttributes(false))
