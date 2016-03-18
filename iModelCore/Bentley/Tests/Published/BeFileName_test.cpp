@@ -2120,6 +2120,7 @@ TEST(BeFileNameTests, ReadOnly)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                         Umar.Hayat                    02/16
 //---------------------------------------------------------------------------------------
+#if defined (BENTLEY_WIN32)
 static void SetupDirectory(BeFileNameCR root)
     {
     if (!root.DoesPathExist())
@@ -2147,6 +2148,7 @@ static void SetupDirectory(BeFileNameCR root)
     fileName2.AppendToPath(L"File2.txt");
     file2.Create(fileName2, true);
     }
+    
 //---------------------------------------------------------------------------------------
 // @bsimethod                                         Umar.Hayat                    02/16
 //---------------------------------------------------------------------------------------
@@ -2175,6 +2177,7 @@ static void VerifyDirectory(BeFileNameCR root, bool SubFolderExpected = true)
     ASSERT_TRUE(SubFolderExpected == fileName2.DoesPathExist());
 
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @betest                                          Umar.Hayat                    02/16
