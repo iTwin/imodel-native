@@ -39,6 +39,17 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 IScalableMeshDisplayCacheManagerPtr s_displayCacheManagerPtr;
 IScalableMeshPtr                    s_scalableMeshPtr;
 
+#define PRINT_SMDISPLAY_MSG
+
+#ifdef PRINT_SMDISPLAY_MSG
+#define PRINT_MSG_IF(condition, ...) if(##condition##) printf(__VA_ARGS__);
+#define PRINT_MSG(...) printf(__VA_ARGS__);
+#else
+#define PRINT_MSG_IF(condition, ...)
+#define PRINT_MSG(...) 
+#endif
+
+
 #ifdef DISPLAYLOG
 
 class Logger
@@ -710,13 +721,6 @@ private:
         {
         DgnPlatformLib::AdoptHost(*hostToAdopt);
 
-#ifndef NDEBUG
-        char threadName[200];
-
-        sprintf(threadName, "ScalableMesh QueryProcessor Thread %i", threadId);
-        BeThreadUtilities::SetCurrentThreadName(threadName);
-#endif
-
         ProcessingQuery<DPoint3d, YProtPtExtentType>::Ptr processingQueryPtr;
 
         do
@@ -770,17 +774,11 @@ private:
                     }
                 
                 //Load unloaded node
-                //HFCPtr<SMPointIndexNode<DPoint3d, YProtPtExtentType>> nodePtr;
-
-                processingQueryPtr->m_toLoadNodeMutexes[threadId].lock();
-
+                //HFCPtr<SMPointIndexNode<DPoint3d, YProtPtExtentType>> nodePtr;                
                 if (processingQueryPtr->m_toLoadNodes[threadId].size() > 0)
                     {                    
-                    nodePtr = processingQueryPtr->m_toLoadNodes[threadId].back();
-                    processingQueryPtr->m_toLoadNodes[threadId].pop_back();                    
+                    nodePtr = processingQueryPtr->m_toLoadNodes[threadId].back();                    
                     }
-
-                processingQueryPtr->m_toLoadNodeMutexes[threadId].unlock();
 
                 if (nodePtr != 0)
                     {       
@@ -790,9 +788,12 @@ private:
                           
                     processingQueryPtr->m_foundMeshNodeMutexes[threadId].lock();
                     processingQueryPtr->m_foundMeshNodes[threadId].push_back(meshNodePtr);
-                    processingQueryPtr->m_foundMeshNodeMutexes[threadId].unlock();                                        
-                    }                   
+                    processingQueryPtr->m_foundMeshNodeMutexes[threadId].unlock();  
 
+                    processingQueryPtr->m_toLoadNodeMutexes[threadId].lock();
+                    processingQueryPtr->m_toLoadNodes[threadId].pop_back();                                        
+                    processingQueryPtr->m_toLoadNodeMutexes[threadId].unlock();
+                    }                   
 
                 size_t m_nbMissed = 0;
                 static size_t MAX_MISSED = 5;
@@ -1087,15 +1088,9 @@ public:
                     */
 #endif
                     foundNodes.insert(foundNodes.end(), (*queryItr)->m_foundMeshNodes[threadIter].begin(),(*queryItr)->m_foundMeshNodes[threadIter].end());
+                    (*queryItr)->m_foundMeshNodes[threadIter].clear();
                     (*queryItr)->m_foundMeshNodeMutexes[threadIter].unlock();
                     }   
-            
-                if ((*queryItr)->IsComplete()) 
-                    {
-                    m_processingQueriesMutex.lock();
-                    m_processingQueries.erase(queryItr);
-                    m_processingQueriesMutex.unlock();                                
-                    }
 
                 status = SUCCESS;
                 }
@@ -1306,9 +1301,15 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
                 }
             else
                 {
+                //NEEDS_WORK_SM : Should not be duplicated.
+                newQuery.m_overviewMeshNodes.push_back(meshNodePtr);
                 newQuery.m_queriedMeshNodes.push_back(meshNodePtr);
                 }
             }
+
+#ifdef PRINT_SMDISPLAY_MSG
+        PRINT_MSG("StartNewQuery m_queriedMeshNodes : %I64u toLoadNodes : %I64u \n", newQuery.m_queriedMeshNodes.size(), toLoadNodes.size());
+#endif
 
         CachedDisplayNodeManager::GetManager().ReleaseNodeListLock();
 
@@ -1480,42 +1481,43 @@ BentleyStatus ScalableMeshProgressiveQueryEngine::_GetOverviewNodes(bvector<BENT
     }
 
 BentleyStatus ScalableMeshProgressiveQueryEngine::_GetQueriedNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes,
-    int                                                   queryId) const
+                                                                   int                                                   queryId) const
     {
     RequestedQuery* requestedQueryP = 0;
 
     for (auto& query : m_requestedQueries)
-    {
-        if (query.m_queryId == queryId)
         {
+        if (query.m_queryId == queryId)
+            {
             requestedQueryP = &query;
             break;
+            }
         }
-    }
 
     BentleyStatus status;
 
     if (requestedQueryP != 0)
-    {
-        if (requestedQueryP->m_isQueryCompleted == false || requestedQueryP->m_fetchLastCompletedNodes == false)
         {
+        if (requestedQueryP->m_isQueryCompleted == false || requestedQueryP->m_fetchLastCompletedNodes == false)
+            {            
             StatusInt status = s_queryProcessor.GetFoundNodes(requestedQueryP->m_queriedMeshNodes, queryId);
             assert(status == SUCCESS);
 
             if (requestedQueryP->m_isQueryCompleted == true)
-            {
+                {
                 requestedQueryP->m_fetchLastCompletedNodes = true;
+                assert(requestedQueryP->m_queriedMeshNodes.size() > 0);
                 s_queryProcessor.CancelQuery(queryId);
+                }
             }
-        }
 
         meshNodes.insert(meshNodes.end(), requestedQueryP->m_queriedMeshNodes.begin(), requestedQueryP->m_queriedMeshNodes.end());
         status = SUCCESS;
-    }
+        }
     else
-    {
+        {
         status = ERROR;
-    }
+        }
 
     return status;
     }
