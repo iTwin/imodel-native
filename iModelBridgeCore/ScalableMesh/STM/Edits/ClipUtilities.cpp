@@ -1509,7 +1509,8 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
     {
     BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr;
     MakeDTMFromIndexList(dtmPtr);
-    return GetRegionsFromClipPolys(polyfaces, polygons, dtmPtr);
+    bvector<bpair<double, int>> metadata(polygons.size(), make_bpair(0,0));
+    return GetRegionsFromClipPolys(polyfaces, polygons, metadata, dtmPtr);
     }
 
 DTMInsertPointCallback Clipper::GetInsertPointCallback(FaceToUVMap& faceToUVMap, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& ptr)
@@ -1572,7 +1573,7 @@ DTMInsertPointCallback Clipper::GetInsertPointCallback(FaceToUVMap& faceToUVMap,
 
 size_t s_nclip = 0;
 
-bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr)
+bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, bvector<bpair<double, int>>& metadata, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr)
     {
     bool dbg = false;
     if (dbg)
@@ -1620,8 +1621,20 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
     int stat = DTM_SUCCESS;
     for (auto& poly : polygons)
         {
-        double area = fabs(bsiGeom_getXYPolygonArea(&poly[0], (int)poly.size()));
-        if (area / (m_range.XLength()*m_range.YLength()) > 0.005)
+        bool applyClipPoly = metadata[&poly - &polygons[0]].second == 0;
+        if (!applyClipPoly)
+            {
+            if (metadata[&poly - &polygons[0]].second == 1)
+                {
+                auto maxLength = std::max(m_range.XLength(), m_range.YLength());
+                if (metadata[&poly - &polygons[0]].first / maxLength > 0.005) applyClipPoly = true;
+                }
+            else if (metadata[&poly - &polygons[0]].second == 2)
+                {
+                if (metadata[&poly - &polygons[0]].first / (m_range.XLength()* m_range.YLength()) > 0.001) applyClipPoly = true;
+                }
+            }
+        if (applyClipPoly)
             {
             /* DTM_POLYGON_OBJ* polyP = nullptr;
              long flag = 0;

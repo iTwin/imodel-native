@@ -2650,6 +2650,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
     bvector<bvector<DPoint3d>> polys;
     bvector<uint64_t> clipIds;
     bvector<DifferenceSet> skirts;
+    bvector<bpair<double, int>> metadata;
     for (auto& diffSet : m_differenceSets)
         {
         //uint64_t upperId = (diffSet.clientID >> 32);
@@ -2658,6 +2659,10 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
             clipIds.push_back(diffSet.clientID);
             polys.push_back(bvector<DPoint3d>());
             GetClipRegistry()->GetClip(diffSet.clientID, polys.back());
+            double importance;
+            int nDimensions;
+            GetClipRegistry()->GetClipMetadata(diffSet.clientID, importance, nDimensions);
+            metadata.push_back(make_bpair(importance, nDimensions));
             }
         else if (!diffSet.toggledForID)
             {
@@ -2696,7 +2701,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
             {
             BcDTMPtr toClipBcDTM = dtm->Clone();
             DTMPtr toClipDTM = toClipBcDTM.get();
-            hasClip = clipNode.GetRegionsFromClipPolys(polyfaces, polys, toClipDTM);
+            if (toClipBcDTM->GetTinHandle() != nullptr) hasClip = clipNode.GetRegionsFromClipPolys(polyfaces, polys, metadata, toClipDTM);
             }
        // m_differenceSets.clear();
        // m_nbClips = 0;

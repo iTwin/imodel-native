@@ -149,7 +149,9 @@ bool SMSQLiteFile::Create(BENTLEY_NAMESPACE_NAME::Utf8CP filename)
 
     result = m_database->CreateTable("SMClipDefinitions", "PolygonId INTEGER PRIMARY KEY,"
                                      "PolygonData BLOB,"
-                                     "Size INTEGER");
+                                     "Size INTEGER,"
+                                     "Importance DOUBLE,"
+                                     "NDimensions INTEGER");
 
     result = m_database->CreateTable("SMSkirts", "PolygonId INTEGER PRIMARY KEY,"
                                      "PolygonData BLOB,"
@@ -854,9 +856,11 @@ void SMSQLiteFile::StoreClipPolygon(int64_t& clipID, const bvector<uint8_t>& cli
     if (clipID == SQLiteNodeHeader::NO_NODEID)
         {
         Savepoint insertTransaction(*m_database, "insert");
-        m_database->GetCachedStatement(stmt, "INSERT INTO SMClipDefinitions (PolygonData,Size) VALUES(?,?)");
+        m_database->GetCachedStatement(stmt, "INSERT INTO SMClipDefinitions (PolygonData,Size, Importance, NDimensions) VALUES(?,?, ?, ?)");
         stmt->BindBlob(1, &clipData[0], (int)clipData.size(), MAKE_COPY_NO);
         stmt->BindInt64(2, uncompressedSize);
+        stmt->BindDouble(3, 0);
+        stmt->BindInt(4, 0);
         DbResult status = stmt->Step();
         assert(status == BE_SQLITE_DONE);
         stmt->ClearBindings();
@@ -869,10 +873,12 @@ void SMSQLiteFile::StoreClipPolygon(int64_t& clipID, const bvector<uint8_t>& cli
     else if (nRows == 0)
         {
         Savepoint insertTransaction(*m_database, "insert");
-        m_database->GetCachedStatement(stmt, "INSERT INTO SMClipDefinitions (PolygonId, PolygonData,Size) VALUES(?, ?,?)");
+        m_database->GetCachedStatement(stmt, "INSERT INTO SMClipDefinitions (PolygonId, PolygonData,Size, Importance, NDimensions) VALUES(?, ?,?,?,?)");
         stmt->BindInt64(1, clipID);
         stmt->BindBlob(2, &clipData[0], (int)clipData.size(), MAKE_COPY_NO);
         stmt->BindInt64(3, uncompressedSize);
+        stmt->BindDouble(4, 0);
+        stmt->BindInt(5, 0);
         DbResult status = stmt->Step();
         assert(status == BE_SQLITE_DONE);
         stmt->ClearBindings();
@@ -889,6 +895,55 @@ void SMSQLiteFile::StoreClipPolygon(int64_t& clipID, const bvector<uint8_t>& cli
         stmt->ClearBindings();
         if (m_autocommit) m_database->SaveChanges();
         }
+    }
+
+void SMSQLiteFile::SetClipPolygonMetadata(uint64_t& clipID, double importance, int nDimensions)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+    CachedStatementPtr stmt3;
+    m_database->GetCachedStatement(stmt3, "SELECT COUNT(PolygonId) FROM SMClipDefinitions WHERE PolygonId=?");
+    stmt3->BindInt64(1, clipID);
+    stmt3->Step();
+    size_t nRows = stmt3->GetValueInt64(0);
+
+    if (nRows == 0)
+        {
+        Savepoint insertTransaction(*m_database, "insert");
+        m_database->GetCachedStatement(stmt, "INSERT INTO SMClipDefinitions (PolygonId, PolygonData,Size, Importance, NDimensions) VALUES(?, ?,?,?,?)");
+        stmt->BindInt64(1, clipID);
+        stmt->BindBlob(2, 0, 0, MAKE_COPY_NO);
+        stmt->BindInt64(3, 0);
+        stmt->BindDouble(4, importance);
+        stmt->BindInt(5, nDimensions);
+        DbResult status = stmt->Step();
+        assert(status == BE_SQLITE_DONE);
+        stmt->ClearBindings();
+        if (m_autocommit) m_database->SaveChanges();
+        }
+    else
+        {
+        m_database->GetCachedStatement(stmt, "UPDATE SMClipDefinitions SET Importance=?, NDimensions=? WHERE PolygonId=?");
+        stmt->BindDouble(1, importance);
+        stmt->BindInt(2, nDimensions);
+        stmt->BindInt64(3, clipID);
+        DbResult status = stmt->Step();
+        assert(status == BE_SQLITE_DONE);
+        stmt->ClearBindings();
+        if (m_autocommit) m_database->SaveChanges();
+        }
+    }
+
+void SMSQLiteFile::GetClipPolygonMetadata(uint64_t clipID, double& importance, int& nDimensions)
+    {
+    CachedStatementPtr stmt;
+    m_database->GetCachedStatement(stmt, "SELECT Importance, NDimensions FROM SMClipDefinitions WHERE PolygonId=?");
+    stmt->BindInt64(1, clipID);
+    DbResult status = stmt->Step();
+    // assert(status == BE_SQLITE_ROW);
+    if (status != BE_SQLITE_ROW) return;
+    importance = stmt->GetValueDouble(0);
+    nDimensions = stmt->GetValueInt(1);
     }
 
 void SMSQLiteFile::StoreSkirtPolygon(int64_t& clipID, const bvector<uint8_t>& clipData, size_t uncompressedSize)

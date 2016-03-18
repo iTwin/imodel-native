@@ -135,6 +135,8 @@ public:
     void StoreGraph(int64_t& nodeID, const bvector<uint8_t>& graph, size_t uncompressedSize);
     void StoreFeature(int64_t& featureID, const bvector<uint8_t>& featureData, size_t uncompressedSize);
     void StoreClipPolygon(int64_t& clipID, const bvector<uint8_t>& clipData, size_t uncompressedSize);
+    void SetClipPolygonMetadata(uint64_t& clipID, double importance, int nDimensions);
+    void GetClipPolygonMetadata(uint64_t clipID, double& importance, int& nDimensions);
     void StoreSkirtPolygon(int64_t& clipID, const bvector<uint8_t>& clipData, size_t uncompressedSize);
     void StoreDiffSet(int64_t& diffsetID, const bvector<uint8_t>& diffsetData, size_t uncompressedSize);
 

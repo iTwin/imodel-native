@@ -149,6 +149,16 @@ template <class EXTENT> class SMSQLiteClipDefinitionsTileStore : public SMPointT
             return false;
             }
 
+        void SetMetadata(uint64_t id, double importance, int nDimensions)
+            {
+            m_smSQLiteFile->SetClipPolygonMetadata(id, importance, nDimensions);
+            }
+
+        void GetMetadata(uint64_t id, double& importance, int& nDimensions)
+            {
+            m_smSQLiteFile->GetClipPolygonMetadata(id, importance, nDimensions);
+            }
+
         SMSQLiteFile* GetFile() { return m_smSQLiteFile.get(); }
 
     private:
