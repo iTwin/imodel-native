@@ -47,7 +47,11 @@ template <typename DataType> class HPMIndirectCountLimitedPool : public HPMCount
             // Check if memory limit attained
             while (m_totalUsedCount + NewCount*sizeof(DataType) - pPoolItem->GetDeepCount() > m_countLimit)
                 {
-                if (m_Pool.empty() || !m_Pool.back()->Discard())
+                if (NewCount*sizeof(DataType) > m_countLimit) return false;
+
+                if (m_Pool.empty())
+                    RecomputeTotalCount();
+                else if(!m_Pool.back()->Discard())
                     return false; 
                 }
             pPoolItem->m_itemMutex.lock();
