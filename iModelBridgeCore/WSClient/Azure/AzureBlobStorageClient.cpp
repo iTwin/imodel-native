@@ -13,6 +13,7 @@
 
 const uint32_t AzureBlobStorageClient::Timeout::Connection::Default = 30;
 const uint32_t AzureBlobStorageClient::Timeout::Transfer::FileDownload = 30;
+const uint32_t AzureBlobStorageClient::Timeout::Transfer::Upload = 30;
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Andrius.Zonys   01/2016
@@ -41,6 +42,25 @@ IHttpHandlerPtr customHandler
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Andrius.Zonys   03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void SetCommonRequestOptions
+(
+HttpRequestR                    request,
+HttpRequest::RetryOption        retryOption,
+uint32_t                        transferType,
+HttpRequest::ProgressCallbackCR progressCallback,
+ICancellationTokenPtr           ct
+)
+    {
+    request.SetRetryOptions(retryOption, 0);
+    request.SetConnectionTimeoutSeconds(AzureBlobStorageClient::Timeout::Connection::Default);
+    request.SetTransferTimeoutSeconds(transferType);
+    request.SetCancellationToken(ct);
+    request.SetUploadProgressCallback(progressCallback);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Andrius.Zonys   01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<AzureResult> AzureBlobStorageClient::SendGetFileRequest
@@ -54,11 +74,7 @@ ICancellationTokenPtr ct
     HttpRequest request(url, "GET", m_customHandler);
 
     request.SetResponseBody(HttpFileBody::Create(filePath));
-    request.SetRetryOptions(HttpRequest::ResumeTransfer, 0);
-    request.SetConnectionTimeoutSeconds(AzureBlobStorageClient::Timeout::Connection::Default);
-    request.SetTransferTimeoutSeconds(AzureBlobStorageClient::Timeout::Transfer::FileDownload);
-    request.SetDownloadProgressCallback(progressCallback);
-    request.SetCancellationToken(ct);
+    SetCommonRequestOptions(request, HttpRequest::ResumeTransfer, AzureBlobStorageClient::Timeout::Transfer::FileDownload, progressCallback, ct);
 
     return request.PerformAsync()
         ->Then<AzureResult>([=] (HttpResponse& httpResponse)
@@ -100,8 +116,7 @@ ICancellationTokenPtr ct
     HttpRequest request(blockUrl, "PUT", m_customHandler);
     request.GetHeaders().SetValue("x-ms-blob-type", "BlockBlob");
     request.SetRequestBody(HttpRangeBody::Create(httpBody, chunkSize * chunkNumber, bytesTo));
-    request.SetCancellationToken(ct);
-    request.SetUploadProgressCallback(progressCallback);
+    SetCommonRequestOptions(request, HttpRequest::ResetTransfer, AzureBlobStorageClient::Timeout::Transfer::Upload, progressCallback, ct);
 
     std::shared_ptr<AzureResult> finalResult = std::make_shared<AzureResult>();
     return request.PerformAsync()
@@ -131,8 +146,7 @@ ICancellationTokenPtr ct
 
         HttpRequest finalRequest(blockListUrl, "PUT", m_customHandler);
         finalRequest.SetRequestBody(HttpStringBody::Create(finalBody));
-        finalRequest.SetCancellationToken(ct);
-        finalRequest.SetUploadProgressCallback(progressCallback);
+        SetCommonRequestOptions(finalRequest, HttpRequest::ResetTransfer, AzureBlobStorageClient::Timeout::Transfer::Upload, progressCallback, ct);
 
         finalRequest.PerformAsync()
             ->Then([=] (const HttpResponse& httpResponse)
