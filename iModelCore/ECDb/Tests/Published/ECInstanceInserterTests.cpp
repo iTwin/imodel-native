@@ -372,7 +372,7 @@ TEST_F (ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
     //scenario 1: double-check what SQLite does with default values if the INSERT statement
     //specifies NULL or a parameter:
         {
-        ECInstanceId id(UINT64_C(1));
+        ECInstanceId id(UINT64_C(1000));
         Statement stmt;
         ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (ECInstanceId,I,S) VALUES (?, 1,'INSERT without specifying LastMod column')"));
         stmt.BindId (1, id);
@@ -382,7 +382,7 @@ TEST_F (ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
         }
 
         {
-        ECInstanceId id(UINT64_C(2));
+        ECInstanceId id(UINT64_C(1002));
         Statement stmt;
         ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (ECInstanceId,I,S) VALUES (?, 1,'INSERT with literal NULL')"));
         stmt.BindId (1, id);
@@ -392,7 +392,7 @@ TEST_F (ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
         }
 
         {
-        ECInstanceId id(UINT64_C(3));
+        ECInstanceId id(UINT64_C(1003));
         Statement stmt;
         ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (ECInstanceId,I,S,LastMod) VALUES (?,1,'INSERT with bound parameter',?)"));
         stmt.BindId (1, id);
