@@ -68,6 +68,8 @@ CachedStatementPtr TxnManager::GetTxnStatement(Utf8CP sql) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::SaveCurrentChange(ChangeSet& changeset, Utf8CP operation)
     {
+    BeAssert(0 != changeset.GetSize()); // See ReadChangeSet for a similar assert
+
     enum Column : int {Id=1,Deleted=2,Grouped=3,Operation=4,Change=5};
     CachedStatementPtr stmt = GetTxnStatement("INSERT INTO " DGN_TABLE_Txns "(Id,Deleted,Grouped,Operation,Change) VALUES(?,?,?,?,?)");
 
@@ -473,7 +475,17 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
     auto rc = changeset.FromChangeTrack(*this);
     UNUSED_VARIABLE(rc);
     BeAssert(BE_SQLITE_OK == rc);
-    //BeAssert(0 != changeset.GetSize());
+
+    if (0 == changeset.GetSize())
+        {
+        // It turns out that the changes in the changeset make no actual change in the Db. 
+        // So there's nothing to validate or to save in Undo.
+        Restart();
+        return OnCommitStatus::Continue;
+        }
+
+    BeAssert(0 != changeset.GetSize());
+    
     Restart();  // clear the change tracker, since we have captured all the changes in the changeset
 
     if (!isCommit)
