@@ -80,6 +80,7 @@ struct AzureBlobStorageClient : public IAzureBlobStorageClient
             struct Transfer
                 {
                 static const uint32_t FileDownload;
+                static const uint32_t Upload;
                 };
             };
 
