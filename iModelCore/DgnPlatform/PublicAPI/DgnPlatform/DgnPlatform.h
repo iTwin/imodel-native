@@ -833,6 +833,7 @@ enum class DrawPurpose
     VisibilityCalculation,
     Dynamics,
     Redraw,
+    Heal,
 };
 
 //! Used to communicate the result of handling an event from a GPS.
