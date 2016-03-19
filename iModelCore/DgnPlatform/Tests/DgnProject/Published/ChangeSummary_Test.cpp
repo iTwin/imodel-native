@@ -1368,10 +1368,10 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
     ECClassId relClassId = m_testDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_RELNAME_ElementOwnsChildElements);
     ECClassId elClassId = m_testDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
 
-    ChangeSummary::Instance instance = changeSummary.GetInstance(elClassId, childElementId);
+    ChangeSummary::Instance instance = changeSummary.GetInstance(elClassId, ECInstanceId(childElementId.GetValue()));
     ASSERT_TRUE(instance.IsValid());
 
-    ChangeSummary::Instance relInstance = changeSummary.GetInstance(relClassId, childElementId);
+    ChangeSummary::Instance relInstance = changeSummary.GetInstance(relClassId, ECInstanceId(childElementId.GetValue()));
     ASSERT_TRUE(relInstance.IsValid());
 
     DbDupValue value(nullptr);

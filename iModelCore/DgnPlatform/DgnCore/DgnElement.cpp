@@ -1155,7 +1155,7 @@ void InstanceUpdater::Update(DgnElementCR el)
         IECInstancePtr instance = adapter.GetInstance();
         BeAssert(instance.IsValid());
         Utf8Char idStrBuffer[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
-        ECInstanceIdHelper::ToString(idStrBuffer, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, el.GetElementId());
+        ECInstanceIdHelper::ToString(idStrBuffer, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ECInstanceId(el.GetElementId().GetValue()));
         ECN::StandaloneECInstancePtr targetInstance = targetClass->GetDefaultStandaloneEnabler()->CreateInstance();
         targetInstance->SetInstanceId(idStrBuffer);
         targetInstance->CopyValues(*instance.get());

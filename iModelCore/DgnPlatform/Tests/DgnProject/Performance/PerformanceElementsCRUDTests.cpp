@@ -85,7 +85,7 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
     ASSERT_TRUE (m_db.IsValid());
     }
 
-int64_t PerformanceElementsCRUDTestFixture::s_elementId = INT64_C(2000000);
+uint64_t PerformanceElementsCRUDTestFixture::s_elementId = UINT64_C(2000000);
 
 Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
     "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
