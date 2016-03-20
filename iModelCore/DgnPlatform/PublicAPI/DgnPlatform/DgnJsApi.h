@@ -685,7 +685,7 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
         }
 
 
-    static JsGeometryBuilderP CreateForElement(JsDgnElementP el, JsTransformP transform)
+    static JsGeometryBuilderP CreateForElementWithTransform(JsDgnElementP el, JsTransformP transform)
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(el) && transform);
         DPoint3d origin;
@@ -695,7 +695,7 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
         return new JsGeometryBuilder(el, origin, angles);
         }
 
-    static JsGeometryBuilderP CreateForModel(JsDgnModelP model, JsDgnObjectIdP catid, JsTransformP transform)
+    static JsGeometryBuilderP CreateForModelWithTransform(JsDgnModelP model, JsDgnObjectIdP catid, JsTransformP transform)
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(model) && transform);
         DPoint3d origin;

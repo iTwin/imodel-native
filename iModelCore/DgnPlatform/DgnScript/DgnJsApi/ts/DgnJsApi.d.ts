@@ -701,7 +701,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
          * @return a GeometryBuilder object
          * @see CreateForModel
          */
-        static CreateForElement(el: DgnElementP, transform: TransformP): GeometryBuilderP;
+        static CreateForElementWithTransform(el: DgnElementP, transform: TransformP): GeometryBuilderP;
 
         /**
          * Construct a new GeometryBuilder to prepare geometry for elements in the specified model and category
@@ -710,7 +710,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
          * @param transform The placement transform (origin and axes)
          * @return a GeometryBuilder object
          */
-        static CreateForModel(model: DgnModelP, catid: DgnObjectIdP, t: TransformP): GeometryBuilderP;
+        static CreateForModelWithTransform(model: DgnModelP, catid: DgnObjectIdP, transform: TransformP): GeometryBuilderP;
 
         /**
          * Construct a new GeometryBuilder to prepare geometry for a DgnGeometryPart
