@@ -668,6 +668,7 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
 
     JsGeometryBuilder(GeometryBuilderR gb) : m_builder(&gb) {}
     JsGeometryBuilder(JsDgnElementP el, JsDPoint3dP o, JsYawPitchRollAnglesP angles);
+    JsGeometryBuilder(JsDgnElementP el, DPoint3dCR o, YawPitchRollAnglesCR angles);
     ~JsGeometryBuilder() {}
     bool IsValid() const {return m_builder.IsValid();}
 
@@ -682,6 +683,29 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
         DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(model) && o && angles);
         return new JsGeometryBuilder(*GeometryBuilder::Create(*model->m_model, DgnCategoryId(catid->m_id), o->Get(), angles->GetYawPitchRollAngles()));
         }
+
+
+    static JsGeometryBuilderP CreateForElement(JsDgnElementP el, JsTransformP transform)
+        {
+        DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(el) && transform);
+        DPoint3d origin;
+        YawPitchRollAngles angles;
+        if (!YawPitchRollAngles::TryFromTransform (origin, angles, transform->Get ()))
+            return nullptr;
+        return new JsGeometryBuilder(el, origin, angles);
+        }
+
+    static JsGeometryBuilderP CreateForModel(JsDgnModelP model, JsDgnObjectIdP catid, JsTransformP transform)
+        {
+        DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(model) && transform);
+        DPoint3d origin;
+        YawPitchRollAngles angles;
+        if (!YawPitchRollAngles::TryFromTransform (origin, angles, transform->Get ()))
+            return nullptr;
+        return new JsGeometryBuilder(*GeometryBuilder::Create(*model->m_model, DgnCategoryId(catid->m_id), origin, angles));
+        }
+
+
 
     static JsGeometryBuilderP CreateGeometryPart(JsDgnDbP db, bool is3d)
         {
