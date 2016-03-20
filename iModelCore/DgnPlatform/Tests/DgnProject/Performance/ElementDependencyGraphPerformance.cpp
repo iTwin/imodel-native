@@ -32,7 +32,7 @@ struct TxnMonitorVerifier : TxnMonitor
 {
     bool m_OnTxnClosedCalled;
     bool m_OnTxnReversedCalled;
-    bset<ECInstanceId> m_adds, m_deletes, m_mods;
+    bset<BeInt64Id> m_adds, m_deletes, m_mods;
 
     TxnMonitorVerifier();
     ~TxnMonitorVerifier();

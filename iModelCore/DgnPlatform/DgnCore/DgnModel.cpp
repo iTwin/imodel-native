@@ -212,9 +212,9 @@ ECSqlClassInfo const& DgnModels::FindClassInfo(DgnModelR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-CachedECSqlStatementPtr DgnModels::GetSelectStmt(DgnModelR model) { return FindClassInfo(model).GetSelectStmt(m_dgndb, model.GetModelId()); }
+CachedECSqlStatementPtr DgnModels::GetSelectStmt(DgnModelR model) { return FindClassInfo(model).GetSelectStmt(m_dgndb, ECInstanceId(model.GetModelId().GetValue())); }
 CachedECSqlStatementPtr DgnModels::GetInsertStmt(DgnModelR model) { return FindClassInfo(model).GetInsertStmt(m_dgndb); }
-CachedECSqlStatementPtr DgnModels::GetUpdateStmt(DgnModelR model) { return FindClassInfo(model).GetUpdateStmt(m_dgndb, model.GetModelId()); }
+CachedECSqlStatementPtr DgnModels::GetUpdateStmt(DgnModelR model) { return FindClassInfo(model).GetUpdateStmt(m_dgndb, ECInstanceId(model.GetModelId().GetValue())); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    11/00

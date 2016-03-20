@@ -174,7 +174,9 @@
     <ClInclude Include="PublicAPI\DgnPlatform\QvViewport.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\RealityDataCache.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\RegionUtil.h" />
+    <ClInclude Include="PublicAPI\DgnPlatform\Render.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\RenderMaterial.h" />
+    <ClInclude Include="PublicAPI\DgnPlatform\RepositoryManager.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\RevisionManager.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\SatelliteChangeSets.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\ScanCriteria.h" />

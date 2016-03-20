@@ -191,7 +191,7 @@ DgnDbStatus DgnMaterial::_OnChildImport(DgnElementCR child, DgnModelR destModel,
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnMaterial::Iterator DgnMaterial::Iterator::Create(DgnDbR db, Options const& options)
     {
-    Utf8String ecsql("SELECT ECInstanceId,Code.Value,Code.Namespace,ParentId,Descr FROM " DGN_SCHEMA(DGN_CLASSNAME_MaterialElement));
+    Utf8String ecsql("SELECT ECInstanceId,Code.[Value],Code.Namespace,ParentId,Descr FROM " DGN_SCHEMA(DGN_CLASSNAME_MaterialElement));
     if (options.m_byPalette)
         ecsql.append(" WHERE Code.[Namespace]=?");
 

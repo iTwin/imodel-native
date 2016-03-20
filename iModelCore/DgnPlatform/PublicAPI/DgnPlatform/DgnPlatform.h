@@ -351,7 +351,7 @@ typedef IdSet<DgnMaterialId> DgnMaterialIdSet;          //!< IdSet with DgnMater
 //=======================================================================================
 //! A DgnClassId is the local id for an ECClass in a DgnDb.
 //=======================================================================================
-struct DgnClassId : BeSQLite::BeInt64Id
+struct DgnClassId : BeInt64Id
 {
     DgnClassId() {Invalidate();}
     explicit DgnClassId(int64_t val) : BeInt64Id(val) {}
@@ -833,6 +833,7 @@ enum class DrawPurpose
     VisibilityCalculation,
     Dynamics,
     Redraw,
+    Heal,
 };
 
 //! Used to communicate the result of handling an event from a GPS.

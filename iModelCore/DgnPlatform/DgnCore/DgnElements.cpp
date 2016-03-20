@@ -1503,7 +1503,7 @@ CachedECSqlStatementPtr DgnElements::GetPreparedInsertStatement(DgnElementR el) 
 CachedECSqlStatementPtr DgnElements::GetPreparedUpdateStatement(DgnElementR el) const
     {
     // Not bothering to cache per handler...use our general-purpose ECSql statement cache
-    return FindClassInfo(el).GetUpdateStmt(GetDgnDb(), el.GetElementId());
+    return FindClassInfo(el).GetUpdateStmt(GetDgnDb(), ECInstanceId(el.GetElementId().GetValue()));
     }
 
 /*---------------------------------------------------------------------------------**//**
