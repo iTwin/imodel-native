@@ -798,13 +798,6 @@ bool ECDbSqlForeignKeyConstraint::ContainsInFkColumns(Utf8CP columnName) const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDbSqlForeignKeyConstraint::ContainsInReferencedTableColumns(Utf8CP columnName) const
-    {
-    return std::find_if(m_referencedTableColumns.begin(), m_referencedTableColumns.end(), [columnName] (ECDbSqlColumn const* column) { return column->GetName().EqualsI(columnName); }) != m_referencedTableColumns.end();
-    }
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    affan.khan      09/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
 //static
 Utf8CP ECDbSqlForeignKeyConstraint::ToSQL(ForeignKeyActionType actionType)
     {
@@ -1423,25 +1416,6 @@ BentleyStatus ECDbSqlColumn::AddKind(ColumnKind kind)
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
-//--------------------------------------------------------------------------------------
-Utf8String ECDbSqlColumn::GetFullName() const
-    {
-    return BuildFullName(GetTable().GetName().c_str(), GetName().c_str());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//--------------------------------------------------------------------------------------
-//static 
-Utf8String ECDbSqlColumn::BuildFullName(Utf8CP table, Utf8CP column)
-    {
-    Utf8String str;
-    str.append("[").append(table).append("].[").append(column).append("]");
-    return str;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
 std::weak_ptr<ECDbSqlColumn> ECDbSqlColumn::GetWeakPtr() const
     {
@@ -1897,77 +1871,6 @@ DbResult ECDbSqlPersistence::ReadColumn(Statement& stmt, ECDbSqlTable& table, st
 
     if (primaryKeyOrdinal >= 0)
         primaryKeys[primaryKeyOrdinal] = column;
-
-    return BE_SQLITE_OK;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        01/2015
-//---------------------------------------------------------------------------------------
-DbResult ECDbSqlPersistence::ReadForeignKeys(ECDbSqlTable& o) const
-    {
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT F.Id, R.Name, F.Name, F.OnDelete, F.OnUpdate FROM ec_ForeignKey F INNER JOIN ec_Table R ON R.Id=F.ReferencedTableId WHERE F.TableId=?");
-    if (stmt == nullptr)
-        return BE_SQLITE_ERROR;
-
-    stmt->BindId(1, o.GetId());
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
-        const DbResult stat = ReadForeignKey(*stmt, o);
-        if (stat != BE_SQLITE_OK)
-            return stat;
-        }
-
-    return BE_SQLITE_OK;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        01/2015
-//---------------------------------------------------------------------------------------
-DbResult ECDbSqlPersistence::ReadForeignKey(Statement& stmt, ECDbSqlTable& o) const
-    {
-    //F.Id, P.Name, R.Name, F.Name, F.OnDelete, F.OnUpdate
-    ECDbConstraintId id = stmt.GetValueId<ECDbConstraintId>(0);
-    auto referenceTableName = stmt.GetValueText(1);
-    auto name = stmt.IsColumnNull(2) ? nullptr : stmt.GetValueText(2);
-    auto onDelete = stmt.IsColumnNull(3) ? ForeignKeyActionType::NotSpecified : static_cast<ForeignKeyActionType>(stmt.GetValueInt(3));
-    auto onUpdate = stmt.IsColumnNull(4) ? ForeignKeyActionType::NotSpecified : static_cast<ForeignKeyActionType>(stmt.GetValueInt(4));
-
-    auto referenceTable = o.GetDbDef().FindTable(referenceTableName);
-    if (!referenceTable)
-        {
-        BeAssert(false && "Referenced Table not found");
-        return BE_SQLITE_ERROR;
-        }
-
-    auto n = o.CreateForeignKeyConstraint(*referenceTable);
-    if (!n)
-        {
-        BeAssert(false && "Failed to create foreign key constraint");
-        return BE_SQLITE_ERROR;
-        }
-
-    if (name != nullptr)
-        n->SetName(name);
-
-    n->SetId(id);
-    n->SetOnDeleteAction(onDelete);
-    n->SetOnUpdateAction(onUpdate);
-
-    CachedStatementPtr cstmt = m_ecdb.GetCachedStatement("SELECT A.Name, B.Name FROM ec_ForeignKeyColumn F INNER JOIN ec_Column A ON F.ColumnId=A.Id INNER JOIN ec_Column B ON F.ReferencedColumnId=B.Id  WHERE F.ForeignKeyId=? ORDER BY F.Ordinal");
-    if (cstmt == nullptr)
-        return BE_SQLITE_ERROR;
-
-    cstmt->BindId(1, id);
-    while (cstmt->Step() == BE_SQLITE_ROW)
-        {
-        auto columnL = cstmt->GetValueText(0);
-        auto columnR = cstmt->GetValueText(1);
-
-        if (n->Add(columnL, columnR) != BentleyStatus::SUCCESS)
-            return BE_SQLITE_ERROR;
-        }
 
     return BE_SQLITE_OK;
     }

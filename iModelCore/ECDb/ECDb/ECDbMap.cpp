@@ -1423,21 +1423,6 @@ ECDbMap::LightweightCache::ClassIdsPerTableMap const& ECDbMap::LightweightCache:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-void ECDbMap::LightweightCache::Load(bool forceReload)
-    {
-    if (forceReload)
-        Reset();
-
-    LoadAnyClassRelationships();
-    LoadRelationshipCache();
-    LoadClassIdsPerTable();
-    LoadHorizontalPartitions();
-    LoadAnyClassReplacements();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
 void ECDbMap::LightweightCache::Reset ()
     {
     m_loadedFlags.m_classIdsPerTableIsLoaded = 

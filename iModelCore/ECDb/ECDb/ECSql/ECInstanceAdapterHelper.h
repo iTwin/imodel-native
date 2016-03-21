@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECInstanceAdapterHelper.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -237,7 +237,6 @@ public:
     //!Generates and adds a new binding info for the given parameter.
     //!@return SUCCESS in case of success, ERROR otherwise
     BentleyStatus AddBindingInfo (ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty, int ecsqlParameterIndex);
-    BentleyStatus AddBindingInfo (ECN::ECEnablerCR ecEnabler, ECN::ECPropertyCR ecProperty, Utf8CP accessString, int ecsqlParameterIndex);
     //!Generates and adds a new binding info for the specified ECSQL System property for the given parameter.
     //!@return binding info in case of success, nullptr otherwise
     ECSqlSystemPropertyBindingInfo* AddBindingInfo (ECValueBindingInfo::SystemPropertyKind kind, int ecsqlParameterIndex);

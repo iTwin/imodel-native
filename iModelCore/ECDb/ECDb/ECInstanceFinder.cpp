@@ -184,39 +184,7 @@ void ECInstanceFinder::Finalize()
     {
     m_queryableRelationshipsByClass.clear();
     }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   04/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECInstanceFinder::FindEndClasses(bset<ECClassId>& endClassIds, ECClassId relationshipClassId, ECRelationshipEnd relationshipEnd, ECDbCR ecDb)
-    {
-    Utf8CP sql =
-        "SELECT EndConstraintClass.ClassId "
-        "FROM ec_RelationshipConstraintClass EndConstraintClass "
-        "JOIN ec_RelationshipConstraint EndConstraint "
-        "ON EndConstraint.RelationshipClassId = EndConstraintClass.RelationshipClassId AND EndConstraint.RelationshipEnd = EndConstraintClass.RelationshipEnd "
-        "WHERE EndConstraintClass.RelationshipClassId=? AND EndConstraintClass.RelationshipEnd=?";
 
-    BeSQLite::CachedStatementPtr stmt;
-    ecDb.GetCachedStatement(stmt, sql);
-    stmt->BindId(1, relationshipClassId);
-    stmt->BindInt(2, relationshipEnd);
-
-    DbResult r = stmt->Step();
-    if (r == BE_SQLITE_DONE)
-        return;
-
-    stmt->Reset();
-    while ((r = stmt->Step()) == BE_SQLITE_ROW)
-        {
-        ECClassId endClassId = stmt->GetValueId<ECClassId>(0);
-        if (endClassIds.find(endClassId) != endClassIds.end())
-            continue;
-        endClassIds.insert(endClassId);
-        }
-    BeAssert(r == BE_SQLITE_DONE);
-    }
-    
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                 Ramanujam.Raman     08/2013
 +---------------+---------------+---------------+---------------+---------------+------*/

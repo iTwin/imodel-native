@@ -80,6 +80,23 @@ TEST_F (ECDbMappingTestFixture, InvalidMapStrategyCATests)
         "    </ECEntityClass>"
         "</ECSchema>", false, "Option JoinedTablePerDirectSubclass cannot be used without a strategy"));
 
+    testItems.push_back (SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>bla</Options>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>", false, "invalid MapStrategy Option not allowed"));
+
     AssertSchemaImport (testItems, "invalidmapstrategycatests.ecdb");
     }
 

@@ -63,8 +63,6 @@ private:
 
     static ECInstanceIdMode ValidateUserProvidedECInstanceId (int& ecinstanceIdExpIndex, ECSqlPrepareContext&, InsertStatementExp const&, ClassMap const&);
 
-    static int GetParamterCount(Exp const& exp, std::set<ParameterExp const*>& namedParameterList);
-
 public:
     static ECSqlStatus Prepare (ECSqlPrepareContext&, InsertStatementExp const&);
     };

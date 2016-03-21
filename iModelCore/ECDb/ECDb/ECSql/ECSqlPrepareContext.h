@@ -381,8 +381,7 @@ struct ECSqlPrepareContext
         SelectionOptions m_selectionOptions;
         std::unique_ptr<JoinedTableInfo> m_joinedTableInfo;
         ECClassId m_joinedTableClassId;
-        //SELECT only
-        static bool FindLastParameterIndexBeforeWhereClause(int& index, Exp const& statementExp, WhereExp const* whereExp);
+
     public:
         ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&);
         ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECN::ECClassId joinedTableClassId);
@@ -418,9 +417,6 @@ struct ECSqlPrepareContext
 
         bool IsEmbeddedStatement() const { return m_parentCtx != nullptr; }
         bool IsPrimaryStatement() const { return !IsEmbeddedStatement(); }
-
-        static Utf8String CreateECInstanceIdSelectionQuery(ECSqlPrepareContext& ctx, ClassNameExp const& classNameExpr, WhereExp const* whereExp);
-        static int FindLastParameterIndexBeforeWhereClause(Exp const& statementExp, WhereExp const* whereExp);
     };
 
 

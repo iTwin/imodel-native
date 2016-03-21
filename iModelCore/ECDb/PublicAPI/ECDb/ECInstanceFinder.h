@@ -121,7 +121,6 @@ struct ECInstanceFinder
 private:
     QueryableRelationshipsByClass m_queryableRelationshipsByClass;
 
-    static void FindEndClasses (bset<ECN::ECClassId>& endClassIds, ECN::ECClassId relationshipClassId, ECN::ECRelationshipEnd relationshipEnd, ECDbCR ecDb);
     static DbResult FindRelationshipsOnEnd (QueryableRelationshipVector& queryableRelationships, ECN::ECClassId foreignEndClassId, ECDbCR ecDb);
     DbResult GetRelationshipsOnEnd (QueryableRelationshipVectorP &queryableRelationships, ECN::ECClassId foreignEndClassId);
 

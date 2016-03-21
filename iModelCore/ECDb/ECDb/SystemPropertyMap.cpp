@@ -20,21 +20,6 @@ std::vector<ECDbSqlColumn const*> SystemPropertyMap::ToVector(ECDbSqlColumn cons
     }
 
 //----------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                02/2016
-//+---------------+---------------+---------------+---------------+---------------+-
-std::vector<std::weak_ptr<ECDbSqlColumn>> SystemPropertyMap::ToWeakPtr(std::vector<ECDbSqlColumn const*>const& columns)
-    {
-    std::vector<std::weak_ptr<ECDbSqlColumn>> tmp;
-    for (ECDbSqlColumn const* column : columns)
-        {
-        if (column != nullptr)
-            tmp.push_back(column->GetWeakPtr());
-        }
-
-    BeAssert(tmp.size() == columns.size());
-    return std::move(tmp);
-    }
-//----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
 SystemPropertyMap::SystemPropertyMap(ECPropertyCR ecProperty, std::vector<ECDbSqlColumn const*> columns, ECSqlSystemProperty kind)
@@ -68,25 +53,6 @@ ECDbSqlColumn const& SystemPropertyMap::GetColumn() const
     }
 
 //----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                01/2016
-//+---------------+---------------+---------------+---------------+---------------+-
-ECDbSqlColumn const* SystemPropertyMap::GetColumn(ECDbSqlTable const& table) const
-    {
-    BeAssert(!m_columns.empty());
-    if (&GetColumn().GetTable() == &table)
-        return &GetColumn();
-
-
-    for (std::weak_ptr<ECDbSqlColumn> const& column: m_columns)
-        {
-        if (&table == &column.lock()->GetTable())
-            return column.lock().get();
-        }
-
-    return nullptr;
-    }
-
-//----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
 void SystemPropertyMap::_GetColumns (std::vector<ECDbSqlColumn const*>& columns) const
@@ -101,34 +67,6 @@ void SystemPropertyMap::_GetColumns (std::vector<ECDbSqlColumn const*>& columns)
         {
         BeAssert (!column.expired ());
         columns.push_back(column.lock().get());
-        }
-    }
-
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                01/2016
-//+---------------+---------------+---------------+---------------+---------------+-
-ColumnKind SystemPropertyMap::ToColumnKind() const
-    {
-    switch (m_kind)
-        {
-        case ECSqlSystemProperty::ECInstanceId:
-            return ColumnKind::ECInstanceId;
-
-        case ECSqlSystemProperty::SourceECClassId:
-            return ColumnKind::SourceECClassId;
-
-        case ECSqlSystemProperty::SourceECInstanceId:
-            return ColumnKind::SourceECInstanceId;
-
-        case ECSqlSystemProperty::TargetECClassId:
-            return ColumnKind::TargetECClassId;
-
-        case ECSqlSystemProperty::TargetECInstanceId:
-            return ColumnKind::TargetECInstanceId;
-
-        default:
-            BeAssert(false);
-            return ColumnKind::Unknown;
         }
     }
 
@@ -214,25 +152,7 @@ void RelationshipConstraintPropertyMap::AppendSelectClauseSqlSnippetForView(Nati
         viewSql.AppendSpace().Append(GetViewColumnAlias());
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      12/2013
-//---------------------------------------------------------------------------------------
-void RelationshipConstraintPropertyMap::AppendSelectClauseSqlSnippetForView(NativeSqlBuilder& viewSql) const
-    {
-    ECDbSqlColumn const* column = GetSingleColumn();
-    if (column == nullptr)
-        {
-        BeAssert(column != nullptr && "Expecting a column");
-        return;
-        }
-
-    viewSql.Append(column->GetName().c_str());
-    if (HasViewColumnAlias())
-        viewSql.AppendSpace().Append(GetViewColumnAlias());
-    }
-
 //******************************** PropertyMapRelationshipConstraintECInstanceId ****************************************
-
 //----------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle             01/2014
 //+---------------+---------------+---------------+---------------+---------------+-

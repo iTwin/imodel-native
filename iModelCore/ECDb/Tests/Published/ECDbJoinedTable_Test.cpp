@@ -1311,6 +1311,8 @@ TEST_F (JoinedTableECDbMapStrategyTests, SelfJoinRelationships)
     ecsql.Sprintf (ToSelectECSql (db, "ManyFooHasManyFoo").c_str (), manyFooHasManyFooInstanceId4.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId2, fooInstanceId2, fooClassId, fooClassId);
     }
+
+    db.Schemas().CreateECClassViewsInDb();
     }
 
 //---------------------------------------------------------------------------------------

@@ -51,53 +51,6 @@ ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStateme
     }
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Muhammad.zaighum                    8/2014
-//+---------------+---------------+---------------+---------------+---------------+--------
-//static
-int ECSqlInsertPreparer::GetParamterCount(Exp const& exp, std::set<ParameterExp const*>& namedParameterList)
-    {
-    int nFoundParameters = 0;
-    if (exp.IsParameterExp())
-        {
-        auto param = static_cast<ParameterExp const*>(&exp);
-        if (param->IsNamedParameter())
-            {
-            if (namedParameterList.find(param) == namedParameterList.end())
-                {
-                namedParameterList.insert(param);
-                }
-            }
-        else
-            nFoundParameters = nFoundParameters + 1;
-        }
-
-    for (auto const child : exp.GetChildren())
-        {
-        if (child->IsParameterExp())
-            {
-            auto param = static_cast<ParameterExp const*>(child);
-            if (param->IsNamedParameter())
-                {
-                if (namedParameterList.find(param) == namedParameterList.end())
-                    {
-                    namedParameterList.insert(param);
-                    }
-                else
-                    continue;
-                }
-
-            nFoundParameters = nFoundParameters + 1;
-            }
-        else if (child->GetChildrenCount() > 0)
-            {
-            nFoundParameters += GetParamterCount(*child, namedParameterList);
-            }
-        }
-
-    return nFoundParameters;
-    }
-
-//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
