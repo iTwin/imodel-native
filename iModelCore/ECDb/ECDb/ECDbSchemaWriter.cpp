@@ -1177,5 +1177,147 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
 
     return ImportCustomAttributes(ecProperty, ecPropertyId, ECContainerType::Property);
     }
+/////////////////////////////////////////////////////////////////////////////
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SqlUpdater::BindSet(Statement& stmt, Utf8StringCR column, int i) const
+    {
+    auto itor = m_updateMap.find(column);
+    if (itor == m_updateMap.end())
+        return ERROR;
 
+    switch (itor->second.GetPrimitiveType())
+        {
+            case PRIMITIVETYPE_Integer:
+                return stmt.BindInt(i, itor->second.GetInteger()) == BE_SQLITE_OK ? SUCCESS : ERROR;
+            case PRIMITIVETYPE_Long:
+                return stmt.BindInt64(i, itor->second.GetLong()) == BE_SQLITE_OK ? SUCCESS : ERROR;
+            case PRIMITIVETYPE_Double:
+                return stmt.BindDouble(i, itor->second.GetDouble()) == BE_SQLITE_OK ? SUCCESS : ERROR;
+            case PRIMITIVETYPE_String:
+                return stmt.BindText(i, itor->second.GetUtf8CP(), Statement::MakeCopy::No) == BE_SQLITE_OK ? SUCCESS : ERROR;
+            case PRIMITIVETYPE_Boolean:
+                return stmt.BindInt(i, itor->second.GetBoolean()) == BE_SQLITE_OK ? SUCCESS : ERROR;
+        }
+
+    BeAssert(false && "Unsupported case");
+    return ERROR;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SqlUpdater::BindWhere(Statement& stmt, Utf8StringCR column, int i) const
+    {
+    auto itor = m_whereMap.find(column);
+    if (itor == m_whereMap.end())
+        return ERROR;
+
+    switch (itor->second.GetPrimitiveType())
+        {
+            case PRIMITIVETYPE_Integer:
+                return stmt.BindInt(i, itor->second.GetInteger()) == BE_SQLITE_OK ? SUCCESS : ERROR;
+            case PRIMITIVETYPE_Long:
+                return stmt.BindInt64(i, itor->second.GetLong()) == BE_SQLITE_OK ? SUCCESS : ERROR;
+            case PRIMITIVETYPE_Double:
+                return stmt.BindDouble(i, itor->second.GetDouble()) == BE_SQLITE_OK ? SUCCESS : ERROR;
+            case PRIMITIVETYPE_String:
+                return stmt.BindText(i, itor->second.GetUtf8CP(), Statement::MakeCopy::No) == BE_SQLITE_OK ? SUCCESS : ERROR;
+            case PRIMITIVETYPE_Boolean:
+                return stmt.BindInt(i, itor->second.GetBoolean()) == BE_SQLITE_OK ? SUCCESS : ERROR;
+        }
+
+    BeAssert(false && "Unsupported case");
+    return ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SqlUpdater::Apply(ECDb const& ecdb) const
+    {
+    if (m_updateMap.empty())
+        return SUCCESS;
+
+    NativeSqlBuilder sql;
+    sql.Append("UPDATE ").AppendEscaped(m_table.c_str()).Append(" SET ");
+    bool first = true;
+    for (auto& key : m_updateMap)
+        {
+        if (first)
+            first = false;
+        else
+            sql.Append(", ");
+
+        sql.Append(key.first.c_str()).Append(" = ?");
+        }
+
+    if (m_whereMap.empty())
+        {
+        BeAssert(false && "WHERE must not be empty");
+        return ERROR;
+        }
+
+    first = true;
+    for (auto& key : m_whereMap)
+        {
+        if (first)
+            first = false;
+        else
+            sql.Append(" AND ");
+
+        sql.Append(key.first.c_str()).Append(" = ?");
+        }
+
+    Statement stmt;
+    if (stmt.Prepare(ecdb, sql.ToString()) != BE_SQLITE_OK)
+        return ERROR;
+
+    int i = 1;
+    for (auto& key : m_updateMap)
+        if (BindSet(stmt, key.first, i++) != SUCCESS)
+            return ERROR;
+    i = 1;
+    for (auto& key : m_whereMap)
+        if (BindWhere(stmt, key.first, i++) != SUCCESS)
+            return ERROR;
+
+    return stmt.Step() == BE_SQLITE_DONE ? SUCCESS : ERROR;
+    }
+void SqlUpdater::Set(Utf8CP column, Utf8CP value)
+    {
+    m_updateMap[column] = ECN::ECValue(value);
+    }
+void SqlUpdater::Set(Utf8CP column, Utf8StringCR value)
+    {
+    m_updateMap[column] = ECN::ECValue(value.c_str());
+    }
+void SqlUpdater::Set(Utf8CP column, double value)
+    {
+    m_updateMap[column] = ECN::ECValue(value);
+    }
+void SqlUpdater::Set(Utf8CP column, bool value)
+    {
+    m_updateMap[column] = ECN::ECValue(value);
+    }
+void SqlUpdater::Set(Utf8CP column, uint32_t value)
+    {
+    m_updateMap[column] = ECN::ECValue(static_cast<int64_t>(value));
+    }
+void SqlUpdater::Set(Utf8CP column, uint64_t value)
+    {
+    m_updateMap[column] = ECN::ECValue(static_cast<int64_t>(value));
+    }
+void SqlUpdater::Set(Utf8CP column, int32_t value)
+    {
+    m_updateMap[column] = ECN::ECValue(value);
+    }
+void SqlUpdater::Set(Utf8CP column, int64_t value)
+    {
+    m_updateMap[column] = ECN::ECValue(value);
+    }
+void SqlUpdater::Where(Utf8CP column, int64_t value)
+    {
+    m_whereMap[column] = ECN::ECValue(value);
+    }
 END_BENTLEY_SQLITE_EC_NAMESPACE

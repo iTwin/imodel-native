@@ -21,18 +21,106 @@ struct ECRelationshipConstraintClassChange;
 struct ECEnumeratorChange;
 struct ECPropertyValueChange;
 struct ECObjectChange;
-//=========================================
 
+//=======================================================================================
+// @bsienum                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 enum class ChangeState
     {
     Deleted = 1, //This need to be none zero base
     Modified =2 ,
     New =3,
     };
+
+//=======================================================================================
+// @bsienum                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 enum class ValueId
     {
     Deleted, New
     };
+
+//=======================================================================================
+// @bsienum                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
+enum SystemId : uint32_t
+    {
+    NONE,
+    ALTERNATIVEPRESENTATIONUNITLIST,
+    ARRAY,
+    CARDINALITY,
+    CLASSES,
+    CLASS,
+    CLASSMODIFIER,
+    CLASSFULLNAME,
+    CONSTANTKEY,
+    CONSTRAINTCLASS,
+    CONSTRAINTCLASSES,
+    CONSTRAINT,
+    CUSTOMATTRIBTUES,
+    DEFAULTPRESENTATIONUNIT,
+    DESCRIPTION,
+    DIRECTION,
+    DISPLAYLABEL,
+    BASECLASSES,
+    BASECLASS,
+    ENUMERATION,
+    ENUMERATIONS,
+    ENUMERATOERS,
+    ENUMERATOR,
+    ENUMERATORS,
+    EXTENDEDTYPENAME,
+    INSTANCE,
+    INSTANCES,
+    INTEGER,
+    ISCUSTOMATTRIBUTECLASS,
+    ISENTITYCLASS,
+    ISPOLYMORPHIC,
+    ISREADONLY,
+    ISRELATIONSHIPCLASS,
+    ISSTRICT,
+    ISSTRUCTCLASS,
+    ISSTRUCT,
+    ISSTRUCTARRAY,
+    ISPRIMITIVE,
+    ISPRIMITIVEARRAY,
+    ISNAVIGATION,
+    KEYPROPERTIES,
+    KEYPROPERTY,
+    KINDOFQUANTITIES,
+    KINDOFQUANTITY,
+    MAXIMUMVALUE,
+    MAXOCCURS,
+    MINIMUMVALUE,
+    MINOCCURS,
+    NAME,
+    NAMESPACEPREFIX,
+    NAVIGATION,
+    PERSISTENCEUNIT,
+    PRECISION,
+    PROPERTIES,
+    PROPERTY,
+    PROPERTYTYPE,
+    REFERENCES,
+    REFERENCE,
+    RELATIONSHIP,
+    RELATIONSHIPNAME,
+    ROLELABEL,
+    SCHEMA,
+    SCHEMAS,
+    SOURCE,
+    STRENGTHDIRECTION,
+    STRENGTHTYPE,
+    STRING,
+    TARGET,
+    TYPENAME,
+    VERSIONMAJOR,
+    VERSIONMINOR,
+    VERSIONWRITE,
+    };
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 template<typename T>
 struct Nullable
     {
@@ -60,6 +148,9 @@ struct Nullable
         Nullable<T>& operator = (nullptr_t rhs);
     };
 
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct Binary
     {
     private:
@@ -87,81 +178,10 @@ struct Binary
         BentleyStatus CopyFrom(ECValueCR value);
         ~Binary();
     };
-    enum SystemId : uint32_t
-        {
-        NONE,
-        ALTERNATIVEPRESENTATIONUNITLIST,
-        ARRAY,
-        CARDINALITY,
-        CLASSES,
-        CLASS,
-        CLASSMODIFIER,
-        CLASSFULLNAME,
-        CONSTANTKEY,
-        CONSTRAINTCLASS,
-        CONSTRAINTCLASSES,
-        CONSTRAINT,
-        CUSTOMATTRIBTUES,
-        DEFAULTPRESENTATIONUNIT,
-        DESCRIPTION,
-        DIRECTION,
-        DISPLAYLABEL,
-        BASECLASSES,
-        BASECLASS,
-        ENUMERATION,
-        ENUMERATIONS,
-        ENUMERATOERS,
-        ENUMERATOR,
-        ENUMERATORS,
-        EXTENDEDTYPENAME,
-        INSTANCE,
-        INSTANCES,
-        INTEGER,
-        ISCUSTOMATTRIBUTECLASS,
-        ISENTITYCLASS,
-        ISPOLYMORPHIC,
-        ISREADONLY,
-        ISRELATIONSHIPCLASS,
-        ISSTRICT,
-        ISSTRUCTCLASS,
-        ISSTRUCT,
-        ISSTRUCTARRAY,
-        ISPRIMITIVE,
-        ISPRIMITIVEARRAY,
-        ISNAVIGATION,        
-        KEYPROPERTIES,
-        KEYPROPERTY,
-        KINDOFQUANTITIES,
-        KINDOFQUANTITY,
-        MAXIMUMVALUE,
-        MAXOCCURS,
-        MINIMUMVALUE,
-        MINOCCURS,
-        NAME,
-        NAMESPACEPREFIX,
-        NAVIGATION,
-        PERSISTENCEUNIT,
-        PRECISION,
-        PROPERTIES,
-        PROPERTY,
-        PROPERTYTYPE,
-        REFERENCES,
-        REFERENCE,
-        RELATIONSHIP,
-        RELATIONSHIPNAME,
-        ROLELABEL,
-        SCHEMA,
-        SCHEMAS,
-        SOURCE,
-        STRENGTHDIRECTION,
-        STRENGTHTYPE,
-        STRING,
-        TARGET,
-        TYPENAME,
-        VERSIONMAJOR,
-        VERSIONMINOR,
-        VERSIONWRITE,
-        };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct ECChange
     {
     public:
@@ -318,6 +338,10 @@ struct ECChange
         bool IsPending() const { return m_applied; }
         void Done() { BeAssert(m_applied == false); m_applied = true; }
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct ECObjectChange : ECChange
     {
     private:
@@ -368,6 +392,10 @@ struct ECObjectChange : ECChange
             :ECChange(state, systemId, parent, customId)
             {}
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 template<typename T>
 struct ECChangeArray : ECChange
     {
@@ -436,6 +464,10 @@ struct ECChangeArray : ECChange
             m_changes.erase(m_changes.begin() + index);
             }
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct ECSchemaChanges : ECChangeArray<ECSchemaChange>
     {
     public:
@@ -449,6 +481,10 @@ struct ECSchemaChanges : ECChangeArray<ECSchemaChange>
             }
         virtual ~ECSchemaChanges(){}
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct ECClassChanges : ECChangeArray<ECClassChange>
     {
     public:
@@ -458,7 +494,11 @@ struct ECClassChanges : ECChangeArray<ECClassChange>
             BeAssert(systemId == GetSystemId());
             }
         virtual ~ECClassChanges() {}
-    }; 
+    };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct ECEnumerationChanges : ECChangeArray<ECEnumerationChange>
     {
     public:
@@ -469,6 +509,10 @@ struct ECEnumerationChanges : ECChangeArray<ECEnumerationChange>
             }
         virtual ~ECEnumerationChanges() {}
     }; 
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 //struct ECKindOfQuantityChanges : ECChangeArray<KindOfQuantityChange>
 //    {
 //    public:
@@ -479,6 +523,9 @@ struct ECEnumerationChanges : ECChangeArray<ECEnumerationChange>
 //            }
 //        virtual ~ECKindOfQuantityChanges() {}
 //    };
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct ECInstanceChanges : ECChangeArray<ECInstanceChange>
     {
     public:
@@ -489,6 +536,10 @@ struct ECInstanceChanges : ECChangeArray<ECInstanceChange>
             }
         virtual ~ECInstanceChanges() {}
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct ECPropertyChanges : ECChangeArray<ECPropertyChange>
     {
     public:
@@ -499,6 +550,10 @@ struct ECPropertyChanges : ECChangeArray<ECPropertyChange>
             }
         virtual ~ECPropertyChanges() {}
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct ECRelationshipConstraintClassChanges : ECChangeArray<ECRelationshipConstraintClassChange>
     {
     public:
@@ -509,6 +564,10 @@ struct ECRelationshipConstraintClassChanges : ECChangeArray<ECRelationshipConstr
             }
         virtual ~ECRelationshipConstraintClassChanges() {}
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct ECEnumeratorChanges : ECChangeArray<ECEnumeratorChange>
     {
     public:
@@ -519,6 +578,10 @@ struct ECEnumeratorChanges : ECChangeArray<ECEnumeratorChange>
             }
         virtual ~ECEnumeratorChanges() {}
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct StringChanges : ECChangeArray<StringChange>
     {
     public:
@@ -527,6 +590,10 @@ struct StringChanges : ECChangeArray<StringChange>
             {}
         virtual ~StringChanges() {}
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct BaseClassChanges : ECChangeArray<StringChange>
     {
     public:
@@ -535,6 +602,10 @@ struct BaseClassChanges : ECChangeArray<StringChange>
             {}
         virtual ~BaseClassChanges() {}
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct ReferenceChanges : ECChangeArray<StringChange>
     {
     public:
@@ -543,6 +614,10 @@ struct ReferenceChanges : ECChangeArray<StringChange>
             {}
         virtual ~ReferenceChanges() {}
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 template<typename T>
 struct ECPrimitiveChange : ECChange 
     {
@@ -651,6 +726,10 @@ struct ECPrimitiveChange : ECChange
             return SUCCESS;
             }
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct StringChange : ECPrimitiveChange<Utf8String>
     {
     public:
@@ -659,6 +738,10 @@ struct StringChange : ECPrimitiveChange<Utf8String>
             {}
         virtual ~StringChange() {}
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct BooleanChange : ECPrimitiveChange<bool>
     {
     public:
@@ -667,6 +750,10 @@ struct BooleanChange : ECPrimitiveChange<bool>
             {}
         virtual ~BooleanChange() {}
     };
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
+
 struct UInt32Change : ECPrimitiveChange<uint32_t>
     {
     public:
@@ -675,6 +762,10 @@ struct UInt32Change : ECPrimitiveChange<uint32_t>
             {}
         virtual ~UInt32Change() {}
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct Int32Change : ECPrimitiveChange<int32_t>
     {
     public:
@@ -691,6 +782,10 @@ struct DoubleChange: ECPrimitiveChange<double>
             {}
         virtual ~DoubleChange() {}
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct DateTimeChange: ECPrimitiveChange<DateTime>
     {
     public:
@@ -699,6 +794,10 @@ struct DateTimeChange: ECPrimitiveChange<DateTime>
             {}
         virtual ~DateTimeChange() {}
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct BinaryChange: ECPrimitiveChange<Binary>
     {
     public:
@@ -707,6 +806,10 @@ struct BinaryChange: ECPrimitiveChange<Binary>
             {}
         virtual ~BinaryChange() {}
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct Point2DChange: ECPrimitiveChange<Point2d>
     {
     public:
@@ -715,6 +818,10 @@ struct Point2DChange: ECPrimitiveChange<Point2d>
             {}
         virtual ~Point2DChange() {}
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct Point3DChange: ECPrimitiveChange<Point3d>
     {
     public:
@@ -723,6 +830,10 @@ struct Point3DChange: ECPrimitiveChange<Point3d>
             {}
         virtual ~Point3DChange() {}
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct Int64Change: ECPrimitiveChange<int64_t>
     {
     public:
@@ -731,6 +842,10 @@ struct Int64Change: ECPrimitiveChange<int64_t>
             {}
         virtual ~Int64Change() {}
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct StrengthTypeChange : ECPrimitiveChange<ECN::StrengthType>
     {
     public:
@@ -739,6 +854,10 @@ struct StrengthTypeChange : ECPrimitiveChange<ECN::StrengthType>
             {}
         virtual ~StrengthTypeChange() {}
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct StrengthDirectionChange : ECPrimitiveChange<ECN::ECRelatedInstanceDirection>
     {
     public:
@@ -747,6 +866,10 @@ struct StrengthDirectionChange : ECPrimitiveChange<ECN::ECRelatedInstanceDirecti
             {}
         virtual ~StrengthDirectionChange() {}
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct ModifierChange :ECPrimitiveChange<ECN::ECClassModifier>
     {
     public:
@@ -755,6 +878,10 @@ struct ModifierChange :ECPrimitiveChange<ECN::ECClassModifier>
             {}
         virtual ~ModifierChange() {}
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct ECSchemaChange : ECObjectChange
     {
     public:
@@ -777,6 +904,10 @@ struct ECSchemaChange : ECObjectChange
         //ECKindOfQuantityChanges& KindOfQuantities() { return Get<ECKindOfQuantityChanges>(KINDOFQUANTITIES); }
         ECInstanceChanges& CustomAttributes() { return Get<ECInstanceChanges>(CUSTOMATTRIBTUES); }
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct ECEnumeratorChange :ECObjectChange
     {
     public:
@@ -790,6 +921,10 @@ struct ECEnumeratorChange :ECObjectChange
         StringChange& GetString() { return Get<StringChange>(STRING); }
         Int32Change& GetInteger() { return Get<Int32Change>(INTEGER); }
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct ECEnumerationChange :ECObjectChange
     {
     public:
@@ -806,6 +941,10 @@ struct ECEnumerationChange :ECObjectChange
         BooleanChange& IsStrict() { return Get<BooleanChange>(ISSTRICT); }
         ECEnumeratorChanges& Enumerators() { return Get<ECEnumeratorChanges>(ENUMERATORS); }
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct ECInstanceChange: ECObjectChange
     {
     public:
@@ -834,6 +973,10 @@ struct ECInstanceChange: ECObjectChange
 //        UInt32Change& GetPrecision() { return Get<UInt32Change>(PRECISION); }
 //        StringChanges& GetAlternativePresentationUnitList() { return Get<StringChanges>(ALTERNATIVEPRESENTATIONUNITLIST); }
 //    };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct ECRelationshipConstraintClassChange :ECObjectChange
     {
     public:
@@ -846,6 +989,10 @@ struct ECRelationshipConstraintClassChange :ECObjectChange
         StringChange& GetClassName() { return Get<StringChange>(CLASSFULLNAME); }
         StringChanges& KeyProperties() { return Get<StringChanges>(KEYPROPERTIES); }
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct ECRelationshipConstraintChange :ECObjectChange
     {
     public:
@@ -861,6 +1008,10 @@ struct ECRelationshipConstraintChange :ECObjectChange
         ECRelationshipConstraintClassChanges& ConstraintClasses() { return Get<ECRelationshipConstraintClassChanges>(CONSTRAINTCLASSES); }
         ECInstanceChanges& CustomAttributes() { return Get<ECInstanceChanges>(CUSTOMATTRIBTUES); }
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct ECRelationshipChange :ECObjectChange
     {
     public:
@@ -875,6 +1026,10 @@ struct ECRelationshipChange :ECObjectChange
         ECRelationshipConstraintChange& GetSource() { return Get<ECRelationshipConstraintChange>(SOURCE); }
         ECRelationshipConstraintChange& GetTarget() { return Get<ECRelationshipConstraintChange>(TARGET); }
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct ECClassChange :ECObjectChange
     {
     public:
@@ -897,6 +1052,10 @@ struct ECClassChange :ECObjectChange
         ECInstanceChanges& CustomAttributes() { return Get<ECInstanceChanges>(CUSTOMATTRIBTUES); }
         ECRelationshipChange& GetRelationship() { return Get<ECRelationshipChange>(RELATIONSHIP); }
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct NavigationChange :ECObjectChange
     {
     public:
@@ -909,6 +1068,10 @@ struct NavigationChange :ECObjectChange
         StrengthDirectionChange& Direction() { return Get<StrengthDirectionChange>(DIRECTION); }
         StringChange& GetRelationshipClassName() { return Get<StringChange>(RELATIONSHIPNAME); }
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct ArrayChange :ECObjectChange
     {
     public:
@@ -921,6 +1084,10 @@ struct ArrayChange :ECObjectChange
         UInt32Change& MinOccurs() { return Get<UInt32Change>(MINOCCURS); }
         UInt32Change& MaxOccurs() { return Get<UInt32Change>(MAXOCCURS); }
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct ECPropertyChange :ECObjectChange
     {
     public:
@@ -948,7 +1115,9 @@ struct ECPropertyChange :ECObjectChange
         ECInstanceChanges& CustomAttributes() { return Get<ECInstanceChanges>(CUSTOMATTRIBTUES); }
     };
 
-
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct ECSchemaComparer
     {
     private:
