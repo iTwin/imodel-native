@@ -986,7 +986,7 @@ public:
 
     //! Get the ECInstanceKey (the element DgnClassId and DgnElementId) of this DgnElement
     //! @see GetElementClassId, GetElementId
-    BeSQLite::EC::ECInstanceKey GetECInstanceKey() const {return BeSQLite::EC::ECInstanceKey(GetElementClassId().GetValue(), BeSQLite::EC::ECInstanceId(GetElementId().GetValue()));}
+    BeSQLite::EC::ECInstanceKey GetECInstanceKey() const {return BeSQLite::EC::ECInstanceKey(GetElementClassId(), BeSQLite::EC::ECInstanceId(GetElementId().GetValue()));}
 
     //! Get a pointer to the ECClass of this DgnElement.
     DGNPLATFORM_EXPORT ECN::ECClassCP GetElementClass() const;

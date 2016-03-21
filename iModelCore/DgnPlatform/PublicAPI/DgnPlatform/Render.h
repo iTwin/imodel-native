@@ -103,6 +103,7 @@ struct Task : RefCounted<NonCopyableClass>
         Redraw,
         BeginHeal,
         FinishHeal,
+        Heal,
     };
 
     //! The outcome of the processing of a Task.
@@ -168,7 +169,6 @@ struct NonSceneTask : Task
     using Task::Task;
 };
 
-
 //=======================================================================================
 //! The Render::Queue is accessed through DgnViewport::GetRenderQueue. It holds an array of Render::Tasks waiting
 //! to to be processed on the render thread. Render::Tasks may be added to the Render::Queue only
@@ -210,6 +210,7 @@ public:
     DGNPLATFORM_EXPORT bool IsIdle() const;
 
     DGNPLATFORM_EXPORT bool HasPending(Task::Operation op) const;
+    DGNPLATFORM_EXPORT bool HasActiveOrPending(Task::Operation op) const;
 };
 
 //=======================================================================================
@@ -1206,9 +1207,9 @@ struct Decorations
 //=======================================================================================
 struct Redraws
 {
-    GraphicList m_erase;
-    GraphicList m_draw;
-    GraphicList m_change;
+    GraphicListPtr m_erase;
+    GraphicListPtr m_draw;
+    GraphicListPtr m_change;
 };
 
 //=======================================================================================
@@ -1351,6 +1352,7 @@ public:
     virtual void _ChangeRenderPlan(PlanCR) = 0;
     virtual void _Redraw(Redraws&) = 0;
     virtual void _BeginHeal() = 0;
+    virtual void _DrawHeal(GraphicListR healList) = 0;
     enum class HealAborted : bool {No=0, Yes=1};
     virtual void _FinishHeal(HealAborted) = 0;
     virtual bool _NeedsHeal(BSIRectR) const = 0;

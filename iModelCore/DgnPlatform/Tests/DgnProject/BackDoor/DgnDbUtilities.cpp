@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/BackDoor/DgnDbUtilities.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -41,10 +41,10 @@ ECSqlStatus DgnDbUtilities::InsertRelationship (ECInstanceKey& rkey, ECSqlStatem
         statement.ClearBindings();
         }
 
-    statement.BindInt64 (1, sourceKey.GetECClassId());
-    statement.BindId    (2, sourceKey.GetECInstanceId());
-    statement.BindInt64 (3, targetKey.GetECClassId());
-    statement.BindId    (4, targetKey.GetECInstanceId());
+    statement.BindId(1, sourceKey.GetECClassId());
+    statement.BindId(2, sourceKey.GetECInstanceId());
+    statement.BindId(3, targetKey.GetECClassId());
+    statement.BindId(4, targetKey.GetECInstanceId());
 
     if (BE_SQLITE_DONE != statement.Step(rkey))
         return ECSqlStatus::Error;
@@ -66,16 +66,16 @@ ECInstanceKey DgnDbUtilities::QueryRelationshipSourceFromTarget (ECDbR db, Utf8C
     if (!status.IsSuccess())
         return ECInstanceKey();
 
-    if (ECSqlStatus::Success != statement.BindInt64 (1, targetKey.GetECClassId()))
+    if (ECSqlStatus::Success != statement.BindId(1, targetKey.GetECClassId()))
         return ECInstanceKey();
 
-    if (ECSqlStatus::Success != statement.BindId (2, targetKey.GetECInstanceId()))
+    if (ECSqlStatus::Success != statement.BindId(2, targetKey.GetECInstanceId()))
         return ECInstanceKey();
 
     if (BE_SQLITE_ROW != statement.Step())
         return ECInstanceKey();
 
-    return ECInstanceKey (statement.GetValueInt64 (0), statement.GetValueId<ECInstanceId> (1));
+    return ECInstanceKey(statement.GetValueId<ECClassId>(0), statement.GetValueId<ECInstanceId>(1));
     }
 
 END_DGNDB_UNIT_TESTS_NAMESPACE

@@ -418,7 +418,7 @@ void ComponentDef::QueryComponentDefs(bvector<DgnClassId>& componentDefs, DgnDbR
         while (BE_SQLITE_ROW == stmt.Step())
             {
             DgnClassId derivedClassId = stmt.GetValueId<DgnClassId>(0);
-            ECN::ECClassCP derivedClass = db.Schemas().GetECClass(derivedClassId.GetValue());
+            ECN::ECClassCP derivedClass = db.Schemas().GetECClass(derivedClassId);
             if (nullptr == derivedClass)
                 continue;
             if (derivedClass->GetCustomAttribute(*componentSpecificationCA).IsValid())
@@ -435,7 +435,7 @@ void ComponentDef::QueryComponentDefs(bvector<DgnClassId>& componentDefs, DgnDbR
 +---------------+---------------+---------------+---------------+---------------+------*/
 ComponentDefPtr ComponentDef::FromECClassId(DgnDbStatus* statusOut, DgnDbR db, DgnClassId componentDefClassId)
     {
-    ECN::ECClassCP cls = db.Schemas().GetECClass(componentDefClassId.GetValue());
+    ECN::ECClassCP cls = db.Schemas().GetECClass(componentDefClassId);
     if (nullptr == cls)
         return nullptr;
     return FromECClass(statusOut, db, *cls);

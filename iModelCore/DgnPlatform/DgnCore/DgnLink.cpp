@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnLink.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -264,7 +264,7 @@ size_t DgnLinks::OnElementIterator::QueryCount() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     02/2015
 //---------------------------------------------------------------------------------------
-ECInstanceKey DgnLinks::ReferencesLinkIterator::Entry::GetECInstanceKey() const { Verify(); return ECInstanceKey((ECClassId)m_sql->GetValueInt64(0), m_sql->GetValueId<ECInstanceId>(1)); }
+ECInstanceKey DgnLinks::ReferencesLinkIterator::Entry::GetECInstanceKey() const { Verify(); return ECInstanceKey(m_sql->GetValueId<ECClassId>(0), m_sql->GetValueId<ECInstanceId>(1)); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     02/2015

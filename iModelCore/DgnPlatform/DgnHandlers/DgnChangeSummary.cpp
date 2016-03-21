@@ -17,7 +17,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 void DgnChangeSummary::FindChangedRelationshipEndIds(ECInstanceIdSet& endInstanceIds, Utf8CP relationshipSchemaName, Utf8CP relationshipClassName, ECRelationshipEnd relationshipEnd)
     {
     ECN::ECClassId relationshipClassId = m_dgndb.Schemas().GetECClassId(relationshipSchemaName, relationshipClassName);
-    BeAssert(relationshipClassId);
+    BeAssert(relationshipClassId.IsValid());
 
     Utf8CP endInstanceIdAccessStr = (relationshipEnd == ECRelationshipEnd_Source) ? "SourceECInstanceId" : "TargetECInstanceId";
 
@@ -78,7 +78,7 @@ void DgnChangeSummary::FindChangedRelationshipEndIds(ECInstanceIdSet& endInstanc
 void DgnChangeSummary::FindUpdatedInstanceIds(ECInstanceIdSet& updatedInstanceIds, Utf8CP schemaName, Utf8CP className)
     {
     ECN::ECClassId classId = m_dgndb.Schemas().GetECClassId(schemaName, className);
-    BeAssert(classId);
+    BeAssert(classId.IsValid());
 
     bmap<ECInstanceId, ChangeSummary::Instance> changes;
     QueryByClass(changes, classId, true, ChangeSummary::QueryDbOpcode::Update);
