@@ -262,16 +262,6 @@ BentleyStatus ECValueBindingInfoCollection::AddBindingInfo (ECN::ECClassCR ecCla
     return SUCCESS;
     }
 
-BentleyStatus ECValueBindingInfoCollection::AddBindingInfo (ECN::ECEnablerCR ecEnabler, ECN::ECPropertyCR ecProperty, Utf8CP accessString, int ecsqlParameterIndex)
-    {
-    auto binding = ECValueBindingInfoFactory::CreateBindingInfo (ecEnabler, ecProperty, accessString, ecsqlParameterIndex);
-    if (binding == nullptr)
-        return ERROR;
-
-    m_bindingInfos.push_back (std::move (binding));
-    return SUCCESS;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -580,7 +570,7 @@ BentleyStatus ECInstanceAdapterHelper::BindECSqlSystemPropertyValue (IECSqlBinde
             {
             //Bind constraint class id
             BeAssert (systemPropertyKind == ECValueBindingInfo::SystemPropertyKind::SourceECClassId || systemPropertyKind == ECValueBindingInfo::SystemPropertyKind::TargetECClassId);
-            stat = binder.BindInt64 (endInstance->GetClass ().GetId ());
+            stat = binder.BindId(endInstance->GetClass ().GetId ());
             }
         }
 
@@ -662,8 +652,8 @@ BentleyStatus ECInstanceAdapterHelper::SetECInstanceId (ECN::IECInstanceR instan
     Utf8Char instanceIdStr[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
     if (!ECInstanceIdHelper::ToString (instanceIdStr, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ecInstanceId))
         {
-        LOG.errorv ("Could not set ECInstanceId %lld on the ECInstanceId. Conversion to string failed.", ecInstanceId.GetValue ());
-        BeAssert (false && "Could not set ECInstanceId %lld on the ECInstanceId. Conversion to string failed.");
+        LOG.errorv ("Could not set ECInstanceId %llu on the ECInstanceId. Conversion to string failed.", ecInstanceId.GetValue ());
+        BeAssert (false && "Could not set ECInstanceId on the ECInstanceId. Conversion to string failed.");
         return ERROR;
         }
 

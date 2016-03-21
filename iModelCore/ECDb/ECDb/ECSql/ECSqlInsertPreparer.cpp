@@ -51,53 +51,6 @@ ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStateme
     }
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Muhammad.zaighum                    8/2014
-//+---------------+---------------+---------------+---------------+---------------+--------
-//static
-int ECSqlInsertPreparer::GetParamterCount(Exp const& exp, std::set<ParameterExp const*>& namedParameterList)
-    {
-    int nFoundParameters = 0;
-    if (exp.IsParameterExp())
-        {
-        auto param = static_cast<ParameterExp const*>(&exp);
-        if (param->IsNamedParameter())
-            {
-            if (namedParameterList.find(param) == namedParameterList.end())
-                {
-                namedParameterList.insert(param);
-                }
-            }
-        else
-            nFoundParameters = nFoundParameters + 1;
-        }
-
-    for (auto const child : exp.GetChildren())
-        {
-        if (child->IsParameterExp())
-            {
-            auto param = static_cast<ParameterExp const*>(child);
-            if (param->IsNamedParameter())
-                {
-                if (namedParameterList.find(param) == namedParameterList.end())
-                    {
-                    namedParameterList.insert(param);
-                    }
-                else
-                    continue;
-                }
-
-            nFoundParameters = nFoundParameters + 1;
-            }
-        else if (child->GetChildrenCount() > 0)
-            {
-            nFoundParameters += GetParamterCount(*child, namedParameterList);
-            }
-        }
-
-    return nFoundParameters;
-    }
-
-//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
@@ -132,12 +85,12 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoRelationship(ECSqlPrepareConte
 
     RelationshipClassMapCR relationshipClassMap = static_cast<RelationshipClassMapCR> (classMap);
     //Validate and if need be determine SourceECClassId and TargetECClassId
-    ECClassId sourceECClassId = ECClass::UNSET_ECCLASSID; //remains unset if is parametrized
+    ECClassId sourceECClassId; //remains unset if is parametrized
     ECSqlStatus stat = ValidateConstraintClassId(sourceECClassId, ctx, exp, relationshipClassMap, ECRelationshipEnd_Source);
     if (!stat.IsSuccess())
         return stat;
 
-    ECClassId targetECClassId = ECClass::UNSET_ECCLASSID;  //remains unset if is parametrized
+    ECClassId targetECClassId;  //remains unset if is parametrized
     stat = ValidateConstraintClassId(targetECClassId, ctx, exp, relationshipClassMap, ECRelationshipEnd_Target);
     if (!stat.IsSuccess())
         return stat;
@@ -156,14 +109,14 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoLinkTableRelationship(ECSqlPre
     {
     PreparePrimaryKey(ctx, nativeSqlSnippets, relationshipClassMap);
 
-    if (sourceECClassId != ECClass::UNSET_ECCLASSID)
+    if (sourceECClassId.IsValid())
         {
         ECSqlStatus stat = PrepareConstraintClassId(nativeSqlSnippets, ctx, *relationshipClassMap.GetSourceECClassIdPropMap(), sourceECClassId);
         if (!stat.IsSuccess())
             return stat;
         }
 
-    if (targetECClassId != ECClass::UNSET_ECCLASSID)
+    if (targetECClassId.IsValid())
         {
         ECSqlStatus stat = PrepareConstraintClassId(nativeSqlSnippets, ctx, *relationshipClassMap.GetTargetECClassIdPropMap(), targetECClassId);
         if (!stat.IsSuccess())
@@ -290,7 +243,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
     std::sort(expIndexSkipList.begin(), expIndexSkipList.end());
 
     auto referencedEndClassId = foreignEnd == ECRelationshipEnd_Source ? targetECClassId : sourceECClassId;
-    if (referencedEndClassId != ECClass::UNSET_ECCLASSID)
+    if (referencedEndClassId.IsValid())
         {
         if (referencedEndECClassIdIndex > 0)
             {
@@ -467,8 +420,8 @@ ECN::ECRelationshipEnd constraintEnd
         //retrievedConstraintClassId < 0 means user specified parameter for it
         if (!isParameter && !constraintMap.ClassIdMatchesConstraint(retrievedConstraintClassId))
             {
-            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid value %lld for property %s. None of the respective constraint's ECClasses match that ECClassId.",
-                                                     retrievedConstraintClassId, constraintClassIdPropName.c_str());
+            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid value %llu for property %s. None of the respective constraint's ECClasses match that ECClassId.",
+                                                     retrievedConstraintClassId.GetValue(), constraintClassIdPropName.c_str());
             return ECSqlStatus::InvalidECSql;
             }
 
@@ -523,13 +476,13 @@ ECSqlStatus ECSqlInsertPreparer::GetConstraintClassIdExpValue(bool& isParameter,
             return ECSqlStatus::InvalidECSql;
             }
 
-        constraintClassId = constraintECClassIdConstantValueExp->GetValueAsInt64();
+        constraintClassId = ECClassId((uint64_t) constraintECClassIdConstantValueExp->GetValueAsInt64());
         isParameter = false;
         return ECSqlStatus::Success;
         }
     else if (expType == Exp::Type::Parameter)
         {
-        constraintClassId = ECClass::UNSET_ECCLASSID;
+        constraintClassId.Invalidate();
         isParameter = true;
         return ECSqlStatus::Success;
         }
@@ -545,7 +498,7 @@ ECSqlStatus ECSqlInsertPreparer::GetConstraintClassIdExpValue(bool& isParameter,
 //static
 ECSqlStatus ECSqlInsertPreparer::PrepareConstraintClassId(NativeSqlSnippets& insertNativeSqlSnippets, ECSqlPrepareContext& ctx, ECClassIdRelationshipConstraintPropertyMap const& constraintClassIdPropMap, ECClassId constraintClassId)
     {
-    BeAssert(constraintClassId != ECClass::UNSET_ECCLASSID);
+    BeAssert(constraintClassId.IsValid());
     //if constraint class id maps to virtual column then ignore it as the column does not exist in the table.
     if (constraintClassIdPropMap.IsVirtual())
         return ECSqlStatus::Success;

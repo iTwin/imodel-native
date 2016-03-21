@@ -97,7 +97,7 @@ ECSqlPrepareContext::ExpScope& ECSqlPrepareContext::ExpScopeStack::CurrentR ()
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment)
     : m_ecdb(ecdb), m_ecsqlStatement(preparedStatment), m_parentCtx(nullptr), m_parentArrayProperty(nullptr),
-    m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_joinedTableClassId(ECClass::UNSET_ECCLASSID), m_joinedTableInfo(nullptr)
+    m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_joinedTableInfo(nullptr)
     {}
 
 //-----------------------------------------------------------------------------------------
@@ -113,7 +113,7 @@ ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& prepar
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECSqlPrepareContext const& parentCtx)
     : m_ecdb(ecdb), m_ecsqlStatement(preparedStatment), m_parentCtx(&parentCtx), m_parentArrayProperty(nullptr),
-    m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_joinedTableClassId(ECClass::UNSET_ECCLASSID), m_joinedTableInfo(nullptr)
+    m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_joinedTableInfo(nullptr)
     {}
 
 //-----------------------------------------------------------------------------------------
@@ -122,7 +122,7 @@ ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& prepar
 ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECSqlPrepareContext const& parentCtx, ArrayECPropertyCR parentArrayProperty, ECSqlColumnInfo const* parentColumnInfo)
     : m_ecdb(ecdb), m_ecsqlStatement(preparedStatment), m_parentCtx(&parentCtx),
     m_parentArrayProperty(&parentArrayProperty), m_parentColumnInfo(parentColumnInfo),
-    m_nativeStatementIsNoop(false), m_joinedTableClassId(ECClass::UNSET_ECCLASSID), m_joinedTableInfo(nullptr)
+    m_nativeStatementIsNoop(false), m_joinedTableInfo(nullptr)
     {}
 
 //-----------------------------------------------------------------------------------------
@@ -165,74 +165,6 @@ int ECSqlPrepareContext::ExpScope::GetNativeSqlSelectClauseColumnCount () const
 void ECSqlPrepareContext::ExpScope::IncrementNativeSqlSelectClauseColumnCount (size_t value)
     {
     m_nativeSqlSelectClauseColumnCount += static_cast<int> (value);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       02/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-//static 
-Utf8String ECSqlPrepareContext::CreateECInstanceIdSelectionQuery(ECSqlPrepareContext& ctx, ClassNameExp const& classNameExpr, WhereExp const* whereExp)
-    {
-    NativeSqlBuilder selectBuilder;
-    selectBuilder.Append("SELECT DISTINCT ");
-    if (!classNameExpr.GetAlias().empty())
-        {
-        selectBuilder.AppendEscaped(classNameExpr.GetAlias().c_str());
-        selectBuilder.AppendDot();
-        }
-
-    selectBuilder.Append("ECInstanceId, GetECClassId() FROM ");
-
-    if (!classNameExpr.IsPolymorphic())
-        selectBuilder.Append("ONLY ");
-
-    selectBuilder.AppendEscaped(classNameExpr.GetSchemaName().c_str());
-    selectBuilder.AppendDot();
-    selectBuilder.AppendEscaped(classNameExpr.GetClassName().c_str());
-    selectBuilder.AppendSpace();
-
-    if (!classNameExpr.GetAlias().empty())
-        {
-        selectBuilder.AppendEscaped(classNameExpr.GetAlias().c_str());
-        selectBuilder.AppendSpace();
-        }
-
-    if (whereExp != nullptr)
-        selectBuilder.Append(whereExp->ToECSql().c_str());
-
-    return selectBuilder.ToString();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       04/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-//static 
-int ECSqlPrepareContext::FindLastParameterIndexBeforeWhereClause (Exp const& statementExp, WhereExp const* whereExp)
-    {
-    int index = 0;
-    FindLastParameterIndexBeforeWhereClause (index, statementExp, whereExp);
-    return index;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       04/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-//static 
-bool ECSqlPrepareContext::FindLastParameterIndexBeforeWhereClause (int& index, Exp const& statementExp, WhereExp const* whereExp)
-    {
-    for (auto exp : statementExp.GetChildren ())
-        {
-        if (exp == whereExp)
-            return true;
-
-        else if (exp->IsParameterExp ())
-            index++;
-
-        else if (FindLastParameterIndexBeforeWhereClause (index, *exp, whereExp))
-            return true;
-        }
-
-    return false;
     }
 
 //-----------------------------------------------------------------------------------------

@@ -23,15 +23,14 @@ private:
     bool m_isSupported;
     Utf8String m_notSupportedMessage;
 
-    ECDbPolicy (bool isSupported, Utf8CP notSupportedMessage);
+    ECDbPolicy (bool isSupported, Utf8CP notSupportedMessage) : m_isSupported(isSupported), m_notSupportedMessage(notSupportedMessage) {}
 
 public:
-    ~ECDbPolicy ()
-        {}
+    ~ECDbPolicy () {}
 
-    ECDbPolicy (ECDbPolicy const& rhs);
+    ECDbPolicy(ECDbPolicy const& rhs) : m_isSupported(rhs.m_isSupported), m_notSupportedMessage(rhs.m_notSupportedMessage) {}
     ECDbPolicy& operator= (ECDbPolicy const& rhs);
-    ECDbPolicy (ECDbPolicy&& rhs);
+    ECDbPolicy(ECDbPolicy&& rhs) : m_isSupported(std::move(rhs.m_isSupported)), m_notSupportedMessage(std::move(rhs.m_notSupportedMessage)) {}
     ECDbPolicy& operator= (ECDbPolicy&& rhs);
 
     //! Gets a value indicating whether the policy is supported or not.
@@ -46,9 +45,10 @@ public:
 
     //Factory
     //! Creates a 'Supported' policy
-    static ECDbPolicy CreateSupported ();
+    static ECDbPolicy CreateSupported() { return ECDbPolicy(true, nullptr); }
+
     //! Creates a 'Not supported' policy
-    static ECDbPolicy CreateNotSupported (Utf8CP notSupportedMessage = nullptr);
+    static ECDbPolicy CreateNotSupported(Utf8CP notSupportedMessage = nullptr) { return ECDbPolicy(false, notSupportedMessage); }
     };
 
 //=======================================================================================
@@ -73,7 +73,7 @@ private:
 public:
     virtual ~ECDbPolicyAssertion () {}
 
-    Type GetType () const;
+    Type GetType() const { return _GetType(); }
     };
 
 //=======================================================================================

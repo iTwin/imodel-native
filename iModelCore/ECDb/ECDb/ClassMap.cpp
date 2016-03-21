@@ -18,8 +18,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                 Ramanujam.Raman                06/2012
 //---------------------------------------------------------------------------------------
 ClassMap::ClassMap(Type type, ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
-    : m_type(type), m_ecDbMap(ecDbMap), m_ecClass(ecClass), m_mapStrategy(mapStrategy), m_parentMapClassId(ECClass::UNSET_ECCLASSID), 
-    m_isDirty(setIsDirty), m_columnFactory(*this), m_id(0ULL), m_isECInstanceIdAutogenerationDisabled(false)
+    : m_type(type), m_ecDbMap(ecDbMap), m_ecClass(ecClass), m_mapStrategy(mapStrategy), 
+    m_isDirty(setIsDirty), m_columnFactory(*this), m_isECInstanceIdAutogenerationDisabled(false)
     {
     if (SUCCESS != InitializeDisableECInstanceIdAutogeneration())
         {
@@ -708,7 +708,7 @@ BentleyStatus ClassMap::GetPathToParentOfJoinedTable(std::vector<ClassMap const*
     do
         {
         ECClassId nextParentId = current->GetParentMapClassId();
-        if (nextParentId == ECClass::UNSET_ECCLASSID)
+        if (!nextParentId.IsValid())
             return SUCCESS;
 
         current = GetECDbMap().GetClassMap(nextParentId);
@@ -744,7 +744,7 @@ ClassMap const* ClassMap::FindClassMapOfParentOfJoinedTable() const
             return current;
 
         auto nextParentId = current->GetParentMapClassId();
-        if (nextParentId == ECClass::UNSET_ECCLASSID)
+        if (!nextParentId.IsValid())
             return nullptr;
 
         current = GetECDbMap().GetClassMap(nextParentId);
@@ -769,7 +769,7 @@ ClassMap const* ClassMap::FindSharedTableRootClassMap() const
         return nullptr;
 
     ECClassId parentId = GetParentMapClassId();
-    if (parentId == ECClass::UNSET_ECCLASSID)
+    if (!parentId.IsValid())
         return this;
 
     ClassMap const* parent = GetECDbMap().GetClassMap(parentId);
@@ -927,7 +927,7 @@ ECDbSqlColumn* ColumnFactory::ApplyDefaultStrategy(Utf8CP requestedColumnName, P
         }
 
     const ECClassId classId = GetPersistenceClassId(propMap);
-    if (classId == ECClass::UNSET_ECCLASSID)
+    if (!classId.IsValid())
         return nullptr;
 
     //column already exists but doesn't match, therefore create a new one
@@ -999,7 +999,7 @@ BentleyStatus ColumnFactory::ResolveColumnName(Utf8StringR resolvedColumName, Ut
 
     ECDbSqlColumn const* existingColumn = GetTable().FindColumnP(requestedColumnName);
     if (existingColumn != nullptr && IsColumnInUseByClassMap(*existingColumn))
-        resolvedColumName.Sprintf("c%lld_%s", classId, requestedColumnName);
+        resolvedColumName.Sprintf("c%llu_%s", classId.GetValue(), requestedColumnName);
     else
         resolvedColumName.assign(requestedColumnName);
 
@@ -1026,7 +1026,7 @@ ECClassId ColumnFactory::GetPersistenceClassId(PropertyMapCR propMap) const
     if (property == nullptr)
         {
         BeAssert(false && "Failed to find root property");
-        return ECClass::UNSET_ECCLASSID;
+        return ECClassId();
         }
 
     return property->GetClass().GetId();
@@ -1151,7 +1151,7 @@ PropertyMapSet::Ptr PropertyMapSet::Create(ClassMap const& classMap)
     Ptr propertySet = Ptr(new PropertyMapSet(classMap));
     ECValue defaultValue;
     AddSystemEndPoint(*propertySet, classMap, ColumnKind::ECInstanceId, defaultValue);
-    AddSystemEndPoint(*propertySet, classMap, ColumnKind::ECClassId, ECValue(classMap.GetClass().GetId()));
+    AddSystemEndPoint(*propertySet, classMap, ColumnKind::ECClassId, ECValue(classMap.GetClass().GetId().GetValue()));
 
     if (classMap.IsRelationshipClassMap())
         {
@@ -1167,14 +1167,14 @@ PropertyMapSet::Ptr PropertyMapSet::Create(ClassMap const& classMap)
         AddSystemEndPoint(*propertySet, classMap, ColumnKind::SourceECInstanceId, defaultValue, sourceECInstanceIdColumn);
         auto sourceConstraintClass = sourceConstraints.at(0);
         if (!ClassMap::IsAnyClass(*sourceConstraintClass) && sourceConstraints.size() == 1)
-            AddSystemEndPoint(*propertySet, classMap, ColumnKind::SourceECClassId, ECValue(sourceConstraintClass->GetId()), sourceECClassIdColumn);
+            AddSystemEndPoint(*propertySet, classMap, ColumnKind::SourceECClassId, ECValue(sourceConstraintClass->GetId().GetValue()), sourceECClassIdColumn);
         else
             AddSystemEndPoint(*propertySet, classMap, ColumnKind::SourceECClassId, defaultValue, sourceECClassIdColumn);
 
         AddSystemEndPoint(*propertySet, classMap, ColumnKind::TargetECInstanceId, defaultValue, targetECInstanceIdColumn);
         auto targetConstraintClass = targetConstraints.at(0);
         if (!ClassMap::IsAnyClass(*targetConstraintClass) && targetConstraints.size() == 1)
-            AddSystemEndPoint(*propertySet, classMap, ColumnKind::TargetECClassId, ECValue(targetConstraintClass->GetId()), targetECClassIdColumn);
+            AddSystemEndPoint(*propertySet, classMap, ColumnKind::TargetECClassId, ECValue(targetConstraintClass->GetId().GetValue()), targetECClassIdColumn);
         else
             AddSystemEndPoint(*propertySet, classMap, ColumnKind::SourceECClassId, defaultValue, targetECClassIdColumn);
         }

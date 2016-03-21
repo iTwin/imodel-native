@@ -240,19 +240,6 @@ std::unique_ptr<ECSchemaValidationRule::Error> CaseInsensitiveClassNamesRule::_G
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
-bset<ECN::ECClassCP> const* CaseInsensitiveClassNamesRule::Error::TryGetInvalidClasses (ECN::ECClassCR ecClass) const
-    {
-    auto classIt = m_invalidClasses.find (ecClass.GetName ().c_str ());
-    if (classIt == m_invalidClasses.end ())
-        return nullptr;
-
-    BeAssert (!classIt->second.empty ());
-    return &classIt->second;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    06/2014
-//---------------------------------------------------------------------------------------
 Utf8String CaseInsensitiveClassNamesRule::Error::_ToString () const
     {
     if (GetInvalidClasses ().empty ())

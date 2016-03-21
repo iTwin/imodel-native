@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Performance/PerformanceBisDesignTestFixture.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceBisDesignTestFixture.h"
@@ -174,13 +174,9 @@ uint64_t ecInstanceId
 
     Utf8String propertyName (property.GetName ());
     if (propertyName.Equals (ECINSTANCEID_COLUMN_NAME))
-        {
         stat = stmt.BindInt64 (parameterIndex, ecInstanceId);
-        }
     else if (propertyName.Equals (CLASSID_COLUMN_NAME))
-        {
-        stat = stmt.BindInt64 (parameterIndex, testClass.GetId ());
-        }
+        stat = stmt.BindId (parameterIndex, testClass.GetId ());
     else if (propertyName.Equals (PARENTECINSTANCEID_COLUMN_NAME))
         {
         if (ecInstanceId % 5 == 0)
@@ -201,7 +197,7 @@ uint64_t ecInstanceId
                 case ECN::PRIMITIVETYPE_String:
                     {
                     Utf8String str;
-                    str.Sprintf ("Sample string %lld", ecInstanceId);
+                    str.Sprintf ("Sample string %llu", ecInstanceId);
                     stat = stmt.BindText (parameterIndex, str.c_str (), Statement::MakeCopy::Yes);
                     break;
                     }
@@ -326,12 +322,12 @@ ECSchemaPtr PerformanceBisDesignTestFixture::CreateTestSchema (int domainPropCou
     if (stat != ECObjectsStatus::Success)
         return nullptr;
 
-    ECClassId classId = 0ULL;
+    ECClassId classId;
     ECClassCP baseClass = AddTestBaseClass (*schema, classId);
     if (baseClass == nullptr)
         return nullptr;
 
-    classId++;
+    classId = ECClassId(classId.GetValue() + 1);
     ECClassP testClass = AddTestClassStub (*schema, *baseClass, "ClassMixed", classId);
     for (int i = 0; i < domainPropCount; i++)
         {
@@ -339,7 +335,7 @@ ECSchemaPtr PerformanceBisDesignTestFixture::CreateTestSchema (int domainPropCou
             return nullptr;
         }
 
-    classId++;
+    classId = ECClassId(classId.GetValue() + 1);
     testClass = AddTestClassStub (*schema, *baseClass, "ClassInteger", classId);
     PrimitiveType dataType = PRIMITIVETYPE_Integer;
     for (int i = 0; i < domainPropCount; i++)
@@ -348,7 +344,7 @@ ECSchemaPtr PerformanceBisDesignTestFixture::CreateTestSchema (int domainPropCou
             return nullptr;
         }
 
-    classId++;
+    classId = ECClassId(classId.GetValue() + 1);
     testClass = AddTestClassStub (*schema, *baseClass, "ClassDouble", classId);
     dataType = PRIMITIVETYPE_Double;
     for (int i = 0; i < domainPropCount; i++)
@@ -357,7 +353,7 @@ ECSchemaPtr PerformanceBisDesignTestFixture::CreateTestSchema (int domainPropCou
             return nullptr;
         }
 
-    classId++;
+    classId = ECClassId(classId.GetValue() + 1);
     testClass = AddTestClassStub (*schema, *baseClass, "ClassString", classId);
     dataType = PRIMITIVETYPE_String;
     for (int i = 0; i < domainPropCount; i++)
@@ -366,7 +362,7 @@ ECSchemaPtr PerformanceBisDesignTestFixture::CreateTestSchema (int domainPropCou
             return nullptr;
         }
 
-    classId++;
+    classId = ECClassId(classId.GetValue() + 1);
     testClass = AddTestClassStub (*schema, *baseClass, "ClassBlob", classId);
     dataType = PRIMITIVETYPE_Binary;
     for (int i = 0; i < domainPropCount; i++)
@@ -824,7 +820,7 @@ void Performance_BisDesign_MasterTableScenario_TestFixture::RunGenericSelectTest
     for (auto const& kvPair : m_sqlTestItems)
         {
         auto testClass = kvPair.first;
-        stat = stmt.BindInt64 (1, testClass->GetId ());
+        stat = stmt.BindId(1, testClass->GetId ());
         ASSERT_EQ (BE_SQLITE_OK, stat) << "Binding ECClassId failed for generic SELECT: " << m_genericSelectSql.c_str ();
         //Does not read values from all columns, but only those belonging to this ECClass
 
@@ -849,40 +845,40 @@ void Performance_BisDesign_MasterTableScenario_TestFixture::RunGenericSelectTest
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  05/14
 //+---------------+---------------+---------------+---------------+---------------+------
-void Performance_BisDesign_MasterTableScenario_TestFixture::_GenerateSqlTestItems (Context const& context, ECN::ECSchemaCR testSchema)
+void Performance_BisDesign_MasterTableScenario_TestFixture::_GenerateSqlTestItems(Context const& context, ECN::ECSchemaCR testSchema)
     {
-    auto baseClass = testSchema.GetClassCP (BASE_CLASS_NAME);
-    ASSERT_TRUE (baseClass != nullptr);
-    Utf8String tableName = GetTableName (*baseClass);
+    auto baseClass = testSchema.GetClassCP(BASE_CLASS_NAME);
+    ASSERT_TRUE(baseClass != nullptr);
+    Utf8String tableName = GetTableName(*baseClass);
 
     //Generic INSERT (add all columns and parameters for all columns, irrelevant columns are not bound which means they are set to NULL)
-    m_genericInsertSql.append ("INSERT INTO ").append (tableName).append (" (");
-    Utf8String genericInsertValuesSql (") VALUES (");
-    
+    m_genericInsertSql.append("INSERT INTO ").append(tableName).append(" (");
+    Utf8String genericInsertValuesSql(") VALUES (");
+
     //Generic SELECT (SELECT * FROM Foo WHERE CLASSID = ?)
-    m_genericSelectSql.append ("SELECT ");
-    
+    m_genericSelectSql.append("SELECT ");
+
     int insertParameterIndex = 1; //classid column has already index 1
     int selectClauseItemIndex = 0;
 
     m_systemColumnsSelectClauseRangeInGenericSelect.first = selectClauseItemIndex;
     bool isFirstItem = true;
-    for (auto prop : baseClass->GetProperties (false))
+    for (auto prop : baseClass->GetProperties(false))
         {
         if (!isFirstItem)
             {
-            m_genericInsertSql.append (", ");
-            genericInsertValuesSql.append (", ");
-            m_genericSelectSql.append (", ");
+            m_genericInsertSql.append(", ");
+            genericInsertValuesSql.append(", ");
+            m_genericSelectSql.append(", ");
             }
 
         //only domain props need to be prefixed with class name
-        AppendPropToSql (m_genericInsertSql, *prop, nullptr);
-        genericInsertValuesSql.append ("?");
+        AppendPropToSql(m_genericInsertSql, *prop, nullptr);
+        genericInsertValuesSql.append("?");
 
-        AddParameterMapping (*prop, insertParameterIndex);
+        AddParameterMapping(*prop, insertParameterIndex);
 
-        AppendPropToSql (m_genericSelectSql, *prop, nullptr);
+        AppendPropToSql(m_genericSelectSql, *prop, nullptr);
 
         insertParameterIndex++;
         selectClauseItemIndex++;
@@ -891,27 +887,27 @@ void Performance_BisDesign_MasterTableScenario_TestFixture::_GenerateSqlTestItem
 
     m_systemColumnsSelectClauseRangeInGenericSelect.second = selectClauseItemIndex - 1;
 
-    for (auto testClass : testSchema.GetClasses ())
+    for (auto testClass : testSchema.GetClasses())
         {
         if (ECClassModifier::Abstract == testClass->GetClassModifier()) //base class was already handled above
             continue;
 
-        Utf8String className (testClass->GetName ());
+        Utf8String className(testClass->GetName());
 
         SqlTestItem& testItem = m_sqlTestItems[testClass];
 
         //for insert only consider domain properties (exclude inherited system props)
         testItem.m_domainColumnsSelectClauseRangeInGenericSelect.first = selectClauseItemIndex;
-        for (auto prop : testClass->GetProperties (false))
+        for (auto prop : testClass->GetProperties(false))
             {
-            m_genericInsertSql.append (", ");
-            AppendPropToSql (m_genericInsertSql, *prop, className.c_str ());
+            m_genericInsertSql.append(", ");
+            AppendPropToSql(m_genericInsertSql, *prop, className.c_str());
 
-            genericInsertValuesSql.append (", ?");
-            AddParameterMapping (*prop, insertParameterIndex);
+            genericInsertValuesSql.append(", ?");
+            AddParameterMapping(*prop, insertParameterIndex);
 
-            m_genericSelectSql.append (", ");
-            AppendPropToSql (m_genericSelectSql, *prop, className.c_str ());
+            m_genericSelectSql.append(", ");
+            AppendPropToSql(m_genericSelectSql, *prop, className.c_str());
 
             insertParameterIndex++;
             selectClauseItemIndex++;
@@ -923,25 +919,25 @@ void Performance_BisDesign_MasterTableScenario_TestFixture::_GenerateSqlTestItem
         //prepared for each ECClass. Therefore the WHERE CLASSID expression can be hard-coded too
         //(no binding needed for the class id)
         Utf8StringR nonGenericSelectSql = testItem.m_nonGenericSelectSql;
-        nonGenericSelectSql.append ("SELECT ");
+        nonGenericSelectSql.append("SELECT ");
         isFirstItem = true;
-        for (auto prop : testClass->GetProperties (true))
+        for (auto prop : testClass->GetProperties(true))
             {
             if (!isFirstItem)
-                nonGenericSelectSql.append (", ");
+                nonGenericSelectSql.append(", ");
 
-            const bool isBaseProperty = &prop->GetClass () == baseClass;
-            AppendPropToSql (nonGenericSelectSql, *prop, isBaseProperty ? nullptr : className.c_str ());
+            const bool isBaseProperty = &prop->GetClass() == baseClass;
+            AppendPropToSql(nonGenericSelectSql, *prop, isBaseProperty ? nullptr : className.c_str());
             isFirstItem = false;
             }
 
         Utf8String classIdStr;
-        classIdStr.Sprintf ("%lld", testClass->GetId ());
-        nonGenericSelectSql.append (" FROM ").append (tableName).append (" WHERE ").append (CLASSID_COLUMN_NAME).append (" = ").append (classIdStr);
+        classIdStr.Sprintf("%llu", testClass->GetId().GetValue());
+        nonGenericSelectSql.append(" FROM ").append(tableName).append(" WHERE ").append(CLASSID_COLUMN_NAME).append(" = ").append(classIdStr);
         }
 
-    m_genericInsertSql.append (genericInsertValuesSql).append (");");
-    m_genericSelectSql.append (" FROM ").append (tableName).append (" WHERE ").append (CLASSID_COLUMN_NAME).append (" = ? ");
+    m_genericInsertSql.append(genericInsertValuesSql).append(");");
+    m_genericSelectSql.append(" FROM ").append(tableName).append(" WHERE ").append(CLASSID_COLUMN_NAME).append(" = ? ");
     }
 
 //---------------------------------------------------------------------------------------

@@ -53,7 +53,6 @@ private:
     bool m_isValid;
 
     void Initialize(bvector<ECPropertyCP>& propertiesToBind);
-    void Initialize(bvector<uint32_t>& propertiesToBind);
 
     virtual BentleyStatus _Update (IECInstanceCR instance) const override;
     virtual bool _IsValid () const override { return m_isValid; }
@@ -61,7 +60,6 @@ private:
 public:
     ClassUpdaterImpl (ECDbCR ecdb, ECClassCR ecClass);
     ClassUpdaterImpl (ECDbCR ecdb, IECInstanceCR instance);
-    ClassUpdaterImpl(ECDbCR ecdb, ECClassCR ecClass, bvector<uint32_t>& propertiesToBind);
     ClassUpdaterImpl(ECDbCR ecdb, ECClassCR ecClass, bvector<ECPropertyCP>& propertiesToBind);
 
     ~ClassUpdaterImpl ()
@@ -88,14 +86,6 @@ ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass)
 ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::IECInstanceCR instance)
     {
     m_impl = new ClassUpdaterImpl(ecdb, instance);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Carole.MacDonald                   09/14
-//+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, bvector<uint32_t>& propertiesToBind)
-    {
-    m_impl = new ClassUpdaterImpl(ecdb, ecClass, propertiesToBind);
     }
 
 //---------------------------------------------------------------------------------------
@@ -219,93 +209,12 @@ ClassUpdaterImpl::ClassUpdaterImpl (ECDbCR ecdb, IECInstanceCR instance)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald                   02/16
-//+---------------+---------------+---------------+---------------+---------------+------
-ClassUpdaterImpl::ClassUpdaterImpl(ECDbCR ecdb, ECClassCR ecClass, bvector<uint32_t>& propertiesToBind)
-    : Impl(ecClass), m_ecdb(ecdb), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
-    {
-    Initialize(propertiesToBind);
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald                   09/14
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassUpdaterImpl::ClassUpdaterImpl(ECDbCR ecdb, ECClassCR ecClass, bvector<ECN::ECPropertyCP>& propertiesToBind)
     : Impl(ecClass), m_ecdb(ecdb), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
     {
     Initialize(propertiesToBind);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald                   08/14
-//+---------------+---------------+---------------+---------------+---------------+------
-void ClassUpdaterImpl::Initialize(bvector<uint32_t>& propertiesToBind)
-    {
-    if (propertiesToBind.size() < 1)
-        {
-        LOG.errorv("ECClass '%s' doesn't have any properties. Instances of that class therefore cannot be updated.",
-                     GetECClass().GetFullName());
-
-        m_isValid = false;
-        return;
-        }
-
-    Utf8String ecsql("UPDATE ONLY ");
-    ecsql.append(GetECClass().GetECSqlName()).append(" SET ");
-
-    ECPropertyCP currentTimeStampProp = nullptr;
-    bool hasCurrentTimeStampProp = ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty (currentTimeStampProp, GetECClass ());
-
-    int parameterIndex = 1;
-    ECEnablerP enabler = GetECClass().GetDefaultStandaloneEnabler ();
-    for (uint32_t propertyIndex : propertiesToBind)
-        {
-        ECPropertyCP ecProperty = enabler->LookupECProperty(propertyIndex);
-
-        //Current time stamp props are populated by SQLite, so ignore them here.
-        if (hasCurrentTimeStampProp && ecProperty == currentTimeStampProp)
-            continue;
-
-        if (ecProperty->GetIsStruct())
-            continue;
-
-        if (!m_needsCalculatedPropertyEvaluation)
-            m_needsCalculatedPropertyEvaluation = ECInstanceAdapterHelper::IsOrContainsCalculatedProperty (*ecProperty);
-
-        Utf8String propNameSnippet ("[");
-        Utf8CP accessString;
-        enabler->GetAccessString(accessString, propertyIndex);
-        size_t offset = 0;
-        Utf8String utfAccessString(accessString);
-        Utf8String token;
-        bool firstEntry = true;
-        while ((offset = utfAccessString.GetNextToken (token, ".", offset)) != Utf8String::npos)
-            {
-            if (!firstEntry)
-                propNameSnippet.append(".[");
-            propNameSnippet.append (token).append ("]");
-            firstEntry = false;
-            }
-
-        if (parameterIndex != 1)
-            ecsql.append(",");
-
-        ecsql.append(propNameSnippet).append("=?");
-
-        if (SUCCESS != m_ecValueBindingInfos.AddBindingInfo (*enabler, *ecProperty, accessString, parameterIndex))
-            {
-            m_isValid = false;
-            return;
-            }
-
-        parameterIndex++;
-        }
-
-    ecsql.append(" WHERE ECInstanceId=?");
-    m_ecinstanceIdParameterIndex = parameterIndex;
-
-    ECSqlStatus stat = m_statement.Prepare (m_ecdb, ecsql.c_str ());
-    m_isValid = (stat.IsSuccess());
     }
 
 //---------------------------------------------------------------------------------------

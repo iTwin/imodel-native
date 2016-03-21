@@ -593,17 +593,17 @@ TEST_F(ECDbSchemaRules, RelationshipCardinalityTests)
             ECSqlStatement relStmt;
             ASSERT_EQ(ECSqlStatus::Success, relStmt.Prepare(ecdb, "INSERT INTO ts.Rel(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES (?,?,?,?)"));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a2Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a2Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a2Key.GetECClassId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, b1Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, b1Key.GetECClassId()));
             ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(1,1):(1,1)]> Max of (1,1) cardinality constraint is expected to be enforced";
             relStmt.Reset();
             relStmt.ClearBindings();
 
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a1Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a1Key.GetECClassId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b2Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, b2Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, b2Key.GetECClassId()));
             ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(1,1):(1,1)]> Max of (1,1) cardinality constraint is expected to be enforced";
             }
 
@@ -658,9 +658,9 @@ TEST_F(ECDbSchemaRules, RelationshipCardinalityTests)
             ECSqlStatement relStmt;
             ASSERT_EQ(ECSqlStatus::Success, relStmt.Prepare(ecdb, "INSERT INTO ts.Rel(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES (?,?,?,?)"));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a2Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a2Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a2Key.GetECClassId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, b1Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, b1Key.GetECClassId()));
             ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(1,1):(1,N)]> Max of (1,1) cardinality constraint is expected to be enforced";
             relStmt.Reset();
             relStmt.ClearBindings();
@@ -710,25 +710,25 @@ TEST_F(ECDbSchemaRules, RelationshipCardinalityTests)
             ECSqlStatement relStmt;
             ASSERT_EQ(ECSqlStatus::Success, relStmt.Prepare(ecdb, "INSERT INTO ts.Rel(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES (?,?,?,?)"));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a1Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a1Key.GetECClassId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, b1Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, b1Key.GetECClassId()));
             ASSERT_EQ(BE_SQLITE_DONE, relStmt.Step());
             relStmt.Reset();
             relStmt.ClearBindings();
 
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a2Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a2Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a2Key.GetECClassId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, b1Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, b1Key.GetECClassId()));
             ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(0,1):(0,1)]> Max of (0,1) cardinality constraint is expected to be enforced";
             relStmt.Reset();
             relStmt.ClearBindings();
 
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a1Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a1Key.GetECClassId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b2Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, b2Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, b2Key.GetECClassId()));
             ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(0,1):(0,1)]> Max of (0,1) cardinality constraint is expected to be enforced";
             }
 
@@ -776,25 +776,25 @@ TEST_F(ECDbSchemaRules, RelationshipCardinalityTests)
             ECSqlStatement relStmt;
             ASSERT_EQ(ECSqlStatus::Success, relStmt.Prepare(ecdb, "INSERT INTO ts.Rel(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES (?,?,?,?)"));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a1Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a1Key.GetECClassId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, b1Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, b1Key.GetECClassId()));
             ASSERT_EQ(BE_SQLITE_DONE, relStmt.Step());
             relStmt.Reset();
             relStmt.ClearBindings();
 
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a2Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a2Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a2Key.GetECClassId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, b1Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, b1Key.GetECClassId()));
             ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(0,1):(0,N)]> Max of (0,1) cardinality constraint is expected to be enforced";
             relStmt.Reset();
             relStmt.ClearBindings();
 
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a1Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a1Key.GetECClassId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b2Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, b2Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, b2Key.GetECClassId()));
             ASSERT_EQ(BE_SQLITE_DONE, relStmt.Step()) << "[(0,1):(0,N)]> More than one child can exist";
             }
 
@@ -831,25 +831,25 @@ TEST_F(ECDbSchemaRules, RelationshipCardinalityTests)
             ECSqlStatement relStmt;
             ASSERT_EQ(ECSqlStatus::Success, relStmt.Prepare(ecdb, "INSERT INTO ts.Rel(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES (?,?,?,?)"));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a1Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a1Key.GetECClassId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, a2Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, a2Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, a2Key.GetECClassId()));
             ASSERT_EQ(BE_SQLITE_DONE, relStmt.Step());
             relStmt.Reset();
             relStmt.ClearBindings();
 
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a1Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a1Key.GetECClassId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, a3Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, a3Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, a3Key.GetECClassId()));
             ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step());
             relStmt.Reset();
             relStmt.ClearBindings();
 
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a3Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(2, a3Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a3Key.GetECClassId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, a1Key.GetECInstanceId()));
-            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindInt64(4, a1Key.GetECClassId()));
+            ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, a1Key.GetECClassId()));
             //THIS SHOULD ACTUALLY FAIL, but we cannot enforce that in ECDb, because the unique index is only on the FK column,
             //but it would have to be on FK and PK at the same time.
             ASSERT_EQ(BE_SQLITE_DONE, relStmt.Step());
@@ -1297,9 +1297,9 @@ void AssertRelationship(ECDbCR ecdb, ECDbTestFixture::SchemaItem const& schemaIt
     {
     //insert relationship
     Utf8String ecsql;
-    ecsql.Sprintf("INSERT INTO %s.%s(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(%lld,%lld,%lld,%lld)",
-                  schemaName, relationshipClassName, sourceKey.GetECInstanceId().GetValue(), sourceKey.GetECClassId(),
-                  targetKey.GetECInstanceId().GetValue(), targetKey.GetECClassId());
+    ecsql.Sprintf("INSERT INTO %s.%s(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(%llu,%llu,%llu,%llu)",
+                  schemaName, relationshipClassName, sourceKey.GetECInstanceId().GetValue(), sourceKey.GetECClassId().GetValue(),
+                  targetKey.GetECInstanceId().GetValue(), targetKey.GetECClassId().GetValue());
 
     ECSqlStatement stmt;
     if (expectedReadonly)
@@ -1316,28 +1316,28 @@ void AssertRelationship(ECDbCR ecdb, ECDbTestFixture::SchemaItem const& schemaIt
    
     const_cast<ECDbR>(ecdb).SaveChanges();
     //select
-    ecsql.Sprintf("SELECT SourceECInstanceId, SourceECClassId FROM %s.%s WHERE TargetECInstanceId=%lld",
+    ecsql.Sprintf("SELECT SourceECInstanceId, SourceECClassId FROM %s.%s WHERE TargetECInstanceId=%llu",
                   schemaName, relationshipClassName, targetKey.GetECInstanceId().GetValue());
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << schemaItem.m_name.c_str() << ": ECSQL: " << ecsql.c_str();
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << schemaItem.m_name.c_str() << ": ECSQL: " << ecsql.c_str();
     ASSERT_EQ(sourceKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue()) << schemaItem.m_name.c_str() << ": ECSQL: " << ecsql.c_str();
-    ASSERT_EQ(sourceKey.GetECClassId(), stmt.GetValueInt64(1)) << schemaItem.m_name.c_str() << ": ECSQL: " << ecsql.c_str();
+    ASSERT_EQ(sourceKey.GetECClassId().GetValue(), stmt.GetValueId<ECClassId>(1).GetValue()) << schemaItem.m_name.c_str() << ": ECSQL: " << ecsql.c_str();
     stmt.Finalize();
 
-    ecsql.Sprintf("SELECT TargetECInstanceId, TargetECClassId FROM %s.%s WHERE SourceECInstanceId=%lld",
+    ecsql.Sprintf("SELECT TargetECInstanceId, TargetECClassId FROM %s.%s WHERE SourceECInstanceId=%llu",
                   schemaName, relationshipClassName, sourceKey.GetECInstanceId().GetValue());
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << schemaItem.m_name.c_str() << ": ECSQL: " << ecsql.c_str();
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << schemaItem.m_name.c_str() << ": ECSQL: " << ecsql.c_str();
     ASSERT_EQ(targetKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue()) << schemaItem.m_name.c_str() << ": ECSQL: " << ecsql.c_str();
-    ASSERT_EQ(targetKey.GetECClassId(), stmt.GetValueInt64(1)) << schemaItem.m_name.c_str() << ": ECSQL: " << ecsql.c_str();
+    ASSERT_EQ(targetKey.GetECClassId().GetValue(), stmt.GetValueId<ECClassId>(1).GetValue()) << schemaItem.m_name.c_str() << ": ECSQL: " << ecsql.c_str();
     stmt.Finalize();
 
     //delete relationship
-    ecsql.Sprintf("DELETE FROM %s.%s WHERE SourceECInstanceId=%lld AND SourceECClassId=%lld AND TargetECInstanceId=%lld AND TargetECClassId=%lld",
-                  schemaName, relationshipClassName, sourceKey.GetECInstanceId().GetValue(), sourceKey.GetECClassId(),
-                  targetKey.GetECInstanceId().GetValue(), targetKey.GetECClassId());
+    ecsql.Sprintf("DELETE FROM %s.%s WHERE SourceECInstanceId=%llu AND SourceECClassId=%llu AND TargetECInstanceId=%llu AND TargetECClassId=%llu",
+                  schemaName, relationshipClassName, sourceKey.GetECInstanceId().GetValue(), sourceKey.GetECClassId().GetValue(),
+                  targetKey.GetECInstanceId().GetValue(), targetKey.GetECClassId().GetValue());
 
     if (expectedReadonly)
         {

@@ -37,7 +37,6 @@ struct ECSqlPreparedStatement : NonCopyableClass
         bool m_isNoopInSqlite;
         ECSqlParameterMap m_parameterMap;
         std::unique_ptr<ParentOfJoinedTableECSqlStatement> m_parentOfJoinedTableECSqlStatement;
-        std::vector<ECN::ECSchemaPtr> m_keepAliveSchemas; //Hold on to dependent ECSchema just in case some process flush original ECSchema
 
         virtual ECSqlStatus _Reset() = 0;
 
@@ -73,8 +72,6 @@ struct ECSqlPreparedStatement : NonCopyableClass
         BeSQLite::Statement& GetSqliteStatementR() const { return m_sqliteStatement; }
 
         ECSqlParameterMap& GetParameterMapR() { return m_parameterMap; }
-
-        void AddKeepAliveSchema(ECN::ECSchemaCR schema);
     };
 
 //=======================================================================================
@@ -144,9 +141,7 @@ public:
     public:
         //compiler generated copy ctor and copy assignment
 
-        explicit ECInstanceKeyInfo ()
-            : m_ecClassId(ECN::ECClass::UNSET_ECCLASSID), m_ecInstanceIdBinder(nullptr)
-            {}
+        explicit ECInstanceKeyInfo () :  m_ecInstanceIdBinder(nullptr) {}
 
         ECInstanceKeyInfo (ECN::ECClassId ecClassId, ECSqlBinder& ecInstanceIdBinder)
             : m_ecClassId (ecClassId), m_ecInstanceIdBinder (&ecInstanceIdBinder)
@@ -156,7 +151,7 @@ public:
             : m_ecClassId (ecClassId), m_ecInstanceIdBinder (nullptr), m_userProvidedECInstanceId (userProvidedLiteral)
             {}
 
-        ECN::ECClassId GetECClassId() const { BeAssert(m_ecClassId != ECN::ECClass::UNSET_ECCLASSID); return m_ecClassId; }
+        ECN::ECClassId GetECClassId() const { BeAssert(m_ecClassId.IsValid()); return m_ecClassId; }
 
         ECSqlBinder* GetECInstanceIdBinder () const { return m_ecInstanceIdBinder; }
         bool HasUserProvidedECInstanceId () const {return m_userProvidedECInstanceId.IsValid ();}

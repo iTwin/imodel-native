@@ -137,22 +137,22 @@ bool isPolymorphic
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 01 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonReader::Impl::GetRelatedInstanceKeys (ECInstanceKeyMultiMap& instanceKeys, const ECRelationshipPath& pathFromRelatedClass, const ECInstanceId& ecInstanceId)
+BentleyStatus JsonReader::Impl::GetRelatedInstanceKeys(ECInstanceKeyMultiMap& instanceKeys, const ECRelationshipPath& pathFromRelatedClass, const ECInstanceId& ecInstanceId)
     {
-    instanceKeys.clear ();
+    instanceKeys.clear();
 
     CachedECSqlStatementPtr statement = nullptr;
-    if (SUCCESS != PrepareECSql (statement, pathFromRelatedClass, ecInstanceId, true /* selectInstanceKeyOnly*/,false/*isPolymorphic*/))
+    if (SUCCESS != PrepareECSql(statement, pathFromRelatedClass, ecInstanceId, true /* selectInstanceKeyOnly*/, false/*isPolymorphic*/))
         return ERROR;
 
-    while (BE_SQLITE_ROW == statement->Step ())
+    while (BE_SQLITE_ROW == statement->Step())
         {
-        ECInstanceKey instanceKey (statement->GetValueInt64 (0), statement->GetValueId<ECInstanceId> (1));
-        if (!instanceKey.IsValid ())
+        ECInstanceKey instanceKey(statement->GetValueId<ECClassId>(0), statement->GetValueId<ECInstanceId>(1));
+        if (!instanceKey.IsValid())
             continue; // TODO: In the existing DgnDb, you can have ECClassId, ECInstanceId set to 0,0
 
-        ECInstanceKeyMultiMapPair instanceEntry (instanceKey.GetECClassId (), instanceKey.GetECInstanceId ());
-        instanceKeys.insert (instanceEntry);
+        ECInstanceKeyMultiMapPair instanceEntry(instanceKey.GetECClassId(), instanceKey.GetECInstanceId());
+        instanceKeys.insert(instanceEntry);
         }
 
     return SUCCESS;

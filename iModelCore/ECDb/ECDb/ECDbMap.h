@@ -88,8 +88,6 @@ public:
             //For a end table relationship class map, the storage description provides horizontal partitions
             //For the end table's constraint classes - not for the relationship itself.
             StorageDescription const& GetStorageDescription (ClassMap const&)  const;
-
-            void Load (bool forceReload);
             void Reset ();
         };
 

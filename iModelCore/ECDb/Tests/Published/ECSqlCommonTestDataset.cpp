@@ -350,10 +350,10 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereFunctionTests (ECSqlType ecsqlType
     if (ToECSql (pClassECSqlStub, ecsqlType, *pClass, false))
         {
         Utf8String ecsql;
-        ecsql.Sprintf ("%s WHERE GetECClassId() <> %lld", pClassECSqlStub.c_str (), pClassId);
+        ecsql.Sprintf ("%s WHERE GetECClassId() <> %llu", pClassECSqlStub.c_str (), pClassId.GetValue());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
 
-        ecsql.Sprintf ("%s WHERE GetECClassId() = %lld", pClassECSqlStub.c_str (), pClassId);
+        ecsql.Sprintf ("%s WHERE GetECClassId() = %llu", pClassECSqlStub.c_str (), pClassId.GetValue());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), rowCountPerClass);
 
         ecsql.Sprintf ("%s WHERE LOWER(S) = UPPER(S)", pClassECSqlStub.c_str ());
@@ -495,7 +495,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipEndTableMappingTests (
     pECInstanceId = ECSqlTestFrameworkHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.P (I, S) VALUES (100, 'Test instance for relationship tests')");
 
     Utf8String ecsql;
-    ecsql.Sprintf ("INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES (%lld, %lld)", psaECInstanceId.GetValue(), pECInstanceId.GetValue());
+    ecsql.Sprintf ("INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES (%llu, %llu)", psaECInstanceId.GetValue(), pECInstanceId.GetValue());
     psaHasPECInstanceId = ECSqlTestFrameworkHelper::InsertTestInstance (ecdb, ecsql.c_str ());
     if (!psaECInstanceId.IsValid () || !pECInstanceId.IsValid () || !psaHasPECInstanceId.IsValid ())
         {
@@ -515,28 +515,28 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipEndTableMappingTests (
         //using empty where clause
         AddTestItem (dataset, ecsqlType, psaHasPClassECSqlStub.c_str (), 1);
 
-        ecsql.Sprintf ("%s WHERE ECInstanceId = %lld", psaHasPClassECSqlStub.c_str (), psaHasPECInstanceId.GetValue ());
+        ecsql.Sprintf ("%s WHERE ECInstanceId = %llu", psaHasPClassECSqlStub.c_str (), psaHasPECInstanceId.GetValue ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
 
-        ecsql.Sprintf ("%s WHERE ECInstanceId <> %lld", psaHasPClassECSqlStub.c_str (), psaHasPECInstanceId.GetValue ());
+        ecsql.Sprintf ("%s WHERE ECInstanceId <> %llu", psaHasPClassECSqlStub.c_str (), psaHasPECInstanceId.GetValue ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
 
-        ecsql.Sprintf ("%s WHERE SourceECInstanceId = %lld", psaHasPClassECSqlStub.c_str (), psaECInstanceId.GetValue ());
+        ecsql.Sprintf ("%s WHERE SourceECInstanceId = %llu", psaHasPClassECSqlStub.c_str (), psaECInstanceId.GetValue ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
 
-        ecsql.Sprintf ("%s WHERE TargetECInstanceId = %lld", psaHasPClassECSqlStub.c_str (), pECInstanceId.GetValue ());
+        ecsql.Sprintf ("%s WHERE TargetECInstanceId = %llu", psaHasPClassECSqlStub.c_str (), pECInstanceId.GetValue ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
 
-        ecsql.Sprintf ("%s WHERE SourceECInstanceId = %lld AND TargetECInstanceId = %lld", psaHasPClassECSqlStub.c_str (), psaECInstanceId.GetValue (), pECInstanceId.GetValue ());
+        ecsql.Sprintf ("%s WHERE SourceECInstanceId = %llu AND TargetECInstanceId = %llu", psaHasPClassECSqlStub.c_str (), psaECInstanceId.GetValue (), pECInstanceId.GetValue ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
 
-        ecsql.Sprintf ("%s WHERE SourceECInstanceId = %lld AND TargetECInstanceId <> %lld", psaHasPClassECSqlStub.c_str (), psaECInstanceId.GetValue (), pECInstanceId.GetValue ());
+        ecsql.Sprintf ("%s WHERE SourceECInstanceId = %llu AND TargetECInstanceId <> %llu", psaHasPClassECSqlStub.c_str (), psaECInstanceId.GetValue (), pECInstanceId.GetValue ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
 
-        ecsql.Sprintf ("%s WHERE SourceECClassId = %lld AND TargetECClassId = %lld", psaHasPClassECSqlStub.c_str (), psaClassId, pClassId);
+        ecsql.Sprintf ("%s WHERE SourceECClassId = %llu AND TargetECClassId = %llu", psaHasPClassECSqlStub.c_str (), psaClassId.GetValue(), pClassId.GetValue());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
 
-        ecsql.Sprintf ("%s WHERE SourceECClassId = %lld + 1 AND TargetECClassId = %lld", psaHasPClassECSqlStub.c_str (), psaClassId, pClassId);
+        ecsql.Sprintf ("%s WHERE SourceECClassId = %llu + 1 AND TargetECClassId = %llu", psaHasPClassECSqlStub.c_str (), psaClassId.GetValue(), pClassId.GetValue());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
         }
 
@@ -561,7 +561,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipLinkTableMappingTests 
     psaECInstanceId2 = ECSqlTestFrameworkHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.PSA (I, S) VALUES (200, 'Second test instance for relationship tests')");
 
     Utf8String ecsql;
-    ecsql.Sprintf ("INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, TargetECInstanceId) VALUES (%lld, %lld)", psaECInstanceId1.GetValue(), psaECInstanceId2.GetValue());
+    ecsql.Sprintf ("INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, TargetECInstanceId) VALUES (%llu, %llu)", psaECInstanceId1.GetValue(), psaECInstanceId2.GetValue());
     psaHasPsaECInstanceId = ECSqlTestFrameworkHelper::InsertTestInstance (ecdb, ecsql.c_str ());
     if (!psaECInstanceId1.IsValid () || !psaECInstanceId2.IsValid () || !psaHasPsaECInstanceId.IsValid ())
         {
@@ -581,28 +581,28 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipLinkTableMappingTests 
         //using empty where clause
         AddTestItem (dataset, ecsqlType, psaHasPsaClassECSqlStub.c_str (), 1);
 
-        ecsql.Sprintf ("%s WHERE ECInstanceId = %lld", psaHasPsaClassECSqlStub.c_str (), psaHasPsaECInstanceId.GetValue ());
+        ecsql.Sprintf ("%s WHERE ECInstanceId = %llu", psaHasPsaClassECSqlStub.c_str (), psaHasPsaECInstanceId.GetValue ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
 
-        ecsql.Sprintf ("%s WHERE ECInstanceId <> %lld", psaHasPsaClassECSqlStub.c_str (), psaHasPsaECInstanceId.GetValue ());
+        ecsql.Sprintf ("%s WHERE ECInstanceId <> %llu", psaHasPsaClassECSqlStub.c_str (), psaHasPsaECInstanceId.GetValue ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
 
-        ecsql.Sprintf ("%s WHERE SourceECInstanceId = %lld", psaHasPsaClassECSqlStub.c_str (), psaECInstanceId1.GetValue ());
+        ecsql.Sprintf ("%s WHERE SourceECInstanceId = %llu", psaHasPsaClassECSqlStub.c_str (), psaECInstanceId1.GetValue ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
 
-        ecsql.Sprintf ("%s WHERE TargetECInstanceId = %lld", psaHasPsaClassECSqlStub.c_str (), psaECInstanceId2.GetValue ());
+        ecsql.Sprintf ("%s WHERE TargetECInstanceId = %llu", psaHasPsaClassECSqlStub.c_str (), psaECInstanceId2.GetValue ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
 
-        ecsql.Sprintf ("%s WHERE SourceECInstanceId = %lld AND TargetECInstanceId = %lld", psaHasPsaClassECSqlStub.c_str (), psaECInstanceId1.GetValue (), psaECInstanceId2.GetValue ());
+        ecsql.Sprintf ("%s WHERE SourceECInstanceId = %llu AND TargetECInstanceId = %llu", psaHasPsaClassECSqlStub.c_str (), psaECInstanceId1.GetValue (), psaECInstanceId2.GetValue ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
 
-        ecsql.Sprintf ("%s WHERE SourceECInstanceId = %lld AND TargetECInstanceId <> %lld", psaHasPsaClassECSqlStub.c_str (), psaECInstanceId1.GetValue (), psaECInstanceId2.GetValue ());
+        ecsql.Sprintf ("%s WHERE SourceECInstanceId = %llu AND TargetECInstanceId <> %llu", psaHasPsaClassECSqlStub.c_str (), psaECInstanceId1.GetValue (), psaECInstanceId2.GetValue ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
 
-        ecsql.Sprintf ("%s WHERE SourceECClassId = %lld AND TargetECClassId = %lld", psaHasPsaClassECSqlStub.c_str (), psaClassId, psaClassId);
+        ecsql.Sprintf ("%s WHERE SourceECClassId = %llu AND TargetECClassId = %llu", psaHasPsaClassECSqlStub.c_str (), psaClassId.GetValue(), psaClassId.GetValue());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
 
-        ecsql.Sprintf ("%s WHERE SourceECClassId = %lld + 1 AND TargetECClassId = %lld", psaHasPsaClassECSqlStub.c_str (), psaClassId, psaClassId);
+        ecsql.Sprintf ("%s WHERE SourceECClassId = %llu + 1 AND TargetECClassId = %llu", psaHasPsaClassECSqlStub.c_str (), psaClassId.GetValue(), psaClassId.GetValue());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
         }
 
@@ -640,7 +640,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTes
     ECInstanceId ecInstanceId;
     {
     Savepoint savepoint (ecdb, "Inserting test instances");
-    ecInstanceId = ECSqlTestFrameworkHelper::InsertTestInstance (ecdb, SqlPrintfString("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, TargetECInstanceId, B, D) VALUES (%lld, %lld, False, 3.14)", sourceECInstanceId.GetValue(),targetECInstanceId.GetValue()).GetUtf8CP());
+    ecInstanceId = ECSqlTestFrameworkHelper::InsertTestInstance (ecdb, SqlPrintfString("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, TargetECInstanceId, B, D) VALUES (%llu, %llu, False, 3.14)", sourceECInstanceId.GetValue(),targetECInstanceId.GetValue()).GetUtf8CP());
     if (!ecInstanceId.IsValid ())
         {
         savepoint.Cancel ();
@@ -668,28 +668,28 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTes
         ecsql.Sprintf ("%s WHERE B = false AND D = 3.14", relClassECSqlStub.c_str ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
 
-        ecsql.Sprintf ("%s WHERE SourceECInstanceId = %lld", relClassECSqlStub.c_str (), sourceECInstanceId.GetValue());
+        ecsql.Sprintf ("%s WHERE SourceECInstanceId = %llu", relClassECSqlStub.c_str (), sourceECInstanceId.GetValue());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
 
-        ecsql.Sprintf ("%s WHERE TargetECInstanceId = %lld", relClassECSqlStub.c_str (), targetECInstanceId.GetValue());
+        ecsql.Sprintf ("%s WHERE TargetECInstanceId = %llu", relClassECSqlStub.c_str (), targetECInstanceId.GetValue());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
 
-        ecsql.Sprintf ("%s WHERE SourceECClassId <> %lld", relClassECSqlStub.c_str (), psaClassId);
+        ecsql.Sprintf ("%s WHERE SourceECClassId <> %llu", relClassECSqlStub.c_str (), psaClassId.GetValue());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
 
-        ecsql.Sprintf ("%s WHERE SourceECClassId = %lld", relClassECSqlStub.c_str (), psaClassId);
+        ecsql.Sprintf ("%s WHERE SourceECClassId = %llu", relClassECSqlStub.c_str (), psaClassId.GetValue());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
 
-        ecsql.Sprintf ("%s WHERE TargetECClassId <> %lld", relClassECSqlStub.c_str (), pClassId);
+        ecsql.Sprintf ("%s WHERE TargetECClassId <> %llu", relClassECSqlStub.c_str (), pClassId.GetValue());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
 
-        ecsql.Sprintf ("%s WHERE TargetECClassId = %lld", relClassECSqlStub.c_str (), pClassId);
+        ecsql.Sprintf ("%s WHERE TargetECClassId = %llu", relClassECSqlStub.c_str (), pClassId.GetValue());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
 
-        ecsql.Sprintf ("%s WHERE ECInstanceId = %lld", relClassECSqlStub.c_str (), ecInstanceId.GetValue ());
+        ecsql.Sprintf ("%s WHERE ECInstanceId = %llu", relClassECSqlStub.c_str (), ecInstanceId.GetValue ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
 
-        ecsql.Sprintf ("%s WHERE ECInstanceId > %lld", relClassECSqlStub.c_str (), ecInstanceId.GetValue ());
+        ecsql.Sprintf ("%s WHERE ECInstanceId > %llu", relClassECSqlStub.c_str (), ecInstanceId.GetValue ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
         }
 

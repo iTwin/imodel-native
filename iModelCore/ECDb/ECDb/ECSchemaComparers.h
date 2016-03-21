@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSchemaComparers.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -26,7 +26,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //! @return true if the classes are equal by the definition explained above. false otherwise.
 // @bsiclass                                                 Krischan.Eberle      06/2013
 //+===============+===============+===============+===============+===============+======
-bool operator== (ECN::ECClassCR lhs, ECN::ECClassCR rhs);
+bool operator==(ECN::ECClassCR lhs, ECN::ECClassCR rhs);
 
 //=======================================================================================
 //! Operator that checks two ECClasses for inequality.
@@ -40,7 +40,7 @@ bool operator== (ECN::ECClassCR lhs, ECN::ECClassCR rhs);
 //! @return true if the classes are not equal by the definition explained above. false otherwise.
 // @bsiclass                                                 Krischan.Eberle      06/2013
 //+===============+===============+===============+===============+===============+======
-bool operator!= (ECN::ECClassCR lhs, ECN::ECClassCR rhs);
+bool operator!=(ECN::ECClassCR lhs, ECN::ECClassCR rhs);
 
 //=======================================================================================
 //! Operator that checks two ECProperties for equality.
@@ -54,7 +54,7 @@ bool operator!= (ECN::ECClassCR lhs, ECN::ECClassCR rhs);
 //! @return true if the ECProperties are equal by the definition explained above. false otherwise.
 // @bsiclass                                                 Krischan.Eberle      06/2013
 //+===============+===============+===============+===============+===============+======
-bool operator== (ECN::ECPropertyCR lhs, ECN::ECPropertyCR rhs);
+bool operator==(ECN::ECPropertyCR lhs, ECN::ECPropertyCR rhs);
 
 //=======================================================================================
 //! Operator that checks two ECClasses for inequality.
@@ -68,6 +68,6 @@ bool operator== (ECN::ECPropertyCR lhs, ECN::ECPropertyCR rhs);
 //! @return true if the ECProperties are not equal by the definition explained above. false otherwise.
 // @bsiclass                                                 Krischan.Eberle      06/2013
 //+===============+===============+===============+===============+===============+======
-bool operator!= (ECN::ECPropertyCR lhs, ECN::ECPropertyCR rhs);
+bool operator!=(ECN::ECPropertyCR lhs, ECN::ECPropertyCR rhs);
 
 END_BENTLEY_ECOBJECT_NAMESPACE

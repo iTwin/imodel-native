@@ -91,7 +91,7 @@ ECN::IECInstancePtr ECInstanceECSqlSelectAdapter::GetInstance() const
     if (-1 != m_ecClassIdColumnIndex)
         {
         IECSqlValue const& value = m_ecSqlStatement.GetValue (m_ecClassIdColumnIndex);
-        ecClass = m_ecSqlStatement.GetECDb()->Schemas().GetECClass(value.GetInt64());
+        ecClass = m_ecSqlStatement.GetECDb()->Schemas().GetECClass(value.GetId<ECClassId>());
         }
     else
         {
@@ -471,7 +471,7 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetRelationshipSource(ECN::IECInstan
     if (nullptr == standaloneRelationship)
         return ERROR;
 
-    IECInstancePtr endpoint = FindRelationshipEndpoint(value.GetId<ECInstanceId>(), m_ecSqlStatement.GetValueUInt64(m_sourceECClassIdColumnIndex), standaloneRelationship, true);
+    IECInstancePtr endpoint = FindRelationshipEndpoint(value.GetId<ECInstanceId>(), m_ecSqlStatement.GetValueId<ECClassId>(m_sourceECClassIdColumnIndex), standaloneRelationship, true);
     if (endpoint.IsValid())
         {
         standaloneRelationship->SetSource(&(*endpoint));
@@ -490,10 +490,10 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetRelationshipTarget(ECN::IECInstan
     if (nullptr == standaloneRelationship)
         return ERROR;
 
-    IECInstancePtr endpoint = FindRelationshipEndpoint (value.GetId<ECInstanceId>(), m_ecSqlStatement.GetValueUInt64 (m_targetECClassIdColumnIndex), standaloneRelationship, false);
-    if (endpoint.IsValid ())
+    IECInstancePtr endpoint = FindRelationshipEndpoint(value.GetId<ECInstanceId>(), m_ecSqlStatement.GetValueId<ECClassId>(m_targetECClassIdColumnIndex), standaloneRelationship, false);
+    if (endpoint.IsValid())
         {
-        standaloneRelationship->SetTarget (&(*endpoint));
+        standaloneRelationship->SetTarget(&(*endpoint));
         return SUCCESS;
         }
 

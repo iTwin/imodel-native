@@ -206,21 +206,21 @@ TEST_F (ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
     auto assertInsert = [&ecdb] (IECInstanceCR testInstance, ECInstanceId expectedId)
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT I, GetECClassId() FROM ecsql.P WHERE ECInstanceId = ?"));
-        stmt.BindId (1, expectedId);
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT I, GetECClassId() FROM ecsql.P WHERE ECInstanceId = ?"));
+        stmt.BindId(1, expectedId);
 
-        ASSERT_EQ (BE_SQLITE_ROW, stmt.Step ());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
-        IECSqlValue const& colVal = stmt.GetValue (0);
+        IECSqlValue const& colVal = stmt.GetValue(0);
 
         ECValue v;
-        ASSERT_EQ (ECObjectsStatus::Success, testInstance.GetValue (v, colVal.GetColumnInfo ().GetPropertyPath ().ToString ().c_str ()));
-        ASSERT_EQ (v.IsNull (), colVal.IsNull ());
-        if (!v.IsNull ())
-            ASSERT_EQ (v.GetInteger (), colVal.GetInt ());
+        ASSERT_EQ(ECObjectsStatus::Success, testInstance.GetValue(v, colVal.GetColumnInfo().GetPropertyPath().ToString().c_str()));
+        ASSERT_EQ(v.IsNull(), colVal.IsNull());
+        if (!v.IsNull())
+            ASSERT_EQ(v.GetInteger(), colVal.GetInt());
 
-        ASSERT_EQ ((int64_t) testInstance.GetClass ().GetId (), stmt.GetValueInt64 (1));
-        ASSERT_EQ (BE_SQLITE_DONE, stmt.Step ()) << "Only one instance for given instance id is expected to be returned";
+        ASSERT_EQ(testInstance.GetClass().GetId().GetValue(), stmt.GetValueId<ECClassId>(1).GetValue());
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Only one instance for given instance id is expected to be returned";
         };
 
 
@@ -323,7 +323,7 @@ TEST_F(ECInstanceInserterTests, InsertReadonlyProperty)
     ASSERT_EQ(SUCCESS, inserter.Insert(key, *instance));
 
     Utf8String validateECSql;
-    validateECSql.Sprintf("SELECT NULL FROM ts.A WHERE ECInstanceId=%lld AND P1=%d AND P2 LIKE '%s' AND P3=%lld",
+    validateECSql.Sprintf("SELECT NULL FROM ts.A WHERE ECInstanceId=%llu AND P1=%d AND P2 LIKE '%s' AND P3=%lld",
                           key.GetECInstanceId().GetValue(), p1Value, p2Value, p3Value);
 
     ECSqlStatement validateStmt;
@@ -641,9 +641,9 @@ TEST_F (ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClass
 
     ASSERT_EQ (stmt.Prepare (db, "INSERT INTO rc.RelationshipClassA (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"), ECSqlStatus::Success);
     stmt.BindId (1, key1.GetECInstanceId ());
-    stmt.BindInt64 (2, key1.GetECClassId ());
+    stmt.BindId(2, key1.GetECClassId ());
     stmt.BindId (3, key3.GetECInstanceId ());
-    stmt.BindInt64 (4, key3.GetECClassId ());
+    stmt.BindId(4, key3.GetECClassId ());
     ASSERT_EQ (stmt.Step (), BE_SQLITE_DONE);
     stmt.Finalize ();
     //Instance insertion query without specifing Souce/TargetClassId's should be successful for a 1:N, end tabler relationship
@@ -655,9 +655,9 @@ TEST_F (ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClass
 
     ASSERT_EQ (stmt.Prepare (db, "INSERT INTO rc.RelationshipClassB (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"), ECSqlStatus::Success);
     stmt.BindId (1, key1.GetECInstanceId ());
-    stmt.BindInt64 (2, key1.GetECClassId ());
+    stmt.BindId(2, key1.GetECClassId ());
     stmt.BindId (3, key3.GetECInstanceId ());
-    stmt.BindInt64 (4, key3.GetECClassId ());
+    stmt.BindId(4, key3.GetECClassId ());
     ASSERT_EQ (stmt.Step (), BE_SQLITE_DONE);
     stmt.Finalize ();
     //Instance insertion query without specifing Souce/TargetClassId's should be successful for a 1:1, end tabler relationship
@@ -669,9 +669,9 @@ TEST_F (ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClass
 
     ASSERT_EQ (stmt.Prepare (db, "INSERT INTO rc.RelationshipClassC (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"), ECSqlStatus::Success);
     stmt.BindId (1, key1.GetECInstanceId ());
-    stmt.BindInt64 (2, key1.GetECClassId ());
+    stmt.BindId(2, key1.GetECClassId ());
     stmt.BindId (3, key3.GetECInstanceId ());
-    stmt.BindInt64 (4, key3.GetECClassId ());
+    stmt.BindId(4, key3.GetECClassId ());
     ASSERT_EQ (stmt.Step (), BE_SQLITE_DONE);
     stmt.Finalize ();
     //Instance insertion query without specifing Souce/TargetClassId's shouldn't work for a link table relationship if constraint isn't a single table or isn't polymorphic Constraint

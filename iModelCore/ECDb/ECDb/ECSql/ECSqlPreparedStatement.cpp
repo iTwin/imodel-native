@@ -199,18 +199,6 @@ Utf8CP ECSqlPreparedStatement::GetNativeSql() const
     return m_nativeSql.c_str();
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        12/13
-//---------------------------------------------------------------------------------------
-void ECSqlPreparedStatement::AddKeepAliveSchema(ECN::ECSchemaCR schema)
-    {
-    for (auto& keepAlive : m_keepAliveSchemas)
-    if (&schema == keepAlive.get())
-        return;
-
-    m_keepAliveSchemas.push_back(const_cast<ECSchemaP>(&schema));
-    }
-
 
 //***************************************************************************************
 //    ECSqlSelectPreparedStatement
@@ -419,7 +407,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::GenerateECInstanceIdAndBindToInsertSta
 //---------------------------------------------------------------------------------------
 void ECSqlInsertPreparedStatement::SetECInstanceKeyInfo(ECInstanceKeyInfo const& ecInstanceKeyInfo)
     {
-    BeAssert(ecInstanceKeyInfo.GetECClassId() != ECClass::UNSET_ECCLASSID);
+    BeAssert(ecInstanceKeyInfo.GetECClassId().IsValid());
     m_ecInstanceKeyInfo = ecInstanceKeyInfo;
     }
 

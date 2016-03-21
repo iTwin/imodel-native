@@ -1088,7 +1088,7 @@ Utf8String JoinedTableECDbMapStrategyTests::ToInsertECSql (ECDbCR ecdb, Utf8CP c
     EXPECT_TRUE (ecClass != nullptr);
 
     Utf8String insertECSql = "INSERT INTO ";
-    insertECSql.append (ecClass->GetECSqlName()).append (" (SourceECInstanceId, TargetECInstanceId, SourceECClassId, TargetECClassId) VALUES (%lld, %lld, %lld, %lld)");
+    insertECSql.append (ecClass->GetECSqlName()).append (" (SourceECInstanceId, TargetECInstanceId, SourceECClassId, TargetECClassId) VALUES (%llu, %llu, %llu, %llu)");
 
     return insertECSql;
     }
@@ -1126,7 +1126,7 @@ Utf8String JoinedTableECDbMapStrategyTests::ToSelectECSql (ECDbCR ecdb, Utf8CP c
     EXPECT_TRUE (ecClass != nullptr);
 
     Utf8String selecteECSql = "SELECT ";
-    selecteECSql.append (className).append (".* FROM ").append (ecClass->GetECSqlName()).append (" WHERE ECInstanceId = %lld");
+    selecteECSql.append (className).append (".* FROM ").append (ecClass->GetECSqlName()).append (" WHERE ECInstanceId = %llu");
 
     return selecteECSql;
     }
@@ -1146,9 +1146,9 @@ void JoinedTableECDbMapStrategyTests::VerifyInsertedInstance (ECDbR ecdb, Utf8CP
 
     ASSERT_EQ (BE_SQLITE_ROW, stmt.Step ()) << "Select test instance with '" << ecsql << "' failed. Step failed";
     ASSERT_EQ (sourceInstanceId.GetValue (), stmt.GetValueInt64 (1)) << "Get Source InstanceId failed : " << ecsql;
-    ASSERT_EQ (sourceClassId, stmt.GetValueInt64 (2)) << "Get SourceClassId failed : " << ecsql;
+    ASSERT_EQ (sourceClassId, stmt.GetValueId<ECClassId>(2)) << "Get SourceClassId failed : " << ecsql;
     ASSERT_EQ (targetInstanceId.GetValue (), stmt.GetValueInt64 (3)) << "Get TargetInstanceId failed : " << ecsql;
-    ASSERT_EQ (targetClassId, stmt.GetValueInt64 (4)) << "Get TargetClassId failed : " << ecsql;
+    ASSERT_EQ (targetClassId, stmt.GetValueId<ECClassId>(4)) << "Get TargetClassId failed : " << ecsql;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1311,6 +1311,8 @@ TEST_F (JoinedTableECDbMapStrategyTests, SelfJoinRelationships)
     ecsql.Sprintf (ToSelectECSql (db, "ManyFooHasManyFoo").c_str (), manyFooHasManyFooInstanceId4.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId2, fooInstanceId2, fooClassId, fooClassId);
     }
+
+    db.Schemas().CreateECClassViewsInDb();
     }
 
 //---------------------------------------------------------------------------------------
@@ -2542,8 +2544,8 @@ TEST_F(JoinedTableECDbMapStrategyTests, DropFKConstraintForSharedColumnForSubCla
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.Rel1(SourceECInstanceId, TargetECInstanceId, SourceECClassId, TargetECClassId) VALUES(?,?,?,?)"));
     statement.BindId(1, sourceKey.GetECInstanceId());
     statement.BindId(2, targetKey.GetECInstanceId());
-    statement.BindInt64(3, sourceKey.GetECClassId());
-    statement.BindInt64(4, targetKey.GetECClassId());
+    statement.BindId(3, sourceKey.GetECClassId());
+    statement.BindId(4, targetKey.GetECClassId());
     ASSERT_EQ(BE_SQLITE_DONE, statement.Step(relKey));
     statement.Finalize();
 
@@ -2630,8 +2632,8 @@ TEST_F(JoinedTableECDbMapStrategyTests, VerifyONDeleteRestrictWithJoinedTable)
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.AOwnsB(SourceECInstanceId, TargetECInstanceId, SourceECClassId, TargetECClassId) VALUES(?,?,?,?)"));
     statement.BindId(1, sourceKey.GetECInstanceId());
     statement.BindId(2, targetKey.GetECInstanceId());
-    statement.BindInt64(3, sourceKey.GetECClassId());
-    statement.BindInt64(4, targetKey.GetECClassId());
+    statement.BindId(3, sourceKey.GetECClassId());
+    statement.BindId(4, targetKey.GetECClassId());
     ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
     statement.Finalize();
 
@@ -2650,8 +2652,8 @@ TEST_F(JoinedTableECDbMapStrategyTests, VerifyONDeleteRestrictWithJoinedTable)
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.AOwnsB1(SourceECInstanceId, TargetECInstanceId, SourceECClassId, TargetECClassId) VALUES(?,?,?,?)"));
     statement.BindId(1, sourceKey1.GetECInstanceId());
     statement.BindId(2, targetKey1.GetECInstanceId());
-    statement.BindInt64(3, sourceKey1.GetECClassId());
-    statement.BindInt64(4, targetKey1.GetECClassId());
+    statement.BindId(3, sourceKey1.GetECClassId());
+    statement.BindId(4, targetKey1.GetECClassId());
     ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
     statement.Finalize();
 

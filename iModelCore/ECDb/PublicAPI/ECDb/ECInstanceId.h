@@ -40,10 +40,10 @@ private:
 
 public:
     //! Construct an empty/invalid ECInstanceKey
-    ECInstanceKey() : m_ecClassId(ECN::ECClass::UNSET_ECCLASSID) {}
+    ECInstanceKey() {}
 
     //! Construct an ECInstanceKey
-    ECInstanceKey(ECN::ECClassId ecClassId, ECInstanceId const& ecInstanceId) : m_ecClassId(ecClassId), m_ecInstanceId(ecInstanceId) {}
+    ECInstanceKey(ECN::ECClassId ecClassId, ECInstanceId ecInstanceId) : m_ecClassId(ecClassId), m_ecInstanceId(ecInstanceId) {}
 
     //! Compare this ECInstanceKey with another key for equality
     bool operator == (ECInstanceKey const& other) const { return m_ecClassId == other.m_ecClassId && m_ecInstanceId == other.m_ecInstanceId; }
@@ -69,7 +69,7 @@ public:
     ECInstanceId GetECInstanceId() const { return m_ecInstanceId; }
     
     //! Test if this key is valid
-    bool IsValid() const { return (m_ecClassId != ECN::ECClass::UNSET_ECCLASSID && m_ecInstanceId.IsValid()); }
+    bool IsValid() const { return (m_ecClassId.IsValid() && m_ecInstanceId.IsValid()); }
     };
 
 typedef ECInstanceKey const& ECInstanceKeyCR;

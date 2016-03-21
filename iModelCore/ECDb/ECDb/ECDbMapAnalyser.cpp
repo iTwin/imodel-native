@@ -388,11 +388,6 @@ Utf8CP ECDbMapAnalyser::Class::GetSqlName () const { return  m_name.c_str (); }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-ECDbMapAnalyser::Storage& ECDbMapAnalyser::Class::GetStorageR () { return m_storage; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
 ClassMapCR ECDbMapAnalyser::Class::GetClassMap () const { return m_classMap; }
 
 //---------------------------------------------------------------------------------------
@@ -781,10 +776,8 @@ ECDbMapAnalyser::Class& ECDbMapAnalyser::GetClass (ClassMapCR classMap)
     m_classes[classMap.GetClass ().GetId ()] = Class::Ptr (new Class (classMap, storage, nullptr));
 
     auto ptr = m_classes[classMap.GetClass ().GetId ()].get ();
-    if (classMap.GetParentMapClassId () != 0LL)
-        {
+    if (classMap.GetParentMapClassId ().IsValid())
         ptr->SetParent (GetClass (*GetClassMap (classMap.GetParentMapClassId ())));
-        }
 
     storage.GetClassesR ().insert (ptr);
     if (classMap.HasJoinedTable())
@@ -829,11 +822,8 @@ ECDbMapAnalyser::Relationship&  ECDbMapAnalyser::GetRelationship(RelationshipCla
     Storage& storage = GetStorage(classMap);
     m_relationships[classMap.GetClass().GetId()] = Relationship::Ptr(new Relationship(classMap, GetStorage(classMap), nullptr));
     auto ptr = m_relationships[classMap.GetClass().GetId()].get();
-    if (classMap.GetParentMapClassId() != 0LL)
-        {
+    if (classMap.GetParentMapClassId().IsValid())
         ptr->SetParent(GetClass(*GetClassMap(classMap.GetParentMapClassId())));
-        }
-
 
     for (auto& part : classMap.GetStorageDescription().GetHorizontalPartitions())
         {
@@ -944,7 +934,7 @@ BentleyStatus ECDbMapAnalyser::AnalyseRelationshipClass(RelationshipClassMapCR e
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-std::vector<ECN::ECClassId> ECDbMapAnalyser::GetRootClassIds () const
+std::vector<ECN::ECClassId> ECDbMapAnalyser::GetRootClassIds() const
     {
     Utf8String sql;
     sql.Sprintf("SELECT C.Id FROM ec_Class C "
@@ -954,11 +944,11 @@ std::vector<ECN::ECClassId> ECDbMapAnalyser::GetRootClassIds () const
 
     std::vector<ECN::ECClassId> classIds;
     Statement stmt;
-    stmt.Prepare (GetMap ().GetECDbR (), sql.c_str());
-    while (stmt.Step () == BE_SQLITE_ROW)
-        classIds.push_back (stmt.GetValueInt64 (0));
+    stmt.Prepare(GetMap().GetECDbR(), sql.c_str());
+    while (stmt.Step() == BE_SQLITE_ROW)
+        classIds.push_back(stmt.GetValueId<ECClassId>(0));
 
-    return std::move (classIds);
+    return std::move(classIds);
     }
 
 //---------------------------------------------------------------------------------------
@@ -976,7 +966,7 @@ std::vector<ECN::ECClassId> ECDbMapAnalyser::GetRelationshipClassIds() const
     Statement stmt;
     stmt.Prepare(GetMap().GetECDbR(), sql.c_str());
     while (stmt.Step() == BE_SQLITE_ROW)
-        classIds.push_back(stmt.GetValueInt64(0));
+        classIds.push_back(stmt.GetValueId<ECClassId>(0));
 
     return std::move(classIds);
     }
@@ -1012,7 +1002,7 @@ void ECDbMapAnalyser::SetupDerivedClassLookup ()
     m_derivedClassLookup.clear ();
     stmt.Prepare (GetMap ().GetECDbR (), sql0);
     while (stmt.Step () == BE_SQLITE_ROW)
-        m_derivedClassLookup[stmt.GetValueInt64 (0)].insert (stmt.GetValueInt64 (1));
+        m_derivedClassLookup[stmt.GetValueId<ECClassId>(0)].insert (stmt.GetValueId<ECClassId>(1));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1195,101 +1185,101 @@ BentleyStatus ECDbMapAnalyser::BuildPolymorphicUpdateTrigger (Class& nclass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-SqlViewBuilder ECDbMapAnalyser::BuildView (Class& nclass)
+SqlViewBuilder ECDbMapAnalyser::BuildView(Class& nclass)
     {
-    auto classMap = &nclass.GetClassMap ();
-    auto rootPMS = PropertyMapSet::Create (*classMap);
-    auto const& storageDescription = classMap->GetStorageDescription ();
+    auto classMap = &nclass.GetClassMap();
+    auto rootPMS = PropertyMapSet::Create(*classMap);
+    auto const& storageDescription = classMap->GetStorageDescription();
 
     SqlViewBuilder builder;
-    builder.GetNameBuilder ()
-        .Append ("_")
-        .Append (classMap->GetClass ().GetSchema ().GetNamespacePrefix ().c_str ())
-        .Append ("_")
-        .Append (classMap->GetClass ().GetName ().c_str ());
+    builder.GetNameBuilder()
+        .Append("_")
+        .Append(classMap->GetClass().GetSchema().GetNamespacePrefix().c_str())
+        .Append("_")
+        .Append(classMap->GetClass().GetName().c_str());
 
     NativeSqlBuilder::List selects;
-    Partition const* root = &storageDescription.GetRootHorizontalPartition ();
-    if (root->GetTable ().GetPersistenceType () == PersistenceType::Virtual)
+    Partition const* root = &storageDescription.GetRootHorizontalPartition();
+    if (root->GetTable().GetPersistenceType() == PersistenceType::Virtual)
         root = nullptr;
 
     bool bFirst = true;
-    for (auto const& hp : storageDescription.GetHorizontalPartitions ())
+    for (auto const& hp : storageDescription.GetHorizontalPartitions())
         {
-        if (hp.GetTable ().GetPersistenceType () == PersistenceType::Virtual)
+        if (hp.GetTable().GetPersistenceType() == PersistenceType::Virtual)
             continue;
 
         NativeSqlBuilder select;
-        select.Append ("SELECT ");
-        ClassMapCP firstChildMap = m_map.GetClassMap (hp.GetClassIds ().front ());
-        auto childPMS = PropertyMapSet::Create (*firstChildMap);
-        auto rootEndPoints = rootPMS->GetEndPoints ();
-        for (auto const rootE : rootEndPoints)
+        select.Append("SELECT ");
+        ClassMapCP firstChildMap = m_map.GetClassMap(hp.GetClassIds().front());
+        auto childPMS = PropertyMapSet::Create(*firstChildMap);
+        auto rootEndPoints = rootPMS->GetEndPoints();
+        for (PropertyMapSet::EndPoint const* rootE : rootEndPoints)
             {
-            auto childE = childPMS->GetEndPointByAccessString (rootE->GetAccessString ().c_str ());
-            if (childE->GetValue ().IsNull ())
+            PropertyMapSet::EndPoint const* childE = childPMS->GetEndPointByAccessString(rootE->GetAccessString().c_str());
+            if (childE->GetValue().IsNull())
                 {
-                select.AppendEscaped (childE->GetColumn ()->GetName ().c_str ());
+                select.AppendEscaped(childE->GetColumn()->GetName().c_str());
                 if (bFirst && root == nullptr)
                     {
                     bFirst = false;
-                    select.AppendSpace ().AppendEscaped (rootE->GetColumn ()->GetName ().c_str ());
+                    select.AppendSpace().AppendEscaped(rootE->GetColumn()->GetName().c_str());
                     }
                 }
             else
                 {
-                if (rootE->GetColumn () != nullptr)
-                    select.Append (Utf8PrintfString ("%lld [%s]", childE->GetValue ().GetLong (), rootE->GetColumn ()->GetName ().c_str ()).c_str());
+                if (rootE->GetColumn() != nullptr)
+                    select.Append(Utf8PrintfString("%llu [%s]", (uint64_t) childE->GetValue().GetLong(), rootE->GetColumn()->GetName().c_str()));
                 else
-                    select.Append (Utf8PrintfString ("%lld [%s]", childE->GetValue ().GetLong (), (rootE->GetAccessString ().c_str ())).c_str());
+                    select.Append(Utf8PrintfString("%llu [%s]", (uint64_t) childE->GetValue().GetLong(), (rootE->GetAccessString().c_str())));
                 }
 
-            if (rootE != rootEndPoints.back ())
-                select.Append (", ");
+            if (rootE != rootEndPoints.back())
+                select.Append(", ");
             }
 
-        select.Append (" FROM ").AppendEscaped (firstChildMap->GetJoinedTable().GetName ().c_str ());
+        select.Append(" FROM ").AppendEscaped(firstChildMap->GetJoinedTable().GetName().c_str());
         ECDbSqlColumn const* classIdColumn = nullptr;
-        if (hp.GetTable ().TryGetECClassIdColumn(classIdColumn))
+        if (hp.GetTable().TryGetECClassIdColumn(classIdColumn))
             {
-            if (classIdColumn->GetPersistenceType () == PersistenceType::Persisted && hp.NeedsECClassIdFilter ())
+            if (classIdColumn->GetPersistenceType() == PersistenceType::Persisted && hp.NeedsECClassIdFilter())
                 {
-                select.Append (" WHERE ");
-                hp.AppendECClassIdFilterSql (classIdColumn->GetName().c_str(), select);
+                select.Append(" WHERE ");
+                hp.AppendECClassIdFilterSql(classIdColumn->GetName().c_str(), select);
                 }
             }
 
         if (&hp == root)
-            selects.insert (selects.begin (), std::move (select));
+            selects.insert(selects.begin(), std::move(select));
         else
-            selects.push_back (std::move (select));
+            selects.push_back(std::move(select));
         }
 
-    if (!selects.empty ())
+    if (!selects.empty())
         {
         for (auto const& select : selects)
             {
-            builder.AddSelect ().Append (select);
+            builder.AddSelect().Append(select);
             }
         }
     else
         {
-        auto& select = builder.AddSelect ();
-        select.Append ("SELECT ");
-        auto rootEndPoints = rootPMS->GetEndPoints ();
+        auto& select = builder.AddSelect();
+        select.Append("SELECT ");
+        auto rootEndPoints = rootPMS->GetEndPoints();
         for (auto const rootE : rootEndPoints)
             {
-            select.Append ("NULL ");
-            select.AppendEscaped (rootE->GetColumn ()->GetName ().c_str ());
-            if (rootE != rootEndPoints.back ())
-                select.Append (", ");
+            select.Append("NULL ");
+            select.AppendEscaped(rootE->GetColumn()->GetName().c_str());
+            if (rootE != rootEndPoints.back())
+                select.Append(", ");
             }
 
-        select.Append (" LIMIT 0");
-        builder.MarkAsNullView ();
+        select.Append(" LIMIT 0");
+        builder.MarkAsNullView();
         }
 
-    return std::move (builder);
+    return std::move(builder);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2114,7 +2104,7 @@ BentleyStatus ECClassViewGenerator::BuildSystemSelectionClause(NativeSqlBuilder:
         else
             {
             NativeSqlBuilder exp;
-            exp.AppendFormatted("%lld " ECDB_COL_ECClassId, classMap.GetClass().GetId());
+            exp.AppendFormatted("%llu " ECDB_COL_ECClassId, classMap.GetClass().GetId().GetValue());
             fragments.push_back(exp);
             }
         }
@@ -2185,7 +2175,7 @@ BentleyStatus ECClassViewGenerator::BuildECClassIdConstraintExpression(NativeSql
 
     ECClassId classId = constraint.GetClasses().front()->GetId();
     NativeSqlBuilder exp;
-    exp.AppendFormatted("%lld ", classId).AppendEscaped(colAlias);
+    exp.AppendFormatted("%llu ", classId.GetValue()).AppendEscaped(colAlias);
     fragments.push_back(std::move(exp));
     return SUCCESS;
     }

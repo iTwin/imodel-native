@@ -62,7 +62,7 @@ private:
     bool m_isMapped = false;
     mutable ECDbSqlTable const* m_ecDbSqlTable = nullptr;
 
-    ECN::ECClassId m_primaryClassId = ECN::ECClass::UNSET_ECCLASSID;
+    ECN::ECClassId m_primaryClassId;
     Utf8String m_instanceIdColumnName;
     int m_instanceIdColumnIndex = -1;
     Utf8String m_primaryClassIdColumnName;
@@ -308,9 +308,9 @@ ECClassId SqlChange::GetValueECClassId(int columnIndex) const
     {
     DbValue value = GetValue(columnIndex);
     if (!value.IsValid() || value.IsNull())
-        return ECClass::UNSET_ECCLASSID;
+        return ECClassId();
 
-    return value.GetValueUInt64();
+    return value.GetValueId<ECClassId>();
     }
 
 //---------------------------------------------------------------------------------------
@@ -354,11 +354,11 @@ ECClassId TableMap::QueryClassId(ECDbR ecdb, Utf8StringCR tableName) const
     if (result != BE_SQLITE_ROW)
         {
         BeAssert(false);
-        return ECClass::UNSET_ECCLASSID;
+        return ECClassId();
         }
 
-    const ECClassId ecClassId = (ECClassId) stmt->GetValueUInt64(0);
-    BeAssert(ecClassId != ECClass::UNSET_ECCLASSID);
+    const ECClassId ecClassId = stmt->GetValueId<ECClassId>(0);
+    BeAssert(ecClassId.IsValid());
     BeAssert(BE_SQLITE_DONE == stmt->Step()); // There should be only one primary class mapped to a table (if there is no ecClassId column)    
     return ecClassId;
     }
@@ -523,9 +523,9 @@ ECClassId TableMap::GetValueECClassId(Utf8StringCR columnName, ECInstanceId inst
     {
     DbDupValue value = GetValue(columnName, instanceId);
     if (!value.IsValid() || value.IsNull())
-        return ECClass::UNSET_ECCLASSID;
+        return ECClassId();
 
-    return value.GetValueUInt64();
+    return value.GetValueId<ECClassId>();
     }
 
 //---------------------------------------------------------------------------------------
@@ -652,7 +652,7 @@ void InstancesTable::FinalizeStatements()
 void InstancesTable::Insert(ECClassId classId, ECInstanceId instanceId, DbOpcode dbOpcode, int indirect, Utf8StringCR tableName)
     {
     m_instancesTableInsert.Reset();
-    m_instancesTableInsert.BindInt64(1, classId);
+    m_instancesTableInsert.BindId(1, classId);
     m_instancesTableInsert.BindId(2, instanceId);
     m_instancesTableInsert.BindInt(3, (int) dbOpcode);
     m_instancesTableInsert.BindInt(4, indirect);
@@ -668,7 +668,7 @@ void InstancesTable::Insert(ECClassId classId, ECInstanceId instanceId, DbOpcode
 void InstancesTable::Update(ECClassId classId, ECInstanceId instanceId, DbOpcode dbOpcode, int indirect)
     {
     m_instancesTableUpdate.Reset();
-    m_instancesTableUpdate.BindInt64(1, classId);
+    m_instancesTableUpdate.BindId(1, classId);
     m_instancesTableUpdate.BindId(2, instanceId);
     m_instancesTableUpdate.BindInt(3, (int) dbOpcode);
     m_instancesTableUpdate.BindInt(4, indirect);
@@ -719,7 +719,7 @@ void InstancesTable::InsertOrUpdate(ChangeSummary::InstanceCR instance)
 ChangeSummary::Instance InstancesTable::QueryInstance(ECClassId classId, ECInstanceId instanceId) const
     {
     m_instancesTableSelect.Reset();
-    m_instancesTableSelect.BindInt64(1, classId);
+    m_instancesTableSelect.BindId(1, classId);
     m_instancesTableSelect.BindId(2, instanceId);
 
     DbResult result = m_instancesTableSelect.Step();
@@ -741,7 +741,7 @@ ChangeSummary::Instance InstancesTable::QueryInstance(ECClassId classId, ECInsta
 bool InstancesTable::ContainsInstance(ECClassId classId, ECInstanceId instanceId) const
     {
     m_instancesTableSelect.Reset();
-    m_instancesTableSelect.BindInt64(1, classId);
+    m_instancesTableSelect.BindId(1, classId);
     m_instancesTableSelect.BindId(2, instanceId);
 
     DbResult result = m_instancesTableSelect.Step();
@@ -766,9 +766,9 @@ ECClassId InstancesTable::QueryClassId(Utf8StringCR tableName, ECInstanceId inst
 
     DbResult result = stmt->Step();
     if (result != BE_SQLITE_ROW)
-        return ECClass::UNSET_ECCLASSID;
+        return ECClassId();
 
-    return (ECClassId) stmt->GetValueUInt64(0);
+    return stmt->GetValueId<ECClassId>(0);
     }
 
 //---------------------------------------------------------------------------------------
@@ -868,7 +868,7 @@ void ValuesTable::Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8St
     {
     Statement& statement = m_valuesTableInsert;
     statement.Reset();
-    statement.BindUInt64(1, classId);
+    statement.BindId(1, classId);
     statement.BindId(2, instanceId);
     statement.BindText(3, accessString.c_str(), Statement::MakeCopy::No);
 
@@ -894,17 +894,17 @@ void ValuesTable::Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8St
     Statement& statement = m_valuesTableInsert;
 
     statement.Reset();
-    statement.BindUInt64(1, classId);
+    statement.BindId(1, classId);
     statement.BindId(2, instanceId);
     statement.BindText(3, accessString.c_str(), Statement::MakeCopy::No);
 
-    if (oldValue != ECClass::UNSET_ECCLASSID)
-        statement.BindUInt64(4, oldValue);
+    if (oldValue.IsValid())
+        statement.BindId(4, oldValue);
     else
         statement.BindNull(4);
 
-    if (newValue != ECClass::UNSET_ECCLASSID)
-        statement.BindUInt64(5, newValue);
+    if (newValue.IsValid())
+        statement.BindId(5, newValue);
     else
         statement.BindNull(5);
 
@@ -920,7 +920,7 @@ void ValuesTable::Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8St
     Statement& statement = m_valuesTableInsert;
 
     statement.Reset();
-    statement.BindUInt64(1, classId);
+    statement.BindId(1, classId);
     statement.BindId(2, instanceId);
     statement.BindText(3, accessString.c_str(), Statement::MakeCopy::No);
 
@@ -995,7 +995,7 @@ void ChangeExtractor::FreeTableMap()
 ECClassId ChangeExtractor::GetClassIdFromChangeOrTable(Utf8CP classIdColumnName, ECInstanceId instanceId) const
     {
     ECClassId classId = m_tableMap->GetPrimaryClassId();
-    if (classId != ECClass::UNSET_ECCLASSID)
+    if (classId.IsValid())
         return classId; // There is only one primary class for the table. 
 
     const DbOpcode dbOpcode = m_sqlChange->GetDbOpcode();
@@ -1285,14 +1285,14 @@ void ChangeExtractor::GetRelEndInstanceKeys(ECInstanceKey& oldInstanceKey, ECIns
     if (newEndInstanceId.IsValid())
         {
         ECClassId newClassId = GetRelEndClassId(relClassMap, relInstanceId, relEnd, newEndInstanceId);
-        BeAssert(newClassId != ECClass::UNSET_ECCLASSID);
+        BeAssert(newClassId.IsValid());
         newInstanceKey = ECInstanceKey(newClassId, newEndInstanceId);
         }
 
     if (oldEndInstanceId.IsValid())
         {
         ECClassId oldClassId = GetRelEndClassId(relClassMap, relInstanceId, relEnd, oldEndInstanceId);
-        BeAssert(oldClassId != ECClass::UNSET_ECCLASSID);
+        BeAssert(oldClassId.IsValid());
         oldInstanceKey = ECInstanceKey(oldClassId, oldEndInstanceId);
         }
     }
@@ -1306,7 +1306,7 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassId(RelationshipClassMapCR relClass
     if (!classIdPropMap)
         {
         BeAssert(false);
-        return ECClass::UNSET_ECCLASSID;
+        return ECClassId();
         }
 
     ECDbSqlColumnCP classIdColumn = classIdPropMap->GetSingleColumn();
@@ -1357,12 +1357,12 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassId(RelationshipClassMapCR relClass
 
         // Search in all changes
         ECClassId classId = m_instancesTable.QueryClassId(endTableName, endInstanceId);
-        if (classId != ECClass::UNSET_ECCLASSID)
+        if (classId.IsValid())
             return classId;
 
         // Search in the end table
         classId = GetTableMap(endTableName)->GetValueECClassId(classIdColumn->GetName(), endInstanceId);
-        BeAssert(classId != ECClass::UNSET_ECCLASSID);
+        BeAssert(classId.IsValid());
         return classId;
         }
 
@@ -1372,7 +1372,7 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassId(RelationshipClassMapCR relClass
     BeAssert(classIdColumnIndex >= 0);
 
     ECClassId classId = GetClassIdFromChangeOrTable(classIdColumnName.c_str(), relInstanceId);
-    BeAssert(classId != ECClass::UNSET_ECCLASSID);
+    BeAssert(classId.IsValid());
     return classId;
     }
 
@@ -1385,7 +1385,7 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassIdFromRelClass(ECN::ECRelationship
     if (relClass == nullptr)
         {
         BeAssert(false);
-        return ECClass::UNSET_ECCLASSID;
+        return ECClassId();
         }
 
     ECRelationshipConstraintR endConstraint = (relEnd == ECRelationshipEnd_Source) ? relClass->GetSource() : relClass->GetTarget();
@@ -1393,11 +1393,11 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassIdFromRelClass(ECN::ECRelationship
     if (endClasses.size() != 1)
         {
         BeAssert(false && "Multiple classes at end. Cannot pick something arbitrary");
-        return ECClass::UNSET_ECCLASSID;
+        return ECClassId();
         }
 
     ECClassId classId = endClasses[0]->GetId();
-    BeAssert(classId != ECClass::UNSET_ECCLASSID);
+    BeAssert(classId.IsValid());
     return classId;
     }
 
@@ -1430,9 +1430,9 @@ void ChangeExtractor::RecordRelInstance(ClassMapCR classMap, ECInstanceId instan
 
     ECClassId classId = classMap.GetClass().GetId();
 
-    m_valuesTable.Insert(classId, instanceId, "SourceECClassId", oldSourceKey.IsValid() ? oldSourceKey.GetECClassId() : ECClass::UNSET_ECCLASSID, newSourceKey.IsValid() ? newSourceKey.GetECClassId() : ECClass::UNSET_ECCLASSID);
+    m_valuesTable.Insert(classId, instanceId, "SourceECClassId", oldSourceKey.IsValid() ? oldSourceKey.GetECClassId() : ECClassId(), newSourceKey.IsValid() ? newSourceKey.GetECClassId() : ECClassId());
     m_valuesTable.Insert(classId, instanceId, "SourceECInstanceId", oldSourceKey.IsValid() ? oldSourceKey.GetECInstanceId() : ECInstanceId(), newSourceKey.IsValid() ? newSourceKey.GetECInstanceId() : ECInstanceId());
-    m_valuesTable.Insert(classId, instanceId, "TargetECClassId", oldTargetKey.IsValid() ? oldTargetKey.GetECClassId() : ECClass::UNSET_ECCLASSID, newTargetKey.IsValid() ? newTargetKey.GetECClassId() : ECClass::UNSET_ECCLASSID);
+    m_valuesTable.Insert(classId, instanceId, "TargetECClassId", oldTargetKey.IsValid() ? oldTargetKey.GetECClassId() : ECClassId(), newTargetKey.IsValid() ? newTargetKey.GetECClassId() : ECClassId());
     m_valuesTable.Insert(classId, instanceId, "TargetECInstanceId", oldTargetKey.IsValid() ? oldTargetKey.GetECInstanceId() : ECInstanceId(), newTargetKey.IsValid() ? newTargetKey.GetECInstanceId() : ECInstanceId());
     }
 
@@ -1645,13 +1645,13 @@ Utf8String ChangeSummary::FormatInstanceIdStr(ECInstanceId id) const
 //---------------------------------------------------------------------------------------
 Utf8String ChangeSummary::FormatClassIdStr(ECClassId id) const
     {
-    if (id == ECClass::UNSET_ECCLASSID)
+    if (!id.IsValid())
         return "NULL";
 
     ECN::ECClassCP ecClass = m_ecdb.Schemas().GetECClass(id);
     BeAssert(ecClass != nullptr);
 
-    Utf8PrintfString idStr("%s:%" PRIu64, ecClass->GetFullName(), (uint64_t) id);
+    Utf8PrintfString idStr("%s:%" PRIu64, ecClass->GetFullName(), id.GetValue());
     return idStr;
     }
 
@@ -1704,8 +1704,8 @@ void ChangeSummary::Dump() const
                 }
             else if (accessString.Contains("ECClassId"))
                 {
-                oldValueStr = FormatClassIdStr(oldValue.GetValueInt64());
-                newValueStr = FormatClassIdStr(newValue.GetValueInt64());
+                oldValueStr = FormatClassIdStr(oldValue.GetValueId<ECClassId>());
+                newValueStr = FormatClassIdStr(newValue.GetValueId<ECClassId>());
                 }
             else
                 {
@@ -1752,7 +1752,7 @@ void ChangeSummary::Instance::SetupValuesTableSelectStatement(Utf8CP accessStrin
         m_valuesTableSelect = m_changeSummary->GetDb().GetCachedStatement(sql.c_str());
         BeAssert(m_valuesTableSelect.IsValid());
 
-        m_valuesTableSelect->BindInt64(1, m_classId);
+        m_valuesTableSelect->BindId(1, m_classId);
         m_valuesTableSelect->BindId(2, m_instanceId);
         }
 
@@ -1824,7 +1824,7 @@ bool ChangeSummary::Instance::ContainsValue(Utf8CP accessString) const
 //---------------------------------------------------------------------------------------
 ChangeSummary::Instance ChangeSummary::InstanceIterator::Entry::GetInstance() const
     {
-    ECClassId classId = (ECN::ECClassId) m_sql->GetValueInt64(0);
+    ECClassId classId = m_sql->GetValueId<ECClassId>(0);
     ECInstanceId instanceId = m_sql->GetValueId<ECInstanceId>(1);
     DbOpcode dbOpcode = (DbOpcode) m_sql->GetValueInt(2);
     int indirect = m_sql->GetValueInt(3);
@@ -1883,7 +1883,7 @@ Utf8String ChangeSummary::InstanceIterator::Options::ToSelectStatement(Utf8CP co
 void ChangeSummary::InstanceIterator::Options::Bind(Statement& stmt) const
     {
     if (!IsEmpty())
-        stmt.BindInt64(stmt.GetParameterIndex(":baseClassId"), m_classId);
+        stmt.BindId(stmt.GetParameterIndex(":baseClassId"), m_classId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1935,7 +1935,7 @@ ChangeSummary::ValueIterator::const_iterator ChangeSummary::ValueIterator::begin
         DbResult result = m_db->GetCachedStatement(m_stmt, sqlString.c_str());
         BeAssert(BE_SQLITE_OK == result);
 
-        m_stmt->BindInt64(1, m_classId);
+        m_stmt->BindId(1, m_classId);
         m_stmt->BindId(2, m_instanceId);
         }
     else
@@ -1959,7 +1959,7 @@ int ChangeSummary::ValueIterator::QueryCount() const
     m_db->GetCachedStatement(stmt, sqlString.c_str());
     BeAssert(stmt.IsValid());
 
-    stmt->BindInt64(1, m_classId);
+    stmt->BindId(1, m_classId);
     stmt->BindId(2, m_instanceId);
 
     return ((BE_SQLITE_ROW != stmt->Step()) ? 0 : stmt->GetValueInt(0));

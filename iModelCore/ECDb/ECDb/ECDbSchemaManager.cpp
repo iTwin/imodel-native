@@ -192,13 +192,13 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext const&
         if (schema == nullptr) continue;
 
         ECSchemaId id = ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, schema->GetName().c_str());
-        if (schema->HasId() && (id == 0 || id != schema->GetId()))
+        if (schema->HasId() && (!id.IsValid() || id != schema->GetId()))
             {
             m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema %s is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
             return ERROR;
             }
 
-        if (id > INT64_C(0))
+        if (id.IsValid())
             {
             //schema with same name already exists. If version of existing schema is older than fail, as ECDb does not update
             //schemas via import
@@ -295,7 +295,7 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext const&
         {
         importedSchemas.push_back(schema);
 
-        if (INT64_C(0) != ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, schema->GetName().c_str()))
+        if (ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, schema->GetName().c_str()).IsValid())
             continue;
 
         if (SUCCESS != schemaWriter.Import(*schema))
@@ -311,7 +311,7 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext const&
 ECSchemaCP ECDbSchemaManager::GetECSchema (Utf8CP schemaName, bool ensureAllClassesLoaded) const
     {
     const ECSchemaId schemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(GetECDb(), schemaName);
-    if (INT64_C(0) == schemaId)
+    if (!schemaId.IsValid())
         return nullptr;
 
     return GetECSchema(schemaId, ensureAllClassesLoaded);
@@ -328,7 +328,7 @@ ECSchemaCP ECDbSchemaManager::GetECSchema (ECSchemaId schemaId, bool ensureAllCl
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDbSchemaManager::ContainsECSchema (Utf8CP schemaName)  const
+bool ECDbSchemaManager::ContainsECSchema(Utf8CP schemaName)  const
     {
     if (Utf8String::IsNullOrEmpty(schemaName))
         {
@@ -336,7 +336,7 @@ bool ECDbSchemaManager::ContainsECSchema (Utf8CP schemaName)  const
         return false;
         }
 
-    return ECDbSchemaPersistenceHelper::GetECSchemaId (m_ecdb, schemaName) > 0ULL;
+    return ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, schemaName).IsValid();
     }
 
 /*---------------------------------------------------------------------------------------
@@ -344,7 +344,7 @@ bool ECDbSchemaManager::ContainsECSchema (Utf8CP schemaName)  const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP ECDbSchemaManager::GetECClass (Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema) const
     {
-    ECClassId id = ECClass::UNSET_ECCLASSID;
+    ECClassId id;
     if (!TryGetECClassId(id, schemaNameOrPrefix, className, resolveSchema))
         return nullptr;
 
@@ -425,7 +425,7 @@ ECDbCR ECDbSchemaManager::GetECDb () const { return m_ecdb; }
 ECSchemaPtr ECDbSchemaManager::_LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
     {
     const ECSchemaId schemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(GetECDb(), key.GetName().c_str());
-    if (0 == schemaId)
+    if (!schemaId.IsValid())
         return nullptr;
 
     ECSchemaCP schema = m_ecReader->GetECSchema(schemaId, true);
@@ -456,7 +456,7 @@ ECClassCP ECDbSchemaManager::_LocateClass (Utf8CP schemaName, Utf8CP className)
 //static
 ECClassId ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema (ECDbCR db, ECClassCR ecClass)
     {
-    ECClassId id = ECClass::UNSET_ECCLASSID;
+    ECClassId id;
     db.Schemas().TryGetECClassId(id, ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), ResolveSchema::BySchemaName);
     const_cast<ECClassR>(ecClass).SetId(id);
     return id;
@@ -487,7 +487,7 @@ ECSchemaId ECDbSchemaManager::GetSchemaIdForECSchemaFromDuplicateECSchema(ECDbCR
 //---------------------------------------------------------------------------------------
 BentleyStatus ECDbSchemaManager::EnsureDerivedClassesExist(ECN::ECClassCR ecClass) const
     {
-    ECClassId ecClassId = ECClass::UNSET_ECCLASSID;
+    ECClassId ecClassId;
     if (ecClass.HasId())
         ecClassId = ecClass.GetId();
     else

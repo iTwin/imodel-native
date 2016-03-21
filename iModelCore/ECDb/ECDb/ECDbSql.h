@@ -315,7 +315,6 @@ struct ECDbSqlColumn : NonCopyableClass
         BentleyStatus AddKind(ColumnKind);
 
         bool IsShared() const { return m_kind == ColumnKind::SharedDataColumn; }
-        Utf8String GetFullName() const;
         std::weak_ptr<ECDbSqlColumn> GetWeakPtr() const;
 
         static Type PrimitiveTypeToColumnType(ECN::PrimitiveType type);
@@ -409,7 +408,6 @@ struct ECDbSqlForeignKeyConstraint : ECDbSqlConstraint
         ECDbSqlTable const& GetReferencedTable() const { return m_referencedTable; }
         ECDbSqlTable const& GetForeignKeyTable() const { return GetTable(); }
         bool ContainsInFkColumns(Utf8CP columnName) const;
-        bool ContainsInReferencedTableColumns(Utf8CP columnName) const;
         size_t Count() const { return m_fkColumns.size(); }
 
         bool IsDuplicate() const;
@@ -792,8 +790,6 @@ struct ECDbSqlPersistence : NonCopyableClass
         DbResult ReadTable (Statement&, ECDbMapDb&) const;
         DbResult ReadColumns (ECDbSqlTable&) const;
         DbResult ReadColumn (Statement&, ECDbSqlTable&, std::map<size_t, ECDbSqlColumn const*>& primaryKeys) const;
-        DbResult ReadForeignKeys (ECDbSqlTable&) const;
-        DbResult ReadForeignKey (Statement&, ECDbSqlTable&) const;
         DbResult InsertTable (ECDbSqlTable const&) const;
         DbResult InsertColumn (ECDbSqlColumn const&, int columnOrdinal, int primaryKeyOrdianal) const;
         DbResult InsertConstraint (ECDbSqlConstraint const&) const;

@@ -481,7 +481,7 @@ TEST(ECInstanceIdSequenceTests, ChangeBriefcaseIdTest)
 
     //finally query for the instance inserted under the old repo id
     Utf8String ecsql;
-    ecsql.Sprintf("SELECT ECInstanceId FROM %s WHERE ECInstanceId=%lld", testClass.GetECSqlName().c_str(), idBeforeRepoIdChange.GetECInstanceId().GetValue());
+    ecsql.Sprintf("SELECT ECInstanceId FROM %s WHERE ECInstanceId=%llu", testClass.GetECSqlName().c_str(), idBeforeRepoIdChange.GetECInstanceId().GetValue());
 
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare (ecdb, ecsql.c_str ())) << "Preparing SQL " << ecsql.c_str() << " to retrieve instance inserted before repo id change failed";
