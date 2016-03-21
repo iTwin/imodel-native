@@ -149,6 +149,9 @@ public:
     size_t GetClipPolygonByteCount(int64_t clipID);
     size_t GetSkirtPolygonByteCount(int64_t skirtID);
 
+
+    void GetAllClipIDs(bvector<uint64_t>& allIds);
+
     bool m_autocommit = true;
 private:
     BeSQLite::Db* m_database;

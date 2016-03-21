@@ -15,6 +15,7 @@
 
 #include "IScalableMesh.h"
 #include "IScalableMeshQuery.h"
+#include <Bentley\bset.h>
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -84,6 +85,8 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
 
         virtual BentleyStatus _StopQuery(int queryId) = 0; 
 
+        virtual void          _SetActiveClips(const bset<uint64_t>& activeClips, const IScalableMeshPtr& scalableMeshPtr) = 0;
+
         virtual bool          _IsQueryComplete(int queryId) = 0; 
         
     /*__PUBLISH_SECTION_START__*/
@@ -110,6 +113,8 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
         BENTLEYSTM_EXPORT BentleyStatus StopQuery(int queryId); 
 
         BENTLEYSTM_EXPORT bool IsQueryComplete(int queryId); 
+
+        BENTLEYSTM_EXPORT void SetActiveClips(const bset<uint64_t>& activeClips, const IScalableMeshPtr& scalableMeshPtr);
 
         BENTLEYSTM_EXPORT static IScalableMeshProgressiveQueryEnginePtr Create(IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr);
     };

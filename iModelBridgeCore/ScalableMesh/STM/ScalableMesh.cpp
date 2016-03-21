@@ -315,6 +315,11 @@ bool IScalableMesh::ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_
     return _ModifySkirt(skirt, clipID);
     }
 
+void IScalableMesh::GetAllClipIds(bvector<uint64_t>& ids)
+    {
+    return _GetAllClipsIds(ids);
+    }
+
 bool IScalableMesh::RemoveSkirt(uint64_t clipID)
     {
     return _RemoveSkirt(clipID);
@@ -1550,6 +1555,12 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifySkirt(const bvector<bvec
     return true;
     }
 
+template <class POINT> void ScalableMesh<POINT>::_GetAllClipsIds(bvector<uint64_t>& allClipIds)
+    {
+    if (m_scmIndexPtr->GetClipRegistry() == nullptr) return;
+    m_scmIndexPtr->GetClipRegistry()->GetAllClipsIds(allClipIds);
+    }
+
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_RemoveClip
 +----------------------------------------------------------------------------*/
@@ -1902,6 +1913,11 @@ template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_
 template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t clipID)
     {
     return false;
+    }
+
+template <class POINT> void ScalableMeshSingleResolutionPointIndexView<POINT>::_GetAllClipsIds(bvector<uint64_t>& allClipIds)
+    {
+
     }
 
 template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_RemoveSkirt(uint64_t clipID)

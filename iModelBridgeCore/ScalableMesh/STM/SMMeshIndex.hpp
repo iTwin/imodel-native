@@ -2589,7 +2589,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::HasCli
     {
     for (auto& diffSet : m_differenceSets)
         {
-        if (diffSet.clientID == clipId && (!diffSet.upToDate || !diffSet.IsEmpty())) return true;
+        if (diffSet.clientID == clipId && (!diffSet.upToDate || !diffSet.IsEmpty() || diffSet.clientID == (uint64_t)-1)) return true;
         }
     return false;
     }

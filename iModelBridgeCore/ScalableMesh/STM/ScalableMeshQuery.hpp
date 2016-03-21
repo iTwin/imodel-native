@@ -1311,11 +1311,11 @@ template <class POINT> void ScalableMeshNode<POINT>::ComputeDiffSet(DifferenceSe
             {
 #endif
             //NEEDS_WORK_SM_ELENIE : Remove shift, use full 64 bits
-            uint64_t lowerId = (d.clientID << 32) >> 32;
+            //uint64_t lowerId = (d.clientID << 32) >> 32;
             if (d.clientID == 0) currentTexId++;
             if (currentTexId != texID) continue;
             //uint64_t upperId = (d.clientID >> 32);
-            if (d.clientID == 0 || (d.clientID < ((uint64_t)-1) && (lowerId - 1) < (uint64_t)clipsToShow.size() && clipsToShow.count(lowerId - 1) == 0) && d.upToDate)
+            if (d.toggledForID && (d.clientID == 0 || (d.clientID < ((uint64_t)-1) && clipsToShow.count(d.clientID) == 0) && d.upToDate))
                 {
                 //meshPtr->ApplyDifferenceSet(d);
                 diffs.ApplySet(d, 0);
@@ -2354,7 +2354,7 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
             //m_cachedDisplayTexture
 
             auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
-            
+
             m_cachedDisplayMeshes.resize(_GetNbMeshes());
 
             assert(meshNode->GetNbPtsIndiceArrays() == m_cachedDisplayMeshes.size());
@@ -2363,26 +2363,26 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
 
             DRange3d range3D(_GetContentExtent());
 
-            DPoint3d centroid;                                                        
+            DPoint3d centroid;
             centroid = DPoint3d::From((range3D.high.x + range3D.low.x) / 2.0, (range3D.high.y + range3D.low.y) / 2.0, (range3D.high.z + range3D.low.z) / 2.0);
 
             m_node->Pin();
 
             vector<FloatXYZ> dataPoints(m_node->size());
-                        
+
             for (size_t pointInd = 0; pointInd < m_node->size(); pointInd++)
-                {                               
+                {
                 dataPoints[pointInd].x = (float)(PointOp<POINT>::GetX(m_node->operator[](pointInd)) - centroid.x);
                 dataPoints[pointInd].y = (float)(PointOp<POINT>::GetY(m_node->operator[](pointInd)) - centroid.y);
-                dataPoints[pointInd].z = (float)(PointOp<POINT>::GetZ(m_node->operator[](pointInd)) - centroid.z);                
+                dataPoints[pointInd].z = (float)(PointOp<POINT>::GetZ(m_node->operator[](pointInd)) - centroid.z);
                 }
 
             m_node->UnPin();
-                                       
+
             for (size_t meshInd = 0; meshInd < meshNode->GetNbPtsIndiceArrays(); meshInd++)
-                {                                    
+                {
                 FloatXYZ* toLoadPoints = 0;
-                size_t    toLoadNbPoints = 0; 
+                size_t    toLoadNbPoints = 0;
                 int32_t*  toLoadFaceIndexes = 0;
                 size_t    toLoadNbFaceIndexes = 0;
                 FloatXY*  toLoadUv = 0;
@@ -2392,16 +2392,16 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
                 meshNode->PinPtsIndices(meshInd);
 
                 int32_t* faceIndexes = meshNode->GetPtsIndicePtr(meshInd);
-                
+
                 if (faceIndexes == 0)
                     {
-                    assert(meshInd == 0);
+                    assert(meshInd == 0 || m_node->size() <= 4);
                     m_cachedDisplayMeshes[meshInd] = 0;
                     }
                 else
-                    {                    
+                    {
                     size_t nbFaceIndices = meshNode->GetNbPtsIndices(meshInd);
-                    
+
                     if (nbFaceIndices == 0)
                         {
                         meshNode->UnPinPtsIndices(meshInd);
@@ -2410,20 +2410,20 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
 
                     if (meshInd > 0 && loadTexture)
                         {
-//                        auto idTexture = GetTextureID(meshInd - 1);
-                                                
+                        //                        auto idTexture = GetTextureID(meshInd - 1);
+
                         IScalableMeshTexturePtr smTexturePtr(GetTexture(meshInd - 1));
-                                                
-                        BentleyStatus status = displayCacheManagerPtr->_CreateCachedTexture(m_cachedDisplayTextures[meshInd], 
+
+                        BentleyStatus status = displayCacheManagerPtr->_CreateCachedTexture(m_cachedDisplayTextures[meshInd],
                                                                                             smTexturePtr->GetDimension().x,
                                                                                             smTexturePtr->GetDimension().y,
                                                                                             false,
-                                                                                            QV_RGBA_FORMAT,
+                                                                                            QV_RGB_FORMAT,
                                                                                             smTexturePtr->GetData());
 
-                        assert(status == SUCCESS);    
+                        assert(status == SUCCESS);
                         }
-                                                                                                                           
+
                     DPoint2d* uvPtr = 0;
                     size_t    nbUvs = 0;
                     int32_t*  uvIndicesP = 0;
@@ -2437,26 +2437,25 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
                         meshNode->PinUVsIndices(meshInd - 1);
                         uvIndicesP = meshNode->GetUVsIndicesPtr(meshInd - 1);
                         }
-                    
-                    DifferenceSet clipDiffSet; 
-                                                                
-                    if (meshNode->m_nbClips > 0 && clipsToShow.size() > 0)
-                        {                        
-                        ComputeDiffSet(clipDiffSet, clipsToShow, meshInd);
-                    
-                        ApplyClipDiffSetToMesh(toLoadPoints, toLoadNbPoints, 
-                                               toLoadFaceIndexes, toLoadNbFaceIndexes, 
-                                               toLoadUv, toLoadUvIndex, toLoadUvCount,     
-                                               &dataPoints[0], dataPoints.size(), 
-                                               faceIndexes, nbFaceIndices, 
-                                               uvPtr, uvIndicesP, nbUvs, 
-                                               clipDiffSet, 
-                                               centroid);
 
+                    DifferenceSet clipDiffSet;
+
+                    if (meshNode->m_nbClips > 0 && (clipsToShow.size() > 0))
+                        {
+                        ComputeDiffSet(clipDiffSet, clipsToShow, meshInd);
+
+                        ApplyClipDiffSetToMesh(toLoadPoints, toLoadNbPoints,
+                                               toLoadFaceIndexes, toLoadNbFaceIndexes,
+                                               toLoadUv, toLoadUvIndex, toLoadUvCount,
+                                               &dataPoints[0], dataPoints.size(),
+                                               faceIndexes, nbFaceIndices,
+                                               uvPtr, uvIndicesP, nbUvs,
+                                               clipDiffSet,
+                                               centroid);
                         for (size_t ind = 0; ind < toLoadNbFaceIndexes; ind++)
                             {
-                            toLoadFaceIndexes[ind] -= 1;                            
-                            }                        
+                            toLoadFaceIndexes[ind] -= 1;
+                            }
                         }
                     else
                         {
@@ -2464,13 +2463,13 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
                         toLoadNbPoints = dataPoints.size();
                         toLoadFaceIndexes = new int32_t[nbFaceIndices];
                         toLoadNbFaceIndexes = nbFaceIndices;
-                        
+
                         //NEEDS_WORK_SM : Could generate them starting at 0.
                         for (size_t ind = 0; ind < toLoadNbFaceIndexes; ind++)
                             {
                             toLoadFaceIndexes[ind] = faceIndexes[ind] - 1;
-                            }                        
-                        
+                            }
+
                         if (nbUvs > 0)
                             {
                             toLoadUv = new FloatXY[nbUvs];
@@ -2478,32 +2477,38 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
                             for (size_t ind = 0; ind < nbUvs; ind++)
                                 {
                                 toLoadUv[ind].x = uvPtr[ind].x;
-                                toLoadUv[ind].y = uvPtr[ind].y; 
+                                toLoadUv[ind].y = uvPtr[ind].y;
                                 }
                             }
-                        
+
                         toLoadUvIndex = uvIndicesP;
                         toLoadUvCount = nbUvs;
-                        }                                                                                
+                        }
 
                     bvector<float>          uvCoordinates;
                     float*                  uvCoordinatesP = 0;
                     SmCachedDisplayTexture* cachedTexture = 0;
 
-                    if (m_cachedDisplayTextures[meshInd] != 0)
-                        {                        
+                    if (m_cachedDisplayTextures[meshInd] != 0 && toLoadUvCount > 0)
+                        {
                         cachedTexture = m_cachedDisplayTextures[meshInd];
-                                                
+
                         assert(meshNode->GetNbUVs() == m_node->size());
-                                                
+
                         //NEEDS_WORK_SM : Can we store UV coordinate as float
                         //uvCoordinates.resize(meshNode->GetNbUVs() * 2);
-                        uvCoordinates.resize(m_node->size() * 2);
-                                                                        
+                        uvCoordinates.resize(/*m_node->size()*/toLoadUvCount * 2);
+                        if (toLoadUvCount < toLoadNbPoints)
+                            {
+                            uvCoordinates.resize(toLoadNbPoints * 2);
+                            for (size_t idx = toLoadUvCount * 2; idx < uvCoordinates.size(); ++idx)
+                                uvCoordinates[idx] = 0.0;
+                            }
+
                         for (size_t uvCoordInd = 0; uvCoordInd < toLoadNbFaceIndexes; uvCoordInd++)
-                            {  
-                            if (uvCoordinates[toLoadFaceIndexes[uvCoordInd] * 2] != 0 || uvCoordinates[toLoadFaceIndexes[uvCoordInd] * 2 + 1] != 0)
-                                continue;
+                            {
+                            // if (uvCoordinates[toLoadFaceIndexes[uvCoordInd] * 2] != 0 || uvCoordinates[toLoadFaceIndexes[uvCoordInd] * 2 + 1] != 0)
+                            //     continue;
 
                             assert(toLoadUv[toLoadUvIndex[uvCoordInd] - 1].x <= 1.0 && toLoadUv[toLoadUvIndex[uvCoordInd] - 1].x >= 0.0);
                             assert(toLoadUv[toLoadUvIndex[uvCoordInd] - 1].y <= 1.0 && toLoadUv[toLoadUvIndex[uvCoordInd] - 1].y >= 0.0);
@@ -2512,60 +2517,63 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
                             uvCoordinates[toLoadFaceIndexes[uvCoordInd] * 2 + 1] = 1.0 - toLoadUv[toLoadUvIndex[uvCoordInd] - 1].y;
                             }
 
-                        uvCoordinatesP = &uvCoordinates[0];
+                        uvCoordinatesP = new float[uvCoordinates.size()];
+                        memcpy(uvCoordinatesP, &uvCoordinates[0], sizeof(float)*uvCoordinates.size());
 
                         meshNode->UnPinUV();
                         meshNode->UnPinUVsIndices(meshInd - 1);
                         }
-                   
+
                     if (s_deactivateTexture)
-                        {                        
-                        BentleyStatus status = displayCacheManagerPtr->_CreateCachedMesh(m_cachedDisplayMeshes[meshInd], 
-                                                                                         toLoadNbPoints, 
+                        {
+                        BentleyStatus status = displayCacheManagerPtr->_CreateCachedMesh(m_cachedDisplayMeshes[meshInd],
+                                                                                         toLoadNbPoints,
                                                                                          &centroid,
                                                                                          (float*)toLoadPoints,
                                                                                          0,
                                                                                          (int)toLoadNbFaceIndexes / 3,
-                                                                                         toLoadFaceIndexes, 
+                                                                                         toLoadFaceIndexes,
                                                                                          0,
                                                                                          0);
-                    
-                        assert(status == SUCCESS);                       
+
+                        assert(status == SUCCESS);
                         }
                     else
                         {
-                        BentleyStatus status = displayCacheManagerPtr->_CreateCachedMesh(m_cachedDisplayMeshes[meshInd], 
-                                                                                         toLoadNbPoints, 
+                        BentleyStatus status = displayCacheManagerPtr->_CreateCachedMesh(m_cachedDisplayMeshes[meshInd],
+                                                                                         toLoadNbPoints,
                                                                                          &centroid,
                                                                                          (float*)toLoadPoints,
                                                                                          0,
                                                                                          (int)toLoadNbFaceIndexes / 3,
-                                                                                         toLoadFaceIndexes, 
+                                                                                         toLoadFaceIndexes,
                                                                                          uvCoordinatesP,
                                                                                          cachedTexture);
-                    
-                        assert(status == SUCCESS);                       
+
+                        assert(status == SUCCESS);
                         }
+                    if (uvCoordinatesP != 0)
+                        delete[]uvCoordinatesP;
                     }
 
                 meshNode->UnPinPtsIndices(meshInd);
-                                     
+
                 if (meshNode->m_nbClips > 0)
-                    {   
+                    {
                     if (toLoadPoints != 0)
-                        delete [] toLoadPoints;
-                    
+                        delete[] toLoadPoints;
+
                     if (toLoadUvIndex != 0)
-                        delete [] toLoadUvIndex;
+                        delete[] toLoadUvIndex;
                     }
-                
+
                 if (toLoadFaceIndexes != 0)
-                    delete [] toLoadFaceIndexes;
-                
+                    delete[] toLoadFaceIndexes;
+
                 if (toLoadUv != 0)
-                    delete [] toLoadUv;                
+                    delete[] toLoadUv;
                 }
-            } 
+            }
 
         m_isLoaded = true;
         m_displayCacheManagerPtr = displayCacheManagerPtr;

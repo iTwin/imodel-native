@@ -1143,6 +1143,21 @@ size_t SMSQLiteFile::GetSkirtPolygonByteCount(int64_t clipID)
     }
 
 
+void SMSQLiteFile::GetAllClipIDs(bvector<uint64_t>& allIds)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+    m_database->GetCachedStatement(stmt, "SELECT PolygonId FROM SMClipDefinitions");
+    DbResult status = stmt->Step();
+    // assert(status == BE_SQLITE_ROW);
+    while (status == BE_SQLITE_ROW)
+        {
+        allIds.push_back(stmt->GetValueInt64(0));
+        status = stmt->Step();
+        }
+    }
+
+
     bool SMSQLiteFile::SetWkt(WCharCP extendedWkt)
 {
     /*char* tmpCharP = new char[extendedWkt.GetMaxLocaleCharBytes()];
