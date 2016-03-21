@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/InstanceNodesOfSpecificClassesSpecification.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -18,7 +18,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 This specification returns instance nodes of defined classes.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct InstanceNodesOfSpecificClassesSpecification : public ChildNodeSpecification
+struct EXPORT_VTABLE_ATTRIBUTE InstanceNodesOfSpecificClassesSpecification : public ChildNodeSpecification
     {
     /*__PUBLISH_SECTION_END__*/
     private:

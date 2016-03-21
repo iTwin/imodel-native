@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ContentInstancesOfSpecificClassesSpecification.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -19,7 +19,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 Specification that creates content ECQueries for predefined ECClasses.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ContentInstancesOfSpecificClassesSpecification : public ContentSpecification
+struct EXPORT_VTABLE_ATTRIBUTE  ContentInstancesOfSpecificClassesSpecification : public ContentSpecification
     {
     /*__PUBLISH_SECTION_END__*/
     private:
