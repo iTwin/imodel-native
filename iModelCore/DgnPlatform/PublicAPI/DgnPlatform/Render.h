@@ -103,6 +103,7 @@ struct Task : RefCounted<NonCopyableClass>
         Redraw,
         BeginHeal,
         FinishHeal,
+        Heal,
     };
 
     //! The outcome of the processing of a Task.
@@ -137,6 +138,8 @@ public:
     //! @return true if this Task should replace the other pending task.
     virtual bool _Replaces(Task& other) const {return m_operation == other.m_operation;}
 
+    virtual bool _DefinesScene() const = 0;
+
     virtual void _OnQueued() const {}
 
     Target* GetTarget() const {return m_target.get();} //!< Get the Target of this Task
@@ -145,6 +148,25 @@ public:
     double GetElapsedTime() const {return m_elapsedTime;} //!< Elapsed time in seconds. Only valid if m_outcome is Finished or Aborted
 
     Task(Target* target, Operation operation) : m_target(target), m_operation(operation) {}
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   03/16
+//=======================================================================================
+struct SceneTask : Task
+{
+    bool _DefinesScene() const override {return true;}
+    bool _Replaces(Task& other) const override {return Render::Task::_Replaces(other) || !other._DefinesScene();}
+    using Task::Task;
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   03/16
+//=======================================================================================
+struct NonSceneTask : Task
+{
+    bool _DefinesScene() const override {return false;}
+    using Task::Task;
 };
 
 //=======================================================================================
@@ -188,6 +210,7 @@ public:
     DGNPLATFORM_EXPORT bool IsIdle() const;
 
     DGNPLATFORM_EXPORT bool HasPending(Task::Operation op) const;
+    DGNPLATFORM_EXPORT bool HasActiveOrPending(Task::Operation op) const;
 };
 
 //=======================================================================================
@@ -1329,6 +1352,7 @@ public:
     virtual void _ChangeRenderPlan(PlanCR) = 0;
     virtual void _Redraw(Redraws&) = 0;
     virtual void _BeginHeal() = 0;
+    virtual void _DrawHeal(GraphicListR healList) = 0;
     enum class HealAborted : bool {No=0, Yes=1};
     virtual void _FinishHeal(HealAborted) = 0;
     virtual bool _NeedsHeal(BSIRectR) const = 0;

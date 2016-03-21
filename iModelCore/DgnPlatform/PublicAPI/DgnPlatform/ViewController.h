@@ -94,7 +94,7 @@ public:
 
 
 <h3>Defining a subclass of ViewController</h3>
-To create a subclass of ViewController, create a ViewHandler and implement _SupplyController.
+To create a subclass of ViewController, create a ViewDefinition and implement _SupplyController.
 
 */
 //=======================================================================================
@@ -204,6 +204,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR);
 
     virtual void _CreateScene(SceneContextR context) {_DrawView(context);}
+    virtual void _DoHeal(HealContext&) {}
     virtual void _CreateTerrain(TerrainContextR context) {}
     virtual bool _IsSceneReady() const {return false;}
     virtual void _InvalidateScene() {}
