@@ -388,8 +388,8 @@ NativeSqlBuilder::List ECClassIdRelationshipConstraintPropertyMap::_ToNativeSql 
 //+---------------+---------------+---------------+---------------+---------------+-
 Utf8String ECClassIdRelationshipConstraintPropertyMap::_ToString () const
     {
-    return Utf8PrintfString ("ECClassIdRelationshipConstraintPropertyMap: Column name=%s View column alias=%s Default constraint ECClassId=%lld",
-        GetColumn ().GetName ().c_str(), GetViewColumnAlias (), m_defaultConstraintClassId);
+    return Utf8PrintfString ("ECClassIdRelationshipConstraintPropertyMap: Column name=%s View column alias=%s Default constraint ECClassId=%llu",
+        GetColumn ().GetName ().c_str(), GetViewColumnAlias (), m_defaultConstraintClassId.GetValue());
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

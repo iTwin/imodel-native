@@ -113,7 +113,7 @@ BentleyStatus PersistRelationship (IECRelationshipInstanceR relInstance, ECDbR e
 void ValidatePersistingRelationship (DbR db, Utf8CP tableName, ECInstanceId whereECInstanceId, Utf8CP expectedIdColumnName, int64_t expectedId)
     {
     Utf8String whereClause;
-    whereClause.Sprintf ("WHERE ECInstanceId=%lld", whereECInstanceId.GetValue ());
+    whereClause.Sprintf ("WHERE ECInstanceId=%llu", whereECInstanceId.GetValue ());
     const int64_t actualId = ECDbTestUtility::ReadCellValueAsInt64 (db, tableName, expectedIdColumnName, whereClause.c_str());
     ASSERT_EQ (expectedId, actualId);
     }
@@ -150,9 +150,9 @@ void ValidateReadingRelationship (ECDbR ecdb, Utf8CP relationshipSchemaName, Utf
     ASSERT_TRUE(BE_SQLITE_ROW == statement.Step());
     ASSERT_TRUE (statement.GetValueId<ECInstanceId>(0).IsValid());
     ASSERT_TRUE(statement.GetValueId<ECInstanceId>(1).IsValid());
-    ASSERT_NE(ECClass::UNSET_ECCLASSID, statement.GetValueInt64(2));
+    ASSERT_TRUE(statement.GetValueId<ECClassId>(2).IsValid());
     ASSERT_TRUE(statement.GetValueId<ECInstanceId>(3).IsValid());
-    ASSERT_NE(ECClass::UNSET_ECCLASSID, statement.GetValueInt64(4));
+    ASSERT_TRUE(statement.GetValueId<ECClassId>(4).IsValid());
 
     // Get and check result
     ECInstanceECSqlSelectAdapter adapter (statement);
@@ -229,7 +229,7 @@ TEST (ECDbRelationships, RelationshipECInstanceIdContract)
 
         EXPECT_EQ (targetECInstanceId.GetValue (), relECInstanceId.GetValue ()) << "For non-link table mappings, the ECInstanceId of the relationship is equal to the ECInstanceId of the child instance, i.e. the instance on the end of the relationship into whose table the relationship is persisted";
         EXPECT_NE (sourceECInstanceId.GetValue (), relECInstanceId.GetValue ()) << "For non-link table mappings, the ECInstanceId of the relationship must not be equal to the ECInstanceId of the parent instance.";
-        LOG.infov ("ECRelationship ECInstanceId Contract for non-link-table mappings: Relationship ECInstanceId: %lld - Source ECInstanceId: %lld - Target ECInstanceId: %lld (Target is where relationship is persisted to)",
+        LOG.infov ("ECRelationship ECInstanceId Contract for non-link-table mappings: Relationship ECInstanceId: %llu - Source ECInstanceId: %llu - Target ECInstanceId: %llu (Target is where relationship is persisted to)",
             relECInstanceId.GetValue (), sourceECInstanceId.GetValue (), targetECInstanceId.GetValue ());
         }
 
@@ -248,7 +248,7 @@ TEST (ECDbRelationships, RelationshipECInstanceIdContract)
 
         EXPECT_NE (sourceECInstanceId.GetValue (), relECInstanceId.GetValue ()) << "For link table mappings, the ECInstanceId of the relationship is different from the ECInstanceIds of source and target instance.";
         EXPECT_NE (targetECInstanceId.GetValue (), relECInstanceId.GetValue ()) << "For link table mappings, the ECInstanceId of the relationship is different from the ECInstanceIds of source and target instance.";
-        LOG.infov (L"ECRelationship ECInstanceId Contract for link-table mappings: Relationship ECInstanceId: %lld - Source ECInstanceId: %lld - Target ECInstanceId: %lld",
+        LOG.infov (L"ECRelationship ECInstanceId Contract for link-table mappings: Relationship ECInstanceId: %llu - Source ECInstanceId: %llu - Target ECInstanceId: %llu",
             relECInstanceId.GetValue (), sourceECInstanceId.GetValue (), targetECInstanceId.GetValue ());
         }
     }

@@ -398,7 +398,7 @@ struct ECSqlPrepareContext
         SelectionOptions& GetSelectionOptionsR() { return m_selectionOptions; }
         
         ECClassId GetJoinedTableClassId() const { return m_joinedTableClassId; }
-        bool IsParentOfJoinedTable() const { return m_joinedTableClassId != ECClass::UNSET_ECCLASSID; }
+        bool IsParentOfJoinedTable() const { return m_joinedTableClassId.IsValid(); }
         void MarkAsParentOfJoinedTable(ECN::ECClassId classId) { BeAssert(!IsParentOfJoinedTable()); m_joinedTableClassId = classId; }
         JoinedTableInfo const* GetJoinedTableInfo() const { return m_joinedTableInfo.get(); }
         JoinedTableInfo const* TrySetupJoinedTableInfo(ECSqlParseTreeCR exp, Utf8CP originalECSQL);

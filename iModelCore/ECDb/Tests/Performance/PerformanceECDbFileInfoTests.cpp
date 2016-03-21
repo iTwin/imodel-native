@@ -80,7 +80,7 @@ protected:
             testFilePath.AppendToPath(L"StartupCompany.json");
 
             ECClassId embeddedFileInfoClassId = GetECDb().Schemas().GetECClassId("ECDb_FileInfo", "EmbeddedFileInfo");
-            if (ECClass::UNSET_ECCLASSID == embeddedFileInfoClassId)
+            if (!embeddedFileInfoClassId.IsValid())
                 return ERROR;
 
             ECSqlStatement insertExternalFileInfoStmt;
@@ -116,7 +116,7 @@ protected:
                         ECInstanceId ownerId = stmt.GetValueId<ECInstanceId>(0);
                         i++;
                         Utf8String fileInfoName;
-                        fileInfoName.Sprintf("file_for_%s_%lld", ecclass->GetFullName(), ownerId.GetValue());
+                        fileInfoName.Sprintf("file_for_%s_%llu", ecclass->GetFullName(), ownerId.GetValue());
 
                         ECInstanceKey newKey;
                         if (i % 2 == 0)
@@ -147,7 +147,7 @@ protected:
                         insertOwnershipStmt.BindId(1, ownerId);
                         insertOwnershipStmt.BindInt64(2, stmt.GetValueInt64(1));
                         insertOwnershipStmt.BindId(3, newKey.GetECInstanceId());
-                        insertOwnershipStmt.BindInt64(4, newKey.GetECClassId());
+                        insertOwnershipStmt.BindId(4, newKey.GetECClassId());
                         if (BE_SQLITE_DONE != insertOwnershipStmt.Step())
                             {
                             LOG.fatal(GetECDb().GetLastError().c_str());
@@ -195,8 +195,8 @@ protected:
 
         Utf8String ecsql;
         if (count >= 0)
-            ecsql.Sprintf("DELETE FROM ONLY %s WHERE ECInstanceId IN (SELECT OwnerId FROM ONLY ecdbf.FileInfoOwnership WHERE OwnerECClassId=%lld LIMIT %d)",
-                          ecclassECSqlToken, ownerClassId, count);
+            ecsql.Sprintf("DELETE FROM ONLY %s WHERE ECInstanceId IN (SELECT OwnerId FROM ONLY ecdbf.FileInfoOwnership WHERE OwnerECClassId=%llu LIMIT %d)",
+                          ecclassECSqlToken, ownerClassId.GetValue(), count);
         else
             ecsql.Sprintf("DELETE FROM ONLY %s", ecclassECSqlToken);
 
@@ -277,7 +277,7 @@ TEST_F(PerformanceECDbFileInfoTests, PurgeAfterSingleDeletion)
     ASSERT_EQ(SUCCESS, SetupTestECDb());
     
     ECClassId testClassId = GetECDb().Schemas().GetECClassId("ECSqlTest", "P");
-    ASSERT_NE(ECClass::UNSET_ECCLASSID, testClassId);
+    ASSERT_TRUE(testClassId.IsValid());
 
     FileInfoStats beforeDeleteStats;
     ASSERT_EQ(SUCCESS, RetrieveFileInfoStats(beforeDeleteStats));
@@ -314,7 +314,7 @@ TEST_F(PerformanceECDbFileInfoTests, PurgeAfterDeletionOfAllInstancesOfSingleCla
     {
     ASSERT_EQ(SUCCESS, SetupTestECDb());
     ECClassId testClassId = GetECDb().Schemas().GetECClassId("ECSqlTest", "P");
-    ASSERT_NE(ECClass::UNSET_ECCLASSID, testClassId);
+    ASSERT_TRUE(testClassId.IsValid());
     
     int deletedCount = -1;
     ASSERT_EQ(SUCCESS, DeleteOwners(deletedCount, testClassId, -1));

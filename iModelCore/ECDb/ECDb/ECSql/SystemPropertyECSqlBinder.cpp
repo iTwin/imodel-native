@@ -163,7 +163,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindInt(int value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus SystemPropertyECSqlBinder::_BindInt64(int64_t value)
     {
-    auto stat = FailIfConstraintClassIdViolation(static_cast<ECClassId> (value));
+    ECSqlStatus stat = FailIfConstraintClassIdViolation(ECClassId((uint64_t) value));
     if (!stat.IsSuccess())
         return stat;
 
@@ -278,8 +278,8 @@ ECSqlStatus SystemPropertyECSqlBinder::FailIfConstraintClassIdViolation(ECN::ECC
     const auto relationshipEnd = m_systemProperty == ECSqlSystemProperty::SourceECClassId ? ECN::ECRelationshipEnd_Source : ECN::ECRelationshipEnd_Target;
     if (!m_constraints->GetConstraintMap(relationshipEnd).ClassIdMatchesConstraint(constraintClassId))
         {
-        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Constraint violation. ECClassId %lld not valid as value for %s parameter.",
-                                             constraintClassId, SystemPropertyToString());
+        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Constraint violation. ECClassId %llu not valid as value for %s parameter.",
+                                             constraintClassId.GetValue(), SystemPropertyToString());
         return ECSqlStatus::Error;
         }
 

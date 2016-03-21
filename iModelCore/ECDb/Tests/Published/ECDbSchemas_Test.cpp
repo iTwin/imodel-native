@@ -1482,7 +1482,7 @@ TEST(ECDbSchemas, ECDbSchemaManagerAPITest)
          ECSchemaCP outSchema = schemaManager.GetECSchema (schemaKey.GetName ());
          EXPECT_TRUE(outSchema != nullptr);
          ECSchemaId ecSchemaId = outSchema->GetId();
-         EXPECT_TRUE(ecSchemaId != 0);
+         EXPECT_TRUE(ecSchemaId.IsValid());
 
          ECClassKeys classKeys;
          EXPECT_EQ (SUCCESS, schemaManager.GetECClassKeys(classKeys, schemaKey.GetName ()));

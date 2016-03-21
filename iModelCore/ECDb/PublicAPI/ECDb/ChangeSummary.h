@@ -69,7 +69,7 @@ struct ChangeSummary : NonCopyableClass
     {
     private:
         ChangeSummaryCP m_changeSummary = nullptr;
-        ECN::ECClassId m_classId = ECN::ECClass::UNSET_ECCLASSID;
+        ECN::ECClassId m_classId;
         ECInstanceId m_instanceId;
         DbOpcode m_dbOpcode;
         int m_indirect;
@@ -142,14 +142,14 @@ struct ChangeSummary : NonCopyableClass
             Utf8String ToSelectStatement(Utf8CP columnsToSelect, ChangeSummaryCR summary) const;
             void Bind(BeSQLite::Statement& stmt) const;
         public:
-            explicit Options(ECN::ECClassId classId=ECN::ECClass::UNSET_ECCLASSID, bool polymorphic=true, QueryDbOpcode queryDbOpcodes=QueryDbOpcode::All)
+            explicit Options(ECN::ECClassId classId=ECN::ECClassId(), bool polymorphic=true, QueryDbOpcode queryDbOpcodes=QueryDbOpcode::All)
                 : m_classId(classId), m_polymorphic(polymorphic), m_opcodes(queryDbOpcodes) { }
 
             ECN::ECClassId GetClassId() const { return m_classId; }
             bool IsPolymorphic() const { return m_polymorphic; }
             QueryDbOpcode GetOpcodes() const { return m_opcodes; }
 
-            bool IsEmpty() const { return ECN::ECClass::UNSET_ECCLASSID == m_classId; }
+            bool IsEmpty() const { return !m_classId.IsValid(); }
         };
     private:
         ChangeSummaryCR m_changeSummary;

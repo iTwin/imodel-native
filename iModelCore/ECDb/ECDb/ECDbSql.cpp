@@ -2471,7 +2471,7 @@ DbResult ECDbMapStorage::InsertClassMap(ECDbClassMapInfo const& o) const
     else
         stmt->BindId(2, o.GetBaseClassMap()->GetId());
 
-    stmt->BindInt64(3, o.GetClassId());
+    stmt->BindId(3, o.GetClassId());
     stmt->BindInt(4, (int) o.GetMapStrategy().GetStrategy());
     stmt->BindInt(5, (int) o.GetMapStrategy().GetOptions());
     const int minSharedColCount = o.GetMapStrategy().GetMinimumSharedColumnCount();
@@ -2497,7 +2497,7 @@ DbResult ECDbMapStorage::InsertPropertyPath(ECDbPropertyPath const& o) const
         }
 
     stmt->BindId(1, o.GetId());
-    stmt->BindInt64(2, o.GetRootPropertyId());
+    stmt->BindId(2, o.GetRootPropertyId());
     stmt->BindText(3, o.GetAccessString().c_str(), Statement::MakeCopy::No);
     const DbResult stat = stmt->Step();
     return stat == BE_SQLITE_DONE ? BE_SQLITE_OK : stat;
@@ -2594,7 +2594,7 @@ DbResult ECDbMapStorage::ReadClassMaps() const
         {
         ECDbClassMapId id = stmt->GetValueId<ECDbClassMapId>(0);
         ECDbClassMapId parentId = stmt->IsColumnNull(1) ? ECDbClassMapId() : stmt->GetValueId<ECDbClassMapId>(1);
-        ECN::ECClassId classId = stmt->GetValueInt64(2);
+        ECN::ECClassId classId = stmt->GetValueId<ECClassId>(2);
 
         const int minSharedColCount = stmt->IsColumnNull(5) ? ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT : stmt->GetValueInt(5);
         ECDbMapStrategy mapStrategy;
@@ -2639,7 +2639,7 @@ DbResult ECDbMapStorage::ReadPropertyPaths() const
     while (stmt->Step() == BE_SQLITE_ROW)
         {
         ECDbPropertyPathId id = stmt->GetValueId<ECDbPropertyPathId>(0);
-        ECPropertyId rootPropertyId = stmt->GetValueInt64(1);
+        ECPropertyId rootPropertyId = stmt->GetValueId<ECPropertyId>(1);
         Utf8CP accessString = stmt->GetValueText(2);
         auto propertyPath = Set(std::unique_ptr<ECDbPropertyPath>(new ECDbPropertyPath(id, rootPropertyId, accessString)));
         if (propertyPath == nullptr)

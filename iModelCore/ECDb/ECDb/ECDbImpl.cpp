@@ -238,7 +238,7 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
 
     while (BE_SQLITE_ROW == stmt.Step())
         {
-        ownerClassIds.push_back(stmt.GetValueInt64(0));
+        ownerClassIds.push_back(stmt.GetValueId<ECClassId>(0));
         }
     }
 
@@ -251,7 +251,7 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
         ECClassCP ownerClass = Schemas().GetECClass(ownerClassId);
         if (ownerClass == nullptr)
             {
-            GetIssueReporter().Report(ECDbIssueSeverity::Error, "FileInfo owner ECClass not found for ECClassId %lld.", ownerClassId);
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "FileInfo owner ECClass not found for ECClassId %llu.", ownerClassId.GetValue());
             return ERROR;
             }
 
@@ -259,7 +259,7 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
             purgeOwnershipByOwnersECSql.append(" OR ");
 
         Utf8String whereSnippet;
-        whereSnippet.Sprintf("(OwnerECClassId=%lld AND OwnerId NOT IN (SELECT ECInstanceId FROM ONLY %s))", ownerClassId, ownerClass->GetECSqlName().c_str());
+        whereSnippet.Sprintf("(OwnerECClassId=%llu AND OwnerId NOT IN (SELECT ECInstanceId FROM ONLY %s))", ownerClassId.GetValue(), ownerClass->GetECSqlName().c_str());
         purgeOwnershipByOwnersECSql.append(whereSnippet);
 
         isFirstOwnerClassId = false;

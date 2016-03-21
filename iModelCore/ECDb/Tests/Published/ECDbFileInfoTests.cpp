@@ -126,9 +126,9 @@ TEST_F(ECDbFileInfoTests, ECFEmbeddedFileBackedInstanceSupport)
     //insert ownership
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecdbf.FileInfoOwnership (OwnerId, OwnerECClassId, FileInfoId, FileInfoECClassId) VALUES (?,?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKey.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, fooKey.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, fooKey.GetECClassId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, embeddedFileId));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, embeddedFileInfoClass->GetId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, embeddedFileInfoClass->GetId()));
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
@@ -330,7 +330,7 @@ TEST_F(ECDbFileInfoTests, FileInfoOwnershipConstraints)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecdbf.FileInfoOwnership(OwnerId, OwnerECClassId, FileInfoId, FileInfoECClassId) VALUES(?,?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId(UINT64_C(1))));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, 1));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, ECClassId(UINT64_C(1))));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, ECInstanceId(UINT64_C(2))));
     ASSERT_EQ(BE_SQLITE_CONSTRAINT_NOTNULL, stmt.Step());
 
@@ -338,57 +338,57 @@ TEST_F(ECDbFileInfoTests, FileInfoOwnershipConstraints)
     stmt.ClearBindings();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId(UINT64_C(1))));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, 1));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, 2));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, ECClassId(UINT64_C(1))));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, ECClassId(UINT64_C(2))));
     ASSERT_EQ(BE_SQLITE_CONSTRAINT_NOTNULL, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId(UINT64_C(1))));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, ECInstanceId(UINT64_C(2))));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, 2));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, ECClassId(UINT64_C(2))));
     ASSERT_EQ(BE_SQLITE_CONSTRAINT_NOTNULL, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, 1));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, ECClassId(UINT64_C(1))));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, ECInstanceId(UINT64_C(2))));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, 2));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, ECClassId(UINT64_C(2))));
     ASSERT_EQ(BE_SQLITE_CONSTRAINT_NOTNULL, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId(UINT64_C(1))));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, 1));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, ECClassId(UINT64_C(1))));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, ECInstanceId(UINT64_C(2))));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, 2));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, ECClassId(UINT64_C(2))));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
 
     //Ensure no duplicates
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId(UINT64_C(1))));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, 1));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, ECClassId(UINT64_C(1))));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, ECInstanceId(UINT64_C(2))));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, 2));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, ECClassId(UINT64_C(2))));
     ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, stmt.Step()) << "Inserting same ownership twice is expected to fail";
     stmt.Reset();
     stmt.ClearBindings();
 
     //One owner cannot have more than one file info
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId(UINT64_C(1))));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, 1));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, ECClassId(UINT64_C(1))));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, ECInstanceId(UINT64_C(10))));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, 2));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, ECClassId(UINT64_C(2))));
     ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, stmt.Step()) << "One owner cannot have more than one file info";
     stmt.Reset();
     stmt.ClearBindings();
 
     //One file cannot have more than one file infos
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, ECInstanceId(UINT64_C(20))));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, 1));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, ECClassId(UINT64_C(1))));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, ECInstanceId(UINT64_C(2))));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, 2));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, ECClassId(UINT64_C(2))));
     ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, stmt.Step()) << "One file cannot have more than one file infos";
     stmt.Reset();
     stmt.ClearBindings();
@@ -427,11 +427,11 @@ void AssertPurge(ECDbCR ecdb, std::vector<std::pair<ECInstanceKey, ECInstanceKey
         const ECClassId expectedFileInfoClassId = expectedOwnerships[i].second.GetECClassId();
         const ECInstanceId expectedFileInfoId = expectedOwnerships[i].second.GetECInstanceId();
 
-        ECClassId actualOwnerClassId = stmt.GetValueInt64(0);
+        ECClassId actualOwnerClassId = stmt.GetValueId<ECClassId>(0);
         ASSERT_EQ(expectedOwnerClassId, actualOwnerClassId);
         ECInstanceId actualOwnerId = stmt.GetValueId<ECInstanceId>(1);
         ASSERT_EQ(expectedOwnerId.GetValue(), actualOwnerId.GetValue());
-        ECClassId actualFileInfoClassId = stmt.GetValueInt64(2);
+        ECClassId actualFileInfoClassId = stmt.GetValueId<ECClassId>(2);
         ASSERT_EQ(expectedFileInfoClassId, actualFileInfoClassId);
         ECInstanceId actualFileInfoId = stmt.GetValueId<ECInstanceId>(3);
         ASSERT_EQ(expectedFileInfoId.GetValue(), actualFileInfoId.GetValue());
@@ -450,7 +450,7 @@ void AssertPurge(ECDbCR ecdb, std::vector<std::pair<ECInstanceKey, ECInstanceKey
         const ECClassId expectedFileInfoClassId = expectedFileInfos[i].GetECClassId();
         const ECInstanceId expectedFileInfoId = expectedFileInfos[i].GetECInstanceId();
 
-        ECClassId actualFileInfoClassId = stmt.GetValueInt64(0);
+        ECClassId actualFileInfoClassId = stmt.GetValueId<ECClassId>(0);
         ASSERT_EQ(expectedFileInfoClassId, actualFileInfoClassId);
         ECInstanceId actualFileInfoId = stmt.GetValueId<ECInstanceId>(1);
         ASSERT_EQ(expectedFileInfoId.GetValue(), actualFileInfoId.GetValue());
@@ -501,7 +501,8 @@ TEST_F(ECDbFileInfoTests, Purge)
 
     //EmbeddedFileInfos
     ECClassId embeddedFileInfoClassId = ecdb.Schemas().GetECClassId("ECDb_FileInfo", "EmbeddedFileInfo");
-    ASSERT_NE(ECClass::UNSET_ECCLASSID, embeddedFileInfoClassId);
+    ASSERT_TRUE(embeddedFileInfoClassId.IsValid());
+
     Utf8CP testFileName = "StartupCompany.json";
 
     BeFileName testFilePath;
@@ -528,27 +529,27 @@ TEST_F(ECDbFileInfoTests, Purge)
     //Foo - ExternalFile1
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecdbf.FileInfoOwnership(OwnerId, OwnerECClassId, FileInfoId, FileInfoECClassId) VALUES(?,?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKey.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, fooKey.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, fooKey.GetECClassId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, fooExternalFileInfoKey.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, fooExternalFileInfoKey.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, fooExternalFileInfoKey.GetECClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
     stmt.Reset();
     stmt.ClearBindings();
 
     //FooChild - EmbeddedFile1
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooChildKey.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, fooChildKey.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, fooChildKey.GetECClassId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, fooChildEmbeddedFileInfoKey.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, fooChildEmbeddedFileInfoKey.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, fooChildEmbeddedFileInfoKey.GetECClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
     stmt.Reset();
     stmt.ClearBindings();
 
     //Goo - ExternalFile2
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, gooKey.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, gooKey.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, gooKey.GetECClassId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, gooExternalFileInfoKey.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, gooExternalFileInfoKey.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, gooExternalFileInfoKey.GetECClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
     stmt.Reset();
     stmt.ClearBindings();

@@ -97,7 +97,7 @@ void RelationshipClassMap::DetermineConstraintClassIdColumnHandling (bool& addCo
         defaultConstraintClassId = constraintClass->GetId ();
         }
     else
-        defaultConstraintClassId = ECClass::UNSET_ECCLASSID;
+        defaultConstraintClassId = ECClassId();
     }
 
 //---------------------------------------------------------------------------------------
@@ -695,13 +695,13 @@ BentleyStatus RelationshipClassEndTableMap::_Load(std::set<ClassMap const*>& loa
     ECClassId defaultSourceECClassId, defaultTargetECClassId;
     if (GetReferencedEnd() == ECRelationshipEnd_Source)
         {
-        defaultSourceECClassId = relationshipClass.GetSource().GetClasses().empty() ? ECClass::UNSET_ECCLASSID : relationshipClass.GetSource().GetClasses().front()->GetId();
-        defaultTargetECClassId = relationshipClass.GetTarget().GetClasses().empty() ? ECClass::UNSET_ECCLASSID : relationshipClass.GetTarget().GetClasses().front()->GetId();
+        defaultSourceECClassId = relationshipClass.GetSource().GetClasses().empty() ? ECClassId() : relationshipClass.GetSource().GetClasses().front()->GetId();
+        defaultTargetECClassId = relationshipClass.GetTarget().GetClasses().empty() ? ECClassId() : relationshipClass.GetTarget().GetClasses().front()->GetId();
         }
     else
         {
-        defaultSourceECClassId = relationshipClass.GetTarget().GetClasses().empty() ? ECClass::UNSET_ECCLASSID : relationshipClass.GetTarget().GetClasses().front()->GetId();
-        defaultTargetECClassId = relationshipClass.GetSource().GetClasses().empty() ? ECClass::UNSET_ECCLASSID : relationshipClass.GetSource().GetClasses().front()->GetId();
+        defaultSourceECClassId = relationshipClass.GetTarget().GetClasses().empty() ? ECClassId() : relationshipClass.GetTarget().GetClasses().front()->GetId();
+        defaultTargetECClassId = relationshipClass.GetSource().GetClasses().empty() ? ECClassId() : relationshipClass.GetSource().GetClasses().front()->GetId();
         }
 
     //SourceECInstanceId
@@ -1156,11 +1156,11 @@ MapStatus RelationshipClassLinkTableMap::_MapPart1 (SchemaImportContext& context
 
     //**** Constraint columns and prop maps
     bool addSourceECClassIdColumnToTable = false;
-    ECClassId defaultSourceECClassId = ECClass::UNSET_ECCLASSID;
+    ECClassId defaultSourceECClassId;
     DetermineConstraintClassIdColumnHandling (addSourceECClassIdColumnToTable, defaultSourceECClassId, sourceConstraint);
 
     bool addTargetECClassIdColumnToTable = false;
-    ECClassId defaultTargetECClassId = ECClass::UNSET_ECCLASSID;
+    ECClassId defaultTargetECClassId;
     DetermineConstraintClassIdColumnHandling (addTargetECClassIdColumnToTable, defaultTargetECClassId, targetConstraint);
     return CreateConstraintPropMaps (relationClassMapInfo, addSourceECClassIdColumnToTable, defaultSourceECClassId, addTargetECClassIdColumnToTable, defaultTargetECClassId);
     }
@@ -1536,8 +1536,8 @@ BentleyStatus RelationshipClassLinkTableMap::_Load (std::set<ClassMap const*>& l
     auto const& sourceConstraint = relationshipClass.GetSource ();
     auto const& targetConstraint = relationshipClass.GetTarget ();
 
-    ECClassId defaultSourceECClassId = sourceConstraint.GetClasses().empty() ? ECClass::UNSET_ECCLASSID : sourceConstraint.GetClasses().front()->GetId();
-    ECClassId defaultTargetECClassId = targetConstraint.GetClasses().empty() ? ECClass::UNSET_ECCLASSID : targetConstraint.GetClasses().front()->GetId();
+    ECClassId defaultSourceECClassId = sourceConstraint.GetClasses().empty() ? ECClassId() : sourceConstraint.GetClasses().front()->GetId();
+    ECClassId defaultTargetECClassId = targetConstraint.GetClasses().empty() ? ECClassId() : targetConstraint.GetClasses().front()->GetId();
 
     auto sourceECInstanceIdProperty = ECDbSystemSchemaHelper::GetSystemProperty (Schemas (), ECSqlSystemProperty::SourceECInstanceId);
     auto pm = mapInfo.FindPropertyMap (sourceECInstanceIdProperty->GetId (), ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME);

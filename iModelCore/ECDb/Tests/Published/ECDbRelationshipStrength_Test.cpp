@@ -38,7 +38,7 @@ void DeleteInstance (IECInstanceCR instance, ECDbR ecdb)
 bool HasInstance (IECInstanceCR instance, ECDbR ecdb)
     {
     Utf8String ecsql;
-    ecsql.Sprintf("SELECT NULL FROM ONLY %s WHERE ECInstanceId=%lld",
+    ecsql.Sprintf("SELECT NULL FROM ONLY %s WHERE ECInstanceId=%llu",
                   instance.GetClass().GetECSqlName().c_str(), InstanceToId(instance).GetValue());
 
     ECSqlStatement statement;
@@ -497,30 +497,30 @@ void ECDbRelationshipsIntegrityTests::InsertEntityClassInstances (Utf8CP classNa
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECDbRelationshipsIntegrityTests::InsertRelationshipInstances (Utf8CP relationshipClass, std::vector<ECInstanceKey> const& sourceKeys, std::vector<ECInstanceKey>const& targetKeys, std::vector<DbResult> const& expected, size_t& rowInserted) const
+void ECDbRelationshipsIntegrityTests::InsertRelationshipInstances(Utf8CP relationshipClass, std::vector<ECInstanceKey> const& sourceKeys, std::vector<ECInstanceKey>const& targetKeys, std::vector<DbResult> const& expected, size_t& rowInserted) const
     {
     ECSqlStatement stmt;
-    SqlPrintfString sql = SqlPrintfString ("INSERT INTO %s (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)", relationshipClass);
+    SqlPrintfString sql = SqlPrintfString("INSERT INTO %s (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)", relationshipClass);
 
-    ASSERT_EQ (stmt.Prepare (m_ecdb, sql.GetUtf8CP ()), ECSqlStatus::Success);
-    ASSERT_EQ (expected.size (), sourceKeys.size () * targetKeys.size ());
+    ASSERT_EQ(stmt.Prepare(m_ecdb, sql.GetUtf8CP()), ECSqlStatus::Success);
+    ASSERT_EQ(expected.size(), sourceKeys.size() * targetKeys.size());
     int n = 0;
     for (auto& sourceKey : sourceKeys)
         {
         for (auto& targetKey : targetKeys)
             {
-            stmt.Reset ();
-            ASSERT_EQ (ECSqlStatus::Success, stmt.ClearBindings ());
-            stmt.BindId (1, sourceKey.GetECInstanceId ());
-            stmt.BindInt64 (2, sourceKey.GetECClassId ());
-            stmt.BindId (3, targetKey.GetECInstanceId ());
-            stmt.BindInt64 (4, targetKey.GetECClassId ());
+            stmt.Reset();
+            ASSERT_EQ(ECSqlStatus::Success, stmt.ClearBindings());
+            stmt.BindId(1, sourceKey.GetECInstanceId());
+            stmt.BindId(2, sourceKey.GetECClassId());
+            stmt.BindId(3, targetKey.GetECInstanceId());
+            stmt.BindId(4, targetKey.GetECClassId());
 
             if (expected[n] != BE_SQLITE_DONE)
-                ASSERT_NE (BE_SQLITE_DONE, stmt.Step ());
+                ASSERT_NE(BE_SQLITE_DONE, stmt.Step());
             else
                 {
-                ASSERT_EQ (BE_SQLITE_DONE, stmt.Step ());
+                ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
                 rowInserted++;
                 }
 
@@ -579,9 +579,9 @@ bool ECDbRelationshipsIntegrityTests::RelationshipExists (Utf8CP relClassExp, EC
     ECSqlStatement stmt;
     EXPECT_EQ (ECSqlStatus::Success, stmt.Prepare (GetECDb (), ecsql.c_str ())) << ecsql.c_str ();
     EXPECT_EQ (ECSqlStatus::Success, stmt.BindId (1, sourceKey.GetECInstanceId ()));
-    EXPECT_EQ (ECSqlStatus::Success, stmt.BindInt64 (2, sourceKey.GetECClassId ()));
+    EXPECT_EQ (ECSqlStatus::Success, stmt.BindId(2, sourceKey.GetECClassId ()));
     EXPECT_EQ (ECSqlStatus::Success, stmt.BindId (3, targetKey.GetECInstanceId ()));
-    EXPECT_EQ (ECSqlStatus::Success, stmt.BindInt64 (4, targetKey.GetECClassId ()));
+    EXPECT_EQ (ECSqlStatus::Success, stmt.BindId(4, targetKey.GetECClassId ()));
 
     DbResult stat = stmt.Step ();
     EXPECT_TRUE (stat == BE_SQLITE_ROW || stat == BE_SQLITE_DONE);

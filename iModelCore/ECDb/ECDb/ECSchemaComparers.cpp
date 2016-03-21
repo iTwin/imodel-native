@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSchemaComparers.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -14,12 +14,12 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 bool operator== (ECClassCR lhs, ECClassCR rhs)
     {
-    if (lhs.HasId () && rhs.HasId ())
+    if (lhs.HasId() && rhs.HasId())
         {
-        return lhs.GetId () == rhs.GetId ();
+        return lhs.GetId() == rhs.GetId();
         }
 
-    return strcmp (lhs.GetFullName (), rhs.GetFullName ()) == 0;
+    return strcmp(lhs.GetFullName(), rhs.GetFullName()) == 0;
     }
 
 
@@ -38,12 +38,12 @@ bool operator!= (ECClassCR lhs, ECClassCR rhs)
 bool operator== (ECPropertyCR lhs, ECPropertyCR rhs)
     {
     //PropertyIds are unique in the ECDb file. So they can be compared directly
-    if (lhs.HasId () && rhs.HasId ())
+    if (lhs.HasId() && rhs.HasId())
         {
-        return lhs.GetId () == rhs.GetId ();
+        return lhs.GetId() == rhs.GetId();
         }
 
-    return lhs.GetClass () == rhs.GetClass () && strcmp (lhs.GetName ().c_str (), rhs.GetName ().c_str ()) == 0;
+    return lhs.GetClass() == rhs.GetClass() && strcmp(lhs.GetName().c_str(), rhs.GetName().c_str()) == 0;
     }
 
 //--------------------------------------------------------------------------------------

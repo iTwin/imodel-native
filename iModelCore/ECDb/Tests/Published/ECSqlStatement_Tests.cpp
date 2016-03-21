@@ -317,10 +317,10 @@ TEST_F (ECSqlStatementTestFixture, NestedSelectStatementsTests)
     ECClassId secondClassId = std::max<ECClassId>(supplierClassId, customerClassId);
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ECClassId, COUNT(*) FROM (SELECT GetECClassId() ECClassId FROM ECST.Supplier UNION ALL SELECT GetECClassId() ECClassId FROM ECST.Customer) GROUP BY ECClassId ORDER BY ECClassId"));
     ASSERT_TRUE (stmt.Step () == BE_SQLITE_ROW);
-    ASSERT_EQ (firstClassId, stmt.GetValueInt (0));
+    ASSERT_EQ (firstClassId, stmt.GetValueId<ECClassId>(0));
     ASSERT_EQ (4, stmt.GetValueInt (1));
     ASSERT_TRUE (stmt.Step () == BE_SQLITE_ROW);
-    ASSERT_EQ (secondClassId, stmt.GetValueInt (0));
+    ASSERT_EQ (secondClassId, stmt.GetValueId<ECClassId>(0));
     ASSERT_EQ (3, stmt.GetValueInt (1));
     ASSERT_TRUE (stmt.Step () == BE_SQLITE_DONE);
     }

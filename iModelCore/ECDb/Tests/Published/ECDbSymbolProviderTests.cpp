@@ -170,10 +170,10 @@ TEST_F(ECDbSymbolProviderRelatedInstanceTests, FollowsForwardRelationshipWithSin
     ECSqlStatement stmt;
     stmt.Prepare(GetECDb(), "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
     stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindInt64(2, classA->GetId());
+    stmt.BindId(2, classA->GetId());
     stmt.BindText(3, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindInt64(4, classB->GetId());
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step());
+    stmt.BindId(4, classB->GetId());
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     ECValue value;
     ASSERT_EQ(ECObjectsStatus::Success, instanceA->GetValue(value, "calc_Forward"));
@@ -198,10 +198,10 @@ TEST_F(ECDbSymbolProviderRelatedInstanceTests, FollowsBackwardRelationshipWithSi
     ECSqlStatement stmt;
     stmt.Prepare(GetECDb(), "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
     stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindInt64(2, classA->GetId());
+    stmt.BindId(2, classA->GetId());
     stmt.BindText(3, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindInt64(4, classB->GetId());
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step());
+    stmt.BindId(4, classB->GetId());
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     ECValue value;
     ASSERT_EQ(ECObjectsStatus::Success, instanceB->GetValue(value, "calc_Backward"));
@@ -229,9 +229,9 @@ TEST_F(ECDbSymbolProviderRelatedInstanceTests, FollowsForwardRelationshipWithMul
     ECSqlStatement stmt;
     stmt.Prepare(GetECDb(), "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
     stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindInt64(2, classA->GetId());
+    stmt.BindId(2, classA->GetId());
     stmt.BindText(3, instanceB2->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindInt64(4, classB->GetId());
+    stmt.BindId(4, classB->GetId());
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step());
 
     ECValue value;
@@ -260,9 +260,9 @@ TEST_F(ECDbSymbolProviderRelatedInstanceTests, FollowsBackwardRelationshipWithMu
     ECSqlStatement stmt;
     stmt.Prepare(GetECDb(), "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
     stmt.BindText(1, instanceA2->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindInt64(2, classA->GetId());
+    stmt.BindId(2, classA->GetId());
     stmt.BindText(3, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindInt64(4, classB->GetId());
+    stmt.BindId(4, classB->GetId());
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step());
 
     ECValue value;
@@ -320,10 +320,10 @@ TEST_F(ECDbSymbolProviderRelatedInstanceTests, FollowsRelationshipWhenRelationsh
     ECSqlStatement stmt;
     stmt.Prepare(GetECDb(), "INSERT INTO [test2].[DifferentRelationship] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
     stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindInt64(2, classA->GetId());
+    stmt.BindId(2, classA->GetId());
     stmt.BindText(3, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindInt64(4, classB->GetId());
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step());
+    stmt.BindId(4, classB->GetId());
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     ECValue value;
     ASSERT_EQ(ECObjectsStatus::Success, instanceB->GetValue(value, "calc_DifferentSchema"));
@@ -379,10 +379,10 @@ TEST_F(ECDbSymbolProviderRelatedInstanceTests, SymbolsAreInjectedWhenImportingSc
     ECSqlStatement stmt;
     stmt.Prepare(GetECDb(), "INSERT INTO [test2].[CHasA] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
     stmt.BindText(1, instanceC->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindInt64(2, classC->GetId());
+    stmt.BindId(2, classC->GetId());
     stmt.BindText(3, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindInt64(4, classA->GetId());
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step());
+    stmt.BindId(4, classA->GetId());
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     ECValue v;
     instanceC->GetValue(v, "label");
@@ -437,11 +437,11 @@ TEST_F(ECDbSymbolProviderRelatedInstanceTests, SymbolsAreInjectedWhenDeserializi
     ECSqlStatement insertStmt;
     insertStmt.Prepare(GetECDb(), "INSERT INTO [test2].[CHasA] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
     insertStmt.BindText(1, instanceC->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    insertStmt.BindInt64(2, classC->GetId());
+    insertStmt.BindId(2, classC->GetId());
     insertStmt.BindText(3, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
-    insertStmt.BindInt64(4, classA->GetId());
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, insertStmt.Step());
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+    insertStmt.BindId(4, classA->GetId());
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+    ASSERT_EQ(BE_SQLITE_OK, GetECDb().SaveChanges());
 
     // reopen ECDb
     BeFileName ecdbPath(GetECDb().GetDbFileName(), true);
