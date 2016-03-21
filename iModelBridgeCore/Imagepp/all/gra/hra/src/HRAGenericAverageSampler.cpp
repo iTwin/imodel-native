@@ -1133,8 +1133,9 @@ void HRAGenericAverageSparseDataSampler<T, TS>::GetPixels(double pi_PositionX,
         }
     }
 
-
+BEGIN_IMAGEPP_NAMESPACE
 template class HRAGenericAverageSamplerInteger<int16_t, int64_t>;
 template class HRAGenericAverageSampler<float,  double>;
 template class HRAGenericAverageSparseDataSampler<float,  double>;
 template class HRAGenericAverageSparseDataSampler<int16_t,  int64_t>;
+END_IMAGEPP_NAMESPACE

@@ -152,7 +152,7 @@ inline HTagFile::DirectoryID HTagFile::MakeDirectoryID(HTagFile::DirectoryType  
                                                        uint32_t                  pi_DirNum)
     {
     HPRECONDITION(pi_DirNum <  0x0FFFFFFF);
-    HPRECONDITION(pi_DirType < 0x0000000F);
+    HPRECONDITION((uint32_t)pi_DirType < 0x0000000F);
 
     return (pi_DirType << 28 | pi_DirNum & 0x0FFFFFFF);
     }

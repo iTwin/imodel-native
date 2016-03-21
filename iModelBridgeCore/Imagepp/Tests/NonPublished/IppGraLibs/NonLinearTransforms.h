@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/NonLinearTransforms.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRARasterCopyFromTester
@@ -12,6 +12,7 @@
 
 #include <Imagepp/all/h/HGF2DTransfoModel.h>
 
+/*
 //-----------------------------------------------------------------------------
 //  This class is a 2DTransfoModel defined for testing purposes only.
 //  It defines a non-linear that is composed with other transform models
@@ -32,7 +33,8 @@
 //  |           |     ==>      |  /     \ |               
 //  -------------              | /       \|                 
 //-----------------------------------------------------------------------------
-class ParabolaTransfoModel : public HGF2DTransfoModel
+*/
+ class ParabolaTransfoModel : public HGF2DTransfoModel
     {
     public:
     ParabolaTransfoModel()

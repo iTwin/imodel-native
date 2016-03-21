@@ -856,7 +856,7 @@ template<class O, class SI> void HIDXAListRelativeIndex<O, SI>::TryToMakeSpaceAt
     // Look for an empty space
     while (!Found && pCurrentBlock)
         {
-        while (!Found && CurrentIndex >= 0)
+        while (!Found)
             {
             if ((*pCurrentBlock)[CurrentIndex] == 0)
                 {

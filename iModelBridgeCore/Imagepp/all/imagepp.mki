@@ -7,6 +7,8 @@
 #--------------------------------------------------------------------------------------
 
 BUILD_NO_STACK_CHECK        = 1
+# &&ep to fix: disabled some clang warnings
+NO_DEFAULT_CLANG_WARNINGS   = 1
 
 # DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
 # If we define appName and use it for DLM_NAME, MultiCppCompileRule.mki will use it for CCompPDBName, and linkLibrary.mki will use DLM_NAME for LIB_NAME.

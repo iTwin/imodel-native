@@ -364,8 +364,8 @@ HFCPtr<HGF2DTransfoModel> HRFOGCService::CreateTransfoModel(GeoCoordinates::Base
     bool IsValidModel = true;
     bool NeedFlip     = true;
 
-    double PixelScaleX = abs(m_BBoxMaxX - m_BBoxMinX) / (double)pi_Width;
-    double PixelScaleY = abs(m_BBoxMaxY - m_BBoxMinY) / (double)pi_Height;
+    double PixelScaleX = fabs((m_BBoxMaxX - m_BBoxMinX)) / (double)pi_Width;
+    double PixelScaleY = fabs(m_BBoxMaxY - m_BBoxMinY) / (double)pi_Height;
 
 
     pTransfoModel = new HGF2DStretch(HGF2DDisplacement (m_BBoxMinX, m_BBoxMinY+(pi_Height*PixelScaleY)),

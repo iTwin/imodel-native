@@ -728,8 +728,10 @@ struct ImageEditorSampleRle : public ImageEditorBaseRle<HRAImageSample>
             {
             // build first line
             idx = Rle1Manip::SetRun(0, &pBuf[0], 0);
-            idx = Rle1Manip::SetRun(idx, &pBuf[++idx], width);
-            idx = Rle1Manip::SetRun(idx, &pBuf[++idx], 0);
+            ++idx;
+            idx = Rle1Manip::SetRun(idx, &pBuf[idx], width);
+            ++idx;
+            idx = Rle1Manip::SetRun(idx, &pBuf[idx], 0);
             ++idx;
             }
         else

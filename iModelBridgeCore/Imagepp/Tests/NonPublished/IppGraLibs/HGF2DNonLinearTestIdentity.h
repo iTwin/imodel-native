@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HGF2DNonLinearTestIdentity.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DNonLinearTestIdentity
@@ -101,12 +101,4 @@ protected:
     virtual void                Prepare ();
 
     HFCPtr<HGF2DTransfoModel>   ComposeYourself(const HGF2DTransfoModel& pi_rModel) const;
-
-private:
-
-    double         m_XDirectRatio;
-    double         m_YDirectRatio;
-    double         m_XInverseRatio;
-    double         m_YInverseRatio;
-
     };

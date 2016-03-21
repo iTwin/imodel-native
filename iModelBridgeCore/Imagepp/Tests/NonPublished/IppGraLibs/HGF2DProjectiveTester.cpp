@@ -368,7 +368,7 @@ TEST_F (HGF2DProjectiveTester, SpecialConstructorTest)
     MyMatrix1[2][1] = 0.0;
     MyMatrix1[2][2] = 1.0;
 
-    double MyMatrix2[3][3] = {1.0, 0.0, 10.0, 0.0, 1.0, 10.0, 0.0, 0.0, 1.0};
+    double MyMatrix2[3][3] = {{1.0, 0.0, 10.0}, {0.0, 1.0, 10.0}, {0.0, 0.0, 1.0}};
     
     HGF2DProjective     ProjectiveTranslation1(MyMatrix1);
     HGF2DProjective     ProjectiveTranslation2(MyMatrix2);

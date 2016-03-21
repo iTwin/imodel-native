@@ -226,78 +226,68 @@ inline void HGFPolynomialModelAdapter::TransposePointsUsingPolynomial(double pi_
                                                                       double* po_pXOut, double* po_pYOut) const
     {
 
-    #if defined HAVE_SIMD_INTRINSICS
-        double y2 = pi_YIn * pi_YIn;
-        double y3 = pi_YIn * y2;
+#if defined HAVE_SIMD_INTRINSICS
+    double y2 = pi_YIn * pi_YIn;
+    double y3 = pi_YIn * y2;
 
-        //Loading factors to pre compute some numbers that are the same for every pixel
-        __m128d InitialFactor[6] = {_mm_set1_pd(pi_YIn),
-            _mm_set1_pd(pi_YIn),
-            _mm_set1_pd(y2),
-            _mm_set1_pd(pi_YIn),
-            _mm_set1_pd(y2),
-            _mm_set1_pd(y3)};
+    //Loading factors to pre compute some numbers that are the same for every pixel
+    __m128d InitialFactor[6] = {_mm_set1_pd(pi_YIn),
+        InitialFactor[0],
+        _mm_set1_pd(y2),
+        InitialFactor[0],
+        InitialFactor[2],
+        _mm_set1_pd(y3)};
 
-        //Loading the coefficient of the pre multiplication
-        __m128d InitialCoeff[6] = {_mm_set_pd(m_CoefficientsX[2], m_CoefficientsY[2]),
-            _mm_set_pd(m_CoefficientsX[4], m_CoefficientsY[4]),
-            _mm_set_pd(m_CoefficientsX[5], m_CoefficientsY[5]),
-            _mm_set_pd(m_CoefficientsX[7], m_CoefficientsY[7]),
-            _mm_set_pd(m_CoefficientsX[8], m_CoefficientsY[8]),
-            _mm_set_pd(m_CoefficientsX[9], m_CoefficientsY[9])};
+    //Loading the coefficient of the pre multiplication
+    __m128d InitialCoeff[6] = {_mm_set_pd(m_CoefficientsX[2], m_CoefficientsY[2]),
+        _mm_set_pd(m_CoefficientsX[4], m_CoefficientsY[4]),
+        _mm_set_pd(m_CoefficientsX[5], m_CoefficientsY[5]),
+        _mm_set_pd(m_CoefficientsX[7], m_CoefficientsY[7]),
+        _mm_set_pd(m_CoefficientsX[8], m_CoefficientsY[8]),
+        _mm_set_pd(m_CoefficientsX[9], m_CoefficientsY[9])};
 
-        //Pre computing
-        for (size_t i = 0; i < 6; ++i)
-            {
-            InitialCoeff[i] = _mm_mul_pd(InitialFactor[i], InitialCoeff[i]);            
-            }
-
-        //Loading the coefficient for the multiplication in the for statement
-        __m128d storedCoeff[10] = {_mm_set_pd(m_CoefficientsX[0], m_CoefficientsY[0]),
-            _mm_set_pd(m_CoefficientsX[1], m_CoefficientsY[1]),
-            InitialCoeff[0],
-            _mm_set_pd(m_CoefficientsX[3], m_CoefficientsY[3]),
-            InitialCoeff[1],
-            InitialCoeff[2],
-            _mm_set_pd(m_CoefficientsX[6], m_CoefficientsY[6]),
-            InitialCoeff[3],
-            InitialCoeff[4],
-            InitialCoeff[5]};
-    
-        uint32_t index;
-        double x, x2, x3;
-    
-        for (index = 0, x = pi_XInStart; index < pi_NumLoc; ++index, x += pi_XInStep)
-            {
-            x2 = x * x;
-            x3 = x2 * x;
-    
-            //loading factors (x, x2, x, x3, x2, x) in SSE registers
-            __m128d storedFactor[6] = {_mm_set1_pd(x),
-                                       _mm_set1_pd(x2),
-                                       _mm_set1_pd(x),
-                                       _mm_set1_pd(x3),
-                                       _mm_set1_pd(x2),
-                                       _mm_set1_pd(x)};
-
-            //Multiplication and addition on the X and Y coordinates at the same time
-            __m128d result = _mm_add_pd(_mm_add_pd(_mm_add_pd(_mm_add_pd(_mm_add_pd(_mm_add_pd(_mm_add_pd(_mm_add_pd(_mm_add_pd(
-                storedCoeff[0], _mm_mul_pd(storedCoeff[1], storedFactor[0])),
-                storedCoeff[2]),
-                _mm_mul_pd(storedCoeff[3], storedFactor[1])),
-                _mm_mul_pd(storedCoeff[4], storedFactor[2])),
-                storedCoeff[5]),
-                _mm_mul_pd(storedCoeff[6], storedFactor[3])),
-                _mm_mul_pd(storedCoeff[7], storedFactor[4])),
-                _mm_mul_pd(storedCoeff[8], storedFactor[5])),
-                storedCoeff[9]);
-    
-            //Move final result out of SSE register
-            *(po_pXOut + index) = _mm_cvtsd_f64(_mm_unpackhi_pd(result, result));
-            *(po_pYOut + index) = _mm_cvtsd_f64(result);
+    //Pre computing
+    for (auto i = 0; i < 6; ++i)
+        {
+        InitialCoeff[i] = _mm_mul_pd(InitialFactor[i], InitialCoeff[i]);
         }
-    
-    #else
+
+    //Loading the coefficient for the multiplication in the for statement
+    __m128d storedCoeff[3] = {_mm_set_pd(m_CoefficientsX[1], m_CoefficientsY[1]),
+        _mm_set_pd(m_CoefficientsX[3], m_CoefficientsY[3]),
+        _mm_set_pd(m_CoefficientsX[6], m_CoefficientsY[6])};
+
+    storedCoeff[0] = _mm_add_pd(_mm_add_pd(storedCoeff[0], InitialCoeff[1]), InitialCoeff[4]);
+    storedCoeff[1] = _mm_add_pd(storedCoeff[1], InitialCoeff[3]);
+
+    __m128d ConstCoeff = _mm_add_pd(_mm_add_pd(_mm_add_pd(
+        _mm_set_pd(m_CoefficientsX[0], m_CoefficientsY[0]),
+        InitialCoeff[0]), InitialCoeff[2]),
+        InitialCoeff[5]);
+
+    __m128d x, x2;
+
+    x = _mm_set1_pd(pi_XInStart);
+
+    for (size_t index = 0; index < pi_NumLoc; ++index)
+        {
+        x2 = _mm_mul_pd(x, x);
+
+        //Multiplication and addition on the X and Y coordinates at the same time
+        __m128d result = _mm_add_pd(_mm_add_pd(_mm_add_pd(
+            _mm_mul_pd(storedCoeff[0], x),
+            _mm_mul_pd(storedCoeff[1], x2)),
+            _mm_mul_pd(storedCoeff[2], _mm_mul_pd(x2, x))),
+            ConstCoeff);
+
+        //Move final result out of SSE register
+        _mm_storeh_pd(po_pXOut + index, result);
+        _mm_storel_pd(po_pYOut + index, result);
+
+        x = _mm_add_pd(x, _mm_set1_pd(1.0));
+        }
+
+#else
 
     //Pre-compute some factors that are the same for every pixel
     double y = pi_YIn;
@@ -318,6 +308,8 @@ inline void HGFPolynomialModelAdapter::TransposePointsUsingPolynomial(double pi_
     double partial8_y = m_CoefficientsY[8] * y2;
     double a9_y = m_CoefficientsY[9] * y3;
 
+    double ConstCoeffX = m_CoefficientsX[0] + a2_x + a5_x + a9_x;
+    double ConstCoeffY = m_CoefficientsY[0] + a2_y + a5_y + a9_y;
 
     uint32_t index;
     double x;
@@ -328,27 +320,15 @@ inline void HGFPolynomialModelAdapter::TransposePointsUsingPolynomial(double pi_
         x2 = x * x;
         x3 = x2 * x;
 
-        *(po_pXOut + index) = m_CoefficientsX[0]
-            + m_CoefficientsX[1] * x
-            + a2_x
-            + m_CoefficientsX[3] * x2
-            + partial4_x * x
-            + a5_x
+        po_pXOut[index] = ((m_CoefficientsX[1] + partial4_x + partial8_x) * x)
+            + ((m_CoefficientsX[3] + partial7_x) * x2)
             + m_CoefficientsX[6] * x3
-            + partial7_x * x2
-            + partial8_x * x
-            + a9_x;
+            + ConstCoeffX;
 
-        *(po_pYOut + index) = m_CoefficientsY[0]
-            + m_CoefficientsY[1] * x
-            + a2_y
-            + m_CoefficientsY[3] * x2
-            + partial4_y * x
-            + a5_y
+        po_pYOut[index] = ((m_CoefficientsY[1] + partial4_y + partial8_y) * x)
+            + ((m_CoefficientsY[3] + partial7_y) * x2)
             + m_CoefficientsY[6] * x3
-            + partial7_y * x2
-            + partial8_y * x
-            + a9_y;
+            + ConstCoeffY;
         }
 #endif // HAVE_SIMD_INTRINSICS
 
