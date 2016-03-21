@@ -174,7 +174,9 @@
         <ProductDirectory Name="MrSidAssemblies" Deliver="false"/>
         <ProductDirectory Name="GdalData" Deliver="false"/>
         <ProductDirectory Name="ImagePPAssemblies" Deliver="false"/>
+        <ProductDirectory Name="ImagePPAssemblies" Deliver="false" LibType="static"/>
         <ProductDirectory Name="RasterAssemblies" Deliver="false"/>
+        <ProductDirectory Name="RasterAssemblies" Deliver="false" LibType="static"/>
 
     </ProductDirectoryList>
 
