@@ -8,6 +8,7 @@
 #include "BeSQLitePublishedTests.h"
 
 #include <vector>
+#include <limits>
 
 /*---------------------------------------------------------------------------------**//**
 * Test fixture for testing Db
@@ -423,6 +424,49 @@ TEST_F (BeSQLiteDbTests, BlobTest)
     ASSERT_EQ (0LL, selectStmt.GetValueInt64(0)) << "is expected to not convert the blob implicitly to the expected int64_t";
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   03/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(BeSQLiteDbTests, BigUInt64Test)
+    {
+    SetupDb(L"biguint64test.db");
+
+    Utf8CP testTableName = "testtable";
+    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable(testTableName, "id INTEGER PRIMARY KEY, val INTEGER")) << "Creating test table '" << testTableName << "' failed.";
+
+    const uint64_t bigNumber = ((uint64_t) std::numeric_limits<int64_t>::max()) + 100;
+    ASSERT_TRUE(static_cast<int64_t>(bigNumber) < 0) << "Ensure the uint64 is larger than the max of int64";
+
+    auto assertUInt64 = [] (Db const& db, int64_t id, uint64_t expected)
+        {
+        CachedStatementPtr selectStmt = db.GetCachedStatement("SELECT val FROM testtable WHERE id=?");
+        ASSERT_TRUE(selectStmt != nullptr);
+        ASSERT_EQ(BE_SQLITE_OK, selectStmt->BindInt64(1, id));
+        ASSERT_EQ(BE_SQLITE_ROW, selectStmt->Step());
+        ASSERT_EQ(expected, selectStmt->GetValueUInt64(0));
+        ASSERT_EQ(expected, (uint64_t) selectStmt->GetValueInt64(0));
+        };
+
+    {
+    Statement insertStmt;
+    ASSERT_EQ(BE_SQLITE_OK, insertStmt.Prepare(m_db, "INSERT INTO testtable(val) VALUES (?)"));
+
+    ASSERT_EQ(BE_SQLITE_OK, insertStmt.BindUInt64(1, bigNumber));
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+    assertUInt64(m_db, m_db.GetLastInsertRowId(), bigNumber);
+    }
+
+
+    {
+    Utf8String sql;
+    sql.Sprintf("INSERT INTO testtable(val) VALUES (%lld)", bigNumber);
+    Statement insertStmt;
+    ASSERT_EQ(BE_SQLITE_OK, insertStmt.Prepare(m_db, sql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+    assertUInt64(m_db, m_db.GetLastInsertRowId(), bigNumber);
+    }
+
+    }
 /*---------------------------------------------------------------------------------**//**
 * Save and Query PropertyString
 * @bsimethod                                    Majd.Uddin                   06/12
