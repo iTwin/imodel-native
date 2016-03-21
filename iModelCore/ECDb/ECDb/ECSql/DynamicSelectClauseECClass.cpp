@@ -75,16 +75,6 @@ DynamicSelectClauseECClass& DynamicSelectClauseECClass::operator= (DynamicSelect
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-bool DynamicSelectClauseECClass::IsGeneratedProperty (ECPropertyCR selectClauseProperty) const
-    {
-    //pointer comparison as other ECSqlStatements could float around which would have class with same name
-    //if class was not generated, select clause doesn't contain any generated items -> return false in that case.
-    return m_class != nullptr && selectClauseProperty.GetClass () == GetClassR ();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    10/2013
-//+---------------+---------------+---------------+---------------+---------------+------
 ECSqlStatus DynamicSelectClauseECClass::Initialize()
     {
     if (m_schema != nullptr)
@@ -99,22 +89,6 @@ ECSqlStatus DynamicSelectClauseECClass::Initialize()
     //is never instantiated
     m_class->SetClassModifier(ECClassModifier::Abstract);
     return ECSqlStatus::Success;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       10/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus DynamicSelectClauseECClass::ParseBackReferenceToPropertyPath(PropertyPath& propertyPath, ECPropertyCR generatedProperty, ECDbCR ecdb)
-    {
-    auto defMetaDataInst = generatedProperty.GetCustomAttribute ("DefinitionMetaData");
-    if (defMetaDataInst == nullptr)
-        return ERROR;
-    
-    ECValue v;
-    if (defMetaDataInst->GetValue(v, "DefinitionBackReference") != ECObjectsStatus::Success)
-        return ERROR;
-
-    return PropertyPath::TryParseQualifiedPath(propertyPath, v.GetUtf8CP(), ecdb);
     }
 
 //-----------------------------------------------------------------------------------------

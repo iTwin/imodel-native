@@ -31,15 +31,10 @@ protected:
     ECDbSqlColumn const& GetColumn () const;
 
     ECSqlSystemProperty GetKind () const { return m_kind; }
-    ColumnKind ToColumnKind() const;
-    static std::vector<std::weak_ptr<ECDbSqlColumn>> ToWeakPtr(std::vector<ECDbSqlColumn const*> const& columns);
     std::vector<std::weak_ptr<ECDbSqlColumn>>& GetColumnWeakPtrs ()  { return m_columns; }   
 
 public:
     virtual ~SystemPropertyMap () {}
-
-    ECDbSqlColumn const* GetColumn(ECDbSqlTable const& table) const;
-
     static std::vector<ECDbSqlColumn const*> ToVector(ECDbSqlColumn const* column);
     };
 
@@ -87,8 +82,6 @@ public:
     //! and, if set, the view column alias to to the select clause of the view.
     //! @param[in,out] viewSql View SQL builder to append to
     void AppendSelectClauseSqlSnippetForView (NativeSqlBuilder& viewSql, ECDbSqlTable const& table) const;
-    void AppendSelectClauseSqlSnippetForView (NativeSqlBuilder& viewSql) const;
-
     };
 
 //=======================================================================================

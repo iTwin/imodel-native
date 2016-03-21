@@ -168,7 +168,6 @@ struct ECDbMapAnalyser
         public:
             Class(ClassMapCR classMap, Storage& storage, Class* parent);
             Utf8CP GetSqlName() const;
-            Storage& GetStorageR();
             Storage const& GetStorage() const {return m_storage;}
             ClassMapCR GetClassMap() const;
             void SetParent(Class& cl) { m_parent = &cl; }

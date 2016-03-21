@@ -137,8 +137,6 @@ public:
         explicit Error (Type ruleType) : ECSchemaValidationRule::Error (ruleType) {}
         ~Error () {}
 
-        bset<ECN::ECClassCP> const* TryGetInvalidClasses (ECN::ECClassCR ecClass) const;
-
         InvalidClasses const& GetInvalidClasses () const { return m_invalidClasses; }
         InvalidClasses& GetInvalidClassesR () { return m_invalidClasses; }
         };

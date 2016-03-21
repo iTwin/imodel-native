@@ -46,7 +46,6 @@ private:
     static BentleyStatus CreateNullViewForRelationshipClassEndTableMap (NativeSqlBuilder& viewSql, ECSqlPrepareContext const&, RelationshipClassMapCR, ClassMap const& baseClassMap);
     static BentleyStatus CreateNullViewForRelationship (NativeSqlBuilder& viewSql, ECDbMapCR, ECSqlPrepareContext const&, ClassMap const& relationMap, ClassMap const& baseClassMap);
     static BentleyStatus CreateNullView (NativeSqlBuilder& viewSql, ECSqlPrepareContext const&, ClassMap const&);
-    static BentleyStatus GetAllChildRelationships (std::vector<RelationshipClassMapCP>&, ECDbMapCR, ECSqlPrepareContext const&, ClassMap const& baseRelationMap);
     static Utf8CP GetECClassIdPrimaryTableAlias (ECN::ECRelationshipEnd endPoint) { return endPoint == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? "SourceECClassPrimaryTable" : "TargetECClassPrimaryTable"; }
 
     static BentleyStatus BuildRelationshipJoinIfAny (NativeSqlBuilder& sqlBuilder, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, ECDbSqlTable const& contextTable);
@@ -59,9 +58,6 @@ private:
 
     //! Return prop maps of child base on parent map. So only prop maps that make up baseClass properties are selected.
     static BentleyStatus GetPropertyMapsOfDerivedClassCastAsBaseClass (std::vector<std::pair<PropertyMapCP, PropertyMapCP>>& propMaps, ECSqlPrepareContext const& prepareContext, ClassMap const& baseClassMap, ClassMap const& childClassMap, bool skipSystemProperties);
-
-    static void LoadDerivedClassMaps (std::map<ECN::ECClassId, ClassMap const *>& viewClasses, ECDbMapCR, ClassMap const*);
-    static void CreateSystemClassView (NativeSqlBuilder &viewSql, std::map<ECDbSqlTable const*, std::vector<ClassMap const*>> &tableMap, std::set<ECDbSqlTable const*> &tableToIncludeEntirly, ECSqlPrepareContext const&);
 
 public:
 
