@@ -7,7 +7,10 @@
 #--------------------------------------------------------------------------------------
 
 BUILD_NO_STACK_CHECK        = 1
-# &&ep to fix: disabled some clang warnings
+
+# &&ep - temporary defines to decrease build errors on iOS.
+# We'll have to fix build errors on iOS when we remove these flags.
+IS_THIRD_PARTY_LIBRARY              = 1
 NO_DEFAULT_CLANG_WARNINGS   = 1
 
 # DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.

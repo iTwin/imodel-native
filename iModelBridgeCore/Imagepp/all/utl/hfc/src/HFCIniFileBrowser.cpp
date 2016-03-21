@@ -435,8 +435,10 @@ void HFCIniFileBrowser::CleanUpString(WString& pi_rString, bool pi_KeepLineSepar
         {
         // Remove the SPACE/TAB/ENTER at the end of the string.
         Pos = pi_rString.size()-1;
-        while(Pos >= 0 && !IsValidChar(pi_rString[Pos], pi_KeepLineSeparator))
+        while(Pos > 0 && !IsValidChar(pi_rString[Pos], pi_KeepLineSeparator))
             {
+            if (Pos == 0)
+                break;
             Pos--;
             }
         pi_rString = pi_rString.substr(0, Pos+1);
