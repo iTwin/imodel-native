@@ -1,0 +1,30 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/DgnDbServer/Client/DgnDbServerResult.h $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+//__PUBLISH_SECTION_START__
+#include <DgnDbServer/Client/DgnDbServerError.h>
+#include <DgnClientFx/Utils/Threading/AsyncResult.h>
+#include <DgnClientFx/Utils/Threading/AsyncTask.h>
+
+
+BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
+template<typename ValueType> using  DgnDbServerResult       = AsyncResult<ValueType, DgnDbServerError>;
+template<typename ValueType> using  DgnDbServerResultPtr    = std::shared_ptr<DgnDbServerResult<ValueType>>;
+template<typename ValueType> using  DgnDbServerTask         = PackagedAsyncTask<DgnDbServerResult<ValueType>>;
+template<typename ValueType> using  DgnDbServerTaskPtr      = AsyncTaskPtr<DgnDbServerResult<ValueType>>;
+
+#define DEFINE_TASK_TYPEDEFS(_type_, _name_) \
+    typedef DgnDbServerResult<_type_>           _name_##Result; \
+    typedef DgnDbServerResultPtr<_type_>        _name_##ResultPtr; \
+    typedef DgnDbServerResult<_type_> const&    _name_##ResultCR; \
+    typedef DgnDbServerTask<_type_>             _name_##Task; \
+    typedef DgnDbServerTaskPtr<_type_>          _name_##TaskPtr;
+
+DEFINE_TASK_TYPEDEFS(void, DgnDbServerStatus);
+END_BENTLEY_DGNDBSERVER_NAMESPACE

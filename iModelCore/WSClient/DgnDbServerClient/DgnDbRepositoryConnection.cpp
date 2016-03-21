@@ -68,36 +68,33 @@ void RepositoryInfoParser (RepositoryInfoR repositoryInfo, Utf8StringCR reposito
     {
     DateTime uploadedDate = DateTime();
     DateTime::FromString(uploadedDate, static_cast<Utf8CP>(value[ServerSchema::Property::UploadedDate].asCString()));
-    repositoryInfo = RepositoryInfo(repositoryUrl, repositoryId, value[ServerSchema::Property::RepositoryName].asString(), value[ServerSchema::Property::FileId].asString(),
-        value[ServerSchema::Property::URL].asString(), value[ServerSchema::Property::Description].asString(), value[ServerSchema::Property::UserUploaded].asString(),
-        uploadedDate);
+    repositoryInfo = RepositoryInfo(repositoryUrl, repositoryId, value[ServerSchema::Property::RepositoryName].asString(), value[ServerSchema::Property::FileId].asString(), 
+                                    value[ServerSchema::Property::URL].asString(), value[ServerSchema::Property::FileName].asString(), value[ServerSchema::Property::Description].asString(),
+                                    value[ServerSchema::Property::UserUploaded].asString(), uploadedDate);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbServerResult> DgnDbRepositoryConnection::UpdateRepositoryInfo (ICancellationTokenPtr cancellationToken)
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::UpdateRepositoryInfo (ICancellationTokenPtr cancellationToken)
     {
     ObjectId repositoryObject(ServerSchema::Schema::Repository, ServerSchema::Class::File, "");
-    return m_wsRepositoryClient->SendGetObjectRequest(repositoryObject, nullptr, cancellationToken)->Then<DgnDbServerResult>([=] (WSObjectsResult& response)
+    return m_wsRepositoryClient->SendGetObjectRequest(repositoryObject, nullptr, cancellationToken)->Then<DgnDbServerStatusResult>([=] (const WSObjectsResult& response)
         {
         if (response.IsSuccess())
             {
             JsonValueCR instance = response.GetValue().GetJsonValue()[ServerSchema::Instances][0];
             RepositoryInfoParser(m_repositoryInfo, m_repositoryInfo.GetServerURL(), instance[ServerSchema::InstanceId].asString(), instance[ServerSchema::Properties]);
-            return DgnDbServerResult::Success();
+            return DgnDbServerStatusResult::Success();
             }
-        else
-            {
-            return DgnDbServerResult::Error(response.GetError());
-            }
+        return DgnDbServerStatusResult::Error(response.GetError());
         });
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbRepositoryConnectionResult> DgnDbRepositoryConnection::Create
+DgnDbRepositoryConnectionTaskPtr DgnDbRepositoryConnection::Create
 (
 RepositoryInfoCR         repository,
 CredentialsCR            credentials,
@@ -118,27 +115,27 @@ AuthenticationHandlerPtr authenticationHandler
         {
         return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Error(DgnDbServerError::Id::CredentialsNotSet));
         }
+
     DgnDbRepositoryConnectionPtr repositoryConnection(new DgnDbRepositoryConnection(repository, credentials, clientInfo, authenticationHandler));
-    if (repository.GetFileId().empty())
-        return repositoryConnection->UpdateRepositoryInfo(cancellationToken)->Then<DgnDbRepositoryConnectionResult>([=] (const DgnDbServerResult& result)
-        {
-        if (result.IsSuccess())
-            {
-            if (!repositoryConnection->GetRepositoryInfo().GetFileURL().empty())
-                repositoryConnection->SetAzureClient(AzureBlobStorageClient::Create());
-            return DgnDbRepositoryConnectionResult::Success(repositoryConnection);
-            }
-        else
-            return DgnDbRepositoryConnectionResult::Error(result.GetError());
-        });
-    else
+    if (!repository.GetFileId().empty())
         return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Success(repositoryConnection));
+
+    return repositoryConnection->UpdateRepositoryInfo(cancellationToken)->Then<DgnDbRepositoryConnectionResult>([=] (DgnDbServerStatusResultCR result)
+        {
+        if (!result.IsSuccess())
+            return DgnDbRepositoryConnectionResult::Error(result.GetError());
+
+        if (!repositoryConnection->GetRepositoryInfo().GetFileURL().empty())
+            repositoryConnection->SetAzureClient(AzureBlobStorageClient::Create());
+
+        return DgnDbRepositoryConnectionResult::Success(repositoryConnection);
+        });
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerResult DgnDbRepositoryConnection::WriteBriefcaseIdIntoFile
+DgnDbServerStatusResult DgnDbRepositoryConnection::WriteBriefcaseIdIntoFile
 (
 BeFileName                     filePath,
 BeBriefcaseId                  briefcaseId
@@ -150,7 +147,7 @@ BeBriefcaseId                  briefcaseId
     DgnDbServerHost::Adopt (host);
 
     Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb (&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
-    DgnDbServerResult result;
+    DgnDbServerStatusResult result;
     if (BeSQLite::DbResult::BE_SQLITE_OK == status && db.IsValid())
         {
         result = RepositoryInfo::WriteRepositoryInfo (*db, m_repositoryInfo, briefcaseId);
@@ -158,7 +155,7 @@ BeBriefcaseId                  briefcaseId
         }
     else
         {
-        result = DgnDbServerResult::Error(DgnDbServerError(db, status));
+        result = DgnDbServerStatusResult::Error(DgnDbServerError(db, status));
         if (db.IsValid())
             db->CloseDb();
         }
@@ -170,7 +167,7 @@ BeBriefcaseId                  briefcaseId
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbServerResult> DgnDbRepositoryConnection::DownloadBriefcaseFile
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::DownloadBriefcaseFile
 (
 BeFileName                      localFile,
 BeBriefcaseId                   briefcaseId,
@@ -185,24 +182,24 @@ ICancellationTokenPtr           cancellationToken
         instanceId.Sprintf("%u", briefcaseId.GetValue());
         ObjectId fileObject(ServerSchema::Schema::Repository, ServerSchema::Class::Briefcase, instanceId);
         return m_wsRepositoryClient->SendGetFileRequest(fileObject, localFile, nullptr, callback, cancellationToken)
-            ->Then<DgnDbServerResult>([=] (const WSFileResult& fileResult)
+            ->Then<DgnDbServerStatusResult>([=] (const WSFileResult& fileResult)
             {
             if (fileResult.IsSuccess())
                 return WriteBriefcaseIdIntoFile(fileResult.GetValue().GetFilePath(), briefcaseId);
             else
-                return DgnDbServerResult::Error(fileResult.GetError());
+                return DgnDbServerStatusResult::Error(fileResult.GetError());
             });
         }
     else
         {
         // Download file directly from the url.
         return m_azureClient->SendGetFileRequest(url, localFile, callback, cancellationToken)
-            ->Then<DgnDbServerResult>([=] (const AzureResult& result)
+            ->Then<DgnDbServerStatusResult>([=] (const AzureResult& result)
             {
             if (result.IsSuccess())
                 return WriteBriefcaseIdIntoFile(localFile, briefcaseId);
             else
-                return DgnDbServerResult::Error(DgnDbServerError(result.GetError()));
+                return DgnDbServerStatusResult::Error(DgnDbServerError(result.GetError()));
             });
         }
     }
@@ -210,7 +207,7 @@ ICancellationTokenPtr           cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbServerResult> DgnDbRepositoryConnection::DownloadRevisionFile
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::DownloadRevisionFile
 (
 DgnDbServerRevisionPtr          revision,
 HttpRequest::ProgressCallbackCR callback,
@@ -222,24 +219,24 @@ ICancellationTokenPtr           cancellationToken
     if (revision->GetURL().empty())
         {
         return m_wsRepositoryClient->SendGetFileRequest(fileObject, revision->GetRevision()->GetChangeStreamFile(), nullptr, callback, cancellationToken)
-            ->Then<DgnDbServerResult>([=] (const WSFileResult& fileResult)
+            ->Then<DgnDbServerStatusResult>([=] (const WSFileResult& fileResult)
             {
             if (fileResult.IsSuccess())
-                return DgnDbServerResult::Success();
+                return DgnDbServerStatusResult::Success();
             else
-                return DgnDbServerResult::Error(fileResult.GetError());
+                return DgnDbServerStatusResult::Error(fileResult.GetError());
             });
         }
     else
         {
         // Download file directly from the url.
         return m_azureClient->SendGetFileRequest(revision->GetURL(), revision->GetRevision()->GetChangeStreamFile(), nullptr, cancellationToken)
-            ->Then<DgnDbServerResult>([=] (const AzureResult& result)
+            ->Then<DgnDbServerStatusResult>([=] (const AzureResult& result)
             {
             if (result.IsSuccess())
-                return DgnDbServerResult::Success();
+                return DgnDbServerStatusResult::Success();
             else
-                return DgnDbServerResult::Error(DgnDbServerError(result.GetError()));
+                return DgnDbServerStatusResult::Error(DgnDbServerError(result.GetError()));
             });
         }
     }
@@ -348,23 +345,23 @@ std::shared_ptr<WSChangeset> LockDeleteAllJsonRequest (const BeBriefcaseId& brie
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             03/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbServerResult> DgnDbRepositoryConnection::SendChangesetRequest(std::shared_ptr<WSChangeset> changeset, ICancellationTokenPtr cancellationToken) const
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::SendChangesetRequest(std::shared_ptr<WSChangeset> changeset, ICancellationTokenPtr cancellationToken) const
     {
     HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
-    return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then<DgnDbServerResult>
+    return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then<DgnDbServerStatusResult>
         ([=] (const WSChangesetResult& result)
         {
         if (result.IsSuccess())
-            return DgnDbServerResult::Success();
+            return DgnDbServerStatusResult::Success();
         else
-            return DgnDbServerResult::Error(result.GetError());
+            return DgnDbServerStatusResult::Error(result.GetError());
         });
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbServerResult> DgnDbRepositoryConnection::AcquireLocks
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::AcquireLocks
 (
 LockRequestCR         locks,
 BeBriefcaseId         briefcaseId,
@@ -381,7 +378,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbServerResult> DgnDbRepositoryConnection::DemoteLocks
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::DemoteLocks
 (
 const DgnLockSet&     locks,
 BeBriefcaseId         briefcaseId,
@@ -397,7 +394,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbServerResult> DgnDbRepositoryConnection::RelinquishLocks
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::RelinquishLocks
 (
 BeBriefcaseId         briefcaseId,
 ICancellationTokenPtr cancellationToken
@@ -410,7 +407,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbLockSetResult> DgnDbRepositoryConnection::QueryLocks
+DgnDbServerLockSetTaskPtr DgnDbRepositoryConnection::QueryLocks
 (
 BeBriefcaseId         briefcaseId,
 ICancellationTokenPtr cancellationToken
@@ -422,7 +419,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbLockSetResult> DgnDbRepositoryConnection::QueryLocksById
+DgnDbServerLockSetTaskPtr DgnDbRepositoryConnection::QueryLocksById
 (
 LockableIdSet const&  ids,
 BeBriefcaseId         briefcaseId,
@@ -435,7 +432,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbLockSetResult> DgnDbRepositoryConnection::QueryLocksById
+DgnDbServerLockSetTaskPtr DgnDbRepositoryConnection::QueryLocksById
 (
 LockableIdSet const&  ids,
 ICancellationTokenPtr cancellationToken
@@ -447,7 +444,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbLockSetResult> DgnDbRepositoryConnection::QueryLocksInternal
+DgnDbServerLockSetTaskPtr DgnDbRepositoryConnection::QueryLocksInternal
 (
 LockableIdSet const*  ids,
 const BeBriefcaseId*  briefcaseId,
@@ -487,7 +484,7 @@ ICancellationTokenPtr cancellationToken
         }
 
     //Execute query
-    return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<DgnDbLockSetResult>
+    return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<DgnDbServerLockSetResult>
         ([=] (const WSObjectsResult& result)
         {
         if (result.IsSuccess())
@@ -504,10 +501,10 @@ ICancellationTokenPtr cancellationToken
                 if (lock.GetLevel() != LockLevel::None)
                     locks.AddLock (lock, briefcaseId, repositoryId);
                 }
-            return DgnDbLockSetResult::Success(locks);
+            return DgnDbServerLockSetResult::Success(locks);
             }
         else
-            return DgnDbLockSetResult::Error(result.GetError());
+            return DgnDbServerLockSetResult::Error(result.GetError());
         });
     }
 
@@ -550,7 +547,7 @@ DgnDbServerRevisionPtr ParseRevision (JsonValueCR jsonValue)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              03/2016
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbServerRevisionsResult> DgnDbRepositoryConnection::GetAllRevisions (ICancellationTokenPtr cancellationToken) const
+DgnDbServerRevisionsTaskPtr DgnDbRepositoryConnection::GetAllRevisions (ICancellationTokenPtr cancellationToken) const
     {
     BeAssert (DgnDbServerHost::IsInitialized ());
     WSQuery query (ServerSchema::Schema::Repository, ServerSchema::Class::Revision);
@@ -560,7 +557,7 @@ AsyncTaskPtr<DgnDbServerRevisionsResult> DgnDbRepositoryConnection::GetAllRevisi
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbUInt64Result> DgnDbRepositoryConnection::GetRevisionIndex
+DgnDbServerUInt64TaskPtr DgnDbRepositoryConnection::GetRevisionIndex
 (
 Utf8StringCR          revisionId,
 ICancellationTokenPtr cancellationToken
@@ -568,10 +565,10 @@ ICancellationTokenPtr cancellationToken
     {
     if (revisionId.empty())
         {
-        return CreateCompletedAsyncTask<DgnDbUInt64Result>(DgnDbUInt64Result::Success(0));
+        return CreateCompletedAsyncTask<DgnDbServerUInt64Result>(DgnDbServerUInt64Result::Success(0));
         }
     ObjectId revisionObject(ServerSchema::Schema::Repository, ServerSchema::Class::Revision, revisionId);
-    return m_wsRepositoryClient->SendGetObjectRequest(revisionObject, nullptr, cancellationToken)->Then<DgnDbUInt64Result>
+    return m_wsRepositoryClient->SendGetObjectRequest(revisionObject, nullptr, cancellationToken)->Then<DgnDbServerUInt64Result>
         ([=] (WSObjectsResult& revisionResult)
         {
         if (revisionResult.IsSuccess())
@@ -580,17 +577,17 @@ ICancellationTokenPtr cancellationToken
             JsonValueCR instances = revisionResult.GetValue().GetJsonValue()[ServerSchema::Instances];
             if (instances.isValidIndex(0))
                 index = instances[0][ServerSchema::Properties][ServerSchema::Property::Index].asInt64() + 1;
-            return DgnDbUInt64Result::Success(index);
+            return DgnDbServerUInt64Result::Success(index);
             }
         else
-            return DgnDbUInt64Result::Error(revisionResult.GetError());
+            return DgnDbServerUInt64Result::Error(revisionResult.GetError());
         });
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbServerRevisionResult> DgnDbRepositoryConnection::GetRevisionById
+DgnDbServerRevisionTaskPtr DgnDbRepositoryConnection::GetRevisionById
 (
 Utf8StringCR          revisionId,
 ICancellationTokenPtr cancellationToken
@@ -618,7 +615,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbServerRevisionsResult> DgnDbRepositoryConnection::RevisionsFromQuery
+DgnDbServerRevisionsTaskPtr DgnDbRepositoryConnection::RevisionsFromQuery
 (
 const WebServices::WSQuery& query,
 ICancellationTokenPtr       cancellationToken
@@ -647,7 +644,7 @@ ICancellationTokenPtr       cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbServerRevisionsResult> DgnDbRepositoryConnection::GetRevisionsAfterId
+DgnDbServerRevisionsTaskPtr DgnDbRepositoryConnection::GetRevisionsAfterId
 (
 Utf8StringCR          revisionId,
 ICancellationTokenPtr cancellationToken
@@ -655,7 +652,7 @@ ICancellationTokenPtr cancellationToken
     {
     BeAssert(DgnDbServerHost::IsInitialized());
     std::shared_ptr<DgnDbServerRevisionsResult> finalResult = std::make_shared<DgnDbServerRevisionsResult>();
-    return GetRevisionIndex(revisionId, cancellationToken)->Then([=] (const DgnDbUInt64Result& indexResult)
+    return GetRevisionIndex(revisionId, cancellationToken)->Then([=] (const DgnDbServerUInt64Result& indexResult)
         {
         if (indexResult.IsSuccess())
             {
@@ -663,7 +660,7 @@ ICancellationTokenPtr cancellationToken
             Utf8String queryFilter;
             queryFilter.Sprintf("Index+ge+%llu", indexResult.GetValue());
             query.SetFilter(queryFilter);
-            RevisionsFromQuery(query, cancellationToken)->Then([=] (const DgnDbServerRevisionsResult& revisionsResult)
+            RevisionsFromQuery(query, cancellationToken)->Then([=] (DgnDbServerRevisionsResultCR revisionsResult)
                 {
                 if (revisionsResult.IsSuccess())
                     finalResult->SetSuccess(revisionsResult.GetValue());
@@ -682,7 +679,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             11/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbServerResult> DgnDbRepositoryConnection::DownloadRevisions
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::DownloadRevisions
 (
 const bvector<DgnDbServerRevisionPtr>& revisions,
 HttpRequest::ProgressCallbackCR        callback,
@@ -692,22 +689,22 @@ ICancellationTokenPtr                  cancellationToken
     bset<std::shared_ptr<AsyncTask>> tasks;
     for (auto& revision : revisions)
         tasks.insert(DownloadRevisionFile(revision, callback, cancellationToken));
-    return AsyncTask::WhenAll(tasks)->Then<DgnDbServerResult>([=] ()
+    return AsyncTask::WhenAll(tasks)->Then<DgnDbServerStatusResult>([=] ()
         {
         for (auto task : tasks)
             {
-            auto result = dynamic_pointer_cast<PackagedAsyncTask<DgnDbServerResult>>(task)->GetResult();
+            auto result = dynamic_pointer_cast<DgnDbServerStatusTask>(task)->GetResult();
             if (!result.IsSuccess())
-                return DgnDbServerResult::Error(result.GetError());
+                return DgnDbServerStatusResult::Error(result.GetError());
             }
-        return DgnDbServerResult::Success();
+        return DgnDbServerStatusResult::Success();
         });
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbServerRevisionsResult> DgnDbRepositoryConnection::Pull
+DgnDbServerRevisionsTaskPtr DgnDbRepositoryConnection::Pull
 (
 Utf8StringCR                    revisionId,
 HttpRequest::ProgressCallbackCR callback,
@@ -715,11 +712,11 @@ ICancellationTokenPtr           cancellationToken
 ) const
     {
     std::shared_ptr<DgnDbServerRevisionsResult> finalResult = std::make_shared<DgnDbServerRevisionsResult>();
-    return GetRevisionsAfterId(revisionId, cancellationToken)->Then([=] (const DgnDbServerRevisionsResult& revisionsResult)
+    return GetRevisionsAfterId(revisionId, cancellationToken)->Then([=] (DgnDbServerRevisionsResultCR revisionsResult)
         {
         if (revisionsResult.IsSuccess())
             {
-            DownloadRevisions(revisionsResult.GetValue(), callback, cancellationToken)->Then([=](const DgnDbServerResult& downloadResult)
+            DownloadRevisions(revisionsResult.GetValue(), callback, cancellationToken)->Then([=](DgnDbServerStatusResultCR downloadResult)
                 {
                 if (downloadResult.IsSuccess())
                     finalResult->SetSuccess(revisionsResult.GetValue());
@@ -767,7 +764,7 @@ BeBriefcaseId                  briefcaseId
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              02/2016
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbServerResult> DgnDbRepositoryConnection::InitializeRevision
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::InitializeRevision
 (
 Dgn::DgnRevisionPtr             revision,
 BeBriefcaseId                   briefcaseId,
@@ -797,7 +794,7 @@ ICancellationTokenPtr           cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbServerResult> DgnDbRepositoryConnection::Push
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::Push
 (
 Dgn::DgnRevisionPtr             revision,
 BeBriefcaseId                   briefcaseId,
@@ -807,7 +804,7 @@ ICancellationTokenPtr           cancellationToken
     {
     // Stage 1. Create revision.
     std::shared_ptr<Json::Value> pushJson = std::make_shared<Json::Value>(PushRevisionJson(revision, m_repositoryInfo.GetId(), briefcaseId));
-    std::shared_ptr<DgnDbServerResult> finalResult = std::make_shared<DgnDbServerResult>();
+    std::shared_ptr<DgnDbServerStatusResult> finalResult = std::make_shared<DgnDbServerStatusResult>();
     return m_wsRepositoryClient->SendCreateObjectRequest(*pushJson, BeFileName(), callback, cancellationToken)
         ->Then([=] (const WSCreateObjectResult& initializePushResult)
         {
@@ -836,7 +833,7 @@ ICancellationTokenPtr           cancellationToken
 
                 // Stage 3. Initialize revision.
                 InitializeRevision(revision, briefcaseId, *pushJson, revisionObjectId, callback, cancellationToken)
-                    ->Then([=] (const DgnDbServerResult& result)
+                    ->Then([=] (DgnDbServerStatusResultCR result)
                     {
                     if (result.IsSuccess())
                         finalResult->SetSuccess();
@@ -858,7 +855,7 @@ ICancellationTokenPtr           cancellationToken
 
                 // Stage 3. Initialize revision.
                 InitializeRevision(revision, briefcaseId, *pushJson, revisionObjectId, callback, cancellationToken)
-                    ->Then([=] (const DgnDbServerResult& result)
+                    ->Then([=] (DgnDbServerStatusResultCR result)
                     {
                     if (result.IsSuccess())
                         finalResult->SetSuccess();
@@ -867,7 +864,7 @@ ICancellationTokenPtr           cancellationToken
                     });
                 });
             }
-        })->Then<DgnDbServerResult>([=]
+        })->Then<DgnDbServerStatusResult>([=]
             {
             return *finalResult;
             });
@@ -884,14 +881,14 @@ RepositoryInfoCR DgnDbRepositoryConnection::GetRepositoryInfo() const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbServerResult> DgnDbRepositoryConnection::VerifyConnection(ICancellationTokenPtr cancellationToken) const
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::VerifyConnection(ICancellationTokenPtr cancellationToken) const
     {
-    return m_wsRepositoryClient->VerifyAccess(cancellationToken)->Then<DgnDbServerResult>([] (const AsyncResult<void, WSError>& result)
+    return m_wsRepositoryClient->VerifyAccess(cancellationToken)->Then<DgnDbServerStatusResult>([] (const AsyncResult<void, WSError>& result)
         {
         if (result.IsSuccess())
-            return DgnDbServerResult::Success();
+            return DgnDbServerStatusResult::Success();
         else
-            return DgnDbServerResult::Error(result.GetError());
+            return DgnDbServerStatusResult::Error(result.GetError());
         });
     }
 

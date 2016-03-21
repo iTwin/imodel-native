@@ -145,12 +145,12 @@ DgnDbServerError::DgnDbServerError(HttpErrorCR error)
     m_description = error.AsyncError::GetDescription();
     }
 
-JsonValueCR DgnDbServerError::GetExtendedData()
+JsonValueCR DgnDbServerError::GetExtendedData() const
     {
     return m_wsError ? m_wsError->GetData() : Json::Value::null;
     }
 
-DgnDbServerError::Id DgnDbServerError::GetId()
+DgnDbServerError::Id DgnDbServerError::GetId() const
     {
     return m_id;
     }

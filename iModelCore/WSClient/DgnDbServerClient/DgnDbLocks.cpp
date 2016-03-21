@@ -35,7 +35,7 @@ void SetLockStates (IBriefcaseManager::Response& response, IBriefcaseManager::Re
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Karolis.Dziedzelis              12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbServerResult DgnDbRepositoryManager::Connect (DgnDbCR db)
+DgnDbServerStatusResult DgnDbRepositoryManager::Connect (DgnDbCR db)
     {
     RepositoryInfo repositoryInfo;
     auto readResult = RepositoryInfo::ReadRepositoryInfo(repositoryInfo, db);
@@ -46,7 +46,7 @@ DgnDbServerResult DgnDbRepositoryManager::Connect (DgnDbCR db)
     if (m_connection)
         {
         if (repositoryInfo == m_connection->GetRepositoryInfo())
-            return DgnDbServerResult::Success();
+            return DgnDbServerStatusResult::Success();
         }
 
     auto connectionResult = DgnDbRepositoryConnection::Create(repositoryInfo, m_credentials, m_clientInfo, m_cancellationToken, m_authenticationHandler)->GetResult();
@@ -54,12 +54,12 @@ DgnDbServerResult DgnDbRepositoryManager::Connect (DgnDbCR db)
         {
         DgnDbRepositoryConnectionPtr connection = connectionResult.GetValue();
         m_connection = connection;
-        return DgnDbServerResult::Success();
+        return DgnDbServerStatusResult::Success();
         }
     else
         {
         m_connection = nullptr;
-        return DgnDbServerResult::Error(connectionResult.GetError());
+        return DgnDbServerStatusResult::Error(connectionResult.GetError());
         }
     }
 
