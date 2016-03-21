@@ -691,7 +691,7 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation)
 Utf8String DbFile::ExplainQuery(Utf8CP sql, bool explainPlan, bool suppressDiagnostics) const
     {
     Statement queryPlan;
-    if (BE_SQLITE_OK != queryPlan.Prepare(*this, Utf8PrintfString("EXPLAIN %s %s", explainPlan ? "QUERY PLAN" : "", sql), suppressDiagnostics))
+    if (BE_SQLITE_OK != queryPlan.Prepare(*this, Utf8PrintfString("EXPLAIN %s %s", explainPlan ? "QUERY PLAN" : "", sql).c_str(), suppressDiagnostics))
         return GetLastError(nullptr);
 
     Utf8CP fmt = explainPlan ? "%s %s %s %s" : "%-3s %-12s %-4s %-4s";
