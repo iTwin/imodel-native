@@ -1058,13 +1058,13 @@ ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginni
 
     if (ECClassModifier::Sealed == baseClass.m_modifier)
         {
-        LOG.errorv("Cannot add class '%s' as a base class to '%s' because it is declared as Sealed", baseClass.GetName().c_str(), GetName().c_str());
+        LOG.errorv("Cannot add class '%s' as a base class to '%s' because it is declared as Sealed", baseClass.GetFullName(), GetFullName());
         return ECObjectsStatus::BaseClassUnacceptable;
         }
 
     if (GetClassType() != baseClass.GetClassType())
         {
-        LOG.errorv("Cannot add class '%s' as a base class to '%s' because they are of differing class types", baseClass.GetName().c_str(), GetName().c_str());
+        LOG.errorv("Cannot add class '%s' as a base class to '%s' because they are of differing class types", baseClass.GetFullName(), GetFullName());
         return ECObjectsStatus::BaseClassUnacceptable;
         }
 
@@ -1073,7 +1073,7 @@ ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginni
         {
         if (*baseClassIterator == (ECClassP) &baseClass)
             {
-            LOG.errorv("Cannot add class '%s' as a base class to '%s' because it already exists as a base class", baseClass.GetName().c_str(), GetName().c_str());
+            LOG.errorv("Cannot add class '%s' as a base class to '%s' because it already exists as a base class", baseClass.GetFullName(), GetFullName());
             return ECObjectsStatus::NamedItemAlreadyExists;
             }
         }
