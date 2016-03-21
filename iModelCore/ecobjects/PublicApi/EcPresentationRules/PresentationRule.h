@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/PresentationRule.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -107,7 +107,7 @@ struct PresentationRuleSpecificationVisitor;
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct PresentationRuleSpecification
+struct EXPORT_VTABLE_ATTRIBUTE PresentationRuleSpecification
 {
 protected:
     virtual ~PresentationRuleSpecification() {}
