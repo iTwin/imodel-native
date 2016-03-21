@@ -840,7 +840,7 @@ class Point3d64f_R16G16B16_I16_C8ToPoint3d64fConverter : public TypeConversionFi
 
         while (srcPtP != srcPtEnd)
             {
-            if (!shouldPtBeRemoved(*srcPtP, *srcPtClassP))
+           // if (!shouldPtBeRemoved(*srcPtP, *srcPtClassP))
                 {
                 *dstPtP++ = *srcPtP;
                 }
@@ -857,7 +857,7 @@ class Point3d64f_R16G16B16_I16_C8ToPoint3d64fConverter : public TypeConversionFi
                                                                         PacketGroup&                    dst) override
         {
         m_srcPtPacket.AssignTo(src[SRC_POINT_DIM]);
-        m_srcPtClassifPacket.AssignTo(src[SRC_CLASSIF_DIM]);
+        //m_srcPtClassifPacket.AssignTo(src[SRC_CLASSIF_DIM]);
         m_dstPtPacket.AssignTo(dst[DST_POINT_DIM]);
         }
 
@@ -875,7 +875,8 @@ class Point3d64f_R16G16B16_I16_C8ToPoint3d64fConverter : public TypeConversionFi
             } SHOULD_POINT_BE_REMOVED_PREDICATE;
 
         m_dstPtPacket.SetSize(RemovePointsIf(m_srcPtPacket.Get(),
-                                             m_srcPtClassifPacket.Get(),
+                                             //m_srcPtClassifPacket.Get(),
+                                             nullptr,
                                              m_srcPtPacket.GetSize(),
                                              m_dstPtPacket.Edit(),
                                              SHOULD_POINT_BE_REMOVED_PREDICATE));

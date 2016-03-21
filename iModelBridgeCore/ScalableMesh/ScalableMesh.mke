@@ -387,9 +387,6 @@ $(o)tetgenpredicates$(oext) : $(delaunayDir)tetgen/tetgenpredicates.cpp $(delaun
 DLM_OBJECT_PCH      = $(o)ScalableMeshPCH$(oext)
 DLM_OBJECT_FILES    = $(MultiCompileObjectList) 
 
-#SCALABLE_MESH_DGN=1
-#    $(ContextSubpartsLibs)wastorage.lib \
-#    $(ContextSubpartsLibs)cpprest120_2_6.lib \
 LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)BeCurl.lib \
     $(ContextSubpartsLibs)BeSQLite.lib \

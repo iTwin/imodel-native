@@ -1499,7 +1499,7 @@ void PerformVolumeTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     double pointSize = mesh["mesh"]["pointCount"].asDouble();
     bvector<DPoint3d> points;
-    points.resize(pointSize);
+    points.resize((uint64_t)pointSize);
     int i = 0;
     for (const auto& jsonObject : mesh["mesh"]["Points"])
         {
@@ -1512,7 +1512,7 @@ void PerformVolumeTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     double pointIndexSize = mesh["mesh"]["pointIndexCount"].asDouble();
     bvector<int32_t> pointsIndex;
-    pointsIndex.resize(pointIndexSize);
+    pointsIndex.resize((uint64_t)pointIndexSize);
     for (int i = 0; i < pointIndexSize; i++)
         {
         int32_t id = mesh["mesh"]["PointsIndex"][i].asInt();
