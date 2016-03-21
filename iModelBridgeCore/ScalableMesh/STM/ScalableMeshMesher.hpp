@@ -54,8 +54,8 @@ bool firstTile = false;
 template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXTENT>::Mesh(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const
     {
     bool isMeshingDone = false;
-    LOG_SET_PATH("E:\\output\\scmesh\\2015-12-15\\")
-    LOG_SET_PATH_W("E:\\output\\scmesh\\2015-12-15\\")
+    LOG_SET_PATH("E:\\output\\scmesh\\2016-03-15\\")
+    LOG_SET_PATH_W("E:\\output\\scmesh\\2016-03-15\\")
     //LOGSTRING_NODE_INFO(node, LOG_PATH_STR)
     //LOGSTRING_NODE_INFO_W(node, LOG_PATH_STR_W)
     //NEEDS_WORK_SM
@@ -120,13 +120,13 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
 #endif
                 status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, (DTMFeatureType)node->m_featureDefinitions[i][0], dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &feature[0], (long)feature.size());
                 }
+            status = bcdtmObject_triangulateDtmObject(dtmObjP);
 #if 0
             WString dtmFileName(LOG_PATH_STR_W + L"meshtile_");
             LOGSTRING_NODE_INFO_W(node, dtmFileName)
-            dtmFileName.append(L".dtm");
+                dtmFileName.append(L".tin");
             bcdtmWrite_toFileDtmObject(dtmObjP, dtmFileName.c_str());
 #endif
-            status = bcdtmObject_triangulateDtmObject(dtmObjP);
             }
         else
             {
@@ -1362,8 +1362,8 @@ template<class POINT, class EXTENT> void ScalableMesh2DDelaunayMesher<POINT, EXT
 template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXTENT>::Stitch(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const
     {
     //return true;
-    LOG_SET_PATH("E:\\output\\scmesh\\2015-12-15\\")
-    LOG_SET_PATH_W("E:\\output\\scmesh\\2015-12-15\\")
+    LOG_SET_PATH("E:\\output\\scmesh\\2016-03-16\\")
+    LOG_SET_PATH_W("E:\\output\\scmesh\\2016-03-16\\")
     //LOGSTRING_NODE_INFO(node, LOG_PATH_STR)
     //LOGSTRING_NODE_INFO_W(node, LOG_PATH_STR_W)
 
@@ -1835,10 +1835,10 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
             //assert(status == SUCCESS);
             }
         }
-#if 1
-    if (node->GetBlockID().m_integerID == 628)
+#if SM_OUTPUT_MESHES_STITCHING
+   // if (node->GetBlockID().m_integerID == 628)
         {
-        WString dtmFileName(L"E:\\output\\scmesh\\2016-01-28\\meshtile_");
+        WString dtmFileName(L"E:\\output\\scmesh\\2016-03-11\\meshtile_");
         dtmFileName.append(std::to_wstring(node->GetBlockID().m_integerID).c_str());
         dtmFileName.append(L"_");
         dtmFileName.append(std::to_wstring(node->m_nodeHeader.m_level).c_str());

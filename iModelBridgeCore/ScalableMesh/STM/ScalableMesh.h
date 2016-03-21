@@ -54,7 +54,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include "ScalableMeshMemoryPools.h"
 
-
+#include "ScalableMeshVolume.h"
 /*__PUBLISH_SECTION_START__*/
 using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
@@ -113,6 +113,7 @@ class ScalableMeshDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::
     ScalableMeshDraping* m_draping;
     IScalableMesh* m_scMesh;
     Transform m_transformToUors;
+    IDTMVolume* m_dtmVolume;
     protected:
 
     virtual IDTMDrapingP     _GetDTMDraping() override;
@@ -131,12 +132,14 @@ class ScalableMeshDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::
         ScalableMeshDTM(IScalableMeshPtr scMesh)
             {
             m_draping = new ScalableMeshDraping(scMesh);
+            m_dtmVolume = new ScalableMeshVolume(scMesh);
             m_scMesh = scMesh.get();
             }
 
         virtual ~ScalableMeshDTM()
             {
             delete m_draping;
+            delete m_dtmVolume;
             }
 
         static RefCountedPtr<ScalableMeshDTM> Create(IScalableMeshPtr scMesh)
@@ -272,6 +275,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
         virtual bool                               _RemoveClip(uint64_t clipID) override;
         virtual void                               _SetIsInsertingClips(bool toggleInsertMode) override;
+        virtual void                               _ModifyClipMetadata(uint64_t clipId, double importance, int nDimensions) override;
+        virtual void                               _GetAllClipsIds(bvector<uint64_t>& allClipIds) override;
 
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
         virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
@@ -361,6 +366,8 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
         virtual bool                               _RemoveClip(uint64_t clipID) override;
         virtual void                               _SetIsInsertingClips(bool toggleInsertMode) override;
+        virtual void                               _ModifyClipMetadata(uint64_t clipId, double importance, int nDimensions) override;
+        virtual void                               _GetAllClipsIds(bvector<uint64_t>& allClipIds) override;
 
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
         virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;

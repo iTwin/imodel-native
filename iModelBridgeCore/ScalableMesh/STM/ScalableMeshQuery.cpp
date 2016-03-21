@@ -1401,6 +1401,171 @@ bool ScalableMeshMesh::_FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DP
 size_t s_nGetDTMs=0;
 size_t s_nMissedDTMs=0;
 
+int bcdtmObject_triangulateStmTrianglesDtmObjectOld
+(
+BC_DTM_OBJ *dtmP,//  Pointer To DTM Object
+const DPoint3d* ptsList,
+int numPts,
+const int* indexList,
+int numIndices
+)
+    {
+    int ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(0), cdbg = DTM_CHECK_VALUE(0), tdbg = DTM_TIME_VALUE(0);
+    long n, /*dtmFeature, numTrgPts, stmPoints[4],*/ startTime = bcdtmClock();
+    long index, mid, bottom, top;
+    bvector<DPoint3d> originalPts, dtmPts;
+    dtmP->ppTol = dtmP->plTol = 1e-8;
+    bcdtmObject_storeDtmFeatureInDtmObject(dtmP, DTMFeatureType::RandomSpots, dtmP->nullUserTag, 1, &dtmP->nullFeatureId, ptsList, numPts);
+    // Log Arguments
+    if (dbg)
+        {
+        bcdtmWrite_message(0, 0, 0, "Triangulating STM Triangles");
+        bcdtmWrite_message(0, 0, 0, "dtmP  = %p", dtmP);
+        }
+
+    // Check For Valid DTM Object
+    if (bcdtmObject_testForValidDtmObject(dtmP)) goto errexit;
+
+    // Check For DTM Data State
+    if (dtmP->dtmState != DTMState::Data)
+        {
+        bcdtmWrite_message(1, 0, 0, "Method Requires Untriangulated DTM");
+        goto errexit;
+        }
+
+ 
+    // Process For Triangulation
+    if (dbg) bcdtmWrite_message(0, 0, 0, "Processing For Triangulation ** Number Of DTM Points = %8ld", dtmP->numPoints);
+    if (bcdtmObject_processForTriangulationDtmObject(dtmP))goto errexit;
+    if (dbg) bcdtmWrite_message(0, 0, 0, "Processing For Triangulation Completed ** Number Of DTM Points = %8ld", dtmP->numPoints);
+
+    // Allocate Memory For Nodes Array
+    if (bcdtmObject_allocateNodesMemoryDtmObject(dtmP)) goto errexit;
+
+    // Initialise Circular List Parameters
+    dtmP->cListPtr = 0;
+    dtmP->cListDelPtr = dtmP->nullPtr;
+    dtmP->numSortedPoints = dtmP->numPoints;
+
+    //  Allocate Circular List Memory For Dtm Object
+    if (dbg) bcdtmWrite_message(0, 0, 0, "Allocating Circular List Memory For Dtm Object");
+    if (bcdtmObject_allocateCircularListMemoryDtmObject(dtmP)) goto errexit;
+
+
+    for (int i = 0; i < dtmP->numPoints-1; ++i)
+        {
+        if (((*(dtmP)->pointsPP) + i + 1)->x == ((*(dtmP)->pointsPP) + i)->x) assert(((*(dtmP)->pointsPP) + i + 1)->y >= ((*(dtmP)->pointsPP) + i)->y);
+        else assert(((*(dtmP)->pointsPP) + i + 1)->x > ((*(dtmP)->pointsPP) + i)->x);
+        dtmPts.push_back(*((*(dtmP)->pointsPP) + i));
+        }
+    dtmPts.push_back(*((*(dtmP)->pointsPP) + dtmP->numPoints - 1));
+    originalPts.resize(numPts);
+    memcpy(&originalPts[0], ptsList, numPts*sizeof(DPoint3d));
+    std::sort(originalPts.begin(), originalPts.end(), [] (const DPoint3d&a, const DPoint3d&b) { return b.x - a.x > 1e-8 || (fabs(a.x - b.x) < 1e-8  &&b.y - a.y > 1e-8); });
+    auto newIt = std::unique(originalPts.begin(), originalPts.end(), [] (const DPoint3d&a, const DPoint3d&b) { return fabs(a.x - b.x) < 1e-8 && fabs(a.y - b.y) < 1e-8; });
+    originalPts.resize(newIt - originalPts.begin());
+    std::sort(dtmPts.begin(), dtmPts.end(), [] (const DPoint3d&a, const DPoint3d&b) { return b.x - a.x > 1e-8 || (fabs(a.x - b.x) < 1e-8  &&b.y - a.y > 1e-8); });
+    newIt = std::unique(dtmPts.begin(), dtmPts.end(), [] (const DPoint3d&a, const DPoint3d&b) { return fabs(a.x - b.x) < 1e-8 && fabs(a.y - b.y) < 1e-8; });
+    dtmPts.resize(newIt - dtmPts.begin());
+    assert(dtmPts.size() == originalPts.size());
+
+    if (dtmPts.size() == originalPts.size())
+        {
+        for (size_t i = 0; i < dtmPts.size(); ++i) assert(fabs(dtmPts[i].x - originalPts[i].x) < 1e-8 && fabs(dtmPts[i].y - originalPts[i].y) < 1e-8);
+        }
+
+    // Create Circular List From STM Triangles
+    if (dbg) bcdtmWrite_message(0, 0, 0, "Creating Circular List From STM Triangles");
+    for (int idx = 0; idx < numIndices; idx += 3)
+        {
+        DPoint3d tri[3] = { ptsList[indexList[idx] - 1], ptsList[indexList[idx + 1] - 1], ptsList[indexList[idx + 2] - 1] };
+        int stmPoints[3];
+        //  Get Point Numbers For STM Triangle
+        for (size_t i = 0; i < 3; ++i)
+            {
+            // Binary Search To Find Related DTM Point Number
+            index = -1;
+            bottom = 0;
+            top = dtmP->numPoints - 1;
+            if (fabs(tri[i].x - pointAddrP(dtmP, bottom)->x) < 1e-8 && fabs(tri[i].y - pointAddrP(dtmP, bottom)->y) < 1e-8) index = bottom;
+            else if (fabs(tri[i].x -pointAddrP(dtmP, top)->x) < 1e-8    && fabs(tri[i].y - pointAddrP(dtmP, top)->y) < 1e-8) index = top;
+            else
+                {
+                while (top - bottom > 1)
+                    {
+                    mid = (top + bottom) / 2;
+                    if (fabs(tri[i].x - pointAddrP(dtmP, mid)->x) < 1e-8 && fabs(tri[i].y - pointAddrP(dtmP, mid)->y) < 1e-8) top = bottom = index = mid;
+                    else if (tri[i].x >  pointAddrP(dtmP, mid)->x || (tri[i].x == pointAddrP(dtmP, mid)->x && tri[i].y > pointAddrP(dtmP, mid)->y)) bottom = mid;
+                    else top = mid;
+                    }
+                }
+
+            // Check Point Was Found
+            if (index == -1)
+                {
+                bcdtmWrite_message(1, 0, 0, "Cannot Find DTM Point Number For STM Triangle Vertex");
+                goto errexit;
+                }
+            stmPoints[i] = index;
+
+            //  Check Point Found Has The Correct Coordinates
+            if (cdbg)
+                {
+                if (tri[i].x != pointAddrP(dtmP, stmPoints[i])->x || tri[i].y != pointAddrP(dtmP, stmPoints[i])->y)
+                    {
+                    bcdtmWrite_message(2, 0, 0, "Incorrect Point Association");
+                    goto errexit;
+                    }
+                }
+            }
+
+        // Insert Lines Into Circular List
+
+        for (n = 0; n < 3; ++n)
+            {
+            if (!bcdtmList_testLineDtmObject(dtmP, stmPoints[n], stmPoints[(n + 1)%3]))
+                {
+                if (bcdtmList_insertLineDtmObject(dtmP, stmPoints[n], stmPoints[(n + 1) % 3])) goto errexit;
+                }
+            }
+        }
+    dtmP->dtmState = DTMState::Tin;
+    dtmP->numTriangles = numIndices / 3;
+
+    // Check Triangulated STM Triangles
+    if (cdbg)
+        {
+        if (dbg) bcdtmWrite_message(0, 0, 0, "Checking DTM Validity");
+        if (bcdtmCheck_trianglesDtmObject(dtmP))
+            {
+            bcdtmWrite_message(1, 0, 0, "DTM Invalid");
+            goto errexit;
+            }
+        if (dbg) bcdtmWrite_message(0, 0, 0, "Checking DTM Valid");
+        }
+
+    // Log Triangulation Statistics
+    if (dbg == 1) bcdtmObject_reportStatisticsDtmObject(dtmP);
+
+    // Log Triangualtion Times
+    if (tdbg) bcdtmWrite_message(0, 0, 0, "Time To Triangulate %8ld STM Triangles = %8.3lf Seconds", dtmP->numFeatures, bcdtmClock_elapsedTime(bcdtmClock(), startTime));
+
+    // Clean Up
+cleanup:
+
+    // Return
+
+    if (dbg && ret == DTM_SUCCESS) bcdtmWrite_message(0, 0, 0, "Triangulating STM Triangles Completed");
+    if (dbg && ret != DTM_SUCCESS) bcdtmWrite_message(0, 0, 0, "Triangulating STM Triangles Error");
+    return (ret);
+
+    // Error Exit
+
+errexit:
+    if (ret == DTM_SUCCESS) ret = DTM_ERROR;
+    goto cleanup;
+    }
+
 DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
     { 
     BC_DTM_OBJ* bcDtmP = 0;
@@ -1412,7 +1577,7 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
     else return DTM_ERROR;
     DPoint3d triangle[4];
 
-    for (unsigned int t = 0; t < m_nbFaceIndexes; t += 3)
+   /* for (unsigned int t = 0; t < m_nbFaceIndexes; t += 3)
         {
         for (int i = 0; i < 3; i++)
             triangle[i] = m_points[m_faceIndexes[i + t] - 1];
@@ -1429,9 +1594,74 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
         if (closestPt.AlmostEqualXY(triangle[2])) continue;
 
         bcdtmObject_storeDtmFeatureInDtmObject(bcdtm->GetTinHandle(), DTMFeatureType::GraphicBreak, bcdtm->GetTinHandle()->nullUserTag, 1, &bcdtm->GetTinHandle()->nullFeatureId, &triangle[0], 4);
+        }*/
+
+    bvector<int> indices;
+    for (unsigned int t = 0; t < m_nbFaceIndexes; t += 3)
+        {
+        for (int i = 0; i < 3; i++)
+            triangle[i] = m_points[m_faceIndexes[i + t] - 1];
+
+        triangle[3] = triangle[0];
+
+        //colinearity test
+        if (triangle[0].AlmostEqualXY(triangle[1]) || triangle[1].AlmostEqualXY(triangle[2]) || triangle[2].AlmostEqualXY(triangle[0])) continue;
+        DSegment3d triSeg = DSegment3d::From(triangle[0], triangle[1]);
+        double param;
+        DPoint3d closestPt;
+        triSeg.ProjectPointXY(closestPt, param, triangle[2]);
+        if (closestPt.AlmostEqualXY(triangle[2])) continue;
+        indices.push_back(m_faceIndexes[t] - 1);
+        if (bsiGeom_getXYPolygonArea(&triangle[0], 3) < 0)
+            {
+            indices.push_back(m_faceIndexes[t + 2] - 1);
+            indices.push_back(m_faceIndexes[t + 1] - 1);
+            }
+        else
+            {
+            indices.push_back(m_faceIndexes[t + 1] - 1);
+            indices.push_back(m_faceIndexes[t + 2] - 1);
+            }
         }
-    int status = bcdtmObject_triangulateStmTrianglesDtmObject(bcdtm->GetTinHandle());
+    int status = bcdtmObject_storeTrianglesInDtmObject(bcdtm->GetTinHandle(), DTMFeatureType::GraphicBreak, m_points, (int)m_nbPoints, &indices[0], (int)indices.size() / 3);
+
+    bool dbg = false;
+    if (dbg)
+        {
+        for (auto& idx : indices) idx += 1;
+        size_t nIndices = indices.size();
+        WString nameBefore = WString(L"E:\\output\\scmesh\\2016-03-14\\") + L"fpostgetmesh_";
+        DRange3d range;
+        bcdtm->GetRange(range);
+        nameBefore.append(to_wstring(range.low.x).c_str());
+        nameBefore.append(L"_");
+        nameBefore.append(to_wstring(range.low.y).c_str());
+        nameBefore.append(L".m");
+        FILE* meshBeforeClip = _wfopen(nameBefore.c_str(), L"wb");
+        fwrite(&m_nbPoints, sizeof(size_t), 1, meshBeforeClip);
+        fwrite(m_points, sizeof(DPoint3d), m_nbPoints, meshBeforeClip);
+        fwrite(&nIndices, sizeof(size_t), 1, meshBeforeClip);
+        fwrite(&indices[0], sizeof(int32_t), nIndices, meshBeforeClip);
+        fclose(meshBeforeClip);
+        }
     assert(status == SUCCESS);
+
+    //int status = bcdtmObject_triangulateStmTrianglesDtmObjectOld(bcdtm->GetTinHandle(), m_points, (int)m_nbPoints, m_faceIndexes, (int)m_nbFaceIndexes);
+    status = bcdtmObject_triangulateStmTrianglesDtmObject(bcdtm->GetTinHandle());
+    assert(status == SUCCESS);
+
+    bvector<DTMFeatureId> listIds;
+    DTMFeatureCallback browseVoids = [] (DTMFeatureType dtmFeatureType, DTMUserTag userTag, DTMFeatureId featureId, DPoint3d *points, size_t numPoints, void* userArg) ->int
+        {
+        if (dtmFeatureType == DTMFeatureType::Void && numPoints <= 4)
+            {
+            ((bvector<DTMFeatureId>*)userArg)->push_back(featureId);
+            }
+        return 0;
+        };
+
+    bcdtm->BrowseFeatures(DTMFeatureType::Void, 20, &listIds, browseVoids);
+    for (auto& id : listIds) bcdtm->DeleteFeatureById(id);
     return status == SUCCESS? DTM_SUCCESS : DTM_ERROR;
     }
 
@@ -2121,6 +2351,11 @@ IScalableMeshMeshPtr IScalableMeshNode::GetMesh(IScalableMeshMeshFlagsPtr& flags
     {
     return _GetMesh(flags, clipsToShow);
     }  
+
+IScalableMeshMeshPtr IScalableMeshNode::GetMeshUnderClip(IScalableMeshMeshFlagsPtr& flags, uint64_t clip) const
+    {
+    return _GetMeshUnderClip(flags, clip);
+    }
 
 IScalableMeshMeshPtr IScalableMeshNode::GetMeshByParts(bvector<bool>& clipsToShow, ScalableMeshTextureID texId) const
     {

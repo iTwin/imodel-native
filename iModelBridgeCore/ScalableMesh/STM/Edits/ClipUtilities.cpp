@@ -11,7 +11,7 @@
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 #define SM_TRACE_CLIPS_GETMESH 0
-const wchar_t* s_path = L"E:\\output\\scmesh\\2016-03-07\\";
+const wchar_t* s_path = L"E:\\output\\scmesh\\2016-03-14\\";
 
 void print_polygonarray(std::string& s, const char* tag, DPoint3d* polyArray, int polySize)
     {
@@ -1509,7 +1509,8 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
     {
     BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr;
     MakeDTMFromIndexList(dtmPtr);
-    return GetRegionsFromClipPolys(polyfaces, polygons, dtmPtr);
+    bvector<bpair<double, int>> metadata(polygons.size(), make_bpair(0,0));
+    return GetRegionsFromClipPolys(polyfaces, polygons, metadata, dtmPtr);
     }
 
 DTMInsertPointCallback Clipper::GetInsertPointCallback(FaceToUVMap& faceToUVMap, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& ptr)
@@ -1572,7 +1573,7 @@ DTMInsertPointCallback Clipper::GetInsertPointCallback(FaceToUVMap& faceToUVMap,
 
 size_t s_nclip = 0;
 
-bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr)
+bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, bvector<bpair<double, int>>& metadata, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr)
     {
     bool dbg = false;
     if (dbg)
@@ -1616,12 +1617,24 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
         }
     if (dtmPtr->GetBcDTM()->GetTinHandle()->dtmState != DTMState::Tin) return false;
     polyfaces.resize(polygons.size() + 1);
-    if (dbg) bcdtmWrite_toFileDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), (WString(s_path) + WString(L"featurepolytest") + WString(std::to_wstring(s_nclip).c_str()) + WString(L".dtm")).c_str());
+    if (dbg) bcdtmWrite_toFileDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), (WString(s_path) + WString(L"featurepolytest") + WString(std::to_wstring(s_nclip).c_str()) + WString(L".tin")).c_str());
     int stat = DTM_SUCCESS;
     for (auto& poly : polygons)
         {
-        double area = fabs(bsiGeom_getXYPolygonArea(&poly[0], (int)poly.size()));
-        if (area / (m_range.XLength()*m_range.YLength()) > 0.005)
+        bool applyClipPoly = metadata[&poly - &polygons[0]].second == 0;
+        if (!applyClipPoly)
+            {
+            if (metadata[&poly - &polygons[0]].second == 1)
+                {
+                auto maxLength = std::max(m_range.XLength(), m_range.YLength());
+                if (metadata[&poly - &polygons[0]].first / maxLength > 0.005) applyClipPoly = true;
+                }
+            else if (metadata[&poly - &polygons[0]].second == 2)
+                {
+                if (metadata[&poly - &polygons[0]].first / (m_range.XLength()* m_range.YLength()) > 0.001) applyClipPoly = true;
+                }
+            }
+        if (applyClipPoly)
             {
             /* DTM_POLYGON_OBJ* polyP = nullptr;
              long flag = 0;
@@ -1663,7 +1676,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
         bcdtmWrite_toFileDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), (WString(s_path) + WString(L"featurepolytest") + WString(std::to_wstring(m_range.low.x).c_str())+WString(L"_") 
             + WString(std::to_wstring(m_range.low.y).c_str())/* + WString(L"_") + WString(std::to_wstring(userTag).c_str()) + WString(L".dtm")).c_str());
         }*/
-
+    if (dbg) bcdtmWrite_toFileDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), (WString(s_path) + WString(L"featurepolytest") + WString(std::to_wstring(s_nclip).c_str()) + WString(L"_after.tin")).c_str());
     BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
     if (m_uvBuffer && m_uvIndices)en->SetUseRealPointIndexes(true);
     en->SetExcludeAllRegions();

@@ -169,7 +169,7 @@ public:
 
     static bool IsPointOutterIn2D(const DRange3d& extent, const POINT& point)
         {
-        return !extent.IsContainedXY(point);
+        return extent.IsContainedXY(point);
         }
     };
 

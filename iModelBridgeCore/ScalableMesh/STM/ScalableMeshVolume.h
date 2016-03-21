@@ -21,6 +21,9 @@ struct ScalableMeshVolume : IDTMVolume
     {
     private:
         IScalableMeshPtr m_scmPtr;
+        bool hasRestrictions;
+        uint64_t m_restrictedId;
+
         double _ComputeVolumeCutAndFillForTile(IScalableMeshMeshPtr smTile, double& cut, double& fill, PolyfaceHeader& mesh, bool is2d, DRange3d meshExtent, bvector<PolyfaceHeaderPtr>& volumeMeshVector);
     protected:
 

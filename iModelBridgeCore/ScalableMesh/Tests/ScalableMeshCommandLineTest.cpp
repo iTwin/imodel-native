@@ -6,6 +6,7 @@ typedef uint8_t byte;
 #include <iostream>
 #include <TerrainModel/Core/DTMIterators.h>
 #include "..\STM\LogUtils.h"
+#include <random>
 
 int wmain(int argc, wchar_t* argv[])
 {
@@ -28,7 +29,7 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
         std::cout << "Please input name of Scalable mesh file as first argument" << std::endl;
         return 0;
         }
-
+#if 0
     BC_DTM_OBJ* bcDtmP = 0;
     bcdtmRead_fromFileDtmObject(&bcDtmP, argv[1]);
     FILE* mesh = _wfopen(argv[2], L"rb");
@@ -86,7 +87,7 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
             fclose(meshAfterClip);
             
         }
-#if 0
+
     if(argc < 3) 
         {
         std::cout << "Please input name of output dir as second argument" << std::endl;
@@ -175,6 +176,70 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
         }
     bcdtmObject_triangulateStmTrianglesDtmObject(bcdtm->GetTinHandle());
 #endif
+
+    WString stmFileName(argv[1]);
+
+    StatusInt status;
+    ScalableMesh::IScalableMeshPtr meshP = ScalableMesh::IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
+    ScalableMesh::IScalableMeshMeshQueryPtr meshQueryInterface = meshP->GetMeshQueryInterface(ScalableMesh::MESH_QUERY_FULL_RESOLUTION);
+    auto draping = meshP->GetDTMInterface()->GetDTMDraping();
+    int drapeType;
+    DRange3d range;
+
+    meshP->GetRange(range);
+    range.ScaleAboutCenter(range,0.5);
+    std::random_device rd;
+
+    std::default_random_engine e1(rd());
+    std::uniform_real_distribution<double> val_x(range.low.x, range.high.x);
+    std::uniform_real_distribution<double> val_y(range.low.y, range.high.y);
+
+    DPoint3d corners[8];
+    range.Get8Corners(corners);
+    size_t nbResolutions = meshP->GetNbResolutions();
+    bvector<double> precisionVals(nbResolutions,0.0);
+    bvector<size_t> nVals(nbResolutions, 0);
+    bvector<DPoint3d> allTestPts;
+    for (size_t i = 0; i < 1000; i++)
+        {
+        DPoint3d tmpPoint;
+        tmpPoint.x = val_x(e1);
+        tmpPoint.y = val_y(e1);
+        draping->DrapePoint(&tmpPoint.z, NULL, NULL, NULL, &drapeType, tmpPoint);
+        allTestPts.push_back(tmpPoint);
+        }
+    for (size_t i = 0; i < nbResolutions-1; ++i)
+        {
+        bvector<ScalableMesh::IScalableMeshNodePtr> returnedNodes;
+        ScalableMesh::IScalableMeshMeshQueryParamsPtr params = ScalableMesh::IScalableMeshMeshQueryParams::CreateParams();
+        params->SetLevel(i);
+        meshQueryInterface->Query(returnedNodes, corners, 8, params);
+        
+        for (auto& node : returnedNodes)
+            {
+            for (auto& tmpPoint: allTestPts)
+                {
+                if (node->GetNodeExtent().IsContainedXY(tmpPoint))
+                    {
+                    double z = tmpPoint.z;
+                    auto dtm = node->GetBcDTM();
+                    if (dtm.get() != nullptr)
+                        {
+                        node->GetBcDTM()->DrapePoint(&z, NULL, NULL, NULL, &drapeType, &tmpPoint);
+                        precisionVals[i] += fabs(z - tmpPoint.z);
+                        nVals[i]++;
+                        }
+                    break;
+                    }
+                }
+            }
+
+        }
+
+    for (size_t i = 0; i < nbResolutions - 1; ++i)
+        {
+        std::cout << " at resolution " << i << " precision is " << precisionVals[i] / nVals[i] << " m" << std::endl;
+        }
     std::cout << "THE END" << std::endl;
     return 0;
 }

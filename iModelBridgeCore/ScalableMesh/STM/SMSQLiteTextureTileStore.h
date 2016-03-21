@@ -93,7 +93,7 @@ public:
         pi_uncompressedPacket.SetBuffer(DataTypeArray, countData);
         pi_uncompressedPacket.SetDataSize(countData);
         size_t w, h;
-        w = h = (size_t)sqrt(countData / 4);
+        w = h = (size_t)sqrt(countData / 3);
         WriteCompressedPacket(pi_uncompressedPacket, pi_compressedPacket, (int)w, (int)h, 3);
         bvector<uint8_t> texData(pi_compressedPacket.GetDataSize());
         memcpy(&texData[0], pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize());
