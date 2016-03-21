@@ -16,6 +16,7 @@
 /*__PUBLISH_SECTION_START__*/
 #include <ECObjects/ECEnabler.h>
 #include <Bentley/RefCounted.h>
+#include <Bentley/BeId.h>
 #include <Bentley/bvector.h>
 #include <Bentley/bmap.h>
 #include <Bentley/bset.h>
@@ -201,9 +202,29 @@ public:
 /*__PUBLISH_SECTION_START__*/
 };
 
-typedef uint64_t ECClassId;
-typedef uint64_t ECPropertyId;
-typedef uint64_t ECSchemaId;
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct ECSchemaId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(ECSchemaId, BeInt64Id)
+    };
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct ECClassId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(ECClassId, BeInt64Id)
+    };
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct ECPropertyId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(ECPropertyId, BeInt64Id)
+    };
 
 typedef bvector<IECInstancePtr> ECCustomAttributeCollection;
 struct ECCustomAttributeInstanceIterable;
@@ -706,8 +727,8 @@ public:
     bool                                IsForSupplementation() const { return m_forSupplementation; }
 
     //! Intended to be called by ECDb or a similar system
-    void SetId(ECPropertyId id) { BeAssert(0 == m_ecPropertyId); m_ecPropertyId = id; };
-    bool HasId() const { return m_ecPropertyId != 0; };
+    void SetId(ECPropertyId id) { BeAssert(!m_ecPropertyId.IsValid()); m_ecPropertyId = id; };
+    bool HasId() const { return m_ecPropertyId.IsValid(); };
 
 /*__PUBLISH_SECTION_START__*/
 public:
@@ -1195,10 +1216,6 @@ friend struct ECProperty; // for access to InvalidateDefaultStandaloneEnabler() 
 
 //__PUBLISH_SECTION_START__
 
-public:
-    //! Value of unset ECClassId.
-    static const ECClassId UNSET_ECCLASSID = INT64_C(0);
-
 private:
     mutable Utf8String              m_fullName;
     mutable Utf8String              m_ecsqlName;
@@ -1266,7 +1283,7 @@ protected:
     //! @param[in]  context         The read context that contains information about schemas used for deserialization
     //! @param[in]  conversionSchema  If there was a supplied schema to assist in converting from V2 to V3
     //! @param[in]  ecXmlVersionMajor The major version of the ECXml spec used for serializing this ECClass
-    //! @param[out] navigationProperties A running list of all naviagtion properties in the schema.  This list is used for validation, which may only happen after all classes are loaded
+    //! @param[out] navigationProperties A running list of all navigation properties in the schema.  This list is used for validation, which may only happen after all classes are loaded
     //! @return   Status code
     virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties);
 
@@ -1302,8 +1319,8 @@ public:
     ECSchemaR                               GetSchemaR() { return const_cast<ECSchemaR>(m_schema); }
 
     //! Intended to be called by ECDb or a similar system
-    void SetId(ECClassId id) { BeAssert(UNSET_ECCLASSID == m_ecClassId); m_ecClassId = id; };
-    bool HasId() const { return m_ecClassId != UNSET_ECCLASSID; };
+    void SetId(ECClassId id) { BeAssert(!m_ecClassId.IsValid()); m_ecClassId = id; };
+    bool HasId() const { return m_ecClassId.IsValid(); };
 
 public:
     //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
@@ -2986,8 +3003,8 @@ protected:
 public:
     ECOBJECTS_EXPORT void               ReComputeCheckSum ();
     //! Intended to be called by ECDb or a similar system
-    void SetId(ECSchemaId id) { BeAssert(0 == m_ecSchemaId); m_ecSchemaId = id; };
-    bool HasId() const { return m_ecSchemaId != 0; };
+    void SetId(ECSchemaId id) { BeAssert(!m_ecSchemaId.IsValid()); m_ecSchemaId = id; };
+    bool HasId() const { return m_ecSchemaId.IsValid(); };
 
     ECOBJECTS_EXPORT ECObjectsStatus    DeleteClass (ECClassR ecClass);
     ECOBJECTS_EXPORT ECObjectsStatus    RenameClass (ECClassR ecClass, Utf8CP newName);

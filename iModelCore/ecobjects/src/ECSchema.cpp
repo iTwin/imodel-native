@@ -259,13 +259,9 @@ void ECValidatedName::SetDisplayLabel (Utf8CP label)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchema::ECSchema ()
-    :m_classContainer(m_classMap), m_enumerationContainer(m_enumerationMap), m_isSupplemented(false),
-    m_hasExplicitDisplayLabel(false), m_immutable(false), m_ecSchemaId(0),
-    m_kindOfQuantityContainer(m_kindOfQuantityMap)
-    {
-    //
-    };
+ECSchema::ECSchema ():m_classContainer(m_classMap), m_enumerationContainer(m_enumerationMap), m_isSupplemented(false),
+    m_hasExplicitDisplayLabel(false), m_immutable(false), m_kindOfQuantityContainer(m_kindOfQuantityMap)
+    {};
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
@@ -2259,7 +2255,7 @@ void            ECSchema::FindAllSchemasInGraph (bvector<ECN::ECSchemaCP>& allSc
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaId ECSchema::GetId() const
     {
-    BeAssert (0 != m_ecSchemaId);
+    BeAssert (m_ecSchemaId.IsValid());
     return m_ecSchemaId;
     }
 
