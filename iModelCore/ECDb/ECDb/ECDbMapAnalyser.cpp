@@ -1239,9 +1239,9 @@ SqlViewBuilder ECDbMapAnalyser::BuildView (Class& nclass)
             else
                 {
                 if (rootE->GetColumn () != nullptr)
-                    select.Append (Utf8PrintfString ("%lld [%s]", childE->GetValue ().GetLong (), rootE->GetColumn ()->GetName ().c_str ()));
+                    select.Append (Utf8PrintfString ("%lld [%s]", childE->GetValue ().GetLong (), rootE->GetColumn ()->GetName ().c_str ()).c_str());
                 else
-                    select.Append (Utf8PrintfString ("%lld [%s]", childE->GetValue ().GetLong (), (rootE->GetAccessString ().c_str ())));
+                    select.Append (Utf8PrintfString ("%lld [%s]", childE->GetValue ().GetLong (), (rootE->GetAccessString ().c_str ())).c_str());
                 }
 
             if (rootE != rootEndPoints.back ())
