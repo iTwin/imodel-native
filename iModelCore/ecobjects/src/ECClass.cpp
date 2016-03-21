@@ -540,8 +540,18 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
         {
         ECObjectsStatus status = CanPropertyBeOverridden (*baseProperty, *pProperty);
         if (ECObjectsStatus::Success != status)
-            return status;
-
+            {
+            if (!resolveConflicts)
+                return status;
+            else
+                {
+                Utf8String newName;
+                FindUniquePropertyName(newName, pProperty->GetClass().GetSchema().GetNamespacePrefix().c_str(), pProperty->GetName().c_str());
+                pProperty->SetName(newName);
+                }
+            }
+        else if (!baseProperty->GetName().Equals(pProperty->GetName()) && resolveConflicts)
+            pProperty->SetName(baseProperty->GetName());
         pProperty->SetBaseProperty (baseProperty);
         }
 
