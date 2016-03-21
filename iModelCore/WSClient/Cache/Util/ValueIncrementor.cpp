@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Util/ValueIncrementor.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -35,7 +35,7 @@ BentleyStatus ValueIncrementor::IncrementWithoutSaving(Utf8StringR valueOut)
     {
     ECClassCP propertyClass = m_db->Schemas().GetECClass(m_propertyClassId);
 
-    Utf8PrintfString key("ValueIncrementor::IncrementWithoutSaving:%lld:%s", m_propertyClassId, m_propertyName.c_str());
+    Utf8PrintfString key("ValueIncrementor::IncrementWithoutSaving:%llu:%s", m_propertyClassId.GetValue(), m_propertyName.c_str());
     auto statement = m_statementCache->GetPreparedStatement(key, [&]
         {
         return 

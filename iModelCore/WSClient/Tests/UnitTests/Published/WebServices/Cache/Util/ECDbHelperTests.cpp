@@ -15,8 +15,8 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 TEST_F(ECDbHelperTests, Erase_MultipleInstanceKeysInMap_ErasesSpecificKeyFromMap)
     {
-    ECInstanceKey key1(1, ECInstanceId(UINT64_C(2)));
-    ECInstanceKey key2(1, ECInstanceId(UINT64_C(3)));
+    ECInstanceKey key1(ECClassId(UINT64_C(1)), ECInstanceId(UINT64_C(2)));
+    ECInstanceKey key2(ECClassId(UINT64_C(1)), ECInstanceId(UINT64_C(3)));
 
     ECInstanceKeyMultiMap map;
     map.insert(ECDbHelper::ToPair(key1));
@@ -32,9 +32,9 @@ TEST_F(ECDbHelperTests, Erase_MultipleInstanceKeysInMap_ErasesSpecificKeyFromMap
 TEST_F(ECDbHelperTests, ToECInstanceIdList_MultipleInstanceKeysInMap_CombinesToCommaSeperatedList)
     {
     ECInstanceKeyMultiMap map;
-    map.insert({1, ECInstanceId(UINT64_C(4))});
-    map.insert({2, ECInstanceId(UINT64_C(5))});
-    map.insert({2, ECInstanceId(UINT64_C(6))});
+    map.insert({ECClassId(UINT64_C(1)), ECInstanceId(UINT64_C(4))});
+    map.insert({ECClassId(UINT64_C(2)), ECInstanceId(UINT64_C(5))});
+    map.insert({ECClassId(UINT64_C(2)), ECInstanceId(UINT64_C(6))});
 
     EXPECT_STREQ("4,5,6", ECDbHelper::ToECInstanceIdList(map.begin(), map.end()).c_str());
     }

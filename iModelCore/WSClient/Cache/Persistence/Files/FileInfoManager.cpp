@@ -245,7 +245,7 @@ Json::Value FileInfoManager::ReadCachedFileInfo(CachedInstanceKeyCR cachedKey)
             "LIMIT 1 ";
         });
 
-    statement->BindInt64(1, infoKey.GetECClassId());
+    statement->BindId(1, infoKey.GetECClassId());
     statement->BindId(2, infoKey.GetECInstanceId());
 
     DbResult status = statement->Step();
@@ -309,9 +309,9 @@ ECInstanceKey FileInfoManager::InsertFileInfoOwnership(ECInstanceKeyCR ownerKey,
         return "INSERT INTO " ECSql_FileInfoOwnership " (OwnerECClassId, OwnerId, FileInfoECClassId, FileInfoId) VALUES (?,?,?,?)";
         });
 
-    statement->BindInt64(1, ownerKey.GetECClassId());
+    statement->BindId(1, ownerKey.GetECClassId());
     statement->BindId(2, ownerKey.GetECInstanceId());
-    statement->BindInt64(3, fileInfoKey.GetECClassId());
+    statement->BindId(3, fileInfoKey.GetECClassId());
     statement->BindId(4, fileInfoKey.GetECInstanceId());
 
     ECInstanceKey ownershipKey;

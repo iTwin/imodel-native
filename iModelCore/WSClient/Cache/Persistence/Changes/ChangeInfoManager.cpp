@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Changes/ChangeInfoManager.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -155,7 +155,7 @@ BentleyStatus ChangeInfoManager::GetFileChanges(IChangeManager::Changes& changes
 +--------------------------------------------------------------------------------------*/
 std::shared_ptr<ECSqlStatement> ChangeInfoManager::GetPreparedStatementForGetChanges(ECClassCP infoClass, bool onlyReadyToSync)
     {
-    Utf8PrintfString key("ChangeInfoManager::GetPreparedStatementForGetChanges:%lld:%d", infoClass->GetId(), onlyReadyToSync);
+    Utf8PrintfString key("ChangeInfoManager::GetPreparedStatementForGetChanges:%llu:%d", infoClass->GetId().GetValue(), onlyReadyToSync);
     auto statement = m_statementCache.GetPreparedStatement(key, [&]
         {
         Utf8String syncStatusCriteria;
@@ -272,7 +272,7 @@ int ChangeInfoManager::ReadStatusProperty(ECInstanceKeyCR instanceKey, Utf8CP st
             );
         });
 
-    statement->BindInt64(1, instanceKey.GetECClassId());
+    statement->BindId(1, instanceKey.GetECClassId());
     statement->BindId(2, instanceKey.GetECInstanceId());
     DbResult status = statement->Step();
 

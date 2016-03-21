@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Responses/CachedResponseInfo.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -17,9 +17,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-CachedResponseInfo::CachedResponseInfo() :
-m_infoClassId(0)
-    {}
+CachedResponseInfo::CachedResponseInfo() {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014

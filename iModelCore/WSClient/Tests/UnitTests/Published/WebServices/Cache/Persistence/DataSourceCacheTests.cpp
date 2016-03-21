@@ -1087,11 +1087,11 @@ TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_NewInstnaces_ReturnsCac
     instances.Add({"TestSchema.TestClass2", "B"});
 
     ECInstanceKeyMultiMap instanceKeys;
-    instanceKeys.insert({1, ECInstanceId(UINT64_C(1234))});
+    instanceKeys.insert({ECClassId(UINT64_C(1)), ECInstanceId(UINT64_C(1234))});
     ASSERT_EQ(SUCCESS, cache->CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), "root", &instanceKeys));
 
     EXPECT_THAT(instanceKeys, SizeIs(3));
-    EXPECT_THAT(instanceKeys, Contains(ECDbHelper::ToPair(ECInstanceKey(1, ECInstanceId(UINT64_C(1234))))));
+    EXPECT_THAT(instanceKeys, Contains(ECDbHelper::ToPair(ECInstanceKey(ECClassId(UINT64_C(1)), ECInstanceId(UINT64_C(1234))))));
     EXPECT_THAT(instanceKeys, Contains(ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "A"}))));
     EXPECT_THAT(instanceKeys, Contains(ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass2", "B"}))));
     }
@@ -1221,7 +1221,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_NonExistingParent_ReturnsError)
     auto cache = GetTestCache();
 
     CachedResponseKey responseKey(cache->FindInstance({"TestSchema.TestClass", "NonExisting"}), nullptr);
-    EXPECT_NE(0, responseKey.GetParent().GetECClassId());
+    EXPECT_TRUE(responseKey.GetParent().GetECClassId().IsValid());
 
     EXPECT_EQ(ERROR, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
     }
@@ -4277,11 +4277,11 @@ TEST_F(DataSourceCacheTests, CacheFile_FileCached_CorrectECDbFileInfoStructureCr
     ASSERT_TRUE(externalFileInfoKey.IsValid());
 
     ECInstanceKey ownershipOwnerKey(
-        ECClassId(BeJsonUtilities::Int64FromValue(fileInfoOwnerships[0]["OwnerECClassId"], -42)),
+        ECClassId((uint64_t) BeJsonUtilities::Int64FromValue(fileInfoOwnerships[0]["OwnerECClassId"], -42)),
         ECInstanceId((uint64_t) BeJsonUtilities::Int64FromValue(fileInfoOwnerships[0]["OwnerId"], -42)));
 
     ECInstanceKey ownershipFileInfoKey(
-        ECClassId(BeJsonUtilities::Int64FromValue(fileInfoOwnerships[0]["FileInfoECClassId"], -42)),
+        ECClassId((uint64_t) BeJsonUtilities::Int64FromValue(fileInfoOwnerships[0]["FileInfoECClassId"], -42)),
         ECInstanceId((uint64_t) BeJsonUtilities::Int64FromValue(fileInfoOwnerships[0]["FileInfoId"], -42)));
 
     EXPECT_EQ(fileKey, ownershipOwnerKey);

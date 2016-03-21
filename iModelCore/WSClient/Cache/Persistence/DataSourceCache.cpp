@@ -369,10 +369,10 @@ BentleyStatus DataSourceCache::Reset()
                 continue;
                 }
 
-            Utf8PrintfString key("DataSourceCache::Reset:%lld", ecClass->GetId());
+            Utf8PrintfString key("DataSourceCache::Reset:%llu", ecClass->GetId().GetValue());
             auto statement = m_state->GetStatementCache().GetPreparedStatement(key, [&]
                 {
-                return Utf8PrintfString("SELECT %lld, ECInstanceId FROM ONLY %s", ecClass->GetId(),
+                return Utf8PrintfString("SELECT %llu, ECInstanceId FROM ONLY %s", ecClass->GetId().GetValue(),
                                         ecClass->GetECSqlName().c_str());
                 });
 
@@ -871,7 +871,7 @@ IECInstancePtr DataSourceCache::ReadInstance(ObjectIdCR objectId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<ECSqlStatement> DataSourceCache::GetReadInstanceStatement(ECClassCR ecClass, Utf8CP remoteId)
     {
-    Utf8PrintfString key("DataSourceCache::GetReadInstanceStatement:RemoteId:%lld", ecClass.GetId());
+    Utf8PrintfString key("DataSourceCache::GetReadInstanceStatement:RemoteId:%llu", ecClass.GetId().GetValue());
     auto statement = m_state->GetStatementCache().GetPreparedStatement(key, [&]
         {
         return CacheQueryHelper::ECSql::SelectAllPropertiesByRemoteId(ecClass);
@@ -885,7 +885,7 @@ std::shared_ptr<ECSqlStatement> DataSourceCache::GetReadInstanceStatement(ECClas
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<ECSqlStatement> DataSourceCache::GetReadInstanceStatement(ECClassCR ecClass, ECInstanceId ecInstanceId)
     {
-    Utf8PrintfString key("DataSourceCache::GetReadInstanceStatement:ECInstanceId:%lld", ecClass.GetId());
+    Utf8PrintfString key("DataSourceCache::GetReadInstanceStatement:ECInstanceId:%llu", ecClass.GetId().GetValue());
     auto statement = m_state->GetStatementCache().GetPreparedStatement(key, [&]
         {
         return CacheQueryHelper::ECSql::SelectAllPropertiesAndRemoteIdByECInstanceId(ecClass);
@@ -1755,7 +1755,7 @@ Utf8String DataSourceCache::ReadInstanceLabel(ObjectIdCR objectId)
         return "";
         }
 
-    Utf8PrintfString key("DataSourceCache::ReadInstanceLabel:%lld", objectClass->GetId());
+    Utf8PrintfString key("DataSourceCache::ReadInstanceLabel:%llu", objectClass->GetId().GetValue());
     auto statement = m_state->GetStatementCache().GetPreparedStatement(key, [&]
         {
         Utf8String classKey = ECDbHelper::ECClassKeyFromClass(*objectClass);
@@ -1817,7 +1817,7 @@ BentleyStatus DataSourceCache::ReadFileProperties(ECInstanceKeyCR instanceKey, U
         return ERROR;
         }
 
-    Utf8PrintfString key("DataSourceCache::ReadFileProperties:%lld:%d:%d", ecClass->GetId(), !!fileNameP, !!fileSizeP);
+    Utf8PrintfString key("DataSourceCache::ReadFileProperties:%llu:%d:%d", ecClass->GetId().GetValue(), !!fileNameP, !!fileSizeP);
     auto statement = m_state->GetStatementCache().GetPreparedStatement(key, [&]
         {
         Utf8String fileNamePropertyName, fileSizePropertyName;

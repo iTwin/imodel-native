@@ -122,7 +122,7 @@ ObjectInfo ObjectInfoManager::ReadInfo(ECClassCR ecClass, Utf8StringCR remoteId)
             "LIMIT 1 ";
         });
 
-    statement->BindInt64(1, ecClass.GetId());
+    statement->BindId(1, ecClass.GetId());
     statement->BindText(2, remoteId.c_str(), IECSqlBinder::MakeCopy::No);
 
     Json::Value infoJson;
@@ -136,7 +136,7 @@ ObjectInfo ObjectInfoManager::ReadInfo(ECClassCR ecClass, Utf8StringCR remoteId)
     else
         {
         // Return valid info object so it could be saved
-        infoJson[CLASS_CachedObjectInfo_PROPERTY_ClassId] = BeJsonUtilities::StringValueFromInt64(ecClass.GetId());
+        infoJson[CLASS_CachedObjectInfo_PROPERTY_ClassId] = BeJsonUtilities::StringValueFromInt64(ecClass.GetId().GetValue());
         infoJson[CLASS_CachedObjectInfo_PROPERTY_RemoteId] = remoteId;
         }
 
@@ -165,8 +165,8 @@ ObjectInfo ObjectInfoManager::ReadInfo(ECInstanceKeyCR instanceKey)
             "LIMIT 1 ";
         });
 
-    statement->BindInt64(1, objectClass->GetId());
-    statement->BindInt64(2, instanceKey.GetECInstanceId().GetValue());
+    statement->BindId(1, objectClass->GetId());
+    statement->BindId(2, instanceKey.GetECInstanceId());
 
     DbResult status = statement->Step();
     if (status != BE_SQLITE_ROW)
@@ -186,7 +186,7 @@ ObjectInfo ObjectInfoManager::ReadInfo(ECInstanceKeyCR instanceKey)
 +--------------------------------------------------------------------------------------*/
 ObjectInfo ObjectInfoManager::ReadInfo(JsonValueCR infoJson)
     {
-    ECClassCP instanceClass = m_dbAdapter.GetECClass(BeJsonUtilities::Int64FromValue(infoJson[CLASS_CachedObjectInfo_PROPERTY_ClassId]));
+    ECClassCP instanceClass = m_dbAdapter.GetECClass(ECClassId((uint64_t) BeJsonUtilities::Int64FromValue(infoJson[CLASS_CachedObjectInfo_PROPERTY_ClassId])));
     return ObjectInfo(infoJson, instanceClass, m_infoClass->GetId());
     }
 
@@ -219,7 +219,7 @@ ECInstanceKey ObjectInfoManager::FindCachedInstance(ECClassCP ecClass, Utf8Strin
             "LIMIT 1 ";
         });
 
-    statement->BindInt64(1, ecClass->GetId());
+    statement->BindId(1, ecClass->GetId());
     statement->BindText(2, remoteId.c_str(), IECSqlBinder::MakeCopy::No);
 
     DbResult status = statement->Step();
@@ -254,7 +254,7 @@ ObjectId ObjectInfoManager::FindCachedInstance(ECInstanceKeyCR instanceKey)
             "LIMIT 1 ";
         });
 
-    statement->BindInt64(1, objectClass->GetId());
+    statement->BindId(1, objectClass->GetId());
     statement->BindId(2, instanceKey.GetECInstanceId());
 
     DbResult status = statement->Step();
@@ -290,7 +290,7 @@ CachedObjectInfoKey ObjectInfoManager::ReadInfoKey(ECInstanceKeyCR instanceKey)
             "LIMIT 1 ";
         });
 
-    statement->BindInt64(1, instanceKey.GetECClassId());
+    statement->BindId(1, instanceKey.GetECClassId());
     statement->BindId(2, instanceKey.GetECInstanceId());
 
     DbResult status = statement->Step();
@@ -335,7 +335,7 @@ CachedInstanceKey ObjectInfoManager::ReadCachedInstanceKey(ObjectIdCR objectId)
             "LIMIT 1 ";
         });
 
-    statement->BindInt64(1, objectClass->GetId());
+    statement->BindId(1, objectClass->GetId());
     statement->BindText(2, objectId.remoteId.c_str(), IECSqlBinder::MakeCopy::No);
 
     DbResult status = statement->Step();
@@ -345,7 +345,7 @@ CachedInstanceKey ObjectInfoManager::ReadCachedInstanceKey(ObjectIdCR objectId)
         }
 
     CacheNodeKey infoKey(m_infoClass->GetId(), statement->GetValueId<ECInstanceId>(0));
-    ECInstanceKey instanceKey(statement->GetValueInt64(1), statement->GetValueId<ECInstanceId>(2));
+    ECInstanceKey instanceKey(statement->GetValueId<ECClassId>(1), statement->GetValueId<ECInstanceId>(2));
     return CachedInstanceKey(infoKey, instanceKey);
     }
 
@@ -374,7 +374,7 @@ CachedInstanceKey ObjectInfoManager::ReadCachedInstanceKey(CacheNodeKeyCR infoKe
         return CachedInstanceKey();
         }
 
-    ECInstanceKey instanceKey(statement->GetValueInt64(0), statement->GetValueId<ECInstanceId>(1));
+    ECInstanceKey instanceKey(statement->GetValueId<ECClassId>(0), statement->GetValueId<ECInstanceId>(1));
     return CachedInstanceKey(infoKey, instanceKey);
     }
 
@@ -389,7 +389,7 @@ CachedInstanceKey ObjectInfoManager::ReadCachedInstanceKey(CacheNodeKeyCR relate
         return CachedInstanceKey();
         }
 
-    Utf8PrintfString key("ObjectInfoManager::ReadCachedInstanceKey:%lld:%lld", relatedClass->GetId(), relClass.GetId());
+    Utf8PrintfString key("ObjectInfoManager::ReadCachedInstanceKey:%llu:%llu", relatedClass->GetId().GetValue(), relClass.GetId().GetValue());
     auto statement = m_statementCache.GetPreparedStatement(key, [&]
         {
         return
@@ -412,7 +412,7 @@ CachedInstanceKey ObjectInfoManager::ReadCachedInstanceKey(CacheNodeKeyCR relate
         }
 
     CacheNodeKey infoKey(m_infoClass->GetId(), statement->GetValueId<ECInstanceId>(0));
-    ECInstanceKey instanceKey(statement->GetValueInt64(1), statement->GetValueId<ECInstanceId>(2));
+    ECInstanceKey instanceKey(statement->GetValueId<ECClassId>(1), statement->GetValueId<ECInstanceId>(2));
     return CachedInstanceKey(infoKey, instanceKey);
     }
 
@@ -439,7 +439,7 @@ BentleyStatus ObjectInfoManager::ReadCachedInstanceKeys(const ECInstanceKeyMulti
         if (BE_SQLITE_ROW != statement->Step())
             return ERROR;
 
-        instanceKeysOut.insert({statement->GetValueUInt64(0), statement->GetValueId<ECInstanceId>(1)});
+        instanceKeysOut.insert({statement->GetValueId<ECClassId>(0), statement->GetValueId<ECInstanceId>(1)});
         }
 
     return SUCCESS;
@@ -461,7 +461,7 @@ ECInstanceKeyMultiMap& instanceKeysOut
         return ERROR;
         }
 
-    Utf8PrintfString key("ObjectInfoManager::ReadCachedInstanceKeys:Map:%lld:%lld", relatedClass->GetId(), relClass.GetId());
+    Utf8PrintfString key("ObjectInfoManager::ReadCachedInstanceKeys:Map:%llu:%llu", relatedClass->GetId().GetValue(), relClass.GetId().GetValue());
     auto statement = m_statementCache.GetPreparedStatement(key, [&]
         {
         return
@@ -503,7 +503,7 @@ bset<CachedInstanceKey>& instanceKeysOut
         return ERROR;
         }
 
-    Utf8PrintfString key("ObjectInfoManager::ReadCachedInstanceKeys:Set:%lld:%lld", relatedClass->GetId(), relClass.GetId());
+    Utf8PrintfString key("ObjectInfoManager::ReadCachedInstanceKeys:Set:%llu:%llu", relatedClass->GetId().GetValue(), relClass.GetId().GetValue());
     auto statement = m_statementCache.GetPreparedStatement(key, [&]
         {
         return
@@ -544,7 +544,7 @@ BentleyStatus ObjectInfoManager::ReadCachedInstanceIds(CacheNodeKeyCR relatedKey
         return ERROR;
         }
 
-    Utf8PrintfString key("ObjectInfoManager::ReadCachedInstanceIds:%lld:%lld", relatedClass->GetId(), relClass.GetId());
+    Utf8PrintfString key("ObjectInfoManager::ReadCachedInstanceIds:%llu:%llu", relatedClass->GetId().GetValue(), relClass.GetId().GetValue());
     auto statement = m_statementCache.GetPreparedStatement(key, [&]
         {
         return

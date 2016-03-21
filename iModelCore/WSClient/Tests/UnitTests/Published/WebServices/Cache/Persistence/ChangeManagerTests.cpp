@@ -141,7 +141,7 @@ TEST_F(ChangeManagerTests, ModifyFile_SyncSetToActiveAndModifyingModifiedFile_Er
 TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_InvalidClassIds_ReturnsInvalid)
     {
     auto cache = GetTestCache();
-    EXPECT_EQ(nullptr, cache->GetChangeManager().GetLegacyParentRelationshipClass(99999, 99999));
+    EXPECT_EQ(nullptr, cache->GetChangeManager().GetLegacyParentRelationshipClass(ECClassId(UINT64_C(99999)), ECClassId(UINT64_C(99999))));
     }
 
 TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_SameParameters_ReturnsSameClass)
@@ -1185,7 +1185,7 @@ TEST_F(ChangeManagerTests, ReadInstanceRevision_NotExistingInstance_ReturnsInval
     auto cache = GetTestCache();
     // Act
     auto testClass = cache->GetAdapter().GetECClass("TestSchema.TestClass");
-    auto revision = cache->GetChangeManager().ReadInstanceRevision(StubECInstanceKey(testClass->GetId(), 1));
+    auto revision = cache->GetChangeManager().ReadInstanceRevision(StubECInstanceKey(testClass->GetId().GetValue(), 1));
     // Assert
     ASSERT_NE(nullptr, revision);
     EXPECT_FALSE(revision->IsValid());
@@ -1667,7 +1667,7 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_NonExistingObject_Error)
     // Arrange
     auto cache = GetTestCache();
     auto testClass = cache->GetAdapter().GetECClass("TestSchema.TestClass");
-    auto revision = cache->GetChangeManager().ReadInstanceRevision(StubECInstanceKey(testClass->GetId(), 1));
+    auto revision = cache->GetChangeManager().ReadInstanceRevision(StubECInstanceKey(testClass->GetId().GetValue(), 1));
     // Act
     BeTest::SetFailOnAssert(false);
     auto status = cache->GetChangeManager().CommitInstanceRevision(*revision);

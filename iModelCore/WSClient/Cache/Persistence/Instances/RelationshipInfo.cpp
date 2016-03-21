@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Instances/RelationshipInfo.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -16,10 +16,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-RelationshipInfo::RelationshipInfo() :
-m_relClass(nullptr),
-m_infoClassId(0)
-    {}
+RelationshipInfo::RelationshipInfo() : m_relClass(nullptr) {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod

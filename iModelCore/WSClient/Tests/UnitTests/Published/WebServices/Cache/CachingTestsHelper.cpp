@@ -304,12 +304,12 @@ IECInstancePtr StubInstance(ECClassCP ecClass)
 
 ECInstanceKey StubECInstanceKey(uint64_t classId, uint64_t instanceId)
     {
-    return ECInstanceKey(classId, ECInstanceId(instanceId));
+    return ECInstanceKey(ECClassId(classId), ECInstanceId(instanceId));
     }
 
 bpair<ECClassId, ECInstanceId> StubECInstanceKeyPair(uint64_t classId, uint64_t instanceId)
     {
-    return bpair <ECClassId, ECInstanceId>(classId, ECInstanceId(instanceId));
+    return bpair<ECClassId, ECInstanceId>(ECClassId(classId), ECInstanceId(instanceId));
     }
 
 ECInstanceKeyMultiMap StubECInstanceKeyMultiMap(const std::vector<ECInstanceKey>& keys)
