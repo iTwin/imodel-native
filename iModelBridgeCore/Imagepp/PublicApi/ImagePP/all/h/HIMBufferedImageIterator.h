@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMBufferedImageIterator.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -60,7 +60,6 @@ private:
     void            Initialize();
 
     // Info. for useful tiles.
-    uint64_t    m_TileCount;
     HIMBufImgTileIDSet*
     m_pIDSet;
     HIMBufImgTileIDSet::iterator

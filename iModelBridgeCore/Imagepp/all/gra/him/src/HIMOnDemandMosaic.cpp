@@ -2436,8 +2436,6 @@ void HIMOnDemandMosaic::RecalculateEffectiveShape ()
 /** ---------------------------------------------------------------------------
     Draw the mosaic
     ---------------------------------------------------------------------------*/
-static bool s_multiThreadTest = false;
-
 
 void HIMOnDemandMosaic::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const
     {

@@ -388,7 +388,7 @@ HRFGeoTiffCompressedTable::HRFGeoTiffCompressedTable(const HFCPtr<HFCURL>& pi_rp
 //:> private section
 //:>-----------------------------------------------------------------------------
 
-#define PRINTABLE_CHARACTER(c) (c != EOF && c != '\n' && c != '\r' && c != 0x0D && c != 0x0A)
+#define PRINTABLE_CHARACTER(c) (c != '\n' && c != '\r' && c != 0x0D && c != 0x0A)
 //-----------------------------------------------------------------------------
 // ReadTextLine
 //-----------------------------------------------------------------------------
