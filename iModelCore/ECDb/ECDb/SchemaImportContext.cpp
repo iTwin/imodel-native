@@ -30,11 +30,13 @@ BentleyStatus ECSchemaCompareContext::Prepare(ECDbSchemaManager const& schemaMan
 
         m_importedSchemaList.push_back(schema);
         }
-    ECSchemaComparer comparer;
-    ECSchemaChanges schemaChanges;
-    if (comparer.Compare(schemaChanges, m_existingSchemaList, m_importedSchemaList) != SUCCESS)
-        return ERROR;
 
+    if (!m_existingSchemaList.empty())
+        {
+        ECSchemaComparer comparer;
+        if (comparer.Compare(m_changes, m_existingSchemaList, m_importedSchemaList) != SUCCESS)
+            return ERROR;
+        }
     return SUCCESS;
     }
 //*************************************************************************************

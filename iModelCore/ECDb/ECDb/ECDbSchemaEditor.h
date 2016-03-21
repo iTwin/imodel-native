@@ -66,7 +66,6 @@ enum SystemId : uint32_t
     BASECLASS,
     ENUMERATION,
     ENUMERATIONS,
-    ENUMERATOERS,
     ENUMERATOR,
     ENUMERATORS,
     EXTENDEDTYPENAME,
@@ -208,9 +207,12 @@ struct ECChange
                         {NONE, ""},
                         {ALTERNATIVEPRESENTATIONUNITLIST, "AlternativePresentationUnitList"},
                         {ARRAY, "Array"},
+                        {BASECLASS, "BaseClass"},
+                        {BASECLASSES, "BaseClasses"},
                         {CARDINALITY, "Cardinality"},
                         {CLASSES, "Classes"},
-                        {CLASSES, "Class"},
+                        {CLASS, "Class"},
+                        {CONSTANTKEY, "ConstantKey"},
                         {CLASSFULLNAME, "ClassFullName"},
                         {CLASSMODIFIER, "ClassModifier"},
                         {CONSTRAINTCLASS, "ConstraintClass"},
@@ -223,7 +225,6 @@ struct ECChange
                         {DISPLAYLABEL, "DisplayLabel"},
                         {ENUMERATION, "Enumeration"},
                         {ENUMERATIONS, "Enumerations"},
-                        {ENUMERATOERS, "Enumerators"},
                         {ENUMERATOR, "Enumerator"},
                         {ENUMERATORS, "Enumerators"},
                         {EXTENDEDTYPENAME, "ExtendTypeName"},
@@ -257,6 +258,7 @@ struct ECChange
                         {PRECISION, "Precision"},
                         {PROPERTIES, "Properties"},
                         {PROPERTY, "Property"},
+                        {PROPERTYTYPE, "PropertyType"},
                         {REFERENCE, "Reference"},
                         {REFERENCES, "References"},
                         {RELATIONSHIP, "Relationship"},
@@ -304,12 +306,34 @@ struct ECChange
         ECChange const* m_parent;
         ChangeState m_state;
         bool m_applied;
+        virtual void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const = 0;
         virtual bool _IsEmpty() const = 0;
         virtual void _Optimize() {}
         virtual bool _IsArray() const { return false; }
         virtual bool _IsObject() const { return false; }
         virtual bool _IsPrimitive() const { return false; }
+    protected:
+        static  void AppendBegin(Utf8StringR str, ECChange const& change, int currentIndex)
+            {
+          
+            if (change.GetState() == ChangeState::Deleted)
+                str += "-";
+            else if (change.GetState() == ChangeState::New)
+                str += "+";
+            else if (change.GetState() == ChangeState::Modified)
+                str += "!";
 
+            for (int i = 0; i < currentIndex; i++)
+                str.append(" ");
+
+            str.append(Convert(change.GetSystemId()));
+            if (change.HasCustomId())
+                str.append("(").append(change.GetId().c_str()).append(")");
+            }
+        static  void AppendEnd(Utf8StringR str)
+            { 
+            str.append("\r\n");
+            }
     public:
         ECChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             :m_systemId(systemId), m_parent(parent), m_state(state), m_applied(false)
@@ -327,6 +351,7 @@ struct ECChange
 
             return Convert(GetSystemId());
             }
+        bool HasCustomId() const { return m_customId != nullptr; }
         ChangeState GetState() const { return m_state; }
         ECChange const* GetParent() const { return m_parent; }
         bool IsEmpty() const { return _IsEmpty(); }
@@ -335,8 +360,14 @@ struct ECChange
         //bool IsObject() const { return _IsObject(); }
         //bool IsPrimitive() const { return _IsPrimitive(); }
         bool Exist() const { return !IsEmpty(); }
-        bool IsPending() const { return m_applied; }
+        bool IsPending() const { return !m_applied; }
         void Done() { BeAssert(m_applied == false); m_applied = true; }
+        void WriteToString(Utf8StringR str, int initIndex = 0, int indentSize =3) const
+            {
+
+            _WriteToString(str, initIndex, indentSize);
+            }
+
     };
 
 //=======================================================================================
@@ -346,12 +377,21 @@ struct ECObjectChange : ECChange
     {
     private:
         std::map<Utf8CP, ECChange::Ptr, CompareUtf8> m_changes;
+        virtual void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override
+            {
+            AppendBegin(str, *this, currentIndex);
+            AppendEnd(str);
+            for (auto& change : m_changes)
+                {
+                change.second->WriteToString(str, currentIndex + indentSize, indentSize);
+                }
+            }
 
         virtual bool _IsEmpty() const override
             {
             for (auto& change : m_changes)
                 {
-                if (!change.second->IsEmpty())
+                if (change.second->Exist())
                     return false;
                 }
 
@@ -359,10 +399,16 @@ struct ECObjectChange : ECChange
             }
         virtual void _Optimize() override
             {
-            for (auto itor = m_changes.begin(); itor != m_changes.end(); ++itor)
+            auto itor = m_changes.begin();
+            while (itor != m_changes.end())
                 {
+                itor->second->Optimize();
                 if (itor->second->IsEmpty())
+                    {
                     itor = m_changes.erase(itor);
+                    }
+                else
+                    ++itor;
                 }
             }
         virtual bool _IsObject() const override
@@ -402,6 +448,16 @@ struct ECChangeArray : ECChange
     private:
         std::vector<ECChange::Ptr> m_changes;
         SystemId m_elementType;
+        virtual void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override
+            {
+            AppendBegin(str, *this, currentIndex);
+            AppendEnd(str);
+            for (auto& change : m_changes)
+                {
+                change->WriteToString(str, currentIndex + indentSize, indentSize);
+                }
+            }
+
         virtual bool _IsEmpty() const override
             {
             for (ECChange::Ptr const& change : m_changes)
@@ -414,12 +470,16 @@ struct ECChangeArray : ECChange
             }
         virtual void _Optimize() override
             {
-            for (auto itor = m_changes.begin(); itor != m_changes.end(); ++itor)
+            auto itor = m_changes.begin();
+            while (itor != m_changes.end())
                 {
+                (*itor)->Optimize();
                 if ((*itor)->IsEmpty())
                     {
                     itor = m_changes.erase(itor);
                     }
+                else
+                    ++itor;
                 }
             }
         virtual bool _IsArray() const override
@@ -530,7 +590,7 @@ struct ECInstanceChanges : ECChangeArray<ECInstanceChange>
     {
     public:
         ECInstanceChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECChangeArray<ECInstanceChange>(state, INSTANCES, parent, customId, INSTANCE)
+            : ECChangeArray<ECInstanceChange>(state, CUSTOMATTRIBTUES, parent, customId, INSTANCE)
             {
             BeAssert(systemId == GetSystemId());
             }
@@ -572,7 +632,7 @@ struct ECEnumeratorChanges : ECChangeArray<ECEnumeratorChange>
     {
     public:
         ECEnumeratorChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECChangeArray<ECEnumeratorChange>(state, ENUMERATOERS, parent, customId, ENUMERATOR)
+            : ECChangeArray<ECEnumeratorChange>(state, ENUMERATORS, parent, customId, ENUMERATOR)
             {
             BeAssert(systemId == GetSystemId());
             }
@@ -624,6 +684,7 @@ struct ECPrimitiveChange : ECChange
     private:
         Nullable<T> m_old;
         Nullable<T> m_new;
+     
         virtual bool _IsEmpty() const override
             {
             return m_old == m_new;
@@ -632,6 +693,20 @@ struct ECPrimitiveChange : ECChange
             {
             return true;
             }
+        virtual Utf8String _ToString(ValueId id) const  { return "NOT_IMP"; }
+        virtual void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override
+            {
+            AppendBegin(str, *this, currentIndex);
+            str.append(": ");
+            if (GetState() == ChangeState::Deleted)
+                str.append(ToString(ValueId::Deleted));
+            if (GetState() == ChangeState::New)
+                str.append(ToString(ValueId::New));
+            if (GetState() == ChangeState::Modified)
+                str.append(ToString(ValueId::Deleted)).append(" -> ").append(ToString(ValueId::New));
+            AppendEnd(str);
+            }
+
     public:
         ECPrimitiveChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECChange(state, systemId, parent, customId)
@@ -645,10 +720,13 @@ struct ECPrimitiveChange : ECChange
             {
             return m_new;
             }
-
+        Utf8String ToString(ValueId id) const
+            {
+            return _ToString(id);
+            }
         Nullable<T> const& GetValue(ValueId id) const
             {
-            if (id == ValueId::New)
+            if (id == ValueId::Deleted)
                 {
                 if (GetState() == ChangeState::New)
                     {
@@ -732,6 +810,19 @@ struct ECPrimitiveChange : ECChange
 //+===============+===============+===============+===============+===============+======
 struct StringChange : ECPrimitiveChange<Utf8String>
     {
+   
+    private:
+        virtual Utf8String _ToString(ValueId id) const override 
+            { 
+            Utf8String str;
+            auto& v = GetValue(id);
+            if (v.IsNull())
+                str = "<null>";
+            else
+                str = v.Value();
+            return str;
+            }
+
     public:
         StringChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<Utf8String>(state, systemId, parent, customId)
@@ -744,6 +835,18 @@ struct StringChange : ECPrimitiveChange<Utf8String>
 //+===============+===============+===============+===============+===============+======
 struct BooleanChange : ECPrimitiveChange<bool>
     {
+    private:
+        virtual Utf8String _ToString(ValueId id) const override
+            {
+            Utf8String str;
+            auto& v = GetValue(id);
+            if (v.IsNull())
+                str = "<null>";
+            else
+                str = v.Value() ? "true": "false";
+            return str;
+            }
+
     public:
         BooleanChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<bool>(state, systemId, parent, customId)
@@ -756,6 +859,18 @@ struct BooleanChange : ECPrimitiveChange<bool>
 
 struct UInt32Change : ECPrimitiveChange<uint32_t>
     {
+    private:
+        virtual Utf8String _ToString(ValueId id) const override
+            {
+            Utf8String str;
+            auto& v = GetValue(id);
+            if (v.IsNull())
+                str = "<null>";
+            else
+                str.Sprintf("%u", v.Value());
+
+            return str;
+            }
     public:
         UInt32Change(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<uint32_t>(state, systemId, parent, customId)
@@ -768,6 +883,18 @@ struct UInt32Change : ECPrimitiveChange<uint32_t>
 //+===============+===============+===============+===============+===============+======
 struct Int32Change : ECPrimitiveChange<int32_t>
     {
+    virtual Utf8String _ToString(ValueId id) const override
+        {
+        Utf8String str;
+        auto& v = GetValue(id);
+        if (v.IsNull())
+            str = "<null>";
+        else
+            str.Sprintf("%d", v.Value());
+
+        return str;
+        }
+
     public:
         Int32Change(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<int32_t>(state, systemId, parent, customId)
@@ -776,6 +903,19 @@ struct Int32Change : ECPrimitiveChange<int32_t>
     };
 struct DoubleChange: ECPrimitiveChange<double>
     {
+    private:
+        virtual Utf8String _ToString(ValueId id) const override
+            {
+            Utf8String str;
+            auto& v = GetValue(id);
+            if (v.IsNull())
+                str = "<null>";
+            else
+                str.Sprintf("%f", v.Value());
+
+            return str;
+            }
+
     public:
         DoubleChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<double>(state, systemId, parent, customId)
@@ -788,6 +928,19 @@ struct DoubleChange: ECPrimitiveChange<double>
 //+===============+===============+===============+===============+===============+======
 struct DateTimeChange: ECPrimitiveChange<DateTime>
     {
+    private:
+        virtual Utf8String _ToString(ValueId id) const override
+            {
+            Utf8String str;
+            auto& v = GetValue(id);
+            if (v.IsNull())
+                str = "<null>";
+            else
+                str = Utf8String(v.Value().ToString().c_str());
+
+            return str;
+            }
+
     public:
         DateTimeChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<DateTime>(state, systemId, parent, customId)
@@ -836,6 +989,19 @@ struct Point3DChange: ECPrimitiveChange<Point3d>
 //+===============+===============+===============+===============+===============+======
 struct Int64Change: ECPrimitiveChange<int64_t>
     {
+    private:
+        virtual Utf8String _ToString(ValueId id) const override
+            {
+            Utf8String str;
+            auto& v = GetValue(id);
+            if (v.IsNull())
+                str = "<null>";
+            else
+                str.Sprintf("%ll",v.Value());
+
+            return str;
+            }
+
     public:
         Int64Change(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<int64_t>(state, systemId, parent, customId)

@@ -482,8 +482,12 @@ BentleyStatus ECDbSchemaWriter::UpdateSchema(ECSchemaChange& schemaChange, ECSch
 
         updater.Set("NamespacePrefix", schemaChange.GetVersionWrite().GetNew().Value());
         }
+    auto existingSchemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, oldSchema.GetName().c_str());
+    BeAssert(existingSchemaId != 0LL); 
+    if (existingSchemaId == 0LL)
+        return ERROR;
 
-    updater.Where("Id", oldSchema.GetId());
+    updater.Where("Id", existingSchemaId);//this could even be on name
     if (updater.Apply(m_ecdb) != SUCCESS)
         return ERROR;
 
@@ -515,7 +519,7 @@ BentleyStatus ECDbSchemaWriter::UpdateSchema(ECSchemaChange& schemaChange, ECSch
             }
         }
 
-    schemaChange.Done();
+  
     if (schemaChange.Classes().Exist())
         {
         for (size_t i = 0; i < schemaChange.Classes().Count(); i++)
@@ -1257,7 +1261,7 @@ BentleyStatus SqlUpdater::Apply(ECDb const& ecdb) const
         BeAssert(false && "WHERE must not be empty");
         return ERROR;
         }
-
+    sql.Append(" WHERE ");
     first = true;
     for (auto& key : m_whereMap)
         {
@@ -1277,12 +1281,14 @@ BentleyStatus SqlUpdater::Apply(ECDb const& ecdb) const
     for (auto& key : m_updateMap)
         if (BindSet(stmt, key.first, i++) != SUCCESS)
             return ERROR;
-    i = 1;
+    
     for (auto& key : m_whereMap)
         if (BindWhere(stmt, key.first, i++) != SUCCESS)
             return ERROR;
 
-    return stmt.Step() == BE_SQLITE_DONE ? SUCCESS : ERROR;
+    auto r =  stmt.Step() == BE_SQLITE_DONE ? SUCCESS : ERROR;
+    BeAssert(ecdb.GetModifiedRowCount() > 0);
+    return r;
     }
 void SqlUpdater::Set(Utf8CP column, Utf8CP value)
     {

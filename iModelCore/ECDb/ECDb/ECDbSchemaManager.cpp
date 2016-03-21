@@ -196,27 +196,27 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext const&
             return ERROR;
             }
 
-        if (id > INT64_C(0))
-            {
-            //schema with same name already exists. If version of existing schema is older than fail, as ECDb does not update
-            //schemas via import
-            SchemaKey existingSchemaKey;
-            if (!ECDbSchemaPersistenceHelper::TryGetECSchemaKey(existingSchemaKey, m_ecdb, id))
-                {
-                BeAssert(false && "SchemaId exists, so schema key must be retrievable");
-                return ERROR;
-                }
+        //if (id > INT64_C(0))
+        //    {
+        //    //schema with same name already exists. If version of existing schema is older than fail, as ECDb does not update
+        //    //schemas via import
+        //    SchemaKey existingSchemaKey;
+        //    if (!ECDbSchemaPersistenceHelper::TryGetECSchemaKey(existingSchemaKey, m_ecdb, id))
+        //        {
+        //        BeAssert(false && "SchemaId exists, so schema key must be retrievable");
+        //        return ERROR;
+        //        }
 
-            if (schema->GetSchemaKey().CompareByVersion(existingSchemaKey) > 0)
-                {
-                m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                                                                "Failed to import the ECSchema '%s'. The ECSchema already exists in the ECDb file with an older version '%s'. ECDb does not support to update ECSchemas on import.",
-                                                                schema->GetFullSchemaName().c_str(),
-                                                                ECSchema::FormatSchemaVersion(existingSchemaKey.GetVersionMajor(), existingSchemaKey.GetVersionWrite(), existingSchemaKey.GetVersionMinor()).c_str());
-                return ERROR;
-                }
-            }
-        else
+        //    if (schema->GetSchemaKey().CompareByVersion(existingSchemaKey) > 0)
+        //        {
+        //        m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+        //                                                        "Failed to import the ECSchema '%s'. The ECSchema already exists in the ECDb file with an older version '%s'. ECDb does not support to update ECSchemas on import.",
+        //                                                        schema->GetFullSchemaName().c_str(),
+        //                                                        ECSchema::FormatSchemaVersion(existingSchemaKey.GetVersionMajor(), existingSchemaKey.GetVersionWrite(), existingSchemaKey.GetVersionMinor()).c_str());
+        //        return ERROR;
+        //        }
+        //    }
+        //else
             BuildDependencyOrderedSchemaList(schemasToImport, schema);
         }
 
@@ -295,8 +295,8 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext const&
     for (ECSchemaCP schema : ctx.GetImportedSchemaSet())
         {
         importedSchemas.push_back(schema);
-        if (INT64_C(0) != ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, schema->GetName().c_str()))
-            continue;
+        //if (INT64_C(0) != ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, schema->GetName().c_str()))
+        //    continue;
 
         if (SUCCESS != schemaWriter.Import(ctx, *schema))
             return ERROR;

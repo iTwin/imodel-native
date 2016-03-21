@@ -69,7 +69,7 @@ bool Nullable<T>::operator == (Nullable<T> const& rhs) const
     else if (rhs.IsNull() && IsNull())
         return true;
     else
-        return rhs.Value() == rhs.Value();
+        return rhs.Value() == Value();
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
@@ -1492,7 +1492,13 @@ BentleyStatus ECSchemaComparer::Compare(ECSchemaChanges& changes, ECSchemaList c
     if (CompareECSchemas(changes, existingSet, newSet) != SUCCESS)
         return ERROR;
 
+    Utf8String beforeOptimize, afterOptimize;
+    changes.WriteToString(beforeOptimize);
     changes.Optimize();
+    changes.WriteToString(afterOptimize);
+    printf("%s", beforeOptimize.c_str());
+    printf("%s", afterOptimize.c_str());
+
     return SUCCESS;
     }
 
