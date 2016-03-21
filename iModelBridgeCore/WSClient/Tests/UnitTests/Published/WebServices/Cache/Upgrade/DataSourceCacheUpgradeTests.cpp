@@ -52,7 +52,7 @@ BeFileName GetSeedDir(int version, Utf8StringCR subdir, BeFileName basedir)
         basedir
         .AppendToPath(L"DataSourceCacheUpgradeTests")
         .AppendToPath(L"UpgradeSeeds")
-        .AppendToPath(WPrintfString(L"%d", version))
+        .AppendToPath(WPrintfString(L"%d", version).c_str())
         .AppendToPath(BeFileName(subdir));
 
     return path;

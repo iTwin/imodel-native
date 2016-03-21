@@ -32,7 +32,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 #define EXPECT_INSTANCE_EXISTS(db, key) \
     auto foundInstance = ECDbAdapter(*db).FindInstance(\
     db->Schemas().GetECClass(key.GetECClassId()), \
-    Utf8PrintfString("ECInstanceId = %llu", key.GetECInstanceId().GetValue())); \
+    Utf8PrintfString("ECInstanceId = %llu", key.GetECInstanceId().GetValue()).c_str()); \
     EXPECT_TRUE(foundInstance.IsValid()); \
 
 #if 1
@@ -51,7 +51,7 @@ void EXPECT_CALL_OnBeforeDelete(MockECDbAdapterDeleteListener& listener, std::sh
         .WillOnce(Invoke([&] (ECClassCR ecClass, ECInstanceId id, bset<ECInstanceKey>&)
         {
         /* Check if instance was not deleted yet */
-        auto foundInstance = ECDbAdapter(*db).FindInstance(&ecClass, Utf8PrintfString("ECInstanceId = %llu", id.GetValue()));
+        auto foundInstance = ECDbAdapter(*db).FindInstance(&ecClass, Utf8PrintfString("ECInstanceId = %llu", id.GetValue()).c_str());
         EXPECT_TRUE(foundInstance.IsValid());
         return SUCCESS;
         }));

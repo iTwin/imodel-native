@@ -25,7 +25,7 @@ BeFileName SeedFile::GetTestFile()
         {
         m_seedFilePath = GetTestsOutputDir();
         m_seedFilePath.AppendToPath(L"SeedFiles");
-        m_seedFilePath.AppendToPath(BeFileName(Utf8PrintfString("%llu-%s", m_id, m_name.c_str())));
+        m_seedFilePath.AppendToPath(BeFileName(Utf8PrintfString("%llu-%s", m_id, m_name.c_str())).c_str());
 
         if (m_seedFilePath.DoesPathExist())
             {
