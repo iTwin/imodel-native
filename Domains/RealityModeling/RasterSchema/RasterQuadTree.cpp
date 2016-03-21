@@ -282,7 +282,7 @@ RasterTilePtr RasterTile::CreateRoot(RasterQuadTreeR tree)
     DPoint3d srcCorners[4];
     DPoint3d uorCorners[4];
     tree.GetSource().ComputeTileCorners(srcCorners, id); 
-    if(BSISUCCESS != ReprojectCorners(uorCorners, srcCorners, tree))
+    if(REPROJECT_Success != ReprojectCorners(uorCorners, srcCorners, tree))
         return NULL;
 
     return new RasterTile(id, NULL, tree);
@@ -565,14 +565,14 @@ bool RasterTile::IsVisible (ViewContextR viewContext, double& factor) const
     double averageViewDiag = (viewDiag1 + viewDiag2) / 2.0;
     factor = averageViewDiag / physicalDiag;
 
-    DPoint3d centerPt = DPoint3d::FromInterpolate(m_corners[0], 0.5, m_corners[3]);centerPt;
-    double pixelSize = viewContext.GetPixelSizeAtPoint(&centerPt);pixelSize;
+    DPoint3d centerPt = DPoint3d::FromInterpolate(m_corners[0], 0.5, m_corners[3]);(void)centerPt;
+    double pixelSize = viewContext.GetPixelSizeAtPoint(&centerPt);(void)pixelSize;
 
-    double widthView = viewCorners[1].DistanceXY(viewCorners[0]);widthView;
-    double heightView = viewCorners[3].DistanceXY(viewCorners[2]);heightView;
+    double widthView = viewCorners[1].DistanceXY(viewCorners[0]);(void)widthView;
+    double heightView = viewCorners[3].DistanceXY(viewCorners[2]);(void)heightView;
 
-    double uorDiag1 = m_corners[3].DistanceXY(m_corners[0]);uorDiag1;
-    double uorDiag2 = m_corners[2].DistanceXY(m_corners[1]);uorDiag2;
+    double uorDiag1 = m_corners[3].DistanceXY(m_corners[0]);(void)uorDiag1;
+    double uorDiag2 = m_corners[2].DistanceXY(m_corners[1]);(void)uorDiag2;
     
 #endif
 
