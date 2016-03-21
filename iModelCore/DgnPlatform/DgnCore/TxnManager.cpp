@@ -1332,10 +1332,10 @@ void dgn_TxnTable::ElementDep::UpdateSummary(Changes::Change change, ChangeType 
     if (ChangeType::Delete == changeType)
         {
         ECInstanceId relid = change.GetOldValue(0).GetValueId<ECInstanceId>();
-        int64_t relclsid = change.GetOldValue(1).GetValueInt64();
+        ECClassId relclsid = change.GetOldValue(1).GetValueId<ECClassId>();
         int64_t srcelemid = change.GetOldValue(2).GetValueInt64();
         int64_t tgtelemid = change.GetOldValue(3).GetValueInt64();
-        BeSQLite::EC::ECInstanceKey relkey((ECN::ECClassId)relclsid, relid);
+        BeSQLite::EC::ECInstanceKey relkey(relclsid, relid);
         m_deletedRels.push_back(DepRelData(relkey, DgnElementId((uint64_t)srcelemid), DgnElementId((uint64_t)tgtelemid)));
         }
     else

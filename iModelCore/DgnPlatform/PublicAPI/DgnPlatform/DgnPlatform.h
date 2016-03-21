@@ -351,13 +351,12 @@ typedef IdSet<DgnMaterialId> DgnMaterialIdSet;          //!< IdSet with DgnMater
 //=======================================================================================
 //! A DgnClassId is the local id for an ECClass in a DgnDb.
 //=======================================================================================
-struct DgnClassId : BeInt64Id
+struct DgnClassId : ECN::ECClassId
 {
-    DgnClassId() {Invalidate();}
-    explicit DgnClassId(int64_t val) : BeInt64Id(val) {}
-    DgnClassId(DgnClassId&& rhs) : BeInt64Id(std::move(rhs)) {}
-    DgnClassId(DgnClassId const& rhs) : BeInt64Id(rhs) {}
-    DgnClassId& operator=(DgnClassId const& rhs) {m_id = rhs.m_id; return *this;}
+BEINT64_ID_DECLARE_MEMBERS(DgnClassId, ECN::ECClassId)
+
+public:
+    explicit DgnClassId(ECN::ECClassId id) : ECN::ECClassId(id.GetValue()) {}
 };
 
 //=======================================================================================

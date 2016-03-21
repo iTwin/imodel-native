@@ -320,8 +320,8 @@ DgnDomain::Handler* DgnDomains::LookupHandler(DgnClassId handlerId)
 ECN::ECClassCP DgnDomains::FindBaseOfType(DgnClassId subClassId, DgnClassId baseClassId)
     {
     auto const& schemas = m_dgndb.Schemas();
-    ECN::ECClassCP subClass  = schemas.GetECClass(subClassId.GetValue());
-    ECN::ECClassCP baseClass = schemas.GetECClass(baseClassId.GetValue());
+    ECN::ECClassCP subClass  = schemas.GetECClass(subClassId);
+    ECN::ECClassCP baseClass = schemas.GetECClass(baseClassId);
 
     if (nullptr==subClass || nullptr==baseClass || subClass == baseClass) // can't be baseclass of yourself
         return nullptr;
@@ -368,7 +368,7 @@ DgnDomain::Handler* DgnDomains::FindHandler(DgnClassId handlerId, DgnClassId bas
             if (BE_SQLITE_ROW == stmt.Step())
                 restrictions = stmt.GetValueUInt64(0);
 
-            ECN::ECClassCP ecClass = m_dgndb.Schemas().GetECClass(handlerId.GetValue());
+            ECN::ECClassCP ecClass = m_dgndb.Schemas().GetECClass(handlerId);
             BeAssert(nullptr != ecClass && "It is impossible to end up here with a null ECClass unless the preceding code was later modified");
             handler = handler->_CreateMissingHandler(restrictions, ecClass->GetSchema().GetName(), ecClass->GetName());
             BeAssert(nullptr != handler);
@@ -402,7 +402,7 @@ bool DgnDomains::GetHandlerInfo(uint64_t* restrictionMask, DgnClassId handlerId,
     if (nullptr != restrictionMask)
         *restrictionMask = 0;
 
-    ECN::ECClassCP ecClass = GetDgnDb().Schemas().GetECClass(handlerId.GetValue());
+    ECN::ECClassCP ecClass = GetDgnDb().Schemas().GetECClass(handlerId);
     BeAssert(nullptr != ecClass);
 
     // The ClassHasHandler attribute signifies this specific ECClass has an associated Handler. Therefore we do not check base classes for it.
@@ -514,8 +514,8 @@ DgnDbStatus DgnDomain::Handler::_VerifySchema(DgnDomains& domains)
     DgnClassId superClassId = domains.GetClassId(*handlerSuperClass);
 
     auto const& schemas = domains.GetDgnDb().Schemas();
-    ECN::ECClassCP myEcClass    = schemas.GetECClass(classId.GetValue());
-    ECN::ECClassCP superEcClass = schemas.GetECClass(superClassId.GetValue());
+    ECN::ECClassCP myEcClass    = schemas.GetECClass(classId);
+    ECN::ECClassCP superEcClass = schemas.GetECClass(superClassId);
 
     if (!myEcClass->Is(superEcClass))
         {
@@ -529,7 +529,7 @@ DgnDbStatus DgnDomain::Handler::_VerifySchema(DgnDomains& domains)
     else
         {
         Handler* rootClass = GetRootClass();
-        ECN::ECClassCP rootEcClass = schemas.GetECClass(domains.GetClassId(*rootClass).GetValue());
+        ECN::ECClassCP rootEcClass = schemas.GetECClass(domains.GetClassId(*rootClass));
         BeAssert(nullptr != rootEcClass);
         if (nullptr != rootEcClass && rootEcClass != myEcClass && !myEcClass->IsSingularlyDerivedFrom(*rootEcClass))
             {
@@ -730,12 +730,12 @@ public:
         DgnClassId superClassId = m_domains.GetClassId(*handlerSuperClass);
 
         auto const& schemas = m_domains.GetDgnDb().Schemas();
-        ECN::ECClassCP myECClass = schemas.GetECClass(classId.GetValue());
-        ECN::ECClassCP superECClass = schemas.GetECClass(superClassId.GetValue());
+        ECN::ECClassCP myECClass = schemas.GetECClass(classId);
+        ECN::ECClassCP superECClass = schemas.GetECClass(superClassId);
 
         if (!myECClass->Is(superECClass))
             {
-            LOG.errorv("ERROR: HANDLER hiearchy does not match ECSCHMA hiearchy:\n"
+            LOG.errorv("ERROR: HANDLER hierarchy does not match ECSCHMA hiearchy:\n"
                    " Handler [%s] says it handles ECClass '%s', \n"
                    " but that class does not derive from its superclass handler's ECClass '%s'\n", 
                     typeid(m_handler).name(), m_handler.GetClassName().c_str(), handlerSuperClass->GetClassName().c_str());
@@ -745,7 +745,7 @@ public:
         else
             {
             DgnDomain::Handler* rootClass = m_handler.GetRootClass();
-            ECN::ECClassCP rootEcClass = schemas.GetECClass(m_domains.GetClassId(*rootClass).GetValue());
+            ECN::ECClassCP rootEcClass = schemas.GetECClass(m_domains.GetClassId(*rootClass));
             BeAssert(nullptr != rootEcClass);
             if (nullptr != rootEcClass && rootEcClass != myECClass && !myECClass->IsSingularlyDerivedFrom(*rootEcClass))
                 {
@@ -789,8 +789,8 @@ public:
         DgnClassId instanceClassId(schemas.GetECClassId(m_handler.GetDomain().GetDomainName(), T_Traits::GetECClassName(*instance)));
         DgnClassId instanceSuperClassId(schemas.GetECClassId(handlerSuperClass->GetDomain().GetDomainName(), T_Traits::GetSuperECClassName(*instance)));
 
-        ECN::ECClassCP instanceECClass = schemas.GetECClass(instanceClassId.GetValue());
-        ECN::ECClassCP instanceSuperECClass = schemas.GetECClass(instanceSuperClassId.GetValue());
+        ECN::ECClassCP instanceECClass = schemas.GetECClass(instanceClassId);
+        ECN::ECClassCP instanceSuperECClass = schemas.GetECClass(instanceSuperClassId);
         if (!instanceECClass->Is(instanceSuperECClass))
             {
             LOG.errorv("C++ INHERITANCE ERROR: %s class [%s] handlers ECClass '%s', but it does not derive from ECClass '%s'\n",
