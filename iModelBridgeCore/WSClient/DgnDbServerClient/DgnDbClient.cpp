@@ -18,6 +18,15 @@ USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
+BriefcaseFileNameCallback DgnDbClient::DefaultFileNameCallback = [](BeFileName baseDirectory, BeBriefcaseId briefcase, RepositoryInfoCR repositoryInfo)
+    {
+    baseDirectory.AppendToPath(BeFileName(repositoryInfo.GetId()));
+    BeFileName briefcaseId;
+    briefcaseId.Sprintf(L"%u", briefcase);
+    baseDirectory.AppendToPath(briefcaseId);
+    baseDirectory.AppendToPath(BeFileName(repositoryInfo.GetFileName()));
+    return baseDirectory;
+    };
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             11/2015
@@ -39,7 +48,7 @@ void DgnDbClient::Initialize()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbRepositoryConnectionResult> DgnDbClient::ConnectToRepository(RepositoryInfoCR repository, ICancellationTokenPtr cancellationToken) const
+DgnDbRepositoryConnectionTaskPtr DgnDbClient::ConnectToRepository(RepositoryInfoCR repository, ICancellationTokenPtr cancellationToken) const
     {
     return DgnDbRepositoryConnection::Create(repository, m_credentials, m_clientInfo, cancellationToken, m_authenticationHandler);
     }
@@ -112,51 +121,53 @@ Utf8String ParseRepositoryId(const WSRepository& repository)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnClientFx::Utils::AsyncTaskPtr<DgnDbRepositoriesResult> DgnDbClient::GetRepositories(ICancellationTokenPtr cancellationToken) const
+DgnDbServerRepositoriesTaskPtr DgnDbClient::GetRepositories(ICancellationTokenPtr cancellationToken) const
     {
     BeAssert(DgnDbServerHost::IsInitialized());
     if (m_serverUrl.empty())
         {
-        return CreateCompletedAsyncTask<DgnDbRepositoriesResult>(DgnDbRepositoriesResult::Error(DgnDbServerError::Id::InvalidServerURL));
+        return CreateCompletedAsyncTask<DgnDbServerRepositoriesResult>(DgnDbServerRepositoriesResult::Error(DgnDbServerError::Id::InvalidServerURL));
         }
     if (!m_credentials.IsValid() && !m_authenticationHandler)
         {
-        return CreateCompletedAsyncTask<DgnDbRepositoriesResult>(DgnDbRepositoriesResult::Error(DgnDbServerError::Id::CredentialsNotSet));
+        return CreateCompletedAsyncTask<DgnDbServerRepositoriesResult>(DgnDbServerRepositoriesResult::Error(DgnDbServerError::Id::CredentialsNotSet));
         }
-    std::shared_ptr<DgnDbRepositoriesResult> finalResult = std::make_shared<DgnDbRepositoriesResult>();
+    DgnDbServerRepositoriesResultPtr finalResult = std::make_shared<DgnDbServerRepositoriesResult>();
     return GetRepositoriesByPlugin(ServerSchema::Plugin::Repository, cancellationToken)->Then([=]
         (const WSRepositoriesResult& response)
         {
-        if (response.IsSuccess())
+        if (!response.IsSuccess())
             {
-            if (response.GetValue().empty())
-                {
-                finalResult->SetSuccess(bvector<RepositoryInfoPtr>());
-                return;
-                }
-            bset<std::shared_ptr<AsyncTask>> tasks;
-            for (const auto& repository : response.GetValue())
-                tasks.insert(ConnectToRepository(RepositoryInfo(m_serverUrl, ParseRepositoryId(repository)), cancellationToken));
-            AsyncTask::WhenAll(tasks)->Then([=] ()
-                {
-                bvector<RepositoryInfoPtr> repositories;
-                for (auto task : tasks)
-                    {
-                    auto result = dynamic_pointer_cast<PackagedAsyncTask<DgnDbRepositoryConnectionResult>>(task)->GetResult();
-                    if (result.IsSuccess())
-                        repositories.push_back(std::make_shared<RepositoryInfo>(result.GetValue()->GetRepositoryInfo()));
-                    else
-                        finalResult->SetError(result.GetError());
-                    }
-                if (!repositories.empty())
-                    {
-                    finalResult->SetSuccess(repositories);
-                    }
-                });
-            }
-        else
             finalResult->SetError(response.GetError());
-        })->Then<DgnDbRepositoriesResult>([=] ()
+            return;
+            }
+
+        if (response.GetValue().empty())
+            {
+            finalResult->SetSuccess(bvector<RepositoryInfoPtr>());
+            return;
+            }
+
+        bset<std::shared_ptr<AsyncTask>> tasks;
+        for (const auto& repository : response.GetValue())
+            tasks.insert(ConnectToRepository(RepositoryInfo(m_serverUrl, ParseRepositoryId(repository)), cancellationToken));
+        AsyncTask::WhenAll(tasks)->Then([=] ()
+            {
+            bvector<RepositoryInfoPtr> repositories;
+            for (auto task : tasks)
+                {
+                auto result = dynamic_pointer_cast<PackagedAsyncTask<DgnDbRepositoryConnectionResult>>(task)->GetResult();
+                if (result.IsSuccess())
+                    repositories.push_back(std::make_shared<RepositoryInfo>(result.GetValue()->GetRepositoryInfo()));
+                else
+                    finalResult->SetError(result.GetError());
+                }
+            if (!repositories.empty())
+                {
+                finalResult->SetSuccess(repositories);
+                }
+            });
+        })->Then<DgnDbServerRepositoriesResult>([=] ()
             {
             return *finalResult;
             });
@@ -189,13 +200,13 @@ Json::Value RepositoryCreationJson(Utf8StringCR repositoryName, Utf8StringCR rep
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Andrius.Zonys                  01/2016
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::InitializeRepository(IWSRepositoryClientPtr client, Utf8StringCR repositoryId, Json::Value repositoryCreationJson,
+DgnDbServerRepositoryTaskPtr DgnDbClient::InitializeRepository(IWSRepositoryClientPtr client, Utf8StringCR repositoryId, Json::Value repositoryCreationJson,
     ObjectId repositoryObjectId, HttpRequest::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
     Json::Value repositoryProperties = Json::Value(repositoryCreationJson[ServerSchema::Instance][ServerSchema::Properties]);
     repositoryProperties[ServerSchema::Property::IsUploaded] = true;
 
-    std::shared_ptr<DgnDbRepositoryResult> finalResult = std::make_shared<DgnDbRepositoryResult>();
+    DgnDbServerRepositoryResultPtr finalResult = std::make_shared<DgnDbServerRepositoryResult>();
     return client->SendUpdateObjectRequest(repositoryObjectId, repositoryProperties, nullptr, callback, cancellationToken)
         ->Then([=] (const WSUpdateObjectResult& initializeRepositoryResult)
         {
@@ -213,7 +224,7 @@ AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::InitializeRepository(IWSReposit
             else
                 finalResult->SetError (result.GetError());
             });
-        })->Then<DgnDbRepositoryResult>([=]
+        })->Then<DgnDbServerRepositoryResult>([=]
             {
             return *finalResult;
             });
@@ -232,16 +243,25 @@ DgnDbPtr CleanDb(DgnDbCR db)
     if (BeSQLite::DbResult::BE_SQLITE_OK != status)
         return nullptr;
 
-
+    tempdb->Txns().EnableTracking(true);
     //Do cleanup
-    TxnManager::TxnId cancelToId, tempId = tempdb->Txns().GetCurrentTxnId();            //Clear transaction table
-    while (tempId.IsValid())
+    auto revision = tempdb->Revisions().StartCreateRevision();
+    if (revision.IsValid())
         {
-        cancelToId = tempId;
-        tempId = tempdb->Txns().QueryPreviousTxnId(tempId);
+        auto revisionStatus = tempdb->Revisions().FinishCreateRevision();
+        if (RevisionStatus::Success == revisionStatus)
+            {
+            tempdb->Revisions().MergeRevision(*revision);
+            }
         }
-    if (cancelToId.IsValid())
-        tempdb->Txns().CancelTo(cancelToId, TxnManager::AllowCrossSessions::Yes);
+    //TxnManager::TxnId cancelToId, tempId = tempdb->Txns().GetCurrentTxnId();            //Clear transaction table
+    //while (tempId.IsValid())
+    //    {
+    //    cancelToId = tempId;
+    //    tempId = tempdb->Txns().QueryPreviousTxnId(tempId);
+    //    }
+    //if (cancelToId.IsValid())
+    //    tempdb->Txns().CancelTo(cancelToId, TxnManager::AllowCrossSessions::Yes);
     tempdb->SaveBriefcaseLocalValue("ParentRevisionId", "");                            //Clear parent revision id
     tempdb->ChangeBriefcaseId(BeBriefcaseId(0));                                        //Set BriefcaseId to 0 (master)
     tempdb->SaveBriefcaseLocalValue(DgnDbServer::Db::Local::RepositoryURL, "");         //Set URL
@@ -255,36 +275,36 @@ DgnDbPtr CleanDb(DgnDbCR db)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, Utf8StringCR repositoryName, Utf8StringCR description,
+DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, Utf8StringCR repositoryName, Utf8StringCR description,
     bool published, HttpRequest::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
     BeAssert(DgnDbServerHost::IsInitialized());
     if (!db.GetFileName().DoesPathExist())
         {
-        return CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(DgnDbServerError::Id::FileNotFound));
+        return CreateCompletedAsyncTask<DgnDbServerRepositoryResult>(DgnDbServerRepositoryResult::Error(DgnDbServerError::Id::FileNotFound));
         }
     if (m_serverUrl.empty())
         {
-        return CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(DgnDbServerError::Id::InvalidServerURL));
+        return CreateCompletedAsyncTask<DgnDbServerRepositoryResult>(DgnDbServerRepositoryResult::Error(DgnDbServerError::Id::InvalidServerURL));
         }
     if (!m_credentials.IsValid() && !m_authenticationHandler)
         {
-        return CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(DgnDbServerError::Id::CredentialsNotSet));
+        return CreateCompletedAsyncTask<DgnDbServerRepositoryResult>(DgnDbServerRepositoryResult::Error(DgnDbServerError::Id::CredentialsNotSet));
         }
     if (repositoryName.empty())
         {
-        return CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(DgnDbServerError::Id::InvalidRepostioryName));
+        return CreateCompletedAsyncTask<DgnDbServerRepositoryResult>(DgnDbServerRepositoryResult::Error(DgnDbServerError::Id::InvalidRepostioryName));
         }
 
     DgnDbPtr tempdb = CleanDb(db);
     if (!tempdb.IsValid())
-        CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(DgnDbServerError::Id::FileNotFound));
+        CreateCompletedAsyncTask<DgnDbServerRepositoryResult>(DgnDbServerRepositoryResult::Error(DgnDbServerError::Id::FileNotFound));
     Utf8String dbFileName = tempdb->GetDbFileName();
     BeFileName fileName = tempdb->GetFileName();
     Utf8String dbFileId = tempdb->GetDbGuid().ToString();
     tempdb->CloseDb();
 
-    std::shared_ptr<DgnDbRepositoryResult> finalResult = std::make_shared<DgnDbRepositoryResult>();
+    std::shared_ptr<DgnDbServerRepositoryResult> finalResult = std::make_shared<DgnDbServerRepositoryResult>();
     return GetRepositoriesByPlugin(ServerSchema::Plugin::Admin, cancellationToken)
         ->Then([=] (const WSRepositoriesResult& repositoriesResult)
         {
@@ -327,7 +347,7 @@ AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::CreateNewRepository(Dgn::DgnDbC
 
                     // Stage 3. Initialize repository.
                     InitializeRepository(client, repositoryInstanceId, repositoryCreationJson, repositoryObjectId, callback, cancellationToken)
-                        ->Then([=] (const DgnDbRepositoryResult& result)
+                        ->Then([=] (const DgnDbServerRepositoryResult& result)
                         {
                         if (result.IsSuccess())
                             finalResult->SetSuccess(result.GetValue());
@@ -350,7 +370,7 @@ AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::CreateNewRepository(Dgn::DgnDbC
 
                     // Stage 3. Initialize repository.
                     InitializeRepository(client, repositoryInstanceId, repositoryCreationJson, repositoryObjectId, callback, cancellationToken)
-                        ->Then([=] (const DgnDbRepositoryResult& result)
+                        ->Then([=] (const DgnDbServerRepositoryResult& result)
                         {
                         if (result.IsSuccess())
                             finalResult->SetSuccess(result.GetValue());
@@ -360,7 +380,7 @@ AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::CreateNewRepository(Dgn::DgnDbC
                     });
                 }
             });
-        })->Then<DgnDbRepositoryResult>([=]
+        })->Then<DgnDbServerRepositoryResult>([=]
             {
             return *finalResult;
             });
@@ -369,13 +389,13 @@ AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::CreateNewRepository(Dgn::DgnDbC
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             11/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, bool published, HttpRequest::ProgressCallbackCR callback,
+DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, bool published, HttpRequest::ProgressCallbackCR callback,
     ICancellationTokenPtr cancellationToken) const
     {
     BeAssert(DgnDbServerHost::IsInitialized());
     if (!db.GetFileName().DoesPathExist())
         {
-        return CreateCompletedAsyncTask<DgnDbRepositoryResult>(DgnDbRepositoryResult::Error(DgnDbServerError::Id::FileNotFound));
+        return CreateCompletedAsyncTask<DgnDbServerRepositoryResult>(DgnDbServerRepositoryResult::Error(DgnDbServerError::Id::FileNotFound));
         }
     Utf8String name;
     db.QueryProperty(name, BeSQLite::PropertySpec(Db::Properties::Name, Db::Properties::ProjectNamespace));
@@ -389,25 +409,25 @@ AsyncTaskPtr<DgnDbRepositoryResult> DgnDbClient::CreateNewRepository(Dgn::DgnDbC
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbBriefcaseResult> DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool doSync, HttpRequest::ProgressCallbackCR callback,
+DgnDbServerBriefcaseTaskPtr DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool doSync, HttpRequest::ProgressCallbackCR callback,
     ICancellationTokenPtr cancellationToken) const
     {
     BeAssert(DgnDbServerHost::IsInitialized());
     if (!db.IsValid() || !db->GetFileName().DoesPathExist())
         {
-        return CreateCompletedAsyncTask<DgnDbBriefcaseResult>(DgnDbBriefcaseResult::Error(DgnDbServerError::Id::FileNotFound));
+        return CreateCompletedAsyncTask<DgnDbServerBriefcaseResult>(DgnDbServerBriefcaseResult::Error(DgnDbServerError::Id::FileNotFound));
         }
     if (!m_credentials.IsValid() && !m_authenticationHandler)
         {
-        return CreateCompletedAsyncTask<DgnDbBriefcaseResult>(DgnDbBriefcaseResult::Error(DgnDbServerError::Id::CredentialsNotSet));
+        return CreateCompletedAsyncTask<DgnDbServerBriefcaseResult>(DgnDbServerBriefcaseResult::Error(DgnDbServerError::Id::CredentialsNotSet));
         }
     RepositoryInfo repositoryInfo;
     auto readResult = RepositoryInfo::ReadRepositoryInfo(repositoryInfo, *db);
     if (!readResult.IsSuccess() || db->GetBriefcaseId().IsMasterId())
         {
-        return CreateCompletedAsyncTask<DgnDbBriefcaseResult>(DgnDbBriefcaseResult::Error(DgnDbServerError::Id::FileIsNotBriefcase));
+        return CreateCompletedAsyncTask<DgnDbServerBriefcaseResult>(DgnDbServerBriefcaseResult::Error(DgnDbServerError::Id::FileIsNotBriefcase));
         }
-    std::shared_ptr<DgnDbBriefcaseResult> finalResult = std::make_shared<DgnDbBriefcaseResult>();
+    std::shared_ptr<DgnDbServerBriefcaseResult> finalResult = std::make_shared<DgnDbServerBriefcaseResult>();
     return ConnectToRepository(repositoryInfo, cancellationToken)->Then([=] (const DgnDbRepositoryConnectionResult& connectionResult)
         {
         if (connectionResult.IsSuccess())
@@ -415,7 +435,7 @@ AsyncTaskPtr<DgnDbBriefcaseResult> DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, 
             DgnDbBriefcasePtr briefcase = DgnDbBriefcase::Create(db, connectionResult.GetValue());
             if (doSync)
                 {
-                briefcase->PullAndMerge(callback, cancellationToken)->Then ([=](const DgnDbServerRevisionMergeResult& result)
+                briefcase->PullAndMerge(callback, cancellationToken)->Then ([=](const DgnDbServerRevisionsResult& result)
                     {
                     if (result.IsSuccess ())
                         finalResult->SetSuccess (briefcase);
@@ -430,41 +450,94 @@ AsyncTaskPtr<DgnDbBriefcaseResult> DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, 
             }
         else
             finalResult->SetError(connectionResult.GetError());
-        })->Then<DgnDbBriefcaseResult>([=] ()
+        })->Then<DgnDbServerBriefcaseResult>([=] ()
             {
             return *finalResult;
             });
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             10/2015
+//@bsimethod                                     Karolis.Dziedzelis             03/2016
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbFileNameResult> DgnDbClient::AcquireBriefcase(RepositoryInfoCR repositoryInfo, BeFileNameCR localFileName, bool doSync,
-    HttpRequest::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+DgnDbServerStatusTaskPtr DgnDbClient::DownloadBriefcase(DgnDbRepositoryConnectionPtr connection, BeFileName filePath, BeBriefcaseId briefcaseId, Utf8StringCR url,
+                                                      bool doSync, HttpRequest::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+    {
+    auto briefcaseTask = connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), url, callback, cancellationToken);
+    if (!doSync)
+        return briefcaseTask;
+
+    auto pullTask = connection->Pull("", callback, cancellationToken);
+    bset<std::shared_ptr<AsyncTask>> tasks;
+    tasks.insert(briefcaseTask);
+    tasks.insert(pullTask);
+    return AsyncTask::WhenAll(tasks)->Then<DgnDbServerStatusResult>([=] ()
+        {
+        if (!briefcaseTask->GetResult().IsSuccess())
+            {
+            return DgnDbServerStatusResult::Error(briefcaseTask->GetResult().GetError());
+            }
+        if (!pullTask->GetResult().IsSuccess())
+            {
+            return DgnDbServerStatusResult::Error(pullTask->GetResult().GetError());
+            }
+
+        BeSQLite::DbResult status;
+        std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
+        DgnDbServerHost::Adopt(host);
+        Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
+        if (BeSQLite::DbResult::BE_SQLITE_OK == status)
+            {
+            db->Txns().EnableTracking(true);
+            bvector<DgnDbServerRevisionPtr> revisions = pullTask->GetResult().GetValue();
+            RevisionStatus mergeStatus = RevisionStatus::Success;
+            if (!revisions.empty())
+                {
+                for (auto revision : revisions)
+                    {
+                    mergeStatus = db->Revisions().MergeRevision(*(revision->GetRevision()));
+                    if (mergeStatus != RevisionStatus::Success)
+                        break; // TODO: Use the information on the revision that actually failed. 
+                    }
+                }
+
+            db->CloseDb();
+            DgnDbServerHost::Forget(host);
+
+            if (RevisionStatus::Success == mergeStatus)
+                return DgnDbServerStatusResult::Success();
+
+            return DgnDbServerStatusResult::Error(mergeStatus);
+            }
+        else
+            {
+            DgnDbServerStatusResult result = DgnDbServerStatusResult::Error(DgnDbServerError(*db, status));
+            DgnDbServerHost::Forget(host);
+            return result;
+            }
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             03/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerFileNameTaskPtr DgnDbClient::AcquireBriefcaseToDir(RepositoryInfoCR repositoryInfo, BeFileNameCR baseDirectory, bool doSync, BriefcaseFileNameCallback const& fileNameCallback,
+                                                              HttpRequest::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
     BeAssert(DgnDbServerHost::IsInitialized());
     std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
     if (repositoryInfo.GetId().empty())
         {
-        return CreateCompletedAsyncTask<DgnDbFileNameResult>(DgnDbFileNameResult::Error(DgnDbServerError::Id::InvalidRepostioryName));
+        return CreateCompletedAsyncTask<DgnDbServerFileNameResult>(DgnDbServerFileNameResult::Error(DgnDbServerError::Id::InvalidRepostioryName));
         }
     if (repositoryInfo.GetServerURL().empty())
         {
-        return CreateCompletedAsyncTask<DgnDbFileNameResult>(DgnDbFileNameResult::Error(DgnDbServerError::Id::InvalidServerURL));
+        return CreateCompletedAsyncTask<DgnDbServerFileNameResult>(DgnDbServerFileNameResult::Error(DgnDbServerError::Id::InvalidServerURL));
         }
     if (!m_credentials.IsValid() && !m_authenticationHandler)
         {
-        return CreateCompletedAsyncTask<DgnDbFileNameResult>(DgnDbFileNameResult::Error(DgnDbServerError::Id::CredentialsNotSet));
+        return CreateCompletedAsyncTask<DgnDbServerFileNameResult>(DgnDbServerFileNameResult::Error(DgnDbServerError::Id::CredentialsNotSet));
         }
-    if (localFileName.DoesPathExist() && !localFileName.IsDirectory())
-        {
-        return CreateCompletedAsyncTask<DgnDbFileNameResult>(DgnDbFileNameResult::Error(DgnDbServerError::Id::FileAlreadyExists));
-        }
-    if (!localFileName.GetDirectoryName().DoesPathExist())
-        {
-        BeFileName::CreateNewDirectory(localFileName.GetDirectoryName());
-        }
-    std::shared_ptr<DgnDbFileNameResult> finalResult = std::make_shared<DgnDbFileNameResult>();
+    std::shared_ptr<DgnDbServerFileNameResult> finalResult = std::make_shared<DgnDbServerFileNameResult>();
     return ConnectToRepository(repositoryInfo, cancellationToken)->Then([=] (const DgnDbRepositoryConnectionResult& connectionResult)
         {
         if (!connectionResult.IsSuccess())
@@ -487,94 +560,49 @@ AsyncTaskPtr<DgnDbFileNameResult> DgnDbClient::AcquireBriefcase(RepositoryInfoCR
             uint32_t briefcaseId = properties[ServerSchema::Property::BriefcaseId].asUInt();
             Utf8StringCR url = properties[ServerSchema::Property::URL].asString();
 
-            BeFileName filePath(localFileName);
-            if (filePath.IsDirectory())
+            BeFileName filePath = fileNameCallback(baseDirectory, BeBriefcaseId(briefcaseId), connection->GetRepositoryInfo());
+            if (filePath.DoesPathExist())
                 {
-                filePath.AppendToPath(BeFileName(repositoryInfo.GetId()));
-                BeFileName briefcase;
-                briefcase.Sprintf(L"%u", briefcaseId);
-                filePath.AppendToPath(briefcase);
-                if (!filePath.DoesPathExist())
-                    BeFileName::CreateNewDirectory(filePath);
-                filePath.AppendToPath(BeFileName(properties[ServerSchema::Property::FileName].asString()));
-                if (filePath.DoesPathExist())
-                    {
-                    finalResult->SetError(DgnDbServerError::Id::FileAlreadyExists);
-                    return;
-                    }
-                }
-
-            uint64_t fileSize;
-            BeStringUtilities::ParseUInt64(fileSize, properties[ServerSchema::Property::FileSize].asCString());
-
-            if (!doSync)
-                {
-                connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), url, callback, cancellationToken)->Then
-                    ([=] (const DgnDbServerResult& result)
-                    {
-                    if (result.IsSuccess())
-                        finalResult->SetSuccess(filePath);
-                    else
-                        finalResult->SetError(result.GetError());
-                    })->Wait();
+                finalResult->SetError(DgnDbServerError::Id::FileAlreadyExists);
                 return;
                 }
-
-            auto briefcaseTask = connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), url, callback, cancellationToken);
-            auto pullTask = connection->Pull("", callback, cancellationToken);
-            bset<std::shared_ptr<AsyncTask>> tasks;
-            tasks.insert(briefcaseTask);
-            tasks.insert(pullTask);
-            AsyncTask::WhenAll(tasks)->Then([=] ()
+            if (!filePath.GetDirectoryName().DoesPathExist())
                 {
-                if (!briefcaseTask->GetResult().IsSuccess())
-                    {
-                    finalResult->SetError(briefcaseTask->GetResult().GetError());
-                    return;
-                    }
-                if (!pullTask->GetResult().IsSuccess())
-                    {
-                    finalResult->SetError(pullTask->GetResult().GetError());
-                    return;
-                    }
+                BeFileName::CreateNewDirectory(filePath.GetDirectoryName());
+                }
 
-                BeSQLite::DbResult status;
-                DgnDbServerHost::Adopt(host);
-                Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb (&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
-                if (BeSQLite::DbResult::BE_SQLITE_OK == status)
-                    {
-                    db->Txns ().EnableTracking (true);
-                    bvector<DgnDbServerRevisionPtr> revisions = pullTask->GetResult ().GetValue ();
-                    RevisionStatus mergeStatus = RevisionStatus::Success;
-                    if (!revisions.empty ())
-                        {
-                        for (auto revision : revisions)
-                            {
-                            mergeStatus = db->Revisions().MergeRevision(*(revision->GetRevision()));
-                            if (mergeStatus != RevisionStatus::Success)
-                                break; // TODO: Use the information on the revision that actually failed. 
-                            }
-                        }
-                                    
-                    db->CloseDb ();
-                    DgnDbServerHost::Forget (host);
-
-                    if (RevisionStatus::Success != mergeStatus)
-                        finalResult->SetError (mergeStatus);
-                    else
-                        finalResult->SetSuccess (filePath);
-                    }
+            DownloadBriefcase(connection, filePath, BeBriefcaseId(briefcaseId), url, doSync, callback, cancellationToken)->Then([=] (DgnDbServerStatusResultCR downloadResult)
+                {
+                if (downloadResult.IsSuccess())
+                    finalResult->SetSuccess(filePath);
                 else
-                    {
-                    finalResult->SetError(DgnDbServerError(*db, status));
-                    DgnDbServerHost::Forget(host);
-                    }
+                    finalResult->SetError(downloadResult.GetError());
                 });
+
             });
-        })->Then<DgnDbFileNameResult>([=] ()
+        })->Then<DgnDbServerFileNameResult>([=] ()
             {
             return *finalResult;
             });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             10/2015
+//---------------------------------------------------------------------------------------
+DgnDbServerFileNameTaskPtr DgnDbClient::AcquireBriefcase(RepositoryInfoCR repositoryInfo, BeFileNameCR localFileName, bool doSync,
+                                                         HttpRequest::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+    {
+    BeAssert(DgnDbServerHost::IsInitialized());
+    if (localFileName.DoesPathExist() && !localFileName.IsDirectory())
+        {
+        return CreateCompletedAsyncTask<DgnDbServerFileNameResult>(DgnDbServerFileNameResult::Error(DgnDbServerError::Id::FileAlreadyExists));
+        }
+    return AcquireBriefcaseToDir(repositoryInfo, localFileName, doSync, [=] (BeFileName baseDirectory, BeBriefcaseId, RepositoryInfoCR repositoryInfo)
+        {
+        if (baseDirectory.IsDirectory())
+            baseDirectory.AppendToPath(BeFileName(repositoryInfo.GetFileName()));
+        return baseDirectory;
+        }, callback, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------

@@ -34,20 +34,21 @@ private:
 protected:
     DgnDbRepositoryManager (WebServices::ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler);
 
-    virtual Response                            _ProcessRequest       (Request const& req, DgnDbR db) override;
-    virtual RepositoryStatus                    _Demote               (DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db) override;
-    virtual RepositoryStatus                    _Relinquish           (Resources which, DgnDbR db) override;
-    virtual RepositoryStatus                    _QueryHeldResources   (DgnLockSet& locks, DgnCodeSet& codes, DgnDbR db) override;
-    virtual RepositoryStatus                    _QueryStates          (DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) override;
+    virtual Response                                _ProcessRequest       (Request const& req, DgnDbR db) override;
+    virtual RepositoryStatus                        _Demote               (DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db) override;
+    virtual RepositoryStatus                        _Relinquish           (Resources which, DgnDbR db) override;
+    virtual RepositoryStatus                        _QueryHeldResources   (DgnLockSet& locks, DgnCodeSet& codes, DgnDbR db) override;
+    virtual RepositoryStatus                        _QueryStates          (DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks,
+                                                                           DgnCodeSet const& codes) override;
 
 public:
-    static DgnDbRepositoryManagerPtr            Create                (WebServices::ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler = nullptr);
-    void                                        SetCredentials        (CredentialsCR credentials) { m_credentials = credentials; };
+    static DgnDbRepositoryManagerPtr                Create                (WebServices::ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler = nullptr);
+    void                                            SetCredentials        (CredentialsCR credentials) { m_credentials = credentials; };
 
 //__PUBLISH_SECTION_START__
 public:
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerResult  Connect          (DgnDbCR db);
-    DGNDBSERVERCLIENT_EXPORT void               SetCancellationToken  (ICancellationTokenPtr cancellationToken);
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusResult  Connect               (DgnDbCR db);
+    DGNDBSERVERCLIENT_EXPORT void                     SetCancellationToken  (ICancellationTokenPtr cancellationToken);
 };
 
 END_BENTLEY_DGNDBSERVER_NAMESPACE

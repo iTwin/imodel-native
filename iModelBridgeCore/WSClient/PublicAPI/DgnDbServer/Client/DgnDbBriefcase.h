@@ -17,9 +17,10 @@ BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 typedef std::shared_ptr<struct DgnDbBriefcase> DgnDbBriefcasePtr;
+DEFINE_POINTER_SUFFIX_TYPEDEFS(DgnDbBriefcase);
 
-typedef AsyncResult<bool, DgnDbServerError>                            DgnDbServerBoolResult;
-typedef AsyncResult<bvector<DgnDbServerRevisionPtr>, DgnDbServerError> DgnDbServerRevisionMergeResult;
+DEFINE_TASK_TYPEDEFS(bool, DgnDbServerBool);
+DEFINE_TASK_TYPEDEFS(bvector<DgnDbServerRevisionPtr>, DgnDbServerRevisionMerge);
 
 //=======================================================================================
 //! A class that represents 
@@ -36,9 +37,10 @@ private:
 
     DgnDbBriefcase (Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection);
 
-    AsyncTaskPtr<DgnDbServerRevisionMergeResult> PullMergeAndPushInternal (HttpRequest::ProgressCallbackCR downloadCallback = nullptr, HttpRequest::ProgressCallbackCR uploadCallback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
-    AsyncTaskPtr<DgnDbServerRevisionMergeResult> PullMergeAndPushRepeated (HttpRequest::ProgressCallbackCR downloadCallback = nullptr, HttpRequest::ProgressCallbackCR uploadCallback = nullptr, ICancellationTokenPtr cancellationToken = nullptr,
-                                                                           int attemptsCount = 1, int attempt = 1, int delay = 0) const;
+    DgnDbServerRevisionsTaskPtr PullMergeAndPushInternal (HttpRequest::ProgressCallbackCR downloadCallback = nullptr, HttpRequest::ProgressCallbackCR uploadCallback = nullptr,
+                                                          ICancellationTokenPtr cancellationToken = nullptr) const;
+    DgnDbServerRevisionsTaskPtr PullMergeAndPushRepeated (HttpRequest::ProgressCallbackCR downloadCallback = nullptr, HttpRequest::ProgressCallbackCR uploadCallback = nullptr,
+                                                          ICancellationTokenPtr cancellationToken = nullptr, int attemptsCount = 1, int attempt = 1, int delay = 0) const;
 
 public:
     //! Create an instance of a briefcase from previously downloaded briefcase file.
@@ -46,7 +48,7 @@ public:
     //! @param[in] connection Connection to a repository on server.
     //! @return Returns shared pointer of the created instance.
     //! @note This method is called by DgnDbClient. See DgnDbClient::OpenBriefcase.
-    static DgnDbBriefcasePtr                                               Create                  (Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection);
+    static DgnDbBriefcasePtr                                    Create                  (Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection);
 
 //__PUBLISH_SECTION_START__
 public:
@@ -54,7 +56,8 @@ public:
     //! @param[in] callback Download progress callback.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that returns success or an error and list of pulled and merged revisions.
-    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbServerRevisionMergeResult>  PullAndMerge            (HttpRequest::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerRevisionMergeTaskPtr    PullAndMerge            (HttpRequest::ProgressCallbackCR callback = nullptr,
+                                                                                         ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Pull and merge incomming revisions and then send the outgoing revisions.
     //! @param[in] downloadCallback Download progress callback.
@@ -62,18 +65,19 @@ public:
     //! @param[in] cancellationToken
     //! @param[in] attemptsCount Maximum count of retries if fail.
     //! @return Asynchronous task that returns success or an error and list of pulled and merged revisions.
-    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbServerRevisionMergeResult>  PullMergeAndPush        (HttpRequest::ProgressCallbackCR downloadCallback = nullptr, HttpRequest::ProgressCallbackCR uploadCallback = nullptr,
-                                                                                                    ICancellationTokenPtr cancellationToken = nullptr, int attemptsCount = 1) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerRevisionMergeTaskPtr    PullMergeAndPush        (HttpRequest::ProgressCallbackCR downloadCallback = nullptr,
+                                                                                         HttpRequest::ProgressCallbackCR uploadCallback = nullptr,
+                                                                                         ICancellationTokenPtr cancellationToken = nullptr, int attemptsCount = 1) const;
 
     //! Returns true if briefcase is up to date and there are no revisions pending. This will end up sending request to the server.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that returns success or an error.
-    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbServerBoolResult>           IsBriefcaseUpToDate     (ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerBoolTaskPtr             IsBriefcaseUpToDate     (ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    DGNDBSERVERCLIENT_EXPORT Dgn::DgnDbR                                   GetDgnDb                () const; //!< Briefcase file.
-    DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionCR                   GetRepositoryConnection () const; //!< Connection to a repository on server.
-    DGNDBSERVERCLIENT_EXPORT BeSQLite::BeBriefcaseId                       GetBriefcaseId          () const; //!< Briefcase Id.
-    DGNDBSERVERCLIENT_EXPORT Utf8String                                    GetLastRevisionPulled   () const; //!< Last revision that was pulled by this briefcase.
+    DGNDBSERVERCLIENT_EXPORT Dgn::DgnDbR                        GetDgnDb                () const; //!< Briefcase file.
+    DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionCR        GetRepositoryConnection () const; //!< Connection to a repository on server.
+    DGNDBSERVERCLIENT_EXPORT BeSQLite::BeBriefcaseId            GetBriefcaseId          () const; //!< Briefcase Id.
+    DGNDBSERVERCLIENT_EXPORT Utf8String                         GetLastRevisionPulled   () const; //!< Last revision that was pulled by this briefcase.
 
 };
 

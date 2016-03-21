@@ -89,9 +89,7 @@ struct DgnDbServerError : public DgnClientFx::Utils::AsyncError
 
         DGNDBSERVERCLIENT_EXPORT DgnDbServerError(DgnClientFx::Utils::HttpErrorCR error);
 
-        JsonValueCR GetExtendedData();
-        DGNDBSERVERCLIENT_EXPORT DgnDbServerError::Id GetId();
+        JsonValueCR GetExtendedData() const;
+        DGNDBSERVERCLIENT_EXPORT DgnDbServerError::Id GetId() const;
     };
-
-typedef DgnClientFx::Utils::AsyncResult<void, DgnDbServerError> DgnDbServerResult;
 END_BENTLEY_DGNDBSERVER_NAMESPACE

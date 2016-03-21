@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <DgnDbServer/DgnDbServerCommon.h>
+#include <DgnDbServer/Client/DgnDbServerResult.h>
 #include <DgnClientFx/Utils/Http/HttpRequest.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/LocksManager.h>
@@ -14,6 +15,7 @@
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
+
 namespace ServerSchema
     {
     static Utf8CP Instance = "instance";
