@@ -50,7 +50,7 @@ ExtendedData ExtendedDataAdapter::GetData(ECInstanceKeyCR ownerKey)
 
     ECInstanceKey holderKey = m_delegate.GetHolderKey(ownerKey);
 
-    statement->BindInt64(1, holderKey.GetECClassId());
+    statement->BindId(1, holderKey.GetECClassId());
     statement->BindId(2, holderKey.GetECInstanceId());
 
     ECInstanceId extendedDataId;

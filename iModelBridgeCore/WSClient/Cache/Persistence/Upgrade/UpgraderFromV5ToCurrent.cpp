@@ -217,7 +217,7 @@ BentleyStatus UpgraderFromV5ToCurrent::CopyData(DataSourceCache& newCache)
         bvector<ECInstanceKey> rootChildrenKeys;
         while (BE_SQLITE_ROW == statement->Step())
             {
-            rootChildrenKeys.push_back({statement->GetValueUInt64(0), statement->GetValueId<ECInstanceId>(1)});
+            rootChildrenKeys.push_back({statement->GetValueId<ECClassId>(0), statement->GetValueId<ECInstanceId>(1)});
             }
 
         for (ECInstanceKeyCR childKey : rootChildrenKeys)
@@ -301,7 +301,7 @@ JsonValueCR oldParentInfo
         return SUCCESS;
         }
 
-    Utf8PrintfString statementKey("CopyInstanceHierarchy:%lld", relationshipClass->GetId());
+    Utf8PrintfString statementKey("CopyInstanceHierarchy:%llu", relationshipClass->GetId().GetValue());
     auto statement = m_statementCache.GetPreparedStatement(statementKey, [&]
         {
         Utf8String ecsql ("SELECT TargetECClassId, TargetECInstanceId FROM ONLY ");
@@ -309,14 +309,14 @@ JsonValueCR oldParentInfo
         return ecsql;
         });
 
-    statement->BindInt64(1, oldParentKey.GetECClassId());
+    statement->BindId(1, oldParentKey.GetECClassId());
     statement->BindId(2, oldParentKey.GetECInstanceId());
 
     bvector<ECInstanceKey> childrenKeys;
     DbResult status;
     while (BE_SQLITE_ROW == (status = statement->Step()))
         {
-        childrenKeys.push_back({statement->GetValueUInt64(0), statement->GetValueId<ECInstanceId>(1)});
+        childrenKeys.push_back({statement->GetValueId<ECClassId>(0), statement->GetValueId<ECInstanceId>(1)});
         }
 
     bvector<RawWSObjectsReader::RawInstance> navigationResponseInstances;
@@ -584,7 +584,7 @@ JsonValueR instanceInfo
         }
 
     // Instance and InstanceInfo
-    Utf8PrintfString statementKey("ReadInstanceData:%lld", key.GetECClassId());
+    Utf8PrintfString statementKey("ReadInstanceData:%llu", key.GetECClassId().GetValue());
     auto statement = m_statementCache.GetPreparedStatement(statementKey, [&]
         {
         Utf8String ecsql("SELECT * FROM ONLY ");

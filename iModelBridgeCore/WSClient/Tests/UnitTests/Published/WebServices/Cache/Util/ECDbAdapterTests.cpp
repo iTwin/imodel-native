@@ -152,7 +152,7 @@ TEST_F(ECDbAdapterTests, GetECClass_ValidClassId_ReturnsClass)
 TEST_F(ECDbAdapterTests, GetECClass_InValidClassId_ReturnsNull)
     {
     auto db = GetTestDb();
-    ECClassCP ecClass = ECDbAdapter(*db).GetECClass(9999);
+    ECClassCP ecClass = ECDbAdapter(*db).GetECClass(ECClassId(UINT64_C(9999)));
     EXPECT_EQ(nullptr, ecClass);
     }
 
@@ -739,7 +739,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_NotExistingInstance_NotifiesBeforeDelet
     ECDbAdapter adapter(*db);
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
 
-    ECInstanceKey instance = StubECInstanceKey(ecClass->GetId(), 123456);
+    ECInstanceKey instance = StubECInstanceKey(ecClass->GetId().GetValue(), 123456);
 
     CREATE_MockECDbAdapterDeleteListener(listener);
     EXPECT_CALL(listener, OnBeforeDelete(Ref(*ecClass), instance.GetECInstanceId(), _)).WillOnce(Return(SUCCESS));

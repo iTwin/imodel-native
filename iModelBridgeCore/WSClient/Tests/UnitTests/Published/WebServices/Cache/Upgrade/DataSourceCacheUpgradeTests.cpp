@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Upgrade/DataSourceCacheUpgradeTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -294,7 +294,7 @@ void DataSourceCacheUpgradeTests::ValidateV5SeedData(IDataSourceCache& cache, Be
         EXPECT_EQ(SUCCESS, cache.GetAdapter().PrepareStatement(statement, ecsql));
         EXPECT_EQ(ECSqlStatus::Success, statement.BindText(1, testPropertyValue.c_str(), IECSqlBinder::MakeCopy::No));
         EXPECT_EQ(BE_SQLITE_ROW, statement.Step());
-        return ECInstanceKey(statement.GetValueInt64(0), statement.GetValueId<ECInstanceId>(1));
+        return ECInstanceKey(statement.GetValueId<ECClassId>(0), statement.GetValueId<ECInstanceId>(1));
         };
 
     auto newInstanceKey1 = findInstanceByPropertyValue("NewValue1");

@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Instances/ObjectInfo.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -19,8 +19,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 +--------------------------------------------------------------------------------------*/
 ObjectInfo::ObjectInfo() :
 ChangeInfo(Json::nullValue),
-m_instanceClass(nullptr),
-m_infoClassId(0)
+m_instanceClass(nullptr)
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -46,7 +45,7 @@ CachedInstanceKey ObjectInfo::GetCachedInstanceKey() const
 ECInstanceKey ObjectInfo::GetInstanceKey() const
     {
     ECInstanceId ecInstanceId = ECDbHelper::ECInstanceIdFromJsonValue(m_infoJson[CLASS_CachedObjectInfo_PROPERTY_InstanceId]);
-    return ECInstanceKey(m_instanceClass ? m_instanceClass->GetId() : 0, ecInstanceId);
+    return ECInstanceKey(m_instanceClass ? m_instanceClass->GetId() : ECClassId(), ecInstanceId);
     }
 
 /*--------------------------------------------------------------------------------------+

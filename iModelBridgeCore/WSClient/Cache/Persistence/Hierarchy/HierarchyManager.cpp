@@ -161,7 +161,7 @@ BentleyStatus HierarchyManager::DeleteInstances(ECSqlStatement& ecInstanceKeySta
     DbResult status;
     while (BE_SQLITE_ROW == (status = ecInstanceKeyStatement.Step()))
         {
-        ECClassId ecClassId = ecInstanceKeyStatement.GetValueInt64(0);
+        ECClassId ecClassId = ecInstanceKeyStatement.GetValueId<ECClassId>(0);
         ECInstanceId ecInstanceId = ecInstanceKeyStatement.GetValueId<ECInstanceId>(1);
         instances.Insert(ecClassId, ecInstanceId);
         }
@@ -343,7 +343,7 @@ ECInstanceKeyMultiMap& keysOut
         return ERROR;
         }
 
-    Utf8PrintfString key("HierarchyManager::ReadTargetKeys:%lld", relationshipClass->GetId());
+    Utf8PrintfString key("HierarchyManager::ReadTargetKeys:%llu", relationshipClass->GetId().GetValue());
     auto statement = m_statementCache.GetPreparedStatement(key, [&]
         {
         return 
@@ -352,13 +352,13 @@ ECInstanceKeyMultiMap& keysOut
             "WHERE rel.SourceECClassId = ? AND rel.SourceECInstanceId = ? ";
         });
 
-    statement->BindInt64(1, source.GetECClassId());
+    statement->BindId(1, source.GetECClassId());
     statement->BindId(2, source.GetECInstanceId());
 
     DbResult status;
     while (BE_SQLITE_ROW == (status = statement->Step()))
         {
-        ECClassId ecClassId = statement->GetValueInt64(0);
+        ECClassId ecClassId = statement->GetValueId<ECClassId>(0);
         ECInstanceId ecId = statement->GetValueId<ECInstanceId>(1);
 
         keysOut.insert({ecClassId, ecId});

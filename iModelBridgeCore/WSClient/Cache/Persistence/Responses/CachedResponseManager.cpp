@@ -109,7 +109,7 @@ BentleyStatus CachedResponseManager::OnBeforeDelete(ECN::ECClassCR ecClass, ECIn
     statement->BindId(1, ecInstanceId);
     statement->Step();
 
-    ECInstanceKey responseInfoKey(statement->GetValueInt64(0), statement->GetValueId<ECInstanceId>(1));
+    ECInstanceKey responseInfoKey(statement->GetValueId<ECClassId>(0), statement->GetValueId<ECInstanceId>(1));
     if (!responseInfoKey.IsValid())
         {
         BeAssert(false);
@@ -871,7 +871,7 @@ BentleyStatus CachedResponseManager::InvalidateResponsePagesContainingInstance(C
             "WHERE rel.TargetECClassId = ? AND rel.TargetECInstanceId = ? ";
         });
 
-    statement->BindInt64(1, nodeKey.GetECClassId());
+    statement->BindId(1, nodeKey.GetECClassId());
     statement->BindId(2, nodeKey.GetECInstanceId());
 
     if (SUCCESS != m_dbAdapter.ExtractECIdsFromStatement(*statement, 0, pageIds))
@@ -889,7 +889,7 @@ BentleyStatus CachedResponseManager::InvalidateResponsePagesContainingInstance(C
             "WHERE rel.TargetECClassId = ? AND rel.TargetECInstanceId = ? ";
         });
 
-    statement->BindInt64(1, nodeKey.GetECClassId());
+    statement->BindId(1, nodeKey.GetECClassId());
     statement->BindId(2, nodeKey.GetECInstanceId());
 
     if (SUCCESS != m_dbAdapter.ExtractECIdsFromStatement(*statement, 0, pageIds))

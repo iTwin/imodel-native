@@ -291,13 +291,13 @@ bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClasses(ECClassId so
         m_findRelationshipClassesStatement->ClearBindings();
         }
 
-    m_findRelationshipClassesStatement->BindInt64(1, sourceClassId);
-    m_findRelationshipClassesStatement->BindInt64(2, targetClassId);
+    m_findRelationshipClassesStatement->BindId(1, sourceClassId);
+    m_findRelationshipClassesStatement->BindId(2, targetClassId);
 
     BeSQLite::DbResult status;
     while (BeSQLite::DbResult::BE_SQLITE_ROW == (status = m_findRelationshipClassesStatement->Step()))
         {
-        classes.push_back(GetECRelationshipClass(m_findRelationshipClassesStatement->GetValueInt64(0)));
+        classes.push_back(GetECRelationshipClass(m_findRelationshipClassesStatement->GetValueId<ECClassId>(0)));
         }
 
     return classes;
@@ -809,7 +809,7 @@ ECInstanceKey ECDbAdapter::RelateInstances(ECRelationshipClassCP relClass, ECIns
         return relationshipKey;
         }
 
-    Utf8PrintfString key("RelateInstances:%lld", relClass->GetId());
+    Utf8PrintfString key("RelateInstances:%llu", relClass->GetId().GetValue());
     auto statement = m_statementCache.GetPreparedStatement(key, [&]
         {
         return Utf8PrintfString(
@@ -818,9 +818,9 @@ ECInstanceKey ECDbAdapter::RelateInstances(ECRelationshipClassCP relClass, ECIns
             );
         });
 
-    statement->BindInt64(1, source.GetECClassId());
+    statement->BindId(1, source.GetECClassId());
     statement->BindId(2, source.GetECInstanceId());
-    statement->BindInt64(3, target.GetECClassId());
+    statement->BindId(3, target.GetECClassId());
     statement->BindId(4, target.GetECInstanceId());
 
     if (BE_SQLITE_DONE != statement->Step(relationshipKey))
@@ -846,7 +846,7 @@ ECInstanceKey ECDbAdapter::FindRelationship(ECRelationshipClassCP relClass, ECIn
         return ECInstanceKey(relClass->GetId(), ECInstanceId());
         }
 
-    Utf8PrintfString key("FindRelationship:%lld", relClass->GetId());
+    Utf8PrintfString key("FindRelationship:%llu", relClass->GetId().GetValue());
     auto statement = m_statementCache.GetPreparedStatement(key, [&]
         {
         return  Utf8PrintfString(
@@ -858,9 +858,9 @@ ECInstanceKey ECDbAdapter::FindRelationship(ECRelationshipClassCP relClass, ECIn
             );
         });
 
-    statement->BindInt64(1, source.GetECClassId());
+    statement->BindId(1, source.GetECClassId());
     statement->BindId(2, source.GetECInstanceId());
-    statement->BindInt64(3, target.GetECClassId());
+    statement->BindId(3, target.GetECClassId());
     statement->BindId(4, target.GetECInstanceId());
 
     if (BE_SQLITE_ROW != statement->Step())
@@ -1046,7 +1046,7 @@ BentleyStatus ECDbAdapter::GetRelatedTargetKeys(ECRelationshipClassCP relClass, 
         return ERROR;
         }
 
-    statement.BindInt64(1, source.GetECClassId());
+    statement.BindId(1, source.GetECClassId());
     statement.BindId(2, source.GetECInstanceId());
 
     DbResult status;
@@ -1146,7 +1146,7 @@ BentleyStatus ECDbAdapter::DeleteInstances(const ECInstanceKeyMultiMap& instance
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbAdapter::DeleteInstance(ECClassId classId, ECInstanceId instanceId)
     {
-    Utf8PrintfString key("DeleteInstance:%lld", classId);
+    Utf8PrintfString key("DeleteInstance:%llu", classId.GetValue());
     auto statement = m_statementCache.GetPreparedStatement(key, [&]
         {
         ECClassCP ecClass = GetECClass(classId);
@@ -1312,7 +1312,7 @@ bset<ECInstanceKey>& allInstancesBeingDeletedOut
         return SUCCESS;
         }
 
-    Utf8PrintfString key("FindInstancesBeingDeletedForRelationship:%lld", relClass.GetId());
+    Utf8PrintfString key("FindInstancesBeingDeletedForRelationship:%llu", relClass.GetId().GetValue());
     auto statement = m_statementCache.GetPreparedStatement(key, [&]
         {
         Utf8String ecsql = "SELECT ";
@@ -1337,7 +1337,7 @@ bset<ECInstanceKey>& allInstancesBeingDeletedOut
         return ERROR;
         }
 
-    ECInstanceKey child(statement->GetValueInt64(0), statement->GetValueId<ECInstanceId>(1));
+    ECInstanceKey child(statement->GetValueId<ECClassId>(0), statement->GetValueId<ECInstanceId>(1));
 
     if (StrengthType::Embedding == relClass.GetStrength() ||
         (StrengthType::Holding == relClass.GetStrength() && (CountHoldingParents(child, &allInstancesBeingDeletedOut) <= 1)))

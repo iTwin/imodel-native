@@ -481,7 +481,7 @@ bool CacheNavigationTask::IsObjectFileBacked(CacheTransactionCR txn, ECInstanceK
         return false;
         }
 
-    Utf8PrintfString key("IsObjectFileBacked:%lld", instance.GetECClassId());
+    Utf8PrintfString key("IsObjectFileBacked:%llu", instance.GetECClassId().GetValue());
     auto statement = m_statementCache->GetPreparedStatement(key, [&]
         {
         return
