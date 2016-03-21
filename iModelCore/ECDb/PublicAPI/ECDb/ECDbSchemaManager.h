@@ -158,6 +158,7 @@ private:
 
     //! Implementation of IECClassLocater
     virtual ECN::ECClassCP _LocateClass (Utf8CP schemaName, Utf8CP className) override;
+    //void PrepareForImport(ECSchemaList& existingSchemas, ECSchemaList& importedSchemas, bvector<ECN::ECSchemaP> const& dependencyOrderedPrimarySchemas) const;
 
 public:
 #if !defined (DOCUMENTATION_GENERATOR)
@@ -279,5 +280,7 @@ public:
     };
 
 typedef ECDbSchemaManager const& ECDbSchemaManagerCR;
+
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

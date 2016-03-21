@@ -10,7 +10,7 @@
 #include "ClassMap.h"
 #include "ClassMapInfo.h"
 #include "ECDbSql.h"
-
+#include "ECDbSchemaEditor.h"
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //======================================================================================
@@ -121,5 +121,34 @@ public:
     ClassMapLoadContext& GetClassMapLoadContext() { return m_loadContext; }
     SchemaImportECDbMapDb& GetECDbMapDb() { return m_ecdbMapDb; }
     };
+struct ECSchemaCompareContext
+    {
+    private:
+        ECSchemaList m_existingSchemaList;
+        ECSchemaList m_importedSchemaList;
+        ECSchemaChanges m_changes;
+    public:
+        ECSchemaCompareContext() {}
+        ~ECSchemaCompareContext() {}
+        BentleyStatus Prepare(ECDbSchemaManager const& schemaManager, bvector<ECSchemaP> const& dependencyOrderedPrimarySchemas);
+        ECSchemaList const& GetExistingSchemaSet() const { return m_existingSchemaList; }
+        ECSchemaList const& GetImportedSchemaSet() const { return m_importedSchemaList; }
+        ECSchemaCP FindExistingSchema(Utf8CP schemaName) const
+            {
+            for (auto schema : m_existingSchemaList)
+                if (schema->GetName() == schemaName)
+                    return schema;
 
+            return nullptr;
+            }
+        ECSchemaCP FindImportedSchema(Utf8CP schemaName) const
+            {
+            for (auto schema : m_importedSchemaList)
+                if (schema->GetName() == schemaName)
+                    return schema;
+
+            return nullptr;
+            }
+        ECSchemaChanges& GetChanges() { return m_changes; }
+    };
 END_BENTLEY_SQLITE_EC_NAMESPACE

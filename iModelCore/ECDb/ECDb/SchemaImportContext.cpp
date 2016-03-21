@@ -10,6 +10,33 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECSchemaCompareContext::Prepare(ECDbSchemaManager const& schemaManager, bvector<ECSchemaP> const& dependencyOrderedPrimarySchemas)
+    {
+    m_existingSchemaList.clear();
+    m_importedSchemaList.clear();
+
+    for (ECSchemaCP schema : dependencyOrderedPrimarySchemas)
+        {
+        if (ECSchemaCP existingSchema = schemaManager.GetECSchema(schema->GetName().c_str(), true))
+            {
+            if (existingSchema == schema)
+                continue;
+
+            m_existingSchemaList.push_back(existingSchema);
+            }
+
+        m_importedSchemaList.push_back(schema);
+        }
+    ECSchemaComparer comparer;
+    ECSchemaChanges schemaChanges;
+    if (comparer.Compare(schemaChanges, m_existingSchemaList, m_importedSchemaList) != SUCCESS)
+        return ERROR;
+
+    return SUCCESS;
+    }
 //*************************************************************************************
 // SchemaImportContext
 //*************************************************************************************

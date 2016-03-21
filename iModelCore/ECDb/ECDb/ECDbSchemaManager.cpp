@@ -287,20 +287,24 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext const&
     if (!isValid)
         return ERROR;
 
+    ECSchemaCompareContext ctx;
+    if (ctx.Prepare(*this, dependencyOrderedPrimarySchemas) != SUCCESS)
+        return ERROR;
+
     ECDbSchemaWriter schemaWriter(m_ecdb);
-    for (ECSchemaCP schema : dependencyOrderedPrimarySchemas)
+    for (ECSchemaCP schema : ctx.GetImportedSchemaSet())
         {
         importedSchemas.push_back(schema);
-
         if (INT64_C(0) != ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, schema->GetName().c_str()))
             continue;
 
-        if (SUCCESS != schemaWriter.Import(*schema))
+        if (SUCCESS != schemaWriter.Import(ctx, *schema))
             return ERROR;
         }
 
     return SUCCESS;
     }
+
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
