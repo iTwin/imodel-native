@@ -120,7 +120,7 @@ TEST_F(SqlFunctionsTest, placement_areaxy)
         DbResult rc = stmt.Step(); // rc will be BE_SQLITE_ERROR, and m_db->GetLastError() will return "Illegal input to DGN_bbox_areaxy"
         //__PUBLISH_EXTRACT_END__
         ASSERT_EQ( BE_SQLITE_ERROR , rc );
-        BeTest::Log("SqlFunctionsTest", BeTest::PRIORITY_INFO, Utf8PrintfString("SQLite error: %s\n", m_db->GetLastError().c_str())); // displays "SQLite error: Illegal input to DGN_bbox_areaxy"
+        BeTest::Log("SqlFunctionsTest", BeTest::PRIORITY_INFO, Utf8PrintfString("SQLite error: %s\n", m_db->GetLastError().c_str()).c_str()); // displays "SQLite error: Illegal input to DGN_bbox_areaxy"
         }
 
     //  The X-Y area is width (X) time depth (Y)
@@ -142,7 +142,7 @@ TEST_F(SqlFunctionsTest, placement_areaxy)
             totalAreaXy += areaxy;
             }
 
-        ASSERT_EQ( BE_SQLITE_DONE , rc ) << (Utf8CP)Utf8PrintfString("SQLite error: %s", m_db->GetLastError().c_str());
+        ASSERT_EQ( BE_SQLITE_DONE , rc ) << Utf8PrintfString("SQLite error: %s", m_db->GetLastError().c_str()).c_str();
         EXPECT_DOUBLE_EQ( 2*obstacleXyArea , totalAreaXy );
         }
 
