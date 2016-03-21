@@ -6,9 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "..\ThreeMxSchemaInternal.h"
-
 #include    <DgnPlatform/HttpHandler.h>
-
 #include    <windows.h>
 
 
@@ -19,12 +17,10 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 int s_debugCacheLevel = 0;
 
-
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/2005
 +---------------+---------------+---------------+---------------+---------------+------*/
-double   getTimeResolution ()
+static double getTimeResolution ()
     {
     // Thanks to http://www.codeproject.com/cpp/duration.asp for pointing put how to use QueryPerformanceCounter, etc.
     LARGE_INTEGER li;
@@ -69,7 +65,7 @@ struct BVectorStreamBuffer : public std::basic_streambuf<Utf8Char>
                 break;
             }
         return 1;
-	}
+        }
 
     virtual pos_type __CLR_OR_THIS_CALL seekpos(pos_type position, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out) override
         {
@@ -396,11 +392,11 @@ struct   NodeRequest
 
 };
 
-typedef bmap <MRMeshNodeP, NodeRequest>   T_RequestMap;
+typedef bmap<MRMeshNodeP, NodeRequest>   T_RequestMap;
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     03/2015
 +===============+===============+===============+===============+===============+======*/
-struct  BentleyApi::ThreeMxSchema::MRMeshCache
+struct  ThreeMxSchema::MRMeshCache
 {
     RealityDataCache*               m_cache;
     T_RequestMap                    m_requests;
@@ -630,9 +626,7 @@ size_t GetMaxDepth ()
     return maxDepth;
     }
 
-
-               
-  /*-----------------------------------------------------------------------------------**//**
+/*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   FlushStale (uint64_t staleTime)
@@ -805,35 +799,9 @@ BentleyStatus  MRMeshUtil::ReadSceneFile (S3SceneInfo& sceneInfo, WCharCP  fileN
     if (HttpRequestStatus::Success != HttpHandler::Instance().Request (response, request))
         return ERROR;
 
-
     BVectorStreamBuffer buff (response->GetBody());
     std::istream        stream (&buff);
 
     return (SUCCESS == BaseSceneNode::Read3MX (stream, sceneInfo, err)) ? SUCCESS : ERROR;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

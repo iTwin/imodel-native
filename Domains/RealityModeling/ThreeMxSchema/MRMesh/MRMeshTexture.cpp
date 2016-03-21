@@ -7,9 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "..\ThreeMxSchemaInternal.h"
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_THREEMX_SCHEMA
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      11/2008
@@ -32,13 +31,12 @@ StatusInt readBGRAFromJPEGData (ByteStream& bgra, Point2dR size, Byte const* jpe
     return SUCCESS;
     }
 
-
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 MRMeshTexture::MRMeshTexture (Byte const* pData, size_t dataSize)
     {
-    // This constructor is run in the "reality data" threads.   We'll decompress the data here and then free it
+    // This constructor is run in the "reality data" threads. We'll decompress the data here and then free it
     // after initial use so that we dont have to do it in the main thread..
     // But save the uncompressed data as well which we'll keep around just in case the texture
     // image is required again (by an export application).
@@ -83,7 +81,6 @@ virtual     uintptr_t  _GetQvMaterialId (DgnDbR dgnDb, bool createIfNotFound) co
         return m_qvMaterialId = (uintptr_t) this;        // These qvMaterials will not be shared -- just use own memory address as qvMaterialId.
 
     return m_qvMaterialId;
-
     }
 
 /*-----------------------------------------------------------------------------------**//**
@@ -189,32 +186,4 @@ void MRMeshTexture::ReleaseQVisionCache ()
         }
 #endif
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
