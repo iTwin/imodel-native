@@ -123,7 +123,7 @@ void ECDbDebugInfoHolder::Log(Utf8StringCR context)
             message += schemaMessage;
             }
         }
-    LOG.trace(message);
+    LOG.trace(message.c_str());
     }
 
 /*--------------------------------------------------------------------------------------+

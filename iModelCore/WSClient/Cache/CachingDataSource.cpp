@@ -133,7 +133,7 @@ WorkerThreadPtr cacheAccessThread
     if (cacheAccessThread == nullptr)
         {
         Utf8PrintfString threadName("Cache '%s'", client->GetRepositoryId().c_str());
-        cacheAccessThread = WorkerThread::Create(threadName);
+        cacheAccessThread = WorkerThread::Create(threadName.c_str());
         }
 
     auto openResult = std::make_shared<OpenResult>();

@@ -216,7 +216,7 @@ HttpResponse StubWSInfoHttpResponseWebApi(BeVersion webApiVersion)
         info.GetWebApiVersion().GetMajor(),
         info.GetWebApiVersion().GetMinor()
         );
-    return StubHttpResponse(HttpStatus::OK, "", {{"Server", serverHeader}});
+    return StubHttpResponse(HttpStatus::OK, "", {{"Server", serverHeader.c_str()}});
     }
 
 void WriteStringToHttpBody(Utf8StringCR string, HttpBodyPtr body)
