@@ -2610,7 +2610,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
         {
         GeometryCollection collection(stream, db);
 
-        output._DoOutputLine(Utf8PrintfString("\n--- GeometryStream Entry Ids ---\n\n"));
+        output._DoOutputLine(Utf8PrintfString("\n--- GeometryStream Entry Ids ---\n\n").c_str());
 
         for (auto iter : collection)
             {
@@ -2642,7 +2642,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                 }
             }
 
-        output._DoOutputLine(Utf8PrintfString("\n"));
+        output._DoOutputLine("\n");
         }
     }
 
