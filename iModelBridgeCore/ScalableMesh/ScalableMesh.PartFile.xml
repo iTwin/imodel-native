@@ -29,6 +29,7 @@
         <SubPart PartName="BeCurl"          PartFile="BeCurl"                                   Repository="Libsrc-Curl"/>
        <SubPart PartName="CGALHeaders" PartFile="CGAL" Repository="Libsrc-CGAL" />
        <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
+	   <SubPart PartName="BePointCloud" PartFile="BePointCloud" Repository="BePointCloud" />
         <!-- For Importer-->
         <!--<SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
         <SubPart PartName="DgnGeoCoord"     PartFile="GeoCoord"                             Repository="GeoCoord" />
@@ -159,6 +160,7 @@
 		<ProductDirectory Name="BeOpenSSLAssemblies" Path="Dlls"/>
         <ProductDirectory Name="BeCurlAssemblies" Path="Dlls"/>
 		<ProductDirectory Name="BeIcu4cData"       Path="Dlls" LibType="static" />
+		<ProductDirectory Name="PointCloudAssemblies" Path="Dlls" Deliver="true" />
     </ProductDirectoryList>
     
     <Product Name="ScalableMeshATP" SaveProduct="true" >

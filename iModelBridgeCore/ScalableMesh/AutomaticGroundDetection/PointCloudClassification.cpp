@@ -77,8 +77,6 @@ class ChannelAppData :  public ElementRefAppData
 ClassificationChannelManager::ClassificationChannelManager()
     {
     SisterFileManager::GetInstance().Register(&this->Get());
-    //NEEDS_WORK_SM_IMPORTER : Deactivated
-    //ChannelUndoRedoManager::GetInstance().Register(&this->Get());
     }
 
 ClassificationChannelManager::~ClassificationChannelManager()
@@ -116,8 +114,6 @@ void ClassificationChannelManager::_OnSave(ElementHandleR eh, IPointCloudChannel
     else
         {
         ClassificationChannelHandlerPtr ptr = ClassificationChannelHandler::GetChannelHandler(eh);
-        //NEEDS_WORK_SM_IMPORTER : Deactivated
-        //ChannelUndoRedoManager::GetInstance().SaveRedo(ptr->GetFullPath(), _GetExtension());
         }
     }
 
