@@ -1274,3 +1274,23 @@ TEST (BeStringUtilitiesTests, ParseDelimitedString)
     EXPECT_STREQ(L"3G4", tokens[2].c_str());
     EXPECT_STREQ(L"Fourty Two", tokens[3].c_str());
     }
+//---------------------------------------------------------------------------------------
+// @betest                                     Umar.Hayat                  03/16
+//---------------------------------------------------------------------------------------
+TEST(BeStringUtilitiesTests, WCharUtf16Roundtrip)
+    {
+    // The first caller to convert strings in a process has to ensure BeStringUtilities::Initialize is called.
+    initBeStringUtilities();
+
+    WString expected(TESTDATA_StringW);
+    Utf16P strUtf16 = new Utf16Char[expected.size() + 1];
+    EXPECT_TRUE(SUCCESS == BeStringUtilities::WCharToUtf16(strUtf16, expected.size() + 1, expected.c_str()));
+    
+    WString strWString;
+    strWString.reserve(expected.size() + 1);
+
+    BeStringUtilities::Utf16ToWChar((WCharP)strWString.data(), expected.size() + 1, strUtf16);
+
+    EXPECT_EQ(0, wcscmp(expected.c_str(), strWString.c_str()));
+
+    }

@@ -1368,6 +1368,10 @@ TEST(WStringTest, ReplaceI)
     str.assign(L"ABC");
     EXPECT_FALSE(str.ReplaceI(L"ABCD", L""));
     EXPECT_STREQ(L"ABC", str.c_str());
+
+    str.assign(L"ABC");
+    EXPECT_FALSE(str.ReplaceI(L"ABCD", NULL));
+    EXPECT_STREQ(L"ABC", str.c_str());
     }
 //---------------------------------------------------------------------------------------
 // @betest                                      Umar.Hayat                          02/16
@@ -1435,4 +1439,16 @@ TEST(WStringTest, Assign)
 
     str5.AssignUtf16(nullptr);
     VERIFY(str5 == L"");
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          03/16
+//---------------------------------------------------------------------------------------
+TEST(AStringTest, Util)
+    {
+    AString str (L" abc ");
+    VERIFY (str.c_str() == str.c_str() );
+    AString cc (str);
+    VERIFY( str == cc );
+    VERIFY( str.length() == 5 );
     }
