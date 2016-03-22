@@ -62,7 +62,8 @@ ECObjectsHeaders    =           $(ecobjectsPublicAPISrc)ECObjects.h \
                                 $(ecobjectsPublicAPISrc)ECDiff.h \
                                 $(ecobjectsPublicAPISrc)SchemaLocalizedStrings.h \
                                 $(ecobjectsPublicAPISrc)AdHocJsonContainer.h \
-                                $(ecobjectsPublicAPISrc)ECJsonUtilities.h
+                                $(ecobjectsPublicAPISrc)ECJsonUtilities.h \
+                                $(ecobjectsPublicAPISrc)ECRelationshipPath.h
 
 
 ECPresentationHeaders =         $(ecpresentationPublicAPISrc)auicommand.h \
@@ -173,6 +174,8 @@ $(o)SchemaLocalizedStrings$(oext)                          : $(baseDir)SchemaLoc
 $(o)AdHocJsonContainer$(oext)                              : $(baseDir)AdHocJsonContainer.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)ECJsonUtilities$(oext)                                 : $(baseDir)ECJsonUtilities.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)ECRelationshipPath$(oext)                              : $(baseDir)ECRelationshipPath.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 # ECPresentation
 
