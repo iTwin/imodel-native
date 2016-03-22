@@ -10,11 +10,14 @@
 #include <DgnPlatform/DgnIModel.h>
 #include <DgnPlatform/ColorUtil.h>
 #include <DgnPlatform/DgnGeoCoord.h>
+#include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
+USING_DGNDB_UNIT_TESTS_NAMESPACE
+USING_NAMESPACE_BENTLEY_DPTEST
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   05/11
@@ -765,4 +768,77 @@ TEST_F (DgnProjectPackageTest, VerifyViewsForDgndbFilesConvertedDuringBuild)
 
         dgnProj->CloseDb ();
         }
+    }
+
+/*=================================================================================**//**
+* @bsiclass                                                     Sam.Wilson      01/15
++===============+===============+===============+===============+===============+======*/
+struct QueryElementIdGraphiteURI : ::testing::Test
+{
+    BETEST_DECLARE_TC_SETUP
+    BETEST_DECLARE_TC_TEARDOWN
+
+    ScopedDgnHost m_host;
+    static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
+
+    QueryElementIdGraphiteURI()
+        {
+        // Must register my domain whenever I initialize a host
+        DgnPlatformTestDomain::Register();
+        }
+};
+
+DgnDbTestUtils::SeedDbInfo QueryElementIdGraphiteURI::s_seedFileInfo;
+
+//---------------------------------------------------------------------------------------
+// Do one-time setup for all tests in this group
+// In this case, I just request the (root) seed file that my tests will use and make a note of it.
+// @bsimethod                                           Sam.Wilson             01/2016
+//---------------------------------------------------------------------------------------
+BETEST_TC_SETUP(QueryElementIdGraphiteURI) 
+    {
+    ScopedDgnHost tempHost;
+    QueryElementIdGraphiteURI::s_seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(true, true));
+    }
+
+//---------------------------------------------------------------------------------------
+// Clean up what I did in my one-time setup
+// @bsimethod                                           Sam.Wilson             01/2016
+//---------------------------------------------------------------------------------------
+BETEST_TC_TEARDOWN(QueryElementIdGraphiteURI)
+    {
+    // Note: leave your subdirectory in place. Don't remove it. That allows the 
+    // base class to detect and throw an error if two groups try to use a directory of the same name.
+    // Don't worry about stale data. The test runner will clean out everything at the start of the program.
+    // You can empty the directory, if you want to save space.
+    //DgnDbTestUtils::EmptySubDirectory(GROUP_SUBDIR);
+    }
+
+TEST_F(QueryElementIdGraphiteURI, Test1)
+    {
+    // Note: We know that our group's TC_SETUP function has already created the group seed file. We can just ask for it.
+    DgnDbPtr db = DgnDbTestUtils::OpenSeedDbCopy(s_seedFileInfo.fileName, L"Test1");
+    ASSERT_TRUE(db.IsValid());
+
+    DgnModelId mid = db->Models().QueryModelId(s_seedFileInfo.modelCode);
+    DgnCategoryId catId = DgnCategory::QueryCategoryId(s_seedFileInfo.categoryName, *db);
+
+    DgnElementCPtr el;
+    if (true)
+        {
+        TestElementPtr testel = TestElement::Create(*db, mid, catId, "E1");
+        testel->SetTestElementProperty("foo");
+        el = testel->Insert();
+        ASSERT_TRUE(el.IsValid());
+
+        db->SaveChanges();
+        }
+
+    Utf8CP uri = "/DgnElements?ECClass=DgnPlatformTest:TestElement&TestElementProperty=foo";
+    auto eid = db->Elements().QueryElementIdGraphiteURI(uri);
+    ASSERT_TRUE(eid == el->GetElementId());
+
+    Utf8CP baduri = "/DgnElements?ECClass=DgnPlatformTest:TestElement&TestElementProperty=bar";
+    auto badeid = db->Elements().QueryElementIdGraphiteURI(baduri);
+    ASSERT_TRUE(!badeid.IsValid());
     }

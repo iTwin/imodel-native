@@ -76,10 +76,12 @@ protected:
     };
 
     Properties m_properties;
-    mutable TextureCache m_cache;
-
+    mutable RealityDataCachePtr m_realityDataCache;
+    mutable TextureCache m_textureCache;
+        
 public:
-    TextureCache& GetTextureCache() const {return m_cache;}
+    RealityDataCache& GetRealityDataCache() const;
+    TextureCache& GetTextureCache() const {return m_textureCache;}
 
     //! Create a new WebMercatorModel object, in preparation for loading it from the DgnDb.
     WebMercatorModel(CreateParams const& params) : T_Super(params) {}

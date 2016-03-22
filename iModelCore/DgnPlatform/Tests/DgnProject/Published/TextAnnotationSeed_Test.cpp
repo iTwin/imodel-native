@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: Tests/DgnProject/Published/TextAnnotationSeed_Test.cpp $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include "AnnotationTestFixture.h"
@@ -42,11 +42,11 @@ TEST(BasicTextAnnotationSeedTest, PropertyBagTypes)
 }
 
 #define DECLARE_AND_SET_DATA_1(STYLE_PTR)\
-    Utf8String name = "MySeed";                                                                STYLE_PTR->SetName(name.c_str());\
-    Utf8String description = "MySeedDescription";                                                   STYLE_PTR->SetDescription(description.c_str());\
-    AnnotationFrameStylePtr frameStyle = createAnnotationFrameStyle(project , "TestFrameStyle" );         STYLE_PTR->SetFrameStyleId(frameStyle->GetElementId());\
-    AnnotationLeaderStylePtr leaderStyle = createAnnotationLeaderStyle(project, "TestLeaderStyle");       STYLE_PTR->SetLeaderStyleId(leaderStyle->GetElementId());\
-    AnnotationTextStylePtr textStyle = createAnnotationTextStyle(project, "TestTextStyle");         STYLE_PTR->SetTextStyleId(textStyle->GetElementId());
+    Utf8String name = "MySeed";                                                                             STYLE_PTR->SetName(name.c_str());\
+    Utf8String description = "MySeedDescription";                                                           STYLE_PTR->SetDescription(description.c_str());\
+    AnnotationFrameStylePtr frameStyle = createAnnotationFrameStyle(project , "TestFrameStyle" );           STYLE_PTR->SetFrameStyleId(frameStyle->GetElementId());\
+    AnnotationLeaderStylePtr leaderStyle = createAnnotationLeaderStyle(project, "TestLeaderStyle");         STYLE_PTR->SetLeaderStyleId(leaderStyle->GetElementId());\
+    AnnotationTextStylePtr textStyle = createAnnotationTextStyle(project, "TestTextStyle");                 STYLE_PTR->SetTextStyleId(textStyle->GetElementId());
 
 #define VERIFY_DATA_1(STYLE_PTR)\
     EXPECT_TRUE(name.Equals(STYLE_PTR->GetName()));\
@@ -339,4 +339,5 @@ TEST_F(TextAnnotationSeedTest, InvalidOperations)
         EXPECT_EQ(DgnDbStatus::DeletionProhibited, project.Elements().Delete(*styleToDelete));
         EXPECT_EQ(1, TextAnnotationSeed::QueryCount(project));
     }
+
 

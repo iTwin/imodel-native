@@ -100,6 +100,10 @@ struct Task : RefCounted<NonCopyableClass>
         ChangeDecorations,
         DrawProgressive,
         DrawFrame,
+        Redraw,
+        BeginHeal,
+        FinishHeal,
+        Heal,
     };
 
     //! The outcome of the processing of a Task.
@@ -134,6 +138,8 @@ public:
     //! @return true if this Task should replace the other pending task.
     virtual bool _Replaces(Task& other) const {return m_operation == other.m_operation;}
 
+    virtual bool _DefinesScene() const = 0;
+
     virtual void _OnQueued() const {}
 
     Target* GetTarget() const {return m_target.get();} //!< Get the Target of this Task
@@ -142,6 +148,25 @@ public:
     double GetElapsedTime() const {return m_elapsedTime;} //!< Elapsed time in seconds. Only valid if m_outcome is Finished or Aborted
 
     Task(Target* target, Operation operation) : m_target(target), m_operation(operation) {}
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   03/16
+//=======================================================================================
+struct SceneTask : Task
+{
+    bool _DefinesScene() const override {return true;}
+    bool _Replaces(Task& other) const override {return Render::Task::_Replaces(other) || !other._DefinesScene();}
+    using Task::Task;
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   03/16
+//=======================================================================================
+struct NonSceneTask : Task
+{
+    bool _DefinesScene() const override {return false;}
+    using Task::Task;
 };
 
 //=======================================================================================
@@ -180,7 +205,12 @@ public:
     //! to complete.
     void AddAndWait(Task& task) {AddTask(task); WaitForIdle();}
 
-    DGNPLATFORM_EXPORT bool HasPending(Task::Operation op);
+    //! @return true if the render queue is empty and no pending tasks are active.
+    //! @note This method may only be called from the main thread 
+    DGNPLATFORM_EXPORT bool IsIdle() const;
+
+    DGNPLATFORM_EXPORT bool HasPending(Task::Operation op) const;
+    DGNPLATFORM_EXPORT bool HasActiveOrPending(Task::Operation op) const;
 };
 
 //=======================================================================================
@@ -931,7 +961,7 @@ public:
         if (nullptr != m_vp && m_vp != &vp)
             return false;
 
-        if (0.0 == m_minSize && 0.0 == m_maxSize)
+        if (0.0 == metersPerPixel || (0.0 == m_minSize && 0.0 == m_maxSize))
             return true;
 
         return (metersPerPixel >= m_minSize && metersPerPixel <= m_maxSize);
@@ -1154,7 +1184,9 @@ struct GraphicList : RefCounted<NonCopyableClass>
     uint32_t GetCount() const {return (uint32_t) m_list.size();}
     bool IsEmpty() const {return m_list.empty();}
     void Clear() {m_list.clear();}
+    DGNPLATFORM_EXPORT void Drop(Graphic& graphic);
     DGNPLATFORM_EXPORT void Add(Graphic& graphic, void* ovr, uint32_t ovrFlags);
+    DGNPLATFORM_EXPORT void ChangeOverride(Graphic& graphic, void* ovr, uint32_t ovrFlags);
 };
 
 //=======================================================================================
@@ -1168,6 +1200,16 @@ struct Decorations
     GraphicListPtr m_world;          // drawn with zbuffer, with default lighting, smooth shading
     GraphicListPtr m_worldOverlay;   // drawn in overlay mode, world units
     GraphicListPtr m_viewOverlay;    // drawn in overlay mode, view units
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   03/16
+//=======================================================================================
+struct Redraws
+{
+    GraphicListPtr m_erase;
+    GraphicListPtr m_draw;
+    GraphicListPtr m_change;
 };
 
 //=======================================================================================
@@ -1234,7 +1276,7 @@ public:
 };
 
 //=======================================================================================
-//! A Render::Device is the platform specific object that connects a render target to a the platform's rendering system.
+//! A Render::Device is the platform specific object that connects a render target to a rendering system.
 //! It holds a reference to a Render::Window.
 //! On Windows, for example, the default Render::Device maps to a "DC"
 // @bsiclass                                                    Keith.Bentley   11/15
@@ -1303,16 +1345,21 @@ public:
         DGNPLATFORM_EXPORT static void SaveProgressiveTarget(int);
         static void Show();
     };
-
     virtual void _ChangeScene(GraphicListR scene, ClipPrimitiveCP activeVolume) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
     virtual void _ChangeTerrain(GraphicListR terrain) {VerifyRenderThread(); m_terrain = !terrain.IsEmpty() ? &terrain : nullptr;}
     virtual void _ChangeDynamics(GraphicListR dynamics) {VerifyRenderThread(); m_dynamics = &dynamics;}
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
     virtual void _ChangeRenderPlan(PlanCR) = 0;
+    virtual void _Redraw(Redraws&) = 0;
+    virtual void _BeginHeal() = 0;
+    virtual void _DrawHeal(GraphicListR healList) = 0;
+    enum class HealAborted : bool {No=0, Yes=1};
+    virtual void _FinishHeal(HealAborted) = 0;
+    virtual bool _NeedsHeal(BSIRectR) const = 0;
     virtual void _DrawFrame(StopWatch&) = 0;
     virtual void _DrawProgressive(GraphicListR progressiveList, StopWatch&) = 0;
-    virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
+    virtual double _GetCameraFrustumNearScaleLimit() const = 0;
 
     void AbortProgressive() {m_abort=true;}
     Point2d GetScreenOrigin() const {return _GetScreenOrigin();}
@@ -1329,7 +1376,8 @@ public:
 
     uint32_t GetGraphicsPerSecondScene() const {return m_graphicsPerSecondScene.load();}
     uint32_t GetGraphicsPerSecondNonScene() const {return m_graphicsPerSecondNonScene.load();}
-    DGNPLATFORM_EXPORT void RecordFrameTime(GraphicList&, double seconds, bool isFromProgressiveDisplay);
+    void RecordFrameTime(GraphicList& scene, double seconds, bool isFromProgressiveDisplay) { RecordFrameTime(scene.GetCount(), seconds, isFromProgressiveDisplay); }
+    DGNPLATFORM_EXPORT void RecordFrameTime(uint32_t numGraphicsInScene, double seconds, bool isFromProgressiveDisplay);
 };
 
 END_BENTLEY_RENDER_NAMESPACE

@@ -146,7 +146,7 @@ DgnDbStatus DgnElement::_DeleteInDb() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP DgnElement::GetElementClass() const
     {
-    return GetDgnDb().Schemas().GetECClass(GetElementClassId().GetValue());
+    return GetDgnDb().Schemas().GetECClass(GetElementClassId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1155,7 +1155,7 @@ void InstanceUpdater::Update(DgnElementCR el)
         IECInstancePtr instance = adapter.GetInstance();
         BeAssert(instance.IsValid());
         Utf8Char idStrBuffer[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
-        ECInstanceIdHelper::ToString(idStrBuffer, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, el.GetElementId());
+        ECInstanceIdHelper::ToString(idStrBuffer, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ECInstanceId(el.GetElementId().GetValue()));
         ECN::StandaloneECInstancePtr targetInstance = targetClass->GetDefaultStandaloneEnabler()->CreateInstance();
         targetInstance->SetInstanceId(idStrBuffer);
         targetInstance->CopyValues(*instance.get());
@@ -1547,7 +1547,7 @@ DgnElement::AppData::DropMe DgnElement::Aspect::_OnUpdated(DgnElementCR modified
         {
         DgnDbR db = modified.GetDgnDb();
         ECInstanceKey existing = _QueryExistingInstanceKey(modified);
-        if (existing.IsValid() && (existing.GetECClassId() != GetECClassId(db).GetValue()))
+        if (existing.IsValid() && (existing.GetECClassId() != GetECClassId(db)))
             {
             _DeleteInstance(modified);
             existing = ECInstanceKey();  //  trigger an insert below
@@ -1749,7 +1749,7 @@ void DgnElement::MultiAspect::AddAspect(DgnElementR el, MultiAspect& aspect)
 ECInstanceKey DgnElement::MultiAspect::_QueryExistingInstanceKey(DgnElementCR el)
     {
     // My m_instanceId field is valid if and only if I was just inserted or was loaded from an existing instance.
-    return ECInstanceKey(GetECClassId(el.GetDgnDb()).GetValue(), m_instanceId);
+    return ECInstanceKey(GetECClassId(el.GetDgnDb()), m_instanceId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1888,7 +1888,7 @@ ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR e
         return ECInstanceKey();
 
     // And we know the ID. See if such an instance actually exists.
-    return ECInstanceKey(classId.GetValue(), GetAspectInstanceId(el));
+    return ECInstanceKey(classId, GetAspectInstanceId(el));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2143,8 +2143,10 @@ uint64_t DgnElement::RestrictedAction::Parse(Utf8CP name)
         };
 
     for (auto const& pair : s_pairs)
+        {
         if (0 == BeStringUtilities::Stricmp(name, pair.name))
             return pair.action;
+        }
 
     return T_Super::Parse(name);
     }
@@ -2152,9 +2154,9 @@ uint64_t DgnElement::RestrictedAction::Parse(Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_OnChildInsert(DgnElementCR) const { return GetElementHandler()._IsRestrictedAction(RestrictedAction::InsertChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success; }
-DgnDbStatus DgnElement::_OnChildUpdate(DgnElementCR, DgnElementCR) const { return GetElementHandler()._IsRestrictedAction(RestrictedAction::UpdateChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success; }
-DgnDbStatus DgnElement::_OnChildDelete(DgnElementCR) const { return GetElementHandler()._IsRestrictedAction(RestrictedAction::DeleteChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success; }
+DgnDbStatus DgnElement::_OnChildInsert(DgnElementCR) const {return GetElementHandler()._IsRestrictedAction(RestrictedAction::InsertChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success;}
+DgnDbStatus DgnElement::_OnChildUpdate(DgnElementCR, DgnElementCR) const {return GetElementHandler()._IsRestrictedAction(RestrictedAction::UpdateChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success;}
+DgnDbStatus DgnElement::_OnChildDelete(DgnElementCR) const {return GetElementHandler()._IsRestrictedAction(RestrictedAction::DeleteChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
@@ -2541,6 +2543,64 @@ DgnDbStatus GeometricElement::_OnUpdate(DgnElementCR el)
     {
     auto stat = Validate();
     return DgnDbStatus::Success == stat ? T_Super::_OnUpdate(el) : stat;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::_OnInserted(DgnElementP copiedFrom) const 
+    {
+    T_Super::_OnInserted(copiedFrom);
+    T_HOST.GetTxnAdmin()._OnGraphicElementAdded(m_elementId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void  GeometricElement::_OnDeleted() const 
+    {
+    T_Super::_OnDeleted();
+    if (m_graphics.IsEmpty())
+        return;
+        
+    T_HOST.GetTxnAdmin()._OnGraphicsRemoved(m_graphics);
+    m_graphics.Clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::_OnReversedAdd() const 
+    {
+    T_Super::_OnReversedAdd();
+    if (m_graphics.IsEmpty())
+        return;
+        
+    T_HOST.GetTxnAdmin()._OnGraphicsRemoved(m_graphics);
+    m_graphics.Clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::_OnReversedDelete() const 
+    {
+    T_Super::_OnReversedDelete();
+    T_HOST.GetTxnAdmin()._OnGraphicElementAdded(m_elementId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::_OnUpdateFinished() const 
+    {
+    T_Super::_OnUpdateFinished(); 
+    T_HOST.GetTxnAdmin()._OnGraphicElementAdded(m_elementId);
+
+    if (m_graphics.IsEmpty())
+        return;
+    T_HOST.GetTxnAdmin()._OnGraphicsRemoved(m_graphics);
+    m_graphics.Clear();
     }
 
 /*---------------------------------------------------------------------------------**//**

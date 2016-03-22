@@ -1408,8 +1408,8 @@ DgnElementId DgnElements::QueryElementIdByCode(DgnCode const& code) const
     {
     if (!code.IsValid() || code.IsEmpty())
         return DgnElementId(); // An invalid code won't be found; an empty code won't be unique. So don't bother.
-    else
-        return QueryElementIdByCode(code.GetAuthority(), code.GetValue(), code.GetNamespace());
+
+    return QueryElementIdByCode(code.GetAuthority(), code.GetValue(), code.GetNamespace());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1503,7 +1503,7 @@ CachedECSqlStatementPtr DgnElements::GetPreparedInsertStatement(DgnElementR el) 
 CachedECSqlStatementPtr DgnElements::GetPreparedUpdateStatement(DgnElementR el) const
     {
     // Not bothering to cache per handler...use our general-purpose ECSql statement cache
-    return FindClassInfo(el).GetUpdateStmt(GetDgnDb(), el.GetElementId());
+    return FindClassInfo(el).GetUpdateStmt(GetDgnDb(), ECInstanceId(el.GetElementId().GetValue()));
     }
 
 /*---------------------------------------------------------------------------------**//**

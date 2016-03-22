@@ -406,7 +406,7 @@ DgnClassId DgnImportContext::RemapClassId(DgnClassId source)
     if (dest.IsValid())
         return dest;
 
-    ECClassCP sourceecclass = GetSourceDb().Schemas().GetECClass(source.GetValue());
+    ECClassCP sourceecclass = GetSourceDb().Schemas().GetECClass(source);
     if (nullptr == sourceecclass)
         return DgnClassId();
 

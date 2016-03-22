@@ -3,6 +3,16 @@
 
     <ECSchemaReference name="dgn" version="02.00" prefix="dgn"/>
 
+    <ECEntityClass typeName="Graphic3d">
+        <!-- A generic Graphic3d is used by a conversion process when: -->
+        <!-- * It did not have enough information to pick another domain -->
+        <!-- * It determined the element is 3d but does not represent a SpatialLocation -->
+        <BaseClass>dgn:GraphicalElement3d</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
     <ECEntityClass typeName="PhysicalObject">
         <!-- A generic PhysicalObject is used by a conversion process when: -->
         <!-- * It did not have enough information to pick another domain -->

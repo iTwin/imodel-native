@@ -121,32 +121,41 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
     };
 
     //=======================================================================================
-    // The set of DgnElementIds that are contained in a scene. This is used when performing a progressive
-    // update of a view to determine which elements are already visible.
+    // The set of DgnElements that are contained in a scene. This is used when performing a progressive
+    // update or heal of a view to determine which elements are already visible.
     // @bsiclass                                                    Keith.Bentley   02/16
     //=======================================================================================
-    struct SceneMembers : RefCounted<DgnElementIdSet>, NonCopyableClass
+    struct SceneMembers : RefCounted<DgnElementMap>, NonCopyableClass
     {
+        bool m_complete = false;
+        uint32_t m_progressiveTotal = 0;
+
     };
     typedef RefCountedPtr<SceneMembers> SceneMembersPtr;
+
+    //=======================================================================================
+    // @bsiclass                                                    Keith.Bentley   03/16
+    //=======================================================================================
+    struct NonSceneQuery : RangeQuery
+    {
+        NonSceneQuery(DgnQueryViewR view, FrustumCR frustum, DgnViewportCR vp);
+    };
 
     //=======================================================================================
     // A ProgressiveTask for a DgnQueryView that draws all of the elements that satisfy the query and range
     // criteria, but were too small to be in the scene.
     // @bsiclass                                                    Keith.Bentley   04/14
     //=======================================================================================
-    struct NonScene : ProgressiveTask
+    struct ProgressiveTask : Dgn::ProgressiveTask
     {
         enum {SHOW_PROGRESS_INTERVAL = 1000}; // once per second.
         bool m_setTimeout = false;
-        uint32_t m_total = 0;
         uint32_t m_thisBatch = 0;
         uint32_t m_batchSize = 0;
         uint64_t m_nextShow  = 0;
-        SceneMembersPtr m_scene;
-        RangeQuery m_rangeQuery;
+        NonSceneQuery m_rangeQuery;
         DgnQueryViewR m_view;
-        explicit NonScene(DgnQueryViewR view, DgnViewportCR, SceneMembers& scene);
+        explicit ProgressiveTask(DgnQueryViewR view, DgnViewportCR);
         virtual Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
     };
 
@@ -156,32 +165,34 @@ protected:
     Utf8String m_viewSQL;
     double m_sceneLODSize = 6.0; 
     double m_nonSceneLODSize = 7.0; 
+    SceneMembersPtr m_scene;
     SpecialElements m_special;
-    bset<Utf8String> m_copyrightMsgs;  // only keep unique ones
+    bset<Utf8String> m_copyrightMsgs;  // from reality models. Only keep unique ones
     ClipPrimitivePtr m_activeVolume;     //!< the active volume. If present, elements inside this volume may be treated specially
     mutable QueryResultsPtr m_results;
 
     void QueryModelExtents(FitContextR);
     void QueueQuery(DgnViewportR, UpdatePlan::Query const&);
-    void AddtoSceneQuick(SceneContextR context, SceneMembers&, QueryResults& results);
+    void AddtoSceneQuick(SceneContextR context, QueryResults& results);
     bool AbortRequested() const {return m_abortQuery;} //!< @private
     void SetAbortQuery(bool val) const {m_abortQuery=val;} //!< @private
-    virtual DgnQueryViewCP _ToQueryView() const override {return this;}
-    DGNPLATFORM_EXPORT virtual bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
-    DGNPLATFORM_EXPORT virtual void _InvalidateScene() override;
-    DGNPLATFORM_EXPORT virtual bool _IsSceneReady() const override;
-    virtual void _FillModels() override {} // query views do not load elements in advance
-    DGNPLATFORM_EXPORT virtual void _OnUpdate(DgnViewportR vp, UpdatePlan const& plan) override;
-    DGNPLATFORM_EXPORT virtual void _OnAttachedToViewport(DgnViewportR) override;
-    DGNPLATFORM_EXPORT virtual void _CreateScene(SceneContextR) override;
-    DGNPLATFORM_EXPORT virtual void _CreateTerrain(TerrainContextR context) override;
-    DGNPLATFORM_EXPORT virtual void _VisitAllElements(ViewContextR) override;
-    DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR context) override;
-    DGNPLATFORM_EXPORT virtual void _OnCategoryChange(bool singleEnabled) override;
-    DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
-    DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(struct FitContext&) override;
-    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _GetViewedExtents() const override final; // Always DgnDb::Units().GetProjectExtents() for QueryViews, don't allow override.
-    DGNPLATFORM_EXPORT virtual void _DrawDecorations(DecorateContextR) override;
+    DgnQueryViewCP _ToQueryView() const override {return this;}
+    DGNPLATFORM_EXPORT void _DoHeal(HealContext&) override;
+    DGNPLATFORM_EXPORT bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
+    DGNPLATFORM_EXPORT void _InvalidateScene() override;
+    DGNPLATFORM_EXPORT bool _IsSceneReady() const override;
+    void _FillModels() override {} // query views do not load elements in advance
+    DGNPLATFORM_EXPORT void _OnUpdate(DgnViewportR vp, UpdatePlan const& plan) override;
+    DGNPLATFORM_EXPORT void _OnAttachedToViewport(DgnViewportR) override;
+    DGNPLATFORM_EXPORT void _CreateScene(SceneContextR) override;
+    DGNPLATFORM_EXPORT void _CreateTerrain(TerrainContextR context) override;
+    DGNPLATFORM_EXPORT void _VisitAllElements(ViewContextR) override;
+    DGNPLATFORM_EXPORT void _DrawView(ViewContextR context) override;
+    DGNPLATFORM_EXPORT void _OnCategoryChange(bool singleEnabled) override;
+    DGNPLATFORM_EXPORT void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
+    DGNPLATFORM_EXPORT FitComplete _ComputeFitRange(struct FitContext&) override;
+    DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents() const override final; // Always DgnDb::Units().GetProjectExtents() for QueryViews, don't allow override.
+    DGNPLATFORM_EXPORT void _DrawDecorations(DecorateContextR) override;
 
 public:
     //! @param dgndb  The DgnDb for the view

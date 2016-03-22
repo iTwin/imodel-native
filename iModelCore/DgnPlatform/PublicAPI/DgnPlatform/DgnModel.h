@@ -48,6 +48,7 @@ struct DgnElementMap : bmap<DgnElementId, DgnElementCPtr>
             }
         Insert(id, &el);
         }
+    bool Contains(DgnElementId id) const {return end() != find(id);}
     };
 
 /** @addtogroup DgnModelGroup DgnModels
@@ -395,6 +396,8 @@ protected:
     DGNPLATFORM_EXPORT virtual void _EmptyModel();
     virtual DgnRangeTree* _GetRangeIndexP(bool create) const {return nullptr;}
     virtual void _OnValidate() { }
+
+    virtual void _DropGraphicsForViewport(DgnViewportCR viewport) {};
 
     virtual DgnCode const& _GetCode() const override final { return m_code; }
     virtual DgnDbR _GetDgnDb() const override final { return m_dgndb; }

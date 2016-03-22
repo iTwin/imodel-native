@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ECSqlClassParams.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -94,7 +94,7 @@ template<typename T> static uint16_t buildParamString(Utf8StringR str, ECSqlClas
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECSqlClassParams::AppendClassName(Utf8StringR classname, DgnDbCR db, DgnClassId classId)
     {
-    ECClassCP ecclass = db.Schemas().GetECClass(classId.GetValue());
+    ECClassCP ecclass = db.Schemas().GetECClass(classId);
     BeAssert(nullptr != ecclass);
     if (nullptr == ecclass)
         return false;

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/TestFixture/GenericDgnModelTestFixture.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -24,6 +24,7 @@ protected:
     Dgn::ScopedDgnHost       m_host;
     DgnDbTestDgnManager      m_testDgnManager;
 
+public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson     02/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -42,11 +43,11 @@ virtual ~GenericDgnModelTestFixture ()
     {
     }
 
-    DgnModelP GetDgnModelP() const {return m_testDgnManager.GetDgnModelP();}
-    DgnDbP  GetDgnDb() const {return m_testDgnManager.GetDgnProjectP();}
+    DgnModelP       GetDgnModelP() const {return m_testDgnManager.GetDgnModelP();}
+    DgnDbP          GetDgnDb() const {return m_testDgnManager.GetDgnProjectP();}
     void            CloseTestFile() {m_testDgnManager.CloseTestFile();}
     BentleyStatus   ReopenTestFile() {return m_testDgnManager.OpenTestFile (false);}
-    bool      Is3d() const {return m_is3d;}
+    bool            Is3d() const {return m_is3d;}
 };
 
 END_DGNDB_UNIT_TESTS_NAMESPACE

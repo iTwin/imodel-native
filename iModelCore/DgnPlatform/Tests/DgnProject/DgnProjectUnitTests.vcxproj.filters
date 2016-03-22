@@ -250,9 +250,31 @@
     <ClCompile Include="Performance\ComponentModel_PerfTest.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\BackwardCompatibility_Tests.cpp">
-      <Filter>NonPublished</Filter>
+    <ClCompile Include="Published\DateTimeformat_test.cpp">
+      <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="Published\AnnotationParagraph_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\AnnotationLayout_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\VolumeElement_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\BriefcaseManager_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\DgnBaseDomainSchema_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ExampleTestGroup.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ViewAttachment_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\BackwardCompatibility_Tests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\DgnHandlersTests.h">

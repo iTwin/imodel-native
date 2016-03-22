@@ -16,6 +16,16 @@ END_UNNAMED_NAMESPACE
 
 #define RENDER_LOGGING 1
 
+#ifdef RENDER_LOGGING
+#   define DEBUG_PRINTF THREADLOG.debugv
+#   define ERROR_PRINTF THREADLOG.errorv
+#   define WARN_PRINTF THREADLOG.warningv
+#else
+#   define DEBUG_PRINTF(fmt, ...)
+#   define ERROR_PRINTF(fmt, ...)
+#   define WARN_PRINTF(fmt, ...)
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -33,9 +43,8 @@ void Render::Target::Debug::Show()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Render::Target::RecordFrameTime(GraphicList& scene, double seconds, bool isFromProgressiveDisplay) 
+void Render::Target::RecordFrameTime(uint32_t count, double seconds, bool isFromProgressiveDisplay) 
     {
-    uint32_t count = scene.GetCount();
     if (0 == count)
         return;
 
@@ -72,22 +81,32 @@ void Render::Queue::AddTask(Task& task)
             {
             (*entry)->m_outcome = Render::Task::Outcome::Abandoned;
             entry = m_tasks.erase(entry);
+
             }
         else
             ++entry;
         }
 
     task._OnQueued();
-
     m_tasks.push_back(&task);
     mux.unlock();      // release lock before notify so other thread will start immediately vs. "hurry up and wait" problem
     m_cv.notify_all(); 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Render::Queue::IsIdle() const
+    {
+    DgnDb::VerifyClientThread();
+    BeMutexHolder holder(m_cv.GetMutex());
+    return m_tasks.empty() && !m_currTask.IsValid();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Render::Queue::HasPending(Task::Operation op)
+bool Render::Queue::HasPending(Task::Operation op) const
     {
     DgnDb::VerifyClientThread();
 
@@ -99,6 +118,27 @@ bool Render::Queue::HasPending(Task::Operation op)
         }
     return false;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Render::Queue::HasActiveOrPending(Task::Operation op) const
+    {
+    DgnDb::VerifyClientThread();
+
+    BeMutexHolder holder(m_cv.GetMutex());
+    if (m_currTask.IsValid() && m_currTask->GetOperation()==op)
+        return true;
+
+    for (auto entry : m_tasks)
+        {
+        if (entry->GetOperation() == op)
+            return true;
+        }
+
+    return false;
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/15
@@ -135,11 +175,11 @@ void Render::Task::Perform(StopWatch& timer)
     m_outcome = _Process(timer);
     m_elapsedTime = timer.GetCurrentSeconds();
     if (m_elapsedTime>.5)
-        THREADLOG.errorv("task=%s, elapsed=%lf", _GetName(), m_elapsedTime);
+        ERROR_PRINTF("task=%s, elapsed=%lf", _GetName(), m_elapsedTime);
     else if (m_elapsedTime>.125)
-        THREADLOG.warningv("task=%s, elapsed=%lf", _GetName(), m_elapsedTime);
+        WARN_PRINTF("task=%s, elapsed=%lf", _GetName(), m_elapsedTime);
     else
-        THREADLOG.debugv("task=%s, elapsed=%lf", _GetName(), m_elapsedTime);
+        DEBUG_PRINTF("task=%s, elapsed=%lf", _GetName(), m_elapsedTime);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -261,6 +301,38 @@ void GraphicList::Add(Graphic& graphic, void* ovr, uint32_t ovrFlags)
     graphic.Close(); 
     m_list.push_back(Node(graphic, ovr, ovrFlags));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void GraphicList::Drop(Graphic& graphic) 
+    {
+    for (auto it=m_list.begin(); it!=m_list.end(); ++it)
+        {
+        if (it->m_ptr.get() == &graphic)
+            {
+            m_list.erase(it);
+            return;
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void GraphicList::ChangeOverride(Graphic& graphic, void* ovr, uint32_t ovrFlags) 
+    {
+    for (auto it=m_list.begin(); it!=m_list.end(); ++it)
+        {
+        if (it->m_ptr.get() == &graphic)
+            {
+            it->m_overrides = ovr;
+            it->m_ovrFlags = ovrFlags;
+            return;
+            }
+        }
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16

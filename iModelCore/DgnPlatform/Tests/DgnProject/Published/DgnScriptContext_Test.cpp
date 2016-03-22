@@ -247,6 +247,9 @@ TEST_F(DgnScriptTest, RunScripts)
     int retstatus = 0;
     DgnScript::ExecuteDgnDbScript(retstatus, *project, "DgnScriptTests.TestDgnDbScript", parms);
     ASSERT_EQ(0, retstatus);
+    // undefined function
+    DgnScript::ExecuteDgnDbScript(retstatus, *project, "DgnScriptTests.SomeUndefinedFunction", parms);
+    ASSERT_NE(0, retstatus);
     }
 
 /*---------------------------------------------------------------------------------**//**

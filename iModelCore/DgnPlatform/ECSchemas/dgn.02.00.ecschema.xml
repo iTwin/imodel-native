@@ -387,6 +387,7 @@
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Options>SharedColumnsForSubclasses</Options>
+                    <MinimumSharedColumnCount>16</MinimumSharedColumnCount>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -413,6 +414,7 @@
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Options>SharedColumnsForSubclasses</Options>
+                    <MinimumSharedColumnCount>16</MinimumSharedColumnCount>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -457,6 +459,7 @@
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Options>SharedColumnsForSubclasses</Options>
+                    <MinimumSharedColumnCount>8</MinimumSharedColumnCount>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>

@@ -335,9 +335,7 @@ public:
     void insert(const_iterator first, const_iterator last) {((T_SetType&)m_set).insert(first,last);}
     size_t erase(IdType const& val) {return ((T_SetType&)m_set).erase(val);}
     iterator erase(iterator it) {return ((T_SetType&)m_set).erase(it);}
-
     bool Contains(IdType id) const {return end() != find(id);}
-
     void FromJson(Json::Value const& in) {m_set.FromJson(in);}
     void ToJson(Json::Value& out) const {m_set.ToJson(out);}
 
@@ -350,17 +348,7 @@ typedef IdSet<DgnCategoryId> DgnCategoryIdSet;          //!< IdSet with DgnCateg
 typedef IdSet<DgnSubCategoryId> DgnSubCategoryIdSet;    //!< IdSet with DgnSubCategoryId members. @ingroup DgnCategoryGroup
 typedef IdSet<DgnMaterialId> DgnMaterialIdSet;          //!< IdSet with DgnMaterialId members.
 
-//=======================================================================================
-//! A DgnClassId is the local id for an ECClass in a DgnDb.
-//=======================================================================================
-struct DgnClassId : BeSQLite::BeInt64Id
-{
-    DgnClassId() {Invalidate();}
-    explicit DgnClassId(int64_t val) : BeInt64Id(val) {}
-    DgnClassId(DgnClassId&& rhs) : BeInt64Id(std::move(rhs)) {}
-    DgnClassId(DgnClassId const& rhs) : BeInt64Id(rhs) {}
-    DgnClassId& operator=(DgnClassId const& rhs) {m_id = rhs.m_id; return *this;}
-};
+typedef ECN::ECClassId DgnClassId;
 
 //=======================================================================================
 //! The GeometryStreamEntryId class identifies a geometric primitive in a GeometryStream.
@@ -834,6 +822,8 @@ enum class DrawPurpose
     Measure,
     VisibilityCalculation,
     Dynamics,
+    Redraw,
+    Heal,
 };
 
 //! Used to communicate the result of handling an event from a GPS.

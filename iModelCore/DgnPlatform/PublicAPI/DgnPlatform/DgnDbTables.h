@@ -137,7 +137,7 @@ public:
     DgnCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) : m_authority(authorityId), m_value(value), m_nameSpace(nameSpace) { }
 
     //! Construct a code with the specified ID as its namespace
-    DGNPLATFORM_EXPORT DgnCode(DgnAuthorityId authorityId, Utf8StringCR value, BeSQLite::BeInt64Id namespaceId);
+    DGNPLATFORM_EXPORT DgnCode(DgnAuthorityId authorityId, Utf8StringCR value, BeInt64Id namespaceId);
 
     //! Determine whether this DgnCode is valid. A valid code has a valid authority ID and either:
     //!     - An empty namespace and value; or
@@ -382,6 +382,12 @@ public:
     //! @return true if the model name is valid, false otherwise.
     //! @note Model names may also not start or end with a space.
     static bool IsValidName(Utf8StringCR name) {return DgnDbTable::IsValidName(name, GetIllegalCharacters());}
+
+    //! Tell all models to drop any cached graphics associated with the specified viewport.
+    //! This is typically invoked by applications when a viewport is closed or its attributes modified such that the cached graphics
+    //! no longer reflect its state.
+    //! @param[in]      viewport The viewport for which to drop graphics
+    DGNPLATFORM_EXPORT void DropGraphicsForViewport(DgnViewportCR viewport);
 };
 
 
@@ -911,18 +917,18 @@ public:
     {
     private:
         Utf8String m_type;
-        BeSQLite::BeInt64Id m_id;
+        BeInt64Id m_id;
     public:
         //! Constructor.
         //! @param[in]      textType Specifies the type of text. May not be empty.
         //! @param[in]      id       The ID of the associated object. Must be valid.
-        Key(Utf8StringCR textType, BeSQLite::BeInt64Id id) : m_type(textType), m_id(id) { m_type.Trim(); }
+        Key(Utf8StringCR textType, BeInt64Id id) : m_type(textType), m_id(id) { m_type.Trim(); }
 
         //! Default constructor producing an invalid Key.
         Key() { }
 
         Utf8StringCR GetTextType() const { return m_type; } //!< The search text type
-        BeSQLite::BeInt64Id GetId() const { return m_id; } //!< The ID of the object associated with this record
+        BeInt64Id GetId() const { return m_id; } //!< The ID of the object associated with this record
         bool IsValid() const { return !m_type.empty() && m_id.IsValid(); } //!< Determine whether this is a valid Key
     };
 
@@ -938,7 +944,7 @@ public:
         //! @param[in]      id       The ID of the object associated with this text. Must be valid.
         //! @param[in]      text     The searchable text. May not be empty.
         //! @remarks The combination of text type and ID must be unique within the searchable text table
-        Record(Utf8StringCR textType, BeSQLite::BeInt64Id id, Utf8StringCR text) : Record(Key(textType, id), text) { }
+        Record(Utf8StringCR textType, BeInt64Id id, Utf8StringCR text) : Record(Key(textType, id), text) { }
 
         //! Constructor
         //! @param[in]      key  Uniquely identifies this record within the table. Must be valid.
@@ -949,7 +955,7 @@ public:
         Record() { }
 
         Utf8StringCR GetTextType() const { return m_key.GetTextType(); } //!< The search text type
-        BeSQLite::BeInt64Id GetId() const { return m_key.GetId(); } //!< The ID of the object associated with the text
+        BeInt64Id GetId() const { return m_key.GetId(); } //!< The ID of the object associated with the text
         Utf8StringCR GetText() const { return m_text; } //!< The searchable text
         Key const& GetKey() const { return m_key; } //!< The record key
         bool IsValid() const { return m_key.IsValid() && !m_text.empty(); } //!< Determine if this is a valid record
@@ -1017,7 +1023,7 @@ public:
             Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) { }
         public:
             DGNPLATFORM_EXPORT Utf8CP GetTextType() const; //!< The type of text
-            DGNPLATFORM_EXPORT BeSQLite::BeInt64Id GetId() const; //!< The ID of the associated object
+            DGNPLATFORM_EXPORT BeInt64Id GetId() const; //!< The ID of the associated object
             DGNPLATFORM_EXPORT Utf8CP GetText() const; //!< The search text
 
             Key GetKey() const { return Key(GetTextType(), GetId()); } //!< The unique Key identifying this entry
@@ -1061,7 +1067,7 @@ public:
     //! @param[in]      text     The searchable text. May not be empty.
     //! @return Success if the new record was inserted, or else an error code.
     //! @remarks The combination of text type and ID must be unique within the searchable text table
-    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertRecord(Utf8CP textType, BeSQLite::BeInt64Id id, Utf8CP text);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertRecord(Utf8CP textType, BeInt64Id id, Utf8CP text);
 
     //! Update an existing record in the searchable text table
     //! @param[in]      record      The modified record

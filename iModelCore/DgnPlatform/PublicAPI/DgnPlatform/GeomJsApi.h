@@ -100,6 +100,11 @@ JsSTRUCT(JsGeometryNode)
 
 JsSTRUCT(JsPolyfaceVisitor)
 
+JsSTRUCT(JsCurveLocationDetail)     // NOT REFCOUNTED
+JsSTRUCT(JsPartialCurveDetail)      // NOT REFCOUNTED
+JsSTRUCT(JsPartialCurveDetailPair)  // NOT REFCOUNTED
+JsSTRUCT(JsPartialCurveDetailPairArray)
+
 // Forward declare access methods so JsDPoint2d and JsDPoint3d can query their vector peers.
 DVec3d GetData (JsDVector3dP);
 DVec2d GetData (JsDVector2dP);
@@ -135,7 +140,7 @@ virtual JsCurveVectorP AsCurveVector (){return nullptr;}
 virtual JsSolidPrimitiveP AsSolidPrimitive () {return nullptr;}
 virtual JsPolyfaceMeshP AsPolyfaceMesh () {return nullptr;}
 
-// real implementation is expectged for all types .... stubs do something if possible . . 
+// real implementation is expected for all types .... stubs do something if possible . . 
 virtual JsDRange3dP Range ();
 virtual JsDRange3dP RangeAfterTransform (JsTransformP transform);
 };
@@ -212,6 +217,8 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 #include <DgnPlatform/GeomJsTypes/JsPolyfaceMesh.h>
 #include <DgnPlatform/GeomJsTypes/JsPolyfaceVisitor.h>
 #include <DgnPlatform/GeomJsTypes/JsDgnXXXDetail.h>
+#include <DgnPlatform/GeomJsTypes/JsCurveLocationDetail.h>
+
 
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
