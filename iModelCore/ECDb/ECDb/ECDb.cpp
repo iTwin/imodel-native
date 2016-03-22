@@ -186,6 +186,14 @@ void ECDb::RemoveIssueListener()
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                03/2016
+//---------------+---------------+---------------+---------------+---------------+------
+void ECDb::AddAppData(AppData::Key const& key, AppData* appData, bool deleteOnClearCache) const
+    {
+    m_pimpl->AddAppData(key, appData, deleteOnClearCache);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                Raman.Ramanujam                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
 void ECDb::ClearECDbCache() const

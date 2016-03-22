@@ -78,7 +78,6 @@
     <ClCompile Include="ECSql\JsonECSqlSelectAdapter.cpp" />
     <ClCompile Include="ECSql\JsonInserter.cpp" />
     <ClCompile Include="ECSql\JsonReader.cpp" />
-    <ClCompile Include="ECSql\JsonReaderImpl.cpp" />
     <ClCompile Include="ECSql\JsonUpdater.cpp" />
     <ClCompile Include="ECSql\ListExp.cpp" />
     <ClCompile Include="ECSql\NativeSqlBuilder.cpp" />
@@ -173,7 +172,6 @@
     <ClInclude Include="ECSql\IECSqlPrimitiveValue.h" />
     <ClInclude Include="ECSql\InsertStatementExp.h" />
     <ClInclude Include="ECSql\JoinExp.h" />
-    <ClInclude Include="ECSql\JsonReaderImpl.h" />
     <ClInclude Include="ECSql\ListExp.h" />
     <ClInclude Include="ECSql\NativeSqlBuilder.h" />
     <ClInclude Include="ECSql\OptionsExp.h" />

@@ -101,6 +101,7 @@ private:
 
     mutable bmap<DbFunctionKey, DbFunction*, DbFunctionKey::Comparer> m_sqlFunctions;
     ECSqlStatementRegistry m_statementRegistry;
+    mutable bset<AppData::Key const*, std::less<AppData::Key const*>> m_appDataToDeleteOnClearCache;
 
     IssueReporter m_issueReporter;
 
@@ -120,6 +121,8 @@ private:
 
     BentleyStatus AddIssueListener(IIssueListener const& issueListener) { return m_issueReporter.AddListener(issueListener); }
     void RemoveIssueListener() { m_issueReporter.RemoveListener(); }
+
+    void AddAppData(ECDb::AppData::Key const& key, ECDb::AppData* appData, bool deleteOnClearCache) const;
 
     void ClearECDbCache() const;
     DbResult OnDbOpened() const;

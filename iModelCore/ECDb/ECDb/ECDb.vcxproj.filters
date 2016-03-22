@@ -277,9 +277,6 @@
     <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="ECSql\JsonReaderImpl.h">
-      <Filter>ECSql\Adapters</Filter>
-    </ClInclude>
     <ClInclude Include="ECSql\SystemPropertyECSqlBinder.h">
       <Filter>ECSql\ParameterBinding</Filter>
     </ClInclude>
@@ -644,9 +641,6 @@
       <Filter>ECSql\Adapters</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\JsonReader.cpp">
-      <Filter>ECSql\Adapters</Filter>
-    </ClCompile>
-    <ClCompile Include="ECSql\JsonReaderImpl.cpp">
       <Filter>ECSql\Adapters</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\SystemPropertyECSqlBinder.cpp">

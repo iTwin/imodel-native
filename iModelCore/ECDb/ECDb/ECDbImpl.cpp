@@ -131,6 +131,11 @@ void ECDb::Impl::ClearECDbCache () const
         m_schemaManager->ClearCache ();
 
     m_statementRegistry.ReprepareStatements();
+
+    for (AppData::Key const* appDataKey : m_appDataToDeleteOnClearCache)
+        {
+        m_ecdb.DropAppData(*appDataKey);
+        }
     }
 
 //--------------------------------------------------------------------------------------
@@ -294,6 +299,17 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
     }
 
     return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDb::Impl::AddAppData(ECDb::AppData::Key const& key, ECDb::AppData* appData, bool deleteOnClearCache) const
+    {
+    if (deleteOnClearCache)
+        m_appDataToDeleteOnClearCache.insert(&key);
+        
+    m_ecdb.AddAppData(key, appData);
     }
 
 //******************************************
