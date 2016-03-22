@@ -123,7 +123,7 @@ public:
     //! @param[in] callback Download progress callback.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has downloaded file name as the result.
-    //! @note Default callback will save repository at baseDirectory/repositoryId/briefcaseId/fileName
+    //! @note Default callback will save repository at baseDirectory\\repositoryId\\briefcaseId\\fileName
     DGNDBSERVERCLIENT_EXPORT DgnDbServerFileNameTaskPtr     AcquireBriefcaseToDir   (RepositoryInfoCR repositoryInfo, BeFileNameCR baseDirectory, bool doSync = true,
                                                                                      BriefcaseFileNameCallback const& fileNameCallback = DefaultFileNameCallback, 
                                                                                      HttpRequest::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
