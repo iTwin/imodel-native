@@ -2186,7 +2186,7 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
                         nbUvs = meshNode->GetNbUVs();
 
                         meshNode->PinUVsIndices(meshInd - 1);
-                        uvIndicesP = meshNode->GetUVsIndicesPtr(meshInd - 1);
+                        uvIndicesP = meshNode->GetUVsIndicesPtr(meshInd - 1);                        
                         }
 
                     DifferenceSet clipDiffSet;
