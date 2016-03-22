@@ -43,7 +43,6 @@
     <ClCompile Include="ECSql\ECInstanceDeleter.cpp" />
     <ClCompile Include="ECSql\ECInstanceUpdater.cpp" />
     <ClCompile Include="ECSql\ECInstanceInserter.cpp" />
-    <ClCompile Include="ECSql\ECRelationshipPath.cpp" />
     <ClCompile Include="ECSql\ECInstanceAdapterHelper.cpp" />
     <ClCompile Include="ECSql\ECSqlDeletePreparer.cpp" />
     <ClCompile Include="ECSql\ECSqlInsertPreparer.cpp" />
@@ -122,7 +121,6 @@
     <ClInclude Include="..\PublicAPI\ECDb\ECInstanceAdapter.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECInstanceId.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECInstanceFinder.h" />
-    <ClInclude Include="..\PublicAPI\ECDb\ECRelationshipPath.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECSqlColumnInfo.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECSqlStatement.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECSqlStatus.h" />

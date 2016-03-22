@@ -15,24 +15,18 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Ramanujam.Raman                 9 / 2013
 //+---------------+---------------+---------------+---------------+---------------+------
-JsonReader::Impl::Impl (ECDbCR ecdb, ECN::ECClassId ecClassId)
-: m_ecDb (ecdb), m_statementCache (50, "JsonReader ECSqlStatement Cache")
+JsonReader::Impl::Impl(ECDbCR ecdb, ECN::ECClassId ecClassId)
+    : m_ecDb(ecdb), m_statementCache(50, "JsonReader ECSqlStatement Cache")
     {
-    m_ecClass = m_ecDb.Schemas ().GetECClass (ecClassId);
-    BeAssert (m_ecClass != nullptr && "Could not retrieve class with specified id");
+    m_ecClass = m_ecDb.Schemas().GetECClass(ecClassId);
+    BeAssert(m_ecClass != nullptr && "Could not retrieve class with specified id");
     m_isValid = m_ecClass != nullptr;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 09 / 2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonReader::Impl::Read
-(
-JsonValueR jsonInstances,
-JsonValueR jsonDisplayInfo,
-ECInstanceId const& ecInstanceId,
-JsonECSqlSelectAdapter::FormatOptions formatOptions
-)
+BentleyStatus JsonReader::Impl::Read(JsonValueR jsonInstances, JsonValueR jsonDisplayInfo, ECInstanceId ecInstanceId, JsonECSqlSelectAdapter::FormatOptions formatOptions)
     {
     jsonInstances = Json::arrayValue;
     jsonDisplayInfo = Json::objectValue;
@@ -46,9 +40,10 @@ JsonECSqlSelectAdapter::FormatOptions formatOptions
     if (status == SUCCESS)
         status = AddInstancesFromSpecifiedClassPath (jsonInstances, jsonDisplayInfo, trivialPathToClass, ecInstanceId, formatOptions);
 
+    //WIP_FOR_RAMAN: Method AddInstancesFromRelatedItems does not exist
     // Add any related instances according to the "RelatedItemsDisplaySpecification" custom attribute
-    if (status == SUCCESS)
-        status = AddInstancesFromRelatedItems (jsonInstances, jsonDisplayInfo, *m_ecClass, trivialPathToClass, ecInstanceId, formatOptions);
+    //if (status == SUCCESS)
+        //status = AddInstancesFromRelatedItems (jsonInstances, jsonDisplayInfo, *m_ecClass, trivialPathToClass, ecInstanceId, formatOptions);
 
     if (status != SUCCESS)
         {
@@ -62,12 +57,7 @@ JsonECSqlSelectAdapter::FormatOptions formatOptions
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 09 / 2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonReader::Impl::ReadInstance
-(
-Json::Value& jsonValue,
-ECInstanceId const& ecInstanceId,
-JsonECSqlSelectAdapter::FormatOptions formatOptions
-)
+BentleyStatus JsonReader::Impl::ReadInstance(Json::Value& jsonValue, ECInstanceId ecInstanceId, JsonECSqlSelectAdapter::FormatOptions formatOptions)
     {
     if (!IsValid ())
         return ERROR;
@@ -92,7 +82,7 @@ JsonECSqlSelectAdapter::FormatOptions formatOptions
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 01 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonReader::Impl::PrepareECSql (CachedECSqlStatementPtr& statement, Utf8StringCR ecSql)
+BentleyStatus JsonReader::Impl::PrepareECSql (CachedECSqlStatementPtr& statement, Utf8StringCR ecSql) const
     {
     statement = m_statementCache.GetPreparedStatement (m_ecDb, ecSql.c_str ());
     POSTCONDITION (statement != nullptr, ERROR);
@@ -103,14 +93,7 @@ BentleyStatus JsonReader::Impl::PrepareECSql (CachedECSqlStatementPtr& statement
 // Prepare ECSQL to retrieve the instance specified by the path
 // @bsimethod                                    Ramanujam.Raman                 01 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonReader::Impl::PrepareECSql 
-(
-CachedECSqlStatementPtr& statement,
-const ECRelationshipPath& pathFromRelatedClass, 
-const ECInstanceId& ecInstanceId, 
-bool selectInstanceKeyOnly,
-bool isPolymorphic
-)
+BentleyStatus JsonReader::Impl::PrepareECSql(CachedECSqlStatementPtr& statement, ECRelationshipPath const& pathFromRelatedClass, ECInstanceId ecInstanceId, bool selectInstanceKeyOnly, bool isPolymorphic) const
     {
     Utf8String fromClause, joinClause;
     ECRelationshipPath::GeneratedEndInfo rootInfo, leafInfo;
@@ -137,7 +120,7 @@ bool isPolymorphic
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 01 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonReader::Impl::GetRelatedInstanceKeys(ECInstanceKeyMultiMap& instanceKeys, const ECRelationshipPath& pathFromRelatedClass, const ECInstanceId& ecInstanceId)
+BentleyStatus JsonReader::Impl::GetRelatedInstanceKeys(ECInstanceKeyMultiMap& instanceKeys, ECRelationshipPath const& pathFromRelatedClass, ECInstanceId ecInstanceId)
     {
     instanceKeys.clear();
 
@@ -161,29 +144,29 @@ BentleyStatus JsonReader::Impl::GetRelatedInstanceKeys(ECInstanceKeyMultiMap& in
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 01 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-void JsonReader::Impl::SetRelationshipPath (JsonValueR addClasses, Utf8StringCR pathFromRelatedClassStr)
+void JsonReader::Impl::SetRelationshipPath(JsonValueR addClasses, Utf8StringCR pathFromRelatedClassStr)
     {
-    for (Utf8StringCR key : addClasses.getMemberNames ())
+    for (Utf8StringCR key : addClasses.getMemberNames())
         addClasses[key]["RelationshipPath"] = pathFromRelatedClassStr;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 01 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-void JsonReader::Impl::SetInstanceIndex (JsonValueR addCategories, int currentInstanceIndex)
+void JsonReader::Impl::SetInstanceIndex(JsonValueR addCategories, int currentInstanceIndex)
     {
-    for (int categoryIndex = 0; categoryIndex < (int) addCategories.size (); categoryIndex++)
+    for (int categoryIndex = 0; categoryIndex < (int) addCategories.size(); categoryIndex++)
         {
         Json::Value& addCategory = addCategories[categoryIndex];
-        if (!addCategory.isMember ("Properties"))
+        if (!addCategory.isMember("Properties"))
             continue; // empty category
         Json::Value& addProperties = addCategory["Properties"];
-        for (int propertyIndex = 0; propertyIndex < (int) addProperties.size (); propertyIndex++)
+        for (int propertyIndex = 0; propertyIndex < (int) addProperties.size(); propertyIndex++)
             {
             Json::Value& addProperty = addProperties[propertyIndex];
             addProperty["InstanceIndex"] = currentInstanceIndex;
-            if (addProperty.isMember ("Categories"))
-                SetInstanceIndex (addProperty["Categories"], currentInstanceIndex);
+            if (addProperty.isMember("Categories"))
+                SetInstanceIndex(addProperty["Categories"], currentInstanceIndex);
             }
         }
     }
@@ -191,11 +174,11 @@ void JsonReader::Impl::SetInstanceIndex (JsonValueR addCategories, int currentIn
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 01 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-void JsonReader::Impl::AddClasses (JsonValueR allClasses, JsonValueR addClasses)
+void JsonReader::Impl::AddClasses(JsonValueR allClasses, JsonValueR addClasses)
     {
-    for (Utf8StringCR key : addClasses.getMemberNames ())
+    for (Utf8StringCR key : addClasses.getMemberNames())
         {
-        if (allClasses.isMember (key))
+        if (allClasses.isMember(key))
             continue;
         allClasses[key] = addClasses[key];
         }
@@ -205,37 +188,37 @@ void JsonReader::Impl::AddClasses (JsonValueR allClasses, JsonValueR addClasses)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 01 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-void JsonReader::Impl::AddCategories (JsonValueR allCategories, JsonValueR addCategories, int currentInstanceIndex)
+void JsonReader::Impl::AddCategories(JsonValueR allCategories, JsonValueR addCategories, int currentInstanceIndex)
     {
     // Recursively setup the instanceIndex in all the properties within addCategories
-    SetInstanceIndex (addCategories, currentInstanceIndex);
+    SetInstanceIndex(addCategories, currentInstanceIndex);
 
     // Consolidate the categories
-    for (int categoryIndex = 0; categoryIndex < (int) addCategories.size (); categoryIndex++)
+    for (int categoryIndex = 0; categoryIndex < (int) addCategories.size(); categoryIndex++)
         {
         // Consolidate the categories
         Json::Value& addCategory = addCategories[categoryIndex];
-        if (!addCategory.isMember ("Properties"))
+        if (!addCategory.isMember("Properties"))
             continue; // empty category
 
-        Utf8String categoryName = addCategory["CategoryName"].asString ();
+        Utf8String categoryName = addCategory["CategoryName"].asString();
         int existingCategoryIndex;
-        for (existingCategoryIndex = 0; existingCategoryIndex < (int) allCategories.size (); existingCategoryIndex++)
+        for (existingCategoryIndex = 0; existingCategoryIndex < (int) allCategories.size(); existingCategoryIndex++)
             {
-            if (allCategories[existingCategoryIndex]["CategoryName"].asString () == categoryName)
+            if (allCategories[existingCategoryIndex]["CategoryName"].asString() == categoryName)
                 break;
             }
-        if (existingCategoryIndex >= (int) allCategories.size ()) // Category not found
+        if (existingCategoryIndex >= (int) allCategories.size()) // Category not found
             {
-            allCategories.append (addCategory);
+            allCategories.append(addCategory);
             continue;
             }
 
         // Category found, consolidate the properties
         Json::Value& allProperties = allCategories[existingCategoryIndex]["Properties"];
         Json::Value& addProperties = addCategory["Properties"];
-        for (int propertyIndex = 0; propertyIndex < (int) addProperties.size (); propertyIndex++)
-            allProperties.append (addProperties[propertyIndex]);
+        for (int propertyIndex = 0; propertyIndex < (int) addProperties.size(); propertyIndex++)
+            allProperties.append(addProperties[propertyIndex]);
 
         }
     }
@@ -243,41 +226,35 @@ void JsonReader::Impl::AddCategories (JsonValueR allCategories, JsonValueR addCa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 01 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-void JsonReader::Impl::AddInstances (JsonValueR allInstances, JsonValueR addInstances, int currentInstanceIndex)
+void JsonReader::Impl::AddInstances(JsonValueR allInstances, JsonValueR addInstances, int currentInstanceIndex)
     {
     // Consolidate the categories with previous instances
-    for (int ii = 0; ii < (int) addInstances.size (); ii++)
+    for (int ii = 0; ii < (int) addInstances.size(); ii++)
         allInstances[currentInstanceIndex + ii] = addInstances[ii];
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 01 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonReader::Impl::AddInstancesFromPreparedStatement
-(
-JsonValueR allInstances,
-JsonValueR allDisplayInfo,
-ECSqlStatement& statement,
-const JsonECSqlSelectAdapter::FormatOptions& formatOptions,
-Utf8StringCR pathFromRelatedClassStr
-)
+BentleyStatus JsonReader::Impl::AddInstancesFromPreparedStatement(JsonValueR allInstances, JsonValueR allDisplayInfo, ECSqlStatement& statement,
+                                                                  JsonECSqlSelectAdapter::FormatOptions const& formatOptions, Utf8StringCR pathFromRelatedClassStr)
     {
-    statement.Reset ();
-    JsonECSqlSelectAdapter jsonAdapter (statement, formatOptions);
+    statement.Reset();
+    JsonECSqlSelectAdapter jsonAdapter(statement, formatOptions);
 
-    int currentInstanceIndex = (int) allInstances.size ();
+    int currentInstanceIndex = (int) allInstances.size();
 
-    while (BE_SQLITE_ROW == statement.Step ())
+    while (BE_SQLITE_ROW == statement.Step())
         {
         if (currentInstanceIndex == 0)
             {
             // Setup instance the first time
-            if (!jsonAdapter.GetRow (allInstances))
+            if (!jsonAdapter.GetRow(allInstances))
                 return ERROR;
 
             // Setup display info the first time
-            jsonAdapter.GetRowDisplayInfo (allDisplayInfo);
-            SetRelationshipPath (allDisplayInfo["Classes"], pathFromRelatedClassStr);
+            jsonAdapter.GetRowDisplayInfo(allDisplayInfo);
+            SetRelationshipPath(allDisplayInfo["Classes"], pathFromRelatedClassStr);
             }
         else
             {
@@ -285,25 +262,25 @@ Utf8StringCR pathFromRelatedClassStr
             * Consolidate instances
             */
             Json::Value addInstances;
-            if (!jsonAdapter.GetRow (addInstances))
+            if (!jsonAdapter.GetRow(addInstances))
                 return ERROR;
 
-            AddInstances (allInstances, addInstances, currentInstanceIndex);
+            AddInstances(allInstances, addInstances, currentInstanceIndex);
 
             /*
             * Consolidate display info
             */
             Json::Value addDisplayInfo;
-            jsonAdapter.GetRowDisplayInfo (addDisplayInfo); // TODO: Setup move constructors in Json::Value
-            SetRelationshipPath (addDisplayInfo["Classes"], pathFromRelatedClassStr);
+            jsonAdapter.GetRowDisplayInfo(addDisplayInfo); // TODO: Setup move constructors in Json::Value
+            SetRelationshipPath(addDisplayInfo["Classes"], pathFromRelatedClassStr);
 
             // Consolidate the categories
-            if (!allDisplayInfo.isMember ("Categories"))
-                allDisplayInfo["Categories"] = Json::Value (Json::arrayValue);
-            AddCategories (allDisplayInfo["Categories"], addDisplayInfo["Categories"], currentInstanceIndex);
+            if (!allDisplayInfo.isMember("Categories"))
+                allDisplayInfo["Categories"] = Json::Value(Json::arrayValue);
+            AddCategories(allDisplayInfo["Categories"], addDisplayInfo["Categories"], currentInstanceIndex);
 
             // Consolidate the classes
-            AddClasses (allDisplayInfo["Classes"], addDisplayInfo["Classes"]);
+            AddClasses(allDisplayInfo["Classes"], addDisplayInfo["Classes"]);
             }
 
         currentInstanceIndex++;
@@ -315,36 +292,30 @@ Utf8StringCR pathFromRelatedClassStr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 05 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonReader::Impl::AddInstancesFromRelatedItems
-(
-JsonValueR allInstances,
-JsonValueR allDisplayInfo,
-ECClassCR parentClass,
-ECRelationshipPathCR pathFromParent,
-const ECInstanceId& ecInstanceId,
-const JsonECSqlSelectAdapter::FormatOptions& formatOptions
-)
+BentleyStatus JsonReader::Impl::AddInstancesFromRelatedItems(JsonValueR allInstances,JsonValueR allDisplayInfo,ECClassCR parentClass,
+ECRelationshipPath const& pathFromParent,ECInstanceId ecInstanceId,JsonECSqlSelectAdapter::FormatOptions const& formatOptions)
     {
-    ECRelationshipPathVector appendPathsFromParent;
-    if (!ECRelatedItemsDisplaySpecificationsCache::GetCache(m_ecDb)->TryGetRelatedPathsFromClass (appendPathsFromParent, parentClass))
+    bvector<ECRelationshipPath> appendPathsFromParent;
+    ECRelatedItemsDisplaySpecCacheAppData* appData = ECRelatedItemsDisplaySpecCacheAppData::Get(m_ecDb);
+    if (appData == nullptr)
+        return ERROR;
+
+    if (!appData->GetCache().TryGetRelatedPaths(appendPathsFromParent, parentClass))
         return SUCCESS;
 
     ECRelationshipPath pathToParent;
-    pathFromParent.Reverse (pathToParent);
+    pathFromParent.Reverse(pathToParent);
 
-    for (ECRelationshipPathCR appendPath : appendPathsFromParent)
+    for (ECRelationshipPath const& appendPath : appendPathsFromParent)
         {
         ECRelationshipPath pathToRelatedClass = pathToParent;
-        pathToRelatedClass.Combine (appendPath);
+        pathToRelatedClass.Combine(appendPath);
 
         ECRelationshipPath pathFromRelatedClass;
-        pathToRelatedClass.Reverse (pathFromRelatedClass);
+        pathToRelatedClass.Reverse(pathFromRelatedClass);
 
-        BentleyStatus status = SUCCESS;
-            status = AddInstancesFromSpecifiedClassPath (allInstances, allDisplayInfo, pathFromRelatedClass, ecInstanceId, formatOptions);
-
-        if (SUCCESS != status)
-            return status;
+        if (SUCCESS != AddInstancesFromSpecifiedClassPath(allInstances, allDisplayInfo, pathFromRelatedClass, ecInstanceId, formatOptions))
+            return ERROR;
         }
 
     return SUCCESS;
@@ -353,130 +324,56 @@ const JsonECSqlSelectAdapter::FormatOptions& formatOptions
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 01 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonReader::Impl::AddInstancesFromSpecifiedClassPath
-(
-JsonValueR allInstances,
-JsonValueR allDisplayInfo,
-const ECRelationshipPath& pathFromRelatedClass,
-const ECInstanceId& ecInstanceId,
-const JsonECSqlSelectAdapter::FormatOptions& formatOptions
-)
+BentleyStatus JsonReader::Impl::AddInstancesFromSpecifiedClassPath(JsonValueR allInstances, JsonValueR allDisplayInfo, ECRelationshipPath const& pathFromRelatedClass, ECInstanceId ecInstanceId, JsonECSqlSelectAdapter::FormatOptions const& formatOptions)
     {
-    BeAssert (!pathFromRelatedClass.IsAnyClassAtEnd (ECRelationshipPath::End::Root));
-
     CachedECSqlStatementPtr statement = nullptr;
-    if (SUCCESS != PrepareECSql (statement, pathFromRelatedClass, ecInstanceId, false /* selectInstanceKeyOnly*/,false/*isPolymorphic*/))
+    if (SUCCESS != PrepareECSql(statement, pathFromRelatedClass, ecInstanceId, false /* selectInstanceKeyOnly*/, false/*isPolymorphic*/))
         return ERROR;
 
-    Utf8String pathFromRelatedClassStr = pathFromRelatedClass.ToString ();
-    return AddInstancesFromPreparedStatement (allInstances, allDisplayInfo, *statement, formatOptions, pathFromRelatedClassStr);
+    Utf8String pathFromRelatedClassStr = pathFromRelatedClass.ToString();
+    return AddInstancesFromPreparedStatement(allInstances, allDisplayInfo, *statement, formatOptions, pathFromRelatedClassStr);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 05 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonReader::Impl::GetTrivialPathToSelf (ECRelationshipPathR emptyPath, ECClassCR ecClass)
+BentleyStatus JsonReader::Impl::GetTrivialPathToSelf (ECRelationshipPath& emptyPath, ECClassCR ecClass)
     {
-    Utf8String schemaName (ecClass.GetSchema ().GetName ().c_str ());
-    Utf8String className (ecClass.GetName ().c_str ());
-    Utf8String qualifiedClassName = schemaName + ":" + className;
-
-    auto status = emptyPath.InitFromString (qualifiedClassName, m_ecDb, &(ecClass.GetSchema ()));
+    auto status = emptyPath.InitFromString (ecClass.GetFullName(), m_ecDb.GetClassLocater(), &(ecClass.GetSchema ()));
     POSTCONDITION (status == SUCCESS, ERROR);
-
     return SUCCESS;
     }
 
-///////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////
-
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 01 / 2014
+// @bsimethod                                    Ramanujam.Raman                 05 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECClassHelper::ParseQualifiedName (Utf8StringR schemaPrefixOrName, Utf8StringR className, Utf8StringCR qualifiedClassName, Utf8Char delimiter)
+//static
+JsonReader::Impl::ECRelatedItemsDisplaySpecCacheAppData* JsonReader::Impl::ECRelatedItemsDisplaySpecCacheAppData::Get(ECDbCR ecdb)
     {
-    // [SchemaPrefix[.:]]<ClassName>
-    className = qualifiedClassName;
-    size_t splitIndex;
-    if (Utf8String::npos != (splitIndex = className.find (delimiter)))
-        {
-        schemaPrefixOrName = className.substr (0, splitIndex);
-        className = className.substr (splitIndex + 1);
-        }
-    }
+    //WIP_FOR_RAMAN It is dangerous to keep this cache together with the ECDb with pointers to ECSchema entities, because whenever
+    //ClearCache is called (or a schema import is done), the pointers are invalid.
+    ECRelatedItemsDisplaySpecCacheAppData* appData = reinterpret_cast <ECRelatedItemsDisplaySpecCacheAppData*> (ecdb.FindAppData(ECRelatedItemsDisplaySpecCacheAppData::GetKey()));
 
-//---------------------------------------------------------------------------------------
-//@bsimethod                                    Ramanujam.Raman                 01 / 2014
-// @param schemaName [in] Can be nullptr, in which case the class is resolved in the default schema (assuming that's supplied).
-//+---------------+---------------+---------------+---------------+---------------+------
-ECClassCP ECClassHelper::ResolveClass (Utf8CP schemaName, Utf8StringCR className, ECDbCR ecDb, ECSchemaCP defaultSchema)
-    {
-    ECClassCP ecClass = nullptr;
-    if (schemaName != nullptr)
-        ecClass = ecDb.Schemas ().GetECClass (schemaName, className.c_str ());
-    else
+    if (nullptr == appData)
         {
-        PRECONDITION (defaultSchema != nullptr && "Cannot resolve class without a specified namespace. or a default schema", nullptr);
-        Utf8String defaultSchemaName (defaultSchema->GetName ().c_str ());
-        ecClass = ecDb.Schemas ().GetECClass (defaultSchemaName.c_str (), className.c_str ());
+        ECSchemaList allSchemas;
+        if (SUCCESS != ecdb.Schemas().GetECSchemas(allSchemas, false))
+            {
+            BeAssert(false);
+            return nullptr;
+            }
+
+        appData = new ECRelatedItemsDisplaySpecCacheAppData(ecdb);
+        if (SUCCESS != appData->m_cache.Initialize(allSchemas, ecdb.GetClassLocater()))
+            {
+            delete appData;
+            return nullptr;
+            }
+
+        ecdb.AddAppData(ECRelatedItemsDisplaySpecCacheAppData::GetKey(), appData);
         }
 
-    POSTCONDITION (ecClass != nullptr, nullptr);
-    return ecClass;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 01 / 2014
-//+---------------+---------------+---------------+---------------+---------------+------
-ECClassCP ECClassHelper::ResolveClass (Utf8StringCR possiblyQualifiedClassName, ECDbCR ecDb, ECSchemaCP defaultSchema)
-    {
-    Utf8String schemaName, className;
-    ECClassHelper::ParseQualifiedECObjectsName (schemaName, className, possiblyQualifiedClassName);
-
-    return ResolveClass ((schemaName.empty ()) ? nullptr : schemaName.c_str (), className, ecDb, defaultSchema);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 01 / 2014
-////+---------------+---------------+---------------+---------------+---------------+------
-bool ECClassHelper::IsAnyClass (ECClassCR ecClass)
-    {
-    return ClassMap::IsAnyClass (ecClass);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 01 / 2014
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String ECClassHelper::GetName (ECClassCR ecClass)
-    {
-    Utf8String className (ecClass.GetName ().c_str ());
-    return className;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 01 / 2014
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String ECClassHelper::GetQualifiedECObjectsName (ECClassCR ecClass)
-    {
-    Utf8PrintfString qualifiedName ("%s:%s", Utf8String (ecClass.GetSchema ().GetName ().c_str ()).c_str (), Utf8String (ecClass.GetName ().c_str ()).c_str ());
-    return qualifiedName;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 01 / 2014
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String ECClassHelper::GetQualifiedECSqlName (ECClassCR ecClass)
-    {
-    Utf8PrintfString qualifiedName ("[%s].[%s]", Utf8String (ecClass.GetSchema ().GetName ().c_str ()).c_str (), Utf8String (ecClass.GetName ().c_str ()).c_str ());
-    return qualifiedName;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 01 / 2014
-//+---------------+---------------+---------------+---------------+---------------+------
-void ECClassHelper::ParseQualifiedECObjectsName (Utf8StringR schemaPrefixOrName, Utf8StringR className, Utf8StringCR qualifiedClassName)
-    {
-    ParseQualifiedName (schemaPrefixOrName, className, qualifiedClassName, ':');
+    return appData;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

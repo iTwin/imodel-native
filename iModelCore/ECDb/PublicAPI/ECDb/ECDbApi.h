@@ -17,6 +17,5 @@
 #include <ECDb/JsonAdapter.h>
 #include <ECDb/ECInstanceFinder.h>
 
-#include <ECDb/ECRelationshipPath.h>
 #include <ECDb/ChangeSummary.h>
 

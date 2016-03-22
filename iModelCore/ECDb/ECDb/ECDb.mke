@@ -28,7 +28,6 @@ ECDbPublicHeaders =  \
                 $(publicApiDir)ECSqlColumnInfo.h \
                 $(publicApiDir)ECInstanceAdapter.h \
                 $(publicApiDir)JsonAdapter.h \
-                $(publicApiDir)ECRelationshipPath.h \
                 $(publicApiDir)ChangeSummary.h
 
 ECDbAllHeaders = \
@@ -294,8 +293,6 @@ $(o)JsonInserter$(oext):                                    $(baseDir)ECSql/Json
 $(o)JsonUpdater$(oext):                                     $(baseDir)ECSql/JsonUpdater.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)JsonDeleter$(oext):                                     $(baseDir)ECSql/JsonDeleter.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)ECRelationshipPath$(oext):								$(baseDir)ECSql/ECRelationshipPath.cpp      $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlStatementNoopImpls$(oext):                         $(baseDir)ECSql/ECSqlStatementNoopImpls.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

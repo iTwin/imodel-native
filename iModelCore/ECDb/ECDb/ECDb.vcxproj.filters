@@ -249,9 +249,6 @@
     <ClInclude Include="..\PublicAPI\ECDb\ECInstanceId.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\ECDb\ECRelationshipPath.h">
-      <Filter>PublicApi</Filter>
-    </ClInclude>
     <ClInclude Include="ECSql\IECSqlPrimitiveValue.h">
       <Filter>ECSql\ECSqlStatement</Filter>
     </ClInclude>
@@ -616,9 +613,6 @@
       <Filter>ECSql\Adapters</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\ECInstanceDeleter.cpp">
-      <Filter>ECSql\Adapters</Filter>
-    </ClCompile>
-    <ClCompile Include="ECSql\ECRelationshipPath.cpp">
       <Filter>ECSql\Adapters</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\ECInstanceUpdater.cpp">
