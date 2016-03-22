@@ -958,6 +958,7 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
             }
         }
 
+#if defined (DGNPLATFORM_WIP_PARASOLID)
     // Make the parasolid data available for platforms that can support it...MUST BE ADDED FIRST!!!
     if (saveBRep)
         {
@@ -1026,6 +1027,7 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
         fbb.Finish(mloc);
         Append(Operation(OpCode::ParasolidBRep, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
         }
+#endif
 
     // Store mesh representation for quick display or when parasolid isn't available...
     if (saveFacets)
@@ -1063,6 +1065,7 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
             m_buffer.resize(currSize); // Remove OpCode::ParasolidBRep, body is invalid...
         }
 
+#if defined (DGNPLATFORM_WIP_PARASOLID)
     // When facetted representation is an approximation, we need to store the edge curves for snapping...
     if (saveEdges)
         {
@@ -1162,6 +1165,7 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
                 }
             }
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
