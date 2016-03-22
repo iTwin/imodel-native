@@ -320,23 +320,18 @@ void Expression::Copy(ExpressionR source, ExpressionR target)
 Utf8String ExpressionSymbol::ToString(bool includeFactors) const
     {
     if (!includeFactors)
-        {
         return Utf8PrintfString("%s^%d", GetName(), GetExponent());
-        }
-    else
+    
+    if (GetSymbol()->HasOffset())
         {
-        Utf8String factorAndUnit;
         if (GetSymbol()->GetFactor() == 1.0)
-            factorAndUnit = GetName();
-        else
-            {
-            Utf8PrintfString temp("%.15g[%s]", GetSymbol()->GetFactor(), GetName());
-            factorAndUnit = temp.c_str();
-            }
+            return Utf8PrintfString("(%s + %.15g)^%d", GetSymbol()->GetName(), GetSymbol()->GetOffset(), GetExponent());
 
-        if (GetSymbol()->HasOffset())
-            return Utf8PrintfString("(%s + %.15g)^%d", factorAndUnit.c_str(), GetSymbol()->GetOffset(), GetExponent());
-        
-        return Utf8PrintfString("%s^%d", factorAndUnit.c_str(), GetExponent());
+        return Utf8PrintfString("%.15g(%s + %.15g)^%d", GetSymbol()->GetFactor(), GetSymbol()->GetName(), GetSymbol()->GetOffset(), GetExponent());
         }
+
+    if (GetSymbol()->GetFactor() == 1.0)
+        return Utf8PrintfString("%s^%d", GetSymbol()->GetName(), GetExponent());
+
+    return Utf8PrintfString("%.15g[%s]^%d", GetSymbol()->GetFactor(), GetSymbol()->GetName(), GetExponent());
     }

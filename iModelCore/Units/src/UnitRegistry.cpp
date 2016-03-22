@@ -154,14 +154,14 @@ void UnitRegistry::AddDefaultSystems ()
     {
     AddSystem (SI);
     AddSystem (CGS);
-    AddSystem (METRIC);
+    //AddSystem (METRIC);
     AddSystem (IMPERIAL);
-    AddSystem (PHYSICS);
+    //AddSystem (PHYSICS);
     AddSystem (CHEMISTRY);
-    AddSystem (THERMODYNAMICS);
+    //AddSystem (THERMODYNAMICS);
     //AddSystem (ASTRONOMY);
     AddSystem (MARITIME);
-    AddSystem (SURVEYOR);
+    AddSystem (USSURVEY);
     AddSystem (TYPOGRAPHY);
     AddSystem (POSTSCRIPT);
     AddSystem (TEXT);
@@ -174,7 +174,7 @@ void UnitRegistry::AddDefaultSystems ()
     AddSystem (JAPANESE);
     //AddSystem (HISTORICAL);
     AddSystem (STATISTICS);
-    AddSystem (BENTLEY);
+    //AddSystem (BENTLEY);
     AddSystem (CUSTOMARY);
     AddSystem (FINANCE);
     AddSystem (CONSTANT);

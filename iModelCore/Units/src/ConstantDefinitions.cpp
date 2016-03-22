@@ -17,17 +17,17 @@ USING_NAMESPACE_BENTLEY_UNITS
 void UnitRegistry::AddDefaultConstants ()
     {
     UnitRegistry& reg = UnitRegistry::Instance();
-    reg.AddConstant(LENGTH, "EARTH_RAD", "M", 6.3781e6); //, "Radius Of Earth");
-    reg.AddConstant(LENGTH, "ASTRO_UNIT", "M", 1.495978707e11); //, "Distance from Sun to Earth");
-    reg.AddConstant(VELOCITY, "C", "M*S(-1)", 2.99792458e8); //, "Speed Of Light in Vaccum");
+    //reg.AddConstant(LENGTH, "EARTH_RAD", "M", 6.3781e6); //, "Radius Of Earth");
+    //reg.AddConstant(LENGTH, "ASTRO_UNIT", "M", 1.495978707e11); //, "Distance from Sun to Earth");
+    //reg.AddConstant(VELOCITY, "C", "M*S(-1)", 2.99792458e8); //, "Speed Of Light in Vaccum");
     reg.AddConstant(ONE, "PI", "ONE", PI); //, "Ratio of Circumference to its Diameter");
     reg.AddConstant(ONE, "PI/4", "[PI]", 0.25); //, "PI/4");
     reg.AddConstant(ONE, "PI/2", "[PI]", 0.5); //, "PI/2");
-    reg.AddConstant(ONE, "PI2", "[PI]", 2); //, "2*PI");
+    reg.AddConstant(ONE, "2PI", "[PI]", 2); //, "2*PI");
     reg.AddConstant(ANGLE, "360DEG", "ARC_DEG", 360); //, "Full Circle");
-    reg.AddConstant(ONE, "E", "ONE", E); //, "Base of the natural logarithm");
-    reg.AddConstant(GRAVCONSTANT, "G0", "M(3)*KG(-1)*S(-2)", 6.67408e-11); //, "Gravitational constant");
-    reg.AddConstant(ELECTRIC_CHARGE, "Q0", "A*S", 1.6021766208e-19);// , "Elementary Charge");
+    //reg.AddConstant(ONE, "E", "ONE", E); //, "Base of the natural logarithm");
+    //reg.AddConstant(GRAVCONSTANT, "G0", "M(3)*KG(-1)*S(-2)", 6.67408e-11); //, "Gravitational constant");
+    //reg.AddConstant(ELECTRIC_CHARGE, "Q0", "A*S", 1.6021766208e-19);// , "Elementary Charge");
     reg.AddConstant(ACCELERATION, "STD_G", "M*S(-2)", 9.80665); //, "Standard Gravity");
     //reg.AddConstant(ACTION, "H", "J*S", 6.62607004e-34); //, "Planck constant"); // NOTE: Not used so removed instead of adding 'ACTION' phenomenon
     //reg.AddConstant(MOLE, "A0", "MOL(-1)", 6.022140857e23); //, "Avogadro Number"); // NOTE: Not actually MOLE but MOLE(-1), we don't use it anywhere so removed it
@@ -47,7 +47,7 @@ void UnitRegistry::AddDefaultConstants ()
     //reg.AddConstant(DENSITY, "H2O_80C", "KG*M(-3)", 0.97056e3); //, "Density of water at 80 degree Celsius");
     //reg.AddConstant(DENSITY, "H2O_90C", "KG*M(-3)", 0.9653e3); //, "Density of water at 90 degree Celsius");
     //reg.AddConstant(DENSITY, "H2O_100C", "KG*M(-3)", 0.95865e3); //, "Density of water at 100 degree Celsius");
-    //// Densities of Water in LB/CUB.FT
+    //// Densities of Water in LBM/CUB.FT
     //reg.AddConstant(DENSITY, "H2O_32F", "LBM*FT(-3)", 62.416); //, "Density of water at 32 degree Fahrenheit");
     //reg.AddConstant(DENSITY, "H2O_39.2F", "LBM*FT(-3)", 62.424); //, "Density of water at 39.2 degree Fahrenheit");
     //reg.AddConstant(DENSITY, "H2O_40F", "LBM*FT(-3)", 62.423); //, "Density of water at 40 degree Fahrenheit");
@@ -70,7 +70,7 @@ void UnitRegistry::AddDefaultConstants ()
     //reg.AddConstant(DENSITY, "HG_25C", "KG*M(-3)", 13.532e3); //, "Density of mercury 25 degree Celsius");
     //reg.AddConstant(DENSITY, "HG_60F", "KG*M(-3)", 13.557e3); //, "Density of mercury 60 degree Fahrenheit");
 
-    reg.AddConstant(PRESSURE, "GAUGE_OFFSET", "PA", 101325); // TODO: Get NIST reference, There are other standards but this is the one we used in Old units framework
+    //reg.AddConstant(PRESSURE, "GAUGE_OFFSET", "PA", 101325); // TODO: Get NIST reference, There are other standards but this is the one we used in Old units framework
 
     //Decimal multiples
     reg.AddConstant(ONE, "DECI", "ONE", 1.0e-1); //, "DECI-prefix");

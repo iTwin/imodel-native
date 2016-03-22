@@ -107,7 +107,6 @@ private:
 
     uint32_t GetPhenomenonId() const;
     UnitCP  CombineWithUnit(UnitCR rhs, int factor) const;
-    Utf8CP  GetUnitSystem() const { return m_system.c_str(); }
     bool    IsInverseUnit() const { return nullptr != m_parent; }
     
     double  DoNumericConversion(double value, UnitCR toUnit) const;
@@ -120,6 +119,7 @@ public:
 
     bool IsRegistered()    const;
     bool IsConstant() const { return m_isConstant; }
+    Utf8CP GetUnitSystem() const { return m_system.c_str(); }
 
     PhenomenonCP GetPhenomenon()   const { return m_phenomenon; }
 

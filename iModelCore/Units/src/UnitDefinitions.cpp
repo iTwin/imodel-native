@@ -22,21 +22,21 @@ void AddLengths(UnitRegistry& reg)
 
     reg.AddUnit(LENGTH, USCUSTOM, "MILLIINCH", "[MILLI]*IN");
     reg.AddUnit(LENGTH, USCUSTOM, "MICROINCH", "[MICRO]*IN");
-    reg.AddUnit(LENGTH, IMPERIAL, "MILLIFOOT", "[MILLI]*FT");
+    reg.AddUnit(LENGTH, USCUSTOM, "MILLIFOOT", "[MILLI]*FT");
 
-    reg.AddUnit(LENGTH, IMPERIAL, "IN", "MM", 25.4); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
-    reg.AddUnit(LENGTH, IMPERIAL, "FT", "IN", 12.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
-    reg.AddUnit(LENGTH, IMPERIAL, "YRD", "FT", 3.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
-    reg.AddUnit(LENGTH, SURVEYOR, "CHAIN", "FT", 66.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-8
-    reg.AddUnit(LENGTH, IMPERIAL, "MILE", "YRD", 1760.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-8
+    reg.AddUnit(LENGTH, USCUSTOM, "IN", "MM", 25.4); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
+    reg.AddUnit(LENGTH, USCUSTOM, "FT", "IN", 12.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
+    reg.AddUnit(LENGTH, USCUSTOM, "YRD", "FT", 3.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
+    reg.AddUnit(LENGTH, USCUSTOM, "CHAIN", "FT", 66.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-8
+    reg.AddUnit(LENGTH, USCUSTOM, "MILE", "YRD", 1760.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-8
 
-    reg.AddUnit(LENGTH, USCUSTOM, "US_SURVEY_INCH", "M", 100.0 / 3937.0); // Derived from the definition of us survey foot in terms of meters.  Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-9
-    reg.AddUnit(LENGTH, USCUSTOM, "US_SURVEY_FOOT", "US_SURVEY_INCH", 12.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
-    reg.AddUnit(LENGTH, USCUSTOM, "US_SURVEY_YARD", "US_SURVEY_FOOT", 3.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
-    reg.AddUnit(LENGTH, SURVEYOR, "US_SURVEY_CHAIN", "US_SURVEY_FOOT", 66.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-8
-    reg.AddUnit(LENGTH, USCUSTOM, "US_SURVEY_MILE", "US_SURVEY_YARD", 1760.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-8
+    reg.AddUnit(LENGTH, USSURVEY, "US_SURVEY_IN", "M", 100.0 / 3937.0); // Derived from the definition of us survey foot in terms of meters.  Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-9
+    reg.AddUnit(LENGTH, USSURVEY, "US_SURVEY_FT", "US_SURVEY_IN", 12.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
+    reg.AddUnit(LENGTH, USSURVEY, "US_SURVEY_YRD", "US_SURVEY_FT", 3.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
+    reg.AddUnit(LENGTH, USSURVEY, "US_SURVEY_CHAIN", "US_SURVEY_FT", 66.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-8
+    reg.AddUnit(LENGTH, USSURVEY, "US_SURVEY_MILE", "US_SURVEY_YRD", 1760.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-8
 
-    reg.AddUnit(LENGTH, IMPERIAL, "NAUT_MILE", "M", 1852.0); // International Nautical Mile.  Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
+    reg.AddUnit(LENGTH, MARITIME, "NAUT_MILE", "M", 1852.0); // International Nautical Mile.  Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
     reg.AddSynonym("NAUT_MILE", "NAUTICAL_MILE_INTERNATIONAL");
     
     // NOTE: An Admiralty mile was defined as 1853.184 Meters, then redefined as 1853.0 by UK law see schedule 1995 No. 1804, can be found at legislation.gov.uk, search by year and number.
@@ -50,11 +50,11 @@ void AddLengths(UnitRegistry& reg)
     //reg.AddUnit(LENGTH, HISTORICAL, "CUBIT", "IN", 18.0);
     //reg.AddUnit(LENGTH, HISTORICAL, "ELL", "IN", 45.0);
     //reg.AddUnit(LENGTH, HISTORICAL, "FATHOM", "FT", 6.0);
-    /*reg.AddUnit(LENGTH, ASTRONOMY, "LIGHT_SEC", "[C]*S");
-    reg.AddUnit(LENGTH, ASTRONOMY, "LIGHT_MIN", "[C]*MIN");
-    reg.AddUnit(LENGTH, ASTRONOMY, "LIGHT_HOUR", "[C]*HR");
-    reg.AddUnit(LENGTH, ASTRONOMY, "LIGHT_YEAR", "[C]*YR");
-    reg.AddUnit(LENGTH, ASTRONOMY, "AU", "M", 1.495978707e11);*/
+    //reg.AddUnit(LENGTH, ASTRONOMY, "LIGHT_SEC", "[C]*S");
+    //reg.AddUnit(LENGTH, ASTRONOMY, "LIGHT_MIN", "[C]*MIN");
+    //reg.AddUnit(LENGTH, ASTRONOMY, "LIGHT_HR", "[C]*HR");
+    //reg.AddUnit(LENGTH, ASTRONOMY, "LIGHT_YEAR", "[C]*YR");
+    //reg.AddUnit(LENGTH, ASTRONOMY, "AU", "M", 1.495978707e11);
     }
 
 void AddMass(UnitRegistry& reg)
@@ -67,29 +67,31 @@ void AddMass(UnitRegistry& reg)
     reg.AddUnit(MASS, SI, "MEGAGRAM", "[MEGA]*G");
     reg.AddUnit(MASS, SI, "TONNE", "[KILO]*KG"); // Also known as a metric ton http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
 
-    reg.AddUnit(MASS, IMPERIAL, "LBM", "KG", 0.45359237); // Is Avoirdupois Pound.  Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B. Footnote 22
+    reg.AddUnit(MASS, USCUSTOM, "LBM", "KG", 0.45359237); // Is Avoirdupois Pound.  Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B. Footnote 22
     reg.AddSynonym("LBM", "POUND_MASS");
-    reg.AddUnit(MASS, IMPERIAL, "SLUG", "LBF*S(2)*FT(-1)");
-    reg.AddSynonym("SLUG", "GEEPOUND");
-    reg.AddUnit(MASS, USCUSTOM, "GRAIN", "LBM", 1.0 / 7000.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix B. Section 3.2, Page B-10
+    reg.AddUnit(MASS, USCUSTOM, "SLUG", "LBF*S(2)*FT(-1)");
+    reg.AddUnit(MASS, USCUSTOM, "GRM", "LBM", 1.0 / 7000.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix B. Section 3.2, Page B-10
+    reg.AddSynonym("GRM", "GRAIN_MASS");
 
-    reg.AddUnit(MASS, USCUSTOM, "SHORT_TON", "LBM", 2000); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
-    reg.AddUnit(MASS, USCUSTOM, "LONG_TON", "LBM", 2240); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
-    reg.AddUnit(MASS, USCUSTOM, "KIP", "LBM", 1000); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
+    reg.AddUnit(MASS, USCUSTOM, "SHORT_TON_MASS", "LBM", 2000); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
+    reg.AddSynonym("SHORT_TON_MASS", "SHORT_TON");
+    reg.AddUnit(MASS, USCUSTOM, "LONG_TON_MASS", "LBM", 2240); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
+    reg.AddSynonym("LONG_TON_MASS", "LONG_TON");
+    reg.AddUnit(MASS, USCUSTOM, "KIPM", "LBM", 1000); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
     }
 
 void AddTime(UnitRegistry& reg)
     {
-    reg.AddUnit(TIME, SI, "MIN", "S", 60.0);
-    reg.AddUnit(TIME, SI, "HR", "MIN", 60.0);
-    reg.AddUnit(TIME, SI, "DAY", "HR", 24.0);
-    reg.AddUnit(TIME, SI, "WEEK", "DAY", 7.0);
+    reg.AddUnit(TIME, INTERNATIONAL, "MIN", "S", 60.0);
+    reg.AddUnit(TIME, INTERNATIONAL, "HR", "MIN", 60.0);
+    reg.AddUnit(TIME, INTERNATIONAL, "DAY", "HR", 24.0);
+    reg.AddUnit(TIME, INTERNATIONAL, "WEEK", "DAY", 7.0);
     //reg.AddUnit(TIME, SI, "MONTH", "DAY", 30.0); // TODO: No standard definition of month
-    reg.AddUnit(TIME, SI, "YR", "DAY", 365);  //  http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B. Year is 3.1536 E+07 seconds which is equal to 365 * 24 * 60 * 60
-    reg.AddUnit(TIME, SI, "YEAR_SIDEREAL", "S", 3.155815e7); //  http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
-    reg.AddUnit(TIME, SI, "YEAR_TROPICAL", "S", 3.155693e7); //  http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
-    reg.AddUnit(TIME, SI, "MS", "[MILLI]*S");
-    reg.AddUnit(TIME, SI, "MKS", "[MICRO]*S");
+    reg.AddUnit(TIME, INTERNATIONAL, "YR", "DAY", 365);  //  http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B. Year is 3.1536 E+07 seconds which is equal to 365 * 24 * 60 * 60
+    reg.AddUnit(TIME, INTERNATIONAL, "YEAR_SIDEREAL", "S", 3.155815e7); //  http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
+    reg.AddUnit(TIME, INTERNATIONAL, "YEAR_TROPICAL", "S", 3.155693e7); //  http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
+    reg.AddUnit(TIME, INTERNATIONAL, "MS", "[MILLI]*S");
+    reg.AddUnit(TIME, INTERNATIONAL, "MKS", "[MICRO]*S");
     reg.AddSynonym("MKS", "MICROSECOND");
 
     }
@@ -100,8 +102,7 @@ void AddTemperature(UnitRegistry& reg)
     reg.AddUnit(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "CELSIUS", 5.0 / 9.0, -32);
     reg.AddUnit(TEMPERATURE, USCUSTOM, "RANKINE", "K", 5.0 / 9.0);
 
-    reg.AddUnit(TEMPERATURE, USCUSTOM, "ROMER", "CELSIUS", 40.0 / 21.0, -7.5);
-    reg.AddSynonym("ROMER", "DEGREE_ROMER");
+    //reg.AddUnit(TEMPERATURE, USCUSTOM, "ROMER", "CELSIUS", 40.0 / 21.0, -7.5);
     }
 
 void AddTemperatureChange(UnitRegistry& reg)
@@ -120,7 +121,7 @@ void AddTemperatureGradient(UnitRegistry& reg)
 
 void AddLinearThermalExpansionCoefficient(UnitRegistry& reg)
     {
-    reg.AddUnit(LINEAR_COEFFICIENT_OF_THERMAL_EXPANSION, SI, "STRAIN/K", "DELTA_KELVIN(-1)");
+    reg.AddUnit(LINEAR_COEFFICIENT_OF_THERMAL_EXPANSION, SI, "STRAIN/KELVIN", "DELTA_KELVIN(-1)");
 
     reg.AddUnit(LINEAR_COEFFICIENT_OF_THERMAL_EXPANSION, SI, "STRAIN/CELSIUS", "DELTA_CELSIUS(-1)");
 
@@ -147,8 +148,8 @@ void AddMole(UnitRegistry& reg)
     {
     reg.AddUnit(MOLE, SI, "KMOL", "[KILO]*MOL");
     reg.AddSynonym("KMOL", "KILOMOLE");
-    reg.AddUnit(MOLE, SI, "LB-MOLE", "MOL", 453.59237); // ASTM SI 10 standard SI1-.phhc8328.pdf page 29, 35 and http://en.wikipedia.org/wiki/Mole_%28unit%29
-    reg.AddSynonym("LB-MOLE", "POUND_MOLE");
+    reg.AddUnit(MOLE, USCUSTOM, "LB-MOL", "MOL", 453.59237); // ASTM SI 10 standard SI1-.phhc8328.pdf page 29, 35 and http://en.wikipedia.org/wiki/Mole_%28unit%29
+    reg.AddSynonym("LB-MOL", "POUND_MOLE");
     }
 
 void AddCapita(UnitRegistry& reg)
@@ -184,9 +185,9 @@ void AddLinearRotationalSpringConstant(UnitRegistry& reg)
 
 void AddAcceleration(UnitRegistry& reg)
     {
-    reg.AddUnit(ACCELERATION, SI, "M/SEC.SQUARED", "M*S(-2)");
-    reg.AddUnit(ACCELERATION, SI, "CM/SEC.SQUARED", "CM*S(-2)");
-    reg.AddUnit(ACCELERATION, IMPERIAL, "FT/SEC.SQUARED", "FT*S(-2)");
+    reg.AddUnit(ACCELERATION, SI, "M/SEC.SQ", "M*S(-2)");
+    reg.AddUnit(ACCELERATION, SI, "CM/SEC.SQ", "CM*S(-2)");
+    reg.AddUnit(ACCELERATION, USCUSTOM, "FT/SEC.SQ", "FT*S(-2)");
     }
 
 void AddPlaneAngle(UnitRegistry& reg)
@@ -194,9 +195,9 @@ void AddPlaneAngle(UnitRegistry& reg)
     reg.AddUnit(ANGLE, SI, "ARC_DEG", "[PI]*RAD", 1.0 / 180.0);
     reg.AddUnit(ANGLE, SI, "ARC_MINUTE", "ARC_DEG", 1.0 / 60.0);
     reg.AddUnit(ANGLE, SI, "ARC_SECOND", "ARC_DEG", 1.0 / 3600.0);
-    reg.AddUnit(ANGLE, SI, "ARC_QUADRANT", "[PI]*RAD", 0.5);
+    reg.AddUnit(ANGLE, SI, "ARC_QUADRANT", "[PI/2]*RAD");
     reg.AddUnit(ANGLE, SI, "GRAD", "[PI]*RAD", 1.0 / 200.0);
-    reg.AddUnit(ANGLE, SI, "REVOLUTION", "[PI]*RAD", 2.0);
+    reg.AddUnit(ANGLE, SI, "REVOLUTION", "[2PI]*RAD");
     }
 
 void AddSolidAngle(UnitRegistry& reg)
@@ -214,20 +215,20 @@ void AddArea(UnitRegistry& reg)
     reg.AddUnit(AREA, SI, "ARE", "[HECTO]*M(2)");
     reg.AddUnit(AREA, SI, "HECTARE", "[HECTO]*ARE");
 
-    reg.AddUnit(AREA, IMPERIAL, "SQ.IN", "IN(2)");
-    reg.AddUnit(AREA, IMPERIAL, "SQ.FT", "FT(2)");
-    reg.AddUnit(AREA, IMPERIAL, "THOUSAND_SQ.FT", "[KILO]*FT(2)");
-    reg.AddUnit(AREA, IMPERIAL, "SQ.YRD", "YRD(2)");
-    reg.AddUnit(AREA, IMPERIAL, "SQ.MILE", "MILE(2)");
-    reg.AddUnit(AREA, IMPERIAL, "SQ.CHAIN", "CHAIN(2)");
-    reg.AddUnit(AREA, IMPERIAL, "ACRE", "CHAIN(2)", 10.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-9
+    reg.AddUnit(AREA, USCUSTOM, "SQ.IN", "IN(2)");
+    reg.AddUnit(AREA, USCUSTOM, "SQ.FT", "FT(2)");
+    reg.AddUnit(AREA, USCUSTOM, "THOUSAND_SQ.FT", "[KILO]*FT(2)");
+    reg.AddUnit(AREA, USCUSTOM, "SQ.YRD", "YRD(2)");
+    reg.AddUnit(AREA, USCUSTOM, "SQ.MILE", "MILE(2)");
+    reg.AddUnit(AREA, USCUSTOM, "SQ.CHAIN", "CHAIN(2)");
+    reg.AddUnit(AREA, USCUSTOM, "ACRE", "CHAIN(2)", 10.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-9
 
-    reg.AddUnit(AREA, IMPERIAL, "SQ.US_SURVEY_IN", "US_SURVEY_INCH(2)");
-    reg.AddUnit(AREA, IMPERIAL, "SQ.US_SURVEY_FT", "US_SURVEY_FOOT(2)");
-    reg.AddUnit(AREA, IMPERIAL, "SQ.US_SURVEY_YRD", "US_SURVEY_YARD(2)");
-    reg.AddUnit(AREA, SURVEYOR, "SQ.US_SURVEY_MILE", "US_SURVEY_MILE(2)");
-    reg.AddUnit(AREA, SURVEYOR, "SQ.US_SURVEY_CHAIN", "US_SURVEY_CHAIN(2)");
-    reg.AddUnit(AREA, SURVEYOR, "US_SURVEY_ACRE", "US_SURVEY_CHAIN(2)", 10.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-9
+    reg.AddUnit(AREA, USSURVEY, "SQ.US_SURVEY_IN", "US_SURVEY_IN(2)");
+    reg.AddUnit(AREA, USSURVEY, "SQ.US_SURVEY_FT", "US_SURVEY_FT(2)");
+    reg.AddUnit(AREA, USSURVEY, "SQ.US_SURVEY_YRD", "US_SURVEY_YRD(2)");
+    reg.AddUnit(AREA, USSURVEY, "SQ.US_SURVEY_MILE", "US_SURVEY_MILE(2)");
+    reg.AddUnit(AREA, USSURVEY, "SQ.US_SURVEY_CHAIN", "US_SURVEY_CHAIN(2)");
+    reg.AddUnit(AREA, USSURVEY, "US_SURVEY_ACRE", "US_SURVEY_CHAIN(2)", 10.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-9
     }
 
 void AddSizeLengthRate(UnitRegistry& reg)
@@ -265,9 +266,9 @@ void AddDensity(UnitRegistry& reg)
 
     reg.AddUnit(DENSITY, USCUSTOM, "SLUG/CUB.FT", "SLUG*FT(-3)");
 
-    reg.AddUnit(DENSITY, USCUSTOM, "KIP/CUB.FT", "KIP*FT(-3)");
+    reg.AddUnit(DENSITY, USCUSTOM, "KIP/CUB.FT", "KIPM*FT(-3)");
 
-    reg.AddUnit(DENSITY, USCUSTOM, "SHORT_TON/CUB.FT", "SHORT_TON* FT(-3)");
+    reg.AddUnit(DENSITY, USCUSTOM, "SHORT_TON/CUB.FT", "SHORT_TON_MASS*FT(-3)");
     }
 
 void AddForceDensity(UnitRegistry& reg)
@@ -275,7 +276,6 @@ void AddForceDensity(UnitRegistry& reg)
     reg.AddUnit(FORCE_DENSITY, SI, "N/CUB.M", "N*M(-3)");
     reg.AddUnit(FORCE_DENSITY, SI, "KN/CUB.M", "[KILO]*N*M(-3)");
     reg.AddUnit(FORCE_DENSITY, USCUSTOM, "N/CUB.FT", "N*FT(-3)");
-    reg.AddSynonym("N/CUB.FT", "NEWTON_PER_FOOT_CUBED");
     reg.AddUnit(FORCE_DENSITY, USCUSTOM, "KN/CUB.FT", "[KILO]*N*FT(-3)");
     }
 
@@ -284,9 +284,9 @@ void AddPopulationDensity(UnitRegistry& reg)
     reg.AddUnit(POPULATION_DENSITY, SI, "PERSON/SQ.M", "PERSON*M(-2)");
     reg.AddUnit(POPULATION_DENSITY, SI, "PERSON/HECTARE", "PERSON*HECTARE(-1)");
     reg.AddUnit(POPULATION_DENSITY, SI, "PERSON/SQ.KM", "PERSON*KM(-2)");
-    reg.AddUnit(POPULATION_DENSITY, SI, "PERSON/ACRE", "PERSON*ACRE(-1)");
-    reg.AddUnit(POPULATION_DENSITY, SI, "PERSON/SQ.FT", "PERSON*FT(-2)");
-    reg.AddUnit(POPULATION_DENSITY, SI, "PERSON/SQ.MILE", "PERSON*MILE(-2)");
+    reg.AddUnit(POPULATION_DENSITY, USCUSTOM, "PERSON/ACRE", "PERSON*ACRE(-1)");
+    reg.AddUnit(POPULATION_DENSITY, USCUSTOM, "PERSON/SQ.FT", "PERSON*FT(-2)");
+    reg.AddUnit(POPULATION_DENSITY, USCUSTOM, "PERSON/SQ.MILE", "PERSON*MILE(-2)");
     }
 
 void AddElectricCurrent(UnitRegistry& reg)
@@ -311,10 +311,10 @@ void AddElectricPotential(UnitRegistry& reg)
 void AddEnergy(UnitRegistry& reg)
     {
     reg.AddUnit(WORK, SI, "J", "N*M");
-    reg.AddUnit(WORK, SI, "KJ", "[KILO]*N*M");
-    reg.AddUnit(WORK, SI, "MJ", "[MEGA]*N*M");
-    reg.AddUnit(WORK, SI, "GJ", "[GIGA]*N*M");
-    reg.AddUnit(WORK, USCUSTOM, "FOOT_POUNDAL", "PDL*FT");
+    reg.AddUnit(WORK, SI, "KJ", "[KILO]*J");
+    reg.AddUnit(WORK, SI, "MEGAJ", "[MEGA]*J");
+    reg.AddUnit(WORK, SI, "GJ", "[GIGA]*J");
+    reg.AddUnit(WORK, USCUSTOM, "FT_PDL", "PDL*FT");
     reg.AddUnit(WORK, INTERNATIONAL, "BTU", "J", 1.05505585262e3); // Is IT BTU.  http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.  See foot note #9: 
     reg.AddSynonym("BTU", "BRITISH_THERMAL_UNIT");
     reg.AddUnit(WORK, USCUSTOM, "KILOBTU", "[KILO]*BTU");
@@ -327,9 +327,9 @@ void AddEnergy(UnitRegistry& reg)
     //reg.AddSynonym("CUB.FT_ATM", "CUBIC_FOOT_OF_ATMOSPHERE");
     //reg.AddUnit(WORK, INTERNATIONAL, "CUB.YRD_ATM", "ATM*CUB.YRD");
     //reg.AddSynonym("CUB.YRD_ATM", "CUBIC_YARD_OF_ATMOSPHERE");
-    reg.AddUnit(WORK, USCUSTOM, "WATT_SECOND", "W*S");
+    reg.AddUnit(WORK, INTERNATIONAL, "WATT_SECOND", "W*S");
     reg.AddUnit(WORK, INTERNATIONAL, "KWH", "KW*HR");
-    reg.AddUnit(WORK, INTERNATIONAL, "MWH", "MW*HR");
+    reg.AddUnit(WORK, INTERNATIONAL, "MEGAWH", "MEGAW*HR");
     reg.AddUnit(WORK, INTERNATIONAL, "GWH", "GW*HR");
     }
 
@@ -352,7 +352,7 @@ void AddHeatingValue(UnitRegistry& reg)
     {
     reg.AddUnit(HEATING_VALUE_MASS, SI, "J/KG", "J*KG(-1)");
     reg.AddUnit(HEATING_VALUE_MASS, SI, "KJ/KG", "KJ*KG(-1)");
-    reg.AddUnit(HEATING_VALUE_MASS, SI, "MEGAJ/KG", "MJ*KG(-1)");
+    reg.AddUnit(HEATING_VALUE_MASS, SI, "MEGAJ/KG", "MEGAJ*KG(-1)");
 
     reg.AddUnit(HEATING_VALUE_MASS, USCUSTOM, "BTU/LBM", "BTU*LBM(-1)");
     }
@@ -370,7 +370,7 @@ void AddSpecificHeatCapacityMolar(UnitRegistry& reg)
 
     reg.AddUnit(SPECIFIC_HEAT_CAPACITY_MOLAR, SI, "KJ/(KMOL*K)", "KJ*KMOL(-1)*DELTA_KELVIN(-1)");
 
-    reg.AddUnit(SPECIFIC_HEAT_CAPACITY_MOLAR, SI, "BTU/(LB-MOLE*RANKINE)", "BTU*LB-MOLE(-1)*DELTA_RANKINE(-1)");
+    reg.AddUnit(SPECIFIC_HEAT_CAPACITY_MOLAR, USCUSTOM, "BTU/(LB-MOL*RANKINE)", "BTU*LB-MOL(-1)*DELTA_RANKINE(-1)");
     }
 
 void AddVolumeFlowRateByArea(UnitRegistry& reg)
@@ -384,29 +384,32 @@ void AddVolumeFlowRate(UnitRegistry& reg)
     reg.AddUnit(FLOW, SI, "CUB.M/MIN", "M(3)*MIN(-1)");
     reg.AddUnit(FLOW, SI, "CUB.M/HR", "M(3)*HR(-1)");
     reg.AddUnit(FLOW, SI, "CUB.M/DAY", "M(3)*DAY(-1)");
+
     reg.AddUnit(FLOW, SI, "LITRE/SEC", "LITRE*S(-1)");
     reg.AddUnit(FLOW, SI, "LITRE/MIN", "LITRE*MIN(-1)");
     reg.AddUnit(FLOW, SI, "LITRE/HR", "LITRE*HR(-1)");
     reg.AddUnit(FLOW, SI, "LITRE/DAY", "LITRE*DAY(-1)");
+
     reg.AddUnit(FLOW, USCUSTOM, "CUB.IN/SEC", "CUB.IN*S(-1)");
     reg.AddUnit(FLOW, USCUSTOM, "CUB.IN/MIN", "CUB.IN*MIN(-1)");
+
     reg.AddUnit(FLOW, USCUSTOM, "CUB.FT/SEC", "CUB.FT*S(-1)");
     reg.AddUnit(FLOW, USCUSTOM, "CUB.FT/MIN", "CUB.FT*MIN(-1)");
     reg.AddUnit(FLOW, USCUSTOM, "CUB.FT/DAY", "CUB.FT*DAY(-1)");
+
     reg.AddUnit(FLOW, USCUSTOM, "ACRE_FT/DAY", "ACRE_FT*DAY(-1)");
     reg.AddUnit(FLOW, USCUSTOM, "ACRE_FT/HR", "ACRE_FT*HR(-1)");
     reg.AddUnit(FLOW, USCUSTOM, "ACRE_FT/MIN", "ACRE_FT*MIN(-1)");
+
     reg.AddUnit(FLOW, USCUSTOM, "ACRE_IN/DAY", "ACRE_IN*DAY(-1)");
-    reg.AddUnit(FLOW, USCUSTOM, "ACRE_IN/HOUR", "ACRE_IN*HR(-1)");
+    reg.AddUnit(FLOW, USCUSTOM, "ACRE_IN/HR", "ACRE_IN*HR(-1)");
     reg.AddUnit(FLOW, USCUSTOM, "ACRE_IN/MIN", "ACRE_IN*MIN(-1)");
 
+    reg.AddUnit(FLOW, USCUSTOM, "GALLON_IMPERIAL/SEC", "GALLON_IMPERIAL*S(-1)");
+    reg.AddUnit(FLOW, USCUSTOM, "GALLON_IMPERIAL/MIN", "GALLON_IMPERIAL*MIN(-1)");
     reg.AddUnit(FLOW, USCUSTOM, "GALLON_IMPERIAL/DAY", "GALLON_IMPERIAL*DAY(-1)");
 
-    reg.AddUnit(FLOW, USCUSTOM, "GALLON_IMPERIAL/MINUTE", "GALLON_IMPERIAL*MIN(-1)");
-
-    reg.AddUnit(FLOW, USCUSTOM, "GALLON_IMPERIAL/SECOND", "GALLON_IMPERIAL*S(-1)");
-
-    reg.AddUnit(FLOW, USCUSTOM, "GALLON/S", "GALLON*S(-1)");
+    reg.AddUnit(FLOW, USCUSTOM, "GALLON/SEC", "GALLON*S(-1)");
     reg.AddUnit(FLOW, USCUSTOM, "GALLON/MIN", "GALLON*MIN(-1)");
     reg.AddUnit(FLOW, USCUSTOM, "GALLON/DAY", "GALLON*DAY(-1)");
     }
@@ -423,59 +426,59 @@ void AddFrequency(UnitRegistry& reg)
 
 void AddSurfaceFlowRate(UnitRegistry& reg)
     {
-    reg.AddUnit(SURFACE_FLOW_RATE, INDUSTRIAL, "CUB.M/(SEC*SQ.M)", "M*S(-1)");
-    reg.AddUnit(SURFACE_FLOW_RATE, INDUSTRIAL, "CUB.M/(DAY*SQ.M)", "M*DAY(-1)");
-    reg.AddUnit(SURFACE_FLOW_RATE, SI, "CUB.M/(DAY*HECTARE)", "CUB.M*HECTARE(-1)*DAY(-1)");
-    reg.AddUnit(SURFACE_FLOW_RATE, SI, "CUB.M/(DAY*SQ.KM)", "CUB.M*KM(-2)*DAY(-1)");
+    reg.AddUnit(SURFACE_FLOW_RATE, SI, "CUB.M/(SQ.M*SEC)", "M*S(-1)");
+    reg.AddUnit(SURFACE_FLOW_RATE, SI, "CUB.M/(SQ.M*DAY)", "M*DAY(-1)");
+    reg.AddUnit(SURFACE_FLOW_RATE, SI, "CUB.M/(HECTARE*DAY)", "CUB.M*HECTARE(-1)*DAY(-1)");
+    reg.AddUnit(SURFACE_FLOW_RATE, SI, "CUB.M/(SQ.KM*DAY)", "CUB.M*KM(-2)*DAY(-1)");
     reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "CUB.FT/(SQ.FT*MIN)", "FT*MIN(-1)");
-    reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "CUB.FT/(SQ.FT*S)", "FT*S(-1)");
-    reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "CUB.FT/(SQ.MILE*S)", "FT(3)*MILE(-2)*S(-1)");
-    reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "GALLON/(DAY*ACRE)", "GALLON*DAY(-1)*ACRE(-1)");
-    reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "GALLON/(MIN*ACRE)", "GALLON*MIN(-1)*ACRE(-1)");
-    reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "GALLON/(MIN*SQ.FT)", "GALLON*MIN(-1)*FT(-2)");
-    reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "GALLON/(DAY*SQ.FT)", "GALLON*DAY(-1)*FT(-2)");
-    reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "GALLON/(MIN*SQ.MILE)", "GALLON*MIN(-1)*MILE(-2)");
-    reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "GALLON/(DAY*SQ.MILE)", "GALLON*DAY(-1)*MILE(-2)");
+    reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "CUB.FT/(SQ.FT*SEC)", "FT*S(-1)");
+    reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "CUB.FT/(SQ.MILE*SEC)", "FT(3)*MILE(-2)*S(-1)");
     reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "CUB.FT/(ACRE*SEC)", "FT(3)*ACRE(-1)*S(-1)");
+    reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "GALLON/(ACRE*DAY)", "GALLON*DAY(-1)*ACRE(-1)");
+    reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "GALLON/(ACRE*MIN)", "GALLON*MIN(-1)*ACRE(-1)");
+    reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "GALLON/(SQ.FT*MIN)", "GALLON*MIN(-1)*FT(-2)");
+    reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "GALLON/(SQ.FT*DAY)", "GALLON*DAY(-1)*FT(-2)");
+    reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "GALLON/(SQ.MILE*MIN)", "GALLON*MIN(-1)*MILE(-2)");
+    reg.AddUnit(SURFACE_FLOW_RATE, USCUSTOM, "GALLON/(SQ.MILE*DAY)", "GALLON*DAY(-1)*MILE(-2)");
     }
 
 void AddMassRatio(UnitRegistry& reg)
     {
-    reg.AddUnit(MASS_RATIO, SI, "KILOGRAM_PER_KILOGRAM", "KG*KG(-1)");
-    reg.AddUnit(MASS_RATIO, USCUSTOM, "GRAIN_MASS_PER_POUND_MASS", "GRAIN*LBM(-1)");
+    reg.AddUnit(MASS_RATIO, SI, "KG/KG", "KG*KG(-1)");
+    reg.AddUnit(MASS_RATIO, USCUSTOM, "GRM/LBM", "GRM*LBM(-1)");
     }
 
 void AddMassFlowRate(UnitRegistry& reg)
     {
-    reg.AddUnit(MASS_FLOW, SI, "KG/S", "KG*S(-1)");
+    reg.AddUnit(MASS_FLOW, SI, "KG/SEC", "KG*S(-1)");
     reg.AddUnit(MASS_FLOW, SI, "KG/MIN", "KG*MIN(-1)");
     reg.AddUnit(MASS_FLOW, SI, "KG/HR", "KG*HR(-1)");
     reg.AddUnit(MASS_FLOW, SI, "KG/DAY", "KG*DAY(-1)");
 
-    reg.AddUnit(MASS_FLOW, SI, "G/S", "G*S(-1)");
+    reg.AddUnit(MASS_FLOW, SI, "G/SEC", "G*S(-1)");
     reg.AddUnit(MASS_FLOW, SI, "G/MIN", "G*MIN(-1)");
     reg.AddUnit(MASS_FLOW, SI, "G/HR", "G*HR(-1)");
-    reg.AddUnit(MASS_FLOW, SI, "MG/S", "MG*S(-1)");
+    reg.AddUnit(MASS_FLOW, SI, "MG/SEC", "MG*S(-1)");
     reg.AddUnit(MASS_FLOW, SI, "MG/MIN", "MG*MIN(-1)");
     reg.AddUnit(MASS_FLOW, SI, "MG/HR", "MG*HR(-1)");
     reg.AddUnit(MASS_FLOW, SI, "MG/DAY", "MG*DAY(-1)");
-    reg.AddUnit(MASS_FLOW, SI, "MKG/S", "MKG*S(-1)");
+    reg.AddUnit(MASS_FLOW, SI, "MKG/SEC", "MKG*S(-1)");
     reg.AddUnit(MASS_FLOW, SI, "MKG/MIN", "MKG*MIN(-1)");
     reg.AddUnit(MASS_FLOW, SI, "MKG/HR", "MKG*HR(-1)");
     reg.AddUnit(MASS_FLOW, SI, "MKG/DAY", "MKG*DAY(-1)");
-    reg.AddUnit(MASS_FLOW, SI, "LB/S", "LBM*S(-1)");
-    reg.AddUnit(MASS_FLOW, SI, "LB/MIN", "LBM*MIN(-1)");
-    reg.AddUnit(MASS_FLOW, SI, "LB/HR", "LBM*HR(-1)");
-    reg.AddUnit(MASS_FLOW, SI, "LB/DAY", "LBM*DAY(-1)");
     reg.AddUnit(MASS_FLOW, SI, "TONNE/HR", "TONNE*HR(-1)");
 
-    reg.AddUnit(MASS_FLOW, USCUSTOM, "SHORT_TON/HR", "SHORT_TON*HR(-1)");
+    reg.AddUnit(MASS_FLOW, USCUSTOM, "LBM/SEC", "LBM*S(-1)");
+    reg.AddUnit(MASS_FLOW, USCUSTOM, "LBM/MIN", "LBM*MIN(-1)");
+    reg.AddUnit(MASS_FLOW, USCUSTOM, "LBM/HR", "LBM*HR(-1)");
+    reg.AddUnit(MASS_FLOW, USCUSTOM, "LBM/DAY", "LBM*DAY(-1)");
+    reg.AddUnit(MASS_FLOW, USCUSTOM, "SHORT_TON/HR", "SHORT_TON_MASS*HR(-1)");
     }
 
 void AddParticleFlowRate(UnitRegistry& reg)
     {
-    reg.AddUnit(PARTICLE_FLOW, SI, "MOL/S", "MOL*S(-1)");
-    reg.AddUnit(PARTICLE_FLOW, SI, "KMOL/S", "[KILO]*MOL*S(-1)");
+    reg.AddUnit(PARTICLE_FLOW, SI, "MOL/SEC", "MOL*S(-1)");
+    reg.AddUnit(PARTICLE_FLOW, SI, "KMOL/SEC", "[KILO]*MOL*S(-1)");
     }
 
 void AddForce(UnitRegistry& reg)
@@ -488,11 +491,12 @@ void AddForce(UnitRegistry& reg)
     reg.AddUnit(FORCE, SI, "LBF", "[STD_G]*LBM");
     reg.AddUnit(FORCE, SI, "KPF", "[KILO]*LBF");
     reg.AddUnit(FORCE, SI, "DYNE", "G*CM*S(-2)");
-    reg.AddUnit(FORCE, SI, "PDL", "LBM*FT*S(-2)");
+    
+    reg.AddUnit(FORCE, USCUSTOM, "PDL", "LBM*FT*S(-2)");
     reg.AddSynonym("PDL", "POUNDAL");
-
-    reg.AddUnit(FORCE, USCUSTOM, "SHORT_TON_FORCE", "[STD_G]*SHORT_TON");
-    reg.AddUnit(FORCE, USCUSTOM, "LONG_TON_FORCE", "[STD_G]*LONG_TON");
+    reg.AddUnit(FORCE, USCUSTOM, "SHORT_TON_FORCE", "[STD_G]*SHORT_TON_MASS");
+    reg.AddUnit(FORCE, USCUSTOM, "LONG_TON_FORCE", "[STD_G]*LONG_TON_MASS");
+    reg.AddUnit(FORCE, USCUSTOM, "KIPF", "[STD_G]*KIPM");
     }
 
 void AddHeatFlux(UnitRegistry& reg)
@@ -521,14 +525,15 @@ void AddLinearLoad(UnitRegistry& reg)
     {
     reg.AddUnit(LINEAR_LOAD, SI, "N/M", "N*M(-1)");
     reg.AddUnit(LINEAR_LOAD, SI, "N/MM", "N*MM(-1)");
-    reg.AddUnit(LINEAR_LOAD, SI, "LBF/IN", "LBF*IN(-1)");
+    reg.AddUnit(LINEAR_LOAD, USCUSTOM, "LBF/IN", "LBF*IN(-1)");
     }
 
-void AddLinearCost(UnitRegistry& reg)
-    {
-    reg.AddUnit(LINEAR_COST, FINANCE, "$/M", "US$*M(-1)");
-    reg.AddUnit(LINEAR_COST, FINANCE, "$/MM", "US$*MM(-1)");
-    }
+// NOTE: Don't have a user right now
+//void AddLinearCost(UnitRegistry& reg)
+//    {
+//    reg.AddUnit(LINEAR_COST, FINANCE, "US$/M", "US$*M(-1)");
+//    reg.AddUnit(LINEAR_COST, FINANCE, "US$/MM", "US$*MM(-1)");
+//    }
 
 void AddLinearRate(UnitRegistry& reg)
     {
@@ -555,18 +560,18 @@ void AddTorque(UnitRegistry& reg)
 
 void AddMolarVolume(UnitRegistry& reg)
     {
-    reg.AddUnit(MOLAR_VOLUME, CHEMISTRY, "CUB.M/MOLE", "CUB.M*MOL(-1)");
+    reg.AddUnit(MOLAR_VOLUME, CHEMISTRY, "CUB.M/MOL", "CUB.M*MOL(-1)");
     reg.AddUnit(MOLAR_VOLUME, CHEMISTRY, "CUB.M/KMOL", "CUB.M*MOL(-1)", 1.0e-3);
-    reg.AddUnit(MOLAR_VOLUME, CHEMISTRY, "CUB.FT/LB-MOLE", "CUB.FT*LB-MOLE(-1)");
+    reg.AddUnit(MOLAR_VOLUME, CHEMISTRY, "CUB.FT/LB-MOL", "CUB.FT*LB-MOL(-1)");
     }
 
 void AddMolarConcentration(UnitRegistry& reg)
     {
     reg.AddUnit(MOLAR_CONCENTRATION, CHEMISTRY, "MOL/CUB.M", "MOL*CUB.M(-1)");
     reg.AddSynonym("MOL/CUB.M", "MILLIMOLAR");
-    reg.AddUnit(MOLAR_CONCENTRATION, SI, "KMOL/CUB.M", "[KILO]*MOL*CUB.M(-1)");
+    reg.AddUnit(MOLAR_CONCENTRATION, CHEMISTRY, "KMOL/CUB.M", "[KILO]*MOL*CUB.M(-1)");
     reg.AddUnit(MOLAR_CONCENTRATION, CHEMISTRY, "MOL/CUB.DM", "MOL*CUB.DM(-1)");
-    reg.AddSynonym("MOL/CUB.DM", "MOLE_PER_LITRE");
+    reg.AddSynonym("MOL/CUB.DM", "MOL/LITRE");
     reg.AddSynonym("MOL/CUB.DM", "MOLAR");
     reg.AddUnit(MOLAR_CONCENTRATION, CHEMISTRY, "MICROMOL/CUB.DM", "[MICRO]*MOL*CUB.DM(-1)");
     reg.AddSynonym("MICROMOL/CUB.DM", "MICROMOLAR");
@@ -575,27 +580,26 @@ void AddMolarConcentration(UnitRegistry& reg)
     reg.AddUnit(MOLAR_CONCENTRATION, CHEMISTRY, "PICOMOL/CUB.DM", "[PICO]*MOL*CUB.DM(-1)");
     reg.AddSynonym("PICOMOL/CUB.DM", "PICOMOLAR");
     reg.AddUnit(MOLAR_CONCENTRATION, CHEMISTRY, "MOL/CUB.FT", "MOL*CUB.FT(-1)");
-    reg.AddSynonym("MOL/CUB.FT", "MOLE_PER_FOOT_CUBED");
     }
 
 // NOTE: Changed to Area moment of inertia based on Wiki pages on moment of inertia and area moment of inertia
 void AddMomentOfInertia(UnitRegistry& reg)
     {
-    reg.AddUnit(AREA_MOMENT_INERTIA, USCUSTOM, "M^4", "M(4)");
-    reg.AddUnit(AREA_MOMENT_INERTIA, INDUSTRIAL, "CM^4", "CM(4)");
-    reg.AddUnit(AREA_MOMENT_INERTIA, INDUSTRIAL, "IN^4", "IN(4)");
-    reg.AddUnit(AREA_MOMENT_INERTIA, INDUSTRIAL, "FT^4", "FT(4)");
     reg.AddUnit(AREA_MOMENT_INERTIA, SI, "MM^4", "MM(4)");
+    reg.AddUnit(AREA_MOMENT_INERTIA, SI, "M^4", "M(4)");
+    reg.AddUnit(AREA_MOMENT_INERTIA, SI, "CM^4", "CM(4)");
+    reg.AddUnit(AREA_MOMENT_INERTIA, USCUSTOM, "IN^4", "IN(4)");
+    reg.AddUnit(AREA_MOMENT_INERTIA, USCUSTOM, "FT^4", "FT(4)");
     }
 
 void AddPower(UnitRegistry& reg)
     {
     reg.AddUnit(POWER, INTERNATIONAL, "W", "N*M*S(-1)");
     reg.AddUnit(POWER, INTERNATIONAL, "KW", "[KILO]*W");
-    reg.AddUnit(POWER, INTERNATIONAL, "MW", "[MEGA]*W");
+    reg.AddUnit(POWER, INTERNATIONAL, "MEGAW", "[MEGA]*W");
     reg.AddUnit(POWER, INTERNATIONAL, "GW", "[GIGA]*W");
-    reg.AddUnit(POWER, INTERNATIONAL, "BTU/HOUR", "BTU*HR(-1)");
-    reg.AddUnit(POWER, USCUSTOM, "KILOBTU/HOUR", "[KILO]*BTU*HR(-1)");
+    reg.AddUnit(POWER, INTERNATIONAL, "BTU/HR", "BTU*HR(-1)");
+    reg.AddUnit(POWER, INTERNATIONAL, "KILOBTU/HR", "[KILO]*BTU*HR(-1)");
     reg.AddUnit(POWER, USCUSTOM, "HP", "LBF*FT*S(-1)", 550.0);  // Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
 
     // TODO: No standard definition of a month ... 
@@ -603,17 +607,10 @@ void AddPower(UnitRegistry& reg)
     //reg.AddUnit(POWER, SI, "GJ/MONTH", "GJ*MONTH(-1)");
     }
 
-// TODO: Wrong
-//void AddPowerDensity(UnitRegistry& reg)
-//    {
-//    reg.AddUnit(BISPH_LENGTH, USCUSTOM, "BTU_PER_HOUR_PER_FOOT_CUBED", "M_PER_L_T3", 0.09662109117546, 0.0); //, BISQNoDescript);
-//    }
-
 void AddPressure(UnitRegistry& reg)
     {
     reg.AddUnit(PRESSURE, SI, "PA", "N*M(-2)");
-
-    reg.AddUnit(PRESSURE, SI, "PA_GAUGE", "PA", 1, -101325);  // Offset is one standard atmosphere in PA.  Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
+    reg.AddUnit(PRESSURE, INDUSTRIAL, "PA_GAUGE", "PA", 1, 101325);  // Offset is one standard atmosphere in PA.  Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
 
     // TODO: See if this is equal to another unit here.
     reg.AddUnit(PRESSURE, SI, "N/SQ.MM", "N*MM(-2)");
@@ -621,22 +618,22 @@ void AddPressure(UnitRegistry& reg)
     reg.AddUnit(PRESSURE, SI, "HECTOPASCAL", "[HECTO]*PA");
 
     reg.AddUnit(PRESSURE, SI, "KILOPASCAL", "[KILO]*PA");
-    reg.AddUnit(PRESSURE, SI, "KILOPASCAL_GAUGE", "[KILO]*PA", 1, -101325e-3);  // Offset is one standard atmosphere converted to KiloPA.  Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
+    reg.AddUnit(PRESSURE, INDUSTRIAL, "KILOPASCAL_GAUGE", "[KILO]*PA", 1, 101325e-3);  // Offset is one standard atmosphere converted to KiloPA.  Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
 
     reg.AddUnit(PRESSURE, SI, "MEGAPASCAL", "[MEGA]*PA");
-    reg.AddUnit(PRESSURE, SI, "MEGAPASCAL_GAUGE", "[MEGA]*PA", 1, -101325e-6);  // Offset is one standard atmosphere converted to MegaPA.  Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
+    reg.AddUnit(PRESSURE, INDUSTRIAL, "MEGAPASCAL_GAUGE", "[MEGA]*PA", 1, 101325e-6);  // Offset is one standard atmosphere converted to MegaPA.  Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
 
     reg.AddUnit(PRESSURE, INTERNATIONAL, "AT", "KGF*CM(-2)");  // Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
     reg.AddSynonym("AT", "ATMOSPHERE_TECHNIAL");
 
-    reg.AddUnit(PRESSURE, INDUSTRIAL, "AT_GAUGE", "AT", 1.0, -1.0332274527998859); // TODO: double check, used 101325 PA -> AT conversion
+    reg.AddUnit(PRESSURE, INDUSTRIAL, "AT_GAUGE", "AT", 1.0, 1.0332274527998859); // TODO: double check, used 101325 PA -> AT conversion
 
     reg.AddUnit(PRESSURE, INTERNATIONAL, "KGF/SQ.M", "KGF*M(-2)");
 
     reg.AddUnit(PRESSURE, SI, "ATM", "PA", 101325);  // Is standard atmosphere.  Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
 
     reg.AddUnit(PRESSURE, SI, "BAR", "PA", 1.0e5); // Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
-    reg.AddUnit(PRESSURE, INDUSTRIAL, "BAR_GAUGE", "PA", 1.0e5, -1.01325); // Offset is one standard atmosphere converted to BAR.  Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
+    reg.AddUnit(PRESSURE, INDUSTRIAL, "BAR_GAUGE", "PA", 1.0e5, 1.01325); // Offset is one standard atmosphere converted to BAR.  Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
 
     reg.AddUnit(PRESSURE, SI, "MBAR", "[MILLI]*BAR");
 
@@ -645,27 +642,26 @@ void AddPressure(UnitRegistry& reg)
 
     reg.AddUnit(PRESSURE, USCUSTOM, "PSI", "LBF*IN(-2)");
 
-    reg.AddUnit(PRESSURE, USCUSTOM, "PSIG", "LBF*IN(-2)", 1, -14.695948775513449); // TODO: double check, used 101325 PA -> PSI conversion
+    reg.AddUnit(PRESSURE, USCUSTOM, "PSIG", "LBF*IN(-2)", 1, 14.695948775513449); // TODO: double check, used 101325 PA -> PSI conversion
 
-    reg.AddUnit(PRESSURE, USCUSTOM, "KSI", "[KILO]*LBF*IN(-2)");
+    reg.AddUnit(PRESSURE, USCUSTOM, "KSI", "KIPF*IN(-2)");
 
     reg.AddUnit(PRESSURE, USCUSTOM, "LBF/SQ.FT", "LBF*FT(-2)");
 
-    reg.AddUnit(PRESSURE, USCUSTOM, "TORR", "PA", 1.333224e2);   // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+    reg.AddUnit(PRESSURE, USCUSTOM, "TORR", "PA", 101325.0 / 760.0);   // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B. for approx conversion and Table 11 for a reference to the exact conversion
 
     // TODO: Go back to density conversion once we have verified sources for those values
-    reg.AddUnit(PRESSURE, SI, "METRE_OF_H2O_CONVENTIONAL", "[KILO]*MILLIMETRE_OF_H2O_CONVENTIONAL");
+    reg.AddUnit(PRESSURE, SI, "M_H2O", "[KILO]*MM_H2O"); // Meter of H2O Conventional
+    reg.AddUnit(PRESSURE, SI, "MM_H2O", "PA", 9.80665); // Millimeter of H2O Conventional, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+    reg.AddUnit(PRESSURE, SI, "MM_HG@32F", "PA", 1.33322e2); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  Used centimeter of mercury (0 C) to pascal
+    reg.AddUnit(PRESSURE, USCUSTOM, "FT_H2O", "PA", 2.989067e3); // foot of H2O Conventional, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+    reg.AddUnit(PRESSURE, USCUSTOM, "IN_H2O@32F", "PA", 249.1083); // Inch of H2O at 32 Fahrenheit, Water is assumed to be in a liquid state. Equal to water at 0C.  No verified source
+    reg.AddUnit(PRESSURE, USCUSTOM, "IN_H2O@39.2F", "PA", 2.49082e2); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+    reg.AddUnit(PRESSURE, USCUSTOM, "IN_H2O@60F", "PA", 2.4884e2); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
 
-    reg.AddUnit(PRESSURE, SI, "MILLIMETRE_OF_H2O_CONVENTIONAL", "PA", 9.80665); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
-    reg.AddUnit(PRESSURE, USCUSTOM, "FOOT_OF_H2O_CONVENTIONAL", "PA", 2.989067e3); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
-    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_H2O_AT_32_FAHRENHEIT", "PA", 249.1083); // Water is assumed to be in a liquid state. Equal to water at 0C.  No verified source
-    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_H2O_AT_39_2_FAHRENHEIT", "PA", 2.49082e2); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
-    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_H2O_AT_60_FAHRENHEIT", "PA", 2.4884e2); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
-
-    reg.AddUnit(PRESSURE, USCUSTOM, "MILLIMETRE_OF_HG_AT_32_FAHRENHEIT", "PA", 1.33322e2); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  Used centimeter of mercury (0 C) to pascal
-    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_HG_CONVENTIONAL", "PA", 3.386389e3); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
-    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_HG_AT_32_FAHRENHEIT", "PA", 3.38638e3); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
-    reg.AddUnit(PRESSURE, USCUSTOM, "INCH_OF_HG_AT_60_FAHRENHEIT", "PA", 3.37685e3); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+    reg.AddUnit(PRESSURE, USCUSTOM, "IN_HG", "PA", 3.386389e3); // Inch of HG conventional, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+    reg.AddUnit(PRESSURE, USCUSTOM, "IN_HG@32F", "PA", 3.38638e3); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
+    reg.AddUnit(PRESSURE, USCUSTOM, "IN_HG@60F", "PA", 3.37685e3); // See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
     }
 
 void AddPressureGradient(UnitRegistry& reg)
@@ -696,13 +692,13 @@ void AddSlope(UnitRegistry& reg)
     reg.AddUnit(SLOPE, USCUSTOM, "FT/IN", "FT*IN(-1)");
     reg.AddUnit(SLOPE, USCUSTOM, "FT/MILE", "FT*MILE(-1)");
 
-    reg.AddUnit(SLOPE, INTERNATIONAL, "VERTICAL_PER_HORIZONTAL", "M/M");
+    reg.AddUnit(SLOPE, INTERNATIONAL, "VERTICAL/HORIZONTAL", "M/M");
 
     reg.AddUnit(SLOPE, INTERNATIONAL, "PERCENT_SLOPE", "M/M", 1.0e-2);
 
-    reg.AddInvertingUnit("VERTICAL_PER_HORIZONTAL", "HORIZONTAL_PER_VERTICAL");
-    reg.AddInvertingUnit("FT/FT", "FT_HORIZONTAL_PER_FT_VERTICAL");
-    reg.AddInvertingUnit("M/M", "M_HORIZONTAL_PER_M_VERTICAL");
+    reg.AddInvertingUnit("VERTICAL/HORIZONTAL", "HORIZONTAL/VERTICAL");
+    reg.AddInvertingUnit("FT/FT", "FT_HORIZONTAL/FT_VERTICAL");
+    reg.AddInvertingUnit("M/M", "M_HORIZONTAL/M_VERTICAL");
     }
 
 void AddSurfaceDensity(UnitRegistry& reg)
@@ -710,12 +706,12 @@ void AddSurfaceDensity(UnitRegistry& reg)
     reg.AddUnit(SURFACE_DENSITY, SI, "KG/SQ.M", "KG*M(-2)");
     reg.AddUnit(SURFACE_DENSITY, SI, "G/SQ.M", "G*M(-2)");
     reg.AddUnit(SURFACE_DENSITY, SI, "KG/HECTARE", "KG*HECTARE(-1)");
-    reg.AddUnit(SURFACE_DENSITY, USCUSTOM, "LB/ACRE", "LBM*ACRE(-1)");
+    reg.AddUnit(SURFACE_DENSITY, USCUSTOM, "LBM/ACRE", "LBM*ACRE(-1)");
     }
 
 void AddThermalConductivity(UnitRegistry& reg)
     {
-    reg.AddUnit(THERMAL_CONDUCTIVITY, USCUSTOM, "W/(M*K)", "W*M(-1)*DELTA_KELVIN(-1)");
+    reg.AddUnit(THERMAL_CONDUCTIVITY, SI, "W/(M*K)", "W*M(-1)*DELTA_KELVIN(-1)");
     reg.AddUnit(THERMAL_CONDUCTIVITY, SI, "W/(M*C)", "W*M(-1)*DELTA_CELSIUS(-1)");
 
     reg.AddUnit(THERMAL_CONDUCTIVITY, USCUSTOM, "(BTU*IN)/(SQ.FT*HR*FAHRENHEIT)", "BTU*IN*FT(-2)*HR(-1)*DELTA_FAHRENHEIT(-1)");
@@ -724,7 +720,6 @@ void AddThermalConductivity(UnitRegistry& reg)
 void AddThermalResistance(UnitRegistry& reg)
     {
     reg.AddUnit(THERMAL_RESISTANCE, SI, "(SQ.M*KELVIN)/WATT", "M(2)*DELTA_KELVIN*W(-1)");
-
     reg.AddUnit(THERMAL_RESISTANCE, SI, "(SQ.M*CELSIUS)/WATT", "M(2)*DELTA_CELSIUS*W(-1)");
 
     reg.AddUnit(THERMAL_RESISTANCE, USCUSTOM, "(SQ.FT*HR*FAHRENHEIT)/BTU", "FT(2)*HR*DELTA_FAHRENHEIT*BTU(-1)");
@@ -734,7 +729,6 @@ void AddThreadPitch(UnitRegistry& reg)
     {
     reg.AddUnit(THREAD_PITCH, SI, "M/REVOLUTION", "M*REVOLUTION(-1)");
     reg.AddUnit(THREAD_PITCH, SI, "CM/REVOLUTION", "CM*REVOLUTION(-1)");
-    reg.AddSynonym("CM/REVOLUTION", "CENTIMETRE_PER_REVOLUTION");
     reg.AddUnit(THREAD_PITCH, SI, "MM/REVOLUTION", "MM*REVOLUTION(-1)");
     reg.AddUnit(THREAD_PITCH, SI, "M/RAD", "M*RAD(-1)");
     reg.AddUnit(THREAD_PITCH, SI, "M/DEGREE", "M*ARC_DEG(-1)");
@@ -748,30 +742,30 @@ void AddThreadPitch(UnitRegistry& reg)
 
 void AddVelocity(UnitRegistry& reg)
     {
-    reg.AddUnit(VELOCITY, SI, "M/S", "M*S(-1)");
+    reg.AddUnit(VELOCITY, SI, "M/SEC", "M*S(-1)");
     reg.AddUnit(VELOCITY, SI, "M/MIN", "M*MIN(-1)");
     reg.AddUnit(VELOCITY, SI, "M/HR", "M*HR(-1)");
     reg.AddUnit(VELOCITY, SI, "M/DAy", "M*DAY(-1)");
-    reg.AddUnit(VELOCITY, SI, "MM/S", "MM*S(-1)");
+    reg.AddUnit(VELOCITY, SI, "MM/SEC", "MM*S(-1)");
     reg.AddUnit(VELOCITY, SI, "MM/MIN", "MM*MIN(-1)");
     reg.AddUnit(VELOCITY, SI, "MM/HR", "MM*HR(-1)");
     reg.AddUnit(VELOCITY, SI, "MM/DAY", "MM*DAY(-1)");
-    reg.AddUnit(VELOCITY, SI, "CM/S", "CM*S(-1)");
+    reg.AddUnit(VELOCITY, SI, "CM/SEC", "CM*S(-1)");
     reg.AddUnit(VELOCITY, SI, "CM/MIN", "CM*MIN(-1)");
-    reg.AddUnit(VELOCITY, SI, "CM/HOUR", "CM*HR(-1)");
+    reg.AddUnit(VELOCITY, SI, "CM/HR", "CM*HR(-1)");
     reg.AddUnit(VELOCITY, SI, "CM/DAY", "CM*DAY(-1)");
-    reg.AddUnit(VELOCITY, SI, "KM/S", "KM*S(-1)");
+    reg.AddUnit(VELOCITY, SI, "KM/SEC", "KM*S(-1)");
     reg.AddUnit(VELOCITY, SI, "KM/HR", "KM*HR(-1)");
-    reg.AddUnit(VELOCITY, SI, "IN/SEC", "IN*S(-1)");
-    reg.AddUnit(VELOCITY, SI, "IN/MIN", "IN*MIN(-1)");
-    reg.AddUnit(VELOCITY, SI, "IN/HR", "IN*HR(-1)");
-    reg.AddUnit(VELOCITY, SI, "IN/DAY", "IN*DAY(-1)");
-    reg.AddUnit(VELOCITY, SI, "FT/SEC", "FT*S(-1)");
-    reg.AddUnit(VELOCITY, SI, "FT/MIN", "FT*MIN(-1)");
-    reg.AddUnit(VELOCITY, SI, "FT/HR", "FT*HR(-1)");
-    reg.AddUnit(VELOCITY, SI, "FT/DAY", "FT*DAY(-1)");
-    reg.AddUnit(VELOCITY, SI, "YRD/SEC", "YRD*S(-1)");
-    reg.AddUnit(VELOCITY, SI, "MPH", "MILE*HR(-1)");
+    reg.AddUnit(VELOCITY, USCUSTOM, "IN/SEC", "IN*S(-1)");
+    reg.AddUnit(VELOCITY, USCUSTOM, "IN/MIN", "IN*MIN(-1)");
+    reg.AddUnit(VELOCITY, USCUSTOM, "IN/HR", "IN*HR(-1)");
+    reg.AddUnit(VELOCITY, USCUSTOM, "IN/DAY", "IN*DAY(-1)");
+    reg.AddUnit(VELOCITY, USCUSTOM, "FT/SEC", "FT*S(-1)");
+    reg.AddUnit(VELOCITY, USCUSTOM, "FT/MIN", "FT*MIN(-1)");
+    reg.AddUnit(VELOCITY, USCUSTOM, "FT/HR", "FT*HR(-1)");
+    reg.AddUnit(VELOCITY, USCUSTOM, "FT/DAY", "FT*DAY(-1)");
+    reg.AddUnit(VELOCITY, USCUSTOM, "YRD/SEC", "YRD*S(-1)");
+    reg.AddUnit(VELOCITY, USCUSTOM, "MPH", "MILE*HR(-1)");
 
     // NOTE: An Admiralty mile was defined as 1853.184 Meters, then redefined as 1853.0 by UK law see schedule 1995 No. 1804, can be found at legislation.gov.uk, search by year and number.
     //reg.AddUnit(VELOCITY, MARITIME, "KNOT_UK_ADMIRALTY", "M*HR(-1)", 1853.184);
@@ -780,18 +774,15 @@ void AddVelocity(UnitRegistry& reg)
 
 void AddAngularVelocity(UnitRegistry& reg)
     {
-    reg.AddUnit(ANGULAR_VELOCITY, SI, "RAD/S", "RAD*S(-1)");
+    reg.AddUnit(ANGULAR_VELOCITY, SI, "RAD/SEC", "RAD*S(-1)");
     reg.AddUnit(ANGULAR_VELOCITY, SI, "RAD/MIN", "RAD*MIN(-1)");
     reg.AddUnit(ANGULAR_VELOCITY, SI, "RAD/HR", "RAD*HR(-1)");
-    reg.AddUnit(ANGULAR_VELOCITY, SI, "RPS", "[PI]*RAD*S(-1)", 2.0);
-    reg.AddUnit(ANGULAR_VELOCITY, SI, "RPM", "[PI]*RAD*MIN(-1)", 2.0);
-    reg.AddUnit(ANGULAR_VELOCITY, SI, "RPH", "[PI]*RAD*HR(-1)", 2.0);
-    reg.AddUnit(ANGULAR_VELOCITY, SI, "DEG/S", "ARC_DEG*S(-1)");
-    reg.AddSynonym("DEG/S", "ARC_DEG/S");
+    reg.AddUnit(ANGULAR_VELOCITY, SI, "RPS", "[2PI]*RAD*S(-1)");
+    reg.AddUnit(ANGULAR_VELOCITY, SI, "RPM", "[2PI]*RAD*MIN(-1)");
+    reg.AddUnit(ANGULAR_VELOCITY, SI, "RPH", "[2PI]*RAD*HR(-1)");
+    reg.AddUnit(ANGULAR_VELOCITY, SI, "DEG/SEC", "ARC_DEG*S(-1)");
     reg.AddUnit(ANGULAR_VELOCITY, SI, "DEG/MIN", "ARC_DEG*MIN(-1)");
-    reg.AddSynonym("DEG/MIN", "ARC_DEG/MIN");
     reg.AddUnit(ANGULAR_VELOCITY, SI, "DEG/HR", "ARC_DEG*HR(-1)");
-    reg.AddSynonym("DEG/HR", "ARC_DEG/HOUR");
     }
 
 void AddDynamicViscosity(UnitRegistry& reg)
@@ -799,13 +790,13 @@ void AddDynamicViscosity(UnitRegistry& reg)
     reg.AddUnit(DYNAMIC_VISCOSITY, SI, "PA-S", "PA*S");
     reg.AddUnit(DYNAMIC_VISCOSITY, SI, "POISE", "PA-S", 0.1); // Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
     reg.AddUnit(DYNAMIC_VISCOSITY, SI, "CENTIPOISE", "[CENTI]*POISE");
-    reg.AddUnit(DYNAMIC_VISCOSITY, SI, "LBM/(FT*S)", "LBM*FT(-1)*S(-1)");
+    reg.AddUnit(DYNAMIC_VISCOSITY, USCUSTOM, "LBM/(FT*S)", "LBM*FT(-1)*S(-1)");
     }
 
 void AddKinematicViscosity(UnitRegistry& reg)
     {
-    reg.AddUnit(KINEMATIC_VISCOSITY, SI, "SQ.M/S", "M(2)*S(-1)");
-    reg.AddUnit(KINEMATIC_VISCOSITY, SI, "SQ.FT/S", "FT(2)*S(-1)");
+    reg.AddUnit(KINEMATIC_VISCOSITY, SI, "SQ.M/SEC", "M(2)*S(-1)");
+    reg.AddUnit(KINEMATIC_VISCOSITY, USCUSTOM, "SQ.FT/SEC", "FT(2)*S(-1)");
     reg.AddUnit(KINEMATIC_VISCOSITY, SI, "STOKE", "CM(2)*S(-1)");
     reg.AddUnit(KINEMATIC_VISCOSITY, SI, "CENTISTOKE", "MM(2)*S(-1)");
     }
@@ -820,26 +811,26 @@ void AddVolume(UnitRegistry& reg)
     reg.AddUnit(VOLUME, SI, "CUB.KM", "KM(3)");
     reg.AddUnit(VOLUME, SI, "LITRE", "CUB.DM");
     reg.AddUnit(VOLUME, SI, "THOUSAND_LITRE", "[KILO]*LITRE");
-    reg.AddUnit(VOLUME, INDUSTRIAL, "THOUSAND_GALLON", "[KILO]*GALLON");
-    reg.AddUnit(VOLUME, INDUSTRIAL, "MILLION_GALLON", "[MEGA]*GALLON");
-    reg.AddUnit(VOLUME, INDUSTRIAL, "MILLION_LITRE", "[MEGA]*LITRE");
+    reg.AddUnit(VOLUME, SI, "MILLION_LITRE", "[MEGA]*LITRE");
     reg.AddUnit(VOLUME, SI, "MICROLITRE", "[MICRO]*LITRE");
 
-    reg.AddUnit(VOLUME, IMPERIAL, "CUB.IN", "IN(3)");
-    reg.AddUnit(VOLUME, IMPERIAL, "CUB.FT", "FT(3)");
-    reg.AddUnit(VOLUME, IMPERIAL, "CUB.YRD", "YRD(3)");
-    reg.AddUnit(VOLUME, IMPERIAL, "CUB.MILE", "MILE(3)");
+    reg.AddUnit(VOLUME, USCUSTOM, "CUB.IN", "IN(3)");
+    reg.AddUnit(VOLUME, USCUSTOM, "CUB.FT", "FT(3)");
+    reg.AddUnit(VOLUME, USCUSTOM, "CUB.YRD", "YRD(3)");
+    reg.AddUnit(VOLUME, USCUSTOM, "CUB.MILE", "MILE(3)");
 
-    reg.AddUnit(VOLUME, IMPERIAL, "ACRE_IN", "ACRE*IN");
-    reg.AddUnit(VOLUME, IMPERIAL, "ACRE_FT", "ACRE*FT");
+    reg.AddUnit(VOLUME, USCUSTOM, "ACRE_IN", "ACRE*IN");
+    reg.AddUnit(VOLUME, USCUSTOM, "ACRE_FT", "ACRE*FT");
     reg.AddUnit(VOLUME, USCUSTOM, "GALLON", "IN(3)", 231.0);  // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-11
+    reg.AddUnit(VOLUME, USCUSTOM, "THOUSAND_GALLON", "[KILO]*GALLON");
+    reg.AddUnit(VOLUME, USCUSTOM, "MILLION_GALLON", "[MEGA]*GALLON");
     reg.AddUnit(VOLUME, IMPERIAL, "GALLON_IMPERIAL", "LITRE", 4.54609); // Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
     }
 
 void AddSpecificVolume(UnitRegistry& reg)
     {
-    reg.AddUnit(SPECIFIC_VOLUME, USCUSTOM, "CUB.M/KG", "M(3)*KG(-1)");
-    reg.AddUnit(SPECIFIC_VOLUME, USCUSTOM, "CUB.FT/LB", "FT(3)*LBM(-1)");
+    reg.AddUnit(SPECIFIC_VOLUME, SI, "CUB.M/KG", "M(3)*KG(-1)");
+    reg.AddUnit(SPECIFIC_VOLUME, USCUSTOM, "CUB.FT/LBM", "FT(3)*LBM(-1)");
     }
 
 void AddWarpingConstant(UnitRegistry& reg)
@@ -872,6 +863,7 @@ void UnitRegistry::AddDefaultUnits()
     reg.AddUnitForBasePhenomenon("CD", BasePhenomena::Luminosity);
     reg.AddSynonym("CD", "CANDELA");
     reg.AddUnitForBasePhenomenon("RAD", BasePhenomena::PlaneAngle);
+    reg.AddSynonym("RAD", "RADIAN");
     reg.AddUnitForBasePhenomenon("STERAD", BasePhenomena::SolidAngle);
     reg.AddSynonym("STERAD", "STERADIAN");
     reg.AddUnitForBasePhenomenon("US$", BasePhenomena::Finance);
@@ -881,7 +873,7 @@ void UnitRegistry::AddDefaultUnits()
 
 
     AddLengths(reg);
-    AddLinearCost(reg);
+    //AddLinearCost(reg);
     AddLinearRate(reg);
     AddMass(reg);
     AddTime(reg);
@@ -915,6 +907,7 @@ void UnitRegistry::AddDefaultUnits()
     AddVolumeFlowRate(reg);
     AddFrequency(reg);
     AddSurfaceFlowRate(reg);
+    AddMassRatio(reg);
     AddMassFlowRate(reg);
     AddParticleFlowRate(reg);
     AddForce(reg);
@@ -975,7 +968,7 @@ void UnitRegistry::AddDefaultMappings ()
     AddMapping("DELTA_DEGREE_FAHRENHEIT", "DELTA_FAHRENHEIT");
     AddMapping("DELTA_DEGREE_RANKINE", "DELTA_RANKINE");
     AddMapping("DELTA_DEGREE_KELVIN_PER_METRE", "KELVIN/M");
-    AddMapping("RECIPROCAL_DELTA_DEGREE_KELVIN", "STRAIN/K");
+    AddMapping("RECIPROCAL_DELTA_DEGREE_KELVIN", "STRAIN/KELVIN");
     AddMapping("RECIPROCAL_DELTA_DEGREE_CELSIUS", "STRAIN/CELSIUS");
     AddMapping("RECIPROCAL_DELTA_DEGREE_FAHRENHEIT", "STRAIN/FAHRENHEIT");
     AddMapping("RECIPROCAL_DELTA_DEGREE_RANKINE", "STRAIN/RANKINE");
@@ -1022,10 +1015,10 @@ void UnitRegistry::AddDefaultMappings ()
     AddMapping("PERSON_PER_MILE_SQUARED", "PERSON/SQ.MILE");
     AddMapping("JOULE", "J");
     AddMapping("KILOJOULE", "KJ");
-    AddMapping("MEGAJOULE", "MJ");
+    AddMapping("MEGAJOULE", "MEGAJ");
     AddMapping("GIGAJOULE", "GJ");
     AddMapping("KILOWATT_HOUR", "KWH");
-    AddMapping("MEGAWATT_HOUR", "MWH");
+    AddMapping("MEGAWATT_HOUR", "MEGAWH");
     AddMapping("GIGAWATT_HOUR", "GWH");
     AddMapping("JOULE_PER_METRE_CUBED", "J/CUB.M");
     AddMapping("KILOJOULE_PER_METRE_CUBED", "KJ/CUB.M");
@@ -1039,7 +1032,7 @@ void UnitRegistry::AddDefaultMappings ()
     AddMapping("BTU_PER_POUND_MASS_PER_DELTA_DEGREE_RANKINE", "BTU/(LBM*RANKINE)");
     AddMapping("JOULE_PER_KILOMOLE_PER_DELTA_DEGREE_KELVIN", "J/(KMOL*K)");
     AddMapping("KILOJOULE_PER_KILOMOLE_PER_DELTA_DEGREE_KELVIN", "KJ/(KMOL*K)");
-    AddMapping("BTU_PER_POUND_MOLE_PER_DELTA_DEGREE_RANKINE", "BTU/(LB-MOLE*RANKINE)");
+    AddMapping("BTU_PER_POUND_MOLE_PER_DELTA_DEGREE_RANKINE", "BTU/(LB-MOL*RANKINE)");
     AddMapping("METRE_CUBED_PER_SECOND", "CUB.M/SEC");
     AddMapping("METRE_CUBED_PER_MINUTE", "CUB.M/MIN");
     AddMapping("METRE_CUBED_PER_HOUR", "CUB.M/HR");
@@ -1054,50 +1047,50 @@ void UnitRegistry::AddDefaultMappings ()
     AddMapping("ACRE_FOOT_PER_DAY", "ACRE_FT/DAY");
     AddMapping("ACRE_FOOT_PER_HOUR", "ACRE_FT/HR");
     AddMapping("ACRE_FOOT_PER_MINUTE", "ACRE_FT/MIN");
-    AddMapping("ACRE_INCH_PER_HOUR", "ACRE_IN/HOUR");
+    AddMapping("ACRE_INCH_PER_HOUR", "ACRE_IN/HR");
     AddMapping("ACRE_INCH_PER_MINUTE", "ACRE_IN/MIN");
     AddMapping("GALLON_IMPERIAL_PER_DAY", "GALLON_IMPERIAL/DAY");
-    AddMapping("GALLON_IMPERIAL_PER_MINUTE", "GALLON_IMPERIAL/MINUTE");
-    AddMapping("GALLON_IMPERIAL_PER_SECOND", "GALLON_IMPERIAL/SECOND");
-    AddMapping("GALLON_PER_SECOND", "GALLON/S");
+    AddMapping("GALLON_IMPERIAL_PER_MINUTE", "GALLON_IMPERIAL/MIN");
+    AddMapping("GALLON_IMPERIAL_PER_SECOND", "GALLON_IMPERIAL/SEC");
+    AddMapping("GALLON_PER_SECOND", "GALLON/SEC");
     AddMapping("GALLON_PER_MINUTE", "GALLON/MIN");
     AddMapping("GALLON_PER_DAY", "GALLON/DAY");
-    AddMapping("METRE_CUBED_PER_METRE_SQUARED_PER_DAY", "CUB.M/(DAY*SQ.M)");
-    AddMapping("METRE_CUBED_PER_HECTARE_PER_DAY", "CUB.M/(DAY*HECTARE)");
-    AddMapping("METRE_CUBED_PER_KILOMETRE_SQUARED_PER_DAY", "CUB.M/(DAY*SQ.KM)");
+    AddMapping("METRE_CUBED_PER_METRE_SQUARED_PER_DAY", "CUB.M/(SQ.M*DAY)");
+    AddMapping("METRE_CUBED_PER_HECTARE_PER_DAY", "CUB.M/(HECTARE*DAY)");
+    AddMapping("METRE_CUBED_PER_KILOMETRE_SQUARED_PER_DAY", "CUB.M/(SQ.KM*DAY)");
     AddMapping("FOOT_CUBED_PER_FOOT_SQUARED_PER_MINUTE", "CUB.FT/(SQ.FT*MIN)");
-    AddMapping("FOOT_CUBED_PER_FOOT_SQUARED_PER_SECOND", "CUB.FT/(SQ.FT*S)");
-    AddMapping("FOOT_CUBED_PER_MILE_SQUARED_PER_SECOND", "CUB.FT/(SQ.MILE*S)");
-    AddMapping("GALLON_PER_ACRE_PER_DAY", "GALLON/(DAY*ACRE)");
-    AddMapping("GALLON_PER_ACRE_PER_MINUTE", "GALLON/(MIN*ACRE)");
-    AddMapping("GALLON_PER_FOOT_SQUARED_PER_MINUTE", "GALLON/(MIN*SQ.FT)");
-    AddMapping("GALLON_PER_FOOT_SQUARED_PER_DAY", "GALLON/(DAY*SQ.FT)");
-    AddMapping("GALLON_PER_MILE_SQUARED_PER_MINUTE", "GALLON/(MIN*SQ.MILE)");
-    AddMapping("GALLON_PER_MILE_SQUARED_PER_DAY", "GALLON/(DAY*SQ.MILE)");
+    AddMapping("FOOT_CUBED_PER_FOOT_SQUARED_PER_SECOND", "CUB.FT/(SQ.FT*SEC)");
+    AddMapping("FOOT_CUBED_PER_MILE_SQUARED_PER_SECOND", "CUB.FT/(SQ.MILE*SEC)");
+    AddMapping("GALLON_PER_ACRE_PER_DAY", "GALLON/(ACRE*DAY)");
+    AddMapping("GALLON_PER_ACRE_PER_MINUTE", "GALLON/(ACRE*MIN)");
+    AddMapping("GALLON_PER_FOOT_SQUARED_PER_MINUTE", "GALLON/(SQ.FT*MIN)");
+    AddMapping("GALLON_PER_FOOT_SQUARED_PER_DAY", "GALLON/(SQ.FT*DAY)");
+    AddMapping("GALLON_PER_MILE_SQUARED_PER_MINUTE", "GALLON/(SQ.MILE*MIN)");
+    AddMapping("GALLON_PER_MILE_SQUARED_PER_DAY", "GALLON/(SQ.MILE*DAY)");
     AddMapping("FOOT_CUBED_PER_ACRE_PER_SECOND", "CUB.FT/(ACRE*SEC)");
-    AddMapping("KILOGRAM_PER_SECOND", "KG/S");
+    AddMapping("KILOGRAM_PER_SECOND", "KG/SEC");
     AddMapping("KILOGRAM_PER_MINUTE", "KG/MIN");
     AddMapping("KILOGRAM_PER_HOUR", "KG/HR");
     AddMapping("KILOGRAM_PER_DAY", "KG/DAY");
-    AddMapping("GRAM_PER_SECOND", "G/S");
+    AddMapping("GRAM_PER_SECOND", "G/SEC");
     AddMapping("GRAM_PER_MINUTE", "G/MIN");
     AddMapping("GRAM_PER_HOUR", "G/HR");
-    AddMapping("MILLIGRAM_PER_SECOND", "MG/S");
+    AddMapping("MILLIGRAM_PER_SECOND", "MG/SEC");
     AddMapping("MILLIGRAM_PER_MINUTE", "MG/MIN");
     AddMapping("MILLIGRAM_PER_HOUR", "MG/HR");
     AddMapping("MILLIGRAM_PER_DAY", "MG/DAY");
-    AddMapping("MICROGRAM_PER_SECOND", "MKG/S");
+    AddMapping("MICROGRAM_PER_SECOND", "MKG/SEC");
     AddMapping("MICROGRAM_PER_MINUTE", "MKG/MIN");
     AddMapping("MICROGRAM_PER_HOUR", "MKG/HR");
     AddMapping("MICROGRAM_PER_DAY", "MKG/DAY");
-    AddMapping("POUND_PER_SECOND", "LB/S");
-    AddMapping("POUND_PER_MINUTE", "LB/MIN");
-    AddMapping("POUND_PER_HOUR", "LB/HR");
-    AddMapping("POUND_PER_DAY", "LB/DAY");
+    AddMapping("POUND_PER_SECOND", "LBM/SEC");
+    AddMapping("POUND_PER_MINUTE", "LBM/MIN");
+    AddMapping("POUND_PER_HOUR", "LBM/HR");
+    AddMapping("POUND_PER_DAY", "LBM/DAY");
     AddMapping("TONNE_PER_HOUR", "TONNE/HR");
     AddMapping("SHORT_TON_PER_HOUR", "SHORT_TON/HR");
-    AddMapping("MOLE_PER_SECOND", "MOL/S");
-    AddMapping("KILOMOLE_PER_SECOND", "KMOL/S");
+    AddMapping("MOLE_PER_SECOND", "MOL/SEC");
+    AddMapping("KILOMOLE_PER_SECOND", "KMOL/SEC");
     AddMapping("NEWTON", "N");
     AddMapping("KILONEWTON", "KN");
     AddMapping("MILLINEWTON", "MN");
@@ -1121,9 +1114,9 @@ void UnitRegistry::AddDefaultMappings ()
     AddMapping("ONE_PER_THOUSAND_FOOT", "PER_THOUSAND_FT");
     AddMapping("NEWTON_METRE", "N_M");
     AddMapping("POUND_FOOT", "LBF_FT");
-    AddMapping("METRE_CUBED_PER_MOLE", "CUB.M/MOLE");
+    AddMapping("METRE_CUBED_PER_MOLE", "CUB.M/MOL");
     AddMapping("METRE_CUBED_PER_KILOMOLE", "CUB.M/KMOL");
-    AddMapping("FOOT_CUBED_PER_POUND_MOLE", "CUB.FT/LB-MOLE");
+    AddMapping("FOOT_CUBED_PER_POUND_MOLE", "CUB.FT/LB-MOL");
     AddMapping("MOLE_PER_METRE_CUBED", "MOL/CUB.M");
     AddMapping("KILOMOLE_PER_METRE_CUBED", "KMOL/CUB.M");
     AddMapping("METRE_TO_THE_FOURTH", "M^4");
@@ -1133,11 +1126,11 @@ void UnitRegistry::AddDefaultMappings ()
     AddMapping("MILLIMETRE_TO_THE_FOURTH", "MM^4");
     AddMapping("WATT", "W");
     AddMapping("KILOWATT", "KW");
-    AddMapping("MEGAWATT", "MW");
+    AddMapping("MEGAWATT", "MEGAW");
     AddMapping("GIGAWATT", "GW");
     //AddMapping("BTU_PER_MONTH", "BTU/MONTH");
-    AddMapping("BTU_PER_HOUR", "BTU/HOUR");
-    AddMapping("KILOBTU_PER_HOUR", "KILOBTU/HOUR");
+    AddMapping("BTU_PER_HOUR", "BTU/HR");
+    AddMapping("KILOBTU_PER_HOUR", "KILOBTU/HR");
     AddMapping("HORSEPOWER", "HP");
     //AddMapping("GIGAJOULE_PER_MONTH", "GJ/MONTH");
     AddMapping("PASCAL", "PA");
@@ -1168,7 +1161,7 @@ void UnitRegistry::AddDefaultMappings ()
     AddMapping("KILOGRAM_PER_METRE_SQUARED", "KG/SQ.M");
     AddMapping("GRAM_PER_METRE_SQUARED", "G/SQ.M");
     AddMapping("KILOGRAM_PER_HECTARE", "KG/HECTARE");
-    AddMapping("POUND_PER_ACRE", "LB/ACRE");
+    AddMapping("POUND_PER_ACRE", "LBM/ACRE");
     AddMapping("WATT_PER_METRE_PER_DEGREE_KELVIN", "W/(M*K)");
     AddMapping("WATT_PER_METRE_PER_DEGREE_CELSIUS", "W/(M*C)");
     AddMapping("BTU_INCH_PER_FOOT_SQUARED_PER_HOUR_PER_DEGREE_FAHRENHEIT", "(BTU*IN)/(SQ.FT*HR*FAHRENHEIT)");
@@ -1184,16 +1177,16 @@ void UnitRegistry::AddDefaultMappings ()
     AddMapping("FOOT_PER_REVOLUTION", "FT/REVOLUTION");
     AddMapping("INCH_PER_DEGREE", "IN/DEGREE");
     AddMapping("INCH_PER_RADIAN", "IN/RAD");
-    AddMapping("METRE_PER_SECOND", "M/S");
+    AddMapping("METRE_PER_SECOND", "M/SEC");
     AddMapping("METRE_PER_MINUTE", "M/MIN");
     AddMapping("METRE_PER_HOUR", "M/HR");
     AddMapping("METRE_PER_DAY", "M/DAy");
     AddMapping("MILLIMETRE_PER_MINUTE", "MM/MIN");
     AddMapping("MILLIMETRE_PER_HOUR", "MM/HR");
     AddMapping("MILLIMETRE_PER_DAY", "MM/DAY");
-    AddMapping("CENTIMETRE_PER_SECOND", "CM/S");
+    AddMapping("CENTIMETRE_PER_SECOND", "CM/SEC");
     AddMapping("CENTIMETRE_PER_MINUTE", "CM/MIN");
-    AddMapping("CENTIMETRE_PER_HOUR", "CM/HOUR");
+    AddMapping("CENTIMETRE_PER_HOUR", "CM/HR");
     AddMapping("CENTIMETRE_PER_DAY", "CM/DAY");
     AddMapping("KILOMETRE_PER_HOUR", "KM/HR");
     AddMapping("INCH_PER_SECOND", "IN/SEC");
@@ -1207,26 +1200,26 @@ void UnitRegistry::AddDefaultMappings ()
     AddMapping("MILE_PER_HOUR", "MPH");
     //AddMapping("KNOT", "KNOT_UK_ADMIRALTY");    // NOTE: OldSystem used admiralty knot conversion factor for knot conversion factor
     AddMapping("KNOT_INTERNATIONAL", "KNOT_INTERNATIONAL");
-    AddMapping("RADIAN_PER_SECOND", "RAD/S");
+    AddMapping("RADIAN_PER_SECOND", "RAD/SEC");
     AddMapping("RADIAN_PER_MINUTE", "RAD/MIN");
     AddMapping("RADIAN_PER_HOUR", "RAD/HR");
     AddMapping("CYCLE_PER_SECOND", "RPS");
     AddMapping("CYCLE_PER_MINUTE", "RPM");
     AddMapping("REVOLUTION_PER_MINUTE", "RPM");
     AddMapping("CYCLE_PER_HOUR", "RPH");
-    AddMapping("DEGREE_PER_SECOND", "DEG/S");
+    AddMapping("DEGREE_PER_SECOND", "DEG/SEC");
     AddMapping("DEGREE_PER_MINUTE", "DEG/MIN");
     AddMapping("DEGREE_PER_HOUR", "DEG/HR");
     AddMapping("PASCAL_SECOND", "PA-S");
-    AddMapping("METRE_SQUARED_PER_SECOND", "SQ.M/S");
-    AddMapping("FOOT_SQUARED_PER_SECOND", "SQ.FT/S");
+    AddMapping("METRE_SQUARED_PER_SECOND", "SQ.M/SEC");
+    AddMapping("FOOT_SQUARED_PER_SECOND", "SQ.FT/SEC");
     AddMapping("METRE_CUBED", "CUB.M");
     AddMapping("CENTIMETRE_CUBED", "CUB.CM");
     AddMapping("INCH_CUBED", "CUB.IN");
     AddMapping("FOOT_CUBED", "CUB.FT");
     AddMapping("YARD_CUBED", "CUB.YRD");
     AddMapping("METRE_CUBED_PER_KILOGRAM", "CUB.M/KG");
-    AddMapping("FOOT_CUBED_PER_POUND_MASS", "CUB.FT/LB");
+    AddMapping("FOOT_CUBED_PER_POUND_MASS", "CUB.FT/LBM");
     AddMapping("METRE_TO_THE_SIXTH", "M^6");
     AddMapping("MILLIMETRE_TO_THE_SIXTH", "MM^6");
     AddMapping("CENTIMETRE_TO_THE_SIXTH", "CM^6");
@@ -1244,15 +1237,15 @@ void UnitRegistry::AddDefaultMappings ()
     AddMapping("UNITLESS_UNIT", "ONE");
     AddMapping("THOUSAND_FOOT_SQUARED", "THOUSAND_SQ.FT");
     AddMapping("DYNE", "DYNE");
-    AddMapping("FOOT_POUNDAL", "FOOT_POUNDAL");
+    AddMapping("FOOT_POUNDAL", "FT_PDL");
     AddMapping("KILOPASCAL_GAUGE", "KILOPASCAL_GAUGE");
     AddMapping("PERCENT_SLOPE", "PERCENT_SLOPE");
     AddMapping("MILE", "MILE");
     AddMapping("MICROINCH", "MICROINCH");
     AddMapping("MILLIINCH", "MILLIINCH");
     AddMapping("MILLIFOOT", "MILLIFOOT");
-    AddMapping("US_SURVEY_INCH", "US_SURVEY_INCH");
-    AddMapping("US_SURVEY_FOOT", "US_SURVEY_FOOT");
+    AddMapping("US_SURVEY_INCH", "US_SURVEY_IN");
+    AddMapping("US_SURVEY_FOOT", "US_SURVEY_FT");
     AddMapping("US_SURVEY_MILE", "US_SURVEY_MILE");
     AddMapping("HECTARE", "HECTARE");
     AddMapping("ACRE", "ACRE");
@@ -1275,7 +1268,7 @@ void UnitRegistry::AddDefaultMappings ()
     AddMapping("MILLION_LITRE", "MILLION_LITRE");
     AddMapping("THOUSAND_GALLON", "THOUSAND_GALLON");
     AddMapping("THOUSAND_LITRE", "THOUSAND_LITRE");
-    AddMapping("GRAIN", "GRAIN");
+    AddMapping("GRAIN", "GRM");
     AddMapping("LONG_TON", "LONG_TON");
     AddMapping("MEGAGRAM", "MEGAGRAM");
     AddMapping("SHORT_TON", "SHORT_TON");
@@ -1301,10 +1294,10 @@ void UnitRegistry::AddDefaultMappings ()
     AddMapping("PASSENGER", "PASSENGER");
     AddMapping("RESIDENT", "RESIDENT");
     AddMapping("STUDENT", "STUDENT");
-    AddMapping("VERTICAL_PER_HORIZONTAL", "VERTICAL_PER_HORIZONTAL");
-    AddMapping("FOOT_HORIZONTAL_PER_FOOT_VERTICAL", "FT_HORIZONTAL_PER_FT_VERTICAL");
-    AddMapping("METRE_HORIZONTAL_PER_METRE_VERTICAL", "M_HORIZONTAL_PER_M_VERTICAL");
-    AddMapping("HORIZONTAL_PER_VERTICAL", "HORIZONTAL_PER_VERTICAL");
+    AddMapping("VERTICAL_PER_HORIZONTAL", "VERTICAL/HORIZONTAL");
+    AddMapping("FOOT_HORIZONTAL_PER_FOOT_VERTICAL", "FT_HORIZONTAL/FT_VERTICAL");
+    AddMapping("METRE_HORIZONTAL_PER_METRE_VERTICAL", "M_HORIZONTAL/M_VERTICAL");
+    AddMapping("HORIZONTAL_PER_VERTICAL", "HORIZONTAL/VERTICAL");
     AddMapping("FOOT_PER_1000_FOOT", "FT/THOUSAND_FOOT");
     AddMapping("CENTIPOISE", "CENTIPOISE");
     AddMapping("LUX", "LUX");
@@ -1314,20 +1307,22 @@ void UnitRegistry::AddDefaultMappings ()
     AddMapping("BAR", "BAR");
     AddMapping("BAR_GAUGE", "BAR_GAUGE");
     AddMapping("BARYE", "BARYE");
-    AddMapping("FOOT_OF_H2O_CONVENTIONAL", "FOOT_OF_H2O_CONVENTIONAL");
+    AddMapping("FOOT_OF_H2O_CONVENTIONAL", "FT_H2O");
     AddMapping("HECTOPASCAL", "HECTOPASCAL");
-    AddMapping("INCH_OF_H2O_AT_32_FAHRENHEIT", "INCH_OF_H2O_AT_32_FAHRENHEIT");
-    AddMapping("INCH_OF_H2O_AT_39_2_FAHRENHEIT", "INCH_OF_H2O_AT_39_2_FAHRENHEIT");
-    AddMapping("INCH_OF_H2O_AT_60_FAHRENHEIT", "INCH_OF_H2O_AT_60_FAHRENHEIT");
-    AddMapping("INCH_OF_HG_AT_32_FAHRENHEIT", "INCH_OF_HG_AT_32_FAHRENHEIT");
-    AddMapping("INCH_OF_HG_AT_60_FAHRENHEIT", "INCH_OF_HG_AT_60_FAHRENHEIT");
-    AddMapping("INCH_OF_HG_CONVENTIONAL", "INCH_OF_HG_CONVENTIONAL");
+    AddMapping("INCH_OF_H2O_AT_32_FAHRENHEIT", "IN_H2O@32F");
+    AddMapping("INCH_OF_H2O_AT_39_2_FAHRENHEIT", "IN_H2O@39.2F");
+    AddMapping("INCH_OF_H2O_AT_60_FAHRENHEIT", "IN_H2O@60F");
+    AddMapping("INCH_OF_HG_AT_32_FAHRENHEIT", "IN_HG@32F");
+    AddMapping("INCH_OF_HG_AT_60_FAHRENHEIT", "IN_HG@60F");
+    AddMapping("INCH_OF_HG_CONVENTIONAL", "IN_HG");
     AddMapping("MEGAPASCAL", "MEGAPASCAL");
     AddMapping("MEGAPASCAL_GAUGE", "MEGAPASCAL_GAUGE");
-    AddMapping("METRE_OF_H2O_CONVENTIONAL", "METRE_OF_H2O_CONVENTIONAL");
-    AddMapping("MILLIMETRE_OF_H2O_CONVENTIONAL", "MILLIMETRE_OF_H2O_CONVENTIONAL");
-    AddMapping("MILLIMETRE_OF_HG_AT_32_FAHRENHEIT", "MILLIMETRE_OF_HG_AT_32_FAHRENHEIT");
+    AddMapping("METRE_OF_H2O_CONVENTIONAL", "M_H2O");
+    AddMapping("MILLIMETRE_OF_H2O_CONVENTIONAL", "MM_H2O");
+    AddMapping("MILLIMETRE_OF_HG_AT_32_FAHRENHEIT", "MM_HG@32F");
     AddMapping("TORR", "TORR");
     AddMapping("HERTZ", "HZ");
+    AddMapping("KILOGRAM_PER_KILOGRAM", "KG/KG");
+    AddMapping("GRAIN_MASS_PER_POUND_MASS", "GRM/LBM");
 
     }

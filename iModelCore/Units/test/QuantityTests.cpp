@@ -15,7 +15,7 @@ BEGIN_UNITS_UNITTESTS_NAMESPACE
 TEST_F(QuantityTestFixture, Conversion)
     {
     auto q1 = Quantity::Create(22.7, "MPH");
-    auto q2 = q1->ConvertTo("M/S");
+    auto q2 = q1->ConvertTo("M/SEC");
     auto q3 = q1->ConvertTo("N");
 
     QuantityEquality(*q1, *q2);
@@ -51,9 +51,9 @@ TEST_F(QuantityTestFixture, InvalidSubtract)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QuantityTestFixture, SimpleAddition)
     {
-    auto q1 = Quantity::Create(7.5, "M/S");
-    auto q2 = Quantity::Create(10.2, "M/S");
-    auto ans = Quantity::Create(17.7, "M/S");
+    auto q1 = Quantity::Create(7.5, "M/SEC");
+    auto q2 = Quantity::Create(10.2, "M/SEC");
+    auto ans = Quantity::Create(17.7, "M/SEC");
 
     auto q3 = q1->Add(*q2);
     QuantityEquality(*q3, *ans);
@@ -65,9 +65,9 @@ TEST_F(QuantityTestFixture, SimpleAddition)
 TEST_F(QuantityTestFixture, ComplexAddition)
     {
     auto q1 = Quantity::Create(22.7, "MPH");
-    auto q2 = Quantity::Create(13.4112, "M/S");
+    auto q2 = Quantity::Create(13.4112, "M/SEC");
     auto ans1 = Quantity::Create(52.7, "MPH");
-    auto ans2 = Quantity::Create(23.559008, "M/S");
+    auto ans2 = Quantity::Create(23.559008, "M/SEC");
 
     // Since our units are inconsistent, do both orders.
     // The answer is given in terms of the first term's units.
@@ -83,9 +83,9 @@ TEST_F(QuantityTestFixture, ComplexAddition)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QuantityTestFixture, SimpleSubtraction)
     {
-    auto q1 = Quantity::Create(7.5, "M/S");
-    auto q2 = Quantity::Create(10.2, "M/S");
-    auto ans = Quantity::Create(2.7, "M/S");
+    auto q1 = Quantity::Create(7.5, "M/SEC");
+    auto q2 = Quantity::Create(10.2, "M/SEC");
+    auto ans = Quantity::Create(2.7, "M/SEC");
 
     auto q3 = q2->Subtract(*q1);
     QuantityEquality(*ans, *q3);
@@ -97,9 +97,9 @@ TEST_F(QuantityTestFixture, SimpleSubtraction)
 TEST_F(QuantityTestFixture, ComplexSubtraction)
     {
     auto q1 = Quantity::Create(22.7, "MPH");
-    auto q2 = Quantity::Create(13.4112, "M/S");
+    auto q2 = Quantity::Create(13.4112, "M/SEC");
     auto ans1 = Quantity::Create(7.3, "MPH");
-    auto ans2 = Quantity::Create(-3.263392, "M/S");
+    auto ans2 = Quantity::Create(-3.263392, "M/SEC");
 
     // Since our units are inconsistent, do both orders.
     // The answer is given in terms of the first term's units.
@@ -157,9 +157,9 @@ TEST_F(QuantityTestFixture, ComplexDivision)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QuantityTestFixture, QuantityComparison)
     {    
-    auto a = Quantity::Create(1.0, "M/S");
+    auto a = Quantity::Create(1.0, "M/SEC");
     auto delta = 1.0 + 5.0*a->GetTolerance()*std::numeric_limits<double>::epsilon();
-    auto aprime = Quantity::Create(delta, "M/S");
+    auto aprime = Quantity::Create(delta, "M/SEC");
 
     QuantityEquality(*a, *a);
     QuantityGreater(*aprime, *a);

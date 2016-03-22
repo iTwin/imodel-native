@@ -214,7 +214,7 @@ TEST_F (UnitsTests, UnitsMapping)
         guess += i + ", ";
         }
 
-    EXPECT_EQ (103, notMapped.size() ) << guess;
+    EXPECT_EQ (101, notMapped.size() ) << guess;
     }
 
 // TODO: Make this test pass when conversions fail and add more conversions to test a wide spectrum of dimenions.
@@ -225,7 +225,7 @@ TEST_F (UnitsTests, UnitsMapping)
 //    TestUnitConversion(1.0, "JOULE", 1.0, "NEWTON_METRE", 1000, loadErrors, conversionErrors);
 //    }
 
-TEST_F(UnitsTests, TestOffsetConversions)
+TEST_F(UnitsTests, TestTemperatureConversions)
     {
     bvector<Utf8String> loadErrors;
     bvector<Utf8String> conversionErrors;
@@ -241,11 +241,11 @@ TEST_F(UnitsTests, TestOffsetConversions)
     TestUnitConversion(122, "FAHRENHEIT", 50, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(60, "FAHRENHEIT", 288.70555555555555555555555555556, "KELVIN", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(60, "FAHRENHEIT", 519.67, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(61.1, "FAHRENHEIT", 15.9875, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
+    //TestUnitConversion(61.1, "FAHRENHEIT", 15.9875, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(0, "FAHRENHEIT", -17.777777777777777777777777777778, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(0, "FAHRENHEIT", 255.37222222222222222222222222222, "KELVIN", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(0, "FAHRENHEIT", 459.67, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "FAHRENHEIT", -1.8333333333333333333333333333333, "ROMER", 10, loadErrors, conversionErrors, handledUnits);
+    //TestUnitConversion(0, "FAHRENHEIT", -1.8333333333333333333333333333333, "ROMER", 10, loadErrors, conversionErrors, handledUnits);
 
     // Expected values generated using the following equations and windows calculator
     // Fahrenheit = Celsius󭝵+32
@@ -258,20 +258,20 @@ TEST_F(UnitsTests, TestOffsetConversions)
     TestUnitConversion(60, "CELSIUS", 140, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(60, "CELSIUS", 333.15, "KELVIN", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(60, "CELSIUS", 599.67, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(-14.3, "CELSIUS", -0.0075, "ROMER", 100, loadErrors, conversionErrors, handledUnits);
+    //TestUnitConversion(-14.3, "CELSIUS", -0.0075, "ROMER", 100, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(0, "CELSIUS", 32, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(0, "CELSIUS", 273.15, "KELVIN", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(0, "CELSIUS", 491.67, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "CELSIUS", 7.5, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
+    //TestUnitConversion(0, "CELSIUS", 7.5, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
 
     TestUnitConversion(42, "KELVIN", -231.15, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42, "KELVIN", -384.07, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42, "KELVIN", 75.6, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(571.2, "KELVIN", 163.97625, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
+    //TestUnitConversion(571.2, "KELVIN", 163.97625, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(0, "KELVIN", -273.15, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(0, "KELVIN", -459.67, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(0, "KELVIN", 0, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "KELVIN", -135.90375, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
+    //TestUnitConversion(0, "KELVIN", -135.90375, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
 
 
     // Expected values generated using the following equations and windows calculator
@@ -282,25 +282,25 @@ TEST_F(UnitsTests, TestOffsetConversions)
     TestUnitConversion(42, "RANKINE", -249.81666666666666666666666666667, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42, "RANKINE", -417.67, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42, "RANKINE", 23.333333333333333, "KELVIN", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(630, "RANKINE", 47.84625, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
+    //TestUnitConversion(630, "RANKINE", 47.84625, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(0, "RANKINE", -273.15, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(0, "RANKINE", -459.67, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(0, "RANKINE", 0, "KELVIN", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "RANKINE", -135.90375, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
+    //TestUnitConversion(0, "RANKINE", -135.90375, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
     
     // Expected values generated using the following equations and windows calculator
     // Celsius = (R鴐er�7.5)�40/21
     // Fahrenheit = (R鴐er�7.5)�24/7+32
     // Kelvin = (R鴐er�7.5)�40/21+273.15
     // Rankine = (R鴐er�7.5)�24/7+491.67
-    TestUnitConversion(42, "ROMER", 65.714285714285714285714285714286, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42, "ROMER", 150.28571428571428571428571428571, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42, "ROMER", 338.86428571428571428571428571429, "KELVIN", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42, "ROMER", 609.95571428571428571428571428571, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "ROMER", -14.285714285714285714285714285714, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "ROMER", 6.285714285714285714, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "ROMER", 258.8642857142857142, "KELVIN", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "ROMER", 465.9557142857142857, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
+    //TestUnitConversion(42, "ROMER", 65.714285714285714285714285714286, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
+    //TestUnitConversion(42, "ROMER", 150.28571428571428571428571428571, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
+    //TestUnitConversion(42, "ROMER", 338.86428571428571428571428571429, "KELVIN", 1, loadErrors, conversionErrors, handledUnits);
+    //TestUnitConversion(42, "ROMER", 609.95571428571428571428571428571, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
+    //TestUnitConversion(0, "ROMER", -14.285714285714285714285714285714, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
+    //TestUnitConversion(0, "ROMER", 6.285714285714285714, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
+    //TestUnitConversion(0, "ROMER", 258.8642857142857142, "KELVIN", 1, loadErrors, conversionErrors, handledUnits);
+    //TestUnitConversion(0, "ROMER", 465.9557142857142857, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
 
 
     Utf8String loadErrorString("The following units were not found:\n");
@@ -342,7 +342,7 @@ TEST_F(UnitsTests, TestBasicConversion)
     TestUnitConversion(8.92179121619701e6, "POUND_PER_ACRE", 1.0e6, "GRAM_PER_METRE_SQUARED", 10000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(8.54292974552351e7, "FOOT_POUNDAL", 1.0, "KILOWATT_HOUR", 10000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(2.37303604042319e7, "FOOT_POUNDAL", 1.0, "MEGAJOULE", 10000, loadErrors, conversionErrors, handledUnits, true);
-    TestUnitConversion(42, "KG/S", 42000.0, "G/S", 1000, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42, "KG/SEC", 42000.0, "G/SEC", 1000, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42, "CUB.M/SEC", 2.562997252e6, "CUB.IN/SEC", 100000, loadErrors, conversionErrors, handledUnits); // Exptected value has 10 digits of precision generated using http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
     TestUnitConversion(2.326e6, "KILOJOULE_PER_KILOGRAM", 1.0e6, "BTU_PER_POUND_MASS", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(60, "GRAM_PER_MINUTE", 1.0, "GRAM_PER_SECOND", 1000, loadErrors, conversionErrors, handledUnits, true);
@@ -361,30 +361,31 @@ TEST_F(UnitsTests, TestInvertedSlopeUnits)
     bvector<Utf8String> loadErrors;
     bvector<Utf8String> conversionErrors;
     bvector<bpair<Utf8String, Utf8String>> handledUnits;
-    TestUnitConversion(42.42, "HORIZONTAL_PER_VERTICAL", 1.0 / 42.42, "VERTICAL_PER_HORIZONTAL", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0.0, "HORIZONTAL_PER_VERTICAL", 0.0, "VERTICAL_PER_HORIZONTAL", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "HORIZONTAL/VERTICAL", 1.0 / 42.42, "VERTICAL/HORIZONTAL", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0.0, "HORIZONTAL/VERTICAL", 0.0, "VERTICAL/HORIZONTAL", 1, loadErrors, conversionErrors, handledUnits);
     ASSERT_EQ(0, loadErrors.size()) << BeStringUtilities::Join(loadErrors, ", ");
     ASSERT_EQ(0, conversionErrors.size()) << BeStringUtilities::Join(conversionErrors, ", ");
     Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"TestInvertedSlopeUnits_handledUnits.csv");
     WriteToFile(fileName.c_str(), handledUnits);
     }
 
-TEST_F(UnitsTests, TestLinearCostConversions)
-    {
-    bvector<Utf8String> loadErrors;
-    bvector<Utf8String> conversionErrors;
-    bvector<bpair<Utf8String, Utf8String>> handledUnits;
-    TestUnitConversion(4200.42, "$/M", 4.20042, "$/MM", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(4200.42, "$/M", 4200.42, "$/M", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0.0, "$/M", 0.0, "$/MM", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(4200.42, "$/MM", 4200420.0, "$/M", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(4200.42, "$/MM", 4200.42, "$/MM", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0.0, "$/MM", 0.0, "$/M", 1, loadErrors, conversionErrors, handledUnits);
-    ASSERT_EQ(0, loadErrors.size()) << BeStringUtilities::Join(loadErrors, ", ");
-    ASSERT_EQ(0, conversionErrors.size()) << BeStringUtilities::Join(conversionErrors, ", ");
-    Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"TestLinearCostConversions_handledUnits.csv");
-    WriteToFile(fileName.c_str(), handledUnits);
-    }
+// NOTE: Disabled because we do not have active customers
+//TEST_F(UnitsTests, TestLinearCostConversions)
+//    {
+//    bvector<Utf8String> loadErrors;
+//    bvector<Utf8String> conversionErrors;
+//    bvector<bpair<Utf8String, Utf8String>> handledUnits;
+//    TestUnitConversion(4200.42, "US$/M", 4.20042, "US$/MM", 1, loadErrors, conversionErrors, handledUnits);
+//    TestUnitConversion(4200.42, "US$/M", 4200.42, "US$/M", 1, loadErrors, conversionErrors, handledUnits);
+//    TestUnitConversion(0.0, "US$/M", 0.0, "US$/MM", 1, loadErrors, conversionErrors, handledUnits);
+//    TestUnitConversion(4200.42, "US$/MM", 4200420.0, "US$/M", 1, loadErrors, conversionErrors, handledUnits);
+//    TestUnitConversion(4200.42, "US$/MM", 4200.42, "US$/MM", 1, loadErrors, conversionErrors, handledUnits);
+//    TestUnitConversion(0.0, "US$/MM", 0.0, "US$/M", 1, loadErrors, conversionErrors, handledUnits);
+//    ASSERT_EQ(0, loadErrors.size()) << BeStringUtilities::Join(loadErrors, ", ");
+//    ASSERT_EQ(0, conversionErrors.size()) << BeStringUtilities::Join(conversionErrors, ", ");
+//    Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"TestLinearCostConversions_handledUnits.csv");
+//    WriteToFile(fileName.c_str(), handledUnits);
+//    }
 
 //This test is an open pot to add conversion tests which don't deserve their own method
 TEST_F(UnitsTests, TestMiscConversions)
@@ -404,10 +405,10 @@ TEST_F(UnitsTests, TestMiscConversions)
     TestUnitConversion(42.42, "TONNE", 42.42e15, "NG", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42.42, "TONNE", 42.42e3 / 0.45359237, "LBM", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42.42, "NG", 42.42e-12 / 0.45359237, "LBM", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42.42, "MKG", 42.42e-12 / 0.45359237, "KIP", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "MKG", 42.42e-12 / 0.45359237, "KIPM", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42.42, "SLUG", (42.42 * 1000 * 0.45359237 * 9.80665) / 0.3048, "G", 1, loadErrors, conversionErrors, handledUnits); // 0.45359237 is conversion between LBM and KG, 9.80665 is std g
     TestUnitConversion(42.43, "SLUG", 6.1921930163e5, "G", 100000, loadErrors, conversionErrors, handledUnits); // conversion from http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
-    TestUnitConversion(42.42, "KIP", (42.42 * 1000 * 0.3048) / 9.80665, "SLUG", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "KIPM", (42.42 * 1000 * 0.3048) / 9.80665, "SLUG", 1, loadErrors, conversionErrors, handledUnits);
 
     //DYNAMIC_VISCOSITY
     TestUnitConversion(4200.0, "POISE", 420.0, "PA-S", 1, loadErrors, conversionErrors, handledUnits);
@@ -437,23 +438,23 @@ TEST_F(UnitsTests, TestMiscConversions)
     //MOLE
     TestUnitConversion(0.3, "MOL", 0.0003, "KMOL", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42.42, "KMOL", 42420.0, "MOL", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42.42, "LB-MOLE", 42.42 * 453.59237, "MOL", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42.42, "KMOL", 42.42e3 / 453.59237, "LB-MOLE", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "LB-MOL", 42.42 * 453.59237, "MOL", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "KMOL", 42.42e3 / 453.59237, "LB-MOL", 1, loadErrors, conversionErrors, handledUnits);
 
     //ACCELERATION
-    TestUnitConversion(42.42, "M/SEC.SQUARED", 4242.0, "CM/SEC.SQUARED", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42.42, "M/SEC.SQUARED", 42.42 / 0.3048, "FT/SEC.SQUARED", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42.42, "M/SEC.SQUARED", 42.42, "M/SEC.SQUARED", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42.42, "FT/SEC.SQUARED", 42.42 * 0.3048, "M/SEC.SQUARED", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42.42, "FT/SEC.SQUARED", 42.42 * 30.48, "CM/SEC.SQUARED", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42.42, "FT/SEC.SQUARED", 42.42 , "FT/SEC.SQUARED", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42.42, "CM/SEC.SQUARED", 0.4242, "M/SEC.SQUARED", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42.42, "CM/SEC.SQUARED", 42.42 / 30.48, "FT/SEC.SQUARED", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42.42, "CM/SEC.SQUARED", 42.42, "CM/SEC.SQUARED", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "M/SEC.SQ", 4242.0, "CM/SEC.SQ", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "M/SEC.SQ", 42.42 / 0.3048, "FT/SEC.SQ", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "M/SEC.SQ", 42.42, "M/SEC.SQ", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "FT/SEC.SQ", 42.42 * 0.3048, "M/SEC.SQ", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "FT/SEC.SQ", 42.42 * 30.48, "CM/SEC.SQ", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "FT/SEC.SQ", 42.42 , "FT/SEC.SQ", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "CM/SEC.SQ", 0.4242, "M/SEC.SQ", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "CM/SEC.SQ", 42.42 / 30.48, "FT/SEC.SQ", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "CM/SEC.SQ", 42.42, "CM/SEC.SQ", 1, loadErrors, conversionErrors, handledUnits);
 
-    TestUnitConversion(1.0, "STD_G", 9.80665, "M/SEC.SQUARED", 1, loadErrors, conversionErrors, handledUnits); // Exact constant value for standard gravity
-    TestUnitConversion(1.0, "STD_G", 32.174048556, "FT/SEC.SQUARED", 100000, loadErrors, conversionErrors, handledUnits); // Documented value for standard gravity in m/s^2 converted to ft/s^2 using http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
-    TestUnitConversion(1.0, "STD_G", 32.174048556430446194225721784777, "FT/SEC.SQUARED", 1, loadErrors, conversionErrors, handledUnits); // Expected value is the result of 9.80665 / 0.3048 done on windows calculator
+    TestUnitConversion(1.0, "STD_G", 9.80665, "M/SEC.SQ", 1, loadErrors, conversionErrors, handledUnits); // Exact constant value for standard gravity
+    TestUnitConversion(1.0, "STD_G", 32.174048556, "FT/SEC.SQ", 100000, loadErrors, conversionErrors, handledUnits); // Documented value for standard gravity in m/s^2 converted to ft/s^2 using http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    TestUnitConversion(1.0, "STD_G", 32.174048556430446194225721784777, "FT/SEC.SQ", 1, loadErrors, conversionErrors, handledUnits); // Expected value is the result of 9.80665 / 0.3048 done on windows calculator
 
     //AREA
     TestUnitConversion(42.42, "SQ.MU", 42.42e-6, "SQ.MM", 1, loadErrors, conversionErrors, handledUnits);
@@ -505,17 +506,26 @@ TEST_F(UnitsTests, TestMiscConversions)
     TestUnitConversion(42.42, "NMOL/CUB.DM", 42.42e-6 * pow(0.3048, 3), "MOL/CUB.FT", 2, loadErrors, conversionErrors, handledUnits);
 
     //Pressure
-    //TestUnitConversion(42.42, "PA_GAUGE", 42.42 + 101325.0, "PA", 1, loadErrors, conversionErrors, handledUnits);
-    //TestUnitConversion(42.42, "PA", 42.42 - 101325.0, "PA_GAUGE", 1, loadErrors, conversionErrors, handledUnits);
-    //TestUnitConversion(42.42, "KILOPASCAL_GAUGE", 42.42e3, "PA_GAUGE", 1, loadErrors, conversionErrors, handledUnits);
-    //TestUnitConversion(42.42, "KILOPASCAL_GAUGE", 42.42 + 101.325, "KILOPASCAL", 1, loadErrors, conversionErrors, handledUnits);
-    //TestUnitConversion(42.42, "KILOPASCAL", 42.42 - 101.325, "KILOPASCAL_GAUGE", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "PA_GAUGE", 42.42 + 101325.0, "PA", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "PA", 42.42 - 101325.0, "PA_GAUGE", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "KILOPASCAL_GAUGE", 42.42e3, "PA_GAUGE", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "KILOPASCAL_GAUGE", 42.42 + 101.325, "KILOPASCAL", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "KILOPASCAL", 42.42 - 101.325, "KILOPASCAL_GAUGE", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42.42, "KSI", 42.42e3, "PSI", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42.42, "PSI", 42.42e-3, "KSI", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "TORR", 42.42 * 101325.0 / 760.0, "PA", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.43, "TORR", 5656.8680921, "PA", 10000, loadErrors, conversionErrors, handledUnits);  // conversion from http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    TestUnitConversion(42.43, "PSI", 2194.264589, "TORR", 10000, loadErrors, conversionErrors, handledUnits);  // conversion from http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    TestUnitConversion(42.43, "TORR", 0.82045935072, "PSI", 10000, loadErrors, conversionErrors, handledUnits);  // conversion from http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    TestUnitConversion(42.42, "ATM", 42.42 * 760.0, "TORR", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.43, "ATM", 32246.8, "TORR", 1, loadErrors, conversionErrors, handledUnits);  // conversion from http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    TestUnitConversion(42.42, "TORR", 42.42 / 760.0, "ATM", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.43, "TORR", 0.055828947368, "ATM", 100000, loadErrors, conversionErrors, handledUnits);  // conversion from http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    TestUnitConversion(42.43, "ATM", 623.54910655, "PSI", 100000, loadErrors, conversionErrors, handledUnits);  // conversion from http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
 
     // Surface Flow Rate
-    TestUnitConversion(42.42, "CUB.M/(SEC*SQ.M)", 42.42 * 60.0 * 60.0 * 24.0, "CUB.M/(DAY*SQ.M)", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42.42, "CUB.FT/(SQ.FT*S)", 42.42 * 0.3048, "CUB.M/(SEC*SQ.M)", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "CUB.M/(SQ.M*SEC)", 42.42 * 60.0 * 60.0 * 24.0, "CUB.M/(SQ.M*DAY)", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "CUB.FT/(SQ.FT*SEC)", 42.42 * 0.3048, "CUB.M/(SQ.M*SEC)", 1, loadErrors, conversionErrors, handledUnits);
 
     //Thread Pitch
     TestUnitConversion(42.42, "CM/REVOLUTION", 42.42e-2, "M/REVOLUTION", 1, loadErrors, conversionErrors, handledUnits);
@@ -536,9 +546,9 @@ TEST_F(UnitsTests, TestMiscConversions)
     TestUnitConversion(42.43, "LBF_FT", 5752.7355548, "N_CM", 100000, loadErrors, conversionErrors, handledUnits);
 
     // Velocity
-    TestUnitConversion(42.42, "MM/S", 42.42e-3, "M/S", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42.42, "KM/S", 42.42e6, "MM/S", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42.42, "YRD/SEC", 42.42 * 0.3048 * 3.0, "M/S", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "MM/SEC", 42.42e-3, "M/SEC", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "KM/SEC", 42.42e6, "MM/SEC", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "YRD/SEC", 42.42 * 0.3048 * 3.0, "M/SEC", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42.42, "FT/MIN", 42.42 / (60.0 * 3.0), "YRD/SEC", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42.43, "FT/MIN", 0.23572222222, "YRD/SEC", 100000, loadErrors, conversionErrors, handledUnits);
 
@@ -611,30 +621,30 @@ TEST_F(UnitsTests, UsSurveyLengths)
     bvector<bpair<Utf8String, Utf8String>> handledUnits;
     // Conversion tests where expected value is taken directly out of  http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-8
     // Exact values from document used for these conversions
-    TestUnitConversion(1.0, "FT", 0.999998, "US_SURVEY_FOOT", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(1.0, "FT", 0.0254 * 39.37, "US_SURVEY_FOOT", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(1.0, "US_SURVEY_FOOT", 1.0 / 0.999998, "FT", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(1.0, "US_SURVEY_FOOT", 1200.0 / 3937.0, "M", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(1.0, "M", 3937.0 / 1200.0, "US_SURVEY_FOOT", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "FT", 0.999998, "US_SURVEY_FT", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "FT", 0.0254 * 39.37, "US_SURVEY_FT", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "US_SURVEY_FT", 1.0 / 0.999998, "FT", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "US_SURVEY_FT", 1200.0 / 3937.0, "M", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "M", 3937.0 / 1200.0, "US_SURVEY_FT", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(1.0, "US_SURVEY_MILE", 5280.0 * 1200.0 / 3937.0, "M", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(1.0, "US_SURVEY_MILE", 1.0 / 0.999998, "MILE", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(1.0, "MILE", 0.999998, "US_SURVEY_MILE", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(1.0, "M", 3937.0 / 1200.0 / 5280.0, "US_SURVEY_MILE", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(1.0, "US_SURVEY_CHAIN", 66, "US_SURVEY_FOOT", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(1.0, "US_SURVEY_FOOT", 1.0 / 66.0, "US_SURVEY_CHAIN", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(1.0, "M", 39.37, "US_SURVEY_INCH", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(12.0, "US_SURVEY_INCH", 1200.0 / 3937.0, "M", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "US_SURVEY_CHAIN", 66, "US_SURVEY_FT", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "US_SURVEY_FT", 1.0 / 66.0, "US_SURVEY_CHAIN", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "M", 39.37, "US_SURVEY_IN", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(12.0, "US_SURVEY_IN", 1200.0 / 3937.0, "M", 1, loadErrors, conversionErrors, handledUnits);
 
     // Directly from exact values in tables
-    TestUnitConversion(1.0, "US_SURVEY_MILE", 63360, "US_SURVEY_INCH", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(1.0, "US_SURVEY_MILE", 5280, "US_SURVEY_FOOT", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(1.0, "US_SURVEY_MILE", 1760, "US_SURVEY_YARD", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "US_SURVEY_MILE", 63360, "US_SURVEY_IN", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "US_SURVEY_MILE", 5280, "US_SURVEY_FT", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "US_SURVEY_MILE", 1760, "US_SURVEY_YRD", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(1.0, "US_SURVEY_MILE", 80, "US_SURVEY_CHAIN", 1, loadErrors, conversionErrors, handledUnits);
 
     // Exact values do not exist in document
-    TestUnitConversion(1.0, "US_SURVEY_FOOT", 0.3048006, "M", 100000000, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "US_SURVEY_FT", 0.3048006, "M", 100000000, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(1.0, "US_SURVEY_CHAIN", 20.11684, "M", 100000000, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(1.0, "US_SURVEY_YARD", 3.0 * 0.3048006, "M", 100000000, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "US_SURVEY_YRD", 3.0 * 0.3048006, "M", 100000000, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(1.0, "US_SURVEY_MILE", 1609.347, "M", 1000000000, loadErrors, conversionErrors, handledUnits);
 
     ASSERT_EQ(0, loadErrors.size()) << BeStringUtilities::Join(loadErrors, ", ");
@@ -743,7 +753,7 @@ TEST_F(UnitsTests, UnitsConversions_Complex)
     TestUnitConversion(1.0 / 1.0e-5, "DYNE", 1.0, "NEWTON", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(9.80665e6 / 1.0e-5, "DYNE", 1.0e6, "KILOGRAM_FORCE", 10000000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(1.0e5 / 1.01325e5, "ATMOSPHERE", 1.0, "BAR", 1000, loadErrors, conversionErrors, handledUnits, true);
-    TestUnitConversion(((1 - 1.01325) * 1.0e5) / 1.01325e5, "ATMOSPHERE", 1.0, "BAR_GAUGE", 1000, loadErrors, conversionErrors, handledUnits, true);
+    TestUnitConversion(((1 + 1.01325) * 1.0e5) / 1.01325e5, "ATMOSPHERE", 1.0, "BAR_GAUGE", 1000, loadErrors, conversionErrors, handledUnits, true); //Gauge Offset was inverse in Units 1.0.  Switched - to + to correct expected value
     TestUnitConversion(0.1 / 1.01325e5, "ATMOSPHERE", 1.0, "BARYE", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(2.989067e3 / 1.01325e5, "ATMOSPHERE", 1.0, "FOOT_OF_H2O_CONVENTIONAL", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(249.1083 / 1.01325e5, "ATMOSPHERE", 1.0, "INCH_OF_H2O_AT_32_FAHRENHEIT", 1000, loadErrors, conversionErrors, handledUnits, true);
@@ -753,12 +763,12 @@ TEST_F(UnitsTests, UnitsConversions_Complex)
     TestUnitConversion(3.386389e3 / 1.01325e5, "ATMOSPHERE", 1.0, "INCH_OF_HG_CONVENTIONAL", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(3.37685e3 / 1.01325e5, "ATMOSPHERE", 1.0, "INCH_OF_HG_AT_60_FAHRENHEIT", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(9.80665e4 / 1.01325e5, "ATMOSPHERE", 1.0, "KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED", 1000, loadErrors, conversionErrors, handledUnits, true);
-    TestUnitConversion(((1 - 101.325 / 98.0665) * 9.80665e4) / 1.01325e5, "ATMOSPHERE", 1.0, "KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED_GAUGE", 1000, loadErrors, conversionErrors, handledUnits, true);
+    TestUnitConversion(((1 + 101.325 / 98.0665) * 9.80665e4) / 1.01325e5, "ATMOSPHERE", 1.0, "KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED_GAUGE", 1000, loadErrors, conversionErrors, handledUnits, true); //Gauge Offset was inverse in Units 1.0.  Switched - to + to correct expected value
     TestUnitConversion(9.80665 / 1.01325e5, "ATMOSPHERE", 1.0, "KILOGRAM_FORCE_PER_METRE_SQUARED", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(1000 / 1.01325e5, "ATMOSPHERE", 1.0, "KILOPASCAL", 1000, loadErrors, conversionErrors, handledUnits, true);
-    TestUnitConversion(((1 - 101.325) * 1000) / 1.01325e5, "ATMOSPHERE", 1.0, "KILOPASCAL_GAUGE", 1000, loadErrors, conversionErrors, handledUnits, true);
+    TestUnitConversion(((1 + 101.325) * 1000) / 1.01325e5, "ATMOSPHERE", 1.0, "KILOPASCAL_GAUGE", 1000, loadErrors, conversionErrors, handledUnits, true); //Gauge Offset was inverse in Units 1.0.  Switched - to + to correct expected value
     TestUnitConversion(1000000 / 1.01325e5, "ATMOSPHERE", 1.0, "MEGAPASCAL", 1000, loadErrors, conversionErrors, handledUnits, true);
-    TestUnitConversion(((1 - 101.325 / 1000) * 1000000) / 1.01325e5, "ATMOSPHERE", 1.0, "MEGAPASCAL_GAUGE", 1000, loadErrors, conversionErrors, handledUnits, true);
+    TestUnitConversion(((1 + 101.325 / 1000) * 1000000) / 1.01325e5, "ATMOSPHERE", 1.0, "MEGAPASCAL_GAUGE", 1000, loadErrors, conversionErrors, handledUnits, true); //Gauge Offset was inverse in Units 1.0.  Switched - to + to correct expected value
     TestUnitConversion(9806.65 / 1.01325e5, "ATMOSPHERE", 1.0, "METRE_OF_H2O_CONVENTIONAL", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(9.80665 / 1.01325e5, "ATMOSPHERE", 1.0, "MILLIMETRE_OF_H2O_CONVENTIONAL", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(1.0, "MILLIMETRE_OF_HG_AT_32_FAHRENHEIT", 1.33322e2 / 101325.0, "ATMOSPHERE", 1000, loadErrors, conversionErrors, handledUnits, true);  // KnowledgeDoor and hand calculation agree with actual value more than value from old system
@@ -766,12 +776,11 @@ TEST_F(UnitsTests, UnitsConversions_Complex)
     TestUnitConversion(1 / 1.01325e5, "ATMOSPHERE", 1.0, "PASCAL", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(1.0, "POUND_FORCE_PER_FOOT_SQUARED", 47.88026 / 1.01325e5, "ATMOSPHERE", 100000000, loadErrors, conversionErrors, handledUnits, true);  // Uses NIST table conversion value for LBF/FT^2 to Pascal.  This has 7 significant digits so comparison must use reduced precision.
     TestUnitConversion(1.0, "POUND_FORCE_PER_INCH_SQUARED", 6.894757e3 / 1.01325e5, "ATMOSPHERE", 100000000, loadErrors, conversionErrors, handledUnits, true);  // Uses NIST table conversion value for LBF/IN^2 to Pascal.  This has 7 significant digits so comparison must use reduced precision.
-    TestUnitConversion(1.0, "POUND_FORCE_PER_INCH_SQUARED_GAUGE", ((1 - 101.325 / 6.894757) * 6.894757e3) / 1.01325e5, "ATMOSPHERE", 10000000, loadErrors, conversionErrors, handledUnits, true);  // Uses NIST table conversion value for LBF/IN^2 to Pascal.  This has 7 significant digits so comparison must use reduced precision.
-    TestUnitConversion(1.333224e2 / 1.01325e5, "ATMOSPHERE", 1.0, "TORR", 1000, loadErrors, conversionErrors, handledUnits, true);
+    TestUnitConversion(1.0, "POUND_FORCE_PER_INCH_SQUARED_GAUGE", ((1 + 101.325 / 6.894757) * 6.894757e3) / 1.01325e5, "ATMOSPHERE", 10000000, loadErrors, conversionErrors, handledUnits, true);  // Uses NIST table conversion value for LBF/IN^2 to Pascal.  This has 7 significant digits so comparison must use reduced precision.  Gauge Offset was inverse in Units 1.0.  Switched - to + to correct expected value
     TestUnitConversion(1.0e2 / 1.01325e5, "ATMOSPHERE", 1.0, "MILLIBAR", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(100.0 / 1.01325e5, "ATMOSPHERE", 1.0, "HECTOPASCAL", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(1000000.0 * 1.0e5 / 1.01325e5, "ATMOSPHERE", 1000000.0, "BAR", 1000, loadErrors, conversionErrors, handledUnits, true);
-    TestUnitConversion(((1000000.0 - 1.01325) * 1.0e5) / 1.01325e5, "ATMOSPHERE", 1000000.0, "BAR_GAUGE", 1000, loadErrors, conversionErrors, handledUnits, true);
+    TestUnitConversion(((1000000.0 + 1.01325) * 1.0e5) / 1.01325e5, "ATMOSPHERE", 1000000.0, "BAR_GAUGE", 1000, loadErrors, conversionErrors, handledUnits, true); //Gauge Offset was inverse in Units 1.0.  Switched - to + to correct expected value
     TestUnitConversion(100000 / 1.01325e5, "ATMOSPHERE", 1000000.0, "BARYE", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(1000000.0 * 2.989067e3 / 1.01325e5, "ATMOSPHERE", 1000000.0, "FOOT_OF_H2O_CONVENTIONAL", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(1000000.0 * 249.1083 / 1.01325e5, "ATMOSPHERE", 1000000.0, "INCH_OF_H2O_AT_32_FAHRENHEIT", 1000, loadErrors, conversionErrors, handledUnits, true);
@@ -781,18 +790,19 @@ TEST_F(UnitsTests, UnitsConversions_Complex)
     TestUnitConversion(1000000.0 * 3.386389e3 / 1.01325e5, "ATMOSPHERE", 1000000.0, "INCH_OF_HG_CONVENTIONAL", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(1000000.0 * 3.37685e3 / 1.01325e5, "ATMOSPHERE", 1000000.0, "INCH_OF_HG_AT_60_FAHRENHEIT", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(1000000.0 * 9.80665e4 / 1.01325e5, "ATMOSPHERE", 1000000.0, "KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED", 1000, loadErrors, conversionErrors, handledUnits, true);
-    TestUnitConversion(((1000000 - 101.325 / 98.0665) * 9.80665e4) / 1.01325e5, "ATMOSPHERE", 1000000.0, "KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED_GAUGE", 1000, loadErrors, conversionErrors, handledUnits, true);
+    TestUnitConversion(((1000000 + 101.325 / 98.0665) * 9.80665e4) / 1.01325e5, "ATMOSPHERE", 1000000.0, "KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED_GAUGE", 1000, loadErrors, conversionErrors, handledUnits, true); //Gauge Offset was inverse in Units 1.0.  Switched - to + to correct expected value
     TestUnitConversion(1000000.0 * 9.80665 / 1.01325e5, "ATMOSPHERE", 1000000.0, "KILOGRAM_FORCE_PER_METRE_SQUARED", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(1000000000 / 1.01325e5, "ATMOSPHERE", 1000000.0, "KILOPASCAL", 1000, loadErrors, conversionErrors, handledUnits, true);
-    TestUnitConversion(((1000000 - 101.325) * 1000) / 1.01325e5, "ATMOSPHERE", 1000000.0, "KILOPASCAL_GAUGE", 1000, loadErrors, conversionErrors, handledUnits, true);
+    TestUnitConversion(((1000000 + 101.325) * 1000) / 1.01325e5, "ATMOSPHERE", 1000000.0, "KILOPASCAL_GAUGE", 1000, loadErrors, conversionErrors, handledUnits, true); //Gauge Offset was inverse in Units 1.0.  Switched - to + to correct expected value
     TestUnitConversion(1000000000000 / 1.01325e5, "ATMOSPHERE", 1000000.0, "MEGAPASCAL", 1000, loadErrors, conversionErrors, handledUnits, true);
-    TestUnitConversion(((1000000 - 101.325 / 1000) * 1000000) / 1.01325e5, "ATMOSPHERE", 1000000.0, "MEGAPASCAL_GAUGE", 1000, loadErrors, conversionErrors, handledUnits, true);
+    TestUnitConversion(((1000000 + 101.325 / 1000) * 1000000) / 1.01325e5, "ATMOSPHERE", 1000000.0, "MEGAPASCAL_GAUGE", 1000, loadErrors, conversionErrors, handledUnits, true); //Gauge Offset was inverse in Units 1.0.  Switched - to + to correct expected value
     TestUnitConversion(1000000.0 * 9806.65 / 1.01325e5, "ATMOSPHERE", 1000000.0, "METRE_OF_H2O_CONVENTIONAL", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(1000000.0 * 9.80665 / 1.01325e5, "ATMOSPHERE", 1000000.0, "MILLIMETRE_OF_H2O_CONVENTIONAL", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion((1000000.0 * 133.322) / 1.01325e5, "ATMOSPHERE", 1000000.0, "MILLIMETRE_OF_HG_AT_32_FAHRENHEIT", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(1000000 / 1.01325e5, "ATMOSPHERE", 1000000.0, "NEWTON_PER_METRE_SQUARED", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(1000000 / 1.01325e5, "ATMOSPHERE", 1000000.0, "PASCAL", 1000, loadErrors, conversionErrors, handledUnits, true);
-    TestUnitConversion(1000000.0 * 1.333224e2 / 1.01325e5, "ATMOSPHERE", 1000000.0, "TORR", 1000, loadErrors, conversionErrors, handledUnits, true);
+    TestUnitConversion((101325.0 / 760.0) / 1.01325e5, "ATMOSPHERE", 1.0, "TORR", 1, loadErrors, conversionErrors, handledUnits, true);// Changed approx. conversion factor for TORR from old system to exact definition, so changed expected value to match
+    TestUnitConversion(1000000.0 * (101325.0 / 760.0) / 1.01325e5, "ATMOSPHERE", 1000000.0, "TORR", 1, loadErrors, conversionErrors, handledUnits, true); // Changed approx. conversion factor for TORR from old system to exact definition, so changed expected value to match
     TestUnitConversion(1.0e8 / 1.01325e5, "ATMOSPHERE", 1.0e6, "MILLIBAR", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(100.0e6 / 1.01325e5, "ATMOSPHERE", 1.0e6, "HECTOPASCAL", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(1.0 / (1000.0 * 3600.0), "KILOWATT_HOUR_PER_METRE_CUBED", 1.0, "JOULE_PER_METRE_CUBED", 1000, loadErrors, conversionErrors, handledUnits, true);
@@ -845,8 +855,8 @@ TEST_F(UnitsTests, UnitsConversions_Complex)
     TestUnitConversion(1.0 / 0.42992261392949271, "KILOJOULE_PER_KILOMOLE", 1.0, "BTU_PER_POUND_MOLE", 1000, loadErrors, conversionErrors, handledUnits, true);
     TestUnitConversion(1.0e6 / 0.42992261392949271, "KILOJOULE_PER_KILOMOLE", 1.0e6, "BTU_PER_POUND_MOLE", 1000, loadErrors, conversionErrors, handledUnits, true);
     
-    //Missing Units: KNOT, MEGAJOULE_PER_METRE_CUBED, GRAM_PER_DAY, ONE_OVER_SLOPE, KILOGRAM_PER_KILOGRAM, GRAIN_MASS_PER_POUND_MASS, ONE_PER_HOUR, ONE_PER_YEAR, ONE_PER_DAY, ONE_PER_MINUTE, KILOJOULE_PER_KILOMOLE, BTU_PER_POUND_MOLE
-    EXPECT_EQ(12, loadErrors.size()) << "The following units were not found: " << BeStringUtilities::Join(loadErrors, ", ");
+    //Missing Units: KNOT, MEGAJOULE_PER_METRE_CUBED, GRAM_PER_DAY, ONE_OVER_SLOPE, ONE_PER_HOUR, ONE_PER_YEAR, ONE_PER_DAY, ONE_PER_MINUTE, KILOJOULE_PER_KILOMOLE, BTU_PER_POUND_MOLE
+    EXPECT_EQ(10, loadErrors.size()) << "The following units were not found: " << BeStringUtilities::Join(loadErrors, ", ");
     EXPECT_EQ(0, conversionErrors.size()) << "Failed to convert between the following units: " << BeStringUtilities::Join(conversionErrors, ", ");
     Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"TestUnitsConversions_Complex_handledUnits.csv");
     WriteToFile(fileName.c_str(), handledUnits);
@@ -892,12 +902,12 @@ void UnitsTests::TestConversionsLoadedFromCvsFile(Utf8CP fileName, int expectedM
 
 TEST_F(UnitsTests, UnitsConversion_CompareToRawOutputFromOldSystem)
     {
-    TestConversionsLoadedFromCvsFile("ConversionsBetweenAllOldUnits.csv", 109); // went from 107 to 109 because work per month units were removed
+    TestConversionsLoadedFromCvsFile("ConversionsBetweenAllOldUnits.csv", 107); // went from 107 to 109 because work per month units were removed, back to 9107 because mass ratios added
     }
 
 TEST_F(UnitsTests, UnitsConversion)
     {
-    TestConversionsLoadedFromCvsFile("unitcomparisondata.csv", 96); // went from 94 to 96 because work per month units were removed
+    TestConversionsLoadedFromCvsFile("unitcomparisondata.csv", 94); // went from 94 to 96 because work per month units were removed, back to 94 because mass ratios added
     }
 
 void GetUnitsByName(UnitRegistry& hub, bvector<Utf8String>& unitNames)
@@ -1010,21 +1020,18 @@ TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
     bvector<PhenomenonCP> phenomena;
     UnitRegistry::Instance().AllPhenomena(phenomena);
 
+    WriteLine(file, "Name,Unit System,Sub Components,Signature,ParsedDefinition");
+
     for (auto const& phenomenon : phenomena)
         {
         if (phenomenon->GetUnits().size() == 0)
             continue;
 
-        Utf8PrintfString line("Units for Phenomenon:,%s", phenomenon->GetName());
+        WriteLine(file, "-Phenomenon-");
+        Utf8PrintfString line("%s,,%s,%s", phenomenon->GetName(), phenomenon->GetDefinition(), phenomenon->GetPhenomenonSignature());
         WriteLine(file, line.c_str());
 
-        line.Sprintf("Phenomenon Definition:,%s", phenomenon->GetDefinition());
-        WriteLine(file, line.c_str());
-
-        line.Sprintf("Phenomenon Dimension:,%s", phenomenon->GetPhenomenonSignature().c_str());
-        WriteLine(file, line.c_str());
-
-        WriteLine(file, "UnitName,UnitDefinition,UnitSignature,ParsedDefinition");
+        WriteLine(file);
         
         for (auto const& unit : phenomenon->GetUnits())
             {
@@ -1032,16 +1039,7 @@ TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
                 continue;
 
             Utf8String parsedExpression = unit->GetParsedUnitExpression();
-            if (unit->GetFactor() == 0.0)
-                line.Sprintf("%s,Inverts(%s),%s,%s", unit->GetName(), unit->GetDefinition(), unit->GetUnitSignature(), parsedExpression.c_str());
-            else if (unit->HasOffset() && unit->GetFactor() != 1.0)
-                line.Sprintf("%s,(%s)/%.10g - %.10g,%s,%s", unit->GetName(), unit->GetDefinition(), unit->GetFactor(), unit->GetOffset(), unit->GetUnitSignature().c_str(), parsedExpression.c_str());
-            else if (unit->HasOffset())
-                line.Sprintf("%s,%s - %.10g,%s,%s", unit->GetName(), unit->GetDefinition(), unit->GetOffset(), unit->GetUnitSignature().c_str(), parsedExpression.c_str());
-            else if (unit->GetFactor() != 1.0)
-                line.Sprintf("%s,(%s)/%.10g,%s,%s", unit->GetName(), unit->GetDefinition(), unit->GetFactor(), unit->GetUnitSignature().c_str(), parsedExpression.c_str());
-            else
-                line.Sprintf("%s,%s,%s,%s", unit->GetName(), unit->GetDefinition(), unit->GetUnitSignature().c_str(), parsedExpression.c_str());
+            line.Sprintf("%s,%s,%s,%s,%s", unit->GetName(), unit->GetUnitSystem(), unit->GetDefinition(), unit->GetUnitSignature(), parsedExpression.c_str());
 
             WriteLine(file, line.c_str());
 
@@ -1211,7 +1209,7 @@ TEST_F(UnitsPerformanceTests, GenerateEveryConversionValue)
 //    {
 //    StopWatch timer("Do Many Conversions", false);
 //    UnitRegistry::Clear();
-//    UnitCP unitA = UnitRegistry::Instance().LookupUnit("CUB.M/(DAY*SQ.M)");
+//    UnitCP unitA = UnitRegistry::Instance().LookupUnit("CUB.M/(SQ.M*DAY)");
 //    UnitCP unitB = UnitRegistry::Instance().LookupUnit("CUB.FT/(ACRE*SEC)");
 //
 //    int numTimes = 1000000;
