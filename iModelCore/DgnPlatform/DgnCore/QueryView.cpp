@@ -463,7 +463,7 @@ void DgnQueryView::_CreateScene(SceneContextR context)
         }
 
     DgnElements& pool = m_dgndb.Elements();
-    if (m_scene->size() < results->GetCount()) // did we get them all?
+    if ((uint32_t)m_scene->size() < results->GetCount()) // did we get them all?
         {
         DEBUG_PRINTF("Begin create scene with load");
         for (auto& thisScore : results->m_scores)
@@ -493,7 +493,7 @@ void DgnQueryView::_CreateScene(SceneContextR context)
             }
         }
 
-    BeAssert(m_scene->size() <= results->GetCount());
+    BeAssert((uint32_t)m_scene->size() <= results->GetCount());
     m_scene->m_complete = !results->m_incomplete && (m_scene->size() == results->GetCount());
     if (!m_scene->m_complete)
         {
