@@ -28,7 +28,7 @@
         </Bindings>
     </Part>
 
-    <!-- NOTE: Graphite uses "G" as a library suffix to disambiguate from Vancouver libraries -->
+    <!-- NOTE: DgnDb uses "G" as a library suffix to differentiate from DgnV8 libraries -->
     <Part Name="DgnPlatformDLL" BentleyBuildMakeFile="DgnPlatform.mke" ApiNumber="G06">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>

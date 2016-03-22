@@ -506,12 +506,15 @@ ScanCriteria::Result ViewContext::_CheckNodeRange(ScanCriteriaCR scanCriteria, D
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::IsPointVisible(DPoint3dCR worldPoint, bool boresite)
+bool ViewContext::IsPointVisible(DPoint3dCR worldPoint, WantBoresite boresite, double tolerance)
     {
-    if (m_frustumPlanes.ContainsPoint(worldPoint))
+    if (boresite==WantBoresite::No && m_volume.IsValid() && !m_volume->PointInside(worldPoint, tolerance))
+        return false;
+
+    if (m_frustumPlanes.ContainsPoint(worldPoint, tolerance))
         return true;
 
-    if (!boresite)
+    if (boresite!=WantBoresite::Yes)
         return false;
 
     DVec3d worldZVec;
@@ -959,8 +962,7 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
                 }
             else
                 {
-                TextureP lsTexture = lsSymb.GetTexture(); // For 2d do we need to check that this wasn't a forced texture???
-                m_lineTexture = (nullptr != lsTexture ? new LineTexture(lsTexture) : nullptr);
+                m_lineTexture = lsSymb.GetTexture(); // For 2d do we need to check that this wasn't a forced texture???
                 }
             }
         }

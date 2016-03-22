@@ -346,7 +346,7 @@ void FrustumPlanes::Init(FrustumCR frustum)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-FrustumPlanes::Contained FrustumPlanes::Contains(DPoint3dCP points, int nPts) const
+FrustumPlanes::Contained FrustumPlanes::Contains(DPoint3dCP points, int nPts, double tolerance) const
     {
     BeAssert(IsValid());
 
@@ -356,7 +356,7 @@ FrustumPlanes::Contained FrustumPlanes::Contains(DPoint3dCP points, int nPts) co
         int nOutside = 0;
         for (int j=0; j < nPts; ++j)
             {
-            if (plane.EvaluatePoint(points[j]) < 1.0E-8)
+            if (plane.EvaluatePoint(points[j]) < tolerance)
                 {
                 ++nOutside;
                 allInside = false;

@@ -180,7 +180,8 @@ public:
     bool VisitAllModelElements() {return _VisitAllModelElements();}
     DGNPLATFORM_EXPORT bool VisitAllViewElements(BSIRectCP updateRect=nullptr);
     StatusInt InitContextForView() {return _InitContextForView();}
-    DGNPLATFORM_EXPORT bool IsPointVisible(DPoint3dCR worldPoint, bool boresite);
+    enum class WantBoresite : bool {Yes=true, No=false};
+    DGNPLATFORM_EXPORT bool IsPointVisible(DPoint3dCR worldPoint, WantBoresite boresite, double toerance=1.0e-8);
     DGNPLATFORM_EXPORT Frustum GetFrustum();
     Render::FrustumPlanes const& GetFrustumPlanes() const {return m_frustumPlanes;}
     ScanCriteriaCP GetScanCriteria() const {return &m_scanCriteria;}
@@ -254,11 +255,6 @@ public:
     //!                             closer to the eye are larger than those further from the eye. May be nullptr, in which case the center of the view is used.
     //! @return the length, in the current coordinate system units, of a unit bvector in the x direction in DgnCoordSystem::View, starting at \c origin.
     DGNPLATFORM_EXPORT double GetPixelSizeAtPoint(DPoint3dCP origin) const;
-
-    //@}
-
-    /// @name Query Methods
-    //@{
 
     //! Get the current state of the ViewFlags for this context
     //! When a ViewContext is first attached to a DgnViewport, the ViewFlags are initialized

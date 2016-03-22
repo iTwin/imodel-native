@@ -274,22 +274,6 @@ struct Material : RefCounted<NonCopyableClass>
 };
 
 //=======================================================================================
-// @bsiclass                                                    Keith.Bentley   11/15
-//=======================================================================================
-struct LineTexture : RefCounted<NonCopyableClass>
-{
-    TexturePtr m_texture;
-    LineTexture(Texture* texture) : m_texture(texture) {}
-};
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   08/15
-//=======================================================================================
-struct MultiResImage : RefCounted<NonCopyableClass>
-{
-};
-
-//=======================================================================================
 //! Line style parameters
 //! @private
 //=======================================================================================
@@ -698,7 +682,7 @@ private:
     ColorDef            m_fillColor;
     double              m_trueWidthStart;
     double              m_trueWidthEnd;
-    LineTexturePtr      m_lineTexture;
+    TexturePtr          m_lineTexture;
     MaterialPtr         m_material;
     GradientSymbPtr     m_gradient;
     PatternParamsPtr    m_patternParams;
@@ -750,7 +734,7 @@ public:
     double GetTrueWidthEnd() const {return m_trueWidthEnd;}
 
     //! Get the texture applied to lines for this GraphicParams
-    LineTextureP GetLineTexture() const {return m_lineTexture.get();}
+    TextureP GetLineTexture() const {return m_lineTexture.get();}
 
     //! Get the linear pixel pattern for this GraphicParams. This is only valid for overlay decorators in pixel mode.
     uint32_t GetLinePixels() const {return m_linePixels;}
@@ -796,7 +780,7 @@ public:
     void SetTrueWidthEnd(double width) {m_trueWidthEnd = width;}
 
     //! Set a LineTexture for this GraphicParams
-    void SetLineTexture(LineTextureP texture) {m_lineTexture = texture;}
+    void SetLineTexture(TextureP texture) {m_lineTexture = texture;}
 
     //! Set the linear pixel pattern for this GraphicParams. This is only valid for overlay decorators in pixel mode.
     void SetLinePixels(LinePixels code) {m_linePixels = (uint32_t) code; m_lineTexture=nullptr;}
@@ -868,7 +852,7 @@ public:
     void SetLinePixels(GraphicParams::LinePixels pixels) {m_matSymb.SetLinePixels(pixels); m_flags |= FLAGS_Style;}
     void SetMaterial(Material* material) {m_matSymb.SetMaterial(material); m_flags |= FLAGS_RenderMaterial;}
     void SetPatternParams(PatternParamsP patternParams) {m_matSymb.SetPatternParams(patternParams);}
-    void SetLineTexture(LineTextureP texture) {m_matSymb.SetLineTexture(texture); m_flags |= FLAGS_Style;}
+    void SetLineTexture(TextureP texture) {m_matSymb.SetLineTexture(texture); m_flags |= FLAGS_Style;}
     void SetTrueWidthStart(double width) {m_matSymb.SetTrueWidthStart(width); m_flags |= FLAGS_TrueWidth;}
     void SetTrueWidthEnd(double width) {m_matSymb.SetTrueWidthEnd(width); m_flags |= FLAGS_TrueWidth;}
 };
@@ -1228,8 +1212,8 @@ struct FrustumPlanes
     enum struct Contained {Outside = 0, Partly = 1,Inside = 2,};
     Contained Contains(FrustumCR box) const {return Contains(box.m_pts, 8);}
     bool Intersects(FrustumCR box) const {return Contained::Outside != Contains(box);}
-    bool ContainsPoint(DPoint3dCR pt) const {return Contained::Outside != Contains(&pt, 1);}
-    DGNPLATFORM_EXPORT Contained Contains(DPoint3dCP, int nPts) const;
+    bool ContainsPoint(DPoint3dCR pt, double tolerance=1.0e-8) const {return Contained::Outside != Contains(&pt, 1, tolerance);}
+    DGNPLATFORM_EXPORT Contained Contains(DPoint3dCP, int nPts, double tolerance=1.0e-8) const;
     DGNPLATFORM_EXPORT bool IntersectsRay(DPoint3dCR origin, DVec3dCR direction);
 };
 
