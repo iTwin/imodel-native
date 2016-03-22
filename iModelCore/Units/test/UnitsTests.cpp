@@ -915,12 +915,12 @@ void UnitsTests::TestConversionsLoadedFromCvsFile(Utf8CP fileName, WCharCP outpu
 
 TEST_F(UnitsTests, UnitsConversion_CompareToRawOutputFromOldSystem)
     {
-    TestConversionsLoadedFromCvsFile("ConversionsBetweenAllOldUnits.csv", L"TestConversionsBetweenAllOldUnits_handledUnits.csv", 109); // went from 107 to 109 because work per month units were removed, back to 107 because mass ratios added
+    TestConversionsLoadedFromCvsFile("ConversionsBetweenAllOldUnits.csv", L"TestConversionsBetweenAllOldUnits_handledUnits.csv", 107); // went from 107 to 109 because work per month units were removed, back to 107 because mass ratios added
     }
 
 TEST_F(UnitsTests, UnitsConversion)
     {
-    TestConversionsLoadedFromCvsFile("unitcomparisondata.csv", L"Testunitcomparisondata_handledUnits.csv", 96);// went from 94 to 96 because work per month units were removed, back to 94 because mass ratios added
+    TestConversionsLoadedFromCvsFile("unitcomparisondata.csv", L"Testunitcomparisondata_handledUnits.csv", 94);// went from 94 to 96 because work per month units were removed, back to 94 because mass ratios added
     }
 
 void GetUnitsByName(UnitRegistry& hub, bvector<Utf8String>& unitNames)
@@ -1114,7 +1114,7 @@ TEST_F(UnitsTests, UnitNamesByReferencedComponents)
         for (auto const& unit : unitsWhichRefUnit.second)
             {
             Utf8PrintfString unitString("    %s", unit.c_str());
-            WriteLine(file, unitString);
+            WriteLine(file, unitString.c_str());
             }
         }
     WriteLine(file);
