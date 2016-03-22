@@ -137,12 +137,20 @@ BentleyStatus ECDbSchemaWriter::InsertCAEntry(IECInstanceP customAttribute, ECCl
 
 
 
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaWriter::UpdateProperty(ECPropertyChange& propertyChange, ECPropertyCR oldProperty, ECPropertyCR newProperty)
     {
     if (!propertyChange.IsPending())
         return SUCCESS;
 
+    auto propertyId = ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema(m_ecdb, newProperty);
+    if (propertyId == 0LL)
+        {
+        BeAssert(false && "Failed to resolve ecclass id");
+        return ERROR;
+        }
 
     SqlUpdater updater("ec_Property");
     if (propertyChange.GetTypeName().Exist())
@@ -234,12 +242,15 @@ BentleyStatus ECDbSchemaWriter::UpdateProperty(ECPropertyChange& propertyChange,
         updater.Set("Description", propertyChange.GetDescription().GetNew().Value());
         }
 
-    updater.Where("Id", oldProperty.GetId());
+    updater.Where("Id", propertyId);
     if (updater.Apply(m_ecdb) != SUCCESS)
         return ERROR;
 
     return SUCCESS;
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaWriter::UpdateRelationshipConstraint(SqlUpdater& sqlUpdater, ECRelationshipConstraintChange& constraintChange, ECRelationshipConstraintCR oldConstraint, ECRelationshipConstraintCR newConstraint , Utf8CP constraintType, Utf8CP relationshipName)
     {
     if (!constraintChange.IsPending())
@@ -267,10 +278,22 @@ BentleyStatus ECDbSchemaWriter::UpdateRelationshipConstraint(SqlUpdater& sqlUpda
 
     return SUCCESS;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaWriter::UpdateClass(ECClassChange& classChange, ECClassCR oldClass, ECClassCR newClass)
     {
     if (!classChange.IsPending())
         return SUCCESS;
+
+    auto classId = ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema(m_ecdb, newClass);
+    if (classId == 0LL)
+        {
+        BeAssert(false && "Failed to resolve ecclass id");
+        return ERROR;
+        }
+
 
     SqlUpdater updater("ec_Class");
 
@@ -344,7 +367,7 @@ BentleyStatus ECDbSchemaWriter::UpdateClass(ECClassChange& classChange, ECClassC
                 return ERROR;
         }
 
-    updater.Where("Id", oldClass.GetId());
+    updater.Where("Id", classId);
     if (updater.Apply(m_ecdb) != SUCCESS)
         return ERROR;
 
@@ -416,8 +439,22 @@ BentleyStatus ECDbSchemaWriter::UpdateClass(ECClassChange& classChange, ECClassC
 
     return SUCCESS;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaWriter::UpdateSchema(ECSchemaChange& schemaChange, ECSchemaCR oldSchema, ECSchemaCR newSchema)
     {
+    if (!schemaChange.IsPending())
+        return SUCCESS;
+    
+    auto schemaId =  ECDbSchemaManager::GetSchemaIdForECSchemaFromDuplicateECSchema(m_ecdb, newSchema);
+    if (schemaId == 0LL)
+        {
+        BeAssert(false && "Failed to resolve ecshema id");
+        return ERROR;
+        }
+
     SqlUpdater updater("ec_Schema");
     if (schemaChange.GetName().Exist())
         {
@@ -480,20 +517,15 @@ BentleyStatus ECDbSchemaWriter::UpdateSchema(ECSchemaChange& schemaChange, ECSch
 
             }
 
-        updater.Set("NamespacePrefix", schemaChange.GetVersionWrite().GetNew().Value());
+        updater.Set("NamespacePrefix", schemaChange.GetNamespacePrefix().GetNew().Value());
         }
-    auto existingSchemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, oldSchema.GetName().c_str());
-    BeAssert(existingSchemaId != 0LL); 
-    if (existingSchemaId == 0LL)
-        return ERROR;
 
-    updater.Where("Id", existingSchemaId);//this could even be on name
+    updater.Where("Id", schemaId);//this could even be on name
     if (updater.Apply(m_ecdb) != SUCCESS)
         return ERROR;
 
     schemaChange.Done();
 
-    //ApplyChange
     if (schemaChange.References().Exist())
         {
         for (size_t i = 0; i < schemaChange.References().Count(); i++)
@@ -519,7 +551,6 @@ BentleyStatus ECDbSchemaWriter::UpdateSchema(ECSchemaChange& schemaChange, ECSch
             }
         }
 
-  
     if (schemaChange.Classes().Exist())
         {
         for (size_t i = 0; i < schemaChange.Classes().Count(); i++)
@@ -590,6 +621,7 @@ BentleyStatus ECDbSchemaWriter::UpdateSchema(ECSchemaChange& schemaChange, ECSch
         }
     return SUCCESS;
     }
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -617,8 +649,7 @@ BentleyStatus ECDbSchemaWriter::Import(ECSchemaCompareContext& ctx, ECN::ECSchem
                 return SUCCESS;
 
             schemaChange->Done();
-            m_ecdb.GetECDbImplR().GetIssueReporter()
-                .Report(ECDbIssueSeverity::Error, "ECSCHEMA-UPGRADE: Deleting ECSchema is not supported. Failed while deleting ECSchema %s.", 
+            Fail ("ECSCHEMA-UPGRADE: Deleting ECSchema is not supported. Failed while deleting ECSchema %s.", 
                         ecSchema.GetFullSchemaName().c_str());
 
             return ERROR;

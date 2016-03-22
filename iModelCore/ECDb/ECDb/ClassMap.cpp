@@ -689,12 +689,15 @@ MapStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, IClassMap const* p
             }
         else
             {
-            if (SUCCESS != propMap->Load(*loadInfo))
+            if (ERROR == propMap->Load(*loadInfo))
                 {
-                BeAssert(false);
-                return MapStatus::Error;
+                //ECSchema Upgrade
+                if (SUCCESS != propMap->FindOrCreateColumnsInTable(*this))
+                    {
+                    BeAssert(false);
+                    return MapStatus::Error;
+                    }
                 }
-
             }
 
         GetPropertyMapsR().AddPropertyMap(propMap);

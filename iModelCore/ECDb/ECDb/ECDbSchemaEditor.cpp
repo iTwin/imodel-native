@@ -650,7 +650,7 @@ BentleyStatus ECSchemaComparer::CompareECProperty(ECPropertyChange& change, ECPr
         change.GetDisplayLabel().SetValue(a.GetDisplayLabel(), b.GetDisplayLabel());
 
     if (a.GetDescription() != b.GetDescription())
-        change.GetTypeName().SetValue(a.GetDescription(), b.GetDescription());
+        change.GetDescription().SetValue(a.GetDescription(), b.GetDescription());
 
     if (a.GetIsPrimitive() != b.GetIsPrimitive())
         change.IsPrimitive().SetValue(a.GetIsPrimitive(), b.GetIsPrimitive());
@@ -675,10 +675,6 @@ BentleyStatus ECSchemaComparer::CompareECProperty(ECPropertyChange& change, ECPr
 
     //if (a.GetMinimumValue() != b.GetMinimumValue())
     //    change.GetMinimumValue().SetValue(a.GetMinimumValue(), b.GetMinimumValue());
-
-    if (a.GetIsReadOnly() != b.GetIsReadOnly())
-        change.IsReadonly().SetValue(a.GetIsReadOnly(), b.GetIsReadOnly());
-
 
     auto aNavigation = a.GetAsNavigationProperty();
     auto bNavigation = b.GetAsNavigationProperty();
@@ -757,7 +753,7 @@ BentleyStatus ECSchemaComparer::CompareECProperties(ECPropertyChanges& changes, 
         bool existInB = itorB != bMap.end();
         if (existInA && existInB)
             {
-            auto& propertyChange = changes.Add(ChangeState::Modified);
+            auto& propertyChange = changes.Add(ChangeState::Modified, u.first);
             if (CompareECProperty(propertyChange, *itorA->second, *itorB->second) == ERROR)
                 return ERROR;
             }

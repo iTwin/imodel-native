@@ -959,14 +959,14 @@ BentleyStatus PointPropertyMap::_Load(ECDbClassMapInfo const& classMapInfo)
     ECDbPropertyMapInfo const* xPropMap = classMapInfo.FindPropertyMap(rootPropertyId, (accessString + ".X").c_str());
     if (xPropMap == nullptr)
         {
-        BeAssert(false && "Failed to load propertymap");
+        //WIP_ECSCHEMA_UPGRADE
         return ERROR;
         }
 
     ECDbPropertyMapInfo const* yPropMap = classMapInfo.FindPropertyMap(rootPropertyId, (accessString + ".Y").c_str());
     if (yPropMap == nullptr)
         {
-        BeAssert(false && "Failed to load propertymap");
+        //WIP_ECSCHEMA_UPGRADE
         return ERROR;
         }
 
@@ -976,7 +976,7 @@ BentleyStatus PointPropertyMap::_Load(ECDbClassMapInfo const& classMapInfo)
         zPropMap = classMapInfo.FindPropertyMap(rootPropertyId, (accessString + ".Z").c_str());
         if (zPropMap == nullptr)
             {
-            BeAssert(false && "Failed to load propertymap");
+            //WIP_ECSCHEMA_UPGRADE
             return ERROR;
             }
         }

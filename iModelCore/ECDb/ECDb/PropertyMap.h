@@ -212,7 +212,7 @@ private:
         ECDbPropertyMapInfo const* info = classMapInfo.FindPropertyMap(GetRoot().GetProperty().GetId(), GetPropertyAccessString());
         if (info == nullptr)
             {
-            BeAssert (false && "Failed to read back property map");
+            //WIP_ECSCHEMA_UPGRADE
             return ERROR;
             }
 
