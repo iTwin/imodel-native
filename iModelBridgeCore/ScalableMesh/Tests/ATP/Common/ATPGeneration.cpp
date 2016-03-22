@@ -1,4 +1,3 @@
-//#include "ScalableMeshATPPch.h"
 #include "ATPUtils.h"
 
 #include <time.h>
@@ -12,106 +11,12 @@
 #include "ATPDefinitions.h"
 #include "ATPGeneration.h"
 #include "ATPFileFinder.h"
-//#include <DgnPlatform/DgnFile.h>
-//#include <ScalableMesh/Import/ScalableMeshData.h>
-//#include <ScalableMesh\IScalableMeshSourceImportConfig.h>
-//#include <DgnPlatform\DgnDocumentManager.h>
-//#include <DgnPlatform\LevelCache.h>
 #include <ScalableMesh/IScalableMeshSourceImportConfig.h>
 #include <DgnPlatform\DgnPlatformErrors.r.h>
 #include <DgnPlatform\DgnPlatformBaseType.r.h>
 
-
-//#include    <DgnGeoCoord\DgnGeoCoordApi.h>
-
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
-//USING_NAMESPACE_SCALABLEMESH
-
-/*typedef uint32_t  LevelId;
-
-StatusInt    mdlLevel_getIdFromName
-(
-    LevelId*        levelIdOut,
-    DgnModelP    modelRefIn,
-    LevelId,
-    WCharCP         levelNameIn
-    )
-    {
-    // Does not look in level libraries!
-    if (NULL == modelRefIn)
-        return ERROR;
-
-    LevelHandle level = modelRefIn->GetLevelCacheR().GetLevelByName(levelNameIn, false);
-    if (!level.IsValid())
-        {
-        if (NULL != levelIdOut)
-            *levelIdOut = LEVEL_NULL_ID;
-
-        return static_cast<StatusInt>(level.GetStatus());
-        }
-
-    if (NULL != levelIdOut)
-        *levelIdOut = level.GetLevelId();
-
-    return SUCCESS;
-    }*/
-
-/*IDTMSourcePtr CreateSourceFor(const WString&          sourcePath,
-                                    DTMSourceDataType importedType, 
-                                    BeXmlNodeP        pTestChildNode)
-    {
-    ILocalFileMonikerPtr monikerPtr(ILocalFileMonikerFactory::GetInstance().Create(sourcePath.c_str()));
-            
-    if(0 == _wcsicmp(L"dgn", BeFileName::GetExtension(sourcePath.c_str()).c_str()))
-        {
-        assert(pTestChildNode != 0);        
-
-        WString model = L"Default";
-        WString level = L"Default";
-
-        DgnFileOpenParams fileOpenParams(sourcePath.c_str(), false, DgnFilePurpose::MasterFile);
-
-        DgnFilePtr dgnFilePtr(fileOpenParams.CreateFileAndLoad ());
-
-        assert(dgnFilePtr != 0);
-
-        StatusInt errorDetails;
-        //Only supporting DGN with one model with ID 0.
-        ModelId modelID = 0;
-
-        DgnModelP modelRef = dgnFilePtr->LoadRootModelById (&errorDetails, modelID);   
-                
-        assert(modelRef != 0);
-
-        StatusInt status = pTestChildNode->GetAttributeStringValue(model, "model"); 
-
-        assert(status == SUCCESS);        
-
-#ifndef NDEBUG
-        WCharCP modelName;// [3000];
-        //mdlModelRef_getModelName(modelRef, modelName);
-        modelName = modelRef->GetModelName();
-        
-        assert(0 == wcscmp(modelName, model.c_str()));            
-#endif
-                           
-        status = pTestChildNode->GetAttributeStringValue(level, "level"); 
-
-        assert(status == SUCCESS);
-
-        LevelId levelId;
-
-        status = mdlLevel_getIdFromName(&levelId, modelRef, 0, level.c_str());
-        //modelRef->GetLevelID;
-
-        assert(status == SUCCESS);
-        
-        return IDTMDgnLevelSource::Create(importedType, monikerPtr, modelID, model.c_str(), levelId, level.c_str()).get();
-        }
-            
-    return IDTMLocalFileSource::Create(importedType, monikerPtr).get();
-    }*/
 
 void ParseDTMFeatureType(WString& name, DTMFeatureType& type)
     {
@@ -382,7 +287,6 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pTes
                 if ((datasetPath.c_str()[datasetPath.size() - 1] != L'\\') &&
                     (datasetPath.c_str()[datasetPath.size() - 1] != L'/'))
                     {
-                    //IDTMSourcePtr srcPtr = CreateSourceFor(datasetPath, dataType, pTestChildNode);
                     IDTMSourcePtr srcPtr = IDTMLocalFileSource::Create(dataType, datasetPath.c_str());
                     AddOptionToSource(srcPtr, pTestChildNode);
                     if (BSISUCCESS != sourceCollection.Add(srcPtr))
@@ -413,7 +317,6 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pTes
                         if (0 == BeStringUtilities::Wcsicmp(extension.c_str(), L"classif")) continue;
                         if (!ext.empty() && 0 != BeStringUtilities::Wcsicmp(extension.c_str(), ext.c_str())) continue;
                         if (!filter.empty() && !name.ContainsI(filter)) continue;
-                        //IDTMSourcePtr srcPtr = CreateSourceFor(firstPath, dataType, pTestChildNode);
                         IDTMSourcePtr srcPtr = IDTMLocalFileSource::Create(dataType, firstPath.c_str());
                         AddOptionToSource(srcPtr, pTestChildNode);
                         if (BSISUCCESS != sourceCollection.Add(srcPtr))
@@ -445,26 +348,26 @@ bool ParseBaselineSubNodes(WString& baselinePointFileName, WString& baselineFeat
     {
     bool baselineSubNodeFound = false;
 
-    BeXmlNodeP pTestChildNode = pTestNode->GetFirstChild();                    
+    BeXmlNodeP pTestChildNode = pTestNode->GetFirstChild();
 
     while ((0 != pTestChildNode) && (baselineSubNodeFound == false))
         {
         if (0 == BeStringUtilities::Stricmp(pTestChildNode->GetName(), "baseline"))
-            {                        
+            {
             StatusInt status = pTestChildNode->GetAttributeStringValue(baselinePointFileName, "pointFileName");
 
-            assert(status == BEXML_Success);            
+            assert(status == BEXML_Success);
 
             status = pTestChildNode->GetAttributeStringValue(baselineFeatureFileName, "featureFileName");
 
-            assert(status == BEXML_Success);            
+            assert(status == BEXML_Success);
 
-            baselineSubNodeFound = true;            
+            baselineSubNodeFound = true;
 
             break;
             }
 
-        pTestChildNode = pTestChildNode->GetNextSibling();                    
+        pTestChildNode = pTestChildNode->GetNextSibling();
         }
 
     return baselineSubNodeFound;

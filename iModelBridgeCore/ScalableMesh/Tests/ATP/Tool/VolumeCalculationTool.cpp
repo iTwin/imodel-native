@@ -1,29 +1,16 @@
 #include "VolumeCalculationTool.h"
-//#include "..\TiledTriangulation\MrDTMUtil.h"
 #include <ScalableMesh\IScalableMeshATP.h>
 
-StatusInt ComputeVolumeForAgenda(/*BENTLEY_NAMESPACE_NAME::DRange3d& elemRange,*/ PolyfaceHeaderPtr meshData, IScalableMeshPtr smPtr, double& cut, double& fill, double& volume/*, bvector<PolyfaceHeaderPtr>& volumeMeshVector*/)
+StatusInt ComputeVolumeForAgenda(PolyfaceHeaderPtr meshData, IScalableMeshPtr smPtr, double& cut, double& fill, double& volume)
     {
     clock_t timer = clock();
-
-
-            //Transform uorToMeter, meterToUor;
-            //GetTransformForPoints(uorToMeter, meterToUor);
-            //meshData->Transform(uorToMeter);
-            //bsiTransform_multiplyDPoint3dArrayInPlace(&uorToMeter, &elemRange.low, 1);
-            //bsiTransform_multiplyDPoint3dArrayInPlace(&uorToMeter, &elemRange.high, 1);
-            //Transform refToActiveTrf;
-            //GetFromModelRefToActiveTransform(refToActiveTrf, meshElement->GetModelRef());
-            //meshData->Transform(refToActiveTrf);
-            //bsiTransform_multiplyDPoint3dArrayInPlace(&refToActiveTrf, &elemRange.low, 1);
-            //bsiTransform_multiplyDPoint3dArrayInPlace(&refToActiveTrf, &elemRange.high, 1);
-            IScalableMeshATP::StoreInt(L"nTrianglesInCorridor", meshData->GetNumFacet());
-            volume = ComputeVolumeCutAndFill(smPtr->GetDTMInterface(), cut, fill, *meshData/*, elemRange, volumeMeshVector*/);
-            timer = clock() - timer;
-            float secs;
-            secs = ((float)timer) / CLOCKS_PER_SEC;
-            IScalableMeshATP::StoreDouble(L"volumeTime", secs);
-            return SUCCESS;
+    IScalableMeshATP::StoreInt(L"nTrianglesInCorridor", meshData->GetNumFacet());
+    volume = ComputeVolumeCutAndFill(smPtr->GetDTMInterface(), cut, fill, *meshData);
+    timer = clock() - timer;
+    float secs;
+    secs = ((float)timer) / CLOCKS_PER_SEC;
+    IScalableMeshATP::StoreDouble(L"volumeTime", secs);
+    return SUCCESS;
     }
 
 /*StatusInt ComputeVolumeForAgenda(ElementAgendaR agenda, IScalableMeshPtr smPtr, ElementAgendaR agendaGround, double& cut, double& fill, double& volume, bvector<PolyfaceHeaderPtr>& volumeMeshVector)
@@ -90,28 +77,24 @@ StatusInt ComputeVolumeForAgenda(/*BENTLEY_NAMESPACE_NAME::DRange3d& elemRange,*
     return ERROR;
     }*/
 
-/*double ComputeVolumeCutAndFill(DTMPtr smPtr, double& cut, double& fill, PolyfaceHeaderPtr& meshGround, PolyfaceHeader& mesh, DRange3d& elemRange, bvector<PolyfaceHeaderPtr>& volumeMeshVector)
-    {
-    //IScalableMeshPtr mrDTMPtr = (IScalableMesh*)smPtr.get();
-    //DTMPtr dtmP = dynamic_cast<BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*>(&*smPtr->GetDTMInterface());
+    /*double ComputeVolumeCutAndFill(DTMPtr smPtr, double& cut, double& fill, PolyfaceHeaderPtr& meshGround, PolyfaceHeader& mesh, DRange3d& elemRange, bvector<PolyfaceHeaderPtr>& volumeMeshVector)
+        {
+        //IScalableMeshPtr mrDTMPtr = (IScalableMesh*)smPtr.get();
+        //DTMPtr dtmP = dynamic_cast<BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*>(&*smPtr->GetDTMInterface());
 
-    IDTMVolumeP volume = smPtr->GetDTMVolume();
-    if (volume == NULL) return 0;
-    //volume->ComputeVolumeCutAndFill(meshGround, cut, fill, mesh, false, volumeMeshVector);
-    volume->ComputeCutFillVolume(cut, fill, volume, mesh, volumeMeshVector);
-    return cut - fill;
-    }*/
+        IDTMVolumeP volume = smPtr->GetDTMVolume();
+        if (volume == NULL) return 0;
+        //volume->ComputeVolumeCutAndFill(meshGround, cut, fill, mesh, false, volumeMeshVector);
+        volume->ComputeCutFillVolume(cut, fill, volume, mesh, volumeMeshVector);
+        return cut - fill;
+        }*/
 
-double ComputeVolumeCutAndFill(DTMPtr smPtr, double& cut, double& fill, PolyfaceHeader& mesh/*, DRange3d& elemRange, bvector<PolyfaceHeaderPtr>& volumeMeshVector*/)
+double ComputeVolumeCutAndFill(DTMPtr smPtr, double& cut, double& fill, PolyfaceHeader& mesh)
     {
     double area;
 
-    //IScalableMeshPtr mrDTMPtr = (IScalableMesh*)smPtr.get();
-    //DTMPtr dtmP = dynamic_cast<BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*>(&*smPtr->GetDTMInterface());
-
     IDTMVolumeP volume = smPtr->GetDTMVolume();
     if (volume == NULL) return 0;
-    //volume->ComputeCutFillVolume(cut, fill, area, mesh, elemRange, volumeMeshVector);
-    volume->ComputeCutFillVolume(&cut, &fill, &area, &mesh/*, elemRange, volumeMeshVector*/);
+    volume->ComputeCutFillVolume(&cut, &fill, &area, &mesh);
     return cut - fill;
     }

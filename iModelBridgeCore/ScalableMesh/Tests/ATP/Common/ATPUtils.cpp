@@ -1,4 +1,3 @@
-//#include "ScalableMeshATPPch.h"
 #include "ATPUtils.h"
 
 #include <time.h>
@@ -318,14 +317,14 @@ void ReadLinesFile(std::ifstream& file, bvector<bvector<DPoint3d>>& lineDefs)
                 }
             linePts.push_back(pt);
             }
-        if (linePts.size()>0)lineDefs.push_back(linePts);
+        if (linePts.size() > 0)lineDefs.push_back(linePts);
         }
     }
 
 
 bool DPoint3dEqualityTest(const DPoint3d& point1, const DPoint3d& point2)
     {
-    return point1.x== point2.x && point1.y == point2.y;
+    return point1.x == point2.x && point1.y == point2.y;
     }
 
 DTMFeatureType ParseFeatureType(std::string& line)
