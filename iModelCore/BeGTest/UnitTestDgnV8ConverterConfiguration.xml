@@ -7,7 +7,7 @@
     <Levels/>
     <Models/>
     <References newLevelDisplay="false" mergeIntoParent="false"/>
-    <Raster importAttachments="true" compressData="true"/>
+    <Raster importAttachments="true" exportRaster="true"/>
     <Thumbnails viewTypes="Physical Drawing" pixelResolution="768" renderModeOverride="None"/>
     <Fonts>
         <AlwaysEmbed>
