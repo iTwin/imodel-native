@@ -115,7 +115,7 @@ std::ostream& operator << (std::ostream &o, IChangeManager::SyncStatus status)
 
 std::ostream& operator << (std::ostream &o, ECInstanceKeyCR instance)
     {
-    o << Utf8PrintfString("%llu:%llu", instance.GetECClassId().GetValue(), instance.GetECInstanceId().IsValid() ? instance.GetECInstanceId().GetValue() : 0);
+    o << Utf8PrintfString("%llu:%llu", instance.GetECClassId().GetValue(), instance.GetECInstanceId().IsValid() ? instance.GetECInstanceId().GetValue() : 0).c_str();
     return o;
     }
 

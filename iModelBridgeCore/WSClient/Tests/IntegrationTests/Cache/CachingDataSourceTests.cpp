@@ -499,7 +499,7 @@ TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_WSG2eBPluginProductionRepos
         ECSchemaList eschemas;
         txn.GetCache().GetECDb().Schemas().GetECSchemas(eschemas);
         b = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-        BeDebugLog(Utf8PrintfString("GetECSchemas  took:%lld ms rels:%d", b - a));
+        BeDebugLog(Utf8PrintfString("GetECSchemas  took:%lld ms rels:%d", b - a).c_str());
 
         //txn.GetCache().GetECDb().ClearCache();
 
@@ -508,7 +508,7 @@ TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_WSG2eBPluginProductionRepos
             a = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
             rels = txn.GetCache().GetAdapter().FindRelationshipClasses(aClass->GetId(), bClass->GetId());
             b = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-            BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClasses  took:%lld ms rels:%d", b - a, rels.size()));
+            BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClasses  took:%lld ms rels:%d", b - a, rels.size()).c_str());
             });
 
         //txn.GetCache().GetECDb().ClearCache();
@@ -528,7 +528,7 @@ TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_WSG2eBPluginProductionRepos
             a = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
             rels = txn.GetCache().GetAdapter().FindRelationshipClassesWithSource(aClass->GetId(), "eB_Dynamic");
             b = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-            BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClassesWithSource  took:%lld ms rels:%d", b - a, rels.size()));
+            BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClassesWithSource  took:%lld ms rels:%d", b - a, rels.size()).c_str());
             });
 
         for (auto rel : rels)
@@ -545,7 +545,7 @@ TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_WSG2eBPluginProductionRepos
             a = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
             txn.GetCache().GetAdapter().FindRelationshipClassWithSource(aClass->GetId(), bClass->GetId());
             b = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-            BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClassWithSource  took:%lld ms", b - a));
+            BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClassWithSource  took:%lld ms", b - a).c_str());
             });
 
         //txn.GetCache().GetECDb().ClearCache();
@@ -555,7 +555,7 @@ TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_WSG2eBPluginProductionRepos
             a = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
             txn.GetCache().GetAdapter().FindRelationshipClassWithTarget(aClass->GetId(), bClass->GetId());
             b = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-            BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClassWithTarget  took:%lld ms", b - a));
+            BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClassWithTarget  took:%lld ms", b - a).c_str());
             });
         })->Wait();
     }

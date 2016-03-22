@@ -38,7 +38,7 @@ struct TestBeSQLiteDbTransactionHandler : BeSQLiteDbTransactionHandler
 
         bool OnBusy(uint64_t count) override
             {
-            DebugLog(Utf8PrintfString("%s BSY:%d", m_name.c_str(), count));
+            DebugLog(Utf8PrintfString("%s BSY:%d", m_name.c_str(), count).c_str());
             m_lastBusyCount = count;
             //BeThreadUtilities::BeSleep (1);
             return true;

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/WSInfoTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <WebServices/Client/WSInfo.h>
@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 WSInfo CreateWSInfoWithInfoPage(Utf8CP versionString)
     {
     Utf8PrintfString body(R"({"serverVersion" : "%s"})", versionString);
-    return WSInfo(StubHttpResponse(HttpStatus::OK, body, {{"Content-Type", "application/json"}}));
+    return WSInfo(StubHttpResponse(HttpStatus::OK, body.c_str(), {{"Content-Type", "application/json"}}));
     }
 
 TEST_F(WSInfoTests, IsValid_DefaultCtor_False)
