@@ -8,101 +8,58 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
-THREEMXSCHEMA_TYPEDEFS (ThreeMxModel)
-THREEMXSCHEMA_TYPEDEFS (S3SceneInfo)
-
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
 BEGIN_BENTLEY_THREEMX_SCHEMA_NAMESPACE
 
-typedef void(*GetTileCallback)(uint32_t x, uint32_t y, bvector<bpair<PolyfaceHeaderPtr, int>>& meshes, bvector<bpair<Byte*, Point2d>>& textures);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(ThreeMxModel)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(S3SceneInfo)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(MRMeshScene)
+DEFINE_REF_COUNTED_PTR(ThreeMxModel)
+DEFINE_REF_COUNTED_PTR(MRMeshScene)
 
 //=======================================================================================
 // @bsiclass                                                    Ray.Bentley     09/2015
 //=======================================================================================
-struct ThreeMxScene : RefCountedBase
+struct TileCallback
 {
-
-    Transform       m_transform;
-
-    ThreeMxScene () : m_transform (Transform::FromIdentity()) { }
-    void    SetTransform (TransformCR transform) { m_transform = transform; }
-    void    GetTransform(TransformR transform) { transform = m_transform; }
-
-    virtual void            _Draw (bool& childrenScheduled, ViewContextR viewContext, struct MRMeshContext const& meshContext) = 0;
-    virtual BentleyStatus   _GetRange (DRange3dR range, TransformCR transform)  const = 0;
-    virtual void            _GetTiles(GetTileCallback callback, double resolution) = 0;
-
-};  // ThreeMxScene
-
-//=======================================================================================
-// @bsiclass                                                    Ray.Bentley     09/2015
-//=======================================================================================
-struct ThreeMxGCS
-{
-    static BentleyStatus GetProjectionTransform (TransformR transform, S3SceneInfoCR sceneInfo, DgnDbR db, DRange3dCR range);
-    
+    virtual void _OnTile(uint32_t x, uint32_t y, bvector<bpair<PolyfaceHeaderPtr, int>>& meshes, bvector<bpair<Byte*, Point2d>>& textures) = 0;
 };
 
-
-typedef RefCountedPtr <struct ThreeMxScene>      ThreeMxScenePtr;
-
 //=======================================================================================
 // @bsiclass                                                    Ray.Bentley     09/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ThreeMxModel : SpatialModel
+struct ThreeMxModel : Dgn::SpatialModel
 {
     DGNMODEL_DECLARE_MEMBERS("ThreeMxModel", SpatialModel);
-
-private:
-    ThreeMxScenePtr         m_scene;
-    DRange3d                GetSceneRange();
-    static ThreeMxScenePtr  ReadScene (BeFileNameR fileName, DgnDbR db, Utf8StringCR fileId);
-
-    ~ThreeMxModel() { }
-
-public:
-    ThreeMxModel(CreateParams const& params) : T_Super (params), m_scene (NULL) { }
-
-    //TEMP possibly - need a query for ConceptStation to get at meshes. Resolution value is directly compared to m_dMax
-    THREEMX_SCHEMA_EXPORT void GetTiles(GetTileCallback callback, double resolution);
-    THREEMX_SCHEMA_EXPORT void GetTransform(TransformR transform) const;
-    THREEMX_SCHEMA_EXPORT double GetDefaultExportResolution() const;
-    THREEMX_SCHEMA_EXPORT virtual void _AddGraphicsToScene(ViewContextR) override;
-    THREEMX_SCHEMA_EXPORT virtual void _WriteJsonProperties(Json::Value&) const override;
-    THREEMX_SCHEMA_EXPORT virtual void _ReadJsonProperties(Json::Value const&) override;
-    THREEMX_SCHEMA_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const override;
-    THREEMX_SCHEMA_EXPORT static DgnModelId  CreateThreeMxModel (DgnDbR dgnDb, Utf8StringCR fileId);
-
-    ThreeMxScenePtr  GetScene ();
-    void             SetScene (ThreeMxScenePtr& scene)    { m_scene = scene; }
-    void             SetFileId (Utf8StringCR fileId)      { m_properties.m_fileId = fileId; }
-
-    struct Properties
-        {
-        Utf8String          m_fileId;    
-
-        void ToJson(Json::Value&) const;
-        void FromJson(Json::Value const&);
-        };
-
-protected:
-    Properties      m_properties;
-
     friend struct ThreeMxModelHandler;
     friend struct ThreeMxProgressiveDisplay;
 
+private:
+    Utf8String m_sceneUrl;
+    mutable MRMeshScenePtr m_scene;
 
-};  // ThreeMxScene;
+    DRange3d GetSceneRange();
+    static MRMeshScenePtr ReadScene(BeFileNameCR fileName, DgnDbR db);
+
+public:
+    ThreeMxModel(CreateParams const& params) : T_Super(params) {}
+    void GetTiles(TileCallback&, double resolution);
+    double GetDefaultExportResolution() const {return 0.0;}
+    void _AddTerrainGraphics(Dgn::TerrainContextR) const override;
+    virtual void _WriteJsonProperties(Json::Value&) const override;
+    virtual void _ReadJsonProperties(Json::Value const&) override;
+    Dgn::AxisAlignedBox3d _QueryModelRange() const override;
+    void SetSceneUrl(Utf8CP url) {m_sceneUrl = url;}
+    void SetScene(MRMeshSceneP scene) {m_scene = scene;}
+    MRMeshSceneP GetScene() const {return m_scene.get();}
+};
 
 //=======================================================================================
 // @bsiclass                                                    Ray.Bentley     09/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ThreeMxModelHandler :  Dgn::dgn_ModelHandler::Spatial
+struct ThreeMxModelHandler :  dgn_ModelHandler::Spatial
 {
-    MODELHANDLER_DECLARE_MEMBERS ("ThreeMxModel", ThreeMxModel, ThreeMxModelHandler, Dgn::dgn_ModelHandler::Spatial, THREEMX_SCHEMA_EXPORT)
-
+    MODELHANDLER_DECLARE_MEMBERS ("ThreeMxModel", ThreeMxModel, ThreeMxModelHandler, dgn_ModelHandler::Spatial, )
+    static DgnModelId CreateModel(DgnDbR db, Utf8CP modelName, Utf8CP fileName);
 };
-
-typedef RefCountedPtr<ThreeMxModel>                          ThreeMxModelPtr;
 
 END_BENTLEY_THREEMX_SCHEMA_NAMESPACE

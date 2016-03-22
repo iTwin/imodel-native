@@ -7,16 +7,13 @@
 +--------------------------------------------------------------------------------------*/
 #include "..\ThreeMxSchemaInternal.h"
 
-#include    <windows.h>
-#include    <regex>
-
-
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+#include <windows.h>
+#include <regex>
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName MRMeshUtil::ConstructNodeName (std::string const& childName, BeFileNameCP parentName)
+BeFileName MRMeshUtil::ConstructNodeName(Utf8StringCR childName, BeFileNameCP parentName)
     {
     BeFileName nodeFileName(childName.c_str());
 
@@ -25,7 +22,7 @@ BeFileName MRMeshUtil::ConstructNodeName (std::string const& childName, BeFileNa
 
     BeFileName fullNodeFileName = (NULL == parentName) ? BeFileName() : *parentName;
 
-    fullNodeFileName.AppendToPath (nodeFileName.c_str());
+    fullNodeFileName.AppendToPath(nodeFileName.c_str());
 
     return fullNodeFileName;
     }
@@ -33,12 +30,11 @@ BeFileName MRMeshUtil::ConstructNodeName (std::string const& childName, BeFileNa
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    MRMeshUtil::GetMemoryStatistics (size_t& memoryLoad, size_t& total, size_t& available)
-
+void MRMeshUtil::GetMemoryStatistics(size_t& memoryLoad, size_t& total, size_t& available)
     {
     MEMORYSTATUSEX statex;
     statex.dwLength = sizeof (statex);
-    ::GlobalMemoryStatusEx (&statex);
+    ::GlobalMemoryStatusEx(&statex);
 
     memoryLoad = (size_t) statex.dwMemoryLoad;
     total      = (size_t) statex.ullTotalPhys;
@@ -48,11 +44,11 @@ void    MRMeshUtil::GetMemoryStatistics (size_t& memoryLoad, size_t& total, size
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-double MRMeshUtil::CalculateResolutionRatio ()
+double MRMeshUtil::CalculateResolutionRatio()
     {
     MEMORYSTATUSEX statex;
     statex.dwLength = sizeof (statex);
-    ::GlobalMemoryStatusEx (&statex);
+    ::GlobalMemoryStatusEx(&statex);
 
     static  uint32_t      s_memoryThresholdPercent = 90;       // Start limiting usage at 70% memory usage.
 
@@ -68,18 +64,17 @@ double MRMeshUtil::CalculateResolutionRatio ()
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                              Nicholas.Woodfield     01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MRMeshUtil::ParseTileId(std::string const& name, uint32_t& tileX, uint32_t& tileY)
+BentleyStatus MRMeshUtil::ParseTileId(Utf8StringCR name, uint32_t& tileX, uint32_t& tileY)
     {
-    if(name.empty())
+    if (name.empty())
         return ERROR;
       
+    std::string strName(name.c_str());
     std::regex pattern("([0-9]*)");
-    std::sregex_token_iterator iter(name.begin(), name.end(), pattern);
+    std::sregex_token_iterator iter(strName.begin(), strName.end(), pattern);
     std::sregex_token_iterator end;
 
-    uint32_t x = 0, y = 0;
     uint32_t count = 0;
-
     while (count < 2 && iter != end)
         {
         std::string substring = iter->str();
@@ -88,9 +83,9 @@ BentleyStatus MRMeshUtil::ParseTileId(std::string const& name, uint32_t& tileX, 
             int val = std::stoi(substring);
 
             if (count == 0)
-                x = (uint32_t)val;
+                tileX = (uint32_t)val;
             else
-                y = (uint32_t)val;
+                tileY = (uint32_t)val;
 
             count++;
             }
@@ -98,27 +93,15 @@ BentleyStatus MRMeshUtil::ParseTileId(std::string const& name, uint32_t& tileX, 
         iter++;
         }
 
-    if (count == 2)
-        {
-        tileX = x;
-        tileY = y;
-        
-        return SUCCESS;
-        }
-
-    return ERROR;
+    return count != 2 ? ERROR : SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-MRMeshContext::MRMeshContext (TransformCR transform, ViewContextR viewContext, double fixedResolution) 
-    : m_transform (transform), m_useFixedResolution (false), m_fixedResolution (0.0), m_nodeCount (0), m_pointCount (0)    
+MRMeshContext::MRMeshContext(TransformCR transform, ViewContextR viewContext, double fixedResolution) 
+    : m_transform(transform), m_useFixedResolution(false), m_fixedResolution(0.0), m_nodeCount(0), m_pointCount(0)    
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    m_qvCache = viewContext.GetDgnDb().Models().GetQvCache();
-#endif
-
     m_loadSynchronous    = // FILTER_LOD_Off == viewContext.GetFilterLODFlag() ||          // If the LOD filter is off we assume that this is an application that is interested in full detail (and isn't going to wait for nodes to load.(DrawPurpose::CaptureGeometry == viewContext.GetDrawPurpose() || DrawPurpose::ModelFacet == viewContext.GetDrawPurpose())
                            DrawPurpose::ModelFacet == viewContext.GetDrawPurpose();          
     
@@ -126,11 +109,11 @@ MRMeshContext::MRMeshContext (TransformCR transform, ViewContextR viewContext, d
         {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         if (DrawPurpose::Update != viewContext.GetDrawPurpose())       // For capture image the LOD filter is off - but we still want view dependent resolution.
-#endif
             {
             m_useFixedResolution = true;
             m_fixedResolution    = .1;  // (0.0 == fixedResolution ? MRMeshElementHandler::ComputeDefaultExportResolution (element) : fixedResolution) / transform.ColumnXMagnitude();
             }
+#endif
         }
     }
 

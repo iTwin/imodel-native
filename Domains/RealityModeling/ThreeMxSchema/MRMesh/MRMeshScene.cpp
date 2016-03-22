@@ -7,91 +7,84 @@
 +--------------------------------------------------------------------------------------*/
 #include "..\ThreeMxSchemaInternal.h"
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
-
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-MRMeshScene::MRMeshScene (S3SceneInfo const& sceneInfo, WCharCP fileName)
+MRMeshScene::MRMeshScene(DgnDbR db, S3SceneInfo const& sceneInfo, BeFileNameCR fileName) : m_db(db), m_fileName(fileName)
     {
-    m_fileName  = BeFileName (fileName);
-    m_sceneName = WString (sceneInfo.sceneName.c_str(), false);
-    m_srs       = WString (sceneInfo.SRS.c_str(), false);
+    m_transform.InitIdentity();
+    m_sceneName = sceneInfo.m_sceneName;
+    m_srs       = sceneInfo.m_SRS;
 
-   if (3 == sceneInfo.SRSOrigin.size ())
-        m_srsOrigin.InitFromArray (&sceneInfo.SRSOrigin.front ());
+   if (3 == sceneInfo.m_SRSOrigin.size())
+        m_srsOrigin.InitFromArray(&sceneInfo.m_SRSOrigin.front());
     else
-        m_srsOrigin.Zero ();
-
+        m_srsOrigin.Zero();
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ThreeMxScenePtr   MRMeshScene::Create (S3SceneInfo const& sceneInfo, WCharCP fileName)
+BentleyStatus MRMeshScene::Load(S3SceneInfo const& sceneInfo)
     {
-    MRMeshScene*    scene = new MRMeshScene (sceneInfo, fileName);
- 
-    BeFileName   scenePath (BeFileName::DevAndDir, fileName);
-    for (bvector<std::string>::const_iterator child = sceneInfo.meshChildren.begin (); child != sceneInfo.meshChildren.end (); child++)
+    BeFileName scenePath(BeFileName::DevAndDir, m_fileName.c_str());
+    for (auto const& child : sceneInfo.m_meshChildren)
         {
-        MRMeshNodePtr       childNode = MRMeshNode::Create ();
+        MRMeshNodePtr childNode = MRMeshNode::Create();
 
-        if (SUCCESS != MRMeshCacheManager::GetManager().SynchronousRead (*childNode, MRMeshUtil::ConstructNodeName (*child, &scenePath)))
-            return nullptr;
+        if (SUCCESS != MRMeshCacheManager::GetManager().SynchronousRead(*childNode, MRMeshUtil::ConstructNodeName(child, &scenePath)))
+            return ERROR;
 
-        childNode->LoadUntilDisplayable ();
-        scene->m_children.push_back (childNode);
+        childNode->LoadUntilDisplayable();
+        m_children.push_back(childNode);
         }
-    return scene;
-    }
 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void drawBoundingSpheres (MRMeshNodeR node, ViewContextR viewContext)
-    {
-    if (node.IsLoaded())
-        {
-        if (node.IsDisplayable())
-            node.DrawBoundingSphere (viewContext);
-
-        for (bvector<MRMeshNodePtr>::iterator child = node.m_children.begin (); child != node.m_children.end (); child++)
-            drawBoundingSpheres (**child, viewContext);
-        }
+    GetProjectionTransform();
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void        MRMeshScene::DrawBoundingSpheres (ViewContextR viewContext)
+static void drawBoundingSpheres(MRMeshNodeCR node, RenderContextR context) 
     {
-    for (bvector<MRMeshNodePtr>::iterator child = m_children.begin (); child != m_children.end (); child++)
-        drawBoundingSpheres (**child, viewContext);
+    if (!node.IsLoaded())
+        return;
+
+    if (node.IsDisplayable())
+        node.DrawBoundingSphere(context);
+
+    for (auto const& child : node.m_children)
+        drawBoundingSpheres(*child, context);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void MRMeshScene::DrawBoundingSpheres(RenderContextR context)
+    {
+    for (auto const& child : m_children)
+        drawBoundingSpheres(*child, context);
+    }
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshScene::DrawMeshes (Render::GraphicR graphic, TransformCR transform)
+void MRMeshScene::DrawMeshes(Render::GraphicR graphic)
     {
-    for (bvector<MRMeshNodePtr>::iterator child = m_children.begin (); child != m_children.end (); child++)
-        (*child)->DrawMeshes (graphic, transform);
+    for (auto const& child : m_children)
+        child->DrawMeshes(graphic, m_transform);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t      MRMeshScene::GetMeshMemorySize () const
+size_t MRMeshScene::GetMeshMemorySize() const
     {
-    size_t      memorySize = 0;
+    size_t memorySize = 0;
 
-    for (bvector<MRMeshNodePtr>::const_iterator child = m_children.begin (); child != m_children.end (); child++)
-        memorySize += (*child)->GetMeshMemorySize();
+    for (auto const& child : m_children)
+        memorySize += child->GetMeshMemorySize();
 
     return memorySize;
     }
@@ -99,26 +92,25 @@ size_t      MRMeshScene::GetMeshMemorySize () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t      MRMeshScene::GetTextureMemorySize () const
+size_t MRMeshScene::GetTextureMemorySize() const
     {
-    size_t      memorySize = 0;
+    size_t memorySize = 0;
 
-    for (bvector<MRMeshNodePtr>::const_iterator child = m_children.begin (); child != m_children.end (); child++)
-        memorySize += (*child)->GetTextureMemorySize();
+    for (auto const& child : m_children)
+        memorySize += child->GetTextureMemorySize();
 
     return memorySize;
     }
 
-
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t      MRMeshScene::GetNodeCount () const
+size_t MRMeshScene::GetNodeCount() const
     {
-    size_t      count = 1;
+    size_t  count = 1;
 
-    for (bvector<MRMeshNodePtr>::const_iterator child = m_children.begin (); child != m_children.end (); child++)
-        count += (*child)->GetNodeCount ();
+    for (auto const& child : m_children)
+        count += child->GetNodeCount();
 
     return count;
     }
@@ -127,13 +119,16 @@ size_t      MRMeshScene::GetNodeCount () const
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t      MRMeshScene::GetMaxDepth () const
+size_t MRMeshScene::GetMaxDepth() const
     {
-    size_t maxChildDepth = 0, childDepth;
+    size_t maxChildDepth = 0;
 
-    for (bvector<MRMeshNodePtr>::const_iterator child = m_children.begin (); child != m_children.end (); child++)
-        if ((childDepth = (*child)->GetMaxDepth()) > maxChildDepth)
+    for (auto const& child : m_children)
+        {
+        size_t childDepth = child->GetMaxDepth();
+        if (childDepth > maxChildDepth)
             maxChildDepth = childDepth;
+        }
 
     return 1 + maxChildDepth;
     }
@@ -141,48 +136,93 @@ size_t      MRMeshScene::GetMaxDepth () const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus   MRMeshScene::_GetRange (DRange3dR range, TransformCR transform) const
+BentleyStatus MRMeshScene::_GetRange(DRange3dR range) const
     {
-    range.Init ();
+    range.Init();
     for (auto const& child : m_children)
         {
-        DRange3d        childRange = DRange3d::NullRange();
+        DRange3d childRange = DRange3d::NullRange();
 
-        if (SUCCESS == child->GetRange (range, transform))
-            range.UnionOf (range, childRange);
+        if (SUCCESS == child->GetRange(range, m_transform))
+            range.UnionOf(range, childRange);
         }
 
     return range.IsNull() ? ERROR : SUCCESS;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                      Ray.Bentley     09/2015
+//----------------------------------------------------------------------------------------
+BentleyStatus MRMeshScene::GetProjectionTransform()
+    {
+    DRange3d  range;
+    if (SUCCESS != _GetRange(range))
+        return ERROR;
 
+    DgnGCSPtr databaseGCS = m_db.Units().GetDgnGCS();
+    if (!databaseGCS.IsValid())
+        return ERROR;
+
+    if (m_srs.empty())
+        return SUCCESS;         // No GCS...
+
+    Transform transform = Transform::From(m_srsOrigin);
+
+    int epsgCode;
+    WString    warningMsg;
+    StatusInt  status, warning;
+
+    DgnGCSPtr acute3dGCS = DgnGCS::CreateGCS(m_db);
+
+    if (1 == sscanf(m_srs.c_str(), "EPSG:%d", &epsgCode))
+        status = acute3dGCS->InitFromEPSGCode(&warning, &warningMsg, epsgCode);
+    else
+        status = acute3dGCS->InitFromWellKnownText(&warning, &warningMsg, DgnGCS::wktFlavorEPSG, WString(m_srs.c_str(), false).c_str());
+
+    if (SUCCESS != status)
+        {
+        BeAssert(false && warningMsg.c_str());
+        return ERROR;
+        }
+
+    DRange3d sourceRange;
+    transform.Multiply(sourceRange, range);
+    
+    DPoint3d extent;
+    extent.DifferenceOf(sourceRange.high, sourceRange.low);
+
+    // Compute a linear transform that approximate the reprojection transformation.
+    Transform localTransform;
+    status = acute3dGCS->GetLocalTransform(&localTransform, sourceRange.low, &extent, true/*doRotate*/, true/*doScale*/, *databaseGCS);
+
+    // 0 == SUCCESS, 1 == Wajrning, 2 == Severe Warning,  Negative values are severe errors.
+    if (status == 0 || status == 1)
+        {
+        m_transform = Transform::FromProduct(localTransform, transform);
+        return SUCCESS;
+        }
+
+    return ERROR;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    MRMeshScene::_Draw (bool& childrenScheduled, ViewContextR viewContext, MRMeshContextCR MeshContext)
+void MRMeshScene::Draw(bool& childrenScheduled, RenderContextR context, MRMeshContextCR meshContext)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    viewContext.PushTransform (m_transform);
-
-    for (bvector<MRMeshNodePtr>::iterator child = m_children.begin (); child != m_children.end (); child++)
+    for (auto const& child : m_children)
         {
-        if (viewContext.CheckStop())
-            break;
-
-        (*child)->Draw (childrenScheduled, viewContext, MeshContext);
+        child->Draw(childrenScheduled, context, meshContext);
+        if (context.CheckStop())
+            return;
         }
-    viewContext.PopTransformClip ();
-#endif
     }
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                Nicholas.Woodfield     01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshScene::_GetTiles(GetTileCallback callback, double resolution)
-  {
-  for (bvector<MRMeshNodePtr>::const_iterator child = m_children.begin(); child != m_children.end(); child++)
+void MRMeshScene::GetTiles(TileCallback& callback, double resolution) const
     {
-    (*child)->GetTiles(callback, resolution);
+    for (auto const& child : m_children)
+        child->GetTiles(callback, resolution);
     }
-  }

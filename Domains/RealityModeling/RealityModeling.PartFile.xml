@@ -2,11 +2,9 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
-
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
     <!-- ////////////////////////////   ScalableMesh       /////////////////////////////////// -->
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
-    
     <Part Name="ScalableMeshHandler" BMakeFile="ScalableMeshHandler/handler.mke">
         <SubPart PartName="ScalableMesh" PartFile="ScalableMesh" Repository="ScalableMesh" />
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform" />
@@ -89,7 +87,7 @@
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
     <!-- ////////////////////////////   ThreeMx       /////////////////////////////////// -->
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
-	    <Part Name="ThreeMxSchemaPublicAPI" BentleyBuildMakeFile="ThreeMxSchema/ThreeMxSchema.prewire.mke">
+    <Part Name="ThreeMxSchemaPublicAPI" BentleyBuildMakeFile="ThreeMxSchema/ThreeMxSchema.prewire.mke">
         <Bindings>
             <PublicAPI Domain="ThreeMxSchema"/>
             <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
@@ -97,9 +95,8 @@
             </Files>
         </Bindings>
     </Part>
-
     
-    <Part Name="ThreeMxSchema" BMakeFile="ThreeMxSchema/ThreeMxSchema.mke">
+    <Part Name="ThreeMx" BMakeFile="ThreeMxSchema/ThreeMxSchema.mke">
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="ThreeMxSchemaPublicAPI"/>
         <Bindings>

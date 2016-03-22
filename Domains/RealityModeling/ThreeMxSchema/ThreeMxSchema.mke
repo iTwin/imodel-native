@@ -2,7 +2,7 @@
 #
 #     $Source: ThreeMxSchema/ThreeMxSchema.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -89,13 +89,7 @@ $(o)MRMeshScene$(oext)              : $(SrcMrMesh)MRMeshScene.cpp ${threeMxSchem
 
 $(o)MRMeshUtil$(oext)               : $(SrcMrMesh)MRMeshUtil.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
 
-
-#----------------------------------------------------------------------
-#   Schema
-#----------------------------------------------------------------------
 $(o)ThreeMxHandler$(oext)           : $(SrcThreeMxSchema)ThreeMxHandler.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
-
-$(o)ThreeMxGCS$(oext)               : $(SrcThreeMxSchema)ThreeMxGCS.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
 
 $(o)ThreeMxDomain$(oext)            : $(SrcThreeMxSchema)ThreeMxDomain.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
 

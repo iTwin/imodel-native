@@ -7,9 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include "ThreeMxSchemaInternal.h"
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
-USING_NAMESPACE_BENTLEY_THREEMX_SCHEMA
-
 HANDLER_DEFINE_MEMBERS(ThreeMxModelHandler)
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
@@ -23,10 +20,9 @@ struct ThreeMxSchema::ThreeMxProgressiveDisplay : Dgn::IProgressiveDisplay, NonC
 protected:
     ThreeMxModelR        m_model;
 
-    ThreeMxProgressiveDisplay (ThreeMxModelR model) : m_model (model) {DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT }
+    ThreeMxProgressiveDisplay(ThreeMxModelR model) : m_model(model) {DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT }
 
 public:
-    virtual bool _WantTimeoutSet(uint32_t& limit)   {return false; }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
@@ -48,11 +44,11 @@ virtual Completion _Process(ViewContextR viewContext) override
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-static void Schedule (ThreeMxModelR model, ViewContextR viewContext)
+static void Schedule(ThreeMxModelR model, ViewContextR viewContext)
     {
-    ThreeMxProgressiveDisplay*   progressiveDisplay = new ThreeMxProgressiveDisplay (model);
+    ThreeMxProgressiveDisplay*   progressiveDisplay = new ThreeMxProgressiveDisplay(model);
 
-    viewContext.GetViewport()->ScheduleProgressiveDisplay (*progressiveDisplay);
+    viewContext.GetViewport()->ScheduleProgressiveDisplay(*progressiveDisplay);
     }
 
 };  //  ThreeMxProgressiveDisplay
@@ -61,107 +57,73 @@ static void Schedule (ThreeMxModelR model, ViewContextR viewContext)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-ThreeMxScenePtr      ThreeMxModel::ReadScene (BeFileNameR fileName, DgnDbR db, Utf8StringCR fileId)
+MRMeshScenePtr ThreeMxModel::ReadScene(BeFileNameCR fileName, DgnDbR db) 
     {
-    BentleyStatus status = T_HOST.GetPointCloudAdmin()._ResolveFileName(fileName, fileId, db);
-    if (status != SUCCESS)
+    S3SceneInfo sceneInfo;
+    if (SUCCESS != sceneInfo.Read3MX(fileName))
         return nullptr;
 
-    S3SceneInfo         sceneInfo;
-    std::string         err;
-    ThreeMxScenePtr     scene;
-    Transform           transform;
-    DRange3d            range;
-
-    if (SUCCESS != BaseSceneNode::Read3MX (fileName, sceneInfo, err) ||
-       ! (scene = MRMeshScene::Create (sceneInfo, fileName)).IsValid())
-        return nullptr;
-
-    if (SUCCESS == scene->_GetRange (range, Transform::FromIdentity()) &&
-        SUCCESS == ThreeMxGCS::GetProjectionTransform (transform, sceneInfo, db, range))
-        scene->SetTransform (transform);
-
-    return scene;
+    MRMeshScenePtr scene = new MRMeshScene(db, sceneInfo, fileName);
+    return SUCCESS==scene->Load(sceneInfo) ? scene : nullptr;
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-DgnModelId ThreeMxModel::CreateThreeMxModel(DgnDbR db, Utf8StringCR fileId)
+DgnModelId ThreeMxModelHandler::CreateModel(DgnDbR db, Utf8CP modelName, Utf8CP sceneUrl)
     {
-    DgnClassId classId (db.Schemas().GetECClassId(BENTLEY_THREEMX_SCHEMA_NAME, "ThreeMxModel"));
+    DgnClassId classId(db.Schemas().GetECClassId(BENTLEY_THREEMX_SCHEMA_NAME, "ThreeMxModel"));
     BeAssert(classId.IsValid());
 
-    BeFileName      fileName;
-    
-    ThreeMxScenePtr scene = ReadScene (fileName, db, fileId);
-    if (! scene.IsValid())
+    BeFileName fileName;
+    BentleyStatus status = T_HOST.GetPointCloudAdmin()._ResolveFileName(fileName, sceneUrl, db);
+    if (SUCCESS != status)
         return DgnModelId();
-    
-    // Create model in DgnDb
-    Utf8String modelName(fileName.GetFileNameWithoutExtension().c_str());
-    ThreeMxModelPtr model = new ThreeMxModel (DgnModel::CreateParams(db, classId, CreateModelCode(modelName)));
 
-    model->SetScene (scene);
-    model->SetFileId (fileId);
+    MRMeshScenePtr scene = ThreeMxModel::ReadScene(fileName, db);
+    if (!scene.IsValid())
+        return DgnModelId();
+
+    // Create model in DgnDb
+    ThreeMxModelPtr model = new ThreeMxModel(DgnModel::CreateParams(db, classId, ThreeMxModel::CreateModelCode(modelName)));
+    
+    model->SetSceneUrl(sceneUrl);
+    model->SetScene(scene.get());
     model->Insert();
     return model->GetModelId();
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-ThreeMxScenePtr  ThreeMxModel::GetScene ()
+MRMeshScenePtr ThreeMxModel::GetScene() const
     {
     if (!m_scene.IsValid())
         {
-        BeFileName      fileName;
-
-        m_scene = ReadScene (fileName, GetDgnDb(), m_properties.m_fileId);
+        BeFileName fileName;
+        ReadScene(fileName, GetDgnDb(), m_fileId);
         }
 
     return m_scene;
     }
+#endif
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                               Nicholas.Woodfield     01/2016
 //----------------------------------------------------------------------------------------
-void ThreeMxModel::GetTiles(GetTileCallback callback, double resolution)
-  {
-  if(callback == nullptr || resolution < 0)
-    return;
-    
-    ThreeMxScenePtr  scene = GetScene();
-
-    if (!scene.IsValid())
-        {
-        BeAssert (false);
-        return;
-        }
-  
-  scene->_GetTiles(callback, resolution);
-  }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                               Nicholas.Woodfield     01/2016
-//----------------------------------------------------------------------------------------
-void ThreeMxModel::GetTransform(TransformR transform) const
+void ThreeMxModel::GetTiles(TileCallback& callback, double resolution) 
     {
+    if (resolution < 0)
+        return;
+        
     if (!m_scene.IsValid())
         {
         BeAssert(false);
         return;
         }
-
-    m_scene->GetTransform(transform);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                               Nicholas.Woodfield     01/2016
-//----------------------------------------------------------------------------------------
-double ThreeMxModel::GetDefaultExportResolution() const
-    {
-    return 0.0;
+  
+    m_scene->GetTiles(callback, resolution);
     }
 
 //----------------------------------------------------------------------------------------
@@ -176,10 +138,7 @@ AxisAlignedBox3d ThreeMxModel::_QueryModelRange() const
         }
 
     DRange3d range;
-    Transform transform;
-    m_scene->GetTransform(transform);
-
-    m_scene->_GetRange(range, transform);
+    m_scene->_GetRange(range);
 
     return AxisAlignedBox3d(range);
     }   
@@ -187,65 +146,42 @@ AxisAlignedBox3d ThreeMxModel::_QueryModelRange() const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-void ThreeMxModel::_AddGraphicsToScene (ViewContextR viewContext)
+void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
     {
-    ThreeMxScenePtr  scene = GetScene();
+    GetScene();
 
-    if (!scene.IsValid())
+    if (!m_scene.IsValid())
         {
-        BeAssert (false);
+        BeAssert(false);
         return;
         }
 
-    MRMeshContext       meshContext (Transform::FromIdentity(), viewContext, 0.0);
-    bool                childrenScheduled = false;
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    Render::ViewFlags   viewFlags = viewContext.GetViewFlags(), saveViewFlags = viewFlags;
+    MRMeshContext meshContext(Transform::FromIdentity(), context, 0.0);
+    bool childrenScheduled = false;
 
-    viewFlags.ignoreLighting = true;
-    
-    viewContext.GetViewport()->GetIViewOutput()->SetRenderMode (viewFlags);
-#endif
-    scene->_Draw (childrenScheduled, viewContext, meshContext);
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    viewContext.GetViewport()->GetIViewOutput()->SetRenderMode (saveViewFlags);
+    m_scene->Draw(childrenScheduled, context, meshContext);
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (childrenScheduled)
-        ThreeMxProgressiveDisplay::Schedule (*this, viewContext);
+        ThreeMxProgressiveDisplay::Schedule(*this, context);
 #endif
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-void ThreeMxModel::Properties::ToJson(Json::Value& v) const
+void ThreeMxModel::_WriteJsonProperties(Json::Value& val) const
     {
-    v["FileId"] = m_fileId.c_str();
+    T_Super::_WriteJsonProperties(val);
+    val["SceneUrl"] = m_sceneUrl;
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-void ThreeMxModel::Properties::FromJson(Json::Value const& v)
+void ThreeMxModel::_ReadJsonProperties(Json::Value const& val)
     {
-    m_fileId = v["FileId"].asString();
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                      Ray.Bentley     09/2015
-//----------------------------------------------------------------------------------------
-void ThreeMxModel::_WriteJsonProperties(Json::Value& v) const
-    {
-    T_Super::_WriteJsonProperties(v);
-    m_properties.ToJson(v);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                      Ray.Bentley     09/2015
-//----------------------------------------------------------------------------------------
-void ThreeMxModel::_ReadJsonProperties(Json::Value const& v)
-    {
-    T_Super::_ReadJsonProperties(v);
-    m_properties.FromJson(v);
+    T_Super::_ReadJsonProperties(val);
+    m_sceneUrl = val["SceneUrl"].asString();
     }
 
