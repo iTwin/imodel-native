@@ -1089,8 +1089,6 @@ void dgn_TxnTable::Element::_OnReversedUpdate(BeSQLite::Changes::Change const& c
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const
     {
-    wt_OperationForGraphics highPriority;  //  see comments in BeSQLite.h
-
     ElementHandlerP elHandler = dgn_ElementHandler::Element::FindHandler(m_dgndb, params.m_classId);
     if (nullptr == elHandler)
         {
@@ -1126,8 +1124,6 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersistent) const
     {
-    wt_OperationForGraphics highPriority;  //  see comments in BeSQLite.h
-
     enum Column : int {ClassId=0,ModelId=1,Code_AuthorityId=2,Code_Namespace=3,Code_Value=4,Label=5,ParentId=6};
     CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,Code_AuthorityId,Code_Namespace,Code_Value,Label,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     stmt->BindId(1, elementId);
