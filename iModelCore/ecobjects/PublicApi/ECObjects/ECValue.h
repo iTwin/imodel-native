@@ -244,6 +244,10 @@ public:
     //! Initializes a new instance of ECValue from the given value. Type is set to BentleyApi::ECN::PRIMITIVETYPE_Long
     //! @param[in] long64 Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (::int64_t long64);
+    
+    //! Initializes a new instance of ECValue from the given value. Type is set to BentleyApi::ECN::PRIMITIVETYPE_Long
+    //! @param[in] val Value to initialize this ECValue from
+    explicit ECValue(uint64_t val) : ECValue((::int64_t) val) {}
 
     //! Initializes a new instance of ECValue from the given value. Type is set to BentleyApi::ECN::PRIMITIVETYPE_Double
     //! @param[in] doubleVal Value to initialize this ECValue from

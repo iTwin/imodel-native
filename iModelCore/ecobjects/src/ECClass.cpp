@@ -29,7 +29,7 @@ void ECClass::SetErrorHandling (bool doAssert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClass::ECClass (ECSchemaCR schema)
     :
-    m_schema(schema), m_ecClassId(0), m_modifier(ECClassModifier::None), m_xmlComments(), m_contentXmlComments()
+    m_schema(schema), m_modifier(ECClassModifier::None), m_xmlComments(), m_contentXmlComments()
     {
     //
     };
@@ -503,6 +503,11 @@ ECObjectsStatus ECClass::OnBaseClassPropertyAdded (ECPropertyCR baseProperty, bo
             {
             if (ECObjectsStatus::Success == (status = CanPropertyBeOverridden (baseProperty, *derivedProperty)))
                 derivedProperty->SetBaseProperty (&baseProperty);
+            else if (ECObjectsStatus::DataTypeMismatch == status && resolveConflicts)
+                {
+                LOG.debugv("DataTypeMismatch when adding base property '%s:%s' to '%s:%s;", baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), GetFullName(), GetName().c_str());
+                RenameConflictProperty(derivedProperty, true);
+                }
             }
         }
     for (ECClassP derivedClass : m_derivedClasses)
@@ -535,8 +540,18 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
         {
         ECObjectsStatus status = CanPropertyBeOverridden (*baseProperty, *pProperty);
         if (ECObjectsStatus::Success != status)
-            return status;
-
+            {
+            if (!resolveConflicts)
+                return status;
+            else
+                {
+                Utf8String newName;
+                FindUniquePropertyName(newName, pProperty->GetClass().GetSchema().GetNamespacePrefix().c_str(), pProperty->GetName().c_str());
+                pProperty->SetName(newName);
+                }
+            }
+        else if (!baseProperty->GetName().Equals(pProperty->GetName()) && resolveConflicts)
+            pProperty->SetName(baseProperty->GetName());
         pProperty->SetBaseProperty (baseProperty);
         }
 

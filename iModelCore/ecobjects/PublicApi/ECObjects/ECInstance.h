@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECInstance.h $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -640,6 +640,12 @@ public:
     //! @param[in] xmlWriter The writer to write to.  It should be at the current point where to insert the instance
     //! @returns SUCCESS if the instance was successfully written, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT InstanceWriteStatus        WriteToBeXmlNode (BeXmlWriterR xmlWriter);
+
+    //! Serializes the instance to an existing BeXmlWriter
+    //! @param[in] xmlWriter The writer to write to.  It should be at the current point where to insert the instance
+    //! @param[in] className The overriding class name while serializing a schema
+    //! @returns SUCCESS if the instance was successfully written, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT InstanceWriteStatus        WriteToBeXmlNode(BeXmlWriterR xmlWriter, Utf8CP className);
 
     //! Allow each instance type to determine if it want to only serialize "loaded" properties to XML.  If the instance
     //! returns true then the instance insures the ECValue returned for a property will properly set the "IsLoaded" flag in the ECValue.

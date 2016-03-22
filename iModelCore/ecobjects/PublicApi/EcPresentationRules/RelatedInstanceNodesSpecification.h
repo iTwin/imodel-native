@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/RelatedInstanceNodesSpecification.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -33,7 +33,7 @@ the given parent node. This specification does not return any nodes if parent no
 not ECInstance node!
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct RelatedInstanceNodesSpecification : public ChildNodeSpecification
+struct EXPORT_VTABLE_ATTRIBUTE RelatedInstanceNodesSpecification : public ChildNodeSpecification
     {
     /*__PUBLISH_SECTION_END__*/
     private:

@@ -25,20 +25,13 @@ void ECProperty::SetErrorHandling (bool doAssert)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECProperty::ECProperty (ECClassCR ecClass)
-    :
-    m_class(ecClass), m_readOnly(false), m_baseProperty(NULL), m_forSupplementation(false), m_cachedTypeAdapter(NULL), m_ecPropertyId(0)
-    {
-    //
-    }
+ECProperty::ECProperty (ECClassCR ecClass) : m_class(ecClass), m_readOnly(false), m_baseProperty(nullptr), m_forSupplementation(false), m_cachedTypeAdapter(nullptr)
+    {}
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECProperty::~ECProperty ()
-    {
-    //
-    }
+ECProperty::~ECProperty () {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
@@ -91,7 +84,7 @@ Utf8StringCR ECProperty::GetName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyId ECProperty::GetId () const
     {
-    BeAssert (0 != m_ecPropertyId);
+    BeAssert (m_ecPropertyId.IsValid());
     return m_ecPropertyId;
     }
 

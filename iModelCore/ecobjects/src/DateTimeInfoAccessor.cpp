@@ -140,17 +140,17 @@ bool DateTimeInfoAccessor::TryParseKind (bool& isKindNull, DateTime::Kind& kind,
         }
 
     isKindNull = false;
-    if (BeStringUtilities::Stricmp (kindStr, DATETIMEKIND_UNSPECIFIED_STR) == 0)
+    if (BeStringUtilities::StricmpAscii (kindStr, DATETIMEKIND_UNSPECIFIED_STR) == 0)
         {
         kind = DateTime::Kind::Unspecified;
         return true;
         }
-    else if (BeStringUtilities::Stricmp (kindStr, DATETIMEKIND_UTC_STR) == 0)
+    else if (BeStringUtilities::StricmpAscii (kindStr, DATETIMEKIND_UTC_STR) == 0)
         {
         kind = DateTime::Kind::Utc;
         return true;
         }
-    else if (BeStringUtilities::Stricmp (kindStr, DATETIMEKIND_LOCAL_STR) == 0)
+    else if (BeStringUtilities::StricmpAscii (kindStr, DATETIMEKIND_LOCAL_STR) == 0)
         {
         kind = DateTime::Kind::Local;
         return true;
@@ -234,12 +234,12 @@ bool DateTimeInfoAccessor::TryParseComponent (bool& isComponentNull, DateTime::C
         }
 
     isComponentNull = false;
-    if (BeStringUtilities::Stricmp (componentStr, DATETIMECOMPONENT_DATE_STR) == 0)
+    if (BeStringUtilities::StricmpAscii (componentStr, DATETIMECOMPONENT_DATE_STR) == 0)
         {
         component = DateTime::Component::Date;
         return true;
         }
-    else if (BeStringUtilities::Stricmp (componentStr, DATETIMECOMPONENT_DATETIME_STR) == 0)
+    else if (BeStringUtilities::StricmpAscii (componentStr, DATETIMECOMPONENT_DATETIME_STR) == 0)
         {
         component = DateTime::Component::DateAndTime;
         return true;

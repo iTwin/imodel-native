@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECEnabler.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -256,7 +256,7 @@ protected:
             {
             for (uint32_t index = 0; index < DerivedClass::MAX_PROPERTY_COUNT; ++index)
                 {
-                if (0 == BeStringUtilities::Stricmp(propertyAccessString, DerivedClass::PropertyNameList[index]))
+                if (0 == BeStringUtilities::StricmpAscii(propertyAccessString, DerivedClass::PropertyNameList[index]))
                     {
                     propertyIndex = index + 1;
                     return ECObjectsStatus::Success;

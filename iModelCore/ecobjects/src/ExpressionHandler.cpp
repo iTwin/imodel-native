@@ -2,7 +2,7 @@
 |
 |     $Source: src/ExpressionHandler.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -459,31 +459,31 @@ ExpressionToken Lexer::GetIdentifier ()
 
     Utf8CP identifier = getTokenStringCP ();
 
-    if (BeStringUtilities::Stricmp("True", identifier) == 0)
+    if (BeStringUtilities::StricmpAscii("True", identifier) == 0)
         return TOKEN_True;
-    else if (BeStringUtilities::Stricmp ("False", identifier) == 0)
+    else if (BeStringUtilities::StricmpAscii("False", identifier) == 0)
         return TOKEN_False;
-    else if (BeStringUtilities::Stricmp ("And", identifier) == 0)
+    else if (BeStringUtilities::StricmpAscii("And", identifier) == 0)
         return TOKEN_And;
-    else if (BeStringUtilities::Stricmp ("AndAlso", identifier) == 0)
+    else if (BeStringUtilities::StricmpAscii("AndAlso", identifier) == 0)
         return TOKEN_AndAlso;
-    else if (BeStringUtilities::Stricmp ("Or", identifier) == 0)
+    else if (BeStringUtilities::StricmpAscii("Or", identifier) == 0)
         return TOKEN_Or;
-    else if (BeStringUtilities::Stricmp ("OrElse", identifier) == 0)
+    else if (BeStringUtilities::StricmpAscii("OrElse", identifier) == 0)
         return TOKEN_OrElse;
-    else if (BeStringUtilities::Stricmp ("Mod", identifier) == 0)
+    else if (BeStringUtilities::StricmpAscii("Mod", identifier) == 0)
         return TOKEN_Mod;
-    else if (BeStringUtilities::Stricmp ("Xor", identifier) == 0)
+    else if (BeStringUtilities::StricmpAscii("Xor", identifier) == 0)
         return TOKEN_Xor;
-    else if (BeStringUtilities::Stricmp ("Not", identifier) == 0)
+    else if (BeStringUtilities::StricmpAscii("Not", identifier) == 0)
         return TOKEN_Not;
-    else if (BeStringUtilities::Stricmp ("Like", identifier) == 0)
+    else if (BeStringUtilities::StricmpAscii("Like", identifier) == 0)
         return TOKEN_Like;
-    else if (BeStringUtilities::Stricmp ("Is", identifier) == 0)
+    else if (BeStringUtilities::StricmpAscii("Is", identifier) == 0)
         return TOKEN_Is;
-    else if (BeStringUtilities::Stricmp ("IIf", identifier) == 0)
+    else if (BeStringUtilities::StricmpAscii("IIf", identifier) == 0)
         return TOKEN_IIf;
-    else if (BeStringUtilities::Stricmp ("Null", identifier) == 0)
+    else if (BeStringUtilities::StricmpAscii("Null", identifier) == 0)
         return TOKEN_Null;
 
     return TOKEN_Ident;
