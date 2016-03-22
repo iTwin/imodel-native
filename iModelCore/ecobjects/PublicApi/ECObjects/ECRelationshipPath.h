@@ -255,8 +255,6 @@ public:
     ~ECRelatedItemsDisplaySpecificationsCache() {}
 
     ECOBJECTS_EXPORT BentleyStatus Initialize(bvector<ECSchemaCP> const&, IECClassLocater&);
-    void Clear() { m_pathsByClass.clear(); }
-
     ECOBJECTS_EXPORT bool TryGetRelatedPaths(bvector<ECRelationshipPath>&, ECClassCR) const;
     };
 
