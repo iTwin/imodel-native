@@ -103,6 +103,33 @@ BentleyStatus ECDbSchemaWriter::CreateECRelationshipConstraintEntry(ECClassId re
     return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
     }
 
+BentleyStatus ECDbSchemaWriter::DeleteCAEntry(ECClassId ecClassId, ECContainerId containerId, ECContainerType containerType)
+    {
+    CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "DELETE FROM ec_CustomAttribute WHERE ContainerId = ? AND ContainerType = ? AND ClassId = ?"))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt64(1, containerId))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt(2, Enum::ToInt(containerType)))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt64(3, ecClassId))
+        return ERROR;
+
+    if (stmt->Step() != BE_SQLITE_DONE)
+        return ERROR;
+
+    return SUCCESS;
+    }
+BentleyStatus ECDbSchemaWriter::ReplaceCAEntry(IECInstanceP customAttribute, ECClassId ecClassId, ECContainerId containerId, ECContainerType containerType, int ordinal)
+    {
+    if (DeleteCAEntry(ecClassId, containerId, containerType) != SUCCESS)
+        return ERROR;
+
+    return InsertCAEntry(customAttribute, ecClassId, containerId, containerType, ordinal);
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  11/2012
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -246,13 +273,15 @@ BentleyStatus ECDbSchemaWriter::UpdateProperty(ECPropertyChange& propertyChange,
     if (updater.Apply(m_ecdb) != SUCCESS)
         return ERROR;
 
-    return SUCCESS;
+    return UpdateCustomAttributes(ECContainerType::Property, propertyId, propertyChange.CustomAttributes(), oldProperty, newProperty);;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbSchemaWriter::UpdateRelationshipConstraint(SqlUpdater& sqlUpdater, ECRelationshipConstraintChange& constraintChange, ECRelationshipConstraintCR oldConstraint, ECRelationshipConstraintCR newConstraint , Utf8CP constraintType, Utf8CP relationshipName)
+BentleyStatus ECDbSchemaWriter::UpdateRelationshipConstraint(ECContainerId containerId, SqlUpdater& sqlUpdater, ECRelationshipConstraintChange& constraintChange, ECRelationshipConstraintCR oldConstraint, ECRelationshipConstraintCR newConstraint , bool isSource, Utf8CP relationshipName)
     {
+    Utf8CP constraintType = isSource ? "Source" : "Target";
     if (!constraintChange.IsPending())
         return SUCCESS;
 
@@ -276,9 +305,79 @@ BentleyStatus ECDbSchemaWriter::UpdateRelationshipConstraint(SqlUpdater& sqlUpda
         sqlUpdater.Set("RoleLabel", constraintChange.GetRoleLabel().GetNew().Value());
         }
 
-    return SUCCESS;
+    ECContainerType type = isSource ? ECContainerType::RelationshipConstraintSource : ECContainerType::RelationshipConstraintTarget;
+    return UpdateCustomAttributes(type, containerId, constraintChange.CustomAttributes(), oldConstraint, newConstraint);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbSchemaWriter::UpdateCustomAttributes(ECContainerType containerType, ECContainerId containerId, ECInstanceChanges& instanceChanges, IECCustomAttributeContainerCR oldContainer, IECCustomAttributeContainerCR newContainer)
+    {
+    if (instanceChanges.Empty() || !instanceChanges.IsPending())
+        return SUCCESS;
+    
+    for (size_t i = 0; i < instanceChanges.Count(); i++)
+        {
+        ECPropertyValueChange& change = instanceChanges.At(i);
+        if (!change.IsPending())
+            continue;
+
+        auto n = change.GetId().find(':');
+        BeAssert(n != Utf8String::npos);
+        if (n == Utf8String::npos)
+            return ERROR;
+
+        Utf8String schemaName = change.GetId().substr(0, n);
+        Utf8String className = change.GetId().substr(n + 1);
+
+        if (change.GetState() == ChangeState::New)
+            {
+            IECInstancePtr ca = newContainer.GetCustomAttribute(schemaName, className);
+            BeAssert(ca.IsValid());
+            if (ca.IsNull())
+                return ERROR;
+
+            if (ImportECClass(ca->GetClass()) != SUCCESS)
+                return ERROR;
+
+            if (InsertCAEntry(ca.get(), ca->GetClass().GetId(), containerId, containerType, 0) != SUCCESS)
+                return ERROR;
+            }
+        else if (change.GetState() == ChangeState::Deleted)
+            {
+            //DELETE FROM ec_CustomAttribute WHERE ECContainerId =? AND ECContainerType = ? AND ECClassId =?
+            IECInstancePtr ca = oldContainer.GetCustomAttribute(schemaName, className);
+            BeAssert(ca.IsValid());
+            if (ca.IsNull())
+                return ERROR;
+
+            if (!ca->GetClass().HasId())
+                ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema(m_ecdb, ca->GetClass()); //Callers will assume it has a valid Id
+
+            if (DeleteCAEntry(ca->GetClass().GetId(), containerId, containerType) != SUCCESS)
+                return ERROR;
+            }
+        else if (change.GetState() == ChangeState::Modified)
+            {
+            IECInstancePtr ca = newContainer.GetCustomAttribute(schemaName, className);
+            BeAssert(ca.IsValid());
+            if (ca.IsNull())
+                return ERROR;
+
+            if (ImportECClass(ca->GetClass()) != SUCCESS)
+                return ERROR;
+
+            if (ReplaceCAEntry(ca.get(), ca->GetClass().GetId(), containerId, containerType, 0) != SUCCESS)
+                return ERROR;
+            }
+
+        change.Done();
+        }
+
+    instanceChanges.Done();
+    return SUCCESS;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -359,11 +458,11 @@ BentleyStatus ECDbSchemaWriter::UpdateClass(ECClassChange& classChange, ECClassC
             return ERROR;
 
         if (relationshipChange.GetSource().Exist())
-            if (UpdateRelationshipConstraint(updater, relationshipChange.GetSource(), newRel->GetSource(), oldRel->GetSource(), "Source", oldRel->GetFullName()) == ERROR)
+            if (UpdateRelationshipConstraint(classId, updater, relationshipChange.GetSource(), newRel->GetSource(), oldRel->GetSource(), true, oldRel->GetFullName()) == ERROR)
                 return ERROR;
 
         if (relationshipChange.GetTarget().Exist())
-            if (UpdateRelationshipConstraint(updater, relationshipChange.GetTarget(), newRel->GetSource(), oldRel->GetTarget(), "Target", oldRel->GetFullName()) == ERROR)
+            if (UpdateRelationshipConstraint(classId, updater, relationshipChange.GetTarget(), newRel->GetSource(), oldRel->GetTarget(), false, oldRel->GetFullName()) == ERROR)
                 return ERROR;
         }
 
@@ -437,7 +536,7 @@ BentleyStatus ECDbSchemaWriter::UpdateClass(ECClassChange& classChange, ECClassC
             }
         }
 
-    return SUCCESS;
+    return UpdateCustomAttributes(ECContainerType::Class, classId, classChange.CustomAttributes(), oldClass, newClass);
     }
 
 //---------------------------------------------------------------------------------------
@@ -619,7 +718,8 @@ BentleyStatus ECDbSchemaWriter::UpdateSchema(ECSchemaChange& schemaChange, ECSch
                 }
             }
         }
-    return SUCCESS;
+
+    return UpdateCustomAttributes(ECContainerType::Schema, schemaId, schemaChange.CustomAttributes(), oldSchema, newSchema);
     }
 
 /*---------------------------------------------------------------------------------------

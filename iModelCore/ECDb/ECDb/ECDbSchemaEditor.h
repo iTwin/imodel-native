@@ -14,7 +14,7 @@ struct ECSchemaChange;
 struct ECClassChange;
 struct ECEnumerationChange;
 //struct KindOfQuantityChange;
-struct ECInstanceChange;
+struct ECPropertyValueChange;
 struct StringChange;
 struct ECPropertyChange;
 struct ECRelationshipConstraintClassChange;
@@ -71,6 +71,8 @@ enum SystemId : uint32_t
     EXTENDEDTYPENAME,
     INSTANCE,
     INSTANCES,
+    PROPERTYVALUE,
+    PROPERTYVALUES,
     INTEGER,
     ISCUSTOMATTRIBUTECLASS,
     ISENTITYCLASS,
@@ -222,6 +224,8 @@ struct ECChange
                         {DEFAULTPRESENTATIONUNIT, "DefaultPresentationUnit"},
                         {DESCRIPTION, "Description"},
                         {DIRECTION, "Direction"},
+                        {PROPERTYVALUE,"PropertyValue"},
+                        {PROPERTYVALUES,"PropertyValues"},
                         {DISPLAYLABEL, "DisplayLabel"},
                         {ENUMERATION, "Enumeration"},
                         {ENUMERATIONS, "Enumerations"},
@@ -586,11 +590,11 @@ struct ECEnumerationChanges : ECChangeArray<ECEnumerationChange>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECInstanceChanges : ECChangeArray<ECInstanceChange>
+struct ECInstanceChanges : ECChangeArray<ECPropertyValueChange>
     {
     public:
         ECInstanceChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECChangeArray<ECInstanceChange>(state, CUSTOMATTRIBTUES, parent, customId, INSTANCE)
+            : ECChangeArray<ECPropertyValueChange>(state, CUSTOMATTRIBTUES, parent, customId, PROPERTYVALUE)
             {
             BeAssert(systemId == GetSystemId());
             }
@@ -948,6 +952,27 @@ struct DateTimeChange: ECPrimitiveChange<DateTime>
         virtual ~DateTimeChange() {}
     };
 
+struct ECValueChange : ECPrimitiveChange<ECValue>
+    {
+    private:
+        virtual Utf8String _ToString(ValueId id) const override
+            {
+            auto& v = GetValue(id);
+            if (v.IsNull())
+                return "<null>";
+
+            if (v.Value().IsNull())
+                return "<null>";
+
+            return v.Value().ToString();
+            }
+
+    public:
+        ECValueChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECPrimitiveChange<ECValue>(state, systemId, parent, customId)
+            {}
+        virtual ~ECValueChange() {}
+    };
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
@@ -1111,17 +1136,102 @@ struct ECEnumerationChange :ECObjectChange
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECInstanceChange: ECObjectChange
+struct ECPropertyValueChange : ECChange
     {
+    private:
+        std::unique_ptr<ECValueChange> m_value;
+        std::unique_ptr<ECChangeArray<ECPropertyValueChange>> m_children;
+        virtual void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override
+            {
+            if (m_value != nullptr)
+                {
+                m_value->WriteToString(str, currentIndex, indentSize);
+                return;
+                }
+
+            AppendBegin(str, *this, currentIndex);
+            AppendEnd(str);
+
+
+            if (m_children != nullptr)
+                {
+                //AppendBegin(str, *this, currentIndex);
+                for (size_t i = 0; i < m_children->Count(); i++)
+                    {
+                    m_children->At(i).WriteToString(str, currentIndex + indentSize, indentSize);
+                    }
+                //AppendEnd(str);
+                }
+            }
+
+        virtual bool _IsEmpty() const override
+            {
+            if (m_value != nullptr)
+                return m_value->IsEmpty();
+
+            if (m_children != nullptr)
+                return m_children->IsEmpty();
+
+            return true;
+            }
+
+        virtual void _Optimize() 
+            {
+            if (m_value != nullptr)
+                if (m_value->IsEmpty())
+                    m_value = nullptr;
+
+            if (m_children != nullptr)
+                if (m_children->IsEmpty())
+                    m_children = nullptr;
+            }
     public:
-        ECInstanceChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECObjectChange(state, INSTANCE, parent, customId)
+        ECPropertyValueChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECChange(state, PROPERTYVALUE, parent, customId)
             {
             BeAssert(systemId == GetSystemId());
+       
             }
-        virtual ~ECInstanceChange(){}
-        StringChange& GetClassName() { return Get<StringChange>(CLASSFULLNAME); }
+        bool HasValue() const { return m_value != nullptr; }
+        bool HasChildren() const { return m_children != nullptr; }
+
+        ECPrimitiveChange<ECValue>& GetPropertyValue() 
+            { 
+            if (m_value == nullptr)
+                {
+                m_value = std::unique_ptr<ECValueChange>(new ECValueChange(GetState(), PROPERTYVALUE, this, GetId().c_str()));
+                }
+
+            return *m_value;
+            }
+        ECChangeArray<ECPropertyValueChange>& GetChildren() 
+            { 
+            if (m_children == nullptr)
+                {
+                m_children = std::unique_ptr<ECChangeArray<ECPropertyValueChange>>(new ECChangeArray<ECPropertyValueChange>(GetState(), PROPERTYVALUES, this, GetId().c_str(), PROPERTYVALUE));
+                }
+
+            return *m_children;
+            }
+        ECPropertyValueChange& GetOrCreate(ChangeState stat, std::vector<Utf8String> const& path)
+            {
+            ECPropertyValueChange* c = this;
+            for (auto& str : path)
+                {
+                auto m = c->GetChildren().Find(str.c_str());
+                if (m == nullptr)
+                    {
+                    c = &c->GetChildren().Add(stat, str.c_str());
+                    }
+                else
+                    c = m;
+                }
+
+            return *c;
+            }
+        virtual ~ECPropertyValueChange() {}
     };
+
 //struct KindOfQuantityChange :ECObjectChange
 //    {
 //    public:
@@ -1286,6 +1396,7 @@ struct ECPropertyChange :ECObjectChange
 //+===============+===============+===============+===============+===============+======
 struct ECSchemaComparer
     {
+
     private:
         BentleyStatus CompareECSchemas(ECSchemaChanges& changes, ECSchemaList const& a, ECSchemaList const& b);
         BentleyStatus CompareECSchema(ECSchemaChange& change, ECSchemaCR a, ECSchemaCR b);
@@ -1301,11 +1412,12 @@ struct ECSchemaComparer
         BentleyStatus CompareECEnumerations(ECEnumerationChanges& changes, ECEnumerationContainerCR a, ECEnumerationContainerCR b);
         //BentleyStatus CompareKindOfQuantities(ECKindOfQuantityChanges& changes, KindOfQuantityContainerCR a, KindOfQuantityContainerCR b);
         BentleyStatus CompareCustomAttributes(ECInstanceChanges& changes, IECCustomAttributeContainerCR a, IECCustomAttributeContainerCR b);
+        BentleyStatus CompareCustomAttribute(ECPropertyValueChange& changes, IECInstanceCR a, IECInstanceCR b);
+        
         BentleyStatus CompareECEnumeration(ECEnumerationChange& change, ECEnumerationCR a, ECEnumerationCR b);
         BentleyStatus CompareIntegerECEnumerators(ECEnumeratorChanges& changes, EnumeratorIterable const& a, EnumeratorIterable const& b);
         BentleyStatus CompareStringECEnumerators(ECEnumeratorChanges& changes, EnumeratorIterable const& a, EnumeratorIterable const& b);
         //BentleyStatus CompareKindOfQuantity(KindOfQuantityChange& change, KindOfQuantityCR a, KindOfQuantityCR b);
-        BentleyStatus CompareECInstance(ECInstanceChange& change, IECInstanceCR a, IECInstanceCR b);
         BentleyStatus CompareBaseClasses(BaseClassChanges& changes, ECBaseClassesList const& a, ECBaseClassesList const& b);
         BentleyStatus CompareReferences(ReferenceChanges& changes, ECSchemaReferenceListCR a, ECSchemaReferenceListCR b);
         BentleyStatus AppendECSchema(ECSchemaChanges& changes, ECSchemaCR v, ValueId appendType);
@@ -1317,8 +1429,11 @@ struct ECSchemaComparer
         BentleyStatus AppendECEnumeration(ECEnumerationChanges& changes, ECEnumerationCR v, ValueId appendType);
         //BentleyStatus AppendKindOfQuantity(ECKindOfQuantityChanges& changes, KindOfQuantityCR v, ValueId appendType);
         BentleyStatus AppendECProperty(ECPropertyChanges& changes, ECPropertyCR v, ValueId appendType);
-        BentleyStatus AppendECInstance(ECInstanceChange& changes, IECInstanceCR v, ValueId appendType);
+        //BentleyStatus AppendECInstance(ECPropertyValueChange& changes, IECInstanceCR v, ValueId appendType);
+        
         BentleyStatus AppendCustomAttributes(ECInstanceChanges& changes, IECCustomAttributeContainerCR v, ValueId appendType);
+        BentleyStatus AppendCustomAttribute(ECInstanceChanges& changes, IECInstanceCR v, ValueId appendType);
+        
         BentleyStatus AppendBaseClasses(BaseClassChanges& changes, ECBaseClassesList const& v, ValueId appendType);
         BentleyStatus AppendReferences(ReferenceChanges& changes, ECSchemaReferenceListCR v, ValueId appendType);
         BentleyStatus ConvertECInstanceToValueMap(std::map<Utf8String, ECValue>& map, IECInstanceCR instance);

@@ -50,6 +50,9 @@ private:
     BentleyStatus CreateBaseClassEntry(ECClassId ecClassId, ECClassCR baseClass, int ordinal);
     BentleyStatus CreateECRelationshipConstraintEntry(ECClassId relationshipClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd endpoint);
     BentleyStatus InsertCAEntry(IECInstanceP customAttribute, ECClassId ecClassId, ECContainerId containerId, ECContainerType containerType, int ordinal);
+    BentleyStatus ReplaceCAEntry(IECInstanceP customAttribute, ECClassId ecClassId, ECContainerId containerId, ECContainerType containerType, int ordinal);
+    BentleyStatus DeleteCAEntry(ECClassId ecClassId, ECContainerId containerId, ECContainerType containerType);
+
     BentleyStatus CreateECSchemaReferenceEntry(ECSchemaId ecSchemaId, ECSchemaId ecReferencedSchemaId);
 
     BentleyStatus ImportCustomAttributes(IECCustomAttributeContainerCR sourceContainer, ECContainerId sourceContainerId, ECContainerType containerType, Utf8CP onlyImportCAWithClassName = nullptr);
@@ -61,7 +64,8 @@ private:
     BentleyStatus ImportECRelationshipClass(ECN::ECRelationshipClassCP);
     BentleyStatus ImportECRelationshipConstraint(ECClassId relationshipClassId, ECN::ECRelationshipConstraintR, ECRelationshipEnd);
     BentleyStatus EnsureECSchemaExists(ECClassCR);
-    BentleyStatus UpdateRelationshipConstraint(SqlUpdater& sqlUpdater, ECRelationshipConstraintChange& constraintChange, ECRelationshipConstraintCR oldConstraint, ECRelationshipConstraintCR newConstraint, Utf8CP constraintType, Utf8CP relationshipName);
+    BentleyStatus UpdateRelationshipConstraint(ECContainerId containerId, SqlUpdater& sqlUpdater, ECRelationshipConstraintChange& constraintChange, ECRelationshipConstraintCR oldConstraint, ECRelationshipConstraintCR newConstraint, bool isSource, Utf8CP relationshipName);
+    BentleyStatus UpdateCustomAttributes(ECContainerType containerType, ECContainerId containerId, ECInstanceChanges& instanceChanges,IECCustomAttributeContainerCR oldClass, IECCustomAttributeContainerCR newClass);
 
     BentleyStatus UpdateClass(ECClassChange& classChange, ECClassCR oldClass, ECClassCR newClass);
     BentleyStatus UpdateProperty(ECPropertyChange& propertyChange, ECPropertyCR oldProperty, ECPropertyCR newProperty);

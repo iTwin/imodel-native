@@ -14,6 +14,13 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
+bool operator == (ECValueCR lhs, ECValueCR rhs)
+    {
+    return lhs.Equals(rhs);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
 template<typename T>
 Nullable<T>::Nullable()
     :m_isNull(true), m_value(T())
@@ -53,6 +60,7 @@ T const& Nullable<T>::Value() const
     //   BeAssert(!IsNull());
     return m_value;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -897,11 +905,124 @@ BentleyStatus ECSchemaComparer::CompareECEnumerations(ECEnumerationChanges& chan
 //
 //    return SUCCESS;
 //    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECSchemaComparer::CompareCustomAttribute(ECPropertyValueChange& changes, IECInstanceCR a, IECInstanceCR b)
+    {
+    std::map<Utf8String, ECValue> aMap, bMap;  
+    std::set<Utf8CP, CompareUtf8> cMap;
+    if (ConvertECInstanceToValueMap(aMap, a) != SUCCESS)
+        return ERROR;
+
+    if (ConvertECInstanceToValueMap(bMap, b) != SUCCESS)
+        return ERROR;
+
+    for (auto& i : aMap)
+        cMap.insert(i.first.c_str());
+
+    for (auto& i : bMap)
+        cMap.insert(i.first.c_str());
+
+    for (auto& u : cMap)
+        {
+        auto itorA = aMap.find(u);
+        auto itorB = bMap.find(u);
+
+        bool existInA = itorA != aMap.end();
+        bool existInB = itorB != bMap.end();
+        if (existInA && existInB)
+            {
+            if (!itorA->second.Equals(itorB->second))
+                changes.GetOrCreate(ChangeState::Modified, Split(u)).GetPropertyValue().SetValue(itorA->second, itorB->second);
+            }
+        else if (existInA && !existInB)
+            {
+            changes.GetOrCreate(ChangeState::Deleted, Split(u)).GetPropertyValue().SetValue(ValueId::Deleted, itorA->second);
+            }
+        else if (!existInA && existInB)
+            {
+            changes.GetOrCreate(ChangeState::New, Split(u)).GetPropertyValue().SetValue(ValueId::New, itorB->second);
+            }
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECSchemaComparer::AppendCustomAttribute(ECInstanceChanges& changes, IECInstanceCR v, ValueId appendType)
+    {
+    ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
+    std::map<Utf8String, ECValue> map;
+    if (ConvertECInstanceToValueMap(map, v) != SUCCESS)
+        return ERROR;
+
+
+    if (map.empty())
+        return SUCCESS;
+
+    auto& change = changes.Add(state, v.GetClass().GetFullName());
+    for (auto& key : map)
+        change.GetOrCreate(state, Split(key.first)).GetPropertyValue().SetValue(appendType, key.second);
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECSchemaComparer::AppendCustomAttributes(ECInstanceChanges& changes, IECCustomAttributeContainerCR v, ValueId appendType)
+    {
+    for (IECInstancePtr const& ptr : v.GetCustomAttributes(false))
+        {
+        if (AppendCustomAttribute(changes, *ptr, appendType) != SUCCESS)
+            return ERROR;
+        }
+    return SUCCESS;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSchemaComparer::CompareCustomAttributes(ECInstanceChanges& changes, IECCustomAttributeContainerCR a, IECCustomAttributeContainerCR b)
     {
+    std::map<Utf8CP, IECInstanceCP, CompareUtf8> aMap, bMap, cMap;
+    for (IECInstancePtr const& instancePtr : a.GetCustomAttributes(false))
+        aMap[instancePtr->GetClass().GetFullName()] = instancePtr.get();
+
+    for (IECInstancePtr const& instancePtr : b.GetCustomAttributes(false))
+        bMap[instancePtr->GetClass().GetFullName()] = instancePtr.get();
+
+    cMap.insert(aMap.cbegin(), aMap.cend());
+    cMap.insert(bMap.cbegin(), bMap.cend());
+
+    for (auto& u : cMap)
+        {
+        auto itorA = aMap.find(u.first);
+        auto itorB = bMap.find(u.first);
+
+        bool existInA = itorA != aMap.end();
+        bool existInB = itorB != bMap.end();
+        if (existInA && existInB)
+            {
+            auto& caChange = changes.Add(ChangeState::Modified, u.first);
+            if (CompareCustomAttribute(caChange, *itorA->second, *itorB->second) == ERROR)
+                return ERROR;
+            }
+        else if (existInA && !existInB)
+            {
+            if (AppendCustomAttribute(changes, *itorA->second, ValueId::Deleted) == ERROR)
+                return ERROR;
+            }
+        else if (!existInA && existInB)
+            {
+            if (AppendCustomAttribute(changes, *itorB->second, ValueId::New) == ERROR)
+                return ERROR;
+            }
+        }
     return SUCCESS;
     }
 //---------------------------------------------------------------------------------------
@@ -1072,13 +1193,6 @@ BentleyStatus ECSchemaComparer::CompareStringECEnumerators(ECEnumeratorChanges& 
 //        }
 //    return SUCCESS;
 //    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::CompareECInstance(ECInstanceChange& change, IECInstanceCR a, IECInstanceCR b)
-    {
-    return SUCCESS;
-    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1369,40 +1483,7 @@ BentleyStatus ECSchemaComparer::AppendECProperty(ECPropertyChanges& changes, ECP
 
     return SUCCESS;
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::AppendECInstance(ECInstanceChange& changes, IECInstanceCR v, ValueId appendType)
-    {
-    std::map<Utf8String, ECValue> map;
-    if (ConvertECInstanceToValueMap(map, v) != SUCCESS)
-        return ERROR;
 
-    if (map.empty())
-        return SUCCESS;
-
-    //for (auto& k : map)
-    //    {
-    //    k.first
-    //    }
-    return SUCCESS;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::AppendCustomAttributes(ECInstanceChanges& changes, IECCustomAttributeContainerCR v, ValueId appendType)
-    {
-    ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
-    for (auto& instance : v.GetPrimaryCustomAttributes(false))
-        {
-        ECInstanceChange& instanceChange = changes.Add(state, instance->GetClass().GetFullName());
-        instanceChange.GetClassName().SetValue(appendType, instance->GetClass().GetFullName());
-        if (AppendECInstance(instanceChange, *instance, appendType) != SUCCESS)
-            return ERROR;
-        }
-
-    return SUCCESS;
-    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1453,6 +1534,12 @@ BentleyStatus ECSchemaComparer::ConvertECValuesCollectionToValueMap(std::map<Utf
         else
             {
             ECValueCR v = (*itor).GetValue();
+            if (!v.IsPrimitive())
+                continue;
+        
+            if (v.IsNull())
+                continue;
+
             map[valueAccessor.GetManagedAccessString()] = v;
             }
         }
@@ -1475,8 +1562,8 @@ std::vector<Utf8String> ECSchemaComparer::Split(Utf8StringCR path)
             }
         }
 
-    if (b < --i)
-        axis.push_back(path.substr(b, i - b));
+    if (b < i)
+        axis.push_back(path.substr(b, i - b ));
 
     return axis;
     }

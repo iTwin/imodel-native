@@ -120,7 +120,7 @@ TEST_F(ECDbSchemaUpgrade, UpdateECClassAttributes)
     ECSchema::CreateSchema(test_1_0_0, "test", "t", 1, 0, 0);
     test_1_0_0->SetDisplayLabel("Test ECSchema");
     test_1_0_0->SetDescription("This is a test schema");
-
+    
     ECEntityClassP test_book;
     test_1_0_0->CreateEntityClass(test_book, "Book");
     test_book->SetDisplayLabel("Book");
@@ -176,6 +176,9 @@ TEST_F(ECDbSchemaUpgrade, UpdateECPropertyAttributes)
     {
     ECSchemaPtr test_1_0_0;
     ECSchema::CreateSchema(test_1_0_0, "test", "t", 1, 0, 0);
+    auto ecdbMap = ecdb.Schemas().GetECSchema("ECDbMap");
+    test_1_0_0->AddReferencedSchema(const_cast<ECSchemaR>(*ecdbMap));
+ 
     test_1_0_0->SetDisplayLabel("Test ECSchema");
     test_1_0_0->SetDescription("This is a test schema");
 
@@ -191,6 +194,11 @@ TEST_F(ECDbSchemaUpgrade, UpdateECPropertyAttributes)
     test_book_code->SetDescription("Code of the book");
     test_book_code->SetType(PrimitiveType::PRIMITIVETYPE_String);
 
+    StandaloneECInstancePtr inst = ecdbMap->GetClassCP("PropertyMap")->GetDefaultStandaloneEnabler()->CreateInstance();
+    inst->SetValue("IsNullable", ECValue(true));
+    test_book_code->SetCustomAttribute(*inst);
+
+
     ECSchemaCachePtr cache1 = ECSchemaCache::Create();
     cache1->AddSchema(*test_1_0_0);
 
@@ -202,6 +210,9 @@ TEST_F(ECDbSchemaUpgrade, UpdateECPropertyAttributes)
 
     //modified schema info
     ECSchema::CreateSchema(test_1_0_0, "test", "t1", 1, 1, 1);
+    auto ecdbMap = ecdb.Schemas().GetECSchema("ECDbMap");
+    test_1_0_0->AddReferencedSchema(const_cast<ECSchemaR>(*ecdbMap));
+
     test_1_0_0->SetDisplayLabel("Test ECSchema (MODIFIED)");
     test_1_0_0->SetDescription("This is a test schema  (MODIFIED)");
     //MODIFIED existing class
@@ -216,6 +227,12 @@ TEST_F(ECDbSchemaUpgrade, UpdateECPropertyAttributes)
     test_book_code->SetDisplayLabel("DOI Code (MODIFIED)");
     test_book_code->SetDescription("Code of the book (MODIFIED)");
     test_book_code->SetType(PrimitiveType::PRIMITIVETYPE_String);
+
+    StandaloneECInstancePtr inst = ecdbMap->GetClassCP("PropertyMap")->GetDefaultStandaloneEnabler()->CreateInstance();
+    inst->SetValue("IsNullable", ECValue(false));
+    inst->SetValue("ColumnName", ECValue("Code__1"));
+
+    test_book_code->SetCustomAttribute(*inst);
 
     ECSchemaCachePtr cache1 = ECSchemaCache::Create();
     cache1->AddSchema(*test_1_0_0);
@@ -355,6 +372,7 @@ TEST_F(ECDbSchemaUpgrade, AddECProperty)
     //Upgrade with some changes
     {
     ECSchemaPtr test_1_0_0;
+    //
 
     //modified schema info
     ECSchema::CreateSchema(test_1_0_0, "test", "t1", 1, 1, 1);
