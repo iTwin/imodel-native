@@ -189,7 +189,7 @@ DgnAuthorityPtr DgnAuthorities::LoadAuthority(DgnAuthorityId id, DgnDbStatus* ou
 
     Utf8String name = stmt->GetValueText(0);
     Utf8String props = stmt->GetValueText(1);
-    DgnClassId classId = DgnClassId(stmt->GetValueInt64(2));
+    DgnClassId classId = stmt->GetValueId<DgnClassId>(2);
 
     AuthorityHandlerP handler = dgn_AuthorityHandler::Authority::FindHandler(m_dgndb, classId);
     if (nullptr == handler)

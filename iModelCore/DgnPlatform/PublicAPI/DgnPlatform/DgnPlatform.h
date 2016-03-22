@@ -348,17 +348,7 @@ typedef IdSet<DgnCategoryId> DgnCategoryIdSet;          //!< IdSet with DgnCateg
 typedef IdSet<DgnSubCategoryId> DgnSubCategoryIdSet;    //!< IdSet with DgnSubCategoryId members. @ingroup DgnCategoryGroup
 typedef IdSet<DgnMaterialId> DgnMaterialIdSet;          //!< IdSet with DgnMaterialId members.
 
-//=======================================================================================
-//! A DgnClassId is the local id for an ECClass in a DgnDb.
-//=======================================================================================
-struct DgnClassId : BeInt64Id
-{
-    DgnClassId() {Invalidate();}
-    explicit DgnClassId(int64_t val) : BeInt64Id(val) {}
-    DgnClassId(DgnClassId&& rhs) : BeInt64Id(std::move(rhs)) {}
-    DgnClassId(DgnClassId const& rhs) : BeInt64Id(rhs) {}
-    DgnClassId& operator=(DgnClassId const& rhs) {m_id = rhs.m_id; return *this;}
-};
+typedef ECN::ECClassId DgnClassId;
 
 //=======================================================================================
 //! The GeometryStreamEntryId class identifies a geometric primitive in a GeometryStream.

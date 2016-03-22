@@ -1526,7 +1526,7 @@ void PerformanceElementsCRUDTestFixture::GetSelectSql(Utf8CP className, Utf8Stri
         if (!omitClassIdFilter)
             {
             Utf8String classIdFilter;
-            classIdFilter.Sprintf(" AND e.ECClassId=%lld", ecClass->GetId());
+            classIdFilter.Sprintf(" AND e.ECClassId=%llu", ecClass->GetId().GetValue());
             selectSql.append(classIdFilter);
             }
 
@@ -1568,7 +1568,7 @@ void PerformanceElementsCRUDTestFixture::GetUpdateSql(Utf8CP className, Utf8Stri
     if (!omitClassIdFilter)
         {
         Utf8String classIdFilter;
-        classIdFilter.Sprintf(" AND ECClassId=%lld", ecClass->GetId());
+        classIdFilter.Sprintf(" AND ECClassId=%llu", ecClass->GetId().GetValue());
         updateSql.append(classIdFilter);
         }
     }
@@ -1585,7 +1585,7 @@ void PerformanceElementsCRUDTestFixture::GetDeleteSql(Utf8CP className, Utf8Stri
         ECN::ECClassCP ecClass = m_db->Schemas().GetECClass(ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className);
         ASSERT_TRUE(ecClass != nullptr);
         Utf8String classIdFilter;
-        classIdFilter.Sprintf(" AND ECClassId=%lld", ecClass->GetId());
+        classIdFilter.Sprintf(" AND ECClassId=%llu", ecClass->GetId().GetValue());
         deleteSql.append(classIdFilter);
         }
 

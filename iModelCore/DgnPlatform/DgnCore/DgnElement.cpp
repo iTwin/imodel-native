@@ -146,7 +146,7 @@ DgnDbStatus DgnElement::_DeleteInDb() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP DgnElement::GetElementClass() const
     {
-    return GetDgnDb().Schemas().GetECClass(GetElementClassId().GetValue());
+    return GetDgnDb().Schemas().GetECClass(GetElementClassId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1547,7 +1547,7 @@ DgnElement::AppData::DropMe DgnElement::Aspect::_OnUpdated(DgnElementCR modified
         {
         DgnDbR db = modified.GetDgnDb();
         ECInstanceKey existing = _QueryExistingInstanceKey(modified);
-        if (existing.IsValid() && (existing.GetECClassId() != GetECClassId(db).GetValue()))
+        if (existing.IsValid() && (existing.GetECClassId() != GetECClassId(db)))
             {
             _DeleteInstance(modified);
             existing = ECInstanceKey();  //  trigger an insert below
@@ -1749,7 +1749,7 @@ void DgnElement::MultiAspect::AddAspect(DgnElementR el, MultiAspect& aspect)
 ECInstanceKey DgnElement::MultiAspect::_QueryExistingInstanceKey(DgnElementCR el)
     {
     // My m_instanceId field is valid if and only if I was just inserted or was loaded from an existing instance.
-    return ECInstanceKey(GetECClassId(el.GetDgnDb()).GetValue(), m_instanceId);
+    return ECInstanceKey(GetECClassId(el.GetDgnDb()), m_instanceId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1888,7 +1888,7 @@ ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR e
         return ECInstanceKey();
 
     // And we know the ID. See if such an instance actually exists.
-    return ECInstanceKey(classId.GetValue(), GetAspectInstanceId(el));
+    return ECInstanceKey(classId, GetAspectInstanceId(el));
     }
 
 /*---------------------------------------------------------------------------------**//**
