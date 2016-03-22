@@ -409,6 +409,9 @@ IScalableMeshCreator::Impl::Impl(const WChar* scmFileName)
             s_useThreadsInFiltering = true;
             }
         }*/
+    s_useThreadsInMeshing = true;
+    s_useThreadsInStitching = true;
+    s_useThreadsInFiltering = true;
     }
 
 IScalableMeshCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)

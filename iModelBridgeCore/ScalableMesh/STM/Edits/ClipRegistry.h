@@ -228,6 +228,24 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
         {
         return 0;//m_clipStore->CountClips();// m_clips.size();
         }
+
+    void SetClipMetadata(uint64_t id, double importance, int nDimensions)
+        {
+        if (m_clipStore == NULL) OpenStore();
+        m_clipStore->SetMetadata(id, importance, nDimensions);
+        }
+
+    void GetClipMetadata(uint64_t id, double& importance, int& nDimensions)
+        {
+        if (m_clipStore == NULL) OpenStore();
+        m_clipStore->GetMetadata(id, importance, nDimensions);
+        }
+
+    void GetAllClipsIds(bvector<uint64_t>& allClipIds)
+        {
+        if (m_clipStore == NULL) OpenStore();
+        m_clipStore->GetAllIDs(allClipIds);
+        }
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

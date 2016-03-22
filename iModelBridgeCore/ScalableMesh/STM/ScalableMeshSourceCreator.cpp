@@ -540,7 +540,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
             s_getLastFilteringDuration += clock() - startClock;
             startClock = clock();
 #endif
-           // if (level == (int)depth)
+            //if (level == (int)depth)
                 {
                 if (BSISUCCESS != IScalableMeshCreator::Impl::Stitch<IndexType>(*pDataIndex, level, false))
                     return BSIERROR;

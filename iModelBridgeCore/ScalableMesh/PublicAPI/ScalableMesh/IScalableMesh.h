@@ -120,6 +120,10 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         virtual bool                               _RemoveSkirt(uint64_t skirtID) = 0;
 
         virtual void                               _SetIsInsertingClips(bool toggleInsertMode) = 0;
+
+        virtual void                               _ModifyClipMetadata(uint64_t clipId, double importance, int nDimensions) = 0;
+
+        virtual void                               _GetAllClipsIds(bvector<uint64_t>& ids) = 0;
     /*__PUBLISH_SECTION_START__*/
     public:
         //! Gets the number of points of the DTM.
@@ -204,6 +208,10 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         BENTLEYSTM_EXPORT bool                   RemoveSkirt(uint64_t skirtID);
 
         BENTLEYSTM_EXPORT void                   SetIsInsertingClips(bool toggleInsertMode);
+
+        BENTLEYSTM_EXPORT void                   ModifyClipMetadata(uint64_t clipId,double importance, int nDimensions);
+
+        BENTLEYSTM_EXPORT void                   GetAllClipIds(bvector<uint64_t>& ids);
 
     
         BENTLEYSTM_EXPORT static IScalableMeshPtr        GetFor                 (const WChar*          filePath,

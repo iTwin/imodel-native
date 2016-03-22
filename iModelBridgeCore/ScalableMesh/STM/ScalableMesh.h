@@ -275,6 +275,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
         virtual bool                               _RemoveClip(uint64_t clipID) override;
         virtual void                               _SetIsInsertingClips(bool toggleInsertMode) override;
+        virtual void                               _ModifyClipMetadata(uint64_t clipId, double importance, int nDimensions) override;
+        virtual void                               _GetAllClipsIds(bvector<uint64_t>& allClipIds) override;
 
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
         virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
@@ -364,6 +366,8 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
         virtual bool                               _RemoveClip(uint64_t clipID) override;
         virtual void                               _SetIsInsertingClips(bool toggleInsertMode) override;
+        virtual void                               _ModifyClipMetadata(uint64_t clipId, double importance, int nDimensions) override;
+        virtual void                               _GetAllClipsIds(bvector<uint64_t>& allClipIds) override;
 
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
         virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;

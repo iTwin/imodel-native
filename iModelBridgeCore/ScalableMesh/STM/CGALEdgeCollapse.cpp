@@ -65,6 +65,46 @@ class Preserve25DCost : public SMS::LindstromTurk_cost < ECM_ >
         MTGNodeId v0v1 = (MTGNodeId)profile.v0_v1();
         MTGNodeId v1v0 = (MTGNodeId)profile.v1_v0();
 
+
+        if (FastCountNodesAroundFace(profile.surface().graphP, v0v1) > 3)
+            {
+            int indices[3];
+            DPoint3d triangle[3];
+            MTGNodeId id = profile.surface().graphP->VSucc(v0v1);
+            profile.surface().graphP->TryGetLabel(v0v1, 0, indices[0]);
+            profile.surface().graphP->TryGetLabel(v1v0, 0, indices[1]);
+            profile.surface().graphP->TryGetLabel(id, 0, indices[2]);
+            for (size_t i = 0; i < 3;++i)
+               triangle[i] = profile.surface().ptArray[indices[i] - 1];
+            if (!triangle[0].AlmostEqualXY(triangle[1]) && !triangle[1].AlmostEqualXY(triangle[2]) && !triangle[2].AlmostEqualXY(triangle[0]))
+                {
+                DSegment3d triSeg = DSegment3d::From(triangle[0], triangle[1]);
+                double param;
+                DPoint3d closestPt;
+                triSeg.ProjectPointXY(closestPt, param, triangle[2]);
+                if (!closestPt.AlmostEqualXY(triangle[2])) return result_type(std::numeric_limits<double>::max());
+                }
+            
+            }
+        else if (FastCountNodesAroundFace(profile.surface().graphP, v1v0) > 3)
+            {
+            int indices[3];
+            DPoint3d triangle[3];
+            MTGNodeId id = profile.surface().graphP->VSucc(v1v0);
+            profile.surface().graphP->TryGetLabel(v1v0, 0, indices[0]);
+            profile.surface().graphP->TryGetLabel(v0v1, 0, indices[1]);
+            profile.surface().graphP->TryGetLabel(id, 0, indices[2]);
+            for (size_t i = 0; i < 3; ++i)
+                triangle[i] = profile.surface().ptArray[indices[i] - 1];
+            if (!triangle[0].AlmostEqualXY(triangle[1]) && !triangle[1].AlmostEqualXY(triangle[2]) && !triangle[2].AlmostEqualXY(triangle[0]))
+                {
+                DSegment3d triSeg = DSegment3d::From(triangle[0], triangle[1]);
+                double param;
+                DPoint3d closestPt;
+                triSeg.ProjectPointXY(closestPt, param, triangle[2]);
+                if (!closestPt.AlmostEqualXY(triangle[2])) return result_type(std::numeric_limits<double>::max());
+                }
+            }
         std::vector<std::array<MTGNodeId, 3>> facets;
         facets.reserve(20);
         MTGGraph* graphP = profile.surface().graphP;
