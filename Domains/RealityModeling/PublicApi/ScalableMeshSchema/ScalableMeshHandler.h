@@ -95,6 +95,7 @@ struct ScalableMeshModel : IMeshSpatialModel
         ScalableMeshDrawingInfoPtr              m_currentDrawingInfoPtr;
         DMatrix4d                               m_storageToUorsTransfo; 
         bool m_forceRedraw;
+        bset<uint64_t>                          m_activeClips;
                        
     protected:
 
@@ -145,6 +146,10 @@ struct ScalableMeshModel : IMeshSpatialModel
         SCALABLEMESH_SCHEMA_EXPORT IScalableMesh* GetScalableMesh();
 
         SCALABLEMESH_SCHEMA_EXPORT Transform GetUorsToStorage();
+
+        SCALABLEMESH_SCHEMA_EXPORT void SetActiveClipSets(bset<uint64_t>& activeClips, bset<uint64_t>& previouslyActiveClips);
+
+        SCALABLEMESH_SCHEMA_EXPORT void GetClipSetIds(bvector<uint64_t>& allShownIds);
 
 
     };

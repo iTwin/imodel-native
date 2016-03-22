@@ -946,6 +946,28 @@ WString ScalableMeshModel::GetTerrainModelPath(BentleyApi::Dgn::DgnDbCR dgnDb)
     }
 
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     3/2016
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::SetActiveClipSets(bset<uint64_t>& activeClips, bset<uint64_t>& previouslyActiveClips)
+    {
+    m_activeClips = activeClips;
+    bvector<uint64_t> clipIds;
+    for (auto& clip: previouslyActiveClips)
+       clipIds.push_back(clip);
+    m_progressiveQueryEngine->SetActiveClips(activeClips, m_smPtr);
+    m_progressiveQueryEngine->ClearCaching(clipIds, m_smPtr);
+    m_forceRedraw = true;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     3/2016
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::GetClipSetIds(bvector<uint64_t>& allShownIds)
+    {
+    if (m_smPtr.get() != nullptr) m_smPtr->GetAllClipIds(allShownIds);
+    }
+
 IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDbR db, Utf8StringCR modelName, BeFileNameCR smFilename)
     {    
     /*    
