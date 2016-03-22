@@ -55,7 +55,7 @@ struct UnitsTests : UnitsTestFixture
     static bool TestUnitConversion(double fromVal, Utf8CP fromUnitName, double expectedVal, Utf8CP targetUnitName, int ulp, 
                                    bvector<Utf8String>& loadErrors, bvector<Utf8String>& conversionErrors, bvector<bpair<Utf8String, Utf8String>>& handledUnits,
                                    bool useLegacyNames = false, bool showDetailLogs = false);
-    static void TestConversionsLoadedFromCvsFile(Utf8CP fileName, int expectedMissingUnits);
+    static void TestConversionsLoadedFromCvsFile(Utf8CP fileName, WCharCP outputFileName, int expectedMissingUnits);
 
     static Utf8String ParseUOM(Utf8CP unitName, bset<Utf8String>& notMapped)
         {
@@ -402,6 +402,7 @@ TEST_F(UnitsTests, TestMiscConversions)
 
     //MASS
     TestUnitConversion(5, "TONNE", 5000, "KG", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(5000, "KG", 5, "TONNE", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42.42, "TONNE", 42.42e15, "NG", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42.42, "TONNE", 42.42e3 / 0.45359237, "LBM", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42.42, "NG", 42.42e-12 / 0.45359237, "LBM", 1, loadErrors, conversionErrors, handledUnits);
@@ -416,6 +417,7 @@ TEST_F(UnitsTests, TestMiscConversions)
     TestUnitConversion(42.42, "PA-S", 42.42e3, "CENTIPOISE", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42.42, "LBM/(FT*S)", (42.42 * 0.45359237) / 0.3048, "PA-S", 1, loadErrors, conversionErrors, handledUnits); // 0.45359237 is conversion between LBM and KG
     TestUnitConversion(42.43, "LBM/(FT*S)", 63.142796126, "PA-S", 100000, loadErrors, conversionErrors, handledUnits); // conversion from http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    TestUnitConversion(63.142796126, "PA-S", 42.43, "LBM/(FT*S)", 100000, loadErrors, conversionErrors, handledUnits); // conversion from http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
 
     //FORCE
     TestUnitConversion(1000.0, "PDL", 138.254954376, "N", 10, loadErrors, conversionErrors, handledUnits);
@@ -475,9 +477,11 @@ TEST_F(UnitsTests, TestMiscConversions)
     TestUnitConversion(42.42, "A", 42.42e6, "MICROAMPERE", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42.42, "KILOAMPERE", 42.42e9, "MICROAMPERE", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42.42, "MILLIAMPERE", 42.42e3, "MICROAMPERE", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42e3, "MICROAMPERE", 42.42, "MILLIAMPERE", 1, loadErrors, conversionErrors, handledUnits);
 
     //Volume Flow Rate
     TestUnitConversion(42.42, "CUB.IN/MIN", 42.42 / 60.0, "CUB.IN/SEC", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42, "CUB.IN/SEC", 42.42 * 60.0, "CUB.IN/MIN", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42.42, "CUB.IN/MIN", 42.42 / pow(12.0, 3) , "CUB.FT/MIN", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42.42, "ACRE_IN/DAY", 42.42 / 12.0, "ACRE_FT/DAY", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42.42, "ACRE_IN/DAY", (42.42 * 43560.0 * 144.0) / (24.0 * 60.0), "CUB.IN/MIN", 1, loadErrors, conversionErrors, handledUnits); // 43560 is number of sq ft in an acre
@@ -539,6 +543,7 @@ TEST_F(UnitsTests, TestMiscConversions)
     TestUnitConversion(1.0, "YEAR_TROPICAL", 3.155693e7, "S", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(3.155693e13, "MKS", 1.0, "YEAR_TROPICAL", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(3.155815e10, "MS", 1.0, "YEAR_SIDEREAL", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "YEAR_TROPICAL",3.155693e13 , "MKS", 10, loadErrors, conversionErrors, handledUnits);
 
     // Torque
     TestUnitConversion(42.42, "N_CM", 0.4242, "N_M", 1, loadErrors, conversionErrors, handledUnits);
@@ -549,6 +554,7 @@ TEST_F(UnitsTests, TestMiscConversions)
     TestUnitConversion(42.42, "MM/SEC", 42.42e-3, "M/SEC", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42.42, "KM/SEC", 42.42e6, "MM/SEC", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42.42, "YRD/SEC", 42.42 * 0.3048 * 3.0, "M/SEC", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42.42e6, "MM/SEC", 42.42, "KM/SEC", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42.42, "FT/MIN", 42.42 / (60.0 * 3.0), "YRD/SEC", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42.43, "FT/MIN", 0.23572222222, "YRD/SEC", 100000, loadErrors, conversionErrors, handledUnits);
 
@@ -560,6 +566,13 @@ TEST_F(UnitsTests, TestMiscConversions)
     TestUnitConversion(42.42, "MICROLITRE", 42.42e-6, "CUB.DM", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42.42, "CUB.MILE", 42.42 * pow(5280.0 * 0.3048, 3) / 1.0e9, "CUB.KM", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42.43, "CUB.MILE", 176.85595485, "CUB.KM", 100000, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(176.85595485, "CUB.KM", 42.43, "CUB.MILE", 100000, loadErrors, conversionErrors, handledUnits);
+
+    //The following are not real conversions. These units are all alone in their phenomena, so we just test their 1:1 conversion to touch them once
+    TestUnitConversion(1.0, "COULOMB", 1.0, "COULOMB", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "W/SQ.M", 1.0, "W/SQ.M", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "CD", 1.0, "CD", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "STERAD", 1.0, "STERAD", 1, loadErrors, conversionErrors, handledUnits);
 
     ASSERT_EQ(0, loadErrors.size()) << BeStringUtilities::Join(loadErrors, ", ");
     ASSERT_EQ(0, conversionErrors.size()) << BeStringUtilities::Join(conversionErrors, ", ");
@@ -862,7 +875,7 @@ TEST_F(UnitsTests, UnitsConversions_Complex)
     WriteToFile(fileName.c_str(), handledUnits);
     }
 
-void UnitsTests::TestConversionsLoadedFromCvsFile(Utf8CP fileName, int expectedMissingUnits)
+void UnitsTests::TestConversionsLoadedFromCvsFile(Utf8CP fileName, WCharCP outputFileName, int expectedMissingUnits)
     {
     bvector<Utf8String> loadErrors;
     bvector<Utf8String> conversionErrors;
@@ -896,18 +909,18 @@ void UnitsTests::TestConversionsLoadedFromCvsFile(Utf8CP fileName, int expectedM
 
     EXPECT_EQ(0, conversionErrors.size()) << conversionErrorString;
 
-    Utf8String outputfile = UnitsTestFixture::GetOutputDataPath(L"TestConversionsLoadedFromCvsFile_handledUnits.csv");
+    Utf8String outputfile = UnitsTestFixture::GetOutputDataPath(outputFileName);
     WriteToFile(outputfile.c_str(), handledUnits);
     }
 
 TEST_F(UnitsTests, UnitsConversion_CompareToRawOutputFromOldSystem)
     {
-    TestConversionsLoadedFromCvsFile("ConversionsBetweenAllOldUnits.csv", 107); // went from 107 to 109 because work per month units were removed, back to 9107 because mass ratios added
+    TestConversionsLoadedFromCvsFile("ConversionsBetweenAllOldUnits.csv", L"TestConversionsBetweenAllOldUnits_handledUnits.csv", 109); // went from 107 to 109 because work per month units were removed, back to 107 because mass ratios added
     }
 
 TEST_F(UnitsTests, UnitsConversion)
     {
-    TestConversionsLoadedFromCvsFile("unitcomparisondata.csv", 94); // went from 94 to 96 because work per month units were removed, back to 94 because mass ratios added
+    TestConversionsLoadedFromCvsFile("unitcomparisondata.csv", L"Testunitcomparisondata_handledUnits.csv", 96);// went from 94 to 96 because work per month units were removed, back to 94 because mass ratios added
     }
 
 void GetUnitsByName(UnitRegistry& hub, bvector<Utf8String>& unitNames)
