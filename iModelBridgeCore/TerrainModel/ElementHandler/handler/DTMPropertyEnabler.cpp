@@ -1047,7 +1047,20 @@ protected:
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DTMELEMENTECExtension::_InitializeCompoundDelegate (ICompoundECDelegateR del, ECN::ECClassCR ecClass) const
     {
-    if (ecClass.GetName().Equals (L"DTMElement"))
+    bool isDTMElementClass = ecClass.GetName().Equals(L"DTMElement");
+    
+    if (!isDTMElementClass)
+        {
+        for (auto baseClass : ecClass.GetBaseClasses())
+            {
+            if (baseClass->GetName().Equals(L"DTMElement"))
+                {
+                isDTMElementClass = true;
+                break;
+                }
+            }
+        }
+    if (isDTMElementClass)
         {
         // Following are read-only if in a reference attachment and OverrideSymbology=Yes OR No
         del.RegisterIsPropertyReadOnlyOverrideHandler (*ElementECDelegate::LookupRegisteredPrimaryDelegate (L"BaseElementSchema", L"MstnGraphHeader"), &DTMELEMENTECExtension::IsPropertyReadOnly_AlwaysInRef);
