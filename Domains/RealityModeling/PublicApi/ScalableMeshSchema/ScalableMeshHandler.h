@@ -87,6 +87,7 @@ struct ScalableMeshModel : IMeshSpatialModel
         private:
 
         IScalableMeshPtr                        m_smPtr;
+        bool                                    m_tryOpen; 
         BentleyApi::Dgn::AxisAlignedBox3d       m_range;
 
         IScalableMeshDisplayCacheManagerPtr     m_displayNodesCache;
@@ -94,10 +95,22 @@ struct ScalableMeshModel : IMeshSpatialModel
         ScalableMeshDrawingInfoPtr              m_currentDrawingInfoPtr;
         DMatrix4d                               m_storageToUorsTransfo; 
         bool m_forceRedraw;
-
+                       
     protected:
- 
 
+        struct Properties
+            {
+            Utf8String          m_fileId;    
+
+            void ToJson(Json::Value&) const;
+            void FromJson(Json::Value const&);
+            };
+
+        Properties      m_properties;
+
+        virtual void _WriteJsonProperties(Json::Value&) const override;
+        virtual void _ReadJsonProperties(Json::Value const&) override;
+     
         virtual bool _IsMultiResolution() const { return true; };
         virtual BentleyApi::Dgn::AxisAlignedBox3dCR _GetRange() const override;
         virtual BentleyStatus _QueryTexturesLod(bvector<ITerrainTexturePtr>& textures, size_t maxSizeBytes) const override;

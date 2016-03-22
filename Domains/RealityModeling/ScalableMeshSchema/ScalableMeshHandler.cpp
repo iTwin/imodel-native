@@ -248,9 +248,9 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
         {
         //NEEDS_WORK_SM : If kept needs clean up
         for (size_t nodeInd = 0; nodeInd < overviewMeshNodes.size(); nodeInd++)
-            {                      
+            {              
             if (context.CheckStop())
-                break;            
+                break;                           
             
             //NEEDS_WORK_SM_PROGRESSIVE : IsMeshLoaded trigger load header.
             //assert(overviewMeshNodes[nodeInd]->IsHeaderLoaded() && overviewMeshNodes[nodeInd]->IsMeshLoaded());
@@ -585,7 +585,19 @@ static bool s_waitQueryComplete = false;
 
 void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     {    
-    if (!ShouldDrawInContext(context) || NULL == context.GetViewport())
+    if (m_smPtr == 0 && !m_tryOpen)
+        {
+        BeFileName smFileName(((this)->m_properties).m_fileId); 
+
+        if (BeFileName::DoesPathExist(smFileName.c_str()))
+            {
+            OpenFile(smFileName, GetDgnDb()); 
+            }
+
+        m_tryOpen = true;
+        }
+
+    if (!ShouldDrawInContext(context) || NULL == context.GetViewport() || !m_smPtr.IsValid())
         return;
          
     ScalableMeshDrawingInfoPtr nextDrawingInfoPtr(new ScalableMeshDrawingInfo(&context));
@@ -745,15 +757,8 @@ void GetScalableMeshTerrainFileName(BeFileName& smtFileName, const BeFileName& d
 ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams const& params)
     : T_Super(params)
     {
-    BeFileName tmFileName;
-    tmFileName = params.m_dgndb.GetFileName().GetDirectoryName();
-    tmFileName.AppendToPath(params.m_dgndb.GetFileName().GetFileNameWithoutExtension().c_str());
-    tmFileName.AppendString(L"\\terrain.stm");
-
-    if (BeFileName::DoesPathExist(tmFileName.c_str()))
-        {
-        OpenFile(tmFileName, GetDgnDb());    
-        }
+    m_tryOpen = false;
+               
     m_forceRedraw = false;
     }
 
@@ -802,6 +807,9 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     DPoint3d translation = {0,0,0};
     
     m_storageToUorsTransfo = DMatrix4d::FromScaleAndTranslation(scale, translation);                
+        
+    //NEEDS_WORK_SM : Try use the same strategy as 3MX. 
+    m_properties.m_fileId = smFilename.GetNameUtf8 ();
     }
 
 //=======================================================================================
@@ -969,6 +977,39 @@ IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDbR db, Utf8S
     return model.get();    
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  03/2016
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::Properties::ToJson(Json::Value& v) const
+    {
+    v["FileId"] = m_fileId.c_str();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  03/2016
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::Properties::FromJson(Json::Value const& v)
+    {
+    m_fileId = v["FileId"].asString();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  03/2016
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::_WriteJsonProperties(Json::Value& v) const
+    {
+    T_Super::_WriteJsonProperties(v);
+    m_properties.ToJson(v);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  03/2016
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::_ReadJsonProperties(Json::Value const& v)
+    {
+    T_Super::_ReadJsonProperties(v);
+    m_properties.FromJson(v);
+    }
 
 
 HANDLER_DEFINE_MEMBERS(ScalableMeshModelHandler)
