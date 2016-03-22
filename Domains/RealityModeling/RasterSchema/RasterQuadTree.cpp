@@ -15,8 +15,9 @@ static const uint32_t DRAW_COARSER_DELTA = 5;
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  2/2016
 //----------------------------------------------------------------------------------------
-RasterTileCache& RasterQuadTree::GetTileCache()
+RasterTileCache& s_GetSharedTileCache()
     {
+    // Tile graphics cache among all rasters
     static RasterTileCache* s_instance = NULL;
     if (NULL == s_instance)
         s_instance = new RasterTileCache;
@@ -90,8 +91,8 @@ class ThreadPool
             {
             // At least 2 make sense since we have a mix of io and cpu/memory operations.
             size_t hardwareThreads = std::thread::hardware_concurrency();
-            static ThreadPool s_pool(MAX(2, hardwareThreads));
-            return s_pool;
+            static ThreadPool* s_pool = new ThreadPool(MAX(2, hardwareThreads));
+            return *s_pool;
             }
     private:
         friend class Worker;
@@ -319,7 +320,7 @@ RasterTile::~RasterTile()
         RasterTileCache::ItemId itemToRemove = itr->m_cacheId;
         // Remove from m_cachedGraphics prior to remove from cache because OnItemRemoveFromCache() would do it and invalidate our iterator.
         itr = m_cachedGraphics.erase(itr);
-        RasterQuadTree::GetTileCache().RemoveItem(itemToRemove);
+        m_tree.GetTileCache().RemoveItem(itemToRemove);
         }
     }
 
@@ -589,7 +590,7 @@ void RasterTile::DropGraphicsForViewport(Dgn::DgnViewportCR viewport)
         if (itr->m_pViewport == &viewport)
             {
             // Will trigger OnItemRemoveFromCache() and remove it from the cache.
-            RasterQuadTree::GetTileCache().RemoveItem(itr->m_cacheId);
+            m_tree.GetTileCache().RemoveItem(itr->m_cacheId);
             break;
             }
         }
@@ -613,7 +614,7 @@ Render::GraphicP RasterTile::GetCachedGraphic(DgnViewportCR viewport, bool notif
         if (cacheEntry.m_pViewport == &viewport)
             {
             if(notifyAccess)
-                RasterQuadTree::GetTileCache().NotifyAccess(cacheEntry.m_cacheId);
+                m_tree.GetTileCache().NotifyAccess(cacheEntry.m_cacheId);
             return cacheEntry.m_graphic.get();
             }
         }
@@ -626,8 +627,10 @@ Render::GraphicP RasterTile::GetCachedGraphic(DgnViewportCR viewport, bool notif
 //----------------------------------------------------------------------------------------
 void RasterTile::SaveGraphic(DgnViewportCR viewport, Render::GraphicR graphic)
     {
+    BeAssert(!HasCachedGraphic(viewport));
+
     GraphicCacheEntry entry;
-    entry.m_cacheId = RasterQuadTree::GetTileCache().AddItem(*this);
+    entry.m_cacheId = m_tree.GetTileCache().AddItem(*this);
     entry.m_pViewport = &viewport;
     entry.m_graphic = &graphic;
    
@@ -671,7 +674,8 @@ RasterQuadTreePtr RasterQuadTree::Create(RasterSourceR source, DgnDbR dgnDb)
 //----------------------------------------------------------------------------------------
 RasterQuadTree::RasterQuadTree(RasterSourceR source, DgnDbR dgnDb)
 :m_pSource(&source), // increment ref count.
- m_dgnDb(dgnDb)
+ m_dgnDb(dgnDb),
+ m_tileCache(s_GetSharedTileCache())
     {    
     // Create the lowest LOD but do not load its data yet.
     m_pRoot = RasterTile::CreateRoot(*this);
@@ -835,6 +839,8 @@ void RasterProgressiveDisplay::Draw (RenderContextR context)
             // Draw finer resolution.
             DrawLoadedChildren(*pTile, DRAW_CHILDREN_DELTA, context);
 
+            BeAssert(!pTile->HasCachedGraphic(context.GetViewportR()));
+
             TileDataQueryPtr pQuery = new TileDataQuery(*pTile, context.GetTargetR());
             ThreadPool::GetInstance().Enqueue(*pQuery);
             m_queriedTiles.emplace_back(pQuery);
@@ -887,6 +893,7 @@ ProgressiveTask::Completion RasterProgressiveDisplay::_DoProgressive(Progressive
             }
         }
 
+    //&&MM should probably show intermidate.
     if (m_queriedTiles.empty())
         {
         wantShow = WantShow::Yes;

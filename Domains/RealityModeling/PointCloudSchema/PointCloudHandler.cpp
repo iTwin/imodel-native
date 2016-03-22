@@ -79,7 +79,7 @@ PointCloudModel::~PointCloudModel()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-PointCloudScenePtr PointCloudModel::GetPointCloudScenePtr()
+PointCloudSceneP PointCloudModel::GetPointCloudSceneP() const
     {
     if (m_pointCloudScenePtr == nullptr)
         {
@@ -94,21 +94,19 @@ PointCloudScenePtr PointCloudModel::GetPointCloudScenePtr()
         m_pointCloudScenePtr = PointCloudScene::Create(fileName.c_str());
         }
 
-    return m_pointCloudScenePtr;
+    return m_pointCloudScenePtr.get();
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-void PointCloudModel::_AddGraphicsToScene (ViewContextR context)
+void PointCloudModel::_AddSceneGraphics(Dgn::SceneContextR context) const
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    if (GetPointCloudScenePtr() != nullptr)
+    if (GetPointCloudSceneP() != nullptr)
         {
         RefCountedPtr<PointCloudProgressiveDisplay> display = new PointCloudProgressiveDisplay(*this);
         display->DrawView(context);
         }
-#endif
     }
 
 //----------------------------------------------------------------------------------------
@@ -117,9 +115,9 @@ void PointCloudModel::_AddGraphicsToScene (ViewContextR context)
 DRange3d PointCloudModel::GetSceneRange()
     {
     DRange3d range = DRange3d::From (0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
-    if (GetPointCloudScenePtr() != nullptr)
+    if (GetPointCloudSceneP() != nullptr)
         {
-        GetPointCloudScenePtr()->GetRange (range, false);
+        GetPointCloudSceneP()->GetRange (range, false);
         }
     return DRange3d(range);
     }
