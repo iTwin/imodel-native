@@ -263,6 +263,19 @@ BentleyStatus ECValueBindingInfoCollection::AddBindingInfo (ECN::ECClassCR ecCla
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   03/16
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECValueBindingInfoCollection::AddBindingInfo(ECN::ECEnablerCR ecEnabler, ECN::ECPropertyCR ecProperty, Utf8CP accessString, int ecsqlParameterIndex)
+    {
+    auto binding = ECValueBindingInfoFactory::CreateBindingInfo(ecEnabler, ecProperty, accessString, ecsqlParameterIndex);
+    if (binding == nullptr)
+        return ERROR;
+
+    m_bindingInfos.push_back(std::move(binding));
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlSystemPropertyBindingInfo* ECValueBindingInfoCollection::AddBindingInfo (ECValueBindingInfo::SystemPropertyKind kind, int ecsqlParameterIndex)
