@@ -26,40 +26,46 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 struct ECRelatedClassSpecifier
     {
     friend struct ECRelationshipPath;
-private:
-    ECRelationshipClassCP m_relationshipClass;
-    ECClassCP m_relatedClass;
-    ECRelatedInstanceDirection m_direction;
-    mutable Utf8String m_relationshipClassAlias; // Used only in ECSql generation
-    mutable Utf8String m_relatedClassAlias; // Used only in ECSql generation
+    private:
+        ECRelationshipClassCP m_relationshipClass;
+        ECClassCP m_relatedClass;
+        ECRelatedInstanceDirection m_direction;
 
-    Utf8StringCR GetRelatedClassAlias() const { return m_relatedClassAlias; }
-    void SetRelatedClassAlias(Utf8StringCR relatedClassAlias) const { m_relatedClassAlias = relatedClassAlias; }
-    Utf8StringCR GetRelationshipClassAlias() const { return m_relationshipClassAlias; }
-    void SetRelationshipClassAlias(Utf8StringCR relationshipClassAlias) const { m_relationshipClassAlias = relationshipClassAlias; }
+        mutable Utf8String m_relationshipClassAlias; // Used only in ECSql generation
+        mutable Utf8String m_relatedClassAlias; // Used only in ECSql generation
 
-public:
-#if !defined (DOCUMENTATION_GENERATOR)
-    ECRelatedClassSpecifier();
-    ECRelatedClassSpecifier(ECRelationshipClassCR relationshipClass, ECClassCR relatedClass, ECRelatedInstanceDirection direction);
-#endif
-    //! Get the related class
-    ECClassCP GetRelatedClass() const { return m_relatedClass; }
+        Utf8StringCR GetRelatedClassAlias() const { return m_relatedClassAlias; }
+        void SetRelatedClassAlias(Utf8StringCR relatedClassAlias) const { m_relatedClassAlias = relatedClassAlias; }
 
-    //! Get the relationship class
-    ECRelationshipClassCP GetRelationshipClass() const { return m_relationshipClass; }
+        Utf8StringCR GetRelationshipClassAlias() const { return m_relationshipClassAlias; }
+        void SetRelationshipClassAlias(Utf8StringCR relationshipClassAlias) const { m_relationshipClassAlias = relationshipClassAlias; }
 
-    //! Get the direction the relationship needs to be traversed
-    ECRelatedInstanceDirection GetDirection() const { return m_direction; }
+    public:
+        //! Constructor
+        ECRelatedClassSpecifier();
 
-#if !defined (DOCUMENTATION_GENERATOR)
-    //! @param [in] defaultSchema The schema containing the partly qualified classes in the path. Can be set to nullptr if all the class names 
-    //! in relationship path are guaranteed to be fully qualified by the schema name.
-    //! @see ToString()
-    BentleyStatus InitFromString(Utf8StringCR relatedClassString, IECClassLocaterR, ECN::ECSchemaCP defaultSchema);
-    Utf8String ToString() const;
-    static ECClassCP ResolveClass(Utf8StringCR possiblyQualifiedClassName, IECClassLocaterR, ECSchemaCP defaultSchema);
-#endif
+        //! Constructor
+        ECRelatedClassSpecifier(ECRelationshipClassCR relationshipClass, ECClassCR relatedClass, ECRelatedInstanceDirection direction);
+
+        //! Initializes a related class specifier from the specified string. 
+        //! @param relatedClassString [in] Specifier as a string
+        //! @param classLocater [in] Class locater to look up classes from class names in the string
+        //! @param [in] defaultSchema The schema containing the partly qualified classes in the path. Can be set to nullptr if all the class names 
+        //! in relationship path are guaranteed to be fully qualified by the schema name.
+        //! @see ToString()
+        BentleyStatus InitFromString(Utf8StringCR relatedClassString, IECClassLocaterR classLocater, ECN::ECSchemaCP defaultSchema);
+
+        //! Convert the relationship path to its string equivalent
+        Utf8String ToString() const;
+
+        //! Get the related class
+        ECClassCP GetRelatedClass() const { return m_relatedClass; }
+
+        //! Get the relationship class
+        ECRelationshipClassCP GetRelationshipClass() const { return m_relationshipClass; }
+
+        //! Get the direction the relationship needs to be traversed
+        ECRelatedInstanceDirection GetDirection() const { return m_direction; }
     };
 
 //======================================================================================
@@ -69,34 +75,34 @@ public:
 //===============+===============+===============+===============+===============+======
 struct ECRelationshipPath
 {
-enum class End
+    enum class End
     {
     Root,
     Leaf
     };
 
-enum class SelectOptions
+    enum class SelectOptions
     {
     None,
     InstanceKeyOnly,
     EntireInstance
     };
 
-// Output of ECSql generation
-struct GeneratedEndInfo
+    // Output of ECSql generation
+    struct GeneratedEndInfo
     {
     friend struct ECRelationshipPath;
     private:
-    Utf8String m_alias;
-    Utf8String m_classIdExpression;
-    Utf8String m_instanceIdExpression;
+        Utf8String m_alias;
+        Utf8String m_classIdExpression;
+        Utf8String m_instanceIdExpression;
 
     public:
-       Utf8StringCR GetAlias() const {return m_alias;}
-       Utf8StringCR GetClassIdExpression() const {return m_classIdExpression;}
-       Utf8StringCR GetInstanceIdExpression() const {return m_instanceIdExpression;}
+        Utf8StringCR GetAlias() const { return m_alias; }
+        Utf8StringCR GetClassIdExpression() const { return m_classIdExpression; }
+        Utf8StringCR GetInstanceIdExpression() const { return m_instanceIdExpression; }
     };
-    
+
 private:
     ECN::ECClassCP m_rootClass;
     bvector<ECRelatedClassSpecifier> m_relatedClassSpecifiers;
@@ -104,10 +110,10 @@ private:
 
     void Clear();
 
-    void CopyFrom (ECRelationshipPath const& other);
-    bool ValidateConstraint (ECN::ECRelationshipConstraintCR constraint, ECN::ECClassCP checkClass) const;
-    bvector<ECRelatedClassSpecifier>::const_iterator FindLastRelatedClass (const bvector<ECRelatedClassSpecifier>& relatedSpecifiers, ECN::ECClassCP ecClass);
-    Utf8String FindNextAvailableAlias (ECClassCR ecClass, bvector<Utf8String>& allClassAliases) const;
+    void CopyFrom(ECRelationshipPath const& other);
+    bool ValidateConstraint(ECN::ECRelationshipConstraintCR constraint, ECN::ECClassCP checkClass) const;
+    bvector<ECRelatedClassSpecifier>::const_iterator FindLastRelatedClass(const bvector<ECRelatedClassSpecifier>& relatedSpecifiers, ECN::ECClassCP ecClass);
+    Utf8String FindNextAvailableAlias(ECClassCR ecClass, bvector<Utf8String>& allClassAliases) const;
     void SetupAliases() const;
 
     static bool IsAnyClass(ECClassCR);
@@ -115,9 +121,13 @@ private:
 public:
     //! Constructs an empty relationship path
     ECRelationshipPath() {}
+
     ~ECRelationshipPath() {}
 
+    //! Copy constructor
     ECOBJECTS_EXPORT ECRelationshipPath(ECRelationshipPath const& other);
+
+    //! Assignment operator
     ECOBJECTS_EXPORT ECRelationshipPath& operator= (ECRelationshipPath const& other);
 
     //! Initializes a new relationship path from the specified string. 
@@ -136,10 +146,14 @@ public:
     //! </ul>
     //! @see ToString()
     ECOBJECTS_EXPORT BentleyStatus InitFromString(Utf8StringCR relationshipPathString, IECClassLocaterR classLocater, ECN::ECSchemaCP defaultSchema);
-    
+
+    //! Checks if the relationship path is empty
+    //! @return true if empty. false otherwise. 
+    ECOBJECTS_EXPORT bool IsEmpty() const;
+
     //! Gets the class at the specified end of the path.
     //! @return End class (can be nullptr)
-    ECOBJECTS_EXPORT ECClassCP GetEndClass (End end) const;
+    ECOBJECTS_EXPORT ECClassCP GetEndClass(End end) const;
 
     //! Generates the ECSql FROM and JOIN clauses to query based on the relationship path
     //! @param fromClause [out] Generated FROM clause
@@ -212,18 +226,7 @@ public:
     //! Plant:Pump.dgn:ElementHasPrimaryInstance:1 (no related class)
     //! 
     //! @see Reverse() to flip the direction of traversal.
-    ECOBJECTS_EXPORT BentleyStatus GenerateECSql(Utf8StringR fromClause, Utf8StringR joinClause, ECRelationshipPath::GeneratedEndInfo& rootInfo,
-        ECRelationshipPath::GeneratedEndInfo& leafInfo, bool isPolymorphic) const;
-
-    //! Reverses the path
-    //! @param reversedPath [out] The reversed path. 
-    ECOBJECTS_EXPORT void Reverse (ECRelationshipPath& reversedPath) const;
-
-    //! Combines the specified path to the (leaf) end of this path. 
-    //! @param pathToCombine [in] Path to combine
-    //! @return ERROR if the leaf end of the current path does not match
-    //! the root end of the path to be combined. SUCCESS otherwise. 
-    ECOBJECTS_EXPORT BentleyStatus Combine(ECRelationshipPath const& pathToCombine);
+    ECOBJECTS_EXPORT BentleyStatus GenerateECSql(Utf8StringR fromClause, Utf8StringR joinClause, ECRelationshipPath::GeneratedEndInfo& rootInfo, ECRelationshipPath::GeneratedEndInfo& leafInfo, bool isPolymorphic) const;
 
     //! Creates a string equivalent of the path. 
     //! @return The string equivalent of the path
@@ -231,10 +234,43 @@ public:
     //! schema name.
     ECOBJECTS_EXPORT Utf8String ToString() const;
 
-#if !defined (DOCUMENTATION_GENERATOR)
+    //! Reverses the path
+    //! @param reversedPath [out] The reversed path. 
+    ECOBJECTS_EXPORT void Reverse(ECRelationshipPath& reversedPath) const;
+
+    //! Combines the specified path to the (leaf) end of this path. 
+    //! @param pathToCombine [in] Path to combine
+    //! @return ERROR if the leaf end of the current path does not match
+    //! the root end of the path to be combined. SUCCESS otherwise. 
+    ECOBJECTS_EXPORT BentleyStatus Combine(ECRelationshipPath const& pathToCombine);
+
+    //! Set the end class of the relationship path
     void SetEndClass(ECClassCR, End);
+
     //! Validates the specified relationship path
     bool Validate() const;
+
+#if 0
+    // TODO: Remove these methods after ensuring they are not needed -- wait until Navigator is 
+    // completely ported to DgnDb0601Dev. 
+    
+    //! Determines if there is a "AnyClass" at the specified end
+    //! @return true if the end has "AnyClass". false otherwise. 
+    ECOBJECTS_EXPORT bool IsAnyClassAtEnd(End end) const;
+
+    //! Get the number of related class specifiers in the path
+    size_t GetRelatedClassSpecifierCount() const { return m_relatedClassSpecifiers.size(); }
+
+    //! Gets the related class specifier at the specified index. 
+    ECRelatedClassSpecifier const* GetRelatedClassSpecifier(size_t index) const { return (index >= m_relatedClassSpecifiers.size()) ? nullptr : &m_relatedClassSpecifiers[index]; }
+
+    //! Removes leaf entries in the relationship path starting with the specified index
+    BentleyStatus TrimLeafEnd(size_t relatedClassSpecifierIndex);
+
+    //! Replaces the class at the end if it's originally specified as AnyClass. 
+    //! @return ERROR if the existing path does not have AnyClass at the specified end. 
+    //! Returns SUCCESS otherwise. 
+    ECOBJECTS_EXPORT BentleyStatus ReplaceAnyClassAtEnd(ECN::ECClassCR replacementClass, End end);
 #endif
 
 };
@@ -243,20 +279,20 @@ public:
 // @bsiclass                                             Ramanujam.Raman      01 / 2014
 //===============+===============+===============+===============+===============+======
 struct ECRelatedItemsDisplaySpecificationsCache
-    {
+{
 private:
     bmap<ECN::ECClassCP, bvector<ECRelationshipPath>> m_pathsByClass;
 
-    BentleyStatus ExtractFromCustomAttribute (IECInstanceCR customAttributeSpecification, IECClassLocater&, ECSchemaCR customAttributeContainerSchema);
+    BentleyStatus ExtractFromCustomAttribute(IECInstanceCR customAttributeSpecification, IECClassLocater&, ECSchemaCR customAttributeContainerSchema);
     void AddPathToCache(ECRelationshipPath const& path);
 
 public:
-    explicit ECRelatedItemsDisplaySpecificationsCache()  {}
+    explicit ECRelatedItemsDisplaySpecificationsCache() {}
     ~ECRelatedItemsDisplaySpecificationsCache() {}
 
     ECOBJECTS_EXPORT BentleyStatus Initialize(bvector<ECSchemaCP> const&, IECClassLocater&);
     ECOBJECTS_EXPORT bool TryGetRelatedPaths(bvector<ECRelationshipPath>&, ECClassCR) const;
-    };
+};
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 
