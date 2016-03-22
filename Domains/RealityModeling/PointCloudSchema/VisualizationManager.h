@@ -43,9 +43,7 @@ struct VisualizationManager
         VisualizationManager();
         ~VisualizationManager();
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        Dgn::IProgressiveDisplay::Completion DrawToContext(Dgn::ViewContextR context, BePointCloud::PointCloudSceneCR pointCloudScene, DRange3dCR pointCloudRange);
-#endif
+        Dgn::ProgressiveTask::Completion DrawToContext(Dgn::ViewContextR context, BePointCloud::PointCloudSceneCR pointCloudScene, DRange3dCR pointCloudRange);
 
         static  VisualizationManager& GetInstance();
     };

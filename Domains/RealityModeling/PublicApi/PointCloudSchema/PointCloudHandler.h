@@ -27,7 +27,7 @@ struct EXPORT_VTABLE_ATTRIBUTE PointCloudModel : Dgn::SpatialModel
 DGNMODEL_DECLARE_MEMBERS(POINTCLOUD_CLASSNAME_PointCloudModel, Dgn::SpatialModel)
 
 private:
-    BePointCloud::PointCloudScenePtr    m_pointCloudScenePtr;
+    mutable BePointCloud::PointCloudScenePtr    m_pointCloudScenePtr;
 
     DRange3d                            GetSceneRange();
 
@@ -62,12 +62,13 @@ public:
     PointCloudModel(CreateParams const& params);
     PointCloudModel(CreateParams const& params, PointCloudModel::Properties const& properties) ;
 
-    POINTCLOUDSCHEMA_EXPORT virtual void _AddGraphicsToScene(ViewContextR) override;
-    POINTCLOUDSCHEMA_EXPORT virtual void _WriteJsonProperties(Json::Value&) const override;
-    POINTCLOUDSCHEMA_EXPORT virtual void _ReadJsonProperties(Json::Value const&) override;
-    POINTCLOUDSCHEMA_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const override;
-    POINTCLOUDSCHEMA_EXPORT BePointCloud::PointCloudScenePtr GetPointCloudScenePtr ();
-    POINTCLOUDSCHEMA_EXPORT DRange3dR GetRangeR() {return m_properties.m_range;}
+    virtual void _AddSceneGraphics(Dgn::SceneContextR) const override;
+    virtual void _WriteJsonProperties(Json::Value&) const override;
+    virtual void _ReadJsonProperties(Json::Value const&) override;
+    virtual Dgn::AxisAlignedBox3d _QueryModelRange() const override;
+    BePointCloud::PointCloudSceneP GetPointCloudSceneP () const;
+    DRange3dCR GetRange() const {return m_properties.m_range;}
+    DRange3dR GetRangeR() {return m_properties.m_range;}
 };
 
 //=======================================================================================

@@ -2,7 +2,7 @@
 |
 |     $Source: PointCloudSchema/PointCloudGcsFacility.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,9 +32,9 @@ struct PointCloudGcsFacility
         static GeoCoordinates::BaseGCS::WktFlavor                   GetWKTFlavor(WStringP wktStrWithoutFlavor, const WString& wktStr);       
         static bool                                                 MapWktFlavorEnum(GeoCoordinates::BaseGCS::WktFlavor& baseGcsWktFlavor, PointCloudGcsFacility::WktFlavor wktFlavor);
 
-        POINTCLOUDSCHEMA_EXPORT static DgnGCSPtr                    CreateGcsFromWkt(WStringCR spatialReferenceWkt, DgnDbR dgnDb, bool reprojectElevation);
-        POINTCLOUDSCHEMA_EXPORT static BentleyStatus                ComputeLocalTransform(DRange3dCR range, DgnGCSR src, DgnGCSR dst, TransformR approxTransform);
-        POINTCLOUDSCHEMA_EXPORT static BentleyStatus                GetTransformToUor(TransformR transform, WString wktStringGeoreference, DRange3dCR rangeUOR, DgnDbR dgnDb);
+        static DgnGCSPtr                    CreateGcsFromWkt(WStringCR spatialReferenceWkt, DgnDbR dgnDb, bool reprojectElevation);
+        static BentleyStatus                ComputeLocalTransform(DRange3dCR range, DgnGCSR src, DgnGCSR dst, TransformR approxTransform);
+        static BentleyStatus                GetTransformToUor(TransformR transform, WString wktStringGeoreference, DRange3dCR rangeUOR, DgnDbR dgnDb);
     };
 
 

@@ -59,11 +59,10 @@ PointCloudRenderer::~PointCloudRenderer()
     {
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     2/2015
 //----------------------------------------------------------------------------------------
-IProgressiveDisplay::Completion PointCloudRenderer::DrawPointCloud(ViewContextR context, LasClassificationInfo const* pClassifInfo, PointCloudSceneCR pointCloudScene)
+ProgressiveTask::Completion PointCloudRenderer::DrawPointCloud(ViewContextR context, LasClassificationInfo const* pClassifInfo, PointCloudSceneCR pointCloudScene)
     {
         bool sceneHasClassif = pointCloudScene.HasClassificationChannel();
 
@@ -86,7 +85,7 @@ IProgressiveDisplay::Completion PointCloudRenderer::DrawPointCloud(ViewContextR 
 
         // POINTCLOUD_WIP_GR06_PointCloudDisplay - to do change density(or whatever they did in v8i) when DrawPurpose::UpdateDynamic.
         // ??required?? PtVortex::DynamicFrameRate (displayParams.fps);
-        PointCloudVortex::SetQueryDensity (queryHandle, PtQueryDensity::QUERY_DENSITY_VIEW_COMPLETE, context.GetDrawPurpose() == DrawPurpose::UpdateDynamic ? 0.2f : 1.0f);
+        PointCloudVortex::SetQueryDensity (queryHandle, PtQueryDensity::QUERY_DENSITY_VIEW_COMPLETE, context.GetDrawPurpose() == DrawPurpose::Dynamics ? 0.2f : 1.0f);
 
         uint64_t numQueryPoints = 0;
 
@@ -94,7 +93,7 @@ IProgressiveDisplay::Completion PointCloudRenderer::DrawPointCloud(ViewContextR 
             {
             if (context.CheckStop())
                 {
-                return IProgressiveDisplay::Completion::Aborted;
+                return ProgressiveTask::Completion::Aborted;
                 }
             //we need to create buffers for each iteration as QV will reference it.
             PointCloudQueryBuffersPtr queryBuffers = PointCloudQueryBuffers::Create(DRAW_QUERYCAPACITY, channelFlags);
@@ -114,26 +113,27 @@ IProgressiveDisplay::Completion PointCloudRenderer::DrawPointCloud(ViewContextR 
             queryBuffers->SetNormalChannel(NULL);
 
             // Create buffers for drawing. These are the buffers that are eventually used by QV.
-            RefCountedPtr<PointCloudDrawBuffer> buffer = PointCloudDrawParams::Create (queryBuffers->GetXyzChannel(), queryBuffers->GetRgbChannel());
+            RefCountedPtr<PointCloudDrawParams> buffer = PointCloudDrawParams::Create (queryBuffers->GetXyzChannel(), queryBuffers->GetRgbChannel());
             if (buffer.IsNull())
                 break;
 
-            DrawPointBuffer(context, buffer.get());
+            DrawPointBuffer(context, *buffer);
             }
 
         int64_t ptsToLoad = PointCloudVortex::PtsToLoadInViewport(pointCloudScene.GetSceneHandle(), true/*recompute*/);
 
         PointCloudVortex::EndDrawFrameMetrics();
 
-        return 0 == ptsToLoad ? IProgressiveDisplay::Completion::Finished : IProgressiveDisplay::Completion::Aborted;
+        return 0 == ptsToLoad ? ProgressiveTask::Completion::Finished : ProgressiveTask::Completion::Aborted;
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     3/2015
 //----------------------------------------------------------------------------------------
-void PointCloudRenderer::DrawPointBuffer(ViewContextR context, PointCloudDrawBuffer* buffer) const
+void PointCloudRenderer::DrawPointBuffer(ViewContextR context, PointCloudDrawParams& buffer) const
     {
-    uint32_t numPoints = buffer->GetNumPoints();
+#ifdef NEEDS_WORK_CONTINUOUS_RENDER //&&MM todo DRAW. Why are we creating buffers that exceed capacity?? I don't understand.
+    uint32_t numPoints = buffer.GetNumPoints();
 
     if (numPoints > m_outputCapacity)
         {
@@ -147,7 +147,7 @@ void PointCloudRenderer::DrawPointBuffer(ViewContextR context, PointCloudDrawBuf
             if(NULL != buffer->GetRgbChannel())
                 pRgbChannel = PointCloudRgbChannel::Create(buffer->GetRgbChannel()->GetCapacity());
 
-            RefCountedPtr<PointCloudDrawBuffer> tmpBuffer = PointCloudDrawParams::Create (pXyzChannel.get(), pRgbChannel.get());
+            RefCountedPtr<PointCloudDrawParams> tmpBuffer = PointCloudDrawParams::Create (pXyzChannel.get(), pRgbChannel.get());
 
             if (tmpBuffer.IsNull())
                 return;
@@ -162,11 +162,23 @@ void PointCloudRenderer::DrawPointBuffer(ViewContextR context, PointCloudDrawBuf
             }
         }
     else
+#else
+      //temporary.  
         {
-        context.GetIViewDraw().DrawPointCloud (buffer);
+        Render::GraphicPtr pGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport()));
+
+        Render::GraphicParams graphicParams;
+        graphicParams.SetLineColor(ColorDef::White());
+        graphicParams.SetFillColor(ColorDef::White());
+        graphicParams.SetWidth(1);
+        pGraphic->ActivateGraphicParams(graphicParams);
+        pGraphic->AddPointString(buffer._GetNumPoints(), buffer._GetDPoints());
+
+        context.OutputGraphic(*pGraphic, nullptr);
         }
+#endif        
+
     }
-#endif
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                    Simon.Normand                   05/2014
