@@ -137,7 +137,7 @@ TEST_F(WSRepositoryClientTests, DISABLED_SendCreateObjectRequest_ProjectWiseAndW
     BeFileName filePath = StubFileWithSize(10000);
     auto onProgress = [=] (double bytesTransfered, double bytesTotal)
         {
-        BeDebugLog(Utf8PrintfString("%.2f %% (%.2f kb)", bytesTransfered / bytesTotal, bytesTransfered / 1024));
+        BeDebugLog(Utf8PrintfString("%.2f %% (%.2f kb)", bytesTransfered / bytesTotal, bytesTransfered / 1024).c_str());
         };
 
     auto result = client->SendCreateObjectRequest(objectCreationJson, filePath, onProgress)->GetResult();
@@ -184,7 +184,7 @@ TEST_F(WSRepositoryClientTests, DISABLED_SendCreateObjectRequest_ProjectWiseAndW
     BeFileName filePath = StubFileWithSize(0);
     auto onProgress = [=] (double bytesTransfered, double bytesTotal)
         {
-        BeDebugLog(Utf8PrintfString("%.2f %% (%.2f kb)", bytesTransfered / bytesTotal, bytesTransfered / 1024));
+        BeDebugLog(Utf8PrintfString("%.2f %% (%.2f kb)", bytesTransfered / bytesTotal, bytesTransfered / 1024).c_str());
         };
 
     auto result = client->SendCreateObjectRequest(objectCreationJson, filePath, onProgress)->GetResult();
@@ -243,7 +243,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_FileLargerThanUploadChun
         {
         auto onProgress = [=] (double bytesTransfered, double bytesTotal)
             {
-            BeDebugLog(Utf8PrintfString("#%d %.2f %% (%.2f KB) (%.0f Bytes)", i, (bytesTransfered / bytesTotal) * 100, bytesTransfered / 1024, bytesTransfered));
+            BeDebugLog(Utf8PrintfString("#%d %.2f %% (%.2f KB) (%.0f Bytes)", i, (bytesTransfered / bytesTotal) * 100, bytesTransfered / 1024, bytesTransfered).c_str());
             };
 
         auto task = client->SendCreateObjectRequest(objectCreationJson, filePath, onProgress);

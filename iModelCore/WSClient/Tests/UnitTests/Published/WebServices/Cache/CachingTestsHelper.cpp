@@ -82,7 +82,7 @@ bool DoesInstanceExist(IDataSourceCache& ds, ECInstanceKeyCR key)
     EXPECT_TRUE(key.IsValid());
     auto ecClass = ds.GetAdapter().GetECClass(key);
     EXPECT_TRUE(nullptr != ecClass);
-    auto ecInstanceId = ds.GetAdapter().FindInstance(ecClass, Utf8PrintfString("ECInstanceId = %llu", key.GetECInstanceId().GetValue()));
+    auto ecInstanceId = ds.GetAdapter().FindInstance(ecClass, Utf8PrintfString("ECInstanceId = %llu", key.GetECInstanceId().GetValue()).c_str());
     return ecInstanceId.IsValid();
     }
 
@@ -367,7 +367,7 @@ ECInstanceKey StubNonExistingInstanceKey(IDataSourceCache& cache, Utf8StringCR c
     auto ecClass = cache.GetAdapter().GetECClass(classKey);
     auto nonExistingInstance = ECInstanceKey(ecClass->GetId(), ECInstanceId(instanceId));
     EXPECT_TRUE(nonExistingInstance.IsValid());
-    EXPECT_FALSE(cache.GetAdapter().FindInstance(ecClass, Utf8PrintfString("ECInstanceId = %llu", instanceId)).IsValid());
+    EXPECT_FALSE(cache.GetAdapter().FindInstance(ecClass, Utf8PrintfString("ECInstanceId = %llu", instanceId).c_str()).IsValid());
     return nonExistingInstance;
     }
 
