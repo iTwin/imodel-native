@@ -188,4 +188,19 @@ TEST_F(SchemaVersionConversionTests, CanLoadMetaSchemaWithDeliveredConversionSch
     VerifySchema(schema, expectedClasses, unexpectedClasses);
     }
 
+TEST_F(SchemaVersionConversionTests, SchemaWithOldUnitSpecifications)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"OldUnits.01.00.ecschema.xml").c_str(), *schemaContext);
+    EXPECT_EQ(SchemaReadStatus::Success, status);
+
+    WString fullSchemaName;
+    fullSchemaName.AssignUtf8(schema->GetFullSchemaName().c_str());
+    fullSchemaName.append(L".ecschema.xml");
+    SchemaWriteStatus ws = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(fullSchemaName.c_str()).c_str(), 3);
+    EXPECT_EQ(SchemaWriteStatus::Success, ws);
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE
