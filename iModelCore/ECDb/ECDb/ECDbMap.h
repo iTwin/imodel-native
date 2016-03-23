@@ -41,20 +41,15 @@ public:
                 };
 
 
-            typedef bmap<ECN::ECClassId, RelationshipEnd> RelationshipClassIds;
-            typedef bmap<ECN::ECClassId, RelationshipEnd> ConstraintClassIds;
             typedef bmap<ECN::ECClassId, RelationshipType> RelationshipTypeByClassId;
             typedef bmap<ECDbSqlTable const*, std::vector<ECN::ECClassId>> ClassIdsPerTableMap;
             typedef bmap<ECDbSqlTable const*, RelationshipTypeByClassId> RelationshipPerTable;
+
         private:
             mutable ClassIdsPerTableMap m_classIdsPerTable;
             mutable bmap<ECN::ECClassId, ClassIdsPerTableMap> m_horizontalPartitions;
-            mutable bmap<ECN::ECClassId, RelationshipClassIds> m_relationshipEndsByClassIdRev;
-            mutable RelationshipClassIds m_anyClassRelationships;
-            mutable bmap<ECN::ECClassId, RelationshipClassIds> m_relationshipClassIdsPerConstraintClassIds;
-            mutable bmap<ECN::ECClassId, ConstraintClassIds> m_nonAnyClassConstraintClassIdsPerRelClassIds;
-            mutable std::vector<ECN::ECClassId> m_anyClassReplacements;
-            mutable ECN::ECClassId m_anyClassId;
+            mutable bmap<ECN::ECClassId, bmap<ECN::ECClassId, RelationshipEnd>> m_relationshipClassIdsPerConstraintClassIds;
+            mutable bmap<ECN::ECClassId, bmap<ECN::ECClassId, RelationshipEnd>> m_constraintClassIdsPerRelClassIds;
             mutable std::map<ECN::ECClassId, std::unique_ptr<StorageDescription>> m_storageDescriptions;
             mutable RelationshipPerTable m_relationshipPerTable;
             mutable bmap<ECN::ECClassId, bset<ECDbSqlTable const*>> m_tablesPerClassId;
@@ -63,28 +58,22 @@ public:
                 bool m_horizontalPartitionsIsLoaded : 1;
                 bool m_classIdsPerTableIsLoaded : 2;
                 bool m_relationshipCacheIsLoaded : 3;
-                bool m_anyClassRelationshipsIsLoaded : 4;
-                bool m_anyClassReplacementsLoaded : 5;
-                bool m_relationshipPerTableLoaded : 6;
+                bool m_relationshipPerTableLoaded : 4;
                 } m_loadedFlags;
 
             ECDbMapCR m_map;
             void LoadHorizontalPartitions () const;
             void LoadClassIdsPerTable () const;
-            void LoadAnyClassRelationships () const;
             void LoadRelationshipCache () const;
-            void LoadAnyClassReplacements () const;
         public:
             explicit LightweightCache (ECDbMapCR map);
             ~LightweightCache () {}
             std::vector<ECN::ECClassId> const& GetClassesForTable (ECDbSqlTable const&) const;
             bset<ECDbSqlTable const*> const& GetVerticalPartitionsForClass(ECN::ECClassId classId) const;
             ClassIdsPerTableMap const& GetHorizontalPartitionsForClass (ECN::ECClassId) const;
-            RelationshipClassIds const& GetRelationships (ECN::ECClassId relationshipId) const;
             //Gets all the constraint class ids plus the constraint end that make up the relationship with the given class id.
             //@remarks: AnyClass constraints are ignored.
-            ConstraintClassIds const& GetConstraintClassesForRelationship (ECN::ECClassId relClassId) const;
-            ECN::ECClassId GetAnyClassId () const;
+            bmap<ECN::ECClassId, RelationshipEnd> const& GetConstraintClassesForRelationshipClass (ECN::ECClassId relClassId) const;
             //For a end table relationship class map, the storage description provides horizontal partitions
             //For the end table's constraint classes - not for the relationship itself.
             StorageDescription const& GetStorageDescription (ClassMap const&)  const;

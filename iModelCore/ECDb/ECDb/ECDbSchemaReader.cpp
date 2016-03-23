@@ -351,10 +351,22 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaDefinition(DbECSchemaEntry*& schemaE
         return ERROR;
 
     newlyLoadedSchemas.push_back(schemaEntry);
+
+    //cache schema ids before loading reference schemas, so that statement can be reused.
+    std::vector<ECSchemaId> referencedSchemaIds;
     while (BE_SQLITE_ROW == stmt->Step())
         {
         BeAssert(!stmt->IsColumnNull(0));
         ECSchemaId referencedSchemaId = stmt->GetValueId<ECSchemaId>(0);
+        BeAssert(referencedSchemaId.IsValid());
+        referencedSchemaIds.push_back(referencedSchemaId);
+        }
+
+    //release stmt so that it can be reused when loading schema reference
+    stmt = nullptr;
+
+    for (ECSchemaId referencedSchemaId : referencedSchemaIds)
+        {
         DbECSchemaEntry* referenceSchemaKey = nullptr;
         if (SUCCESS != LoadECSchemaDefinition(referenceSchemaKey, newlyLoadedSchemas, referencedSchemaId))
             return ERROR;
@@ -805,9 +817,20 @@ BentleyStatus ECDbSchemaReader::LoadBaseClassesFromDb(ECClassP& ecClass, Context
     if (BE_SQLITE_OK != stmt->BindId(1, ecClassId))
         return ERROR;
 
+    //cache base class ids before loading base classes so that statement can be reused for fetching base class ids
+    std::vector<ECClassId> baseClassIds;
     while (stmt->Step() == BE_SQLITE_ROW)
         {
         ECClassId baseClassId = stmt->GetValueId<ECClassId>(0);
+        BeAssert(baseClassId.IsValid());
+        baseClassIds.push_back(baseClassId);
+        }
+
+    //release stmt so that it can be reused for loading base classes
+    stmt = nullptr;
+
+    for (ECClassId baseClassId : baseClassIds)
+        {
         ECClassCP baseClass = GetECClass(ctx, baseClassId);
         if (baseClass == nullptr)
             return ERROR;
@@ -822,7 +845,7 @@ BentleyStatus ECDbSchemaReader::LoadBaseClassesFromDb(ECClassP& ecClass, Context
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR  caConstainer, Context& ctx, ECContainerId containerId, ECContainerType containerType) const
+BentleyStatus ECDbSchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR caConstainer, Context& ctx, ECContainerId containerId, ECContainerType containerType) const
     {
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT ClassId,Instance FROM ec_CustomAttribute WHERE ContainerId=? AND ContainerType=? ORDER BY Ordinal"))

@@ -378,6 +378,9 @@ BentleyStatus ECDbSchemaWriter::ImportECClass(ECN::ECClassCR ecClass)
     if (BE_SQLITE_DONE != stmt->Step())
         return ERROR;
 
+    //release stmt so that it can be reused to insert base classes
+    stmt = nullptr;
+
     //Import All baseCases
     int baseClassIndex = 0;
     for (ECClassCP baseClass : ecClass.GetBaseClasses())

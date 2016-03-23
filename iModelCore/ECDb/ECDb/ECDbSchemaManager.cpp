@@ -131,12 +131,10 @@ void BuildDependencyOrderedSchemaList(bvector<ECSchemaP>& schemas, ECSchemaP ins
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                     06/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbSchemaManager::ImportECSchemas 
-(
-ECSchemaCacheR cache, 
-ImportOptions const& options
-) const
+BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache, ImportOptions const& options) const
     {
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin ECDbSchemaManager::ImportECSchemas");
+
     SchemaImportContext context (m_map.GetSQLManager().GetDbSchemaR());
     if (SUCCESS != context.Initialize())
         return ERROR;
@@ -174,6 +172,7 @@ ImportOptions const& options
 
     timer.Stop();
     LOG.infov("Imported ECSchemas in %.4f msecs.",  timer.GetElapsedSeconds() * 1000.0);
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End ECDbSchemaManager::ImportECSchemas");
     return SUCCESS;
     }
 

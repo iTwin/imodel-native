@@ -442,7 +442,7 @@ BentleyStatus SchemaImportECDbMapDb::ReadIndexInfosFromDb(ECDbCR ecdb) const
             }
 
         CachedStatementPtr indexColStmt = nullptr;
-        ecdb.GetCachedStatement(indexColStmt, "SELECT C.Name FROM " EC_INDEXCOLUMN_TableName "  I INNER JOIN ec_Column C ON C.Id = I.ColumnId WHERE I.IndexId = ? ORDER BY I.Ordinal");
+        ecdb.GetCachedStatement(indexColStmt, "SELECT C.Name FROM " EC_INDEXCOLUMN_TableName " I INNER JOIN ec_Column C ON C.Id = I.ColumnId WHERE I.IndexId = ? ORDER BY I.Ordinal");
         if (indexColStmt == nullptr)
             return ERROR;
 
