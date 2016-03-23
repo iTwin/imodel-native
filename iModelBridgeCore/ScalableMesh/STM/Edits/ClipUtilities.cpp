@@ -1654,8 +1654,8 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
             // if (stat != DTM_SUCCESS) break;
             //  }
             // if (polyP != nullptr) free(polyP);
+            userTag++;
             }
-        userTag++;
         }
    /* if (stat != DTM_SUCCESS)
         {
@@ -1709,7 +1709,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
             }
         polyfaces[0].push_back(vec);
         }
-    for (size_t n = 0; n < polygons.size() && n < numRegionTextureIds; ++n)
+    for (size_t n = 0; n < polygons.size() && n < (size_t)userTag; ++n)
         {
         size_t n2 = 0;
 
