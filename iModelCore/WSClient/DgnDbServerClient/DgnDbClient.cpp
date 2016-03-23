@@ -247,13 +247,7 @@ DgnDbPtr CleanDb(DgnDbCR db)
     //Do cleanup
     auto revision = tempdb->Revisions().StartCreateRevision();
     if (revision.IsValid())
-        {
-        auto revisionStatus = tempdb->Revisions().FinishCreateRevision();
-        if (RevisionStatus::Success == revisionStatus)
-            {
-            tempdb->Revisions().MergeRevision(*revision);
-            }
-        }
+        tempdb->Revisions().FinishCreateRevision();
     //TxnManager::TxnId cancelToId, tempId = tempdb->Txns().GetCurrentTxnId();            //Clear transaction table
     //while (tempId.IsValid())
     //    {
