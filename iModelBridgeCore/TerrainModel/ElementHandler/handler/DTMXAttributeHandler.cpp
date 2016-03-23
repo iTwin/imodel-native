@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMXAttributeHandler.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -579,7 +579,8 @@ void DTMXAttributeHandler::EndModify ()
 
             UpdateXAttributes ();
 
-            WriteHeader ((const byte*)m_dtm->GetTinHandle(), DTMIOHeaderSize);
+            if (m_noSchedule)
+                WriteHeader((const byte*)m_dtm->GetTinHandle(), DTMIOHeaderSize);
 
             if (m_noSchedule)
                 DTMTxnMonitor::GetInstance().EndTMPersist();
@@ -1506,7 +1507,7 @@ StatusInt DTMXAttributeHandler::ScheduleDtmData (EditElementHandleR elemHandle, 
     int index = 0;
     DTMXAttributeHandler* m_allocator = allocator;
     if (nullptr == allocator)
-        m_allocator = Create (elemHandle, bcDTM, true);
+        m_allocator = Create(elemHandle, bcDTM, true);
 
     // If this is a DTMElement then we can't do a copy.
     m_allocator->StartModify (false);
