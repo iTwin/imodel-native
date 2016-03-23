@@ -341,7 +341,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     -----------------------------------------------------------------------------*/
     virtual void Stitch(int pi_levelToStitch, vector<SMMeshIndexNode<POINT, EXTENT>*>* nodesToStitch);
 
-    HFCPtr<IHPMPermanentStore<MTGGraph, Byte, Byte>> GetGraphStore() const
+    HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>> GetGraphStore() const
         {
         return dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetGraphStore();
         };
@@ -433,8 +433,11 @@ size_t GetNbPtsIndices(size_t texture_id) const
         return dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetPtsIndicesStore();
         }
 
-
-    virtual void         SaveCloudReadyNode(const WString pi_pOutputDirPath) const override;
+    void         SaveCloudReadyNode(HFCPtr<StreamingPointStoreType> pi_pPointStore,
+                                    HFCPtr<StreamingIndiceStoreType> pi_pIndiceStore,
+                                    HFCPtr<StreamingUVStoreType> pi_pUVStore,
+                                    HFCPtr<StreamingIndiceStoreType> pi_pUVIndiceStore,
+                                    HFCPtr<StreamingTextureTileStoreType> pi_pTextureStore) const override;
 
 #ifdef INDEX_DUMPING_ACTIVATED
     virtual void         DumpOctTreeNode(FILE* pi_pOutputXmlFileStream,
@@ -473,7 +476,7 @@ size_t GetNbPtsIndices(size_t texture_id) const
     else return nullptr;
     }
 
-    HFCPtr<IHPMPermanentStore<Byte, float, float>> GetTextureStore() const
+    HFCPtr<IScalableMeshDataStore<Byte, float, float>> GetTextureStore() const
         {
         return dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetTexturesStore();
         };
@@ -628,6 +631,7 @@ size_t GetNbPtsIndices(size_t texture_id) const
         if(m_textureVec[0].size() < 3*sizeof(int)) return;
         WString fileName = L"file://";
         fileName.append(L"e:\\output\\scmesh\\2015-11-19\\texture_");
+        //fileName.append(L"C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\QuebecCityMini\\DumpedTextures\\texture_");
         fileName.append(std::to_wstring(m_nodeHeader.m_level).c_str());
         fileName.append(L"_");
         fileName.append(std::to_wstring(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent)).c_str());
@@ -701,9 +705,9 @@ size_t GetNbPtsIndices(size_t texture_id) const
                      HFCPtr<HPMCountLimitedPool<int32_t> > ptsIndicePool,
                      HFCPtr<SMPointTileStore<int32_t, EXTENT>> ptsIndiceStore,
                      HFCPtr<HPMIndirectCountLimitedPool<MTGGraph> > graphPool,
-                     HFCPtr<IHPMPermanentStore<MTGGraph, Byte, Byte>> graphStore,
+                     HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>> graphStore,
                      HFCPtr<HPMCountLimitedPool<Byte>> texturePool,
-                     HFCPtr<IHPMPermanentStore<Byte, float, float> > textureStore,
+                     HFCPtr<IScalableMeshDataStore<Byte, float, float> > textureStore,
                      HFCPtr<HPMCountLimitedPool<DPoint2d>> uvPool,
                      HFCPtr<SMPointTileStore<DPoint2d, EXTENT> > uvStore,
                      HFCPtr<HPMCountLimitedPool<int32_t>> uvsIndicesPool,
@@ -727,18 +731,26 @@ size_t GetNbPtsIndices(size_t texture_id) const
 
         virtual void        Mesh();
 
+        virtual void        GetCloudFormatStores(const WString& pi_pOutputDirPath,
+                                                 const bool& pi_pCompress,
+                                                 HFCPtr<StreamingPointStoreType>& po_pPointStore,
+                                                 HFCPtr<StreamingIndiceStoreType>& po_pIndiceStore,
+                                                 HFCPtr<StreamingUVStoreType>& po_pUVStore,
+                                                 HFCPtr<StreamingIndiceStoreType>& po_pUVIndiceStore,
+                                                 HFCPtr<StreamingTextureTileStoreType>& po_pTextureStore) const override;
+
         virtual void        Stitch(int pi_levelToStitch, bool do2_5dStitchFirst = false);
 
         void                SetFeatureStore(HFCPtr<SMPointTileStore<int32_t, EXTENT>>& featureStore);
         void                SetFeaturePool(HFCPtr<HPMCountLimitedPool<int32_t>>& featurePool);
-        void                SetClipStore(HFCPtr<IHPMPermanentStore<DifferenceSet, Byte, Byte>>& clipStore);
+        void                SetClipStore(HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>>& clipStore);
         void                SetClipRegistry(ClipRegistry* registry);
 
         void                SetPtsIndicesStore(HFCPtr<SMPointTileStore<int32_t, EXTENT>>& ptsIndicesStore);
         void                SetPtsIndicesPool(HFCPtr<HPMCountLimitedPool<int32_t>>& ptsIndicesPool);
-        void                SetGraphStore(HFCPtr<IHPMPermanentStore<MTGGraph, Byte, Byte>>& graphStore);
+        void                SetGraphStore(HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>>& graphStore);
         void                SetGraphPool(HFCPtr<HPMIndirectCountLimitedPool<MTGGraph>>& graphPool);
-        void                SetTexturesStore(HFCPtr<IHPMPermanentStore<Byte, float, float>>& texturesStore);
+        void                SetTexturesStore(HFCPtr<IScalableMeshDataStore<Byte, float, float>>& texturesStore);
         void                SetTexturesPool(HFCPtr<HPMCountLimitedPool<Byte>>& texturesPool);
         void                SetUVStore(HFCPtr<SMPointTileStore<DPoint2d, EXTENT>>& uvStore);
         void                SetUVPool(HFCPtr<HPMCountLimitedPool<DPoint2d>>& uvPool);
@@ -747,9 +759,9 @@ size_t GetNbPtsIndices(size_t texture_id) const
 
         HFCPtr<SMPointTileStore<int32_t, EXTENT>> GetPtsIndicesStore() const { return m_ptsIndicesStore; }
         HFCPtr<HPMCountLimitedPool<int32_t>> GetPtsIndicesPool() const { return m_ptsIndicesPool; }
-        HFCPtr<IHPMPermanentStore<MTGGraph, Byte, Byte>> GetGraphStore() const { return m_graphStore; }
+        HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>> GetGraphStore() const { return m_graphStore; }
         HFCPtr<HPMIndirectCountLimitedPool<MTGGraph>> GetGraphPool() const { return m_graphPool; }
-        HFCPtr<IHPMPermanentStore<Byte, float, float>> GetTexturesStore() const { return m_texturesStore; }
+        HFCPtr<IScalableMeshDataStore<Byte, float, float>> GetTexturesStore() const { return m_texturesStore; }
         HFCPtr<HPMCountLimitedPool<Byte>> GetTexturesPool() const { return m_texturesPool; }
         HFCPtr<SMPointTileStore<DPoint2d, EXTENT>> GetUVStore() const { return m_uvStore; }
         HFCPtr<HPMCountLimitedPool<DPoint2d>> GetUVPool() const { return m_uvPool; }
@@ -764,7 +776,7 @@ size_t GetNbPtsIndices(size_t texture_id) const
             return m_clipRegistry.GetPtr();
             }
 
-        HFCPtr<IHPMPermanentStore<DifferenceSet, Byte, Byte>>& GetClipStore()
+        HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>>& GetClipStore()
             {
             return m_clipStore;
             }
@@ -802,9 +814,9 @@ size_t GetNbPtsIndices(size_t texture_id) const
         HFCPtr<HPMCountLimitedPool<int32_t> > m_ptsIndicesPool;
         HFCPtr<SMPointTileStore<int32_t, EXTENT> > m_ptsIndicesStore;
         HFCPtr<HPMIndirectCountLimitedPool<MTGGraph>> m_graphPool;
-        HFCPtr<IHPMPermanentStore<MTGGraph, Byte, Byte>> m_graphStore;
+        HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>> m_graphStore;
         HFCPtr<HPMCountLimitedPool<Byte> > m_texturesPool;
-        HFCPtr<IHPMPermanentStore<Byte, float, float> > m_texturesStore;
+        HFCPtr<IScalableMeshDataStore<Byte, float, float> > m_texturesStore;
         HFCPtr<HPMCountLimitedPool<DPoint2d> > m_uvPool;
         HFCPtr<SMPointTileStore<DPoint2d, EXTENT> > m_uvStore;
         HFCPtr<HPMCountLimitedPool<int32_t> > m_uvsIndicesPool;
@@ -813,7 +825,7 @@ size_t GetNbPtsIndices(size_t texture_id) const
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher3d;
         HFCPtr<SMPointTileStore<int32_t, EXTENT>> m_featureStore;
         HFCPtr<HPMCountLimitedPool<int32_t>> m_featurePool;
-        HFCPtr<IHPMPermanentStore<DifferenceSet, Byte, Byte>> m_clipStore;
+        HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>> m_clipStore;
         HFCPtr<ClipRegistry> m_clipRegistry;
         HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>> m_clipPool;
     };

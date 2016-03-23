@@ -930,6 +930,9 @@
     </ClInclude>
     <ClInclude Include="STM\SMSQLiteClipDefinitionsTileStore.h" />
     <ClInclude Include="STM\SMSQLiteDiffsetTileStore.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshDataStore.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Foundations\Errors.cpp">

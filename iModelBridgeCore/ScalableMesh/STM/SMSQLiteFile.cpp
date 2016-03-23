@@ -244,7 +244,7 @@ bool SMSQLiteFile::SetNodeHeader(const SQLiteNodeHeader& newNodeHeader)
     stmt->BindInt64(3, newNodeHeader.m_level);
     stmt->BindInt(4, newNodeHeader.m_filtered ? 1 : 0);
     stmt->BindBlob(5, &newNodeHeader.m_nodeExtent, 6 * sizeof(double), Statement::MAKE_COPY_No);
-    stmt->BindBlob(6, &newNodeHeader.m_contentExtent, 6 * sizeof(double), Statement::MAKE_COPY_No);
+    stmt->BindBlob(6, newNodeHeader.m_contentExtentDefined ? &newNodeHeader.m_contentExtent : NULL, 6 * sizeof(double), Statement::MAKE_COPY_No);
     stmt->BindInt64(7, newNodeHeader.m_totalCount);
     stmt->BindInt(8, newNodeHeader.m_arePoints3d ? 1 : 0);
     stmt->BindInt64(9, newNodeHeader.m_nbFaceIndexes);
@@ -352,7 +352,8 @@ bool SMSQLiteFile::GetNodeHeader(SQLiteNodeHeader& nodeHeader)
         }
 
     memcpy(&nodeHeader.m_nodeExtent, extentTmp, sizeof(double) * 6);
-    memcpy(&nodeHeader.m_contentExtent, contentExtentTmp, sizeof(double) * 6);
+    nodeHeader.m_contentExtentDefined = contentExtentTmp != NULL;
+    if (nodeHeader.m_contentExtentDefined) memcpy(&nodeHeader.m_contentExtent, contentExtentTmp, sizeof(double) * 6);
     nodeHeader.m_meshComponents = new int[nodeHeader.m_numberOfMeshComponents];
     memcpy(nodeHeader.m_meshComponents, allComponentTmp, sizeof(int) * nodeHeader.m_numberOfMeshComponents);
     nodeHeader.m_clipSetsID = std::vector<int>();

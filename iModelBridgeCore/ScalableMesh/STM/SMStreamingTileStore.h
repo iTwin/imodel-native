@@ -766,71 +766,61 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             header->m_uvID = nodeHeader["uvID"].asUInt();
             header->m_areTextured = nodeHeader["areTextured"].asBool();
 
-            auto& textures = nodeHeader["textureIDs"];
-            assert(textures.isArray());
-            header->m_textureID.resize(textures.size());
-            if (textures.size() > 0)
-                {
-                assert(header->m_areTextured);
-                for (size_t indiceID = 0; indiceID < (size_t)textures.size(); indiceID++)
-                    {
-                    auto textureID = textures[(Json::ArrayIndex)indiceID].asUInt();
-                    header->m_textureID[indiceID] = textureID != IDTMFile::GetNullNodeID() ? HPMBlockID(textureID) : IDTMFile::GetNullNodeID();
-                    }
-                }
-            else
-                {
-                header->m_textureID.resize(1);
-                header->m_textureID[0] = HPMBlockID();
-                }
-
-            auto& indices = nodeHeader["indiceID"];
-            assert(indices.isArray());
-            header->m_ptsIndiceID.resize(indices.size());
-            if (indices.size() > 0)
-                {
-                for (size_t indiceID = 0; indiceID < (size_t)indices.size(); indiceID++)
-                    {
-                    auto id = indices[(Json::ArrayIndex)indiceID].asUInt();
-                    header->m_ptsIndiceID[indiceID] = id != IDTMFile::GetNullNodeID() ? HPMBlockID(id) : IDTMFile::GetNullNodeID();
-                    }
-                }
-            //else
-            //    {
-            //    header->m_ptsIndiceID.resize(1);
-            //    header->m_ptsIndiceID[0] = HPMBlockID();
-            //    }
-
-            auto& uvIndiceIDs = nodeHeader["uvIndiceIDs"];
-            assert(uvIndiceIDs.isArray());
-            header->m_uvsIndicesID.resize(uvIndiceIDs.size());
-            if (uvIndiceIDs.size() > 0)
-                {
-                for (size_t indiceID = 0; indiceID < (size_t)uvIndiceIDs.size(); indiceID++)
-                    {
-                    auto uvIndiceID = uvIndiceIDs[(Json::ArrayIndex)indiceID].asUInt();
-                    header->m_uvsIndicesID[indiceID] = uvIndiceID != IDTMFile::GetNullNodeID() ? HPMBlockID(uvIndiceID) : IDTMFile::GetNullNodeID();
-                    }
-                }
-            else
-                {
-                header->m_uvsIndicesID.resize(1);
-                header->m_uvsIndicesID[0] = HPMBlockID();
-                }
-
-
             if (header->m_areTextured)
                 {
-                auto texIdx = header->m_textureID[0];
-                auto idx = header->m_ptsIndiceID[0];
-                header->m_ptsIndiceID.resize(2);
-                header->m_ptsIndiceID[1] = idx;
-                header->m_ptsIndiceID[0] = HPMBlockID();
-                header->m_nbTextures = 1;
-                header->m_uvsIndicesID.resize(1);
-                header->m_uvsIndicesID[0] = texIdx;
-                //header->m_uvID = blockID;
+                auto& textures = nodeHeader["textureIDs"];
+                assert(textures.isArray());
+                header->m_textureID.resize(textures.size());
+                if (textures.size() > 0)
+                    {
+                    assert(header->m_areTextured);
+                    for (size_t indiceID = 0; indiceID < (size_t)textures.size(); indiceID++)
+                        {
+                        auto textureID = textures[(Json::ArrayIndex)indiceID].asUInt();
+                        header->m_textureID[indiceID] = textureID != IDTMFile::GetNullNodeID() ? HPMBlockID(textureID) : IDTMFile::GetNullNodeID();
+                        }
+                    }
+                else
+                    {
+                    header->m_textureID.resize(1);
+                    header->m_textureID[0] = HPMBlockID();
+                    }
+
+                auto& indices = nodeHeader["indiceID"];
+                assert(indices.isArray());
+                header->m_ptsIndiceID.resize(indices.size());
+                if (indices.size() > 0)
+                    {
+                    for (size_t indiceID = 0; indiceID < (size_t)indices.size(); indiceID++)
+                        {
+                        auto id = indices[(Json::ArrayIndex)indiceID].asUInt();
+                        header->m_ptsIndiceID[indiceID] = id != IDTMFile::GetNullNodeID() ? HPMBlockID(id) : IDTMFile::GetNullNodeID();
+                        }
+                    }
+                //else
+                //    {
+                //    header->m_ptsIndiceID.resize(1);
+                //    header->m_ptsIndiceID[0] = HPMBlockID();
+                //    }
+
+                auto& uvIndiceIDs = nodeHeader["uvIndiceIDs"];
+                assert(uvIndiceIDs.isArray());
+                header->m_uvsIndicesID.resize(uvIndiceIDs.size());
+                if (uvIndiceIDs.size() > 0)
+                    {
+                    for (size_t indiceID = 0; indiceID < (size_t)uvIndiceIDs.size(); indiceID++)
+                        {
+                        auto uvIndiceID = uvIndiceIDs[(Json::ArrayIndex)indiceID].asUInt();
+                        header->m_uvsIndicesID[indiceID] = uvIndiceID != IDTMFile::GetNullNodeID() ? HPMBlockID(uvIndiceID) : IDTMFile::GetNullNodeID();
+                        }
+                    }
+                else
+                    {
+                    header->m_uvsIndicesID.resize(1);
+                    header->m_uvsIndicesID[0] = HPMBlockID();
+                    }
                 }
+
 
             //if (ConvertBlockID(header->m_uvID) == IDTMFile::GetNullNodeID()) header->m_uvID = HPMBlockID();
             //if (ConvertBlockID(header->m_graphID) == IDTMFile::GetNullNodeID()) header->m_graphID = HPMBlockID();
@@ -950,6 +940,8 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
         Json::Value GetNodeHeader(HPMBlockID blockID)
             {
+			//NEEDS_WORK_SM_STREAMING : are we loading node headers multiple times?
+            std::lock_guard<std::mutex> lock(headerLock);
             Json::Value result;
             WString pathToNodes(m_path + L"nodes\\");
             wstringstream ss;
@@ -960,7 +952,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             if (s_stream_from_disk)
                 {
                 BeFile file;
-                if (BeFileStatus::Success != file.Open(filename.c_str(), BeFileAccess::Read, BeFileSharing::Read))
+                if (BeFileStatus::Success != file.Open(filename.c_str(), BeFileAccess::Read, BeFileSharing::None))
                     {
                     assert(false); // node header file must exist
                     return 1;
@@ -1030,44 +1022,42 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
             if (s_stream_from_disk)
                 {
+                uint32_t uncompressedSize = 0;
                 BeFile file;
-                if (BeFileStatus::Success == file.Open(filename.c_str(), BeFileAccess::Read, BeFileSharing::None))
+                if (BeFileStatus::Success == file.Open(filename.c_str(), BeFileAccess::Read, BeFileSharing::Read))
                     {
-                    // Read Uncompressed size
-                    auto DataTypeArray = new uint8_t[sizeof(uint32_t)];
+
+                    size_t fileSize = 0;
+                    file.GetSize(fileSize);
+
+                    // Read uncompressed size
                     uint32_t bytesRead = 0;
-                    auto read_result = file.Read((uint8_t*)DataTypeArray, &bytesRead, sizeof(uint32_t));
+                    auto read_result = file.Read(&uncompressedSize, &bytesRead, sizeof(uint32_t));
                     HASSERT(BeFileStatus::Success == read_result);
-                    HASSERT(bytesRead <= sizeof(uint32_t));
-                    auto UncompressedSize = reinterpret_cast<uint32_t&>(*DataTypeArray);
-                    delete[] DataTypeArray;
+                    HASSERT(bytesRead == sizeof(uint32_t));
 
                     // Read compressed points
-                    DataTypeArray = new uint8_t[UncompressedSize];
-                    read_result = file.Read((uint8_t*)DataTypeArray, &bytesRead, UncompressedSize);
+                    auto compressedSize = fileSize - sizeof(uint32_t);
+                    bvector<uint8_t> ptData(compressedSize);
+                    read_result = file.Read(&ptData[0], &bytesRead, (uint32_t)compressedSize);
+                    HASSERT(bytesRead == compressedSize);
                     HASSERT(BeFileStatus::Success == read_result);
-                    HASSERT(bytesRead <= UncompressedSize);
-
-                    uint64_t compressedSize = 0;
-                    file.GetSize(compressedSize);
-                    compressedSize -= sizeof(uint32_t);
+                    file.Close();
 
                     HCDPacket uncompressedPacket, compressedPacket;
-                    compressedPacket.SetBuffer(DataTypeArray, compressedSize);
-                    compressedPacket.SetDataSize(compressedSize);
-                    uncompressedPacket.SetDataSize(UncompressedSize);
+                    compressedPacket.SetBuffer(&ptData[0], ptData.size());
+                    compressedPacket.SetDataSize(ptData.size());
+                    uncompressedPacket.SetDataSize(uncompressedSize);
                     LoadCompressedPacket(compressedPacket, uncompressedPacket);
-                    assert(UncompressedSize == uncompressedPacket.GetDataSize());
-                    points.resize(UncompressedSize);
+                    assert(uncompressedSize == uncompressedPacket.GetDataSize());
+                    points.resize(uncompressedSize);
                     memcpy(points.data(), uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());
-                    file.Close();
-                    delete[] DataTypeArray;
                     }
                 else
                     {
                     HASSERT(!"Problem opening block of points for reading");
+                    file.Close();
                     }
-                file.Close();
                 }
             else if (s_stream_from_file_server)
                 {
@@ -1118,7 +1108,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
     public:
         // Constructor / Destroyer
 
-        SMStreamingPointTaggedTileStore(WString& path, WString grouped_headers_path, bool compress)
+        SMStreamingPointTaggedTileStore(WString& path, WString grouped_headers_path = L"", bool compress = true)
             :m_path(path),
             m_path_to_grouped_headers(grouped_headers_path),
             m_node_id(0),
@@ -1639,7 +1629,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             assert(block.size() <= maxCountData * sizeof(POINT));
             memcpy(DataTypeArray, block.data(), block.size());
                
-            return 1;
+            return block.size();
             }
 
         virtual bool DestroyBlock(HPMBlockID blockID)
@@ -1673,4 +1663,6 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
         bvector<HFCPtr<SMNodeGroup>> m_nodeHeaderGroups;
         mutable std::map<IDTMFile::NodeID, PointBlock> m_countInfo;
         std::condition_variable m_groupCV;
+        std::mutex headerLock;
+
     };

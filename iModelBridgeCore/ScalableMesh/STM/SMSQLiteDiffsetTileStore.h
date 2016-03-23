@@ -7,7 +7,7 @@
 #undef min
 #undef max
 
-class SMSQLiteDiffsetTileStore : public IHPMPermanentStore<DifferenceSet, Byte, Byte>
+class SMSQLiteDiffsetTileStore : public IScalableMeshDataStore<DifferenceSet, Byte, Byte>
     {
     private:
 

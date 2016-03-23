@@ -592,7 +592,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
         //m_smSQLitePtr->Open(m_path);
         // If there are no masterHeader => file empty ?
         bool notEmpty = m_smSQLitePtr->HasMasterHeader();
-        if (!notEmpty)
+        if (!notEmpty && m_smSQLitePtr->IsSingleFile())
             return BSISUCCESS; // File is empty.
 
         if (!LoadGCSFrom())
@@ -603,7 +603,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
 
         HFCPtr<TileStoreType> pTileStore;
-        HFCPtr<StreamingStoreType>  pStreamingTileStore;
+        HFCPtr<StreamingPointStoreType>  pStreamingTileStore;
         HFCPtr<SMStreamingPointTaggedTileStore<int32_t, YProtPtExtentType >> pStreamingIndiceTileStore;
         HFCPtr<SMStreamingPointTaggedTileStore<DPoint2d, YProtPtExtentType >> pStreamingUVTileStore;
         HFCPtr<SMStreamingPointTaggedTileStore<int32_t, YProtPtExtentType >> pStreamingUVsIndicesTileStore;
@@ -612,8 +612,8 @@ template <class POINT> int ScalableMesh<POINT>::Open()
         HFCPtr<SMPointTileStore<int32_t, YProtPtExtentType >> pIndiceTileStore;
         HFCPtr<SMPointTileStore<DPoint2d, YProtPtExtentType >> pUVTileStore;
         HFCPtr<SMPointTileStore<int32_t, YProtPtExtentType >> pUVsIndicesTileStore;
-        HFCPtr<IHPMPermanentStore<Byte, float, float>> pTextureTileStore;
-        HFCPtr<IHPMPermanentStore<MTGGraph, Byte, Byte>> pGraphTileStore;
+        HFCPtr<IScalableMeshDataStore<Byte, float, float>> pTextureTileStore;
+        HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>> pGraphTileStore;
         bool isSingleFile = true;
         
 
@@ -645,7 +645,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     WString texture_store_path = streamingFilePath + L"texture_store\\";
 
                     // NEEDS_WORK_SM - Need to stream textures as well
-                    pStreamingTileStore = new StreamingStoreType(point_store_path, groupedStreamingFilePath, AreDataCompressed());
+                    pStreamingTileStore = new StreamingPointStoreType(point_store_path, groupedStreamingFilePath, AreDataCompressed());
                     pStreamingIndiceTileStore = new SMStreamingPointTaggedTileStore< Int32, YProtPtExtentType>(indice_store_path, groupedStreamingFilePath, AreDataCompressed());
                     pStreamingUVTileStore = new SMStreamingPointTaggedTileStore< DPoint2d, YProtPtExtentType>(uv_store_path, groupedStreamingFilePath, AreDataCompressed());
                     pStreamingUVsIndicesTileStore = new SMStreamingPointTaggedTileStore<int32_t, YProtPtExtentType >(uvIndice_store_path, groupedStreamingFilePath, AreDataCompressed());
@@ -718,7 +718,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
             WString clipFilePath = m_path;
             clipFilePath.append(L"_clips"); 
            // IDTMFile::File::Ptr clipFilePtr = IDTMFile::File::Create(clipFilePath.c_str());
-            HFCPtr<IHPMPermanentStore<DifferenceSet, Byte, Byte>> store = new SMSQLiteDiffsetTileStore(clipFilePath, 0);//DiffSetTileStore(clipFilePath, 0);
+            HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>> store = new SMSQLiteDiffsetTileStore(clipFilePath, 0);//DiffSetTileStore(clipFilePath, 0);
             //store->StoreMasterHeader(NULL,0);
             m_scmIndexPtr->SetClipStore(store);
             auto pool = ScalableMeshMemoryPools<POINT>::Get()->GetDiffSetPool();

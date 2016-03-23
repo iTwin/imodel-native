@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ImagePP/all/h/HPMDataStore.h>
+#include <ScalableMesh/IScalableMeshDataStore.h>
 #include <ImagePP/all/h/IDTMTypes.h>
 #include <ImagePP/all/h/IDTMFile.h>
 #include <ImagePP/all/h/HCDCodecIJG.h>
@@ -8,7 +8,7 @@
 #include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>
 #include "SMSQLiteFile.h"
 
-class SMSQLiteTextureTileStore : public IHPMPermanentStore<Byte, float, float> // JPEGData (Byte*), size
+class SMSQLiteTextureTileStore : public IScalableMeshDataStore<Byte, float, float> // JPEGData (Byte*), size
 {
 public:
 
@@ -151,6 +151,17 @@ public:
     memcpy(DataTypeArray+3*sizeof(int), pi_uncompressedPacket.GetBufferAddress(), std::min(uncompressedSize, maxCountData));
     return std::min(uncompressedSize + 3 * sizeof(int), maxCountData);
     }
+
+    size_t LoadCompressedBlock(Byte* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
+        {
+        bvector<uint8_t> ptData;
+        size_t uncompressedSize = 0;
+        m_smSQLiteFile->GetTexture(blockID.m_integerID, ptData, uncompressedSize);
+        assert(ptData.size() < maxCountData*sizeof(uint8_t));
+        memcpy(DataTypeArray, &uncompressedSize, sizeof(uncompressedSize));
+        memcpy(DataTypeArray + sizeof(uncompressedSize), ptData.data(), ptData.size());
+        return ptData.size() + sizeof(uncompressedSize);
+        }
 
     virtual bool DestroyBlock(HPMBlockID blockID)
     {

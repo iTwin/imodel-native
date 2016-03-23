@@ -9,7 +9,7 @@
 //#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
 #include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>
 
-class StreamingTextureTileStore : public IHPMPermanentStore<uint8_t, float, float> // JPEGData (uint8_t*), size
+class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, float> // JPEGData (uint8_t*), size
     {
     public:
 
@@ -85,14 +85,14 @@ class StreamingTextureTileStore : public IHPMPermanentStore<uint8_t, float, floa
                     try {
                         const size_t uncompressedDataSize = pCodec->DecompressSubset(compressedPacket.GetBufferAddress(), compressedPacket.GetDataSize() * sizeof(uint8_t), uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetBufferSize() * sizeof(uint8_t));
                         uncompressedPacket.SetDataSize(uncompressedDataSize);
-                        assert(pi_TextureSize >= uncompressedDataSize);
+                        assert(pi_TextureSize >= uncompressedDataSize); // JPEG can be lossy
 
                         this->resize(uncompressedDataSize);
                         memcpy(this->data(), uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());
                         }
                     catch (const std::exception& e)
                         {
-                        assert(!"There is an error downloading from Azure");
+                        assert(!"There is an error decompressing texture");
                         std::wcout << U("Error: ") << e.what() << std::endl;
                         }
                     }
@@ -114,7 +114,7 @@ class StreamingTextureTileStore : public IHPMPermanentStore<uint8_t, float, floa
                     auto DataTypeArray = new uint8_t[textureSize];
                     read_result = file.Read((uint8_t*)DataTypeArray, &bytesRead, (uint32_t)textureSize);
                     assert(BeFileStatus::Success == read_result);
-                    assert(bytesRead <= textureSize); // JPEG can be lossy
+                    assert(bytesRead <= textureSize);
 
                     uint64_t compressedSize = bytesRead;
 
@@ -310,6 +310,16 @@ class StreamingTextureTileStore : public IHPMPermanentStore<uint8_t, float, floa
             return HPMBlockID(blockID.m_integerID);
             }
 
+        virtual HPMBlockID StoreCompressedBlock(uint8_t* DataTypeArray, size_t countData, HPMBlockID blockID)
+            {
+            assert(blockID.IsValid());
+            BeFile file;
+            OpenOrCreateBeFile(file, blockID);
+            file.Write(NULL, DataTypeArray, (uint32_t)countData);
+            file.Close();
+            return HPMBlockID(blockID.m_integerID);
+            }
+
         virtual size_t GetBlockDataCount(HPMBlockID blockID) const
             {
             return this->GetTexture(blockID).size();
@@ -331,6 +341,27 @@ class StreamingTextureTileStore : public IHPMPermanentStore<uint8_t, float, floa
         virtual size_t LoadBlock(uint8_t* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
             {
             auto& texture = this->GetTexture(blockID);
+            /*BeFile file;
+            wstringstream ss;
+            ss << L"file://"<<m_path << L"textureAfterLoad_" << ConvertBlockID(blockID) << L".jpeg";
+            auto filename = ss.str();
+            HFCPtr<HFCURL> fileUrl(HFCURL::Instanciate(filename.c_str()));
+            byte* pixelBuffer = new byte[1024 * 1024 * 3];
+            size_t t = 0;
+            for (size_t i = 0; i < 1024 * 1024 * 4; i += 4)
+                {
+                pixelBuffer[t] = *(texture.data() + i);
+                pixelBuffer[t + 1] = *(texture.data() + i + 1);
+                pixelBuffer[t + 2] = *(texture.data() + i + 2);
+                t += 3;
+                }
+            HFCPtr<HRPPixelType> pImageDataPixelType(new HRPPixelTypeV24B8G8R8());
+            HRFBmpCreator::CreateBmpFileFromImageData(fileUrl,
+                                                      1024,
+                                                      1024,
+                                                      pImageDataPixelType,
+                                                      pixelBuffer);
+            delete[] pixelBuffer;*/
             ((int*)DataTypeArray)[0] = (int)texture.GetWidth();
             ((int*)DataTypeArray)[1] = (int)texture.GetHeight();
             ((int*)DataTypeArray)[2] = 4;

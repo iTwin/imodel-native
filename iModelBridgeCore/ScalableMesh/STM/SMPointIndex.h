@@ -626,7 +626,15 @@ public:
 
     virtual void         SerializeHeaderToBinary(std::unique_ptr<Byte>& pi_pData, uint32_t& pi_pDataSize) const;
 
-    virtual void         SaveCloudReadyNode(const WString pi_pOutputDirPath) const;
+    typedef SMStreamingPointTaggedTileStore<POINT, EXTENT>        StreamingPointStoreType;
+    typedef SMStreamingPointTaggedTileStore<int32_t, EXTENT>      StreamingIndiceStoreType;
+    typedef SMStreamingPointTaggedTileStore<DPoint2d, EXTENT>     StreamingUVStoreType;
+    typedef StreamingTextureTileStore                             StreamingTextureTileStoreType;
+    virtual void         SaveCloudReadyNode(HFCPtr<StreamingPointStoreType> pi_pPointStore,
+                                            HFCPtr<StreamingIndiceStoreType> pi_pIndiceStore,
+                                            HFCPtr<StreamingUVStoreType> pi_pUVStore,
+                                            HFCPtr<StreamingIndiceStoreType> pi_pUVIndiceStore,
+                                            HFCPtr<StreamingTextureTileStoreType> pi_pTextureStore) const;
     virtual void         SaveCloudReadyNode(SMNodeGroup* pi_pNodes, SMNodeGroupMasterHeader* pi_pGroupsHeader) const;
 
 #ifdef INDEX_DUMPING_ACTIVATED
@@ -1088,9 +1096,7 @@ protected:
      Saves node header and point data in files that can be used for streaming
      point data from a cloud server.
     -----------------------------------------------------------------------------*/
-    virtual void SaveCloudReadyData(const WString& pi_pOutputDirPath) const;
-    
-   
+    virtual void SaveCloudReadyData(HFCPtr<StreamingPointStoreType> pi_pPointStore) const;
 
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;
 
@@ -1342,8 +1348,31 @@ public:
     bool                Clear(HFCPtr<HVEShape> pi_shapeToClear);    
     bool                RemovePoints(const EXTENT& pi_extentToClear);    
 
-    StatusInt           SaveCloudReady(const WString pi_pOutputDirectoryName, HFCPtr<SMNodeGroupMasterHeader> pi_pGroupMasterHeader = nullptr) const;
-            
+    StatusInt           SaveCloudReady(const WString pi_pOutputDirectoryName, HFCPtr<SMNodeGroupMasterHeader> pi_pGroupMasterHeader = nullptr, bool pi_pCompress = true) const;
+    typedef SMStreamingPointTaggedTileStore<POINT, EXTENT>        StreamingPointStoreType;
+    typedef SMStreamingPointTaggedTileStore<int32_t, EXTENT>      StreamingIndiceStoreType;
+    typedef SMStreamingPointTaggedTileStore<DPoint2d, EXTENT>     StreamingUVStoreType;
+    typedef StreamingTextureTileStore                             StreamingTextureTileStoreType;
+    virtual void        GetCloudFormatStores(const WString& pi_pOutputDirPath,
+                                             const bool& pi_pCompress,
+                                             HFCPtr<StreamingPointStoreType>& po_pPointStore,
+                                             HFCPtr<StreamingIndiceStoreType>& po_pIndiceStore,
+                                             HFCPtr<StreamingUVStoreType>& po_pUVStore,
+                                             HFCPtr<StreamingIndiceStoreType>& po_pUVIndiceStore,
+                                             HFCPtr<StreamingTextureTileStoreType>& po_pTextureStore) const
+        {
+        // Set paths
+        WString point_store_path = pi_pOutputDirPath + L"point_store\\";
+
+        // Create streaming stores
+        po_pPointStore = new StreamingPointStoreType(point_store_path, L"", pi_pCompress);
+        po_pIndiceStore   = nullptr;
+        po_pUVStore       = nullptr;
+        po_pUVIndiceStore = nullptr;
+        po_pTextureStore  = nullptr;
+
+        }
+
 #ifdef INDEX_DUMPING_ACTIVATED    
     virtual void                DumpOctTree(char* pi_pOutputXMLFileName, bool pi_OnlyLoadedNode) const;
 #endif

@@ -14,8 +14,7 @@
 #pragma once
 
 
-
-#include <ImagePP/all/h/HPMDataStore.h>
+#include <ScalableMesh/IScalableMeshDataStore.h>
 #include <ImagePP/all/h/IDTMTypes.h>
 #include <ImagePP/all/h/IDTMFile.h>
 #include <TerrainModel/TerrainModel.h>
@@ -24,7 +23,7 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-class DiffSetTileStore : public IHPMPermanentStore < DifferenceSet, Byte, Byte >
+class DiffSetTileStore : public IScalableMeshDataStore < DifferenceSet, Byte, Byte >
     {
     public:
         static const IDTMFile::FeatureType MASS_POINT_FEATURE_TYPE = 0;

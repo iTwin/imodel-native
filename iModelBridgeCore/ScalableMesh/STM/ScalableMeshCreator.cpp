@@ -622,7 +622,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
 
         
     HFCPtr<TileStoreType> pFinalTileStore;
-    HFCPtr<IHPMPermanentStore<MTGGraph, Byte, Byte>> pGraphTileStore;
+    HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>> pGraphTileStore;
     bool isSingleFile = true;
 
     isSingleFile = m_smSQLitePtr->IsSingleFile();
@@ -706,7 +706,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
             WString clipFilePath = m_scmFileName;
             clipFilePath.append(L"_clips");
             //IDTMFile::File::Ptr clipFilePtr = IDTMFile::File::Create(clipFilePath.c_str());
-            HFCPtr<IHPMPermanentStore<DifferenceSet, Byte, Byte>> store = new DiffSetTileStore(clipFilePath, 0, true);
+            HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>> store = new DiffSetTileStore(clipFilePath, 0, true);
             store->StoreMasterHeader(NULL, 0);
             pDataIndex->SetClipStore(store);
             auto pool = ScalableMeshMemoryPools<POINT>::Get()->GetDiffSetPool();
@@ -754,7 +754,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
             WString clipFilePath = m_scmFileName;
             clipFilePath.append(L"_clips");
             //IDTMFile::File::Ptr clipFilePtr = IDTMFile::File::Create(clipFilePath.c_str());
-            HFCPtr<IHPMPermanentStore<DifferenceSet, Byte, Byte>> store = new DiffSetTileStore(clipFilePath, 0, true);
+            HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>> store = new DiffSetTileStore(clipFilePath, 0, true);
             //store->StoreMasterHeader(NULL, 0);
             pDataIndex->SetClipStore(store);
             auto pool = ScalableMeshMemoryPools<POINT>::Get()->GetDiffSetPool();

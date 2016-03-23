@@ -6994,52 +6994,12 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveAl
         }
     }
 
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveCloudReadyData(const WString& pi_pOutputDirPath) const
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveCloudReadyData(HFCPtr<StreamingPointStoreType> pi_pPointStore) const
     {
-    // Helper function to Open/Create file to save data
-    auto fileHelper = [this](const WString& pi_pFilePrefix, uint8_t* pi_pData, uint32_t pi_pSize) -> BeFileStatus
-        {
-        wstringstream ss;
-        ss << pi_pFilePrefix << ConvertBlockID(GetBlockID()) << L".bin";
-        auto filename = ss.str();
-        BeFile file;
-        auto fileOpened = BeFileStatus::Success == file.Open(filename.c_str(), BeFileAccess::Write, BeFileSharing::None) || BeFileStatus::Success == file.Create(filename.c_str());
-        if (!fileOpened) return BeFileStatus::FileNotOpenError;
-        file.Write(NULL, pi_pData, pi_pSize);
-        file.Close();
-        return BeFileStatus::Success;
-        };
-
-    // Save node header data
-    uint32_t headerSize = 0;
-    std::unique_ptr<Byte> headerData = nullptr;
-    this->SerializeHeaderToBinary(headerData, headerSize);
-    auto fileSaved = fileHelper(pi_pOutputDirPath + L"headers/n_", headerData.get(), headerSize);
-    assert(fileSaved == BeFileStatus::Success);
-    delete[] headerData.release();
-
-    // Save node points data (compressed)
-    HCDPacket uncompressedPacket, compressedPacket;
-    size_t bufferSize = this->size() * sizeof(POINT);
-    uncompressedPacket.SetBuffer((uint8_t*)(&(*this)[0]), bufferSize);
-    uncompressedPacket.SetDataSize(bufferSize);
-
-    HFCPtr<HCDCodec> pCodec = new HCDCodecZlib(uncompressedPacket.GetDataSize());
-    compressedPacket.SetBufferOwnership(true);
-    size_t compressedBufferSize = pCodec->GetSubsetMaxCompressedSize();
-    compressedPacket.SetBuffer(new uint8_t[compressedBufferSize], compressedBufferSize * sizeof(uint8_t));
-    const size_t compressedDataSize = pCodec->CompressSubset(uncompressedPacket.GetBufferAddress(),
-                                                             uncompressedPacket.GetDataSize() * sizeof(uint8_t),
-                                                             compressedPacket.GetBufferAddress(),
-                                                             compressedPacket.GetBufferSize() * sizeof(uint8_t));
-    compressedPacket.SetDataSize(compressedDataSize);
-
-    uint8_t* data = new uint8_t[compressedPacket.GetDataSize() + sizeof(uint32_t)];
-    reinterpret_cast<uint32_t&>(*data) = (uint32_t)uncompressedPacket.GetDataSize();
-
-    memcpy(data + sizeof(uint32_t), compressedPacket.GetBufferAddress(), compressedPacket.GetDataSize());
-    fileHelper(pi_pOutputDirPath + L"points/p_", data, (uint32_t)compressedPacket.GetDataSize() + sizeof(uint32_t));
-    delete[] data;
+    // Simply transfer data from this store to the other store passed in parameter
+    pi_pPointStore->StoreHeader(&m_nodeHeader, this->GetBlockID());
+    auto count = this->GetStore()->GetBlockDataCount(this->GetBlockID());
+    if (count > 0) pi_pPointStore->StoreBlock(const_cast<POINT*>(&this->operator[](0)), count, this->GetBlockID());
     }
 
 /**----------------------------------------------------------------------------
@@ -7047,25 +7007,31 @@ This method saves the node for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveCloudReadyNode(const WString pi_pOutputDirPath) const
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveCloudReadyNode(HFCPtr<StreamingPointStoreType> pi_pPointStore,
+                                                                                             HFCPtr<StreamingIndiceStoreType> pi_pIndiceStore,
+                                                                                             HFCPtr<StreamingUVStoreType> pi_pUVStore,
+                                                                                             HFCPtr<StreamingIndiceStoreType> pi_pUVIndiceStore,
+                                                                                             HFCPtr<StreamingTextureTileStoreType> pi_pTextureStore) const
     {
+    assert(!pi_pIndiceStore && !pi_pUVStore && !pi_pUVIndiceStore && !pi_pTextureStore);
+
     if (!IsLoaded())
         Load();
 
-    this->SaveCloudReadyData(pi_pOutputDirPath);
+    this->SaveCloudReadyData(pi_pPointStore);
 
     // Save children nodes
     if (!m_nodeHeader.m_IsLeaf)
         {
         if (m_pSubNodeNoSplit != NULL)
             {
-            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveCloudReadyNode(pi_pOutputDirPath);
+            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveCloudReadyNode(pi_pPointStore, pi_pIndiceStore, pi_pUVStore, pi_pUVIndiceStore, pi_pTextureStore);
             }
         else
             {
             for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
                 {
-                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveCloudReadyNode(pi_pOutputDirPath);
+                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveCloudReadyNode(pi_pPointStore, pi_pIndiceStore, pi_pUVStore, pi_pUVIndiceStore, pi_pTextureStore);
                 }
             }
         }
@@ -8019,7 +7985,7 @@ This method saves the mesh for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveCloudReady(const WString pi_pOutputDirPath, HFCPtr<SMNodeGroupMasterHeader> pi_pGroupMasterHeader) const
+template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveCloudReady(const WString pi_pOutputDirPath, HFCPtr<SMNodeGroupMasterHeader> pi_pGroupMasterHeader, bool pi_pCompress) const
     {
     if (0 == CreateDirectoryW(pi_pOutputDirPath.c_str(), NULL))
         {
@@ -8046,15 +8012,14 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveC
         }
     else 
         {
-        if (0 == CreateDirectoryW((pi_pOutputDirPath + L"headers").c_str(), NULL))
-            {
-            if (ERROR_PATH_NOT_FOUND == GetLastError()) return ERROR;
-            }
-        if (0 == CreateDirectoryW((pi_pOutputDirPath + L"points").c_str(), NULL))
-            {
-            if (ERROR_PATH_NOT_FOUND == GetLastError()) return ERROR;
-            }
-        rootNode->SaveCloudReadyNode(pi_pOutputDirPath);
+        HFCPtr<StreamingPointStoreType> pPointStore;
+        HFCPtr<StreamingIndiceStoreType> pIndiceStore;
+        HFCPtr<StreamingUVStoreType> pUVStore;
+        HFCPtr<StreamingIndiceStoreType> pUVIndiceStore;
+        HFCPtr<StreamingTextureTileStoreType> pTextureStore;
+        this->GetCloudFormatStores(pi_pOutputDirPath, pi_pCompress, pPointStore, pIndiceStore, pUVStore, pUVIndiceStore, pTextureStore);
+
+        rootNode->SaveCloudReadyNode(pPointStore, pIndiceStore, pUVStore, pUVIndiceStore, pTextureStore);
 
         // Save master header for cloud
         Json::Value masterHeader;
@@ -8431,7 +8396,8 @@ template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::Store()
         if (s_dropNodes)
             {                           
             DumpOctTree("D:\\MyDoc\\Scalable Mesh Iteration 8\\PartialUpdate\\Neighbor\\Log\\NodeAferCreationR.xml", false);                
-          //  ValidateNeighbors();
+            //DumpOctTree("C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\QuebecCityMini\\nodeAfterCreation.xml", false);
+            //  ValidateNeighbors();
             }        
 #endif
 
