@@ -10,15 +10,16 @@
 /*__PUBLISH_SECTION_START__*/
 
 #include <Logging/bentleylogging.h>
-#include <DgnPlatform\ElementHandle.h>
+//#include <DgnPlatform\ElementHandle.h>
 
 #include <DgnPlatform\DgnPlatform.r.h>
-#include <DgnPlatform\ElementHandle.h>
-#include <RmgrTools\Tools\DataExternalizer.h>
-#include <DgnPlatform\IPointCloud.h>
+//#include <DgnPlatform\ElementHandle.h>
+//#include <RmgrTools\Tools\DataExternalizer.h>
+#include <BePointCloud\BePointCloudApi.h>
+/*#include <DgnPlatform\IPointCloud.h>
 #include <DgnPlatform\PointCloudClipHandler.h>
 #include <PointCloud\PointCloudDataQuery.h>
-#include <PointCloud\PointCloudChannel.h>
+#include <PointCloud\PointCloudChannel.h>*/
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 

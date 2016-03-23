@@ -10,7 +10,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-//#include "ScalableMeshATPPch.h"
 #include "ATPFileFinder.h"
 #include <windows.h>
 #include <ImagePP/h/HmrMacro.h>
@@ -54,8 +53,8 @@ ATPFileFinder::~ATPFileFinder()
 * @bsimethod                                                  Hiba.Dorias   	04/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ATPFileFinder::FindFiles(const WString& pi_rSourceFolderPath,
-                                 WString&       pi_FilePaths,  //=>should be initially an empty AString
-                                 bool        pi_SearchSubFolders) const
+                              WString&       pi_FilePaths,  //=>should be initially an empty AString
+                              bool        pi_SearchSubFolders) const
     {
     HANDLE hFindFile;
     WIN32_FIND_DATAW FindFileData;
@@ -71,9 +70,9 @@ void ATPFileFinder::FindFiles(const WString& pi_rSourceFolderPath,
 
     do
         {
-        if(!(FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+        if (!(FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
             {
-            
+
             SrcName = sourceFolderPathWithMissingBackslash + FindFileData.cFileName;
 
             //it's a file!
@@ -85,10 +84,10 @@ void ATPFileFinder::FindFiles(const WString& pi_rSourceFolderPath,
             SrcNameWithWildcard = SrcName;
             AddWildCardToFolderPath(&SrcNameWithWildcard);
 
-            if( !((wcscmp(FindFileData.cFileName, L".") == 0) ||
-                  (wcscmp(FindFileData.cFileName, L"..") == 0) ))
+            if (!((wcscmp(FindFileData.cFileName, L".") == 0) ||
+                  (wcscmp(FindFileData.cFileName, L"..") == 0)))
                 {
-                if(pi_SearchSubFolders)
+                if (pi_SearchSubFolders)
                     {
                     WIN32_FIND_DATAW FindFileData2;
                     HANDLE hFindFile2;
@@ -100,10 +99,9 @@ void ATPFileFinder::FindFiles(const WString& pi_rSourceFolderPath,
                 }
             }
 
-        }
-    while (::FindNextFileW(hFindFile, &FindFileData));
+        } while (::FindNextFileW(hFindFile, &FindFileData));
 
-    ::FindClose(hFindFile);
+        ::FindClose(hFindFile);
 
     }
 
@@ -114,19 +112,19 @@ void ATPFileFinder::FindFiles(const WString& pi_rSourceFolderPath,
 * @bsimethod                                                  Hiba.Dorias   	04/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ATPFileFinder::ParseFilePaths(WString& pio_FilePaths,
-                                      WString& pio_FirstPath) const
+                                   WString& pio_FirstPath) const
     {
     bool StringNotEmpty = false;
     pio_FirstPath = L"";
 
-    WChar seps[]   = L";";
+    WChar seps[] = L";";
 
     WChar* token1,
-              *next_token1;
+        *next_token1;
 
     token1 = wcstok_s(const_cast<WChar*>(pio_FilePaths.c_str()), seps, &next_token1);
 
-    if(token1 != NULL)
+    if (token1 != NULL)
         {
         pio_FirstPath = token1;
         StringNotEmpty = true;

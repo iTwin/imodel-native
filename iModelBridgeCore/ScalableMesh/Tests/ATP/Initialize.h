@@ -4,7 +4,7 @@
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 namespace ScalableMeshATPexe
-    {
-    void InitializeATP(DgnPlatformLib::Host& host);
-    void CloseATP();
-    };
+{
+void InitializeATP(DgnPlatformLib::Host& host);
+void CloseATP();
+};

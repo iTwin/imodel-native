@@ -2850,6 +2850,11 @@ template <class POINT, class EXTENT> class ProducedNodeContainer
              m_threadSafe = threadSafe;
              }
 
+         void SetThreadSafe(bool threadSafe)
+             {
+             m_threadSafe = threadSafe;
+             }
+
          void AddNode(HFCPtr<SMPointIndexNode<POINT, EXTENT>>& nodePtr)
              {
              while (m_threadSafe && !m_producedNodesMutex.try_lock());             

@@ -35,10 +35,6 @@ nameToDefine = NOMINMAX
 nameToDefine=SCALABLE_MESH_ATP
 %include cdefapnd.mki
 
-#NEEDS_WORK_SM : TEMP_SM_DGN For DGNDB purpose
-nameToDefine=SCALABLE_MESH_DGN
-%include cdefapnd.mki
-
 %ifndef NDEBUG
 nameToDefine=INDEX_DUMPING_ACTIVATED
 %include cdefapnd.mki
