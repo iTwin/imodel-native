@@ -196,6 +196,8 @@ TEST_F(SchemaVersionConversionTests, SchemaWithOldUnitSpecifications)
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"OldUnits.01.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_EQ(SchemaReadStatus::Success, status);
 
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Failed to convert schema";
+
     WString fullSchemaName;
     fullSchemaName.AssignUtf8(schema->GetFullSchemaName().c_str());
     fullSchemaName.append(L".ecschema.xml");
