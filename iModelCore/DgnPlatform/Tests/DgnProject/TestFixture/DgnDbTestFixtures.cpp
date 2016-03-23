@@ -83,7 +83,7 @@ void DgnDbTestFixture::OpenDb(DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode m
     {
     DbResult result = BE_SQLITE_OK;
     db = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(mode));
-    ASSERT_TRUE( db.IsValid() ) << (WCharCP)WPrintfString(L"Failed to open %ls in mode %d => result=%x", name.c_str(), (int)mode, (int)result);
+    ASSERT_TRUE( db.IsValid() ) << WPrintfString(L"Failed to open %ls in mode %d => result=%x", name.c_str(), (int)mode, (int)result).c_str();
     ASSERT_EQ( BE_SQLITE_OK , result );
     if (needBriefcase)
         TestDataManager::MustBeBriefcase(db, mode);

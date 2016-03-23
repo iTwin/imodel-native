@@ -646,7 +646,7 @@ DgnElementId DgnElements::QueryElementIdGraphiteURI(Utf8CP uriStr) const
         if (queryParser.ParseQueryParameter (propname, propvalue, unused, true) != SUCCESS) // NB: ECProperty values are always encoded as strings, never as integers
             return DgnElementId();
 
-        auto stmt = GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId FROM %s WHERE(%s=?)", ecClass->GetECSqlName().c_str(), propname.GetString().c_str()));
+        auto stmt = GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId FROM %s WHERE(%s=?)", ecClass->GetECSqlName().c_str(), propname.GetString().c_str()).c_str());
         stmt->BindText(1, propvalue.GetString().c_str(), EC::IECSqlBinder::MakeCopy::No);
         if (BE_SQLITE_ROW == stmt->Step())
             return stmt->GetValueId<DgnElementId>(0);
