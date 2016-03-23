@@ -35,6 +35,14 @@ DTMStatusInt IDTM::CalculateSlopeArea (double& flatArea, double& slopeArea, DPoi
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Elenie.Godzaridis 03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DTMStatusInt IDTM::CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback)
+    {
+    return _CalculateSlopeArea(flatArea, slopeArea, pts, numPoints, progressiveCallback, isCancelledCallback);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sylvain.Pucci   08/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 IDTMDraping* IDTM::GetDTMDraping ()

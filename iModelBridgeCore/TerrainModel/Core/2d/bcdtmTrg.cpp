@@ -7600,11 +7600,16 @@ errexit:
     goto cleanup;
     }
 
+double timeSpentTriangulating = 0;
+size_t nOfTriangulations = 0;
+
 BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
 (
  BC_DTM_OBJ *dtmP //  Pointer To DTM Object
  )
     {
+    nOfTriangulations++;
+    clock_t timeAtStart = clock();
     int ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(0), cdbg = DTM_CHECK_VALUE(0), tdbg = DTM_TIME_VALUE(0);
     long dtmFeature;
     DPoint3dP trgPtsP = nullptr;
@@ -7749,6 +7754,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
 
     if (dbg && ret == DTM_SUCCESS) bcdtmWrite_message (0, 0, 0, "Triangulating STM Triangles Completed");
     if (dbg && ret != DTM_SUCCESS) bcdtmWrite_message (0, 0, 0, "Triangulating STM Triangles Error");
+    timeSpentTriangulating += clock() - timeAtStart;
     return (ret);
 
     // Error Exit

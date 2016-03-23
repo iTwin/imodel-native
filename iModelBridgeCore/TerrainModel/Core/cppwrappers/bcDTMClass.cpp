@@ -4094,6 +4094,15 @@ DTMStatusInt BcDTM::_CalculateSlopeArea (double& flatArea, double& slopeArea, DP
     return (DTMStatusInt)_CalculateSlopeArea (&flatArea, &slopeArea, const_cast<DPoint3d*>(pts), numPoints);
     }
 
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Elenie.Godzaridis  03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DTMStatusInt BcDTM::_CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback)
+    {
+    DTMStatusInt retval = _CalculateSlopeArea(flatArea, slopeArea, pts, numPoints);
+    progressiveCallback(retval,flatArea, slopeArea);
+    return retval;
+    }
 
 /*---------------------------------------------------------------------------------------
 * @bsiclass                                                     Daryl.Holmwood  12/10

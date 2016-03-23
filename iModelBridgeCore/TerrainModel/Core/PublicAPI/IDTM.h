@@ -308,6 +308,9 @@ BENTLEYDTM_EXPORT void RemoveAllRestrictions();
 * Interface implemented by DTM engines.
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
+
+typedef std::function<void(DTMStatusInt status,double flatArea, double slopeArea)> DTMAreaValuesCallback;
+typedef std::function<bool()> DTMCancelProcessCallback;
 struct IDTM abstract : IRefCounted
 {
 //__PUBLISH_SECTION_END__
@@ -322,6 +325,7 @@ virtual DTMStatusInt _GetRange(DRange3dR range) = 0;
 virtual BcDTMP _GetBcDTM() = 0;
 virtual DTMStatusInt _GetBoundary(DTMPointArray& ret) = 0;
 virtual DTMStatusInt _CalculateSlopeArea (double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints) = 0;
+virtual DTMStatusInt _CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback) = 0;
 virtual DTMStatusInt _GetTransformDTM (DTMPtr& transformedDTM, TransformCR transformation) = 0;
 virtual bool _GetTransformation (TransformR transformation) = 0;
 
@@ -367,6 +371,8 @@ BENTLEYDTM_EXPORT DTMStatusInt GetBoundary (DTMPointArray& ret);
 //! @param[in] numPoints     The number of points of the area.
 //! @return error status.
 BENTLEYDTM_EXPORT DTMStatusInt CalculateSlopeArea (double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints);
+
+BENTLEYDTM_EXPORT DTMStatusInt CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback);
 //__PUBLISH_SECTION_START__
 
 //! Gets a Transformed copy of the DTM.
