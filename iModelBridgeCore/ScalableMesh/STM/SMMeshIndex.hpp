@@ -2316,7 +2316,8 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitNodeBasedOnImageRes()
     // Indicate node is not a leaf anymore
     m_nodeHeader.m_IsLeaf = false;
     m_nodeHeader.m_IsBranched = true;
-
+    for (size_t i = 0; i < m_nodeHeader.m_numberOfSubNodesOnSplit;++i)
+    this->AdviseSubNodeIDChanged(m_apSubNodes[i]);
     SetupNeighborNodesAfterSplit();
 
 #ifdef SM_BESQL_FORMAT
@@ -2379,10 +2380,10 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     HFCPtr<HRPPixelType> pPixelType(new HRPPixelTypeV32R8G8B8A8());
 
     HFCPtr<HCDCodec>     pCodec(new HCDCodecIdentity());
-    byte* pixelBufferP = new byte[textureWidthInPixels * textureHeightInPixels * 4 + 3 * sizeof(int)];
+    byte* pixelBufferP = new byte[textureWidthInPixels * textureHeightInPixels * 3 + 3 * sizeof(int)];
     memcpy(pixelBufferP, &textureWidthInPixels, sizeof(int));
     memcpy(pixelBufferP + sizeof(int), &textureHeightInPixels, sizeof(int));
-    int nOfChannels = 4;
+    int nOfChannels = 3;
     memcpy(pixelBufferP + 2 * sizeof(int), &nOfChannels, sizeof(int));
     pTextureBitmap = new HRABitmap(textureWidthInPixels,
                                    textureHeightInPixels,
@@ -2397,7 +2398,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     minExt.ChangeCoordSys(pTextureBitmap->GetCoordSys());
     if (/*m_nodeHeader.m_level <= 6 && */IsLeaf() && (contentExtent.XLength() / minExt.GetWidth() > textureWidthInPixels || contentExtent.YLength() / minExt.GetHeight() > textureHeightInPixels) /*&& this->size() > 0*/)
         SplitNodeBasedOnImageRes();
-    pTextureBitmap->GetPacket()->SetBuffer(pixelBufferP + 3 * sizeof(int), textureWidthInPixels * textureHeightInPixels * 4);
+    byte* pixelBufferPRGBA = new byte[textureWidthInPixels * textureHeightInPixels * 4];
+    pTextureBitmap->GetPacket()->SetBuffer(pixelBufferPRGBA, textureWidthInPixels * textureHeightInPixels * 4);
     pTextureBitmap->GetPacket()->SetBufferOwnership(false);
 
     HRAClearOptions clearOptions;
@@ -2496,7 +2498,64 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
                                               pixelBuffer);
     delete[] pixelBuffer;
 #endif
-     PushTexture(texId, pixelBufferP, textureWidthInPixels * textureHeightInPixels * 4+3*sizeof(int));
+    for (size_t i = 0; i < textureWidthInPixels*textureHeightInPixels; ++i)
+        {
+        *(pixelBufferP + 3 * sizeof(int)+i*3) = pixelBufferPRGBA[i*4];
+        *(pixelBufferP + 3 * sizeof(int)+i*3+1) = pixelBufferPRGBA[i*4+1];
+        *(pixelBufferP + 3 * sizeof(int)+i*3 + 2) = pixelBufferPRGBA[i*4 + 2];
+        }
+   /* WString fileName = L"file://";
+    fileName.append(L"e:\\output\\scmesh\\2016-02-24\\texture_before_");
+    fileName.append(std::to_wstring(m_nodeHeader.m_level).c_str());
+    fileName.append(L"_");
+    fileName.append(std::to_wstring(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent)).c_str());
+    fileName.append(L"_");
+    fileName.append(std::to_wstring(ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent)).c_str());
+    fileName.append(L".bmp");
+    HFCPtr<HFCURL> fileUrl(HFCURL::Instanciate(fileName));
+    HFCPtr<HRPPixelType> pImageDataPixelType(new HRPPixelTypeV24B8G8R8());
+    byte* pixelBuffer = new byte[1024 * 1024 * 3];
+    size_t t = 0;
+    for (size_t i = 0; i < 1024 * 1024 * 4; i += 4)
+        {
+        pixelBuffer[t] = *(pixelBufferPRGBA + i);
+        pixelBuffer[t + 1] = *(pixelBufferPRGBA + i + 1);
+        pixelBuffer[t + 2] = *(pixelBufferPRGBA + i + 2);
+        t += 3;
+        }
+    HRFBmpCreator::CreateBmpFileFromImageData(fileUrl,
+                                              1024,
+                                              1024,
+                                              pImageDataPixelType,
+                                              pixelBuffer);
+    delete[] pixelBuffer;*/
+    PushTexture(texId, pixelBufferP + 3 * sizeof(int), textureWidthInPixels * textureHeightInPixels * 3/*+3*sizeof(int)*/);
+   /* auto codec = new HCDCodecIJG(1024, 1024, 8 * 3);
+    //codec->SetSourceColorMode(HCDCodecIJG::ColorModes::RGB);
+    //codec->SetColorMode(HCDCodecIJG::ColorModes::RGB);
+    codec->SetQuality(100);
+    codec->SetSubsamplingMode(HCDCodecIJG::SubsamplingModes::SNONE);
+    HFCPtr<HCDCodec> pCodec2 = codec;
+    size_t compressedBufferSize = pCodec2->GetSubsetMaxCompressedSize();
+    byte* pCompressedPixelBuffer = new byte[compressedBufferSize];
+    size_t nCompressed = pCodec2->CompressSubset(pixelBufferP + 3 * sizeof(int), 1024 * 1024 * 3 * sizeof(Byte), pCompressedPixelBuffer, compressedBufferSize * sizeof(Byte));
+    byte * pUncompressedPixelBuffer = new byte[1024 * 1024 * 3];
+    pCodec2->DecompressSubset(pCompressedPixelBuffer, nCompressed* sizeof(Byte), pUncompressedPixelBuffer, 1024 * 1024 * 3 * sizeof(Byte));
+
+    std::string s1;
+    std::string s2;
+    for (size_t k = 0; k < 10; ++k)
+        {
+        s1 += std::to_string(*(pixelBufferP + 3 * sizeof(int) + k)) + " ";
+        s2 += std::to_string(*(pUncompressedPixelBuffer + k)) + " ";
+        s1 += std::to_string(*(pixelBufferP + 3 * sizeof(int) + k+1)) + " ";
+        s2 += std::to_string(*(pUncompressedPixelBuffer + k+1)) + " ";
+        s1 += std::to_string(*(pixelBufferP + 3 * sizeof(int) + k+2)) + " ";
+        s2 += std::to_string(*(pUncompressedPixelBuffer + k+2)) + " ";
+        s1 += "\n";
+        s2 += "\n";
+        }
+    delete[] pUncompressedPixelBuffer;*/
      SetTextureDirty(texId);
     StoreTexture(texId);
     if (GetNbPtsIndices(0) >= 4)
@@ -2540,6 +2599,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
         StoreUV();
     StoreUVsIndices(texId);
     StorePtsIndice(texId+1);
+    SetDirty(true);
 #if DEBUG && SM_TRACE_RASTER_TEXTURING 
         std::string s;
     s += " N OF INDICE ARRAYS " + std::to_string(GetNbPtsIndiceArrays());
@@ -2550,6 +2610,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
 #endif
     }
     delete[] pixelBufferP;
+    delete[] pixelBufferPRGBA;
     pTextureBitmap = 0;
     }
 

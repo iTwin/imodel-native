@@ -77,6 +77,7 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)ScalableMesh.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)TerrainModelCore.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)IppGraLibs.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)IppUtlLibs.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(BeJsonCppLib)
 
 
 LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)RmgrTools.lib

@@ -1377,8 +1377,11 @@ template <class POINT> IScalableMeshTexturePtr ScalableMeshNode<POINT>::_GetText
         int nOfChannels;
         //dimension.x = 1;
         //dimension.y = 1;
-        memcpy_s(&dimension.x, sizeof(int), data, sizeof(int));
-        memcpy_s(&dimension.y, sizeof(int), (int*)data + 1, sizeof(int));
+        int w, h;
+        memcpy_s(&w, sizeof(int), data, sizeof(int));
+        memcpy_s(&h, sizeof(int), (int*)data + 1, sizeof(int));
+        dimension.x = w;
+        dimension.y = h;
         memcpy_s(&nOfChannels, sizeof(int), (int*)data + 2, sizeof(int));
         size = dimension.x * dimension.y * nOfChannels;
 
@@ -1910,7 +1913,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMeshes(boo
                                                                                                 smTexturePtr->GetDimension().x,
                                                                                                 smTexturePtr->GetDimension().y,
                                                                                                 false,
-                                                                                                QV_RGBA_FORMAT,
+                                                                                                QV_RGB_FORMAT,
                                                                                                 smTexturePtr->GetData());
 
                             assert(status == SUCCESS);

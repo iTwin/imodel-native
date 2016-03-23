@@ -146,7 +146,8 @@
         <ProductDirectory Name="PngNativeAssemblies" Deliver="false"/>            
         <ProductDirectory Name="TiffNativeAssemblies" Deliver="false"/>      
         <ProductDirectory Name="ZlibNativeAssemblies" Deliver="false"/>
-        <ProductDirectory Name="CGALAssemblies" Path="Dlls"/>   
+        <ProductDirectory Name="CGALAssemblies" Path="Dlls"/>
+		<ProductDirectory Name="Assemblies" Path="Dlls"/>
     </ProductDirectoryList>
     
     <Product Name="ScalableMeshATP" SaveProduct="true" >

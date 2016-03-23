@@ -283,13 +283,13 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClCompile Include="..\Common\ATPFileFinder.cpp" />
     <ClCompile Include="..\Common\ATPGeneration.cpp" />
     <ClCompile Include="..\Common\ATPUtils.cpp" />
-    <ClCompile Include="..\DrapeLineTool\DrapeLineTool.cpp" />
     <ClCompile Include="..\Initialize.cpp" />
     <ClCompile Include="..\ScalableMeshATPexe.cpp" />
     <ClCompile Include="..\TiledTriangulation\MrDTMFace.cpp" />
     <ClCompile Include="..\TiledTriangulation\MrDTMUtil.cpp" />
     <ClCompile Include="..\TiledTriangulation\TiledTriangulatorUtil.cpp" />
     <ClCompile Include="..\TiledTriangulation\TiledTriangulatorValidator.cpp" />
+    <ClCompile Include="..\Tool\DrapeLineTool.cpp" />
     <ClCompile Include="..\Tool\VolumeCalculationTool.cpp" />
   </ItemGroup>
   <ItemGroup>

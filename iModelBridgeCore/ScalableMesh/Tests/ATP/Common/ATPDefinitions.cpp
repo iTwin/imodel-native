@@ -38,6 +38,8 @@ using namespace std;
 #include <ScalableMesh/ScalableMeshLib.h>
 #include <ScalableMesh/ScalableMeshAdmin.h>
 
+#include <BeJsonCpp/BeJsonUtilities.h>
+
 
 #include <time.h>
 #include <sys/types.h>
@@ -1002,6 +1004,140 @@ int CollectAllElmsCallback
     agendaP->Insert(elemRef, modelP);
 
     return SUCCESS;
+    }
+
+void ExportDrapeLine(BeXmlNodeP pTestNode, FILE* pResultFile)
+    {
+    WString linesFileName, name, outputname;
+    if (pTestNode->GetAttributeStringValue(outputname, "outputFileName") != BEXML_Success)
+        {
+        printf("ERROR : outputFileName attribute not found\r\n");
+        return;
+        }
+    // parse dgn file name
+    if (pTestNode->GetAttributeStringValue(linesFileName, "linesFileName") != BEXML_Success)
+        {
+        printf("ERROR : linesFileName attribute not found\r\n");
+        return;
+        }
+    if (pTestNode->GetAttributeStringValue(name, "name") != BEXML_Success)
+        {
+        printf("ERROR : name attribute not found\r\n");
+        }
+    DgnFileStatus fileOpenStatus;
+    DgnDocumentPtr lineDoc = DgnDocument::CreateFromFileName(fileOpenStatus, linesFileName.c_str(), NULL, DEFDGNFILE_ID, DgnDocument::FetchMode::Read);
+
+    DgnModelRefP model = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef();
+    DgnAttachment* newAttachment;
+    model->CreateDgnAttachment(newAttachment, *lineDoc->GetMonikerPtr(), L"");
+    ElementAgenda agenda;
+    LevelCache& levelCache = newAttachment->GetLevelCacheR();
+
+    LevelHandle level = levelCache.GetLevelByName(L"toDrape", false);
+    LevelId levelId = level.GetLevelId();
+
+    ScanCriteriaP scP = new ScanCriteria();
+    scP->SetModelRef(newAttachment);
+    scP->SetReturnType(MSSCANCRIT_ITERATE_ELMREF, false, true);
+    scP->SetElemRefCallback(CollectAllElmsCallback, &agenda);
+    BitMaskP levelBitMask = BitMask::Create(false);
+    levelBitMask->SetBit(levelId - 1, 1);
+    scP->SetLevelTest(levelBitMask, false);
+    scP->Scan();
+
+    bvector<bvector<DPoint3d>> pts;
+    bvector<bvector<DPoint3d>> lines;
+    EditElementHandleP curr = agenda.GetFirstP();
+    EditElementHandleP end = curr + agenda.GetCount();
+
+    Json::Value block;
+    for (; curr < end; curr++) // For each valid element we do draping
+        {
+        ElementHandle elemHandle = *curr;
+        bvector<DPoint3d> origPoints;
+        MSElementCP element = elemHandle.GetElementCP();
+        switch (elemHandle.GetElementType())
+            {
+            case LINE_ELM:
+                {
+                origPoints.push_back(element->line_3d.start);
+                origPoints.push_back(element->line_3d.end);
+                break;
+                }
+            case LINE_STRING_ELM:
+                {
+                origPoints.resize(element->point_string_3d.numpts);
+                memcpy(&origPoints[0], &element->point_string_3d.point[0], element->point_string_3d.numpts * sizeof(DPoint3d));
+                break;
+                }
+            default:
+                break;
+            }
+
+        Transform refToActiveTrf;
+        GetFromModelRefToActiveTransform(refToActiveTrf, elemHandle.GetModelRef());
+        bsiTransform_multiplyDPoint3dArrayInPlace(&refToActiveTrf, &origPoints[0], (int)origPoints.size());
+        Transform uorToMeter;
+        Transform meterToUor;
+        GetTransformForPoints(uorToMeter, meterToUor);
+        
+        DPoint3d ptGO;
+        ModelInfoCP modelInfo = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef()->GetModelInfoCP();
+        if (SUCCESS != modelInfo->GetGlobalOrigin(modelInfo, &ptGO))
+            ptGO.x = ptGO.y = ptGO.z = 0.;
+
+        Transform transTrf;
+        transTrf.InitIdentity();
+        transTrf.SetTranslation(ptGO);
+        transTrf.InverseOf(transTrf);
+
+        bsiTransform_multiplyDPoint3dArrayInPlace(&transTrf, (DPoint3dP)&origPoints[0], (int)origPoints.size());
+
+        // Get the coordinates of the line in meter
+        bsiTransform_multiplyDPoint3dArrayInPlace(&uorToMeter, (DPoint3dP)&origPoints[0], (int)origPoints.size());
+        lines.push_back(origPoints);
+
+        //auto& children = block.append("line");
+        //auto& children = block["lines"];
+        Json::Value children;
+        size_t nbChildren = origPoints.size();
+        for (size_t childInd = 0; childInd < nbChildren; childInd++)
+            {
+            //Json::Value& child = childInd >= nbChildren ? children.append(Json::Value()) : children["point"];
+            //Json::Value& child = children.append("point");
+            //child["x"] = origPoints[childInd].x;
+            //child["y"] = origPoints[childInd].y;
+            //child["z"] = origPoints[childInd].z;
+            Json::Value child;
+            Json::Value points;
+            points["x"] = origPoints[childInd].x;
+            points["y"] = origPoints[childInd].y;
+            points["z"] = origPoints[childInd].z;
+            /*points["x].push_back(origPoints[childInd].x);
+            points.push_back(origPoints[childInd].y);
+            points.push_back(origPoints[childInd].z);*/
+            child["point"] = points;
+            children.append(child);
+            }
+        block["lines"].append(children);
+        }
+
+    uint64_t buffer_size;
+    auto jsonWriter = [&buffer_size](BeFile& file, Json::Value& object)
+        {
+        Json::StyledWriter writer;
+        auto buffer = writer.write(object);
+        buffer_size = buffer.size();
+        file.Write(NULL, buffer.c_str(), buffer_size);
+        };
+    BeFile file;
+    if (BeFileStatus::Success == file.Open(outputname.c_str(), BeFileAccess::Write, BeFileSharing::None))
+        jsonWriter(file, block);
+    else if (BeFileStatus::Success == file.Create(outputname.c_str()))
+        jsonWriter(file, block);
+    else
+        HASSERT(!"Problem creating master header file");
+    file.Close();
     }
 
 void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)

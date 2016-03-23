@@ -54,6 +54,9 @@ WString GetHeaderForTestType(TestType t)
         case TEST_STREAMING:
             return L"File Name Original, File Name Streaming, AllTestPass, Point Count Pass, Node Count Pass, time load all node headers, time streaming load all node headers, points Node Pass\n";
             break;
+        case EXPORT_LINE:
+            return L"\n";
+            break;
         default: break;
         }
     return L"";
@@ -113,6 +116,8 @@ bool ParseTestType(BeXmlNodeP pRootNode, TestType& t)
             t = TEST_SDK_MESH;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"streaming"))
             t = TEST_STREAMING;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"exportLine"))
+            t = EXPORT_LINE;
         else return false;
         }
     else return false;
@@ -257,6 +262,8 @@ bool RunTestPlan(BeFileName& testPlanPath)
             case TEST_STREAMING:
                 PerformStreaming(pTestNode, pResultFile);
                 break;
+            case EXPORT_LINE:
+                ExportDrapeLine(pTestNode, pResultFile);
             default: break;
             }
         pTestNode = pTestNode->GetNextSibling();
