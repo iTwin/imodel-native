@@ -587,7 +587,8 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     {    
     if (m_smPtr == 0 && !m_tryOpen)
         {
-        BeFileName smFileName(((this)->m_properties).m_fileId); 
+        BeFileName smFileName;
+        T_HOST.GetPointCloudAdmin()._ResolveFileName(smFileName, (((this)->m_properties).m_fileId), GetDgnDb());
 
         if (BeFileName::DoesPathExist(smFileName.c_str()))
             {
@@ -808,8 +809,9 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     
     m_storageToUorsTransfo = DMatrix4d::FromScaleAndTranslation(scale, translation);                
         
-    //NEEDS_WORK_SM : Try use the same strategy as 3MX. 
-    m_properties.m_fileId = smFilename.GetNameUtf8 ();
+    BeFileName dbFileName(dgnProject.GetDbFileName());
+    BeFileName basePath = dbFileName.GetDirectoryName();
+    T_HOST.GetPointCloudAdmin()._CreateLocalFileId(m_properties.m_fileId, smFilename, basePath);
     }
 
 //=======================================================================================
