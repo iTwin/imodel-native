@@ -216,7 +216,8 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
     
     bool isOutputQuickVision = context.GetIViewDraw ().IsOutputQuickVision();
 
-    assert(overviewMeshNodes.size() > 0 || meshNodes.size() > 0);
+    //NEEDS_WORK_MST : Will be fixed when the lowest resolution is created and pin at creation time.
+    //assert(overviewMeshNodes.size() > 0 || meshNodes.size() > 0);
     assert(isOutputQuickVision == true);
 
     /*ElemMatSymbP matSymbP = context.GetElemMatSymb ();
@@ -726,7 +727,9 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         status = m_progressiveQueryEngine->GetOverviewNodes(m_currentDrawingInfoPtr->m_overviewNodes, queryId);
         m_currentDrawingInfoPtr->m_overviewNodes.insert(m_currentDrawingInfoPtr->m_overviewNodes.end(), m_currentDrawingInfoPtr->m_meshNodes.begin(), m_currentDrawingInfoPtr->m_meshNodes.end());
         m_currentDrawingInfoPtr->m_meshNodes.clear();
-        assert(m_currentDrawingInfoPtr->m_overviewNodes.size() > 0);
+
+        //NEEDS_WORK_MST : Will be fixed when the lowest resolution is created and pin at creation time.
+        //assert(m_currentDrawingInfoPtr->m_overviewNodes.size() > 0);
         assert(status == SUCCESS);
 
         needProgressive = true;
