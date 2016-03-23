@@ -50,6 +50,8 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         virtual DTMStatusInt     _GetRange(DRange3dR range) = 0;
 
+        virtual StatusInt         _GetBoundary(bvector<DPoint3d>& boundary) = 0;
+
         virtual int                    _GenerateSubResolutions() = 0;      
 
         virtual __int64                _GetBreaklineCount() const = 0;
@@ -135,6 +137,8 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         BENTLEYSTM_EXPORT __int64          GetPointCount();
 
         BENTLEYSTM_EXPORT DTMStatusInt     GetRange(DRange3dR range);
+
+        BENTLEYSTM_EXPORT StatusInt          GetBoundary(bvector<DPoint3d>& boundary);
 
         BENTLEYSTM_EXPORT int                    GenerateSubResolutions();
 

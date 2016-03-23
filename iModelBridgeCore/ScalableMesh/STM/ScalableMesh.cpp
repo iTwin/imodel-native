@@ -50,6 +50,7 @@ extern bool   GET_HIGHEST_RES;
 #include "SMSQLiteTextureTileStore.h"
 #include <Vu\VuApi.h>
 #include <Vu\vupoly.fdf>
+#include "vuPolygonClassifier.h"
 //#include "CGALEdgeCollapse.h"
 
 
@@ -141,6 +142,11 @@ _int64 IScalableMesh::GetPointCount()
 DTMStatusInt IScalableMesh::GetRange(DRange3dR range)
     {
     return _GetRange(range);
+    }
+
+StatusInt IScalableMesh::GetBoundary(bvector<DPoint3d>& boundary)
+    {
+    return _GetBoundary(boundary);
     }
 
 int IScalableMesh::GenerateSubResolutions()
@@ -1058,12 +1064,11 @@ return 0;
 
 DTMStatusInt ScalableMeshDTM::_GetBoundary(DTMPointArray& result)
 {
-return DTM_ERROR;
+return m_scMesh->GetBoundary(result) == SUCCESS ? DTM_SUCCESS : DTM_ERROR;
 }
 
 IDTMDrapingP ScalableMeshDTM::_GetDTMDraping()
     {
-    // assert(0);
     return m_draping;
     }
 
@@ -1079,9 +1084,128 @@ IDTMContouringP  ScalableMeshDTM::_GetDTMContouring()
     return 0;
     }
 
-DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double&, double&, const DPoint3d*, int)
+DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints)
     {
-    return DTM_ERROR;
+    IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
+    IScalableMeshMeshQueryPtr meshQueryInterface = m_scMesh->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
+    bvector<IScalableMeshNodePtr> returnedNodes;
+    params->SetLevel(m_scMesh->GetTerrainDepth());
+
+    Transform uorsToStorage = m_transformToUors.ValidatedInverse();
+    bvector<DPoint3d> transPts(numPoints);
+    memcpy(&transPts[0], pts, numPoints*sizeof(DPoint3d));
+    uorsToStorage.Multiply(&transPts[0], numPoints);
+    if (meshQueryInterface->Query(returnedNodes, &transPts[0], numPoints, params) != SUCCESS)
+        return DTM_ERROR;
+    bvector<bool> clips;
+    flatArea = 0;
+    slopeArea = 0;
+    for (auto& node : returnedNodes)
+        {
+        double flatAreaTile = 0;
+        double slopeAreaTile = 0;
+        BcDTMPtr dtmP = node->GetBcDTM();
+        if (dtmP != nullptr) dtmP->CalculateSlopeArea(&flatAreaTile, &slopeAreaTile, &transPts[0], numPoints);
+        flatArea += flatAreaTile;
+        slopeArea += slopeAreaTile;
+        }
+    DPoint3d pt = DPoint3d::From(flatArea, slopeArea, 0);
+    m_transformToUors.Multiply(pt);
+    flatArea = pt.x;
+    slopeArea = pt.y;
+    return DTM_SUCCESS;
+    }
+
+DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback)
+    {
+    IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
+    IScalableMeshMeshQueryPtr meshQueryInterface = m_scMesh->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
+    bvector<IScalableMeshNodePtr> returnedNodes;
+    params->SetLevel(m_scMesh->GetTerrainDepth());
+
+    Transform uorsToStorage = m_transformToUors.ValidatedInverse();
+    bvector<DPoint3d> transPts(numPoints);
+    memcpy(&transPts[0], pts, numPoints*sizeof(DPoint3d));
+    uorsToStorage.Multiply(&transPts[0], numPoints);
+    if (meshQueryInterface->Query(returnedNodes, &transPts[0], numPoints, params) != SUCCESS)
+        return DTM_ERROR;
+    bvector<IScalableMeshNodePtr>* fullResolutionReturnedNodes = new bvector<IScalableMeshNodePtr> (returnedNodes);
+    while (returnedNodes.size() > 20 && params->GetLevel() > 1)
+        {
+        returnedNodes.clear();
+        params->SetLevel(params->GetLevel()-1);
+        meshQueryInterface->Query(returnedNodes, &transPts[0], numPoints, params);
+        }
+    bvector<bool> clips;
+    flatArea = 0;
+    slopeArea = 0;
+    for (auto& node : returnedNodes)
+        {
+        double flatAreaTile = 0;
+        double slopeAreaTile = 0;
+        DRange3d nodeExt = node->GetContentExtent();
+        DPoint3d rangePts[5] = { DPoint3d::From(nodeExt.low.x, nodeExt.low.y, 0), DPoint3d::From(nodeExt.high.x, nodeExt.low.y, 0), DPoint3d::From(nodeExt.high.x, nodeExt.high.y, 0),
+            DPoint3d::From(nodeExt.low.x, nodeExt.high.y, 0), DPoint3d::From(nodeExt.low.x, nodeExt.low.y, 0) };
+        DTM_POLYGON_OBJ* polyP = NULL;
+        long intersectFlag;
+        bool restrictToPoly = true;
+        if (DTM_SUCCESS != bcdtmPolygon_intersectPointArrayPolygons(&rangePts[0], 5, &transPts[0], numPoints, &intersectFlag, &polyP, 1e-8, 1e-8) || intersectFlag == 0) restrictToPoly = false;
+        if (polyP != NULL) free(polyP);
+        BcDTMPtr dtmP = node->GetBcDTM();
+        if (dtmP != nullptr) dtmP->CalculateSlopeArea(&flatAreaTile, &slopeAreaTile, restrictToPoly ? &transPts[0] : 0, restrictToPoly?numPoints:0);
+        flatArea += flatAreaTile;
+        slopeArea += slopeAreaTile;
+        }
+    DPoint3d pt = DPoint3d::From(flatArea, slopeArea, 0);
+    m_transformToUors.Multiply(pt);
+    flatArea = pt.x;
+    slopeArea = pt.y;
+    if (fullResolutionReturnedNodes->size() == returnedNodes.size())
+        {
+        progressiveCallback(DTM_SUCCESS, flatArea, slopeArea);
+        delete fullResolutionReturnedNodes;
+        }
+    else
+        {
+        DPoint3d* transPtsAsync = new DPoint3d[numPoints];
+        memcpy(transPtsAsync,&transPts[0], numPoints*sizeof(DPoint3d));
+
+        std::thread t(std::bind([] (bvector<IScalableMeshNodePtr>* nodes, DPoint3d* pts, int numPoints, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback)
+            {
+            double flatAreaFull = 0;
+            double slopeAreaFull = 0;
+            bool finished = true;
+            DTMStatusInt retval = DTM_ERROR;
+            for (auto& node : *nodes)
+                {
+                if (isCancelledCallback())
+                    {
+                    finished = false;
+                    break;
+                    }
+                double flatAreaTile = 0;
+                double slopeAreaTile = 0;
+                DRange3d nodeExt = node->GetContentExtent();
+                DPoint3d rangePts[5] = { DPoint3d::From(nodeExt.low.x, nodeExt.low.y, 0), DPoint3d::From(nodeExt.low.x, nodeExt.high.y, 0), DPoint3d::From(nodeExt.high.x, nodeExt.high.y, 0),
+                    DPoint3d::From(nodeExt.high.x, nodeExt.low.y, 0), DPoint3d::From(nodeExt.low.x, nodeExt.low.y, 0) };
+                DTM_POLYGON_OBJ* polyP = NULL;
+                long intersectFlag;
+                bool restrictToPoly = true;
+                if (DTM_SUCCESS != bcdtmPolygon_intersectPointArrayPolygons(&rangePts[0], 5, &pts[0], numPoints, &intersectFlag, &polyP, 1e-8, 1e-8) || intersectFlag == 0) restrictToPoly = false;
+                if (polyP != NULL) free(polyP);
+                BcDTMPtr dtmP = node->GetBcDTM();
+                if (dtmP->CalculateSlopeArea(&flatAreaTile, &slopeAreaTile, restrictToPoly ? pts : 0, restrictToPoly?numPoints:0) == DTM_SUCCESS) retval = DTM_SUCCESS;
+                
+                flatAreaFull += flatAreaTile;
+                slopeAreaFull += slopeAreaTile;
+                }
+            if (finished) progressiveCallback(retval, flatAreaFull, slopeAreaFull);
+            delete nodes;
+            delete[] pts;
+            }, fullResolutionReturnedNodes, transPtsAsync, numPoints, progressiveCallback, isCancelledCallback));
+        t.detach();
+        }
+    return DTM_SUCCESS;
     }
 
 bool ScalableMeshDTM::_GetTransformation(TransformR)
@@ -1168,6 +1292,48 @@ template <class POINT> DTMStatusInt ScalableMesh<POINT>::_GetRange(DRange3dR ran
 
     range = m_contentExtent;
     return DTM_SUCCESS;
+    }
+
+
+/*----------------------------------------------------------------------------+
+|ScalableMesh::_GetBoundary
++----------------------------------------------------------------------------*/
+template <class POINT> StatusInt ScalableMesh<POINT>::_GetBoundary(bvector<DPoint3d>& boundary)
+    {
+    IScalableMeshMeshQueryPtr meshQueryInterface = GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
+    bvector<IScalableMeshNodePtr> returnedNodes;
+    IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
+    params->SetLevel(std::min((size_t)3, _GetTerrainDepth()));
+    meshQueryInterface->Query(returnedNodes, 0,0, params);
+    if (returnedNodes.size() == 0) return ERROR;
+    bvector<DPoint3d> current;
+    DRange3d rangeCurrent = DRange3d::From(current);
+    for (auto& node : returnedNodes)
+        {
+        bvector<bool> clips;
+        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+        flags->SetLoadGraph(true);
+        auto meshP = node->GetMesh(flags, clips);
+        bvector<DPoint3d> bound;
+        if (meshP.get() != nullptr && meshP->GetBoundary(bound) == DTM_SUCCESS)
+            {
+            VuPolygonClassifier vu(1e-8, 0);
+            vu.ClassifyAUnionB(bound, current);
+            bvector<DPoint3d> xyz;
+            for (; vu.GetFace(xyz);)
+                {
+                DRange3d rangeXYZ = DRange3d::From(xyz);
+                if (rangeXYZ.XLength() * rangeXYZ.YLength() >= rangeCurrent.XLength() * rangeCurrent.YLength())
+                    {
+                    current = xyz;
+                    rangeCurrent = rangeXYZ;
+                    }
+                }
+            }
+        }
+    if (current.size() == 0) return ERROR;
+    boundary = current;
+    return SUCCESS;
     }
 
 
@@ -1569,7 +1735,8 @@ template <class POINT> bool ScalableMesh<POINT>::_RemoveSkirt(uint64_t clipID)
     if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
     bvector<bvector<DPoint3d>> skirt;
     m_scmIndexPtr->GetClipRegistry()->GetSkirt(clipID, skirt);
-    DRange3d extent = DRange3d::From(skirt[0][0]);
+    if (skirt.size() == 0) return true;
+    DRange3d extent =  DRange3d::From(skirt[0][0]);
     for (auto& vec : skirt) extent.Extend(vec, nullptr);
     m_scmIndexPtr->GetClipRegistry()->DeleteClip(clipID);
     m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_DELETE, clipID, extent, false);
@@ -1732,6 +1899,13 @@ template <class POINT> DTMStatusInt ScalableMeshSingleResolutionPointIndexView<P
     range.low.z = ExtentOp<YProtPtExtentType>::GetZMin(ExtentPoints);
     range.high.z = ExtentOp<YProtPtExtentType>::GetZMax(ExtentPoints);   
     return DTM_SUCCESS;
+    }
+
+
+
+template <class POINT> StatusInt ScalableMeshSingleResolutionPointIndexView<POINT>::_GetBoundary(bvector<DPoint3d>& boundary)
+    {
+    return ERROR;
     }
 
 template <class POINT> uint64_t ScalableMeshSingleResolutionPointIndexView<POINT>::_AddClip(const DPoint3d* pts, size_t ptsSize)

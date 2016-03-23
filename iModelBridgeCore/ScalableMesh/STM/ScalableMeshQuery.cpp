@@ -813,6 +813,11 @@ DTMStatusInt IScalableMeshMesh::GetAsBcDTM(BcDTMPtr& bcdtm)
     return _GetAsBcDTM(bcdtm);
     }
 
+DTMStatusInt IScalableMeshMesh::GetBoundary(bvector<DPoint3d>& pts)
+    {
+    return _GetBoundary(pts);
+    }
+
 int IScalableMeshMesh::ProjectPolyLineOnMesh(DPoint3d& endPt, bvector<bvector<DPoint3d>>& projectedPoints, const DPoint3d* points, int nPts, int* segment, const int* triangle, DPoint3d startPt, MTGNodeId& lastEdge) const
     {
     return _ProjectPolyLineOnMesh(endPt, projectedPoints, points, nPts, segment, triangle, startPt, lastEdge);
@@ -1566,6 +1571,11 @@ errexit:
     goto cleanup;
     }
 
+DTMStatusInt ScalableMeshMesh::_GetBoundary(bvector<DPoint3d>& pts)
+    {
+    return DTM_ERROR;
+    }
+
 DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
     { 
     BC_DTM_OBJ* bcDtmP = 0;
@@ -1741,6 +1751,24 @@ ScalableMeshTexture::~ScalableMeshTexture()
     delete[] m_data;
 }
 
+DTMStatusInt ScalableMeshMeshWithGraph::_GetBoundary(bvector<DPoint3d>& pts)
+    {
+    bvector<bvector<DPoint3d>> bound;
+    GetGraphExteriorBoundary(m_graphData, bound, m_points);
+    if (bound.size() == 0) return DTM_ERROR;
+    else if (bound.size() == 1) pts = bound[0];
+    else
+        {
+        bmap<double, size_t> largestPolys;
+        for (auto& poly : bound)
+            {
+            DRange3d range = DRange3d::From(poly);
+            largestPolys.insert(make_bpair(range.XLength() * range.YLength(), &poly - &bound.front()));
+            }
+        pts = bound[largestPolys.rbegin()->second];
+        }
+    return DTM_SUCCESS;
+    }
 
 int ScalableMeshMeshWithGraph::_ProjectPolyLineOnMesh(DPoint3d& endPt, bvector<bvector<DPoint3d>>& projectedPoints, const DPoint3d* points, int nPts, int* segment, const MTGNodeId triangleEdge, DPoint3d startPt) const
     {
