@@ -60,6 +60,16 @@ struct ChangeSummary : NonCopyableClass
         UpdateDelete    = Update | Delete,
         };
 
+    //! Options to control extraction of the change summary
+    struct Options
+        {
+        private:
+            bool m_includeRelationshipInstances = true;
+        public:
+            void SetIncludeRelationshipInstances(bool value) { m_includeRelationshipInstances = value; }
+            bool GetIncludeRelationshipInstances() const { return m_includeRelationshipInstances; }
+        };
+
     struct Instance;
     struct InstanceIterator;
     struct ValueIterator;
@@ -265,7 +275,7 @@ public:
     //! Create a ChangeSummary from the contents of a BeSQLite ChangeSet
     //! @remarks The ChangeSummary needs to be new or freed before this call. 
     //! @see MakeIterator, GetInstancesTableName
-    ECDB_EXPORT BentleyStatus FromChangeSet(BeSQLite::IChangeSet& changeSet);
+    ECDB_EXPORT BentleyStatus FromChangeSet(BeSQLite::IChangeSet& changeSet, Options const& options = Options());
 
     //! Free the data held by this ChangeSummary.
     //! @note Normally the destructor will call Free. After this call the ChangeSet is invalid.
