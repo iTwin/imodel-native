@@ -304,7 +304,7 @@ bool SMSQLiteFile::SetNodeHeader(const SQLiteNodeHeader& newNodeHeader)
 bool SMSQLiteFile::GetMasterHeader(SQLiteIndexHeader& header)
     {
     CachedStatementPtr stmt;
-    m_database->GetCachedStatement(stmt, "SELECT Balanced, RootNodeId, SplitTreshold, Depth,IsTextured, SingleFile FROM SMMasterHeader WHERE MasterHeaderId = ?");
+    m_database->GetCachedStatement(stmt, "SELECT Balanced, RootNodeId, SplitTreshold, Depth,IsTextured, SingleFile, TerrainDepth FROM SMMasterHeader WHERE MasterHeaderId = ?");
     size_t id = 0;
     stmt->BindInt64(1, id);
     DbResult status = stmt->Step();
@@ -316,6 +316,7 @@ bool SMSQLiteFile::GetMasterHeader(SQLiteIndexHeader& header)
     header.m_depth = (size_t)stmt->GetValueInt(3);
     header.m_textured = stmt->GetValueInt(4) ? true : false;
     header.m_singleFile = stmt->GetValueInt(5) ? true : false;
+    header.m_terrainDepth = stmt->GetValueInt64(6);
     return true;
     }
 

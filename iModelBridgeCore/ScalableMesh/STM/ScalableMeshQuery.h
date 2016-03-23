@@ -683,6 +683,8 @@ class ScalableMeshMesh : public IScalableMeshMesh
 
         virtual DTMStatusInt _GetAsBcDTM(BcDTMPtr& bcdtm)override;
 
+        virtual DTMStatusInt _GetBoundary(bvector<DPoint3d>& boundary) override;
+
         virtual bool _FindTriangleForProjectedPoint(int* outTriangle, DPoint3d& point, bool use2d = false) const override;
         virtual bool _FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d = false) const override;
 
@@ -772,6 +774,7 @@ class ScalableMeshMeshWithGraph : public ScalableMeshMesh
         bool m_is3d; //helps with traversal/holes assumptions
 
     protected:
+        virtual DTMStatusInt _GetBoundary(bvector<DPoint3d>& boundary) override;
         virtual int _ProjectPolyLineOnMesh(DPoint3d& endPt, bvector<bvector<DPoint3d>>& projectedPoints, const DPoint3d* points, int nPts, int* segment, const MTGNodeId triangleEdge, DPoint3d startPt) const override;
         virtual int _ProjectPolyLineOnMesh(DPoint3d& endPt, bvector<bvector<DPoint3d>>& projectedPoints, const DPoint3d* points, int nPts, int* segment, const int* triangle, DPoint3d startPt, MTGNodeId& lastEdge) const override;
         virtual bool _FindTriangleAlongRay(int* outTriangle, DRay3d& ray, MTGNodeId edge = -1) const override;

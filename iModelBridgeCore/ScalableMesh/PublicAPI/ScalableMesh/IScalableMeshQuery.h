@@ -388,6 +388,8 @@ struct IScalableMeshMesh : public RefCountedBase
 
         virtual DTMStatusInt _GetAsBcDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& bcdtm) = 0;
 
+        virtual DTMStatusInt _GetBoundary(bvector<DPoint3d>& boundary) = 0;
+
         virtual bool _FindTriangleForProjectedPoint(int* outTriangle, DPoint3d& point, bool use2d = false) const = 0;
         virtual bool _FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d = false) const = 0;
 
@@ -410,6 +412,8 @@ struct IScalableMeshMesh : public RefCountedBase
         DPoint3d* EditPoints();
 
         BENTLEYSTM_EXPORT DTMStatusInt GetAsBcDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& bcdtm);
+
+        BENTLEYSTM_EXPORT DTMStatusInt GetBoundary(bvector<DPoint3d>& boundary);
 
         //NEEDS_WORK_SM: maybe move all geometry-related functions to util interface
         

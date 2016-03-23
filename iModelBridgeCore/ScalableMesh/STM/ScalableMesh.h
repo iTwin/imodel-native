@@ -124,6 +124,7 @@ class ScalableMeshDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::
     virtual BcDTMP _GetBcDTM() override;
     virtual DTMStatusInt _GetBoundary(DTMPointArray& ret) override;
     virtual DTMStatusInt _CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints) override;
+    virtual DTMStatusInt _CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback) override;
     virtual DTMStatusInt _GetTransformDTM(DTMPtr& transformedDTM, TransformCR transformation) override;
     virtual bool _GetTransformation(TransformR transformation) override;
     virtual IDTMVolumeP _GetDTMVolume() override;
@@ -244,6 +245,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         virtual DTMStatusInt     _GetRange(DRange3dR range) override;
 
+        virtual StatusInt         _GetBoundary(bvector<DPoint3d>& boundary) override;
+
 
     // Inherited from IMRDTM                   
         virtual Count                  _GetCountInRange (const DRange2d& range, const CountType& type, const unsigned __int64& maxNumberCountedPoints) const;
@@ -336,6 +339,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
 
         virtual DTMStatusInt     _GetRange(DRange3dR range) override;
 
+        virtual StatusInt         _GetBoundary(bvector<DPoint3d>& boundary) override;
 
         // Inherited from IMRDTM             
         virtual Count                  _GetCountInRange (const DRange2d& range, const CountType& type, const unsigned __int64& maxNumberCountedPoints) const override;

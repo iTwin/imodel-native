@@ -600,7 +600,6 @@ bool ScalableMeshDraping::_DrapeAlongVector(DPoint3d* endPt, double *slope, doub
          return false;
     bvector<bool> clips;
     bool ret = false;
-    clock_t begin = clock();
     for (auto& node : nodes)
         {
         BcDTMPtr dtmP = node->GetBcDTM();
@@ -614,8 +613,6 @@ bool ScalableMeshDraping::_DrapeAlongVector(DPoint3d* endPt, double *slope, doub
             break;
             }
         }
-    clock_t time = clock() - begin;
-    time = time;
     return ret;
     }
 
