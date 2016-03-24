@@ -163,7 +163,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindInt(int value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus SystemPropertyECSqlBinder::_BindInt64(int64_t value)
     {
-    auto stat = FailIfConstraintClassIdViolation(static_cast<ECClassId> (value));
+    ECSqlStatus stat = FailIfConstraintClassIdViolation(ECClassId((uint64_t) value));
     if (!stat.IsSuccess())
         return stat;
 
@@ -187,7 +187,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindInt64(int64_t value)
 
     auto onBindEventHandler = GetOnBindBriefcaseBasedIdEventHandler();
     if (onBindEventHandler != nullptr)
-        onBindEventHandler(ECInstanceId(value));
+        onBindEventHandler(ECInstanceId((uint64_t) value));
 
     m_bindValueIsNull = false;
     return ECSqlStatus::Success;
@@ -199,7 +199,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindInt64(int64_t value)
 ECSqlStatus SystemPropertyECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount)
     {
     //by ECSQL design ECInstanceIds can be specified as numeric values or as string values
-    if (m_systemProperty != ECSqlSystemProperty::ECInstanceId && m_systemProperty != ECSqlSystemProperty::ParentECInstanceId &&
+    if (m_systemProperty != ECSqlSystemProperty::ECInstanceId &&
         m_systemProperty != ECSqlSystemProperty::SourceECInstanceId && m_systemProperty != ECSqlSystemProperty::TargetECInstanceId)
         {
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind string value to %s parameter.", SystemPropertyToString());
@@ -278,8 +278,8 @@ ECSqlStatus SystemPropertyECSqlBinder::FailIfConstraintClassIdViolation(ECN::ECC
     const auto relationshipEnd = m_systemProperty == ECSqlSystemProperty::SourceECClassId ? ECN::ECRelationshipEnd_Source : ECN::ECRelationshipEnd_Target;
     if (!m_constraints->GetConstraintMap(relationshipEnd).ClassIdMatchesConstraint(constraintClassId))
         {
-        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Constraint violation. ECClassId %lld not valid as value for %s parameter.",
-                                             constraintClassId, SystemPropertyToString());
+        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Constraint violation. ECClassId %llu not valid as value for %s parameter.",
+                                             constraintClassId.GetValue(), SystemPropertyToString());
         return ECSqlStatus::Error;
         }
 

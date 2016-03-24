@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlField.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,62 +27,36 @@ protected:
 private:
     ECSqlStatementBase& m_ecsqlStatement;
 
-    virtual ECSqlColumnInfoCR _GetColumnInfo () const override;
+    virtual ECSqlColumnInfoCR _GetColumnInfo() const override;
 
-    virtual ECSqlStatus _Reset () { return ECSqlStatus::Success; }
-    virtual ECSqlStatus _Init () { return ECSqlStatus::Success; }
+    virtual ECSqlStatus _OnAfterReset() { return ECSqlStatus::Success; }
+    virtual ECSqlStatus _OnAfterStep() { return ECSqlStatus::Success; }
 
     static Collection s_emptyChildCollection;
 
 protected:
-    bool m_requiresInit;
-    bool m_requiresReset;
+    bool m_requiresOnAfterStep;
+    bool m_requiresOnAfterReset;
 
-    ECSqlField (ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo, bool needsInit, bool needsReset)
-        : m_ecsqlStatement(ecsqlStatement), m_ecsqlColumnInfo(std::move(ecsqlColumnInfo)), m_requiresInit(needsInit), m_requiresReset(needsReset)
+    ECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo, bool needsOnAfterStep, bool needsOnAfterReset)
+        : m_ecsqlStatement(ecsqlStatement), m_ecsqlColumnInfo(std::move(ecsqlColumnInfo)), m_requiresOnAfterStep(needsOnAfterStep), m_requiresOnAfterReset(needsOnAfterReset)
         {}
 
-    ECSqlStatus ReportError (ECSqlStatus status, Utf8CP errorMessage) const;
-    ECSqlStatementBase& GetECSqlStatementR () const;
-    Statement& GetSqliteStatement () const;
+    ECSqlStatus ReportError(ECSqlStatus status, Utf8CP errorMessage) const;
+    ECSqlStatementBase& GetECSqlStatementR() const;
+    Statement& GetSqliteStatement() const;
 
 public:
-    virtual ~ECSqlField () {}
+    virtual ~ECSqlField() {}
 
-    virtual Collection const& GetChildren () const {return s_emptyChildCollection;}
+    virtual Collection const& GetChildren() const { return s_emptyChildCollection; }
 
-    bool RequiresInit() const { return m_requiresInit; }
-    ECSqlStatus Init ();
-    bool RequiresReset() const { return m_requiresReset; }
-    ECSqlStatus Reset ();
+    bool RequiresOnAfterStep() const { return m_requiresOnAfterStep; }
+    ECSqlStatus OnAfterStep();
+    bool RequiresOnAfterReset() const { return m_requiresOnAfterReset; }
+    ECSqlStatus OnAfterReset();
+
+    static Utf8CP GetPrimitiveGetMethodName(ECN::PrimitiveType getMethodType);
     };
 
-//=======================================================================================
-//! @bsiclass                                                Affan.Khan      09/2013
-//ECSQL_TODO: Need to move this to another file
-//+===============+===============+===============+===============+===============+======
-struct ECSqlPrimitiveBinder
-    {
-    enum class StatementType
-        {
-        ECSql, Sqlite, Unknown
-        };
-private:
-    Utf8String m_sourcePropertyPath;
-    int m_sourceColumnIndex;
-    int m_targetParameterIndex;
-    StatementType m_sourceStmtType;
-public:
-    ECSqlPrimitiveBinder();
-    void SetSourcePropertyPath(Utf8CP column);
-    void SetSourceStatementType(StatementType type);
-    void SetSourceColumnIndex(int columnIndex);
-    void SetTargetParamterIndex(int parameterIndex);
-    bool IsResolved() const;
-    Utf8StringCR GetSourcePropertyPath() const;
-    int GetSourceColumnIndex() const;
-    int GetTargetParameterIndex() const;
-    StatementType GetSourceStatementType () const;
-    ECSqlStatus Execute(ECSqlStatementBase& sourceStmt, ECSqlStatementBase& targetStmt, IECSqlBinder::MakeCopy makeCopy);
-    };
 END_BENTLEY_SQLITE_EC_NAMESPACE

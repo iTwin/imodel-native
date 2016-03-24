@@ -20,7 +20,7 @@ struct PerformanceJoinedTableTests: ECDbTestFixture
         static BeFileName s_seedFilePath;
 
     protected:
-        static const int64_t s_firstInstanceId = INT64_C(1);
+        static const uint64_t s_firstInstanceId = UINT64_C(1);
         static const int s_initialInstanceCount = 1000000;
         static const int s_opCount = 500000;
 

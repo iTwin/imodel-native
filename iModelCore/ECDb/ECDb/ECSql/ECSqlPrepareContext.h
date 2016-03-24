@@ -36,10 +36,7 @@ struct ECSqlPrepareContext
                     {
                     static std::set<Utf8CP, CompareUtf8> s_systemProperties
                         {
-                        ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME,
                         ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME,
-                        ECDbSystemSchemaHelper::ECPROPERTYPATHID_PROPNAME,
-                        ECDbSystemSchemaHelper::OWNERECINSTANCEID_PROPNAME,
                         ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME,
                         ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME,
                         ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME,
@@ -187,7 +184,7 @@ struct ECSqlPrepareContext
                             for (auto& param : m_parameters)
                                 {
                                 if (param->IsNamed())
-                                    if (BeStringUtilities::Stricmp(param->GetName(), name) == 0)
+                                    if (BeStringUtilities::StricmpAscii(param->GetName(), name) == 0)
                                         return param.get();
                                 }
 
@@ -380,23 +377,17 @@ struct ECSqlPrepareContext
         ECSqlColumnInfo const* m_parentColumnInfo;
         NativeSqlBuilder m_nativeSqlBuilder;
         bool m_nativeStatementIsNoop;
-        bool m_onlyExecuteStepTasks;
         ExpScopeStack m_scopes;
         SelectionOptions m_selectionOptions;
         std::unique_ptr<JoinedTableInfo> m_joinedTableInfo;
         ECClassId m_joinedTableClassId;
-        //SELECT only
-        static bool FindLastParameterIndexBeforeWhereClause(int& index, Exp const& statementExp, WhereExp const* whereExp);
+
     public:
         ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&);
         ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECN::ECClassId joinedTableClassId);
         ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECSqlPrepareContext const& parentCtx, ArrayECPropertyCR parentArrayProperty, ECSqlColumnInfo const* parentColumnInfo);
         ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECSqlPrepareContext const& parentCtx);
         //ECSqlPrepareContext is copyable. Using compiler-generated copy ctor and assignment op.
-
-        //! Gets the view mode to be used for class maps for classes in the ECSQL to prepare
-        //! @return View mode for class maps for this prepare context
-        IClassMap::View GetClassMapViewMode() const;
 
         ECDbCR GetECDb() const { return m_ecdb; }
         ECSqlPrepareContext const* GetParentContext() const { return m_parentCtx; }
@@ -406,7 +397,7 @@ struct ECSqlPrepareContext
         SelectionOptions& GetSelectionOptionsR() { return m_selectionOptions; }
         
         ECClassId GetJoinedTableClassId() const { return m_joinedTableClassId; }
-        bool IsParentOfJoinedTable() const { return m_joinedTableClassId != ECClass::UNSET_ECCLASSID; }
+        bool IsParentOfJoinedTable() const { return m_joinedTableClassId.IsValid(); }
         void MarkAsParentOfJoinedTable(ECN::ECClassId classId) { BeAssert(!IsParentOfJoinedTable()); m_joinedTableClassId = classId; }
         JoinedTableInfo const* GetJoinedTableInfo() const { return m_joinedTableInfo.get(); }
         JoinedTableInfo const* TrySetupJoinedTableInfo(ECSqlParseTreeCR exp, Utf8CP originalECSQL);
@@ -418,8 +409,6 @@ struct ECSqlPrepareContext
 
         bool NativeStatementIsNoop() const { return m_nativeStatementIsNoop; }
         void SetNativeStatementIsNoop(bool flag) { m_nativeStatementIsNoop = flag; }
-        bool OnlyExecuteStepTasks() const { return m_onlyExecuteStepTasks; }
-        void SetOnlyExecuteStepTasks() { m_onlyExecuteStepTasks = true; }
 
         ExpScope const& GetCurrentScope() const { return m_scopes.Current(); }
         ExpScope& GetCurrentScopeR() { return m_scopes.CurrentR(); }
@@ -428,9 +417,6 @@ struct ECSqlPrepareContext
 
         bool IsEmbeddedStatement() const { return m_parentCtx != nullptr; }
         bool IsPrimaryStatement() const { return !IsEmbeddedStatement(); }
-
-        static Utf8String CreateECInstanceIdSelectionQuery(ECSqlPrepareContext& ctx, ClassNameExp const& classNameExpr, WhereExp const* whereExp);
-        static int FindLastParameterIndexBeforeWhereClause(Exp const& statementExp, WhereExp const* whereExp);
     };
 
 

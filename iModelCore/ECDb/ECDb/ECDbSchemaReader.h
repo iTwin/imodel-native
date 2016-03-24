@@ -51,10 +51,10 @@ struct DbECClassEntry
 struct DbECEnumEntry
     {
     public:
-        uint64_t m_enumId;
+        ECEnumerationId m_enumId;
         ECN::ECEnumerationP m_cachedECEnum;
 
-        DbECEnumEntry(uint64_t enumId, ECN::ECEnumerationCR ecEnum) : m_enumId(enumId)
+        DbECEnumEntry(ECEnumerationId enumId, ECN::ECEnumerationCR ecEnum) : m_enumId(enumId)
             {
             m_cachedECEnum = const_cast<ECN::ECEnumerationP> (&ecEnum);
             }
@@ -68,28 +68,18 @@ struct ECDbSchemaReader: public RefCountedBase
     {
     typedef std::map<ECSchemaId, std::unique_ptr<DbECSchemaEntry>> DbECSchemaMap;
     typedef std::map<ECClassId, std::unique_ptr<DbECClassEntry>> DbECClassEntryMap;
-    typedef std::map<uint64_t, std::unique_ptr<DbECEnumEntry>> DbECEnumEntryMap;
+    typedef std::map<ECEnumerationId, std::unique_ptr<DbECEnumEntry>> DbECEnumEntryMap;
 
 private:
     struct Context : NonCopyableClass
         {
-        private:
-            std::vector<ECN::NavigationECProperty*> m_navProps;
+    private:
+        std::vector<ECN::NavigationECProperty*> m_navProps;
 
-        public:
-            Context() {}
-
-            void AddNavigationProperty(ECN::NavigationECProperty& navProp) { m_navProps.push_back(&navProp); }
-
-            BentleyStatus Postprocess() const
-                {
-                for (ECN::NavigationECProperty* navProp : m_navProps)
-                    {
-                    if (!navProp->Verify())
-                        return ERROR;
-                    }
-                return SUCCESS;
-                }
+    public:
+        Context() {}
+        void AddNavigationProperty(ECN::NavigationECProperty& navProp) { m_navProps.push_back(&navProp); }
+        BentleyStatus Postprocess() const;
         };
 
     ECDbCR m_db;
@@ -114,8 +104,8 @@ private:
     BentleyStatus         LoadECRelationshipConstraintClassesFromDb(ECRelationshipConstraintR, Context&, ECClassId relationshipClassId, ECRelationshipEnd) const;
     BentleyStatus         LoadECSchemaDefinition(DbECSchemaEntry*&, bvector<DbECSchemaEntry*>& newlyLoadedSchemas, ECSchemaId ctxECSchemaId) const;
 
-    BentleyStatus         ReadECSchema(DbECSchemaEntry*&, Context&, ECSchemaId ctxECSchemaId, bool loadClasses) const;
-    BentleyStatus         ReadECEnumeration(ECEnumerationP&, Context&, uint64_t ecenumId) const;
+    BentleyStatus         ReadECSchema(DbECSchemaEntry*&, Context&, ECSchemaId, bool loadClasses) const;
+    BentleyStatus         ReadECEnumeration(ECEnumerationP&, Context&, ECEnumerationId) const;
 
     BentleyStatus         EnsureDerivedClassesExist(Context&, ECClassId baseClassId) const;
 
@@ -130,7 +120,7 @@ public:
     bool                  TryGetECClassId(ECN::ECClassId& id, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema) const;
     void                  ClearCache ();
 
-    static ECDbSchemaReaderPtr Create(ECDbCR);
+    static ECDbSchemaReaderPtr Create(ECDbCR ecdb) { return new ECDbSchemaReader(ecdb); }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

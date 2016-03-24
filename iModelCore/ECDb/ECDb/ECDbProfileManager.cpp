@@ -8,13 +8,11 @@
 #include "ECDbPch.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                07/2013
-//---------------+---------------+---------------+---------------+---------------+------
 //static
 Utf8CP const ECDbProfileManager::PROFILENAME = "ECDb";
 //static
 const PropertySpec ECDbProfileManager::PROFILEVERSION_PROPSPEC = PropertySpec("SchemaVersion", "ec_Db");
+
 //static
 const SchemaVersion ECDbProfileManager::MINIMUM_SUPPORTED_VERSION = SchemaVersion(3, 0, 0, 0);
 
@@ -77,9 +75,9 @@ DbResult ECDbProfileManager::CreateECProfile(ECDbR ecdb)
     }
 
 //=======================================================================================
-//! Whenever a profile upgrade is performed a context is created which prepares SQLite
-//! for the performing table and column alterations.
-//! E.g. foreign key enforcement is disabled during upgrade to not invalidate foreign key
+//! Whenever a profile upgrade needs to rename or remove tables/columns
+//! a ProfileUpgradeContext is needed which prepares SQLite accordingly, 
+//! e.g. foreign key enforcement is disabled during upgrade to not invalidate foreign key
 //! constraints when altering tables.
 // @bsiclass                                                 Krischan.Eberle      07/2013
 //+===============+===============+===============+===============+===============+======
@@ -118,12 +116,11 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
     if (stat != BE_SQLITE_OK)
         return stat;       //File is no ECDb file, i.e. doesn't have the ECDb profile
 
+    const SchemaVersion expectedVersion = GetExpectedVersion();
     bool profileNeedsUpgrade = false;
-    stat = ECDb::CheckProfileVersion(profileNeedsUpgrade, GetExpectedProfileVersion(), actualProfileVersion, GetMinimumAutoUpgradableProfileVersion(), openParams.IsReadonly(), PROFILENAME);
+    stat = ECDb::CheckProfileVersion(profileNeedsUpgrade, expectedVersion, actualProfileVersion, MINIMUM_SUPPORTED_VERSION, openParams.IsReadonly(), PROFILENAME);
     if (!profileNeedsUpgrade)
         return stat;
-
-    LOG.infov("Version of file's %s profile is too old. Upgrading '%s' now...", PROFILENAME, ecdb.GetDbFileName());
 
     //if ECDb file is readonly, reopen it in read-write mode
     if (!openParams._ReopenForSchemaUpgrade(ecdb))
@@ -134,26 +131,19 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
 
     BeAssert(!ecdb.IsReadonly());
 
-    //Creating the context performs some preparational steps in the SQLite database required for table modifications (e.g. foreign key
-    //enforcement is disabled). When the context goes out of scope its destructor automatically performs the clean-up so that the ECDb file is
-    //in the same state as before the upgrade.
-    ProfileUpgradeContext context(ecdb, *ecdb.GetDefaultTransaction()); //also commits the transaction (if active) right now
-    if (BE_SQLITE_BUSY == context.GetBeginTransError())
-        return BE_SQLITE_BUSY;
-
     //Call upgrader sequence and let upgraders incrementally upgrade the profile
     //to the latest state
     auto upgraderIterator = GetUpgraderSequenceFor(actualProfileVersion);
-    BeAssert(upgraderIterator != GetUpgraderSequence().end() && "Upgrader sequence is not expected to be empty as the profile status is 'requires upgrade'");
     for (;upgraderIterator != GetUpgraderSequence().end(); ++upgraderIterator)
         {
         std::unique_ptr<ECDbProfileUpgrader> const& upgrader = *upgraderIterator;
-        if (BE_SQLITE_OK != upgrader->Upgrade(ecdb))
-            return BE_SQLITE_ERROR_ProfileUpgradeFailed; //context dtor ensures that changes are rolled back
+        stat = upgrader->Upgrade(ecdb);
+        if (BE_SQLITE_OK != stat)
+            return stat;
         }
 
     if (BE_SQLITE_OK != ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ecdb))
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed; //context dtor ensures that changes are rolled back
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
 
     //after upgrade procedure set new profile version in ECDb file
     stat = AssignProfileVersion(ecdb);
@@ -163,21 +153,19 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
         {
         LOG.errorv("Failed to upgrade %s profile in file '%s'. Could not assign new profile version. %s",
             PROFILENAME, ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed; //context dtor ensures that changes are rolled back
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
     
-    context.SetCommitAfterUpgrade(); //change context dtor behavior to commit changes
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         {
-        const auto expectedProfileVersion = GetExpectedProfileVersion();
         LOG.infov("Upgraded %s profile from version %d.%d.%d.%d to version %d.%d.%d.%d (in %.4lf seconds) in file '%s'.",
-            PROFILENAME,
-            actualProfileVersion.GetMajor(), actualProfileVersion.GetMinor(), actualProfileVersion.GetSub1(), actualProfileVersion.GetSub2(),
-            expectedProfileVersion.GetMajor(), expectedProfileVersion.GetMinor(), expectedProfileVersion.GetSub1(), expectedProfileVersion.GetSub2(),
-            timer.GetElapsedSeconds(), ecdb.GetDbFileName());
+                  PROFILENAME,
+                  actualProfileVersion.GetMajor(), actualProfileVersion.GetMinor(), actualProfileVersion.GetSub1(), actualProfileVersion.GetSub2(),
+                  expectedVersion.GetMajor(), expectedVersion.GetMinor(), expectedVersion.GetSub1(), expectedVersion.GetSub2(),
+                  timer.GetElapsedSeconds(), ecdb.GetDbFileName());
         }
 
-    return BE_SQLITE_OK; //context dtor ensures that changes are committed
+    return BE_SQLITE_OK;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -187,7 +175,7 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
 DbResult ECDbProfileManager::AssignProfileVersion(ECDbR ecdb)
     {
     //Save the profile version as string (JSON format)
-    const Utf8String profileVersionStr = GetExpectedProfileVersion().ToJson();
+    const Utf8String profileVersionStr = GetExpectedVersion().ToJson();
     return ecdb.SavePropertyString(PROFILEVERSION_PROPSPEC, profileVersionStr);
     }
 
@@ -228,39 +216,6 @@ DbResult ECDbProfileManager::AssignProfileVersion(ECDbR ecdb)
 // @bsimethod                                                    Krischan.Eberle    07/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-SchemaVersion ECDbProfileManager::GetExpectedProfileVersion()
-    {
-    //if there are no upgraders yet, the current version is the minimally supported version
-    if (GetUpgraderSequence().empty())
-        return GetMinimumAutoUpgradableProfileVersion();
-
-    //Version of latest upgrader is the version currently required by the API
-    return GetLatestUpgrader().GetTargetVersion();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle    11/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-//static
-SchemaVersion ECDbProfileManager::GetMinimumAutoUpgradableProfileVersion()
-    {
-    //Auto-upgradable back to this version
-    return MINIMUM_SUPPORTED_VERSION;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle    07/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-//static
-ECDbProfileUpgrader const& ECDbProfileManager::GetLatestUpgrader()
-    {
-    return *GetUpgraderSequence().back();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle    07/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-//static
 ECDbProfileManager::ECDbProfileUpgraderSequence::const_iterator ECDbProfileManager::GetUpgraderSequenceFor(SchemaVersion const& currentProfileVersion)
     {
     auto end = GetUpgraderSequence().end();
@@ -285,6 +240,8 @@ ECDbProfileManager::ECDbProfileUpgraderSequence const& ECDbProfileManager::GetUp
         //upgraders must be listed in ascending order
         s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3001()));
         s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3100()));
+        s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3200()));
+        s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3201()));
         }
 
     return s_upgraderSequence;

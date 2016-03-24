@@ -73,4 +73,24 @@ public:
 
     };
 
+//=======================================================================================
+//! @bsiclass                                                Affan.Khan      12/2015
+//+===============+===============+===============+===============+===============+======
+struct ParentOfJoinedTableECSqlStatement : public ECSqlStatementBase
+    {
+private:
+    ECN::ECClassId m_classId;
+    IECSqlBinder* m_ecInstanceIdBinder;
+
+    virtual ECSqlPrepareContext _InitializePrepare(ECDbCR ecdb, Utf8CP ecsql) override { return ECSqlPrepareContext(ecdb, *this, m_classId); }
+
+public:
+    explicit ParentOfJoinedTableECSqlStatement(ECN::ECClassId joinTableClassId) : ECSqlStatementBase(), m_classId(joinTableClassId), m_ecInstanceIdBinder(nullptr) {}
+    ~ParentOfJoinedTableECSqlStatement() {}
+
+    ECN::ECClassId GetClassId() const { return m_classId; }
+    void SetECInstanceIdBinder(int ecsqlParameterIndex) { m_ecInstanceIdBinder = &GetBinder(ecsqlParameterIndex); }
+    IECSqlBinder* GetECInstanceIdBinder() { return m_ecInstanceIdBinder; }
+    };
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

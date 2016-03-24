@@ -69,7 +69,6 @@ public:
                 } m_loadedFlags;
 
             ECDbMapCR m_map;
-            void LoadRelationshipByTable () const;
             void LoadHorizontalPartitions () const;
             void LoadClassIdsPerTable () const;
             void LoadAnyClassRelationships () const;
@@ -79,24 +78,16 @@ public:
             explicit LightweightCache (ECDbMapCR map);
             ~LightweightCache () {}
             std::vector<ECN::ECClassId> const& GetClassesForTable (ECDbSqlTable const&) const;
-            RelationshipTypeByClassId GetRelationshipsMapToTable (ECDbSqlTable const& table) const;
-            RelationshipPerTable GetRelationshipsMapToTables () const;
             bset<ECDbSqlTable const*> const& GetVerticalPartitionsForClass(ECN::ECClassId classId) const;
             ClassIdsPerTableMap const& GetHorizontalPartitionsForClass (ECN::ECClassId) const;
             RelationshipClassIds const& GetRelationships (ECN::ECClassId relationshipId) const;
-            RelationshipClassIds const& GetRelationshipsForConstraintClass (ECN::ECClassId constraintClassId) const;
             //Gets all the constraint class ids plus the constraint end that make up the relationship with the given class id.
             //@remarks: AnyClass constraints are ignored.
             ConstraintClassIds const& GetConstraintClassesForRelationship (ECN::ECClassId relClassId) const;
-            RelationshipClassIds const& GetAnyClassRelationships () const;
             ECN::ECClassId GetAnyClassId () const;
-            std::vector<ECN::ECClassId> const& GetAnyClassReplacements () const;
-            //bmap<ECN::ECClassId, bset<ECDbSqlTable const*> const& GetTablesPerClass()
             //For a end table relationship class map, the storage description provides horizontal partitions
             //For the end table's constraint classes - not for the relationship itself.
-            StorageDescription const& GetStorageDescription (IClassMap const&)  const;
-
-            void Load (bool forceReload);
+            StorageDescription const& GetStorageDescription (ClassMap const&)  const;
             void Reset ();
         };
 
@@ -143,7 +134,6 @@ public:
     ECDbSqlTable const* GetPrimaryTable(ECDbSqlTable const& joinedTable) const;
     //!Loads the class maps if they were not loaded yet
     size_t GetTableCountOnRelationshipEnd(ECN::ECRelationshipConstraintCR) const;
-    ECDbSqlTable const* GetFirstTableFromRelationshipEnd(ECN::ECRelationshipConstraintCR) const;
 
     ECDbSQLManager const& GetSQLManager() const { return m_ecdbSqlManager; }
 
@@ -163,7 +153,6 @@ public:
     ECDbR GetECDbR() const { return m_ecdb; }
     ECDbCR GetECDb()  const { return m_ecdb; }
     std::set<ECDbSqlTable const*> GetTablesFromRelationshipEnd(ECN::ECRelationshipConstraintCR relationshipEnd, EndTablesOptimizationOptions options) const;
-    std::set<ECDbSqlTable const*> GetTablesFromRelationshipEndWithColumn(ECN::ECRelationshipConstraintCR relationshipEnd, Utf8CP column) const;
 
     static void ParsePropertyAccessString(bvector<Utf8String>&, Utf8CP propAccessString);
     };
@@ -195,7 +184,6 @@ public:
         Partition(Partition const&);
         Partition& operator=(Partition const& rhs);
         Partition(Partition&& rhs);
-        Partition& operator=(Partition&& rhs);
 
         ECDbSqlTable const& GetTable () const { return *m_table; }
         ECN::ECClassId GetRootClassId() const { BeAssert(!m_partitionClassIds.empty()); return m_partitionClassIds[0]; }
@@ -228,7 +216,6 @@ public:
     public:
         ~StorageDescription (){}
         StorageDescription (StorageDescription&&);
-        StorageDescription& operator=(StorageDescription&&);
         std::vector<Partition> const& GetVerticalPartitions() const { return m_verticalPartitions; }
 
         //! Returns nullptr, if more than one non-virtual partitions exist.
@@ -236,7 +223,6 @@ public:
         //! If has a single non-virtual partition returns that.
         Partition const* GetHorizontalPartition(bool polymorphic) const;
         Partition const& GetRootHorizontalPartition() const;
-        Partition const& GetRootVerticalPartition() const;
         Partition const* GetVerticalPartition(ECDbSqlTable const&) const;
         Partition const* GetHorizontalPartition(ECDbSqlTable const&) const;
 
@@ -246,7 +232,7 @@ public:
         ECN::ECClassId GetClassId () const { return m_classId; }
 
         BentleyStatus GenerateECClassIdFilter(NativeSqlBuilder& filter, ECDbSqlTable const&, ECDbSqlColumn const& classIdColumn, bool polymorphic, bool fullyQualifyColumnName = false, Utf8CP tableAlias =nullptr) const;
-        static std::unique_ptr<StorageDescription> Create(IClassMap const&, ECDbMap::LightweightCache const& lwmc);
+        static std::unique_ptr<StorageDescription> Create(ClassMap const&, ECDbMap::LightweightCache const& lwmc);
         };
     
 

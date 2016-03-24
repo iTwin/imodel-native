@@ -150,6 +150,9 @@ public:
     //! Clears the ECDb cache
     ECDB_EXPORT void ClearECDbCache() const;
 
+    ECDB_EXPORT void AddAppData(AppData::Key const& key, AppData* appData, bool deleteOnClearCache) const;
+    using Db::AddAppData;
+
 #if !defined (DOCUMENTATION_GENERATOR)
     Impl& GetECDbImplR() const;
 #endif

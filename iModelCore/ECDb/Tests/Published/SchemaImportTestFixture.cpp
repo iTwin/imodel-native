@@ -182,7 +182,7 @@ bool ECDbMappingTestFixture::TryGetPersistedMapStrategy(PersistedMapStrategy& st
     CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT MapStrategy, MapStrategyOptions, MapStrategyAppliesToSubclasses FROM ec_ClassMap WHERE ClassId = ?");
     EXPECT_TRUE(stmt != nullptr);
 
-    stmt->BindInt64(1, classId);
+    stmt->BindId(1, classId);
     if (BE_SQLITE_ROW == stmt->Step())
         {
         const PersistedMapStrategy::Strategy strat = (PersistedMapStrategy::Strategy) stmt->GetValueInt(0);

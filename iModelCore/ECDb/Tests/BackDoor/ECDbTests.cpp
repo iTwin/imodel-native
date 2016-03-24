@@ -852,7 +852,7 @@ BentleyStatus ECDbTestUtility::SetECInstanceId(ECN::IECInstanceR instance, ECIns
     Utf8Char instanceIdStr[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
     if (!ECInstanceIdHelper::ToString(instanceIdStr, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, instanceId))
         {
-        LOG.errorv("Could not set ECInstanceId %lld on the ECInstanceId. Conversion to string failed.", instanceId.GetValue());
+        LOG.errorv("Could not set ECInstanceId %llu on the ECInstanceId. Conversion to string failed.", instanceId.GetValue());
         return ERROR;
         }
 

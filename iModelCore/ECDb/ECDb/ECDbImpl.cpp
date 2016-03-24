@@ -131,51 +131,30 @@ void ECDb::Impl::ClearECDbCache () const
         m_schemaManager->ClearCache ();
 
     m_statementRegistry.ReprepareStatements();
+
+    for (AppData::Key const* appDataKey : m_appDataToDeleteOnClearCache)
+        {
+        m_ecdb.DropAppData(*appDataKey);
+        }
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2014
 //---------------+---------------+---------------+---------------+---------------+------
-std::vector<BeBriefcaseBasedIdSequence const*> ECDb::Impl::GetSequences () const
+std::vector<BeBriefcaseBasedIdSequence const*> ECDb::Impl::GetSequences() const
     {
-    return std::move (std::vector < BeBriefcaseBasedIdSequence const* > 
-        {
-        &m_ecInstanceIdSequence, 
-        &m_ecSchemaIdSequence, 
-        &m_ecClassIdSequence, 
-        &m_ecPropertyIdSequence,
-        &m_ecEnumIdSequence,
-        &m_classmapIdSequence, 
-        &m_columnIdSequence, 
-        &m_constraintIdSequence, 
-        &m_tableIdSequence,
-        &m_propertypathIdSequence,
-        &m_indexIdSequence
-        });
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan       06/2012
-//+---------------+---------------+---------------+---------------+---------------+------
-ECDbSchemaManagerCR ECDb::Impl::Schemas() const
-    {
-    return *m_schemaManager;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  12/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-ECN::IECSchemaLocaterR ECDb::Impl::GetSchemaLocater() const
-    {
-    return *m_schemaManager;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  12/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-ECN::IECClassLocaterR ECDb::Impl::GetClassLocater() const
-    {
-    return *m_schemaManager;
+    return std::move(std::vector<BeBriefcaseBasedIdSequence const*>  {
+                                            &m_ecInstanceIdSequence,
+                                            &m_ecSchemaIdSequence,
+                                            &m_ecClassIdSequence,
+                                            &m_ecPropertyIdSequence,
+                                            &m_ecEnumIdSequence,
+                                            &m_classmapIdSequence,
+                                            &m_columnIdSequence,
+                                            &m_constraintIdSequence,
+                                            &m_tableIdSequence,
+                                            &m_propertypathIdSequence,
+                                            &m_indexIdSequence});
     }
 
 //---------------------------------------------------------------------------------------
@@ -264,7 +243,7 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
 
     while (BE_SQLITE_ROW == stmt.Step())
         {
-        ownerClassIds.push_back(stmt.GetValueInt64(0));
+        ownerClassIds.push_back(stmt.GetValueId<ECClassId>(0));
         }
     }
 
@@ -277,7 +256,7 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
         ECClassCP ownerClass = Schemas().GetECClass(ownerClassId);
         if (ownerClass == nullptr)
             {
-            GetIssueReporter().Report(ECDbIssueSeverity::Error, "FileInfo owner ECClass not found for ECClassId %lld.", ownerClassId);
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "FileInfo owner ECClass not found for ECClassId %llu.", ownerClassId.GetValue());
             return ERROR;
             }
 
@@ -285,7 +264,7 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
             purgeOwnershipByOwnersECSql.append(" OR ");
 
         Utf8String whereSnippet;
-        whereSnippet.Sprintf("(OwnerECClassId=%lld AND OwnerId NOT IN (SELECT ECInstanceId FROM ONLY %s))", ownerClassId, ownerClass->GetECSqlName().c_str());
+        whereSnippet.Sprintf("(OwnerECClassId=%llu AND OwnerId NOT IN (SELECT ECInstanceId FROM ONLY %s))", ownerClassId.GetValue(), ownerClass->GetECSqlName().c_str());
         purgeOwnershipByOwnersECSql.append(whereSnippet);
 
         isFirstOwnerClassId = false;
@@ -320,6 +299,17 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
     }
 
     return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDb::Impl::AddAppData(ECDb::AppData::Key const& key, ECDb::AppData* appData, bool deleteOnClearCache) const
+    {
+    if (deleteOnClearCache)
+        m_appDataToDeleteOnClearCache.insert(&key);
+        
+    m_ecdb.AddAppData(key, appData);
     }
 
 //******************************************

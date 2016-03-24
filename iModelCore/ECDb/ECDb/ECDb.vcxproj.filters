@@ -55,9 +55,6 @@
     <Filter Include="ECSchemas">
       <UniqueIdentifier>{48af7464-6331-4c7d-9e22-c4bb3bead7ba}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ECDbSchemaManager\Editor">
-      <UniqueIdentifier>{530c817c-10c4-4c2a-b027-5c943a300928}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECDbInternalTypes.h" />
@@ -134,9 +131,6 @@
     <ClInclude Include="ECSql\StructMappedToColumnsECSqlField.h">
       <Filter>ECSql\Fields</Filter>
     </ClInclude>
-    <ClInclude Include="ECSql\StructArrayMappedToSecondaryTableECSqlField.h">
-      <Filter>ECSql\Fields</Filter>
-    </ClInclude>
     <ClInclude Include="ECDbProfileManager.h">
       <Filter>ECDbProfile</Filter>
     </ClInclude>
@@ -186,9 +180,6 @@
       <Filter>ECDbProfile</Filter>
     </ClInclude>
     <ClInclude Include="ECSql\ECSqlStatementBase.h">
-      <Filter>ECSql\ECSqlStatement</Filter>
-    </ClInclude>
-    <ClInclude Include="ECSql\ECSqlPropertyPathImpl.h">
       <Filter>ECSql\ECSqlStatement</Filter>
     </ClInclude>
     <ClInclude Include="ECDbSchemaReader.h">
@@ -252,23 +243,11 @@
     <ClInclude Include="ECSql\ECSqlPropertyNameExpPreparer.h">
       <Filter>ECSql\ECSqlPrepare</Filter>
     </ClInclude>
-    <ClInclude Include="ECSql\StructArrayToSecondaryTableECSqlBinder.h">
-      <Filter>ECSql\ParameterBinding</Filter>
-    </ClInclude>
     <ClInclude Include="ECSql\PrimitiveArrayToColumnECSqlBinder.h">
       <Filter>ECSql\ParameterBinding</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\ECDb\ECJsonUtility.h">
-      <Filter>PublicApi</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECInstanceId.h">
       <Filter>PublicApi</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicAPI\ECDb\ECRelationshipPath.h">
-      <Filter>PublicApi</Filter>
-    </ClInclude>
-    <ClInclude Include="ECSql\ECSqlParameterValue.h">
-      <Filter>ECSql\ParameterBinding</Filter>
     </ClInclude>
     <ClInclude Include="ECSql\IECSqlPrimitiveValue.h">
       <Filter>ECSql\ECSqlStatement</Filter>
@@ -286,9 +265,6 @@
     <ClInclude Include="..\PublicAPI\ECDb\ECInstanceFinder.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="ECSql\EmbeddedECSqlStatement.h">
-      <Filter>ECSql\ECSqlStatement</Filter>
-    </ClInclude>
     <ClInclude Include="SchemaImportContext.h">
       <Filter>ECDbSchemaManager</Filter>
     </ClInclude>
@@ -300,9 +276,6 @@
     </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h">
       <Filter>PublicApi</Filter>
-    </ClInclude>
-    <ClInclude Include="ECSql\JsonReaderImpl.h">
-      <Filter>ECSql\Adapters</Filter>
     </ClInclude>
     <ClInclude Include="ECSql\SystemPropertyECSqlBinder.h">
       <Filter>ECSql\ParameterBinding</Filter>
@@ -328,13 +301,7 @@
     <ClInclude Include="..\PublicAPI\ECDb\ECInstanceId.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\ECDb\ECJsonUtility.h">
-      <Filter>PublicApi</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECRelationshipPath.h">
-      <Filter>PublicApi</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicAPI\ECDb\ECSqlBuilder.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECSqlColumnInfo.h">
@@ -352,7 +319,6 @@
     <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
     <ClInclude Include="ECDbSql.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
@@ -377,9 +343,6 @@
     <ClInclude Include="ClassMapInfo.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
-    <ClInclude Include="ClassMapSubclasses.h">
-      <Filter>ECDbMap</Filter>
-    </ClInclude>
     <ClInclude Include="ECDbMap.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
@@ -401,9 +364,6 @@
     <ClInclude Include="ViewGenerator.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
-    <ClInclude Include="ECSql\ECSqlStepTask.h">
-      <Filter>ECSql\ECSqlStatement</Filter>
-    </ClInclude>
     <ClInclude Include="BeBriefcaseBasedIdSequence.h" />
     <ClInclude Include="ECSql\OptionsExp.h">
       <Filter>ECSql\ECSqlParser</Filter>
@@ -411,15 +371,19 @@
     <ClInclude Include="ECDbSchemaPersistenceHelper.h">
       <Filter>ECDbSchemaManager</Filter>
     </ClInclude>
-    <ClInclude Include="ECDbSchemaEditor.h">
-      <Filter>ECDbSchemaManager\Editor</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicAPI\ECDb\ECDbExpressionSymbolProviders.h">
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h">
       <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="ECSql\StructArrayJsonECSqlBinder.h">
+      <Filter>ECSql\ParameterBinding</Filter>
+    </ClInclude>
+    <ClInclude Include="ECSql\StructArrayJsonECSqlField.h">
+      <Filter>ECSql\Fields</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
+    <ClInclude Include="ECDbExpressionSymbolProvider.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -494,9 +458,6 @@
     <ClCompile Include="ECSql\StructMappedToColumnsECSqlField.cpp">
       <Filter>ECSql\Fields</Filter>
     </ClCompile>
-    <ClCompile Include="ECSql\StructArrayMappedToSecondaryTableECSqlField.cpp">
-      <Filter>ECSql\Fields</Filter>
-    </ClCompile>
     <ClCompile Include="ECDbProfileManager.cpp">
       <Filter>ECDbProfile</Filter>
     </ClCompile>
@@ -561,9 +522,6 @@
       <Filter>ECSql\Fields</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\ECSqlStatementBase.cpp">
-      <Filter>ECSql\ECSqlStatement</Filter>
-    </ClCompile>
-    <ClCompile Include="ECSql\ECSqlPropertyPathImpl.cpp">
       <Filter>ECSql\ECSqlStatement</Filter>
     </ClCompile>
     <ClCompile Include="ECDbSchemaReader.cpp">
@@ -639,9 +597,6 @@
     <ClCompile Include="ECSql\ECSqlPropertyNameExpPreparer.cpp">
       <Filter>ECSql\ECSqlPrepare</Filter>
     </ClCompile>
-    <ClCompile Include="ECSql\StructArrayToSecondaryTableECSqlBinder.cpp">
-      <Filter>ECSql\ParameterBinding</Filter>
-    </ClCompile>
     <ClCompile Include="ECSql\PrimitiveArrayToColumnECSqlBinder.cpp">
       <Filter>ECSql\ParameterBinding</Filter>
     </ClCompile>
@@ -657,17 +612,11 @@
     <ClCompile Include="ECSql\ECInstanceDeleter.cpp">
       <Filter>ECSql\Adapters</Filter>
     </ClCompile>
-    <ClCompile Include="ECSql\ECRelationshipPath.cpp">
-      <Filter>ECSql\Adapters</Filter>
-    </ClCompile>
     <ClCompile Include="ECSql\ECInstanceUpdater.cpp">
       <Filter>ECSql\Adapters</Filter>
     </ClCompile>
     <ClCompile Include="ECInstanceId.cpp">
       <Filter>ECSql</Filter>
-    </ClCompile>
-    <ClCompile Include="ECSql\ECSqlParameterValue.cpp">
-      <Filter>ECSql\ParameterBinding</Filter>
     </ClCompile>
     <ClCompile Include="ECDbLogger.cpp" />
     <ClCompile Include="ECSql\PrimitiveToSingleColumnECSqlBinder.cpp">
@@ -678,12 +627,6 @@
     </ClCompile>
     <ClCompile Include="SchemaImportContext.cpp">
       <Filter>ECDbSchemaManager</Filter>
-    </ClCompile>
-    <ClCompile Include="ECSql\EmbeddedECSqlStatement.cpp">
-      <Filter>ECSql\ECSqlStatement</Filter>
-    </ClCompile>
-    <ClCompile Include="ECSql\ECJsonUtility.cpp">
-      <Filter>ECSql\Adapters</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\ECInstanceAdapterHelper.cpp">
       <Filter>ECSql\Adapters</Filter>
@@ -698,9 +641,6 @@
       <Filter>ECSql\Adapters</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\JsonReader.cpp">
-      <Filter>ECSql\Adapters</Filter>
-    </ClCompile>
-    <ClCompile Include="ECSql\JsonReaderImpl.cpp">
       <Filter>ECSql\Adapters</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\SystemPropertyECSqlBinder.cpp">
@@ -727,9 +667,6 @@
     <ClCompile Include="ClassMapInfo.cpp">
       <Filter>ECDbMap</Filter>
     </ClCompile>
-    <ClCompile Include="ClassMapSubclasses.cpp">
-      <Filter>ECDbMap</Filter>
-    </ClCompile>
     <ClCompile Include="ECDbMap.cpp">
       <Filter>ECDbMap</Filter>
     </ClCompile>
@@ -751,9 +688,6 @@
     <ClCompile Include="ViewGenerator.cpp">
       <Filter>ECDbMap</Filter>
     </ClCompile>
-    <ClCompile Include="ECSql\ECSqlStepTask.cpp">
-      <Filter>ECSql\ECSqlStatement</Filter>
-    </ClCompile>
     <ClCompile Include="ChangeSummary.cpp" />
     <ClCompile Include="BeBriefcaseBasedIdSequence.cpp" />
     <ClCompile Include="ECSql\OptionsExp.cpp">
@@ -762,10 +696,13 @@
     <ClCompile Include="ECDbSchemaPersistenceHelper.cpp">
       <Filter>ECDbSchemaManager</Filter>
     </ClCompile>
-    <ClCompile Include="ECDbSchemaEditor.cpp">
-      <Filter>ECDbSchemaManager\Editor</Filter>
+    <ClCompile Include="ECSql\StructArrayJsonECSqlBinder.cpp">
+      <Filter>ECSql\ParameterBinding</Filter>
     </ClCompile>
-    <ClCompile Include="ECDbExpressionSymbolProviders.cpp" />
+    <ClCompile Include="ECSql\StructArrayJsonECSqlField.cpp">
+      <Filter>ECSql\Fields</Filter>
+    </ClCompile>
+    <ClCompile Include="ECDbExpressionSymbolProvider.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="ECSchemas\ECDb_FileInfo.02.00.ecschema.xml">

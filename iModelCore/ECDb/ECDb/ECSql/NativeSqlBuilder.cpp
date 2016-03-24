@@ -233,7 +233,7 @@ NativeSqlBuilder& NativeSqlBuilder::AppendParameter (Utf8CP ecsqlParameterName, 
 NativeSqlBuilder& NativeSqlBuilder::Append (ECClassId ecClassId)
     {
     Utf8String classIdStr;
-    classIdStr.Sprintf ("%lld", ecClassId);
+    classIdStr.Sprintf ("%llu", ecClassId.GetValue());
     return Append (classIdStr.c_str ());
     }
 

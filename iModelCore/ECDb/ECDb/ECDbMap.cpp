@@ -149,7 +149,7 @@ BentleyStatus ECDbMap::CreateECClassViewsInDb() const
     std::vector<ClassMapCP> classMaps;
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        ECClassId classId = (ECClassId)stmt.GetValueInt64(0);
+        ECClassId classId = stmt.GetValueId<ECClassId>(0);
         ClassMapCP classMap = GetClassMap(classId);
         if (classMap == nullptr)
             {
@@ -157,7 +157,7 @@ BentleyStatus ECDbMap::CreateECClassViewsInDb() const
             return ERROR;
             }
 
-        BeAssert((classMap->GetClass().IsEntityClass() || classMap->GetClass().IsRelationshipClass()) && classMap->GetClassMapType() != IClassMap::Type::Unmapped);
+        BeAssert((classMap->GetClass().IsEntityClass() || classMap->GetClass().IsRelationshipClass()) && classMap->GetType() != ClassMap::Type::Unmapped);
         classMaps.push_back(classMap);
         }
 
@@ -309,8 +309,6 @@ ClassMapPtr ECDbMap::LoadClassMap(ClassMapLoadContext& ctx, ECN::ECClassCR ecCla
             else
                 classMap = RelationshipClassLinkTableMap::Create(*ecRelationshipClass, *this, mapStrategy, setIsDirty);
             }
-        else if (IClassMap::MapsToStructArrayTable(ecClass))
-            classMap = StructClassMap::Create(ecClass, *this, mapStrategy, setIsDirty);
         else
             classMap = ClassMap::Create(ecClass, *this, mapStrategy, setIsDirty);
         }
@@ -351,7 +349,7 @@ MapStatus ECDbMap::MapClass(ECClassCR ecClass)
 
     if (!ecClass.HasId())
         {
-        if (0 == ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema(GetECDbR(), ecClass))
+        if (!ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema(GetECDbR(), ecClass).IsValid())
             {
             LOG.errorv("ECClass %s does not exist in ECDb. Import ECSchema containing the class first", ecClass.GetFullName());
             BeAssert(false);
@@ -385,8 +383,6 @@ MapStatus ECDbMap::MapClass(ECClassCR ecClass)
                 else
                     classMap = RelationshipClassLinkTableMap::Create(*ecRelationshipClass, *this, mapStrategy, true);
                 }
-            else if (IClassMap::MapsToStructArrayTable(ecClass))
-                classMap = StructClassMap::Create(ecClass, *this, mapStrategy, true);
             else
                 classMap = ClassMap::Create(ecClass, *this, mapStrategy, true);
             }
@@ -498,23 +494,23 @@ ClassMapPtr ECDbMap::DoGetClassMap (ECClassCR ecClass) const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext* schemaImportContext, Utf8CP tableName, TableType tableType, bool isVirtual, Utf8CP primaryKeyColumnName, ECDbSqlTable const* baseTable)
+ECDbSqlTable* ECDbMap::FindOrCreateTable(SchemaImportContext* schemaImportContext, Utf8CP tableName, TableType tableType, bool isVirtual, Utf8CP primaryKeyColumnName, ECDbSqlTable const* baseTable)
     {
-    if (AssertIfIsNotImportingSchema ())
+    if (AssertIfIsNotImportingSchema())
         return nullptr;
 
-    BeMutexHolder lock (m_mutex);
-    ECDbSqlTable* table = GetSQLManager ().GetDbSchema ().FindTableP (tableName);
+    BeMutexHolder lock(m_mutex);
+    ECDbSqlTable* table = GetSQLManager().GetDbSchema().FindTableP(tableName);
     if (table != nullptr)
         {
         if (table->GetTableType() != tableType)
             {
-            std::function<Utf8CP (bool)> toStr = [] (bool val) {return val ? "true" : "false"; };
-            LOG.warningv ("Multiple classes are mapped to the table %s although the classes require mismatching table metadata: "
-                "Metadata IsMappedToExistingTable: Expected=%s - Actual=%s. Actual value is ignored.",
-                tableName,
-                toStr (tableType == TableType::Existing), toStr (!table->IsOwnedByECDb()));
-            BeAssert (false && "ECDb uses a table for two classes although the classes require mismatching table metadata.");
+            std::function<Utf8CP(bool)> toStr = [] (bool val) { return val ? "true" : "false"; };
+            LOG.warningv("Multiple classes are mapped to the table %s although the classes require mismatching table metadata: "
+                         "Metadata IsMappedToExistingTable: Expected=%s - Actual=%s. Actual value is ignored.",
+                         tableName,
+                         toStr(tableType == TableType::Existing), toStr(!table->IsOwnedByECDb()));
+            BeAssert(false && "ECDb uses a table for two classes although the classes require mismatching table metadata.");
             }
 
         return table;
@@ -523,43 +519,14 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext* schemaImportConte
     if (tableType != TableType::Existing)
         {
         table = GetSQLManager().GetDbSchemaR().CreateTable(tableName, tableType, isVirtual ? PersistenceType::Virtual : PersistenceType::Persisted, baseTable);
-        if (Utf8String::IsNullOrEmpty (primaryKeyColumnName))
+        if (Utf8String::IsNullOrEmpty(primaryKeyColumnName))
             primaryKeyColumnName = ECDB_COL_ECInstanceId;
 
-        auto column = table->CreateColumn (primaryKeyColumnName, ECDbSqlColumn::Type::Integer, ColumnKind::ECInstanceId, PersistenceType::Persisted);
-        if (table->GetPersistenceType () == PersistenceType::Persisted)
+        auto column = table->CreateColumn(primaryKeyColumnName, ECDbSqlColumn::Type::Integer, ColumnKind::ECInstanceId, PersistenceType::Persisted);
+        if (table->GetPersistenceType() == PersistenceType::Persisted)
             {
-            column->GetConstraintR ().SetIsNotNull (true);
-            table->GetPrimaryKeyConstraint ()->Add (primaryKeyColumnName);
-            }
-
-        if (tableType == TableType::StructArray)
-            {
-            table->CreateColumn (ECDB_COL_ParentECInstanceId, ECDbSqlColumn::Type::Integer, ColumnKind::ParentECInstanceId, PersistenceType::Persisted);
-            table->CreateColumn (ECDB_COL_ECPropertyPathId, ECDbSqlColumn::Type::Integer, ColumnKind::ECPropertyPathId, PersistenceType::Persisted);
-            table->CreateColumn (ECDB_COL_ECArrayIndex, ECDbSqlColumn::Type::Integer, ColumnKind::ECArrayIndex, PersistenceType::Persisted);
-            if (table->GetPersistenceType() == PersistenceType::Persisted)
-                {
-                if (schemaImportContext != nullptr)
-                    {
-                    //indexes are only required at schema import time
-                    //struct array indices don't get a class id
-                    Utf8String indexName("uix_");
-                    indexName.append(table->GetName()).append("_structarraykey");
-                    if (nullptr == schemaImportContext->GetECDbMapDb().CreateIndex(m_ecdb, *table, indexName.c_str(), true,
-                                                                            {ECDB_COL_ParentECInstanceId, 
-                                                                             ECDB_COL_ECPropertyPathId, 
-                                                                             ECDB_COL_ECArrayIndex, 
-                                                                             primaryKeyColumnName},
-                                                                             false,
-                                                                             true, 
-                                                                             ECClass::UNSET_ECCLASSID))
-                        {
-                        BeAssert(false);
-                        return nullptr;
-                        }
-                    }
-                }
+            column->GetConstraintR().SetIsNotNull(true);
+            table->GetPrimaryKeyConstraint()->Add(primaryKeyColumnName);
             }
         }
     else
@@ -568,26 +535,26 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext* schemaImportConte
         if (table == nullptr)
             return nullptr;
 
-        if (!Utf8String::IsNullOrEmpty (primaryKeyColumnName))
+        if (!Utf8String::IsNullOrEmpty(primaryKeyColumnName))
             {
-            auto editMode = table->GetEditHandle ().CanEdit ();
+            auto editMode = table->GetEditHandle().CanEdit();
             if (!editMode)
-                table->GetEditHandleR ().BeginEdit ();
+                table->GetEditHandleR().BeginEdit();
 
-            auto systemColumn = table->FindColumnP (primaryKeyColumnName);
+            auto systemColumn = table->FindColumnP(primaryKeyColumnName);
             if (systemColumn == nullptr)
                 {
                 LOG.errorv("Primary key column '%s' does not exist in table '%s' which was specified in ClassMap custom attribute together with ExistingTable MapStrategy. Specify the column name in the ECInstanceIdColumn property in the ClassMap custom attribute, if it is not ECDb's default primary key column name.", primaryKeyColumnName, tableName);
                 return nullptr;
                 }
 
-            systemColumn->SetKind (ColumnKind::ECInstanceId);
+            systemColumn->SetKind(ColumnKind::ECInstanceId);
             if (!editMode)
-                table->GetEditHandleR ().EndEdit ();
+                table->GetEditHandleR().EndEdit();
             }
         }
 
-    return table;   
+    return table;
     }
 
 //---------------------------------------------------------------------------------------
@@ -598,8 +565,8 @@ ECDbMap::ClassMapsByTable ECDbMap::GetClassMapsByTable() const
     ClassMapsByTable map;
     for (auto const& entry : m_classMapDictionary)
         {
-        if (entry.second->GetClassMapType() == IClassMap::Type::RelationshipEndTable ||
-            entry.second->GetClassMapType() == IClassMap::Type::Unmapped)
+        if (entry.second->GetType() == ClassMap::Type::RelationshipEndTable ||
+            entry.second->GetType() == ClassMap::Type::Unmapped)
             continue;
 
         ECDbSqlTable* primaryTable = &entry.second->GetPrimaryTable();
@@ -629,7 +596,7 @@ BentleyStatus ECDbMap::EvaluateColumnNotNullConstraints() const
     for (bpair<ECClassId, ClassMapPtr> const& kvPair : m_classMapDictionary)
         {
         ClassMapCR classMap = *kvPair.second;
-        if (classMap.GetClassMapType() == IClassMap::Type::RelationshipEndTable)
+        if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
             {
             RelationshipClassEndTableMap const& relClassMap = static_cast<RelationshipClassEndTableMap const&> (classMap);
             const bool impliesNotNullOnFkCol = relClassMap.GetConstraintMap(relClassMap.GetReferencedEnd()).GetRelationshipConstraint().GetCardinality().GetLowerLimit() > 0;
@@ -641,7 +608,7 @@ BentleyStatus ECDbMap::EvaluateColumnNotNullConstraints() const
     for (ECClassId relClassId : endTableRelClassIds)
         {
         ClassMap const* classMap = GetClassMap(relClassId);
-        if (classMap == nullptr || classMap->GetClassMapType() != IClassMap::Type::RelationshipEndTable)
+        if (classMap == nullptr || classMap->GetType() != ClassMap::Type::RelationshipEndTable)
             {
             BeAssert(false);
             return ERROR;
@@ -776,7 +743,7 @@ BentleyStatus ECDbMap::CreateOrUpdateIndexesInDb() const
     for (ECDbSqlIndex const* index : indexes)
         {
         const ECClassId classId = index->GetClassId();
-        if (ECClass::UNSET_ECCLASSID == classId)
+        if (!classId.IsValid())
             continue;
 
         ECDbSqlTable const& indexTable = index->GetTable();
@@ -893,7 +860,7 @@ BentleyStatus ECDbMap::CreateClassIdColumnIfNecessary(ECDbSqlTable& table, bset<
     Utf8String indexName("ix_");
     indexName.append(table.GetName()).append("_ecclassid");
     return m_schemaImportContext->GetECDbMapDb().CreateIndex(GetECDb(), table, indexName.c_str(), false, {ecClassIdColumn}, 
-                                      false, true, ECClass::UNSET_ECCLASSID) != nullptr ? SUCCESS : ERROR;
+                                      false, true, ECClassId()) != nullptr ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -945,7 +912,7 @@ size_t ECDbMap::GetTableCountOnRelationshipEnd(ECRelationshipConstraintCR relati
     std::map<PersistenceType, std::set<ECDbSqlTable const*>> tables;
     bool abstractEndPoint = relationshipEnd.GetClasses().size() == 1 && relationshipEnd.GetClasses().front()->GetClassModifier() == ECClassModifier::Abstract;
     std::vector<ECClassCP> classes = GetClassesFromRelationshipEnd(relationshipEnd);
-    for (IClassMap const* classMap : classMaps)
+    for (ClassMap const* classMap : classMaps)
         {
         if (abstractEndPoint)
             tables[classMap->GetPrimaryTable().GetPersistenceType()].insert(&classMap->GetJoinedTable());
@@ -973,7 +940,7 @@ std::set<ClassMap const*> ECDbMap::GetClassMapsFromRelationshipEnd(ECRelationshi
     std::set<ClassMap const*> classMaps;
     for (ECClassCP ecClass : constraint.GetClasses())
         {
-        if (IClassMap::IsAnyClass(*ecClass))
+        if (ClassMap::IsAnyClass(*ecClass))
             {
             if (hasAnyClass)
                 *hasAnyClass = true;
@@ -1046,9 +1013,9 @@ std::set<ECDbSqlTable const*> ECDbMap::GetTablesFromRelationshipEnd(ECRelationsh
 
     std::map<ECDbSqlTable const*, std::set<ECDbSqlTable const*>> joinedTables;
     std::set<ECDbSqlTable const*> tables;
-    for (IClassMap const* classMap : classMaps)
+    for (ClassMap const* classMap : classMaps)
         {
-        IClassMap::TableListR classPersistInTables = classMap->GetTables();
+        ClassMap::TableListR classPersistInTables = classMap->GetTables();
         if (classPersistInTables.size() == 1)
             {
             tables.insert(classPersistInTables.front());
@@ -1099,67 +1066,6 @@ std::set<ECDbSqlTable const*> ECDbMap::GetTablesFromRelationshipEnd(ECRelationsh
 
 
     return finalListOfTables[PersistenceType::Persisted];
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Affan.Khan                      12/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-std::set<ECDbSqlTable const*> ECDbMap::GetTablesFromRelationshipEndWithColumn(ECRelationshipConstraintCR relationshipEnd, Utf8CP column) const
-    {
-    bool hasAnyClass = false;
-    std::set<ClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
-
-    if (hasAnyClass)
-        return std::set<ECDbSqlTable const*>();
-
-    std::map<PersistenceType, std::set<ECDbSqlTable const*>> tables;
-    std::vector<ECClassCP> classes = GetClassesFromRelationshipEnd(relationshipEnd);
-    for (IClassMap const* classMap : classMaps)
-        {
-        ECDbSqlTable const* table = classMap->GetPrimaryTable().FindColumnCP(column) != nullptr ? &classMap->GetPrimaryTable() : nullptr;
-        if (table == nullptr && !classMap->IsMappedToSingleTable())
-            table = classMap->GetJoinedTable().FindColumnCP(column) != nullptr ? &classMap->GetJoinedTable() : nullptr;
-
-        if (table)
-            tables[table->GetPersistenceType()].insert(table);
-        }
-
-
-    if (tables[PersistenceType::Persisted].size() > 0)
-        return tables[PersistenceType::Persisted];
-
-    return tables[PersistenceType::Virtual];
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Affan.Khan                      12/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-ECDbSqlTable const* ECDbMap::GetFirstTableFromRelationshipEnd(ECRelationshipConstraintCR relationshipEnd) const
-    {
-    std::map<PersistenceType, std::set<ECDbSqlTable const*>> tables;
-    bool hasAnyClass;
-    std::set<ClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
-
-    if (hasAnyClass)
-        return nullptr;
-        
-    for (ClassMap const* classMap : classMaps)
-        {
-        tables[classMap->GetJoinedTable().GetPersistenceType()].insert(&classMap->GetJoinedTable());
-        }
-
-    std::set<ECDbSqlTable const*>& persistedTables = tables[PersistenceType::Persisted];
-    std::set<ECDbSqlTable const*>& virtualTables = tables[PersistenceType::Virtual];
-
-    if (persistedTables.size() > 0)
-        {
-        return *persistedTables.begin();
-        }
-
-    if (tables[PersistenceType::Virtual].size() > 0)
-        return *virtualTables.begin();
-
-    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1242,11 +1148,11 @@ void ECDbMap::LightweightCache::LoadClassIdsPerTable() const
                 Enum::ToInt(ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable));
 
     CachedStatementPtr stmt = m_map.GetECDbR().GetCachedStatement(sql.c_str());
-    ECDbTableId currentTableId = -1;
+    ECDbTableId currentTableId;
     ECDbSqlTable const* currentTable = nullptr;
     while (stmt->Step() == BE_SQLITE_ROW)
         {
-        ECDbTableId tableId = stmt->GetValueInt64(0);
+        ECDbTableId tableId = stmt->GetValueId<ECDbTableId>(0);
         if (currentTableId != tableId)
             {
             Utf8CP tableName = stmt->GetValueText(1);
@@ -1255,7 +1161,7 @@ void ECDbMap::LightweightCache::LoadClassIdsPerTable() const
             BeAssert(currentTable != nullptr);
             }
 
-        ECClassId id = stmt->GetValueInt64(2);
+        ECClassId id = stmt->GetValueId<ECClassId>(2);
         m_classIdsPerTable[currentTable].push_back(id);
         m_tablesPerClassId[id].insert(currentTable);
         }
@@ -1266,7 +1172,7 @@ void ECDbMap::LightweightCache::LoadClassIdsPerTable() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-void ECDbMap::LightweightCache::LoadAnyClassRelationships () const
+void ECDbMap::LightweightCache::LoadAnyClassRelationships() const
     {
     if (m_loadedFlags.m_anyClassRelationshipsIsLoaded)
         return;
@@ -1275,18 +1181,18 @@ void ECDbMap::LightweightCache::LoadAnyClassRelationships () const
         "SELECT RCC.RelationshipClassId, RCC.RelationshipEnd FROM ec_RelationshipConstraintClass RCC "
         "WHERE RCC.ClassId IN (SELECT Id FROM ec_Class WHERE Name = 'AnyClass')";
 
-    auto stmt1 = m_map.GetECDbR ().GetCachedStatement (sql1);
-    while (stmt1->Step () == BE_SQLITE_ROW)
+    auto stmt1 = m_map.GetECDbR().GetCachedStatement(sql1);
+    while (stmt1->Step() == BE_SQLITE_ROW)
         {
-        ECClassId id = stmt1->GetValueInt64 (0);
-        RelationshipEnd filter = stmt1->GetValueInt (1) == 0 ? RelationshipEnd::Source : RelationshipEnd::Target;
+        ECClassId id = stmt1->GetValueId<ECClassId>(0);
+        RelationshipEnd filter = stmt1->GetValueInt(1) == 0 ? RelationshipEnd::Source : RelationshipEnd::Target;
 
-        auto itor = m_anyClassRelationships.find (id);
-        if (itor == m_anyClassRelationships.end ())
-            m_anyClassRelationships.insert (make_bpair (id, filter));
+        auto itor = m_anyClassRelationships.find(id);
+        if (itor == m_anyClassRelationships.end())
+            m_anyClassRelationships.insert(make_bpair(id, filter));
         else
             {
-            m_anyClassRelationships[id] = static_cast<RelationshipEnd>((int)(itor->second) & (int)(filter));
+            m_anyClassRelationships[id] = static_cast<RelationshipEnd>((int) (itor->second) & (int) (filter));
             }
         }
 
@@ -1296,31 +1202,32 @@ void ECDbMap::LightweightCache::LoadAnyClassRelationships () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-void ECDbMap::LightweightCache::LoadAnyClassReplacements () const
+void ECDbMap::LightweightCache::LoadAnyClassReplacements() const
     {
     if (m_loadedFlags.m_anyClassReplacementsLoaded)
         return;
 
     Utf8String sql;
     sql.Sprintf("SELECT ec_Class.Id  FROM ec_PropertyMap "
-        "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
-        "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
-        "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-        "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
-        "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "WHERE ec_ClassMap.MapStrategy <> 0 AND ec_Class.Type <> %d AND ec_Table.IsVirtual = 0 "
-        "GROUP BY ec_Class.Id", Enum::ToInt(ECN::ECClassType::Relationship));
+                "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
+                "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+                "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
+                "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
+                "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
+                "WHERE ec_ClassMap.MapStrategy <> 0 AND ec_Class.Type <> %d AND ec_Table.IsVirtual = 0 "
+                "GROUP BY ec_Class.Id", Enum::ToInt(ECN::ECClassType::Relationship));
 
 
-    auto stmt1 = m_map.GetECDbR ().GetCachedStatement (sql.c_str());
-    while (stmt1->Step () == BE_SQLITE_ROW)
+    auto stmt1 = m_map.GetECDbR().GetCachedStatement(sql.c_str());
+    while (stmt1->Step() == BE_SQLITE_ROW)
         {
-        ECClassId id = stmt1->GetValueInt64 (0);
-        m_anyClassReplacements.push_back (id);
+        ECClassId id = stmt1->GetValueId<ECClassId>(0);
+        m_anyClassReplacements.push_back(id);
         }
 
     m_loadedFlags.m_anyClassReplacementsLoaded = true;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
@@ -1342,8 +1249,8 @@ void ECDbMap::LightweightCache::LoadRelationshipCache () const
     auto stmt0 = m_map.GetECDbR ().GetCachedStatement (sql0);
     while (stmt0->Step () == BE_SQLITE_ROW)
         {
-        ECClassId constraintClassId = stmt0->GetValueInt64 (0);
-        ECClassId relationshipId = stmt0->GetValueInt64 (1);
+        ECClassId constraintClassId = stmt0->GetValueId<ECClassId>(0);
+        ECClassId relationshipId = stmt0->GetValueId<ECClassId>(1);
         BeAssert (!stmt0->IsColumnNull (2));
         RelationshipEnd end = stmt0->GetValueInt (2) == 0 ? RelationshipEnd::Source : RelationshipEnd::Target;
 
@@ -1435,11 +1342,11 @@ void ECDbMap::LightweightCache::LoadHorizontalPartitions ()  const
     CachedStatementPtr stmt = m_map.GetECDbR ().GetCachedStatement (sql.c_str());
     while (stmt->Step() == BE_SQLITE_ROW)
         {
-        ECClassId rootClassId = stmt->GetValueInt64(0);
+        ECClassId rootClassId = stmt->GetValueId<ECClassId>(0);
         if (anyClassId == rootClassId)
             continue;
 
-        ECClassId derivedClassId = stmt->GetValueInt64(1);
+        ECClassId derivedClassId = stmt->GetValueId<ECClassId>(1);
 
         Utf8CP tableName = stmt->GetValueText(2);
         ECDbSqlTable const* table = m_map.GetSQLManager().GetDbSchema().FindTable(tableName);
@@ -1456,66 +1363,19 @@ void ECDbMap::LightweightCache::LoadHorizontalPartitions ()  const
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
-void ECDbMap::LightweightCache::LoadRelationshipByTable()  const
-    {
-    if (m_loadedFlags.m_relationshipPerTableLoaded)
-        return;
-
-    Utf8String sql;
-    sql.Sprintf("SELECT DISTINCT ec_Class.Id, ec_Table.Name, ec_ClassMap.MapStrategy FROM ec_Column "
-                "INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-                "INNER JOIN ec_PropertyMap ON  ec_PropertyMap.ColumnId = ec_Column.Id "
-                "INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
-                "INNER JOIN ec_Property ON ec_PropertyPath.RootPropertyId = ec_Property.Id "
-                "INNER JOIN ec_ClassMap ON ec_PropertyMap.ClassMapId = ec_ClassMap.Id "
-                "INNER JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
-                "WHERE ec_ClassMap.MapStrategy  <> 0 AND "
-                "ec_Column.ColumnKind & %d = 0 AND "
-                "ec_Class.Type=%d AND ec_Table.IsVirtual = 0",
-                Enum::ToInt(Enum::Or(ColumnKind::ECInstanceId, ColumnKind::ECClassId)),
-                Enum::ToInt(ECClassType::Relationship));
-
-    auto stmt = m_map.GetECDbR().GetCachedStatement(sql.c_str());
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
-        auto relationshipClassId = stmt->GetValueInt64(0);
-        Utf8CP tableName = stmt->GetValueText(1);
-        RelationshipType type = RelationshipType::Link;
-        if (stmt->GetValueInt(2) == Enum::ToInt(RelationshipType::Source))
-            type = RelationshipType::Source;
-        else if (stmt->GetValueInt(2) == Enum::ToInt(RelationshipType::Target))
-            type = RelationshipType::Target;
-
-        auto table = m_map.GetSQLManager().GetDbSchema().FindTable(tableName);
-        BeAssert(table != nullptr);
-        m_relationshipPerTable[table][relationshipClassId] = type;
-        }
-
-    m_loadedFlags.m_relationshipPerTableLoaded = true;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      07/2015
 //--------------------------------------------------------------------------------------
-ECN::ECClassId ECDbMap::LightweightCache::GetAnyClassId () const
+ECN::ECClassId ECDbMap::LightweightCache::GetAnyClassId() const
     {
-    if (m_anyClassId == ECClass::UNSET_ECCLASSID)
+    if (!m_anyClassId.IsValid())
         {
-        auto stmt = m_map.GetECDbR ().GetCachedStatement ("SELECT ec_Class.Id FROM ec_Class INNER JOIN ec_Schema ON ec_Schema.Id = ec_Class.SchemaId WHERE ec_Class.Name = 'AnyClass' AND ec_Schema.Name = 'Bentley_Standard_Classes'");
-        if (stmt->Step () == BE_SQLITE_ROW)
-            m_anyClassId = stmt->GetValueInt64 (0);
+        auto stmt = m_map.GetECDbR().GetCachedStatement("SELECT ec_Class.Id FROM ec_Class INNER JOIN ec_Schema ON ec_Schema.Id = ec_Class.SchemaId WHERE ec_Class.Name = 'AnyClass' AND ec_Schema.Name = 'Bentley_Standard_Classes'");
+        if (stmt->Step() == BE_SQLITE_ROW)
+            m_anyClassId = stmt->GetValueId<ECClassId>(0);
         }
 
     return m_anyClassId;
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
-ECDbMap::LightweightCache::RelationshipClassIds const& ECDbMap::LightweightCache::GetRelationshipsForConstraintClass(ECN::ECClassId constraintClassId) const
-    {
-    LoadRelationshipCache ();
-    return m_relationshipClassIdsPerConstraintClassIds[constraintClassId];
-    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
@@ -1536,45 +1396,10 @@ ECDbMap::LightweightCache::ConstraintClassIds const& ECDbMap::LightweightCache::
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-ECDbMap::LightweightCache::RelationshipClassIds const& ECDbMap::LightweightCache::GetAnyClassRelationships() const
-    {
-    LoadAnyClassRelationships ();
-    return m_anyClassRelationships;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
-ECDbMap::LightweightCache::RelationshipTypeByClassId ECDbMap::LightweightCache::GetRelationshipsMapToTable (ECDbSqlTable const& table) const
-    {
-    LoadRelationshipByTable ();
-    return m_relationshipPerTable[&table];
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
-ECDbMap::LightweightCache::RelationshipPerTable ECDbMap::LightweightCache::GetRelationshipsMapToTables () const
-    {
-    LoadRelationshipByTable ();
-    return m_relationshipPerTable;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
 std::vector<ECClassId> const& ECDbMap::LightweightCache::GetClassesForTable (ECDbSqlTable const& table) const
     {
     LoadClassIdsPerTable ();
     return m_classIdsPerTable[&table];
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
-std::vector<ECClassId> const& ECDbMap::LightweightCache::GetAnyClassReplacements() const
-    {
-    LoadAnyClassReplacements ();
-    return m_anyClassReplacements;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1598,21 +1423,6 @@ ECDbMap::LightweightCache::ClassIdsPerTableMap const& ECDbMap::LightweightCache:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-void ECDbMap::LightweightCache::Load(bool forceReload)
-    {
-    if (forceReload)
-        Reset();
-
-    LoadAnyClassRelationships();
-    LoadRelationshipCache();
-    LoadClassIdsPerTable();
-    LoadHorizontalPartitions();
-    LoadAnyClassReplacements();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
 void ECDbMap::LightweightCache::Reset ()
     {
     m_loadedFlags.m_classIdsPerTableIsLoaded = 
@@ -1622,7 +1432,7 @@ void ECDbMap::LightweightCache::Reset ()
         m_loadedFlags.m_anyClassReplacementsLoaded = 
         m_loadedFlags.m_anyClassRelationshipsIsLoaded = false;
 
-    m_anyClassId = ECClass::UNSET_ECCLASSID;
+    m_anyClassId = ECClassId();
     m_relationshipEndsByClassIdRev.clear ();
     m_horizontalPartitions.clear();
     m_classIdsPerTable.clear();
@@ -1643,7 +1453,7 @@ ECDbMap::LightweightCache::LightweightCache (ECDbMapCR map) : m_map(map) { Reset
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-StorageDescription const& ECDbMap::LightweightCache::GetStorageDescription (IClassMap const& classMap)  const
+StorageDescription const& ECDbMap::LightweightCache::GetStorageDescription (ClassMap const& classMap)  const
     {
     const ECClassId classId = classMap.GetClass().GetId();
     auto it = m_storageDescriptions.find(classId);
@@ -1662,34 +1472,6 @@ StorageDescription const& ECDbMap::LightweightCache::GetStorageDescription (ICla
 //****************************************************************************************
 // StorageDescription
 //****************************************************************************************
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    05 / 2015
-//------------------------------------------------------------------------------------------
-StorageDescription::StorageDescription(StorageDescription&& rhs)
-    : m_classId(std::move(rhs.m_classId)), m_horizontalPartitions(std::move(rhs.m_horizontalPartitions)),
-    m_nonVirtualHorizontalPartitionIndices(std::move(rhs.m_nonVirtualHorizontalPartitionIndices)),
-    m_rootHorizontalPartitionIndex(std::move(rhs.m_rootHorizontalPartitionIndex)),
-    m_rootVerticalPartitionIndex(std::move(rhs.m_rootVerticalPartitionIndex)), m_verticalPartitions(std::move(rhs.m_verticalPartitions))
-    {}
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    05 / 2015
-//------------------------------------------------------------------------------------------
-StorageDescription& StorageDescription::operator=(StorageDescription&& rhs)
-    {
-    if (this != &rhs)
-        {
-        m_classId = std::move(rhs.m_classId);
-        m_horizontalPartitions = std::move(rhs.m_horizontalPartitions);
-        m_nonVirtualHorizontalPartitionIndices = std::move(rhs.m_nonVirtualHorizontalPartitionIndices);
-        m_rootHorizontalPartitionIndex = std::move(rhs.m_rootHorizontalPartitionIndex);
-        m_rootVerticalPartitionIndex = std::move(rhs.m_rootVerticalPartitionIndex);
-        m_verticalPartitions = std::move(rhs.m_verticalPartitions);
-        }
-
-    return *this;
-    }
-
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    10 / 2015
@@ -1741,12 +1523,12 @@ BentleyStatus StorageDescription::GenerateECClassIdFilter(NativeSqlBuilder& filt
 //@bsimethod                                                    Affan.Khan    05 / 2015
 //------------------------------------------------------------------------------------------
 //static
-std::unique_ptr<StorageDescription> StorageDescription::Create(IClassMap const& classMap, ECDbMap::LightweightCache const& lwmc)
+std::unique_ptr<StorageDescription> StorageDescription::Create(ClassMap const& classMap, ECDbMap::LightweightCache const& lwmc)
     {
     const ECClassId classId = classMap.GetClass().GetId();
     std::unique_ptr<StorageDescription> storageDescription = std::unique_ptr<StorageDescription>(new StorageDescription(classId));
     std::set<ECClassId> derviedClassSet;
-    if (classMap.GetClassMapType() == IClassMap::Type::RelationshipEndTable)
+    if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
         {
         RelationshipClassEndTableMap const& relClassMap = static_cast<RelationshipClassEndTableMap const&> (classMap);
         for (ECDbSqlTable const* endTable : relClassMap.GetTables())
@@ -1837,6 +1619,7 @@ Partition const* StorageDescription::GetHorizontalPartition(ECDbSqlTable const& 
 
     return nullptr;
     }
+
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.KHan    11 / 2015
 //------------------------------------------------------------------------------------------
@@ -1850,6 +1633,7 @@ Partition const* StorageDescription::GetVerticalPartition(ECDbSqlTable const& ta
 
     return nullptr;
     }
+
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    10 / 2015
 //------------------------------------------------------------------------------------------
@@ -1859,14 +1643,6 @@ Partition const& StorageDescription::GetRootHorizontalPartition() const
     return m_horizontalPartitions[m_rootHorizontalPartitionIndex];
     }
 
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan    11 / 2015
-//------------------------------------------------------------------------------------------
-Partition const& StorageDescription::GetRootVerticalPartition() const
-    {
-    BeAssert(m_rootVerticalPartitionIndex < m_verticalPartitions.size());
-    return m_verticalPartitions[m_rootVerticalPartitionIndex];
-    }
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    05 / 2015
 //------------------------------------------------------------------------------------------
@@ -1943,27 +1719,6 @@ Partition::Partition(Partition&& rhs)
     rhs.m_table = nullptr;
     }
 
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    05 / 2015
-//------------------------------------------------------------------------------------------
-Partition& Partition::operator=(Partition&& rhs)
-    {
-    if (this != &rhs)
-        {
-        m_table = std::move(rhs.m_table);
-        m_partitionClassIds = std::move(rhs.m_partitionClassIds);
-        m_inversedPartitionClassIds = std::move(rhs.m_inversedPartitionClassIds);
-        m_hasInversedPartitionClassIds = std::move(rhs.m_hasInversedPartitionClassIds);
-
-        //nulling out the RHS m_table pointer is defensive, even if the destructor doesn't
-        //free the table (as it is now owned by Partition). If the ownership ever changes,
-        //this method is safe.
-        rhs.m_table = nullptr;
-        }
-
-    return *this;
-    }
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    05 / 2015
 //------------------------------------------------------------------------------------------
@@ -2077,7 +1832,7 @@ BentleyStatus RelationshipPurger::Initialize(ECDbR ecdb)
 
     while (stmt->Step() == BE_SQLITE_ROW)
         {
-        ECClassId id = stmt->GetValueInt64(0);
+        ECClassId id = stmt->GetValueId<ECClassId>(0);
         if (RelationshipClassMapCP relationshipClassMap = static_cast<RelationshipClassMapCP>(map.GetClassMap(id)))
             relationships.push_back(relationshipClassMap);
         }
@@ -2106,7 +1861,7 @@ BentleyStatus RelationshipPurger::Initialize(ECDbR ecdb)
                 }
             }
 
-        if (relClassMap->GetClassMapType() == IClassMap::Type::RelationshipEndTable)
+        if (relClassMap->GetType() == ClassMap::Type::RelationshipEndTable)
             {
             RelationshipClassEndTableMap const* endTableRelClassMap = static_cast<RelationshipClassEndTableMap const*>(relClassMap);
             PropertyMapCP foreignIdPropMap = endTableRelClassMap->GetConstraintECInstanceIdPropMap(endTableRelClassMap->GetReferencedEnd());

@@ -97,7 +97,7 @@ ECSqlPrepareContext::ExpScope& ECSqlPrepareContext::ExpScopeStack::CurrentR ()
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment)
     : m_ecdb(ecdb), m_ecsqlStatement(preparedStatment), m_parentCtx(nullptr), m_parentArrayProperty(nullptr),
-    m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_onlyExecuteStepTasks(false), m_joinedTableClassId(ECClass::UNSET_ECCLASSID), m_joinedTableInfo(nullptr)
+    m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_joinedTableInfo(nullptr)
     {}
 
 //-----------------------------------------------------------------------------------------
@@ -105,7 +105,7 @@ ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& prepar
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECClassId joinedTableClassId)
     : m_ecdb(ecdb), m_ecsqlStatement(preparedStatment), m_parentCtx(nullptr), m_parentArrayProperty(nullptr),
-    m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_onlyExecuteStepTasks(false), m_joinedTableClassId(joinedTableClassId), m_joinedTableInfo(nullptr)
+    m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_joinedTableClassId(joinedTableClassId), m_joinedTableInfo(nullptr)
     {}
 
 //-----------------------------------------------------------------------------------------
@@ -113,7 +113,7 @@ ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& prepar
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECSqlPrepareContext const& parentCtx)
     : m_ecdb(ecdb), m_ecsqlStatement(preparedStatment), m_parentCtx(&parentCtx), m_parentArrayProperty(nullptr),
-    m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_onlyExecuteStepTasks(false), m_joinedTableClassId(ECClass::UNSET_ECCLASSID), m_joinedTableInfo(nullptr)
+    m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_joinedTableInfo(nullptr)
     {}
 
 //-----------------------------------------------------------------------------------------
@@ -122,19 +122,8 @@ ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& prepar
 ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECSqlPrepareContext const& parentCtx, ArrayECPropertyCR parentArrayProperty, ECSqlColumnInfo const* parentColumnInfo)
     : m_ecdb(ecdb), m_ecsqlStatement(preparedStatment), m_parentCtx(&parentCtx),
     m_parentArrayProperty(&parentArrayProperty), m_parentColumnInfo(parentColumnInfo),
-    m_nativeStatementIsNoop(false), m_onlyExecuteStepTasks(false), m_joinedTableClassId(ECClass::UNSET_ECCLASSID), m_joinedTableInfo(nullptr)
+    m_nativeStatementIsNoop(false), m_joinedTableInfo(nullptr)
     {}
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    02/2014
-//+---------------+---------------+---------------+---------------+---------------+--------
-IClassMap::View ECSqlPrepareContext::GetClassMapViewMode () const
-    {
-    if (m_parentArrayProperty == nullptr)
-        return IClassMap::View::DomainClass;
-    else
-        return IClassMap::View::EmbeddedType;
-    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       01/2016
@@ -179,86 +168,18 @@ void ECSqlPrepareContext::ExpScope::IncrementNativeSqlSelectClauseColumnCount (s
     }
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       02/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-//static 
-Utf8String ECSqlPrepareContext::CreateECInstanceIdSelectionQuery(ECSqlPrepareContext& ctx, ClassNameExp const& classNameExpr, WhereExp const* whereExp)
-    {
-    NativeSqlBuilder selectBuilder;
-    selectBuilder.Append("SELECT DISTINCT ");
-    if (!classNameExpr.GetAlias().empty())
-        {
-        selectBuilder.AppendEscaped(classNameExpr.GetAlias().c_str());
-        selectBuilder.AppendDot();
-        }
-
-    selectBuilder.Append("ECInstanceId, GetECClassId() FROM ");
-
-    if (!classNameExpr.IsPolymorphic())
-        selectBuilder.Append("ONLY ");
-
-    selectBuilder.AppendEscaped(classNameExpr.GetSchemaName().c_str());
-    selectBuilder.AppendDot();
-    selectBuilder.AppendEscaped(classNameExpr.GetClassName().c_str());
-    selectBuilder.AppendSpace();
-
-    if (!classNameExpr.GetAlias().empty())
-        {
-        selectBuilder.AppendEscaped(classNameExpr.GetAlias().c_str());
-        selectBuilder.AppendSpace();
-        }
-
-    if (whereExp != nullptr)
-        selectBuilder.Append(whereExp->ToECSql().c_str());
-
-    return selectBuilder.ToString();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       04/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-//static 
-int ECSqlPrepareContext::FindLastParameterIndexBeforeWhereClause (Exp const& statementExp, WhereExp const* whereExp)
-    {
-    int index = 0;
-    FindLastParameterIndexBeforeWhereClause (index, statementExp, whereExp);
-    return index;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       04/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-//static 
-bool ECSqlPrepareContext::FindLastParameterIndexBeforeWhereClause (int& index, Exp const& statementExp, WhereExp const* whereExp)
-    {
-    for (auto exp : statementExp.GetChildren ())
-        {
-        if (exp == whereExp)
-            return true;
-
-        else if (exp->IsParameterExp ())
-            index++;
-
-        else if (FindLastParameterIndexBeforeWhereClause (index, *exp, whereExp))
-            return true;
-        }
-
-    return false;
-    }
-
-//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       01/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 //static 
 std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::JoinedTableInfo::CreateForInsert(ECSqlPrepareContext& ctx, InsertStatementExp const& exp)
     {
-    IClassMap const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
+    ClassMap const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
     if (!classMap.HasJoinedTable())
         return nullptr;
 
     NativeSqlBuilder parentOfJoinedTableECSQL;
     NativeSqlBuilder joinedTableECSQL;
-    IClassMap const* parentOfJoinedTableClassMap = classMap.FindClassMapOfParentOfJoinedTable();
+    ClassMap const* parentOfJoinedTableClassMap = classMap.FindClassMapOfParentOfJoinedTable();
     if (parentOfJoinedTableClassMap == nullptr)
         {
         BeAssert(parentOfJoinedTableClassMap != nullptr && "Root class for joined table must exist.");
@@ -326,12 +247,6 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
             joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
             info->m_parameterMap.GetSecondaryR().Add(thisValueParams);
             }
-        else if (property->GetPropertyMap().GetAsStructArrayTablePropertyMap())
-            {
-            joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
-            joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
-            info->m_parameterMap.GetSecondaryR().Add(thisValueParams);
-            }
         else
             {
             BeAssert(property->GetPropertyMap().MapsToTable(primaryTable));
@@ -369,13 +284,13 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
 //static 
 std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::JoinedTableInfo::CreateForUpdate(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp)
     {
-    IClassMap const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
+    ClassMap const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
     if (!classMap.HasJoinedTable())
         return nullptr;
 
     NativeSqlBuilder parentOfJoinedTableECSQL;
     NativeSqlBuilder joinedTableECSQL;
-    IClassMap const* parentOfJoinedTableClassMap = classMap.FindClassMapOfParentOfJoinedTable();
+    ClassMap const* parentOfJoinedTableClassMap = classMap.FindClassMapOfParentOfJoinedTable();
 
     ECDbSqlTable const& primaryTable = classMap.GetPrimaryTable();
     ECDbSqlTable const& joinedTable = classMap.GetJoinedTable();
@@ -417,12 +332,6 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
             return nullptr;
             }
         else if (property->GetPropertyMap().MapsToTable(joinedTable))
-            {
-            joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
-            joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
-            info->m_parameterMap.GetSecondaryR().Add(thisValueParams);
-            }
-        else if (property->GetPropertyMap().GetAsStructArrayTablePropertyMap())
             {
             joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
             joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/IECSqlValue.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -102,6 +102,13 @@ public:
     //!   those types can implicitly be converted into each other.
     ECDB_EXPORT int64_t GetInt64() const;
 
+    //! Gets the value as uint64_t
+    //! @return uint64_t value
+    //! @note Possible errors:
+    //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
+    //!   those types can implicitly be converted into each other.
+    uint64_t GetUInt64() const { return (uint64_t) GetInt64(); }
+
     //! Gets the value as UTF-8 encoded string
     //! @return UTF-8 encoded string value
     //! @note Possible errors:
@@ -142,7 +149,7 @@ public:
     //! @note Possible errors:
     //! - column data does not hold a BeInt64Id
     template <class TBeInt64Id>
-    TBeInt64Id GetId() const { return TBeInt64Id(GetInt64()); }
+    TBeInt64Id GetId() const { return TBeInt64Id(GetUInt64()); }
 
     //! Used to access the value if it is a struct value
     //! @return Struct value

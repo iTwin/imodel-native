@@ -20,21 +20,6 @@ std::vector<ECDbSqlColumn const*> SystemPropertyMap::ToVector(ECDbSqlColumn cons
     }
 
 //----------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                02/2016
-//+---------------+---------------+---------------+---------------+---------------+-
-std::vector<std::weak_ptr<ECDbSqlColumn>> SystemPropertyMap::ToWeakPtr(std::vector<ECDbSqlColumn const*>const& columns)
-    {
-    std::vector<std::weak_ptr<ECDbSqlColumn>> tmp;
-    for (ECDbSqlColumn const* column : columns)
-        {
-        if (column != nullptr)
-            tmp.push_back(column->GetWeakPtr());
-        }
-
-    BeAssert(tmp.size() == columns.size());
-    return std::move(tmp);
-    }
-//----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
 SystemPropertyMap::SystemPropertyMap(ECPropertyCR ecProperty, std::vector<ECDbSqlColumn const*> columns, ECSqlSystemProperty kind)
@@ -68,25 +53,6 @@ ECDbSqlColumn const& SystemPropertyMap::GetColumn() const
     }
 
 //----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                01/2016
-//+---------------+---------------+---------------+---------------+---------------+-
-ECDbSqlColumn const* SystemPropertyMap::GetColumn(ECDbSqlTable const& table) const
-    {
-    BeAssert(!m_columns.empty());
-    if (&GetColumn().GetTable() == &table)
-        return &GetColumn();
-
-
-    for (std::weak_ptr<ECDbSqlColumn> const& column: m_columns)
-        {
-        if (&table == &column.lock()->GetTable())
-            return column.lock().get();
-        }
-
-    return nullptr;
-    }
-
-//----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
 void SystemPropertyMap::_GetColumns (std::vector<ECDbSqlColumn const*>& columns) const
@@ -101,43 +67,6 @@ void SystemPropertyMap::_GetColumns (std::vector<ECDbSqlColumn const*>& columns)
         {
         BeAssert (!column.expired ());
         columns.push_back(column.lock().get());
-        }
-    }
-
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                01/2016
-//+---------------+---------------+---------------+---------------+---------------+-
-ColumnKind SystemPropertyMap::ToColumnKind() const
-    {
-    switch (m_kind)
-        {
-        case ECSqlSystemProperty::ECArrayIndex:
-            return ColumnKind::ECArrayIndex;
-
-        case ECSqlSystemProperty::ECInstanceId:
-            return ColumnKind::ECInstanceId;
-
-        case ECSqlSystemProperty::ECPropertyPathId:
-            return ColumnKind::ECPropertyPathId;
-
-        case ECSqlSystemProperty::ParentECInstanceId:
-            return ColumnKind::ParentECInstanceId;
-
-        case ECSqlSystemProperty::SourceECClassId:
-            return ColumnKind::SourceECClassId;
-
-        case ECSqlSystemProperty::SourceECInstanceId:
-            return ColumnKind::SourceECInstanceId;
-
-        case ECSqlSystemProperty::TargetECClassId:
-            return ColumnKind::TargetECClassId;
-
-        case ECSqlSystemProperty::TargetECInstanceId:
-            return ColumnKind::TargetECInstanceId;
-
-        default:
-            BeAssert(false);
-            return ColumnKind::Unknown;
         }
     }
 
@@ -198,107 +127,6 @@ Utf8String ECInstanceIdPropertyMap::_ToString () const
     }
 
 
-
-//******************************** PropertyMapSecondaryTableKey ****************************************
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2014
-//+---------------+---------------+---------------+---------------+---------------+-
-StructArrayTableKeyPropertyMap::StructArrayTableKeyPropertyMap (ECPropertyCR ecProperty, std::vector<ECDbSqlColumn const*> columns, ECSqlSystemProperty kind)
-: SystemPropertyMap (ecProperty, std::move(columns), kind)
- {}
-
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2014
-//+---------------+---------------+---------------+---------------+---------------+-
-PropertyMapPtr StructArrayTableKeyPropertyMap::Create (ECDbSchemaManagerCR schemaManager, ECSqlSystemProperty kind, IClassMap const& classMap)
-    {
-    if (!classMap.MapsToStructArrayTable ())
-        {
-        BeAssert (false);
-        return nullptr;
-        }
-
-    if (kind != ECSqlSystemProperty::ECInstanceId && kind != ECSqlSystemProperty::ECPropertyPathId && kind != ECSqlSystemProperty::ECArrayIndex&& kind != ECSqlSystemProperty::ParentECInstanceId)
-        {
-        BeAssert (false && "StructArrayTableKeyPropertyMap::Create must only be called with ECSqlSystemProperty::ECInstanceId, ECSqlSystemProperty::ECPropertyPathId, or ECSqlSystemProperty::ECArrayIndex or ECSqlSystemProperty::ParentECInstanceId.");
-        return nullptr;
-        }
-
-    auto property = ECDbSystemSchemaHelper::GetSystemProperty (schemaManager, kind);
-    if (property == nullptr)
-        //log and assert done in child method
-        return nullptr;
-
-    std::vector<ECDbSqlColumn const*> systemColumns;  
-    if (classMap.GetJoinedTable().GetFilteredColumnList (systemColumns, ColumnKind::NonRelSystemColumn) == BentleyStatus::ERROR)
-        {
-        BeAssert (false && "StructArrayTableKeyPropertyMap::Create> Table is expected to have primary key columns.");
-        return nullptr;
-        }
-
-    ECDbSqlColumn const* systemColumn = nullptr;
-    for (ECDbSqlColumn const* column : systemColumns)
-        {
-        bool found = false;
-        switch (kind)
-            {
-                case ECSqlSystemProperty::ECInstanceId:
-                {
-                if (column->GetKind() == ColumnKind::ECInstanceId)
-                    found = true;
-
-                break;
-                }
-                case ECSqlSystemProperty::ParentECInstanceId:
-                {
-                if (column->GetKind() == ColumnKind::ParentECInstanceId)
-                    found = true;
-
-                break;
-                }
-                case ECSqlSystemProperty::ECPropertyPathId:
-                {
-                if (column->GetKind() == ColumnKind::ECPropertyPathId)
-                    found = true;
-
-                break;
-                }
-                case ECSqlSystemProperty::ECArrayIndex:
-                {
-                if (column->GetKind() == ColumnKind::ECArrayIndex)
-                    found = true;
-
-                break;
-                }
-                default:
-                    break;
-            }
-
-        if (found)
-            {
-            systemColumn = column;
-            break;
-            }
-        }
-
-    if (systemColumn == nullptr)
-        {
-        BeAssert (false && "No column found for StructArrayTableKeyPropertyMap");
-        return nullptr;
-        }
-
-    return new StructArrayTableKeyPropertyMap(*property, std::move(ToVector(systemColumn)), kind);
-    }
-
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2014
-//+---------------+---------------+---------------+---------------+---------------+-
-Utf8String StructArrayTableKeyPropertyMap::_ToString () const
- {
- return Utf8PrintfString ("StructArrayTableKeyPropertyMap: Column name=%s", GetColumn ().GetName ().c_str());
- }
-
-
 //******************************** PropertyMapRelationshipConstraint ****************************************
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                08/2013
@@ -324,25 +152,7 @@ void RelationshipConstraintPropertyMap::AppendSelectClauseSqlSnippetForView(Nati
         viewSql.AppendSpace().Append(GetViewColumnAlias());
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      12/2013
-//---------------------------------------------------------------------------------------
-void RelationshipConstraintPropertyMap::AppendSelectClauseSqlSnippetForView(NativeSqlBuilder& viewSql) const
-    {
-    ECDbSqlColumn const* column = GetSingleColumn();
-    if (column == nullptr)
-        {
-        BeAssert(column != nullptr && "Expecting a column");
-        return;
-        }
-
-    viewSql.Append(column->GetName().c_str());
-    if (HasViewColumnAlias())
-        viewSql.AppendSpace().Append(GetViewColumnAlias());
-    }
-
 //******************************** PropertyMapRelationshipConstraintECInstanceId ****************************************
-
 //----------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle             01/2014
 //+---------------+---------------+---------------+---------------+---------------+-
@@ -498,8 +308,8 @@ NativeSqlBuilder::List ECClassIdRelationshipConstraintPropertyMap::_ToNativeSql 
 //+---------------+---------------+---------------+---------------+---------------+-
 Utf8String ECClassIdRelationshipConstraintPropertyMap::_ToString () const
     {
-    return Utf8PrintfString ("ECClassIdRelationshipConstraintPropertyMap: Column name=%s View column alias=%s Default constraint ECClassId=%lld",
-        GetColumn ().GetName ().c_str(), GetViewColumnAlias (), m_defaultConstraintClassId);
+    return Utf8PrintfString ("ECClassIdRelationshipConstraintPropertyMap: Column name=%s View column alias=%s Default constraint ECClassId=%llu",
+        GetColumn ().GetName ().c_str(), GetViewColumnAlias (), m_defaultConstraintClassId.GetValue());
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -36,19 +36,16 @@ bool ECInstanceECSqlSelectAdapter::Initialize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Carole.MacDonald                   10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECInstanceECSqlSelectAdapter::GetInstanceId
-(
-ECInstanceId& id
-) const
+bool ECInstanceECSqlSelectAdapter::GetInstanceId(ECInstanceId& id) const
     {
     if (!m_initialized)
         return false;
-    for(int i=0; i < m_ecSqlStatement.GetColumnCount(); i++)
+    for (int i = 0; i < m_ecSqlStatement.GetColumnCount(); i++)
         {
-        auto prop = m_ecSqlStatement.GetColumnInfo (i).GetProperty();
+        auto prop = m_ecSqlStatement.GetColumnInfo(i).GetProperty();
         if (prop->GetName().Equals("ECInstanceId"))
             {
-            id = m_ecSqlStatement.GetValueId<ECInstanceId> (i);
+            id = m_ecSqlStatement.GetValueId<ECInstanceId>(i);
             return true;
             }
         }
@@ -58,21 +55,18 @@ ECInstanceId& id
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Carole.MacDonald                   02/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECN::IECInstancePtr ECInstanceECSqlSelectAdapter::GetInstance
-(
-ECN::ECClassId ecClassid
-) const
+ECN::IECInstancePtr ECInstanceECSqlSelectAdapter::GetInstance(ECN::ECClassId ecClassid) const
     {
     if (!m_initialized)
         return nullptr;
 
     /* Create instance */
-    ECClassCP ecClass = m_ecSqlStatement.GetECDb ()->Schemas ().GetECClass (ecClassid);
+    ECClassCP ecClass = m_ecSqlStatement.GetECDb()->Schemas().GetECClass(ecClassid);
     if (ecClass == nullptr)
         return nullptr;
 
     ECN::IECInstancePtr instance = ECInstanceAdapterHelper::CreateECInstance(*ecClass);
-    if (SUCCESS != SetInstanceData (*instance, true))
+    if (SUCCESS != SetInstanceData(*instance, true))
         return nullptr;
 
     return instance;
@@ -97,7 +91,7 @@ ECN::IECInstancePtr ECInstanceECSqlSelectAdapter::GetInstance() const
     if (-1 != m_ecClassIdColumnIndex)
         {
         IECSqlValue const& value = m_ecSqlStatement.GetValue (m_ecClassIdColumnIndex);
-        ecClass = m_ecSqlStatement.GetECDb()->Schemas().GetECClass(value.GetInt64());
+        ecClass = m_ecSqlStatement.GetECDb()->Schemas().GetECClass(value.GetId<ECClassId>());
         }
     else
         {
@@ -185,17 +179,13 @@ void ECInstanceECSqlSelectAdapter::CreateColumnHandlers()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Carole.MacDonald                   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECInstanceECSqlSelectAdapter::SetInstanceData
-(
-IECInstanceR instance,
-bool usesClassIdFilter
-) const
+BentleyStatus ECInstanceECSqlSelectAdapter::SetInstanceData(IECInstanceR instance, bool usesClassIdFilter) const
     {
-    auto const& ecClass = instance.GetClass ();
-    for (int i = 0; i < m_ecSqlStatement.GetColumnCount (); i++)
+    auto const& ecClass = instance.GetClass();
+    for (int i = 0; i < m_ecSqlStatement.GetColumnCount(); i++)
         {
-        IECSqlValue const& value = m_ecSqlStatement.GetValue (i);
-        if (usesClassIdFilter && ecClass.GetPropertyP (value.GetColumnInfo ().GetProperty ()->GetName ().c_str ()) == nullptr)
+        IECSqlValue const& value = m_ecSqlStatement.GetValue(i);
+        if (usesClassIdFilter && ecClass.GetPropertyP(value.GetColumnInfo().GetProperty()->GetName().c_str()) == nullptr)
             continue;
 
         if (nullptr != m_columnHandlers[i])
@@ -213,24 +203,15 @@ bool usesClassIdFilter
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   08/14
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECInstanceECSqlSelectAdapter::SetPropertyData
-(
-IECInstanceR instance,
-IECSqlValue const& value
-) const
+BentleyStatus ECInstanceECSqlSelectAdapter::SetPropertyData(IECInstanceR instance, IECSqlValue const& value) const
     {
-    return SetPropertyData (instance, nullptr, value);
+    return SetPropertyData(instance, nullptr, value);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald                 03/14
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECInstanceECSqlSelectAdapter::SetPropertyData
-(
-    IECInstanceR instance,
-    Utf8CP parentPropertyAccessString,
-    IECSqlValue const& value
-    ) const
+BentleyStatus ECInstanceECSqlSelectAdapter::SetPropertyData(IECInstanceR instance, Utf8CP parentPropertyAccessString, IECSqlValue const& value) const
     {
     auto const& columnInfo = value.GetColumnInfo();
     auto prop = columnInfo.GetProperty();
@@ -343,12 +324,7 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPropertyData
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Carole.MacDonald                   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECInstanceECSqlSelectAdapter::SetPrimitiveValue
-(
-ECValueR val,
-ECN::PrimitiveType primitiveType,
-IECSqlValue const& value
-) const
+BentleyStatus ECInstanceECSqlSelectAdapter::SetPrimitiveValue(ECValueR val, ECN::PrimitiveType primitiveType, IECSqlValue const& value) const
     {
     if (value.IsNull())
         {
@@ -359,69 +335,69 @@ IECSqlValue const& value
     switch (primitiveType)
         {
             case ECN::PRIMITIVETYPE_Integer:
-                {
-                auto intValue = value.GetInt();
-                val.SetInteger(intValue);
-                break;
-                }
+            {
+            auto intValue = value.GetInt();
+            val.SetInteger(intValue);
+            break;
+            }
             case ECN::PRIMITIVETYPE_String:
-                {
-                auto str = value.GetText();
-                val.SetUtf8CP(str);
-                break;
-                }
+            {
+            auto str = value.GetText();
+            val.SetUtf8CP(str);
+            break;
+            }
             case ECN::PRIMITIVETYPE_Long:
-                {
-                auto intValue = value.GetInt64();
-                val.SetLong(intValue);
-                break;
-                }
+            {
+            auto intValue = value.GetInt64();
+            val.SetLong(intValue);
+            break;
+            }
             case ECN::PRIMITIVETYPE_Double:
-                {
-                auto doubleValue = value.GetDouble();
-                val.SetDouble(doubleValue);
-                break;
-                }
+            {
+            auto doubleValue = value.GetDouble();
+            val.SetDouble(doubleValue);
+            break;
+            }
             case ECN::PRIMITIVETYPE_Boolean:
-                {
-                auto boolValue = value.GetBoolean();
-                val.SetBoolean(boolValue);
-                break;
-                }
+            {
+            auto boolValue = value.GetBoolean();
+            val.SetBoolean(boolValue);
+            break;
+            }
             case ECN::PRIMITIVETYPE_Binary:
-                {
-                int size = 0;
-                const Byte* b = (const Byte *) value.GetBinary(&size);
-                val.SetBinary(b, size, false);
-                break;
-                }
+            {
+            int size = 0;
+            const Byte* b = (const Byte *) value.GetBinary(&size);
+            val.SetBinary(b, size, false);
+            break;
+            }
             case ECN::PRIMITIVETYPE_Point2D:
-                {
-                auto d = value.GetPoint2D();
-                val.SetPoint2D(d);
-                break;
-                }
+            {
+            auto d = value.GetPoint2D();
+            val.SetPoint2D(d);
+            break;
+            }
             case ECN::PRIMITIVETYPE_Point3D:
-                {
-                auto d = value.GetPoint3D();
-                val.SetPoint3D(d);
-                break;
-                }
+            {
+            auto d = value.GetPoint3D();
+            val.SetPoint3D(d);
+            break;
+            }
             case ECN::PRIMITIVETYPE_DateTime:
-                {
-                DateTime::Info metadata;
-                const uint64_t jdHns = value.GetDateTimeJulianDaysHns(metadata);
-                const int64_t ceTicks = DateTime::JulianDayToCommonEraTicks(jdHns);
-                val.SetDateTimeTicks(ceTicks, metadata);
-                break;
-                }
+            {
+            DateTime::Info metadata;
+            const uint64_t jdHns = value.GetDateTimeJulianDaysHns(metadata);
+            const int64_t ceTicks = DateTime::JulianDayToCommonEraTicks(jdHns);
+            val.SetDateTimeTicks(ceTicks, metadata);
+            break;
+            }
             case ECN::PRIMITIVETYPE_IGeometry:
-                {
-                int bgfbSize = -1;
-                void const* bgfb = value.GetGeometryBlob(&bgfbSize);
-                val.SetBinary(static_cast<Byte const*> (bgfb), (size_t) bgfbSize, false);
-                break;
-                }
+            {
+            int bgfbSize = -1;
+            void const* bgfb = value.GetGeometryBlob(&bgfbSize);
+            val.SetBinary(static_cast<Byte const*> (bgfb), (size_t) bgfbSize, false);
+            break;
+            }
         }
 
     return SUCCESS;
@@ -430,21 +406,16 @@ IECSqlValue const& value
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Carole.MacDonald                   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECInstanceECSqlSelectAdapter::SetStructArrayElement
-(
-ECValueR val,
-ECClassCR structType,
-IECSqlValue const& value
-) const
+BentleyStatus ECInstanceECSqlSelectAdapter::SetStructArrayElement(ECValueR val, ECClassCR structType, IECSqlValue const& value) const
     {
     val.Clear();
     auto structInstance = structType.GetDefaultStandaloneEnabler()->CreateInstance();
 
-    IECSqlStructValue const& structValue = value.GetStruct ();
-    int memberCount = structValue.GetMemberCount ();
+    IECSqlStructValue const& structValue = value.GetStruct();
+    int memberCount = structValue.GetMemberCount();
     for (int i = 0; i < memberCount; i++)
         {
-        if (SUCCESS != SetPropertyData (*structInstance, structValue.GetValue (i)))
+        if (SUCCESS != SetPropertyData(*structInstance, structValue.GetValue(i)))
             return ERROR;
         }
 
@@ -455,13 +426,8 @@ IECSqlValue const& value
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Carole.MacDonald                   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr ECInstanceECSqlSelectAdapter::FindRelationshipEndpoint
-(
-int64_t endpointInstanceId,
-int64_t endpointClassId,
-ECN::StandaloneECRelationshipInstance* relationshipInstance,
-bool isSource
-) const
+IECInstancePtr ECInstanceECSqlSelectAdapter::FindRelationshipEndpoint(ECInstanceId endpointInstanceId, ECN::ECClassId endpointClassId,
+                        ECN::StandaloneECRelationshipInstance* relationshipInstance, bool isSource) const
     {
     IECInstancePtr instance;
 
@@ -476,7 +442,7 @@ bool isSource
     if (!status.IsSuccess())
         return instance;
 
-    statement.BindInt64(1, endpointInstanceId);
+    statement.BindId(1, endpointInstanceId);
     ECInstanceECSqlSelectAdapter endpointAdapter(statement);
     while (BE_SQLITE_ROW == statement.Step())
         {
@@ -491,35 +457,24 @@ bool isSource
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Carole.MacDonald                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECInstanceECSqlSelectAdapter::SetInstanceId
-(
-ECN::IECInstanceR instance, 
-IECSqlValue const& value
-) const
+BentleyStatus ECInstanceECSqlSelectAdapter::SetInstanceId(ECN::IECInstanceR instance, IECSqlValue const& value) const
     {
-    //if (instance.GetClass ().GetId () != value.GetColumnInfo ().GetRootClass ().GetId ())
-    //    return ERROR;
-
     return ECInstanceAdapterHelper::SetECInstanceId (instance, value.GetId<ECInstanceId>());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Carole.MacDonald                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECInstanceECSqlSelectAdapter::SetRelationshipSource
-(
-ECN::IECInstanceR instance, 
-IECSqlValue const& value
-) const
+BentleyStatus ECInstanceECSqlSelectAdapter::SetRelationshipSource(ECN::IECInstanceR instance, IECSqlValue const& value) const
     {
     ECN::StandaloneECRelationshipInstance* standaloneRelationship = dynamic_cast<ECN::StandaloneECRelationshipInstance*>(&instance);
     if (nullptr == standaloneRelationship)
         return ERROR;
 
-    IECInstancePtr endpoint = FindRelationshipEndpoint (value.GetInt64 (), m_ecSqlStatement.GetValueInt64 (m_sourceECClassIdColumnIndex), standaloneRelationship, true);
-    if (endpoint.IsValid ())
+    IECInstancePtr endpoint = FindRelationshipEndpoint(value.GetId<ECInstanceId>(), m_ecSqlStatement.GetValueId<ECClassId>(m_sourceECClassIdColumnIndex), standaloneRelationship, true);
+    if (endpoint.IsValid())
         {
-        standaloneRelationship->SetSource (&(*endpoint));
+        standaloneRelationship->SetSource(&(*endpoint));
         return SUCCESS;
         }
 
@@ -529,23 +484,20 @@ IECSqlValue const& value
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Carole.MacDonald                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECInstanceECSqlSelectAdapter::SetRelationshipTarget
-(
-ECN::IECInstanceR instance, 
-IECSqlValue const& value
-) const
+BentleyStatus ECInstanceECSqlSelectAdapter::SetRelationshipTarget(ECN::IECInstanceR instance, IECSqlValue const& value) const
     {
     ECN::StandaloneECRelationshipInstance* standaloneRelationship = dynamic_cast<ECN::StandaloneECRelationshipInstance*>(&instance);
     if (nullptr == standaloneRelationship)
         return ERROR;
 
-    IECInstancePtr endpoint = FindRelationshipEndpoint (value.GetInt64 (), m_ecSqlStatement.GetValueInt64 (m_targetECClassIdColumnIndex), standaloneRelationship, false);
-    if (endpoint.IsValid ())
+    IECInstancePtr endpoint = FindRelationshipEndpoint(value.GetId<ECInstanceId>(), m_ecSqlStatement.GetValueId<ECClassId>(m_targetECClassIdColumnIndex), standaloneRelationship, false);
+    if (endpoint.IsValid())
         {
-        standaloneRelationship->SetTarget (&(*endpoint));
+        standaloneRelationship->SetTarget(&(*endpoint));
         return SUCCESS;
         }
 
     return ERROR;
     }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

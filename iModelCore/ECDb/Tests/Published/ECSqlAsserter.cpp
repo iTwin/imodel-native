@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/ECSqlAsserter.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlAsserter.h"
@@ -327,14 +327,14 @@ void ECSqlSelectAsserter::AssertCurrentRow (ECSqlTestItem const& testItem, ECSql
     for (int i = 0; i < columnCount; i++)
         {
         IECSqlValue const& value = statement.GetValue (i);
-        AssertCurrentCell (testItem, statement, value, nullptr);
+        AssertCurrentCell (testItem, statement, value, nullptr, value.GetColumnInfo().GetDataType().IsStructArray());
         }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  10/13
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlSelectAsserter::AssertCurrentCell (ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlValue const& ecsqlValue, ECTypeDescriptor const* parentDataType) const
+void ECSqlSelectAsserter::AssertCurrentCell (ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlValue const& ecsqlValue, ECTypeDescriptor const* parentDataType, bool isInStructArray) const
     {
     AssertColumnInfo (testItem, statement, ecsqlValue, parentDataType);
 
@@ -343,25 +343,28 @@ void ECSqlSelectAsserter::AssertCurrentCell (ECSqlTestItem const& testItem, ECSq
 
     if (dataType.IsPrimitive ())
         {
-        AssertCurrentCell (testItem, statement, ecsqlValue, dataType, CreateIsExpectedToSucceedDelegateForAssertCurrentRow (parentDataType, dataType));
+        AssertCurrentCell (testItem, statement, ecsqlValue, dataType, isInStructArray, CreateIsExpectedToSucceedDelegateForAssertCurrentRow (parentDataType, dataType, isInStructArray));
         }
     else if (dataType.IsStruct ())
         {
         auto const& structValue = ecsqlValue.GetStruct ();
         for (int i = 0; i < structValue.GetMemberCount (); i++)
-            AssertCurrentCell (testItem, statement, structValue.GetValue (i), &dataType);
+            AssertCurrentCell (testItem, statement, structValue.GetValue (i), &dataType, isInStructArray);
         }
     else // array
         {
         auto const& arrayValue = ecsqlValue.GetArray ();
-        AssertArrayCell (testItem, statement, arrayValue, dataType);
+        if (!isInStructArray)
+            isInStructArray = dataType.IsStructArray();
+
+        AssertArrayCell (testItem, statement, arrayValue, dataType, isInStructArray);
         }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  10/13
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlSelectAsserter::AssertCurrentCell (ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlValue const& value, ECTypeDescriptor const& columnDataType,
+void ECSqlSelectAsserter::AssertCurrentCell (ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlValue const& value, ECTypeDescriptor const& columnDataType, bool isInStructArray,
                                                    std::function<bool (ECN::ECTypeDescriptor const&)> isExpectedToSucceedDelegate) const
     {
     if (value.IsNull ())
@@ -400,11 +403,11 @@ void ECSqlSelectAsserter::AssertCurrentCell (ECSqlTestItem const& testItem, ECSq
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  10/13
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlSelectAsserter::AssertArrayCell (ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlArrayValue const& arrayValue, ECTypeDescriptor const& arrayType) const
+void ECSqlSelectAsserter::AssertArrayCell (ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlArrayValue const& arrayValue, ECTypeDescriptor const& arrayType, bool isInStructArray) const
     {
     for (IECSqlValue const* arrayElement : arrayValue)
         {
-        AssertCurrentCell (testItem, statement, *arrayElement, &arrayType);
+        AssertCurrentCell (testItem, statement, *arrayElement, &arrayType, isInStructArray);
         }
     }
 
@@ -498,10 +501,10 @@ ECSqlSelectAsserter::GetValueCallList ECSqlSelectAsserter::CreateGetValueCallLis
 // @bsimethod                                     Krischan.Eberle                  10/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-std::function<bool (ECN::ECTypeDescriptor const&)> ECSqlSelectAsserter::CreateIsExpectedToSucceedDelegateForAssertCurrentRow (ECTypeDescriptor const* parentDataType, ECTypeDescriptor const& dataType) 
+std::function<bool (ECN::ECTypeDescriptor const&)> ECSqlSelectAsserter::CreateIsExpectedToSucceedDelegateForAssertCurrentRow (ECTypeDescriptor const* parentDataType, ECTypeDescriptor const& dataType, bool isInStructArray)
     {
-    //for prim array elements, we need exact type match
-    if (parentDataType != nullptr && parentDataType->IsPrimitiveArray ())
+    //for prim or struct array elements, we need exact type match
+    if (isInStructArray || (parentDataType != nullptr && parentDataType->IsPrimitiveArray ()))
         {
         return [&dataType] (ECTypeDescriptor const& requestedDataType) 
             {

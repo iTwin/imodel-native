@@ -23,29 +23,20 @@ struct ECDbInstances : ECDbTestFixture {};
 TEST(ECInstanceIdHelper, ECInstanceIdInstanceIdConversion)
     {
     //ToString
-    ECInstanceId ecInstanceId (123456789LL);
+    ECInstanceId ecInstanceId (UINT64_C(123456789));
     Utf8CP expectedInstanceId = "123456789";
     Utf8Char actualInstanceId[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
     bool success = ECInstanceIdHelper::ToString (actualInstanceId, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ecInstanceId);
     EXPECT_TRUE (success);
     EXPECT_STREQ (expectedInstanceId, actualInstanceId) << "Unexpected InstanceId generated from ECInstanceId " << ecInstanceId.GetValue ();
 
-    ecInstanceId = ECInstanceId (0LL);
+    ecInstanceId = ECInstanceId(UINT64_C(0));
     expectedInstanceId = "0";
     actualInstanceId[0] = '\0';
     success = ECInstanceIdHelper::ToString (actualInstanceId, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ecInstanceId);
     EXPECT_FALSE (success);
 
-    //ECInstanceId are allowed to be negative
-    ecInstanceId = ECInstanceId (-1LL);
-    success = ECInstanceIdHelper::ToString (actualInstanceId, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ecInstanceId);
-    EXPECT_TRUE (success) << "ECInstanceIds can be negative, so ToString should succeed";
-
-    ecInstanceId = ECInstanceId(-100LL);
-    success = ECInstanceIdHelper::ToString(actualInstanceId, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ecInstanceId);
-    EXPECT_TRUE(success) << "ECInstanceIds can be negative, so ToString should succeed";
-
-    ecInstanceId = ECInstanceId (123LL);
+    ecInstanceId = ECInstanceId (UINT64_C(123));
     Utf8Char smallIdBuffer[10];
     ASSERT_FALSE (ECInstanceIdHelper::ToString (smallIdBuffer, (size_t) 10, ecInstanceId)) << "Expected to fail if buffer is to small to take max uint64_t as string";
 
@@ -54,39 +45,37 @@ TEST(ECInstanceIdHelper, ECInstanceIdInstanceIdConversion)
 
     //FromString
     Utf8CP instanceId = "123456789";
-    ECInstanceId expectedECInstanceId (123456789LL);
+    ECInstanceId expectedECInstanceId (UINT64_C(123456789));
     ECInstanceId actualECInstanceId;
     success = ECInstanceIdHelper::FromString (actualECInstanceId, instanceId);
     EXPECT_TRUE (success) << "Unexpected failure of ECInstanceIdHelper::FromString";
     EXPECT_EQ (expectedECInstanceId.GetValue (), actualECInstanceId.GetValue ()) << L"Unexpected ECInstanceId parsed from InstanceId " << instanceId;
 
     instanceId = "0";
-    expectedECInstanceId = ECInstanceId(0LL);
+    expectedECInstanceId = ECInstanceId(UINT64_C(0));
     actualECInstanceId = ECInstanceId ();
     success = ECInstanceIdHelper::FromString (actualECInstanceId, instanceId);
     EXPECT_FALSE (success) << "Unexpected failure of ECInstanceIdHelper::FromString";
 
     instanceId = "0000";
-    expectedECInstanceId = ECInstanceId (0LL);
+    expectedECInstanceId = ECInstanceId(UINT64_C(0));
     actualECInstanceId = ECInstanceId ();
     success = ECInstanceIdHelper::FromString (actualECInstanceId, instanceId);
     EXPECT_FALSE (success) << "Unexpected failure of ECInstanceIdHelper::FromString";
 
     instanceId = "-123456";
     success = ECInstanceIdHelper::FromString (actualECInstanceId, instanceId);
-    EXPECT_TRUE (success) << L"InstanceId with negative number '" << instanceId << L"' is expected to be supported by ECInstanceIdHelper::FromString";
-    EXPECT_EQ(actualECInstanceId.GetValue(), -123456LL);
+    EXPECT_FALSE (success) << L"InstanceId with negative number '" << instanceId << L"' is not expected to be supported by ECInstanceIdHelper::FromString";
 
     instanceId = "-12345678901234";
     success = ECInstanceIdHelper::FromString (actualECInstanceId, instanceId);
-    EXPECT_TRUE(success) << L"InstanceId with negative number '" << instanceId << L"' is expected to be supported by ECInstanceIdHelper::FromString";
-    EXPECT_EQ(actualECInstanceId.GetValue(), -12345678901234LL);
+    EXPECT_FALSE(success) << L"InstanceId with negative number '" << instanceId << L"' is not expected to be supported by ECInstanceIdHelper::FromString";
 
     //now test with invalid instance ids
     BeTest::SetFailOnAssert(false);
 
     instanceId = "0x75BCD15";
-    expectedECInstanceId = ECInstanceId (123456789LL);
+    expectedECInstanceId = ECInstanceId (UINT64_C(123456789));
     actualECInstanceId = ECInstanceId ();
     success = ECInstanceIdHelper::FromString (actualECInstanceId, instanceId);
     EXPECT_FALSE (success) << L"InstanceId with hex formatted number '" << instanceId << L"' is not expected to be supported by ECInstanceIdHelper::FromString";
@@ -130,7 +119,8 @@ TEST_F (ECDbInstances, CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST)
     ASSERT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlFile (schema, dsCacheSchema1_4.GetName (), *context));
     ASSERT_EQ (SUCCESS, db.Schemas ().ImportECSchemas (context->GetCache ()));
 
-    ECClassCP rootClass = db.GetClassLocater ().LocateClass ("DSCacheSchema", "Root");
+    IECClassLocaterR classLocater = db.GetClassLocater();
+    ECClassCP rootClass = classLocater.LocateClass ("DSCacheSchema", "Root");
     ASSERT_NE (nullptr, rootClass);
 
     // Names
@@ -156,7 +146,7 @@ TEST_F (ECDbInstances, CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST)
     statement.ClearBindings ();
     ASSERT_EQ (ECSqlStatus::Success, statement.BindText (1, rootName.c_str (), IECSqlBinder::MakeCopy::No));
     EXPECT_EQ (BE_SQLITE_ROW, statement.Step ());
-    EXPECT_EQ (ECInstanceId (1), statement.GetValueId <ECInstanceId> (0));
+    EXPECT_EQ (1, statement.GetValueId <ECInstanceId> (0).GetValue());
     }
 
 TEST_F(ECDbInstances, QuoteTest)
@@ -754,7 +744,7 @@ TEST_F(ECDbInstances, FindECInstancesFromSelectWithMultipleClasses)
 TEST_F(ECDbInstances, SelectClause)
     {
     ECDb& db = SetupECDb ("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"), 3);
-
+    ASSERT_TRUE(db.IsDbOpen());
     ECClassCP employee = db.Schemas().GetECClass("StartupCompany", "Employee");
     ASSERT_TRUE (employee != nullptr);
 
@@ -764,8 +754,8 @@ TEST_F(ECDbInstances, SelectClause)
     int managerId1;
         {
         // ECSQL should honor the order of the ecColumns from the select clause
-        ASSERT_TRUE (ECSqlStatus::Success == ecStatement.Prepare (db, "SELECT JobTitle, ManagerID FROM [StartupCompany].[Employee]"));
-        ASSERT_TRUE (BE_SQLITE_ROW == ecStatement.Step());
+        ASSERT_EQ(ECSqlStatus::Success, ecStatement.Prepare (db, "SELECT JobTitle, ManagerID FROM [StartupCompany].[Employee]"));
+        ASSERT_EQ(BE_SQLITE_ROW, ecStatement.Step());
         jobTitle1  = ecStatement.GetValueText(0);
         managerId1 = ecStatement.GetValueInt(1);
         EXPECT_TRUE (ecStatement.GetColumnInfo(0).GetProperty()->GetName().Equals("JobTitle"));
@@ -774,8 +764,8 @@ TEST_F(ECDbInstances, SelectClause)
         }
 
         {
-        ASSERT_TRUE (ECSqlStatus::Success == ecStatement.Prepare (db, "SELECT JobTitle, ManagerID FROM [StartupCompany].[Employee]"));
-        ASSERT_TRUE (BE_SQLITE_ROW == ecStatement.Step());
+        ASSERT_EQ(ECSqlStatus::Success, ecStatement.Prepare (db, "SELECT JobTitle, ManagerID FROM [StartupCompany].[Employee]"));
+        ASSERT_EQ(BE_SQLITE_ROW, ecStatement.Step());
         Utf8String jobTitle2  = ecStatement.GetValueText(0);
         int        managerId2 = ecStatement.GetValueInt(1);
         EXPECT_TRUE (ecStatement.GetColumnInfo(0).GetProperty()->GetName().Equals("JobTitle"));
@@ -868,6 +858,7 @@ TEST_F(ECDbInstances, AdapterCheckClassBeforeOperation)
     EXPECT_EQ(ERROR, sms);
 
     JsonDeleter jsonDeleter(db, *employee);
+    ASSERT_TRUE(jsonDeleter.IsValid());
     ECInstanceId instanceId;
     ECInstanceIdHelper::FromString(instanceId, instance->GetInstanceId().c_str());
     sms = jsonDeleter.Delete(instanceId);

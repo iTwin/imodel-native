@@ -2,8 +2,6 @@
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
 InstanceCRUDTests.* 	# No need to run with the build, used by testing after build for verifying CRUD operations.
-ECDbExpressionSymbolProviderRelatedInstanceTests.SymbolsAreInjectedWhenImportingSchemas   # Grigas WIP
-ECDbExpressionSymbolProviderRelatedInstanceTests.SymbolsAreInjectedWhenOpeningECDb        # Grigas WIP
 
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
@@ -31,3 +29,6 @@ ECDbMappingTestFixture.RelationshipWithAbstractConstraintClassAndNoSubclasses
 #Crashes in DgnDb0601Dev -> Hassan
 ECSqlInsertTestFramework.MiscTests
 ECSqlSelectTestFramework.StructTests
+
+#TFS 383266
+JsonReaderTests.ReadInstanceAlongWithRelatedInstances

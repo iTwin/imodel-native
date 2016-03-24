@@ -85,8 +85,8 @@ private:
 
     static NoopECSqlValue s_singleton;
 
-    NoopECSqlValue();
-    ~NoopECSqlValue();
+    NoopECSqlValue() : IECSqlValue(), IECSqlPrimitiveValue(), IECSqlStructValue(), IECSqlArrayValue() {}
+    ~NoopECSqlValue() {}
 
     //IECSqlValue
     virtual ECSqlColumnInfoCR _GetColumnInfo() const override { return m_dummyColumnInfo; }

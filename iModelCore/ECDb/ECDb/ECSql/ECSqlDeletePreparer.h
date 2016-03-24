@@ -33,18 +33,17 @@ private:
     ECSqlDeletePreparer ();
     ~ECSqlDeletePreparer ();
 
-    static ECSqlStatus GenerateNativeSqlSnippets (NativeSqlSnippets& deleteNativeSqlSnippets, ECSqlPrepareContext& ctx, 
-                        DeleteStatementExp const& exp, ClassNameExp const& classNameExp);
+    static ECSqlStatus GenerateNativeSqlSnippets (NativeSqlSnippets& deleteNativeSqlSnippets, ECSqlPrepareContext&, 
+                        DeleteStatementExp const&, ClassNameExp const&);
 
-    static ECSqlStatus PrepareForClass (ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets);
-    static ECSqlStatus PrepareForEndTableRelationship (ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, RelationshipClassEndTableMap const& classMap);
+    static ECSqlStatus PrepareForClass (ECSqlPrepareContext&, NativeSqlSnippets&);
+    static ECSqlStatus PrepareForEndTableRelationship (ECSqlPrepareContext&, NativeSqlSnippets&, RelationshipClassEndTableMap const&);
 
     static void BuildNativeSqlDeleteStatement (NativeSqlBuilder& deleteBuilder, NativeSqlSnippets const& deleteNativeSqlSnippets);
-    static void BuildNativeSqlUpdateStatement (NativeSqlBuilder& updateBuilder, NativeSqlSnippets const& deleteNativeSqlSnippets,
-                                    NativeSqlBuilder::List const& propNamesToUnsetNativeSqlSnippets);
+    static void BuildNativeSqlUpdateStatement (NativeSqlBuilder& updateBuilder, NativeSqlSnippets const& deleteNativeSqlSnippets, NativeSqlBuilder::List const& propNamesToUnsetNativeSqlSnippets);
 
 public:
-    static ECSqlStatus Prepare (ECSqlPrepareContext& ctx, DeleteStatementExp const& exp);
+    static ECSqlStatus Prepare (ECSqlPrepareContext&, DeleteStatementExp const&);
     };
 
 

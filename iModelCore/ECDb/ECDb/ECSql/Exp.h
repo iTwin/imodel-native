@@ -56,7 +56,7 @@ public:
 
 private:
     std::vector<Location> m_path;
-    IClassMap const* m_classMap;
+    ClassMap const* m_classMap;
 
     void Reset();
     void Clear();
@@ -73,14 +73,14 @@ public:
     Location const& operator[] (size_t index) const { return m_path[index]; }
     size_t Size() const { return m_path.size(); }
     bool IsEmpty() const { return m_path.empty(); }
-    IClassMap const* GetClassMap() const { return m_classMap; }
+    ClassMap const* GetClassMap() const { return m_classMap; }
 
     void Push(Utf8CP propertyName);
     void Push(Utf8CP propertyName, size_t arrayIndex);
     void Pop();
     void Remove(size_t index) { m_path.erase(m_path.begin() + index); }
 
-    BentleyStatus Resolve(IClassMap const& classMap, Utf8String* errorMessage = nullptr);
+    BentleyStatus Resolve(ClassMap const& classMap, Utf8String* errorMessage = nullptr);
     bool IsResolved() const;
 
     BentleyStatus TryGetQualifiedPath(Utf8StringR qualifiedPath) const;

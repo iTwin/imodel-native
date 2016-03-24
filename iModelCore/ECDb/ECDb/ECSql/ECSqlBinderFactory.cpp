@@ -11,7 +11,7 @@
 #include "PointECSqlBinder.h"
 #include "StructToColumnsECSqlBinder.h"
 #include "PrimitiveArrayToColumnECSqlBinder.h"
-#include "StructArrayToSecondaryTableECSqlBinder.h"
+#include "StructArrayJsonECSqlBinder.h"
 #include "SystemPropertyECSqlBinder.h"
 #include "ECSqlStatementBase.h"
 #include "ECSqlBinder.h"
@@ -93,7 +93,7 @@ unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder
             case ECSqlTypeInfo::Kind::PrimitiveArray:
                 return unique_ptr<ECSqlBinder>(new PrimitiveArrayToColumnECSqlBinder(ecsqlStatement, typeInfo));
             case ECSqlTypeInfo::Kind::StructArray:
-                return unique_ptr<ECSqlBinder>(new StructArrayToSecondaryTableECSqlBinder(ecsqlStatement, typeInfo));
+                return unique_ptr<ECSqlBinder>(new StructArrayJsonECSqlBinder(ecsqlStatement, typeInfo));
 
             default:
                 BeAssert(false && "ECSqlBinderFactory::CreateBinder> Unhandled ECSqlTypeInfo::Kind value.");

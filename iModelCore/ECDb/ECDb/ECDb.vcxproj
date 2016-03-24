@@ -14,17 +14,15 @@
     <ClCompile Include="ChangeSummary.cpp" />
     <ClCompile Include="ClassMap.cpp" />
     <ClCompile Include="ClassMapInfo.cpp" />
-    <ClCompile Include="ClassMapSubclasses.cpp" />
     <ClCompile Include="docs\samplecode\ECDb.sample.cpp" />
     <ClCompile Include="docs\samplecode\ECDbCRUD.sample.cpp" />
     <ClCompile Include="docs\samplecode\ECDbCRUDAdapters.sample.cpp" />
     <ClCompile Include="ECDb.cpp" />
-    <ClCompile Include="ECDbExpressionSymbolProviders.cpp" />
+    <ClCompile Include="ECDbExpressionSymbolProvider.cpp" />
     <ClCompile Include="ECDbImpl.cpp" />
     <ClCompile Include="ECDbLogger.cpp" />
     <ClCompile Include="ECDbMapAnalyser.cpp" />
     <ClCompile Include="ECDbPolicyManager.cpp" />
-    <ClCompile Include="ECDbSchemaEditor.cpp" />
     <ClCompile Include="ECDbSchemaManager.cpp" />
     <ClCompile Include="ECDbSchemaPersistenceHelper.cpp" />
     <ClCompile Include="ECDbSql.cpp" />
@@ -44,15 +42,11 @@
     <ClCompile Include="ECSql\DeleteStatementExp.cpp" />
     <ClCompile Include="ECSql\ECInstanceDeleter.cpp" />
     <ClCompile Include="ECSql\ECInstanceUpdater.cpp" />
-    <ClCompile Include="ECSql\ECJsonUtility.cpp" />
     <ClCompile Include="ECSql\ECInstanceInserter.cpp" />
-    <ClCompile Include="ECSql\ECRelationshipPath.cpp" />
     <ClCompile Include="ECSql\ECInstanceAdapterHelper.cpp" />
     <ClCompile Include="ECSql\ECSqlDeletePreparer.cpp" />
     <ClCompile Include="ECSql\ECSqlInsertPreparer.cpp" />
-    <ClCompile Include="ECSql\ECSqlParameterValue.cpp" />
     <ClCompile Include="ECSql\ECSqlPropertyNameExpPreparer.cpp" />
-    <ClCompile Include="ECSql\ECSqlPropertyPathImpl.cpp" />
     <ClCompile Include="ECSql\ECSqlSelectPreparer.cpp" />
     <ClCompile Include="ECSql\ECSqlStatementBase.cpp" />
     <ClCompile Include="ECSql\ComputedExp.cpp" />
@@ -70,10 +64,8 @@
     <ClCompile Include="ECSql\ECSqlPreparedStatement.cpp" />
     <ClCompile Include="ECSql\ECSqlStatementCache.cpp" />
     <ClCompile Include="ECSql\ECSqlStatus.cpp" />
-    <ClCompile Include="ECSql\ECSqlStepTask.cpp" />
     <ClCompile Include="ECSql\ECSqlTypeInfo.cpp" />
     <ClCompile Include="ECSql\ECSqlUpdatePreparer.cpp" />
-    <ClCompile Include="ECSql\EmbeddedECSqlStatement.cpp" />
     <ClCompile Include="ECSql\Exp.cpp" />
     <ClCompile Include="ECSql\ExpHelper.cpp" />
     <ClCompile Include="ECSql\ECSqlStatement.cpp" />
@@ -86,7 +78,6 @@
     <ClCompile Include="ECSql\JsonECSqlSelectAdapter.cpp" />
     <ClCompile Include="ECSql\JsonInserter.cpp" />
     <ClCompile Include="ECSql\JsonReader.cpp" />
-    <ClCompile Include="ECSql\JsonReaderImpl.cpp" />
     <ClCompile Include="ECSql\JsonUpdater.cpp" />
     <ClCompile Include="ECSql\ListExp.cpp" />
     <ClCompile Include="ECSql\NativeSqlBuilder.cpp" />
@@ -105,8 +96,8 @@
     <ClCompile Include="ECSql\PrimitiveToSingleColumnECSqlBinder.cpp" />
     <ClCompile Include="ECSql\PropertyNameExp.cpp" />
     <ClCompile Include="ECSql\SelectStatementExp.cpp" />
-    <ClCompile Include="ECSql\StructArrayMappedToSecondaryTableECSqlField.cpp" />
-    <ClCompile Include="ECSql\StructArrayToSecondaryTableECSqlBinder.cpp" />
+    <ClCompile Include="ECSql\StructArrayJsonECSqlBinder.cpp" />
+    <ClCompile Include="ECSql\StructArrayJsonECSqlField.cpp" />
     <ClCompile Include="ECSql\StructMappedToColumnsECSqlField.cpp" />
     <ClCompile Include="ECSql\StructToColumnsECSqlBinder.cpp" />
     <ClCompile Include="ECSql\SystemPropertyECSqlBinder.cpp" />
@@ -124,14 +115,11 @@
     <ClInclude Include="..\PublicAPI\ECDb\ChangeSummary.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDb.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
-    <ClInclude Include="..\PublicAPI\ECDb\ECDbExpressionSymbolProviders.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDbSchemaManager.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDbTypes.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECInstanceAdapter.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECInstanceId.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECInstanceFinder.h" />
-    <ClInclude Include="..\PublicAPI\ECDb\ECJsonUtility.h" />
-    <ClInclude Include="..\PublicAPI\ECDb\ECRelationshipPath.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECSqlColumnInfo.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECSqlStatement.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECSqlStatus.h" />
@@ -141,7 +129,7 @@
     <ClInclude Include="BeBriefcaseBasedIdSequence.h" />
     <ClInclude Include="ClassMap.h" />
     <ClInclude Include="ClassMapInfo.h" />
-    <ClInclude Include="ClassMapSubclasses.h" />
+    <ClInclude Include="ECDbExpressionSymbolProvider.h" />
     <ClInclude Include="ECDbImpl.h" />
     <ClInclude Include="ECDbInternalTypes.h" />
     <ClInclude Include="ECDbLogger.h" />
@@ -149,7 +137,6 @@
     <ClInclude Include="ECDbMapAnalyser.h" />
     <ClInclude Include="ECDbPch.h" />
     <ClInclude Include="ECDbPolicyManager.h" />
-    <ClInclude Include="ECDbSchemaEditor.h" />
     <ClInclude Include="ECDbSchemaPersistenceHelper.h" />
     <ClInclude Include="ECDbSchemaReader.h" />
     <ClInclude Include="ECDbSchemaWriter.h" />
@@ -164,9 +151,7 @@
     <ClInclude Include="ECSql\ECInstanceAdapterHelper.h" />
     <ClInclude Include="ECSql\ECSqlDeletePreparer.h" />
     <ClInclude Include="ECSql\ECSqlInsertPreparer.h" />
-    <ClInclude Include="ECSql\ECSqlParameterValue.h" />
     <ClInclude Include="ECSql\ECSqlPropertyNameExpPreparer.h" />
-    <ClInclude Include="ECSql\ECSqlPropertyPathImpl.h" />
     <ClInclude Include="ECSql\ECSqlSelectPreparer.h" />
     <ClInclude Include="ECSql\ECSqlStatementBase.h" />
     <ClInclude Include="ECSql\ComputedExp.h" />
@@ -178,10 +163,8 @@
     <ClInclude Include="ECSql\ECSqlPreparer.h" />
     <ClInclude Include="ECSql\ECSqlField.h" />
     <ClInclude Include="ECSql\ECSqlPreparedStatement.h" />
-    <ClInclude Include="ECSql\ECSqlStepTask.h" />
     <ClInclude Include="ECSql\ECSqlTypeInfo.h" />
     <ClInclude Include="ECSql\ECSqlUpdatePreparer.h" />
-    <ClInclude Include="ECSql\EmbeddedECSqlStatement.h" />
     <ClInclude Include="ECSql\Exp.h" />
     <ClInclude Include="ECSql\ExpHelper.h" />
     <ClInclude Include="ECSql\ECSqlStatementNoopImpls.h" />
@@ -189,7 +172,6 @@
     <ClInclude Include="ECSql\IECSqlPrimitiveValue.h" />
     <ClInclude Include="ECSql\InsertStatementExp.h" />
     <ClInclude Include="ECSql\JoinExp.h" />
-    <ClInclude Include="ECSql\JsonReaderImpl.h" />
     <ClInclude Include="ECSql\ListExp.h" />
     <ClInclude Include="ECSql\NativeSqlBuilder.h" />
     <ClInclude Include="ECSql\OptionsExp.h" />
@@ -214,8 +196,8 @@
     <ClInclude Include="ECSql\PrimitiveToSingleColumnECSqlBinder.h" />
     <ClInclude Include="ECSql\PropertyNameExp.h" />
     <ClInclude Include="ECSql\SelectStatementExp.h" />
-    <ClInclude Include="ECSql\StructArrayMappedToSecondaryTableECSqlField.h" />
-    <ClInclude Include="ECSql\StructArrayToSecondaryTableECSqlBinder.h" />
+    <ClInclude Include="ECSql\StructArrayJsonECSqlBinder.h" />
+    <ClInclude Include="ECSql\StructArrayJsonECSqlField.h" />
     <ClInclude Include="ECSql\StructMappedToColumnsECSqlField.h" />
     <ClInclude Include="ECSql\StructToColumnsECSqlBinder.h" />
     <ClInclude Include="ECSql\SystemPropertyECSqlBinder.h" />
@@ -277,7 +259,7 @@
     <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary -c &amp; python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary -c</NMakeCleanCommandLine>
-    <NMakeIncludeSearchPath>$(ProjectDir)\..\PublicAPI\;$(ProjectDir)\ECSql\;$(ProjectDir);$(OutRoot)Winx64\BuildContexts\ECDb\VendorAPI\;$(OutRoot)Winx64\BuildContexts\ECDb\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(ProjectDir)PublicAPI\;$(ProjectDir)ECSql\;$(ProjectDir);$(OutRoot)Winx64\BuildContexts\ECDb\VendorAPI\;$(OutRoot)Winx64\BuildContexts\ECDb\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeOutput>ECDb.exe</NMakeOutput>

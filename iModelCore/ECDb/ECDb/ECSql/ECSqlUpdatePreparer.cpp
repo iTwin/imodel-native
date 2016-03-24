@@ -8,7 +8,6 @@
 #include "ECDbPch.h"
 #include "ECSqlUpdatePreparer.h"
 #include "ECSqlPropertyNameExpPreparer.h"
-#include "StructArrayToSecondaryTableECSqlBinder.h"
 
 using namespace std;
 
@@ -32,7 +31,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         return ECSqlStatus::InvalidECSql;
         }
 
-    IClassMap const& classMap = classNameExp->GetInfo().GetMap();
+    ClassMap const& classMap = classNameExp->GetInfo().GetMap();
     if (auto info = ctx.GetJoinedTableInfo())
         {
         if (info->HasParentOfJoinedTableECSql() && info->HasJoinedTableECSql())
@@ -77,7 +76,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
     auto assignmentListSnippets = NativeSqlBuilder::FlattenJaggedList(assignmentListSnippetLists, emptyIndexSkipList);
     nativeSqlBuilder.Append(" SET ").Append(assignmentListSnippets);
     if (assignmentListSnippets.size() == 0)
-        ctx.SetOnlyExecuteStepTasks();
+        ctx.SetNativeStatementIsNoop(true);
 
     //WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] WHERE (%s))
     NativeSqlBuilder topLevelWhereClause;
@@ -88,7 +87,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         if (!status.IsSuccess())
             return status;
 
-        //Following generate optimized WHERE depending on what was accessed in WHERE class of delete. It will avoid uncessary
+        //Following generate optimized WHERE depending on what was accessed in WHERE class of delete.
         auto const & currentClassMap = classMap;
         if (!currentClassMap.IsMappedToSingleTable())
             {
@@ -177,153 +176,10 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
             }
         }
 
-    status = PrepareStepTask(ctx, exp);
-
     ctx.PopScope();
     return status;
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                    04/2014
-//+---------------+---------------+---------------+---------------+---------------+--------
-//static
-ECSqlStatus ECSqlUpdatePreparer::PrepareStepTask (ECSqlPrepareContext& ctx, UpdateStatementExp const& exp)
-    {
-    ECSqlParameterMap& ecsqlParameterMap = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetParameterMapR();
-    IClassMap const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
-    ECSqlNonSelectPreparedStatement* preparedStmt = ctx.GetECSqlStatementR().GetPreparedStatementP <ECSqlNonSelectPreparedStatement>();
-    BeAssert(preparedStmt != nullptr && "Expecting ECSqlNonSelectPreparedStatement");
-    int ecsqlParameterIndex = 1;
-    ECSqlBinder* binder = nullptr;
-    for (auto childExp : exp.GetAssignmentListExp()->GetChildren())
-        {
-        auto assignementExp = static_cast<AssignmentExp const*> (childExp);
-        auto propNameExp = assignementExp->GetPropertyNameExp();
-        auto& typeInfo = propNameExp->GetTypeInfo();
-        if (ecsqlParameterMap.TryGetBinder(binder, ecsqlParameterIndex) != ECSqlStatus::Success)
-            continue;
-
-        ECSqlStatus stat;
-        if (typeInfo.GetKind() == ECSqlTypeInfo::Kind::Struct)
-            {
-            stat = StructPrepareStepTask(assignementExp, classMap, propNameExp->GetPropertyMap(), binder, preparedStmt, ctx, exp);
-            if (!stat.IsSuccess())
-                {
-                BeAssert(false && "PrepareStepTask Failed for Struct");
-                return ECSqlStatus::Error;
-                }
-
-            }
-
-        else if (typeInfo.GetKind() == ECSqlTypeInfo::Kind::StructArray)
-            {
-            stat = StructArrayPrepareStepTask(assignementExp, classMap, propNameExp->GetPropertyMap(), binder, preparedStmt, ctx, exp);
-            if (!stat.IsSuccess())
-                {
-                BeAssert(false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
-                return ECSqlStatus::Error;
-                }
-            }
-
-        ecsqlParameterIndex++;
-        }
-
-    ECSqlStepTask::Collection& stepTasks = preparedStmt->GetStepTasks();
-
-    if (stepTasks.IsEmpty())
-        return ECSqlStatus::Success;
-
-    EmbeddedECSqlStatement* selectorStmt = stepTasks.GetSelector(true);
-    selectorStmt->Initialize(ctx, ctx.GetParentArrayProperty(), nullptr);
-    Utf8String selectorQuery = ECSqlPrepareContext::CreateECInstanceIdSelectionQuery(ctx, *exp.GetClassNameExp(), exp.GetWhereClauseExp());
-    ECSqlStatus stat = selectorStmt->Prepare(classMap.GetECDbMap().GetECDbR(), selectorQuery.c_str());
-    if (!stat.IsSuccess())
-        {
-        BeAssert(false && "Fail to prepared statement for ECInstanceIdSelect. Possible case of struct array containing struct array");
-        return stat;
-        }
-
-    int parameterIndex = ECSqlPrepareContext::FindLastParameterIndexBeforeWhereClause(exp, exp.GetWhereClauseExp());
-    int nParamterToBind = ((int) ecsqlParameterMap.Count()) - parameterIndex;
-    for (int j = 1; j <= nParamterToBind; j++)
-        {
-        IECSqlBinder& sink = selectorStmt->GetBinder(j);
-        ECSqlBinder* source = nullptr;
-        ECSqlStatus status = ecsqlParameterMap.TryGetBinder(source, j + parameterIndex);
-        if (status.IsSuccess())
-            source->SetOnBindEventHandler(sink);
-        else
-            return status;
-        }
-
-    return ECSqlStatus::Success;
-    }
-
-
-ECSqlStatus ECSqlUpdatePreparer::StructArrayPrepareStepTask(const AssignmentExp* assignementExp, const IClassMap &classMap, PropertyMapCR propNameExp, ECSqlBinder* binder, ECSqlNonSelectPreparedStatement* noneSelectPreparedStmt, ECSqlPrepareContext& ctx, UpdateStatementExp const& exp)
-    {
-    auto stepTaskType = ECSqlExpPreparer::IsNullExp(*assignementExp->GetValueExp())
-        ? StepTaskType::Delete : StepTaskType::Update;
-
-    std::unique_ptr<ECSqlStepTask> stepTask;
-
-    auto status = ECSqlStepTaskFactory::CreatePropertyStepTask(stepTask, stepTaskType, ctx, classMap.GetECDbMap().GetECDbR(), classMap, propNameExp.GetPropertyAccessString());
-    if (status != ECSqlStepTaskCreateStatus::NothingToDo)
-        {
-        if (status != ECSqlStepTaskCreateStatus::Success)
-            {
-            BeAssert(false && "SubqueryTest expression not supported.");
-            return ECSqlStatus::Error;
-            }
-        }
-
-    if (stepTaskType == StepTaskType::Update)
-        {
-        auto structArrayBinder = dynamic_cast<StructArrayToSecondaryTableECSqlBinder*> (binder);
-        if (structArrayBinder == nullptr)
-            {
-            BeAssert(false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
-            return ECSqlStatus::Error;
-            }
-
-        auto& parameterValue = structArrayBinder->GetParameterValue();
-        auto structArrayStepTask = static_cast<ParametericStepTask*>(stepTask.get());
-        structArrayStepTask->SetParameterSource(parameterValue);
-        }
-
-    BeAssert(stepTask != nullptr && "Failed to create step task for struct array");
-    noneSelectPreparedStmt->GetStepTasks().Add(move(stepTask));
-   
-    return ECSqlStatus::Success;
-
-    }
-
-ECSqlStatus ECSqlUpdatePreparer::StructPrepareStepTask(const AssignmentExp* assignementExp, const IClassMap &classMap, PropertyMapCR propertyMap, ECSqlBinder* binder, ECSqlNonSelectPreparedStatement* noneSelectPreparedStmt, ECSqlPrepareContext& ctx, UpdateStatementExp const& exp)
-    {
-    for (auto childPropertyMap : propertyMap.GetChildren())
-        {
-        auto& propertyBinder = static_cast<ECSqlBinder&>(binder->BindStruct().GetMember(childPropertyMap->GetProperty().GetName().c_str()));
-        if (childPropertyMap->GetProperty().GetIsStruct())
-            {
-            if ((StructPrepareStepTask(assignementExp, classMap, *childPropertyMap, &propertyBinder, noneSelectPreparedStmt, ctx, exp)) != ECSqlStatus::Success)
-                {
-                BeAssert(false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
-                return ECSqlStatus::Error;
-                }
-            }
-
-        else if (childPropertyMap->GetAsStructArrayTablePropertyMap() != nullptr)
-            {
-            if (StructArrayPrepareStepTask(assignementExp, classMap, *childPropertyMap, &propertyBinder, noneSelectPreparedStmt, ctx, exp) != ECSqlStatus::Success)
-                {
-                BeAssert(false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
-                return ECSqlStatus::Error;
-                }
-            }
-        }
-
-    return ECSqlStatus::Success;
-        }
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------

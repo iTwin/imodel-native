@@ -60,6 +60,16 @@ struct ChangeSummary : NonCopyableClass
         UpdateDelete    = Update | Delete,
         };
 
+    //! Options to control extraction of the change summary
+    struct Options
+        {
+        private:
+            bool m_includeRelationshipInstances = true;
+        public:
+            void SetIncludeRelationshipInstances(bool value) { m_includeRelationshipInstances = value; }
+            bool GetIncludeRelationshipInstances() const { return m_includeRelationshipInstances; }
+        };
+
     struct Instance;
     struct InstanceIterator;
     struct ValueIterator;
@@ -69,7 +79,7 @@ struct ChangeSummary : NonCopyableClass
     {
     private:
         ChangeSummaryCP m_changeSummary = nullptr;
-        ECN::ECClassId m_classId = -1;
+        ECN::ECClassId m_classId;
         ECInstanceId m_instanceId;
         DbOpcode m_dbOpcode;
         int m_indirect;
@@ -142,14 +152,14 @@ struct ChangeSummary : NonCopyableClass
             Utf8String ToSelectStatement(Utf8CP columnsToSelect, ChangeSummaryCR summary) const;
             void Bind(BeSQLite::Statement& stmt) const;
         public:
-            explicit Options(ECN::ECClassId classId=(ECN::ECClassId)0, bool polymorphic=true, QueryDbOpcode queryDbOpcodes=QueryDbOpcode::All)
+            explicit Options(ECN::ECClassId classId=ECN::ECClassId(), bool polymorphic=true, QueryDbOpcode queryDbOpcodes=QueryDbOpcode::All)
                 : m_classId(classId), m_polymorphic(polymorphic), m_opcodes(queryDbOpcodes) { }
 
             ECN::ECClassId GetClassId() const { return m_classId; }
             bool IsPolymorphic() const { return m_polymorphic; }
             QueryDbOpcode GetOpcodes() const { return m_opcodes; }
 
-            bool IsEmpty() const { return ((ECN::ECClassId)0) == m_classId; }
+            bool IsEmpty() const { return !m_classId.IsValid(); }
         };
     private:
         ChangeSummaryCR m_changeSummary;
@@ -161,7 +171,7 @@ struct ChangeSummary : NonCopyableClass
             : DbTableIterator((BeSQLite::DbCR) changeSummary.GetDb()), m_changeSummary(changeSummary), m_options(options) { }
 
         //! An entry in the table.
-        struct Entry : DbTableIterator::Entry, std::iterator < std::input_iterator_tag, Entry const >
+        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
             {
             private:
                 friend struct InstanceIterator;
@@ -170,7 +180,7 @@ struct ChangeSummary : NonCopyableClass
 
             public:
                 //! Get the class id of the current change
-                ECN::ECClassId GetClassId() const {return (ECN::ECClassId) m_sql->GetValueInt64(0);}
+                ECN::ECClassId GetClassId() const {return (ECN::ECClassId) m_sql->GetValueUInt64(0);}
 
                 //! Get the instance id of the current change
                 ECInstanceId GetInstanceId() const { return m_sql->GetValueId<ECInstanceId>(1); }
@@ -205,12 +215,12 @@ struct ChangeSummary : NonCopyableClass
         ECInstanceId m_instanceId;
 
     public:
-        explicit ValueIterator(ChangeSummaryCR changeSummary, ECN::ECClassId classId, ECInstanceId instanceId)
+        ValueIterator(ChangeSummaryCR changeSummary, ECN::ECClassId classId, ECInstanceId instanceId)
             : DbTableIterator(changeSummary.GetDb()), m_changeSummary (changeSummary), m_classId(classId), m_instanceId(instanceId)
             {}
 
         //! An entry in the table of values in a changed instance.
-        struct Entry : DbTableIterator::Entry, std::iterator < std::input_iterator_tag, Entry const >
+        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
         {
         private:
             friend struct ValueIterator;
@@ -247,10 +257,10 @@ private:
     static IsChangedInstanceSqlFunction* s_isChangedInstanceSqlFunction;
     
     void Initialize();
-    static void RegisterSqlFunctions(ECDbR ecdb);
-    static void UnregisterSqlFunctions(ECDbR ecdb);
-    Utf8String FormatInstanceIdStr(int64_t id) const;
-    Utf8String FormatClassIdStr(ECN::ECClassId id) const;
+    static void RegisterSqlFunctions(ECDbR);
+    static void UnregisterSqlFunctions(ECDbR);
+    Utf8String FormatInstanceIdStr(ECInstanceId) const;
+    Utf8String FormatClassIdStr(ECN::ECClassId) const;
 
 public:
     //! Construct a ChangeSummary from a BeSQLite ChangeSet
@@ -265,7 +275,7 @@ public:
     //! Create a ChangeSummary from the contents of a BeSQLite ChangeSet
     //! @remarks The ChangeSummary needs to be new or freed before this call. 
     //! @see MakeIterator, GetInstancesTableName
-    ECDB_EXPORT BentleyStatus FromChangeSet(BeSQLite::IChangeSet& changeSet);
+    ECDB_EXPORT BentleyStatus FromChangeSet(BeSQLite::IChangeSet& changeSet, Options const& options = Options());
 
     //! Free the data held by this ChangeSummary.
     //! @note Normally the destructor will call Free. After this call the ChangeSet is invalid.

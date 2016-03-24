@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStatementNoopImpls.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -34,18 +34,5 @@ NoopECSqlBinder& NoopECSqlBinderFactory::GetBinder (ECSqlStatus status)
 //---------------------------------------------------------------------------------------
 //static member initialization
 NoopECSqlValue NoopECSqlValue::s_singleton;
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      12/2013
-//---------------------------------------------------------------------------------------
-NoopECSqlValue::NoopECSqlValue ()
-: IECSqlValue (), IECSqlPrimitiveValue (), IECSqlStructValue (), IECSqlArrayValue ()
-    {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      12/2013
-//---------------------------------------------------------------------------------------
-NoopECSqlValue::~NoopECSqlValue ()
-    {}
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

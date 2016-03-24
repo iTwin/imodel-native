@@ -6,8 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include <BeJsonCpp/BeJsonUtilities.h>
-#include <rapidjson/BeRapidJson.h>
+#include <ECObjects/ECJsonUtilities.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -31,8 +30,7 @@ BentleyStatus JsonInserter::Insert (ECInstanceKey& newInstanceKey, JsonValueCR j
     {
     IECInstancePtr ecInstance = m_ecClass.GetDefaultStandaloneEnabler ()->CreateInstance (0);
     BeAssert (ecInstance.IsValid ());
-    StatusInt status = ECJsonCppUtility::ECInstanceFromJsonValue (*ecInstance, jsonValue);
-    if (status != SUCCESS)
+    if (SUCCESS != ECJsonUtilities::ECInstanceFromJsonValue (*ecInstance, jsonValue))
         return ERROR;
 
     return m_ecinstanceInserter.Insert (newInstanceKey, *ecInstance);
@@ -45,8 +43,7 @@ BentleyStatus JsonInserter::Insert (JsonValueR jsonValue) const
     {
     IECInstancePtr ecInstance = m_ecClass.GetDefaultStandaloneEnabler ()->CreateInstance (0);
     BeAssert (ecInstance.IsValid ());
-    StatusInt status = ECJsonCppUtility::ECInstanceFromJsonValue (*ecInstance, jsonValue);
-    if (status != SUCCESS)
+    if (SUCCESS != ECJsonUtilities::ECInstanceFromJsonValue (*ecInstance, jsonValue))
         return ERROR;
 
     ECInstanceKey newInstanceKey;
@@ -65,7 +62,7 @@ BentleyStatus JsonInserter::Insert (ECInstanceKey& newInstanceKey, RapidJsonValu
     {
     IECInstancePtr ecInstance = m_ecClass.GetDefaultStandaloneEnabler ()->CreateInstance (0);
     BeAssert (ecInstance.IsValid ());
-    if (SUCCESS != ECRapidJsonUtility::ECInstanceFromJsonValue (*ecInstance, jsonValue))
+    if (SUCCESS != ECRapidJsonUtilities::ECInstanceFromJsonValue (*ecInstance, jsonValue))
         return ERROR;
 
     auto stat = m_ecinstanceInserter.Insert (newInstanceKey, *ecInstance);

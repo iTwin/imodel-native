@@ -6,8 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include <BeJsonCpp/BeJsonUtilities.h>
-#include <rapidjson/BeRapidJson.h>
+#include <ECObjects/ECJsonUtilities.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -71,7 +70,7 @@ IECInstancePtr JsonUpdater::CreateEmptyRelInstance(ECRelationshipClassCR ecRelCl
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus JsonUpdater::Update(JsonValueCR jsonValue) const
     {
-    ECInstanceId instanceId = ECInstanceId(BeJsonUtilities::Int64FromValue(jsonValue["$ECInstanceId"]));
+    ECInstanceId instanceId = ECInstanceId((uint64_t) BeJsonUtilities::Int64FromValue(jsonValue["$ECInstanceId"]));
     if (!instanceId.IsValid())
         return ERROR;
 
@@ -91,8 +90,7 @@ BentleyStatus JsonUpdater::Update(ECInstanceId const& instanceId, JsonValueCR js
 
     IECInstancePtr ecInstance = CreateEmptyInstance(m_ecClass);
 
-    StatusInt status = ECJsonCppUtility::ECInstanceFromJsonValue (*ecInstance, jsonValue);
-    if (status != SUCCESS)
+    if (SUCCESS != ECJsonUtilities::ECInstanceFromJsonValue (*ecInstance, jsonValue))
         return ERROR;
 
     ECInstanceAdapterHelper::SetECInstanceId(*ecInstance, instanceId);
@@ -114,8 +112,7 @@ BentleyStatus JsonUpdater::Update(ECInstanceId const& instanceId, JsonValueCR js
 
     IECInstancePtr ecInstance = CreateEmptyRelInstance(*relClass, sourceKey, targetKey);
 
-    StatusInt status = ECJsonCppUtility::ECInstanceFromJsonValue(*ecInstance, jsonValue);
-    if (status != SUCCESS)
+    if (SUCCESS != ECJsonUtilities::ECInstanceFromJsonValue(*ecInstance, jsonValue))
         return ERROR;
 
     ECInstanceAdapterHelper::SetECInstanceId(*ecInstance, instanceId);
@@ -136,7 +133,7 @@ BentleyStatus JsonUpdater::Update (ECInstanceId const& instanceId, RapidJsonValu
 
     IECInstancePtr ecInstance = ECInstanceAdapterHelper::CreateECInstance(m_ecClass);
     
-    if (SUCCESS != ECRapidJsonUtility::ECInstanceFromJsonValue(*ecInstance, jsonValue))
+    if (SUCCESS != ECRapidJsonUtilities::ECInstanceFromJsonValue(*ecInstance, jsonValue))
         return ERROR;
 
     ECInstanceAdapterHelper::SetECInstanceId(*ecInstance, instanceId);
@@ -158,7 +155,7 @@ BentleyStatus  JsonUpdater::Update(ECInstanceId const& instanceId, RapidJsonValu
 
     IECInstancePtr ecInstance = CreateEmptyRelInstance(*relClass, sourceKey, targetKey);
    
-    if (SUCCESS != ECRapidJsonUtility::ECInstanceFromJsonValue(*ecInstance, jsonValue))
+    if (SUCCESS != ECRapidJsonUtilities::ECInstanceFromJsonValue(*ecInstance, jsonValue))
         return ERROR;
 
     ECInstanceAdapterHelper::SetECInstanceId(*ecInstance, instanceId);

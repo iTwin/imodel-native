@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlField.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -21,15 +21,15 @@ ECSqlField::Collection ECSqlField::s_emptyChildCollection;
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlField::Init () 
+ECSqlStatus ECSqlField::OnAfterStep () 
     {
-    auto stat = _Init ();
+    auto stat = _OnAfterStep ();
     if (!stat.IsSuccess())
         return stat;
 
     for (unique_ptr<ECSqlField> const& child : GetChildren ())
         {
-        stat = child->Init ();
+        stat = child->OnAfterStep ();
         if (!stat.IsSuccess())
             return stat;
         }
@@ -48,15 +48,15 @@ ECSqlColumnInfoCR ECSqlField::_GetColumnInfo () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      10/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlField::Reset () 
+ECSqlStatus ECSqlField::OnAfterReset () 
     {
-    auto stat = _Reset ();
+    auto stat = _OnAfterReset ();
     if (!stat.IsSuccess())
         return stat;
 
     for (unique_ptr<ECSqlField> const& child : GetChildren ())
         {
-        stat = child->Reset ();
+        stat = child->OnAfterReset ();
         if (!stat.IsSuccess())
             return stat;
         }
@@ -93,95 +93,39 @@ ECSqlStatus ECSqlField::ReportError (ECSqlStatus status, Utf8CP errorMessage) co
     return status;
     }
 
-
-//****************** ECSqlPrimitiveBinder ***************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      09/2013
-//---------------------------------------------------------------------------------------
-ECSqlPrimitiveBinder::ECSqlPrimitiveBinder()
-    : m_sourceColumnIndex(-1), m_targetParameterIndex(-1), m_sourceStmtType(StatementType::Unknown)
-    {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      09/2013
-//---------------------------------------------------------------------------------------
-void ECSqlPrimitiveBinder::SetSourcePropertyPath(Utf8CP column)
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+Utf8CP ECSqlField::GetPrimitiveGetMethodName(ECN::PrimitiveType getMethodType)
     {
-    m_sourcePropertyPath = column;
-    }
+    switch (getMethodType)
+        {
+            case PRIMITIVETYPE_Binary:
+                return "GetBinary";
+            case PRIMITIVETYPE_Boolean:
+                return "GetBoolean";
+            case PRIMITIVETYPE_DateTime:
+                return "GetDateTime";
+            case PRIMITIVETYPE_Double:
+                return "GetDouble";
+            case PRIMITIVETYPE_IGeometry:
+                return "GetGeometry";
+            case PRIMITIVETYPE_Integer:
+                return "GetInt";
+            case PRIMITIVETYPE_Long:
+                return "GetInt64";
+            case PRIMITIVETYPE_Point2D:
+                return "GetPoint2D";
+            case PRIMITIVETYPE_Point3D:
+                return "GetPoint3D";
+            case PRIMITIVETYPE_String:
+                return "GetText";
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      09/2013
-//---------------------------------------------------------------------------------------
-void ECSqlPrimitiveBinder::SetSourceStatementType(StatementType type)
-    {
-    m_sourceStmtType = type;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      09/2013
-//---------------------------------------------------------------------------------------
-void ECSqlPrimitiveBinder::SetSourceColumnIndex(int columnIndex)
-    {
-    m_sourceColumnIndex = columnIndex;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      09/2013
-//---------------------------------------------------------------------------------------
-void ECSqlPrimitiveBinder::SetTargetParamterIndex(int parameterIndex)
-    {
-    m_targetParameterIndex = parameterIndex;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      09/2013
-//---------------------------------------------------------------------------------------
-bool ECSqlPrimitiveBinder::IsResolved() const
-    {
-    return m_sourceColumnIndex > -1 && m_targetParameterIndex > -1 && m_sourceStmtType != StatementType::Unknown;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      09/2013
-//---------------------------------------------------------------------------------------
-Utf8StringCR ECSqlPrimitiveBinder::GetSourcePropertyPath()const  { return m_sourcePropertyPath;}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      09/2013
-//---------------------------------------------------------------------------------------
-int ECSqlPrimitiveBinder::GetSourceColumnIndex() const { return m_sourceColumnIndex;}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      09/2013
-//---------------------------------------------------------------------------------------
-int ECSqlPrimitiveBinder::GetTargetParameterIndex() const {return m_targetParameterIndex;}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      09/2013
-//---------------------------------------------------------------------------------------
-ECSqlPrimitiveBinder::StatementType ECSqlPrimitiveBinder::GetSourceStatementType () const {return m_sourceStmtType;}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      09/2013
-//---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlPrimitiveBinder::Execute(ECSqlStatementBase& sourceStmt, ECSqlStatementBase& targetStmt, IECSqlBinder::MakeCopy makeCopy)
-    {
-    if (!IsResolved())
-        return ECSqlStatus::Error;
-
-    BeAssert(sourceStmt.GetPreparedStatementP() != nullptr);
-
-    IECSqlValue const* ecsqlValue = nullptr;
-    if (m_sourceStmtType == StatementType::ECSql)
-        ecsqlValue = &sourceStmt.GetValue(m_sourceColumnIndex);
-
-    Statement& sourceSqliteStatement = sourceStmt.GetPreparedStatementP()->GetSqliteStatementR();
-
-    IECSqlBinder& targetBinder = targetStmt.GetBinder(m_targetParameterIndex);
-    int64_t value = (m_sourceStmtType == StatementType::ECSql) ?
-        ecsqlValue->GetInt64() : sourceSqliteStatement.GetValueInt64(m_sourceColumnIndex);
-    return targetBinder.BindInt64(value);
+            default:
+                BeAssert(false && "ECSqlField::GetPrimitiveGetMethodName needs to be adjusted to new ECN::PrimitiveType value");
+                return "";
+        }
     }
 
 

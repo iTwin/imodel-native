@@ -1,14 +1,42 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECDbExpressionSymbolProviders.cpp $
+|     $Source: ECDb/ECDbExpressionSymbolProvider.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include <ECDb/ECDbExpressionSymbolProviders.h>
+#include "ECDbExpressionSymbolProvider.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE_EC
+
+BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Grigas.Petraitis                02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECDbExpressionSymbolContext::ECDbExpressionSymbolContext(ECDbCR ecdb)
+    {
+    m_provider = new ECDbExpressionSymbolProvider(ecdb);
+    InternalECSymbolProviderManager::GetManager().RegisterSymbolProvider(*m_provider);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Grigas.Petraitis                02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDbExpressionSymbolContext::LeaveContext()
+    {
+    if (nullptr == m_provider)
+        return;
+
+    InternalECSymbolProviderManager::GetManager().UnregisterSymbolProvider(*m_provider);
+
+    if (nullptr != m_provider)
+        {
+        delete m_provider;
+        m_provider = nullptr;
+        }
+    }
 
 //=======================================================================================
 // @bsiclass                                      Grigas.Petraitis              02/2016
@@ -31,18 +59,18 @@ public:
     static RefCountedPtr<ECDbExpressionContext> Create(ECDbCR db) {return new ECDbExpressionContext(db);}
 };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                02/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Grigas.Petraitis                02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
 void ECDbExpressionSymbolProvider::_PublishSymbols(SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const
     {
     context.AddSymbol(*ContextSymbol::CreateContextSymbol("ECDb", *ECDbExpressionContext::Create(m_db)));
     context.AddSymbol(*MethodSymbol::Create("GetRelatedInstance", nullptr, &GetRelatedInstance, const_cast<ECDbP>(&m_db)));
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                02/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Grigas.Petraitis                02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
 ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstance(EvaluationResult& evalResult, void* context, ECInstanceListCR instanceData, EvaluationResultVector& args)
     {
     // This method takes a single string argument of the format:
@@ -164,27 +192,27 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstance(EvaluationResu
     return ExpressionStatus::Success;
     }
     
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                02/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Grigas.Petraitis                02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
 static ECEntityClassCP GetEntityClassFromSameSchema(ECClassCR other, Utf8CP name)
     {
     ECClassCP classCP = other.GetSchema().GetClassCP(name);
     return (nullptr != classCP) ? classCP->GetEntityClassCP() : nullptr;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                02/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Grigas.Petraitis                02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
 static ECRelationshipClassCP GetRelationshipClassFromSameSchema(ECClassCR other, Utf8CP name)
     {
     ECClassCP classCP = other.GetSchema().GetClassCP(name);
     return (nullptr != classCP) ? classCP->GetRelationshipClassCP() : nullptr;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                02/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Grigas.Petraitis                02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbExpressionSymbolProvider::FindRelationshipAndClassInfo(ECDbCR db, ECRelationshipClassCP& relationship, Utf8CP relationshipName, ECEntityClassCP& entityClass, Utf8CP className)
     {
     // already have both - immediate return
@@ -227,28 +255,4 @@ BentleyStatus ECDbExpressionSymbolProvider::FindRelationshipAndClassInfo(ECDbCR 
     return ERROR;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                02/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECDbExpressionSymbolContext::ECDbExpressionSymbolContext(ECDbCR ecdb)
-    {
-    m_provider = new ECDbExpressionSymbolProvider(ecdb);
-    InternalECSymbolProviderManager::GetManager().RegisterSymbolProvider(*m_provider);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                02/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECDbExpressionSymbolContext::~ECDbExpressionSymbolContext() {LeaveContext();}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                02/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECDbExpressionSymbolContext::LeaveContext()
-    {
-    if (nullptr == m_provider)
-        return;
-
-    InternalECSymbolProviderManager::GetManager().UnregisterSymbolProvider(*m_provider);
-    DELETE_AND_CLEAR(m_provider);
-    }
+END_BENTLEY_SQLITE_EC_NAMESPACE

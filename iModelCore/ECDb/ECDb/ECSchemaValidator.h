@@ -126,7 +126,7 @@ public:
     struct Error : ECSchemaValidationRule::Error
         {
     public:
-        typedef bmap<Utf8CP, bset<ECN::ECClassCP>, CompareIUtf8> InvalidClasses;
+        typedef bmap<Utf8CP, bset<ECN::ECClassCP>, CompareIUtf8Ascii> InvalidClasses;
 
     private:
         InvalidClasses m_invalidClasses;
@@ -137,14 +137,12 @@ public:
         explicit Error (Type ruleType) : ECSchemaValidationRule::Error (ruleType) {}
         ~Error () {}
 
-        bset<ECN::ECClassCP> const* TryGetInvalidClasses (ECN::ECClassCR ecClass) const;
-
         InvalidClasses const& GetInvalidClasses () const { return m_invalidClasses; }
         InvalidClasses& GetInvalidClassesR () { return m_invalidClasses; }
         };
 
 private:
-    bset<Utf8CP, CompareIUtf8> m_classNameSet;
+    bset<Utf8CP, CompareIUtf8Ascii> m_classNameSet;
     mutable std::unique_ptr<Error> m_error;
 
     virtual bool _ValidateSchema (ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) override;
@@ -168,7 +166,7 @@ private:
     struct Error : ECSchemaValidationRule::Error
         {
     public:
-        typedef bmap<Utf8CP, bset<ECN::ECPropertyCP>, CompareIUtf8> InvalidProperties;
+        typedef bmap<Utf8CP, bset<ECN::ECPropertyCP>, CompareIUtf8Ascii> InvalidProperties;
 
     private:
         ECN::ECClassCR m_ecClass;
@@ -187,7 +185,7 @@ private:
         InvalidProperties& GetInvalidPropertiesR () { return m_invalidProperties; }
         };
 
-    bset<Utf8CP, CompareIUtf8> m_propertyNameSet;
+    bset<Utf8CP, CompareIUtf8Ascii> m_propertyNameSet;
     mutable std::unique_ptr<Error> m_error;
 
     virtual bool _ValidateClass (ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) override;

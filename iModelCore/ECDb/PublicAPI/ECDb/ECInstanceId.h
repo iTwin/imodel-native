@@ -2,12 +2,13 @@
 |
 |     $Source: PublicAPI/ECDb/ECInstanceId.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 #include <ECDb/ECDbTypes.h>
+#include <Bentley/BeId.h>
 #include <limits>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -17,7 +18,14 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! @see @ref ECInstanceIdInECDb, ECInstanceIdHelper
 //! @ingroup ECDbGroup
 //+===============+===============+===============+===============+===============+======
-typedef BeInt64Id ECInstanceId;
+struct ECInstanceId : BeInt64Id
+    {
+public:
+    BEINT64_ID_DECLARE_MEMBERS(ECInstanceId, BeInt64Id)
+
+public:
+    explicit ECInstanceId(BeBriefcaseBasedId id) : ECInstanceId(id.GetValue()) {}
+    };
 
 //=======================================================================================
 //! An ECInstanceKey of an ECInstance is made up of the ECInstance's ECInstanceId and the ECN::ECClassId 
@@ -32,10 +40,10 @@ private:
 
 public:
     //! Construct an empty/invalid ECInstanceKey
-    ECInstanceKey() : m_ecClassId(ECN::ECClass::UNSET_ECCLASSID) {}
+    ECInstanceKey() {}
 
     //! Construct an ECInstanceKey
-    ECInstanceKey(ECN::ECClassId ecClassId, ECInstanceId const& ecInstanceId) : m_ecClassId(ecClassId), m_ecInstanceId(ecInstanceId) {}
+    ECInstanceKey(ECN::ECClassId ecClassId, ECInstanceId ecInstanceId) : m_ecClassId(ecClassId), m_ecInstanceId(ecInstanceId) {}
 
     //! Compare this ECInstanceKey with another key for equality
     bool operator == (ECInstanceKey const& other) const { return m_ecClassId == other.m_ecClassId && m_ecInstanceId == other.m_ecInstanceId; }
@@ -61,7 +69,7 @@ public:
     ECInstanceId GetECInstanceId() const { return m_ecInstanceId; }
     
     //! Test if this key is valid
-    bool IsValid() const { return (m_ecClassId > ECN::ECClass::UNSET_ECCLASSID && m_ecInstanceId.IsValid()); }
+    bool IsValid() const { return (m_ecClassId.IsValid() && m_ecInstanceId.IsValid()); }
     };
 
 typedef ECInstanceKey const& ECInstanceKeyCR;
@@ -82,7 +90,7 @@ private:
 public:
     //! Required number of characters to represent an ECInstanceId as string.
     //! @see ECInstanceIdHelper::ToString
-    static const size_t ECINSTANCEID_STRINGBUFFER_LENGTH = std::numeric_limits<int64_t>::digits + 2; //+2 for the sign character and the trailing 0 character
+    static const size_t ECINSTANCEID_STRINGBUFFER_LENGTH = std::numeric_limits<uint64_t>::digits + 1; //+1 for the trailing 0 character
 
     //! Converts the specified ECInstanceId to its string representation.
     //! 
@@ -119,7 +127,7 @@ private:
     virtual bool _IsInSet(int nVals, DbValue const* vals) const
         {
         BeAssert(nVals == 1);
-        return this->end() != this->find(ECInstanceId(vals[0].GetValueInt64()));
+        return this->end() != this->find(vals[0].GetValueId<ECInstanceId>());
         }
 };
 

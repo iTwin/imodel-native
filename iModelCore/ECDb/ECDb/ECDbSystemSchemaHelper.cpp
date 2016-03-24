@@ -21,10 +21,6 @@ Utf8CP const ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME = "SourceECInst
 Utf8CP const ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME = "SourceECClassId";
 Utf8CP const ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME = "TargetECInstanceId";
 Utf8CP const ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME = "TargetECClassId";
-Utf8CP const ECDbSystemSchemaHelper::ECPROPERTYPATHID_PROPNAME = "ECPropertyPathId";
-Utf8CP const ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME = "ECArrayIndex";
-Utf8CP const ECDbSystemSchemaHelper::PARENTECINSTANCEID_PROPNAME = "ParentECInstanceId";
-Utf8CP const ECDbSystemSchemaHelper::OWNERECINSTANCEID_PROPNAME = "OwnerECInstanceId";
 
 Utf8CP const ECDbSystemSchemaHelper::ECSQLSYSTEMPROPERTIES_CLASSNAME = "ECSqlSystemProperties";
 
@@ -154,12 +150,6 @@ Utf8CP ECDbSystemSchemaHelper::GetPropertyName (ECSqlSystemProperty kind)
                 return TARGETECINSTANCEID_PROPNAME;
             case ECSqlSystemProperty::TargetECClassId:
                 return TARGETECCLASSID_PROPNAME;
-            case ECSqlSystemProperty::ECPropertyPathId:
-                return ECPROPERTYPATHID_PROPNAME;
-            case ECSqlSystemProperty::ECArrayIndex:
-                return ECARRAYINDEX_PROPNAME;
-            case ECSqlSystemProperty::ParentECInstanceId:
-                return PARENTECINSTANCEID_PROPNAME;
             default:
                 BeAssert (false && "ECSqlSystemProperty enum has new value. Update ECDbSystemSchemaHelper::GetPropertyName accordingly.");
                 return nullptr;
@@ -174,10 +164,7 @@ bool ECDbSystemSchemaHelper::TryGetSystemPropertyKind (ECSqlSystemProperty& kind
     {
     std::vector<ECSqlSystemProperty> kindList { ECSqlSystemProperty::ECInstanceId, 
                         ECSqlSystemProperty::SourceECInstanceId, ECSqlSystemProperty::SourceECClassId, 
-                        ECSqlSystemProperty::TargetECInstanceId, ECSqlSystemProperty::TargetECClassId, 
-                        ECSqlSystemProperty::ECPropertyPathId, 
-                        ECSqlSystemProperty::ECArrayIndex, 
-                        ECSqlSystemProperty::ParentECInstanceId };
+                        ECSqlSystemProperty::TargetECInstanceId, ECSqlSystemProperty::TargetECClassId};
    
     for (auto candidateKind : kindList)
         {

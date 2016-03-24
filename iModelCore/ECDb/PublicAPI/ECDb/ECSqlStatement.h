@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ECSqlStatement.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -75,13 +75,13 @@ public:
     //! finds all Foo rows where MyProp is unset.
     //!
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindNull(int parameterIndex);
+    ECSqlStatus BindNull(int parameterIndex) { return GetBinder(parameterIndex).BindNull(); }
 
     //! Binds a boolean value to the parameter
     //! @param[in] parameterIndex Parameter index
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindBoolean(int parameterIndex, bool value);
+    ECSqlStatus BindBoolean(int parameterIndex, bool value) { return GetBinder(parameterIndex).BindBoolean(value); }
 
     //! Binds a binary / BLOB value to the parameter
     //! @param[in] parameterIndex Parameter index
@@ -91,49 +91,49 @@ public:
     //! IECSqlBinder::MakeCopy::No if @p value remains valid until
     //!            the statement's bindings are cleared.
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindBinary(int parameterIndex, const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy);
+    ECSqlStatus BindBinary(int parameterIndex, const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy) { return GetBinder(parameterIndex).BindBinary(value, binarySize, makeCopy); }
 
     //! Binds a DateTime value to the parameter
     //! @param[in] parameterIndex Parameter index
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindDateTime(int parameterIndex, DateTimeCR value);
+    ECSqlStatus BindDateTime(int parameterIndex, DateTimeCR value) { return GetBinder(parameterIndex).BindDateTime(value); }
 
     //! Binds a double value to the parameter
     //! @param[in] parameterIndex Parameter index
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindDouble(int parameterIndex, double value);
+    ECSqlStatus BindDouble(int parameterIndex, double value) { return GetBinder(parameterIndex).BindDouble(value); }
 
     //! Binds an IGeometry value to the parameter
     //! @param[in] parameterIndex Parameter index
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindGeometry(int parameterIndex, IGeometryCR value);
+    ECSqlStatus BindGeometry(int parameterIndex, IGeometryCR value) { return GetBinder(parameterIndex).BindGeometry(value); }
 
     //! Binds a 32-bit integer value to the parameter
     //! @param[in] parameterIndex Parameter index
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindInt(int parameterIndex, int value);
+    ECSqlStatus BindInt(int parameterIndex, int value) { return GetBinder(parameterIndex).BindInt(value); }
 
     //! Binds a 64-bit integer value to the parameter
     //! @param[in] parameterIndex Parameter index
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindInt64(int parameterIndex, int64_t value);
+    ECSqlStatus BindInt64(int parameterIndex, int64_t value) { return GetBinder(parameterIndex).BindInt64(value); }
 
     //! Binds a Point2D value to the parameter
     //! @param[in] parameterIndex Parameter index
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindPoint2D(int parameterIndex, DPoint2dCR value);
+    ECSqlStatus BindPoint2D(int parameterIndex, DPoint2dCR value) { return GetBinder(parameterIndex).BindPoint2D(value); }
 
     //! Binds a Point3D value to the parameter
     //! @param[in] parameterIndex Parameter index
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindPoint3D(int parameterIndex, DPoint3dCR value);
+    ECSqlStatus BindPoint3D(int parameterIndex, DPoint3dCR value) { return GetBinder(parameterIndex).BindPoint3D(value); }
 
     //! Binds a UTF-8 encoded string to the parameter
     //! @param[in] parameterIndex Parameter index
@@ -142,20 +142,20 @@ public:
     //!             Only pass IECSqlBinder::MakeCopy::No if @p value will remain valid until the statement's bindings are cleared.
     //! @param[in] byteCount Number of bytes (not characters) in @p value. If negative, it will be calculated from value. Passing this value is only an optimization. 
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindText(int parameterIndex, Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount = -1);
+    ECSqlStatus BindText(int parameterIndex, Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount = -1) { return GetBinder(parameterIndex).BindText(value, makeCopy, byteCount); }
 
-    //! Binds a BeInt64Id subclass to the parameter. Binds NULL if the id is not valid.
+    //! Binds a BeInt64Id subclass to the parameter. Binds NULL if the value is not valid.
     //! @param[in] parameterIndex Parameter index
-    //! @param[in] id Value to bind.
+    //! @param[in] value Value to bind.
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindId(int parameterIndex, BeInt64Id id);
+    ECSqlStatus BindId(int parameterIndex, BeInt64Id value) { return GetBinder(parameterIndex).BindId(value); }
 
     //! Gets a binder which is used to bind a struct value to the specified parameter
     //! @param[in] parameterIndex Parameter index
     //! @remarks In case of error, e.g. if the parameter is not a struct, a no-op binder will be returned. Calling methods on the no-op binder
     //! returns the appropriate error-code.
     //! @return Struct parameter binder
-    ECDB_EXPORT IECSqlStructBinder& BindStruct(int parameterIndex);
+    IECSqlStructBinder& BindStruct(int parameterIndex) { return GetBinder(parameterIndex).BindStruct(); }
 
     //! Gets a binder which is used to bind an array to the specified parameter
     //! @param[in] parameterIndex Parameter index
@@ -164,7 +164,7 @@ public:
     //! is not an array, a no-op binder will be returned. Calling methods on the no-op binder
     //! returns the appropriate error-code.
     //! @return Array parameter binder
-    ECDB_EXPORT IECSqlArrayBinder& BindArray(int parameterIndex, uint32_t initialArrayCapacity);
+    IECSqlArrayBinder& BindArray(int parameterIndex, uint32_t initialArrayCapacity) { return GetBinder(parameterIndex).BindArray(initialArrayCapacity); }
     
     //! Gets a binder to bind a value to the parameter at the specified index.
     //! @param[in] parameterIndex Parameter index
@@ -227,7 +227,7 @@ public:
     //! @return ECSQL column metadata.
     //! @note Possible errors:
     //! - @p columnIndex is out of bounds
-    ECDB_EXPORT ECSqlColumnInfoCR GetColumnInfo(int columnIndex) const;
+    ECSqlColumnInfoCR GetColumnInfo(int columnIndex) const { return GetValue(columnIndex).GetColumnInfo(); }
 
     //! @}
 
@@ -239,7 +239,7 @@ public:
     //! @return true if column value is %NULL, false otherwise
     //! @note Possible errors:
     //! - @p columnIndex is out of bounds
-    ECDB_EXPORT bool IsValueNull(int columnIndex) const;
+    bool IsValueNull(int columnIndex) const { return GetValue(columnIndex).IsNull(); }
 
     //! Gets the binary / blob value of the specific column.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
@@ -248,7 +248,7 @@ public:
     //! @note Possible errors:
     //! - column data type is not binary
     //! - @p columnIndex is out of bounds
-    ECDB_EXPORT void const* GetValueBinary(int columnIndex, int* binarySize = nullptr) const;
+    void const* GetValueBinary(int columnIndex, int* binarySize = nullptr) const { return GetValue(columnIndex).GetBinary(binarySize); }
 
     //! Gets the value of the specific column as a boolean value.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
@@ -257,7 +257,7 @@ public:
     //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
     //!   those types can implicitly be converted into each other.
     //! - @p columnIndex is out of bounds
-    ECDB_EXPORT bool GetValueBoolean(int columnIndex) const;
+    bool GetValueBoolean(int columnIndex) const { return GetValue(columnIndex).GetBoolean(); }
 
     //! Gets the DateTime value of the specific column.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
@@ -266,7 +266,7 @@ public:
     //! - column data type is not DateTime
     //! - @p columnIndex is out of bounds
     //! @see @ref ECDbCodeSampleECSqlStatementAndDateTimeProperties
-    ECDB_EXPORT DateTime GetValueDateTime(int columnIndex) const;
+    DateTime GetValueDateTime(int columnIndex) const { return GetValue(columnIndex).GetDateTime(); }
 
     //! Gets the value of the specific column as a double value.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
@@ -275,7 +275,7 @@ public:
     //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
     //!   those types can implicitly be converted into each other.
     //! - @p columnIndex is out of bounds
-    ECDB_EXPORT double GetValueDouble(int columnIndex) const;
+    double GetValueDouble(int columnIndex) const { return GetValue(columnIndex).GetDouble(); }
 
     //! Gets the value of the specific column as an IGeometry value.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
@@ -283,7 +283,7 @@ public:
     //! @note Possible errors:
     //! - column data type is not IGeometry
     //! - @p columnIndex is out of bounds
-    ECDB_EXPORT IGeometryPtr GetValueGeometry(int columnIndex) const;
+    IGeometryPtr GetValueGeometry(int columnIndex) const { return GetValue(columnIndex).GetGeometry(); }
 
     //! Gets the value of the specific column as an integer value.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
@@ -292,7 +292,7 @@ public:
     //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
     //!   those types can implicitly be converted into each other.
     //! - @p columnIndex is out of bounds
-    ECDB_EXPORT int GetValueInt(int columnIndex) const;
+    int GetValueInt(int columnIndex) const { return GetValue(columnIndex).GetInt(); }
 
     //! Gets the value of the specific column as an Int64 value.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
@@ -301,8 +301,16 @@ public:
     //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
     //!   those types can implicitly be converted into each other.
     //! - @p columnIndex is out of bounds
-    ECDB_EXPORT int64_t GetValueInt64(int columnIndex) const;
-    uint64_t GetValueUInt64(int columnIndex) const {return (uint64_t) GetValueInt64(columnIndex);}
+    int64_t GetValueInt64(int columnIndex) const { return GetValue(columnIndex).GetInt64(); }
+
+    //! Gets the value of the specific column as an uint64_t value.
+    //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
+    //! @return Column value as uint64_t
+    //! @note Possible errors:
+    //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
+    //!   those types can implicitly be converted into each other.
+    //! - @p columnIndex is out of bounds
+    uint64_t GetValueUInt64(int columnIndex) const { return GetValue(columnIndex).GetUInt64(); }
 
     //! Gets the Point2D value of the specific column.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
@@ -310,7 +318,7 @@ public:
     //! @note Possible errors:
     //! - column data type is not Point2D
     //! - @p columnIndex is out of bounds
-    ECDB_EXPORT DPoint2d GetValuePoint2D (int columnIndex) const;
+    DPoint2d GetValuePoint2D (int columnIndex) const { return GetValue(columnIndex).GetPoint2D(); }
 
     //! Gets the Point3D value of the specific column.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
@@ -318,7 +326,7 @@ public:
     //! @note Possible errors:
     //! - column data type is not Point3D
     //! - @p columnIndex is out of bounds
-    ECDB_EXPORT DPoint3d GetValuePoint3D (int columnIndex) const;
+    DPoint3d GetValuePoint3D (int columnIndex) const { return GetValue(columnIndex).GetPoint3D(); }
 
     //! Gets the value of the specific column as a string value.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
@@ -327,7 +335,7 @@ public:
     //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
     //!   those types can implicitly be converted into each other.
     //! - @p columnIndex is out of bounds
-    ECDB_EXPORT Utf8CP GetValueText(int columnIndex) const;
+    Utf8CP GetValueText(int columnIndex) const { return GetValue(columnIndex).GetText(); }
 
     //! Gets the value as a subclass of BeInt64Id
     //! @remarks As @ref ECInstanceId "ECInstanceIds" are BeInt64Ids, you can use
@@ -347,14 +355,14 @@ public:
     //! @note Possible errors:
     //! - column data type is not an array
     //! - @p columnIndex is out of bounds
-    ECDB_EXPORT IECSqlArrayValue const& GetValueArray(int columnIndex) const;
+    IECSqlArrayValue const& GetValueArray(int columnIndex) const { return GetValue(columnIndex).GetArray(); }
 
     //! Gets the struct value of the specified column.
     //! @return Struct value for the column
     //! @note Possible errors:
     //! - column data type is not an ECStruct
     //! - @p columnIndex is out of bounds
-    ECDB_EXPORT IECSqlStructValue const& GetValueStruct(int columnIndex) const;
+    IECSqlStructValue const& GetValueStruct(int columnIndex) const { return GetValue(columnIndex).GetStruct(); }
 
     //! Gets the value of the specified column.
     //! @remarks This is the generic way of getting the value of a specified column in the result set. 

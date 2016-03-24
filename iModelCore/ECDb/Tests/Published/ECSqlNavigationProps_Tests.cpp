@@ -117,7 +117,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT GetECClassId(), ECInstanceId FROM np.DgnModel LIMIT 1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
-    modelKey = ECInstanceKey(stmt.GetValueInt64(0), stmt.GetValueId<ECInstanceId>(1));
+    modelKey = ECInstanceKey(stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1));
     ASSERT_TRUE(modelKey.IsValid());
     }
 
@@ -139,7 +139,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, elementKey.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
-    ASSERT_EQ(modelKey.GetECClassId(), stmt.GetValueInt64(1));
+    ASSERT_EQ(modelKey.GetECClassId().GetValue(), stmt.GetValueId<ECClassId>(1).GetValue());
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     stmt.Finalize();
@@ -148,7 +148,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, modelKey.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(elementKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
-    ASSERT_EQ(elementKey.GetECClassId(), stmt.GetValueInt64(1));
+    ASSERT_EQ(elementKey.GetECClassId().GetValue(), stmt.GetValueId<ECClassId>(1).GetValue());
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
@@ -195,7 +195,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
 
     //with literal values
     Utf8String ecsql;
-    ecsql.Sprintf("SELECT ECInstanceId FROM np.DgnElement WHERE ModelId=%lld", modelKey.GetECInstanceId().GetValue());
+    ecsql.Sprintf("SELECT ECInstanceId FROM np.DgnElement WHERE ModelId=%llu", modelKey.GetECInstanceId().GetValue());
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(elementKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
@@ -258,7 +258,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT GetECClassId(), ECInstanceId FROM np.DgnModel LIMIT 1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
-    modelKey = ECInstanceKey(stmt.GetValueInt64(0), stmt.GetValueId<ECInstanceId>(1));
+    modelKey = ECInstanceKey(stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1));
     ASSERT_TRUE(modelKey.IsValid());
     }
 
@@ -289,7 +289,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, elementKey.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
-    ASSERT_EQ(modelKey.GetECClassId(), stmt.GetValueInt64(1));
+    ASSERT_EQ(modelKey.GetECClassId().GetValue(), stmt.GetValueId<ECClassId>(1).GetValue());
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     stmt.Finalize();
@@ -298,7 +298,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, modelKey.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(elementKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
-    ASSERT_EQ(elementKey.GetECClassId(), stmt.GetValueInt64(1));
+    ASSERT_EQ(elementKey.GetECClassId().GetValue(), stmt.GetValueId<ECClassId>(1).GetValue());
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
@@ -370,7 +370,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT GetECClassId(), ECInstanceId FROM np.DgnModel LIMIT 1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
-    modelKey = ECInstanceKey(stmt.GetValueInt64(0), stmt.GetValueId<ECInstanceId>(1));
+    modelKey = ECInstanceKey(stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1));
     ASSERT_TRUE(modelKey.IsValid());
     }
 
@@ -383,7 +383,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     ASSERT_TRUE(elementInserter.IsValid());
 
     Utf8String newElementJsonStr;
-    newElementJsonStr.Sprintf("{\"Code\": \"TestCode-1\", \"ModelId\": \"%lld\"}", modelKey.GetECInstanceId().GetValue());
+    newElementJsonStr.Sprintf("{\"Code\": \"TestCode-1\", \"ModelId\": \"%llu\"}", modelKey.GetECInstanceId().GetValue());
 
     rapidjson::Document newElementJson;
     ASSERT_FALSE(newElementJson.Parse<0>(newElementJsonStr.c_str()).HasParseError());
@@ -398,7 +398,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, elementKey.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
-    ASSERT_EQ(modelKey.GetECClassId(), stmt.GetValueInt64(1));
+    ASSERT_EQ(modelKey.GetECClassId().GetValue(), stmt.GetValueId<ECClassId>(1).GetValue());
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     stmt.Finalize();
@@ -407,7 +407,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, modelKey.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(elementKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
-    ASSERT_EQ(elementKey.GetECClassId(), stmt.GetValueInt64(1));
+    ASSERT_EQ(elementKey.GetECClassId().GetValue(), stmt.GetValueId<ECClassId>(1).GetValue());
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
@@ -572,7 +572,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
         ECInstanceId currentId = stmt.GetValueId<ECInstanceId>(0);
         if (currentId == fooKey.GetECInstanceId())
             {
-            ASSERT_EQ(fooKey.GetECClassId(), stmt.GetValueInt64(1));
+            ASSERT_EQ(fooKey.GetECClassId().GetValue(), stmt.GetValueId<ECClassId>(1).GetValue());
             ASSERT_EQ(catKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(2).GetValue());
             }
         else

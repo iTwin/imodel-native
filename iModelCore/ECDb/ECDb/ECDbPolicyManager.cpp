@@ -11,20 +11,7 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //********************* ECDbPolicy ******************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    12/2013
-//---------------------------------------------------------------------------------------
-ECDbPolicy::ECDbPolicy (bool isSupported, Utf8CP notSupportedMessage) 
-    : m_isSupported (isSupported), m_notSupportedMessage (notSupportedMessage)
-    {}
     
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    12/2013
-//---------------------------------------------------------------------------------------
-ECDbPolicy::ECDbPolicy (ECDbPolicy const& rhs)
-    : m_isSupported (rhs.m_isSupported), m_notSupportedMessage (rhs.m_notSupportedMessage)
-    {}
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    12/2013
 //---------------------------------------------------------------------------------------
@@ -42,14 +29,6 @@ ECDbPolicy& ECDbPolicy::operator= (ECDbPolicy const& rhs)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    12/2013
 //---------------------------------------------------------------------------------------
-ECDbPolicy::ECDbPolicy (ECDbPolicy&& rhs)
-    : m_isSupported (std::move (rhs.m_isSupported)), m_notSupportedMessage (std::move (rhs.m_notSupportedMessage))
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    12/2013
-//---------------------------------------------------------------------------------------
 ECDbPolicy& ECDbPolicy::operator= (ECDbPolicy&& rhs)
     {
     if (this != &rhs)
@@ -60,32 +39,6 @@ ECDbPolicy& ECDbPolicy::operator= (ECDbPolicy&& rhs)
 
     return *this;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    12/2013
-//---------------------------------------------------------------------------------------
-ECDbPolicy ECDbPolicy::CreateSupported ()
-    {
-    return ECDbPolicy (true, nullptr);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    12/2013
-//---------------------------------------------------------------------------------------
-ECDbPolicy ECDbPolicy::CreateNotSupported (Utf8CP notSupportedMessage)
-    {
-    return ECDbPolicy (false, notSupportedMessage);
-    }
-
-//********************* ECDbPolicyAssertion ******************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    12/2013
-//---------------------------------------------------------------------------------------
-ECDbPolicyAssertion::Type ECDbPolicyAssertion::GetType () const
-    {
-    return _GetType ();
-    }
-
 
 //********************* IsValidInECSqlPolicyAssertion ******************************************
 //---------------------------------------------------------------------------------------
@@ -118,7 +71,7 @@ IsValidInECSqlPolicyAssertion IsValidInECSqlPolicyAssertion::Get (ECSqlType ecSq
 // @bsimethod                                 Krischan.Eberle                    12/2013
 //---------------------------------------------------------------------------------------
 //static
-ECDbPolicy ECDbPolicyManager::GetClassPolicy (IClassMap const& classMap, ECDbPolicyAssertion const& assertion)
+ECDbPolicy ECDbPolicyManager::GetClassPolicy (ClassMap const& classMap, ECDbPolicyAssertion const& assertion)
     {
     switch (assertion.GetType ())
         {
@@ -134,7 +87,7 @@ ECDbPolicy ECDbPolicyManager::GetClassPolicy (IClassMap const& classMap, ECDbPol
 // @bsimethod                                 Krischan.Eberle                    12/2013
 //---------------------------------------------------------------------------------------
 //static
-ECDbPolicy ECDbPolicyManager::DoGetClassPolicy(IClassMap const& classMap, IsValidInECSqlPolicyAssertion const& assertion)
+ECDbPolicy ECDbPolicyManager::DoGetClassPolicy(ClassMap const& classMap, IsValidInECSqlPolicyAssertion const& assertion)
     {
     ECClassCR ecClass = classMap.GetClass();
     Utf8StringCR className = ecClass.GetName();

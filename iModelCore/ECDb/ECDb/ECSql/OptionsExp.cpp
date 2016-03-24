@@ -46,7 +46,7 @@ bool OptionsExp::HasOption(Utf8CP optionName) const
         return true;
 
     Utf8CP val = option->GetValue();
-    return BeStringUtilities::Stricmp(val, "true") == 0 || BeStringUtilities::Stricmp(val, "1") == 0;
+    return BeStringUtilities::StricmpAscii(val, "true") == 0 || BeStringUtilities::StricmpAscii(val, "1") == 0;
     }
 
 //-----------------------------------------------------------------------------------------

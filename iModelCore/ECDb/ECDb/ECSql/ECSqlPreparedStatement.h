@@ -16,17 +16,15 @@
 #include "ECSqlField.h"
 #include "ECSqlBinder.h"
 #include "DynamicSelectClauseECClass.h"
-#include "ECSqlStepTask.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+struct ParentOfJoinedTableECSqlStatement;
 
 //=======================================================================================
 //! Represents a prepared ECSqlStatement with all additional information needed for
 //! post-prepare operations
 // @bsiclass                                                Krischan.Eberle      12/2013
 //+===============+===============+===============+===============+===============+======
-struct ParentOfJoinedTableECSqlStatement;
-
 struct ECSqlPreparedStatement : NonCopyableClass
     {
     private:
@@ -37,10 +35,8 @@ struct ECSqlPreparedStatement : NonCopyableClass
         Utf8String m_nativeSql;
         mutable BeSQLite::Statement m_sqliteStatement;
         bool m_isNoopInSqlite;
-        bool m_onlyExecuteStepTasks;
         ECSqlParameterMap m_parameterMap;
         std::unique_ptr<ParentOfJoinedTableECSqlStatement> m_parentOfJoinedTableECSqlStatement;
-        std::vector<ECN::ECSchemaPtr> m_keepAliveSchemas; //Hold on to dependent ECSchema just in case some process flush original ECSchema
 
         virtual ECSqlStatus _Reset() = 0;
 
@@ -52,7 +48,6 @@ struct ECSqlPreparedStatement : NonCopyableClass
 
         ECSqlParameterMap const& GetParameterMap() const { return m_parameterMap; }
         bool IsNoopInSqlite() const { return m_isNoopInSqlite; }
-        bool OnlyExecuteStepTasks() const { return m_onlyExecuteStepTasks; }
 
         IssueReporter const& GetIssueReporter() const { return m_ecdb->GetECDbImplR().GetIssueReporter(); }
 
@@ -77,8 +72,6 @@ struct ECSqlPreparedStatement : NonCopyableClass
         BeSQLite::Statement& GetSqliteStatementR() const { return m_sqliteStatement; }
 
         ECSqlParameterMap& GetParameterMapR() { return m_parameterMap; }
-
-        void AddKeepAliveSchema(ECN::ECSchemaCR schema);
     };
 
 //=======================================================================================
@@ -91,14 +84,14 @@ struct ECSqlSelectPreparedStatement : public ECSqlPreparedStatement
 private:
     DynamicSelectClauseECClass m_dynamicSelectClauseECClass;
     ECSqlField::Collection m_fields;
-    //Calls to Init/Reset on ECSqlFields can be very many, so only call it on fields that require it.
-    std::vector<ECSqlField*> m_fieldsRequiringInit;
+    //Calls to OnAfterStep/Reset on ECSqlFields can be very many, so only call it on fields that require it.
+    std::vector<ECSqlField*> m_fieldsRequiringOnAfterStep;
     std::vector<ECSqlField*> m_fieldsRequiringReset;
 
     virtual ECSqlStatus _Reset () override;
 
     ECSqlStatus ResetFields () const;
-    ECSqlStatus InitFields () const;
+    ECSqlStatus OnAfterStep () const;
 
 public:
     explicit ECSqlSelectPreparedStatement (ECDbCR ecdb) : ECSqlPreparedStatement (ECSqlType::Select, ecdb) {}
@@ -122,18 +115,12 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct ECSqlNonSelectPreparedStatement : public ECSqlPreparedStatement
     {
-private:
-    ECSqlStepTask::Collection m_stepTasks;
-
 protected:
-    ECSqlNonSelectPreparedStatement (ECSqlType statementType, ECDbCR ecdb) :ECSqlPreparedStatement (statementType, ecdb), m_stepTasks ()  {}
-
+    ECSqlNonSelectPreparedStatement (ECSqlType statementType, ECDbCR ecdb) :ECSqlPreparedStatement (statementType, ecdb)  {}
     virtual ECSqlStatus _Reset () override;
 
 public:
-
     virtual ~ECSqlNonSelectPreparedStatement () {}
-    ECSqlStepTask::Collection& GetStepTasks () { return m_stepTasks; }
     };
 
 //=======================================================================================
@@ -154,9 +141,7 @@ public:
     public:
         //compiler generated copy ctor and copy assignment
 
-        explicit ECInstanceKeyInfo ()
-            : m_ecClassId(ECN::ECClass::UNSET_ECCLASSID), m_ecInstanceIdBinder(nullptr)
-            {}
+        explicit ECInstanceKeyInfo () :  m_ecInstanceIdBinder(nullptr) {}
 
         ECInstanceKeyInfo (ECN::ECClassId ecClassId, ECSqlBinder& ecInstanceIdBinder)
             : m_ecClassId (ecClassId), m_ecInstanceIdBinder (&ecInstanceIdBinder)
@@ -166,7 +151,7 @@ public:
             : m_ecClassId (ecClassId), m_ecInstanceIdBinder (nullptr), m_userProvidedECInstanceId (userProvidedLiteral)
             {}
 
-        ECN::ECClassId GetECClassId() const { BeAssert(m_ecClassId > ECN::ECClass::UNSET_ECCLASSID); return m_ecClassId; }
+        ECN::ECClassId GetECClassId() const { BeAssert(m_ecClassId.IsValid()); return m_ecClassId; }
 
         ECSqlBinder* GetECInstanceIdBinder () const { return m_ecInstanceIdBinder; }
         bool HasUserProvidedECInstanceId () const {return m_userProvidedECInstanceId.IsValid ();}

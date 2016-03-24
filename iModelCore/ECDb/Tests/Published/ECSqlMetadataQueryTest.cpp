@@ -223,7 +223,7 @@ void ECSqlMetadataQueryTest::ComparePropertyDefProperties(ECPropertyCR expectedP
             }
         else if (ARRAYKIND_Struct == expectedProperty.GetAsArrayProperty()->GetKind())
             {
-            u.SetLong(expectedProperty.GetAsStructArrayProperty()->GetStructElementType()->GetId());
+            u.SetLong(expectedProperty.GetAsStructArrayProperty()->GetStructElementType()->GetId().GetValue());
             actualProperty.GetValue(v, "NonPrimitiveType");
             EXPECT_TRUE(u.Equals(v));
             }
@@ -249,7 +249,7 @@ void ECSqlMetadataQueryTest::ComparePropertyDefProperties(ECPropertyCR expectedP
 
         if (expectedProperty.GetIsStruct())
             {
-            u.SetLong(expectedProperty.GetAsStructProperty()->GetType().GetId());
+            u.SetLong(expectedProperty.GetAsStructProperty()->GetType().GetId().GetValue());
             actualProperty.GetValue(v, "NonPrimitiveType");
             EXPECT_TRUE(u.Equals(v));
             }

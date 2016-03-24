@@ -953,20 +953,20 @@ ECSqlTestDataset ECSqlSelectTestDataset::ECInstanceIdTests (ECDbCR ecdb, int row
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
     Utf8String ecsqlStr;
-    ecsqlStr.Sprintf("SELECT I, Dt, S FROM ecsql.PSA WHERE ECInstanceId ='%lld'", psaIds[0].GetValue());
+    ecsqlStr.Sprintf("SELECT I, Dt, S FROM ecsql.PSA WHERE ECInstanceId ='%llu'", psaIds[0].GetValue());
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsqlStr.c_str(), ECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 3, 1);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE ECInstanceId <= '10000'";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, ECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 3, rowCountPerClass);
 
-    ecsqlStr.Sprintf("SELECT I, Dt, S FROM ecsql.PSA WHERE ECInstanceId IN ('%lld', '%lld')", psaIds[0].GetValue(), psaIds[2].GetValue());
+    ecsqlStr.Sprintf("SELECT I, Dt, S FROM ecsql.PSA WHERE ECInstanceId IN ('%llu', '%llu')", psaIds[0].GetValue(), psaIds[2].GetValue());
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsqlStr.c_str(), ECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 3, 2);
 
-    ecsqlStr.Sprintf("SELECT I, Dt, S FROM ecsql.PSA WHERE ECInstanceId BETWEEN '%lld' AND '%lld'", psaIds[0].GetValue(), psaIds[3].GetValue());
+    ecsqlStr.Sprintf("SELECT I, Dt, S FROM ecsql.PSA WHERE ECInstanceId BETWEEN '%llu' AND '%llu'", psaIds[0].GetValue(), psaIds[3].GetValue());
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsqlStr.c_str(), ECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 3, 4);
 
-    ecsqlStr.Sprintf("SELECT I, Dt, S FROM ecsql.PSA WHERE ECInstanceId IN (%lld, (select ECInstanceId from ecsql.PSA where ECInstanceId = %lld))", psaIds[0].GetValue(), psaIds[2].GetValue());
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsqlStr.c_str(), 3, 2);;
+    ecsqlStr.Sprintf("SELECT I, Dt, S FROM ecsql.PSA WHERE ECInstanceId IN (%llu, (select ECInstanceId from ecsql.PSA where ECInstanceId = %llu))", psaIds[0].GetValue(), psaIds[2].GetValue());
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsqlStr.c_str(), 3, 2);
 
         {
         ecsql = "SELECT I, Dt FROM ecsql.PSA WHERE ECInstanceId = :id";
@@ -978,7 +978,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::ECInstanceIdTests (ECDbCR ecdb, int row
         ecsql = "SELECT I, Dt FROM ecsql.PSA WHERE ECInstanceId = :id";
         auto& testItem = ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, ECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 2, 1);
         Utf8String strVal;
-        strVal.Sprintf("%lld", psaIds[0].GetValue());
+        strVal.Sprintf("%llu", psaIds[0].GetValue());
         testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("id", ECValue (strVal.c_str())));
         }
 
@@ -992,7 +992,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::ECInstanceIdTests (ECDbCR ecdb, int row
         ecsql = "SELECT I, Dt FROM ecsql.PSA WHERE ECInstanceId = ?";
         auto& testItem = ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, ECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 2, 1);
         Utf8String strVal;
-        strVal.Sprintf("%lld", psaIds[0].GetValue());
+        strVal.Sprintf("%llu", psaIds[0].GetValue());
         testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue(strVal.c_str())));
         }
 
@@ -2916,7 +2916,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::UnionTests(int rowCountPerClass)
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 8, rowCountPerClass*2);
 
     ecsql = "SELECT PStruct_Array FROM ecsql.PSA UNION SELECT SAStructProp.PStruct_Array FROM ecsql.SA";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1,  20);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1,  2);
 
     ecsql = "SELECT ECClassId, COUNT(*) FROM (SELECT GetECClassId() ECClassId, ECInstanceId FROM ecsql.PSA UNION ALL SELECT GetECClassId() ECClassId, ECInstanceId FROM ecsql.SA) GROUP BY ECClassId";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2, 2);

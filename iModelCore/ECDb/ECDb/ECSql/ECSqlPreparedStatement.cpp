@@ -20,7 +20,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
 ECSqlPreparedStatement::ECSqlPreparedStatement(ECSqlType type, ECDbCR ecdb)
-: m_type(type), m_ecdb(&ecdb), m_isNoopInSqlite(false), m_onlyExecuteStepTasks(false), m_parentOfJoinedTableECSqlStatement(nullptr) {}
+: m_type(type), m_ecdb(&ecdb), m_isNoopInSqlite(false), m_parentOfJoinedTableECSqlStatement(nullptr) {}
 
 
 //---------------------------------------------------------------------------------------
@@ -69,11 +69,6 @@ ECSqlStatus ECSqlPreparedStatement::Prepare(ECSqlPrepareContext& prepareContext,
     if (prepareContext.NativeStatementIsNoop())
         {
         m_isNoopInSqlite = true;
-        m_nativeSql = "n/a";
-        }
-    else if (prepareContext.OnlyExecuteStepTasks())
-        {
-        m_onlyExecuteStepTasks = true;
         m_nativeSql = "n/a";
         }
     else
@@ -204,18 +199,6 @@ Utf8CP ECSqlPreparedStatement::GetNativeSql() const
     return m_nativeSql.c_str();
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        12/13
-//---------------------------------------------------------------------------------------
-void ECSqlPreparedStatement::AddKeepAliveSchema(ECN::ECSchemaCR schema)
-    {
-    for (auto& keepAlive : m_keepAliveSchemas)
-    if (&schema == keepAlive.get())
-        return;
-
-    m_keepAliveSchemas.push_back(const_cast<ECSchemaP>(&schema));
-    }
-
 
 //***************************************************************************************
 //    ECSqlSelectPreparedStatement
@@ -228,7 +211,7 @@ DbResult ECSqlSelectPreparedStatement::Step()
     const DbResult stat = DoStep();
     if (BE_SQLITE_ROW == stat)
         {
-        if (!InitFields().IsSuccess())
+        if (!OnAfterStep().IsSuccess())
             return BE_SQLITE_ERROR;
         }
 
@@ -283,7 +266,7 @@ ECSqlStatus ECSqlSelectPreparedStatement::ResetFields() const
     {
     for (ECSqlField* field : m_fieldsRequiringReset)
         {
-        ECSqlStatus stat = field->Reset();
+        ECSqlStatus stat = field->OnAfterReset();
         if (!stat.IsSuccess())
             return stat;
         }
@@ -294,11 +277,11 @@ ECSqlStatus ECSqlSelectPreparedStatement::ResetFields() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        10/13
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlSelectPreparedStatement::InitFields() const
+ECSqlStatus ECSqlSelectPreparedStatement::OnAfterStep() const
     {
-    for (ECSqlField* field : m_fieldsRequiringInit)
+    for (ECSqlField* field : m_fieldsRequiringOnAfterStep)
         {
-        ECSqlStatus stat = field->Init();
+        ECSqlStatus stat = field->OnAfterStep();
         if (!stat.IsSuccess())
             return stat;
         }
@@ -314,10 +297,10 @@ void ECSqlSelectPreparedStatement::AddField(std::unique_ptr<ECSqlField> field)
     BeAssert(field != nullptr);
     if (field != nullptr)
         {
-        if (field->RequiresInit())
-            m_fieldsRequiringInit.push_back(field.get());
+        if (field->RequiresOnAfterStep())
+            m_fieldsRequiringOnAfterStep.push_back(field.get());
 
-        if (field->RequiresReset())
+        if (field->RequiresOnAfterReset())
             m_fieldsRequiringReset.push_back(field.get());
 
         m_fields.push_back(std::move(field));
@@ -390,14 +373,6 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
             }
 
         instanceKey = ECInstanceKey(m_ecInstanceKeyInfo.GetECClassId(), ecinstanceidOfInsert);
-
-        if (!GetStepTasks().IsEmpty())
-            {
-            stat = GetStepTasks().ExecuteAfterStepTaskList(ecinstanceidOfInsert);
-            if (BE_SQLITE_OK != stat)
-                return stat;
-            }
-
         return BE_SQLITE_DONE;
         }
 
@@ -432,7 +407,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::GenerateECInstanceIdAndBindToInsertSta
 //---------------------------------------------------------------------------------------
 void ECSqlInsertPreparedStatement::SetECInstanceKeyInfo(ECInstanceKeyInfo const& ecInstanceKeyInfo)
     {
-    BeAssert(ecInstanceKeyInfo.GetECClassId() > ECClass::UNSET_ECCLASSID);
+    BeAssert(ecInstanceKeyInfo.GetECClassId().IsValid());
     m_ecInstanceKeyInfo = ecInstanceKeyInfo;
     }
 
@@ -445,13 +420,6 @@ void ECSqlInsertPreparedStatement::SetECInstanceKeyInfo(ECInstanceKeyInfo const&
 DbResult ECSqlUpdatePreparedStatement::Step()
     {
     if (IsNoopInSqlite())
-        return BE_SQLITE_DONE;
-
-    const DbResult status = GetStepTasks().ExecuteBeforeStepTaskList();
-    if (BE_SQLITE_OK != status)
-        return status;
-
-    if (OnlyExecuteStepTasks())
         return BE_SQLITE_DONE;
 
     if (auto parentOfJoinedTableStmt = GetParentOfJoinedTableECSqlStatement())
@@ -469,9 +437,6 @@ DbResult ECSqlUpdatePreparedStatement::Step()
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlNonSelectPreparedStatement::_Reset()
     {
-    if (GetStepTasks().HasSelector())
-        GetStepTasks().ResetSelector();
-
     return DoReset();
     }
 
@@ -486,10 +451,6 @@ DbResult ECSqlDeletePreparedStatement::Step()
     {
     if (IsNoopInSqlite())
         return BE_SQLITE_DONE;
-
-    const DbResult status = GetStepTasks().ExecuteBeforeStepTaskList();
-    if (BE_SQLITE_OK != status)
-        return status;
 
     return DoStep();
     }

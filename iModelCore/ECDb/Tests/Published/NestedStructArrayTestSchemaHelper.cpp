@@ -1,16 +1,16 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/Published/ECSqlStatementTestsSchemaHelper.cpp $
+|  $Source: Tests/Published/NestedStructArrayTestSchemaHelper.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECSqlStatementTestsSchemaHelper.h"
+#include "NestedStructArrayTestSchemaHelper.h"
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlStatementTestsSchemaHelper::setContactDetailsValues (StandaloneECInstancePtr instance, Utf8CP contactType, Utf8CP notes)
+void NestedStructArrayTestSchemaHelper::setContactDetailsValues (StandaloneECInstancePtr instance, Utf8CP contactType, Utf8CP notes)
     {
     instance->SetValue ("ContactType", ECValue (contactType));
     instance->SetValue ("Notes", ECValue (notes));
@@ -19,7 +19,7 @@ void ECSqlStatementTestsSchemaHelper::setContactDetailsValues (StandaloneECInsta
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlStatementTestsSchemaHelper::setEmployeeValues (StandaloneECInstancePtr instance, int64_t phone, Utf8CP city, Utf8CP country, Utf8CP address, Utf8CP FirstName, Utf8CP LastName, bool isContractual, std::vector<StandaloneECInstancePtr> contactDetailsArray)
+void NestedStructArrayTestSchemaHelper::setEmployeeValues (StandaloneECInstancePtr instance, int64_t phone, Utf8CP city, Utf8CP country, Utf8CP address, Utf8CP FirstName, Utf8CP LastName, bool isContractual, std::vector<StandaloneECInstancePtr> contactDetailsArray)
     {
     instance->SetValue ("Phone", ECValue (phone));
     instance->SetValue ("City", ECValue (city));
@@ -41,7 +41,7 @@ void ECSqlStatementTestsSchemaHelper::setEmployeeValues (StandaloneECInstancePtr
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlStatementTestsSchemaHelper::setCustomerValues (StandaloneECInstancePtr instance, int64_t phone, Utf8CP city, Utf8CP country, Utf8CP address, Utf8CP FirstName, Utf8CP LastName, Utf8CP contactTitle, Utf8CP company, bool isRegular, std::vector<StandaloneECInstancePtr> contactDetailsArray)
+void NestedStructArrayTestSchemaHelper::setCustomerValues (StandaloneECInstancePtr instance, int64_t phone, Utf8CP city, Utf8CP country, Utf8CP address, Utf8CP FirstName, Utf8CP LastName, Utf8CP contactTitle, Utf8CP company, bool isRegular, std::vector<StandaloneECInstancePtr> contactDetailsArray)
     {
     instance->SetValue ("Phone", ECValue (phone));
     instance->SetValue ("City", ECValue (city));
@@ -65,7 +65,7 @@ void ECSqlStatementTestsSchemaHelper::setCustomerValues (StandaloneECInstancePtr
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlStatementTestsSchemaHelper::setOrderValues (StandaloneECInstancePtr instance, Utf8CP orderDate, Utf8CP releaseDate, Utf8CP shipCity, Utf8CP shipPostalCode)
+void NestedStructArrayTestSchemaHelper::setOrderValues (StandaloneECInstancePtr instance, Utf8CP orderDate, Utf8CP releaseDate, Utf8CP shipCity, Utf8CP shipPostalCode)
     {
     instance->SetValue ("OrderDate", ECValue (orderDate));
     instance->SetValue ("ReleaseDate", ECValue (releaseDate));
@@ -76,7 +76,7 @@ void ECSqlStatementTestsSchemaHelper::setOrderValues (StandaloneECInstancePtr in
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlStatementTestsSchemaHelper::setShipperValues (StandaloneECInstancePtr instance, Utf8CP companyName, int64_t Phone)
+void NestedStructArrayTestSchemaHelper::setShipperValues (StandaloneECInstancePtr instance, Utf8CP companyName, int64_t Phone)
     {
     instance->SetValue ("CompanyName", ECValue (companyName));
     instance->SetValue ("Phone", ECValue (Phone));
@@ -85,7 +85,7 @@ void ECSqlStatementTestsSchemaHelper::setShipperValues (StandaloneECInstancePtr 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlStatementTestsSchemaHelper::setSupplierValues (StandaloneECInstancePtr instance, Utf8CP companyName, Utf8CP contactName, Utf8CP contactTitle, Utf8CP City, Utf8CP Country, Utf8CP Address, int64_t phone)
+void NestedStructArrayTestSchemaHelper::setSupplierValues (StandaloneECInstancePtr instance, Utf8CP companyName, Utf8CP contactName, Utf8CP contactTitle, Utf8CP City, Utf8CP Country, Utf8CP Address, int64_t phone)
     {
     instance->SetValue ("CompanyName", ECValue (companyName));
     instance->SetValue ("ContactName", ECValue (contactName));
@@ -99,7 +99,7 @@ void ECSqlStatementTestsSchemaHelper::setSupplierValues (StandaloneECInstancePtr
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlStatementTestsSchemaHelper::setProductsValues (StandaloneECInstancePtr instance, int ProductId, Utf8CP productName, double unitPrice, bool productAvailable)
+void NestedStructArrayTestSchemaHelper::setProductsValues (StandaloneECInstancePtr instance, int ProductId, Utf8CP productName, double unitPrice, bool productAvailable)
     {
     instance->SetValue ("ProductName", ECValue (productName));
     instance->SetValue ("UnitPrice", ECValue (unitPrice));
@@ -109,7 +109,7 @@ void ECSqlStatementTestsSchemaHelper::setProductsValues (StandaloneECInstancePtr
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlStatementTestsSchemaHelper::PopulateECSqlStatementTestsDb (BeSQLite::EC::ECDbR ecdb)
+void NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb (BeSQLite::EC::ECDbR ecdb)
     {
     //Create Instances of ContactDetails class
     ECClassCP contactDetails = ecdb.Schemas ().GetECClass ("ECSqlStatementTests", "ContactDetails");
@@ -399,7 +399,7 @@ void ECSqlStatementTestsSchemaHelper::PopulateECSqlStatementTestsDb (BeSQLite::E
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8CP const ECSqlStatementTestsSchemaHelper::s_testSchemaXml =
+Utf8CP const NestedStructArrayTestSchemaHelper::s_testSchemaXml =
     "<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='NestedStructArrayTest' nameSpacePrefix='nsat' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
     "<ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix='bsca'/>"
@@ -453,7 +453,7 @@ Utf8CP const ECSqlStatementTestsSchemaHelper::s_testSchemaXml =
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-bvector<IECInstancePtr> ECSqlStatementTestsSchemaHelper::CreateECInstance_S4 (BeSQLite::EC::ECDbR ecdb, int n, Utf8CP className)
+bvector<IECInstancePtr> NestedStructArrayTestSchemaHelper::CreateECInstance_S4 (BeSQLite::EC::ECDbR ecdb, int n, Utf8CP className)
     {
     ECClassCP s4 = ecdb.Schemas ().GetECClass ("NestedStructArrayTest", "S4");
     EXPECT_TRUE (s4 != nullptr);
@@ -476,7 +476,7 @@ bvector<IECInstancePtr> ECSqlStatementTestsSchemaHelper::CreateECInstance_S4 (Be
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-bvector<IECInstancePtr> ECSqlStatementTestsSchemaHelper::CreateECInstance_S3 (BeSQLite::EC::ECDbR ecdb, int n, Utf8CP className)
+bvector<IECInstancePtr> NestedStructArrayTestSchemaHelper::CreateECInstance_S3 (BeSQLite::EC::ECDbR ecdb, int n, Utf8CP className)
     {
     int m = n + 1;
     ECClassCP s3 = ecdb.Schemas ().GetECClass ("NestedStructArrayTest", "S3");
@@ -509,7 +509,7 @@ bvector<IECInstancePtr> ECSqlStatementTestsSchemaHelper::CreateECInstance_S3 (Be
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-bvector<IECInstancePtr> ECSqlStatementTestsSchemaHelper::CreateECInstance_S2 (BeSQLite::EC::ECDbR ecdb, int n, Utf8CP className)
+bvector<IECInstancePtr> NestedStructArrayTestSchemaHelper::CreateECInstance_S2 (BeSQLite::EC::ECDbR ecdb, int n, Utf8CP className)
     {
     int m = n + 1;
     ECClassCP s2 = ecdb.Schemas ().GetECClass ("NestedStructArrayTest", "S2");
@@ -542,7 +542,7 @@ bvector<IECInstancePtr> ECSqlStatementTestsSchemaHelper::CreateECInstance_S2 (Be
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-bvector<IECInstancePtr> ECSqlStatementTestsSchemaHelper::CreateECInstance_S1 (BeSQLite::EC::ECDbR ecdb, int n, Utf8CP className)
+bvector<IECInstancePtr> NestedStructArrayTestSchemaHelper::CreateECInstance_S1 (BeSQLite::EC::ECDbR ecdb, int n, Utf8CP className)
     {
     int m = n + 1;
     ECClassCP s1 = ecdb.Schemas ().GetECClass ("NestedStructArrayTest", "S1");
@@ -575,7 +575,7 @@ bvector<IECInstancePtr> ECSqlStatementTestsSchemaHelper::CreateECInstance_S1 (Be
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-bvector<IECInstancePtr> ECSqlStatementTestsSchemaHelper::CreateECInstance (BeSQLite::EC::ECDbR ecdb, int n, Utf8CP className)
+bvector<IECInstancePtr> NestedStructArrayTestSchemaHelper::CreateECInstances (BeSQLite::EC::ECDbR ecdb, int n, Utf8CP className)
     {
     int m = n + 1;
     ECClassCP ecClassCP = ecdb.Schemas ().GetECClass ("NestedStructArrayTest", className);
@@ -607,7 +607,7 @@ bvector<IECInstancePtr> ECSqlStatementTestsSchemaHelper::CreateECInstance (BeSQL
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-bvector<IECInstancePtr> ECSqlStatementTestsSchemaHelper::CreateECInstanceWithOutStructArrayProperty (BeSQLite::EC::ECDbR ecdb, int n, Utf8CP className)
+bvector<IECInstancePtr> NestedStructArrayTestSchemaHelper::CreateECInstanceWithOutStructArrayProperty (BeSQLite::EC::ECDbR ecdb, int n, Utf8CP className)
     {
     ECClassCP ecClassCP = ecdb.Schemas ().GetECClass ("NestedStructArrayTest", className);
     EXPECT_TRUE (ecClassCP != nullptr);
@@ -630,7 +630,7 @@ bvector<IECInstancePtr> ECSqlStatementTestsSchemaHelper::CreateECInstanceWithOut
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlStatementTestsSchemaHelper::InsertRelationshipInstance (BeSQLite::EC::ECDbR ecdb, IECInstancePtr sourceInstance, IECInstancePtr targetInstance, ECRelationshipClassCP relClass)
+void NestedStructArrayTestSchemaHelper::InsertRelationshipInstance (BeSQLite::EC::ECDbR ecdb, IECInstancePtr sourceInstance, IECInstancePtr targetInstance, ECRelationshipClassCP relClass)
     {
     ECN::StandaloneECRelationshipInstancePtr relationshipInstance = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*relClass)->CreateRelationshipInstance ();
     BeSQLite::EC::ECInstanceInserter relationshipInserter (ecdb, *relClass);
@@ -643,7 +643,7 @@ void ECSqlStatementTestsSchemaHelper::InsertRelationshipInstance (BeSQLite::EC::
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlStatementTestsSchemaHelper::PopulateNestedStructArrayDb (BeSQLite::EC::ECDbR ecdb, bool insertRelationships)
+void NestedStructArrayTestSchemaHelper::PopulateNestedStructArrayDb (BeSQLite::EC::ECDbR ecdb, bool insertRelationships)
     {
     //Insert Instances for each class in the Hierarchy Seperately.
     bvector<IECInstancePtr> instances = CreateECInstanceWithOutStructArrayProperty (ecdb, 1, "ClassA");
@@ -654,7 +654,7 @@ void ECSqlStatementTestsSchemaHelper::PopulateNestedStructArrayDb (BeSQLite::EC:
         ASSERT_EQ (BentleyStatus::SUCCESS, sourceInserter.Insert (*instance, true));
         }
 
-    instances = CreateECInstance (ecdb, 1, "DerivedA");
+    instances = CreateECInstances (ecdb, 1, "DerivedA");
     for (auto instance : instances)
         {
         BeSQLite::EC::ECInstanceInserter inserter (ecdb, instance->GetClass ());
@@ -678,7 +678,7 @@ void ECSqlStatementTestsSchemaHelper::PopulateNestedStructArrayDb (BeSQLite::EC:
         ASSERT_EQ (BentleyStatus::SUCCESS, inserter.Insert (*instance, true));
         }
 
-    instances = CreateECInstance (ecdb, 1, "DoubleDerivedA");
+    instances = CreateECInstances (ecdb, 1, "DoubleDerivedA");
     for (auto instance : instances)
         {
         BeSQLite::EC::ECInstanceInserter inserter (ecdb, instance->GetClass ());
@@ -686,7 +686,7 @@ void ECSqlStatementTestsSchemaHelper::PopulateNestedStructArrayDb (BeSQLite::EC:
         ASSERT_EQ (BentleyStatus::SUCCESS, inserter.Insert (*instance, true));
         }
 
-    instances = CreateECInstance (ecdb, 1, "DoubleDerivedC");
+    instances = CreateECInstances (ecdb, 1, "DoubleDerivedC");
     for (auto instance : instances)
         {
         BeSQLite::EC::ECInstanceInserter inserter (ecdb, instance->GetClass ());
@@ -706,7 +706,7 @@ void ECSqlStatementTestsSchemaHelper::PopulateNestedStructArrayDb (BeSQLite::EC:
             ASSERT_TRUE (sourceInserter.IsValid ());
             ASSERT_EQ (BentleyStatus::SUCCESS, sourceInserter.Insert (*sourceInstance, true));
 
-            bvector<IECInstancePtr> targetInstances = CreateECInstance (ecdb, 2, "DerivedA");
+            bvector<IECInstancePtr> targetInstances = CreateECInstances (ecdb, 2, "DerivedA");
             for (auto targetInstance : targetInstances)
                 {
                 BeSQLite::EC::ECInstanceInserter targetInserter (ecdb, targetInstance->GetClass ());
@@ -734,7 +734,7 @@ void ECSqlStatementTestsSchemaHelper::PopulateNestedStructArrayDb (BeSQLite::EC:
                 InsertRelationshipInstance (ecdb, sourceInstance, targetInstance, derivedBHasChildren);
                 }
 
-            targetInstances = CreateECInstance (ecdb, 2, "DoubleDerivedA");
+            targetInstances = CreateECInstances (ecdb, 2, "DoubleDerivedA");
             for (auto targetInstance : targetInstances)
                 {
                 BeSQLite::EC::ECInstanceInserter targetInserter (ecdb, targetInstance->GetClass ());

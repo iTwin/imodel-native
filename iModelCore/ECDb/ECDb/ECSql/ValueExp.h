@@ -229,7 +229,7 @@ struct FunctionCallExp : ValueExp
         bool m_isStandardSetFunction;
         SqlSetQuantifier m_setQuantifier;
 
-        static bmap<Utf8CP, ECN::PrimitiveType, CompareIUtf8> s_builtinFunctionNonDefaultReturnTypes;
+        static bmap<Utf8CP, ECN::PrimitiveType, CompareIUtf8Ascii> s_builtinFunctionNonDefaultReturnTypes;
 
         virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
         virtual bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;

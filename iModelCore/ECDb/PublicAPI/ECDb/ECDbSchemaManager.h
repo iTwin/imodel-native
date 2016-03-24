@@ -30,7 +30,7 @@ public:
         : m_ecSchemaId(ecSchemaId), m_name(name), m_versionMajor(versionMajor), m_versionWrite(versionWrite), m_versionMinor(versionMinor), m_displayLabel(displayLabel)
         {}
 
-    ECN::ECSchemaId GetECSchemaId() const { BeAssert(m_ecSchemaId != 0ULL); return m_ecSchemaId; }
+    ECN::ECSchemaId GetECSchemaId() const { BeAssert(m_ecSchemaId.IsValid()); return m_ecSchemaId; }
     uint32_t GetVersionMajor() const { return m_versionMajor; }
     uint32_t GetVersionWrite() const { return m_versionWrite; }
     uint32_t GetVersionMinor() const { return m_versionMinor; }
@@ -48,10 +48,10 @@ private:
     Utf8String m_name;
     Utf8String m_displayLabel;
 public:
-    ECClassKey (ECN::ECClassId ecClassId, Utf8CP name, Utf8CP displayLabel = nullptr) : m_ecClassId (ecClassId), m_name (name), m_displayLabel (displayLabel) {}
-    ECN::ECClassId GetECClassId () const {return m_ecClassId;}
-    Utf8CP GetName () const {return m_name.c_str ();}
-    Utf8CP GetDisplayLabel () const {return m_displayLabel.empty () ? GetName () : m_displayLabel.c_str ();}
+    ECClassKey(ECN::ECClassId ecClassId, Utf8CP name, Utf8CP displayLabel = nullptr) : m_ecClassId(ecClassId), m_name(name), m_displayLabel(displayLabel) {}
+    ECN::ECClassId GetECClassId() const { return m_ecClassId; }
+    Utf8CP GetName() const { return m_name.c_str(); }
+    Utf8CP GetDisplayLabel() const { return m_displayLabel.empty() ? GetName() : m_displayLabel.c_str(); }
     };
 
 typedef bvector<ECSchemaKey> ECSchemaKeys;
@@ -231,7 +231,7 @@ public:
     //! @param[in] className Name of the class to be retrieved
     //! @param[in] resolveSchema indicates whether @p schemaNameOrPrefix is a schema name or a schema prefix
     //! @return ECClassId of the requested ECClass. If the ECClass does not exist in the %ECDb file, an invalid class id is returned
-    ECN::ECClassId GetECClassId(Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const { ECN::ECClassId id = ECN::ECClass::UNSET_ECCLASSID; TryGetECClassId(id, schemaNameOrPrefix, className, resolveSchema); return id; }
+    ECN::ECClassId GetECClassId(Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const { ECN::ECClassId id; TryGetECClassId(id, schemaNameOrPrefix, className, resolveSchema); return id; }
 
     //! Gets the derived classes of @p baseECClass. The derived classes are loaded, if they are not yet.
     //! Callers should use this method in favor of ECN::ECClass::GetDerivedECClasses to ensure

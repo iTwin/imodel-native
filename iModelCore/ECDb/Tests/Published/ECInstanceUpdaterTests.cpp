@@ -227,7 +227,7 @@ TEST_F(ECInstanceUpdaterTests, UpdateReadonlyProperty)
     ASSERT_EQ(SUCCESS, updater.Update(*updatedInstance));
 
     Utf8String validateECSql;
-    validateECSql.Sprintf("SELECT NULL FROM ts.A WHERE ECInstanceId=%lld AND P1=%d AND P2 LIKE '%s' AND P3=%lld",
+    validateECSql.Sprintf("SELECT NULL FROM ts.A WHERE ECInstanceId=%llu AND P1=%d AND P2 LIKE '%s' AND P3=%lld",
                           key.GetECInstanceId().GetValue(), newP1Value, newP2Value, newP3Value);
 
     ECSqlStatement validateStmt;

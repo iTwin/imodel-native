@@ -262,13 +262,16 @@ BentleyStatus ECValueBindingInfoCollection::AddBindingInfo (ECN::ECClassCR ecCla
     return SUCCESS;
     }
 
-BentleyStatus ECValueBindingInfoCollection::AddBindingInfo (ECN::ECEnablerCR ecEnabler, ECN::ECPropertyCR ecProperty, Utf8CP accessString, int ecsqlParameterIndex)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   03/16
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECValueBindingInfoCollection::AddBindingInfo(ECN::ECEnablerCR ecEnabler, ECN::ECPropertyCR ecProperty, Utf8CP accessString, int ecsqlParameterIndex)
     {
-    auto binding = ECValueBindingInfoFactory::CreateBindingInfo (ecEnabler, ecProperty, accessString, ecsqlParameterIndex);
+    auto binding = ECValueBindingInfoFactory::CreateBindingInfo(ecEnabler, ecProperty, accessString, ecsqlParameterIndex);
     if (binding == nullptr)
         return ERROR;
 
-    m_bindingInfos.push_back (std::move (binding));
+    m_bindingInfos.push_back(std::move(binding));
     return SUCCESS;
     }
 
@@ -364,7 +367,7 @@ BentleyStatus ECInstanceAdapterHelper::BindPrimitiveValue (IECSqlBinder& binder,
             case ECN::PRIMITIVETYPE_Binary:
                 {
                 size_t blobSize;
-                auto blob = value.GetBinary (blobSize);
+                Byte const* const blob = value.GetBinary (blobSize);
 
                 //if blob owner is IECInstance which will be alive until ECInstance adapter is done executing,
                 //we don't need to copy
@@ -580,7 +583,7 @@ BentleyStatus ECInstanceAdapterHelper::BindECSqlSystemPropertyValue (IECSqlBinde
             {
             //Bind constraint class id
             BeAssert (systemPropertyKind == ECValueBindingInfo::SystemPropertyKind::SourceECClassId || systemPropertyKind == ECValueBindingInfo::SystemPropertyKind::TargetECClassId);
-            stat = binder.BindInt64 (endInstance->GetClass ().GetId ());
+            stat = binder.BindId(endInstance->GetClass ().GetId ());
             }
         }
 
@@ -662,8 +665,8 @@ BentleyStatus ECInstanceAdapterHelper::SetECInstanceId (ECN::IECInstanceR instan
     Utf8Char instanceIdStr[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
     if (!ECInstanceIdHelper::ToString (instanceIdStr, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ecInstanceId))
         {
-        LOG.errorv ("Could not set ECInstanceId %lld on the ECInstanceId. Conversion to string failed.", ecInstanceId.GetValue ());
-        BeAssert (false && "Could not set ECInstanceId %lld on the ECInstanceId. Conversion to string failed.");
+        LOG.errorv ("Could not set ECInstanceId %llu on the ECInstanceId. Conversion to string failed.", ecInstanceId.GetValue ());
+        BeAssert (false && "Could not set ECInstanceId on the ECInstanceId. Conversion to string failed.");
         return ERROR;
         }
 
@@ -693,8 +696,7 @@ void ECInstanceAdapterHelper::LogFailure (Utf8CP operationName, ECN::IECInstance
     {
     Utf8String displayLabel;
     instance.GetDisplayLabel (displayLabel);
-    LOG.errorv ("Failed to %s ECInstance '%s'. %s", operationName,
-        Utf8String (displayLabel).c_str (), errorMessage);
+    LOG.errorv ("Failed to %s ECInstance '%s'. %s", operationName, displayLabel.c_str (), errorMessage);
     }
 
 //---------------------------------------------------------------------------------------

@@ -8,8 +8,9 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 #include "ECDbInternalTypes.h"
-#include <BeXml/BeXml.h>
+#include <Bentley/BeId.h>
 #include <Bentley/BeVersion.h>
+#include <BeXml/BeXml.h>
 
 #include <unordered_map>
 #include <unordered_set>
@@ -18,31 +19,77 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-typedef int64_t ECDbTableId;
-typedef int64_t ECDbColumnId;
-typedef int64_t ECDbIndexId;
-typedef int64_t ECDbConstraintId;
-typedef int64_t ECDbPropertyPathId;
-typedef int64_t ECDbClassMapId;
+struct ECDbClassMapId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(ECDbClassMapId, BeInt64Id)
+    };
+
+struct ECDbPropertyPathId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(ECDbPropertyPathId, BeInt64Id)
+    };
+
+struct ECDbTableId : BeInt64Id
+    {
+        BEINT64_ID_DECLARE_MEMBERS(ECDbTableId, BeInt64Id)
+    };
+
+struct ECDbColumnId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(ECDbColumnId, BeInt64Id)
+    };
+
+
+struct ECDbIndexId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(ECDbIndexId, BeInt64Id)
+    };
+
+struct ECDbConstraintId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(ECDbConstraintId, BeInt64Id)
+    };
+
 
 enum class ColumnKind
     {
     Unknown = 0, //! Not known to ECDb or user define columns
     ECInstanceId = 1, //! ECInstanceId system column also primary key of the table
     ECClassId = 2, //! ECClassId system column. Use if more then on classes is mapped to this table
-    ParentECInstanceId = 4, //! ParentECInstanceId column used in struct array
-    ECPropertyPathId = 8, //! ECPropertyPathId column used in struct array
-    ECArrayIndex = 16, //! ECArrayIndex column used in struct array
     SourceECInstanceId = 32,
     SourceECClassId = 64,
     TargetECInstanceId = 128,
     TargetECClassId = 256,
     DataColumn = 512, //! unshared data column
     SharedDataColumn = 1024, //! shared data column
-    NonRelSystemColumn = ECInstanceId | ECClassId | ParentECInstanceId | ECPropertyPathId | ECArrayIndex
+    NonRelSystemColumn = ECInstanceId | ECClassId
     };
 
+enum class PersistenceType
+    {
+    Persisted, //! Persisted in DB
+    Virtual //! Not persisted in db rather used as a view specification
+    };
 
+enum class TableType
+    {
+    Primary = 0,
+    Joined = 1,
+    Existing = 2
+    };
+
+//=======================================================================================
+//! @bsiclass                                                Affan.Khan      03/2015
+//+===============+===============+===============+===============+===============+======
+enum class ForeignKeyActionType
+    {
+    NotSpecified,
+    Cascade,
+    NoAction,
+    SetNull,
+    SetDefault,
+    Restrict,
+    };
 
 enum class TriggerType
     {
@@ -55,19 +102,6 @@ enum class TriggerSubType
     Before,
     After
     };
-enum class PersistenceType
-    {
-    Persisted, //! Persisted in DB
-    Virtual //! Not persisted in db rather used as a view specification
-    };
-
-enum class TableType
-    {
-    Primary = 0,
-    Joined = 1,
-    Existing = 2,
-    StructArray = 3
-    };
 
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
@@ -76,17 +110,13 @@ struct EditHandle : NonCopyableClass
     {
     private:
         bool m_canEdit : 1;
-        bool m_isModified : 2;
 
     public:
         EditHandle ();
         bool BeginEdit ();
-        bool IsModified () const;
-        bool SetModified ();
         bool EndEdit ();
         bool CanEdit () const;
         bool AssertNotInEditMode ();
-        bool AssertInEditMode () const;
         EditHandle (EditHandle const &&  eh);
         ~EditHandle ();
     };
@@ -103,41 +133,38 @@ enum class ECDbSqlTypeAffinity
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
-struct IIdGenerator
+struct IdGenerator
     {
-public:
-    static const int64_t UNSET_ID = 0ULL;
-
 private: 
     bool m_enabled;
 
-    virtual ECDbTableId _NextTableId() { return UNSET_ID; }
-    virtual ECDbColumnId _NextColumnId() { return UNSET_ID; }
-    virtual ECDbIndexId _NextIndexId() { return UNSET_ID; }
-    virtual ECDbConstraintId _NextConstraintId() { return UNSET_ID; }
-    virtual ECDbClassMapId _NextClassMapId() { return UNSET_ID; }
-    virtual ECDbPropertyPathId _NextPropertyPathId() { return UNSET_ID; }
+    virtual ECDbTableId _NextTableId() = 0;
+    virtual ECDbColumnId _NextColumnId() = 0;
+    virtual ECDbIndexId _NextIndexId() = 0;
+    virtual ECDbConstraintId _NextConstraintId() = 0;
+    virtual ECDbClassMapId _NextClassMapId() = 0;
+    virtual ECDbPropertyPathId _NextPropertyPathId() = 0;
 
 protected:
-    IIdGenerator() : m_enabled(true) {}
+    IdGenerator() : m_enabled(true) {}
 
 public:
-    virtual ~IIdGenerator (){}
-    ECDbTableId NextTableId() { return  m_enabled ? _NextTableId() : UNSET_ID; }
-    ECDbColumnId NextColumnId() { return  m_enabled ? _NextColumnId() : UNSET_ID; }
-    ECDbIndexId NextIndexId() { return  m_enabled ? _NextIndexId() : UNSET_ID; }
-    ECDbConstraintId NextConstraintId() { return  m_enabled ? _NextConstraintId() : UNSET_ID; }
-    ECDbClassMapId NextClassMapId() { return  m_enabled ? _NextClassMapId() : UNSET_ID; }
-    ECDbPropertyPathId NextPropertyPathId() { return  m_enabled ? _NextPropertyPathId() : UNSET_ID; }
+    virtual ~IdGenerator (){}
+    ECDbTableId NextTableId() { return  m_enabled ? _NextTableId() : ECDbTableId(); }
+    ECDbColumnId NextColumnId() { return  m_enabled ? _NextColumnId() : ECDbColumnId(); }
+    ECDbIndexId NextIndexId() { return  m_enabled ? _NextIndexId() : ECDbIndexId(); }
+    ECDbConstraintId NextConstraintId() { return  m_enabled ? _NextConstraintId() : ECDbConstraintId(); }
+    ECDbClassMapId NextClassMapId() { return  m_enabled ? _NextClassMapId() : ECDbClassMapId(); }
+    ECDbPropertyPathId NextPropertyPathId() { return  m_enabled ? _NextPropertyPathId() : ECDbPropertyPathId(); }
 
     void SetEnabled (bool enabled) { m_enabled = enabled; }
 
     struct DisableGeneratorScope
         {
         private:
-            IIdGenerator& m_ig;
+            IdGenerator& m_ig;
         public:
-            DisableGeneratorScope (IIdGenerator& ig)
+            DisableGeneratorScope (IdGenerator& ig)
                 :m_ig (ig)
                 {
                 m_ig.SetEnabled (false);
@@ -169,33 +196,6 @@ struct NameGenerator
             }
     };
 
-//======================================================================================
-// @bsiclass                                                 Affan.Khan         09/2014
-//======================================================================================
-struct StringPool : NonCopyableClass
-    {
-    private:
-        std::set<Utf8CP, CompareUtf8> m_lookUp;
-
-    public:
-        StringPool ()
-            {
-            //Reserve (1024);
-            }
-        ~StringPool ()
-            {
-            for (auto str : m_lookUp)
-                {
-                free (const_cast<Utf8P>(str));
-                }
-
-            m_lookUp.clear ();
-            }
-        Utf8CP Set (Utf8CP str);
-        bool Exists (Utf8CP accessString) const;
-        Utf8CP Get (Utf8CP str) const;
-    };
-
 struct ECDbSqlColumn;
 struct ECDbSqlTable;
 struct ECDbSQLManager;
@@ -208,8 +208,7 @@ struct ECDbMapDb : NonCopyableClass
 private:
     BeVersion m_version;
     NameGenerator m_nameGenerator;
-    std::map<Utf8CP, std::unique_ptr<ECDbSqlTable>, CompareIUtf8> m_tables;
-    StringPool m_stringPool;
+    std::map<Utf8CP, std::unique_ptr<ECDbSqlTable>, CompareIUtf8Ascii> m_tables;
     ECDbSQLManager& m_sqlManager;
 
 public:
@@ -226,19 +225,10 @@ public:
     ECDbSqlTable const* FindTable (Utf8CP name) const;
     ECDbSqlTable* FindTableP (Utf8CP name) const;
     const std::vector<ECDbSqlTable const*> GetTables () const;
-    const std::vector<ECDbSqlTable*> GetTablesR ();
-
     ECDbSQLManager& GetManager() const { return m_sqlManager; }
     ECDbSQLManager & GetManagerR() { return m_sqlManager; }
-
     NameGenerator& GetNameGenerator() { return m_nameGenerator; }
-
     bool IsNameInUse(Utf8CP name) const;
-
-    StringPool const& GetStringPool () const { return m_stringPool; }
-    StringPool& GetStringPoolR () { return m_stringPool; }
-    BentleyStatus DropTable (Utf8CP name);
-    bool IsModified () const;
     void Reset ();
     };
 
@@ -305,14 +295,13 @@ struct ECDbSqlColumn : NonCopyableClass
         PersistenceType m_persistenceType;
 
     public:
-        ECDbSqlColumn(ECDbSqlTable& table, Utf8CP name, Type type, ColumnKind kind, PersistenceType persistenceType, ECDbColumnId id)
+        ECDbSqlColumn(ECDbColumnId id, ECDbSqlTable& table, Utf8CP name, Type type, ColumnKind kind, PersistenceType persistenceType)
             : m_id(id), m_table(table), m_name(name), m_type(type), m_persistenceType(persistenceType), m_kind(kind)
             {}
 
         ~ECDbSqlColumn() {}
 
         ECDbColumnId GetId() const { return m_id; }
-        void SetId(ECDbColumnId id) { m_id = id; }
         PersistenceType GetPersistenceType() const { return m_persistenceType; }
         Utf8StringCR GetName() const { return m_name; }
         Type GetType() const { return m_type; };
@@ -326,7 +315,6 @@ struct ECDbSqlColumn : NonCopyableClass
         BentleyStatus AddKind(ColumnKind);
 
         bool IsShared() const { return m_kind == ColumnKind::SharedDataColumn; }
-        Utf8String GetFullName() const;
         std::weak_ptr<ECDbSqlColumn> GetWeakPtr() const;
 
         static Type PrimitiveTypeToColumnType(ECN::PrimitiveType type);
@@ -420,7 +408,6 @@ struct ECDbSqlForeignKeyConstraint : ECDbSqlConstraint
         ECDbSqlTable const& GetReferencedTable() const { return m_referencedTable; }
         ECDbSqlTable const& GetForeignKeyTable() const { return GetTable(); }
         bool ContainsInFkColumns(Utf8CP columnName) const;
-        bool ContainsInReferencedTableColumns(Utf8CP columnName) const;
         size_t Count() const { return m_fkColumns.size(); }
 
         bool IsDuplicate() const;
@@ -434,7 +421,6 @@ struct ECDbSqlForeignKeyConstraint : ECDbSqlConstraint
         static ForeignKeyActionType ToActionType(Utf8CP str);
         static Utf8CP ToSQL(ForeignKeyActionType actionType);
     };
-
 
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
@@ -468,7 +454,6 @@ public:
 
         BentleyStatus Create(ECDbR ecdb) const;
         BentleyStatus CreateOrUpdate(ECDbR ecdb) const;
-        bool Exist (ECDbR ecdb) const;
         };
 
     private:
@@ -479,9 +464,10 @@ public:
         NameGenerator m_nameGeneratorForColumn;
         TableType m_tableType;
         PersistenceType m_persistenceType;
-        std::map<Utf8CP, std::shared_ptr<ECDbSqlColumn>, CompareIUtf8> m_columns;
-        std::map<Utf8CP, std::unique_ptr<ECDbSqlTrigger>, CompareIUtf8> m_triggers;
+        std::map<Utf8CP, std::shared_ptr<ECDbSqlColumn>, CompareIUtf8Ascii> m_columns;
+        std::map<Utf8CP, std::unique_ptr<ECDbSqlTrigger>, CompareIUtf8Ascii> m_triggers;
         std::vector<ECDbSqlColumn const*> m_orderedColumns;
+
         int m_minimumSharedColumnCount;
         mutable bool m_isClassIdColumnCached;
         mutable ECDbSqlColumn const* m_classIdColumn;
@@ -503,6 +489,9 @@ public:
                 const_cast<ECDbSqlTable*>(parentOfJoinedTable)->m_childTables.push_back(this);
             }
 
+
+        ECDbSqlColumn* CreateColumn(ECDbColumnId, Utf8CP name, ECDbSqlColumn::Type, int position, ColumnKind, PersistenceType);
+
         std::weak_ptr<ECDbSqlColumn> GetColumnWeakPtr (Utf8CP name) const;
 
     public:
@@ -520,9 +509,10 @@ public:
         bool IsOwnedByECDb() const { return m_tableType != TableType::Existing; }
         ECDbMapDb const& GetDbDef () const{ return m_dbDef; }
         ECDbMapDb & GetDbDefR () { return m_dbDef; }
-        ECDbSqlColumn* CreateColumn(Utf8CP name, ECDbSqlColumn::Type, int position, ColumnKind, PersistenceType);
         ECDbSqlColumn* CreateColumn(Utf8CP name, ECDbSqlColumn::Type type, ColumnKind kind, PersistenceType persistenceType) { return CreateColumn(name, type, -1, kind, persistenceType); }
         ECDbSqlColumn* CreateSharedColumn() { return CreateColumn(nullptr, ECDbSqlColumn::Type::Any, ColumnKind::SharedDataColumn, PersistenceType::Persisted); }
+        ECDbSqlColumn* CreateColumn(Utf8CP name, ECDbSqlColumn::Type type, int position, ColumnKind kind, PersistenceType persType) { return CreateColumn(ECDbColumnId(), name, type, position, kind, persType); }
+        ECDbSqlColumn* CreateColumn(ECDbColumnId id, Utf8CP name, ECDbSqlColumn::Type type, ColumnKind kind, PersistenceType persType) { return CreateColumn(id, name, type, -1, kind, persType); }
         BentleyStatus SetMinimumSharedColumnCount(int minimumSharedColumnCount);
         BentleyStatus EnsureMinimumNumberOfSharedColumns();
 
@@ -606,10 +596,7 @@ private:
 public:
     static Utf8String GetCreateTableDDL(ECDbSqlTable const&, CreateOption);
     static Utf8String GetCreateTriggerDDL(ECDbSqlTrigger const&);
-
     static BentleyStatus AddColumns(ECDbR, ECDbSqlTable const&, std::vector<Utf8CP> const& newColumns);
-    static BentleyStatus CopyRows(ECDbR, Utf8CP sourceTable, bvector<Utf8String>& sourceColumns, Utf8CP targetTable, bvector<Utf8String>& targetColumns);
-
     static Utf8CP ColumnTypeToSql(ECDbSqlColumn::Type);
     };
 
@@ -711,11 +698,10 @@ struct ECDbClassMapInfo : NonCopyableClass
         ECDbMapStorage const& m_map;
 
     protected:
-        const std::map<Utf8CP, ECDbPropertyMapInfo const*, CompareIUtf8> GetPropertyMapByColumnName (bool onlyLocal) const;
         void GetPropertyMaps (std::vector<ECDbPropertyMapInfo const*>& propertyMaps, bool onlyLocal) const;
 
     public:
-        ECDbClassMapInfo (ECDbMapStorage const& map, ECDbClassMapId id, ECN::ECClassId classId, ECDbMapStrategy mapStrategy, ECDbClassMapId baseClassMap = 0LL)
+        ECDbClassMapInfo (ECDbMapStorage const& map, ECDbClassMapId id, ECN::ECClassId classId, ECDbMapStrategy mapStrategy, ECDbClassMapId baseClassMap = ECDbClassMapId())
             :m_map (map), m_id (id), m_ecClassId (classId), m_mapStrategy (mapStrategy), m_ecBaseClassMap (nullptr), m_ecBaseClassMapId (baseClassMap)
             {}
 
@@ -726,7 +712,6 @@ struct ECDbClassMapInfo : NonCopyableClass
         ECDbClassMapInfo const*  GetBaseClassMap () const;
         ECDbMapStrategy const& GetMapStrategy () const { return m_mapStrategy; }
         std::vector<ECDbClassMapInfo*> const& GetChildren () const { return m_childClassMaps; }
-        ECDbPropertyMapInfo const * FindPropertyMap (Utf8CP columnName) const;
         ECDbPropertyMapInfo const* FindPropertyMap (ECN::ECPropertyId rootPropertyId, Utf8CP accessString) const;
         ECDbPropertyMapInfo const* FindPropertyMapByAccessString(Utf8CP accessString) const;
         ECDbPropertyMapInfo* CreatePropertyMap (ECDbPropertyPath const& propertyPath);
@@ -766,7 +751,7 @@ struct ECDbMapStorage
         std::vector<ECDbClassMapInfo const*> const* FindClassMapsByClassId(ECN::ECClassId id) const;
 
         ECDbPropertyPath* CreatePropertyPath(ECN::ECPropertyId rootPropertyId, Utf8CP accessString) const;
-        ECDbClassMapInfo* CreateClassMap(ECN::ECClassId classId, ECDbMapStrategy const& mapStrategy, ECDbClassMapId baseClassMapId = 0LL) const;
+        ECDbClassMapInfo* CreateClassMap(ECN::ECClassId classId, ECDbMapStrategy const& mapStrategy, ECDbClassMapId baseClassMapId = ECDbClassMapId()) const;
 
         BentleyStatus Load() const { return Read() != BE_SQLITE_OK ? ERROR : SUCCESS; }
         BentleyStatus Save() const { return InsertOrReplace() != BE_SQLITE_OK ? ERROR : SUCCESS; }
@@ -776,7 +761,7 @@ struct ECDbMapStorage
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         01/2015
 //======================================================================================
-struct ECDbBriefcaseBasedId : IIdGenerator
+struct ECDbBriefcaseBasedId : IdGenerator
     {
 private:
     ECDbR m_ecdb;
@@ -789,7 +774,7 @@ private:
     virtual ECDbPropertyPathId _NextPropertyPathId () override;
 
 public:
-    explicit ECDbBriefcaseBasedId (ECDbR ecdb) :IIdGenerator (), m_ecdb (ecdb) {}
+    explicit ECDbBriefcaseBasedId (ECDbR ecdb) :IdGenerator (), m_ecdb (ecdb) {}
     virtual ~ECDbBriefcaseBasedId () {}
     };
 
@@ -804,10 +789,7 @@ struct ECDbSqlPersistence : NonCopyableClass
         DbResult ReadTables (ECDbMapDb&) const;
         DbResult ReadTable (Statement&, ECDbMapDb&) const;
         DbResult ReadColumns (ECDbSqlTable&) const;
-        DbResult ReadForeignKeys (ECDbMapDb&) const;
         DbResult ReadColumn (Statement&, ECDbSqlTable&, std::map<size_t, ECDbSqlColumn const*>& primaryKeys) const;
-        DbResult ReadForeignKeys (ECDbSqlTable&) const;
-        DbResult ReadForeignKey (Statement&, ECDbSqlTable&) const;
         DbResult InsertTable (ECDbSqlTable const&) const;
         DbResult InsertColumn (ECDbSqlColumn const&, int columnOrdinal, int primaryKeyOrdianal) const;
         DbResult InsertConstraint (ECDbSqlConstraint const&) const;
@@ -851,7 +833,7 @@ struct ECDbSQLManager : public NonCopyableClass
         ECDbMapStorage const& GetMapStorage () const { return m_mapStorage; }
         void Reset () const;
         bool IsLoaded () const { return m_loaded; }
-        IIdGenerator& GetIdGenerator () {return m_idGenerator;}
+        IdGenerator& GetIdGenerator () {return m_idGenerator;}
     };
 
 //=================================================================================
@@ -869,15 +851,15 @@ struct DbMetaDataHelper
     static ObjectType GetObjectType(Db& db, Utf8CP name)
         {
         BeSQLite::CachedStatementPtr stmt;
-        db.GetCachedStatement(stmt, "SELECT type FROM sqlite_master WHERE name =?");
+        db.GetCachedStatement(stmt, "SELECT type FROM sqlite_master WHERE name=?");
         stmt->BindText(1, name, BeSQLite::Statement::MakeCopy::No);
         if (stmt->Step() == BE_SQLITE_ROW)
             {
-            if (BeStringUtilities::Stricmp(stmt->GetValueText(0), "table") == 0)
+            if (BeStringUtilities::StricmpAscii(stmt->GetValueText(0), "table") == 0)
                 return ObjectType::Table;
-            if (BeStringUtilities::Stricmp(stmt->GetValueText(0), "view") == 0)
+            if (BeStringUtilities::StricmpAscii(stmt->GetValueText(0), "view") == 0)
                 return ObjectType::View;
-            if (BeStringUtilities::Stricmp(stmt->GetValueText(0), "index") == 0)
+            if (BeStringUtilities::StricmpAscii(stmt->GetValueText(0), "index") == 0)
                 return ObjectType::Index;
             }
         return ObjectType::None;

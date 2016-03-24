@@ -31,15 +31,10 @@ protected:
     ECDbSqlColumn const& GetColumn () const;
 
     ECSqlSystemProperty GetKind () const { return m_kind; }
-    ColumnKind ToColumnKind() const;
-    static std::vector<std::weak_ptr<ECDbSqlColumn>> ToWeakPtr(std::vector<ECDbSqlColumn const*> const& columns);
     std::vector<std::weak_ptr<ECDbSqlColumn>>& GetColumnWeakPtrs ()  { return m_columns; }   
 
 public:
     virtual ~SystemPropertyMap () {}
-
-    ECDbSqlColumn const* GetColumn(ECDbSqlTable const& table) const;
-
     static std::vector<ECDbSqlColumn const*> ToVector(ECDbSqlColumn const* column);
     };
 
@@ -61,24 +56,6 @@ public:
     ~ECInstanceIdPropertyMap() {}
     static PropertyMapPtr Create(ECDbSchemaManagerCR, ClassMap const&);
     static PropertyMapPtr Create(ECDbSchemaManagerCR, ClassMap const&, std::vector<ECDbSqlColumn const*>);
-    };
-
-
-//=======================================================================================
-//! PropertyMapStructArrayTableKey is a property map for the system properties used to
-//! identify a row in a secondary table.
-/// @bsiclass                                                 Krischan.Eberle    06/2013
-//+===============+===============+===============+===============+===============+======
-struct StructArrayTableKeyPropertyMap : SystemPropertyMap
-    {
-private:
-    explicit StructArrayTableKeyPropertyMap (ECN::ECPropertyCR systemProperty, std::vector<ECDbSqlColumn const*>, ECSqlSystemProperty);
-
-    virtual Utf8String _ToString () const override;
-
-public:
-    ~StructArrayTableKeyPropertyMap () {}
-    static PropertyMapPtr Create (ECDbSchemaManagerCR, ECSqlSystemProperty, IClassMap const&);
     };
 
 //=======================================================================================
@@ -105,8 +82,6 @@ public:
     //! and, if set, the view column alias to to the select clause of the view.
     //! @param[in,out] viewSql View SQL builder to append to
     void AppendSelectClauseSqlSnippetForView (NativeSqlBuilder& viewSql, ECDbSqlTable const& table) const;
-    void AppendSelectClauseSqlSnippetForView (NativeSqlBuilder& viewSql) const;
-
     };
 
 //=======================================================================================

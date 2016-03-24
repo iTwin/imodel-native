@@ -116,8 +116,9 @@ bvector<ECInstanceId> ECSqlTestFrameworkHelper::GetValidECInstanceIds (ECDbCR ec
     EXPECT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, ecsql));
     while (DbResult::BE_SQLITE_ROW == stmt.Step ())
         {
-        instanceIds.push_back(ECInstanceId (stmt.GetValueInt (0))) ;
+        instanceIds.push_back(stmt.GetValueId<ECInstanceId>(0));
         }
+
     return instanceIds;
     }
 

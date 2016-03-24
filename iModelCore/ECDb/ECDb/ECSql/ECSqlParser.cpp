@@ -16,18 +16,13 @@ using namespace std;
 using namespace connectivity;
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       04/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-unique_ptr<OSQLParser> ECSqlParser::s_parser = nullptr;
-
-//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParser::Parse (ECSqlParseTreePtr& ecsqlParseTree, ECDbCR ecdb, Utf8CP ecsql, IClassMap::View classView) const
+BentleyStatus ECSqlParser::Parse (ECSqlParseTreePtr& ecsqlParseTree, ECDbCR ecdb, Utf8CP ecsql) const
     {
     ecsqlParseTree = nullptr;
 
-    ScopedContext scopedContext (*this, ecdb, classView);
+    ScopedContext scopedContext (*this, ecdb);
     //Parse statement
     Utf8String error;
     OSQLParser* ecsqlParser = GetSharedParser();
@@ -854,7 +849,7 @@ BentleyStatus ECSqlParser::parse_opt_ecsqloptions_clause(std::unique_ptr<Options
 
      unique_ptr<FunctionCallExp> functionCallExp = unique_ptr<FunctionCallExp>(new FunctionCallExp(functionName, setQuantifier, isStandardSetFunction));
 
-     if (BeStringUtilities::Stricmp(functionName, "count") == 0 && Exp::IsAsteriskToken(parseNode.getChild(2)->getTokenValue().c_str()))
+     if (BeStringUtilities::StricmpAscii(functionName, "count") == 0 && Exp::IsAsteriskToken(parseNode.getChild(2)->getTokenValue().c_str()))
          {
          unique_ptr<ValueExp> argExp = nullptr;
          if (SUCCESS != LiteralValueExp::Create(argExp, *m_context, Exp::ASTERISK_TOKEN, ECSqlTypeInfo(ECSqlTypeInfo::Kind::Varies)))
@@ -2870,8 +2865,9 @@ BentleyStatus ECSqlParser::parse_values_or_query_spec(unique_ptr<ValueExpListExp
 //+---------------+---------------+---------------+---------------+---------------+--------
 OSQLParser* ECSqlParser::GetSharedParser()
     {
-    s_parser = unique_ptr<OSQLParser>(new OSQLParser(com::sun::star::lang::XMultiServiceFactory::CreateInstance()));
-    return s_parser.get();
+    //WIP_ECSQL: Mem leaks where there is error in statement. Need to use shared_ptr instead of unique_ptr
+    static std::unique_ptr<connectivity::OSQLParser> parser = std::unique_ptr<connectivity::OSQLParser>(new connectivity::OSQLParser(com::sun::star::lang::XMultiServiceFactory::CreateInstance()));
+    return parser.get();
     }
 
 
@@ -2953,8 +2949,7 @@ BentleyStatus ECSqlParseContext::TryResolveClass(shared_ptr<ClassNameExp::Info>&
     if (map == nullptr)
         return ERROR;
 
-    IClassMap const& classMapView = map->GetView(m_classMapViewMode);
-    classNameExpInfo = ClassNameExp::Info::Create(classMapView);
+    classNameExpInfo = ClassNameExp::Info::Create(*map);
     m_classNameExpInfoList[key] = classNameExpInfo;
 
     return SUCCESS;

@@ -80,6 +80,23 @@ TEST_F (ECDbMappingTestFixture, InvalidMapStrategyCATests)
         "    </ECEntityClass>"
         "</ECSchema>", false, "Option JoinedTablePerDirectSubclass cannot be used without a strategy"));
 
+    testItems.push_back (SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>bla</Options>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>", false, "invalid MapStrategy Option not allowed"));
+
     AssertSchemaImport (testItems, "invalidmapstrategycatests.ecdb");
     }
 
@@ -3422,7 +3439,7 @@ void AssertECInstanceIdAutoGeneration(ECDbCR ecdb, bool expectedToSucceed, Utf8C
             {
             id = ECInstanceId(id.GetValue() + 1);
             Utf8String ecsql;
-            ecsql.Sprintf("INSERT INTO %s (ECInstanceId, %s) VALUES(%lld, %s)", fullyQualifiedTestClass, prop, id.GetValue() , val);
+            ecsql.Sprintf("INSERT INTO %s (ECInstanceId, %s) VALUES(%llu, %s)", fullyQualifiedTestClass, prop, id.GetValue() , val);
             ECSqlStatement stmt;
 
             ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
@@ -3947,7 +3964,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
 
      ECClassId baseClassId = db.Schemas ().GetECClassId ("TestSchema", "Base");
      Utf8String indexWhereClause;
-     indexWhereClause.Sprintf ("ECClassId<>%lld", baseClassId);
+     indexWhereClause.Sprintf ("ECClassId<>%llu", baseClassId.GetValue());
      AssertIndex (db, "uix_sub1_code", true, "ts_Base", { "Code" }, indexWhereClause.c_str ());
      }
 
@@ -4013,7 +4030,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
          "    </ECEntityClass>"
          "</ECSchema>", true, "");
 
-     ECClassId sub3ClassId = ECClass::UNSET_ECCLASSID;
+     ECClassId sub3ClassId;
      Utf8String ecdbFilePath;
 
         {
@@ -4028,7 +4045,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
         AssertIndex (ecdb, "uix_base_code", true, "ts_Base", { "Code" });
 
         Utf8String indexWhereClause;
-        indexWhereClause.Sprintf ("ECClassId=%lld", sub3ClassId);
+        indexWhereClause.Sprintf ("ECClassId=%llu", sub3ClassId.GetValue());
         AssertIndex (ecdb, "uix_sub3_prop", true, "ts_Base", { "Sub3_Prop" }, indexWhereClause.c_str ());
         }
 
@@ -4046,7 +4063,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
      //This index must include the new subclass Sub4
      ECClassId sub4ClassId = ecdb.Schemas ().GetECClassId ("TestSchema2", "Sub4");
      Utf8String indexWhereClause;
-     indexWhereClause.Sprintf ("ECClassId=%lld OR ECClassId=%lld", sub3ClassId, sub4ClassId);
+     indexWhereClause.Sprintf ("ECClassId=%llu OR ECClassId=%llu", sub3ClassId.GetValue(), sub4ClassId.GetValue());
      AssertIndex (ecdb, "uix_sub3_prop", true, "ts_Base", { "Sub3_Prop" }, indexWhereClause.c_str ());
      }
 
@@ -4157,7 +4174,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
      ECClassId sub1ClassId = db.Schemas ().GetECClassId ("TestSchema", "Sub1");
      ECClassId sub11ClassId = db.Schemas ().GetECClassId ("TestSchema", "Sub11");
      Utf8String indexWhereClause;
-     indexWhereClause.Sprintf ("ECClassId=%lld OR ECClassId=%lld", sub1ClassId, sub11ClassId);
+     indexWhereClause.Sprintf ("ECClassId=%llu OR ECClassId=%llu", sub1ClassId.GetValue(), sub11ClassId.GetValue());
      AssertIndex (db, "uix_sub1_aid", true, "ts_Base", { "sc01" }, indexWhereClause.c_str ());
      }
 
@@ -4220,7 +4237,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
      ECClassId sub1ClassId = db.Schemas ().GetECClassId ("TestSchema", "Sub1");
      ECClassId sub11ClassId = db.Schemas ().GetECClassId ("TestSchema", "Sub11");
      Utf8String indexWhereClause;
-     indexWhereClause.Sprintf ("ECClassId=%lld OR ECClassId=%lld", sub1ClassId, sub11ClassId);
+     indexWhereClause.Sprintf ("ECClassId=%llu OR ECClassId=%llu", sub1ClassId.GetValue(), sub11ClassId.GetValue());
      AssertIndex (db, "uix_sub1_aid", true, "ts_Base", { "AId" }, indexWhereClause.c_str ());
      }
 
@@ -4462,7 +4479,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
      ECClassCP subSubClass = db.Schemas().GetECClass("TestSchema", "SubSub");
      ASSERT_TRUE(subSubClass != nullptr);
      Utf8String indexWhere;
-     indexWhere.Sprintf("ECClassId=%lld", subSubClass->GetId());
+     indexWhere.Sprintf("ECClassId=%llu", subSubClass->GetId().GetValue());
      AssertIndex(db, "uix_subsub", true, "ts_Sub", {"SubSubProp"}, indexWhere.c_str());
 
      //class hierarchy without shared table
@@ -5097,7 +5114,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
 
         ECClassId b1ClassId = ecdb.Schemas().GetECClassId("TestSchema", "B1");
         Utf8String indexWhereClause;
-        indexWhereClause.Sprintf("([sc03] IS NOT NULL) AND (ECClassId=%lld)", b1ClassId);
+        indexWhereClause.Sprintf("([sc03] IS NOT NULL) AND (ECClassId=%llu)", b1ClassId.GetValue());
         AssertIndexExists(ecdb, "ix_ts_B_fk_ts_Rel1N_target", false);
         AssertIndex(ecdb, "ix_ts_B_fk_ts_Rel1NNoKeyProp_target", false, "ts_B", {"ForeignECInstanceId_Rel1NNoKeyProp"}, "([ForeignECInstanceId_Rel1NNoKeyProp] IS NOT NULL)");
         AssertIndex(ecdb, "ix_ts_B_ecclassid", false, "ts_B", {"ECClassId"});
@@ -5174,7 +5191,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
 
         ECClassId b1ClassId = ecdb.Schemas().GetECClassId("TestSchema", "B1");
         Utf8String indexWhereClause;
-        indexWhereClause.Sprintf("([AId] IS NOT NULL) AND (ECClassId=%lld)", b1ClassId);
+        indexWhereClause.Sprintf("([AId] IS NOT NULL) AND (ECClassId=%llu)", b1ClassId.GetValue());
 
         AssertIndex(ecdb, "uix_ts_B_fk_ts_RelSub1_target", true, "ts_B", {"Aid"}, indexWhereClause.c_str());
         }
@@ -5308,11 +5325,11 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
         
         //RelNonPoly must exclude index on B11 as the constraint is non-polymorphic
         Utf8String indexWhereClause;
-        indexWhereClause.Sprintf("([ForeignECInstanceId_RelNonPoly] IS NOT NULL) AND (ECClassId=%lld OR ECClassId=%lld)", b1ClassId, b2ClassId);
+        indexWhereClause.Sprintf("([ForeignECInstanceId_RelNonPoly] IS NOT NULL) AND (ECClassId=%llu OR ECClassId=%llu)", b1ClassId.GetValue(), b2ClassId.GetValue());
         AssertIndex(ecdb, "uix_ts_B_fk_ts_RelNonPoly_target", true, "ts_B", {"ForeignECInstanceId_RelNonPoly"}, indexWhereClause.c_str());
 
         //RelPoly must include index on B11 as the constraint is polymorphic
-        indexWhereClause.Sprintf("([ForeignECInstanceId_RelPoly] IS NOT NULL) AND (ECClassId<>%lld)", bClassId);
+        indexWhereClause.Sprintf("([ForeignECInstanceId_RelPoly] IS NOT NULL) AND (ECClassId<>%llu)", bClassId.GetValue());
         AssertIndex(ecdb, "uix_ts_B_fk_ts_RelPoly_target", true, "ts_B", {"ForeignECInstanceId_RelPoly"}, indexWhereClause.c_str());
         }
 
@@ -5371,10 +5388,11 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
         ASSERT_EQ(5, (int) RetrieveIndicesForTable(ecdb, "ts_ARelB").size());
 
         ECClassId aRelCClassId = ecdb.Schemas().GetECClassId("TestSchema", "ARelC");
-        ASSERT_TRUE(aRelCClassId != ECClass::UNSET_ECCLASSID);
+        ASSERT_TRUE(aRelCClassId.IsValid());
+
 
         Utf8String indexWhereClause;
-        indexWhereClause.Sprintf("ECClassId=%lld", aRelCClassId);
+        indexWhereClause.Sprintf("ECClassId=%llu", aRelCClassId.GetValue());
 
         AssertIndex(ecdb, "ix_ts_ARelB_source", false, "ts_ARelB", {"SourceECInstanceId"});
         AssertIndex(ecdb, "ix_ts_ARelB_target", false, "ts_ARelB", {"TargetECInstanceId"});
@@ -5777,6 +5795,32 @@ TEST_F(ECDbMappingTestFixture, DroppedFkConstraintsForSharedKeyProperties)
     AssertForeignKey(false, ecdb, "ts_B", "sc_02");
     AssertForeignKey(true, ecdb, "ts_B", "AId");
 
+    ECInstanceKey sourceKey;
+    ECInstanceKey targetKey;
+    ECInstanceKey relKey;
+
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.A VALUES('A_prop')"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step(sourceKey));
+    statement.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.B1Sub(BName, B1SubName) VALUES('B_prop', 'B1Sub_prop')"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step(targetKey));
+    statement.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.Rel1(SourceECInstanceId, TargetECInstanceId, SourceECClassId, TargetECClassId) VALUES(?,?,?,?)"));
+    statement.BindId(1, sourceKey.GetECInstanceId());
+    statement.BindId(2, targetKey.GetECInstanceId());
+    statement.BindId(3, sourceKey.GetECClassId());
+    statement.BindId(4, targetKey.GetECClassId());
+    ASSERT_EQ(BE_SQLITE_DONE, statement.Step(relKey));
+    statement.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT SourceECInstanceId, TargetECInstanceId FROM ts.Rel1 WHERE ECInstanceId = ?"));
+    statement.BindId(1, relKey.GetECInstanceId());
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(sourceKey.GetECInstanceId().GetValue(), statement.GetValueUInt64(0));
+    ASSERT_EQ(targetKey.GetECInstanceId().GetValue(), statement.GetValueUInt64(1));
     }
 
 //---------------------------------------------------------------------------------------
@@ -7645,9 +7689,9 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractConstraintClass)
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(ecdb, "INSERT INTO ts.GeometrySourceHasGeometry(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
 
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(1, geomElem1Key.GetECInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindInt64(2, geomElem1Key.GetECClassId()));
+        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(2, geomElem1Key.GetECClassId()));
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(3, geom1Key.GetECInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindInt64(4, geom1Key.GetECClassId()));
+        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(4, geom1Key.GetECClassId()));
 
         ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step()) << "Inserting GeometrySourceHasGeometry against GeometricElement is expected to succeed";
         insertStmt.Reset();
@@ -7656,9 +7700,9 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractConstraintClass)
         ASSERT_EQ(1, getGeometrySourceHasGeometryRowCount(ecdb)) << "After inserting one relationship [Scenario: " << testSchema.m_name << "]";
 
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(1, elem1Key.GetECInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindInt64(2, elem1Key.GetECClassId()));
+        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(2, elem1Key.GetECClassId()));
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(3, geom2Key.GetECInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindInt64(4, geom2Key.GetECClassId()));
+        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(4, geom2Key.GetECClassId()));
         ASSERT_EQ (BE_SQLITE_DONE, insertStmt.Step ()) << "Inserting GeometrySourceHasGeometry against ExtendedElement is also expected to succeed";
         insertStmt.Reset ();
         insertStmt.ClearBindings ();
@@ -7695,8 +7739,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnChildE
     ASSERT_FALSE(asserted);
 
     ECClassId faceClassId = ecdb.Schemas().GetECClassId("TestSchema", "Face");
-    ASSERT_NE(ECClass::UNSET_ECCLASSID, faceClassId);
-
+    ASSERT_TRUE(faceClassId.IsValid());
     ECInstanceKey solidKey;
     {
     ECSqlStatement stmt;
@@ -7745,9 +7788,9 @@ struct ECDbHoldingRelationshipStrengthTestFixture : ECDbMappingTestFixture
             ECSqlStatement stmt;
             EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), ecsql.c_str())) << ecsql.c_str();
             EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(1, sourceKey.GetECInstanceId()));
-            EXPECT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, sourceKey.GetECClassId()));
+            EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(2, sourceKey.GetECClassId()));
             EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(3, targetKey.GetECInstanceId()));
-            EXPECT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, targetKey.GetECClassId()));
+            EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(4, targetKey.GetECClassId()));
 
             DbResult stat = stmt.Step();
             EXPECT_TRUE(stat == BE_SQLITE_ROW || stat == BE_SQLITE_DONE);
@@ -7810,9 +7853,9 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToOneForward)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.GeometryHoldsParts(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, geomKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, geomKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, geomKey1.GetECClassId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, partKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, partKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, partKey1.GetECClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
@@ -7895,9 +7938,9 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToOneBackward)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.PartHeldByGeometry(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, partKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, partKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, partKey1.GetECClassId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, geomKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, geomKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, geomKey1.GetECClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
@@ -7981,17 +8024,17 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToManyForward)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.GeometryHoldsParts(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, geomKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, geomKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, geomKey1.GetECClassId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, partKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, partKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, partKey1.GetECClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, geomKey2.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, geomKey2.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, geomKey2.GetECClassId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, partKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, partKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, partKey1.GetECClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
@@ -8087,17 +8130,17 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToManyBackward)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.PartIsHeldByGeometry(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, partKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, partKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, partKey1.GetECClassId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, geomKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, geomKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, geomKey1.GetECClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, partKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, partKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, partKey1.GetECClassId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, geomKey2.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, geomKey2.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, geomKey2.GetECClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
@@ -8193,26 +8236,26 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, ManyToManyForward)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.GeometryHasParts(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, geomKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, geomKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, geomKey1.GetECClassId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, partKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, partKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, partKey1.GetECClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, geomKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, geomKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, geomKey1.GetECClassId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, partKey2.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, partKey2.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, partKey2.GetECClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     stmt.Reset();
     stmt.ClearBindings();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, geomKey2.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, geomKey2.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, geomKey2.GetECClassId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, partKey2.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, partKey2.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, partKey2.GetECClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
@@ -8295,26 +8338,26 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, ManyToManyBackward)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.PartsHeldByGeometry(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, partKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, partKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, partKey1.GetECClassId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, geomKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, geomKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, geomKey1.GetECClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, partKey2.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, partKey2.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, partKey2.GetECClassId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, geomKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, geomKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, geomKey1.GetECClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     stmt.Reset();
     stmt.ClearBindings();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, partKey2.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, partKey2.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, partKey2.GetECClassId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, geomKey2.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, geomKey2.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, geomKey2.GetECClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
@@ -8426,12 +8469,12 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, UniqueIndexesSupportFor1to1Relat
     BeSQLite::Statement stmt;
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, "SELECT Id from ec_Class where ec_Class.Name = 'BaseHasClassA'"));
     ASSERT_EQ (DbResult::BE_SQLITE_ROW, stmt.Step ());
-    ECClassId classId = stmt.GetValueInt64(0);
+    ECClassId classId = stmt.GetValueId<ECClassId>(0);
     stmt.Finalize ();
 
     //verify that entry in the ec_Index table exists for relationship table BaseHasClassA
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, "SELECT Name, IsUnique from ec_Index where ClassId = ?"));
-    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindInt64 (1, classId));
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindId(1, classId));
     while (DbResult::BE_SQLITE_ROW == stmt.Step ())
         {
         ASSERT_EQ (1, stmt.GetValueInt (1)) << "Index value for 1:1 Relationship is not Unique";
@@ -8442,12 +8485,12 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, UniqueIndexesSupportFor1to1Relat
 
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, "SELECT Id from ec_Class where ec_Class.Name = 'BaseHasClassB'"));
     ASSERT_EQ (DbResult::BE_SQLITE_ROW, stmt.Step ());
-    classId = stmt.GetValueInt64(0);
+    classId = stmt.GetValueId<ECClassId>(0);
     stmt.Finalize();
 
     //verify that entry in ec_Index table also exists for relationship table BaseHasClassB
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, "SELECT Name, IsUnique from ec_Index where ClassId = ?"));
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, stmt.BindInt64(1, classId));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, stmt.BindId(1, classId));
     while (DbResult::BE_SQLITE_ROW == stmt.Step())
         {
         ASSERT_EQ (1, stmt.GetValueInt (1)) << "Index value for 1:1 Relationship is not Unique";
@@ -8689,18 +8732,18 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, RetrieveConstraintClassInstanceB
     ECSqlStatement relationStmt;
     ASSERT_EQ (relationStmt.Prepare (ecdb, "INSERT INTO t.BaseHasClassA (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"), ECSqlStatus::Success);
     relationStmt.BindId (1, TPHKey1.GetECInstanceId ());
-    relationStmt.BindInt64 (2, TPHKey1.GetECClassId ());
+    relationStmt.BindId (2, TPHKey1.GetECClassId ());
     relationStmt.BindId (3, classAKey1.GetECInstanceId ());
-    relationStmt.BindInt64 (4, classAKey1.GetECClassId ());
+    relationStmt.BindId (4, classAKey1.GetECClassId ());
     ASSERT_EQ (BE_SQLITE_DONE, relationStmt.Step ());
     relationStmt.Finalize ();
 
     //try to insert Duplicate relationship step() should return error
     ASSERT_EQ (relationStmt.Prepare (ecdb, "INSERT INTO t.BaseHasClassA (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"), ECSqlStatus::Success);
     relationStmt.BindId (1, TPHKey1.GetECInstanceId ());
-    relationStmt.BindInt64 (2, TPHKey1.GetECClassId ());
+    relationStmt.BindId (2, TPHKey1.GetECClassId ());
     relationStmt.BindId (3, classAKey1.GetECInstanceId ());
-    relationStmt.BindInt64 (4, classAKey1.GetECClassId ());
+    relationStmt.BindId (4, classAKey1.GetECClassId ());
     ASSERT_TRUE ((BE_SQLITE_CONSTRAINT_BASE & relationStmt.Step ()) == BE_SQLITE_CONSTRAINT_BASE);
     relationStmt.Finalize ();
 
@@ -8824,9 +8867,9 @@ void ReferentialIntegrityTestFixture::VerifyRelationshipInsertionIntegrity(ECDbC
             stmt.Reset();
             ASSERT_EQ(ECSqlStatus::Success, stmt.ClearBindings());
             stmt.BindId(1, fooKey.GetECInstanceId());
-            stmt.BindInt64(2, fooKey.GetECClassId());
+            stmt.BindId(2, fooKey.GetECClassId());
             stmt.BindId(3, gooKey.GetECInstanceId());
-            stmt.BindInt64(4, gooKey.GetECClassId());
+            stmt.BindId(4, gooKey.GetECClassId());
             if (expected[n] != BE_SQLITE_DONE)
                 ASSERT_NE(BE_SQLITE_DONE, stmt.Step());
             else

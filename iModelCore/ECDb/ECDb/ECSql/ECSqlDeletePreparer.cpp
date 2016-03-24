@@ -28,47 +28,10 @@ ECSqlStatus ECSqlDeletePreparer::Prepare (ECSqlPrepareContext& ctx, DeleteStatem
     if (!stat.IsSuccess())
         return stat;
 
-    if (classMap.GetClassMapType () == ClassMap::Type::RelationshipEndTable)
+    if (classMap.GetType () == ClassMap::Type::RelationshipEndTable)
         stat = PrepareForEndTableRelationship (ctx, deleteNativeSqlSnippets, static_cast<RelationshipClassEndTableMap const&> (classMap));
     else
         stat = PrepareForClass (ctx, deleteNativeSqlSnippets);
-
-    //Create child delete step task for delete
-    ECSqlNonSelectPreparedStatement* nonSelectPreparedStmt = ctx.GetECSqlStatementR().GetPreparedStatementP <ECSqlNonSelectPreparedStatement>();
-    BeAssert(nonSelectPreparedStmt != nullptr && "Expecting ECSqlNonSelectPreparedStatement");
-    ECSqlStepTaskCreateStatus status = ECSqlStepTaskFactory::CreateClassStepTask(nonSelectPreparedStmt->GetStepTasks(), StepTaskType::Delete, ctx,
-            classMap.GetECDbMap().GetECDbR(), classMap, classNameExp->IsPolymorphic());
-    if (status != ECSqlStepTaskCreateStatus::NothingToDo && status != ECSqlStepTaskCreateStatus::Success)
-        {
-        LOG.errorv("Failed to create delete struct array step task for ECSQL '%s'.", ctx.GetSqlBuilder().ToString());
-        return ECSqlStatus::InvalidECSql;
-        }
-    
-    ECSqlParameterMap& ecsqlParameterMap = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetParameterMapR();
-    Utf8String selectorQuery = ECSqlPrepareContext::CreateECInstanceIdSelectionQuery(ctx, *exp.GetClassNameExp(), exp.GetWhereClauseExp());
-    EmbeddedECSqlStatement* selectorStmt = nonSelectPreparedStmt->GetStepTasks().GetSelector(true);
-    selectorStmt->Initialize(ctx, ctx.GetParentArrayProperty(), nullptr);
-    stat = selectorStmt->Prepare(classMap.GetECDbMap().GetECDbR(), selectorQuery.c_str());
-    if (!stat.IsSuccess())
-        {
-        BeAssert(false && "Fail to prepared statement for ECInstanceIdSelect. Possible case of struct array containing struct array");
-        return stat;
-        }
-
-    LOG.infov("Prepared step task selector query: %s", selectorQuery.c_str());
-
-    int parameterIndex = ECSqlPrepareContext::FindLastParameterIndexBeforeWhereClause(exp, exp.GetWhereClauseExp());
-    int nParamterToBind = static_cast<int>(ecsqlParameterMap.Count()) - parameterIndex;
-    for (int j = 1; j <= nParamterToBind; j++)
-        {
-        IECSqlBinder& sink = selectorStmt->GetBinder(j);
-        ECSqlBinder* source = nullptr;
-        ECSqlStatus status = ecsqlParameterMap.TryGetBinder(source, j + parameterIndex);
-        if (!status.IsSuccess())
-            return status;
-
-        source->SetOnBindEventHandler(sink);
-        }
 
     ctx.PopScope ();
     return stat;
@@ -136,7 +99,7 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
         //WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] WHERE (%s))
         NativeSqlBuilder whereClause;
         //Following generate optimized WHERE depending on what was accessed in WHERE class of delete. It will avoid uncessary
-        IClassMap const& currentClassMap = classNameExp.GetInfo().GetMap();
+        ClassMap const& currentClassMap = classNameExp.GetInfo().GetMap();
         if (currentClassMap.IsMappedToSingleTable())
             {
             status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, whereExp);
@@ -213,7 +176,7 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
         return ECSqlStatus::Success;
 
 
-    IClassMap const& classMap = classNameExp.GetInfo().GetMap();
+    ClassMap const& classMap = classNameExp.GetInfo().GetMap();
     ECDbSqlTable const* table = &classMap.GetPrimaryTable();
     ECDbSqlColumn const* classIdColumn = nullptr;
     if (!table->TryGetECClassIdColumn(classIdColumn) || classIdColumn->GetPersistenceType() != PersistenceType::Persisted)

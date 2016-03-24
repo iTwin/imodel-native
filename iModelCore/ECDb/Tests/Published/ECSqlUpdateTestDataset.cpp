@@ -762,7 +762,7 @@ ECSqlTestDataset ECSqlUpdateTestDataset::RelationshipWithAdditionalPropsTests (E
         {
         Savepoint savepoint (ecdb, "Inserting test instances");
         Utf8String ecsqlStr;
-        ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, TargetECInstanceId) VALUES (%lld, %lld)", psaIds[i].GetValue (), pIds[j].GetValue ());
+        ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, TargetECInstanceId) VALUES (%llu, %llu)", psaIds[i].GetValue (), pIds[j].GetValue ());
         const ECInstanceId ecInstanceId = ECSqlTestFrameworkHelper::InsertTestInstance (ecdb, ecsqlStr.c_str());
         if (!ecInstanceId.IsValid ())
             {

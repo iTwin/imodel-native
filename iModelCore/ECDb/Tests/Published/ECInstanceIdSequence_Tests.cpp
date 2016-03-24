@@ -184,50 +184,50 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceExcessTest)
     int64_t maxId = 0LL;
     int64_t twoBelowMaxId = 0LL;
     size_t sequenceIndex = 0;
-        {
-        dbPath = CreateTestDb("StartupCompany.ecdb", schemaFullName, 1);
-        
-        //only open as Db without EC profile, so that ECInstanceId Sequence does not overwrite our manual value on closing the db
-        Db db;
-        DbResult stat = db.OpenBeSQLiteDb(dbPath.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite));
-        EXPECT_EQ (BE_SQLITE_OK, stat) << "Opening test db failed.";
+    {
+    dbPath = CreateTestDb("StartupCompany.ecdb", schemaFullName, 1);
 
-        ASSERT_EQ (BE_SQLITE_OK, db.GetRLVCache().Register(sequenceIndex, ECINSTANCEIDSEQUENCE_BELOCAL_KEY));
-        //artificially set sequence close to maximum
-        BeBriefcaseId repoId = db.GetBriefcaseId();
-        maxId = BeBriefcaseBasedId(repoId, BeBriefcaseBasedId::MaxLocal()-1).GetValue();
+    //only open as Db without EC profile, so that ECInstanceId Sequence does not overwrite our manual value on closing the db
+    Db db;
+    DbResult stat = db.OpenBeSQLiteDb(dbPath.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite));
+    EXPECT_EQ(BE_SQLITE_OK, stat) << "Opening test db failed.";
 
-        twoBelowMaxId = maxId - 2LL;
-        stat = db.GetRLVCache().SaveValue(sequenceIndex, twoBelowMaxId);
-        EXPECT_EQ (BE_SQLITE_OK, stat) << "Setting ECInstanceIdSequence to two below per briefcase max in be_Local failed.";
-        db.SaveChanges();
-        }
+    ASSERT_EQ(BE_SQLITE_OK, db.GetRLVCache().Register(sequenceIndex, ECINSTANCEIDSEQUENCE_BELOCAL_KEY));
+    //artificially set sequence close to maximum
+    BeBriefcaseId repoId = db.GetBriefcaseId();
+    maxId = BeBriefcaseBasedId(repoId, BeBriefcaseBasedId::MaxLocal() - 1).GetValue();
+
+    twoBelowMaxId = maxId - 2LL;
+    stat = db.GetRLVCache().SaveValue(sequenceIndex, twoBelowMaxId);
+    EXPECT_EQ(BE_SQLITE_OK, stat) << "Setting ECInstanceIdSequence to two below per briefcase max in be_Local failed.";
+    db.SaveChanges();
+    }
 
     ECDb ecdb;
     ECSchemaCP schema = nullptr;
     OpenTestDb(ecdb, dbPath, schemaFullName, Db::OpenMode::ReadWrite, &schema);
 
-    ECClassCP testClass = schema->GetClassCP ("AAA");
-    ASSERT_TRUE (testClass != nullptr) << "Test class not found";
+    ECClassCP testClass = schema->GetClassCP("AAA");
+    ASSERT_TRUE(testClass != nullptr) << "Test class not found";
 
-    uint64_t lastId = -1LL;
+    uint64_t lastId = 0;
     DbResult stat = ecdb.GetRLVCache().QueryValue(lastId, sequenceIndex);
-    ASSERT_EQ (BE_SQLITE_OK, stat) << "Retrieving ECInstanceIdSequence state from be_Local failed.";
-    ASSERT_EQ (twoBelowMaxId, lastId) << "Retrieved ECInstanceIdSequence state doesn't match what the state that was stored";
-    
+    ASSERT_EQ(BE_SQLITE_OK, stat) << "Retrieving ECInstanceIdSequence state from be_Local failed.";
+    ASSERT_EQ(twoBelowMaxId, lastId) << "Retrieved ECInstanceIdSequence state doesn't match what the state that was stored";
+
     ECInstanceKey id;
     InsertInstance(id, ecdb, *testClass);
-    ASSERT_EQ (twoBelowMaxId + 1LL, id.GetECInstanceId().GetValue());
+    ASSERT_EQ(twoBelowMaxId + 1LL, id.GetECInstanceId().GetValue());
 
     InsertInstance(id, ecdb, *testClass);
-    ASSERT_EQ (twoBelowMaxId + 2LL, id.GetECInstanceId().GetValue());
+    ASSERT_EQ(twoBelowMaxId + 2LL, id.GetECInstanceId().GetValue());
 
     //will succeed, but fire an assertion
     BeTest::SetFailOnAssert(false);
-        {
-        IECInstancePtr instance = InsertInstance(id, ecdb, *testClass);
-        ASSERT_TRUE (instance.IsValid()) << L"Insert instance which generates an ECInstanceId that exceeds the per briefcase id maximum is expected to succeed, with an undefined ECInstanceId";
-        }
+    {
+    IECInstancePtr instance = InsertInstance(id, ecdb, *testClass);
+    ASSERT_TRUE(instance.IsValid()) << "Insert instance which generates an ECInstanceId that exceeds the per briefcase id maximum is expected to succeed, with an undefined ECInstanceId";
+    }
     BeTest::SetFailOnAssert(true);
     }
 
@@ -267,7 +267,7 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceTestWithMaximumRepoId)
 
         ASSERT_TRUE (db.GetRLVCache().TryGetIndex(sequenceIndex, ECINSTANCEIDSEQUENCE_BELOCAL_KEY));
         DbResult stat = db.GetRLVCache().SaveValue(sequenceIndex, oneBelowMaxIdValue.GetValue());
-        EXPECT_EQ (BE_SQLITE_OK, stat) << L"Setting ECInstanceIdSequence to three below max in be_Local failed.";
+        EXPECT_EQ (BE_SQLITE_OK, stat) << "Setting ECInstanceIdSequence to three below max in be_Local failed.";
         db.SaveChanges();
         }
 
@@ -341,7 +341,7 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceIncrementationTest)
     ECInstanceKey id4;
     IECInstancePtr instance4 = InsertInstance(id4, ecdb, *(schema->GetClassCP ("ClassWithPrimitiveArrayProperties")));
 
-    EXPECT_EQ (id3.GetECInstanceId().GetValue() + 1LL + 3LL, id4.GetECInstanceId().GetValue()) << "Instance id for instance with five array properties inserted right after another is expected to be greater by 1.";
+    EXPECT_EQ (id3.GetECInstanceId().GetValue() + 1LL, id4.GetECInstanceId().GetValue()) << "Instance id for instance with five array properties inserted right after another is expected to be greater by 1.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -360,12 +360,12 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceIncrementationWithOneToManyR
     //insert first child instance
     ECInstanceKey child1Id;
     IECInstancePtr child1Instance = InsertInstance(child1Id, ecdb, *(schema->GetClassCP ("Employee")));
-    EXPECT_EQ (parentId.GetECInstanceId().GetValue() + 4LL, child1Id.GetECInstanceId().GetValue()) << "Instance id for child #1 is expected to be greater by 1 than the id of the parent.";
+    EXPECT_EQ (parentId.GetECInstanceId().GetValue() + 1LL, child1Id.GetECInstanceId().GetValue()) << "Instance id for child #1 is expected to be greater by 1 than the id of the parent.";
 
     //insert second child instance
     ECInstanceKey child2Id;
     IECInstancePtr child2Instance = InsertInstance(child2Id, ecdb, *(schema->GetClassCP ("Employee")));
-    EXPECT_EQ (parentId.GetECInstanceId().GetValue() + 8LL, child2Id.GetECInstanceId().GetValue()) << "Instance id for child #2 is expected to be greater by 2 than the id of the parent.";
+    EXPECT_EQ (parentId.GetECInstanceId().GetValue() + 2LL, child2Id.GetECInstanceId().GetValue()) << "Instance id for child #2 is expected to be greater by 2 than the id of the parent.";
 
     ECInstanceKey lastId = child2Id;
 
@@ -383,7 +383,7 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceIncrementationWithOneToManyR
     //finally create an ordinary instance to check that the above relationship inserts didn't increment the sequence
     ECInstanceKey id;
     InsertInstance(id, ecdb, *(schema->GetClassCP ("AAA")));
-    EXPECT_EQ (lastId.GetECInstanceId().GetValue() + 4LL, id.GetECInstanceId().GetValue()) << "Instance id of instance is expected to be greater by one than the previously inserted one-to-many relationship.";
+    EXPECT_EQ (lastId.GetECInstanceId().GetValue() + 1LL, id.GetECInstanceId().GetValue()) << "Instance id of instance is expected to be greater by one than the previously inserted one-to-many relationship.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -404,13 +404,13 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceIncrementationWithManyToMany
 
     //insert source instance #1
     IECInstancePtr source2Instance = InsertInstance(id, ecdb, *sourceClass);
-    EXPECT_EQ (lastId.GetECInstanceId().GetValue() + 4LL, id.GetECInstanceId().GetValue()) << "Instance id for source #2 is expected to be greater by 1 than the id of the previously inserted instance.";
+    EXPECT_EQ (lastId.GetECInstanceId().GetValue() + 1LL, id.GetECInstanceId().GetValue()) << "Instance id for source #2 is expected to be greater by 1 than the id of the previously inserted instance.";
     lastId = id;
 
     //insert target instance #1
     ECClassCP targetClass = schema->GetClassCP ("Hardware");
     IECInstancePtr target1Instance = InsertInstance(id, ecdb, *targetClass);
-    EXPECT_EQ (lastId.GetECInstanceId().GetValue() + 4LL, id.GetECInstanceId().GetValue()) << "Instance id for target #1 is expected to be greater by 1 than the id of the previously inserted instance.";
+    EXPECT_EQ (lastId.GetECInstanceId().GetValue() + 1LL, id.GetECInstanceId().GetValue()) << "Instance id for target #1 is expected to be greater by 1 than the id of the previously inserted instance.";
     lastId = id;
 
     //insert target instance #2
@@ -481,7 +481,7 @@ TEST(ECInstanceIdSequenceTests, ChangeBriefcaseIdTest)
 
     //finally query for the instance inserted under the old repo id
     Utf8String ecsql;
-    ecsql.Sprintf("SELECT ECInstanceId FROM %s WHERE ECInstanceId=%lld", testClass.GetECSqlName().c_str(), idBeforeRepoIdChange.GetECInstanceId().GetValue());
+    ecsql.Sprintf("SELECT ECInstanceId FROM %s WHERE ECInstanceId=%llu", testClass.GetECSqlName().c_str(), idBeforeRepoIdChange.GetECInstanceId().GetValue());
 
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare (ecdb, ecsql.c_str ())) << "Preparing SQL " << ecsql.c_str() << " to retrieve instance inserted before repo id change failed";

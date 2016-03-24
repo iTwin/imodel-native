@@ -196,19 +196,24 @@
     <ClCompile Include="Published\ECDbTestHelper.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECSqlInsertTests.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ECSqlStatementTestsSchemaHelper.cpp">
-      <Filter>Published\ECSql</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ECSqlSelectTests.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>
     <ClCompile Include="Published\ECSqlMetadataQueryTest.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECDbSymbolProviderTests.cpp" />
+    <ClCompile Include="Published\ECDbSymbolProviderTests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\NestedStructArrayTestSchemaHelper.cpp">
+      <Filter>Published\ECSql</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\JsonReaderTests.cpp">
+      <Filter>Published\ECSql</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlInsertTests.cpp">
+      <Filter>Published\ECSql</Filter>
+    </ClCompile>
     <ClCompile Include="Published\ECDbSchemaUpgrade.cpp">
       <Filter>Published</Filter>
     </ClCompile>
@@ -283,7 +288,7 @@
     <ClInclude Include="Published\ECDbTestHelper.h">
       <Filter>Published</Filter>
     </ClInclude>
-    <ClInclude Include="Published\ECSqlStatementTestsSchemaHelper.h">
+    <ClInclude Include="Published\NestedStructArrayTestSchemaHelper.h">
       <Filter>Published\ECSql</Filter>
     </ClInclude>
   </ItemGroup>

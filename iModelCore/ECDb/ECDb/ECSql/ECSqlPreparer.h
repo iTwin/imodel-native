@@ -86,7 +86,6 @@ struct ECSqlExpPreparer
         static ECSqlStatus PrepareValueExpListExp(NativeSqlBuilder::ListOfLists&, ECSqlPrepareContext&, ValueExpListExp const*, PropertyNameListExp const* targetExp, NativeSqlBuilder::ListOfLists& targetNativeSqlSnippetLists);
         static ECSqlStatus PrepareWhereExp(NativeSqlBuilder&, ECSqlPrepareContext&, WhereExp const*);
 
-        static ECSqlStatus ResolveChildStatementsBinding(ECSqlPrepareContext&);
         static ECSqlStatus ResolveParameterMappings(ECSqlPrepareContext&);
 
         static BooleanSqlOperator DetermineCompoundLogicalOpForCompoundExpressions(BooleanSqlOperator);

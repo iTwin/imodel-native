@@ -9,33 +9,6 @@
 #include "ECSqlPropertyNameExpPreparer.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-void RenderPropertyMap (NativeSqlBuilder::List& snippets, PropertyMapCR propertyMap)
-    {
-    BeAssert (propertyMap.GetAsStructArrayTablePropertyMap () == nullptr);
-    auto& children = propertyMap.GetChildren ();
-    if (children.Size() == 0)
-        {
-        Utf8String accessString = Utf8String (propertyMap.GetPropertyAccessString ());
-        if (auto mp = dynamic_cast<PointPropertyMap const*>(&propertyMap))
-            {
-            snippets.push_back (NativeSqlBuilder{ ("[" + accessString + ".X]").c_str ()});
-            snippets.push_back (NativeSqlBuilder{ ("[" + accessString + ".Y]").c_str () });
-            if (mp->Is3d())
-                snippets.push_back (NativeSqlBuilder{ ("[" + accessString + ".Z]").c_str () });
-            }
-        else
-            {
-            snippets.push_back (NativeSqlBuilder{ ("[" + accessString + "]").c_str ()});
-            }
-        }
-    else
-        {
-        for (auto child : children)
-            {
-            RenderPropertyMap (snippets, *child);
-            }
-        }
-    }
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -93,7 +66,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
 
         if (exp->GetClassRefExp()->GetType() == Exp::Type::ClassName)
             {
-            IClassMap const& classMap = static_cast<ClassNameExp const*>(exp->GetClassRefExp())->GetInfo().GetMap();
+            ClassMap const& classMap = static_cast<ClassNameExp const*>(exp->GetClassRefExp())->GetInfo().GetMap();
             StorageDescription const& desc = classMap.GetStorageDescription();
             bool isPolymorphic = exp->GetClassRefExp()->IsPolymorphic();
             if (isPolymorphic && desc.HierarchyMapsToMultipleTables())

@@ -9,6 +9,7 @@
 //__BENTLEY_INTERNAL_ONLY__
 #include <ECDb/ECDbTypes.h>
 #include <Bentley/BeStringUtilities.h>
+#include <Bentley/BeId.h>
 #include <Bentley/BeAssert.h>
 #include "ECDbLogger.h"
 #include <type_traits>
@@ -114,30 +115,17 @@ enum class SqlSetQuantifier
     All,
     };
 
+
 //=======================================================================================
-//! @bsiclass                                                Affan.Khan      03/2015
+//should actually be in ECObjects, but ECEnumeration doesn't have Id yet in ECObjects - only in ECDb
+// @bsienum                                                Krischan.Eberle      02/2016
 //+===============+===============+===============+===============+===============+======
-enum class ForeignKeyActionType
+struct ECEnumerationId : BeInt64Id
     {
-    NotSpecified,
-    Cascade,
-    NoAction,
-    SetNull,
-    SetDefault,
-    Restrict,
+    BEINT64_ID_DECLARE_MEMBERS(ECEnumerationId, BeInt64Id)
     };
 
-typedef int64_t ECContainerId;
-
-enum class MapStatus 
-    {
-    Success                         = 0,
-    BaseClassesNotMapped            = 1,    // We have temporarily stopped mapping a given branch of the class hierarchy because
-                                                // we haven't mapped one or more of its base classes. This can happen in the case 
-                                                // of multiple inheritance, where we attempt to map a child class for which 
-                                                // not all parent classes have been mapped
-    Error                           = 666
-    };
+typedef BeInt64Id ECContainerId;
 
 enum class ECContainerType
     {
@@ -150,9 +138,6 @@ enum class ECContainerType
 
 #define ECDB_COL_ECInstanceId           "ECInstanceId"
 #define ECDB_COL_ECClassId              "ECClassId"
-#define ECDB_COL_ECPropertyPathId       "ECPropertyPathId"
-#define ECDB_COL_ParentECInstanceId     "ParentECInstanceId"
-#define ECDB_COL_ECArrayIndex           "ECArrayIndex"
 
 //=======================================================================================
 // @bsiclass                                 Affan.Khan                10/2015
@@ -203,23 +188,14 @@ struct CompareUtf8
 
 
 //=======================================================================================
-// For case-insensitive UTF-8 string comparisons in STL collections.
+// For case-insensitive UTF-8 string comparisons in STL collections that only use ASCII
+// strings
 // @bsistruct
 //+===============+===============+===============+===============+===============+======
-struct CompareIUtf8
+struct CompareIUtf8Ascii
     {
-    bool operator()(Utf8CP s1, Utf8CP s2) const { return BeStringUtilities::Stricmp(s1, s2) < 0; }
-
-    bool operator()(Utf8StringCR s1, Utf8StringCR s2) const
-        {
-        return BeStringUtilities::Stricmp(s1.c_str(), s2.c_str()) < 0;
-        }
+    bool operator()(Utf8CP s1, Utf8CP s2) const { return BeStringUtilities::StricmpAscii(s1, s2) < 0; }
+    bool operator()(Utf8StringCR s1, Utf8StringCR s2) const {  return BeStringUtilities::StricmpAscii(s1.c_str(), s2.c_str()) < 0;  }
     };
 
-enum class EndTablesOptimizationOptions
-    {
-    Skip, //!NOP or do nothing
-    ReferencedEnd, //Select base table over joined table
-    ForeignEnd //select subset of joinedTable if possiable instead of base table.
-    };
 END_BENTLEY_SQLITE_EC_NAMESPACE

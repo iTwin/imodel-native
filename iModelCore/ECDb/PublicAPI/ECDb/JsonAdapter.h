@@ -28,7 +28,7 @@ enum class ECValueFormat
 
 struct ECPropertyFormatter;
 typedef ECPropertyFormatter* ECPropertyFormatterP;
-typedef RefCountedPtr<ECPropertyFormatter>  ECPropertyFormatterPtr;
+typedef RefCountedPtr<ECPropertyFormatter> ECPropertyFormatterPtr;
 
 //=======================================================================================
 //! Provides a means of extending the formatting capabilities of the JsonECSqlSelectAdapter
@@ -156,11 +156,7 @@ public:
             //! @param[in] propertyFormatter (Optional) Provides more control over the formatting of properties
             //! Normally the DgnPlatform layer provides formatters that use the dgn specific context to provide additional
             //! formatting including specification of units, property categorization, etc. 
-            ECDB_EXPORT FormatOptions
-                (
-                ECValueFormat format = ECValueFormat::FormattedStrings,
-                ECPropertyFormatterP propertyFormatter = nullptr
-                );
+            ECDB_EXPORT FormatOptions(ECValueFormat format = ECValueFormat::FormattedStrings, ECPropertyFormatterP propertyFormatter = nullptr);
         };
 
 private:
@@ -222,13 +218,8 @@ public:
     //! @param[in] ecsqlStatement Prepared ECSQL statement
     //! @param[in] formatOptions Options to control the output. 
     //! @see ECSqlStatement
-    ECDB_EXPORT JsonECSqlSelectAdapter
-        (
-        ECSqlStatement const& ecsqlStatement,
-        JsonECSqlSelectAdapter::FormatOptions formatOptions = JsonECSqlSelectAdapter::FormatOptions (ECValueFormat::FormattedStrings)
-        );
-
-    virtual ~JsonECSqlSelectAdapter () {}
+    ECDB_EXPORT JsonECSqlSelectAdapter(ECSqlStatement const& ecsqlStatement, JsonECSqlSelectAdapter::FormatOptions formatOptions = JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::FormattedStrings));
+    virtual ~JsonECSqlSelectAdapter() {}
 
     //! Gets the presentation meta-data for displaying the individual rows read in. 
     //! @param [out] rowDisplayInfo Includes information to display the various property columns in the correct order. 
@@ -274,7 +265,7 @@ public:
     //! 
     //! @endcode
     //! @see GetRow()
-    ECDB_EXPORT void GetRowDisplayInfo (JsonValueR rowDisplayInfo) const;
+    ECDB_EXPORT void GetRowDisplayInfo(JsonValueR rowDisplayInfo) const;
 
     //! Gets the entire current row as JSON
     //! @param [out] currentRow Property values for the current row.
@@ -331,7 +322,7 @@ public:
     //!     Point3D: "1.1, 2.2, 3.3"
     //!     String: "Test"
     //! @endcode
-    ECDB_EXPORT bool GetRow (JsonValueR currentRow) const;
+    ECDB_EXPORT bool GetRow(JsonValueR currentRow) const;
 
     //! Gets a specific instance from the current row as JSON
     //! @param [out] ecJsonInstance JSON representation of the ECInstance as a property-value map. 
@@ -352,7 +343,7 @@ public:
     //! }
     //! @endcode
     //! @see JsonECSqlSelectAdapter::GetRow
-    ECDB_EXPORT bool GetRowInstance (JsonValueR ecJsonInstance, ECN::ECClassId ecClassId) const;
+    ECDB_EXPORT bool GetRowInstance(JsonValueR ecJsonInstance, ECN::ECClassId ecClassId) const;
 
     
     //! Gets the first instance from the current row as JSON
@@ -374,13 +365,15 @@ public:
     //! }
     //! @endcode
     //! @see JsonECSqlSelectAdapter::GetRow
-    ECDB_EXPORT bool GetRowInstance (JsonValueR ecJsonInstance) const;
+    ECDB_EXPORT bool GetRowInstance(JsonValueR ecJsonInstance) const;
 
     //! Gets the current row as is in the JSON format
     //! @param [out] ecJsonRow JSON representation of the row as an ordered array of values
     //! @return false if there was an error in retrieving/formatting values. true otherwise.
-    ECDB_EXPORT bool GetRowAsIs (JsonValueR ecJsonRow) const;
+    ECDB_EXPORT bool GetRowAsIs(JsonValueR ecJsonRow) const;
     };
+
+#if !defined (DOCUMENTATION_GENERATOR)
 
 //=================================================================================
 //! Reads information associated with an instance of the class in the JSON format.
@@ -395,21 +388,56 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct JsonReader : NonCopyableClass
     {
-public:
-    struct Impl;
-
 private:
-    Impl* m_pimpl;
+    struct ECRelatedItemsDisplaySpecCacheAppData : public BeSQLite::Db::AppData
+        {
+    private:
+        ECDbCR m_ecDb;
+        ECN::ECRelatedItemsDisplaySpecificationsCache m_cache;
+
+        ECRelatedItemsDisplaySpecCacheAppData(ECDbCR ecDb) : Db::AppData(), m_ecDb(ecDb) {}
+
+        static BeSQLite::Db::AppData::Key const& GetKey() { static BeSQLite::Db::AppData::Key s_key; return s_key; }
+
+    public:
+        ~ECRelatedItemsDisplaySpecCacheAppData() {}
+
+        ECN::ECRelatedItemsDisplaySpecificationsCache const& GetCache() const { return m_cache; }
+
+        static ECRelatedItemsDisplaySpecCacheAppData* Get(ECDbCR);
+        };
+
+    ECDbCR m_ecDb;
+    ECN::ECClassCP m_ecClass;
+    ECSqlStatementCache m_statementCache;
+
+    BentleyStatus PrepareECSql(CachedECSqlStatementPtr& statement, Utf8StringCR ecSql) const;
+    BentleyStatus PrepareECSql(CachedECSqlStatementPtr& statement, ECN::ECRelationshipPath const& pathFromRelatedClass, ECInstanceId, bool selectInstanceKeyOnly, bool isPolymorphic) const;
+
+    BentleyStatus AddInstancesFromSpecifiedClassPath(JsonValueR jsonInstances, JsonValueR jsonDisplayInfo, ECN::ECRelationshipPath const& pathToClass, ECInstanceId, JsonECSqlSelectAdapter::FormatOptions const&) const;
+    BentleyStatus AddInstancesFromRelatedItems(JsonValueR allInstances, JsonValueR allDisplayInfo, ECN::ECClassCR parentClass, ECN::ECRelationshipPath const& pathFromParent, ECInstanceId, JsonECSqlSelectAdapter::FormatOptions const&) const;
+
+    BentleyStatus GetTrivialPathToSelf(ECN::ECRelationshipPath& emptyPath, ECN::ECClassCR) const;
+
+    bool IsValid() const { return m_ecClass != nullptr; }
+
+    static BentleyStatus AddInstancesFromPreparedStatement(JsonValueR jsonInstances, JsonValueR jsonDisplayInfo, ECSqlStatement&, JsonECSqlSelectAdapter::FormatOptions const&, Utf8StringCR pathToClassStr);
+    static void AddClasses(JsonValueR allClasses, JsonValueR addClasses);
+    static void AddCategories(JsonValueR allCategories, JsonValueR addCategories, int currentInstanceIndex);
+    static void AddInstances(JsonValueR allInstances, JsonValueR addInstances, int currentInstanceIndex);
+
+    static void SetInstanceIndex(JsonValueR addCategories, int currentInstanceIndex);
+    static void SetRelationshipPath(JsonValueR addClasses, Utf8StringCR pathToClassStr);
 
 public:
+
     //! Construct a reader for the specified class. 
     //! @param ecdb [in] ECDb
     //! @param ecClassId [in] ECClassId indicating the class of the instance that needs to be retrieved. 
     //! @remarks Holds some cached state to speed up future lookups of the same class. Keep the 
     //! reader around when retrieving many instances of the same class. 
     ECDB_EXPORT JsonReader (ECDbCR ecdb, ECN::ECClassId ecClassId);
-
-    ECDB_EXPORT ~JsonReader ();
+    ~JsonReader() {}
 
     //! Reads the specified instance and any related instances that are to be displayed in the JSON format. 
     //! @param jsonInstances [out] Information on the instances in the JSON format.
@@ -427,13 +455,7 @@ public:
     //! depending on whether a related instance was retrieved or not along with the requested instance.
     //! </ul>
     //! @see JsonECSqlSelectAdapter::ReadInstance
-    ECDB_EXPORT BentleyStatus Read
-    (
-    JsonValueR jsonInstances,
-    JsonValueR jsonDisplayInfo,
-    ECInstanceId const& ecInstanceId,
-    JsonECSqlSelectAdapter::FormatOptions formatOptions = JsonECSqlSelectAdapter::FormatOptions (ECValueFormat::FormattedStrings)
-    ) const;
+    ECDB_EXPORT BentleyStatus Read(JsonValueR jsonInstances, JsonValueR jsonDisplayInfo, ECInstanceId ecInstanceId, JsonECSqlSelectAdapter::FormatOptions formatOptions = JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::FormattedStrings)) const;
 
     //! Reads (only) the specified instance in the JSON format. 
     //! @param [out] jsonInstance JSON representation of the ECInstance as a property-value map.  
@@ -442,13 +464,10 @@ public:
     //! @remarks The returned JSON is a map of properties and values for the specified instance. See 
     //! @ref JsonECSqlSelectAdapter::GetRowInstance for more details. 
     //! @see Read()
-    ECDB_EXPORT BentleyStatus ReadInstance
-    (
-    JsonValueR jsonInstance,
-    ECInstanceId const& ecInstanceId,
-    JsonECSqlSelectAdapter::FormatOptions formatOptions = JsonECSqlSelectAdapter::FormatOptions (ECValueFormat::FormattedStrings)
-    ) const;
+    ECDB_EXPORT BentleyStatus ReadInstance(JsonValueR jsonInstance, ECInstanceId ecInstanceId, JsonECSqlSelectAdapter::FormatOptions formatOptions = JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::FormattedStrings)) const;
     };
+
+#endif
 
 //=======================================================================================
 //! Insert JSON instances into ECDb file.

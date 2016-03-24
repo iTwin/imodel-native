@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/StructMappedToColumnsECSqlField.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -95,11 +95,11 @@ void StructMappedToColumnsECSqlField::AppendField (std::unique_ptr<ECSqlField> f
     {
     PRECONDITION (field != nullptr, );
     
-    if (field->RequiresInit())
-        m_requiresInit = true;
+    if (field->RequiresOnAfterStep())
+        m_requiresOnAfterStep = true;
 
-    if (field->RequiresReset())
-        m_requiresReset = true;
+    if (field->RequiresOnAfterReset())
+        m_requiresOnAfterReset = true;
 
     m_structFields.push_back (move (field));
 
