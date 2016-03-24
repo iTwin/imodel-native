@@ -421,6 +421,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMesh -f ScalableMesh 
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMesh.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshClipContainer.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshCreator.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshDataStore.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshDocumentEnv.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshFeature.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshMoniker.h" />

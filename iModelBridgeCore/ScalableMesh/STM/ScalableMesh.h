@@ -165,7 +165,13 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         typedef SMStreamingPointTaggedTileStore<
             INDEXPOINT,
-            YProtPtExtentType >        StreamingStoreType;
+            YProtPtExtentType >        StreamingPointStoreType;
+        typedef SMStreamingPointTaggedTileStore<
+            int32_t,
+            YProtPtExtentType >        StreamingIndiceStoreType;
+        typedef SMStreamingPointTaggedTileStore<
+            DPoint2d,
+            YProtPtExtentType >        StreamingUVStoreType;
 
         typedef SMMeshIndex<INDEXPOINT, YProtPtExtentType>
                                         PointIndexType;
@@ -255,6 +261,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual bool                   _IsShareable() const override;
         virtual int                    _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, Bentley::GeoCoordinates::BaseGCSPtr& targetGCS) const;
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) override;
+        virtual StatusInt              _ConvertToCloud(const WString& pi_pOutputDirPath) const override;
         
 #ifdef SCALABLE_MESH_ATP
         virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes) const override; 
@@ -339,6 +346,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual int                    _SynchWithSources() override;
 
         virtual int                    _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, Bentley::GeoCoordinates::BaseGCSPtr& targetGCS) const override;
+        virtual StatusInt              _ConvertToCloud(const WString& pi_pOutputDirPath) const override { return ERROR; }
 
 #ifdef SCALABLE_MESH_ATP
         virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes) const override {return ERROR;}

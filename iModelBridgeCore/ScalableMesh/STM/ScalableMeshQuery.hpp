@@ -1907,15 +1907,17 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMeshes(boo
 //                        auto idTexture = GetTextureID(meshInd - 1);
                                                 
                         IScalableMeshTexturePtr smTexturePtr(GetTexture(meshInd - 1));
-                                                
-                        BentleyStatus status = displayCacheManagerPtr->_CreateCachedTexture(m_cachedDisplayTextures[meshInd], 
-                                                                                            smTexturePtr->GetDimension().x,
-                                                                                            smTexturePtr->GetDimension().y,
-                                                                                            false,
-                                                                                            QV_RGB_FORMAT,
-                                                                                            smTexturePtr->GetData());
+                        if (smTexturePtr != nullptr)
+                            {
+                            BentleyStatus status = displayCacheManagerPtr->_CreateCachedTexture(m_cachedDisplayTextures[meshInd],
+                                                                                                smTexturePtr->GetDimension().x,
+                                                                                                smTexturePtr->GetDimension().y,
+                                                                                                false,
+                                                                                                QV_RGB_FORMAT,
+                                                                                                smTexturePtr->GetData());
 
-                        assert(status == SUCCESS);    
+                            assert(status == SUCCESS);
+                            }
                         }
                                                                                                                            
                     DPoint2d* uvPtr = 0;

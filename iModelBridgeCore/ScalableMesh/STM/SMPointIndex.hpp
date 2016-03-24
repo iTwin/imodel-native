@@ -6994,8 +6994,51 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveAl
         }
     }
 
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveCloudReadyData(HFCPtr<StreamingPointStoreType> pi_pPointStore) const
+    {
+    // Simply transfer data from this store to the other store passed in parameter
+    pi_pPointStore->StoreHeader(&m_nodeHeader, this->GetBlockID());
+    auto count = this->GetStore()->GetBlockDataCount(this->GetBlockID());
+    if (count > 0) pi_pPointStore->StoreBlock(const_cast<POINT*>(&this->operator[](0)), count, this->GetBlockID());
+    }
+
 /**----------------------------------------------------------------------------
 This method saves the node for streaming.
+
+@param
+-----------------------------------------------------------------------------*/
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveCloudReadyNode(HFCPtr<StreamingPointStoreType> pi_pPointStore,
+                                                                                             HFCPtr<StreamingIndiceStoreType> pi_pIndiceStore,
+                                                                                             HFCPtr<StreamingUVStoreType> pi_pUVStore,
+                                                                                             HFCPtr<StreamingIndiceStoreType> pi_pUVIndiceStore,
+                                                                                             HFCPtr<StreamingTextureTileStoreType> pi_pTextureStore) const
+    {
+    assert(!pi_pIndiceStore && !pi_pUVStore && !pi_pUVIndiceStore && !pi_pTextureStore);
+
+    if (!IsLoaded())
+        Load();
+
+    this->SaveCloudReadyData(pi_pPointStore);
+
+    // Save children nodes
+    if (!m_nodeHeader.m_IsLeaf)
+        {
+        if (m_pSubNodeNoSplit != NULL)
+            {
+            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveCloudReadyNode(pi_pPointStore, pi_pIndiceStore, pi_pUVStore, pi_pUVIndiceStore, pi_pTextureStore);
+            }
+        else
+            {
+            for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
+                {
+                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveCloudReadyNode(pi_pPointStore, pi_pIndiceStore, pi_pUVStore, pi_pUVIndiceStore, pi_pTextureStore);
+                }
+            }
+        }
+    }
+
+/**----------------------------------------------------------------------------
+This method saves the node for streaming using the grouping strategy.
 
 @param
 -----------------------------------------------------------------------------*/
@@ -7942,31 +7985,76 @@ This method saves the mesh for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::SaveCloudReady(const WString pi_pOutputDirPath, const WString pi_pMasterHeaderPath) const
+template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveCloudReady(const WString pi_pOutputDirPath, HFCPtr<SMNodeGroupMasterHeader> pi_pGroupMasterHeader, bool pi_pCompress) const
     {
     if (0 == CreateDirectoryW(pi_pOutputDirPath.c_str(), NULL))
         {
-        assert(ERROR_PATH_NOT_FOUND != GetLastError());
+        if (ERROR_PATH_NOT_FOUND == GetLastError()) return ERROR;
         }
-    SMNodeGroup* group = new SMNodeGroup(pi_pOutputDirPath, 0, 0);
-    SMNodeGroupMasterHeader* groupMasterHeader = new SMNodeGroupMasterHeader;
-
-    // Add first group
-    groupMasterHeader->AddGroup(0);
 
     auto rootNode = GetRootNode();
-    rootNode->AddOpenGroup(0, group);
+    if (pi_pGroupMasterHeader)
+        {
+        HFCPtr<SMNodeGroup> group = new SMNodeGroup(pi_pOutputDirPath, 0, 0);
 
-    rootNode->SaveCloudReadyNode(group, groupMasterHeader);
+        // Add first group
+        pi_pGroupMasterHeader->AddGroup(0);
 
-    // Handle all open groups 
-    rootNode->SaveAllOpenGroups();
+        rootNode->AddOpenGroup(0, group);
 
-    // Save group info file which contains info about all the generated groups (groupID and blockID)
-    groupMasterHeader->SaveToFile(pi_pMasterHeaderPath, pi_pOutputDirPath);
+        rootNode->SaveCloudReadyNode(group, pi_pGroupMasterHeader);
 
-    delete group;
-    delete groupMasterHeader;
+        // Handle all open groups 
+        rootNode->SaveAllOpenGroups();
+
+        // Save group info file which contains info about all the generated groups (groupID and blockID)
+        pi_pGroupMasterHeader->SaveToFile(pi_pOutputDirPath);
+        }
+    else 
+        {
+        HFCPtr<StreamingPointStoreType> pPointStore;
+        HFCPtr<StreamingIndiceStoreType> pIndiceStore;
+        HFCPtr<StreamingUVStoreType> pUVStore;
+        HFCPtr<StreamingIndiceStoreType> pUVIndiceStore;
+        HFCPtr<StreamingTextureTileStoreType> pTextureStore;
+        this->GetCloudFormatStores(pi_pOutputDirPath, pi_pCompress, pPointStore, pIndiceStore, pUVStore, pUVIndiceStore, pTextureStore);
+
+        rootNode->SaveCloudReadyNode(pPointStore, pIndiceStore, pUVStore, pUVIndiceStore, pTextureStore);
+
+        // Save master header for cloud
+        Json::Value masterHeader;
+        masterHeader["balanced"] = this->IsBalanced();
+        masterHeader["depth"] = (uint32_t)this->GetDepth();
+        masterHeader["rootNodeBlockID"] = rootNode->GetBlockID().m_integerID;
+        masterHeader["splitThreshold"] = this->GetSplitTreshold();
+        masterHeader["singleFile"] = false;
+
+        // Write to file
+        auto filename = (pi_pOutputDirPath + L"MasterHeader.sscm").c_str();
+        BeFile file;
+        uint64_t buffer_size;
+        auto jsonWriter = [&file, &buffer_size](BeFile& file, Json::Value& object) {
+
+            Json::StyledWriter writer;
+            auto buffer = writer.write(object);
+            buffer_size = buffer.size();
+            file.Write(NULL, buffer.c_str(), buffer_size);
+            };
+        if (BeFileStatus::Success == file.Open(filename, BeFileAccess::Write, BeFileSharing::None))
+            {
+            jsonWriter(file, masterHeader);
+            }
+        else if (BeFileStatus::Success == file.Create(filename))
+            {
+            jsonWriter(file, masterHeader);
+            }
+        else
+            {
+            HASSERT(!"Problem creating master header file");
+            }
+        file.Close();
+        }
+    return SUCCESS;
     }
 
 #ifdef INDEX_DUMPING_ACTIVATED
@@ -8308,7 +8396,8 @@ template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::Store()
         if (s_dropNodes)
             {                           
             DumpOctTree("D:\\MyDoc\\Scalable Mesh Iteration 8\\PartialUpdate\\Neighbor\\Log\\NodeAferCreationR.xml", false);                
-          //  ValidateNeighbors();
+            //DumpOctTree("C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\QuebecCityMini\\nodeAfterCreation.xml", false);
+            //  ValidateNeighbors();
             }        
 #endif
 
