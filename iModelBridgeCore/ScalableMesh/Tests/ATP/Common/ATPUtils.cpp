@@ -57,6 +57,12 @@ WString GetHeaderForTestType(TestType t)
         case EXPORT_LINE:
             return L"\n";
             break;
+        case EXPORT_VOLUME:
+            return L"\n";
+            break;
+        case IMPORT_VOLUME:
+            return L"\n";
+            break;
         default: break;
         }
     return L"";
@@ -118,6 +124,10 @@ bool ParseTestType(BeXmlNodeP pRootNode, TestType& t)
             t = TEST_STREAMING;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"exportLine"))
             t = EXPORT_LINE;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"exportVolume"))
+            t = EXPORT_VOLUME;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"importVolume"))
+            t = IMPORT_VOLUME;
         else return false;
         }
     else return false;
@@ -264,6 +274,13 @@ bool RunTestPlan(BeFileName& testPlanPath)
                 break;
             case EXPORT_LINE:
                 ExportDrapeLine(pTestNode, pResultFile);
+                break;
+            case EXPORT_VOLUME:
+                ExportVolume(pTestNode, pResultFile);
+                break;
+            case IMPORT_VOLUME:
+                ImportVolume(pTestNode, pResultFile);
+                break;
             default: break;
             }
         pTestNode = pTestNode->GetNextSibling();

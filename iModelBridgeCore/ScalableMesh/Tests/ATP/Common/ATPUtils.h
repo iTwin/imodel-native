@@ -35,6 +35,8 @@ typedef enum
     TEST_SDK_MESH,
     TEST_STREAMING,
     EXPORT_LINE,
+    EXPORT_VOLUME,
+    IMPORT_VOLUME,
     } TestType;
 
 

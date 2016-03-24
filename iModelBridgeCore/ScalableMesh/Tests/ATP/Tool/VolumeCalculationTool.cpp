@@ -29,7 +29,24 @@ StatusInt ComputeVolumeForAgenda(ElementAgendaR agenda, IScalableMeshPtr smPtr, 
             bsiTransform_multiplyDPoint3dArrayInPlace(&refToActiveTrf, &elemRange.low, 1);
             bsiTransform_multiplyDPoint3dArrayInPlace(&refToActiveTrf, &elemRange.high, 1);
             IScalableMeshATP::StoreInt(L"nTrianglesInCorridor", meshData->GetNumFacet());
-            volume = ComputeVolumeCutAndFill(smPtr->GetDTMInterface(), cut, fill, *meshData, elemRange, volumeMeshVector);
+            
+            //PolyfaceHeaderPtr dataMesh = PolyfaceHeader::Create
+            PolyfaceHeaderPtr meshDataTest;
+            PolyfaceQuery* poly = new PolyfaceQueryCarrier(3, false/*twoSided*/, meshData->GetFaceIndexCount(), meshData->GetPointCount(), meshData->GetPointCP(), meshData->GetFaceIndexCP());
+            //PolyfaceHeaderPtr meshData;
+            IFacetOptionsPtr options = IFacetOptions::Create();
+            options->SetMaxPerFace(3);
+            IPolyfaceConstructionPtr builder = IPolyfaceConstruction::New(*options);
+            builder->AddPolyface(*poly);
+            meshDataTest = builder->GetClientMeshPtr();
+
+            double area;
+            IDTMVolumeP volumeDTM = smPtr->GetDTMVolume();
+            if (volumeDTM == NULL) return 0;
+            volumeDTM->ComputeVolumeCutAndFill(cut, fill, area, *meshDataTest, elemRange, volumeMeshVector);
+            volume = cut - fill;
+
+            //volume = ComputeVolumeCutAndFill(smPtr->GetDTMInterface(), cut, fill, *meshData, elemRange, volumeMeshVector);
             timer = clock() - timer;
             float secs;
             secs = ((float)timer) / CLOCKS_PER_SEC;
@@ -104,6 +121,54 @@ StatusInt ComputeVolumeForAgenda(ElementAgendaR agenda, IScalableMeshPtr smPtr, 
         }
     return ERROR;
     }
+
+StatusInt ComputeVolumeForAgenda(BENTLEY_NAMESPACE_NAME::DRange3d& elemRange, PolyfaceHeaderPtr meshData, IScalableMeshPtr smPtr, double& cut, double& fill, double& volume, bvector<PolyfaceHeaderPtr>& volumeMeshVector)
+    {
+    clock_t timer = clock();
+
+
+    //Transform uorToMeter, meterToUor;
+    //GetTransformForPoints(uorToMeter, meterToUor);
+    //meshData->Transform(uorToMeter);
+    //bsiTransform_multiplyDPoint3dArrayInPlace(&uorToMeter, &elemRange.low, 1);
+    //bsiTransform_multiplyDPoint3dArrayInPlace(&uorToMeter, &elemRange.high, 1);
+    //Transform refToActiveTrf;
+    //GetFromModelRefToActiveTransform(refToActiveTrf, meshElement->GetModelRef());
+    //meshData->Transform(refToActiveTrf);
+    //bsiTransform_multiplyDPoint3dArrayInPlace(&refToActiveTrf, &elemRange.low, 1);
+    //bsiTransform_multiplyDPoint3dArrayInPlace(&refToActiveTrf, &elemRange.high, 1);
+    IScalableMeshATP::StoreInt(L"nTrianglesInCorridor", meshData->GetNumFacet());
+    //volume = ComputeVolumeCutAndFill(smPtr->GetDTMInterface(), cut, fill, *meshData, elemRange, volumeMeshVector);
+
+    double area;
+    IDTMVolumeP volumeDTM = smPtr->GetDTMVolume();
+    if (volumeDTM == NULL) return 0;
+    volumeDTM->ComputeVolumeCutAndFill(cut, fill, area, *meshData, elemRange, volumeMeshVector);
+    volume = cut - fill;
+
+    timer = clock() - timer;
+    float secs;
+    secs = ((float)timer) / CLOCKS_PER_SEC;
+    IScalableMeshATP::StoreDouble(L"volumeTime", secs);
+    return SUCCESS;
+    }
+
+/*double ComputeVolumeCutAndFill(DTMPtr smPtr, double& cut, double& fill, PolyfaceHeader& mesh/*, DRange3d& elemRange, bvector<PolyfaceHeaderPtr>& volumeMeshVector*//*)
+    {
+    double area;
+
+    //IScalableMeshPtr mrDTMPtr = (IScalableMesh*)smPtr.get();
+    //DTMPtr dtmP = dynamic_cast<BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*>(&*smPtr->GetDTMInterface());
+
+    //IDTMVolumeP volume = smPtr->GetDTMVolume();
+    IScalableMeshPtr mrDTMPtr = (IScalableMesh*)smPtr.get();
+    IDTMVolumeP volume = mrDTMPtr->GetDTMVolume();
+
+    if (volume == NULL) return 0;
+    //volume->ComputeCutFillVolume(cut, fill, area, mesh, elemRange, volumeMeshVector);
+    volume->ComputeCutFillVolume(&cut, &fill, &area, &mesh/*, elemRange, volumeMeshVector*//*);
+    return cut - fill;
+    }*/
 
 double ComputeVolumeCutAndFill(DTMPtr smPtr, double& cut, double& fill, PolyfaceHeaderPtr& meshGround, PolyfaceHeader& mesh, DRange3d& elemRange, bvector<PolyfaceHeaderPtr>& volumeMeshVector)
     {
