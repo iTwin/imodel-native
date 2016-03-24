@@ -165,7 +165,7 @@ Render::ImagePtr DgnTexture::ExtractImage() const
             break;
 
         case DgnTexture::Format::PNG:  
-            imageInfo.ReadImageFromPngBuffer(image->GetByteStreamR(), m_data.GetData(), m_data.GetSize());
+            imageInfo.ReadImageFromPngBuffer(*image, m_data.GetData(), m_data.GetSize());
             break;
 
         case DgnTexture::Format::JPEG:
@@ -176,7 +176,7 @@ Render::ImagePtr DgnTexture::ExtractImage() const
             imageInfo.m_isBGR = false;
             imageInfo.m_isTopDown = true;
             
-            imageInfo.ReadImageFromJpgBuffer(image->GetByteStreamR(), m_data.GetData(), m_data.GetSize());
+            imageInfo.ReadImageFromJpgBuffer(*image, m_data.GetData(), m_data.GetSize());
             break;
             }
     

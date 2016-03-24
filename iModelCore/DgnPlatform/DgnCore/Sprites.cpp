@@ -169,15 +169,12 @@ RgbaSpritePtr RgbaSprite::CreateFromPngBuffer(Byte const*inputBuffer, size_t num
 void RgbaSprite::PopulateRgbaSpriteFromPngBuffer(Byte const*inputBuffer, size_t numberBytes)
     {
     RgbImageInfo info;
-    if (BSISUCCESS != info.ReadImageFromPngBuffer(m_rgbaBuffer, inputBuffer, numberBytes) || !info.m_hasAlpha)
+    if (BSISUCCESS != info.ReadImageFromPngBuffer(m_image, inputBuffer, numberBytes) || !info.m_hasAlpha)
         {
         m_isLoaded = false;
-        m_rgbaBuffer.Clear();
+        m_image.Clear();
         return;
         }
-
-    m_size.x = (int)info.m_width;
-    m_size.y = (int)info.m_height;
     m_isLoaded = true;
     }
 
@@ -206,7 +203,7 @@ void NamedSprite::_LoadSprite()
 
     BeFileName pngPath;
 
-     if (T_HOST.GetIKnownLocationsAdmin()._GetSpriteContainer(pngPath, m_namespace.c_str(), m_spriteName.c_str()) != BSISUCCESS)
+    if (T_HOST.GetIKnownLocationsAdmin()._GetSpriteContainer(pngPath, m_namespace.c_str(), m_spriteName.c_str()) != BSISUCCESS)
         return;
 
     if (BeFileName::IsDirectory(pngPath.c_str()))
@@ -240,8 +237,7 @@ RgbaSprite::~RgbaSprite()
 RgbaSprite::RgbaSprite()
     {
     m_isLoaded = false;
-    m_size.x = m_size.y = 0;
     }
 
-Byte const* RgbaSprite::_GetRgbaDefinition() { _LoadSprite(); return m_rgbaBuffer.GetSize() > 0 ? m_rgbaBuffer.GetData() : nullptr; }
+Byte const* RgbaSprite::_GetRgbaDefinition() { _LoadSprite(); return m_image.GetByteStream().GetSize() > 0 ? m_image.GetByteStream().GetData() : nullptr; }
 

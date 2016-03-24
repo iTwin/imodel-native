@@ -241,14 +241,17 @@ struct Image : RefCounted<NonCopyableClass>
         }
 
 protected:
-    uint32_t   m_width;
-    uint32_t   m_height;
-    Format     m_format;
+    uint32_t   m_width = 0;
+    uint32_t   m_height = 0;
+    Format     m_format = Format::Rgba;
     ByteStream m_image;
 
 public:
+    Image() {}
     Image(uint32_t width, uint32_t height, Format format, uint8_t const* data=0, uint32_t size=0) : m_width(width), m_height(height), m_format(format), m_image(data, size) {}
     Image(uint32_t width, uint32_t height, Format format, ByteStream&& data) : m_width(width), m_height(height), m_format(format), m_image(std::move(data)) {}
+    void Clear() {m_image.Clear();}
+    void Initialize(uint32_t width, uint32_t height, Format format=Format::Rgba) {m_height=height; m_width=width; m_format=format; Clear();}
     uint32_t GetWidth() const {return m_width;}
     uint32_t GetHeight() const {return m_height;}
     Format GetFormat() const {return m_format;}
@@ -893,6 +896,8 @@ struct Graphic : RefCounted<NonCopyableClass>
         CreateParams(DgnViewportCP vp=nullptr, TransformCR placement=Transform::FromIdentity(), double pixelSize=0.0) : m_vp(vp), m_pixelSize(pixelSize), m_placement(placement) {}
     };
 
+    struct TriMeshArgs{int32_t m_numIndices; int32_t const* m_vertIndex; int32_t m_numPoints; FPoint3d const* m_points; FPoint3d const* m_normals; FPoint2d const* m_txtrUV; Texture* m_texture; int32_t m_flags;};
+
 protected:
     bool          m_isOpen = true;
     DgnViewportCP m_vp; //! Viewport this Graphic is valid for (Graphic is valid for any viewport if nullptr)
@@ -900,6 +905,7 @@ protected:
     double        m_minSize; //! Minimum pixel size this Graphic is valid for (Graphic is valid for all sizes if min and max are both 0.0)
     double        m_maxSize; //! Maximum pixel size this Graphic is valid for (Graphic is valid for all sizes if min and max are both 0.0)
     Transform     m_localToWorldTransform;
+    TextureCPtr   m_texture;
 
     virtual StatusInt _Close() {m_isOpen=false; return SUCCESS;}
     virtual bool _IsForDisplay() const {return false;}
@@ -921,11 +927,10 @@ protected:
     virtual void _AddSolidPrimitive(ISolidPrimitiveCR primitive) = 0;
     virtual void _AddBSplineSurface(MSBsplineSurfaceCR surface) = 0;
     virtual void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) = 0;
+    virtual void _AddTriMesh(TriMeshArgs const& args) = 0;
     virtual void _AddBody(ISolidKernelEntityCR, double pixelSize = 0.0) = 0;
     virtual void _AddTextString(TextStringCR text) = 0;
     virtual void _AddTextString2d(TextStringCR text, double zDepth) = 0;
-    virtual void _AddRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels) = 0;
-    virtual void _AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth) = 0;
     virtual void _AddTile(TextureCR tile, DPoint3dCP corners) = 0;
     virtual void _AddDgnOle(DgnOleDraw*) = 0;
     virtual void _AddPointCloud(PointCloudDraw* drawParams) = 0;
@@ -1037,9 +1042,10 @@ public:
     //! Draw a BSpline surface.
     void AddBSplineSurface(MSBsplineSurfaceCR surface) {_AddBSplineSurface(surface);}
 
-    //! @note Caller is expected to define texture id for illuminated meshed, SetTextureId.
     //! @remarks Wireframe fill display supported for non-illuminated meshes.
     void AddPolyface(PolyfaceQueryCR meshData, bool filled = false) {_AddPolyface(meshData, filled);}
+
+    void AddTriMesh(TriMeshArgs const& args) {_AddTriMesh(args);}
 
     //! Draw a BRep surface/solid entity from the solids kernel.
     void AddBody(ISolidKernelEntityCR entity, double pixelSize = 0.0) {_AddBody(entity, pixelSize);}
@@ -1109,10 +1115,6 @@ public:
 
         AddLineString2d(5, tmpPts, zDepth);
         }
-
-    //! Add raster
-    void AddRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels) {_AddRaster(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels);}
-    void AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth) {_AddRaster2d(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, zDepth);}
 
     //! Draw a 3D point cloud.
     //! @param[in] drawParams Object containing draw parameters.
@@ -1283,6 +1285,20 @@ public:
 };
 
 //=======================================================================================
+// @bsiclass                                                    Keith.Bentley   03/16
+//=======================================================================================
+struct System
+{
+    virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
+    virtual TexturePtr _GetTexture(DgnTextureId, DgnDbR) const = 0;
+    virtual GraphicPtr _CreateGraphic(Graphic::CreateParams const& params) const = 0;
+    virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) const = 0;
+
+    //N.B. _CreateTexture is called from multiple-threads implementer must ensure this is supported. If not non-shareable resource must be protected by locks.
+    virtual TexturePtr _CreateTexture(ImageCR, bool enableAlpha) const = 0;
+};
+
+//=======================================================================================
 //! A Render::Target is the renderer-specific factory for creating Render::Graphics.
 //! A Render:Target holds the current "scene", the current set of dynamic Graphics, and the current decorators.
 //! When frames are composed, all of those Graphics are rendered, as appropriate.
@@ -1294,6 +1310,7 @@ struct Target : RefCounted<NonCopyableClass>
 {
 protected:
     bool               m_abort;
+    System&            m_system;
     DevicePtr          m_device;
     ClipPrimitiveCPtr  m_activeVolume;
     GraphicListPtr     m_currentScene;
@@ -1303,21 +1320,14 @@ protected:
     BeAtomic<uint32_t> m_graphicsPerSecondScene;
     BeAtomic<uint32_t> m_graphicsPerSecondNonScene;
 
-    virtual GraphicPtr _CreateGraphic(Graphic::CreateParams const& params) = 0;
-    virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) = 0;
     virtual void _OnResized() {}
-    virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
-    virtual TexturePtr _GetTexture(DgnTextureId, DgnDbR) const = 0;
-
-    //N.B. CreateTileSection is called from multiple-threads implementer must ensure this is supported. If not non-shareable resource must be protected by locks.
-    virtual TexturePtr _CreateTileSection(ImageR, bool enableAlpha) const = 0;
 
     virtual void* _ResolveOverrides(OvrGraphicParamsCR) = 0;
     virtual Point2d _GetScreenOrigin() const = 0;
     virtual BSIRect _GetViewRect() const = 0;
     virtual DVec2d _GetDpiScale() const = 0;
 
-    DGNVIEW_EXPORT Target();
+    DGNVIEW_EXPORT Target(SystemR);
     DGNVIEW_EXPORT ~Target();
     DGNPLATFORM_EXPORT static void VerifyRenderThread();
 
@@ -1349,14 +1359,15 @@ public:
     Point2d GetScreenOrigin() const {return _GetScreenOrigin();}
     BSIRect GetViewRect() const {return _GetViewRect();}
     DVec2d GetDpiScale() const {return _GetDpiScale();}
-    GraphicPtr CreateGraphic(Graphic::CreateParams const& params) {return _CreateGraphic(params);}
-    GraphicPtr CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) {return _CreateSprite(sprite, location, xVec, transparency);}
     DeviceCP GetDevice() const {return m_device.get();}
     void OnResized() {_OnResized();}
     void* ResolveOverrides(OvrGraphicParamsCP ovr) {return ovr ? _ResolveOverrides(*ovr) : nullptr;}
-    MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return _GetMaterial(id, dgndb);}
-    TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return _GetTexture(id, dgndb);}
-    TexturePtr CreateTileSection(ImageR image, bool enableAlpha) const {return _CreateTileSection(image, enableAlpha);}
+    GraphicPtr CreateGraphic(Graphic::CreateParams const& params) {return m_system._CreateGraphic(params);}
+    GraphicPtr CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) {return m_system._CreateSprite(sprite, location, xVec, transparency);}
+    MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return m_system._GetMaterial(id, dgndb);}
+    TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return m_system._GetTexture(id, dgndb);}
+    TexturePtr CreateTexture(ImageR image, bool enableAlpha) const {return m_system._CreateTexture(image, enableAlpha);}
+    SystemR GetSystem() {return m_system;}
 
     uint32_t GetGraphicsPerSecondScene() const {return m_graphicsPerSecondScene.load();}
     uint32_t GetGraphicsPerSecondNonScene() const {return m_graphicsPerSecondNonScene.load();}

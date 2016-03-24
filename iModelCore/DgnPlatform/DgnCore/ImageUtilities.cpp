@@ -145,10 +145,11 @@ template<typename READER> static BentleyStatus readPngToBuffer(ByteStream& outPi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus RgbImageInfo::ReadImageFromPngBuffer(ByteStream& rgbaBuffer, Byte const*inputBuffer, size_t numberBytes)
+BentleyStatus RgbImageInfo::ReadImageFromPngBuffer(Render::Image& image, Byte const*inputBuffer, size_t numberBytes)
     {
+    image.Initialize(m_width, m_height);
     PngReadData pngData(inputBuffer, numberBytes);
-    return readPngToBuffer(rgbaBuffer, *this, pngData);
+    return readPngToBuffer(image.GetByteStreamR(), *this, pngData);
     }
 
 //---------------------------------------------------------------------------------------
@@ -357,12 +358,14 @@ BentleyStatus RgbImageInfo::WriteImageToJpgBuffer(bvector<uint8_t>& jpegData, By
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      10/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus RgbImageInfo::ReadImageFromJpgBuffer(ByteStream& rgbaBuffer, Byte const*inputBuffer, size_t inputBufferSize)
+BentleyStatus RgbImageInfo::ReadImageFromJpgBuffer(Render::Image& image, Byte const*inputBuffer, size_t inputBufferSize)
     {
     BeJpegDecompressor reader;
     if (SUCCESS != reader.ReadHeader(m_width, m_height, inputBuffer, inputBufferSize))
         return ERROR;
 
+    image.Initialize(m_width, m_height);
+    ByteStream& rgbaBuffer = image.GetByteStreamR();
     rgbaBuffer.Resize((uint32_t) (m_width*m_height*computeBytesPerPixel(*this)));
     return reader.Decompress(rgbaBuffer.GetDataP(), rgbaBuffer.GetSize(), inputBuffer, inputBufferSize, computePixelFormat(*this));
     }

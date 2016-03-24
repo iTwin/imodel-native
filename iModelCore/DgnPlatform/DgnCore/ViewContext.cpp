@@ -78,6 +78,8 @@ StatusInt ViewContext::_InitContextForView()
     m_worldToView = *m_viewport->GetWorldToViewMap();
     m_scanRangeValid = false;
 
+    m_frustumPlanes.Init(GetFrustum());
+
     SetDgnDb(m_viewport->GetViewController().GetDgnDb());
 
     return SUCCESS;
@@ -520,7 +522,7 @@ bool ViewContext::IsPointVisible(DPoint3dCR worldPoint, WantBoresite boresite, d
     DVec3d worldZVec;
     if (IsCameraOn())
         {
-        worldZVec.NormalizedDifference(worldPoint, m_viewport->GetCamera().GetEyePoint());
+        worldZVec.NormalizedDifference(worldPoint, m_viewport->GetCamera().GetEyePoint());              
         }
     else
         {
