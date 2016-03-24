@@ -71,7 +71,7 @@
     <RequiredRepository>PointoolsCommon</RequiredRepository>	
     <SubPart PartName="EncryptShaders_VS2012" />
     <SubPart PartName="Base" PartFile="Bentley" Repository="Bentley" />
-    <SubPart PartName="LicenseSDKVancouver92" PartFile="${SrcBsiCommon}CvsPartFiles\bsibin" Repository="Bsibin-Licensesdk_Vancouver92" />  
+    <SubPart PartName="LicenseSDK8.11" PartFile="${SrcBsiCommon}CvsPartFiles\bsibin" Repository="bsibin-licensesdk" />  
     <SubPart PartName="PointoolsLibsVortex_VS2012" />
     <Bindings>
       <VendorAPI Domain="PointoolsVortexAPI_DLL"/>
@@ -788,8 +788,10 @@
   <Part Name="PointoolsVortexAPI_DLL_VS2005" BMakeFile="PointoolsVortexAPI.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
     <RequiredRepository>PointoolsCommon</RequiredRepository>	
     <SubPart PartName="EncryptShaders_VS2005"/>
+    <SubPart PartName="Base" PartFile="Bentley" Repository="Bentley" />
+    <SubPart PartName="LicenseSDK8.11" PartFile="${SrcBsiCommon}CvsPartFiles\bsibin" Repository="bsibin-licensesdk" />  
     <SubPart PartName="PointoolsLibsVortex_2_VS2005" />
-    <Bindings>
+<Bindings>
       <VendorAPI Domain="PointoolsVortexAPI_DLL"/>
       <Libs> Delivery\PointoolsVortexAPI.lib </Libs>
       <Assemblies ProductDirectoryName="PointoolsAssemblies"> Delivery\PointoolsVortexAPI.dll </Assemblies>

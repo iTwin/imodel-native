@@ -78,11 +78,11 @@ PointoolsBentleyLicense::LicenseStatus PointoolsBentleyLicense::startLicenseDesk
 	
 																	// Check if product is activated
 	licenseConfigured	= getLicenseConfigured();
-
+    
 	__try 
 	{
 																	// Attempt to start license
-		licenseStatus	= LicenseClient_StartDesktopLicense3(getProductID(), getProductVersionStr(), LICCLIENT_DURATION_Desktop, getProductFeaturesStr(), NULL);
+		licenseStatus = LicenseClient_StartDesktopLicense(getProductID(), getProductVersionStr(), getProductFeaturesStr(), NULL, LICCLIENT_NULL_PROJECT_ID, &productUsageID);
 	}	
 	__except (EXCEPTION_EXECUTE_HANDLER) 
 	{
@@ -268,6 +268,10 @@ void PointoolsBentleyLicense::setProductFeatures(const ProductFeatures &features
 	productFeatures = features;
 }
 
+void PointoolsBentleyLicense::setProductUsageID(const ProductUsageID &usageID)
+    {
+    productUsageID = usageID;
+    }
 
 const PointoolsBentleyLicense::ProductFeatures &PointoolsBentleyLicense::getProductFeatures(void)
 {
@@ -284,6 +288,10 @@ const wchar_t *PointoolsBentleyLicense::getProductFeaturesStr(void)
 	return NULL;
 }
 
+const PointoolsBentleyLicense::ProductUsageID& PointoolsBentleyLicense::getProductUsageID(void)
+    {
+    return productUsageID;
+    }
 
 UINT32 PointoolsBentleyLicense::getLicenseConfigured(void)
 {
@@ -302,7 +310,7 @@ PointoolsBentleyLicense::LicenseStatus PointoolsBentleyLicense::getLicenseStatus
 {
 	__try 
 	{
-		return LicenseClient_GetStatus3(getProductID(), getProductFeaturesStr());
+		return LicenseClient_GetStatus(getProductID(), getProductFeaturesStr());
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER) 
 	{
@@ -327,10 +335,11 @@ PointoolsBentleyLicense::LicenseType PointoolsBentleyLicense::getLicenseType(voi
 int PointoolsBentleyLicense::getDaysUntilDisabled(void)
 {
 	UINT32	days;
+    UInt32  loginDaysRemaining = 0;
 
 	__try 
 	{
-		if(LicenseClient_GetDaysUntilDisabled3(&days, getProductID(), getProductFeaturesStr()) != BENTLEY_LICENSE_SUCCESS)
+		if(LicenseClient_GetDaysUntilDisabled(&days, &loginDaysRemaining, getProductID(), getProductFeaturesStr()) != BENTLEY_LICENSE_SUCCESS)
 		{
 			days = -1;
 		}

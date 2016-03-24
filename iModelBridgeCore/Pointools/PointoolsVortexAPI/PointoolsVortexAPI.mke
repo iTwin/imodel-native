@@ -517,7 +517,7 @@ DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 DLM_SPECIAL_LINKOPT     + -def:$(baseDir)api.def
 DLM_SPECIAL_LINKOPT     + -NODEFAULTLIB:LIBCMT
-LINKER_LIBRARIES_DELAYLOADED = $(ContextSubpartsLibs)$(stlibprefix)Bentley.liclib$(stlibext)
+LINKER_LIBRARIES_DELAYLOADED = $(ContextSubpartsLibs)$(stlibprefix)Bentley.liclib.10$(stlibext)
 
 ContextSubpartsStaticLibs = $(BuildContext)SubParts/StaticLibs/
 
@@ -539,7 +539,7 @@ LINKER_LIBRARIES     =  \
     shlwapi.lib\
     wsock32.lib\
     Ws2_32.lib\
-    $(ContextSubpartsLibs)$(stlibprefix)Bentley.liclib$(stlibext)\
+    $(ContextSubpartsLibs)$(stlibprefix)Bentley.liclib.10$(stlibext)\
 %if $(BUILD_TOOLSET) == "VC8"
     $(ContextSubpartsStaticLibs)$(stlibprefix)glew_VC8$(stlibext) \
     $(ContextSubpartsLibs)$(stlibprefix)wildmagic_VC8$(stlibext) \

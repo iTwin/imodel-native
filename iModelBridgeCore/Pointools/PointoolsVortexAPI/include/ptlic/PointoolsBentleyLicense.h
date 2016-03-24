@@ -30,6 +30,7 @@ public:
 	typedef pt::String								ProductName;
 	typedef	pt::String								ProductVersion;
 	typedef	pt::String								ProductFeatures;
+    typedef UsageId                                 ProductUsageID;
 
 	typedef std::pair<pt::String, pt::String>		LicenseDescriptionItem;
 	typedef std::vector<LicenseDescriptionItem>		LicenseDescriptionSet;
@@ -73,6 +74,7 @@ protected:
 	ProductID				productID;
 	ProductVersion			productVersion;
 	ProductFeatures			productFeatures;
+    ProductUsageID          productUsageID;
 
 	LicenseStatus			licenseStatus;
 
@@ -85,6 +87,7 @@ protected:
 	void					setProductID							(ProductID id);
 	void					setProductVersion						(const ProductVersion &version);
 	void					setProductFeatures						(const ProductFeatures &features);
+    void                    setProductUsageID                       (const ProductUsageID &usageID);
 
 	void					setToolsPath							(const ProductPath &path);
 
@@ -131,6 +134,7 @@ public:
 	const wchar_t		  *	getProductVersionStr					(void);
 	const ProductFeatures & getProductFeatures						(void);
 	const wchar_t		  *	getProductFeaturesStr					(void);
+    const ProductUsageID  & getProductUsageID                       (void);
 
 	const ProductPath	  &	getToolsPath							(void);	
 
