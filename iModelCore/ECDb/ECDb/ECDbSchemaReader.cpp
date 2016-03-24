@@ -7,6 +7,7 @@
 +-------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include "ECDbExpressionSymbolProvider.h"
+#include <limits>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -524,118 +525,155 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaFromDb(DbECSchemaEntry*& schemaEntry
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Context& ctx, ECClassId ecClassId) const
     {
-    const int kindIx = 0;
-    const int idIx = 1;
-    const int nameIx = 2;
-    const int displayLabelIx = 3;
-    const int descrIx = 4;
-    const int isReadonlyIx = 5;
-    const int primTypeIx = 6;
-    const int nonPrimTypeIx = 7;
-    const int extendedTypeIx = 8;
-    const int enumIx = 9;
-    const int minOccursIx = 10;
-    const int maxOccursIx = 11;
-    const int navPropDirectionIx = 12;
-
     struct PropReaderHelper
         {
-        static BentleyStatus PrepareStatement(CachedStatementPtr& stmt, ECDbCR ecdb, ECClassId classId)
+        struct RowInfo
             {
-            if (BE_SQLITE_OK != ecdb.GetCachedStatement(stmt, "SELECT Kind,Id,Name,DisplayLabel,Description,IsReadonly,PrimitiveType,NonPrimitiveType,ExtendedType,Enumeration,ArrayMinOccurs,ArrayMaxOccurs,NavigationPropertyDirection FROM ec_Property WHERE ClassId=? ORDER BY Ordinal"))
+            ECPropertyId m_id;
+            ECPropertyKind m_kind;
+            Utf8String m_name;
+            Utf8String m_displayLabel;
+            Utf8String m_description;
+            bool m_isReadonly = false;
+            int m_primType = -1;
+            ECClassId m_nonPrimTypeId;
+            Utf8String m_extendedTypeName;
+            ECEnumerationId m_enumId;
+            uint32_t m_arrayMinOccurs = 0;
+            uint32_t m_arrayMaxOccurs = std::numeric_limits<uint32_t>::max();
+            int m_navPropDirection = -1;
+            };
+
+        static BentleyStatus ReadRows(std::vector<RowInfo>& rows, ECDbCR ecdb, ECClassId classId)
+            {
+            const int idIx = 0;
+            const int kindIx = 1;
+            const int nameIx = 2;
+            const int displayLabelIx = 3;
+            const int descrIx = 4;
+            const int isReadonlyIx = 5;
+            const int primTypeIx = 6;
+            const int nonPrimTypeIx = 7;
+            const int extendedTypeIx = 8;
+            const int enumIx = 9;
+            const int minOccursIx = 10;
+            const int maxOccursIx = 11;
+            const int navPropDirectionIx = 12;
+
+            CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Id,Kind,Name,DisplayLabel,Description,IsReadonly,PrimitiveType,NonPrimitiveType,ExtendedType,Enumeration,ArrayMinOccurs,ArrayMaxOccurs,NavigationPropertyDirection FROM ec_Property WHERE ClassId=? ORDER BY Ordinal");
+            if (stmt == nullptr)
                 return ERROR;
 
             if (BE_SQLITE_OK != stmt->BindId(1, classId))
                 return ERROR;
 
+            while (BE_SQLITE_ROW == stmt->Step())
+                {
+                RowInfo rowInfo;
+                rowInfo.m_id = stmt->GetValueId<ECPropertyId>(idIx);
+                const ECPropertyKind kind = Enum::FromInt<ECPropertyKind>(stmt->GetValueInt(kindIx));
+                rowInfo.m_kind = kind;
+                rowInfo.m_name.assign(stmt->GetValueText(nameIx));
+                if (!stmt->IsColumnNull(displayLabelIx))
+                    rowInfo.m_displayLabel.assign(stmt->GetValueText(displayLabelIx));
+
+                if (!stmt->IsColumnNull(descrIx))
+                    rowInfo.m_description.assign(stmt->GetValueText(descrIx));
+
+                if (!stmt->IsColumnNull(isReadonlyIx))
+                    rowInfo.m_isReadonly = stmt->GetValueInt(isReadonlyIx) != 0;
+
+                if (stmt->IsColumnNull(primTypeIx))
+                    {
+                    if (kind == ECPropertyKind::Primitive || kind == ECPropertyKind::PrimitiveArray)
+                        {
+                        BeAssert(false && "PrimitiveType column must not be NULL for primitive and prim array property");
+                        return ERROR;
+                        }
+                    }
+                else
+                    rowInfo.m_primType = stmt->GetValueInt(primTypeIx);
+
+                if (stmt->IsColumnNull(nonPrimTypeIx))
+                    {
+                    if (kind == ECPropertyKind::Struct || kind == ECPropertyKind::StructArray || kind == ECPropertyKind::Navigation)
+                        {
+                        BeAssert(false && "NonPrimitiveType column must not be NULL for struct, struct array and navigation property");
+                        return ERROR;
+                        }
+                    }
+                else
+                    rowInfo.m_nonPrimTypeId = stmt->GetValueId<ECClassId>(nonPrimTypeIx);
+
+                if (!stmt->IsColumnNull(extendedTypeIx))
+                    rowInfo.m_extendedTypeName.assign(stmt->GetValueText(extendedTypeIx));
+
+                if (stmt->IsColumnNull(enumIx))
+                    {
+                    if (kind == ECPropertyKind::Enumeration)
+                        {
+                        BeAssert(false && "Enumeration column must not be NULL for enumeration property");
+                        return ERROR;
+                        }
+                    }
+                else
+                    rowInfo.m_enumId = stmt->GetValueId<ECEnumerationId>(enumIx);
+                    
+
+                if (stmt->IsColumnNull(minOccursIx) || stmt->IsColumnNull(maxOccursIx))
+                    {
+                    if (kind == ECPropertyKind::PrimitiveArray || kind == ECPropertyKind::StructArray)
+                        {
+                        BeAssert(false && "ArrayMinOccurs and ArrayMaxOccurs columns must not be NULL for array property");
+                        return ERROR;
+                        }
+                    }
+                else
+                    {
+                    rowInfo.m_arrayMinOccurs = (uint32_t) stmt->GetValueInt(minOccursIx);
+                    rowInfo.m_arrayMaxOccurs = (uint32_t) stmt->GetValueInt(maxOccursIx);
+                    }
+
+                if (stmt->IsColumnNull(navPropDirectionIx))
+                    {
+                    if (kind == ECPropertyKind::Navigation)
+                        {
+                        BeAssert(false && "NavigationPropertyDirection column must not be NULL for navigation property");
+                        return ERROR;
+                        }
+                    }
+                else
+                    rowInfo.m_navPropDirection = stmt->GetValueInt(navPropDirectionIx);
+                    
+
+                rows.push_back(rowInfo);
+                }
+
             return SUCCESS;
             }
 
-        //!@param[out] extendedType The value is only valid until the next call to Step!
-        static BentleyStatus TryReadPrimitiveType(PrimitiveType& primType, Utf8CP& extendedType, CachedStatement& stmt)
-            {
-            if (stmt.IsColumnNull(primTypeIx))
-                return ERROR;
-
-            primType = (PrimitiveType) stmt.GetValueInt(primTypeIx);
-
-            if (!stmt.IsColumnNull(extendedTypeIx))
-                extendedType = stmt.GetValueText(extendedTypeIx);
-
-            return SUCCESS;
-            }
-
-        static BentleyStatus TryReadNonPrimitiveType(ECClassP& nonPrimType, ECDbSchemaReader const& schemaReader, Context& ctx, CachedStatement& stmt)
-            {
-            if (stmt.IsColumnNull(nonPrimTypeIx))
-                return ERROR;
-
-            const ECClassId nonPrimTypeId = stmt.GetValueId<ECClassId>(nonPrimTypeIx);
-            BeAssert(nonPrimTypeId.IsValid());
-            nonPrimType = schemaReader.GetECClass(ctx, nonPrimTypeId);
-            return nonPrimType != nullptr ? SUCCESS : ERROR;
-            }
-
-        //!@param[out] extendedType The value is only valid until the next call to Step!
-        static BentleyStatus TryReadEnumeration(ECEnumerationP& enumeration, Utf8CP& extendedType, ECDbSchemaReader const& schemaReader, Context& ctx, CachedStatement& stmt)
-            {
-            if (stmt.IsColumnNull(enumIx))
-                return ERROR;
-
-            const ECEnumerationId enumTypeId = stmt.GetValueId<ECEnumerationId>(enumIx);
-            if (!stmt.IsColumnNull(extendedTypeIx))
-                extendedType = stmt.GetValueText(extendedTypeIx);
-
-            return schemaReader.ReadECEnumeration(enumeration, ctx, enumTypeId);
-            }
-
-        static BentleyStatus TryReadArrayConstraints(uint32_t& minOccurs, uint32_t& maxOccurs, CachedStatement& stmt)
-            {
-            if (stmt.IsColumnNull(minOccursIx) || stmt.IsColumnNull(maxOccursIx))
-                return ERROR;
-
-            minOccurs = (uint32_t) stmt.GetValueInt(minOccursIx);
-            maxOccurs = (uint32_t) stmt.GetValueInt(maxOccursIx);
-            return SUCCESS;
-            }
         };
 
-    CachedStatementPtr stmt = nullptr;
-    if (SUCCESS != PropReaderHelper::PrepareStatement(stmt, m_db, ecClassId))
+    std::vector<PropReaderHelper::RowInfo> rowInfos;
+    if (SUCCESS != PropReaderHelper::ReadRows(rowInfos, m_db, ecClassId))
         return ERROR;
 
-    while (BE_SQLITE_ROW == stmt->Step())
+    for (PropReaderHelper::RowInfo const& rowInfo : rowInfos)
         {
-        const ECPropertyKind kind = Enum::FromInt<ECPropertyKind>(stmt->GetValueInt(kindIx));
-        const ECPropertyId id = stmt->GetValueId<ECPropertyId>(idIx);
-        Utf8CP propName = stmt->GetValueText(nameIx);
-
-        Utf8CP displayLabel = stmt->IsColumnNull(displayLabelIx) ? nullptr : stmt->GetValueText(displayLabelIx);
-        Utf8CP description = stmt->IsColumnNull(descrIx) ? nullptr : stmt->GetValueText(descrIx);
-        const bool isReadonly = stmt->IsColumnNull(isReadonlyIx) ? false : stmt->GetValueInt(isReadonlyIx) != 0;
-
         ECPropertyP prop = nullptr;
-        switch (kind)
+        switch (rowInfo.m_kind)
             {
                 case ECPropertyKind::Primitive:
                 {
-                PrimitiveType primType;
-                
-                Utf8CP extendedType = nullptr;
-
-                if (SUCCESS != PropReaderHelper::TryReadPrimitiveType(primType, extendedType, *stmt))
-                    {
-                    BeAssert(false && "PrimitiveType column is not expected to be NULL for primitive property");
-                    return ERROR;
-                    }
+                BeAssert(rowInfo.m_primType >= 0);
 
                 PrimitiveECPropertyP primProp = nullptr;
-                if (ECObjectsStatus::Success != ecClass->CreatePrimitiveProperty(primProp, propName, primType))
+                if (ECObjectsStatus::Success != ecClass->CreatePrimitiveProperty(primProp, rowInfo.m_name, (PrimitiveType) rowInfo.m_primType))
                     return ERROR;
 
-                if (!Utf8String::IsNullOrEmpty(extendedType))
+                if (!rowInfo.m_extendedTypeName.empty())
                     {
-                    if (ECObjectsStatus::Success != primProp->SetExtendedTypeName(extendedType))
+                    if (ECObjectsStatus::Success != primProp->SetExtendedTypeName(rowInfo.m_extendedTypeName.c_str()))
                         return ERROR;
                     }
 
@@ -645,21 +683,19 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
 
                 case ECPropertyKind::Enumeration:
                 {
+                BeAssert(rowInfo.m_enumId.IsValid());
                 ECEnumerationP ecenum = nullptr;
-                Utf8CP extendedType = nullptr;
-                if (SUCCESS != PropReaderHelper::TryReadEnumeration(ecenum, extendedType, *this, ctx, *stmt))
-                    {
-                    BeAssert(false && "Enumeration column is not expected to be NULL for property using an ECEnumeration");
+
+                if (SUCCESS != ReadECEnumeration(ecenum, ctx, rowInfo.m_enumId))
                     return ERROR;
-                    }
 
                 PrimitiveECPropertyP primProp = nullptr;
-                if (ECObjectsStatus::Success != ecClass->CreateEnumerationProperty(primProp, propName, *ecenum))
+                if (ECObjectsStatus::Success != ecClass->CreateEnumerationProperty(primProp, rowInfo.m_name, *ecenum))
                     return ERROR;
 
-                if (!Utf8String::IsNullOrEmpty(extendedType))
+                if (!rowInfo.m_extendedTypeName.empty())
                     {
-                    if (ECObjectsStatus::Success != primProp->SetExtendedTypeName(extendedType))
+                    if (ECObjectsStatus::Success != primProp->SetExtendedTypeName(rowInfo.m_extendedTypeName.c_str()))
                         return ERROR;
                     }
 
@@ -669,12 +705,11 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
 
                 case ECPropertyKind::Struct:
                 {
-                ECClassP structClassRaw = nullptr;
-                if (SUCCESS != PropReaderHelper::TryReadNonPrimitiveType(structClassRaw, *this, ctx, *stmt))
-                    {
-                    BeAssert(false && "NonPrimitiveType column is not expected to be NULL for struct property");
+                BeAssert(rowInfo.m_nonPrimTypeId.IsValid());
+
+                ECClassCP structClassRaw = GetECClass(ctx, rowInfo.m_nonPrimTypeId);
+                if (structClassRaw == nullptr)
                     return ERROR;
-                    }
 
                 ECStructClassCP structClass = structClassRaw->GetStructClassCP();
                 if (nullptr == structClass)
@@ -684,7 +719,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
                     }
 
                 StructECPropertyP structProp = nullptr;
-                if (ECObjectsStatus::Success != ecClass->CreateStructProperty(structProp, propName, *structClass))
+                if (ECObjectsStatus::Success != ecClass->CreateStructProperty(structProp, rowInfo.m_name, *structClass))
                     return ERROR;
 
                 prop = structProp;
@@ -693,33 +728,22 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
 
                 case ECPropertyKind::PrimitiveArray:
                 {
-                PrimitiveType primType;
-                Utf8CP extendedType = nullptr;
-                if (SUCCESS != PropReaderHelper::TryReadPrimitiveType(primType, extendedType, *stmt))
-                    {
-                    BeAssert(false && "PrimitiveType column is not expected to be NULL for primitive array property");
-                    return ERROR;
-                    }
+                BeAssert(rowInfo.m_primType >= 0);
+
+                PrimitiveType primType = (PrimitiveType) rowInfo.m_primType;
 
                 ArrayECPropertyP arrayProp = nullptr;
-                if (ECObjectsStatus::Success != ecClass->CreateArrayProperty(arrayProp, propName, primType))
+                if (ECObjectsStatus::Success != ecClass->CreateArrayProperty(arrayProp, rowInfo.m_name, primType))
                     return ERROR;
 
-                if (!Utf8String::IsNullOrEmpty(extendedType))
+                if (!rowInfo.m_extendedTypeName.empty())
                     {
-                    if (ECObjectsStatus::Success != arrayProp->SetExtendedTypeName(extendedType))
+                    if (ECObjectsStatus::Success != arrayProp->SetExtendedTypeName(rowInfo.m_extendedTypeName.c_str()))
                         return ERROR;
                     }
 
-                uint32_t minOccurs, maxOccurs;
-                if (SUCCESS != PropReaderHelper::TryReadArrayConstraints(minOccurs, maxOccurs, *stmt))
-                    {
-                    BeAssert(false && "MinOccurs and MaxOccurs columns are not expected to be NULL for array property");
-                    return ERROR;
-                    }
-
-                arrayProp->SetMinOccurs(minOccurs);
-                arrayProp->SetMaxOccurs(maxOccurs);
+                arrayProp->SetMinOccurs(rowInfo.m_arrayMinOccurs);
+                arrayProp->SetMaxOccurs(rowInfo.m_arrayMaxOccurs);
 
                 prop = arrayProp;
                 break;
@@ -727,12 +751,10 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
 
                 case ECPropertyKind::StructArray:
                 {
-                ECClassP structClassRaw = nullptr;
-                if (SUCCESS != PropReaderHelper::TryReadNonPrimitiveType(structClassRaw, *this, ctx, *stmt))
-                    {
-                    BeAssert(false && "NonPrimitiveType column is not expected to be NULL for struct array property");
+                BeAssert(rowInfo.m_nonPrimTypeId.IsValid());
+                ECClassCP structClassRaw = GetECClass(ctx, rowInfo.m_nonPrimTypeId);
+                if (structClassRaw == nullptr)
                     return ERROR;
-                    }
 
                 ECStructClassCP structClass = structClassRaw->GetStructClassCP();
                 if (nullptr == structClass)
@@ -742,38 +764,29 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
                     }
 
                 StructArrayECPropertyP arrayProp = nullptr;
-                if (ECObjectsStatus::Success != ecClass->CreateStructArrayProperty(arrayProp, propName, structClass))
+                if (ECObjectsStatus::Success != ecClass->CreateStructArrayProperty(arrayProp, rowInfo.m_name, structClass))
                     return ERROR;
 
-                uint32_t minOccurs, maxOccurs;
-                if (SUCCESS != PropReaderHelper::TryReadArrayConstraints(minOccurs, maxOccurs, *stmt))
-                    {
-                    BeAssert(false && "MinOccurs and MaxOccurs columns are not expected to be NULL for array property");
-                    return ERROR;
-                    }
-
-                arrayProp->SetMinOccurs(minOccurs);
-                arrayProp->SetMaxOccurs(maxOccurs);
+                arrayProp->SetMinOccurs(rowInfo.m_arrayMinOccurs);
+                arrayProp->SetMaxOccurs(rowInfo.m_arrayMaxOccurs);
 
                 prop = arrayProp;
                 break;
                 }
-                
+
                 case ECPropertyKind::Navigation:
                 {
                 BeAssert(ecClass->IsEntityClass());
 
-                ECClassP relClassRaw = nullptr;
-                if (SUCCESS != PropReaderHelper::TryReadNonPrimitiveType(relClassRaw, *this, ctx, *stmt))
-                    {
-                    BeAssert(false && "NonPrimitiveType column is not expected to be NULL for navigation property");
+                BeAssert(rowInfo.m_nonPrimTypeId.IsValid());
+                ECClassCP relClassRaw = GetECClass(ctx, rowInfo.m_nonPrimTypeId);
+                if (relClassRaw == nullptr)
                     return ERROR;
-                    }
 
                 BeAssert(relClassRaw->IsRelationshipClass());
-                ECRelatedInstanceDirection direction = stmt->IsColumnNull(navPropDirectionIx) ? ECRelatedInstanceDirection::Forward : (ECRelatedInstanceDirection) stmt->GetValueInt(navPropDirectionIx);
+                ECRelatedInstanceDirection direction = rowInfo.m_navPropDirection < 0 ? ECRelatedInstanceDirection::Forward : (ECRelatedInstanceDirection) rowInfo.m_navPropDirection;
                 NavigationECPropertyP navProp = nullptr;
-                if (ECObjectsStatus::Success != ecClass->GetEntityClassP()->CreateNavigationProperty(navProp, propName, *relClassRaw->GetRelationshipClassCP(), direction, PrimitiveType::PRIMITIVETYPE_Long, false))
+                if (ECObjectsStatus::Success != ecClass->GetEntityClassP()->CreateNavigationProperty(navProp, rowInfo.m_name, *relClassRaw->GetRelationshipClassCP(), direction, PrimitiveType::PRIMITIVETYPE_Long, false))
                     return ERROR;
 
                 //keep track of nav prop as we need to validate them when everything else is loaded
@@ -785,22 +798,26 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
                 default:
                     BeAssert(false);
                     return ERROR;
+
             }
 
         BeAssert(prop != nullptr);
-        prop->SetId(id);
-        prop->SetIsReadOnly(isReadonly);
-        prop->SetDescription(description);
-        if (displayLabel != nullptr)
-            prop->SetDisplayLabel(displayLabel);
+        prop->SetId(rowInfo.m_id);
+        prop->SetIsReadOnly(rowInfo.m_isReadonly);
+        if (!rowInfo.m_description.empty())
+            prop->SetDescription(rowInfo.m_description);
 
-        if (SUCCESS != LoadCAFromDb(*prop, ctx, ECContainerId(id), ECContainerType::Property))
+        if (!rowInfo.m_displayLabel.empty())
+            prop->SetDisplayLabel(rowInfo.m_displayLabel);
+
+        if (SUCCESS != LoadCAFromDb(*prop, ctx, ECContainerId(rowInfo.m_id), ECContainerType::Property))
             return ERROR;
 
         // For ECDb symbol provider ensure the calculated property specification is created (must do that after
         // custom attributes are loaded)
         if (prop->IsCalculated())
-            prop->GetCalculatedPropertySpecification(); 
+            prop->GetCalculatedPropertySpecification();
+
         }
 
     return SUCCESS;
