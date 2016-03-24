@@ -302,7 +302,7 @@ struct WPrintfString : WString
     //! Construct a WString from a format string and a va_list 
     BENTLEYDLL_EXPORT WPrintfString(WCharCP format, va_list);
 
-    operator WCharCP(){return c_str();}
+    //operator WCharCP(){return c_str();}
 };
 
 //=======================================================================================
@@ -487,7 +487,7 @@ struct Utf8PrintfString : Utf8String
 {
     BENTLEYDLL_EXPORT explicit Utf8PrintfString (Utf8CP format, ...);
     BENTLEYDLL_EXPORT Utf8PrintfString(Utf8CP format, va_list);
-    operator Utf8CP(){return c_str();}
+    //operator Utf8CP(){return c_str();}
 };
 
 //! A bvector of WString objects, with allocations handled by the Bentley allocator (so it can be passed across DLLs targeting different C runtimes).

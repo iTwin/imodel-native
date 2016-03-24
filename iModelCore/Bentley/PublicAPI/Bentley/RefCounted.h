@@ -41,7 +41,8 @@ public:
 
 // You can use this macro to implement IRefCounted directly on your class.
 // You should normally make your class non-copyable. If not, you must define a copy constructor and assignment operator, as shown in the RefCounted template below.
-// Warning: Release reads and decrements the value of m_refCount atomically. It must not use member variables after that since the object may be deleted on another thread.
+// Warning: the Release method implementation decreases the value of m_refCount atomically and must not use any member variables after that - other
+// threads see the decreased value and can potentially delete the object.
 #define DEFINE_BENTLEY_REF_COUNTED_MEMBERS              \
 private:                                                \
     mutable BeAtomic<uint32_t> m_refCount;              \
