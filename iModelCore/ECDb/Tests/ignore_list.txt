@@ -26,8 +26,7 @@ JoinedTableECDbMapStrategyTests.PolymorphicRelationshipWithStandAloneClass
 #TFS 368922
 ECDbMappingTestFixture.RelationshipWithAbstractConstraintClassAndNoSubclasses
 
-#Crashes in DgnDb0601Dev -> Hassan
-ECSqlInsertTestFramework.MiscTests
+#TFS 388756
 ECSqlSelectTestFramework.StructTests
 
 #TFS 383266
