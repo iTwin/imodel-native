@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECDbSchemaEditor.h $
+|     $Source: ECDb/ECSchemaComparer.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |

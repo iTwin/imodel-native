@@ -646,7 +646,6 @@ BentleyStatus SingleColumnPropertyMap::_Load(ECDbClassMapInfo const& classMapInf
     ECDbPropertyMapInfo const* info = classMapInfo.FindPropertyMap(GetRoot().GetProperty().GetId(), GetPropertyAccessString());
     if (info == nullptr)
         {
-        BeAssert(false && "Failed to read back property map");
         return ERROR;
         }
 

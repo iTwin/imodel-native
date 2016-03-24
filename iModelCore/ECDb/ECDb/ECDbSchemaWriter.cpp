@@ -109,13 +109,13 @@ BentleyStatus ECDbSchemaWriter::DeleteCAEntry(ECClassId ecClassId, ECContainerId
     if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "DELETE FROM ec_CustomAttribute WHERE ContainerId = ? AND ContainerType = ? AND ClassId = ?"))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindInt64(1, containerId))
+    if (BE_SQLITE_OK != stmt->BindInt64(1, containerId.GetValue()))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindInt(2, Enum::ToInt(containerType)))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindInt64(3, ecClassId))
+    if (BE_SQLITE_OK != stmt->BindInt64(3, ecClassId.GetValue()))
         return ERROR;
 
     if (stmt->Step() != BE_SQLITE_DONE)
@@ -173,7 +173,7 @@ BentleyStatus ECDbSchemaWriter::UpdateProperty(ECPropertyChange& propertyChange,
         return SUCCESS;
 
     auto propertyId = ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema(m_ecdb, newProperty);
-    if (propertyId == 0LL)
+    if (!propertyId.IsValid())
         {
         BeAssert(false && "Failed to resolve ecclass id");
         return ERROR;
@@ -269,7 +269,7 @@ BentleyStatus ECDbSchemaWriter::UpdateProperty(ECPropertyChange& propertyChange,
         updater.Set("Description", propertyChange.GetDescription().GetNew().Value());
         }
 
-    updater.Where("Id", propertyId);
+    updater.Where("Id", propertyId.GetValue());
     if (updater.Apply(m_ecdb) != SUCCESS)
         return ERROR;
 
@@ -387,7 +387,7 @@ BentleyStatus ECDbSchemaWriter::UpdateClass(ECClassChange& classChange, ECClassC
         return SUCCESS;
 
     auto classId = ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema(m_ecdb, newClass);
-    if (classId == 0LL)
+    if (!classId.IsValid())
         {
         BeAssert(false && "Failed to resolve ecclass id");
         return ERROR;
@@ -466,7 +466,7 @@ BentleyStatus ECDbSchemaWriter::UpdateClass(ECClassChange& classChange, ECClassC
                 return ERROR;
         }
 
-    updater.Where("Id", classId);
+    updater.Where("Id", classId.GetValue());
     if (updater.Apply(m_ecdb) != SUCCESS)
         return ERROR;
 
@@ -548,7 +548,7 @@ BentleyStatus ECDbSchemaWriter::UpdateSchema(ECSchemaChange& schemaChange, ECSch
         return SUCCESS;
     
     auto schemaId =  ECDbSchemaManager::GetSchemaIdForECSchemaFromDuplicateECSchema(m_ecdb, newSchema);
-    if (schemaId == 0LL)
+    if (!schemaId.IsValid())
         {
         BeAssert(false && "Failed to resolve ecshema id");
         return ERROR;
@@ -619,7 +619,7 @@ BentleyStatus ECDbSchemaWriter::UpdateSchema(ECSchemaChange& schemaChange, ECSch
         updater.Set("NamespacePrefix", schemaChange.GetNamespacePrefix().GetNew().Value());
         }
 
-    updater.Where("Id", schemaId);//this could even be on name
+    updater.Where("Id", schemaId.GetValue());//this could even be on name
     if (updater.Apply(m_ecdb) != SUCCESS)
         return ERROR;
 
