@@ -6,27 +6,14 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
 //__PUBLISH_SECTION_START__
 
-#include <Bentley/Bentley.h>
-#include <ECDb/ECDbTypes.h>
-#include <ECDb/ECDbApi.h>
-#include <ECObjects/ECSchema.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 
-#include <ThreeMxSchema/ThreeMxSchemaCommon.h>
+#define BEGIN_BENTLEY_THREEMX_SCHEMA_NAMESPACE       BEGIN_BENTLEY_NAMESPACE namespace ThreeMxSchema {
+#define END_BENTLEY_THREEMX_SCHEMA_NAMESPACE         } END_BENTLEY_NAMESPACE
+#define USING_NAMESPACE_BENTLEY_THREEMX_SCHEMA       using namespace BentleyApi::ThreeMxSchema;
 
-//-----------------------------------------------------------------------------------------
-// ECSchema macros
-//-----------------------------------------------------------------------------------------
-#define BENTLEY_THREEMX_SCHEMA_NAME                      "ThreeMx"
-#define BENTLEY_THREEMX_SCHEMA_PATH                      L"ECSchemas/Domain/ThreeMx.01.00.ecschema.xml"
-#define THREEMX_SCHEMA(className)                        BENTLEY_THREEMX_SCHEMA_NAME "." className
-
-//-----------------------------------------------------------------------------------------
-// Include from PublicApi
-//-----------------------------------------------------------------------------------------
-#include "ThreeMxSchemaCommon.h"
-#include "ThreeMxDomain.h"
-
+#define BENTLEY_THREEMX_SCHEMA_NAME "ThreeMx"
+#define BENTLEY_THREEMX_SCHEMA_PATH L"ECSchemas/Domain/ThreeMx.01.00.ecschema.xml"
+#define THREEMX_SCHEMA(className)   BENTLEY_THREEMX_SCHEMA_NAME "." className

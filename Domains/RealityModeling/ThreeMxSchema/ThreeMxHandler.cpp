@@ -7,8 +7,18 @@
 +--------------------------------------------------------------------------------------*/
 #include "ThreeMxSchemaInternal.h"
 
+DOMAIN_DEFINE_MEMBERS(ThreeMxDomain)
+
 HANDLER_DEFINE_MEMBERS(ThreeMxModelHandler)
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                   Ray.Bentley       09/2015
+//-----------------------------------------------------------------------------------------
+ThreeMxDomain::ThreeMxDomain() : DgnDomain(BENTLEY_THREEMX_SCHEMA_NAME, "3MX Domain", 1) 
+    {
+    RegisterHandler(ThreeMxModelHandler::GetHandler());
+    }
+ 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //========================================================================================
 // @bsiclass                                                        Ray.Bentley     09/2015
@@ -57,14 +67,14 @@ static void Schedule(ThreeMxModelR model, ViewContextR viewContext)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-MRMeshScenePtr ThreeMxModel::ReadScene(BeFileNameCR fileName, DgnDbR db) 
+MRMeshScenePtr ThreeMxModel::ReadScene(BeFileNameCR fileName, DgnDbR db, SystemP system) 
     {
     S3SceneInfo sceneInfo;
     if (SUCCESS != sceneInfo.Read3MX(fileName))
         return nullptr;
 
     MRMeshScenePtr scene = new MRMeshScene(db, sceneInfo, fileName);
-    return SUCCESS==scene->Load(sceneInfo) ? scene : nullptr;
+    return SUCCESS==scene->Load(sceneInfo, system) ? scene : nullptr;
     }
 
 //----------------------------------------------------------------------------------------
@@ -80,7 +90,7 @@ DgnModelId ThreeMxModelHandler::CreateModel(DgnDbR db, Utf8CP modelName, Utf8CP 
     if (SUCCESS != status)
         return DgnModelId();
 
-    MRMeshScenePtr scene = ThreeMxModel::ReadScene(fileName, db);
+    MRMeshScenePtr scene = ThreeMxModel::ReadScene(fileName, db, nullptr);
     if (!scene.IsValid())
         return DgnModelId();
 

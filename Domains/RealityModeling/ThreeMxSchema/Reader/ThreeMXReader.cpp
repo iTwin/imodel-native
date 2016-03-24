@@ -145,9 +145,8 @@ static uint32_t ctmReadFunc(void* buf, uint32_t count, void* userData)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BaseMeshNode::Read3MXB(MxStreamBuffer& in)
+BentleyStatus MRMeshNode::Read3MXB(MxStreamBuffer& in)
     {
-    _Clear();
     bmap<Utf8String, int>  textureIds;
     bmap<Utf8String, int>  nodeIds;
     bmap<Utf8String, Utf8String>  geometryNodeCorrespondence;
@@ -208,7 +207,7 @@ BentleyStatus BaseMeshNode::Read3MXB(MxStreamBuffer& in)
             for (size_t i = 0; i < nodeResources.size(); i++){
                 geometryNodeCorrespondence[nodeResources[i]] = nodeName;
             }
-        _PushNode(nodeInfo);
+        PushNode(nodeInfo);
         }
 
     Utf8String resourceType;
@@ -236,11 +235,10 @@ BentleyStatus BaseMeshNode::Read3MXB(MxStreamBuffer& in)
                 if (!in.Advance(resourceSize))
                     {
                     LOG_ERROR("Cannot read child data");
-                    _Clear();
                     return ERROR;
                     }
 
-                _PushJpegTexture(buffer, resourceSize);
+                m_jpegTextures.push_back(ByteStream(buffer, resourceSize));
                 textureIds[resourceName] = textureCount++;
                 }
             else if (resourceType == "geometryBuffer" && resourceFormat == "ctm"
@@ -249,14 +247,12 @@ BentleyStatus BaseMeshNode::Read3MXB(MxStreamBuffer& in)
                 if (geometryNodeCorrespondence.find(resourceName) == geometryNodeCorrespondence.end())
                     {
                     LOG_ERROR("Geometry is not referenced by any node");
-                    _Clear();
                     return ERROR;
                     }
                 Utf8String nodeName = geometryNodeCorrespondence[resourceName];
                 if (nodeIds.find(nodeName) == nodeIds.end())
                     {
                     LOG_ERROR("Node name is unknown");
-                    _Clear();
                     return ERROR;
                     }
                 int nodeId = nodeIds[nodeName];
@@ -266,7 +262,6 @@ BentleyStatus BaseMeshNode::Read3MXB(MxStreamBuffer& in)
                 if (ctmGetError(context) != CTM_NONE)
                     {
                     LOG_ERROR(Utf8String("CTM context error: ") + ctmErrorString(ctmGetError(context)));
-                    _Clear();
                     return ERROR;
                     }
 
@@ -275,7 +270,6 @@ BentleyStatus BaseMeshNode::Read3MXB(MxStreamBuffer& in)
                 if (ctmGetError(context) != CTM_NONE)
                     {
                     LOG_ERROR(Utf8String("CTM read error: ") + ctmErrorString(ctmGetError(context)));
-                    _Clear();
                     return ERROR;
                     }
 
@@ -285,12 +279,12 @@ BentleyStatus BaseMeshNode::Read3MXB(MxStreamBuffer& in)
                 float* normals = (ctmGetInteger(context, CTM_HAS_NORMALS) == CTM_TRUE) ? (float*)ctmGetFloatArray(context, CTM_NORMALS) : NULL;
 
                 unsigned int nbTriangles = ctmGetInteger(context, CTM_TRIANGLE_COUNT);
-                int* indices = (int*)ctmGetIntegerArray(context, CTM_INDICES);
+                uint32_t* indices = (uint32_t*)ctmGetIntegerArray(context, CTM_INDICES);
 
                 //Texture
                 unsigned int nbTexCoordsArrays = ctmGetInteger(context, CTM_UV_MAP_COUNT);
                 float* textureCoordinates = NULL;
-                int textureId = -1;
+                int textureIndex = -1;
                 if (nbTexCoordsArrays == 1)
                     {
                     Utf8String texName = childPt.get("texture", Json::Value("")).asCString();
@@ -301,35 +295,31 @@ BentleyStatus BaseMeshNode::Read3MXB(MxStreamBuffer& in)
                             {
                             LOG_ERROR(Utf8String("Bad texture name ") + texName);
                             ctmFreeContext(context);
-                            _Clear();
                             return ERROR;
                             }
-                        textureId = textureIds[texName];
+                        textureIndex = textureIds[texName];
                         }
                     }
-                _AddGeometry(nodeId, nbVertices, positions, normals, nbTriangles, indices, textureCoordinates, textureId);
+                AddGeometry(nodeId, nbVertices, (FPoint3d const*) positions, (FPoint3d const*) normals, nbTriangles, indices, (FPoint2d const*) textureCoordinates, textureIndex, m_system);
                 ctmFreeContext(context);
                 }//end CTM
             else 
                 {
                 LOG_ERROR("Bad children definition: resourceType = " + resourceType + "; resourceFormat = " + resourceFormat + "; resourceName = " + resourceName);
-                _Clear();
                 return (BentleyStatus)ERROR;
                 }
             offset += resourceSize;
             }
         }
-    return (BentleyStatus)SUCCESS;
+    return SUCCESS;
     }
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BaseMeshNode::Read3MXB(BeFileNameCR filename)
+BentleyStatus MRMeshNode::Read3MXB(BeFileNameCR filename)
     {
-    _Clear();
-
-    _SetDirectory(BeFileName(BeFileName::DevAndDir, filename.c_str()));
+    SetDirectory(BeFileName(BeFileName::DevAndDir, filename.c_str()));
     BeFile file;
     if (BeFileStatus::Success != file.Open(filename.c_str(), BeFileAccess::Read))
         {

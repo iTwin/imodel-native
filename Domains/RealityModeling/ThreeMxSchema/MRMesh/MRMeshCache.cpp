@@ -23,7 +23,8 @@ struct MRMeshData
     //=======================================================================================
     struct RequestOptions : RealityDataCacheOptions
         {
-        RequestOptions() : RealityDataCacheOptions(true, false, true, true) {}
+        Render::SystemP m_renderSys;
+        RequestOptions(Render::SystemP system) : RealityDataCacheOptions(true, false, true, true), m_renderSys(system) {}
         };
 
     //=======================================================================================
@@ -97,23 +98,24 @@ struct MRMeshData
         +---------------+---------------+---------------+---------------+---------------+------*/
         static RefCountedPtr<DatabasePrepareAndCleanupHandler> Create() {return new DatabasePrepareAndCleanupHandler();}
         };
-private:
+
+protected:
     Utf8String m_filename;
     MRMeshNodePtr m_node;
     mutable MxStreamBuffer m_nodeBytes;
 
-protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2015
     +---------------+---------------+---------------+---------------+---------------+------*/
     BentleyStatus InitFromSelf(IRealityDataBase const& self, RequestOptions const& options)
         {
         MRMeshData const& other = dynamic_cast<MRMeshData const&>(self);
-        m_node = MRMeshNode::Create();
+        m_node = new MRMeshNode(S3NodeInfo(), nullptr, options.m_renderSys);
         m_node->Clone(*other.GetNode());
         m_filename = other.GetFilename();
         return SUCCESS;
         }
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2015
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -172,9 +174,9 @@ protected:
             m_nodeBytes.SetPos(0);
             }
 
-        m_node = MRMeshNode::Create();
+        m_node = new MRMeshNode(S3NodeInfo(), nullptr, options.m_renderSys);
 
-        BeAssert(m_node->m_children.empty());
+        BeAssert(m_node->GetChildren().empty());
         BentleyStatus result = m_node->Read3MXB(m_nodeBytes);
         if (SUCCESS != result)
             {
@@ -246,19 +248,17 @@ struct MRMeshHttpData : MRMeshData, IRealityData<MRMeshHttpData, BeSQLiteReality
     struct RequestOptions : MRMeshData::RequestOptions, IRealityData::RequestOptions
     {
     DEFINE_BENTLEY_REF_COUNTED_MEMBERS
-    private:
-        RequestOptions(bool synchronous) : MRMeshData::RequestOptions()
+    public:
+        RequestOptions(SystemP target, bool synchronous) : MRMeshData::RequestOptions(target)
             {
             BeSQLiteRealityDataStorage::SelectOptions::SetForceSynchronousRequest(synchronous);
             HttpRealityDataSource::RequestOptions::SetForceSynchronousRequest(synchronous);
             SetUseStorage(true);
             }
-    public:
-        static RefCountedPtr<RequestOptions> Create(bool synchronous) {return new RequestOptions(synchronous);}
+//        static RefCountedPtr<RequestOptions> Create(bool synchronous) {return new RequestOptions(synchronous);}
     };
 
 private:
-    MRMeshHttpData() {}
 protected:
     virtual Utf8CP _GetId() const override {return GetFilename().c_str();}
     virtual bool _IsExpired() const override {return false;}
@@ -287,42 +287,41 @@ struct MRMeshFileData : MRMeshData, IRealityData<MRMeshFileData, BeSQLiteReality
     struct RequestOptions : MRMeshData::RequestOptions, IRealityData::RequestOptions
     {
     DEFINE_BENTLEY_REF_COUNTED_MEMBERS
-    private:
-        RequestOptions(bool synchronous) : MRMeshData::RequestOptions()
+    public:
+        RequestOptions(SystemP target, bool synchronous) : MRMeshData::RequestOptions(target)
             {
             BeSQLiteRealityDataStorage::SelectOptions::SetForceSynchronousRequest(synchronous);
             FileRealityDataSource::RequestOptions::SetForceSynchronousRequest(synchronous);
             SetUseStorage(false);
             }
-    public:
-        static RefCountedPtr<RequestOptions> Create( bool synchronous) {return new RequestOptions(synchronous);}
+//        static RefCountedPtr<RequestOptions> Create( bool synchronous) {return new RequestOptions(synchronous);}
     };
 
 private:
-    MRMeshFileData() {}
+    MRMeshFileData() : MRMeshData() {}
+
 protected:
     virtual Utf8CP _GetId() const override {return GetFilename().c_str();}
     virtual bool _IsExpired() const override {return false;}
     virtual BentleyStatus _InitFrom(IRealityDataBase const& self, RealityDataCacheOptions const& options) override {return InitFromSelf(self, (RequestOptions const&)options);}
     virtual BentleyStatus _InitFrom(Utf8CP filepath, ByteStream const& data, FileRealityDataSource::RequestOptions const& options) override {return InitFromSource(filepath, data, (RequestOptions const&)options);}
-    virtual BentleyStatus _InitFrom(Db& db, BeMutex& cs, Utf8CP id, BeSQLiteRealityDataStorage::SelectOptions const& options) override {return InitFromStorage(db, cs, id, (RequestOptions const&)options);}
+    virtual BentleyStatus _InitFrom(Db& db, BeMutex& cs, Utf8CP id, BeSQLiteRealityDataStorage::SelectOptions const& options) override {return InitFromStorage(db, cs, id, (RequestOptions const&)options);} 
     virtual BentleyStatus _Persist(Db& db, BeMutex& cs) const override {return PersistToStorage(db, cs);}
     virtual BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandlerPtr _GetDatabasePrepareAndCleanupHandler() const override {return DatabasePrepareAndCleanupHandler::Create();}
 public:
-    static RefCountedPtr<MRMeshFileData> Create() {return new MRMeshFileData();}
+    static RefCountedPtr<MRMeshFileData> Create() {return new MRMeshFileData();}    
 };
 typedef RefCountedPtr<MRMeshFileData> MRMeshFileDataPtr;
-
 
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     03/2015
 +===============+===============+===============+===============+===============+======*/
 struct   NodeRequest
 {
-    Transform                   m_transform;
-    bset<DgnViewportP>          m_viewports;
+    Transform  m_transform;
+    bset<DgnViewportP> m_viewports;
 
-    NodeRequest() { }
+    NodeRequest() {}
     NodeRequest(TransformCR transform, DgnViewportP viewport) : m_transform(transform) { m_viewports.insert(viewport); }
 };
 
@@ -332,13 +331,14 @@ typedef bmap<MRMeshNodeP, NodeRequest>   T_RequestMap;
 +===============+===============+===============+===============+===============+======*/
 struct  ThreeMxSchema::MRMeshCache
 {
-    RealityDataCache*               m_cache;
-    T_RequestMap                    m_requests;
-    bset <MRMeshNodeP>              m_roots;
-    bool                            m_progressiveStarted;
+    RealityDataCache* m_cache;
+    T_RequestMap  m_requests;
+    MRMeshNodeP m_root;
+    SystemP m_target;
+    bool m_progressiveStarted;
 
-    MRMeshCache() : m_progressiveStarted(false)   { Initialize();  }
-    void AddRoot(MRMeshNodeR node) { m_roots.insert(&node); }
+    MRMeshCache(SystemP target) : m_progressiveStarted(false), m_target(target) {Initialize();}
+    void SetRoot(MRMeshNodeR node) {m_root = &node;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
@@ -363,7 +363,7 @@ void RemoveCacheRequests(MRMeshNodeR node)
     if (found != m_requests.end())
         m_requests.erase(found);
 
-    for (auto& child : node.m_children)
+    for (auto const& child : node.GetChildren())
         RemoveCacheRequests(*child);
     }
 
@@ -385,21 +385,21 @@ void CloneNodeFromMRMeshData(MRMeshNode& node, MRMeshData const& meshData)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataCacheResult RequestData(MRMeshNode* node, BeFileNameCR path, bool synchronous = false)
+RealityDataCacheResult RequestData(SystemP target, MRMeshNode* node, BeFileNameCR path, bool synchronous = false)
     {
     RealityDataCacheResult result;
 
     if (path.IsUrl())
         {
         MRMeshHttpDataPtr meshData;
-        result = m_cache->Get(meshData, path.GetNameUtf8().c_str(), *MRMeshHttpData::RequestOptions::Create(synchronous));
+        result = m_cache->Get(meshData, path.GetNameUtf8().c_str(), * new MRMeshHttpData::RequestOptions(target, synchronous));     
         if (RealityDataCacheResult::Success == result && nullptr != node)
             CloneNodeFromMRMeshData(*node, *meshData);
         }
     else
         {
         MRMeshFileDataPtr meshData;
-        result = m_cache->Get(meshData, path.GetNameUtf8().c_str(), *MRMeshFileData::RequestOptions::Create(synchronous));
+        result = m_cache->Get(meshData, path.GetNameUtf8().c_str(), *new MRMeshFileData::RequestOptions(target, synchronous));
         if (RealityDataCacheResult::Success == result && nullptr != node)
             CloneNodeFromMRMeshData(*node, *meshData);
         }
@@ -427,12 +427,12 @@ MRMeshCacheManager::RequestStatus ProcessRequests()
             continue;
 
         BeFileName             fileName = curr->first->GetFileName();
-        RealityDataCacheResult cacheStatus = RequestData(curr->first, fileName, false);
+        RealityDataCacheResult cacheStatus = RequestData(m_target, curr->first, fileName, false);
         switch (cacheStatus)
             {
             case RealityDataCacheResult::Success:
                 {
-                curr->first->_SetDirectory(BeFileName(BeFileName::DevAndDir, fileName));
+                curr->first->SetDirectory(BeFileName(BeFileName::DevAndDir, fileName));
 
                 requestsProcessed++;
                 curr = m_requests.erase(curr);
@@ -481,11 +481,7 @@ void    Debug()
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t GetMemoryUsage()
     {
-    size_t      memoryUsage = 0;
-    for (auto& root : m_roots)
-        memoryUsage += root->GetMemorySize();
-
-    return memoryUsage;
+    return m_root->GetMemorySize();
     }
 
 /*-----------------------------------------------------------------------------------**//**
@@ -493,11 +489,7 @@ size_t GetMemoryUsage()
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t GetTextureMemoryUsage()
     {
-    size_t      memoryUsage = 0;
-    for (auto& root : m_roots)
-        memoryUsage += root->GetTextureMemorySize();
-
-    return memoryUsage;
+    return m_root->GetTextureMemorySize();
     }
 
 /*-----------------------------------------------------------------------------------**//**
@@ -505,12 +497,7 @@ size_t GetTextureMemoryUsage()
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t GetNodeCount()
     {
-    size_t      nodeCount = 0;
-
-    for (auto& root : m_roots)
-        nodeCount += root->GetNodeCount();
-
-    return nodeCount;
+    return m_root->GetNodeCount();
     }
 
 /*-----------------------------------------------------------------------------------**//**
@@ -518,12 +505,7 @@ size_t GetNodeCount()
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t GetMeshCount()
     {
-    size_t      count = 0;
-
-    for (auto& root : m_roots)
-        count += root->GetMeshCount();
-
-    return count;
+    return m_root->GetMeshCount();
     }
 
 
@@ -532,17 +514,7 @@ size_t GetMeshCount()
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t GetMaxDepth()
     {
-    size_t      maxDepth = 0;
-
-    for (auto& root : m_roots)
-        {
-        size_t      depth = root->GetMaxDepth();
-
-        if (depth > maxDepth)
-            maxDepth = depth;
-        }
-
-    return maxDepth;
+    return m_root->GetMaxDepth();
     }
 
 /*-----------------------------------------------------------------------------------**//**
@@ -553,9 +525,7 @@ BentleyStatus FlushStale(uint64_t staleTime)
     if (!m_requests.empty())
         return ERROR;
 
-    for (auto& root : m_roots)
-        root->FlushStale(staleTime);
-
+    m_root->FlushStale(staleTime);
     return SUCCESS;
     }
 
@@ -564,18 +534,18 @@ BentleyStatus FlushStale(uint64_t staleTime)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SynchronousRead(MRMeshNodeR node, BeFileNameCR fileName)
     {
-    RealityDataCacheResult status = RequestData(&node, fileName, true);
+    RealityDataCacheResult status = RequestData(m_target, &node, fileName, true);
     if (RealityDataCacheResult::Success != status)
         return ERROR;
 
-    node._SetDirectory(BeFileName(BeFileName::DevAndDir, fileName));
+    node.SetDirectory(BeFileName(BeFileName::DevAndDir, fileName));
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueueChildLoad(T_MeshNodeArray const& children, DgnViewportP viewport, TransformCR transform)
+void QueueChildLoad(MRMeshNode::MeshNodes const& children, DgnViewportP viewport, TransformCR transform)
     {
     size_t                  requestsMade = 0;
     static long             s_timerDuration = 10;
@@ -590,7 +560,7 @@ void QueueChildLoad(T_MeshNodeArray const& children, DgnViewportP viewport, Tran
         if (found == m_requests.end())
             {
             BeAssert(child->m_children.empty());
-            RequestData(nullptr, fileName, false);
+            RequestData(m_target, nullptr, fileName, false);
             m_requests[child.get()] = NodeRequest(transform, indexedViewport);
             requestsMade++;
             }
@@ -612,18 +582,6 @@ void QueueChildLoad(T_MeshNodeArray const& children, DgnViewportP viewport, Tran
 #endif
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RemoveRoot(MRMeshNodeR node)
-    {
-    m_cache->Cleanup();
-    RemoveCacheRequests(node);
-
-    auto found = m_roots.find(&node);
-    if (found != m_roots.end())
-        m_roots.erase(found);
-    }
 };  //  MRMeshCache
 
 /*---------------------------------------------------------------------------------**//**
@@ -638,10 +596,10 @@ MRMeshCacheManagerR MRMeshCacheManager::GetManager()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshCacheManager::QueueChildLoad(T_MeshNodeArray const& children, DgnViewportP viewport, TransformCR transform)
+void MRMeshCacheManager::QueueChildLoad(MRMeshNode::MeshNodes const& children, DgnViewportP viewport, TransformCR transform, SystemP system)
     {
     if (NULL == m_cache)
-        m_cache = new MRMeshCache();
+        m_cache = new MRMeshCache(system);
 
     m_cache->QueueChildLoad(children, viewport, transform);
     }
@@ -649,31 +607,23 @@ void MRMeshCacheManager::QueueChildLoad(T_MeshNodeArray const& children, DgnView
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshCacheManager::AddRoot(MRMeshNodeR node)
+void MRMeshCacheManager::SetRoot(MRMeshNodeR node, SystemP system)
     {
     if (NULL == m_cache)
-        m_cache = new MRMeshCache();
+        m_cache = new MRMeshCache(system);
 
-    m_cache->AddRoot(node);
+    m_cache->SetRoot(node);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MRMeshCacheManager::SynchronousRead(MRMeshNodeR node, BeFileNameCR fileName)
+BentleyStatus MRMeshCacheManager::SynchronousRead(MRMeshNodeR node, BeFileNameCR fileName, SystemP system)
     {
     if (NULL == m_cache)
-        m_cache = new MRMeshCache();
+        m_cache = new MRMeshCache(system);
 
     return m_cache->SynchronousRead(node, fileName);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshCacheManager::RemoveRoot(MRMeshNodeR node)
-    {
-    m_cache->RemoveRoot(node);
     }
 
 /*---------------------------------------------------------------------------------**//**

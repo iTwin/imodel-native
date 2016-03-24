@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "..\ThreeMxSchemaInternal.h"
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -19,12 +20,14 @@ MRMeshTexture::MRMeshTexture(ByteCP data, uint32_t dataSize)
 
     m_compressedData.SaveData(data, dataSize);
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     RgbImageInfo info;
     if (SUCCESS != info.ReadImageFromJpgBuffer(m_data, data, dataSize))
         return;
 
     m_size.x = info.m_width;
     m_size.y = info.m_height;
+#endif
     }
 
 
@@ -134,13 +137,6 @@ bool MRMeshTexture::IsInitialized() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t MRMeshTexture::GetMemorySize() const
     {
-    size_t      size = m_data.GetSize();
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    if (m_material.IsValid())
-        size += m_size.x * m_size.y * 8;     // Approximate memory for QVision and embedded material.
-#endif
-
-    return size;
+    return m_compressedData.GetSize();
     }
-
+#endif

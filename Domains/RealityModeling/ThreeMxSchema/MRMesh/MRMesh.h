@@ -25,43 +25,46 @@ DEFINE_REF_COUNTED_PTR(MRMeshTexture)
 +===============+===============+===============+===============+===============+======*/
 struct MRMeshGeometry : RefCountedBase, NonCopyableClass
 {
-    MRMeshGeometry(int nbVertices,float* positions,float* normals,int nbTriangles,int* indices,float* textureCoordinates,int textureId);
-
-    PolyfaceHeaderPtr m_polyface;
-    int  m_textureId;
+private:
+    bvector<FPoint3d> m_points;
+    bvector<FPoint3d> m_normals;
+    bvector<FPoint2d> m_params;
+    bvector<int32_t> m_indices;
     Render::GraphicPtr m_graphic;
 
-    PolyfaceHeaderPtr GetPolyface() { return m_polyface; }
-    PolyfaceHeaderCP GetPolyfaceCP() const { return m_polyface.get(); }
-    int GetTextureId() const { return m_textureId; }
+public:
+    MRMeshGeometry(int nbVertices, FPoint3d const* positions, FPoint3d const* normals, int nbTriangles, uint32_t const* indices, FPoint2d const* textureUV, TextureCP texture, SystemP target);
+    PolyfaceHeaderPtr GetPolyface() const;
+
     void Draw(RenderContextR, MRMeshNodeR node, MRMeshContextCR meshContext);
     BentleyStatus GetRange(DRange3dR range, TransformCR transform) const;
 
     size_t GetMemorySize() const;
     void ClearGraphic() {m_graphic = nullptr;}
     bool IsCached() const {return m_graphic.IsValid();}
-    bool IsDisplayable() const { return m_textureId >= 0; }
+//    bool IsDisplayable() const {return m_textureId >= 0;}
 };
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     03/2015
 +===============+===============+===============+===============+===============+======*/
 struct MRMeshTexture : RefCountedBase, NonCopyableClass
 {
-    ByteStream m_data;         // BGRA
+private:
     ByteStream m_compressedData;
     Point2d m_size;
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    RenderMaterialPtr           m_material;
-#endif
+    TexturePtr m_texture;
+
+public:
     MRMeshTexture(ByteCP pData, uint32_t dataSize);
     void Initialize(MRMeshNodeCR node, MRMeshContextCR host, ViewContextR viewContext);
     void Activate(ViewContextR viewContext);
     size_t GetMemorySize() const;
     bool IsInitialized() const;
     Point2d GetSize() const {return m_size;}
-    ByteCP GetData() const {return m_data.GetData();}
 };
+#endif
 
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     03/2015
@@ -77,10 +80,10 @@ struct MRMeshContext
     mutable size_t m_pointCount;
 
     MRMeshContext(TransformCR transform, ViewContextR viewContext, double fixedResolution);
-    TransformCR GetTransform() const { return m_transform; }
-    bool GetLoadSynchronous() const { return m_loadSynchronous; }
-    bool UseFixedResolution()const { return m_useFixedResolution; }
-    double GetFixedResolution() const { return m_fixedResolution; }
+    TransformCR GetTransform() const {return m_transform;}
+    bool GetLoadSynchronous() const {return m_loadSynchronous;}
+    bool UseFixedResolution()const {return m_useFixedResolution;}
+    double GetFixedResolution() const {return m_fixedResolution;}
 };
 
 /*=================================================================================**//**
@@ -88,8 +91,8 @@ struct MRMeshContext
 +===============+===============+===============+===============+===============+======*/
 struct MRMeshScene : RefCountedBase, NonCopyableClass
 {
-protected:
-    DgnDbR     m_db;
+private:
+    DgnDbR m_db;
     Utf8String m_sceneName;
     Utf8String m_srs;
     BeFileName m_fileName;
@@ -101,7 +104,7 @@ protected:
 
 public:
     MRMeshScene(DgnDbR, S3SceneInfo const& sceneInfo, BeFileNameCR fileName);
-    BentleyStatus Load(S3SceneInfo const& sceneInfo);
+    BentleyStatus Load(S3SceneInfo const& sceneInfo, SystemP);
     void Draw(bool& childrenScheduled, RenderContextR, MRMeshContextCR MeshContext);
     BentleyStatus _GetRange(DRange3dR range) const;
     void GetTiles(TileCallback&, double resolution) const;
@@ -113,31 +116,33 @@ public:
     size_t GetMaxDepth() const;
 };
 
-typedef bvector<MRMeshNodePtr>  T_MeshNodeArray;
-
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     03/2015
 +===============+===============+===============+===============+===============+======*/
-struct MRMeshNode :  BaseMeshNode
+struct MRMeshNode :  RefCountedBase, NonCopyableClass
 {
+    typedef bvector<MRMeshNodePtr>  MeshNodes;
+    Render::SystemP m_system;
     S3NodeInfo m_info;
     MRMeshNodeP m_parent;
-    T_MeshNodeArray m_children;
+    MeshNodes m_children;
     bvector<MRMeshGeometryPtr> m_meshes;
-    bvector<MRMeshTexturePtr> m_textures;
+    bvector<ByteStream> m_jpegTextures;
     BeFileName m_dir;
-    bool m_primary;                  // The root node and all descendents until displayable are marked as primary and never flushed.
+    bool m_primary;  // The root node and all descendents until displayable are marked as primary and never flushed.
     bool m_childrenRequested;
     uint64_t m_lastUsed;
 
-    MRMeshNode(S3NodeInfo const& info, MRMeshNodeP parent) : m_info(info), m_parent(parent), m_primary(false), m_childrenRequested(false), m_lastUsed(0) { }
+public:
+    MRMeshNode(S3NodeInfo const& info, MRMeshNodeP parent, SystemP system) : m_system(system), m_info(info), m_parent(parent), m_primary(false), m_childrenRequested(false), m_lastUsed(0) {}
     ~MRMeshNode();
 
-    void _SetDirectory(BeFileNameCR dir) override { m_dir = dir; }
-    void _Clear() override {}
-    void _PushJpegTexture(Byte const* data, uint32_t dataSize) override;
-    void _AddGeometry(int nodeId, int nbVertices,float* positions,float* normals,int nbTriangles,int* indices,float* textureCoordinates,int textureId) override;
-    void _PushNode(const S3NodeInfo& nodeInfo) override;
+    void SetDirectory(BeFileNameCR dir) {m_dir = dir;}
+    void AddGeometry(int32_t nodeId, int32_t nbVertices, FPoint3d const* positions, FPoint3d const* normals, int32_t nbTriangles, uint32_t const* indices, FPoint2d const* textureCoordinates, int32_t textureIndex, SystemP);
+    void PushNode(const S3NodeInfo& nodeInfo) ;
+
+    BentleyStatus Read3MXB(MxStreamBuffer&);
+    BentleyStatus Read3MXB(BeFileNameCR filename);
 
     BeFileName GetFileName() const;
     BentleyStatus Load();
@@ -146,16 +151,14 @@ struct MRMeshNode :  BaseMeshNode
     bool LoadedUntilDisplayable() const;
     void Dump(Utf8StringCR prefix);
     BentleyStatus Draw(bool& childrenScheduled, RenderContextR, MRMeshContextCR MeshContext);
-    void Draw(Render::GraphicR graphic, TransformCR tranform);
-    void DrawMeshes(Render::GraphicR graphic, TransformCR transform);
     void DrawMeshes(RenderContextR, MRMeshContextCR MeshContext);
     void DrawBoundingSphere(RenderContextR) const;
     DRange3d GetRange() const;
     bool IsLoaded() const {return !m_dir.empty();}
     bool AreChildrenLoaded() const;
-    bool AreVisibleChildrenLoaded(T_MeshNodeArray& visibleChildren, ViewContextR viewContext, MRMeshContextCR meshContext) const;
+    bool AreVisibleChildrenLoaded(MeshNodes& visibleChildren, ViewContextR viewContext, MRMeshContextCR meshContext) const;
     bool IsDisplayable() const {return m_info.m_dMax > 0.0;}
-    MRMeshTextureP GetTexture(int textureId) const {return textureId >= 0 && textureId < (int) m_textures.size() ? m_textures.at(textureId).get() : NULL;}
+    ByteStream* GetTextureData(int textureIndex) {return textureIndex >= 0 && textureIndex < (int) m_jpegTextures.size() ? &m_jpegTextures[textureIndex] : nullptr;}
     size_t GetTextureMemorySize() const;
     size_t GetMeshMemorySize() const;
     size_t GetMemorySize() const {return GetMeshMemorySize() + GetTextureMemorySize();}
@@ -173,7 +176,9 @@ struct MRMeshNode :  BaseMeshNode
     BentleyStatus GetRange(DRange3dR range, TransformCR transform) const;
     void FlushStale(uint64_t staleTime);
     void GetTiles(TileCallback&, double resolution);
-    static MRMeshNodePtr Create();
+    MeshNodes const& GetChildren() const {return m_children;}
+    MRMeshNodeCP GetParent() const {return m_parent;}
+    S3NodeInfo const& GetInfo() const {return m_info;}
 };
 
 /*=================================================================================**//**
@@ -186,15 +191,15 @@ struct  MRMeshCacheManager
 
     MRMeshCacheManager();
     ~MRMeshCacheManager();
-    void QueueChildLoad(T_MeshNodeArray const& children, DgnViewportP viewport, TransformCR transform);
+    void QueueChildLoad(MRMeshNode::MeshNodes const& children, DgnViewportP viewport, TransformCR transform, SystemP);
     void RemoveRoot(MRMeshNodeR root);
-    void AddRoot(MRMeshNodeR root);
-    BentleyStatus SynchronousRead(MRMeshNodeR node, BeFileNameCR fileName);
+    void SetRoot(MRMeshNodeR root, SystemP);
+    BentleyStatus SynchronousRead(MRMeshNodeR node, BeFileNameCR fileName, SystemP);
     void RemoveRequest(MRMeshNodeR node);
     void Debug();
     void Flush(uint64_t staleTime);
 
-    enum class RequestStatus { Finished, None, Processed };
+    enum class RequestStatus {Finished, None, Processed};
     RequestStatus ProcessRequests();
 };
 
@@ -203,7 +208,7 @@ struct  MRMeshCacheManager
 +===============+===============+===============+===============+===============+======*/
 struct  MRMeshUtil
 {
-    static void DisplayNodeFailureWarning(WCharCP fileName) { BeAssert(false); };
+    static void DisplayNodeFailureWarning(WCharCP fileName) {BeAssert(false);};
     static BeFileName ConstructNodeName(Utf8StringCR childName, BeFileNameCP parentName);
     static void GetMemoryStatistics(size_t& memoryLoad, size_t& total, size_t& available);
     static double CalculateResolutionRatio();

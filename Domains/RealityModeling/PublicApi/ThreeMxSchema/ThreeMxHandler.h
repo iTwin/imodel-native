@@ -17,6 +17,18 @@ DEFINE_REF_COUNTED_PTR(ThreeMxModel)
 DEFINE_REF_COUNTED_PTR(MRMeshScene)
 
 //=======================================================================================
+// @bsiclass                                                    Eric.Paquet     05/15
+//=======================================================================================
+struct ThreeMxDomain : DgnDomain
+{
+    DOMAIN_DECLARE_MEMBERS(ThreeMxDomain, )
+
+public:
+    ThreeMxDomain();
+};
+
+
+//=======================================================================================
 // @bsiclass                                                    Ray.Bentley     09/2015
 //=======================================================================================
 struct TileCallback
@@ -38,7 +50,7 @@ private:
     mutable MRMeshScenePtr m_scene;
 
     DRange3d GetSceneRange();
-    static MRMeshScenePtr ReadScene(BeFileNameCR fileName, DgnDbR db);
+    static MRMeshScenePtr ReadScene(BeFileNameCR fileName, DgnDbR db, SystemP);
 
 public:
     ThreeMxModel(CreateParams const& params) : T_Super(params) {}

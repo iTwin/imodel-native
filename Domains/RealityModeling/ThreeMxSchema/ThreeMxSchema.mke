@@ -73,7 +73,6 @@ $(o)LzmaLib$(oext)                  : $(SrcLibLzma)LzmaLib.c ${threeMxSchemaDepe
 
 $(o)ThreeMxReader$(oext)            : $(SrcThreeMxReader)ThreeMxReader.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
 
-
 #----------------------------------------------------------------------
 #   MRMesh
 #----------------------------------------------------------------------
@@ -90,9 +89,6 @@ $(o)MRMeshScene$(oext)              : $(SrcMrMesh)MRMeshScene.cpp ${threeMxSchem
 $(o)MRMeshUtil$(oext)               : $(SrcMrMesh)MRMeshUtil.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
 
 $(o)ThreeMxHandler$(oext)           : $(SrcThreeMxSchema)ThreeMxHandler.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
-
-$(o)ThreeMxDomain$(oext)            : $(SrcThreeMxSchema)ThreeMxDomain.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
-
 
 %include MultiCppCompileGo.mki
 objs =% $(MultiCompileObjectList) 

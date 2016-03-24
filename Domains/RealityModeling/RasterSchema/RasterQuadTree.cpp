@@ -214,7 +214,7 @@ void TileDataQuery::Run()
         }
 #endif         
     if (pImage.IsValid() && !IsCanceled())
-        m_pTile = m_target.CreateTileSection(*pImage, enableAlphaBlend);
+        m_pTile = m_target.CreateTexture(*pImage, enableAlphaBlend);
         
     m_isFinished = true;
     }

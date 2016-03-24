@@ -23,35 +23,44 @@ void MRMeshNode::Clear()
     m_dir.clear();
     m_children.clear();
     m_meshes.clear();
-    m_textures.clear();
     }
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshNode::_PushJpegTexture(Byte const* data, uint32_t dataSize)
-    {
-    m_textures.push_back(new MRMeshTexture(data, dataSize));
-    }
-
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshNode::_PushNode(const S3NodeInfo& nodeInfo)
+void MRMeshNode::PushNode(S3NodeInfo const& nodeInfo)
     {
     if (nodeInfo.m_children.empty())
         return;
 
-    m_children.push_back(new MRMeshNode(nodeInfo, this));
+    m_children.push_back(new MRMeshNode(nodeInfo, this, m_system));
     }
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshNode::_AddGeometry(int nodeId, int nbVertices,float* positions,float* normals,int nbTriangles,int* indices,float* textureCoordinates,int textureId)
+void MRMeshNode::AddGeometry(int32_t nodeId, int32_t nbVertices, FPoint3d const* positions, FPoint3d const* normals, int32_t nbTriangles, uint32_t const* indices, FPoint2d const* textureCoordinates, int32_t textureIndex, SystemP system)
     {
-    if (textureId >= 0)
-        m_meshes.push_back(new MRMeshGeometry(nbVertices, positions, normals, nbTriangles, indices, textureCoordinates, textureId));
+    ByteStream* jpeg = GetTextureData(textureIndex);
+    if (nullptr == jpeg) 
+        {
+        BeAssert(false); // ???
+        return;
+        }
+
+    RgbImageInfo imageInfo;
+    Render::Image rgba;
+    if (SUCCESS != imageInfo.ReadImageFromJpgBuffer(rgba, jpeg->GetData(), jpeg->GetSize()))
+        return;
+
+    TexturePtr texture;
+    if (system)
+        {
+        texture = system->_CreateTexture(rgba, imageInfo.m_hasAlpha);
+        jpeg->Clear(); // we no longer need the jpeg data
+        }
+    
+    m_meshes.push_back(new MRMeshGeometry(nbVertices, positions, normals, nbTriangles, indices, textureCoordinates, texture.get(), system));
     }
 
 /*-----------------------------------------------------------------------------------**//**
@@ -76,7 +85,7 @@ BentleyStatus MRMeshNode::Load()
         return ERROR;
         }
 
-    if (SUCCESS != MRMeshCacheManager::GetManager().SynchronousRead(*this, GetFileName()))
+    if (SUCCESS != MRMeshCacheManager::GetManager().SynchronousRead(*this, GetFileName(), m_system))
         {
         MRMeshUtil::DisplayNodeFailureWarning(GetFileName().c_str());
         m_dir.clear();
@@ -156,7 +165,7 @@ void MRMeshNode::RequestLoadUntilDisplayable()
         if (!m_childrenRequested)
             {
             m_childrenRequested = true;
-            MRMeshCacheManager::GetManager().QueueChildLoad(m_children, nullptr, Transform::FromIdentity());
+            MRMeshCacheManager::GetManager().QueueChildLoad(m_children, nullptr, Transform::FromIdentity(), m_system);
             }
         else
             {
@@ -212,7 +221,7 @@ bool MRMeshNode::IsCached() const
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MRMeshNode::AreVisibleChildrenLoaded(T_MeshNodeArray& unloadedVisibleChildren, ViewContextR viewContext, MRMeshContextCR meshContext) const
+bool MRMeshNode::AreVisibleChildrenLoaded(MeshNodes& unloadedVisibleChildren, ViewContextR viewContext, MRMeshContextCR meshContext) const
     {
     if (meshContext.GetLoadSynchronous())
         {
@@ -278,6 +287,7 @@ DRange3d MRMeshNode::GetRange() const
     return range;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -294,6 +304,7 @@ void MRMeshNode::DrawMeshes(Render::GraphicR graphic, TransformCR transform)
         graphic.AddPolyface(*polyface, false);
         }
     }
+#endif
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
@@ -328,7 +339,7 @@ BentleyStatus MRMeshNode::Draw(bool& childrenScheduled, RenderContextR context, 
 
     m_lastUsed = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
 
-    T_MeshNodeArray unloadedVisibleChildren;
+    MeshNodes unloadedVisibleChildren;
     
     if ((!isUnderMaximumSize || !IsDisplayable()) && 
         ! m_children.empty() && 
@@ -397,8 +408,8 @@ size_t MRMeshNode::GetTextureMemorySize() const
     {
     size_t memorySize = 0;
 
-    for (auto const& texture : m_textures)
-        memorySize += texture->GetMemorySize();
+    for (auto const& texture : m_jpegTextures)
+        memorySize += texture.GetSize();
 
     for (auto const& child : m_children)
         memorySize += child->GetTextureMemorySize();
@@ -464,34 +475,21 @@ void MRMeshNode::ClearGraphics()
     }
 
 /*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-MRMeshNodePtr MRMeshNode::Create()
-    {
-    S3NodeInfo nodeInfo;
-    nodeInfo.m_center.Zero();
-    nodeInfo.m_radius = 1.0E10;
-    nodeInfo.m_dMax   = 0.0;
-
-    return new MRMeshNode(nodeInfo, nullptr);
-    }
-
-/*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                        Grigas.Petraitis            04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MRMeshNode::Clone(MRMeshNode const& other)
     {
     BeAssert(&other != this);
+    m_system    = other.m_system;
     m_parent    = other.m_parent;
     m_info      = other.m_info;
     m_dir       = other.m_dir;
     m_meshes    = other.m_meshes;
-    m_textures  = other.m_textures;
     m_children.clear();
 
     for (auto const& otherChild : other.m_children)
         {
-        MRMeshNodePtr child = MRMeshNode::Create();
+        MRMeshNodePtr child = new MRMeshNode(S3NodeInfo(), this, m_system);
         child->Clone(*otherChild);
         child->m_parent = this;
         m_children.push_back(child);
@@ -582,6 +580,7 @@ void MRMeshNode::FlushStale(uint64_t staleTime)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MRMeshNode::GetTiles(TileCallback& callback, double resolution) 
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     bool isUnderMaximumSize = resolution < m_info.m_dMax;
     bool hasNoDisplayableChildren = true;
 
@@ -613,12 +612,10 @@ void MRMeshNode::GetTiles(TileCallback& callback, double resolution)
             bvector<bpair<PolyfaceHeaderPtr, int>> geom;
             geom.reserve(m_meshes.size());
 
-            bvector<bpair<Byte*, Point2d>> textures;
-            textures.reserve(m_textures.size());
 
             for (auto const& mesh : m_meshes)
                 {
-                PolyfaceHeaderCP polyface = mesh->GetPolyfaceCP();
+                PolyfaceHeaderPtr polyface = mesh->GetPolyface();
                 PolyfaceHeaderPtr copy = PolyfaceHeader::CreateVariableSizeIndexed();
                 copy->CopyFrom(*polyface);
 
@@ -626,6 +623,7 @@ void MRMeshNode::GetTiles(TileCallback& callback, double resolution)
                 geom.push_back(bpair<PolyfaceHeaderPtr, int>(copy, texId));
                 }
 
+            bvector<bpair<Byte*, Point2d>> textures;
             for (auto const& tex : m_textures)
                 {
                 ByteCP texData = tex->GetData();
@@ -652,4 +650,5 @@ void MRMeshNode::GetTiles(TileCallback& callback, double resolution)
     //Clear all non-primary nodes as we go so we don't load too much and potentially run out of memory
     if (!m_primary)
         Clear();
+#endif
     }

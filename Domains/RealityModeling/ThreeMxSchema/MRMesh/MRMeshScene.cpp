@@ -25,14 +25,14 @@ MRMeshScene::MRMeshScene(DgnDbR db, S3SceneInfo const& sceneInfo, BeFileNameCR f
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MRMeshScene::Load(S3SceneInfo const& sceneInfo)
+BentleyStatus MRMeshScene::Load(S3SceneInfo const& sceneInfo, SystemP system)
     {
     BeFileName scenePath(BeFileName::DevAndDir, m_fileName.c_str());
     for (auto const& child : sceneInfo.m_meshChildren)
         {
-        MRMeshNodePtr childNode = MRMeshNode::Create();
+        MRMeshNodePtr childNode = new MRMeshNode(S3NodeInfo(), nullptr, system);
 
-        if (SUCCESS != MRMeshCacheManager::GetManager().SynchronousRead(*childNode, MRMeshUtil::ConstructNodeName(child, &scenePath)))
+        if (SUCCESS != MRMeshCacheManager::GetManager().SynchronousRead(*childNode, MRMeshUtil::ConstructNodeName(child, &scenePath), system))
             return ERROR;
 
         childNode->LoadUntilDisplayable();
@@ -54,7 +54,7 @@ static void drawBoundingSpheres(MRMeshNodeCR node, RenderContextR context)
     if (node.IsDisplayable())
         node.DrawBoundingSphere(context);
 
-    for (auto const& child : node.m_children)
+    for (auto const& child : node.GetChildren())
         drawBoundingSpheres(*child, context);
     }
 
@@ -67,6 +67,7 @@ void MRMeshScene::DrawBoundingSpheres(RenderContextR context)
         drawBoundingSpheres(*child, context);
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -75,6 +76,7 @@ void MRMeshScene::DrawMeshes(Render::GraphicR graphic)
     for (auto const& child : m_children)
         child->DrawMeshes(graphic, m_transform);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
