@@ -100,6 +100,17 @@ struct ECDbProfileUpgrader_3201 : ECDbProfileUpgrader
     };
 
 //=======================================================================================
+// @bsiclass                                                 Krischan.Eberle      03/2016
+//+===============+===============+===============+===============+===============+======
+struct ECDbProfileUpgrader_3202 : ECDbProfileUpgrader
+    {
+    //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
+    private:
+        virtual SchemaVersion _GetTargetVersion() const override { return SchemaVersion(3, 2, 0, 2); }
+        virtual DbResult _Upgrade(ECDbR) const override;
+    };
+
+//=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      07/2013
 //+===============+===============+===============+===============+===============+======
 struct ECDbProfileECSchemaUpgrader

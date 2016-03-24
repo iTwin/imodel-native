@@ -28,74 +28,38 @@ Utf8CP const ECDbSystemSchemaHelper::ECSQLSYSTEMPROPERTIES_CLASSNAME = "ECSqlSys
 // @bsimethod                                 Krischan.Eberle                06/2013
 //+---------------+---------------+---------------+---------------+---------------+-
 //static 
-ECClassCP ECDbSystemSchemaHelper::GetECSqlSystemPropertiesClass (ECDbSchemaManagerCR schemaManager)
+ECClassCP ECDbSystemSchemaHelper::GetECSqlSystemPropertiesClass(ECDbSchemaManagerCR schemaManager)
     {
-    //WIP_ECDb: Calling GetECClass and then GetSchema does not load all remaining classes. Instead
-    // only the class requested with GetECClass is in the schema. Is this by design?
-
-    //ECClassP systemPropsClass = nullptr;
-    //auto stat = schemaManager.GetECClass (systemPropsClass, ECDBSYSTEM_SCHEMANAME, ECSQLSYSTEMPROPERTIES_CLASSNAME);
-    //if (stat != SUCCESS)
-    //        {
-      //  BeAssert (false && "ECDbSystemSchemaHelper> Getting ECSqlSystemProperties class from ECDb_System schema should never fail.");
-        //return nullptr;
-        //}
-    //return systemPropsClass;
-
-    auto systemSchema = GetSchema (schemaManager);
-    if (systemSchema == nullptr)
-        {
-        //log and assert already done in callee
-        return nullptr;
-        }
-
-    //log and assert already done in callee
-    return GetECClass (*systemSchema, ECSQLSYSTEMPROPERTIES_CLASSNAME);
-    }
-
-
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                06/2013
-//+---------------+---------------+---------------+---------------+---------------+-
-//static 
-ECSchemaCP ECDbSystemSchemaHelper::GetSchema (ECDbSchemaManagerCR schemaManager)
-    {
-    ECSchemaCP schema = schemaManager.GetECSchema (ECDBSYSTEM_SCHEMANAME);
-    if (schema == nullptr)
-        {
-        LOG.errorv ("Could not load system ECSchema '%s'. Make sure the standard ECSchemas are deployed in the expected location.", ECDBSYSTEM_SCHEMANAME);
-        BeAssert (false && "Could not load system ECSchema. Make sure the standard ECSchemas are deployed in the expected location.");
-        return nullptr;
-        }
-
-    return schema;
+    ECClassCP systemPropsClass = schemaManager.GetECClass(ECDBSYSTEM_SCHEMANAME, ECSQLSYSTEMPROPERTIES_CLASSNAME);
+    BeAssert(systemPropsClass != nullptr);
+    return systemPropsClass;
     }
 
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
 //static 
-ECPropertyCP ECDbSystemSchemaHelper::GetSystemProperty (ECDbSchemaManagerCR schemaManager, ECSqlSystemProperty kind)
+ECPropertyCP ECDbSystemSchemaHelper::GetSystemProperty(ECDbSchemaManagerCR schemaManager, ECSqlSystemProperty kind)
     {
-    auto systemPropsClass = GetECSqlSystemPropertiesClass (schemaManager);
+    ECClassCP systemPropsClass = GetECSqlSystemPropertiesClass(schemaManager);
     if (systemPropsClass == nullptr)
         {
         //log and assert already done in callee
         return nullptr;
         }
 
-    Utf8CP requiredPropName = GetPropertyName (kind);
-    return GetECProperty (*systemPropsClass, requiredPropName);
+    Utf8CP requiredPropName = GetPropertyName(kind);
+    return GetECProperty(*systemPropsClass, requiredPropName);
     }
 
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
 //static 
-bool ECDbSystemSchemaHelper::IsSystemProperty (ECPropertyCR ecProperty, ECSqlSystemProperty kind)
+bool ECDbSystemSchemaHelper::IsSystemProperty(ECPropertyCR ecProperty, ECSqlSystemProperty kind)
     {
-    Utf8CP requiredPropName = GetPropertyName (kind);
-    return ecProperty.GetName ().Equals (requiredPropName) && ecProperty.GetClass ().GetName ().Equals (ECSQLSYSTEMPROPERTIES_CLASSNAME);
+    Utf8CP requiredPropName = GetPropertyName(kind);
+    return ecProperty.GetName().Equals(requiredPropName) && ecProperty.GetClass().GetName().Equals(ECSQLSYSTEMPROPERTIES_CLASSNAME);
     }
 
 
@@ -103,30 +67,13 @@ bool ECDbSystemSchemaHelper::IsSystemProperty (ECPropertyCR ecProperty, ECSqlSys
 // @bsimethod                                 Krischan.Eberle                09/2013
 //+---------------+---------------+---------------+---------------+---------------+-
 //static 
-ECClassCP ECDbSystemSchemaHelper::GetECClass (ECSchemaCR ecdbSystemSchema, Utf8CP className)
+ECPropertyCP ECDbSystemSchemaHelper::GetECProperty(ECClassCR ecClass, Utf8CP propertyName)
     {
-    auto ecClass = ecdbSystemSchema.GetClassCP (className);
-    if (ecClass == nullptr)
-        {
-        LOG.fatalv ("ECClass '%s' not found in system ECSchema '%s'.", className, ECDBSYSTEM_SCHEMANAME);
-        BeAssert (false && "Fatal error. ECClass not found in system ECSchema.");
-        }
-
-    return ecClass;
-
-    }
-
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                09/2013
-//+---------------+---------------+---------------+---------------+---------------+-
-//static 
-ECPropertyCP ECDbSystemSchemaHelper::GetECProperty (ECClassCR ecClass, Utf8CP propertyName)
-    {
-    auto prop = ecClass.GetPropertyP (propertyName);
+    auto prop = ecClass.GetPropertyP(propertyName);
     if (prop == nullptr)
         {
-        LOG.fatalv ("ECProperty '%s' not found in ECClass '%s' from system ECSchema '%s'.", propertyName, Utf8String (ecClass.GetName ().c_str ()).c_str (), ECDBSYSTEM_SCHEMANAME);
-        BeAssert (false && "Fatal error. ECProperty not found in ECSqlSystemProperties ECClass from system ECSchema.");
+        LOG.fatalv("ECProperty '%s' not found in ECClass '%s' from system ECSchema '%s'.", propertyName, Utf8String(ecClass.GetName().c_str()).c_str(), ECDBSYSTEM_SCHEMANAME);
+        BeAssert(false && "Fatal error. ECProperty not found in ECSqlSystemProperties ECClass from system ECSchema.");
         }
 
     return prop;
@@ -136,7 +83,7 @@ ECPropertyCP ECDbSystemSchemaHelper::GetECProperty (ECClassCR ecClass, Utf8CP pr
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
 //static 
-Utf8CP ECDbSystemSchemaHelper::GetPropertyName (ECSqlSystemProperty kind)
+Utf8CP ECDbSystemSchemaHelper::GetPropertyName(ECSqlSystemProperty kind)
     {
     switch (kind)
         {
@@ -151,7 +98,7 @@ Utf8CP ECDbSystemSchemaHelper::GetPropertyName (ECSqlSystemProperty kind)
             case ECSqlSystemProperty::TargetECClassId:
                 return TARGETECCLASSID_PROPNAME;
             default:
-                BeAssert (false && "ECSqlSystemProperty enum has new value. Update ECDbSystemSchemaHelper::GetPropertyName accordingly.");
+                BeAssert(false && "ECSqlSystemProperty enum has new value. Update ECDbSystemSchemaHelper::GetPropertyName accordingly.");
                 return nullptr;
         }
     }
@@ -160,15 +107,15 @@ Utf8CP ECDbSystemSchemaHelper::GetPropertyName (ECSqlSystemProperty kind)
 // @bsimethod                                 Krischan.Eberle                12/2013
 //+---------------+---------------+---------------+---------------+---------------+-
 //static 
-bool ECDbSystemSchemaHelper::TryGetSystemPropertyKind (ECSqlSystemProperty& kind, ECN::ECPropertyCR ecProperty)
+bool ECDbSystemSchemaHelper::TryGetSystemPropertyKind(ECSqlSystemProperty& kind, ECN::ECPropertyCR ecProperty)
     {
-    std::vector<ECSqlSystemProperty> kindList { ECSqlSystemProperty::ECInstanceId, 
-                        ECSqlSystemProperty::SourceECInstanceId, ECSqlSystemProperty::SourceECClassId, 
+    std::vector<ECSqlSystemProperty> kindList {ECSqlSystemProperty::ECInstanceId,
+                        ECSqlSystemProperty::SourceECInstanceId, ECSqlSystemProperty::SourceECClassId,
                         ECSqlSystemProperty::TargetECInstanceId, ECSqlSystemProperty::TargetECClassId};
-   
+
     for (auto candidateKind : kindList)
         {
-        if (IsSystemProperty (ecProperty, candidateKind))
+        if (IsSystemProperty(ecProperty, candidateKind))
             {
             kind = candidateKind;
             return true;
@@ -182,9 +129,9 @@ bool ECDbSystemSchemaHelper::TryGetSystemPropertyKind (ECSqlSystemProperty& kind
 // @bsimethod                                 Krischan.Eberle                07/2014
 //+---------------+---------------+---------------+---------------+---------------+-
 //static 
-Utf8CP ECDbSystemSchemaHelper::ToString (ECSqlSystemProperty systemProperty)
+Utf8CP ECDbSystemSchemaHelper::ToString(ECSqlSystemProperty systemProperty)
     {
-    return GetPropertyName (systemProperty);
+    return GetPropertyName(systemProperty);
     }
 
 
@@ -194,31 +141,30 @@ Utf8CP ECDbSystemSchemaHelper::ToString (ECSqlSystemProperty systemProperty)
 //static
 ECN::ECClassCP ECDbSystemSchemaHelper::GetClassForPrimitiveArrayPersistence(ECDbCR ecdb, ECN::PrimitiveType primitiveType)
     {
-    ECSchemaCP ecdbSystemSchema = GetSchema(ecdb.Schemas());
-    EXPECTED_CONDITION(ecdbSystemSchema != nullptr);
+    ECDbSchemaManager const& schemaManager = ecdb.Schemas();
 
     switch (primitiveType)
         {
             case PRIMITIVETYPE_Binary:
-                return ecdbSystemSchema->GetClassCP("BinaryArray");
+                return schemaManager.GetECClass(ECDBSYSTEM_SCHEMANAME, "BinaryArray");
             case PRIMITIVETYPE_Boolean:
-                return ecdbSystemSchema->GetClassCP("BooleanArray");
+                return schemaManager.GetECClass(ECDBSYSTEM_SCHEMANAME, "BooleanArray");
             case PRIMITIVETYPE_DateTime:
-                return ecdbSystemSchema->GetClassCP("DateTimeArray");
+                return schemaManager.GetECClass(ECDBSYSTEM_SCHEMANAME, "DateTimeArray");
             case PRIMITIVETYPE_Double:
-                return ecdbSystemSchema->GetClassCP("DoubleArray");
+                return schemaManager.GetECClass(ECDBSYSTEM_SCHEMANAME, "DoubleArray");
             case PRIMITIVETYPE_Integer:
-                return ecdbSystemSchema->GetClassCP("IntegerArray");
+                return schemaManager.GetECClass(ECDBSYSTEM_SCHEMANAME, "IntegerArray");
             case PRIMITIVETYPE_Long:
-                return ecdbSystemSchema->GetClassCP("LongArray");
+                return schemaManager.GetECClass(ECDBSYSTEM_SCHEMANAME, "LongArray");
             case PRIMITIVETYPE_Point2D:
-                return ecdbSystemSchema->GetClassCP("Point2dArray");
+                return schemaManager.GetECClass(ECDBSYSTEM_SCHEMANAME, "Point2dArray");
             case PRIMITIVETYPE_Point3D:
-                return ecdbSystemSchema->GetClassCP("Point3dArray");
+                return schemaManager.GetECClass(ECDBSYSTEM_SCHEMANAME, "Point3dArray");
             case PRIMITIVETYPE_String:
-                return ecdbSystemSchema->GetClassCP("StringArray");
+                return schemaManager.GetECClass(ECDBSYSTEM_SCHEMANAME, "StringArray");
             case PRIMITIVETYPE_IGeometry:
-                return ecdbSystemSchema->GetClassCP("GeometryArray");
+                return schemaManager.GetECClass(ECDBSYSTEM_SCHEMANAME, "GeometryArray");
             default:
                 BeAssert(false && "Unsupported primitive type. Adjust this method for new value of ECN::PrimitiveType enum");
                 return nullptr;
