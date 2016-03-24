@@ -597,6 +597,7 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
         {
         if (isAutoClipPref)
             {
+#if defined (BENTLEYCONFIG_PARASOLIDS)
             bvector<CurveVectorPtr> insideCurves;
 
             if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._ClipCurveVector(insideCurves, geom, *GetCurrentClip(), &m_localToWorldTransform))
@@ -606,9 +607,11 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
 
                 return;
                 }
+#endif
             }
         else if (!doClipping || geom.IsAnyRegionType()) // _ClipBody doesn't support wire bodies...
             {
+#if defined (BENTLEYCONFIG_PARASOLIDS)
             ISolidKernelEntityPtr entityPtr;
 
             if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._CreateBodyFromCurveVector(entityPtr, geom))
@@ -633,6 +636,7 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
                     }
                 return;
                 }
+#endif
             }
 
         // If conversion to BRep wasn't possible, check if conversion to another type is requested...
@@ -714,6 +718,7 @@ void SimplifyGraphic::ClipAndProcessSolidPrimitive(ISolidPrimitiveCR geom)
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::BRep & unhandled))
         {
+#if defined (BENTLEYCONFIG_PARASOLIDS)
         ISolidKernelEntityPtr entityPtr;
 
         if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._CreateBodyFromSolidPrimitive(entityPtr, geom))
@@ -738,6 +743,7 @@ void SimplifyGraphic::ClipAndProcessSolidPrimitive(ISolidPrimitiveCR geom)
                 }
             return;
             }
+#endif
 
         // If conversion to BRep wasn't possible, check if conversion to another type is requested...
         }
@@ -829,6 +835,7 @@ void SimplifyGraphic::ClipAndProcessSurface(MSBsplineSurfaceCR geom)
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::BRep & unhandled))
         {
+#if defined (BENTLEYCONFIG_PARASOLIDS)
         ISolidKernelEntityPtr entityPtr;
 
         if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._CreateBodyFromBSurface(entityPtr, geom))
@@ -853,6 +860,7 @@ void SimplifyGraphic::ClipAndProcessSurface(MSBsplineSurfaceCR geom)
                 }
             return;
             }
+#endif
 
         // If conversion to BRep wasn't possible, check if conversion to another type is requested...
         }
@@ -939,6 +947,7 @@ void SimplifyGraphic::ClipAndProcessPolyface(PolyfaceQueryCR geom, bool filled)
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::BRep & unhandled))
         {
+#if defined (BENTLEYCONFIG_PARASOLIDS)
         ISolidKernelEntityPtr entityPtr;
 
         if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._CreateBodyFromPolyface(entityPtr, geom))
@@ -963,6 +972,7 @@ void SimplifyGraphic::ClipAndProcessPolyface(PolyfaceQueryCR geom, bool filled)
                 }
             return;
             }
+#endif
 
         // If conversion to BRep wasn't possible, check if conversion to another type is requested...
         }
@@ -1128,6 +1138,7 @@ void SimplifyGraphic::ClipAndProcessBody(ISolidKernelEntityCR geom)
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::BRep & unhandled) && doClipping) // Already had a chance at un-clipped solid...
         {
+#if defined (BENTLEYCONFIG_PARASOLIDS)
         bool clipped;
         bvector<ISolidKernelEntityPtr> clippedBodies;
 
@@ -1140,6 +1151,7 @@ void SimplifyGraphic::ClipAndProcessBody(ISolidKernelEntityCR geom)
             {
             m_processor._ProcessBody(geom, *this);
             }
+#endif
 
         return;
         }
@@ -1184,6 +1196,7 @@ void SimplifyGraphic::ClipAndProcessBody(ISolidKernelEntityCR geom)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::ClipAndProcessBodyAsPolyface(ISolidKernelEntityCR geom)
     {
+#if defined (BENTLEYCONFIG_PARASOLIDS)
     IFacetTopologyTablePtr  facetsPtr;
 
     if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._FacetBody(facetsPtr, geom, *m_facetOptions))
@@ -1266,6 +1279,7 @@ void SimplifyGraphic::ClipAndProcessBodyAsPolyface(ISolidKernelEntityCR geom)
         {
         m_processor._ProcessPolyface(*polyface, false, static_cast<SimplifyGraphic&> (*graphic));
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
