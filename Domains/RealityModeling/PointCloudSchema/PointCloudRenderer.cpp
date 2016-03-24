@@ -132,7 +132,7 @@ ProgressiveTask::Completion PointCloudRenderer::DrawPointCloud(ViewContextR cont
 //----------------------------------------------------------------------------------------
 void PointCloudRenderer::DrawPointBuffer(ViewContextR context, PointCloudDrawParams& buffer) const
     {
-#ifdef NEEDS_WORK_CONTINUOUS_RENDER //&&MM todo DRAW. Why are we creating buffers that exceed capacity?? I don't understand.
+#ifdef NEEDS_WORK_CONTINUOUS_RENDER
     uint32_t numPoints = buffer.GetNumPoints();
 
     if (numPoints > m_outputCapacity)
@@ -162,7 +162,7 @@ void PointCloudRenderer::DrawPointBuffer(ViewContextR context, PointCloudDrawPar
             }
         }
     else
-#else
+
       //temporary.  
         {
         Render::GraphicPtr pGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport()));

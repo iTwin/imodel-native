@@ -18,28 +18,6 @@ PointCloudIntensityChannelPool  PointCloudIntensityChannel::m_pool(VIEW_POOL_MAX
 PointCloudNormalChannelPool     PointCloudNormalChannel::m_pool(VIEW_POOL_MAX_BUFFER_COUNT);
 PointCloudByteChannelPool       PointCloudByteChannel::m_pool(VIEW_POOL_MAX_BUFFER_COUNT);
 
-#if 0 //&&MM clean
-/*---------------------------------------------------------------------------------**//**
-* PointCloudDrawBuffer
-* NVI interface.
-+---------------+---------------+---------------+---------------+---------------+------*/
-/*---------------------------------------------------------------------------------**//**
-* Need to implement the virtual destructor of interface so that we can use delete on PointCloudDrawBuffer
-* @bsimethod                                    Simon.Normand                   03/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-                        PointCloudDrawBuffer::~PointCloudDrawBuffer ()           { }
-                        PointCloudDrawBuffer::PointCloudDrawBuffer()             { }
-void                    PointCloudDrawBuffer::Deallocate()                       { _Deallocate(); }
-uint32_t                PointCloudDrawBuffer::GetCapacity()                      { return _GetCapacity(); }
-PointCloudRgbChannel*   PointCloudDrawBuffer::GetRgbChannel()                    { return _GetRgbChannel();  }
-PointCloudXyzChannel*   PointCloudDrawBuffer::GetPointChannel()                  { return _GetPointChannel();}
-void                    PointCloudDrawBuffer::SetNumPoints(uint32_t numPoints)     { _SetNumPoints(numPoints); }
-void                    PointCloudDrawBuffer::InitFrom(uint32_t begin, uint32_t end, Transform const* pTransform, PointCloudDrawBuffer* source) 
-                                                                                 { _InitFrom(begin, end, pTransform, source); }
-void                    PointCloudDrawBuffer::ChangeCapacity(uint32_t capacity)    { _ChangeCapacity(capacity); }
-void                    PointCloudDrawBuffer::SetIgnoreColor(bool ignoreColor)   { _SetIgnoreColor(ignoreColor); }
-#endif
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Stephane.Poulin                 10/2012
@@ -91,7 +69,7 @@ void PointCloudDrawParams::ChangeCapacity(uint32_t capacity)
 +---------------+---------------+---------------+---------------+---------------+------*/
 PointCloudDrawParams::PointCloudDrawParams (PointCloudXyzChannel* pXyzChannel, PointCloudRgbChannel* pRgbChannel)
     {
-    BeAssert(NULL != pXyzChannel); // Mandatory //&&MM ask for a reference and not a pointer!
+    BeAssert(NULL != pXyzChannel); // Mandatory
 
     m_ignoreColor = false;
     m_points = pXyzChannel;
@@ -106,30 +84,6 @@ PointCloudDrawParams::~PointCloudDrawParams ()
     m_points = NULL;
     m_colors = NULL;
     }
-
-#if 0 //&&MM TODO
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    StephanePoulin  02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PointCloudDrawParams::_InitFrom(uint32_t begin, uint32_t end, Transform const* pTransform, PointCloudDrawBuffer* source)
-    {
-    uint32_t count = end - begin;
-    ValidateCapacity(count);
-    SetNumPoints(count);
-
-    if (source->GetPointChannel() && source->GetPointChannel()->GetChannelBuffer())
-        {
-        if (pTransform)
-            pTransform->Multiply (m_points->GetChannelBuffer(), source->GetPointChannel()->GetChannelBuffer() + begin, count);
-        else
-            memcpy(m_points->GetChannelBuffer(), source->GetPointChannel()->GetChannelBuffer() + begin, count * sizeof(DPoint3d));
-        }
-
-    if (source->GetRgbChannel() && source->GetRgbChannel()->GetChannelBuffer())
-        memcpy(m_colors->GetChannelBuffer(), source->GetRgbChannel()->GetChannelBuffer() + begin, count * sizeof(PointCloudColorDef));
-
-    }
-#endif
 
 
 /*---------------------------------------------------------------------------------**//**

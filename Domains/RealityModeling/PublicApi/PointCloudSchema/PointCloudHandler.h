@@ -17,6 +17,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 BEGIN_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
 
 struct PointCloudModelHandler;
+struct PtViewport;
 
 //=======================================================================================
 // Obtain and display point cloud data from POD files. 
@@ -26,17 +27,13 @@ struct EXPORT_VTABLE_ATTRIBUTE PointCloudModel : Dgn::SpatialModel
 {
 DGNMODEL_DECLARE_MEMBERS(POINTCLOUD_CLASSNAME_PointCloudModel, Dgn::SpatialModel)
 
-private:
-    mutable BePointCloud::PointCloudScenePtr    m_pointCloudScenePtr;
-
-    DRange3d                            GetSceneRange();
 
 public:
-    // POINTCLOUD_WIP_GR06_Json - To remove this, we could move JsonUtils.h to PublicApi and then delete this struct and associated methods.
-    struct JsonUtils
+    enum class LoadStatus
         {
-        static void DPoint3dToJson (JsonValueR outValue, DPoint3dCR point);
-        static void DPoint3dFromJson (DPoint3dR point, Json::Value const& inValue);
+        Unloaded,
+        Loaded,
+        UnknownError,
         };
 
     struct Properties
@@ -46,6 +43,22 @@ public:
 
         void ToJson(Json::Value&) const;
         void FromJson(Json::Value const&);
+        };
+
+private:
+    mutable LoadStatus                          m_loadSceneStatus;
+    mutable BePointCloud::PointCloudScenePtr    m_pointCloudScenePtr;
+    mutable Transform                           m_sceneToWorld;
+    mutable std::map<DgnViewportCP, RefCountedPtr<PtViewport>> m_cachedPtViewport;
+
+    //! May return nullptr when we reach the limit.
+    PtViewport* GetPtViewportP(DgnViewportCR) const;
+
+    // POINTCLOUD_WIP_GR06_Json - To remove this, we could move JsonUtils.h to PublicApi and then delete this struct and associated methods.
+    struct JsonUtils
+        {
+        static void DPoint3dToJson(JsonValueR outValue, DPoint3dCR point);
+        static void DPoint3dFromJson(DPoint3dR point, Json::Value const& inValue);
         };
 
 protected:
@@ -58,17 +71,27 @@ protected:
     ~PointCloudModel();
 
 public:
+
     //! Create a new PointCloudModel object, in preparation for loading it from the DgnDb.
     PointCloudModel(CreateParams const& params);
     PointCloudModel(CreateParams const& params, PointCloudModel::Properties const& properties) ;
 
     virtual void _AddSceneGraphics(Dgn::SceneContextR) const override;
+
+    virtual void _OnFitView(Dgn::FitContextR) override;
+    
+    virtual void _DropGraphicsForViewport(Dgn::DgnViewportCR viewport) override;
+
     virtual void _WriteJsonProperties(Json::Value&) const override;
     virtual void _ReadJsonProperties(Json::Value const&) override;
     virtual Dgn::AxisAlignedBox3d _QueryModelRange() const override;
     BePointCloud::PointCloudSceneP GetPointCloudSceneP () const;
     DRange3dCR GetRange() const {return m_properties.m_range;}
     DRange3dR GetRangeR() {return m_properties.m_range;}
+    DRange3d GetSceneRange() const;
+
+    TransformCR GetSceneToWorld() const {return m_sceneToWorld;}
+
 };
 
 //=======================================================================================

@@ -11,38 +11,6 @@
 
 BEGIN_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
 
-
-#if 0 //&&MM remove me
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass                                                    StephanePoulin  02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct PointCloudDrawBuffer : public Dgn::PointCloudDraw
-    {
-    private:
-        virtual uint32_t                                _GetCapacity() = 0;                     // Number of points
-        virtual BePointCloud::PointCloudRgbChannel*     _GetRgbChannel() = 0;
-        virtual BePointCloud::PointCloudXyzChannel*     _GetPointChannel() = 0;
-        virtual void                                    _SetNumPoints(uint32_t numPoints) = 0;
-        virtual void                                    _InitFrom(uint32_t begin, uint32_t end, Transform const* pTransform, PointCloudDrawBuffer* source) = 0;
-        virtual void                                    _ChangeCapacity(uint32_t capacity) = 0;   // Number of points
-        virtual void                                    _SetIgnoreColor(bool ignoreColor) = 0;     // Use the RGB color in the PointCloud or Not
-
-    protected:
-                                                        PointCloudDrawBuffer();
-        virtual                                         ~PointCloudDrawBuffer();
-
-    public:
-        void                                                            Deallocate();
-        POINTCLOUDSCHEMA_EXPORT uint32_t                               GetCapacity();
-        POINTCLOUDSCHEMA_EXPORT BePointCloud::PointCloudRgbChannel*    GetRgbChannel();
-        POINTCLOUDSCHEMA_EXPORT BePointCloud::PointCloudXyzChannel*    GetPointChannel();
-        POINTCLOUDSCHEMA_EXPORT void                                   SetNumPoints(uint32_t numPoints);
-        POINTCLOUDSCHEMA_EXPORT void                                   InitFrom(uint32_t begin, uint32_t end, Transform const* pTransform, PointCloudDrawBuffer* source);
-        POINTCLOUDSCHEMA_EXPORT void                                   ChangeCapacity(uint32_t capacity);
-        POINTCLOUDSCHEMA_EXPORT void                                   SetIgnoreColor(bool ignoreColor);
-    };
-#endif
-
 /*=================================================================================**//**
 * @bsiclass                                                     John.Gooding    02/2009
 +===============+===============+===============+===============+===============+======*/
@@ -78,7 +46,6 @@ struct PointCloudDrawParams : public Dgn::Render::PointCloudDraw
         BePointCloud::PointCloudRgbChannel*     GetRgbChannel() { return m_colors.get(); }
         BePointCloud::PointCloudXyzChannel*     GetPointChannel() { return m_points.get(); }
         void                                    SetNumPoints(uint32_t numPoints);
-        //&&MM not_now void                                    InitFrom(uint32_t begin, uint32_t end, Transform const* pTransform, PointCloudDrawBuffer* source);
         void                                    ChangeCapacity(uint32_t capacity);
         void                                    SetIgnoreColor(bool ignoreColor) { m_ignoreColor = ignoreColor; }
 

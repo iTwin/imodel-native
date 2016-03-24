@@ -12,144 +12,6 @@ USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 USING_NAMESPACE_BENTLEY_POINTCLOUDSCHEMA
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    StephanePoulin  08/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-VisualizationManager::VisualizationManager ()
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    12/2008
-+---------------+---------------+---------------+---------------+---------------+------*/
-VisualizationManager::~VisualizationManager ()
-    {
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     2/2015
-//----------------------------------------------------------------------------------------
-ProgressiveTask::Completion VisualizationManager::DrawToContext(ViewContextR context, PointCloudSceneCR pointCloudScene, DRange3dCR pointCloudRange)
-    {
-    //&&MM use PTint64 ptPtsLoadedInViewportSinceDraw( PThandle forScene ) to detect that we have a good amount of pixels to redraw
-    //          if we returned because of context.CheckStop() I think it would not make sense. it make sense only when ptPtsToLoadInViewport != 0
-
-    DrawPurpose drawPurpose = context.GetDrawPurpose ();
-
-    // Get transformation to UOR (including transformation for the coordinate system)
-    Transform pointCloudTransform;
-    DRange3d rangeUOR;
-    pointCloudScene.GetRange (rangeUOR, true);
-    WString wktString(pointCloudScene.GetSurveyGeoreferenceMetaTag());
-    PointCloudGcsFacility::GetTransformToUor(pointCloudTransform, wktString, rangeUOR, context.GetViewport()->GetViewController().GetTargetModel()->GetDgnDb());
-
-    // Setup viewport
-    // set the pointool viewport to use for this model, scene and view
-    DRange3d pcRange;
-    pointCloudTransform.Multiply(pcRange, pointCloudRange);
-
-    PTViewportID viewportId(context.GetViewport()->GetViewController().GetTargetModel(), const_cast<PointCloudScene*>(&pointCloudScene), pcRange);
-
-    PointCloudVortex::SetViewport(ModelViewportManager::Get ().GetViewport (viewportId));
-    SetViewportInfo (context, pointCloudTransform, pcRange);
-    // Get view settings
-    RefCountedPtr<IPointCloudViewSettings> viewSettings = PointCloudViewSettings::GetPointCloudViewSettings(context);
-
-    // POINTCLOUD_WIP_GR06 - calling SetUseRGB here is temporary. We set the display style to RGB until we have an application that can 
-    //                       handle the view settings.
-    viewSettings->SetUseRGB(true);
-    viewSettings->SetNeedClassifBuffer(true);
-
-    // May need to override view settings based on the scene characteristics and the view\print background color
-    OverrideViewSettings(viewSettings, context, pointCloudScene);
-
-    DgnViewportP viewport = context.GetViewport();
-
-    // Examples how to use viewSettings:
-    // Intensity
-    // viewSettings->SetDisplayStyle(IPointCloudViewSettings::DisplayStyle_Intensity);
-    // WCharCP rampName = PointCloudRamps::GetInstance().GetIntensityRampName(2).c_str();
-    // viewSettings->SetIntensityRamp(rampName);
-    //
-    // Elevation
-    // viewSettings->SetDisplayStyle(IPointCloudViewSettings::DisplayStyle_Location);
-    // WCharCP planeRampName = PointCloudRamps::GetInstance().GetPlaneRamps().at(2).c_str();
-    // viewSettings->SetPlaneRamp(planeRampName);
-    // viewSettings->SetDistance(20);
-    // viewSettings->SetClampIntensity(true);
-
-    UpdateVortexShaders (viewSettings, *viewport);
-
-    // POINTCLOUD_WIP_GR06 - For now, set density to 1.0. We can change that when the application will have a way to set the density.
-    float density = 1.0;
-
-    PtQueryDensity densityType = PtQueryDensity::QUERY_DENSITY_VIEW; // Get only points in memory for a view representation. Point still on disk will get loaded at a later time.
-
-    PointCloudQueryHandlePtr queryHandle (pointCloudScene.GetFrustumQueryHandle());
-
-    if (IsDrawPurposeValidForFastUpdate(drawPurpose))
-        {
-        // Use fast params
-        // POINTCLOUD_WIP_GR06_Density - Use 0.10 for now. Eventually, we could maybe get this from user preferences.
-        density = __min (density, 0.10f);
-        }
-    else if (IsDrawPurposeValidForCompleteUpdate(drawPurpose))
-        {
-        densityType = PtQueryDensity::QUERY_DENSITY_VIEW_COMPLETE;   // Get every points (memory and disk) needed for a view representation. (Display is not progressive).
-        }
-
-    PointCloudVortex::ResetQuery(queryHandle->GetHandle());
-    PointCloudVortex::SetQueryDensity (queryHandle->GetHandle(), densityType, density);
-
-    LasClassificationInfo const*   pClassifInfo = NULL;
-    IPointCloudClassificationViewSettingsPtr pClassifSettings;
-
-    // Get classification info if necessary
-    if (viewSettings->GetNeedClassifBuffer())
-        {
-        //Use the context and the element model ref so we can use different style
-        //when the element is from a reference attachement file
-        //IPointCloudClassificationViewSettingsPtr pClassifSettings = (IPointCloudClassificationViewSettings::GetPointCloudClassificationViewSettings(viewport->GetViewNumber()));
-        pClassifSettings = (IPointCloudClassificationViewSettings::GetPointCloudClassificationViewSettings(context));
-        bool getClassifBuffer = false;
-
-        //Make sure we need the classif channel
-        if (    viewSettings->GetNeedClassifBuffer()    // Need classif buffer in the display style 
-            || !pClassifSettings->GetUnclassState()     // Undefined Class is inactive in the view
-            ||  viewSettings->GetDisplayStyle() == IPointCloudViewSettings::DisplayStyle_Classification // DS from SS3
-            )
-            {
-            getClassifBuffer = true;
-            }
-        else
-            {
-            //as soon as one active class is disabled we need to get the classif buffer
-            for (int i = 0; i < CLASSIFCATION_COUNT; i++) 
-                {
-                if (pClassifSettings->GetClassActiveState((unsigned char)i) && !pClassifSettings->GetClassificationState((unsigned char)i)) 
-                    {
-                    getClassifBuffer = true;
-                    break;
-                    }
-                }
-            }
-
-        if (getClassifBuffer)
-            pClassifInfo = dynamic_cast<PointCloudClassificationViewSettings*>(pClassifSettings.get())->GetLasClassificationInfo();
-        }
-
-//&&MM must pass as placement transform when constructing Render::Graphic.
-#ifdef NEEDS_WORK_CONTINUOUS_RENDER
-    // Push transformation to UOR
-    ContextTransform pushTransform(context, pointCloudTransform);
-#endif
-
-    PointCloudRenderer renderer(DRAW_OUTPUTCAPACITY);
-    ProgressiveTask::Completion status = renderer.DrawPointCloud(context, pClassifInfo, pointCloudScene);
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    01/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
 void VisualizationManager::SetViewportInfo (ViewContextR context, Transform const& sceneToUor, DRange3d const& range)
@@ -216,19 +78,10 @@ void VisualizationManager::SetViewportProjectionFromSceneRange(ViewContextR cont
 
     PointCloudVortex::SetViewportSize ((int)(subViewRange_view.low.x + 0.5), (int)(subViewRange_view.low.y + 0.5), horizontalPixels, verticalPixels);
     
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    DPoint3d subViewBox_local[NPC_CORNER_COUNT];
-    context.ViewToLocal(subViewBox_local, subViewBox_view, NPC_CORNER_COUNT);
-    DVec3d subViewBox_scene[NPC_CORNER_COUNT];
-    uorToScene.Multiply (subViewBox_scene, subViewBox_local, NPC_CORNER_COUNT);
-#else
-    // NEEDSWORK: Not sure if "local" is appropriate anymore...is a transform still going to be "pushed" somewhere?
-    //&&MM localToWorld is part of Render::Graphic 
     DPoint3d subViewBox_world[NPC_CORNER_COUNT];
     context.ViewToWorld(subViewBox_world, subViewBox_view, NPC_CORNER_COUNT);
     DVec3d subViewBox_scene[NPC_CORNER_COUNT];
     uorToScene.Multiply (subViewBox_scene, subViewBox_world, NPC_CORNER_COUNT);
-#endif
 
     PerspectiveViewParams subViewParams;
     ViewParametersFromWorld(subViewParams, subViewBox_scene);
@@ -251,11 +104,7 @@ void VisualizationManager::SetViewportOrtho(ViewContextR context, Transform cons
     DRange3d pointCloudRange_local; pointCloudRange_local.InitFrom(vector.low, vector.high);
     DPoint3d pointCloudBox[NPC_CORNER_COUNT];
     pointCloudRange_local.Get8Corners(pointCloudBox);
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    context.LocalToView(&pointCloudBox[0], &pointCloudBox[0], NPC_CORNER_COUNT);
-#else
     context.WorldToView(&pointCloudBox[0], &pointCloudBox[0], NPC_CORNER_COUNT);
-#endif
     context.ViewToNpc(&pointCloudBox[0], &pointCloudBox[0], NPC_CORNER_COUNT);
 
     // intersect the point cloud with the view
@@ -273,11 +122,7 @@ void VisualizationManager::SetViewportOrtho(ViewContextR context, Transform cons
 
     PointCloudVortex::SetViewportSize ((int)(viewRange_view.low.x + 0.5), (int)(viewRange_view.low.y + 0.5), horizontalPixels, verticalPixels);
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    DMatrix4d sceneToUorMat, localToView = context.GetLocalToView();
-#else
     DMatrix4d sceneToUorMat, localToView = context.GetWorldToView().M0;
-#endif
     bsiDMatrix4d_initFromTransform (&sceneToUorMat, &sceneToUor);
 
     // TR# 296246. - On viewlets (and the sheet/drawing parents) the "View" Z coordinates are somewhat 
@@ -381,11 +226,7 @@ StatusInt VisualizationManager::LocalToViewAccountingForPointBehindCamera(DPoint
         static double   s_minW = .001;                  // Arbitrary front of eye lmit.
 
         point4d.Init (localPoints[i], 1.0);
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        context.GetLocalToView().Multiply(point4d, point4d);
-#else
         context.GetWorldToView().M0.Multiply(point4d, point4d);
-#endif
 
         if (point4d.w < s_minW)
             return ERROR;
@@ -395,221 +236,6 @@ StatusInt VisualizationManager::LocalToViewAccountingForPointBehindCamera(DPoint
         }
 
     return SUCCESS;
-    }
-
-//----------------------------------------------------------------------------------------
-// This method try to determine if the point cloud will draw white on a white background.
-// If so, it overrides the view settings to draw the point cloud in black.
-// @bsimethod                                                      StephanePoulin  03/2010
-//----------------------------------------------------------------------------------------
-void VisualizationManager::OverrideViewSettings(RefCountedPtr<PointCloudSchema::IPointCloudViewSettings> settingsPtr, ViewContextR context, PointCloudSceneCR pointCloudScene)
-    {
-    IPointCloudViewSettings::PointCloudDisplayStyles displayStyle = settingsPtr->GetDisplayStyle();
-    if (displayStyle == IPointCloudViewSettings::DisplayStyle_Intensity)
-        {
-        if (pointCloudScene.HasIntensityChannel())
-            return;
-        }
-    else if (displayStyle == IPointCloudViewSettings::DisplayStyle_Location)
-        {
-        return; 
-        }
-    else if (displayStyle == IPointCloudViewSettings::DisplayStyle_Classification)
-        {
-        if (pointCloudScene.HasClassificationChannel())
-            return; 
-        }
-    else if (displayStyle == IPointCloudViewSettings::DisplayStyle_Custom)
-        {
-        return;
-        }
-    else
-        {
-        BeAssert (displayStyle == IPointCloudViewSettings::DisplayStyle_None);
-        if (!settingsPtr->GetUseRGB())
-            return; // Point cloud should display using element color
-
-        if (settingsPtr->GetUseRGB() && pointCloudScene.HasRGBChannel())
-            return; // We are in Rgb display Style and the point cloud has a Rbg channel.
-        }
-
-    DgnViewportP contextVp = context.GetViewport();
-
-    if (NULL == contextVp)
-        return;
-
-    ColorDef mediaColor;
-    mediaColor = contextVp->GetBackgroundColor();
-
-    ColorDef whiteColor = {255,255,255};
-
-    // We get here because we are in an inconsistent state(i.e. Classification display style but no classification channel.) and we want to avoid to display 
-    // white points on a white background.
-    // The default point color is white, maybe we want to use the element color instead
-    if(memcmp(&mediaColor, &whiteColor, sizeof(whiteColor)) == 0)
-        {
-        // the background color is white, adjust the view settings to draw the point cloud in black.
-        settingsPtr->SetDisplayStyle(IPointCloudViewSettings::DisplayStyle_Location);
-        settingsPtr->SetContrast(POINTCLOUD_DEFAULT_VIEW_CONTRAST);
-        settingsPtr->SetBrightness(POINTCLOUD_DEFAULT_VIEW_BRIGHTNESS);
-        settingsPtr->SetPlaneRamp(BLACK_RAMP);
-        }
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                   Simon.Normand                   11/2009
-//----------------------------------------------------------------------------------------
-void VisualizationManager::UpdateVortexShaders (RefCountedPtr<PointCloudSchema::IPointCloudViewSettings> const& settingsPtr, DgnViewportR viewport)
-    {
-    /* POINTCLOUD_WIP_GR06_PointCloudDisplay - adjust correctly with display params
-    DisplayQueryParams& displayParams(GetDisplayParam());
-
-    PtVortex::DynamicFrameRate (displayParams.fps);
-    */
-
-    // change the global density has no effect once points have been loaded already.
-    // instead, alter the display query density 
-    PointCloudVortex::GlobalDensity (1.0f);
-
-    //POINTCLOUD_WIP_GR06_PointCloudDisplay (adjust) - PointCloudVortex::StaticOptimizer(displayParams.staticOptimizer);
-
-    PointCloudVortex::SetEnabledState (PtEnable::RGB_SHADER, settingsPtr->GetUseRGB ());
-    PointCloudVortex::SetEnabledState (PtEnable::FRONT_BIAS, settingsPtr->GetUseFrontBias ());
-    PointCloudVortex::SetEnabledState (PtEnable::ADAPTIVE_POINT_SIZE, false);
-    PointCloudVortex::SetEnabledState (PtEnable::LIGHTING, false);
-
-    IPointCloudViewSettings::PointCloudDisplayStyles displayStyle = settingsPtr->GetDisplayStyle();
-    if (displayStyle == IPointCloudViewSettings::DisplayStyle_Custom)
-
-        {
-        PointCloudVortex::SetEnabledState (PtEnable::INTENSITY_SHADER, settingsPtr->GetUseIntensity());
-        PointCloudVortex::SetEnabledState (PtEnable::PLANE_SHADER, settingsPtr->GetUsePlane());
-        if (settingsPtr->GetUseIntensity()) //if intensity set to true
-            {
-            PointCloudVortex::ShaderOptionf( PtShaderOptions::INTENSITY_SHADER_BRIGHTNESS, settingsPtr->GetBrightness () );
-            PointCloudVortex::ShaderOptionf( PtShaderOptions::INTENSITY_SHADER_CONTRAST, settingsPtr->GetContrast () );
-            PointCloudVortex::ShaderOptioni( PtShaderOptions::INTENSITY_SHADER_RAMP, settingsPtr->GetIntensityRampIndex ());
-            BeAssert (settingsPtr->GetIntensityRampIndex() != INVALID_RAMP_INDEX);
-            }
-
-        if (settingsPtr->GetUsePlane()) //if elevation is set to true
-            {
-            PointCloudVortex::ShaderOptioni( PtShaderOptions::PLANE_SHADER_RAMP, settingsPtr->GetPlaneRampIndex ());
-            BeAssert (settingsPtr->GetPlaneRampIndex() != INVALID_RAMP_INDEX);
-            PointCloudVortex::ShaderOptionf (PtShaderOptions::PLANE_SHADER_DISTANCE, settingsPtr->GetDistance ());
-            PointCloudVortex::ShaderOptionf (PtShaderOptions::PLANE_SHADER_OFFSET, settingsPtr->GetOffset ());
-
-            //Clamp elevation value
-            if (settingsPtr->GetClampIntensity())
-                PointCloudVortex::ShaderOptioni (PtShaderOptions::PLANE_SHADER_EDGE, 0x01);
-            else
-                PointCloudVortex::ShaderOptioni (PtShaderOptions::PLANE_SHADER_EDGE, 0x00);
-
-            float axis [] = {0,0,0};
-            if (settingsPtr->GetACSAsPlaneAxis () && IACSManager::GetManager().GetActive (viewport))
-                {
-                RotMatrix rot;
-                DVec3d direction;
-
-                IACSManager::GetManager().GetActive (viewport)->GetRotation (rot);
-                rot.GetRow(direction, 2);
-                direction.Normalize ();
-                axis[0]= (float)direction.x;
-                axis[1]= (float)direction.y;
-                axis[2]= (float)direction.z;
-                }
-            else
-                axis [__min (2, settingsPtr->GetPlaneAxis ())] = 1.0f;
-
-            PointCloudVortex::ShaderOptionfv( PtShaderOptions::PLANE_SHADER_VECTOR, axis ); 
-            }
-        }
-    else if (displayStyle == IPointCloudViewSettings::DisplayStyle_Intensity)
-        {
-        PointCloudVortex::SetEnabledState (PtEnable::INTENSITY_SHADER, true);
-        PointCloudVortex::SetEnabledState (PtEnable::PLANE_SHADER, false);
-        PointCloudVortex::ShaderOptionf( PtShaderOptions::INTENSITY_SHADER_BRIGHTNESS, settingsPtr->GetBrightness () );
-        PointCloudVortex::ShaderOptionf( PtShaderOptions::INTENSITY_SHADER_CONTRAST, settingsPtr->GetContrast () );
-        PointCloudVortex::ShaderOptioni( PtShaderOptions::INTENSITY_SHADER_RAMP, settingsPtr->GetIntensityRampIndex ());
-        BeAssert (settingsPtr->GetIntensityRampIndex() != INVALID_RAMP_INDEX);
-        }
-    else if (displayStyle == IPointCloudViewSettings::DisplayStyle_Location)
-        {
-        PointCloudVortex::SetEnabledState (PtEnable::INTENSITY_SHADER, false);
-        PointCloudVortex::SetEnabledState (PtEnable::PLANE_SHADER, true);
-        PointCloudVortex::ShaderOptioni( PtShaderOptions::PLANE_SHADER_RAMP, settingsPtr->GetPlaneRampIndex ());
-
-        BeAssert (settingsPtr->GetPlaneRampIndex() != INVALID_RAMP_INDEX);
-
-        //Clamp elevation value
-        if (settingsPtr->GetClampIntensity())
-            PointCloudVortex::ShaderOptioni (PtShaderOptions::PLANE_SHADER_EDGE, 0x01);
-        else
-            PointCloudVortex::ShaderOptioni (PtShaderOptions::PLANE_SHADER_EDGE, 0x00);
-
-        PointCloudVortex::ShaderOptionf (PtShaderOptions::PLANE_SHADER_DISTANCE, settingsPtr->GetDistance ());
-        PointCloudVortex::ShaderOptionf (PtShaderOptions::PLANE_SHADER_OFFSET, settingsPtr->GetOffset ());
-
-        float axis [] = {0,0,0};
-        if (settingsPtr->GetACSAsPlaneAxis () && IACSManager::GetManager().GetActive (viewport))
-            {
-            RotMatrix rot;
-            DVec3d direction;
-            IACSManager::GetManager().GetActive (viewport)->GetRotation (rot);
-            rot.GetRow(direction,  2);
-            direction.Normalize ();
-            axis[0]= (float)direction.x;
-            axis[1]= (float)direction.y;
-            axis[2]= (float)direction.z;
-            }
-        else
-            axis [__min (2, settingsPtr->GetPlaneAxis ())] = 1.0f;
-        PointCloudVortex::ShaderOptionfv( PtShaderOptions::PLANE_SHADER_VECTOR, axis ); 
-        }
-    else
-        {
-        BeAssert (displayStyle == IPointCloudViewSettings::DisplayStyle_None || 
-                    displayStyle == IPointCloudViewSettings::DisplayStyle_Classification);
-        PointCloudVortex::SetEnabledState (PtEnable::INTENSITY_SHADER, false);
-        PointCloudVortex::SetEnabledState (PtEnable::PLANE_SHADER, false);
-        }
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                    StephanePoulin  11/2009
-//----------------------------------------------------------------------------------------
-bool VisualizationManager::IsDrawPurposeValidForFastUpdate(DrawPurpose drawPurpose)
-    {
-    switch (drawPurpose)
-        {
-        case DrawPurpose::Dynamics:
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        case DrawPurpose::UpdateDynamic:
-#endif
-            {
-            return true;
-            }
-        }
-    return false;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                    StephanePoulin  11/2009
-//----------------------------------------------------------------------------------------
-bool VisualizationManager::IsDrawPurposeValidForCompleteUpdate(DrawPurpose drawPurpose)
-    {
-    switch (drawPurpose)
-        {
-        case DrawPurpose::Plot:
-        case DrawPurpose::ModelFacet:
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        case DrawPurpose::GenerateThumbnail:
-#endif
-            {
-            return true;
-            }
-        }
-    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -648,42 +274,3 @@ double VisualizationManager::ComputeWorldScale(DPoint3dCP world)
 
     return  frontViewX.Magnitude () / backViewX.Magnitude ();
     }
-
-/*---------------------------------------------------------------------------------**//**
-* Management of the VisualizationManager singleton
-+---------------+---------------+---------------+---------------+---------------+------*/
-// static VisualizationManager instance
-VisualizationManager* VisualizationManager::s_instance=NULL;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    StephanePoulin  11/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-VisualizationManager& VisualizationManager::GetInstance()
-    {
-    if (NULL == s_instance)
-        s_instance = new VisualizationManager();
-
-    return *s_instance;
-    }
-
-//========================================================================================
-// This class deletes the static VisualizationManager pointer in its destructor.
-// @bsiclass                                                        Eric.Paquet     1/2015
-//========================================================================================
-BEGIN_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
-struct VisualizationManagerDestroyer
-    {
-    public:
-        VisualizationManagerDestroyer() {}
-        ~VisualizationManagerDestroyer()
-            {
-            if (VisualizationManager::s_instance!=NULL)
-                delete VisualizationManager::s_instance;
-            }
-    private:
-        VisualizationManagerDestroyer(VisualizationManagerDestroyer const&);  //disabled
-        VisualizationManagerDestroyer& operator=(VisualizationManagerDestroyer const&);   //disabled
-    };
-END_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
-
-VisualizationManagerDestroyer s_visualizationManagerDestroyer;
