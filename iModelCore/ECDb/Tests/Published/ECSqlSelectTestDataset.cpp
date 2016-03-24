@@ -2513,6 +2513,15 @@ ECSqlTestDataset ECSqlSelectTestDataset::PrimitiveTests (int rowCountPerClass)
     ecsql = "SELECT 3.14 AS BlaBla FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
+    //Primitive Property with different case
+    {
+    ecsql = "SELECT b FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "SELECT B, d FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    }
+
         {
         ecsql = "SELECT I, S FROM ecsql.PSA WHERE I = ?";
         auto& testItem = ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2, rowCountPerClass);
@@ -2759,9 +2768,16 @@ ECSqlTestDataset ECSqlSelectTestDataset::StructTests( int rowCountPerClass )
     Utf8CP ecsql = "SELECT PStructProp.i, PStructProp.dtUtc, PStructProp.b FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3, rowCountPerClass);
 
-    //Struct member property I does not exist
-    ecsql = "SELECT PStructProp.I, PStructProp.dtUtc, PStructProp.b FROM ecsql.PSA";
+    //Struct member property J does not exist
+    ecsql = "SELECT PStructProp.j, PStructProp.dtUtc, PStructProp.b FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+
+    //Struct member Property with invalid case
+    ecsql = "SELECT PStructProp.I, PStructProp.dtUtc, PStructProp.b FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "SELECT B, PStructProp.B FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     ecsql = "SELECT PStructProp FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
@@ -2831,7 +2847,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::StructTests( int rowCountPerClass )
 
         ecsql = "SELECT I, S FROM ecsql.PSA WHERE PStructProp.i BETWEEN 10 AND 200";
         ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2, rowCountPerClass);
-        
+
     return dataset;
     }
 
