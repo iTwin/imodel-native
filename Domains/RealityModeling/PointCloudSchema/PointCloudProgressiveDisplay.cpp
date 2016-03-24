@@ -14,18 +14,15 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_POINTCLOUDSCHEMA
 USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     5/2015
 //----------------------------------------------------------------------------------------
-PointCloudProgressiveDisplay::PointCloudProgressiveDisplay (PointCloudModel& model) 
+PointCloudProgressiveDisplay::PointCloudProgressiveDisplay (PointCloudModel const& model) 
     :
     m_model(model),
     m_waitTime(0),
     m_nextRetryTime(0)
     {
-    // Default initialization for ref counted
-    DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT
     }
 
 //----------------------------------------------------------------------------------------
@@ -38,8 +35,10 @@ PointCloudProgressiveDisplay::~PointCloudProgressiveDisplay()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     5/2015
 //----------------------------------------------------------------------------------------
-void PointCloudProgressiveDisplay::DrawView (ViewContextR context)
+void PointCloudProgressiveDisplay::DrawView (Dgn::RenderContextR context)
     {
+    BeAssert(nullptr != context.GetViewport()); // a scene should always have a viewport.
+
     // **********************************
     // *** NB: This method must be fast. 
     // **********************************
@@ -49,14 +48,14 @@ void PointCloudProgressiveDisplay::DrawView (ViewContextR context)
     //
     //  First, determine if we can draw map tiles at all.
     //
-    if (!ShouldDrawInContext (context) || NULL == context.GetViewport())
+    if (!ShouldDrawInContext (context) || m_model.GetPointCloudSceneP() == nullptr)     //&&MM do that prior to allocate PointCloudProgressiveDisplay.
         return;
 
-    PointCloudScenePtr scenePtr = m_model.GetPointCloudScenePtr();
-    IProgressiveDisplay::Completion drawStatus = VisualizationManager::GetInstance().DrawToContext(context, *scenePtr, m_model.GetRangeR());
-    if (drawStatus != IProgressiveDisplay::Completion::Finished)
+     PointCloudScenePtr scenePtr = m_model.GetPointCloudSceneP();
+     ProgressiveTask::Completion drawStatus = VisualizationManager::GetInstance().DrawToContext(context, *scenePtr, m_model.GetRange());
+     if (drawStatus != ProgressiveTask::Completion::Finished)
         {
-        context.GetViewport()->ScheduleProgressiveDisplay (*this);
+        context.GetViewportR().ScheduleProgressiveTask(*this);
         m_waitTime = 100;
         m_nextRetryTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + m_waitTime;
         }
@@ -66,7 +65,7 @@ void PointCloudProgressiveDisplay::DrawView (ViewContextR context)
 // This callback is invoked on a timer during progressive display.
 // @bsimethod                                                       Eric.Paquet     5/2015
 //----------------------------------------------------------------------------------------
-IProgressiveDisplay::Completion PointCloudProgressiveDisplay::_Process (ViewContextR context)
+ProgressiveTask::Completion PointCloudProgressiveDisplay::_DoProgressive(Dgn::ProgressiveContext& context, WantShow& wantShow)
     {
     if (BeTimeUtilities::GetCurrentTimeAsUnixMillis() < m_nextRetryTime)
         {
@@ -74,40 +73,38 @@ IProgressiveDisplay::Completion PointCloudProgressiveDisplay::_Process (ViewCont
         return Completion::Aborted;
         }
 
-    PointCloudScenePtr scenePtr = m_model.GetPointCloudScenePtr();
-    IProgressiveDisplay::Completion drawStatus = VisualizationManager::GetInstance().DrawToContext(context, *scenePtr, m_model.GetRangeR());
+    PointCloudScenePtr scenePtr = m_model.GetPointCloudSceneP();
+    ProgressiveTask::Completion drawStatus = VisualizationManager::GetInstance().DrawToContext(context, *scenePtr, m_model.GetRange());
 
-    if (drawStatus != IProgressiveDisplay::Completion::Finished)
+    if (drawStatus != ProgressiveTask::Completion::Finished)
         {
         m_waitTime = (uint64_t)(m_waitTime * 1.33);
         m_nextRetryTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + m_waitTime;  
         }
 
+    //&&MM todo wantShow only if have a good amount of pts.
+    wantShow = WantShow::Yes;
+
     return drawStatus;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PointCloudProgressiveDisplay::ShouldDrawInContext (ViewContextR context) const
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  4/2015
+//----------------------------------------------------------------------------------------
+bool PointCloudProgressiveDisplay::ShouldDrawInContext(Dgn::RenderContextR context)
     {
     switch (context.GetDrawPurpose())
         {
-        case DrawPurpose::Hilite:
-        case DrawPurpose::Unhilite:
-        case DrawPurpose::ChangedPre:       // Erase, rely on Healing.
-        case DrawPurpose::RestoredPre:      // Erase, rely on Healing.
         case DrawPurpose::Pick:
-        case DrawPurpose::Flash:
         case DrawPurpose::CaptureGeometry:
         case DrawPurpose::FenceAccept:
         case DrawPurpose::RegionFlood:
         case DrawPurpose::FitView:
         case DrawPurpose::ExportVisibleEdges:
+        case DrawPurpose::ClashDetection:
         case DrawPurpose::ModelFacet:
             return false;
         }
 
     return true;
     }
-#endif

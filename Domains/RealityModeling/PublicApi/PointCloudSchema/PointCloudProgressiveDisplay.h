@@ -13,36 +13,30 @@
 
 BEGIN_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+//&&MM remove from publicApi.
 //========================================================================================
 // @bsiclass                                                        Eric.Paquet     5/2015
 //========================================================================================
-struct PointCloudProgressiveDisplay : Dgn::IProgressiveDisplay, NonCopyableClass
+struct PointCloudProgressiveDisplay : Dgn::ProgressiveTask
     {
-    DEFINE_BENTLEY_REF_COUNTED_MEMBERS
-
     friend struct PointCloudModel;
 
 private:
     uint64_t    m_nextRetryTime;                             //!< When to re-try to query points. unix millis UTC
     uint64_t    m_waitTime;                                  //!< How long to wait before re-trying to query points. millis 
 
-    bool        ShouldDrawInContext (ViewContextR context) const;
+    static bool ShouldDrawInContext (Dgn::RenderContextR context);
 
 protected:
-    PointCloudModel&         m_model;
+    PointCloudModel const& m_model;
 
     //! Displays point cloud and schedules downloads. 
-    virtual Completion _Process(ViewContextR) override;
+    virtual Completion _DoProgressive(Dgn::ProgressiveContext& context, WantShow&) override;
 
-    // set limit and returns true to cause caller to call EnableStopAfterTimout
-    virtual bool _WantTimeoutSet(uint32_t& limit) override {return false;}
+    void DrawView (Dgn::RenderContextR);
 
-    void DrawView (ViewContextR);
-
-    PointCloudProgressiveDisplay (PointCloudModel& model);
-    ~PointCloudProgressiveDisplay();
+    PointCloudProgressiveDisplay (PointCloudModel const& model);
+    virtual ~PointCloudProgressiveDisplay();
     };
-#endif
 
 END_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE

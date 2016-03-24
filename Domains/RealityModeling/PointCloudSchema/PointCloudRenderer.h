@@ -21,19 +21,15 @@ struct PointCloudRenderer
         PointCloudRenderer(); // disabled
         PointCloudRenderer(PointCloudRenderer const&); // disabled
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        void            DrawPointBuffer(ViewContextR context, PointCloudDrawBuffer* buffer) const;
-#endif
+        void            DrawPointBuffer(ViewContextR context, PointCloudDrawParams& buffer) const;
         void            ApplyClassification(BePointCloud::PointCloudQueryBuffers& channels, LasClassificationInfo const* pClassifInfo, Dgn::ViewContextR context) const;
 
         uint32_t        m_outputCapacity;
     public:
-        POINTCLOUDSCHEMA_EXPORT PointCloudRenderer (uint32_t outputCapacity);
-        POINTCLOUDSCHEMA_EXPORT virtual ~PointCloudRenderer();
+        PointCloudRenderer (uint32_t outputCapacity);
+        virtual ~PointCloudRenderer();
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        POINTCLOUDSCHEMA_EXPORT IProgressiveDisplay::Completion DrawPointCloud(Dgn::ViewContextR context, LasClassificationInfo const* pClassifInfo, BePointCloud::PointCloudSceneCR pointCloudScene);
-#endif
+        Dgn::ProgressiveTask::Completion DrawPointCloud(Dgn::ViewContextR context, LasClassificationInfo const* pClassifInfo, BePointCloud::PointCloudSceneCR pointCloudScene);
     };  //  PointCloudRenderer
 
 END_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE

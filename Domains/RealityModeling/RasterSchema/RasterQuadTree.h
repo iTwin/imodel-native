@@ -208,7 +208,7 @@ public:
     void SetVisibleQualityFactor(double factor) {m_visibleQualityFactor=factor;}
     double GetVisibleQualityFactor() const {return m_visibleQualityFactor;}
 
-    static RasterTileCache& GetTileCache();     // Tile graphics cache among all rasters
+    RasterTileCache& GetTileCache() { return m_tileCache;}
 
     void DropGraphicsForViewport(Dgn::DgnViewportCR viewport);
 
@@ -219,6 +219,7 @@ private:
     Dgn::DgnDbR m_dgnDb;                 
     RasterSourcePtr m_pSource; 
     RasterTilePtr m_pRoot;          // The lowest/coarser resolution. 
+    RasterTileCache& m_tileCache;
     double m_visibleQualityFactor;
 };
 

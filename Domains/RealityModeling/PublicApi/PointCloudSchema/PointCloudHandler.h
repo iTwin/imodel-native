@@ -23,52 +23,76 @@ struct PointCloudModelHandler;
 // @bsiclass                                                    Eric.Paquet     04/2015
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PointCloudModel : Dgn::SpatialModel
-{
-DGNMODEL_DECLARE_MEMBERS(POINTCLOUD_CLASSNAME_PointCloudModel, Dgn::SpatialModel)
-
-private:
-    BePointCloud::PointCloudScenePtr    m_pointCloudScenePtr;
-
-    DRange3d                            GetSceneRange();
-
-public:
-    // POINTCLOUD_WIP_GR06_Json - To remove this, we could move JsonUtils.h to PublicApi and then delete this struct and associated methods.
-    struct JsonUtils
+    {
+    struct CreateParams : T_Super::CreateParams
         {
-        static void DPoint3dToJson (JsonValueR outValue, DPoint3dCR point);
-        static void DPoint3dFromJson (DPoint3dR point, Json::Value const& inValue);
+        DEFINE_T_SUPER(Dgn::SpatialModel::CreateParams);
+
+        Utf8String m_fileId;
+
+        public:
+            //! This constructor is used only by the model handler to create a new instance, prior to calling ReadProperties on the model object
+            CreateParams(Dgn::DgnModel::CreateParams const& params) : T_Super(params) {}
+
+            //! Parameters to create a new instance of a PointCloudModel.
+            //! @param[in] dgndb The DgnDb for the new DgnModel
+            //! @param[in] code The Code for the DgnModel
+            //! @param[in] fileId File Id of the PointCloud file.
+            CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnCode code, Utf8StringCR fileId) :
+                T_Super(dgndb, PointCloudModel::QueryClassId(dgndb), code), m_fileId(fileId)
+                {}
         };
 
-    struct Properties
-        {
-        DRange3d            m_range;        //! Point Cloud range
-        Utf8String          m_fileId;       //! File id provided by the application. Used to resolve the local file name.
+    DGNMODEL_DECLARE_MEMBERS(POINTCLOUD_CLASSNAME_PointCloudModel, Dgn::SpatialModel)
 
-        void ToJson(Json::Value&) const;
-        void FromJson(Json::Value const&);
-        };
+    private:
+        mutable BePointCloud::PointCloudScenePtr    m_pointCloudScenePtr;
 
-protected:
-    friend struct PointCloudModelHandler;
-    friend struct PointCloudProgressiveDisplay;
+        DRange3d                            GetSceneRange();
 
-    Properties m_properties;
+    public:
+        // POINTCLOUD_WIP_GR06_Json - To remove this, we could move JsonUtils.h to PublicApi and then delete this struct and associated methods.
+        struct JsonUtils
+            {
+            static void DPoint3dToJson (JsonValueR outValue, DPoint3dCR point);
+            static void DPoint3dFromJson (DPoint3dR point, Json::Value const& inValue);
+            };
 
-    //! Destruct a PointCloudModel object.
-    ~PointCloudModel();
+        struct Properties
+            {
+            DRange3d            m_range;        //! Point Cloud range
+            Utf8String          m_fileId;       //! File id provided by the application. Used to resolve the local file name.
 
-public:
-    //! Create a new PointCloudModel object, in preparation for loading it from the DgnDb.
-    PointCloudModel(CreateParams const& params);
-    PointCloudModel(CreateParams const& params, PointCloudModel::Properties const& properties) ;
+            void ToJson(Json::Value&) const;
+            void FromJson(Json::Value const&);
+            };
 
-    POINTCLOUDSCHEMA_EXPORT virtual void _AddGraphicsToScene(ViewContextR) override;
-    POINTCLOUDSCHEMA_EXPORT virtual void _WriteJsonProperties(Json::Value&) const override;
-    POINTCLOUDSCHEMA_EXPORT virtual void _ReadJsonProperties(Json::Value const&) override;
-    POINTCLOUDSCHEMA_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const override;
-    POINTCLOUDSCHEMA_EXPORT BePointCloud::PointCloudScenePtr GetPointCloudScenePtr ();
-    POINTCLOUDSCHEMA_EXPORT DRange3dR GetRangeR() {return m_properties.m_range;}
-};
+    protected:
+        friend struct PointCloudModelHandler;
+        friend struct PointCloudProgressiveDisplay;
+
+        Properties m_properties;
+
+        //! Destruct a PointCloudModel object.
+        ~PointCloudModel();
+
+    public:
+        //! Create a new PointCloudModel object, in preparation for loading it from the DgnDb.
+        PointCloudModel(CreateParams const& params);
+        PointCloudModel(CreateParams const& params, PointCloudModel::Properties const& properties) ;
+
+        virtual void _AddSceneGraphics(Dgn::SceneContextR) const override;
+        virtual void _WriteJsonProperties(Json::Value&) const override;
+        virtual void _ReadJsonProperties(Json::Value const&) override;
+        virtual Dgn::AxisAlignedBox3d _QueryModelRange() const override;
+        BePointCloud::PointCloudSceneP GetPointCloudSceneP () const;
+        DRange3dCR GetRange() const {return m_properties.m_range;}
+        DRange3dR GetRangeR() {return m_properties.m_range;}
+
+        //! Query the DgnClassId of the PointCloudModel ECClass in the specified DgnDb.
+        //! @note This is a static method that always returns the DgnClassId of the PointCloudModel class - it does @em not return the class of a specific instance.
+        static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb) { return Dgn::DgnClassId(dgndb.Schemas().GetECClassId(POINTCLOUD_SCHEMA_NAME, POINTCLOUD_CLASSNAME_PointCloudModel)); }
+    };
 
 //=======================================================================================
 // Model handler for point clouds.
@@ -80,7 +104,7 @@ struct EXPORT_VTABLE_ATTRIBUTE PointCloudModelHandler : Dgn::dgn_ModelHandler::S
     MODELHANDLER_DECLARE_MEMBERS(POINTCLOUD_CLASSNAME_PointCloudModel, PointCloudModel, PointCloudModelHandler, Dgn::dgn_ModelHandler::Spatial, POINTCLOUDSCHEMA_EXPORT)
 
 public:
-    POINTCLOUDSCHEMA_EXPORT static Dgn::DgnModelId CreatePointCloudModel(DgnDbR db, Utf8StringCR fileId);
+    POINTCLOUDSCHEMA_EXPORT static PointCloudModelPtr CreatePointCloudModel(PointCloudModel::CreateParams const& params);
 };
 
 END_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE

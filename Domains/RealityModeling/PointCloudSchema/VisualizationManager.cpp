@@ -25,11 +25,10 @@ VisualizationManager::~VisualizationManager ()
     {
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     2/2015
 //----------------------------------------------------------------------------------------
-IProgressiveDisplay::Completion VisualizationManager::DrawToContext(ViewContextR context, PointCloudSceneCR pointCloudScene, DRange3dCR pointCloudRange)
+ProgressiveTask::Completion VisualizationManager::DrawToContext(ViewContextR context, PointCloudSceneCR pointCloudScene, DRange3dCR pointCloudRange)
     {
     //&&MM use PTint64 ptPtsLoadedInViewportSinceDraw( PThandle forScene ) to detect that we have a good amount of pixels to redraw
     //          if we returned because of context.CheckStop() I think it would not make sense. it make sense only when ptPtsToLoadInViewport != 0
@@ -138,15 +137,17 @@ IProgressiveDisplay::Completion VisualizationManager::DrawToContext(ViewContextR
             pClassifInfo = dynamic_cast<PointCloudClassificationViewSettings*>(pClassifSettings.get())->GetLasClassificationInfo();
         }
 
+//&&MM must pass as placement transform when constructing Render::Graphic.
+#ifdef NEEDS_WORK_CONTINUOUS_RENDER
     // Push transformation to UOR
     ContextTransform pushTransform(context, pointCloudTransform);
+#endif
 
     PointCloudRenderer renderer(DRAW_OUTPUTCAPACITY);
-    IProgressiveDisplay::Completion status = renderer.DrawPointCloud(context, pClassifInfo, pointCloudScene);
+    ProgressiveTask::Completion status = renderer.DrawPointCloud(context, pClassifInfo, pointCloudScene);
 
     return status;
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    01/2009
@@ -222,6 +223,7 @@ void VisualizationManager::SetViewportProjectionFromSceneRange(ViewContextR cont
     uorToScene.Multiply (subViewBox_scene, subViewBox_local, NPC_CORNER_COUNT);
 #else
     // NEEDSWORK: Not sure if "local" is appropriate anymore...is a transform still going to be "pushed" somewhere?
+    //&&MM localToWorld is part of Render::Graphic 
     DPoint3d subViewBox_world[NPC_CORNER_COUNT];
     context.ViewToWorld(subViewBox_world, subViewBox_view, NPC_CORNER_COUNT);
     DVec3d subViewBox_scene[NPC_CORNER_COUNT];

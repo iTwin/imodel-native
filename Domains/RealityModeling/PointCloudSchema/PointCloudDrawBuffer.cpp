@@ -18,6 +18,7 @@ PointCloudIntensityChannelPool  PointCloudIntensityChannel::m_pool(VIEW_POOL_MAX
 PointCloudNormalChannelPool     PointCloudNormalChannel::m_pool(VIEW_POOL_MAX_BUFFER_COUNT);
 PointCloudByteChannelPool       PointCloudByteChannel::m_pool(VIEW_POOL_MAX_BUFFER_COUNT);
 
+#if 0 //&&MM clean
 /*---------------------------------------------------------------------------------**//**
 * PointCloudDrawBuffer
 * NVI interface.
@@ -26,7 +27,6 @@ PointCloudByteChannelPool       PointCloudByteChannel::m_pool(VIEW_POOL_MAX_BUFF
 * Need to implement the virtual destructor of interface so that we can use delete on PointCloudDrawBuffer
 * @bsimethod                                    Simon.Normand                   03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
                         PointCloudDrawBuffer::~PointCloudDrawBuffer ()           { }
                         PointCloudDrawBuffer::PointCloudDrawBuffer()             { }
 void                    PointCloudDrawBuffer::Deallocate()                       { _Deallocate(); }
@@ -38,27 +38,8 @@ void                    PointCloudDrawBuffer::InitFrom(uint32_t begin, uint32_t 
                                                                                  { _InitFrom(begin, end, pTransform, source); }
 void                    PointCloudDrawBuffer::ChangeCapacity(uint32_t capacity)    { _ChangeCapacity(capacity); }
 void                    PointCloudDrawBuffer::SetIgnoreColor(bool ignoreColor)   { _SetIgnoreColor(ignoreColor); }
+#endif
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    StephanePoulin  03/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t PointCloudDrawParams::AddRef ()
-    { 
-    return ++m_refCount; 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    StephanePoulin  03/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t PointCloudDrawParams::Release ()
-    {
-    uint32_t retval = --m_refCount;
-    if (0 == retval)
-        {
-        delete this;
-        }
-    return retval;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Stephane.Poulin                 10/2012
@@ -79,7 +60,7 @@ void PointCloudDrawParams::ValidateCapacity(uint32_t capacity)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Stephane.Poulin                 10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PointCloudDrawParams::_SetNumPoints (uint32_t numPoints)
+void PointCloudDrawParams::SetNumPoints (uint32_t numPoints)
     { 
     if (m_points.IsValid())
         m_points->SetSize(numPoints);
@@ -90,7 +71,7 @@ void PointCloudDrawParams::_SetNumPoints (uint32_t numPoints)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    StephanePoulin  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PointCloudDrawParams::_ChangeCapacity(uint32_t capacity)
+void PointCloudDrawParams::ChangeCapacity(uint32_t capacity)
     {
     SetNumPoints(0);
 
@@ -110,10 +91,9 @@ void PointCloudDrawParams::_ChangeCapacity(uint32_t capacity)
 +---------------+---------------+---------------+---------------+---------------+------*/
 PointCloudDrawParams::PointCloudDrawParams (PointCloudXyzChannel* pXyzChannel, PointCloudRgbChannel* pRgbChannel)
     {
-    BeAssert(NULL != pXyzChannel); // Mandatory
+    BeAssert(NULL != pXyzChannel); // Mandatory //&&MM ask for a reference and not a pointer!
 
     m_ignoreColor = false;
-    m_refCount = 0;
     m_points = pXyzChannel;
     m_colors = pRgbChannel;
     }
@@ -127,6 +107,7 @@ PointCloudDrawParams::~PointCloudDrawParams ()
     m_colors = NULL;
     }
 
+#if 0 //&&MM TODO
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    StephanePoulin  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -148,13 +129,14 @@ void PointCloudDrawParams::_InitFrom(uint32_t begin, uint32_t end, Transform con
         memcpy(m_colors->GetChannelBuffer(), source->GetRgbChannel()->GetChannelBuffer() + begin, count * sizeof(PointCloudColorDef));
 
     }
+#endif
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Stephane.Poulin                 01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-PointCloudDrawParams* PointCloudDrawParams::Create(PointCloudXyzChannel* pXyzChannel, PointCloudRgbChannel* pRgbChannel)
+RefCountedPtr<PointCloudDrawParams> PointCloudDrawParams::Create(PointCloudXyzChannel* pXyzChannel, PointCloudRgbChannel* pRgbChannel)
     {
     return new PointCloudDrawParams(pXyzChannel, pRgbChannel);
     }
-#endif
+
