@@ -17,7 +17,27 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+--------
 DbResult ECDbProfileUpgrader_3202::_Upgrade(ECDbR ecdb) const
     {
-    return BE_SQLITE_ERROR_ProfileTooOld;
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("DROP INDEX ix_ec_Property_ClassId; DROP INDEX ix_ec_Column_TableId;"))
+        {
+        LOG.errorv("ECDb profile upgrade failed for '%s': Failed to drop indexes ix_ec_Property_ClassId and ix_ec_Column_TableId: %s", ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE INDEX ix_ec_BaseClass_ClassId_Ordinal ON ec_BaseClass(ClassId,Ordinal);"
+                                        "CREATE INDEX ix_ec_Property_ClassId_Ordinal ON ec_Property(ClassId,Ordinal);"
+                                        "CREATE INDEX ix_ec_CustomAttribute_ContainerId_ContainerType_Ordinal ON ec_CustomAttribute(ContainerId,ContainerType,Ordinal);"
+                                        "CREATE INDEX ix_ec_Table_BaseTableId ON ec_Table(BaseTableId);"
+                                        "CREATE INDEX ix_ec_Column_TableId_Ordinal ON ec_Column(TableId,Ordinal);"
+                                        "CREATE INDEX ix_ec_IndexColumn_IndexId_Ordinal ON ec_IndexColumn(IndexId,Ordinal);"))
+        {
+        LOG.errorv("ECDb profile upgrade failed for '%s': Failed to create indexes ix_ec_BaseClass_ClassId_Ordinal, ix_ec_Property_ClassId_Ordinal, "
+                   "ix_ec_CustomAttribute_ContainerId_ContainerType_Ordinal, ix_ec_Table_BaseTableId, ix_ec_Column_TableId_Ordinal, ix_ec_IndexColumn_IndexId_Ordinal: %s", ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debug("ECDb profile upgrade: Dropped indexes ix_ec_Property_ClassId and ix_ec_Column_TableId and created indexes ix_ec_BaseClass_ClassId_Ordinal, ix_ec_Property_ClassId_Ordinal, "
+              "ix_ec_CustomAttribute_ContainerId_ContainerType_Ordinal, ix_ec_Table_BaseTableId, ix_ec_Column_TableId_Ordinal, ix_ec_IndexColumn_IndexId_Ordinal.");
+    return BE_SQLITE_OK;
     }
 
 //-----------------------------------------------------------------------------------------
