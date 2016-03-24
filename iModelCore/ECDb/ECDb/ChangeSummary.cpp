@@ -231,7 +231,7 @@ public:
     ChangeExtractor(ChangeSummaryCR changeSummary, InstancesTableR instancesTable, ValuesTableR valuesTable) : m_changeSummary(changeSummary), m_ecdb(m_changeSummary.GetDb()), m_instancesTable(instancesTable), m_valuesTable(valuesTable) {}
     ~ChangeExtractor() { FreeTableMap(); }
 
-    BentleyStatus ExtractFromSqlChanges(Changes& changes);
+    BentleyStatus ExtractFromSqlChanges(Changes& changes, bool includeRelationshipInstances);
 };
 
 
@@ -1077,11 +1077,11 @@ int ChangeExtractor::GetFirstColumnIndex(PropertyMapCP propertyMap) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeExtractor::ExtractFromSqlChanges(Changes& changes)
+BentleyStatus ChangeExtractor::ExtractFromSqlChanges(Changes& changes, bool includeRelationshipInstances)
     {
     // Pass 1
     BentleyStatus status = ExtractFromSqlChanges(changes, ExtractOption::InstancesOnly);
-    if (SUCCESS != status)
+    if (SUCCESS != status || !includeRelationshipInstances)
         return status;
 
     // Pass 2
@@ -1591,12 +1591,12 @@ ChangeSummary::~ChangeSummary()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeSummary::FromChangeSet(IChangeSet& changeSet)
+BentleyStatus ChangeSummary::FromChangeSet(IChangeSet& changeSet, ChangeSummary::Options const& options)
     {
     Initialize();
 
     Changes changes = changeSet.GetChanges();
-    return m_changeExtractor->ExtractFromSqlChanges(changes);
+    return m_changeExtractor->ExtractFromSqlChanges(changes, options.GetIncludeRelationshipInstances());
     }
 
 //---------------------------------------------------------------------------------------
