@@ -381,7 +381,7 @@
       <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="ECDbExpressionSymbolProvider.h" />
-    <ClInclude Include="ECDbSchemaEditor.h">
+    <ClInclude Include="ECSchemaComparer.h">
       <Filter>ECDbSchemaManager</Filter>
     </ClInclude>
   </ItemGroup>
@@ -703,7 +703,7 @@
       <Filter>ECSql\Fields</Filter>
     </ClCompile>
     <ClCompile Include="ECDbExpressionSymbolProvider.cpp" />
-    <ClCompile Include="ECDbSchemaEditor.cpp">
+    <ClCompile Include="ECSchemaComparer.cpp">
       <Filter>ECDbSchemaManager</Filter>
     </ClCompile>
   </ItemGroup>

@@ -146,7 +146,7 @@ private:
     RefCountedPtr<ECDbSchemaReader> m_ecReader;
     mutable BeMutex m_criticalSection;
 
-    BentleyStatus BatchImportECSchemas (SchemaImportContext const&, bvector<ECN::ECSchemaCP>& importedSchemas, ECN::ECSchemaCacheR, ImportOptions const&) const;
+    BentleyStatus BatchImportECSchemas (SchemaImportContext&, ECN::ECSchemaCacheR, ImportOptions const&) const;
     
     ECN::ECSchemaCP GetECSchema (ECN::ECSchemaId, bool ensureAllClassesLoaded) const;
     //! Ensure that all direct subclasses of @p ecClass are loaded. Subclasses of its subclasses are not loaded

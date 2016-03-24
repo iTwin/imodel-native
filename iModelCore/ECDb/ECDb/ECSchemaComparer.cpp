@@ -516,7 +516,7 @@ BentleyStatus ECSchemaComparer::CompareECBaseClasses(BaseClassChanges& changes, 
     auto m = std::min(a.size(), b.size());
     for (size_t i = 0; i < m; i++)
         {
-        if (strcmp(a[i]->GetFullName(), b[i]->GetFullName()) == 0)
+        if (strcmp(a[i]->GetFullName(), b[i]->GetFullName()) != 0)
             {
             changes.Add(ChangeState::Modified).SetValue(Utf8String(a[i]->GetFullName()), Utf8String(b[i]->GetFullName()));
             }
@@ -1575,12 +1575,13 @@ BentleyStatus ECSchemaComparer::Compare(ECSchemaChanges& changes, ECSchemaList c
     if (CompareECSchemas(changes, existingSet, newSet) != SUCCESS)
         return ERROR;
 
-    Utf8String beforeOptimize, afterOptimize;
-    changes.WriteToString(beforeOptimize);
     changes.Optimize();
+
+#ifndef NDEBUG
+    Utf8String afterOptimize;
     changes.WriteToString(afterOptimize);
-    printf("%s", beforeOptimize.c_str());
-    printf("%s", afterOptimize.c_str());
+    LOG.debug(afterOptimize.c_str());
+#endif
 
     return SUCCESS;
     }

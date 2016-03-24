@@ -157,11 +157,18 @@ ImportOptions const& options
 
     BeMutexHolder lock (m_criticalSection);
     
-    bvector<ECSchemaCP> importedSchemas;
-    if (SUCCESS != BatchImportECSchemas (context, importedSchemas, cache, options))
+    if (SUCCESS != BatchImportECSchemas (context, cache, options))
         return ERROR;
   
-    if (MapStatus::Error == m_map.MapSchemas (context, importedSchemas))
+    ECSchemaCompareContext& compareContext = context.GetECSchemaCompareContext();
+    if (compareContext.IsEmpty())
+        return SUCCESS;
+
+    //See if cache need to be cleared. If compareContext.RequireECSchemaUpgrade() == true will clear the cache and reload imported schema.
+    if (compareContext.ReloadECSchemaIfRequired(*this) == ERROR)
+        return ERROR;
+
+    if (MapStatus::Error == m_map.MapSchemas (context))
         return ERROR;
 
     {
@@ -170,7 +177,9 @@ ImportOptions const& options
         return ERROR;
     }
 
-    m_ecdb.ClearECDbCache();
+    //only clear cache if its not been cleared before by ReloadECSchemaIfRequired()
+    if (!compareContext.RequireECSchemaUpgrade())
+        m_ecdb.ClearECDbCache();
 
     timer.Stop();
     LOG.infov("Imported ECSchemas in %.4f msecs.",  timer.GetElapsedSeconds() * 1000.0);
@@ -180,7 +189,7 @@ ImportOptions const& options
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                   Affan.Khan        29/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext const& context, bvector<ECN::ECSchemaCP>& importedSchemas, ECSchemaCacheR schemaCache, ImportOptions const& options) const
+BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext& context, ECSchemaCacheR schemaCache, ImportOptions const& options) const
     {
     bvector<ECSchemaP> schemas;
     schemaCache.GetSchemas(schemas);
@@ -269,18 +278,15 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext const&
     if (!isValid)
         return ERROR;
 
-    ECSchemaCompareContext ctx;
-    if (ctx.Prepare(*this, dependencyOrderedPrimarySchemas) != SUCCESS)
+    ECSchemaCompareContext& schemaPrepareContext = context.GetECSchemaCompareContext();
+    if (schemaPrepareContext.Prepare(*this, dependencyOrderedPrimarySchemas) != SUCCESS)
         return ERROR;
 
     ECDbSchemaWriter schemaWriter(m_ecdb);
     ECDbExpressionSymbolContext symbolsContext(m_ecdb);
-    for (ECSchemaCP schema : ctx.GetImportedSchemaSet())
+    for (ECSchemaCP schema : schemaPrepareContext.GetImportedSchemaSet())
         {
-        importedSchemas.push_back(schema);
- 
-
-        if (SUCCESS != schemaWriter.Import(ctx, *schema))
+        if (SUCCESS != schemaWriter.Import(schemaPrepareContext, *schema))
             return ERROR;
         }
 

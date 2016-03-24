@@ -312,6 +312,21 @@ BentleyStatus ECDbSchemaWriter::UpdateRelationshipConstraint(ECContainerId conta
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus TryParseId(Utf8StringR schemaName, Utf8StringR className, Utf8StringCR id)
+    {
+    auto n = id.find(':');
+    BeAssert(n != Utf8String::npos);
+    if (n == Utf8String::npos)
+        {
+        return ERROR;
+        }
+    schemaName = id.substr(0, n);
+    className = id.substr(n + 1);
+    return SUCCESS;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaWriter::UpdateCustomAttributes(ECContainerType containerType, ECContainerId containerId, ECInstanceChanges& instanceChanges, IECCustomAttributeContainerCR oldContainer, IECCustomAttributeContainerCR newContainer)
     {
     if (instanceChanges.Empty() || !instanceChanges.IsPending())
@@ -323,13 +338,10 @@ BentleyStatus ECDbSchemaWriter::UpdateCustomAttributes(ECContainerType container
         if (!change.IsPending())
             continue;
 
-        auto n = change.GetId().find(':');
-        BeAssert(n != Utf8String::npos);
-        if (n == Utf8String::npos)
+        Utf8String schemaName;
+        Utf8String className;
+        if (TryParseId(schemaName, className, change.GetId()) == ERROR)
             return ERROR;
-
-        Utf8String schemaName = change.GetId().substr(0, n);
-        Utf8String className = change.GetId().substr(n + 1);
 
         if (change.GetState() == ChangeState::New)
             {
@@ -481,7 +493,7 @@ BentleyStatus ECDbSchemaWriter::UpdateClass(ECClassChange& classChange, ECClassC
                             oldClass.GetFullName());
                 }
             else if (change.GetState() == ChangeState::New)
-                {
+                {               
                 return Fail("ECSCHEMA-UPGRADE: Adding new BaseClass is not supported. Failed on ECClass %s.",
                             oldClass.GetFullName());
                 }
@@ -760,6 +772,9 @@ BentleyStatus ECDbSchemaWriter::Import(ECSchemaCompareContext& ctx, ECN::ECSchem
                 return SUCCESS;
             }
         }
+
+    if (ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, ecSchema.GetName().c_str()).IsValid())
+        return SUCCESS;
 
     // GenerateId
     BeBriefcaseBasedId nextId;

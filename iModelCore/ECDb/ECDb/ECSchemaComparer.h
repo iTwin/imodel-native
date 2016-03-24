@@ -313,9 +313,6 @@ struct ECChange
         virtual void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const = 0;
         virtual bool _IsEmpty() const = 0;
         virtual void _Optimize() {}
-        virtual bool _IsArray() const { return false; }
-        virtual bool _IsObject() const { return false; }
-        virtual bool _IsPrimitive() const { return false; }
     protected:
         static  void AppendBegin(Utf8StringR str, ECChange const& change, int currentIndex)
             {
@@ -415,10 +412,7 @@ struct ECObjectChange : ECChange
                     ++itor;
                 }
             }
-        virtual bool _IsObject() const override
-            {
-            return true;
-            }
+        
     protected:
         template<typename T>
         T& Get(SystemId systemId)
@@ -485,10 +479,6 @@ struct ECChangeArray : ECChange
                 else
                     ++itor;
                 }
-            }
-        virtual bool _IsArray() const override
-            {
-            return true;
             }
 
     public:
@@ -691,12 +681,9 @@ struct ECPrimitiveChange : ECChange
      
         virtual bool _IsEmpty() const override
             {
-            return m_old == m_new;
+            return m_old == m_new;           
             }
-        virtual bool _IsPrimitive() const override
-            {
-            return true;
-            }
+        
         virtual Utf8String _ToString(ValueId id) const  { return "NOT_IMP"; }
         virtual void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override
             {
@@ -905,6 +892,9 @@ struct Int32Change : ECPrimitiveChange<int32_t>
             {}
         virtual ~Int32Change() {}
     };
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct DoubleChange: ECPrimitiveChange<double>
     {
     private:
@@ -951,7 +941,9 @@ struct DateTimeChange: ECPrimitiveChange<DateTime>
             {}
         virtual ~DateTimeChange() {}
     };
-
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct ECValueChange : ECPrimitiveChange<ECValue>
     {
     private:
@@ -1166,6 +1158,10 @@ struct ECPropertyValueChange : ECChange
 
         virtual bool _IsEmpty() const override
             {
+            if (auto parent = GetParent())
+                if (parent->GetSystemId() == CUSTOMATTRIBTUES && GetState() != ChangeState::Modified)
+                    return false;
+
             if (m_value != nullptr)
                 return m_value->IsEmpty();
 
@@ -1429,11 +1425,9 @@ struct ECSchemaComparer
         BentleyStatus AppendECEnumeration(ECEnumerationChanges& changes, ECEnumerationCR v, ValueId appendType);
         //BentleyStatus AppendKindOfQuantity(ECKindOfQuantityChanges& changes, KindOfQuantityCR v, ValueId appendType);
         BentleyStatus AppendECProperty(ECPropertyChanges& changes, ECPropertyCR v, ValueId appendType);
-        //BentleyStatus AppendECInstance(ECPropertyValueChange& changes, IECInstanceCR v, ValueId appendType);
-        
+        //BentleyStatus AppendECInstance(ECPropertyValueChange& changes, IECInstanceCR v, ValueId appendType);        
         BentleyStatus AppendCustomAttributes(ECInstanceChanges& changes, IECCustomAttributeContainerCR v, ValueId appendType);
-        BentleyStatus AppendCustomAttribute(ECInstanceChanges& changes, IECInstanceCR v, ValueId appendType);
-        
+        BentleyStatus AppendCustomAttribute(ECInstanceChanges& changes, IECInstanceCR v, ValueId appendType);        
         BentleyStatus AppendBaseClasses(BaseClassChanges& changes, ECBaseClassesList const& v, ValueId appendType);
         BentleyStatus AppendReferences(ReferenceChanges& changes, ECSchemaReferenceListCR v, ValueId appendType);
         BentleyStatus ConvertECInstanceToValueMap(std::map<Utf8String, ECValue>& map, IECInstanceCR instance);

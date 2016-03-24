@@ -10,7 +10,7 @@
 #include "ClassMap.h"
 #include "ClassMapInfo.h"
 #include "ECDbSql.h"
-#include "ECDbSchemaEditor.h"
+#include "ECSchemaComparer.h"
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //======================================================================================
@@ -85,7 +85,32 @@ public:
 
     std::vector<std::unique_ptr<ECDbSqlIndex>> const& GetIndexes() const { return m_indexes; }
     };
-
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
+struct ECSchemaCompareContext
+    {
+    private:
+        ECSchemaList m_existingSchemaList;
+        ECSchemaList m_importedSchemaList;
+        ECSchemaChanges m_changes;
+        bool m_prepared;
+    private:
+        bool AssertIfNotPrepared() const;
+    public:
+        ECSchemaCompareContext() : m_prepared(false) {}
+        ~ECSchemaCompareContext() {}
+        BentleyStatus Prepare(ECDbSchemaManager const& schemaManager, bvector<ECSchemaP> const& dependencyOrderedPrimarySchemas);
+        ECSchemaList const& GetExistingSchemaSet() const { return m_existingSchemaList; }
+        ECSchemaList const& GetImportedSchemaSet() const { return m_importedSchemaList; }
+        ECSchemaCP FindExistingSchema(Utf8CP schemaName) const;
+        ECSchemaCP FindImportedSchema(Utf8CP schemaName) const;
+        bool RequireECSchemaUpgrade() const;
+        bool IsPrepared() const { return m_prepared; }
+        ECSchemaChanges& GetChanges() { return m_changes; }
+        bool IsEmpty() const { return m_importedSchemaList.empty(); }
+        BentleyStatus ReloadECSchemaIfRequired(ECDbSchemaManager const& schemaManager);
+    };
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      05/2014
 //+===============+===============+===============+===============+===============+======
@@ -102,7 +127,7 @@ private:
     ClassMapLoadContext m_loadContext;
 
     UserECDbMapStrategy* GetUserStrategyP(ECN::ECClassCR, ECN::ECDbClassMap const*) const;
-
+    ECSchemaCompareContext m_prepareContext;
 public:
     explicit SchemaImportContext (ECDbMapDb& coreECDbMapDb) : m_ecdbMapDb(coreECDbMapDb) {}
     BentleyStatus Initialize() { return m_ecdbMapDb.Load(); }
@@ -120,35 +145,8 @@ public:
     bool IsRelationshipClassWithSingleNavigationProperty(ECN::ECRelationshipClassCR relClass) const { return m_relationshipClassesWithSingleNavigationProperty.find(&relClass) != m_relationshipClassesWithSingleNavigationProperty.end(); }
     ClassMapLoadContext& GetClassMapLoadContext() { return m_loadContext; }
     SchemaImportECDbMapDb& GetECDbMapDb() { return m_ecdbMapDb; }
-    };
-struct ECSchemaCompareContext
-    {
-    private:
-        ECSchemaList m_existingSchemaList;
-        ECSchemaList m_importedSchemaList;
-        ECSchemaChanges m_changes;
-    public:
-        ECSchemaCompareContext() {}
-        ~ECSchemaCompareContext() {}
-        BentleyStatus Prepare(ECDbSchemaManager const& schemaManager, bvector<ECSchemaP> const& dependencyOrderedPrimarySchemas);
-        ECSchemaList const& GetExistingSchemaSet() const { return m_existingSchemaList; }
-        ECSchemaList const& GetImportedSchemaSet() const { return m_importedSchemaList; }
-        ECSchemaCP FindExistingSchema(Utf8CP schemaName) const
-            {
-            for (auto schema : m_existingSchemaList)
-                if (schema->GetName() == schemaName)
-                    return schema;
+    ECSchemaCompareContext& GetECSchemaCompareContext() { return m_prepareContext; }
 
-            return nullptr;
-            }
-        ECSchemaCP FindImportedSchema(Utf8CP schemaName) const
-            {
-            for (auto schema : m_importedSchemaList)
-                if (schema->GetName() == schemaName)
-                    return schema;
-
-            return nullptr;
-            }
-        ECSchemaChanges& GetChanges() { return m_changes; }
     };
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

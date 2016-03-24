@@ -9,12 +9,109 @@
 #include "SchemaImportContext.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECSchemaCompareContext::ReloadECSchemaIfRequired(ECDbSchemaManager const& schemaManager)
+    {
+    if (IsEmpty() || !RequireECSchemaUpgrade())
+        return SUCCESS;
 
+    //save names
+    std::vector<Utf8String> existing, imported;
+    for (auto schemaP : m_existingSchemaList)
+        existing.push_back(schemaP->GetName());
+
+    for (auto schemaP : m_importedSchemaList)
+        imported.push_back(schemaP->GetName());
+
+    m_existingSchemaList.clear();
+    m_importedSchemaList.clear();
+    schemaManager.GetECDb().ClearECDbCache();
+
+    for (auto const& name : existing)
+        {
+        auto schemaCP = schemaManager.GetECSchema(name.c_str());
+        if (schemaCP == nullptr)
+            {
+            BeAssert(false && "Failed to reload a schema");
+            return ERROR;
+            }
+        }
+
+    for (auto const& name : imported)
+        {
+        auto schemaCP = schemaManager.GetECSchema(name.c_str());
+        if (schemaCP == nullptr)
+            {
+            BeAssert(false && "Failed to reload a schema");
+            return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchemaCompareContext::AssertIfNotPrepared() const
+    {
+    if (m_prepared)
+        return false;
+
+    BeAssert(m_prepared && "Context is not prepared");
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaCP ECSchemaCompareContext::FindExistingSchema(Utf8CP schemaName) const
+    {
+    if (AssertIfNotPrepared())
+        return nullptr;
+
+    for (auto schema : m_existingSchemaList)
+        if (schema->GetName() == schemaName)
+            return schema;
+
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaCP ECSchemaCompareContext::FindImportedSchema(Utf8CP schemaName) const
+    {
+    if (AssertIfNotPrepared())
+        return nullptr;
+
+    for (auto schema : m_importedSchemaList)
+        if (schema->GetName() == schemaName)
+            return schema;
+
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchemaCompareContext::RequireECSchemaUpgrade() const
+    {
+    AssertIfNotPrepared();
+    return !m_existingSchemaList.empty();
+    }
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECSchemaCompareContext::Prepare(ECDbSchemaManager const& schemaManager, bvector<ECSchemaP> const& dependencyOrderedPrimarySchemas)
     {
+    if (m_prepared)
+        {
+        BeAssert(false && "Already prepared");
+        return ERROR;
+        }
+
     m_existingSchemaList.clear();
     m_importedSchemaList.clear();
 
@@ -36,7 +133,38 @@ BentleyStatus ECSchemaCompareContext::Prepare(ECDbSchemaManager const& schemaMan
         ECSchemaComparer comparer;
         if (comparer.Compare(m_changes, m_existingSchemaList, m_importedSchemaList) != SUCCESS)
             return ERROR;
+
+        std::set<Utf8CP, CompareUtf8> schemaOfInterest;
+        if (m_changes.Exist())
+            {
+            for (int i = 0; i < m_changes.Count(); i++)
+                {
+                schemaOfInterest.insert(m_changes.At(i).GetId().c_str());                
+                }
+            }
+        //Remove any none interesting schemas
+        auto importItor = m_importedSchemaList.begin();
+        while (importItor != m_importedSchemaList.end())
+            {
+            if (schemaOfInterest.find((*importItor)->GetName().c_str()) == schemaOfInterest.end())
+                {
+                importItor = m_importedSchemaList.erase(importItor);
+                }
+            }
+
+        //Remove any none interesting schemas
+        auto existingItor = m_existingSchemaList.begin();
+        while (existingItor != m_existingSchemaList.end())
+            {
+            if (schemaOfInterest.find((*existingItor)->GetName().c_str()) == schemaOfInterest.end())
+                {
+                existingItor = m_existingSchemaList.erase(existingItor);
+                }
+            }
+
         }
+
+    m_prepared = true;
     return SUCCESS;
     }
 //*************************************************************************************
