@@ -84,12 +84,10 @@ WSError::WSError(HttpResponseCR httpResponse) : WSError()
         {
         LOG.infov
             (
-            "WSError - received error:\n"
-            "From Url: %s\n"
-            "Http status: %d\n"
+            "Received WSError: %d %s\n"
             "Server response: %s\n",
-            httpResponse.GetEffectiveUrl().c_str(),
             httpResponse.GetHttpStatus(),
+            httpResponse.GetEffectiveUrl().c_str(),
             httpResponse.GetBody().AsString().c_str()
             );
         }
