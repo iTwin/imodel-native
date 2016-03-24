@@ -1218,6 +1218,69 @@ TEST_F(UnitsPerformanceTests, GenerateEveryConversionValue)
     PERFORMANCELOG.errorv("Time to Generate %d conversion factors: %.17g", numConversions, timer.GetElapsedSeconds());
     }
 
+TEST_F(UnitsTests, ExportDisplayLabelsFromOldSystem)
+    {
+    bmap<Utf8String, Utf8String> labels;
+    bvector<Utf8String> missingUnits;
+    auto lineProcessor = [&labels, &missingUnits] (bvector<Utf8String>& tokens)
+        {
+        UnitCP unit = LocateUOM(tokens[0].c_str(), true);
+        if (unit == nullptr)
+            {
+            missingUnits.push_back(tokens[0]);
+            return;
+            }
+
+        labels[unit->GetName()] = Utf8PrintfString("%s,%s", tokens[1].c_str(), tokens[2].c_str());
+        };
+
+    ReadConversionCsvFile(L"oldunitlabels.csv", lineProcessor);
+
+    Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"NewUnitLabelsByName.csv");
+    BeFile file;
+    EXPECT_EQ(file.Create(fileName, true), BeFileStatus::Success);
+    EXPECT_EQ(file.Open(fileName, BeFileAccess::Write), BeFileStatus::Success);
+    for (auto const& s : labels)
+        {
+        Utf8PrintfString line("%s,%s", s.first.c_str(), s.second.c_str());
+        WriteLine(file, line.c_str());
+        }
+
+    file.Close();
+
+    if (missingUnits.size() > 0)
+        {
+        fileName = UnitsTestFixture::GetOutputDataPath(L"OldUnitLabelsNotUsedInNewSystem.txt");
+        EXPECT_EQ(file.Create(fileName, true), BeFileStatus::Success);
+        EXPECT_EQ(file.Open(fileName, BeFileAccess::Write), BeFileStatus::Success);
+        for (auto const& s : missingUnits)
+            {
+            WriteLine(file, s.c_str());
+            }
+
+        file.Close();
+        }
+
+    bvector<Utf8String> allUnitNames;
+    UnitRegistry::Instance().AllUnitNames(allUnitNames, false);
+    bvector<Utf8String> missingLabels;
+    for (auto const& name : allUnitNames)
+        {
+        if (labels.end() == labels.find(name))
+            missingLabels.push_back(name);
+        }
+
+    fileName = UnitsTestFixture::GetOutputDataPath(L"UnitsWithoutDisplayLabel.csv");
+    EXPECT_EQ(file.Create(fileName, true), BeFileStatus::Success);
+    EXPECT_EQ(file.Open(fileName, BeFileAccess::Write), BeFileStatus::Success);
+    for (auto const& s : missingLabels)
+        {
+        WriteLine(file, s.c_str());
+        }
+
+    file.Close();
+    }
+
 //TEST_F(UnitsPerformanceTests, ConvertManyValues)
 //    {
 //    StopWatch timer("Do Many Conversions", false);
