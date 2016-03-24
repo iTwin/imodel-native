@@ -588,6 +588,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     {    
     if (m_smPtr == 0 && !m_tryOpen)
         {
+        //BeFileName smFileName(((this)->m_properties).m_fileId);
         BeFileName smFileName;
         T_HOST.GetPointCloudAdmin()._ResolveFileName(smFileName, (((this)->m_properties).m_fileId), GetDgnDb());
 
@@ -811,10 +812,12 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     DPoint3d translation = {0,0,0};
     
     m_storageToUorsTransfo = DMatrix4d::FromScaleAndTranslation(scale, translation);                
-        
+    
+    // NEEDS_WORK_SM
     BeFileName dbFileName(dgnProject.GetDbFileName());
     BeFileName basePath = dbFileName.GetDirectoryName();
     T_HOST.GetPointCloudAdmin()._CreateLocalFileId(m_properties.m_fileId, smFilename, basePath);
+    //m_properties.m_fileId = smFilename.GetNameUtf8();
     }
 
 //=======================================================================================
