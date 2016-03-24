@@ -33,6 +33,15 @@ DGNPLATFORM_REF_COUNTED_PTR(SpatialViewController)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
+enum class OrientationError
+    {
+    None,
+    Unknown,
+    DeviceRequiresMovement, //! Orientation events are meaningless until the user moves the device
+    TrueNorthNotAvailable,  //! True north requested but available, possibly because wifi is not enabled.
+    NotAvailable,
+    };
+
 enum class OrientationMode
 {
     CompassHeading  = 0,    //!< Use compass heading from device

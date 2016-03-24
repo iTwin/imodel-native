@@ -1469,13 +1469,13 @@ static DgnDbStatus importECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceMod
         }
     Statement sstmt(sourceModel.GetDgnDb(), Utf8PrintfString(
         "SELECT %s FROM %s rel, dgn_Element source, dgn_Element target WHERE rel.%s=source.Id AND rel.%s=target.Id AND source.ModelId=? AND target.ModelId=?",
-        selectList.c_str(), relname, sourcecol, targetcol));
+        selectList.c_str(), relname, sourcecol, targetcol).c_str());
 
     sstmt.BindId(1, sourceModel.GetModelId());
     sstmt.BindId(2, sourceModel.GetModelId());
 
     Statement istmt(destDb, Utf8PrintfString(
-        "INSERT INTO %s (%s) VALUES(%s)", relname, colsList.c_str(), placeholderList.c_str()));
+        "INSERT INTO %s (%s) VALUES(%s)", relname, colsList.c_str(), placeholderList.c_str()).c_str());
 
     StopWatch timer(true);
     DbResult stepResult = sstmt.Step();

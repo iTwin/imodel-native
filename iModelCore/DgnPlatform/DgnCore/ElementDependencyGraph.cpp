@@ -380,7 +380,7 @@ void DgnElementDependencyGraph::UpdateModelDependencyIndex()
     auto count = modelsCount->GetValueInt64(0);
     if (modelsSeen.size() != count)
         {
-        ReportValidationError(*new CyclesDetectedError(Utf8PrintfString("%d models involved",(count-idx))), nullptr);
+        ReportValidationError(*new CyclesDetectedError(Utf8PrintfString("%d models involved",(count-idx)).c_str()), nullptr);
         return;
         }
     }

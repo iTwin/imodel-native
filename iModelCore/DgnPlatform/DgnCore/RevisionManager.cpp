@@ -444,7 +444,11 @@ void DgnRevision::IncludeChangeGroupData(ChangeGroup& changeGroup, Include inclu
     // Would like to avoid having to read from disk here...
     ChangeStreamFileReader stream(GetChangeStreamFile(), db);
     DgnChangeSummary summary(db);
-    if (SUCCESS != summary.FromChangeSet(stream))
+
+    ChangeSummary::Options summaryOptions;
+    summaryOptions.SetIncludeRelationshipInstances(false);
+
+    if (SUCCESS != summary.FromChangeSet(stream, summaryOptions))
         return;
 
     if (Include::Locks == (include & Include::Locks))
