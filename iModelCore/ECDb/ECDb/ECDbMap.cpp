@@ -164,7 +164,38 @@ BentleyStatus ECDbMap::CreateECClassViewsInDb() const
     ECClassViewGenerator viewGenerator(*this);
     return viewGenerator.BuildViews(classMaps);
     }
+void VisitRoot(ECClassCR ecclass, std::set<ECClassCP>& doneList, std::set<ECClassCP>& rootClassSet, std::vector<ECClassCP>& rootClassList, std::vector<ECRelationshipClassCP>& rootRelationshipList)
+    {
+    if (doneList.find(&ecclass) == doneList.end())
+        return;
 
+    doneList.insert(&ecclass);
+
+    if (!ecclass.HasBaseClasses())
+        {
+        if (rootClassSet.find(&ecclass) == rootClassSet.end())
+            {
+            rootClassSet.insert(&ecclass);
+            if (auto relationship = ecclass.GetRelationshipClassCP())
+                rootRelationshipList.push_back(relationship);
+            else
+                rootClassList.push_back(&ecclass);
+            }
+
+        return;
+        }
+
+    for (ECClassCP baseClass : ecclass.GetBaseClasses())
+        {
+        if (baseClass == nullptr)
+            continue;
+
+        if (doneList.find(baseClass) == doneList.end())
+            return;
+
+        VisitRoot(*baseClass, doneList, rootClassSet, rootClassList, rootRelationshipList);
+        }
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan         09/2012
 //---------------------------------------------------------------------------------------
@@ -176,11 +207,13 @@ MapStatus ECDbMap::DoMapSchemas()
     StopWatch timer(true);
 
     // Identify root classes/relationship-classes
-    bvector<ECClassCP> rootClasses;
-    bvector<ECRelationshipClassCP> rootRelationships;
-    int nClasses = 0;
-    int nRelationshipClasses = 0;
     ECSchemaCompareContext& ctx = GetSchemaImportContext()->GetECSchemaCompareContext();
+
+    std::set<ECClassCP> doneList;
+    std::set<ECClassCP> rootClassSet; 
+    std::vector<ECClassCP> rootClassList;
+    std::vector<ECRelationshipClassCP> rootRelationshipList;
+
     for (ECSchemaCP schema : ctx.GetImportedSchemaSet())
         {
         if (schema->IsSupplementalSchema())
@@ -188,28 +221,16 @@ MapStatus ECDbMap::DoMapSchemas()
 
         for (ECClassCP ecClass : schema->GetClasses())
             {
-            const bool isRootClass = ecClass->GetBaseClasses().empty();
-            ECRelationshipClassCP relationshipClass = ecClass->GetRelationshipClassCP();
-            if (relationshipClass != nullptr)
-                {
-                if (isRootClass)
-                    rootRelationships.push_back(relationshipClass);
+            if (doneList.find(ecClass) == doneList.end())
+                continue;
 
-                nRelationshipClasses++;
-                }
-            else
-                {
-                if (isRootClass)
-                    rootClasses.push_back(ecClass);
-
-                nClasses++;
-                }
+            VisitRoot(*ecClass, doneList, rootClassSet, rootClassList, rootRelationshipList);
             }
         }
 
     // Starting with the root, recursively map the entire class hierarchy. 
     MapStatus status = MapStatus::Success;
-    for (ECClassCP rootClass : rootClasses)
+    for (ECClassCP rootClass : rootClassList)
         {
         status = MapClass(*rootClass);
         if (status == MapStatus::Error)
@@ -221,7 +242,7 @@ MapStatus ECDbMap::DoMapSchemas()
         return MapStatus::Error;
 
     BeAssert(status != MapStatus::BaseClassesNotMapped && "Expected to resolve all class maps by now.");
-    for (ECRelationshipClassCP rootRelationshipClass : rootRelationships)
+    for (ECRelationshipClassCP rootRelationshipClass : rootRelationshipList)
         {
         status = MapClass(*rootRelationshipClass);
         if (status == MapStatus::Error)
@@ -246,7 +267,7 @@ MapStatus ECDbMap::DoMapSchemas()
     timer.Stop();
     if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
         LOG.debugv("Mapped %d ECSchemas containing %d ECClasses and %d ECRelationshipClasses to the database in %.4f seconds",
-                   ctx.GetImportedSchemaSet().size(), nClasses, nRelationshipClasses, timer.GetElapsedSeconds());
+                   ctx.GetImportedSchemaSet().size(), rootClassList.size(), rootRelationshipList.size(), timer.GetElapsedSeconds());
 
     return MapStatus::Success;
     }
