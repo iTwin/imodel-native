@@ -78,6 +78,26 @@ JsGeometryBuilder::JsGeometryBuilder(JsDgnElementP e, JsDPoint3dP o, JsYawPitchR
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Earlin.Lutz                      03/16
+//---------------------------------------------------------------------------------------
+JsGeometryBuilder::JsGeometryBuilder(JsDgnElementP e, DPoint3dCR o, YawPitchRollAnglesCR a)
+    {
+    DGNJSAPI_VALIDATE_ARGS_VOID(DGNJSAPI_IS_VALID_JSOBJ(e));
+
+    GeometrySource3dCP source3d = e->m_el->ToGeometrySource3d();
+    if (nullptr != source3d)
+        m_builder = GeometryBuilder::Create(*source3d, o, a);
+    else
+        {
+        GeometrySource2dCP source2d = e->m_el->ToGeometrySource2d();
+        if (nullptr != source2d)
+            m_builder = GeometryBuilder::Create(*source2d, DPoint2d::From(o.x, o.y), AngleInDegrees::FromDegrees(a.GetYaw ().Degrees ()));
+        }
+    }
+
+
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15
 //---------------------------------------------------------------------------------------
 void JsGeometryBuilder::AppendCopyOfGeometry(JsGeometryBuilderP jsbuilder, JsPlacement3dP jsrelativePlacement)

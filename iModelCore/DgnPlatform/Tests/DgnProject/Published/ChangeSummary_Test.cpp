@@ -170,7 +170,7 @@ bool ChangeSummaryTestFixture::ChangeSummaryContainsInstance(ChangeSummary const
     CachedStatementPtr statement = m_testDb->GetCachedStatement(sql.c_str());
     BeAssert(statement.IsValid());
 
-    statement->BindInt64(1, classId);
+    statement->BindId(1, classId);
     statement->BindId(2, instanceId);
     statement->BindInt(3, (int) dbOpcode);
 
@@ -981,9 +981,9 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
 
     statement.Finalize();
     statement.Prepare(*m_testDb, "INSERT INTO StartupCompany.EmployeeCompany (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
-    statement.BindInt64(1, (int64_t) employeeKey.GetECClassId());
+    statement.BindId(1, employeeKey.GetECClassId());
     statement.BindId(2, employeeKey.GetECInstanceId());
-    statement.BindInt64(3, (int64_t) companyKey1.GetECClassId());
+    statement.BindId(3, companyKey1.GetECClassId());
     statement.BindId(4, companyKey1.GetECInstanceId());
 
     ECInstanceKey employeeCompanyKey;
@@ -992,9 +992,9 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
 
     statement.Finalize();
     statement.Prepare(*m_testDb, "INSERT INTO StartupCompany.EmployeeHardware (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
-    statement.BindInt64(1, (int64_t) employeeKey.GetECClassId());
+    statement.BindId(1, employeeKey.GetECClassId());
     statement.BindId(2, employeeKey.GetECInstanceId());
-    statement.BindInt64(3, (int64_t) hardwareKey1.GetECClassId());
+    statement.BindId(3, hardwareKey1.GetECClassId());
     statement.BindId(4, hardwareKey1.GetECInstanceId());
 
     ECInstanceKey employeeHardwareKey;
@@ -1044,9 +1044,9 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
 
     statement.Finalize();
     statement.Prepare(*m_testDb, "INSERT INTO StartupCompany.EmployeeHardware (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
-    statement.BindInt64(1, (int64_t) employeeKey.GetECClassId());
+    statement.BindId(1, employeeKey.GetECClassId());
     statement.BindId(2, employeeKey.GetECInstanceId());
-    statement.BindInt64(3, (int64_t) hardwareKey2.GetECClassId());
+    statement.BindId(3, hardwareKey2.GetECClassId());
     statement.BindId(4, hardwareKey2.GetECInstanceId());
 
     ECInstanceKey employeeHardwareKey2;
@@ -1055,9 +1055,9 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
 
     statement.Finalize();
     statement.Prepare(*m_testDb, "INSERT INTO StartupCompany.EmployeeCompany (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
-    statement.BindInt64(1, (int64_t) employeeKey.GetECClassId());
+    statement.BindId(1, employeeKey.GetECClassId());
     statement.BindId(2, employeeKey.GetECInstanceId());
-    statement.BindInt64(3, (int64_t) companyKey2.GetECClassId());
+    statement.BindId(3, companyKey2.GetECClassId());
     statement.BindId(4, companyKey2.GetECInstanceId());
 
     ECInstanceKey employeeCompanyKey2;
@@ -1182,9 +1182,9 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
 
     statement.Finalize();
     statement.Prepare(*m_testDb, "INSERT INTO StartupCompany.EmployeeCompany (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
-    statement.BindInt64(1, (int64_t) employeeKey.GetECClassId());
+    statement.BindId(1, employeeKey.GetECClassId());
     statement.BindId(2, employeeKey.GetECInstanceId());
-    statement.BindInt64(3, (int64_t) companyKey1.GetECClassId());
+    statement.BindId(3, companyKey1.GetECClassId());
     statement.BindId(4, companyKey1.GetECInstanceId());
 
     ECInstanceKey employeeCompanyKey;
@@ -1193,9 +1193,9 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
 
     statement.Finalize();
     statement.Prepare(*m_testDb, "INSERT INTO StartupCompany.EmployeeHardware (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
-    statement.BindInt64(1, (int64_t) employeeKey.GetECClassId());
+    statement.BindId(1, employeeKey.GetECClassId());
     statement.BindId(2, employeeKey.GetECInstanceId());
-    statement.BindInt64(3, (int64_t) hardwareKey1.GetECClassId());
+    statement.BindId(3, hardwareKey1.GetECClassId());
     statement.BindId(4, hardwareKey1.GetECInstanceId());
 
     ECInstanceKey employeeHardwareKey;
@@ -1258,9 +1258,9 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
 
     statement.Finalize();
     statement.Prepare(*m_testDb, "INSERT INTO StartupCompany.EmployeeHardware (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
-    statement.BindInt64(1, (int64_t) employeeKey.GetECClassId());
+    statement.BindId(1, employeeKey.GetECClassId());
     statement.BindId(2, employeeKey.GetECInstanceId());
-    statement.BindInt64(3, (int64_t) hardwareKey2.GetECClassId());
+    statement.BindId(3, hardwareKey2.GetECClassId());
     statement.BindId(4, hardwareKey2.GetECInstanceId());
 
     ECInstanceKey employeeHardwareKey2;
@@ -1269,9 +1269,9 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
 
     statement.Finalize();
     statement.Prepare(*m_testDb, "INSERT INTO StartupCompany.EmployeeCompany (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
-    statement.BindInt64(1, (int64_t) employeeKey.GetECClassId());
+    statement.BindId(1, employeeKey.GetECClassId());
     statement.BindId(2, employeeKey.GetECInstanceId());
-    statement.BindInt64(3, (int64_t) companyKey2.GetECClassId());
+    statement.BindId(3, companyKey2.GetECClassId());
     statement.BindId(4, companyKey2.GetECInstanceId());
 
     ECInstanceKey employeeCompanyKey2;
@@ -1378,28 +1378,28 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
 
     value = relInstance.GetNewValue("SourceECClassId");
     ASSERT_TRUE(value.IsValid());
-    EXPECT_EQ(elClassId, value.GetValueInt64());
-    EXPECT_EQ(elClassId, relInstance.GetNewValue("SourceECClassId").GetValueInt64());
+    EXPECT_EQ(elClassId.GetValue(), value.GetValueId<ECClassId>().GetValue());
+    EXPECT_EQ(elClassId.GetValue(), relInstance.GetNewValue("SourceECClassId").GetValueId<ECClassId>().GetValue());
 
     value = relInstance.GetNewValue("SourceECInstanceId");
     ASSERT_TRUE(value.IsValid());
-    EXPECT_EQ(parentElementId.GetValueUnchecked(), value.GetValueInt64());
-    EXPECT_EQ(parentElementId.GetValueUnchecked(), relInstance.GetNewValue("SourceECInstanceId").GetValueInt64());
+    EXPECT_EQ(parentElementId.GetValueUnchecked(), value.GetValueUInt64());
+    EXPECT_EQ(parentElementId.GetValueUnchecked(), relInstance.GetNewValue("SourceECInstanceId").GetValueUInt64());
 
     value = relInstance.GetNewValue("TargetECClassId");
     ASSERT_TRUE(value.IsValid());
-    EXPECT_EQ(elClassId, value.GetValueInt64());
-    EXPECT_EQ(elClassId, relInstance.GetNewValue("TargetECClassId").GetValueInt64());
+    EXPECT_EQ(elClassId.GetValue(), value.GetValueId<ECClassId>().GetValue());
+    EXPECT_EQ(elClassId.GetValue(), relInstance.GetNewValue("TargetECClassId").GetValueId<ECClassId>().GetValue());
 
     value = relInstance.GetNewValue("TargetECInstanceId");
     ASSERT_TRUE(value.IsValid());
-    ASSERT_EQ(childElementId.GetValueUnchecked(), value.GetValueInt64());
-    ASSERT_EQ(childElementId.GetValueUnchecked(), relInstance.GetNewValue("TargetECInstanceId").GetValueInt64());
+    ASSERT_EQ(childElementId.GetValueUnchecked(), value.GetValueUInt64());
+    ASSERT_EQ(childElementId.GetValueUnchecked(), relInstance.GetNewValue("TargetECInstanceId").GetValueUInt64());
 
     value = instance.GetNewValue("ParentId");
     ASSERT_TRUE(value.IsValid());
-    ASSERT_EQ(parentElementId.GetValueUnchecked(), value.GetValueInt64());
-    ASSERT_EQ(parentElementId.GetValueUnchecked(), instance.GetNewValue("ParentId").GetValueInt64());
+    ASSERT_EQ(parentElementId.GetValueUnchecked(), value.GetValueUInt64());
+    ASSERT_EQ(parentElementId.GetValueUnchecked(), instance.GetNewValue("ParentId").GetValueUInt64());
 
     EXPECT_EQ(4, relInstance.MakeValueIterator(changeSummary).QueryCount());
     EXPECT_EQ(8, instance.MakeValueIterator(changeSummary).QueryCount());

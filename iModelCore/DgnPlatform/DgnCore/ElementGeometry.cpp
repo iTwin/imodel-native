@@ -917,7 +917,9 @@ void GeometryStreamIO::Writer::Append(MSBsplineSurfaceCR surface)
 void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
     {
     bool saveBRep = false, saveFacets = false, saveEdges = false, saveFaceIso = false, facetFailure = false;
+#if defined (DGNPLATFORM_WIP_PARASOLID)
     size_t currSize = m_buffer.size();
+#endif
     IFaceMaterialAttachmentsCP attachments = entity.GetFaceMaterialAttachments();
 
     switch (entity.GetEntityType())
@@ -961,6 +963,7 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
             }
         }
 
+#if defined (DGNPLATFORM_WIP_PARASOLID)
     // Make the parasolid data available for platforms that can support it...MUST BE ADDED FIRST!!!
     if (saveBRep)
         {
@@ -1029,6 +1032,7 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
         fbb.Finish(mloc);
         Append(Operation(OpCode::ParasolidBRep, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
         }
+#endif
 
     // Store mesh representation for quick display or when parasolid isn't available...
     if (saveFacets)
@@ -1045,27 +1049,40 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
             WireframeGeomUtil::CollectPolyfaces(entity, m_db, polyfaces, params, *facetOpt);
             facetFailure = (0 == polyfaces.size());
 
-            for (size_t i=0; i < polyfaces.size(); i++)
+            for (size_t i = 0; i < polyfaces.size(); i++)
                 {
                 if (0 == polyfaces[i]->GetPointCount())
                     continue;
 
                 Append(params[i], true);
+#if defined (DGNPLATFORM_WIP_PARASOLID)
                 Append(*polyfaces[i], OpCode::BRepPolyface);
+#else
+                Append(*polyfaces[i]);
+#endif
                 }
             }
         else
             {
             PolyfaceHeaderPtr polyface = WireframeGeomUtil::CollectPolyface(entity, m_db, *facetOpt);
-            
-            if (!(facetFailure = !polyface.IsValid()))
-                Append(*polyface, saveEdges ? OpCode::BRepPolyface : OpCode::BRepPolyfaceExact);
-            }
 
+            if (!(facetFailure = !polyface.IsValid()))
+                {
+#if defined (DGNPLATFORM_WIP_PARASOLID)
+                Append(*polyface, saveEdges ? OpCode::BRepPolyface : OpCode::BRepPolyfaceExact);
+#else
+                Append(*polyface);
+#endif
+                }
+            }
+#if defined (DGNPLATFORM_WIP_PARASOLID)
         if (facetFailure)
             m_buffer.resize(currSize); // Remove OpCode::ParasolidBRep, body is invalid...
+#endif			
         }
 
+
+#if defined (DGNPLATFORM_WIP_PARASOLID)
     // When facetted representation is an approximation, we need to store the edge curves for snapping...
     if (saveEdges)
         {
@@ -1165,6 +1182,7 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
                 }
             }
         }
+#endif
     }
 #endif
 
@@ -2626,7 +2644,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
         {
         GeometryCollection collection(stream, db);
 
-        output._DoOutputLine(Utf8PrintfString("\n--- GeometryStream Entry Ids ---\n\n"));
+        output._DoOutputLine(Utf8PrintfString("\n--- GeometryStream Entry Ids ---\n\n").c_str());
 
         for (auto iter : collection)
             {
@@ -2658,7 +2676,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                 }
             }
 
-        output._DoOutputLine(Utf8PrintfString("\n"));
+        output._DoOutputLine("\n");
         }
     }
 

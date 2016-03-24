@@ -694,6 +694,25 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         static CreateForModel(model: DgnModelP, catid: DgnObjectIdP, o: DPoint3dP, angles: YawPitchRollAnglesP): GeometryBuilderP;
 
         /**
+         * Construct a new GeometryBuilder to prepare geometry for the specified element. 
+         * @note This is just a short cut for calling CreateForModel.
+         * @param el    The element to which this geometry will be attached
+         * @param transform     The placement transform (origin and axes)
+         * @return a GeometryBuilder object
+         * @see CreateForModel
+         */
+        static CreateForElementWithTransform(el: DgnElementP, transform: TransformP): GeometryBuilderP;
+
+        /**
+         * Construct a new GeometryBuilder to prepare geometry for elements in the specified model and category
+         * @param model The model where the geometry will ultimatley be stored
+         * @param catid The category of the element that will will ultimatley contain the geometry
+         * @param transform The placement transform (origin and axes)
+         * @return a GeometryBuilder object
+         */
+        static CreateForModelWithTransform(model: DgnModelP, catid: DgnObjectIdP, transform: TransformP): GeometryBuilderP;
+
+        /**
          * Construct a new GeometryBuilder to prepare geometry for a DgnGeometryPart
          * @param db    The DgnDb that will hold the DgnGeometryPart
          * @param is3d  Will the DgnGeometryPart hold 3-D geometry?
