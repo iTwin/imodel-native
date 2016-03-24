@@ -146,7 +146,7 @@ DgnDbStatus DgnElement::_DeleteInDb() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP DgnElement::GetElementClass() const
     {
-    return GetDgnDb().Schemas().GetECClass(GetElementClassId().GetValue());
+    return GetDgnDb().Schemas().GetECClass(GetElementClassId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1547,7 +1547,7 @@ DgnElement::AppData::DropMe DgnElement::Aspect::_OnUpdated(DgnElementCR modified
         {
         DgnDbR db = modified.GetDgnDb();
         ECInstanceKey existing = _QueryExistingInstanceKey(modified);
-        if (existing.IsValid() && (existing.GetECClassId() != GetECClassId(db).GetValue()))
+        if (existing.IsValid() && (existing.GetECClassId() != GetECClassId(db)))
             {
             _DeleteInstance(modified);
             existing = ECInstanceKey();  //  trigger an insert below
@@ -1665,7 +1665,7 @@ DgnElement::AppData::DropMe MultiAspectMux::_OnUpdated(DgnElementCR modified, Dg
 DgnDbStatus DgnElement::MultiAspect::_DeleteInstance(DgnElementCR el)
     {
     // I am assuming that the ElementOwnsAspects ECRelationship is either just a foreign key column on the aspect or that ECSql somehow deletes the relationship instance automatically.
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()).c_str());
     stmt->BindId(1, m_instanceId);
     BeSQLite::DbResult status = stmt->Step();
     return (BeSQLite::BE_SQLITE_DONE == status) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
@@ -1676,7 +1676,7 @@ DgnDbStatus DgnElement::MultiAspect::_DeleteInstance(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::MultiAspect::_InsertInstance(DgnElementCR el)
     {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s ([ElementId]) VALUES (?)", GetFullEcSqlClassName().c_str()));
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s ([ElementId]) VALUES (?)", GetFullEcSqlClassName().c_str()).c_str());
     stmt->BindId(1, el.GetElementId());
 
     ECInstanceKey key;
@@ -1749,7 +1749,7 @@ void DgnElement::MultiAspect::AddAspect(DgnElementR el, MultiAspect& aspect)
 ECInstanceKey DgnElement::MultiAspect::_QueryExistingInstanceKey(DgnElementCR el)
     {
     // My m_instanceId field is valid if and only if I was just inserted or was loaded from an existing instance.
-    return ECInstanceKey(GetECClassId(el.GetDgnDb()).GetValue(), m_instanceId);
+    return ECInstanceKey(GetECClassId(el.GetDgnDb()), m_instanceId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1856,7 +1856,7 @@ DgnElement::UniqueAspect* DgnElement::UniqueAspect::Load(DgnElementCR el, DgnCla
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::UniqueAspect::_InsertInstance(DgnElementCR el)
     {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s (ECInstanceId) VALUES(?)", GetFullEcSqlClassName().c_str()));
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s (ECInstanceId) VALUES(?)", GetFullEcSqlClassName().c_str()).c_str());
     stmt->BindId(1, GetAspectInstanceId(el));
     DbResult status = stmt->Step();
     return (BE_SQLITE_DONE == status) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
@@ -1868,7 +1868,7 @@ DgnDbStatus DgnElement::UniqueAspect::_InsertInstance(DgnElementCR el)
 DgnDbStatus DgnElement::UniqueAspect::_DeleteInstance(DgnElementCR el)
     {
     // I am assuming that the ElementOwnsAspects ECRelationship is either just a foreign key column on the aspect or that ECSql somehow deletes the relationship instance automatically.
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()).c_str());
     stmt->BindId(1, GetAspectInstanceId(el));
     DbResult status = stmt->Step();
     return (BE_SQLITE_DONE == status) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
@@ -1882,13 +1882,13 @@ ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR e
     // We know what the class and the ID of an instance *would be* if it exists. See if such an instance actually exists.
     DgnClassId classId = GetECClassId(el.GetDgnDb());
 
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()).c_str());
     stmt->BindId(1, el.GetElementId());
     if (BE_SQLITE_ROW != stmt->Step())
         return ECInstanceKey();
 
     // And we know the ID. See if such an instance actually exists.
-    return ECInstanceKey(classId.GetValue(), GetAspectInstanceId(el));
+    return ECInstanceKey(classId, GetAspectInstanceId(el));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1981,7 +1981,7 @@ ECN::IECInstancePtr UnhandledProps::GetInstance(DgnElementCR elem)
         }
 
     EC::ECSqlStatement stmt;
-    stmt.Prepare(elem.GetDgnDb(), Utf8PrintfString("SELECT %s FROM %s.%s WHERE ECInstanceId=%lld", props.c_str(), elem.GetElementClass()->GetSchema().GetName().c_str(), elem.GetElementClass()->GetName().c_str(), elem.GetElementId().GetValue()));
+    stmt.Prepare(elem.GetDgnDb(), Utf8PrintfString("SELECT %s FROM %s.%s WHERE ECInstanceId=%lld", props.c_str(), elem.GetElementClass()->GetSchema().GetName().c_str(), elem.GetElementClass()->GetName().c_str(), elem.GetElementId().GetValue()).c_str());
     if (stmt.Step() != BE_SQLITE_ROW)
         return nullptr;
 
@@ -2026,7 +2026,7 @@ DgnDbStatus UnhandledProps::UpdateModifiedProperties(DgnElementCR elem)
     if (!m_instance.IsValid() || m_pendingEdits.empty())
         return DgnDbStatus::Success;
     
-    m_instance->SetInstanceId(Utf8PrintfString("%lld", elem.GetElementId().GetValue()));
+    m_instance->SetInstanceId(Utf8PrintfString("%lld", elem.GetElementId().GetValue()).c_str());
 
     EC::ECInstanceUpdater updater(elem.GetDgnDb(), *m_instance);
     return updater.Update(*m_instance) == BSISUCCESS? DgnDbStatus::Success: DgnDbStatus::WriteError;

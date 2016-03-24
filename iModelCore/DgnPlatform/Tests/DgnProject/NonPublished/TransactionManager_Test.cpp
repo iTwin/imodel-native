@@ -952,7 +952,7 @@ struct DynamicTxnsTest : TransactionManagerTests
         {
         static char s_code = 'A';
         Utf8PrintfString code("%c", s_code++);
-        DgnElementCPtr elem = DgnDbTestFixture::InsertElement(code);
+        DgnElementCPtr elem = DgnDbTestFixture::InsertElement(code.c_str());
         EXPECT_TRUE(elem.IsValid());
         if (saveIfNotInDynamics && !m_db->Txns().InDynamicTxn())
             EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges());

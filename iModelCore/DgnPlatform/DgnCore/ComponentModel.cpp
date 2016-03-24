@@ -418,7 +418,7 @@ void ComponentDef::QueryComponentDefs(bvector<DgnClassId>& componentDefs, DgnDbR
         while (BE_SQLITE_ROW == stmt.Step())
             {
             DgnClassId derivedClassId = stmt.GetValueId<DgnClassId>(0);
-            ECN::ECClassCP derivedClass = db.Schemas().GetECClass(derivedClassId.GetValue());
+            ECN::ECClassCP derivedClass = db.Schemas().GetECClass(derivedClassId);
             if (nullptr == derivedClass)
                 continue;
             if (derivedClass->GetCustomAttribute(*componentSpecificationCA).IsValid())
@@ -435,7 +435,7 @@ void ComponentDef::QueryComponentDefs(bvector<DgnClassId>& componentDefs, DgnDbR
 +---------------+---------------+---------------+---------------+---------------+------*/
 ComponentDefPtr ComponentDef::FromECClassId(DgnDbStatus* statusOut, DgnDbR db, DgnClassId componentDefClassId)
     {
-    ECN::ECClassCP cls = db.Schemas().GetECClass(componentDefClassId.GetValue());
+    ECN::ECClassCP cls = db.Schemas().GetECClass(componentDefClassId);
     if (nullptr == cls)
         return nullptr;
     return FromECClass(statusOut, db, *cls);
@@ -485,7 +485,7 @@ DgnDbStatus ComponentDef::DeleteComponentDef(DgnDbR db, Utf8StringCR fullEcSqlCl
             cdef->GetModel().Delete();
 
         ECSqlStatement stmt;
-        stmt.Prepare(db, Utf8PrintfString("DELETE FROM %s", cdef->GetClassECSqlName().c_str()));
+        stmt.Prepare(db, Utf8PrintfString("DELETE FROM %s", cdef->GetClassECSqlName().c_str()).c_str());
         stmt.Step();
 
         ecclass = const_cast<ECN::ECClassP>(&cdef->m_class);
@@ -918,7 +918,7 @@ ECN::IECInstancePtr ComponentDef::GetParameters(DgnElementCR el)
         return nullptr;
 
     Utf8PrintfString sql("SELECT %s ScriptOnlyParameters FROM %s WHERE ECInstanceId=?", cdef->GetInputsForSelect().c_str(), GetClassECSqlName(*el.GetElementClass()).c_str());
-    auto ecsql = el.GetDgnDb().GetPreparedECSqlStatement(sql);
+    auto ecsql = el.GetDgnDb().GetPreparedECSqlStatement(sql.c_str());
     ecsql->BindId(1, el.GetElementId());
     ECInstanceECSqlSelectAdapter selector(*ecsql);
     return selector.GetInstance();
@@ -1154,7 +1154,7 @@ DgnDbStatus ComponentDef::ExportVariations(DgnModelR destVariationsModel, DgnMod
     ElementImporter importer(context);
 
     EC::ECSqlStatement selectInstancesOfComponent;
-    selectInstancesOfComponent.Prepare(GetDgnDb(), Utf8PrintfString("SELECT ECInstanceId FROM %s WHERE(ModelId=?)", GetClassECSqlName().c_str()));
+    selectInstancesOfComponent.Prepare(GetDgnDb(), Utf8PrintfString("SELECT ECInstanceId FROM %s WHERE(ModelId=?)", GetClassECSqlName().c_str()).c_str());
     selectInstancesOfComponent.BindId(1, sourceVariationsModelId);
     while (BE_SQLITE_ROW == selectInstancesOfComponent.Step())
         {
@@ -1185,7 +1185,7 @@ DgnDbStatus ComponentDef::ExportVariations(DgnModelR destVariationsModel, DgnMod
 void ComponentDef::QueryVariations(bvector<DgnElementId>& variations, DgnModelId variationsModelId)
     {
     EC::ECSqlStatement selectInstancesOfComponent;
-    selectInstancesOfComponent.Prepare(GetDgnDb(), Utf8PrintfString("SELECT ECInstanceId FROM %s WHERE(ModelId=?)", GetClassECSqlName().c_str()));
+    selectInstancesOfComponent.Prepare(GetDgnDb(), Utf8PrintfString("SELECT ECInstanceId FROM %s WHERE(ModelId=?)", GetClassECSqlName().c_str()).c_str());
     selectInstancesOfComponent.BindId(1, variationsModelId);
     while (BE_SQLITE_ROW == selectInstancesOfComponent.Step())
         {

@@ -380,7 +380,7 @@ void DgnElementDependencyGraph::UpdateModelDependencyIndex()
     auto count = modelsCount->GetValueInt64(0);
     if (modelsSeen.size() != count)
         {
-        ReportValidationError(*new CyclesDetectedError(Utf8PrintfString("%d models involved",(count-idx))), nullptr);
+        ReportValidationError(*new CyclesDetectedError(Utf8PrintfString("%d models involved",(count-idx)).c_str()), nullptr);
         return;
         }
     }
@@ -619,7 +619,7 @@ DbResult DgnElementDependencyGraph::EdgeQueue::SelectEdge(DgnElementDependencyGr
     edge.m_relId   = stmt.GetValueId<EC::ECInstanceId>(0);
     edge.m_ein      = stmt.GetValueId<DgnElementId>(1);
     edge.m_eout     = stmt.GetValueId<DgnElementId>(2);
-    edge.m_relClassId = stmt.GetValueInt64(3);
+    edge.m_relClassId = stmt.GetValueId<ECClassId>(3);
     edge.m_status   = stmt.GetValueInt(4);
     edge.m_priority = stmt.GetValueInt64(5);
 
@@ -761,7 +761,7 @@ void DgnElementDependencyGraph::InvokeHandlersForDeletedRelationships()
         if (nullptr == handler)
             continue;
 
-        EDGLOG(LOG_TRACE, "%sDELETED %lld:%lld(%lld,%lld) (%llx)", "", reldata.m_relKey.GetECClassId(), reldata.m_relKey.GetECInstanceId().GetValue(), 
+        EDGLOG(LOG_TRACE, "%sDELETED %llu:%llu(%llu,%llu) (%llx)", "", reldata.m_relKey.GetECClassId().GetValue(), reldata.m_relKey.GetECInstanceId().GetValue(), 
                                                                        reldata.m_source.GetValueUnchecked(), reldata.m_target.GetValueUnchecked(),
                                                                        (intptr_t)handler);
 
@@ -869,7 +869,7 @@ DbResult DgnElementDependencyGraph::ElementDrivesElement::SelectEdge(Edge& edge,
     edge.m_ein       = stmt.GetValueId<DgnElementId>(0);
     edge.m_eout      = stmt.GetValueId<DgnElementId>(1);
     edge.m_relId     = stmt.GetValueId<ECInstanceId>(2);
-    edge.m_relClassId = stmt.GetValueInt64(3);
+    edge.m_relClassId = stmt.GetValueId<ECClassId>(3);
     edge.m_status    = (uint8_t)stmt.GetValueInt(4);
     edge.m_priority  = stmt.GetValueInt64(5);
 

@@ -49,6 +49,7 @@ struct DgnElementMap : bmap<DgnElementId, DgnElementCPtr>
         Insert(id, &el);
         }
     bool Contains(DgnElementId id) const {return end() != find(id);}
+    uint32_t GetCount() const {return (uint32_t) size();}
     };
 
 /** @addtogroup DgnModelGroup DgnModels
