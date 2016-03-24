@@ -27,8 +27,26 @@ struct EXPORT_VTABLE_ATTRIBUTE PointCloudModel : Dgn::SpatialModel
 {
 DGNMODEL_DECLARE_MEMBERS(POINTCLOUD_CLASSNAME_PointCloudModel, Dgn::SpatialModel)
 
-
 public:
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER(Dgn::SpatialModel::CreateParams);
+
+        Utf8String m_fileId;
+
+        public:
+            //! This constructor is used only by the model handler to create a new instance, prior to calling ReadProperties on the model object
+            CreateParams(Dgn::DgnModel::CreateParams const& params) : T_Super(params) {}
+
+            //! Parameters to create a new instance of a PointCloudModel.
+            //! @param[in] dgndb The DgnDb for the new DgnModel
+            //! @param[in] code The Code for the DgnModel
+            //! @param[in] fileId File Id of the PointCloud file.
+            CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnCode code, Utf8StringCR fileId) :
+                T_Super(dgndb, PointCloudModel::QueryClassId(dgndb), code), m_fileId(fileId)
+                {}
+        };
+        
     enum class LoadStatus
         {
         Unloaded,
@@ -91,7 +109,10 @@ public:
     DRange3d GetSceneRange() const;
 
     TransformCR GetSceneToWorld() const {return m_sceneToWorld;}
-
+    
+    //! Query the DgnClassId of the PointCloudModel ECClass in the specified DgnDb.
+    //! @note This is a static method that always returns the DgnClassId of the PointCloudModel class - it does @em not return the class of a specific instance.
+    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb) { return Dgn::DgnClassId(dgndb.Schemas().GetECClassId(POINTCLOUD_SCHEMA_NAME, POINTCLOUD_CLASSNAME_PointCloudModel)); }
 };
 
 //=======================================================================================
@@ -104,7 +125,7 @@ struct EXPORT_VTABLE_ATTRIBUTE PointCloudModelHandler : Dgn::dgn_ModelHandler::S
     MODELHANDLER_DECLARE_MEMBERS(POINTCLOUD_CLASSNAME_PointCloudModel, PointCloudModel, PointCloudModelHandler, Dgn::dgn_ModelHandler::Spatial, POINTCLOUDSCHEMA_EXPORT)
 
 public:
-    POINTCLOUDSCHEMA_EXPORT static Dgn::DgnModelId CreatePointCloudModel(DgnDbR db, Utf8StringCR fileId);
+    POINTCLOUDSCHEMA_EXPORT static PointCloudModelPtr CreatePointCloudModel(PointCloudModel::CreateParams const& params);
 };
 
 END_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE

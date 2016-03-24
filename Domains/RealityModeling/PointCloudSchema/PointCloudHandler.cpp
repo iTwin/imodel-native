@@ -17,18 +17,14 @@ HANDLER_DEFINE_MEMBERS(PointCloudModelHandler)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-DgnModelId PointCloudModelHandler::CreatePointCloudModel(DgnDbR db, Utf8StringCR fileId)
+PointCloudModelPtr PointCloudModelHandler::CreatePointCloudModel(PointCloudModel::CreateParams const& params)
     {
-    DgnClassId classId(db.Schemas().GetECClassId(POINTCLOUD_SCHEMA_NAME, "PointCloudModel"));
-    BeAssert(classId.IsValid());
-
     // Find resolved file name for the point cloud
     BeFileName fileName;
-    BentleyStatus status = T_HOST.GetPointCloudAdmin()._ResolveFileName(fileName, fileId, db);
+    BentleyStatus status = T_HOST.GetPointCloudAdmin()._ResolveFileName(fileName, params.m_fileId, params.m_dgndb);
     if (status != SUCCESS)
         {
-        // Return an invalid model id.
-        return DgnModelId();
+        return nullptr;
         }
     Utf8String resolvedName(fileName);
     Utf8String modelName(fileName.GetFileNameWithoutExtension().c_str());
@@ -37,18 +33,18 @@ DgnModelId PointCloudModelHandler::CreatePointCloudModel(DgnDbR db, Utf8StringCR
     PointCloudScenePtr pointCloudScenePtr = PointCloudScene::Create(fileName.c_str());
     if (pointCloudScenePtr == nullptr)
         {
-        // Can't create model; probably that file name is invalid. Return an invalid model id.
-        return DgnModelId();
+        // Can't create model; probably that file name is invalid.
+        return nullptr;
         }
 
     PointCloudModel::Properties props;
-    props.m_fileId = fileId;
+    props.m_fileId = params.m_fileId;
     pointCloudScenePtr->GetRange (props.m_range, true);
 
     // Create model in DgnDb
-    PointCloudModelPtr model = new PointCloudModel(DgnModel::CreateParams(db, classId, DgnModel::CreateModelCode(modelName)), props);
-    model->Insert();
-    return model->GetModelId();
+    PointCloudModelPtr model = new PointCloudModel(params, props);
+
+    return model;
     }
 
 //----------------------------------------------------------------------------------------
