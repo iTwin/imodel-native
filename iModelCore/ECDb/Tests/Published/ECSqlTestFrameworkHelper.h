@@ -31,7 +31,6 @@ public:
 
     //Helpers
     static ECInstanceId InsertTestInstance (ECDbCR, Utf8CP ecsql);
-    static bvector<ECInstanceId> GetValidECInstanceIds (ECDbCR ecdb, Utf8CP ecsql);
     };
 
 END_ECSQLTESTFRAMEWORK_NAMESPACE

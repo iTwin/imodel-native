@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/ECSqlInsertTestDataset.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -30,8 +30,8 @@ public:
     static ECSqlTestDataset MiscTests (ECDbR);
     static ECSqlTestDataset ParameterAdvancedTests ();
     static ECSqlTestDataset RelationshipEndTableMappingTests (ECDbR);
-    static ECSqlTestDataset RelationshipLinkTableMappingTests (ECDbCR);
-    static ECSqlTestDataset RelationshipWithAdditionalPropsTests (ECDbCR);
+    static ECSqlTestDataset RelationshipLinkTableMappingTests (ECDbR);
+    static ECSqlTestDataset RelationshipWithAdditionalPropsTests (ECDbR);
     static ECSqlTestDataset RelationshipWithParametersTests (ECDbR);
     static ECSqlTestDataset StructTests ();
     };

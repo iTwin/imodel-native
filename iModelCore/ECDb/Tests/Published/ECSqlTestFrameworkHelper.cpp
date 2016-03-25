@@ -105,21 +105,4 @@ ECInstanceId ECSqlTestFrameworkHelper::InsertTestInstance (ECDbCR ecdb, Utf8CP e
         return newECInstanceKey.GetECInstanceId ();
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Muhammad Hassan                  02/16
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-bvector<ECInstanceId> ECSqlTestFrameworkHelper::GetValidECInstanceIds (ECDbCR ecdb, Utf8CP ecsql)
-    {
-    bvector<ECInstanceId> instanceIds;
-    ECSqlStatement stmt;
-    EXPECT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, ecsql));
-    while (DbResult::BE_SQLITE_ROW == stmt.Step ())
-        {
-        instanceIds.push_back(stmt.GetValueId<ECInstanceId>(0));
-        }
-
-    return instanceIds;
-    }
-
 END_ECSQLTESTFRAMEWORK_NAMESPACE
