@@ -834,7 +834,7 @@ struct BooleanChange : ECPrimitiveChange<bool>
             if (v.IsNull())
                 str = "<null>";
             else
-                str = v.Value() ? "true": "false";
+                str = v.Value() ? "True": "False";
             return str;
             }
 
@@ -905,8 +905,8 @@ struct DoubleChange: ECPrimitiveChange<double>
             if (v.IsNull())
                 str = "<null>";
             else
-                str.Sprintf("%f", v.Value());
-
+                str.Sprintf("%.17g", v.Value());
+            
             return str;
             }
 
@@ -982,6 +982,17 @@ struct BinaryChange: ECPrimitiveChange<Binary>
 //+===============+===============+===============+===============+===============+======
 struct Point2DChange: ECPrimitiveChange<Point2d>
     {
+    private:
+        virtual Utf8String _ToString(ValueId id) const override
+            {
+            Utf8String str;
+            auto& v = GetValue(id);
+            if (v.IsNull())
+                str = "<null>";
+            else
+                str.Sprintf("(%.17g, %.17g)", v.Value().x, v.Value().y);
+            return str;
+            }
     public:
         Point2DChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<Point2d>(state, systemId, parent, customId)
@@ -994,6 +1005,18 @@ struct Point2DChange: ECPrimitiveChange<Point2d>
 //+===============+===============+===============+===============+===============+======
 struct Point3DChange: ECPrimitiveChange<Point3d>
     {
+    private:
+        virtual Utf8String _ToString(ValueId id) const override
+            {
+            Utf8String str;
+            auto& v = GetValue(id);
+            if (v.IsNull())
+                str = "<null>";
+            else
+                str.Sprintf("(%.17g, %.17g, %.17g)", v.Value().x, v.Value().y, v.Value().z);
+
+            return str;
+            }
     public:
         Point3DChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<Point3d>(state, systemId, parent, customId)
@@ -1014,7 +1037,7 @@ struct Int64Change: ECPrimitiveChange<int64_t>
             if (v.IsNull())
                 str = "<null>";
             else
-                str.Sprintf("%ll",v.Value());
+                str.Sprintf("%lld",v.Value());
 
             return str;
             }
@@ -1031,6 +1054,23 @@ struct Int64Change: ECPrimitiveChange<int64_t>
 //+===============+===============+===============+===============+===============+======
 struct StrengthTypeChange : ECPrimitiveChange<ECN::StrengthType>
     {
+    virtual Utf8String _ToString(ValueId id) const override
+        {
+        Utf8String str;
+        auto& v = GetValue(id);
+        if (v.IsNull())
+            str = "<null>";
+        else
+            {
+            if (v.Value() == ECN::StrengthType::Embedding)
+                str = "Embedding";
+            else if (v.Value() == ECN::StrengthType::Holding)
+                str = "Holding";
+            else if (v.Value() == ECN::StrengthType::Referencing)
+                str = "Referencing";
+            }
+        return str;
+        }
     public:
         StrengthTypeChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<ECN::StrengthType>(state, systemId, parent, customId)
@@ -1043,6 +1083,21 @@ struct StrengthTypeChange : ECPrimitiveChange<ECN::StrengthType>
 //+===============+===============+===============+===============+===============+======
 struct StrengthDirectionChange : ECPrimitiveChange<ECN::ECRelatedInstanceDirection>
     {
+    virtual Utf8String _ToString(ValueId id) const override
+        {
+        Utf8String str;
+        auto& v = GetValue(id);
+        if (v.IsNull())
+            str = "<null>";
+        else
+            {
+            if (v.Value() == ECN::ECRelatedInstanceDirection::Backward)
+                str = "Backward";
+            else if (v.Value() == ECN::ECRelatedInstanceDirection::Forward)
+                str = "Forward";
+            }
+        return str;
+        }
     public:
         StrengthDirectionChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<ECN::ECRelatedInstanceDirection>(state, systemId, parent, customId)
@@ -1055,6 +1110,24 @@ struct StrengthDirectionChange : ECPrimitiveChange<ECN::ECRelatedInstanceDirecti
 //+===============+===============+===============+===============+===============+======
 struct ModifierChange :ECPrimitiveChange<ECN::ECClassModifier>
     {
+    virtual Utf8String _ToString(ValueId id) const override
+        {
+        Utf8String str;
+        auto& v = GetValue(id);
+        if (v.IsNull())
+            str = "<null>";
+        else
+            {
+            if (v.Value() == ECN::ECClassModifier::Abstract)
+                str = "Abstract";
+            else if (v.Value() == ECN::ECClassModifier::None)
+                str = "None";
+            else if (v.Value() == ECN::ECClassModifier::Sealed)
+                str = "Sealed";
+
+            }
+        return str;
+        }
     public:
         ModifierChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<ECN::ECClassModifier>(state, systemId, parent, customId)
@@ -1269,9 +1342,9 @@ struct ECRelationshipConstraintChange :ECObjectChange
     {
     public:
         ECRelationshipConstraintChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECObjectChange(state, CONSTRAINT, parent, customId)
+            : ECObjectChange(state, systemId, parent, customId)
             {
-            BeAssert(systemId == GetSystemId());
+            BeAssert(systemId == SOURCE || systemId == TARGET);
             }
         virtual ~ECRelationshipConstraintChange() {}
         StringChange& GetRoleLabel() { return Get<StringChange>(ROLELABEL); }
@@ -1280,6 +1353,7 @@ struct ECRelationshipConstraintChange :ECObjectChange
         ECRelationshipConstraintClassChanges& ConstraintClasses() { return Get<ECRelationshipConstraintClassChanges>(CONSTRAINTCLASSES); }
         ECInstanceChanges& CustomAttributes() { return Get<ECInstanceChanges>(CUSTOMATTRIBTUES); }
     };
+
 
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016

@@ -147,9 +147,9 @@ BentleyStatus ECSchemaCompareContext::Prepare(ECDbSchemaManager const& schemaMan
         while (importItor != m_importedSchemaList.end())
             {
             if (schemaOfInterest.find((*importItor)->GetName().c_str()) == schemaOfInterest.end())
-                {
                 importItor = m_importedSchemaList.erase(importItor);
-                }
+            else
+                ++importItor;
             }
 
         //Remove any none interesting schemas
@@ -157,9 +157,9 @@ BentleyStatus ECSchemaCompareContext::Prepare(ECDbSchemaManager const& schemaMan
         while (existingItor != m_existingSchemaList.end())
             {
             if (schemaOfInterest.find((*existingItor)->GetName().c_str()) == schemaOfInterest.end())
-                {
                 existingItor = m_existingSchemaList.erase(existingItor);
-                }
+            else
+                ++existingItor;
             }
 
         }

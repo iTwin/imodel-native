@@ -495,8 +495,8 @@ BentleyStatus ECSchemaComparer::CompareECClass(ECClassChange& change, ECClassCR 
         }
     else
         {
-        if (a.IsRelationshipClass())
-            if (AppendECRelationshipClass(change.GetRelationship(), *b.GetRelationshipClassCP(), ValueId::New) != SUCCESS)
+        if (a.IsRelationshipClass() && b.IsRelationshipClass())
+            if (CompareECRelationshipClass(change.GetRelationship(), *a.GetRelationshipClassCP(), *b.GetRelationshipClassCP()) != SUCCESS)
                 return ERROR;
         }
 
@@ -1580,7 +1580,7 @@ BentleyStatus ECSchemaComparer::Compare(ECSchemaChanges& changes, ECSchemaList c
 #ifndef NDEBUG
     Utf8String afterOptimize;
     changes.WriteToString(afterOptimize);
-    LOG.debug(afterOptimize.c_str());
+    printf(afterOptimize.c_str());
 #endif
 
     return SUCCESS;

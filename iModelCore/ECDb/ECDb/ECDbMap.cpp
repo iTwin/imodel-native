@@ -164,13 +164,34 @@ BentleyStatus ECDbMap::CreateECClassViewsInDb() const
     ECClassViewGenerator viewGenerator(*this);
     return viewGenerator.BuildViews(classMaps);
     }
-void VisitRoot(ECClassCR ecclass, std::set<ECClassCP>& doneList, std::set<ECClassCP>& rootClassSet, std::vector<ECClassCP>& rootClassList, std::vector<ECRelationshipClassCP>& rootRelationshipList)
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    affan.khan         03/2016
+//---------------------------------------------------------------------------------------
+std::vector<ECClassCP> ECDbMap::GetBaseClassesNotAlreadyMapped(ECClassCR ecclass) const
     {
-    if (doneList.find(&ecclass) == doneList.end())
+    //!This does not work due to navigation properties
+    std::vector<ECClassCP> baseClasses;
+    for (ECClassCP baseClass : ecclass.GetBaseClasses())
+        {
+        ClassMapCP baseClassMap = GetClassMap(*baseClass);
+        if (baseClassMap == nullptr)
+            {
+            baseClasses.push_back(baseClass);
+            }
+        }
+
+    return baseClasses;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    affan.khan         03/2016
+//---------------------------------------------------------------------------------------
+void ECDbMap::VisitRoot(ECClassCR ecclass, std::set<ECClassCP>& doneList, std::set<ECClassCP>& rootClassSet, std::vector<ECClassCP>& rootClassList, std::vector<ECRelationshipClassCP>& rootRelationshipList) const
+    {
+    if (doneList.find(&ecclass) != doneList.end())
         return;
 
     doneList.insert(&ecclass);
-
     if (!ecclass.HasBaseClasses())
         {
         if (rootClassSet.find(&ecclass) == rootClassSet.end())
@@ -190,7 +211,7 @@ void VisitRoot(ECClassCR ecclass, std::set<ECClassCP>& doneList, std::set<ECClas
         if (baseClass == nullptr)
             continue;
 
-        if (doneList.find(baseClass) == doneList.end())
+        if (doneList.find(baseClass) != doneList.end())
             return;
 
         VisitRoot(*baseClass, doneList, rootClassSet, rootClassList, rootRelationshipList);
@@ -221,7 +242,7 @@ MapStatus ECDbMap::DoMapSchemas()
 
         for (ECClassCP ecClass : schema->GetClasses())
             {
-            if (doneList.find(ecClass) == doneList.end())
+            if (doneList.find(ecClass) != doneList.end())
                 continue;
 
             VisitRoot(*ecClass, doneList, rootClassSet, rootClassList, rootRelationshipList);
