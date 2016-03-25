@@ -876,11 +876,9 @@ public:
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct PointCloudDraw
+struct PointCloudDraw : RefCounted<NonCopyableClass>
 {
     // If IsThreadBound returns false, implement AddRef and Release using InterlockedIncrement
-    virtual uint32_t AddRef() = 0;
-    virtual uint32_t Release() = 0;
     virtual bool _IsThreadBound() = 0; // If true, always executed in calling thread instead of QV thread
     virtual bool _GetRange(DPoint3dP range) = 0; // returns false if it does not have range
 

@@ -162,6 +162,7 @@ bool GeometricPrimitive::GetLocalRange(DRange3dR localRange, TransformR localToW
     if (localToWorld.IsIdentity())
         return GetRange(localRange);
 
+#if defined (BENTLEYCONFIG_PARASOLIDS)
     GeometricPrimitivePtr clone;
 
     // NOTE: Avoid un-necessary copy of BRep. We just need to change entity transform...
@@ -178,6 +179,9 @@ bool GeometricPrimitive::GetLocalRange(DRange3dR localRange, TransformR localToW
         {
         clone = Clone();
         }
+#else
+    GeometricPrimitivePtr clone = Clone();
+#endif
 
     Transform   worldToLocal;
 
@@ -243,10 +247,7 @@ static bool getRange(MSBsplineSurfaceCR geom, DRange3dR range, TransformCP trans
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool getRange(ISolidKernelEntityCR geom, DRange3dR range, TransformCP transform)
     {
-    if (SUCCESS != DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._GetEntityRange(range, geom))
-        return false;
-
-    geom.GetEntityTransform().Multiply(range, range);
+    range = geom.GetEntityRange();
 
     if (nullptr != transform)
         transform->Multiply(range, range);
@@ -605,6 +606,7 @@ bool GeometryStreamIO::Operation::IsGeometryOp() const
         case OpCode::SolidPrimitive:
         case OpCode::BsplineSurface:
         case OpCode::ParasolidBRep:
+        case OpCode::OpenCascadeBRep:
         case OpCode::BRepPolyface:
         case OpCode::BRepPolyfaceExact:
         case OpCode::BRepEdges:
@@ -908,13 +910,16 @@ void GeometryStreamIO::Writer::Append(MSBsplineSurfaceCR surface)
     Append(Operation(OpCode::BsplineSurface, (uint32_t) buffer.size(), &buffer.front()));
     }
 
+#if defined (BENTLEYCONFIG_PARASOLIDS)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
     {
     bool saveBRep = false, saveFacets = false, saveEdges = false, saveFaceIso = false, facetFailure = false;
+#if defined (DGNPLATFORM_WIP_PARASOLID)
     size_t currSize = m_buffer.size();
+#endif
     IFaceMaterialAttachmentsCP attachments = entity.GetFaceMaterialAttachments();
 
     switch (entity.GetEntityType())
@@ -1044,26 +1049,38 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
             WireframeGeomUtil::CollectPolyfaces(entity, m_db, polyfaces, params, *facetOpt);
             facetFailure = (0 == polyfaces.size());
 
-            for (size_t i=0; i < polyfaces.size(); i++)
+            for (size_t i = 0; i < polyfaces.size(); i++)
                 {
                 if (0 == polyfaces[i]->GetPointCount())
                     continue;
 
                 Append(params[i], true);
+#if defined (DGNPLATFORM_WIP_PARASOLID)
                 Append(*polyfaces[i], OpCode::BRepPolyface);
+#else
+                Append(*polyfaces[i]);
+#endif
                 }
             }
         else
             {
             PolyfaceHeaderPtr polyface = WireframeGeomUtil::CollectPolyface(entity, m_db, *facetOpt);
-            
-            if (!(facetFailure = !polyface.IsValid()))
-                Append(*polyface, saveEdges ? OpCode::BRepPolyface : OpCode::BRepPolyfaceExact);
-            }
 
+            if (!(facetFailure = !polyface.IsValid()))
+                {
+#if defined (DGNPLATFORM_WIP_PARASOLID)
+                Append(*polyface, saveEdges ? OpCode::BRepPolyface : OpCode::BRepPolyfaceExact);
+#else
+                Append(*polyface);
+#endif
+                }
+            }
+#if defined (DGNPLATFORM_WIP_PARASOLID)
         if (facetFailure)
             m_buffer.resize(currSize); // Remove OpCode::ParasolidBRep, body is invalid...
+#endif			
         }
+
 
 #if defined (DGNPLATFORM_WIP_PARASOLID)
     // When facetted representation is an approximation, we need to store the edge curves for snapping...
@@ -1167,6 +1184,7 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
         }
 #endif
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/2015
@@ -1481,6 +1499,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, MSBsplineSurfacePtr& s
     return surface.IsValid();
     }
 
+#if defined (BENTLEYCONFIG_PARASOLIDS)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1540,6 +1559,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, ISolidKernelEntityPtr&
 
     return true;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/2015
@@ -1949,6 +1969,17 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometricPrimitivePtr&
             return true;
             }
 
+        case GeometryStreamIO::OpCode::OpenCascadeBRep:
+            {
+            ISolidKernelEntityPtr entityPtr;
+
+            if (!Get(egOp, entityPtr))
+                break;
+
+            elemGeom = GeometricPrimitive::Create(entityPtr);
+            return true;
+            }
+
         case GeometryStreamIO::OpCode::BRepPolyface:
         case GeometryStreamIO::OpCode::BRepPolyfaceExact:
             {
@@ -2079,6 +2110,7 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
                 break;
                 }
 
+#if defined (BENTLEYCONFIG_PARASOLIDS)
             case GeometryStreamIO::OpCode::ParasolidBRep:
                 {
                 auto ppfb = flatbuffers::GetRoot<FB::BRepData>(egOp.m_data);
@@ -2122,6 +2154,7 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
                 writer.Append(Operation(OpCode::ParasolidBRep, (uint32_t) remappedfbb.GetSize(), remappedfbb.GetBufferPointer()));
                 break;
                 }
+#endif
 
             case GeometryStreamIO::OpCode::TextString:
                 {
@@ -2467,6 +2500,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                 }
 
             case GeometryStreamIO::OpCode::ParasolidBRep:
+            case GeometryStreamIO::OpCode::OpenCascadeBRep:
                 {
                 output._DoOutputLine(Utf8PrintfString("OpCode::ParasolidBRep\n").c_str());
                 break;
@@ -3064,6 +3098,26 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 break;
                 }
 
+            case GeometryStreamIO::OpCode::OpenCascadeBRep:
+                {
+                GeometryStreamEntryIdHelper::Increment(context.GetGeometryStreamEntryIdR());
+
+                if (!DrawHelper::IsGeometryVisible(context, geomParams))
+                    break;
+
+                ISolidKernelEntityPtr entityPtr;
+
+                if (!reader.Get(egOp, entityPtr))
+                    {
+                    useBRep = false;
+                    break;
+                    }
+
+                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
+                graphic.AddBody(*entityPtr);
+                break;
+                }
+
             case GeometryStreamIO::OpCode::ParasolidBRep:
                 {
                 GeometryStreamEntryIdHelper::Increment(context.GetGeometryStreamEntryIdR());
@@ -3439,6 +3493,7 @@ GeometryCollection::Iterator::EntryType GeometryCollection::Iterator::GetEntryTy
             return EntryType::BsplineSurface;
 
         case GeometryStreamIO::OpCode::ParasolidBRep:
+        case GeometryStreamIO::OpCode::OpenCascadeBRep:
             return EntryType::SolidKernelEntity;
 
         case GeometryStreamIO::OpCode::BRepPolyface:
@@ -3517,9 +3572,18 @@ bool GeometryCollection::Iterator::IsSurface() const
             return (geom.IsValid() && !geom->GetAsPolyfaceHeader()->IsClosedByEdgePairing());
             }
 
+#if defined (BENTLEYCONFIG_PARASOLIDS)
         case GeometryStreamIO::OpCode::ParasolidBRep:
             {
             auto ppfb = flatbuffers::GetRoot<FB::BRepData>(m_egOp.m_data);
+
+            return (ISolidKernelEntity::EntityType_Sheet == ((ISolidKernelEntity::KernelEntityType) ppfb->brepType()));
+            }
+#endif
+
+        case GeometryStreamIO::OpCode::OpenCascadeBRep:
+            {
+            auto ppfb = flatbuffers::GetRoot<FB::OCBRepData>(m_egOp.m_data);
 
             return (ISolidKernelEntity::EntityType_Sheet == ((ISolidKernelEntity::KernelEntityType) ppfb->brepType()));
             }
@@ -3552,9 +3616,18 @@ bool GeometryCollection::Iterator::IsSolid() const
             return (geom.IsValid() && geom->GetAsPolyfaceHeader()->IsClosedByEdgePairing());
             }
 
+#if defined (BENTLEYCONFIG_PARASOLIDS)
         case GeometryStreamIO::OpCode::ParasolidBRep:
             {
             auto ppfb = flatbuffers::GetRoot<FB::BRepData>(m_egOp.m_data);
+
+            return (ISolidKernelEntity::EntityType_Solid == ((ISolidKernelEntity::KernelEntityType) ppfb->brepType()));
+            }
+#endif
+
+        case GeometryStreamIO::OpCode::OpenCascadeBRep:
+            {
+            auto ppfb = flatbuffers::GetRoot<FB::OCBRepData>(m_egOp.m_data);
 
             return (ISolidKernelEntity::EntityType_Solid == ((ISolidKernelEntity::KernelEntityType) ppfb->brepType()));
             }
@@ -3660,7 +3733,11 @@ void GeometryCollection::Iterator::ToNext()
                         {
                         // Decide now on best "auto" output representation by checking if Parasolid is available...
                         if (BRepOutput::None != (BRepOutput::Auto & m_state->m_bRepOutput))
+#if defined (BENTLEYCONFIG_PARASOLIDS)
                             m_state->m_bRepOutput = ((m_state->m_bRepOutput & ~BRepOutput::Auto) | (DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._IsParasolidLoaded() ? BRepOutput::BRep : BRepOutput::Mesh));
+#else
+                            m_state->m_bRepOutput = ((m_state->m_bRepOutput & ~BRepOutput::Auto) | (BRepOutput::BRep));
+#endif
 
                         doOutput = (BRepOutput::None != (BRepOutput::BRep & m_state->m_bRepOutput));
                         doIncrement = true;
@@ -4095,6 +4172,7 @@ bool GeometryBuilder::Append(GeometricPrimitiveCR geom)
     if (m_haveLocalGeom)
         return AppendLocal(geom);
 
+#if defined (BENTLEYCONFIG_PARASOLIDS)
     GeometricPrimitivePtr geomPtr;
 
     // NOTE: Avoid un-necessary copy of BRep. We just need to change entity transform...
@@ -4111,6 +4189,9 @@ bool GeometryBuilder::Append(GeometricPrimitiveCR geom)
         {
         geomPtr = geom.Clone();
         }
+#else
+    GeometricPrimitivePtr geomPtr = geom.Clone();
+#endif
 
     return AppendWorld(*geomPtr);
     }
@@ -4296,11 +4377,15 @@ bool GeometryBuilder::Append(ISolidKernelEntityCR geom)
         return true;
         }
 
+#if defined (BENTLEYCONFIG_PARASOLIDS)
     ISolidKernelEntityPtr clone;
 
     // NOTE: Avoid un-necessary copy of BRep. We just need to change entity transform...
     if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._InstanceEntity(clone, geom))
         return false;
+#else
+    ISolidKernelEntityPtr clone = geom.Clone();
+#endif
 
     GeometricPrimitivePtr geomPtr = GeometricPrimitive::Create(clone);
 
@@ -4511,6 +4596,7 @@ GeometryBuilderPtr GeometryBuilder::CreateGeometryPart(GeometryStreamCR stream, 
                 break;
                 }
 
+#if defined (BENTLEYCONFIG_PARASOLIDS)
             case GeometryStreamIO::OpCode::ParasolidBRep:
                 {
                 if (!ignoreSymbology)
@@ -4534,6 +4620,7 @@ GeometryBuilderPtr GeometryBuilder::CreateGeometryPart(GeometryStreamCR stream, 
                 builder->m_writer.Append(GeometryStreamIO::Operation(GeometryStreamIO::OpCode::ParasolidBRep, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
                 break;
                 }
+#endif
 
             default:
                 builder->m_writer.Append(egOp); // Append raw data so we don't lose bReps, etc. even when we don't have Parasolid available...

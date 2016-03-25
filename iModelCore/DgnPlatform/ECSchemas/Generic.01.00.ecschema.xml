@@ -41,4 +41,12 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
+    <ECEntityClass typeName="GraphicGroup2d">
+        <!-- A GraphicalElement2d that groups other GraphicalElement2ds using the ElementGroupsMembers relationship -->
+        <BaseClass>dgn:GraphicalElement2d</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
 </ECSchema>

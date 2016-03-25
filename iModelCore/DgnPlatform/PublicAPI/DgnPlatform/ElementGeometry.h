@@ -94,28 +94,29 @@ struct GeometryStreamIO
 {
     enum class OpCode : uint32_t
     {
-        Invalid             = 0,
-        Header              = 1,    //!< Required to be first opcode
+        Invalid                 = 0,
+        Header                  = 1,    //!< Required to be first opcode
         GeometryPartInstance    = 3,    //!< Draw referenced geometry part
-        BasicSymbology      = 4,    //!< Set symbology for subsequent geometry that doesn't follow subCategory appearance
-        PointPrimitive      = 5,    //!< Simple lines, line strings, shapes, point strings, etc.
-        PointPrimitive2d    = 6,    //!< Simple 2d lines, line strings, shapes, point strings, etc.
-        ArcPrimitive        = 7,    //!< Single arc/ellipse
-        CurveVector         = 8,    //!< CurveVector
-        Polyface            = 9,    //!< PolyfaceQueryCarrier
-        CurvePrimitive      = 10,   //!< Single CurvePrimitive
-        SolidPrimitive      = 11,   //!< SolidPrimitive
-        BsplineSurface      = 12,   //!< BSpline surface
-        ParasolidBRep       = 13,   //!< Parasolid body
-        BRepPolyface        = 14,   //!< PolyfaceQueryCarrier from Parasolid BRep
-        BRepPolyfaceExact   = 15,   //!< PolyfaceQueryCarrier from Parasolid BRep with only straight edges and planar faces
-        BRepEdges           = 16,   //!< CurveVector from Parasolid body edges (Not created/necessary for BRepPolyfaceExact)
-        BRepFaceIso         = 17,   //!< CurveVector from Parasolid body face iso lines (Not created/necessary for BRepPolyfaceExact)
-        AreaFill            = 19,   //!< Opaque and gradient fills
-        Pattern             = 20,   //!< Hatch, cross-hatch, and area pattern
-        Material            = 21,   //!< Render material
-        TextString          = 22,   //!< TextString (single-line/single-format run of characters)
-        LineStyleModifiers  = 23,   //!< Specifies line style overrides to populate a LineStyleParams structure
+        BasicSymbology          = 4,    //!< Set symbology for subsequent geometry that doesn't follow subCategory appearance
+        PointPrimitive          = 5,    //!< Simple lines, line strings, shapes, point strings, etc.
+        PointPrimitive2d        = 6,    //!< Simple 2d lines, line strings, shapes, point strings, etc.
+        ArcPrimitive            = 7,    //!< Single arc/ellipse
+        CurveVector             = 8,    //!< CurveVector
+        Polyface                = 9,    //!< PolyfaceQueryCarrier
+        CurvePrimitive          = 10,   //!< Single CurvePrimitive
+        SolidPrimitive          = 11,   //!< SolidPrimitive
+        BsplineSurface          = 12,   //!< BSpline surface
+        ParasolidBRep           = 13,   //!< Parasolid body
+        BRepPolyface            = 14,   //!< PolyfaceQueryCarrier from Parasolid BRep
+        BRepPolyfaceExact       = 15,   //!< PolyfaceQueryCarrier from Parasolid BRep with only straight edges and planar faces
+        BRepEdges               = 16,   //!< CurveVector from Parasolid body edges (Not created/necessary for BRepPolyfaceExact)
+        BRepFaceIso             = 17,   //!< CurveVector from Parasolid body face iso lines (Not created/necessary for BRepPolyfaceExact)
+        AreaFill                = 19,   //!< Opaque and gradient fills
+        Pattern                 = 20,   //!< Hatch, cross-hatch, and area pattern
+        Material                = 21,   //!< Render material
+        TextString              = 22,   //!< TextString (single-line/single-format run of characters)
+        LineStyleModifiers      = 23,   //!< Specifies line style overrides to populate a LineStyleParams structure
+        OpenCascadeBRep         = 24,   //!< Open Cascade TopoDS_Shape
     };
 
     //=======================================================================================
