@@ -619,7 +619,7 @@ struct ECPrimitiveChange : ECChange
                 if (GetState() == ChangeState::New)
                     {
                     BeAssert(false && "Cannot set OLD value for Change which is marked as NEW");
-                    return ERROR:
+                    return ERROR;
                     }
 
                 m_old = std::move(value);
@@ -629,7 +629,7 @@ struct ECPrimitiveChange : ECChange
                 if (GetState() == ChangeState::Deleted)
                     {
                     BeAssert(false && "Cannot set NEW value for Change which is marked DELETED");
-                    return ERROR:
+                    return ERROR;
                     }
 
                 m_new = std::move(value);
