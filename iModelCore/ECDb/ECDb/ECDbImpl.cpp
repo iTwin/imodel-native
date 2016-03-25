@@ -136,6 +136,8 @@ void ECDb::Impl::ClearECDbCache () const
         {
         m_ecdb.DropAppData(*appDataKey);
         }
+
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("After ECDb::ClearECDbCache");
     }
 
 //--------------------------------------------------------------------------------------

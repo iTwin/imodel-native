@@ -129,7 +129,6 @@ struct ECDbMapAnalyser
     struct Relationship;
     struct Storage
         {
-        typedef std::unique_ptr<Storage> Ptr;
         private:
 
             ECDbSqlTable const& m_table;
@@ -157,7 +156,6 @@ struct ECDbMapAnalyser
     //+===============+===============+===============+===============+===============+======
     struct Class
         {
-        typedef  std::unique_ptr<Class> Ptr;
         private:
             ClassMapCR m_classMap;
             Storage& m_storage;
@@ -184,7 +182,6 @@ struct ECDbMapAnalyser
     //+===============+===============+===============+===============+===============+======
     struct Relationship : Class
         {
-        typedef  std::unique_ptr<Relationship> Ptr;
         enum class EndType
             {
             From, To
@@ -242,30 +239,13 @@ struct ECDbMapAnalyser
             bool IsLinkTable() const;
             EndPoint& From();
             EndPoint& To();
-            EndPoint& ForeignEnd()
-                {
-                BeAssert(!IsLinkTable());
-                return GetPersistanceLocation() == PersistanceLocation::From ? From() : To();
-                }
-            EndPoint& ReferencedEnd()
-                {
-                BeAssert(!IsLinkTable());
-                return GetPersistanceLocation() == PersistanceLocation::To ? From() : To();
-                }
+            EndPoint& ForeignEnd() { BeAssert(!IsLinkTable()); return GetPersistanceLocation() == PersistanceLocation::From ? From() : To(); }
+            EndPoint& ReferencedEnd() { BeAssert(!IsLinkTable()); return GetPersistanceLocation() == PersistanceLocation::To ? From() : To(); }
             bool IsHolding() const { return GetRelationshipClassMap().GetRelationshipClass().GetStrength() == ECN::StrengthType::Holding; }
             bool IsReferencing() const { return GetRelationshipClassMap().GetRelationshipClass().GetStrength() == ECN::StrengthType::Referencing; }
             bool IsEmbedding() const { return GetRelationshipClassMap().GetRelationshipClass().GetStrength() == ECN::StrengthType::Embedding; }
-            bool IsMarkedForCascadeDelete() const
-                {
-                BeAssert(!IsLinkTable());
-                return m_onDeleteAction == ForeignKeyActionType::Cascade;
-                }
-            bool IsMarkedForCascadeUpdate() const
-                {
-                BeAssert(!IsLinkTable());
-                return m_onUpdateAction == ForeignKeyActionType::Cascade;
-                }
-
+            bool IsMarkedForCascadeDelete() const { BeAssert(!IsLinkTable()); return m_onDeleteAction == ForeignKeyActionType::Cascade; }
+            bool IsMarkedForCascadeUpdate() const { BeAssert(!IsLinkTable()); return m_onUpdateAction == ForeignKeyActionType::Cascade; }
         };
 
     private:
@@ -281,14 +261,8 @@ struct ECDbMapAnalyser
                 SqlViewBuilder m_view;
             public:
                 ViewInfo() {}
-                ViewInfo(ViewInfo const& rhs)
-                    :m_triggers(rhs.m_triggers), m_view(rhs.m_view)
-                    {
-                    }
-                ViewInfo(ViewInfo const&& rhs)
-                    :m_triggers(std::move(rhs.m_triggers)), m_view(std::move(rhs.m_view))
-                    {
-                    }
+                ViewInfo(ViewInfo const& rhs) :m_triggers(rhs.m_triggers), m_view(rhs.m_view) {}
+                ViewInfo(ViewInfo const&& rhs) :m_triggers(std::move(rhs.m_triggers)), m_view(std::move(rhs.m_view)) {}
                 ViewInfo& operator = (ViewInfo const& rhs)
                     {
                     if (this != &rhs)
@@ -316,9 +290,9 @@ struct ECDbMapAnalyser
 
         mutable std::map<ECN::ECClassId, std::set<ECN::ECClassId>> m_derivedClassLookup;
         ECDbMapR m_map;
-        std::map<ECN::ECClassId, Class::Ptr> m_classes;
-        std::map<ECN::ECClassId, Relationship::Ptr> m_relationships;
-        std::map<Utf8CP, Storage::Ptr, CompareIUtf8Ascii> m_storage;
+        std::map<ECN::ECClassId, std::unique_ptr<Class>> m_classes;
+        std::map<ECN::ECClassId, std::unique_ptr<Relationship>> m_relationships;
+        std::map<Utf8CP, std::unique_ptr<Storage>> m_storage;
         std::map<Class const*, ViewInfo> m_viewInfos;
 
     private:
@@ -330,8 +304,7 @@ struct ECDbMapAnalyser
         Relationship&  GetRelationship(RelationshipClassMapCR classMap);
         BentleyStatus AnalyseClass(ClassMapCR);
         BentleyStatus AnalyseRelationshipClass(RelationshipClassMapCR);
-        std::vector<ECN::ECClassId> GetRootClassIds() const;
-        std::vector<ECN::ECClassId> GetRelationshipClassIds() const;
+        void GetClassIds(std::vector<ECN::ECClassId>& rootClassIds, std::vector<ECN::ECClassId>& rootRelationshipClassIds) const;
         std::set<ECN::ECClassId> const& GetDerivedClassIds(ECN::ECClassId baseClassId) const;
         ClassMapCP GetClassMap(ECN::ECClassId classId) const;
         void SetupDerivedClassLookup();
