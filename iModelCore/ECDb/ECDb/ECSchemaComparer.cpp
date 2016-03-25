@@ -8,9 +8,8 @@
 #include "ECDbPch.h"
 USING_NAMESPACE_BENTLEY_EC
 using namespace std;
-
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
+#define NULL_TEXT "<null>"
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -18,6 +17,17 @@ bool operator == (ECValueCR lhs, ECValueCR rhs)
     {
     return lhs.Equals(rhs);
     }
+bool operator == (DPoint2dCR lhs, DPoint2dCR rhs)
+    {
+    return lhs.AlmostEqual(rhs);
+    }
+bool operator == (DPoint3dCR lhs, DPoint3dCR rhs)
+    {
+    return lhs.AlmostEqual(rhs);
+    }
+//======================================================================================>
+//Nullable<T>
+//======================================================================================>
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -25,6 +35,7 @@ template<typename T>
 Nullable<T>::Nullable()
     :m_isNull(true), m_value(T())
     {}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -32,6 +43,7 @@ template<typename T>
 Nullable<T>::Nullable(T const& value)
     :m_isNull(false), m_value(value)
     {}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -39,6 +51,7 @@ template<typename T>
 Nullable<T>::Nullable(Nullable<T> const& rhs)
     :m_isNull(rhs.m_isNull), m_value(rhs.m_value)
     {}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -46,11 +59,13 @@ template<typename T>
 Nullable<T>::Nullable(Nullable<T> const&& rhs)
     :m_isNull(std::move(rhs.m_isNull)), m_value(std::move(rhs.m_value))
     {}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 template<typename T>
 bool Nullable<T>::IsNull() const { return m_isNull; }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -66,6 +81,7 @@ T const& Nullable<T>::Value() const
 //+---------------+---------------+---------------+---------------+---------------+------
 template<typename T>
 T& Nullable<T>::ValueR() { return m_value; }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -79,6 +95,7 @@ bool Nullable<T>::operator == (Nullable<T> const& rhs) const
     else
         return rhs.Value() == Value();
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -87,6 +104,7 @@ bool Nullable<T>::operator == (nullptr_t rhs)const
     {
     return IsNull();
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -95,6 +113,7 @@ bool Nullable<T>::operator != (Nullable<T> const& rhs) const
     {
     return !operator==(rhs);
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -103,6 +122,7 @@ bool Nullable<T>::operator != (nullptr_t rhs) const
     {
     return !operator==(rhs);
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -117,6 +137,7 @@ Nullable<T>& Nullable<T>::operator = (Nullable<T> const&& rhs)
 
     return *this;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -130,6 +151,7 @@ Nullable<T>& Nullable<T>::operator = (Nullable<T> const& rhs)
         }
     return *this;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -138,9 +160,9 @@ Nullable<T>& Nullable<T>::operator = (T const& rhs)
     {
     m_value = rhs;
     m_isNull = false;
-
     return *this;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -152,6 +174,7 @@ Nullable<T>& Nullable<T>::operator = (T const&& rhs)
 
     return *this;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -163,7 +186,9 @@ Nullable<T>& Nullable<T>::operator = (nullptr_t rhs)
     return *this;
     }
 
-/////////////////////////////////////////////////////////////////////
+//======================================================================================>
+//Binary
+//======================================================================================>
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -171,6 +196,7 @@ bool Binary::_empty() const
     {
     return m_len == 0;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -371,9 +397,9 @@ Binary::~Binary()
     _free();
     }
 
-///////////////////////////////////////////////////////////////////////////////////////
-
-
+//======================================================================================>
+//ECSchemaComparer
+//======================================================================================>
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -416,6 +442,7 @@ BentleyStatus ECSchemaComparer::CompareECSchemas(ECSchemaChanges& changes, ECSch
 
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -453,6 +480,7 @@ BentleyStatus ECSchemaComparer::CompareECSchema(ECSchemaChange& change, ECSchema
 
     return CompareCustomAttributes(change.CustomAttributes(), a, b);
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -508,6 +536,7 @@ BentleyStatus ECSchemaComparer::CompareECClass(ECClassChange& change, ECClassCR 
 
     return CompareCustomAttributes(change.CustomAttributes(), a, b);
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -529,6 +558,7 @@ BentleyStatus ECSchemaComparer::CompareECBaseClasses(BaseClassChanges& changes, 
 
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -545,6 +575,7 @@ BentleyStatus ECSchemaComparer::CompareECRelationshipClass(ECRelationshipChange&
 
     return CompareECRelationshipConstraint(change.GetTarget(), a.GetTarget(), b.GetTarget());
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -561,6 +592,7 @@ BentleyStatus ECSchemaComparer::CompareECRelationshipConstraint(ECRelationshipCo
 
     return CompareECRelationshipConstraintClasses(change.ConstraintClasses(), a.GetConstraintClasses(), b.GetConstraintClasses());
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -601,6 +633,7 @@ BentleyStatus ECSchemaComparer::CompareECRelationshipConstraintClassKeys(ECRelat
 
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -643,6 +676,7 @@ BentleyStatus ECSchemaComparer::CompareECRelationshipConstraintClasses(ECRelatio
 
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -737,6 +771,7 @@ BentleyStatus ECSchemaComparer::CompareECProperty(ECPropertyChange& change, ECPr
 
     return CompareCustomAttributes(change.CustomAttributes(), a, b);
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -779,6 +814,7 @@ BentleyStatus ECSchemaComparer::CompareECProperties(ECPropertyChanges& changes, 
 
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -821,6 +857,7 @@ BentleyStatus ECSchemaComparer::CompareECClasses(ECClassChanges& changes, ECClas
 
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -863,6 +900,7 @@ BentleyStatus ECSchemaComparer::CompareECEnumerations(ECEnumerationChanges& chan
 
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1025,6 +1063,7 @@ BentleyStatus ECSchemaComparer::CompareCustomAttributes(ECInstanceChanges& chang
         }
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1056,6 +1095,7 @@ BentleyStatus ECSchemaComparer::CompareECEnumeration(ECEnumerationChange& change
 
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1099,6 +1139,7 @@ BentleyStatus ECSchemaComparer::CompareIntegerECEnumerators(ECEnumeratorChanges&
 
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1142,6 +1183,7 @@ BentleyStatus ECSchemaComparer::CompareStringECEnumerators(ECEnumeratorChanges& 
 
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1226,6 +1268,7 @@ BentleyStatus ECSchemaComparer::CompareBaseClasses(BaseClassChanges& changes, EC
 
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1258,6 +1301,7 @@ BentleyStatus ECSchemaComparer::CompareReferences(ReferenceChanges& changes, ECS
         }
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1291,6 +1335,7 @@ BentleyStatus ECSchemaComparer::AppendECSchema(ECSchemaChanges& changes, ECSchem
 
     return AppendCustomAttributes(change.CustomAttributes(), v, appendType);
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1323,6 +1368,7 @@ BentleyStatus ECSchemaComparer::AppendECClass(ECClassChanges& changes, ECClassCR
 
     return AppendCustomAttributes(change.CustomAttributes(), v, appendType);
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1338,6 +1384,7 @@ BentleyStatus ECSchemaComparer::AppendECRelationshipClass(ECRelationshipChange& 
 
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1351,6 +1398,7 @@ BentleyStatus ECSchemaComparer::AppendECRelationshipConstraint(ECRelationshipCon
 
     return AppendCustomAttributes(change.CustomAttributes(), v, appendType);
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1365,6 +1413,7 @@ BentleyStatus ECSchemaComparer::AppendECRelationshipConstraintClasses(ECRelation
         }
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1379,6 +1428,7 @@ BentleyStatus ECSchemaComparer::AppendECRelationshipConstraintClass(ECRelationsh
         }
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1403,6 +1453,7 @@ BentleyStatus ECSchemaComparer::AppendECEnumeration(ECEnumerationChanges& change
         }
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1423,6 +1474,7 @@ BentleyStatus ECSchemaComparer::AppendECEnumeration(ECEnumerationChanges& change
 //
 //    return SUCCESS;
 //    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1495,6 +1547,7 @@ BentleyStatus ECSchemaComparer::AppendBaseClasses(BaseClassChanges& changes, ECB
 
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1506,6 +1559,7 @@ BentleyStatus ECSchemaComparer::AppendReferences(ReferenceChanges& changes, ECSc
 
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1517,6 +1571,7 @@ BentleyStatus ECSchemaComparer::ConvertECInstanceToValueMap(std::map<Utf8String,
 
     return ConvertECValuesCollectionToValueMap(map, *values);
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1545,6 +1600,7 @@ BentleyStatus ECSchemaComparer::ConvertECValuesCollectionToValueMap(std::map<Utf
         }
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1567,6 +1623,7 @@ std::vector<Utf8String> ECSchemaComparer::Split(Utf8StringCR path)
 
     return axis;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1586,4 +1643,678 @@ BentleyStatus ECSchemaComparer::Compare(ECSchemaChanges& changes, ECSchemaList c
     return SUCCESS;
     }
 
+//======================================================================================>
+//ECChange
+//======================================================================================>
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static 
+std::map<Utf8CP, SystemId, CompareUtf8> const& ECChange::GetStringToTypeMap()
+{
+static std::map<Utf8CP, SystemId, CompareUtf8> keyToId;
+if (keyToId.empty())
+    {
+    for (auto const& kp : GetTypeToStringMap())
+        {
+        keyToId[kp.second.c_str()] = kp.first;
+        }
+    }
+
+return keyToId;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static 
+std::map<SystemId, Utf8String> const& ECChange::GetTypeToStringMap()
+{
+static std::map<SystemId, Utf8String> idToKey
+    {
+            {NONE, ""},
+            {ALTERNATIVEPRESENTATIONUNITLIST, "AlternativePresentationUnitList"},
+            {ARRAY, "Array"},
+            {BASECLASS, "BaseClass"},
+            {BASECLASSES, "BaseClasses"},
+            {CARDINALITY, "Cardinality"},
+            {CLASSES, "Classes"},
+            {CLASS, "Class"},
+            {CONSTANTKEY, "ConstantKey"},
+            {CLASSFULLNAME, "ClassFullName"},
+            {CLASSMODIFIER, "ClassModifier"},
+            {CONSTRAINTCLASS, "ConstraintClass"},
+            {CONSTRAINTCLASSES, "ConstraintClasses"},
+            {CONSTRAINT, "Constraint"},
+            {CUSTOMATTRIBTUES, "CustomAttributes"},
+            {DEFAULTPRESENTATIONUNIT, "DefaultPresentationUnit"},
+            {DESCRIPTION, "Description"},
+            {DIRECTION, "Direction"},
+            {PROPERTYVALUE,"PropertyValue"},
+            {PROPERTYVALUES,"PropertyValues"},
+            {DISPLAYLABEL, "DisplayLabel"},
+            {ENUMERATION, "Enumeration"},
+            {ENUMERATIONS, "Enumerations"},
+            {ENUMERATOR, "Enumerator"},
+            {ENUMERATORS, "Enumerators"},
+            {EXTENDEDTYPENAME, "ExtendTypeName"},
+            {INSTANCE, "Instance"},
+            {INSTANCES, "Instances"},
+            {INTEGER, "Integer"},
+            {ISCUSTOMATTRIBUTECLASS, "IsCustomAttributeClass"},
+            {ISENTITYCLASS, "IsEntityClass"},
+            {ISPOLYMORPHIC, "IsPolymorphic"},
+            {ISREADONLY, "IsReadOnly"},
+            {ISRELATIONSHIPCLASS, "IsRelationshipClass"},
+            {ISSTRICT, "IsStict"},
+            {ISSTRUCTCLASS, "IsStructClass"},
+            {ISSTRUCT, "IsStruct"},
+            {ISSTRUCTARRAY, "IsStructArray"},
+            {ISPRIMITIVE, "IsPrimitive"},
+            {ISPRIMITIVEARRAY, "IsPrimitiveArray"},
+            {ISNAVIGATION, "IsNavigation"},
+            {KEYPROPERTIES, "KeyProperties"},
+            {KEYPROPERTY, "KeyProperty"},
+            {KINDOFQUANTITIES, "KindOfQuantities"},
+            {KINDOFQUANTITY, "KindOfQuantity"},
+            {MAXIMUMVALUE, "MaximumValue"},
+            {MAXOCCURS, "MaxOccurs"},
+            {MINIMUMVALUE, "MinimumValue"},
+            {MINOCCURS, "MinOccurs"},
+            {NAME, "Name"},
+            {NAMESPACEPREFIX, "NameSpacePrefix"},
+            {NAVIGATION, "Navigation"},
+            {PERSISTENCEUNIT, "PersistenceUnit"},
+            {PRECISION, "Precision"},
+            {PROPERTIES, "Properties"},
+            {PROPERTY, "Property"},
+            {PROPERTYTYPE, "PropertyType"},
+            {REFERENCE, "Reference"},
+            {REFERENCES, "References"},
+            {RELATIONSHIP, "Relationship"},
+            {RELATIONSHIPNAME, "RelationshipName"},
+            {ROLELABEL, "RoleLabel"},
+            {SCHEMA, "Schema"},
+            {SCHEMAS, "Schemas"},
+            {SOURCE, "Source"},
+            {STRENGTHDIRECTION, "StrengthDirection"},
+            {STRENGTHTYPE, "StrengthType"},
+            {STRING, "String"},
+            {TARGET, "Target"},
+            {TYPENAME, "TypeName"},
+            {VERSIONMAJOR, "VersionMajor"},
+            {VERSIONMINOR, "VersionMinor"},
+            {VERSIONWRITE, "VersionWrite"},
+    };
+
+return idToKey;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static 
+Utf8StringCR ECChange::Convert(SystemId id)
+    {
+    std::map<SystemId, Utf8String> const& idToKey = GetTypeToStringMap();
+    auto itor = idToKey.find(id);
+    if (itor != idToKey.end())
+        return itor->second;
+
+    BeAssert(false && "Failed to convert to string");
+    return idToKey.find(SystemId::NONE)->second;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static 
+SystemId ECChange::Convert(Utf8CP id)
+    {
+    std::map<Utf8CP, SystemId, CompareUtf8> const& keyToId = GetStringToTypeMap();
+    auto itor = keyToId.find(id);
+    if (itor != keyToId.end())
+        return itor->second;
+
+    BeAssert(false && "Failed to decode type id into string");
+    return SystemId::NONE;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static  
+void ECChange::AppendBegin(Utf8StringR str, ECChange const& change, int currentIndex)
+    {
+
+    if (change.GetState() == ChangeState::Deleted)
+        str += "-";
+    else if (change.GetState() == ChangeState::New)
+        str += "+";
+    else if (change.GetState() == ChangeState::Modified)
+        str += "!";
+
+    for (int i = 0; i < currentIndex; i++)
+        str.append(" ");
+
+    str.append(Convert(change.GetSystemId()));
+    if (change.HasCustomId())
+        str.append("(").append(change.GetId().c_str()).append(")");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+void ECChange::AppendEnd(Utf8StringR str)
+    {
+    str.append("\r\n");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECChange::ECChange(ChangeState state, SystemId systemId, ECChange const* parent, Utf8CP customId)
+    :m_systemId(systemId), m_parent(parent), m_state(state), m_applied(false)
+    {
+    if (customId != nullptr)
+        m_customId = std::unique_ptr<Utf8String>(new Utf8String(customId));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+SystemId ECChange::GetSystemId() const { return m_systemId; }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8StringCR ECChange::GetId() const
+    {
+    if (m_customId != nullptr)
+        return *m_customId;
+
+    return Convert(GetSystemId());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECChange::HasCustomId() const { return m_customId != nullptr; }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ChangeState ECChange::GetState() const { return m_state; }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECChange const* ECChange::GetParent() const { return m_parent; }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECChange::IsEmpty() const { return _IsEmpty(); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECChange::Optimize() { return _Optimize(); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECChange::Exist() const { return !IsEmpty(); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECChange::IsPending() const { return !m_applied; }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECChange::Done() { BeAssert(m_applied == false); m_applied = true; }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECChange::WriteToString(Utf8StringR str, int initIndex, int indentSize) const
+    {
+    _WriteToString(str, initIndex, indentSize);
+    }
+
+//======================================================================================>
+//ECObjectChange
+//======================================================================================>
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECObjectChange::_WriteToString(Utf8StringR str, int currentIndex, int indentSize) const 
+    {
+    AppendBegin(str, *this, currentIndex);
+    AppendEnd(str);
+    for (auto& change : m_changes)
+        {
+        change.second->WriteToString(str, currentIndex + indentSize, indentSize);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECObjectChange::_IsEmpty() const
+    {
+    for (auto& change : m_changes)
+        {
+        if (change.second->Exist())
+            return false;
+        }
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECObjectChange::_Optimize() 
+    {
+    auto itor = m_changes.begin();
+    while (itor != m_changes.end())
+        {
+        itor->second->Optimize();
+        if (itor->second->IsEmpty())
+            {
+            itor = m_changes.erase(itor);
+            }
+        else
+            ++itor;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+template<typename T>
+T& ECObjectChange::Get(SystemId systemId)
+    {
+    static_assert(std::is_base_of<ECChange, T>::value, "T not derived from ECChange");
+    Utf8CP customId = Convert(systemId).c_str();
+    auto itor = m_changes.find(customId);
+    if (itor != m_changes.end())
+        return *(static_cast<T*>(itor->second.get()));
+
+    ECChange::Ptr ptr;
+    ptr = ECChange::Ptr(new T(GetState(), systemId, this, nullptr));
+    ECChange* p = ptr.get();
+    m_changes[ptr->GetId().c_str()] = std::move(ptr);
+    return *(static_cast<T*>(p));
+    }
+//======================================================================================>
+//StringChange
+//======================================================================================>
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String StringChange::_ToString(ValueId id) const
+    {
+    Utf8String str;
+    auto& v = GetValue(id);
+    if (v.IsNull())
+        str = NULL_TEXT;
+    else
+        str = v.Value();
+    return str;
+    }
+//======================================================================================>
+//BooleanChange
+//======================================================================================>
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String BooleanChange::_ToString(ValueId id) const
+    {
+    Utf8String str;
+    auto& v = GetValue(id);
+    if (v.IsNull())
+        str = NULL_TEXT;
+    else
+        str = v.Value() ? "True" : "False";
+    return str;
+    }
+
+//======================================================================================>
+//UInt32Change
+//======================================================================================>
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String UInt32Change::_ToString(ValueId id) const
+    {
+    Utf8String str;
+    auto& v = GetValue(id);
+    if (v.IsNull())
+        str = NULL_TEXT;
+    else
+        str.Sprintf("%u", v.Value());
+
+    return str;
+    }
+
+//======================================================================================>
+//Int32Change
+//======================================================================================>
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String Int32Change::_ToString(ValueId id) const
+    {
+    Utf8String str;
+    auto& v = GetValue(id);
+    if (v.IsNull())
+        str = NULL_TEXT;
+    else
+        str.Sprintf("%d", v.Value());
+
+    return str;
+    }
+
+//======================================================================================>
+//DoubleChange
+//======================================================================================>
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String DoubleChange::_ToString(ValueId id) const
+    {
+    Utf8String str;
+    auto& v = GetValue(id);
+    if (v.IsNull())
+        str = NULL_TEXT;
+    else
+        str.Sprintf("%.17g", v.Value());
+
+    return str;
+    }
+
+//======================================================================================>
+//DateTimeChange
+//======================================================================================>
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String DateTimeChange::_ToString(ValueId id) const
+    {
+    Utf8String str;
+    auto& v = GetValue(id);
+    if (v.IsNull())
+        str = NULL_TEXT;
+    else
+        str = Utf8String(v.Value().ToString().c_str());
+
+    return str;
+    }
+
+//======================================================================================>
+//ECValueChange
+//======================================================================================>
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String ECValueChange::_ToString(ValueId id) const
+    {
+    auto& v = GetValue(id);
+    if (v.IsNull())
+        return NULL_TEXT;
+
+    if (v.Value().IsNull())
+        return NULL_TEXT;
+
+    return v.Value().ToString();
+    }
+
+//======================================================================================>
+//Point2DChange
+//======================================================================================>
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String Point2DChange::_ToString(ValueId id) const
+    {
+    Utf8String str;
+    auto& v = GetValue(id);
+    if (v.IsNull())
+        str = NULL_TEXT;
+    else
+        str.Sprintf("(%.17g, %.17g)", v.Value().x, v.Value().y);
+    return str;
+    }
+
+//======================================================================================>
+//Point3DChange
+//======================================================================================>
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String Point3DChange::_ToString(ValueId id) const
+    {
+    Utf8String str;
+    auto& v = GetValue(id);
+    if (v.IsNull())
+        str = NULL_TEXT;
+    else
+        str.Sprintf("(%.17g, %.17g, %.17g)", v.Value().x, v.Value().y, v.Value().z);
+
+    return str;
+    }
+
+//======================================================================================>
+//Int64Change
+//======================================================================================>
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String Int64Change::_ToString(ValueId id) const
+    {
+    Utf8String str;
+    auto& v = GetValue(id);
+    if (v.IsNull())
+        str = NULL_TEXT;
+    else
+        str.Sprintf("%lld", v.Value());
+
+    return str;
+    }
+
+//======================================================================================>
+//StrengthTypeChange
+//======================================================================================>
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String StrengthTypeChange::_ToString(ValueId id) const 
+    {
+    Utf8String str;
+    auto& v = GetValue(id);
+    if (v.IsNull())
+        str = NULL_TEXT;
+    else
+        {
+        if (v.Value() == ECN::StrengthType::Embedding)
+            str = "Embedding";
+        else if (v.Value() == ECN::StrengthType::Holding)
+            str = "Holding";
+        else if (v.Value() == ECN::StrengthType::Referencing)
+            str = "Referencing";
+        }
+    return str;
+    }
+
+//======================================================================================>
+//StrengthDirectionChange
+//======================================================================================>
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String StrengthDirectionChange::_ToString(ValueId id) const 
+    {
+    Utf8String str;
+    auto& v = GetValue(id);
+    if (v.IsNull())
+        str = NULL_TEXT;
+    else
+        {
+        if (v.Value() == ECN::ECRelatedInstanceDirection::Backward)
+            str = "Backward";
+        else if (v.Value() == ECN::ECRelatedInstanceDirection::Forward)
+            str = "Forward";
+        }
+    return str;
+    }
+
+//======================================================================================>
+//ModifierChange
+//======================================================================================>
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String ModifierChange::_ToString(ValueId id) const 
+    {
+    Utf8String str;
+    auto& v = GetValue(id);
+    if (v.IsNull())
+        str = NULL_TEXT;
+    else
+        {
+        if (v.Value() == ECN::ECClassModifier::Abstract)
+            str = "Abstract";
+        else if (v.Value() == ECN::ECClassModifier::None)
+            str = "None";
+        else if (v.Value() == ECN::ECClassModifier::Sealed)
+            str = "Sealed";
+
+        }
+    return str;
+    }
+
+//======================================================================================>
+//ECPropertyValueChange
+//======================================================================================>
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECPropertyValueChange::_WriteToString(Utf8StringR str, int currentIndex, int indentSize) const
+    {
+    if (m_value != nullptr)
+        {
+        m_value->WriteToString(str, currentIndex, indentSize);
+        return;
+        }
+
+    AppendBegin(str, *this, currentIndex);
+    AppendEnd(str);
+
+
+    if (m_children != nullptr)
+        {
+        //AppendBegin(str, *this, currentIndex);
+        for (size_t i = 0; i < m_children->Count(); i++)
+            {
+            m_children->At(i).WriteToString(str, currentIndex + indentSize, indentSize);
+            }
+        //AppendEnd(str);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECPropertyValueChange::_IsEmpty() const
+    {
+    if (auto parent = GetParent())
+        if (parent->GetSystemId() == CUSTOMATTRIBTUES && GetState() != ChangeState::Modified)
+            return false;
+
+    if (m_value != nullptr)
+        return m_value->IsEmpty();
+
+    if (m_children != nullptr)
+        return m_children->IsEmpty();
+
+    return true;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECPropertyValueChange::_Optimize()
+    {
+    if (m_value != nullptr)
+        if (m_value->IsEmpty())
+            m_value = nullptr;
+
+    if (m_children != nullptr)
+        if (m_children->IsEmpty())
+            m_children = nullptr;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECPropertyValueChange::ECPropertyValueChange(ChangeState state, SystemId systemId, ECChange const* parent, Utf8CP customId)
+    : ECChange(state, PROPERTYVALUE, parent, customId)
+    {
+    BeAssert(systemId == GetSystemId());
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECPropertyValueChange::HasValue() const { return m_value != nullptr; }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECPropertyValueChange::HasChildren() const { return m_children != nullptr; }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECPrimitiveChange<ECValue>& ECPropertyValueChange::GetPropertyValue()
+    {
+    if (m_value == nullptr)
+        {
+        m_value = std::unique_ptr<ECValueChange>(new ECValueChange(GetState(), PROPERTYVALUE, this, GetId().c_str()));
+        }
+
+    return *m_value;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECChangeArray<ECPropertyValueChange>& ECPropertyValueChange::GetChildren()
+    {
+    if (m_children == nullptr)
+        {
+        m_children = std::unique_ptr<ECChangeArray<ECPropertyValueChange>>(new ECChangeArray<ECPropertyValueChange>(GetState(), PROPERTYVALUES, this, GetId().c_str(), PROPERTYVALUE));
+        }
+
+    return *m_children;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECPropertyValueChange& ECPropertyValueChange::GetOrCreate(ChangeState stat, std::vector<Utf8String> const& path)
+    {
+    ECPropertyValueChange* c = this;
+    for (auto& str : path)
+        {
+        auto m = c->GetChildren().Find(str.c_str());
+        if (m == nullptr)
+            {
+            c = &c->GetChildren().Add(stat, str.c_str());
+            }
+        else
+            c = m;
+        }
+
+    return *c;
+    }
+      
 END_BENTLEY_SQLITE_EC_NAMESPACE

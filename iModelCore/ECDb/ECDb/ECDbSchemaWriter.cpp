@@ -9,6 +9,23 @@
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECDbSchemaWriter::Fail(Utf8CP fmt, ...) const
+    {
+    va_list args;
+    va_start(args, fmt);
+
+    Utf8String formattedMessage;
+    formattedMessage.VSprintf(fmt, args);
+
+    //Utf8String a;a.VSprintf
+    m_ecdb.GetECDbImplR().GetIssueReporter()
+        .Report(ECDbIssueSeverity::Error, formattedMessage.c_str());
+
+    return ERROR;
+    }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
@@ -167,7 +184,7 @@ BentleyStatus ECDbSchemaWriter::InsertCAEntry(IECInstanceP customAttribute, ECCl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbSchemaWriter::UpdateProperty(ECPropertyChange& propertyChange, ECPropertyCR oldProperty, ECPropertyCR newProperty)
+BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChange, ECPropertyCR oldProperty, ECPropertyCR newProperty)
     {
     if (!propertyChange.IsPending())
         return SUCCESS;
@@ -273,13 +290,13 @@ BentleyStatus ECDbSchemaWriter::UpdateProperty(ECPropertyChange& propertyChange,
     if (updater.Apply(m_ecdb) != SUCCESS)
         return ERROR;
 
-    return UpdateCustomAttributes(ECContainerType::Property, propertyId, propertyChange.CustomAttributes(), oldProperty, newProperty);;
+    return UpdateECCustomAttributes(ECContainerType::Property, propertyId, propertyChange.CustomAttributes(), oldProperty, newProperty);;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbSchemaWriter::UpdateRelationshipConstraint(ECContainerId containerId, SqlUpdater& sqlUpdater, ECRelationshipConstraintChange& constraintChange, ECRelationshipConstraintCR oldConstraint, ECRelationshipConstraintCR newConstraint , bool isSource, Utf8CP relationshipName)
+BentleyStatus ECDbSchemaWriter::UpdateECRelationshipConstraint(ECContainerId containerId, SqlUpdater& sqlUpdater, ECRelationshipConstraintChange& constraintChange, ECRelationshipConstraintCR oldConstraint, ECRelationshipConstraintCR newConstraint , bool isSource, Utf8CP relationshipName)
     {
     Utf8CP constraintType = isSource ? "Source" : "Target";
     if (!constraintChange.IsPending())
@@ -306,13 +323,13 @@ BentleyStatus ECDbSchemaWriter::UpdateRelationshipConstraint(ECContainerId conta
         }
 
     ECContainerType type = isSource ? ECContainerType::RelationshipConstraintSource : ECContainerType::RelationshipConstraintTarget;
-    return UpdateCustomAttributes(type, containerId, constraintChange.CustomAttributes(), oldConstraint, newConstraint);
+    return UpdateECCustomAttributes(type, containerId, constraintChange.CustomAttributes(), oldConstraint, newConstraint);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus TryParseId(Utf8StringR schemaName, Utf8StringR className, Utf8StringCR id)
+BentleyStatus ECDbSchemaWriter::TryParseId(Utf8StringR schemaName, Utf8StringR className, Utf8StringCR id) const
     {
     auto n = id.find(':');
     BeAssert(n != Utf8String::npos);
@@ -327,7 +344,7 @@ BentleyStatus TryParseId(Utf8StringR schemaName, Utf8StringR className, Utf8Stri
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbSchemaWriter::UpdateCustomAttributes(ECContainerType containerType, ECContainerId containerId, ECInstanceChanges& instanceChanges, IECCustomAttributeContainerCR oldContainer, IECCustomAttributeContainerCR newContainer)
+BentleyStatus ECDbSchemaWriter::UpdateECCustomAttributes(ECContainerType containerType, ECContainerId containerId, ECInstanceChanges& instanceChanges, IECCustomAttributeContainerCR oldContainer, IECCustomAttributeContainerCR newContainer)
     {
     if (instanceChanges.Empty() || !instanceChanges.IsPending())
         return SUCCESS;
@@ -390,10 +407,11 @@ BentleyStatus ECDbSchemaWriter::UpdateCustomAttributes(ECContainerType container
     instanceChanges.Done();
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbSchemaWriter::UpdateClass(ECClassChange& classChange, ECClassCR oldClass, ECClassCR newClass)
+BentleyStatus ECDbSchemaWriter::UpdateECClass(ECClassChange& classChange, ECClassCR oldClass, ECClassCR newClass)
     {
     if (!classChange.IsPending())
         return SUCCESS;
@@ -470,11 +488,11 @@ BentleyStatus ECDbSchemaWriter::UpdateClass(ECClassChange& classChange, ECClassC
             return ERROR;
 
         if (relationshipChange.GetSource().Exist())
-            if (UpdateRelationshipConstraint(classId, updater, relationshipChange.GetSource(), newRel->GetSource(), oldRel->GetSource(), true, oldRel->GetFullName()) == ERROR)
+            if (UpdateECRelationshipConstraint(classId, updater, relationshipChange.GetSource(), newRel->GetSource(), oldRel->GetSource(), true, oldRel->GetFullName()) == ERROR)
                 return ERROR;
 
         if (relationshipChange.GetTarget().Exist())
-            if (UpdateRelationshipConstraint(classId, updater, relationshipChange.GetTarget(), newRel->GetSource(), oldRel->GetTarget(), false, oldRel->GetFullName()) == ERROR)
+            if (UpdateECRelationshipConstraint(classId, updater, relationshipChange.GetTarget(), newRel->GetSource(), oldRel->GetTarget(), false, oldRel->GetFullName()) == ERROR)
                 return ERROR;
         }
 
@@ -542,19 +560,19 @@ BentleyStatus ECDbSchemaWriter::UpdateClass(ECClassChange& classChange, ECClassC
                     return ERROR;
                     }
 
-                if (UpdateProperty(change, *oldProperty, *newProperty) != SUCCESS)
+                if (UpdateECProperty(change, *oldProperty, *newProperty) != SUCCESS)
                     return ERROR;
                 }
             }
         }
 
-    return UpdateCustomAttributes(ECContainerType::Class, classId, classChange.CustomAttributes(), oldClass, newClass);
+    return UpdateECCustomAttributes(ECContainerType::Class, classId, classChange.CustomAttributes(), oldClass, newClass);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbSchemaWriter::UpdateSchema(ECSchemaChange& schemaChange, ECSchemaCR oldSchema, ECSchemaCR newSchema)
+BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECSchemaCR oldSchema, ECSchemaCR newSchema)
     {
     if (!schemaChange.IsPending())
         return SUCCESS;
@@ -699,7 +717,7 @@ BentleyStatus ECDbSchemaWriter::UpdateSchema(ECSchemaChange& schemaChange, ECSch
                     return ERROR;
                     }
 
-                if (UpdateClass(change, *oldClass, *newClass) != SUCCESS)
+                if (UpdateECClass(change, *oldClass, *newClass) != SUCCESS)
                     return ERROR;
                 }
             }
@@ -731,7 +749,7 @@ BentleyStatus ECDbSchemaWriter::UpdateSchema(ECSchemaChange& schemaChange, ECSch
             }
         }
 
-    return UpdateCustomAttributes(ECContainerType::Schema, schemaId, schemaChange.CustomAttributes(), oldSchema, newSchema);
+    return UpdateECCustomAttributes(ECContainerType::Schema, schemaId, schemaChange.CustomAttributes(), oldSchema, newSchema);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -753,7 +771,7 @@ BentleyStatus ECDbSchemaWriter::Import(ECSchemaCompareContext& ctx, ECN::ECSchem
             if (existingSchema == nullptr)
                 return ERROR;
 
-            return UpdateSchema(*schemaChange, *existingSchema, ecSchema);
+            return UpdateECSchema(*schemaChange, *existingSchema, ecSchema);
             }
         else if (schemaChange->GetState() == ChangeState::Deleted)
             {            
