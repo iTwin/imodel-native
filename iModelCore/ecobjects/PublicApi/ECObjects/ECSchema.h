@@ -780,15 +780,15 @@ public:
     //! Sets the minimum value for this ECProperty
     ECOBJECTS_EXPORT ECObjectsStatus    SetMinimumValue(Utf8StringCR min);
     //! Gets whether the minimum value has been defined explicitly
-    ECOBJECTS_EXPORT bool               IsMinimumValueDefined();
+    ECOBJECTS_EXPORT bool               IsMinimumValueDefined() const;
     //! Gets the minimum value for this ECProperty
-    ECOBJECTS_EXPORT Utf8StringCR       GetMinimumValue();
+    ECOBJECTS_EXPORT Utf8StringCR       GetMinimumValue() const;
     //! Sets the maximum value for this ECProperty
     ECOBJECTS_EXPORT ECObjectsStatus    SetMaximumValue(Utf8StringCR max);
     //! Gets whether the maximum value has been defined explicitly
-    ECOBJECTS_EXPORT bool               IsMaximumValueDefined();
+    ECOBJECTS_EXPORT bool               IsMaximumValueDefined() const;
     //! Gets the maximum value for this ECProperty
-    ECOBJECTS_EXPORT Utf8StringCR       GetMaximumValue();
+    ECOBJECTS_EXPORT Utf8StringCR       GetMaximumValue() const;
     //! The Description of this ECProperty.  Returns the localized description if one exists.
     ECOBJECTS_EXPORT Utf8StringCR       GetDescription() const;
     //! Gets the invariant description for this ECProperty.
