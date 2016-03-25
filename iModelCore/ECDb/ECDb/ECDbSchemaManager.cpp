@@ -16,6 +16,21 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 
 //******************************** ECDbSchemaManager ****************************************
+BentleyStatus ECDbSchemaManager::CompareECSchemas(Utf8StringR differences, ECN::ECSchemaCR lhs, ECN::ECSchemaCR rhs) const
+    {
+    ECSchemaList lhsSchemas, rhsSchemas;
+    lhsSchemas.push_back(&lhs);
+    rhsSchemas.push_back(&rhs);
+
+    ECSchemaChanges changes;
+    ECSchemaComparer sc;
+    if (sc.Compare(changes, lhsSchemas, rhsSchemas) == ERROR)
+        return ERROR;
+
+    changes.Optimize();
+    changes.WriteToString(differences);
+    return SUCCESS;
+    }
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/

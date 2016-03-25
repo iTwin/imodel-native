@@ -1614,12 +1614,12 @@ std::vector<Utf8String> ECSchemaComparer::Split(Utf8StringCR path)
         if (path[i] == '.')
             {
             axis.push_back(path.substr(b, i - b));
-            b = i;
+            b = i + 1;
             }
         }
 
     if (b < i)
-        axis.push_back(path.substr(b, i - b ));
+        axis.push_back(path.substr(b , i - b ));
 
     return axis;
     }
@@ -1634,11 +1634,11 @@ BentleyStatus ECSchemaComparer::Compare(ECSchemaChanges& changes, ECSchemaList c
 
     changes.Optimize();
 
-#ifndef NDEBUG
-    Utf8String afterOptimize;
-    changes.WriteToString(afterOptimize);
-    printf(afterOptimize.c_str());
-#endif
+//#ifndef NDEBUG
+//    Utf8String afterOptimize;
+//    changes.WriteToString(afterOptimize);
+//    LOG.debug(afterOptimize.c_str());
+//#endif
 
     return SUCCESS;
     }

@@ -257,7 +257,12 @@ public:
     //! No code should depend on these views.
     //! @return SUCCESS OR ERROR
     ECDB_EXPORT BentleyStatus CreateECClassViewsInDb() const;
-
+    //! Compare two schema and return readable difference as string
+    //! @param[out] differences Contain text in human readable for contain differences of two schemas;
+    //! @param[in] lhs Existing or older schema then rhs
+    //! @param[in] rhs Modified or newer schema then lhs
+    //! @return SUCCESS OR ERROR
+    ECDB_EXPORT BentleyStatus CompareECSchemas(Utf8StringR differences, ECN::ECSchemaCR lhs, ECN::ECSchemaCR rhs) const;
 #if !defined (DOCUMENTATION_GENERATOR)    
     //! For cases where we are working with an ECClass in a referenced ECSchema that is a duplicate of one already persisted
     //! and therefore doesn't have the persistent ECClassId set. Generally, we would prefer that the primary ECSchema had
