@@ -10,6 +10,7 @@
 #include <Bentley/Bentley.h>
 #include <Bentley/bset.h>
 #include <Bentley/BeId.h>
+#include <list>
 
 #ifndef NDEBUG
 #include <Logging/bentleylogging.h>
@@ -1165,17 +1166,19 @@ struct BeDbMutexHolder : NonCopyableClass
 //=======================================================================================
 struct CachedStatement : Statement
 {
+    friend struct StatementCache;
 private:
-    mutable uint32_t m_refCount;
+    mutable BeAtomic<uint32_t> m_refCount;
+    mutable BeAtomic<struct StatementCache const*> m_myCache;
     Utf8CP  m_sql;
 
 public:
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-    uint32_t AddRef() const {return ++m_refCount;}
-    uint32_t GetRefCount() const {return m_refCount;}
+    uint32_t AddRef() const {return m_refCount.IncrementAtomicPre();}
+    uint32_t GetRefCount() const {return m_refCount.load();}
     BE_SQLITE_EXPORT uint32_t Release();
-    BE_SQLITE_EXPORT CachedStatement(Utf8CP sql);
+    BE_SQLITE_EXPORT CachedStatement(Utf8CP sql, struct StatementCache const&);
     BE_SQLITE_EXPORT ~CachedStatement();
     Utf8CP GetSQL() const {return m_sql;}
 };
@@ -1193,13 +1196,14 @@ struct StatementCache : NonCopyableClass
 {
 private:
     mutable BeDbMutex m_mutex;
-    mutable bvector<CachedStatementPtr> m_entries;
-    bvector<CachedStatementPtr>::iterator FindEntry(Utf8CP) const;
+    mutable std::list<CachedStatementPtr> m_entries;
+    uint32_t m_size;
+    std::list<CachedStatementPtr>::iterator FindEntry(Utf8CP) const;
     BE_SQLITE_EXPORT CachedStatement& AddStatement(Utf8CP) const;
     BE_SQLITE_EXPORT CachedStatement* FindStatement(Utf8CP) const;
 
 public:
-    StatementCache(int size){m_entries.reserve(size);}
+    StatementCache(uint32_t size){m_size=size;}
     ~StatementCache() {Empty();}
 
     BE_SQLITE_EXPORT DbResult GetPreparedStatement(CachedStatementPtr&, DbFile const& dbFile, Utf8CP sqlString) const;
@@ -1927,7 +1931,7 @@ protected:
 // @bsiclass                                                    Keith.Bentley   11/10
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE Db : NonCopyableClass
-{
+{                                           
     friend struct DbFile;
 public:
     enum class Encoding {Utf8=0, Utf16=1};
@@ -2024,7 +2028,7 @@ public:
         //! Set the compression mode for the new Db. Default is CompressDb_None.
         void SetCompressMode(CompressedDb val) {m_compressedDb=val;}
         //! Set Application Id to be stored at offset 68 of the SQLite file
-        void SetApplicationId(ApplicationId applicationId) {m_applicationId=applicationId;}
+    void SetApplicationId(ApplicationId applicationId) {m_applicationId=applicationId;}
         //! Set expiration date for the newly created database.
         void SetExpirationDate(DateTime xdate) {m_expirationDate=xdate;}
     };
