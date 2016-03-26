@@ -1710,7 +1710,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelIntersectIndex
         if (m_is2d && m_depth != -1 && (m_depth<par)) return false;
         if (node->m_nodeHeader.m_totalCount == 0) return false;
 
-        if ((node->m_nodeHeader.m_balanced && node->GetLevel() == m_requestedLevel) || (!node->m_nodeHeader.m_balanced && node->IsLeaf()) && (!m_is2d || par > 0))
+        if ((node->m_nodeHeader.m_balanced && node->GetLevel() == m_requestedLevel) || (!node->m_nodeHeader.m_balanced && (node->IsLeaf() || node->GetLevel() == m_requestedLevel)) && (!m_is2d || par > 0))
                 {
                 if (isnan(m_bestHitScore) || (m_intersect == RaycastOptions::LAST_INTERSECT && m_bestHitScore < (!m_is2d ? fraction.high : par))
                     || (m_intersect == RaycastOptions::FIRST_INTERSECT && m_bestHitScore >(!m_is2d ? fraction.low : par)))
@@ -1722,7 +1722,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelIntersectIndex
                         m_bestHitScore = par;
                     }
                 }
-        else if (node->m_nodeHeader.m_balanced && node->GetLevel() > m_requestedLevel) return false; //too deep
+        else if (node->GetLevel() > m_requestedLevel) return false; //too deep
         }
     else return false; //don't do subnodes, this is not the right extent
     return true;
@@ -1752,13 +1752,13 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelIntersectIndex
         if (!m_is2d && m_depth != -1 && ((m_depth < fraction.low) || (fraction.high < 0 && m_depth < fabs(fraction.high)))) return false;
         if (node->m_nodeHeader.m_totalCount == 0) return false;
 
-        if ((node->m_nodeHeader.m_balanced && node->GetLevel() == m_requestedLevel) || (!node->m_nodeHeader.m_balanced && node->IsLeaf()) && (!m_is2d || par > 0))
+        if ((node->m_nodeHeader.m_balanced && node->GetLevel() == m_requestedLevel) || (!node->m_nodeHeader.m_balanced && (node->GetLevel() == m_requestedLevel || node->IsLeaf())) && (!m_is2d || par > 0))
             {
             double positionAlongRay = m_is2d ? par : fraction.low;
             auto it = m_fractions.insert(std::lower_bound(m_fractions.begin(), m_fractions.end(), positionAlongRay), positionAlongRay);
             meshNodes.insert(meshNodes.begin() + (it - m_fractions.begin()), node);
             }
-        else if (node->m_nodeHeader.m_balanced && node->GetLevel() > m_requestedLevel) return false; //too deep
+        else if (node->GetLevel() > m_requestedLevel) return false; //too deep
         }
     else return false; //don't do subnodes, this is not the right extent
     return true;

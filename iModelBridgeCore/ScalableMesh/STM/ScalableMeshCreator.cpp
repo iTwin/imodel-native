@@ -141,7 +141,7 @@ void RegisterDelayedImporters()
 
     if (!s_areRegistered)
         {
-        RegisterPODImportPlugin();
+        //RegisterPODImportPlugin();
         s_areRegistered = true;
         }
     }

@@ -1095,13 +1095,13 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
             ScalableMeshMeshPtr meshPtr = ScalableMeshMesh::Create();
         
             vector<DPoint3d> dataPoints(m_node->size());
-
-            PtToPtConverter converter; 
+            m_node->get(&dataPoints[0], dataPoints.size());
+            /*PtToPtConverter converter; 
 
             for (size_t pointInd = 0; pointInd < m_node->size(); pointInd++)
                 {
                 dataPoints[pointInd] = converter.operator()(m_node->operator[](pointInd));                                            
-                }
+                }*/
 
             int status = meshPtr->AppendMesh(m_node->size(), &dataPoints[0],0,0, 0, 0, 0, 0, 0,0);
             if (flags->ShouldLoadTexture())
@@ -1196,7 +1196,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
 
     m_node->UnPin();
     //if (isStreaming) s_streamingMutex.unlock();
-    if (meshP->GetNbFaces() == 0) return nullptr;
+    if (meshP == nullptr || meshP->GetNbFaces() == 0) return nullptr;
     return meshP;    
     }
 

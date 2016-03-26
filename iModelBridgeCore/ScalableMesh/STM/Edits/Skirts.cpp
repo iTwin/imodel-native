@@ -115,6 +115,7 @@ void FindSegmentHoleBoundaries(bvector<HoleBoundary>&            holeBoundaries,
 
 void BuildSkirt(PolyfaceHeaderPtr& skirt, bvector<DPoint3d> polylineToSkirt, TerrainModel::DTMPtr& dtmPtr)
     {
+    if (dtmPtr->GetBcDTM()->GetTinHandle() == nullptr) return;
     IFacetOptionsPtr facetOptions = IFacetOptions::Create();
     bvector<TerrainModel::DTMDrapedLinePtr> drapedSegments;
     TerrainModel::IDTMDraping * draping = dtmPtr->GetDTMDraping();

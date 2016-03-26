@@ -781,6 +781,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Discard
 //=======================================================================================
 template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Load() const
     {
+    std::lock_guard<std::mutex> lock(m_headerMutex);
     if (IsLoaded()) return;
     SMPointIndexNode<POINT, EXTENT>::Load();
     m_graphVec.SetBlockID(m_nodeHeader.m_graphID);

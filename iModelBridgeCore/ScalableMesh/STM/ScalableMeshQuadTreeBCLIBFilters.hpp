@@ -303,17 +303,21 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
         // There are far too few points to start decimating them towards the root.
         // We then promote then all so they are given a high importance to make sure some terrain
         // representativity is retained in this area.
+        DRange3d extent = DRange3d::NullRange();
         for (size_t indexNodes = 0; indexNodes < numSubNodes ; indexNodes++)
         {
+        extent.Extend(subNodes[indexNodes]->m_nodeHeader.m_contentExtent);
             if (subNodes[indexNodes] != NULL)
             {                
                 parentNode->push_back(subNodes[indexNodes]);                                    
             }
         }
+        parentNode->m_nodeHeader.m_contentExtent = extent;
     }
     else
     {    
         size_t pointArrayInitialNumber[8];
+        DRange3d extent = DRange3d::NullRange();
         parentNode->reserve (parentNode->size() + (totalNumberOfPoints * 1 /8) + 20);
         for (size_t indexNodes = 0; indexNodes < numSubNodes ; indexNodes++)
         {
@@ -344,6 +348,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
                     size_t count = (points.size() / 8) + 1;
 
                     parentNode->push_back(&points[0], count);
+                    extent.Extend(&points[0], (int)count);
                     /*
                     subNodes[indexNodes]->clearFrom (indexStart);
                     subNodes[indexNodes]->m_nodeHeader.m_totalCount -= pointArrayInitialNumber[indexNodes] - subNodes[indexNodes]->size();
@@ -351,6 +356,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
                 }
                 subNodes[indexNodes]->UnPin();
             }
+            parentNode->m_nodeHeader.m_contentExtent = extent;
         }
         
     if (pParentMeshNode->m_nodeHeader.m_arePoints3d)

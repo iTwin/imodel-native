@@ -704,6 +704,7 @@ size_t GetNbPtsIndices(size_t texture_id) const
         mutable bool m_isTextureLoaded;
         mutable bool m_isUVsIndicesLoaded;
         HFCPtr<ClipRegistry> m_clipRegistry;
+        mutable std::mutex m_headerMutex;
     };
 
 
