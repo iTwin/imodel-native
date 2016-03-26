@@ -793,6 +793,7 @@ public:
     */
     size_t get(DataType* objects, size_t maxCount) const
         {
+        std::lock_guard<std::recursive_mutex> lock(m_itemMutex);
         if (maxCount == 0)
             return false;
 
