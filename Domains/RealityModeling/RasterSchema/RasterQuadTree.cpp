@@ -199,23 +199,23 @@ void ThreadPool::Enqueue(TileDataQuery& task)
 void TileDataQuery::Run()
     {
     bool enableAlphaBlend = false;
-    Render::ImagePtr pImage = m_tileNode.GetTreeR().GetSource().QueryTile(m_tileNode.GetId(), enableAlphaBlend);
+    Render::Image image = m_tileNode.GetTreeR().GetSource().QueryTile(m_tileNode.GetId(), enableAlphaBlend);
 
 #ifndef NDEBUG  // debug build only.
     static bool s_missingTilesInRed = false;
-    if (s_missingTilesInRed && !pImage.IsValid())
+    if (s_missingTilesInRed && !image.IsValid())
         {
         ByteStream data(256 * 256 * 3);
         Byte red[3] = {255,0,0};
         for (uint32_t pixel = 0; pixel < 256 * 256; ++pixel)
             memcpy(data.GetDataP() + pixel * 3, red, 3);
 
-        pImage = new Render::Image(256, 256, Render::Image::Format::Rgb, std::move(data));
+        image = Render::Image(256, 256, Render::Image::Format::Rgb, std::move(data));
         enableAlphaBlend = false;
         }
 #endif         
-    if (pImage.IsValid() && !IsCanceled())
-        m_pTile = m_target.CreateTexture(*pImage, enableAlphaBlend);
+    if (image.IsValid() && !IsCanceled())
+        m_pTile = m_target.CreateTexture(image, enableAlphaBlend);
         
     m_isFinished = true;
     }

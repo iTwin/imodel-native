@@ -10,15 +10,15 @@
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-MRMeshNode::~MRMeshNode() 
-    { 
-    MRMeshCacheManager::GetManager().RemoveRequest(*this); 
+Node::~Node()
+    {
+    CacheManager::GetManager().RemoveRequest(*this);
     }
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshNode::Clear()
+void Node::Clear()
     {
     m_dir.clear();
     m_children.clear();
@@ -28,21 +28,21 @@ void MRMeshNode::Clear()
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshNode::PushNode(S3NodeInfo const& nodeInfo)
+void Node::PushNode(NodeInfo const& nodeInfo)
     {
     if (nodeInfo.m_children.empty())
         return;
 
-    m_children.push_back(new MRMeshNode(nodeInfo, this, m_system));
+    m_children.push_back(new Node(nodeInfo, this));
     }
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshNode::AddGeometry(int32_t nodeId, int32_t nbVertices, FPoint3d const* positions, FPoint3d const* normals, int32_t nbTriangles, uint32_t const* indices, FPoint2d const* textureCoordinates, int32_t textureIndex, SystemP system)
+void Node::AddGeometry(int32_t nodeId, Graphic::TriMeshArgs& args, int32_t textureIndex, LoadContextCR loadContext)
     {
     ByteStream* jpeg = GetTextureData(textureIndex);
-    if (nullptr == jpeg) 
+    if (nullptr == jpeg)
         {
         BeAssert(false); // ???
         return;
@@ -53,28 +53,29 @@ void MRMeshNode::AddGeometry(int32_t nodeId, int32_t nbVertices, FPoint3d const*
     if (SUCCESS != imageInfo.ReadImageFromJpgBuffer(rgba, jpeg->GetData(), jpeg->GetSize()))
         return;
 
-    TexturePtr texture;
-    if (system)
+    Render::TexturePtr texture;
+    if (loadContext.m_system)
         {
-        texture = system->_CreateTexture(rgba, imageInfo.m_hasAlpha);
+        texture = loadContext.m_system->_CreateTexture(rgba, imageInfo.m_hasAlpha);
         jpeg->Clear(); // we no longer need the jpeg data
         }
-    
-    m_meshes.push_back(new MRMeshGeometry(nbVertices, positions, normals, nbTriangles, indices, textureCoordinates, texture.get(), system));
+
+    args.m_texture = texture.get();
+    m_meshes.push_back(new Geometry(args, loadContext));
     }
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName MRMeshNode::GetFileName() const 
+BeFileName Node::GetFileName() const
     {
-    return m_info.m_children.empty() ? BeFileName() : MRMeshUtil::ConstructNodeName(m_info.m_children.front(), nullptr == m_parent ? nullptr : &m_parent->m_dir); 
+    return m_info.m_children.empty() ? BeFileName() : Util::ConstructNodeName(m_info.m_children.front(), nullptr == m_parent ? nullptr : &m_parent->m_dir);
     }
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MRMeshNode::Load()
+BentleyStatus Node::Load(LoadContextCR loadContext)
     {
     if (!m_dir.empty())
         return SUCCESS;         // Already loaded.
@@ -85,26 +86,27 @@ BentleyStatus MRMeshNode::Load()
         return ERROR;
         }
 
-    if (SUCCESS != MRMeshCacheManager::GetManager().SynchronousRead(*this, GetFileName(), m_system))
+    if (SUCCESS != CacheManager::GetManager().SynchronousRead(*this, GetFileName(), loadContext))
         {
-        MRMeshUtil::DisplayNodeFailureWarning(GetFileName().c_str());
+        Util::DisplayNodeFailureWarning(GetFileName().c_str());
         m_dir.clear();
         return ERROR;
         }
+
     return SUCCESS;
     }
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MRMeshNode::LoadUntilDisplayable()
+BentleyStatus Node::LoadUntilDisplayable(LoadContextCR loadContext)
     {
     static uint32_t s_sleepMillis = 20;
 
     while (!LoadedUntilDisplayable())
         {
-        MRMeshCacheManager::GetManager().ProcessRequests();
-        RequestLoadUntilDisplayable();
+        CacheManager::GetManager().ProcessRequests();
+        RequestLoadUntilDisplayable(loadContext);
         BeThreadUtilities::BeSleep(s_sleepMillis);
 
 #ifdef NEEDS_WORK_LOAD_NOTIFY
@@ -136,7 +138,7 @@ BentleyStatus MRMeshNode::LoadUntilDisplayable()
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MRMeshNode::LoadedUntilDisplayable() const
+bool Node::LoadedUntilDisplayable() const
     {
     if (!IsLoaded())
         return false;
@@ -156,7 +158,7 @@ bool MRMeshNode::LoadedUntilDisplayable() const
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshNode::RequestLoadUntilDisplayable()
+void Node::RequestLoadUntilDisplayable(LoadContextCR context)
     {
     if (IsLoaded() && !IsDisplayable())
         {
@@ -165,21 +167,20 @@ void MRMeshNode::RequestLoadUntilDisplayable()
         if (!m_childrenRequested)
             {
             m_childrenRequested = true;
-            MRMeshCacheManager::GetManager().QueueChildLoad(m_children, nullptr, Transform::FromIdentity(), m_system);
+            CacheManager::GetManager().QueueChildLoad(m_children, nullptr, context);
             }
         else
             {
             for (auto const& child : m_children)
-                child->RequestLoadUntilDisplayable();
+                child->RequestLoadUntilDisplayable(context);
             }
         }
     }
 
-
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MRMeshNode::AreChildrenLoaded() const
+bool Node::AreChildrenLoaded() const
     {
     for (auto const& child : m_children)
         {
@@ -193,7 +194,7 @@ bool MRMeshNode::AreChildrenLoaded() const
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MRMeshNode::Validate(MRMeshNodeCP parent) const
+bool Node::Validate(NodeCP parent) const
     {
     for (auto const& child : m_children)
         {
@@ -207,7 +208,7 @@ bool MRMeshNode::Validate(MRMeshNodeCP parent) const
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MRMeshNode::IsCached() const
+bool Node::IsCached() const
     {
     for (auto const& mesh : m_meshes)
         {
@@ -221,7 +222,7 @@ bool MRMeshNode::IsCached() const
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MRMeshNode::AreVisibleChildrenLoaded(MeshNodes& unloadedVisibleChildren, ViewContextR viewContext, MRMeshContextCR meshContext) const
+bool Node::AreVisibleChildrenLoaded(MeshNodes& unloadedVisibleChildren, ViewContextR viewContext, LoadContextCR meshContext) const
     {
     if (meshContext.GetLoadSynchronous())
         {
@@ -232,7 +233,7 @@ bool MRMeshNode::AreVisibleChildrenLoaded(MeshNodes& unloadedVisibleChildren, Vi
             if (child->IsDisplayable())
                 {
                 if (viewContext.IsPointVisible(child->m_info.m_center, ViewContext::WantBoresite::No, child->m_info.m_radius))
-                    child->Load();
+                    child->Load(meshContext);
                 else if (!child->m_primary)
                     child->Clear();
                 }
@@ -252,7 +253,7 @@ bool MRMeshNode::AreVisibleChildrenLoaded(MeshNodes& unloadedVisibleChildren, Vi
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshNode::DrawMeshes(RenderContextR context, MRMeshContextCR meshContext)
+void Node::DrawMeshes(RenderContextR context)
     {
     if (!IsLoaded())
         {
@@ -261,13 +262,13 @@ void MRMeshNode::DrawMeshes(RenderContextR context, MRMeshContextCR meshContext)
         }
 
     for (auto const& mesh : m_meshes)
-        mesh->Draw(context, *this, meshContext);
+        mesh->Draw(context);
     }
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshNode::DrawBoundingSphere(RenderContextR context) const
+void Node::DrawBoundingSphere(RenderContextR context) const
     {
     Render::GraphicPtr graphic = context.CreateGraphic(Render::Graphic::CreateParams());
 
@@ -276,22 +277,12 @@ void MRMeshNode::DrawBoundingSphere(RenderContextR context) const
     context.OutputGraphic(*graphic, nullptr);
     }
 
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Daryl.Holmwood     04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d MRMeshNode::GetRange() const
-    {
-    DRange3d range;
-    range.InitFrom(m_info.m_center);
-    range.Extend(m_info.m_radius);
-    return range;
-    }
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshNode::DrawMeshes(Render::GraphicR graphic, TransformCR transform)
+void Node::DrawMeshes(Render::GraphicR graphic, TransformCR transform)
     {
     if (SUCCESS != Load())
         return;
@@ -309,7 +300,7 @@ void MRMeshNode::DrawMeshes(Render::GraphicR graphic, TransformCR transform)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MRMeshNode::TestVisibility(bool& isUnderMaximumSize, ViewContextR viewContext, MRMeshContextCR meshContext)
+bool Node::TestVisibility(bool& isUnderMaximumSize, ViewContextR viewContext, LoadContextCR meshContext)
     {
     if (!viewContext.IsPointVisible(m_info.m_center, ViewContext::WantBoresite::No, m_info.m_radius))
         return false;
@@ -322,7 +313,7 @@ bool MRMeshNode::TestVisibility(bool& isUnderMaximumSize, ViewContextR viewConte
         {
         double pixelSize  =  m_info.m_radius / viewContext.GetPixelSizeAtPoint(&m_info.m_center);
 
-        isUnderMaximumSize = pixelSize < MRMeshUtil::CalculateResolutionRatio() * m_info.m_dMax;
+        isUnderMaximumSize = pixelSize < Util::CalculateResolutionRatio() * m_info.m_dMax;
         }
     return true;
     }
@@ -330,28 +321,29 @@ bool MRMeshNode::TestVisibility(bool& isUnderMaximumSize, ViewContextR viewConte
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MRMeshNode::Draw(bool& childrenScheduled, RenderContextR context, MRMeshContextCR meshContext)
+bool Node::Draw(RenderContextR context, LoadContextCR meshContext)
     {
+    bool childrenScheduled = false;
     bool isUnderMaximumSize = false, childrenNeedLoading = false;
 
     if (!TestVisibility(isUnderMaximumSize, context, meshContext) || !IsLoaded())
-        return SUCCESS;
+        return childrenScheduled;
 
     m_lastUsed = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
 
     MeshNodes unloadedVisibleChildren;
-    
-    if ((!isUnderMaximumSize || !IsDisplayable()) && 
-        ! m_children.empty() && 
-        ! (childrenNeedLoading = !AreVisibleChildrenLoaded(unloadedVisibleChildren, context, meshContext)))
-        {                                                                                                 
-        for (auto const& child : m_children)
-            child->Draw(childrenScheduled, context, meshContext);
 
-        return SUCCESS;
+    if ((!isUnderMaximumSize || !IsDisplayable()) &&
+        !m_children.empty() &&
+        !(childrenNeedLoading = !AreVisibleChildrenLoaded(unloadedVisibleChildren, context, meshContext)))
+        {
+        for (auto const& child : m_children)
+            childrenScheduled |= child->Draw(context, meshContext);
+
+        return childrenScheduled;
         }
 
-    DrawMeshes(context, meshContext);
+    DrawMeshes(context);
 
     if (meshContext.GetLoadSynchronous() &&         // If we just are exporting fixed resolution clear here to mimimize memory usage.
         meshContext.UseFixedResolution() &&
@@ -365,17 +357,17 @@ BentleyStatus MRMeshNode::Draw(bool& childrenScheduled, RenderContextR context, 
         nullptr != viewContext.GetViewport())
         {
         childrenScheduled = true;
-        MRMeshCacheManager::GetManager().QueueChildLoad(unloadedVisibleChildren, viewContext.GetViewport(), meshContext.GetTransform());
+        CacheManager::GetManager().QueueChildLoad(unloadedVisibleChildren, viewContext.GetViewport(), meshContext.GetTransform());
         }
 #endif
 
-    return SUCCESS;
+    return childrenScheduled;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t MRMeshNode::GetMeshCount() const
+size_t Node::GetMeshCount() const
     {
     size_t count = m_meshes.size();
 
@@ -388,7 +380,7 @@ size_t MRMeshNode::GetMeshCount() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t MRMeshNode::GetMeshMemorySize() const
+size_t Node::GetMeshMemorySize() const
     {
     size_t memorySize = 0;
 
@@ -404,7 +396,7 @@ size_t MRMeshNode::GetMeshMemorySize() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t MRMeshNode::GetTextureMemorySize() const
+size_t Node::GetTextureMemorySize() const
     {
     size_t memorySize = 0;
 
@@ -420,7 +412,7 @@ size_t MRMeshNode::GetTextureMemorySize() const
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t MRMeshNode::GetNodeCount() const
+size_t Node::GetNodeCount() const
     {
     size_t  count = IsLoaded() ? 1 : 0;
 
@@ -433,7 +425,7 @@ size_t MRMeshNode::GetNodeCount() const
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t MRMeshNode::GetMaxDepth() const
+size_t Node::GetMaxDepth() const
     {
     size_t maxChildDepth = 0;
 
@@ -450,7 +442,7 @@ size_t MRMeshNode::GetMaxDepth() const
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshNode::RemoveChild(MRMeshNodeP failedChild)
+void Node::RemoveChild(NodeP failedChild)
     {
     for (auto child = m_children.begin(); child != m_children.end(); ++child)
         {
@@ -465,7 +457,7 @@ void MRMeshNode::RemoveChild(MRMeshNodeP failedChild)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshNode::ClearGraphics()
+void Node::ClearGraphics()
     {
     for (auto const& mesh : m_meshes)
         mesh->ClearGraphic();
@@ -477,10 +469,9 @@ void MRMeshNode::ClearGraphics()
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                        Grigas.Petraitis            04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshNode::Clone(MRMeshNode const& other)
+void Node::Clone(Node const& other)
     {
     BeAssert(&other != this);
-    m_system    = other.m_system;
     m_parent    = other.m_parent;
     m_info      = other.m_info;
     m_dir       = other.m_dir;
@@ -489,7 +480,7 @@ void MRMeshNode::Clone(MRMeshNode const& other)
 
     for (auto const& otherChild : other.m_children)
         {
-        MRMeshNodePtr child = new MRMeshNode(S3NodeInfo(), this, m_system);
+        NodePtr child = new Node(NodeInfo(), this);
         child->Clone(*otherChild);
         child->m_parent = this;
         m_children.push_back(child);
@@ -499,7 +490,7 @@ void MRMeshNode::Clone(MRMeshNode const& other)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void  MRMeshNode::GetDepthMap(bvector<size_t>& map, bvector <bset<BeFileName>>& fileNames, size_t depth)
+void  Node::GetDepthMap(bvector<size_t>& map, bvector <bset<BeFileName>>& fileNames, size_t depth)
     {
     if (!IsLoaded())
         return;
@@ -509,7 +500,6 @@ void  MRMeshNode::GetDepthMap(bvector<size_t>& map, bvector <bset<BeFileName>>& 
     else
         map[depth]++;
 
-    
     if (fileNames.size() <= depth)
         {
         bset<BeFileName>    thisNames;
@@ -530,39 +520,40 @@ void  MRMeshNode::GetDepthMap(bvector<size_t>& map, bvector <bset<BeFileName>>& 
         child->GetDepthMap(map, fileNames, depth+1);
     }
 
-
 /*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
+* @bsimethod                                                    Daryl.Holmwood     04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MRMeshNode::GetRange(DRange3dR range, TransformCR transform) const
+DRange3d Node::GetSphereRange() const
     {
-    range = DRange3d::NullRange();
-
-    for (auto const& child : m_children)     // Prefer the more accurate child range...
-        {
-        DRange3d        childRange = DRange3d::NullRange();
-
-        if (SUCCESS == child->GetRange(childRange, transform))
-            range.UnionOf(range, childRange);
-        }
-
-    if (range.IsNull())
-        {
-        for (auto const& mesh : m_meshes)
-            {
-            DRange3d        meshRange = DRange3d::NullRange();
-
-            if (SUCCESS == mesh->GetRange(range, transform))
-                range.UnionOf(range, meshRange);
-            }
-        }
-    return range.IsNull() ? ERROR : SUCCESS;
+    DRange3d range;
+    range.InitFrom(m_info.m_center);
+    range.Extend(m_info.m_radius);
+    return range;
     }
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshNode::FlushStale(uint64_t staleTime)
+DRange3d Node::GetRange() const
+    {
+    DRange3d range = DRange3d::NullRange();
+
+    for (auto const& child : m_children)     // Prefer the more accurate child range...
+        range.UnionOf(range, child->GetRange());
+
+    if (range.IsNull())
+        {
+        for (auto const& mesh : m_meshes)
+            range.UnionOf(range, mesh->GetRange());
+        }
+
+    return range;
+    }
+
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void Node::FlushStale(uint64_t staleTime)
     {
     if (m_lastUsed < staleTime)
         {
@@ -575,12 +566,12 @@ void MRMeshNode::FlushStale(uint64_t staleTime)
         }
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                Nicholas.Woodfield     01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshNode::GetTiles(TileCallback& callback, double resolution) 
+void Node::GetTiles(TileCallback& callback, double resolution)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     bool isUnderMaximumSize = resolution < m_info.m_dMax;
     bool hasNoDisplayableChildren = true;
 
@@ -596,7 +587,7 @@ void MRMeshNode::GetTiles(TileCallback& callback, double resolution)
             {
             if (resolution >= child->m_info.m_dMax && !child->m_info.m_children.empty())
                 {
-                //Load children up front, if we have one that has meshes keep loading 
+                //Load children up front, if we have one that has meshes keep loading
                 child->Load();
                 if (child->GetMeshCount() > 0)
                     hasNoDisplayableChildren = false;
@@ -607,7 +598,7 @@ void MRMeshNode::GetTiles(TileCallback& callback, double resolution)
     if (m_meshes.size() > 0 && !m_info.m_children.empty() && (isUnderMaximumSize || hasNoDisplayableChildren))
         {
         uint32_t tileX, tileY;
-        if (MRMeshUtil::ParseTileId(m_info.m_children[0], tileX, tileY) == SUCCESS)
+        if (Util::ParseTileId(m_info.m_children[0], tileX, tileY) == SUCCESS)
             {
             bvector<bpair<PolyfaceHeaderPtr, int>> geom;
             geom.reserve(m_meshes.size());
@@ -650,5 +641,5 @@ void MRMeshNode::GetTiles(TileCallback& callback, double resolution)
     //Clear all non-primary nodes as we go so we don't load too much and potentially run out of memory
     if (!m_primary)
         Clear();
-#endif
     }
+#endif

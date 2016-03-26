@@ -10,9 +10,9 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-MRMeshScene::MRMeshScene(DgnDbR db, S3SceneInfo const& sceneInfo, BeFileNameCR fileName) : m_db(db), m_fileName(fileName)
+Scene::Scene(DgnDbR db, SceneInfo const& sceneInfo, BeFileNameCR fileName) : m_db(db), m_fileName(fileName)
     {
-    m_transform.InitIdentity();
+    m_placement.FromIdentity();
     m_sceneName = sceneInfo.m_sceneName;
     m_srs       = sceneInfo.m_SRS;
 
@@ -25,17 +25,17 @@ MRMeshScene::MRMeshScene(DgnDbR db, S3SceneInfo const& sceneInfo, BeFileNameCR f
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MRMeshScene::Load(S3SceneInfo const& sceneInfo, SystemP system)
+BentleyStatus Scene::Load(SceneInfo const& sceneInfo, LoadContextCR loadContext)
     {
     BeFileName scenePath(BeFileName::DevAndDir, m_fileName.c_str());
     for (auto const& child : sceneInfo.m_meshChildren)
         {
-        MRMeshNodePtr childNode = new MRMeshNode(S3NodeInfo(), nullptr, system);
+        NodePtr childNode = new Node(NodeInfo(), nullptr);
 
-        if (SUCCESS != MRMeshCacheManager::GetManager().SynchronousRead(*childNode, MRMeshUtil::ConstructNodeName(child, &scenePath), system))
+        if (SUCCESS != CacheManager::GetManager().SynchronousRead(*childNode, Util::ConstructNodeName(child, &scenePath), loadContext))
             return ERROR;
 
-        childNode->LoadUntilDisplayable();
+        childNode->LoadUntilDisplayable(loadContext);
         m_children.push_back(childNode);
         }
 
@@ -46,7 +46,7 @@ BentleyStatus MRMeshScene::Load(S3SceneInfo const& sceneInfo, SystemP system)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void drawBoundingSpheres(MRMeshNodeCR node, RenderContextR context) 
+static void drawBoundingSpheres(NodeCR node, RenderContextR context) 
     {
     if (!node.IsLoaded())
         return;
@@ -61,27 +61,16 @@ static void drawBoundingSpheres(MRMeshNodeCR node, RenderContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshScene::DrawBoundingSpheres(RenderContextR context)
+void Scene::DrawBoundingSpheres(RenderContextR context)
     {
     for (auto const& child : m_children)
         drawBoundingSpheres(*child, context);
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshScene::DrawMeshes(Render::GraphicR graphic)
-    {
-    for (auto const& child : m_children)
-        child->DrawMeshes(graphic, m_transform);
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t MRMeshScene::GetMeshMemorySize() const
+size_t Scene::GetMeshMemorySize() const
     {
     size_t memorySize = 0;
 
@@ -94,7 +83,7 @@ size_t MRMeshScene::GetMeshMemorySize() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t MRMeshScene::GetTextureMemorySize() const
+size_t Scene::GetTextureMemorySize() const
     {
     size_t memorySize = 0;
 
@@ -107,21 +96,38 @@ size_t MRMeshScene::GetTextureMemorySize() const
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t MRMeshScene::GetNodeCount() const
+size_t Scene::GetNodeCount() const
     {
     size_t  count = 1;
-
     for (auto const& child : m_children)
         count += child->GetNodeCount();
-
     return count;
     }
-
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t MRMeshScene::GetMaxDepth() const
+size_t Scene::GetMeshCount() const
+    {
+    size_t  count = 0;
+    for (auto const& child : m_children)
+        count += child->GetMeshCount();
+    return count;
+    }
+
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void Scene::FlushStale(uint64_t staleTime)
+    {
+    for (auto& child : m_children)
+        child->FlushStale(staleTime);
+    }
+
+/*-----------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    Ray.Bentley     03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t Scene::GetMaxDepth() const
     {
     size_t maxChildDepth = 0;
 
@@ -138,27 +144,38 @@ size_t MRMeshScene::GetMaxDepth() const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus MRMeshScene::_GetRange(DRange3dR range) const
+DRange3d Scene::GetRange() const
     {
+    DRange3d range;
     range.Init();
+
     for (auto const& child : m_children)
-        {
-        DRange3d childRange = DRange3d::NullRange();
+        range.UnionOf(range, child->GetRange());
 
-        if (SUCCESS == child->GetRange(range, m_transform))
-            range.UnionOf(range, childRange);
-        }
-
-    return range.IsNull() ? ERROR : SUCCESS;
+    return range;
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus MRMeshScene::GetProjectionTransform()
+DRange3d Scene::GetSphereRange() const
     {
-    DRange3d  range;
-    if (SUCCESS != _GetRange(range))
+    DRange3d range;
+    range.Init();
+
+    for (auto const& child : m_children)
+        range.UnionOf(range, child->GetSphereRange());
+
+    return range;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                      Ray.Bentley     09/2015
+//----------------------------------------------------------------------------------------
+BentleyStatus Scene::GetProjectionTransform()
+    {
+    DRange3d  range = GetSphereRange();
+    if (range.IsNull())
         return ERROR;
 
     DgnGCSPtr databaseGCS = m_db.Units().GetDgnGCS();
@@ -197,10 +214,10 @@ BentleyStatus MRMeshScene::GetProjectionTransform()
     Transform localTransform;
     status = acute3dGCS->GetLocalTransform(&localTransform, sourceRange.low, &extent, true/*doRotate*/, true/*doScale*/, *databaseGCS);
 
-    // 0 == SUCCESS, 1 == Wajrning, 2 == Severe Warning,  Negative values are severe errors.
+    // 0 == SUCCESS, 1 == Warning, 2 == Severe Warning,  Negative values are severe errors.
     if (status == 0 || status == 1)
         {
-        m_transform = Transform::FromProduct(localTransform, transform);
+        m_placement = Transform::FromProduct(localTransform, transform);
         return SUCCESS;
         }
 
@@ -210,21 +227,26 @@ BentleyStatus MRMeshScene::GetProjectionTransform()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshScene::Draw(bool& childrenScheduled, RenderContextR context, MRMeshContextCR meshContext)
+bool Scene::Draw(RenderContextR context, LoadContextCR meshContext)
     {
+    bool childrenScheduled=false;
     for (auto const& child : m_children)
         {
-        child->Draw(childrenScheduled, context, meshContext);
+        childrenScheduled |= child->Draw(context, meshContext);
         if (context.CheckStop())
-            return;
+            break;
         }
+    return childrenScheduled;
     }
 
+#if defined (NEEDS_WORK_RENDER_SYSTEM)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                Nicholas.Woodfield     01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshScene::GetTiles(TileCallback& callback, double resolution) const
+void Scene::GetTiles(TileCallback& callback, double resolution) const
     {
     for (auto const& child : m_children)
         child->GetTiles(callback, resolution);
     }
+
+#endif

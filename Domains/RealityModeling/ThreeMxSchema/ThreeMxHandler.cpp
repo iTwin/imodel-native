@@ -8,45 +8,41 @@
 #include "ThreeMxSchemaInternal.h"
 
 DOMAIN_DEFINE_MEMBERS(ThreeMxDomain)
-
-HANDLER_DEFINE_MEMBERS(ThreeMxModelHandler)
+HANDLER_DEFINE_MEMBERS(ModelHandler)
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Ray.Bentley       09/2015
 //-----------------------------------------------------------------------------------------
 ThreeMxDomain::ThreeMxDomain() : DgnDomain(BENTLEY_THREEMX_SCHEMA_NAME, "3MX Domain", 1) 
     {
-    RegisterHandler(ThreeMxModelHandler::GetHandler());
+    RegisterHandler(ModelHandler::GetHandler());
     }
  
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //========================================================================================
 // @bsiclass                                                        Ray.Bentley     09/2015
 //========================================================================================
-struct ThreeMxSchema::ThreeMxProgressiveDisplay : Dgn::IProgressiveDisplay, NonCopyableClass
+struct ThreeMxProgressive : ProgressiveTask
 {
-    DEFINE_BENTLEY_REF_COUNTED_MEMBERS
-
-protected:
-    ThreeMxModelR        m_model;
-
-    ThreeMxProgressiveDisplay(ThreeMxModelR model) : m_model(model) {DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT }
-
-public:
+    ThreeMxModelCR m_model;
+    ThreeMxProgressive(ThreeMxModelCR model) : m_model(model) {}
+    Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
+};
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-virtual Completion _Process(ViewContextR viewContext) override
+ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContext& context, WantShow&) 
     {
-    switch (MRMeshCacheManager::GetManager().ProcessRequests())
+    switch (CacheManager::GetManager().ProcessRequests())
         {
         default:
-        case MRMeshCacheManager::RequestStatus::None:
-        case MRMeshCacheManager::RequestStatus::Processed:
+#if defined (NEEDS_WORK_RENDER_SYSTEM)
+        case CacheManager::RequestStatus::None:
+        case CacheManager::RequestStatus::Processed:
             return Completion::HealRequired;
+#endif
 
-        case MRMeshCacheManager::RequestStatus::Finished:
+        case CacheManager::RequestStatus::Finished:
             return Completion::Finished;
         }
     }
@@ -54,33 +50,20 @@ virtual Completion _Process(ViewContextR viewContext) override
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-static void Schedule(ThreeMxModelR model, ViewContextR viewContext)
+ScenePtr ThreeMxModel::ReadScene(BeFileNameCR fileName, DgnDbR db, LoadContextCR loadContext) 
     {
-    ThreeMxProgressiveDisplay*   progressiveDisplay = new ThreeMxProgressiveDisplay(model);
-
-    viewContext.GetViewport()->ScheduleProgressiveDisplay(*progressiveDisplay);
-    }
-
-};  //  ThreeMxProgressiveDisplay
-#endif
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                      Ray.Bentley     09/2015
-//----------------------------------------------------------------------------------------
-MRMeshScenePtr ThreeMxModel::ReadScene(BeFileNameCR fileName, DgnDbR db, SystemP system) 
-    {
-    S3SceneInfo sceneInfo;
+    SceneInfo sceneInfo;
     if (SUCCESS != sceneInfo.Read3MX(fileName))
         return nullptr;
 
-    MRMeshScenePtr scene = new MRMeshScene(db, sceneInfo, fileName);
-    return SUCCESS==scene->Load(sceneInfo, system) ? scene : nullptr;
+    ScenePtr scene = new Scene(db, sceneInfo, fileName);
+    return SUCCESS==scene->Load(sceneInfo, loadContext) ? scene : nullptr;
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-DgnModelId ThreeMxModelHandler::CreateModel(DgnDbR db, Utf8CP modelName, Utf8CP sceneUrl)
+DgnModelId ModelHandler::CreateModel(DgnDbR db, Utf8CP modelName, Utf8CP sceneUrl)
     {
     DgnClassId classId(db.Schemas().GetECClassId(BENTLEY_THREEMX_SCHEMA_NAME, "ThreeMxModel"));
     BeAssert(classId.IsValid());
@@ -90,7 +73,8 @@ DgnModelId ThreeMxModelHandler::CreateModel(DgnDbR db, Utf8CP modelName, Utf8CP 
     if (SUCCESS != status)
         return DgnModelId();
 
-    MRMeshScenePtr scene = ThreeMxModel::ReadScene(fileName, db, nullptr);
+    LoadContext context;
+    ScenePtr scene = ThreeMxModel::ReadScene(fileName, db, context);
     if (!scene.IsValid())
         return DgnModelId();
 
@@ -98,27 +82,12 @@ DgnModelId ThreeMxModelHandler::CreateModel(DgnDbR db, Utf8CP modelName, Utf8CP 
     ThreeMxModelPtr model = new ThreeMxModel(DgnModel::CreateParams(db, classId, ThreeMxModel::CreateModelCode(modelName)));
     
     model->SetSceneUrl(sceneUrl);
-    model->SetScene(scene.get());
+//    model->SetScene(scene.get());
     model->Insert();
     return model->GetModelId();
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                      Ray.Bentley     09/2015
-//----------------------------------------------------------------------------------------
-MRMeshScenePtr ThreeMxModel::GetScene() const
-    {
-    if (!m_scene.IsValid())
-        {
-        BeFileName fileName;
-        ReadScene(fileName, GetDgnDb(), m_fileId);
-        }
-
-    return m_scene;
-    }
-#endif
-
+#if defined (NEEDS_WORK_RENDER_SYSTEM)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                               Nicholas.Woodfield     01/2016
 //----------------------------------------------------------------------------------------
@@ -135,6 +104,7 @@ void ThreeMxModel::GetTiles(TileCallback& callback, double resolution)
   
     m_scene->GetTiles(callback, resolution);
     }
+#endif
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
@@ -147,10 +117,7 @@ AxisAlignedBox3d ThreeMxModel::_QueryModelRange() const
         return AxisAlignedBox3d();
         }
 
-    DRange3d range;
-    m_scene->_GetRange(range);
-
-    return AxisAlignedBox3d(range);
+    return AxisAlignedBox3d(m_scene->GetRange());
     }   
 
 //----------------------------------------------------------------------------------------
@@ -166,15 +133,11 @@ void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
         return;
         }
 
-    MRMeshContext meshContext(Transform::FromIdentity(), context, 0.0);
-    bool childrenScheduled = false;
+    LoadContext loadContext(m_scene->GetPlacement());
+    loadContext.m_system = &context.GetViewport()->GetRenderTarget()->GetSystem();
 
-    m_scene->Draw(childrenScheduled, context, meshContext);
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    if (childrenScheduled)
-        ThreeMxProgressiveDisplay::Schedule(*this, context);
-#endif
+    if (m_scene->Draw(context, loadContext))
+        context.GetViewport()->ScheduleProgressiveTask(*new ThreeMxProgressive(*this));
     }
 
 //----------------------------------------------------------------------------------------

@@ -198,7 +198,7 @@ DisplayTile::~DisplayTile()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-Render::ImagePtr RasterSource::QueryTile(TileId const& id, bool& alphaBlend) {return _QueryTile(id, alphaBlend);}
+Render::Image RasterSource::QueryTile(TileId const& id, bool& alphaBlend) {return _QueryTile(id, alphaBlend);}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  5/2015

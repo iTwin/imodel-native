@@ -147,7 +147,7 @@ struct RasterSource : RefCountedBase
 
     //! Query for tile data. Null might be returned if an error occurs.
     //! Border tiles are assumed to be clipped to the raster physical extent.
-    Dgn::Render::ImagePtr QueryTile(TileId const& id, bool& alphaBlend);
+    Dgn::Render::Image QueryTile(TileId const& id, bool& alphaBlend);
 
     uint32_t GetResolutionCount() const {return (uint32_t)m_resolution.size();}
 
@@ -182,7 +182,7 @@ protected:
 
     void SetGcsP(GeoCoordinates::BaseGCSP pNewGcs) {m_pGcs = pNewGcs/*Hold a ref*/;} 
 
-    virtual Dgn::Render::ImagePtr _QueryTile(TileId const& id, bool& alphaBlend) = 0;
+    virtual Dgn::Render::Image _QueryTile(TileId const& id, bool& alphaBlend) = 0;
 
     //! default empty constructor. Must call Initialize afterward.
     RasterSource(); 

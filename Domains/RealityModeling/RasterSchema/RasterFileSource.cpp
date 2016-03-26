@@ -29,13 +29,13 @@ RasterFileSource::RasterFileSource(Utf8StringCR resolvedName)
     m_rasterFilePtr = RasterFile::Create(resolvedName);
     if (m_rasterFilePtr == nullptr)
         {
-        // Can't create model; probably that file name is invalid. 
+        // Can't create model; probably that file name is invalid.
         return;
         }
 
     Point2d sizePixels;
     m_rasterFilePtr->GetSize(&sizePixels);
-   
+
     // Raster width and height come from the raster file.
     // And resolution definition should come from the raster resolution descriptor.
     bvector<Resolution> resolution;
@@ -75,7 +75,7 @@ static HFCPtr<HRPPixelType> s_GetTileQueryPixelType(HRARaster const& raster, Ren
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
-Render::ImagePtr RasterFileSource::_QueryTile(TileId const& id, bool& alphaBlend)
+Render::Image RasterFileSource::_QueryTile(TileId const& id, bool& alphaBlend)
     {
     // Imagepp CopyFrom is not thread safe. sequentialize the queries.
     static std::mutex s_ippMutex;
@@ -83,7 +83,7 @@ Render::ImagePtr RasterFileSource::_QueryTile(TileId const& id, bool& alphaBlend
 
     // Must be done within lock because GetRasterP might load the raster.
     if (m_rasterFilePtr == nullptr || m_rasterFilePtr->GetRasterP() == nullptr)
-        return nullptr;            
+        return Render::Image();
 
     Render::Image::Format imageFormat = Render::Image::Format::Rgb;
     HFCPtr<HRPPixelType> pPixelType = s_GetTileQueryPixelType(*m_rasterFilePtr->GetRasterP(), imageFormat);
@@ -100,7 +100,7 @@ Render::ImagePtr RasterFileSource::_QueryTile(TileId const& id, bool& alphaBlend
     HFCPtr<HRABitmap> pTileBitmap;
     pTileBitmap = HRABitmap::Create(effectiveTileSizeX, effectiveTileSizeY, &stretch, m_rasterFilePtr->GetPhysicalCoordSys(), pPixelType);
 
-    ByteStream dataStream((uint32_t)(effectiveTileSizeY*pTileBitmap->ComputeBytesPerWidth()));    
+    ByteStream dataStream((uint32_t)(effectiveTileSizeY*pTileBitmap->ComputeBytesPerWidth()));
 
     HFCPtr<HCDPacket> pPacket(new HCDPacket(dataStream.GetDataP(), dataStream.GetSize(), dataStream.GetSize()));
     pTileBitmap->SetPacket(pPacket);
@@ -108,12 +108,10 @@ Render::ImagePtr RasterFileSource::_QueryTile(TileId const& id, bool& alphaBlend
     HRACopyFromOptions opts;
     opts.SetResamplingMode(HGSResampling::BILINEAR);
     if (ImagePPStatus::IMAGEPP_STATUS_Success != pTileBitmap->CopyFrom(*m_rasterFilePtr->GetRasterP(), opts))
-        return nullptr;
-        
+        return Render::Image();
+
     __ippLock.unlock(); // done with imagepp...
 
     alphaBlend = (Render::Image::Format::Rgba == imageFormat || Render::Image::Format::Bgra == imageFormat);
-    Render::ImagePtr pImage = new Render::Image(effectiveTileSizeX, effectiveTileSizeY, imageFormat, std::move(dataStream));
-
-    return pImage;
+    return Render::Image(effectiveTileSizeX, effectiveTileSizeY, imageFormat, std::move(dataStream));
     }

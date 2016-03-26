@@ -9,7 +9,7 @@
 
 #include "openctm/openctm.h"
 
-#define LOG_ERROR(...)
+#define LOG_ERROR (*NativeLogging::LoggingManager::GetLogger(L"3MX")).errorv
 
 template <typename T> T getJsonValue(JsonValueCR pt);
 template<> double getJsonValue(JsonValueCR pt) {return pt.asDouble();}
@@ -46,7 +46,7 @@ template<typename T> bool readVectorEntry(JsonValueCR pt, Utf8StringCR tag, bvec
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool readNodeInfo(JsonValueCR pt, S3NodeInfo& nodeInfo, Utf8String& nodeName, bvector<Utf8String>& nodeResources)
+static bool readNodeInfo(JsonValueCR pt, NodeInfo& nodeInfo, Utf8String& nodeName, bvector<Utf8String>& nodeResources)
     {
     nodeName = pt.get("id", "").asCString();
 
@@ -60,8 +60,6 @@ static bool readNodeInfo(JsonValueCR pt, S3NodeInfo& nodeInfo, Utf8String& nodeN
     bvector<double> bbMax;
     bvector<double> sphereCenter;
     sphereCenter.resize(3);
-
-    double sphereDiameter;
 
     if (!readVectorEntry(pt, "bbMin", bbMin)) 
         return false;
@@ -81,7 +79,7 @@ static bool readNodeInfo(JsonValueCR pt, S3NodeInfo& nodeInfo, Utf8String& nodeN
         return false;
         }
 
-    sphereDiameter = 0;
+    double sphereDiameter = 0;
     for (int i = 0; i < 3; i++) 
         {
         sphereCenter[i] = (bbMin[i] + bbMax[i])*0.5;
@@ -145,7 +143,7 @@ static uint32_t ctmReadFunc(void* buf, uint32_t count, void* userData)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MRMeshNode::Read3MXB(MxStreamBuffer& in)
+BentleyStatus Node::Read3MXB(MxStreamBuffer& in, LoadContextCR loadContext)
     {
     bmap<Utf8String, int>  textureIds;
     bmap<Utf8String, int>  nodeIds;
@@ -196,7 +194,7 @@ BentleyStatus MRMeshNode::Read3MXB(MxStreamBuffer& in)
         {
         for (Json::ArrayIndex i = 0; i < entry.size(); i++)
             {
-            S3NodeInfo nodeInfo;
+            NodeInfo nodeInfo;
             Utf8String nodeName;
             bvector<Utf8String> nodeResources;
 
@@ -241,7 +239,7 @@ BentleyStatus MRMeshNode::Read3MXB(MxStreamBuffer& in)
                 m_jpegTextures.push_back(ByteStream(buffer, resourceSize));
                 textureIds[resourceName] = textureCount++;
                 }
-            else if (resourceType == "geometryBuffer" && resourceFormat == "ctm"
+            else if (resourceType == "geometryBuffer" && resourceFormat == "ctm"                                                                
                     && !resourceName.empty() && resourceSize > 0)
                 {
                 if (geometryNodeCorrespondence.find(resourceName) == geometryNodeCorrespondence.end())
@@ -261,7 +259,7 @@ BentleyStatus MRMeshNode::Read3MXB(MxStreamBuffer& in)
                 context = ctmNewContext(CTM_IMPORT);
                 if (ctmGetError(context) != CTM_NONE)
                     {
-                    LOG_ERROR(Utf8String("CTM context error: ") + ctmErrorString(ctmGetError(context)));
+                    LOG_ERROR("CTM context error: %s", ctmErrorString(ctmGetError(context)));
                     return ERROR;
                     }
 
@@ -269,43 +267,41 @@ BentleyStatus MRMeshNode::Read3MXB(MxStreamBuffer& in)
                 ctmLoadCustom(context, ctmReadFunc, &in);
                 if (ctmGetError(context) != CTM_NONE)
                     {
-                    LOG_ERROR(Utf8String("CTM read error: ") + ctmErrorString(ctmGetError(context)));
+                    LOG_ERROR("CTM read error: %s", ctmErrorString(ctmGetError(context)));
                     return ERROR;
                     }
 
-                unsigned int nbVertices = ctmGetInteger(context, CTM_VERTEX_COUNT);
-                float* positions = (float*)ctmGetFloatArray(context, CTM_VERTICES);
+                Render::Graphic::TriMeshArgs trimesh;
+                trimesh.m_numPoints = ctmGetInteger(context, CTM_VERTEX_COUNT);
+                trimesh.m_points = (FPoint3d const*)ctmGetFloatArray(context, CTM_VERTICES);
+                trimesh.m_normals = (ctmGetInteger(context, CTM_HAS_NORMALS) == CTM_TRUE) ? (FPoint3d const*)ctmGetFloatArray(context, CTM_NORMALS) : nullptr;
+                trimesh.m_numIndices = 3 *  ctmGetInteger(context, CTM_TRIANGLE_COUNT);
+                trimesh.m_vertIndex = (int32_t const*)ctmGetIntegerArray(context, CTM_INDICES);
 
-                float* normals = (ctmGetInteger(context, CTM_HAS_NORMALS) == CTM_TRUE) ? (float*)ctmGetFloatArray(context, CTM_NORMALS) : NULL;
-
-                unsigned int nbTriangles = ctmGetInteger(context, CTM_TRIANGLE_COUNT);
-                uint32_t* indices = (uint32_t*)ctmGetIntegerArray(context, CTM_INDICES);
-
-                //Texture
                 unsigned int nbTexCoordsArrays = ctmGetInteger(context, CTM_UV_MAP_COUNT);
-                float* textureCoordinates = NULL;
                 int textureIndex = -1;
                 if (nbTexCoordsArrays == 1)
                     {
                     Utf8String texName = childPt.get("texture", Json::Value("")).asCString();
                     if (!texName.empty())
                         {
-                        textureCoordinates = (float*)ctmGetFloatArray(context, CTM_UV_MAP_1);
+                        trimesh.m_textureUV =  (FPoint2d const*)ctmGetFloatArray(context, CTM_UV_MAP_1);
                         if (textureIds.find(texName) == textureIds.end())
                             {
-                            LOG_ERROR(Utf8String("Bad texture name ") + texName);
+                            LOG_ERROR("Bad texture name %s", texName);
                             ctmFreeContext(context);
                             return ERROR;
                             }
                         textureIndex = textureIds[texName];
                         }
                     }
-                AddGeometry(nodeId, nbVertices, (FPoint3d const*) positions, (FPoint3d const*) normals, nbTriangles, indices, (FPoint2d const*) textureCoordinates, textureIndex, m_system);
+                AddGeometry(nodeId, trimesh, textureIndex, loadContext);
                 ctmFreeContext(context);
                 }//end CTM
             else 
                 {
-                LOG_ERROR("Bad children definition: resourceType = " + resourceType + "; resourceFormat = " + resourceFormat + "; resourceName = " + resourceName);
+                Utf8String msg("Bad children definition: resourceType = %s" + resourceType + "; resourceFormat = " + resourceFormat + "; resourceName = " + resourceName);
+                LOG_ERROR(msg.c_str());
                 return (BentleyStatus)ERROR;
                 }
             offset += resourceSize;
@@ -317,7 +313,7 @@ BentleyStatus MRMeshNode::Read3MXB(MxStreamBuffer& in)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MRMeshNode::Read3MXB(BeFileNameCR filename)
+BentleyStatus Node::Read3MXB(BeFileNameCR filename, LoadContextCR loadContext)
     {
     SetDirectory(BeFileName(BeFileName::DevAndDir, filename.c_str()));
     BeFile file;
@@ -331,13 +327,13 @@ BentleyStatus MRMeshNode::Read3MXB(BeFileNameCR filename)
     file.ReadEntireFile(buf);
     file.Close();
 
-    return Read3MXB(buf);
+    return Read3MXB(buf, loadContext);
     }
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus S3SceneInfo::Read3MX(MxStreamBuffer& buffer) 
+BentleyStatus SceneInfo::Read3MX(MxStreamBuffer& buffer) 
     {
     Json::Value pt;
     Json::Reader reader;
@@ -351,7 +347,7 @@ BentleyStatus S3SceneInfo::Read3MX(MxStreamBuffer& buffer)
     int version = pt.get(ThreeMX::GetSceneVersionTag().c_str(), 0).asInt();
     if (version != 1)
         {
-        LOG_ERROR(Utf8String("Unsupported version of ") + ThreeMX::GetShortName());
+        LOG_ERROR("Unsupported version of %s", ThreeMX::GetShortName());
         return ERROR;
         }
 
@@ -409,7 +405,7 @@ BentleyStatus S3SceneInfo::Read3MX(MxStreamBuffer& buffer)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus S3SceneInfo::Read3MX(BeFileNameCR filename)
+BentleyStatus SceneInfo::Read3MX(BeFileNameCR filename)
     {
     BeFile file;
     if (BeFileStatus::Success != file.Open(filename.c_str(), BeFileAccess::Read))

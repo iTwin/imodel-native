@@ -13,7 +13,7 @@
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName MRMeshUtil::ConstructNodeName(Utf8StringCR childName, BeFileNameCP parentName)
+BeFileName Util::ConstructNodeName(Utf8StringCR childName, BeFileNameCP parentName)
     {
     BeFileName nodeFileName(childName.c_str());
 
@@ -30,7 +30,7 @@ BeFileName MRMeshUtil::ConstructNodeName(Utf8StringCR childName, BeFileNameCP pa
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshUtil::GetMemoryStatistics(size_t& memoryLoad, size_t& total, size_t& available)
+void Util::GetMemoryStatistics(size_t& memoryLoad, size_t& total, size_t& available)
     {
     MEMORYSTATUSEX statex;
     statex.dwLength = sizeof (statex);
@@ -44,7 +44,7 @@ void MRMeshUtil::GetMemoryStatistics(size_t& memoryLoad, size_t& total, size_t& 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-double MRMeshUtil::CalculateResolutionRatio()
+double Util::CalculateResolutionRatio()
     {
     MEMORYSTATUSEX statex;
     statex.dwLength = sizeof (statex);
@@ -64,7 +64,7 @@ double MRMeshUtil::CalculateResolutionRatio()
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                              Nicholas.Woodfield     01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MRMeshUtil::ParseTileId(Utf8StringCR name, uint32_t& tileX, uint32_t& tileY)
+BentleyStatus Util::ParseTileId(Utf8StringCR name, uint32_t& tileX, uint32_t& tileY)
     {
     if (name.empty())
         return ERROR;
@@ -94,26 +94,5 @@ BentleyStatus MRMeshUtil::ParseTileId(Utf8StringCR name, uint32_t& tileX, uint32
         }
 
     return count != 2 ? ERROR : SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-MRMeshContext::MRMeshContext(TransformCR transform, ViewContextR viewContext, double fixedResolution) 
-    : m_transform(transform), m_useFixedResolution(false), m_fixedResolution(0.0), m_nodeCount(0), m_pointCount(0)    
-    {
-    m_loadSynchronous    = // FILTER_LOD_Off == viewContext.GetFilterLODFlag() ||          // If the LOD filter is off we assume that this is an application that is interested in full detail (and isn't going to wait for nodes to load.(DrawPurpose::CaptureGeometry == viewContext.GetDrawPurpose() || DrawPurpose::ModelFacet == viewContext.GetDrawPurpose())
-                           DrawPurpose::ModelFacet == viewContext.GetDrawPurpose();          
-    
-    if (m_loadSynchronous)
-        {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        if (DrawPurpose::Update != viewContext.GetDrawPurpose())       // For capture image the LOD filter is off - but we still want view dependent resolution.
-            {
-            m_useFixedResolution = true;
-            m_fixedResolution    = .1;  // (0.0 == fixedResolution ? MRMeshElementHandler::ComputeDefaultExportResolution (element) : fixedResolution) / transform.ColumnXMagnitude();
-            }
-#endif
-        }
     }
 

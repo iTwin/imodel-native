@@ -5,7 +5,6 @@
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-
 %include mdl.mki
 
 #-----------------------------------------------------------
@@ -16,16 +15,15 @@ SrcThreeMxSchema                 = $(_MakeFilePath)
 #------------------------------------------------------
 # Header file locations in source tree
 #------------------------------------------------------
-ThreeMxSchemaPublicApiSrc        = $(SrcThreeMxSchema)../PublicAPI/ThreeMxSchema/
+ThreeMxSchemaPublicApiSrc        = $(SrcThreeMxSchema)../PublicAPI/ThreeMx/
 
 #-----------------------------------------------------------
 # Source directories
 #-----------------------------------------------------------
-SrcMrMesh                       = $(SrcThreeMxSchema)MrMesh/
-SrcThreeMxReader                = $(SrcThreeMxSchema)Reader/
-SrcOpenCtm                      = $(SrcThreeMxReader)openCtm/
-SrcLibLzma                      = $(SrcOpenCtm)LibLzma/
-
+SrcMrMesh           = $(SrcThreeMxSchema)MrMesh/
+SrcThreeMxReader    = $(SrcThreeMxSchema)Reader/
+SrcOpenCtm          = $(SrcThreeMxReader)openCtm/
+SrcLibLzma          = $(SrcOpenCtm)LibLzma/
 
 #----------------------------------------------------------
 # Set and then include the CompileOptionsMki file.
@@ -41,7 +39,6 @@ always:
 #   Set up build dependencies
 #--------------------------------------------------------------------------------------
 threeMxSchemaDepends         = $(_MakeFileSpec)   \
-                               $(SrcThreeMxReader)ThreeMxReader.h \
                                $(ThreeMxSchemaPublicApiSrc)ThreeMxSchemaApi.h \
                                $(ThreeMxSchemaPublicApiSrc)ThreeMxHandler.h             
                                   
@@ -102,7 +99,6 @@ CPchOpts =
 DLM_NAME                    = $(appName)
 DLM_OBJECT_FILES            = $(objs)
 DLM_OBJECT_DEST             = $(o)
-#DLM_OBJECT_PCH              = $(o)ThreeMxSchemaInternal$(oext) 
 DLM_DEST                    = $(o)
 DLM_NOMSBUILTINS            = 1
 DLM_EXPORT_DEST             = $(o)
