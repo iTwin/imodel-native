@@ -869,7 +869,9 @@ void WireframeGeomUtil::Draw(Render::GraphicR graphic, MSBsplineSurfaceCR surfac
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WireframeGeomUtil::Draw(Render::GraphicR graphic, ISolidKernelEntityCR entity, ViewContextR context, bool includeEdges, bool includeFaceIso)
     {
+#if defined (BENTLEYCONFIG_PARASOLIDS)
     T_HOST.GetSolidsKernelAdmin()._OutputBodyAsWireframe(graphic, entity, context, includeEdges, includeFaceIso);
+#endif
     }
 
 BEGIN_UNNAMED_NAMESPACE
@@ -1112,6 +1114,7 @@ void WireframeGeomUtil::CollectCurves(ISolidKernelEntityCR entity, DgnDbR dgnDb,
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceHeaderPtr WireframeGeomUtil::CollectPolyface(ISolidKernelEntityCR entity, DgnDbR dgnDb, IFacetOptionsR options)
     {
+#if defined (BENTLEYCONFIG_PARASOLIDS)
     IFacetTopologyTablePtr facetsPtr;
 
     if (SUCCESS != DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._FacetBody(facetsPtr, entity, options))
@@ -1126,6 +1129,9 @@ PolyfaceHeaderPtr WireframeGeomUtil::CollectPolyface(ISolidKernelEntityCR entity
     polyface->Transform(entity.GetEntityTransform());
 
     return polyface;
+#else
+    return nullptr;
+#endif
     }
 
 /*----------------------------------------------------------------------------------*//**
@@ -1133,6 +1139,7 @@ PolyfaceHeaderPtr WireframeGeomUtil::CollectPolyface(ISolidKernelEntityCR entity
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WireframeGeomUtil::CollectPolyfaces(ISolidKernelEntityCR entity, DgnDbR dgnDb, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<GeometryParams>& params, IFacetOptionsR options)
     {
+#if defined (BENTLEYCONFIG_PARASOLIDS)
     if (nullptr == entity.GetFaceMaterialAttachments())
         return; // No reason to call this method when there aren't attachments...
 
@@ -1175,6 +1182,7 @@ void WireframeGeomUtil::CollectPolyfaces(ISolidKernelEntityCR entity, DgnDbR dgn
         polyfaces[i]->SetTwoSided(ISolidKernelEntity::EntityType_Solid != entity.GetEntityType());
         polyfaces[i]->Transform(entity.GetEntityTransform());
         }
+#endif
     }
 
 /*----------------------------------------------------------------------------------*//**
