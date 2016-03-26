@@ -206,7 +206,7 @@ public:
     void AddAndWait(Task& task) {AddTask(task); WaitForIdle();}
 
     //! @return true if the render queue is empty and no pending tasks are active.
-    //! @note This method may only be called from the main thread 
+    //! @note This method may only be called from the main thread
     DGNPLATFORM_EXPORT bool IsIdle() const;
 
     DGNPLATFORM_EXPORT bool HasPending(Task::Operation op) const;
@@ -216,7 +216,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                    BentleySystems
 //=======================================================================================
-struct Image : RefCounted<NonCopyableClass>
+struct Image
 {
     enum class Format
     {
@@ -250,11 +250,13 @@ public:
     Image() {}
     Image(uint32_t width, uint32_t height, Format format, uint8_t const* data=0, uint32_t size=0) : m_width(width), m_height(height), m_format(format), m_image(data, size) {}
     Image(uint32_t width, uint32_t height, Format format, ByteStream&& data) : m_width(width), m_height(height), m_format(format), m_image(std::move(data)) {}
-    void Clear() {m_image.Clear();}
-    void Initialize(uint32_t width, uint32_t height, Format format=Format::Rgba) {m_height=height; m_width=width; m_format=format; Clear();}
+    void Invalidate() {m_width=m_height=0; ClearData();}
+    void ClearData() {m_image.Clear();}
+    void Initialize(uint32_t width, uint32_t height, Format format=Format::Rgba) {m_height=height; m_width=width; m_format=format; ClearData();}
     uint32_t GetWidth() const {return m_width;}
     uint32_t GetHeight() const {return m_height;}
     Format GetFormat() const {return m_format;}
+    bool IsValid() {return 0!=m_width && 0!=m_height;}
     ByteStream const& GetByteStream() const {return m_image;}
     ByteStream& GetByteStreamR() {return m_image;}
 };
@@ -894,7 +896,19 @@ struct Graphic : RefCounted<NonCopyableClass>
         CreateParams(DgnViewportCP vp=nullptr, TransformCR placement=Transform::FromIdentity(), double pixelSize=0.0) : m_vp(vp), m_pixelSize(pixelSize), m_placement(placement) {}
     };
 
-    struct TriMeshArgs{int32_t m_numIndices; int32_t const* m_vertIndex; int32_t m_numPoints; FPoint3d const* m_points; FPoint3d const* m_normals; FPoint2d const* m_txtrUV; Texture* m_texture; int32_t m_flags;};
+    struct TriMeshArgs
+    {
+        int32_t m_numIndices = 0;
+        int32_t const* m_vertIndex = nullptr;
+        int32_t m_numPoints = 0;
+        FPoint3d const* m_points= nullptr;
+        FPoint3d const* m_normals= nullptr;
+        FPoint2d const* m_textureUV= nullptr;
+        Texture* m_texture = 0;
+        int32_t m_flags = 1; // QV_QTMESH_GENNORMALS
+
+        DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
+    };
 
 protected:
     bool          m_isOpen = true;

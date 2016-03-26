@@ -27,12 +27,12 @@ struct RgbImageInfo
 /** @name PNG Support for the PNG format */
 /** @{ */
     //! Extract an RGB[A] image from a stream of bytes in the PNG format.
-    //! @param[out] imageData   Image data read from PNG .
+    //! @param[out] image   Image data read from PNG .
     //! @param[in]  inputBuffer The PNG definition data
     //! @param[in]  inputBufferSize The number of bytes in \a inputBuffer
     //! @return non-zero if the image could not be read.
     //! @remarks The image data written to \a imageData is always in top-down row order. It is in RGB format if \a hasAlpha is \a false, else RGBA. It is always 8-bit color.
-    DGNPLATFORM_EXPORT BentleyStatus ReadImageFromPngBuffer(Render::Image& imageData, Byte const* inputBuffer, size_t inputBufferSize);  
+    DGNPLATFORM_EXPORT BentleyStatus ReadImageFromPngBuffer(Render::Image& image, Byte const* inputBuffer, size_t inputBufferSize);  
 
     //! Extract an RGB[A] image from a file in the PNG format.
     //! @param[out] imageData   Image data read from PNG file.
@@ -64,7 +64,7 @@ struct RgbImageInfo
 /** @name JPEG Support for the JPEG format */
 /** @{ */
     //! Read an image in RGB format from a JPEG file
-    //! @param[out] rgbBuffer   Image data read from JPEG file.
+    //! @param[out] image Image data read from JPEG file.
     //! @param[in]  jpegBuffer The JPEG definition data
     //! @param[in]  jpegBufferSize The number of bytes in \a inputBuffer
     //! @return non-zero if the image could not be read.

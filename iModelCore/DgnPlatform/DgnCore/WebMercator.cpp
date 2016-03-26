@@ -9,6 +9,7 @@
 #include <DgnPlatform/ImageUtilities.h>
 #include <DgnPlatform/RealityDataCache.h>
 
+#define DEBUG_MERCATOR
 #ifdef DEBUG_MERCATOR
 #   define DEBUG_PRINTF THREADLOG.debugv
 #   define DEBUG_ERRORLOG THREADLOG.errorv
@@ -540,25 +541,18 @@ void WebMercatorDisplay::DrawAndCacheTile(RenderContext& context, TileIdCR tilei
     RgbImageInfo imageInfo = realityData.GetImageInfo();
     Utf8String const& contentType = realityData.GetContentType();
     
-    BentleyStatus status;
-
-    m_image.Clear(); // reuse the same buffer, in order to minimize mallocs
+    m_image.Invalidate(); // reuse the same buffer, in order to minimize mallocs
 
     if (contentType.Equals("image/png"))
         {
-        status = imageInfo.ReadImageFromPngBuffer(m_image, data.GetData(), data.GetSize());
+        imageInfo.ReadImageFromPngBuffer(m_image, data.GetData(), data.GetSize());
         }
     else if (contentType.Equals("image/jpeg"))
         {
-        status = imageInfo.ReadImageFromJpgBuffer(m_image, data.GetData(), data.GetSize());
-        }
-    else
-        {
-        status = ERROR;
-        BeAssert(false && "Unsupported image type");
+        imageInfo.ReadImageFromJpgBuffer(m_image, data.GetData(), data.GetSize());
         }
 
-    if (SUCCESS != status)
+    if (!m_image.IsValid())
         return;
 
     BeAssert(!imageInfo.m_isBGR);

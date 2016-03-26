@@ -1749,43 +1749,13 @@ void SimplifyGraphic::_AddPolyface(PolyfaceQueryCR geom, bool filled)
     ClipAndProcessPolyface(geom, filled);
     }
 
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void floatToDouble(double* pDouble, float const* pFloat, size_t n)
-    {
-    for (double* pEnd = pDouble + n; pDouble < pEnd; )
-        *pDouble++ = *pFloat++;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddTriMesh(TriMeshArgs const& args)
     {
-    PolyfaceHeaderPtr polyFace = PolyfaceHeader::CreateFixedBlockIndexed(3);
-
-    BlockedVectorIntR pointIndex = polyFace->PointIndex();
-    pointIndex.resize(args.m_numIndices);
-    int32_t const* pIndex = args.m_vertIndex;
-    int32_t const* pEnd = pIndex + args.m_numIndices;
-    int32_t* pOut = &pointIndex.front();
-
-    for (; pIndex < pEnd; )
-        *pOut++ = 1 + *pIndex++;
-    
-    polyFace->Point().resize(args.m_numPoints);
-    floatToDouble(&polyFace->Point().front().x, &args.m_points->x, 3 * args.m_numPoints);
-
-    polyFace->Normal().resize(args.m_numPoints);
-    floatToDouble(&polyFace->Normal().front().x, &args.m_normals->x, 3 * args.m_numPoints);
-    polyFace->NormalIndex() = pointIndex;
-    
-    polyFace->Param().resize(args.m_numPoints);
-    floatToDouble(&polyFace->Param().front().x, &args.m_txtrUV->x, 2 * args.m_numPoints);
-    polyFace->ParamIndex() = pointIndex;
-
-    _AddPolyface(*polyFace, true);
+    PolyfaceHeaderPtr polyface = args.ToPolyface();
+    _AddPolyface(*polyface, true);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -172,7 +172,7 @@ void RgbaSprite::PopulateRgbaSpriteFromPngBuffer(Byte const*inputBuffer, size_t 
     if (BSISUCCESS != info.ReadImageFromPngBuffer(m_image, inputBuffer, numberBytes) || !info.m_hasAlpha)
         {
         m_isLoaded = false;
-        m_image.Clear();
+        m_image.Invalidate();
         return;
         }
     m_isLoaded = true;
