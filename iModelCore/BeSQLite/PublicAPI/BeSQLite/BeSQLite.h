@@ -1203,7 +1203,7 @@ public:
     ~StatementCache() {Empty();}
 
     BE_SQLITE_EXPORT DbResult GetPreparedStatement(CachedStatementPtr&, DbFile const& dbFile, Utf8CP sqlString) const;
-    BE_SQLITE_EXPORT void Dump();
+    BE_SQLITE_EXPORT void Dump() const;
     BE_SQLITE_EXPORT void Empty();
     bool IsEmpty() const {return m_entries.empty();}
 };

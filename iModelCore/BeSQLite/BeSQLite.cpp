@@ -3063,7 +3063,7 @@ void StatementCache::Empty()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void StatementCache::Dump()
+void StatementCache::Dump() const
     {
     for (auto it=m_entries.begin(); it<m_entries.end(); ++it)
         {
@@ -3098,7 +3098,11 @@ CachedStatement& StatementCache::AddStatement(Utf8CP sql) const
     BeDbMutexHolder _v_v(m_mutex);
 
     if (m_entries.size() >= m_entries.capacity()) // if cache is full, remove oldest entry
-        m_entries.erase(m_entries.begin());
+        {
+        std::rotate(m_entries.begin(), m_entries.begin()+1, m_entries.end());
+        //m_entries.back()->DropFromPool();
+        m_entries.pop_back();
+        }
 
     CachedStatement* newEntry = new CachedStatement(sql);
     m_entries.push_back(newEntry);
