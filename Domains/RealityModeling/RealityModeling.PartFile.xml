@@ -100,7 +100,7 @@
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="ThreeMxPublicAPI"/>
         <Bindings>
-            <Assemblies ProductDirectoryName="ThreeMxAssemblies">Delivery/ThreeMx.dll</Assemblies>
+            <Assemblies ProductDirectoryName="ThreeMxAssemblies" Required="false">Delivery/ThreeMx.dll</Assemblies>
             <Libs>delivery/$(shlibprefix)ThreeMx$(libext)</Libs> 
         </Bindings>
     </Part>

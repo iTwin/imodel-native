@@ -15,7 +15,7 @@ SrcThreeMxSchema                 = $(_MakeFilePath)
 #------------------------------------------------------
 # Header file locations in source tree
 #------------------------------------------------------
-ThreeMxSchemaPublicApiSrc        = $(SrcThreeMxSchema)../PublicAPI/ThreeMx/
+ThreeMxPublicApiSrc        = $(SrcThreeMxSchema)../PublicAPI/ThreeMx/
 
 #-----------------------------------------------------------
 # Source directories
@@ -39,8 +39,7 @@ always:
 #   Set up build dependencies
 #--------------------------------------------------------------------------------------
 threeMxSchemaDepends         = $(_MakeFileSpec)   \
-                               $(ThreeMxSchemaPublicApiSrc)ThreeMxSchemaApi.h \
-                               $(ThreeMxSchemaPublicApiSrc)ThreeMxHandler.h             
+                               $(ThreeMxPublicApiSrc)ThreeMxApi.h 
                                   
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki

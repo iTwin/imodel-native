@@ -259,10 +259,10 @@ struct  Util
 //=======================================================================================
 struct ThreeMxDomain : Dgn::DgnDomain
 {
-    DOMAIN_DECLARE_MEMBERS(ThreeMxDomain, )
+    DOMAIN_DECLARE_MEMBERS(ThreeMxDomain, THREEMX_EXPORT)
 
 public:
-    ThreeMxDomain();
+    THREEMX_EXPORT ThreeMxDomain();
 };
 
 #if defined (NEEDS_WORK_RENDER_SYSTEM)
@@ -306,7 +306,7 @@ public:
 //=======================================================================================
 struct ModelHandler :  Dgn::dgn_ModelHandler::Spatial
 {
-    MODELHANDLER_DECLARE_MEMBERS ("ThreeMxModel", ThreeMxModel, ModelHandler, Dgn::dgn_ModelHandler::Spatial, )
+    MODELHANDLER_DECLARE_MEMBERS ("ThreeMxModel", ThreeMxModel, ModelHandler, Dgn::dgn_ModelHandler::Spatial, THREEMX_EXPORT)
     THREEMX_EXPORT static Dgn::DgnModelId CreateModel(Dgn::DgnDbR db, Utf8CP modelName, Utf8CP fileName);
 };
 
