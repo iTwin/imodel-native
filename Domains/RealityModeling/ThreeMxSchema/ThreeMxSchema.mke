@@ -78,8 +78,6 @@ $(o)MrMeshNode$(oext)               : $(SrcMrMesh)MrMeshNode.cpp ${threeMxSchema
 
 $(o)MRMeshGeometry$(oext)           : $(SrcMrMesh)MRMeshGeometry.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
 
-$(o)MRMeshTexture$(oext)            : $(SrcMrMesh)MRMeshTexture.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
-
 $(o)MRMeshScene$(oext)              : $(SrcMrMesh)MRMeshScene.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
 
 $(o)MRMeshUtil$(oext)               : $(SrcMrMesh)MRMeshUtil.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
