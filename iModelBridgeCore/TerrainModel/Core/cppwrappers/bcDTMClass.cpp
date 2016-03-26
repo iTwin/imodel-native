@@ -1429,12 +1429,23 @@ DTMStatusInt BcDTM::_DrapeLinear(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDraped
     return status;
     }
 
+DTMStatusInt BcDTM::_FastDrapeLinear(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints)
+    {
+    return _DrapeLinear(ret, pts, numPoints);
+    }
+
 bool BcDTM::_ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint)
     {
     return _GetProjectedPointOnDTM(pointOnDTM, w2vMap, testPoint);
     }
 
 bool BcDTM::_DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector)
+    {
+    long startFlag, endFlag;
+    return (DTM_SUCCESS == _ShotVector(slope, aspect, triangle, drapedType, &startFlag, &endFlag, endPt, &const_cast<DPoint3dR>(point), directionOfVector, slopeOfVector) && endFlag == 0);
+    }
+
+bool BcDTM::_FastDrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector)
     {
     long startFlag, endFlag;
     return (DTM_SUCCESS == _ShotVector(slope, aspect, triangle, drapedType, &startFlag, &endFlag, endPt, &const_cast<DPoint3dR>(point), directionOfVector, slopeOfVector) && endFlag == 0);
