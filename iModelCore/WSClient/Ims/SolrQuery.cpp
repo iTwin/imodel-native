@@ -165,7 +165,7 @@ Utf8StringCR SolrQuery::GetRows() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 SolrQuery& SolrQuery::SetIndent(const bool indent)
     {
-    m_indentParameter = Utf8PrintfString("%s", Utf8String(indent ? "true" : "false"));
+    m_indentParameter = Utf8PrintfString("%s", Utf8String(indent ? "true" : "false").c_str());
     return *this;
     }
 
@@ -219,5 +219,5 @@ Utf8String SolrQuery::ToString() const
     AppendOptionalParameter(query, "wt",     m_wtParameter);
     AppendOptionalParameter(query, "indent", m_indentParameter);
 
-    return query.empty() ? query : Utf8PrintfString("?%s", query);
+    return query.empty() ? query : Utf8PrintfString("?%s", query.c_str());
     }
