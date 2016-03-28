@@ -15,7 +15,6 @@ USING_NAMESPACE_BENTLEY_DGNDBSERVER
 //@bsimethod                                     Karolis.Dziedzelis             03/2016
 //---------------------------------------------------------------------------------------
 RepositoryInfo::RepositoryInfo()
-    : m_serverUrl(""), m_id("")
     {
     }
 
@@ -25,6 +24,15 @@ RepositoryInfo::RepositoryInfo()
 RepositoryInfo::RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id)
     : m_serverUrl(serverUrl), m_id(id)
     {
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             03/2016
+//---------------------------------------------------------------------------------------
+RepositoryInfo::RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR name, Utf8StringCR description)
+    : m_serverUrl(serverUrl), m_id(id), m_name(name), m_description(description)
+    {
+
     }
 
 //---------------------------------------------------------------------------------------

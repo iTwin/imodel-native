@@ -36,6 +36,7 @@ private:
 public:
     DGNDBSERVERCLIENT_EXPORT RepositoryInfo();
     DGNDBSERVERCLIENT_EXPORT RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id);
+    DGNDBSERVERCLIENT_EXPORT RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR name, Utf8StringCR description);
     DGNDBSERVERCLIENT_EXPORT RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR name, Utf8StringCR fileId, Utf8StringCR fileUrl,
                                             Utf8StringCR fileName, Utf8StringCR description, Utf8StringCR user, DateTimeCR date);
 
