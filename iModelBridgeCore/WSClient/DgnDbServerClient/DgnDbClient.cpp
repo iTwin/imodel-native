@@ -133,44 +133,21 @@ DgnDbServerRepositoriesTaskPtr DgnDbClient::GetRepositories(ICancellationTokenPt
         return CreateCompletedAsyncTask<DgnDbServerRepositoriesResult>(DgnDbServerRepositoriesResult::Error(DgnDbServerError::Id::CredentialsNotSet));
         }
     DgnDbServerRepositoriesResultPtr finalResult = std::make_shared<DgnDbServerRepositoriesResult>();
-    return GetRepositoriesByPlugin(ServerSchema::Plugin::Repository, cancellationToken)->Then([=]
+    return GetRepositoriesByPlugin(ServerSchema::Plugin::Repository, cancellationToken)->Then<DgnDbServerRepositoriesResult>([=]
         (const WSRepositoriesResult& response)
         {
         if (!response.IsSuccess())
             {
-            finalResult->SetError(response.GetError());
-            return;
+            return DgnDbServerRepositoriesResult::Error(response.GetError());
             }
 
-        if (response.GetValue().empty())
-            {
-            finalResult->SetSuccess(bvector<RepositoryInfoPtr>());
-            return;
-            }
-
-        bset<std::shared_ptr<AsyncTask>> tasks;
+        bvector<RepositoryInfoPtr> repositories;
         for (const auto& repository : response.GetValue())
-            tasks.insert(ConnectToRepository(RepositoryInfo(m_serverUrl, ParseRepositoryId(repository)), cancellationToken));
-        AsyncTask::WhenAll(tasks)->Then([=] ()
             {
-            bvector<RepositoryInfoPtr> repositories;
-            for (auto task : tasks)
-                {
-                auto result = dynamic_pointer_cast<PackagedAsyncTask<DgnDbRepositoryConnectionResult>>(task)->GetResult();
-                if (result.IsSuccess())
-                    repositories.push_back(std::make_shared<RepositoryInfo>(result.GetValue()->GetRepositoryInfo()));
-                else
-                    finalResult->SetError(result.GetError());
-                }
-            if (!repositories.empty())
-                {
-                finalResult->SetSuccess(repositories);
-                }
-            });
-        })->Then<DgnDbServerRepositoriesResult>([=] ()
-            {
-            return *finalResult;
-            });
+            repositories.push_back(std::make_shared<RepositoryInfo>(m_serverUrl, ParseRepositoryId(repository), repository.GetLabel(), repository.GetDescription()));
+            }
+        return DgnDbServerRepositoriesResult::Success(repositories);
+        });
     }
 
 //---------------------------------------------------------------------------------------
