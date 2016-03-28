@@ -15,3 +15,4 @@ always:
     @CreateSymLinks.py "$(BuildContext)PublicAPI/WebServices/Configuration  =$(_MakeFilePath)/PublicAPI/WebServices/Configuration"
     @CreateSymLinks.py "$(BuildContext)PublicAPI/WebServices/Connect        =$(_MakeFilePath)/PublicAPI/WebServices/Connect"
     @CreateSymLinks.py "$(BuildContext)PublicAPI/WebServices/Licensing      =$(_MakeFilePath)/PublicAPI/WebServices/Licensing"
+    @CreateSymLinks.py "$(BuildContext)PublicAPI/WebServices/IMS            =$(_MakeFilePath)/PublicAPI/WebServices/IMS"
