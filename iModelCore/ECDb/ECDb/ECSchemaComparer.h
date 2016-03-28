@@ -139,14 +139,14 @@ struct Nullable
         T const& Value() const;
         T& ValueR();
         bool operator == (Nullable<T> const& rhs) const;
-        bool operator == (nullptr_t rhs)const;
+        bool operator == (std::nullptr_t rhs)const;
         bool operator != (Nullable<T> const& rhs) const;
-        bool operator != (nullptr_t rhs) const;
+        bool operator != (std::nullptr_t rhs) const;
         Nullable<T>& operator = (Nullable<T> const&& rhs);
         Nullable<T>& operator = (Nullable<T> const& rhs);
         Nullable<T>& operator = (T const& rhs);
         Nullable<T>& operator = (T const&& rhs);
-        Nullable<T>& operator = (nullptr_t rhs);
+        Nullable<T>& operator = (std::nullptr_t rhs);
     };
 
 //=======================================================================================
@@ -1142,7 +1142,7 @@ struct ECSchemaComparer
         BentleyStatus CompareECBaseClasses(BaseClassChanges& changes, ECBaseClassesList const& a, ECBaseClassesList const& b);
         BentleyStatus CompareECRelationshipClass(ECRelationshipChange& change, ECRelationshipClassCR a, ECRelationshipClassCR b);
         BentleyStatus CompareECRelationshipConstraint(ECRelationshipConstraintChange& change, ECRelationshipConstraintCR a, ECRelationshipConstraintCR b);
-        BentleyStatus CompareECRelationshipConstraintClassKeys(ECRelationshipConstraintClassChange& change, ECRelationshipConstraintClassCR const& a, ECRelationshipConstraintClassCR const& b);
+        BentleyStatus CompareECRelationshipConstraintClassKeys(ECRelationshipConstraintClassChange& change, ECRelationshipConstraintClassCR a, ECRelationshipConstraintClassCR b);
         BentleyStatus CompareECRelationshipConstraintClasses(ECRelationshipConstraintClassChanges& change, ECRelationshipConstraintClassList const& a, ECRelationshipConstraintClassList const& b);
         BentleyStatus CompareECProperty(ECPropertyChange& change, ECPropertyCR a, ECPropertyCR b);
         BentleyStatus CompareECProperties(ECPropertyChanges& changes, ECPropertyIterableCR a, ECPropertyIterableCR b);
@@ -1160,7 +1160,7 @@ struct ECSchemaComparer
         BentleyStatus AppendECRelationshipClass(ECRelationshipChange& change, ECRelationshipClassCR v, ValueId appendType);
         BentleyStatus AppendECRelationshipConstraint(ECRelationshipConstraintChange& change, ECRelationshipConstraintCR v, ValueId appendType);
         BentleyStatus AppendECRelationshipConstraintClasses(ECRelationshipConstraintClassChanges& changes, ECRelationshipConstraintClassList const& v, ValueId appendType);
-        BentleyStatus AppendECRelationshipConstraintClass(ECRelationshipConstraintClassChange& change, ECRelationshipConstraintClassCR const& v, ValueId appendType);
+        BentleyStatus AppendECRelationshipConstraintClass(ECRelationshipConstraintClassChange& change, ECRelationshipConstraintClassCR v, ValueId appendType);
         BentleyStatus AppendECEnumeration(ECEnumerationChanges& changes, ECEnumerationCR v, ValueId appendType);
         BentleyStatus AppendECProperty(ECPropertyChanges& changes, ECPropertyCR v, ValueId appendType);
         BentleyStatus AppendCustomAttributes(ECInstanceChanges& changes, IECCustomAttributeContainerCR v, ValueId appendType);

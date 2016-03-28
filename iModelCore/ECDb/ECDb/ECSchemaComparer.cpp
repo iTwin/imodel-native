@@ -596,7 +596,7 @@ BentleyStatus ECSchemaComparer::CompareECRelationshipConstraint(ECRelationshipCo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::CompareECRelationshipConstraintClassKeys(ECRelationshipConstraintClassChange& change, ECRelationshipConstraintClassCR const& a, ECRelationshipConstraintClassCR const& b)
+BentleyStatus ECSchemaComparer::CompareECRelationshipConstraintClassKeys(ECRelationshipConstraintClassChange& change, ECRelationshipConstraintClassCR a, ECRelationshipConstraintClassCR b)
     {
     std::set<Utf8CP, CompareUtf8> aMap, bMap, cMap;
     for (Utf8StringCR keyProperty : a.GetKeys())
@@ -1417,7 +1417,7 @@ BentleyStatus ECSchemaComparer::AppendECRelationshipConstraintClasses(ECRelation
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::AppendECRelationshipConstraintClass(ECRelationshipConstraintClassChange& change, ECRelationshipConstraintClassCR const& v, ValueId appendType)
+BentleyStatus ECSchemaComparer::AppendECRelationshipConstraintClass(ECRelationshipConstraintClassChange& change, ECRelationshipConstraintClassCR v, ValueId appendType)
     {
     ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
     change.GetClassName().SetValue(appendType, v.GetClass().GetFullName());
