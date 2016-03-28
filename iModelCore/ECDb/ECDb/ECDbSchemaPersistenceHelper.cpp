@@ -73,6 +73,19 @@ bool ECDbSchemaPersistenceHelper::ContainsECSchema(ECDbCR db, ECSchemaId ecSchem
     return stmt->Step () == BE_SQLITE_ROW;
     }
 
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECDbSchemaPersistenceHelper::ContainsECSchemaWithNamespacePrefix(ECDbCR db, Utf8CP namespacePrefix)
+    {
+    CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT NULL FROM ec_Schema WHERE lower(NamespacePrefix) = lower(?)"))
+        return false;
+
+    stmt->BindText(1, namespacePrefix, Statement::MakeCopy::No);
+    return stmt->Step() == BE_SQLITE_ROW;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Casey.Mullen      01/2013
 //---------------------------------------------------------------------------------------

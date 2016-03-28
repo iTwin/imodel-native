@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECSqlStatementCache_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -36,6 +36,7 @@ TEST (ECSqlStatementCacheTests, BindValuesToSameCachedStatementsMultipleTime)
         }
 
     ASSERT_EQ (cache.Size (), 1);
+    cache.Log();
 
         {
         CachedECSqlStatementPtr stmt = cache.GetPreparedStatement (ecdb, ecSqlSelect);
@@ -46,6 +47,7 @@ TEST (ECSqlStatementCacheTests, BindValuesToSameCachedStatementsMultipleTime)
         }
 
     ASSERT_EQ (cache.Size (), 2) << "Cache is expected to have two ECSqlStatements";
+    cache.Log();
 
         {
         CachedECSqlStatementPtr stmt = cache.GetPreparedStatement (ecdb, ecSqlInsert);

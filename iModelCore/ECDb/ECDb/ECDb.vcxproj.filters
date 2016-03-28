@@ -301,9 +301,6 @@
     <ClInclude Include="..\PublicAPI\ECDb\ECInstanceId.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\ECDb\ECRelationshipPath.h">
-      <Filter>PublicApi</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECSqlColumnInfo.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
@@ -384,6 +381,9 @@
       <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="ECDbExpressionSymbolProvider.h" />
+    <ClInclude Include="ECSchemaComparer.h">
+      <Filter>ECDbSchemaManager</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -703,6 +703,9 @@
       <Filter>ECSql\Fields</Filter>
     </ClCompile>
     <ClCompile Include="ECDbExpressionSymbolProvider.cpp" />
+    <ClCompile Include="ECSchemaComparer.cpp">
+      <Filter>ECDbSchemaManager</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="ECSchemas\ECDb_FileInfo.02.00.ecschema.xml">

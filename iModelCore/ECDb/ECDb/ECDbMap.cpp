@@ -73,7 +73,7 @@ bool ECDbMap::AssertIfIsNotImportingSchema() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    04/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-MapStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext, bvector<ECSchemaCP> const& mapSchemas)
+MapStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext)
     {
     if (m_schemaImportContext != nullptr)
         {
@@ -81,12 +81,12 @@ MapStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext, bvector<
         return MapStatus::Error;
         }
 
-    if (mapSchemas.empty())
+    if (schemaImportContext.GetECSchemaCompareContext().IsEmpty())
         return MapStatus::Success;
 
     m_schemaImportContext = &schemaImportContext;
 
-    const MapStatus stat = DoMapSchemas(mapSchemas);
+    const MapStatus stat = DoMapSchemas();
     if (MapStatus::Success != stat)
         {
         m_schemaImportContext = nullptr;
@@ -166,49 +166,92 @@ BentleyStatus ECDbMap::CreateECClassViewsInDb() const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    affan.khan         03/2016
+//---------------------------------------------------------------------------------------
+std::vector<ECClassCP> ECDbMap::GetBaseClassesNotAlreadyMapped(ECClassCR ecclass) const
+    {
+    //!This does not work due to navigation properties
+    std::vector<ECClassCP> baseClasses;
+    for (ECClassCP baseClass : ecclass.GetBaseClasses())
+        {
+        ClassMapCP baseClassMap = GetClassMap(*baseClass);
+        if (baseClassMap == nullptr)
+            {
+            baseClasses.push_back(baseClass);
+            }
+        }
+
+    return baseClasses;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    affan.khan         03/2016
+//---------------------------------------------------------------------------------------
+void ECDbMap::VisitRoot(ECClassCR ecclass, std::set<ECClassCP>& doneList, std::set<ECClassCP>& rootClassSet, std::vector<ECClassCP>& rootClassList, std::vector<ECRelationshipClassCP>& rootRelationshipList) const
+    {
+    if (doneList.find(&ecclass) != doneList.end())
+        return;
+
+    doneList.insert(&ecclass);
+    if (!ecclass.HasBaseClasses())
+        {
+        if (rootClassSet.find(&ecclass) == rootClassSet.end())
+            {
+            rootClassSet.insert(&ecclass);
+            if (auto relationship = ecclass.GetRelationshipClassCP())
+                rootRelationshipList.push_back(relationship);
+            else
+                rootClassList.push_back(&ecclass);
+            }
+
+        return;
+        }
+
+    for (ECClassCP baseClass : ecclass.GetBaseClasses())
+        {
+        if (baseClass == nullptr)
+            continue;
+
+        if (doneList.find(baseClass) != doneList.end())
+            return;
+
+        VisitRoot(*baseClass, doneList, rootClassSet, rootClassList, rootRelationshipList);
+        }
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan         09/2012
 //---------------------------------------------------------------------------------------
-MapStatus ECDbMap::DoMapSchemas(bvector<ECSchemaCP> const& mapSchemas)
+MapStatus ECDbMap::DoMapSchemas()
     {
     if (AssertIfIsNotImportingSchema())
         return MapStatus::Error;
-
+    
     StopWatch timer(true);
 
     // Identify root classes/relationship-classes
-    bvector<ECClassCP> rootClasses;
-    bvector<ECRelationshipClassCP> rootRelationships;
-    int nClasses = 0;
-    int nRelationshipClasses = 0;
-    for (ECSchemaCP schema : mapSchemas)
+    ECSchemaCompareContext& ctx = GetSchemaImportContext()->GetECSchemaCompareContext();
+
+    std::set<ECClassCP> doneList;
+    std::set<ECClassCP> rootClassSet; 
+    std::vector<ECClassCP> rootClassList;
+    std::vector<ECRelationshipClassCP> rootRelationshipList;
+
+    for (ECSchemaCP schema : ctx.GetImportedSchemaSet())
         {
         if (schema->IsSupplementalSchema())
             continue; // Don't map any supplemental schemas
 
         for (ECClassCP ecClass : schema->GetClasses())
             {
-            const bool isRootClass = ecClass->GetBaseClasses().empty();
-            ECRelationshipClassCP relationshipClass = ecClass->GetRelationshipClassCP();
-            if (relationshipClass != nullptr)
-                {
-                if (isRootClass)
-                    rootRelationships.push_back(relationshipClass);
+            if (doneList.find(ecClass) != doneList.end())
+                continue;
 
-                nRelationshipClasses++;
-                }
-            else
-                {
-                if (isRootClass)
-                    rootClasses.push_back(ecClass);
-
-                nClasses++;
-                }
+            VisitRoot(*ecClass, doneList, rootClassSet, rootClassList, rootRelationshipList);
             }
         }
 
     // Starting with the root, recursively map the entire class hierarchy. 
     MapStatus status = MapStatus::Success;
-    for (ECClassCP rootClass : rootClasses)
+    for (ECClassCP rootClass : rootClassList)
         {
         status = MapClass(*rootClass);
         if (status == MapStatus::Error)
@@ -220,7 +263,7 @@ MapStatus ECDbMap::DoMapSchemas(bvector<ECSchemaCP> const& mapSchemas)
         return MapStatus::Error;
 
     BeAssert(status != MapStatus::BaseClassesNotMapped && "Expected to resolve all class maps by now.");
-    for (ECRelationshipClassCP rootRelationshipClass : rootRelationships)
+    for (ECRelationshipClassCP rootRelationshipClass : rootRelationshipList)
         {
         status = MapClass(*rootRelationshipClass);
         if (status == MapStatus::Error)
@@ -245,7 +288,7 @@ MapStatus ECDbMap::DoMapSchemas(bvector<ECSchemaCP> const& mapSchemas)
     timer.Stop();
     if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
         LOG.debugv("Mapped %d ECSchemas containing %d ECClasses and %d ECRelationshipClasses to the database in %.4f seconds",
-                   mapSchemas.size(), nClasses, nRelationshipClasses, timer.GetElapsedSeconds());
+                   ctx.GetImportedSchemaSet().size(), rootClassList.size(), rootRelationshipList.size(), timer.GetElapsedSeconds());
 
     return MapStatus::Success;
     }

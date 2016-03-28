@@ -146,7 +146,7 @@ private:
     RefCountedPtr<ECDbSchemaReader> m_ecReader;
     mutable BeMutex m_criticalSection;
 
-    BentleyStatus BatchImportECSchemas (SchemaImportContext const&, bvector<ECN::ECSchemaCP>& importedSchemas, ECN::ECSchemaCacheR, ImportOptions const&) const;
+    BentleyStatus BatchImportECSchemas (SchemaImportContext&, ECN::ECSchemaCacheR, ImportOptions const&) const;
     
     ECN::ECSchemaCP GetECSchema (ECN::ECSchemaId, bool ensureAllClassesLoaded) const;
     //! Ensure that all direct subclasses of @p ecClass are loaded. Subclasses of its subclasses are not loaded
@@ -158,6 +158,7 @@ private:
 
     //! Implementation of IECClassLocater
     virtual ECN::ECClassCP _LocateClass (Utf8CP schemaName, Utf8CP className) override;
+    //void PrepareForImport(ECSchemaList& existingSchemas, ECSchemaList& importedSchemas, bvector<ECN::ECSchemaP> const& dependencyOrderedPrimarySchemas) const;
 
 public:
 #if !defined (DOCUMENTATION_GENERATOR)
@@ -256,7 +257,12 @@ public:
     //! No code should depend on these views.
     //! @return SUCCESS OR ERROR
     ECDB_EXPORT BentleyStatus CreateECClassViewsInDb() const;
-
+    //! Compare two schema and return readable difference as string
+    //! @param[out] differences Contain text in human readable for contain differences of two schemas;
+    //! @param[in] lhs Existing or older schema then rhs
+    //! @param[in] rhs Modified or newer schema then lhs
+    //! @return SUCCESS OR ERROR
+    ECDB_EXPORT BentleyStatus CompareECSchemas(Utf8StringR differences, ECN::ECSchemaCR lhs, ECN::ECSchemaCR rhs) const;
 #if !defined (DOCUMENTATION_GENERATOR)    
     //! For cases where we are working with an ECClass in a referenced ECSchema that is a duplicate of one already persisted
     //! and therefore doesn't have the persistent ECClassId set. Generally, we would prefer that the primary ECSchema had
@@ -279,5 +285,7 @@ public:
     };
 
 typedef ECDbSchemaManager const& ECDbSchemaManagerCR;
+
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

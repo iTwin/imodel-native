@@ -753,31 +753,31 @@ ECSqlTestDataset ECSqlUpdateTestDataset::RelationshipLinkTableMappingTests(int r
 ECSqlTestDataset ECSqlUpdateTestDataset::RelationshipWithAdditionalPropsTests (ECDbR ecdb, int rowCountPerClass)
     {
     ECSqlTestDataset dataset;
-    bvector<ECInstanceId> psaIds = ECSqlTestFrameworkHelper::GetValidECInstanceIds (ecdb, "SELECT ECInstanceId FROM ecsql.PSA");
-    bvector<ECInstanceId> pIds = ECSqlTestFrameworkHelper::GetValidECInstanceIds (ecdb, "SELECT ECInstanceId FROM ecsql.P");
 
-    int i = 0; //used as indexNumber for class PSA
-    int j = 0; //used as indexNumber for class P
+    ECInstanceId psaInstanceId;
+    ECInstanceId pInstanceId;
+    {
+    Savepoint savepoint(ecdb, "Inserting test instances", true);
+    psaInstanceId = ECSqlTestFrameworkHelper::InsertTestInstance(ecdb, "INSERT INTO ecsql.PSA (I, S) VALUES (100, 'Test instance for relationship tests')");
+    pInstanceId = ECSqlTestFrameworkHelper::InsertTestInstance(ecdb, "INSERT INTO ecsql.P (I, S) VALUES (100, 'Test instance for relationship tests')");
 
+    if (!psaInstanceId.IsValid() || pInstanceId.IsValid())
         {
-        Savepoint savepoint (ecdb, "Inserting test instances");
-        Utf8String ecsqlStr;
-        ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, TargetECInstanceId) VALUES (%llu, %llu)", psaIds[i].GetValue (), pIds[j].GetValue ());
-        const ECInstanceId ecInstanceId = ECSqlTestFrameworkHelper::InsertTestInstance (ecdb, ecsqlStr.c_str());
-        if (!ecInstanceId.IsValid ())
-            {
-            savepoint.Cancel ();
-            return dataset;
-            }
-
-        savepoint.Commit ();
+        savepoint.Cancel();
+        return dataset;
         }
 
+    savepoint.Commit();
+    }
 
-    Utf8CP ecsql = "UPDATE ONLY ecsql.PSAHasPWithPrimProps SET SourceECInstanceId = 400, TargetECInstanceId = 234;";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    {
+    Utf8String ecsqlStr;
+    ecsqlStr.Sprintf("UPDATE ONLY ecsql.PSAHasPWithPrimProps SET SourceECInstanceId = %llu, TargetECInstanceId = %llu;",
+                     psaInstanceId.GetValue(), pInstanceId.GetValue());
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsqlStr.c_str(), ECSqlExpectedResult::Category::Invalid);
+    }
 
-    ecsql = "UPDATE ONLY ecsql.PSAHasPWithPrimProps SET D = 3.14, B = false";
+    Utf8CP ecsql = "UPDATE ONLY ecsql.PSAHasPWithPrimProps SET D = 3.14, B = false";
     ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsql, true);
 
     ecsql = "UPDATE ONLY ecsql.PSAHasPWithPrimProps SET D = 3.14, B = false WHERE D IS NULL AND B IS NULL";

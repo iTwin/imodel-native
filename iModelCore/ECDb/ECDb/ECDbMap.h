@@ -94,7 +94,7 @@ private:
 
     ClassMapPtr LoadClassMap(ClassMapLoadContext& ctx, ECN::ECClassCR) const;
 
-    MapStatus DoMapSchemas(bvector<ECN::ECSchemaCP> const&);
+    MapStatus DoMapSchemas();
     MapStatus MapClass(ECN::ECClassCR);
     BentleyStatus SaveMappings() const;
     BentleyStatus CreateOrUpdateRequiredTables() const;
@@ -110,6 +110,8 @@ private:
 
     ClassMapsByTable GetClassMapsByTable() const;
     BentleyStatus GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>&, ECN::ECClassCR, bool recursive) const;
+    std::vector<ECClassCP> GetBaseClassesNotAlreadyMapped(ECClassCR ecclass) const;
+    void VisitRoot(ECClassCR ecclass, std::set<ECClassCP>& doneList, std::set<ECClassCP>& rootClassSet, std::vector<ECClassCP>& rootClassList, std::vector<ECRelationshipClassCP>& rootRelationshipList) const;
 
 public:
     explicit ECDbMap(ECDbR ecdb);
@@ -126,7 +128,7 @@ public:
 
     ECDbSQLManager const& GetSQLManager() const { return m_ecdbSqlManager; }
 
-    MapStatus MapSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&);
+    MapStatus MapSchemas(SchemaImportContext&);
 
     BentleyStatus CreateECClassViewsInDb() const;
     ECDbSqlTable* FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, TableType, bool isVirtual, Utf8CP primaryKeyColumnName);

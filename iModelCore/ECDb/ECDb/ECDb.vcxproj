@@ -34,6 +34,7 @@
     <ClCompile Include="ECInstanceFinder.cpp" />
     <ClCompile Include="ECDbProfileManager.cpp" />
     <ClCompile Include="ECDbProfileUpgrader.cpp" />
+    <ClCompile Include="ECSchemaComparer.cpp" />
     <ClCompile Include="ECSchemaComparers.cpp" />
     <ClCompile Include="ECDbSchemaWriter.cpp" />
     <ClCompile Include="ECDbSchemaReader.cpp" />
@@ -144,6 +145,7 @@
     <ClInclude Include="ECDbSystemSchemaHelper.h" />
     <ClInclude Include="ECDbProfileManager.h" />
     <ClInclude Include="ECDbProfileUpgrader.h" />
+    <ClInclude Include="ECSchemaComparer.h" />
     <ClInclude Include="ECSchemaComparers.h" />
     <ClInclude Include="ECSchemaValidator.h" />
     <ClInclude Include="ECSql\ClassRefExp.h" />
