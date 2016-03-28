@@ -206,12 +206,12 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChang
     //if (propertyChange.GetMaximumValue().Exist())
     //    {
     //    return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::MaximumValue is not supported. Failed on ECProperty %s.%s.",
-    //                oldProperty.GetClass().GetFullName(), oldProperty.GetName());
+    //                oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
     //    }
     //if (propertyChange.GetMinimumValue().Exist())
     //    {
     //    return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::MinimumValue is not supported. Failed on ECProperty %s.%s.",
-    //                oldProperty.GetClass().GetFullName(), oldProperty.GetName());
+    //                oldProperty.GetClass().GetFullName(), oldProperty.GetName()).c_str();
     //    }
     if (propertyChange.IsStruct().Exist())
         {
