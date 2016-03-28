@@ -64,8 +64,9 @@ struct ChangeSummary : NonCopyableClass
     struct Options
         {
         private:
-            bool m_includeRelationshipInstances = true;
+            bool m_includeRelationshipInstances;
         public:
+            Options() : m_includeRelationshipInstances(true) {}
             void SetIncludeRelationshipInstances(bool value) { m_includeRelationshipInstances = value; }
             bool GetIncludeRelationshipInstances() const { return m_includeRelationshipInstances; }
         };
