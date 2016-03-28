@@ -69,7 +69,7 @@ struct MockCachingDataSource : public ICachingDataSource
 
         CacheTransaction StartCacheTransaction () override
             {
-            return *StartCacheTransactionProxy ();
+            return std::move(*StartCacheTransactionProxy());
             }
 
         //! Use this method to mock StartCacheTransaction that returns non-copyable CacheTransaction
