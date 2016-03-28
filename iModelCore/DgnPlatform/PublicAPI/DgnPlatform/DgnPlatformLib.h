@@ -456,6 +456,7 @@ public:
             virtual BentleyStatus _CreateLocalFileId(Utf8StringR fileId, BeFileNameCR fullPath, BeFileNameCR basePath) const {return ERROR;}
             };
 
+#if defined (BENTLEYCONFIG_PARASOLIDS)
         //! Support for elements that store their data as Parasolid or Acis breps. Also required
         //! to output element graphics as solid kernel entities and facet sets.
         struct SolidsKernelAdmin : IHostObject
@@ -800,6 +801,7 @@ public:
             //! @return SUCCESS if tool body was unified with target.
             virtual BentleyStatus _UnifyBody(ISolidKernelEntityPtr& targetEntity, ISolidKernelEntityPtr* toolEntities, size_t nTools) const {return ERROR;}
             };
+#endif
 
         //! Receives messages sent to NotificationManager. Hosts can implement this interface to communicate issues to the user.
         struct NotificationAdmin : IHostObject
@@ -855,7 +857,9 @@ public:
         RasterAttachmentAdmin*  m_rasterAttachmentAdmin;
         PointCloudAdmin*        m_pointCloudAdmin;
         NotificationAdmin*      m_notificationAdmin;
+#if defined (BENTLEYCONFIG_PARASOLIDS)
         SolidsKernelAdmin*      m_solidsKernelAdmin;
+#endif
         GeoCoordinationAdmin*   m_geoCoordAdmin;
         TxnAdmin*               m_txnAdmin;
         IACSManagerP            m_acsManager;
@@ -892,8 +896,10 @@ public:
         //! Supply the NotificationAdmin for this session. This method is guaranteed to be called once per thread from DgnPlatformLib::Host::Initialize and never again.
         DGNPLATFORM_EXPORT virtual NotificationAdmin& _SupplyNotificationAdmin();
 
+#if defined (BENTLEYCONFIG_PARASOLIDS)
         //! Supply the SolidsKernelAdmin for this session. This method is guaranteed to be called once per thread from DgnPlatformLib::Host::Initialize and never again.
         DGNPLATFORM_EXPORT virtual SolidsKernelAdmin& _SupplySolidsKernelAdmin();
+#endif
 
         //! Supply the GeoCoordinationStateAdmin for this session. This method is guaranteed to be called once per thread from DgnPlatformLib::Host::Initialize and never again..
         DGNPLATFORM_EXPORT virtual GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin();
@@ -922,7 +928,9 @@ public:
             m_rasterAttachmentAdmin = nullptr;
             m_pointCloudAdmin = nullptr;
             m_notificationAdmin = nullptr;
+#if defined (BENTLEYCONFIG_PARASOLIDS)
             m_solidsKernelAdmin = nullptr;
+#endif
             m_geoCoordAdmin = nullptr;
             m_txnAdmin = nullptr;
             m_acsManager = nullptr;
@@ -942,7 +950,9 @@ public:
         RasterAttachmentAdmin&  GetRasterAttachmentAdmin() {return *m_rasterAttachmentAdmin;}
         PointCloudAdmin&        GetPointCloudAdmin()       {return *m_pointCloudAdmin;}
         NotificationAdmin&      GetNotificationAdmin()     {return *m_notificationAdmin;}
+#if defined (BENTLEYCONFIG_PARASOLIDS)
         SolidsKernelAdmin&      GetSolidsKernelAdmin()     {return *m_solidsKernelAdmin;}
+#endif
         GeoCoordinationAdmin&   GetGeoCoordinationAdmin()  {return *m_geoCoordAdmin;}
         TxnAdmin&               GetTxnAdmin()              {return *m_txnAdmin;}
         IACSManagerR            GetAcsManager()            {return *m_acsManager;}

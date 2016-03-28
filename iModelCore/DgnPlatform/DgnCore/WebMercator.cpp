@@ -9,6 +9,7 @@
 #include <DgnPlatform/ImageUtilities.h>
 #include <DgnPlatform/RealityDataCache.h>
 
+#define DEBUG_MERCATOR
 #ifdef DEBUG_MERCATOR
 #   define DEBUG_PRINTF THREADLOG.debugv
 #   define DEBUG_ERRORLOG THREADLOG.errorv
@@ -277,7 +278,7 @@ protected:
     bool m_preferFinerResolution = false;                       //!< Download and display more tiles, in order to get the best resolution? Else, go with 1/4 as many tiles and be satisfied with slightly fuzzy resolution.
     double m_originLatitudeInRadians;
     bmap<LatLongPoint, DPoint3d> m_latLngToMeters;
-    ByteStream m_rgbBuffer;
+    Render::Image m_image;
 
 public:
     bool IsValid() const {return nullptr != m_units.GetDgnGCS();}
@@ -289,7 +290,6 @@ public:
     static uint8_t GetZoomLevels() {return (uint8_t)(MAX_ZOOM_LEVEL - MIN_ZOOM_LEVEL);}
     bool ComputeZoomLevel(DgnViewportR);
     void GetTileIds(TileList& tileids, uint8_t desiredZoomLevel);
-    Render::TexturePtr DefineTexture(RgbImageInfo const& imageInfo, RenderContext& context);
     Render::TextureP GetCachedTexture(RgbImageInfo& cachedImageInfo, TileIdCR);
     void DrawTile(RenderContext&, TileIdCR tileid, RgbImageInfo const& imageInfo, Render::TextureR texture, double bias);
     void DrawAndCacheTile(RenderContext& context, TileIdCR tileid, TiledRaster& realityData);
@@ -509,17 +509,6 @@ Render::TextureP WebMercatorDisplay::GetCachedTexture(RgbImageInfo& cachedImageI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::TexturePtr WebMercatorDisplay::DefineTexture(RgbImageInfo const& imageInfo, RenderContext& context)
-    {
-    BeAssert(!imageInfo.m_isBGR);
-    
-    Render::ImagePtr image = new Render::Image(imageInfo.m_width, imageInfo.m_height, imageInfo.m_hasAlpha ? Render::Image::Format::Rgba : Render::Image::Format::Rgb, m_rgbBuffer.GetData(), m_rgbBuffer.GetSize());
-    return context.GetTargetR().CreateTileSection(*image, false);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/14
-+---------------+---------------+---------------+---------------+---------------+------*/
 void WebMercatorDisplay::DrawTile(RenderContext& context, TileIdCR tileid, RgbImageInfo const& imageInfo, Render::TextureR texture, double bias)
     {
     // Get 4 corners in this order:
@@ -552,29 +541,24 @@ void WebMercatorDisplay::DrawAndCacheTile(RenderContext& context, TileIdCR tilei
     RgbImageInfo imageInfo = realityData.GetImageInfo();
     Utf8String const& contentType = realityData.GetContentType();
     
-    BentleyStatus status;
-
-    m_rgbBuffer.Clear(); // reuse the same buffer, in order to minimize mallocs
+    m_image.Invalidate(); // reuse the same buffer, in order to minimize mallocs
 
     if (contentType.Equals("image/png"))
         {
-        status = imageInfo.ReadImageFromPngBuffer(m_rgbBuffer, data.GetData(), data.GetSize());
+        imageInfo.ReadImageFromPngBuffer(m_image, data.GetData(), data.GetSize());
         }
     else if (contentType.Equals("image/jpeg"))
         {
-        status = imageInfo.ReadImageFromJpgBuffer(m_rgbBuffer, data.GetData(), data.GetSize());
-        }
-    else
-        {
-        status = ERROR;
-        BeAssert(false && "Unsupported image type");
+        imageInfo.ReadImageFromJpgBuffer(m_image, data.GetData(), data.GetSize());
         }
 
-    if (SUCCESS != status)
+    if (!m_image.IsValid())
         return;
 
-    auto texture = DefineTexture(imageInfo, context);
+    BeAssert(!imageInfo.m_isBGR);
+    auto texture = context.GetTargetR().CreateTexture(m_image, false);
     m_model.GetTextureCache().Insert(tileid, imageInfo, *texture);
+
     DrawTile(context, tileid, imageInfo, *texture, m_model.GetGroundBias());
     }
 

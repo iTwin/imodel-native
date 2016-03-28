@@ -24,33 +24,32 @@ struct NullContext : ViewContext
     +===============+===============+===============+===============+===============+======*/
     struct NullGraphic : Render::Graphic
     {
-        virtual void _ActivateGraphicParams(Render::GraphicParamsCR, Render::GeometryParamsCP) override {}
-        virtual void _AddLineString(int numPoints, DPoint3dCP points) override {}
-        virtual void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth) override {}
-        virtual void _AddPointString(int numPoints, DPoint3dCP points) override {}
-        virtual void _AddPointString2d(int numPoints, DPoint2dCP points, double zDepthe) override {}
-        virtual void _AddShape(int numPoints, DPoint3dCP points, bool filled) override {}
-        virtual void _AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth) override {}
-        virtual void _AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags) override {}
-        virtual void _AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) override {}
-        virtual void _AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled) override {}
-        virtual void _AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) override {}
-        virtual void _AddBSplineCurve(MSBsplineCurveCR curve, bool filled) override {}
-        virtual void _AddBSplineCurve2d(MSBsplineCurveCR curve, bool filled, double zDepth) override {}
-        virtual void _AddCurveVector(CurveVectorCR curves, bool isFilled) override {}
-        virtual void _AddCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth) override {}
-        virtual void _AddSolidPrimitive(ISolidPrimitiveCR primitive) override {}
-        virtual void _AddBSplineSurface(MSBsplineSurfaceCR surface) override {}
-        virtual void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) override {}
-        virtual void _AddBody(ISolidKernelEntityCR, double pixelSize = 0.0) override {}
-        virtual void _AddTextString(TextStringCR text) override {}
-        virtual void _AddTextString2d(TextStringCR text, double zDepth) override {}
-        virtual void _AddTile(Render::TextureCR tile, DPoint3dCP corners) override {}
-        virtual void _AddRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels) override {}
-        virtual void _AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth) override {}
-        virtual void _AddDgnOle(Render::DgnOleDraw*) override {}
-        virtual void _AddPointCloud(Render::PointCloudDraw* drawParams) override {}
-        virtual void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR) override {}
+        void _ActivateGraphicParams(Render::GraphicParamsCR, Render::GeometryParamsCP) override {}
+        void _AddLineString(int numPoints, DPoint3dCP points) override {}
+        void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth) override {}
+        void _AddPointString(int numPoints, DPoint3dCP points) override {}
+        void _AddPointString2d(int numPoints, DPoint2dCP points, double zDepthe) override {}
+        void _AddShape(int numPoints, DPoint3dCP points, bool filled) override {}
+        void _AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth) override {}
+        void _AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags) override {}
+        void _AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) override {}
+        void _AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled) override {}
+        void _AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) override {}
+        void _AddBSplineCurve(MSBsplineCurveCR curve, bool filled) override {}
+        void _AddBSplineCurve2d(MSBsplineCurveCR curve, bool filled, double zDepth) override {}
+        void _AddCurveVector(CurveVectorCR curves, bool isFilled) override {}
+        void _AddCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth) override {}
+        void _AddSolidPrimitive(ISolidPrimitiveCR primitive) override {}
+        void _AddBSplineSurface(MSBsplineSurfaceCR surface) override {}
+        void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) override {}
+        void _AddTriMesh(TriMeshArgs const& args)  override {}
+        void _AddBody(ISolidKernelEntityCR, double pixelSize = 0.0) override {}
+        void _AddTextString(TextStringCR text) override {}
+        void _AddTextString2d(TextStringCR text, double zDepth) override {}
+        void _AddTile(Render::TextureCR tile, DPoint3dCP corners) override {}
+        void _AddDgnOle(Render::DgnOleDraw*) override {}
+        void _AddPointCloud(Render::PointCloudDraw* drawParams) override {}
+        void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR) override {}
         virtual Render::GraphicPtr _CreateSubGraphic(TransformCR) const override {return new NullGraphic();}
     };
 

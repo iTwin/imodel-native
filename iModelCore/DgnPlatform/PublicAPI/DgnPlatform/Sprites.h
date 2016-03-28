@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/Sprites.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,10 +20,8 @@ typedef RefCountedPtr<struct RgbaSprite> RgbaSpritePtr;
 struct RgbaSprite : RefCounted<ISprite>
 {
 protected:
-    Point2d         m_size;
     bool            m_isLoaded;
-
-    ByteStream   m_rgbaBuffer;  //  Expanded PNG
+    Render::Image   m_image;  //  Expanded PNG
     DGNPLATFORM_EXPORT virtual void _LoadSprite();
     void PopulateRgbaSpriteFromPngBuffer(Byte const*inputBuffer, size_t numberBytes);
 
@@ -31,7 +29,7 @@ public:
     DGNPLATFORM_EXPORT RgbaSprite();
     DGNPLATFORM_EXPORT ~RgbaSprite();
 
-    Point2d _GetSize() override {_LoadSprite(); return m_size;}
+    Point2d _GetSize() override {_LoadSprite(); Point2d pt; pt.x=m_image.GetWidth(); pt.y=m_image.GetHeight(); return pt;}
     virtual Byte const* _GetRgbaDefinition() override;
     DGNPLATFORM_EXPORT static RgbaSpritePtr CreateFromPngBuffer(Byte const*inputBuffer, size_t numberBytes);
 
@@ -65,7 +63,7 @@ private:
 
 public:
     DGNPLATFORM_EXPORT StaticSprite(Utf8CP nameSpace, Utf8CP spriteName);
-    DGNPLATFORM_EXPORT ISpriteP GetISpriteP ();
+    DGNPLATFORM_EXPORT ISpriteP GetISpriteP();
 };
 
 END_BENTLEY_RENDER_NAMESPACE
