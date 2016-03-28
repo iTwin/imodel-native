@@ -47,26 +47,6 @@ MultiCompileDepends=$(_MakeFileSpec)
 #----------------------------------------------------------------------
 #   ThreeMX Reader
 #----------------------------------------------------------------------
-$(o)openCtm$(oext)                  : $(SrcOpenCtm)openCtm.c $(SrcOpenCtm)openCtm.h ${threeMxSchemaDepends} ${MultiCompileDepends} 
-
-$(o)stream$(oext)                   : $(SrcOpenCtm)stream.c $(SrcOpenCtm)openCtm.h ${threeMxSchemaDepends} ${MultiCompileDepends}
-
-$(o)compressMG1$(oext)              : $(SrcOpenCtm)compressMG1.c ${threeMxSchemaDepends} ${MultiCompileDepends}
-
-$(o)compressMG2$(oext)              : $(SrcOpenCtm)compressMG2.c ${threeMxSchemaDepends} ${MultiCompileDepends}
-
-$(o)compressRAW$(oext)              : $(SrcOpenCtm)compressRAW.c ${threeMxSchemaDepends} ${MultiCompileDepends}
-
-$(o)Alloc$(oext)                    : $(SrcLibLzma)Alloc.c ${threeMxSchemaDepends} ${MultiCompileDepends}
-
-$(o)LzmaDec$(oext)                  : $(SrcLibLzma)LzmaDec.c ${threeMxSchemaDepends} ${MultiCompileDepends}
-
-$(o)LzmaEnc$(oext)                  : $(SrcLibLzma)LzmaEnc.c ${threeMxSchemaDepends} ${MultiCompileDepends}
-
-$(o)LzFind$(oext)                   : $(SrcLibLzma)LzFind.c ${threeMxSchemaDepends} ${MultiCompileDepends}
-
-$(o)LzmaLib$(oext)                  : $(SrcLibLzma)LzmaLib.c ${threeMxSchemaDepends} ${MultiCompileDepends}
-
 $(o)ThreeMxReader$(oext)            : $(SrcThreeMxReader)ThreeMxReader.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
 
 #----------------------------------------------------------------------
@@ -89,6 +69,51 @@ objs =% $(MultiCompileObjectList)
 
 CCPchOpts =
 CPchOpts =
+
+#----------------------------------------------------------------------
+#   Third-party code
+#----------------------------------------------------------------------
+
+# Prefer to disable warnings in third-party code vs. editing it.
+%if ("CLANG" == $(BUILD_TOOLSET))
+    OldLLVMCommonCompOpts =% $(LLVMCommonCompOpts)
+    LLVMCommonCompOpts + -w
+%endif
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)openCtm$(oext)                  : $(SrcOpenCtm)openCtm.c $(SrcOpenCtm)openCtm.h ${threeMxSchemaDepends} ${MultiCompileDepends} 
+
+$(o)stream$(oext)                   : $(SrcOpenCtm)stream.c $(SrcOpenCtm)openCtm.h ${threeMxSchemaDepends} ${MultiCompileDepends}
+
+$(o)compressMG1$(oext)              : $(SrcOpenCtm)compressMG1.c ${threeMxSchemaDepends} ${MultiCompileDepends}
+
+$(o)compressMG2$(oext)              : $(SrcOpenCtm)compressMG2.c ${threeMxSchemaDepends} ${MultiCompileDepends}
+
+$(o)compressRAW$(oext)              : $(SrcOpenCtm)compressRAW.c ${threeMxSchemaDepends} ${MultiCompileDepends}
+
+$(o)Alloc$(oext)                    : $(SrcLibLzma)Alloc.c ${threeMxSchemaDepends} ${MultiCompileDepends}
+
+$(o)LzmaDec$(oext)                  : $(SrcLibLzma)LzmaDec.c ${threeMxSchemaDepends} ${MultiCompileDepends}
+
+$(o)LzmaEnc$(oext)                  : $(SrcLibLzma)LzmaEnc.c ${threeMxSchemaDepends} ${MultiCompileDepends}
+
+$(o)LzFind$(oext)                   : $(SrcLibLzma)LzFind.c ${threeMxSchemaDepends} ${MultiCompileDepends}
+
+$(o)LzmaLib$(oext)                  : $(SrcLibLzma)LzmaLib.c ${threeMxSchemaDepends} ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+nonportObjs=%$(MultiCompileObjectList)
+
+%if ("CLANG" == $(BUILD_TOOLSET))
+    LLVMCommonCompOpts = $(OldLLVMCommonCompOpts)
+%endif
+
+CCPchOpts =
+CPchOpts =
+
+objs + $(nonportObjs)
 
 #--------------------------------------------------------------------------------------
 #   Build the library                                                                                     
@@ -113,4 +138,3 @@ LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(l
 
 
 %include $(sharedMki)LinkLibrary.mki
-

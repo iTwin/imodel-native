@@ -19,9 +19,9 @@
 #define THREEMX_SCHEMA(className)   BENTLEY_THREEMX_SCHEMA_NAME "." className
 
 #ifdef __THREEMX_BUILD__
-#define THREEMX_EXPORT __declspec(dllexport)
+#define THREEMX_EXPORT EXPORT_ATTRIBUTE
 #else
-#define THREEMX_EXPORT __declspec(dllimport)
+#define THREEMX_EXPORT IMPORT_ATTRIBUTE
 #endif
 
 BEGIN_BENTLEY_THREEMX_NAMESPACE
@@ -249,8 +249,10 @@ struct  Util
 {
     static void DisplayNodeFailureWarning(WCharCP fileName) {BeAssert(false);};
     static BeFileName ConstructNodeName(Utf8StringCR childName, BeFileNameCP parentName);
+#if defined (BENTLEYCONFIG_OS_WINDOWS)
     static void GetMemoryStatistics(size_t& memoryLoad, size_t& total, size_t& available);
     static double CalculateResolutionRatio();
+#endif
     static BentleyStatus ParseTileId(Utf8StringCR name, uint32_t& tileX, uint32_t& tileY);
 };
 

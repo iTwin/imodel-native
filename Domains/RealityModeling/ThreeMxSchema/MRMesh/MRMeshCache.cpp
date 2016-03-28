@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "..\ThreeMxSchemaInternal.h"
+#include "../ThreeMxSchemaInternal.h"
 #include    <DgnPlatform/HttpHandler.h>
 
 #define ONE_GB (1024 * 1024 * 1024)
@@ -363,9 +363,9 @@ END_BENTLEY_THREEMX_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Cache::Initialize()
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     static int s_fileThreadCount = 4, s_httpThreadCount = 8;
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     m_cache = &T_HOST.GetRealityDataAdmin().GetCache();
     m_cache->RegisterSource(*FileRealityDataSource::Create(s_fileThreadCount));
 #endif
@@ -486,12 +486,16 @@ void Cache::Debug()
     size_t memoryUsage = GetMemoryUsage(), textureMemoryUsage = GetTextureMemoryUsage(), nodeCount = GetNodeCount();
     printf("Node Count: %zu, Memory Usage: %lf, Texture Memory: %lf \n", nodeCount, (double)memoryUsage / (double)ONE_GB, (double)textureMemoryUsage / (double)ONE_GB);
     printf("Memory/Node: %lf Texture/Node: %lf, Mesh Count: %zu, Max Depth: %zu\n", (double)memoryUsage / (double)(nodeCount * 1024), (double)textureMemoryUsage / (double)(nodeCount * 1024), GetMeshCount(), GetMaxDepth());
+#if defined (BENTLEYCONFIG_OS_WINDOWS)
     printf("Resolution Ratio: %lf\n", Util::CalculateResolutionRatio());
+#endif
 
+#if defined (BENTLEYCONFIG_OS_WINDOWS)
     size_t  load, total, available;
 
     Util::GetMemoryStatistics(load, total, available);
     printf("Memory Load: %zu, Total Memory: %lf, Available Memory: %lf\n", load, (double)total / (double)ONE_GB, (double)available / (double)ONE_GB);
+#endif
     }
 
 /*-----------------------------------------------------------------------------------**//**
@@ -525,7 +529,7 @@ BentleyStatus Cache::SynchronousRead(NodeR node, BeFileNameCR fileName)
 void Cache::QueueChildLoad(Node::MeshNodes const& children, DgnViewportP viewport)
     {
     size_t                  requestsMade = 0;
-    static long             s_timerDuration = 10;
+    // unused - static long             s_timerDuration = 10;
     DgnViewportP        indexedViewport = dynamic_cast <DgnViewportP> (viewport);
 
     for (auto const& child : children)
