@@ -3399,7 +3399,7 @@ StatusInt       ProcessGeographicCitationKey (IGeoTiffKeysList::GeoKeyItem& geoK
                     line = strtok(NULL, seps);
                 }
 
-            delete citationCopy;
+            delete[] citationCopy;
 
             }
         }
