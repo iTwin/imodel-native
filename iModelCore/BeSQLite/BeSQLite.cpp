@@ -3017,9 +3017,9 @@ bool BeDbMutex::IsHeld() {return 0!=sqlite3_mutex_held((sqlite3_mutex*)m_mux);}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-CachedStatement::CachedStatement(Utf8CP sql)
+CachedStatement::CachedStatement(Utf8CP sql, StatementCache const& myCache)
     {
-    m_refCount = 0;
+    m_myCache.store(&myCache);
     size_t len = strlen(sql) + 1;
     m_sql = (Utf8P) sqlite3_malloc((int)len);
     memcpy((char*)m_sql, sql, len);
@@ -3032,7 +3032,8 @@ CachedStatement::~CachedStatement() {sqlite3_free((void*)m_sql);}
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t CachedStatement::Release()
     {
-    if (0 == --m_refCount)
+    uint32_t countWas = m_refCount.DecrementAtomicPost(); 
+    if (1 == countWas)
         {
         delete this;
         return  0;
@@ -3042,13 +3043,13 @@ uint32_t CachedStatement::Release()
     // one else is pointing to this instance. That means that the statement is no longer in use and
     // we should reset it so sqlite won't keep it in the list of active vdbe's. Also, clear its bindings so
     // the next user won't accidentally inherit them.
-    if (1== m_refCount)
+    if (2==countWas && nullptr != m_myCache.load())
         {
         Reset();
         ClearBindings();
         }
 
-    return  m_refCount;
+    return countWas-1;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3063,9 +3064,9 @@ void StatementCache::Empty()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void StatementCache::Dump()
+void StatementCache::Dump() const
     {
-    for (auto it=m_entries.begin(); it<m_entries.end(); ++it)
+    for (auto it=m_entries.begin(); it!=m_entries.end(); ++it)
         {
         printf("%s\n", (*it)->GetSQL());
         }
@@ -3074,9 +3075,9 @@ void StatementCache::Dump()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<CachedStatementPtr>::iterator StatementCache::FindEntry(Utf8CP sql) const
+std::list<CachedStatementPtr>::iterator StatementCache::FindEntry(Utf8CP sql) const
     {
-    for (auto it=m_entries.begin(), end=m_entries.end(); it<end; ++it)
+    for (auto it=m_entries.begin(), end=m_entries.end(); it!=end; ++it)
         {
         if (0==strcmp((*it)->GetSQL(), sql))
             {
@@ -3097,11 +3098,14 @@ CachedStatement& StatementCache::AddStatement(Utf8CP sql) const
     {
     BeDbMutexHolder _v_v(m_mutex);
 
-    if (m_entries.size() >= m_entries.capacity()) // if cache is full, remove oldest entry
-        m_entries.erase(m_entries.begin());
+    if (m_entries.size() >= m_size) // if cache is full, remove oldest entry
+        {
+        m_entries.back()->m_myCache.store(nullptr);
+        m_entries.pop_back();
+        }
 
-    CachedStatement* newEntry = new CachedStatement(sql);
-    m_entries.push_back(newEntry);
+    CachedStatement* newEntry = new CachedStatement(sql, *this);
+    m_entries.push_front(newEntry);
     return  *newEntry;
     }
 
@@ -3131,8 +3135,12 @@ CachedStatement* StatementCache::FindStatement(Utf8CP sql) const
     {
     BeDbMutexHolder _v_v(m_mutex);
 
-    bvector<CachedStatementPtr>::iterator entry = FindEntry(sql);
-    return (entry != m_entries.end()) ? entry->get(): nullptr;
+    auto entry = FindEntry(sql);
+    if (entry == m_entries.end())
+        return nullptr;
+
+    m_entries.splice(m_entries.begin(), m_entries, entry); // move this most-recently-accessed statement to front 
+    return entry->get();
     }
 
 /*---------------------------------------------------------------------------------**//**
