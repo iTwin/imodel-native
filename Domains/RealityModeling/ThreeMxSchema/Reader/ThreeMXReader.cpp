@@ -288,7 +288,7 @@ BentleyStatus Node::Read3MXB(MxStreamBuffer& in, LoadContextCR loadContext)
                         trimesh.m_textureUV =  (FPoint2d const*)ctmGetFloatArray(context, CTM_UV_MAP_1);
                         if (textureIds.find(texName) == textureIds.end())
                             {
-                            LOG_ERROR("Bad texture name %s", texName);
+                            LOG_ERROR("Bad texture name %s", texName.c_str());
                             ctmFreeContext(context);
                             return ERROR;
                             }
@@ -347,7 +347,7 @@ BentleyStatus SceneInfo::Read3MX(MxStreamBuffer& buffer)
     int version = pt.get(ThreeMX::GetSceneVersionTag().c_str(), 0).asInt();
     if (version != 1)
         {
-        LOG_ERROR("Unsupported version of %s", ThreeMX::GetShortName());
+        LOG_ERROR("Unsupported version of %s", ThreeMX::GetShortName().c_str());
         return ERROR;
         }
 

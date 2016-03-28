@@ -19,9 +19,9 @@
 #define THREEMX_SCHEMA(className)   BENTLEY_THREEMX_SCHEMA_NAME "." className
 
 #ifdef __THREEMX_BUILD__
-#define THREEMX_EXPORT __declspec(dllexport)
+#define THREEMX_EXPORT EXPORT_ATTRIBUTE
 #else
-#define THREEMX_EXPORT __declspec(dllimport)
+#define THREEMX_EXPORT IMPORT_ATTRIBUTE
 #endif
 
 BEGIN_BENTLEY_THREEMX_NAMESPACE
