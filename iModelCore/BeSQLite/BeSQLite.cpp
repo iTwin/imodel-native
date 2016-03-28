@@ -330,7 +330,7 @@ BeGuid      Statement::GetValueGuid(int col)    {BeGuid guid; memcpy(&guid, GetV
 DbDupValue  Statement::GetDbValue(int col)
     {
     DbDupValue value(sqlite3_column_value(m_stmt, col));
-    return std::move(value);
+    return value;
     }
 
 int         Statement::GetParameterIndex(Utf8CP name) { return sqlite3_bind_parameter_index(m_stmt, name);}
@@ -4191,7 +4191,7 @@ DateTime DbEmbeddedFileTable::Iterator::Entry::GetLastModified() const
 
     DateTime lastModified;
     DateTime::FromJulianDay(lastModified, m_sql->GetValueDouble(6), DateTime::Info(DateTime::Kind::Utc, DateTime::Component::DateAndTime));
-    return std::move(lastModified);
+    return lastModified;
     }
 
 BeBriefcaseBasedId DbEmbeddedFileTable::Iterator::Entry::GetId() const {return BeBriefcaseBasedId(m_sql->GetValueUInt64(3));}
