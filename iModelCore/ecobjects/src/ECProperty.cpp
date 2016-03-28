@@ -137,7 +137,7 @@ ECObjectsStatus ECProperty::SetMinimumValue(Utf8StringCR min)
 /*---------------------------------------------------------------------------------**//**
 @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECProperty::IsMinimumValueDefined()
+bool ECProperty::IsMinimumValueDefined() const
     {
     if ("" == m_minimumValue)
         return false;
@@ -147,7 +147,7 @@ bool ECProperty::IsMinimumValueDefined()
 /*---------------------------------------------------------------------------------**//**
 @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ECProperty::GetMinimumValue()
+Utf8StringCR ECProperty::GetMinimumValue() const
     {
     return m_minimumValue;
     }
@@ -164,7 +164,7 @@ ECObjectsStatus ECProperty::SetMaximumValue(Utf8StringCR max)
 /*---------------------------------------------------------------------------------**//**
 @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECProperty::IsMaximumValueDefined()
+bool ECProperty::IsMaximumValueDefined() const
     {
     if ("" == m_maximumValue)
         return false;
@@ -174,7 +174,7 @@ bool ECProperty::IsMaximumValueDefined()
 /*---------------------------------------------------------------------------------**//**
 @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ECProperty::GetMaximumValue()
+Utf8StringCR ECProperty::GetMaximumValue() const
     {
     return m_maximumValue;
     }
