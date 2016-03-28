@@ -33,6 +33,7 @@ always:
 %include Configuration/Configuration.mki
 %include Connect/Connect.mki
 %include Licensing/Licensing.mki
+%include IMS/IMS.mki
 
 %include MultiCppCompileGo.mki
 WSClientObjectList = $(MultiCompileObjectList)

@@ -158,6 +158,8 @@
     <ClCompile Include="DgnDbServerClient\DgnDbServerRevision.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerUtils.cpp" />
     <ClCompile Include="DgnDbServerClient\RepositoryInfo.cpp" />
+    <ClCompile Include="Ims\SolrQuery.cpp" />
+    <ClCompile Include="Ims\SolrClient.cpp" />
     <ClCompile Include="Licensing\MobileTracking.cpp" />
     <ClCompile Include="Client\ObjectId.cpp" />
     <ClCompile Include="Connect\Passport.cpp" />
@@ -236,6 +238,8 @@
     <ClInclude Include="Client\ClientConnection.h" />
     <ClInclude Include="Configuration\BuddiError.xliff.h" />
     <ClInclude Include="DgnDbServerClient\DgnDbServerUtils.h" />
+    <ClInclude Include="PublicAPI\WebServices\Ims\SolrQuery.h" />
+    <ClInclude Include="PublicAPI\WebServices\Ims\SolrClient.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbBriefcase.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbClient.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbLocks.h" />
@@ -382,6 +386,7 @@
     <None Include="DgnDbServerClientLib.mke" />
     <None Include="DgnDbServerClientPrewire.mke" />
     <None Include="DgnDbServerClient\DgnDbServerClient.mki" />
+    <None Include="Ims\Ims.mki" />
     <None Include="l10n-WSClient.mke" />
     <None Include="Licensing\Licensing.mki" />
     <None Include="UnZip.py" />

@@ -154,6 +154,8 @@
     <ClInclude Include="Published\WebServices\Connect\StubImsClient.h" />
     <ClInclude Include="Published\WebServices\Connect\ImsClientTests.h" />
     <ClInclude Include="Published\WebServices\Connect\IdentityAuthenticationPersistenceTests.h" />
+    <ClInclude Include="Published\WebServices\IMS\SolrQueryTests.h" />
+    <ClInclude Include="Published\WebServices\IMS\SolrClientTests.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">
@@ -321,6 +323,8 @@
     <ClCompile Include="Published\WebServices\Connect\ConnectSignInManagerTests.cpp" />
     <ClCompile Include="Published\WebServices\Connect\ImsClientTests.cpp" />
     <ClCompile Include="Published\WebServices\Connect\IdentityAuthenticationPersistenceTests.cpp" />
+    <ClCompile Include="Published\WebServices\IMS\SolrQueryTests.cpp" />
+    <ClCompile Include="Published\WebServices\IMS\SolrClientTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTests.mke" />

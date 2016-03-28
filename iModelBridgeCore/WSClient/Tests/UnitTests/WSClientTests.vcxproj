@@ -153,6 +153,8 @@
     <ClInclude Include="Published\WebServices\Client\WSInfoTests.h" />
     <ClInclude Include="Published\WebServices\Client\WSQueryTests.h" />
     <ClInclude Include="Published\WebServices\Client\WSRepositoryClientTests.h" />
+    <ClInclude Include="Published\WebServices\IMS\SolrQueryTests.h" />
+    <ClInclude Include="Published\WebServices\IMS\SolrClientTests.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp" />
@@ -275,6 +277,8 @@
     <ClCompile Include="Published\WebServices\Client\WSInfoTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\WSQueryTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\WSRepositoryClientTests.cpp" />
+    <ClCompile Include="Published\WebServices\IMS\SolrQueryTests.cpp" />
+    <ClCompile Include="Published\WebServices\IMS\SolrClientTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTests.mke" />

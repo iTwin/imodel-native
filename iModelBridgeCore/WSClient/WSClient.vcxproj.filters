@@ -399,6 +399,12 @@
     <ClCompile Include="Connect\ImsClient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Ims\SolrQuery.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Ims\SolrClient.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">
@@ -878,6 +884,12 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\ImsClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Ims\SolrQuery.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Ims\SolrClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="WSClient.PartFile.xml" />
@@ -919,5 +931,6 @@
     <None Include="DgnDbServerClientPrewire.mke" />
     <None Include="Azure\Azure.mki" />
     <None Include="DgnDbServerClient\DgnDbServerClient.mki" />
+    <None Include="Ims\Ims.mki" />
   </ItemGroup>
 </Project>

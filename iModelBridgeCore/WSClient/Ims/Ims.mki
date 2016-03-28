@@ -1,0 +1,26 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: Ims/Ims.mki $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+
+ImsMkiPublicApiDir = $(ClientPublicApiDirectory)Ims/
+ImsMkiSourceDir = $(ClientSourceDirectory)Ims/
+
+#--------------------------------------------------------------------------------------
+#   Set up build dependencies
+#--------------------------------------------------------------------------------------
+ImsMkiHeaders = $(ImsMkiPublicApiDir)SolrClient.h               \
+                $(ImsMkiPublicApiDir)SolrQuery.h
+
+#---------------------------------------------------------------------------------------+
+#   Files to compile 
+#---------------------------------------------------------------------------------------+
+$(o)SolrClient$(oext)                               : $(ImsMkiSourceDir)SolrClient.cpp $(ImsMkiHeaders) ${MultiCompileDepends}
+
+$(o)SolrQuery$(oext)                                : $(ImsMkiSourceDir)SolrQuery.cpp $(ImsMkiHeaders) ${MultiCompileDepends}
+
+
+
