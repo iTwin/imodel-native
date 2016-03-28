@@ -22,12 +22,14 @@ ConnectAuthenticationHandler::ConnectAuthenticationHandler
 (
 Utf8String urlBaseToAuth,
 std::shared_ptr<IConnectTokenProvider> customTokenProvider,
-IHttpHandlerPtr customHttpHandler
+IHttpHandlerPtr customHttpHandler,
+bool shouldUseSAMLAuthorization
 ) :
 AuthenticationHandler(customHttpHandler),
 m_urlBaseToAuth(urlBaseToAuth),
 m_tokenProvider(customTokenProvider ? customTokenProvider : std::make_shared<ConnectTokenProvider>(ImsClient::GetShared())),
-m_thread(WorkerThread::Create("ConnectAuthenticationHandler"))
+m_thread(WorkerThread::Create("ConnectAuthenticationHandler")),
+m_shouldUseSAMLAuthorization(shouldUseSAMLAuthorization)
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -76,7 +78,7 @@ AsyncTaskPtr<AuthenticationHandler::AuthorizationResult> ConnectAuthenticationHa
         if (!IsTokenAuthorization(previousAttempt.GetAuthorization()) &&
             nullptr != token)
             {
-            return AuthenticationHandler::AuthorizationResult::Success(token->ToAuthorizationString());
+            return AuthenticationHandler::AuthorizationResult::Success(m_shouldUseSAMLAuthorization ? token->ToSAMLAuthorizationString() : token->ToAuthorizationString());
             }
 
         token = m_tokenProvider->UpdateToken();
@@ -85,7 +87,7 @@ AsyncTaskPtr<AuthenticationHandler::AuthorizationResult> ConnectAuthenticationHa
             return AuthenticationHandler::AuthorizationResult::Error(AsyncError("Failed to get new token"));
             }
 
-        return AuthenticationHandler::AuthorizationResult::Success(token->ToAuthorizationString());
+        return AuthenticationHandler::AuthorizationResult::Success(m_shouldUseSAMLAuthorization ? token->ToSAMLAuthorizationString() : token->ToAuthorizationString());
         });
     }
 

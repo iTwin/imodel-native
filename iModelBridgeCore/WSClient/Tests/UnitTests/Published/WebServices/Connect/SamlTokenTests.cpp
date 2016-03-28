@@ -56,6 +56,11 @@ TEST_F(SamlTokenTests, ToAuthorizationString_AnyStringPassed_ReturnsFormattedAut
     EXPECT_EQ("token " + Base64Utilities::Encode("TestToken"), SamlToken("TestToken").ToAuthorizationString());
     }
 
+TEST_F(SamlTokenTests, ToSAMLAuthorizationString_AnyStringPassed_ReturnsFormattedAuthorizationHeaderValue)
+    {
+    EXPECT_EQ("SAML " + Base64Utilities::Encode("TestToken"), SamlToken("TestToken").ToSAMLAuthorizationString());
+    }
+
 TEST_F(SamlTokenTests, AsString_AnyStringPassed_ReturnsSame)
     {
     EXPECT_EQ("TestToken", SamlToken("TestToken").AsString());

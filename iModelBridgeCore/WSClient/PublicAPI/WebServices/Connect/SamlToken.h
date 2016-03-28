@@ -48,8 +48,10 @@ struct SamlToken
         WSCLIENT_EXPORT BentleyStatus GetAttributes(bmap<Utf8String, Utf8String>& atributtesOut) const;
         //! Get base 64 encoded certificate
         WSCLIENT_EXPORT BentleyStatus GetX509Certificate(Utf8StringR certOut) const;
-        //! Create string for authroization header
+        //! Create string for authorization header
         WSCLIENT_EXPORT Utf8String ToAuthorizationString() const;
+        //! Create string for SAML authorization header
+        WSCLIENT_EXPORT Utf8String ToSAMLAuthorizationString() const;
         //! Return original token representation
         WSCLIENT_EXPORT Utf8StringCR AsString() const;
         //! Compare contents of two tokens for equality
