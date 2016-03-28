@@ -85,7 +85,13 @@ BentleyStatus Util::ParseTileId(Utf8StringCR name, uint32_t& tileX, uint32_t& ti
         std::string substring = iter->str();
         if (!substring.empty())
             {
+            // *** NEEDS WORK: std::stoi does not seem to be implemented the version of GCC that we use for Android (yet)
+            #ifndef ANDROID
             int val = std::stoi(substring);
+            #else
+            int val;
+            sscanf(substring.c_str(), "%d", &val);
+            #endif
 
             if (count == 0)
                 tileX = (uint32_t)val;
