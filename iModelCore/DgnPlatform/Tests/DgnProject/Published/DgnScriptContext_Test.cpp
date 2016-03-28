@@ -172,7 +172,7 @@ TEST_F(DgnScriptTest, TestEga)
         parms["Z"] = parms["Z"].asDouble() + 1;
         }
     timeIt.Stop();
-    BeTest::Log("DgnScriptTest", BeTest::LogPriority::PRIORITY_ERROR, Utf8PrintfString("%d / %lf seconds = %lf/second\n", niters, timeIt.GetElapsedSeconds(), niters/timeIt.GetElapsedSeconds()));
+    BeTest::Log("DgnScriptTest", BeTest::LogPriority::PRIORITY_ERROR, Utf8PrintfString("%d / %lf seconds = %lf/second\n", niters, timeIt.GetElapsedSeconds(), niters/timeIt.GetElapsedSeconds()).c_str());
 
     // Check that attempting to call a non-registered function fails with a non-zero xstatus
     if (true)
@@ -206,7 +206,7 @@ struct DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHan
         {
         //enum class Category {ReportedByScript, ParseError, Exception, Other};
         static char const* s_errTypes[] = {"ReportedByScript", "ParseError", "Exception", "Other"};
-        FAIL() << (Utf8CP)Utf8PrintfString("JavaScript error %s: %s, %s", s_errTypes[(int)category], description, details);
+        FAIL() << Utf8PrintfString("JavaScript error %s: %s, %s", s_errTypes[(int)category], description, details).c_str();
         }
 
     void _HandleLogMessage(Utf8CP category, DgnPlatformLib::Host::ScriptAdmin::LoggingSeverity sev, Utf8CP msg) override

@@ -28,7 +28,7 @@
         </Bindings>
     </Part>
 
-    <!-- NOTE: Graphite uses "G" as a library suffix to disambiguate from Vancouver libraries -->
+    <!-- NOTE: DgnDb uses "G" as a library suffix to differentiate from DgnV8 libraries -->
     <Part Name="DgnPlatformDLL" BentleyBuildMakeFile="DgnPlatform.mke" ApiNumber="G06">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
@@ -42,6 +42,7 @@
         <SubPart PartName="BeLibJpegTurbo"      PartFile="BeLibJpegTurbo" Repository="Libsrc-libjpegturbo"/>
         <SubPart PartName="Headers"             PartFile="flatbuffers"  Repository="libsrc-flatbuffers"/>
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     Repository="geocoord"/>
+        <!-- <SubPart PartName="OpenCASCADE"         PartFile="OpenCASCADE"  Repository="Libsrc-OpenCASCADE"/> -->
         <SubPart PartName="PublicApi"           PartFile="csmap"        Repository="libsrc-csmap"/>
         <SubPart PartName="GeoCoordDataMinimal" PartFile="csmap"        Repository="libsrc-csmap"/>
         <SubPart PartName="BeJavaScript"        PartFile="BePortableUi" Repository="BePortableUi"/>

@@ -32,7 +32,7 @@ struct TxnMonitorVerifier : TxnMonitor
 {
     bool m_OnTxnClosedCalled;
     bool m_OnTxnReversedCalled;
-    bset<ECInstanceId> m_adds, m_deletes, m_mods;
+    bset<BeInt64Id> m_adds, m_deletes, m_mods;
 
     TxnMonitorVerifier();
     ~TxnMonitorVerifier();
@@ -224,7 +224,7 @@ void TransactionManagerTests::SetUpTestDgnDb(WCharCP destFileName, int initialIn
         SetupProject(L"3dMetricGeneral.idgndb", seedFileName.c_str(), BeSQLite::Db::OpenMode::ReadWrite);
 
         for (auto i = 0; i<initialInstanceCount; ++i)
-            InsertElement(Utf8PrintfString("X%d", i));
+            InsertElement(Utf8PrintfString("X%d", i).c_str());
 
         m_db->SaveChanges();
         m_db->CloseDb();
@@ -499,7 +499,7 @@ TEST_F(Performance_ElementDependencyGraph, Deep_Small)
         for (size_t i = 0; i<s_nElements; ++i)
         {
             previousElement = thisElement;
-            thisElement = InsertElement(Utf8PrintfString("E%d", (int)i));
+            thisElement = InsertElement(Utf8PrintfString("E%d", (int)i).c_str());
 
             if (!firstElement.IsValid())
                 firstElement = thisElement;
@@ -522,7 +522,7 @@ TEST_F(Performance_ElementDependencyGraph, Deep_Small)
 
         timer.Stop();
         LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Inserts", (int)s_nElements);
-        BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Inserts: %lf seconds", timer.GetElapsedSeconds()));
+        BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Inserts: %lf seconds", timer.GetElapsedSeconds()).c_str());
     }
 
     // Modify the first Element => triggers all handlers, in order
@@ -534,7 +534,7 @@ TEST_F(Performance_ElementDependencyGraph, Deep_Small)
         m_db->SaveChanges();
         timer.Stop();
         LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Mod 1st", (int)s_nElements);
-        BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Mod 1st: %lf seconds", timer.GetElapsedSeconds()));
+        BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Mod 1st: %lf seconds", timer.GetElapsedSeconds()).c_str());
         auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
         ASSERT_EQ(rels.size(), s_nElements - 1);
         ASSERT_EQ(rels.front(), firstRel.GetECInstanceId());
@@ -550,7 +550,7 @@ TEST_F(Performance_ElementDependencyGraph, Deep_Small)
         m_db->SaveChanges();
         timer.Stop();
         LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Mod last", (int)s_nElements);
-        BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Mod last: %lf seconds", timer.GetElapsedSeconds()));
+        BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Mod last: %lf seconds", timer.GetElapsedSeconds()).c_str());
         auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
         ASSERT_EQ(rels.size(), 1);
         ASSERT_EQ(rels.front(), lastRel.GetECInstanceId());
@@ -565,7 +565,7 @@ TEST_F(Performance_ElementDependencyGraph, Deep_Small)
         m_db->SaveChanges();
         timer.Stop();
         LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Mod next to last", (int)s_nElements);
-        BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Mod next to last: %lf seconds", timer.GetElapsedSeconds()));
+        BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Mod next to last: %lf seconds", timer.GetElapsedSeconds()).c_str());
         auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
         ASSERT_EQ(rels.size(), 2);
         ASSERT_EQ(rels.back(), lastRel.GetECInstanceId());
@@ -591,7 +591,7 @@ void Performance_ElementDependencyGraph::DoPerformanceShallow(size_t depCount)
 
         for (size_t i = 0; i<depCount; ++i)
         {
-            auto thisElement = InsertElement(Utf8PrintfString("E%d", (int)i));
+            auto thisElement = InsertElement(Utf8PrintfString("E%d", (int)i).c_str());
 
             if (!firstDependentElement.IsValid())
                 firstDependentElement = thisElement;
@@ -610,7 +610,7 @@ void Performance_ElementDependencyGraph::DoPerformanceShallow(size_t depCount)
 
         timer.Stop();
         LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Inserts", (int)depCount);
-        BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Inserts: %lf seconds", timer.GetElapsedSeconds()));
+        BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Inserts: %lf seconds", timer.GetElapsedSeconds()).c_str());
     }
 
     // Modify rootElement => triggers all handlers (in no particular order)
@@ -622,7 +622,7 @@ void Performance_ElementDependencyGraph::DoPerformanceShallow(size_t depCount)
         m_db->SaveChanges();
         timer.Stop();
         LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Mod Root", (int)depCount);
-        BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Mod Root: %lf seconds", timer.GetElapsedSeconds()));
+        BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Mod Root: %lf seconds", timer.GetElapsedSeconds()).c_str());
         auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
         ASSERT_EQ(rels.size(), depCount);
         ASSERT_EQ(rels.front(), firstRel.GetECInstanceId());
@@ -639,7 +639,7 @@ void Performance_ElementDependencyGraph::DoPerformanceShallow(size_t depCount)
         m_db->SaveChanges();
         timer.Stop();
         LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Mod Dependents", (int)depCount);
-        BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Mod dependents: %lf seconds", timer.GetElapsedSeconds()));
+        BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Mod dependents: %lf seconds", timer.GetElapsedSeconds()).c_str());
         auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
         ASSERT_EQ(rels.size(), 2);
     }

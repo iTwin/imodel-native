@@ -24,7 +24,7 @@ struct TxnMonitorVerifier : TxnMonitor
     {
     bool m_OnTxnClosedCalled;
     bool m_OnTxnReversedCalled;
-    bset<ECInstanceId> m_adds, m_deletes, m_mods;
+    bset<BeInt64Id> m_adds, m_deletes, m_mods;
 
     TxnMonitorVerifier();
     ~TxnMonitorVerifier();
@@ -64,7 +64,7 @@ void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, D
 * set up method that opens an existing .dgndb project file after copying it to out
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool isElementIdInKeySet(bset<ECInstanceId> const& theSet, DgnElementId element)
+static bool isElementIdInKeySet(bset<BeInt64Id> const& theSet, DgnElementId element)
     {
     return theSet.find(element) != theSet.end();
     }
@@ -952,7 +952,7 @@ struct DynamicTxnsTest : TransactionManagerTests
         {
         static char s_code = 'A';
         Utf8PrintfString code("%c", s_code++);
-        DgnElementCPtr elem = DgnDbTestFixture::InsertElement(code);
+        DgnElementCPtr elem = DgnDbTestFixture::InsertElement(code.c_str());
         EXPECT_TRUE(elem.IsValid());
         if (saveIfNotInDynamics && !m_db->Txns().InDynamicTxn())
             EXPECT_EQ(BE_SQLITE_OK, m_db->SaveChanges());

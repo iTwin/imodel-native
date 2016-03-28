@@ -524,7 +524,7 @@ public:
         };
 
         //! Get the Id of this aspect. The aspect's Id is always the same as the host element's Id. This is a convenience function that converts from DgnElementId to ECInstanceId.
-        BeSQLite::EC::ECInstanceId GetAspectInstanceId(DgnElementCR el) const {return el.GetElementId();}
+        BeSQLite::EC::ECInstanceId GetAspectInstanceId(DgnElementCR el) const {return BeSQLite::EC::ECInstanceId(el.GetElementId().GetValueUnchecked());}
 
         //! Prepare to insert or update an Aspect for the specified element
         //! @param el   The host element
@@ -986,7 +986,7 @@ public:
 
     //! Get the ECInstanceKey (the element DgnClassId and DgnElementId) of this DgnElement
     //! @see GetElementClassId, GetElementId
-    BeSQLite::EC::ECInstanceKey GetECInstanceKey() const {return BeSQLite::EC::ECInstanceKey(GetElementClassId().GetValue(), GetElementId());}
+    BeSQLite::EC::ECInstanceKey GetECInstanceKey() const {return BeSQLite::EC::ECInstanceKey(GetElementClassId(), BeSQLite::EC::ECInstanceId(GetElementId().GetValue()));}
 
     //! Get a pointer to the ECClass of this DgnElement.
     DGNPLATFORM_EXPORT ECN::ECClassCP GetElementClass() const;

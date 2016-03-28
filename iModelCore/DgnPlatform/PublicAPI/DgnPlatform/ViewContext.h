@@ -171,8 +171,8 @@ public:
     DMap4dCR GetWorldToView() const {return m_worldToView;}
     DMap4dCR GetWorldToNpc() const {return m_worldToNpc;}
     bool GetWantMaterials() {return m_wantMaterials;};
-    void SetSubRectFromViewRect(BSIRectCP viewRect);
-    DGNPLATFORM_EXPORT void SetSubRectNpc(DRange3dCR subRect);
+    DGNPLATFORM_EXPORT void SetSubRectFromViewRect(BSIRectCP viewRect);
+    void SetSubRectNpc(DRange3dCR subRect);
     void SetWantMaterials(bool wantMaterials) {m_wantMaterials = wantMaterials;}
     bool IsUndisplayed(GeometrySourceCR source);
     bool ValidateScanRange() {return m_scanRangeValid ? true : _ScanRangeFromPolyhedron();}
@@ -180,7 +180,8 @@ public:
     bool VisitAllModelElements() {return _VisitAllModelElements();}
     DGNPLATFORM_EXPORT bool VisitAllViewElements(BSIRectCP updateRect=nullptr);
     StatusInt InitContextForView() {return _InitContextForView();}
-    DGNPLATFORM_EXPORT bool IsPointVisible(DPoint3dCR worldPoint, bool boresite);
+    enum class WantBoresite : bool {Yes=true, No=false};
+    DGNPLATFORM_EXPORT bool IsPointVisible(DPoint3dCR worldPoint, WantBoresite boresite, double toerance=1.0e-8);
     DGNPLATFORM_EXPORT Frustum GetFrustum();
     Render::FrustumPlanes const& GetFrustumPlanes() const {return m_frustumPlanes;}
     ScanCriteriaCP GetScanCriteria() const {return &m_scanCriteria;}
@@ -254,11 +255,6 @@ public:
     //!                             closer to the eye are larger than those further from the eye. May be nullptr, in which case the center of the view is used.
     //! @return the length, in the current coordinate system units, of a unit bvector in the x direction in DgnCoordSystem::View, starting at \c origin.
     DGNPLATFORM_EXPORT double GetPixelSizeAtPoint(DPoint3dCP origin) const;
-
-    //@}
-
-    /// @name Query Methods
-    //@{
 
     //! Get the current state of the ViewFlags for this context
     //! When a ViewContext is first attached to a DgnViewport, the ViewFlags are initialized
@@ -395,23 +391,27 @@ struct RenderListContext : RenderContext
     friend struct DgnQueryView;
 
 protected:
+    bool m_wantStroke = true;
     int32_t m_checkStopInterval;
     int32_t m_checkStopElementSkip = 10;
     int32_t m_checkStopElementCount = 0;
     uint64_t m_nextCheckStop;
-    Render::GraphicListR m_list;
+    Render::GraphicListPtr m_list;
     UpdateAbort m_abortReason = UpdateAbort::None;
     UpdatePlan const& m_plan;
+
+    Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize) override {return m_wantStroke ? T_Super::_StrokeGeometry(source,pixelSize) : nullptr;}
     void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
     bool _CheckStop() override;
     int AccumulateMotion();
     bool DoCheckStop();
 
 public:    
+    void EnableCheckStop(int stopInterval, int const* motionTolerance);
+    void SetNoStroking(bool val) {m_wantStroke=!val;}
     UpdatePlan const& GetUpdatePlan() const {return m_plan;}
-    RenderListContext(DgnViewportR vp, DrawPurpose purpose, Render::GraphicListR list, UpdatePlan const& plan) : RenderContext(vp, purpose), m_list(list), m_plan(plan) {}
+    RenderListContext(DgnViewportR vp, DrawPurpose purpose, Render::GraphicList* list, UpdatePlan const& plan) : RenderContext(vp, purpose), m_list(list), m_plan(plan) {}
 };
-
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   10/15
@@ -422,11 +422,7 @@ struct SceneContext : RenderListContext
     friend struct DgnQueryView;
 
 private:
-    bool m_wantStroke = true;
     bool _CheckStop() override;
-    void SetNoStroking(bool val) {m_wantStroke=!val;}
-    Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize) override {return m_wantStroke ? T_Super::_StrokeGeometry(source,pixelSize) : nullptr;}
-    void EnableCheckStop(int stopInterval, int const* motionTolerance);
 
 public:
     SceneContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan);
@@ -439,7 +435,7 @@ struct RedrawContext : RenderListContext
 {
     DEFINE_T_SUPER(RenderListContext);
 public:
-    RedrawContext(DgnViewportR vp, Render::GraphicListR draws, UpdatePlan const& plan) : RenderListContext(vp, DrawPurpose::Redraw, draws, plan) {}
+    RedrawContext(DgnViewportR vp, Render::GraphicListR draws, UpdatePlan const& plan) : RenderListContext(vp, DrawPurpose::Redraw, &draws, plan) {}
 };
 
 //=======================================================================================
@@ -449,7 +445,19 @@ struct ProgressiveContext : RenderListContext
 {
     DEFINE_T_SUPER(RenderListContext);
 public:
-    ProgressiveContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan) : RenderListContext(vp, DrawPurpose::Progressive, scene, plan) {}
+    ProgressiveContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan) : RenderListContext(vp, DrawPurpose::Progressive, &scene, plan) {}
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   10/15
+//=======================================================================================
+struct HealContext : RenderListContext
+{
+    DEFINE_T_SUPER(RenderListContext);
+    void Flush(bool restart);
+public:
+    virtual void _HealElement(DgnElementId);
+    HealContext(DgnViewportR vp, BSIRectCR, UpdatePlan const& plan);
 };
 
 //=======================================================================================
@@ -459,7 +467,7 @@ struct TerrainContext : RenderListContext
 {
     DEFINE_T_SUPER(RenderListContext);
 public:
-    TerrainContext(DgnViewportR vp, Render::GraphicListR terrain, UpdatePlan const& plan) : RenderListContext(vp, DrawPurpose::CreateTerrain, terrain, plan) {}
+    TerrainContext(DgnViewportR vp, Render::GraphicListR terrain, UpdatePlan const& plan) : RenderListContext(vp, DrawPurpose::CreateTerrain, &terrain, plan) {}
 };
 
 //=======================================================================================

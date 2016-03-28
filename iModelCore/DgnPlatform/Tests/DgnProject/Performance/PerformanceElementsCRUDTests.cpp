@@ -85,7 +85,7 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
     ASSERT_TRUE (m_db.IsValid());
     }
 
-int64_t PerformanceElementsCRUDTestFixture::s_elementId = INT64_C(2000000);
+uint64_t PerformanceElementsCRUDTestFixture::s_elementId = UINT64_C(2000000);
 
 Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
     "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
@@ -298,7 +298,7 @@ static bool appendSolidPrimitive(GeometryBuilder& builder, double dz, double rad
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus TestMultiAspect::_LoadProperties(DgnElementCR el)
 {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT TestMultiAspectProperty FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT TestMultiAspectProperty FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()).c_str());
     stmt->BindId(1, GetAspectInstanceId());
     if (BE_SQLITE_ROW != stmt->Step())
         return DgnDbStatus::ReadError;
@@ -1526,7 +1526,7 @@ void PerformanceElementsCRUDTestFixture::GetSelectSql(Utf8CP className, Utf8Stri
         if (!omitClassIdFilter)
             {
             Utf8String classIdFilter;
-            classIdFilter.Sprintf(" AND e.ECClassId=%lld", ecClass->GetId());
+            classIdFilter.Sprintf(" AND e.ECClassId=%llu", ecClass->GetId().GetValue());
             selectSql.append(classIdFilter);
             }
 
@@ -1568,7 +1568,7 @@ void PerformanceElementsCRUDTestFixture::GetUpdateSql(Utf8CP className, Utf8Stri
     if (!omitClassIdFilter)
         {
         Utf8String classIdFilter;
-        classIdFilter.Sprintf(" AND ECClassId=%lld", ecClass->GetId());
+        classIdFilter.Sprintf(" AND ECClassId=%llu", ecClass->GetId().GetValue());
         updateSql.append(classIdFilter);
         }
     }
@@ -1585,7 +1585,7 @@ void PerformanceElementsCRUDTestFixture::GetDeleteSql(Utf8CP className, Utf8Stri
         ECN::ECClassCP ecClass = m_db->Schemas().GetECClass(ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className);
         ASSERT_TRUE(ecClass != nullptr);
         Utf8String classIdFilter;
-        classIdFilter.Sprintf(" AND ECClassId=%lld", ecClass->GetId());
+        classIdFilter.Sprintf(" AND ECClassId=%llu", ecClass->GetId().GetValue());
         deleteSql.append(classIdFilter);
         }
 
@@ -1700,7 +1700,7 @@ void PerformanceElementsCRUDTestFixture::ApiInsertTime(Utf8CP className, int ini
     WString wClassName;
     wClassName.AssignUtf8(className);
     WPrintfString dbName(L"ElementApiInsert%ls_%d.idgndb", wClassName.c_str(), opCount);
-    SetUpTestDgnDb(dbName, className, initialInstanceCount);
+    SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
     bvector<DgnElementPtr> testElements;
     CreateElements(opCount, className, testElements, "ElementApiInstances", true);
@@ -1725,7 +1725,7 @@ void PerformanceElementsCRUDTestFixture::ApiSelectTime(Utf8CP className, int ini
     WString wClassName;
     wClassName.AssignUtf8(className);
     WPrintfString dbName(L"ElementApiSelect%ls_%d.idgndb", wClassName.c_str(), opCount);
-    SetUpTestDgnDb(dbName, className, initialInstanceCount);
+    SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
     const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
     StopWatch timer(true);
@@ -1746,7 +1746,7 @@ void PerformanceElementsCRUDTestFixture::ApiSelectTime(Utf8CP className, int ini
 void PerformanceElementsCRUDTestFixture::ApiUpdateTime(Utf8CP className, int initialInstanceCount, int opCount)
     {
     WPrintfString dbName(L"ElementApiUpdate%ls_%d.idgndb", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
-    SetUpTestDgnDb(dbName, className, initialInstanceCount);
+    SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
     const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
 
@@ -1781,7 +1781,7 @@ void PerformanceElementsCRUDTestFixture::ApiUpdateTime(Utf8CP className, int ini
 void PerformanceElementsCRUDTestFixture::ApiDeleteTime(Utf8CP className, int initialInstanceCount, int opCount)
     {
     WPrintfString dbName(L"ElementApiDelete%ls_%d.idgndb", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
-    SetUpTestDgnDb(dbName, className, initialInstanceCount);
+    SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
     const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
 
@@ -1804,7 +1804,7 @@ void PerformanceElementsCRUDTestFixture::ApiDeleteTime(Utf8CP className, int ini
 void PerformanceElementsCRUDTestFixture::ECSqlInsertTime(Utf8CP className, int initialInstanceCount, int opCount)
     {
     WPrintfString dbName(L"ECSqlInsert%ls_%d.idgndb", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
-    SetUpTestDgnDb(dbName, className, initialInstanceCount);
+    SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
     bvector<DgnElementPtr> testElements;
     CreateElements(opCount, className, testElements, "ECSqlInstances", false);
@@ -1836,7 +1836,7 @@ void PerformanceElementsCRUDTestFixture::ECSqlInsertTime(Utf8CP className, int i
 void PerformanceElementsCRUDTestFixture::ECSqlSelectTime(Utf8CP className, bool omitClassIdFilter, int initialInstanceCount, int opCount)
     {
     WPrintfString dbName(L"ECSqlSelect%ls_%d.idgndb", WString(className, BentleyCharEncoding::Utf8).c_str(), initialInstanceCount);
-    SetUpTestDgnDb(dbName, className, initialInstanceCount);
+    SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
     Utf8String selectECSql;
     GetSelectECSql(className, selectECSql, omitClassIdFilter);
@@ -1870,7 +1870,7 @@ void PerformanceElementsCRUDTestFixture::ECSqlSelectTime(Utf8CP className, bool 
 void PerformanceElementsCRUDTestFixture::ECSqlUpdateTime(Utf8CP className, bool omitClassIdFilter, int initialInstanceCount, int opCount)
     {
     WPrintfString dbName(L"ECSqlUpdate%ls_%d.idgndb", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
-    SetUpTestDgnDb(dbName, className, initialInstanceCount);
+    SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
     ECSqlStatement stmt;
     Utf8String updateECSql;
@@ -1912,7 +1912,7 @@ void PerformanceElementsCRUDTestFixture::ECSqlUpdateTime(Utf8CP className, bool 
 void PerformanceElementsCRUDTestFixture::ECSqlDeleteTime(Utf8CP className, bool omitClassIdFilter, int initialInstanceCount, int opCount)
     {
     WPrintfString dbName(L"ECSqlDelete%ls_%d.idgndb", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
-    SetUpTestDgnDb(dbName, className, initialInstanceCount);
+    SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
     ECSqlStatement stmt;
     Utf8String deleteECSql;
@@ -1947,7 +1947,7 @@ void PerformanceElementsCRUDTestFixture::ECSqlDeleteTime(Utf8CP className, bool 
 void PerformanceElementsCRUDTestFixture::SqlInsertTime(Utf8CP className, int initialInstanceCount, int opCount)
     {
     WPrintfString dbName(L"SqlInsert%ls_%d.idgndb", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
-    SetUpTestDgnDb(dbName, className, initialInstanceCount);
+    SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
     bvector<DgnElementPtr> testElements;
     CreateElements(opCount, className, testElements, "SqlInstances", false);
@@ -1980,7 +1980,7 @@ void PerformanceElementsCRUDTestFixture::SqlInsertTime(Utf8CP className, int ini
 void PerformanceElementsCRUDTestFixture::SqlSelectTime(Utf8CP className, bool asTranslatedByECSql, bool omitClassIdFilter, int initialInstanceCount, int opCount)
     {
     WPrintfString dbName(L"SqlSelect%ls_%d.idgndb", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
-    SetUpTestDgnDb(dbName, className, initialInstanceCount);
+    SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
     BeSQLite::Statement stmt;
     Utf8String selectSql;
@@ -2011,7 +2011,7 @@ void PerformanceElementsCRUDTestFixture::SqlSelectTime(Utf8CP className, bool as
 void PerformanceElementsCRUDTestFixture::SqlUpdateTime(Utf8CP className, bool omitClassIdFilter, int initialInstanceCount, int opCount)
     {
     WPrintfString dbName(L"SqlUpdate%ls_%d.idgndb", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
-    SetUpTestDgnDb(dbName, className, initialInstanceCount);
+    SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
     BeSQLite::Statement stmt;
     Utf8String updateSql;
@@ -2042,7 +2042,7 @@ void PerformanceElementsCRUDTestFixture::SqlUpdateTime(Utf8CP className, bool om
 void PerformanceElementsCRUDTestFixture::SqlDeleteTime(Utf8CP className, bool omitClassIdFilter, int initialInstanceCount, int opCount)
     {
     WPrintfString dbName(L"SqlDelete%ls_%d.idgndb", WString(className, BentleyCharEncoding::Utf8).c_str(), opCount);
-    SetUpTestDgnDb(dbName, className, initialInstanceCount);
+    SetUpTestDgnDb(dbName.c_str(), className, initialInstanceCount);
 
     BeSQLite::Statement stmt;
     Utf8String deleteSql;

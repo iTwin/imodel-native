@@ -33,6 +33,15 @@ DGNPLATFORM_REF_COUNTED_PTR(SpatialViewController)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
+enum class OrientationError
+    {
+    None,
+    Unknown,
+    DeviceRequiresMovement, //! Orientation events are meaningless until the user moves the device
+    TrueNorthNotAvailable,  //! True north requested but available, possibly because wifi is not enabled.
+    NotAvailable,
+    };
+
 enum class OrientationMode
 {
     CompassHeading  = 0,    //!< Use compass heading from device
@@ -94,7 +103,7 @@ public:
 
 
 <h3>Defining a subclass of ViewController</h3>
-To create a subclass of ViewController, create a ViewHandler and implement _SupplyController.
+To create a subclass of ViewController, create a ViewDefinition and implement _SupplyController.
 
 */
 //=======================================================================================
@@ -204,6 +213,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR);
 
     virtual void _CreateScene(SceneContextR context) {_DrawView(context);}
+    virtual void _DoHeal(HealContext&) {}
     virtual void _CreateTerrain(TerrainContextR context) {}
     virtual bool _IsSceneReady() const {return false;}
     virtual void _InvalidateScene() {}

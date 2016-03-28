@@ -242,13 +242,13 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleInfo)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleParams)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleSymb)
-    DEFINE_POINTER_SUFFIX_TYPEDEFS(LineTexture)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Material)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(MultiResImage)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(OvrGraphicParams)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Plan)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Target)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Task)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(System)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Texture)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Window)
 
@@ -256,9 +256,7 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_REF_COUNTED_PTR(GradientSymb)
     DEFINE_REF_COUNTED_PTR(Graphic)
     DEFINE_REF_COUNTED_PTR(GraphicList)
-    DEFINE_REF_COUNTED_PTR(Image)
     DEFINE_REF_COUNTED_PTR(LineStyleInfo)
-    DEFINE_REF_COUNTED_PTR(LineTexture)
     DEFINE_REF_COUNTED_PTR(Material)
     DEFINE_REF_COUNTED_PTR(MultiResImage)
     DEFINE_REF_COUNTED_PTR(Target)
@@ -348,17 +346,7 @@ typedef IdSet<DgnCategoryId> DgnCategoryIdSet;          //!< IdSet with DgnCateg
 typedef IdSet<DgnSubCategoryId> DgnSubCategoryIdSet;    //!< IdSet with DgnSubCategoryId members. @ingroup DgnCategoryGroup
 typedef IdSet<DgnMaterialId> DgnMaterialIdSet;          //!< IdSet with DgnMaterialId members.
 
-//=======================================================================================
-//! A DgnClassId is the local id for an ECClass in a DgnDb.
-//=======================================================================================
-struct DgnClassId : BeSQLite::BeInt64Id
-{
-    DgnClassId() {Invalidate();}
-    explicit DgnClassId(int64_t val) : BeInt64Id(val) {}
-    DgnClassId(DgnClassId&& rhs) : BeInt64Id(std::move(rhs)) {}
-    DgnClassId(DgnClassId const& rhs) : BeInt64Id(rhs) {}
-    DgnClassId& operator=(DgnClassId const& rhs) {m_id = rhs.m_id; return *this;}
-};
+typedef ECN::ECClassId DgnClassId;
 
 //=======================================================================================
 //! The GeometryStreamEntryId class identifies a geometric primitive in a GeometryStream.
@@ -833,6 +821,7 @@ enum class DrawPurpose
     VisibilityCalculation,
     Dynamics,
     Redraw,
+    Heal,
 };
 
 //! Used to communicate the result of handling an event from a GPS.

@@ -46,7 +46,7 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
         {
         out->m_id = id;
         out->m_label.AssignOrClear(stmt.GetValueText(1));
-        out->m_classId = DgnClassId(stmt.GetValueInt64(2));
+        out->m_classId = stmt.GetValueId<DgnClassId>(2);
         out->m_inGuiList = TO_BOOL(stmt.GetValueInt(3));
         out->m_code.From(stmt.GetValueId<DgnAuthorityId>(5), stmt.GetValueText(0), stmt.GetValueText(4));
         }
@@ -187,7 +187,7 @@ DgnModelId      DgnModels::Iterator::Entry::GetModelId() const {Verify(); return
 Utf8CP          DgnModels::Iterator::Entry::GetCodeValue() const {Verify(); return m_sql->GetValueText(1);}
 Utf8CP          DgnModels::Iterator::Entry::GetLabel() const {Verify(); return m_sql->GetValueText(2);}
 bool            DgnModels::Iterator::Entry::GetInGuiList() const { Verify(); return (0 != m_sql->GetValueInt(3)); }
-DgnClassId      DgnModels::Iterator::Entry::GetClassId() const {Verify(); return DgnClassId(m_sql->GetValueInt64(4));}
+DgnClassId      DgnModels::Iterator::Entry::GetClassId() const {Verify(); return m_sql->GetValueId<DgnClassId>(4);}
 Utf8CP          DgnModels::Iterator::Entry::GetCodeNamespace() const {Verify(); return m_sql->GetValueText(5);}
 DgnAuthorityId  DgnModels::Iterator::Entry::GetCodeAuthorityId() const {Verify(); return m_sql->GetValueId<DgnAuthorityId>(6);}
 
@@ -212,9 +212,9 @@ ECSqlClassInfo const& DgnModels::FindClassInfo(DgnModelR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-CachedECSqlStatementPtr DgnModels::GetSelectStmt(DgnModelR model) { return FindClassInfo(model).GetSelectStmt(m_dgndb, model.GetModelId()); }
+CachedECSqlStatementPtr DgnModels::GetSelectStmt(DgnModelR model) { return FindClassInfo(model).GetSelectStmt(m_dgndb, ECInstanceId(model.GetModelId().GetValue())); }
 CachedECSqlStatementPtr DgnModels::GetInsertStmt(DgnModelR model) { return FindClassInfo(model).GetInsertStmt(m_dgndb); }
-CachedECSqlStatementPtr DgnModels::GetUpdateStmt(DgnModelR model) { return FindClassInfo(model).GetUpdateStmt(m_dgndb, model.GetModelId()); }
+CachedECSqlStatementPtr DgnModels::GetUpdateStmt(DgnModelR model) { return FindClassInfo(model).GetUpdateStmt(m_dgndb, ECInstanceId(model.GetModelId().GetValue())); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    11/00
@@ -1469,13 +1469,13 @@ static DgnDbStatus importECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceMod
         }
     Statement sstmt(sourceModel.GetDgnDb(), Utf8PrintfString(
         "SELECT %s FROM %s rel, dgn_Element source, dgn_Element target WHERE rel.%s=source.Id AND rel.%s=target.Id AND source.ModelId=? AND target.ModelId=?",
-        selectList.c_str(), relname, sourcecol, targetcol));
+        selectList.c_str(), relname, sourcecol, targetcol).c_str());
 
     sstmt.BindId(1, sourceModel.GetModelId());
     sstmt.BindId(2, sourceModel.GetModelId());
 
     Statement istmt(destDb, Utf8PrintfString(
-        "INSERT INTO %s (%s) VALUES(%s)", relname, colsList.c_str(), placeholderList.c_str()));
+        "INSERT INTO %s (%s) VALUES(%s)", relname, colsList.c_str(), placeholderList.c_str()).c_str());
 
     StopWatch timer(true);
     DbResult stepResult = sstmt.Step();

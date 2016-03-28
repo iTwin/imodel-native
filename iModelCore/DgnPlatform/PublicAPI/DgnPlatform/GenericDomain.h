@@ -11,10 +11,12 @@
 #include <DgnPlatform/DgnDomain.h>
 
 DGNPLATFORM_TYPEDEFS(GenericSpatialGroup)
+DGNPLATFORM_TYPEDEFS(GenericGraphicGroup2d)
 DGNPLATFORM_TYPEDEFS(GenericSpatialLocation)
 DGNPLATFORM_TYPEDEFS(GenericPhysicalObject)
 
 DGNPLATFORM_REF_COUNTED_PTR(GenericSpatialGroup)
+DGNPLATFORM_REF_COUNTED_PTR(GenericGraphicGroup2d)
 DGNPLATFORM_REF_COUNTED_PTR(GenericSpatialLocation)
 DGNPLATFORM_REF_COUNTED_PTR(GenericPhysicalObject)
 
@@ -26,6 +28,7 @@ DGNPLATFORM_REF_COUNTED_PTR(GenericPhysicalObject)
 #define GENERIC_CLASSNAME_PhysicalObject    "PhysicalObject"
 #define GENERIC_CLASSNAME_SpatialLocation   "SpatialLocation"
 #define GENERIC_CLASSNAME_SpatialGroup      "SpatialGroup"
+#define GENERIC_CLASSNAME_GraphicGroup2d    "GraphicGroup2d"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -99,7 +102,7 @@ public:
 //! A SpatialElement that groups other SpatialElements using the ElementGroupsMembers relationship
 // @bsiclass                                                    Shaun.Sewall    12/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialGroup : SpatialElement, IElementGroupOf<SpatialElement>
+struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialGroup : SpatialElement, IElementGroupOf<GeometricElement3d>
 {
     DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASSNAME_SpatialGroup, SpatialElement)
 
@@ -110,6 +113,22 @@ protected:
 public:
     explicit GenericSpatialGroup(CreateParams const& params) : T_Super(params) {}
 };
+
+//=======================================================================================
+//! A GraphicalElement2d that groups other GraphicalElement2d using the ElementGroupsMembers relationship
+// @bsiclass                                                   Carole.MacDonald            03/2016
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GenericGraphicGroup2d : GraphicalElement2d, IElementGroupOf<GraphicalElement2d>
+    {
+    DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASSNAME_GraphicGroup2d, GraphicalElement2d)
+
+    protected:
+        Dgn::IElementGroupCP _ToIElementGroup() const override final { return this; }
+        virtual Dgn::DgnElementCP _ToGroupElement() const override final { return this; }
+
+    public:
+        explicit GenericGraphicGroup2d(CreateParams const& params) : T_Super(params) {}
+    };
 
 //=======================================================================================
 //! The namespace that only contains ElementHandlers for the GenericDomain
