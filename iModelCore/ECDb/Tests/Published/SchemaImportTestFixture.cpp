@@ -145,7 +145,7 @@ std::vector<SchemaImportTestFixture::IndexInfo> SchemaImportTestFixture::Retriev
         indices.push_back(SchemaImportTestFixture::IndexInfo(stmt.GetValueText(0), tableName, stmt.GetValueText(1)));
         }
 
-    return std::move(indices);
+    return indices;
     }
 
 //---------------------------------------------------------------------------------------

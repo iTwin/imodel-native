@@ -513,7 +513,7 @@ DbDupValue TableMap::GetValue(Utf8StringCR columnName, ECInstanceId instanceId) 
         return statement->GetDbValue(0);
 
     BeAssert(result == BE_SQLITE_DONE);
-    return std::move(DbDupValue(nullptr));
+    return DbDupValue(nullptr);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1512,13 +1512,13 @@ void ChangeExtractor::RecordColumnValue(ChangeSummary::InstanceCR instance, Utf8
 
         if (dbOpcode == DbOpcode::Insert && !hasNewValue)
             {
-            newDupValue = std::move(m_tableMap->GetValue(columnName, instanceId));
+            newDupValue = m_tableMap->GetValue(columnName, instanceId);
             newValue = DbValue(newDupValue.GetSqlValueP());
             hasNewValue = newValue.IsValid() && !newValue.IsNull();
             }
         else if (dbOpcode == DbOpcode::Delete && !hasOldValue)
             {
-            oldDupValue = std::move(m_tableMap->GetValue(columnName, instanceId));
+            oldDupValue = m_tableMap->GetValue(columnName, instanceId);
             oldValue = DbValue(oldDupValue.GetSqlValueP());
             hasOldValue = oldValue.IsValid() && !oldValue.IsNull();
             }
@@ -1772,12 +1772,12 @@ DbDupValue ChangeSummary::Instance::GetOldValue(Utf8CP accessString) const
        SetupValuesTableSelectStatement(accessString);
        DbResult result = m_valuesTableSelect->Step();
        if (result == BE_SQLITE_ROW)
-           return std::move(m_valuesTableSelect->GetDbValue(0));
+           return m_valuesTableSelect->GetDbValue(0);
        BeAssert(result == BE_SQLITE_DONE);
 	   }
 	
     DbDupValue invalidValue(nullptr);
-    return std::move(invalidValue);
+    return invalidValue;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1792,12 +1792,12 @@ DbDupValue ChangeSummary::Instance::GetNewValue(Utf8CP accessString) const
         SetupValuesTableSelectStatement(accessString);
         DbResult result = m_valuesTableSelect->Step();
         if (result == BE_SQLITE_ROW)
-            return std::move(m_valuesTableSelect->GetDbValue(1));
+            return m_valuesTableSelect->GetDbValue(1);
         BeAssert(result == BE_SQLITE_DONE);
         }
 
     DbDupValue invalidValue(nullptr);
-    return std::move(invalidValue);
+    return invalidValue;
     }
 
 //---------------------------------------------------------------------------------------

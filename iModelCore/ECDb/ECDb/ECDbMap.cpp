@@ -891,7 +891,7 @@ std::vector<ECClassCP> ECDbMap::GetClassesFromRelationshipEnd (ECRelationshipCon
         gatherClassesDelegate (classes, ecClassP, isPolymorphic);
         }
     
-    return std::move (classes);
+    return classes;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -966,7 +966,7 @@ std::set<ClassMap const*> ECDbMap::GetClassMapsFromRelationshipEnd(ECRelationshi
             }
         }
 
-    return std::move(classMaps);
+    return classMaps;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1455,7 +1455,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(ClassMap const& c
         vp->GenerateClassIdFilter(lwmc.GetClassesForTable(*table));
         }
 
-    return std::move(storageDescription);
+    return storageDescription;
     }
 
 

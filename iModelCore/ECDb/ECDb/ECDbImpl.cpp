@@ -145,7 +145,7 @@ void ECDb::Impl::ClearECDbCache () const
 //---------------+---------------+---------------+---------------+---------------+------
 std::vector<BeBriefcaseBasedIdSequence const*> ECDb::Impl::GetSequences() const
     {
-    return std::move(std::vector<BeBriefcaseBasedIdSequence const*>  {
+    return std::vector<BeBriefcaseBasedIdSequence const*>  {
                                             &m_ecInstanceIdSequence,
                                             &m_ecSchemaIdSequence,
                                             &m_ecClassIdSequence,
@@ -156,7 +156,7 @@ std::vector<BeBriefcaseBasedIdSequence const*> ECDb::Impl::GetSequences() const
                                             &m_constraintIdSequence,
                                             &m_tableIdSequence,
                                             &m_propertypathIdSequence,
-                                            &m_indexIdSequence});
+                                            &m_indexIdSequence};
     }
 
 //---------------------------------------------------------------------------------------

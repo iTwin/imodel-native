@@ -185,7 +185,7 @@ Utf8String UserECDbMapStrategy::ToString() const
         str.append(std::move(snip));
         }
 
-    return std::move(str);
+    return str;
     }
 
 //---------------------------------------------------------------------------------
@@ -393,7 +393,7 @@ Utf8String ECDbMapStrategy::ToString() const
         str.append(snip);
         }
 
-    return std::move(str);
+    return str;
     }
 
 

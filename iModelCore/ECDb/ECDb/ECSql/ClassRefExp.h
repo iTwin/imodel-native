@@ -152,7 +152,7 @@ public:
 
         fullName.append (m_className);
 
-        return std::move (fullName);
+        return fullName;
         }
 
     Utf8StringCR GetClassName() const { return m_className;}

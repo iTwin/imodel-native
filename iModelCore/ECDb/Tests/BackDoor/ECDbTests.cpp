@@ -34,7 +34,7 @@ ECDbIssue ECDbIssueListener::GetIssue() const
     ECDbIssue copy(m_issue);
     //reset cached issue before returning
     m_issue = ECDbIssue();
-    return std::move(copy);
+    return copy;
     }
 
 //************************************************************************************
@@ -75,7 +75,7 @@ BeFileName ECDbTestUtility::BuildECDbPath(Utf8CP ecdbFileName)
     BeFileName ecdbPath;
     BeTest::GetHost().GetOutputRoot(ecdbPath);
     ecdbPath.AppendToPath(WString(ecdbFileName, BentleyCharEncoding::Utf8).c_str());
-    return std::move(ecdbPath);
+    return ecdbPath;
     }
 
 //---------------------------------------------------------------------------------------

@@ -16,7 +16,7 @@ std::vector<ECDbSqlColumn const*> SystemPropertyMap::ToVector(ECDbSqlColumn cons
     {
     std::vector<ECDbSqlColumn const*> tmp;
     tmp.push_back(column);
-    return std::move(tmp);
+    return tmp;
     }
 
 //----------------------------------------------------------------------------------
@@ -192,7 +192,7 @@ NativeSqlBuilder::List ECInstanceIdRelationshipConstraintPropertyMap::_ToNativeS
 
     NativeSqlBuilder::List nativeSqlSnippets;
     nativeSqlSnippets.push_back (std::move (nativeSqlSnippet));
-    return std::move (nativeSqlSnippets);
+    return nativeSqlSnippets;
     }
 
 //----------------------------------------------------------------------------------
@@ -300,7 +300,7 @@ NativeSqlBuilder::List ECClassIdRelationshipConstraintPropertyMap::_ToNativeSql 
 
     NativeSqlBuilder::List nativeSqlSnippets;
     nativeSqlSnippets.push_back (std::move (nativeSqlSnippet));
-    return std::move (nativeSqlSnippets);
+    return nativeSqlSnippets;
     }
 
 //----------------------------------------------------------------------------------

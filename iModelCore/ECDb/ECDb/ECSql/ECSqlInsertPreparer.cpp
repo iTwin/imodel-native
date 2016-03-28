@@ -331,7 +331,7 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
                 return;
                 }
 
-            nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(move(ecInstanceIdPropMap->ToNativeSql(nullptr, ECSqlType::Insert, false)));
+            nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(ecInstanceIdPropMap->ToNativeSql(nullptr, ECSqlType::Insert, false));
             nativeSqlSnippets.m_valuesNativeSqlSnippets.push_back(NativeSqlBuilder::List {NativeSqlBuilder()});
             }
         else if (ecinstanceIdMode == ECInstanceIdMode::UserProvidedNull)

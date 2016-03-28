@@ -64,8 +64,9 @@ struct ChangeSummary : NonCopyableClass
     struct Options
         {
         private:
-            bool m_includeRelationshipInstances = true;
+            bool m_includeRelationshipInstances;
         public:
+            Options() : m_includeRelationshipInstances(true) {}
             void SetIncludeRelationshipInstances(bool value) { m_includeRelationshipInstances = value; }
             bool GetIncludeRelationshipInstances() const { return m_includeRelationshipInstances; }
         };
@@ -231,10 +232,10 @@ struct ChangeSummary : NonCopyableClass
             Utf8CP GetAccessString() const { return m_sql->GetValueText(0); }
 
             //! Gets the old value
-            DbDupValue GetOldValue() const { return std::move(m_sql->GetDbValue(1)); }
+            DbDupValue GetOldValue() const { return m_sql->GetDbValue(1); }
 
             //! Gets the new value
-            DbDupValue GetNewValue() const { return std::move(m_sql->GetDbValue(2)); }
+            DbDupValue GetNewValue() const { return m_sql->GetDbValue(2); }
 
             Entry const& operator*() const { return *this; }
         };

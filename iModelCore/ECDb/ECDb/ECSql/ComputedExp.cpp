@@ -30,7 +30,7 @@ Utf8String ComputedExp::_ToECSql() const
     if (HasParentheses())
         ecsql.append(")");
 
-    return std::move(ecsql);
+    return ecsql;
     }
 
 //*************************** BooleanBinaryExp ******************************************

@@ -275,7 +275,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
 
     info->m_joinedTableECSql = joinedTableECSQL.ToString();
     info->m_parentOfJoinedTableECSql = parentOfJoinedTableECSQL.ToString();
-    return std::move(info);
+    return info;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -380,7 +380,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
         info->m_parentOfJoinedTableECSql = parentOfJoinedTableECSQL.ToString();
         }
 
-    return std::move(info);
+    return info;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -399,7 +399,7 @@ NativeSqlBuilder ECSqlPrepareContext::JoinedTableInfo::BuildAssignmentExpression
         out.Append(*propI).Append("=").Append(*valueI);      
         }
 
-    return std::move(out);
+    return out;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -442,7 +442,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
                 }
             }
 
-        return std::move(info);
+        return info;
         }
 
     return nullptr;

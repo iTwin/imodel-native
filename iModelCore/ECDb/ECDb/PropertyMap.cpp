@@ -252,7 +252,7 @@ NativeSqlBuilder::List PropertyMap::_ToNativeSql(Utf8CP classIdentifier, ECSqlTy
         nativeSqlSnippets.push_back (std::move (sqlSnippet));
         }
 
-    return std::move (nativeSqlSnippets);
+    return nativeSqlSnippets;
     }
 
 /*---------------------------------------------------------------------------------------
@@ -975,7 +975,7 @@ Utf8String StructArrayJsonPropertyMap::_ToString() const
     Utf8String str;
     str.Sprintf("StructArrayJsonPropertyMap: ECProperty: %s.%s, Column name: %s", GetProperty().GetClass().GetFullName(),
                 GetProperty().GetName().c_str(), GetColumn().GetName().c_str());
-    return std::move(str);
+    return str;
     }
 
 

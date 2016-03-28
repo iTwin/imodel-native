@@ -330,7 +330,7 @@ NativeSqlBuilder::List NativeSqlBuilder::FlattenJaggedList (ListOfLists const& l
         flattenedList.insert (flattenedList.end (), innerList.begin (), innerList.end ());
         }
 
-    return move (flattenedList);
+    return flattenedList;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -83,7 +83,7 @@ Utf8String OptionsExp::_ToECSql() const
         ecsql.append(" ").append(child->ToECSql());
         }
 
-    return std::move(ecsql);
+    return ecsql;
     }
 
 
@@ -98,7 +98,7 @@ Utf8String OptionExp::_ToECSql() const
 
     Utf8String ecsql(m_name);
     ecsql.append("=").append(m_val);
-    return std::move(ecsql);
+    return ecsql;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

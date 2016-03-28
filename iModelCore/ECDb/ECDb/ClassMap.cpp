@@ -643,7 +643,7 @@ std::vector<ClassMap const*> ClassMap::GetDerivedClassMaps() const
         derivedClassMaps.push_back(derivedClassMap);
         }
 
-    return std::move(derivedClassMaps);
+    return derivedClassMaps;
     }
 
 
@@ -836,7 +836,7 @@ Utf8String ClassMap::GetPersistedViewName() const
     {
     Utf8String name;
     name.Sprintf("_%s_%s", GetClass().GetSchema().GetNamespacePrefix().c_str(), GetClass().GetName().c_str());
-    return std::move(name);
+    return name;
     }
 
 //---------------------------------------------------------------------------------------

@@ -278,7 +278,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType ecsqlType, 
         ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::NotYetSupported);
         }
 
-    return std::move (dataset);
+    return dataset;
     }
 
 //---------------------------------------------------------------------------------------
@@ -332,7 +332,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereCommonGeometryTests (ECSqlType ecs
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
         }
 
-    return std::move (dataset);
+    return dataset;
     }
 
 //---------------------------------------------------------------------------------------

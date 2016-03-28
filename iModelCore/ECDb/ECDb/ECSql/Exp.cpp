@@ -26,7 +26,7 @@ std::set<ECDbSqlTable const*> Exp::GetReferencedTables() const
     if (!this->IsComplete())
         {
         BeAssert(false && "This operation is supported on resolved expressions");
-        return std::move(tmp);
+        return tmp;
         }
 
     auto expList = Find(Type::PropertyName, true);
@@ -45,7 +45,7 @@ std::set<ECDbSqlTable const*> Exp::GetReferencedTables() const
             }
         }
 
-    return std::move(tmp);
+    return tmp;
     }
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                    09/2015
@@ -96,7 +96,7 @@ std::vector<Exp const*> Exp::Find( Exp::Type ofType, bool recusive) const
     else
         FindInDirectDecedentOnly(tmp, ofType);
 
-    return std::move(tmp);
+    return tmp;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -536,7 +536,7 @@ Utf8String PropertyPath::ToString(bool escape, bool includeArrayIndexes /*= true
         isFirstLoc = false;
         }
 
-    return std::move(str);
+    return str;
     }
 
 //-----------------------------------------------------------------------------------------

@@ -723,7 +723,7 @@ Exp::FinalizeParseStatus SingleSelectStatementExp::_FinalizeParsing(ECSqlParseCo
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
-        m_finalizeParsingArgCache = move (GetFrom()->FindRangeClassRefExpressions ());
+        m_finalizeParsingArgCache = GetFrom()->FindRangeClassRefExpressions ();
         ctx.PushFinalizeParseArg (m_finalizeParsingArgCache.get ());
         return FinalizeParseStatus::NotCompleted;
         }

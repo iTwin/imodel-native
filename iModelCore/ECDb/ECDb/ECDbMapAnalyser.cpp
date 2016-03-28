@@ -419,7 +419,7 @@ std::vector<ECDbMapAnalyser::Storage const*> ECDbMapAnalyser::Class::GetNoneVirt
         tmp.push_back (key.first);
         }
 
-    return std::move (tmp);
+    return tmp;
     }
 
 //---------------------------------------------------------------------------------------
@@ -553,7 +553,7 @@ std::set<ECDbMapAnalyser::Storage const*> ECDbMapAnalyser::Relationship::EndPoin
             if (!s1.first->IsVirtual ())
                 storages.insert (s1.first);
         }
-    return std::move (storages);
+    return storages;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1056,7 +1056,7 @@ NativeSqlBuilder ECDbMapAnalyser::GetClassFilter(std::pair<ECDbMapAnalyser::Stor
         sql.Append(")");
         }
 
-    return std::move(sql);
+    return sql;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1267,7 +1267,7 @@ SqlViewBuilder ECDbMapAnalyser::BuildView(Class& nclass)
         builder.MarkAsNullView();
         }
 
-    return std::move(builder);
+    return builder;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1375,7 +1375,7 @@ BentleyStatus ECDbMapAnalyser::Analyse(bool applyChanges)
             continue;
 
         ViewInfo& viewInfo = m_viewInfos[&ecclass];
-        viewInfo.GetViewR() = std::move(BuildView(ecclass));
+        viewInfo.GetViewR() = BuildView(ecclass);
         BuildPolymorphicDeleteTrigger(ecclass);
         BuildPolymorphicUpdateTrigger(ecclass);
         }

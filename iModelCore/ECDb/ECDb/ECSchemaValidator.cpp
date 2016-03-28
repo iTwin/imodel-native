@@ -17,7 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 bool ECSchemaValidator::ValidateSchemas(ECSchemaValidationResult& result, bvector<ECN::ECSchemaP> const& schemas)
     {
     std::vector<std::unique_ptr<ECSchemaValidationRule>> validationTasks;
-    validationTasks.push_back(std::move(std::unique_ptr<ECSchemaValidationRule>(new SchemaNamespacePrefixRule())));
+    validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new SchemaNamespacePrefixRule()));
 
     bool valid = true;
     for (ECSchemaCP schema : schemas)
@@ -49,8 +49,8 @@ bool ECSchemaValidator::ValidateSchemas(ECSchemaValidationResult& result, bvecto
 bool ECSchemaValidator::ValidateSchema (ECSchemaValidationResult& result, ECN::ECSchemaCR schema)
     {
     std::vector<std::unique_ptr<ECSchemaValidationRule>> validationTasks;
-    validationTasks.push_back(std::move(std::unique_ptr<ECSchemaValidationRule> (new CaseInsensitiveClassNamesRule ())));
-    validationTasks.push_back(std::move(std::unique_ptr<ECSchemaValidationRule>(new ValidRelationshipConstraintsRule())));
+    validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule> (new CaseInsensitiveClassNamesRule ()));
+    validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new ValidRelationshipConstraintsRule()));
 
     bool valid = true;
     for (ECClassCP ecClass : schema.GetClasses ())
@@ -82,8 +82,8 @@ bool ECSchemaValidator::ValidateSchema (ECSchemaValidationResult& result, ECN::E
 bool ECSchemaValidator::ValidateClass (ECSchemaValidationResult& result, ECN::ECClassCR ecClass)
     {
     std::vector<std::unique_ptr<ECSchemaValidationRule>> validationTasks;
-    validationTasks.push_back (std::move (std::unique_ptr<ECSchemaValidationRule> (new CaseInsensitivePropertyNamesRule (ecClass))));
-    validationTasks.push_back (std::move (std::unique_ptr<ECSchemaValidationRule> (new NoPropertiesOfSameTypeAsClassRule (ecClass))));
+    validationTasks.push_back (std::unique_ptr<ECSchemaValidationRule> (new CaseInsensitivePropertyNamesRule (ecClass)));
+    validationTasks.push_back (std::unique_ptr<ECSchemaValidationRule> (new NoPropertiesOfSameTypeAsClassRule (ecClass)));
 
     bool valid = true;
     for (ECPropertyCP prop : ecClass.GetProperties (true))
@@ -228,7 +228,7 @@ std::unique_ptr<ECSchemaValidationRule::Error> CaseInsensitiveClassNamesRule::_G
     if (m_error->GetInvalidClasses ().empty ())
         return nullptr;
 
-    return std::move (m_error);
+    return std::move(m_error);
     }
 
 
@@ -272,7 +272,7 @@ Utf8String CaseInsensitiveClassNamesRule::Error::_ToString () const
 
     Utf8String str;
     str.Sprintf ("ECSchema '%s' contains ECClasses for which names only differ by case. ECDb does not support case sensitive class names. Conflicting ECClasses: %s.", schema->GetName ().c_str (), violatingClassesStr.c_str ());
-    return std::move (str);
+    return str;
     }
 
 
@@ -325,7 +325,7 @@ std::unique_ptr<ECSchemaValidationRule::Error> CaseInsensitivePropertyNamesRule:
     if (m_error->GetInvalidProperties ().empty ())
         return nullptr;
 
-    return std::move (m_error);
+    return std::move(m_error);
     }
 
 
@@ -364,7 +364,7 @@ Utf8String CaseInsensitivePropertyNamesRule::Error::_ToString () const
 
     Utf8String str;
     str.Sprintf ("ECClass '%s' contains ECProperties for which names only differ by case. ECDb does not support case sensitive property names. Conflicting ECProperties: %s.", m_ecClass.GetFullName (), violatingPropsStr.c_str ());
-    return std::move (str);
+    return str;
     }
 
 
@@ -415,7 +415,7 @@ std::unique_ptr<ECSchemaValidationRule::Error> NoPropertiesOfSameTypeAsClassRule
     if (m_error->GetInvalidProperties ().empty ())
         return nullptr;
 
-    return std::move (m_error);
+    return std::move(m_error);
     }
 
 //**********************************************************************
@@ -446,7 +446,7 @@ Utf8String NoPropertiesOfSameTypeAsClassRule::Error::_ToString () const
     Utf8String str;
     str.Sprintf (strTemplate, m_ecClass.GetFullName (), violatingPropsStr.c_str ());
 
-    return std::move (str);
+    return str;
     }
 
 //**********************************************************************
@@ -575,7 +575,7 @@ Utf8String ValidRelationshipConstraintsRule::Error::_ToString() const
         isFirstItem = false;
         }
 
-    return std::move(str);
+    return str;
     }
 
 
@@ -643,7 +643,7 @@ Utf8String SchemaNamespacePrefixRule::Error::_ToString() const
         isFirstItem = false;
         }
 
-    return std::move(error);
+    return error;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
