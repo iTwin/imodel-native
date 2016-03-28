@@ -96,12 +96,12 @@
         </Bindings>
     </Part>
     
-    <Part Name="ThreeMx" BMakeFile="ThreeMxSchema/ThreeMxSchema.mke">
+    <Part Name="ThreeMx" BentleyBuildMakeFile="ThreeMxSchema/ThreeMxSchema.mke">
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="ThreeMxPublicAPI"/>
         <Bindings>
-            <Assemblies ProductDirectoryName="ThreeMxAssemblies" Required="false">Delivery/ThreeMx.dll</Assemblies>
-            <Libs>delivery/$(shlibprefix)ThreeMx$(libext)</Libs> 
+            <Assemblies ProductDirectoryName="ThreeMxAssemblies" Required="false">Delivery/$(shlibprefix)ThreeMx$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)ThreeMx$(libext)</Libs> 
         </Bindings>
     </Part>
 

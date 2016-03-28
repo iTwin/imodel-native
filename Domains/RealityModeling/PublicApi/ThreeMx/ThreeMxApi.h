@@ -249,8 +249,10 @@ struct  Util
 {
     static void DisplayNodeFailureWarning(WCharCP fileName) {BeAssert(false);};
     static BeFileName ConstructNodeName(Utf8StringCR childName, BeFileNameCP parentName);
+#if defined (BENTLEYCONFIG_OS_WINDOWS)
     static void GetMemoryStatistics(size_t& memoryLoad, size_t& total, size_t& available);
     static double CalculateResolutionRatio();
+#endif
     static BentleyStatus ParseTileId(Utf8StringCR name, uint32_t& tileX, uint32_t& tileY);
 };
 

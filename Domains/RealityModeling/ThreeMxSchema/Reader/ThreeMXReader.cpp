@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "..\ThreeMxSchemaInternal.h"
+#include "../ThreeMxSchemaInternal.h"
 
 #include "openctm/openctm.h"
 

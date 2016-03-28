@@ -5,9 +5,12 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "..\ThreeMxSchemaInternal.h"
+#include "../ThreeMxSchemaInternal.h"
 
+#if defined (BENTLEYCONFIG_OS_WINDOWS)
 #include <windows.h>
+#endif
+
 #include <regex>
 
 /*-----------------------------------------------------------------------------------**//**
@@ -30,6 +33,7 @@ BeFileName Util::ConstructNodeName(Utf8StringCR childName, BeFileNameCP parentNa
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if defined (BENTLEYCONFIG_OS_WINDOWS)
 void Util::GetMemoryStatistics(size_t& memoryLoad, size_t& total, size_t& available)
     {
     MEMORYSTATUSEX statex;
@@ -60,6 +64,7 @@ double Util::CalculateResolutionRatio()
 
     return (100.0 - (double) s_memoryThresholdPercent) / (100.0 - (double) statex.dwMemoryLoad);
     }
+#endif
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                              Nicholas.Woodfield     01/2016

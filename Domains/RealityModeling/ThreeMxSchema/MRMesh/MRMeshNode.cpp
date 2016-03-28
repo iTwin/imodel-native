@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "..\ThreeMxSchemaInternal.h"
+#include "../ThreeMxSchemaInternal.h"
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
@@ -311,9 +311,14 @@ bool Node::TestVisibility(bool& isUnderMaximumSize, ViewContextR viewContext, Lo
         }
     else
         {
+#if defined (BENTLEYCONFIG_OS_WINDOWS)
         double pixelSize  =  m_info.m_radius / viewContext.GetPixelSizeAtPoint(&m_info.m_center);
 
         isUnderMaximumSize = pixelSize < Util::CalculateResolutionRatio() * m_info.m_dMax;
+#else
+        // WIP_NONPORT
+        isUnderMaximumSize = true;
+#endif
         }
     return true;
     }
