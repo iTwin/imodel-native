@@ -200,80 +200,80 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChang
     if (propertyChange.GetTypeName().Exist())
         {
         return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::Type is not supported. Failed on ECProperty %s.%s.",
-                    oldProperty.GetClass().GetFullName(), oldProperty.GetName());
+                    oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
         }
 
     //if (propertyChange.GetMaximumValue().Exist())
     //    {
     //    return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::MaximumValue is not supported. Failed on ECProperty %s.%s.",
-    //                oldProperty.GetClass().GetFullName(), oldProperty.GetName());
+    //                oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
     //    }
     //if (propertyChange.GetMinimumValue().Exist())
     //    {
     //    return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::MinimumValue is not supported. Failed on ECProperty %s.%s.",
-    //                oldProperty.GetClass().GetFullName(), oldProperty.GetName());
+    //                oldProperty.GetClass().GetFullName(), oldProperty.GetName()).c_str();
     //    }
     if (propertyChange.IsStruct().Exist())
         {
         return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::IsStruct is not supported. Failed on ECProperty %s.%s.",
-                    oldProperty.GetClass().GetFullName(), oldProperty.GetName());
+                    oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
         }
     if (propertyChange.IsStructArray().Exist())
         {
         return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::IsStructArray is not supported. Failed on ECProperty %s.%s.",
-                    oldProperty.GetClass().GetFullName(), oldProperty.GetName());
+                    oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
         }
     if (propertyChange.IsPrimitive().Exist())
         {
         return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::IsPrimitive is not supported. Failed on ECProperty %s.%s.",
-                    oldProperty.GetClass().GetFullName(), oldProperty.GetName());
+                    oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
         }
     if (propertyChange.IsPrimitiveArray().Exist())
         {
         return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::IsPrimitiveArray is not supported. Failed on ECProperty %s.%s.",
-                    oldProperty.GetClass().GetFullName(), oldProperty.GetName());
+                    oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
         }
     if (propertyChange.GetExtendedTypeName().Exist())
         {
         return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::ExtendedTypeName is not supported. Failed on ECProperty %s.%s.",
-                    oldProperty.GetClass().GetFullName(), oldProperty.GetName());
+                    oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
         }
     if (propertyChange.IsNavigation().Exist())
         {
         return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::IsNavigation is not supported. Failed on ECProperty %s.%s.",
-                    oldProperty.GetClass().GetFullName(), oldProperty.GetName());
+                    oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
         }
     if (propertyChange.GetArray().Exist())
         {
         auto& arrayChange = propertyChange.GetArray();
         if (arrayChange.MaxOccurs().Exist())
             return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::Array.MaxOccurs is not supported. Failed on ECProperty %s.%s.",
-                        oldProperty.GetClass().GetFullName(), oldProperty.GetName());
+                        oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
 
         if (arrayChange.MinOccurs().Exist())
             return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::Array.MinOccurs is not supported. Failed on ECProperty %s.%s.",
-                        oldProperty.GetClass().GetFullName(), oldProperty.GetName());
+                        oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
         }
     if (propertyChange.GetNavigation().Exist())
         {
         auto& navigationChange = propertyChange.GetNavigation();
         if (navigationChange.GetRelationshipClassName().Exist())
             return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::Navigation.RelationshipClassName is not supported. Failed on ECProperty %s.%s.",
-                        oldProperty.GetClass().GetFullName(), oldProperty.GetName());
+                        oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
 
         if (navigationChange.Direction().Exist())
             return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::Navigation.Direction is not supported. Failed on ECProperty %s.%s.",
-                        oldProperty.GetClass().GetFullName(), oldProperty.GetName());
+                        oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
 
         if (navigationChange.GetRelationshipClassName().Exist())
             return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::Navigation.RelationshipClassName is not supported. Failed on ECProperty %s.%s.",
-                        oldProperty.GetClass().GetFullName(), oldProperty.GetName());
+                        oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
         }
     if (propertyChange.GetName().Exist())
         {
         if (propertyChange.GetName().GetNew().IsNull())
             return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::Maximum is not supported. Failed on ECProperty %s.%s.",
-                        oldProperty.GetClass().GetFullName(), oldProperty.GetName());
+                        oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
 
         updater.Set("Name", propertyChange.GetName().GetNew().Value());
         }
