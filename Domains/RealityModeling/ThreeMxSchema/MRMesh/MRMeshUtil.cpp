@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "../ThreeMxSchemaInternal.h"
 
-#if defined (BENTLEYCONFIG_OS_WINDOWS)
+#if defined (BENTLEY_WIN32)
 #include <windows.h>
 #endif
 
@@ -33,7 +33,7 @@ BeFileName Util::ConstructNodeName(Utf8StringCR childName, BeFileNameCP parentNa
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-#if defined (BENTLEYCONFIG_OS_WINDOWS)
+#if defined (BENTLEY_WIN32)
 void Util::GetMemoryStatistics(size_t& memoryLoad, size_t& total, size_t& available)
     {
     MEMORYSTATUSEX statex;

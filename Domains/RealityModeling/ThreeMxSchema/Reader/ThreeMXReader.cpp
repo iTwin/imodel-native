@@ -135,7 +135,7 @@ static bool readBytes(MxStreamBuffer& in, void* buf, uint32_t size)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static uint32_t ctmReadFunc(void* buf, uint32_t count, void* userData)
+static uint32_t CTMCALL ctmReadFunc(void* buf, uint32_t count, void* userData)
     {
     return readBytes(*(MxStreamBuffer*)userData, buf, count) ? count : 0;
     }

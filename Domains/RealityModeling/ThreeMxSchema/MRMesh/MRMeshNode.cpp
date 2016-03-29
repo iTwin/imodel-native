@@ -311,7 +311,7 @@ bool Node::TestVisibility(bool& isUnderMaximumSize, ViewContextR viewContext, Lo
         }
     else
         {
-#if defined (BENTLEYCONFIG_OS_WINDOWS)
+#if defined (BENTLEY_WIN32)
         double pixelSize  =  m_info.m_radius / viewContext.GetPixelSizeAtPoint(&m_info.m_center);
 
         isUnderMaximumSize = pixelSize < Util::CalculateResolutionRatio() * m_info.m_dMax;
