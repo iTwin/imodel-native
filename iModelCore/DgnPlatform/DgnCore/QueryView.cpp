@@ -466,8 +466,9 @@ void DgnQueryView::_CreateScene(SceneContextR context)
     if (m_scene->GetCount() < results->GetCount()) // did we get them all?
         {
         DEBUG_PRINTF("Begin create scene with load");
-        for (auto& thisScore : results->m_scores)
+        for (auto rit = results->m_scores.rbegin(), ritEnd = results->m_scores.rend(); rit != ritEnd; ++rit)
             {
+            auto& thisScore = *rit;
             if (m_scene->Contains(thisScore.second))
                 continue; // was already added during "quick" pass
 
@@ -769,13 +770,13 @@ DgnQueryView::QueryResultsPtr DgnQueryView::RangeQuery::DoQuery()
             if (++m_count > m_hitLimit)
                 {
                 SetTestLOD(true); // now that we've found a minimum number of elements, start skipping small ones
-                m_results->m_scores.erase(m_results->m_scores.end());
+                m_results->m_scores.erase(m_results->m_scores.begin());
                 m_results->m_incomplete = true;
                 m_count = m_hitLimit;
                 }
 
             m_results->m_scores.Insert(m_lastScore, thisId);
-            m_minScore = m_results->m_scores.end()->first;
+            m_minScore = m_results->m_scores.begin()->first;
             }
 
         if (endTime && (BeTimeUtilities::QueryMillisecondsCounter() > endTime))

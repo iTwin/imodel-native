@@ -78,7 +78,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
     //! Holds the results of a query.
     struct QueryResults : RefCounted<NonCopyableClass>
     {
-        typedef bmultimap<double, DgnElementId, std::greater<double> > OcclusionScores;
+        typedef bmultimap<double, DgnElementId> OcclusionScores;
         bool m_incomplete = false;
         OcclusionScores m_scores;
         uint32_t GetCount() const {return (uint32_t) m_scores.size();}
