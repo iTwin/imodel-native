@@ -1764,6 +1764,15 @@ void SimplifyGraphic::_AddPolyface(PolyfaceQueryCR geom, bool filled)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimplifyGraphic::_AddTriMesh(TriMeshArgs const& args)
+    {
+    PolyfaceHeaderPtr polyface = args.ToPolyface();
+    _AddPolyface(*polyface, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddBody(ISolidKernelEntityCR geom, double pixelSize)
@@ -1787,6 +1796,7 @@ void SimplifyGraphic::_AddTextString2d(TextStringCR text, double zDepth)
     _AddTextString(text);
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1813,6 +1823,7 @@ void SimplifyGraphic::_AddRaster2d (DPoint2d const points[4], int pitch, int num
     copy2dTo3d(4, &localPointsBuf3d[0], points, 0.0);
     _AddRaster(&localPointsBuf3d[0], pitch, numTexelsX, numTexelsY, enableAlpha, format, texels);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05

@@ -86,9 +86,9 @@ public:
     //! Create a new WebMercatorModel object, in preparation for loading it from the DgnDb.
     WebMercatorModel(CreateParams const& params) : T_Super(params) {}
 
-    DGNPLATFORM_EXPORT void _AddTerrainGraphics(TerrainContextR) const override;
-    DGNPLATFORM_EXPORT void _WriteJsonProperties(Json::Value&) const override;
-    DGNPLATFORM_EXPORT void _ReadJsonProperties(Json::Value const&) override;
+    void _AddTerrainGraphics(TerrainContextR) const override;
+    void _WriteJsonProperties(Json::Value&) const override;
+    void _ReadJsonProperties(Json::Value const&) override;
     AxisAlignedBox3d _QueryModelRange() const override {return m_properties.m_range;}
     double GetGroundBias() const {return m_properties.m_groundBias;}
 
