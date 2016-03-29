@@ -3,7 +3,7 @@
 Igor Pavlov
 Public domain */
 
-#ifdef _WIN32
+#ifdef BENTLEY_WIN32
 #define NOMINMAX
 #include <windows.h>
 #endif
@@ -45,7 +45,7 @@ void MyFree(void *address)
   free(address);
 }
 
-#ifdef _WIN32
+#ifdef BENTLEY_WIN32
 
 #ifdef NO_BENTLEY_CHANGES
 void *MidAlloc(size_t size)
