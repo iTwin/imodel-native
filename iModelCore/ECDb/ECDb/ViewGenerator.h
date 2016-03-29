@@ -8,6 +8,7 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 #include "ECDbInternalTypes.h"
+#include "DbSchema.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -23,19 +24,19 @@ private:
         {
     private:
         std::vector<ClassMap const*> m_classMaps;
-        DbMetaDataHelper::ObjectType m_storageType;
+        DbSchema::EntityType m_storageType;
     public:
-        ViewMember() :m_storageType(DbMetaDataHelper::ObjectType::Table) {}
-        ViewMember (DbMetaDataHelper::ObjectType storageType, ClassMap const& classMap) :m_storageType(storageType) { m_classMaps.push_back(&classMap); }
+        ViewMember() :m_storageType(DbSchema::EntityType::Table) {}
+        ViewMember (DbSchema::EntityType storageType, ClassMap const& classMap) :m_storageType(storageType) { m_classMaps.push_back(&classMap); }
 
         void AddClassMap(ClassMap const& classMap) { m_classMaps.push_back(&classMap); }
         std::vector<ClassMap const*> const& GetClassMaps() const { return m_classMaps; }
-        DbMetaDataHelper::ObjectType GetStorageType() const { return m_storageType; }
+        DbSchema::EntityType GetStorageType() const { return m_storageType; }
         };
 
     typedef bmap<ECDbSqlTable const*, ViewMember> ViewMemberByTable; 
     static BentleyStatus ComputeViewMembers (ViewMemberByTable& viewMembers, ECDbMapCR, ECN::ECClassCR, bool isPolymorphic, bool optimizeByIncludingOnlyRealTables, bool ensureDerivedClassesAreLoaded);
-    static BentleyStatus GetRootClasses (std::vector<ClassMap const*>& rootClasses, ECDbR);
+    static BentleyStatus GetRootClasses (std::vector<ClassMap const*>& rootClasses, ECDbCR);
     static BentleyStatus GetViewQueryForChild (NativeSqlBuilder& viewSql, ECDbMapCR, ECSqlPrepareContext const&, ECDbSqlTable const&, const std::vector<ClassMap const*>& childClassMap, ClassMap const& baseClassMap, bool isPolymorphic);
     //! Relationship polymorphic query
     static BentleyStatus CreateViewForRelationship (NativeSqlBuilder& viewSql, ECDbMapCR, ECSqlPrepareContext const&, ClassMap const& relationMap, bool isPolymorphic, bool optimizeByIncludingOnlyRealTables);
@@ -50,7 +51,7 @@ private:
 
     static BentleyStatus BuildRelationshipJoinIfAny (NativeSqlBuilder& sqlBuilder, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, ECDbSqlTable const& contextTable);
     //! Append view prop map list separated by comma.
-    static BentleyStatus AppendViewPropMapsToQuery (NativeSqlBuilder& viewQuery, ECDbR, ECSqlPrepareContext const&, ECDbSqlTable const& table, std::vector<std::pair<PropertyMapCP, PropertyMapCP>> const& viewPropMaps, bool forNullView = false);
+    static BentleyStatus AppendViewPropMapsToQuery (NativeSqlBuilder& viewQuery, ECSqlPrepareContext const&, ECDbSqlTable const& table, std::vector<std::pair<PropertyMapCP, PropertyMapCP>> const& viewPropMaps, bool forNullView = false);
 
     static BentleyStatus AppendSystemPropMaps (NativeSqlBuilder& viewQuery, ECDbMapCR, ECSqlPrepareContext const&, RelationshipClassMapCR relationMap, ECDbSqlTable const& contextTable);
     static BentleyStatus AppendSystemPropMapsToNullView (NativeSqlBuilder& viewQuery, ECSqlPrepareContext const&, RelationshipClassMapCR relationMap, bool endWithComma);

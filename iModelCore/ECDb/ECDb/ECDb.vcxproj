@@ -14,6 +14,7 @@
     <ClCompile Include="ChangeSummary.cpp" />
     <ClCompile Include="ClassMap.cpp" />
     <ClCompile Include="ClassMapInfo.cpp" />
+    <ClCompile Include="DbSchema.cpp" />
     <ClCompile Include="docs\samplecode\ECDb.sample.cpp" />
     <ClCompile Include="docs\samplecode\ECDbCRUD.sample.cpp" />
     <ClCompile Include="docs\samplecode\ECDbCRUDAdapters.sample.cpp" />
@@ -130,6 +131,7 @@
     <ClInclude Include="BeBriefcaseBasedIdSequence.h" />
     <ClInclude Include="ClassMap.h" />
     <ClInclude Include="ClassMapInfo.h" />
+    <ClInclude Include="DbSchema.h" />
     <ClInclude Include="ECDbExpressionSymbolProvider.h" />
     <ClInclude Include="ECDbImpl.h" />
     <ClInclude Include="ECDbInternalTypes.h" />

@@ -70,6 +70,7 @@
 #include "ECSql/ECInstanceAdapterHelper.h"
 #include "ECSql/ECSqlPrepareContext.h"
 #include "ECDbSql.h"
+#include "DbSchema.h"
 #include "ECSchemaComparer.h"
 
 

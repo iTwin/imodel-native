@@ -414,15 +414,15 @@ bool ECDbSqlTable::TryGetECClassIdColumn(ECDbSqlColumn const*& classIdCol) const
 BentleyStatus ECDbSqlTable::PersistenceManager::CreateOrUpdate(ECDbR ecdb) const
     {
     auto name = m_table.GetName().c_str();
-    auto type = DbMetaDataHelper::GetObjectType(ecdb, name);
-    if (type == DbMetaDataHelper::ObjectType::None)
+    auto type = DbSchema::GetEntityType(ecdb, name);
+    if (type == DbSchema::EntityType::None)
         return Create(ecdb);
 
     if (m_table.GetPersistenceType() == PersistenceType::Virtual)
         return ERROR;
 
     //! Object type is view and exist in db. Action = DROP it and recreate it.
-    if (type == DbMetaDataHelper::ObjectType::View)
+    if (type == DbSchema::EntityType::View)
         {
         Utf8String sql("DROP VIEW ");
         sql.append(name);
@@ -436,7 +436,7 @@ BentleyStatus ECDbSqlTable::PersistenceManager::CreateOrUpdate(ECDbR ecdb) const
         return Create(ecdb);
         }
 
-    BeAssert(type == DbMetaDataHelper::ObjectType::Table);
+    BeAssert(type == DbSchema::EntityType::Table);
 
     bvector<Utf8String> existingDbColumns;
     if (!ecdb.GetColumns(existingDbColumns, name))
@@ -717,7 +717,7 @@ ECDbSqlTable* ECDbMapDb::FindTableP(Utf8CP name) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-const std::vector<ECDbSqlTable const*> ECDbMapDb::GetTables() const
+std::vector<ECDbSqlTable const*> ECDbMapDb::GetTables() const
     {
     std::vector<ECDbSqlTable const*> tables;
     std::vector<ECDbSqlTable const*> joinedTables;
@@ -1880,6 +1880,14 @@ DbResult ECDbSqlPersistence::ReadColumn(Statement& stmt, ECDbSqlTable& table, st
 //---------------------------------------------------------------------------------------
 DbResult ECDbSqlPersistence::Insert(ECDbMapDb const& db) const
     {
+    DbResult stat = m_ecdb.ExecuteSql("DELETE FROM ec_Table");
+    if (BE_SQLITE_OK != stat)
+        {
+        BeAssert(false && "Truncating ec_Table failed");
+        return stat;
+        }
+
+
     auto tables = db.GetTables();
     for (auto table : tables)
         {

@@ -526,8 +526,8 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
 
     stat = ecdb.ExecuteSql("CREATE TABLE ec_ForeignKeyColumn("
         "ForeignKeyId INTEGER NOT NULL REFERENCES ec_ForeignKey (Id) ON DELETE CASCADE,"
-        "ColumnId INTEGER NOT NULL  REFERENCES ec_Column (Id) ON DELETE CASCADE,"
-        "ReferencedColumnId INTEGER NOT NULL  REFERENCES ec_Column (Id) ON DELETE CASCADE,"
+        "ColumnId INTEGER NOT NULL REFERENCES ec_Column (Id) ON DELETE CASCADE,"
+        "ReferencedColumnId INTEGER NOT NULL REFERENCES ec_Column (Id) ON DELETE CASCADE,"
         "Ordinal INTEGER NOT NULL)");
     if (BE_SQLITE_OK != stat)
         return stat;

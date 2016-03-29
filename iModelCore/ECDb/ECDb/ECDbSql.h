@@ -17,6 +17,8 @@
 #include "BeBriefcaseBasedIdSequence.h"
 #include "MapStrategy.h"
 
+#include "DbSchema.h"
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct ECDbClassMapId : BeInt64Id
@@ -63,12 +65,6 @@ enum class ColumnKind
     DataColumn = 512, //! unshared data column
     SharedDataColumn = 1024, //! shared data column
     NonRelSystemColumn = ECInstanceId | ECClassId
-    };
-
-enum class PersistenceType
-    {
-    Persisted, //! Persisted in DB
-    Virtual //! Not persisted in db rather used as a view specification
     };
 
 enum class TableType
@@ -224,12 +220,11 @@ public:
     //! Find a table with a given name
     ECDbSqlTable const* FindTable (Utf8CP name) const;
     ECDbSqlTable* FindTableP (Utf8CP name) const;
-    const std::vector<ECDbSqlTable const*> GetTables () const;
-    ECDbSQLManager& GetManager() const { return m_sqlManager; }
+    std::vector<ECDbSqlTable const*> GetTables () const;
     ECDbSQLManager & GetManagerR() { return m_sqlManager; }
     NameGenerator& GetNameGenerator() { return m_nameGenerator; }
     bool IsNameInUse(Utf8CP name) const;
-    void Reset ();
+    void Reset();
     };
 
 
@@ -836,34 +831,5 @@ struct ECDbSQLManager : public NonCopyableClass
         IdGenerator& GetIdGenerator () {return m_idGenerator;}
     };
 
-//=================================================================================
-// @bsiclass                                                     Affan.Khan      11/2011
-//+===============+===============+===============+===============+===============+======
-struct DbMetaDataHelper
-    {
-    enum class ObjectType
-        {
-        None,
-        Table,
-        View,
-        Index,
-        };
-    static ObjectType GetObjectType(Db& db, Utf8CP name)
-        {
-        BeSQLite::CachedStatementPtr stmt;
-        db.GetCachedStatement(stmt, "SELECT type FROM sqlite_master WHERE name=?");
-        stmt->BindText(1, name, BeSQLite::Statement::MakeCopy::No);
-        if (stmt->Step() == BE_SQLITE_ROW)
-            {
-            if (BeStringUtilities::StricmpAscii(stmt->GetValueText(0), "table") == 0)
-                return ObjectType::Table;
-            if (BeStringUtilities::StricmpAscii(stmt->GetValueText(0), "view") == 0)
-                return ObjectType::View;
-            if (BeStringUtilities::StricmpAscii(stmt->GetValueText(0), "index") == 0)
-                return ObjectType::Index;
-            }
-        return ObjectType::None;
-        }
-    };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

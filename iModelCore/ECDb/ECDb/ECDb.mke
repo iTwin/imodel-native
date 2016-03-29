@@ -109,6 +109,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/StructArrayJsonECSqlField.h \
                 $(baseDir)ECSql/ECInstanceAdapterHelper.h \
                 $(baseDir)ECDbSql.h \
+                $(baseDir)DbSchema.h \
                 $(baseDir)ECSchemaComparer.h \
                 $(baseDir)ECDbExpressionSymbolProvider.h
 
@@ -326,11 +327,13 @@ $(o)StructMappedToColumnsECSqlField$(oext):                 $(baseDir)ECSql/Stru
 
 $(o)StructArrayJsonECSqlField$(oext):                       $(baseDir)ECSql/StructArrayJsonECSqlField.cpp                   $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbSql$(oext):	                                        $(baseDir)ECDbSql.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECDbSql$(oext):	                                    $(baseDir)ECDbSql.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)DbSchema$(oext):	                                    $(baseDir)DbSchema.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDbExpressionSymbolProvider$(oext):                    $(baseDir)ECDbExpressionSymbolProvider.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSchemaComparer$(oext):                    $(baseDir)ECSchemaComparer.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSchemaComparer$(oext):                                $(baseDir)ECSchemaComparer.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList) 

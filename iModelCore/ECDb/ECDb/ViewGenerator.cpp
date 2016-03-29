@@ -31,9 +31,9 @@ BentleyStatus ViewGenerator::CreateView(NativeSqlBuilder& viewSql, ECDbMapCR map
         return CreateViewForRelationship(viewSql, map, prepareContext, classMap, isPolymorphicQuery, optimizeByIncludingOnlyRealTables);
 
     viewSql.AppendParenLeft();
-    ECDbR db = map.GetECDbR();
-    DbMetaDataHelper::ObjectType objectType = DbMetaDataHelper::GetObjectType(db, classMap.GetPrimaryTable().GetName().c_str());
-    if (objectType == DbMetaDataHelper::ObjectType::None && !isPolymorphicQuery)
+    ECDbCR db = map.GetECDb();
+    DbSchema::EntityType entityType = DbSchema::GetEntityType(db, classMap.GetPrimaryTable().GetName().c_str());
+    if (entityType == DbSchema::EntityType::None && !isPolymorphicQuery)
         {
         if (SUCCESS != CreateNullView(viewSql, prepareContext, classMap))
             return ERROR;
@@ -70,7 +70,7 @@ BentleyStatus ViewGenerator::CreateView(NativeSqlBuilder& viewSql, ECDbMapCR map
     int queriesAddedToUnion = 0;
     for (auto& pvm : viewMembers)
         {
-        if (optimizeByIncludingOnlyRealTables && pvm.second.GetStorageType() == DbMetaDataHelper::ObjectType::None)
+        if (optimizeByIncludingOnlyRealTables && pvm.second.GetStorageType() == DbSchema::EntityType::None)
             continue;
 
         if (queriesAddedToUnion > 0)
@@ -101,13 +101,13 @@ BentleyStatus ViewGenerator::CreateView(NativeSqlBuilder& viewSql, ECDbMapCR map
 //+---------------+---------------+---------------+---------------+---------------+--------
 BentleyStatus ViewGenerator::CreateNullView (NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, ClassMap const& classMap)
     {
-    viewSql.Append ("SELECT NULL ECClassId, NULL " ECDB_COL_ECInstanceId);
+    viewSql.Append ("SELECT NULL " ECDB_COL_ECClassId ", NULL " ECDB_COL_ECInstanceId);
 
     std::vector<std::pair<PropertyMapCP, PropertyMapCP>> viewPropMaps;
     if (SUCCESS != GetPropertyMapsOfDerivedClassCastAsBaseClass(viewPropMaps, prepareContext, classMap, classMap, false))
         return ERROR;
  
-    AppendViewPropMapsToQuery (viewSql, classMap.GetECDbMap ().GetECDbR (), prepareContext, classMap.GetJoinedTable (), viewPropMaps, true /*forNullView*/);
+    AppendViewPropMapsToQuery (viewSql, prepareContext, classMap.GetJoinedTable (), viewPropMaps, true /*forNullView*/);
     viewSql.Append (" LIMIT 0");
     return SUCCESS;
     }
@@ -115,7 +115,7 @@ BentleyStatus ViewGenerator::CreateNullView (NativeSqlBuilder& viewSql, ECSqlPre
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      07/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus ViewGenerator::GetRootClasses (std::vector<ClassMap const*>& rootClasses, ECDbR db)
+BentleyStatus ViewGenerator::GetRootClasses (std::vector<ClassMap const*>& rootClasses, ECDbCR db)
     {
     ECSchemaList schemas;
     if (db.Schemas ().GetECSchemas (schemas, true) != SUCCESS)
@@ -166,21 +166,21 @@ BentleyStatus ViewGenerator::ComputeViewMembers(ViewMemberByTable& viewMembers, 
         auto itor = viewMembers.find(&classMap->GetJoinedTable());
         if (itor == viewMembers.end())
             {
-            DbMetaDataHelper::ObjectType storageType = DbMetaDataHelper::ObjectType::Table;
+            DbSchema::EntityType storageType = DbSchema::EntityType::Table;
             if (optimizeByIncludingOnlyRealTables)
                 {
                 //This is a db query so optimization comes at a cost
-                storageType = DbMetaDataHelper::GetObjectType(map.GetECDbR(), classMap->GetJoinedTable().GetName().c_str());
+                storageType = DbSchema::GetEntityType(map.GetECDb(), classMap->GetJoinedTable().GetName().c_str());
                 }
 
-            if (storageType == DbMetaDataHelper::ObjectType::Table)
+            if (storageType == DbSchema::EntityType::Table)
                 viewMembers.insert(ViewMemberByTable::value_type(&classMap->GetJoinedTable(), ViewMember(storageType, *classMap)));
             }
         else
             {
             if (optimizeByIncludingOnlyRealTables)
                 {
-                if (itor->second.GetStorageType() == DbMetaDataHelper::ObjectType::Table)
+                if (itor->second.GetStorageType() == DbSchema::EntityType::Table)
                     itor->second.AddClassMap(*classMap);
                 }
             else
@@ -239,7 +239,7 @@ BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass(std::v
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      09/2013
 //+---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewQuery, ECDbR ecdb, ECSqlPrepareContext const& prepareContext, ECDbSqlTable const& table, std::vector<std::pair<PropertyMapCP, PropertyMapCP>> const& viewPropMaps, bool forNullView)
+BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewQuery, ECSqlPrepareContext const& prepareContext, ECDbSqlTable const& table, std::vector<std::pair<PropertyMapCP, PropertyMapCP>> const& viewPropMaps, bool forNullView)
     {    
     for (auto const& propMapPair : viewPropMaps)
         {
@@ -308,7 +308,7 @@ BentleyStatus ViewGenerator::GetViewQueryForChild(NativeSqlBuilder& viewSql, ECD
         return status;
 
     //Append prop map columns to query [col1],[col2], ...
-    AppendViewPropMapsToQuery(viewSql, map.GetECDbR(), prepareContext, table, viewPropMaps);
+    AppendViewPropMapsToQuery(viewSql, prepareContext, table, viewPropMaps);
     
     //Determine which table to join for split table case
     std::set<ECDbSqlTable const*> tableToJoinOn;
@@ -381,7 +381,7 @@ BentleyStatus ViewGenerator::CreateNullViewForRelationshipClassLinkTableMap (Nat
         return ERROR;
 
     //Append columns to query [col1],[col2], ...
-    AppendViewPropMapsToQuery (viewSql, relationMap.GetECDbMap ().GetECDbR (), prepareContext, relationMap.GetJoinedTable(), viewPropMaps, true);
+    AppendViewPropMapsToQuery (viewSql, prepareContext, relationMap.GetJoinedTable(), viewPropMaps, true);
     viewSql.AppendParenRight();
     return SUCCESS;
     }
@@ -400,7 +400,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationshipClassLinkTableMap (NativeS
         return ERROR;
 
     //Append prop maps' columns to query [col1],[col2], ...
-    AppendViewPropMapsToQuery (viewSql, ecdbMap.GetECDbR (), prepareContext, relationMap.GetJoinedTable(), viewPropMaps);
+    AppendViewPropMapsToQuery (viewSql, prepareContext, relationMap.GetJoinedTable(), viewPropMaps);
 
     viewSql.Append (" FROM ").AppendEscaped (relationMap.GetJoinedTable().GetName ().c_str ());
    
@@ -601,7 +601,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
      for (bpair<ECDbSqlTable const*, ViewMember> const& vm : vmt)
          {
          ECDbSqlTable const* table = vm.first;
-         if (vm.second.GetStorageType() != DbMetaDataHelper::ObjectType::Table)
+         if (vm.second.GetStorageType() != DbSchema::EntityType::Table)
              continue;
 
          std::vector<RelationshipClassEndTableMap const*> etm;
