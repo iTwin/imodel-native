@@ -27,7 +27,7 @@ public:
     WmsMap const& GetMapInfo() {return m_mapInfo;}
 
 protected:
-    virtual Render::ImagePtr _QueryTile(TileId const& id, bool& alphaBlend) override;
+    virtual Render::Image _QueryTile(TileId const& id, bool& alphaBlend) override;
     RealityDataCache& GetRealityDataCache() const;
 
 private:
@@ -41,8 +41,6 @@ private:
     static bool EvaluateReverseAxis(WmsMap const& mapInfo, GeoCoordinates::BaseGCSP pGcs);
 
     WmsMap m_mapInfo;
-
-    ByteStream m_decompressBuffer;
 
     bool m_reverseAxis; // deduct form WmsMap::m_axisOrder at construction.
 

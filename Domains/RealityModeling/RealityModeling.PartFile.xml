@@ -2,11 +2,9 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
-
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
     <!-- ////////////////////////////   ScalableMesh       /////////////////////////////////// -->
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
-    
     <Part Name="ScalableMeshHandler" BMakeFile="ScalableMeshHandler/handler.mke">
         <SubPart PartName="ScalableMesh" PartFile="ScalableMesh" Repository="ScalableMesh" />
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform" />
@@ -89,22 +87,21 @@
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
     <!-- ////////////////////////////   ThreeMx       /////////////////////////////////// -->
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
-	    <Part Name="ThreeMxSchemaPublicAPI" BentleyBuildMakeFile="ThreeMxSchema/ThreeMxSchema.prewire.mke">
+    <Part Name="ThreeMxPublicAPI" BentleyBuildMakeFile="ThreeMxSchema/ThreeMxSchema.prewire.mke">
         <Bindings>
-            <PublicAPI Domain="ThreeMxSchema"/>
+            <PublicAPI Domain="ThreeMx"/>
             <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Domain/ThreeMx*.xml
             </Files>
         </Bindings>
     </Part>
-
     
-    <Part Name="ThreeMxSchema" BMakeFile="ThreeMxSchema/ThreeMxSchema.mke">
+    <Part Name="ThreeMx" BentleyBuildMakeFile="ThreeMxSchema/ThreeMxSchema.mke">
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="ThreeMxSchemaPublicAPI"/>
+        <SubPart PartName="ThreeMxPublicAPI"/>
         <Bindings>
-            <Assemblies ProductDirectoryName="ThreeMxAssemblies">Delivery/ThreeMxSchema.dll</Assemblies>
-            <Libs>delivery/$(shlibprefix)ThreeMxSchema$(libext)</Libs>
+            <Assemblies ProductDirectoryName="ThreeMxAssemblies" Required="false">Delivery/$(shlibprefix)ThreeMx$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)ThreeMx$(libext)</Libs> 
         </Bindings>
     </Part>
 

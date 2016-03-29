@@ -2,13 +2,11 @@
 #
 #     $Source: ThreeMxSchema/ThreeMxSchema.mki $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-
-
-appName         = ThreeMxSchema
-o               = $(OutBuildDir)ThreeMxSchema/
+appName  = ThreeMx
+o        = $(OutBuildDir)ThreeMx/
 
 DLM_NAME    = $(appName)
 CCompPDBName = $(appName)
@@ -22,6 +20,7 @@ nameToDefine = OPENCTM_STATIC
 #----------------------------------------------------------------------
 # We're building the ThreeMxSchema lib
 #----------------------------------------------------------------------
-nameToDefine = __THREEMXSCHEMA_BUILD__
+nameToDefine = __THREEMX_BUILD__
 %include cdefapnd.mki
+
 

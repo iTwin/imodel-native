@@ -5,171 +5,98 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "..\ThreeMxSchemaInternal.h"
+#include "../ThreeMxSchemaInternal.h"
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void floatToDouble (double* pDouble, float const* pFloat, int n)
+PolyfaceHeaderPtr Geometry::GetPolyface() const
     {
-    for (double* pEnd = pDouble + n; pDouble < pEnd; )
-        *pDouble++ = *pFloat++;
+    Graphic::TriMeshArgs trimesh;
+    trimesh.m_numIndices = (int32_t) m_indices.size();
+    trimesh.m_vertIndex = &m_indices.front();
+    trimesh.m_numPoints = (int32_t) m_points.size();
+    trimesh.m_points = &m_points.front();
+    trimesh.m_normals = &m_normals.front();
+    trimesh.m_textureUV = &m_textureUV.front();
+    return trimesh.ToPolyface();
     }
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-MRMeshGeometry::MRMeshGeometry (int nbVertices,float* positions,float* normals,int nbTriangles,int* indices,float* textureCoordinates,int textureId) : m_textureId (textureId)
+Geometry::Geometry(Graphic::TriMeshArgs const& args, LoadContextCR loadContext)
     {
-    m_polyface = PolyfaceHeader::CreateFixedBlockIndexed (3);
+    m_indices.resize(args.m_numIndices);
+    memcpy(&m_indices.front(), args.m_vertIndex, args.m_numIndices * sizeof(int32_t));
 
-    BlockedVectorIntR       pointIndex = m_polyface->PointIndex();
-
-    pointIndex.resize (3* nbTriangles);
-    for (int32_t *pIndex = indices, *pEnd = pIndex + 3 * nbTriangles, *pOut = &pointIndex.front(); pIndex < pEnd; )
-        *pOut++ = 1 + *pIndex++;
-
-    if (NULL != positions)
+    m_points.resize(args.m_numPoints);
+    memcpy(&m_points.front(), args.m_points, args.m_numPoints * sizeof(FPoint3d));
+    
+    if (nullptr != args.m_normals)
         {
-        m_polyface->Point().resize (nbVertices);
-        floatToDouble (&m_polyface->Point().front().x, positions, 3 * nbVertices);
-        }
-    if (NULL != normals)
-        {
-        m_polyface->Normal().resize (nbVertices);
-        floatToDouble (&m_polyface->Normal().front().x, normals, 3 * nbVertices);
+        m_normals.resize(args.m_numIndices);
+        memcpy(&m_normals.front(), args.m_normals, args.m_numIndices * sizeof(FPoint3d));
         }
 
-    if (NULL != textureCoordinates)
+    if (nullptr != args.m_textureUV)
         {
-        m_polyface->Param().resize (nbVertices);
-        floatToDouble (&m_polyface->Param().front().x, textureCoordinates, 2 * nbVertices);
+        m_textureUV.resize(args.m_numIndices);
+        memcpy(&m_textureUV.front(), args.m_textureUV, args.m_numIndices * sizeof(FPoint2d));
         }
-    if (NULL != normals)
-        m_polyface->NormalIndex() = pointIndex;
 
-    if (NULL != textureCoordinates)
-        m_polyface->ParamIndex() = pointIndex;
+    if (nullptr == loadContext.m_system)
+        return;
 
+    m_graphic = loadContext.m_system->_CreateGraphic(Graphic::CreateParams(nullptr, loadContext.m_placement));
+    m_graphic->AddTriMesh(args);
+    m_graphic->Close();
     }
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t      MRMeshGeometry::GetMemorySize() const
+size_t Geometry::GetMemorySize() const
     {
-    // Approximate QVision float data by 1.5 * the double precision data stored here.
-    // Note - we can't release the polyFace data as it is needed for locating/snapping.
-    size_t size = m_polyface->GetPointCount ()           * sizeof (DPoint3d) +
-                  m_polyface->GetNormalCount ()          * sizeof (DVec3d) +
-                  m_polyface->GetParamCount ()           * sizeof (DPoint2d) +
-                  m_polyface->GetFaceCount()             * sizeof (FacetFaceData) +
-                  m_polyface->PointIndex ().size ()      * sizeof (int32_t) +
-                  m_polyface->NormalIndex ().size ()     * sizeof (int32_t) +                           m_polyface->ParamIndex ().size ()      * sizeof (int32_t) +
-                  m_polyface->GetFaceIndexCount ()       * sizeof (int32_t);
+    size_t size = m_points.size() * sizeof(FPoint3d) + 
+                  m_normals.size() * sizeof(FPoint3d) + 
+                  m_textureUV.size() * sizeof(FPoint2d);
 
     if (m_graphic.IsValid())
         {
-        size += (m_polyface->GetPointCount()  * 3 +
-                 m_polyface->GetNormalCount() * 3 +
-                 m_polyface->GetParamCount()  * 2) * 12;     // Account for QVision data (floats).
+        size += (m_points.size()  * 3 +
+                 m_normals.size() * 3 +
+                 m_textureUV.size() * 2) * sizeof(float);     // Account for QVision data (floats).
         }
+
     return size;
     }
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshGeometry::Draw (ViewContextR viewContext, MRMeshNodeR node, MRMeshContextCR host)
+void Geometry::Draw(RenderContextR context)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    MRMeshTextureP  texture;
-
-    ICachedDrawP    cachedDraw = viewContext.GetICachedDraw();
-    if (NULL != (texture = node.GetTexture (m_textureId)))
-        {
-        texture->Initialize (node, host, viewContext);
-        texture->Activate (viewContext);
-        }
-
-    if (NULL == cachedDraw || 
-        !viewContext.GetIViewDraw ().IsOutputQuickVision ())
-        {
-        viewContext.GetIDrawGeom().DrawPolyface (*m_polyface);
-        return;
-        }
-
-    if (NULL == m_qvElem)
-        {
-        cachedDraw->BeginCacheElement (host.GetQvCache());
-        cachedDraw->DrawPolyface (*m_polyface);
-        m_qvElem = cachedDraw->EndCacheElement ();
-        }
-
-    viewContext.GetIViewDraw().DrawQvElem (m_qvElem);
-#endif
-    }
-
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshGeometry::DrawCut (ViewContextR viewContext, DPlane3dCR plane)
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    CurveVectorPtr  slice;
-    
-    if (m_polyface.IsValid() &&
-        (slice = m_polyface->PlaneSlice (plane, false, false)).IsValid())
-        viewContext.GetIDrawGeom().DrawCurveVector (*slice, false);
-#endif
-    }
-
-
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshGeometry::ReleaseQVisionCache ()
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    // shutting down
-    if (nullptr == DgnPlatformLib::QueryHost())
-        return;
-
-    if (NULL != m_qvElem)
-        T_HOST.GetGraphicsAdmin()._DeleteQvElem (m_qvElem);
-
-    m_qvElem = NULL;
-#endif
+    if (m_graphic.IsValid())
+        context.OutputGraphic(*m_graphic, nullptr);
     }
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-MRMeshGeometryPtr MRMeshGeometry::Create (int nbVertices,float* positions,float* normals,int nbTriangles,int* indices,float* textureCoordinates,int textureId)
+DRange3d Geometry::GetRange() const    
     {
-    return new MRMeshGeometry (nbVertices, positions, normals, nbTriangles, indices, textureCoordinates, textureId);
-    }
+    DRange3d range = DRange3d::NullRange();
+    if (!m_graphic.IsValid())
+        return range;
 
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   MRMeshGeometry::GetRange (DRange3dR range, TransformCR transform) const
-    {
-    for (DPoint3dCP point = m_polyface->GetPointCP(), end = point + m_polyface->GetPointCount(); point < end; )
+    PolyfaceHeaderPtr polyface = GetPolyface();
+    for (DPoint3dCP point = polyface->GetPointCP(), end = point + polyface->GetPointCount(); point < end; )
         {
         DPoint3d    transformedPoint;
-
-        transform.Multiply (transformedPoint, *point++);
-
-        range.Extend (transformedPoint);
+        m_graphic->GetLocalToWorldTransform().Multiply(transformedPoint, *point++);
+        range.Extend(transformedPoint);
         }
-    return SUCCESS;
+
+    return range;
     }
-
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-MRMeshGeometry::~MRMeshGeometry ()  { ReleaseQVisionCache (); }
-
-
-

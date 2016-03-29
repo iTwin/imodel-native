@@ -26,7 +26,7 @@ private:
     virtual ~RasterFileSource(){};
 
 protected:
-    virtual Render::ImagePtr _QueryTile(TileId const& id, bool& alphaBlend) override;
+    virtual Render::Image _QueryTile(TileId const& id, bool& alphaBlend) override;
 
 public:
     static  RasterSourcePtr Create(Utf8StringCR resolvedName);

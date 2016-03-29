@@ -7,7 +7,7 @@
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
 
-$(BuildContext)PublicAPI/ThreeMxSchema : $(_MakeFilePath)../PublicAPI/ThreeMxSchema
+$(BuildContext)PublicAPI/ThreeMx : $(_MakeFilePath)../PublicAPI/ThreeMx
     $(LinkFirstDepToFirstTargetAsDirectory)
 
 $(BuildContext)ECSchemas/Domain/ThreeMx.01.00.ecschema.xml : $(_MakeFilePath)ThreeMx.01.00.ecschema.xml

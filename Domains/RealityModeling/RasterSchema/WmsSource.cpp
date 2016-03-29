@@ -441,11 +441,12 @@ WmsSource::WmsSource(WmsMap const& mapInfo)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-Render::ImagePtr WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
+Render::Image WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
     {
     //&&MM WMS will return nullptr. so we can check back later. we do not want that anymore. review.
 
     Utf8String tileUrl = BuildTileUrl(id);
+    Render::Image image;
 
     //      We are using tiledRaster but it should be extended to support more pixeltype and compression or have a new type?
     //      Maybe we should create a better Image object than RgbImageInfo and use that.
@@ -462,7 +463,7 @@ Render::ImagePtr WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
     //     BeSQLiteRealityDataStorage::wt_Prepare call to "VACCUUM" is the reason why we have such a big slowdown.
     RefCountedPtr<WmsTileData> pWmsTileData;
     if(RealityDataCacheResult::Success != GetRealityDataCache().Get<WmsTileData>(pWmsTileData, tileUrl.c_str(), *pOptions))
-        return NULL;
+        return image;
 
     BeAssert(pWmsTileData.IsValid());
 
@@ -472,36 +473,30 @@ Render::ImagePtr WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
     
     BentleyStatus status;
 
-    m_decompressBuffer.Clear(); // reuse the same buffer, in order to minimize mallocs
-
     if (contentType.EqualsI (CONTENT_TYPE_PNG))
         {
-        status = actualImageInfo.ReadImageFromPngBuffer(m_decompressBuffer, data.data(), data.size());
+        status = actualImageInfo.ReadImageFromPngBuffer(image, data.data(), data.size());
         }
     else if (contentType.EqualsI (CONTENT_TYPE_JPEG))
         {
-        status = actualImageInfo.ReadImageFromJpgBuffer(m_decompressBuffer, data.data(), data.size());
+        status = actualImageInfo.ReadImageFromJpgBuffer(image, data.data(), data.size());
         }
     else
         {
         BeAssertOnce (false && "Unsupported image type");
-        return NULL;
+        return image;
         }
 
     //&&MM we probably need a way to handle errors and avoid trying over and over again.
     if (SUCCESS != status)
-        return NULL;
-    
+        return image;
     
     BeAssert (!actualImageInfo.m_isBGR);    //&&MM todo 
-    Render::Image::Format pixelType = actualImageInfo.m_hasAlpha ? Render::Image::Format::Rgba : Render::Image::Format::Rgb;
 
     //&&MM how to tell if we need to enable alpha?
     //     We cannot reuse buffer anymore review...
-    Render::ImagePtr pImage = new Render::Image(actualImageInfo.m_width, actualImageInfo.m_height, pixelType, std::move(m_decompressBuffer));
     alphaBlend = m_mapInfo.m_transparent && actualImageInfo.m_hasAlpha;
-
-    return pImage;
+    return image;
     }
 
 //----------------------------------------------------------------------------------------
