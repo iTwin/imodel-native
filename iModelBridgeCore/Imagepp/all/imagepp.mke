@@ -7,6 +7,10 @@
 #--------------------------------------------------------------------------------------
 BUILD_NO_STACK_CHECK        = 1
 
+# &&ep - temporary define to decrease build errors on iOS.
+# We'll have to fix build errors on iOS when we remove this flag.
+IS_THIRD_PARTY_LIBRARY              = 1
+
 %include mdl.mki
 
 #----------------------------------------------------------
@@ -777,8 +781,6 @@ $(o)HCPGCoordLatLongModel$(oext) : $(ippGraDir)hcp/src/HCPGCoordLatLongModel.cpp
 
 $(o)HCPGCoordUtility$(oext) : $(ippGraDir)hcp/src/HCPGCoordUtility.cpp $(ippAllInc)HCPGCoordUtility.h ${MultiCompileDepends}
 
-$(o)HCPWellKnownText$(oext) : $(ippGraDir)hcp/src/HCPWellKnownText.cpp $(ippAllInc)HCPWellKnownText.h ${MultiCompileDepends}
-
 $(o)DownSampling$(oext) : $(ippGraDir)hra/src/DownSampling.cpp $(ippGraPrivateAPISrc)DownSampling.h ${MultiCompileDepends}
 
 $(o)ImageCommon$(oext) : $(ippGraDir)hra/src/ImageCommon.cpp $(ippGraPrivateAPISrc)ImageCommon.h ${MultiCompileDepends}
@@ -1378,6 +1380,11 @@ DLM_NO_DEF                  = 1
 DLM_NOMSBUILTINS            = 1
 DLM_NO_DLS                  = 1
 DLM_NOENTRY                 = 1
+
+# Note: Even though we know that some external lib are always linked statically, we still put them into the LINKER_LIBRARIES list below.
+# That is so that it can be *excluded* from the (static) link of this library when it is built for platforms such as Android and iOS
+# that always build static libraries. On such platforms, it is up to the final consumer of these (static) libraries to know and link them all.
+# We must *not* try to nest one static library inside another, as that is not supported on all platforms.
 
 LINKER_LIBRARIES =  $(BeLibJpegTurbo) \
                     $(IppJpegLib12Bits) \

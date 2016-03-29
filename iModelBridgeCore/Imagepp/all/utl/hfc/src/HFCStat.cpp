@@ -127,9 +127,7 @@ time_t HFCStatFileImpl::GetCreationTime(const HFCURL& pi_rURL) const
     time_t    Result = 0;
 
     // Build a string filename
-    WString FileName(((HFCURLFile&)pi_rURL).GetHost());
-    FileName += L"\\";
-    FileName += ((HFCURLFile&)pi_rURL).GetPath();
+    WString FileName(static_cast<HFCURLFile const&>(pi_rURL).GetAbsoluteFileName());
 
     BeFileName::GetFileTime (&Result, 0, 0, FileName.c_str());
 
@@ -146,9 +144,7 @@ time_t HFCStatFileImpl::GetLastAccessTime(const HFCURL& pi_rURL) const
     time_t Result = 0;
 
     // Build a string filename
-    WString FileName(((HFCURLFile&)pi_rURL).GetHost());
-    FileName += L"\\";
-    FileName += ((HFCURLFile&)pi_rURL).GetPath();
+    WString FileName(static_cast<HFCURLFile const&>(pi_rURL).GetAbsoluteFileName());
 
     BeFileName::GetFileTime (0, &Result, 0, FileName.c_str());
     
@@ -166,9 +162,7 @@ time_t HFCStatFileImpl::GetModificationTime(const HFCURL& pi_rURL) const
     time_t Result = 0;
 
     // Build a string filename
-    WString FileName(((HFCURLFile&)pi_rURL).GetHost());
-    FileName += L"\\";
-    FileName += ((HFCURLFile&)pi_rURL).GetPath();
+    WString FileName(static_cast<HFCURLFile const&>(pi_rURL).GetAbsoluteFileName());
 
     BeFileName::GetFileTime (0, 0, &Result, FileName.c_str());
     
@@ -186,9 +180,7 @@ void HFCStatFileImpl::SetModificationTime(const HFCURL& pi_rURL,
     HPRECONDITION(CanHandle(pi_rURL));
 
     // Build a string filename
-    WString FileName(((HFCURLFile&)pi_rURL).GetHost());
-    FileName += L"\\";
-    FileName += ((HFCURLFile&)pi_rURL).GetPath();
+    WString FileName(static_cast<HFCURLFile const&>(pi_rURL).GetAbsoluteFileName());
 
     BeFileName::SetFileTime (FileName.c_str(), 0, &pi_NewTime);
     }
@@ -205,9 +197,7 @@ uint64_t HFCStatFileImpl::GetSize(const HFCURL& pi_rURL) const
 
     uint64_t FileSize = 0;
     // Build a string filename
-    WString FileName(((HFCURLFile&)pi_rURL).GetHost());
-    FileName += L"\\";
-    FileName += ((HFCURLFile&)pi_rURL).GetPath();
+    WString FileName(static_cast<HFCURLFile const&>(pi_rURL).GetAbsoluteFileName());
 
     BeFileName::GetFileSize(FileSize, FileName.c_str());
 
@@ -223,9 +213,7 @@ HFCStat::AccessStatus HFCStatFileImpl::DetectAccess(const HFCURL& pi_rURL) const
     HPRECONDITION(CanHandle(pi_rURL));
 
     // Build a string filename
-    WString FileName(((HFCURLFile&)pi_rURL).GetHost());
-    FileName += L"\\";
-    FileName += ((HFCURLFile&)pi_rURL).GetPath();
+    WString FileName(static_cast<HFCURLFile const&>(pi_rURL).GetAbsoluteFileName());   
 
     // Check if the file exist.
     if (BeFileName::DoesPathExist(FileName.c_str()))
@@ -245,9 +233,7 @@ HFCAccessMode HFCStatFileImpl::GetAccessMode(const HFCURL& pi_rURL) const
     HFCAccessMode Result = HFC_NO_ACCESS;
 
     // Build a string filename
-    WString FileName(((HFCURLFile&)pi_rURL).GetHost());
-    FileName += L"\\";
-    FileName += ((HFCURLFile&)pi_rURL).GetPath();
+    WString FileName(static_cast<HFCURLFile const&>(pi_rURL).GetAbsoluteFileName());
 
     if (IsExistent(pi_rURL))
         {
