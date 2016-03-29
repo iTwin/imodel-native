@@ -2124,10 +2124,10 @@ void HGF2DHoledShape::GetBestOrientedExtent(HGF2DPositionCollection* po_pMinimal
             HGF2DLiteLine FourthHullLine(ConvexHullPoints[HorizontalMaxIndex], ConvexHullPoints[(HorizontalMaxIndex + 1) % nbPoints]);
 
             //Get the minimum angle between the line of the box and the corresponding line of the convex hull
-            double FirstAngle = abs(VerticalMinLine.CalculateBearing().GetAngle() - FirstHullLine.CalculateBearing().GetAngle());
-            double SecondAngle = abs(VerticalMaxLine.CalculateBearing().GetAngle() - SecondHullLine.CalculateBearing().GetAngle());
-            double ThirdAngle = abs(HorizontalMinLine.CalculateBearing().GetAngle() - ThirdHullLine.CalculateBearing().GetAngle());
-            double FourthAngle = abs(HorizontalMaxLine.CalculateBearing().GetAngle() - FourthHullLine.CalculateBearing().GetAngle());
+            double FirstAngle = fabs(VerticalMinLine.CalculateBearing().GetAngle() - FirstHullLine.CalculateBearing().GetAngle());
+            double SecondAngle = fabs(VerticalMaxLine.CalculateBearing().GetAngle() - SecondHullLine.CalculateBearing().GetAngle());
+            double ThirdAngle = fabs(HorizontalMinLine.CalculateBearing().GetAngle() - ThirdHullLine.CalculateBearing().GetAngle());
+            double FourthAngle = fabs(HorizontalMaxLine.CalculateBearing().GetAngle() - FourthHullLine.CalculateBearing().GetAngle());
 
             FirstAngle = MIN(FirstAngle, PI - FirstAngle);
             SecondAngle = MIN(SecondAngle, PI - SecondAngle);
