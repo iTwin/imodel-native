@@ -186,6 +186,9 @@ Nullable<T>& Nullable<T>::operator = (nullptr_t rhs)
     return *this;
     }
 
+template struct Nullable<Utf8String>;
+template struct Nullable<unsigned int>;
+
 //======================================================================================>
 //Binary
 //======================================================================================>
