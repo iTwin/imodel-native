@@ -594,7 +594,6 @@ DirectoryObserverLinux::DirectoryObserverLinux(ObserverCallback callback) : Dire
     int pipeCreationResult = pipe(m_resetDescriptor);
     BeAssert(-1 != pipeCreationResult);
     }
- Json::Value value;
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                              Mantas.Ragauskas       06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -847,7 +846,6 @@ DirectoryObserverIOS::DirectoryObserverIOS(ObserverCallback callback) : Director
     int pipeCreationResult = pipe(m_resetDescriptor);
     BeAssert(-1 != pipeCreationResult);
     }
-Json::Value value;
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                              Mantas.Ragauskas       06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/

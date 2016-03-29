@@ -12,11 +12,11 @@ CompileOptionsMki = $(SrcRoot)Bentley/BeHttp/BeHttpCompileOptions.mki
 #--------------------------------------------------------------------------------------
 #   Building the BeHttp library
 #--------------------------------------------------------------------------------------
-baseDir         			= $(_MakeFilePath)../
-BeHttpSourceDir     		= $(baseDir)BeHttp/
-BeHttpPublicApiDir 			= $(baseDir)PublicAPI/BeHttp/
-VendorAPIDir 				= $(baseDir)VendorAPI/
-BuildContext    			= $(OutputRootDir)BuildContexts/Bentley/
+baseDir                     = $(_MakeFilePath)../
+BeHttpSourceDir             = $(baseDir)BeHttp/
+BeHttpPublicApiDir          = $(baseDir)PublicAPI/BeHttp/
+VendorAPIDir                = $(baseDir)VendorAPI/
+BuildContext                = $(OutputRootDir)BuildContexts/Bentley/
 BuildContextLibsDirectory   = $(BuildContext)SubParts/Libs/
 
 o = $(OutputRootDir)build/BeHttp/
@@ -48,10 +48,6 @@ DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/BeHttp/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/BeHttp/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
-%if $(TARGET_PLATFORM)=="Android"
-    %include dlmlink.mki
-%else
-    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext)
-    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(stlibext)
-    %include $(sharedMki)LinkLibrary.mki
-%endif
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(stlibext)
+%include $(sharedMki)linkLibrary.mki

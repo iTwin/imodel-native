@@ -9,6 +9,6 @@
 
 #include <Bentley/Bentley.h>
 #include <Logging/bentleylogging.h>
+#include <BeHttp/Http.h>
 
-#define LOGGER_NAMESPACE_BENTLEY_HTTP  "Bentley.Http"
 #define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (LOGGER_NAMESPACE_BENTLEY_HTTP))

@@ -9,5 +9,6 @@
 
 #include <Bentley/Bentley.h>
 #include <Logging/bentleylogging.h>
-#define LOGGER_NAMESPACE_BENTLEY_TASKS  "Bentley.Tasks"
+#include <Bentley/Tasks/Tasks.h>
+
 #define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (LOGGER_NAMESPACE_BENTLEY_TASKS))
