@@ -29,6 +29,10 @@ private:
     uint64_t    m_nextRetryTime;                             //!< When to re-try to query points. unix millis UTC
     uint64_t    m_waitTime;                                  //!< How long to wait before re-trying to query points. millis 
 
+    uint32_t    m_tentativeId;
+
+    bool        m_lastTentativeStopped;
+
     static bool ShouldDrawInContext (Dgn::RenderContextR context);
 
     void SetupPtViewport(Dgn::RenderContextR context);
