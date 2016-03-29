@@ -2,7 +2,7 @@
 |
 |     $Source: PointCloudVortex.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BePointCloudInternal.h>
@@ -213,6 +213,11 @@ void PointCloudVortex::GlobalDensity(float opt)
 float PointCloudVortex::GetGlobalDensity()
     {
     return ptGetGlobalDensity();
+    }
+
+int64_t PointCloudVortex::PtsLoadedInViewportSinceLastDraw(PThandle hScene)
+    {
+    return ptPtsLoadedInViewportSinceDraw(hScene);
     }
 
 int64_t PointCloudVortex::PtsToLoadInViewport(PThandle hScene, bool recompute)

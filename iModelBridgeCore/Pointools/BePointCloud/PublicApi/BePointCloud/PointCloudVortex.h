@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/BePointCloud/PointCloudVortex.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -119,6 +119,7 @@ struct PointCloudVortex
         BEPOINTCLOUD_EXPORT static float       GetGlobalDensity();
 
         // draw
+        BEPOINTCLOUD_EXPORT static int64_t     PtsLoadedInViewportSinceLastDraw(PThandle hScene);
         BEPOINTCLOUD_EXPORT static int64_t     PtsToLoadInViewport(PThandle hScene, bool recompute);
         BEPOINTCLOUD_EXPORT static void        StartDrawFrameMetrics();
         BEPOINTCLOUD_EXPORT static void        EndDrawFrameMetrics();
