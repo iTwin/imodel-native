@@ -1752,7 +1752,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelIntersectIndex
         if (!m_is2d && m_depth != -1 && ((m_depth < fraction.low) || (fraction.high < 0 && m_depth < fabs(fraction.high)))) return false;
         if (node->m_nodeHeader.m_totalCount == 0) return false;
 
-        if ((node->m_nodeHeader.m_balanced && node->GetLevel() == m_requestedLevel) || (!node->m_nodeHeader.m_balanced && (node->GetLevel() == m_requestedLevel || node->IsLeaf())) && (!m_is2d || par > 0))
+        if ((node->m_nodeHeader.m_balanced && node->GetLevel() == m_requestedLevel) || (!node->m_nodeHeader.m_balanced && (node->GetLevel() == m_requestedLevel || node->IsLeaf())) && (!m_is2d || (par > 0||par2 > 0)))
             {
             double positionAlongRay = m_is2d ? par : fraction.low;
             auto it = m_fractions.insert(std::lower_bound(m_fractions.begin(), m_fractions.end(), positionAlongRay), positionAlongRay);
