@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCPGCoordModel.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -15,6 +15,7 @@
 BEGIN_IMAGEPP_NAMESPACE
 
 class HGF2DDisplacement;
+class HGF2DStretch;
 
 // ----------------------------------------------------------------------------
 //  HCPGCoordModel
@@ -151,6 +152,11 @@ private:
     mutable bool                            m_domainComputed;
     mutable HFCPtr<HGF2DShape>              m_domainDirect;
     mutable HFCPtr<HGF2DShape>              m_domainInverse;
+
+    //Pre and post Stretches
+    HFCPtr<HGF2DTransfoModel> m_PreStretch;
+    HFCPtr<HGF2DTransfoModel> m_PostStretch;
+
 
     };
 

@@ -587,3 +587,46 @@ HFCPtr<HGF2DShape> HGF2DShape::AllocTransformInverse(const HGF2DTransfoModel& pi
     pReversedModel->Reverse();
     return AllocTransformDirect(*pReversedModel);
     }
+
+//-----------------------------------------------------------------------------
+// Compute the convex hull of the shape
+// Returns in po_pConvexHull a list of point in counter-clockwise order representing the convex hull
+//
+// Reference for the algorithm : https://en.wikibooks.org/wiki/Algorithm_Implementation/Geometry/Convex_hull/Monotone_chain
+//
+//Laurent.Robert-Veillette                                              03/2016
+//-----------------------------------------------------------------------------
+void HGF2DShape::GetConvexHull(HGF2DPositionCollection* p_points, HGF2DPositionCollection* po_pConvexHull) const
+    {
+    HPRECONDITION(po_pConvexHull != nullptr);
+    HPRECONDITION(p_points != nullptr);
+
+    int nbPoints = (int)p_points->size();
+    po_pConvexHull->resize(2 * nbPoints);
+
+    // Sort the points lexicographically (left points first)
+    std::sort(begin(*p_points), end(*p_points), [] (const HGF2DPosition& a, const HGF2DPosition& b)
+        {
+        return (a.GetX() < b.GetX() || (a.GetX() == b.GetX() && a.GetY() < b.GetY()));
+        });
+
+    // Build lower hull
+    int k = 0;
+    for (int i = 0; i < nbPoints; ++i)
+        {
+        while (k >= 2 && (*p_points)[i].CrossProduct2D((*po_pConvexHull)[k - 2], (*po_pConvexHull)[k - 1]) <= 0)
+            --k;
+        (*po_pConvexHull)[k++] = (*p_points)[i];
+        }
+
+    // Build upper hull
+    for (int i = nbPoints - 2, t = k + 1; i >= 0; --i)
+        {
+        while (k >= t && (*p_points)[i].CrossProduct2D((*po_pConvexHull)[k - 2], (*po_pConvexHull)[k - 1]) <= 0)
+            --k;
+        (*po_pConvexHull)[k++] = (*p_points)[i];
+        }
+
+    //Removing the unused points and the last one because it is a repetition of the first point.
+    (*po_pConvexHull).resize(k - 1);
+    }

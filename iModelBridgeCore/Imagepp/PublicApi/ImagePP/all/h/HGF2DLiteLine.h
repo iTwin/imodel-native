@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DLiteLine.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DLiteLine
@@ -101,6 +101,7 @@ public:
     double              GetSlope () const;
     bool                IsParallelTo(const HGF2DLiteLine& pi_rLine) const;
     bool                IsVertical() const;
+    void                Rotate(double pi_Angle, const HGF2DPosition& pi_rOrigin);
 
 
 protected:

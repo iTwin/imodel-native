@@ -1183,3 +1183,154 @@ HGF2DShape::SpatialPosition HGF2DComplexShape::CalculateSpatialPositionOf(const 
 
     return HGF2DShape::CalculateSpatialPositionOf(pi_rPosition);
 }
+
+//-----------------------------------------------------------------------------
+// Compute the minimal bounding box in which a shape is contained. We can also visualize it
+// as the oriented extent with the minimal area. i.e. the rotated rectangle contaning all the
+// shape while having the minimal area.
+//
+// Returns the four corner of the best rectangle found
+//
+// Reference for the algorithm : https://geidav.wordpress.com/2014/01/23/computing-oriented-minimum-bounding-boxes-in-2d/
+//
+//Laurent.Robert-Veillette                                              03/2016
+//-----------------------------------------------------------------------------
+void HGF2DComplexShape::GetBestOrientedExtent(HGF2DPositionCollection* po_pMinimalBoxCorners) const
+    {
+    HPRECONDITION(po_pMinimalBoxCorners != nullptr);
+
+    //Get the convex hull of the shape
+    HGF2DPositionCollection ShapePoints, ConvexHullPoints;
+    Drop(&ShapePoints, 0);
+    GetConvexHull(&ShapePoints, &ConvexHullPoints);
+
+    //Already a rectangle
+    if (ConvexHullPoints.size() == 4)
+        *po_pMinimalBoxCorners = ConvexHullPoints;
+
+    else
+        {
+        //Construct the extreme lines with the extent boundary points
+        HGF2DLiteExtent SelfExtent(GetExtent());
+        HGF2DLiteLine VerticalMinLine(HGF2DPosition(SelfExtent.GetXMin(), 0), HGF2DPosition(SelfExtent.GetXMin(), 1));
+        HGF2DLiteLine VerticalMaxLine(HGF2DPosition(SelfExtent.GetXMax(), 0), HGF2DPosition(SelfExtent.GetXMax(), 1));
+        HGF2DLiteLine HorizontalMinLine(HGF2DPosition(0, SelfExtent.GetYMin()), HGF2DPosition(1, SelfExtent.GetYMin()));
+        HGF2DLiteLine HorizontalMaxLine(HGF2DPosition(0, SelfExtent.GetYMax()), HGF2DPosition(1, SelfExtent.GetYMax()));
+
+        //Initialize the current minimum rectangle area to infity
+        double MinArea = std::numeric_limits<double>::max();
+
+        //The minimal vertical line is always associated with index 0 because of the order of the points in the convex hull method
+        int VerticalMinIndex = 0;
+        int VerticalMaxIndex = 0;
+        int HorizontalMinIndex = 0;
+        int HorizontalMaxIndex = 0;
+
+        //Associate each line with its corresponding point(s) in the convex hull
+        int i = 0;
+        double maxX = ConvexHullPoints[0].GetX();
+        double minY = ConvexHullPoints[0].GetY();
+        double maxY = minY;
+        for_each(begin(ConvexHullPoints), end(ConvexHullPoints), [&] (const HGF2DPosition& pPoint)
+            {
+            if (pPoint.GetX() > maxX)
+                {
+                maxX = pPoint.GetX();
+                VerticalMaxIndex = i;
+                }
+            if (pPoint.GetY() < minY)
+                {
+                minY = pPoint.GetY();
+                HorizontalMinIndex = i;
+                }
+            if (pPoint.GetY() > maxY)
+                {
+                maxY = pPoint.GetY();
+                HorizontalMaxIndex = i;
+                }
+            ++i;
+            });
+
+        double TotalRotationAngle = 0.0; //Can't go over 90 degrees
+                                         //Rotate the bounding boxes to fit with one side of the convex hull, compute the area and compare to find the minimal one.
+        auto nbPoints = ConvexHullPoints.size();
+        HGF2DPositionCollection CornersMinimalBox;
+        CornersMinimalBox.reserve(4);
+
+        while (TotalRotationAngle <= PI / 2)
+            {
+            HGF2DLiteLine FirstHullLine(ConvexHullPoints[VerticalMinIndex], ConvexHullPoints[(VerticalMinIndex + 1) % nbPoints]);
+            HGF2DLiteLine SecondHullLine(ConvexHullPoints[VerticalMaxIndex], ConvexHullPoints[(VerticalMaxIndex + 1) % nbPoints]);
+            HGF2DLiteLine ThirdHullLine(ConvexHullPoints[HorizontalMinIndex], ConvexHullPoints[(HorizontalMinIndex + 1) % nbPoints]);
+            HGF2DLiteLine FourthHullLine(ConvexHullPoints[HorizontalMaxIndex], ConvexHullPoints[(HorizontalMaxIndex + 1) % nbPoints]);
+
+            //Get the minimum angle between the line of the box and the corresponding line of the convex hull
+            double FirstAngle = abs(VerticalMinLine.CalculateBearing().GetAngle() - FirstHullLine.CalculateBearing().GetAngle());
+            double SecondAngle = abs(VerticalMaxLine.CalculateBearing().GetAngle() - SecondHullLine.CalculateBearing().GetAngle());
+            double ThirdAngle = abs(HorizontalMinLine.CalculateBearing().GetAngle() - ThirdHullLine.CalculateBearing().GetAngle());
+            double FourthAngle = abs(HorizontalMaxLine.CalculateBearing().GetAngle() - FourthHullLine.CalculateBearing().GetAngle());
+
+            FirstAngle = MIN(FirstAngle, PI - FirstAngle);
+            SecondAngle = MIN(SecondAngle, PI - SecondAngle);
+            ThirdAngle = MIN(ThirdAngle, PI - ThirdAngle);
+            FourthAngle = MIN(FourthAngle, PI - FourthAngle);
+
+            //Find minimal rotation angle
+            double minAngle = MIN(FirstAngle, MIN(SecondAngle, MIN(ThirdAngle, FourthAngle)));
+            BeAssert(minAngle <= PI / 2 && minAngle >= 0);
+
+            //Rotate Counter-Clockwise every line around the point of their index
+            VerticalMinLine.Rotate(minAngle, ConvexHullPoints[VerticalMinIndex]);
+            VerticalMaxLine.Rotate(minAngle, ConvexHullPoints[VerticalMaxIndex]);
+            HorizontalMinLine.Rotate(minAngle, ConvexHullPoints[HorizontalMinIndex]);
+            HorizontalMaxLine.Rotate(minAngle, ConvexHullPoints[HorizontalMaxIndex]);
+
+            //Increment the corresponding index
+            if (HDOUBLE_EQUAL_EPSILON(minAngle, FirstAngle))
+                (++VerticalMinIndex % nbPoints);
+            else if (HDOUBLE_EQUAL_EPSILON(minAngle, SecondAngle))
+                (++VerticalMaxIndex % nbPoints);
+            else if (HDOUBLE_EQUAL_EPSILON(minAngle, ThirdAngle))
+                (++HorizontalMinIndex % nbPoints);
+            else if (HDOUBLE_EQUAL_EPSILON(minAngle, FourthAngle))
+                (++HorizontalMaxIndex % nbPoints);
+
+            //Intersect the line to form the rectangle
+            HGF2DPosition Corner1, Corner2, Corner3, Corner4;
+            VerticalMinLine.IntersectLine(HorizontalMaxLine, &Corner1);
+            HorizontalMaxLine.IntersectLine(VerticalMaxLine, &Corner2);
+            VerticalMaxLine.IntersectLine(HorizontalMinLine, &Corner3);
+            HorizontalMinLine.IntersectLine(VerticalMinLine, &Corner4);
+
+            double width = VerticalMinLine.CalculateShortestDistance(Corner2);
+            double height = HorizontalMaxLine.CalculateShortestDistance(Corner3);
+
+            //Angles between line must always be PI/2 radian
+            BeAssert(HDOUBLE_EQUAL_EPSILON(abs(VerticalMinLine.CalculateBearing().GetAngle() -
+                                               HorizontalMinLine.CalculateBearing().GetAngle()), PI / 2));
+            BeAssert(HDOUBLE_EQUAL_EPSILON(abs(VerticalMinLine.CalculateBearing().GetAngle() -
+                                               HorizontalMaxLine.CalculateBearing().GetAngle()), PI / 2));
+            BeAssert(HDOUBLE_EQUAL_EPSILON(abs(VerticalMaxLine.CalculateBearing().GetAngle() -
+                                               HorizontalMinLine.CalculateBearing().GetAngle()), PI / 2));
+            BeAssert(HDOUBLE_EQUAL_EPSILON(abs(VerticalMaxLine.CalculateBearing().GetAngle() -
+                                               HorizontalMaxLine.CalculateBearing().GetAngle()), PI / 2));
+
+            //Compute the area and compare it with the actual minimum
+            double ActualArea = width * height;
+
+            if (ActualArea < MinArea)
+                {
+                MinArea = ActualArea;
+                CornersMinimalBox.clear();
+                CornersMinimalBox.push_back(Corner1);
+                CornersMinimalBox.push_back(Corner2);
+                CornersMinimalBox.push_back(Corner3);
+                CornersMinimalBox.push_back(Corner4);
+                }
+
+            TotalRotationAngle += minAngle;
+            }
+        *po_pMinimalBoxCorners = CornersMinimalBox;
+        }
+
+    }

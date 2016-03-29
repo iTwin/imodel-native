@@ -27,6 +27,8 @@
     #define HAVE_CONCURRENCY_RUNTIME 
 
     #if defined(_M_IX86) || defined(_M_X64)
+        // We include this header to support SSE2 intrinsics. 
+        //Important note : There is only SSE2 intrinsics in emmintrin.h ans all Windows x64 CPU support SSE2.
         #define HAVE_SIMD_INTRINSICS
         #include <emmintrin.h>
     #endif
