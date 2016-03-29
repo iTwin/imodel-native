@@ -414,7 +414,7 @@ public:
     void EnableCheckStop(int stopInterval, int const* motionTolerance);
     void SetNoStroking(bool val) {m_wantStroke=!val;}
     UpdatePlan const& GetUpdatePlan() const {return m_plan;}
-    RenderListContext(DgnViewportR vp, DrawPurpose purpose, Render::GraphicList* list, UpdatePlan const& plan) : RenderContext(vp, purpose), m_list(list), m_plan(plan) {}
+    RenderListContext(DgnViewportR vp, DrawPurpose purpose, Render::GraphicList* list, UpdatePlan const& plan);
 };
 
 //=======================================================================================
