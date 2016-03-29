@@ -99,74 +99,70 @@ TEST_F(ECInstanceUpdaterAgainstPrimitiveClassTests, UpdateSingleInstanceOfPrimit
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad.Zaighum                  01/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
+TEST_F(ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
     {
     ECDbR ecdb = SetupECDb("updatewithcurrenttimestamptrigger.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
-    auto testClass = ecdb.Schemas ().GetECClass ("ECSqlTest", "ClassWithLastModProp");
-    ASSERT_TRUE (testClass != nullptr);
+    ECClassCP testClass = ecdb.Schemas().GetECClass("ECSqlTest", "ClassWithLastModProp");
+    ASSERT_TRUE(testClass != nullptr);
 
     auto tryGetLastMod = [] (DateTime& lastMod, ECDbR ecdb, ECInstanceId id)
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT LastMod FROM ecsql.ClassWithLastModProp WHERE ECInstanceId=?"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT LastMod FROM ecsql.ClassWithLastModProp WHERE ECInstanceId=?"));
 
-        stmt.BindId (1, id);
-        ASSERT_EQ (BE_SQLITE_ROW, stmt.Step ());
-        ASSERT_FALSE (stmt.IsValueNull (0));
+        stmt.BindId(1, id);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_FALSE(stmt.IsValueNull(0));
 
-        lastMod = stmt.GetValueDateTime (0);
+        lastMod = stmt.GetValueDateTime(0);
         };
 
     //insert test instance
-    auto testInstance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    StandaloneECInstancePtr testInstance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
-    ECValue v (1);
-    ASSERT_EQ (ECObjectsStatus::Success, testInstance->SetValue ("I", v));
+    ECValue v(1);
+    ASSERT_EQ(ECObjectsStatus::Success, testInstance->SetValue("I", v));
 
-    v.Clear ();
-    v.SetUtf8CP ("ECInstanceInserter");
-    ASSERT_EQ (ECObjectsStatus::Success, testInstance->SetValue ("S", v));
-
+    v.Clear();
+    v.SetUtf8CP("ECInstanceInserter");
+    ASSERT_EQ(ECObjectsStatus::Success, testInstance->SetValue("S", v));
 
     ECInstanceId testId;
-
-        {
-        ECInstanceInserter inserter (ecdb, *testClass);
-        ASSERT_TRUE (inserter.IsValid ());
-
-        ASSERT_EQ (SUCCESS, inserter.Insert (*testInstance));
-
-        ASSERT_TRUE (ECInstanceIdHelper::FromString (testId, testInstance->GetInstanceId ().c_str ()));
-        }
-
+    {
+    ECInstanceInserter inserter(ecdb, *testClass);
+    ASSERT_TRUE(inserter.IsValid());
+    ASSERT_EQ(SUCCESS, inserter.Insert(*testInstance));
+    ASSERT_TRUE(ECInstanceIdHelper::FromString(testId, testInstance->GetInstanceId().c_str()));
+    }
 
     DateTime firstLastMod;
-    tryGetLastMod (firstLastMod, ecdb, testId);
-    ASSERT_TRUE (firstLastMod.IsValid ());
+    tryGetLastMod(firstLastMod, ecdb, testId);
+    ASSERT_TRUE(firstLastMod.IsValid());
 
     //now update an ECInstance
-    BeThreadUtilities::BeSleep (1000); //so that new last mod differs significantly from old last mod
-    v.Clear ();
-    v.SetInteger (2);
-    ASSERT_EQ (ECObjectsStatus::Success, testInstance->SetValue ("I", v));
+    BeThreadUtilities::BeSleep(1000); //so that new last mod differs significantly from old last mod
+    v.Clear();
 
-    ECInstanceUpdater updater (ecdb, *testClass);
-    ASSERT_TRUE (updater.IsValid ());
-    ASSERT_EQ (SUCCESS, updater.Update (*testInstance));
+    v.SetInteger(2);
+    ASSERT_EQ(ECObjectsStatus::Success, testInstance->SetValue("I", v));
+
+    ECInstanceUpdater updater(ecdb, *testClass);
+    ASSERT_TRUE(updater.IsValid());
+    ASSERT_EQ(SUCCESS, updater.Update(*testInstance));
 
     DateTime newLastMod;
-    tryGetLastMod (newLastMod, ecdb, testId);
-    ASSERT_TRUE (newLastMod.IsValid ());
+    tryGetLastMod(newLastMod, ecdb, testId);
+    ASSERT_TRUE(newLastMod.IsValid());
 
     uint64_t firstLastModJdHns = 0ULL;
-    ASSERT_EQ (SUCCESS, firstLastMod.ToJulianDay (firstLastModJdHns));
+    ASSERT_EQ(SUCCESS, firstLastMod.ToJulianDay(firstLastModJdHns));
 
     uint64_t newLastModJdHns = 0ULL;
-    ASSERT_EQ (SUCCESS, newLastMod.ToJulianDay (newLastModJdHns));
+    ASSERT_EQ(SUCCESS, newLastMod.ToJulianDay(newLastModJdHns));
 
     uint64_t timeSpan = newLastModJdHns - firstLastModJdHns;
     const uint64_t timeSpan_1sec_in_hns = 5000000ULL;
-    ASSERT_GT (timeSpan, timeSpan_1sec_in_hns) << "New LastMod must be at least 1 second later than old LastMod as test was paused for 1 sec before updating";
+    ASSERT_GT(timeSpan, timeSpan_1sec_in_hns) << "New LastMod must be at least 1 second later than old LastMod as test was paused for 1 sec before updating";
     }
 
 //---------------------------------------------------------------------------------------
@@ -226,6 +222,151 @@ TEST_F(ECInstanceUpdaterTests, UpdateReadonlyProperty)
     ECInstanceUpdater updater(ecdb, *ecClass);
     ASSERT_EQ(SUCCESS, updater.Update(*updatedInstance));
 
+    Utf8String validateECSql;
+    validateECSql.Sprintf("SELECT NULL FROM ts.A WHERE ECInstanceId=%llu AND P1=%d AND P2 LIKE '%s' AND P3=%lld",
+                          key.GetECInstanceId().GetValue(), newP1Value, newP2Value, newP3Value);
+
+    ECSqlStatement validateStmt;
+    ASSERT_EQ(ECSqlStatus::Success, validateStmt.Prepare(ecdb, validateECSql.c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     03/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECInstanceUpdaterTests, UpdaterBasedOnListOfPropertyIndices)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='testSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEntityClass typeName='A' >"
+        "        <ECProperty propertyName='P1' typeName='int' />"
+        "        <ECProperty propertyName='P2' typeName='string' />"
+        "        <ECProperty propertyName='P3' typeName='long' />"
+        "    </ECEntityClass>"
+        "</ECSchema>");
+
+    ECDbR ecdb = SetupECDb("updaterbasesonparameterindices.ecdb", schemaItem);
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ECInstanceKey key;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.A (P1,P2,P3) VALUES(100, 'old', 1000)"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step(key));
+    }
+
+    ECClassCP ecClass = ecdb.Schemas().GetECClass("testSchema", "A");
+    ASSERT_TRUE(ecClass != nullptr);
+
+    bvector<uint32_t> propertiesToBind {1, 2, 3};
+    ECInstanceUpdater instanceUpdater(ecdb, *ecClass, propertiesToBind);
+    ASSERT_TRUE(instanceUpdater.IsValid());
+
+    //new values for properties
+    const int newP1Value = 200;
+    Utf8CP newP2Value = "new";
+    const int64_t newP3Value = INT64_C(2000);
+
+    //create New Instance
+    IECInstancePtr updatedInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    Utf8Char idStrBuffer[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
+    ASSERT_TRUE(ECInstanceIdHelper::ToString(idStrBuffer, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, key.GetECInstanceId()));
+    updatedInstance->SetInstanceId(idStrBuffer);
+
+    ECValue v;
+    v.SetInteger(newP1Value);
+    ASSERT_EQ(ECObjectsStatus::Success, updatedInstance->SetValue("P1", v));
+
+    v.Clear();
+    v.SetUtf8CP(newP2Value);
+    ASSERT_EQ(ECObjectsStatus::Success, updatedInstance->SetValue("P2", v));
+
+    v.Clear();
+    v.SetLong(newP3Value);
+    ASSERT_EQ(ECObjectsStatus::Success, updatedInstance->SetValue("P3", v));
+
+    //update inserted instance
+    ASSERT_EQ(BentleyStatus::SUCCESS, instanceUpdater.Update(*updatedInstance));
+
+    //validate updated Instance
+    Utf8String validateECSql;
+    validateECSql.Sprintf("SELECT NULL FROM ts.A WHERE ECInstanceId=%llu AND P1=%d AND P2 LIKE '%s' AND P3=%lld",
+                          key.GetECInstanceId().GetValue(), newP1Value, newP2Value, newP3Value);
+
+    ECSqlStatement validateStmt;
+    ASSERT_EQ(ECSqlStatus::Success, validateStmt.Prepare(ecdb, validateECSql.c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     03/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECInstanceUpdaterTests, UpdaterBasedOnListOfPropertiesToBind)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='testSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEntityClass typeName='A' >"
+        "        <ECProperty propertyName='P1' typeName='int' />"
+        "        <ECProperty propertyName='P2' typeName='string' />"
+        "        <ECProperty propertyName='P3' typeName='long' />"
+        "    </ECEntityClass>"
+        "</ECSchema>");
+
+    ECDbR ecdb = SetupECDb("updaterbasesonlistofproperties.ecdb", schemaItem);
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ECInstanceKey key;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.A (P1,P2,P3) VALUES(100, 'old', 1000)"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step(key));
+    }
+
+    ECClassCP ecClass = ecdb.Schemas().GetECClass("testSchema", "A");
+    ASSERT_TRUE(ecClass != nullptr);
+
+    ECPropertyCP p1 = ecClass->GetPropertyP("P1");
+    ASSERT_TRUE(p1 != nullptr);
+
+    ECPropertyCP p2 = ecClass->GetPropertyP("P2");
+    ASSERT_TRUE(p2 != nullptr);
+
+    ECPropertyCP p3 = ecClass->GetPropertyP("P3");
+    ASSERT_TRUE(p3 != nullptr);
+
+    bvector<ECPropertyCP> propertiesToBind {p1, p2, p3};
+    ECInstanceUpdater instanceUpdater(ecdb, *ecClass, propertiesToBind);
+    ASSERT_TRUE(instanceUpdater.IsValid());
+
+    //new values for properties
+    const int newP1Value = 200;
+    Utf8CP newP2Value = "new";
+    const int64_t newP3Value = INT64_C(2000);
+
+    //create New Instance
+    IECInstancePtr updatedInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    Utf8Char idStrBuffer[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
+    ASSERT_TRUE(ECInstanceIdHelper::ToString(idStrBuffer, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, key.GetECInstanceId()));
+    updatedInstance->SetInstanceId(idStrBuffer);
+
+    ECValue v;
+    v.SetInteger(newP1Value);
+    ASSERT_EQ(ECObjectsStatus::Success, updatedInstance->SetValue("P1", v));
+
+    v.Clear();
+    v.SetUtf8CP(newP2Value);
+    ASSERT_EQ(ECObjectsStatus::Success, updatedInstance->SetValue("P2", v));
+
+    v.Clear();
+    v.SetLong(newP3Value);
+    ASSERT_EQ(ECObjectsStatus::Success, updatedInstance->SetValue("P3", v));
+
+    //update inserted instance
+    ASSERT_EQ(BentleyStatus::SUCCESS, instanceUpdater.Update(*updatedInstance));
+
+    //validate updated Instance
     Utf8String validateECSql;
     validateECSql.Sprintf("SELECT NULL FROM ts.A WHERE ECInstanceId=%llu AND P1=%d AND P2 LIKE '%s' AND P3=%lld",
                           key.GetECInstanceId().GetValue(), newP1Value, newP2Value, newP3Value);

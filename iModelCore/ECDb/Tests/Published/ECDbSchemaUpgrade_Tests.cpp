@@ -258,6 +258,8 @@ TEST_F(ECDbSchemaUpgradeTests, UpdateCAProperties)
     ECValue val;
     ASSERT_EQ(ECObjectsStatus::Success, propertyMapCA->GetValue(val, "IsNullable"));
     ASSERT_FALSE(val.GetBoolean());
+    val.Clear();
+
     ASSERT_EQ(ECObjectsStatus::Success, propertyMapCA->GetValue(val, "ColumnName"));
     ASSERT_STREQ("TestProperty1", val.GetUtf8CP());
     }
@@ -363,6 +365,8 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewClassModifyAllExistingAttributes)
     ECValue val;
     ASSERT_EQ(ECObjectsStatus::Success, propertyMapCA->GetValue(val, "IsNullable"));
     ASSERT_FALSE(val.GetBoolean());
+    val.Clear();
+
     ASSERT_EQ(ECObjectsStatus::Success, propertyMapCA->GetValue(val, "ColumnName"));
     ASSERT_STREQ("TestProperty1", val.GetUtf8CP());
 
@@ -480,6 +484,8 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewPropertyModifyAllExistingAttributes)
     ECValue val;
     ASSERT_EQ(ECObjectsStatus::Success, propertyMapCA->GetValue(val, "IsNullable"));
     ASSERT_FALSE(val.GetBoolean());
+    val.Clear();
+
     ASSERT_EQ(ECObjectsStatus::Success, propertyMapCA->GetValue(val, "ColumnName"));
     ASSERT_STREQ("TestProperty1", val.GetUtf8CP());
 
@@ -581,6 +587,8 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewCAOnClass)
     ECValue val;
     ASSERT_EQ(ECObjectsStatus::Success, classMapCA->GetValue(val, "MapStrategy.Strategy"));
     ASSERT_STREQ("SharedTable", val.GetUtf8CP());
+    val.Clear();
+
     ASSERT_EQ(ECObjectsStatus::Success, classMapCA->GetValue(val, "MapStrategy.Options"));
     ASSERT_STREQ("SharedColumns", val.GetUtf8CP());
     }
