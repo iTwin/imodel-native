@@ -282,6 +282,11 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelMeshIndexQuer
 /*
 *   Query for retrieving nodes that intersect a given ray. Will only return nodes at chosen level that have points in them.
 *   The optional parameter intersectType decides if using first or last node hit in direction of ray.
+*
+*   There are 2 kinds of intersect queries. The 2D queries return nodes if, when projected on the XY plane, their extent intersects the
+*   ray also projected on the XY plane. The 3D queries are a full ray intersect against the node's box. Both kinds of queries can be constrained using 
+*   a depth parameter corresponding to maximum length along the ray (allowing bounded queries, default is unbounded) and both can return the first, last or 
+*   all intersects along the ray. "ALL_INTERSECT" queries will return nodes sorted along the ray direction.
 */
 template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelIntersectIndexQuery : public  HGFLevelPointIndexQuery<POINT, EXTENT>
 {

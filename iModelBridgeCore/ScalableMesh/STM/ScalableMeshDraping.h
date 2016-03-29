@@ -92,6 +92,25 @@ struct MeshTraversalQueue
             {
             m_currentStep.lastEdge = edge;
             }
+
+        size_t GetNumberOfNodes()
+            {
+            return m_nodesRemainingToDrape.size();
+            }
+        static const size_t ALL_CHUNKS = (size_t)-1;
+        void GetNodes(bvector < MeshTraversalStep>& nodes, size_t numberOfChunks)
+            {
+            size_t n = 0;
+            while (n < numberOfChunks && !m_nodesRemainingToDrape.empty())
+                {
+                nodes.push_back(m_nodesRemainingToDrape.front());
+                m_nodesRemainingToDrape.pop();
+                ++n;
+                }
+            }
+
+        void CollectAll();
+
         bool TryStartTraversal(bool& needProjectionToFindFirstTriangle, int segment);
         bool HasNodesToProcess();
         bool NextAlongElevation();
