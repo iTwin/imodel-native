@@ -769,7 +769,7 @@ DgnQueryView::QueryResultsPtr DgnQueryView::RangeQuery::DoQuery()
             if (++m_count > m_hitLimit)
                 {
                 SetTestLOD(true); // now that we've found a minimum number of elements, start skipping small ones
-                m_results->m_scores.erase(m_results->m_scores.begin());
+                m_results->m_scores.erase(m_results->m_scores.end());
                 m_results->m_incomplete = true;
                 m_count = m_hitLimit;
                 }
