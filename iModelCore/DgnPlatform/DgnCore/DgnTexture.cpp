@@ -152,20 +152,20 @@ DgnDbStatus DgnTexture::_OnDelete() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::ImagePtr DgnTexture::ExtractImage() const
+Render::Image DgnTexture::ExtractImage() const
     {
     RgbImageInfo imageInfo;
     memset(&imageInfo, 0, sizeof (imageInfo));
 
-    Render::ImagePtr image = new Render::Image(m_data.m_width, m_data.m_height, Render::Image::Format::Rgba);
+    Render::Image image(m_data.m_width, m_data.m_height, Render::Image::Format::Rgba);
     switch (m_data.GetFormat())
         {
         case DgnTexture::Format::RAW:
-            image->GetByteStreamR() = std::move(m_data); // extracts the data
+            image.GetByteStreamR() = std::move(m_data); // extracts the data
             break;
 
         case DgnTexture::Format::PNG:  
-            imageInfo.ReadImageFromPngBuffer(image->GetByteStreamR(), m_data.GetData(), m_data.GetSize());
+            imageInfo.ReadImageFromPngBuffer(image, m_data.GetData(), m_data.GetSize());
             break;
 
         case DgnTexture::Format::JPEG:
@@ -176,13 +176,13 @@ Render::ImagePtr DgnTexture::ExtractImage() const
             imageInfo.m_isBGR = false;
             imageInfo.m_isTopDown = true;
             
-            imageInfo.ReadImageFromJpgBuffer(image->GetByteStreamR(), m_data.GetData(), m_data.GetSize());
+            imageInfo.ReadImageFromJpgBuffer(image, m_data.GetData(), m_data.GetSize());
             break;
             }
     
         default:
             BeAssert(false);
-            return nullptr;
+            return Render::Image();
         }
 
     // This is tricky. We may have just transferred ownership of the image data to the the caller. That means that this
