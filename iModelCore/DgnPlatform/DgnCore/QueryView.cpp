@@ -463,7 +463,6 @@ void DgnQueryView::_CreateScene(SceneContextR context)
         }
 
     DgnElements& pool = m_dgndb.Elements();
-    double lastScore = 1000000;
     if (m_scene->GetCount() < results->GetCount()) // did we get them all?
         {
         DEBUG_PRINTF("Begin create scene with load");
@@ -472,10 +471,6 @@ void DgnQueryView::_CreateScene(SceneContextR context)
             if (m_scene->Contains(thisScore.second))
                 continue; // was already added during "quick" pass
 
-            if (thisScore.first > lastScore)
-                DEBUG_PRINTF("scores are in wrong order");
-
-            lastScore = thisScore.first;
             DgnElementCPtr el = pool.GetElement(thisScore.second);
             if (!el.IsValid())
                 {
