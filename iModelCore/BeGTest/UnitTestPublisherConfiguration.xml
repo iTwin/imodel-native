@@ -7,7 +7,7 @@
     <Levels/>
     <Models/>
     <References newLevelDisplay="false" mergeIntoParent="false"/>
-    <Raster importAttachments="true" compressData="true"/>
+    <Raster importAttachments="true" exportRaster="true"/>
     <ECSchemas exportDiscovered="false" stopPublishingAfterExport="false">
         <SupplementalPaths/>
         <ForcedSelections/>
