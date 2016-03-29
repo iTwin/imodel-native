@@ -151,7 +151,8 @@ BentleyBuild.py -p ScalableMeshATPexe -f ScalableMesh -r ScalableMesh re Scalabl
     <NMakeReBuildCommandLine>BentleyBuild.py -p ScalableMeshATP -f ScalableMesh -r ScalableMesh re ScalableMeshATPexe -x64 -c</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>BentleyBuild.py -p ScalableMeshATP -f ScalableMesh -r ScalableMesh re ScalableMeshATP -x64 -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\scalablemesh\PublicAPI;$(OutRoot)Winx64\BuildContexts\scalablemesh\PublicAPI\scalablemesh</NMakeIncludeSearchPath>
-    <NMakeForcedIncludes>$(ProjectDir)ScalableMeshATPPch.h</NMakeForcedIncludes>
+    <NMakeForcedIncludes>
+    </NMakeForcedIncludes>
     <NMakeForcedUsingAssemblies />
     <AdditionalOptions />
     <NMakeAssemblySearchPath />
@@ -227,7 +228,8 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <IncludePath>C:\dev\ConceptStation\out\release\Winx64\BuildContexts\DgnPlatform\PublicAPI;C:\dev\ConceptStation\out\release\Winx64\BuildContexts\scalablemesh\PublicAPI;C:\dev\ConceptStation\out\release\Winx64\BuildContexts\ImagePP\PublicAPI;C:\dev\ConceptStation\out\release\Winx64\BuildContexts\BeSQLite\PublicAPI;C:\dev\ConceptStation\src\Imagepp\PublicApi;C:\dev\ConceptStation\out\release\Winx64\BuildContexts\TerrainModel\PublicAPI;C:\dev\ConceptStation\out\release\Winx64\BuildContexts\Bentley\PublicAPI;C:\dev\ConceptStation\out\release\Winx64\BuildContexts\ConceptStation\PublicAPI;C:\dev\ConceptStation\out\release\Winx64\BuildContexts\DgnDisplay\PublicAPI;C:\dev\ConceptStation\out\release\Winx64\BuildContexts\DgnDisplay\PublicAPI\RasterCore;$(IncludePath)</IncludePath>
     <SourcePath>$(SourcePath)</SourcePath>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
-    <NMakeForcedIncludes>$(ProjectDir)ScalableMeshATPPch.h</NMakeForcedIncludes>
+    <NMakeForcedIncludes>
+    </NMakeForcedIncludes>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseProduct|Win32'">
     <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel </NMakeBuildCommandLine>
