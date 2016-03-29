@@ -300,7 +300,7 @@ Utf8String ECXml::ContainerTypeToString(CustomAttributeContainerType containerTy
     if (TestValue(CustomAttributeContainerType::Any, containerType))
         str = "Any";
 
-    return std::move(str);
+    return str;
     }
 
 //---------------------------------------------------------------------------------------
