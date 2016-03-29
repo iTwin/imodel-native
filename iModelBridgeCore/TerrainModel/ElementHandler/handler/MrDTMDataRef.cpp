@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/MrDTMDataRef.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -1479,6 +1479,9 @@ RefCountedPtr<DTMDataRef> MrDTMDataRef::FromElemHandle(ElementHandleCR elemHandl
     // Do not cache non persistent element.
     if(elemHandle.GetElementRef() == NULL)
         return new MrDTMDataRef(elemHandle, mrdtmDocumentPtr, inCreation);
+
+    if (elemHandle.GetElementRef()->IsDeleted())
+        return NULL;
 
     DTMDataRef* pDataRef;
 
