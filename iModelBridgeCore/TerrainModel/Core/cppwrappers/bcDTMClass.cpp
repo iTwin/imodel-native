@@ -1491,9 +1491,9 @@ DTMStatusInt BcDTM::_DrapePoint
         if (elevationP) *elevationP = z;
         if (slopeP)     *slopeP = slope;
         if (aspectP)    *aspectP = aspect;
-        if (triangle) memcpy (triangle, &trianglePoints[0], 3*sizeof(DPoint3d));
+        if (triangle) memcpy(triangle, &trianglePoints[0], 3 * sizeof(trianglePoints[0]));
         }
-    if (drapedTypeP) drapedTypeP = drapeFlag;
+    drapedTypeP = drapeFlag;
 
 BC_END:;
 

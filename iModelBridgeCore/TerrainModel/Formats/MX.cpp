@@ -318,7 +318,10 @@ BcDTMPtr MXFilImporter::ImportStringModel (ModelTableRecord* modelTableRecord) c
                             {
                             if (inNullSegment)
                                 pointList.push_back(points[pointNum]);
-                            dtm->AddLinearFeature(featureType, pointList.data(), (int)pointList.size(), asLong(stringTableRecord->stringName()), &featureId);
+                            if (DTMFeatureType::FeatureSpot == featureType)
+                                dtm->AddPointFeature(pointList.data(), (int)pointList.size(), asLong(stringTableRecord->stringName()), &featureId);
+                            else
+                                dtm->AddLinearFeature(featureType, pointList.data(), (int)pointList.size(), asLong(stringTableRecord->stringName()), &featureId);
                             if (m_callback)
                                 m_callback->AddFeature(featureId, L"", L"", stringName.GetWCharCP(), L"", featureType, pointList.data(), (int)pointList.size());
                             }
@@ -334,7 +337,10 @@ BcDTMPtr MXFilImporter::ImportStringModel (ModelTableRecord* modelTableRecord) c
                             {
                             if (includeNULLSegments || !inNullSegment)
                                 {
-                                dtm->AddLinearFeature(featureType, pointList.data(), (int)pointList.size(), asLong(stringTableRecord->stringName()), &featureId);
+                                if (DTMFeatureType::FeatureSpot == featureType)
+                                    dtm->AddPointFeature(pointList.data(), (int)pointList.size(), asLong(stringTableRecord->stringName()), &featureId);
+                                else
+                                    dtm->AddLinearFeature(featureType, pointList.data(), (int)pointList.size(), asLong(stringTableRecord->stringName()), &featureId);
                                 if (m_callback)
                                     m_callback->AddFeature(featureId, L"", L"", stringName.GetWCharCP(), L"", featureType, pointList.data(), (int)pointList.size());
                                 }
@@ -345,7 +351,10 @@ BcDTMPtr MXFilImporter::ImportStringModel (ModelTableRecord* modelTableRecord) c
                     }
                 if (includeNULLSegments || !inNullSegment)
                     {
-                    dtm->AddLinearFeature(featureType, pointList.data(), (int)pointList.size(), asLong(stringTableRecord->stringName()), &featureId);
+                    if (DTMFeatureType::FeatureSpot == featureType)
+                        dtm->AddPointFeature(pointList.data(), (int)pointList.size(), asLong(stringTableRecord->stringName()), &featureId);
+                    else
+                        dtm->AddLinearFeature(featureType, pointList.data(), (int)pointList.size(), asLong(stringTableRecord->stringName()), &featureId);
                     if (m_callback)
                         m_callback->AddFeature(featureId, L"", L"", stringName.GetWCharCP(), L"", featureType, pointList.data(), (int)pointList.size());
                     }
