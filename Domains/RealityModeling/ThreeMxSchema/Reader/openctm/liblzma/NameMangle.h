@@ -10,10 +10,14 @@
 #define MyAlloc _ctm_MyAlloc
 #define MyFree _ctm_MyFree
 #ifdef _WIN32
+#ifdef NO_BENTLEY_CHANGES
 #define MidAlloc _ctm_MidAlloc
+#endif
 #define MidFree _ctm_MidFree
 #define SetLargePageSize _ctm_SetLargePageSize
+#ifdef NO_BENTLEY_CHANGES
 #define BigAlloc _ctm_BigAlloc
+#endif
 #define BigFree _ctm_BigFree
 #endif /* _WIN32 */
 

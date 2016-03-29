@@ -17,9 +17,13 @@ void MyFree(void *address);
 
 void SetLargePageSize();
 
+#ifdef NO_BENTLEY_CHANGES
 void *MidAlloc(size_t size);
+#endif
 void MidFree(void *address);
+#ifdef NO_BENTLEY_CHANGES
 void *BigAlloc(size_t size);
+#endif
 void BigFree(void *address);
 
 #else
