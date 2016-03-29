@@ -966,6 +966,10 @@ public:
     //! @param[in] key The key for the AppData of interest.
     //! @return the AppData for key \a key, or nullptr.
     DGNPLATFORM_EXPORT AppData* FindAppData(AppData::Key const& key) const;
+
+    //! @private
+    DGNPLATFORM_EXPORT void CopyAppDataFrom(DgnElementCR source) const;
+
     //! @}
 
     //! Get the DgnModelId of this DgnElement.
