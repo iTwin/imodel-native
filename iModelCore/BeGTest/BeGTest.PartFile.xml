@@ -61,6 +61,8 @@
         <ProductDirectory Name="DgnPlatformNativeAssemblies"        Deliver="false" LibType="static"/>
         <ProductDirectory Name="BeCurlAssemblies"                   Path="Assemblies"/>
         <ProductDirectory Name="BeCurlAssemblies"                   Deliver="false" LibType="static"/>
+        <ProductDirectory Name="BeHttpNativeAssemblies"             Path="Assemblies"/>
+        <ProductDirectory Name="BeHttpNativeAssemblies"             Deliver="false" LibType="static"/>
         <ProductDirectory Name="ConstructionAssemblies"             Path="Assemblies"/>
         <ProductDirectory Name="ConstructionAssemblies"             Deliver="false" LibType="static"/>
         <ProductDirectory Name="ECObjectsNativeAssemblies"          Path="Assemblies"/>
@@ -90,6 +92,8 @@
         <ProductDirectory Name="BentleyLibs"                        Path="Libs" LibType="static"/>
         <ProductDirectory Name="WSClientLibs"                       Path="Libs"/>
         <ProductDirectory Name="WSClientLibs"                       Path="Libs" LibType="static"/>
+        <ProductDirectory Name="BeHttpLibs"                         Path="Libs"/>
+        <ProductDirectory Name="BeHttpLibs"                         Path="Libs" LibType="static"/>
         <ProductDirectory Name="BeStaticLibDir"                     Path="Libs"/>
         <ProductDirectory Name="BeStaticLibDir"                     Path="Libs" LibType="static"/>
         <ProductDirectory Name="BeJsonCppStaticLibDir"              Path="Libs"/>
@@ -103,6 +107,8 @@
         <ProductDirectory Name="UnitTests-Objects"                  Path="Objects" LibType="static"/>
         <ProductDirectory Name="UnitTests-Assets"                   Path="Assets"/>
         <ProductDirectory Name="UnitTests-Assets"                   Path="Assets" LibType="static"/>
+        <ProductDirectory Name="BeHttpAssets"                       Path="Assets/BeHttp"/>
+        <ProductDirectory Name="BeHttpAssets"                       Path="Assets/BeHttp" LibType="static"/>
         <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore"/>
         <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore" LibType="static"/>
         <ProductDirectory Name="UnitTests-Documents-DgnDb"          Path="Assets/Documents/DgnDb"/>
@@ -129,9 +135,6 @@
         <ProductDirectory Name="PlanningLibs"                       Path="Libs" LibType="static"/>
         <ProductDirectory Name="UnitTests-GeomLibsTestData"         Path="Assets/GeomLibsTestData"/>
         <ProductDirectory Name="UnitTests-GeomLibsTestData"         Path="Assets/GeomLibsTestData" LibType="static"/>
-
-        <ProductDirectory Name="http"                               Path="Assets/http"/>
-        <ProductDirectory Name="http"                               Path="Assets/http" LibType="static"/>
 
         <ProductDirectory Name="DgnClientFxJavaScript"                Path="Assets/js/"/>
         <ProductDirectory Name="DgnClientFxJavaScript"                Path="Assets/js/" LibType="static"/>
