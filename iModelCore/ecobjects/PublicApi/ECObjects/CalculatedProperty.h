@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/CalculatedProperty.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,6 +22,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 struct CalculatedPropertySpecification : RefCountedBase
     {
 private:
+    Utf8String                  m_expressionStr;
     NodePtr                     m_expression;
     ParserRegexP                m_parserRegex;
     ECValue                     m_failureValue;
@@ -32,9 +33,11 @@ private:
     InstanceExpressionContextP  m_thisContext;
     EvaluationOptions           m_evaluationOptions;
 
-    CalculatedPropertySpecification (NodeR expr, ParserRegexP regex, IECInstanceCR customAttr, PrimitiveType primType, ECValueCR failureValue);
+    CalculatedPropertySpecification (Utf8CP exprStr, NodeR expr, ParserRegexP regex, IECInstanceCR customAttr, PrimitiveType primType, ECValueCR failureValue);
     ~CalculatedPropertySpecification();
 public:
+    Utf8CP GetExpression() const {return m_expressionStr.c_str();}
+
     // Attempts to evaluate the property value. Regardless of the return value, newValue will contain the proper result based on flags like UseLastValidOnFailure, FailureValue, and IsDefaultValueOnly
     ECOBJECTS_EXPORT ECObjectsStatus    Evaluate (ECValueR newValue, ECValueCR existingValue, IECInstanceCR instance, Utf8CP accessString) const;
 
