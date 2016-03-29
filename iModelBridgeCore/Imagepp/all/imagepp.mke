@@ -781,8 +781,6 @@ $(o)HCPGCoordLatLongModel$(oext) : $(ippGraDir)hcp/src/HCPGCoordLatLongModel.cpp
 
 $(o)HCPGCoordUtility$(oext) : $(ippGraDir)hcp/src/HCPGCoordUtility.cpp $(ippAllInc)HCPGCoordUtility.h ${MultiCompileDepends}
 
-$(o)HCPWellKnownText$(oext) : $(ippGraDir)hcp/src/HCPWellKnownText.cpp $(ippAllInc)HCPWellKnownText.h ${MultiCompileDepends}
-
 $(o)DownSampling$(oext) : $(ippGraDir)hra/src/DownSampling.cpp $(ippGraPrivateAPISrc)DownSampling.h ${MultiCompileDepends}
 
 $(o)ImageCommon$(oext) : $(ippGraDir)hra/src/ImageCommon.cpp $(ippGraPrivateAPISrc)ImageCommon.h ${MultiCompileDepends}
