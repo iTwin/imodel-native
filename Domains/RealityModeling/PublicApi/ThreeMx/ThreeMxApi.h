@@ -249,7 +249,7 @@ struct  Util
 {
     static void DisplayNodeFailureWarning(WCharCP fileName) {BeAssert(false);};
     static BeFileName ConstructNodeName(Utf8StringCR childName, BeFileNameCP parentName);
-#if defined (BENTLEYCONFIG_OS_WINDOWS)
+#if defined (BENTLEYCONFIG_OS_WINDOWS) && !defined (BENTLEY_WINRT)
     static void GetMemoryStatistics(size_t& memoryLoad, size_t& total, size_t& available);
     static double CalculateResolutionRatio();
 #endif

@@ -47,6 +47,7 @@ void MyFree(void *address)
 
 #ifdef _WIN32
 
+#ifdef NO_BENTLEY_CHANGES
 void *MidAlloc(size_t size)
 {
   if (size == 0)
@@ -56,6 +57,7 @@ void *MidAlloc(size_t size)
   #endif
   return VirtualAlloc(0, size, MEM_COMMIT, PAGE_READWRITE);
 }
+#endif
 
 void MidFree(void *address)
 {
@@ -93,6 +95,7 @@ void SetLargePageSize()
 }
 
 
+#ifdef NO_BENTLEY_CHANGES
 void *BigAlloc(size_t size)
 {
   if (size == 0)
@@ -112,6 +115,7 @@ void *BigAlloc(size_t size)
   #endif
   return VirtualAlloc(0, size, MEM_COMMIT, PAGE_READWRITE);
 }
+#endif
 
 void BigFree(void *address)
 {

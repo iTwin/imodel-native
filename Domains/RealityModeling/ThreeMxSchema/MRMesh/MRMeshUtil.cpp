@@ -33,7 +33,7 @@ BeFileName Util::ConstructNodeName(Utf8StringCR childName, BeFileNameCP parentNa
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-#if defined (BENTLEYCONFIG_OS_WINDOWS)
+#if defined (BENTLEYCONFIG_OS_WINDOWS) && !defined (BENTLEY_WINRT)
 void Util::GetMemoryStatistics(size_t& memoryLoad, size_t& total, size_t& available)
     {
     MEMORYSTATUSEX statex;

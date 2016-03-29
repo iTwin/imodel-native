@@ -486,11 +486,11 @@ void Cache::Debug()
     size_t memoryUsage = GetMemoryUsage(), textureMemoryUsage = GetTextureMemoryUsage(), nodeCount = GetNodeCount();
     printf("Node Count: %zu, Memory Usage: %lf, Texture Memory: %lf \n", nodeCount, (double)memoryUsage / (double)ONE_GB, (double)textureMemoryUsage / (double)ONE_GB);
     printf("Memory/Node: %lf Texture/Node: %lf, Mesh Count: %zu, Max Depth: %zu\n", (double)memoryUsage / (double)(nodeCount * 1024), (double)textureMemoryUsage / (double)(nodeCount * 1024), GetMeshCount(), GetMaxDepth());
-#if defined (BENTLEYCONFIG_OS_WINDOWS)
+#if defined (BENTLEYCONFIG_OS_WINDOWS) && !defined (BENTLEY_WINRT)
     printf("Resolution Ratio: %lf\n", Util::CalculateResolutionRatio());
 #endif
 
-#if defined (BENTLEYCONFIG_OS_WINDOWS)
+#if defined (BENTLEYCONFIG_OS_WINDOWS) && !defined (BENTLEY_WINRT)
     size_t  load, total, available;
 
     Util::GetMemoryStatistics(load, total, available);

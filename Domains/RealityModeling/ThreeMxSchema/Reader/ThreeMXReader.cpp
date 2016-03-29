@@ -135,7 +135,7 @@ static bool readBytes(MxStreamBuffer& in, void* buf, uint32_t size)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static uint32_t ctmReadFunc(void* buf, uint32_t count, void* userData)
+static CTMuint ctmReadFunc(void* buf, CTMuint count, void* userData)
     {
     return readBytes(*(MxStreamBuffer*)userData, buf, count) ? count : 0;
     }
@@ -264,7 +264,7 @@ BentleyStatus Node::Read3MXB(MxStreamBuffer& in, LoadContextCR loadContext)
                     }
 
                 in.SetPos(offset);
-                ctmLoadCustom(context, ctmReadFunc, &in);
+                ctmLoadCustom(context, (CTMreadfn)ctmReadFunc, &in);
                 if (ctmGetError(context) != CTM_NONE)
                     {
                     LOG_ERROR("CTM read error: %s", ctmErrorString(ctmGetError(context)));
