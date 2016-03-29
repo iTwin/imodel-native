@@ -376,4 +376,58 @@ TEST_F(ECInstanceUpdaterTests, UpdaterBasedOnListOfPropertiesToBind)
     ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     03/16
+//+---------------+---------------+---------------+---------------+---------------+------
+//Failing case, if number of property indices less then 1, updater should be invalid
+TEST_F(ECInstanceUpdaterTests, InvalidListOfPropertyIndices)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='testSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEntityClass typeName='A' >"
+        "        <ECProperty propertyName='P1' typeName='int' />"
+        "    </ECEntityClass>"
+        "</ECSchema>");
+
+    ECDbR ecdb = SetupECDb("updaterbasesonparameterindices.ecdb", schemaItem);
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ECClassCP ecClass = ecdb.Schemas().GetECClass("testSchema", "A");
+    ASSERT_TRUE(ecClass != nullptr);
+
+    bvector<uint32_t> propertiesToBind {};
+    ECInstanceUpdater instanceUpdater(ecdb, *ecClass, propertiesToBind);
+    ASSERT_FALSE(instanceUpdater.IsValid());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     03/16
+//+---------------+---------------+---------------+---------------+---------------+------
+//Failing case, Update should fail it updater is invalid
+TEST_F(ECInstanceUpdaterTests, InvalidUpdater)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='testSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEntityClass typeName='A' >"
+        "        <ECProperty propertyName='P1' typeName='int' />"
+        "    </ECEntityClass>"
+        "</ECSchema>");
+
+    ECDbR ecdb = SetupECDb("updaterbasesonparameterindices.ecdb", schemaItem);
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ECClassCP ecClass = ecdb.Schemas().GetECClass("testSchema", "A");
+    ASSERT_TRUE(ecClass != nullptr);
+
+    bvector<uint32_t> propertiesToBind {};
+    ECInstanceUpdater instanceUpdater(ecdb, *ecClass, propertiesToBind);
+    ASSERT_FALSE(instanceUpdater.IsValid());
+
+    IECInstancePtr updatedInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    ASSERT_EQ(BentleyStatus::ERROR, instanceUpdater.Update(*updatedInstance));
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
