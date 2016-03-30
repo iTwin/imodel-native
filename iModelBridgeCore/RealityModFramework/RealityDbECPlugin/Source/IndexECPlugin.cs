@@ -77,7 +77,7 @@ namespace IndexECPlugin.Source
         /// <remarks>This is only made public to simplify testing.</remarks>
         public const string PLUGIN_NAME = "IndexECPlugin";
 
-        private string m_connectionString = "";
+        private string m_connectionString = ConfigurationRoot.GetAppSetting("RECPConnectionString");
 
         /// <summary>
         /// Make plugin available to contract tests.
@@ -149,11 +149,14 @@ namespace IndexECPlugin.Source
 
             //ParseConfigFile(location);
 
-            m_connectionString = ConfigurationRoot.GetAppSetting("RECPConnectionString");
+            if ( location == "Server" )
+                {
 
-            var identifier = new RepositoryIdentifier(module.ParentECPlugin.ECPluginId, location, location, location, null);
-            module.RepositoryVerified(session, identifier); //tells the module to include that repository in the list of known repositories from now on
-            return identifier;
+                var identifier = new RepositoryIdentifier(module.ParentECPlugin.ECPluginId, location, location, location, null);
+                module.RepositoryVerified(session, identifier); //tells the module to include that repository in the list of known repositories from now on
+                return identifier;
+                }
+            return null;
             //}
             }
 
