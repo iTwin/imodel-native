@@ -49,7 +49,7 @@ private:
     std::map<ClassMap const*, std::unique_ptr<ClassMapInfo>> m_classMapInfoCache;
     bset<ECN::ECRelationshipClassCP> m_relationshipClassesWithSingleNavigationProperty;
     ClassMapLoadContext m_loadContext;
-    ECSchemaCompareContext m_prepareContext;
+    ECSchemaCompareContext m_compareContext;
 
     UserECDbMapStrategy* GetUserStrategyP(ECN::ECClassCR, ECN::ECDbClassMap const*) const;
 
@@ -69,7 +69,7 @@ public:
     void AddNRelationshipRelationshipClassWithSingleNavigationProperty(ECN::ECRelationshipClassCR relClass) { m_relationshipClassesWithSingleNavigationProperty.insert(&relClass); }
     bool IsRelationshipClassWithSingleNavigationProperty(ECN::ECRelationshipClassCR relClass) const { return m_relationshipClassesWithSingleNavigationProperty.find(&relClass) != m_relationshipClassesWithSingleNavigationProperty.end(); }
     ClassMapLoadContext& GetClassMapLoadContext() { return m_loadContext; }
-    ECSchemaCompareContext& GetECSchemaCompareContext() { return m_prepareContext; }
+    ECSchemaCompareContext& GetECSchemaCompareContext() { return m_compareContext; }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

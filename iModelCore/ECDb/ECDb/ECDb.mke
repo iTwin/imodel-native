@@ -35,7 +35,6 @@ ECDbAllHeaders = \
                 $(baseDir)ECDbInternalTypes.h \
                 $(baseDir)ECDbLogger.h \
                 $(baseDir)MapStrategy.h \
-                $(baseDir)ECSchemaComparers.h \
                 $(baseDir)ECDbImpl.h \
                 $(baseDir)BeBriefcaseBasedIdSequence.h \
                 $(baseDir)ECDbMap.h \
@@ -154,8 +153,6 @@ $(o)ECDbLogger$(oext):										$(baseDir)ECDbLogger.cpp                    $(EC
 $(o)BeBriefcaseBasedIdSequence$(oext):						$(baseDir)BeBriefcaseBasedIdSequence.cpp   $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDbMap$(oext):											$(baseDir)ECDbMap.cpp                       $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)ECSchemaComparers$(oext):								$(baseDir)ECSchemaComparers.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)MapStrategy$(oext):									    $(baseDir)MapStrategy.cpp                   $(ECDbAllHeaders) ${MultiCompileDepends}
 

@@ -175,7 +175,7 @@ BentleyStatus ECInstanceInserter::Impl::Insert (ECInstanceKey& newInstanceKey, I
         return ERROR;
         }
 
-    if (instance.GetClass () != m_ecClass)
+    if (!ECInstanceAdapterHelper::Equals(instance.GetClass(), m_ecClass))
         {
         Utf8String errorMessage;
         errorMessage.Sprintf ("Invalid ECInstance passed to ECInstanceInserter. ECClass mismatch: Expected ECClass: '%s'. ECInstance's ECClass: '%s'.",

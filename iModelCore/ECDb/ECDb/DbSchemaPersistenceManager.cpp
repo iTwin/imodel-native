@@ -26,18 +26,21 @@ BentleyStatus DbSchemaPersistenceManager::Load(DbSchema& dbSchema, ECDbCR ecdb, 
         return ERROR;
         }
 
-    dbSchema.Reset();
+    if (Enum::Contains(loadMode, DbSchema::LoadState::Core) &&
+        !Enum::Contains(dbSchema.GetLoadState(), DbSchema::LoadState::Core))
+        {
+        if (BE_SQLITE_OK != ReadTables(dbSchema, ecdb))
+            return ERROR;
 
-    if (BE_SQLITE_OK != ReadTables(dbSchema, ecdb))
-        return ERROR;
+        if (BE_SQLITE_OK != ReadPropertyPaths(dbSchema, ecdb))
+            return ERROR;
 
-    if (BE_SQLITE_OK != ReadPropertyPaths(dbSchema, ecdb))
-        return ERROR;
+        if (BE_SQLITE_OK != ReadClassMappings(dbSchema, ecdb))
+            return ERROR;
+        }
 
-    if (BE_SQLITE_OK != ReadClassMappings(dbSchema, ecdb))
-        return ERROR;
-
-    if (loadMode == DbSchema::LoadState::ForSchemaImport)
+    if (Enum::Contains(loadMode, DbSchema::LoadState::Indexes) &&
+        !Enum::Contains(dbSchema.GetLoadState(), DbSchema::LoadState::Indexes))
         {
         if (SUCCESS != ReadIndexes(dbSchema, ecdb))
             return ERROR;
@@ -65,17 +68,15 @@ DbResult DbSchemaPersistenceManager::ReadTables(DbSchema& dbSchema, ECDbCR ecdb)
         PersistenceType persistenceType = stmt->GetValueInt(3) == 1 ? PersistenceType::Virtual : PersistenceType::Persisted;
         Utf8CP primaryTableName = stmt->GetValueText(4);
 
-        DbTable* table = nullptr;
-        if (Utf8String::IsNullOrEmpty(primaryTableName))
-            table = dbSchema.CreateTable(name, tableType, persistenceType);
-        else
+        DbTable const* primaryTable = nullptr;
+        if (!Utf8String::IsNullOrEmpty(primaryTableName))
             {
-            DbTable const* primaryTable = dbSchema.FindTable(primaryTableName);
+            primaryTable = dbSchema.FindTable(primaryTableName);
             BeAssert(primaryTable != nullptr && "Failed to find primary table");
             BeAssert(DbTable::Type::Joined == tableType && "Expecting JoinedTable");
-            table = dbSchema.CreateTable(name, tableType, persistenceType, primaryTable);
             }
 
+        DbTable* table = dbSchema.CreateTable(id, name, tableType, persistenceType, primaryTable);
         if (table == nullptr)
             {
             BeAssert(false && "Failed to create table definition");
@@ -975,6 +976,7 @@ BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const&
 //static
 BentleyStatus DbSchemaPersistenceManager::CreateOrUpdateIndexes(ECDbCR ecdb, DbSchema const& dbSchema)
     {
+#ifndef NDEBUG
             {
             Statement stmt;
             if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT NULL FROM " EC_INDEX_TableName " LIMIT 1"))
@@ -986,6 +988,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateOrUpdateIndexes(ECDbCR ecdb, DbS
                 return ERROR;
                 }
             }
+#endif
 
     bmap<Utf8String, DbIndex const*> comparableIndexDefs;
     for (std::unique_ptr<DbIndex> const& indexPtr : dbSchema.GetIndexes())

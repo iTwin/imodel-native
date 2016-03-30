@@ -624,12 +624,9 @@ public:
     LoadState GetLoadState() const { return m_loadState; }
     void SetLoadState(LoadState state) { m_loadState = state; }
     //! Create a table with a given name or if name is null a name will be generated
-    DbTable* CreateTable(Utf8CP name, DbTable::Type, PersistenceType type = PersistenceType::Persisted, DbTable const* primaryTable = nullptr);
-
+    DbTable* CreateTable(Utf8CP name, DbTable::Type, PersistenceType type, DbTable const* primaryTable);
     DbTable* CreateTableAndColumnsForExistingTableMapStrategy(Utf8CP existingTableName);
-
-
-    //! Find a table with a given name
+    DbTable* CreateTable(DbTableId, Utf8CP name, DbTable::Type, PersistenceType type, DbTable const* primaryTable);
     TableMap const& GetTables() const { return m_tables; }
     DbTable const* FindTable(Utf8CP name) const;
     DbTable* FindTableP(Utf8CP name) const;

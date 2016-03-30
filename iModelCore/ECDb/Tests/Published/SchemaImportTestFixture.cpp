@@ -166,9 +166,9 @@ void SchemaImportTestFixture::AssertForeignKey(bool expectedToHaveForeignKey, EC
 
     Utf8String fkSearchString;
     if (Utf8String::IsNullOrEmpty(foreignKeyColumnName))
-        fkSearchString = "FOREIGN KEY (";
+        fkSearchString = "FOREIGN KEY(";
     else
-        fkSearchString.Sprintf("FOREIGN KEY ([%s]", foreignKeyColumnName);
+        fkSearchString.Sprintf("FOREIGN KEY([%s]", foreignKeyColumnName);
 
     ASSERT_EQ(expectedToHaveForeignKey, ddl.find(fkSearchString) != ddl.npos) << "Table: " << tableName << " FK column name: " << foreignKeyColumnName;
     }

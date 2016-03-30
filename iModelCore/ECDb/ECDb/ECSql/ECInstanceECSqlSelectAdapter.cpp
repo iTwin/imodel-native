@@ -165,7 +165,7 @@ void ECInstanceECSqlSelectAdapter::CreateColumnHandlers()
                     if (targetClassInSelectClause == nullptr)
                         targetClassInSelectClause = &columnInfo.GetRootClass ();
                     else
-                        isSingleClassSelectClause = *targetClassInSelectClause == columnInfo.GetRootClass ();
+                        isSingleClassSelectClause = ECInstanceAdapterHelper::Equals(*targetClassInSelectClause, columnInfo.GetRootClass());
                     }
                 else
                     isSingleClassSelectClause = false;

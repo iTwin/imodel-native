@@ -1459,13 +1459,6 @@ BentleyStatus ECSchemaComparer::Compare(ECSchemaChanges& changes, ECSchemaList c
         return ERROR;
 
     changes.Optimize();
-
-//#ifndef NDEBUG
-//    Utf8String afterOptimize;
-//    changes.WriteToString(afterOptimize);
-//    LOG.debug(afterOptimize.c_str());
-//#endif
-
     return SUCCESS;
     }
 

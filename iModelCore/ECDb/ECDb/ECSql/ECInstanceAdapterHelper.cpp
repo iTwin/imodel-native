@@ -703,6 +703,20 @@ void ECInstanceAdapterHelper::LogFailure (Utf8CP operationName, ECN::IECInstance
 // @bsimethod                                   Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
+bool ECInstanceAdapterHelper::Equals(ECN::ECClassCR lhs, ECN::ECClassCR rhs)
+    {
+    if (lhs.HasId() && rhs.HasId())
+        {
+        return lhs.GetId() == rhs.GetId();
+        }
+
+    return strcmp(lhs.GetFullName(), rhs.GetFullName()) == 0;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   07/14
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
 IECSqlBinder::MakeCopy ECInstanceAdapterHelper::DetermineMakeCopy (ECN::ECValueCR ecValue)
     {
     //if original string is not UTF-8, it will be converted to UTF-8 and the new string stored in ECValue.

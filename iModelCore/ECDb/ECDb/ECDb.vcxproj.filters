@@ -100,7 +100,6 @@
     <ClInclude Include="ECSql\Parser\IParseContext.h">
       <Filter>ECSql\OSQLParser</Filter>
     </ClInclude>
-    <ClInclude Include="ECSchemaComparers.h" />
     <ClInclude Include="..\PublicAPI\ECDb\IECSqlBinder.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
@@ -442,7 +441,6 @@
     <ClCompile Include="ECSql\ECSqlParseTreeFormatter.cpp">
       <Filter>ECSql</Filter>
     </ClCompile>
-    <ClCompile Include="ECSchemaComparers.cpp" />
     <ClCompile Include="ECSql\ECSqlField.cpp">
       <Filter>ECSql\Fields</Filter>
     </ClCompile>
