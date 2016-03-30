@@ -750,13 +750,13 @@ void HGF2DShape::GetBestOrientedExtent(HGF2DPositionCollection* po_pMinimalBoxCo
             double height = HorizontalMaxLine.CalculateShortestDistance(Corner3);
 
             //Angles between lines must always be PI/2 radian
-            BeAssert(HDOUBLE_EQUAL_EPSILON(abs(VerticalMinLine.CalculateBearing().GetAngle() -
+            BeAssert(HDOUBLE_EQUAL_EPSILON(fabs(VerticalMinLine.CalculateBearing().GetAngle() -
                                                HorizontalMinLine.CalculateBearing().GetAngle()), PI / 2));
-            BeAssert(HDOUBLE_EQUAL_EPSILON(abs(VerticalMinLine.CalculateBearing().GetAngle() -
+            BeAssert(HDOUBLE_EQUAL_EPSILON(fabs(VerticalMinLine.CalculateBearing().GetAngle() -
                                                HorizontalMaxLine.CalculateBearing().GetAngle()), PI / 2));
-            BeAssert(HDOUBLE_EQUAL_EPSILON(abs(VerticalMaxLine.CalculateBearing().GetAngle() -
+            BeAssert(HDOUBLE_EQUAL_EPSILON(fabs(VerticalMaxLine.CalculateBearing().GetAngle() -
                                                HorizontalMinLine.CalculateBearing().GetAngle()), PI / 2));
-            BeAssert(HDOUBLE_EQUAL_EPSILON(abs(VerticalMaxLine.CalculateBearing().GetAngle() -
+            BeAssert(HDOUBLE_EQUAL_EPSILON(fabs(VerticalMaxLine.CalculateBearing().GetAngle() -
                                                HorizontalMaxLine.CalculateBearing().GetAngle()), PI / 2));
 
             //Compute the area and compare it with the actual minimum
