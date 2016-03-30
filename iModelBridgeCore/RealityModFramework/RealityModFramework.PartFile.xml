@@ -83,7 +83,7 @@
         <SubPart PartName="CrawlerLibExample"/>
         <SubPart PartName="RealityDbECPluginInstaller" />
         <SubPart PartName="DataHandlerTool" />
-        <SubPart PartName="RealityCrawler"/>
+        <!--<SubPart PartName="RealityCrawler"/>-->
     </Part>
 
     <Part Name="RealityDbECPlugin" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" OnlyPlatforms="x86,x64">
