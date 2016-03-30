@@ -82,6 +82,14 @@ public:
                     Transform::FromAxisAndRotationAngle (ray->Get (), angle->GetRadians ()));
                 }                
     
+    static JsTransformP CreateNormalizedFrameOriginTarget (JsDPoint3dP origin, JsDPoint3dP target, double axisIndex)
+                {
+                DVec3d direction = target->Get() - origin->Get ();
+                // remark: always normalize.
+                return new JsTransform (
+                    Transform::From (RotMatrix::From1Vector (direction, (int)floor (axisIndex), true), origin->Get ()));
+                }                
+
     
     JsDPoint3dP MultiplyPoint (JsDPoint3dP Point)
         {
