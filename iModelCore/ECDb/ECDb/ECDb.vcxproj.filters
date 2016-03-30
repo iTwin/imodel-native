@@ -387,6 +387,9 @@
     <ClInclude Include="DbSchemaPersistenceManager.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
+    <ClInclude Include="Nullable.h">
+      <Filter>ECDbSchemaManager</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
