@@ -384,6 +384,9 @@
     <ClInclude Include="ECSchemaComparer.h">
       <Filter>ECDbSchemaManager</Filter>
     </ClInclude>
+    <ClInclude Include="Nullable.h">
+      <Filter>ECDbSchemaManager</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">

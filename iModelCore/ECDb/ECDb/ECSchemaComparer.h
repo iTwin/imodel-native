@@ -7,6 +7,7 @@
 +-------------------------------------------------------------------------------------*/
 #pragma once
 #include "ECDbInternalTypes.h"
+#include "Nullable.h"
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define INDENT_SIZE 3
@@ -120,34 +121,27 @@ enum SystemId : uint32_t
     VERSIONMINOR,
     VERSIONWRITE,
     };
-//=======================================================================================
-// @bsiclass                                                Affan.Khan            03/2016
-//+===============+===============+===============+===============+===============+======
-template<typename T>
-struct Nullable
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+static bool operator == (ECValueCR lhs, ECValueCR rhs)
     {
-    private:
-        T m_value;
-        bool m_isNull;
-
-    public:
-        Nullable();
-        Nullable(T const& value);
-        Nullable(Nullable<T> const& rhs);
-        Nullable(Nullable<T> const&& rhs);
-        bool IsNull() const;
-        T const& Value() const;
-        T& ValueR();
-        bool operator == (Nullable<T> const& rhs) const;
-        bool operator == (std::nullptr_t rhs)const;
-        bool operator != (Nullable<T> const& rhs) const;
-        bool operator != (std::nullptr_t rhs) const;
-        Nullable<T>& operator = (Nullable<T> const&& rhs);
-        Nullable<T>& operator = (Nullable<T> const& rhs);
-        Nullable<T>& operator = (T const& rhs);
-        Nullable<T>& operator = (T const&& rhs);
-        Nullable<T>& operator = (std::nullptr_t rhs);
-    };
+    return lhs.Equals(rhs);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+static bool operator == (DPoint2dCR lhs, DPoint2dCR rhs)
+    {
+    return lhs.AlmostEqual(rhs);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+static bool operator == (DPoint3dCR lhs, DPoint3dCR rhs)
+    {
+    return lhs.AlmostEqual(rhs);
+    }
 
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
