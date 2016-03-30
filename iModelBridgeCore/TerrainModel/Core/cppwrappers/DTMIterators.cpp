@@ -2,7 +2,7 @@
 |
 |   $Source: Core/cppwrappers/DTMIterators.cpp $
 |
-| $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+| $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TerrainModel/TerrainModel.h>
@@ -101,11 +101,9 @@ long DTMFeatureInfo::FeatureIndex() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Daryl.Holmwood  11/2015
 //---------------------------------------------------------------------------------------
-static int featureIdCompareFunction(const DTMFeatureId& id1P, const DTMFeatureId& id2P)
+static bool featureIdCompareFunction(const DTMFeatureId& id1P, const DTMFeatureId& id2P)
     {
-    if (id1P < id2P) return -1;
-    if (id1P > id2P) return 1;
-    return(0);
+    return id1P < id2P;
     }
 
 //---------------------------------------------------------------------------------------
@@ -184,6 +182,7 @@ void DTMFeatureEnumerator::Initialize() const
     */
     long numCleanUpFeatures = 0;
     
+    m_isInitialized = true;
     InitializeForSorting ();
 
     for (long dtmFeature = 0; dtmFeature < m_dtmP->numFeatures; ++dtmFeature)
@@ -223,7 +222,7 @@ void DTMFeatureEnumerator::Initialize() const
     /*
     **     Sort Feature Ids
     */
-    if (numCleanUpFeatures > 1 && !m_sort)
+    if (numCleanUpFeatures > 1 && m_readSourceFeatures)
         std::sort (m_sourceFeatureIds.begin (), m_sourceFeatureIds.end (), &featureIdCompareFunction);
     }
 
@@ -252,8 +251,9 @@ bool DTMFeatureEnumerator::MoveNext(long& m_index, size_t& m_nextSourceFeatureIn
         if (!((dtmFeatureP->dtmFeatureState == DTMFeatureState::Data || dtmFeatureP->dtmFeatureState == DTMFeatureState::Tin || dtmFeatureP->dtmFeatureState == DTMFeatureState::TinError || dtmFeatureP->dtmFeatureState == DTMFeatureState::Rollback || dtmFeatureP->dtmFeatureState == DTMFeatureState::PointsArray) && dtmFeatureP->dtmFeatureType != DTMFeatureType::RandomSpots))
             continue;
 
-        // ToDo Check the feature type matches what the user wants
-        bool isSourceFeature = true;
+        // Check if the user doesn't want source Features.
+        if (!m_readSourceFeatures && dtmFeatureP->dtmFeatureState == DTMFeatureState::Rollback)
+            continue;
 
         if (m_filterByFeatureId && m_featureIdFilter != dtmFeatureP->dtmFeatureId)
             continue;
@@ -278,56 +278,63 @@ bool DTMFeatureEnumerator::MoveNext(long& m_index, size_t& m_nextSourceFeatureIn
         else if (m_excludeFeatureTypeByDefault)
             continue;
 
-        if (m_sort)
+        if (m_readSourceFeatures)
             {
-            if (dtmFeatureP->dtmFeatureState != DTMFeatureState::Rollback)
-                {
-                while (m_nextSourceFeatureIndex < m_sourceFeatureIds.size () && m_sourceFeatureIds[m_nextSourceFeatureIndex] < dtmFeatureP->dtmFeatureId)
-                    m_nextSourceFeatureIndex++;
+            bool isSourceFeature = true;
 
-                isSourceFeature = m_nextSourceFeatureIndex >= m_sourceFeatureIds.size () || m_sourceFeatureIds[m_nextSourceFeatureIndex] != dtmFeatureP->dtmFeatureId;
-                }
-            }
-        else
-            {
-            if (dtmFeatureP->dtmFeatureState != DTMFeatureState::Rollback)
+            if (m_sort)
                 {
-                if (m_sourceFeatureIds.size () == 1)
+                if (dtmFeatureP->dtmFeatureState != DTMFeatureState::Rollback)
                     {
-                    if (dtmFeatureP->dtmFeatureId == m_sourceFeatureIds[0])
-                        {
-                        isSourceFeature = false;
-                        }
+                    while (m_nextSourceFeatureIndex < m_sourceFeatureIds.size() && m_sourceFeatureIds[m_nextSourceFeatureIndex] < dtmFeatureP->dtmFeatureId)
+                        m_nextSourceFeatureIndex++;
+
+                    isSourceFeature = m_nextSourceFeatureIndex >= m_sourceFeatureIds.size() || m_sourceFeatureIds[m_nextSourceFeatureIndex] != dtmFeatureP->dtmFeatureId;
                     }
-                else if (m_sourceFeatureIds.size () > 1)
+                }
+            else
+                {
+                if (dtmFeatureP->dtmFeatureState != DTMFeatureState::Rollback)
                     {
-                    DTMFeatureId* featureIdsP = &m_sourceFeatureIds[0];
-                    DTMFeatureId* feat1P = featureIdsP;
-                    DTMFeatureId* feat2P = &featureIdsP[m_sourceFeatureIds.size () - 1];
-                    if (dtmFeatureP->dtmFeatureId == *feat1P || dtmFeatureP->dtmFeatureId == *feat2P)
-                        isSourceFeature = false;
-                    else
+                    if (m_sourceFeatureIds.size() == 1)
                         {
-                        DTMFeatureId *feat3P = &featureIdsP[((long)(feat1P - featureIdsP) + (long)(feat2P - featureIdsP)) / 2];
-                        while (feat3P != feat1P && feat3P != feat2P)
+                        if (dtmFeatureP->dtmFeatureId == m_sourceFeatureIds[0])
                             {
-                            if (dtmFeatureP->dtmFeatureId == *feat3P)
+                            isSourceFeature = false;
+                            }
+                        }
+                    else if (m_sourceFeatureIds.size() > 1)
+                        {
+                        DTMFeatureId* featureIdsP = &m_sourceFeatureIds[0];
+                        DTMFeatureId* feat1P = featureIdsP;
+                        DTMFeatureId* feat2P = &featureIdsP[m_sourceFeatureIds.size() - 1];
+                        if (dtmFeatureP->dtmFeatureId == *feat1P || dtmFeatureP->dtmFeatureId == *feat2P)
+                            isSourceFeature = false;
+                        else
+                            {
+                            DTMFeatureId *feat3P = &featureIdsP[((long)(feat1P - featureIdsP) + (long)(feat2P - featureIdsP)) / 2];
+                            while (feat3P != feat1P && feat3P != feat2P)
                                 {
-                                isSourceFeature = false;
-                                feat1P = feat2P = feat3P;
-                                }
-                            else
-                                {
-                                if (dtmFeatureP->dtmFeatureId < *feat3P) feat2P = feat3P;
-                                else if (dtmFeatureP->dtmFeatureId > *feat3P) feat1P = feat3P;
-                                feat3P = &featureIdsP[((long)(feat1P - featureIdsP) + (long)(feat2P - featureIdsP)) / 2];
+                                if (dtmFeatureP->dtmFeatureId == *feat3P)
+                                    {
+                                    isSourceFeature = false;
+                                    feat1P = feat2P = feat3P;
+                                    }
+                                else
+                                    {
+                                    if (dtmFeatureP->dtmFeatureId < *feat3P) feat2P = feat3P;
+                                    else if (dtmFeatureP->dtmFeatureId > *feat3P) feat1P = feat3P;
+                                    feat3P = &featureIdsP[((long)(feat1P - featureIdsP) + (long)(feat2P - featureIdsP)) / 2];
+                                    }
                                 }
                             }
                         }
                     }
                 }
+            if (isSourceFeature)
+                break;
             }
-        if (isSourceFeature)
+        else
             break;
         } while (true);
         return true;
