@@ -153,7 +153,7 @@ DbResult ECDbProfileUpgrader_3100::_Upgrade(ECDbR ecdb) const
     const int dataColKindInt = Enum::ToInt(DbColumn::Kind::DataColumn);
     
     Utf8String sql;
-    sql.Sprintf("UPDATE ec_Column SET DbColumn::Kind=%d WHERE DbColumn::Kind & %d=%d AND Type=%d AND TableId IN (SELECT t.Id FROM ec_Table t WHERE t.Type<>%d)", Enum::ToInt(DbColumn::Kind::SharedDataColumn),
+    sql.Sprintf("UPDATE ec_Column SET ColumnKind=%d WHERE ColumnKind & %d=%d AND Type=%d AND TableId IN (SELECT t.Id FROM ec_Table t WHERE t.Type<>%d)", Enum::ToInt(DbColumn::Kind::SharedDataColumn),
                 dataColKindInt, dataColKindInt, Enum::ToInt(DbColumn::Type::Any), Enum::ToInt(DbTable::Type::Existing));
 
     Statement stmt;
@@ -171,7 +171,7 @@ DbResult ECDbProfileUpgrader_3100::_Upgrade(ECDbR ecdb) const
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    LOG.debugv("ECDb profile upgrade: Table 'ec_Column': changed DbColumn::Kind from 'DataColumn' to 'SharedDataColumn' in %d rows.",
+    LOG.debugv("ECDb profile upgrade: Table 'ec_Column': changed ColumnKind from 'DataColumn' to 'SharedDataColumn' in %d rows.",
                ecdb.GetModifiedRowCount());
     return BE_SQLITE_OK;
     }

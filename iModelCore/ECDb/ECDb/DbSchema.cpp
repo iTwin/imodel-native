@@ -578,6 +578,7 @@ std::weak_ptr<DbColumn> DbTable::FindColumnWeakPtr(Utf8CP name) const
 
     return std::weak_ptr<DbColumn>();
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
@@ -644,7 +645,6 @@ DbColumn const* DbTable::GetFilteredColumnFirst(DbColumn::Kind kind) const
     return nullptr;
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
@@ -658,6 +658,14 @@ bool DbTable::TryGetECClassIdColumn(DbColumn const*& classIdCol) const
 
     classIdCol = m_classIdColumn;
     return m_classIdColumn != nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+bool DbTable::IsNullTable() const
+    {
+    return this == m_dbSchema.GetNullTable();
     }
 
 

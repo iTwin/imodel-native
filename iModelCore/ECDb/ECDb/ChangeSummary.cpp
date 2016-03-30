@@ -340,7 +340,7 @@ ECClassId TableMap::QueryClassId(ECDbCR ecdb, Utf8StringCR tableName) const
                 " WHERE ec_Table.Name = :tableName"
                 " AND (ec_ClassMap.MapStrategy != :sourceTableStrategy AND ec_ClassMap.MapStrategy != :targetTableStrategy)"
                 " AND ec_Column.IsVirtual = 0"
-                " AND (ec_Column.DbColumn::Kind & %d = %d)",
+                " AND (ec_Column.ColumnKind & %d = %d)",
                 Enum::ToInt(DbColumn::Kind::ECInstanceId), Enum::ToInt(DbColumn::Kind::ECInstanceId));
 
     CachedStatementPtr stmt = ecdb.GetCachedStatement(sql.c_str());
@@ -388,7 +388,7 @@ bool TableMap::QueryIdColumn(Utf8StringR idColumnName, ECDbCR ecdb, Utf8StringCR
         "SELECT ec_Column.Name"
         " FROM ec_Column"
         " JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
-        " WHERE ec_Table.Name = ?1 AND ec_Column.IsVirtual = 0 AND (ec_Column.DbColumn::Kind & ?2 = ?2)");
+        " WHERE ec_Table.Name = ?1 AND ec_Column.IsVirtual = 0 AND (ec_Column.ColumnKind & ?2 = ?2)");
     BeAssert(statement.IsValid());
 
     statement->BindText(1, tableName, Statement::MakeCopy::No);
@@ -419,7 +419,7 @@ void TableMap::QueryForeignKeyRelClassIds(bvector<ECClassId>& fkeyRelClassIds, E
                 "       ec_Class.Type=%d AND"
                 "       (ec_ClassMap.MapStrategy = :targetTableStrategy OR ec_ClassMap.MapStrategy = :sourceTableStrategy) AND"
                 "       ec_Column.IsVirtual = 0 AND"
-                "       (ec_Column.DbColumn::Kind & %d = %d )",
+                "       (ec_Column.ColumnKind & %d = %d )",
                 Enum::ToInt(ECClassType::Relationship),
                 Enum::ToInt(DbColumn::Kind::ECInstanceId), Enum::ToInt(DbColumn::Kind::ECInstanceId));
 

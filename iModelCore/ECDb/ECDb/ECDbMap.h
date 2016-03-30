@@ -97,7 +97,7 @@ private:
 
     MapStatus DoMapSchemas();
     MapStatus MapClass(ECN::ECClassCR);
-    BentleyStatus SaveMappings() const;
+    BentleyStatus SaveDbSchema() const;
     BentleyStatus CreateOrUpdateRequiredTables() const;
     BentleyStatus EvaluateColumnNotNullConstraints() const;
     BentleyStatus CreateOrUpdateIndexesInDb() const;
@@ -144,8 +144,6 @@ public:
     LightweightCache const& GetLightweightCache() const { return m_lightweightCache; }
     ECDbCR GetECDb() const { return m_ecdb; }
     std::set<DbTable const*> GetTablesFromRelationshipEnd(ECN::ECRelationshipConstraintCR relationshipEnd, EndTablesOptimizationOptions options) const;
-
-    static void ParsePropertyAccessString(bvector<Utf8String>&, Utf8CP propAccessString);
     };
 
 

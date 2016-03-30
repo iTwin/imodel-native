@@ -93,7 +93,7 @@ MapStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext)
         return stat;
         }
 
-    if (SUCCESS != SaveMappings())
+    if (SUCCESS != SaveDbSchema())
         {
         ClearCache();
         m_schemaImportContext = nullptr;
@@ -1125,10 +1125,9 @@ void ECDbMap::ClearCache()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Save map
 * @bsimethod                                 Affan Khan                          08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbMap::SaveMappings() const
+BentleyStatus ECDbMap::SaveDbSchema() const
     {
     BeMutexHolder lock(m_mutex);
     StopWatch stopWatch(true);
@@ -1159,15 +1158,6 @@ BentleyStatus ECDbMap::SaveMappings() const
     return SUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle    10/2015
-//---------------------------------------------------------------------------------------
-void ECDbMap::ParsePropertyAccessString(bvector<Utf8String>& tokens, Utf8CP propertyAccessString)
-    {
-    BeStringUtilities::Split(propertyAccessString, ".", nullptr, tokens);
-    }
-
-
 
 //************************************************************************************
 // LightweightCache
@@ -1182,7 +1172,7 @@ void ECDbMap::LightweightCache::LoadClassIdsPerTable() const
 
     Utf8String sql;
     sql.Sprintf("SELECT t.Id, t.Name, c.Id FROM ec_Table t, ec_Class c, ec_PropertyMap pm, ec_ClassMap cm, ec_PropertyPath pp, ec_Column col "
-                "WHERE cm.Id=pm.ClassMapId AND pp.Id=pm.PropertyPathId AND col.Id=pm.ColumnId AND (col.DbColumn::Kind & %d = 0) AND "
+                "WHERE cm.Id=pm.ClassMapId AND pp.Id=pm.PropertyPathId AND col.Id=pm.ColumnId AND (col.ColumnKind & %d = 0) AND "
                 "c.Id=cm.ClassId AND t.Id=col.TableId AND "
                 "cm.MapStrategy<>%d AND cm.MapStrategy<>%d "
                 "GROUP BY t.Id, c.Id", Enum::ToInt(DbColumn::Kind::ECClassId),
@@ -1274,7 +1264,7 @@ void ECDbMap::LightweightCache::LoadHorizontalPartitions ()  const
         "INNER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId), "
         "TableMapInfo AS ("
         "SELECT ec_Class.Id ClassId, ec_Table.Name TableName FROM ec_PropertyMap "
-        "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.DbColumn::Kind & %d = 0) "
+        "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & %d = 0) "
         "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
         "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
         "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "

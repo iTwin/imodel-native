@@ -105,7 +105,7 @@ DbResult DbSchemaPersistenceManager::ReadTables(DbSchema& dbSchema, ECDbCR ecdb)
 //static
 DbResult DbSchemaPersistenceManager::ReadColumns(DbTable& table, ECDbCR ecdb)
     {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Id, Name, Type, IsVirtual, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, DbColumn::Kind FROM ec_Column WHERE TableId = ? ORDER BY Ordinal");
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Id, Name, Type, IsVirtual, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, ColumnKind FROM ec_Column WHERE TableId = ? ORDER BY Ordinal");
     if (stmt == nullptr)
         return BE_SQLITE_ERROR;
 
@@ -448,9 +448,9 @@ BentleyStatus DbSchemaPersistenceManager::Save(ECDbCR ecdb, DbSchema const& dbSc
 //static
 DbResult DbSchemaPersistenceManager::InsertTable(ECDbCR ecdb, DbTable const& table)
     {
-    if (!table.IsValid())
+    if (!table.IsNullTable() && !table.IsValid())
         {
-        BeAssert(false && "TAble to insert is not valid");
+        BeAssert(false && "Table to insert is not valid");
         return BE_SQLITE_ERROR;
         }
 
@@ -502,7 +502,7 @@ DbResult DbSchemaPersistenceManager::InsertTable(ECDbCR ecdb, DbTable const& tab
 //static
 DbResult DbSchemaPersistenceManager::InsertColumn(ECDbCR ecdb, DbColumn const& column, int columnOrdinal, int primaryKeyOrdinal)
     {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("INSERT INTO ec_Column (Id, TableId, Name, Type, IsVirtual, Ordinal, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, DbColumn::Kind) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("INSERT INTO ec_Column (Id, TableId, Name, Type, IsVirtual, Ordinal, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, ColumnKind) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     if (stmt == nullptr)
         return BE_SQLITE_ERROR;
 
@@ -558,7 +558,7 @@ DbResult DbSchemaPersistenceManager::InsertForeignKeyConstraint(ECDbCR ecdb, For
         return BE_SQLITE_ERROR;
         }
 
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("INSERT ec_ForeignKey(Id, TableId, ReferencedTableId, OnDelete, OnUpdate) VALUES (?, ?, ?, ?, ?)");
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("INSERT INTO ec_ForeignKey(Id, TableId, ReferencedTableId, OnDelete, OnUpdate) VALUES (?, ?, ?, ?, ?)");
     if (stmt == nullptr)
         return BE_SQLITE_ERROR;
 
@@ -975,6 +975,18 @@ BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const&
 //static
 BentleyStatus DbSchemaPersistenceManager::CreateOrUpdateIndexes(ECDbCR ecdb, DbSchema const& dbSchema)
     {
+            {
+            Statement stmt;
+            if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT NULL FROM " EC_INDEX_TableName " LIMIT 1"))
+                return ERROR;
+
+            if (stmt.Step() == BE_SQLITE_ROW)
+                {
+                BeAssert(false && "ec_Index is expected to be empty");
+                return ERROR;
+                }
+            }
+
     bmap<Utf8String, DbIndex const*> comparableIndexDefs;
     for (std::unique_ptr<DbIndex> const& indexPtr : dbSchema.GetIndexes())
         {
