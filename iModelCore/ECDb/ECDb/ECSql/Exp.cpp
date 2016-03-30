@@ -20,9 +20,9 @@ Utf8CP const Exp::ASTERISK_TOKEN = "*";
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                    09/2015
 //+---------------+---------------+---------------+---------------+---------------+--------
-std::set<ECDbSqlTable const*> Exp::GetReferencedTables() const
+std::set<DbTable const*> Exp::GetReferencedTables() const
     {
-    std::set<ECDbSqlTable const*> tmp;
+    std::set<DbTable const*> tmp;
     if (!this->IsComplete())
         {
         BeAssert(false && "This operation is supported on resolved expressions");
@@ -35,7 +35,7 @@ std::set<ECDbSqlTable const*> Exp::GetReferencedTables() const
         auto propertyNameExp = static_cast<PropertyNameExp const*>(exp);
         if (!propertyNameExp->IsPropertyRef())
             {
-            std::vector<ECDbSqlColumn const*> columns;            
+            std::vector<DbColumn const*> columns;            
             propertyNameExp->GetTypeInfo().GetPropertyMap()->GetColumns(columns);
             for (auto column : columns)
                 {

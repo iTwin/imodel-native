@@ -316,9 +316,6 @@
     <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="ECDbSql.h">
-      <Filter>ECDbMap</Filter>
-    </ClInclude>
     <ClInclude Include="ECDbPch.h">
       <Filter>Mke</Filter>
     </ClInclude>
@@ -386,6 +383,9 @@
     </ClInclude>
     <ClInclude Include="ECSchemaComparer.h">
       <Filter>ECDbSchemaManager</Filter>
+    </ClInclude>
+    <ClInclude Include="DbSchemaPersistenceManager.h">
+      <Filter>ECDbMap</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -655,9 +655,6 @@
     <ClCompile Include="ECSql\ECSqlStatementCache.cpp">
       <Filter>ECSql\ECSqlStatement</Filter>
     </ClCompile>
-    <ClCompile Include="ECDbSql.cpp">
-      <Filter>ECDbMap</Filter>
-    </ClCompile>
     <ClCompile Include="ECDbPch.cpp">
       <Filter>Mke</Filter>
     </ClCompile>
@@ -711,6 +708,9 @@
     </ClCompile>
     <ClCompile Include="ECSchemaComparer.cpp">
       <Filter>ECDbSchemaManager</Filter>
+    </ClCompile>
+    <ClCompile Include="DbSchemaPersistenceManager.cpp">
+      <Filter>ECDbMap</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

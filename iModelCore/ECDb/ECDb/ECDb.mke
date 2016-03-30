@@ -108,8 +108,8 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/StructMappedToColumnsECSqlField.h \
                 $(baseDir)ECSql/StructArrayJsonECSqlField.h \
                 $(baseDir)ECSql/ECInstanceAdapterHelper.h \
-                $(baseDir)ECDbSql.h \
                 $(baseDir)DbSchema.h \
+                $(baseDir)DbSchemaPersistenceManager.h \
                 $(baseDir)ECSchemaComparer.h \
                 $(baseDir)ECDbExpressionSymbolProvider.h
 
@@ -303,19 +303,19 @@ $(o)PrimitiveToSingleColumnECSqlBinder$(oext):              $(baseDir)ECSql/Prim
 
 $(o)PointECSqlBinder$(oext):                                $(baseDir)ECSql/PointECSqlBinder.cpp        $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)StructToColumnsECSqlBinder$(oext):                      $(baseDir)ECSql/StructToColumnsECSqlBinder.cpp  $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)StructToColumnsECSqlBinder$(oext):                      $(baseDir)ECSql/StructToColumnsECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)PrimitiveArrayToColumnECSqlBinder$(oext):               $(baseDir)ECSql/PrimitiveArrayToColumnECSqlBinder.cpp  $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)PrimitiveArrayToColumnECSqlBinder$(oext):               $(baseDir)ECSql/PrimitiveArrayToColumnECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)StructArrayJsonECSqlBinder$(oext):                      $(baseDir)ECSql/StructArrayJsonECSqlBinder.cpp   $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)StructArrayJsonECSqlBinder$(oext):                      $(baseDir)ECSql/StructArrayJsonECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)SystemPropertyECSqlBinder$(oext):                       $(baseDir)ECSql/SystemPropertyECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlParseTreeFormatter$(oext):                         $(baseDir)ECSql/ECSqlParseTreeFormatter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlField$(oext):                                      $(baseDir)ECSql/ECSqlField.cpp              $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlField$(oext):                                      $(baseDir)ECSql/ECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlFieldFactory$(oext):                               $(baseDir)ECSql/ECSqlFieldFactory.cpp      $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlFieldFactory$(oext):                               $(baseDir)ECSql/ECSqlFieldFactory.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)PrimitiveArrayMappedToSingleColumnECSqlField$(oext):    $(baseDir)ECSql/PrimitiveArrayMappedToSingleColumnECSqlField.cpp      $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -327,9 +327,9 @@ $(o)StructMappedToColumnsECSqlField$(oext):                 $(baseDir)ECSql/Stru
 
 $(o)StructArrayJsonECSqlField$(oext):                       $(baseDir)ECSql/StructArrayJsonECSqlField.cpp                   $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbSql$(oext):	                                    $(baseDir)ECDbSql.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)DbSchema$(oext):	                                    $(baseDir)DbSchema.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)DbSchema$(oext):	                                    $(baseDir)DbSchema.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)DbSchemaPersistenceManager$(oext):                      $(baseDir)DbSchemaPersistenceManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDbExpressionSymbolProvider$(oext):                    $(baseDir)ECDbExpressionSymbolProvider.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

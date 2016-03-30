@@ -70,7 +70,7 @@ protected:
     RelationshipConstraintMap m_targetConstraintMap;
 
     RelationshipClassMap (Type, ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
-    ECDbSqlColumn* CreateConstraintColumn (Utf8CP columnName, ColumnKind columnId, PersistenceType);
+    DbColumn* CreateConstraintColumn (Utf8CP columnName, DbColumn::Kind columnId, PersistenceType);
     void DetermineConstraintClassIdColumnHandling (bool& addConstraintClassIdColumnNeeded, ECN::ECClassId& defaultConstraintClassId, ECN::ECRelationshipConstraintCR constraint) const;
 
     RelationshipConstraintMap& GetConstraintMapR(ECN::ECRelationshipEnd constraintEnd);
@@ -143,11 +143,11 @@ private:
 
     RelationshipClassEndTableMap (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
 
-    bool GetRelationshipColumnName (Utf8StringR columnName, ECDbSqlTable const& table, Utf8CP prefix, bool mappingInProgress) const;
+    bool GetRelationshipColumnName (Utf8StringR columnName, DbTable const& table, Utf8CP prefix, bool mappingInProgress) const;
 
     void AddIndexToRelationshipEnd (SchemaImportContext&, ClassMapInfo const& mapInfo);
 
-    bool GetReferencedEndKeyColumnName (Utf8StringR columnName, ECDbSqlTable const& table, bool mappingInProgress) const;
+    bool GetReferencedEndKeyColumnName (Utf8StringR columnName, DbTable const& table, bool mappingInProgress) const;
     virtual MapStatus _MapPart1 (SchemaImportContext&, ClassMapInfo const& classMapInfo, ClassMap const* parentClassMap) override;
     virtual MapStatus _MapPart2 (SchemaImportContext&, ClassMapInfo const& classMapInfo, ClassMap const* parentClassMap) override;
 
@@ -156,11 +156,11 @@ private:
     //! @param[in] constraint Constraint
     //! @return SUCCESS if key property was found or no key property exists on the constraint. ERROR if constraint has more
     //! than one class or more than one key properties.
-    BentleyStatus TryGetKeyPropertyColumn(std::set<ECDbSqlColumn const*>& keyPropertyColumns, ECN::ECRelationshipConstraintCR, ECN::ECRelationshipClassCR, ECN::ECRelationshipEnd constraintEnd) const;
+    BentleyStatus TryGetKeyPropertyColumn(std::set<DbColumn const*>& keyPropertyColumns, ECN::ECRelationshipConstraintCR, ECN::ECRelationshipClassCR, ECN::ECRelationshipEnd constraintEnd) const;
     BentleyStatus TryGetForeignKeyColumnInfoFromNavigationProperty(ForeignKeyColumnInfo&, ECN::ECRelationshipConstraintCR, ECN::ECRelationshipClassCR, ECN::ECRelationshipEnd constraintEnd) const;
-    BentleyStatus TryDetermineForeignKeyColumnPosition(int& position, ECDbSqlTable const&, ForeignKeyColumnInfo const&) const;
+    BentleyStatus TryDetermineForeignKeyColumnPosition(int& position, DbTable const&, ForeignKeyColumnInfo const&) const;
 
-    virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ClassMapLoadContext&, ECDbClassMapInfo const&, ClassMap const* parentClassMap) override;
+    virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ClassMapLoadContext&, ClassDbMapping const&, ClassMap const* parentClassMap) override;
 
 public:
     ~RelationshipClassEndTableMap () {}
@@ -204,17 +204,17 @@ private:
     void AddIndices (SchemaImportContext&, ClassMapInfo const&);
     void AddIndex(SchemaImportContext&, RelationshipIndexSpec, bool addUniqueIndex);
 
-    bool GetConstraintECInstanceIdColumnName (Utf8StringR columnName, ECN::ECRelationshipEnd relationshipEnd, ECDbSqlTable const& table) const;
-    virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ClassMapLoadContext&, ECDbClassMapInfo const&, ClassMap const* parentClassMap) override;
-    ECDbSqlColumn* ConfigureForeignECClassIdKey(RelationshipMapInfo const&, ECN::ECRelationshipEnd relationshipEnd);
+    bool GetConstraintECInstanceIdColumnName (Utf8StringR columnName, ECN::ECRelationshipEnd relationshipEnd, DbTable const& table) const;
+    virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ClassMapLoadContext&, ClassDbMapping const&, ClassMap const* parentClassMap) override;
+    DbColumn* ConfigureForeignECClassIdKey(RelationshipMapInfo const&, ECN::ECRelationshipEnd relationshipEnd);
 
-    static void GenerateIndexColumnList(std::vector<ECDbSqlColumn const*>&, ECDbSqlColumn const* col1, ECDbSqlColumn const* col2, ECDbSqlColumn const* col3, ECDbSqlColumn const* col4);
+    static void GenerateIndexColumnList(std::vector<DbColumn const*>&, DbColumn const* col1, DbColumn const* col2, DbColumn const* col3, DbColumn const* col4);
     static bool HasKeyProperties(ECN::ECRelationshipConstraint const&);
 public:
     ~RelationshipClassLinkTableMap () {}
     static ClassMapPtr Create (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new RelationshipClassLinkTableMap (ecRelClass, ecDbMap, mapStrategy, setIsDirty); }
 
-    bool GetConstraintECClassIdColumnName (Utf8StringR columnName, ECN::ECRelationshipEnd relationshipEnd, ECDbSqlTable const& table) const;
+    bool GetConstraintECClassIdColumnName (Utf8StringR columnName, ECN::ECRelationshipEnd relationshipEnd, DbTable const& table) const;
     virtual ReferentialIntegrityMethod _GetDataIntegrityEnforcementMethod() const override;
 };
 

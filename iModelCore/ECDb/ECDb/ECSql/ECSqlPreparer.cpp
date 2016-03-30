@@ -437,7 +437,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         return ECSqlStatus::Success;
         }
 
-    ECDbSqlTable const* table = nullptr;
+    DbTable const* table = nullptr;
     if (currentScopeECSqlType == ECSqlType::Insert)
         {
         //don't compute storage description for INSERT as it is slow, and not needed for INSERT (which is always non-polymorphic)
@@ -776,7 +776,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp(NativeSqlBuilder::List
         nativeSqlSnippet.AppendParenLeft();
 
     ClassMap const& classMap = classNameExp->GetInfo().GetMap();
-    ECDbSqlColumn const* classIdColumn = nullptr;
+    DbColumn const* classIdColumn = nullptr;
     if (classMap.GetJoinedTable().TryGetECClassIdColumn(classIdColumn))
         {
         auto classRefId = classRefExp->GetId().c_str();

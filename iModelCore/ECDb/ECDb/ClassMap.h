@@ -54,21 +54,21 @@ struct PropertyMapSet : NonCopyableClass
     struct EndPoint : NonCopyableClass
         {
         private:
-            ECDbSqlColumn const* m_column;
+            DbColumn const* m_column;
             Utf8String m_accessString;
             ECN::ECValue m_value;
-            ColumnKind m_columnKind;
+            DbColumn::Kind m_columnKind;
         public:
-            EndPoint(Utf8CP accessString, ColumnKind columnKin, ECN::ECValueCR value)
-                : m_accessString(accessString), m_column(nullptr), m_value(value), m_columnKind(columnKin)
+            EndPoint(Utf8CP accessString, DbColumn::Kind columnKind, ECN::ECValueCR value)
+                : m_accessString(accessString), m_column(nullptr), m_value(value), m_columnKind(columnKind)
                 {}
-            EndPoint(Utf8CP accessString, ECDbSqlColumn const& column, ECN::ECValueCR value)
+            EndPoint(Utf8CP accessString, DbColumn const& column, ECN::ECValueCR value)
                 : m_accessString(accessString), m_column(&column), m_value(value), m_columnKind(column.GetKind())
                 {}
-            ECDbSqlColumn const* GetColumn() const { return m_column; }
+            DbColumn const* GetColumn() const { return m_column; }
             Utf8StringCR GetAccessString() const { return m_accessString; }
             ECN::ECValueCR GetValue() const { return m_value; }
-            ColumnKind GetColumnKind() const { return m_columnKind; }
+            DbColumn::Kind GetColumnKind() const { return m_columnKind; }
         };
 
 
@@ -91,7 +91,7 @@ struct PropertyMapSet : NonCopyableClass
             return itor->second;
             }
 
-        static BentleyStatus AddSystemEndPoint(PropertyMapSet& propertySet, ClassMap const&, ColumnKind, ECN::ECValueCR, ECDbSqlColumn const* column = nullptr);
+        static BentleyStatus AddSystemEndPoint(PropertyMapSet& propertySet, ClassMap const&, DbColumn::Kind, ECN::ECValueCR, DbColumn const* column = nullptr);
         static PropertyMapSet::Ptr Create(ClassMap const&);
     };
 
@@ -103,25 +103,25 @@ struct ColumnFactory : NonCopyableClass
     private:
         ClassMapCR m_classMap;
         bool m_usesSharedColumnStrategy;
-        mutable bset<ECDbColumnId> m_idsOfColumnsInUseByClassMap;
+        mutable bset<DbColumnId> m_idsOfColumnsInUseByClassMap;
 
         BentleyStatus ResolveColumnName(Utf8StringR resolvedColumName, Utf8CP requestedColumnName, ECN::ECClassId, int retryCount) const;
 
-        ECDbSqlColumn* ApplyDefaultStrategy(Utf8CP requestedColumnName, PropertyMapCR, ECDbSqlColumn::Type, bool addNotNullConstraint, bool addUniqueConstraint, ECDbSqlColumn::Constraint::Collation) const;
-        ECDbSqlColumn* ApplySharedColumnStrategy() const;
+        DbColumn* ApplyDefaultStrategy(Utf8CP requestedColumnName, PropertyMapCR, DbColumn::Type, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraint::Collation) const;
+        DbColumn* ApplySharedColumnStrategy() const;
 
         ECN::ECClassId GetPersistenceClassId(PropertyMapCR) const;
-        bool TryFindReusableSharedDataColumn(ECDbSqlColumn const*& reusableColumn) const;
-        bool IsColumnInUseByClassMap(ECDbSqlColumn const&) const;
-        void CacheUsedColumn(ECDbSqlColumn const&) const;
+        bool TryFindReusableSharedDataColumn(DbColumn const*& reusableColumn) const;
+        bool IsColumnInUseByClassMap(DbColumn const&) const;
+        void CacheUsedColumn(DbColumn const&) const;
 
-        ECDbSqlTable& GetTable() const;
+        DbTable& GetTable() const;
 
     public:
         explicit ColumnFactory(ClassMapCR classMap);
         ~ColumnFactory() {}
 
-        ECDbSqlColumn* CreateColumn(PropertyMapCR, Utf8CP requestedColumnName, ECDbSqlColumn::Type, bool addNotNullConstraint, bool addUniqueConstraint, ECDbSqlColumn::Constraint::Collation) const;
+        DbColumn* CreateColumn(PropertyMapCR, Utf8CP requestedColumnName, DbColumn::Type, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraint::Collation) const;
         void Update();
 
         bool UsesSharedColumnStrategy() const { return m_usesSharedColumnStrategy; }
@@ -135,7 +135,7 @@ struct ECSqlPrepareContext;
 struct ClassMap : RefCountedBase
     {
     public:
-        typedef std::vector<ECDbSqlTable*>& TableListR;
+        typedef std::vector<DbTable*>& TableListR;
 
         enum class Type
             {
@@ -147,11 +147,11 @@ struct ClassMap : RefCountedBase
 
     private:
         ECDbMapCR m_ecDbMap;
-        ECDbClassMapId m_id;
+        ClassMapId m_id;
         Type m_type;
         ECDbMapStrategy m_mapStrategy;
         PropertyMapCollection m_propertyMaps;
-        mutable std::vector<ECDbSqlTable*> m_tables;
+        mutable std::vector<DbTable*> m_tables;
         bool m_isDirty;
         bool m_isECInstanceIdAutogenerationDisabled;
         ECN::ECClassCR m_ecClass;
@@ -171,12 +171,12 @@ struct ClassMap : RefCountedBase
 
         virtual MapStatus _MapPart1(SchemaImportContext&, ClassMapInfo const&, ClassMap const* parentClassMap);
         virtual MapStatus _MapPart2(SchemaImportContext&, ClassMapInfo const&, ClassMap const* parentClassMap);
-        virtual BentleyStatus _Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext&, ECDbClassMapInfo const&, ClassMap const* parentClassMap);
+        virtual BentleyStatus _Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext&, ClassDbMapping const&, ClassMap const* parentClassMap);
         virtual BentleyStatus _Save(std::set<ClassMap const*>& savedGraph);
 
 
-        MapStatus AddPropertyMaps(ClassMapLoadContext&, ClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo, ClassMapInfo const* classMapInfo);
-        void SetTable(ECDbSqlTable& newTable, bool append = false);
+        MapStatus AddPropertyMaps(ClassMapLoadContext&, ClassMap const* parentClassMap, ClassDbMapping const* loadInfo, ClassMapInfo const* classMapInfo);
+        void SetTable(DbTable& newTable, bool append = false);
         PropertyMapCollection& GetPropertyMapsR() { return m_propertyMaps; }
         ECDbSchemaManagerCR Schemas() const;
 
@@ -184,7 +184,7 @@ struct ClassMap : RefCountedBase
         static ClassMapPtr Create(ECN::ECClassCR ecClass, ECDbMapCR ecdbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new ClassMap(Type::Class, ecClass, ecdbMap, mapStrategy, setIsDirty); }
 
         //! Called when loading an existing class map from the ECDb file 
-        BentleyStatus Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext& ctx, ECDbClassMapInfo const& mapInfo, ClassMap const* parentClassMap) { return _Load(loadGraph, ctx, mapInfo, parentClassMap); }
+        BentleyStatus Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext& ctx, ClassDbMapping const& mapInfo, ClassMap const* parentClassMap) { return _Load(loadGraph, ctx, mapInfo, parentClassMap); }
 
         //! Called during schema import when creating the class map from the imported ECClass 
         MapStatus Map(SchemaImportContext&, ClassMapInfo const& classMapInfo);
@@ -198,17 +198,17 @@ struct ClassMap : RefCountedBase
 
         Type GetType() const { return m_type; }
         bool IsDirty() const { return m_isDirty; }
-        ECDbClassMapId GetId() const { return m_id; }
-        void SetId(ECDbClassMapId id) { m_id = id; }
+        ClassMapId GetId() const { return m_id; }
+        void SetId(ClassMapId id) { m_id = id; }
         BentleyStatus Save(std::set<ClassMap const*>& savedGraph) { return _Save(savedGraph); }
 
         ColumnFactory const& GetColumnFactory() const { return m_columnFactory; }
         ColumnFactory& GetColumnFactoryR() { return m_columnFactory; }
 
         TableListR GetTables() const { return m_tables; }
-        ECDbSqlTable& GetPrimaryTable() const { BeAssert(!GetTables().empty()); return *GetTables().front(); }
-        ECDbSqlTable& GetJoinedTable() const { BeAssert(!GetTables().empty()); return *GetTables().back(); }
-        bool IsMappedTo(ECDbSqlTable const& table) const { TableListR tables = GetTables(); return std::find(tables.begin(), tables.end(), &table) != tables.end(); }
+        DbTable& GetPrimaryTable() const { BeAssert(!GetTables().empty()); return *GetTables().front(); }
+        DbTable& GetJoinedTable() const { BeAssert(!GetTables().empty()); return *GetTables().back(); }
+        bool IsMappedTo(DbTable const& table) const { TableListR tables = GetTables(); return std::find(tables.begin(), tables.end(), &table) != tables.end(); }
         bool IsMappedToSingleTable() const { return GetTables().size() == 1; }
 
         ClassMap const* FindSharedTableRootClassMap() const;
@@ -254,7 +254,7 @@ private:
 
     virtual MapStatus _MapPart1(SchemaImportContext&, ClassMapInfo const& classMapInfo, ClassMap const* parentClassMap) override;
     virtual MapStatus _MapPart2(SchemaImportContext&, ClassMapInfo const& classMapInfo, ClassMap const* parentClassMap) override { return MapStatus::Success; }
-    virtual BentleyStatus _Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext& ctx, ECDbClassMapInfo const& mapInfo, ClassMap const* parentClassMap) override;
+    virtual BentleyStatus _Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext& ctx, ClassDbMapping const& mapInfo, ClassMap const* parentClassMap) override;
 
 public:
     ~UnmappedClassMap() {}

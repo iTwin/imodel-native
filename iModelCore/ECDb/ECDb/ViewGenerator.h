@@ -34,10 +34,10 @@ private:
         DbSchema::EntityType GetStorageType() const { return m_storageType; }
         };
 
-    typedef bmap<ECDbSqlTable const*, ViewMember> ViewMemberByTable; 
+    typedef bmap<DbTable const*, ViewMember> ViewMemberByTable; 
     static BentleyStatus ComputeViewMembers (ViewMemberByTable& viewMembers, ECDbMapCR, ECN::ECClassCR, bool isPolymorphic, bool optimizeByIncludingOnlyRealTables, bool ensureDerivedClassesAreLoaded);
     static BentleyStatus GetRootClasses (std::vector<ClassMap const*>& rootClasses, ECDbCR);
-    static BentleyStatus GetViewQueryForChild (NativeSqlBuilder& viewSql, ECDbMapCR, ECSqlPrepareContext const&, ECDbSqlTable const&, const std::vector<ClassMap const*>& childClassMap, ClassMap const& baseClassMap, bool isPolymorphic);
+    static BentleyStatus GetViewQueryForChild (NativeSqlBuilder& viewSql, ECDbMapCR, ECSqlPrepareContext const&, DbTable const&, const std::vector<ClassMap const*>& childClassMap, ClassMap const& baseClassMap, bool isPolymorphic);
     //! Relationship polymorphic query
     static BentleyStatus CreateViewForRelationship (NativeSqlBuilder& viewSql, ECDbMapCR, ECSqlPrepareContext const&, ClassMap const& relationMap, bool isPolymorphic, bool optimizeByIncludingOnlyRealTables);
     static BentleyStatus CreateViewForRelationship (NativeSqlBuilder& viewSql, ECDbMapCR, ECSqlPrepareContext const&, ClassMap const& relationMap, ClassMap const& baseClassMap);
@@ -49,13 +49,13 @@ private:
     static BentleyStatus CreateNullView (NativeSqlBuilder& viewSql, ECSqlPrepareContext const&, ClassMap const&);
     static Utf8CP GetECClassIdPrimaryTableAlias (ECN::ECRelationshipEnd endPoint) { return endPoint == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? "SourceECClassPrimaryTable" : "TargetECClassPrimaryTable"; }
 
-    static BentleyStatus BuildRelationshipJoinIfAny (NativeSqlBuilder& sqlBuilder, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, ECDbSqlTable const& contextTable);
+    static BentleyStatus BuildRelationshipJoinIfAny (NativeSqlBuilder& sqlBuilder, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, DbTable const& contextTable);
     //! Append view prop map list separated by comma.
-    static BentleyStatus AppendViewPropMapsToQuery (NativeSqlBuilder& viewQuery, ECSqlPrepareContext const&, ECDbSqlTable const& table, std::vector<std::pair<PropertyMapCP, PropertyMapCP>> const& viewPropMaps, bool forNullView = false);
+    static BentleyStatus AppendViewPropMapsToQuery (NativeSqlBuilder& viewQuery, ECSqlPrepareContext const&, DbTable const& table, std::vector<std::pair<PropertyMapCP, PropertyMapCP>> const& viewPropMaps, bool forNullView = false);
 
-    static BentleyStatus AppendSystemPropMaps (NativeSqlBuilder& viewQuery, ECDbMapCR, ECSqlPrepareContext const&, RelationshipClassMapCR relationMap, ECDbSqlTable const& contextTable);
+    static BentleyStatus AppendSystemPropMaps (NativeSqlBuilder& viewQuery, ECDbMapCR, ECSqlPrepareContext const&, RelationshipClassMapCR relationMap, DbTable const& contextTable);
     static BentleyStatus AppendSystemPropMapsToNullView (NativeSqlBuilder& viewQuery, ECSqlPrepareContext const&, RelationshipClassMapCR relationMap, bool endWithComma);
-    static BentleyStatus AppendConstraintClassIdPropMap (NativeSqlBuilder& viewQuery, ECSqlPrepareContext const&, RelationshipConstraintPropertyMap const& propMap, ECDbMapCR ecdbMap, RelationshipClassMapCR relationMap, ECN::ECRelationshipConstraintCR constraint, ECDbSqlTable const& contextTable);
+    static BentleyStatus AppendConstraintClassIdPropMap (NativeSqlBuilder& viewQuery, ECSqlPrepareContext const&, RelationshipConstraintPropertyMap const& propMap, ECDbMapCR ecdbMap, RelationshipClassMapCR relationMap, ECN::ECRelationshipConstraintCR constraint, DbTable const& contextTable);
 
     //! Return prop maps of child base on parent map. So only prop maps that make up baseClass properties are selected.
     static BentleyStatus GetPropertyMapsOfDerivedClassCastAsBaseClass (std::vector<std::pair<PropertyMapCP, PropertyMapCP>>& propMaps, ECSqlPrepareContext const& prepareContext, ClassMap const& baseClassMap, ClassMap const& childClassMap, bool skipSystemProperties);

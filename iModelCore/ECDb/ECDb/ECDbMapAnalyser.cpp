@@ -434,7 +434,7 @@ bool ECDbMapAnalyser::Class::RequireView () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-ECDbMapAnalyser::Relationship::EndInfo::EndInfo(Utf8CP accessString, ECDbSqlColumn const& column)
+ECDbMapAnalyser::Relationship::EndInfo::EndInfo(Utf8CP accessString, DbColumn const& column)
     :m_accessString(accessString), m_column(&column)
     {
     }
@@ -453,7 +453,7 @@ ECDbMapAnalyser::Relationship::EndInfo::EndInfo(PropertyMapCR map)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-ECDbMapAnalyser::Relationship::EndInfo::EndInfo(PropertyMapCR map, Storage const& storage, ColumnKind columnType)
+ECDbMapAnalyser::Relationship::EndInfo::EndInfo(PropertyMapCR map, Storage const& storage, DbColumn::Kind columnType)
     :m_accessString(map.GetPropertyAccessString())
     {
     auto firstColumn = storage.GetTable().GetFilteredColumnFirst(columnType);
@@ -480,7 +480,7 @@ ECDbMapAnalyser::Relationship::EndInfo::EndInfo()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-ECDbSqlColumn const& ECDbMapAnalyser::Relationship::EndInfo::GetColumn() const
+DbColumn const& ECDbMapAnalyser::Relationship::EndInfo::GetColumn() const
     {
     BeAssert(m_column != nullptr); return *m_column;
     }
@@ -533,7 +533,7 @@ ECDbMapAnalyser::Relationship::EndInfo ECDbMapAnalyser::Relationship::EndPoint::
         return EndInfo(*GetInstanceId());
         }
 
-    return EndInfo(*GetInstanceId(), forStorage, ColumnKind::ECInstanceId);
+    return EndInfo(*GetInstanceId(), forStorage, DbColumn::Kind::ECInstanceId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -571,7 +571,7 @@ ECClassIdRelationshipConstraintPropertyMap const* ECDbMapAnalyser::Relationship:
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
 ECDbMapAnalyser::Relationship::Relationship (RelationshipClassMapCR classMap, Storage& storage, Class* parent)
-    :Class (classMap, storage, parent), m_from (*this, EndType::From), m_to (*this, EndType::To), m_onDeleteAction (ForeignKeyActionType::NotSpecified), m_onUpdateAction (ForeignKeyActionType::NotSpecified)
+    :Class (classMap, storage, parent), m_from (*this, EndType::From), m_to (*this, EndType::To), m_onDeleteAction (ForeignKeyDbConstraint::ActionType::NotSpecified), m_onUpdateAction (ForeignKeyDbConstraint::ActionType::NotSpecified)
     {
     ECDbForeignKeyRelationshipMap foreignKeyRelMap;
     if (ECDbMapCustomAttributeHelper::TryGetForeignKeyRelationshipMap (foreignKeyRelMap, GetRelationshipClassMap ().GetRelationshipClass ()))
@@ -584,8 +584,8 @@ ECDbMapAnalyser::Relationship::Relationship (RelationshipClassMapCR classMap, St
         if (ECObjectsStatus::Success != foreignKeyRelMap.TryGetOnUpdateAction (onUpdateActionStr))
             return;
 
-        m_onDeleteAction = ECDbSqlForeignKeyConstraint::ToActionType (onDeleteActionStr.c_str ());
-        m_onUpdateAction = ECDbSqlForeignKeyConstraint::ToActionType (onUpdateActionStr.c_str ());
+        m_onDeleteAction = ForeignKeyDbConstraint::ToActionType (onDeleteActionStr.c_str ());
+        m_onUpdateAction = ForeignKeyDbConstraint::ToActionType (onUpdateActionStr.c_str ());
         }
     }
 
@@ -652,14 +652,14 @@ ECDbMapAnalyser::Relationship::EndPoint& ECDbMapAnalyser::Relationship::To () { 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-ECDbMapAnalyser::Storage::Storage (ECDbSqlTable const& table)
+ECDbMapAnalyser::Storage::Storage (DbTable const& table)
     :m_table (table)
     {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-ECDbSqlTable const& ECDbMapAnalyser::Storage::GetTable () const { return m_table; }
+DbTable const& ECDbMapAnalyser::Storage::GetTable () const { return m_table; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
@@ -714,7 +714,7 @@ void ECDbMapAnalyser::Storage::HandleCascadeLinkTable (std::vector<ECDbMapAnalys
                 .AppendEscaped (storage->GetTable ().GetName ().c_str ())
                 .Append (" WHERE ");
 
-            auto referencedEndPrimaryKey = storage->GetTable ().GetFilteredColumnFirst (ColumnKind::ECInstanceId);
+            auto referencedEndPrimaryKey = storage->GetTable ().GetFilteredColumnFirst (DbColumn::Kind::ECInstanceId);
             body.AppendFormatted ("(OLD.[%s] = [%s])", relationship->To ().GetInstanceId ()->GetSingleColumn ()->GetName ().c_str (), referencedEndPrimaryKey->GetName ().c_str ());
             if (relationship->IsHolding ())
                 {
@@ -752,7 +752,7 @@ ECDbMapAnalyser::Storage& ECDbMapAnalyser::GetStorage(Utf8CP tableName)
     if (it != m_storage.end())
         return *(it->second);
 
-    ECDbSqlTable const* table = m_map.GetSQLManager().GetDbSchema().FindTable(tableName);
+    DbTable const* table = m_map.GetDbSchema().FindTable(tableName);
     BeAssert(table != nullptr);
     std::unique_ptr<Storage> storagePtr = std::unique_ptr<Storage>(new Storage(*table));
     Storage* storage = storagePtr.get();
@@ -940,7 +940,7 @@ BentleyStatus ECDbMapAnalyser::AnalyseRelationshipClass(RelationshipClassMapCR e
 void ECDbMapAnalyser::GetClassIds(std::vector<ECN::ECClassId>& rootClassIds, std::vector<ECN::ECClassId>& rootRelationshipClassIds) const
     {
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(GetMap().GetECDbR(), "SELECT C.Id, C.Type FROM ec_Class C "
+    if (BE_SQLITE_OK != stmt.Prepare(GetMap().GetECDb(), "SELECT C.Id, C.Type FROM ec_Class C "
                                      "INNER JOIN ec_ClassMap M ON M.ClassId=C.Id "
                                      "LEFT JOIN ec_BaseClass B ON B.ClassId=C.Id "
                                      "WHERE B.BaseClassId IS NULL"))
@@ -988,7 +988,7 @@ void ECDbMapAnalyser::SetupDerivedClassLookup ()
     {
     m_derivedClassLookup.clear ();
     Statement stmt;
-    stmt.Prepare (GetMap ().GetECDbR (), "SELECT BaseClassId, ClassId FROM ec_BaseClass ORDER BY BaseClassId");
+    stmt.Prepare (GetMap ().GetECDb (), "SELECT BaseClassId, ClassId FROM ec_BaseClass ORDER BY BaseClassId");
     while (stmt.Step () == BE_SQLITE_ROW)
         m_derivedClassLookup[stmt.GetValueId<ECClassId>(0)].insert (stmt.GetValueId<ECClassId>(1));
     }
@@ -1067,8 +1067,8 @@ BentleyStatus ECDbMapAnalyser::BuildPolymorphicDeleteTrigger (Class& nclass)
     BeAssert (nclass.RequireView ());
     auto viewInfo = GetViewInfoForClass (nclass);
     BeAssert (viewInfo != nullptr && !viewInfo->GetView ().IsEmpty ());
-    auto p = nclass.GetStorage ().GetTable ().GetFilteredColumnFirst (ColumnKind::ECInstanceId);
-    auto c = nclass.GetStorage ().GetTable ().GetFilteredColumnFirst (ColumnKind::ECClassId);
+    auto p = nclass.GetStorage ().GetTable ().GetFilteredColumnFirst (DbColumn::Kind::ECInstanceId);
+    auto c = nclass.GetStorage ().GetTable ().GetFilteredColumnFirst (DbColumn::Kind::ECClassId);
     for (auto & i : nclass.GetPartitionsR ())
         {
         auto storage = i.first;
@@ -1088,7 +1088,7 @@ BentleyStatus ECDbMapAnalyser::BuildPolymorphicDeleteTrigger (Class& nclass)
             }
 
         auto& body = builder.GetBodyBuilder ();
-        auto f = storage->GetTable ().GetFilteredColumnFirst (ColumnKind::ECInstanceId);
+        auto f = storage->GetTable ().GetFilteredColumnFirst (DbColumn::Kind::ECInstanceId);
         body.Append ("DELETE FROM ").AppendEscaped (storage->GetTable ().GetName ().c_str ());
         body.AppendFormatted (" WHERE OLD.[%s] = [%s]", p->GetName ().c_str (), f->GetName ().c_str ());
         body.Append (";").AppendEOL ();
@@ -1109,8 +1109,8 @@ BentleyStatus ECDbMapAnalyser::BuildPolymorphicUpdateTrigger (Class& nclass)
 
     auto rootPMS = PropertyMapSet::Create (nclass.GetClassMap ());
     auto rootEndPoints = rootPMS->GetEndPoints ();
-    auto p = nclass.GetStorage ().GetTable ().GetFilteredColumnFirst (ColumnKind::ECInstanceId);
-    auto c = nclass.GetStorage ().GetTable ().GetFilteredColumnFirst (ColumnKind::ECClassId);
+    auto p = nclass.GetStorage ().GetTable ().GetFilteredColumnFirst (DbColumn::Kind::ECInstanceId);
+    auto c = nclass.GetStorage ().GetTable ().GetFilteredColumnFirst (DbColumn::Kind::ECClassId);
 
     for (auto & i : nclass.GetPartitionsR())
         {
@@ -1132,7 +1132,7 @@ BentleyStatus ECDbMapAnalyser::BuildPolymorphicUpdateTrigger (Class& nclass)
 
         auto& body = builder.GetBodyBuilder();
         auto& firstClass = **(i.second.begin());
-        auto f = storage->GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+        auto f = storage->GetTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
         auto childPMS = PropertyMapSet::Create(firstClass.GetClassMap());
         body.Append("UPDATE ").AppendEscaped(storage->GetTable().GetName().c_str());
         body.Append(" SET ");
@@ -1142,8 +1142,8 @@ BentleyStatus ECDbMapAnalyser::BuildPolymorphicUpdateTrigger (Class& nclass)
         for (PropertyMapSet::EndPoint const* rootE : rootEndPoints)
             {
             PropertyMapSet::EndPoint const* childE = childPMS->GetEndPointByAccessString(rootE->GetAccessString().c_str());
-            ColumnKind rootEColKind = rootE->GetColumnKind();
-            if (rootEColKind != ColumnKind::DataColumn && rootEColKind != ColumnKind::SharedDataColumn)
+            DbColumn::Kind rootEColKind = rootE->GetColumnKind();
+            if (rootEColKind != DbColumn::Kind::DataColumn && rootEColKind != DbColumn::Kind::SharedDataColumn)
                 continue;
 
             if (!isFirstSetExpr)
@@ -1227,7 +1227,7 @@ SqlViewBuilder ECDbMapAnalyser::BuildView(Class& nclass)
             }
 
         select.Append(" FROM ").AppendEscaped(firstChildMap->GetJoinedTable().GetName().c_str());
-        ECDbSqlColumn const* classIdColumn = nullptr;
+        DbColumn const* classIdColumn = nullptr;
         if (hp.GetTable().TryGetECClassIdColumn(classIdColumn))
             {
             if (classIdColumn->GetPersistenceType() == PersistenceType::Persisted && hp.NeedsECClassIdFilter())
@@ -1275,7 +1275,7 @@ SqlViewBuilder ECDbMapAnalyser::BuildView(Class& nclass)
 //---------------------------------------------------------------------------------------
 DbResult ECDbMapAnalyser::ExecuteDDL (Utf8CP sql)
     {
-    auto r = m_map.GetECDbR ().ExecuteSql (sql);
+    auto r = m_map.GetECDb ().ExecuteSql (sql);
     if (r != BE_SQLITE_OK)
         {
         BeAssert (false && "Failed to run DDL statement");
@@ -1407,7 +1407,7 @@ void ECDbMapAnalyser::HandleLinkTable (Storage* fromStorage, std::map<ECDbMapAna
             continue;
 
         //Determine which source/target or both side to delete
-        std::set<ECDbSqlColumn const*> forignKeys;
+        std::set<DbColumn const*> forignKeys;
         for (auto relationship : relationships)
             {
             if (relationship->GetRelationshipClassMap()._GetDataIntegrityEnforcementMethod() == RelationshipClassMap::ReferentialIntegrityMethod::Trigger)
@@ -1440,7 +1440,7 @@ void ECDbMapAnalyser::HandleLinkTable (Storage* fromStorage, std::map<ECDbMapAna
 
         body.Append ("DELETE FROM ").AppendEscaped (relationshipStorage->GetTable ().GetName ().c_str ()).Append (" WHERE ");
 
-        auto thisECInstanceIdColumn = fromStorage->GetTable ().GetFilteredColumnFirst (ColumnKind::ECInstanceId);
+        auto thisECInstanceIdColumn = fromStorage->GetTable ().GetFilteredColumnFirst (DbColumn::Kind::ECInstanceId);
         for (auto forignKey : forignKeys)
             {
             body.AppendFormatted ("(OLD.[%s] = [%s])", thisECInstanceIdColumn->GetName ().c_str (), forignKey->GetName ().c_str ());
@@ -1548,7 +1548,7 @@ void ECDbMapAnalyser::ProcessEndTableRelationships ()
 
                     if (!relationship->To().GetClassId()->IsVirtual() && 
                         relationship->To().GetClassId()->IsMappedToClassMapTables() && 
-                        relationship->To().GetClassId()->GetSingleColumn()->GetKind() != ColumnKind::ECClassId)
+                        relationship->To().GetClassId()->GetSingleColumn()->GetKind() != DbColumn::Kind::ECClassId)
                         {
                         body.Append(", ")
                             .AppendEscaped(relationship->To().GetClassId()->GetSingleColumn()->GetName().c_str())
@@ -1587,7 +1587,7 @@ void ECDbMapAnalyser::ProcessEndTableRelationships ()
 
                     if (!relationship->To().GetClassId()->IsVirtual()
                         && relationship->To().GetClassId()->IsMappedToClassMapTables()
-                        && relationship->To().GetClassId()->GetSingleColumn()->GetKind() != ColumnKind::ECClassId)
+                        && relationship->To().GetClassId()->GetSingleColumn()->GetKind() != DbColumn::Kind::ECClassId)
                         {
                         body.Append(", ")
                             .AppendEscaped(relationship->ReferencedEnd().GetClassId()->GetSingleColumn()->GetName().c_str())
@@ -1628,9 +1628,9 @@ void ECDbMapAnalyser::ProcessEndTableRelationships ()
                         //Self join should not be processed here.
                         //This is issue with EndTable our Source/Target key is always in same table. Following should fix that
                         if (persistedInFrom)
-                            fromKeyColumn = toStorage->GetTable ().GetFilteredColumnFirst (ColumnKind::ECInstanceId);
+                            fromKeyColumn = toStorage->GetTable ().GetFilteredColumnFirst (DbColumn::Kind::ECInstanceId);
                         else
-                            toKeyColumn = fromStorage->GetTable ().GetFilteredColumnFirst (ColumnKind::ECInstanceId);
+                            toKeyColumn = fromStorage->GetTable ().GetFilteredColumnFirst (DbColumn::Kind::ECInstanceId);
                         }
                     body.AppendFormatted ("([%s]=OLD.[%s])",
                         fromKeyColumn->GetName ().c_str (),
@@ -1669,7 +1669,7 @@ BentleyStatus ECClassViewGenerator::BuildViews(std::vector<ClassMap const*> cons
             continue;
 
         Utf8String ddl = builder.ToString(SqlOption::Create);
-        const DbResult stat = m_map.GetECDbR().TryExecuteSql(ddl.c_str());
+        const DbResult stat = m_map.GetECDb().TryExecuteSql(ddl.c_str());
         if (BE_SQLITE_OK != stat)
             {
             Utf8String message;
@@ -1707,7 +1707,7 @@ BentleyStatus ECClassViewGenerator::BuildClassView(SqlViewBuilder& viewBuilder, 
             NativeSqlBuilder sqlBuilder;
             sqlBuilder.Append("SELECT ");
             ECClassId derivedClassId = part.GetClassIds().front();
-            ECClassCP derivedClass = m_map.GetECDbR().Schemas().GetECClass(derivedClassId);
+            ECClassCP derivedClass = m_map.GetECDb().Schemas().GetECClass(derivedClassId);
             if (derivedClass == nullptr)
                 {
                 BeAssert(derivedClass != nullptr);
@@ -1734,13 +1734,13 @@ BentleyStatus ECClassViewGenerator::BuildClassView(SqlViewBuilder& viewBuilder, 
 
             if (classMap.HasJoinedTable())
                 {
-                ECDbSqlColumn const* primaryKeyCol = part.GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+                DbColumn const* primaryKeyCol = part.GetTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
                 for (Partition const& vpart : classMap.GetStorageDescription().GetVerticalPartitions())
                     {
                     if (&vpart.GetTable() == &part.GetTable())
                         continue;
 
-                    ECDbSqlColumn const* fkKeyCol = vpart.GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+                    DbColumn const* fkKeyCol = vpart.GetTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
                     sqlBuilder.Append(" INNER JOIN ").AppendEscaped(vpart.GetTable().GetName().c_str());
                     sqlBuilder.Append(" ON ").AppendEscaped(part.GetTable().GetName().c_str()).AppendDot().AppendEscaped(primaryKeyCol->GetName().c_str());
                     sqlBuilder.Append(BooleanSqlOperator::EqualTo, false).AppendEscaped(vpart.GetTable().GetName().c_str()).AppendDot().AppendEscaped(fkKeyCol->GetName().c_str());
@@ -1757,7 +1757,7 @@ BentleyStatus ECClassViewGenerator::BuildClassView(SqlViewBuilder& viewBuilder, 
                     return ERROR;
                 }
 
-            if (ECDbSqlColumn const* classIdcolumn = part.GetTable().GetFilteredColumnFirst(ColumnKind::ECClassId))
+            if (DbColumn const* classIdcolumn = part.GetTable().GetFilteredColumnFirst(DbColumn::Kind::ECClassId))
                 {
                 if (part.NeedsECClassIdFilter())
                     {
@@ -1805,12 +1805,12 @@ BentleyStatus ECClassViewGenerator::BuildRelationshipJoinIfAny(NativeSqlBuilder&
         ECInstanceIdRelationshipConstraintPropertyMap const* ecInstanceIdPropertyMap = static_cast<ECInstanceIdRelationshipConstraintPropertyMap const*>(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECInstanceIdPropMap() : classMap.GetTargetECInstanceIdPropMap());
         ECDbMapCR ecdbMap = classMap.GetECDbMap();
         size_t tableCount = ecdbMap.GetTableCountOnRelationshipEnd(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetRelationshipClass().GetSource() : classMap.GetRelationshipClass().GetTarget());
-        ECDbSqlTable const* targetTable = ecclassIdPropertyMap->GetTable();
+        DbTable const* targetTable = ecclassIdPropertyMap->GetTable();
         if (tableCount > 1
             /*In this case we expecting we have relationship with one end abstract we only support it in case joinedTable*/)
             {
-            BeAssert(targetTable->GetTableType() == TableType::Joined);
-            if (targetTable->GetTableType() != TableType::Joined)
+            BeAssert(targetTable->GetType() == DbTable::Type::Joined);
+            if (targetTable->GetType() != DbTable::Type::Joined)
                 return ERROR;
 
             targetTable = ecdbMap.GetPrimaryTable(*ecclassIdPropertyMap->GetTable());
@@ -1825,7 +1825,7 @@ BentleyStatus ECClassViewGenerator::BuildRelationshipJoinIfAny(NativeSqlBuilder&
         sqlBuilder.Append(" ON ");
         sqlBuilder.Append(GetECClassIdPrimaryTableAlias(endPoint));
         sqlBuilder.AppendDot();
-        auto targetECInstanceIdColumn = targetTable->GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+        auto targetECInstanceIdColumn = targetTable->GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
         if (targetECInstanceIdColumn == nullptr)
             {
             BeAssert(false && "Failed to find ECInstanceId column in target table");
@@ -1986,25 +1986,25 @@ BentleyStatus ECClassViewGenerator::BuildPointPropertyExpression(NativeSqlBuilde
         }
 
     NativeSqlBuilder::List fragments;
-    std::vector<ECDbSqlColumn const*> columns;
+    std::vector<DbColumn const*> columns;
     propertyMap.GetColumns(columns);
 
     Utf8String colAlias(propertyMap.GetPropertyAccessString());
 
-    const ECDbSqlColumn::Type targetColType = PointPropertyMap::GetDefaultColumnType();
-    ECDbSqlColumn const* xCol = columns[0];
+    const DbColumn::Type targetColType = PointPropertyMap::GetDefaultColumnType();
+    DbColumn const* xCol = columns[0];
     Utf8CP xCastTargetType = DetermineCastTargetType(*xCol, targetColType);
     if (SUCCESS != BuildColumnExpression(fragments, isNullValue, xCol->GetTable().GetName().c_str(), xCol->GetName().c_str(), xCastTargetType, (colAlias + ".X").c_str()))
         return ERROR;
 
-    ECDbSqlColumn const* yCol = columns[1];
+    DbColumn const* yCol = columns[1];
     Utf8CP yCastTargetType = DetermineCastTargetType(*yCol, targetColType);
     if (SUCCESS != BuildColumnExpression(fragments, isNullValue, yCol->GetTable().GetName().c_str(), yCol->GetName().c_str(), yCastTargetType, (colAlias + ".Y").c_str()))
         return ERROR;
 
     if (is3d)
         {
-        ECDbSqlColumn const* zCol = columns[2];
+        DbColumn const* zCol = columns[2];
         Utf8CP zCastTargetType = DetermineCastTargetType(*zCol, targetColType);
         if (SUCCESS != BuildColumnExpression(fragments, isNullValue, zCol->GetTable().GetName().c_str(), zCol->GetName().c_str(), zCastTargetType, (colAlias + ".Z").c_str()))
             return ERROR;
@@ -2021,7 +2021,7 @@ BentleyStatus ECClassViewGenerator::BuildPointPropertyExpression(NativeSqlBuilde
 BentleyStatus ECClassViewGenerator::BuildPrimitivePropertyExpression(NativeSqlBuilder& viewSql, PropertyMap const& propertyMap, Utf8CP tablePrefix, bool isNullValue)
     {
     NativeSqlBuilder::List fragments;
-    std::vector<ECDbSqlColumn const*> columns;
+    std::vector<DbColumn const*> columns;
     propertyMap.GetColumns(columns);
 
     if (columns.size() != 1)
@@ -2030,7 +2030,7 @@ BentleyStatus ECClassViewGenerator::BuildPrimitivePropertyExpression(NativeSqlBu
         return ERROR;
         }
 
-    ECDbSqlColumn const* col = columns[0];
+    DbColumn const* col = columns[0];
     Utf8CP castTargetType = DetermineCastTargetType(*col, propertyMap.GetProperty());
     if (BuildColumnExpression(fragments, isNullValue, col->GetTable().GetName().c_str(), col->GetName().c_str(), castTargetType, propertyMap.GetPropertyAccessString()) != SUCCESS)
         return ERROR;
@@ -2065,10 +2065,10 @@ BentleyStatus ECClassViewGenerator::BuildStructPropertyExpression(NativeSqlBuild
 //static
 BentleyStatus ECClassViewGenerator::BuildSystemSelectionClause(NativeSqlBuilder::List& fragments, ClassMapCR baseClassMap, ClassMapCR classMap, bool isNullValue)
     { 
-    ECDbSqlTable const& table = classMap.GetPrimaryTable();
+    DbTable const& table = classMap.GetPrimaryTable();
     Utf8CP tablePrefix = table.GetName().c_str();
 
-    if (ECDbSqlColumn const* column = table.GetFilteredColumnFirst(ColumnKind::ECInstanceId))
+    if (DbColumn const* column = table.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId))
         {
         if (BuildColumnExpression(fragments, isNullValue, tablePrefix, column->GetName().c_str(), nullptr, ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME) != SUCCESS)
             return ERROR;
@@ -2083,7 +2083,7 @@ BentleyStatus ECClassViewGenerator::BuildSystemSelectionClause(NativeSqlBuilder:
         fragments.push_back(NativeSqlBuilder("NULL " ECDB_COL_ECClassId));
     else
         {
-        if (ECDbSqlColumn const* column = table.GetFilteredColumnFirst(ColumnKind::ECClassId))
+        if (DbColumn const* column = table.GetFilteredColumnFirst(DbColumn::Kind::ECClassId))
             {
             if (BuildColumnExpression(fragments, false, tablePrefix, column->GetName().c_str(), nullptr, ECDB_COL_ECClassId) != SUCCESS)
                 return ERROR;
@@ -2122,7 +2122,7 @@ BentleyStatus ECClassViewGenerator::BuildSystemSelectionClause(NativeSqlBuilder:
 BentleyStatus ECClassViewGenerator::BuildECInstanceIdConstraintExpression(NativeSqlBuilder::List& fragments, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, Utf8CP tablePrefix, bool isNullValue)
     {
     PropertyMapCP propertyMap = endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECInstanceIdPropMap() : classMap.GetTargetECInstanceIdPropMap();
-    ECDbSqlColumn const* column = propertyMap->GetSingleColumn();
+    DbColumn const* column = propertyMap->GetSingleColumn();
     if (propertyMap->IsVirtual())
         isNullValue = true;
 
@@ -2148,7 +2148,7 @@ BentleyStatus ECClassViewGenerator::BuildECClassIdConstraintExpression(NativeSql
         return SUCCESS;
         }
 
-    ECDbSqlColumn const* column = propertyMap->GetSingleColumn();
+    DbColumn const* column = propertyMap->GetSingleColumn();
     Utf8CP castTargetType = DetermineCastTargetType(*column, propertyMap->GetProperty());
 
     if (column->GetPersistenceType() == PersistenceType::Persisted)
@@ -2223,13 +2223,13 @@ Utf8String ECClassViewGenerator::BuildSchemaQualifiedClassName(ECClassCR ecClass
 // @bsimethod                                 Krischan.Eberle                     02/2016
 //---------------------------------------------------------------------------------------
 //static
-Utf8CP ECClassViewGenerator::DetermineCastTargetType(ECDbSqlColumn const& col, ECN::ECPropertyCR prop)
+Utf8CP ECClassViewGenerator::DetermineCastTargetType(DbColumn const& col, ECN::ECPropertyCR prop)
     {
     PrimitiveECPropertyCP primProp = prop.GetAsPrimitiveProperty();
     if (primProp == nullptr)
         return nullptr;
 
-    const ECDbSqlColumn::Type targetType = ECDbSqlColumn::PrimitiveTypeToColumnType(primProp->GetType());
+    const DbColumn::Type targetType = DbColumn::PrimitiveTypeToColumnType(primProp->GetType());
     return DetermineCastTargetType(col, targetType);
     }
 
@@ -2237,10 +2237,10 @@ Utf8CP ECClassViewGenerator::DetermineCastTargetType(ECDbSqlColumn const& col, E
 // @bsimethod                                 Krischan.Eberle                     02/2016
 //---------------------------------------------------------------------------------------
 //static
-Utf8CP ECClassViewGenerator::DetermineCastTargetType(ECDbSqlColumn const& col, ECDbSqlColumn::Type targetType)
+Utf8CP ECClassViewGenerator::DetermineCastTargetType(DbColumn const& col, DbColumn::Type targetType)
     {
-    Utf8CP actualSqlType = DDLGenerator::ColumnTypeToSql(col.GetType());
-    Utf8CP targetSqlType = DDLGenerator::ColumnTypeToSql(targetType);
+    Utf8CP actualSqlType = DbColumn::TypeToSql(col.GetType());
+    Utf8CP targetSqlType = DbColumn::TypeToSql(targetType);
     if (BeStringUtilities::StricmpAscii(actualSqlType, targetSqlType) == 0)
         return nullptr;
 
@@ -2252,7 +2252,7 @@ Utf8CP ECClassViewGenerator::DetermineCastTargetType(ECDbSqlColumn const& col, E
 //---------------------------------------------------------------------------------------
 void ECClassViewGenerator::DropExistingViews() const
     {
-    BeAssert(!m_map.GetECDb().IsReadonly() && "Db is readonly the operation will fail");
+    BeAssert(!m_map.GetECDb().IsReadonly() && "Db is read-only the operation will fail");
 
     Statement stmt;
     stmt.Prepare(m_map.GetECDb(), "select 'DROP VIEW [' || name || '];'  from sqlite_master where type = 'view' and instr(name, '.') and instr(sql, '--### ECCLASS VIEW')");
@@ -2266,7 +2266,7 @@ void ECClassViewGenerator::DropExistingViews() const
     for (auto const& command : dropViewCommands)
         {
         LOG.info(command.c_str());
-        m_map.GetECDbR().ExecuteSql(command.c_str());
+        m_map.GetECDb().ExecuteSql(command.c_str());
         }
     }
 END_BENTLEY_SQLITE_EC_NAMESPACE

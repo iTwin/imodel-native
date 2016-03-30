@@ -111,11 +111,11 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
         else
             {
             std::vector<Exp const*> propertyExpsInWhereClause =  whereExp->Find(Exp::Type::PropertyName, true);
-            ECDbSqlTable& primaryTable = currentClassMap.GetPrimaryTable();
-            ECDbSqlTable& joinedTable = currentClassMap.GetJoinedTable();
+            DbTable& primaryTable = currentClassMap.GetPrimaryTable();
+            DbTable& joinedTable = currentClassMap.GetJoinedTable();
 
             // * WIP Needs fixes as the prepare picks the joined table when it should actually pick the primary table
-            std::set<ECDbSqlTable const*> tablesReferencedByWhereClause = whereExp->GetReferencedTables();
+            std::set<DbTable const*> tablesReferencedByWhereClause = whereExp->GetReferencedTables();
             const bool primaryTableIsReferencedByWhereClause = (tablesReferencedByWhereClause.find(&primaryTable) != tablesReferencedByWhereClause.end());
             const bool joinedTableIsReferencedByWhereClause = (tablesReferencedByWhereClause.find(&joinedTable) != tablesReferencedByWhereClause.end());
             ECSqlSystemProperty systemPropExp = ECSqlSystemProperty::ECInstanceId;
@@ -146,8 +146,8 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
                 if (!status.IsSuccess())
                     return status;
 
-                ECDbSqlColumn const* joinedTableIdCol = joinedTable.GetFilteredColumnFirst(ColumnKind::ECInstanceId);
-                ECDbSqlColumn const* primaryTableIdCol = primaryTable.GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+                DbColumn const* joinedTableIdCol = joinedTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+                DbColumn const* primaryTableIdCol = primaryTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
                 NativeSqlBuilder snippet;
                 snippet.AppendFormatted(
                     " WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] %s) ",
@@ -177,8 +177,8 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
 
 
     ClassMap const& classMap = classNameExp.GetInfo().GetMap();
-    ECDbSqlTable const* table = &classMap.GetPrimaryTable();
-    ECDbSqlColumn const* classIdColumn = nullptr;
+    DbTable const* table = &classMap.GetPrimaryTable();
+    DbColumn const* classIdColumn = nullptr;
     if (!table->TryGetECClassIdColumn(classIdColumn) || classIdColumn->GetPersistenceType() != PersistenceType::Persisted)
         return ECSqlStatus::Success; //no class id column exists -> no system where clause
     

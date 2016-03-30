@@ -186,8 +186,8 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
         return nullptr;
         }
 
-    ECDbSqlTable const& primaryTable = classMap.GetPrimaryTable();
-    ECDbSqlTable const& joinedTable = classMap.GetJoinedTable();
+    DbTable const& primaryTable = classMap.GetPrimaryTable();
+    DbTable const& joinedTable = classMap.GetJoinedTable();
     auto tables = exp.GetReferencedTables();
     if (tables.size() < 2)
         {
@@ -230,7 +230,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
 
             if (!info->m_ecinstanceIdIsUserProvided  && property->GetPropertyMap().GetSingleColumn())
                 {
-                info->m_ecinstanceIdIsUserProvided = Enum::Contains(property->GetPropertyMap().GetSingleColumn()->GetKind(), ColumnKind::ECInstanceId);
+                info->m_ecinstanceIdIsUserProvided = Enum::Contains(property->GetPropertyMap().GetSingleColumn()->GetKind(), DbColumn::Kind::ECInstanceId);
                 BeAssert(thisValueParams.size() <= 1);
                 if (thisValueParams.size() == 1)
                     info->m_primaryECInstanceIdParameterIndex = info->m_parameterMap.GetPrimaryR().Last();
@@ -292,8 +292,8 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
     NativeSqlBuilder joinedTableECSQL;
     ClassMap const* parentOfJoinedTableClassMap = classMap.FindClassMapOfParentOfJoinedTable();
 
-    ECDbSqlTable const& primaryTable = classMap.GetPrimaryTable();
-    ECDbSqlTable const& joinedTable = classMap.GetJoinedTable();
+    DbTable const& primaryTable = classMap.GetPrimaryTable();
+    DbTable const& joinedTable = classMap.GetJoinedTable();
     auto tables = exp.GetReferencedTables();
     if (tables.size() <= 2)
         {

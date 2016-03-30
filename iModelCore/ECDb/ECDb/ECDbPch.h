@@ -69,8 +69,8 @@
 #include "ECSql/ECSqlDeletePreparer.h"
 #include "ECSql/ECInstanceAdapterHelper.h"
 #include "ECSql/ECSqlPrepareContext.h"
-#include "ECDbSql.h"
 #include "DbSchema.h"
+#include "DbSchemaPersistenceManager.h"
 #include "ECSchemaComparer.h"
 
 

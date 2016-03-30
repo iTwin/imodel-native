@@ -475,7 +475,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
                            "DefaultConstraint TEXT,"
                            "CollationConstraint INTEGER,"
                            "OrdinalInPrimaryKey INTEGER,"
-                           "ColumnKind INTEGER)");
+                           "DbColumn::Kind INTEGER)");
     if (BE_SQLITE_OK != stat)
         return stat;
 

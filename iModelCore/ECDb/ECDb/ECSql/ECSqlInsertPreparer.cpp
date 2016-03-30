@@ -361,7 +361,7 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
         }
 
     //if table has a class id column, handle this here
-    auto classIdColumn = classMap.GetJoinedTable().FindColumnCP(ECDB_COL_ECClassId);
+    DbColumn const* classIdColumn = classMap.GetJoinedTable().FindColumn(ECDB_COL_ECClassId);
     if (classIdColumn != nullptr)
         {
         NativeSqlBuilder::List classIdNameSqliteSnippets {NativeSqlBuilder(classIdColumn->GetName().c_str())};
@@ -384,14 +384,8 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlInsertPreparer::ValidateConstraintClassId
-(
-ECClassId& retrievedConstraintClassId, 
-ECSqlPrepareContext& ctx, 
-InsertStatementExp const& exp, 
-RelationshipClassMapCR relationshipClassMap,
-ECN::ECRelationshipEnd constraintEnd
-)
+ECSqlStatus ECSqlInsertPreparer::ValidateConstraintClassId(ECClassId& retrievedConstraintClassId, ECSqlPrepareContext& ctx, 
+                            InsertStatementExp const& exp, RelationshipClassMapCR relationshipClassMap,ECN::ECRelationshipEnd constraintEnd)
     {
     //This is how the class id handling looks like
     //Case 1: User specified XXClassId in ECSQL
@@ -429,7 +423,7 @@ ECN::ECRelationshipEnd constraintEnd
         }
     //Sometime SourceECClassId/TargetECClassId  propertyMap is mapped to another table where ECClassId exist.
     //In this case if user did not specify it is not a error..
-    if (!constraintClassIdPropMap->IsMappedToClassMapTables() || Enum::Contains(constraintClassIdPropMap->GetSingleColumn()->GetKind(), ColumnKind::ECClassId))
+    if (!constraintClassIdPropMap->IsMappedToClassMapTables() || Enum::Contains(constraintClassIdPropMap->GetSingleColumn()->GetKind(), DbColumn::Kind::ECClassId))
         {
         return ECSqlStatus::Success;
         }
@@ -503,7 +497,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareConstraintClassId(NativeSqlSnippets& ins
     if (constraintClassIdPropMap.IsVirtual())
         return ECSqlStatus::Success;
 
-    if (!constraintClassIdPropMap.IsMappedToClassMapTables() || Enum::Contains(constraintClassIdPropMap.GetSingleColumn()->GetKind(), ColumnKind::ECClassId))
+    if (!constraintClassIdPropMap.IsMappedToClassMapTables() || Enum::Contains(constraintClassIdPropMap.GetSingleColumn()->GetKind(), DbColumn::Kind::ECClassId))
         return ECSqlStatus::Success;
 
     auto classIdColSqlSnippet = constraintClassIdPropMap.ToNativeSql(nullptr, ECSqlType::Insert, false);

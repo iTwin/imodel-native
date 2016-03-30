@@ -16,25 +16,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 
 //******************************** ECDbSchemaManager ****************************************
-BentleyStatus ECDbSchemaManager::CompareECSchemas(Utf8StringR differences, ECN::ECSchemaCR lhs, ECN::ECSchemaCR rhs) const
-    {
-    ECSchemaList lhsSchemas, rhsSchemas;
-    lhsSchemas.push_back(&lhs);
-    rhsSchemas.push_back(&rhs);
-
-    ECSchemaChanges changes;
-    ECSchemaComparer sc;
-    if (sc.Compare(changes, lhsSchemas, rhsSchemas) == ERROR)
-        return ERROR;
-
-    changes.Optimize();
-    changes.WriteToString(differences);
-    return SUCCESS;
-    }
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDbSchemaManager::ECDbSchemaManager (ECDbR ecdb, ECDbMapR map) :m_ecdb (ecdb), m_map (map)
+ECDbSchemaManager::ECDbSchemaManager(ECDbCR ecdb, ECDbMap& map) :m_ecdb(ecdb), m_map(map)
     {
     m_ecReader = ECDbSchemaReader::Create(ecdb);
     }
@@ -150,10 +135,6 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache, ImportOpt
     {
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin ECDbSchemaManager::ImportECSchemas");
 
-    SchemaImportContext context (m_map.GetSQLManager().GetDbSchemaR());
-    if (SUCCESS != context.Initialize())
-        return ERROR;
-
     if (m_ecdb.IsReadonly ())
         {
         m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas. ECDb file is read-only.");
@@ -170,6 +151,10 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache, ImportOpt
 
     BeMutexHolder lock (m_criticalSection);
     
+    SchemaImportContext context;
+    if (SUCCESS != context.Initialize(m_map.GetDbSchemaR(), m_ecdb))
+        return ERROR;
+
     if (SUCCESS != BatchImportECSchemas (context, cache, options))
         return ERROR;
   
@@ -181,7 +166,7 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache, ImportOpt
     if (compareContext.ReloadECSchemaIfRequired(*this) == ERROR)
         return ERROR;
 
-    if (MapStatus::Error == m_map.MapSchemas (context))
+    if (MapStatus::Error == m_map.MapSchemas(context))
         return ERROR;
 
     {
@@ -307,6 +292,24 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext& conte
     return SUCCESS;
     }
 
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECDbSchemaManager::CompareECSchemas(Utf8StringR differences, ECN::ECSchemaCR lhs, ECN::ECSchemaCR rhs) const
+    {
+    ECSchemaList lhsSchemas, rhsSchemas;
+    lhsSchemas.push_back(&lhs);
+    rhsSchemas.push_back(&rhs);
+
+    ECSchemaChanges changes;
+    ECSchemaComparer sc;
+    if (sc.Compare(changes, lhsSchemas, rhsSchemas) == ERROR)
+        return ERROR;
+
+    changes.Optimize();
+    changes.WriteToString(differences);
+    return SUCCESS;
+    }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012

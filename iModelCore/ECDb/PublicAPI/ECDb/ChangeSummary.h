@@ -248,7 +248,7 @@ struct ChangeSummary : NonCopyableClass
     }; // ValueIterator
 
 private:
-    ECDbR m_ecdb;
+    ECDbCR m_ecdb;
     bool m_isValid = false;
     InstancesTableP m_instancesTable;
     ValuesTableP m_valuesTable;
@@ -258,20 +258,20 @@ private:
     static IsChangedInstanceSqlFunction* s_isChangedInstanceSqlFunction;
     
     void Initialize();
-    static void RegisterSqlFunctions(ECDbR);
-    static void UnregisterSqlFunctions(ECDbR);
+    static void RegisterSqlFunctions(ECDbCR);
+    static void UnregisterSqlFunctions(ECDbCR);
     Utf8String FormatInstanceIdStr(ECInstanceId) const;
     Utf8String FormatClassIdStr(ECN::ECClassId) const;
 
 public:
     //! Construct a ChangeSummary from a BeSQLite ChangeSet
-    ECDB_EXPORT explicit ChangeSummary(ECDbR);
+    ECDB_EXPORT explicit ChangeSummary(ECDbCR);
 
     //! Destructor
     ECDB_EXPORT ~ChangeSummary();
 
     //! Get the Db used by this change set
-    ECDbR GetDb() const { return m_ecdb; }
+    ECDbCR GetDb() const { return m_ecdb; }
 
     //! Create a ChangeSummary from the contents of a BeSQLite ChangeSet
     //! @remarks The ChangeSummary needs to be new or freed before this call. 

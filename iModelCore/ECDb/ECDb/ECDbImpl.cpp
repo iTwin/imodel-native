@@ -74,13 +74,13 @@ DbResult ECDb::Impl::OnDbOpened () const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2012
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::Impl::OnDbCreated () const
+DbResult ECDb::Impl::OnDbCreated() const
     {
-    auto stat = OnDbOpened ();
+    auto stat = OnDbOpened();
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return ECDbProfileManager::CreateECProfile (m_ecdb);
+    return ECDbProfileManager::CreateECProfile(m_ecdb);
     }
 
 //--------------------------------------------------------------------------------------
