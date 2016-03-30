@@ -2,7 +2,7 @@
 |
 |     $Source: docs/overview/View.overviewPage $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -15,19 +15,19 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->
-@section SECTION_Category_Includes Required include files
+@section PAGE_ViewOverview_SECTION_Category_Includes Required include files
 
 __PUBLISH_INSERT_FILE__ View_Includes.sampleCode
 
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->
-@section SECTION_CreateAndInsertView Create and Insert View
+@section PAGE_ViewOverview_SECTION_CreateAndInsertView Create and Insert View
 
 __PUBLISH_INSERT_FILE__ View_CreateAndInsert.sampleCode
 
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->
-@section SECTION_LinkToViewModules View Modules and Links
+@section PAGE_ViewOverview_SECTION_LinkToViewModules View Modules and Links
 
 @see DgnViewGroup
 */

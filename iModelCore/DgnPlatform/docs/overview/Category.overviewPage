@@ -37,13 +37,13 @@ Every Category has a default (unnamed) SubCategory associated with it.
 
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->
-@section SECTION_Category_Includes Required include files
+@section PAGE_CategoryOverview_SECTION_Category_Includes Required include files
 
 __PUBLISH_INSERT_FILE__ Category_Includes.sampleCode
 
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->
-@section SECTION_Category_CreateAndInsert Creating and inserting a new category
+@section PAGE_CategoryOverview_SECTION_Category_CreateAndInsert Creating and inserting a new category
 
 Many developers will just use categories set up by the system or domain.
 In the case that custom categories are required, here is how to create and insert a category:
@@ -52,7 +52,7 @@ __PUBLISH_INSERT_FILE__ Category_CreateAndInsert.sampleCode
 
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->
-@section SECTION_Category_DgnV8Level Category vs. DgnV8 Level
+@section PAGE_CategoryOverview_SECTION_Category_DgnV8Level Category vs. DgnV8 Level
 
 The concept of a DgnDb @b Category supercedes the concept of a DgnV8 @b Level.
 While both have the same primary role (filtering) there are some important differences:
@@ -63,7 +63,7 @@ While both have the same primary role (filtering) there are some important diffe
 
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->
-@section SECTION_LinkToCategoryModules Category Modules and Links
+@section PAGE_CategoryOverview_SECTION_LinkToCategoryModules Category Modules and Links
 
 @see DgnCategoryGroup
 
