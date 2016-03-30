@@ -26,9 +26,13 @@ struct ScalableMeshDraping : IDTMDraping
 
         size_t m_levelForDrapeLinear;
 
+        bvector<IScalableMeshNodePtr> m_nodeSelection;
+
         DTMStatusInt DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int* drapedTypeP, DPoint3dCR point, const DMatrix4d& w2vMap);
 
         size_t ComputeLevelForTransform(const DMatrix4d& w2vMap);
+
+        void QueryNodesBasedOnParams(bvector<IScalableMeshNodePtr>& nodes, const DPoint3d& testPt, const IScalableMeshNodeQueryParamsPtr& params);
 
     protected:
         virtual DTMStatusInt _DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int* drapedTypeP, DPoint3dCR point) override;
@@ -110,6 +114,8 @@ struct MeshTraversalQueue
             }
 
         void CollectAll();
+
+        void CollectAll(const bvector<IScalableMeshNodePtr>& inputNodes);
 
         bool TryStartTraversal(bool& needProjectionToFindFirstTriangle, int segment);
         bool HasNodesToProcess();

@@ -126,6 +126,10 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         virtual void                               _ModifyClipMetadata(uint64_t clipId, double importance, int nDimensions) = 0;
 
         virtual void                               _GetAllClipsIds(bvector<uint64_t>& ids) = 0;
+
+        virtual void                               _GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes) = 0;
+
+        virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) = 0;
     /*__PUBLISH_SECTION_START__*/
     public:
         //! Gets the number of points of the DTM.
@@ -216,6 +220,10 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         BENTLEYSTM_EXPORT void                   ModifyClipMetadata(uint64_t clipId,double importance, int nDimensions);
 
         BENTLEYSTM_EXPORT void                   GetAllClipIds(bvector<uint64_t>& ids);
+
+        BENTLEYSTM_EXPORT void                   GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes);
+
+        BENTLEYSTM_EXPORT void                   SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes);
 
     
         BENTLEYSTM_EXPORT static IScalableMeshPtr        GetFor                 (const WChar*          filePath,

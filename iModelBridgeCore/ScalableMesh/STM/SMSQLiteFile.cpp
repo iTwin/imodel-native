@@ -458,7 +458,7 @@ void SMSQLiteFile::GetTexture(int64_t nodeID, bvector<uint8_t>& texture, size_t&
     stmt->BindInt64(1, nodeID);
     DbResult status = stmt->Step();
     // assert(status == BE_SQLITE_ROW);
-    if (status == BE_SQLITE_DONE)
+    if (status == BE_SQLITE_DONE || stmt->GetValueInt64(1) == 0)
         {
         uncompressedSize = 0;
         return;

@@ -2675,12 +2675,15 @@ template <class POINT> BcDTMPtr ScalableMeshNode<POINT>::_GetBcDTM() const
     else
         {
         s_nMissedDTMs++;
-        bvector<bool> clips;
-        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
-        auto meshP = GetMesh(flags, clips);
-        if (meshP == nullptr) return nullptr;
-        meshP->GetAsBcDTM(m_meshNode->m_tileBcDTM);
-        return m_meshNode->m_tileBcDTM.get();
+            {
+            std::lock_guard<std::mutex> m(m_meshNode->m_dtmLock);
+            bvector<bool> clips;
+            IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+            auto meshP = GetMesh(flags, clips);
+            if (meshP == nullptr) return nullptr;
+            meshP->GetAsBcDTM(m_meshNode->m_tileBcDTM);
+            return m_meshNode->m_tileBcDTM.get();
+            }
         }
     }
 
@@ -2694,6 +2697,31 @@ template <class POINT> void ScalableMeshNode<POINT>::_GetSkirtMeshes(bvector<Pol
         PolyfaceHeaderPtr mesh = d.ToPolyfaceMesh(&m_node->operator[](0), m_node->size());
         meshes.push_back(mesh);
         }
+    }
+
+template <class POINT> bool ScalableMeshNode<POINT>::_RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query, bvector<IScalableMeshNodePtr>& nodes) const
+    {
+    std::vector<SMPointIndexNode<DPoint3d, DRange3d>::QueriedNode> nodesP;
+    for (auto& node : nodes)
+        {
+        nodesP.push_back(SMPointIndexNode<DPoint3d, DRange3d>::QueriedNode(dynamic_cast<ScalableMeshNode<POINT>*>(node.get())->m_node, false));
+        }
+    bool retval = query.Query(m_node, 0, 0, nodesP);
+
+    if (nodesP.size() == 0) return false;
+    nodes.clear();
+    for (auto& currentNodeP : nodesP)
+        {
+        IScalableMeshNodePtr nodePtr = new ScalableMeshNode<POINT>(currentNodeP.m_indexNode);
+        nodes.push_back(nodePtr);
+        }
+    return retval;
+    }
+
+template <class POINT> bool ScalableMeshNode<POINT>::_RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query) const
+    {
+    HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>> ptr;
+    return query.Query(m_node, 0, 0, ptr) && ptr != nullptr;
     }
 
 template <class POINT> bool ScalableMeshNode<POINT>::_HasClip(uint64_t clip) const

@@ -27,7 +27,7 @@
 #include <Bentley\bset.h>
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 //#include <Bentley/RefCounted.h>
-
+template<class POINT, class EXTENT> class ISMPointIndexQuery;
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 struct IScalableMeshMesh;
@@ -492,6 +492,7 @@ struct IScalableMeshMeshFlags abstract: public RefCountedBase
         BENTLEYSTM_EXPORT static IScalableMeshMeshFlagsPtr Create();
     };
 
+
 struct IScalableMeshNode abstract: virtual public RefCountedBase
 
     {
@@ -551,6 +552,10 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         virtual void _GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const = 0;
 
+        virtual bool _RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query, bvector<IScalableMeshNodePtr>& nodes) const = 0;
+
+        virtual bool _RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query) const = 0;
+
                 
     public:
         static const BENTLEYSTM_EXPORT ScalableMeshTextureID UNTEXTURED_PART = 0;
@@ -609,6 +614,10 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         BENTLEYSTM_EXPORT bool HasClip(uint64_t id) const;
 
         BENTLEYSTM_EXPORT void GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const;
+
+        BENTLEYSTM_EXPORT bool RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query, bvector<IScalableMeshNodePtr>& nodes) const;
+
+        BENTLEYSTM_EXPORT bool RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query) const;
     };
 
 struct SmCachedDisplayMesh;

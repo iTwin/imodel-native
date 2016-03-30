@@ -687,6 +687,7 @@ size_t GetNbPtsIndices(size_t texture_id) const
     mutable vector<HPMStoredPooledVector<int32_t>> m_featureDefinitions;
     atomic<size_t> m_nbClips;
     BcDTMPtr m_tileBcDTM;
+    std::mutex m_dtmLock;
     private:
         mutable HPMStoredPooledVector<DifferenceSet> m_differenceSets;
         mutable HPMStoredPooledVector<MTGGraph> m_graphVec;

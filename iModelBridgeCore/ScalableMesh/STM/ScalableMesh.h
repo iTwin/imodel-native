@@ -191,6 +191,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         HFCPtr<PointIndexType>          m_scmIndexPtr;                                                    
         RefCountedPtr<ScalableMeshDTM>                m_scalableMeshDTM;
 
+        bvector<IScalableMeshNodePtr> m_viewedNodes;
+
 
         explicit                        ScalableMesh(SMSQLiteFilePtr& smSQLiteFile,const WString&             path);
 
@@ -284,6 +286,10 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
         virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
         virtual bool                               _RemoveSkirt(uint64_t skirtID) override;
+
+
+        virtual void                               _GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes) override;
+        virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) override;
         
 #ifdef SCALABLE_MESH_ATP
         virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes) const override; 
@@ -377,6 +383,8 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
         virtual bool                               _RemoveSkirt(uint64_t skirtID) override;
         
+        virtual void                               _GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes) override;
+        virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) override;
         //Data source synchronization functions.
         virtual bool                   _InSynchWithSources() const override; 
         virtual bool                   _LastSynchronizationCheck(time_t& last) const override;        

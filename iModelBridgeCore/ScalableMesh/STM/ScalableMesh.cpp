@@ -326,6 +326,16 @@ void IScalableMesh::GetAllClipIds(bvector<uint64_t>& ids)
     return _GetAllClipsIds(ids);
     }
 
+void IScalableMesh::GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes)
+    {
+    return _GetCurrentlyViewedNodes(nodes);
+    }
+
+void IScalableMesh::SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes)
+    {
+    return _SetCurrentlyViewedNodes(nodes);
+    }
+
 bool IScalableMesh::RemoveSkirt(uint64_t clipID)
     {
     return _RemoveSkirt(clipID);
@@ -1727,6 +1737,17 @@ template <class POINT> void ScalableMesh<POINT>::_GetAllClipsIds(bvector<uint64_
     m_scmIndexPtr->GetClipRegistry()->GetAllClipsIds(allClipIds);
     }
 
+template <class POINT> void ScalableMesh<POINT>::_GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes)
+    {
+    nodes = m_viewedNodes;
+    }
+
+template <class POINT> void ScalableMesh<POINT>::_SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes)
+    {
+    m_viewedNodes = nodes;
+    }
+
+
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_RemoveClip
 +----------------------------------------------------------------------------*/
@@ -2090,6 +2111,16 @@ template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_
     }
 
 template <class POINT> void ScalableMeshSingleResolutionPointIndexView<POINT>::_GetAllClipsIds(bvector<uint64_t>& allClipIds)
+    {
+
+    }
+
+template <class POINT> void ScalableMeshSingleResolutionPointIndexView<POINT>::_GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes)
+    {
+
+    }
+
+template <class POINT> void ScalableMeshSingleResolutionPointIndexView<POINT>::_SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes)
     {
 
     }

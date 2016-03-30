@@ -2496,6 +2496,15 @@ void IScalableMeshNode::GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const
     return _GetSkirtMeshes(meshes);
     }
 
+bool IScalableMeshNode::RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query, bvector<IScalableMeshNodePtr>& nodes) const
+    {
+    return _RunQuery(query,nodes);
+    }
+
+bool IScalableMeshNode::RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query) const
+    {
+    return _RunQuery(query);
+    }
 
 int IScalableMeshNodeRayQuery::Query(IScalableMeshNodePtr&                               nodePtr,
                               const DPoint3d*                           pTestPt,
