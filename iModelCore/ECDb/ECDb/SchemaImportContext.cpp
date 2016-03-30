@@ -207,7 +207,7 @@ BentleyStatus ECSchemaCompareContext::Prepare(ECDbSchemaManager const& schemaMan
         std::set<Utf8CP, CompareUtf8> schemaOfInterest;
         if (m_changes.Exist())
             {
-            for (int i = 0; i < m_changes.Count(); i++)
+            for (size_t i = 0; i < m_changes.Count(); i++)
                 {
                 schemaOfInterest.insert(m_changes.At(i).GetId().c_str());                
                 }

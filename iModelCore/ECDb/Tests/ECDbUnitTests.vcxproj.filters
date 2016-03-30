@@ -214,7 +214,7 @@
     <ClCompile Include="Published\ECSqlInsertTests.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECDbSchemaUpgrade.cpp">
+    <ClCompile Include="Published\ECDbSchemaUpgrade_Tests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
   </ItemGroup>
