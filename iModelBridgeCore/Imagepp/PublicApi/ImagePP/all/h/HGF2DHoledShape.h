@@ -126,7 +126,8 @@ public:
 
     virtual HFCPtr<HGF2DShape>  AllocTransformDirect(const HGF2DTransfoModel& pi_rModel) const override;
 
-    virtual void                GetBestOrientedExtent(HGF2DPositionCollection* po_pMinimalBoxCorners) const override;
+    virtual void                GetBestOrientedExtent(HGF2DPositionCollection* po_pMinimalBoxCorners,
+                                                      HGF2DPositionCollection* po_pConvexHull) const override;
 
 protected:
 

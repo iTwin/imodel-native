@@ -455,7 +455,8 @@ public:
 
     //Convex Hull and minimum bounding box methods see .cpp file for documentation
     virtual void                                    GetConvexHull(HGF2DPositionCollection* p_points, HGF2DPositionCollection* po_pConvexHull) const;
-    virtual void                                    GetBestOrientedExtent(HGF2DPositionCollection* po_pMinimalBoxCorners) const = 0;
+    virtual void                                    GetBestOrientedExtent(HGF2DPositionCollection* po_pMinimalBoxCorners,
+                                                                          HGF2DPositionCollection* po_pConvexHull) const = 0;
 
 protected:    
 
