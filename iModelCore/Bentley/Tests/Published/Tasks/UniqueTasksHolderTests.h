@@ -9,6 +9,7 @@
 #pragma once
 
 #include "../TestsHelper.h"
+
 class UniqueTasksHolderTests : public ::testing::Test
     {
     };

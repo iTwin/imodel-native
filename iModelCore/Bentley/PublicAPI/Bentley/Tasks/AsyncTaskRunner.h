@@ -53,6 +53,7 @@ struct AsyncTaskRunner : public ITaskRunner
         // ITaskRunner implementation
         BENTLEYDLL_EXPORT void Start (std::shared_ptr<ITaskScheduler> scheduler, Utf8CP name = nullptr) override;
         BENTLEYDLL_EXPORT void Stop () override;
+        BENTLEYDLL_EXPORT void WakeUp() override;
         BENTLEYDLL_EXPORT bool IsRunning () const override;
         BENTLEYDLL_EXPORT bool IsStopping () const override;
 

@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <BeHttp/IHttpHandler.h>
+#include <mutex>
 
 BEGIN_BENTLEY_HTTP_NAMESPACE
 
@@ -17,6 +18,9 @@ BEGIN_BENTLEY_HTTP_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct DefaultHttpHandler
     {
+    private:
+        static std::once_flag s_initFlag;
+
     public:
         BEHTTP_EXPORT static IHttpHandlerPtr GetInstance ();
     };

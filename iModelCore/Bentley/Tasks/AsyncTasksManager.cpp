@@ -12,15 +12,20 @@
 USING_NAMESPACE_BENTLEY_TASKS
 
 bmap<intptr_t, std::weak_ptr<struct ITaskRunner>> AsyncTasksManager::s_runners;
-BeMutex AsyncTasksManager::s_runnersCS;
+std::mutex AsyncTasksManager::s_runnersMutex;
+std::condition_variable AsyncTasksManager::s_emptyRunnersCV;
+
 std::weak_ptr<WorkerThreadPool> AsyncTasksManager::s_defaultThreadPool;
+
+std::mutex AsyncTasksManager::s_threadingStoppingListenersMutex;
+bvector<std::function<void()>> AsyncTasksManager::s_onThreadingStoppingListeners;
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Benediktas.Lipnickas     10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AsyncTasksManager::RegisterAsyncTaskRunner (std::shared_ptr<ITaskRunner> runner)
     {
-    BeMutexHolder h (s_runnersCS);
+    std::lock_guard<std::mutex> lock(s_runnersMutex);
     s_runners.Insert (BeThreadUtilities::GetCurrentThreadId (), runner);
     }
 
@@ -29,8 +34,13 @@ void AsyncTasksManager::RegisterAsyncTaskRunner (std::shared_ptr<ITaskRunner> ru
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AsyncTasksManager::UnregisterCurrentThreadAsyncTaskRunner ()
     {
-    BeMutexHolder h (s_runnersCS);
+    std::lock_guard<std::mutex> lock(s_runnersMutex);
     s_runners.erase (BeThreadUtilities::GetCurrentThreadId ());
+
+    if (s_runners.empty())
+        {
+        s_emptyRunnersCV.notify_all();
+        }
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -38,7 +48,7 @@ void AsyncTasksManager::UnregisterCurrentThreadAsyncTaskRunner ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<ITaskRunner> AsyncTasksManager::GetTaskRunner (intptr_t threadId)
     {
-    BeMutexHolder h (s_runnersCS);
+    std::lock_guard<std::mutex> lock(s_runnersMutex);
     auto runnerIt = s_runners.find (threadId);
     if (runnerIt != s_runners.end ())
         {
@@ -73,7 +83,7 @@ std::shared_ptr<AsyncTask> AsyncTasksManager::GetCurrentThreadAsyncTask()
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<ITaskScheduler> AsyncTasksManager::GetDefaultScheduler()
     {
-    BeMutexHolder h (s_runnersCS);
+    std::lock_guard<std::mutex> lock(s_runnersMutex);
     std::shared_ptr<WorkerThreadPool> sheduler = s_defaultThreadPool.lock ();
     if (sheduler == nullptr)
         {
@@ -83,3 +93,46 @@ std::shared_ptr<ITaskScheduler> AsyncTasksManager::GetDefaultScheduler()
 
     return sheduler;
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void AsyncTasksManager::RegisterOnCompletedListener(const std::function<void()>& listener)
+    {
+    std::lock_guard<std::mutex> lock(s_threadingStoppingListenersMutex);
+    s_onThreadingStoppingListeners.push_back(listener);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void AsyncTasksManager::StopThreadingAndWait()
+    {
+    StopThreading();
+    WaitForAllTreadRunnersToStop();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                        
++---------------+---------------+---------------+---------------+---------------+------*/
+void AsyncTasksManager::StopThreading()
+    {
+    std::lock_guard<std::mutex> lock(s_threadingStoppingListenersMutex);
+    for (auto listener : s_onThreadingStoppingListeners)
+        {
+        listener();
+        }
+     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                         
++---------------+---------------+---------------+---------------+---------------+------*/
+void AsyncTasksManager::WaitForAllTreadRunnersToStop()
+    {
+    std::unique_lock<std::mutex> lk(s_runnersMutex);
+    s_emptyRunnersCV.wait(lk, [&]
+        {
+        return s_runners.empty();
+        });
+    }
+

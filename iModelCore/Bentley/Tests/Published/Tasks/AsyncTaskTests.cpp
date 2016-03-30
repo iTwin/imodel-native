@@ -73,11 +73,11 @@ TEST_F(AsyncTaskTests, Then_ThenCallbackAdded_ExecutedAfterOriginalTaskWasExecut
     {
     BeAtomic<int> result (0);
 
-    auto task = std::make_shared<PackagedAsyncTask<void>>([&] { result = 1; });
+    auto task = std::make_shared<PackagedAsyncTask<void>>([&] { result.store(1); });
 
-    auto lastTask = task->Then([&] { result = 2; });
+    auto lastTask = task->Then([&] { result.store(2); });
 
-    result = 3;
+    result.store(3);
 
     task->Execute();
 
@@ -96,17 +96,17 @@ TEST_F(AsyncTaskTests, Then_MultipleThensChained_AllExecutedInCorrectOrder)
     task->Then([&] 
             {
             EXPECT_TRUE(lastCompletedThenTask == 0);
-            lastCompletedThenTask = 1;
+            lastCompletedThenTask.store(1);
             })
         ->Then([&] 
             {
             EXPECT_TRUE(lastCompletedThenTask == 1);
-            lastCompletedThenTask = 2;
+            lastCompletedThenTask.store(2);
             })
         ->Then([&] 
             {
             EXPECT_TRUE(lastCompletedThenTask == 2);
-            lastCompletedThenTask = 3;
+            lastCompletedThenTask.store(3);
             });
 
     task->Execute();

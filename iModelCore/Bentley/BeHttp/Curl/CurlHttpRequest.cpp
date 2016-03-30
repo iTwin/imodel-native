@@ -298,7 +298,7 @@ int CurlHttpRequest::CurlDebugCallback(CURL* handle, curl_infotype type, char* d
 
         LOG.tracev("%s#%lld %.*s", text, request->GetNumber(), size, buffer);
 
-        delete buffer;
+        delete[] buffer;
         }
     else
         {

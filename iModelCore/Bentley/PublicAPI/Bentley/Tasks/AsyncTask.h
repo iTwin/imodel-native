@@ -15,6 +15,15 @@
 #include <functional>
 #include <mutex>
 
+#if defined (THREADING_DEBUG)
+    #include <MobileDgn/Utils/BeDbgHelp.h>
+
+    #define ASYNC_TASK_ADD_DEBUG_INFO(task, callerFrame) { task->SetStackInfo(BeDbgHelp::GetStackInfoAt(callerFrame)); }
+
+#else
+    #define ASYNC_TASK_ADD_DEBUG_INFO(task, callerFrame)
+#endif
+
 BEGIN_BENTLEY_TASKS_NAMESPACE
 
 struct ITaskScheduler;
@@ -62,6 +71,10 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncTask : public std::enable_shared_from_this<A
         bset<std::shared_ptr<AsyncTask>> m_parentTasks;
 
         Priority m_priority;
+
+#if defined (THREADING_DEBUG)
+        BeDbgHelp::StackInfo m_stackInfo;
+#endif
 
     private:
         void SetPriority (Priority priority);
@@ -112,6 +125,13 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncTask : public std::enable_shared_from_this<A
         BENTLEYDLL_EXPORT void WaitFor (int milliseconds);
 
         BENTLEYDLL_EXPORT void Execute ();
+
+#if defined (THREADING_DEBUG)
+        void SetStackInfo(const BeDbgHelp::StackInfo& stackInfo)
+            {
+            m_stackInfo = stackInfo;
+            }
+#endif
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -149,6 +169,7 @@ struct PackagedAsyncTask : AsyncTask
         std::shared_ptr<PackagedThenAsyncTask<R, T>> Then (const std::function<R (T&)>& taskCallback)
             {
             auto task = std::make_shared<PackagedThenAsyncTask<R, T>> (taskCallback, std::shared_ptr <T> (shared_from_this (), &m_result));
+            ASYNC_TASK_ADD_DEBUG_INFO(task, 2);
             AddThenTask (task);
             return task;
             }
@@ -158,6 +179,7 @@ struct PackagedAsyncTask : AsyncTask
         std::shared_ptr<PackagedThenAsyncTask<R, T>> Then (std::shared_ptr<ITaskScheduler> scheduler, const std::function<R (T&)>& taskCallback)
             {
             auto task = std::make_shared<PackagedThenAsyncTask<R, T>> (taskCallback, std::shared_ptr <T> (shared_from_this (), &m_result));
+            ASYNC_TASK_ADD_DEBUG_INFO(task, 2);
             AddThenTask (task, scheduler);
             return task;
             }
@@ -166,6 +188,7 @@ struct PackagedAsyncTask : AsyncTask
         std::shared_ptr<PackagedThenAsyncTask<void, T>> Then (std::shared_ptr<ITaskScheduler> scheduler, const std::function<void (T&)>& taskCallback)
             {
             auto task = std::make_shared<PackagedThenAsyncTask<void, T>> (taskCallback, std::shared_ptr <T> (shared_from_this (), &m_result));
+            ASYNC_TASK_ADD_DEBUG_INFO(task, 2);
             AddThenTask (task, scheduler);
             return task;
             }
@@ -174,6 +197,7 @@ struct PackagedAsyncTask : AsyncTask
         std::shared_ptr<PackagedThenAsyncTask<void, T>> Then (const std::function<void (T&)>& taskCallback)
             {
             auto task = std::make_shared<PackagedThenAsyncTask<void, T>> (taskCallback, std::shared_ptr <T> (shared_from_this (), &m_result));
+            ASYNC_TASK_ADD_DEBUG_INFO(task, 2);
             AddThenTask (task);
             return task;
             }
@@ -203,6 +227,7 @@ struct PackagedAsyncTask<void> : AsyncTask
         std::shared_ptr<PackagedAsyncTask<R>> Then (const std::function<R (void)>& taskCallback)
             {
             auto task = std::make_shared<PackagedAsyncTask<R>> (taskCallback);
+            ASYNC_TASK_ADD_DEBUG_INFO(task, 2);
             AddThenTask (task);
             return task;
             }
@@ -212,6 +237,7 @@ struct PackagedAsyncTask<void> : AsyncTask
         std::shared_ptr<PackagedAsyncTask<R>> Then (std::shared_ptr<ITaskScheduler> scheduler, const std::function<R (void)>& taskCallback)
             {
             auto task = std::make_shared<PackagedAsyncTask<R>> (taskCallback);
+            ASYNC_TASK_ADD_DEBUG_INFO(task, 2);
             AddThenTask (task, scheduler);
             return task;
             }
@@ -220,6 +246,7 @@ struct PackagedAsyncTask<void> : AsyncTask
         std::shared_ptr<PackagedAsyncTask<void>> Then (const std::function<void (void)>& taskCallback)
             {
             auto task = std::make_shared<PackagedAsyncTask<void>> (taskCallback);
+            ASYNC_TASK_ADD_DEBUG_INFO(task, 2);
             AddThenTask (task);
             return task;
             }
@@ -228,6 +255,7 @@ struct PackagedAsyncTask<void> : AsyncTask
         std::shared_ptr<PackagedAsyncTask<void>> Then (std::shared_ptr<ITaskScheduler> scheduler, const std::function<void (void)>& taskCallback)
             {
             auto task = std::make_shared<PackagedAsyncTask<void>> (taskCallback);
+            ASYNC_TASK_ADD_DEBUG_INFO(task, 2);
             AddThenTask (task, scheduler);
             return task;
             }

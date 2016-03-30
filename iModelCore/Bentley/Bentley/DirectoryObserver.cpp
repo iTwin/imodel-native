@@ -103,7 +103,7 @@ DirectoryObserver::DirectoryObserver(bset<BeFileName> const& directories, Observ
     {
     m_directories = directories;
     m_callback = callback;
-    m_isObserving = false;
+    m_isObserving.store(false);
     m_waitingThread = WorkerThread::Create("DirObserver_WaitingThread");
     m_callbackThread = WorkerThread::Create("DirObserver_CallbackThread");
     }
@@ -115,7 +115,7 @@ DirectoryObserver::DirectoryObserver(ObserverCallback callback)
     {
     m_directories.clear();
     m_callback = callback;
-    m_isObserving = false;
+    m_isObserving.store(false);
     m_waitingThread = WorkerThread::Create("DirObserver_WaitingThread");
     m_callbackThread = WorkerThread::Create("DirObserver_CallbackThread");
     }
@@ -123,8 +123,8 @@ DirectoryObserver::DirectoryObserver(ObserverCallback callback)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                              Mantas.Ragauskas       06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DirectoryObserver::~DirectoryObserver() 
-    { 
+DirectoryObserver::~DirectoryObserver()
+    {
     StopObserving();
     m_waitingThread->OnEmpty()->Wait();
     m_callbackThread->OnEmpty()->Wait();
@@ -253,19 +253,19 @@ BentleyStatus DirectoryObserver::RemoveAllObservedDirectories()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DirectoryObserver::StartObserving()
     {
-    if (m_isObserving) 
+    if (m_isObserving)
         return BentleyStatus::SUCCESS;
-    
+
     if (0 == m_directories.size())
         {
         LOG.errorv("[StartObserving]: No directories to observe");
         return BentleyStatus::ERROR;
         }
     DIROBSERVER_DEBUGMSG("[Main][Observer starting]: %llu", BeTimeUtilities::GetCurrentTimeAsUnixMillis());
-    m_isObserving = true;  
-    m_startedObserving = false;
+    m_isObserving.store(true);
+    m_startedObserving.store(false);
 
-    m_waitingThread->ExecuteAsync([&]() 
+    m_waitingThread->ExecuteAsync([&]()
         {
         _StartObserving();
         while (m_isObserving)
@@ -274,7 +274,7 @@ BentleyStatus DirectoryObserver::StartObserving()
             }
 
         BeMutexHolder lock(m_stoppedObservingLock.GetMutex());
-        m_stoppedObserving = true;
+        m_stoppedObserving.store(true);
         m_stoppedObservingLock.notify_all();
         });
 
@@ -292,9 +292,9 @@ BentleyStatus DirectoryObserver::StopObserving()
     BeMutexHolder lock(m_stoppedObservingLock.GetMutex());
     if (!m_isObserving)
         return BentleyStatus::SUCCESS;
-     
-    m_isObserving = false;
-    m_stoppedObserving = false;
+
+    m_isObserving.store(false);
+    m_stoppedObserving.store(false);
     _StopObserving();
 
     ChangesPredicate predicate(m_stoppedObserving);
@@ -316,15 +316,15 @@ BentleyStatus DirectoryObserver::StopObserving()
 struct ObservedDir
     {
     OVERLAPPED m_overlapped;
-    HANDLE     m_dirHandle;   
+    HANDLE     m_dirHandle;
     BeFileName m_dirName;
     DWORD      m_buffer[EVENT_SIZE];
 
     /*--------------------------------------------------------------------------------------+
     * @bsimethod                                              Mantas.Ragauskas       07/2015
     +---------------+---------------+---------------+---------------+---------------+------*/
-    ObservedDir(HANDLE dirHandle, BeFileNameCR dirName) : m_dirHandle (dirHandle), m_dirName (dirName) 
-        { 
+    ObservedDir(HANDLE dirHandle, BeFileNameCR dirName) : m_dirHandle (dirHandle), m_dirName (dirName)
+        {
         m_overlapped = {};
         memset(m_buffer, 0, EVENT_SIZE);
         }
@@ -352,7 +352,7 @@ private:
     virtual void _OnObservingStopped() override;
     virtual void _Observe()override;
 
-public:    
+public:
     DirectoryObserverWin(bset<BeFileName>const& directories, ObserverCallback callback);
     DirectoryObserverWin(ObserverCallback callback);
     };
@@ -383,14 +383,14 @@ void DirectoryObserverWin::_StartObserving()
         id++;
 
         HANDLE dirHandle = CreateFileW(
-            directory.c_str(),                                      // pointer to the file name      
-            FILE_LIST_DIRECTORY,                                    // access (read/write) mode      
-            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, // share mode                    
-            NULL,                                                   // security descriptor           
-            OPEN_EXISTING,                                          // how to create                 
-            FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED,      // file attributes               
+            directory.c_str(),                                      // pointer to the file name
+            FILE_LIST_DIRECTORY,                                    // access (read/write) mode
+            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, // share mode
+            NULL,                                                   // security descriptor
+            OPEN_EXISTING,                                          // how to create
+            FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED,      // file attributes
             NULL);                                                  // file with attributes to copy
-         
+
         HANDLE assosiatedHandle = CreateIoCompletionPort(dirHandle, m_completionPort, id, 0);
         BeAssert(m_completionPort == assosiatedHandle);
 
@@ -402,10 +402,10 @@ void DirectoryObserverWin::_StartObserving()
              sizeof(m_mappedDirectories[id]->m_buffer),             // length of buffer
              FALSE,                                                 // monitoring option (watch subtree)
              FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_CREATION | FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME, // filter conditions
-             NULL,                                                  // bytes returned                                                           
-             &(m_mappedDirectories[id]->m_overlapped),              // overlapped buffer                                                       
-             NULL);                                                 // completion routine 
-                                            
+             NULL,                                                  // bytes returned
+             &(m_mappedDirectories[id]->m_overlapped),              // overlapped buffer
+             NULL);                                                 // completion routine
+
          BeAssert(0 != readResult);
         }
     }
@@ -471,7 +471,7 @@ void DirectoryObserverWin::_Observe()
     ULONG_PTR completionKey = 0;
     OVERLAPPED* overlapped = NULL;
 
-    m_startedObserving = true;
+    m_startedObserving.store(true);
     m_startedObservingLock.notify_all();
 
     BeMutexHolder lock(m_mutex);
@@ -548,7 +548,7 @@ struct DirectoryObserverLinux : DirectoryObserver
     {
 private:
     int     m_inotifyInstance;
-    int     m_resetDescriptor[2];      //Pipe serves as a reset; destriptor [0] for reading, [1] for writing to a pipe  
+    int     m_resetDescriptor[2];      //Pipe serves as a reset; destriptor [0] for reading, [1] for writing to a pipe
     char    m_inotifyBuffer[BUF_LEN];
     fd_set  m_fileDescriptorSet;
 
@@ -659,7 +659,7 @@ void DirectoryObserverLinux::_Observe()
 
     int highestFileDescriptor = (m_inotifyInstance > m_resetDescriptor[0]) ? m_inotifyInstance : m_resetDescriptor[0]; // select requires highes numbered file descriptor passed as argument 
 
-    m_startedObserving = true;
+    m_startedObserving.store(true);
     m_startedObservingLock.notify_all();
     int eventNum = select(1 + highestFileDescriptor, &m_fileDescriptorSet, NULL, NULL, NULL);
     
@@ -924,7 +924,7 @@ void DirectoryObserverIOS::_StopObserving()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DirectoryObserverIOS::_Observe()
     {
-    m_startedObserving = true;
+    m_startedObserving.store(true);
     m_startedObservingLock.notify_all();
     
     int numberOfEvents = kevent(m_kqueue, m_events, m_directories.size() + 1, m_eventResults, m_directories.size() + 1, NULL);
@@ -1110,7 +1110,7 @@ DirectoryObserverWinRT::~DirectoryObserverWinRT()
 void DirectoryObserverWinRT::Reset()
     {
     DIROBSERVER_DEBUGMSG("[WinRT][Observer reseting]: %llu", BeTimeUtilities::GetCurrentTimeAsUnixMillis());
-    m_reset = true;
+    m_reset.store(true);
     m_resetCV.notify_all();
     }
 
@@ -1142,10 +1142,10 @@ void DirectoryObserverWinRT::_StopObserving()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DirectoryObserverWinRT::_Observe()
     {
-    m_startedObserving = true;
+    m_startedObserving.store(true);
     m_startedObservingLock.notify_all();
 
-    m_reset = false;
+    m_reset.store(false);
     DIROBSERVER_DEBUGMSG("[WinRT][Observer wait]: %llu", BeTimeUtilities::GetCurrentTimeAsUnixMillis());
     m_resetCV.WaitOnCondition(&m_resetPredicate, 1000);
     DIROBSERVER_DEBUGMSG("[WinRT][Observer reset done]: %llu", BeTimeUtilities::GetCurrentTimeAsUnixMillis());    BeMutexHolder holder(m_mutex);

@@ -59,7 +59,18 @@ void AsyncTaskRunnerPool::Start ()
     for (int i = 0; i < m_runnerCount; i++)
         {
         auto runner = m_runnerFactory->CreateRunner ();
-        runner->Start (m_taskScheduler, m_name.c_str ());
+
+        Utf8String runnerName;
+        if (m_runnerCount > 1)
+            {
+            runnerName = Utf8PrintfString("%s #%d", m_name.c_str(), i);
+            }
+        else
+            {
+            runnerName = m_name;
+            }
+
+        runner->Start (m_taskScheduler, runnerName.c_str ());
         m_runners.push_back (runner);
         }
     }
@@ -75,6 +86,11 @@ void AsyncTaskRunnerPool::Stop ()
     for (auto runner : m_runners)
         {
         runner->Stop ();
+        }
+
+    for (auto runner : m_runners)
+        {
+        runner->WakeUp();
         }
 
     m_started = false;

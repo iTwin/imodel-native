@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "WorkerThreadTests.h"
+
 #include <Bentley/Tasks/WorkerThread.h>
 #include <Bentley/Tasks/WorkerThreadPool.h>
 
@@ -111,7 +112,7 @@ TEST_F (WorkerThreadTests, OnEmpty_OneTaskAdded_WaitsUntilEmpty)
         i++;
         });
 
-    block = false;
+    block.store(false);
     thread->OnEmpty ()->Wait ();
     EXPECT_EQ (1, i);
     }
@@ -175,7 +176,7 @@ TEST_F (WorkerThreadTests, Push_MultipleTasksWithPriority_HighesPriorityExecutes
 
     thread->ExecuteAsync ([&]
         {
-        block2 = false;
+        block2.store(false);
         // All 3 tasks will be pushed now
         while (block);
         });
@@ -186,7 +187,7 @@ TEST_F (WorkerThreadTests, Push_MultipleTasksWithPriority_HighesPriorityExecutes
     thread->Push (t2, AsyncTask::Priority::High);
     thread->Push (t3, AsyncTask::Priority::Normal);
 
-    block = false;
+    block.store(false);
 
     thread->OnEmpty ()->Wait ();
     EXPECT_EQ (3, i);
@@ -301,7 +302,7 @@ TEST_F (WorkerThreadTests, OnEmpty_HasExecutingTasks_OnEmptyTaskIsCompletedAfter
         EXPECT_EQ (2, completedTasks);
         });
 
-    block = false;
+    block.store(false);
 
     thread->OnEmpty ()->Wait ();
     }
@@ -327,7 +328,7 @@ TEST_F (WorkerThreadTests, ExecuteAsyncWithoutAttachingToCurrentTask_MultipleThe
 
     EXPECT_TRUE (task->IsCompleted ());
 
-    block = false;
+    block.store(false);
     }
 
 //---------------------------------------------------------------------------------------

@@ -132,7 +132,14 @@ void CurlTaskRunner::WaitAndPopNewRequests ()
 
     if (m_curlToRequestMap.empty ())
         {
-        AddTaskToCurlMultiMap (GetTaskScheduler ()->WaitAndPop ());
+        task = GetTaskScheduler()->WaitAndPop();
+
+        if (IsStopping())
+            {
+            return;
+            }
+
+        AddTaskToCurlMultiMap (task);
         }
     }
 

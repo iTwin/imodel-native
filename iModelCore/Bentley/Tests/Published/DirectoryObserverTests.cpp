@@ -228,9 +228,9 @@ void DirectoryObserverTests::RenameObservedDirectory()
     m_testObserver = DirectoryObserver::Create(m_filesList, [&](BeFileName changedDir, FileChanges changeStatus)
         {
         if (FileChanges::FileRemoved == changeStatus)
-            oldFileNameUpdate = true;
+            oldFileNameUpdate.store(true);
         else if (FileChanges::FileAdded == changeStatus)
-            newFileNameUpdate = true;
+            newFileNameUpdate.store(true);
         m_cv.notify_all();
         LOG_OBSERVER("[RenameObservedDirectory]: [Callback called] %llu", BeTimeUtilities::GetCurrentTimeAsUnixMillis());
         });

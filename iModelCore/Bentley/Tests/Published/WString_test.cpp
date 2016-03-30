@@ -123,6 +123,11 @@ TEST(WStringTest, ToLowerToUpper)
     str = L"StrIng";
     str.ToUpper();
     ASSERT_STREQ( str.c_str(), L"STRING");
+    // To Upper Non Ascii
+    WCharP nonasc = L"\u20AC"; // this is the Euro symbol
+    //  Convert to UTF8 and lowercase it
+    WString nonasc_wchar(nonasc);    // s/ be E2 82 AC 00
+    EXPECT_STREQ(nonasc, nonasc_wchar.ToUpper().c_str()); // s/ be a nop
     }
 
 // ******************************************************
@@ -184,6 +189,11 @@ TEST(WStringTest, CharToMSWChar)
     str.AppendA ("def");
     VERIFY( str == L"abcdef" );
     VERIFY( str.length() == 6 );
+
+    str.AppendA(nullptr);
+    VERIFY(str == L"abcdef");
+    VERIFY(str.length() == 6);
+
     }
 
 TEST(WStringTest, Utils)
@@ -215,6 +225,13 @@ TEST(WStringTest, Utils)
     WString str3(L"");
     VERIFY( 0 == str3.Trim().length());
     VERIFY(0 == str3.Trim(L"; .").length());
+
+    WString newValue(L"New Test String");
+    Utf16Buffer newValueUtf16;
+    BeStringUtilities::WCharToUtf16(newValueUtf16, newValue.c_str(), BeStringUtilities::AsManyAsPossible);
+    WString str4((Utf16CP)newValueUtf16.data());
+    VERIFY(str4 == L"New Test String");
+
     }
 
 TEST(WStringTest, Operators)
@@ -1186,6 +1203,8 @@ TEST(WStringTest, EndsWith_DifferentCaseStrings)
     EXPECT_TRUE(WString(L"ABC").EndsWithI(L"abc"));
     
     EXPECT_FALSE(WString(L"ABC").EndsWithI(nullptr));
+
+    EXPECT_FALSE(WString(L"ABC").EndsWithI(L"abcd"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1212,6 +1231,7 @@ TEST(WStringTest, StartsWith)
     EXPECT_TRUE(WString(L"ABC").StartsWithI(L"abc"));
     EXPECT_FALSE(WString(L"ABC").StartsWithI(L""));
     EXPECT_FALSE(WString(L"ABC").StartsWithI(nullptr));
+    EXPECT_FALSE(WString(L"ABC").StartsWithI(L"abcd"));
     }
 //---------------------------------------------------------------------------------------
 // @betest                                      Umar.Hayat                          01/16
@@ -1344,6 +1364,10 @@ TEST(WStringTest, ReplaceI)
     str.assign(L"ABC");
     EXPECT_FALSE(str.ReplaceI(L"ABCD", L""));
     EXPECT_STREQ(L"ABC", str.c_str());
+
+    str.assign(L"ABC");
+    EXPECT_FALSE(str.ReplaceI(L"ABCD", L""));
+    EXPECT_STREQ(L"ABC", str.c_str());
     }
 //---------------------------------------------------------------------------------------
 // @betest                                      Umar.Hayat                          02/16
@@ -1390,4 +1414,25 @@ TEST(WStringTest, PadLeft)
 
     str.assign(L"ABC");
     EXPECT_STREQ(L"DABC", str.PadLeft(4, 'D').c_str());
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          02/16
+//---------------------------------------------------------------------------------------
+TEST(WStringTest, Assign)
+    {
+    WString str4(L"SomeValue");
+    str4.AssignA("SomeOtherValue");
+    VERIFY(str4 == L"SomeOtherValue");
+    str4.AssignA(nullptr);
+    VERIFY(str4 == L"");
+
+    WString str5(L"Test String");
+    WString newValue(L"New Test String");
+    Utf16Buffer newValueUtf16;
+    BeStringUtilities::WCharToUtf16(newValueUtf16, newValue.c_str(), BeStringUtilities::AsManyAsPossible);
+    str5.AssignUtf16(newValueUtf16.data());
+    EXPECT_STREQ(str5.c_str(), L"New Test String");
+
+    str5.AssignUtf16(nullptr);
+    VERIFY(str5 == L"");
     }

@@ -2,13 +2,14 @@
  |
  |     $Source: PublicAPI/Bentley/Base64Utilities.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
 #include <Bentley/WString.h>
+#include <Bentley/bvector.h>
 
 BEGIN_BENTLEY_NAMESPACE
 
@@ -17,14 +18,21 @@ BEGIN_BENTLEY_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct Base64Utilities
     {
-    public:
-        BENTLEYDLL_EXPORT static Utf8String Encode (Utf8StringCR stringToEncode);
-        BENTLEYDLL_EXPORT static Utf8String Encode (Utf8CP bytesToEncode, size_t length);
+private:
+    Base64Utilities();
+    ~Base64Utilities();
 
-        BENTLEYDLL_EXPORT static Utf8String Decode (Utf8StringCR encodedString);
-        BENTLEYDLL_EXPORT static Utf8String Decode (Utf8CP encodedBytes, size_t length);
+public:
+    static Utf8String Encode(Utf8StringCR stringToEncode) { return Encode(stringToEncode.c_str(), stringToEncode.size()); }
+    BENTLEYDLL_EXPORT static Utf8String Encode (Utf8CP bytesToEncode, size_t byteCount);
+    BENTLEYDLL_EXPORT static BentleyStatus Encode(Utf8StringR encodedString, Byte const* bytesToEncode, size_t byteCount);
 
-        BENTLEYDLL_EXPORT static Utf8StringCR Alphabet ();
+    static BentleyStatus Decode(bvector<Byte>& byteArray, Utf8StringCR encodedString) { return Decode(byteArray, encodedString.c_str(), encodedString.size()); }
+    BENTLEYDLL_EXPORT static BentleyStatus Decode(bvector<Byte>& byteArray, Utf8CP encodedString, size_t encodedStringLength);
+    static Utf8String Decode(Utf8StringCR encodedString) { return Decode(encodedString.c_str(), encodedString.size()); }
+    BENTLEYDLL_EXPORT static Utf8String Decode(Utf8CP encodedString, size_t encodedStringLength);
+
+    BENTLEYDLL_EXPORT static Utf8StringCR Alphabet();
     };
 
 END_BENTLEY_NAMESPACE

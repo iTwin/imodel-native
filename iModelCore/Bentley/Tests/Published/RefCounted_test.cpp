@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/RefCounted_test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -29,7 +29,6 @@ struct Derived : RefCounted<Base>
     ~Derived() {--s_derivedCount;}
     };
 
-
 struct Base2 : IRefCounted
     {
     Base2()  {++s_base2Count;}
@@ -40,11 +39,10 @@ struct Derived2 : Base, Base2
     {
     DEFINE_BENTLEY_REF_COUNTED_MEMBERS
 
-    Derived2()  {DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT; ++s_derived2Count;}
+    Derived2()  {++s_derived2Count;}
     ~Derived2() {--s_derived2Count;}
 
     uint32_t GetRefCount() const {return m_refCount.load();}
-
     static Derived2* Factory() {return new Derived2;}
     };
 }

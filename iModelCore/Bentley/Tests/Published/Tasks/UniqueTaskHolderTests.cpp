@@ -38,7 +38,7 @@ TEST_F (UniqueTaskHolderTests, GetRunningTask_CalledTwice_ExecutesJustFirstTask)
         return nullptr;
         }));
 
-    block = false;
+    block.store(false);
 
     AsyncTask::WhenAll (tasks)->Wait ();
     }
@@ -105,7 +105,7 @@ TEST_F (UniqueTaskHolderTests, GetRunningTask_CalledTwiceWithThenTasks_ReturnsVa
             EXPECT_EQ ("UniqueTaskResult", result);
             }));
 
-    block = false;
+    block.store(false);
 
     AsyncTask::WhenAll (tasks)->Wait ();
     EXPECT_EQ (2, i);
@@ -129,7 +129,7 @@ TEST_F (UniqueTaskHolderTests, GetRunningTask_CalledOnceAndExecutorDeleted_DoesN
         });
 
     delete taskHolder;
-    block = false;
+    block.store(false);
 
     EXPECT_EQ (42, task->GetResult ());
     }

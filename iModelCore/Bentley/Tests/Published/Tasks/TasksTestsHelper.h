@@ -26,14 +26,14 @@ struct AsyncTestCheckpoint
         //! Call in async code to mark that checkpoint is reached. Will block until Continue() was called.
         void CheckinAndWait ()
             {
-            m_reached = true;
+            m_reached.store(true);
             while (m_wait);
             }
 
         //! Call in controlling code to make async code continue from checkpoint.
         void Continue ()
             {
-            m_wait = false;
+            m_wait.store(false);
             }
 
         //! Check if checkpoint was reached with CheckinAndWait() method by async code

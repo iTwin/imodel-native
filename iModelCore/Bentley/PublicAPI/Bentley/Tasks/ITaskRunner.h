@@ -24,6 +24,7 @@ struct ITaskRunner : public std::enable_shared_from_this<ITaskRunner>
     public:
         virtual void Start (std::shared_ptr<ITaskScheduler> scheduler, Utf8CP name = nullptr) = 0;
         virtual void Stop () = 0;
+        virtual void WakeUp () = 0;
         virtual bool IsRunning () const = 0;
         virtual bool IsStopping () const = 0;
 

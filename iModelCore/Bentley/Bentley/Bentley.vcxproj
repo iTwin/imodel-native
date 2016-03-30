@@ -51,6 +51,7 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\PublicAPI\Bentley\Base64Utilities.h" />
     <ClInclude Include="..\PublicAPI\Bentley\BeAssert.h" />
     <ClInclude Include="..\PublicAPI\Bentley\BeDebugLog.h" />
     <ClInclude Include="..\PublicAPI\Bentley\BeDirectoryIterator.h" />
@@ -58,6 +59,7 @@
     <ClInclude Include="..\PublicAPI\Bentley\BeFileListIterator.h" />
     <ClInclude Include="..\PublicAPI\Bentley\BeFileName.h" />
     <ClInclude Include="..\PublicAPI\Bentley\BeIconUtilities.h" />
+    <ClInclude Include="..\PublicAPI\Bentley\BeId.h" />
     <ClInclude Include="..\PublicAPI\Bentley\BeJStringUtilities.h" />
     <ClInclude Include="..\PublicAPI\Bentley\Bentley.h" />
     <ClInclude Include="..\PublicAPI\Bentley\Bentley.r.h" />
@@ -102,10 +104,10 @@
     <ClInclude Include="nonport\strfunc.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BeTextFile.cpp" />
     <ClCompile Include="DateTime.cpp" />
     <ClCompile Include="DateTimeConverter.cpp" />
     <ClCompile Include="GlobalHandleContainer.cpp" />
+    <ClCompile Include="nonport\Base64Utilities.cpp" />
     <ClCompile Include="nonport\BeDebugLog.cpp" />
     <ClCompile Include="nonport\BeDirectoryIterator.cpp" />
     <ClCompile Include="nonport\BeFile.cpp" />
@@ -131,7 +133,6 @@
     <ClCompile Include="nonport\stg\redblack.cpp" />
     <ClCompile Include="nonport\strfunc.cpp" />
     <ClCompile Include="nonport\ThumbnailPropertyValue.cpp" />
-    <ClCompile Include="rbtree.cpp" />
     <ClCompile Include="RefCounted.cpp" />
     <ClCompile Include="WString.cpp" />
   </ItemGroup>

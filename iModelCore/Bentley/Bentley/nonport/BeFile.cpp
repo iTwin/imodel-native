@@ -360,6 +360,9 @@ BeFileStatus BeFile::ReadEntireFile(bvector<Byte>& buffer)
     if (BeFileStatus::Success != stat)
         return  stat;
 
+    if (0 == fileSize)
+        return BeFileStatus::Success;
+
     buffer.resize(static_cast <uint32_t> (fileSize));
     return Read(buffer.data(), NULL, static_cast <uint32_t> (fileSize));
     }

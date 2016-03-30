@@ -83,9 +83,9 @@ static void* getProcAddress (WCharCP moduleName, CharCP functionName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t MaxMessageSize::Set ( uint32_t size )
     {
-    return m_maxMessageSize = size;
+    m_maxMessageSize.store(size);
+    return size;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    TonyCleveland   06/04

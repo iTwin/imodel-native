@@ -37,6 +37,7 @@ struct ITaskScheduler
     template <class T> std::shared_ptr<PackagedAsyncTask<T>> ExecuteAsync (const std::function<T ()>& taskCallback, AsyncTask::Priority priority = AsyncTask::Priority::Inherited)
         {
         auto task = std::make_shared<PackagedAsyncTask<T>> (taskCallback);
+        ASYNC_TASK_ADD_DEBUG_INFO(task, 2);
         Push (task, priority);
         return task;
         }
@@ -45,6 +46,7 @@ struct ITaskScheduler
     std::shared_ptr<PackagedAsyncTask<void>> ExecuteAsync (const std::function<void (void)>& taskCallback, AsyncTask::Priority priority = AsyncTask::Priority::Inherited)
         {
         auto task = std::make_shared<PackagedAsyncTask<void>> (taskCallback);
+        ASYNC_TASK_ADD_DEBUG_INFO(task, 2);
         Push (task, priority);
         return task;
         }
@@ -54,6 +56,7 @@ struct ITaskScheduler
     template <class T> std::shared_ptr<PackagedAsyncTask<T>> ExecuteAsyncWithoutAttachingToCurrentTask (const std::function<T ()>& taskCallback, AsyncTask::Priority priority = AsyncTask::Priority::Inherited)
         {
         auto task = std::make_shared<PackagedAsyncTask<T>> (taskCallback);
+        ASYNC_TASK_ADD_DEBUG_INFO(task, 2);
         Push (task, nullptr, priority);
         return task;
         }
@@ -63,6 +66,7 @@ struct ITaskScheduler
     std::shared_ptr<PackagedAsyncTask<void>> ExecuteAsyncWithoutAttachingToCurrentTask (const std::function<void (void)>& taskCallback, AsyncTask::Priority priority = AsyncTask::Priority::Inherited)
         {
         auto task = std::make_shared<PackagedAsyncTask<void>> (taskCallback);
+        ASYNC_TASK_ADD_DEBUG_INFO(task, 2);
         Push (task, nullptr, priority);
         return task;
         }

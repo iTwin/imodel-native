@@ -19,6 +19,7 @@
 #include <BeHttp/HttpResponse.h>
 #include <BeHttp/IHttpHandler.h>
 
+USING_NAMESPACE_BENTLEY_TASKS
 BEGIN_BENTLEY_HTTP_NAMESPACE
 
 struct HttpRequest;
@@ -56,7 +57,7 @@ private:
 
     HttpBodyPtr m_responseBody;
 
-    Tasks::ICancellationTokenPtr m_cancellationToken;
+    ICancellationTokenPtr m_cancellationToken;
 
     ProgressCallback m_uploadProgressCallback;
     ProgressCallback m_downloadProgressCallback;
@@ -132,8 +133,8 @@ public:
     BEHTTP_EXPORT RetryOption const&    GetRetryOption () const;
     BEHTTP_EXPORT unsigned              GetMaxRetries () const;
 
-    BEHTTP_EXPORT void                  SetCancellationToken (Tasks::ICancellationTokenPtr token);
-    BEHTTP_EXPORT Tasks::ICancellationTokenPtr GetCancellationToken () const;
+    BEHTTP_EXPORT void                  SetCancellationToken (ICancellationTokenPtr token);
+    BEHTTP_EXPORT ICancellationTokenPtr GetCancellationToken () const;
 
     BEHTTP_EXPORT void                  SetDownloadProgressCallback (ProgressCallbackCR onProgress);
     BEHTTP_EXPORT ProgressCallbackCR    GetDownloadProgressCallback () const;
@@ -146,7 +147,7 @@ public:
     BEHTTP_EXPORT HttpResponse Perform ();
 
     // Execute request asynchronously
-    BEHTTP_EXPORT Tasks::AsyncTaskPtr<HttpResponse> PerformAsync ();
+    BEHTTP_EXPORT AsyncTaskPtr<HttpResponse> PerformAsync ();
     };
 
 END_BENTLEY_HTTP_NAMESPACE

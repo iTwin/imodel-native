@@ -145,6 +145,23 @@ TEST(Utf8StringTest, EndsWith_DifferentCaseStrings)
     EXPECT_FALSE(Utf8String("ABC").EndsWithI(nullptr));
 
     EXPECT_FALSE(Utf8String("ABC").EndsWithI(""));
+
+    EXPECT_FALSE(Utf8String("ABC").EndsWithI("abcd"));
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          02/16
+//---------------------------------------------------------------------------------------
+TEST(Utf8StringTest, EndsWith_Utf8String)
+    {
+    EXPECT_TRUE(Utf8String("ABC").EndsWith(Utf8String("")));
+
+    EXPECT_TRUE(Utf8String("ABC").EndsWith(Utf8String("BC")));
+
+    EXPECT_TRUE(Utf8String("ABC").EndsWith(Utf8String("ABC")));
+
+    EXPECT_FALSE(Utf8String("ABC").EndsWith(Utf8String("ABCD")));
+
+    EXPECT_FALSE(Utf8String("ABC").EndsWith(Utf8String("abc")));
     }
 
 //---------------------------------------------------------------------------------------
@@ -243,6 +260,8 @@ TEST(Utf8StringTest, StartsWith)
     // Check Case
     EXPECT_FALSE(Utf8String("ABC").StartsWith("abc"));
     EXPECT_TRUE(Utf8String("ABC").StartsWithI("abc"));
+    EXPECT_FALSE(Utf8String("ABC").StartsWithI("abcd"));
+    EXPECT_FALSE(Utf8String("ABC").StartsWithI(""));
     }
 //---------------------------------------------------------------------------------------
 // @betest                                      Umar.Hayat                          01/16
@@ -331,6 +350,13 @@ TEST(Utf8StringTest, ToUpper)
     EXPECT_STREQ("ABC", Utf8String("Abc").ToUpper().c_str());
     EXPECT_STREQ("ABC", Utf8String("ABC").ToUpper().c_str());
     EXPECT_STREQ("123$%^ ABC", Utf8String("123$%^ AbC").ToUpper().c_str());
+
+    // To Upper Non Ascii
+    WCharP nonasc = L"\u20AC"; // this is the Euro symbol
+    //  Convert to UTF8 and lowercase it
+    Utf8String nonasc_utf8(nonasc);    // s/ be E2 82 AC 00
+    Utf8String nonasc_utf8_src(nonasc);    // s/ be E2 82 AC 00
+    EXPECT_STREQ(nonasc_utf8_src.c_str(), nonasc_utf8.ToUpper().c_str()); // s/ be a nop
     }
 //---------------------------------------------------------------------------------------
 // @betest                                      Umar.Hayat                          01/16

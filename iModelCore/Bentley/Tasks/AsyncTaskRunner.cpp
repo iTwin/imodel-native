@@ -45,13 +45,19 @@ void AsyncTaskRunner::Start (std::shared_ptr<ITaskScheduler> scheduler, Utf8CP n
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AsyncTaskRunner::Stop ()
     {
-    m_isStopping = true;
+    m_isStopping.store(true);
 
     m_thisPtr = shared_from_this ();
+    }
 
-    if (m_schedulerToHoldWhileStopping = m_scheduler.lock ())
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                      
++---------------+---------------+---------------+---------------+---------------+------*/
+void AsyncTaskRunner::WakeUp()
+    {
+    if (m_schedulerToHoldWhileStopping = m_scheduler.lock())
         {
-        m_schedulerToHoldWhileStopping->Push (std::make_shared<AsyncTask> ()); // Push dummy task to wake up thread runner.
+        m_schedulerToHoldWhileStopping->Push(std::make_shared<AsyncTask>()); // Push dummy task to wake up thread runner.
         }
     }
 
@@ -76,21 +82,21 @@ bool AsyncTaskRunner::IsStopping () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AsyncTaskRunner::_Run ()
     {
-    m_isRunning = true;
+    m_isRunning.store(true);
 
     BeThreadUtilities::SetCurrentThreadName (m_name.c_str ());
-    
+
     LOG.infov ("Thread started: %s", m_name.c_str ());
     AsyncTasksManager::RegisterAsyncTaskRunner (shared_from_this());
     m_id = BeThreadUtilities::GetCurrentThreadId ();
 
     _RunAsyncTasksLoop ();
 
-    AsyncTasksManager::UnregisterCurrentThreadAsyncTaskRunner ();
-    LOG.infov ("Thread exiting: %s", m_name.c_str ());
-    m_isRunning = false;
-
+    LOG.infov("Thread exiting: %s", m_name.c_str());
+    m_isRunning.store(false);
     m_schedulerToHoldWhileStopping = nullptr;
+
+    AsyncTasksManager::UnregisterCurrentThreadAsyncTaskRunner ();
     m_thisPtr = nullptr;
     }
 
