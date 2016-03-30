@@ -44,9 +44,10 @@ BentleyBuild.py -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityMo
     <NMakeIncludeSearchPath>E:\dgndb06SM\out\Release\Winx64\BuildContexts\RealityModeling\PublicAPI;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityModeling b </NMakeBuildCommandLine>
-    <NMakeCleanCommandLine>BentleyBuild.py -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityModeling re ScalableMeshSchema -c</NMakeCleanCommandLine>
-    <NMakeReBuildCommandLine>BentleyBuild.py -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityModeling re ScalableMeshSchema</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityModeling re ScalableMeshSchema</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>BentleyBuild.py -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityModeling re ScalableMeshSchema -c
+BentleyBuild.py -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityModeling re ScalableMeshSchema</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>BentleyBuild.py -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityModeling re ScalableMeshSchema -c</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>E:\dgndb06SM\out\Release\Winx64\BuildContexts\RealityModeling\PublicAPI;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>

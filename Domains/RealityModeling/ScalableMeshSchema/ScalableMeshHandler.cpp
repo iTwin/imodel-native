@@ -216,7 +216,8 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
     
     bool isOutputQuickVision = context.GetIViewDraw ().IsOutputQuickVision();
 
-    assert(overviewMeshNodes.size() > 0 || meshNodes.size() > 0);
+    //NEEDS_WORK_MST : Will be fixed when the lowest resolution is created and pin at creation time.
+    //assert(overviewMeshNodes.size() > 0 || meshNodes.size() > 0);
     assert(isOutputQuickVision == true);
 
     /*ElemMatSymbP matSymbP = context.GetElemMatSymb ();
@@ -248,9 +249,9 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
         {
         //NEEDS_WORK_SM : If kept needs clean up
         for (size_t nodeInd = 0; nodeInd < overviewMeshNodes.size(); nodeInd++)
-            {                      
+            {              
             if (context.CheckStop())
-                break;            
+                break;                           
             
             //NEEDS_WORK_SM_PROGRESSIVE : IsMeshLoaded trigger load header.
             //assert(overviewMeshNodes[nodeInd]->IsHeaderLoaded() && overviewMeshNodes[nodeInd]->IsMeshLoaded());
@@ -585,7 +586,21 @@ static bool s_waitQueryComplete = false;
 
 void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     {    
-    if (!ShouldDrawInContext(context) || NULL == context.GetViewport())
+    if (m_smPtr == 0 && !m_tryOpen)
+        {
+        //BeFileName smFileName(((this)->m_properties).m_fileId);
+        BeFileName smFileName;
+        T_HOST.GetPointCloudAdmin()._ResolveFileName(smFileName, (((this)->m_properties).m_fileId), GetDgnDb());
+
+        if (BeFileName::DoesPathExist(smFileName.c_str()))
+            {
+            OpenFile(smFileName, GetDgnDb()); 
+            }
+
+        m_tryOpen = true;
+        }
+
+    if (!ShouldDrawInContext(context) || NULL == context.GetViewport() || !m_smPtr.IsValid())
         return;
          
     ScalableMeshDrawingInfoPtr nextDrawingInfoPtr(new ScalableMeshDrawingInfo(&context));
@@ -722,7 +737,9 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         status = m_progressiveQueryEngine->GetOverviewNodes(m_currentDrawingInfoPtr->m_overviewNodes, queryId);
         m_currentDrawingInfoPtr->m_overviewNodes.insert(m_currentDrawingInfoPtr->m_overviewNodes.end(), m_currentDrawingInfoPtr->m_meshNodes.begin(), m_currentDrawingInfoPtr->m_meshNodes.end());
         m_currentDrawingInfoPtr->m_meshNodes.clear();
-        assert(m_currentDrawingInfoPtr->m_overviewNodes.size() > 0);
+
+        //NEEDS_WORK_MST : Will be fixed when the lowest resolution is created and pin at creation time.
+        //assert(m_currentDrawingInfoPtr->m_overviewNodes.size() > 0);
         assert(status == SUCCESS);
 
         needProgressive = true;
@@ -753,15 +770,8 @@ void GetScalableMeshTerrainFileName(BeFileName& smtFileName, const BeFileName& d
 ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams const& params)
     : T_Super(params)
     {
-    BeFileName tmFileName;
-    tmFileName = params.m_dgndb.GetFileName().GetDirectoryName();
-    tmFileName.AppendToPath(params.m_dgndb.GetFileName().GetFileNameWithoutExtension().c_str());
-    tmFileName.AppendString(L"\\terrain.stm");
-
-    if (BeFileName::DoesPathExist(tmFileName.c_str()))
-        {
-        OpenFile(tmFileName, GetDgnDb());    
-        }
+    m_tryOpen = false;
+               
     m_forceRedraw = false;
     }
 
@@ -810,6 +820,12 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     DPoint3d translation = {0,0,0};
     
     m_storageToUorsTransfo = DMatrix4d::FromScaleAndTranslation(scale, translation);                
+    
+    // NEEDS_WORK_SM
+    BeFileName dbFileName(dgnProject.GetDbFileName());
+    BeFileName basePath = dbFileName.GetDirectoryName();
+    T_HOST.GetPointCloudAdmin()._CreateLocalFileId(m_properties.m_fileId, smFilename, basePath);
+    //m_properties.m_fileId = smFilename.GetNameUtf8();
     }
 
 //=======================================================================================
@@ -999,6 +1015,39 @@ IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDbR db, Utf8S
     return model.get();    
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  03/2016
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::Properties::ToJson(Json::Value& v) const
+    {
+    v["FileId"] = m_fileId.c_str();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  03/2016
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::Properties::FromJson(Json::Value const& v)
+    {
+    m_fileId = v["FileId"].asString();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  03/2016
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::_WriteJsonProperties(Json::Value& v) const
+    {
+    T_Super::_WriteJsonProperties(v);
+    m_properties.ToJson(v);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  03/2016
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::_ReadJsonProperties(Json::Value const& v)
+    {
+    T_Super::_ReadJsonProperties(v);
+    m_properties.FromJson(v);
+    }
 
 
 HANDLER_DEFINE_MEMBERS(ScalableMeshModelHandler)
