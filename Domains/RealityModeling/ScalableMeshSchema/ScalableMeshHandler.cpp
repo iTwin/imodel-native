@@ -505,7 +505,7 @@ virtual Completion _Process(ViewContextR viewContext) override
             {
             m_currentDrawingInfoPtr->m_meshNodes.clear();
             StatusInt status = m_progressiveQueryEngine->GetQueriedNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
-            
+
             assert(m_currentDrawingInfoPtr->m_overviewNodes.size() == 0 || m_currentDrawingInfoPtr->m_meshNodes.size() > 0);
 
             m_currentDrawingInfoPtr->m_overviewNodes.clear();
@@ -703,14 +703,22 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         {
         m_currentDrawingInfoPtr->m_meshNodes.clear();
         status = m_progressiveQueryEngine->GetQueriedNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
+
+        bvector<IScalableMeshNodePtr> nodes;
+        for (auto& nodeP : m_currentDrawingInfoPtr->m_meshNodes) nodes.push_back(nodeP.get());
+        m_smPtr->SetCurrentlyViewedNodes(nodes);
         assert(m_currentDrawingInfoPtr->m_meshNodes.size() > 0);
+
         m_currentDrawingInfoPtr->m_overviewNodes.clear();
         assert(status == SUCCESS);
         needProgressive = false;
         m_forceRedraw = false;
         }
     else
-        {        
+        {  
+        bvector<IScalableMeshNodePtr> nodes;
+        for (auto& nodeP : m_currentDrawingInfoPtr->m_meshNodes) nodes.push_back(nodeP.get());
+        m_smPtr->SetCurrentlyViewedNodes(nodes);
         status = m_progressiveQueryEngine->GetOverviewNodes(m_currentDrawingInfoPtr->m_overviewNodes, queryId);
         m_currentDrawingInfoPtr->m_overviewNodes.insert(m_currentDrawingInfoPtr->m_overviewNodes.end(), m_currentDrawingInfoPtr->m_meshNodes.begin(), m_currentDrawingInfoPtr->m_meshNodes.end());
         m_currentDrawingInfoPtr->m_meshNodes.clear();
