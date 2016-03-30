@@ -747,7 +747,7 @@ Savepoint* Db::GetSavepoint(int32_t depth) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::ExecuteSql(Utf8CP sql, int (*callback)(void*,int,CharP*,CharP*),void* arg,CharP* errmsg)
+DbResult Db::ExecuteSql(Utf8CP sql, int (*callback)(void*,int,CharP*,CharP*),void* arg,CharP* errmsg) const
     {
     if (!m_dbFile->CheckImplicitTxn())
         {
@@ -758,7 +758,7 @@ DbResult Db::ExecuteSql(Utf8CP sql, int (*callback)(void*,int,CharP*,CharP*),voi
     DbResult rc = (DbResult) sqlite3_exec(GetSqlDb(), sql, callback, arg, errmsg);
     if (rc != BE_SQLITE_OK && rc != BE_SQLITE_DONE)
         {
-        Utf8String lastError = GetLastError(); // keep on separate line for debuggging
+        Utf8String lastError = GetLastError(); // keep on separate line for debugging
         LOG.errorv("Error \"%s\" SQL: %s", lastError.c_str(), sql);
         BeAssert(false);  // If you EXPECT failures to be non-exceptional, call TryExecuteSql
         }
@@ -768,7 +768,7 @@ DbResult Db::ExecuteSql(Utf8CP sql, int (*callback)(void*,int,CharP*,CharP*),voi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::TryExecuteSql(Utf8CP sql, int (*callback)(void*,int,CharP*,CharP*),void* arg,CharP* errmsg)
+DbResult Db::TryExecuteSql(Utf8CP sql, int (*callback)(void*,int,CharP*,CharP*),void* arg,CharP* errmsg) const
     {
     return (DbResult) sqlite3_exec(GetSqlDb(), sql, callback, arg, errmsg);
     }
@@ -1787,7 +1787,7 @@ DbResult Db::QueryBriefcaseLocalValue(Utf8CP name, Utf8StringR value) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::CreateTable(Utf8CP tableName, Utf8CP ddl)
+DbResult Db::CreateTable(Utf8CP tableName, Utf8CP ddl) const
     {
     return ExecuteSql(SqlPrintfString("CREATE TABLE %s (%s)", tableName, ddl));
     }
@@ -1795,7 +1795,7 @@ DbResult Db::CreateTable(Utf8CP tableName, Utf8CP ddl)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::DropTable(Utf8CP tableName)
+DbResult Db::DropTable(Utf8CP tableName) const
     {
     DbResult rc = TryExecuteSql(SqlPrintfString("DROP TABLE %s", tableName));
     BeAssert(rc == BE_SQLITE_OK);
@@ -1805,7 +1805,7 @@ DbResult Db::DropTable(Utf8CP tableName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 12/12
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult Db::TruncateTable(Utf8CP tableName)
+DbResult Db::TruncateTable(Utf8CP tableName) const
     {
     DbResult rc = TryExecuteSql(SqlPrintfString("DELETE FROM %s", tableName));
     BeAssert(rc == BE_SQLITE_OK);

@@ -2119,7 +2119,7 @@ private:
     DbResult SaveBriefcaseId();
     void DoCloseDb();
     DbResult DoOpenDb(Utf8CP dbName, OpenParams const& params);
-    DbResult TruncateTable(Utf8CP tableName);
+    DbResult TruncateTable(Utf8CP tableName) const;
     DbResult DeleteBriefcaseLocalValues();
 
 public:
@@ -2275,10 +2275,10 @@ public:
     //! but is more convenient.
     //! This method also enforces logs the statement and error if the statement fails. Use TryExecuteSql if you consider failures to be non-exceptional.
     //! @see sqlite3_exec
-    BE_SQLITE_EXPORT DbResult ExecuteSql(Utf8CP sql, int(*callback)(void*,int,char**,char**)=0, void* arg=0, char** errmsg=0);
+    BE_SQLITE_EXPORT DbResult ExecuteSql(Utf8CP sql, int(*callback)(void*,int,char**,char**)=0, void* arg=0, char** errmsg=0) const;
 
     //! Identical to ExecuteSql, but does not log errors nor check implicit transactions
-    BE_SQLITE_EXPORT DbResult TryExecuteSql(Utf8CP sql, int (*callback)(void*,int,char**,char**)=0, void* arg=0, char** errmsg=0);
+    BE_SQLITE_EXPORT DbResult TryExecuteSql(Utf8CP sql, int (*callback)(void*,int,char**,char**)=0, void* arg=0, char** errmsg=0) const;
 
     //! return a string that describes the query plan for the specified SQL, or an error message if the SQL is invalid
     BE_SQLITE_EXPORT Utf8String ExplainQuery(Utf8CP sql, bool plan=true) const;
@@ -2286,10 +2286,10 @@ public:
     //! Create a new table in this Db.
     //! @param[in] tableName The name for the new table.
     //! @param[in] ddl The column definition sql for this table (should not include parentheses).
-    BE_SQLITE_EXPORT DbResult CreateTable(Utf8CP tableName, Utf8CP ddl);
+    BE_SQLITE_EXPORT DbResult CreateTable(Utf8CP tableName, Utf8CP ddl) const;
 
     //! Drop a table from this Db.
-    BE_SQLITE_EXPORT DbResult DropTable(Utf8CP tableName);
+    BE_SQLITE_EXPORT DbResult DropTable(Utf8CP tableName) const;
 
     //! Determine whether a table exists in this Db.
     BE_SQLITE_EXPORT bool TableExists(Utf8CP tableName) const;
