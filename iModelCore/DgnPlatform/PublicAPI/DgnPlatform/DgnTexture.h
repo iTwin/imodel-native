@@ -135,7 +135,7 @@ public:
     //! Looks up a texture by ID
     static DgnTextureCPtr QueryTexture(DgnTextureId textureId, DgnDbR db) {return db.Elements().Get<DgnTexture>(textureId);}
 
-    DGNPLATFORM_EXPORT Render::ImagePtr ExtractImage() const; //!< The image data 
+    DGNPLATFORM_EXPORT Render::Image ExtractImage() const; //!< The image data 
 };
 
 namespace dgn_ElementHandler
