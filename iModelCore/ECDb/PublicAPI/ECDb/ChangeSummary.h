@@ -247,6 +247,39 @@ struct ChangeSummary : NonCopyableClass
         ECDB_EXPORT int QueryCount() const;
     }; // ValueIterator
 
+    //! @private
+    //! Information on mappings to a column
+    struct ColumnMapInfo
+    {
+    private:
+        Utf8String m_columnName;
+        int m_columnIndex;
+    public:
+        ColumnMapInfo() {}
+        ColumnMapInfo(Utf8StringCR columnName, int columnIndex) : m_columnName(columnName), m_columnIndex(columnIndex) {}
+
+        Utf8StringCR GetColumnName() const { return m_columnName; }
+        int GetColumnIndex() const { return m_columnIndex; }
+    };
+
+    //! @private
+    //! Information on mappings to a table
+    struct TableMapInfo
+    {
+    friend struct ChangeSummary;
+    private:
+        Utf8String m_tableName;
+        bmap<Utf8String, ColumnMapInfo> m_columnMapByAccessString;
+    public:
+        Utf8StringCR GetTableName() const { return m_tableName; }
+        ColumnMapInfo const& GetColumnMap(Utf8CP propertyAccessString) const
+            {
+            bmap<Utf8String, ColumnMapInfo>::const_iterator iter = m_columnMapByAccessString.find(propertyAccessString);
+            BeAssert(iter != m_columnMapByAccessString.end());
+            return iter->second;
+            }
+    };
+
 private:
     ECDbCR m_ecdb;
     bool m_isValid = false;
@@ -314,8 +347,11 @@ public:
 
     //! @private
     Utf8String ConstructWhereInClause(QueryDbOpcode queryDbOpcodes) const;
-};
 
+    //! @private internal use only
+    //! Utility to get the mapping information on the primary table containing the class
+    ECDB_EXPORT static BentleyStatus GetPrimaryTableMapInfo(TableMapInfo& tableMapInfo, ECN::ECClassCR cls, ECDbCR ecdb);
+};
 
 ENUM_IS_FLAGS(ChangeSummary::QueryDbOpcode);
 

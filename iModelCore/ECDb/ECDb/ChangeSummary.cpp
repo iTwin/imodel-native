@@ -2072,5 +2072,83 @@ void IsChangedInstanceSqlFunction::_ComputeScalar(ScalarFunction::Context& ctx, 
     ctx.SetResultInt(res);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     03/2016
+//---------------------------------------------------------------------------------------
+void AddPropertyMapInfo(bmap<Utf8String, ChangeSummary::ColumnMapInfo>& columnMapByAccessString, PropertyMapCR propertyMap, bmap<Utf8String, int> const& columnIndexByName)
+    {
+    StructPropertyMap const* inlineStructMap = dynamic_cast<StructPropertyMap const*> (&propertyMap);
+    if (inlineStructMap != nullptr)
+        {
+        for (PropertyMapCP childPropertyMap : inlineStructMap->GetChildren())
+            AddPropertyMapInfo(columnMapByAccessString, *childPropertyMap, columnIndexByName);
+        return;
+        }
+
+    Utf8String accessString(propertyMap.GetPropertyAccessString());
+    std::vector<ECDbSqlColumnCP> columns;
+    propertyMap.GetColumns(columns);
+
+    PointPropertyMap const* pointMap = dynamic_cast<PointPropertyMap const*> (&propertyMap);
+    if (pointMap != nullptr)
+        {
+        BeAssert(columns.size() == (pointMap->Is3d() ? 3 : 2));
+        for (int ii = 0; ii < (int) columns.size(); ii++)
+            {
+            Utf8PrintfString childAccessString("%s.%s", accessString.c_str(), (ii == 0) ? "X" : ((ii == 1) ? "Y" : "Z"));
+
+            Utf8StringCR columnName = columns[ii]->GetName();
+
+            bmap<Utf8String, int>::const_iterator iter = columnIndexByName.find(columnName);
+            BeAssert(iter != columnIndexByName.end());
+            
+            columnMapByAccessString[childAccessString] = ChangeSummary::ColumnMapInfo(columnName, iter->second);
+            }
+        return;
+        }
+
+    // PropertyMapToColumn, PropertyMapArrayOfPrimitives
+    BeAssert(columns.size() == 1);
+    Utf8StringCR columnName = columns[0]->GetName();
+
+    bmap<Utf8String, int>::const_iterator iter = columnIndexByName.find(columnName);
+    BeAssert(iter != columnIndexByName.end());
+
+    columnMapByAccessString[accessString] = ChangeSummary::ColumnMapInfo(columnName, iter->second);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     03/2016
+//---------------------------------------------------------------------------------------
+//static 
+BentleyStatus ChangeSummary::GetPrimaryTableMapInfo(TableMapInfo& tableMapInfo, ECN::ECClassCR cls, ECDbCR ecdb)
+    {
+    ClassMapCP classMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMap(cls);
+    if (!classMap)
+        {
+        BeAssert(false && "Class not found");
+        return ERROR;
+        }
+
+    ECDbSqlTable& primaryTable = classMap->GetPrimaryTable();
+    tableMapInfo.m_tableName = primaryTable.GetName();
+
+    bvector<Utf8String> columnNames;
+    ecdb.GetColumns(columnNames, tableMapInfo.m_tableName.c_str());
+
+    bmap<Utf8String, int> columnIndexByName;
+    for (int ii = 0; ii < (int) columnNames.size(); ii++)
+        columnIndexByName[columnNames[ii]] = ii;
+
+    for (PropertyMapCP propertyMap : classMap->GetPropertyMaps())
+        {
+        if (!propertyMap->MapsToTable(primaryTable))
+            continue;
+
+        AddPropertyMapInfo(tableMapInfo.m_columnMapByAccessString, *propertyMap, columnIndexByName);
+        }
+
+    return SUCCESS;
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
