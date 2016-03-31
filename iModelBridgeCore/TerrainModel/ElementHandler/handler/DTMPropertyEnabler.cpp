@@ -3364,7 +3364,7 @@ DTMELEMENTECExtension::ECTable& DTMELEMENTECExtension::GetMapTable () const
                 { L"DTMRegions", nullptr },
                 { L"DTMContoursBase", &DTMElementContourECDelegate::Create },
                 { L"DTMContours", nullptr },
-                ////{L"DTMRasterDraping", nullptr},
+                { L"DTMRasterDraping", nullptr},
                 { L"DTMOverrideSymbology", &DTMElementOverrideSymbologyECDelegate::Create },
                 { L"DTMGraphHeader", &DTMElementGraphHeaderECDelegate::Create },
                 { L"DTMOSTemplate", &DTMElementOSTemplateECDelegate::Create },
@@ -3522,6 +3522,10 @@ DgnECInstancePtr DTMELEMENTECExtension::GetInstance (ElementHandleCR eh, UInt32 
                             return GetInstanceWithDataCache (eh,  dataCache, enablerMap[L"DTMFeatureSpots"], it->second.subElementId.GetId(), context);
                         case DTMElementRegionsHandler::SubHandlerId:
                             return GetInstanceWithDataCache (eh,  dataCache, enablerMap[L"DTMRegions"], it->second.subElementId.GetId(), context);
+
+                        case DTMElementRasterDrapingHandler::SubHandlerId:
+                            return GetInstanceWithDataCache(eh, dataCache, enablerMap[L"DTMRasterDraping"], it->second.subElementId.GetId(), context);
+
                         default:
             //                return GetInstanceWithDataCache (eh, dataCache, enablerMap[L"DTMSubElementDisplay"], it->second.subElementId.GetId(), context);
                             break;
@@ -3741,6 +3745,11 @@ DgnECInstanceIterable   TerrainModelChildrenFinder::_GetRelatedInstances (DgnECI
                         if (localId == LocalID_DTMCalculatedFeatures)
                             m_extension->AddInstanceWithDataCache (instances, eh, dataCache, enablerMap[L"DTMRegions"], it->second.subElementId.GetId (), m_createContext);
                         break;
+                    case DTMElementRasterDrapingHandler::SubHandlerId:
+                        if (localId == LocalID_DTMCalculatedFeatures)
+                            m_extension->AddInstanceWithDataCache(instances, eh, dataCache, enablerMap[L"DTMRasterDraping"], it->second.subElementId.GetId(), m_createContext);
+                        break;
+
                     default:
                         //                m_extension->AddInstanceWithDataCache (instances, eh, dataCache, enablerMap[L"DTMSubElementDisplay"], it->second.subElementId.GetId(), m_createContext);
                         break;

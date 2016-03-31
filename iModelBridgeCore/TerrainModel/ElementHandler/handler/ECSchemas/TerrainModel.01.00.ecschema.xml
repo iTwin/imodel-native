@@ -1571,7 +1571,19 @@
             </CustomImageSpecification>
         </ECCustomAttributes>
     </ECClass>
-
+    <ECClass typeName="DTMRasterDraping" isDomainClass="True" displayLabel="Draped Reasters">
+        <BaseClass>DTMSubElementDisplay</BaseClass>
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <CustomImageSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Moniker_Default>ECLiteralImage://DCDraping</Moniker_Default>
+                <Moniker_Expanded>ECLiteralImage://DCDraping</Moniker_Expanded>
+                <Moniker_Collapsed>ECLiteralImage://DCDraping</Moniker_Collapsed>
+            </CustomImageSpecification>
+        </ECCustomAttributes>
+    </ECClass>
     <ECClass typeName="DTMRegionsBase" isDomainClass="True">
         <ECCustomAttributes>
             <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
