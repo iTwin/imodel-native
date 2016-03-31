@@ -183,7 +183,7 @@ PolyfaceHeaderPtr OCBRepUtil::IncrementalMesh(TopoDS_Shape const& shape, IFacetO
             }
         }
 
-    BRepTools::Clean(shape); // Don't leave triangulation on shape...
+//    BRepTools::Clean(shape); // Don't leave triangulation on shape...
 
     return polyfaceBuilder->GetClientMeshPtr();
     }
