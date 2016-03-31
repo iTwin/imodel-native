@@ -346,7 +346,7 @@ void FrustumPlanes::Init(FrustumCR frustum)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-FrustumPlanes::Contained FrustumPlanes::Contains(DPoint3dCP points, int nPts) const
+FrustumPlanes::Contained FrustumPlanes::Contains(DPoint3dCP points, int nPts, double tolerance) const
     {
     BeAssert(IsValid());
 
@@ -356,7 +356,7 @@ FrustumPlanes::Contained FrustumPlanes::Contains(DPoint3dCP points, int nPts) co
         int nOutside = 0;
         for (int j=0; j < nPts; ++j)
             {
-            if (plane.EvaluatePoint(points[j]) < 1.0E-8)
+            if (plane.EvaluatePoint(points[j]) < tolerance)
                 {
                 ++nOutside;
                 allInside = false;
@@ -406,4 +406,43 @@ bool FrustumPlanes::IntersectsRay(DPoint3dCR origin, DVec3dCR direction)
         } 
 
     return tNear <= tFar;
+    }
+
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+static void floatToDouble(double* pDouble, float const* pFloat, size_t n)
+    {
+    for (double* pEnd = pDouble + n; pDouble < pEnd; )
+        *pDouble++ = *pFloat++;
+    }
+
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+PolyfaceHeaderPtr Graphic::TriMeshArgs::ToPolyface() const
+    {
+    PolyfaceHeaderPtr polyFace = PolyfaceHeader::CreateFixedBlockIndexed(3);
+
+    BlockedVectorIntR pointIndex = polyFace->PointIndex();
+    pointIndex.resize(m_numIndices);
+    int32_t const* pIndex = m_vertIndex;
+    int32_t const* pEnd = pIndex + m_numIndices;
+    int32_t* pOut = &pointIndex.front();
+
+    for (; pIndex < pEnd; )
+        *pOut++ = 1 + *pIndex++;
+    
+    polyFace->Point().resize(m_numPoints);
+    floatToDouble(&polyFace->Point().front().x, &m_points->x, 3 * m_numPoints);
+
+    polyFace->Normal().resize(m_numPoints);
+    floatToDouble(&polyFace->Normal().front().x, &m_normals->x, 3 * m_numPoints);
+    polyFace->NormalIndex() = pointIndex;
+    
+    polyFace->Param().resize(m_numPoints);
+    floatToDouble(&polyFace->Param().front().x, &m_textureUV->x, 2 * m_numPoints);
+    polyFace->ParamIndex() = pointIndex;
+
+    return polyFace;
     }

@@ -840,6 +840,17 @@ void DgnElement::_CopyFrom(DgnElementCR other)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::CopyAppDataFrom(DgnElementCR source) const
+    {
+    for (auto a : source.m_appData)
+        {
+        AddAppData(*a.first, a.second.get());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 void DgnCode::RelocateToDestinationDb(DgnImportContext& importer)
     {
     m_authority = importer.RemapAuthorityId(m_authority);

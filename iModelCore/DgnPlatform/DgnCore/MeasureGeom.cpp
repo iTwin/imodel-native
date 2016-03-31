@@ -664,6 +664,7 @@ bool MeasureGeomCollector::_ProcessPolyface (PolyfaceQueryCR meshQuery, bool isF
         }
     }
 
+#if defined (BENTLEYCONFIG_PARASOLIDS)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -732,12 +733,14 @@ static void getBRepMoments (DPoint3dR moments, double& iXY, double& iXZ, double&
     moments.y = inertia[1][1];
     moments.z = inertia[2][2];
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool MeasureGeomCollector::DoAccumulateLengths (ISolidKernelEntityCR entity, SimplifyGraphic& graphic)
     {
+#if defined (BENTLEYCONFIG_PARASOLIDS)
     Transform   flattenTransform;
 
     if (GetPreFlattenTransform (flattenTransform, graphic))
@@ -771,6 +774,7 @@ bool MeasureGeomCollector::DoAccumulateLengths (ISolidKernelEntityCR entity, Sim
 
         AccumulateLengthSums (amount, centroid, moments, iXY, iXZ, iYZ);
         }
+#endif
 
     return true;
     }
@@ -780,6 +784,7 @@ bool MeasureGeomCollector::DoAccumulateLengths (ISolidKernelEntityCR entity, Sim
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool MeasureGeomCollector::DoAccumulateAreas (ISolidKernelEntityCR entity, SimplifyGraphic& graphic)
     {
+#if defined (BENTLEYCONFIG_PARASOLIDS)
     Transform   flattenTransform;
 
     if (GetPreFlattenTransform (flattenTransform, graphic))
@@ -813,6 +818,7 @@ bool MeasureGeomCollector::DoAccumulateAreas (ISolidKernelEntityCR entity, Simpl
 
         AccumulateAreaSums (amount, periphery, centroid, moments, iXY, iXZ, iYZ);
         }
+#endif
 
     return true;
     }
@@ -822,6 +828,7 @@ bool MeasureGeomCollector::DoAccumulateAreas (ISolidKernelEntityCR entity, Simpl
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool MeasureGeomCollector::DoAccumulateVolumes (ISolidKernelEntityCR entity, SimplifyGraphic& graphic)
     {
+#if defined (BENTLEYCONFIG_PARASOLIDS)
     ISolidKernelEntityPtr entityPtr;
 
     if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._InstanceEntity (entityPtr, entity))
@@ -845,6 +852,7 @@ bool MeasureGeomCollector::DoAccumulateVolumes (ISolidKernelEntityCR entity, Sim
 
         AccumulateVolumeSums (amount, periphery, 0.0, centroid, moments, iXY, iXZ, iYZ);
         }
+#endif
 
     return true;
     }
@@ -854,6 +862,7 @@ bool MeasureGeomCollector::DoAccumulateVolumes (ISolidKernelEntityCR entity, Sim
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity, SimplifyGraphic& graphic)
     {
+#if defined (BENTLEYCONFIG_PARASOLIDS)
     switch (m_opType)
         {
         case AccumulateLengths:
@@ -901,6 +910,9 @@ bool MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity, SimplifyGr
             return DoAccumulateAreas (entity, graphic);
             }
         }
+#else
+    return true;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
