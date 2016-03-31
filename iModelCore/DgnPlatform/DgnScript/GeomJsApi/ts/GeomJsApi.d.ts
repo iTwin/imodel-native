@@ -512,9 +512,13 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         
 /** Create a matrix that scales along a specified direction. The scale factor can be negative; for instance scale of -1.0 (negative one) is a mirror. */
         static CreateDirectionalScale (direction : DVector3dP, scale : cxx_double) : RotMatrixP;
-        // TODO: square and normalize !!!
-        
-/** Create a matrix with the indicated column in the (normalized) direction, and the other two columns perpendicular. All columns are normalized */
+/** Create a matrix with the indicated column in the (normalized) direction, and the other two columns perpendicular. All columns are normalized.
+<ul>
+<li>The direction vector is normalized and appears in column axisIndex
+<li>If the direction vector is not close to Z, the "next" column ((axisIndex + 1) mod 3) will be in the XY plane in the direction of (direction cross Z)
+<li>If the dirction vector is close to Z, the "next" column ((axisIndex + 1) mode 3) will be in the direction of (direction cross Y)
+</ul>
+*/
         static Create1Vector (direction : DVector3dP, axisIndex : cxx_double) : RotMatrixP;
         static CreateFromXYVectors (vectorX : DVector3dP, vectorY : DVector3dP, axisIndex : cxx_double) : RotMatrixP;
 /** Multiply the matrix * vector, i.e. the vector is a column vector on the right. 
@@ -619,6 +623,15 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
         static CreateRotationAroundRay (ray : DRay3dP, angle : AngleP) : TransformP;                
         
+        /** Create a normalized frame.
+        <ul>
+        <li>The given origin is the translation part of the transform.
+        <li>The unit vector from origin towards target appears as the axisIndex column.
+        <li>the other two columns are perpendicular to that, as described in RotMatix.Create1Vector
+        </ul>
+        */
+        static CreateNormalizedFrameOriginTarget (origin : DPoint3dP, target : DPoint3dP, axisIndex : cxx_double) : TransformP;
+
         
         MultiplyPoint (Point : DPoint3dP) : DPoint3dP;
             
