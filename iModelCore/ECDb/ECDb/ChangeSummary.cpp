@@ -13,8 +13,6 @@
 
 ECDB_TYPEDEFS(TableMap);
 ECDB_TYPEDEFS(SqlChange);
-ECDB_TYPEDEFS(DbColumn);
-ECDB_TYPEDEFS(PointPropertyMap);
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -2086,7 +2084,7 @@ void AddPropertyMapInfo(bmap<Utf8String, ChangeSummary::ColumnMapInfo>& columnMa
         }
 
     Utf8String accessString(propertyMap.GetPropertyAccessString());
-    std::vector<DbColumnCP> columns;
+    std::vector<ECDbSqlColumnCP> columns;
     propertyMap.GetColumns(columns);
 
     PointPropertyMap const* pointMap = dynamic_cast<PointPropertyMap const*> (&propertyMap);

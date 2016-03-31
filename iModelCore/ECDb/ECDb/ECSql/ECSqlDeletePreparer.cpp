@@ -15,25 +15,25 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlDeletePreparer::Prepare (ECSqlPrepareContext& ctx, DeleteStatementExp const& exp)
+ECSqlStatus ECSqlDeletePreparer::Prepare(ECSqlPrepareContext& ctx, DeleteStatementExp const& exp)
     {
-    BeAssert (exp.IsComplete ());
-    ctx.PushScope (exp, exp.GetOptionsClauseExp());
+    BeAssert(exp.IsComplete());
+    ctx.PushScope(exp, exp.GetOptionsClauseExp());
 
-    auto classNameExp = exp.GetClassNameExp ();
-    auto const& classMap = classNameExp->GetInfo ().GetMap ();
- 
+    auto classNameExp = exp.GetClassNameExp();
+    auto const& classMap = classNameExp->GetInfo().GetMap();
+
     NativeSqlSnippets deleteNativeSqlSnippets;
-    auto stat = GenerateNativeSqlSnippets (deleteNativeSqlSnippets, ctx, exp, *classNameExp);
+    auto stat = GenerateNativeSqlSnippets(deleteNativeSqlSnippets, ctx, exp, *classNameExp);
     if (!stat.IsSuccess())
         return stat;
 
-    if (classMap.GetType () == ClassMap::Type::RelationshipEndTable)
-        stat = PrepareForEndTableRelationship (ctx, deleteNativeSqlSnippets, static_cast<RelationshipClassEndTableMap const&> (classMap));
+    if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
+        stat = PrepareForEndTableRelationship(ctx, deleteNativeSqlSnippets, static_cast<RelationshipClassEndTableMap const&> (classMap));
     else
-        stat = PrepareForClass (ctx, deleteNativeSqlSnippets);
+        stat = PrepareForClass(ctx, deleteNativeSqlSnippets);
 
-    ctx.PopScope ();
+    ctx.PopScope();
     return stat;
     }
 
@@ -41,13 +41,13 @@ ECSqlStatus ECSqlDeletePreparer::Prepare (ECSqlPrepareContext& ctx, DeleteStatem
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlDeletePreparer::PrepareForClass 
+ECSqlStatus ECSqlDeletePreparer::PrepareForClass
 (
-ECSqlPrepareContext& ctx, 
-NativeSqlSnippets& nativeSqlSnippets
-)
+    ECSqlPrepareContext& ctx,
+    NativeSqlSnippets& nativeSqlSnippets
+    )
     {
-    BuildNativeSqlDeleteStatement (ctx.GetSqlBuilderR (), nativeSqlSnippets); 
+    BuildNativeSqlDeleteStatement(ctx.GetSqlBuilderR(), nativeSqlSnippets);
     return ECSqlStatus::Success;
     }
 
@@ -55,31 +55,31 @@ NativeSqlSnippets& nativeSqlSnippets
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlDeletePreparer::PrepareForEndTableRelationship 
+ECSqlStatus ECSqlDeletePreparer::PrepareForEndTableRelationship
 (
-ECSqlPrepareContext& ctx, 
-NativeSqlSnippets& nativeSqlSnippets, 
-RelationshipClassEndTableMap const& classMap
-)
+    ECSqlPrepareContext& ctx,
+    NativeSqlSnippets& nativeSqlSnippets,
+    RelationshipClassEndTableMap const& classMap
+    )
     {
-    auto referencedEndECInstanceIdPropMap = classMap.GetReferencedEndECInstanceIdPropMap ();
-    auto referencedEndECClassIdPropMap = classMap.GetReferencedEndECInstanceIdPropMap ();
+    auto referencedEndECInstanceIdPropMap = classMap.GetReferencedEndECInstanceIdPropMap();
+    auto referencedEndECClassIdPropMap = classMap.GetReferencedEndECInstanceIdPropMap();
 
     NativeSqlBuilder::List propertyNamesToUnsetSqlSnippets;
-    classMap.GetPropertyMaps ().Traverse (
+    classMap.GetPropertyMaps().Traverse(
         [&propertyNamesToUnsetSqlSnippets, &referencedEndECInstanceIdPropMap, &referencedEndECClassIdPropMap] (TraversalFeedback& feedback, PropertyMapCP propMap)
         {
         //virtual prop maps map to non-existing columns. So they don't need to be considered in the list of columns to be nulled out
-        if (!propMap->IsVirtual () && (!propMap->IsSystemPropertyMap () || propMap == referencedEndECInstanceIdPropMap || propMap == referencedEndECClassIdPropMap))
+        if (!propMap->IsVirtual() && (!propMap->IsSystemPropertyMap() || propMap == referencedEndECInstanceIdPropMap || propMap == referencedEndECClassIdPropMap))
             {
-            auto sqlSnippets = propMap->ToNativeSql (nullptr, ECSqlType::Delete, false);
-            propertyNamesToUnsetSqlSnippets.insert (propertyNamesToUnsetSqlSnippets.end (), sqlSnippets.begin (), sqlSnippets.end ());
+            auto sqlSnippets = propMap->ToNativeSql(nullptr, ECSqlType::Delete, false);
+            propertyNamesToUnsetSqlSnippets.insert(propertyNamesToUnsetSqlSnippets.end(), sqlSnippets.begin(), sqlSnippets.end());
             }
-        }, 
+        },
         false); //don't recurse, i.e. only top-level prop maps are interesting here
 
 
-    BuildNativeSqlUpdateStatement (ctx.GetSqlBuilderR (), nativeSqlSnippets, propertyNamesToUnsetSqlSnippets);
+    BuildNativeSqlUpdateStatement(ctx.GetSqlBuilderR(), nativeSqlSnippets, propertyNamesToUnsetSqlSnippets);
     return ECSqlStatus::Success;
     }
 
@@ -110,7 +110,7 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
             }
         else
             {
-            std::vector<Exp const*> propertyExpsInWhereClause =  whereExp->Find(Exp::Type::PropertyName, true);
+            std::vector<Exp const*> propertyExpsInWhereClause = whereExp->Find(Exp::Type::PropertyName, true);
             DbTable& primaryTable = currentClassMap.GetPrimaryTable();
             DbTable& joinedTable = currentClassMap.GetJoinedTable();
 
@@ -119,8 +119,8 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
             const bool primaryTableIsReferencedByWhereClause = (tablesReferencedByWhereClause.find(&primaryTable) != tablesReferencedByWhereClause.end());
             const bool joinedTableIsReferencedByWhereClause = (tablesReferencedByWhereClause.find(&joinedTable) != tablesReferencedByWhereClause.end());
             ECSqlSystemProperty systemPropExp = ECSqlSystemProperty::ECInstanceId;
-            
-            if (propertyExpsInWhereClause.size() == 1 && 
+
+            if (propertyExpsInWhereClause.size() == 1 &&
                 static_cast<PropertyNameExp const*>(propertyExpsInWhereClause[0])->TryGetSystemProperty(systemPropExp) && systemPropExp == ECSqlSystemProperty::ECInstanceId)
                 {
                 //WhereClause only consists of ECInstanceId exp
@@ -164,7 +164,7 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
                     );
 
                 deleteSqlSnippets.m_whereClauseNativeSqlSnippet = snippet;
-                deleteSqlSnippets.m_whereClauseNativeSqlSnippet.ImportParameters(whereClause);
+                deleteSqlSnippets.m_whereClauseNativeSqlSnippet.CopyParameters(whereClause);
                 }
             }
         }
@@ -181,11 +181,13 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
     DbColumn const* classIdColumn = nullptr;
     if (!table->TryGetECClassIdColumn(classIdColumn) || classIdColumn->GetPersistenceType() != PersistenceType::Persisted)
         return ECSqlStatus::Success; //no class id column exists -> no system where clause
-    
-    return classMap.GetStorageDescription().GenerateECClassIdFilter(deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet,
-        *table,
-        *classIdColumn,
-        exp.GetClassNameExp()->IsPolymorphic()) == SUCCESS ? ECSqlStatus::Success : ECSqlStatus::Error;
+
+    Utf8String classIdFilter;
+    if (SUCCESS != classMap.GetStorageDescription().GenerateECClassIdFilter(classIdFilter, *table, *classIdColumn, exp.GetClassNameExp()->IsPolymorphic()))
+        return ECSqlStatus::Error;
+
+    deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet.Append(classIdFilter.c_str());
+    return ECSqlStatus::Success;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -194,28 +196,28 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
 //static
 void ECSqlDeletePreparer::BuildNativeSqlDeleteStatement
 (
-NativeSqlBuilder& deleteBuilder,
-NativeSqlSnippets const& deleteNativeSqlSnippets
-)
+    NativeSqlBuilder& deleteBuilder,
+    NativeSqlSnippets const& deleteNativeSqlSnippets
+    )
     {
-    deleteBuilder.Append ("DELETE FROM ").Append (deleteNativeSqlSnippets.m_classNameNativeSqlSnippet);
+    deleteBuilder.Append("DELETE FROM ").Append(deleteNativeSqlSnippets.m_classNameNativeSqlSnippet);
 
     bool whereAlreadyAppended = false;
-    if (!deleteNativeSqlSnippets.m_whereClauseNativeSqlSnippet.IsEmpty ())
+    if (!deleteNativeSqlSnippets.m_whereClauseNativeSqlSnippet.IsEmpty())
         {
-        deleteBuilder.AppendSpace ().Append (deleteNativeSqlSnippets.m_whereClauseNativeSqlSnippet);
+        deleteBuilder.AppendSpace().Append(deleteNativeSqlSnippets.m_whereClauseNativeSqlSnippet);
         whereAlreadyAppended = true;
         }
-    
-    if (!deleteNativeSqlSnippets.m_systemWhereClauseNativeSqlSnippet.IsEmpty ())
+
+    if (!deleteNativeSqlSnippets.m_systemWhereClauseNativeSqlSnippet.IsEmpty())
         {
         if (whereAlreadyAppended)
-            deleteBuilder.Append (" AND ").AppendParenLeft();
+            deleteBuilder.Append(" AND ").AppendParenLeft();
         else
-            deleteBuilder.Append (" WHERE ");
+            deleteBuilder.Append(" WHERE ");
 
-        deleteBuilder.Append (deleteNativeSqlSnippets.m_systemWhereClauseNativeSqlSnippet);
-        
+        deleteBuilder.Append(deleteNativeSqlSnippets.m_systemWhereClauseNativeSqlSnippet);
+
         if (whereAlreadyAppended)
             deleteBuilder.AppendParenRight();
         }
@@ -227,43 +229,43 @@ NativeSqlSnippets const& deleteNativeSqlSnippets
 //static
 void ECSqlDeletePreparer::BuildNativeSqlUpdateStatement
 (
-NativeSqlBuilder& updateBuilder,
-NativeSqlSnippets const& deleteNativeSqlSnippets,
-NativeSqlBuilder::List const& propNamesToUnsetNativeSqlSnippets
-)
+    NativeSqlBuilder& updateBuilder,
+    NativeSqlSnippets const& deleteNativeSqlSnippets,
+    NativeSqlBuilder::List const& propNamesToUnsetNativeSqlSnippets
+    )
     {
-    updateBuilder.Append ("UPDATE ").Append (deleteNativeSqlSnippets.m_classNameNativeSqlSnippet);
+    updateBuilder.Append("UPDATE ").Append(deleteNativeSqlSnippets.m_classNameNativeSqlSnippet);
 
     //Columns of properties of the relationship need to be nulled out when "deleting" the relationship
-    BeAssert (!propNamesToUnsetNativeSqlSnippets.empty ());
-    updateBuilder.Append (" SET ");
-    
+    BeAssert(!propNamesToUnsetNativeSqlSnippets.empty());
+    updateBuilder.Append(" SET ");
+
     bool isFirstItem = true;
     for (auto const& sqlSnippet : propNamesToUnsetNativeSqlSnippets)
         {
         if (!isFirstItem)
-            updateBuilder.AppendComma ();
+            updateBuilder.AppendComma();
 
-        updateBuilder.Append (sqlSnippet).Append (" = NULL");
+        updateBuilder.Append(sqlSnippet).Append(" = NULL");
         isFirstItem = false;
         }
 
 
     bool whereAlreadyAppended = false;
-    if (!deleteNativeSqlSnippets.m_whereClauseNativeSqlSnippet.IsEmpty ())
+    if (!deleteNativeSqlSnippets.m_whereClauseNativeSqlSnippet.IsEmpty())
         {
-        updateBuilder.AppendSpace ().Append (deleteNativeSqlSnippets.m_whereClauseNativeSqlSnippet);
+        updateBuilder.AppendSpace().Append(deleteNativeSqlSnippets.m_whereClauseNativeSqlSnippet);
         whereAlreadyAppended = true;
         }
 
-    if (!deleteNativeSqlSnippets.m_systemWhereClauseNativeSqlSnippet.IsEmpty ())
+    if (!deleteNativeSqlSnippets.m_systemWhereClauseNativeSqlSnippet.IsEmpty())
         {
         if (whereAlreadyAppended)
-            updateBuilder.Append (" AND ");
+            updateBuilder.Append(" AND ");
         else
-            updateBuilder.Append (" WHERE ");
+            updateBuilder.Append(" WHERE ");
 
-        updateBuilder.Append (deleteNativeSqlSnippets.m_systemWhereClauseNativeSqlSnippet);
+        updateBuilder.Append(deleteNativeSqlSnippets.m_systemWhereClauseNativeSqlSnippet);
         }
     }
 

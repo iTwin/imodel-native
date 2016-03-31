@@ -2822,7 +2822,7 @@ TEST_F(JoinedTableECSqlStatementsTests, PersistSqlForQueryOnAbstractBaseClass)
     {
     SetUpECSqlStatementTestsDb();
 
-    Utf8CP expectedGeneratedECSql = "SELECT [Person].[ECInstanceId] FROM (SELECT [ECST_Person].ECClassId, [ECST_Person].[ECInstanceId] FROM [ECST_Person]) [Person]";
+    Utf8CP expectedGeneratedECSql = "SELECT [Person].[ECInstanceId] FROM (SELECT [ECST_Person].ECClassId,[ECST_Person].[ECInstanceId] FROM [ECST_Person]) [Person]";
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT ECInstanceId FROM ECST.Person"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, stmt.Step());

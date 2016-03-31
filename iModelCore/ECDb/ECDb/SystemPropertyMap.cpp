@@ -290,7 +290,7 @@ NativeSqlBuilder::List ECClassIdRelationshipConstraintPropertyMap::_ToNativeSql 
     else
         {
         if (IsVirtual ())
-            nativeSqlSnippet.Append (m_defaultConstraintClassId);
+            nativeSqlSnippet.Append(m_defaultConstraintClassId.ToString().c_str());
         else
             nativeSqlSnippet.Append (classIdentifier, GetColumn ().GetName ().c_str());
         }
@@ -308,8 +308,10 @@ NativeSqlBuilder::List ECClassIdRelationshipConstraintPropertyMap::_ToNativeSql 
 //+---------------+---------------+---------------+---------------+---------------+-
 Utf8String ECClassIdRelationshipConstraintPropertyMap::_ToString () const
     {
-    return Utf8PrintfString ("ECClassIdRelationshipConstraintPropertyMap: Column name=%s View column alias=%s Default constraint ECClassId=%llu",
-        GetColumn ().GetName ().c_str(), GetViewColumnAlias (), m_defaultConstraintClassId.GetValue());
+    Utf8String str;
+    str.Sprintf("ECClassIdRelationshipConstraintPropertyMap: Column name=%s View column alias=%s Default constraint ECClassId=%s",
+                GetColumn().GetName().c_str(), GetViewColumnAlias(), m_defaultConstraintClassId.ToString().c_str());
+    return str;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -178,7 +178,7 @@ public:
         ECN::ECClassId GetRootClassId() const { BeAssert(!m_partitionClassIds.empty()); return m_partitionClassIds[0]; }
         std::vector<ECN::ECClassId> const& GetClassIds () const { return m_partitionClassIds; }
         bool NeedsECClassIdFilter() const;
-        void AppendECClassIdFilterSql(Utf8CP classIdColName, NativeSqlBuilder&) const;
+        void AppendECClassIdFilterSql(Utf8StringR filterSql, Utf8CP classIdColName) const;
         };
 
 
@@ -220,7 +220,7 @@ public:
         bool HierarchyMapsToMultipleTables() const { return m_nonVirtualHorizontalPartitionIndices.size() > 1; }
         ECN::ECClassId GetClassId () const { return m_classId; }
 
-        BentleyStatus GenerateECClassIdFilter(NativeSqlBuilder& filter, DbTable const&, DbColumn const& classIdColumn, bool polymorphic, bool fullyQualifyColumnName = false, Utf8CP tableAlias =nullptr) const;
+        BentleyStatus GenerateECClassIdFilter(Utf8StringR filterSqlExpression, DbTable const&, DbColumn const& classIdColumn, bool polymorphic, bool fullyQualifyColumnName = false, Utf8CP tableAlias =nullptr) const;
         static std::unique_ptr<StorageDescription> Create(ClassMap const&, ECDbMap::LightweightCache const& lwmc);
         };
     

@@ -665,7 +665,7 @@ BentleyStatus ECInstanceAdapterHelper::SetECInstanceId (ECN::IECInstanceR instan
     Utf8Char instanceIdStr[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
     if (!ECInstanceIdHelper::ToString (instanceIdStr, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ecInstanceId))
         {
-        LOG.errorv ("Could not set ECInstanceId %llu on the ECInstanceId. Conversion to string failed.", ecInstanceId.GetValue ());
+        LOG.errorv ("Could not set ECInstanceId %s on the ECInstanceId. Conversion to string failed.", ecInstanceId.ToString().c_str());
         BeAssert (false && "Could not set ECInstanceId on the ECInstanceId. Conversion to string failed.");
         return ERROR;
         }

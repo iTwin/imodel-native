@@ -626,8 +626,8 @@ DbResult DbSchemaPersistenceManager::InsertIndex(ECDbCR ecdb, DbIndex const& ind
     DbResult stat = stmt->Step();
     if (stat != BE_SQLITE_DONE)
         {
-        LOG.errorv("Failed to insert index metadata into " EC_INDEX_TableName " for index %s (Id: %llu): %s",
-                   index.GetName().c_str(), index.GetId().GetValue(), ecdb.GetLastError().c_str());
+        LOG.errorv("Failed to insert index metadata into " EC_INDEX_TableName " for index %s (Id: %s): %s",
+                   index.GetName().c_str(), index.GetId().ToString().c_str(), ecdb.GetLastError().c_str());
         return stat;
         }
 
@@ -645,8 +645,8 @@ DbResult DbSchemaPersistenceManager::InsertIndex(ECDbCR ecdb, DbIndex const& ind
         stat = indexColStmt->Step();
         if (stat != BE_SQLITE_DONE)
             {
-            LOG.errorv("Failed to insert index column metadata into " EC_INDEXCOLUMN_TableName " for index %s (Id: %llu) and column %s (Id: %llu): %s",
-                       index.GetName().c_str(), index.GetId().GetValue(), col->GetName().c_str(), col->GetId().GetValue(), ecdb.GetLastError().c_str());
+            LOG.errorv("Failed to insert index column metadata into " EC_INDEXCOLUMN_TableName " for index %s (Id: %s) and column %s (Id: %s): %s",
+                       index.GetName().c_str(), index.GetId().ToString().c_str(), col->GetName().c_str(), col->GetId().ToString().c_str(), ecdb.GetLastError().c_str());
             return stat;
             }
 
@@ -788,8 +788,8 @@ BentleyStatus DbSchemaPersistenceManager::CreateOrUpdateTable(ECDbCR ecdb, DbTab
     //! Object type is view and exist in db. Action = DROP it and recreate it.
     if (type == DbSchema::EntityType::View)
         {
-        Utf8String sql("DROP VIEW ");
-        sql.append(tableName);
+        Utf8String sql("DROP VIEW [");
+        sql.append(tableName).append("]");
         auto r = ecdb.ExecuteSql(sql.c_str());
         if (r != BE_SQLITE_OK)
             {
@@ -870,13 +870,13 @@ BentleyStatus DbSchemaPersistenceManager::CreateTable(ECDbCR ecdb, DbTable const
         }
 
     Utf8String ddl("CREATE TABLE [");
-    ddl.append(table.GetName()).append("] (");
+    ddl.append(table.GetName()).append("](");
 
     bool isFirstCol = true;
     for (DbColumn const* col : columns)
         {
         if (!isFirstCol)
-            ddl.append(",");
+            ddl.append(", ");
 
         if (SUCCESS != AppendColumnDdl(ddl, *col))
             return ERROR;
@@ -990,7 +990,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateOrUpdateIndexes(ECDbCR ecdb, DbS
             }
 #endif
 
-    bmap<Utf8String, DbIndex const*> comparableIndexDefs;
+    bmap<Utf8String, DbIndex const*, CompareIUtf8Ascii> comparableIndexDefs;
     for (std::unique_ptr<DbIndex> const& indexPtr : dbSchema.GetIndexes())
         {
         DbIndex& index = *indexPtr;
@@ -1001,15 +1001,14 @@ BentleyStatus DbSchemaPersistenceManager::CreateOrUpdateIndexes(ECDbCR ecdb, DbS
             }
 
         //drop index first if it exists, as we always have to recreate them to make sure the class id filter is up-to-date
-        Utf8String dropIndexSql("DROP INDEX [");
-        dropIndexSql.append(index.GetName()).append("]");
+        Utf8String dropIndexSql;
+        dropIndexSql.Sprintf("DROP INDEX [%s]", index.GetName().c_str());
         ecdb.TryExecuteSql(dropIndexSql.c_str());
 
         //indexes on virtual tables are ignored
         if (index.GetTable().GetPersistenceType() == PersistenceType::Persisted)
             {
-            NativeSqlBuilder ddl;
-            Utf8String comparableIndexDef;
+            Utf8String ddl, comparableIndexDef;
             if (SUCCESS != BuildCreateIndexDdl(ddl, comparableIndexDef, ecdb, index))
                 return ERROR;
 
@@ -1060,7 +1059,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateOrUpdateIndexes(ECDbCR ecdb, DbS
 
             comparableIndexDefs[comparableIndexDef] = &index;
 
-            if (BE_SQLITE_OK != ecdb.ExecuteSql(ddl.ToString()))
+            if (BE_SQLITE_OK != ecdb.ExecuteSql(ddl.c_str()))
                 {
                 ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to create index %s on table %s. Error: %s", index.GetName().c_str(), index.GetTable().GetName().c_str(),
                                                                 ecdb.GetLastError().c_str());
@@ -1082,47 +1081,35 @@ BentleyStatus DbSchemaPersistenceManager::CreateOrUpdateIndexes(ECDbCR ecdb, DbS
 // @bsimethod                                                Krischan.Eberle 10/2015
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus DbSchemaPersistenceManager::BuildCreateIndexDdl(NativeSqlBuilder& ddl, Utf8StringR comparableIndexDef, ECDbCR ecdb, DbIndex const& index)
+BentleyStatus DbSchemaPersistenceManager::BuildCreateIndexDdl(Utf8StringR ddl, Utf8StringR comparableIndexDef, ECDbCR ecdb, DbIndex const& index)
     {
     //this is a string that contains the pieces of the index definition that altogether make the definition unique.
-    //that string leaves out keywords common to all indexes (e.g. CREATE, INDEX, WHERE).
+    //that string leaves out index name and keywords common to all indexes (e.g. CREATE, INDEX, WHERE).
     comparableIndexDef.clear();
 
-    ddl.Append("CREATE ");
+    ddl.assign("CREATE ");
     if (index.GetIsUnique())
         {
-        ddl.Append("UNIQUE ");
+        ddl.append("UNIQUE ");
         comparableIndexDef.assign("u ");
         }
 
     Utf8CP indexName = index.GetName().c_str();
     Utf8CP tableName = index.GetTable().GetName().c_str();
-    ddl.Append("INDEX ").AppendEscaped(indexName).Append(" ON ").AppendEscaped(tableName).Append(" (");
+    Utf8String columnsDdl;
+    AppendColumnNamesToDdl(columnsDdl, index.GetColumns());
 
-    comparableIndexDef.append(tableName).append("(");
-    bool isFirstCol = true;
-    for (DbColumn const* col : index.GetColumns())
-        {
-        if (!isFirstCol)
-            ddl.AppendComma(false);
+    ddl.append("INDEX [").append(indexName).append("] ON [").append(tableName).append("](").append(columnsDdl).append(")");
+    comparableIndexDef.append(tableName).append("(").append(columnsDdl).append(")");
 
-        ddl.AppendEscaped(col->GetName().c_str());
-        isFirstCol = false;
-
-        comparableIndexDef.append(col->GetName()).append(" ");
-        }
-
-    ddl.AppendParenRight();
-    comparableIndexDef.append(")");
-
-    NativeSqlBuilder whereClause;
+    Utf8String whereClause;
     if (SUCCESS != GenerateIndexWhereClause(whereClause, ecdb, index))
         return ERROR;
 
-    if (!whereClause.IsEmpty())
+    if (!whereClause.empty())
         {
-        ddl.Append(" WHERE ").Append(whereClause.ToString());
-        comparableIndexDef.append(whereClause.ToString());
+        ddl.append(" WHERE ").append(whereClause);
+        comparableIndexDef.append(whereClause);
         }
 
     comparableIndexDef.ToLower();
@@ -1133,11 +1120,11 @@ BentleyStatus DbSchemaPersistenceManager::BuildCreateIndexDdl(NativeSqlBuilder& 
 // @bsimethod                                                    Krischan.Eberle  10/2015
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus DbSchemaPersistenceManager::GenerateIndexWhereClause(NativeSqlBuilder& whereClause, ECDbCR ecdb, DbIndex const& index)
+BentleyStatus DbSchemaPersistenceManager::GenerateIndexWhereClause(Utf8StringR whereClause, ECDbCR ecdb, DbIndex const& index)
     {
     if (index.IsAddColumnsAreNotNullWhereExp())
         {
-        NativeSqlBuilder notNullWhereExp;
+        Utf8String notNullWhereExp;
         bool isFirstCol = true;
         for (DbColumn const* indexCol : index.GetColumns())
             {
@@ -1145,14 +1132,14 @@ BentleyStatus DbSchemaPersistenceManager::GenerateIndexWhereClause(NativeSqlBuil
                 continue;
 
             if (!isFirstCol)
-                notNullWhereExp.AppendSpace().Append(BooleanSqlOperator::And, true);
+                notNullWhereExp.append(" AND ");
 
-            notNullWhereExp.AppendEscaped(indexCol->GetName().c_str()).AppendSpace().Append(BooleanSqlOperator::IsNot, true).Append("NULL", false);
+            notNullWhereExp.append("[").append(indexCol->GetName()).append("] IS NOT NULL");
             isFirstCol = false;
             }
 
-        if (!notNullWhereExp.IsEmpty())
-            whereClause.AppendParenLeft().Append(notNullWhereExp).AppendParenRight();
+        if (!notNullWhereExp.empty())
+            whereClause.append("(").append(notNullWhereExp).append(")");
         }
 
     DbColumn const* classIdCol = nullptr;
@@ -1186,11 +1173,11 @@ BentleyStatus DbSchemaPersistenceManager::GenerateIndexWhereClause(NativeSqlBuil
         return ERROR;
         }
 
-    NativeSqlBuilder classIdFilter;
+    Utf8String classIdFilter;
     if (SUCCESS != storageDescription.GenerateECClassIdFilter(classIdFilter, index.GetTable(), *classIdCol, index.AppliesToSubclassesIfPartial()))
         return ERROR;
 
-    if (classIdFilter.IsEmpty())
+    if (classIdFilter.empty())
         return SUCCESS;
 
     //now we know the index would have to be partial.
@@ -1200,14 +1187,14 @@ BentleyStatus DbSchemaPersistenceManager::GenerateIndexWhereClause(NativeSqlBuil
         return SUCCESS;
 
     //unique indexes are always created to not lose enforcement of the uniqueness
-    const bool needsParens = !whereClause.IsEmpty();
+    const bool needsParens = !whereClause.empty();
     if (needsParens)
-        whereClause.AppendSpace().Append(BooleanSqlOperator::And, true).AppendParenLeft();
+        whereClause.append(" AND (");
 
-    whereClause.Append(classIdFilter);
+    whereClause.append(classIdFilter);
 
     if (needsParens)
-        whereClause.AppendParenRight();
+        whereClause.append(")");
 
     return SUCCESS;
     }
@@ -1231,22 +1218,22 @@ BentleyStatus DbSchemaPersistenceManager::CreateTriggers(ECDbCR ecdb, DbTable co
             continue;
             }
 
-        Utf8String ddl("CREATE TRIGGER ");
-        ddl.append(trigger->GetName()).append(" ");
+        Utf8String ddl("CREATE TRIGGER [");
+        ddl.append(trigger->GetName()).append("] ");
 
         switch (trigger->GetType())
             {
                 case DbTrigger::Type::After:
-                    ddl.append("AFTER ");
+                    ddl.append("AFTER");
                     break;
                 case DbTrigger::Type::Before:
-                    ddl.append("BEFORE ");
+                    ddl.append("BEFORE");
 
                 default:
                     break;
             }
 
-        ddl.append("UPDATE ON [").append(trigger->GetTable().GetName()).append("] WHEN ");
+        ddl.append(" UPDATE ON [").append(trigger->GetTable().GetName()).append("] WHEN ");
         ddl.append(trigger->GetCondition()).append(" ").append(trigger->GetBody());
 
         if (ecdb.ExecuteSql(ddl.c_str()) != BE_SQLITE_OK)
@@ -1301,12 +1288,30 @@ BentleyStatus DbSchemaPersistenceManager::AppendColumnDdl(Utf8StringR ddl, DbCol
         ddl.append(" COLLATE ").append(DbColumn::Constraint::CollationToString(colConstraint.GetCollation()));
 
     if (!colConstraint.GetDefaultExpression().empty())
-        ddl.append(" DEFAULT (").append(colConstraint.GetDefaultExpression()).append(")");
+        ddl.append(" DEFAULT(").append(colConstraint.GetDefaultExpression()).append(")");
 
     if (!colConstraint.GetCheckExpression().empty())
-        ddl.append(" CHECK ('").append(colConstraint.GetCheckExpression()).append("')");
+        ddl.append(" CHECK('").append(colConstraint.GetCheckExpression()).append("')");
 
     return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        01/2015
+//---------------------------------------------------------------------------------------
+//static
+void DbSchemaPersistenceManager::AppendColumnNamesToDdl(Utf8StringR ddl, std::vector<DbColumn const*> const& columns)
+    {
+    bool isFirstCol = true;
+    for (DbColumn const* col : columns)
+        {
+        if (!isFirstCol)
+            ddl.append(", ");
+
+        ddl.append("[").append(col->GetName()).append("]");
+
+        isFirstCol = false;
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1348,7 +1353,7 @@ BentleyStatus DbSchemaPersistenceManager::AppendForeignKeyToColumnDdl(Utf8String
 //static
 void DbSchemaPersistenceManager::DoAppendForeignKeyDdl(Utf8StringR ddl, ForeignKeyDbConstraint const& fkConstraint)
     {
-    ddl.append(" REFERENCES [").append(fkConstraint.GetReferencedTable().GetName()).append("] (");
+    ddl.append(" REFERENCES [").append(fkConstraint.GetReferencedTable().GetName()).append("](");
     AppendColumnNamesToDdl(ddl, fkConstraint.GetReferencedTableColumns());
     ddl.append(")");
 
@@ -1359,22 +1364,5 @@ void DbSchemaPersistenceManager::DoAppendForeignKeyDdl(Utf8StringR ddl, ForeignK
         ddl.append(" ON UPDATE ").append(ForeignKeyDbConstraint::ActionTypeToSql(fkConstraint.GetOnUpdateAction()));
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        01/2015
-//---------------------------------------------------------------------------------------
-//static
-void DbSchemaPersistenceManager::AppendColumnNamesToDdl(Utf8StringR ddl, std::vector<DbColumn const*> const& columns)
-    {
-    bool isFirstCol = true;
-    for (DbColumn const* col : columns)
-        {
-        if (!isFirstCol)
-            ddl.append(",");
-
-        ddl.append("[").append(col->GetName()).append("]");
-
-        isFirstCol = false;
-        }
-    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

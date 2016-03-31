@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/NativeSqlBuilder.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,17 +22,14 @@ struct NativeSqlBuilder
     public:
         struct ECSqlParameterIndex
             {
-            private:
-                int m_index;
-                int m_componentIndex;
+        private:
+            int m_index;
+            int m_componentIndex;
 
-            public:
-                ECSqlParameterIndex (int index, int componentIndex)
-                    : m_index (index), m_componentIndex (componentIndex)
-                    {}
-
-                int GetIndex () const { return m_index; }
-                int GetComponentIndex () const { return m_componentIndex; }
+        public:
+            ECSqlParameterIndex(int index, int componentIndex) : m_index(index), m_componentIndex(componentIndex) {}
+            int GetIndex() const { return m_index; }
+            int GetComponentIndex() const { return m_componentIndex; }
             };
 
         typedef std::vector<NativeSqlBuilder> List;
@@ -42,117 +39,62 @@ struct NativeSqlBuilder
         Utf8String m_nativeSql;
         std::vector<ECSqlParameterIndex> m_parameterIndexMappings;
         std::vector<Utf8String> m_stack;
-    public:
-        NativeSqlBuilder ();
-        explicit NativeSqlBuilder (Utf8CP initialStr);
 
-        ~NativeSqlBuilder () {}
-        NativeSqlBuilder (NativeSqlBuilder const& rhs);
+    public:
+        NativeSqlBuilder() {}
+        explicit NativeSqlBuilder(Utf8CP initialStr) : m_nativeSql(initialStr) {}
+        ~NativeSqlBuilder() {}
+        NativeSqlBuilder(NativeSqlBuilder const& rhs) : m_nativeSql(rhs.m_nativeSql), m_parameterIndexMappings(rhs.m_parameterIndexMappings) {}
         NativeSqlBuilder& operator= (NativeSqlBuilder const& rhs);
-        NativeSqlBuilder (NativeSqlBuilder&& rhs);
+        NativeSqlBuilder(NativeSqlBuilder&& rhs) : m_nativeSql(std::move(rhs.m_nativeSql)), m_parameterIndexMappings(std::move(rhs.m_parameterIndexMappings)) {}
         NativeSqlBuilder& operator= (NativeSqlBuilder&& rhs);
 
-        NativeSqlBuilder& Append (NativeSqlBuilder const& builder, bool appendTrailingSpace = false);
-        NativeSqlBuilder& Append (Utf8CP str, bool appendTrailingSpace = false);
+        NativeSqlBuilder& CopyParameters(NativeSqlBuilder const& sqlBuilder);
 
-        void Push (bool clear = true)
-            {
-            m_stack.push_back (m_nativeSql);
+        NativeSqlBuilder& Append(NativeSqlBuilder const& builder);
+        NativeSqlBuilder& Append(Utf8CP str) { m_nativeSql.append(str); return *this; }
 
-            if (clear)
-                m_nativeSql.clear ();
-            }
-        void Reset ()
-            {
-            m_nativeSql.clear ();
-            m_stack.clear ();
-            }
-        Utf8String Pop ()
-            {
-            Utf8String r;
-            if (m_stack.empty ())
-                {
-                BeAssert (false && "Nothing to pop");
-                return r;
-                }
+        void Push(bool clear = true);
+        Utf8String Pop();
 
-            r = m_nativeSql;
-            m_nativeSql = m_stack.back ();
-            m_stack.pop_back ();
-            return r;
-            }
         //!@param[in] separator The separator used to separate the items in @p builderList. If nullptr is passed,
         //!                     the items will be separated by comma.
-        NativeSqlBuilder& Append (List const& builderList, Utf8CP separator = nullptr);
+        NativeSqlBuilder& Append(List const& builderList, Utf8CP separator = nullptr);
 
-        NativeSqlBuilder& Append (List const& lhsBuilderList, Utf8CP operatorStr, List const& rhsBuilderList, Utf8CP separator = nullptr);
-        NativeSqlBuilder& AppendFormatted (Utf8CP format, ...)
-            {
-            va_list ap;
-            va_start (ap, format);
-            Append (Utf8PrintfString (format, ap).c_str());
-            va_end (ap);
-            return *this;
-            }
-    NativeSqlBuilder& Append (Utf8CP classIdentifier, Utf8CP identifier);
-    NativeSqlBuilder& Append (BinarySqlOperator op, bool appendTrailingSpace = true);
-    NativeSqlBuilder& Append (BooleanSqlOperator op, bool appendTrailingSpace = true);
-    NativeSqlBuilder& Append (SqlSetQuantifier setQuantifier, bool appendTrailingSpace = true);
-    NativeSqlBuilder& Append (UnarySqlOperator op, bool appendTrailingSpace = true);
-    //!@param[in] ecsqlParameterName Parameter name of nullptr if parameter is unnamed
-    NativeSqlBuilder& AppendParameter (Utf8CP ecsqlParameterName, int ecsqlParameterIndex, int ecsqlParameterComponentIndex);
-    NativeSqlBuilder& ImportParameters(NativeSqlBuilder const& sqlBuilder)
-        {
-        if (this != &sqlBuilder)
-            m_parameterIndexMappings = sqlBuilder.m_parameterIndexMappings;
+        NativeSqlBuilder& Append(List const& lhsBuilderList, Utf8CP operatorStr, List const& rhsBuilderList, Utf8CP separator = nullptr);
+        NativeSqlBuilder& AppendFormatted(Utf8CP format, ...);
+        NativeSqlBuilder& Append(Utf8CP classIdentifier, Utf8CP identifier);
+        NativeSqlBuilder& Append(BinarySqlOperator);
+        NativeSqlBuilder& Append(BooleanSqlOperator);
+        NativeSqlBuilder& Append(SqlSetQuantifier);
+        NativeSqlBuilder& Append(UnarySqlOperator);
+        //!@param[in] ecsqlParameterName Parameter name of nullptr if parameter is unnamed
+        NativeSqlBuilder& AppendParameter(Utf8CP ecsqlParameterName, int ecsqlParameterIndex, int ecsqlParameterComponentIndex);
+        //!@param[in] ecsqlParameterName Parameter name of nullptr if parameter is unnamed
+        NativeSqlBuilder& AppendParameter(Utf8CP ecsqlParameterName, int ecsqlParameterComponentIndex);
 
-        return *this;
-        } 
-    //!@param[in] ecsqlParameterName Parameter name of nullptr if parameter is unnamed
-    NativeSqlBuilder& AppendParameter (Utf8CP ecsqlParameterName, int ecsqlParameterComponentIndex);
-    NativeSqlBuilder& Append (ECN::ECClassId ecClassId);
+        NativeSqlBuilder& AppendEscaped(Utf8CP identifier) { return Append("[").Append(identifier).Append("]"); }
 
-    NativeSqlBuilder& AppendEscaped (Utf8CP identifier);
-    NativeSqlBuilder& AppendQuoted (Utf8CP stringLiteral);
+        NativeSqlBuilder& Append(Utf8CP identifier, bool escape) { return escape ? AppendEscaped(identifier) : Append(identifier); };
+        NativeSqlBuilder& AppendQuoted(Utf8CP stringLiteral) { return Append("'").Append(stringLiteral).Append("'"); }
 
-    NativeSqlBuilder& AppendSpace ();
-    NativeSqlBuilder& AppendComma (bool appendTrailingSpace = true);
-    NativeSqlBuilder& AppendDot ();
-    NativeSqlBuilder& AppendParenLeft ();
-    NativeSqlBuilder& AppendParenRight ();
-    NativeSqlBuilder& AppendLine (Utf8CP str)
-        {
-        return Append (str).AppendEOL ();
-        }
-    NativeSqlBuilder& AppendEOL () { return Append ("\n"); }
-    NativeSqlBuilder& AppendTAB (int count = 1) 
-        { 
-        for (auto i = 0; i < count; i++)
-            Append ("\t"); 
+        NativeSqlBuilder& AppendSpace() { return Append(" "); }
+        NativeSqlBuilder& AppendComma() { return Append(","); }
+        NativeSqlBuilder& AppendDot() { return Append("."); }
+        NativeSqlBuilder& AppendParenLeft() { return Append("("); }
+        NativeSqlBuilder& AppendParenRight() { return Append(")"); }
+        NativeSqlBuilder& AppendLine(Utf8CP str) { return Append(str).AppendEol(); }
+        NativeSqlBuilder& AppendEol() { return Append("\n"); }
+        NativeSqlBuilder& AppendIf(bool condition, Utf8CP stringLiteral) { if (condition) Append(stringLiteral); return *this; }
+        NativeSqlBuilder& AppendIIf(bool condition, Utf8CP trueStr, Utf8CP falseStr) { return condition ? Append(trueStr) : Append(falseStr); }
 
-        return *this;
-        }
-	NativeSqlBuilder& AppendIf(bool appendIf, Utf8CP stringLiteral){ if (appendIf) Append(stringLiteral); return *this; }
-    NativeSqlBuilder& AppendIIf (bool appendIIf, Utf8CP trueStr, Utf8CP falseStr)
-        { 
-        if (appendIIf) 
-            {
-            Append (trueStr);
-            }
-        else
-            {
-            Append (falseStr);
-            }
-            return *this;
-        }
+        void Reset();
+        bool IsEmpty() const { return m_nativeSql.empty(); }
+        Utf8CP ToString() const { return m_nativeSql.c_str(); }
 
-    NativeSqlBuilder& AppendEscapedIf(bool escapeIf, Utf8CP identifier){ if (escapeIf) AppendEscaped(identifier); else Append(identifier); return *this; };
-    bool IsEmpty () const;
-    Utf8CP ToString () const;
+        std::vector<ECSqlParameterIndex> const& GetParameterIndexMappings() const { return m_parameterIndexMappings; }
 
-    std::vector<ECSqlParameterIndex> const& GetParameterIndexMappings () const { return m_parameterIndexMappings; }
-
-    static List FlattenJaggedList (ListOfLists const& listOfLists, std::vector<size_t> const& indexSkipList);
+        static List FlattenJaggedList(ListOfLists const& listOfLists, std::vector<size_t> const& indexSkipList);
     };
 
 

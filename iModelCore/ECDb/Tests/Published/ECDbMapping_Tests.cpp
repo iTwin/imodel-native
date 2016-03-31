@@ -1812,7 +1812,7 @@ TEST_F(ECDbMappingTestFixture, MinimumSharedColumns)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    ECDbR ecdb = SetupECDb("schemaupgrade.ecdb", schemaItem);
+    ECDbR ecdb = SetupECDb("minimumsharedcolumns.ecdb", schemaItem);
     ASSERT_TRUE(ecdb.IsDbOpen());
     ecdb.SaveChanges();
 

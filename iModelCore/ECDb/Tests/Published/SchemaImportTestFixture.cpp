@@ -96,12 +96,12 @@ void SchemaImportTestFixture::AssertIndex(ECDbCR ecdb, Utf8CP indexName, bool is
     if (isUnique)
         expectedDdl.append("UNIQUE ");
 
-    expectedDdl.append("INDEX [").append(indexName).append("] ON [").append(tableName).append("] (");
+    expectedDdl.append("INDEX [").append(indexName).append("] ON [").append(tableName).append("](");
     bool isFirstColumn = true;
     for (Utf8CP column : columns)
         {
         if (!isFirstColumn)
-            expectedDdl.append(",");
+            expectedDdl.append(", ");
 
         expectedDdl.append("[").append(column).append("]");
         isFirstColumn = false;
