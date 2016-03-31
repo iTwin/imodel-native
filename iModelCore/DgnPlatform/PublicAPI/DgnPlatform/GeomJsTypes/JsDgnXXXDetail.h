@@ -167,6 +167,20 @@ static JsDgnTorusPipeP CreateTorusPipe (
     return new JsDgnTorusPipe (ISolidPrimitive::CreateDgnTorusPipe (data));
     }
 
+static JsDgnTorusPipeP CreateFromArc (
+        JsEllipticArcP arc,
+        double minorRadius,
+        bool capped
+        )
+    {
+    DgnTorusPipeDetail data (arc->GetDEllipse3d (),
+            minorRadius,
+            capped
+            );
+    return new JsDgnTorusPipe (ISolidPrimitive::CreateDgnTorusPipe (data));
+    }
+
+
 };
 
 

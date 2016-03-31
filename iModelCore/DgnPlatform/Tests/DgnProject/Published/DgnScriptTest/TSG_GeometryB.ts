@@ -141,7 +141,25 @@ module DgnScriptTests {
                 flattened.IsSameStructureAndGeometry (expectedFlattened));
         }
 
-
+function t_FilletConstructions ()
+{
+    var pointA = new Bentley.Dgn.DPoint3d (1,0,0);
+    var pointB = new Bentley.Dgn.DPoint3d (5,0,0);
+    var pointC = new Bentley.Dgn.DPoint3d (5,5,0);
+    var vectorX = new Bentley.Dgn.DVector3d (1,0,0);
+    var planeNormal = new Bentley.Dgn.DVector3d (0,0,1);
+    var arc1 = Bentley.Dgn.EllipticArc.CreateFilletAtMiddlePoint (pointA, pointB, pointC, 2.0);
+    var arc2 = Bentley.Dgn.EllipticArc.CreateStartTangentNormalRadiusSweep (pointA, vectorX, planeNormal, 3.0,
+                    Bentley.Dgn.Angle.CreateDegrees (45));
+    // a frenet frame at the start
+    var frenet0 = arc1.FrenetFrameAtFraction (0.0);
+    // at end
+    var frenet1 = arc2.FrenetFrameAtFraction (1.0);
+    // at center, pointing at middle of arc
+    var frenetC = arc2.CenterFrameAtFraction (0.5);
+    checker.IsNearDPoint3d (frenetC.GetTranslation (), arc2.GetCenter ());
+    var torus = Bentley.Dgn.DgnTorusPipe.CreateFromArc (arc1, 0.1, false);
+}
     //debugger ;
     logMessage('TSG_GeometryB t_pointVectorOps3d');
     t_pointVectorOps3d(new Bentley.Dgn.DPoint3d(1, 2, 3),
@@ -161,11 +179,16 @@ module DgnScriptTests {
         new Bentley.Dgn.DVector2d(0.2, 0.4),
         new Bentley.Dgn.DVector2d(-0.4, 0.2),
         new Bentley.Dgn.DVector2d(0, 0.4));
+    logMessage('TSG_GeometryB t_pointDistances');
 
     t_pointDistances(new Bentley.Dgn.DPoint3d(1, 2, 3),
         new Bentley.Dgn.DVector3d(0.2, 0.4, 0.8));
+    logMessage('TSG_GeometryB t_FilletConstructions');
+    t_FilletConstructions ();
+    logMessage('TSG_GeometryB t_GeometryNode');
     
     t_GeometryNode ();
+    //t_FilletConstructions ();
     logMessage('TSG_GeometryB B Exit');
 }
 

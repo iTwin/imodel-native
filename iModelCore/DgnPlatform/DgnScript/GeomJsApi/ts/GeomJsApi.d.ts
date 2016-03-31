@@ -779,6 +779,14 @@ class CurvePrimitive extends Geometry implements BeJsProjection_SuppressConstruc
     /*** NATIVE_TYPE_NAME = JsCurvePrimitive ***/ 
     Clone(): CurvePrimitiveP;
     CurvePrimitiveType(): cxx_double;
+/** Return a frenet frame at a fractional position.
+<ul>
+<li> x axis is forward along the curve (tangent)
+<li> y axis is towards the center of curvature.
+<li> z axis is x cross y
+</ul>
+*/
+FrenetFrameAtFraction (f : cxx_double) : TransformP;
     /** return the point at fractional position along the curve. */
     PointAtFraction(f: cxx_double): DPoint3dP; 
     /** return the point and unit tangent at fractional position along the curve. */
@@ -840,6 +848,19 @@ This property is extremely convenient for passing ellipses through viewing trans
         constructor(center: DPoint3dP, vector0: DVector3dP, vector90: DVector3dP, startAngle: AngleP, sweepAngle : AngleP);
         static CreateCircleStartMidEnd (startPoint: DPoint3dP, interiorPoint: DPoint3dP, endPoint: DPoint3dP) : EllipticArcP;
         static CreateCircleXY (center: DPoint3dP, radius: cxx_double) : EllipticArcP;
+        /** Create a circular arc that fillets (replaces pointB) in the path pointA to pointB to pointC */
+        static CreateFilletAtMiddlePoint (pointA: DPoint3dP, pointB: DPoint3dP, pointC: DPoint3dP, radius: cxx_double) : EllipticArcP;
+        /** Create a circular arc from a start point, initial direction, and plane normal vector. */
+        static CreateStartTangentNormalRadiusSweep (
+                startPoint: DPoint3dP, 
+                startTangent: DVector3dP,
+                planeNormal: DVector3dP,
+                radius: cxx_double,
+                sweep: AngleP
+                ) : EllipticArcP;
+        //! Return the frenet frame of the arc fraction, but with translation to arc center.
+        CenterFrameAtFraction (fraction : cxx_double) : TransformP;
+
         GetCenter (): DPoint3dP;
         GetVector0 (): DVector3dP;
         GetVector90 (): DVector3dP;
@@ -1319,6 +1340,12 @@ type DgnBoxP = cxx_pointer<DgnBox>;
             majorRadius: cxx_double,
             minorRadius: cxx_double,
             sweep: AngleP,
+            capped: cxx_bool
+            ): DgnTorusPipeP;
+
+        static CreateFromArc(
+            arc: EllipticArcP,
+            minorRadius: cxx_double,
             capped: cxx_bool
             ): DgnTorusPipeP;
 
