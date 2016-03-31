@@ -125,6 +125,8 @@ class ScalableMeshProgressiveQueryEngine : public virtual IScalableMeshProgressi
 
         ScalableMeshProgressiveQueryEngine(IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr);
 
+        virtual ~ScalableMeshProgressiveQueryEngine();
+
     };
 
 

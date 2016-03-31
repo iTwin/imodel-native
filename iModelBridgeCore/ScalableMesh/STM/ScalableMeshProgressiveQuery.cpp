@@ -142,6 +142,7 @@ IScalableMeshProgressiveQueryEnginePtr IScalableMeshProgressiveQueryEngine::Crea
 
 static bool s_LoadQVDuringQuery = true;
 
+static bool s_keepSomeInvalidate = false; 
 
 class CachedDisplayNodeManager
     {
@@ -170,14 +171,16 @@ private:
 
 
         IScalableMeshPtr                  m_scalableMeshPtr;
-        IScalableMeshCachedDisplayNodePtr m_displayNodePtr;
+        IScalableMeshCachedDisplayNodePtr m_displayNodePtr;       
 
         //MaterialPtr m_material;
     };
 
     typedef std::list<CachedNode> CachedNodesList;
+    typedef std::vector<CachedNode> CachedNodesVector;
     CachedNodesList m_cachedNodes;
-
+    CachedNodesVector m_invalidatedCachedNodes;
+    
     CachedDisplayNodeManager()
         {
         m_maxNbPoints = 3000000;
@@ -203,7 +206,24 @@ public:
             m_cachedNodes.pop_back();
         }
 
-        m_cachedNodes.push_front(CachedNode(scalableMeshPtr, displayNodePtr));
+        m_cachedNodes.push_front(CachedNode(scalableMeshPtr, displayNodePtr));        
+
+        if (s_keepSomeInvalidate)
+            {
+            auto invalidatedNodeIter(m_invalidatedCachedNodes.begin());
+            auto invalidatedNodeIterEnd(m_invalidatedCachedNodes.end());
+
+            while (invalidatedNodeIter != invalidatedNodeIterEnd)
+                {                        
+                if ((invalidatedNodeIter->m_scalableMeshPtr == scalableMeshPtr) && 
+                    (invalidatedNodeIter->m_displayNodePtr->GetNodeId() == displayNodePtr->GetNodeId()))
+                    {
+                    invalidatedNodeIter = m_invalidatedCachedNodes.erase(invalidatedNodeIter);
+                    }
+
+                invalidatedNodeIter++;
+                }            
+            }
 
         m_nodeListMutex.unlock();
 
@@ -211,10 +231,36 @@ public:
     }
 
 
+    void ClearCachedNodes(IScalableMeshPtr& scalableMeshPtr)
+        {        
+        assert(!s_keepSomeInvalidate);                
+        m_nodeListMutex.lock();
+
+        auto cachedNodeIter(m_cachedNodes.begin());
+        auto cachedNodeIterEnd(m_cachedNodes.end());
+
+        //NEEDS_WORK_SM : Maybe should try making it parallel?        
+        while (cachedNodeIter != cachedNodeIterEnd)
+            {
+            if (cachedNodeIter->m_scalableMeshPtr == scalableMeshPtr)
+                {                     
+                cachedNodeIter = m_cachedNodes.erase(cachedNodeIter);                    
+                }
+            else
+                {
+                cachedNodeIter++;
+                }
+            }
+
+        m_nodeListMutex.unlock();
+        }
+
     //MaterialPtr GetMaterial(__int64 nodeId, DTMDataRef* dtmDataRef);
 
     void ClearCachedNodes(const bvector<DRange2d>* clearRanges, IScalableMeshPtr& scalableMeshPtr)
         {
+        //NEEDS_WORK_SM : Not done yet.
+        assert(!s_keepSomeInvalidate);                
         m_nodeListMutex.lock();
 
         auto cachedNodeIter(m_cachedNodes.begin());
@@ -278,13 +324,15 @@ public:
                 {
                 if (clipIds.size() > 0)
                     {
-
                     bool isCleared = false;
 
                     for (auto& id : clipIds)
                         {
                         if (cachedNodeIter->m_displayNodePtr->HasClip(id))
-                            {
+                            {           
+                            if (s_keepSomeInvalidate)
+                                m_invalidatedCachedNodes.push_back(*cachedNodeIter);
+
                             cachedNodeIter = m_cachedNodes.erase(cachedNodeIter);
                             isCleared = true;
                             break;
@@ -297,8 +345,14 @@ public:
                     }
                 else
                     {
+                    //NEEDS_WORK_SM : Remove all clips if the are no clip passed has been done to handle the isolate case, 
+                    //                which is sub-optimal (all tiles to which only the isolate road is crossing shouldn't be erase.
+                    //NEEDS_WORK_SM : Remove magic number -1.
                     if (cachedNodeIter->m_displayNodePtr->HasClip((uint64_t)-1))
                         {
+                        if (s_keepSomeInvalidate)
+                            m_invalidatedCachedNodes.push_back(*cachedNodeIter);
+
                         cachedNodeIter = m_cachedNodes.erase(cachedNodeIter);
                         }
                     else cachedNodeIter++;
@@ -356,6 +410,32 @@ public:
             if (threadSafe)
                 m_nodeListMutex.unlock();
 
+            return foundNodePtr; 
+            }
+
+        IScalableMeshCachedDisplayNodePtr FindInvalidatedNode(__int64 nodeId, IScalableMeshPtr& scalableMeshPtr, bool threadSafe = true)
+            {          
+            assert(s_keepSomeInvalidate == true);
+            assert(threadSafe == false);            
+
+            auto cachedNodeIter(m_invalidatedCachedNodes.begin());
+            auto cachedNodeIterEnd(m_invalidatedCachedNodes.end());
+
+            IScalableMeshCachedDisplayNodePtr foundNodePtr;
+                        
+            while (cachedNodeIter != cachedNodeIterEnd)
+                {                
+                if ((cachedNodeIter->m_scalableMeshPtr == scalableMeshPtr) && 
+                    (cachedNodeIter->m_displayNodePtr->GetNodeId() == nodeId))
+                    {
+                    CachedNode cachedNode(*cachedNodeIter);
+                    foundNodePtr = cachedNodeIter->m_displayNodePtr;                            
+                    break;
+                    }
+
+                cachedNodeIter++;
+                }
+                        
             return foundNodePtr; 
             }
               
@@ -932,6 +1012,44 @@ public:
             Start();
             }        
         }
+
+
+    StatusInt CancelAllQueries()
+        {
+        ProcessingQuery<DPoint3d, YProtPtExtentType>::Ptr toCancelQueryPtr;        
+
+        m_processingQueriesMutex.lock();
+
+        ProcessingQueryList::iterator queryIter(m_processingQueries.begin());
+        ProcessingQueryList::iterator queryIterEnd(m_processingQueries.end());
+
+        while (queryIter != queryIterEnd)
+            {
+            toCancelQueryPtr = *queryIter;
+            queryIter = m_processingQueries.erase(queryIter);
+            toCancelQueryPtr->m_isCancel = true;   
+
+            for (size_t processorInd = 0; processorInd < toCancelQueryPtr->m_nodeQueryProcessors.size(); processorInd++)
+                {
+                toCancelQueryPtr->m_nodeQueryProcessorMutexes[processorInd].lock();
+                if (toCancelQueryPtr->m_nodeQueryProcessors[processorInd] != 0)
+                    {
+                    toCancelQueryPtr->m_nodeQueryProcessors[processorInd]->SetStopQuery(true);
+                    }
+                toCancelQueryPtr->m_nodeQueryProcessorMutexes[processorInd].unlock();
+                }            
+            }
+
+        m_processingQueriesMutex.unlock();
+
+        for (size_t threadInd = 0; threadInd < m_numWorkingThreads; threadInd++)
+            {
+            if (m_workingThreads[threadInd].joinable())
+                m_workingThreads[threadInd].join();
+            }
+
+        return SUCCESS;
+        }
      
     StatusInt CancelQuery(int queryId)
         {              
@@ -1004,37 +1122,6 @@ public:
             if (queryPtr != 0)
                 {                
                 isQueryComplete = queryPtr->IsComplete();
-/*
-                if (queryPtr->m_producedFoundNodes.)
-
-                for (size_t processorInd = 0; processorInd < queryPtr->m_nodeQueryProcessors.size(); processorInd++)
-                    {
-                    queryPtr->m_nodeQueryProcessorMutexes[processorInd].lock();
-                    if (queryPtr->m_nodeQueryProcessors[processorInd] != 0)
-                        {
-                        isQueryComplete = false;
-                        queryPtr->m_nodeQueryProcessorMutexes[processorInd].unlock();
-                        break;
-                        }
-
-                    queryPtr->m_nodeQueryProcessorMutexes[processorInd].unlock();
-                    }     
-
-                if (isQueryComplete == true)
-                    {
-                    for (size_t processorInd = 0; processorInd < queryPtr->m_searchingNodes.size(); processorInd++)
-                        {
-                        queryPtr->m_searchingNodeMutexes[processorInd].lock();
-                        if (queryPtr->m_searchingNodes[processorInd].size() > 0)
-                            {
-                            isQueryComplete = false;
-                            queryPtr->m_searchingNodeMutexes[processorInd].unlock();
-                            break;
-                            }
-                        queryPtr->m_searchingNodeMutexes[processorInd].unlock();
-                        }     
-                    }
-                    */
                 }
 
             return isQueryComplete;
@@ -1133,6 +1220,12 @@ ScalableMeshProgressiveQueryEngine::ScalableMeshProgressiveQueryEngine(IScalable
     m_displayCacheManagerPtr = displayCacheManagerPtr;
     }
 
+ScalableMeshProgressiveQueryEngine::~ScalableMeshProgressiveQueryEngine()
+    {    
+    s_queryProcessor.CancelAllQueries();
+    CachedDisplayNodeManager::GetManager().ClearCachedNodes(m_scalableMeshPtr);
+    }
+
 template <class POINT> int BuildQueryObject(//ScalableMeshQuadTreeViewDependentMeshQuery<POINT, YProtPtExtentType>* viewDependentQueryP,
     ISMPointIndexQuery<POINT, YProtPtExtentType>*&                        pQueryObject,
     const DPoint3d*                                                       pQueryExtentPts,
@@ -1219,6 +1312,7 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
     assert(node->IsParentSet() == true);
         
     HFCPtr<SMPointIndexNode<DPoint3d, YProtPtExtentType>> parentNodePtr(node->GetParentNodePtr());
+    assert(parentNodePtr != node);
 
     //NEEDS_WORK_MST : Root node could be loaded at load time instead. 
     if (parentNodePtr == nullptr)
@@ -1232,7 +1326,12 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
         }
                     
     IScalableMeshCachedDisplayNodePtr meshNodePtr = CachedDisplayNodeManager::GetManager().FindNode(parentNodePtr->GetBlockID().m_integerID, s_scalableMeshPtr, false, false);
-    assert(parentNodePtr != node);
+    
+    if (s_keepSomeInvalidate && meshNodePtr == 0)
+        {        
+        meshNodePtr = CachedDisplayNodeManager::GetManager().FindInvalidatedNode(parentNodePtr->GetBlockID().m_integerID, s_scalableMeshPtr, false);
+        }
+
     if (meshNodePtr == 0)
         {
         FindOverview(lowerResOverviewNodes, parentNodePtr, loadTexture, clipVisibilities);
@@ -1306,6 +1405,11 @@ class NewQueryStartingNodeProcessor
 
                 IScalableMeshCachedDisplayNodePtr meshNodePtr = CachedDisplayNodeManager::GetManager().FindNode(m_nodesToSearch->GetNodes()[nodeInd]->GetBlockID().m_integerID, s_scalableMeshPtr, false, false);
 
+                if (s_keepSomeInvalidate && meshNodePtr == 0)
+                    {        
+                    meshNodePtr = CachedDisplayNodeManager::GetManager().FindInvalidatedNode(m_nodesToSearch->GetNodes()[nodeInd]->GetBlockID().m_integerID, s_scalableMeshPtr, false);
+                    }
+
                 if (meshNodePtr == 0)
                     {                                
                     FindOverview(m_lowerResOverviewNodes[threadId], m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips);
@@ -1324,7 +1428,20 @@ class NewQueryStartingNodeProcessor
 
                 if (meshNodePtr == 0)
                     {                
-                    FindOverview(m_lowerResOverviewNodes[threadId], m_foundNodes->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips);
+                    if (s_keepSomeInvalidate && meshNodePtr == 0)
+                        {        
+                        meshNodePtr = CachedDisplayNodeManager::GetManager().FindInvalidatedNode(m_nodesToSearch->GetNodes()[nodeInd]->GetBlockID().m_integerID, s_scalableMeshPtr, false);
+                        }
+                        
+                    if (meshNodePtr != 0)
+                        {
+                        m_lowerResOverviewNodes[threadId].push_back(meshNodePtr);
+                        }
+                    else
+                        {
+                        FindOverview(m_lowerResOverviewNodes[threadId], m_foundNodes->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips);
+                        }
+                    
                     m_toLoadNodes[threadId].push_back(m_foundNodes->GetNodes()[nodeInd]);
                     }
                 else
