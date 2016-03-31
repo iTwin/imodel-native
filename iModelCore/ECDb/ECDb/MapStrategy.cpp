@@ -260,7 +260,7 @@ BentleyStatus ECDbMapStrategy::Assign(UserECDbMapStrategy const& userStrategy)
     if (Enum::Contains(userOptions, UserECDbMapStrategy::Options::JoinedTablePerDirectSubclass))
         m_options = Enum::Or(m_options, Options::ParentOfJoinedTable);
 
-    m_minimumSharedColumnCount = userStrategy.GetMinimumSharedColumnCount();
+    //m_minimumSharedColumnCount = userStrategy.GetMinimumSharedColumnCount();
 
     if (!IsValid())
         return ERROR;
