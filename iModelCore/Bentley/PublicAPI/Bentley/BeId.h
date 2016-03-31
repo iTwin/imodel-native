@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include "Bentley.h"
+#include "WString.h"
 #include "BeAssert.h"
 
 BEGIN_BENTLEY_NAMESPACE
@@ -62,6 +63,8 @@ public:
 
     //! Set this BeInt64Id to an invalid value (0).
     void Invalidate() { m_id = 0; }
+
+    Utf8String ToString() const { Utf8String str; str.Sprintf("%" PRIu64, m_id); return str; }
     };
 
 #define BEINT64_ID_DECLARE_MEMBERS(classname,superclass) \
