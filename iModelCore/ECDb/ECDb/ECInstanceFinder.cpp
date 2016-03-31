@@ -137,14 +137,14 @@ ECSqlStatus ECInstanceFinder::QueryableRelationship::PrepareECSqlStatement (ECDb
     if (m_thisRelationshipEnd == ECRelationshipEnd_Source)
         {
         relECSql.Sprintf ("SELECT ECInstanceId, TargetECClassId, TargetECInstanceId "
-            "FROM %s.%s WHERE SourceECClassId = %llu AND SourceECInstanceId = ?", 
-            relSchemaName.c_str(), relClassName.c_str(), m_thisClass->GetId().GetValue());
+            "FROM %s.%s WHERE SourceECClassId = %s AND SourceECInstanceId = ?", 
+            relSchemaName.c_str(), relClassName.c_str(), m_thisClass->GetId().ToString().c_str());
         }
     else
         {
         relECSql.Sprintf ("SELECT ECInstanceId, SourceECClassId, SourceECInstanceId "
-            "FROM %s.%s WHERE TargetECClassId = %llu AND TargetECInstanceId = ?",
-            relSchemaName.c_str(), relClassName.c_str(), m_thisClass->GetId().GetValue());
+            "FROM %s.%s WHERE TargetECClassId = %s AND TargetECInstanceId = ?",
+            relSchemaName.c_str(), relClassName.c_str(), m_thisClass->GetId().ToString().c_str());
         }
 
     m_cachedStatement = std::make_shared<ECSqlStatement> (); 
@@ -300,7 +300,7 @@ void ECInstanceFinder::DumpInstanceKeyMap (const ECInstanceKeyMultiMap& instance
 
         LOG.tracev ("Class: %s, Instances:%d", ecClass->GetName().c_str(), ids.size());
         for (ECInstanceId& id : ids)
-            LOG.tracev ("Instance %llu", id.GetValue());
+            LOG.tracev ("Instance %s", id.ToString().c_str());
         }
     }
 
@@ -463,7 +463,7 @@ uint8_t& currentDepth
         if (instanceKeyMap.end() != std::find (instanceKeyMap.begin(), instanceKeyMap.end(), instanceEntry))
             {
             ECClassCP ecClass = m_ecDb.Schemas ().GetECClass (iter->first);
-            LOG.warningv ("Detected a relationship cycle with instance id %llu of class %s", iter->second.GetValue(),
+            LOG.warningv ("Detected a relationship cycle with instance id %s of class %s", iter->second.ToString().c_str(),
                 ecClass->GetName().c_str());
             iter = newSeedInstanceKeyMap.erase (iter); // C++ 11 returns the next entry after erase
             }

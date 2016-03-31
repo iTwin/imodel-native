@@ -142,35 +142,34 @@ BentleyStatus ECInstanceUpdater::Update(ECN::IECInstanceCR instance) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECInstanceUpdater::Impl::Update (IECInstanceCR instance) const
+BentleyStatus ECInstanceUpdater::Impl::Update(IECInstanceCR instance) const
     {
-    if (instance.GetClass () != GetECClass ())
+    if (!ECInstanceAdapterHelper::Equals(instance.GetClass(), m_ecClass))
         {
         Utf8String errorMessage;
-        errorMessage.Sprintf ("Invalid ECInstance passed to ECInstanceUpdater. ECClass mismatch: Expected ECClass: '%s'. ECInstance's ECClass: '%s'.",
-            m_ecClass.GetFullName (), instance.GetClass ().GetFullName ());
+        errorMessage.Sprintf("Invalid ECInstance passed to ECInstanceUpdater. ECClass mismatch: Expected ECClass: '%s'. ECInstance's ECClass: '%s'.",
+                             m_ecClass.GetFullName(), instance.GetClass().GetFullName());
 
-        LogFailure (instance, Utf8String (errorMessage).c_str ());
+        LogFailure(instance, Utf8String(errorMessage).c_str());
         return ERROR;
         }
 
-
-    if (!IsValid ())
+    if (!IsValid())
         {
-        LOG.errorv ("ECInstanceUpdater for ECClass '%s' is invalid as the ECClass is not mapped or cannot be used for updating.", m_ecClass.GetFullName ());
+        LOG.errorv("ECInstanceUpdater for ECClass '%s' is invalid as the ECClass is not mapped or cannot be used for updating.", m_ecClass.GetFullName());
         return ERROR;
         }
 
-    return _Update (instance);
+    return _Update(instance);
     }
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECInstanceUpdater::Impl::IsValid () const
+bool ECInstanceUpdater::Impl::IsValid() const
     {
-    return _IsValid ();
+    return _IsValid();
     }
 
 //---------------------------------------------------------------------------------------

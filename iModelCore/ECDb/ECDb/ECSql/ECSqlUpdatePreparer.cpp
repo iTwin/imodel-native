@@ -104,8 +104,8 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
                 }
             else
                 {
-                auto joinedTableId = secondaryTable.GetFilteredColumnFirst(ColumnKind::ECInstanceId);
-                auto parentOfjoinedTableId = primaryTable.GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+                auto joinedTableId = secondaryTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+                auto parentOfjoinedTableId = primaryTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
                 NativeSqlBuilder snippet;
                 snippet.AppendFormatted(
                     " WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] %s) ",
@@ -132,9 +132,9 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
     if (exp.GetOptionsClauseExp() == nullptr || !exp.GetOptionsClauseExp()->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION))
         {
         // WHERE clause
-        NativeSqlBuilder systemWhereClause;
-        ECDbSqlColumn const* classIdColumn = nullptr;
-        ECDbSqlTable const* table = &classMap.GetPrimaryTable();
+        Utf8String systemWhereClause;
+        DbColumn const* classIdColumn = nullptr;
+        DbTable const* table = &classMap.GetPrimaryTable();
 
         if (table->TryGetECClassIdColumn(classIdColumn) &&
             classIdColumn->GetPersistenceType() == PersistenceType::Persisted)
@@ -165,14 +165,14 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
                 }
             }
 
-        if (!systemWhereClause.IsEmpty())
+        if (!systemWhereClause.empty())
             {
             if (topLevelWhereClause.IsEmpty())
                 nativeSqlBuilder.Append(" WHERE ");
             else
                 nativeSqlBuilder.Append(" AND ");
 
-            nativeSqlBuilder.AppendParenLeft().Append(systemWhereClause).AppendParenRight();
+            nativeSqlBuilder.AppendParenLeft().Append(systemWhereClause.c_str()).AppendParenRight();
             }
         }
 
@@ -231,7 +231,7 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareAssignmentListExp(NativeSqlBuilder::List
 
             for (size_t i = 0; i < sqlSnippetCount; i++)
                 {
-                nativeSqlSnippets[i].Append(BooleanSqlOperator::EqualTo, false).Append(rhsNativeSqlSnippets[i]);
+                nativeSqlSnippets[i].Append(BooleanSqlOperator::EqualTo).Append(rhsNativeSqlSnippets[i]);
                 }
             }
         else

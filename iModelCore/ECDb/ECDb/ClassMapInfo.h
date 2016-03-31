@@ -8,7 +8,7 @@
 #pragma once
 #include "ECDbInternalTypes.h"
 #include "MapStrategy.h"
-#include "ECDbSql.h"
+#include "DbSchema.h"
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct ClassMap;
@@ -146,11 +146,11 @@ private:
     RelationshipEndColumns m_targetColumnsMapping;
     CustomMapType m_customMapType;
     bool m_allowDuplicateRelationships;
-    ForeignKeyActionType m_onDeleteAction;
-    ForeignKeyActionType m_onUpdateAction;
+    ForeignKeyDbConstraint::ActionType m_onDeleteAction;
+    ForeignKeyDbConstraint::ActionType m_onUpdateAction;
     bool m_createIndexOnForeignKey;
-    std::set<ECDbSqlTable const*>  m_sourceTables;
-    std::set<ECDbSqlTable const*>  m_targetTables;
+    std::set<DbTable const*>  m_sourceTables;
+    std::set<DbTable const*>  m_targetTables;
 
     virtual BentleyStatus _InitializeFromSchema() override;
     virtual MapStatus _EvaluateMapStrategy();
@@ -161,7 +161,7 @@ private:
 public:
     RelationshipMapInfo(ECN::ECRelationshipClassCR relationshipClass, ECDbMapCR ecdbMap) : ClassMapInfo(relationshipClass, ecdbMap), m_sourceColumnsMappingIsNull(true), m_targetColumnsMappingIsNull(true),
         m_customMapType(CustomMapType::None), m_allowDuplicateRelationships(false), 
-        m_onDeleteAction(ForeignKeyActionType::NotSpecified), m_onUpdateAction(ForeignKeyActionType::NotSpecified), m_createIndexOnForeignKey(true)
+        m_onDeleteAction(ForeignKeyDbConstraint::ActionType::NotSpecified), m_onUpdateAction(ForeignKeyDbConstraint::ActionType::NotSpecified), m_createIndexOnForeignKey(true)
         {}
 
     virtual ~RelationshipMapInfo() {}
@@ -170,13 +170,13 @@ public:
 
     CustomMapType GetCustomMapType() const { return m_customMapType; }
     bool AllowDuplicateRelationships() const { BeAssert((m_customMapType == CustomMapType::LinkTable || m_customMapType == CustomMapType::None) && !m_resolvedStrategy.IsForeignKeyMapping()); return m_allowDuplicateRelationships; }
-    ForeignKeyActionType GetOnDeleteAction() const { BeAssert(m_customMapType != CustomMapType::LinkTable && m_resolvedStrategy.IsForeignKeyMapping());  return m_onDeleteAction; }
-    ForeignKeyActionType GetOnUpdateAction() const { BeAssert(m_customMapType != CustomMapType::LinkTable && m_resolvedStrategy.IsForeignKeyMapping()); return m_onUpdateAction; }
+    ForeignKeyDbConstraint::ActionType GetOnDeleteAction() const { BeAssert(m_customMapType != CustomMapType::LinkTable && m_resolvedStrategy.IsForeignKeyMapping());  return m_onDeleteAction; }
+    ForeignKeyDbConstraint::ActionType GetOnUpdateAction() const { BeAssert(m_customMapType != CustomMapType::LinkTable && m_resolvedStrategy.IsForeignKeyMapping()); return m_onUpdateAction; }
     bool CreateIndexOnForeignKey() const { BeAssert(m_customMapType != CustomMapType::LinkTable && m_resolvedStrategy.IsForeignKeyMapping()); return m_createIndexOnForeignKey; }
 
     RelationshipEndColumns const& GetColumnsMapping(ECN::ECRelationshipEnd end) const;
-    std::set<ECDbSqlTable const*> const& GetSourceTables() const {return m_sourceTables;}
-    std::set<ECDbSqlTable const*> const& GetTargetTables() const {return m_targetTables;}
+    std::set<DbTable const*> const& GetSourceTables() const {return m_sourceTables;}
+    std::set<DbTable const*> const& GetTargetTables() const {return m_targetTables;}
     };
 
 

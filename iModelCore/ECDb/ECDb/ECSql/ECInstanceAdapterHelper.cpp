@@ -665,7 +665,7 @@ BentleyStatus ECInstanceAdapterHelper::SetECInstanceId (ECN::IECInstanceR instan
     Utf8Char instanceIdStr[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
     if (!ECInstanceIdHelper::ToString (instanceIdStr, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ecInstanceId))
         {
-        LOG.errorv ("Could not set ECInstanceId %llu on the ECInstanceId. Conversion to string failed.", ecInstanceId.GetValue ());
+        LOG.errorv ("Could not set ECInstanceId %s on the ECInstanceId. Conversion to string failed.", ecInstanceId.ToString().c_str());
         BeAssert (false && "Could not set ECInstanceId on the ECInstanceId. Conversion to string failed.");
         return ERROR;
         }
@@ -697,6 +697,20 @@ void ECInstanceAdapterHelper::LogFailure (Utf8CP operationName, ECN::IECInstance
     Utf8String displayLabel;
     instance.GetDisplayLabel (displayLabel);
     LOG.errorv ("Failed to %s ECInstance '%s'. %s", operationName, displayLabel.c_str (), errorMessage);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   07/14
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool ECInstanceAdapterHelper::Equals(ECN::ECClassCR lhs, ECN::ECClassCR rhs)
+    {
+    if (lhs.HasId() && rhs.HasId())
+        {
+        return lhs.GetId() == rhs.GetId();
+        }
+
+    return strcmp(lhs.GetFullName(), rhs.GetFullName()) == 0;
     }
 
 //---------------------------------------------------------------------------------------

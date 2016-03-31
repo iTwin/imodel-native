@@ -9,7 +9,7 @@
 #include "ECDbInternalTypes.h"
 #include "ClassMap.h"
 #include "SchemaImportContext.h"
-#include "ECDbSql.h"
+#include "DbSchema.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -21,7 +21,7 @@ struct StorageDescription;
 struct ECDbMap :NonCopyableClass
     {
 public:
-    typedef bmap<ECDbSqlTable*, bset<ClassMap*>> ClassMapsByTable;
+    typedef bmap<DbTable*, bset<ClassMap*>> ClassMapsByTable;
 
     struct LightweightCache : NonCopyableClass
         {
@@ -42,8 +42,8 @@ public:
 
 
             typedef bmap<ECN::ECClassId, RelationshipType> RelationshipTypeByClassId;
-            typedef bmap<ECDbSqlTable const*, std::vector<ECN::ECClassId>> ClassIdsPerTableMap;
-            typedef bmap<ECDbSqlTable const*, RelationshipTypeByClassId> RelationshipPerTable;
+            typedef bmap<DbTable const*, std::vector<ECN::ECClassId>> ClassIdsPerTableMap;
+            typedef bmap<DbTable const*, RelationshipTypeByClassId> RelationshipPerTable;
 
         private:
             mutable ClassIdsPerTableMap m_classIdsPerTable;
@@ -52,7 +52,7 @@ public:
             mutable bmap<ECN::ECClassId, bmap<ECN::ECClassId, RelationshipEnd>> m_constraintClassIdsPerRelClassIds;
             mutable std::map<ECN::ECClassId, std::unique_ptr<StorageDescription>> m_storageDescriptions;
             mutable RelationshipPerTable m_relationshipPerTable;
-            mutable bmap<ECN::ECClassId, bset<ECDbSqlTable const*>> m_tablesPerClassId;
+            mutable bmap<ECN::ECClassId, bset<DbTable const*>> m_tablesPerClassId;
             mutable struct
                 {
                 bool m_horizontalPartitionsIsLoaded : 1;
@@ -68,8 +68,8 @@ public:
         public:
             explicit LightweightCache (ECDbMapCR map);
             ~LightweightCache () {}
-            std::vector<ECN::ECClassId> const& GetClassesForTable (ECDbSqlTable const&) const;
-            bset<ECDbSqlTable const*> const& GetVerticalPartitionsForClass(ECN::ECClassId classId) const;
+            std::vector<ECN::ECClassId> const& GetClassesForTable (DbTable const&) const;
+            bset<DbTable const*> const& GetVerticalPartitionsForClass(ECN::ECClassId classId) const;
             ClassIdsPerTableMap const& GetHorizontalPartitionsForClass (ECN::ECClassId) const;
             //Gets all the constraint class ids plus the constraint end that make up the relationship with the given class id.
             //@remarks: AnyClass constraints are ignored.
@@ -83,8 +83,9 @@ public:
 private:
     mutable BeMutex m_mutex;
 
-    ECDbR m_ecdb;
-    ECDbSQLManager m_ecdbSqlManager;
+    ECDbCR m_ecdb;
+    DbSchema m_dbSchema;
+
     mutable bmap<ECN::ECClassId, ClassMapPtr> m_classMapDictionary;
     mutable LightweightCache m_lightweightCache;
     SchemaImportContext* m_schemaImportContext;
@@ -96,13 +97,13 @@ private:
 
     MapStatus DoMapSchemas();
     MapStatus MapClass(ECN::ECClassCR);
-    BentleyStatus SaveMappings() const;
+    BentleyStatus SaveDbSchema() const;
     BentleyStatus CreateOrUpdateRequiredTables() const;
     BentleyStatus EvaluateColumnNotNullConstraints() const;
     BentleyStatus CreateOrUpdateIndexesInDb() const;
 
     BentleyStatus FinishTableDefinitions(bool onlyCreateClassIdColumns = false) const;
-    BentleyStatus CreateClassIdColumnIfNecessary(ECDbSqlTable&, bset<ClassMap*> const&) const;
+    BentleyStatus CreateClassIdColumnIfNecessary(DbTable&, bset<ClassMap*> const&) const;
 
     MapStatus AddClassMap(ClassMapPtr&) const;
 
@@ -114,7 +115,7 @@ private:
     void VisitRoot(ECClassCR ecclass, std::set<ECClassCP>& doneList, std::set<ECClassCP>& rootClassSet, std::vector<ECClassCP>& rootClassList, std::vector<ECRelationshipClassCP>& rootRelationshipList) const;
 
 public:
-    explicit ECDbMap(ECDbR ecdb);
+    explicit ECDbMap(ECDbCR ecdb);
     ~ECDbMap() {}
 
     ClassMap const* GetClassMap(ECN::ECClassCR) const;
@@ -122,30 +123,27 @@ public:
 
     std::vector<ECN::ECClassCP> GetClassesFromRelationshipEnd(ECN::ECRelationshipConstraintCR) const;
     std::set<ClassMap const*> GetClassMapsFromRelationshipEnd(ECN::ECRelationshipConstraintCR, bool* hasAnyClass) const;
-    ECDbSqlTable const* GetPrimaryTable(ECDbSqlTable const& joinedTable) const;
+    DbTable const* GetPrimaryTable(DbTable const& joinedTable) const;
     //!Loads the class maps if they were not loaded yet
     size_t GetTableCountOnRelationshipEnd(ECN::ECRelationshipConstraintCR) const;
-
-    ECDbSQLManager const& GetSQLManager() const { return m_ecdbSqlManager; }
 
     MapStatus MapSchemas(SchemaImportContext&);
 
     BentleyStatus CreateECClassViewsInDb() const;
-    ECDbSqlTable* FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, TableType, bool isVirtual, Utf8CP primaryKeyColumnName);
+    DbTable* FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, DbTable::Type, bool isVirtual, Utf8CP primaryKeyColumnName);
 
     void ClearCache();
 
     bool IsImportingSchema() const;
     SchemaImportContext* GetSchemaImportContext() const;
     bool AssertIfIsNotImportingSchema() const;
-    ECDbSqlTable*  FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, TableType, bool isVirtual, Utf8CP primaryKeyColumnName, ECDbSqlTable const* baseTable);
+    DbTable* FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, DbTable::Type, bool isVirtual, Utf8CP primaryKeyColumnName, DbTable const* baseTable);
 
+    DbSchema const& GetDbSchema() const { return m_dbSchema; }
+    DbSchema& GetDbSchemaR() const { return const_cast<DbSchema&> (m_dbSchema); }
     LightweightCache const& GetLightweightCache() const { return m_lightweightCache; }
-    ECDbR GetECDbR() const { return m_ecdb; }
-    ECDbCR GetECDb()  const { return m_ecdb; }
-    std::set<ECDbSqlTable const*> GetTablesFromRelationshipEnd(ECN::ECRelationshipConstraintCR relationshipEnd, EndTablesOptimizationOptions options) const;
-
-    static void ParsePropertyAccessString(bvector<Utf8String>&, Utf8CP propAccessString);
+    ECDbCR GetECDb() const { return m_ecdb; }
+    std::set<DbTable const*> GetTablesFromRelationshipEnd(ECN::ECRelationshipConstraintCR relationshipEnd, EndTablesOptimizationOptions options) const;
     };
 
 
@@ -159,7 +157,7 @@ public:
     friend struct StorageDescription;
 
     private:
-        ECDbSqlTable const* m_table;
+        DbTable const* m_table;
         std::vector<ECN::ECClassId> m_partitionClassIds;
         std::vector<ECN::ECClassId> m_inversedPartitionClassIds;
         bool m_hasInversedPartitionClassIds;
@@ -170,17 +168,17 @@ public:
         void GenerateClassIdFilter(std::vector<ECN::ECClassId> const& tableClassIds);
 
     public:
-        explicit Partition (ECDbSqlTable const& table) : m_table (&table), m_hasInversedPartitionClassIds (false) {}
+        explicit Partition (DbTable const& table) : m_table (&table), m_hasInversedPartitionClassIds (false) {}
         ~Partition() {}
         Partition(Partition const&);
         Partition& operator=(Partition const& rhs);
         Partition(Partition&& rhs);
 
-        ECDbSqlTable const& GetTable () const { return *m_table; }
+        DbTable const& GetTable () const { return *m_table; }
         ECN::ECClassId GetRootClassId() const { BeAssert(!m_partitionClassIds.empty()); return m_partitionClassIds[0]; }
         std::vector<ECN::ECClassId> const& GetClassIds () const { return m_partitionClassIds; }
         bool NeedsECClassIdFilter() const;
-        void AppendECClassIdFilterSql(Utf8CP classIdColName, NativeSqlBuilder&) const;
+        void AppendECClassIdFilterSql(Utf8StringR filterSql, Utf8CP classIdColName) const;
         };
 
 
@@ -200,8 +198,8 @@ public:
 
         explicit StorageDescription (ECN::ECClassId classId) : m_classId (classId), m_rootHorizontalPartitionIndex (0), m_rootVerticalPartitionIndex(0) {}
 
-        Partition* AddHorizontalPartition(ECDbSqlTable const&, bool isRootPartition);
-        Partition* AddVerticalPartition(ECDbSqlTable const&, bool isRootPartition);
+        Partition* AddHorizontalPartition(DbTable const&, bool isRootPartition);
+        Partition* AddVerticalPartition(DbTable const&, bool isRootPartition);
 
 
     public:
@@ -214,15 +212,15 @@ public:
         //! If has a single non-virtual partition returns that.
         Partition const* GetHorizontalPartition(bool polymorphic) const;
         Partition const& GetRootHorizontalPartition() const;
-        Partition const* GetVerticalPartition(ECDbSqlTable const&) const;
-        Partition const* GetHorizontalPartition(ECDbSqlTable const&) const;
+        Partition const* GetVerticalPartition(DbTable const&) const;
+        Partition const* GetHorizontalPartition(DbTable const&) const;
 
         std::vector<Partition> const& GetHorizontalPartitions() const { return m_horizontalPartitions; }
         bool HasNonVirtualPartitions() const { return !m_nonVirtualHorizontalPartitionIndices.empty(); }
         bool HierarchyMapsToMultipleTables() const { return m_nonVirtualHorizontalPartitionIndices.size() > 1; }
         ECN::ECClassId GetClassId () const { return m_classId; }
 
-        BentleyStatus GenerateECClassIdFilter(NativeSqlBuilder& filter, ECDbSqlTable const&, ECDbSqlColumn const& classIdColumn, bool polymorphic, bool fullyQualifyColumnName = false, Utf8CP tableAlias =nullptr) const;
+        BentleyStatus GenerateECClassIdFilter(Utf8StringR filterSqlExpression, DbTable const&, DbColumn const& classIdColumn, bool polymorphic, bool fullyQualifyColumnName = false, Utf8CP tableAlias =nullptr) const;
         static std::unique_ptr<StorageDescription> Create(ClassMap const&, ECDbMap::LightweightCache const& lwmc);
         };
     
@@ -238,14 +236,14 @@ private:
 
     std::vector<std::unique_ptr<Statement>> m_stmts;
 
-    BentleyStatus Initialize(ECDbR);
+    BentleyStatus Initialize(ECDbCR);
     static Utf8String BuildSql(Utf8CP tableName, Utf8CP pkColumnName);
 
 public:
     RelationshipPurger() {}
     ~RelationshipPurger() { Finalize(); }
 
-    BentleyStatus Purge(ECDbR);
+    BentleyStatus Purge(ECDbCR);
     void Finalize();
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

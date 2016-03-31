@@ -101,7 +101,7 @@ PropertyMapPtr PropertyMapFactory::ClonePropertyMap(ECDbMapCR ecdbMap, PropertyM
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     01/2016
 //---------------------------------------------------------------------------------------
-ECDbSqlTable const* PropertyMap::GetTable() const
+DbTable const* PropertyMap::GetTable() const
     {
     if (m_mappedTables.empty())
         return nullptr;
@@ -115,9 +115,9 @@ ECDbSqlTable const* PropertyMap::GetTable() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     01/2016
 //---------------------------------------------------------------------------------------
-bool PropertyMap::MapsToTable(ECDbSqlTable const& candidateTable) const
+bool PropertyMap::MapsToTable(DbTable const& candidateTable) const
     {
-    for (ECDbSqlTable const* table : m_mappedTables)
+    for (DbTable const* table : m_mappedTables)
         {
         if (table == &candidateTable)
             return true;
@@ -143,13 +143,13 @@ PropertyMapCR PropertyMap::GetRoot() const
 // @bsimethod                                                Krischan.Eberle     01/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus PropertyMap::DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, ECDbSqlColumn::Constraint::Collation& collation, 
+BentleyStatus PropertyMap::DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, DbColumn::Constraint::Collation& collation, 
                                                ECDbCR ecdb, ECPropertyCR ecProp, Utf8CP propAccessString)
     {
     columnName.clear();
     isNullable = true;
     isUnique = false;
-    collation = ECDbSqlColumn::Constraint::Collation::Default;
+    collation = DbColumn::Constraint::Collation::Default;
 
     ECDbPropertyMap customPropMap;
     if (ECDbMapCustomAttributeHelper::TryGetPropertyMap(customPropMap, ecProp))
@@ -175,7 +175,7 @@ BentleyStatus PropertyMap::DetermineColumnInfo(Utf8StringR columnName, bool& isN
         if (ECObjectsStatus::Success != customPropMap.TryGetCollation(collationStr))
             return ERROR;
 
-        if (!ECDbSqlColumn::Constraint::TryParseCollationString(collation, collationStr.c_str()))
+        if (!DbColumn::Constraint::TryParseCollationString(collation, collationStr.c_str()))
             {
             ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
                        "Failed to map ECProperty '%s:%s': Custom attribute PropertyMap has an invalid value for the property 'Collation': %s",
@@ -200,14 +200,14 @@ BentleyStatus PropertyMap::DetermineColumnInfo(Utf8StringR columnName, bool& isN
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PropertyMap::_Save(ECDbClassMapInfo & classMapInfo) const
+BentleyStatus PropertyMap::_Save(ClassDbMapping& classMapInfo) const
     {
-    std::vector<ECDbSqlColumn const*> columns;
+    std::vector<DbColumn const*> columns;
     GetColumns(columns);
     if (columns.size() == 0)
         return SUCCESS;
 
-    ECDbPropertyMapInfo* mapInfo = classMapInfo.CreatePropertyMap(GetRoot().GetProperty().GetId(), GetPropertyAccessString(), columns);
+    PropertyDbMapping* mapInfo = classMapInfo.CreatePropertyMapping(GetRoot().GetProperty().GetId(), GetPropertyAccessString(), columns);
     if (mapInfo == nullptr)
         return ERROR;
 
@@ -218,7 +218,7 @@ BentleyStatus PropertyMap::_Save(ECDbClassMapInfo & classMapInfo) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      12/2013
 //---------------------------------------------------------------------------------------
-NativeSqlBuilder::List PropertyMap::ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses, ECDbSqlTable const* tableFilter) const
+NativeSqlBuilder::List PropertyMap::ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses, DbTable const* tableFilter) const
     {
     return _ToNativeSql(classIdentifier, ecsqlType, wrapInParentheses, tableFilter);
     }
@@ -227,13 +227,13 @@ NativeSqlBuilder::List PropertyMap::ToNativeSql (Utf8CP classIdentifier, ECSqlTy
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      12/2013
 //---------------------------------------------------------------------------------------
-NativeSqlBuilder::List PropertyMap::_ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses, ECDbSqlTable const* tableFilter) const
+NativeSqlBuilder::List PropertyMap::_ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses, DbTable const* tableFilter) const
     {
-    std::vector<ECDbSqlColumn const*> columns;
+    std::vector<DbColumn const*> columns;
     GetColumns (columns);
 
     NativeSqlBuilder::List nativeSqlSnippets;
-    for (ECDbSqlColumn const* column : columns)
+    for (DbColumn const* column : columns)
         {
         if (tableFilter != nullptr && &column->GetTable() != tableFilter)
             continue;
@@ -266,17 +266,17 @@ BentleyStatus PropertyMap::FindOrCreateColumnsInTable(ClassMap const& classMap)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-void PropertyMap::_GetColumns (std::vector<ECDbSqlColumn const*>& columns) const {}
+void PropertyMap::_GetColumns (std::vector<DbColumn const*>& columns) const {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan      02/2015
 //---------------------------------------------------------------------------------------
-void PropertyMap::GetColumns(std::vector<ECDbSqlColumn const*>& columns, ECDbSqlTable const& table) const
+void PropertyMap::GetColumns(std::vector<DbColumn const*>& columns, DbTable const& table) const
     {
-    std::vector<ECDbSqlColumn const*> cols;
+    std::vector<DbColumn const*> cols;
     GetColumns(cols);
 
-    for (ECDbSqlColumn const* col : cols)
+    for (DbColumn const* col : cols)
         {
         if (&col->GetTable() == &table)
             columns.push_back(col);
@@ -286,9 +286,9 @@ void PropertyMap::GetColumns(std::vector<ECDbSqlColumn const*>& columns, ECDbSql
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      08/2013
 //---------------------------------------------------------------------------------------
-ECDbSqlColumn const* PropertyMap::GetSingleColumn() const
+DbColumn const* PropertyMap::GetSingleColumn() const
     {
-    std::vector<ECDbSqlColumn const*> columns;
+    std::vector<DbColumn const*> columns;
     GetColumns(columns);
     BeAssert(columns.size() == 1 && "Expecting Single Column");
     if (columns.empty() || columns.size() > 1)
@@ -300,16 +300,16 @@ ECDbSqlColumn const* PropertyMap::GetSingleColumn() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      08/2013
 //---------------------------------------------------------------------------------------
-ECDbSqlColumn const* PropertyMap::GetSingleColumn(ECDbSqlTable const& table, bool alwaysFilterByTable) const
+DbColumn const* PropertyMap::GetSingleColumn(DbTable const& table, bool alwaysFilterByTable) const
     {
-    std::vector<ECDbSqlColumn const*> columns;
+    std::vector<DbColumn const*> columns;
     GetColumns(columns);
 
     if (columns.size() == 1 && !alwaysFilterByTable)
         return columns[0];
 
-    ECDbSqlColumn const* foundCol = nullptr;
-    for (ECDbSqlColumn const* col : columns)
+    DbColumn const* foundCol = nullptr;
+    for (DbColumn const* col : columns)
         {
         if (&col->GetTable() == &table)
             {
@@ -330,16 +330,16 @@ ECDbSqlColumn const* PropertyMap::GetSingleColumn(ECDbSqlTable const& table, boo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      08/2013
 //---------------------------------------------------------------------------------------
-ECDbSqlTable const* PropertyMap::GetSingleTable() const
+DbTable const* PropertyMap::GetSingleTable() const
     {
-    std::vector<ECDbSqlColumn const*> columns;
+    std::vector<DbColumn const*> columns;
     GetColumns(columns);
     BeAssert(columns.size() > 0 && "Expecting at least one column");
     if (columns.empty())
         return nullptr;
 
     size_t i = 0;
-    ECDbSqlTable const* table = &columns.at(i++)->GetTable();
+    DbTable const* table = &columns.at(i++)->GetTable();
     for (; i < columns.size(); i++)
         {
         if (table != &columns.at(i)->GetTable())
@@ -421,8 +421,7 @@ bool PropertyMapCollection::TryGetPropertyMap(PropertyMapPtr& propertyMap, Utf8C
 
     //recurse into access string and look up prop map for first member in access string
     bvector<Utf8String> tokens;
-    ECDbMap::ParsePropertyAccessString(tokens, propertyAccessString);
-
+    BeStringUtilities::Split(propertyAccessString, ".", nullptr, tokens);
     bvector<Utf8String>::const_iterator tokenIt = tokens.begin();
     bvector<Utf8String>::const_iterator tokenEndIt = tokens.end();
     return TryGetPropertyMap(propertyMap, tokenIt, tokenEndIt);
@@ -528,7 +527,7 @@ StructPropertyMap::StructPropertyMap(ECDbMapCR ecdbMap, StructPropertyMap const&
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan     09/2013
 //---------------------------------------------------------------------------------------
-void StructPropertyMap::_GetColumns(std::vector<ECDbSqlColumn const*>& columns) const 
+void StructPropertyMap::_GetColumns(std::vector<DbColumn const*>& columns) const 
     {
     for (auto childPropMap : m_children)
         {
@@ -578,7 +577,7 @@ BentleyStatus StructPropertyMap::_FindOrCreateColumnsInTable(ClassMap const& cla
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus StructPropertyMap::_Load(ECDbClassMapInfo const& classMapInfo)
+BentleyStatus StructPropertyMap::_Load(ClassDbMapping const& classMapInfo)
     {
     for (PropertyMap const* child : GetChildren())
         {
@@ -595,7 +594,7 @@ BentleyStatus StructPropertyMap::_Load(ECDbClassMapInfo const& classMapInfo)
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus StructPropertyMap::_Save(ECDbClassMapInfo& classMapInfo) const
+BentleyStatus StructPropertyMap::_Save(ClassDbMapping& classMapInfo) const
     {
     for (PropertyMap const* child : GetChildren())
         {
@@ -640,32 +639,32 @@ Utf8String StructPropertyMap::_ToString() const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SingleColumnPropertyMap::_Load(ECDbClassMapInfo const& classMapInfo)
+BentleyStatus SingleColumnPropertyMap::_Load(ClassDbMapping const& classMapInfo)
     {
     BeAssert(m_column == nullptr);
-    ECDbPropertyMapInfo const* info = classMapInfo.FindPropertyMap(GetRoot().GetProperty().GetId(), GetPropertyAccessString());
+    PropertyDbMapping const* info = classMapInfo.FindPropertyMapping(GetRoot().GetProperty().GetId(), GetPropertyAccessString());
     if (info == nullptr)
         {
         return ERROR;
         }
 
-    SetColumn(*const_cast<ECDbSqlColumn*>(info->ExpectingSingleColumn()));
+    SetColumn(*const_cast<DbColumn*>(info->ExpectingSingleColumn()));
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    01/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus SingleColumnPropertyMap::DoFindOrCreateColumnsInTable(ClassMap const& classMap, ECDbSqlColumn::Type colType)
+BentleyStatus SingleColumnPropertyMap::DoFindOrCreateColumnsInTable(ClassMap const& classMap, DbColumn::Type colType)
     {
     Utf8String colName;
     bool isNullable = true;
     bool isUnique = false;
-    ECDbSqlColumn::Constraint::Collation collation = ECDbSqlColumn::Constraint::Collation::Default;
+    DbColumn::Constraint::Collation collation = DbColumn::Constraint::Collation::Default;
     if (SUCCESS != DetermineColumnInfo(colName, isNullable, isUnique, collation, classMap.GetECDbMap().GetECDb()))
         return ERROR;
 
-    ECDbSqlColumn* col = classMap.GetColumnFactory().CreateColumn(*this, colName.c_str(), colType, !isNullable, isUnique, collation);
+    DbColumn* col = classMap.GetColumnFactory().CreateColumn(*this, colName.c_str(), colType, !isNullable, isUnique, collation);
     if (col == nullptr)
         {
         BeAssert(col != nullptr);
@@ -679,7 +678,7 @@ BentleyStatus SingleColumnPropertyMap::DoFindOrCreateColumnsInTable(ClassMap con
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    01/2016
 //---------------------------------------------------------------------------------------
-void SingleColumnPropertyMap::SetColumn(ECDbSqlColumn const& col)
+void SingleColumnPropertyMap::SetColumn(DbColumn const& col)
     {
     m_column = &col;
     m_mappedTables.push_back(&m_column->GetTable());
@@ -688,7 +687,7 @@ void SingleColumnPropertyMap::SetColumn(ECDbSqlColumn const& col)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-void SingleColumnPropertyMap::_GetColumns (std::vector<ECDbSqlColumn const*>& columns) const
+void SingleColumnPropertyMap::_GetColumns (std::vector<DbColumn const*>& columns) const
     {
     columns.push_back(m_column);
     }
@@ -708,7 +707,7 @@ bool SingleColumnPropertyMap::_IsVirtual() const
 //---------------------------------------------------------------------------------------
 BentleyStatus PrimitivePropertyMap::_FindOrCreateColumnsInTable(ClassMap const& classMap)
     {
-    const ECDbSqlColumn::Type colType = ECDbSqlColumn::PrimitiveTypeToColumnType(GetPrimitiveProperty().GetType());
+    const DbColumn::Type colType = DbColumn::PrimitiveTypeToColumnType(GetPrimitiveProperty().GetType());
     return DoFindOrCreateColumnsInTable(classMap, colType);
     }
 
@@ -745,21 +744,21 @@ PointPropertyMap::PointPropertyMap(PrimitiveECPropertyCR pointProperty, Utf8CP p
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PointPropertyMap::_Save(ECDbClassMapInfo & classMapInfo) const
+BentleyStatus PointPropertyMap::_Save(ClassDbMapping & classMapInfo) const
     {
     BeAssert(m_xColumn != nullptr);
     BeAssert(m_yColumn != nullptr);
 
     auto rootPropertyId = GetRoot().GetProperty().GetId();
     Utf8String accessString = GetPropertyAccessString();
-    auto pm = classMapInfo.CreatePropertyMap(rootPropertyId, (accessString + ".X").c_str(), {m_xColumn});
+    auto pm = classMapInfo.CreatePropertyMapping(rootPropertyId, (accessString + ".X").c_str(), {m_xColumn});
     if (pm == nullptr)
         {
         BeAssert(false && "Failed to create propertymap");
         return ERROR;
         }
 
-    classMapInfo.CreatePropertyMap(rootPropertyId, (accessString + ".Y").c_str(), {m_yColumn});
+    classMapInfo.CreatePropertyMapping(rootPropertyId, (accessString + ".Y").c_str(), {m_yColumn});
     if (pm == nullptr)
         {
         BeAssert(false && "Failed to create propertymap");
@@ -769,7 +768,7 @@ BentleyStatus PointPropertyMap::_Save(ECDbClassMapInfo & classMapInfo) const
     if (m_is3d)
         {
         BeAssert(m_zColumn != nullptr);
-        classMapInfo.CreatePropertyMap(rootPropertyId, (accessString + ".Z").c_str(), {m_zColumn});
+        classMapInfo.CreatePropertyMapping(rootPropertyId, (accessString + ".Z").c_str(), {m_zColumn});
         if (pm == nullptr)
             {
             BeAssert(false && "Failed to create propertymap");
@@ -783,7 +782,7 @@ BentleyStatus PointPropertyMap::_Save(ECDbClassMapInfo & classMapInfo) const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PointPropertyMap::_Load(ECDbClassMapInfo const& classMapInfo)
+BentleyStatus PointPropertyMap::_Load(ClassDbMapping const& classMapInfo)
     {
     BeAssert(m_xColumn == nullptr);
     BeAssert(m_yColumn == nullptr);
@@ -791,24 +790,24 @@ BentleyStatus PointPropertyMap::_Load(ECDbClassMapInfo const& classMapInfo)
 
     const ECPropertyId rootPropertyId = GetRoot().GetProperty().GetId();
     Utf8String accessString(GetPropertyAccessString());
-    ECDbPropertyMapInfo const* xPropMap = classMapInfo.FindPropertyMap(rootPropertyId, (accessString + ".X").c_str());
+    PropertyDbMapping const* xPropMap = classMapInfo.FindPropertyMapping(rootPropertyId, (accessString + ".X").c_str());
     if (xPropMap == nullptr)
         {
         //WIP_ECSCHEMA_UPGRADE
         return ERROR;
         }
 
-    ECDbPropertyMapInfo const* yPropMap = classMapInfo.FindPropertyMap(rootPropertyId, (accessString + ".Y").c_str());
+    PropertyDbMapping const* yPropMap = classMapInfo.FindPropertyMapping(rootPropertyId, (accessString + ".Y").c_str());
     if (yPropMap == nullptr)
         {
         //WIP_ECSCHEMA_UPGRADE
         return ERROR;
         }
 
-    ECDbPropertyMapInfo const* zPropMap = nullptr;
+    PropertyDbMapping const* zPropMap = nullptr;
     if (m_is3d)
         {
-        zPropMap = classMapInfo.FindPropertyMap(rootPropertyId, (accessString + ".Z").c_str());
+        zPropMap = classMapInfo.FindPropertyMapping(rootPropertyId, (accessString + ".Z").c_str());
         if (zPropMap == nullptr)
             {
             //WIP_ECSCHEMA_UPGRADE
@@ -822,9 +821,9 @@ BentleyStatus PointPropertyMap::_Load(ECDbClassMapInfo const& classMapInfo)
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                01/2016
 //+---------------+---------------+---------------+---------------+---------------+-
-BentleyStatus PointPropertyMap::SetColumns(ECDbSqlColumn const& xCol, ECDbSqlColumn const& yCol, ECDbSqlColumn const* zCol)
+BentleyStatus PointPropertyMap::SetColumns(DbColumn const& xCol, DbColumn const& yCol, DbColumn const* zCol)
     {
-    bset<ECDbSqlTable const*> tables;
+    bset<DbTable const*> tables;
     m_xColumn = &xCol;
     tables.insert(&xCol.GetTable());
 
@@ -866,16 +865,16 @@ BentleyStatus PointPropertyMap::_FindOrCreateColumnsInTable(ClassMap const& clas
     Utf8String columnName;
     bool isNullable = true;
     bool isUnique = false;
-    ECDbSqlColumn::Constraint::Collation collation = ECDbSqlColumn::Constraint::Collation::Default;
+    DbColumn::Constraint::Collation collation = DbColumn::Constraint::Collation::Default;
     if (SUCCESS != DetermineColumnInfo(columnName, isNullable, isUnique, collation, classMap.GetECDbMap().GetECDb()))
         return ERROR;
 
-    const ECDbSqlColumn::Type colType = ECDbSqlColumn::Type::Real;
-    bset<ECDbSqlTable const*> tables;
+    const DbColumn::Type colType = DbColumn::Type::Real;
+    bset<DbTable const*> tables;
     Utf8String xColumnName(columnName);
     xColumnName.append("_X");
 
-    ECDbSqlColumn const* xCol = classMap.GetColumnFactory().CreateColumn(*this, xColumnName.c_str(), colType, !isNullable, isUnique, collation);
+    DbColumn const* xCol = classMap.GetColumnFactory().CreateColumn(*this, xColumnName.c_str(), colType, !isNullable, isUnique, collation);
     if (xCol == nullptr)
         {
         BeAssert(false);
@@ -884,14 +883,14 @@ BentleyStatus PointPropertyMap::_FindOrCreateColumnsInTable(ClassMap const& clas
 
     Utf8String yColumnName(columnName);
     yColumnName.append("_Y");
-    ECDbSqlColumn const* yCol = classMap.GetColumnFactory().CreateColumn(*this, yColumnName.c_str(), colType, !isNullable, isUnique, collation);
+    DbColumn const* yCol = classMap.GetColumnFactory().CreateColumn(*this, yColumnName.c_str(), colType, !isNullable, isUnique, collation);
     if (yCol == nullptr)
         {
         BeAssert(false);
         return ERROR;
         }
 
-    ECDbSqlColumn const* zCol = nullptr;
+    DbColumn const* zCol = nullptr;
     if (m_is3d)
         {
         Utf8String zColumnName(columnName);
@@ -910,7 +909,7 @@ BentleyStatus PointPropertyMap::_FindOrCreateColumnsInTable(ClassMap const& clas
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PointPropertyMap::_GetColumns(std::vector<ECDbSqlColumn const*>& columns) const
+void PointPropertyMap::_GetColumns(std::vector<DbColumn const*>& columns) const
     {
     columns.push_back(m_xColumn);
     columns.push_back(m_yColumn);
@@ -942,7 +941,7 @@ BentleyStatus PrimitiveArrayPropertyMap::_FindOrCreateColumnsInTable(ClassMap co
         return ERROR;
         }
 
-    return DoFindOrCreateColumnsInTable(classMap, ECDbSqlColumn::Type::Blob);
+    return DoFindOrCreateColumnsInTable(classMap, DbColumn::Type::Blob);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -963,7 +962,7 @@ Utf8String PrimitiveArrayPropertyMap::_ToString() const
 //---------------------------------------------------------------------------------------
 BentleyStatus StructArrayJsonPropertyMap::_FindOrCreateColumnsInTable(ClassMap const& classMap)
     {
-    return DoFindOrCreateColumnsInTable(classMap, ECDbSqlColumn::Type::Text);
+    return DoFindOrCreateColumnsInTable(classMap, DbColumn::Type::Text);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1053,8 +1052,8 @@ BentleyStatus NavigationPropertyMap::Postprocess(ECDbMapCR ecdbMap)
         return ERROR;
         }
 
-    ECDbSqlColumn const* fkCol = nullptr;
-    std::vector<ECDbSqlColumn const*> columns;
+    DbColumn const* fkCol = nullptr;
+    std::vector<DbColumn const*> columns;
     GetConstraintMap(NavigationEnd::To).GetECInstanceIdPropMap()->GetColumns(columns, classMap->GetPrimaryTable());
     if (columns.size() == 1)
         fkCol = columns.front();
@@ -1119,7 +1118,7 @@ bool NavigationPropertyMap::IsSupportedInECSql(bool logIfNotSupported, ECDbCP ec
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                      01/2016
 //---------------------------------------------------------------------------------------
-void NavigationPropertyMap::_GetColumns(std::vector<ECDbSqlColumn const*>& columns) const
+void NavigationPropertyMap::_GetColumns(std::vector<DbColumn const*>& columns) const
     {
     BeAssert(IsSupportedInECSql() && "NavProperty which is not supported in ECSQL");
     columns = m_columns;

@@ -339,7 +339,7 @@ public:
     static bool IsAsteriskToken (Utf8CP token) { return strcmp (token, ASTERISK_TOKEN) == 0; }
     Exp const* FindParent(Exp::Type type) const;
     std::vector<Exp const*>  Find(Type ofType, bool recusive) const;
-    std::set<ECDbSqlTable const*> GetReferencedTables() const;
+    std::set<DbTable const*> GetReferencedTables() const;
     };
 
 typedef Exp* ExpP;

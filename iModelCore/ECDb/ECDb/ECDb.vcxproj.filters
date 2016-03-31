@@ -100,7 +100,6 @@
     <ClInclude Include="ECSql\Parser\IParseContext.h">
       <Filter>ECSql\OSQLParser</Filter>
     </ClInclude>
-    <ClInclude Include="ECSchemaComparers.h" />
     <ClInclude Include="..\PublicAPI\ECDb\IECSqlBinder.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
@@ -316,9 +315,6 @@
     <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="ECDbSql.h">
-      <Filter>ECDbMap</Filter>
-    </ClInclude>
     <ClInclude Include="ECDbPch.h">
       <Filter>Mke</Filter>
     </ClInclude>
@@ -381,7 +377,16 @@
       <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="ECDbExpressionSymbolProvider.h" />
+    <ClInclude Include="DbSchema.h">
+      <Filter>ECDbMap</Filter>
+    </ClInclude>
     <ClInclude Include="ECSchemaComparer.h">
+      <Filter>ECDbSchemaManager</Filter>
+    </ClInclude>
+    <ClInclude Include="DbSchemaPersistenceManager.h">
+      <Filter>ECDbMap</Filter>
+    </ClInclude>
+    <ClInclude Include="Nullable.h">
       <Filter>ECDbSchemaManager</Filter>
     </ClInclude>
   </ItemGroup>
@@ -436,7 +441,6 @@
     <ClCompile Include="ECSql\ECSqlParseTreeFormatter.cpp">
       <Filter>ECSql</Filter>
     </ClCompile>
-    <ClCompile Include="ECSchemaComparers.cpp" />
     <ClCompile Include="ECSql\ECSqlField.cpp">
       <Filter>ECSql\Fields</Filter>
     </ClCompile>
@@ -652,9 +656,6 @@
     <ClCompile Include="ECSql\ECSqlStatementCache.cpp">
       <Filter>ECSql\ECSqlStatement</Filter>
     </ClCompile>
-    <ClCompile Include="ECDbSql.cpp">
-      <Filter>ECDbMap</Filter>
-    </ClCompile>
     <ClCompile Include="ECDbPch.cpp">
       <Filter>Mke</Filter>
     </ClCompile>
@@ -703,8 +704,14 @@
       <Filter>ECSql\Fields</Filter>
     </ClCompile>
     <ClCompile Include="ECDbExpressionSymbolProvider.cpp" />
+    <ClCompile Include="DbSchema.cpp">
+      <Filter>ECDbMap</Filter>
+    </ClCompile>
     <ClCompile Include="ECSchemaComparer.cpp">
       <Filter>ECDbSchemaManager</Filter>
+    </ClCompile>
+    <ClCompile Include="DbSchemaPersistenceManager.cpp">
+      <Filter>ECDbMap</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

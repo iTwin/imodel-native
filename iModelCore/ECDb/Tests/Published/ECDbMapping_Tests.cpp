@@ -1789,9 +1789,42 @@ void AssertColumnCount(ECDbCR ecdb, std::vector<std::pair<Utf8String, int>> cons
     };
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     03/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, MinimumSharedColumns)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>SharedColumns</Options>"
+        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P1' typeName='int' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    ECDbR ecdb = SetupECDb("minimumsharedcolumns.ecdb", schemaItem);
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    ecdb.SaveChanges();
+
+    std::vector<std::pair<Utf8String, int>> testItems;
+    testItems.push_back(std::make_pair("ts_Parent", 7));
+    AssertColumnCount(ecdb, testItems, "MinimumSharedColumns");
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, MinimumSharedColumnCount)
+TEST_F(ECDbMappingTestFixture, MinimumSharedColumnsForSubClasses)
     {
     ECDbR ecdb = SetupECDb("minimumsharedcolcount.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"

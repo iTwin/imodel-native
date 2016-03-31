@@ -131,15 +131,15 @@ struct ECDbMapAnalyser
         {
         private:
 
-            ECDbSqlTable const& m_table;
+            DbTable const& m_table;
             std::set<Class*> m_classes;
             std::set<Relationship*> m_relationships;
             std::map<Storage*, std::set<Relationship*>> m_cascades;
             SqlTriggerBuilder::TriggerList m_triggers;
 
         public:
-            Storage(ECDbSqlTable const& table);
-            ECDbSqlTable const& GetTable() const;
+            Storage(DbTable const& table);
+            DbTable const& GetTable() const;
             bool IsVirtual() const;
             std::set<Class*> & GetClassesR();
             std::set<Class*> const& GetClasses() const { return m_classes; }
@@ -196,16 +196,16 @@ struct ECDbMapAnalyser
             {
             private:
                 Utf8CP m_accessString;
-                ECDbSqlColumn const* m_column;
+                DbColumn const* m_column;
                 EndInfo(EndInfo const&);
                 EndInfo& operator = (EndInfo const&);
             public:
-                EndInfo(Utf8CP accessString, ECDbSqlColumn const& column);
-                EndInfo(PropertyMapCR map);
-                EndInfo(PropertyMapCR map, Storage const& storage, ColumnKind columnType);
+                EndInfo(Utf8CP accessString, DbColumn const&);
+                EndInfo(PropertyMapCR);
+                EndInfo(PropertyMapCR, Storage const&, DbColumn::Kind);
                 EndInfo(EndInfo const&& rhs);
                 EndInfo();
-                ECDbSqlColumn const& GetColumn() const;
+                DbColumn const& GetColumn() const;
             };
 
         struct EndPoint
@@ -217,7 +217,7 @@ struct ECDbMapAnalyser
                 EndType m_type;
                 Relationship const& m_parent;
             public:
-                EndPoint(Relationship const& parent, EndType type);
+                EndPoint(Relationship const& parent, EndType);
                 std::set<Class*>& GetClassesR();
                 std::set<Storage const*> GetStorages() const;
                 PropertyMapCP GetInstanceId() const;
@@ -228,11 +228,11 @@ struct ECDbMapAnalyser
         private:
             EndPoint m_from;
             EndPoint m_to;
-            ForeignKeyActionType m_onDeleteAction;
-            ForeignKeyActionType m_onUpdateAction;
+            ForeignKeyDbConstraint::ActionType m_onDeleteAction;
+            ForeignKeyDbConstraint::ActionType m_onUpdateAction;
 
         public:
-            Relationship(RelationshipClassMapCR classMap, Storage& storage, Class* parent);
+            Relationship(RelationshipClassMapCR, Storage&, Class* parent);
             RelationshipClassMapCR GetRelationshipClassMap() const;
             PersistanceLocation GetPersistanceLocation() const;
             bool RequireCascade() const;
@@ -244,8 +244,8 @@ struct ECDbMapAnalyser
             bool IsHolding() const { return GetRelationshipClassMap().GetRelationshipClass().GetStrength() == ECN::StrengthType::Holding; }
             bool IsReferencing() const { return GetRelationshipClassMap().GetRelationshipClass().GetStrength() == ECN::StrengthType::Referencing; }
             bool IsEmbedding() const { return GetRelationshipClassMap().GetRelationshipClass().GetStrength() == ECN::StrengthType::Embedding; }
-            bool IsMarkedForCascadeDelete() const { BeAssert(!IsLinkTable()); return m_onDeleteAction == ForeignKeyActionType::Cascade; }
-            bool IsMarkedForCascadeUpdate() const { BeAssert(!IsLinkTable()); return m_onUpdateAction == ForeignKeyActionType::Cascade; }
+            bool IsMarkedForCascadeDelete() const { BeAssert(!IsLinkTable()); return m_onDeleteAction == ForeignKeyDbConstraint::ActionType::Cascade; }
+            bool IsMarkedForCascadeUpdate() const { BeAssert(!IsLinkTable()); return m_onUpdateAction == ForeignKeyDbConstraint::ActionType::Cascade; }
         };
 
     private:
@@ -356,8 +356,8 @@ struct ECClassViewGenerator : NonCopyableClass
         static Utf8String BuildSchemaQualifiedClassName(ECN::ECClassCR ecClass);
         static Utf8CP GetECClassIdPrimaryTableAlias(ECN::ECRelationshipEnd endPoint) { return endPoint == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? "SourceECClassPrimaryTable" : "TargetECClassPrimaryTable"; }
 
-        static Utf8CP DetermineCastTargetType(ECDbSqlColumn const&, ECN::ECPropertyCR);
-        static Utf8CP DetermineCastTargetType(ECDbSqlColumn const&, ECDbSqlColumn::Type targetType);
+        static Utf8CP DetermineCastTargetType(DbColumn const&, ECN::ECPropertyCR);
+        static Utf8CP DetermineCastTargetType(DbColumn const&, DbColumn::Type targetType);
 
         static void CollectDerivedEndTableRelationships(std::set<RelationshipClassEndTableMap const*>& childMaps, RelationshipClassMapCR classMap);
 

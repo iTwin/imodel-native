@@ -150,7 +150,7 @@ public:
     BeBriefcaseBasedIdSequence& GetIndexIdSequence() { return m_indexIdSequence; }
     BeBriefcaseBasedIdSequence& GetConstraintIdSequence() { return m_constraintIdSequence; }
     BeBriefcaseBasedIdSequence& GetClassMapIdSequence() { return m_classmapIdSequence; }
-    BeBriefcaseBasedIdSequence& GetPropertyMapIdSequence() { return m_propertypathIdSequence; }
+    BeBriefcaseBasedIdSequence& GetPropertyPathIdSequence() { return m_propertypathIdSequence; }
 
     bool TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) const;
 

@@ -31,3 +31,6 @@ ECSqlSelectTestFramework.StructTests
 
 #TFS 383266
 JsonReaderTests.ReadInstanceAlongWithRelatedInstances
+
+#for Krischan
+ECDbMappingTestFixture.MinimumSharedColumns

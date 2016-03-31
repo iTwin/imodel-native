@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECInstanceDeleter.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -85,7 +85,7 @@ BentleyStatus ECInstanceDeleter::Delete
 IECInstanceCR ecInstance
 ) const
     {
-    if (ecInstance.GetClass () != m_ecClass)
+    if (!ECInstanceAdapterHelper::Equals(ecInstance.GetClass(), m_ecClass))
         {
         Utf8String displayLabel;
         ecInstance.GetDisplayLabel (displayLabel);

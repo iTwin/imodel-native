@@ -12,7 +12,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle     06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-bool operator== (ECClassCR lhs, ECClassCR rhs)
+/*bool operator== (ECClassCR lhs, ECClassCR rhs)
     {
     if (lhs.HasId() && rhs.HasId())
         {
@@ -53,5 +53,5 @@ bool operator!= (ECPropertyCR lhs, ECPropertyCR rhs)
     {
     return !(lhs == rhs);
     }
-
+    */
 END_BENTLEY_ECOBJECT_NAMESPACE

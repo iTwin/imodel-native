@@ -96,12 +96,12 @@ void SchemaImportTestFixture::AssertIndex(ECDbCR ecdb, Utf8CP indexName, bool is
     if (isUnique)
         expectedDdl.append("UNIQUE ");
 
-    expectedDdl.append("INDEX [").append(indexName).append("] ON [").append(tableName).append("] (");
+    expectedDdl.append("INDEX [").append(indexName).append("] ON [").append(tableName).append("](");
     bool isFirstColumn = true;
     for (Utf8CP column : columns)
         {
         if (!isFirstColumn)
-            expectedDdl.append(",");
+            expectedDdl.append(", ");
 
         expectedDdl.append("[").append(column).append("]");
         isFirstColumn = false;
@@ -166,9 +166,9 @@ void SchemaImportTestFixture::AssertForeignKey(bool expectedToHaveForeignKey, EC
 
     Utf8String fkSearchString;
     if (Utf8String::IsNullOrEmpty(foreignKeyColumnName))
-        fkSearchString = "FOREIGN KEY (";
+        fkSearchString = "FOREIGN KEY(";
     else
-        fkSearchString.Sprintf("FOREIGN KEY ([%s]", foreignKeyColumnName);
+        fkSearchString.Sprintf("FOREIGN KEY([%s]", foreignKeyColumnName);
 
     ASSERT_EQ(expectedToHaveForeignKey, ddl.find(fkSearchString) != ddl.npos) << "Table: " << tableName << " FK column name: " << foreignKeyColumnName;
     }

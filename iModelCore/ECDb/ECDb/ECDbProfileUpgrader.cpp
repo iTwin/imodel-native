@@ -147,14 +147,14 @@ DbResult ECDbProfileUpgrader_3200::_Upgrade(ECDbR ecdb) const
 //+---------------+---------------+---------------+---------------+---------------+--------
 DbResult ECDbProfileUpgrader_3100::_Upgrade(ECDbR ecdb) const
     {
-    //shared columns now have a dedicated ColumnKind::SharedDataColumn. So update all sharead column entries in ec_Column.
-    //Identifying shared columns in the previous version is done by looking for columns with ColumnKind::DataColumn, Type::Any
+    //shared columns now have a dedicated DbColumn::Kind::SharedDataColumn. So update all sharead column entries in ec_Column.
+    //Identifying shared columns in the previous version is done by looking for columns with DbColumn::Kind::DataColumn, Type::Any
     //and a table created by ECDb (-> not an existing table)
-    const int dataColKindInt = Enum::ToInt(ColumnKind::DataColumn);
+    const int dataColKindInt = Enum::ToInt(DbColumn::Kind::DataColumn);
     
     Utf8String sql;
-    sql.Sprintf("UPDATE ec_Column SET ColumnKind=%d WHERE ColumnKind & %d=%d AND Type=%d AND TableId IN (SELECT t.Id FROM ec_Table t WHERE t.Type<>%d)", Enum::ToInt(ColumnKind::SharedDataColumn),
-                dataColKindInt, dataColKindInt, Enum::ToInt(ECDbSqlColumn::Type::Any), Enum::ToInt(TableType::Existing));
+    sql.Sprintf("UPDATE ec_Column SET ColumnKind=%d WHERE ColumnKind & %d=%d AND Type=%d AND TableId IN (SELECT t.Id FROM ec_Table t WHERE t.Type<>%d)", Enum::ToInt(DbColumn::Kind::SharedDataColumn),
+                dataColKindInt, dataColKindInt, Enum::ToInt(DbColumn::Type::Any), Enum::ToInt(DbTable::Type::Existing));
 
     Statement stmt;
     DbResult stat = stmt.Prepare(ecdb, sql.c_str());
@@ -209,27 +209,27 @@ DbResult ECDbProfileUpgrader::AlterColumns (ECDbR ecdb, Utf8CP tableName, Utf8CP
 // @bsimethod                                                    Krischan.Eberle    07/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ECDbProfileUpgrader::AlterColumnsInTable (ECDbR ecdb, Utf8CP tableName, Utf8CP newDdlBody, bool recreateIndices, Utf8CP allColumnNamesAfter,  Utf8CP matchingColumnNamesWithOldNames)
+DbResult ECDbProfileUpgrader::AlterColumnsInTable(ECDbCR ecdb, Utf8CP tableName, Utf8CP newDdlBody, bool recreateIndices, Utf8CP allColumnNamesAfter, Utf8CP matchingColumnNamesWithOldNames)
     {
-    Utf8String tempTableName (tableName);
-    tempTableName.append ("_tmp");
+    Utf8String tempTableName(tableName);
+    tempTableName.append("_tmp");
 
     vector<Utf8String> createIndexDdlList;
     if (recreateIndices)
         {
-        auto stat = RetrieveIndexDdlListForTable (createIndexDdlList, ecdb, tableName);
+        auto stat = RetrieveIndexDdlListForTable(createIndexDdlList, ecdb, tableName);
         if (stat != BE_SQLITE_OK)
             return stat;
         }
 
     Utf8String sql;
-    sql.Sprintf ("ALTER TABLE %s RENAME TO %s;", tableName, tempTableName.c_str ());
-    auto stat = ecdb.ExecuteSql (sql.c_str ());
+    sql.Sprintf("ALTER TABLE %s RENAME TO %s;", tableName, tempTableName.c_str());
+    auto stat = ecdb.ExecuteSql(sql.c_str());
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    sql.Sprintf ("CREATE TABLE %s (%s);", tableName, newDdlBody);
-    stat = ecdb.ExecuteSql (sql.c_str ());
+    sql.Sprintf("CREATE TABLE %s (%s);", tableName, newDdlBody);
+    stat = ecdb.ExecuteSql(sql.c_str());
     if (stat != BE_SQLITE_OK)
         return stat;
 
@@ -238,12 +238,12 @@ DbResult ECDbProfileUpgrader::AlterColumnsInTable (ECDbR ecdb, Utf8CP tableName,
     if (matchingColumnNamesWithOldNames == nullptr)
         matchingColumnNamesWithOldNames = allColumnNamesAfter;
 
-    sql.Sprintf ("INSERT INTO %s (%s) SELECT %s FROM %s;", tableName, allColumnNamesAfter, matchingColumnNamesWithOldNames, tempTableName.c_str ());
-    stat = ecdb.ExecuteSql (sql.c_str ());
+    sql.Sprintf("INSERT INTO %s (%s) SELECT %s FROM %s;", tableName, allColumnNamesAfter, matchingColumnNamesWithOldNames, tempTableName.c_str());
+    stat = ecdb.ExecuteSql(sql.c_str());
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    stat = ecdb.DropTable (tempTableName.c_str ());
+    stat = ecdb.DropTable(tempTableName.c_str());
     if (stat != BE_SQLITE_OK)
         return stat;
 
@@ -254,7 +254,7 @@ DbResult ECDbProfileUpgrader::AlterColumnsInTable (ECDbR ecdb, Utf8CP tableName,
         {
         for (auto const& createIndexDdl : createIndexDdlList)
             {
-            stat = ecdb.ExecuteSql (createIndexDdl.c_str ());
+            stat = ecdb.ExecuteSql(createIndexDdl.c_str());
             if (stat != BE_SQLITE_OK)
                 return stat;
             }
@@ -267,11 +267,11 @@ DbResult ECDbProfileUpgrader::AlterColumnsInTable (ECDbR ecdb, Utf8CP tableName,
 // @bsimethod                                                    Krischan.Eberle    07/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ECDbProfileUpgrader::AlterColumnsInView (ECDbR ecdb, Utf8CP viewName, Utf8CP allColumnNamesAfter)
+DbResult ECDbProfileUpgrader::AlterColumnsInView(ECDbCR ecdb, Utf8CP viewName, Utf8CP allColumnNamesAfter)
     {
-    Utf8String sql ("DROP VIEW ");
-    sql.append (viewName);
-    auto stat = ecdb.ExecuteSql (sql.c_str ());
+    Utf8String sql("DROP VIEW ");
+    sql.append(viewName);
+    auto stat = ecdb.ExecuteSql(sql.c_str());
     if (stat != BE_SQLITE_OK)
         return stat;
 
@@ -279,41 +279,40 @@ DbResult ECDbProfileUpgrader::AlterColumnsInView (ECDbR ecdb, Utf8CP viewName, U
     BeStringUtilities::Split(allColumnNamesAfter, ",", nullptr, columnNameList);
 
     Utf8String columnsDdl;
-    const size_t columnCount = columnNameList.size ();
+    const size_t columnCount = columnNameList.size();
     for (size_t i = 0; i < columnCount; i++)
         {
         auto& columnName = columnNameList[i];
-        columnName.Trim ();
-        columnsDdl.append ("NULL AS ");
-        columnsDdl.append (columnName.c_str ());
+        columnName.Trim();
+        columnsDdl.append("NULL AS ");
+        columnsDdl.append(columnName.c_str());
         if (i != columnCount - 1)
             {
-            columnsDdl.append (", ");
+            columnsDdl.append(", ");
             }
         }
 
-    sql.Sprintf ("CREATE VIEW %s AS SELECT %s LIMIT 0;", viewName, columnsDdl.c_str ());
-    return ecdb.ExecuteSql (sql.c_str ());
+    sql.Sprintf("CREATE VIEW %s AS SELECT %s LIMIT 0;", viewName, columnsDdl.c_str());
+    return ecdb.ExecuteSql(sql.c_str());
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    07/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ECDbProfileUpgrader::RetrieveIndexDdlListForTable (vector<Utf8String>& indexDdlList, ECDbR ecdb, Utf8CP tableName)
+DbResult ECDbProfileUpgrader::RetrieveIndexDdlListForTable(vector<Utf8String>& indexDdlList, ECDbCR ecdb, Utf8CP tableName)
     {
-    BeAssert (ecdb.TableExists (tableName));
+    BeAssert(ecdb.TableExists(tableName));
 
-    CachedStatementPtr stmt = nullptr;
-    auto stat = ecdb.GetCachedStatement (stmt, "SELECT sql FROM sqlite_master WHERE tbl_name=? AND type NOT IN ('table', 'view')");
-    if (stat != BE_SQLITE_OK)
-        return stat;
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT sql FROM sqlite_master WHERE tbl_name=? AND type NOT IN ('table', 'view')");
+    if (stmt == nullptr)
+        return BE_SQLITE_ERROR;
 
-    stmt->BindText (1, tableName, Statement::MakeCopy::No);
+    stmt->BindText(1, tableName, Statement::MakeCopy::No);
 
-    while (stmt->Step () == BE_SQLITE_ROW)
+    while (stmt->Step() == BE_SQLITE_ROW)
         {
-        indexDdlList.push_back (Utf8String (stmt->GetValueText (0)));
+        indexDdlList.push_back(Utf8String(stmt->GetValueText(0)));
         }
 
     return BE_SQLITE_OK;
@@ -323,31 +322,30 @@ DbResult ECDbProfileUpgrader::RetrieveIndexDdlListForTable (vector<Utf8String>& 
 // @bsimethod                                                    Krischan.Eberle    02/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ECDbProfileUpgrader::DropTableOrView (ECDbR ecdb, Utf8CP tableOrViewName)
+DbResult ECDbProfileUpgrader::DropTableOrView(ECDbCR ecdb, Utf8CP tableOrViewName)
     {
-    Utf8String sql ("DROP ");
-    if (IsView (ecdb, tableOrViewName))
-        sql.append ("VIEW ");
-    else 
-        sql.append ("TABLE ");
-    
-    sql.append (tableOrViewName);
+    Utf8String sql("DROP ");
+    if (IsView(ecdb, tableOrViewName))
+        sql.append("VIEW ");
+    else
+        sql.append("TABLE ");
 
-    return ecdb.ExecuteSql (sql.c_str ());
+    sql.append(tableOrViewName);
+
+    return ecdb.ExecuteSql(sql.c_str());
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    07/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-bool ECDbProfileUpgrader::IsView (ECDbCR ecdb, Utf8CP tableOrViewName)
+bool ECDbProfileUpgrader::IsView(ECDbCR ecdb, Utf8CP tableOrViewName)
     {
-    BeAssert (ecdb.TableExists (tableOrViewName));
-    CachedStatementPtr stmt = nullptr;
-    ecdb.GetCachedStatement (stmt, "SELECT NULL FROM sqlite_master WHERE name=? AND type='view' LIMIT 1");
+    BeAssert(ecdb.TableExists(tableOrViewName));
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT NULL FROM sqlite_master WHERE name=? AND type='view' LIMIT 1");
 
-    stmt->BindText (1, tableOrViewName, Statement::MakeCopy::No);
-    return stmt->Step () == BE_SQLITE_ROW;
+    stmt->BindText(1, tableOrViewName, Statement::MakeCopy::No);
+    return stmt->Step() == BE_SQLITE_ROW;
     }
 
 //*************************************** ECDbProfileSchemaUpgrader *********************************
@@ -402,7 +400,7 @@ DbResult ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
 BentleyStatus ECDbProfileECSchemaUpgrader::ReadECDbSystemSchema (ECSchemaReadContextR readContext, Utf8CP ecdbFileName)
     {
     ECSchemaPtr ecdbSystemSchema = nullptr;
-    auto deserializeStat = ECSchema::ReadFromXmlString (ecdbSystemSchema, GetECDbSystemECSchemaXml (), readContext);
+    const SchemaReadStatus deserializeStat = ECSchema::ReadFromXmlString (ecdbSystemSchema, GetECDbSystemECSchemaXml (), readContext);
     if (SchemaReadStatus::Success != deserializeStat)
         {
         if (SchemaReadStatus::ReferencedSchemaNotFound == deserializeStat)
@@ -426,7 +424,7 @@ BentleyStatus ECDbProfileECSchemaUpgrader::ReadECDbSystemSchema (ECSchemaReadCon
 //static
 BentleyStatus ECDbProfileECSchemaUpgrader::ReadECDbFileInfoSchema (ECSchemaReadContextR readContext, Utf8CP ecdbFileName)
     {
-    auto schema = readContext.LocateSchema (s_ecdbfileinfoSchemaKey, SchemaMatchType::LatestCompatible);
+    ECSchemaPtr schema = readContext.LocateSchema (s_ecdbfileinfoSchemaKey, SchemaMatchType::LatestCompatible);
     if (schema == nullptr)
         {
         LOG.errorv ("Creating / upgrading ECDb file %s failed because required ECSchema '%s' could not be found.", ecdbFileName,

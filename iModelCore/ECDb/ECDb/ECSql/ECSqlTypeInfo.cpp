@@ -180,7 +180,7 @@ bool ECSqlTypeInfo::Matches (ECSqlTypeInfo const& rhs, Utf8String* errorMessage)
     //struct check
     if (lhsKind == Kind::Struct || lhsKind == Kind::StructArray)
         {
-        canCompare = GetStructType () == rhs.GetStructType ();
+        canCompare = GetStructType().GetId() == rhs.GetStructType().GetId();
         if (!canCompare && errorMessage != nullptr)
             *errorMessage = "Left and right side of expression must both be of same ECStruct type.";
 
@@ -188,8 +188,8 @@ bool ECSqlTypeInfo::Matches (ECSqlTypeInfo const& rhs, Utf8String* errorMessage)
         }
 
     //primitive or primitive array checks
-    const auto lhsType = GetPrimitiveType ();
-    const auto rhsType = rhs.GetPrimitiveType ();
+    const PrimitiveType lhsType = GetPrimitiveType ();
+    const PrimitiveType rhsType = rhs.GetPrimitiveType ();
 
     if (lhsType == PRIMITIVETYPE_DateTime || rhsType == PRIMITIVETYPE_DateTime)
         {

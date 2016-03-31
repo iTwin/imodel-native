@@ -13,8 +13,6 @@
 
 ECDB_TYPEDEFS(TableMap);
 ECDB_TYPEDEFS(SqlChange);
-ECDB_TYPEDEFS(ECDbSqlColumn);
-ECDB_TYPEDEFS(PointPropertyMap);
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -55,12 +53,12 @@ public:
 struct TableMap : NonCopyableClass
 {
 private:
-    ECDbR m_ecdb;
+    ECDbCR m_ecdb;
     Utf8String m_tableName;
     bmap<Utf8String, int> m_columnIndexByName;
     bvector<ECN::ECClassId> m_fkeyRelClassIds;
     bool m_isMapped = false;
-    mutable ECDbSqlTable const* m_ecDbSqlTable = nullptr;
+    mutable DbTable const* m_dbTable = nullptr;
 
     ECN::ECClassId m_primaryClassId;
     Utf8String m_instanceIdColumnName;
@@ -68,20 +66,20 @@ private:
     Utf8String m_primaryClassIdColumnName;
     int m_primaryClassIdColumnIndex = -1;
 
-    void InitColumnIndexByName(ECDbR ecdb);
-    bool QueryIdColumn(Utf8StringR idColumnName, ECDbR ecdb, Utf8StringCR tableName, int columnKind) const;
-    bool QueryInstanceIdColumn(Utf8StringR idColumnName, ECDbR ecdb, Utf8StringCR tableName) const;
-    bool QueryClassIdColumn(Utf8StringR idColumnName, ECDbR ecdb, Utf8StringCR tableName) const;
-    ECN::ECClassId QueryClassId(ECDbR ecdb, Utf8StringCR tableName) const;
-    void QueryForeignKeyRelClassIds(bvector<ECN::ECClassId>& fkeyRelClassIds, ECDbR ecdb, Utf8StringCR tableName) const;
+    void InitColumnIndexByName(ECDbCR ecdb);
+    bool QueryIdColumn(Utf8StringR idColumnName, ECDbCR ecdb, Utf8StringCR tableName, int columnKind) const;
+    bool QueryInstanceIdColumn(Utf8StringR idColumnName, ECDbCR ecdb, Utf8StringCR tableName) const;
+    bool QueryClassIdColumn(Utf8StringR idColumnName, ECDbCR ecdb, Utf8StringCR tableName) const;
+    ECN::ECClassId QueryClassId(ECDbCR ecdb, Utf8StringCR tableName) const;
+    void QueryForeignKeyRelClassIds(bvector<ECN::ECClassId>& fkeyRelClassIds, ECDbCR ecdb, Utf8StringCR tableName) const;
 
 public:
-    TableMap(ECDbR ecdb) : m_ecdb(ecdb) {}
+    TableMap(ECDbCR ecdb) : m_ecdb(ecdb) {}
     ~TableMap() {}
 
-    void Initialize(ECDbR ecDb, Utf8StringCR tableName);
+    void Initialize(ECDbCR ecDb, Utf8StringCR tableName);
     Utf8StringCR GetTableName() const { return m_tableName; }
-    ECDbSqlTable const* GetECDbSqlTable() const;
+    DbTable const* GetDbTable() const;
 
     ECN::ECClassId GetPrimaryClassId() const { return m_primaryClassId; }
     bvector<ECN::ECClassId> const& GetForeignKeyRelClassIds() const { return m_fkeyRelClassIds; }
@@ -106,7 +104,7 @@ struct InstancesTable : NonCopyableClass
 {
 private:
     ChangeSummaryCR m_changeSummary;
-    ECDbR m_ecdb;
+    ECDbCR m_ecdb;
     Utf8String m_instancesTableNameNoPrefix;
     mutable Statement m_instancesTableInsert;
     mutable Statement m_instancesTableUpdate;
@@ -129,7 +127,7 @@ public:
     void Initialize();
     void Free();
 
-    ECDbR GetDb() const { return m_ecdb; }
+    ECDbCR GetDb() const { return m_ecdb; }
     ChangeSummaryCR GetChangeSummary() const { return m_changeSummary; }
 
     Utf8String GetName() const;
@@ -149,7 +147,7 @@ struct ValuesTable : NonCopyableClass
 {
 private:
     ChangeSummaryCR m_changeSummary;
-    ECDbR m_ecdb;
+    ECDbCR m_ecdb;
     InstancesTableCR m_instancesTable;
     Utf8String m_valuesTableNameNoPrefix;
     mutable Statement m_valuesTableInsert;
@@ -170,9 +168,9 @@ public:
     Utf8String GetName() const;
     Utf8StringCR GetNameNoPrefix() const { return m_valuesTableNameNoPrefix; }
 
-    void Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8StringCR accessString, DbValue const& oldValue, DbValue const& newValue);
-    void Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8StringCR accessString, ECN::ECClassId oldId, ECN::ECClassId newId);
-    void Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8StringCR accessString, ECInstanceId oldId, ECInstanceId newId);
+    void Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8CP accessString, DbValue const& oldValue, DbValue const& newValue);
+    void Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8CP accessString, ECN::ECClassId oldId, ECN::ECClassId newId);
+    void Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8CP accessString, ECInstanceId oldId, ECInstanceId newId);
     };
 
 //=======================================================================================
@@ -190,7 +188,7 @@ typedef bmap<Utf8String, TableMapP> TableMapByName;
 
 private:
     ChangeSummaryCR m_changeSummary;
-    ECDbR m_ecdb;
+    ECDbCR m_ecdb;
     mutable TableMapByName m_tableMapByName;
     InstancesTableR m_instancesTable;
     ValuesTableR m_valuesTable;
@@ -199,7 +197,7 @@ private:
     SqlChangeCP m_sqlChange;
     TableMapCP m_tableMap;
 
-    static ClassMapCP GetClassMap(ECDbR ecdb, ECN::ECClassId classId);
+    static ClassMapCP GetClassMap(ECDbCR ecdb, ECN::ECClassId classId);
    
     TableMapCP GetTableMap(Utf8StringCR tableName) const;
     void AddTableToMap(Utf8StringCR tableName) const;
@@ -225,7 +223,7 @@ private:
     void RecordInstance(ClassMapCR classMap, ECInstanceId instanceId, DbOpcode dbOpcode);
     void RecordRelInstance(ClassMapCR classMap, ECInstanceId instanceId, DbOpcode dbOpcode, ECInstanceKeyCR oldSourceKey, ECInstanceKeyCR newSourceKey, ECInstanceKeyCR oldTargetKey, ECInstanceKeyCR newTargetKey);
     void RecordPropertyValue(ChangeSummary::InstanceCR instance, PropertyMapCR propertyMap);
-    void RecordColumnValue(ChangeSummary::InstanceCR instance, Utf8StringCR columnName, Utf8StringCR accessString);
+    void RecordColumnValue(ChangeSummary::InstanceCR instance, Utf8StringCR columnName, Utf8CP accessString);
     
 public:
     ChangeExtractor(ChangeSummaryCR changeSummary, InstancesTableR instancesTable, ValuesTableR valuesTable) : m_changeSummary(changeSummary), m_ecdb(m_changeSummary.GetDb()), m_instancesTable(instancesTable), m_valuesTable(valuesTable) {}
@@ -328,7 +326,7 @@ ECInstanceId SqlChange::GetValueId(int columnIndex) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-ECClassId TableMap::QueryClassId(ECDbR ecdb, Utf8StringCR tableName) const
+ECClassId TableMap::QueryClassId(ECDbCR ecdb, Utf8StringCR tableName) const
     {
     Utf8String sql;
     sql.Sprintf("SELECT DISTINCT ec_Class.Id"
@@ -341,7 +339,7 @@ ECClassId TableMap::QueryClassId(ECDbR ecdb, Utf8StringCR tableName) const
                 " AND (ec_ClassMap.MapStrategy != :sourceTableStrategy AND ec_ClassMap.MapStrategy != :targetTableStrategy)"
                 " AND ec_Column.IsVirtual = 0"
                 " AND (ec_Column.ColumnKind & %d = %d)",
-                Enum::ToInt(ColumnKind::ECInstanceId), Enum::ToInt(ColumnKind::ECInstanceId));
+                Enum::ToInt(DbColumn::Kind::ECInstanceId), Enum::ToInt(DbColumn::Kind::ECInstanceId));
 
     CachedStatementPtr stmt = ecdb.GetCachedStatement(sql.c_str());
     BeAssert(stmt.IsValid());
@@ -366,7 +364,7 @@ ECClassId TableMap::QueryClassId(ECDbR ecdb, Utf8StringCR tableName) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-bool TableMap::QueryInstanceIdColumn(Utf8StringR idColumnName, ECDbR ecdb, Utf8StringCR tableName) const
+bool TableMap::QueryInstanceIdColumn(Utf8StringR idColumnName, ECDbCR ecdb, Utf8StringCR tableName) const
     {
     return QueryIdColumn(idColumnName, ecdb, tableName, 1);
     }
@@ -374,7 +372,7 @@ bool TableMap::QueryInstanceIdColumn(Utf8StringR idColumnName, ECDbR ecdb, Utf8S
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-bool TableMap::QueryClassIdColumn(Utf8StringR idColumnName, ECDbR ecdb, Utf8StringCR tableName) const
+bool TableMap::QueryClassIdColumn(Utf8StringR idColumnName, ECDbCR ecdb, Utf8StringCR tableName) const
     {
     return QueryIdColumn(idColumnName, ecdb, tableName, 2);
     }
@@ -382,7 +380,7 @@ bool TableMap::QueryClassIdColumn(Utf8StringR idColumnName, ECDbR ecdb, Utf8Stri
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-bool TableMap::QueryIdColumn(Utf8StringR idColumnName, ECDbR ecdb, Utf8StringCR tableName, int columnKind) const
+bool TableMap::QueryIdColumn(Utf8StringR idColumnName, ECDbCR ecdb, Utf8StringCR tableName, int columnKind) const
     {
     CachedStatementPtr statement = ecdb.GetCachedStatement(
         "SELECT ec_Column.Name"
@@ -406,7 +404,7 @@ bool TableMap::QueryIdColumn(Utf8StringR idColumnName, ECDbR ecdb, Utf8StringCR 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void TableMap::QueryForeignKeyRelClassIds(bvector<ECClassId>& fkeyRelClassIds, ECDbR ecdb, Utf8StringCR tableName) const
+void TableMap::QueryForeignKeyRelClassIds(bvector<ECClassId>& fkeyRelClassIds, ECDbCR ecdb, Utf8StringCR tableName) const
     {
     Utf8String sql;
     sql.Sprintf("SELECT DISTINCT ec_Class.Id"
@@ -421,7 +419,7 @@ void TableMap::QueryForeignKeyRelClassIds(bvector<ECClassId>& fkeyRelClassIds, E
                 "       ec_Column.IsVirtual = 0 AND"
                 "       (ec_Column.ColumnKind & %d = %d )",
                 Enum::ToInt(ECClassType::Relationship),
-                Enum::ToInt(ColumnKind::ECInstanceId), Enum::ToInt(ColumnKind::ECInstanceId));
+                Enum::ToInt(DbColumn::Kind::ECInstanceId), Enum::ToInt(DbColumn::Kind::ECInstanceId));
 
     CachedStatementPtr stmt = ecdb.GetCachedStatement(sql.c_str());
     BeAssert(stmt.IsValid());
@@ -441,7 +439,7 @@ void TableMap::QueryForeignKeyRelClassIds(bvector<ECClassId>& fkeyRelClassIds, E
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void TableMap::Initialize(ECDbR ecdb, Utf8StringCR tableName)
+void TableMap::Initialize(ECDbCR ecdb, Utf8StringCR tableName)
     {
     m_tableName = tableName;
 
@@ -466,20 +464,20 @@ void TableMap::Initialize(ECDbR ecdb, Utf8StringCR tableName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     11/2015
 //---------------------------------------------------------------------------------------
-ECDbSqlTable const* TableMap::GetECDbSqlTable() const
+DbTable const* TableMap::GetDbTable() const
     {
-    if (m_ecDbSqlTable != nullptr)
-        return m_ecDbSqlTable;
+    if (m_dbTable != nullptr)
+        return m_dbTable;
 
-    m_ecDbSqlTable = m_ecdb.GetECDbImplR().GetECDbMap().GetSQLManager().GetDbSchema().FindTable(m_tableName.c_str());
-    BeAssert(m_ecDbSqlTable != nullptr && "The mapping for this table has likely not been loaded up yet");
-    return m_ecDbSqlTable;
+    m_dbTable = m_ecdb.GetECDbImplR().GetECDbMap().GetDbSchema().FindTable(m_tableName.c_str());
+    BeAssert(m_dbTable != nullptr && "The mapping for this table has likely not been loaded up yet");
+    return m_dbTable;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-void TableMap::InitColumnIndexByName(ECDbR ecdb)
+void TableMap::InitColumnIndexByName(ECDbCR ecdb)
     {
     bvector<Utf8String> columnNames;
     ecdb.GetColumns(columnNames, m_tableName.c_str());
@@ -864,13 +862,13 @@ void ValuesTable::FinalizeStatements()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ValuesTable::Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8StringCR accessString, DbValue const& oldValue, DbValue const& newValue)
+void ValuesTable::Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8CP accessString, DbValue const& oldValue, DbValue const& newValue)
     {
     Statement& statement = m_valuesTableInsert;
     statement.Reset();
     statement.BindId(1, classId);
     statement.BindId(2, instanceId);
-    statement.BindText(3, accessString.c_str(), Statement::MakeCopy::No);
+    statement.BindText(3, accessString, Statement::MakeCopy::No);
 
     if (oldValue.IsValid())
         statement.BindDbValue(4, oldValue);
@@ -889,14 +887,14 @@ void ValuesTable::Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8St
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ValuesTable::Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8StringCR accessString, ECClassId oldValue, ECClassId newValue)
+void ValuesTable::Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8CP accessString, ECClassId oldValue, ECClassId newValue)
     {
     Statement& statement = m_valuesTableInsert;
 
     statement.Reset();
     statement.BindId(1, classId);
     statement.BindId(2, instanceId);
-    statement.BindText(3, accessString.c_str(), Statement::MakeCopy::No);
+    statement.BindText(3, accessString, Statement::MakeCopy::No);
 
     if (oldValue.IsValid())
         statement.BindId(4, oldValue);
@@ -915,14 +913,14 @@ void ValuesTable::Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8St
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ValuesTable::Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8StringCR accessString, ECInstanceId oldValue, ECInstanceId newValue)
+void ValuesTable::Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8CP accessString, ECInstanceId oldValue, ECInstanceId newValue)
     {
     Statement& statement = m_valuesTableInsert;
 
     statement.Reset();
     statement.BindId(1, classId);
     statement.BindId(2, instanceId);
-    statement.BindText(3, accessString.c_str(), Statement::MakeCopy::No);
+    statement.BindText(3, accessString, Statement::MakeCopy::No);
 
     if (oldValue.IsValid())
         statement.BindId(4, oldValue);
@@ -942,7 +940,7 @@ void ValuesTable::Insert(ECN::ECClassId classId, ECInstanceId instanceId, Utf8St
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
 // static
-ClassMapCP ChangeExtractor::GetClassMap(ECDbR ecdb, ECClassId classId)
+ClassMapCP ChangeExtractor::GetClassMap(ECDbCR ecdb, ECClassId classId)
     {
     ECN::ECClassCP ecClass = ecdb.Schemas().GetECClass(classId);
     if (ecClass == nullptr)
@@ -1011,10 +1009,10 @@ ECClassId ChangeExtractor::GetClassIdFromChangeOrTable(Utf8CP classIdColumnName,
 //---------------------------------------------------------------------------------------
 bool ChangeExtractor::ChangeAffectsClass(ClassMapCR classMap) const
     {
-    ECDbSqlTable const* ecDbSqlTable = m_tableMap->GetECDbSqlTable();
+    DbTable const* ecDbSqlTable = m_tableMap->GetDbTable();
     for (PropertyMapCP propertyMap : classMap.GetPropertyMaps())
         {
-        ECDbSqlTable const* table = propertyMap->GetSingleTable();
+        DbTable const* table = propertyMap->GetSingleTable();
         if (!table || table->GetId() != ecDbSqlTable->GetId())
             continue;
 
@@ -1040,10 +1038,10 @@ bool ChangeExtractor::ChangeAffectsProperty(PropertyMapCR propertyMap) const
         return false;
         }
 
-    std::vector<ECDbSqlColumnCP> columns;
+    std::vector<DbColumn const*> columns;
     propertyMap.GetColumns(columns);
 
-    for (ECDbSqlColumnCP column : columns)
+    for (DbColumn const* column : columns)
         {
         Utf8StringCR columnName = column->GetName();
         int columnIndex = m_tableMap->GetColumnIndexByName(columnName);
@@ -1067,7 +1065,7 @@ int ChangeExtractor::GetFirstColumnIndex(PropertyMapCP propertyMap) const
     if (!propertyMap)
         return -1;
 
-    ECDbSqlColumnCP firstColumn = propertyMap->GetSingleColumn();
+    DbColumn const* firstColumn = propertyMap->GetSingleColumn();
     if (!firstColumn)
         return -1;
 
@@ -1140,11 +1138,11 @@ BentleyStatus ChangeExtractor::ExtractFromSqlChange(SqlChangeCR sqlChange, Extra
         return ERROR;
         }
 
-    ECDbSqlTable const* ecDbSqlTable = m_tableMap->GetECDbSqlTable();
+    DbTable const* ecDbSqlTable = m_tableMap->GetDbTable();
     BeAssert(ecDbSqlTable != nullptr);
 
-    TableType tableType = ecDbSqlTable->GetTableType();
-    BeAssert(tableType == TableType::Primary || tableType == TableType::Existing || tableType == TableType::Joined);
+    DbTable::Type tableType = ecDbSqlTable->GetType();
+    BeAssert(tableType == DbTable::Type::Primary || tableType == DbTable::Type::Existing || tableType == DbTable::Type::Joined);
 
     if (m_extractOption == ExtractOption::InstancesOnly && !primaryClassMap->IsRelationshipClassMap())
         {
@@ -1309,7 +1307,7 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassId(RelationshipClassMapCR relClass
         return ECClassId();
         }
 
-    ECDbSqlColumnCP classIdColumn = classIdPropMap->GetSingleColumn();
+    DbColumn const* classIdColumn = classIdPropMap->GetSingleColumn();
     BeAssert(classIdColumn != nullptr);
 
     /*
@@ -1347,7 +1345,7 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassId(RelationshipClassMapCR relClass
         }
 
     // Case #2: End is in only one table    
-    ECDbSqlColumnCP tableClassIdColumn = nullptr;
+    DbColumn const* tableClassIdColumn = nullptr;
     classIdPropMap->GetTable()->TryGetECClassIdColumn(tableClassIdColumn);
 
     bool endIsInOneTable = (classIdColumn == tableClassIdColumn);
@@ -1410,10 +1408,10 @@ void ChangeExtractor::RecordInstance(ClassMapCR classMap, ECInstanceId instanceI
     ChangeSummary::Instance instance(m_changeSummary, classMap.GetClass().GetId(), instanceId, dbOpcode, m_sqlChange->GetIndirect(), tableName);
     m_instancesTable.InsertOrUpdate(instance);
 
-    ECDbSqlTable const* ecDbSqlTable = m_tableMap->GetECDbSqlTable();
+    DbTable const* ecDbSqlTable = m_tableMap->GetDbTable();
     for (PropertyMapCP propertyMap : classMap.GetPropertyMaps())
         {
-        ECDbSqlTable const* table = propertyMap->GetSingleTable();
+        DbTable const* table = propertyMap->GetSingleTable();
         if (!table || table->GetId() != ecDbSqlTable->GetId())
             continue;
 
@@ -1450,8 +1448,8 @@ void ChangeExtractor::RecordPropertyValue(ChangeSummary::InstanceCR instance, Pr
         }
 
     //TODO: Should use Utf8CP to avoid a string copy
-    Utf8String accessString(propertyMap.GetPropertyAccessString());
-    std::vector<ECDbSqlColumnCP> columns;
+    Utf8CP accessString = propertyMap.GetPropertyAccessString();
+    std::vector<DbColumn const*> columns;
     propertyMap.GetColumns(columns);
 
     PointPropertyMap const* pointMap = dynamic_cast<PointPropertyMap const*> (&propertyMap);
@@ -1460,9 +1458,10 @@ void ChangeExtractor::RecordPropertyValue(ChangeSummary::InstanceCR instance, Pr
         BeAssert(columns.size() == (pointMap->Is3d() ? 3 : 2));
         for (int ii = 0; ii < (int) columns.size(); ii++)
             {
-            Utf8PrintfString childAccessString("%s.%s", accessString.c_str(), (ii == 0) ? "X" : ((ii == 1) ? "Y" : "Z"));
+            Utf8String childAccessString;
+            childAccessString.Sprintf("%s.%s", accessString, (ii == 0) ? "X" : ((ii == 1) ? "Y" : "Z"));
             Utf8StringCR columnName = columns[ii]->GetName();
-            RecordColumnValue(instance, columnName, childAccessString);
+            RecordColumnValue(instance, columnName, childAccessString.c_str());
             }
         return;
         }
@@ -1484,7 +1483,7 @@ void ChangeExtractor::RecordPropertyValue(ChangeSummary::InstanceCR instance, Pr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-void ChangeExtractor::RecordColumnValue(ChangeSummary::InstanceCR instance, Utf8StringCR columnName, Utf8StringCR accessString)
+void ChangeExtractor::RecordColumnValue(ChangeSummary::InstanceCR instance, Utf8StringCR columnName, Utf8CP accessString)
     {
     ECN::ECClassId classId = instance.GetClassId();
     ECInstanceId instanceId = instance.GetInstanceId();
@@ -1531,7 +1530,7 @@ void ChangeExtractor::RecordColumnValue(ChangeSummary::InstanceCR instance, Utf8
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     09/2015
 //---------------------------------------------------------------------------------------
-ChangeSummary::ChangeSummary(ECDbR ecdb) : m_ecdb(ecdb)
+ChangeSummary::ChangeSummary(ECDbCR ecdb) : m_ecdb(ecdb)
     {
     if (s_count == 0)
         RegisterSqlFunctions(m_ecdb);
@@ -2018,7 +2017,7 @@ void ChangeSummary::QueryByClass(bmap<ECInstanceId, ChangeSummary::Instance>& ch
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
 // static
-void ChangeSummary::RegisterSqlFunctions(ECDbR ecdb)
+void ChangeSummary::RegisterSqlFunctions(ECDbCR ecdb)
     {
     if (s_isChangedInstanceSqlFunction)
         return;
@@ -2032,7 +2031,7 @@ void ChangeSummary::RegisterSqlFunctions(ECDbR ecdb)
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
 // static
-void ChangeSummary::UnregisterSqlFunctions(ECDbR ecdb)
+void ChangeSummary::UnregisterSqlFunctions(ECDbCR ecdb)
     {
     if (!s_isChangedInstanceSqlFunction)
         return;
@@ -2071,5 +2070,83 @@ void IsChangedInstanceSqlFunction::_ComputeScalar(ScalarFunction::Context& ctx, 
     ctx.SetResultInt(res);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     03/2016
+//---------------------------------------------------------------------------------------
+void AddPropertyMapInfo(bmap<Utf8String, ChangeSummary::ColumnMapInfo>& columnMapByAccessString, PropertyMapCR propertyMap, bmap<Utf8String, int> const& columnIndexByName)
+    {
+    StructPropertyMap const* inlineStructMap = dynamic_cast<StructPropertyMap const*> (&propertyMap);
+    if (inlineStructMap != nullptr)
+        {
+        for (PropertyMapCP childPropertyMap : inlineStructMap->GetChildren())
+            AddPropertyMapInfo(columnMapByAccessString, *childPropertyMap, columnIndexByName);
+        return;
+        }
+
+    Utf8String accessString(propertyMap.GetPropertyAccessString());
+    std::vector<DbColumn const*> columns;
+    propertyMap.GetColumns(columns);
+
+    PointPropertyMap const* pointMap = dynamic_cast<PointPropertyMap const*> (&propertyMap);
+    if (pointMap != nullptr)
+        {
+        BeAssert(columns.size() == (pointMap->Is3d() ? 3 : 2));
+        for (int ii = 0; ii < (int) columns.size(); ii++)
+            {
+            Utf8PrintfString childAccessString("%s.%s", accessString.c_str(), (ii == 0) ? "X" : ((ii == 1) ? "Y" : "Z"));
+
+            Utf8StringCR columnName = columns[ii]->GetName();
+
+            bmap<Utf8String, int>::const_iterator iter = columnIndexByName.find(columnName);
+            BeAssert(iter != columnIndexByName.end());
+            
+            columnMapByAccessString[childAccessString] = ChangeSummary::ColumnMapInfo(columnName, iter->second);
+            }
+        return;
+        }
+
+    // PropertyMapToColumn, PropertyMapArrayOfPrimitives
+    BeAssert(columns.size() == 1);
+    Utf8StringCR columnName = columns[0]->GetName();
+
+    bmap<Utf8String, int>::const_iterator iter = columnIndexByName.find(columnName);
+    BeAssert(iter != columnIndexByName.end());
+
+    columnMapByAccessString[accessString] = ChangeSummary::ColumnMapInfo(columnName, iter->second);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     03/2016
+//---------------------------------------------------------------------------------------
+//static 
+BentleyStatus ChangeSummary::GetPrimaryTableMapInfo(TableMapInfo& tableMapInfo, ECN::ECClassCR cls, ECDbCR ecdb)
+    {
+    ClassMapCP classMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMap(cls);
+    if (!classMap)
+        {
+        BeAssert(false && "Class not found");
+        return ERROR;
+        }
+
+    DbTable& primaryTable = classMap->GetPrimaryTable();
+    tableMapInfo.m_tableName = primaryTable.GetName();
+
+    bvector<Utf8String> columnNames;
+    ecdb.GetColumns(columnNames, tableMapInfo.m_tableName.c_str());
+
+    bmap<Utf8String, int> columnIndexByName;
+    for (int ii = 0; ii < (int) columnNames.size(); ii++)
+        columnIndexByName[columnNames[ii]] = ii;
+
+    for (PropertyMapCP propertyMap : classMap->GetPropertyMaps())
+        {
+        if (!propertyMap->MapsToTable(primaryTable))
+            continue;
+
+        AddPropertyMapInfo(tableMapInfo.m_columnMapByAccessString, *propertyMap, columnIndexByName);
+        }
+
+    return SUCCESS;
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

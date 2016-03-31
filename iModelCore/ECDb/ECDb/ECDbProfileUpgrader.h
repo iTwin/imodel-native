@@ -19,10 +19,10 @@ private:
     virtual SchemaVersion _GetTargetVersion() const = 0;
     virtual DbResult _Upgrade(ECDbR) const = 0;
 
-    static DbResult AlterColumnsInView(ECDbR, Utf8CP viewName, Utf8CP allColumnNamesAfter);
-    static DbResult AlterColumnsInTable(ECDbR, Utf8CP tableName, Utf8CP newDdlBody, bool recreateIndices, Utf8CP allColumnNamesAfter, Utf8CP matchingColumnNamesWithOldNames);
+    static DbResult AlterColumnsInView(ECDbCR, Utf8CP viewName, Utf8CP allColumnNamesAfter);
+    static DbResult AlterColumnsInTable(ECDbCR, Utf8CP tableName, Utf8CP newDdlBody, bool recreateIndices, Utf8CP allColumnNamesAfter, Utf8CP matchingColumnNamesWithOldNames);
     static bool IsView(ECDbCR, Utf8CP tableOrViewName);
-    static DbResult RetrieveIndexDdlListForTable(std::vector<Utf8String>& indexDdlList, ECDbR, Utf8CP tableName);
+    static DbResult RetrieveIndexDdlListForTable(std::vector<Utf8String>& indexDdlList, ECDbCR, Utf8CP tableName);
 
 protected:
     //! Drops a table or view
@@ -30,7 +30,7 @@ protected:
     //! @param[in] ecdb ECDb file handle
     //! @param[in] tableOrViewName Name of table / view to be dropped
     //! @return ::BE_SQLITE_OK in case of succes. Error codes otherwise.
-    static DbResult DropTableOrView(ECDbR ecdb, Utf8CP tableOrViewName);
+    static DbResult DropTableOrView(ECDbCR ecdb, Utf8CP tableOrViewName);
 
     //! Modifies column(s) in a table.
     //! If tableName refers to an empty view, the empty view is modified.

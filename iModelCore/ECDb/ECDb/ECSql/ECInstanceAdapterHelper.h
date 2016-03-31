@@ -313,6 +313,8 @@ public:
     //! @param[in] instance ECInstance for which the operation failed
     //! @param[in] errorMessage Detailed error message
     static void LogFailure (Utf8CP operationName, ECN::IECInstanceCR instance, Utf8CP errorMessage);
+
+    static bool Equals(ECN::ECClassCR lhs, ECN::ECClassCR rhs);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

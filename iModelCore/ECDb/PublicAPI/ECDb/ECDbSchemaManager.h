@@ -141,7 +141,7 @@ public:
         };
 
 private:
-    ECDb& m_ecdb;
+    ECDb const& m_ecdb;
     ECDbMap& m_map;
     RefCountedPtr<ECDbSchemaReader> m_ecReader;
     mutable BeMutex m_criticalSection;
@@ -162,7 +162,7 @@ private:
 
 public:
 #if !defined (DOCUMENTATION_GENERATOR)
-    ECDbSchemaManager(ECDb&, ECDbMap&);
+    ECDbSchemaManager(ECDb const&, ECDbMap&);
     virtual ~ECDbSchemaManager ();
 #endif
 

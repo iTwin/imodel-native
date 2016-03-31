@@ -106,7 +106,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
                         str.AppendFormatted("(SELECT [%s] FROM [%s] WHERE [%s] = [%s] LIMIT 1)",
                             classIdColumn->GetName().c_str(),
                             classIdColumn->GetTable().GetName().c_str(),
-                            classIdColumn->GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId)->GetName().c_str(),
+                            classIdColumn->GetTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId)->GetName().c_str(),
                             ecInstanceidPropMap->GetSingleColumn()->GetName().c_str());
 
                         nativeSqlSnippets.push_back(str);
