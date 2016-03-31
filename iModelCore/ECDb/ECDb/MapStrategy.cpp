@@ -260,8 +260,8 @@ BentleyStatus ECDbMapStrategy::Assign(UserECDbMapStrategy const& userStrategy)
     if (Enum::Contains(userOptions, UserECDbMapStrategy::Options::JoinedTablePerDirectSubclass))
         m_options = Enum::Or(m_options, Options::ParentOfJoinedTable);
 
-    //MinimumSharedColumnCount is not directly taken over into the effective map strategy. It is handled
-    //expliclity when evaluating the class map info
+    m_minimumSharedColumnCount = userStrategy.GetMinimumSharedColumnCount();
+
     if (!IsValid())
         return ERROR;
 
