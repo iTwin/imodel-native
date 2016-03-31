@@ -142,7 +142,7 @@ IScalableMeshProgressiveQueryEnginePtr IScalableMeshProgressiveQueryEngine::Crea
 
 static bool s_LoadQVDuringQuery = true;
 
-static bool s_keepSomeInvalidate = false; 
+static bool s_keepSomeInvalidate = true; 
 
 class CachedDisplayNodeManager
     {
@@ -258,9 +258,7 @@ public:
     //MaterialPtr GetMaterial(__int64 nodeId, DTMDataRef* dtmDataRef);
 
     void ClearCachedNodes(const bvector<DRange2d>* clearRanges, IScalableMeshPtr& scalableMeshPtr)
-        {
-        //NEEDS_WORK_SM : Not done yet.
-        assert(!s_keepSomeInvalidate);                
+        {        
         m_nodeListMutex.lock();
 
         auto cachedNodeIter(m_cachedNodes.begin());
