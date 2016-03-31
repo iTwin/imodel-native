@@ -27,7 +27,49 @@ TopoDS_Shape m_shape;
 protected:
 
 virtual Transform _GetEntityTransform () const override {Transform transform = OCBRepUtil::ToTransform(m_shape.Location()); return transform;}
-virtual void _SetEntityTransform (TransformCR transform) override {TopLoc_Location loc(OCBRepUtil::ToGpTrsf(transform)); m_shape.Location(loc);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual void _SetEntityTransform (TransformCR transform) override
+    {
+    DPoint3d    origin;
+    RotMatrix   rMatrix, rotation, skewFactor;
+    Transform   shapeTrans, goopTrans; 
+
+    transform.GetTranslation(origin);
+    transform.GetMatrix(rMatrix);
+
+    // NOTE: Don't allow scaled TopoDS_Shape::Location...too many bugs, also non-uniform scale isn't supported...
+    if (rMatrix.RotateAndSkewFactors(rotation, skewFactor, 0, 1))
+        {
+        goopTrans.InitFrom(skewFactor);
+        shapeTrans.InitFrom(rotation, origin);
+        }
+    else
+        {
+        goopTrans = transform;
+        shapeTrans.InitIdentity();
+        }
+
+    if (!goopTrans.IsIdentity())
+        {
+        gp_GTrsf goopTrsf = OCBRepUtil::ToGpGTrsf(goopTrans);
+
+        m_shape.Location(TopLoc_Location()); // NOTE: Need to ignore shape location...
+        BRepBuilderAPI_GTransform transformer(m_shape, goopTrsf);
+    
+        if (!transformer.IsDone())
+            {
+            BeAssert(false);
+            return;
+            }
+
+        m_shape = transformer.ModifiedShape(m_shape);
+        }
+
+    m_shape.Location(OCBRepUtil::ToGpTrsf(shapeTrans));
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/16
@@ -56,16 +98,10 @@ KernelEntityType _GetEntityType () const
 DRange3d _GetEntityRange() const
     {
     Bnd_Box box;
-    TopLoc_Location saveLoc = m_shape.Location(); // OC BUG WORKAROUND: Save original location...
 
-    const_cast<TopoDS_Shape&>(m_shape).Location(TopLoc_Location()); // OC BUG WORKAROUND: Clear local coords, scale less than 1.0 isn't handled correctly...
     BRepBndLib::Add(m_shape, box, false); // Never use triangulation...
-    const_cast<TopoDS_Shape&>(m_shape).Location(saveLoc); // OC BUG WORKAROUND: Restore original location...
 
-    DRange3d range = OCBRepUtil::ToDRange3d(box);
-    OCBRepUtil::ToTransform(saveLoc).Multiply(range, range); // OC BUG WORKAROUND: Apply local coords correctly to result...
-
-    return range;
+    return OCBRepUtil::ToDRange3d(box);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -132,6 +168,44 @@ PolyfaceHeaderPtr SolidKernelUtil::IncrementalMesh(ISolidKernelEntityCR entity, 
     return OCBRepUtil::IncrementalMesh(ocEntity->GetShape(), facetOptions);
 #else
     return nullptr;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SolidKernelUtil::IntersectRay(ISolidKernelEntityCR entity, DRay3dCR boresite, bvector<DPoint3d>& points, bvector<DVec3d>& normals)
+    {
+#if defined (BENTLEYCONFIG_OPENCASCADE)
+    OpenCascadeEntity const* ocEntity = dynamic_cast <OpenCascadeEntity const*> (&entity);
+
+    if (!ocEntity)
+        return false;
+
+    gp_Lin lin = OCBRepUtil::ToGpLin(boresite);
+    IntCurvesFace_ShapeIntersector shint;
+
+    shint.Load(ocEntity->GetShape(), Precision::Confusion());
+    shint.Perform(lin, -RealLast(), RealLast());
+
+    if (!shint.IsDone() || 0 == shint.NbPnt())
+        return false;
+
+    printf("\n");
+    for (int iHit=1; iHit <= shint.NbPnt(); ++iHit)
+        {
+        const Handle(Geom_Surface)& surface = BRep_Tool::Surface(shint.Face(iHit));
+        GeomLProp_SLProps props(surface, shint.UParameter(iHit), shint.VParameter(iHit), 1, Precision::Confusion()); // Need 1st derivative for normal...
+
+        printf("(%d) W: %lf\n", iHit, shint.WParameter(iHit));
+
+        points.push_back(OCBRepUtil::ToDPoint3d(shint.Pnt(iHit)));
+        normals.push_back(OCBRepUtil::ToDVec3d(props.Normal()));
+        }
+
+    return true;
+#else
+    return false;
 #endif
     }
 
