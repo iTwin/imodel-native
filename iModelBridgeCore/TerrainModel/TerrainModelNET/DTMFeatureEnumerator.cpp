@@ -2,7 +2,7 @@
 |
 |     $Source: TerrainModelNET/DTMFeatureEnumerator.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -21,6 +21,10 @@ ref class DTMFeatureInfoDirect : DTMFeatureInfo
         }
 
     ~DTMFeatureInfoDirect ()
+        {
+        delete m_impl;
+        }
+    !DTMFeatureInfoDirect()
         {
         delete m_impl;
         }
@@ -89,6 +93,7 @@ ref class DTMFeatureInfoDirect : DTMFeatureInfo
 
 DTMFeatureEnumerator::DTMFeatureEnumerator (DTM^ dtm) : m_dtm (dtm)
     {
+    m_marshaller = ReleaseMarshaller::GetMarshaller();
     DTMFeatureEnumeratorPtr native = Bentley::TerrainModel::DTMFeatureEnumerator::Create (*m_dtm->Handle);
     m_native = native.get ();
     m_native->AddRef ();
@@ -146,6 +151,8 @@ void DTMFeatureEnumerator::ExcludeFeature (DTMFeatureType type)
 
 DTMFeatureInfo^ DTMFeatureEnumerator::Enumerator::Current::get ()
     {
+    if (nullptr == m_impl)
+        return nullptr;
     return gcnew DTMFeatureInfoDirect (*m_impl->m_current);
     }
 

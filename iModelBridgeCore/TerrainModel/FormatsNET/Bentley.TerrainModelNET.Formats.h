@@ -2,13 +2,14 @@
 |
 |     $Source: FormatsNET/Bentley.TerrainModelNET.Formats.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 #pragma unmanaged
 
+#include <Bentley/ReleaseMarshaller.h>
 #include <TerrainModel\TerrainModel.h>
 #include <TerrainModel\Formats\Inroads.h>
 #include <TerrainModel\Formats\InroadsImporter.h>

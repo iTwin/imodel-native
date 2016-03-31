@@ -2,7 +2,7 @@
 |
 |     $Source: TerrainModelNET/DTMFeatureEnumerator.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -44,9 +44,10 @@ public ref class DTMFeatureEnumerator : System::Collections::Generic::IEnumerabl
     ref class Enumerator : System::Collections::Generic::IEnumerator<DTMFeatureInfo^>
         {
         DTMFeatureEnumeratorImpl* m_impl;
+        ReleaseMarshaller* m_marshaller;
         Bentley::TerrainModel::DTMFeatureEnumerator& m_native;
         internal:
-            Enumerator (Bentley::TerrainModel::DTMFeatureEnumerator& native) : m_native (native)
+            Enumerator(Bentley::TerrainModel::DTMFeatureEnumerator& native, ReleaseMarshaller* marshaller) : m_native(native), m_marshaller(marshaller)
                 {
                 m_native.AddRef ();
                 m_impl = nullptr;
@@ -59,6 +60,15 @@ public ref class DTMFeatureEnumerator : System::Collections::Generic::IEnumerabl
                     m_impl = nullptr;
                     }
                 m_native.Release ();
+                }
+            !Enumerator()
+                {
+                if (m_impl)
+                    {
+                    delete m_impl;
+                    m_impl = nullptr;
+                    }
+                m_marshaller->QueueEntry(&m_native);
                 }
         public:
             virtual bool MoveNext ()
@@ -81,7 +91,8 @@ public ref class DTMFeatureEnumerator : System::Collections::Generic::IEnumerabl
             }
         virtual void Reset ()
             {
-            m_impl->m_current = m_impl->m_collection.begin ();
+            if (nullptr != m_impl)
+                m_impl->m_current = m_impl->m_collection.begin();
             }
 
         private:
@@ -96,13 +107,19 @@ public ref class DTMFeatureEnumerator : System::Collections::Generic::IEnumerabl
 
     private:
         DTM^ m_dtm;
+        ReleaseMarshaller* m_marshaller;
         Bentley::TerrainModel::DTMFeatureEnumerator* m_native;
 
     public:
         DTMFeatureEnumerator (DTM^ dtm);
-        ~DTMFeatureEnumerator ()
+        ~DTMFeatureEnumerator()
             {
             m_native->Release();
+            m_native = nullptr;
+            }
+        !DTMFeatureEnumerator()
+            {
+            m_marshaller->QueueEntry(m_native);
             }
 
         property bool Sort
@@ -131,7 +148,7 @@ public ref class DTMFeatureEnumerator : System::Collections::Generic::IEnumerabl
 
         virtual System::Collections::Generic::IEnumerator<DTMFeatureInfo^>^ GetEnumerator ()
             {
-            return gcnew Enumerator (*m_native);
+            return gcnew Enumerator (*m_native, m_marshaller);
             }
 
     private:

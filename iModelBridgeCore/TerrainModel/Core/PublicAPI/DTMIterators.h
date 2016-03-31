@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/DTMIterators.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -200,12 +200,6 @@ struct DTMMeshEnumerator : RefCountedBase
         {
         iterator (const DTMMeshEnumerator* p_vec, long pos, long pos2) : m_pos (pos), m_pos2(pos2), m_p_vec (p_vec)
             {
-            m_polyface = nullptr;
-            }
-        virtual ~iterator ()
-            {
-            if (m_polyface)
-                delete m_polyface;
             }
 
         // these three methods form the basis of an iterator for use with 
@@ -225,9 +219,8 @@ struct DTMMeshEnumerator : RefCountedBase
             long m_pos;
             long m_pos2;
             const DTMMeshEnumerator *m_p_vec;
-            mutable PolyfaceQueryCarrier* m_polyface;
         };
-
+            
     private: BcDTMPtr m_dtm;
     private: BC_DTM_OBJ* m_dtmP;
 
@@ -239,9 +232,8 @@ struct DTMMeshEnumerator : RefCountedBase
     private: mutable long m_pointMark;
     private: mutable bool voidsInDtm;
     private: mutable long startPnt, lastPnt, leftMostPnt;
-    private: mutable BlockedVector<int> meshFaces;
-    private: mutable BlockedVector<DPoint3d> meshPoints;
-    private: mutable BlockedVector<DVec3d> meshNormals;
+    private: mutable PolyfaceHeaderPtr m_polyface;
+
     private: mutable BcDTMPtr clipDtm;
     private: mutable BC_DTM_OBJ* clipDtmP;
     private: mutable bool m_initialized;
