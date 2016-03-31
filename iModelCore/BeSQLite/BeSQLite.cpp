@@ -23,9 +23,6 @@
 #include <BeSQLite/DownloadAdmin.h>
 #include "BeSQLiteProfileManager.h"
 #include <prg.h>
-
-USING_NAMESPACE_BENTLEY
-
 #include "seven/Types.h"
 #include "seven/Lzma2Enc.h"
 #include "seven/Lzma2Dec.h"
@@ -37,6 +34,7 @@ USING_NAMESPACE_BENTLEY
 #define RUNONCE_CHECK(var,stat) {if (var) return stat; var=true;}
 
 using namespace std;
+USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
 
 static Utf8CP loadZlibVfs();
@@ -45,7 +43,6 @@ static Utf8CP loadSnappyVfs();
 #if !defined (NDEBUG)
 extern "C" int checkNoActiveStatements(SqlDbP db);
 #endif
-
 
 BEGIN_BENTLEY_SQLITE_NAMESPACE
 //=======================================================================================
@@ -489,7 +486,7 @@ SqlPrintfString::~SqlPrintfString() {sqlite3_free(m_str);}
 
 #ifdef _MSC_VER
     #pragma warning(disable:4355)
-#endif // _MSC_VER
+#endif 
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  07/14
@@ -1489,7 +1486,6 @@ Db::OpenParams::OpenParams(OpenMode openMode, DefaultTxn defaultTxn, BusyRetry* 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::CreateNewDb(Utf8CP dbName, BeGuid dbGuid, CreateParams const& params)
     {
-
     if (IsDbOpen())
         return BE_SQLITE_ERROR_AlreadyOpen;
 
@@ -2259,7 +2255,7 @@ DbResult Db::CheckProfileVersion(bool& fileIsAutoUpgradable, SchemaVersion const
     //If major and minor of actual profile version is newer than expected, file cannot be opened.
     if (actualProfileVersion.CompareTo(expectedProfileVersion, SchemaVersion::VERSION_MajorMinor) > 0)
         {
-        LOG.errorv("Cannot open file: The file's %s profile is too new. Please upgrade your Bentley product to the latest version.", profileName);
+        LOG.errorv("Cannot open file: The file's %s profile is too new. Please upgrade your product to the latest version.", profileName);
         return BE_SQLITE_ERROR_ProfileTooNew;
         }
 
@@ -2520,102 +2516,6 @@ Utf8CP Db::InterpretDbResult(DbResult result)
 
     return "<unkown result code>";
     }
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-bool GraphicsAndQuerySequencer::s_areSequencerDiagnosticsEnabled;
-int GraphicsAndQuerySequencer::s_nPendingGraphicsPriorityRequests;
-intptr_t GraphicsAndQuerySequencer::s_rangeTreeThreadId;
-SqlDbP GraphicsAndQuerySequencer::s_queryThreadDb;
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    01/2013
-//---------------------------------------------------------------------------------------
-void GraphicsAndQuerySequencer::wt_BeginDiagnostics()
-    {
-    BeAssert(!s_areSequencerDiagnosticsEnabled);
-    s_areSequencerDiagnosticsEnabled = true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    01/2013
-//---------------------------------------------------------------------------------------
-void GraphicsAndQuerySequencer::wt_EndDiagnostics()
-    {
-    BeAssert(s_areSequencerDiagnosticsEnabled);
-    s_areSequencerDiagnosticsEnabled = false;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    01/2013
-//---------------------------------------------------------------------------------------
-void GraphicsAndQuerySequencer::qt_StartRangeTreeOperation(BeSQLite::Db const& queryDb)
-    {
-    BeAssert(0 == s_rangeTreeThreadId);
-    s_queryThreadDb = queryDb.GetSqlDb();
-    s_rangeTreeThreadId = BeThreadUtilities::GetCurrentThreadId();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    01/2013
-//---------------------------------------------------------------------------------------
-void GraphicsAndQuerySequencer::qt_EndRangeTreeOperation()
-    {
-    BeAssert(0 != s_rangeTreeThreadId);
-    s_rangeTreeThreadId = 0;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    01/2013
-//---------------------------------------------------------------------------------------
-void GraphicsAndQuerySequencer::wt_StartOperationRequiredForGraphics()
-    {
-    s_nPendingGraphicsPriorityRequests++;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    01/2013
-//---------------------------------------------------------------------------------------
-void GraphicsAndQuerySequencer::wt_EndOperationRequiredForGraphics()
-    {
-    BeAssert(s_nPendingGraphicsPriorityRequests > 0);
-    s_nPendingGraphicsPriorityRequests--;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    01/2013
-//---------------------------------------------------------------------------------------
-bool GraphicsAndQuerySequencer::qt_isOperationRequiredForGraphicsPending()
-    {
-    return s_nPendingGraphicsPriorityRequests != 0;
-    }
-
-//---------------------------------------------------------------------------------------
-// The only purpose of this method is to assert in a debug build with an operation is not allowed
-// @bsimethod                                                   John.Gooding    01/2013
-//---------------------------------------------------------------------------------------
-void GraphicsAndQuerySequencer::CheckSQLiteOperationAllowed(SqlDbP pendingOperation)
-    {
-#if !defined (NDEBUG)
-    if (!s_areSequencerDiagnosticsEnabled || s_nPendingGraphicsPriorityRequests)
-        return;
-
-    if (BeThreadUtilities::GetCurrentThreadId() == s_rangeTreeThreadId)
-        return;
-
-    if (pendingOperation != s_queryThreadDb)
-        return;
-
-    BeAssert(false);// && "detected an sql operation that may block dynamic update");
-#endif
-    }
-
-wt_OperationForGraphics::wt_OperationForGraphics() { GraphicsAndQuerySequencer::wt_StartOperationRequiredForGraphics(); }
-wt_OperationForGraphics::~wt_OperationForGraphics() { GraphicsAndQuerySequencer::wt_EndOperationRequiredForGraphics(); }
-qt_RangeTreeOperationBlock::qt_RangeTreeOperationBlock(BeSQLite::Db const&queryDb) { GraphicsAndQuerySequencer::qt_StartRangeTreeOperation(queryDb); }
-qt_RangeTreeOperationBlock::~qt_RangeTreeOperationBlock() { GraphicsAndQuerySequencer::qt_EndRangeTreeOperation(); }
-wt_GraphicsAndQuerySequencerDiagnosticsEnabler::wt_GraphicsAndQuerySequencerDiagnosticsEnabler() { GraphicsAndQuerySequencer::wt_BeginDiagnostics(); }
-wt_GraphicsAndQuerySequencerDiagnosticsEnabler::~wt_GraphicsAndQuerySequencerDiagnosticsEnabler() { GraphicsAndQuerySequencer::wt_EndDiagnostics(); }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
@@ -3015,11 +2915,11 @@ bool BeDbMutex::IsHeld() {return 0!=sqlite3_mutex_held((sqlite3_mutex*)m_mux);}
 #endif
 
 /*---------------------------------------------------------------------------------**//**
+* CachedStatements hold a reference to their cache. That is so they can use the cache's mutex for release.
 * @bsimethod                                    Keith.Bentley                   08/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-CachedStatement::CachedStatement(Utf8CP sql, StatementCache const& myCache)
+CachedStatement::CachedStatement(Utf8CP sql, StatementCache const& myCache) : m_myCache(myCache), m_inCache(true)
     {
-    m_myCache.store(&myCache);
     size_t len = strlen(sql) + 1;
     m_sql = (Utf8P) sqlite3_malloc((int)len);
     memcpy((char*)m_sql, sql, len);
@@ -3032,20 +2932,26 @@ CachedStatement::~CachedStatement() {sqlite3_free((void*)m_sql);}
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t CachedStatement::Release()
     {
-    uint32_t countWas = m_refCount.DecrementAtomicPost(); 
+    // Since statements can be referenced from multiple threads, and since we want to reset the statement 
+    // when it is only held by the StatementCache, we need to hold the cache's mutex for the entire scope of this
+    // method. However, the reference count member must still be atomic since we don't acquire the mutex for AddRef.
+    BeDbMutexHolder holder(m_myCache.m_mutex);
+
+    bool inCache = m_inCache; // hold this in a local before we decrement the refcount in case another thread deletes us
+    uint32_t countWas = m_refCount.DecrementAtomicPost();
     if (1 == countWas)
         {
         delete this;
-        return  0;
+        return 0;
         }
 
     // SharedStatements are always held in a StatementCache, so the ref count will be 1 if no
     // one else is pointing to this instance. That means that the statement is no longer in use and
     // we should reset it so sqlite won't keep it in the list of active vdbe's. Also, clear its bindings so
     // the next user won't accidentally inherit them.
-    if (2==countWas && nullptr != m_myCache.load())
+    if (inCache && 2==countWas)
         {
-        Reset();
+        Reset(); // this is safe because we know this statement is now ONLY held by the StatementCache.
         ClearBindings();
         }
 
@@ -3075,7 +2981,7 @@ void StatementCache::Dump() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::list<CachedStatementPtr>::iterator StatementCache::FindEntry(Utf8CP sql) const
+StatementCache::Entries::iterator StatementCache::FindEntry(Utf8CP sql) const
     {
     for (auto it=m_entries.begin(), end=m_entries.end(); it!=end; ++it)
         {
@@ -3094,19 +3000,18 @@ std::list<CachedStatementPtr>::iterator StatementCache::FindEntry(Utf8CP sql) co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-CachedStatement& StatementCache::AddStatement(Utf8CP sql) const
+void StatementCache::AddStatement(CachedStatementPtr& newEntry, Utf8CP sql) const
     {
     BeDbMutexHolder _v_v(m_mutex);
 
     if (m_entries.size() >= m_size) // if cache is full, remove oldest entry
         {
-        m_entries.back()->m_myCache.store(nullptr);
+        m_entries.back()->m_inCache = false; // this statement is no longer managed by this cache, don't let Release method call Reset/ClearBindings anymore
         m_entries.pop_back();
         }
 
-    CachedStatement* newEntry = new CachedStatement(sql, *this);
+    newEntry = new CachedStatement(sql, *this);
     m_entries.push_front(newEntry);
-    return  *newEntry;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3120,27 +3025,30 @@ DbResult StatementCache::GetPreparedStatement(CachedStatementPtr& stmt, DbFile c
         return  BE_SQLITE_ERROR_NoTxnActive;
         }
 
-    stmt = FindStatement(sqlString);
+    FindStatement(stmt, sqlString);
     if (stmt.IsValid())
         return  BE_SQLITE_OK;
 
-    stmt = &AddStatement(sqlString);
+    AddStatement(stmt, sqlString);
     return stmt->Prepare(dbFile, sqlString);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-CachedStatement* StatementCache::FindStatement(Utf8CP sql) const
+void StatementCache::FindStatement(CachedStatementPtr& stmt, Utf8CP sql) const
     {
     BeDbMutexHolder _v_v(m_mutex);
 
     auto entry = FindEntry(sql);
     if (entry == m_entries.end())
-        return nullptr;
+        {
+        stmt = nullptr;
+        return;
+        }
 
     m_entries.splice(m_entries.begin(), m_entries, entry); // move this most-recently-accessed statement to front 
-    return entry->get();
+    stmt = *entry;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3149,9 +3057,9 @@ CachedStatement* StatementCache::FindStatement(Utf8CP sql) const
 StatementCache& Db::GetStatementCache() const
     {
     if (nullptr == m_statements)
-        m_statements = new StatementCache(20);
+        m_statements = new StatementCache(35);
 
-    return  *m_statements;
+    return *m_statements;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3159,6 +3067,7 @@ StatementCache& Db::GetStatementCache() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::GetCachedStatement(CachedStatementPtr& stmt, Utf8CP sqlString) const
     {
+    stmt = nullptr;  // just in case she's already holding a pointer to a valid statement. Otherwise we may not share it.
     return GetStatementCache().GetPreparedStatement(stmt, *m_dbFile, sqlString);
     }
 
@@ -4227,56 +4136,6 @@ size_t DbEmbeddedFileTable::Iterator::QueryCount() const
     return ((BE_SQLITE_ROW != statement.Step()) ? 0 : statement.GetValueInt(0));
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-static int rTreeAcceptMatch(RTreeAcceptFunction::Tester::QueryInfo* info)
-    {
-    RTreeAcceptFunction* agg = (RTreeAcceptFunction*) info->m_context;
-    return agg->GetTester()->_TestRange(*info);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DbFile::InitRTreeMatch() const
-    {
-    if (m_flags.m_rtreeMatchValid)
-        return;
-    m_flags.m_rtreeMatchValid = true;
-
-    // we can't use AddRTreeMatchFunction here because we need the extra level of indirection of the pointer-to-match.
-    int stat = sqlite3_rtree_query_callback(m_sqlDb, "rTreeMatch", (int(*)(sqlite3_rtree_query_info*)) rTreeAcceptMatch, &m_rtreeMatch, nullptr);
-    BeAssert(BE_SQLITE_OK == stat);
-
-    stat = AddFunction(m_rtreeMatch);
-    BeAssert(BE_SQLITE_OK == stat);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DbFile::SetRTreeMatch(RTreeAcceptFunction::Tester* tester) const
-    {
-    BeAssert(m_flags.m_rtreeMatchValid);
-    BeAssert(nullptr == m_rtreeMatch.GetTester() || nullptr == tester);
-    m_rtreeMatch.SetTester(tester);
-    }
-
-RTreeAcceptFunction::Tester::Tester(DbR db) : m_db(db), RTreeMatchFunction("rTreeMatch", 1) {db.GetDbFile()->InitRTreeMatch();}
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult RTreeAcceptFunction::Tester::StepRTree(Statement& stmt)
-    {
-    m_db.m_dbFile->SetRTreeMatch(this);
-    DbResult rc = stmt.Step();
-    m_db.m_dbFile->SetRTreeMatch(nullptr);
-    return rc;
-    }
-#endif
-
 //=======================================================================================
 // support for zlib-compressed databases
 // @bsiclass                                                    Keith.Bentley   12/11
@@ -4545,10 +4404,16 @@ static void likeCallback(sqlite3_context* context, int numArgs, sqlite3_value** 
 
     auto languageSupport = BeSQLiteLib::GetLanguageSupport();
     if (nullptr == languageSupport)
-        { BeAssert(false); return; }
+        {
+        BeAssert(false); 
+        return; 
+        }
 
     if ((numArgs < 2) || (numArgs > 3))
-        { BeAssert(false); return; }
+        {
+        BeAssert(false); 
+        return; 
+        }
 
     auto patternString = sqlite3_value_text(args[0]);
     auto matchString = sqlite3_value_text(args[1]);
@@ -4559,7 +4424,10 @@ static void likeCallback(sqlite3_context* context, int numArgs, sqlite3_value** 
     // Limit the length of the LIKE or GLOB pattern to avoid problems of deep recursion and N*N behavior in likeCompare.
     auto maxPatternLen = sqlite3_limit(sqlite3_context_db_handle(context), SQLITE_LIMIT_LIKE_PATTERN_LENGTH, -1);
     if (sqlite3_value_bytes(args[0]) > maxPatternLen)
-        { BeAssert(false); return; }
+        { 
+        BeAssert(false); 
+        return; 
+        }
 
     uint32_t escapeChar = 0;
     if (3 == numArgs)
@@ -4567,14 +4435,20 @@ static void likeCallback(sqlite3_context* context, int numArgs, sqlite3_value** 
         // The escape character string must consist of a single UTF-8 character. Otherwise, return an error.
         auto escapeCharStr = sqlite3_value_text(args[2]);
         if (nullptr == escapeCharStr)
-            { BeAssert(false); return; }
+            { 
+            BeAssert(false); 
+            return; 
+            }
 
         auto escapeCharNumBytes = sqlite3_value_bytes(args[2]);
         int iNextChar = 0;
         U8_NEXT_UNSAFE(escapeCharStr, iNextChar, escapeChar);
 
         if (iNextChar != escapeCharNumBytes)
-            { BeAssert(false); return; }
+            { 
+            BeAssert(false); 
+            return; 
+            }
         }
 
     sqlite3_result_int(context, likeCompare(patternString, matchString, escapeChar, languageSupport));

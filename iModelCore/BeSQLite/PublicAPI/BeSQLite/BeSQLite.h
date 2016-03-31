@@ -1169,13 +1169,14 @@ struct CachedStatement : Statement
     friend struct StatementCache;
 private:
     mutable BeAtomic<uint32_t> m_refCount;
-    mutable BeAtomic<struct StatementCache const*> m_myCache;
+    bool m_inCache;
+    struct StatementCache const& m_myCache;
     Utf8CP  m_sql;
 
 public:
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-    uint32_t AddRef() const {return m_refCount.IncrementAtomicPre();}
+    uint32_t AddRef() const {return m_refCount.IncrementAtomicPre();} 
     uint32_t GetRefCount() const {return m_refCount.load();}
     BE_SQLITE_EXPORT uint32_t Release();
     BE_SQLITE_EXPORT CachedStatement(Utf8CP sql, struct StatementCache const&);
@@ -1194,16 +1195,18 @@ typedef RefCountedPtr<CachedStatement> CachedStatementPtr;
 //=======================================================================================
 struct StatementCache : NonCopyableClass
 {
+    friend struct CachedStatement;
 private:
+    typedef std::list<CachedStatementPtr> Entries;
     mutable BeDbMutex m_mutex;
-    mutable std::list<CachedStatementPtr> m_entries;
+    mutable Entries m_entries;
     uint32_t m_size;
-    std::list<CachedStatementPtr>::iterator FindEntry(Utf8CP) const;
-    BE_SQLITE_EXPORT CachedStatement& AddStatement(Utf8CP) const;
-    BE_SQLITE_EXPORT CachedStatement* FindStatement(Utf8CP) const;
+    Entries::iterator FindEntry(Utf8CP) const;
+    BE_SQLITE_EXPORT void AddStatement(CachedStatementPtr& newEntry, Utf8CP sql) const;
+    BE_SQLITE_EXPORT void FindStatement(CachedStatementPtr&, Utf8CP) const;
 
 public:
-    StatementCache(uint32_t size){m_size=size;}
+    StatementCache(uint32_t size) : m_mutex(BeDbMutex::MutexType::Recursive) {m_size=size;}
     ~StatementCache() {Empty();}
 
     BE_SQLITE_EXPORT DbResult GetPreparedStatement(CachedStatementPtr&, DbFile const& dbFile, Utf8CP sqlString) const;
