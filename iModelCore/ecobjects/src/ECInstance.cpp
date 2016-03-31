@@ -2538,7 +2538,7 @@ ECSchemaCP GetSchema(Utf8String schemaName)
     if (ECObjectsStatus::Success != SchemaKey::ParseSchemaFullName(key, schemaName.c_str()))
         return NULL;
 
-    return m_context.FindSchemaCP(key, SchemaMatchType::LatestCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact 
+    return m_context.FindSchemaCP(key, SchemaMatchType::LatestMajorCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact 
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   10/2011
@@ -2552,7 +2552,7 @@ ECSchemaCP       GetSchema()
     if (ECObjectsStatus::Success != SchemaKey::ParseSchemaFullName(key, m_fullSchemaName.c_str()))
         return NULL;
     
-    m_schema = m_context.FindSchemaCP(key, SchemaMatchType::LatestCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact 
+    m_schema = m_context.FindSchemaCP(key, SchemaMatchType::LatestMajorCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact 
     return m_schema; 
     }
 
@@ -3338,7 +3338,7 @@ struct NamedAttributeDeserializer : ICustomAttributeDeserializer
             if (ECObjectsStatus::Success != SchemaKey::ParseSchemaFullName (key, schemaName.c_str ()))
                 return NULL;
 
-            return context.LocateSchema (key, SchemaMatchType::LatestCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact 
+            return context.LocateSchema (key, SchemaMatchType::LatestMajorCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact 
             }
         
     public:
@@ -3444,14 +3444,13 @@ InstanceXmlWriter (BeXmlWriter *writer)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   10/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     WriteInstance (IECInstanceCR ecInstance, bool writeInstanceId)
+InstanceWriteStatus     WriteInstance (IECInstanceCR ecInstance, bool writeInstanceId, Utf8CP className)
     {
     ECClassCR   ecClass         = ecInstance.GetClass();
     ECSchemaCR  ecSchema        = ecClass.GetSchema();
-    Utf8String  className       = ecClass.GetName();
-    Utf8String  fullSchemaName = ecSchema.GetFullSchemaName();
+    Utf8String  fullSchemaName = ecSchema.GetLegacyFullSchemaName();
 
-    m_xmlWriter->WriteElementStart(className.c_str(), fullSchemaName.c_str());
+    m_xmlWriter->WriteElementStart(className, fullSchemaName.c_str());
 
     auto relationshipInstance = dynamic_cast<IECRelationshipInstanceCP> (&ecInstance);
     // if relationship, need the attributes used in relationships.
@@ -3461,8 +3460,8 @@ InstanceWriteStatus     WriteInstance (IECInstanceCR ecInstance, bool writeInsta
             return InstanceWriteStatus::XmlWriteError;
 
         Utf8String sourceClassName;
-        if (0 != relationshipInstance->GetSource()->GetClass().GetSchema().GetFullSchemaName().CompareTo(fullSchemaName))
-            sourceClassName.Sprintf("%s:%s", relationshipInstance->GetSource()->GetClass().GetSchema().GetFullSchemaName().c_str(), relationshipInstance->GetSource()->GetClass().GetName().c_str());
+        if (0 != relationshipInstance->GetSource()->GetClass().GetSchema().GetLegacyFullSchemaName().CompareTo(fullSchemaName))
+            sourceClassName.Sprintf("%s:%s", relationshipInstance->GetSource()->GetClass().GetSchema().GetLegacyFullSchemaName().c_str(), relationshipInstance->GetSource()->GetClass().GetName().c_str());
         else
             sourceClassName.Sprintf("%s", relationshipInstance->GetSource()->GetClass().GetName().c_str());
         m_xmlWriter->WriteAttribute(SOURCEINSTANCEID_ATTRIBUTE, relationshipInstance->GetSource()->GetInstanceId().c_str());
@@ -3472,8 +3471,8 @@ InstanceWriteStatus     WriteInstance (IECInstanceCR ecInstance, bool writeInsta
             return InstanceWriteStatus::XmlWriteError;
 
         Utf8String targetClassName;
-        if (0 != relationshipInstance->GetTarget()->GetClass().GetSchema().GetFullSchemaName().CompareTo(fullSchemaName))
-            targetClassName.Sprintf("%s:%s", relationshipInstance->GetTarget()->GetClass().GetSchema().GetFullSchemaName().c_str(), relationshipInstance->GetTarget()->GetClass().GetName().c_str());
+        if (0 != relationshipInstance->GetTarget()->GetClass().GetSchema().GetLegacyFullSchemaName().CompareTo(fullSchemaName))
+            targetClassName.Sprintf("%s:%s", relationshipInstance->GetTarget()->GetClass().GetSchema().GetLegacyFullSchemaName().c_str(), relationshipInstance->GetTarget()->GetClass().GetName().c_str());
         else
             targetClassName.Sprintf("%s", relationshipInstance->GetTarget()->GetClass().GetName().c_str());
         m_xmlWriter->WriteAttribute(TARGETINSTANCEID_ATTRIBUTE, relationshipInstance->GetTarget()->GetInstanceId().c_str());
@@ -3488,6 +3487,16 @@ InstanceWriteStatus     WriteInstance (IECInstanceCR ecInstance, bool writeInsta
         return status;
     m_xmlWriter->WriteElementEnd();
     return InstanceWriteStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Prasanna.Prakash                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceWriteStatus     WriteInstance(IECInstanceCR ecInstance, bool writeInstanceId)
+    {
+    Utf8CP className = ecInstance.GetClass().GetName().c_str();
+    
+    return WriteInstance(ecInstance, writeInstanceId, className);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3981,13 +3990,23 @@ InstanceWriteStatus     IECInstance::WriteToXmlString (WString & ecInstanceXml, 
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   10/2011
+* @bsimethod                                    Prasanna.Prakash                03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceWriteStatus     IECInstance::WriteToBeXmlNode (BeXmlWriterR xmlWriter)
     {
-    InstanceXmlWriter instanceWriter (&xmlWriter);
+    Utf8CP className = this->GetClass().GetName().c_str();
+    
+    return WriteToBeXmlNode(xmlWriter, className);
+    }
 
-    return instanceWriter.WriteInstance (*this, false);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   10/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceWriteStatus     IECInstance::WriteToBeXmlNode(BeXmlWriterR xmlWriter, Utf8CP className)
+    {
+    InstanceXmlWriter instanceWriter(&xmlWriter);
+
+    return instanceWriter.WriteInstance(*this, false, className);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -48,6 +48,7 @@ struct SchemaXmlWriter
         SchemaWriteStatus                   WriteSchemaReferences ();
         SchemaWriteStatus                   WriteClass (ECClassCR ecClass);
         SchemaWriteStatus                   WriteEnumeration(ECEnumerationCR ecEnumeration);
+        SchemaWriteStatus                   WriteKindOfQuantity(KindOfQuantityCR kindOfQuantity);
         SchemaWriteStatus                   WriteCustomAttributeDependencies (IECCustomAttributeContainerCR container);
         SchemaWriteStatus                   WritePropertyDependencies (ECClassCR ecClass);
 

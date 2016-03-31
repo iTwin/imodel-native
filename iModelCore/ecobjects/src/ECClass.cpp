@@ -29,7 +29,7 @@ void ECClass::SetErrorHandling (bool doAssert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClass::ECClass (ECSchemaCR schema)
     :
-    m_schema(schema), m_ecClassId(0), m_modifier(ECClassModifier::None)
+    m_schema(schema), m_modifier(ECClassModifier::None), m_xmlComments(), m_contentXmlComments()
     {
     //
     };
@@ -43,6 +43,8 @@ ECClass::~ECClass ()
     RemoveBaseClasses ();
 
     m_propertyList.clear();
+    m_xmlComments.clear();
+    m_contentXmlComments.clear();
     
     for (PropertyMap::iterator entry=m_propertyMap.begin(); entry != m_propertyMap.end(); ++entry)
         delete entry->second;
@@ -350,6 +352,7 @@ ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDer
     PropertyMap::iterator iter = m_propertyMap.find(prop->GetName().c_str());
     if (iter == m_propertyMap.end())
         return ECObjectsStatus::PropertyNotFound;
+    ECPropertyP thisProp = iter->second; // Since the property that is passed in might come from a base class, we need the actual pointer of the property from this class in order to search the propertyList for it
 
     Utf8String newName;
     FindUniquePropertyName(newName, prop->GetClass().GetSchema().GetNamespacePrefix().c_str(), prop->GetName().c_str());
@@ -358,8 +361,7 @@ ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDer
 
     iter = m_propertyMap.find(prop->GetName().c_str());
     m_propertyMap.erase(iter);
-
-    auto iter2 = std::find(m_propertyList.begin(), m_propertyList.end(), prop);
+    auto iter2 = std::find(m_propertyList.begin(), m_propertyList.end(), thisProp);
     if (iter2 != m_propertyList.end())
         m_propertyList.erase(iter2);
     InvalidateDefaultStandaloneEnabler();
@@ -497,17 +499,19 @@ ECObjectsStatus ECClass::OnBaseClassPropertyAdded (ECPropertyCR baseProperty, bo
 
         // TFS#246533: Silly multiple inheritance scenarios...does derived property already have a different base property? Does the new property
         // have priority over that one based on the order of base class declarations?
-        if (nullptr == derivedProperty->GetBaseProperty() || GetBaseClassPropertyP (baseProperty.GetName().c_str()) == &baseProperty)
+        else if (nullptr == derivedProperty->GetBaseProperty() || GetBaseClassPropertyP (baseProperty.GetName().c_str()) == &baseProperty)
             {
             if (ECObjectsStatus::Success == (status = CanPropertyBeOverridden (baseProperty, *derivedProperty)))
                 derivedProperty->SetBaseProperty (&baseProperty);
+            else if (ECObjectsStatus::DataTypeMismatch == status && resolveConflicts)
+                {
+                LOG.debugv("DataTypeMismatch when adding base property '%s:%s' to '%s:%s;", baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), GetFullName(), GetName().c_str());
+                RenameConflictProperty(derivedProperty, true);
+                }
             }
         }
-    else
-        {
-        for (ECClassP derivedClass : m_derivedClasses)
-            status = derivedClass->OnBaseClassPropertyAdded (baseProperty, resolveConflicts);
-        }
+    for (ECClassP derivedClass : m_derivedClasses)
+        status = derivedClass->OnBaseClassPropertyAdded (baseProperty, resolveConflicts);
 
     return status;
     }
@@ -536,8 +540,18 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
         {
         ECObjectsStatus status = CanPropertyBeOverridden (*baseProperty, *pProperty);
         if (ECObjectsStatus::Success != status)
-            return status;
-
+            {
+            if (!resolveConflicts)
+                return status;
+            else
+                {
+                Utf8String newName;
+                FindUniquePropertyName(newName, pProperty->GetClass().GetSchema().GetNamespacePrefix().c_str(), pProperty->GetName().c_str());
+                pProperty->SetName(newName);
+                }
+            }
+        else if (!baseProperty->GetName().Equals(pProperty->GetName()) && resolveConflicts)
+            pProperty->SetName(baseProperty->GetName());
         pProperty->SetBaseProperty (baseProperty);
         }
 
@@ -1020,11 +1034,18 @@ ECObjectsStatus ECClass::AddBaseClass (ECClassCR baseClass)
     return AddBaseClass(baseClass, false);
     }
 
-
 //-------------------------------------------------------------------------------------
 //* @bsimethod                                              
 //+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus ECClass::AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts)
+    {
+    return _AddBaseClass(baseClass, insertAtBeginning, resolveConflicts);
+    }
+
+//-------------------------------------------------------------------------------------
+//* @bsimethod                                              
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts)
     {
     if (&(baseClass.GetSchema()) != &(this->GetSchema()))
         {
@@ -1361,15 +1382,44 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
     return SchemaReadStatus::Success;
     }
 
+void ECClass::_ReadCommentsInSameLine(BeXmlNodeR childNode, bvector<Utf8String>& comments)
+    {
+    BeXmlNodeP currentNode = &childNode;
+    currentNode = currentNode->GetNextSibling(BEXMLNODE_Any);
+    if (nullptr != currentNode && currentNode->type == BEXMLNODE_Comment)
+        {
+        Utf8String comment;
+        currentNode->GetContent(comment);
+        comments.push_back(comment);
+        childNode = *currentNode->GetNextSibling(BEXMLNODE_Any);
+        }
+
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties)
     {
+    bvector<Utf8String> comments;
+
     bool isSchemaSupplemental = Utf8String::npos != GetSchema().GetName().find("_Supplemental_");
     // Get the BaseClass child nodes.
-    for (BeXmlNodeP childNode = classNode.GetFirstChild (); NULL != childNode; childNode = childNode->GetNextSibling ())
+    for (BeXmlNodeP childNode = classNode.GetFirstChild (BEXMLNODE_Any); NULL != childNode; childNode = childNode->GetNextSibling (BEXMLNODE_Any))
         {
+        if (context.GetPreserveXmlComments())
+            {
+            if (childNode->type == BEXMLNODE_Comment)
+                {
+                Utf8String comment;
+                childNode->GetContent(comment);
+                comments.push_back(comment);
+                }
+             }
+
+        if (childNode->type != BEXMLNODE_Element)
+            continue;
+
         Utf8CP childNodeName = childNode->GetName ();
         if (0 == strcmp (childNodeName, EC_PROPERTY_ELEMENT))
             {
@@ -1377,12 +1427,26 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
             SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, conversionSchema, childNodeName);
             if (SchemaReadStatus::Success != status)
                 return status;
+
+            if (context.GetPreserveXmlComments())
+                {
+                _ReadCommentsInSameLine(*childNode, comments);
+                Utf8String contentIdentifier = ecProperty->GetName();
+                m_contentXmlComments[contentIdentifier] = comments;
+                }
             }
         else if (!isSchemaSupplemental && (0 == strcmp (childNodeName, EC_BASE_CLASS_ELEMENT)))
             {
             SchemaReadStatus status = _ReadBaseClassFromXml(childNode, context);
             if (SchemaReadStatus::Success != status)
                 return status;
+
+            if (context.GetPreserveXmlComments())
+                {
+                _ReadCommentsInSameLine(*childNode, comments);
+                Utf8String contentIdentifier = EC_BASE_CLASS_ELEMENT;
+                m_contentXmlComments[contentIdentifier] = comments;
+                }
             }
         else if (0 == strcmp (childNodeName, EC_ARRAYPROPERTY_ELEMENT))
             {
@@ -1411,6 +1475,14 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
             SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, conversionSchema, childNodeName);
             if (SchemaReadStatus::Success != status)
                 return status;
+
+            if (context.GetPreserveXmlComments())
+                {
+                _ReadCommentsInSameLine(*childNode, comments);
+
+                Utf8String contentIdentifier = ecProperty->GetName();
+                m_contentXmlComments[contentIdentifier] = comments;
+                }
             }
         else if (0 == strcmp(childNodeName, EC_STRUCTARRAYPROPERTY_ELEMENT)) // technically, this only happens in EC3.0 and higher, but no harm in checking 2.0 schemas
             {
@@ -1418,6 +1490,14 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
             SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass(ecProperty, childNode, context, conversionSchema, childNodeName);
             if (SchemaReadStatus::Success != status)
                 return status;
+
+            if (context.GetPreserveXmlComments())
+                {
+                _ReadCommentsInSameLine(*childNode, comments);
+
+                Utf8String contentIdentifier = ecProperty->GetName();
+                m_contentXmlComments[contentIdentifier] = comments;
+                }
             }
         else if (0 == strcmp (childNodeName, EC_STRUCTPROPERTY_ELEMENT))
             {
@@ -1425,6 +1505,13 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
             SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, conversionSchema, childNodeName);
             if (SchemaReadStatus::Success != status)
                 return status;
+            if (context.GetPreserveXmlComments())
+                {
+                _ReadCommentsInSameLine(*childNode, comments);
+
+                Utf8String contentIdentifier = ecProperty->GetName();
+                m_contentXmlComments[contentIdentifier] = comments;
+                }
             }
         else if (0 == strcmp(childNodeName, EC_NAVIGATIONPROPERTY_ELEMENT)) // also EC3.0 only
             {
@@ -1433,7 +1520,25 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
             if (SchemaReadStatus::Success != status)
                 return status;
             navigationProperties.push_back(ecProperty);
+
+            if (context.GetPreserveXmlComments())
+                {
+                _ReadCommentsInSameLine(*childNode, comments);
+
+                Utf8String contentIdentifier = ecProperty->GetName();
+                m_contentXmlComments[contentIdentifier] = comments;
+                }
             }
+        else if (0 == strcmp(childNodeName, EC_CUSTOM_ATTRIBUTES_ELEMENT))
+            {
+            if (context.GetPreserveXmlComments())
+                {
+                Utf8String contentIdentifier = EC_CUSTOM_ATTRIBUTES_ELEMENT;
+                m_contentXmlComments[contentIdentifier] = comments;
+                }
+            }
+
+        comments.clear();
         }
     
     // Add Custom Attributes
@@ -1521,6 +1626,11 @@ SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecPrope
 SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const
     {
     SchemaWriteStatus status = SchemaWriteStatus::Success;
+    // No need to check here if comments need to be preserved. If they're not preserved m_xmlComments will be empty
+    for (auto comment : m_xmlComments)
+        {
+        xmlWriter.WriteComment(comment.c_str());
+        }
 
     xmlWriter.WriteElementStart(elementName);
     
@@ -1549,14 +1659,44 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMa
     
     for (const ECClassP& baseClass: m_baseClasses)
         {
+        auto comments = m_contentXmlComments.find(EC_BASE_CLASS_ELEMENT);
+        if (comments != m_contentXmlComments.end())
+            {
+            for (auto comment : comments->second)
+                {
+                xmlWriter.WriteComment(comment.c_str());
+                }
+            }
+
+
         xmlWriter.WriteElementStart(EC_BASE_CLASS_ELEMENT);
         xmlWriter.WriteText((ECClass::GetQualifiedClassName(GetSchema(), *baseClass)).c_str());
         xmlWriter.WriteElementEnd();
         }
+
+    auto comments = m_contentXmlComments.find(EC_CUSTOM_ATTRIBUTES_ELEMENT);
+    if (comments != m_contentXmlComments.end())
+        {
+        for (auto comment : comments->second)
+            {
+            xmlWriter.WriteComment(comment.c_str());
+            }
+        }
     WriteCustomAttributes (xmlWriter);
             
     for (ECPropertyP prop: GetProperties(false))
-        {
+        { 
+        auto comments = m_contentXmlComments.find(prop->GetName());
+
+        if (comments != m_contentXmlComments.end())
+            {
+            for (auto comment : comments->second)
+                {
+                xmlWriter.WriteComment(comment.c_str());
+                }
+            }
+
+
         prop->_WriteXml (xmlWriter, ecXmlVersionMajor, ecXmlVersionMinor);
         }
     if (doElementEnd)
@@ -1949,7 +2089,23 @@ uint32_t upperLimit
     m_lowerLimit = lowerLimit;
     m_upperLimit = upperLimit;
     }
-  
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+int RelationshipCardinality::Compare
+(
+RelationshipCardinality const& lhs, 
+RelationshipCardinality const& rhs
+)
+    {
+    if (lhs.GetLowerLimit() == rhs.GetLowerLimit() && 
+        lhs.GetUpperLimit() == rhs.GetUpperLimit())
+        return 0;
+
+    return (rhs.GetLowerLimit() > lhs.GetLowerLimit() || rhs.GetUpperLimit() > lhs.GetUpperLimit()) ? 1 : -1;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2084,7 +2240,85 @@ ECSchemaCP ECRelationshipConstraint::_GetContainerSchema() const
     {
     return &(m_relClass->GetSchema());
     }
- 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipConstraint::ValidateClassConstraint
+(
+ECEntityClassCR constraintClass
+) const
+    {
+#ifdef ECRELATIONSHIP_CONSTRAINT_VALIDATION
+    ECRelationshipClassCP relationshipClass = m_relClass;
+    if (!m_relClass->HasBaseClasses())
+        return ECObjectsStatus::Success;
+
+    // Check if this is the source or target constraint. Then Iterate over the base classes and check 
+    // if the constraintClass is equal to or larger in scope than the possibly defined scope on the
+    // baseclasses. 
+    bool isSourceConstraint = &relationshipClass->GetSource() == this;
+    for (auto baseClass : relationshipClass->GetBaseClasses())
+        {
+        // Get the relationship base class
+        ECRelationshipClassCP relationshipBaseClass = baseClass->GetRelationshipClassCP();
+        ECRelationshipConstraintCP baseClassConstraint = (isSourceConstraint) ? &relationshipBaseClass->GetSource() 
+                                                                              : &relationshipBaseClass->GetTarget();
+
+        // Validate against the base class again...
+        ECObjectsStatus validationStatus = baseClassConstraint->ValidateClassConstraint(constraintClass);
+        if (validationStatus != ECObjectsStatus::Success)
+            {
+            return validationStatus;
+            }
+
+        // Iterate over the constraint classes and check if they meet the scopeing requirements.
+        for (auto ecClassIterator : baseClassConstraint->GetConstraintClasses())
+            {
+            if (!constraintClass.Is(&ecClassIterator->GetClass()))
+                {
+                return ECObjectsStatus::RelationshipConstraintsNotCompatible;
+                }
+            }
+        }
+#endif
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipConstraint::ValidateCardinalityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit) const
+    {
+#ifdef THIS_BREAKS_264_TESTS
+    ECRelationshipClassCP relationshipClass = m_relClass;
+    if (!m_relClass->HasBaseClasses())
+        return ECObjectsStatus::Success;
+
+    bool isSourceConstraint = &relationshipClass->GetSource() == this;
+    for (auto baseClass : relationshipClass->GetBaseClasses())
+        {
+        // Get the relationship base class
+        ECRelationshipClassCP relationshipBaseClass = baseClass->GetRelationshipClassCP();
+        ECRelationshipConstraintCP baseClassConstraint = (isSourceConstraint) ? &relationshipBaseClass->GetSource()
+                                                                              : &relationshipBaseClass->GetTarget();
+
+        // Validate against the base class again...
+        ECObjectsStatus validationStatus = baseClassConstraint->ValidateCardinalityConstraint(lowerLimit, upperLimit);
+        if (validationStatus != ECObjectsStatus::Success)
+            {
+            return validationStatus;
+            }
+
+        if (RelationshipCardinality::Compare(RelationshipCardinality(lowerLimit, upperLimit), baseClassConstraint->GetCardinality()) == 1)
+            {
+            return ECObjectsStatus::RelationshipConstraintsNotCompatible;
+            }
+        }
+#endif
+    return ECObjectsStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2098,7 +2332,10 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
     READ_OPTIONAL_XML_ATTRIBUTE (constraintNode, ROLELABEL_ATTRIBUTE, this, RoleLabel);
     READ_OPTIONAL_XML_ATTRIBUTE (constraintNode, CARDINALITY_ATTRIBUTE, this, Cardinality);
     
-    // For supplemental schemas, only read in the attributes
+    // Add Custom Attributes
+    ReadCustomAttributes(constraintNode, schemaContext, m_relClass->GetSchema());
+
+    // For supplemental schemas, only read in the attributes and custom attributes
     if (Utf8String::npos != _GetContainerSchema()->GetName().find("_Supplemental"))
         return SchemaReadStatus::Success;
 
@@ -2144,6 +2381,12 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
             return SchemaReadStatus::InvalidECSchemaXml;
             }
 
+        // Validate the constraint class if it meets the constraints requirements (including base class requirements).
+        if (ECObjectsStatus::Success != ValidateClassConstraint(*constraintAsEntity))
+            {
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+
         ECRelationshipConstraintClassP ecRelationshipconstaintClass;
         m_constraintClasses.Add(ecRelationshipconstaintClass, *constraintAsEntity);
         if (ecRelationshipconstaintClass != nullptr)
@@ -2161,8 +2404,6 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
             }
         }
 
-    // Add Custom Attributes
-    ReadCustomAttributes (constraintNode, schemaContext, m_relClass->GetSchema());
     return status;
     }
     
@@ -2214,15 +2455,20 @@ ECObjectsStatus ECRelationshipConstraint::AddClass(ECEntityClassCR classConstrai
     {
 
     ECRelationshipConstraintClassP ecRelationShipconstraintClass;
-    return  m_constraintClasses.Add(ecRelationShipconstraintClass, classConstraint);
+    return  AddConstraintClass(ecRelationShipconstraintClass, classConstraint);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                       MUHAMMAD.ZAIGHUM                             01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           ECRelationshipConstraint::AddConstraintClass(ECRelationshipConstraintClass*& classConstraint, ECEntityClassCR ecClass)
     {
-    return  m_constraintClasses.Add(classConstraint, ecClass);
+    ECObjectsStatus validationStatus = ValidateClassConstraint(ecClass);
+    if (validationStatus != ECObjectsStatus::Success)
+        {
+        return validationStatus;
+        }
 
+    return  m_constraintClasses.Add(classConstraint, ecClass);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2323,6 +2569,10 @@ RelationshipCardinalityCR ECRelationshipConstraint::GetCardinality () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipConstraint::SetCardinality (uint32_t& lowerLimit, uint32_t& upperLimit)
     {
+    ECObjectsStatus validationStatus = ValidateCardinalityConstraint(lowerLimit, upperLimit);
+    if (validationStatus != ECObjectsStatus::Success)
+        return validationStatus;
+
     if (lowerLimit == 0 && upperLimit == 1)
         m_cardinality = &s_zeroOneCardinality;
     else if (lowerLimit == 0 && upperLimit == UINT_MAX)
@@ -2333,6 +2583,7 @@ ECObjectsStatus ECRelationshipConstraint::SetCardinality (uint32_t& lowerLimit, 
         m_cardinality = &s_oneManyCardinality;
     else
         m_cardinality = new RelationshipCardinality(lowerLimit, upperLimit);
+
     return ECObjectsStatus::Success;
     }
     
@@ -2341,8 +2592,10 @@ ECObjectsStatus ECRelationshipConstraint::SetCardinality (uint32_t& lowerLimit, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipConstraint::SetCardinality (RelationshipCardinalityCR cardinality)
     {
-    m_cardinality = new RelationshipCardinality(cardinality.GetLowerLimit(), cardinality.GetUpperLimit());
-    return ECObjectsStatus::Success;
+    uint32_t lowerLimit = cardinality.GetLowerLimit();
+    uint32_t upperLimit = cardinality.GetUpperLimit();
+
+    return SetCardinality(lowerLimit, upperLimit);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -2523,6 +2776,9 @@ StrengthType ECRelationshipClass::GetStrength () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipClass::SetStrength (StrengthType strength)
     {
+    if (!ValidateStrengthConstraint(strength, false))
+        return ECObjectsStatus::RelationshipConstraintsNotCompatible;
+    
     m_strength = strength;
     return ECObjectsStatus::Success;
     }
@@ -2557,6 +2813,9 @@ ECRelatedInstanceDirection ECRelationshipClass::GetStrengthDirection () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipClass::SetStrengthDirection (ECRelatedInstanceDirection direction)
     {
+    if (!ValidateStrengthDirectionConstraint(direction, false))
+        return ECObjectsStatus::RelationshipConstraintsNotCompatible;
+
     m_strengthDirection = direction;
     return ECObjectsStatus::Success;
     }
@@ -2701,8 +2960,77 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, EC
         
     return SchemaReadStatus::Success;
     }
-    
 
+ /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts)
+    {
+#ifdef ECRELATIONSHIP_CONSTRAINT_VALIDATION
+    if (baseClass.IsRelationshipClass())
+        {
+        // Get the relationship base class and compare it's strength and direction
+        ECRelationshipClassCP relationshipBaseClass = baseClass.GetRelationshipClassCP();
+        if (!ValidateStrengthConstraint(relationshipBaseClass->GetStrength()) ||
+            !ValidateStrengthDirectionConstraint(relationshipBaseClass->GetStrengthDirection()))
+            {
+            return ECObjectsStatus::RelationshipConstraintsNotCompatible;
+            }
+
+        // Compare Cardinality. In general, the cardinality of the derived class must be more restrictive 
+        // than the bounds defined in the base class cardinality. 
+        if (RelationshipCardinality::Compare(GetSource().GetCardinality(), relationshipBaseClass->GetSource().GetCardinality()) == 1 ||
+            RelationshipCardinality::Compare(GetTarget().GetCardinality(), relationshipBaseClass->GetTarget().GetCardinality()) == 1)
+            {
+            return ECObjectsStatus::RelationshipConstraintsNotCompatible;
+            }
+        }
+#endif
+    return ECClass::_AddBaseClass(baseClass, insertAtBeginning, resolveConflicts);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECRelationshipClass::ValidateStrengthConstraint(StrengthType value, bool compareValue) const
+    {
+#ifdef ECRELATIONSHIP_CONSTRAINT_VALIDATION
+    if (HasBaseClasses())
+        {
+        for (auto baseClass : GetBaseClasses())
+            {
+            ECRelationshipClassCP relationshipBaseClass = baseClass->GetRelationshipClassCP();
+            if (relationshipBaseClass != nullptr && !relationshipBaseClass->ValidateStrengthConstraint(value))
+                return false;
+            }
+        }
+
+    return (!compareValue || GetStrength() == value);
+#endif
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECRelationshipClass::ValidateStrengthDirectionConstraint(ECRelatedInstanceDirection value, bool compareValue) const
+    {
+#ifdef ECRELATIONSHIP_CONSTRAINT_VALIDATION
+    if (HasBaseClasses())
+        {
+        for (auto baseClass : GetBaseClasses())
+            {
+            ECRelationshipClassCP relationshipBaseClass = baseClass->GetRelationshipClassCP();
+            if (relationshipBaseClass != nullptr && !relationshipBaseClass->ValidateStrengthDirectionConstraint(value))
+                return false;
+            }
+        }
+
+    return (!compareValue || GetStrengthDirection() == value);
+#endif
+    return true;
+    }
+   
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  12/2012
 +---------------+---------------+---------------+---------------+---------------+------*/

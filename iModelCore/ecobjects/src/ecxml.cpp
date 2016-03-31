@@ -15,9 +15,9 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECXml::ParseBooleanString (bool & booleanValue, Utf8CP booleanString)
     {
-    if (0 == BeStringUtilities::Stricmp(booleanString, ECXML_TRUE))
+    if (0 == BeStringUtilities::StricmpAscii(booleanString, ECXML_TRUE))
         booleanValue = true;
-    else if (0 == BeStringUtilities::Stricmp (booleanString, ECXML_FALSE))
+    else if (0 == BeStringUtilities::StricmpAscii(booleanString, ECXML_FALSE))
         booleanValue = false;
     else
         return ECObjectsStatus::ParseError;
@@ -300,7 +300,7 @@ Utf8String ECXml::ContainerTypeToString(CustomAttributeContainerType containerTy
     if (TestValue(CustomAttributeContainerType::Any, containerType))
         str = "Any";
 
-    return std::move(str);
+    return str;
     }
 
 //---------------------------------------------------------------------------------------

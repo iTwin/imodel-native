@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/ECRelationshipTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -445,4 +445,92 @@ TEST_F (ECRelationshipTests, DumpToString)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECRelationshipTests, TestsRelationshipStrengthAndDirectionConstraints)
+    {
+#ifdef ECRELATIONSHIP_CONSTRAINT_VALIDATION
+    ECSchemaPtr schemaPtr;
+    ECSchema::CreateSchema(schemaPtr, "TestSchema", 1, 0);
+
+    ECSchemaP ecSchema = schemaPtr.get();
+
+    ECRelationshipClassP relationClass1;
+    ecSchema->CreateRelationshipClass(relationClass1, "RelClass1");
+    relationClass1->SetStrength(StrengthType::Referencing);
+    relationClass1->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
+
+    ECRelationshipClassP relationClass2;
+    ecSchema->CreateRelationshipClass(relationClass2, "RelClass2");
+    relationClass2->SetStrength(StrengthType::Holding);
+    relationClass2->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
+
+    ECRelationshipClassP relationClass3;
+    ecSchema->CreateRelationshipClass(relationClass3, "RelClass3");
+    relationClass3->SetStrength(StrengthType::Referencing);
+    relationClass3->SetStrengthDirection(ECRelatedInstanceDirection::Backward);
+
+    ECRelationshipClassP relationClass4;
+    ecSchema->CreateRelationshipClass(relationClass4, "RelClass4");
+    relationClass4->SetStrength(StrengthType::Referencing);
+    relationClass4->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
+
+    // Tests the base class validation. If strength and direction are not same, they
+    // won't be assigned.
+
+    // #1 Direction same, Strength differs
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass1->AddBaseClass(*relationClass2)) << "Strength was supposed to have different values (Referencing/Holding) so baseclass was rejected";
+    // #2 Strength same, Direction differs
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass1->AddBaseClass(*relationClass3)) << "StrengthDirection was supposed to have different values (Forward/Backward) so baseclass was rejected";
+    // #3 Strength and Direction are same
+    EXPECT_EQ(ECObjectsStatus::Success, relationClass1->AddBaseClass(*relationClass4)) << "Failing with equal StrengthDirection and Strength, so baseclass should have been accepted.";
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECRelationshipTests, TestsRelationshipConstraints)
+    {
+#ifdef ECRELATIONSHIP_CONSTRAINT_VALIDATION
+    ECSchemaPtr schemaPtr;
+    ECSchema::CreateSchema(schemaPtr, "TestSchema", 1, 0);
+
+    ECSchemaP ecSchema = schemaPtr.get();
+
+    ECEntityClassP classA;
+    ecSchema->CreateEntityClass(classA, "ClassA");
+
+    ECEntityClassP classB;
+    ecSchema->CreateEntityClass(classB, "ClassB");
+    classB->AddBaseClass(*classA);
+
+    ECEntityClassP classC;
+    ecSchema->CreateEntityClass(classC, "ClassC");
+    classC->AddBaseClass(*classB);
+
+    ECRelationshipClassP relationClass;
+    ecSchema->CreateRelationshipClass(relationClass, "RelClass");
+    relationClass->SetStrength(StrengthType::Referencing);
+    relationClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
+
+    ECRelationshipClassP relationClassBase;
+    ecSchema->CreateRelationshipClass(relationClassBase, "RelBaseClass");
+    relationClassBase->SetStrength(StrengthType::Referencing);
+    relationClassBase->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
+    
+    ECRelationshipConstraintR baseSourceContraint = relationClassBase->GetSource();
+    baseSourceContraint.AddClass(*classB);
+    
+    EXPECT_EQ(ECObjectsStatus::Success, relationClass->AddBaseClass(*relationClassBase));
+
+    // #1 ClassB is the constraint class so it should work...
+    EXPECT_EQ(ECObjectsStatus::Success, relationClass->GetSource().AddClass(*classB));
+    // #2 ClassC is deriving from ClassA so it should work too...
+    EXPECT_EQ(ECObjectsStatus::Success, relationClass->GetSource().AddClass(*classC));
+    // #3 ClassA is the base class of ClassB but violates the base constraints (expects ClassB or bigger)
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetSource().AddClass(*classA));
+#endif
+    }
 END_BENTLEY_ECN_TEST_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ChildNodeSpecification.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -68,6 +68,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
 
         //! Sets the priority of the specification, can be an int.
         ECOBJECTS_EXPORT void                         SetPriority (int value);
+        
+        //! ID of the specification.
+        ECOBJECTS_EXPORT void                         SetId(int id);
 
         //! ID of the specification.
         ECOBJECTS_EXPORT int                          GetId (void) const;

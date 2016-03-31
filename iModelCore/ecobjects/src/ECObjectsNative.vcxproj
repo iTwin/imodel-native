@@ -62,8 +62,11 @@
     <ClCompile Include="ECEnabler.cpp" />
     <ClCompile Include="ECInstance.cpp" />
     <ClCompile Include="ecinstanceiterable.cpp" />
+    <ClCompile Include="ECJsonUtilities.cpp" />
     <ClCompile Include="ECObjectsPch.cpp" />
     <ClCompile Include="ECProperty.cpp" />
+    <ClCompile Include="ecprovider.cpp" />
+    <ClCompile Include="ECRelationshipPath.cpp" />
     <ClCompile Include="ECSchema.cpp" />
     <ClCompile Include="ECEnumeration.cpp" />
     <ClCompile Include="KindOfQuantity.cpp" />
@@ -135,10 +138,12 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECExpressions.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECInstance.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECInstanceIterable.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECJsonUtilities.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjects.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPI.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPIOverview.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ecprovider.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECRelationshipPath.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECSchemaConverter.h" />
     <ClInclude Include="..\PublicApi\ECObjects\PresentationMetadataHelper.h" />
     <ClInclude Include="..\PublicApi\ECObjects\SchemaLocalizedStrings.h" />

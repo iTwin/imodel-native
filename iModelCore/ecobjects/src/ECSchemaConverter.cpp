@@ -172,6 +172,25 @@ private:
         
     };
 
+
+//---------------------------------------------------------------------------------------
+// Implements IECCustomAttributeConverter to convert UnitSpecification Custom Attribute to KindOfQuantity
+// @bsistruct                                                    Robert.Schili   03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+struct UnitSpecificationConverter : IECCustomAttributeConverter
+    {
+    ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
+    };
+
+//---------------------------------------------------------------------------------------
+// Implements IECCustomAttributeConverter to convert UnitSpecifications Custom Attribute to KindOfQuantity
+// @bsistruct                                                    Robert.Schili   03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+struct UnitSpecificationsConverter : IECCustomAttributeConverter
+    {
+    ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
+    };
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -202,6 +221,11 @@ ECSchemaConverterP ECSchemaConverter::GetSingleton()
         IECCustomAttributeConverterPtr scConv = new StandardValuesConverter();
         ECSchemaConverterSingleton->AddConverter("EditorCustomAttributes", "StandardValues", scConv);
         
+        IECCustomAttributeConverterPtr unitSchemaConv = new UnitSpecificationsConverter();
+        ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecifications", unitSchemaConv);
+
+        IECCustomAttributeConverterPtr unitPropConv = new UnitSpecificationConverter();
+        ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecification", unitPropConv);
         }
     return ECSchemaConverterSingleton;
     }
@@ -474,7 +498,7 @@ void ECSchemaConverter::SortClassesByName(bvector<T>& ecClasses, bool ascending)
     {
     auto classComparer = [](T ecClass1, T ecClass2)
         {
-        return BeStringUtilities::Stricmp(ecClass1->GetName().c_str(), ecClass2->GetName().c_str()) < 0 ;
+        return BeStringUtilities::StricmpAscii(ecClass1->GetName().c_str(), ecClass2->GetName().c_str()) < 0 ;
         };
     std::sort(ecClasses.begin(), ecClasses.end(), classComparer);
     if (!ascending)
@@ -720,4 +744,33 @@ ECObjectsStatus StandardValuesConverter::ConvertToEnumType(ECPropertyP& primitiv
 
     return ECSchemaConverter::TraverseProperty(primitiveEcProperty, ecSchema, propertyProcessor);
     }
+
+ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance)
+    {
+    ECPropertyP prop = dynamic_cast<ECPropertyP> (&container);
+    if (prop == nullptr)
+        return ECObjectsStatus::Success;
+
+    /*Unit unit;
+    if(Unit::GetUnitForECProperty(unit, *prop))
+        {
+
+        }*/
+
+
+    return ECObjectsStatus::Success;
+    }
+
+ECObjectsStatus UnitSpecificationsConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance)
+    {
+    ECSchemaP containerAsSchema = dynamic_cast<ECSchemaP>(&container);
+    if (containerAsSchema == nullptr)
+        {
+        //container.RemoveCustomAttribute("UnitSpecifications"); drop the CA if it's not on a property?
+        return ECObjectsStatus::Success;
+        }
+
+    return ECObjectsStatus::Success;
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE

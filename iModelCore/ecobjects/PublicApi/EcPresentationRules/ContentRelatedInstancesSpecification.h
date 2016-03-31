@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ContentRelatedInstancesSpecification.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -19,7 +19,7 @@ Specification that creates content ECQueries for predefined relationships and/or
 related ECClasses of the selected node.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ContentRelatedInstancesSpecification : public ContentSpecification
+struct EXPORT_VTABLE_ATTRIBUTE ContentRelatedInstancesSpecification : public ContentSpecification
     {
     /*__PUBLISH_SECTION_END__*/
     private:

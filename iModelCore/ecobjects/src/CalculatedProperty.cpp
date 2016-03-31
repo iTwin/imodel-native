@@ -192,8 +192,8 @@ bool ParserRegex::Apply (IECInstanceR instance, Utf8CP calculatedValue) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-CalculatedPropertySpecification::CalculatedPropertySpecification (NodeR expr, ParserRegexP regex, IECInstanceCR customAttr, PrimitiveType primType, ECValueCR failureValue)
-  : m_expression(&expr), m_parserRegex(regex), m_failureValue(failureValue), m_isDefaultOnly(false), m_useLastValidOnFailure(false), m_propertyType(primType), m_evaluationOptions (EVALOPT_Legacy)
+CalculatedPropertySpecification::CalculatedPropertySpecification (Utf8CP exprStr, NodeR expr, ParserRegexP regex, IECInstanceCR customAttr, PrimitiveType primType, ECValueCR failureValue)
+  : m_expression(&expr), m_expressionStr(exprStr), m_parserRegex(regex), m_failureValue(failureValue), m_isDefaultOnly(false), m_useLastValidOnFailure(false), m_propertyType(primType), m_evaluationOptions (EVALOPT_Legacy)
     {
     ECValue v;
     if (ECObjectsStatus::Success == customAttr.GetValue (v, "IsDefaultValueOnly") && !v.IsNull())
@@ -251,7 +251,8 @@ CalculatedPropertySpecificationPtr CalculatedPropertySpecification::Create (ECPr
     if (ECObjectsStatus::Success != customAttr->GetValue (v, "ECExpression") || v.IsNull())
         { BeAssert (false && "CalculatedECPropertySpecification must contain an ECExpression"); return NULL; }
 
-    NodePtr node = ECEvaluator::ParseValueExpressionAndCreateTree (v.GetUtf8CP());
+    Utf8String expression = v.GetUtf8CP();
+    NodePtr node = ECEvaluator::ParseValueExpressionAndCreateTree (expression.c_str());
     if (node.IsNull())
         { BeAssert (false && "Could not parse ECExpression for CalculatedECPropertySpecification"); return NULL; }
 
@@ -285,7 +286,7 @@ CalculatedPropertySpecificationPtr CalculatedPropertySpecification::Create (ECPr
         failureValue.SetToNull();
         }
 
-    return new CalculatedPropertySpecification (*node, parserRegex, *customAttr, primitiveType, failureValue);
+    return new CalculatedPropertySpecification (expression.c_str(), *node, parserRegex, *customAttr, primitiveType, failureValue);
     }
 
 /*---------------------------------------------------------------------------------**//**

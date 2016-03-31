@@ -14,6 +14,10 @@ using namespace BentleyApi::ECN;
 
 struct ValueValidationTests : ECTestFixture { };
 
+//---------------------------------------------------------------------------------------//
+// Verify that the minimum and maximum values are read
+// @bsimethod                             Prasanna.Prakash                       01/2016
+//+---------------+---------------+---------------+---------------+---------------+------//
 void VerifyMaxAndMinValues(ECPropertyIterable properties)
     {
     for (ECPropertyIterable::const_iterator propertyIterator = properties.begin(); propertyIterator != properties.end(); ++propertyIterator)
@@ -28,6 +32,10 @@ void VerifyMaxAndMinValues(ECPropertyIterable properties)
         }
     }
 
+//---------------------------------------------------------------------------------------//
+// Verify that ECProperties Minimum and Maximum values are read while deserializing
+// @bsimethod                             Prasanna.Prakash                       01/2016
+//+---------------+---------------+---------------+---------------+---------------+------//
 TEST_F(ValueValidationTests, ECPropertyHasMinAndMaxValues)
     {
     ECSchemaReadContextPtr   context = ECSchemaReadContext::CreateContext();

@@ -34,3 +34,12 @@ RelationshipConstraintTests.StructKeyPropertiesNotSupported # Not yet implemente
 RelationshipConstraintTests.MultipleKeyPropertiesNotSupported # Not yet implemented
 
 RelationshipConstraintTests.MultipleConstraintClassesWithKeyPropertyNotSupported # Not yet implemented
+
+ECRelationshipTests.TestsRelationshipStrengthAndDirectionConstraints # Stefan
+ECRelationshipTests.TestsRelationshipConstraints # Stefan
+
+ClassTests.CheckAbstractness # Not yet implemented
+
+ClassTests.CheckClassTypeForStandAloneInstances # Not yet implemented
+
+ClassTests.DerivedClassTypesOfAbstractClass # Not yet implemented
