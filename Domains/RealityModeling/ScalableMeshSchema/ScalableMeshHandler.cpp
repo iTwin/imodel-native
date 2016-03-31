@@ -201,6 +201,7 @@ struct SmCachedGraphics : TransientCachedGraphics
 
 
 static bool s_waitCheckStop = false;
+static Byte s_transparency = 200;
 
 void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes,
                               bvector<IScalableMeshCachedDisplayNodePtr>& overviewMeshNodes,
@@ -268,7 +269,10 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
                 ColorDef white(0xff, 0xff, 0xff);
                 ColorDef green(0, 0x77, 0);
                 matSymbP->SetLineColor(overviewMeshNodes[nodeInd]->GetNbTexture() != 0 ? white : green);
-                matSymbP->SetFillColor(overviewMeshNodes[nodeInd]->GetNbTexture() != 0 ? white : green);
+                matSymbP->SetFillColor(overviewMeshNodes[nodeInd]->GetNbTexture() != 0 ? white : green);                
+                matSymbP->SetFillTransparency(s_transparency);
+                matSymbP->SetLineTransparency(s_transparency);
+
                 matSymbP->SetIsFilled(false);
                 context.ResetContextOverrides(); // If not reset, last drawn override is applyed to dtm (Selected/Hide preview)
                 context.GetIDrawGeom().ActivateMatSymb(matSymbP);
@@ -764,69 +768,6 @@ void GetScalableMeshTerrainFileName(BeFileName& smtFileName, const BeFileName& d
     smtFileName.AppendString(L"\\terrain.smt");
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                 Elenie.Godzaridis     2/2016
-//----------------------------------------------------------------------------------------
-ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams const& params)
-    : T_Super(params)
-    {
-    m_tryOpen = false;
-               
-    m_forceRedraw = false;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                 Elenie.Godzaridis     2/2016
-//----------------------------------------------------------------------------------------
-ScalableMeshModel::~ScalableMeshModel()
-    {
-
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                 Elenie.Godzaridis     2/2016
-//----------------------------------------------------------------------------------------
-void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
-    {    
-    assert(m_smPtr == nullptr);
-
-    m_smPtr = IScalableMesh::GetFor(smFilename.GetWCharCP(), false, true);
-
-    assert(m_smPtr != 0);
-
-    if (m_progressiveQueryEngine == nullptr)
-        {
-        m_displayNodesCache = new ScalableMeshDisplayCacheManager(dgnProject);
-        m_progressiveQueryEngine = IScalableMeshProgressiveQueryEngine::Create(m_smPtr, m_displayNodesCache);
-        }
-
-    const GeoCoords::GCS& gcs(m_smPtr->GetGCS());
-
-    DPoint3d scale;
-    scale.x = 1;
-    scale.y = 1;
-    scale.z = 1;
-    
-    if (gcs.HasGeoRef())
-        {
-        DgnGCSPtr dgnGcsPtr(DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnProject));        
-        dgnGcsPtr->UorsFromCartesian(scale, scale);
-        }
-    else
-        {                
-        dgnProject.Units().GetDgnGCS()->UorsFromCartesian(scale, scale);
-        }
-           
-    DPoint3d translation = {0,0,0};
-    
-    m_storageToUorsTransfo = DMatrix4d::FromScaleAndTranslation(scale, translation);                
-    
-    // NEEDS_WORK_SM
-    BeFileName dbFileName(dgnProject.GetDbFileName());
-    BeFileName basePath = dbFileName.GetDirectoryName();
-    T_HOST.GetPointCloudAdmin()._CreateLocalFileId(m_properties.m_fileId, smFilename, basePath);
-    //m_properties.m_fileId = smFilename.GetNameUtf8();
-    }
 
 //=======================================================================================
 //! Helper class used to kept pointers with a DgnDb in-memory
@@ -898,6 +839,72 @@ struct ScalableMeshTerrainModelAppData : Db::AppData
 
 Db::AppData::Key ScalableMeshTerrainModelAppData::DataKey;
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     2/2016
+//----------------------------------------------------------------------------------------
+ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams const& params)
+    : T_Super(params)
+    {
+    m_tryOpen = false;               
+    m_forceRedraw = false;
+
+    ScalableMeshTerrainModelAppData* appData = ScalableMeshTerrainModelAppData::Get(params.m_dgndb);
+    appData->m_smTerrainPhysicalModelP = this;
+    appData->m_modelSearched = true;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     2/2016
+//----------------------------------------------------------------------------------------
+ScalableMeshModel::~ScalableMeshModel()
+    {
+
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     2/2016
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
+    {    
+    assert(m_smPtr == nullptr);
+
+    m_smPtr = IScalableMesh::GetFor(smFilename.GetWCharCP(), false, true);
+
+    assert(m_smPtr != 0);
+
+    if (m_progressiveQueryEngine == nullptr)
+        {
+        m_displayNodesCache = new ScalableMeshDisplayCacheManager(dgnProject);
+        m_progressiveQueryEngine = IScalableMeshProgressiveQueryEngine::Create(m_smPtr, m_displayNodesCache);
+        }
+
+    const GeoCoords::GCS& gcs(m_smPtr->GetGCS());
+
+    DPoint3d scale;
+    scale.x = 1;
+    scale.y = 1;
+    scale.z = 1;
+    
+    if (gcs.HasGeoRef())
+        {
+        DgnGCSPtr dgnGcsPtr(DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnProject));        
+        dgnGcsPtr->UorsFromCartesian(scale, scale);
+        }
+    else
+        {                
+        dgnProject.Units().GetDgnGCS()->UorsFromCartesian(scale, scale);
+        }
+           
+    DPoint3d translation = {0,0,0};
+    
+    m_storageToUorsTransfo = DMatrix4d::FromScaleAndTranslation(scale, translation);                
+    
+    // NEEDS_WORK_SM
+    BeFileName dbFileName(dgnProject.GetDbFileName());
+    BeFileName basePath = dbFileName.GetDirectoryName();
+    T_HOST.GetPointCloudAdmin()._CreateLocalFileId(m_properties.m_fileId, smFilename, basePath);
+    //m_properties.m_fileId = smFilename.GetNameUtf8();
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
