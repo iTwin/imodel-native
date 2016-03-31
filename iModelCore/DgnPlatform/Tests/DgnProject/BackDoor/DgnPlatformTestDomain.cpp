@@ -226,16 +226,14 @@ static CurveVectorPtr computeShape2d(double len)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestElement2dPtr TestElement2d::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, DgnCode elementCode, double length)
 {
-    DgnElementPtr testElement = TestElement2dHandler::GetHandler().Create(TestElement2d::CreateParams(db, mid, db.Domains().GetClassId(TestElement2dHandler::GetHandler()), categoryId, Placement2d(), elementCode));
+    TestElement2dPtr testElement = new TestElement2d(CreateParams(db, mid, QueryClassId(db), categoryId));
     if (!testElement.IsValid())
         return nullptr;
 
-    TestElement2d* geom = (TestElement2d*) testElement.get();
-
     //  Add some hard-wired geometry
-    GeometryBuilderPtr builder = GeometryBuilder::CreateWorld(*geom);
-    builder->Append(*computeShape2d(length));
-    return (SUCCESS != builder->SetGeometryStreamAndPlacement(*geom)) ? nullptr : geom;
+    GeometryBuilderPtr builder = GeometryBuilder::CreateWorld(*testElement);
+    EXPECT_TRUE(builder->Append(*computeShape2d(length)));
+    return (SUCCESS != builder->SetGeometryStreamAndPlacement(*testElement)) ? nullptr : testElement;
 }
 
 /*---------------------------------------------------------------------------------**//**

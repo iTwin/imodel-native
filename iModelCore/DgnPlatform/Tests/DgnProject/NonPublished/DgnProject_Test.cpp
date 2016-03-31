@@ -11,6 +11,7 @@
 #include <DgnPlatform/ColorUtil.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
+#include "../TestFixture/DgnDbTestFixtures.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_EC
@@ -841,4 +842,81 @@ TEST_F(QueryElementIdGraphiteURI, Test1)
     Utf8CP baduri = "/DgnElements?ECClass=DgnPlatformTest:TestElement&TestElementProperty=bar";
     auto badeid = db->Elements().QueryElementIdGraphiteURI(baduri);
     ASSERT_TRUE(!badeid.IsValid());
+    }
+
+struct ImportTests : DgnDbTestFixture
+    {};
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     03/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ImportTests, simpleSchemaImport)
+    {
+    Utf8CP testSchemaXml = "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "  <ECSchemaReference name = 'dgn' version = '02.00' prefix = 'dgn' />"
+        "  <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "  <ECClass typeName='Element1' >"
+        "    <ECCustomAttributes>"
+        "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+        "    </ECCustomAttributes>"
+        "    <BaseClass>dgn:PhysicalElement</BaseClass>"
+        "    <ECProperty propertyName='Prop1_1' typeName='string' />"
+        "    <ECProperty propertyName='Prop1_2' typeName='long' />"
+        "    <ECProperty propertyName='Prop1_3' typeName='double' />"
+        "  </ECClass>"
+        "  <ECClass typeName='Element2' >"
+        "    <ECCustomAttributes>"
+        "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+        "    </ECCustomAttributes>"
+        "    <BaseClass>Element1</BaseClass>"
+        "    <ECProperty propertyName='Prop2_1' typeName='string' />"
+        "    <ECProperty propertyName='Prop2_2' typeName='long' />"
+        "    <ECProperty propertyName='Prop2_3' typeName='double' />"
+        "  </ECClass>"
+        "  <ECClass typeName='Element3' >"
+        "    <ECCustomAttributes>"
+        "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+        "    </ECCustomAttributes>"
+        "    <BaseClass>Element2</BaseClass>"
+        "    <ECProperty propertyName='Prop3_1' typeName='string' />"
+        "    <ECProperty propertyName='Prop3_2' typeName='long' />"
+        "    <ECProperty propertyName='Prop3_3' typeName='double' />"
+        "  </ECClass>"
+        "  <ECClass typeName='Element4' >"
+        "    <ECCustomAttributes>"
+        "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+        "    </ECCustomAttributes>"
+        "    <BaseClass>Element3</BaseClass>"
+        "    <ECProperty propertyName='Prop4_1' typeName='string' />"
+        "    <ECProperty propertyName='Prop4_2' typeName='long' />"
+        "    <ECProperty propertyName='Prop4_3' typeName='double' />"
+        "  </ECClass>"
+        "  <ECClass typeName='Element4b' >"
+        "    <ECCustomAttributes>"
+        "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+        "    </ECCustomAttributes>"
+        "    <BaseClass>Element3</BaseClass>"
+        "    <ECProperty propertyName='Prop4b_1' typeName='string' />"
+        "    <ECProperty propertyName='Prop4b_2' typeName='long' />"
+        "    <ECProperty propertyName='Prop4b_3' typeName='double' />"
+        "    <ECProperty propertyName='Prop4b_4' typeName='point3d' />"
+        "  </ECClass>"
+        "</ECSchema>";
+
+    SetupProject(L"3dMetricGeneral.idgndb", L"New3dMetricGeneralDb.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    ECN::ECSchemaReadContextPtr schemaContext = ECN::ECSchemaReadContext::CreateContext();
+    m_db->SaveChanges();
+
+    BeFileName searchDir;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDir);
+    searchDir.AppendToPath(L"ECSchemas").AppendToPath(L"Dgn");
+    schemaContext->AddSchemaPath(searchDir.GetName());
+
+    ECN::ECSchemaPtr schema = nullptr;
+    ASSERT_EQ(ECN::SchemaReadStatus::Success, ECN::ECSchema::ReadFromXmlString(schema, testSchemaXml, *schemaContext));
+    ASSERT_TRUE(schema != nullptr);
+
+    schemaContext->AddSchema(*schema);
+    ASSERT_EQ(DgnDbStatus::Success, DgnBaseDomain::GetDomain().ImportSchema(*m_db, schemaContext->GetCache()));
+    ASSERT_TRUE(m_db->IsDbOpen());
     }
