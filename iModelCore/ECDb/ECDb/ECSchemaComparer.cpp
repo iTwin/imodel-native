@@ -15,21 +15,14 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //======================================================================================>
 //Binary
 //======================================================================================>
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-bool Binary::_empty() const
-    {
-    return m_len == 0;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus Binary::_resize(size_t len)
+BentleyStatus Binary::Resize(size_t len)
     {
     if (len == 0)
-        return _free();
+        return Free();
 
     if (len == m_len)
         return SUCCESS;
@@ -45,7 +38,7 @@ BentleyStatus Binary::_resize(size_t len)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus Binary::_free()
+BentleyStatus Binary::Free()
     {
     if (m_buff)
         free(m_buff);
@@ -57,7 +50,7 @@ BentleyStatus Binary::_free()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus Binary::_assign(void* buff , size_t len)
+BentleyStatus Binary::Assign(void* buff , size_t len)
     {
     if (buff != nullptr && len == 0)
         {
@@ -70,10 +63,8 @@ BentleyStatus Binary::_assign(void* buff , size_t len)
         return ERROR;
         }
     else if (buff == nullptr && len == 0)
-        {
-        return _free();
-        }
-    else if (_resize(len) != SUCCESS)
+        return Free();
+    else if (Resize(len) != SUCCESS)
         {
         BeAssert(false && "_assign() _resize(len) != SUCCESS");
         return ERROR;
@@ -86,9 +77,13 @@ BentleyStatus Binary::_assign(void* buff , size_t len)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-Binary::Binary() :
-    m_buff(nullptr), m_len(0)
-    {}
+Binary::Binary() : m_buff(nullptr), m_len(0) {}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+Binary::~Binary() { Free(); }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -109,9 +104,8 @@ Binary::Binary(Binary&& rhs)
 Binary& Binary::operator = (Binary const& rhs)
     {
     if (this != &rhs)
-        {
-        _assign(rhs.m_buff, rhs.m_len);
-        }
+        Assign(rhs.m_buff, rhs.m_len);
+
     return *this;
     }
 //---------------------------------------------------------------------------------------
@@ -126,6 +120,7 @@ Binary& Binary::operator = (Binary&& rhs)
         rhs.m_buff = nullptr;
         rhs.m_len = 0;
         }
+
     return *this;
     }
 //---------------------------------------------------------------------------------------
@@ -135,64 +130,22 @@ int Binary::Compare(Binary const& rhs) const
     {
     if (Size() == 0 && rhs.Size() == 0)
         return 0;
-    else if (Size() == 0 && rhs.Size() != 0)
+
+    if (Size() == 0 && rhs.Size() != 0)
         return 1;
-    else if (Size() != 0 && rhs.Size() == 0)
+
+    if (Size() != 0 && rhs.Size() == 0)
         return -1;
-    else
-        {
-        if (Size() > rhs.Size())
-            return -1;
-        else if (Size() < rhs.Size())
-            return 1;
-        else
-            {
-            return memcmp(m_buff, rhs.m_buff, m_len);
-            }
-        }
+
+    if (Size() > rhs.Size())
+        return -1;
+
+    if (Size() < rhs.Size())
+        return 1;
+
+    return memcmp(m_buff, rhs.m_buff, m_len);
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-void* Binary::GetPointerP()
-    {
-    return m_buff;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-void const* Binary::GetPointer() const
-    {
-    return m_buff;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-size_t Binary::Size() const
-    {
-    return m_len;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-bool Binary::Empty() const
-    {
-    return m_len == 0;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-bool Binary::operator == (Binary const& rhs) const
-    {
-    return Compare(rhs) == 0;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-bool Binary::Equalls(Binary const& rhs) const
-    {
-    return  *this == rhs;
-    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -206,21 +159,14 @@ void Binary::CopyTo(ECValueR value) const
 BentleyStatus Binary::CopyFrom(ECValueCR value)
     {
     if (value.IsNull())
-        return _free();
+        return Free();
 
     if (!value.IsBinary())
         return ERROR;
 
     size_t len = 0;
     void* buff = (void*) value.GetBinary(len);
-    return _assign(buff, len);
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-Binary::~Binary()
-    {
-    _free();
+    return Assign(buff, len);
     }
 
 //======================================================================================>
@@ -1491,79 +1437,79 @@ std::map<SystemId, Utf8String> const& ECChange::GetTypeToStringMap()
 {
 static std::map<SystemId, Utf8String> idToKey
     {
-            {NONE, ""},
-            {ALTERNATIVEPRESENTATIONUNITLIST, "AlternativePresentationUnitList"},
-            {ARRAY, "Array"},
-            {BASECLASS, "BaseClass"},
-            {BASECLASSES, "BaseClasses"},
-            {CARDINALITY, "Cardinality"},
-            {CLASSES, "Classes"},
-            {CLASS, "Class"},
-            {CONSTANTKEY, "ConstantKey"},
-            {CLASSFULLNAME, "ClassFullName"},
-            {CLASSMODIFIER, "ClassModifier"},
-            {CONSTRAINTCLASS, "ConstraintClass"},
-            {CONSTRAINTCLASSES, "ConstraintClasses"},
-            {CONSTRAINT, "Constraint"},
-            {CUSTOMATTRIBTUES, "CustomAttributes"},
-            {DEFAULTPRESENTATIONUNIT, "DefaultPresentationUnit"},
-            {DESCRIPTION, "Description"},
-            {DIRECTION, "Direction"},
-            {PROPERTYVALUE,"PropertyValue"},
-            {PROPERTYVALUES,"PropertyValues"},
-            {DISPLAYLABEL, "DisplayLabel"},
-            {ENUMERATION, "Enumeration"},
-            {ENUMERATIONS, "Enumerations"},
-            {ENUMERATOR, "Enumerator"},
-            {ENUMERATORS, "Enumerators"},
-            {EXTENDEDTYPENAME, "ExtendTypeName"},
-            {INSTANCE, "Instance"},
-            {INSTANCES, "Instances"},
-            {INTEGER, "Integer"},
-            {ISCUSTOMATTRIBUTECLASS, "IsCustomAttributeClass"},
-            {ISENTITYCLASS, "IsEntityClass"},
-            {ISPOLYMORPHIC, "IsPolymorphic"},
-            {ISREADONLY, "IsReadOnly"},
-            {ISRELATIONSHIPCLASS, "IsRelationshipClass"},
-            {ISSTRICT, "IsStict"},
-            {ISSTRUCTCLASS, "IsStructClass"},
-            {ISSTRUCT, "IsStruct"},
-            {ISSTRUCTARRAY, "IsStructArray"},
-            {ISPRIMITIVE, "IsPrimitive"},
-            {ISPRIMITIVEARRAY, "IsPrimitiveArray"},
-            {ISNAVIGATION, "IsNavigation"},
-            {KEYPROPERTIES, "KeyProperties"},
-            {KEYPROPERTY, "KeyProperty"},
-            {KINDOFQUANTITIES, "KindOfQuantities"},
-            {KINDOFQUANTITY, "KindOfQuantity"},
-            {MAXIMUMVALUE, "MaximumValue"},
-            {MAXOCCURS, "MaxOccurs"},
-            {MINIMUMVALUE, "MinimumValue"},
-            {MINOCCURS, "MinOccurs"},
-            {NAME, "Name"},
-            {NAMESPACEPREFIX, "NameSpacePrefix"},
-            {NAVIGATION, "Navigation"},
-            {PERSISTENCEUNIT, "PersistenceUnit"},
-            {PRECISION, "Precision"},
-            {PROPERTIES, "Properties"},
-            {PROPERTY, "Property"},
-            {PROPERTYTYPE, "PropertyType"},
-            {REFERENCE, "Reference"},
-            {REFERENCES, "References"},
-            {RELATIONSHIP, "Relationship"},
-            {RELATIONSHIPNAME, "RelationshipName"},
-            {ROLELABEL, "RoleLabel"},
-            {SCHEMA, "Schema"},
-            {SCHEMAS, "Schemas"},
-            {SOURCE, "Source"},
-            {STRENGTHDIRECTION, "StrengthDirection"},
-            {STRENGTHTYPE, "StrengthType"},
-            {STRING, "String"},
-            {TARGET, "Target"},
-            {TYPENAME, "TypeName"},
-            {VERSIONMAJOR, "VersionMajor"},
-            {VERSIONMINOR, "VersionMinor"},
-            {VERSIONWRITE, "VersionWrite"},
+            {SystemId::None, ""},
+            {SystemId::AlternativePresentationUnitList, "AlternativePresentationUnitList"},
+            {SystemId::Array, "Array"},
+            {SystemId::BaseClass, "BaseClass"},
+            {SystemId::BaseClasses, "BaseClasses"},
+            {SystemId::Cardinality, "Cardinality"},
+            {SystemId::Classes, "Classes"},
+            {SystemId::Class, "Class"},
+            {SystemId::ConstantKey, "ConstantKey"},
+            {SystemId::ClassFullName, "ClassFullName"},
+            {SystemId::ClassModifier, "ClassModifier"},
+            {SystemId::ConstraintClass, "ConstraintClass"},
+            {SystemId::ConstraintClasses, "ConstraintClasses"},
+            {SystemId::Constraint, "Constraint"},
+            {SystemId::CustomAttributes, "CustomAttributes"},
+            {SystemId::DefaultPresentationUnit, "DefaultPresentationUnit"},
+            {SystemId::Description, "Description"},
+            {SystemId::Direction, "Direction"},
+            {SystemId::PropertyValue,"PropertyValue"},
+            {SystemId::PropertyValues,"PropertyValues"},
+            {SystemId::DisplayLabel, "DisplayLabel"},
+            {SystemId::Enumeration, "Enumeration"},
+            {SystemId::Enumerations, "Enumerations"},
+            {SystemId::Enumerator, "Enumerator"},
+            {SystemId::Enumerators, "Enumerators"},
+            {SystemId::ExtendedTypeName, "ExtendTypeName"},
+            {SystemId::Instance, "Instance"},
+            {SystemId::Instances, "Instances"},
+            {SystemId::Integer, "Integer"},
+            {SystemId::IsCustomAttributeClass, "IsCustomAttributeClass"},
+            {SystemId::IsEntityClass, "IsEntityClass"},
+            {SystemId::IsPolymorphic, "IsPolymorphic"},
+            {SystemId::IsReadonly, "IsReadOnly"},
+            {SystemId::IsRelationshipClass, "IsRelationshipClass"},
+            {SystemId::IsStrict, "IsStict"},
+            {SystemId::IsStructClass, "IsStructClass"},
+            {SystemId::IsStruct, "IsStruct"},
+            {SystemId::IsStructArray, "IsStructArray"},
+            {SystemId::IsPrimitive, "IsPrimitive"},
+            {SystemId::IsPrimitiveArray, "IsPrimitiveArray"},
+            {SystemId::IsNavigation, "IsNavigation"},
+            {SystemId::KeyProperties, "KeyProperties"},
+            {SystemId::KeyProperty, "KeyProperty"},
+            {SystemId::KindOfQuantities, "KindOfQuantities"},
+            {SystemId::KindOfQuantity, "KindOfQuantity"},
+            {SystemId::MaximumValue, "MaximumValue"},
+            {SystemId::MaxOccurs, "MaxOccurs"},
+            {SystemId::MinimumValue, "MinimumValue"},
+            {SystemId::MinOccurs, "MinOccurs"},
+            {SystemId::Name, "Name"},
+            {SystemId::NamespacePrefix, "NameSpacePrefix"},
+            {SystemId::Navigation, "Navigation"},
+            {SystemId::PersistenceUnit, "PersistenceUnit"},
+            {SystemId::Precision, "Precision"},
+            {SystemId::Properties, "Properties"},
+            {SystemId::Property, "Property"},
+            {SystemId::PropertyType, "PropertyType"},
+            {SystemId::Reference, "Reference"},
+            {SystemId::References, "References"},
+            {SystemId::Relationship, "Relationship"},
+            {SystemId::RelationshipName, "RelationshipName"},
+            {SystemId::RoleLabel, "RoleLabel"},
+            {SystemId::Schema, "Schema"},
+            {SystemId::Schemas, "Schemas"},
+            {SystemId::Source, "Source"},
+            {SystemId::StrengthDirection, "StrengthDirection"},
+            {SystemId::StrengthType, "StrengthType"},
+            {SystemId::String, "String"},
+            {SystemId::Target, "Target"},
+            {SystemId::TypeName, "TypeName"},
+            {SystemId::VersionMajor, "VersionMajor"},
+            {SystemId::VersionMinor, "VersionMinor"},
+            {SystemId::VersionWrite, "VersionWrite"},
     };
 
 return idToKey;
@@ -1581,7 +1527,7 @@ Utf8StringCR ECChange::Convert(SystemId id)
         return itor->second;
 
     BeAssert(false && "Failed to convert to string");
-    return idToKey.find(SystemId::NONE)->second;
+    return idToKey.find(SystemId::None)->second;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1596,7 +1542,7 @@ SystemId ECChange::Convert(Utf8CP id)
         return itor->second;
 
     BeAssert(false && "Failed to decode type id into string");
-    return SystemId::NONE;
+    return SystemId::None;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1764,11 +1710,10 @@ T& ECObjectChange::Get(SystemId systemId)
     if (itor != m_changes.end())
         return *(static_cast<T*>(itor->second.get()));
 
-    ECChange::Ptr ptr;
-    ptr = ECChange::Ptr(new T(GetState(), systemId, this, nullptr));
-    ECChange* p = ptr.get();
-    m_changes[ptr->GetId().c_str()] = std::move(ptr);
-    return *(static_cast<T*>(p));
+    ECChangePtr changePtr = new T(GetState(), systemId, this, nullptr);
+    ECChange* changeP = changePtr.get();
+    m_changes[changePtr->GetId().c_str()] = changePtr;
+    return *(static_cast<T*>(changeP));
     }
 //======================================================================================>
 //StringChange
@@ -2052,7 +1997,7 @@ void ECPropertyValueChange::_WriteToString(Utf8StringR str, int currentIndex, in
 bool ECPropertyValueChange::_IsEmpty() const
     {
     if (auto parent = GetParent())
-        if (parent->GetSystemId() == CUSTOMATTRIBTUES && GetState() != ChangeState::Modified)
+        if (parent->GetSystemId() == SystemId::CustomAttributes && GetState() != ChangeState::Modified)
             return false;
 
     if (m_value != nullptr)
@@ -2080,7 +2025,7 @@ void ECPropertyValueChange::_Optimize()
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 ECPropertyValueChange::ECPropertyValueChange(ChangeState state, SystemId systemId, ECChange const* parent, Utf8CP customId)
-    : ECChange(state, PROPERTYVALUE, parent, customId)
+    : ECChange(state, SystemId::PropertyValue, parent, customId)
     {
     BeAssert(systemId == GetSystemId());
     }
@@ -2099,7 +2044,7 @@ ECPrimitiveChange<ECValue>& ECPropertyValueChange::GetPropertyValue()
     {
     if (m_value == nullptr)
         {
-        m_value = std::unique_ptr<ECValueChange>(new ECValueChange(GetState(), PROPERTYVALUE, this, GetId().c_str()));
+        m_value = std::unique_ptr<ECValueChange>(new ECValueChange(GetState(), SystemId::PropertyValue, this, GetId().c_str()));
         }
 
     return *m_value;
@@ -2111,7 +2056,7 @@ ECChangeArray<ECPropertyValueChange>& ECPropertyValueChange::GetChildren()
     {
     if (m_children == nullptr)
         {
-        m_children = std::unique_ptr<ECChangeArray<ECPropertyValueChange>>(new ECChangeArray<ECPropertyValueChange>(GetState(), PROPERTYVALUES, this, GetId().c_str(), PROPERTYVALUE));
+        m_children = std::unique_ptr<ECChangeArray<ECPropertyValueChange>>(new ECChangeArray<ECPropertyValueChange>(GetState(), SystemId::PropertyValues, this, GetId().c_str(), SystemId::PropertyValue));
         }
 
     return *m_children;

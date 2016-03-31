@@ -301,9 +301,9 @@ BentleyStatus ECDbSchemaManager::CompareECSchemas(Utf8StringR differences, ECN::
     lhsSchemas.push_back(&lhs);
     rhsSchemas.push_back(&rhs);
 
-    ECSchemaChanges changes;
     ECSchemaComparer sc;
-    if (sc.Compare(changes, lhsSchemas, rhsSchemas) == ERROR)
+    ECSchemaChanges changes;
+    if (SUCCESS != sc.Compare(changes, lhsSchemas, rhsSchemas))
         return ERROR;
 
     changes.Optimize();
