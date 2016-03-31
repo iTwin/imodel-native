@@ -211,38 +211,57 @@ namespace IndexECPlugin.Source
                         }
                     //IEnumerable<IECInstance> instanceList;
 
-                    switch ( source.ToLower() )
+                    InstanceOverrider instanceOverrider = new InstanceOverrider();
+                    InstanceComplement instanceComplement = new InstanceComplement();
+                    using ( SqlConnection sqlConnection = new SqlConnection(m_connectionString) )
                         {
-                        case "index":
-                            using ( SqlConnection sqlConnection = new SqlConnection(m_connectionString) )
-                                {
-                                string fullSchemaName = sender.ParentECPlugin.SchemaModule.GetSchemaFullNames(connection).First();
-                                IECSchema schema = sender.ParentECPlugin.SchemaModule.GetSchema(connection, fullSchemaName);
-                                helper = new SqlQueryProvider(query, querySettings, sqlConnection, schema);
-                                return helper.CreateInstanceList();
-                                }
+                        switch ( source.ToLower() )
+                            {
+                            case "index":
+                                    {
+                                    string fullSchemaName = sender.ParentECPlugin.SchemaModule.GetSchemaFullNames(connection).First();
+                                    IECSchema schema = sender.ParentECPlugin.SchemaModule.GetSchema(connection, fullSchemaName);
+                                    helper = new SqlQueryProvider(query, querySettings, sqlConnection, schema);
+                                    IEnumerable<IECInstance> instances = helper.CreateInstanceList();
+                                    instanceOverrider.Modify(instances, DataSource.Index, sqlConnection, querySettings);
+                                    instanceComplement.Modify(instances, DataSource.Index, sqlConnection, querySettings);
+                                    return instances;
+                                    }
 
-                        case "usgsapi":
-                            helper = new UsgsAPIQueryProvider(query, querySettings);
-                            return helper.CreateInstanceList();
+                            case "usgsapi":
+                                    {
 
-                        case "all":
-                            List<IECInstance> instanceList = new List<IECInstance>();
-                            using ( SqlConnection sqlConnection = new SqlConnection(m_connectionString) )
-                                {
-                                string fullSchemaName = sender.ParentECPlugin.SchemaModule.GetSchemaFullNames(connection).First();
-                                IECSchema schema = sender.ParentECPlugin.SchemaModule.GetSchema(connection, fullSchemaName);
-                                helper = new SqlQueryProvider(query, querySettings, sqlConnection, schema);
-                                instanceList = helper.CreateInstanceList().ToList();
-                                }
+                                    helper = new UsgsAPIQueryProvider(query, querySettings);
+                                    IEnumerable<IECInstance> instances = helper.CreateInstanceList();
+                                    instanceOverrider.Modify(instances, DataSource.USGS, sqlConnection, querySettings);
+                                    instanceComplement.Modify(instances, DataSource.USGS, sqlConnection, querySettings);
+                                    return instances;
+                                    }
+                            case "all":
+                                    {
 
-                            helper = new UsgsAPIQueryProvider(query, querySettings);
-                            instanceList.AddRange(helper.CreateInstanceList());
-                            return instanceList;
-                        default:
-                            //throw new UserFriendlyException(String.Format("The class {0} cannot be queried.", searchClass.Class.Name));
-                            //Log.Logger.error(String.Format("Query {0} aborted. The source chosen ({1}) is invalid", query.ID, source));
-                            throw new UserFriendlyException("The source \"" + source + "\" does not exist. Choose between \"index\", \"usgsapi\" or \"all\"");
+                                    List<IECInstance> instanceList = new List<IECInstance>();
+                                        {
+                                        string fullSchemaName = sender.ParentECPlugin.SchemaModule.GetSchemaFullNames(connection).First();
+                                        IECSchema schema = sender.ParentECPlugin.SchemaModule.GetSchema(connection, fullSchemaName);
+                                        helper = new SqlQueryProvider(query, querySettings, sqlConnection, schema);
+                                        instanceList = helper.CreateInstanceList().ToList();
+                                        instanceOverrider.Modify(instanceList, DataSource.Index, sqlConnection, querySettings);
+                                        instanceComplement.Modify(instanceList, DataSource.Index, sqlConnection, querySettings);
+
+                                        helper = new UsgsAPIQueryProvider(query, querySettings);
+                                        IEnumerable<IECInstance> instances = helper.CreateInstanceList();
+                                        instanceOverrider.Modify(instances, DataSource.USGS, sqlConnection, querySettings);
+                                        instanceComplement.Modify(instances, DataSource.USGS, sqlConnection, querySettings);
+                                        instanceList.AddRange(instances);
+                                        return instanceList;
+                                        }
+                                    }
+                            default:
+                                //throw new UserFriendlyException(String.Format("The class {0} cannot be queried.", searchClass.Class.Name));
+                                //Log.Logger.error(String.Format("Query {0} aborted. The source chosen ({1}) is invalid", query.ID, source));
+                                throw new UserFriendlyException("The source \"" + source + "\" does not exist. Choose between " + SourceStringMap.GetAllSourceStrings());
+                            }
                         }
                     }
                 }

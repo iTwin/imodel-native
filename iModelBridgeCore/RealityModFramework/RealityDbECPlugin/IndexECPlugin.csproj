@@ -106,9 +106,15 @@
     <Compile Include="Source\Helpers\DBGeometryHelpers.cs" />
     <Compile Include="Source\Helpers\ECQueryConverter.cs" />
     <Compile Include="Source\Helpers\ECToSQLMap.cs" />
+    <Compile Include="Source\Helpers\InstanceComplement.cs" />
+    <Compile Include="Source\Helpers\InstanceModifier.cs" />
+    <Compile Include="Source\Helpers\InstanceOverrider.cs" />
     <Compile Include="Source\Helpers\SchemaHelper.cs" />
     <Compile Include="Source\Helpers\IUSGSDataExtractor.cs" />
     <Compile Include="Source\Helpers\IUSGSDataFetcher.cs" />
+    <Compile Include="Source\Helpers\SourceStringMap.cs" />
+    <Compile Include="Source\Helpers\SqlQueryHelpers.cs" />
+    <Compile Include="Source\Helpers\TableAliasCreator.cs" />
     <Compile Include="Source\IndexConstants.cs" />
     <Compile Include="Source\IndexPolicyHandler.cs" />
     <Compile Include="Source\JTokenExtension.cs" />

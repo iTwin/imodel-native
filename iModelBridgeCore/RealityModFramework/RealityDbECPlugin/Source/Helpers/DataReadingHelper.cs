@@ -22,6 +22,15 @@ namespace IndexECPlugin.Source.Helpers
         private int? m_relatedInstanceIdColumn = null;
 
         /// <summary>
+        /// Gets the collection of all properties requested. This includes instanceData and SpatialInstanceData.
+        /// </summary>
+        /// <returns>Collection of all properties</returns>
+        public IEnumerable<IECProperty> GetProperties()
+            {
+            return instanceDataColumnList.Keys;
+            }
+
+        /// <summary>
         /// This method must be called each time a new row is added the the sql query, in the same order as in the query
         /// </summary>
         /// <param name="columnCategory">The category of the column. This will decide which rows will be accessible by which Get methods</param>

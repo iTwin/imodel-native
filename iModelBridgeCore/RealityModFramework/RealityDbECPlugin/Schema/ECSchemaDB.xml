@@ -3,6 +3,10 @@
     <ECClass typeName="SQLEntity" isCustomAttributeClass="true" isDomainClass ="false">
         <ECProperty propertyName="FromTableName" typeName="string" description="Name of the table to select FROM" /> <!-- Must be non null -->
         <ECProperty propertyName="InstanceIDProperty" typeName="string" description="Name of the property to be used as instance ID" /> <!-- Must be non null. Also, the column of the ID property must be in the table designated by FromTableName-->
+        <ECProperty propertyName="OverrideTableName" typeName="string" description="Name of the table containing Override data" /> <!-- If null, override won't be possible -->
+        <ECProperty propertyName="ComplementTableName" typeName="string" description="Name of the table containing Complement data" /> <!-- If null, override won't be possible -->
+        <ECProperty propertyName="OverrideTableUniqueIdColumn" typeName="string" description="Name of the column containing the Override instance unique ID" /> <!-- If null and OverrideTableName is not null, override will cause an error -->
+        <ECProperty propertyName="ComplementTableUniqueIdColumn" typeName="string" description="Name of the column containing the Complement instance unique ID" /> <!-- If null and ComplementTableName is not null, complement will cause an error -->
     </ECClass>
     
     <ECClass typeName="QueryType" isCustomAttributeClass="true" isDomainClass="false">
@@ -10,7 +14,7 @@
     </ECClass>
     
     <ECClass typeName="DBColumn" isCustomAttributeClass="true" isDomainClass ="false">
-        <ECProperty propertyName="JoinTableName" typeName="string"/> <!-- Table where to find column. To fill if different from FromTableName, or if  -->
+        <ECProperty propertyName="JoinTableName" typeName="string"/> <!-- Table where to find column. To fill if different from FromTableName -->
         <ECProperty propertyName="ColumnName" typeName="string"/> <!-- Must be non null -->
         <!--<ECProperty propertyName="IsNullable" typeName="boolean"/> --> <!--To determine whether to do an inner join (false) or a left outer join (true). Could be erased and we could always do left outer join?-->
         <ECProperty propertyName="FirstTableKey" typeName="string" description="Name of the key in the From Table to compare with the new table key" /> <!-- If FromTableName is non null, must be non null -->
@@ -18,8 +22,16 @@
         <ECProperty propertyName="IsSpatial" typeName="boolean" description="If the property is for holding a series of points representing a polygon, switch this to true" />
     </ECClass>
     
+    <ECClass typeName="ModifierDBColumn" isCustomAttributeClass="true" isDomainClass ="false"> 
+    <!--<ECClass typeName="OverrideDBColumn" isCustomAttributeClass="true" isDomainClass ="false"> -->
+        <ECProperty propertyName="OverrideJoinTableName" typeName="string" /> <!--Table where to find column to override data. THE JOIN WILL BE MADE USING THE SAME KEYS AS NON-OVERRIDE. THE OVERRIDE TABLES MUST BE MADE ACCORDINGLY.-->
+        <ECProperty propertyName="OverrideColumnName" typeName="string"/> <!-- The name of the corresponding column in the override table. Cannot be null.-->
+        <ECProperty propertyName="ComplementJoinTableName" typeName="string" />
+        <ECProperty propertyName="ComplementColumnName" typeName="string" />
+    </ECClass>
+    
     <ECClass typeName="DerivedClassLinker" isCustomAttributeClass="true" isDomainClass="false">
-    <!-- This class was made to enable the use of "Table per Class hierarchy" -->
+    <!-- This class was made to enable the use of "Table per Class hierarchy. Currently not used." -->
         <ECProperty propertyName="DerivedClassKeyProperty" typeName="string" />
         <ECProperty propertyName="BaseClassKeyProperty" typeName="string" />
     </ECClass>
@@ -71,6 +83,8 @@
             <SQLEntity>
                 <FromTableName>dbo.SpatialEntityBases</FromTableName>
                 <InstanceIDProperty>Id</InstanceIDProperty>
+                <OverrideTableName>dbo.OverrideSpatialEntityBases</OverrideTableName>
+                <OverrideTableUniqueIdColumn>UniqueId</OverrideTableUniqueIdColumn>
             </SQLEntity>
         </ECCustomAttributes>
         
@@ -79,6 +93,9 @@
                 <DBColumn>
                     <ColumnName>IdStr</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>IdStr</OverrideColumnName>
+                </ModifierDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -88,6 +105,9 @@
                     <ColumnName>Footprint</ColumnName>
                     <IsSpatial>true</IsSpatial>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Footprint</OverrideColumnName>
+                </ModifierDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -96,6 +116,9 @@
                 <DBColumn>
                     <ColumnName>Name</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Name</OverrideColumnName>
+                </ModifierDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -104,6 +127,9 @@
                 <DBColumn>
                     <ColumnName>Keywords</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Keywords</OverrideColumnName>
+                </ModifierDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -112,6 +138,9 @@
                 <DBColumn>
                     <ColumnName>AssociateFile</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>AssociateFile</OverrideColumnName>
+                </ModifierDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -120,6 +149,9 @@
                 <DBColumn>
                     <ColumnName>ProcessingDescription</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>ProcessingDescription</OverrideColumnName>
+                </ModifierDBColumn>                
             </ECCustomAttributes>
         </ECProperty>
         
@@ -128,6 +160,9 @@
                 <DBColumn>
                     <ColumnName>DataSourceTypesAvailable</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>DataSourceTypesAvailable</OverrideColumnName>
+                </ModifierDBColumn>                  
             </ECCustomAttributes>
         </ECProperty>
         
@@ -136,6 +171,9 @@
                 <DBColumn>
                     <ColumnName>AccuracyResolutionDensity</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>AccuracyResolutionDensity</OverrideColumnName>
+                </ModifierDBColumn>                 
             </ECCustomAttributes>
         </ECProperty>
         
@@ -147,6 +185,9 @@
                 <DBColumn>
                     <ColumnName>Date</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Date</OverrideColumnName>
+                </ModifierDBColumn>                 
             </ECCustomAttributes>
         </ECProperty>
         
@@ -155,6 +196,9 @@
                 <DBColumn>
                     <ColumnName>Classification</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Classification</OverrideColumnName>
+                </ModifierDBColumn>                  
             </ECCustomAttributes>
         </ECProperty>        
         
@@ -168,6 +212,8 @@
             <SQLEntity>
                 <FromTableName>dbo.SpatialEntities</FromTableName>
                 <InstanceIDProperty>Id</InstanceIDProperty>
+                <OverrideTableName>dbo.OverrideSpatialEntities</OverrideTableName>
+                <OverrideTableUniqueIdColumn>UniqueId</OverrideTableUniqueIdColumn>
             </SQLEntity>
         </ECCustomAttributes>
         
@@ -176,6 +222,9 @@
                 <DBColumn>
                     <ColumnName>IdStr</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>IdStr</OverrideColumnName>
+                </ModifierDBColumn>                    
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>
@@ -188,6 +237,8 @@
             <SQLEntity>
                 <FromTableName>dbo.SpatialEntityDatasets</FromTableName>
                 <InstanceIDProperty>Id</InstanceIDProperty>
+                <OverrideTableName>dbo.OverrideSpatialEntityDatasets</OverrideTableName>
+                <OverrideTableUniqueIdColumn>UniqueId</OverrideTableUniqueIdColumn>
             </SQLEntity>
         </ECCustomAttributes>
         
@@ -196,6 +247,9 @@
                 <DBColumn>
                     <ColumnName>IdStr</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>IdStr</OverrideColumnName>
+                </ModifierDBColumn>                 
             </ECCustomAttributes>
         </ECProperty>
         
@@ -204,6 +258,9 @@
                 <DBColumn>
                     <ColumnName>Processable</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Processable</OverrideColumnName>
+                </ModifierDBColumn>                 
             </ECCustomAttributes>
         </ECProperty>    
 
@@ -225,6 +282,8 @@
             <SQLEntity>
                 <FromTableName>dbo.Thumbnails</FromTableName>
                 <InstanceIDProperty>Id</InstanceIDProperty>
+                <OverrideTableName>dbo.OverrideThumbnails</OverrideTableName>
+                <OverrideTableUniqueIdColumn>UniqueId</OverrideTableUniqueIdColumn>
             </SQLEntity>
             <FileHolder>
                 <Type>SQLThumbnail</Type>
@@ -239,6 +298,9 @@
                 <DBColumn>
                     <ColumnName>IdStr</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>IdStr</OverrideColumnName>
+                </ModifierDBColumn>                    
             </ECCustomAttributes>
         </ECProperty>    
         
@@ -247,6 +309,9 @@
                 <DBColumn>
                     <ColumnName>ThumbnailProvenance</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>ThumbnailProvenance</OverrideColumnName>
+                </ModifierDBColumn>                  
             </ECCustomAttributes>
         </ECProperty>
         
@@ -255,6 +320,9 @@
                 <DBColumn>
                     <ColumnName>ThumbnailFormat</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>ThumbnailFormat</OverrideColumnName>
+                </ModifierDBColumn>                   
             </ECCustomAttributes>
         </ECProperty>
         
@@ -263,6 +331,9 @@
                 <DBColumn>
                     <ColumnName>ThumbnailWidth</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>ThumbnailWidth</OverrideColumnName>
+                </ModifierDBColumn>                      
             </ECCustomAttributes>
         </ECProperty>
         
@@ -271,6 +342,9 @@
                 <DBColumn>
                     <ColumnName>ThumbnailHeight</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>ThumbnailHeight</OverrideColumnName>
+                </ModifierDBColumn>                   
             </ECCustomAttributes>
         </ECProperty>
         
@@ -279,6 +353,9 @@
                 <DBColumn>
                     <ColumnName>ThumbnailStamp</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>ThumbnailStamp</OverrideColumnName>
+                </ModifierDBColumn>                   
             </ECCustomAttributes>
         </ECProperty>
         
@@ -295,6 +372,9 @@
                 <DBColumn>
                     <ColumnName>ThumbnailGenerationDetails</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>ThumbnailGenerationDetails</OverrideColumnName>
+                </ModifierDBColumn>                 
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>
@@ -307,6 +387,8 @@
             <SQLEntity>
                 <FromTableName>dbo.Metadatas</FromTableName>
                 <InstanceIDProperty>Id</InstanceIDProperty>
+                <OverrideTableName>dbo.OverrideMetadatas</OverrideTableName>
+                <OverrideTableUniqueIdColumn>UniqueId</OverrideTableUniqueIdColumn>
             </SQLEntity>
         </ECCustomAttributes>
         
@@ -315,6 +397,9 @@
                 <DBColumn>
                     <ColumnName>IdStr</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>IdStr</OverrideColumnName>
+                </ModifierDBColumn>                  
             </ECCustomAttributes>
         </ECProperty>   
         
@@ -323,6 +408,9 @@
                 <DBColumn>
                     <ColumnName>RawMetadata</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>RawMetadata</OverrideColumnName>
+                </ModifierDBColumn>                    
             </ECCustomAttributes>
         </ECProperty>
         
@@ -331,6 +419,9 @@
                 <DBColumn>
                     <ColumnName>RawMetadataFormat</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>RawMetadataFormat</OverrideColumnName>
+                </ModifierDBColumn>                  
             </ECCustomAttributes>
         </ECProperty>
         
@@ -339,6 +430,9 @@
                 <DBColumn>
                     <ColumnName>DisplayStyle</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>DisplayStyle</OverrideColumnName>
+                </ModifierDBColumn>                  
             </ECCustomAttributes>
         </ECProperty>
         
@@ -347,6 +441,9 @@
                 <DBColumn>
                     <ColumnName>Description</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Description</OverrideColumnName>
+                </ModifierDBColumn>                   
             </ECCustomAttributes>
         </ECProperty>
         
@@ -355,6 +452,9 @@
                 <DBColumn>
                     <ColumnName>ContactInformation</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>ContactInformation</OverrideColumnName>
+                </ModifierDBColumn>                  
             </ECCustomAttributes>
         </ECProperty>
         
@@ -363,6 +463,9 @@
                 <DBColumn>
                     <ColumnName>Keywords</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Keywords</OverrideColumnName>
+                </ModifierDBColumn>                   
             </ECCustomAttributes>
         </ECProperty>
         
@@ -371,6 +474,9 @@
                 <DBColumn>
                     <ColumnName>Legal</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Legal</OverrideColumnName>
+                </ModifierDBColumn>                  
             </ECCustomAttributes>
         </ECProperty>
         
@@ -379,6 +485,9 @@
                 <DBColumn>
                     <ColumnName>Lineage</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Lineage</OverrideColumnName>
+                </ModifierDBColumn>                   
             </ECCustomAttributes>
         </ECProperty>
         
@@ -387,6 +496,9 @@
                 <DBColumn>
                     <ColumnName>Provenance</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Provenance</OverrideColumnName>
+                </ModifierDBColumn>                 
             </ECCustomAttributes>
         </ECProperty>
         
@@ -400,6 +512,10 @@
             <SQLEntity>
                 <FromTableName>dbo.SpatialDataSources</FromTableName>
                 <InstanceIDProperty>Id</InstanceIDProperty>
+                <OverrideTableName>dbo.OverrideSpatialDataSources</OverrideTableName>
+                <ComplementTableName>dbo.ComplementSpatialDataSources</ComplementTableName>
+                <OverrideTableUniqueIdColumn>UniqueId</OverrideTableUniqueIdColumn>
+                <ComplementTableUniqueIdColumn>UniqueId</ComplementTableUniqueIdColumn>
             </SQLEntity>
         </ECCustomAttributes>    
         
@@ -408,6 +524,10 @@
                 <DBColumn>
                     <ColumnName>IdStr</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>IdStr</OverrideColumnName>
+                    <ComplementColumnName>IdStr</ComplementColumnName>
+                </ModifierDBColumn>                  
             </ECCustomAttributes>
         </ECProperty>   
 
@@ -416,6 +536,10 @@
                 <DBColumn>
                     <ColumnName>MainURL</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>MainURL</OverrideColumnName>
+                    <ComplementColumnName>MainURL</ComplementColumnName>
+                </ModifierDBColumn>                 
             </ECCustomAttributes>
         </ECProperty>
         
@@ -424,6 +548,9 @@
                 <DBColumn>
                     <ColumnName>CompoundType</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>CompoundType</OverrideColumnName>
+                </ModifierDBColumn>                 
             </ECCustomAttributes>
         </ECProperty>
         
@@ -432,6 +559,9 @@
                 <DBColumn>
                     <ColumnName>LocationInCompound</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>LocationInCompound</OverrideColumnName>
+                </ModifierDBColumn>                 
             </ECCustomAttributes>
         </ECProperty>
         
@@ -440,6 +570,9 @@
                 <DBColumn>
                     <ColumnName>DataSourceType</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>DataSourceType</OverrideColumnName>
+                </ModifierDBColumn>                 
             </ECCustomAttributes>
         </ECProperty>
         
@@ -451,6 +584,9 @@
                 <DBColumn>
                     <ColumnName>SisterFiles</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>SisterFiles</OverrideColumnName>
+                </ModifierDBColumn>                   
             </ECCustomAttributes>
         </ECProperty>
         
@@ -459,6 +595,9 @@
                 <DBColumn>
                     <ColumnName>FileSize</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>FileSize</OverrideColumnName>
+                </ModifierDBColumn>                   
             </ECCustomAttributes>
         </ECProperty>
         
@@ -483,6 +622,10 @@
             <SQLEntity>
                 <FromTableName>dbo.WMSSources</FromTableName>
                 <InstanceIDProperty>Id</InstanceIDProperty>
+                <OverrideTableName>dbo.OverrideWMSSources</OverrideTableName>
+                <ComplementTableName>dbo.ComplementWMSSources</ComplementTableName>
+                <OverrideTableUniqueIdColumn>UniqueId</OverrideTableUniqueIdColumn>
+                <ComplementTableUniqueIdColumn>UniqueId</ComplementTableUniqueIdColumn>
             </SQLEntity>
         </ECCustomAttributes>    
         
@@ -491,6 +634,10 @@
                 <DBColumn>
                     <ColumnName>IdStr</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>IdStr</OverrideColumnName>
+                    <ComplementColumnName>IdStr</ComplementColumnName>
+                </ModifierDBColumn>                 
             </ECCustomAttributes>
         </ECProperty>   
 
@@ -499,6 +646,9 @@
                 <DBColumn>
                     <ColumnName>Layers</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Layers</OverrideColumnName>
+                </ModifierDBColumn>                     
             </ECCustomAttributes>
         </ECProperty>
         
@@ -507,6 +657,9 @@
                 <DBColumn>
                     <ColumnName>Styles</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Styles</OverrideColumnName>
+                </ModifierDBColumn>                  
             </ECCustomAttributes>
         </ECProperty>
         
@@ -515,12 +668,15 @@
                 <DBColumn>
                     <ColumnName>Formats</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Formats</OverrideColumnName>
+                </ModifierDBColumn>                   
             </ECCustomAttributes>
         </ECProperty>
         
     </ECClass>    
     
-    <ECClass typeName="OtherSource" isDomainClass="true" baseClass="SpatialDataSource">
+    <!--<ECClass typeName="OtherSource" isDomainClass="true" baseClass="SpatialDataSource">
         <ECCustomAttributes>
             <QueryType>
                 <QueryType>all</QueryType>
@@ -539,7 +695,7 @@
             </ECCustomAttributes>
         </ECProperty>   
         
-    </ECClass>   
+    </ECClass>   -->
     
     <ECClass typeName="OsmSource" isDomainClass="true" baseClass="SpatialDataSource">
         <ECCustomAttributes>
@@ -549,6 +705,10 @@
             <SQLEntity>
                 <FromTableName>dbo.OsmSources</FromTableName>
                 <InstanceIDProperty>Id</InstanceIDProperty>
+                <OverrideTableName>dbo.OverrideOsmSources</OverrideTableName>
+                <ComplementTableName>dbo.ComplementOsmSources</ComplementTableName>
+                <OverrideTableUniqueIdColumn>UniqueId</OverrideTableUniqueIdColumn>
+                <ComplementTableUniqueIdColumn>UniqueId</ComplementTableUniqueIdColumn>
             </SQLEntity>
         </ECCustomAttributes>    
         
@@ -557,6 +717,10 @@
                 <DBColumn>
                     <ColumnName>IdStr</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>IdStr</OverrideColumnName>
+                    <ComplementColumnName>IdStr</ComplementColumnName>
+                </ModifierDBColumn>                 
             </ECCustomAttributes>
         </ECProperty>   
         
@@ -565,6 +729,9 @@
                 <DBColumn>
                     <ColumnName>AlternateURL1</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>AlternateURL1</OverrideColumnName>
+                </ModifierDBColumn>                  
             </ECCustomAttributes>
         </ECProperty>
         
@@ -573,6 +740,9 @@
                 <DBColumn>
                     <ColumnName>AlternateURL2</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>AlternateURL2</OverrideColumnName>
+                </ModifierDBColumn>                  
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>   
@@ -585,6 +755,8 @@
             <SQLEntity>
                 <FromTableName>dbo.Servers</FromTableName>
                 <InstanceIDProperty>Id</InstanceIDProperty>
+                <OverrideTableName>dbo.OverrideServers</OverrideTableName>
+                <OverrideTableUniqueIdColumn>UniqueId</OverrideTableUniqueIdColumn>
             </SQLEntity>
         </ECCustomAttributes>  
         
@@ -593,6 +765,9 @@
                 <DBColumn>
                     <ColumnName>IdStr</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>IdStr</OverrideColumnName>
+                </ModifierDBColumn>                  
             </ECCustomAttributes>
         </ECProperty>
 
@@ -601,6 +776,9 @@
                 <DBColumn>
                     <ColumnName>CommunicationProtocol</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>CommunicationProtocol</OverrideColumnName>
+                </ModifierDBColumn>                 
             </ECCustomAttributes>
         </ECProperty>
         
@@ -609,6 +787,9 @@
                 <DBColumn>
                     <ColumnName>Name</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Name</OverrideColumnName>
+                </ModifierDBColumn>                  
             </ECCustomAttributes>
         </ECProperty>
         
@@ -617,6 +798,9 @@
                 <DBColumn>
                     <ColumnName>URL</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>URL</OverrideColumnName>
+                </ModifierDBColumn>                  
             </ECCustomAttributes>
         </ECProperty>
         
@@ -625,6 +809,9 @@
                 <DBColumn>
                     <ColumnName>ServerContactInformation</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>ServerContactInformation</OverrideColumnName>
+                </ModifierDBColumn>                   
             </ECCustomAttributes>
         </ECProperty>
         
@@ -633,6 +820,9 @@
                 <DBColumn>
                     <ColumnName>Fees</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Fees</OverrideColumnName>
+                </ModifierDBColumn>                  
             </ECCustomAttributes>
         </ECProperty>
         
@@ -641,6 +831,9 @@
                 <DBColumn>
                     <ColumnName>Legal</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Legal</OverrideColumnName>
+                </ModifierDBColumn>                  
             </ECCustomAttributes>
         </ECProperty>
         
@@ -649,6 +842,9 @@
                 <DBColumn>
                     <ColumnName>AccessConstraints</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>AccessConstraints</OverrideColumnName>
+                </ModifierDBColumn>                  
             </ECCustomAttributes>
         </ECProperty>
         
@@ -657,6 +853,9 @@
                 <DBColumn>
                     <ColumnName>Online</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Online</OverrideColumnName>
+                </ModifierDBColumn>                  
             </ECCustomAttributes>
         </ECProperty>
         
@@ -665,6 +864,9 @@
                 <DBColumn>
                     <ColumnName>LastCheck</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>LastCheck</OverrideColumnName>
+                </ModifierDBColumn>                     
             </ECCustomAttributes>
         </ECProperty>
         
@@ -673,6 +875,9 @@
                 <DBColumn>
                     <ColumnName>LastTimeOnline</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>LastTimeOnline</OverrideColumnName>
+                </ModifierDBColumn>                 
             </ECCustomAttributes>
         </ECProperty>
         
@@ -681,6 +886,9 @@
                 <DBColumn>
                     <ColumnName>Latency</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Latency</OverrideColumnName>
+                </ModifierDBColumn>                  
             </ECCustomAttributes>
         </ECProperty>
         
@@ -689,6 +897,9 @@
                 <DBColumn>
                     <ColumnName>MeanReachabilityStats</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>MeanReachabilityStats</OverrideColumnName>
+                </ModifierDBColumn>                  
             </ECCustomAttributes>
         </ECProperty>
         
@@ -697,6 +908,9 @@
                 <DBColumn>
                     <ColumnName>State</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>State</OverrideColumnName>
+                </ModifierDBColumn>                   
             </ECCustomAttributes>
         </ECProperty>
         
@@ -705,6 +919,9 @@
                 <DBColumn>
                     <ColumnName>Type</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Type</OverrideColumnName>
+                </ModifierDBColumn>                
             </ECCustomAttributes>
         </ECProperty>
         
@@ -718,6 +935,8 @@
             <SQLEntity>
                 <FromTableName>dbo.WMSServers</FromTableName>
                 <InstanceIDProperty>Id</InstanceIDProperty>
+                <OverrideTableName>dbo.OverrideWMSServers</OverrideTableName>
+                <OverrideTableUniqueIdColumn>UniqueId</OverrideTableUniqueIdColumn>
             </SQLEntity>
         </ECCustomAttributes>  
         
@@ -726,6 +945,9 @@
                 <DBColumn>
                     <ColumnName>IdStr</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>IdStr</OverrideColumnName>
+                </ModifierDBColumn>                  
             </ECCustomAttributes>    
         </ECProperty>
         
@@ -734,6 +956,9 @@
                 <DBColumn>
                     <ColumnName>Title</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Title</OverrideColumnName>
+                </ModifierDBColumn>                   
             </ECCustomAttributes>
         </ECProperty>
         
@@ -742,6 +967,9 @@
                 <DBColumn>
                     <ColumnName>Description</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Description</OverrideColumnName>
+                </ModifierDBColumn>                   
             </ECCustomAttributes>
         </ECProperty>
         
@@ -750,6 +978,9 @@
                 <DBColumn>
                     <ColumnName>NumLayers</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>NumLayers</OverrideColumnName>
+                </ModifierDBColumn>                 
             </ECCustomAttributes>    
         </ECProperty>
         
@@ -758,6 +989,9 @@
                 <DBColumn>
                     <ColumnName>Version</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Version</OverrideColumnName>
+                </ModifierDBColumn>                
             </ECCustomAttributes>
         </ECProperty>
         
@@ -766,6 +1000,9 @@
                 <DBColumn>
                     <ColumnName>GetCapabilitiesURL</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>GetCapabilitiesURL</OverrideColumnName>
+                </ModifierDBColumn>                
             </ECCustomAttributes>
         </ECProperty>
         
@@ -774,6 +1011,9 @@
                 <DBColumn>
                     <ColumnName>SupportedFormats</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>SupportedFormats</OverrideColumnName>
+                </ModifierDBColumn>                
             </ECCustomAttributes>
         </ECProperty>
         
@@ -782,6 +1022,9 @@
                 <DBColumn>
                     <ColumnName>GetMapURL</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>GetMapURL</OverrideColumnName>
+                </ModifierDBColumn>                
             </ECCustomAttributes>
         </ECProperty>
         
@@ -790,6 +1033,9 @@
                 <DBColumn>
                     <ColumnName>GetMapURLQuery</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>GetMapURLQuery</OverrideColumnName>
+                </ModifierDBColumn>                
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>
@@ -802,6 +1048,8 @@
             <SQLEntity>
                 <FromTableName>dbo.WMSLayers</FromTableName>
                 <InstanceIDProperty>Id</InstanceIDProperty>
+                <OverrideTableName>dbo.OverrideWMSLayers</OverrideTableName>
+                <OverrideTableUniqueIdColumn>UniqueId</OverrideTableUniqueIdColumn>
             </SQLEntity>
         </ECCustomAttributes>
         
@@ -810,6 +1058,9 @@
                 <DBColumn>
                     <ColumnName>IdStr</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>IdStr</OverrideColumnName>
+                </ModifierDBColumn>                
             </ECCustomAttributes>
         </ECProperty>
         
@@ -818,6 +1069,9 @@
                 <DBColumn>
                     <ColumnName>Name</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Name</OverrideColumnName>
+                </ModifierDBColumn>                
             </ECCustomAttributes>
         </ECProperty>
         
@@ -826,6 +1080,9 @@
                 <DBColumn>
                     <ColumnName>Title</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Title</OverrideColumnName>
+                </ModifierDBColumn>                
             </ECCustomAttributes>
         </ECProperty>
         
@@ -834,6 +1091,9 @@
                 <DBColumn>
                     <ColumnName>Description</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Description</OverrideColumnName>
+                </ModifierDBColumn>                
             </ECCustomAttributes>
         </ECProperty>
         
@@ -843,6 +1103,9 @@
                     <ColumnName>BoundingBox</ColumnName>
                     <IsSpatial>true</IsSpatial>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>BoundingBox</OverrideColumnName>
+                </ModifierDBColumn>                
             </ECCustomAttributes>
         </ECProperty>
         
@@ -851,6 +1114,9 @@
                 <DBColumn>
                     <ColumnName>CoordinateSystems</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>CoordinateSystems</OverrideColumnName>
+                </ModifierDBColumn>                
             </ECCustomAttributes>
         </ECProperty>
         
@@ -864,6 +1130,8 @@
             <SQLEntity>
                 <FromTableName>dbo.SpatialEntityWithDetailsView</FromTableName>
                 <InstanceIDProperty>Id</InstanceIDProperty>
+                <OverrideTableName>dbo.OverrideSpatialEntityWithDetailsView</OverrideTableName>
+                <OverrideTableUniqueIdColumn>UniqueId</OverrideTableUniqueIdColumn>
             </SQLEntity>
         </ECCustomAttributes>  
         
@@ -872,6 +1140,9 @@
                 <DBColumn>
                     <ColumnName>IdStr</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>IdStr</OverrideColumnName>
+                </ModifierDBColumn>                  
             </ECCustomAttributes>
         </ECProperty>
         
@@ -881,6 +1152,9 @@
                     <ColumnName>Footprint</ColumnName>
                     <IsSpatial>true</IsSpatial>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Footprint</OverrideColumnName>
+                </ModifierDBColumn>                
             </ECCustomAttributes>
         </ECProperty>
         
@@ -889,6 +1163,9 @@
                 <DBColumn>
                     <ColumnName>Name</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Name</OverrideColumnName>
+                </ModifierDBColumn>                
             </ECCustomAttributes>
         </ECProperty>
         
@@ -897,6 +1174,9 @@
                 <DBColumn>
                     <ColumnName>Description</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Description</OverrideColumnName>
+                </ModifierDBColumn>                
             </ECCustomAttributes>
         </ECProperty>
         
@@ -905,6 +1185,9 @@
                 <DBColumn>
                     <ColumnName>ContactInformation</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>ContactInformation</OverrideColumnName>
+                </ModifierDBColumn>                
             </ECCustomAttributes>
         </ECProperty>
         
@@ -913,6 +1196,9 @@
                 <DBColumn>
                     <ColumnName>Keywords</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Keywords</OverrideColumnName>
+                </ModifierDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -921,6 +1207,9 @@
                 <DBColumn>
                     <ColumnName>Legal</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Legal</OverrideColumnName>
+                </ModifierDBColumn>
             </ECCustomAttributes>
         </ECProperty>        
         
@@ -929,6 +1218,9 @@
                 <DBColumn>
                     <ColumnName>ProcessingDescription</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>ProcessingDescription</OverrideColumnName>
+                </ModifierDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -937,6 +1229,9 @@
                 <DBColumn>
                     <ColumnName>DataSourceType</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>DataSourceType</OverrideColumnName>
+                </ModifierDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -945,6 +1240,9 @@
                 <DBColumn>
                     <ColumnName>AccuracyResolutionDensity</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>AccuracyResolutionDensity</OverrideColumnName>
+                </ModifierDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -953,6 +1251,9 @@
                 <DBColumn>
                     <ColumnName>Date</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Date</OverrideColumnName>
+                </ModifierDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -961,6 +1262,9 @@
                 <DBColumn>
                     <ColumnName>Classification</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>Classification</OverrideColumnName>
+                </ModifierDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -969,6 +1273,9 @@
                 <DBColumn>
                     <ColumnName>FileSize</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>FileSize</OverrideColumnName>
+                </ModifierDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -977,6 +1284,9 @@
                 <DBColumn>
                     <ColumnName>SpatialDataSourceId</ColumnName>
                 </DBColumn>
+                <ModifierDBColumn>
+                    <OverrideColumnName>SpatialDataSourceId</OverrideColumnName>
+                </ModifierDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
