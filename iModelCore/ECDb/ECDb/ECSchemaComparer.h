@@ -131,20 +131,6 @@ static bool operator==(ECN::ECValueCR lhs, ECN::ECValueCR rhs)
     {
     return lhs.Equals(rhs);
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-static bool operator==(DPoint2dCR lhs, DPoint2dCR rhs)
-    {
-    return lhs.AlmostEqual(rhs);
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-static bool operator==(DPoint3dCR lhs, DPoint3dCR rhs)
-    {
-    return lhs.AlmostEqual(rhs);
-    }
 
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
