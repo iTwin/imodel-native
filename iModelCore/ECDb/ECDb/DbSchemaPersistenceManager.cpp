@@ -1001,18 +1001,18 @@ BentleyStatus DbSchemaPersistenceManager::CreateOrUpdateIndexes(ECDbCR ecdb, DbS
             }
 
         //drop index first if it exists, as we always have to recreate them to make sure the class id filter is up-to-date
-        Utf8String dropIndexSql("DROP INDEX [");
-        dropIndexSql.append(index.GetName()).append("]");
+        Utf8String dropIndexSql;
+        dropIndexSql.Sprintf("DROP INDEX [%s]", index.GetName().c_str());
         ecdb.TryExecuteSql(dropIndexSql.c_str());
 
         //indexes on virtual tables are ignored
         if (index.GetTable().GetPersistenceType() == PersistenceType::Persisted)
             {
-            Utf8String ddl;
-            if (SUCCESS != BuildCreateIndexDdl(ddl, ecdb, index))
+            Utf8String ddl, comparableIndexDef;
+            if (SUCCESS != BuildCreateIndexDdl(ddl, comparableIndexDef, ecdb, index))
                 return ERROR;
 
-            auto it = comparableIndexDefs.find(ddl);
+            auto it = comparableIndexDefs.find(comparableIndexDef);
             if (it != comparableIndexDefs.end())
                 {
                 Utf8CP errorMessage = "Index '%s'%s on table '%s' has the same definition as the already existing index '%s'%s. ECDb does not create this index.";
@@ -1057,7 +1057,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateOrUpdateIndexes(ECDbCR ecdb, DbS
                 continue;
                 }
 
-            comparableIndexDefs[ddl] = &index;
+            comparableIndexDefs[comparableIndexDef] = &index;
 
             if (BE_SQLITE_OK != ecdb.ExecuteSql(ddl.c_str()))
                 {
@@ -1081,25 +1081,38 @@ BentleyStatus DbSchemaPersistenceManager::CreateOrUpdateIndexes(ECDbCR ecdb, DbS
 // @bsimethod                                                Krischan.Eberle 10/2015
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus DbSchemaPersistenceManager::BuildCreateIndexDdl(Utf8StringR ddl, ECDbCR ecdb, DbIndex const& index)
+BentleyStatus DbSchemaPersistenceManager::BuildCreateIndexDdl(Utf8StringR ddl, Utf8StringR comparableIndexDef, ECDbCR ecdb, DbIndex const& index)
     {
+    //this is a string that contains the pieces of the index definition that altogether make the definition unique.
+    //that string leaves out index name and keywords common to all indexes (e.g. CREATE, INDEX, WHERE).
+    comparableIndexDef.clear();
+
     ddl.assign("CREATE ");
     if (index.GetIsUnique())
+        {
         ddl.append("UNIQUE ");
+        comparableIndexDef.assign("u ");
+        }
 
     Utf8CP indexName = index.GetName().c_str();
     Utf8CP tableName = index.GetTable().GetName().c_str();
-    ddl.append("INDEX [").append(indexName).append("] ON [").append(tableName).append("](");
-    AppendColumnNamesToDdl(ddl, index.GetColumns());
-    ddl.append(")");
+    Utf8String columnsDdl;
+    AppendColumnNamesToDdl(columnsDdl, index.GetColumns());
+
+    ddl.append("INDEX [").append(indexName).append("] ON [").append(tableName).append("](").append(columnsDdl).append(")");
+    comparableIndexDef.append(tableName).append("(").append(columnsDdl).append(")");
 
     Utf8String whereClause;
     if (SUCCESS != GenerateIndexWhereClause(whereClause, ecdb, index))
         return ERROR;
 
     if (!whereClause.empty())
+        {
         ddl.append(" WHERE ").append(whereClause);
+        comparableIndexDef.append(whereClause);
+        }
 
+    comparableIndexDef.ToLower();
     return SUCCESS;
     }
 

@@ -12,6 +12,9 @@ using namespace std;
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                    01/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
 void ExtractPropertyRefs(ECSqlPrepareContext& ctx, Exp const* exp)
     {
     if (exp == nullptr)
@@ -28,6 +31,7 @@ void ExtractPropertyRefs(ECSqlPrepareContext& ctx, Exp const* exp)
         ExtractPropertyRefs(ctx, child);
         }
     }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -38,11 +42,14 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SingleSelectS
 
     ctx.PushScope(exp, exp.GetOptions());
 
-    auto& sqlGenerator = ctx.GetSqlBuilderR();
-    sqlGenerator.Append("SELECT ").Append(exp.GetSelectionType()).AppendSpace();
+    NativeSqlBuilder& sqlGenerator = ctx.GetSqlBuilderR();
+    sqlGenerator.Append("SELECT ");
+    
+    if (exp.GetSelectionType() != SqlSetQuantifier::NotSpecified)
+        sqlGenerator.Append(exp.GetSelectionType()).AppendSpace();
 
     // Append selection.
-    auto status = ECSqlExpPreparer::PrepareSelectClauseExp(ctx, exp.GetSelection());
+    ECSqlStatus status = ECSqlExpPreparer::PrepareSelectClauseExp(ctx, exp.GetSelection());
     if (!status.IsSuccess())
         return status;
 
@@ -55,7 +62,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SingleSelectS
         return status;
 
     // Append WHERE
-    if (auto e = exp.GetWhere())
+    if (WhereExp const* e = exp.GetWhere())
         {
         sqlGenerator.AppendSpace();
         status = ECSqlExpPreparer::PrepareWhereExp(sqlGenerator, ctx, e);
@@ -63,7 +70,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SingleSelectS
             return status;
         }
     // Append GROUP BY
-    if (auto e = exp.GetGroupBy())
+    if (GroupByExp const* e = exp.GetGroupBy())
         {
         sqlGenerator.AppendSpace();
         status = ECSqlExpPreparer::PrepareGroupByExp(ctx, e);
@@ -72,7 +79,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SingleSelectS
         }
 
     // Append HAVING
-    if (auto e = exp.GetHaving())
+    if (HavingExp const* e = exp.GetHaving())
         {
         sqlGenerator.AppendSpace();
         status = ECSqlExpPreparer::PrepareHavingExp(ctx, e);
@@ -81,7 +88,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SingleSelectS
         }
 
     // Append ORDER BY
-    if (auto e = exp.GetOrderBy())
+    if (OrderByExp const* e = exp.GetOrderBy())
         {
         sqlGenerator.AppendSpace();
         status = ECSqlExpPreparer::PrepareOrderByExp(ctx, e);
@@ -90,7 +97,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SingleSelectS
         }
 
     // Append LIMIT
-    if (auto e = exp.GetLimitOffset())
+    if (LimitOffsetExp const* e = exp.GetLimitOffset())
         {
         sqlGenerator.AppendSpace();
         status = ECSqlExpPreparer::PrepareLimitOffsetExp(ctx, e);
@@ -109,11 +116,11 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SingleSelectS
 //static
 ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SelectStatementExp const& exp)
     {
-    auto st = Prepare(ctx, exp.GetCurrent());
+    ECSqlStatus st = Prepare(ctx, exp.GetCurrent());
     if (st != ECSqlStatus::Success || !exp.IsCompound())
         return st;
 
-    auto lhs = exp.GetSelection();
+    SelectClauseExp const* lhs = exp.GetSelection();
     ctx.PushScope(exp);
     switch (exp.GetOP())
         {
@@ -133,7 +140,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SelectStateme
 
     st = Prepare(ctx, *exp.GetNext());
 
-    auto rhs = exp.GetNext()->GetSelection();
+    SelectClauseExp const* rhs = exp.GetNext()->GetSelection();
     if (rhs->GetChildrenCount() != lhs->GetChildrenCount())
         {
         ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Number of properties in all the select clauses of UNION/EXCEPT/INTERSECT must be same in number and type");
@@ -151,6 +158,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SelectStateme
             return ECSqlStatus::Error;
             }
         }
+
     ctx.PopScope();
     return st;
     }
