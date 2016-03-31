@@ -49,8 +49,8 @@ private:
     static void DoAppendForeignKeyDdl(Utf8StringR ddl, ForeignKeyDbConstraint const&);
     static void AppendColumnNamesToDdl(Utf8StringR ddl, std::vector<DbColumn const*> const&);
 
-    static BentleyStatus BuildCreateIndexDdl(NativeSqlBuilder&, Utf8StringR comparableIndexDef, ECDbCR, DbIndex const&);
-    static BentleyStatus GenerateIndexWhereClause(NativeSqlBuilder&, ECDbCR, DbIndex const&);
+    static BentleyStatus BuildCreateIndexDdl(Utf8StringR ddl, ECDbCR, DbIndex const&);
+    static BentleyStatus GenerateIndexWhereClause(Utf8StringR ddl, ECDbCR, DbIndex const&);
 
 public:
     static BentleyStatus Load(DbSchema&, ECDbCR, DbSchema::LoadState loadMode);

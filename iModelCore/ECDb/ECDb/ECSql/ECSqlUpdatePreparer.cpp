@@ -132,7 +132,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
     if (exp.GetOptionsClauseExp() == nullptr || !exp.GetOptionsClauseExp()->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION))
         {
         // WHERE clause
-        NativeSqlBuilder systemWhereClause;
+        Utf8String systemWhereClause;
         DbColumn const* classIdColumn = nullptr;
         DbTable const* table = &classMap.GetPrimaryTable();
 
@@ -165,14 +165,14 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
                 }
             }
 
-        if (!systemWhereClause.IsEmpty())
+        if (!systemWhereClause.empty())
             {
             if (topLevelWhereClause.IsEmpty())
                 nativeSqlBuilder.Append(" WHERE ");
             else
                 nativeSqlBuilder.Append(" AND ");
 
-            nativeSqlBuilder.AppendParenLeft().Append(systemWhereClause).AppendParenRight();
+            nativeSqlBuilder.AppendParenLeft().Append(systemWhereClause.c_str()).AppendParenRight();
             }
         }
 
@@ -231,7 +231,7 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareAssignmentListExp(NativeSqlBuilder::List
 
             for (size_t i = 0; i < sqlSnippetCount; i++)
                 {
-                nativeSqlSnippets[i].Append(BooleanSqlOperator::EqualTo, false).Append(rhsNativeSqlSnippets[i]);
+                nativeSqlSnippets[i].Append(BooleanSqlOperator::EqualTo).Append(rhsNativeSqlSnippets[i]);
                 }
             }
         else

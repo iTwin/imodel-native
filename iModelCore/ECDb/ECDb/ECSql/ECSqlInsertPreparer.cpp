@@ -370,11 +370,11 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
         NativeSqlBuilder::List classIdSqliteSnippets {NativeSqlBuilder()};
         if (auto joinedTableStatement = dynamic_cast<ParentOfJoinedTableECSqlStatement const*>(&ctx.GetECSqlStatementR()))
             {
-            classIdSqliteSnippets[0].Append(joinedTableStatement->GetClassId());
+            classIdSqliteSnippets[0].Append(joinedTableStatement->GetClassId().ToString().c_str());
             }
         else
             {
-            classIdSqliteSnippets[0].Append(classMap.GetClass().GetId());
+            classIdSqliteSnippets[0].Append(classMap.GetClass().GetId().ToString().c_str());
             }
         nativeSqlSnippets.m_valuesNativeSqlSnippets.push_back(move(classIdSqliteSnippets));
         }
@@ -414,8 +414,8 @@ ECSqlStatus ECSqlInsertPreparer::ValidateConstraintClassId(ECClassId& retrievedC
         //retrievedConstraintClassId < 0 means user specified parameter for it
         if (!isParameter && !constraintMap.ClassIdMatchesConstraint(retrievedConstraintClassId))
             {
-            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid value %llu for property %s. None of the respective constraint's ECClasses match that ECClassId.",
-                                                     retrievedConstraintClassId.GetValue(), constraintClassIdPropName.c_str());
+            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid value %s for property %s. None of the respective constraint's ECClasses match that ECClassId.",
+                                                     retrievedConstraintClassId.ToString().c_str(), constraintClassIdPropName.c_str());
             return ECSqlStatus::InvalidECSql;
             }
 
@@ -505,7 +505,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareConstraintClassId(NativeSqlSnippets& ins
         {
         insertNativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(move(classIdColSqlSnippet));
         NativeSqlBuilder classIdSnippet;
-        classIdSnippet.Append(constraintClassId);
+        classIdSnippet.Append(constraintClassId.ToString().c_str());
         insertNativeSqlSnippets.m_valuesNativeSqlSnippets.push_back(NativeSqlBuilder::List{ move(classIdSnippet) });
         }
 

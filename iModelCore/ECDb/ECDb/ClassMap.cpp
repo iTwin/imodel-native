@@ -998,7 +998,7 @@ BentleyStatus ColumnFactory::ResolveColumnName(Utf8StringR resolvedColumName, Ut
 
     DbColumn const* existingColumn = GetTable().FindColumnP(requestedColumnName);
     if (existingColumn != nullptr && IsColumnInUseByClassMap(*existingColumn))
-        resolvedColumName.Sprintf("c%llu_%s", classId.GetValue(), requestedColumnName);
+        resolvedColumName.Sprintf("c%s_%s", classId.ToString().c_str(), requestedColumnName);
     else
         resolvedColumName.assign(requestedColumnName);
 

@@ -1381,7 +1381,7 @@ StorageDescription const& ECDbMap::LightweightCache::GetStorageDescription (Clas
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    10 / 2015
 //------------------------------------------------------------------------------------------
-BentleyStatus StorageDescription::GenerateECClassIdFilter(NativeSqlBuilder& filter, DbTable const& table, DbColumn const& classIdColumn, bool polymorphic, bool fullyQualifyColumnName, Utf8CP tableAlias) const
+BentleyStatus StorageDescription::GenerateECClassIdFilter(Utf8StringR filterSqlExpression, DbTable const& table, DbColumn const& classIdColumn, bool polymorphic, bool fullyQualifyColumnName, Utf8CP tableAlias) const
     {
     if (table.GetPersistenceType() != PersistenceType::Persisted)
         return SUCCESS; //table is virtual -> noop
@@ -1401,26 +1401,30 @@ BentleyStatus StorageDescription::GenerateECClassIdFilter(NativeSqlBuilder& filt
             }
         }
 
-    NativeSqlBuilder classIdColSql;
+    Utf8String classIdColSql;
     if (fullyQualifyColumnName)
         {
+        classIdColSql.append("[");
         if (tableAlias)
-            classIdColSql.AppendEscaped(tableAlias).AppendDot();
+            classIdColSql.append(tableAlias);
         else
-            classIdColSql.AppendEscaped(table.GetName().c_str()).AppendDot();
+            classIdColSql.append(table.GetName());
+        
+        classIdColSql.append("].");
         }
-    classIdColSql.Append(classIdColumn.GetName().c_str(), false);
+
+    classIdColSql.append(classIdColumn.GetName());
 
     if (!polymorphic)
         {
         //if partition's table is only used by a single class, no filter needed     
         if (partition->IsSharedTable())
-            filter.Append(classIdColSql, false).Append(BooleanSqlOperator::EqualTo, false).Append(m_classId);
+            filterSqlExpression.append(classIdColSql).append("=").append(m_classId.ToString());
 
         return SUCCESS;
         }
 
-    partition->AppendECClassIdFilterSql(classIdColSql.ToString(), filter);
+    partition->AppendECClassIdFilterSql(filterSqlExpression, classIdColSql.c_str());
     return SUCCESS;
     }
 
@@ -1663,35 +1667,36 @@ bool Partition::NeedsECClassIdFilter() const
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2015
 //------------------------------------------------------------------------------------------
-void Partition::AppendECClassIdFilterSql(Utf8CP classIdColName, NativeSqlBuilder& sqlBuilder) const
+void Partition::AppendECClassIdFilterSql(Utf8StringR filterSqlExpression, Utf8CP classIdColName) const
     {
     BeAssert(!m_partitionClassIds.empty());
 
     std::vector<ECClassId> const* classIds = nullptr;
-    BooleanSqlOperator equalOp, setOp;
+    Utf8CP equalOp = nullptr;
+    Utf8CP setOp = nullptr;
     if (m_hasInversedPartitionClassIds)
         {
         classIds = &m_inversedPartitionClassIds;
         if (classIds->empty())
             return; //no filter needed, as all class ids should be considered
 
-        equalOp = BooleanSqlOperator::NotEqualTo;
-        setOp = BooleanSqlOperator::And;
+        equalOp = "<>";
+        setOp = "AND";
         }
     else
         {
         classIds = &m_partitionClassIds;
-        equalOp = BooleanSqlOperator::EqualTo;
-        setOp = BooleanSqlOperator::Or;
+        equalOp = "=";
+        setOp = "OR";
         }
 
     bool isFirstItem = true;
     for (ECClassId classId : *classIds)
         {
         if (!isFirstItem)
-            sqlBuilder.AppendSpace().Append(setOp, true);
+            filterSqlExpression.append(" ").append(setOp).append(" ");
 
-        sqlBuilder.Append(classIdColName).Append(equalOp, false).Append(classId);
+        filterSqlExpression.append(classIdColName).append(equalOp).append(classId.ToString());
 
         isFirstItem = false;
         }
