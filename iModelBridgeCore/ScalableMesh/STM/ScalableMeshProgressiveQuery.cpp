@@ -328,6 +328,7 @@ public:
                         {
                         if (cachedNodeIter->m_displayNodePtr->HasClip(id))
                             {           
+                            std::cout << "erased node " << cachedNodeIter->m_displayNodePtr->GetNodeId() << " clip ID " << id << std::endl;
                             if (s_keepSomeInvalidate)
                                 m_invalidatedCachedNodes.push_back(*cachedNodeIter);
 
