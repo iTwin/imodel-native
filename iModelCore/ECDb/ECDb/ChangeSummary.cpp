@@ -2086,7 +2086,7 @@ void AddPropertyMapInfo(bmap<Utf8String, ChangeSummary::ColumnMapInfo>& columnMa
         }
 
     Utf8String accessString(propertyMap.GetPropertyAccessString());
-    std::vector<ECDbSqlColumnCP> columns;
+    std::vector<DbColumnCP> columns;
     propertyMap.GetColumns(columns);
 
     PointPropertyMap const* pointMap = dynamic_cast<PointPropertyMap const*> (&propertyMap);
@@ -2130,7 +2130,7 @@ BentleyStatus ChangeSummary::GetPrimaryTableMapInfo(TableMapInfo& tableMapInfo, 
         return ERROR;
         }
 
-    ECDbSqlTable& primaryTable = classMap->GetPrimaryTable();
+    DbTable& primaryTable = classMap->GetPrimaryTable();
     tableMapInfo.m_tableName = primaryTable.GetName();
 
     bvector<Utf8String> columnNames;
