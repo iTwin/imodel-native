@@ -188,6 +188,17 @@ public:
 
     void       PrintState(ostream& po_rOutput) const;
 
+    /** -----------------------------------------------------------------------------
+    2D cross product of Origine-this and Origin-Point, i.e. z-component of their 3D cross product.
+    Returns a positive value, if Origin-Point-this makes a counter-clockwise turn,
+    negative for clockwise turn, and zero if the points are collinear.
+    Laurent.Robert-Veillette                                                    03/2016
+    ---------------------------------------------------------------------------------**/
+    double CrossProduct2D(const HGF2DCoord<DataType> &Origin, const HGF2DCoord<DataType> &Point) const
+        {
+        return (Point.GetX() - Origin.GetX()) * (this->GetY() - Origin.GetY()) - (Point.GetY() - Origin.GetY()) * (this->GetX() - Origin.GetX());
+        };
+
 protected:
 
 

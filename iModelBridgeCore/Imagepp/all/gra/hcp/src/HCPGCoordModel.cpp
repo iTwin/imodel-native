@@ -18,6 +18,7 @@
 #include <ImagePP/all/h/HVE2DShape.h>
 #include <ImagePP/all/h/HVE2DPolygonOfSegments.h>
 #include <ImagePP/all/h/HCPGCoordUtility.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
 
 #include <Geom/GeoPoint.h>
 
@@ -57,18 +58,16 @@ HCPGCoordModel::HCPGCoordModel(GeoCoordinates::BaseGCSCR pi_SourceGEOCS, GeoCoor
     // The two projections must be valid
     HPRECONDITION (m_pSrcGCS->IsValid ());
     HPRECONDITION (m_pDestGCS->IsValid ());
+
+    m_PreStretch = new HGF2DStretch();
+    m_PostStretch = new HGF2DStretch();
     }
 
 //-----------------------------------------------------------------------------
 // Copy constructor.  It duplicates another object.
 //-----------------------------------------------------------------------------
-HCPGCoordModel::HCPGCoordModel (const HCPGCoordModel& pi_rObj)
-    :HGF2DTransfoModel (pi_rObj),
-     m_pSrcGCS(pi_rObj.m_pSrcGCS),
-     m_pDestGCS(pi_rObj.m_pDestGCS),
-     m_domainComputed(false),
-     m_domainDirect(NULL),
-     m_domainInverse(NULL)
+HCPGCoordModel::HCPGCoordModel(const HCPGCoordModel& pi_rObj)
+    :HGF2DTransfoModel(pi_rObj)
     {
     Copy (pi_rObj);
 
@@ -115,6 +114,8 @@ StatusInt HCPGCoordModel::ConvertDirect
     HPRECONDITION (pio_pXInOut != NULL);
     HPRECONDITION (pio_pYInOut != NULL);
 
+    m_PreStretch->ConvertDirect(pio_pXInOut, pio_pYInOut);
+
     DPoint3d inCartesian;
     inCartesian.x = *pio_pXInOut;
     inCartesian.y = *pio_pYInOut;
@@ -157,6 +158,8 @@ StatusInt HCPGCoordModel::ConvertDirect
     *pio_pXInOut = outCartesian.x;
     *pio_pYInOut = outCartesian.y;
 
+    m_PostStretch->ConvertDirect(pio_pXInOut, pio_pYInOut);
+
     return status;
     }
 
@@ -178,7 +181,7 @@ StatusInt HCPGCoordModel::ConvertDirect
     *po_pXOut = pi_XIn;
     *po_pYOut = pi_YIn;
 
-    return ConvertDirect (po_pXOut, po_pYOut);
+    return ConvertDirect(po_pXOut, po_pYOut);
     }
 
 //-----------------------------------------------------------------------------
@@ -206,9 +209,9 @@ StatusInt HCPGCoordModel::ConvertDirect
     double* pCurrentY = po_pYOut;
 
     for (Index = 0, X = pi_XInStart;
-         Index < pi_NumLoc ; ++Index, X+=pi_XInStep, ++pCurrentX, ++pCurrentY)
+    Index < pi_NumLoc; ++Index, X += pi_XInStep, ++pCurrentX, ++pCurrentY)
         {
-        StatusInt tempStatus = ConvertDirect (X, pi_YIn, pCurrentX, pCurrentY);
+        StatusInt tempStatus = ConvertDirect(X, pi_YIn, pCurrentX, pCurrentY);
 
         if ((SUCCESS != tempStatus) && (SUCCESS == status))
             status = tempStatus;
@@ -234,9 +237,9 @@ StatusInt HCPGCoordModel::ConvertDirect
 
     StatusInt status = SUCCESS;
 
-    for(uint32_t i = 0; i < pi_NumLoc; i++)
+    for (uint32_t i = 0; i < pi_NumLoc; i++)
         {
-        StatusInt tempStatus = ConvertDirect (pio_aXInOut[i], pio_aYInOut[i], pio_aXInOut + i, pio_aYInOut + i);
+        StatusInt tempStatus = ConvertDirect(pio_aXInOut[i], pio_aYInOut[i], pio_aXInOut + i, pio_aYInOut + i);
 
         // Return the first non-SUCCESS error yet continue the process as possible.
         if ((SUCCESS != tempStatus) && (SUCCESS == status))
@@ -258,6 +261,8 @@ StatusInt HCPGCoordModel::ConvertInverse
     HINVARIANTS;
     HPRECONDITION (pio_pXInOut != NULL);
     HPRECONDITION (pio_pYInOut != NULL);
+
+    m_PostStretch->ConvertInverse(pio_pXInOut, pio_pYInOut);
 
     DPoint3d inCartesian;
     inCartesian.x = *pio_pXInOut;
@@ -301,6 +306,8 @@ StatusInt HCPGCoordModel::ConvertInverse
     *pio_pXInOut = outCartesian.x;
     *pio_pYInOut = outCartesian.y;
 
+    m_PreStretch->ConvertInverse(pio_pXInOut, pio_pYInOut);
+
     return status;
     }
 
@@ -322,7 +329,7 @@ StatusInt HCPGCoordModel::ConvertInverse
     *po_pXOut = pi_XIn;
     *po_pYOut = pi_YIn;
 
-    return ConvertInverse (po_pXOut, po_pYOut);
+    return ConvertInverse(po_pXOut, po_pYOut);
     }
 
 //-----------------------------------------------------------------------------
@@ -346,12 +353,12 @@ StatusInt HCPGCoordModel::ConvertInverse
     double   X;
     uint32_t Index;
     double* pCurrentX = po_pXOut;
-    double* pCurrentY = po_pYOut;
+    double* pCurrentY = po_pYOut;    
 
     for (Index = 0, X = pi_XInStart;
-         Index < pi_NumLoc ; ++Index, X+=pi_XInStep, ++pCurrentX, ++pCurrentY)
+    Index < pi_NumLoc; ++Index, X += pi_XInStep, ++pCurrentX, ++pCurrentY)
         {
-        StatusInt tempStatus = ConvertInverse (X, pi_YIn, pCurrentX, pCurrentY);
+        StatusInt tempStatus = ConvertInverse(X, pi_YIn, pCurrentX, pCurrentY);
 
         if ((SUCCESS != tempStatus) && (SUCCESS == status))
             status = tempStatus;
@@ -374,12 +381,11 @@ StatusInt HCPGCoordModel::ConvertInverse
     HPRECONDITION (pio_aXInOut!=NULL);
     HPRECONDITION (pio_aYInOut!=NULL);
 
-    StatusInt status = SUCCESS;
+    StatusInt status = SUCCESS;    
 
-
-    for(uint32_t i = 0; i < pi_NumLoc; i++)
+    for (uint32_t i = 0; i < pi_NumLoc; i++)
         {
-        StatusInt tempStatus = ConvertInverse (pio_aXInOut[i], pio_aYInOut[i], pio_aXInOut + i, pio_aYInOut + i);
+        StatusInt tempStatus = ConvertInverse(pio_aXInOut[i], pio_aYInOut[i], pio_aXInOut + i, pio_aYInOut + i);
 
         // Return the first non-SUCCESS error yet continue the process as possible.
         if ((SUCCESS != tempStatus) && (SUCCESS == status))
@@ -516,7 +522,11 @@ void    HCPGCoordModel::Reverse ()
     HINVARIANTS;
 
     std::swap(m_pSrcGCS, m_pDestGCS);
-    
+    std::swap(m_PreStretch, m_PostStretch);
+
+    m_PreStretch->Reverse();
+    m_PostStretch->Reverse();
+
     // Invoque reversing of ancester
     // This call will in turn invoque Prepare()
     HGF2DTransfoModel::Reverse ();
@@ -533,6 +543,7 @@ HFCPtr<HGF2DTransfoModel>  HCPGCoordModel::ComposeInverseWithDirectOf (const HGF
 
     // Recipient
     HFCPtr<HGF2DTransfoModel> pResultModel;
+    static bool s_forceComplex = false;
 
     // Check if it is identity
     if (pi_rModel.IsIdentity ())
@@ -540,6 +551,14 @@ HFCPtr<HGF2DTransfoModel>  HCPGCoordModel::ComposeInverseWithDirectOf (const HGF
         // Model is identity ... return copy of self
         pResultModel = new HCPGCoordModel (*this);
 
+        }
+    else if (pi_rModel.IsStretchable() && !s_forceComplex)
+        {
+        HAutoPtr<HCPGCoordModel> pMyGCoordModel(new HCPGCoordModel(*this));
+        //We integrate the stretch into the GCoordModel
+        pMyGCoordModel->m_PostStretch = pMyGCoordModel->m_PostStretch->ComposeInverseWithDirectOf(pi_rModel);
+       
+        pResultModel = pMyGCoordModel.release();
         }
     else
         {
@@ -573,10 +592,24 @@ HFCPtr<HGF2DTransfoModel>  HCPGCoordModel::ComposeYourself (const HGF2DTransfoMo
 
     // Recipient
     HFCPtr<HGF2DTransfoModel> pResultModel;
+    static bool s_forceComplex = false;
 
-    // Type is not known ... build a complex
-    // To do this we call the ancester ComposeYourself
-    pResultModel = HGF2DTransfoModel::ComposeYourself (pi_rModel);
+    if (pi_rModel.IsStretchable() && !s_forceComplex)
+        {
+        HAutoPtr<HCPGCoordModel> pMyGCoordModel(new HCPGCoordModel(*this));
+
+        //We integrate the stretch into the GCoordModel
+        pMyGCoordModel->m_PreStretch = pi_rModel.ComposeInverseWithDirectOf(*(pMyGCoordModel->m_PreStretch));
+
+        pResultModel = pMyGCoordModel.release();
+        }
+
+    else
+        {
+        // Type is not known ... build a complex
+        // To do this we call the ancester ComposeYourself
+        pResultModel = HGF2DTransfoModel::ComposeYourself(pi_rModel);
+        }
 
     return (pResultModel);
     }
@@ -588,7 +621,6 @@ HFCPtr<HGF2DTransfoModel>  HCPGCoordModel::ComposeYourself (const HGF2DTransfoMo
 //-----------------------------------------------------------------------------
 void HCPGCoordModel::Prepare ()
     {
-    // Obtain conversion ratio for direct X to inverse X units
     }
 
 //-----------------------------------------------------------------------------
@@ -601,9 +633,10 @@ void HCPGCoordModel::Copy (const HCPGCoordModel& pi_rObj)
     m_pSrcGCS  = pi_rObj.m_pSrcGCS;
     m_pDestGCS = pi_rObj.m_pDestGCS;
     m_domainComputed   = false;
-    m_domainDirect     = NULL;
-    m_domainInverse    = NULL;
-
+    m_domainDirect     = nullptr;
+    m_domainInverse    = nullptr;
+    m_PreStretch = pi_rObj.m_PreStretch->Clone();
+    m_PostStretch = pi_rObj.m_PostStretch->Clone();
     }
 
 //-----------------------------------------------------------------------------
@@ -614,7 +647,10 @@ HFCPtr<HGF2DTransfoModel> HCPGCoordModel::CreateSimplifiedModel () const
     HINVARIANTS;
 
     if (m_pSrcGCS->IsEquivalent(*m_pDestGCS))
-        return new HGF2DIdentity();
+        {
+        HFCPtr<HGF2DTransfoModel> pMyStretch = m_PreStretch->ComposeInverseWithDirectOf(*m_PostStretch);
+        return pMyStretch->Clone();
+        }
 
     // If we get here, no simplification is possible.
     return 0;

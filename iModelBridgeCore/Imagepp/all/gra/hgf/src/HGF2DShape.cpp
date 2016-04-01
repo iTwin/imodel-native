@@ -587,3 +587,193 @@ HFCPtr<HGF2DShape> HGF2DShape::AllocTransformInverse(const HGF2DTransfoModel& pi
     pReversedModel->Reverse();
     return AllocTransformDirect(*pReversedModel);
     }
+
+//-----------------------------------------------------------------------------
+// Compute the convex hull of the shape
+// Returns in po_pConvexHull a list of point in counter-clockwise order representing the convex hull
+//
+// Reference for the algorithm : https://en.wikibooks.org/wiki/Algorithm_Implementation/Geometry/Convex_hull/Monotone_chain
+//
+//Laurent.Robert-Veillette                                              03/2016
+//-----------------------------------------------------------------------------
+void HGF2DShape::GetConvexHull(HGF2DPositionCollection* p_points, HGF2DPositionCollection* po_pConvexHull) const
+    {
+    HPRECONDITION(po_pConvexHull != nullptr);
+    HPRECONDITION(p_points != nullptr);
+
+    int nbPoints = (int)p_points->size();
+    po_pConvexHull->resize(2 * nbPoints);
+
+    // Sort the points lexicographically (left points first)
+    std::sort(begin(*p_points), end(*p_points), [] (const HGF2DPosition& a, const HGF2DPosition& b)
+        {
+        return (a.GetX() < b.GetX() || (a.GetX() == b.GetX() && a.GetY() < b.GetY()));
+        });
+
+    // Build lower hull
+    int k = 0;
+    for (int i = 0; i < nbPoints; ++i)
+        {
+        while (k >= 2 && (*p_points)[i].CrossProduct2D((*po_pConvexHull)[k - 2], (*po_pConvexHull)[k - 1]) <= 0)
+            --k;
+        (*po_pConvexHull)[k++] = (*p_points)[i];
+        }
+
+    // Build upper hull
+    for (int i = nbPoints - 2, t = k + 1; i >= 0; --i)
+        {
+        while (k >= t && (*p_points)[i].CrossProduct2D((*po_pConvexHull)[k - 2], (*po_pConvexHull)[k - 1]) <= 0)
+            --k;
+        (*po_pConvexHull)[k++] = (*p_points)[i];
+        }
+
+    //Removing the unused points and the last one because it is a repetition of the first point.
+    (*po_pConvexHull).resize(k - 1);
+    }
+
+
+//-----------------------------------------------------------------------------
+// Compute the minimal bounding box in which a shape is contained. We can also visualize it
+// as the oriented extent with the minimal area. i.e. the rotated rectangle contaning all the
+// shape while having the minimal area.
+//
+// Returns the four corner of the best rectangle found
+//
+// Reference for the algorithm : https://geidav.wordpress.com/2014/01/23/computing-oriented-minimum-bounding-boxes-in-2d/
+//
+//Laurent.Robert-Veillette                                              03/2016
+//-----------------------------------------------------------------------------
+void HGF2DShape::GetBestOrientedExtent(HGF2DPositionCollection* po_pMinimalBoxCorners, HGF2DPositionCollection* po_pConvexHull) const
+    {
+    HPRECONDITION(po_pMinimalBoxCorners != nullptr);
+    HPRECONDITION(po_pConvexHull != nullptr);
+
+    //Already a rectangle
+    if (po_pConvexHull->size() == 4)
+        *po_pMinimalBoxCorners = *po_pConvexHull;
+
+    else
+        {
+        //Construct the extreme lines with the extent boundary points
+        HGF2DLiteExtent SelfExtent(GetExtent());
+        HGF2DLiteLine VerticalMinLine(HGF2DPosition(SelfExtent.GetXMin(), 0), HGF2DPosition(SelfExtent.GetXMin(), 1));
+        HGF2DLiteLine VerticalMaxLine(HGF2DPosition(SelfExtent.GetXMax(), 0), HGF2DPosition(SelfExtent.GetXMax(), 1));
+        HGF2DLiteLine HorizontalMinLine(HGF2DPosition(0, SelfExtent.GetYMin()), HGF2DPosition(1, SelfExtent.GetYMin()));
+        HGF2DLiteLine HorizontalMaxLine(HGF2DPosition(0, SelfExtent.GetYMax()), HGF2DPosition(1, SelfExtent.GetYMax()));
+
+        //Initialize the current minimum rectangle area to infity
+        double MinArea = std::numeric_limits<double>::max();
+
+        //The minimal vertical line is always associated with index 0 because of the order of the points in the convex hull method
+        int VerticalMinIndex = 0;
+        int VerticalMaxIndex = 0;
+        int HorizontalMinIndex = 0;
+        int HorizontalMaxIndex = 0;
+
+        //Associate each line with its corresponding point(s) in the convex hull
+        int i = 0;
+        double maxX = (*po_pConvexHull)[0].GetX();
+        double minY = (*po_pConvexHull)[0].GetY();
+        double maxY = minY;
+        for_each(begin(*po_pConvexHull), end(*po_pConvexHull), [&] (const HGF2DPosition& pPoint)
+            {
+            if (pPoint.GetX() > maxX)
+                {
+                maxX = pPoint.GetX();
+                VerticalMaxIndex = i;
+                }
+            if (pPoint.GetY() < minY)
+                {
+                minY = pPoint.GetY();
+                HorizontalMinIndex = i;
+                }
+            if (pPoint.GetY() > maxY)
+                {
+                maxY = pPoint.GetY();
+                HorizontalMaxIndex = i;
+                }
+            ++i;
+            });
+
+        double TotalRotationAngle = 0.0; //Can't go over PI / 2 radian
+                                         //Rotate the bounding boxes to fit with one side of the convex hull, compute the area and compare to find the minimal one.
+        auto nbPoints = po_pConvexHull->size();
+        HGF2DPositionCollection CornersMinimalBox;
+        CornersMinimalBox.reserve(4);
+
+        while (TotalRotationAngle <= PI / 2)
+            {
+            HGF2DLiteLine FirstHullLine((*po_pConvexHull)[VerticalMinIndex], (*po_pConvexHull)[(VerticalMinIndex + 1) % nbPoints]);
+            HGF2DLiteLine SecondHullLine((*po_pConvexHull)[VerticalMaxIndex], (*po_pConvexHull)[(VerticalMaxIndex + 1) % nbPoints]);
+            HGF2DLiteLine ThirdHullLine((*po_pConvexHull)[HorizontalMinIndex], (*po_pConvexHull)[(HorizontalMinIndex + 1) % nbPoints]);
+            HGF2DLiteLine FourthHullLine((*po_pConvexHull)[HorizontalMaxIndex], (*po_pConvexHull)[(HorizontalMaxIndex + 1) % nbPoints]);
+
+            //Get the minimum angle between the line of the box and the corresponding line of the convex hull
+            double FirstAngle = fabs(VerticalMinLine.CalculateBearing().GetAngle() - FirstHullLine.CalculateBearing().GetAngle());
+            double SecondAngle = fabs(VerticalMaxLine.CalculateBearing().GetAngle() - SecondHullLine.CalculateBearing().GetAngle());
+            double ThirdAngle = fabs(HorizontalMinLine.CalculateBearing().GetAngle() - ThirdHullLine.CalculateBearing().GetAngle());
+            double FourthAngle = fabs(HorizontalMaxLine.CalculateBearing().GetAngle() - FourthHullLine.CalculateBearing().GetAngle());
+
+            FirstAngle = MIN(FirstAngle, PI - FirstAngle);
+            SecondAngle = MIN(SecondAngle, PI - SecondAngle);
+            ThirdAngle = MIN(ThirdAngle, PI - ThirdAngle);
+            FourthAngle = MIN(FourthAngle, PI - FourthAngle);
+
+            //Find minimal rotation angle
+            double minAngle = MIN(FirstAngle, MIN(SecondAngle, MIN(ThirdAngle, FourthAngle)));
+            BeAssert(minAngle <= PI / 2 && minAngle >= 0);
+
+            //Rotate Counter-Clockwise every line around the point of their index
+            VerticalMinLine.Rotate(minAngle, (*po_pConvexHull)[VerticalMinIndex]);
+            VerticalMaxLine.Rotate(minAngle, (*po_pConvexHull)[VerticalMaxIndex]);
+            HorizontalMinLine.Rotate(minAngle, (*po_pConvexHull)[HorizontalMinIndex]);
+            HorizontalMaxLine.Rotate(minAngle, (*po_pConvexHull)[HorizontalMaxIndex]);
+
+            //Increment the corresponding index
+            if (HDOUBLE_EQUAL_EPSILON(minAngle, FirstAngle))
+                (++VerticalMinIndex % nbPoints);
+            else if (HDOUBLE_EQUAL_EPSILON(minAngle, SecondAngle))
+                (++VerticalMaxIndex % nbPoints);
+            else if (HDOUBLE_EQUAL_EPSILON(minAngle, ThirdAngle))
+                (++HorizontalMinIndex % nbPoints);
+            else if (HDOUBLE_EQUAL_EPSILON(minAngle, FourthAngle))
+                (++HorizontalMaxIndex % nbPoints);
+
+            //Intersect the lines to form the rectangle
+            HGF2DPosition Corner1, Corner2, Corner3, Corner4;
+            VerticalMinLine.IntersectLine(HorizontalMaxLine, &Corner1);
+            HorizontalMaxLine.IntersectLine(VerticalMaxLine, &Corner2);
+            VerticalMaxLine.IntersectLine(HorizontalMinLine, &Corner3);
+            HorizontalMinLine.IntersectLine(VerticalMinLine, &Corner4);
+
+            double width = VerticalMinLine.CalculateShortestDistance(Corner2);
+            double height = HorizontalMaxLine.CalculateShortestDistance(Corner3);
+
+            //Angles between lines must always be PI/2 radian
+            BeAssert(HDOUBLE_EQUAL_EPSILON(fabs(VerticalMinLine.CalculateBearing().GetAngle() -
+                                               HorizontalMinLine.CalculateBearing().GetAngle()), PI / 2));
+            BeAssert(HDOUBLE_EQUAL_EPSILON(fabs(VerticalMinLine.CalculateBearing().GetAngle() -
+                                               HorizontalMaxLine.CalculateBearing().GetAngle()), PI / 2));
+            BeAssert(HDOUBLE_EQUAL_EPSILON(fabs(VerticalMaxLine.CalculateBearing().GetAngle() -
+                                               HorizontalMinLine.CalculateBearing().GetAngle()), PI / 2));
+            BeAssert(HDOUBLE_EQUAL_EPSILON(fabs(VerticalMaxLine.CalculateBearing().GetAngle() -
+                                               HorizontalMaxLine.CalculateBearing().GetAngle()), PI / 2));
+
+            //Compute the area and compare it with the actual minimum
+            double ActualArea = width * height;
+
+            if (ActualArea < MinArea)
+                {
+                MinArea = ActualArea;
+                CornersMinimalBox.clear();
+                CornersMinimalBox.push_back(Corner1);
+                CornersMinimalBox.push_back(Corner2);
+                CornersMinimalBox.push_back(Corner3);
+                CornersMinimalBox.push_back(Corner4);
+                }
+
+            TotalRotationAngle += minAngle;
+            }
+        *po_pMinimalBoxCorners = CornersMinimalBox;
+        }
+    }

@@ -13,6 +13,8 @@
 
 #include <Imagepp/all/h/HGF2DLiteLine.h>
 #include <Imagepp/all/h/HGF2DDisplacement.h>
+#include <Imagepp/all/h/HGF2DSimilitude.h>
+
 
 /** -----------------------------------------------------------------------------
     Constructor by bearing
@@ -667,4 +669,46 @@ HGF2DLiteLine::CrossState HGF2DLiteLine::IntersectLine(const HGF2DLiteLine& pi_r
     return (TheState);
     }
 
+
+    /** -----------------------------------------------------------------------------
+    This method rotates the line around an origin given by the user.
+
+    @param pi_Angle IN Angle of the rotation
+
+    @param pi_rOrigin IN point of the line to rotate around
+    -----------------------------------------------------------------------------
+    */
+    void HGF2DLiteLine::Rotate(double pi_Angle, const HGF2DPosition& pi_rOrigin)
+        {
+        // Create a similitude
+        HGF2DSimilitude Similitude;
+
+        // Set rotation
+        Similitude.AddRotation(pi_Angle, pi_rOrigin.GetX(), pi_rOrigin.GetY());
+
+        if (m_InvertSlope && GetSlope() == 0)
+            {
+            double NewX = GetIntercept();
+            double NewY = 0;
+            Similitude.ConvertDirect(&NewX, &NewY);
+
+            double NewXPrime = GetIntercept();
+            double NewYPrime = 1;
+            Similitude.ConvertDirect(&NewXPrime, &NewYPrime);
+            *this = HGF2DLiteLine(HGF2DPosition(NewX, NewY), HGF2DPosition(NewXPrime, NewYPrime));
+            }
+
+        else
+            {
+            double NewX = 0;
+            double NewY = GetIntercept();
+            Similitude.ConvertDirect(&NewX, &NewY);
+
+            double NewXPrime = 1;
+            double NewYPrime = GetIntercept() + GetSlope();
+            Similitude.ConvertDirect(&NewXPrime, &NewYPrime);
+            *this = HGF2DLiteLine(HGF2DPosition(NewX, NewY), HGF2DPosition(NewXPrime, NewYPrime));
+            }
+
+        }
 

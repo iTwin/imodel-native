@@ -1381,6 +1381,11 @@ DLM_NOMSBUILTINS            = 1
 DLM_NO_DLS                  = 1
 DLM_NOENTRY                 = 1
 
+# Note: Even though we know that some external lib are always linked statically, we still put them into the LINKER_LIBRARIES list below.
+# That is so that it can be *excluded* from the (static) link of this library when it is built for platforms such as Android and iOS
+# that always build static libraries. On such platforms, it is up to the final consumer of these (static) libraries to know and link them all.
+# We must *not* try to nest one static library inside another, as that is not supported on all platforms.
+
 LINKER_LIBRARIES =  $(BeLibJpegTurbo) \
                     $(IppJpegLib12Bits) \
                     $(ContextSubpartsLibs)$(libprefix)BePng$(stlibext) \

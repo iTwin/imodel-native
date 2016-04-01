@@ -1183,3 +1183,29 @@ HGF2DShape::SpatialPosition HGF2DComplexShape::CalculateSpatialPositionOf(const 
 
     return HGF2DShape::CalculateSpatialPositionOf(pi_rPosition);
 }
+
+//-----------------------------------------------------------------------------
+// Compute the minimal bounding box in which a shape is contained. We can also visualize it
+// as the oriented extent with the minimal area. i.e. the rotated rectangle contaning all the
+// shape while having the minimal area.
+//
+// Returns the four corner of the best rectangle found and the points forming the convex hull of the shape
+//
+// Reference for the algorithm : https://geidav.wordpress.com/2014/01/23/computing-oriented-minimum-bounding-boxes-in-2d/
+//
+// Laurent.Robert-Veillette                                              03/2016
+//-----------------------------------------------------------------------------
+void HGF2DComplexShape::GetBestOrientedExtent(HGF2DPositionCollection* po_pMinimalBoxCorners, HGF2DPositionCollection* po_pConvexHull) const
+    {
+    HPRECONDITION(po_pMinimalBoxCorners != nullptr);
+    HPRECONDITION(po_pConvexHull != nullptr);
+
+    //Get the convex hull of the shape
+    HGF2DPositionCollection ShapePoints;
+    Drop(&ShapePoints, 0);
+    GetConvexHull(&ShapePoints, po_pConvexHull);
+
+    HGF2DShape::GetBestOrientedExtent(po_pMinimalBoxCorners, po_pConvexHull);
+
+    }
+
