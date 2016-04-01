@@ -414,7 +414,7 @@ MapStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMap
                 {
                 GetECDbMap().GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
                                                                                  "Failed to map ECRelationshipClass '%s'. ForeignKey column name '%s' is already used by another column in the foreign key end table %s.",
-                                                                                 fkColName.c_str(), relationshipClass.GetFullName(), foreignEndTable->GetName().c_str());
+                                                                                 relationshipClass.GetFullName(), fkColName.c_str(), foreignEndTable->GetName().c_str());
 
                 return MapStatus::Error;
                 }
