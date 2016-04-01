@@ -20,6 +20,24 @@ module DgnScriptTests {
     var shiftXSize = 5.0;
     var shiftYsize = 2.5;
 
+
+    function testEcSql(db: be.DgnDb) {
+
+        var physObjClass = db.Schemas.GetECClass(be.GENERIC_ECSCHEMA_NAME, be.GENERIC_CLASSNAME_PhysicalObject);
+                                                    //  0             1      2    3      4 
+        var stmt = db.GetPreparedECSqlSelectStatement("ECInstanceId, Origin, Yaw, Pitch, Roll FROM " + physObjClass.ECSqlName);
+        while (stmt.Step() == be.BeSQLiteDbResult.BE_SQLITE_ROW) {
+            var elemid: be.DgnObjectId = stmt.GetValueId(0);
+            var origin: be.DPoint3d = stmt.GetValueDPoint3d(1);
+            var yaw: number = stmt.GetValueInt(2);
+            var pitch: number = stmt.GetValueDouble(3);
+            var roll: number = stmt.GetValueDouble(4);
+
+            be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, 'testEcSql ' + origin.X);
+        }
+
+    }
+
     //---------------------------------------------------------------------------------------
     // @bsimethod                                   
     //---------------------------------------------------------------------------------------
@@ -118,7 +136,7 @@ module DgnScriptTests {
         geoms.push(sphere);
         var geompart: be.DgnGeometryPart = makeGeomPart(model.DgnDb, geoms);
 
-        var ele = be.PhysicalElement.Create(model, catid, '');
+        var ele = be.PhysicalElement.Create(model, catid, be.GENERIC_ECSCHEMA_NAME + "." + be.GENERIC_CLASSNAME_PhysicalObject);
 
         var builder = new be.GeometryBuilder(ele, new be.DPoint3d(0, 0, 0), new be.YawPitchRollAngles(0, 0, 0));
 
@@ -576,6 +594,9 @@ module DgnScriptTests {
 
         //  Test argument validation
         testInvalidArg();
+
+        //  Test ECSql API
+        testEcSql(db);
 
         return 0;
     }

@@ -1496,7 +1496,8 @@ TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
     DgnDbStatus status = m_testDb->Txns().GetChangeSummary(changeSummary, startTxnId);
     ASSERT_TRUE(status == DgnDbStatus::Success);
 
-    DumpChangeSummary(changeSummary, "ChangeSummary after multiple sessions");
+    //printf("\t%s:\n", "ChangeSummary after multiple sessions");
+    changeSummary.Dump();
 
     int expectedChangeCount = nSessions * nTransactionsPerSession + 2 /*category and subcategory*/;
     EXPECT_EQ(expectedChangeCount, GetChangeSummaryInstanceCount(changeSummary, "dgn.Element"));

@@ -31,6 +31,7 @@
 #include <gp_Elips.hxx>
 #include <gp_Circ2d.hxx>
 #include <gp_Elips2d.hxx>
+#include <gp_GTrsf.hxx>
 #include <Geom_Ellipse.hxx>
 #include <GeomAdaptor_HCurve.hxx>
 #include <Geom_BSplineCurve.hxx>
@@ -38,6 +39,7 @@
 #include <TopTools_ListOfShape.hxx>
 #include <BRepAlgoAPI_BuilderAlgo.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
+#include <BRepBuilderAPI_GTransform.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
@@ -51,6 +53,8 @@
 #include <BRepAlgoAPI_Fuse.hxx>
 #include <TColStd_Array1OfReal.hxx>
 #include <TColStd_Array1OfInteger.hxx>
+#include <IntCurvesFace_ShapeIntersector.hxx>
+#include <GeomLProp_SLProps.hxx>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -63,13 +67,15 @@ struct OCBRepUtil
 static gp_Pnt ToGpPnt(DPoint3dCR point) {return gp_Pnt(point.x, point.y, point.z);}
 static gp_Pnt2d ToGpPnt2d(DPoint2dCR point) {return gp_Pnt2d(point.x, point.y);}
 static gp_Pnt2d ToGpPnt2d(DPoint3dCR point) {return gp_Pnt2d(point.x, point.y);}
+static gp_XYZ ToGpXYZ(DPoint3dCR point) {return gp_XYZ(point.x, point.y, point.z);}
 static gp_Dir ToGpDir(DVec3dCR vec) {return gp_Dir(vec.x, vec.y, vec.z);}
 static gp_Vec ToGpVec(DVec3dCR vec) {return gp_Vec(vec.x, vec.y, vec.z);}
 static gp_Ax1 ToGpAx1(DPoint3dCR point, DVec3dCR zVec) {return gp_Ax1(ToGpPnt(point), ToGpVec(zVec));}
 static gp_Ax2 ToGpAx2(DPoint3dCR point, RotMatrixCR rMatrix) {DVec3d xVec, zVec; rMatrix.GetColumn(xVec, 0); rMatrix.GetColumn(zVec, 2); return gp_Ax2(ToGpPnt(point), ToGpDir(zVec), ToGpDir(xVec));}
 static gp_Lin ToGpLin(DRay3dCR ray) {return gp_Lin(ToGpPnt(ray.origin), ToGpDir(ray.direction));}
+static gp_Mat ToGpMat(RotMatrixCR rMatrix) {gp_Mat mat(rMatrix.form3d[0][0], rMatrix.form3d[0][1], rMatrix.form3d[0][2], rMatrix.form3d[1][0], rMatrix.form3d[1][1], rMatrix.form3d[1][2], rMatrix.form3d[2][0], rMatrix.form3d[2][1], rMatrix.form3d[2][2]); return mat;}
 static gp_Trsf ToGpTrsf(TransformCR transform) {gp_Trsf trsf; trsf.SetValues(transform.form3d[0][0], transform.form3d[0][1], transform.form3d[0][2], transform.form3d[0][3], transform.form3d[1][0], transform.form3d[1][1], transform.form3d[1][2], transform.form3d[1][3], transform.form3d[2][0], transform.form3d[2][1], transform.form3d[2][2], transform.form3d[2][3]); return trsf;}
-
+static gp_GTrsf ToGpGTrsf(TransformCR transform) {DPoint3d origin; RotMatrix rMatrix; transform.GetTranslation(origin); transform.GetMatrix(rMatrix); gp_GTrsf trsf(ToGpMat(rMatrix), ToGpXYZ(origin)); return trsf;}
 DGNPLATFORM_EXPORT static gp_Circ ToGpCirc(double& start, double& end, DEllipse3dCR ellipse);
 DGNPLATFORM_EXPORT static gp_Elips ToGpElips(double& start, double& end, DEllipse3dCR ellipse);
 
