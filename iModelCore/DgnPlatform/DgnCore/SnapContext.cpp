@@ -481,7 +481,9 @@ virtual void _OutputGraphics (ViewContextR context) override
     GeometryCollection collection(*source);
     Render::GraphicPtr graphic;
 
+#if defined (DGNPLATFORM_WIP_PARASOLID)
     collection.SetBRepOutput(GeometryCollection::BRepOutput::Edges | GeometryCollection::BRepOutput::FaceIso); // Want exact edges only...
+#endif
 
     for (auto iter : collection)
         {

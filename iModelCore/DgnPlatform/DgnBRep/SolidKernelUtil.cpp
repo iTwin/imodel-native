@@ -191,13 +191,10 @@ bool SolidKernelUtil::IntersectRay(ISolidKernelEntityCR entity, DRay3dCR boresit
     if (!shint.IsDone() || 0 == shint.NbPnt())
         return false;
 
-    printf("\n");
     for (int iHit=1; iHit <= shint.NbPnt(); ++iHit)
         {
         const Handle(Geom_Surface)& surface = BRep_Tool::Surface(shint.Face(iHit));
         GeomLProp_SLProps props(surface, shint.UParameter(iHit), shint.VParameter(iHit), 1, Precision::Confusion()); // Need 1st derivative for normal...
-
-        printf("(%d) W: %lf\n", iHit, shint.WParameter(iHit));
 
         points.push_back(OCBRepUtil::ToDPoint3d(shint.Pnt(iHit)));
         normals.push_back(OCBRepUtil::ToDVec3d(props.Normal()));
