@@ -848,8 +848,12 @@ This property is extremely convenient for passing ellipses through viewing trans
         constructor(center: DPoint3dP, vector0: DVector3dP, vector90: DVector3dP, startAngle: AngleP, sweepAngle : AngleP);
         static CreateCircleStartMidEnd (startPoint: DPoint3dP, interiorPoint: DPoint3dP, endPoint: DPoint3dP) : EllipticArcP;
         static CreateCircleXY (center: DPoint3dP, radius: cxx_double) : EllipticArcP;
-        /** Create a circular arc that fillets (replaces pointB) in the path pointA to pointB to pointC */
+        /** Create a circular arc that fillets (replaces pointB) in the path pointA to pointB to pointC. The radius is given,
+                so the tangency point can be outside the distance to pointA or pointC */
         static CreateFilletAtMiddlePoint (pointA: DPoint3dP, pointB: DPoint3dP, pointC: DPoint3dP, radius: cxx_double) : EllipticArcP;
+        /** Create the largest arc that fillets the corner at pointB and has tangencies no further away than pointA and pointC */
+        static CreateLargestFilletAtMiddlePoint (pointA: DPoint3dP, pointB: DPoint3dP, pointC: DPoint3dP) : EllipticArcP;
+
         /** Create a circular arc from a start point, initial direction, and plane normal vector. */
         static CreateStartTangentNormalRadiusSweep (
                 startPoint: DPoint3dP, 
@@ -871,7 +875,7 @@ This property is extremely convenient for passing ellipses through viewing trans
         CloneWithPerpendicularAxes () :EllipticArcP;
         /** Return center, Vector0 and Vector90 as a basis plane. Note that these are not unit vectors. */
         GetBasisPlane () : DPoint3dDVector3dDVector3dP;
-        /** Test if the ellipse is circular. */
+        /** Test if the ellipse is circular.   (If so, the radius is GetVector0 ().Magnitude ()) */
         IsCircular () : cxx_bool
     }
 
