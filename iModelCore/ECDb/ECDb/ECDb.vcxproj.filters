@@ -333,9 +333,6 @@
     <ClInclude Include="ClassMap.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
-    <ClInclude Include="ClassMapInfo.h">
-      <Filter>ECDbMap</Filter>
-    </ClInclude>
     <ClInclude Include="ECDbMap.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
@@ -388,6 +385,9 @@
     </ClInclude>
     <ClInclude Include="Nullable.h">
       <Filter>ECDbSchemaManager</Filter>
+    </ClInclude>
+    <ClInclude Include="ClassMappingInfo.h">
+      <Filter>ECDbMap</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -665,9 +665,6 @@
     <ClCompile Include="ClassMap.cpp">
       <Filter>ECDbMap</Filter>
     </ClCompile>
-    <ClCompile Include="ClassMapInfo.cpp">
-      <Filter>ECDbMap</Filter>
-    </ClCompile>
     <ClCompile Include="ECDbMap.cpp">
       <Filter>ECDbMap</Filter>
     </ClCompile>
@@ -711,6 +708,9 @@
       <Filter>ECDbSchemaManager</Filter>
     </ClCompile>
     <ClCompile Include="DbSchemaPersistenceManager.cpp">
+      <Filter>ECDbMap</Filter>
+    </ClCompile>
+    <ClCompile Include="ClassMappingInfo.cpp">
       <Filter>ECDbMap</Filter>
     </ClCompile>
   </ItemGroup>

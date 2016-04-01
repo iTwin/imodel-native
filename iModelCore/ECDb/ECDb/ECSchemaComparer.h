@@ -124,14 +124,6 @@ enum class SystemId
     VersionWrite
     };
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-static bool operator==(ECN::ECValueCR lhs, ECN::ECValueCR rhs)
-    {
-    return lhs.Equals(rhs);
-    }
-
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
@@ -168,40 +160,39 @@ public:
 struct ECChange : RefCountedBase
     {
     private:
-        std::unique_ptr<Utf8String> m_customId;
         SystemId m_systemId;
-        ECChange const* m_parent;
+        Utf8String m_customId;
         ChangeState m_state;
         bool m_applied;
+        ECChange const* m_parent;
 
         virtual void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const = 0;
         virtual bool _IsEmpty() const = 0;
         virtual void _Optimize() {}
 
-        static std::map<Utf8CP, SystemId, CompareUtf8> const& GetStringToTypeMap();
-        static std::map<SystemId, Utf8String> const& GetTypeToStringMap();
+        static SystemId StringToSystemId(Utf8CP);
 
     protected:
         ECChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr);
 
-        static Utf8StringCR Convert(SystemId id);
-        static SystemId Convert(Utf8CP id);
         static void AppendBegin(Utf8StringR str, ECChange const& change, int currentIndex);
-        static void AppendEnd(Utf8StringR str);
+        static void AppendEnd(Utf8StringR str) { str.append("\r\n"); }
+
+        static Utf8CP SystemIdToString(SystemId);
 
     public:
         virtual ~ECChange() {};
-        SystemId GetSystemId() const;
-        Utf8StringCR GetId() const;
-        bool HasCustomId() const;
-        ChangeState GetState() const;
-        ECChange const* GetParent() const;
-        bool IsEmpty() const;
-        void Optimize();
-        bool Exist() const;
-        bool IsPending() const;
-        void Done();
-        void WriteToString(Utf8StringR str, int initIndex = 0, int indentSize = INDENT_SIZE) const;
+        SystemId GetSystemId() const { return m_systemId; }
+        bool HasCustomId() const { return !m_customId.empty(); }
+        Utf8CP GetId() const;
+        ChangeState GetState() const { return m_state; }
+        ECChange const* GetParent() const { return m_parent; }
+        bool IsEmpty() const { return _IsEmpty(); }
+        bool IsValid() const { return !IsEmpty(); }
+        void Optimize() { _Optimize(); }
+        bool IsApplied() const { return m_applied; }
+        void SetIsApplied() { BeAssert(m_applied == false); m_applied = true; }
+        void WriteToString(Utf8StringR str, int initIndex = 0, int indentSize = INDENT_SIZE) const { _WriteToString(str, initIndex, indentSize); }
     };
 
 typedef RefCountedPtr<ECChange> ECChangePtr;
@@ -235,10 +226,9 @@ template<typename T>
 struct ECChangeArray : ECChange
     {
     private:
-        bvector<ECChangePtr> m_changes;
         SystemId m_elementType;
+        bvector<ECChangePtr> m_changes;
 
-    private:
         //---------------------------------------------------------------------------------------
         // @bsimethod                                                    Affan.Khan  03/2016
         //+---------------+---------------+---------------+---------------+---------------+------
@@ -288,6 +278,7 @@ struct ECChangeArray : ECChange
             static_assert(std::is_base_of<ECChange, T>::value, "T not derived from ECChange");
             }        
         virtual ~ECChangeArray() {}
+
         //---------------------------------------------------------------------------------------
         // @bsimethod                                                    Affan.Khan  03/2016
         //+---------------+---------------+---------------+---------------+---------------+------
@@ -318,7 +309,7 @@ struct ECChangeArray : ECChange
         T* Find(Utf8CP customId)
             {
             for (auto& v : m_changes)
-                if (v->GetId() == customId)
+                if (strcmp(v->GetId(), customId) == 0)
                     return static_cast<T*>(v.get());
 
             return nullptr;

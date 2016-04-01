@@ -13,7 +13,7 @@
   <ItemGroup>
     <ClCompile Include="ChangeSummary.cpp" />
     <ClCompile Include="ClassMap.cpp" />
-    <ClCompile Include="ClassMapInfo.cpp" />
+    <ClCompile Include="ClassMappingInfo.cpp" />
     <ClCompile Include="DbSchema.cpp" />
     <ClCompile Include="DbSchemaPersistenceManager.cpp" />
     <ClCompile Include="docs\samplecode\ECDb.sample.cpp" />
@@ -129,7 +129,7 @@
     <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h" />
     <ClInclude Include="BeBriefcaseBasedIdSequence.h" />
     <ClInclude Include="ClassMap.h" />
-    <ClInclude Include="ClassMapInfo.h" />
+    <ClInclude Include="ClassMappingInfo.h" />
     <ClInclude Include="DbSchema.h" />
     <ClInclude Include="DbSchemaPersistenceManager.h" />
     <ClInclude Include="ECDbExpressionSymbolProvider.h" />

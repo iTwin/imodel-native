@@ -95,8 +95,8 @@ private:
 
     ClassMapPtr LoadClassMap(ClassMapLoadContext& ctx, ECN::ECClassCR) const;
 
-    MapStatus DoMapSchemas();
-    MapStatus MapClass(ECN::ECClassCR);
+    MappingStatus DoMapSchemas();
+    MappingStatus MapClass(ECN::ECClassCR);
     BentleyStatus SaveDbSchema() const;
     BentleyStatus CreateOrUpdateRequiredTables() const;
     BentleyStatus EvaluateColumnNotNullConstraints() const;
@@ -105,7 +105,7 @@ private:
     BentleyStatus FinishTableDefinitions(bool onlyCreateClassIdColumns = false) const;
     BentleyStatus CreateClassIdColumnIfNecessary(DbTable&, bset<ClassMap*> const&) const;
 
-    MapStatus AddClassMap(ClassMapPtr&) const;
+    MappingStatus AddClassMap(ClassMapPtr&) const;
 
     DbResult UpdateHoldingView();
 
@@ -127,7 +127,7 @@ public:
     //!Loads the class maps if they were not loaded yet
     size_t GetTableCountOnRelationshipEnd(ECN::ECRelationshipConstraintCR) const;
 
-    MapStatus MapSchemas(SchemaImportContext&);
+    MappingStatus MapSchemas(SchemaImportContext&);
 
     BentleyStatus CreateECClassViewsInDb() const;
     DbTable* FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, DbTable::Type, bool isVirtual, Utf8CP primaryKeyColumnName);

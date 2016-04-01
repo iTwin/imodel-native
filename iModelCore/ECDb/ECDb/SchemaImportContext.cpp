@@ -73,7 +73,7 @@ UserECDbMapStrategy* SchemaImportContext::GetUserStrategyP(ECClassCR ecclass, EC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   08/2015
 //---------------------------------------------------------------------------------------
-void SchemaImportContext::CacheClassMapInfo(ClassMap const& classMap, std::unique_ptr<ClassMapInfo>& info)
+void SchemaImportContext::CacheClassMapInfo(ClassMap const& classMap, std::unique_ptr<ClassMappingInfo>& info)
     {
     m_classMapInfoCache[&classMap] = std::move(info);
     }
@@ -205,11 +205,11 @@ BentleyStatus ECSchemaCompareContext::Prepare(ECDbSchemaManager const& schemaMan
             return ERROR;
 
         std::set<Utf8CP, CompareUtf8> schemaOfInterest;
-        if (m_changes.Exist())
+        if (m_changes.IsValid())
             {
             for (size_t i = 0; i < m_changes.Count(); i++)
                 {
-                schemaOfInterest.insert(m_changes.At(i).GetId().c_str());                
+                schemaOfInterest.insert(m_changes.At(i).GetId());                
                 }
             }
         //Remove any none interesting schemas
