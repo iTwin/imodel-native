@@ -90,10 +90,10 @@ BentleyStatus IScalableMeshProgressiveQueryEngine::GetOverviewNodes(bvector<ISca
     return _GetOverviewNodes(meshNodes, queryId);
     }
 
-BentleyStatus IScalableMeshProgressiveQueryEngine::GetQueriedNodes(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes,
-                                                                   int                                         queryId)
+BentleyStatus IScalableMeshProgressiveQueryEngine::GetRequiredNodes(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes,
+                                                                    int                                         queryId)
     {
-    return _GetQueriedNodes(meshNodes, queryId);
+    return _GetRequiredNodes(meshNodes, queryId);
     }
 
 BentleyStatus IScalableMeshProgressiveQueryEngine::ClearCaching(const bvector<DRange2d>* clearRanges, const IScalableMeshPtr& scalableMeshPtr)
@@ -232,8 +232,7 @@ public:
 
 
     void ClearCachedNodes(IScalableMeshPtr& scalableMeshPtr)
-        {        
-        assert(!s_keepSomeInvalidate);                
+        {                
         m_nodeListMutex.lock();
 
         auto cachedNodeIter(m_cachedNodes.begin());
@@ -327,9 +326,11 @@ public:
                     for (auto& id : clipIds)
                         {
                         if (cachedNodeIter->m_displayNodePtr->HasClip(id))
-                            {           
+                            {                                       
                             if (s_keepSomeInvalidate)
+                                {                                                                
                                 m_invalidatedCachedNodes.push_back(*cachedNodeIter);
+                                }
 
                             cachedNodeIter = m_cachedNodes.erase(cachedNodeIter);
                             isCleared = true;
@@ -362,6 +363,9 @@ public:
                 cachedNodeIter++;
                 }
             }
+
+        //NEEDS_WORK_SM : m_invalidatedCachedNodes could potentially explode, need to work something out.
+        assert(m_invalidatedCachedNodes.size() / 5.0 < m_cachedNodes.size());
 
         m_nodeListMutex.unlock();
         }
@@ -1366,8 +1370,8 @@ class NewQueryStartingNodeProcessor
         RequestedQuery*                                     m_newQuery;
         bset<uint64_t>*                                     m_activeClips;
     
-        bvector<bvector<IScalableMeshCachedDisplayNodePtr>>                    m_lowerResOverviewNodes;
-        bvector<bvector<IScalableMeshCachedDisplayNodePtr>>                    m_queriedMeshNodes;    
+        bvector<bvector<IScalableMeshCachedDisplayNodePtr>>                     m_lowerResOverviewNodes;
+        bvector<bvector<IScalableMeshCachedDisplayNodePtr>>                     m_requiredMeshNodes;    
         bvector<bvector<HFCPtr<SMPointIndexNode<DPoint3d, YProtPtExtentType>>>> m_toLoadNodes;
         
         int          m_numWorkingThreads;
@@ -1381,7 +1385,7 @@ class NewQueryStartingNodeProcessor
             //m_numWorkingThreads = 1;
 
             m_lowerResOverviewNodes.resize(m_numWorkingThreads);
-            m_queriedMeshNodes.resize(m_numWorkingThreads);        
+            m_requiredMeshNodes.resize(m_numWorkingThreads);        
             m_toLoadNodes.resize(m_numWorkingThreads);
             m_workingThreads = new std::thread[m_numWorkingThreads];
             }
@@ -1395,7 +1399,7 @@ class NewQueryStartingNodeProcessor
             {       
             m_lowerResOverviewNodes[threadId].clear();
             m_toLoadNodes[threadId].clear();
-            m_queriedMeshNodes[threadId].clear();
+            m_requiredMeshNodes[threadId].clear();
 
             for (size_t nodeInd = m_nodeToSearchCurrentInd + 1; nodeInd < m_nodesToSearch->GetNodes().size(); nodeInd++)        
                 {                              
@@ -1446,7 +1450,7 @@ class NewQueryStartingNodeProcessor
                     {
                     //NEEDS_WORK_SM : Should not be duplicated.
                     m_lowerResOverviewNodes[threadId].push_back(meshNodePtr);
-                    m_queriedMeshNodes[threadId].push_back(meshNodePtr);
+                    m_requiredMeshNodes[threadId].push_back(meshNodePtr);
                     }
                 }
             }
@@ -1476,7 +1480,7 @@ class NewQueryStartingNodeProcessor
                 if (m_workingThreads[threadInd].joinable())
                     m_workingThreads[threadInd].join();
 
-                m_newQuery->m_queriedMeshNodes.insert(m_newQuery->m_queriedMeshNodes.end(), m_queriedMeshNodes[threadInd].begin(), m_queriedMeshNodes[threadInd].end());                
+                m_newQuery->m_requiredMeshNodes.insert(m_newQuery->m_requiredMeshNodes.end(), m_requiredMeshNodes[threadInd].begin(), m_requiredMeshNodes[threadInd].end());                
                 toLoadNodes.insert(toLoadNodes.end(), m_toLoadNodes[threadInd].begin(), m_toLoadNodes[threadInd].end());
                 
                 //Avoid duplicate
@@ -1554,13 +1558,13 @@ void ComputeOverviewSearchToLoadNodes(RequestedQuery&                           
                 {
                 //NEEDS_WORK_SM : Should not be duplicated.
                 newQuery.m_overviewMeshNodes.push_back(meshNodePtr);
-                newQuery.m_queriedMeshNodes.push_back(meshNodePtr);
+                newQuery.m_requiredMeshNodes.push_back(meshNodePtr);
                 }
             }
         }    
     
 #ifdef PRINT_SMDISPLAY_MSG
-    PRINT_MSG("StartNewQuery m_queriedMeshNodes : %I64u toLoadNodes : %I64u \n", newQuery.m_queriedMeshNodes.size(), toLoadNodes.size());
+    PRINT_MSG("StartNewQuery m_requiredMeshNodes : %I64u toLoadNodes : %I64u \n", newQuery.m_requiredMeshNodes.size(), toLoadNodes.size());
 #endif
 
     CachedDisplayNodeManager::GetManager().ReleaseNodeListLock();
@@ -1660,7 +1664,7 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
                         meshNodePtr = CachedDisplayNodeManager::GetManager().FindOrLoadNode<DPoint3d>(node, newQuery.m_loadTexture, m_activeClips);
                         }
 
-                    newQuery.m_queriedMeshNodes.push_back(meshNodePtr);
+                    newQuery.m_requiredMeshNodes.push_back(meshNodePtr);
                     }
                 }
                       
@@ -1715,7 +1719,7 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
                     meshNodePtr = CachedDisplayNodeManager::GetManager().FindOrLoadNode<DPoint3d>(node, newQuery.m_loadTexture, m_activeClips);
                     }
 
-                newQuery.m_queriedMeshNodes.push_back(meshNodePtr);
+                newQuery.m_requiredMeshNodes.push_back(meshNodePtr);
                 }
 
             delete queryObjectP;
@@ -1776,36 +1780,61 @@ BentleyStatus ScalableMeshProgressiveQueryEngine::_StartQuery(int               
     }
 
 BentleyStatus ScalableMeshProgressiveQueryEngine::_GetOverviewNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes,
-    int                                                   queryId) const
+                                                                    int                                                                               queryId) const
     {
     const RequestedQuery* requestedQueryP = 0;
 
     for (auto& query : m_requestedQueries)
-    {
-        if (query.m_queryId == queryId)
         {
+        if (query.m_queryId == queryId)
+            {
             requestedQueryP = &query;
             break;
+            }
         }
-    }
 
     BentleyStatus status;
 
     if (requestedQueryP != 0)
-    {
-        meshNodes.insert(meshNodes.end(), requestedQueryP->m_overviewMeshNodes.begin(), requestedQueryP->m_overviewMeshNodes.end());
+        {
+        if (s_keepSomeInvalidate)
+            {
+            for (auto& overviewNode : requestedQueryP->m_overviewMeshNodes)
+                {
+                auto requiredNodeIter(requestedQueryP->m_requiredMeshNodes.begin());
+                auto requiredNodeIterEnd(requestedQueryP->m_requiredMeshNodes.end());
+
+                while (requiredNodeIter != requiredNodeIterEnd)
+                    {                           
+                    if (overviewNode->GetNodeId() == (*requiredNodeIter)->GetNodeId())
+                        break;
+
+                    requiredNodeIter++;
+                    }
+
+                if (requiredNodeIter == requiredNodeIterEnd)
+                    {
+                    meshNodes.push_back(overviewNode);
+                    }
+                }                                                
+            }
+        else
+            {
+            meshNodes.insert(meshNodes.end(), requestedQueryP->m_overviewMeshNodes.begin(), requestedQueryP->m_overviewMeshNodes.end());
+            }
+
         status = SUCCESS;
-    }
+        }
     else
-    {
+        {
         status = ERROR;
-    }
+        }
 
     return status;
     }
 
-BentleyStatus ScalableMeshProgressiveQueryEngine::_GetQueriedNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes,
-                                                                   int                                                   queryId) const
+BentleyStatus ScalableMeshProgressiveQueryEngine::_GetRequiredNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes,
+                                                                    int                                                   queryId) const
     {
     RequestedQuery* requestedQueryP = 0;
 
@@ -1824,18 +1853,18 @@ BentleyStatus ScalableMeshProgressiveQueryEngine::_GetQueriedNodes(bvector<BENTL
         {
         if (requestedQueryP->m_isQueryCompleted == false || requestedQueryP->m_fetchLastCompletedNodes == false)
             {            
-            StatusInt status = s_queryProcessor.GetFoundNodes(requestedQueryP->m_queriedMeshNodes, queryId);
+            StatusInt status = s_queryProcessor.GetFoundNodes(requestedQueryP->m_requiredMeshNodes, queryId);
             assert(status == SUCCESS);
 
             if (requestedQueryP->m_isQueryCompleted == true)
                 {
                 requestedQueryP->m_fetchLastCompletedNodes = true;
-                assert(requestedQueryP->m_queriedMeshNodes.size() > 0);
+                assert(requestedQueryP->m_requiredMeshNodes.size() > 0);
                 s_queryProcessor.CancelQuery(queryId);
                 }
             }
 
-        meshNodes.insert(meshNodes.end(), requestedQueryP->m_queriedMeshNodes.begin(), requestedQueryP->m_queriedMeshNodes.end());
+        meshNodes.insert(meshNodes.end(), requestedQueryP->m_requiredMeshNodes.begin(), requestedQueryP->m_requiredMeshNodes.end());
         status = SUCCESS;
         }
     else

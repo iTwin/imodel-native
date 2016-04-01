@@ -72,7 +72,7 @@ struct RequestedQuery
 
     int                                                          m_queryId;
     bvector<IScalableMeshCachedDisplayNodePtr>                                m_overviewMeshNodes;
-    bvector<IScalableMeshCachedDisplayNodePtr>                                m_queriedMeshNodes;
+    bvector<IScalableMeshCachedDisplayNodePtr>                                m_requiredMeshNodes;
     //ISMPointIndexQuery<IDTMFile::Point3d64f, YProtPtExtentType>* m_queryObjectP;    
     bool                                                         m_isQueryCompleted;
     bool                                                         m_fetchLastCompletedNodes;
@@ -113,7 +113,7 @@ class ScalableMeshProgressiveQueryEngine : public virtual IScalableMeshProgressi
         virtual BentleyStatus _GetOverviewNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
                                                 int                                                                queryId) const override;        
 
-        virtual BentleyStatus _GetQueriedNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
+        virtual BentleyStatus _GetRequiredNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
                                                int                                                                queryId) const override;
 
         virtual BentleyStatus _StopQuery(int queryId) override; 
