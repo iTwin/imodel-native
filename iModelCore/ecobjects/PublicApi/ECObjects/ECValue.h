@@ -294,6 +294,9 @@ public:
     //! @param[in] dateTime Date time value to set.
     ECOBJECTS_EXPORT explicit ECValue (DateTimeCR dateTime);
 
+    bool operator==(ECValueCR rhs) const { return Equals(rhs); }
+    bool operator!=(ECValueCR rhs) const { return !(*this == rhs); }
+
     //! Sets whether this ECValue is read-only
     //! @param[in] isReadOnly Sets the read-only status of the ECValue
     ECOBJECTS_EXPORT void           SetIsReadOnly(bool isReadOnly);
