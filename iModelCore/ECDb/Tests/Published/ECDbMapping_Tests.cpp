@@ -1770,23 +1770,7 @@ TEST_F (ECDbMappingTestFixture, SharedColumnCA)
         "</ECSchema>", false, "MinimumSharedColumnCount can only be defined on first occurrence of SharedColumn option in a hierarchy"));
 
     AssertSchemaImport (testItems, "sharedtablecatests.ecdb");
-
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   02/16
-//+---------------+---------------+---------------+---------------+---------------+------
-void AssertColumnCount(ECDbCR ecdb, std::vector<std::pair<Utf8String, int>> const& testItems, Utf8CP scenario)
-    {
-    for (std::pair<Utf8String, int> const& kvPair : testItems)
-        {
-        Utf8CP tableName = kvPair.first.c_str();
-        const int expectedColCount = kvPair.second;
-        bvector<Utf8String> colNames;
-        ASSERT_TRUE(ecdb.GetColumns(colNames, tableName)) << tableName << " Scenario: " << scenario;
-        ASSERT_EQ(expectedColCount, colNames.size()) << tableName << " Scenario: " << scenario;
-        }
-    };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   02/16
