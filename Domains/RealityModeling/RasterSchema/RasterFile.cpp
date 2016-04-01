@@ -332,9 +332,7 @@ HFCPtr<HRFRasterFile> RasterFile::OpenRasterFile(Utf8StringCR resolvedName)
 
     try
         {
-        BeFileName filename(resolvedName);
-
-        if (filename.empty())
+        if (resolvedName.empty())
             return NULL;
 
         // Open Raster file
@@ -342,18 +340,17 @@ HFCPtr<HRFRasterFile> RasterFile::OpenRasterFile(Utf8StringCR resolvedName)
             // HFCMonitor __keyMonitor(m_KeyByMethod);
 
             // Create URL
-            HFCPtr<HFCURL>  srcFilename(HFCURL::Instanciate(filename));
-            if (srcFilename == 0)
+            HFCPtr<HFCURL>  pSrcUrl(HFCURL::Instanciate(resolvedName));
+            if (pSrcUrl == nullptr)
                 {
                 // Open the raster file as a file
-                srcFilename = new HFCURLFile(WString(HFCURLFile::s_SchemeName() + L"://") + filename);
+                pSrcUrl = new HFCURLFile(HFCURLFile::s_SchemeName() + "://" + resolvedName);
                 }
 
-            // Open Raster file without checking "isKindOfFile"
-            rasterFile = HRFRasterFileFactory::GetInstance()->OpenFile((HFCPtr<HFCURL>)srcFilename, true);
+            rasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(pSrcUrl, true/*readOnly*/);
             }
 
-        if (rasterFile == 0)
+        if (rasterFile == nullptr)
             return rasterFile;
 
         rasterFile = GenericImprove(rasterFile, HRFiTiffCacheFileCreator::GetInstance());

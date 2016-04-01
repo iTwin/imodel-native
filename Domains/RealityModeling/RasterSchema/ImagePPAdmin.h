@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/ImagePPAdmin.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -23,8 +23,8 @@ struct MyImageppLibAdmin : ImagePP::ImageppLibAdmin
 
     virtual BentleyStatus                           _GetDefaultTempDirectory(BeFileName& tempFileName) const override;
     virtual BentleyStatus                           _GetLocalCacheDirPath(BeFileName& tempPath, bool checkForChange=false) const override;
-    virtual BentleyStatus                           _GetGDalDataPath(WStringR gdalDataPath) const override;
-    virtual BentleyStatus                           _GetECWDataPath(WStringR ecwDataPath) const override;
+    virtual BentleyStatus                           _GetGDalDataPath(BeFileNameR gdalDataPath) const override;
+    virtual BentleyStatus                           _GetECWDataPath(BeFileNameR ecwDataPath) const override;
     virtual                                         ~MyImageppLibAdmin() {}
     };
 

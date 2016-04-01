@@ -74,14 +74,11 @@ BentleyStatus MyImageppLibAdmin::_GetLocalCacheDirPath(BeFileName& tempPath, boo
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Eric.Paquet         07/2015
 //-----------------------------------------------------------------------------------------
-BentleyStatus MyImageppLibAdmin::_GetGDalDataPath(WStringR gdalDataPath) const
+BentleyStatus MyImageppLibAdmin::_GetGDalDataPath(BeFileNameR gdalDataPath) const
     {
-    BeFileName path = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    path.AppendToPath (L"GDalData");
-
-    // Convert BeFileName to WString
-    BeFileName::BuildName (gdalDataPath, path.GetDevice().c_str(), path.GetDirectoryWithoutDevice().c_str(), path.GetFileNameWithoutExtension().c_str(), path.GetExtension().c_str());
-    BeFileName::AppendSeparator (gdalDataPath);
+    gdalDataPath = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    gdalDataPath.AppendToPath (L"GDalData");
+    gdalDataPath.AppendSeparator();
 
     return BSISUCCESS;
     }
@@ -89,13 +86,10 @@ BentleyStatus MyImageppLibAdmin::_GetGDalDataPath(WStringR gdalDataPath) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Eric.Paquet         07/2015
 //-----------------------------------------------------------------------------------------
-BentleyStatus MyImageppLibAdmin::_GetECWDataPath(WStringR ecwDataPath) const
+BentleyStatus MyImageppLibAdmin::_GetECWDataPath(BeFileNameR ecwDataPath) const
     {
-    BeFileName path = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-
-    // Convert BeFileName to WString
-    BeFileName::BuildName (ecwDataPath, path.GetDevice().c_str(), path.GetDirectoryWithoutDevice().c_str(), path.GetFileNameWithoutExtension().c_str(), path.GetExtension().c_str());
-    BeFileName::AppendSeparator (ecwDataPath);
+    ecwDataPath = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    ecwDataPath.AppendSeparator ();
 
     return BSISUCCESS;
     }
