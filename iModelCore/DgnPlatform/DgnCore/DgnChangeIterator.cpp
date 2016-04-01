@@ -141,7 +141,7 @@ DbDupValue BaseChangeEntry::GetDbValue(Utf8StringCR columnName) const
         return statement->GetDbValue(0);
 
     BeAssert(result == BE_SQLITE_DONE);
-    return std::move(DbDupValue(nullptr));
+    return DbDupValue(nullptr);
     }
 
 //---------------------------------------------------------------------------------------
