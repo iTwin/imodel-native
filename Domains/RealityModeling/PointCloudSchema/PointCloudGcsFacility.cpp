@@ -167,11 +167,12 @@ BentleyStatus PointCloudGcsFacility::GetLocalTransformForReprojection(TransformR
     transform.InitIdentity ();
 
     // Must be able to create a valid GCS
-    DgnGCSPtr pDstGcs(dgnDb.Units().GetDgnGCS());
+    DgnGCSP pDstGcs = dgnDb.Units().GetDgnGCS();
 
     if (pDstGcs == NULL || !pDstGcs->IsValid())
         return ERROR;
 
+    //&&ep PointCloud gcs must be a BaseGcs and not a DgnGcs. What about gcs unit???
     // Must be able to create a valid GCS
     DgnGCSPtr pSrcGcs = PointCloudGcsFacility::CreateGcsFromWkt(wktStringGeoreference, dgnDb, true);
     if (pSrcGcs.IsNull() || !pSrcGcs->IsValid())

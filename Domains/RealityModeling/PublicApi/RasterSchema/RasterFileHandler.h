@@ -36,6 +36,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RasterFileModel : RasterModel
 {
     DGNMODEL_DECLARE_MEMBERS(RASTER_CLASSNAME_RasterFileModel, RasterModel)
 
+public:
     struct CreateParams : T_Super::CreateParams
         {
         DEFINE_T_SUPER(RasterModel::CreateParams);

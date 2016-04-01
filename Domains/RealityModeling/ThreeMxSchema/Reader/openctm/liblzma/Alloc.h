@@ -13,7 +13,7 @@ Public domain */
 void *MyAlloc(size_t size);
 void MyFree(void *address);
 
-#ifdef _WIN32
+#ifdef BENTLEY_WIN32
 
 void SetLargePageSize();
 

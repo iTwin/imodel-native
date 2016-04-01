@@ -2,7 +2,7 @@
 #
 #     $Source: PointCloudSchema/PointCloudSchema.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -40,7 +40,7 @@ pointCloudSchemaDepends         = $(_MakeFileSpec)                              
                                   $(PointCloudSchemaPublicApiSrc)PointCloudSchemaTypes.h           \
                                   $(PointCloudSchemaPublicApiSrc)PointCloudDrawBuffer.h            \
                                   $(PointCloudSchemaPublicApiSrc)PointCloudHandler.h               \
-                                  $(PointCloudSchemaPublicApiSrc)PointCloudProgressiveDisplay.h    \
+                                  $(SrcPointCloudSchema)PointCloudProgressiveDisplay.h              \
                                   $(PointCloudSchemaPublicApiSrc)PointCloudDomain.h                \
                                   $(PointCloudSchemaPublicApiSrc)PointCloudSchemaApi.h             \
                                   

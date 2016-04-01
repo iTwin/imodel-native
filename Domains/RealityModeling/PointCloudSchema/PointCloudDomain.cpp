@@ -38,8 +38,6 @@ void PointCloudDomain::InitializeApi()
     if(!s_initialized)
         {
         BePointCloud::BePointCloudApi::Initialize();
-        PointCloudSchema::ModelViewportManager::Get().Register();
-
         s_initialized = true;
         }
     }

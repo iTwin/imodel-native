@@ -258,7 +258,7 @@ protected:
     void DrawLoadedChildren(RasterTileR tile, uint32_t resolutionDelta, RenderContextR context);
 
 public:
-    static bool ShouldDrawInConvext(RenderContextR context);
+    static bool ShouldDrawInContext(RenderContextR context);
 
     void Draw (RenderContextR context);
 
@@ -700,7 +700,7 @@ void RasterQuadTree::QueryVisible(std::vector<RasterTilePtr>& visibles, ViewCont
 void RasterQuadTree::Draw(RenderContextR context)
     {
     // First, determine if we should draw tiles at all.
-    if (!RasterProgressiveDisplay::ShouldDrawInConvext(context) || NULL == context.GetViewport())
+    if (!RasterProgressiveDisplay::ShouldDrawInContext(context) || NULL == context.GetViewport())
         return;
 
     RefCountedPtr<RasterProgressiveDisplay> display = RasterProgressiveDisplay::Create(*this, context);
@@ -748,7 +748,7 @@ RefCountedPtr<RasterProgressiveDisplay> RasterProgressiveDisplay::Create(RasterQ
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-bool RasterProgressiveDisplay::ShouldDrawInConvext (RenderContextR context)
+bool RasterProgressiveDisplay::ShouldDrawInContext(RenderContextR context)
     {
     switch (context.GetDrawPurpose())
         {

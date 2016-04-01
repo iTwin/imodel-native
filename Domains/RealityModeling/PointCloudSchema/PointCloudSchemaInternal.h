@@ -2,7 +2,7 @@
 |
 |     $Source: PointCloudSchema/PointCloudSchemaInternal.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #ifndef __POINTCLOUDSCHEMAINTERNAL_H__
@@ -33,7 +33,6 @@
 #include <PointCloudSchema/PointCloudViewSettings.h>
 #include <PointCloudSchema/PointCloudDrawBuffer.h>
 #include <PointCloudSchema/PointCloudHandler.h>
-#include <PointCloudSchema/PointCloudProgressiveDisplay.h>
 #include <PointCloudSchema/PointCloudDomain.h>
 
 #include "PointCloudRamps.h"
@@ -41,6 +40,9 @@
 #include "PointCloudGcsFacility.h"
 #include "PointCloudViewport.h"
 #include "PointCloudRenderer.h"
+#include "PointCloudProgressiveDisplay.h"
+
+#include <list>
 
 USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 

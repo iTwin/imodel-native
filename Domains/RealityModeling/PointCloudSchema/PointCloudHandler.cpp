@@ -39,7 +39,7 @@ PointCloudModelPtr PointCloudModelHandler::CreatePointCloudModel(PointCloudModel
 
     PointCloudModel::Properties props;
     props.m_fileId = params.m_fileId;
-    pointCloudScenePtr->GetRange(props.m_range, false);
+    pointCloudScenePtr->GetRange (props.m_range, true);
 
     // Create model in DgnDb
     PointCloudModelPtr model = new PointCloudModel(params, props);
@@ -52,6 +52,7 @@ PointCloudModelPtr PointCloudModelHandler::CreatePointCloudModel(PointCloudModel
 //----------------------------------------------------------------------------------------
 PointCloudModel::PointCloudModel(CreateParams const& params) : T_Super (params)
     {
+    m_loadSceneStatus = LoadStatus::Unloaded;
     m_pointCloudScenePtr = nullptr;
     }
 
@@ -62,7 +63,9 @@ PointCloudModel::PointCloudModel(CreateParams const& params, PointCloudModel::Pr
 :T_Super (params),
  m_properties(properties)
     {
+    m_loadSceneStatus = LoadStatus::Unloaded;
     m_pointCloudScenePtr = nullptr;
+    m_sceneToWorld.InitIdentity();
     }
 
 //----------------------------------------------------------------------------------------
@@ -70,6 +73,32 @@ PointCloudModel::PointCloudModel(CreateParams const& params, PointCloudModel::Pr
 //----------------------------------------------------------------------------------------
 PointCloudModel::~PointCloudModel()
     {
+    m_cachedPtViewport.clear();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2016
+//----------------------------------------------------------------------------------------
+PtViewport* PointCloudModel::GetPtViewportP(DgnViewportCR vp) const
+    {
+    auto viewportItr = m_cachedPtViewport.find(&vp);
+    if (viewportItr != m_cachedPtViewport.end())
+        return viewportItr->second.get();
+    
+    auto ptVp = PtViewport::Create();
+    if (ptVp.IsNull())
+        return nullptr;
+
+    m_cachedPtViewport.insert(std::make_pair(&vp, ptVp));
+    return ptVp.get();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2016
+//----------------------------------------------------------------------------------------
+void PointCloudModel::_DropGraphicsForViewport(Dgn::DgnViewportCR viewport)
+    {
+    m_cachedPtViewport.erase(&viewport);
     }
 
 //----------------------------------------------------------------------------------------
@@ -77,20 +106,50 @@ PointCloudModel::~PointCloudModel()
 //----------------------------------------------------------------------------------------
 PointCloudSceneP PointCloudModel::GetPointCloudSceneP() const
     {
-    if (m_pointCloudScenePtr == nullptr)
+    if (LoadStatus::Unloaded == m_loadSceneStatus && m_pointCloudScenePtr == nullptr)
         {
+        m_loadSceneStatus = LoadStatus::UnknownError;
+
         // Find resolved file name for the point cloud
         BeFileName fileName;
         BentleyStatus status = T_HOST.GetPointCloudAdmin()._ResolveFileName(fileName, m_properties.m_fileId, GetDgnDb());
         if (status != SUCCESS)
-            {
             return nullptr;
-            }
-
+            
         m_pointCloudScenePtr = PointCloudScene::Create(fileName.c_str());
+
+        if (m_pointCloudScenePtr.IsValid())
+            {
+            // Get transformation to UOR (including transformation for the coordinate system)
+            DRange3d rangeUOR = GetRange();
+            WString wktString(m_pointCloudScenePtr->GetSurveyGeoreferenceMetaTag());
+            if (SUCCESS != PointCloudGcsFacility::GetTransformToUor(m_sceneToWorld, wktString, rangeUOR, GetDgnDb()))
+                m_sceneToWorld.InitIdentity();
+
+            m_loadSceneStatus = PointCloudModel::LoadStatus::Loaded;
+            }
         }
 
     return m_pointCloudScenePtr.get();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2016
+//----------------------------------------------------------------------------------------
+void PointCloudModel::_OnFitView(Dgn::FitContextR context)
+    {
+    PointCloudScene* pScene = GetPointCloudSceneP();
+    if(nullptr != pScene)
+        {
+        DRange3d pcRange;
+        pScene->GetRange(pcRange, true);
+        DRange3d pcRangeWorld;
+        GetSceneToWorld().Multiply(pcRangeWorld, pcRange);
+
+        ElementAlignedBox3d box;
+        box.InitFrom(pcRangeWorld.low, pcRangeWorld.high);
+        context.ExtendFitRange(box, Transform::FromIdentity());
+        }
     }
 
 //----------------------------------------------------------------------------------------
@@ -98,24 +157,28 @@ PointCloudSceneP PointCloudModel::GetPointCloudSceneP() const
 //----------------------------------------------------------------------------------------
 void PointCloudModel::_AddSceneGraphics(Dgn::SceneContextR context) const
     {
-    if (GetPointCloudSceneP() != nullptr)
-        {
-        RefCountedPtr<PointCloudProgressiveDisplay> display = new PointCloudProgressiveDisplay(*this);
-        display->DrawView(context);
-        }
+    if (GetPointCloudSceneP() == nullptr || NULL == context.GetViewport() ||
+        !PointCloudProgressiveDisplay::ShouldDrawInContext(context))
+        return;
+
+    PtViewport* ptViewport = GetPtViewportP(context.GetViewportR());
+    if (nullptr == ptViewport)
+        return;     // We ran out of viewport.
+
+    RefCountedPtr<PointCloudProgressiveDisplay> display = new PointCloudProgressiveDisplay(*this, *ptViewport);
+    display->DrawView(context);
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     5/2015
 //----------------------------------------------------------------------------------------
-DRange3d PointCloudModel::GetSceneRange()
+DRange3d PointCloudModel::GetSceneRange() const
     {
     DRange3d range = DRange3d::From (0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
     if (GetPointCloudSceneP() != nullptr)
-        {
-        GetPointCloudSceneP()->GetRange (range, false);
-        }
-    return DRange3d(range);
+        GetPointCloudSceneP()->GetRange (range, true);
+        
+    return range;
     }
 
 //----------------------------------------------------------------------------------------
