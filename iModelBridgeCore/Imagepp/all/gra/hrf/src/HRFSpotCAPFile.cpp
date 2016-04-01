@@ -247,7 +247,7 @@ bool HRFSpotCAPCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         goto WRAPUP;
 
     BeStringUtilities::Strupr(Header);
-    ValueStartPos = strstr((char*)Header, "SCENE");
+    ValueStartPos = strstr(Header.get(), "SCENE");
     if (ValueStartPos != NULL)
         {
         ValueStartPos += 5;
@@ -269,7 +269,7 @@ bool HRFSpotCAPCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                 Path = Path.substr(0, SlashPos);
 
 
-            Utf8String SceneNumberStr = SceneNumber;
+            Utf8String SceneNumberStr = SceneNumber.get();
 
             // Compose url for .hdr, and .bnd files
             Utf8String FileName = Utf8String(HFCURLFile::s_SchemeName() + "://")
@@ -525,7 +525,7 @@ bool HRFSpotCAPFile::ReadFilHeader()
     m_pFilFile->Read(Header, HeaderLength);
 
     BeStringUtilities::Strupr(Header);
-    ValueStartPos = strstr((char*)Header, "SCENE");
+    ValueStartPos = strstr(Header.get(), "SCENE");
     while(ValueStartPos != NULL)
         {
         //seek the end of SCENE
@@ -537,7 +537,7 @@ bool HRFSpotCAPFile::ReadFilHeader()
         memcpy(SceneNumber, ValueStartPos, 2);
         if(atoi(SceneNumber) >= 0 && atoi(SceneNumber) <=99 )
             {
-            Utf8String SceneNumberStr = SceneNumber;
+            Utf8String SceneNumberStr = SceneNumber.get();
             m_SceneNumbers.push_back(SceneNumberStr);
             }
         ValueStartPos = strstr(ValueStartPos, "SCENE");
