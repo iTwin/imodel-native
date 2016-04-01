@@ -28,6 +28,14 @@ void ImsClient::InitializeShared(ClientInfoPtr info, IHttpHandlerPtr httpHandler
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Grigas.Petraitis                03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void ImsClient::UnitializeShared()
+    {
+    s_client = nullptr;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 ImsClientPtr ImsClient::GetShared()
