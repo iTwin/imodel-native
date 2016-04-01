@@ -2499,8 +2499,13 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                 break;
                 }
 
-            case GeometryStreamIO::OpCode::ParasolidBRep:
             case GeometryStreamIO::OpCode::OpenCascadeBRep:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::OpenCascadeBRep\n").c_str());
+                break;
+                }
+
+            case GeometryStreamIO::OpCode::ParasolidBRep:
                 {
                 output._DoOutputLine(Utf8PrintfString("OpCode::ParasolidBRep\n").c_str());
                 break;

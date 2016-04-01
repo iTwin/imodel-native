@@ -293,6 +293,7 @@ DGNPLATFORM_EXPORT static ISolidKernelEntityPtr CreateNewEntity(TopoDS_Shape con
 DGNPLATFORM_EXPORT static TopoDS_Shape const* GetShape(ISolidKernelEntityCR);
 DGNPLATFORM_EXPORT static TopoDS_Shape* GetShapeP(ISolidKernelEntityR);
 DGNPLATFORM_EXPORT static PolyfaceHeaderPtr IncrementalMesh(ISolidKernelEntityCR, IFacetOptionsR);
+DGNPLATFORM_EXPORT static bool IntersectRay(ISolidKernelEntityCR, DRay3dCR, bvector<DPoint3d>& points, bvector<DVec3d>& normals);
 };
 
 END_BENTLEY_DGN_NAMESPACE
