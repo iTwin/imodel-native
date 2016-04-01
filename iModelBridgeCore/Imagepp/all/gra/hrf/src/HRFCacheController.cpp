@@ -19,14 +19,13 @@
 /**-----------------------------------------------------------------------------
  Public constructor of the class.
 ------------------------------------------------------------------------------*/
-HRFCacheController::HRFCacheController(const HFCPtr<HFCURL> & pi_CachePath,
-                                       bool                  pi_ScanSubDir)
+HRFCacheController::HRFCacheController(BeFileNameCR pi_CachePath, bool pi_ScanSubDir)
     :m_DirCachePath(pi_CachePath),
      m_ScanSubDir(pi_ScanSubDir),
      m_MaxCacheSize(UINT64_MAX),
      m_FilesOlderThan(UINT32_MAX)       // ~68 years
     {
-    HPRECONDITION(pi_CachePath->IsCompatibleWith(HFCURLFile::CLASS_ID));
+    BeAssert(pi_CachePath.IsDirectory());
     }
 
 
@@ -79,11 +78,6 @@ const HRFCacheController::MoveFolderList& HRFCacheController::GetMoveFolderList(
 
 void HRFCacheController::SetMoveFolderList(const HRFCacheController::MoveFolderList& pi_MoveFolderList)
     {
-#ifdef __HMR_DEBUG
-    for(MoveFolderList::const_iterator Itr(pi_MoveFolderList.begin()); Itr != pi_MoveFolderList.end(); ++Itr)
-        HPRECONDITION((*Itr)->IsCompatibleWith(HFCURLFile::CLASS_ID));
-#endif
-
     m_MoveFolderList = pi_MoveFolderList;
     }
 
@@ -99,21 +93,14 @@ void HRFCacheController::Control(int32_t pi_CacheControlFlags)
         return;
         }
 
-    WString Path(( (HFCURLFile&)*m_DirCachePath).GetHost() +
-                 WString(L"\\") +
-                 ((HFCURLFile&)*m_DirCachePath).GetPath());
-
     // Get cache file list sorted by access time.
     FileEntryList fileEntryList;
-    GetFileInfo(Path, &fileEntryList);
+    GetFileInfo(m_DirCachePath, &fileEntryList);
 
     // Append move folders to the file entry list
     for(MoveFolderList::const_iterator Itr(m_MoveFolderList.begin()); Itr != m_MoveFolderList.end(); ++Itr)
         {
-        HFCPtr<HFCURL> pUrl(*Itr);
-        Path = ( (HFCURLFile&)*pUrl).GetHost() + WString(L"\\") + ((HFCURLFile&)*pUrl).GetPath();
-
-        GetFileInfo(Path, &fileEntryList);
+        GetFileInfo(*Itr, &fileEntryList);
         }
 
     // Delete old files
@@ -128,7 +115,7 @@ void HRFCacheController::Control(int32_t pi_CacheControlFlags)
             {
             FileEntry fileEntry(*OldItr);
 
-            if(BeFileName::BeDeleteFile(fileEntry.m_FileName.c_str()) == BeFileNameStatus::Success)
+            if(fileEntry.m_FileName.BeDeleteFile() == BeFileNameStatus::Success)
                 {
                 OldItr = fileEntryList.erase(OldItr);
                 }
@@ -154,8 +141,7 @@ void HRFCacheController::Control(int32_t pi_CacheControlFlags)
         while(DeleteItr != fileEntryList.end() && CacheSize > m_MaxCacheSize)
             {
             FileEntry fileEntry(*DeleteItr);
-
-            if(BeFileName::BeDeleteFile(fileEntry.m_FileName.c_str()) == BeFileNameStatus::Success)
+            if(fileEntry.m_FileName.BeDeleteFile() == BeFileNameStatus::Success)
                 {
                 CacheSize-=fileEntry.m_FileSize;
                 DeleteItr = fileEntryList.erase(DeleteItr);
@@ -170,21 +156,21 @@ void HRFCacheController::Control(int32_t pi_CacheControlFlags)
     // Move cache folder
     if(pi_CacheControlFlags & CACHE_CONTROL_MOVE && !m_MoveFolderList.empty())
         {
-        WString currentFolder(((const HFCURLFile&)*m_DirCachePath).GetHost() + WString(L"\\") + ((const HFCURLFile&)*m_DirCachePath).GetPath());
-
         // Move all files to the current folder
         for(FileEntryList::iterator MoveItr(fileEntryList.begin()); MoveItr != fileEntryList.end(); ++MoveItr)
             {
             FileEntry  fileEntry(*MoveItr);
-            HFCURLFile fileURL(WString(L"file://") + fileEntry.m_FileName.c_str());
+            
+            BeFileName filenameAndExt(fileEntry.m_FileName.GetFileNameAndExtension());
 
-            WString newFilename(currentFolder + L"\\" + fileURL.GetFilename());
+            BeFileName newFilename = m_DirCachePath;
+            newFilename.AppendToPath(filenameAndExt);
 
             // Move file only if needed
-            if(BeStringUtilities::Wcsicmp(fileEntry.m_FileName.c_str(), newFilename.c_str()) != 0)
+            if(!newFilename.EqualsI(fileEntry.m_FileName))
                 {
-                BeFileName::BeDeleteFile(newFilename.c_str()); // Delete old one that may exist in the destination folder.
-                BeFileNameStatus status = BeFileName::BeMoveFile(fileEntry.m_FileName.c_str(), newFilename.c_str());
+                newFilename.BeDeleteFile(); // Delete old one that may exist in the destination folder.
+                BeFileNameStatus status = BeFileName::BeMoveFile(fileEntry.m_FileName, newFilename);
                 BeAssert(BeFileNameStatus::Success == status);
                 }
             }
@@ -206,22 +192,23 @@ void HRFCacheController::Control(int32_t pi_CacheControlFlags)
  @param pi_pList The list must be clear for the first call, this method add
                  all entries at the end of the list
 ------------------------------------------------------------------------------*/
-void HRFCacheController::GetFileInfo(const WString& pi_rPath, FileEntryList* pi_pFileList)
+void HRFCacheController::GetFileInfo(BeFileNameCR pi_rPath, FileEntryList* pi_pFileList)
     {
     HPRECONDITION(pi_pFileList != 0);
 
-    WString FindPath(pi_rPath + L"\\*.*");
+    BeFileName FindPath(pi_rPath);
+    FindPath.AppendToPath(L"*.*");
 
-    BeFileListIterator FileList (FindPath.c_str(), m_ScanSubDir);
+    BeFileListIterator FileList (FindPath, m_ScanSubDir);
     BeFileName fn;
     while (FileList.GetNextFileName (fn) == SUCCESS)
         {
         // Insert all the file into the list
-        if (IsCompliant(fn.GetName()))
+        if (IsCompliant(fn))
             {
             FileEntry   EntryInfo;
 
-            EntryInfo.m_FileName = fn.GetName();
+            EntryInfo.m_FileName = fn;
 
             time_t AccesTime, ModifTime;
             BeFileName::GetFileTime (NULL, &AccesTime, &ModifTime, EntryInfo.m_FileName.c_str());
@@ -243,9 +230,9 @@ void HRFCacheController::GetFileInfo(const WString& pi_rPath, FileEntryList* pi_
 
  @return bool true if the file name has the string ".cache."
 ------------------------------------------------------------------------------*/
-bool HRFCacheController::IsCompliant(const WString& pi_rFileName) const
+bool HRFCacheController::IsCompliant(BeFileNameCR pi_rFileName) const
     {
     HPRECONDITION(!pi_rFileName.empty());
 
-    return CaseInsensitiveStringTools().Find(pi_rFileName, L".cache.") != WString::npos;
+    return pi_rFileName.ContainsI(L".cache.");
     }

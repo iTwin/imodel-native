@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRATIFFFileTransactionRecorder.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:> Class : HRATIFFFileTransactionRecorder
@@ -61,7 +61,7 @@ private:
     // members
     HAutoPtr<HTIFFFileRecorder>     m_pUndoRecorder;
     HAutoPtr<HTIFFFileRecorder>     m_pRedoRecorder;
-    WString                         m_FileName;
+    Utf8String                         m_FileName;
     bool                           m_NewFile;
 
     void            AcquiredRecorders();

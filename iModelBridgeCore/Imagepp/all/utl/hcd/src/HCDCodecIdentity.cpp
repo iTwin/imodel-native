@@ -13,7 +13,7 @@
 
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 
-#define HCD_CODEC_NAME L"Uncompressed"
+#define HCD_CODEC_NAME "Uncompressed"
 //-----------------------------------------------------------------------------
 // public
 // Default constructor
@@ -134,7 +134,7 @@ size_t HCDCodecIdentity::GetSubsetMaxCompressedSize() const
 // public
 // SetName
 //-----------------------------------------------------------------------------
-void HCDCodecIdentity::SetName(const WString& pi_rName)
+void HCDCodecIdentity::SetName(const Utf8String& pi_rName)
     {
     m_CodecName = pi_rName;
     }

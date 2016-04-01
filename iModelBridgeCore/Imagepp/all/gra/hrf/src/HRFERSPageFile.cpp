@@ -264,24 +264,21 @@ HFCPtr<HFCURL> HRFERSPageFileCreator::ComposeURLFor(const HFCPtr<HFCURL>& pi_rpU
     if (!pi_rpURLFileName->IsCompatibleWith(HFCURLFile::CLASS_ID))
         throw HFCInvalidUrlForSisterFileException(pi_rpURLFileName->GetURL());
 
-    // Decompose the file name
-    WString DriveDirName;
-
     // Extract the Path
-    WString Path(((HFCPtr<HFCURLFile>&)pi_rpURLFileName)->GetHost()+WString(L"\\")+((HFCPtr<HFCURLFile>&)pi_rpURLFileName)->GetPath());
+    Utf8String Path(((HFCPtr<HFCURLFile>&)pi_rpURLFileName)->GetAbsoluteFileName());
 
     // Find the file extension
-    WString::size_type DotPos = Path.rfind(L'.');
+    Utf8String::size_type DotPos = Path.rfind('.');
 
     // Extract the extension and the drive dir name
-    if (DotPos != WString::npos)
+    if (DotPos != Utf8String::npos)
         {
         // Compose the decoration file name
-        DriveDirName = Path.substr(0, DotPos);
-        URLForPageFile = new HFCURLFile(WString(HFCURLFile::s_SchemeName() + L"://") + DriveDirName + WString(L".ers"));
+        Utf8String DriveDirName = Path.substr(0, DotPos);
+        URLForPageFile = new HFCURLFile(Utf8String(HFCURLFile::s_SchemeName() + "://") + DriveDirName + Utf8String(".ers"));
         }
     else
-        URLForPageFile = new HFCURLFile(WString(HFCURLFile::s_SchemeName() + L"://") + Path + WString(L".ers"));
+        URLForPageFile = new HFCURLFile(Utf8String(HFCURLFile::s_SchemeName() + "://") + Path + Utf8String(".ers"));
 
     return URLForPageFile;
     }
@@ -361,8 +358,7 @@ void HRFERSPageFile::WriteToDisk()
 // Private
 // ReadEntryValue
 //-----------------------------------------------------------------------------
-bool HRFERSPageFile::ReadEntryValue(const string& pi_rStringToParse,
-                                     WString&      po_rValue) const
+bool HRFERSPageFile::ReadEntryValue(const string& pi_rStringToParse, AStringR po_rValue) const
     {
     bool IsEntryFound = false;
 
@@ -372,11 +368,11 @@ bool HRFERSPageFile::ReadEntryValue(const string& pi_rStringToParse,
         {
         pEntryValue++;
 
-        string EntryValue = string(pEntryValue);
+        string EntryValue = pEntryValue;
 
         CleanUpString(EntryValue);
 
-        po_rValue = WString(EntryValue.c_str(),false);
+        po_rValue = EntryValue.c_str();
 
         IsEntryFound = true;
         }
@@ -474,7 +470,7 @@ void HRFERSPageFile::ReadFile()
     HPRECONDITION(m_pFile != 0);
 
     HFCIniFileBrowser InitFile(m_pFile);
-    WString           EntryValue;
+    AString           EntryValue;
     string            LineRead;
 
     uint32_t         DatasetHeadRequiredEntries = 0;
@@ -495,50 +491,45 @@ void HRFERSPageFile::ReadFile()
                     {
                     DatasetHeadRequiredEntries |= VERSION_FLAG;
 
-                    ReadEntryValue(LineRead.substr(strlen(VERSION)),
-                                   m_ERSInfo.m_Version);
+                    ReadEntryValue(LineRead.substr(strlen(VERSION)), m_ERSInfo.m_Version);
                     }
                 else if (BeStringUtilities::Strnicmp(LineRead.c_str(), DATASET_TYPE, strlen(DATASET_TYPE)) == 0)
                     {
                     DatasetHeadRequiredEntries |= DATASET_TYPE_FLAG;
 
-                    ReadEntryValue(LineRead.substr(strlen(DATASET_TYPE)),
-                                   EntryValue);
+                    ReadEntryValue(LineRead.substr(strlen(DATASET_TYPE)), EntryValue);
 
-                    if (EntryValue == L"ERStorage")
+                    if (EntryValue == "ERStorage")
                         {
                         m_ERSInfo.m_DatasetType = ERSDatasetHeaderInfo::ERSTORAGE;
                         }
-                    else if (EntryValue == L"Translated")
+                    else if (EntryValue == "Translated")
                         {
                         m_ERSInfo.m_DatasetType = ERSDatasetHeaderInfo::TRANSLATED;
                         }
                     else
                         {
-                        throw HRFSisterFileInvalidParamValueException(m_pFile->GetURL()->GetURL(),
-                                                        WString(DATASET_TYPE,false).c_str());
+                        throw HRFSisterFileInvalidParamValueException(m_pFile->GetURL()->GetURL(), DATASET_TYPE);
                         }
                     }
                 else if (BeStringUtilities::Strnicmp(LineRead.c_str(), DATATYPE, strlen(DATATYPE)) == 0)
                     {
                     DatasetHeadRequiredEntries |= DATATYPE_FLAG;
 
-                    ReadEntryValue(LineRead.substr(strlen(DATATYPE)),
-                                   EntryValue);
+                    ReadEntryValue(LineRead.substr(strlen(DATATYPE)), EntryValue);
 
-                    if (EntryValue == L"Raster")
+                    if (EntryValue == "Raster")
                         {
                         m_ERSInfo.m_DataType = ERSDatasetHeaderInfo::RASTER;
                         }
-                    else if (EntryValue == L"Vector")
+                    else if (EntryValue == "Vector")
                         {
                         m_ERSInfo.m_DataType = ERSDatasetHeaderInfo::VECTOR;
                         }
                     else
                         {
                         //throw exception
-                        throw HRFSisterFileInvalidParamValueException(m_pFile->GetURL()->GetURL(),
-                                                        WString(DATATYPE,false).c_str());
+                        throw HRFSisterFileInvalidParamValueException(m_pFile->GetURL()->GetURL(), DATATYPE);
                         }
                     }
                 else if (BeStringUtilities::Strnicmp(LineRead.c_str(), BYTEORDER, strlen(BYTEORDER)) == 0)
@@ -562,21 +553,19 @@ void HRFERSPageFile::ReadFile()
 
             if (LineRead != (string(DATASET_HEADER_BLOCK) + string(END_BLOCK_SUFFIX)))
                 {
-                WString ParamGroup = WString(DATASET_HEADER_BLOCK,false) +
-                                     WString(END_BLOCK_SUFFIX,false);
+                Utf8String ParamGroup = Utf8String(DATASET_HEADER_BLOCK) +
+                                     Utf8String(END_BLOCK_SUFFIX);
 
-                throw HRFSisterFileMissingParamGroupException(m_pFile->GetURL()->GetURL(),
-                                                ParamGroup.c_str());
+                throw HRFSisterFileMissingParamGroupException(m_pFile->GetURL()->GetURL(), ParamGroup.c_str());
                 }
             }
         else
             {
             if (LineRead.size() != 0)
                 {
-                WString ParamGroup(LineRead.c_str(),false);
+                Utf8String ParamGroup(LineRead.c_str());
 
-                throw HRFERSDataFoundOutsideDatasetHeaderException(m_pFile->GetURL()->GetURL(),
-                                                ParamGroup.c_str());
+                throw HRFERSDataFoundOutsideDatasetHeaderException(m_pFile->GetURL()->GetURL(), ParamGroup.c_str());
                 }
             }
 
@@ -595,7 +584,7 @@ void HRFERSPageFile::ReadFile()
 //-----------------------------------------------------------------------------
 void HRFERSPageFile::ReadCoordinateSpaceBlock(uint32_t& po_rCoordSpaceRequiredEntries)
     {
-    WString           EntryValue;
+    AString           EntryValue;
     string            LineRead;
 
     do
@@ -606,8 +595,7 @@ void HRFERSPageFile::ReadCoordinateSpaceBlock(uint32_t& po_rCoordSpaceRequiredEn
             {
             po_rCoordSpaceRequiredEntries |= DATUM_FLAG;
 
-            ReadEntryValue(LineRead.substr(strlen(DATUM)),
-                           m_ERSInfo.m_CoordSpaceInfo.m_Datum);
+            ReadEntryValue(LineRead.substr(strlen(DATUM)), m_ERSInfo.m_CoordSpaceInfo.m_Datum);
             }
         else if (BeStringUtilities::Strnicmp(LineRead.c_str(), PROJECTION, strlen(PROJECTION)) == 0)
             {
@@ -620,39 +608,35 @@ void HRFERSPageFile::ReadCoordinateSpaceBlock(uint32_t& po_rCoordSpaceRequiredEn
             {
             po_rCoordSpaceRequiredEntries |= COORDINATE_TYPE_FLAG;
 
-            ReadEntryValue(LineRead.substr(strlen(COORDINATE_TYPE)),
-                           EntryValue);
+            ReadEntryValue(LineRead.substr(strlen(COORDINATE_TYPE)), EntryValue);
 
-            if (EntryValue == L"RAW")
+            if (EntryValue == "RAW")
                 {
                 m_ERSInfo.m_CoordSpaceInfo.m_CoordinateType = ERSCoordinateSpaceInfo::RAW;
                 }
-            else if (EntryValue == L"EN")
+            else if (EntryValue == "EN")
                 {
                 m_ERSInfo.m_CoordSpaceInfo.m_CoordinateType = ERSCoordinateSpaceInfo::EN;
                 }
             }
         else if (BeStringUtilities::Strnicmp(LineRead.c_str(), UNITS, strlen(UNITS)) == 0)
             {
-            m_ERSInfo.m_CoordSpaceInfo.m_pUnits = new WString;
+            m_ERSInfo.m_CoordSpaceInfo.m_pUnits = new AString;
 
-            ReadEntryValue(LineRead.substr(strlen(UNITS)),
-                           *m_ERSInfo.m_CoordSpaceInfo.m_pUnits);
+            ReadEntryValue(LineRead.substr(strlen(UNITS)), *m_ERSInfo.m_CoordSpaceInfo.m_pUnits);
             }
         else if (BeStringUtilities::Strnicmp(LineRead.c_str(), ROTATION, strlen(ROTATION)) == 0)
             {
             m_ERSInfo.m_CoordSpaceInfo.m_pRotation = new double;
 
-            ReadEntryValue(LineRead.substr(strlen(ROTATION)),
-                           EntryValue);
+            ReadEntryValue(LineRead.substr(strlen(ROTATION)), EntryValue);
 
-            bool ConvSuccess = ConvertDegMinSecToDeg(EntryValue,
-                                                      *m_ERSInfo.m_CoordSpaceInfo.m_pRotation);
+            Utf8String valueUtf8(EntryValue.c_str());
+            bool ConvSuccess = ConvertDegMinSecToDeg(valueUtf8, *m_ERSInfo.m_CoordSpaceInfo.m_pRotation);
 
             if (ConvSuccess == false)
                 {
-                throw HRFSisterFileInvalidParamValueException(m_pFile->GetURL()->GetURL(),
-                                                WString(ROTATION,false).c_str());
+                throw HRFSisterFileInvalidParamValueException(m_pFile->GetURL()->GetURL(), ROTATION);
                 }
             }
         }
@@ -661,11 +645,9 @@ void HRFERSPageFile::ReadCoordinateSpaceBlock(uint32_t& po_rCoordSpaceRequiredEn
 
     if (LineRead != (string(COORDINATE_SPACE_BLOCK) + string(END_BLOCK_SUFFIX)))
         {
-        WString ParamGroup = WString(COORDINATE_SPACE_BLOCK,false) +
-                             WString(END_BLOCK_SUFFIX,false);
+        Utf8String ParamGroup = Utf8String(COORDINATE_SPACE_BLOCK) + Utf8String(END_BLOCK_SUFFIX);
 
-        throw HRFSisterFileMissingParamGroupException(m_pFile->GetURL()->GetURL(),
-                                        ParamGroup.c_str());
+        throw HRFSisterFileMissingParamGroupException(m_pFile->GetURL()->GetURL(),ParamGroup.c_str());
         }
     }
 
@@ -676,7 +658,7 @@ void HRFERSPageFile::ReadCoordinateSpaceBlock(uint32_t& po_rCoordSpaceRequiredEn
 //-----------------------------------------------------------------------------
 void HRFERSPageFile::ReadRasterInfoBlock(uint32_t& po_rRasterInfoRequiredEntries)
     {
-    WString           EntryValue;
+    AString           EntryValue;
     string            LineRead;
 
     do
@@ -703,21 +685,17 @@ void HRFERSPageFile::ReadRasterInfoBlock(uint32_t& po_rRasterInfoRequiredEntries
             {
             m_ERSInfo.m_RasterInfo.m_pRegistrationCellX = new double;
 
-            ReadEntryValue(LineRead.substr(strlen(REGISTRATION_CELL_X)),
-                           EntryValue);
+            ReadEntryValue(LineRead.substr(strlen(REGISTRATION_CELL_X)), EntryValue);
 
-            ConvertStringToDouble(EntryValue,
-                                  m_ERSInfo.m_RasterInfo.m_pRegistrationCellX);
+            ConvertStringToDouble(EntryValue, m_ERSInfo.m_RasterInfo.m_pRegistrationCellX);
             }
         else if (BeStringUtilities::Strnicmp(LineRead.c_str(), REGISTRATION_CELL_Y, strlen(REGISTRATION_CELL_Y)) == 0)
             {
             m_ERSInfo.m_RasterInfo.m_pRegistrationCellY = new double;
 
-            ReadEntryValue(LineRead.substr(strlen(REGISTRATION_CELL_Y)),
-                           EntryValue);
+            ReadEntryValue(LineRead.substr(strlen(REGISTRATION_CELL_Y)), EntryValue);
 
-            ConvertStringToDouble(EntryValue,
-                                  m_ERSInfo.m_RasterInfo.m_pRegistrationCellY);
+            ConvertStringToDouble(EntryValue, m_ERSInfo.m_RasterInfo.m_pRegistrationCellY);
             }
         else if (LineRead == (string(CELL_INFO_BLOCK) + string(BEGIN_BLOCK_SUFFIX)))
             {
@@ -733,11 +711,9 @@ void HRFERSPageFile::ReadRasterInfoBlock(uint32_t& po_rRasterInfoRequiredEntries
 
     if (LineRead != (string(RASTER_INFO_BLOCK) + string(END_BLOCK_SUFFIX)))
         {
-        WString ParamGroup = WString(RASTER_INFO_BLOCK,false) +
-                             WString(END_BLOCK_SUFFIX,false);
+        Utf8String ParamGroup = Utf8String(RASTER_INFO_BLOCK) + Utf8String(END_BLOCK_SUFFIX);
 
-        throw HRFSisterFileMissingParamGroupException(m_pFile->GetURL()->GetURL(),
-                                        ParamGroup.c_str());
+        throw HRFSisterFileMissingParamGroupException(m_pFile->GetURL()->GetURL(), ParamGroup.c_str());
         }
     }
 
@@ -748,7 +724,7 @@ void HRFERSPageFile::ReadRasterInfoBlock(uint32_t& po_rRasterInfoRequiredEntries
 //-----------------------------------------------------------------------------
 void HRFERSPageFile::ReadCellInfoBlock()
     {
-    WString           EntryValue;
+    AString           EntryValue;
     string            LineRead;
 
     m_ERSInfo.m_RasterInfo.m_pCellInfo = new ERSCellInfo();
@@ -759,31 +735,24 @@ void HRFERSPageFile::ReadCellInfoBlock()
 
         if (BeStringUtilities::Strnicmp(LineRead.c_str(), X_DIMENSION, strlen(X_DIMENSION)) == 0)
             {
-            ReadEntryValue(LineRead.substr(strlen(X_DIMENSION)),
-                           EntryValue);
+            ReadEntryValue(LineRead.substr(strlen(X_DIMENSION)), EntryValue);
 
-            ConvertStringToDouble(EntryValue,
-                                  &(m_ERSInfo.m_RasterInfo.m_pCellInfo->m_XDimension));
+            ConvertStringToDouble(EntryValue, &(m_ERSInfo.m_RasterInfo.m_pCellInfo->m_XDimension));
             }
         else if (BeStringUtilities::Strnicmp(LineRead.c_str(), Y_DIMENSION, strlen(Y_DIMENSION)) == 0)
             {
-            ReadEntryValue(LineRead.substr(strlen(Y_DIMENSION)),
-                           EntryValue);
+            ReadEntryValue(LineRead.substr(strlen(Y_DIMENSION)), EntryValue);
 
-            ConvertStringToDouble(EntryValue,
-                                  &(m_ERSInfo.m_RasterInfo.m_pCellInfo->m_YDimension));
+            ConvertStringToDouble(EntryValue, &(m_ERSInfo.m_RasterInfo.m_pCellInfo->m_YDimension));
             }
         }
-    while (LineRead != (string(CELL_INFO_BLOCK) + string(END_BLOCK_SUFFIX)) &&
-           (m_pFile->EndOfFile() == false));
+    while (LineRead != (string(CELL_INFO_BLOCK) + string(END_BLOCK_SUFFIX)) && (m_pFile->EndOfFile() == false));
 
     if (LineRead != (string(CELL_INFO_BLOCK) + string(END_BLOCK_SUFFIX)))
         {
-        WString ParamGroup = WString(CELL_INFO_BLOCK,false) +
-                             WString(END_BLOCK_SUFFIX,false);
+        Utf8String ParamGroup = Utf8String(CELL_INFO_BLOCK) + Utf8String(END_BLOCK_SUFFIX);
 
-        throw HRFSisterFileMissingParamGroupException(m_pFile->GetURL()->GetURL(),
-                                        ParamGroup.c_str());
+        throw HRFSisterFileMissingParamGroupException(m_pFile->GetURL()->GetURL(), ParamGroup.c_str());
         }
     }
 
@@ -794,7 +763,7 @@ void HRFERSPageFile::ReadCellInfoBlock()
 //-----------------------------------------------------------------------------
 void HRFERSPageFile::ReadRegistrationCoordBlock()
     {
-    WString           EntryValue;
+    AString           EntryValue;
     string            LineRead;
     ERSRegistrationCoord* pRegCoord = new ERSRegistrationCoord;
 
@@ -857,12 +826,12 @@ void HRFERSPageFile::ReadRegistrationCoordBlock()
             ReadEntryValue(LineRead.substr(strlen(LONGITUDE)),
                            EntryValue);
 
-            bool ConvSuccess = ConvertDegMinSecToDeg(EntryValue,
+            Utf8String valueUtf8(EntryValue.c_str());
+            bool ConvSuccess = ConvertDegMinSecToDeg(valueUtf8,
                                                       pRegCoord->m_X);
             if (ConvSuccess == false)
                 {
-                throw HRFSisterFileInvalidParamValueException(m_pFile->GetURL()->GetURL(),
-                                                WString(LONGITUDE,false).c_str());
+                throw HRFSisterFileInvalidParamValueException(m_pFile->GetURL()->GetURL(), LONGITUDE);
                 }
             }
         else if (BeStringUtilities::Strnicmp(LineRead.c_str(), LATITUDE, strlen(LATITUDE)) == 0)
@@ -874,12 +843,12 @@ void HRFERSPageFile::ReadRegistrationCoordBlock()
             ReadEntryValue(LineRead.substr(strlen(LATITUDE)),
                            EntryValue);
 
-            bool ConvSuccess = ConvertDegMinSecToDeg(EntryValue,
+            Utf8String valueUtf8(EntryValue.c_str());
+            bool ConvSuccess = ConvertDegMinSecToDeg(valueUtf8,
                                                       pRegCoord->m_Y);
             if (ConvSuccess == false)
                 {
-                throw HRFSisterFileInvalidParamValueException(m_pFile->GetURL()->GetURL(),
-                                                WString(LATITUDE,false).c_str());
+                throw HRFSisterFileInvalidParamValueException(m_pFile->GetURL()->GetURL(), LATITUDE);
                 }
             }
         }
@@ -888,8 +857,7 @@ void HRFERSPageFile::ReadRegistrationCoordBlock()
 
     if (LineRead != (string(REGISTRATION_COORD_BLOCK) + string(END_BLOCK_SUFFIX)))
         {
-        WString ParamGroup = WString(REGISTRATION_COORD_BLOCK,false) +
-                             WString(END_BLOCK_SUFFIX,false);
+        Utf8String ParamGroup = Utf8String(REGISTRATION_COORD_BLOCK) + Utf8String(END_BLOCK_SUFFIX);
 
         throw HRFSisterFileMissingParamGroupException(m_pFile->GetURL()->GetURL(),
                                         ParamGroup.c_str());
@@ -911,33 +879,27 @@ void HRFERSPageFile::ValidateERSFile(uint32_t pi_DatasetHeadRequiredEntries,
         {
         if ((pi_DatasetHeadRequiredEntries & VERSION_FLAG) == 0)
             {
-            throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(),
-                                            WString(VERSION,false).c_str());
+            throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(), VERSION);
             }
         else if ((pi_DatasetHeadRequiredEntries & DATASET_TYPE_FLAG) == 0)
             {
-            throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(),
-                                            WString(DATASET_TYPE,false).c_str());
+            throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(), DATASET_TYPE);
             }
         else if ((pi_DatasetHeadRequiredEntries & DATATYPE_FLAG) == 0)
             {
-            throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(),
-                                            WString(DATATYPE,false).c_str());
+            throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(), DATATYPE);
             }
         else if ((pi_DatasetHeadRequiredEntries & BYTEORDER_FLAG) == 0)
             {
-            throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(),
-                                            WString(BYTEORDER,false).c_str());
+            throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(), BYTEORDER);
             }
         else if ((pi_DatasetHeadRequiredEntries & COORDINATE_SPACE_BLOCK_FLAG) == 0)
             {
-            throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(),
-                                            WString(COORDINATE_SPACE_BLOCK,false));
+            throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(), COORDINATE_SPACE_BLOCK);
             }
         else if ((pi_DatasetHeadRequiredEntries & RASTER_INFO_BLOCK_FLAG) == 0)
             {
-            throw HRFSisterFileMissingParamGroupException(m_pFile->GetURL()->GetURL(),
-                                            WString(RASTER_INFO_BLOCK,false).c_str());
+            throw HRFSisterFileMissingParamGroupException(m_pFile->GetURL()->GetURL(), RASTER_INFO_BLOCK);
             }
         }
 
@@ -945,18 +907,15 @@ void HRFERSPageFile::ValidateERSFile(uint32_t pi_DatasetHeadRequiredEntries,
         {
         if ((pi_CoordSpaceRequiredEntries & DATUM_FLAG) == 0)
             {
-            throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(),
-                                            WString(DATUM,false));
+            throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(), DATUM);
             }
         else if ((pi_CoordSpaceRequiredEntries & PROJECTION_FLAG) == 0)
             {
-            throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(),
-                                            WString (PROJECTION,false).c_str());
+            throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(),PROJECTION);
             }
         else if ((pi_CoordSpaceRequiredEntries & COORDINATE_TYPE_FLAG) == 0)
             {
-            throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(),
-                                            WString(COORDINATE_TYPE,false).c_str());
+            throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(), COORDINATE_TYPE);
             }
         }
 
@@ -964,30 +923,25 @@ void HRFERSPageFile::ValidateERSFile(uint32_t pi_DatasetHeadRequiredEntries,
         {
         if ((pi_RasterInfoRequiredEntries & CELL_TYPE_FLAG) == 0)
             {
-            throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(),
-                                            WString(CELL_TYPE,false).c_str());
+            throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(), CELL_TYPE);
             }
         else if ((pi_RasterInfoRequiredEntries & NR_OF_LINES_FLAG) == 0)
             {
-            throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(),
-                                            WString(NR_OF_LINES,false).c_str());
+            throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(), NR_OF_LINES);
             }
         else if ((pi_RasterInfoRequiredEntries & NR_OF_CELLS_PER_LINE_FLAG) == 0)
             {
-            throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(),
-                                            WString(NR_OF_CELLS_PER_LINE,false).c_str());
+            throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(), NR_OF_CELLS_PER_LINE);
             }
         else if ((pi_RasterInfoRequiredEntries & NR_OF_BANDS_FLAG) == 0)
             {
-            throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(),
-                                            WString(NR_OF_BANDS,false).c_str());
+            throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(), NR_OF_BANDS);
             }
         }
 
     if (m_ERSInfo.m_DataType != ERSDatasetHeaderInfo::RASTER)
         {
-        throw HRFSisterFileInvalidParamValueException(m_pFile->GetURL()->GetURL(),
-                                        WString (DATATYPE,false).c_str());
+        throw HRFSisterFileInvalidParamValueException(m_pFile->GetURL()->GetURL(), DATATYPE);
         }
 
     //The registration coordinate type must match the
@@ -1004,9 +958,9 @@ void HRFERSPageFile::ValidateERSFile(uint32_t pi_DatasetHeadRequiredEntries,
         {
         if (m_ERSInfo.m_RasterInfo.m_pCellInfo->m_XDimension <= 0)
             {
-            WString Param = WString(CELL_INFO_BLOCK,false) +
-                            WString(L"::") +
-                            WString(X_DIMENSION,false);
+            Utf8String Param = Utf8String(CELL_INFO_BLOCK) +
+                            Utf8String("::") +
+                            Utf8String(X_DIMENSION);
 
             throw HRFSisterFileInvalidParamValueException(m_pFile->GetURL()->GetURL(),
                                             Param.c_str());
@@ -1014,9 +968,9 @@ void HRFERSPageFile::ValidateERSFile(uint32_t pi_DatasetHeadRequiredEntries,
 
         if (m_ERSInfo.m_RasterInfo.m_pCellInfo->m_YDimension <= 0)
             {
-            WString Param = WString(CELL_INFO_BLOCK,false) +
-                            WString(L"::") +
-                            WString(Y_DIMENSION,false);
+            Utf8String Param = Utf8String(CELL_INFO_BLOCK) +
+                            Utf8String("::") +
+                            Utf8String(Y_DIMENSION);
 
             throw HRFSisterFileInvalidParamValueException(m_pFile->GetURL()->GetURL(),
                                             Param.c_str());
@@ -1027,7 +981,7 @@ void HRFERSPageFile::ValidateERSFile(uint32_t pi_DatasetHeadRequiredEntries,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.Marchand  09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-static GeoCoordinates::BaseGCSPtr s_CreateRasterGcsFromERSIDS(WStringCR projection, WStringCR datum, WStringCR unit)
+static GeoCoordinates::BaseGCSPtr s_CreateRasterGcsFromERSIDS(CharCP projection, CharCP datum, CharCP unit)
     {
     uint32_t EPSGCodeFomrERLibrary = TIFFGeo_UserDefined;
 
@@ -1077,37 +1031,32 @@ void HRFERSPageFile::CreateDescriptor()
         Rotation = *m_ERSInfo.m_CoordSpaceInfo.m_pRotation;
         }
 
-    if (m_ERSInfo.m_CoordSpaceInfo.m_Datum != L"RAW")
+    if (m_ERSInfo.m_CoordSpaceInfo.m_Datum != "RAW")
         {
         if (m_ERSInfo.m_RasterInfo.m_pRegistrationCoord == 0)
             {
-            throw HRFSisterFileMissingParamGroupException(m_pFile->GetURL()->GetURL(),
-                                            WString(REGISTRATION_COORD_BLOCK,false).c_str());
+            throw HRFSisterFileMissingParamGroupException(m_pFile->GetURL()->GetURL(), REGISTRATION_COORD_BLOCK);
             }
-
-        WString szProjection = m_ERSInfo.m_CoordSpaceInfo.m_Projection;
 
         // We process RAW as LOCAL
-        if (szProjection == L"RAW")
+        if (m_ERSInfo.m_CoordSpaceInfo.m_Projection == "RAW")
             {
-            szProjection = L"LOCAL";
+            m_ERSInfo.m_CoordSpaceInfo.m_Projection = "LOCAL";
             }
 
-        
         // Sometimes the unit is not set
-        if (NULL == m_ERSInfo.m_CoordSpaceInfo.m_pUnits)
+        if (nullptr == m_ERSInfo.m_CoordSpaceInfo.m_pUnits)
             {
-            pBaseGCS = s_CreateRasterGcsFromERSIDS(szProjection, m_ERSInfo.m_CoordSpaceInfo.m_Datum, L"");
+            pBaseGCS = s_CreateRasterGcsFromERSIDS(m_ERSInfo.m_CoordSpaceInfo.m_Projection.c_str(), m_ERSInfo.m_CoordSpaceInfo.m_Datum.c_str(), "");
             }
         else
             {
-            pBaseGCS = s_CreateRasterGcsFromERSIDS(szProjection, m_ERSInfo.m_CoordSpaceInfo.m_Datum, *m_ERSInfo.m_CoordSpaceInfo.m_pUnits);
+            pBaseGCS = s_CreateRasterGcsFromERSIDS(m_ERSInfo.m_CoordSpaceInfo.m_Projection.c_str(), m_ERSInfo.m_CoordSpaceInfo.m_Datum.c_str(), m_ERSInfo.m_CoordSpaceInfo.m_pUnits->c_str());
             }
         }
-    else if ((NULL != m_ERSInfo.m_CoordSpaceInfo.m_pUnits) &&
-             (*m_ERSInfo.m_CoordSpaceInfo.m_pUnits.get() != WString(L"RAW")))
+    else if (nullptr != m_ERSInfo.m_CoordSpaceInfo.m_pUnits && *m_ERSInfo.m_CoordSpaceInfo.m_pUnits.get() != "RAW")
         {
-        pBaseGCS = s_CreateRasterGcsFromERSIDS(m_ERSInfo.m_CoordSpaceInfo.m_Projection, m_ERSInfo.m_CoordSpaceInfo.m_Datum, *m_ERSInfo.m_CoordSpaceInfo.m_pUnits);
+        pBaseGCS = s_CreateRasterGcsFromERSIDS(m_ERSInfo.m_CoordSpaceInfo.m_Projection.c_str(), m_ERSInfo.m_CoordSpaceInfo.m_Datum.c_str(), m_ERSInfo.m_CoordSpaceInfo.m_pUnits->c_str());
         }
 
     double RegCellX = 0.0;
@@ -1158,12 +1107,12 @@ void HRFERSPageFile::CreateDescriptor()
 // Private
 // ConvertStringToDouble
 //-----------------------------------------------------------------------------
-bool HRFERSPageFile::ConvertStringToDouble(const WString& pi_rString, double* po_pDouble) const
+bool HRFERSPageFile::ConvertStringToDouble(AStringCR pi_rString, double* po_pDouble) const
     {
     HPRECONDITION(po_pDouble != 0);
 
-    WChar* pStopPtr;
-    *po_pDouble = wcstod(pi_rString.c_str(), &pStopPtr);
+    char* pStopPtr;
+    *po_pDouble = strtod(pi_rString.c_str(), &pStopPtr);
 
     return (pStopPtr - pi_rString.c_str() == pi_rString.length());
     }

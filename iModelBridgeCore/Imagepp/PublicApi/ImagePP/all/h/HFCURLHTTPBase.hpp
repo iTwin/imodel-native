@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLHTTPBase.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -25,7 +25,7 @@ BEGIN_IMAGEPP_NAMESPACE
  @see GetURLPath
  @see GetSearchPart
 -----------------------------------------------------------------------------*/
-inline const WString& HFCURLHTTPBase::GetPath() const
+inline const Utf8String& HFCURLHTTPBase::GetPath() const
     {
     return m_Path;
     }
@@ -48,7 +48,7 @@ inline const WString& HFCURLHTTPBase::GetPath() const
  @see GetURLPath
  @see GetPath
 -----------------------------------------------------------------------------*/
-inline const WString& HFCURLHTTPBase::GetSearchPart() const
+inline const Utf8String& HFCURLHTTPBase::GetSearchPart() const
     {
     return m_SearchPart;
     }

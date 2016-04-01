@@ -36,10 +36,6 @@ HCPGeoTiffKeys::HCPGeoTiffKeys()
     m_HasValidGeoTIFFKeysList = true;
     }
 
-
-
-
-
 //-----------------------------------------------------------------------------
 // public
 // Copy constructor
@@ -132,16 +128,14 @@ bool HCPGeoTiffKeys::GetValue (uint16_t pi_Key, double* po_pVal) const
     return false;
     }
 
-bool HCPGeoTiffKeys::GetValue (uint16_t pi_Key, WString* po_pVal) const
+bool HCPGeoTiffKeys::GetValue (uint16_t pi_Key, AStringR po_Val) const
     {
-    HPRECONDITION(po_pVal != 0);
-
     GeoKeyList::const_iterator Itr;
     if ((Itr = m_GeoKeyList.find((TIFFGeoKey)pi_Key)) != m_GeoKeyList.end())
         {
         HASSERT(IGeoTiffKeysList::ASCII == ((*Itr).second).KeyDataType);
 
-        BeStringUtilities::CurrentLocaleCharToWChar(*po_pVal,((*Itr).second).KeyValue.StringVal);
+        po_Val = ((*Itr).second).KeyValue.StringVal;
 
         return true;
         }
@@ -186,7 +180,7 @@ bool HCPGeoTiffKeys::SetValue (uint16_t pi_Key, double pi_Val)
     return false;
     }
 
-bool HCPGeoTiffKeys::SetValue (uint16_t pi_Key, WString& pi_Val)
+bool HCPGeoTiffKeys::SetValue (uint16_t pi_Key, AStringCR pi_Val)
     {
     //InvalidateCachedInfo should be called before modifying the list of keys
 
@@ -194,14 +188,9 @@ bool HCPGeoTiffKeys::SetValue (uint16_t pi_Key, WString& pi_Val)
     if ((Itr = m_GeoKeyList.find((TIFFGeoKey)pi_Key)) != m_GeoKeyList.end())
         {
         HASSERT(IGeoTiffKeysList::ASCII == ((*Itr).second).KeyDataType);
-
-        size_t  destinationBuffSize = pi_Val.GetMaxLocaleCharBytes();
-        char*  pStr= new char[destinationBuffSize];
-        BeStringUtilities::WCharToCurrentLocaleChar(pStr,pi_Val.c_str(),destinationBuffSize);
         
-        ((*Itr).second).KeyValue.StringVal = pStr;
-
-
+        ((*Itr).second).KeyValue.StringVal = pi_Val.c_str();
+        
         return true;
         }
     return false;
@@ -335,103 +324,103 @@ uint16_t HCPGeoTiffKeys::GetNbKeys() const
 //
 //  Note : These Geokeys value are define by an enum into HTIFFTag.h
 //-----------------------------------------------------------------------------
-uint16_t HCPGeoTiffKeys::DecodeGeoKeyIDFromString(const WString& pi_rGeoTagLabel)
+uint16_t HCPGeoTiffKeys::DecodeGeoKeyIDFromString(const Utf8String& pi_rGeoTagLabel)
     {
     uint16_t GeoKey;
 
-    if (pi_rGeoTagLabel == L"GTModelType")
+    if (pi_rGeoTagLabel == "GTModelType")
         GeoKey = GTModelType;
-    else if (pi_rGeoTagLabel == L"GTRasterType")
+    else if (pi_rGeoTagLabel == "GTRasterType")
         GeoKey = GTRasterType;
-    else if (pi_rGeoTagLabel == L"PCSCitation")
+    else if (pi_rGeoTagLabel == "PCSCitation")
         GeoKey = PCSCitation;
-    else if (pi_rGeoTagLabel == L"ProjectedCSType")
+    else if (pi_rGeoTagLabel == "ProjectedCSType")
         GeoKey = ProjectedCSType;
-    else if (pi_rGeoTagLabel == L"ProjectedCSTypeLong")
+    else if (pi_rGeoTagLabel == "ProjectedCSTypeLong")
         GeoKey = ProjectedCSTypeLong;
-    else if (pi_rGeoTagLabel == L"GTCitation")
+    else if (pi_rGeoTagLabel == "GTCitation")
         GeoKey = GTCitation;
-    else if (pi_rGeoTagLabel == L"Projection")
+    else if (pi_rGeoTagLabel == "Projection")
         GeoKey = Projection;
-    else if (pi_rGeoTagLabel == L"ProjCoordTrans")
+    else if (pi_rGeoTagLabel == "ProjCoordTrans")
         GeoKey = ProjCoordTrans;
-    else if (pi_rGeoTagLabel == L"ProjLinearUnits")
+    else if (pi_rGeoTagLabel == "ProjLinearUnits")
         GeoKey = ProjLinearUnits;
-    else if (pi_rGeoTagLabel == L"ProjLinearUnitSize")
+    else if (pi_rGeoTagLabel == "ProjLinearUnitSize")
         GeoKey = ProjLinearUnitSize;
-    else if (pi_rGeoTagLabel == L"GeographicType")
+    else if (pi_rGeoTagLabel == "GeographicType")
         GeoKey = GeographicType;
-    else if (pi_rGeoTagLabel == L"GeogCitation")
+    else if (pi_rGeoTagLabel == "GeogCitation")
         GeoKey = GeogCitation;
-    else if (pi_rGeoTagLabel == L"GeogGeodeticDatum")
+    else if (pi_rGeoTagLabel == "GeogGeodeticDatum")
         GeoKey = GeogGeodeticDatum;
-    else if (pi_rGeoTagLabel == L"GeogPrimeMeridian")
+    else if (pi_rGeoTagLabel == "GeogPrimeMeridian")
         GeoKey = GeogPrimeMeridian;
-    else if (pi_rGeoTagLabel == L"GeogLinearUnits")
+    else if (pi_rGeoTagLabel == "GeogLinearUnits")
         GeoKey = GeogLinearUnits;
-    else if (pi_rGeoTagLabel == L"GeogLinearUnitSize")
+    else if (pi_rGeoTagLabel == "GeogLinearUnitSize")
         GeoKey = GeogLinearUnitSize;
-    else if (pi_rGeoTagLabel == L"GeogAngularUnits")
+    else if (pi_rGeoTagLabel == "GeogAngularUnits")
         GeoKey = GeogAngularUnits;
-    else if (pi_rGeoTagLabel == L"GeogAngularUnitSize")
+    else if (pi_rGeoTagLabel == "GeogAngularUnitSize")
         GeoKey = GeogAngularUnitSize;
-    else if (pi_rGeoTagLabel == L"GeogEllipsoid")
+    else if (pi_rGeoTagLabel == "GeogEllipsoid")
         GeoKey = GeogEllipsoid;
-    else if (pi_rGeoTagLabel == L"GeogSemiMajorAxis")
+    else if (pi_rGeoTagLabel == "GeogSemiMajorAxis")
         GeoKey = GeogSemiMajorAxis;
-    else if (pi_rGeoTagLabel == L"GeogSemiMinorAxis")
+    else if (pi_rGeoTagLabel == "GeogSemiMinorAxis")
         GeoKey = GeogSemiMinorAxis;
-    else if (pi_rGeoTagLabel == L"GeogInvFlattening")
+    else if (pi_rGeoTagLabel == "GeogInvFlattening")
         GeoKey = GeogInvFlattening;
-    else if (pi_rGeoTagLabel == L"GeogAzimuthUnits")
+    else if (pi_rGeoTagLabel == "GeogAzimuthUnits")
         GeoKey = GeogAzimuthUnits;
-    else if (pi_rGeoTagLabel == L"GeogPrimeMeridianLong")
+    else if (pi_rGeoTagLabel == "GeogPrimeMeridianLong")
         GeoKey = GeogPrimeMeridianLong;
-    else if (pi_rGeoTagLabel == L"ProjStdParallel1")
+    else if (pi_rGeoTagLabel == "ProjStdParallel1")
         GeoKey = ProjStdParallel1;
-    else if (pi_rGeoTagLabel == L"ProjStdParallel2")
+    else if (pi_rGeoTagLabel == "ProjStdParallel2")
         GeoKey = ProjStdParallel2;
-    else if (pi_rGeoTagLabel == L"ProjNatOriginLong")
+    else if (pi_rGeoTagLabel == "ProjNatOriginLong")
         GeoKey = ProjNatOriginLong;
-    else if (pi_rGeoTagLabel == L"ProjNatOriginLat")
+    else if (pi_rGeoTagLabel == "ProjNatOriginLat")
         GeoKey = ProjNatOriginLat;
-    else if (pi_rGeoTagLabel == L"ProjFalseEasting")
+    else if (pi_rGeoTagLabel == "ProjFalseEasting")
         GeoKey = ProjFalseEasting;
-    else if (pi_rGeoTagLabel == L"ProjFalseNorthing")
+    else if (pi_rGeoTagLabel == "ProjFalseNorthing")
         GeoKey = ProjFalseNorthing;
-    else if (pi_rGeoTagLabel == L"ProjFalseOriginLong")
+    else if (pi_rGeoTagLabel == "ProjFalseOriginLong")
         GeoKey = ProjFalseOriginLong;
-    else if (pi_rGeoTagLabel == L"ProjFalseOriginLat")
+    else if (pi_rGeoTagLabel == "ProjFalseOriginLat")
         GeoKey = ProjFalseOriginLat;
-    else if (pi_rGeoTagLabel == L"ProjFalseOriginEasting")
+    else if (pi_rGeoTagLabel == "ProjFalseOriginEasting")
         GeoKey = ProjFalseOriginEasting;
-    else if (pi_rGeoTagLabel == L"ProjFalseOriginNorthing")
+    else if (pi_rGeoTagLabel == "ProjFalseOriginNorthing")
         GeoKey = ProjFalseOriginNorthing;
-    else if (pi_rGeoTagLabel == L"ProjCenterLong")
+    else if (pi_rGeoTagLabel == "ProjCenterLong")
         GeoKey = ProjCenterLong;
-    else if (pi_rGeoTagLabel == L"ProjCenterLat")
+    else if (pi_rGeoTagLabel == "ProjCenterLat")
         GeoKey = ProjCenterLat;
-    else if (pi_rGeoTagLabel == L"ProjCenterEasting")
+    else if (pi_rGeoTagLabel == "ProjCenterEasting")
         GeoKey = ProjCenterEasting;
-    else if (pi_rGeoTagLabel == L"ProjCenterNorthing")
+    else if (pi_rGeoTagLabel == "ProjCenterNorthing")
         GeoKey = ProjCenterNorthing;
-    else if (pi_rGeoTagLabel == L"ProjScaleAtNatOrigin")
+    else if (pi_rGeoTagLabel == "ProjScaleAtNatOrigin")
         GeoKey = ProjScaleAtNatOrigin;
-    else if (pi_rGeoTagLabel == L"ProjScaleAtCenter")
+    else if (pi_rGeoTagLabel == "ProjScaleAtCenter")
         GeoKey = ProjScaleAtCenter;
-    else if (pi_rGeoTagLabel == L"ProjAzimuthAngle")
+    else if (pi_rGeoTagLabel == "ProjAzimuthAngle")
         GeoKey = ProjAzimuthAngle;
-    else if (pi_rGeoTagLabel == L"ProjStraightVertPoleLong")
+    else if (pi_rGeoTagLabel == "ProjStraightVertPoleLong")
         GeoKey = ProjStraightVertPoleLong;
-    else if (pi_rGeoTagLabel == L"ProjRectifiedGridAngle")
+    else if (pi_rGeoTagLabel == "ProjRectifiedGridAngle")
         GeoKey = ProjRectifiedGridAngle;
-    else if (pi_rGeoTagLabel == L"VerticalCSType")
+    else if (pi_rGeoTagLabel == "VerticalCSType")
         GeoKey = VerticalCSType;
-    else if (pi_rGeoTagLabel == L"VerticalCitation")
+    else if (pi_rGeoTagLabel == "VerticalCitation")
         GeoKey = VerticalCitation;
-    else if (pi_rGeoTagLabel == L"VerticalDatum")
+    else if (pi_rGeoTagLabel == "VerticalDatum")
         GeoKey = VerticalDatum;
-    else if (pi_rGeoTagLabel == L"VerticalUnits")
+    else if (pi_rGeoTagLabel == "VerticalUnits")
         GeoKey = VerticalUnits;
     else
         GeoKey = EndGeoKey;

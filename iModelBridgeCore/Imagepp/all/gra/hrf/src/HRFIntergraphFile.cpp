@@ -64,9 +64,9 @@ HRFIntergraphFile::Creator::Creator(HCLASS_ID pi_ClassID)
 //
 //-----------------------------------------------------------------------------
 
-WString HRFIntergraphFile::Creator::GetSchemes() const
+Utf8String HRFIntergraphFile::Creator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 //-----------------------------------------------------------------------------
@@ -2802,7 +2802,7 @@ bool HRFIntergraphFile::ReadAllApplicationPacket()
                         {
                         if ((GetAccessMode().m_HasWriteAccess || GetAccessMode().m_HasCreateAccess) && !m_sIntergraphLUT_ApplyReset)
                             {
-                            WString CurrentFileName(GetURL()->GetURL());
+                            Utf8String CurrentFileName(GetURL()->GetURL());
                             throw HRFIntergraphLutReadOnlyException(CurrentFileName);
                             }
                         }

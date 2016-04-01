@@ -18,7 +18,7 @@
 //---------------------------------------------------------------------------
 //
 //---------------------------------------------------------------------------
-HFCMemoryLineStream::HFCMemoryLineStream(const WString&     pi_Filename,
+HFCMemoryLineStream::HFCMemoryLineStream(const Utf8String&     pi_Filename,
                                          char              pi_LineDelimiter,
                                          HFCPtr<HFCBuffer>& pi_rpBuffer)
     : HFCMemoryBinStream(pi_Filename,
@@ -60,7 +60,7 @@ HFCMemoryLineStream::~HFCMemoryLineStream()
 // Read the specified line. The line numbering begins at 0.
 //---------------------------------------------------------------------------
 size_t HFCMemoryLineStream::ReadLine(uint32_t pi_LineNb,
-                                     WString& po_rLine)
+                                     Utf8String& po_rLine)
     {
     HPRECONDITION(m_pLineStartingAddresses != 0);
 
@@ -103,9 +103,7 @@ size_t HFCMemoryLineStream::ReadLine(uint32_t pi_LineNb,
             {
             pTempBuffer.get()[NbBytesToRead] = '\0';
 
-            string TempString((char*)pTempBuffer.get());
-
-            po_rLine = WString(TempString.c_str(),false);
+            po_rLine = (char*)pTempBuffer.get();
             }
         }
     else

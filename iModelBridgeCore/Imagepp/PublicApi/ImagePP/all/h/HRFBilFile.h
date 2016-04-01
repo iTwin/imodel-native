@@ -216,9 +216,9 @@ struct HRFBilCreator : public HRFRasterFileCreator
                                                    uint64_t                  pi_Offset) const;
 
     // Identification information
-    virtual WString                   GetLabel() const;
-    virtual WString                   GetSchemes() const;
-    virtual WString                   GetExtensions() const;
+    virtual Utf8String                   GetLabel() const;
+    virtual Utf8String                   GetSchemes() const;
+    virtual Utf8String                   GetExtensions() const;
 
     // File format is multi-file
     virtual bool                     GetRelatedURLs(const HFCPtr<HFCURL>& pi_rpURL,

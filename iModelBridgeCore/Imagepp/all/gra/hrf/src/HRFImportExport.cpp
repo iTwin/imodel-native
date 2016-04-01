@@ -110,7 +110,7 @@ void HRFImportExport::SetExportOptions(const HFCPtr<HRFExportOptions>& pi_rpExpo
     //be selected
     if (SelectCodec(pi_rpExportOptions->GetCodec()) == false)
         {
-        WString FileName;
+        Utf8String FileName;
 
         //Depending on when the export file name is set in relation with
         //the call to this method, it is possible that the export file name
@@ -334,33 +334,33 @@ uint32_t HRFImportExport::GetSelectedExportFileFormatIndex() const
 void HRFImportExport::SelectExportFilename(const HFCPtr<HFCURL>& pi_rpURLPath)
     {
     // Extract the Path
-    WString Path(pi_rpURLPath->GetURL());
+    Utf8String Path(pi_rpURLPath->GetURL());
 
     // Find the file extension
-    WString::size_type DotPosInFilename = Path.rfind(L'.');
+    Utf8String::size_type DotPosInFilename = Path.rfind('.');
 
     // Extract the extension and the drive dir name
-    if (DotPosInFilename != WString::npos)
+    if (DotPosInFilename != Utf8String::npos)
         m_pSelectedExportFilename = pi_rpURLPath;
     else
         {
-        WString Extensions(((HRFRasterFileCreator*)(m_ExportOptions.GetFileFormat()))->GetExtensions());
+        Utf8String Extensions(((HRFRasterFileCreator*)(m_ExportOptions.GetFileFormat()))->GetExtensions());
 
         // Find the file extension
-        WString::size_type DotPos  = Extensions.find(L'.');
-        WString::size_type DotVPos = Extensions.find(L';', DotPos);
+        Utf8String::size_type DotPos  = Extensions.find('.');
+        Utf8String::size_type DotVPos = Extensions.find(';', DotPos);
 
         // Extract the first extension in the list
-        if (DotPos != WString::npos)
+        if (DotPos != Utf8String::npos)
             {
-            WString Extension;
+            Utf8String Extension;
 
-            if (DotVPos != WString::npos)
+            if (DotVPos != Utf8String::npos)
                 Extension = Extensions.substr(DotPos+1, DotVPos - DotPos - 1);
             else
                 Extension = Extensions.substr(DotPos+1, Extensions.length() - DotPos - 1);
 
-            m_pSelectedExportFilename = HFCURL::Instanciate(pi_rpURLPath->GetURL() + WString(L".") + Extension);
+            m_pSelectedExportFilename = HFCURL::Instanciate(pi_rpURLPath->GetURL() + Utf8String(".") + Extension);
             }
         else
             m_pSelectedExportFilename = pi_rpURLPath;
@@ -2663,67 +2663,67 @@ HFCPtr<HRFPageDescriptor> HRFImportExport::CreatePageFromSelectedValues()
 //-----------------------------------------------------------------------------
 // ComposeFilenameWithOptions
 //-----------------------------------------------------------------------------
-WString HRFImportExport::ComposeFilenameWithOptions() const
+Utf8String HRFImportExport::ComposeFilenameWithOptions() const
     {
-    WString ComposedFilename;
+    Utf8String ComposedFilename;
 
-    WChar  TempValue[1024];
+    Utf8Char  TempValue[1024];
 
     // Pixel Type
-    BeStringUtilities::Snwprintf(TempValue, L"%lu", GetSelectedPixelType());
-    ComposedFilename += WString(L"PixelType=") + WString(TempValue);
+    BeStringUtilities::Snprintf(TempValue, "%lu", GetSelectedPixelType());
+    ComposedFilename += Utf8String("PixelType=") + Utf8String(TempValue);
 
     // Codec
-    BeStringUtilities::Snwprintf(TempValue, L"%lu", GetSelectedCodec());
-    ComposedFilename += WString(L"_Codec=") + WString(TempValue);
+    BeStringUtilities::Snprintf(TempValue, "%lu", GetSelectedCodec());
+    ComposedFilename += Utf8String("_Codec=") + Utf8String(TempValue);
 
-    BeStringUtilities::Snwprintf(TempValue, L"%lu", GetSelectedCompressionQuality());
-    ComposedFilename += WString(L"_Quality=") + WString(TempValue);
+    BeStringUtilities::Snprintf(TempValue, "%lu", GetSelectedCompressionQuality());
+    ComposedFilename += Utf8String("_Quality=") + Utf8String(TempValue);
 
     // Image size
     if (GetResample() == true)
-        ComposedFilename += WString(L"Resample=true");
+        ComposedFilename += Utf8String("Resample=true");
     else
-        ComposedFilename += WString(L"Resample=false");
+        ComposedFilename += Utf8String("Resample=false");
 
-    BeStringUtilities::Snwprintf(TempValue, L"%lu", GetImageWidth());
-    ComposedFilename += WString(L"_ImageSize(") + WString(TempValue) + WString(L", ");
+    BeStringUtilities::Snprintf(TempValue, "%lu", GetImageWidth());
+    ComposedFilename += Utf8String("_ImageSize(") + Utf8String(TempValue) + Utf8String(", ");
 
-    BeStringUtilities::Snwprintf(TempValue, L"%lu", GetImageHeight());
-    ComposedFilename += WString(TempValue) + WString(L")");
+    BeStringUtilities::Snprintf(TempValue, "%lu", GetImageHeight());
+    ComposedFilename += Utf8String(TempValue) + Utf8String(")");
 
 
     // Block size
-    BeStringUtilities::Snwprintf(TempValue, L"%lu", GetBlockWidth());
+    BeStringUtilities::Snprintf(TempValue, "%lu", GetBlockWidth());
     if (GetSelectedBlockType() == HRFBlockType::TILE)
-        ComposedFilename += WString(L"_TileSize(") + WString(TempValue) + WString(L", ");
+        ComposedFilename += Utf8String("_TileSize(") + Utf8String(TempValue) + Utf8String(", ");
     else if (GetSelectedBlockType() == HRFBlockType::STRIP)
-        ComposedFilename += WString(L"_StripSize(") + WString(TempValue) + WString(L", ");
+        ComposedFilename += Utf8String("_StripSize(") + Utf8String(TempValue) + Utf8String(", ");
     else if (GetSelectedBlockType() == HRFBlockType::LINE)
-        ComposedFilename += WString(L"_LineSize(") + WString(TempValue) + WString(L", ");
+        ComposedFilename += Utf8String("_LineSize(") + Utf8String(TempValue) + Utf8String(", ");
     else if (GetSelectedBlockType() == HRFBlockType::IMAGE)
-        ComposedFilename += WString(L"_ImagekSize(") + WString(TempValue) + WString(L", ");
+        ComposedFilename += Utf8String("_ImagekSize(") + Utf8String(TempValue) + Utf8String(", ");
 
-    BeStringUtilities::Snwprintf(TempValue, L"%lu", GetBlockHeight());
-    ComposedFilename += WString(TempValue) + WString(L")");
+    BeStringUtilities::Snprintf(TempValue, "%lu", GetBlockHeight());
+    ComposedFilename += Utf8String(TempValue) + Utf8String(")");
 
     // Encoding
     if (GetSelectedEncoding() == HRFEncodingType::MULTIRESOLUTION)
-        ComposedFilename += WString(L"_Encoding=MultiResolution");
+        ComposedFilename += Utf8String("_Encoding=MultiResolution");
     else if (GetSelectedEncoding() == HRFEncodingType::STANDARD)
-        ComposedFilename += WString(L"_Encoding=Standard");
+        ComposedFilename += Utf8String("_Encoding=Standard");
     else if (GetSelectedEncoding() == HRFEncodingType::PROGRESSIVE)
-        ComposedFilename += WString(L"_Encoding=Progressive");
+        ComposedFilename += Utf8String("_Encoding=Progressive");
 
 // Do we want to try all formats for each pixel type, compression, etc...
 #if 0
     // Georeference format
     if (GetSelectedGeoreferenceFormat() == HRFGeoreferenceFormat::GEOREFERENCE_IN_IMAGE)
-        ComposedFilename += WString(L"_Georeference=Image");
+        ComposedFilename += Utf8String("_Georeference=Image");
     else if (GetSelectedGeoreferenceFormat() == HRFGeoreferenceFormat::GEOREFERENCE_IN_HGR)
-        ComposedFilename += WString(L"_Georeference=HGR");
+        ComposedFilename += Utf8String("_Georeference=HGR");
     else if (GetSelectedGeoreferenceFormat() == HRFGeoreferenceFormat::GEOREFERENCE_IN_WORLD_FILE)
-        ComposedFilename += WString(L"_Georeference=WorldFile");
+        ComposedFilename += Utf8String("_Georeference=WorldFile");
 #endif
 
     return ComposedFilename;
@@ -2761,11 +2761,11 @@ uint32_t HRFImportExport::ExportToAllOptions(const HFCPtr<HFCURL>& pi_rpURLPath)
                         SelectCompressionQuality(MIN(CountCompressionStep() - 1, (CountCompressionStep() / NumberOfLevels) * Level));
 
                         // Add the path to the Booster url
-                        WString ExportPath(pi_rpURLPath->GetURL());
+                        Utf8String ExportPath(pi_rpURLPath->GetURL());
 
                         // Add the / if necessary
-                        if ((ExportPath[ExportPath.size() - 1] != L'/') && (ExportPath[ExportPath.size() - 1] != L'\\'))
-                            ExportPath += L"\\";
+                        if ((ExportPath[ExportPath.size() - 1] != '/') && (ExportPath[ExportPath.size() - 1] != '\\'))
+                            ExportPath += "\\";
 
                         ExportPath += ComposeFilenameWithOptions();
 
@@ -2789,11 +2789,11 @@ uint32_t HRFImportExport::ExportToAllOptions(const HFCPtr<HFCURL>& pi_rpURLPath)
                         SelectCompressionRatio(MIN(CountCompressionRatioStep() - 1, (CountCompressionRatioStep() / NumberOfLevels) * Level));
 
                         // Add the path to the Booster url
-                        WString ExportPath(pi_rpURLPath->GetURL());
+                        Utf8String ExportPath(pi_rpURLPath->GetURL());
 
                         // Add the / if necessary
-                        if ((ExportPath[ExportPath.size() - 1] != L'/') && (ExportPath[ExportPath.size() - 1] != L'\\'))
-                            ExportPath += L"\\";
+                        if ((ExportPath[ExportPath.size() - 1] != '/') && (ExportPath[ExportPath.size() - 1] != '\\'))
+                            ExportPath += "\\";
 
                         ExportPath += ComposeFilenameWithOptions();
 
@@ -2811,11 +2811,11 @@ uint32_t HRFImportExport::ExportToAllOptions(const HFCPtr<HFCURL>& pi_rpURLPath)
                 else
                     {
                     // Add the path to the Booster url
-                    WString ExportPath(pi_rpURLPath->GetURL());
+                    Utf8String ExportPath(pi_rpURLPath->GetURL());
 
                     // Add the / if necessary
-                    if ((ExportPath[ExportPath.size() - 1] != L'/') && (ExportPath[ExportPath.size() - 1] != L'\\'))
-                        ExportPath += L"\\";
+                    if ((ExportPath[ExportPath.size() - 1] != '/') && (ExportPath[ExportPath.size() - 1] != '\\'))
+                        ExportPath += "\\";
 
                     ExportPath += ComposeFilenameWithOptions();
 

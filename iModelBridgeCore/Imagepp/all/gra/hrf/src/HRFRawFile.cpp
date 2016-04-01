@@ -127,25 +127,25 @@ HRFRawCreator::HRFRawCreator()
 //-----------------------------------------------------------------------------
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFRawCreator::GetLabel() const
+Utf8String HRFRawCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_RAW());  // Raw Data
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_RAW());  // Raw Data
     }
 
 //-----------------------------------------------------------------------------
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFRawCreator::GetSchemes() const
+Utf8String HRFRawCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 //-----------------------------------------------------------------------------
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFRawCreator::GetExtensions() const
+Utf8String HRFRawCreator::GetExtensions() const
     {
-    return WString(L"*.raw");
+    return Utf8String("*.raw");
     }
 
 //-----------------------------------------------------------------------------
@@ -192,13 +192,10 @@ bool HRFRawCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     {
     HPRECONDITION(pi_rpURL != 0);
 
-    bool Result = false;
+    if (pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID) && ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetExtension().EqualsI("raw"))
+        return true;
 
-    if (pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID) &&
-        BeStringUtilities::Wcsicmp(((HFCPtr<HFCURLFile>&)pi_rpURL)->GetExtension().c_str(), L"raw") == 0)
-        Result = true;
-
-    return Result;
+    return false;
     }
 
 //-----------------------------------------------------------------------------

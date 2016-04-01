@@ -142,42 +142,42 @@ HFCPtr<HFCURL> HRFTWFPageFileCreator::ComposeURLFor(const HFCPtr<HFCURL>&   pi_r
     if (!pi_rpURLFileName->IsCompatibleWith(HFCURLFile::CLASS_ID))
         throw HFCInvalidUrlForSisterFileException(pi_rpURLFileName->GetURL());
 
-    WString Path(((HFCPtr<HFCURLFile>&)pi_rpURLFileName)->GetPath());
+    Utf8String Path(((HFCPtr<HFCURLFile>&)pi_rpURLFileName)->GetPath());
 
     // Find the file extension
-    WString::size_type DotPos = Path.rfind(L'.');
+    Utf8String::size_type DotPos = Path.rfind('.');
 
     // Extract the extension
-    if (DotPos != WString::npos)
+    if (DotPos != Utf8String::npos)
         {
-        WString Extension;
-        WString DriveDirName;
+        Utf8String Extension;
+        Utf8String DriveDirName;
 
         // Compose the decoration file name
         Extension = Path.substr(DotPos+1, Path.length() - DotPos - 1);
         if (Extension.size() > 2)
             {
             Extension[1] = Extension[Extension.size() - 1];
-            Extension[2] = L'w';
+            Extension[2] = 'w';
             Extension.resize(3);
             }
         else
             {
-            Extension += L"w";
+            Extension += "w";
             }
 
         DriveDirName = Path.substr(0, DotPos);
-        URLForPageFile = new HFCURLFile(WString(HFCURLFile::s_SchemeName() + L"://") +
-                                        ((HFCPtr<HFCURLFile>&)pi_rpURLFileName)->GetHost() + L"\\" +
+        URLForPageFile = new HFCURLFile(Utf8String(HFCURLFile::s_SchemeName() + "://") +
+                                        ((HFCPtr<HFCURLFile>&)pi_rpURLFileName)->GetHost() + "\\" +
                                         Path.substr(0, DotPos) +
-                                        L"." +
+                                        "." +
                                         Extension);
         }
     else
-        URLForPageFile = new HFCURLFile(WString(HFCURLFile::s_SchemeName() + L"://") +
-                                        ((HFCPtr<HFCURLFile>&)pi_rpURLFileName)->GetHost() + L"\\" +
+        URLForPageFile = new HFCURLFile(Utf8String(HFCURLFile::s_SchemeName() + "://") +
+                                        ((HFCPtr<HFCURLFile>&)pi_rpURLFileName)->GetHost() + "\\" +
                                         Path +
-                                        L".w");
+                                        ".w");
 
 
     return URLForPageFile;
@@ -213,11 +213,11 @@ HFCPtr<HFCURL> HRFTWFPageFileCreator::FoundFileFor(const HFCPtr<HFCURL>& pi_rpUR
         {
         // try with the second rules
         // Check if we have an extension
-        WString URL = pi_rpURL->GetURL();
-        WString::size_type DotPos = URL.rfind(L'.');
-        if (DotPos != WString::npos)
+        Utf8String URL = pi_rpURL->GetURL();
+        Utf8String::size_type DotPos = URL.rfind('.');
+        if (DotPos != Utf8String::npos)
             {
-            URL += L"w";
+            URL += "w";
             pPageFileURL = HFCURL::Instanciate(URL);
             pPageFileStat = new HFCStat(pPageFileURL);
             if (!pPageFileStat->IsExistent())
@@ -315,7 +315,7 @@ void HRFTWFPageFile::WriteToDisk()
     catch(...)
         {
         // Errors can happen, but they surely can't propagate in a destructor!
-        HASSERT(!L"Write error TWF file");
+        HASSERT(!"Write error TWF file");
         }
     }
 
@@ -406,11 +406,11 @@ void HRFTWFPageFile::ReadFile()
     ReadLine(&Line);
     if (Line.empty())
         throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(),
-                                        ImagePPMessages::GetStringW(ImagePPMessages::TWF_PixelSizeX()));
+                                        ImagePPMessages::GetString(ImagePPMessages::TWF_PixelSizeX()));
 
     if (!ConvertStringToDouble(Line, &m_A00))
         throw HRFSisterFileInvalidParamValueException(m_pFile->GetURL()->GetURL(),
-                                        ImagePPMessages::GetStringW(ImagePPMessages::TWF_PixelSizeX()));
+                                        ImagePPMessages::GetString(ImagePPMessages::TWF_PixelSizeX()));
 
     if (Line.empty())
         ReadLine(&Line);
@@ -418,11 +418,11 @@ void HRFTWFPageFile::ReadFile()
     // Rotation term
     if (Line.empty())
         throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(),
-                                        ImagePPMessages::GetStringW(ImagePPMessages::TWF_RotationAboutY()));
+                                        ImagePPMessages::GetString(ImagePPMessages::TWF_RotationAboutY()));
 
     if (!ConvertStringToDouble(Line, &m_A10))
         throw HRFSisterFileInvalidParamValueException(m_pFile->GetURL()->GetURL(),
-                                        ImagePPMessages::GetStringW(ImagePPMessages::TWF_RotationAboutY()));
+                                        ImagePPMessages::GetString(ImagePPMessages::TWF_RotationAboutY()));
 
     if (Line.empty())
         ReadLine(&Line);
@@ -430,11 +430,11 @@ void HRFTWFPageFile::ReadFile()
     // Rotation term
     if (Line.empty())
         throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(),
-                                        ImagePPMessages::GetStringW(ImagePPMessages::TWF_RotationAboutX()));
+                                        ImagePPMessages::GetString(ImagePPMessages::TWF_RotationAboutX()));
 
     if (!ConvertStringToDouble(Line, &m_A01))
         throw HRFSisterFileMissingParamGroupException(m_pFile->GetURL()->GetURL(),
-                                        ImagePPMessages::GetStringW(ImagePPMessages::TWF_RotationAboutX()));
+                                        ImagePPMessages::GetString(ImagePPMessages::TWF_RotationAboutX()));
 
     if (Line.empty())
         ReadLine(&Line);
@@ -442,11 +442,11 @@ void HRFTWFPageFile::ReadFile()
     // negative of y-dimension of a pixel in map units (this value may not be 0.0)
     if (Line.empty())
         throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(),
-                                        ImagePPMessages::GetStringW(ImagePPMessages::TWF_PixelSizeY()));
+                                        ImagePPMessages::GetString(ImagePPMessages::TWF_PixelSizeY()));
 
     if (!ConvertStringToDouble(Line, &m_A11))
         throw HRFSisterFileInvalidParamValueException(m_pFile->GetURL()->GetURL(),
-                                        ImagePPMessages::GetStringW(ImagePPMessages::TWF_PixelSizeY()));
+                                        ImagePPMessages::GetString(ImagePPMessages::TWF_PixelSizeY()));
 
     if (Line.empty())
         ReadLine(&Line);
@@ -454,12 +454,12 @@ void HRFTWFPageFile::ReadFile()
     // x coordinate of center of upper left pixel in map units
     if (Line.empty())
         throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(),
-                                        ImagePPMessages::GetStringW(ImagePPMessages::TWF_TranslationX()));
+                                        ImagePPMessages::GetString(ImagePPMessages::TWF_TranslationX()));
 
 
     if  (!ConvertStringToDouble(Line, &m_Tx))
         throw HRFSisterFileInvalidParamValueException(m_pFile->GetURL()->GetURL(),
-                                        ImagePPMessages::GetStringW(ImagePPMessages::TWF_TranslationX()));
+                                        ImagePPMessages::GetString(ImagePPMessages::TWF_TranslationX()));
 
     if (Line.empty())
         ReadLine(&Line);
@@ -467,11 +467,11 @@ void HRFTWFPageFile::ReadFile()
     // y coordinte of center of upper left corner in map units
     if (Line.empty())
         throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(),
-                                        ImagePPMessages::GetStringW(ImagePPMessages::TWF_TranslationY()));
+                                        ImagePPMessages::GetString(ImagePPMessages::TWF_TranslationY()));
 
     if (!ConvertStringToDouble(Line, &m_Ty))
         throw HRFSisterFileInvalidParamValueException(m_pFile->GetURL()->GetURL(),
-                                        ImagePPMessages::GetStringW(ImagePPMessages::TWF_TranslationY()));
+                                        ImagePPMessages::GetString(ImagePPMessages::TWF_TranslationY()));
     }
 
 //-----------------------------------------------------------------------------

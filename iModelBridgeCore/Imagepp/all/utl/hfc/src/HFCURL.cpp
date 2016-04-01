@@ -31,6 +31,27 @@ static struct SchemeListDestroyer
 
 //:End Ignore
 
+
+/**----------------------------------------------------------------------------
+Scheme list access method.  This static method is required to insure proper
+initialization of the list, which is allocated on the heap instead of
+created statically, because order of creation of static objects is unknown.
+-----------------------------------------------------------------------------*/
+HFCURL::SchemeList& HFCURL::GetSchemeList()
+    {
+    if (!s_pSchemeList)
+        s_pSchemeList = new SchemeList;
+    return *s_pSchemeList;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2016
+//----------------------------------------------------------------------------------------
+void HFCURL::RegisterCreator(Utf8StringCR schemeType, Creator* creator)
+    {
+    GetSchemeList().insert({schemeType, creator});
+    }
+
 /**----------------------------------------------------------------------------
  This constructor configures the object from the detached parts of the URL
  specification.
@@ -67,7 +88,7 @@ static struct SchemeListDestroyer
  @see GetSchemeSpecificPart
  @see GetSchemeType
 -----------------------------------------------------------------------------*/
-HFCURL::HFCURL(const WString& pi_SchemeType, const WString& pi_SchemeSpecificPart)
+HFCURL::HFCURL(const Utf8String& pi_SchemeType, const Utf8String& pi_SchemeSpecificPart)
     : m_SchemeType(pi_SchemeType), m_SchemeSpecificPart(pi_SchemeSpecificPart)
     {
     FREEZE_STL_STRING(m_SchemeType);
@@ -109,10 +130,10 @@ HFCURL::HFCURL(const WString& pi_SchemeType, const WString& pi_SchemeSpecificPar
  @see GetSchemeSpecificPart
  @see GetSchemeType
 -----------------------------------------------------------------------------*/
-HFCURL::HFCURL(const WString& pi_URL)
+HFCURL::HFCURL(const Utf8String& pi_URL)
     {
-    WString::size_type ColonPos = pi_URL.find(L':');
-    if (ColonPos != WString::npos)
+    Utf8String::size_type ColonPos = pi_URL.find(':');
+    if (ColonPos != Utf8String::npos)
         {
         m_SchemeType = pi_URL.substr(0, ColonPos);
         m_SchemeSpecificPart = pi_URL.substr(ColonPos+1,
@@ -139,14 +160,16 @@ HFCURL::~HFCURL()
 +---------------+---------------+---------------+---------------+---------------+------*/
 HFCURL* HFCURL::CreateFrom(const BeFileName& pi_beFilename)
     {
-    HFCURL* pURL = HFCURL::Instanciate(pi_beFilename.GetName());
+    Utf8String name(pi_beFilename.GetName());
+
+    HFCURL* pURL = HFCURL::Instanciate(name);
     if(pURL == NULL)
         {
-        WString newUrl(WString(L"file://"));
         WString InputFixed;
-        if (BeFileNameStatus::Success == BeFileName::FixPathName(InputFixed,pi_beFilename.GetName()))
+        if (BeFileNameStatus::Success == BeFileName::FixPathName(InputFixed, pi_beFilename.GetName()))
             {
-            newUrl += InputFixed;
+            Utf8String newUrl("file://");
+            newUrl += Utf8String(InputFixed);
             pURL = HFCURL::Instanciate(newUrl.c_str());
             }
         }
@@ -171,13 +194,13 @@ HFCURL* HFCURL::CreateFrom(const BeFileName& pi_beFilename)
 
  @inheritance See the overview description of this class.
 -----------------------------------------------------------------------------*/
-HFCURL* HFCURL::Instanciate(const WString& pi_URL)
+HFCURL* HFCURL::Instanciate(const Utf8String& pi_URL)
     {
     HFCURL* pNewObj = 0;
-    WString::size_type ColonPos = pi_URL.find(L':');
-    if (ColonPos != WString::npos)
+    Utf8String::size_type ColonPos = pi_URL.find(':');
+    if (ColonPos != Utf8String::npos)
         {
-        WString SchemeType(pi_URL, 0, ColonPos);
+        Utf8String SchemeType(pi_URL, 0, ColonPos);
         SchemeList::iterator itr = GetSchemeList().find(SchemeType);
         if (itr != GetSchemeList().end())
             {
@@ -191,47 +214,47 @@ HFCURL* HFCURL::Instanciate(const WString& pi_URL)
  Static method that calculates a new path from a source path specification
  and a relative path.
 -----------------------------------------------------------------------------*/
-WString HFCURL::AddPath(const WString& pi_Source, const WString& pi_Path)
+Utf8String HFCURL::AddPath(const Utf8String& pi_Source, const Utf8String& pi_Path)
     {
     // If second path is from root, return it!
 
-    if ((pi_Path.size() > 0) && ((pi_Path[0] == L'\\') || (pi_Path[0] == L'/')))
+    if ((pi_Path.size() > 0) && ((pi_Path[0] == '\\') || (pi_Path[0] == '/')))
         return pi_Path;
 
     // First step : we create a list of path entries for the source.
 
-    list<WString> EntryList;
-    WString::size_type Pos = 0;
+    list<Utf8String> EntryList;
+    Utf8String::size_type Pos = 0;
     if (!pi_Source.empty())
         {
-        while (Pos != WString::npos)
+        while (Pos != Utf8String::npos)
             {
-            WString::size_type FoundPos = pi_Source.find_first_of(L"\\/", Pos);
-            if (FoundPos != WString::npos)
+            Utf8String::size_type FoundPos = pi_Source.find_first_of("\\/", Pos);
+            if (FoundPos != Utf8String::npos)
                 {
                 EntryList.push_back(pi_Source.substr(Pos, FoundPos - Pos));
                 Pos = FoundPos+1;
                 }
             else
-                Pos = WString::npos;
+                Pos = Utf8String::npos;
             }
         }
 
     // We scan the relative path to construct the new path in the list.
 
     Pos = 0;
-    while (Pos != WString::npos)
+    while (Pos != Utf8String::npos)
         {
-        WString::size_type FoundPos = pi_Path.find_first_of(L"\\/", Pos);
-        if (FoundPos != WString::npos)
+        Utf8String::size_type FoundPos = pi_Path.find_first_of("\\/", Pos);
+        if (FoundPos != Utf8String::npos)
             {
-            WString PathStep(pi_Path.substr(Pos, FoundPos - Pos));
-            if (PathStep.compare(L"..") == 0)
+            Utf8String PathStep(pi_Path.substr(Pos, FoundPos - Pos));
+            if (PathStep.compare("..") == 0)
                 {
                 HASSERT(EntryList.size() > 0);
                 EntryList.pop_back();
                 }
-            else if (PathStep.compare(L".") == 0)
+            else if (PathStep.compare(".") == 0)
                 {
                 EntryList.push_back(PathStep);
                 }
@@ -241,18 +264,18 @@ WString HFCURL::AddPath(const WString& pi_Source, const WString& pi_Path)
             {
             if (Pos < pi_Path.length())
                 EntryList.push_back(pi_Path.substr(Pos, pi_Path.length() - Pos));
-            Pos = WString::npos;
+            Pos = Utf8String::npos;
             }
         }
 
     // The new path is created
 
-    WString Result;
-    list<WString>::iterator itr = EntryList.begin();
+    Utf8String Result;
+    list<Utf8String>::iterator itr = EntryList.begin();
     while (itr != EntryList.end())
         {
         if (!Result.empty())
-            Result += L"/";
+            Result += "/";
         Result += *itr;
         ++itr;
         }
@@ -265,41 +288,41 @@ WString HFCURL::AddPath(const WString& pi_Source, const WString& pi_Path)
  There must be a way to get from source to dest : use HasPathTo to check
  this.
 -----------------------------------------------------------------------------*/
-WString HFCURL::FindPath(const WString& pi_Source, const WString& pi_Dest)
+Utf8String HFCURL::FindPath(const Utf8String& pi_Source, const Utf8String& pi_Dest)
     {
     // First step : we create a list of path entries for the source.
 
-    list<WString> EntryList;
-    WString::size_type Pos = 0;
+    list<Utf8String> EntryList;
+    Utf8String::size_type Pos = 0;
     if (!pi_Source.empty())
         {
-        while (Pos != WString::npos)
+        while (Pos != Utf8String::npos)
             {
-            WString::size_type FoundPos = pi_Source.find_first_of(L"\\/", Pos);
-            if (FoundPos != WString::npos)
+            Utf8String::size_type FoundPos = pi_Source.find_first_of("\\/", Pos);
+            if (FoundPos != Utf8String::npos)
                 {
                 EntryList.push_back(pi_Source.substr(Pos, FoundPos - Pos));
                 Pos = FoundPos + 1;
                 }
             else
-                Pos = WString::npos;
+                Pos = Utf8String::npos;
             }
         }
 
     // Next we scan the destination path to count the similar entries from
     // the beginning, removing them from the destination path
 
-    WString Result(pi_Dest);
+    Utf8String Result(pi_Dest);
     uint16_t Count = 0;
     if (EntryList.size() > 0)
         {
-        list<WString>::iterator itr = EntryList.begin();
+        list<Utf8String>::iterator itr = EntryList.begin();
         while (Result.length() && (itr != EntryList.end()))
             {
-            WString::size_type FoundPos = Result.find_first_of(L"\\/");
-            if (FoundPos != WString::npos)
+            Utf8String::size_type FoundPos = Result.find_first_of("\\/");
+            if (FoundPos != Utf8String::npos)
                 {
-                WString PathStep(Result.substr(0, FoundPos));
+                Utf8String PathStep(Result.substr(0, FoundPos));
                 if (PathStep == *itr)
                     {
                     Result.erase(0, FoundPos+1);
@@ -318,7 +341,7 @@ WString HFCURL::FindPath(const WString& pi_Source, const WString& pi_Dest)
     // entries.
 
     for (; Count < EntryList.size(); Count++)
-        Result = L"../" + Result;
+        Result = "../" + Result;
 
     return Result;
     }
@@ -392,7 +415,7 @@ void  HFCURL::SetEncodedURL(bool pi_Encoded)
               The method has to construct a valid URL string from the components
               stored internally.
 -----------------------------------------------------------------------------*/
-WString HFCURL::GetURL() const { }
+Utf8String HFCURL::GetURL() const { }
 
 /**----------------------------------------------------------------------------
  Calculates the relative path that is found between this URL and the
@@ -423,7 +446,7 @@ WString HFCURL::GetURL() const { }
 
  @see HasPathTo
 -----------------------------------------------------------------------------*/
-WString HFCURL::FindPathTo(HFCURL* pi_pDest) { }
+Utf8String HFCURL::FindPathTo(HFCURL* pi_pDest) { }
 
 /**----------------------------------------------------------------------------
 
@@ -448,7 +471,7 @@ WString HFCURL::FindPathTo(HFCURL* pi_pDest) { }
 
  @see FindPathTo
 -----------------------------------------------------------------------------*/
-HFCURL* HFCURL::MakeURLTo(const WString& pi_Path) { }
+HFCURL* HFCURL::MakeURLTo(const Utf8String& pi_Path) { }
 
 //:Ignore
 #endif

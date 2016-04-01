@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPAGrammarObject.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HPAGrammarObject
@@ -45,10 +45,10 @@ public:
     virtual bool       IsTerminal() const {
         return false;
         }
-    void                SetName(const WString& pi_rName) {
+    void                SetName(const Utf8String& pi_rName) {
         m_Name = pi_rName;
         }
-    virtual WString     GetName() const {
+    virtual Utf8String     GetName() const {
         return m_Name;
         }
 
@@ -70,7 +70,7 @@ private:
     HPANodeCreator*     m_pNodeCreator;
     HPAReferingProdList m_ReferingProductions;
     bool               m_IsLeftRecursive;
-    WString             m_Name;
+    Utf8String             m_Name;
 
     };
 

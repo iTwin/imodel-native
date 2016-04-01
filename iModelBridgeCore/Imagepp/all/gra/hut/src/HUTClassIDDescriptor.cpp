@@ -137,118 +137,118 @@ HFC_IMPLEMENT_SINGLETON(HUTClassIDDescriptor)
 
 
 HUTClassIDDescriptor::HUTClassIDDescriptor()
-    : m_NotFound(ImagePPMessages::GetStringW(ImagePPMessages::IMAGEPP_NotFound()))
+    : m_NotFound(ImagePPMessages::GetString(ImagePPMessages::IMAGEPP_NotFound()))
     {
     // Codec
-    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecIdentity::CLASS_ID           , HFCClassDescriptor(ImagePPMessages::CODEC_Identity(),    L"00"))); //None
-    //m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecCCITT::CLASS_ID              , HFCClassDescriptor(ImagePPMessages::CODEC_CCITT3(),    L"01"))); //CCITT3
-    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecHMRCCITT::CLASS_ID           , HFCClassDescriptor(ImagePPMessages::CODEC_CCITT4(),    L"02"))); //CCITT4
-    //m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecDeflate::CLASS_ID            , HFCClassDescriptor(ImagePPMessages::CODEC_Deflate(),    L"03"))); //Deflate
-    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecZlib::CLASS_ID               , HFCClassDescriptor(ImagePPMessages::CODEC_Deflate(),    L"03"))); //Deflate
-    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecHMRPackBits::CLASS_ID        , HFCClassDescriptor(ImagePPMessages::CODEC_Packbits(),    L"04"))); //Packbits
-    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecLZW::CLASS_ID                , HFCClassDescriptor(ImagePPMessages::CODEC_LZW(),    L"05"))); //LZW
-    //m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecJPEG::CLASS_ID               , HFCClassDescriptor(ImagePPMessages::CODEC_JPEG(),    L"06"))); //Jpeg
-    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecIJG::CLASS_ID                , HFCClassDescriptor(ImagePPMessages::CODEC_JPEG(),    L"06"))); //Jpeg
-    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecFlashpix::CLASS_ID           , HFCClassDescriptor(ImagePPMessages::CODEC_FlashPix(),    L"07"))); //FlashPix
-    //m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecRLE1::CLASS_ID               , HFCClassDescriptor(ImagePPMessages::CODEC_RLE1(),    L"08"))); //RLE 1
-    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecHMRRLE1::CLASS_ID            , HFCClassDescriptor(ImagePPMessages::CODEC_RLE1(),    L"08"))); //RLE 1
-    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecRLE8::CLASS_ID               , HFCClassDescriptor(ImagePPMessages::CODEC_RLE8(),    L"09"))); //RLE 8
-    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecBMPRLE8::CLASS_ID            , HFCClassDescriptor(ImagePPMessages::CODEC_BMPRLE8(),    L"11"))); //BMPRLE8
-    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecBMPRLE4::CLASS_ID            , HFCClassDescriptor(ImagePPMessages::CODEC_BMPRLE4(),    L"12"))); //BMPRLE4
-    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecHMRGIF::CLASS_ID             , HFCClassDescriptor(ImagePPMessages::CODEC_Gif(),        L"13"))); //Gif
-    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecFPXSingleColor::CLASS_ID     , HFCClassDescriptor(ImagePPMessages::CODEC_FlashPixSingleColor(),    L"14"))); //FlashPix (single color)
-    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecCCITTRLE::CLASS_ID           , HFCClassDescriptor(ImagePPMessages::CODEC_CCITTRLE(),    L"15"))); //CCITTRLE
-    //m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodec????::CLASS_ID               , HFCClassDescriptor(ImagePPMessages::CODEC_CCITTRLEW(),    L"16"))); //CCITTRLEW
-    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecTGARLE::CLASS_ID             , HFCClassDescriptor(ImagePPMessages::CODEC_TgaRLE(),    L"17"))); //Tga RLE
-    //m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecPCX::CLASS_ID                , HFCClassDescriptor(ImagePPMessages::CODEC_PCX(),    L"19"))); //PCX
-    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecJPEGAlpha::CLASS_ID          , HFCClassDescriptor(ImagePPMessages::CODEC_JpegAlpha(),    L"20"))); //JpegAlpha
+    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecIdentity::CLASS_ID           , HFCClassDescriptor(ImagePPMessages::CODEC_Identity(),    "00"))); //None
+    //m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecCCITT::CLASS_ID              , HFCClassDescriptor(ImagePPMessages::CODEC_CCITT3(),    "01"))); //CCITT3
+    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecHMRCCITT::CLASS_ID           , HFCClassDescriptor(ImagePPMessages::CODEC_CCITT4(),    "02"))); //CCITT4
+    //m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecDeflate::CLASS_ID            , HFCClassDescriptor(ImagePPMessages::CODEC_Deflate(),    "03"))); //Deflate
+    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecZlib::CLASS_ID               , HFCClassDescriptor(ImagePPMessages::CODEC_Deflate(),    "03"))); //Deflate
+    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecHMRPackBits::CLASS_ID        , HFCClassDescriptor(ImagePPMessages::CODEC_Packbits(),    "04"))); //Packbits
+    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecLZW::CLASS_ID                , HFCClassDescriptor(ImagePPMessages::CODEC_LZW(),    "05"))); //LZW
+    //m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecJPEG::CLASS_ID               , HFCClassDescriptor(ImagePPMessages::CODEC_JPEG(),    "06"))); //Jpeg
+    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecIJG::CLASS_ID                , HFCClassDescriptor(ImagePPMessages::CODEC_JPEG(),    "06"))); //Jpeg
+    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecFlashpix::CLASS_ID           , HFCClassDescriptor(ImagePPMessages::CODEC_FlashPix(),    "07"))); //FlashPix
+    //m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecRLE1::CLASS_ID               , HFCClassDescriptor(ImagePPMessages::CODEC_RLE1(),    "08"))); //RLE 1
+    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecHMRRLE1::CLASS_ID            , HFCClassDescriptor(ImagePPMessages::CODEC_RLE1(),    "08"))); //RLE 1
+    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecRLE8::CLASS_ID               , HFCClassDescriptor(ImagePPMessages::CODEC_RLE8(),    "09"))); //RLE 8
+    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecBMPRLE8::CLASS_ID            , HFCClassDescriptor(ImagePPMessages::CODEC_BMPRLE8(),    "11"))); //BMPRLE8
+    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecBMPRLE4::CLASS_ID            , HFCClassDescriptor(ImagePPMessages::CODEC_BMPRLE4(),    "12"))); //BMPRLE4
+    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecHMRGIF::CLASS_ID             , HFCClassDescriptor(ImagePPMessages::CODEC_Gif(),        "13"))); //Gif
+    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecFPXSingleColor::CLASS_ID     , HFCClassDescriptor(ImagePPMessages::CODEC_FlashPixSingleColor(),    "14"))); //FlashPix (single color)
+    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecCCITTRLE::CLASS_ID           , HFCClassDescriptor(ImagePPMessages::CODEC_CCITTRLE(),    "15"))); //CCITTRLE
+    //m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodec????::CLASS_ID               , HFCClassDescriptor(ImagePPMessages::CODEC_CCITTRLEW(),    "16"))); //CCITTRLEW
+    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecTGARLE::CLASS_ID             , HFCClassDescriptor(ImagePPMessages::CODEC_TgaRLE(),    "17"))); //Tga RLE
+    //m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecPCX::CLASS_ID                , HFCClassDescriptor(ImagePPMessages::CODEC_PCX(),    "19"))); //PCX
+    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecJPEGAlpha::CLASS_ID          , HFCClassDescriptor(ImagePPMessages::CODEC_JpegAlpha(),    "20"))); //JpegAlpha
 
-    //m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecTGARLE::CLASS_ID             , HFCClassDescriptor(ImagePPMessages::CODEC_TGARLE(),    L"23"))); //TGARLE
-    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecFLIRLE8::CLASS_ID            , HFCClassDescriptor(ImagePPMessages::CODEC_FLIRLE8(),    L"24")));
-    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecLRDRLE::CLASS_ID             , HFCClassDescriptor(ImagePPMessages::CODEC_LRDRLE1(),    L"25")));
+    //m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecTGARLE::CLASS_ID             , HFCClassDescriptor(ImagePPMessages::CODEC_TGARLE(),    "23"))); //TGARLE
+    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecFLIRLE8::CLASS_ID            , HFCClassDescriptor(ImagePPMessages::CODEC_FLIRLE8(),    "24")));
+    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecLRDRLE::CLASS_ID             , HFCClassDescriptor(ImagePPMessages::CODEC_LRDRLE1(),    "25")));
 
-    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecCRL8::CLASS_ID               , HFCClassDescriptor(ImagePPMessages::CODEC_CRL8(),   L"27")));//CRL8
-    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecCCITTFax4::CLASS_ID          , HFCClassDescriptor(ImagePPMessages::CODEC_CCITTFax4(),   L"28")));//CCITTFax4
+    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecCRL8::CLASS_ID               , HFCClassDescriptor(ImagePPMessages::CODEC_CRL8(),   "27")));//CRL8
+    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecCCITTFax4::CLASS_ID          , HFCClassDescriptor(ImagePPMessages::CODEC_CCITTFax4(),   "28")));//CCITTFax4
 
 #ifdef JBIG_SUPPORT
-    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecJBIG::CLASS_ID                 , HFCClassDescriptor(ImagePPMessages::CODEC_JBIG(), L"29"))); //JBIG
+    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecJBIG::CLASS_ID                 , HFCClassDescriptor(ImagePPMessages::CODEC_JBIG(), "29"))); //JBIG
 #endif
 
-    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecJPEG2000::CLASS_ID           , HFCClassDescriptor(ImagePPMessages::CODEC_Jpeg2000(), L"30")));  //JPEG2000
-    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecECW::CLASS_ID                , HFCClassDescriptor(ImagePPMessages::CODEC_ECW(),      L"31")));  //ECW
+    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecJPEG2000::CLASS_ID           , HFCClassDescriptor(ImagePPMessages::CODEC_Jpeg2000(), "30")));  //JPEG2000
+    m_CodecClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCDCodecECW::CLASS_ID                , HFCClassDescriptor(ImagePPMessages::CODEC_ECW(),      "31")));  //ECW
 
     // Pixel Type
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeI1R8G8B8::CLASS_ID       , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_2ColorsPalette()     , L"1C")));     //2 colors palette
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeI1R8G8B8RLE::CLASS_ID    , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_2ColorsPaletteRLE()          , L"1CRLE"))); //2 colors palette RLE
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeI1R8G8B8A8::CLASS_ID     , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_2ColorsPaletteAlpha()          , L"1A"))); //2 colors palette alpha
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeI1R8G8B8A8RLE::CLASS_ID  , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_2ColorsPaletteAlphaRLE()          , L"1ARLE"))); //2 colors palette alpha RLE
-    //Disabled m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeI2R8G8B8::CLASS_ID       , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_4Colors()          , L"2C"))); //4 colors
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeI4R8G8B8::CLASS_ID       , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_16Colors()          , L"4C"))); //16 colors
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeI4R8G8B8A8::CLASS_ID     , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_16ColorsAlpha()          , L"4A"))); //16 colors alpha
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeI8R8G8B8::CLASS_ID       , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_256Colors()          , L"8C"))); //256 colors
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeI8R8G8B8A8::CLASS_ID     , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_256ColorsAlpha()          , L"8A"))); //256 colors alpha
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeI8R8G8B8Mask::CLASS_ID   , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_256ColorsDCMask()          , L"8MSK"))); //256 colors DC Mask
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeI8Gray8::CLASS_ID        , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_Gray8Palette()          , L"GP"))); //Gray 8 Palette
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV1Gray1::CLASS_ID        , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_BlackAndWhite()          , L"1B"))); //Black & white
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV1GrayWhite1::CLASS_ID   , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_WhiteAndBlack()          , L"1W"))); //White & black
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV8Gray8::CLASS_ID        , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_Gray8()          , L"8G"))); //Gray 8
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV8GrayWhite8::CLASS_ID   , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_Gray8White()          , L"GI"))); //Gray 8 inv.
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV16PRGray8A8::CLASS_ID   , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_Gray8Alpha()          , L"GA"))); //Gray 8 alpha
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV16R5G6B5::CLASS_ID      , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_TrueColors16()          , L"16V"))); //True colors 16
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV24PhotoYCC::CLASS_ID    , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_YCC()          , L"YC"))); //YCC
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV32PRPhotoYCCA8::CLASS_ID, HFCClassDescriptor(ImagePPMessages::PIXELTYPE_YCCAlpha()          , L"YA"))); //YCC alpha
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV32CMYK::CLASS_ID        , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_CMYK()          , L"CK"))); //CMYK
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV24R8G8B8::CLASS_ID      , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_TrueColors24()          , L"TC"))); //True colors 24
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV24B8G8R8::CLASS_ID      , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_TrueColors24BGR()          , L"TCI"))); //True colors 24 BGR.
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV32B8G8R8X8::CLASS_ID    , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_TrueColors32BGRX()         , L"TXI"))); //True colors 32 BGR
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV32R8G8B8A8::CLASS_ID    , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_TrueColors32()          , L"TA"))); //True colors 32
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV32R8G8B8X8::CLASS_ID    , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_TrueColors32RGBX()          , L"TX"))); //True colors 32 no Alpha
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV32PR8PG8PB8A8::CLASS_ID , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_TrueColors32PreMult()          , L"TP"))); //True colors 32 PR
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV32A8R8G8B8::CLASS_ID    , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_TrueColors32ARGB()          , L"TAF"))); //True colors 32 ARGB
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeI8VA8R8G8B8::CLASS_ID    , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_256ColorsARGB()          , L"8V"))); //256 colors with alpha channel
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV16Gray16::CLASS_ID      , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_Gray16()          , L"16G")));   //Gray 16
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV16Int16::CLASS_ID       , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_Integer16()  , L"16INT"))); //Int 16
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV32Float32::CLASS_ID     , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_Float32(), L"32F"))); //Float 32
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV48R16G16B16::CLASS_ID   , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_TrueColors48()          , L"48V"))); //True colors 48
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV64R16G16B16A16::CLASS_ID, HFCClassDescriptor(ImagePPMessages::PIXELTYPE_TrueColors64()          , L"64A"))); //True colors 64
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV64R16G16B16X16::CLASS_ID, HFCClassDescriptor(ImagePPMessages::PIXELTYPE_TrueColors64RGBX()          , L"64X"))); //True colors 64 no Alpha
-    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV96R32G32B32::CLASS_ID   , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_TrueColors96()     , L"TC96"))); // True color 96
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeI1R8G8B8::CLASS_ID       , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_2ColorsPalette()     , "1C")));     //2 colors palette
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeI1R8G8B8RLE::CLASS_ID    , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_2ColorsPaletteRLE()          , "1CRLE"))); //2 colors palette RLE
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeI1R8G8B8A8::CLASS_ID     , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_2ColorsPaletteAlpha()          , "1A"))); //2 colors palette alpha
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeI1R8G8B8A8RLE::CLASS_ID  , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_2ColorsPaletteAlphaRLE()          , "1ARLE"))); //2 colors palette alpha RLE
+    //Disabled m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeI2R8G8B8::CLASS_ID       , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_4Colors()          , "2C"))); //4 colors
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeI4R8G8B8::CLASS_ID       , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_16Colors()          , "4C"))); //16 colors
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeI4R8G8B8A8::CLASS_ID     , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_16ColorsAlpha()          , "4A"))); //16 colors alpha
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeI8R8G8B8::CLASS_ID       , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_256Colors()          , "8C"))); //256 colors
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeI8R8G8B8A8::CLASS_ID     , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_256ColorsAlpha()          , "8A"))); //256 colors alpha
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeI8R8G8B8Mask::CLASS_ID   , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_256ColorsDCMask()          , "8MSK"))); //256 colors DC Mask
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeI8Gray8::CLASS_ID        , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_Gray8Palette()          , "GP"))); //Gray 8 Palette
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV1Gray1::CLASS_ID        , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_BlackAndWhite()          , "1B"))); //Black & white
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV1GrayWhite1::CLASS_ID   , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_WhiteAndBlack()          , "1W"))); //White & black
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV8Gray8::CLASS_ID        , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_Gray8()          , "8G"))); //Gray 8
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV8GrayWhite8::CLASS_ID   , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_Gray8White()          , "GI"))); //Gray 8 inv.
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV16PRGray8A8::CLASS_ID   , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_Gray8Alpha()          , "GA"))); //Gray 8 alpha
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV16R5G6B5::CLASS_ID      , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_TrueColors16()          , "16V"))); //True colors 16
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV24PhotoYCC::CLASS_ID    , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_YCC()          , "YC"))); //YCC
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV32PRPhotoYCCA8::CLASS_ID, HFCClassDescriptor(ImagePPMessages::PIXELTYPE_YCCAlpha()          , "YA"))); //YCC alpha
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV32CMYK::CLASS_ID        , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_CMYK()          , "CK"))); //CMYK
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV24R8G8B8::CLASS_ID      , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_TrueColors24()          , "TC"))); //True colors 24
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV24B8G8R8::CLASS_ID      , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_TrueColors24BGR()          , "TCI"))); //True colors 24 BGR.
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV32B8G8R8X8::CLASS_ID    , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_TrueColors32BGRX()         , "TXI"))); //True colors 32 BGR
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV32R8G8B8A8::CLASS_ID    , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_TrueColors32()          , "TA"))); //True colors 32
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV32R8G8B8X8::CLASS_ID    , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_TrueColors32RGBX()          , "TX"))); //True colors 32 no Alpha
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV32PR8PG8PB8A8::CLASS_ID , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_TrueColors32PreMult()          , "TP"))); //True colors 32 PR
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV32A8R8G8B8::CLASS_ID    , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_TrueColors32ARGB()          , "TAF"))); //True colors 32 ARGB
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeI8VA8R8G8B8::CLASS_ID    , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_256ColorsARGB()          , "8V"))); //256 colors with alpha channel
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV16Gray16::CLASS_ID      , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_Gray16()          , "16G")));   //Gray 16
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV16Int16::CLASS_ID       , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_Integer16()  , "16INT"))); //Int 16
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV32Float32::CLASS_ID     , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_Float32(), "32F"))); //Float 32
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV48R16G16B16::CLASS_ID   , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_TrueColors48()          , "48V"))); //True colors 48
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV64R16G16B16A16::CLASS_ID, HFCClassDescriptor(ImagePPMessages::PIXELTYPE_TrueColors64()          , "64A"))); //True colors 64
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV64R16G16B16X16::CLASS_ID, HFCClassDescriptor(ImagePPMessages::PIXELTYPE_TrueColors64RGBX()          , "64X"))); //True colors 64 no Alpha
+    m_PixelClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPPixelTypeV96R32G32B32::CLASS_ID   , HFCClassDescriptor(ImagePPMessages::PIXELTYPE_TrueColors96()     , "TC96"))); // True color 96
 
     // TransfoModel
-    m_TransfoClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HGF2DStretch::CLASS_ID             , HFCClassDescriptor(ImagePPMessages::TRANSFO_Strech()            , L""))); //Stretch
-    m_TransfoClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HGF2DTranslation::CLASS_ID         , HFCClassDescriptor(ImagePPMessages::TRANSFO_Translation()        , L""))); //Translation
-    m_TransfoClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HGF2DIdentity::CLASS_ID            , HFCClassDescriptor(ImagePPMessages::TRANSFO_Identity()           , L""))); //Identity
-    m_TransfoClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HGF2DSimilitude::CLASS_ID          , HFCClassDescriptor(ImagePPMessages::TRANSFO_Similitude()         , L""))); //Similitude
-    m_TransfoClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HGF2DProjective::CLASS_ID          , HFCClassDescriptor(ImagePPMessages::TRANSFO_Projective()         , L""))); //Projective
-    m_TransfoClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HGF2DAffine::CLASS_ID              , HFCClassDescriptor(ImagePPMessages::TRANSFO_Affine()             , L""))); //Affine
-    m_TransfoClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCPGCoordModel::CLASS_ID           , HFCClassDescriptor(ImagePPMessages::TRANSFO_ProjectionCoordModel()         , L""))); //Coord Model
-    m_TransfoClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HGF2DLinearModelAdapter::CLASS_ID  , HFCClassDescriptor(ImagePPMessages::TRANSFO_LinearModelAdapter() , L""))); //Linear Model Adapter
-    m_TransfoClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HGF2DProjectiveGrid::CLASS_ID      , HFCClassDescriptor(ImagePPMessages::TRANSFO_ProjectiveGrid()     , L""))); //Projective Grid
-    m_TransfoClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HGF2DComplexTransfoModel::CLASS_ID , HFCClassDescriptor(ImagePPMessages::TRANSFO_ComplexModel(), L""))); //Complex Transfo Model
-    m_TransfoClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HGF2DHelmert::CLASS_ID             , HFCClassDescriptor(ImagePPMessages::TRANSFO_Helmert()            , L""))); //Helmert
+    m_TransfoClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HGF2DStretch::CLASS_ID             , HFCClassDescriptor(ImagePPMessages::TRANSFO_Strech()            , ""))); //Stretch
+    m_TransfoClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HGF2DTranslation::CLASS_ID         , HFCClassDescriptor(ImagePPMessages::TRANSFO_Translation()        , ""))); //Translation
+    m_TransfoClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HGF2DIdentity::CLASS_ID            , HFCClassDescriptor(ImagePPMessages::TRANSFO_Identity()           , ""))); //Identity
+    m_TransfoClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HGF2DSimilitude::CLASS_ID          , HFCClassDescriptor(ImagePPMessages::TRANSFO_Similitude()         , ""))); //Similitude
+    m_TransfoClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HGF2DProjective::CLASS_ID          , HFCClassDescriptor(ImagePPMessages::TRANSFO_Projective()         , ""))); //Projective
+    m_TransfoClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HGF2DAffine::CLASS_ID              , HFCClassDescriptor(ImagePPMessages::TRANSFO_Affine()             , ""))); //Affine
+    m_TransfoClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HCPGCoordModel::CLASS_ID           , HFCClassDescriptor(ImagePPMessages::TRANSFO_ProjectionCoordModel()         , ""))); //Coord Model
+    m_TransfoClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HGF2DLinearModelAdapter::CLASS_ID  , HFCClassDescriptor(ImagePPMessages::TRANSFO_LinearModelAdapter() , ""))); //Linear Model Adapter
+    m_TransfoClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HGF2DProjectiveGrid::CLASS_ID      , HFCClassDescriptor(ImagePPMessages::TRANSFO_ProjectiveGrid()     , ""))); //Projective Grid
+    m_TransfoClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HGF2DComplexTransfoModel::CLASS_ID , HFCClassDescriptor(ImagePPMessages::TRANSFO_ComplexModel(), ""))); //Complex Transfo Model
+    m_TransfoClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HGF2DHelmert::CLASS_ID             , HFCClassDescriptor(ImagePPMessages::TRANSFO_Helmert()            , ""))); //Helmert
 
     // Filter
-    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPBlurFilter::CLASS_ID                       , HFCClassDescriptor(ImagePPMessages::FILTER_Blur(),              L""))); 
-    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPColorBalanceFilter::CLASS_ID               , HFCClassDescriptor(ImagePPMessages::FILTER_ColorBalance(),      L""))); 
-    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPColortwistFilter::CLASS_ID                 , HFCClassDescriptor(ImagePPMessages::FILTER_ColorTwist(),        L""))); 
-    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPComplexFilter::CLASS_ID                    , HFCClassDescriptor(ImagePPMessages::FILTER_Complex(),           L""))); 
-    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPContrastFilter::CLASS_ID                   , HFCClassDescriptor(ImagePPMessages::FILTER_Contrast(),          L""))); 
-    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPDetailFilter::CLASS_ID                     , HFCClassDescriptor(ImagePPMessages::FILTER_Detail(),            L""))); 
-    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPEdgeEnhanceFilter::CLASS_ID                , HFCClassDescriptor(ImagePPMessages::FILTER_EdgeEnhance(),       L""))); 
-    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPFindEdgesFilter::CLASS_ID                  , HFCClassDescriptor(ImagePPMessages::FILTER_FindEdges(),         L""))); 
-    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPSharpenFilter::CLASS_ID                    , HFCClassDescriptor(ImagePPMessages::FILTER_Sharpen(),           L""))); 
-    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPSmoothFilter::CLASS_ID                     , HFCClassDescriptor(ImagePPMessages::FILTER_Smooth(),            L""))); 
-    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPAverageFilter::CLASS_ID                    , HFCClassDescriptor(ImagePPMessages::FILTER_Average(),           L""))); 
-    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPCustomConvFilter::CLASS_ID                 , HFCClassDescriptor(ImagePPMessages::FILTER_CustomConvolution(), L""))); 
-    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPAlphaReplacer::CLASS_ID                    , HFCClassDescriptor(ImagePPMessages::FILTER_AlphaReplacer(),     L""))); 
-    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPAlphaComposer::CLASS_ID                    , HFCClassDescriptor(ImagePPMessages::FILTER_AlphaComposer(),     L""))); 
-    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPColorReplacerFilter::CLASS_ID              , HFCClassDescriptor(ImagePPMessages::FILTER_ColorReplacer(),     L""))); 
-    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPHistogramScalingFilter::CLASS_ID           , HFCClassDescriptor(ImagePPMessages::FILTER_HistogramScaling(),  L""))); 
-    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPGammaFilter::CLASS_ID                      , HFCClassDescriptor(ImagePPMessages::FILTER_Gamma(),             L""))); 
-    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPInvertFilter::CLASS_ID                     , HFCClassDescriptor(ImagePPMessages::FILTER_Invert(),            L""))); 
-    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPTintFilter::CLASS_ID                       , HFCClassDescriptor(ImagePPMessages::FILTER_Tint(),              L""))); 
-    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPCustomMap8Filter::CLASS_ID                 , HFCClassDescriptor(ImagePPMessages::FILTER_CustomMap8(),        L""))); 
-    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPCustomMap16Filter::CLASS_ID                , HFCClassDescriptor(ImagePPMessages::FILTER_CustomMap16(),       L""))); 
+    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPBlurFilter::CLASS_ID                       , HFCClassDescriptor(ImagePPMessages::FILTER_Blur(),              ""))); 
+    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPColorBalanceFilter::CLASS_ID               , HFCClassDescriptor(ImagePPMessages::FILTER_ColorBalance(),      ""))); 
+    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPColortwistFilter::CLASS_ID                 , HFCClassDescriptor(ImagePPMessages::FILTER_ColorTwist(),        ""))); 
+    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPComplexFilter::CLASS_ID                    , HFCClassDescriptor(ImagePPMessages::FILTER_Complex(),           ""))); 
+    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPContrastFilter::CLASS_ID                   , HFCClassDescriptor(ImagePPMessages::FILTER_Contrast(),          ""))); 
+    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPDetailFilter::CLASS_ID                     , HFCClassDescriptor(ImagePPMessages::FILTER_Detail(),            ""))); 
+    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPEdgeEnhanceFilter::CLASS_ID                , HFCClassDescriptor(ImagePPMessages::FILTER_EdgeEnhance(),       ""))); 
+    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPFindEdgesFilter::CLASS_ID                  , HFCClassDescriptor(ImagePPMessages::FILTER_FindEdges(),         ""))); 
+    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPSharpenFilter::CLASS_ID                    , HFCClassDescriptor(ImagePPMessages::FILTER_Sharpen(),           ""))); 
+    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPSmoothFilter::CLASS_ID                     , HFCClassDescriptor(ImagePPMessages::FILTER_Smooth(),            ""))); 
+    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPAverageFilter::CLASS_ID                    , HFCClassDescriptor(ImagePPMessages::FILTER_Average(),           ""))); 
+    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPCustomConvFilter::CLASS_ID                 , HFCClassDescriptor(ImagePPMessages::FILTER_CustomConvolution(), ""))); 
+    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPAlphaReplacer::CLASS_ID                    , HFCClassDescriptor(ImagePPMessages::FILTER_AlphaReplacer(),     ""))); 
+    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPAlphaComposer::CLASS_ID                    , HFCClassDescriptor(ImagePPMessages::FILTER_AlphaComposer(),     ""))); 
+    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPColorReplacerFilter::CLASS_ID              , HFCClassDescriptor(ImagePPMessages::FILTER_ColorReplacer(),     ""))); 
+    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPHistogramScalingFilter::CLASS_ID           , HFCClassDescriptor(ImagePPMessages::FILTER_HistogramScaling(),  ""))); 
+    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPGammaFilter::CLASS_ID                      , HFCClassDescriptor(ImagePPMessages::FILTER_Gamma(),             ""))); 
+    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPInvertFilter::CLASS_ID                     , HFCClassDescriptor(ImagePPMessages::FILTER_Invert(),            ""))); 
+    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPTintFilter::CLASS_ID                       , HFCClassDescriptor(ImagePPMessages::FILTER_Tint(),              ""))); 
+    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPCustomMap8Filter::CLASS_ID                 , HFCClassDescriptor(ImagePPMessages::FILTER_CustomMap8(),        ""))); 
+    m_FilterClassIDDescriptorMap.insert(IDDescriptorMap::value_type(HRPCustomMap16Filter::CLASS_ID                , HFCClassDescriptor(ImagePPMessages::FILTER_CustomMap16(),       ""))); 
     }
 
 
@@ -269,12 +269,12 @@ HUTClassIDDescriptor::~HUTClassIDDescriptor()
 //GetLabel for Codec by Class key
 //-----------------------------------------------------------------------------
 
-WString HUTClassIDDescriptor::GetClassLabelCodec(HCLASS_ID pi_ClassID) const
+Utf8String HUTClassIDDescriptor::GetClassLabelCodec(HCLASS_ID pi_ClassID) const
     {
     IDDescriptorMap::const_iterator itr = m_CodecClassIDDescriptorMap.find(pi_ClassID);
 
     if (itr != m_CodecClassIDDescriptorMap.end())
-        return ImagePPMessages::GetStringW(static_cast<ImagePPMessages::StringId>((*itr).second.GetStringID()));
+        return ImagePPMessages::GetString(static_cast<ImagePPMessages::StringId>((*itr).second.GetStringID()));
     else
         return m_NotFound;
     }
@@ -282,7 +282,7 @@ WString HUTClassIDDescriptor::GetClassLabelCodec(HCLASS_ID pi_ClassID) const
 //GetLabel for Codec by objet
 //-----------------------------------------------------------------------------
 
-WString HUTClassIDDescriptor::GetClassLabelCodec(const HCDCodec& pi_rCodec) const
+Utf8String HUTClassIDDescriptor::GetClassLabelCodec(const HCDCodec& pi_rCodec) const
     {
     return GetClassLabelCodec(pi_rCodec.GetClassID());
     }
@@ -290,12 +290,12 @@ WString HUTClassIDDescriptor::GetClassLabelCodec(const HCDCodec& pi_rCodec) cons
 //GetLabel for Pixel Type by Class key
 //-----------------------------------------------------------------------------
 
-WString HUTClassIDDescriptor::GetClassLabelPixelType(HCLASS_ID pi_ClassID) const
+Utf8String HUTClassIDDescriptor::GetClassLabelPixelType(HCLASS_ID pi_ClassID) const
     {
     IDDescriptorMap::const_iterator itr = m_PixelClassIDDescriptorMap.find(pi_ClassID);
 
     if (itr != m_PixelClassIDDescriptorMap.end())
-        return ImagePPMessages::GetStringW(static_cast<ImagePPMessages::StringId>((*itr).second.GetStringID()));
+        return ImagePPMessages::GetString(static_cast<ImagePPMessages::StringId>((*itr).second.GetStringID()));
     else
         return m_NotFound;
     }
@@ -303,7 +303,7 @@ WString HUTClassIDDescriptor::GetClassLabelPixelType(HCLASS_ID pi_ClassID) const
 //GetLabel for Pixel Type by objet
 //-----------------------------------------------------------------------------
 
-WString HUTClassIDDescriptor::GetClassLabelPixelType(const HRPPixelType& pi_rPixelType) const
+Utf8String HUTClassIDDescriptor::GetClassLabelPixelType(const HRPPixelType& pi_rPixelType) const
     {
     return GetClassLabelPixelType(pi_rPixelType.GetClassID());
     }
@@ -311,12 +311,12 @@ WString HUTClassIDDescriptor::GetClassLabelPixelType(const HRPPixelType& pi_rPix
 //GetLabel for TransfoModel by Class key
 //-----------------------------------------------------------------------------
 
-WString HUTClassIDDescriptor::GetClassLabelTransfoModel(HCLASS_ID pi_ClassID) const
+Utf8String HUTClassIDDescriptor::GetClassLabelTransfoModel(HCLASS_ID pi_ClassID) const
     {
     IDDescriptorMap::const_iterator itr = m_TransfoClassIDDescriptorMap.find(pi_ClassID);
 
     if (itr != m_TransfoClassIDDescriptorMap.end())
-        return ImagePPMessages::GetStringW(static_cast<ImagePPMessages::StringId>((*itr).second.GetStringID()));
+        return ImagePPMessages::GetString(static_cast<ImagePPMessages::StringId>((*itr).second.GetStringID()));
     else
         return m_NotFound;
     }
@@ -324,7 +324,7 @@ WString HUTClassIDDescriptor::GetClassLabelTransfoModel(HCLASS_ID pi_ClassID) co
 //GetLabel for TransfoModel by objet
 //-----------------------------------------------------------------------------
 
-WString HUTClassIDDescriptor::GetClassLabelTransfoModel(const HGF2DTransfoModel& pi_rTransfoModel) const
+Utf8String HUTClassIDDescriptor::GetClassLabelTransfoModel(const HGF2DTransfoModel& pi_rTransfoModel) const
     {
     return GetClassLabelTransfoModel(pi_rTransfoModel.GetClassID());
     }
@@ -332,12 +332,12 @@ WString HUTClassIDDescriptor::GetClassLabelTransfoModel(const HGF2DTransfoModel&
 //GetLabel for Filter by Class key
 //-----------------------------------------------------------------------------
 
-WString HUTClassIDDescriptor::GetClassLabelFilter(HCLASS_ID pi_ClassID) const
+Utf8String HUTClassIDDescriptor::GetClassLabelFilter(HCLASS_ID pi_ClassID) const
     {
     IDDescriptorMap::const_iterator itr = m_FilterClassIDDescriptorMap.find(pi_ClassID);
 
     if (itr != m_FilterClassIDDescriptorMap.end())
-        return ImagePPMessages::GetStringW(static_cast<ImagePPMessages::StringId>((*itr).second.GetStringID()));
+        return ImagePPMessages::GetString(static_cast<ImagePPMessages::StringId>((*itr).second.GetStringID()));
     else
         return m_NotFound;
     }
@@ -345,7 +345,7 @@ WString HUTClassIDDescriptor::GetClassLabelFilter(HCLASS_ID pi_ClassID) const
 //GetLabel for Filter by objet
 //-----------------------------------------------------------------------------
 
-WString HUTClassIDDescriptor::GetClassLabelFilter(const HRPFilter& pi_rFilter) const
+Utf8String HUTClassIDDescriptor::GetClassLabelFilter(const HRPFilter& pi_rFilter) const
     {
     return GetClassLabelFilter(pi_rFilter.GetClassID());
     }
@@ -354,41 +354,41 @@ WString HUTClassIDDescriptor::GetClassLabelFilter(const HRPFilter& pi_rFilter) c
 //GetLabel for Scan line Orientation by objet
 //-----------------------------------------------------------------------------
 
-WString HUTClassIDDescriptor::GetClassLabelSLO(const HRFScanlineOrientation& pi_rScanlineO) const
+Utf8String HUTClassIDDescriptor::GetClassLabelSLO(const HRFScanlineOrientation& pi_rScanlineO) const
     {
-    WString Result;
+    Utf8String Result;
 
     if (pi_rScanlineO == HRFScanlineOrientation::UPPER_LEFT_HORIZONTAL)
 
-        Result = ImagePPMessages::GetStringW(ImagePPMessages::ORIENTATION_UpperLeftHorizontal());
+        Result = ImagePPMessages::GetString(ImagePPMessages::ORIENTATION_UpperLeftHorizontal());
 
     else if (pi_rScanlineO == HRFScanlineOrientation::UPPER_RIGHT_HORIZONTAL)
 
-        Result = ImagePPMessages::GetStringW(ImagePPMessages::ORIENTATION_UpperRightHorizontal());
+        Result = ImagePPMessages::GetString(ImagePPMessages::ORIENTATION_UpperRightHorizontal());
 
     else if (pi_rScanlineO == HRFScanlineOrientation::LOWER_LEFT_HORIZONTAL)
 
-        Result = ImagePPMessages::GetStringW(ImagePPMessages::ORIENTATION_LowerLeftHorizontal());
+        Result = ImagePPMessages::GetString(ImagePPMessages::ORIENTATION_LowerLeftHorizontal());
 
     else if (pi_rScanlineO == HRFScanlineOrientation::LOWER_RIGHT_HORIZONTAL)
 
-        Result = ImagePPMessages::GetStringW(ImagePPMessages::ORIENTATION_LowerRightHorizontal());
+        Result = ImagePPMessages::GetString(ImagePPMessages::ORIENTATION_LowerRightHorizontal());
 
     else if (pi_rScanlineO == HRFScanlineOrientation::UPPER_LEFT_VERTICAL)
 
-        Result = ImagePPMessages::GetStringW(ImagePPMessages::ORIENTATION_UpperLeftVertial());
+        Result = ImagePPMessages::GetString(ImagePPMessages::ORIENTATION_UpperLeftVertial());
 
     else if (pi_rScanlineO == HRFScanlineOrientation::UPPER_RIGHT_VERTICAL)
 
-        Result = ImagePPMessages::GetStringW(ImagePPMessages::ORIENTATION_UpperRightVertial());
+        Result = ImagePPMessages::GetString(ImagePPMessages::ORIENTATION_UpperRightVertial());
 
     else if (pi_rScanlineO == HRFScanlineOrientation::LOWER_LEFT_VERTICAL)
 
-        Result = ImagePPMessages::GetStringW(ImagePPMessages::ORIENTATION_LowerLeftVertial());
+        Result = ImagePPMessages::GetString(ImagePPMessages::ORIENTATION_LowerLeftVertial());
 
     else if (pi_rScanlineO == HRFScanlineOrientation::LOWER_RIGHT_VERTICAL)
 
-        Result = ImagePPMessages::GetStringW(ImagePPMessages::ORIENTATION_LowerRightVertial());
+        Result = ImagePPMessages::GetString(ImagePPMessages::ORIENTATION_LowerRightVertial());
     else
 
         return m_NotFound;
@@ -401,25 +401,25 @@ WString HUTClassIDDescriptor::GetClassLabelSLO(const HRFScanlineOrientation& pi_
 //GetLabel for Block Type by objet
 //-----------------------------------------------------------------------------
 
-WString HUTClassIDDescriptor::GetClassLabelBlockType(const HRFBlockType& pi_rBlockT) const
+Utf8String HUTClassIDDescriptor::GetClassLabelBlockType(const HRFBlockType& pi_rBlockT) const
     {
-    WString Result;
+    Utf8String Result;
 
     if (pi_rBlockT == HRFBlockType::TILE)
 
-        Result = ImagePPMessages::GetStringW(ImagePPMessages::BLOCKTYPE_Tile());
+        Result = ImagePPMessages::GetString(ImagePPMessages::BLOCKTYPE_Tile());
 
     else if (pi_rBlockT == HRFBlockType::STRIP)
 
-        Result = ImagePPMessages::GetStringW(ImagePPMessages::BLOCKTYPE_Strip());
+        Result = ImagePPMessages::GetString(ImagePPMessages::BLOCKTYPE_Strip());
 
     else if (pi_rBlockT == HRFBlockType::LINE)
 
-        Result = ImagePPMessages::GetStringW(ImagePPMessages::BLOCKTYPE_Line());
+        Result = ImagePPMessages::GetString(ImagePPMessages::BLOCKTYPE_Line());
 
     else if (pi_rBlockT == HRFBlockType::IMAGE)
 
-        Result = ImagePPMessages::GetStringW(ImagePPMessages::BLOCKTYPE_Image());
+        Result = ImagePPMessages::GetString(ImagePPMessages::BLOCKTYPE_Image());
 
     else
 
@@ -432,21 +432,21 @@ WString HUTClassIDDescriptor::GetClassLabelBlockType(const HRFBlockType& pi_rBlo
 //GetLabel for Encoding Type by objet
 //-----------------------------------------------------------------------------
 
-WString HUTClassIDDescriptor::GetClassLabelEncodingType(const HRFEncodingType& pi_rEncodingT) const
+Utf8String HUTClassIDDescriptor::GetClassLabelEncodingType(const HRFEncodingType& pi_rEncodingT) const
     {
-    WString Result;
+    Utf8String Result;
 
     if (pi_rEncodingT == HRFEncodingType::STANDARD)
 
-        Result = ImagePPMessages::GetStringW(ImagePPMessages::ENCODING_Standard());
+        Result = ImagePPMessages::GetString(ImagePPMessages::ENCODING_Standard());
 
     else if (pi_rEncodingT == HRFEncodingType::MULTIRESOLUTION)
 
-        Result = ImagePPMessages::GetStringW(ImagePPMessages::ENCODING_MultiResolution());
+        Result = ImagePPMessages::GetString(ImagePPMessages::ENCODING_MultiResolution());
 
     else if (pi_rEncodingT == HRFEncodingType::PROGRESSIVE)
 
-        Result = ImagePPMessages::GetStringW(ImagePPMessages::ENCODING_Progressive());
+        Result = ImagePPMessages::GetString(ImagePPMessages::ENCODING_Progressive());
 
     else
 
@@ -459,33 +459,33 @@ WString HUTClassIDDescriptor::GetClassLabelEncodingType(const HRFEncodingType& p
 //GetLabel for Resampling by objet
 //-----------------------------------------------------------------------------
 
-WString HUTClassIDDescriptor::GetClassLabelResampling(const HRFDownSamplingMethod& pi_rSampling) const
+Utf8String HUTClassIDDescriptor::GetClassLabelResampling(const HRFDownSamplingMethod& pi_rSampling) const
     {
-    WString Result;
+    Utf8String Result;
 
     if (pi_rSampling == HRFDownSamplingMethod::NEAREST_NEIGHBOUR)
 
-        Result = ImagePPMessages::GetStringW(ImagePPMessages::RESAMPLING_NearestNeighbour());
+        Result = ImagePPMessages::GetString(ImagePPMessages::RESAMPLING_NearestNeighbour());
 
     else if (pi_rSampling == HRFDownSamplingMethod::AVERAGE)
 
-        Result = ImagePPMessages::GetStringW(ImagePPMessages::RESAMPLING_Average());
+        Result = ImagePPMessages::GetString(ImagePPMessages::RESAMPLING_Average());
 
     else if (pi_rSampling == HRFDownSamplingMethod::VECTOR_AWARENESS)
 
-        Result = ImagePPMessages::GetStringW(ImagePPMessages::RESAMPLING_VectorAwareness());
+        Result = ImagePPMessages::GetString(ImagePPMessages::RESAMPLING_VectorAwareness());
 
     else if (pi_rSampling == HRFDownSamplingMethod::UNKOWN)
 
-        Result = ImagePPMessages::GetStringW(ImagePPMessages::RESAMPLING_Unknown());
+        Result = ImagePPMessages::GetString(ImagePPMessages::RESAMPLING_Unknown());
 
     else if (pi_rSampling == HRFDownSamplingMethod::ORING4)
 
-        Result = ImagePPMessages::GetStringW(ImagePPMessages::RESAMPLING_Oring4());
+        Result = ImagePPMessages::GetString(ImagePPMessages::RESAMPLING_Oring4());
 
     else if (pi_rSampling == HRFDownSamplingMethod::NONE)
 
-        Result = ImagePPMessages::GetStringW(ImagePPMessages::RESAMPLING_None());
+        Result = ImagePPMessages::GetString(ImagePPMessages::RESAMPLING_None());
     else
 
         return m_NotFound;
@@ -497,21 +497,21 @@ WString HUTClassIDDescriptor::GetClassLabelResampling(const HRFDownSamplingMetho
 //GetLabel for Geo Reference by objet
 //-----------------------------------------------------------------------------
 
-WString HUTClassIDDescriptor::GetClassLabelGeoRef(const HRFGeoreferenceFormat& pi_rGeoRef) const
+Utf8String HUTClassIDDescriptor::GetClassLabelGeoRef(const HRFGeoreferenceFormat& pi_rGeoRef) const
     {
-    WString Result;
+    Utf8String Result;
 
     if (pi_rGeoRef == HRFGeoreferenceFormat::GEOREFERENCE_IN_IMAGE)
 
-        Result = ImagePPMessages::GetStringW(ImagePPMessages::GEOREFERENCE_InImage());
+        Result = ImagePPMessages::GetString(ImagePPMessages::GEOREFERENCE_InImage());
 
     else if (pi_rGeoRef == HRFGeoreferenceFormat::GEOREFERENCE_IN_HGR)
 
-        Result = ImagePPMessages::GetStringW(ImagePPMessages::GEOREFERENCE_HGR());
+        Result = ImagePPMessages::GetString(ImagePPMessages::GEOREFERENCE_HGR());
 
     else if (pi_rGeoRef == HRFGeoreferenceFormat::GEOREFERENCE_IN_WORLD_FILE)
 
-        Result = ImagePPMessages::GetStringW(ImagePPMessages::GEOREFERENCE_WorldFile());
+        Result = ImagePPMessages::GetString(ImagePPMessages::GEOREFERENCE_WorldFile());
 
     else
 
@@ -524,7 +524,7 @@ WString HUTClassIDDescriptor::GetClassLabelGeoRef(const HRFGeoreferenceFormat& p
 //Get Class Code for Codec
 //-----------------------------------------------------------------------------
 
-const WString& HUTClassIDDescriptor::GetClassCodeCodec(HCLASS_ID pi_ClassID) const
+const Utf8String& HUTClassIDDescriptor::GetClassCodeCodec(HCLASS_ID pi_ClassID) const
     {
     IDDescriptorMap::const_iterator itr = m_CodecClassIDDescriptorMap.find(pi_ClassID);
 
@@ -537,7 +537,7 @@ const WString& HUTClassIDDescriptor::GetClassCodeCodec(HCLASS_ID pi_ClassID) con
 //Get Class Code for PixelType
 //-----------------------------------------------------------------------------
 
-const WString& HUTClassIDDescriptor::GetClassCodePixelType(HCLASS_ID pi_ClassID) const
+const Utf8String& HUTClassIDDescriptor::GetClassCodePixelType(HCLASS_ID pi_ClassID) const
     {
     IDDescriptorMap::const_iterator itr = m_PixelClassIDDescriptorMap.find(pi_ClassID);
 
@@ -550,7 +550,7 @@ const WString& HUTClassIDDescriptor::GetClassCodePixelType(HCLASS_ID pi_ClassID)
 //Get Class Code for TransfoModel
 //-----------------------------------------------------------------------------
 
-const WString& HUTClassIDDescriptor::GetClassCodeTransfoModel(HCLASS_ID pi_ClassID) const
+const Utf8String& HUTClassIDDescriptor::GetClassCodeTransfoModel(HCLASS_ID pi_ClassID) const
     {
     IDDescriptorMap::const_iterator itr = m_TransfoClassIDDescriptorMap.find(pi_ClassID);
 
@@ -563,7 +563,7 @@ const WString& HUTClassIDDescriptor::GetClassCodeTransfoModel(HCLASS_ID pi_Class
 //Get Class Code for Filter
 //-----------------------------------------------------------------------------
 
-const WString& HUTClassIDDescriptor::GetClassCodeFilter(HCLASS_ID pi_ClassID) const
+const Utf8String& HUTClassIDDescriptor::GetClassCodeFilter(HCLASS_ID pi_ClassID) const
     {
     IDDescriptorMap::const_iterator itr = m_FilterClassIDDescriptorMap.find(pi_ClassID);
 
@@ -577,7 +577,7 @@ const WString& HUTClassIDDescriptor::GetClassCodeFilter(HCLASS_ID pi_ClassID) co
 //  Inline Get the Notfound string.
 //-----------------------------------------------------------------------------
 
-const WString& HUTClassIDDescriptor::GetNotfoundString() const
+const Utf8String& HUTClassIDDescriptor::GetNotfoundString() const
     {
     return m_NotFound;
     }

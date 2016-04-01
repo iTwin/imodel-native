@@ -127,7 +127,7 @@ protected:
     double                     m_BBoxMaxY;
     uint64_t                   m_Width;
     uint64_t                   m_Height;
-    WString                    m_ServerURL;
+    Utf8String                    m_ServerURL;
     Utf8String                 m_Request;
 
     // image size

@@ -51,31 +51,31 @@ public:
     HDECLARE_CLASS_ID(HFCURLId_ECWP, HFCURLCommonInternet);
 
     // Define the Scheme label
-    static const WString& s_SchemeName()
-        {   static const WString Val(L"ecwp");
+    static const Utf8String& s_SchemeName()
+        {   static const Utf8String Val("ecwp");
         FREEZE_STL_STRING(Val);
         return Val;
         }
 
     //:> constructor
-    IMAGEPP_EXPORT                         HFCURLECWP(const WString& pi_URL);
-    IMAGEPP_EXPORT                         HFCURLECWP(const WString& pi_User,
-                                              const WString& pi_Password,
-                                              const WString& pi_Host,
-                                              const WString& pi_Port,
-                                              const WString& pi_Path,
-                                              const WString& pi_SearchPart);
+    IMAGEPP_EXPORT                         HFCURLECWP(const Utf8String& pi_URL);
+    IMAGEPP_EXPORT                         HFCURLECWP(const Utf8String& pi_User,
+                                              const Utf8String& pi_Password,
+                                              const Utf8String& pi_Host,
+                                              const Utf8String& pi_Port,
+                                              const Utf8String& pi_Path,
+                                              const Utf8String& pi_SearchPart);
     IMAGEPP_EXPORT virtual                 ~HFCURLECWP();
 
     //:> Content access methods
-    IMAGEPP_EXPORT virtual WString         GetURL() const;
-    const WString&          GetPath() const;
-    const WString&          GetSearchPart() const;
+    IMAGEPP_EXPORT virtual Utf8String         GetURL() const;
+    const Utf8String&          GetPath() const;
+    const Utf8String&          GetSearchPart() const;
 
     //:> Overriden methods, used in relative path management
     IMAGEPP_EXPORT virtual bool           HasPathTo(HFCURL* pi_pURL);
-    IMAGEPP_EXPORT virtual WString         FindPathTo(HFCURL* pi_pDest);
-    IMAGEPP_EXPORT virtual HFCURL*         MakeURLTo(const WString& pi_Path);
+    IMAGEPP_EXPORT virtual Utf8String         FindPathTo(HFCURL* pi_pDest);
+    IMAGEPP_EXPORT virtual HFCURL*         MakeURLTo(const Utf8String& pi_Path);
 
 #ifdef __HMR_DEBUG_MEMBER
     virtual void            PrintState() const;
@@ -88,8 +88,8 @@ private:
     friend struct URLECWPCreator;
 
     // Components of the URLPath part of the URL string.
-    WString                  m_Path;
-    WString                  m_SearchPart;
+    Utf8String                  m_Path;
+    Utf8String                  m_SearchPart;
 
     // Disabled methods
     HFCURLECWP(const HFCURLECWP&);

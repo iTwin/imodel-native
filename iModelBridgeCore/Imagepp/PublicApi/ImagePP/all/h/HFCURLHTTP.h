@@ -52,13 +52,13 @@ public:
     HDECLARE_CLASS_ID(HFCURLId_HTTP, HFCURLHTTPBase);
 
     //:> constructor
-    IMAGEPP_EXPORT                         HFCURLHTTP(const WString& pi_URL);
-    IMAGEPP_EXPORT                         HFCURLHTTP(const WString& pi_User,
-                                              const WString& pi_Password,
-                                              const WString& pi_Host,
-                                              const WString& pi_Port,
-                                              const WString& pi_Path,
-                                              const WString& pi_SearchPart);
+    IMAGEPP_EXPORT                         HFCURLHTTP(const Utf8String& pi_URL);
+    IMAGEPP_EXPORT                         HFCURLHTTP(const Utf8String& pi_User,
+                                              const Utf8String& pi_Password,
+                                              const Utf8String& pi_Host,
+                                              const Utf8String& pi_Port,
+                                              const Utf8String& pi_Path,
+                                              const Utf8String& pi_SearchPart);
     IMAGEPP_EXPORT virtual                 ~HFCURLHTTP();
 
 private:

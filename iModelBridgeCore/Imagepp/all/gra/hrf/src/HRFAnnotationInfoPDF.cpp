@@ -227,9 +227,9 @@ void HRFAnnotationInfoPDF::CopyMemberData(const HRFAnnotationInfoPDF& pi_rObj)
 // Public
 // Constructor
 //-----------------------------------------------------------------------------
-HRFAnnotationInfoPDF::HRFAnnotationInfoPDF(const WString&             pi_rMsg,
+HRFAnnotationInfoPDF::HRFAnnotationInfoPDF(const Utf8String&             pi_rMsg,
                                                   const HFCPtr<HVE2DVector>& pi_rp2DSelectionZone,
-                                                  const WString&             pi_rAnnotationType,
+                                                  const Utf8String&             pi_rAnnotationType,
                                                   bool                      pi_IsSupported,
                                                   double                    pi_SetTolerance,
                                                   bool                      pi_IsFilled)

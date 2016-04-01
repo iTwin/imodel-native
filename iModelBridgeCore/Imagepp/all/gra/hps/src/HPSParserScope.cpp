@@ -17,18 +17,18 @@
 #include <Imagepp/all/h/HPSParser.h>
 
 //---------------------------------------------------------------------------
-StatementDefinitionNode* HPSParserScope::FindStatement(const WString& pi_rString)
+StatementDefinitionNode* HPSParserScope::FindStatement(const Utf8String& pi_rString)
     {
-    WString IdentText(pi_rString);
-    BeStringUtilities::Wcsupr (&(IdentText[0]));                  //chck UNICODE
+    Utf8String IdentText(pi_rString);
+    IdentText.ToUpper();     //chck UNICODE
     return FindStatementInternal(IdentText);
     }
 
 //---------------------------------------------------------------------------
-VariableTokenNode* HPSParserScope::FindVariable(const WString& pi_rString)
+VariableTokenNode* HPSParserScope::FindVariable(const Utf8String& pi_rString)
     {
-    WString IdentText(pi_rString);
-    BeStringUtilities::Wcsupr (&(IdentText[0]));                  //chck UNICODE
+    Utf8String IdentText(pi_rString);
+    IdentText.ToUpper();                  //chck UNICODE
     return FindVariableInternal(IdentText);
     }
 
@@ -38,8 +38,8 @@ void HPSParserScope::AddParameter(HPANode* pi_pParameterNode)
     HPRECONDITION(pi_pParameterNode != 0);
     HPRECONDITION(pi_pParameterNode->GetSubNodes().size() == 2);
 
-    WString IdentText(((const HFCPtr<HPATokenNode>&)(pi_pParameterNode->GetSubNodes()[1]))->GetText());
-    BeStringUtilities::Wcsupr (&(IdentText[0]));                  //chck UNICODE
+    Utf8String IdentText(((const HFCPtr<HPATokenNode>&)(pi_pParameterNode->GetSubNodes()[1]))->GetText());
+    IdentText.ToUpper();                  //chck UNICODE
 
     if ((FindVariable(IdentText) != 0) || (FindStatement(IdentText) != 0))
         throw HPSAlreadyDefinedException(HFCPtr<HPANode>(pi_pParameterNode), IdentText);
@@ -53,12 +53,12 @@ void HPSParserScope::AddParameter(HPANode* pi_pParameterNode)
     }
 
 //---------------------------------------------------------------------------
-void HPSParserScope::AddVariable(const WString& pi_rString, ExpressionNode* pi_pNode)
+void HPSParserScope::AddVariable(const Utf8String& pi_rString, ExpressionNode* pi_pNode)
     {
     HPRECONDITION(pi_pNode != 0);
 
-    WString IdentText(pi_rString);
-    BeStringUtilities::Wcsupr (&(IdentText[0]));              //chck UNICODE
+    Utf8String IdentText(pi_rString);
+    IdentText.ToUpper();              //chck UNICODE
 
     if ((FindVariable(IdentText) != 0) || (FindStatement(IdentText) != 0))
         throw HPSAlreadyDefinedException(HFCPtr<HPANode>(pi_pNode), IdentText);
@@ -72,10 +72,10 @@ void HPSParserScope::AddVariable(const WString& pi_rString, ExpressionNode* pi_p
     }
 
 //---------------------------------------------------------------------------
-void HPSParserScope::AddStatement(const WString& pi_rString, StatementDefinitionNode* pi_pNode)
+void HPSParserScope::AddStatement(const Utf8String& pi_rString, StatementDefinitionNode* pi_pNode)
     {
-    WString IdentText(pi_rString);
-    BeStringUtilities::Wcsupr (&(IdentText[0]));                  //chck UNICODE
+    Utf8String IdentText(pi_rString);
+    IdentText.ToUpper();                  //chck UNICODE
     if ((FindVariable(IdentText) != 0) || (FindStatement(IdentText) != 0))
         throw HPSAlreadyDefinedException(HFCPtr<HPANode>(pi_pNode), IdentText);
     m_StatementList.insert(StatementList::value_type(IdentText, pi_pNode));
@@ -83,7 +83,7 @@ void HPSParserScope::AddStatement(const WString& pi_rString, StatementDefinition
 
 
 //---------------------------------------------------------------------------
-StatementDefinitionNode* HPSParserScope::FindStatementInternal(const WString& pi_rString)
+StatementDefinitionNode* HPSParserScope::FindStatementInternal(const Utf8String& pi_rString)
     {
     StatementList::iterator itr = m_StatementList.find(pi_rString);
     if (itr == m_StatementList.end())
@@ -98,7 +98,7 @@ StatementDefinitionNode* HPSParserScope::FindStatementInternal(const WString& pi
     }
 
 //---------------------------------------------------------------------------
-VariableTokenNode* HPSParserScope::FindVariableInternal(const WString& pi_rString)
+VariableTokenNode* HPSParserScope::FindVariableInternal(const Utf8String& pi_rString)
     {
     VariableList::iterator itr = m_VariableList.find(pi_rString);
     if (itr == m_VariableList.end())

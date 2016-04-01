@@ -223,21 +223,21 @@ HRFHMRCreator::HRFHMRCreator()
     }
 
 // Identification information
-WString HRFHMRCreator::GetLabel() const
+Utf8String HRFHMRCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_HMR()); //HMR File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_HMR()); //HMR File Format
     }
 
 // Identification information
-WString HRFHMRCreator::GetSchemes() const
+Utf8String HRFHMRCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 // Identification information
-WString HRFHMRCreator::GetExtensions() const
+Utf8String HRFHMRCreator::GetExtensions() const
     {
-    return WString(L"*.hmr");
+    return Utf8String("*.hmr");
     }
 
 // allow to Open an image file
@@ -773,58 +773,58 @@ void HRFHMRFile::CreateDescriptors()
         SetImageInSubImage (GetIndexOfPage(Page));
 
         // DOCUMENTNAME Tag
-        if (GetFilePtr()->GetField(DOCUMENTNAME, &pSystem))
+        if (GetFilePtr()->GetFieldA(DOCUMENTNAME, &pSystem))
             {
-            pTag = new HRFAttributeDocumentName(WString(pSystem,false));
+            pTag = new HRFAttributeDocumentName(pSystem);
             TagList.Set(pTag);
             }
 
         // IMAGEDESCRIPTION Tag
-        if (GetFilePtr()->GetField(IMAGEDESCRIPTION, &pSystem))
+        if (GetFilePtr()->GetFieldA(IMAGEDESCRIPTION, &pSystem))
             {
-            pTag = new HRFAttributeImageDescription(WString(pSystem,false));
+            pTag = new HRFAttributeImageDescription(pSystem);
             TagList.Set(pTag);
             }
 
         // PAGENAME Tag
-        if (GetFilePtr()->GetField(PAGENAME, &pSystem))
+        if (GetFilePtr()->GetFieldA(PAGENAME, &pSystem))
             {
-            pTag = new HRFAttributePageName(WString(pSystem,false));
+            pTag = new HRFAttributePageName(pSystem);
             TagList.Set(pTag);
             }
 
         // SOFTWARE Tag
-        if (GetFilePtr()->GetField(SOFTWARE, &pSystem))
+        if (GetFilePtr()->GetFieldA(SOFTWARE, &pSystem))
             {
-            pTag = new HRFAttributeSoftware(WString(pSystem,false));
+            pTag = new HRFAttributeSoftware(pSystem);
             TagList.Set(pTag);
             }
 
         // DATETIME Tag
-        if (GetFilePtr()->GetField(DATETIME, &pSystem))
+        if (GetFilePtr()->GetFieldA(DATETIME, &pSystem))
             {
-            pTag = new HRFAttributeDateTime(WString(pSystem,false));
+            pTag = new HRFAttributeDateTime(pSystem);
             TagList.Set(pTag);
             }
 
         // ARTIST Tag
-        if (GetFilePtr()->GetField(ARTIST, &pSystem))
+        if (GetFilePtr()->GetFieldA(ARTIST, &pSystem))
             {
-            pTag = new HRFAttributeArtist(WString(pSystem,false));
+            pTag = new HRFAttributeArtist(pSystem);
             TagList.Set(pTag);
             }
 
         // HOSTCOMPUTER Tag
-        if (GetFilePtr()->GetField(HOSTCOMPUTER, &pSystem))
+        if (GetFilePtr()->GetFieldA(HOSTCOMPUTER, &pSystem))
             {
-            pTag = new HRFAttributeHostComputer(WString(pSystem,false));
+            pTag = new HRFAttributeHostComputer(pSystem);
             TagList.Set(pTag);
             }
 
         // INKNAMES Tag
-        if (GetFilePtr()->GetField(INKNAMES, &pSystem))
+        if (GetFilePtr()->GetFieldA(INKNAMES, &pSystem))
             {
-            pTag = new HRFAttributeInkNames(WString(pSystem,false));
+            pTag = new HRFAttributeInkNames(pSystem);
             TagList.Set(pTag);
             }
 
@@ -850,9 +850,9 @@ void HRFHMRFile::CreateDescriptors()
             TagList.Set(pTag);
             }
         // COPYRIGHT Tag
-        if (GetFilePtr()->GetField(COPYRIGHT, &pSystem))
+        if (GetFilePtr()->GetFieldA(COPYRIGHT, &pSystem))
             {
-            pTag = new HRFAttributeCopyright(WString(pSystem,false));
+            pTag = new HRFAttributeCopyright(pSystem);
             TagList.Set(pTag);
             }
 
@@ -1039,7 +1039,6 @@ bool HRFHMRFile::ReadPrivateDirectory ()
     bool   Ret = true;
     HTIFFFile::DirectoryID CurDir = GetFilePtr()->CurrentDirectory();
     double* pData;
-    char*   pUserData;
 
     // Init. default value for the Private Tags
     //
@@ -1057,7 +1056,7 @@ bool HRFHMRFile::ReadPrivateDirectory ()
         m_HMRDirDirty   = false;
 
         // Read System Coord.
-        if (GetFilePtr()->GetField(HMR_IMAGECOORDINATESYSTEM,  &pSystem))
+        if (GetFilePtr()->GetFieldA(HMR_IMAGECOORDINATESYSTEM,  &pSystem))
             {
             if (strlen (pSystem) >= HMR_LgStringSystemCoord)
                 memcpy (m_SystemCoord, pSystem, HMR_LgStringSystemCoord);
@@ -1077,7 +1076,7 @@ bool HRFHMRFile::ReadPrivateDirectory ()
         // DateTime Histogramme.
         memset (m_HistoDateTime, ' ', HMR_LgStringDateTime);
         m_HistoDateTime[HMR_LgStringDateTime-1] = '\0';
-        if (GetFilePtr()->GetField(HMR_HISTOGRAMDATETIME,  &pSystem))
+        if (GetFilePtr()->GetFieldA(HMR_HISTOGRAMDATETIME,  &pSystem))
             memcpy (m_HistoDateTime, pSystem, strlen(pSystem));
 
         // Read Histogramme.
@@ -1118,11 +1117,13 @@ bool HRFHMRFile::ReadPrivateDirectory ()
             }
 
         // Get User data
-        if (GetFilePtr()->GetField(HMR_USERDATA, &pUserData))
+        CharP pUserData = nullptr;
+        if (GetFilePtr()->GetFieldA(HMR_USERDATA, &pUserData))
             {
-            m_HMRUserDataLength = (int32_t)strlen(pUserData)+1;
-            m_pHMRUserData = new Byte[m_HMRUserDataLength];
-            memcpy(m_pHMRUserData, pUserData, m_HMRUserDataLength * sizeof(char));
+            m_HMRUserDataLength = (int32_t)strlen(pUserData) + 1;
+            m_pHMRUserData = new char[m_HMRUserDataLength];
+            BeStringUtilities::Strncpy(m_pHMRUserData, m_HMRUserDataLength, pUserData, BeStringUtilities::AsManyAsPossible);
+
             m_IsBundleTagPresent = true;        // to compability with Descartes
             }
         else
@@ -1154,8 +1155,7 @@ void HRFHMRFile::WritePrivateDirectory ()
         uint32_t PreviousDirectory = GetFilePtr()->CurrentDirectory();
 
         // If description doesn't set, sets a default
-        char* pDesc;
-        if (!GetFilePtr()->GetField(IMAGEDESCRIPTION, &pDesc))
+        if (!GetFilePtr()->TagIsPresent(IMAGEDESCRIPTION))
             {
             // Set page 0
             SetImageInSubImage (GetIndexOfPage(0));
@@ -1217,7 +1217,7 @@ void HRFHMRFile::WritePrivateDirectory ()
 
             // Set User data
             if (m_HMRUserDataLength > 0)
-                GetFilePtr()->SetFieldA(HMR_USERDATA, (char*)m_pHMRUserData.get());
+                GetFilePtr()->SetFieldA(HMR_USERDATA, m_pHMRUserData.get());
             else
                 GetFilePtr()->SetFieldA(HMR_USERDATA, defUserData);
             }

@@ -12,7 +12,7 @@
 
 #include <Imagepp/all/h/HCDCodecJPEG.h>
 
-#define HCD_CODEC_NAME L"JPEG"
+#define HCD_CODEC_NAME "JPEG"
 
 //-----------------------------------------------------------------------------
 // public

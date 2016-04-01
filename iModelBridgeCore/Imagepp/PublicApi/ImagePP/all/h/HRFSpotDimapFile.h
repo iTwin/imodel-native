@@ -20,8 +20,8 @@
 BEGIN_IMAGEPP_NAMESPACE
 typedef struct SpotDimapXmlHeader
     {
-    WString  DataFileFormat;
-    WString  DataFilePath;
+    Utf8String  DataFileFormat;
+    Utf8String  DataFilePath;
     } SpotDimapXmlHeader;
 
 
@@ -129,9 +129,9 @@ struct HRFSpotDimapCreator : public HRFGeoTiffCreator
                                                uint64_t                pi_Offset = 0) const;
 
     //:> Identification information
-    virtual WString               GetLabel() const;
-    virtual WString               GetSchemes() const;
-    virtual WString               GetExtensions() const;
+    virtual Utf8String               GetLabel() const;
+    virtual Utf8String               GetSchemes() const;
+    virtual Utf8String               GetExtensions() const;
 
 
     //:> Capabilities of Raster file.

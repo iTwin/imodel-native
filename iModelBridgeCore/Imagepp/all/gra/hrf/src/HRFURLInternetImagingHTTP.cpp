@@ -20,19 +20,19 @@
 // This constructor configures the object from the detached parts of the URL
 // specification.
 //-----------------------------------------------------------------------------
-HRFURLInternetImagingHTTP::HRFURLInternetImagingHTTP(const WString& pi_User,
-                                                     const WString& pi_Password,
-                                                     const WString& pi_Host,
-                                                     const WString& pi_Port,
-                                                     const WString& pi_Path,
-                                                     const WString& pi_ImageName,
+HRFURLInternetImagingHTTP::HRFURLInternetImagingHTTP(const Utf8String& pi_User,
+                                                     const Utf8String& pi_Password,
+                                                     const Utf8String& pi_Host,
+                                                     const Utf8String& pi_Port,
+                                                     const Utf8String& pi_Path,
+                                                     const Utf8String& pi_ImageName,
                                                      bool    pi_IsHTTP)
     : HFCURLHTTPBase(pi_User,
                      pi_Password,
                      pi_Host,
                      pi_Port,
                      pi_Path,
-                     WString(L"fif=") + pi_ImageName,
+                     Utf8String("fif=") + pi_ImageName,
                      pi_IsHTTP)
     {
     m_Image = pi_ImageName;
@@ -42,7 +42,7 @@ HRFURLInternetImagingHTTP::HRFURLInternetImagingHTTP(const WString& pi_User,
 // This constructor configures the object from the detached parts of the URL
 // specification.
 //-----------------------------------------------------------------------------
-HRFURLInternetImagingHTTP::HRFURLInternetImagingHTTP(const WString& pi_rURL,
+HRFURLInternetImagingHTTP::HRFURLInternetImagingHTTP(const Utf8String& pi_rURL,
                                                      bool    pi_IsHTTP)
     : HFCURLHTTPBase(pi_rURL, pi_IsHTTP)
     {
@@ -94,10 +94,10 @@ bool HRFURLInternetImagingHTTP::IsURLInternetImaging(const HFCURL* pi_pURL)
         (pi_pURL->GetSchemeType() == HFCURLHTTPS::s_SchemeName()))
         {
         // get the first 4 bytes of the search part and lower case them
-        WString SearchPart(((const HFCURLHTTPBase*)pi_pURL)->GetSearchPart(), 0, 4);
+        Utf8String SearchPart(((const HFCURLHTTPBase*)pi_pURL)->GetSearchPart(), 0, 4);
 
         // verify that it starts with "fif="
-        Result = CaseInsensitiveStringTools().AreEqual(SearchPart, L"fif=");
+        Result = SearchPart.EqualsI("fif=");
         }
 
     return (Result);
@@ -106,7 +106,7 @@ bool HRFURLInternetImagingHTTP::IsURLInternetImaging(const HFCURL* pi_pURL)
 //-----------------------------------------------------------------------------
 // Returns a reference to a string that contains the name of the image
 //-----------------------------------------------------------------------------
-const WString& HRFURLInternetImagingHTTP::GetImage() const
+const Utf8String& HRFURLInternetImagingHTTP::GetImage() const
     {
     return m_Image;
     }

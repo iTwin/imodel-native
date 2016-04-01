@@ -27,7 +27,7 @@ public :
 
     IMAGEPP_EXPORT const HMDLayerInfo*           GetLayer       (uint16_t          pi_Index) const;
     IMAGEPP_EXPORT uint16_t                GetNbLayers    () const;
-    IMAGEPP_EXPORT bool                          GetIndexFromKey(const WString&           pi_rKey,
+    IMAGEPP_EXPORT bool                          GetIndexFromKey(const Utf8String&           pi_rKey,
                                                          uint16_t&                 po_rIndex) const;
     IMAGEPP_EXPORT void                          Merge          (const HFCPtr<HMDLayers>& pi_rLayers);
 

@@ -30,7 +30,7 @@ static const ErrorMap s_ErrorMap(s_ErrorMappingArray,
                                  sizeof(s_ErrorMappingArray)/sizeof(s_ErrorMappingArray[0]));
 
 
-HRFOracleException::HRFOracleException  (const WString&      pi_rFileName, const WString&      pi_rOriginalErrorMsg,
+HRFOracleException::HRFOracleException  (const Utf8String&      pi_rFileName, const Utf8String&      pi_rOriginalErrorMsg,
                                          const ErrorCode     pi_ErrorCode) :   HRFException(pi_rFileName)
     {
     m_ErrorMsg = pi_rOriginalErrorMsg;
@@ -71,21 +71,21 @@ ImagePPExceptions::StringId HRFOracleException::GetExceptionIDForCode(ErrorCode 
 // public
 // Get the exception message
 //-----------------------------------------------------------------------------
-WString HRFOracleException::GetExceptionMessage() const
+Utf8String HRFOracleException::GetExceptionMessage() const
     {
     wostringstream ErrorCodeSS;
     if (NO_ERROR_CODE != m_ErrorCode)
         ErrorCodeSS << m_ErrorCode;
     else
-        ErrorCodeSS << L"?";
+        ErrorCodeSS << "?";
 
     ImagePPExceptions::StringId exceptionID = GetExceptionIDForCode(m_ErrorCode);
-    WPrintfString rawMessage(GetRawMessageFromResource(exceptionID).c_str(), ErrorCodeSS.str().c_str(), m_ErrorMsg.c_str());
+    Utf8PrintfString rawMessage(GetRawMessageFromResource(exceptionID).c_str(), ErrorCodeSS.str().c_str(), m_ErrorMsg.c_str());
 
     BeStringUtilities::Utf8ToWChar(exceptionNameWChar, exceptionID.m_str, 100);
 
-    WString exceptionName(exceptionID.m_str, true/*isUtf8*/);
-    WPrintfString message(L"%ls - [%ls]", rawMessage.c_str(), exceptionName.c_str());
+    Utf8String exceptionName(exceptionID.m_str);
+    Utf8PrintfString message("%s - [%s]", rawMessage.c_str(), exceptionName.c_str());
     return message;
     }
 //-----------------------------------------------------------------------------
@@ -99,7 +99,7 @@ const HRFOracleException::ErrorCode HRFOracleException::GetErrorCode() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Julien.Rossignol 07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR HRFOracleException::GetOriginalErrorMsg() const
+Utf8StringCR HRFOracleException::GetOriginalErrorMsg() const
 {
     return m_ErrorMsg;
 }

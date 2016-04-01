@@ -86,7 +86,7 @@ void ReadLine(const HAutoPtr<HFCBinStream>& pi_pFile,
 
     const int32_t BufferSize = MAX_PATH*3;
     char      Buffer[BufferSize + 1];
-    // WString    CurrentLine;
+    // Utf8String    CurrentLine;
 
     bool EndOfLine = false;
     po_pString->erase();
@@ -120,27 +120,27 @@ HRFIrasbRSTCreator::HRFIrasbRSTCreator()
     Return file format label
     ---------------------------------------------------------------------------
  */
-WString HRFIrasbRSTCreator::GetLabel() const
+Utf8String HRFIrasbRSTCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_IrasbRST());  //Raster Save Set
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_IrasbRST());  //Raster Save Set
     }
 
 /** ---------------------------------------------------------------------------
     Return file format scheme
     ---------------------------------------------------------------------------
  */
-WString HRFIrasbRSTCreator::GetSchemes() const
+Utf8String HRFIrasbRSTCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 /** ---------------------------------------------------------------------------
     Return file format extension
     ---------------------------------------------------------------------------
  */
-WString HRFIrasbRSTCreator::GetExtensions() const
+Utf8String HRFIrasbRSTCreator::GetExtensions() const
     {
-    return WString(L"*.rst");
+    return Utf8String("*.rst");
     }
 
 /** ---------------------------------------------------------------------------
@@ -297,7 +297,7 @@ void HRFIrasbRSTCreator::OpenFile(const HFCPtr<HFCURL>& pi_rpURL,
                         currStr++;
                         }
 
-                    BeStringUtilities::Utf8ToWChar(info.fileName,currStr);
+                    info.fileName.AssignA(currStr);
                     po_rListOfRSTSubFileInfo.push_back(info);
                     }
                 }
@@ -327,34 +327,34 @@ bool HRFIrasbRSTCreator::GetRelatedURLs(const HFCPtr<HFCURL>& pi_rpURL,
     // Scan all files
     for (list<RSTSubFileInfo>::const_iterator Itr = listOfRSTSubFileInfo.begin(); Itr != listOfRSTSubFileInfo.end(); ++Itr)
         {
-        WString FileName;
+        Utf8String FileName;
 
-        if ((Itr->fileName).find(L"\\") == WString::npos)
+        if ((Itr->fileName).find(L"\\") == BeFileName::npos)
             {
             // If file has no path, build complete path from RSP file
-            WString Path = ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
+            Utf8String Path = ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
 
-            WString::size_type SepPos = Path.rfind(L"\\");
+            Utf8String::size_type SepPos = Path.rfind("\\");
 
-            if (SepPos != WString::npos)
+            if (SepPos != Utf8String::npos)
                 Path = Path.substr(0, SepPos);
 
             // Compose url
-            FileName = WString(HFCURLFile::s_SchemeName() + L"://")
-                       + ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetHost() + WString(L"\\")
-                       + Path + Itr->fileName;
+            FileName = Utf8String(HFCURLFile::s_SchemeName() + "://")
+                       + ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetHost() + Utf8String("\\")
+                       + Path + Utf8String(Itr->fileName);
             }
         else
-            FileName = WString(HFCURLFile::s_SchemeName() + L"://" + Itr->fileName);
+            FileName = Utf8String(HFCURLFile::s_SchemeName() + "://" + Utf8String(Itr->fileName));
 
         // Remove (x:n:format) from mpf files since we want to refer the file, not the page
 
         // Find the file extension
-        WString::size_type DotPos = FileName.rfind(L'.');
-        WString::size_type SepPos = FileName.rfind(L"\\");
+        Utf8String::size_type DotPos = FileName.rfind('.');
+        Utf8String::size_type SepPos = FileName.rfind("\\");
 
-        if ((DotPos != WString::npos)
-            && (BeStringUtilities::Wcsnicmp(FileName.c_str() + DotPos + 1, L"mpf", 3) == 0)
+        if ((DotPos != Utf8String::npos)
+            && (BeStringUtilities::Strnicmp(FileName.c_str() + DotPos + 1, "mpf", 3) == 0)
             && (SepPos < DotPos)
             && (FileName.c_str()[DotPos+4] == '(')
             && (FileName.c_str()[FileName.length()-1] == ')'))

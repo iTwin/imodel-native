@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMDLayerInfoPDF.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -18,16 +18,16 @@ class HMDLayerInfoPDF : public HMDLayerInfo
 
 public :
 
-    IMAGEPP_EXPORT HMDLayerInfoPDF(const WString& pi_rKeyName,
+    IMAGEPP_EXPORT HMDLayerInfoPDF(const Utf8String& pi_rKeyName,
                     bool          pi_InitialVisibleState,
-                    const WString& pi_rLayerName);
+                    const Utf8String& pi_rLayerName);
     IMAGEPP_EXPORT virtual ~HMDLayerInfoPDF();
 
-    IMAGEPP_EXPORT const WString& GetLayerName() const;
+    IMAGEPP_EXPORT const Utf8String& GetLayerName() const;
 
 protected :
 
-    WString m_LayerName;
+    Utf8String m_LayerName;
 
 private :
 

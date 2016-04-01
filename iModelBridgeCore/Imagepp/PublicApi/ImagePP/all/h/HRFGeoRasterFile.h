@@ -87,7 +87,7 @@ private:
     bool                         m_IsBigEndian;
     HAutoPtr<SDOGeoRasterWrapper> m_pSDOGeoRasterWrapper;
     
-    bool ConnectToOracle         (WStringCR pi_ConnectionString);
+    bool ConnectToOracle         (Utf8StringCR pi_ConnectionString);
 
     void  ReadXORA_1_0 (Bentley::BeXmlNode* pi_pNode, bool pi_Connected);
     void  ReadXORA_1_1 (Bentley::BeXmlNode* pi_pNode, bool pi_Connected);
@@ -114,9 +114,9 @@ struct HRFGeoRasterCreator : public HRFRasterFileCreator
     virtual bool                       CanRegister() const;
 
     // Identification information
-    virtual WString                     GetLabel() const;
-    virtual WString                     GetSchemes() const;
-    virtual WString                     GetExtensions() const;
+    virtual Utf8String                     GetLabel() const;
+    virtual Utf8String                     GetSchemes() const;
+    virtual Utf8String                     GetExtensions() const;
 
     // capabilities of Raster file.
     virtual const HFCPtr<HRFRasterFileCapabilities>&

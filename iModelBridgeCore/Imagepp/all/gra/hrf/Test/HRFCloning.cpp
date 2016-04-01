@@ -81,7 +81,7 @@ int32_t _tmain(int32_t argc, _TCHAR* argv[])
 
     //----------------------------------------------------------------------------------------
     // Open the source file
-    SrcFileName  = new HFCURLFile(WString(HFCURLFile::s_SchemeName() + _T("://"))+WString(argv[1]));
+    SrcFileName  = new HFCURLFile(Utf8String(HFCURLFile::s_SchemeName() + _T("://"))+Utf8String(argv[1]));
     pSource = HRFRasterFileFactory::GetInstance()->OpenFile((HFCPtr<HFCURL>)SrcFileName);
     if (pSource == 0)
         {
@@ -91,14 +91,14 @@ int32_t _tmain(int32_t argc, _TCHAR* argv[])
 
     //----------------------------------------------------------------------------------------
     // Create the destination URL
-    WString Extension;
-    WString DriveDirName;
+    Utf8String Extension;
+    Utf8String DriveDirName;
 
     // Extract the Path
-    WString Path(SrcFileName->GetHost()+WString(_T("\\"))+SrcFileName->GetPath());
+    Utf8String Path(SrcFileName->GetHost()+Utf8String(_T("\\"))+SrcFileName->GetPath());
 
     // Find the file extension
-    WString::size_type DotPos = Path.rfind('.');
+    Utf8String::size_type DotPos = Path.rfind('.');
 
     // Extract the extension and the drive dir name
     if (DotPos != string::npos)
@@ -114,7 +114,7 @@ int32_t _tmain(int32_t argc, _TCHAR* argv[])
 
     //----------------------------------------------------------------------------------------
     // Create the destination file.
-    DestFileName = new HFCURLFile(WString(HFCURLFile::s_SchemeName() + _T("://"))+DriveDirName+WString(_T(".clone."))+Extension);
+    DestFileName = new HFCURLFile(Utf8String(HFCURLFile::s_SchemeName() + _T("://"))+DriveDirName+Utf8String(_T(".clone."))+Extension);
     pDestination = HRFRasterFileFactory::GetInstance()->NewFile((HFCPtr<HFCURL>)DestFileName);
     if (pDestination == 0)
         {

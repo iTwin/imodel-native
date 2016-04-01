@@ -496,9 +496,9 @@ HRFSpotDimapCreator::HRFSpotDimapCreator()
     @return string SpotDimap file format label.
     ---------------------------------------------------------------------------
  */
-WString HRFSpotDimapCreator::GetLabel() const
+Utf8String HRFSpotDimapCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_SpotDigital());
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_SpotDigital());
     }
 
 
@@ -508,9 +508,9 @@ WString HRFSpotDimapCreator::GetLabel() const
     @return string scheme of URL.
     ---------------------------------------------------------------------------
  */
-WString HRFSpotDimapCreator::GetSchemes() const
+Utf8String HRFSpotDimapCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 
@@ -520,9 +520,9 @@ WString HRFSpotDimapCreator::GetSchemes() const
     @return string SpotDimap extension.
     ---------------------------------------------------------------------------
  */
-WString HRFSpotDimapCreator::GetExtensions() const
+Utf8String HRFSpotDimapCreator::GetExtensions() const
     {
-    return WString(L"*.dim");
+    return Utf8String("*.dim");
     }
 
 
@@ -565,11 +565,11 @@ bool HRFSpotDimapCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     if(!pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID))
         return false;
 
-    WString XMLFileName;
+    Utf8String XMLFileName;
     
     // Extract the standard file name from the main URL
     XMLFileName = ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetHost();
-    XMLFileName += L"\\";
+    XMLFileName += "\\";
     XMLFileName += ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
 
     // Open XML file
@@ -588,8 +588,8 @@ bool HRFSpotDimapCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     if(NULL == pMetatDataNode)
         return false;
 
-    WString format;
-    if(BEXML_Success != pMetatDataNode->GetContent(format) || BeStringUtilities::Wcsicmp (format.c_str(), L"DIMAP") != 0)
+    Utf8String format;
+    if(BEXML_Success != pMetatDataNode->GetContent(format) || !format.EqualsI("DIMAP"))
        return false;
 
 
@@ -760,11 +760,11 @@ Close all channel raster files.
 
 bool HRFSpotDimapFile::ReadHeaderFromXMLFile()
     {
-    WString XMLFileName;
+    Utf8String XMLFileName;
 
     // Extract the standard file name from the main URL
     XMLFileName = ((HFCPtr<HFCURLFile>&)GetURL())->GetHost();
-    XMLFileName += L"\\";
+    XMLFileName += "\\";
     XMLFileName += ((HFCPtr<HFCURLFile>&)GetURL())->GetPath();
 
     // Open XML file
@@ -844,24 +844,24 @@ URL composition utility.
 HFCPtr<HFCURL> HRFSpotDimapFile::ComposeImageryURL()
     {
     //we need to read the XML header first
-    HPRECONDITION(m_Header.DataFilePath.compare(L"") != 0);
+    HPRECONDITION(m_Header.DataFilePath.compare("") != 0);
 
-    WString XMLFileName;
+    Utf8String XMLFileName;
     HFCPtr<HFCURL> pImageryFileURL = 0;
-    WString ImgFilePathStr;
+    Utf8String ImgFilePathStr;
 
     // Path is relative to xml file location
-    WString Path = ((HFCPtr<HFCURLFile>&)this->GetURL())->GetPath();
-    WString Host = ((HFCPtr<HFCURLFile>&)this->GetURL())->GetHost();
-    WString FileName = ((HFCPtr<HFCURLFile>&)this->GetURL())->GetFilename();
+    Utf8String Path = ((HFCPtr<HFCURLFile>&)this->GetURL())->GetPath();
+    Utf8String Host = ((HFCPtr<HFCURLFile>&)this->GetURL())->GetHost();
+    Utf8String FileName = ((HFCPtr<HFCURLFile>&)this->GetURL())->GetFilename();
 
-    WString::size_type FileNamePos = Path.rfind(FileName);
+    Utf8String::size_type FileNamePos = Path.rfind(FileName);
 
-    if (FileNamePos != WString::npos)
+    if (FileNamePos != Utf8String::npos)
         Path = Path.substr(0, FileNamePos);
 
-    ImgFilePathStr = WString(HFCURLFile::s_SchemeName() + L"://")
-                     + Host + L"\\"
+    ImgFilePathStr = Utf8String(HFCURLFile::s_SchemeName() + "://")
+                     + Host + "\\"
                      + Path
                      + m_Header.DataFilePath;
 
@@ -886,8 +886,8 @@ initialize members
 
 void  HRFSpotDimapFile::Initialize()
     {
-    m_Header.DataFileFormat = (L"");
-    m_Header.DataFilePath = (L"");
+    m_Header.DataFileFormat = ("");
+    m_Header.DataFilePath = ("");
     }
 
 /** ---------------------------------------------------------------------------

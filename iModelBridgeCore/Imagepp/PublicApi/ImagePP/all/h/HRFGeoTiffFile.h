@@ -129,7 +129,7 @@ struct HRFGeoTiffCreator : public HRFTiffCreator
                                                    uint64_t                pi_Offset = 0) const;
 
     // Identification information
-    virtual WString                   GetLabel() const;
+    virtual Utf8String                   GetLabel() const;
 
     // capabilities of Raster file.
     virtual const HFCPtr<HRFRasterFileCapabilities>&

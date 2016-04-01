@@ -165,18 +165,18 @@ HRFIntergraphCotCreator::HRFIntergraphCotCreator()
 // Identification information
 //-----------------------------------------------------------------------------
 
-WString HRFIntergraphCotCreator::GetLabel() const
+Utf8String HRFIntergraphCotCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_COT()); // Intergraph Cot File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_COT()); // Intergraph Cot File Format
     }
 
 //-----------------------------------------------------------------------------
 // Identification information
 //-----------------------------------------------------------------------------
 
-WString HRFIntergraphCotCreator::GetExtensions() const
+Utf8String HRFIntergraphCotCreator::GetExtensions() const
     {
-    return WString(L"*.cot");
+    return Utf8String("*.cot");
     }
 
 //-----------------------------------------------------------------------------

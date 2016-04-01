@@ -12,7 +12,7 @@
 
 #include <Imagepp/all/h/HCDCodecErMapperSupported.h>
 
-#define HCD_CODEC_NAME     L"ErMapperSupportedCodec"
+#define HCD_CODEC_NAME     "ErMapperSupportedCodec"
 
 //-----------------------------------------------------------------------------
 // public
@@ -121,7 +121,7 @@ uint16_t HCDCodecErMapperSupported::GetCompressionRatio() const
 // protected
 // HCDCodecErMapperSupported
 //-----------------------------------------------------------------------------
-HCDCodecErMapperSupported::HCDCodecErMapperSupported(const WString& pi_rCodecName)
+HCDCodecErMapperSupported::HCDCodecErMapperSupported(const Utf8String& pi_rCodecName)
     : HCDCodecImage(pi_rCodecName)
     {
     m_CompressionRatio = 10;

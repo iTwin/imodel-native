@@ -140,9 +140,9 @@ HRFGifCreator::HRFGifCreator()
 // Public (HRFGifCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFGifCreator::GetLabel() const
+Utf8String HRFGifCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_GIF()); // Gif File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_GIF()); // Gif File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -150,9 +150,9 @@ WString HRFGifCreator::GetLabel() const
 // Public (HRFGifCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFGifCreator::GetSchemes() const
+Utf8String HRFGifCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 //-----------------------------------------------------------------------------
@@ -160,9 +160,9 @@ WString HRFGifCreator::GetSchemes() const
 // Public (HRFGifCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFGifCreator::GetExtensions() const
+Utf8String HRFGifCreator::GetExtensions() const
     {
-    return WString(L"*.gif");
+    return Utf8String("*.gif");
     }
 
 //-----------------------------------------------------------------------------
@@ -658,8 +658,9 @@ void HRFGifFile::SaveGifFile(bool pi_CloseFile)
                 // Software tag
                 if (pTag->GetID() == HRFAttributeSoftware::ATTRIBUTE_ID)
                     {
+                    WString tagW(((HFCPtr<HRFAttributeSoftware>&)pTag)->GetData().c_str(), BentleyCharEncoding::Utf8);
                     AString tempStrA;
-                    BeStringUtilities::WCharToCurrentLocaleChar(tempStrA, ((HFCPtr<HRFAttributeSoftware>&)pTag)->GetData().c_str());
+                    BeStringUtilities::WCharToCurrentLocaleChar(tempStrA, tagW.c_str());
                     Software = tempStrA.c_str();
                     }
                 // Application code tag
@@ -668,8 +669,9 @@ void HRFGifFile::SaveGifFile(bool pi_CloseFile)
                 // Notes Tag
                 if (pTag->GetID() == HRFAttributeNotes::ATTRIBUTE_ID)
                     {
+                    WString tagW(((HFCPtr<HRFAttributeNotes>&)pTag)->GetData().c_str(), BentleyCharEncoding::Utf8);
                     AString tempStrA;
-                    BeStringUtilities::WCharToCurrentLocaleChar(tempStrA, ((HFCPtr<HRFAttributeNotes>&)pTag)->GetData().c_str());
+                    BeStringUtilities::WCharToCurrentLocaleChar(tempStrA, tagW.c_str());
                     CommentData = tempStrA.c_str();
                     }
                 // Background Tag
@@ -1131,7 +1133,7 @@ bool HRFGifFile::LookUpExtensionBlocks()
 
             // Adding tag Comment in the general tag list.
             // Notes Tag
-            HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeNotes(WString(Text.str().c_str(),false));
+            HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeNotes(Utf8String(Text.str().c_str()));
             m_GeneralTagList.Set(pTag);
             delete [] gifComment.CommentData;
             }
@@ -1181,7 +1183,7 @@ bool HRFGifFile::LookUpExtensionBlocks()
             // Adding tag Comment in the general tag list.
             HFCPtr<HPMGenericAttribute> pTag;
             // Software tag
-            pTag = new HRFAttributeSoftware(WString(soft.c_str(),false));
+            pTag = new HRFAttributeSoftware(Utf8String(soft.c_str()));
             m_GeneralTagList.Set(pTag);
             // Application code tag
             pTag = new HRFAttributeGIFApplicationCode(appCode);

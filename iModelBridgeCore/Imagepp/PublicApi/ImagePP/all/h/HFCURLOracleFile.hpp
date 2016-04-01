@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLOracleFile.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -13,7 +13,7 @@ BEGIN_IMAGEPP_NAMESPACE
 // Returns a reference to a string that contains the host part of the
 // URL string.
 //-----------------------------------------------------------------------------
-inline const WString& HFCURLOracleFile::GetHost() const
+inline const Utf8String& HFCURLOracleFile::GetHost() const
     {
     return m_Host;
     }
@@ -22,7 +22,7 @@ inline const WString& HFCURLOracleFile::GetHost() const
 // Returns a reference to a string that contains the Path part of the
 // URL string.
 //-----------------------------------------------------------------------------
-inline const WString& HFCURLOracleFile::GetPath() const
+inline const Utf8String& HFCURLOracleFile::GetPath() const
     {
     return m_Path;
     }
@@ -31,7 +31,7 @@ inline const WString& HFCURLOracleFile::GetPath() const
 // Returns a reference to a string that contains the DirTableName part of the
 // URL string.
 //-----------------------------------------------------------------------------
-inline const WString& HFCURLOracleFile::GetDirTableName() const
+inline const Utf8String& HFCURLOracleFile::GetDirTableName() const
     {
     return m_DirTableName;
     }
@@ -40,7 +40,7 @@ inline const WString& HFCURLOracleFile::GetDirTableName() const
 // Returns a reference to a string that contains the Schema part of the
 // URL string.
 //-----------------------------------------------------------------------------
-inline const WString& HFCURLOracleFile::GetSchema() const
+inline const Utf8String& HFCURLOracleFile::GetSchema() const
     {
     return m_Schema;
     }

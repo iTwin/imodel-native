@@ -22,7 +22,7 @@
 static const uint32_t s_MaxTables     = 256;
 static const uint32_t s_EncoderTable  = 255;  // the last table
 
-#define HCD_CODEC_NAME L"Flashpix"
+#define HCD_CODEC_NAME "Flashpix"
 
 //-----------------------------------------------------------------------------
 // public

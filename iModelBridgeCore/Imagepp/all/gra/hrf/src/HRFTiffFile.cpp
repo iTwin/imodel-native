@@ -680,27 +680,27 @@ HRFTiffCreator::HRFTiffCreator()
 // Identification information
 //-----------------------------------------------------------------------------
 
-WString HRFTiffCreator::GetLabel() const
+Utf8String HRFTiffCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_Tiff());  // Tagged Image File Format (TIFF)
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_Tiff());  // Tagged Image File Format (TIFF)
     }
 
 //-----------------------------------------------------------------------------
 // Identification information
 //-----------------------------------------------------------------------------
 
-WString HRFTiffCreator::GetSchemes() const
+Utf8String HRFTiffCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return HFCURLFile::s_SchemeName();
     }
 
 //-----------------------------------------------------------------------------
 // Identification information
 //-----------------------------------------------------------------------------
 
-WString HRFTiffCreator::GetExtensions() const
+Utf8String HRFTiffCreator::GetExtensions() const
     {
-    return WString(L"*.tif;*.tiff");
+    return Utf8String("*.tif;*.tiff");
     }
 
 //-----------------------------------------------------------------------------
@@ -2029,69 +2029,69 @@ void HRFTiffFile::GetBaselineTags(HPMAttributeSet* po_pTagList, const HRPPixelTy
     {
     HPRECONDITION(po_pTagList != 0);
 
-    char*  pSystem;
+    CharP pFieldA= nullptr;
     HFCPtr<HPMGenericAttribute> pTag;
 
     // DOCUMENTNAME Tag
-    if (GetFilePtr()->GetField(DOCUMENTNAME, &pSystem))
+    if (GetFilePtr()->GetFieldA(DOCUMENTNAME, &pFieldA))
         {
-        pTag = new HRFAttributeDocumentName(WString(pSystem,false));
+        pTag = new HRFAttributeDocumentName(pFieldA);
         po_pTagList->Set(pTag);
         }
 
     // IMAGEDESCRIPTION Tag
-    if (GetFilePtr()->GetField(IMAGEDESCRIPTION, &pSystem))
+    if (GetFilePtr()->GetFieldA(IMAGEDESCRIPTION, &pFieldA))
         {
-        pTag = new HRFAttributeImageDescription(WString(pSystem,false));
+        pTag = new HRFAttributeImageDescription(pFieldA);
         po_pTagList->Set(pTag);
         }
 
     // MAKE Tag
-    if (GetFilePtr()->GetField(MAKE, &pSystem))
+    if (GetFilePtr()->GetFieldA(MAKE, &pFieldA))
         {
-        pTag = new HRFAttributeMake(WString(pSystem,false));
+        pTag = new HRFAttributeMake(pFieldA);
         po_pTagList->Set(pTag);
         }
 
     // MODEL Tag
-    if (GetFilePtr()->GetField(MODEL, &pSystem))
+    if (GetFilePtr()->GetFieldA(MODEL, &pFieldA))
         {
-        pTag = new HRFAttributeModel(WString(pSystem,false));
+        pTag = new HRFAttributeModel(pFieldA);
         po_pTagList->Set(pTag);
         }
 
     // PAGENAME Tag
-    if (GetFilePtr()->GetField(PAGENAME, &pSystem))
+    if (GetFilePtr()->GetFieldA(PAGENAME, &pFieldA))
         {
-        pTag = new HRFAttributePageName(WString(pSystem,false));
+        pTag = new HRFAttributePageName(pFieldA);
         po_pTagList->Set(pTag);
         }
 
     // SOFTWARE Tag
-    if (GetFilePtr()->GetField(SOFTWARE, &pSystem))
+    if (GetFilePtr()->GetFieldA(SOFTWARE, &pFieldA))
         {
-        pTag = new HRFAttributeSoftware(WString(pSystem,false));
+        pTag = new HRFAttributeSoftware(pFieldA);
         po_pTagList->Set(pTag);
         }
 
     // DATETIME Tag
-    if (GetFilePtr()->GetField(DATETIME, &pSystem))
+    if (GetFilePtr()->GetFieldA(DATETIME, &pFieldA))
         {
-        pTag = new HRFAttributeDateTime(WString(pSystem,false));
+        pTag = new HRFAttributeDateTime(pFieldA);
         po_pTagList->Set(pTag);
         }
 
     // ARTIST Tag
-    if (GetFilePtr()->GetField(ARTIST, &pSystem))
+    if (GetFilePtr()->GetFieldA(ARTIST, &pFieldA))
         {
-        pTag = new HRFAttributeArtist(WString(pSystem,false));
+        pTag = new HRFAttributeArtist(pFieldA);
         po_pTagList->Set(pTag);
         }
 
     // HOSTCOMPUTER Tag
-    if (GetFilePtr()->GetField(HOSTCOMPUTER, &pSystem))
+    if (GetFilePtr()->GetFieldA(HOSTCOMPUTER, &pFieldA))
         {
-        pTag = new HRFAttributeHostComputer(WString(pSystem,false));
+        pTag = new HRFAttributeHostComputer(pFieldA);
         po_pTagList->Set(pTag);
         }
 
@@ -2118,9 +2118,9 @@ void HRFTiffFile::GetBaselineTags(HPMAttributeSet* po_pTagList, const HRPPixelTy
         }
 
     // COPYRIGHT Tag
-    if (GetFilePtr()->GetField(COPYRIGHT, &pSystem))
+    if (GetFilePtr()->GetFieldA(COPYRIGHT, &pFieldA))
         {
-        pTag = new HRFAttributeCopyright(WString(pSystem,false));
+        pTag = new HRFAttributeCopyright(pFieldA);
         po_pTagList->Set(pTag);
         }
 
@@ -2340,7 +2340,6 @@ void HRFTiffFile::CreateDescriptors()
             }
 
         // Tag information
-        char*  pSystem;
         HPMAttributeSet TagList;
         HFCPtr<HPMGenericAttribute> pTag;
         SetDirectory(HTIFFFile::MakeDirectoryID(HTIFFFile::STANDARD, PageDirectoryIndex));
@@ -2349,9 +2348,10 @@ void HRFTiffFile::CreateDescriptors()
         GetBaselineTags(&TagList, *PixelType);
 
         // INKNAMES Tag
-        if (GetFilePtr()->GetField(INKNAMES, &pSystem))
+        CharP pFieldA = nullptr;
+        if (GetFilePtr()->GetFieldA(INKNAMES, &pFieldA))
             {
-            pTag = new HRFAttributeInkNames(WString(pSystem,false));
+            pTag = new HRFAttributeInkNames(pFieldA);
             TagList.Set(pTag);
             }
 
@@ -2719,11 +2719,11 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
                             }
                         else if (pi_pTIFFFile->TagIsPresent (GDALNODATA))
                             {
-                            char* noDataValueTag;   
-                            bool  hasTag = pi_pTIFFFile->GetField (GDALNODATA, &noDataValueTag);
+                            CharP pNoDataValueTag = nullptr;   
+                            bool  hasTag = pi_pTIFFFile->GetFieldA (GDALNODATA, &pNoDataValueTag);
                             assert(hasTag == true);
 
-                            noDataValue = atof(noDataValueTag);                                                            
+                            noDataValue = atof(pNoDataValueTag);
                             HasNoDataValues = true;
                             }
 

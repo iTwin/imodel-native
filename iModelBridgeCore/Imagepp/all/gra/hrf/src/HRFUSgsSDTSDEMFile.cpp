@@ -190,21 +190,21 @@ HRFUSgsSDTSDEMCreator::HRFUSgsSDTSDEMCreator()
     }
 
 // Identification information
-WString HRFUSgsSDTSDEMCreator::GetLabel() const
+Utf8String HRFUSgsSDTSDEMCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_USGS_SDTS()); // SDTS DEM File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_USGS_SDTS()); // SDTS DEM File Format
     }
 
 // Identification information
-WString HRFUSgsSDTSDEMCreator::GetSchemes() const
+Utf8String HRFUSgsSDTSDEMCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 // Identification information
-WString HRFUSgsSDTSDEMCreator::GetExtensions() const
+Utf8String HRFUSgsSDTSDEMCreator::GetExtensions() const
     {
-    return WString(L"*catd.ddf");
+    return Utf8String("*catd.ddf");
     }
 
 // allow to Open an image file
@@ -360,16 +360,16 @@ void HRFUSgsSDTSDEMFile::CreateDescriptors()
 
     HFCPtr<HFCURLFile> pURL(new HFCURLFile(GetURL()->GetURL()));
 
-    WString FileName(pURL->GetFilename());
+    Utf8String FileName(pURL->GetFilename());
 
-    size_t Pos = FileName.find(L"CATD");
+    size_t Pos = FileName.find("CATD");
 
     if (Pos == string::npos)
     {
         throw HFCInvalidFileNameException(FileName);
     }
 
-    FileName   = FileName.replace(Pos, 4, L"DDOM");
+    FileName   = FileName.replace(Pos, 4, "DDOM");
 
     pURL->SetFileName(FileName);
 

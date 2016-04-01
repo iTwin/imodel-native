@@ -118,9 +118,9 @@ HRFImgMappedCreator::HRFImgMappedCreator()
     @return string ImgMapped file format label.
     ---------------------------------------------------------------------------
  */
-WString HRFImgMappedCreator::GetLabel() const
+Utf8String HRFImgMappedCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_ImgMapped()); //ImgMapped File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_ImgMapped()); //ImgMapped File Format
     }
 
 /** ---------------------------------------------------------------------------
@@ -129,9 +129,9 @@ WString HRFImgMappedCreator::GetLabel() const
     @return string scheme of URL.
     ---------------------------------------------------------------------------
  */
-WString HRFImgMappedCreator::GetSchemes() const
+Utf8String HRFImgMappedCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 /** ---------------------------------------------------------------------------
@@ -140,9 +140,9 @@ WString HRFImgMappedCreator::GetSchemes() const
     @return string ImgMapped extension.
     ---------------------------------------------------------------------------
  */
-WString HRFImgMappedCreator::GetExtensions() const
+Utf8String HRFImgMappedCreator::GetExtensions() const
     {
-    return WString(L"*.p");
+    return Utf8String("*.p");
     }
 
 /** ---------------------------------------------------------------------------
@@ -341,7 +341,7 @@ HRFImgMappedFile::~HRFImgMappedFile()
             // Delete file
             HASSERT(GetURL()->IsCompatibleWith(HFCURLFile::CLASS_ID));
             
-            BeFileName::BeDeleteFile(static_cast<HFCURLFile*>(GetURL().GetPtr())->GetAbsoluteFileName().c_str());
+            BeFileName(static_cast<HFCURLFile*>(GetURL().GetPtr())->GetAbsoluteFileName()).BeDeleteFile();
             }
         }
     catch(...)

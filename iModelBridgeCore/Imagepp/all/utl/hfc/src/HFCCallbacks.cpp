@@ -74,7 +74,7 @@ HFCAuthenticationError::~HFCAuthenticationError ()
 // Public
 // Returns the authentication message
 //-----------------------------------------------------------------------------
-WString HFCAuthenticationError::ToString () const
+Utf8String HFCAuthenticationError::ToString () const
     {
     return _ToString();
     }
@@ -197,9 +197,9 @@ void HFCAuthentication::ResetAllErrors ()
 // Public
 // constructor
 //-----------------------------------------------------------------------------
-HFCInternetAuthentication::HFCInternetAuthentication(const WString&          pi_Server,
-                                                     const WString&          pi_User,
-                                                     const WString&          pi_Password,
+HFCInternetAuthentication::HFCInternetAuthentication(const Utf8String&          pi_Server,
+                                                     const Utf8String&          pi_User,
+                                                     const Utf8String&          pi_Password,
                                                      const uint16_t   pi_RetryCount)
     :   HFCAuthentication(pi_RetryCount),
         m_User(pi_User),
@@ -219,27 +219,27 @@ HFCInternetAuthentication::~HFCInternetAuthentication()
 //-----------------------------------------------------------------------------
 // Accessors
 //-----------------------------------------------------------------------------
-void HFCInternetAuthentication::SetUser (const WString& pi_User)
+void HFCInternetAuthentication::SetUser (const Utf8String& pi_User)
     {
     m_User = pi_User;
     }
 
-void HFCInternetAuthentication::SetPassword (const WString& pi_Password)
+void HFCInternetAuthentication::SetPassword (const Utf8String& pi_Password)
     {
     m_Password = pi_Password;
     }
 
-const WString& HFCInternetAuthentication::GetUser () const
+const Utf8String& HFCInternetAuthentication::GetUser () const
     {
     return m_User;
     }
 
-const WString& HFCInternetAuthentication::GetPassword () const
+const Utf8String& HFCInternetAuthentication::GetPassword () const
     {
     return m_Password;
     }
 
-const WString& HFCInternetAuthentication::GetServer () const
+const Utf8String& HFCInternetAuthentication::GetServer () const
     {
     return m_Server;
     }
@@ -253,17 +253,17 @@ const WString& HFCInternetAuthentication::GetServer () const
 // A authentication string must be like that
 // user[:password[@server]]
 //-----------------------------------------------------------------------------
-void HFCInternetAuthentication::SetByString(const WString& pi_rAuthenticationString)
+void HFCInternetAuthentication::SetByString(const Utf8String& pi_rAuthenticationString)
     {
     // parse the authentication string
-    WString::size_type Pos = pi_rAuthenticationString.find(L':');
-    WString::size_type Pos2;
-    if (Pos != WString::npos)
+    Utf8String::size_type Pos = pi_rAuthenticationString.find(':');
+    Utf8String::size_type Pos2;
+    if (Pos != Utf8String::npos)
         {
         m_User = pi_rAuthenticationString.substr(0, Pos);
         ++Pos;
 
-        if ((Pos2 = pi_rAuthenticationString.find(L'@', Pos)) != WString::npos)
+        if ((Pos2 = pi_rAuthenticationString.find('@', Pos)) != Utf8String::npos)
             {
             m_Password = pi_rAuthenticationString.substr(Pos, Pos2 - Pos);
             m_Server = pi_rAuthenticationString.substr(Pos2 + 1);
@@ -271,7 +271,7 @@ void HFCInternetAuthentication::SetByString(const WString& pi_rAuthenticationStr
         else
             m_Password = pi_rAuthenticationString.substr(Pos);
         }
-    else if ((Pos = pi_rAuthenticationString.find(L'@')) != WString::npos)
+    else if ((Pos = pi_rAuthenticationString.find('@')) != Utf8String::npos)
         {
         m_User = pi_rAuthenticationString.substr(0, Pos);
         m_Server = pi_rAuthenticationString.substr(Pos + 1);
@@ -309,35 +309,35 @@ HFCOracleAuthentication::~HFCOracleAuthentication()
 //-----------------------------------------------------------------------------
 // Accessors
 //-----------------------------------------------------------------------------
-const WString& HFCOracleAuthentication::GetConnectionString () const
+const Utf8String& HFCOracleAuthentication::GetConnectionString () const
     {
     return m_ConnectionString;
     }
 
-const WString& HFCOracleAuthentication::GetUser () const
+const Utf8String& HFCOracleAuthentication::GetUser () const
     {
     return m_User;
     }
 
-const WString& HFCOracleAuthentication::GetPassword () const
+const Utf8String& HFCOracleAuthentication::GetPassword () const
     {
     return m_Password;
     }
 
-const WString& HFCOracleAuthentication::GetDatabaseName () const
+const Utf8String& HFCOracleAuthentication::GetDatabaseName () const
     {
     return m_DbName;
     }
-void HFCOracleAuthentication::SetUser (const WString& pi_User)
+void HFCOracleAuthentication::SetUser (const Utf8String& pi_User)
     {
     m_User = pi_User;
     }
 
-void HFCOracleAuthentication::SetPassword (const WString& pi_Password)
+void HFCOracleAuthentication::SetPassword (const Utf8String& pi_Password)
     {
     m_Password = pi_Password;
     }
-void HFCOracleAuthentication::SetDatabaseName (const WString& pi_DbName)
+void HFCOracleAuthentication::SetDatabaseName (const Utf8String& pi_DbName)
     {
     m_DbName = pi_DbName;
     }
@@ -350,18 +350,18 @@ void HFCOracleAuthentication::SetDatabaseName (const WString& pi_DbName)
 // A authentication string must use the following format:
 // user/password@geosvs
 //-----------------------------------------------------------------------------
-void HFCOracleAuthentication::SetByString(const WString& pi_rAuthenticationString)
+void HFCOracleAuthentication::SetByString(const Utf8String& pi_rAuthenticationString)
     {
     // OCI
         {
-        const WString::size_type SlashPos = pi_rAuthenticationString.find(L'/');
-        const WString::size_type AtPos    = pi_rAuthenticationString.find(L'@');
+        const Utf8String::size_type SlashPos = pi_rAuthenticationString.find('/');
+        const Utf8String::size_type AtPos    = pi_rAuthenticationString.find('@');
 
-        if (WString::npos != SlashPos &&  WString::npos != AtPos)
+        if (Utf8String::npos != SlashPos &&  Utf8String::npos != AtPos)
             {
             m_User      = pi_rAuthenticationString.substr(0, SlashPos);
             m_Password  = pi_rAuthenticationString.substr(SlashPos + 1, AtPos - SlashPos - 1);
-            m_DbName   = pi_rAuthenticationString.substr(AtPos + 1, WString::npos);
+            m_DbName   = pi_rAuthenticationString.substr(AtPos + 1, Utf8String::npos);
             }
         else
             {
@@ -381,8 +381,8 @@ void HFCOracleAuthentication::SetByString(const WString& pi_rAuthenticationStrin
 // Public
 // constructor
 //-----------------------------------------------------------------------------
-HFCProxyAuthentication::HFCProxyAuthentication  (const WString&          pi_User,
-                                                 const WString&          pi_Password,
+HFCProxyAuthentication::HFCProxyAuthentication  (const Utf8String&          pi_User,
+                                                 const Utf8String&          pi_Password,
                                                  const uint16_t   pi_RetryCount)
     :   HFCAuthentication(pi_RetryCount),
         m_User(pi_User),
@@ -402,22 +402,22 @@ HFCProxyAuthentication::~HFCProxyAuthentication()
 //-----------------------------------------------------------------------------
 // Accessors
 //-----------------------------------------------------------------------------
-void HFCProxyAuthentication::SetUser (const WString& pi_User)
+void HFCProxyAuthentication::SetUser (const Utf8String& pi_User)
     {
     m_User = pi_User;
     }
 
-void HFCProxyAuthentication::SetPassword (const WString& pi_Password)
+void HFCProxyAuthentication::SetPassword (const Utf8String& pi_Password)
     {
     m_Password = pi_Password;
     }
 
-const WString& HFCProxyAuthentication::GetUser () const
+const Utf8String& HFCProxyAuthentication::GetUser () const
     {
     return m_User;
     }
 
-const WString& HFCProxyAuthentication::GetPassword () const
+const Utf8String& HFCProxyAuthentication::GetPassword () const
     {
     return m_Password;
     }
@@ -429,11 +429,11 @@ const WString& HFCProxyAuthentication::GetPassword () const
 // A authentication string must be like that
 // user[:password]
 //-----------------------------------------------------------------------------
-void HFCProxyAuthentication::SetByString(const WString& pi_rAuthenticationString)
+void HFCProxyAuthentication::SetByString(const Utf8String& pi_rAuthenticationString)
     {
     // parse the authentication string
-    WString::size_type Pos = pi_rAuthenticationString.find(L':');
-    if (Pos != WString::npos)
+    Utf8String::size_type Pos = pi_rAuthenticationString.find(':');
+    if (Pos != Utf8String::npos)
         {
         m_User = pi_rAuthenticationString.substr(0, Pos);
         ++Pos;
@@ -454,7 +454,7 @@ void HFCProxyAuthentication::SetByString(const WString& pi_rAuthenticationString
 // Public
 // constructor
 //-----------------------------------------------------------------------------
-HFCPDFAuthentication::HFCPDFAuthentication (const WString&          pi_FileName,
+HFCPDFAuthentication::HFCPDFAuthentication (const Utf8String&          pi_FileName,
                                             const PasswordType      pi_PasswordType,
                                             const uint16_t   pi_RetryCount)
     :   HFCAuthentication(pi_RetryCount),
@@ -487,7 +487,7 @@ const string& HFCPDFAuthentication::GetPassword () const
     return m_Password;
     }
 
-const WString& HFCPDFAuthentication::GetFileName () const
+const Utf8String& HFCPDFAuthentication::GetFileName () const
     {
     return m_FileName;
     }
@@ -501,11 +501,10 @@ HFCPDFAuthentication::PasswordType HFCPDFAuthentication::GetPasswordType () cons
 // public
 // SetByString
 //-----------------------------------------------------------------------------
-void HFCPDFAuthentication::SetByString(const WString& pi_rAuthenticationString)
+void HFCPDFAuthentication::SetByString(const Utf8String& pi_rAuthenticationString)
     {
-    size_t  destinationBuffSize = pi_rAuthenticationString.GetMaxLocaleCharBytes();
-    char*  pAuthenticationStringMBS= (char*)_alloca (destinationBuffSize);
-    BeStringUtilities::WCharToCurrentLocaleChar(pAuthenticationStringMBS, pi_rAuthenticationString.c_str(),destinationBuffSize);
-
-    m_Password = string(pAuthenticationStringMBS);
+    WString passwordW(pi_rAuthenticationString.c_str(), BentleyCharEncoding::Utf8);
+    AString passwordA;
+    BeStringUtilities::WCharToCurrentLocaleChar(passwordA, passwordW.c_str());
+    m_Password = passwordA.c_str();
     }

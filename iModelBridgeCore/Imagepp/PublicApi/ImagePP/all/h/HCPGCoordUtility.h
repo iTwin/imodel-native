@@ -121,7 +121,7 @@ public:
 
         -----------------------------------------------------------------------------
     */
-    static GeoCoordinates::BaseGCSPtr CreateRasterGcsFromERSIDS(uint32_t pi_EPSGCode, WStringCR pi_rErmProjection, WStringCR pi_rErmDatum, WStringCR pi_rErmUnits);
+    static GeoCoordinates::BaseGCSPtr CreateRasterGcsFromERSIDS(uint32_t EPSGCode, CharCP pErmProjection, CharCP pErmDatum, CharCP pErmUnits);
 
     static bool GetUnitsFromMeters(double& unitFromMeter, uint32_t EPSGUnitCode);
 

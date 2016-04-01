@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLCommonInternet.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -25,7 +25,7 @@ BEGIN_IMAGEPP_NAMESPACE
 
  @see GetPassword
 -----------------------------------------------------------------------------*/
-inline const WString& HFCURLCommonInternet::GetUser() const
+inline const Utf8String& HFCURLCommonInternet::GetUser() const
     {
     return m_User;
     }
@@ -42,7 +42,7 @@ inline const WString& HFCURLCommonInternet::GetUser() const
 
  @see GetUser
 -----------------------------------------------------------------------------*/
-inline const WString& HFCURLCommonInternet::GetPassword() const
+inline const Utf8String& HFCURLCommonInternet::GetPassword() const
     {
     return m_Password;
     }
@@ -60,7 +60,7 @@ inline const WString& HFCURLCommonInternet::GetPassword() const
 
  @see GetURLPath
 -----------------------------------------------------------------------------*/
-inline const WString& HFCURLCommonInternet::GetHost() const
+inline const Utf8String& HFCURLCommonInternet::GetHost() const
     {
     return m_Host;
     }
@@ -74,7 +74,7 @@ inline const WString& HFCURLCommonInternet::GetHost() const
 
  @inheritance This method cannot be overriden.
 -----------------------------------------------------------------------------*/
-inline const WString& HFCURLCommonInternet::GetPort() const
+inline const Utf8String& HFCURLCommonInternet::GetPort() const
     {
     return m_Port;
     }
@@ -91,7 +91,7 @@ inline const WString& HFCURLCommonInternet::GetPort() const
 
  @see GetHost
 -----------------------------------------------------------------------------*/
-inline const WString& HFCURLCommonInternet::GetURLPath() const
+inline const Utf8String& HFCURLCommonInternet::GetURLPath() const
     {
     return m_URLPath;
     }

@@ -73,7 +73,7 @@ HSTATUS HFCExceptionHandler::HandleException(const HFCException* pi_pException)
     if (m_pHandler != 0)
         Result = m_pHandler->LocalHandler(pi_pException);
     
-    LoggingManager::GetLogger (L"ImagePP")->message (LOG_ERROR, pi_pException->GetExceptionMessage().c_str());
+    LoggingManager::GetLogger ("ImagePP")->message (LOG_ERROR, pi_pException->GetExceptionMessage().c_str());
     
     return Result;
     }

@@ -67,9 +67,9 @@ template<class T, HPMAttributesID ID> HPMGenericAttribute* HPMAttribute_T<T, ID>
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.Marchand  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<class T> inline WString ExpressAsString(T const& data)
+template<class T> inline Utf8String ExpressAsString(T const& data)
     {
-    wostringstream result;
+    stringstream result;
     result << data;
 
     return result.str().c_str();
@@ -78,11 +78,11 @@ template<class T> inline WString ExpressAsString(T const& data)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.Marchand  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<class T> inline WString ExpressAsString(std::vector<T> const& pi_rVector)
+template<class T> inline Utf8String ExpressAsString(std::vector<T> const& pi_rVector)
     {
-    WString result;
+    Utf8String result;
     for(typename vector<T>::size_type index = 0; index < pi_rVector.size()-1; ++index)
-        result += ExpressAsString<T>(pi_rVector[index]) + L", "; 
+        result += ExpressAsString<T>(pi_rVector[index]) + ", "; 
 
     result += ExpressAsString<T>(pi_rVector[pi_rVector.size()-1]); 
 
@@ -92,15 +92,15 @@ template<class T> inline WString ExpressAsString(std::vector<T> const& pi_rVecto
 /*---------------------------------------------------------------------------------**//**
 // * @bsimethod                                                   Mathieu.Marchand  08/2012
 // +---------------+---------------+---------------+---------------+---------------+------*/
-inline WString ExpressAsString(std::string const& data)
+inline Utf8String ExpressAsString(std::string const& data)
     {
-    return WString(data.c_str(),false);
+    return Utf8String(data.c_str());
     }
 
 // /*---------------------------------------------------------------------------------**//**
 // * @bsimethod                                                   Mathieu.Marchand  08/2012
 // +---------------+---------------+---------------+---------------+---------------+------*/
-inline WString ExpressAsString(WString const& data)
+inline Utf8String ExpressAsString(Utf8String const& data)
     {
     return data;
     }
@@ -108,15 +108,15 @@ inline WString ExpressAsString(WString const& data)
 //-----------------------------------------------------------------------------
 //operator<<
 //-----------------------------------------------------------------------------
-inline WString ExpressAsString(const HFCMatrix<4,4, double>& pi_rMatrix)
+inline Utf8String ExpressAsString(const HFCMatrix<4,4, double>& pi_rMatrix)
    {
-   WString result;
+   Utf8String result;
    for(uint16_t i = 0 ; i < 4 ; ++i)
        {
        for(uint16_t j = 0; j < 3 ; ++j)
-           ExpressAsString(pi_rMatrix[i][j]) + L", ";
+           ExpressAsString(pi_rMatrix[i][j]) + ", ";
            
-       result += ExpressAsString(pi_rMatrix[i][3]) + L"\n";
+       result += ExpressAsString(pi_rMatrix[i][3]) + "\n";
        }
 
    return  result;
@@ -125,7 +125,7 @@ inline WString ExpressAsString(const HFCMatrix<4,4, double>& pi_rMatrix)
 //-----------------------------------------------------------------------------
 // Get the data as a string
 //-----------------------------------------------------------------------------
-template<class T, HPMAttributesID ID> WString HPMAttribute_T<T, ID>::GetDataAsString() const
+template<class T, HPMAttributesID ID> Utf8String HPMAttribute_T<T, ID>::GetDataAsString() const
     {
     return ExpressAsString(m_Data);
     }

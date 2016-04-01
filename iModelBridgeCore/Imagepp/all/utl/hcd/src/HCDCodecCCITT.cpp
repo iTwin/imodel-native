@@ -19,7 +19,7 @@
 //#define HCDCODECCCITT_ESTIMATEDCOMPRESSIONRATIO     0.02          // 50:1
 
 
-#define HCD_CODEC_NAME L"CCITT"
+#define HCD_CODEC_NAME "CCITT"
 
 //-----------------------------------------------------------------------------
 // public

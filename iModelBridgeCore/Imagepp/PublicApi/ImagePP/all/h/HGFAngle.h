@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFAngle.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -28,7 +28,7 @@ inline double  CalculateNormalizedTrigoValue(double pi_Angle)
     return pi_Angle;
     }
 
-bool   ConvertDegMinSecToDeg(WString& pi_rDegMinSec,
+bool   ConvertDegMinSecToDeg(Utf8String& pi_rDegMinSec,
                              double& po_rResultigDegreeValue);
 
 END_IMAGEPP_NAMESPACE

@@ -163,19 +163,19 @@ HRFIntergraphRGBCreator::HRFIntergraphRGBCreator()
 // Identification information
 //-----------------------------------------------------------------------------
 
-WString HRFIntergraphRGBCreator::GetLabel() const
+Utf8String HRFIntergraphRGBCreator::GetLabel() const
     {
 
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_RGB()); // Intergraph RGB File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_RGB()); // Intergraph RGB File Format
     }
 
 //-----------------------------------------------------------------------------
 // Identification information
 //-----------------------------------------------------------------------------
 
-WString HRFIntergraphRGBCreator::GetExtensions() const
+Utf8String HRFIntergraphRGBCreator::GetExtensions() const
     {
-    return WString(L"*.rgb");
+    return Utf8String("*.rgb");
     }
 
 //-----------------------------------------------------------------------------

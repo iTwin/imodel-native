@@ -27,9 +27,9 @@
 
 #define ODMO_XML_SERIALIZATION_SIGNIFICANT_DIGITS 10
 
-void ImagePP::GetDoubleFormatting(WChar* format, size_t maxNbChars)
+void ImagePP::GetDoubleFormatting(Utf8Char* format, size_t maxNbChars)
     {
-    size_t nbCharWritten = swprintf(format, maxNbChars, L"%s.%df", L"%", ODMO_XML_SERIALIZATION_SIGNIFICANT_DIGITS);
+    size_t nbCharWritten = BeStringUtilities::Snprintf(format, maxNbChars, "%s.%df", "%", ODMO_XML_SERIALIZATION_SIGNIFICANT_DIGITS);
     assert(nbCharWritten < maxNbChars);
     }
 
@@ -40,7 +40,7 @@ void ImagePP::GetDoubleFormatting(WChar* format, size_t maxNbChars)
 HRAOnDemandRaster::HRAOnDemandRaster(HPMPool*                       pi_pMemPool,
                                      bool                           pi_IsOpaque,
                                      const HFCPtr<HVEShape>&        pi_rpEffectiveShape,
-                                     const WString&                 pi_rRepresentativePSS,
+                                     const Utf8String&                 pi_rRepresentativePSS,
                                      const HFCPtr<HPSWorldCluster>& pi_rpHPSWorldCluster,
                                      HGF2DWorldIdentificator        pi_CurrentWorldId,
                                      const HFCPtr<HFCURL>&          pi_rpPSSUrl, 
@@ -112,17 +112,17 @@ HRAOnDemandRaster::HRAOnDemandRaster(BeXmlNode*                         pi_pOnDe
 
     HASSERT(pChildNode != 0);
 
-    WString NodeContent;
+    Utf8String NodeContent;
     
     pChildNode->GetContent(NodeContent);         
 
-    if (true == NodeContent.Equals(L"1"))
+    if (true == NodeContent.Equals("1"))
         {
         m_hasLookAhead = true;
         }
     else
         {
-        HASSERT(true == NodeContent.Equals(L"0"));
+        HASSERT(true == NodeContent.Equals("0"));
         m_hasLookAhead = false;
         }          
   
@@ -132,13 +132,13 @@ HRAOnDemandRaster::HRAOnDemandRaster(BeXmlNode*                         pi_pOnDe
 
     pChildNode->GetContent(NodeContent);         
                
-    if (true == NodeContent.Equals(L"1"))
+    if (true == NodeContent.Equals("1"))
         {
         m_IsOpaque = true;
         }
     else
         {
-        HASSERT(true == NodeContent.Equals(L"0"));
+        HASSERT(true == NodeContent.Equals("0"));
         m_IsOpaque = false;
         }      
 
@@ -160,13 +160,13 @@ HRAOnDemandRaster::HRAOnDemandRaster(BeXmlNode*                         pi_pOnDe
     {
         pChildNode->GetContent(NodeContent);     
 
-        if (true == NodeContent.Equals(L"1"))
+        if (true == NodeContent.Equals("1"))
         {
             m_isDataChangingWithResolution = true;
         }
         else
         {
-            HASSERT(true == NodeContent.Equals(L"0"));
+            HASSERT(true == NodeContent.Equals("0"));
             m_isDataChangingWithResolution = false;
         }      
     }
@@ -198,13 +198,13 @@ HRAOnDemandRaster::HRAOnDemandRaster(BeXmlNode*                         pi_pOnDe
     {
         pChildNode->GetContent(NodeContent);     
 
-        if (true == NodeContent.Equals(L"1"))
+        if (true == NodeContent.Equals("1"))
         {
             m_hasUnlimitedRasterSource = TRUE;
         }
         else
         {
-            HASSERT(true == NodeContent.Equals(L"0"));
+            HASSERT(true == NodeContent.Equals("0"));
             m_hasUnlimitedRasterSource = FALSE;
         }      
     }
@@ -292,14 +292,14 @@ HFCPtr<HRARaster> HRAOnDemandRaster::LoadRaster() const
 //-----------------------------------------------------------------------------
 void HRAOnDemandRaster::GetHPSObjectStore(HFCPtr<HPSObjectStore>& po_rpHPSObjectStore) const
     {
-    Utf8String representativePSS_UTF8(m_RepresentativePSS.c_str());
+    Utf8String representativePSS_UTF8(m_RepresentativePSS);
 
     size_t NbBytesInPSS = representativePSS_UTF8.size();
     
     HFCPtr<HFCBuffer> pBuffer(new HFCBuffer(NbBytesInPSS));
     pBuffer->AddData((const Byte*)representativePSS_UTF8.c_str(), NbBytesInPSS);
     
-    HFCPtr<HFCURL> pURLMemFile = new HFCURLMemFile(HFCURLMemFile::s_SchemeName() + L"://Raster", pBuffer);
+    HFCPtr<HFCURL> pURLMemFile = new HFCURLMemFile(HFCURLMemFile::s_SchemeName() + "://Raster", pBuffer);
 
     po_rpHPSObjectStore = new HPSObjectStore(m_pMemPool,
                                              pURLMemFile,
@@ -391,8 +391,8 @@ void HRAOnDemandRaster::GetSerializationXMLNode(const HFCPtr<HGF2DCoordSys>& pi_
     
     size_t shapePointInd = 0; 
 
-    WChar doubleValueBuffer[DOUBLE_VALUE_BUFFER_LENGTH];
-    WChar format[DOUBLE_FORMATTING_BUFFER_LENGTH];
+    Utf8Char doubleValueBuffer[DOUBLE_VALUE_BUFFER_LENGTH];
+    Utf8Char format[DOUBLE_FORMATTING_BUFFER_LENGTH];
 
     GetDoubleFormatting(format, DOUBLE_FORMATTING_BUFFER_LENGTH);
     
@@ -400,18 +400,18 @@ void HRAOnDemandRaster::GetSerializationXMLNode(const HFCPtr<HGF2DCoordSys>& pi_
         {              
         BeXmlNodeP pDoubleXMLNode = pEffectiveShapeXMLNode->AddEmptyElement("D");    
          
-        swprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, pSerializedShapePts[shapePointInd]);  
+        BeStringUtilities::Snprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, pSerializedShapePts[shapePointInd]);
         pDoubleXMLNode->AddAttributeStringValue("V", doubleValueBuffer);       
 
         shapePointInd++;
         }                            
     
     //LookAhead                 
-    BeXmlNodeP pLookAheadXMLNode = pODRNode->AddElementStringValue("LA", m_hasLookAhead ? L"1" : L"0");    
+    BeXmlNodeP pLookAheadXMLNode = pODRNode->AddElementStringValue("LA", m_hasLookAhead ? "1" : "0");    
     HASSERT(pLookAheadXMLNode != 0);
     
     //Is Opaque
-    BeXmlNodeP pIsOpaqueXMLNode = pODRNode->AddElementStringValue("ISO", m_IsOpaque ? L"1" : L"0");    
+    BeXmlNodeP pIsOpaqueXMLNode = pODRNode->AddElementStringValue("ISO", m_IsOpaque ? "1" : "0");    
     HASSERT(pIsOpaqueXMLNode != 0);
            
     //RepresentativePSS
@@ -419,10 +419,10 @@ void HRAOnDemandRaster::GetSerializationXMLNode(const HFCPtr<HGF2DCoordSys>& pi_
     HASSERT(pRepresentativePssXMLNode != 0);
       
     //Is Data Changing With Resolution (e.g. : WMS, Virtual Earth).
-    BeXmlNodeP pIsDataChangingWithResXMLNode = pODRNode->AddElementStringValue("IDCR", m_isDataChangingWithResolution ? L"1" : L"0");    
+    BeXmlNodeP pIsDataChangingWithResXMLNode = pODRNode->AddElementStringValue("IDCR", m_isDataChangingWithResolution ? "1" : "0");    
     HASSERT(pIsDataChangingWithResXMLNode != 0);
     
     //Has Unlimited Raster (e.g. : WMS, PDF).
-    BeXmlNodeP pHasUnlimitedRasterSourceXMLNode = pODRNode->AddElementStringValue("IUR", m_hasUnlimitedRasterSource ? L"1" : L"0");    
+    BeXmlNodeP pHasUnlimitedRasterSourceXMLNode = pODRNode->AddElementStringValue("IUR", m_hasUnlimitedRasterSource ? "1" : "0");    
     HASSERT(pHasUnlimitedRasterSourceXMLNode != 0);    
     }

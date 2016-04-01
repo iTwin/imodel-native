@@ -15,7 +15,7 @@
 
 BEGIN_IMAGEPP_NAMESPACE
 typedef struct RSTSubFileInfo {
-    WString fileName;
+    BeFileName fileName;
     int32_t layerNumber;
     int32_t color;
     int32_t visibility;
@@ -90,9 +90,9 @@ struct HRFIrasbRSTCreator : public HRFRasterFileCreator
                                                uint64_t                pi_Offset = 0) const;
 
     // Identification information
-    virtual WString               GetLabel() const;
-    virtual WString               GetSchemes() const;
-    virtual WString               GetExtensions() const;
+    virtual Utf8String               GetLabel() const;
+    virtual Utf8String               GetSchemes() const;
+    virtual Utf8String               GetExtensions() const;
 
     // File format is multi-file
     virtual bool                 GetRelatedURLs(const HFCPtr<HFCURL>& pi_rpURL,

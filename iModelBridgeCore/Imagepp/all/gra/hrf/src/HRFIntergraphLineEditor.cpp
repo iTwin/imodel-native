@@ -700,12 +700,12 @@ WRAPUP:
 
 void HRFIntergraphLineEditor::DumpStatOnDisk(void)
     {
-    FILE* FilePtr = _wfopen(L"e:\\SebDump.txt", L"wt");
+    FILE* FilePtr = _wfopen("e:\\SebDump.txt", "wt");
 
     if (FilePtr)
         {
         for (uint32_t i=0; i< m_pResolutionDescriptor->GetHeight(); i++)
-            _ftprintf(FilePtr, L"%d\n", m_DumpStatArray[i]);
+            _ftprintf(FilePtr, "%d\n", m_DumpStatArray[i]);
         fclose(FilePtr);
         }
     }

@@ -644,7 +644,7 @@ struct HUTDEMRasterXYZPointsIterator::Impl
     ---------------------------------------------------------------------------
 */
 HUTDEMRasterXYZPointsIterator* HUTDEMRasterXYZPointsIterator::CreateFor(HUTDEMRasterXYZPointsExtractor&    pi_rExtractor,
-                                                                        const WString&                     pi_rDestCoordSysKeyName,
+                                                                        const Utf8String&                     pi_rDestCoordSysKeyName,
                                                                         double                             pi_ScaleFactor)
     {
     return new HUTDEMRasterXYZPointsIterator(new Impl(pi_rExtractor),
@@ -658,7 +658,7 @@ HUTDEMRasterXYZPointsIterator* HUTDEMRasterXYZPointsIterator::CreateFor(HUTDEMRa
     ---------------------------------------------------------------------------
 */
 HUTDEMRasterXYZPointsIterator::HUTDEMRasterXYZPointsIterator   (Impl*          pi_pImpl,
-                                                                const WString& pi_rDestCoordSysKeyName,
+                                                                const Utf8String& pi_rDestCoordSysKeyName,
                                                                 double         pi_ScaleFactor)
     :   m_pImpl(pi_pImpl),
         m_CurrentStripPosInSourceRasterPhyCS(0),
@@ -682,7 +682,7 @@ HUTDEMRasterXYZPointsIterator::HUTDEMRasterXYZPointsIterator   (Impl*          p
     ---------------------------------------------------------------------------
 */
 HUTDEMRasterXYZPointsIterator::HUTDEMRasterXYZPointsIterator(HUTDEMRasterXYZPointsExtractor* pi_pRasterPointExtractor,
-                                                             const WString&                  pi_rDestCoordSysKeyName,
+                                                             const Utf8String&                  pi_rDestCoordSysKeyName,
                                                              double                          pi_ScaleFactor)
     :   m_pImpl(new Impl(*pi_pRasterPointExtractor)),
         m_CurrentStripPosInSourceRasterPhyCS(0),
@@ -707,7 +707,7 @@ HUTDEMRasterXYZPointsIterator::HUTDEMRasterXYZPointsIterator(HUTDEMRasterXYZPoin
     ---------------------------------------------------------------------------
 */
 void HUTDEMRasterXYZPointsIterator::Init   (HUTDEMRasterXYZPointsExtractor&    pi_rExtractor,
-                                            const WString&                     pi_rDestCoordSysKeyName,
+                                            const Utf8String&                     pi_rDestCoordSysKeyName,
                                             double                             pi_ScaleFactor)
 { 
     HPRECONDITION(pi_rExtractor.m_pRaster->IsCompatibleWith(HRAStoredRaster::CLASS_ID));
@@ -773,11 +773,11 @@ void HUTDEMRasterXYZPointsIterator::Init   (HUTDEMRasterXYZPointsExtractor&    p
                              (HFCPtr<HGF2DCoordSys>&)pi_rExtractor.GetXYCoordSystP(),
                              pStoredRaster->GetPixelType());
 
-    if (pi_rDestCoordSysKeyName != L"")
+    if (pi_rDestCoordSysKeyName != "")
         {
         try
             {
-            m_pDestCoorSys = GeoCoordinates::BaseGCS::CreateGCS(pi_rDestCoordSysKeyName.c_str());
+            m_pDestCoorSys = GeoCoordinates::BaseGCS::CreateGCS(WString(pi_rDestCoordSysKeyName.c_str(), BentleyCharEncoding::Utf8).c_str());
             if (!m_pDestCoorSys->IsValid())
                 m_pDestCoorSys = nullptr;
             }

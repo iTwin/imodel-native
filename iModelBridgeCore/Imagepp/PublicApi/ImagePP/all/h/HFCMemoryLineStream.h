@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCMemoryLineStream.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCMemoryLineStream
@@ -19,7 +19,7 @@ class HFCMemoryLineStream : protected HFCMemoryBinStream
 public:
 
     // Primary methods
-    IMAGEPP_EXPORT                  HFCMemoryLineStream(const WString&     pi_Filename,
+    IMAGEPP_EXPORT                  HFCMemoryLineStream(const Utf8String&     pi_Filename,
                                                 char              pi_LineDelimiter,
                                                 HFCPtr<HFCBuffer>& pi_rpBuffer);
 
@@ -30,7 +30,7 @@ public:
 
     // Content access
     IMAGEPP_EXPORT virtual size_t   ReadLine(uint32_t pi_LineNb,
-                                     WString& po_rLine);
+                                     Utf8String& po_rLine);
 
     //Get number of lines
     IMAGEPP_EXPORT uint32_t         GetNbLines() const;

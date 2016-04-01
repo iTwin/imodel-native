@@ -123,9 +123,9 @@ struct HRFPWCreator : public HRFcTiffCreator
 
 
     // Identification information
-    virtual WString                   GetLabel() const;
-    virtual WString                   GetSchemes() const;
-    virtual WString                   GetExtensions() const;
+    virtual Utf8String                   GetLabel() const;
+    virtual Utf8String                   GetSchemes() const;
+    virtual Utf8String                   GetExtensions() const;
 
 
     // allow to Open an image file READ/WRITE and CREATE

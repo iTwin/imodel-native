@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCIniFileBrowser.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Definition of the HFCIniFileBrowser class.
@@ -85,40 +85,32 @@ public:
 
     //:> Topic methods.
     IMAGEPP_EXPORT bool               FirstTopic();
-    IMAGEPP_EXPORT bool               FindTopic(const string& pi_rTopicName);
-    IMAGEPP_EXPORT bool               FindTopic(const WString& pi_rTopicName);
-    IMAGEPP_EXPORT const WString&      GetTopicName();
+    IMAGEPP_EXPORT bool               FindTopic(const Utf8String& pi_rTopicName);
+    IMAGEPP_EXPORT const Utf8String&      GetTopicName();
     IMAGEPP_EXPORT bool               NextTopic();
-    IMAGEPP_EXPORT void                ReadLine(string&  po_rString,
-                                        bool    pi_KeepLineSeparator = false,
-                                        uint32_t pi_MaxSize = -1);
-    IMAGEPP_EXPORT void                ReadLine(WString& po_rString,
+    IMAGEPP_EXPORT void                ReadLine(Utf8String& po_rString,
                                         bool    pi_KeepLineSeparator = false,
                                         uint32_t pi_MaxSize = -1);
 
     //:> Variable methods.
-    IMAGEPP_EXPORT bool               GetVariableValue(const string&  pi_rVariableName,
-                                                string&        po_rValue,
-                                                bool          pi_KeepLineSeparator = false);
-    IMAGEPP_EXPORT bool               GetVariableValue(const WString& pi_rVariableName,
-                                                WString&       po_rValue,
-                                                bool          pi_KeepLineSeparator = false);
+    IMAGEPP_EXPORT bool               GetVariableValue(Utf8CP pi_rVariableName, Utf8String& po_rValue, bool pi_KeepLineSeparator = false);
+                   bool               GetVariableValue(Utf8CP pi_rVariableName, AString& po_rValue, bool pi_KeepLineSeparator = false);
+    IMAGEPP_EXPORT bool               GetVariableValue(Utf8CP pi_rVariableName, WString& po_rValue, bool pi_KeepLineSeparator = false);
 
 private:
     //:> Members.
-    HFCBinStream*    m_pFile;
-    WChar       m_TopicBeginMark;
-    WChar       m_TopicEndMark;
-    WString      m_TopicNameW;
-    uint64_t    m_TopicOffset;
-    WChar       m_VariableMark;
+    HFCBinStream*   m_pFile;
+    Utf8Char        m_TopicBeginMark;
+    Utf8Char        m_TopicEndMark;
+    Utf8String      m_TopicName;
+    uint64_t        m_TopicOffset;
+    Utf8Char        m_VariableMark;
 
     //:> Line manipulation method.
-    void                CleanUpString(WString& pi_rString,
-                                      bool    pi_KeepLineSeparator = false);
-    bool               ExtractTopicName(const WString& pi_rString);
-    bool               ExtractVariableName(const WString& pi_rString, WString& pi_rVariableName);
-    bool               IsValidChar(const WChar& pi_rChar,
+    void               CleanUpString(Utf8String& pi_rString, bool    pi_KeepLineSeparator = false);
+    bool               ExtractTopicName(const Utf8String& pi_rString);
+    bool               ExtractVariableName(const Utf8String& pi_rString, Utf8String& pi_rVariableName);
+    bool               IsValidChar(const Utf8Char& pi_rChar,
                                     bool         pi_KeepLineSeparator = false);
 
     //:> Disabled method.

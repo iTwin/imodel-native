@@ -136,25 +136,25 @@ HRFBilCreator::HRFBilCreator()
 //-----------------------------------------------------------------------------
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFBilCreator::GetLabel() const
+Utf8String HRFBilCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_Bil()); // BIL File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_Bil()); // BIL File Format
     }
 
 //-----------------------------------------------------------------------------
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFBilCreator::GetSchemes() const
+Utf8String HRFBilCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return HFCURLFile::s_SchemeName();
     }
 
 //-----------------------------------------------------------------------------
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFBilCreator::GetExtensions() const
+Utf8String HRFBilCreator::GetExtensions() const
     {
-    return WString(L"*.bil");
+    return "*.bil";
     }
 
 //-----------------------------------------------------------------------------
@@ -196,19 +196,19 @@ bool HRFBilCreator::IsKindOfFileWithExternalHeader(const HFCPtr<HFCURL>& pi_rpUR
 
     HAutoPtr<HFCBinStream>  pHdrFile;
     HFCPtr<HFCURL>          HdrUrl;
-    WString                 UrlString(pi_rpURL->GetURL());
+    Utf8String                 UrlString(pi_rpURL->GetURL());
     HArrayAutoPtr<char>    Header;
     uint32_t                HeaderLength;
     char*                   ValueStartPos;
     bool                   bResult = false;
     HAutoPtr<HFCBinStream>  pFile;
 
-    size_t extPos = UrlString.rfind(L'.');
+    size_t extPos = UrlString.rfind('.');
 
-    if(extPos > 0 && extPos != WString::npos)
+    if(extPos > 0 && extPos != Utf8String::npos)
         {
         // Get the Url for the ".hdr" file.
-        UrlString.replace(extPos + 1, wcslen(L"hdr"), L"hdr");
+        UrlString.replace(extPos + 1, strlen("hdr"), "hdr");
         HdrUrl = HFCURL::Instanciate(UrlString);
 
         HFCStat HDRFileFileStat(HdrUrl);
@@ -376,7 +376,7 @@ bool HRFBilCreator::IsKindOfFileOpenFromExternalHeader(const HFCPtr<HFCURL>& pi_
 
     HAutoPtr<HFCBinStream>  pHdrFile;
     HFCPtr<HFCURL>          BILUrl;
-    WString                 UrlString(pi_rpURL->GetURL());
+    Utf8String                 UrlString(pi_rpURL->GetURL());
     HArrayAutoPtr<char>    Header;
     uint32_t                HeaderLength;
     char*                   ValueStartPos;
@@ -427,7 +427,7 @@ bool HRFBilCreator::IsKindOfFileOpenFromExternalHeader(const HFCPtr<HFCURL>& pi_
                 (ValueStartPos[i] == '\n'))
                 {
                 // Get the Url for the ".bil" file, because we might be opening from a header file
-                UrlString.replace(UrlString.rfind(L'.') + 1, wcslen(L"bil"), L"bil");
+                UrlString.replace(UrlString.rfind('.') + 1, strlen("bi"), "bil");
                 BILUrl = HFCURL::Instanciate(UrlString);
 
 
@@ -455,7 +455,7 @@ bool HRFBilCreator::IsKindOfFileOpenFromExternalHeader(const HFCPtr<HFCURL>& pi_
         if(((NULL != ValueStartPos) && (NbBands == 1 || NbBands == 3)) ? true : false)
             {
             // Get the Url for the ".bil" file, because we might be opening from a header file
-            UrlString.replace(UrlString.rfind(L'.') + 1, wcslen(L"bil"), L"bil");
+            UrlString.replace(UrlString.rfind('.') + 1, strlen("bi"), "bil");
             BILUrl = HFCURL::Instanciate(UrlString);
 
             // Open the BMP File & place file pointer at the start of the file
@@ -518,22 +518,22 @@ bool HRFBilCreator::GetRelatedURLs(const HFCPtr<HFCURL>& pi_rpURL,
         return false;
     
     // Find the file extension
-    WString Path = ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
+    Utf8String Path = ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
 
-    WString::size_type DotPos = Path.rfind(L'.');
+    Utf8String::size_type DotPos = Path.rfind('.');
 
-    if (DotPos != WString::npos)
+    if (DotPos != Utf8String::npos)
         Path = Path.substr(0, DotPos);
 
     // Compose url for .hdr, and .bnd files
-    WString FileName = WString(HFCURLFile::s_SchemeName() + L"://")
-                       + ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetHost() + WString(L"\\")
+    Utf8String FileName = Utf8String(HFCURLFile::s_SchemeName() + "://")
+                       + ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetHost() + Utf8String("\\")
                        + Path;
 
     // Create related files
-    HFCPtr<HFCURL> pHDRFileURL = new HFCURLFile(FileName + WString(L".hdr"));
-    HFCPtr<HFCURL> pBNDFileURL = new HFCURLFile(FileName + WString(L".bnd"));
-    HFCPtr<HFCURL> pSTXFileURL = new HFCURLFile(FileName + WString(L".stx"));
+    HFCPtr<HFCURL> pHDRFileURL = new HFCURLFile(FileName + Utf8String(".hdr"));
+    HFCPtr<HFCURL> pBNDFileURL = new HFCURLFile(FileName + Utf8String(".bnd"));
+    HFCPtr<HFCURL> pSTXFileURL = new HFCURLFile(FileName + Utf8String(".stx"));
 
     pio_rRelatedURLs.push_back(pHDRFileURL);
     pio_rRelatedURLs.push_back(pBNDFileURL);
@@ -567,7 +567,7 @@ HRFBilFile::HRFBilFile(const HFCPtr<HFCURL>& pi_rURL,
     HFCPtr<HRFResolutionDescriptor>     pResolution;
     HFCPtr<HRFPageDescriptor>           pPage;
     HFCPtr<HFCURL>                      Url;
-    WString                             UrlString(GetURL()->GetURL());
+    Utf8String                             UrlString(GetURL()->GetURL());
 
     m_geoRefInfo.m_A00 = 0.0;
     m_geoRefInfo.m_A01 = 0.0;
@@ -971,13 +971,13 @@ HRFScanlineOrientation HRFBilFile::GetScanLineOrientationFromFile() const
 bool HRFBilFile::Open()
     {
     HFCPtr<HFCURL>              BILUrl;
-    WString                     UrlString(GetURL()->GetURL());
+    Utf8String                     UrlString(GetURL()->GetURL());
 
     // Open the file
     if (!m_IsOpen)
         {
         // Get the Url for the ".bil" file, because we might be opening from a header file
-        UrlString.replace(UrlString.rfind(L'.') + 1, wcslen(L"bil"), L"bil");
+        UrlString.replace(UrlString.rfind('.') + 1, strlen("bil"), "bil");
         BILUrl = HFCURL::Instanciate(UrlString);
 
         // Open the actual bil file.
@@ -1012,12 +1012,12 @@ bool HRFBilFile::Open()
 bool HRFBilFile::ReadHdrHeader()
     {
     HFCPtr<HFCURL>              HdrUrl;
-    WString                     UrlString(GetURL()->GetURL());
+    Utf8String                     UrlString(GetURL()->GetURL());
     string                      Header;
     string                      HeaderLine;
 
     // Get the Url for the ".hdr" file.
-    UrlString.replace(UrlString.rfind(L'.') + 1, wcslen(L"hdr"), L"hdr");
+    UrlString.replace(UrlString.rfind('.') + 1, strlen("hdr"), "hdr");
     HdrUrl = HFCURL::Instanciate(UrlString);
 
     // Open the actual hdr file.
@@ -1053,12 +1053,12 @@ bool HRFBilFile::ReadHdrHeader()
     if (0 == m_bilFileHeader.width)
         throw HRFChildFileParameterException(GetURL()->GetURL(),
                                              m_pHdrFile->GetURL()->GetURL(),
-                                             L"NCOLS");
+                                             "NCOLS");
 
     if (0 == m_bilFileHeader.height)
         throw HRFChildFileParameterException(GetURL()->GetURL(),
                                              m_pHdrFile->GetURL()->GetURL(),
-                                             L"NROWS");
+                                             "NROWS");
 
     if (0 == m_bilFileHeader.numbands)
         m_bilFileHeader.numbands = 1;
@@ -1190,12 +1190,12 @@ void HRFBilFile::GetGeoRefInfo
 void HRFBilFile::GetBandsFromFile()
     {
     HFCPtr<HFCURL>              BndUrl;
-    WString                     UrlString(GetURL()->GetURL());
+    Utf8String                     UrlString(GetURL()->GetURL());
     char*                       BandFileContent;
     uint32_t                    BandFileLength;
 
     // Get the Url for the ".bnd" file.
-    UrlString.replace(UrlString.rfind(L'.') + 1, wcslen(L"bnd"), L"bnd");
+    UrlString.replace(UrlString.rfind('.') + 1, strlen("bnd"), "bnd");
     BndUrl = HFCURL::Instanciate(UrlString);
 
     bool FileNotFound = false;
@@ -1254,12 +1254,12 @@ void HRFBilFile::GetBandsFromFile()
 void HRFBilFile::GetBandsStatsFromFile()
     {
     HFCPtr<HFCURL>              StxUrl;
-    WString                     UrlString(GetURL()->GetURL());
+    Utf8String                     UrlString(GetURL()->GetURL());
 
     m_bilFileInfo.HaveRedStats = m_bilFileInfo.HaveGreenStats = m_bilFileInfo.HaveBlueStats = false;
 
     // Get the Url for the ".stx" file.
-    UrlString.replace(UrlString.rfind(L'.') + 1, wcslen(L"stx"), L"stx");
+    UrlString.replace(UrlString.rfind('.') + 1, strlen("stx"), "stx");
     StxUrl = HFCURL::Instanciate(UrlString);
 
     HFCStat STXFileFileStat(StxUrl);

@@ -39,7 +39,7 @@ HFCPtr<HGFHMRStdWorldCluster>   HUTDEMRasterXYZPointsExtractor::m_spWorldCluster
     Default constructor
     ---------------------------------------------------------------------------
 */
-HUTDEMRasterXYZPointsExtractor::HUTDEMRasterXYZPointsExtractor(const WString&         pi_rDEMRasterFileName,
+HUTDEMRasterXYZPointsExtractor::HUTDEMRasterXYZPointsExtractor(const Utf8String&         pi_rDEMRasterFileName,
                                                                const HFCPtr<HPMPool>& pi_rpMemPool)
 // Open the file
     :   m_pRasterFile(HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(pi_rDEMRasterFileName),
@@ -71,7 +71,7 @@ HUTDEMRasterXYZPointsExtractor::HUTDEMRasterXYZPointsExtractor(const WString&   
     Default constructor
     ---------------------------------------------------------------------------
 */
-HUTDEMRasterXYZPointsExtractor::HUTDEMRasterXYZPointsExtractor (const WString&         pi_rDEMRasterFileName, 
+HUTDEMRasterXYZPointsExtractor::HUTDEMRasterXYZPointsExtractor (const Utf8String&         pi_rDEMRasterFileName, 
                                                                 const HFCPtr<HPMPool>& pi_rpMemPool,
                                                                 bool                   pi_legacyPixelTypeSupportOnly)
     :   m_pRasterFile(HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(pi_rDEMRasterFileName), 
@@ -128,7 +128,7 @@ HUTDEMRasterXYZPointsExtractor::~HUTDEMRasterXYZPointsExtractor()
     CreateXYZPointsIterator
     ---------------------------------------------------------------------------
 */
-HUTDEMRasterXYZPointsIterator* HUTDEMRasterXYZPointsExtractor::CreateXYZPointsIterator(const WString& pi_rDestCoordSysKeyName,
+HUTDEMRasterXYZPointsIterator* HUTDEMRasterXYZPointsExtractor::CreateXYZPointsIterator(const Utf8String& pi_rDestCoordSysKeyName,
         double  pi_ScaleFactor)
     {
     return new HUTDEMRasterXYZPointsIterator(this, pi_rDestCoordSysKeyName, pi_ScaleFactor);
@@ -139,7 +139,7 @@ HUTDEMRasterXYZPointsIterator* HUTDEMRasterXYZPointsExtractor::CreateXYZPointsIt
     CreateXYZPointsIteratorWithNoDataValueRemoval
     ---------------------------------------------------------------------------
 */
-HUTDEMRasterXYZPointsIterator* HUTDEMRasterXYZPointsExtractor::CreateXYZPointsIteratorWithNoDataValueRemoval   (const WString& pi_rDestCoordSysKeyName,
+HUTDEMRasterXYZPointsIterator* HUTDEMRasterXYZPointsExtractor::CreateXYZPointsIteratorWithNoDataValueRemoval   (const Utf8String& pi_rDestCoordSysKeyName,
         double  pi_ScaleFactor)
     {
     return HUTDEMRasterXYZPointsIterator::CreateFor(*this, pi_rDestCoordSysKeyName, pi_ScaleFactor);

@@ -223,7 +223,7 @@ void HTIFFError::AddError (HTIFFError::ErrorCode     pi_ErrorCode,
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
-void HTIFFError::GetErrorMsg(WString& po_rErrorMsg) const
+void HTIFFError::GetErrorMsg(Utf8String& po_rErrorMsg) const
     {
     HSTATICASSERTMSG(HTIFFError::ERROR_COUNT == 43, "Missing HTIFF error message.");
 
@@ -281,7 +281,7 @@ void HTIFFError::GetErrorMsg(WString& po_rErrorMsg) const
         }
 
     // Do not want to translate HTIFF. That's the name of our tiff lib.
-    po_rErrorMsg.Sprintf(L"HTIFF(%.4d) - %ls", m_ErrorCode, ImagePPMessages::GetStringW(messageID).c_str());
+    po_rErrorMsg.Sprintf("HTIFF(%.4d) - %s", m_ErrorCode, ImagePPMessages::GetString(messageID).c_str());
 
     if (m_pErrorInfo != 0)
         m_pErrorInfo->FormatErrorMessage(po_rErrorMsg);
@@ -310,7 +310,7 @@ void HTIFFError::CopyData(const HTIFFError& pi_rSrcObj)
 // Class HTIFFStream
 //-----------------------------------------------------------------------------
 
-HTIFFStream::HTIFFStream(const WString& pi_rFilename, HFCAccessMode pi_Mode, uint64_t pi_OriginOffset)
+HTIFFStream::HTIFFStream(const Utf8String& pi_rFilename, HFCAccessMode pi_Mode, uint64_t pi_OriginOffset)
     {
     m_ListDirty = false;
     m_ListOfFreeBlock.clear();

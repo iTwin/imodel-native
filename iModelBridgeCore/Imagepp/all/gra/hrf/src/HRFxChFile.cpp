@@ -53,39 +53,39 @@
     ---------------------------------------------------------------------------
  */
 static HFCPtr<HFCURL> ComposeChannelURL(const HFCPtr<HFCURLFile>& pi_rpXMLFileURL,
-                                        const WString             pi_ChannelStr)
+                                        const Utf8String             pi_ChannelStr)
     {
     HPRECONDITION(pi_rpXMLFileURL != 0);
     HPRECONDITION(!pi_ChannelStr.empty());
 
     HFCPtr<HFCURL> pChURL = 0;
-    WString NewChPathNameStr;
+    Utf8String NewChPathNameStr;
 
     // Compose URL string
-    if ((pi_ChannelStr.find(L":\\\\") != WString::npos) || (pi_ChannelStr.find(L"://") != WString::npos))
+    if ((pi_ChannelStr.find(":\\\\") != Utf8String::npos) || (pi_ChannelStr.find("://") != Utf8String::npos))
         {
         // Complete URL nothing to do
         NewChPathNameStr = pi_ChannelStr;
         }
-    else if (  (pi_ChannelStr.find(L"\\\\") != WString::npos) || (pi_ChannelStr.find(L"//") != WString::npos)
-               || (pi_ChannelStr.find(L":\\") != WString::npos) || (pi_ChannelStr.find(L":/") != WString::npos) )
+    else if (  (pi_ChannelStr.find("\\\\") != Utf8String::npos) || (pi_ChannelStr.find("//") != Utf8String::npos)
+               || (pi_ChannelStr.find(":\\") != Utf8String::npos) || (pi_ChannelStr.find(":/") != Utf8String::npos) )
         {
         // Path is complete but we must add "file://" prefix
-        NewChPathNameStr = WString(HFCURLFile::s_SchemeName() + L"://") + pi_ChannelStr;
+        NewChPathNameStr = Utf8String(HFCURLFile::s_SchemeName() + "://") + pi_ChannelStr;
         }
     else
         {
         // Path is relative to xml file location
-        WString Path     = pi_rpXMLFileURL->GetPath();
-        WString FileName = pi_rpXMLFileURL->GetFilename();
+        Utf8String Path     = pi_rpXMLFileURL->GetPath();
+        Utf8String FileName = pi_rpXMLFileURL->GetFilename();
 
-        WString::size_type FileNamePos = Path.rfind(FileName);
+        Utf8String::size_type FileNamePos = Path.rfind(FileName);
 
-        if (FileNamePos != WString::npos)
+        if (FileNamePos != Utf8String::npos)
             Path = Path.substr(0, FileNamePos);
 
-        NewChPathNameStr = WString(HFCURLFile::s_SchemeName() + L"://")
-                           + pi_rpXMLFileURL->GetHost() + L"\\"
+        NewChPathNameStr = Utf8String(HFCURLFile::s_SchemeName() + "://")
+                           + pi_rpXMLFileURL->GetHost() + "\\"
                            + Path
                            + pi_ChannelStr;
         }
@@ -344,9 +344,9 @@ HRFxChCreator::HRFxChCreator()
     @return string xCh file format label.
     ---------------------------------------------------------------------------
  */
-WString HRFxChCreator::GetLabel() const
+Utf8String HRFxChCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_MultiChannel()); // Multi Channel Image File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_MultiChannel()); // Multi Channel Image File Format
     }
 
 
@@ -356,9 +356,9 @@ WString HRFxChCreator::GetLabel() const
     @return string scheme of URL.
     ---------------------------------------------------------------------------
  */
-WString HRFxChCreator::GetSchemes() const
+Utf8String HRFxChCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 
@@ -368,9 +368,9 @@ WString HRFxChCreator::GetSchemes() const
     @return string xCh extension.
     ---------------------------------------------------------------------------
  */
-WString HRFxChCreator::GetExtensions() const
+Utf8String HRFxChCreator::GetExtensions() const
     {
-    return WString(L"*.xch");
+    return Utf8String("*.xch");
     }
 
 
@@ -416,13 +416,13 @@ bool HRFxChCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         {
         HFCPtr<HFCURLFile>& rpURL((HFCPtr<HFCURLFile>&)pi_rpURL);
         // at least, the file must be have the right extension...
-        if (BeStringUtilities::Wcsicmp(rpURL->GetExtension().c_str(), L"xch") == 0)
+        if (rpURL->GetExtension().EqualsI("xch"))
             {
-            WString XMLFileName;
+            Utf8String XMLFileName;
 
             // Extract the standard file name from the main URL
             XMLFileName = ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetHost();
-            XMLFileName += L"\\";
+            XMLFileName += "\\";
             XMLFileName += ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
 
             // Open XML file
@@ -506,11 +506,11 @@ bool HRFxChCreator::GetRelatedURLs(const HFCPtr<HFCURL>& pi_rpURL,
     {
     HASSERT (pio_rRelatedURLs.size() == 0);
 
-    WString XMLFileName;
-    WString RedFileNameStr;
-    WString GreenFileNameStr;
-    WString BlueFileNameStr;
-    WString AlphaFileNameStr;
+    Utf8String XMLFileName;
+    Utf8String RedFileNameStr;
+    Utf8String GreenFileNameStr;
+    Utf8String BlueFileNameStr;
+    Utf8String AlphaFileNameStr;
 
     HFCPtr<HFCURL> pRedFileURL   = 0;
     HFCPtr<HFCURL> pGreenFileURL = 0;
@@ -519,7 +519,7 @@ bool HRFxChCreator::GetRelatedURLs(const HFCPtr<HFCURL>& pi_rpURL,
 
     // Extract the standard file name from the main URL
     XMLFileName = ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetHost();
-    XMLFileName += L"\\";
+    XMLFileName += "\\";
     XMLFileName += ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
 
     // Open XML file
@@ -548,7 +548,7 @@ bool HRFxChCreator::GetRelatedURLs(const HFCPtr<HFCURL>& pi_rpURL,
     pBlueNode->GetContent (BlueFileNameStr);
 
     // Empty fields ?
-    if ((RedFileNameStr == L"") || (GreenFileNameStr == L"") || (BlueFileNameStr == L""))
+    if ((RedFileNameStr == "") || (GreenFileNameStr == "") || (BlueFileNameStr == ""))
         return false;
 
     // Compose URLs
@@ -644,11 +644,11 @@ HRFxChFile::HRFxChFile(const HFCPtr<HFCURL>& pi_rpRedFileURL,
         }
 
     // Compose a pseudo, unique, main URL (lightly modified red file URL)
-    WString newURLHostStr;
-    WString newURLPathStr;
+    Utf8String newURLHostStr;
+    Utf8String newURLPathStr;
 
     newURLHostStr = ((HFCPtr<HFCURLFile>&)GetURL())->GetHost();
-    newURLPathStr = ((HFCPtr<HFCURLFile>&)GetURL())->GetPath() + L"_xCh";
+    newURLPathStr = ((HFCPtr<HFCURLFile>&)GetURL())->GetPath() + "_xCh";
 
     m_pURL = new HFCURLFile(newURLHostStr, newURLPathStr);
 
@@ -979,12 +979,12 @@ bool HRFxChFile::Open()
     // Open the file
     if (!m_IsOpen)
         {
-        WString XMLFileName;
-        WString ChannelCountStr;
-        WString RedFileNameStr;
-        WString GreenFileNameStr;
-        WString BlueFileNameStr;
-        WString AlphaFileNameStr;
+        Utf8String XMLFileName;
+        Utf8String ChannelCountStr;
+        Utf8String RedFileNameStr;
+        Utf8String GreenFileNameStr;
+        Utf8String BlueFileNameStr;
+        Utf8String AlphaFileNameStr;
 
         HFCPtr<HFCURL> pRedFileURL   = 0;
         HFCPtr<HFCURL> pGreenFileURL = 0;
@@ -993,7 +993,7 @@ bool HRFxChFile::Open()
 
         // Extract the standard file name from the main URL
         XMLFileName = ((HFCPtr<HFCURLFile>&)GetURL())->GetHost();
-        XMLFileName += L"\\";
+        XMLFileName += "\\";
         XMLFileName += ((HFCPtr<HFCURLFile>&)GetURL())->GetPath();
 
         // Open XML file
@@ -1026,15 +1026,15 @@ bool HRFxChFile::Open()
         pBlueNode->GetContent (BlueFileNameStr);
 
         // Empty fields ?
-        if (RedFileNameStr == L"")
+        if (RedFileNameStr == "")
             throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                            L"RED");
-        if (GreenFileNameStr == L"")
+                                            "RED");
+        if (GreenFileNameStr == "")
             throw HRFInvalidParamValueException( GetURL()->GetURL(),
-                                            L"GREEN");
-        if (BlueFileNameStr == L"")
+                                            "GREEN");
+        if (BlueFileNameStr == "")
             throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                            L"BLUE");
+                                            "BLUE");
 
         // Compose URLs
         if (!(pRedFileURL = ComposeChannelURL((HFCPtr<HFCURLFile>&)GetURL(), RedFileNameStr)))
@@ -1091,9 +1091,9 @@ bool HRFxChFile::Open()
             pAlphaNode->GetContent (AlphaFileNameStr);
 
             // Empty field ?
-            if (AlphaFileNameStr == L"")
+            if (AlphaFileNameStr == "")
                 throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                                L"ALPHA");
+                                                "ALPHA");
 
             // Compose URL
             if (!(pAlphaFileURL = ComposeChannelURL((HFCPtr<HFCURLFile>&)GetURL(), AlphaFileNameStr)))

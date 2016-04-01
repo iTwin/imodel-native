@@ -12,7 +12,7 @@
 
 #include <Imagepp/all/h/HCDCodecECW.h>
 
-#define HCD_CODEC_NAME     L"ECW"
+#define HCD_CODEC_NAME     "ECW"
 
 //-----------------------------------------------------------------------------
 // public

@@ -2113,7 +2113,7 @@ void HRATiledRaster::ClearWithRLEMask(const HRAClearOptions& pi_rOptions)
 //-----------------------------------------------------------------------------
 void HRATiledRaster::ClearWithScanlines(const HRAClearOptions& pi_rOptions)
     {
-    HASSERT(!L"Not Yet Supported");
+    HASSERT(!"Not Yet Supported");
     }
 
 //-----------------------------------------------------------------------------

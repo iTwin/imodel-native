@@ -76,7 +76,7 @@ bool HFCIniFileBrowser::FirstTopic()
     {
     // Move to begin of file.
     m_TopicOffset = 0;
-    m_TopicNameW  = L"";
+    m_TopicName = "";
 
     // Search the first topic.
     return NextTopic();
@@ -99,15 +99,7 @@ bool HFCIniFileBrowser::FirstTopic()
  @see FirstTopic
  @see FindTopic
 -----------------------------------------------------------------------------*/
-bool HFCIniFileBrowser::FindTopic(const string& pi_rTopicName)
-    {
-    WString tempoStr;
-    BeStringUtilities::CurrentLocaleCharToWChar( tempoStr,pi_rTopicName.c_str());
-
-    return FindTopic(tempoStr);
-    }
-
-bool HFCIniFileBrowser::FindTopic(const WString& pi_rTopicName)
+bool HFCIniFileBrowser::FindTopic(const Utf8String& pi_rTopicName)
     {
     bool Found     = false;
     bool HaveTopic;
@@ -119,7 +111,7 @@ bool HFCIniFileBrowser::FindTopic(const WString& pi_rTopicName)
     while (HaveTopic)
         {
         // Check if we have found the topic.
-        if (m_TopicNameW == pi_rTopicName)
+        if (m_TopicName == pi_rTopicName)
             {
             HaveTopic = false;
             Found     = true;
@@ -139,9 +131,9 @@ bool HFCIniFileBrowser::FindTopic(const WString& pi_rTopicName)
 
  @return A constant reference to a string containing the name of the current topic.
 -----------------------------------------------------------------------------*/
-const WString& HFCIniFileBrowser::GetTopicName()
+const Utf8String& HFCIniFileBrowser::GetTopicName()
     {
-    return m_TopicNameW;
+    return m_TopicName;
     }
 
 /**----------------------------------------------------------------------------
@@ -161,7 +153,7 @@ const WString& HFCIniFileBrowser::GetTopicName()
 bool HFCIniFileBrowser::NextTopic()
     {
     bool  Found = false;
-    WString CurrentLine;
+    Utf8String CurrentLine;
 
     // Go to the begin of the current topic.
     m_pFile->SeekToPos(m_TopicOffset);
@@ -177,7 +169,7 @@ bool HFCIniFileBrowser::NextTopic()
             {
             // Indicate that we have found a topic and get it's position.
             Found         = true;
-            CurrentLine   = L"";
+            CurrentLine   = "";
             m_TopicOffset = m_pFile->GetCurrentPos();
             }
         else
@@ -187,6 +179,35 @@ bool HFCIniFileBrowser::NextTopic()
         }
 
     return Found;
+    }
+
+
+/**----------------------------------------------------------------------------
+-----------------------------------------------------------------------------*/
+bool HFCIniFileBrowser::GetVariableValue(Utf8CP pi_rVariableName, AString& po_rValue, bool pi_KeepLineSeparator)
+    {
+    Utf8String value;
+
+    if (!GetVariableValue(pi_rVariableName, value, pi_KeepLineSeparator))
+        return false;
+    
+    WString valueW(value.c_str(), BentleyCharEncoding::Utf8);
+    BeStringUtilities::WCharToCurrentLocaleChar(po_rValue, valueW.c_str());
+
+    return true;
+    }
+
+/**----------------------------------------------------------------------------
+-----------------------------------------------------------------------------*/
+bool HFCIniFileBrowser::GetVariableValue(Utf8CP pi_rVariableName, WString& po_rValue, bool pi_KeepLineSeparator)
+    {
+    Utf8String value;
+
+    if (!GetVariableValue(pi_rVariableName, value, pi_KeepLineSeparator))
+        return false;
+
+    po_rValue.AssignUtf8(value.c_str());
+    return true;
     }
 
 /**----------------------------------------------------------------------------
@@ -213,30 +234,12 @@ bool HFCIniFileBrowser::NextTopic()
  @return true if the variable has been found in the current topic section of
          the configuration file, false otherwise.
 -----------------------------------------------------------------------------*/
-bool HFCIniFileBrowser::GetVariableValue(const string& pi_rVariableName,
-                                          string&       po_rValue,
-                                          bool         pi_KeepLineSeparator)
-    {
-
-    WString tempoStr;
-    BeStringUtilities::CurrentLocaleCharToWChar( tempoStr,pi_rVariableName.c_str());
-
-    WString Value;
-    bool Ret = GetVariableValue(tempoStr, Value, pi_KeepLineSeparator);
-
-    size_t  destinationBuffSize = Value.GetMaxLocaleCharBytes();
-    char*  ValueMBS= (char*)_alloca (destinationBuffSize);
-    BeStringUtilities::WCharToCurrentLocaleChar(ValueMBS, Value.c_str(),destinationBuffSize);
-
-    po_rValue = string(ValueMBS);
-    return Ret;
-    }
-bool HFCIniFileBrowser::GetVariableValue(const WString& pi_rVariableName,
-                                          WString&       po_rValue,
+bool HFCIniFileBrowser::GetVariableValue(Utf8CP pi_rVariableName,
+                                          Utf8String&       po_rValue,
                                           bool          pi_KeepLineSeparator)
     {
     bool  Found = false;
-    WString CurrentLine;
+    Utf8String CurrentLine;
 
     // Go to the top of the current topic.
     m_pFile->SeekToPos(m_TopicOffset);
@@ -247,12 +250,11 @@ bool HFCIniFileBrowser::GetVariableValue(const WString& pi_rVariableName,
     // Check that we have a line with data and that it isn't a topic.
     while (!Found && !CurrentLine.empty() && !ExtractTopicName(CurrentLine))
         {
-        WString VariableName;
+        Utf8String VariableName;
 
-        if (ExtractVariableName(CurrentLine, VariableName) &&
-            VariableName == pi_rVariableName)
+        if (ExtractVariableName(CurrentLine, VariableName) && VariableName.Equals(pi_rVariableName))
             {
-            WString Value;
+            Utf8String Value;
 
             // Indicate the we have found the variable.
             Found = true;
@@ -270,7 +272,7 @@ bool HFCIniFileBrowser::GetVariableValue(const WString& pi_rVariableName,
                 {
                 // Add the value to the existing part.
                 CleanUpString(CurrentLine, pi_KeepLineSeparator);
-                po_rValue += L' ' + CurrentLine;
+                po_rValue += ' ' + CurrentLine;
 
                 // Read the next line.
                 ReadLine(CurrentLine, pi_KeepLineSeparator);
@@ -291,7 +293,7 @@ bool HFCIniFileBrowser::GetVariableValue(const WString& pi_rVariableName,
 //-----------------------------------------------------------------------------
 // Private
 //-----------------------------------------------------------------------------
-bool HFCIniFileBrowser::ExtractTopicName(const WString& pi_rString)
+bool HFCIniFileBrowser::ExtractTopicName(const Utf8String& pi_rString)
     {
     bool   Found = false;
     size_t  BeginPos;
@@ -299,16 +301,16 @@ bool HFCIniFileBrowser::ExtractTopicName(const WString& pi_rString)
 
     // Search for the topic begin mark.
     BeginPos = pi_rString.find_first_of(m_TopicBeginMark);
-    if (BeginPos != WString::npos)
+    if (BeginPos != Utf8String::npos)
         {
         // Search for the topic end mark.
         EndPos = pi_rString.find_first_of(m_TopicEndMark, BeginPos);
-        if (EndPos != WString::npos)
+        if (EndPos != Utf8String::npos)
             {
             // We have a topic, we need to extrude it.
             Found       = true;
-            m_TopicNameW = pi_rString.substr(BeginPos+1, EndPos-BeginPos-1);
-            CleanUpString(m_TopicNameW);
+            m_TopicName = pi_rString.substr(BeginPos+1, EndPos-BeginPos-1);
+            CleanUpString(m_TopicName);
             }
         }
 
@@ -319,8 +321,8 @@ bool HFCIniFileBrowser::ExtractTopicName(const WString& pi_rString)
 // Private
 // Extract the variable name.
 //-----------------------------------------------------------------------------
-bool HFCIniFileBrowser::ExtractVariableName(const WString& pi_rString,
-                                             WString& pi_rVariableName)
+bool HFCIniFileBrowser::ExtractVariableName(const Utf8String& pi_rString,
+                                             Utf8String& pi_rVariableName)
     {
     bool  Found = false;
     size_t MarkPos;
@@ -328,12 +330,12 @@ bool HFCIniFileBrowser::ExtractVariableName(const WString& pi_rString,
 
     // Check if the current line contain a variable mark.
     MarkPos = pi_rString.find_first_of(m_VariableMark);
-    if (MarkPos != WString::npos)
+    if (MarkPos != Utf8String::npos)
         {
-        HttpPos = pi_rString.find_first_of(L":");
-        if ((HttpPos == WString::npos) || (HttpPos > MarkPos))
+        HttpPos = pi_rString.find_first_of(":");
+        if ((HttpPos == Utf8String::npos) || (HttpPos > MarkPos))
             {
-            WString VariableName;
+            Utf8String VariableName;
 
             // Extract the variable name.
             VariableName = pi_rString.substr(0, MarkPos);
@@ -355,21 +357,7 @@ bool HFCIniFileBrowser::ExtractVariableName(const WString& pi_rString,
 // Public
 // Read a line of data from the file.  The empty line are flushed.
 //-----------------------------------------------------------------------------
-void HFCIniFileBrowser::ReadLine(string&    po_rString,
-                                 bool      pi_KeepLineSeparator,
-                                 uint32_t   pi_MaxSize)
-    {
-    WString Line;
-    ReadLine(Line, pi_KeepLineSeparator, pi_MaxSize);
-
-    size_t  destinationBuffSize = Line.GetMaxLocaleCharBytes();
-    char*  LineMBS= (char*)_alloca (destinationBuffSize);
-    BeStringUtilities::WCharToCurrentLocaleChar(LineMBS, Line.c_str(),destinationBuffSize);
-
-    po_rString = string(LineMBS);
-    }
-
-void HFCIniFileBrowser::ReadLine(WString& po_rString,
+void HFCIniFileBrowser::ReadLine(Utf8String& po_rString,
                                  bool    pi_KeepLineSeparator,
                                  uint32_t pi_MaxSize)
     {
@@ -377,7 +365,7 @@ void HFCIniFileBrowser::ReadLine(WString& po_rString,
 
     const size_t BufferSize = 512;
     char     Buffer[BufferSize + 1];
-    WString   CurrentLine;
+    Utf8String   CurrentLine;
 
     // Read line until we found a line with data.
     // We also stop to read the file if we the current position in the file
@@ -404,10 +392,7 @@ void HFCIniFileBrowser::ReadLine(WString& po_rString,
                 }
             }
 
-        WString tempoStr;
-        BeStringUtilities::Utf8ToWChar(tempoStr,Buffer);
-
-        CurrentLine += tempoStr;
+        CurrentLine += Buffer;
 
         if (EndOfLine)
             CleanUpString(CurrentLine, pi_KeepLineSeparator);
@@ -420,7 +405,7 @@ void HFCIniFileBrowser::ReadLine(WString& po_rString,
 // Private
 // Remove SPACE/TAB/ENTER from the begin and end of the file.
 //-----------------------------------------------------------------------------
-void HFCIniFileBrowser::CleanUpString(WString& pi_rString, bool pi_KeepLineSeparator)
+void HFCIniFileBrowser::CleanUpString(Utf8String& pi_rString, bool pi_KeepLineSeparator)
     {
     size_t Pos = 0;
 
@@ -450,19 +435,19 @@ void HFCIniFileBrowser::CleanUpString(WString& pi_rString, bool pi_KeepLineSepar
 // Check if the specified character is valid.  Valid character exclude SPACE/
 // TAB/ENTER.
 //-----------------------------------------------------------------------------
-bool HFCIniFileBrowser::IsValidChar(const WChar& pi_rChar,
+bool HFCIniFileBrowser::IsValidChar(const Utf8Char& pi_rChar,
                                      bool         pi_KeepLineSeparator)
     {
     bool IsValid = true;
 
     switch (pi_rChar)
         {
-        case L'\n':
-        case L'\r':
+        case '\n':
+        case '\r':
             IsValid = pi_KeepLineSeparator;
             break;
-        case L' ':
-        case L'\t':
+        case ' ':
+        case '\t':
             IsValid = false;
             break;
         }

@@ -25,8 +25,8 @@
 
 // MakeDir and Access
 
-static const WString s_cTiffExtensionCache = L".cache.cTIFF"; // ctiff extension
-static const WString s_iTiffExtensionCache = L".cache.iTIFF"; // itiff extension
+static const Utf8String s_cTiffExtensionCache = ".cache.cTIFF"; // ctiff extension
+static const Utf8String s_iTiffExtensionCache = ".cache.iTIFF"; // itiff extension
 
 HFC_IMPLEMENT_SINGLETON(HRFiTiffCacheFileCreator)
 //-----------------------------------------------------------------------------
@@ -252,10 +252,7 @@ HFCPtr<HRFRasterFile> HRFiTiffCacheFileCreator::GetCacheFileFor(HFCPtr<HRFRaster
 
         BeFileName localPath;
         ImageppLib::GetHost().GetImageppLibAdmin()._GetLocalCacheDirPath(localPath);
-
-        HFCPtr<HFCURL> pUrl = HFCURL::CreateFrom(localPath);
-
-        HRFCacheController CacheSize(pUrl);
+        HRFCacheController CacheSize(localPath);
         CacheSize.SetCacheSize(ImageppLib::GetHost().GetImageppLibAdmin()._GetDirectoryCacheSize());
         CacheSize.Control(HRFCacheController::CACHE_CONTROL_SIZE);
         }
@@ -279,16 +276,14 @@ const HFCPtr<HRFRasterFileCapabilities>& HRFiTiffCacheFileCreator::GetCapabiliti
 // ComposeURLFor
 //-----------------------------------------------------------------------------
 HFCPtr<HFCURL> HRFiTiffCacheFileCreator::ComposeURLFor(const HFCPtr<HFCURL>& pi_rpURLFileName,
-                                                       const WString&        pi_Extension,
+                                                       const Utf8String&        pi_Extension,
                                                        uint64_t             pi_Offset,
                                                        uint32_t              pi_Page) const
     {
     if (pi_Page != -1 && pi_Page != 0)
         {
-        wostringstream Ext;
-        Ext << L".page" << pi_Page << pi_Extension;
-
-        return HRFLocalCacheFileCreator::ComposeURLFor(pi_rpURLFileName, Ext.str().c_str(), pi_Offset);
+        Utf8PrintfString extension(".page%d%s", pi_Page, pi_Extension);        
+        return HRFLocalCacheFileCreator::ComposeURLFor(pi_rpURLFileName, extension.c_str(), pi_Offset);
         }
     else
         return HRFLocalCacheFileCreator::ComposeURLFor(pi_rpURLFileName, pi_Extension, pi_Offset);

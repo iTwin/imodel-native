@@ -181,9 +181,9 @@ struct HRFLRDCreator : public HRFRasterFileCreator
     virtual bool                     IsKindOfFile(const HFCPtr<HFCURL>&    pi_rpURL,
                                                    uint64_t                pi_Offset = 0) const;
     // Identification information
-    virtual WString                   GetLabel()      const;
-    virtual WString                   GetSchemes()    const;
-    virtual WString                   GetExtensions() const;
+    virtual Utf8String                   GetLabel()      const;
+    virtual Utf8String                   GetSchemes()    const;
+    virtual Utf8String                   GetExtensions() const;
 
     // capabilities of Raster file.
     virtual const HFCPtr<HRFRasterFileCapabilities>&

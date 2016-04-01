@@ -10,8 +10,6 @@
 #pragma once
 
 #include "HFCPtr.h"
-#include "HFCURL.h"
-
 
 /**
     This class is used to control the size use by the cache.
@@ -21,11 +19,12 @@
 */
 
 BEGIN_IMAGEPP_NAMESPACE
+
 class HRFCacheController: public HFCShareableObject<HRFCacheController>
     {
 public:
 
-    typedef bvector<HFCPtr<HFCURL> > MoveFolderList;
+    typedef bvector<BeFileName> MoveFolderList;
 
     enum CacheControlFlags
         {
@@ -38,7 +37,7 @@ public:
     HDECLARE_BASECLASS_ID(HRFCacheControllerId_Base);
 
     //:> Primary methods.
-    IMAGEPP_EXPORT                     HRFCacheController(const HFCPtr<HFCURL> & pi_CachePath, bool pi_ScanSubDir = false);
+    IMAGEPP_EXPORT                     HRFCacheController(BeFileNameCR pi_CachePath, bool pi_ScanSubDir = false);
 
     IMAGEPP_EXPORT virtual             ~HRFCacheController();
 
@@ -57,7 +56,7 @@ private:
 
     struct FileEntry
         {
-        WString     m_FileName;
+        BeFileName  m_FileName;
         time_t      m_LastAccess;
         uint64_t    m_FileSize;
 
@@ -67,10 +66,10 @@ private:
             };
         };
 
-    typedef multiset<FileEntry> FileEntryList;
+    typedef std::multiset<FileEntry> FileEntryList;
 
     // Cache directory
-    HFCPtr<HFCURL>  m_DirCachePath;
+    BeFileName      m_DirCachePath;
     bool            m_ScanSubDir;
 
     // Control settings
@@ -79,8 +78,8 @@ private:
     MoveFolderList  m_MoveFolderList;       // List of folders to move to the current directory
 
     // method
-    bool            IsCompliant(const WString& pi_rFileName) const;
-    void            GetFileInfo(const WString& pi_rPath, FileEntryList* pi_pFileList);
+    bool            IsCompliant(BeFileNameCR pi_rFileName) const;
+    void            GetFileInfo(BeFileNameCR pi_rPath, FileEntryList* pi_pFileList);
 
     // Disable methods
     HRFCacheController(const HRFCacheController&);

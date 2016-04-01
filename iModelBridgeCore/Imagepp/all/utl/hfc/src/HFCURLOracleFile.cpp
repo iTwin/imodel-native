@@ -18,9 +18,9 @@ struct URLOracleFileCreator : public HFCURL::Creator
     {
     URLOracleFileCreator()
         {
-        HFCURLOracleFile::GetSchemeList().insert(HFCURLOracleFile::SchemeList::value_type(HFCURLOracleFile::s_SchemeName(), this));
+        HFCURL::RegisterCreator(HFCURLOracleFile::s_SchemeName(), this);
         }
-    virtual HFCURL* Create(const WString& pi_URL) const
+    virtual HFCURL* Create(const Utf8String& pi_URL) const
         {
         return new HFCURLOracleFile(pi_URL);
         }
@@ -30,12 +30,12 @@ struct URLOracleFileCreator : public HFCURL::Creator
 //-----------------------------------------------------------------------------
 // Little static function that is used by constructor
 
-static WString BuildHostString(const WString& pi_rSchema,
-                               const WString& pi_rHost,
-                               const WString& pi_rDirTableName,
-                               const WString& pi_rPath)
+static Utf8String BuildHostString(const Utf8String& pi_rSchema,
+                               const Utf8String& pi_rHost,
+                               const Utf8String& pi_rDirTableName,
+                               const Utf8String& pi_rPath)
     {
-    WString  Result;
+    Utf8String  Result;
     bool   Error = false;
 
     // validation
@@ -51,12 +51,12 @@ static WString BuildHostString(const WString& pi_rSchema,
             Result += pi_rSchema;
 
         if (!pi_rHost.empty())
-            Result += L"@" + pi_rHost;
+            Result += "@" + pi_rHost;
 
-        Result += L"?";
+        Result += "?";
 
         if (!pi_rDirTableName.empty())
-            Result += pi_rDirTableName + L":";
+            Result += pi_rDirTableName + ":";
 
         Result += pi_rPath;
         }
@@ -69,11 +69,11 @@ static WString BuildHostString(const WString& pi_rSchema,
 // This constructor configures the object from the detached parts of the
 // scheme-specific part of the URL string.
 //-----------------------------------------------------------------------------
-HFCURLOracleFile::HFCURLOracleFile(const WString& pi_rSchema,
-                                   const WString& pi_rHost,
-                                   const WString& pi_rDirTableName,
-                                   const WString& pi_rPath)
-    : HFCURL(s_SchemeName(), WString(L"//") + BuildHostString(pi_rSchema,
+HFCURLOracleFile::HFCURLOracleFile(const Utf8String& pi_rSchema,
+                                   const Utf8String& pi_rHost,
+                                   const Utf8String& pi_rDirTableName,
+                                   const Utf8String& pi_rPath)
+    : HFCURL(s_SchemeName(), Utf8String("//") + BuildHostString(pi_rSchema,
                                                                     pi_rHost,
                                                                     pi_rDirTableName,
                                                                     pi_rPath)),
@@ -92,12 +92,12 @@ HFCURLOracleFile::HFCURLOracleFile(const WString& pi_rSchema,
 // This constructor configures the object from the detached parts of the
 // scheme-specific part of the URL string.
 //-----------------------------------------------------------------------------
-HFCURLOracleFile::HFCURLOracleFile(const WString& pi_rSchema,
-                                   const WString& pi_rHost,
-                                   const WString& pi_rPath)
-    : HFCURL(s_SchemeName(), WString(L"//") + BuildHostString(pi_rSchema,
+HFCURLOracleFile::HFCURLOracleFile(const Utf8String& pi_rSchema,
+                                   const Utf8String& pi_rHost,
+                                   const Utf8String& pi_rPath)
+    : HFCURL(s_SchemeName(), Utf8String("//") + BuildHostString(pi_rSchema,
                                                                     pi_rHost,
-                                                                    WString(),
+                                                                    Utf8String(),
                                                                     pi_rPath)),
     m_Host(pi_rHost),
     m_Schema(pi_rSchema),
@@ -114,30 +114,30 @@ HFCURLOracleFile::HFCURLOracleFile(const WString& pi_rSchema,
 // Syntax :  horacle://<Schema>@<Host>?<DirTableName:>/Path
 //
 //-----------------------------------------------------------------------------
-HFCURLOracleFile::HFCURLOracleFile(const WString& pi_rURL)
+HFCURLOracleFile::HFCURLOracleFile(const Utf8String& pi_rURL)
     : HFCURL(pi_rURL)
     {
 
     bool Error = false;
 
-    if (BeStringUtilities::Wcsicmp(GetSchemeType().c_str(), s_SchemeName().c_str()) == 0)
+    if (GetSchemeType().EqualsI(s_SchemeName()))
         {
-        WString SchemeSpecificPart = GetSchemeSpecificPart();
+        Utf8String SchemeSpecificPart = GetSchemeSpecificPart();
 
         // must be start with "//"
-        if ( (SchemeSpecificPart.length() > 2) && (SchemeSpecificPart.substr(0,2) == L"//") )
+        if ( (SchemeSpecificPart.length() > 2) && (SchemeSpecificPart.substr(0,2) == "//") )
             {
-            WString::size_type QuestionMarkPos;
-            if ((QuestionMarkPos = SchemeSpecificPart.find_first_of(L"?", 2)) != WString::npos)
+            Utf8String::size_type QuestionMarkPos;
+            if ((QuestionMarkPos = SchemeSpecificPart.find_first_of("?", 2)) != Utf8String::npos)
                 {
-                WString Schema = SchemeSpecificPart.substr(2, QuestionMarkPos - 2);
-                WString Image  = SchemeSpecificPart.substr(QuestionMarkPos + 1);
+                Utf8String Schema = SchemeSpecificPart.substr(2, QuestionMarkPos - 2);
+                Utf8String Image  = SchemeSpecificPart.substr(QuestionMarkPos + 1);
 
                 if (!Schema.empty())
                     {
-                    WString::size_type AtPos;
+                    Utf8String::size_type AtPos;
 
-                    if ((AtPos = Schema.find_first_of(L"@")) != WString::npos)
+                    if ((AtPos = Schema.find_first_of("@")) != Utf8String::npos)
                         {
                         if (AtPos != 0)
                             {
@@ -157,9 +157,9 @@ HFCURLOracleFile::HFCURLOracleFile(const WString& pi_rURL)
 
                 if (!Error && !Image.empty())
                     {
-                    WString::size_type CommonPos;
+                    Utf8String::size_type CommonPos;
 
-                    if ((CommonPos = Image.find_first_of(L":")) != WString::npos)
+                    if ((CommonPos = Image.find_first_of(":")) != Utf8String::npos)
                         {
                         m_DirTableName = Image.substr(0, CommonPos);
                         m_Path = Image.substr(CommonPos + 1);
@@ -192,20 +192,20 @@ HFCURLOracleFile::~HFCURLOracleFile()
 // GetURL
 // Returns the standardized and complete URL string.
 //-----------------------------------------------------------------------------
-WString HFCURLOracleFile::GetURL() const
+Utf8String HFCURLOracleFile::GetURL() const
     {
-    WString URL = (s_SchemeName() + L"://");
+    Utf8String URL = (s_SchemeName() + "://");
 
     if (!m_Schema.empty())
         URL += m_Schema;
 
     if (!m_Host.empty())
-        URL += L"@" + m_Host;
+        URL += "@" + m_Host;
 
-    URL += L"?";
+    URL += "?";
 
     if (!m_DirTableName.empty())
-        URL += m_DirTableName + L":";
+        URL += m_DirTableName + ":";
 
     URL += m_Path;
 
@@ -219,10 +219,10 @@ WString HFCURLOracleFile::GetURL() const
 //
 // Not implemented.
 //-----------------------------------------------------------------------------
-WString HFCURLOracleFile::FindPathTo(HFCURL* pi_pDest)
+Utf8String HFCURLOracleFile::FindPathTo(HFCURL* pi_pDest)
     {
     HASSERT(0);
-    return WString();
+    return Utf8String();
     }
 
 
@@ -232,7 +232,7 @@ WString HFCURLOracleFile::FindPathTo(HFCURL* pi_pDest)
 //
 // Not implemented.
 //-----------------------------------------------------------------------------
-HFCURL* HFCURLOracleFile::MakeURLTo(const WString& pi_Path)
+HFCURL* HFCURLOracleFile::MakeURLTo(const Utf8String& pi_Path)
     {
     HASSERT(0);
     return 0;

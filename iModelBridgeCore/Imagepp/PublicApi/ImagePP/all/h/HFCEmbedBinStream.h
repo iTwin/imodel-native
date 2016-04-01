@@ -26,7 +26,7 @@ public:
     // Primary methods
     IMAGEPP_EXPORT                  HFCEmbedBinStream();
 
-    IMAGEPP_EXPORT                  HFCEmbedBinStream(const WString&      pi_Filename,
+    IMAGEPP_EXPORT                  HFCEmbedBinStream(const Utf8String&      pi_Filename,
                                               IFileReaderHandler* pi_pHandler);
 
     IMAGEPP_EXPORT virtual          ~HFCEmbedBinStream();
@@ -69,7 +69,7 @@ private:
     uint64_t           m_CurrentPos;
     IFileReaderHandler* m_pHandler;
     HFCAccessMode       m_AccessMode;
-    WString             m_Filename;
+    Utf8String             m_Filename;
 
     };
 

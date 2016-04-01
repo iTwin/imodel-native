@@ -190,8 +190,7 @@ HTagDefinition::HTagDefinition(const HTagInfo& pi_rTagInfo, FileDirEntry64& pi_T
             {
             HTIFFError::WrongTagDataTypeErInfo ErInfo;
             ErInfo.m_Type      = pi_TagDescriptor.DataType;
-            string TagName = string(GetTagName());
-            ErInfo.m_TagName    = WString(TagName.c_str(),false);
+            ErInfo.m_TagName = GetTagName();
             ErInfo.m_TagFileNb = GetFileTag();
             ErrorMsg (&m_pError, HTIFFError::WRONG_DATA_TYPE_FOR_TAG, &ErInfo, false);
             }
@@ -201,8 +200,7 @@ HTagDefinition::HTagDefinition(const HTagInfo& pi_rTagInfo, FileDirEntry64& pi_T
         // Unknown Tag, display Info
         HTIFFError::UnknownTagErInfo ErInfo;
         ErInfo.m_TagFileNb = pi_TagDescriptor.FileTag;
-        string Type   = string(HTagInfo::sConvertDataTypetoText(static_cast<HTagInfo::DataType>(pi_TagDescriptor.DataType)));
-        ErInfo.m_Type = WString(Type.c_str(),false);
+        ErInfo.m_Type = HTagInfo::sConvertDataTypetoText(static_cast<HTagInfo::DataType>(pi_TagDescriptor.DataType));
 
         if (pi_IsTiff64)
             {

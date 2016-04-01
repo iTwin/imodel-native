@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPAToken.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HPAToken
@@ -55,14 +55,14 @@ class HPATokenNode : public HPANode
 public:
 
     IMAGEPP_EXPORT                     HPATokenNode(HPAGrammarObject* pi_pToken,
-                                            const WString& pi_rText,
+                                            const Utf8String& pi_rText,
                                             const HPASourcePos& pi_rLeftPos,
                                             const HPASourcePos& pi_rRightPos,
                                             HPASession* pi_pSession);
     IMAGEPP_EXPORT virtual             ~HPATokenNode();
 
-    void                SetText(const WString& pi_rText);
-    const WString&      GetText() const;
+    void                SetText(const Utf8String& pi_rText);
+    const Utf8String&      GetText() const;
 
 protected:
 
@@ -75,7 +75,7 @@ private:
 
     // Data members
 
-    WString             m_Text;
+    Utf8String             m_Text;
 
     };
 
@@ -89,7 +89,7 @@ class HPANumberTokenNode : public HPATokenNode
 public:
 
     IMAGEPP_EXPORT                     HPANumberTokenNode(HPAGrammarObject* pi_pToken,
-                                                  const WString& pi_rText,
+                                                  const Utf8String& pi_rText,
                                                   const HPASourcePos& pi_rLeftPos,
                                                   const HPASourcePos& pi_rRightPos,
                                                   HPASession* pi_pSession,

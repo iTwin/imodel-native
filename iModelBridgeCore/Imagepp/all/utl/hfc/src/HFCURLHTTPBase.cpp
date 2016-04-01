@@ -15,19 +15,19 @@
 #include <Imagepp/all/h/HFCURLHTTPS.h>
 
 // Constants
-static const WString s_DefaultPort(L"80");
-static const WString s_DefaultSecurePort(L"443");
+static const Utf8String s_DefaultPort("80");
+static const Utf8String s_DefaultSecurePort("443");
 
 //-----------------------------------------------------------------------------
 // This little static function builds the URLPath portion of URL string from
 // a path and a search expression.  Used by constructor.  Needed because
 // compiler have difficulties with "?:" expressions and strings.
 
-static WString BuildURLPathString(const WString& pi_Path, const WString& pi_SearchPart)
+static Utf8String BuildURLPathString(const Utf8String& pi_Path, const Utf8String& pi_SearchPart)
     {
-    WString Result(pi_Path);
+    Utf8String Result(pi_Path);
     if (!pi_SearchPart.empty())
-        Result += L"?" + pi_SearchPart;
+        Result += "?" + pi_SearchPart;
     return Result;
     }
 
@@ -68,12 +68,12 @@ static WString BuildURLPathString(const WString& pi_Path, const WString& pi_Sear
               precise kind of URL and no child of it are expected to be
               defined.
 -----------------------------------------------------------------------------*/
-HFCURLHTTPBase::HFCURLHTTPBase(const WString& pi_User,
-                               const WString& pi_Password,
-                               const WString& pi_Host,
-                               const WString& pi_Port,
-                               const WString& pi_Path,
-                               const WString& pi_SearchPart,
+HFCURLHTTPBase::HFCURLHTTPBase(const Utf8String& pi_User,
+                               const Utf8String& pi_Password,
+                               const Utf8String& pi_Host,
+                               const Utf8String& pi_Port,
+                               const Utf8String& pi_Path,
+                               const Utf8String& pi_SearchPart,
                                bool    pi_IsHTTPURL)
 : HFCURLCommonInternet((pi_IsHTTPURL ? HFCURLHTTP::s_SchemeName() : HFCURLHTTPS::s_SchemeName()), 
                            pi_User,
@@ -101,7 +101,7 @@ HFCURLHTTPBase::HFCURLHTTPBase(const WString& pi_User,
               precise kind of URL and no child of it are expected to be
               defined.
 -----------------------------------------------------------------------------*/
-HFCURLHTTPBase::HFCURLHTTPBase(const WString& pi_pURL,
+HFCURLHTTPBase::HFCURLHTTPBase(const Utf8String& pi_pURL,
                                bool    pi_IsHTTPURL)
     : HFCURLCommonInternet(pi_pURL),
       m_IsHTTPURL(pi_IsHTTPURL)
@@ -111,14 +111,14 @@ HFCURLHTTPBase::HFCURLHTTPBase(const WString& pi_pURL,
         m_Port = pi_IsHTTPURL ? s_DefaultPort : s_DefaultSecurePort;
 
     // Get the URL path and search part
-    WString::size_type QuestionMarkPos = GetURLPath().find(L'?');
-    if (QuestionMarkPos != WString::npos)
+    Utf8String::size_type QuestionMarkPos = GetURLPath().find('?');
+    if (QuestionMarkPos != Utf8String::npos)
         {
         m_SearchPart = GetURLPath().substr(QuestionMarkPos+1,
                                            GetURLPath().length() - QuestionMarkPos - 1);
 
         // For some obscene reason, sometimes the search part contains the ending & which we do not want
-        while (m_SearchPart.size() > 0 && m_SearchPart.substr(m_SearchPart.size()-1, 1) == L"&")
+        while (m_SearchPart.size() > 0 && m_SearchPart.substr(m_SearchPart.size()-1, 1) == "&")
             m_SearchPart = m_SearchPart.substr(0, m_SearchPart.size() - 1);
 
         m_Path = GetURLPath().substr(0, QuestionMarkPos);
@@ -143,17 +143,17 @@ HFCURLHTTPBase::~HFCURLHTTPBase()
 
  @see HFCURL
 -----------------------------------------------------------------------------*/
-WString HFCURLHTTPBase::GetURL() const
+Utf8String HFCURLHTTPBase::GetURL() const
     {
-    WString Result;
+    Utf8String Result;
 
     if (m_IsHTTPURL)
         {
-        Result = HFCURLHTTP::s_SchemeName() + L"://";
+        Result = HFCURLHTTP::s_SchemeName() + "://";
         }
     else
         {
-        Result = HFCURLHTTPS::s_SchemeName() + L"://";
+        Result = HFCURLHTTPS::s_SchemeName() + "://";
         }
 
     if (!GetUser().empty())
@@ -161,22 +161,22 @@ WString HFCURLHTTPBase::GetURL() const
         Result += GetUser();
         if (!GetPassword().empty())
             {
-            Result += L":";
+            Result += ":";
             Result += GetPassword();
             }
-        Result += L"@";
+        Result += "@";
         }
     Result += GetHost();
     if (!GetPort().empty())
         {
-        Result += L":";
+        Result += ":";
         Result += GetPort();
         }
-    Result += L"/";
+    Result += "/";
     Result += GetPath();
     if (!GetSearchPart().empty())
         {
-        Result += L"?";
+        Result += "?";
         Result += GetSearchPart();
         }
     return Result;
@@ -205,7 +205,7 @@ bool HFCURLHTTPBase::HasPathTo(HFCURL* pi_pURL)
 
  @see HFCURL
 -----------------------------------------------------------------------------*/
-WString HFCURLHTTPBase::FindPathTo(HFCURL* pi_pDest)
+Utf8String HFCURLHTTPBase::FindPathTo(HFCURL* pi_pDest)
     {
     HPRECONDITION(HasPathTo(pi_pDest));
     return FindPath(GetPath(), ((HFCURLHTTPBase*)pi_pDest)->GetPath());
@@ -216,19 +216,19 @@ WString HFCURLHTTPBase::FindPathTo(HFCURL* pi_pDest)
 
  @see HFCURL
 -----------------------------------------------------------------------------*/
-HFCURL* HFCURLHTTPBase::MakeURLTo(const WString& pi_Path)
+HFCURL* HFCURLHTTPBase::MakeURLTo(const Utf8String& pi_Path)
     {
     HFCURL* pURL = 0;
 
     if (m_IsHTTPURL)
         {
         pURL = new HFCURLHTTP(GetUser(), GetPassword(), GetHost(), GetPort(),
-                              AddPath(GetPath(), pi_Path), WString());
+                              AddPath(GetPath(), pi_Path), Utf8String());
         }
     else
         {
         pURL = new HFCURLHTTPS(GetUser(), GetPassword(), GetHost(), GetPort(),
-                               AddPath(GetPath(), pi_Path), WString());
+                               AddPath(GetPath(), pi_Path), Utf8String());
         }
 
     return pURL;

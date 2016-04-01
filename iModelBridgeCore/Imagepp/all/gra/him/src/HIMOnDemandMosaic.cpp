@@ -519,7 +519,7 @@ void HIMOnDemandMosaic::Add(const HIMOnDemandMosaic::RasterList& pi_rRasters)
     @see HIMOnDemandMosaic::GetOnDemandRastersInfo(string& po_rOnDemandRastersInfo)
     ---------------------------------------------------------------------------
 */
-bool HIMOnDemandMosaic::Add(const string&                    pi_rOnDemandRastersInfo, 
+bool HIMOnDemandMosaic::Add(Utf8StringCR                     pi_rOnDemandRastersInfo,
                             HPMPool*                         pi_pMemPool, 
                             const HFCPtr<HGF2DWorldCluster>& pi_rAppWorldCluster, 
                             const HFCPtr<HFCURL>&            pi_rpPSSUrl)
@@ -534,13 +534,7 @@ bool HIMOnDemandMosaic::Add(const string&                    pi_rOnDemandRasters
     
     try 
     {
-        //XMLDocument onDemandMosaicXMLInfo(pi_rOnDemandRastersInfo.c_str(), pi_rOnDemandRastersInfo.size());
-
-        WString TempOnDemandRastersInfo;
-
-        BeStringUtilities::Utf8ToWChar(TempOnDemandRastersInfo, pi_rOnDemandRastersInfo.c_str());
-
-        BeXmlDomPtr pXmlDom(BeXmlDom::CreateAndReadFromString (XmlStatus, TempOnDemandRastersInfo.c_str(), TempOnDemandRastersInfo.length()));
+        BeXmlDomPtr pXmlDom(BeXmlDom::CreateAndReadFromString (XmlStatus, pi_rOnDemandRastersInfo.c_str(), pi_rOnDemandRastersInfo.length()));
 
         HASSERT(pXmlDom != 0);
 
@@ -626,11 +620,11 @@ bool HIMOnDemandMosaic::Add(const string&                    pi_rOnDemandRasters
         #endif    
         */		   		
                 // PSS data must be stored as UTF8.
-                Utf8String worldDescriptivePSS_UTF8(m_WorldDescriptivePSS.c_str());
+                Utf8String worldDescriptivePSS_UTF8(m_WorldDescriptivePSS);
                 HFCPtr<HFCBuffer> pBuffer(new HFCBuffer(worldDescriptivePSS_UTF8.size()));
                 pBuffer->AddData((Byte const*)worldDescriptivePSS_UTF8.c_str(), worldDescriptivePSS_UTF8.size());
                
-		        HFCPtr<HFCURL> pURLMemFile = new HFCURLMemFile(HFCURLMemFile::s_SchemeName() + L"://Raster", pBuffer);
+		        HFCPtr<HFCURL> pURLMemFile = new HFCURLMemFile(HFCURLMemFile::s_SchemeName() + "://Raster", pBuffer);
 		        HPSObjectStore PSSObjectStore(pi_pMemPool,
 		                                      pURLMemFile,
 		                                      pi_rAppWorldCluster,
@@ -1455,7 +1449,7 @@ bool HIMOnDemandMosaic::IsCacheFileUpToDate()
     Set a cache on the HIMOnDemandMosaic
     ---------------------------------------------------------------------------
 */
-bool HIMOnDemandMosaic::SetCacheFile(const WString&                   pi_rCacheFileName,
+bool HIMOnDemandMosaic::SetCacheFile(const Utf8String&                   pi_rCacheFileName,
                                      const HFCPtr<HGF2DWorldCluster>& pi_rpWorldCluster,
                                      HPMPool*                         pi_pMemoryPool)
     {
@@ -1463,7 +1457,7 @@ bool HIMOnDemandMosaic::SetCacheFile(const WString&                   pi_rCacheF
 
     m_onDemandMosaicCacheInfoVersion = 0.0;
 
-    HFCPtr<HFCURL>               pCacheFileURL(HFCURL::Instanciate(L"file://" + pi_rCacheFileName));
+    HFCPtr<HFCURL>               pCacheFileURL(HFCURL::Instanciate("file://" + pi_rCacheFileName));
 
     if (HRFcTiffCreator::GetInstance()->IsKindOfFile(pCacheFileURL) == true)
         {
@@ -1511,7 +1505,7 @@ bool HIMOnDemandMosaic::SetCacheFile(const WString&                   pi_rCacheF
 #define MAX_NB_CACHED_PIXELS        800000000
 #define MIN_GREATEST_DIMENSION_SIZE 512.0 //The minimum size of the greatest dimension size (i.e. : MAX(width, height)) to be allow.
 
-void HIMOnDemandMosaic::CreateCacheFile(const WString&                   		  pi_rCacheFileName, 
+void HIMOnDemandMosaic::CreateCacheFile(const Utf8String&                   		  pi_rCacheFileName, 
                                         const HFCPtr<HGF2DWorldCluster>& 		  pi_pWorldCluster, 
                                         HPMPool*                                  pi_pMemoryPool, 
                                         HRFDownSamplingMethod::DownSamplingMethod pi_DownSamplingMethod)
@@ -1522,7 +1516,7 @@ void HIMOnDemandMosaic::CreateCacheFile(const WString&                   		  pi_
     if (HasSomeRasterLastLoadFailed() == true)
         {
         //Should eventually have something more meaningful. 
-        throw HFCFileNotFoundException(L"");  
+        throw HFCFileNotFoundException("");  
         }
 
     //Verify that a cache is present and is valid                                
@@ -1564,7 +1558,7 @@ void HIMOnDemandMosaic::CreateCacheFile(const WString&                   		  pi_
                                             GetCacheURLFor((HFCPtr<HFCURL>&)pi_pSrcFilename, 0, 0));
                                             */
 
-    HFCPtr<HFCURL> pDstFileName(HFCURL::Instanciate(L"file://" + pi_rCacheFileName));
+    HFCPtr<HFCURL> pDstFileName(HFCURL::Instanciate("file://" + pi_rCacheFileName));
 
     HASSERT((pDstFileName != 0) && (pDstFileName->IsCompatibleWith(HFCURLFile::CLASS_ID) == true));
                        
@@ -1682,12 +1676,12 @@ void HIMOnDemandMosaic::CreateCacheFile(const WString&                   		  pi_
         }
     else
         {
-        BeFileName::BeDeleteFile(pi_rCacheFileName.c_str());
-
-        HASSERT(!BeFileName::DoesPathExist(pi_rCacheFileName.c_str()));
+        BeFileName file(pi_rCacheFileName);
+        file.BeDeleteFile();
+        HASSERT(!file.DoesPathExist());
 
         //Should eventually have something more meaningful. 
-        throw HFCFileNotFoundException(L"");  
+        throw HFCFileNotFoundException("");  
         }       
     }
 
@@ -1695,7 +1689,7 @@ void HIMOnDemandMosaic::CreateCacheFile(const WString&                   		  pi_
     Create the PSS file.
     ---------------------------------------------------------------------------
 */
-void HIMOnDemandMosaic::CreatePssFile(const WString& pi_rFileName) const
+void HIMOnDemandMosaic::CreatePssFile(const Utf8String& pi_rFileName) const
     {
     // Query all rasters in mosaic (all encompassing criterium)
     HAutoPtr<IndexType::IndexableList> pObjects(m_pIndex->GetIndex1()->QueryIndexables(HIDXSearchCriteria()));
@@ -1705,12 +1699,12 @@ void HIMOnDemandMosaic::CreatePssFile(const WString& pi_rFileName) const
 
     // For each raster gets the list of URL composing this raster
     IndexType::IndexableList::const_iterator Itr(pObjects->begin());
-    WString representativePSS;
+    Utf8String representativePSS;
     size_t  pageStatementPos;
     size_t  openParenthesisPos;        
 
-    WString onDemandMosaicStatement(L"m0 = ODMO(");
-    WString rasterPSSName;
+    Utf8String onDemandMosaicStatement("m0 = ODMO(");
+    Utf8String rasterPSSName;
 
     HFCLocalBinStream localBinStream(pi_rFileName, HFC_READ_WRITE_CREATE);
 
@@ -1718,32 +1712,32 @@ void HIMOnDemandMosaic::CreatePssFile(const WString& pi_rFileName) const
         {
         representativePSS = (*Itr)->GetObject()->GetRepresentativePSS();
 
-        pageStatementPos = representativePSS.find(L"PAGE");
+        pageStatementPos = representativePSS.find("PAGE");
 
         if (pageStatementPos == string::npos)
             {
-            pageStatementPos = representativePSS.find(L"PG");
+            pageStatementPos = representativePSS.find("PG");
             }
 
         HASSERT(pageStatementPos != string::npos);
 
         //Get the raster name.
-        openParenthesisPos = representativePSS.find(L"(", pageStatementPos);
+        openParenthesisPos = representativePSS.find("(", pageStatementPos);
 
         rasterPSSName = representativePSS.substr(openParenthesisPos + 1);
 
-        rasterPSSName.erase(rasterPSSName.find_last_not_of(L" )\n\r\t")+1);
+        rasterPSSName.erase(rasterPSSName.find_last_not_of(" )\n\r\t")+1);
 
         //Remove the page statement
         representativePSS = representativePSS.substr(0, pageStatementPos);
                                                                                   
-        onDemandMosaicStatement += rasterPSSName + L",";
+        onDemandMosaicStatement += rasterPSSName + ",";
 
         //Write the representative PSS of the image.                
-        representativePSS += L"\r\n";
+        representativePSS += "\r\n";
         
         // PSS is UTF8.
-        Utf8String representativePSS_UTF8(representativePSS.c_str());
+        Utf8String representativePSS_UTF8(representativePSS);
         size_t nbCharsWritten = localBinStream.Write(representativePSS_UTF8.c_str(), representativePSS_UTF8.size());
 
         HASSERT(nbCharsWritten == representativePSS_UTF8.size());
@@ -1754,10 +1748,10 @@ void HIMOnDemandMosaic::CreatePssFile(const WString& pi_rFileName) const
     //Write the world descriptive PSS. 
     if (m_WorldDescriptivePSS.empty() == false)
         {
-        WString worldDescriptivePSS = m_WorldDescriptivePSS + L"\r\n";
+        Utf8String worldDescriptivePSS = m_WorldDescriptivePSS + "\r\n";
         
         // PSS is UTF8.
-        Utf8String worldDescriptivePSS_UTF8(worldDescriptivePSS.c_str());
+        Utf8String worldDescriptivePSS_UTF8(worldDescriptivePSS);
         size_t nbCharsWritten = localBinStream.Write(worldDescriptivePSS_UTF8.c_str(), worldDescriptivePSS_UTF8.size());
 
         HASSERT(nbCharsWritten == worldDescriptivePSS_UTF8.size());                    
@@ -1766,10 +1760,10 @@ void HIMOnDemandMosaic::CreatePssFile(const WString& pi_rFileName) const
     //Remove the ,
     onDemandMosaicStatement = onDemandMosaicStatement.substr(0, onDemandMosaicStatement.size() - 1);
 
-    onDemandMosaicStatement += L")\r\nPAGE(m0)";
+    onDemandMosaicStatement += ")\r\nPAGE(m0)";
 
     // PSS is UTF8
-    Utf8String onDemandMosaicStatement_UTF8(onDemandMosaicStatement.c_str());
+    Utf8String onDemandMosaicStatement_UTF8(onDemandMosaicStatement);
     size_t nbCharsWritten = localBinStream.Write(onDemandMosaicStatement_UTF8.c_str(), onDemandMosaicStatement_UTF8.size());
 
     HASSERT(nbCharsWritten == onDemandMosaicStatement_UTF8.size());
@@ -1827,7 +1821,8 @@ void HIMOnDemandMosaic::RemoveAll()
         {
         HASSERT(m_pPSSCacheFileUrl->IsCompatibleWith(HFCURLFile::CLASS_ID) == true);
 
-        BeFileName::BeDeleteFile(((HFCURLFile*)m_pPSSCacheFileUrl.GetPtr())->GetAbsoluteFileName().c_str());
+        BeFileName file(((HFCURLFile*) m_pPSSCacheFileUrl.GetPtr())->GetAbsoluteFileName().c_str());
+        file.BeDeleteFile();
         }
 
     // Notify linked rasters that mosaic's content has changed
@@ -1860,13 +1855,13 @@ void HIMOnDemandMosaic::GetOnDemandRastersInfo(Utf8String* po_pOnDemandRastersIn
             
     BeXmlNodeP pRootNode = pOnDemandMosaicXMLInfo->AddNewElement("OnDemandMosaic", 0, 0);
        
-    WChar doubleValueBuffer[DOUBLE_VALUE_BUFFER_LENGTH];
-    WChar format[DOUBLE_FORMATTING_BUFFER_LENGTH];
+    Utf8Char doubleValueBuffer[DOUBLE_VALUE_BUFFER_LENGTH];
+    Utf8Char format[DOUBLE_FORMATTING_BUFFER_LENGTH];
 
     GetDoubleFormatting(format, DOUBLE_FORMATTING_BUFFER_LENGTH);
     
     //Precision lost with the AddAttributeDoubleValue, so we are doing our own conversion.
-    swprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, ON_DEMAND_RASTER_INFO_LATEST_VERSION);       
+    BeStringUtilities::Snprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, ON_DEMAND_RASTER_INFO_LATEST_VERSION);
     pRootNode->AddAttributeStringValue("version", doubleValueBuffer);
                                        
     //onDemandMosaicXMLInfo.AddNode(*pOnDemandMosaicNode);
@@ -1915,16 +1910,16 @@ void HIMOnDemandMosaic::GetOnDemandRastersInfo(Utf8String* po_pOnDemandRastersIn
     */
            
     //Precision lost with the AddAttributeDoubleValue, so we are doing our own conversion.
-    swprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, extentToSerialize.GetXMin());             
+    BeStringUtilities::Snprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, extentToSerialize.GetXMin());
     pODMOMinPixelSizeNode->AddAttributeStringValue("xMin", doubleValueBuffer);
 
-    swprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, extentToSerialize.GetXMax());             
+    BeStringUtilities::Snprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, extentToSerialize.GetXMax());
     pODMOMinPixelSizeNode->AddAttributeStringValue("xMax", doubleValueBuffer);
 
-    swprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, extentToSerialize.GetYMin());    
+    BeStringUtilities::Snprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, extentToSerialize.GetYMin());
     pODMOMinPixelSizeNode->AddAttributeStringValue("yMin", doubleValueBuffer);
 
-    swprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, extentToSerialize.GetYMax());    
+    BeStringUtilities::Snprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, extentToSerialize.GetYMax());
     pODMOMinPixelSizeNode->AddAttributeStringValue("yMax", doubleValueBuffer);
     
     //Maximum pixel size range
@@ -1936,16 +1931,16 @@ void HIMOnDemandMosaic::GetOnDemandRastersInfo(Utf8String* po_pOnDemandRastersIn
 
     extentToSerialize.ChangeCoordSys(GetCoordSys());    
 
-    swprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, extentToSerialize.GetXMin());             
+    BeStringUtilities::Snprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, extentToSerialize.GetXMin());
     pODMOMaxPixelSizeNode->AddAttributeStringValue("xMin", doubleValueBuffer);
 
-    swprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, extentToSerialize.GetXMax());             
+    BeStringUtilities::Snprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, extentToSerialize.GetXMax());
     pODMOMaxPixelSizeNode->AddAttributeStringValue("xMax", doubleValueBuffer);
 
-    swprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, extentToSerialize.GetYMin());             
+    BeStringUtilities::Snprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, extentToSerialize.GetYMin());
     pODMOMaxPixelSizeNode->AddAttributeStringValue("yMin", doubleValueBuffer);
 
-    swprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, extentToSerialize.GetYMax());             
+    BeStringUtilities::Snprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, extentToSerialize.GetYMax());
     pODMOMaxPixelSizeNode->AddAttributeStringValue("yMax", doubleValueBuffer);
     
     //Representative PSS of world statements serialized in UTF8 encoding.

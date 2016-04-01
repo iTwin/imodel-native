@@ -21,10 +21,10 @@ using namespace std;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-static WString s_ToWString(OraText const* in)
+static Utf8String s_ToWString(OraText const* in)
     {
     HPRECONDITION(in!=NULL); 
-    WString out;
+    Utf8String out;
     BeStringUtilities::Utf16ToWChar (out, (Utf16CP)in);
     return out;
     }
@@ -32,7 +32,7 @@ static WString s_ToWString(OraText const* in)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-static OraText* s_AllocOraTextP(WStringCR in, ub4& bufLen)
+static OraText* s_AllocOraTextP(Utf8StringCR in, ub4& bufLen)
     {
     size_t allocatedBufLen = static_cast<ub4>((in.length() + 1) * sizeof(Utf16Char));
     OraText* pBuffer = new OraText[allocatedBufLen];
@@ -70,21 +70,21 @@ void checkerr0(SDOGeoRasterWrapper::OracleError* po_pError, void *handle, ub4 ht
             if (po_pError!=NULL)
                 {
                 po_pError->m_ErrorCode = OCI_SUCCESS_WITH_INFO;
-                po_pError->m_ErrorMsg = L"Error - OCI SUCCESS WITH INFO";
+                po_pError->m_ErrorMsg = "Error - OCI SUCCESS WITH INFO";
                 }
             break;
         case OCI_NEED_DATA:
             if (po_pError!=NULL)
                 {
                 po_pError->m_ErrorCode = OCI_NEED_DATA;
-                po_pError->m_ErrorMsg = L"Error - OCI NEED DATA";
+                po_pError->m_ErrorMsg = "Error - OCI NEED DATA";
                 }
             break;
         case OCI_NO_DATA:
             if (po_pError!=NULL)
                 {
                 po_pError->m_ErrorCode = OCI_NO_DATA;
-                po_pError->m_ErrorMsg = L"Error - OCI NO DATA";
+                po_pError->m_ErrorMsg = "Error - OCI NO DATA";
                 }
             break;
         case OCI_ERROR:
@@ -101,7 +101,7 @@ void checkerr0(SDOGeoRasterWrapper::OracleError* po_pError, void *handle, ub4 ht
                 else
                     {
                     po_pError->m_ErrorCode = OCI_ERROR;
-                    po_pError->m_ErrorMsg = L"Error - Unable to extract detailed diagnostic information";
+                    po_pError->m_ErrorMsg = "Error - Unable to extract detailed diagnostic information";
                     }
                 }
             throw OCI_ERROR;
@@ -110,7 +110,7 @@ void checkerr0(SDOGeoRasterWrapper::OracleError* po_pError, void *handle, ub4 ht
             if (po_pError!=NULL)
                 {
                 po_pError->m_ErrorCode = OCI_INVALID_HANDLE;
-                po_pError->m_ErrorMsg = L"Error - OCI INVALID HANDLE";
+                po_pError->m_ErrorMsg = "Error - OCI INVALID HANDLE";
                 }
             throw OCI_INVALID_HANDLE;
             break;
@@ -118,14 +118,14 @@ void checkerr0(SDOGeoRasterWrapper::OracleError* po_pError, void *handle, ub4 ht
             if (po_pError!=NULL)
                 {
                 po_pError->m_ErrorCode = OCI_STILL_EXECUTING;
-                po_pError->m_ErrorMsg = L"Error - OCI STILL EXECUTE";
+                po_pError->m_ErrorMsg = "Error - OCI STILL EXECUTE";
                 }
             break;
         case OCI_CONTINUE:
             if (po_pError!=NULL)
                 {
                 po_pError->m_ErrorCode = OCI_CONTINUE;
-                po_pError->m_ErrorMsg = L"Error - OCI CONTINUE";
+                po_pError->m_ErrorMsg = "Error - OCI CONTINUE";
                 }
             break;
         default:
@@ -146,11 +146,11 @@ class OCIConnection : public ImagePP::ImagePPHost::HostObjectBase
     HFC_DECLARE_HOSTOBJECT_SINGLETON(ImagePP::ImageppLib,OCIConnection)
 
 public:
-    OCIConnection():m_pRasterId (s_AllocOraTextP(L":RASTERID",m_pRasterIdBufLen)),
-                    m_pRESOLUTION (s_AllocOraTextP(L":RESOLUTION",m_pRESOLUTIONBufLen)),
-                    m_pBAND (s_AllocOraTextP(L":BAND",m_pBANDBufLen)),
-                    m_pPOSX (s_AllocOraTextP(L":POSX",m_pPOSXBufLen)),
-                    m_pPOSY (s_AllocOraTextP(L":POSY",m_pPOSYBufLen))
+    OCIConnection():m_pRasterId (s_AllocOraTextP(":RASTERID",m_pRasterIdBufLen)),
+                    m_pRESOLUTION (s_AllocOraTextP(":RESOLUTION",m_pRESOLUTIONBufLen)),
+                    m_pBAND (s_AllocOraTextP(":BAND",m_pBANDBufLen)),
+                    m_pPOSX (s_AllocOraTextP(":POSX",m_pPOSXBufLen)),
+                    m_pPOSY (s_AllocOraTextP(":POSY",m_pPOSYBufLen))
         {
         m_pEnv      = 0;
         m_pError    = 0;
@@ -165,12 +165,12 @@ public:
 
     bool       IsConnected     ();
 
-    bool       Connect         (WStringCR                      pi_rUser,
-                                 WStringCR                      pi_rPassword,
-                                 WStringCR                      pi_rDatabase,
+    bool       Connect         (Utf8StringCR                      pi_rUser,
+                                 Utf8StringCR                      pi_rPassword,
+                                 Utf8StringCR                      pi_rDatabase,
                                  SDOGeoRasterWrapper::OracleError*  po_pError = 0);
 
-    bool       Connect         (WStringCR                      pi_rConnectionString,
+    bool       Connect         (Utf8StringCR                      pi_rConnectionString,
                                  SDOGeoRasterWrapper::OracleError*  po_pError = 0);
 
     bool       Disconnect      ();
@@ -181,15 +181,15 @@ public:
     OCIError*   GetOCIError()   {return m_pError;}
     OCISvcCtx*  GetOCISvcCtx()  {return m_pSvcCtx;}
 
-    WString CreateGetBlockRequest(WStringCR rasterDataTable)
+    Utf8String CreateGetBlockRequest(Utf8StringCR rasterDataTable)
         {
         //If you change this request, you should also review BindGetBlockVariables below for bind name variables
         wostringstream GetBlockRequest;
-        GetBlockRequest << L"select rasterblock from " << rasterDataTable.c_str();
-        GetBlockRequest << L" where rasterid= :RASTERID and pyramidlevel= :RESOLUTION";
-        GetBlockRequest << L" and bandBlockNumber= :BAND";
-        GetBlockRequest << L" and columnblocknumber= :POSX and rowblocknumber= :POSY";
-        return WString(GetBlockRequest.str().c_str());
+        GetBlockRequest << "select rasterblock from " << rasterDataTable.c_str();
+        GetBlockRequest << " where rasterid= :RASTERID and pyramidlevel= :RESOLUTION";
+        GetBlockRequest << " and bandBlockNumber= :BAND";
+        GetBlockRequest << " and columnblocknumber= :POSX and rowblocknumber= :POSY";
+        return Utf8String(GetBlockRequest.str().c_str());
         }
 
     void BindGetBlockVariables(OCIStmt *stmtp, OraText* pRasterID, sb4 bufLen, uint16_t* pi_Resolution, uint16_t* pi_Band, uint32_t* pi_PosX, uint32_t* pi_PosY)
@@ -259,9 +259,9 @@ bool OCIConnection::IsConnected()
 // public
 // Connect
 //-----------------------------------------------------------------------------
-bool OCIConnection::Connect(WStringCR                           pi_rUser,
-                            WStringCR                           pi_rPassword,
-                            WStringCR                           pi_rDatabase,
+bool OCIConnection::Connect(Utf8StringCR                           pi_rUser,
+                            Utf8StringCR                           pi_rPassword,
+                            Utf8StringCR                           pi_rDatabase,
                             SDOGeoRasterWrapper::OracleError*   po_pError)
     {
     try
@@ -295,20 +295,20 @@ bool OCIConnection::Connect(WStringCR                           pi_rUser,
 // public
 // Connect
 //-----------------------------------------------------------------------------
-bool OCIConnection::Connect(WStringCR pi_rConnectionString,
+bool OCIConnection::Connect(Utf8StringCR pi_rConnectionString,
                               SDOGeoRasterWrapper::OracleError* po_pError)
     {
-    WString User;
-    WString Password;
-    WString Database;
-    WString::size_type Pos = pi_rConnectionString.find(L'/');
-    WString::size_type Pos2;
-    if (Pos != WString::npos)
+    Utf8String User;
+    Utf8String Password;
+    Utf8String Database;
+    Utf8String::size_type Pos = pi_rConnectionString.find('/');
+    Utf8String::size_type Pos2;
+    if (Pos != Utf8String::npos)
         {
         User = pi_rConnectionString.substr(0, Pos);
         ++Pos;
 
-        if ((Pos2 = pi_rConnectionString.find(L'@', Pos)) != WString::npos)
+        if ((Pos2 = pi_rConnectionString.find('@', Pos)) != Utf8String::npos)
             {
             Password = pi_rConnectionString.substr(Pos, Pos2 - Pos);
             Database = pi_rConnectionString.substr(Pos2 + 1);
@@ -316,7 +316,7 @@ bool OCIConnection::Connect(WStringCR pi_rConnectionString,
         else
             Password = pi_rConnectionString.substr(Pos);
         }
-    else if ((Pos = pi_rConnectionString.find(L'@')) != WString::npos)
+    else if ((Pos = pi_rConnectionString.find('@')) != Utf8String::npos)
         {
         User = pi_rConnectionString.substr(0, Pos);
         Database = pi_rConnectionString.substr(Pos + 1);
@@ -379,9 +379,9 @@ bool OCIGeoRasterWrapper::IsConnected()
 // public
 // Connect
 //-----------------------------------------------------------------------------
-bool OCIGeoRasterWrapper::Connect(WStringCR       pi_rUser,
-                                    WStringCR       pi_rPassword,
-                                    WStringCR       pi_rDatabase,
+bool OCIGeoRasterWrapper::Connect(Utf8StringCR       pi_rUser,
+                                    Utf8StringCR       pi_rPassword,
+                                    Utf8StringCR       pi_rDatabase,
                                     OracleError*        po_pError)
     {
     return OCIConnection::GetInstance()->Connect(pi_rUser, pi_rPassword, pi_rDatabase, po_pError);
@@ -391,7 +391,7 @@ bool OCIGeoRasterWrapper::Connect(WStringCR       pi_rUser,
 // public
 // Connect
 //-----------------------------------------------------------------------------
-bool OCIGeoRasterWrapper::Connect(WStringCR  pi_rConnectionString,
+bool OCIGeoRasterWrapper::Connect(Utf8StringCR  pi_rConnectionString,
                                     OracleError*    po_pError)
     {
     return OCIConnection::GetInstance()->Connect(pi_rConnectionString, po_pError);
@@ -411,10 +411,10 @@ bool OCIGeoRasterWrapper::Disconnect()
 // public
 // Constructor
 //-----------------------------------------------------------------------------
-OCIGeoRasterWrapper::OCIGeoRasterWrapper(WStringCR  pi_rTableName,
-                                           WStringCR  pi_rColumnName,
-                                           WStringCR  pi_rImageID,
-                                           WStringCR  pi_rRasterDataTableName,
+OCIGeoRasterWrapper::OCIGeoRasterWrapper(Utf8StringCR  pi_rTableName,
+                                           Utf8StringCR  pi_rColumnName,
+                                           Utf8StringCR  pi_rImageID,
+                                           Utf8StringCR  pi_rRasterDataTableName,
                                            const Utf16Char*   pi_pXMLGeoRasterHeader,
                                            size_t         pi_XMLSize)
 : SDOGeoRasterWrapper(pi_rTableName,
@@ -431,10 +431,10 @@ m_pConnection(OCIConnection::GetInstance()->GetConnection())
     if (pi_pXMLGeoRasterHeader == 0)
         {
         // query the header
-        WString Request;
+        Utf8String Request;
 
-        Request = L"select t." + pi_rColumnName + L".rasterdatatable, t." + pi_rColumnName + L".metadata.getClobVal() from ";
-        Request += pi_rTableName + L" t where t." + pi_rColumnName + L".rasterid = " + pi_rImageID;
+        Request = "select t." + pi_rColumnName + ".rasterdatatable, t." + pi_rColumnName + ".metadata.getClobVal() from ";
+        Request += pi_rTableName + " t where t." + pi_rColumnName + ".rasterid = " + pi_rImageID;
 
         ub4               requestBufLen;
         unique_ptr<OraText> pRequest (s_AllocOraTextP(Request,requestBufLen));
@@ -510,7 +510,7 @@ m_pConnection(OCIConnection::GetInstance()->GetConnection())
         oraub8 byte_amt(amtByteInLob);
         oraub8 char_amt(loblen+1);
         checkerr(&OraError, m_pConnection->GetOCIError(),OCILobRead2(m_pConnection->GetOCISvcCtx(), m_pConnection->GetOCIError(),lob_loc,&byte_amt,&char_amt,1,pXMLHeader.get(),amtByteInLob,OCI_ONE_PIECE,0,0,OCI_UTF16ID,SQLCS_IMPLICIT));
-        WString XMLHeaderStr(s_ToWString(pXMLHeader.get()));
+        Utf8String XMLHeaderStr(s_ToWString(pXMLHeader.get()));
         
         m_XMLHeaderSize = XMLHeaderStr.length() * sizeof(Utf16Char);
         m_pXMLHeader    = new Utf16Char[XMLHeaderStr.length()+1];
@@ -549,7 +549,7 @@ void OCIGeoRasterWrapper::GetBlock(uint16_t pi_Resolution,
     SDOGeoRasterWrapper::OracleError OraError;
     OCIStmt      *stmtp;
     ub4 KeyBufLen;
-    unique_ptr<OraText> pKey (s_AllocOraTextP(L"GetBlock",KeyBufLen));
+    unique_ptr<OraText> pKey (s_AllocOraTextP("GetBlock",KeyBufLen));
 
     ub4               requestBufLen;
     unique_ptr<OraText> pRequest (s_AllocOraTextP(m_getBlockRequest,requestBufLen));
@@ -596,7 +596,7 @@ void OCIGeoRasterWrapper::GetBlock(uint16_t pi_Resolution,
     SDOGeoRasterWrapper::OracleError OraError;
     OCIStmt      *stmtp;
     ub4 KeyBufLen;
-    unique_ptr<OraText> pKey (s_AllocOraTextP(L"GetBlock",KeyBufLen));
+    unique_ptr<OraText> pKey (s_AllocOraTextP("GetBlock",KeyBufLen));
 
     ub4               requestBufLen;
     unique_ptr<OraText> pRequest (s_AllocOraTextP(m_getBlockRequest,requestBufLen));
@@ -663,7 +663,7 @@ bool OCIGeoRasterWrapper::SetBlock(uint16_t pi_Resolution,
 // public
 // GetWkt
 //-----------------------------------------------------------------------------
-bool OCIGeoRasterWrapper::GetWkt(uint32_t pi_SRID, WStringR po_rWKT)
+bool OCIGeoRasterWrapper::GetWkt(uint32_t pi_SRID, Utf8StringR po_rWKT)
     {
     bool IsWKTFound = false;
     // create query to read the raster block data

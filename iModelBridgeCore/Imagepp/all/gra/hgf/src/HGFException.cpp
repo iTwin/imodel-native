@@ -43,10 +43,9 @@ HGFException::~HGFException()
 // Return the message formatted with specific information on the exception
 // that have occurred.
 //-----------------------------------------------------------------------------
-WString HGFException::_BuildMessage(const ImagePPExceptions::StringId& pi_rsID) const
+Utf8String HGFException::_BuildMessage(const ImagePPExceptions::StringId& pi_rsID) const
     {
-    WString exceptionName(pi_rsID.m_str, true /*isUtf8*/);
-    WPrintfString message(L"%ls - [%ls]", GetRawMessageFromResource(pi_rsID).c_str(), exceptionName.c_str());
+    Utf8PrintfString message("%s - [%s]", GetRawMessageFromResource(pi_rsID).c_str(), pi_rsID.m_str);
     return message;
     }
 //-----------------------------------------------------------------------------
@@ -86,11 +85,10 @@ HFCException* HGFmzGCoordException::Clone() const
 // Return the message formatted with specific information on the exception
 // that have occurred.
 //-----------------------------------------------------------------------------
-WString HGFmzGCoordException::GetExceptionMessage() const
+Utf8String HGFmzGCoordException::GetExceptionMessage() const
     {
-    WPrintfString rawMessage(GetRawMessageFromResource(ImagePPExceptions::HGFmzGCoordException()).c_str(), m_StatusCode);
-    WString exceptionName(ImagePPExceptions::HGFmzGCoordException().m_str, true/*isUtf8*/);
-    WPrintfString message(L"%ls - [%ls]", rawMessage.c_str(), exceptionName.c_str());
+    Utf8PrintfString rawMessage(GetRawMessageFromResource(ImagePPExceptions::HGFmzGCoordException()).c_str(), m_StatusCode);
+    Utf8PrintfString message("%s - [%s]", rawMessage.c_str(), ImagePPExceptions::HGFmzGCoordException().m_str);
     return message;
     }
 //-----------------------------------------------------------------------------
@@ -106,10 +104,10 @@ const int32_t HGFmzGCoordException::GetStatusCode() const
 // Return the message formatted with specific information on the exception
 // that have occurred from baseGeoCoord plugIn.
 //-----------------------------------------------------------------------------
-WString HGFmzGCoordException::GetErrorText() const
+Utf8String HGFmzGCoordException::GetErrorText() const
     {
     WString errorStr;
     GeoCoordinates::BaseGCS::GetErrorMessage (errorStr, m_StatusCode);
 
-    return errorStr;
+    return Utf8String(errorStr);
     }

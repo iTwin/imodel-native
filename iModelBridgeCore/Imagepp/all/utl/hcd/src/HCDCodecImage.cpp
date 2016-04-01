@@ -18,7 +18,7 @@
 // protected
 // Default constructor
 //-----------------------------------------------------------------------------
-HCDCodecImage::HCDCodecImage(const WString& pi_rCodecName)
+HCDCodecImage::HCDCodecImage(const Utf8String& pi_rCodecName)
     : HCDCodec(pi_rCodecName)
     {
     // default values fo the attributes
@@ -42,7 +42,7 @@ HCDCodecImage::HCDCodecImage(const WString& pi_rCodecName)
 // protected
 // Constructor
 //-----------------------------------------------------------------------------
-HCDCodecImage::HCDCodecImage(const WString& pi_rCodecName,
+HCDCodecImage::HCDCodecImage(const Utf8String& pi_rCodecName,
                              size_t         pi_Width,
                              size_t         pi_Height,
                              size_t         pi_BitsPerPixel)

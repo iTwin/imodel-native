@@ -287,9 +287,9 @@ void HRFBmpCreator::CreateBmpFileFromImageData(HFCPtr<HFCURL>&       pi_rpFileNa
 // Public (HRFBmpCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFBmpCreator::GetLabel() const
+Utf8String HRFBmpCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_BMP()); // BMP File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_BMP()); // BMP File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -297,9 +297,9 @@ WString HRFBmpCreator::GetLabel() const
 // Public (HRFBmpCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFBmpCreator::GetSchemes() const
+Utf8String HRFBmpCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return HFCURLFile::s_SchemeName();
     }
 
 //-----------------------------------------------------------------------------
@@ -307,9 +307,9 @@ WString HRFBmpCreator::GetSchemes() const
 // Public (HRFBmpCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFBmpCreator::GetExtensions() const
+Utf8String HRFBmpCreator::GetExtensions() const
     {
-    return WString(L"*.bmp;*.dib");
+    return "*.bmp;*.dib";
     }
 
 //-----------------------------------------------------------------------------

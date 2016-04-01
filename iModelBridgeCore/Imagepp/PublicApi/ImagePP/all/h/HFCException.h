@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCException.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ class HFCException
     {
 public :
     IMAGEPP_EXPORT virtual ~HFCException();   
-    virtual WString GetExceptionMessage() const = 0;
+    virtual Utf8String GetExceptionMessage() const = 0;
     virtual HFCException* Clone() const = 0;
     virtual void ThrowMyself() const = 0;
 protected :
@@ -79,9 +79,9 @@ protected :
     IMAGEPP_EXPORT HFCException();
     IMAGEPP_EXPORT HFCException(const HFCException& pi_rObj); 
 
-    IMAGEPP_EXPORT WString GetRawMessageFromResource(const ImagePPExceptions::StringId& pi_ID) const;
+    IMAGEPP_EXPORT Utf8String GetRawMessageFromResource(const ImagePPExceptions::StringId& pi_ID) const;
 
-    IMAGEPP_EXPORT virtual WString _BuildMessage(const ImagePPExceptions::StringId& pi_ID) const;
+    IMAGEPP_EXPORT virtual Utf8String _BuildMessage(const ImagePPExceptions::StringId& pi_ID) const;
 private:
     HFCException&               operator=                      (const HFCException&     pi_rObj);
     };
@@ -97,7 +97,7 @@ class HFCException_T : public HFCException
     HFCException_T (const HFCException_T& pi_rObj) : HFCException(pi_rObj){}
     virtual HFCException* Clone() const override {return new HFCException_T(*this);}
     virtual void ThrowMyself() const override {throw *this;} 
-    virtual WString GetExceptionMessage() const override
+    virtual Utf8String GetExceptionMessage() const override
         {
         return HFCException::_BuildMessage(GetStringId());
         }
@@ -118,14 +118,14 @@ class HFCFileException : public HFCException
     {
 public :
     IMAGEPP_EXPORT virtual ~HFCFileException ();
-    IMAGEPP_EXPORT WStringCR GetFileName () const;
+    IMAGEPP_EXPORT Utf8StringCR GetFileName () const;
     IMAGEPP_EXPORT virtual bool IsInvalidAccess() const;
 protected : 
     //Those constructors are protected to make sure we always throw a specific exception and don't lose type information
-    IMAGEPP_EXPORT HFCFileException (WStringCR pi_rFileName);
+    IMAGEPP_EXPORT HFCFileException (Utf8StringCR pi_rFileName);
     IMAGEPP_EXPORT HFCFileException (const HFCFileException&     pi_rObj); 
-    WString m_FileName;
-    IMAGEPP_EXPORT virtual WString _BuildMessage(const ImagePPExceptions::StringId& rsID) const override;
+    Utf8String m_FileName;
+    IMAGEPP_EXPORT virtual Utf8String _BuildMessage(const ImagePPExceptions::StringId& rsID) const override;
     };
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                                   Julien.Rossignol 07/2013
@@ -134,12 +134,12 @@ template<ImagePPExceptions::StringId (*GetStringId)(), bool IsInvalidAccessMode>
 class HFCFileException_T : public HFCFileException
 {
 public:
-    HFCFileException_T(WStringCR pi_rFileName) : HFCFileException(pi_rFileName){}
+    HFCFileException_T(Utf8StringCR pi_rFileName) : HFCFileException(pi_rFileName){}
     HFCFileException_T (const HFCFileException_T& pi_rObj) : HFCFileException(pi_rObj){} 
     virtual HFCException* Clone() const override {return new HFCFileException_T(*this);}
     virtual void ThrowMyself() const override {throw *this;} 
     virtual bool IsInvalidAccess() const override {return IsInvalidAccessMode;} 
-    virtual WString GetExceptionMessage() const override
+    virtual Utf8String GetExceptionMessage() const override
         {
         return HFCFileException::_BuildMessage(GetStringId());
         }
@@ -179,13 +179,13 @@ class HFCDeviceException : public HFCException
 {
 public :
     IMAGEPP_EXPORT virtual ~HFCDeviceException();
-    IMAGEPP_EXPORT WStringCR GetDeviceName() const;
+    IMAGEPP_EXPORT Utf8StringCR GetDeviceName() const;
 protected :
     //Those constructors are protected to make sure we always throw a specific exception and don't lose type information
     IMAGEPP_EXPORT HFCDeviceException (const HFCDeviceException&     pi_rObj); 
-    IMAGEPP_EXPORT HFCDeviceException(const WString& pi_rDeviceName);
-    WString m_DeviceName;    
-    IMAGEPP_EXPORT virtual WString _BuildMessage(const ImagePPExceptions::StringId& pi_ID) const;
+    IMAGEPP_EXPORT HFCDeviceException(const Utf8String& pi_rDeviceName);
+    Utf8String m_DeviceName;    
+    IMAGEPP_EXPORT virtual Utf8String _BuildMessage(const ImagePPExceptions::StringId& pi_ID) const;
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -195,11 +195,11 @@ template<ImagePPExceptions::StringId (*GetStringId)()>
 class HFCDeviceException_T : public HFCDeviceException
 {
 public:
-    HFCDeviceException_T(const WString& pi_rDeviceName) : HFCDeviceException(pi_rDeviceName){}
+    HFCDeviceException_T(const Utf8String& pi_rDeviceName) : HFCDeviceException(pi_rDeviceName){}
     HFCDeviceException_T (const HFCDeviceException_T& pi_rObj) : HFCDeviceException(pi_rObj){}
     virtual HFCException* Clone() const override {return new HFCDeviceException_T(*this);}
     virtual void ThrowMyself() const override {throw *this;} 
-    virtual WString GetExceptionMessage() const override
+    virtual Utf8String GetExceptionMessage() const override
         {
         return HFCDeviceException::_BuildMessage(GetStringId());
         }
@@ -233,12 +233,12 @@ public :
         PERMISSION_DENIED,
         PROXY_PERMISSION_DENIED
         };
-    IMAGEPP_EXPORT HFCInternetConnectionException(const WString&    pi_rDeviceName,
+    IMAGEPP_EXPORT HFCInternetConnectionException(const Utf8String&    pi_rDeviceName,
                     ErrorType        pi_ErrorType);
     IMAGEPP_EXPORT virtual         ~HFCInternetConnectionException();
     IMAGEPP_EXPORT const ErrorType     GetErrorType() const;
     IMAGEPP_EXPORT HFCInternetConnectionException                   (const HFCInternetConnectionException&     pi_rObj); 
-    IMAGEPP_EXPORT virtual WString GetExceptionMessage() const override;
+    IMAGEPP_EXPORT virtual Utf8String GetExceptionMessage() const override;
     virtual HFCException* Clone() const override;
     virtual void ThrowMyself() const override {throw *this;} 
 protected:
@@ -263,7 +263,7 @@ public :
     IMAGEPP_EXPORT virtual ~HFCCannotCreateSynchroObjException();
     IMAGEPP_EXPORT const SynchroObject GetSynchroObject() const;
     IMAGEPP_EXPORT HFCCannotCreateSynchroObjException(const HFCCannotCreateSynchroObjException&     pi_rObj); 
-    virtual WString GetExceptionMessage() const override;
+    virtual Utf8String GetExceptionMessage() const override;
     virtual HFCException* Clone() const override;
     virtual void ThrowMyself() const override {throw *this;} 
 protected:

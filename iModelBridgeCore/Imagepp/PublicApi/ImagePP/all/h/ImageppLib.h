@@ -233,7 +233,7 @@ protected:
 
     /*__PUBLISH_SECTION_START__*/
 public:
-    typedef bvector<WString>    CompatibleSoftware;
+    typedef bvector<Utf8String>    CompatibleSoftware;
 
     IMAGEPP_EXPORT static ImageppLibAdmin* Create ();
 
@@ -253,7 +253,7 @@ public:
     * Gets the description to use in cache file attributes
     * @bsimethod                                                            05/2012
     +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual void    _GetCacheDescription(WStringR description) const        {}
+    virtual void    _GetCacheDescription(Utf8StringR description) const        {}
 
 
     /*---------------------------------------------------------------------------------**//**
@@ -287,12 +287,12 @@ public:
     *Data path must be provided by host admin implementation
     * @bsimethod                                                            05/2012
     +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual BentleyStatus _GetGDalDataPath(WStringR path) const           {return BSIERROR;}
+    virtual BentleyStatus _GetGDalDataPath(BeFileNameR path) const           {return BSIERROR;}
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                            05/2012
     +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual BentleyStatus _GetECWDataPath(WStringR path) const            {return BSIERROR;}
+    virtual BentleyStatus _GetECWDataPath(BeFileNameR path) const            {return BSIERROR;}
 
 
     /*---------------------------------------------------------------------------------**//**

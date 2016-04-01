@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPAToken.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Inline methods for class HPAToken
@@ -13,7 +13,7 @@ BEGIN_IMAGEPP_NAMESPACE
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 inline HPATokenNode::HPATokenNode(HPAGrammarObject* pi_pToken,
-                                  const WString& pi_rText,
+                                  const Utf8String& pi_rText,
                                   const HPASourcePos& pi_rLeftPos,
                                   const HPASourcePos& pi_rRightPos,
                                   HPASession* pi_pSession)
@@ -24,14 +24,14 @@ inline HPATokenNode::HPATokenNode(HPAGrammarObject* pi_pToken,
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-inline void HPATokenNode::SetText(const WString& pi_rText)
+inline void HPATokenNode::SetText(const Utf8String& pi_rText)
     {
     m_Text = pi_rText;
     }
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-inline const WString& HPATokenNode::GetText() const
+inline const Utf8String& HPATokenNode::GetText() const
     {
     return m_Text;
     }
@@ -39,7 +39,7 @@ inline const WString& HPATokenNode::GetText() const
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 inline HPANumberTokenNode::HPANumberTokenNode(HPAGrammarObject* pi_pToken,
-                                              const WString& pi_rText,
+                                              const Utf8String& pi_rText,
                                               const HPASourcePos& pi_rLeftPos,
                                               const HPASourcePos& pi_rRightPos,
                                               HPASession* pi_pSession,

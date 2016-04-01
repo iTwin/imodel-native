@@ -134,9 +134,9 @@ HRFEpsCreator::HRFEpsCreator()
     Retrieve a string identifying the EPS file format
     -----------------------------------------------------------------------------
 */
-WString HRFEpsCreator::GetLabel() const
+Utf8String HRFEpsCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_EncapsulatedPostScript()); // Encapsulated PostScript
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_EncapsulatedPostScript()); // Encapsulated PostScript
     }
 
 
@@ -144,9 +144,9 @@ WString HRFEpsCreator::GetLabel() const
     Get possible URL schemes for the file format
     -----------------------------------------------------------------------------
 */
-WString HRFEpsCreator::GetSchemes() const
+Utf8String HRFEpsCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 
@@ -154,9 +154,9 @@ WString HRFEpsCreator::GetSchemes() const
     Retrieve the file format extension list
     -----------------------------------------------------------------------------
 */
-WString HRFEpsCreator::GetExtensions() const
+Utf8String HRFEpsCreator::GetExtensions() const
     {
-    return WString(L"*.eps");
+    return Utf8String("*.eps");
     }
 
 
@@ -392,9 +392,9 @@ void HRFEpsFile::WriteHeader(HFCPtr<HRFResolutionDescriptor>& pi_rpResDescriptor
 
     // Title
     m_pFile->Write(s_TitleStatement.c_str(), s_TitleStatement.size());
-    WString::size_type Pos = 0;
-    if ((GetURL()->GetSchemeSpecificPart().substr(Pos,2) == L"//") ||
-        (GetURL()->GetSchemeSpecificPart().substr(Pos,2) == L"\\\\"))
+    Utf8String::size_type Pos = 0;
+    if ((GetURL()->GetSchemeSpecificPart().substr(Pos,2) == "//") ||
+        (GetURL()->GetSchemeSpecificPart().substr(Pos,2) == "\\\\"))
         {
         Pos += 2;
         }

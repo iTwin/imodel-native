@@ -489,6 +489,14 @@ struct CaseInsensitiveStringCompareW : public std::binary_function<WString, WStr
         }
     };
 
+struct CaseInsensitiveStringCompareUtf8 : public std::binary_function<Utf8String, Utf8String, bool>
+    {
+    bool operator()(const Utf8String& x, const Utf8String& y) const
+        {
+        return x.CompareToI(y) < 0;
+        }
+    };
+
 
 /*
 ** --------------------------------------------------------------------------
@@ -599,9 +607,5 @@ struct CaseInsensitiveStringToolsW
             BeStringUtilities::Wcsupr(&(Object[0]));
         }
     };
-
-
-#   define CaseInsensitiveStringTools      CaseInsensitiveStringToolsW
-#   define CaseInsensitiveStringCompare    CaseInsensitiveStringCompareW
 
 END_IMAGEPP_NAMESPACE

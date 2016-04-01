@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ImagePP/all/h/ImagePPMessages.xliff.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -235,7 +235,7 @@ BENTLEY_TRANSLATABLE_STRINGS_START(ImagePPMessages,ImagePPMessages)
     L10N_STRING(HTIFF_CannotWriteDirCount)               // =="cannot write directory count"==
     L10N_STRING(HTIFF_CannotWriteDirOffset)              // =="cannot write directory's next directory offset"==
     L10N_STRING(HTIFF_CannotWriteDirLink)                // =="cannot write directory link"==
-    L10N_STRING(HTIFF_NegativeValueForRational)          // =="cannot write the negative value %g as unsigned RATIONAL (tag : %ls)"==
+    L10N_STRING(HTIFF_NegativeValueForRational)          // =="cannot write the negative value %g as unsigned RATIONAL (tag : %s)"==
     L10N_STRING(HTIFF_HMRDirAlreadyExist)                // =="HMR directory already exists for the page"==
     L10N_STRING(HTIFF_CannotWritePWBlob)                 // =="cannot write the ProjectWise blob (offset : %0I64x, lenght : %I64d)"==
     L10N_STRING(HTIFF_CannotOpenFile)                    // =="cannot open file"==
@@ -262,15 +262,15 @@ BENTLEY_TRANSLATABLE_STRINGS_START(ImagePPMessages,ImagePPMessages)
     L10N_STRING(HTIFF_InvalidGeotiffIndex)               // =="a GeoTIFF index or count is invalid (geoKey : %d)"==
     L10N_STRING(HTIFF_InvalidGeotiffTag)                 // =="a GeoTIFF tag is invalid (geoKey : %d, tag : %d)"==
     L10N_STRING(HTIFF_UnknownTagEnumeration)             // =="the following unknown tag enumeration is ignored : %ld"==
-    L10N_STRING(HTIFF_WrongDataTypeForTag)               // =="a tag is ignored because it has a wrong data type (tag : %d, data type : %ls)"==
-    L10N_STRING(HTIFF_UnknownTag)                        // =="a tag is unknown (tag file : %u, data type : %ls, length : %lu, offset : %lu)"==
+    L10N_STRING(HTIFF_WrongDataTypeForTag)               // =="a tag is ignored because it has a wrong data type (tag : %d, data type : %s)"==
+    L10N_STRING(HTIFF_UnknownTag)                        // =="a tag is unknown (tag file : %u, data type : %s, length : %lu, offset : %lu)"==
     L10N_STRING(HTIFF_UnknownFirstTag)                   // =="the following unknown tag is ignored : %ld"==
     L10N_STRING(HTIFF_DirectoryEntryReadError)           // =="directory entry read error"==
-    L10N_STRING(HTIFF_TagReadError)                      // =="an error occurred while reading a tag (tag name : %ls, tag file : %ld, data length : %ld)"==
+    L10N_STRING(HTIFF_TagReadError)                      // =="an error occurred while reading a tag (tag name : %s, tag file : %ld, data length : %ld)"==
     L10N_STRING(HTIFF_DirectoryEntryWriteError)          // =="directory entry write error"==
-    L10N_STRING(HTIFF_TagWriteError)                     // =="an error occurred while writing a tag (tag name : %ls, tag file : %ld, data length : %ld)"==
-    L10N_STRING(HTIFF_IncorrectCountForTagRead)          // =="incorrect count for tag read (tag name : %ls, count : %I64u, expected count : %hu)"==
-    L10N_STRING(HTIFF_IncorrectCountForTagWritten)       // =="incorrect count for tag written (tag name : %ls, count : %I64u, expected count : %hu)"==
+    L10N_STRING(HTIFF_TagWriteError)                     // =="an error occurred while writing a tag (tag name : %s, tag file : %ld, data length : %ld)"==
+    L10N_STRING(HTIFF_IncorrectCountForTagRead)          // =="incorrect count for tag read (tag name : %s, count : %I64u, expected count : %hu)"==
+    L10N_STRING(HTIFF_IncorrectCountForTagWritten)       // =="incorrect count for tag written (tag name : %s, count : %I64u, expected count : %hu)"==
     L10N_STRING(HTIFF_SizeOutOfRange)                    // =="the image size is too big to be saved using the selected file format"==
 
     // Misc

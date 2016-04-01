@@ -90,7 +90,7 @@ uint16_t HMDLayers::GetNbLayers() const
 // Public
 // GetIndexFromKey
 //-----------------------------------------------------------------------------
-bool HMDLayers::GetIndexFromKey(const WString& pi_rKey, uint16_t&  po_rIndex) const
+bool HMDLayers::GetIndexFromKey(const Utf8String& pi_rKey, uint16_t&  po_rIndex) const
     {
     po_rIndex = 0;
     for (LayerInfoVec::const_iterator Itr = m_layerInfoVec.begin(); Itr != m_layerInfoVec.end(); Itr++)

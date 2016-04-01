@@ -125,27 +125,27 @@ HRFRLCCreator::HRFRLCCreator()
 // public
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFRLCCreator::GetLabel() const
+Utf8String HRFRLCCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_RLC());  //RLC File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_RLC());  //RLC File Format
     }
 
 //-----------------------------------------------------------------------------
 // public
 // Schemes information
 //-----------------------------------------------------------------------------
-WString HRFRLCCreator::GetSchemes() const
+Utf8String HRFRLCCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 //-----------------------------------------------------------------------------
 // public
 // Extensions information
 //-----------------------------------------------------------------------------
-WString HRFRLCCreator::GetExtensions() const
+Utf8String HRFRLCCreator::GetExtensions() const
     {
-    return WString(L"*.rlc");
+    return Utf8String("*.rlc");
     }
 
 //-----------------------------------------------------------------------------
@@ -173,14 +173,12 @@ bool HRFRLCCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                                   uint64_t             pi_Offset) const
     {
     HPRECONDITION(pi_rpURL != 0);
+    HPRECONDITION(pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID) != 0);
 
-    bool Result = false;
+    if (pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID) && ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetExtension().EqualsI("rlc"))
+        return true;
 
-    if (pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID) &&
-        BeStringUtilities::Wcsicmp(((HFCPtr<HFCURLFile>&)pi_rpURL)->GetExtension().c_str(), L"rlc") == 0)
-        Result = true;
-
-    return Result;
+    return false;
     }
 
 //-----------------------------------------------------------------------------

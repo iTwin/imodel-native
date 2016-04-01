@@ -229,7 +229,7 @@ void HRABitmapRLE::Clear(const HRAClearOptions& pi_rOptions)
 
         if (pi_rOptions.HasRLEMask())
             {
-            HASSERT(!L"Not supported yet");
+            HASSERT(!"Not supported yet");
             }
         else if (pi_rOptions.HasScanlines())
             {

@@ -18,24 +18,24 @@
 //-----------------------------------------------------------------------------
 // Little static function that is used by constructor
 
-static WString BuildHostString(const WString& pi_User, const WString& pi_Password,
-                               const WString& pi_Host, const WString& pi_Port)
+static Utf8String BuildHostString(const Utf8String& pi_User, const Utf8String& pi_Password,
+                               const Utf8String& pi_Host, const Utf8String& pi_Port)
     {
-    WString Result;
+    Utf8String Result;
     if (!pi_User.empty())
         {
         Result += pi_User;
         if (!pi_Password.empty())
             {
-            Result += L":";
+            Result += ":";
             Result += pi_Password;
             }
-        Result += L"@";
+        Result += "@";
         }
     Result += pi_Host;
     if (!pi_Port.empty())
         {
-        Result += L":";
+        Result += ":";
         Result += pi_Port;
         }
     return Result;
@@ -74,16 +74,16 @@ static WString BuildHostString(const WString& pi_User, const WString& pi_Passwor
                        resource itself.  Must not begin by a slash or blackslash.
                        If no path, the string must be empty.
 -----------------------------------------------------------------------------*/
-HFCURLCommonInternet::HFCURLCommonInternet(const WString& pi_SchemeType,
-                                           const WString& pi_User,
-                                           const WString& pi_Password,
-                                           const WString& pi_Host,
-                                           const WString& pi_Port,
-                                           const WString& pi_URLPath)
+HFCURLCommonInternet::HFCURLCommonInternet(const Utf8String& pi_SchemeType,
+                                           const Utf8String& pi_User,
+                                           const Utf8String& pi_Password,
+                                           const Utf8String& pi_Host,
+                                           const Utf8String& pi_Port,
+                                           const Utf8String& pi_URLPath)
     : HFCURL(pi_SchemeType,
-             WString(L"//")
+             Utf8String("//")
              + BuildHostString(pi_User, pi_Password, pi_Host, pi_Port)
-             + WString(L"/") + pi_URLPath),
+             + Utf8String("/") + pi_URLPath),
     m_User(pi_User), m_Password(pi_Password), m_Host(pi_Host),
     m_Port(pi_Port), m_URLPath(pi_URLPath)
     {
@@ -94,25 +94,25 @@ HFCURLCommonInternet::HFCURLCommonInternet(const WString& pi_SchemeType,
     FREEZE_STL_STRING(m_URLPath);
     }
 
-void HFCURLCommonInternet::SplitPath(const WString& pi_rURL,
-                                     WString*       po_pScheme,
-                                     WString*       po_pHost,
-                                     WString*       po_pPort,
-                                     WString*       po_pUser,
-                                     WString*       po_pPassword,
-                                     WString*       po_pPath)
+void HFCURLCommonInternet::SplitPath(const Utf8String& pi_rURL,
+                                     Utf8String*       po_pScheme,
+                                     Utf8String*       po_pHost,
+                                     Utf8String*       po_pPort,
+                                     Utf8String*       po_pUser,
+                                     Utf8String*       po_pPassword,
+                                     Utf8String*       po_pPath)
     {
     // initialize all string
-    *po_pScheme = L"";
-    *po_pHost = L"";
-    *po_pPort = L"";
-    *po_pUser = L"";
-    *po_pPassword = L"";
-    *po_pPath = L"";
+    *po_pScheme = "";
+    *po_pHost = "";
+    *po_pPort = "";
+    *po_pUser = "";
+    *po_pPassword = "";
+    *po_pPath = "";
 
-    WString SchemeSpecificPart;
-    WString::size_type ColonPos = pi_rURL.find(L':');
-    if (ColonPos != WString::npos)
+    Utf8String SchemeSpecificPart;
+    Utf8String::size_type ColonPos = pi_rURL.find(':');
+    if (ColonPos != Utf8String::npos)
         {
         *po_pScheme = pi_rURL.substr(0, ColonPos);
         if (HFCURL::GetSchemeList().find(*po_pScheme) != HFCURL::GetSchemeList().end())
@@ -124,7 +124,7 @@ void HFCURLCommonInternet::SplitPath(const WString& pi_rURL,
         else
             {
             SchemeSpecificPart = pi_rURL;
-            *po_pScheme = L"";
+            *po_pScheme = "";
             }
         }
     else
@@ -135,101 +135,105 @@ void HFCURLCommonInternet::SplitPath(const WString& pi_rURL,
     bool HasDoubleSlash = false;
     if (SchemeSpecificPart.length() > 2)
         {
-        HasDoubleSlash = ((SchemeSpecificPart.substr(0,2) == L"//") ||
-                          (SchemeSpecificPart.substr(0,2) == L"\\\\"));
+        HasDoubleSlash = ((SchemeSpecificPart.substr(0,2) == "//") ||
+                          (SchemeSpecificPart.substr(0,2) == "\\\\"));
         }
 
     // First : find the "user:password" part by locating the "@"
-    WString::size_type ArobasPos = WString::npos;
+    Utf8String::size_type ArobasPos = Utf8String::npos;
     if (SchemeSpecificPart.size() > 0)
-        ArobasPos = SchemeSpecificPart.find(L'@');
+        ArobasPos = SchemeSpecificPart.find('@');
 
     // If there is a user specification, check for ":" before "@" to know
     // if there is a password.
-    WString::size_type PasswordColonPos = WString::npos;
-    if (ArobasPos != WString::npos)
+    Utf8String::size_type PasswordColonPos = Utf8String::npos;
+    if (ArobasPos != Utf8String::npos)
         {
-        PasswordColonPos = SchemeSpecificPart.find(L':');
-        if (PasswordColonPos != WString::npos)
+        PasswordColonPos = SchemeSpecificPart.find(':');
+        if (PasswordColonPos != Utf8String::npos)
             {
             if (PasswordColonPos > ArobasPos)
                 {
-                PasswordColonPos = WString::npos;
-                ArobasPos = WString::npos;
+                PasswordColonPos = Utf8String::npos;
+                ArobasPos = Utf8String::npos;
                 }
             }
         else
             {
             // Since there are no password, the arobas must not be the authentication part but something more specific part.
-            ArobasPos = WString::npos;
+            ArobasPos = Utf8String::npos;
             }
 
         }
 
     // Find the first single slash to isolate the URL-path.  If none, there is
     // no url-path.
-    WString::size_type SingleSlashPos =
-        SchemeSpecificPart.find_first_of(L"\\/", HasDoubleSlash ? 2 : 0);
+    Utf8String::size_type SingleSlashPos =
+        SchemeSpecificPart.find_first_of("\\/", HasDoubleSlash ? 2 : 0);
 
     if (ArobasPos > SingleSlashPos)
         {
         // If this occurs then the arobas is not the password arobas
-        ArobasPos = WString::npos;
-        PasswordColonPos = WString::npos;
+        ArobasPos = Utf8String::npos;
+        PasswordColonPos = Utf8String::npos;
         }
 
     // Then look at the possible port number by looking for ":" after the "@"
     // if a user was specified, of just find the ":" if no user, before the
     // url-path specification.
-    WString::size_type PortColonPos;
-    if (ArobasPos != WString::npos)
-        PortColonPos = SchemeSpecificPart.find(L':', ArobasPos+1);
+    Utf8String::size_type PortColonPos;
+    if (ArobasPos != Utf8String::npos)
+        PortColonPos = SchemeSpecificPart.find(':', ArobasPos+1);
     else
-        PortColonPos = SchemeSpecificPart.find(L':');
+        PortColonPos = SchemeSpecificPart.find(':');
 
-    if ((PortColonPos != WString::npos) && (SingleSlashPos != WString::npos))
+    if ((PortColonPos != Utf8String::npos) && (SingleSlashPos != Utf8String::npos))
         if (PortColonPos > SingleSlashPos)
-            PortColonPos = WString::npos;
+            PortColonPos = Utf8String::npos;
 
     // Now we have found all the components, so we extract them!
-    WString TempString(SchemeSpecificPart);
+    Utf8String TempString(SchemeSpecificPart);
     if (HasDoubleSlash)  // Removing the double slash, if any.
         {
         TempString.erase(0, 2);
-        if (SingleSlashPos != WString::npos)
+        if (SingleSlashPos != Utf8String::npos)
             SingleSlashPos -= 2;
-        if (PortColonPos != WString::npos)
+        if (PortColonPos != Utf8String::npos)
             PortColonPos -= 2;
-        if (ArobasPos != WString::npos)
+        if (ArobasPos != Utf8String::npos)
             ArobasPos -= 2;
-        if (PasswordColonPos != WString::npos)
+        if (PasswordColonPos != Utf8String::npos)
             PasswordColonPos -= 2;
         }
 
-    if (SingleSlashPos != WString::npos)    // Splitting the URL-path from the rest
+    if (SingleSlashPos != Utf8String::npos)    // Splitting the URL-path from the rest
         {
         *po_pPath = TempString.substr(SingleSlashPos+1, TempString.length() - 1 - SingleSlashPos);
         TempString.erase(SingleSlashPos, TempString.length() - SingleSlashPos);
         }
-    if (PortColonPos != WString::npos)   // Splitting the port number from the rest
+    if (PortColonPos != Utf8String::npos)   // Splitting the port number from the rest
         {
         *po_pPort = TempString.substr(PortColonPos + 1, TempString.length() - 1 - PortColonPos);
         TempString.erase(PortColonPos, TempString.length() - PortColonPos);
         }
-    if (ArobasPos != WString::npos)  // Splitting the host from the user spec.
+    if (ArobasPos != Utf8String::npos)  // Splitting the host from the user spec.
         {
         *po_pHost = TempString.substr(ArobasPos + 1, TempString.length() - 1 - ArobasPos);
-        if (PasswordColonPos != WString::npos) // Getting the password if any
+        if (PasswordColonPos != Utf8String::npos) // Getting the password if any
             {
-            *po_pPassword = TempString.substr(PasswordColonPos + 1, ArobasPos - PasswordColonPos - 1);
-            HFCEncodeDecodeASCII::EscapeToASCII (*po_pPassword);
-            *po_pUser = TempString.substr(0, PasswordColonPos);
-            HFCEncodeDecodeASCII::EscapeToASCII (*po_pUser);
+            WString passwordW(TempString.substr(PasswordColonPos + 1, ArobasPos - PasswordColonPos - 1).c_str(), BentleyCharEncoding::Utf8);
+            HFCEncodeDecodeASCII::EscapeToASCII (passwordW);
+            po_pPassword->Assign(passwordW.c_str());
+
+            WString userW(TempString.substr(0, PasswordColonPos).c_str(), BentleyCharEncoding::Utf8);
+            HFCEncodeDecodeASCII::EscapeToASCII (userW);
+            po_pUser->Assign(userW.c_str());
             }
         else
             {
-            *po_pUser = TempString.substr(0, ArobasPos);
-            HFCEncodeDecodeASCII::EscapeToASCII (*po_pUser);
+            WString userW(TempString.substr(0, ArobasPos).c_str(), BentleyCharEncoding::Utf8);
+            HFCEncodeDecodeASCII::EscapeToASCII(userW);
+            po_pUser->Assign(userW.c_str());
             }
         }
     else
@@ -248,7 +252,7 @@ void HFCURLCommonInternet::SplitPath(const WString& pi_rURL,
  @param pi_URL Constant reference to a string that contains a complete URL
                specification.
 -----------------------------------------------------------------------------*/
-HFCURLCommonInternet::HFCURLCommonInternet(const WString& pi_URL)
+HFCURLCommonInternet::HFCURLCommonInternet(const Utf8String& pi_URL)
     : HFCURL(pi_URL)
     {
     // Is there a double-slash?
@@ -256,93 +260,93 @@ HFCURLCommonInternet::HFCURLCommonInternet(const WString& pi_URL)
     bool HasDoubleSlash = false;
     if (GetSchemeSpecificPart().length() > 2)
         {
-        HasDoubleSlash = ((GetSchemeSpecificPart().substr(0,2) == L"//") ||
-                          (GetSchemeSpecificPart().substr(0,2) == L"\\\\"));
+        HasDoubleSlash = ((GetSchemeSpecificPart().substr(0,2) == "//") ||
+                          (GetSchemeSpecificPart().substr(0,2) == "\\\\"));
         }
 
     // First : find the "user:password" part by locating the "@"
 
-    WString::size_type ArobasPos = WString::npos;
+    Utf8String::size_type ArobasPos = Utf8String::npos;
     if (GetSchemeSpecificPart().size() > 0)
-        ArobasPos = GetSchemeSpecificPart().find(L'@');
+        ArobasPos = GetSchemeSpecificPart().find('@');
 
     // If there is a user specification, check for ":" before "@" to know
     // if there is a password.
 
-    WString::size_type PasswordColonPos = WString::npos;
-    if (ArobasPos != WString::npos)
+    Utf8String::size_type PasswordColonPos = Utf8String::npos;
+    if (ArobasPos != Utf8String::npos)
         {
-        PasswordColonPos = GetSchemeSpecificPart().find(L':');
-        if (PasswordColonPos != WString::npos)
+        PasswordColonPos = GetSchemeSpecificPart().find(':');
+        if (PasswordColonPos != Utf8String::npos)
             {
             if (PasswordColonPos > ArobasPos)
                 {
-                PasswordColonPos = WString::npos;
-                ArobasPos = WString::npos;
+                PasswordColonPos = Utf8String::npos;
+                ArobasPos = Utf8String::npos;
                 }
             }
         else
             {
             // There is no password clause ... the Arobas portion must be part of the remainder.
-            ArobasPos = WString::npos;
+            ArobasPos = Utf8String::npos;
             }
         }
 
     // Find the first single slash to isolate the URL-path.  If none, there is
     // no url-path.
 
-    WString::size_type SingleSlashPos =
-        GetSchemeSpecificPart().find_first_of(L"\\/", HasDoubleSlash ? 2 : 0);
+    Utf8String::size_type SingleSlashPos =
+        GetSchemeSpecificPart().find_first_of("\\/", HasDoubleSlash ? 2 : 0);
 
     if (ArobasPos > SingleSlashPos)
         {
         // If this occurs then the arobas is not the password arobas
-        ArobasPos = WString::npos;
-        PasswordColonPos = WString::npos;
+        ArobasPos = Utf8String::npos;
+        PasswordColonPos = Utf8String::npos;
         }
 
     // Then look at the possible port number by looking for ":" after the "@"
     // if a user was specified, of just find the ":" if no user, before the
     // url-path specification.
 
-    WString::size_type PortColonPos;
-    if (ArobasPos != WString::npos)
-        PortColonPos = GetSchemeSpecificPart().find(L':', ArobasPos+1);
+    Utf8String::size_type PortColonPos;
+    if (ArobasPos != Utf8String::npos)
+        PortColonPos = GetSchemeSpecificPart().find(':', ArobasPos+1);
     else
-        PortColonPos = GetSchemeSpecificPart().find(L':');
-    if ((PortColonPos != WString::npos) && (SingleSlashPos != WString::npos))
+        PortColonPos = GetSchemeSpecificPart().find(':');
+    if ((PortColonPos != Utf8String::npos) && (SingleSlashPos != Utf8String::npos))
         if (PortColonPos > SingleSlashPos)
-            PortColonPos = WString::npos;
+            PortColonPos = Utf8String::npos;
 
     // Now we have found all the components, so we extract them!
 
-    WString TempString(GetSchemeSpecificPart());
+    Utf8String TempString(GetSchemeSpecificPart());
     if (HasDoubleSlash)  // Removing the double slash, if any.
         {
         TempString.erase(0, 2);
-        if (SingleSlashPos != WString::npos)
+        if (SingleSlashPos != Utf8String::npos)
             SingleSlashPos -= 2;
-        if (PortColonPos != WString::npos)
+        if (PortColonPos != Utf8String::npos)
             PortColonPos -= 2;
-        if (ArobasPos != WString::npos)
+        if (ArobasPos != Utf8String::npos)
             ArobasPos -= 2;
-        if (PasswordColonPos != WString::npos)
+        if (PasswordColonPos != Utf8String::npos)
             PasswordColonPos -= 2;
         }
-    if (SingleSlashPos != WString::npos)    // Splitting the URL-path from the rest
+    if (SingleSlashPos != Utf8String::npos)    // Splitting the URL-path from the rest
         {
         m_URLPath = TempString.substr(SingleSlashPos+1, TempString.length() - 1 - SingleSlashPos);
         TempString.erase(SingleSlashPos, TempString.length() - SingleSlashPos);
         }
-    if (PortColonPos != WString::npos)   // Splitting the port number from the rest
+    if (PortColonPos != Utf8String::npos)   // Splitting the port number from the rest
         {
         m_Port = TempString.substr(PortColonPos + 1, TempString.length() - 1 - PortColonPos);
         TempString.erase(PortColonPos, TempString.length() - PortColonPos);
         }
-    if (ArobasPos != WString::npos)  // Splitting the host from the user spec.
+    if (ArobasPos != Utf8String::npos)  // Splitting the host from the user spec.
         {
         m_Host = TempString.substr(ArobasPos + 1, TempString.length() - 1 - ArobasPos);
-        if (PasswordColonPos != WString::npos) // Getting the password if any
+        if (PasswordColonPos != Utf8String::npos) // Getting the password if any
             {
             m_Password = TempString.substr(PasswordColonPos + 1, ArobasPos - PasswordColonPos - 1);
             m_User = TempString.substr(0, PasswordColonPos);

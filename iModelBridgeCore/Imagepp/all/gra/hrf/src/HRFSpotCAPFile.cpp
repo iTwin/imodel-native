@@ -165,25 +165,25 @@ HRFSpotCAPCreator::HRFSpotCAPCreator()
 //-----------------------------------------------------------------------------
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFSpotCAPCreator::GetLabel() const
+Utf8String HRFSpotCAPCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_SpotCap()); // Spot CAP File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_SpotCap()); // Spot CAP File Format
     }
 
 //-----------------------------------------------------------------------------
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFSpotCAPCreator::GetSchemes() const
+Utf8String HRFSpotCAPCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return HFCURLFile::s_SchemeName();
     }
 
 //-----------------------------------------------------------------------------
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFSpotCAPCreator::GetExtensions() const
+Utf8String HRFSpotCAPCreator::GetExtensions() const
     {
-    return WString(L"*.fil");
+    return Utf8String("*.fil");
     }
 
 //-----------------------------------------------------------------------------
@@ -261,29 +261,28 @@ bool HRFSpotCAPCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
             // Get the Url for the "IMAG_XX.dat" file.
 
             // Find the file extension
-            WString Path = ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
+            Utf8String Path = ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
 
-            WString::size_type SlashPos = Path.find_last_of(L"\\/");
+            Utf8String::size_type SlashPos = Path.find_last_of("\\/");
 
-            if (SlashPos != WString::npos)
+            if (SlashPos != Utf8String::npos)
                 Path = Path.substr(0, SlashPos);
 
 
-            WString SceneNumberStr;
-            BeStringUtilities::CurrentLocaleCharToWChar( SceneNumberStr,SceneNumber);
+            Utf8String SceneNumberStr = SceneNumber;
 
             // Compose url for .hdr, and .bnd files
-            WString FileName = WString(HFCURLFile::s_SchemeName() + L"://")
+            Utf8String FileName = Utf8String(HFCURLFile::s_SchemeName() + "://")
                                + ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetHost()
-                               + WString(L'\\' + Path + L'\\')
-                               + WString(L"SCENE")
+                               + Utf8String('\\' + Path + '\\')
+                               + Utf8String("SCENE")
                                + SceneNumberStr
-                               + WString(L'\\' + WString(L"IMAG_"))
+                               + Utf8String('\\' + Utf8String("IMAG_"))
                                + SceneNumberStr;
 
 
             // Create related files
-            ImagFileUrl = new HFCURLFile(FileName + WString(L".dat"));
+            ImagFileUrl = new HFCURLFile(FileName + Utf8String(".dat"));
 
             pImagDirectoryFile = HFCBinStream::Instanciate(ImagFileUrl, HFC_READ_ONLY | HFC_SHARE_READ_ONLY);
 
@@ -343,11 +342,11 @@ bool HRFSpotCAPCreator::GetRelatedURLs(const HFCPtr<HFCURL>& pi_rpURL,
     HFCPtr<HFCURL> pVoldFilesURLS;
 
     // Find the file extension
-    WString Path = ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
+    Utf8String Path = ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
 
-    WString::size_type SlashPos = Path.find_last_of(L"\\/");
+    Utf8String::size_type SlashPos = Path.find_last_of("\\/");
 
-    if (SlashPos != WString::npos)
+    if (SlashPos != Utf8String::npos)
         Path = Path.substr(0, SlashPos);
 
     for(int32_t SceneNumber = 0; SceneNumber < 1; SceneNumber++)
@@ -356,16 +355,16 @@ bool HRFSpotCAPCreator::GetRelatedURLs(const HFCPtr<HFCURL>& pi_rpURL,
 
 
         // Compose url for .hdr, and .bnd files
-        WString FileName = WString(HFCURLFile::s_SchemeName() + L"://")
-                           + ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetHost() + WString(L"\\")
-                           + Path + WString(L"SCENE") + L"01" + L'\\';
+        Utf8String FileName = Utf8String(HFCURLFile::s_SchemeName() + "://")
+                           + ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetHost() + Utf8String("\\")
+                           + Path + Utf8String("SCENE") + "01" + '\\';
 
         // Create related files
-        pImagFilesURLS = new HFCURLFile(FileName + WString(L"IMAG_") + WString(L"01") + WString(L".DAT"));
-        pLeadFilesURLS = new HFCURLFile(FileName + WString(L"LEAD_") + WString(L"01") + WString(L".DAT"));
-        pNullFilesURLS = new HFCURLFile(FileName + WString(L"NULL_") + WString(L"01") + WString(L".DAT"));
-        pTraiFilesURLS = new HFCURLFile(FileName + WString(L"TRAI_") + WString(L"01") + WString(L".DAT"));
-        pVoldFilesURLS = new HFCURLFile(FileName + WString(L"VOLD_") + WString(L"01") + WString(L".DAT"));
+        pImagFilesURLS = new HFCURLFile(FileName + Utf8String("IMAG_") + Utf8String("01") + Utf8String(".DAT"));
+        pLeadFilesURLS = new HFCURLFile(FileName + Utf8String("LEAD_") + Utf8String("01") + Utf8String(".DAT"));
+        pNullFilesURLS = new HFCURLFile(FileName + Utf8String("NULL_") + Utf8String("01") + Utf8String(".DAT"));
+        pTraiFilesURLS = new HFCURLFile(FileName + Utf8String("TRAI_") + Utf8String("01") + Utf8String(".DAT"));
+        pVoldFilesURLS = new HFCURLFile(FileName + Utf8String("VOLD_") + Utf8String("01") + Utf8String(".DAT"));
 
         pio_rRelatedURLs.push_back(pImagFilesURLS);
         pio_rRelatedURLs.push_back(pLeadFilesURLS);
@@ -538,9 +537,7 @@ bool HRFSpotCAPFile::ReadFilHeader()
         memcpy(SceneNumber, ValueStartPos, 2);
         if(atoi(SceneNumber) >= 0 && atoi(SceneNumber) <=99 )
             {
-            WString SceneNumberStr;
-            BeStringUtilities::CurrentLocaleCharToWChar( SceneNumberStr,SceneNumber);
-
+            Utf8String SceneNumberStr = SceneNumber;
             m_SceneNumbers.push_back(SceneNumberStr);
             }
         ValueStartPos = strstr(ValueStartPos, "SCENE");
@@ -572,20 +569,20 @@ bool HRFSpotCAPFile::ReadImagHeader()
     if(m_IsFilHeader)
         {
         // Find the file extension
-        WString Path = ((HFCPtr<HFCURLFile>&)this->GetURL())->GetPath();
-        WString Host = ((HFCPtr<HFCURLFile>&)this->GetURL())->GetHost();
-        WString::size_type SlashPos = Path.find_last_of(L"\\/");
+        Utf8String Path = ((HFCPtr<HFCURLFile>&)this->GetURL())->GetPath();
+        Utf8String Host = ((HFCPtr<HFCURLFile>&)this->GetURL())->GetHost();
+        Utf8String::size_type SlashPos = Path.find_last_of("\\/");
 
-        if (SlashPos != WString::npos)
+        if (SlashPos != Utf8String::npos)
             Path = Path.substr(0, SlashPos);
 
 
         // Compose url for IMAG_XX.DAT file
-        WString FileName = WString(HFCURLFile::s_SchemeName() + L"://")
-                           + Host + WString(L"\\")
-                           + Path + WString(L"\\") + WString(L"SCENE") + m_SceneNumbers.at(0) + L'\\';
+        Utf8String FileName = Utf8String(HFCURLFile::s_SchemeName() + "://")
+                           + Host + Utf8String("\\")
+                           + Path + Utf8String("\\") + Utf8String("SCENE") + m_SceneNumbers.at(0) + '\\';
 
-        pImagFileURL = new HFCURLFile(FileName + WString(L"IMAG_") + m_SceneNumbers.at(0) + WString(L".DAT"));
+        pImagFileURL = new HFCURLFile(FileName + Utf8String("IMAG_") + m_SceneNumbers.at(0) + Utf8String(".DAT"));
 
         //open the IMAG_XX.DAT file
         m_pImagFile = HFCBinStream::Instanciate(pImagFileURL, HFC_READ_ONLY | HFC_SHARE_READ_ONLY, 0, true);
@@ -711,35 +708,35 @@ bool HRFSpotCAPFile::ReadLeadHeader()
     {
     bool                       Result = false;
     HFCPtr<HFCURL>              pLeadFileURL;
-    WString                     FileName;
+    Utf8String                     FileName;
 
     char                       FieldBuffer[12];
 
     // Find the file extension
-    WString Path = ((HFCPtr<HFCURLFile>&)this->GetURL())->GetPath();
-    WString Host = ((HFCPtr<HFCURLFile>&)this->GetURL())->GetHost();
-    WString::size_type SlashPos = Path.find_last_of(L"\\/");
+    Utf8String Path = ((HFCPtr<HFCURLFile>&)this->GetURL())->GetPath();
+    Utf8String Host = ((HFCPtr<HFCURLFile>&)this->GetURL())->GetHost();
+    Utf8String::size_type SlashPos = Path.find_last_of("\\/");
 
-    if (SlashPos != WString::npos)
+    if (SlashPos != Utf8String::npos)
         Path = Path.substr(0, SlashPos);
 
     if(m_IsFilHeader)
         {
 
         // Compose url for LEAD_XX.DAT file
-        FileName = WString(HFCURLFile::s_SchemeName() + L"://")
-                   + Host + WString(L"\\")
-                   + Path + WString(L"\\") + WString(L"SCENE") + m_SceneNumbers.at(0) + L'\\';
+        FileName = Utf8String(HFCURLFile::s_SchemeName() + "://")
+                   + Host + Utf8String("\\")
+                   + Path + Utf8String("\\") + Utf8String("SCENE") + m_SceneNumbers.at(0) + '\\';
         }
     else
         {
         // Compose url for LEAD_XX.DAT file
-        FileName = WString(HFCURLFile::s_SchemeName() + L"://")
-                   + Host + WString(L"\\")
-                   + Path + WString(L"\\");
+        FileName = Utf8String(HFCURLFile::s_SchemeName() + "://")
+                   + Host + Utf8String("\\")
+                   + Path + Utf8String("\\");
         }
 
-    pLeadFileURL = new HFCURLFile(FileName + WString(L"LEAD_") + WString(L"01") + WString(L".DAT"));
+    pLeadFileURL = new HFCURLFile(FileName + Utf8String("LEAD_") + Utf8String("01") + Utf8String(".DAT"));
 
     //open the LEAD_XX.DAT file
     m_pLeadFile = HFCBinStream::Instanciate(pLeadFileURL, HFC_READ_ONLY | HFC_SHARE_READ_ONLY);
@@ -875,36 +872,36 @@ bool HRFSpotCAPFile::ReadVoldHeader()
     {
     bool                       Result = false;
     HFCPtr<HFCURL>              pVoldFileURL;
-    WString                     FileName;
+    Utf8String                     FileName;
 
     Byte                       WordBuffer[4];
 
 
     // Find the file extension
-    WString Path = ((HFCPtr<HFCURLFile>&)this->GetURL())->GetPath();
-    WString Host = ((HFCPtr<HFCURLFile>&)this->GetURL())->GetHost();
-    WString::size_type SlashPos = Path.find_last_of(L"\\/");
+    Utf8String Path = ((HFCPtr<HFCURLFile>&)this->GetURL())->GetPath();
+    Utf8String Host = ((HFCPtr<HFCURLFile>&)this->GetURL())->GetHost();
+    Utf8String::size_type SlashPos = Path.find_last_of("\\/");
 
-    if (SlashPos != WString::npos)
+    if (SlashPos != Utf8String::npos)
         Path = Path.substr(0, SlashPos);
 
     if(m_IsFilHeader)
         {
 
         // Compose url for LEAD_XX.DAT file
-        FileName = WString(HFCURLFile::s_SchemeName() + L"://")
-                   + Host + WString(L"\\")
-                   + Path + WString(L"\\") + WString(L"SCENE") + m_SceneNumbers.at(0) + L'\\';
+        FileName = Utf8String(HFCURLFile::s_SchemeName() + "://")
+                   + Host + Utf8String("\\")
+                   + Path + Utf8String("\\") + Utf8String("SCENE") + m_SceneNumbers.at(0) + '\\';
         }
     else
         {
         // Compose url for LEAD_XX.DAT file
-        FileName = WString(HFCURLFile::s_SchemeName() + L"://")
-                   + Host + WString(L"\\")
-                   + Path + WString(L"\\");
+        FileName = Utf8String(HFCURLFile::s_SchemeName() + "://")
+                   + Host + Utf8String("\\")
+                   + Path + Utf8String("\\");
         }
 
-    pVoldFileURL = new HFCURLFile(FileName + WString(L"VOLD_") + WString(L"01") + WString(L".DAT"));
+    pVoldFileURL = new HFCURLFile(FileName + Utf8String("VOLD_") + Utf8String("01") + Utf8String(".DAT"));
 
 
     //open the VOLD_XX.DAT file
@@ -1043,16 +1040,16 @@ void HRFSpotCAPFile::CreateDescriptors()
     //HFCPtr<HRPHistogram> pHistogram = GetHistogramFromFile();
 
 
-    pTag = new HRFAttributeImageDescription(WString(m_LeadHeader.ImageFormatDescription.c_str(),false));
+    pTag = new HRFAttributeImageDescription(m_LeadHeader.ImageFormatDescription.c_str());
     TagList.Set(pTag);
 
-    pTag = new HRFAttributeSoftware(WString(m_LeadHeader.SoftwareUsed.c_str(),false));
+    pTag = new HRFAttributeSoftware(m_LeadHeader.SoftwareUsed.c_str());
     TagList.Set(pTag);
 
-    pTag = new HRFAttributeDateTime(WString(m_VoldHeader.DateOfCreation.c_str(),false));
+    pTag = new HRFAttributeDateTime(m_VoldHeader.DateOfCreation.c_str());
     TagList.Set(pTag);
 
-    pTag = new HRFAttributeCopyright(WString(m_VoldHeader.Copyright.c_str(),false));
+    pTag = new HRFAttributeCopyright(m_VoldHeader.Copyright.c_str());
     TagList.Set(pTag);
 
 

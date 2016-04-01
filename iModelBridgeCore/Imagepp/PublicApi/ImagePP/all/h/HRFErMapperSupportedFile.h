@@ -70,7 +70,7 @@ public:
     virtual void                          Save();
 
     void                                  Close();
-    void                                  Open(WCharCP pi_pFileName, uint32_t pi_AsReadOnly);
+    void                                  Open(Utf8CP pi_pFileName, uint32_t pi_AsReadOnly);
 
     virtual void                          SetDefaultRatioToMeter(double pi_RatioToMeter,
                                                                  uint32_t pi_Page,
@@ -101,7 +101,7 @@ public:
 
     static void             InitErMapperLibrary();
 
-    static uint32_t GetEPSGFromProjectionAndDatum(WStringCR pi_rErmProjection, WStringCR pi_rErmDatum);
+    static uint32_t GetEPSGFromProjectionAndDatum(CharCP ErmProjection, CharCP ErmDatum);
 
     Byte                    m_ECWVersion;               // 2 --> Version supported by V8i (default)
                                                         // 3 --> Version supported by ECW SDK 5.0&higher, More models and 16 bits supported
@@ -210,9 +210,9 @@ struct HRFEcwCreator : public HRFRasterFileCreator
                                                    uint64_t                pi_Offset = 0) const;
 
     // Identification information
-    virtual WString                   GetLabel() const;
-    virtual WString                   GetSchemes() const;
-    virtual WString                   GetExtensions() const;
+    virtual Utf8String                   GetLabel() const;
+    virtual Utf8String                   GetSchemes() const;
+    virtual Utf8String                   GetExtensions() const;
 
     // Capability - The Generic SupportsURL function can be overwrite
     virtual bool                     SupportsURL(const HFCPtr<HFCURL>& pi_rpURL) const;
@@ -234,8 +234,8 @@ private:
     HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFEcwCreator)
 
     // members
-    WCharP          m_pLabel;
-    WCharP          m_pExtensions;
+    Utf8P          m_pLabel;
+    Utf8P          m_pExtensions;
     uint32_t*         m_pSupportedPixelTypeList;
 
     // Disabled methodes
@@ -255,9 +255,9 @@ struct HRFJpeg2000Creator : public HRFRasterFileCreator
                                                    uint64_t                pi_Offset = 0) const;
 
     // Identification information
-    virtual WString                   GetLabel() const;
-    virtual WString                   GetSchemes() const;
-    virtual WString                   GetExtensions() const;
+    virtual Utf8String                   GetLabel() const;
+    virtual Utf8String                   GetSchemes() const;
+    virtual Utf8String                   GetExtensions() const;
 
     // capabilities of Raster file.
     virtual const HFCPtr<HRFRasterFileCapabilities>&
@@ -275,8 +275,8 @@ private:
     HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFJpeg2000Creator)
 
     // members
-    WCharP      m_pLabel;
-    WCharP      m_pExtensions;
+    Utf8P      m_pLabel;
+    Utf8P      m_pExtensions;
     uint32_t*     m_pSupportedPixelTypeList;
 
     // Disabled methodes

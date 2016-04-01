@@ -54,12 +54,12 @@ HPAException::~HPAException()
 // Return the message formatted with specific information on the exception
 // that have occurred.
 //-----------------------------------------------------------------------------
-WString HPAException::_BuildMessage(const ImagePPExceptions::StringId& pi_rsID) const
+Utf8String HPAException::_BuildMessage(const ImagePPExceptions::StringId& pi_rsID) const
     {
-    WPrintfString rawMessage(GetRawMessageFromResource(pi_rsID).c_str(), m_pOffendingNode->GetEndPos().m_Line,
+    Utf8PrintfString rawMessage(GetRawMessageFromResource(pi_rsID).c_str(), m_pOffendingNode->GetEndPos().m_Line,
                                  m_pOffendingNode->GetEndPos().m_Column);
-    WString exceptionName(pi_rsID.m_str, true/*isUtf8*/);
-    WPrintfString message(L"%ls - [%ls]", rawMessage.c_str(), exceptionName.c_str());
+    Utf8String exceptionName(pi_rsID.m_str);
+    Utf8PrintfString message("%s - [%s]", rawMessage.c_str(), exceptionName.c_str());
     return message;
     }
 
@@ -78,7 +78,7 @@ const HFCPtr<HPANode>& HPAException::GetOffendingNode() const
 // Constructor
 //-----------------------------------------------------------------------------
 HPAGenericException::HPAGenericException(HFCPtr<HPANode>&    pi_rpOffendingNode,
-                                         const WString&      pi_rMessage)
+                                         const Utf8String&      pi_rMessage)
     : HPAException(pi_rpOffendingNode)
     {
     m_pOffendingNode = pi_rpOffendingNode;
@@ -118,11 +118,11 @@ HPAGenericException::~HPAGenericException()
 // Return the message formatted with specific information on the exception
 // that have occurred.
 //-----------------------------------------------------------------------------
-WString HPAGenericException::GetExceptionMessage() const
+Utf8String HPAGenericException::GetExceptionMessage() const
     {
-    WPrintfString rawMessage(GetRawMessageFromResource(ImagePPExceptions::HPAGeneric()).c_str(), m_Message.c_str());
-    WString exceptionName(ImagePPExceptions::HPAGeneric().m_str, true/*isUtf8*/);
-    WPrintfString message(L"%ls - [%ls]", rawMessage.c_str(), exceptionName.c_str());
+    Utf8PrintfString rawMessage(GetRawMessageFromResource(ImagePPExceptions::HPAGeneric()).c_str(), m_Message.c_str());
+    Utf8String exceptionName(ImagePPExceptions::HPAGeneric().m_str);
+    Utf8PrintfString message("%s - [%s]", rawMessage.c_str(), exceptionName.c_str());
     return message;
     }
 
@@ -130,7 +130,7 @@ WString HPAGenericException::GetExceptionMessage() const
 // public
 // Get the exception information, if any.
 //-----------------------------------------------------------------------------
-WStringCR HPAGenericException::GetMessage() const
+Utf8StringCR HPAGenericException::GetMessage() const
     {
     return m_Message;
     }
@@ -144,11 +144,11 @@ HFCException* HPAGenericException::Clone() const
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-WString HPAException::MakeErrorMsg() const
+Utf8String HPAException::MakeErrorMsg() const
     {
     HPRECONDITION(m_pOffendingNode != 0);
 
-    wostringstream OutputMsg;
+    ostringstream OutputMsg;
 
     if (m_pOffendingNode != 0)
         {
@@ -171,15 +171,15 @@ WString HPAException::MakeErrorMsg() const
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-WString HPAException::GetErrorText() const 
+Utf8String HPAException::GetErrorText() const 
     {
         if (dynamic_cast<HPANoTokenException const*>(this) != 0)
-           return ImagePPMessages::GetStringW(ImagePPMessages::PSS_PrematureEndOfFile()); // Can't get token / Premature end of file found.
+           return ImagePPMessages::GetString(ImagePPMessages::PSS_PrematureEndOfFile()); // Can't get token / Premature end of file found.
         else if  (dynamic_cast<HPARecursiveInclusionException const*>(this) != 0)
-            return ImagePPMessages::GetStringW(ImagePPMessages::PSS_FileAlreadyIncluded()); // Can't get token / Premature end of file found.
+            return ImagePPMessages::GetString(ImagePPMessages::PSS_FileAlreadyIncluded()); // Can't get token / Premature end of file found.
         else
             {
             HASSERT(0);
-            return L"";
+            return "";
             }
     }

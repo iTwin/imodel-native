@@ -733,13 +733,12 @@ class ERMapperExporter
             // Dynamic Load the ECW library
             if (m_pCompressClient = NCSCompressAllocClientW())
                 {
-                WString  FileName(((HFCPtr<HFCURLFile>&)m_rCompressReadInfo.m_pDestinationFile->GetURL())->GetHost());
-
-                FileName += L"\\";
-                FileName += ((HFCPtr<HFCURLFile>&)m_rCompressReadInfo.m_pDestinationFile->GetURL())->GetPath();
+                Utf8String FileName(((HFCPtr<HFCURLFile>&)m_rCompressReadInfo.m_pDestinationFile->GetURL())->GetAbsoluteFileName());
+                
+                WString FileNameW(FileName.c_str(), BentleyCharEncoding::Utf8);
 
                 // Copy in string (unicode) to buffer (ansi)
-                wcscpy_s(m_pCompressClient->uOutputFileName.wszOutputFileName, MAX_PATH, FileName.c_str());    // V5.0
+                wcscpy_s(m_pCompressClient->uOutputFileName.wszOutputFileName, MAX_PATH, FileNameW.c_str());    // V5.0
 
                 HFCPtr<HRFPageDescriptor>       pDstPageDesc = m_rCompressReadInfo.m_pDestinationFile->GetPageDescriptor(0);
                 HFCPtr<HRFResolutionDescriptor> pDstResDesc = pDstPageDesc->GetResolutionDescriptor(0);
@@ -1067,7 +1066,7 @@ void Export_ECW_Jpeg2000_Helper(ECWReadInfoStruct& pio_rReadInfo)
     ** Give output filename
     */
     //		strncpy(pClient->uOutputFileName.szOutputFileName, argv[1], MAX_PATH);      // ori
-    wcscpy_s(pClient->uOutputFileName.wszOutputFileName, MAX_PATH, L"k:\\tmp\\test2.ecw");    // V5.0
+    wcscpy_s(pClient->uOutputFileName.wszOutputFileName, MAX_PATH, "k:\\tmp\\test2.ecw");    // V5.0
 
     /*
     ** Specify the callbacks and client data ptr

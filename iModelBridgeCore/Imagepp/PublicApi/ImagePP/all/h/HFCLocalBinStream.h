@@ -27,20 +27,20 @@ public:
     // Primary methods
 
     HFCLocalBinStream();
-    IMAGEPP_EXPORT                         HFCLocalBinStream(const WString&    pi_Filename,
+    IMAGEPP_EXPORT                         HFCLocalBinStream(const Utf8String&    pi_Filename,
                                                      HFCAccessMode     pi_AccessMode,
                                                      bool              pi_AutoRemove = false,
                                                      uint64_t          pi_OriginOffset = 0,
                                                      int16_t pi_NbRetry = 0);
 
-    IMAGEPP_EXPORT                         HFCLocalBinStream(const WString&    pi_Filename,
+    IMAGEPP_EXPORT                         HFCLocalBinStream(const Utf8String&    pi_Filename,
                                                      HFCAccessMode     pi_AccessMode,
                                                      bool              pi_CreateFile,
                                                      bool              pi_AutoRemove,
                                                      uint64_t          pi_OriginOffset,
                                                      int16_t pi_NbRetry=0);
 
-    IMAGEPP_EXPORT                         HFCLocalBinStream(const WString&    pi_Filename,
+    IMAGEPP_EXPORT                         HFCLocalBinStream(const Utf8String&    pi_Filename,
                                                      bool              pi_ShareWrite = false,
                                                      bool              pi_ShareRead = true,
                                                      bool              pi_CreateFile = true,
@@ -86,7 +86,7 @@ public:
 
 protected:
 
-    IMAGEPP_EXPORT void                    Open(const WString&     pi_Filename,
+    IMAGEPP_EXPORT void                    Open(const Utf8String&     pi_Filename,
                                         HFCAccessMode      pi_AccessMode,
                                         bool              pi_ShareWrite,
                                         bool              pi_ShareRead,
@@ -117,7 +117,7 @@ private:
 
     BeFile                 m_BeFile;
 
-    WString                m_Filename;
+    BeFileName             m_Filename;
     bool                   m_AutoRemove;
     HFCAccessMode          m_AccessMode;
     uint64_t               m_OriginOffset;

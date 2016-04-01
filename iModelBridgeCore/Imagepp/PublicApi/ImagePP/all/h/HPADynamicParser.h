@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPADynamicParser.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HPADynamicParser
@@ -62,8 +62,8 @@ private:
     friend class TokenDeclarationNode;
     friend class GrammarObjectNode;
 
-    typedef map<WString, HPAGrammarObject*> RuleList;
-    typedef map<WString, HPAGrammarObject*> TokenList;
+    typedef map<Utf8String, HPAGrammarObject*> RuleList;
+    typedef map<Utf8String, HPAGrammarObject*> TokenList;
 
     RuleList            m_Rules;
     TokenList           m_Tokens;

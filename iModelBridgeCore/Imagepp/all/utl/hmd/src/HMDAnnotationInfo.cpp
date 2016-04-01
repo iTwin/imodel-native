@@ -14,9 +14,9 @@
 // Public
 // Constructor
 //-----------------------------------------------------------------------------
-HMDAnnotationInfo::HMDAnnotationInfo(const WString& pi_rMsg,
+HMDAnnotationInfo::HMDAnnotationInfo(const Utf8String& pi_rMsg,
                                             bool          pi_IsSupported,
-                                            const WString& pi_rAnnotationType)
+                                            const Utf8String& pi_rAnnotationType)
     {
     m_Msg            = pi_rMsg;
     m_IsSupported    = pi_IsSupported;
@@ -44,7 +44,7 @@ HMDAnnotationInfo::HMDAnnotationInfo(const HMDAnnotationInfo& pi_rObj)
 // Public
 // Return the annotation's message
 //-----------------------------------------------------------------------------
-const WString& HMDAnnotationInfo::GetAnnotationMsg() const
+const Utf8String& HMDAnnotationInfo::GetAnnotationMsg() const
     {
     return m_Msg;
     }
@@ -53,7 +53,7 @@ const WString& HMDAnnotationInfo::GetAnnotationMsg() const
 // Public
 // Return the annotation's type
 //-----------------------------------------------------------------------------
-const WString& HMDAnnotationInfo::GetAnnotationType() const
+const Utf8String& HMDAnnotationInfo::GetAnnotationType() const
     {
     return m_AnnotationType;
     }

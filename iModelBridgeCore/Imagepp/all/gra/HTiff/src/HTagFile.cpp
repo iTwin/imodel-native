@@ -62,7 +62,7 @@ HTagFile::~HTagFile ()
     }
 
 
-HTagFile::HTagFile (const WString&          pi_rFilename,
+HTagFile::HTagFile (const Utf8String&          pi_rFilename,
                     const HTagInfo&         pi_rTagInfo,
                     HFCAccessMode           pi_Mode,
                     uint64_t               pi_OriginOffset,
@@ -133,7 +133,7 @@ void HTagFile::Initialize ()
 // initialization.
 //-----------------------------------------------------------------------------
 void HTagFile::Construct (const HFCPtr<HFCURL>& pi_rpURL,
-                          const WString*        pi_pFilename,
+                          const Utf8String*        pi_pFilename,
                           HFCAccessMode         pi_Mode,
                           uint64_t             pi_OriginOffset,
                           bool                 pi_CreateBigTifFormat,
@@ -253,7 +253,7 @@ void HTagFile::SaveTagFile ()
 
 
 bool HTagFile::OpenTiffFile (const HFCPtr<HFCURL>* pi_pURL,       // by URL
-                              const WString* pi_pFilename,         // by string
+                              const Utf8String* pi_pFilename,         // by string
                               HFCAccessMode  pi_AccessMode,
                               uint64_t      pi_OriginOffset)
     {
@@ -403,7 +403,7 @@ void HTagFile::Save()
     }
 
 bool HTagFile::CreateTiffFile (const HFCPtr<HFCURL>*  pi_pURL,
-                                const WString*         pi_pFilename,
+                                const Utf8String*         pi_pFilename,
                                 HFCAccessMode          pi_AccessMode,          // default RWC only used by URL
                                 bool                  pi_CreateBigTifFormat)  // false
     {

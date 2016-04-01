@@ -34,28 +34,28 @@ public:
     bool               IsTopScope() const;
 
     void                AddParameter(HPANode* pi_pParameterNode);
-    void                AddVariable(const WString& pi_rString, ExpressionNode* pi_pNode);
-    void                AddStatement(const WString& pi_rString, StatementDefinitionNode* pi_pNode);
+    void                AddVariable(const Utf8String& pi_rString, ExpressionNode* pi_pNode);
+    void                AddStatement(const Utf8String& pi_rString, StatementDefinitionNode* pi_pNode);
 
     void                Reset();
     void                SetParameterValue(int16_t pi_Pos, ExpressionNode* pi_pNode);
     StatementDefinitionNode*
-    FindStatement(const WString& pi_rString);
-    VariableTokenNode*  FindVariable(const WString& pi_rString);
+    FindStatement(const Utf8String& pi_rString);
+    VariableTokenNode*  FindVariable(const Utf8String& pi_rString);
     size_t              GetParameterCount() const;
 
 protected:
 
-    StatementDefinitionNode* FindStatementInternal(const WString& pi_rString);
-    VariableTokenNode*       FindVariableInternal(const WString& pi_rString);
+    StatementDefinitionNode* FindStatementInternal(const Utf8String& pi_rString);
+    VariableTokenNode*       FindVariableInternal(const Utf8String& pi_rString);
 
 private:
 
     typedef vector<HFCPtr<VariableTokenNode> > ParameterList;
 
-    typedef map<WString, HFCPtr<VariableTokenNode> > VariableList;
+    typedef map<Utf8String, HFCPtr<VariableTokenNode> > VariableList;
 
-    typedef map<WString, HFCPtr<StatementDefinitionNode> > StatementList;
+    typedef map<Utf8String, HFCPtr<StatementDefinitionNode> > StatementList;
 
 
     HPSParser*          m_pParser;

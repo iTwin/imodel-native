@@ -46,7 +46,7 @@ public:
 
 protected :
 
-    HCDCodecErMapperSupported(const WString& pi_rCodecName);
+    HCDCodecErMapperSupported(const Utf8String& pi_rCodecName);
 
 private :
 

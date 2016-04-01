@@ -137,9 +137,9 @@ HRFCalsCreator::HRFCalsCreator()
 // Identification information
 //-----------------------------------------------------------------------------
 
-WString HRFCalsCreator::GetLabel() const
+Utf8String HRFCalsCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_CALS()); //Cals File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_CALS()); //Cals File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -147,9 +147,9 @@ WString HRFCalsCreator::GetLabel() const
 // Schemes information
 //-----------------------------------------------------------------------------
 
-WString HRFCalsCreator::GetSchemes() const
+Utf8String HRFCalsCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return HFCURLFile::s_SchemeName();
     }
 
 //-----------------------------------------------------------------------------
@@ -157,9 +157,9 @@ WString HRFCalsCreator::GetSchemes() const
 // Extensions information
 //-----------------------------------------------------------------------------
 
-WString HRFCalsCreator::GetExtensions() const
+Utf8String HRFCalsCreator::GetExtensions() const
     {
-    return WString(L"*.cal;*.cals;*.ct1");
+    return "*.cal;*.cals;*.ct1";
     }
 
 //-----------------------------------------------------------------------------

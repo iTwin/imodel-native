@@ -171,23 +171,23 @@ HRFArcInfoGridCreator::HRFArcInfoGridCreator()
 
 
 // Identification information
-WString HRFArcInfoGridCreator::GetLabel() const
+Utf8String HRFArcInfoGridCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_ArcInfoBinary());
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_ArcInfoBinary());
     }
 
 
 // Identification information
-WString HRFArcInfoGridCreator::GetSchemes() const
+Utf8String HRFArcInfoGridCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return HFCURLFile::s_SchemeName();
     }
 
 
 // Identification information
-WString HRFArcInfoGridCreator::GetExtensions() const
+Utf8String HRFArcInfoGridCreator::GetExtensions() const
     {
-    return L"*.adf";
+    return "*.adf";
     }
 
 
@@ -232,13 +232,13 @@ bool HRFArcInfoGridCreator::IsKindOfFile  (const HFCPtr<HFCURL>&    pi_rpURL,
 
 
     // Extension need to be *.adf in order to do any further processing on the file
-    WString FileExtension = (static_cast<HFCURLFile*>(pi_rpURL.GetPtr()))->GetExtension();
-    if (0 != FileExtension.compare(L"adf"))
+    Utf8String FileExtension = (static_cast<HFCURLFile*>(pi_rpURL.GetPtr()))->GetExtension();
+    if (0 != FileExtension.compare("adf"))
         return false;
 
     // The header of this file is external. Any *.adf file in the grid directory could be selected.
     HFCPtr<HFCURL> pHeaderURL(new HFCURLFile(pi_rpURL->GetURL()));
-    (static_cast<HFCURLFile*>(pHeaderURL.GetPtr()))->SetFileName(WString(L"hdr.adf"));
+    (static_cast<HFCURLFile*>(pHeaderURL.GetPtr()))->SetFileName(Utf8String("hdr.adf"));
 
     HAutoPtr<HFCBinStream> pHeaderFile(HFCBinStream::Instanciate(pHeaderURL, HFC_READ_ONLY | HFC_SHARE_READ_WRITE));
 

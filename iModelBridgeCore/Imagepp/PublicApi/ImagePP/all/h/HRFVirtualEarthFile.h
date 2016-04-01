@@ -26,12 +26,12 @@ struct HttpSession;
 
 // The most common ImagerySet that can be used with HRFVirtualEarthFile::ComposeURL. 
 // See Bing Maps REST API(http://msdn.microsoft.com/en-us/library/ff701721.aspx/)
-#define BINGMAPS_IMAGERYSET_ROAD                L"Road"
-#define BINGMAPS_IMAGERYSET_AERIAL              L"Aerial"
-#define BINGMAPS_IMAGERYSET_AERIALWITHLABELS    L"AerialWithLabels"
+#define BINGMAPS_IMAGERYSET_ROAD                "Road"
+#define BINGMAPS_IMAGERYSET_AERIAL              "Aerial"
+#define BINGMAPS_IMAGERYSET_AERIALWITHLABELS    "AerialWithLabels"
 // Less common:
-//#define BINGMAPS_IMAGERYSET_COLLINSBART      L"CollinsBart"       // This imagery is visible only for the London area.
-//#define BINGMAPS_IMAGERYSET_ORDNANCESURVEY   L"OrdnanceSurvey"    // This imagery is visible only for the London area.
+//#define BINGMAPS_IMAGERYSET_COLLINSBART      "CollinsBart"       // This imagery is visible only for the London area.
+//#define BINGMAPS_IMAGERYSET_ORDNANCESURVEY   "OrdnanceSurvey"    // This imagery is visible only for the London area.
 
 //-----------------------------------------------------------------------------
 // HRFVirtualEarthCapabilities class
@@ -66,7 +66,7 @@ public:
 
     struct ImageryProvider
         {
-        WString attribution;
+        Utf8String attribution;
         bvector<CoverageArea> coverage;
         };        
 
@@ -105,13 +105,13 @@ public:
 
     // Compose virtual earth pseudo URL. This is not a valid URL but a specially formatted URL to 
     // identify it as virtual earth URL and which imagery set to use.
-    IMAGEPP_EXPORT static WString ComposeURL(WStringCR imagerySet);
+    IMAGEPP_EXPORT static Utf8String ComposeURL(Utf8StringCR imagerySet);
 
     // Resolve map style from pseudo URL created by ComposeVirtualEarthURL.
-    IMAGEPP_EXPORT static bool FindImagerySetFromURL(WStringR imagerySet, HFCURL const& pi_pURL);
+    IMAGEPP_EXPORT static bool FindImagerySetFromURL(Utf8StringR imagerySet, HFCURL const& pi_pURL);
 
     // Get the logo URL
-    IMAGEPP_EXPORT WStringCR GetBrandLogoURI() const;
+    IMAGEPP_EXPORT Utf8StringCR GetBrandLogoURI() const;
 
     // Get the lists of provider for the specified extent and zoom
     IMAGEPP_EXPORT ImageryProviders const& GetProviders() const;
@@ -145,14 +145,14 @@ protected:
 private:
     friend struct HRFVirtualEarthCreator;
 
-    void                QueryImageURI(WStringCR bingMapKey);
-    WString             GetTileURI(uint32_t pixelX, uint32_t pixelY, int32_t levelOfDetail) const;
+    void                QueryImageURI(Utf8StringCR bingMapKey);
+    Utf8String             GetTileURI(uint32_t pixelX, uint32_t pixelY, int32_t levelOfDetail) const;
 
-    WString             m_ImageURI;               // ex: "http://{subdomain}.tiles.virtualearth.net/tiles/r{quadkey}.jpeg?g=266&mkt={culture}"
-    bvector<WString>    m_ImageURISubdomains;     // ex: "t0","t1","t2","t3"
+    Utf8String             m_ImageURI;               // ex: "http://{subdomain}.tiles.virtualearth.net/tiles/r{quadkey}.jpeg?g=266&mkt={culture}"
+    bvector<Utf8String>    m_ImageURISubdomains;     // ex: "t0","t1","t2","t3"
 
     ImageryProviders    m_Providers;
-    WString             m_LogoURI;                // ex: "http://dev.virtualearth.net/Branding/logo_powered_by.png"
+    Utf8String             m_LogoURI;                // ex: "http://dev.virtualearth.net/Branding/logo_powered_by.png"
 
     WorkerPool&         GetWorkerPool();
     std::unique_ptr<WorkerPool> m_pWorkerPool;
@@ -179,9 +179,9 @@ struct HRFVirtualEarthCreator : public HRFRasterFileCreator
     virtual bool                     SupportsURL(const HFCPtr<HFCURL>& pi_rpURL) const;
 
     // Identification information
-    virtual WString                   GetLabel() const;
-    virtual WString                   GetSchemes() const;
-    virtual WString                   GetExtensions() const;
+    virtual Utf8String                   GetLabel() const;
+    virtual Utf8String                   GetSchemes() const;
+    virtual Utf8String                   GetExtensions() const;
 
     // capabilities of Raster file.
     virtual const HFCPtr<HRFRasterFileCapabilities>&

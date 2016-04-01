@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFException.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Implementation of the HRF exception classes.  The exception hierarchy look
@@ -88,9 +88,9 @@ public:
     IMAGEPP_EXPORT virtual         ~HRFException();
 protected:
     //Those constructors are protected to make sure we always throw a specific exception and don't lose type information
-    IMAGEPP_EXPORT HRFException            (const WString&          pi_rFileName);
+    IMAGEPP_EXPORT HRFException            (const Utf8String&          pi_rFileName);
     IMAGEPP_EXPORT HRFException                   (const HRFException&     pi_rObj);
-    IMAGEPP_EXPORT virtual WString            _BuildMessage(const ImagePPExceptions::StringId& rsId) const override;
+    IMAGEPP_EXPORT virtual Utf8String            _BuildMessage(const ImagePPExceptions::StringId& rsId) const override;
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -100,12 +100,12 @@ template<ImagePPExceptions::StringId (*GetStringId)(), bool IsInvalidAccessMode>
 class HRFException_T : public HRFException
 {
 public:
-    HRFException_T(const WString& pi_rFileName) : HRFException(pi_rFileName){}
+    HRFException_T(const Utf8String& pi_rFileName) : HRFException(pi_rFileName){}
     HRFException_T (const HRFException_T& pi_rObj) : HRFException(pi_rObj){}
     virtual HFCException* Clone() const override {return new HRFException_T(*this);}
     virtual void ThrowMyself() const {throw *this;}
     virtual bool IsInvalidAccess() const override {return IsInvalidAccessMode;} 
-    virtual WString GetExceptionMessage()const override
+    virtual Utf8String GetExceptionMessage()const override
         {
         return HRFException::_BuildMessage(GetStringId());
         }
@@ -166,13 +166,13 @@ class HRFFileParameterException : public HRFException
     {
 public:
     virtual        ~HRFFileParameterException();
-    WStringCR    GetParameterName                        () const; 
+    Utf8StringCR    GetParameterName                        () const; 
 protected:
     //Those constructors are protected to make sure we always throw a specific exception and don't lose type information
-    HRFFileParameterException(const WString& pi_rFileName,const WString& pi_rParamName);
+    HRFFileParameterException(const Utf8String& pi_rFileName,const Utf8String& pi_rParamName);
     HRFFileParameterException                   (const HRFFileParameterException&     pi_rObj);
-    WString m_ParameterName;
-    virtual WString _BuildMessage(const ImagePPExceptions::StringId& rsID) const override;
+    Utf8String m_ParameterName;
+    virtual Utf8String _BuildMessage(const ImagePPExceptions::StringId& rsID) const override;
 private:
     virtual bool HasFilenameInMessageString() const {return false;}
     };
@@ -184,11 +184,11 @@ template<ImagePPExceptions::StringId (*GetStringId)(), bool HasFilenameInMessage
 class HRFFileParameterException_T : public HRFFileParameterException
     {
 public:
-    HRFFileParameterException_T(const WString& pi_rFileName, const WString& pi_rParamName) : HRFFileParameterException(pi_rFileName, pi_rParamName){}
+    HRFFileParameterException_T(const Utf8String& pi_rFileName, const Utf8String& pi_rParamName) : HRFFileParameterException(pi_rFileName, pi_rParamName){}
     HRFFileParameterException_T(const HRFFileParameterException_T& pi_rObj) : HRFFileParameterException(pi_rObj){}
     virtual HFCException* Clone() const override {return new HRFFileParameterException_T(*this);}
     virtual void ThrowMyself() const override {throw *this;} 
-    virtual WString GetExceptionMessage() const override
+    virtual Utf8String GetExceptionMessage() const override
         {
         return HRFFileParameterException::_BuildMessage(GetStringId());
         }
@@ -216,12 +216,12 @@ class HRFChildFileException : public HRFException
 {
 public:
     virtual        ~HRFChildFileException();
-    WStringCR    GetChildFileName                        () const;
+    Utf8StringCR    GetChildFileName                        () const;
 protected:
     //Those constructors are protected to make sure we always throw a specific exception and don't lose type information
-    HRFChildFileException(const WString& pi_rParentFileName,const WString& pi_rChildFileName);
+    HRFChildFileException(const Utf8String& pi_rParentFileName,const Utf8String& pi_rChildFileName);
     HRFChildFileException                   (const HRFChildFileException&     pi_rObj); 
-        WString            m_ChildFileName;
+        Utf8String            m_ChildFileName;
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -230,12 +230,12 @@ protected:
 class HRFCannotOpenChildFileException : public HRFChildFileException 
     {
 public:
-    HRFCannotOpenChildFileException(const WString& pi_rParentFileName,
-                          const WString& pi_rChildFileName);
+    HRFCannotOpenChildFileException(const Utf8String& pi_rParentFileName,
+                          const Utf8String& pi_rChildFileName);
     virtual HFCException* Clone() const override;
     virtual        ~HRFCannotOpenChildFileException();
     HRFCannotOpenChildFileException                   (const HRFCannotOpenChildFileException&     pi_rObj); 
-    virtual WString       GetExceptionMessage() const override;
+    virtual Utf8String       GetExceptionMessage() const override;
     virtual void ThrowMyself() const override {throw *this;} 
     };
 
@@ -246,16 +246,16 @@ public:
 class HRFChildFileParameterException : public HRFChildFileException 
 {
 public:
-    HRFChildFileParameterException(const WString& pi_rParentFileName, const WString& pi_rChildFileName,
-                                   const WString& pi_rParamName);
+    HRFChildFileParameterException(const Utf8String& pi_rParentFileName, const Utf8String& pi_rChildFileName,
+                                   const Utf8String& pi_rParamName);
     virtual        ~HRFChildFileParameterException();
     virtual HFCException* Clone() const override; 
     virtual void ThrowMyself() const override {throw *this;} 
-    WStringCR      GetParameterName() const;
+    Utf8StringCR      GetParameterName() const;
     HRFChildFileParameterException (const HRFChildFileParameterException&     pi_rObj); 
-    virtual WString GetExceptionMessage() const override;
+    virtual Utf8String GetExceptionMessage() const override;
 protected: 
-    WString m_ParameterName;   
+    Utf8String m_ParameterName;   
 };
 
 //----------------------------------------------------------------------------
@@ -264,11 +264,11 @@ protected:
 class HRFTiffErrorException : public HRFException
 {
 public:
-    HRFTiffErrorException(const WString&    pi_rFileName, const HTIFFError& pi_rErrInfo);
+    HRFTiffErrorException(const Utf8String&    pi_rFileName, const HTIFFError& pi_rErrInfo);
     virtual        ~HRFTiffErrorException();
     const HTIFFError    GetError                        () const;
     HRFTiffErrorException                   (const HRFTiffErrorException&     pi_rObj); 
-    virtual WString GetExceptionMessage() const override;
+    virtual Utf8String GetExceptionMessage() const override;
     virtual HFCException* Clone() const override; 
     virtual void ThrowMyself() const override {throw *this;} 
 protected:
@@ -281,12 +281,12 @@ protected:
 class HRFInvalidNewFileDimensionException : public HRFException
 {
 public :
-    HRFInvalidNewFileDimensionException(const WString& pi_rFileName, uint64_t pi_WidthLimit, uint64_t pi_HeightLimit);
+    HRFInvalidNewFileDimensionException(const Utf8String& pi_rFileName, uint64_t pi_WidthLimit, uint64_t pi_HeightLimit);
     virtual ~HRFInvalidNewFileDimensionException();
     const uint64_t GetWidthLimit () const;
     const uint64_t GetHeightLimit () const;
     HRFInvalidNewFileDimensionException (const HRFInvalidNewFileDimensionException&     pi_rObj);
-    virtual WString GetExceptionMessage() const override;
+    virtual Utf8String GetExceptionMessage() const override;
     virtual HFCException* Clone() const override; 
     virtual void ThrowMyself() const override {throw *this;} 
 protected:

@@ -62,11 +62,11 @@ struct JpegMarkerReader
 
     struct JpegException
         {
-        JpegException(WCharCP message)
+        JpegException(Utf8CP message)
             {
             m_message = message;
             }
-        WString m_message;
+        Utf8String m_message;
         };
 
     JpegMarkerReader(Byte const* jpegData, size_t jpegDataSize)
@@ -90,7 +90,7 @@ struct JpegMarkerReader
         int32_t c;
         c = NEXTBYTE();
         if (c == EOF)
-            throw JpegException(L"Premature EOF in JPEG file"); 
+            throw JpegException("Premature EOF in JPEG file"); 
         
         return c;
         }
@@ -103,10 +103,10 @@ struct JpegMarkerReader
 
         c1 = NEXTBYTE();
         if (c1 == EOF)
-            throw JpegException(L"Premature EOF in JPEG file"); 
+            throw JpegException("Premature EOF in JPEG file"); 
         c2 = NEXTBYTE();
         if (c2 == EOF)
-            throw JpegException(L"Premature EOF in JPEG file"); 
+            throw JpegException("Premature EOF in JPEG file"); 
         return (((uint32_t) c1) << 8) + ((uint32_t) c2);
         }
 
@@ -158,7 +158,7 @@ struct JpegMarkerReader
         c1 = NEXTBYTE();
         c2 = NEXTBYTE();
         if (c1 != 0xFF || c2 != M_SOI)
-            throw JpegException(L"Not a JPEG file"); 
+            throw JpegException("Not a JPEG file"); 
         return c2;
         }
 
@@ -179,7 +179,7 @@ struct JpegMarkerReader
         length = lengthRet = read_2_bytes();
         /* Length includes itself, so must be at least 2 */
         if (length < 2)
-            throw JpegException(L"Erroneous JPEG marker length");
+            throw JpegException("Erroneous JPEG marker length");
         length -= 2;
         /* Skip over the remaining bytes */
         while (length > 0) {
@@ -204,7 +204,7 @@ struct JpegMarkerReader
 
         /* Expect SOI at start of file */
         if (first_marker() != M_SOI)
-             throw JpegException(L"Expected SOI marker first");
+             throw JpegException("Expected SOI marker first");
 
         /* Scan miscellaneous markers until we reach SOFn. */
         for (;;)
@@ -228,7 +228,7 @@ struct JpegMarkerReader
                 case M_SOF15:       /* Differential lossless, arithmetic */
                     {
                     if(0 != SOF.pData)
-                        throw JpegException(L"More than one SOFn");  
+                        throw JpegException("More than one SOFn");  
 
                     SOF.pData = m_pData + (m_Offset - 2);
                     SOF.length = skip_variable() + 2; // include marker
@@ -238,7 +238,7 @@ struct JpegMarkerReader
                 case M_SOS:
                     {
                     if(0 == SOF.pData)
-                        throw JpegException(L"SOS without prior SOFn");      
+                        throw JpegException("SOS without prior SOFn");      
 
                     SOS.pData = m_pData + (m_Offset - 2);
                     SOS.length = skip_variable() + 2; // include marker

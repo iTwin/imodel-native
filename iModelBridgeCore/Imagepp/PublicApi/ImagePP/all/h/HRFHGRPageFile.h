@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFHGRPageFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFHGRPageFile
@@ -76,7 +76,7 @@ private:
 
 
     // ID section
-    string          m_File;
+    AString         m_File;
     FileVersion     m_Version;
 
     // GeoRefSetting section
@@ -84,29 +84,27 @@ private:
     double         m_OriginY;
     double         m_PixelSizeX;
     double         m_PixelSizeY;
-    uint32_t        m_ImageWidth;
-    uint32_t        m_ImageHeight;
+    uint32_t       m_ImageWidth;
+    uint32_t       m_ImageHeight;
     double         m_Rotation;
     double         m_Affinity;
 
     // ImageInfo section
-    string          m_Owner;
-    string          m_Description;
+    AString         m_Owner;
+    AString         m_Description;
     uint32_t        m_ScanningResX;
     uint32_t        m_ScanningResY;
 
     // Private methods
 
-    FileVersion             GetFileVersion(const string& pi_rVersion) const;
+    FileVersion             GetFileVersion(Utf8StringCR pi_rVersion) const;
     string                  GetFileVersion(FileVersion   pi_Version) const;
 
     bool                   IsValidHGRFile() const;
 
-    bool                   ConvertStringToDouble(const string&        pi_rString,
-                                                  double*              po_pDouble) const;
+    bool                    ConvertStringToDouble(Utf8StringCR, double* po_pDouble) const;
+    bool                    ConvertStringToUnsignedLong(Utf8StringCR, uint32_t* po_pLong) const;
 
-    bool                   ConvertStringToUnsignedLong(const string&   pi_rString,
-                                                        uint32_t*         po_pLong) const;
     void                    ReadFile();
     void                    WriteFile();
 

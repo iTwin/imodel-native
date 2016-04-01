@@ -60,8 +60,8 @@ public:
     // ObjectsItems struct
     typedef struct _ObjectsItemsData
         {
-        WChar* pCounterList;
-        WChar* pInstanceList;
+        Utf8Char* pCounterList;
+        Utf8Char* pInstanceList;
 
         _ObjectsItemsData::_ObjectsItemsData()
             {
@@ -70,7 +70,7 @@ public:
             }
         } OID, *POID;
 
-    typedef list< WString, allocator<WString> > PERFORMANCE_OBJECT_LIST;
+    typedef list< Utf8String, allocator<Utf8String> > PERFORMANCE_OBJECT_LIST;
     typedef PERFORMANCE_OBJECT_LIST::iterator PERFORMANCE_OBJECT_LIST_ITR;
 
     // Construction - Destruction
@@ -85,7 +85,7 @@ public:
 
 
     HFC_PERFORMANCE_STATUS
-    AddCounter(const WString& pi_rCounterPath,
+    AddCounter(const Utf8String& pi_rCounterPath,
                HFC_PERFORMANCE_COUNTER* pi_pCtrHandle);
 
     HFC_PERFORMANCE_STATUS
@@ -101,7 +101,7 @@ public:
     GetObjectList() const;
 
     HFC_PERFORMANCE_STATUS
-    EnumObjectItems(const WString& pi_rObjectName,
+    EnumObjectItems(const Utf8String& pi_rObjectName,
                     HFCPerformanceDataHelper::POID pi_pRetStc);
 
     void     DeleteAllCounters();
@@ -128,7 +128,7 @@ private:
 
     typedef struct _CounterInfoBlock
         {
-        WChar                          szCounterPath[MAX_PATH];
+        Utf8Char                          szCounterPath[MAX_PATH];
         HFC_PERFORMANCE_COUNTER         hCounter;
         HFC_PERFORMANCE_PRAW_COUNTER    pCounterArray;
         DWORD                           dwFirstIndex;
