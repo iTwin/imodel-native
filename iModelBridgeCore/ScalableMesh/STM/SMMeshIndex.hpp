@@ -1993,23 +1993,25 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipAc
     DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
                                         ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent));
     if (!extent.IntersectsWith(nodeRange, 2)) return;
+    bool clipApplied = true;
     switch (action)
         {
         case ClipAction::ACTION_ADD:
-            AddClip(clipId, false, setToggledWhenIdIsOn);
+            clipApplied = AddClip(clipId, false, setToggledWhenIdIsOn);
             break;
         case ClipAction::ACTION_MODIFY:
-            ModifyClip(clipId, false, setToggledWhenIdIsOn);
+            clipApplied = ModifyClip(clipId, false, setToggledWhenIdIsOn);
             break;
         case ClipAction::ACTION_DELETE:
-            DeleteClip(clipId, false, setToggledWhenIdIsOn);
+            clipApplied = DeleteClip(clipId, false, setToggledWhenIdIsOn);
             break;
         }
+    if (!clipApplied) return;
     if (m_pSubNodeNoSplit != NULL && !m_pSubNodeNoSplit->IsVirtualNode())
         {
         dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pSubNodeNoSplit)->ClipActionRecursive(action, clipId, extent, setToggledWhenIdIsOn);
         }
-    else if (!IsLeaf())
+    else if (m_nodeHeader.m_numberOfSubNodesOnSplit > 1 && m_apSubNodes[0] != nullptr)
         {
         for (size_t indexNodes = 0; indexNodes < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNodes++)
             {
@@ -2637,6 +2639,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
 #else
     {
     if (m_differenceSets.size() == 0) return;
+    //std::cout << "Merging clips for " << GetBlockID().m_integerID << " we have " << m_differenceSets.size() << "clips"<<std::endl;
     for (auto& diffSet : m_differenceSets)
         {
         if (diffSet.clientID == (uint64_t)-1 && diffSet.upToDate) return;
@@ -2750,6 +2753,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         (m_differenceSets.begin() + (m_differenceSets.size() - 1))->upToDate = true;
         m_nbClips++;
         }
+    //std::cout << "Merged clips for " << GetBlockID().m_integerID << " we have " << m_differenceSets.size() << "clips" << std::endl;
 #endif
     }
 
@@ -2791,13 +2795,48 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::BuildS
 
     }
 
+template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIntersectsBox(uint64_t clipId, EXTENT ext)
+    {
+    DRange3d extRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(ext), ExtentOp<EXTENT>::GetYMin(ext), ExtentOp<EXTENT>::GetZMin(ext),
+                                       ExtentOp<EXTENT>::GetXMax(ext), ExtentOp<EXTENT>::GetYMax(ext), ExtentOp<EXTENT>::GetZMax(ext));
+    bvector<DPoint3d> polyPts;
+    GetClipRegistry()->GetClip(clipId, polyPts);
+
+    size_t n = 0;
+    for (auto&pt : polyPts)
+        {
+        if (extRange.IsContainedXY(pt)) ++n;
+        pt.z = 0;
+        }
+    if (n >2) return true;
+
+    ICurvePrimitivePtr curvePtr(ICurvePrimitive::CreateLineString(polyPts));
+    CurveVectorPtr curveVectorPtr(CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr));
+
+    extRange.low.z = extRange.high.z = 0;
+    DPoint3d box[5] = { extRange.low, DPoint3d::From(extRange.low.x, extRange.high.y, 0), extRange.high, DPoint3d::From(extRange.high.x, extRange.low.y, 0), extRange.low };
+    bool allInsidePolygon = true;
+    for (size_t i = 0; i < 4 && allInsidePolygon; ++i)
+        {
+        auto classif =curveVectorPtr->PointInOnOutXY(box[i]);
+        if (classif == CurveVector::InOutClassification::INOUT_Out) allInsidePolygon = false;
+        }
+    if (allInsidePolygon) return true;
+    ICurvePrimitivePtr boxCurvePtr(ICurvePrimitive::CreateLineString(box,5));
+    CurveVectorPtr boxCurveVecPtr(CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, boxCurvePtr));
+
+    const CurveVectorPtr intersection = CurveVector::AreaIntersection(*curveVectorPtr, *boxCurveVecPtr);
+
+    return (!intersection.IsNull());
+    }
+    
 
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 09/15
 //=======================================================================================
     template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::AddClip(uint64_t clipId, bool isVisible, bool setToggledWhenIdIsOn)
     {
-    if (size() == 0 || m_nodeHeader.m_nbFaceIndexes < 3) return false;
+    if (size() == 0 || m_nodeHeader.m_nbFaceIndexes < 3) return true;
 #ifdef USE_DIFFSET
     bvector<DPoint3d> clipPts;
     GetClipRegistry()->GetClip(clipId - 1, clipPts);
@@ -2823,11 +2862,14 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::BuildS
         std::string s;
         s += " AREA IS" + std::to_string(bsiGeom_getXYPolygonArea(&clipPts[0], (int)clipPts.size()));
 #endif
+        bool emptyClip = false;
         //if (nodeRange.XLength() <= clipExt.XLength() * 10000 && nodeRange.YLength() <= clipExt.YLength() * 10000)
+        if (ClipIntersectsBox(clipId, m_nodeHeader.m_nodeExtent))
 #ifdef USE_DIFFSET
             d = clipNode.ClipNonConvexPolygon2D(&clipPts[0], clipPts.size());
 #else
             {
+            //std::cout << " adding clip " << clipId << " to node " << GetBlockID().m_integerID << std::endl;
             d.clientID = clipId;
             d.firstIndex = (int32_t)size() + 1;
             d.toggledForID = setToggledWhenIdIsOn;
@@ -2842,7 +2884,11 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::BuildS
             }
 
 #endif
-        bool emptyClip = false;
+        else
+            {
+            emptyClip = true;
+            //std::cout << " discounting clip " << clipId << " for node " << GetBlockID().m_integerID << " because test failed " << std::endl;
+            }
        // if (d.addedFaces.size() == 0 && d.removedFaces.size() == 0 && d.addedVertices.size() == 0 && d.removedVertices.size() == 0) emptyClip = true;
 #ifdef USE_DIFFSET
         d.clientID = clipId;
@@ -2930,7 +2976,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::DoClip
 //=======================================================================================
 template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::DeleteClip(uint64_t clipId, bool isVisible, bool setToggledWhenIdIsOn)
     {
-    if (size() == 0 || m_nodeHeader.m_nbFaceIndexes < 3) return false;
+    if (size() == 0 || m_nodeHeader.m_nbFaceIndexes < 3) return true;
     bool found = false;
     for (auto it = m_differenceSets.begin(); it != m_differenceSets.end(); ++it)
         {
@@ -2954,7 +3000,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Delete
 //=======================================================================================
 template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ModifyClip(uint64_t clipId, bool isVisible, bool setToggledWhenIdIsOn)
     {
-    if (size() == 0 || m_nodeHeader.m_nbFaceIndexes < 3) return false;
+    if (size() == 0 || m_nodeHeader.m_nbFaceIndexes < 3) return true;
 #ifdef USE_DIFFSET
     bvector<DPoint3d> clipPts;
     GetClipRegistry()->GetClip(clipId, clipPts);
@@ -3006,6 +3052,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Modify
             *it = DifferenceSet();
             it->clientID = clipId;
             it->toggledForID = setToggledWhenIdIsOn;
+            found = true;
 #endif
             }
 #ifndef USE_DIFFSET
@@ -3014,6 +3061,10 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Modify
             it->upToDate = false;
             }
 #endif
+        }
+    if (!found)
+        {
+        found = ClipIntersectsBox(clipId, m_nodeHeader.m_nodeExtent);
         }
     return found;
     }

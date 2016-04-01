@@ -689,6 +689,9 @@ size_t GetNbPtsIndices(size_t texture_id) const
     BcDTMPtr m_tileBcDTM;
     std::mutex m_dtmLock;
     private:
+
+        bool ClipIntersectsBox(uint64_t clipId, EXTENT ext);
+
         mutable HPMStoredPooledVector<DifferenceSet> m_differenceSets;
         mutable HPMStoredPooledVector<MTGGraph> m_graphVec;
         mutable std::mutex m_graphInflateMutex;
