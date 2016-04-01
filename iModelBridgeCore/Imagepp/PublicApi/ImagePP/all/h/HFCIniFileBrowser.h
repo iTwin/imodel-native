@@ -94,7 +94,7 @@ public:
 
     //:> Variable methods.
     IMAGEPP_EXPORT bool               GetVariableValue(Utf8CP pi_rVariableName, Utf8String& po_rValue, bool pi_KeepLineSeparator = false);
-                   bool               GetVariableValue(Utf8CP pi_rVariableName, AString& po_rValue, bool pi_KeepLineSeparator = false);
+    IMAGEPP_EXPORT bool               GetVariableValue(Utf8CP pi_rVariableName, AString& po_rValue, bool pi_KeepLineSeparator = false);
     IMAGEPP_EXPORT bool               GetVariableValue(Utf8CP pi_rVariableName, WString& po_rValue, bool pi_KeepLineSeparator = false);
 
 private:

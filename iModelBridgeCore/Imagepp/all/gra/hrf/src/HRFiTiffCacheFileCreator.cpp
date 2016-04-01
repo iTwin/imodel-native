@@ -282,7 +282,7 @@ HFCPtr<HFCURL> HRFiTiffCacheFileCreator::ComposeURLFor(const HFCPtr<HFCURL>& pi_
     {
     if (pi_Page != -1 && pi_Page != 0)
         {
-        Utf8PrintfString extension(".page%d%s", pi_Page, pi_Extension);        
+        Utf8PrintfString extension(".page%d%s", pi_Page, pi_Extension.c_str());        
         return HRFLocalCacheFileCreator::ComposeURLFor(pi_rpURLFileName, extension.c_str(), pi_Offset);
         }
     else
