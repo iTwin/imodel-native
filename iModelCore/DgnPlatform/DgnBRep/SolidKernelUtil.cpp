@@ -54,18 +54,42 @@ virtual void _SetEntityTransform (TransformCR transform) override
 
     if (!goopTrans.IsIdentity())
         {
-        gp_GTrsf goopTrsf = OCBRepUtil::ToGpGTrsf(goopTrans);
+        double  goopScale;
 
-        m_shape.Location(TopLoc_Location()); // NOTE: Need to ignore shape location...
-        BRepBuilderAPI_GTransform transformer(m_shape, goopTrsf);
-    
-        if (!transformer.IsDone())
+        goopTrans.GetMatrix(rMatrix);
+
+        if (rMatrix.IsUniformScale(goopScale))
             {
-            BeAssert(false);
-            return;
+            gp_Trsf goopTrsf = OCBRepUtil::ToGpTrsf(goopTrans);
+
+            m_shape.Location(TopLoc_Location()); // NOTE: Need to ignore shape location...
+            BRepBuilderAPI_Transform transformer(m_shape, goopTrsf);
+    
+            if (!transformer.IsDone())
+                {
+                BeAssert(false);
+                return;
+                }
+
+            m_shape = transformer.ModifiedShape(m_shape);
+            }
+        else
+            {
+            gp_GTrsf goopTrsf = OCBRepUtil::ToGpGTrsf(goopTrans);
+
+            m_shape.Location(TopLoc_Location()); // NOTE: Need to ignore shape location...
+            BRepBuilderAPI_GTransform transformer(m_shape, goopTrsf);
+    
+            if (!transformer.IsDone())
+                {
+                BeAssert(false);
+                return;
+                }
+
+            m_shape = transformer.ModifiedShape(m_shape);
             }
 
-        m_shape = transformer.ModifiedShape(m_shape);
+        BeAssert(m_shape.Location().IsIdentity());
         }
 
     m_shape.Location(OCBRepUtil::ToGpTrsf(shapeTrans));
