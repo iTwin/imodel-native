@@ -201,7 +201,7 @@ struct SmCachedGraphics : TransientCachedGraphics
 
 
 static bool s_waitCheckStop = false;
-static Byte s_transparency = 200;
+static Byte s_transparency = 100;
 
 void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes,
                               bvector<IScalableMeshCachedDisplayNodePtr>& overviewMeshNodes,
@@ -509,7 +509,7 @@ virtual Completion _Process(ViewContextR viewContext) override
         if (m_progressiveQueryEngine->IsQueryComplete(queryId))
             {
             m_currentDrawingInfoPtr->m_meshNodes.clear();
-            StatusInt status = m_progressiveQueryEngine->GetQueriedNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
+            StatusInt status = m_progressiveQueryEngine->GetRequiredNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
 
             assert(m_currentDrawingInfoPtr->m_overviewNodes.size() == 0 || m_currentDrawingInfoPtr->m_meshNodes.size() > 0);
 
@@ -524,11 +524,15 @@ virtual Completion _Process(ViewContextR viewContext) override
 #endif
             }
         else
-            {                                                
+            {                                       
             m_currentDrawingInfoPtr->m_meshNodes.clear();
-            StatusInt status = m_progressiveQueryEngine->GetQueriedNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
+            StatusInt status = m_progressiveQueryEngine->GetRequiredNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
             assert(status == SUCCESS);                                  
 
+            m_currentDrawingInfoPtr->m_overviewNodes.clear();
+            status = m_progressiveQueryEngine->GetOverviewNodes(m_currentDrawingInfoPtr->m_overviewNodes, queryId);
+            assert(status == SUCCESS);                                  
+                        
             completionStatus = Completion::Aborted;
 
             if (s_drawInProcess)
@@ -721,7 +725,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     if (m_progressiveQueryEngine->IsQueryComplete(queryId))
         {
         m_currentDrawingInfoPtr->m_meshNodes.clear();
-        status = m_progressiveQueryEngine->GetQueriedNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
+        status = m_progressiveQueryEngine->GetRequiredNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
 
         bvector<IScalableMeshNodePtr> nodes;
         for (auto& nodeP : m_currentDrawingInfoPtr->m_meshNodes) nodes.push_back(nodeP.get());
