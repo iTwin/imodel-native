@@ -8,9 +8,9 @@
 #pragma once
 #include <ECDb/ECDbSchemaManager.h>
 #include "ClassMap.h"
-#include "ClassMapInfo.h"
 #include "DbSchemaPersistenceManager.h"
 #include "ECSchemaComparer.h"
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
@@ -18,27 +18,29 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 struct ECSchemaCompareContext
     {
-    private:
-        ECSchemaList m_existingSchemaList;
-        ECSchemaList m_importedSchemaList;
-        ECSchemaChanges m_changes;
-        bool m_prepared;
-    private:
-        bool AssertIfNotPrepared() const;
-    public:
-        ECSchemaCompareContext() : m_prepared(false) {}
-        ~ECSchemaCompareContext() {}
-        BentleyStatus Prepare(ECDbSchemaManager const& schemaManager, bvector<ECSchemaP> const& dependencyOrderedPrimarySchemas);
-        ECSchemaList const& GetExistingSchemaSet() const { return m_existingSchemaList; }
-        ECSchemaList const& GetImportedSchemaSet() const { return m_importedSchemaList; }
-        ECSchemaCP FindExistingSchema(Utf8CP schemaName) const;
-        ECSchemaCP FindImportedSchema(Utf8CP schemaName) const;
-        bool RequireECSchemaUpgrade() const;
-        bool IsPrepared() const { return m_prepared; }
-        ECSchemaChanges& GetChanges() { return m_changes; }
-        bool IsEmpty() const { return m_importedSchemaList.empty(); }
-        BentleyStatus ReloadECSchemaIfRequired(ECDbSchemaManager const& schemaManager);
+private:
+    ECSchemaList m_existingSchemaList;
+    ECSchemaList m_importedSchemaList;
+    ECSchemaChanges m_changes;
+    bool m_prepared;
+
+    bool AssertIfNotPrepared() const;
+    
+public:
+    ECSchemaCompareContext() : m_prepared(false) {}
+    ~ECSchemaCompareContext() {}
+    BentleyStatus Prepare(ECDbSchemaManager const& schemaManager, bvector<ECSchemaP> const& dependencyOrderedPrimarySchemas);
+    ECSchemaList const& GetExistingSchemaSet() const { return m_existingSchemaList; }
+    ECSchemaList const& GetImportedSchemaSet() const { return m_importedSchemaList; }
+    ECSchemaCP FindExistingSchema(Utf8CP schemaName) const;
+    ECSchemaCP FindImportedSchema(Utf8CP schemaName) const;
+    bool RequireECSchemaUpgrade() const;
+    bool IsPrepared() const { return m_prepared; }
+    ECSchemaChanges& GetChanges() { return m_changes; }
+    bool IsEmpty() const { return m_importedSchemaList.empty(); }
+    BentleyStatus ReloadECSchemaIfRequired(ECDbSchemaManager const& schemaManager);
     };
+
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      05/2014
 //+===============+===============+===============+===============+===============+======
@@ -46,7 +48,7 @@ struct SchemaImportContext
     {
 private:
     mutable std::map<ECN::ECClassCP, std::unique_ptr<UserECDbMapStrategy>> m_userStrategyCache;
-    std::map<ClassMap const*, std::unique_ptr<ClassMapInfo>> m_classMapInfoCache;
+    std::map<ClassMap const*, std::unique_ptr<ClassMappingInfo>> m_classMapInfoCache;
     bset<ECN::ECRelationshipClassCP> m_relationshipClassesWithSingleNavigationProperty;
     ClassMapLoadContext m_loadContext;
     ECSchemaCompareContext m_compareContext;
@@ -63,8 +65,8 @@ public:
     UserECDbMapStrategy const* GetUserStrategy(ECN::ECClassCR, ECN::ECDbClassMap const* = nullptr) const;
     UserECDbMapStrategy* GetUserStrategyP(ECN::ECClassCR) const;
 
-    void CacheClassMapInfo(ClassMap const&, std::unique_ptr<ClassMapInfo>&);
-    std::map<ClassMap const*, std::unique_ptr<ClassMapInfo>> const& GetClassMapInfoCache() const { return m_classMapInfoCache; }
+    void CacheClassMapInfo(ClassMap const&, std::unique_ptr<ClassMappingInfo>&);
+    std::map<ClassMap const*, std::unique_ptr<ClassMappingInfo>> const& GetClassMapInfoCache() const { return m_classMapInfoCache; }
 
     void AddNRelationshipRelationshipClassWithSingleNavigationProperty(ECN::ECRelationshipClassCR relClass) { m_relationshipClassesWithSingleNavigationProperty.insert(&relClass); }
     bool IsRelationshipClassWithSingleNavigationProperty(ECN::ECRelationshipClassCR relClass) const { return m_relationshipClassesWithSingleNavigationProperty.find(&relClass) != m_relationshipClassesWithSingleNavigationProperty.end(); }

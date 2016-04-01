@@ -1770,126 +1770,133 @@ TEST_F (ECDbMappingTestFixture, SharedColumnCA)
         "</ECSchema>", false, "MinimumSharedColumnCount can only be defined on first occurrence of SharedColumn option in a hierarchy"));
 
     AssertSchemaImport (testItems, "sharedtablecatests.ecdb");
-
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-void AssertColumnCount(ECDbCR ecdb, std::vector<std::pair<Utf8String, int>> const& testItems, Utf8CP scenario)
+TEST_F(ECDbMappingTestFixture, MinimumSharedColumnCount)
     {
-    for (std::pair<Utf8String, int> const& kvPair : testItems)
         {
-        Utf8CP tableName = kvPair.first.c_str();
-        const int expectedColCount = kvPair.second;
-        bvector<Utf8String> colNames;
-        ASSERT_TRUE(ecdb.GetColumns(colNames, tableName)) << tableName << " Scenario: " << scenario;
-        ASSERT_EQ(expectedColCount, colNames.size()) << tableName << " Scenario: " << scenario;
+        ECDbR ecdb = SetupECDb("minimumsharedcolumncount.ecdb", SchemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+            "   <ECEntityClass typeName='Parent' modifier='None' >"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.01'>"
+            "                <MapStrategy>"
+            "                   <Strategy>SharedTable</Strategy>"
+            "                   <Options>SharedColumns</Options>"
+            "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+            "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+            "                 </MapStrategy>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "       <ECProperty propertyName='P1' typeName='int' />"
+            "   </ECEntityClass>"
+            "</ECSchema>"));
+        ASSERT_TRUE(ecdb.IsDbOpen());
+        ecdb.SaveChanges();
+
+        std::vector<std::pair<Utf8String, int>> testItems;
+        testItems.push_back(std::make_pair("ts_Parent", 7));
+        AssertColumnCount(ecdb, testItems, "MinimumSharedColumns");
         }
-    };
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     03/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, MinimumSharedColumns)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Parent' modifier='None' >"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.01.01'>"
-        "                <MapStrategy>"
-        "                   <Strategy>SharedTable</Strategy>"
-        "                   <Options>SharedColumns</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-        "                 </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='P1' typeName='int' />"
-        "   </ECEntityClass>"
-        "</ECSchema>");
+        {
+        ECDbR ecdb = SetupECDb("minimumsharedcolumncount.ecdb", SchemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+            "   <ECEntityClass typeName='Parent' modifier='None' >"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.01'>"
+            "                <MapStrategy>"
+            "                   <Strategy>SharedTable</Strategy>"
+            "                   <Options>SharedColumnsForSubclasses</Options>"
+            "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+            "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+            "                 </MapStrategy>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "       <ECProperty propertyName='P1' typeName='int' />"
+            "   </ECEntityClass>"
+            "</ECSchema>"));
+        ASSERT_TRUE(ecdb.IsDbOpen());
+        ecdb.SaveChanges();
 
-    ECDbR ecdb = SetupECDb("minimumsharedcolumns.ecdb", schemaItem);
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ecdb.SaveChanges();
+        std::vector<std::pair<Utf8String, int>> testItems;
+        testItems.push_back(std::make_pair("ts_Parent", 3));
+        AssertColumnCount(ecdb, testItems, "MinimumSharedColumns");
+        }
 
-    std::vector<std::pair<Utf8String, int>> testItems;
-    testItems.push_back(std::make_pair("ts_Parent", 7));
-    AssertColumnCount(ecdb, testItems, "MinimumSharedColumns");
-    }
+        {
+        ECDbR ecdb = SetupECDb("minimumsharedcolumncount.ecdb", SchemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "    <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+            "    <ECEntityClass typeName='Parent' modifier='None'>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.01'>"
+            "                <MapStrategy>"
+            "                   <Strategy>SharedTable</Strategy>"
+            "                   <Options>SharedColumnsForSubclasses</Options>"
+            "                   <MinimumSharedColumnCount>100</MinimumSharedColumnCount>"
+            "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+            "                 </MapStrategy>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='Price' typeName='double' />"
+            "    </ECEntityClass>"
+            "    <ECEntityClass typeName='Sub1' modifier='None'>"
+            "        <BaseClass>Parent</BaseClass>"
+            "        <ECProperty propertyName='Cost' typeName='double' />"
+            "    </ECEntityClass>"
+            "    <ECEntityClass typeName='Sub2' modifier='None'>"
+            "        <BaseClass>Parent</BaseClass>"
+            "        <ECProperty propertyName='DoubleProp' typeName='double' />"
+            "    </ECEntityClass>"
+            "    <ECEntityClass typeName='Sub11' modifier='None'>"
+            "        <BaseClass>Sub1</BaseClass>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.01'>"
+            "                <MapStrategy>"
+            "                   <Options>SharedColumns</Options>"
+            "                 </MapStrategy>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='Diameter' typeName='double' />"
+            "    </ECEntityClass>"
+            "</ECSchema>"));
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   02/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, MinimumSharedColumnsForSubClasses)
-    {
-    ECDbR ecdb = SetupECDb("minimumsharedcolcount.ecdb", SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
-        "    <ECEntityClass typeName='Parent' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.01.01'>"
-        "                <MapStrategy>"
-        "                   <Strategy>SharedTable</Strategy>"
-        "                   <Options>SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>100</MinimumSharedColumnCount>"
-        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-        "                 </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Price' typeName='double' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub1' modifier='None'>"
-        "        <BaseClass>Parent</BaseClass>"
-        "        <ECProperty propertyName='Cost' typeName='double' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub2' modifier='None'>"
-        "        <BaseClass>Parent</BaseClass>"
-        "        <ECProperty propertyName='DoubleProp' typeName='double' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub11' modifier='None'>"
-        "        <BaseClass>Sub1</BaseClass>"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.01.01'>"
-        "                <MapStrategy>"
-        "                   <Options>SharedColumns</Options>"
-        "                 </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Diameter' typeName='double' />"
-        "    </ECEntityClass>"
-        "</ECSchema>"));
+        ASSERT_TRUE(ecdb.IsDbOpen());
+        ecdb.SaveChanges();
 
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ecdb.SaveChanges();
+        std::vector<std::pair<Utf8String, int>> testItems;
+        testItems.push_back(std::make_pair("ts_Parent", 103));
+        AssertColumnCount(ecdb, testItems, "After first schema import");
 
-    std::vector<std::pair<Utf8String, int>> testItems;
-    testItems.push_back(std::make_pair("ts_Parent", 103));
-    AssertColumnCount(ecdb, testItems, "After first schema import");
+        SchemaItem secondSchema(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts' />"
+            "    <ECEntityClass typeName='Sub3'>"
+            "        <BaseClass>ts:Parent</BaseClass>"
+            "        <ECProperty propertyName='Prop3' typeName='double' />"
+            "    </ECEntityClass>"
+            "    <ECEntityClass typeName='Sub111'>"
+            "        <BaseClass>ts:Sub11</BaseClass>"
+            "        <ECProperty propertyName='Prop111' typeName='double' />"
+            "    </ECEntityClass>"
+            "</ECSchema>");
 
-    SchemaItem secondSchema(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts' />"
-        "    <ECEntityClass typeName='Sub3'>"
-        "        <BaseClass>ts:Parent</BaseClass>"
-        "        <ECProperty propertyName='Prop3' typeName='double' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub111'>"
-        "        <BaseClass>ts:Sub11</BaseClass>"
-        "        <ECProperty propertyName='Prop111' typeName='double' />"
-        "    </ECEntityClass>"
-        "</ECSchema>");
+        bool asserted = false;
+        AssertSchemaImport(asserted, ecdb, secondSchema);
+        ASSERT_FALSE(asserted);
 
-    bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, secondSchema);
-    ASSERT_FALSE(asserted);
-
-    AssertColumnCount(ecdb, testItems, "After second schema import");
+        AssertColumnCount(ecdb, testItems, "After second schema import");
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1897,7 +1904,7 @@ TEST_F(ECDbMappingTestFixture, MinimumSharedColumnsForSubClasses)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, MinimumSharedColumnCountWithJoinedTable)
     {
-    ECDbR ecdb = SetupECDb("minimumsharedcolcount.ecdb", SchemaItem(
+    ECDbR ecdb = SetupECDb("minimumsharedcolumncount.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
@@ -1962,9 +1969,9 @@ TEST_F(ECDbMappingTestFixture, MinimumSharedColumnCountWithJoinedTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, MinimumSharedColumnBisScenario)
+TEST_F(ECDbMappingTestFixture, MinimumSharedColumnCountBisScenario)
     {
-    ECDbR ecdb = SetupECDb("minimumsharedcolcount.ecdb", SchemaItem(
+    ECDbR ecdb = SetupECDb("minimumsharedcolumncount.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"

@@ -19,15 +19,20 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDbSchemaManager::ECDbSchemaManager(ECDbCR ecdb, ECDbMap& map) :m_ecdb(ecdb), m_map(map)
-    {
-    m_ecReader = ECDbSchemaReader::Create(ecdb);
-    }
+ECDbSchemaManager::ECDbSchemaManager(ECDbCR ecdb, ECDbMap& map) :m_ecdb(ecdb), m_map(map), m_schemaReader(new ECDbSchemaReader(ecdb))
+    {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      01/2013
 //---------------------------------------------------------------------------------------
-ECDbSchemaManager::~ECDbSchemaManager () {}
+ECDbSchemaManager::~ECDbSchemaManager () 
+    {
+    if (m_schemaReader != nullptr)
+        {
+        delete m_schemaReader;
+        m_schemaReader = nullptr;
+        }
+    }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                   Affan.Khan        06/2012
@@ -166,7 +171,7 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache, ImportOpt
     if (compareContext.ReloadECSchemaIfRequired(*this) == ERROR)
         return ERROR;
 
-    if (MapStatus::Error == m_map.MapSchemas(context))
+    if (MappingStatus::Error == m_map.MapSchemas(context))
         return ERROR;
 
     {
@@ -328,7 +333,7 @@ ECSchemaCP ECDbSchemaManager::GetECSchema (Utf8CP schemaName, bool ensureAllClas
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCP ECDbSchemaManager::GetECSchema (ECSchemaId schemaId, bool ensureAllClassesLoaded) const
     {
-    return m_ecReader->GetECSchema(schemaId, ensureAllClassesLoaded);
+    return m_schemaReader->GetECSchema(schemaId, ensureAllClassesLoaded);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -362,7 +367,7 @@ ECClassCP ECDbSchemaManager::GetECClass (Utf8CP schemaNameOrPrefix, Utf8CP class
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP ECDbSchemaManager::GetECClass(ECClassId ecClassId) const
     {
-    return m_ecReader->GetECClass(ecClassId);
+    return m_schemaReader->GetECClass(ecClassId);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -370,7 +375,7 @@ ECClassCP ECDbSchemaManager::GetECClass(ECClassId ecClassId) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDbSchemaManager::TryGetECClassId(ECClassId& id, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema) const
     {
-    return m_ecReader->TryGetECClassId(id, schemaNameOrPrefix, className, resolveSchema);
+    return m_schemaReader->TryGetECClassId(id, schemaNameOrPrefix, className, resolveSchema);
     }
 
 //---------------------------------------------------------------------------------------
@@ -391,7 +396,7 @@ ECDerivedClassesList const& ECDbSchemaManager::GetDerivedECClasses (ECClassCR ba
 //+---------------+---------------+---------------+---------------+---------------+------
 ECEnumerationCP ECDbSchemaManager::GetECEnumeration(Utf8CP schemaName, Utf8CP enumName) const
     {
-    return m_ecReader->GetECEnumeration(schemaName, enumName);
+    return m_schemaReader->GetECEnumeration(schemaName, enumName);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -415,7 +420,7 @@ BentleyStatus ECDbSchemaManager::GetECClassKeys (ECClassKeys& keys, Utf8CP schem
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECDbSchemaManager::ClearCache () const { m_ecReader->ClearCache(); }
+void ECDbSchemaManager::ClearCache () const { m_schemaReader->ClearCache(); }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        09/2012
@@ -434,7 +439,7 @@ ECSchemaPtr ECDbSchemaManager::_LocateSchema(SchemaKeyR key, SchemaMatchType mat
     if (!schemaId.IsValid())
         return nullptr;
 
-    ECSchemaCP schema = m_ecReader->GetECSchema(schemaId, true);
+    ECSchemaCP schema = m_schemaReader->GetECSchema(schemaId, true);
     if (schema == nullptr)
         return nullptr;
 
@@ -499,7 +504,7 @@ BentleyStatus ECDbSchemaManager::EnsureDerivedClassesExist(ECN::ECClassCR ecClas
     else
         ecClassId = GetClassIdForECClassFromDuplicateECSchema(m_ecdb, ecClass);
 
-    return m_ecReader->EnsureDerivedClassesExist(ecClassId);
+    return m_schemaReader->EnsureDerivedClassesExist(ecClassId);
     }
 
 //---------------------------------------------------------------------------------------

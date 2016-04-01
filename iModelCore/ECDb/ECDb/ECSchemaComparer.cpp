@@ -175,43 +175,45 @@ BentleyStatus Binary::CopyFrom(ECValueCR value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::CompareECSchemas(ECSchemaChanges& changes, ECSchemaList const& a, ECSchemaList const& b)
+BentleyStatus ECSchemaComparer::Compare(ECSchemaChanges& changes, ECSchemaList const& lhs, ECSchemaList const& rhs)
     {
-    std::map<Utf8CP, ECSchemaCP, CompareUtf8> aMap, bMap, cMap;
-    for (ECSchemaCP schemaCP : a)
-        aMap[schemaCP->GetName().c_str()] = schemaCP;
+    std::map<Utf8CP, ECSchemaCP, CompareUtf8> lhsMap, rhsMap, allSchemasMap;
+    for (ECSchemaCP schema : lhs)
+        lhsMap[schema->GetName().c_str()] = schema;
 
-    for (ECSchemaCP schemaCP : b)
-        bMap[schemaCP->GetName().c_str()] = schemaCP;
+    for (ECSchemaCP schema : rhs)
+        rhsMap[schema->GetName().c_str()] = schema;
 
-    cMap.insert(aMap.cbegin(), aMap.cend());
-    cMap.insert(bMap.cbegin(), bMap.cend());
+    allSchemasMap.insert(lhsMap.cbegin(), lhsMap.cend());
+    allSchemasMap.insert(rhsMap.cbegin(), rhsMap.cend());
 
-    for (auto& u : cMap)
+    for (std::pair<Utf8CP, ECSchemaCP> const& kvPair : allSchemasMap)
         {
-        auto itorA = aMap.find(u.first);
-        auto itorB = bMap.find(u.first);
+        Utf8CP schemaName = kvPair.first;
+        auto lhsIt = lhsMap.find(schemaName);
+        auto rhsIt = rhsMap.find(schemaName);
 
-        bool existInA = itorA != aMap.end();
-        bool existInB = itorB != bMap.end();
-        if (existInA && existInB)
+        const bool existInLhs = lhsIt != lhsMap.end();
+        const bool existInRhs = rhsIt != rhsMap.end();
+        if (existInLhs && existInRhs)
             {
-            auto& classChange = changes.Add(ChangeState::Modified, u.first);
-            if (CompareECSchema(classChange, *itorA->second, *itorB->second) == ERROR)
+            ECSchemaChange& schemaChange = changes.Add(ChangeState::Modified, schemaName);
+            if (SUCCESS != CompareECSchema(schemaChange, *lhsIt->second, *rhsIt->second))
                 return ERROR;
             }
-        else if (existInA && !existInB)
+        else if (existInLhs && !existInRhs)
             {
-            if (AppendECSchema(changes, *itorA->second, ValueId::Deleted) == ERROR)
+            if (AppendECSchema(changes, *lhsIt->second, ValueId::Deleted) == ERROR)
                 return ERROR;
             }
-        else if (!existInA && existInB)
+        else if (!existInLhs && existInRhs)
             {
-            if (AppendECSchema(changes, *itorB->second, ValueId::New) == ERROR)
+            if (AppendECSchema(changes, *rhsIt->second, ValueId::New) == ERROR)
                 return ERROR;
             }
         }
 
+    changes.Optimize();
     return SUCCESS;
     }
 
@@ -1396,153 +1398,25 @@ std::vector<Utf8String> ECSchemaComparer::Split(Utf8StringCR path)
     return axis;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::Compare(ECSchemaChanges& changes, ECSchemaList const& existingSet, ECSchemaList const& newSet)
-    {
-    if (CompareECSchemas(changes, existingSet, newSet) != SUCCESS)
-        return ERROR;
-
-    changes.Optimize();
-    return SUCCESS;
-    }
-
-//======================================================================================>
+//======================================================================================
 //ECChange
-//======================================================================================>
+//======================================================================================
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-//static 
-std::map<Utf8CP, SystemId, CompareUtf8> const& ECChange::GetStringToTypeMap()
-{
-static std::map<Utf8CP, SystemId, CompareUtf8> keyToId;
-if (keyToId.empty())
-    {
-    for (auto const& kp : GetTypeToStringMap())
-        {
-        keyToId[kp.second.c_str()] = kp.first;
-        }
-    }
-
-return keyToId;
-}
+ECChange::ECChange(ChangeState state, SystemId systemId, ECChange const* parent, Utf8CP customId)
+    :m_systemId(systemId), m_customId(customId), m_state(state), m_applied(false), m_parent(parent)
+    {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-//static 
-std::map<SystemId, Utf8String> const& ECChange::GetTypeToStringMap()
-{
-static std::map<SystemId, Utf8String> idToKey
+Utf8CP ECChange::GetId() const
     {
-            {SystemId::None, ""},
-            {SystemId::AlternativePresentationUnitList, "AlternativePresentationUnitList"},
-            {SystemId::Array, "Array"},
-            {SystemId::BaseClass, "BaseClass"},
-            {SystemId::BaseClasses, "BaseClasses"},
-            {SystemId::Cardinality, "Cardinality"},
-            {SystemId::Classes, "Classes"},
-            {SystemId::Class, "Class"},
-            {SystemId::ConstantKey, "ConstantKey"},
-            {SystemId::ClassFullName, "ClassFullName"},
-            {SystemId::ClassModifier, "ClassModifier"},
-            {SystemId::ConstraintClass, "ConstraintClass"},
-            {SystemId::ConstraintClasses, "ConstraintClasses"},
-            {SystemId::Constraint, "Constraint"},
-            {SystemId::CustomAttributes, "CustomAttributes"},
-            {SystemId::DefaultPresentationUnit, "DefaultPresentationUnit"},
-            {SystemId::Description, "Description"},
-            {SystemId::Direction, "Direction"},
-            {SystemId::PropertyValue,"PropertyValue"},
-            {SystemId::PropertyValues,"PropertyValues"},
-            {SystemId::DisplayLabel, "DisplayLabel"},
-            {SystemId::Enumeration, "Enumeration"},
-            {SystemId::Enumerations, "Enumerations"},
-            {SystemId::Enumerator, "Enumerator"},
-            {SystemId::Enumerators, "Enumerators"},
-            {SystemId::ExtendedTypeName, "ExtendTypeName"},
-            {SystemId::Instance, "Instance"},
-            {SystemId::Instances, "Instances"},
-            {SystemId::Integer, "Integer"},
-            {SystemId::IsCustomAttributeClass, "IsCustomAttributeClass"},
-            {SystemId::IsEntityClass, "IsEntityClass"},
-            {SystemId::IsPolymorphic, "IsPolymorphic"},
-            {SystemId::IsReadonly, "IsReadOnly"},
-            {SystemId::IsRelationshipClass, "IsRelationshipClass"},
-            {SystemId::IsStrict, "IsStict"},
-            {SystemId::IsStructClass, "IsStructClass"},
-            {SystemId::IsStruct, "IsStruct"},
-            {SystemId::IsStructArray, "IsStructArray"},
-            {SystemId::IsPrimitive, "IsPrimitive"},
-            {SystemId::IsPrimitiveArray, "IsPrimitiveArray"},
-            {SystemId::IsNavigation, "IsNavigation"},
-            {SystemId::KeyProperties, "KeyProperties"},
-            {SystemId::KeyProperty, "KeyProperty"},
-            {SystemId::KindOfQuantities, "KindOfQuantities"},
-            {SystemId::KindOfQuantity, "KindOfQuantity"},
-            {SystemId::MaximumValue, "MaximumValue"},
-            {SystemId::MaxOccurs, "MaxOccurs"},
-            {SystemId::MinimumValue, "MinimumValue"},
-            {SystemId::MinOccurs, "MinOccurs"},
-            {SystemId::Name, "Name"},
-            {SystemId::NamespacePrefix, "NameSpacePrefix"},
-            {SystemId::Navigation, "Navigation"},
-            {SystemId::PersistenceUnit, "PersistenceUnit"},
-            {SystemId::Precision, "Precision"},
-            {SystemId::Properties, "Properties"},
-            {SystemId::Property, "Property"},
-            {SystemId::PropertyType, "PropertyType"},
-            {SystemId::Reference, "Reference"},
-            {SystemId::References, "References"},
-            {SystemId::Relationship, "Relationship"},
-            {SystemId::RelationshipName, "RelationshipName"},
-            {SystemId::RoleLabel, "RoleLabel"},
-            {SystemId::Schema, "Schema"},
-            {SystemId::Schemas, "Schemas"},
-            {SystemId::Source, "Source"},
-            {SystemId::StrengthDirection, "StrengthDirection"},
-            {SystemId::StrengthType, "StrengthType"},
-            {SystemId::String, "String"},
-            {SystemId::Target, "Target"},
-            {SystemId::TypeName, "TypeName"},
-            {SystemId::VersionMajor, "VersionMajor"},
-            {SystemId::VersionMinor, "VersionMinor"},
-            {SystemId::VersionWrite, "VersionWrite"},
-    };
+    if (!m_customId.empty())
+        return m_customId.c_str();
 
-return idToKey;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-//static 
-Utf8StringCR ECChange::Convert(SystemId id)
-    {
-    std::map<SystemId, Utf8String> const& idToKey = GetTypeToStringMap();
-    auto itor = idToKey.find(id);
-    if (itor != idToKey.end())
-        return itor->second;
-
-    BeAssert(false && "Failed to convert to string");
-    return idToKey.find(SystemId::None)->second;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-//static 
-SystemId ECChange::Convert(Utf8CP id)
-    {
-    std::map<Utf8CP, SystemId, CompareUtf8> const& keyToId = GetStringToTypeMap();
-    auto itor = keyToId.find(id);
-    if (itor != keyToId.end())
-        return itor->second;
-
-    BeAssert(false && "Failed to decode type id into string");
-    return SystemId::None;
+    return SystemIdToString(m_systemId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1551,7 +1425,6 @@ SystemId ECChange::Convert(Utf8CP id)
 //static  
 void ECChange::AppendBegin(Utf8StringR str, ECChange const& change, int currentIndex)
     {
-
     if (change.GetState() == ChangeState::Deleted)
         str += "-";
     else if (change.GetState() == ChangeState::New)
@@ -1562,92 +1435,184 @@ void ECChange::AppendBegin(Utf8StringR str, ECChange const& change, int currentI
     for (int i = 0; i < currentIndex; i++)
         str.append(" ");
 
-    str.append(Convert(change.GetSystemId()));
+    str.append(SystemIdToString(change.GetSystemId()));
+
     if (change.HasCustomId())
-        str.append("(").append(change.GetId().c_str()).append(")");
+        str.append("(").append(change.GetId()).append(")");
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-//static
-void ECChange::AppendEnd(Utf8StringR str)
+//static 
+SystemId ECChange::StringToSystemId(Utf8CP idString)
     {
-    str.append("\r\n");
+    if (Utf8String::IsNullOrEmpty(idString))
+        return SystemId::None;
+
+    if (strcmp(idString, "AlternativePresentationUnitList") == 0)  return SystemId::AlternativePresentationUnitList;
+    if (strcmp(idString, "Array") == 0) return SystemId::Array;
+    if (strcmp(idString, "BaseClass") == 0) return SystemId::BaseClass;
+    if (strcmp(idString, "BaseClasses") == 0) return SystemId::BaseClasses;
+    if (strcmp(idString, "Cardinality") == 0) return SystemId::Cardinality;
+    if (strcmp(idString, "Classes") == 0) return SystemId::Classes;
+    if (strcmp(idString, "Class") == 0) return SystemId::Class;
+    if (strcmp(idString, "ConstantKey") == 0) return SystemId::ConstantKey;
+    if (strcmp(idString, "ClassFullName") == 0) return SystemId::ClassFullName;
+    if (strcmp(idString, "ClassModifier") == 0) return SystemId::ClassModifier;
+    if (strcmp(idString, "ConstraintClass") == 0) return SystemId::ConstraintClass;
+    if (strcmp(idString, "ConstraintClasses") == 0) return SystemId::ConstraintClasses;
+    if (strcmp(idString, "Constraint") == 0) return SystemId::Constraint;
+    if (strcmp(idString, "CustomAttributes") == 0) return SystemId::CustomAttributes;
+    if (strcmp(idString, "DefaultPresentationUnit") == 0) return SystemId::DefaultPresentationUnit;
+    if (strcmp(idString, "Description") == 0) return SystemId::Description;
+    if (strcmp(idString, "Direction") == 0) return SystemId::Direction;
+    if (strcmp(idString, "PropertyValue") == 0) return SystemId::PropertyValue;
+    if (strcmp(idString, "PropertyValues") == 0) return SystemId::PropertyValues;
+    if (strcmp(idString, "DisplayLabel") == 0) return SystemId::DisplayLabel;
+    if (strcmp(idString, "Enumeration") == 0) return SystemId::Enumeration;
+    if (strcmp(idString, "Enumerations") == 0) return SystemId::Enumerations;
+    if (strcmp(idString, "Enumerator") == 0) return SystemId::Enumerator;
+    if (strcmp(idString, "Enumerators") == 0) return SystemId::Enumerators;
+    if (strcmp(idString, "ExtendedTypeName") == 0) return SystemId::ExtendedTypeName;
+    if (strcmp(idString, "Instance") == 0) return SystemId::Instance;
+    if (strcmp(idString, "Instances") == 0) return SystemId::Instances;
+    if (strcmp(idString, "Integer") == 0) return SystemId::Integer;
+    if (strcmp(idString, "IsCustomAttributeClass") == 0) return SystemId::IsCustomAttributeClass;
+    if (strcmp(idString, "IsEntityClass") == 0) return SystemId::IsEntityClass;
+    if (strcmp(idString, "IsPolymorphic") == 0) return SystemId::IsPolymorphic;
+    if (strcmp(idString, "IsReadonly") == 0) return SystemId::IsReadonly;
+    if (strcmp(idString, "IsRelationshipClass") == 0) return SystemId::IsRelationshipClass;
+    if (strcmp(idString, "IsStrict") == 0) return SystemId::IsStrict;
+    if (strcmp(idString, "IsStructClass") == 0) return SystemId::IsStructClass;
+    if (strcmp(idString, "IsStruct") == 0) return SystemId::IsStruct;
+    if (strcmp(idString, "IsStructArray") == 0) return SystemId::IsStructArray;
+    if (strcmp(idString, "IsPrimitive") == 0) return SystemId::IsPrimitive;
+    if (strcmp(idString, "IsPrimitiveArray") == 0) return SystemId::IsPrimitiveArray;
+    if (strcmp(idString, "IsNavigation") == 0) return SystemId::IsNavigation;
+    if (strcmp(idString, "KeyProperties") == 0) return SystemId::KeyProperties;
+    if (strcmp(idString, "KeyProperty") == 0) return SystemId::KeyProperty;
+    if (strcmp(idString, "KindOfQuantities") == 0) return SystemId::KindOfQuantities;
+    if (strcmp(idString, "KindOfQuantity") == 0) return SystemId::KindOfQuantity;
+    if (strcmp(idString, "MaximumValue") == 0) return SystemId::MaximumValue;
+    if (strcmp(idString, "MaxOccurs") == 0) return SystemId::MaxOccurs;
+    if (strcmp(idString, "MinimumValue") == 0) return SystemId::MinimumValue;
+    if (strcmp(idString, "MinOccurs") == 0) return SystemId::MinOccurs;
+    if (strcmp(idString, "Name") == 0) return SystemId::Name;
+    if (strcmp(idString, "NamespacePrefix") == 0) return SystemId::NamespacePrefix;
+    if (strcmp(idString, "Navigation") == 0) return SystemId::Navigation;
+    if (strcmp(idString, "PersistenceUnit") == 0) return SystemId::PersistenceUnit;
+    if (strcmp(idString, "Precision") == 0) return SystemId::Precision;
+    if (strcmp(idString, "Properties") == 0) return SystemId::Properties;
+    if (strcmp(idString, "Property") == 0) return SystemId::Property;
+    if (strcmp(idString, "PropertyType") == 0) return SystemId::PropertyType;
+    if (strcmp(idString, "Reference") == 0) return SystemId::Reference;
+    if (strcmp(idString, "References") == 0) return SystemId::References;
+    if (strcmp(idString, "Relationship") == 0) return SystemId::Relationship;
+    if (strcmp(idString, "RelationshipName") == 0) return SystemId::RelationshipName;
+    if (strcmp(idString, "RoleLabel") == 0) return SystemId::RoleLabel;
+    if (strcmp(idString, "Schema") == 0) return SystemId::Schema;
+    if (strcmp(idString, "Schemas") == 0) return SystemId::Schemas;
+    if (strcmp(idString, "Source") == 0) return SystemId::Source;
+    if (strcmp(idString, "StrengthDirection") == 0) return SystemId::StrengthDirection;
+    if (strcmp(idString, "StrengthType") == 0) return SystemId::StrengthType;
+    if (strcmp(idString, "String") == 0) return SystemId::String;
+    if (strcmp(idString, "Target") == 0) return SystemId::Target;
+    if (strcmp(idString, "TypeName") == 0) return SystemId::TypeName;
+    if (strcmp(idString, "VersionMajor") == 0) return SystemId::VersionMajor;
+    if (strcmp(idString, "VersionMinor") == 0) return SystemId::VersionMinor;
+    if (strcmp(idString, "VersionWrite") == 0) return SystemId::VersionWrite;
+
+    BeAssert(false && "Unknown SystemId");
+    return SystemId::None;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-ECChange::ECChange(ChangeState state, SystemId systemId, ECChange const* parent, Utf8CP customId)
-    :m_systemId(systemId), m_parent(parent), m_state(state), m_applied(false)
+//static 
+Utf8CP ECChange::SystemIdToString(SystemId id)
     {
-    if (customId != nullptr)
-        m_customId = std::unique_ptr<Utf8String>(new Utf8String(customId));
-    }
+    switch (id)
+        {
+            case SystemId::None: return "";
+            case SystemId::AlternativePresentationUnitList: return "AlternativePresentationUnitList";
+            case SystemId::Array: return "Array";
+            case SystemId::BaseClass: return "BaseClass";
+            case SystemId::BaseClasses: return "BaseClasses";
+            case SystemId::Cardinality: return "Cardinality";
+            case SystemId::Classes: return "Classes";
+            case SystemId::Class: return "Class";
+            case SystemId::ConstantKey: return "ConstantKey";
+            case SystemId::ClassFullName: return "ClassFullName";
+            case SystemId::ClassModifier: return "ClassModifier";
+            case SystemId::ConstraintClass: return "ConstraintClass";
+            case SystemId::ConstraintClasses: return "ConstraintClasses";
+            case SystemId::Constraint: return "Constraint";
+            case SystemId::CustomAttributes: return "CustomAttributes";
+            case SystemId::DefaultPresentationUnit: return "DefaultPresentationUnit";
+            case SystemId::Description: return "Description";
+            case SystemId::Direction: return "Direction";
+            case SystemId::PropertyValue: return "PropertyValue";
+            case SystemId::PropertyValues: return "PropertyValues";
+            case SystemId::DisplayLabel: return "DisplayLabel";
+            case SystemId::Enumeration: return "Enumeration";
+            case SystemId::Enumerations: return "Enumerations";
+            case SystemId::Enumerator: return "Enumerator";
+            case SystemId::Enumerators: return "Enumerators";
+            case SystemId::ExtendedTypeName: return "ExtendedTypeName";
+            case SystemId::Instance: return "Instance";
+            case SystemId::Instances: return "Instances";
+            case SystemId::Integer: return "Integer";
+            case SystemId::IsCustomAttributeClass: return "IsCustomAttributeClass";
+            case SystemId::IsEntityClass: return "IsEntityClass";
+            case SystemId::IsPolymorphic: return "IsPolymorphic";
+            case SystemId::IsReadonly: return "IsReadonly";
+            case SystemId::IsRelationshipClass: return "IsRelationshipClass";
+            case SystemId::IsStrict: return "IsStrict";
+            case SystemId::IsStructClass: return "IsStructClass";
+            case SystemId::IsStruct: return "IsStruct";
+            case SystemId::IsStructArray: return "IsStructArray";
+            case SystemId::IsPrimitive: return "IsPrimitive";
+            case SystemId::IsPrimitiveArray: return "IsPrimitiveArray";
+            case SystemId::IsNavigation: return "IsNavigation";
+            case SystemId::KeyProperties: return "KeyProperties";
+            case SystemId::KeyProperty: return "KeyProperty";
+            case SystemId::KindOfQuantities: return "KindOfQuantities";
+            case SystemId::KindOfQuantity: return "KindOfQuantity";
+            case SystemId::MaximumValue: return "MaximumValue";
+            case SystemId::MaxOccurs: return "MaxOccurs";
+            case SystemId::MinimumValue: return "MinimumValue";
+            case SystemId::MinOccurs: return "MinOccurs";
+            case SystemId::Name: return "Name";
+            case SystemId::NamespacePrefix: return "NamespacePrefix";
+            case SystemId::Navigation: return "Navigation";
+            case SystemId::PersistenceUnit: return "PersistenceUnit";
+            case SystemId::Precision: return "Precision";
+            case SystemId::Properties: return "Properties";
+            case SystemId::Property: return "Property";
+            case SystemId::PropertyType: return "PropertyType";
+            case SystemId::Reference: return "Reference";
+            case SystemId::References: return "References";
+            case SystemId::Relationship: return "Relationship";
+            case SystemId::RelationshipName: return "RelationshipName";
+            case SystemId::RoleLabel: return "RoleLabel";
+            case SystemId::Schema: return "Schema";
+            case SystemId::Schemas: return "Schemas";
+            case SystemId::Source: return "Source";
+            case SystemId::StrengthDirection: return "StrengthDirection";
+            case SystemId::StrengthType: return "StrengthType";
+            case SystemId::String: return "String";
+            case SystemId::Target: return "Target";
+            case SystemId::TypeName: return "TypeName";
+            case SystemId::VersionMajor: return "VersionMajor";
+            case SystemId::VersionMinor: return "VersionMinor";
+            case SystemId::VersionWrite: return "VersionWrite";
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-SystemId ECChange::GetSystemId() const { return m_systemId; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8StringCR ECChange::GetId() const
-    {
-    if (m_customId != nullptr)
-        return *m_customId;
-
-    return Convert(GetSystemId());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-bool ECChange::HasCustomId() const { return m_customId != nullptr; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-ChangeState ECChange::GetState() const { return m_state; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-ECChange const* ECChange::GetParent() const { return m_parent; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-bool ECChange::IsEmpty() const { return _IsEmpty(); }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-void ECChange::Optimize() { return _Optimize(); }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-bool ECChange::Exist() const { return !IsEmpty(); }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-bool ECChange::IsPending() const { return !m_applied; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-void ECChange::Done() { BeAssert(m_applied == false); m_applied = true; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-void ECChange::WriteToString(Utf8StringR str, int initIndex, int indentSize) const
-    {
-    _WriteToString(str, initIndex, indentSize);
+            default:
+                BeAssert(false && "Unhandled SystemId");
+                return "";
+        }
     }
 
 //======================================================================================>
@@ -1673,7 +1638,7 @@ bool ECObjectChange::_IsEmpty() const
     {
     for (auto& change : m_changes)
         {
-        if (change.second->Exist())
+        if (!change.second->IsEmpty())
             return false;
         }
 
@@ -1690,9 +1655,7 @@ void ECObjectChange::_Optimize()
         {
         itor->second->Optimize();
         if (itor->second->IsEmpty())
-            {
             itor = m_changes.erase(itor);
-            }
         else
             ++itor;
         }
@@ -1705,14 +1668,14 @@ template<typename T>
 T& ECObjectChange::Get(SystemId systemId)
     {
     static_assert(std::is_base_of<ECChange, T>::value, "T not derived from ECChange");
-    Utf8CP customId = Convert(systemId).c_str();
-    auto itor = m_changes.find(customId);
+    Utf8CP id = SystemIdToString(systemId);
+    auto itor = m_changes.find(id);
     if (itor != m_changes.end())
         return *(static_cast<T*>(itor->second.get()));
 
     ECChangePtr changePtr = new T(GetState(), systemId, this, nullptr);
     ECChange* changeP = changePtr.get();
-    m_changes[changePtr->GetId().c_str()] = changePtr;
+    m_changes[changePtr->GetId()] = changePtr;
     return *(static_cast<T*>(changeP));
     }
 //======================================================================================>
@@ -2043,9 +2006,7 @@ bool ECPropertyValueChange::HasChildren() const { return m_children != nullptr; 
 ECPrimitiveChange<ECValue>& ECPropertyValueChange::GetPropertyValue()
     {
     if (m_value == nullptr)
-        {
-        m_value = std::unique_ptr<ECValueChange>(new ECValueChange(GetState(), SystemId::PropertyValue, this, GetId().c_str()));
-        }
+        m_value = std::unique_ptr<ECValueChange>(new ECValueChange(GetState(), SystemId::PropertyValue, this, GetId()));
 
     return *m_value;
     }
@@ -2055,9 +2016,7 @@ ECPrimitiveChange<ECValue>& ECPropertyValueChange::GetPropertyValue()
 ECChangeArray<ECPropertyValueChange>& ECPropertyValueChange::GetChildren()
     {
     if (m_children == nullptr)
-        {
-        m_children = std::unique_ptr<ECChangeArray<ECPropertyValueChange>>(new ECChangeArray<ECPropertyValueChange>(GetState(), SystemId::PropertyValues, this, GetId().c_str(), SystemId::PropertyValue));
-        }
+        m_children = std::unique_ptr<ECChangeArray<ECPropertyValueChange>>(new ECChangeArray<ECPropertyValueChange>(GetState(), SystemId::PropertyValues, this, GetId(), SystemId::PropertyValue));
 
     return *m_children;
     }

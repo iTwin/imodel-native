@@ -64,7 +64,7 @@ struct DbECEnumEntry
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ECDbSchemaReader: public RefCountedBase
+struct ECDbSchemaReader
     {
     typedef std::map<ECSchemaId, std::unique_ptr<DbECSchemaEntry>> DbECSchemaMap;
     typedef std::map<ECClassId, std::unique_ptr<DbECClassEntry>> DbECClassEntryMap;
@@ -89,8 +89,6 @@ private:
     mutable DbECEnumEntryMap m_ecEnumCache;
     mutable BeMutex m_criticalSection;
 
-    explicit ECDbSchemaReader(ECDbCR db) :m_db(db) {}
-
     ECSchemaCP            GetECSchema(Context&, ECSchemaId ecSchemaId, bool loadClasses) const;
     ECClassP              GetECClass(Context&, ECClassId ecClassId) const;
     ECEnumerationCP       GetECEnumeration(Context&, Utf8CP schemaName, Utf8CP enumName) const;
@@ -110,6 +108,7 @@ private:
     BentleyStatus         EnsureDerivedClassesExist(Context&, ECClassId baseClassId) const;
 
 public:
+    explicit ECDbSchemaReader(ECDbCR db) :m_db(db) {}
     ~ECDbSchemaReader() {}
 
     ECSchemaCP            GetECSchema(ECSchemaId ecSchemaId, bool loadClasses) const;
@@ -119,8 +118,6 @@ public:
     BentleyStatus         EnsureDerivedClassesExist(ECClassId baseClassId) const;
     bool                  TryGetECClassId(ECN::ECClassId& id, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema) const;
     void                  ClearCache ();
-
-    static ECDbSchemaReaderPtr Create(ECDbCR ecdb) { return new ECDbSchemaReader(ecdb); }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

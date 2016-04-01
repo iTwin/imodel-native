@@ -70,7 +70,20 @@ void SchemaImportTestFixture::AssertSchemaImport(bool& asserted, ECDbCR ecdb, Sc
     BeTest::SetFailOnAssert(true);
     }
 
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     04/16
+//+---------------+---------------+---------------+---------------+---------------+------
+void SchemaImportTestFixture::AssertColumnCount(ECDbCR ecdb, std::vector<std::pair<Utf8String, int>> const& testItems, Utf8CP scenario)
+    {
+    for (std::pair<Utf8String, int> const& kvPair : testItems)
+        {
+        Utf8CP tableName = kvPair.first.c_str();
+        const int expectedColCount = kvPair.second;
+        bvector<Utf8String> colNames;
+        ASSERT_TRUE(ecdb.GetColumns(colNames, tableName)) << tableName << " Scenario: " << scenario;
+        ASSERT_EQ(expectedColCount, colNames.size()) << tableName << " Scenario: " << scenario;
+        }
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  09/15
@@ -85,7 +98,6 @@ void SchemaImportTestFixture::AssertIndexExists(ECDbCR ecdb, Utf8CP indexName, b
     else
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Index " << indexName << " does exist unexpectedly";
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  08/15
@@ -172,7 +184,6 @@ void SchemaImportTestFixture::AssertForeignKey(bool expectedToHaveForeignKey, EC
 
     ASSERT_EQ(expectedToHaveForeignKey, ddl.find(fkSearchString) != ddl.npos) << "Table: " << tableName << " FK column name: " << foreignKeyColumnName;
     }
-
 
 //---------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         02/15

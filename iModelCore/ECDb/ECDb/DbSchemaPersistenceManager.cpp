@@ -1070,7 +1070,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateOrUpdateIndexes(ECDbCR ecdb, DbS
 
         //populates the ec_Index table (even for indexes on virtual tables, as they might be necessary
         //if further schema imports introduce subclasses of abstract classes (which map to virtual tables))
-        if (SUCCESS != InsertIndex(ecdb, index))
+        if (BE_SQLITE_OK != InsertIndex(ecdb, index))
             return ERROR;
         }
 

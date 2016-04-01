@@ -21,11 +21,6 @@ ECDB_TYPEDEFS(RelationshipClassMap);
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-struct ECDbSchemaReader;
-typedef RefCountedPtr<ECDbSchemaReader> ECDbSchemaReaderPtr;
-struct ClassIndexInfo;
-typedef RefCountedPtr<ClassIndexInfo> ClassIndexInfoPtr;
-
 #define LOG (ECDbLogger::Get())
 
 
