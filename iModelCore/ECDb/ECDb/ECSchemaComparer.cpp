@@ -175,43 +175,45 @@ BentleyStatus Binary::CopyFrom(ECValueCR value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::CompareECSchemas(ECSchemaChanges& changes, ECSchemaList const& a, ECSchemaList const& b)
+BentleyStatus ECSchemaComparer::Compare(ECSchemaChanges& changes, ECSchemaList const& lhs, ECSchemaList const& rhs)
     {
-    std::map<Utf8CP, ECSchemaCP, CompareUtf8> aMap, bMap, cMap;
-    for (ECSchemaCP schemaCP : a)
-        aMap[schemaCP->GetName().c_str()] = schemaCP;
+    std::map<Utf8CP, ECSchemaCP, CompareUtf8> lhsMap, rhsMap, allSchemasMap;
+    for (ECSchemaCP schema : lhs)
+        lhsMap[schema->GetName().c_str()] = schema;
 
-    for (ECSchemaCP schemaCP : b)
-        bMap[schemaCP->GetName().c_str()] = schemaCP;
+    for (ECSchemaCP schema : rhs)
+        rhsMap[schema->GetName().c_str()] = schema;
 
-    cMap.insert(aMap.cbegin(), aMap.cend());
-    cMap.insert(bMap.cbegin(), bMap.cend());
+    allSchemasMap.insert(lhsMap.cbegin(), lhsMap.cend());
+    allSchemasMap.insert(rhsMap.cbegin(), rhsMap.cend());
 
-    for (auto& u : cMap)
+    for (std::pair<Utf8CP, ECSchemaCP> const& kvPair : allSchemasMap)
         {
-        auto itorA = aMap.find(u.first);
-        auto itorB = bMap.find(u.first);
+        Utf8CP schemaName = kvPair.first;
+        auto lhsIt = lhsMap.find(schemaName);
+        auto rhsIt = rhsMap.find(schemaName);
 
-        bool existInA = itorA != aMap.end();
-        bool existInB = itorB != bMap.end();
-        if (existInA && existInB)
+        const bool existInLhs = lhsIt != lhsMap.end();
+        const bool existInRhs = rhsIt != rhsMap.end();
+        if (existInLhs && existInRhs)
             {
-            auto& classChange = changes.Add(ChangeState::Modified, u.first);
-            if (CompareECSchema(classChange, *itorA->second, *itorB->second) == ERROR)
+            ECSchemaChange& schemaChange = changes.Add(ChangeState::Modified, schemaName);
+            if (SUCCESS != CompareECSchema(schemaChange, *lhsIt->second, *rhsIt->second))
                 return ERROR;
             }
-        else if (existInA && !existInB)
+        else if (existInLhs && !existInRhs)
             {
-            if (AppendECSchema(changes, *itorA->second, ValueId::Deleted) == ERROR)
+            if (AppendECSchema(changes, *lhsIt->second, ValueId::Deleted) == ERROR)
                 return ERROR;
             }
-        else if (!existInA && existInB)
+        else if (!existInLhs && existInRhs)
             {
-            if (AppendECSchema(changes, *itorB->second, ValueId::New) == ERROR)
+            if (AppendECSchema(changes, *rhsIt->second, ValueId::New) == ERROR)
                 return ERROR;
             }
         }
 
+    changes.Optimize();
     return SUCCESS;
     }
 
@@ -1394,18 +1396,6 @@ std::vector<Utf8String> ECSchemaComparer::Split(Utf8StringCR path)
         axis.push_back(path.substr(b , i - b ));
 
     return axis;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::Compare(ECSchemaChanges& changes, ECSchemaList const& existingSet, ECSchemaList const& newSet)
-    {
-    if (CompareECSchemas(changes, existingSet, newSet) != SUCCESS)
-        return ERROR;
-
-    changes.Optimize();
-    return SUCCESS;
     }
 
 //======================================================================================

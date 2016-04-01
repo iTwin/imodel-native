@@ -494,18 +494,7 @@ struct ECPrimitiveChange : ECChange
         Nullable<T> m_old;
         Nullable<T> m_new;
 
-    private:
-        //---------------------------------------------------------------------------------------
-        // @bsimethod                                                    Affan.Khan  03/2016
-        //+---------------+---------------+---------------+---------------+---------------+------
-        virtual  bool _IsEmpty() const override
-            {
-            return m_old == m_new;
-            }
-
-        //---------------------------------------------------------------------------------------
-        // @bsimethod                                                    Affan.Khan  03/2016
-        //+---------------+---------------+---------------+---------------+---------------+------
+        virtual  bool _IsEmpty() const override { return m_old == m_new; }
         virtual Utf8String _ToString(ValueId id) const { return "_TOSTRING_NOT_IMPLEMENTED_"; }
 
         //---------------------------------------------------------------------------------------
@@ -526,31 +515,12 @@ struct ECPrimitiveChange : ECChange
     public:
         ECPrimitiveChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECChange(state, systemId, parent, customId)
-            {}        
+            {}
+
         virtual ~ECPrimitiveChange() {}
-        //---------------------------------------------------------------------------------------
-        // @bsimethod                                                    Affan.Khan  03/2016
-        //+---------------+---------------+---------------+---------------+---------------+------
-        Nullable<T> const& GetNew() const
-            {
-            return m_new;
-            }
-
-        //---------------------------------------------------------------------------------------
-        // @bsimethod                                                    Affan.Khan  03/2016
-        //+---------------+---------------+---------------+---------------+---------------+------
-        Nullable<T> const& GetOld() const
-            {
-            return m_new;
-            }
-
-        //---------------------------------------------------------------------------------------
-        // @bsimethod                                                    Affan.Khan  03/2016
-        //+---------------+---------------+---------------+---------------+---------------+------
-        Utf8String ToString(ValueId id) const
-            {
-            return _ToString(id);
-            }
+        Nullable<T> const& GetNew() const { return m_new; }
+        Nullable<T> const& GetOld() const { return m_new; }
+        Utf8String ToString(ValueId id) const { return _ToString(id); }
 
         //---------------------------------------------------------------------------------------
         // @bsimethod                                                    Affan.Khan  03/2016
@@ -859,6 +829,7 @@ struct ECSchemaChange : ECObjectChange
             BeAssert(systemId == GetSystemId());
             }
         virtual ~ECSchemaChange(){}
+
         StringChange& GetName() { return Get<StringChange>(SystemId::Name); }
         StringChange& GetDisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
         StringChange& GetDescription() { return Get<StringChange>(SystemId::Description); }
@@ -1101,7 +1072,6 @@ struct ECPropertyChange :ECObjectChange
 struct ECSchemaComparer
     {
     private:
-        BentleyStatus CompareECSchemas(ECSchemaChanges& changes, ECSchemaList const& a, ECSchemaList const& b);
         BentleyStatus CompareECSchema(ECSchemaChange& change, ECSchemaCR a, ECSchemaCR b);
         BentleyStatus CompareECClass(ECClassChange& change, ECClassCR a, ECClassCR b);
         BentleyStatus CompareECBaseClasses(BaseClassChanges& changes, ECBaseClassesList const& a, ECBaseClassesList const& b);
