@@ -53,21 +53,27 @@
             </Files>
         </Bindings>
     </Part>
-	
-	<Part Name="ScalableMeshATPexe" BentleyBuildMakeFile="Tests/ATP/ScalableMeshATPexe.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
+
+    <Part Name="ScalableMeshATPexe" BentleyBuildMakeFile="Tests/ATP/ScalableMeshATPexe.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
         <SubPart PartName="ScalableMesh"  PartFile="ScalableMesh" Repository="ScalableMesh" />
-		<SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
+        <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
         <Bindings>
-			<Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScalableMeshATPexe.exe</Files>
+          <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScalableMeshATPexe.exe</Files>
         </Bindings>
     </Part>
-    
-    	<Part Name="ScalableMeshCommandLineTest" BentleyBuildMakeFile="Tests/ScalableMeshCommandLineTest.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
-        <SubPart PartName="ScalableMesh"  PartFile="ScalableMesh" Repository="ScalableMesh" />
-                <Bindings>
-			<Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScMeshTest.exe</Files>
-        </Bindings>
-    </Part>
+
+  <Part Name="MemoryPoolTestExe" BentleyBuildMakeFile="Tests/MemoryPoolTest/MemoryPoolTester.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">        
+    <Bindings>
+      <Files ProductDirectoryName="MemoryPoolTester">Delivery\MemoryPoolTester.exe</Files>
+    </Bindings>
+  </Part>
+      
+  <Part Name="ScalableMeshCommandLineTest" BentleyBuildMakeFile="Tests/ScalableMeshCommandLineTest.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
+    <SubPart PartName="ScalableMesh"  PartFile="ScalableMesh" Repository="ScalableMesh" />
+      <Bindings>
+        <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScMeshTest.exe</Files>
+      </Bindings>
+  </Part>
     
     <ProductDirectoryList ListName="ScalableMeshSDK">
         <ProductDirectory Name="TMSchemas"  Deliver="true" Path="Dlls"/>
@@ -171,11 +177,20 @@
         <SubPart PartName="PSolidAcisInterop" PartFile="DgnDisplay" Repository="DgnDisplay" />
         <SubPart PartName="DgnGeoCoord" PartFile="GeoCoord" Repository="GeoCoord" />
         <SubPart PartName="DgnPlatformDataFiles" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>-->
-		<SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
+        <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
         <Directories DirectoryListName="DgnPlatform" PartFile="DgnPlatform" Repository="DgnPlatform" />        
         <Directories DirectoryListName="ScalableMeshATP" />        
     </Product>
- 	<ProductDirectoryList ListName="ScalableMeshCmd">
+
+
+  
+    <Product Name="MemoryPoolTest" SaveProduct="true" >
+        <SubPart PartName="MemoryPoolTestExe" />
+        <ProductDirectory Name="MemoryPoolTestExe" Path=""/>
+    </Product> 
+                 
+
+  <ProductDirectoryList ListName="ScalableMeshCmd">
         <ProductDirectory Name="ScalableMeshAssemblies" Path="Dlls"/>
         <ProductDirectory Name="Assemblies" Path="Dlls"/>
         <ProductDirectory Name="ImagePPAssemblies" Path="Dlls"/>
