@@ -33,3 +33,12 @@ $(BuildContext)Delivery/bvector-notice.txt : $(_MakeFilePath)bvector-notice.txt
 
 $(BuildContext)Delivery/bvector-license.txt : $(_MakeFilePath)bvector-license.txt
     $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Dox/Pages/Bentley/BeFileName.doxpage : $(_MakeFilePath)Docs/Overview/BeFileName.doxpage
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Dox/Pages/Bentley/Collections.doxpage : $(_MakeFilePath)Docs/Overview/Collections.doxpage
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Dox/Pages/Bentley/Utf8String.doxpage : $(_MakeFilePath)Docs/Overview/Utf8String.doxpage
+    $(LinkFirstDepToFirstTarget)
