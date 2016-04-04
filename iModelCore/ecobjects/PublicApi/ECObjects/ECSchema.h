@@ -490,7 +490,7 @@ Base class for an object which adapts the internal value of an ECProperty to a u
 +===============+===============+===============+===============+===============+======*/
 struct IECTypeAdapter : RefCountedBase
     {
-    typedef bvector<WString> StandardValuesCollection;
+    typedef bvector<Utf8String> StandardValuesCollection;
 /*__PUBLISH_SECTION_END__*/
     // Note that the implementation of the extended type system is implemented in DgnPlatform in IDgnECTypeAdapter, which subclasses IECTypeAdapter and makes
     // use of IDgnECTypeAdapterContext which provides dgn-specific context such as file, model, and element.
