@@ -2,7 +2,7 @@
 |
 |     $Source: ECSqlConsole/ECSqlConsole.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <windows.h>
@@ -19,8 +19,8 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle    10/2013
 //---------------------------------------------------------------------------------------
-ECSqlConsoleSession::ECSqlConsoleSession ()
-    : m_outputFormat (OutputFormat::Table)
+ECSqlConsoleSession::ECSqlConsoleSession()
+    : m_outputFormat(OutputFormat::Table)
     {
     m_ecdb.AddIssueListener(m_issueListener);
     }
@@ -28,13 +28,13 @@ ECSqlConsoleSession::ECSqlConsoleSession ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle    10/2013
 //---------------------------------------------------------------------------------------
-bool ECSqlConsoleSession::HasECDb( bool printMessageIfFalse ) const
+bool ECSqlConsoleSession::HasECDb(bool printMessageIfFalse) const
     {
     const auto isOpen = m_ecdb.IsDbOpen();
 
     if (!isOpen && printMessageIfFalse)
         {
-        Console::WriteErrorLine ("No ECDb loaded.");
+        Console::WriteErrorLine("No ECDb loaded.");
         }
 
     return isOpen;
@@ -45,15 +45,15 @@ bool ECSqlConsoleSession::HasECDb( bool printMessageIfFalse ) const
 //---------------------------------------------------------------------------------------
 Utf8CP ECSqlConsoleSession::GetECDbPath() const
     {
-    return m_ecdb.GetDbFileName ();
+    return m_ecdb.GetDbFileName();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle    10/2013
 //---------------------------------------------------------------------------------------
-void ECSqlConsoleSession::AddToHistory( Utf8CP command )
+void ECSqlConsoleSession::AddToHistory(Utf8CP command)
     {
-    m_commandHistory.push_back (command);
+    m_commandHistory.push_back(command);
     }
 
 
@@ -62,7 +62,7 @@ void ECSqlConsoleSession::AddToHistory( Utf8CP command )
 //static
 ECSqlConsoleSession ECSqlConsole::s_session;
 ConsoleCommandMap ECSqlConsole::s_commands;
-char ECSqlConsole::s_readBuffer [ECSqlConsole::MaxReadBufferLineSize];
+char ECSqlConsole::s_readBuffer[ECSqlConsole::MaxReadBufferLineSize];
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
@@ -107,6 +107,7 @@ void ECSqlConsole::Setup()
     AddCommand(make_shared<CreateECClassViewsCommand>());
 
     AddCommand(make_shared<SqliteCommand>());
+    AddCommand(make_shared<DbSchemaCommand>());
 
     AddCommand(make_shared<HistoryCommand>());
     auto exitCommand = make_shared<ExitCommand>();
@@ -121,23 +122,23 @@ void ECSqlConsole::Setup()
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
 //static
-int ECSqlConsole::Run (int argc, WCharP argv[])
+int ECSqlConsole::Run(int argc, WCharP argv[])
     {
     //Initialize ECSqlConsole and Print out banner 
-    Setup ();
+    Setup();
 
     if (argc > 1)
         {
-        auto openCommand = GetCommand (".open");
-        BeAssert (openCommand != nullptr);
+        auto openCommand = GetCommand(".open");
+        BeAssert(openCommand != nullptr);
         vector<Utf8String> args;
-        args.push_back (openCommand->GetName ());
-        args.push_back (Utf8String (argv[1]));
+        args.push_back(openCommand->GetName());
+        args.push_back(Utf8String(argv[1]));
 
         if (argc == 3)
-            args.push_back (Utf8String (argv[2]));
+            args.push_back(Utf8String(argv[2]));
 
-        openCommand->Run (GetSession (), args);
+        openCommand->Run(GetSession(), args);
         }
 
     return WaitForUserInput(argc, argv);
@@ -147,16 +148,16 @@ int ECSqlConsole::Run (int argc, WCharP argv[])
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
 //static
-int ECSqlConsole::WaitForUserInput (int argc, WCharP argv[])
+int ECSqlConsole::WaitForUserInput(int argc, WCharP argv[])
     {
     Utf8String cmd;
 
     //Run the Read-Execute command loop
     while (ReadLine(cmd))
         {
-        cmd.Trim ();
+        cmd.Trim();
 
-        RunCommand (cmd.c_str ());
+        RunCommand(cmd.c_str());
 
         }
 
@@ -167,7 +168,7 @@ int ECSqlConsole::WaitForUserInput (int argc, WCharP argv[])
 // @bsimethod                                                  Krischan.eberle     09/2013
 //---------------------------------------------------------------------------------------
 //static
-void ECSqlConsole::RunCommand (Utf8CP cmd)
+void ECSqlConsole::RunCommand(Utf8CP cmd)
     {
     bool isECSqlCommand = cmd[0] != CommandPrefix;
 
@@ -176,41 +177,41 @@ void ECSqlConsole::RunCommand (Utf8CP cmd)
     vector<Utf8String> args;
     if (isECSqlCommand)
         {
-        args.push_back (cmd);
-        command = GetCommand (".ecsql");
+        args.push_back(cmd);
+        command = GetCommand(".ecsql");
         }
     else
         {
-        if (!TokenizeCommandline (args, cmd) || args.empty())
+        if (!TokenizeCommandline(args, cmd) || args.empty())
             {
-            Console::WriteErrorLine ("Syntax error in command");
+            Console::WriteErrorLine("Syntax error in command");
             return;
             }
 
-        command = GetCommand (args[0].c_str ());
+        command = GetCommand(args[0].c_str());
         }
 
     //Unsupported command, use help command to display available commands
     if (command == nullptr)
-        command = GetCommand (".help");
+        command = GetCommand(".help");
 
-    BeAssert (command != nullptr);
+    BeAssert(command != nullptr);
 
-    StopWatch executionTimer (true);
-    command->Run (GetSession (), args);
-    executionTimer.Stop ();
-    Console::WriteLine ("[Execution Time: %.4f seconds]", executionTimer.GetElapsedSeconds ());
-		
+    StopWatch executionTimer(true);
+    command->Run(GetSession(), args);
+    executionTimer.Stop();
+    Console::WriteLine("[Execution Time: %.4f seconds]", executionTimer.GetElapsedSeconds());
+
     //Add command to history (except history command itself)
     if (dynamic_cast<HistoryCommand const*> (command) == nullptr)
-        GetSession ().AddToHistory (cmd);
+        GetSession().AddToHistory(cmd);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
 //static
-bool ECSqlConsole::ReadLine (Utf8StringR cmd)
+bool ECSqlConsole::ReadLine(Utf8StringR cmd)
     {
     WritePrompt();
     cmd.clear();
@@ -219,7 +220,7 @@ bool ECSqlConsole::ReadLine (Utf8StringR cmd)
         fgets(s_readBuffer, sizeof(s_readBuffer), Console::GetIn());
         if (feof(Console::GetIn()))
             return false;
-        cmd.append (s_readBuffer);
+        cmd.append(s_readBuffer);
         if (cmd.size() > 0)
             {
             if (cmd[0] == CommandPrefix || StringEndsWith(cmd, ECSqlStatementDelimiterChar, true))
@@ -238,29 +239,29 @@ bool ECSqlConsole::ReadLine (Utf8StringR cmd)
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
 //static
-bool ECSqlConsole::TokenizeCommandline (vector<Utf8String>& tokens, Utf8StringCR cmd)
+bool ECSqlConsole::TokenizeCommandline(vector<Utf8String>& tokens, Utf8StringCR cmd)
     {
     Utf8String cur;
     int state = 0;
     int n = -1;
-    while ( n < (int)cmd.size())
+    while (n < (int) cmd.size())
         {
         n++;
-        switch(state)
+        switch (state)
             {
-            case 0:
+                case 0:
                 {
                 if (cmd[n] == '"')
                     {
                     state = 1;
-                    cur.append (&cmd[n], 1);
+                    cur.append(&cmd[n], 1);
                     }
                 else if (cmd[n] == '\'')
                     {
                     state = 2;
-                    cur.append (&cmd[n], 1);
+                    cur.append(&cmd[n], 1);
                     }
-                else if (isspace (cmd[n]))
+                else if (isspace(cmd[n]))
                     {
                     if (cur.empty())
                         continue;
@@ -272,12 +273,12 @@ bool ECSqlConsole::TokenizeCommandline (vector<Utf8String>& tokens, Utf8StringCR
                     cur.append(&cmd[n], 1);
                 break;
                 }
-            case 1:
+                case 1:
                 {
                 if (cmd[n] == '"')
                     {
                     state = 0;
-                    cur.append (&cmd[n], 1);
+                    cur.append(&cmd[n], 1);
                     cur.Trim();
                     tokens.push_back(cur);
                     cur.clear();
@@ -286,18 +287,18 @@ bool ECSqlConsole::TokenizeCommandline (vector<Utf8String>& tokens, Utf8StringCR
                     cur.append(&cmd[n], 1);
                 break;
                 }
-            case 2:
+                case 2:
                 {
                 if (cmd[n] == '\'')
                     {
                     state = 0;
-                    cur.append (&cmd[n], 1);
-                    cur.Trim ();
-                    tokens.push_back (cur);
-                    cur.clear ();
+                    cur.append(&cmd[n], 1);
+                    cur.Trim();
+                    tokens.push_back(cur);
+                    cur.clear();
                     }
                 else
-                    cur.append (&cmd[n], 1);
+                    cur.append(&cmd[n], 1);
                 break;
                 }
             }
@@ -325,11 +326,11 @@ void ECSqlConsole::WritePrompt()
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
 //static
-bool ECSqlConsole::StringEndsWith (Utf8StringCR stmt, Utf8Char ch, bool skipSpaces)
+bool ECSqlConsole::StringEndsWith(Utf8StringCR stmt, Utf8Char ch, bool skipSpaces)
     {
     if (stmt.empty())
         return false;
-    for(size_t i=stmt.size()-1; i>=0; i--)
+    for (size_t i = stmt.size() - 1; i >= 0; i--)
         {
         if (skipSpaces)
             if (isspace(stmt[i]))
@@ -345,16 +346,16 @@ bool ECSqlConsole::StringEndsWith (Utf8StringCR stmt, Utf8Char ch, bool skipSpac
 // @bsimethod                                                   Krischan.Eberle   10/2013
 //---------------------------------------------------------------------------------------
 //static
-void ECSqlConsole::AddCommand (std::shared_ptr<ConsoleCommand> const& command)
+void ECSqlConsole::AddCommand(std::shared_ptr<ConsoleCommand> const& command)
     {
-    AddCommand (command->GetName ().c_str (), command);
+    AddCommand(command->GetName().c_str(), command);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   10/2013
 //---------------------------------------------------------------------------------------
 //static
-void ECSqlConsole::AddCommand (Utf8CP commandName, std::shared_ptr<ConsoleCommand> const& command)
+void ECSqlConsole::AddCommand(Utf8CP commandName, std::shared_ptr<ConsoleCommand> const& command)
     {
     s_commands[commandName] = command;
     }
@@ -363,13 +364,13 @@ void ECSqlConsole::AddCommand (Utf8CP commandName, std::shared_ptr<ConsoleComman
 // @bsimethod                                                   Krischan.Eberle   10/2013
 //---------------------------------------------------------------------------------------
 //static
-ConsoleCommand const* ECSqlConsole::GetCommand (Utf8CP commandName)
+ConsoleCommand const* ECSqlConsole::GetCommand(Utf8CP commandName)
     {
-    if (s_commands.find (commandName) == s_commands.end ())
+    if (s_commands.find(commandName) == s_commands.end())
         return nullptr;
 
     shared_ptr<ConsoleCommand> const& command = s_commands[commandName];
-    return command.get ();
+    return command.get();
     }
 
 //---------------------------------------------------------------------------------------
