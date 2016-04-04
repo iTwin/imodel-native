@@ -2476,13 +2476,14 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
                                               pixelBuffer);
     delete[] pixelBuffer;
 #endif
-    for (size_t i = 0; i < textureWidthInPixels*textureHeightInPixels; ++i)
+	Byte *pPixel = pixelBufferP + 3 * sizeof(int);
+	for (size_t i = 0; i < textureWidthInPixels*textureHeightInPixels; ++i)
         {
-        *(pixelBufferP + 3 * sizeof(int) + i * 3) = pixelBufferPRGBA[i * 4];
-        *(pixelBufferP + 3 * sizeof(int) + i * 3 + 1) = pixelBufferPRGBA[i * 4 + 1];
-        *(pixelBufferP + 3 * sizeof(int) + i * 3 + 2) = pixelBufferPRGBA[i * 4 + 2];
+		*pPixel++ = pixelBufferPRGBA[i * 4];
+		*pPixel++ = pixelBufferPRGBA[i * 4 + 1];
+		*pPixel++ = pixelBufferPRGBA[i * 4 + 2];
         }
-    PushTexture(texId, pixelBufferP + 3 * sizeof(int), textureWidthInPixels * textureHeightInPixels * 3);
+	PushTexture(texId, pixelBufferP, 3 * sizeof(int) + textureWidthInPixels * textureHeightInPixels * 3);
      SetTextureDirty(texId);
     StoreTexture(texId);
     if (GetNbPtsIndices(0) >= 4)

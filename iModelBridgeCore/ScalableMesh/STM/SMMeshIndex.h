@@ -464,6 +464,7 @@ size_t GetNbPtsIndices(size_t texture_id) const
         return m_textureVec.size();
         }
 
+	// The byte array starts with three integers specifying the width/heigth in pixels, and the number of channels
     void PushTexture(size_t texture_id, const Byte* texture, size_t size) const;
 
     void ClearTexture(size_t texture_id) const;
