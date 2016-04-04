@@ -292,7 +292,7 @@ struct ECDbMapAnalyser
         ECDbMapR m_map;
         std::map<ECN::ECClassId, std::unique_ptr<Class>> m_classes;
         std::map<ECN::ECClassId, std::unique_ptr<Relationship>> m_relationships;
-        std::map<Utf8CP, std::unique_ptr<Storage>> m_storage;
+        std::map<Utf8CP, std::unique_ptr<Storage>, CompareIUtf8Ascii> m_storage;
         std::map<Class const*, ViewInfo> m_viewInfos;
 
     private:

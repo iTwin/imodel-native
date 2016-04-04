@@ -103,6 +103,46 @@ TEST_F(ECDbSchemaManagerTests, IncrementalLoading)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  04/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbSchemaManagerTests, CasingTests)
+    {
+    ECDbCR ecdb = SetupECDb("schemamanagercasingtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECDB_FILEinfo");
+    ASSERT_TRUE(schema != nullptr && schema->GetName().EqualsI("ECDb_FileInfo"));
+
+    schema = ecdb.Schemas().GetECSchema("ecsqltest");
+    ASSERT_TRUE(schema != nullptr && schema->GetName().EqualsI("ECSqlTest"));
+
+    ECClassCP ecclass = nullptr;
+    ecclass = ecdb.Schemas().GetECClass("ecsqltest", "P");
+    ASSERT_TRUE(ecclass != nullptr && BeStringUtilities::StricmpAscii(ecclass->GetFullName(), "ECSqlTest:P") == 0);
+
+    ecclass = ecdb.Schemas().GetECClass("ECSqlTest", "p");
+    ASSERT_TRUE(ecclass != nullptr && BeStringUtilities::StricmpAscii(ecclass->GetFullName(), "ECSqlTest:P") == 0);
+
+    ecclass = ecdb.Schemas().GetECClass("ecSqL", "P", ResolveSchema::BySchemaNamespacePrefix);
+    ASSERT_TRUE(ecclass != nullptr && BeStringUtilities::StricmpAscii(ecclass->GetFullName(), "ECSqlTest:P") == 0);
+
+    ecclass = ecdb.Schemas().GetECClass("ecsql", "p", ResolveSchema::BySchemaNamespacePrefix);
+    ASSERT_TRUE(ecclass != nullptr && BeStringUtilities::StricmpAscii(ecclass->GetFullName(), "ECSqlTest:P") == 0);
+
+    ecclass = ecdb.Schemas().GetECClass("ecsqlTest", "P", ResolveSchema::AutoDetect);
+    ASSERT_TRUE(ecclass != nullptr && BeStringUtilities::StricmpAscii(ecclass->GetFullName(), "ECSqlTest:P") == 0);
+
+    ecclass = ecdb.Schemas().GetECClass("ecsqL", "P", ResolveSchema::AutoDetect);
+    ASSERT_TRUE(ecclass != nullptr && BeStringUtilities::StricmpAscii(ecclass->GetFullName(), "ECSqlTest:P") == 0);
+
+    ecclass = ecdb.Schemas().GetECClass("ECSqlTest", "p", ResolveSchema::AutoDetect);
+    ASSERT_TRUE(ecclass != nullptr && BeStringUtilities::StricmpAscii(ecclass->GetFullName(), "ECSqlTest:P") == 0);
+
+    ecclass = ecdb.Schemas().GetECClass("ecsql", "p", ResolveSchema::AutoDetect);
+    ASSERT_TRUE(ecclass != nullptr && BeStringUtilities::StricmpAscii(ecclass->GetFullName(), "ECSqlTest:P") == 0);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  06/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaManagerTests, GetDerivedECClasses)

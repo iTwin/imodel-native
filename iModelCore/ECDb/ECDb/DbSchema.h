@@ -559,7 +559,7 @@ public:
 private:
     ECDbCR m_ecdb;
     PropertyPathMap m_propertyPaths;
-    bmap<ECN::ECPropertyId, bmap<Utf8CP, PropertyDbMapping::Path*, CompareUtf8>> m_propertyPathsByRootPropertyId;
+    bmap<ECN::ECPropertyId, bmap<Utf8CP, PropertyDbMapping::Path*, CompareIUtf8Ascii>> m_propertyPathsByRootPropertyId;
     ClassMappingMap m_classMappings;
     bmap<ECN::ECClassId, std::vector<ClassDbMapping const*>> m_classMappingsByClassId;
 

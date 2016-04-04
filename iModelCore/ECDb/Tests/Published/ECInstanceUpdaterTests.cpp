@@ -377,6 +377,75 @@ TEST_F(ECInstanceUpdaterTests, UpdaterBasedOnListOfPropertiesToBind)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     04/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECInstanceUpdaterTests, UpdateArrayProperty)
+    {
+    ECDb&db = SetupECDb("updateArrayProperty.ecdb", BeFileName(L"KitchenSink.01.00.ecschema.xml"));
+
+    ECN::ECClassCP testClass = db.Schemas().GetECClass("KitchenSink", "TestClass");
+    ASSERT_TRUE(testClass != nullptr);
+
+    StandaloneECEnablerPtr testEnabler = testClass->GetDefaultStandaloneEnabler();
+    ECN::StandaloneECInstancePtr testInstance = testEnabler->CreateInstance();
+    testInstance->AddArrayElements("SmallIntArray", 3);
+    ECValue v;
+    v.SetInteger(0);
+    testInstance->SetValue("SmallIntArray", v, 0);
+    v.SetInteger(1);
+    testInstance->SetValue("SmallIntArray", v, 1);
+    v.SetInteger(2);
+    testInstance->SetValue("SmallIntArray", v, 2);
+
+    ECInstanceInserter inserter(db, *testClass);
+    ASSERT_TRUE(inserter.IsValid());
+    ECInstanceKey instanceKey;
+    auto insertStatus = inserter.Insert(instanceKey, *testInstance);
+    ASSERT_EQ(SUCCESS, insertStatus);
+
+    Utf8CP ecSql = "SELECT ECInstanceId, GetECClassId() as ECClassId, SmallIntArray FROM KitchenSink.TestClass";
+    ECSqlStatement ecStatement;
+    ECSqlStatus status = ecStatement.Prepare(db, ecSql);
+    ASSERT_TRUE(ECSqlStatus::Success == status);
+    ECInstanceECSqlSelectAdapter dataAdapter(ecStatement);
+
+    ASSERT_TRUE(BE_SQLITE_ROW == ecStatement.Step());
+    IECInstancePtr selectedInstance = dataAdapter.GetInstance();
+    ASSERT_TRUE(selectedInstance.IsValid());
+
+    ASSERT_TRUE(ECObjectsStatus::Success == selectedInstance->GetValue(v, "SmallIntArray"));
+    ASSERT_TRUE(v.IsArray());
+    ArrayInfo info = v.GetArrayInfo();
+    ASSERT_EQ(3, info.GetCount());
+
+    selectedInstance->ClearArray("SmallIntArray");
+    selectedInstance->AddArrayElements("SmallIntArray", 2);
+    v.SetInteger(0);
+    selectedInstance->SetValue("SmallIntArray", v, 0);
+    v.SetInteger(1);
+    selectedInstance->SetValue("SmallIntArray", v, 1);
+
+    ECInstanceUpdater updater(db, *testClass);
+    ASSERT_TRUE(updater.IsValid());
+    auto updateStatus = updater.Update(*selectedInstance);
+    ASSERT_EQ(SUCCESS, updateStatus);
+
+    ECSqlStatement ecStatement2;
+    ECSqlStatus status2 = ecStatement2.Prepare(db, ecSql);
+    ASSERT_TRUE(ECSqlStatus::Success == status2);
+    ECInstanceECSqlSelectAdapter dataAdapter2(ecStatement2);
+
+    ASSERT_TRUE(BE_SQLITE_ROW == ecStatement2.Step());
+    IECInstancePtr updatedInstance = dataAdapter2.GetInstance();
+    ASSERT_TRUE(updatedInstance.IsValid());
+
+    ASSERT_TRUE(ECObjectsStatus::Success == updatedInstance->GetValue(v, "SmallIntArray"));
+    ASSERT_TRUE(v.IsArray());
+    ArrayInfo info2 = v.GetArrayInfo();
+    ASSERT_EQ(2, info2.GetCount());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
 //Failing case, if number of property indices less then 1, updater should be invalid

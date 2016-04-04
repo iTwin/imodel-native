@@ -8,7 +8,6 @@
 #include "ECDbPublishedTests.h"
 #include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
 #include <limits>
-#include <initializer_list>
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -93,60 +92,6 @@ TEST(ECInstanceIdHelper, ECInstanceIdInstanceIdConversion)
     EXPECT_FALSE (success) << L"Non-numeric InstanceId '" << instanceId << L"' is not expected to be supported by ECInstanceIdHelper::FromString";
 
     BeTest::SetFailOnAssert (true);
-    }   
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Affan.Khan                     09/13
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbInstances, CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST)
-    {
-    ECDbTestFixture::Initialize ();
-
-    BeFileName schemaDir;
-    BeTest::GetHost ().GetDocumentsRoot (schemaDir);
-    schemaDir.AppendToPath (L"DgnDb");
-    schemaDir.AppendToPath (L"ECDb");
-    schemaDir.AppendToPath (L"Schemas");
-    BeFileName dsCacheSchema1_4 (nullptr, schemaDir.GetName (), L"DSCacheSchema.01.04.ecschema.xml", nullptr);
-
-    // Setup ECDb
-    ECDb db;
-    ASSERT_EQ (BE_SQLITE_OK, db.CreateNewDb (":memory:"));
-
-    // Setup Schema
-    auto context = ECSchemaReadContext::CreateContext ();
-    ECSchemaPtr schema;
-    ASSERT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlFile (schema, dsCacheSchema1_4.GetName (), *context));
-    ASSERT_EQ (SUCCESS, db.Schemas ().ImportECSchemas (context->GetCache ()));
-
-    IECClassLocaterR classLocater = db.GetClassLocater();
-    ECClassCP rootClass = classLocater.LocateClass ("DSCacheSchema", "Root");
-    ASSERT_NE (nullptr, rootClass);
-
-    // Names
-    Utf8String rootName = "Foo";
-
-    // Test quety for same instance
-    Utf8String ecsql = "SELECT ECInstanceId FROM [DSC].[Root] WHERE [Name] = ? LIMIT 1 ";
-    ECSqlStatement statement;
-    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (db, ecsql.c_str ()));
-    ASSERT_EQ (ECSqlStatus::Success, statement.BindText (1, rootName.c_str (), IECSqlBinder::MakeCopy::No));
-    EXPECT_EQ (BE_SQLITE_DONE, statement.Step ());
-
-    // Insert one instnace
-    Json::Value rootInstance;
-    rootInstance["Name"] = rootName;
-    rootInstance["Persistence"] = 0;
-
-    JsonInserter inserter (db, *rootClass);
-    ASSERT_EQ (SUCCESS, inserter.Insert (rootInstance));
-
-    // Try again
-    statement.Reset ();
-    statement.ClearBindings ();
-    ASSERT_EQ (ECSqlStatus::Success, statement.BindText (1, rootName.c_str (), IECSqlBinder::MakeCopy::No));
-    EXPECT_EQ (BE_SQLITE_ROW, statement.Step ());
-    EXPECT_EQ (1, statement.GetValueId <ECInstanceId> (0).GetValue());
     }
 
 TEST_F(ECDbInstances, QuoteTest)
@@ -166,6 +111,7 @@ TEST_F(ECDbInstances, QuoteTest)
     ASSERT_TRUE (stmt4.Prepare (ecdb, "SELECT stringProp FROM stco.ClassWithPrimitiveProperties WHERE stringProp = '''g''''g'''") == ECSqlStatus::Success);
     ASSERT_TRUE (stmt4.Step () == BE_SQLITE_ROW);
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Affan.Khan                          04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -231,16 +177,7 @@ void PopulatePrimitiveValueWithCustomDataSet (ECValueR value, PrimitiveType prim
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Krischan.Eberle                  10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SetupInsertECInstanceWithNullValues 
-(
-ECInstanceKey& instanceKey,
-ECValueP nonNullValue,
-ECClassCP& testClass,
-ECDbCR ecdb,
-Utf8CP testSchemaName,
-Utf8CP testClassName,
-Utf8CP nonNullPropertyName
-)
+BentleyStatus SetupInsertECInstanceWithNullValues(ECInstanceKey& instanceKey, ECValueP nonNullValue, ECClassCP& testClass, ECDbCR ecdb, Utf8CP testSchemaName, Utf8CP testClassName, Utf8CP nonNullPropertyName)
     {
     testClass = ecdb.Schemas().GetECClass (testSchemaName, testClassName);
     if (testClass == nullptr)
@@ -280,7 +217,7 @@ TEST_F(ECDbInstances, InsertECInstancesWithNullValues)
 
     Utf8String ecsql ("SELECT * FROM ");
     ecsql.append (testClass->GetECSqlName()).append (" WHERE ECInstanceId = ?");
-    
+
     ECSqlStatement statement;
     auto stat = statement.Prepare (db, ecsql.c_str ());
     ASSERT_EQ(ECSqlStatus::Success, stat);
@@ -367,15 +304,7 @@ void SetStruct1Values(StandaloneECInstancePtr instance, bool boolVal, int intVal
     instance->SetValue("Struct1IntMember", ECValue(intVal));
     }
 
-void SetStruct2Values
-(
-StandaloneECInstancePtr instance, 
-Utf8CP stringVal, 
-double doubleVal, 
-StandaloneECInstancePtr struct1, 
-StandaloneECInstancePtr struct2, 
-StandaloneECInstancePtr struct3
-)
+void SetStruct2Values(StandaloneECInstancePtr instance, Utf8CP stringVal, double doubleVal, StandaloneECInstancePtr struct1, StandaloneECInstancePtr struct2, StandaloneECInstancePtr struct3)
     {
     instance->SetValue("Struct2StringMember", ECValue(stringVal));
     instance->SetValue("Struct2DoubleMember", ECValue(doubleVal));
@@ -394,7 +323,7 @@ StandaloneECInstancePtr struct3
     }
 
 //-------------------------------------------------------------------------------------
-/// <author>Carole.MacDonald</author>                     <date>08/2013</date>
+// <author>Carole.MacDonald</author>                     <date>08/2013</date>
 //---------------+---------------+---------------+---------------+---------------+-----
 TEST_F(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
     {
@@ -522,75 +451,6 @@ TEST_F(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
             arrayIndex++;
             }
         }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Carole.MacDonald                 08/14
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbInstances, UpdateArrayProperty)
-    {
-    ECDb&db = SetupECDb ("updateArrayProperty.ecdb", BeFileName(L"KitchenSink.01.00.ecschema.xml"));
-
-    ECN::ECClassCP testClass = db.Schemas ().GetECClass ("KitchenSink", "TestClass");
-    ASSERT_TRUE (testClass != nullptr);
-
-    StandaloneECEnablerPtr testEnabler = testClass->GetDefaultStandaloneEnabler ();
-    ECN::StandaloneECInstancePtr testInstance = testEnabler->CreateInstance();
-    testInstance->AddArrayElements("SmallIntArray", 3);
-    ECValue v;
-    v.SetInteger(0);
-    testInstance->SetValue("SmallIntArray", v, 0);
-    v.SetInteger(1);
-    testInstance->SetValue("SmallIntArray", v, 1);
-    v.SetInteger(2);
-    testInstance->SetValue("SmallIntArray", v, 2);
-
-    ECInstanceInserter inserter (db, *testClass);
-    ASSERT_TRUE (inserter.IsValid ());
-    ECInstanceKey instanceKey;
-    auto insertStatus = inserter.Insert (instanceKey, *testInstance);
-    ASSERT_EQ (SUCCESS, insertStatus);
-
-    Utf8CP ecSql = "SELECT ECInstanceId, GetECClassId() as ECClassId, SmallIntArray FROM KitchenSink.TestClass";
-    ECSqlStatement ecStatement;
-    ECSqlStatus status = ecStatement.Prepare (db, ecSql);
-    ASSERT_TRUE (ECSqlStatus::Success == status);
-    ECInstanceECSqlSelectAdapter dataAdapter (ecStatement);
-
-    ASSERT_TRUE (BE_SQLITE_ROW == ecStatement.Step());
-    IECInstancePtr selectedInstance = dataAdapter.GetInstance();
-    ASSERT_TRUE (selectedInstance.IsValid());
-
-    ASSERT_TRUE (ECObjectsStatus::Success == selectedInstance->GetValue (v, "SmallIntArray"));
-    ASSERT_TRUE(v.IsArray());
-    ArrayInfo info = v.GetArrayInfo();
-    ASSERT_EQ(3, info.GetCount());
-
-    selectedInstance->ClearArray("SmallIntArray");
-    selectedInstance->AddArrayElements("SmallIntArray", 2);
-    v.SetInteger(0);
-    selectedInstance->SetValue("SmallIntArray", v, 0);
-    v.SetInteger(1);
-    selectedInstance->SetValue("SmallIntArray", v, 1);
-
-    ECInstanceUpdater updater(db, *testClass);
-    ASSERT_TRUE (updater.IsValid ());
-    auto updateStatus = updater.Update(*selectedInstance);
-    ASSERT_EQ (SUCCESS, updateStatus);
-
-    ECSqlStatement ecStatement2;
-    ECSqlStatus status2 = ecStatement2.Prepare (db, ecSql);
-    ASSERT_TRUE (ECSqlStatus::Success == status2);
-    ECInstanceECSqlSelectAdapter dataAdapter2 (ecStatement2);
-
-    ASSERT_TRUE (BE_SQLITE_ROW == ecStatement2.Step());
-    IECInstancePtr updatedInstance = dataAdapter2.GetInstance();
-    ASSERT_TRUE (updatedInstance.IsValid());
-
-    ASSERT_TRUE (ECObjectsStatus::Success == updatedInstance->GetValue (v, "SmallIntArray"));
-    ASSERT_TRUE(v.IsArray());
-    ArrayInfo info2 = v.GetArrayInfo();
-    ASSERT_EQ(2, info2.GetCount()); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -812,7 +672,6 @@ TEST_F(ECDbInstances, SelectClause)
 TEST_F(ECDbInstances, AdapterCheckClassBeforeOperation)
     {
     ECDb& db = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
-
 
     //Get two classes and create instance of second
     ECClassCP employee = db.Schemas().GetECClass("StartupCompany", "Employee");

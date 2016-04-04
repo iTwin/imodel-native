@@ -139,15 +139,14 @@ private:
         PropertyMapCP GetPropertyMapAfterNavProp() const { return m_propMapAfterNavProp; }
         };
 
+    static Utf8CP const DEFAULT_FKCOLUMNNAME_PREFIX;
+
     bool m_autogenerateForeignKeyColumns;
 
     RelationshipClassEndTableMap (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
 
-    bool GetRelationshipColumnName (Utf8StringR columnName, DbTable const& table, Utf8CP prefix, bool mappingInProgress) const;
-
     void AddIndexToRelationshipEnd (SchemaImportContext&, ClassMappingInfo const& mapInfo);
 
-    bool GetReferencedEndKeyColumnName (Utf8StringR columnName, DbTable const& table, bool mappingInProgress) const;
     virtual MappingStatus _MapPart1 (SchemaImportContext&, ClassMappingInfo const& classMapInfo, ClassMap const* parentClassMap) override;
     virtual MappingStatus _MapPart2 (SchemaImportContext&, ClassMappingInfo const& classMapInfo, ClassMap const* parentClassMap) override;
 

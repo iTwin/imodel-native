@@ -2516,10 +2516,10 @@ ECSqlTestDataset ECSqlSelectTestDataset::PrimitiveTests (int rowCountPerClass)
     //Primitive Property with different case
     {
     ecsql = "SELECT b FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT B, d FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, rowCountPerClass);
     }
 
         {
@@ -2772,12 +2772,11 @@ ECSqlTestDataset ECSqlSelectTestDataset::StructTests( int rowCountPerClass )
     ecsql = "SELECT PStructProp.j, PStructProp.dtUtc, PStructProp.b FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
-    //Struct member Property with invalid case
     ecsql = "SELECT PStructProp.I, PStructProp.dtUtc, PStructProp.b FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, rowCountPerClass);
 
     ecsql = "SELECT B, PStructProp.B FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, rowCountPerClass);
 
     ecsql = "SELECT PStructProp FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);

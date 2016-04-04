@@ -27,10 +27,10 @@ private:
     ECDbCR m_ecdb;
 
     std::vector<void const*> m_finalizeParseArgs;
-    bmap<Utf8String, std::shared_ptr<ClassNameExp::Info>> m_classNameExpInfoList;
+    bmap<Utf8String, std::shared_ptr<ClassNameExp::Info>, CompareIUtf8Ascii> m_classNameExpInfoList;
     int m_currentECSqlParameterIndex;
     bvector<ParameterExp*> m_parameterExpList;
-    bmap<Utf8CP, int, CompareUtf8> m_ecsqlParameterNameToIndexMapping;
+    bmap<Utf8CP, int, CompareIUtf8Ascii> m_ecsqlParameterNameToIndexMapping;
     int m_aliasCount;
 
 public:

@@ -26,7 +26,7 @@ private:
 
     ECN::ECSchemaPtr m_schema;
     ECN::ECEntityClassP m_class;
-    bmap<Utf8String, DerivedPropertyExp const*> m_selectClauseNames;
+    bmap<Utf8String, DerivedPropertyExp const*, CompareIUtf8Ascii> m_selectClauseNames;
 
     ECSqlStatus Initialize ();
 

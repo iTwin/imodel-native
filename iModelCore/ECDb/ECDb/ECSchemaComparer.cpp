@@ -177,7 +177,7 @@ BentleyStatus Binary::CopyFrom(ECValueCR value)
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSchemaComparer::Compare(ECSchemaChanges& changes, ECSchemaList const& lhs, ECSchemaList const& rhs)
     {
-    std::map<Utf8CP, ECSchemaCP, CompareUtf8> lhsMap, rhsMap, allSchemasMap;
+    std::map<Utf8CP, ECSchemaCP, CompareIUtf8Ascii> lhsMap, rhsMap, allSchemasMap;
     for (ECSchemaCP schema : lhs)
         lhsMap[schema->GetName().c_str()] = schema;
 
@@ -372,7 +372,7 @@ BentleyStatus ECSchemaComparer::CompareECRelationshipConstraint(ECRelationshipCo
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSchemaComparer::CompareECRelationshipConstraintClassKeys(ECRelationshipConstraintClassChange& change, ECRelationshipConstraintClassCR a, ECRelationshipConstraintClassCR b)
     {
-    std::set<Utf8CP, CompareUtf8> aMap, bMap, cMap;
+    std::set<Utf8CP, CompareIUtf8Ascii> aMap, bMap, cMap;
     for (Utf8StringCR keyProperty : a.GetKeys())
         aMap.insert(keyProperty.c_str());
 
@@ -413,7 +413,7 @@ BentleyStatus ECSchemaComparer::CompareECRelationshipConstraintClassKeys(ECRelat
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSchemaComparer::CompareECRelationshipConstraintClasses(ECRelationshipConstraintClassChanges& change, ECRelationshipConstraintClassList const& a, ECRelationshipConstraintClassList const& b)
     {
-    std::map<Utf8CP, ECRelationshipConstraintClassCP, CompareUtf8> aMap, bMap, cMap;
+    std::map<Utf8CP, ECRelationshipConstraintClassCP, CompareIUtf8Ascii> aMap, bMap, cMap;
     for (ECRelationshipConstraintClassCP constraintClassCP : a)
         aMap[constraintClassCP->GetClass().GetFullName()] = constraintClassCP;
 
@@ -551,7 +551,7 @@ BentleyStatus ECSchemaComparer::CompareECProperty(ECPropertyChange& change, ECPr
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSchemaComparer::CompareECProperties(ECPropertyChanges& changes, ECPropertyIterableCR a, ECPropertyIterableCR b)
     {
-    std::map<Utf8CP, ECPropertyCP, CompareUtf8> aMap, bMap, cMap;
+    std::map<Utf8CP, ECPropertyCP, CompareIUtf8Ascii> aMap, bMap, cMap;
     for (ECPropertyCP propertyCP : a)
         aMap[propertyCP->GetName().c_str()] = propertyCP;
 
@@ -594,7 +594,7 @@ BentleyStatus ECSchemaComparer::CompareECProperties(ECPropertyChanges& changes, 
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSchemaComparer::CompareECClasses(ECClassChanges& changes, ECClassContainerCR a, ECClassContainerCR b)
     {
-    std::map<Utf8CP, ECClassCP, CompareUtf8> aMap, bMap, cMap;
+    std::map<Utf8CP, ECClassCP, CompareIUtf8Ascii> aMap, bMap, cMap;
     for (ECClassCP classCP : a)
         aMap[classCP->GetName().c_str()] = classCP;
 
@@ -637,7 +637,7 @@ BentleyStatus ECSchemaComparer::CompareECClasses(ECClassChanges& changes, ECClas
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSchemaComparer::CompareECEnumerations(ECEnumerationChanges& changes, ECEnumerationContainerCR a, ECEnumerationContainerCR b)
     {
-    std::map<Utf8CP, ECEnumerationCP, CompareUtf8> aMap, bMap, cMap;
+    std::map<Utf8CP, ECEnumerationCP, CompareIUtf8Ascii> aMap, bMap, cMap;
     for (ECEnumerationCP enumCP : a)
         aMap[enumCP->GetName().c_str()] = enumCP;
 
@@ -680,7 +680,7 @@ BentleyStatus ECSchemaComparer::CompareECEnumerations(ECEnumerationChanges& chan
 //+---------------+---------------+---------------+---------------+---------------+------
 //BentleyStatus ECSchemaComparer::CompareKindOfQuantities(ECKindOfQuantityChanges& changes, KindOfQuantityContainerCR a, KindOfQuantityContainerCR b)
 //    {
-//    std::map<Utf8CP, KindOfQuantityCP, CompareUtf8> aMap, bMap, cMap;
+//    std::map<Utf8CP, KindOfQuantityCP, CompareIUtf8Ascii> aMap, bMap, cMap;
 //    for (KindOfQuantityCP enumCP : a)
 //        aMap[enumCP->GetName().c_str()] = enumCP;
 //
@@ -801,7 +801,7 @@ BentleyStatus ECSchemaComparer::AppendCustomAttributes(ECInstanceChanges& change
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSchemaComparer::CompareCustomAttributes(ECInstanceChanges& changes, IECCustomAttributeContainerCR a, IECCustomAttributeContainerCR b)
     {
-    std::map<Utf8CP, IECInstanceCP, CompareUtf8> aMap, bMap, cMap;
+    std::map<Utf8CP, IECInstanceCP, CompareIUtf8Ascii> aMap, bMap, cMap;
     for (IECInstancePtr const& instancePtr : a.GetCustomAttributes(false))
         aMap[instancePtr->GetClass().GetFullName()] = instancePtr.get();
 
@@ -919,7 +919,7 @@ BentleyStatus ECSchemaComparer::CompareIntegerECEnumerators(ECEnumeratorChanges&
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSchemaComparer::CompareStringECEnumerators(ECEnumeratorChanges& changes, EnumeratorIterable const& a, EnumeratorIterable const& b)
     {
-    std::map<Utf8CP, ECEnumeratorCP, CompareUtf8> aMap, bMap, cMap;
+    std::map<Utf8CP, ECEnumeratorCP, CompareIUtf8Ascii> aMap, bMap, cMap;
     for (ECEnumeratorCP enumCP : a)
         aMap[enumCP->GetString().c_str()] = enumCP;
 
@@ -1014,7 +1014,7 @@ BentleyStatus ECSchemaComparer::CompareStringECEnumerators(ECEnumeratorChanges& 
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSchemaComparer::CompareBaseClasses(BaseClassChanges& changes, ECBaseClassesList const& a, ECBaseClassesList const& b)
     {
-    std::set<Utf8CP, CompareUtf8> aMap, bMap, cMap;
+    std::set<Utf8CP, CompareIUtf8Ascii> aMap, bMap, cMap;
     for (ECClassCP classCP : a)
         aMap.insert(classCP->GetFullName());
 
@@ -1048,7 +1048,7 @@ BentleyStatus ECSchemaComparer::CompareBaseClasses(BaseClassChanges& changes, EC
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSchemaComparer::CompareReferences(ReferenceChanges& changes, ECSchemaReferenceListCR a, ECSchemaReferenceListCR b)
     {
-    std::set<Utf8String> aMap, bMap, cMap;
+    std::set<Utf8String, CompareIUtf8Ascii> aMap, bMap, cMap;
     for (auto& ref : a)
         aMap.insert(ref.first.GetFullSchemaName());
 

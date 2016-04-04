@@ -103,7 +103,7 @@ TEST_F (JsonInserterTests, InsertJsonCppJSON)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsiMethod                                      Muhammad Hassan                  01/16
+// @bsimethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (JsonInserterTests, InsertRapidJson)
     {
@@ -164,6 +164,45 @@ TEST_F (JsonInserterTests, InsertRapidJson)
         WriteJsonToFile (afterImportFile.GetName (), afterImportJson);
         ASSERT_TRUE (false) << "Inserted and Retrieved Json doesn't match";
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  04/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(JsonInserterTests, CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST)
+    {
+    ECDbTestFixture::Initialize();
+    ECDbR ecdb = SetupECDb("schemaupgradetest.ecdb", BeFileName(L"DSCacheSchema.01.03.ecschema.xml"));
+    ecdb.SaveChanges();
+
+    IECClassLocaterR classLocater = ecdb.GetClassLocater();
+    ECClassCP rootClass = classLocater.LocateClass("DSCacheSchema", "Root");
+    ASSERT_NE(nullptr, rootClass);
+
+    // Names
+    Utf8String rootName = "Foo";
+
+    // Test quety for same instance
+    Utf8String ecsql = "SELECT ECInstanceId FROM [DSC].[Root] WHERE [Name] = ? LIMIT 1 ";
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, ecsql.c_str()));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindText(1, rootName.c_str(), IECSqlBinder::MakeCopy::No));
+    EXPECT_EQ(BE_SQLITE_DONE, statement.Step());
+
+    // Insert one instnace
+    Json::Value rootInstance;
+    rootInstance["Name"] = rootName;
+    rootInstance["Persistance"] = 0;
+
+    JsonInserter inserter(ecdb, *rootClass);
+    ASSERT_EQ(SUCCESS, inserter.Insert(rootInstance));
+
+    // Try again
+    statement.Reset();
+    statement.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindText(1, rootName.c_str(), IECSqlBinder::MakeCopy::No));
+    EXPECT_EQ(BE_SQLITE_ROW, statement.Step());
+    EXPECT_EQ(1, statement.GetValueId <ECInstanceId>(0).GetValue());
     }
 
 END_ECDBUNITTESTS_NAMESPACE

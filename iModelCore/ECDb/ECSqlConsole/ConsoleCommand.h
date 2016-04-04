@@ -2,7 +2,7 @@
 |
 |     $Source: ECSqlConsole/ConsoleCommand.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -416,4 +416,22 @@ public:
         {}
 
     ~ECSchemaDiffCommand() {}
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                                   Krischan.Eberle    10/2013
+//---------------------------------------------------------------------------------------
+struct DbSchemaCommand : public ConsoleCommand, NonCopyableClass
+    {
+private:
+    virtual Utf8String _GetName() const override;
+    virtual Utf8String _GetUsage() const override;
+    virtual void _Run(ECSqlConsoleSession& session, std::vector<Utf8String> const& args) const override;
+
+    void Search(ECSqlConsoleSession& session, std::vector<Utf8String> const& args) const;
+    void Search(BeSQLite::EC::ECDb const&, Utf8CP searchTerm) const;
+
+public:
+    DbSchemaCommand() : ConsoleCommand() {}
+    ~DbSchemaCommand() {}
     };
