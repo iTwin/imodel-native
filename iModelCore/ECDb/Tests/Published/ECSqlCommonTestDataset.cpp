@@ -12,6 +12,79 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                  01/14
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSqlTestDataset ECSqlCommonTestDataset::CasingTests(ECSqlType ecsqlType, ECDbCR ecdb, int rowCountPerClass)
+    {
+    ECSqlTestDataset dataset;
+
+    Utf8String ecsql;
+    switch (ecsqlType)
+        {
+            case ECSqlType::Delete:
+            {
+            AddTestItem(dataset, ecsqlType, "DELETE FROM ONLY EcSqltEst.P", 0);
+            AddTestItem(dataset, ecsqlType, "DELETE FROM ONLY ECSQLTEST.P", 0);
+            AddTestItem(dataset, ecsqlType, "DELETE FROM ONLY ecsqltest.P", 0);
+            AddTestItem(dataset, ecsqlType, "DELETE FROM ONLY ECSqlTest.p", 0);
+            AddTestItem(dataset, ecsqlType, "DELETE FROM ONLY ECSqlTest.P WHERE i<0", 0);
+            AddTestItem(dataset, ecsqlType, "DELETE FROM ONLY ecsqltest.p WHERE i<0", 0);
+            AddTestItem(dataset, ecsqlType, "DELETE FROM ONLY Ecsql.P", 0);
+            AddTestItem(dataset, ecsqlType, "DELETE FROM ONLY ecSql.P", 0);
+            AddTestItem(dataset, ecsqlType, "DELETE FROM ONLY ecsql.p", 0);
+            AddTestItem(dataset, ecsqlType, "DELETE FROM ONLY ecsql.P WHERE i<0", 0);
+            break;
+            }
+            case ECSqlType::Insert:
+            {
+            AddTestItem(dataset, ecsqlType, "INSERT INTO EcSqltEst.P(ECInstanceId) VALUES(NULL)", 0);
+            AddTestItem(dataset, ecsqlType, "INSERT INTO ECSQLTEST.P(ECInstanceId) VALUES(NULL)", 0);
+            AddTestItem(dataset, ecsqlType, "INSERT INTO ecsqltest.P(ECInstanceId) VALUES(NULL)", 0);
+            AddTestItem(dataset, ecsqlType, "INSERT INTO ECSqlTest.p(ECInstanceId) VALUES(NULL)", 0);
+            AddTestItem(dataset, ecsqlType, "INSERT INTO ecsQl.P(ECInstanceId) VALUES(NULL)", 0);
+            AddTestItem(dataset, ecsqlType, "INSERT INTO ecsQl.p(ECInstanceId) VALUES(NULL)", 0);
+            AddTestItem(dataset, ecsqlType, "INSERT INTO ecsQl.p(EcinstanceId) VALUES(NULL)", 0);
+            AddTestItem(dataset, ecsqlType, "INSERT INTO ecsQl.p(ecinstanceId) VALUES(NULL)", 0);
+            break;
+            }
+
+            case ECSqlType::Select:
+            {
+            AddTestItem(dataset, ecsqlType, "SELECT S FROM EcSqltEst.P", rowCountPerClass);
+            AddTestItem(dataset, ecsqlType, "SELECT S FROM ECSQLTEST.P", rowCountPerClass);
+            AddTestItem(dataset, ecsqlType, "SELECT S FROM ecsqltest.P", rowCountPerClass);
+            AddTestItem(dataset, ecsqlType, "SELECT S FROM ECSqlTest.p", rowCountPerClass);
+            AddTestItem(dataset, ecsqlType, "SELECT s FROM ECSqlTest.P", rowCountPerClass);
+            AddTestItem(dataset, ecsqlType, "SELECT S FROM ecsQl.P", rowCountPerClass);
+            AddTestItem(dataset, ecsqlType, "SELECT S FROM ecsql.p", rowCountPerClass);
+            AddTestItem(dataset, ecsqlType, "SELECT s FROM ecsql.P", rowCountPerClass);
+            AddTestItem(dataset, ecsqlType, "SELECT ecinsTanceiD FROM ECSqlTest.P", rowCountPerClass);
+            AddTestItem(dataset, ecsqlType, "SELECT getecCLassid() FROM ECSqlTest.P", rowCountPerClass);
+            break;
+            }
+            case ECSqlType::Update:
+            {
+            AddTestItem(dataset, ecsqlType, "UPDATE ECSqlTest.P SET I=?", 0);
+            AddTestItem(dataset, ecsqlType, "UPDATE EcSqltEst.P SET I=?", 0);
+            AddTestItem(dataset, ecsqlType, "UPDATE ECSQLTEST.P SET I=?", 0);
+            AddTestItem(dataset, ecsqlType, "UPDATE ECSqlTest.p SET I=?", 0);
+            AddTestItem(dataset, ecsqlType, "UPDATE ecsql.p SET I=?", 0);
+            AddTestItem(dataset, ecsqlType, "UPDATE ecsQl.P SET I=?", 0);
+            AddTestItem(dataset, ecsqlType, "UPDATE ecsql.P SET i=?", 0);
+            break;
+            }
+
+            default:
+                BeAssert(false);
+        }
+
+    return dataset;
+    }
+
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------

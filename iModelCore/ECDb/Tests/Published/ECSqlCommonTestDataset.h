@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/ECSqlCommonTestDataset.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -35,6 +35,7 @@ private:
 
 public:
     //Generates test datasets common to all ECSQL types
+    static ECSqlTestDataset CasingTests(ECSqlType, ECDbCR, int rowCountPerClass);
     static ECSqlTestDataset WhereAbstractClassTests (ECSqlType, ECDbCR, int rowCountPerClass);
     static ECSqlTestDataset WhereAndOrPrecedenceTests(ECSqlType, ECDbCR, int rowCountPerClass);
     static ECSqlTestDataset WhereBasicsTests(ECSqlType, ECDbCR, int rowCountPerClass);
