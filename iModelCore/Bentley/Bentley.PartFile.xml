@@ -34,6 +34,7 @@
                 Delivery/bvector-notice.txt
                 Delivery/bvector-license.txt
             </VendorNotices>
+            <Directory SourceName="Dox/Pages/Bentley" SubPartDirectory="Dox/Pages/Bentley"/>
         </Bindings>
     </Part>
 
