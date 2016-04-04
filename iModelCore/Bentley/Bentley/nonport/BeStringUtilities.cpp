@@ -1655,7 +1655,7 @@ char* strupr_ascii_only(char* s)
 wchar_t* wcslwr_portable(wchar_t* s)
     {
     for (wchar_t* p = s; *p; ++p)
-        *p = (wchar_t)tolower(*p);
+        *p = towlower(*p);
     return s;
     }
 
@@ -1665,7 +1665,7 @@ wchar_t* wcslwr_portable(wchar_t* s)
 wchar_t* wcsupr_portable(wchar_t* s)
     {
     for (wchar_t* p = s; *p; ++p)
-        *p = (wchar_t)toupper(*p);
+        *p = towupper(*p);
     return s;
     }
 
