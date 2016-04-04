@@ -21,14 +21,14 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //  To ease caching of commonly-accessed string resources
 #define DEFINE_TYPE_ADAPTER_RESOURCE_CACHE(STRID)  \
     struct Has ## STRID ## String \
-        { \
+                { \
     private:    Utf8String     m_ ## STRID ## String ; \
     protected:  /*ctor*/    Has ## STRID ## String() \
-        { \
-        m_ ## STRID ## String = DgnCoreL10N::GetString(DgnCoreL10N::ECTYPEADAPTER_##STRID##()); \
-        } \
+                { \
+        m_ ## STRID ## String = DgnCoreL10N::GetString(DgnCoreL10N::ECTYPEADAPTER_##STRID()); \
+                } \
     protected:  Utf8CP     Get ## STRID ## String() const { return m_ ## STRID ## String.c_str(); } \
-        };
+                };
 
 DEFINE_TYPE_ADAPTER_RESOURCE_CACHE(ParensNull)
 DEFINE_TYPE_ADAPTER_RESOURCE_CACHE(ParensNone)
