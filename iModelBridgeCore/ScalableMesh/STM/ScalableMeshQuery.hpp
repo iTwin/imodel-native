@@ -2321,8 +2321,6 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
 
                         assert(status == SUCCESS);
                         }
-                    if (uvCoordinatesP != 0)
-                        delete[]uvCoordinatesP;
                     }
 
                 meshNode->UnPinPtsIndices(meshInd);
@@ -2588,8 +2586,6 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
 
                         assert(status == SUCCESS);
                         }
-                    if (uvCoordinatesP != 0)
-                        delete[]uvCoordinatesP;
                     }
 
                 meshNode->UnPinPtsIndices(meshInd);
