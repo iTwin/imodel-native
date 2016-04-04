@@ -31,6 +31,20 @@ typedef AnnotationLeaderCollection const& AnnotationLeaderCollectionCR;
 //=======================================================================================
 struct TextAnnotation : RefCountedBase
 {
+public:
+    enum class AnchorPoint
+        {
+        LeftTop         = 1,
+        LeftMiddle      = 2,
+        LeftBottom      = 3,
+        CenterTop       = 4,
+        CenterMiddle    = 5,
+        CenterBottom    = 6,
+        RightTop        = 7,
+        RightMiddle     = 8,
+        RightBottom     = 9,
+        };
+
 private:
     DEFINE_T_SUPER(RefCountedBase)
 
@@ -39,7 +53,9 @@ private:
     AnnotationTextBlockPtr m_text;
     AnnotationFramePtr m_frame;
     AnnotationLeaderCollection m_leaders;
-    Transform m_documentTransform;
+    AnchorPoint m_anchorPoint;
+    DPoint3d m_origin;
+    YawPitchRollAngles m_orientation;
 
     DGNPLATFORM_EXPORT void CopyFrom(TextAnnotationCR);
     void Reset();
@@ -51,8 +67,13 @@ public:
     static TextAnnotationPtr Create(DgnDbR project) { return new TextAnnotation(project); }
     DGNPLATFORM_EXPORT static TextAnnotationPtr Create(DgnDbR, DgnElementId);
     TextAnnotationPtr Clone() const { return new TextAnnotation(*this); }
-    TransformCR GetDocumentTransform() const { return m_documentTransform; }
-    void SetDocumentTransform(TransformCR value) { m_documentTransform = value; }
+
+    void TextAnnotation::SetAnchorPoint (AnchorPoint in) { m_anchorPoint = in; }
+    AnchorPoint TextAnnotation::GetAnchorPoint () const { return m_anchorPoint; }
+    void TextAnnotation::SetOrigin (DPoint3dCR in) { m_origin = in; }
+    DPoint3dCR TextAnnotation::GetOrigin () const { return m_origin; }
+    void TextAnnotation::SetOrientation (YawPitchRollAnglesCR in) { m_orientation = in; }
+    YawPitchRollAngles TextAnnotation::GetOrientation () const { return m_orientation; }
 
     DgnDbR GetDbR() const { return *m_dgndb; }                      
     AnnotationTextBlockCP GetTextCP() const { return m_text.get(); }

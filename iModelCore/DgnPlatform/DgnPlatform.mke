@@ -374,9 +374,15 @@ $(CoreObjs)DgnChangeSummary$(oext) :                $(DgnHandlersDir)DgnChangeSu
 
 $(CoreObjs)DgnECSymbolProvider$(oext) :             $(DgnHandlersDir)DgnECSymbolProvider.cpp $(DgnPlatformAPISrc)DgnECSymbolProvider.h ${MultiCompileDepends}
 
-$(coreObjs)AnnotationTable$(oext) :                 $(DgnCoreDir)AnnotationTable.cpp $(DgnPlatformAPISrc)AnnotationTable.h ${MultiCompileDepends}
+$(CoreObjs)AnnotationTable$(oext) :                 $(DgnCoreDir)AnnotationTable.cpp $(DgnPlatformAPISrc)AnnotationTable.h ${MultiCompileDepends}
 
-$(coreObjs)AnnotationTableStroker$(oext) :          $(DgnCoreDir)AnnotationTableStroker.cpp $(DgnPlatformAPISrc)AnnotationTable.h ${MultiCompileDepends}
+$(CoreObjs)AnnotationTableStroker$(oext) :          $(DgnCoreDir)AnnotationTableStroker.cpp $(DgnPlatformAPISrc)AnnotationTable.h ${MultiCompileDepends}
+
+$(CoreObjs)DimensionStyle$(oext) :                  $(DgnCoreDir)Dimension\DimensionStyle.cpp $(DgnPlatformAPISrc)Dimension\Dimension.h ${MultiCompileDepends}
+
+$(CoreObjs)LinearDimension$(oext) :                 $(DgnCoreDir)Dimension\LinearDimension.cpp $(DgnPlatformAPISrc)Dimension\Dimension.h ${MultiCompileDepends}
+
+$(CoreObjs)LinearDimensionStroker$(oext) :          $(DgnCoreDir)Dimension\LinearDimensionStroker.cpp $(DgnPlatformAPISrc)Dimension\Dimension.h ${MultiCompileDepends}
 
 $(o)ECUtils$(oext) :                                $(DgnCoreDir)ECUtils.cpp $(DgnPlatformAPISrc)ECUtils.h ${MultiCompileDepends}
 

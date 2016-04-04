@@ -779,6 +779,23 @@
         </Target>
     </ECRelationshipClass>
 
+    <ECEntityClass typeName="DimensionStyle">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>DictionaryElement</BaseClass>
+        <ECProperty propertyName="TextStyleId" typeName="long"/>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="LinearDimension">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>AnnotationElement2d</BaseClass>
+        <ECProperty propertyName="StyleId" typeName="long"/>
+        <ECProperty propertyName="Points" typeName="binary" description="Location of dimension points"/>
+    </ECEntityClass>
+
     <ECEntityClass typeName="ViewAttachment">
         <!-- A reference to a ViewDefinition, placed onto a sheet -->
         <ECCustomAttributes>
