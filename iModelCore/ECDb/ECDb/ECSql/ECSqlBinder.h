@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlBinder.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -80,7 +80,7 @@ private:
     std::vector<std::unique_ptr<ECSqlBinder>> m_ownedBinders;
     std::vector<ECSqlBinder*> m_binders;
     std::vector<ECSqlBinder*> m_internalSqlParameterBinders;
-    std::map<Utf8String, int> m_nameToIndexMapping;
+    std::map<Utf8String, int, CompareIUtf8Ascii> m_nameToIndexMapping;
 
     std::vector<ECSqlBinder*> m_bindersToCallOnClearBindings;
     std::vector<ECSqlBinder*> m_bindersToCallOnStep;

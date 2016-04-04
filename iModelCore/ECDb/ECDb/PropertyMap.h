@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include "ECDbInternalTypes.h"
-#include "ClassMapInfo.h"
+#include "ClassMappingInfo.h"
 #include "DbSchema.h"
 
 #include "ECDbSystemSchemaHelper.h"
@@ -33,7 +33,7 @@ public:
     typedef std::vector<PropertyMapCP>::const_iterator const_iterator;
 
 private:
-    typedef std::map<Utf8CP, PropertyMapPtr, CompareUtf8> PropertyMapsByAccessString;
+    typedef std::map<Utf8CP, PropertyMapPtr, CompareIUtf8Ascii> PropertyMapsByAccessString;
 
     PropertyMapsByAccessString m_dictionary;
     std::vector<PropertyMapCP> m_orderedCollection;
@@ -151,9 +151,8 @@ public:
     //! @return List of native SQL snippets, one snippet per column this PropertyMap maps to.
     NativeSqlBuilder::List ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses, DbTable const* tableFilter = nullptr) const;
 
-    //! Saves the base column name, if it differs from the property name
-    BentleyStatus Save(ClassDbMapping& info) const { return _Save(info); }
-    BentleyStatus Load(ClassDbMapping const& classMapInfo) { return _Load(classMapInfo); }
+    BentleyStatus Save(ClassDbMapping& mapping) const { return _Save(mapping); }
+    BentleyStatus Load(ClassDbMapping const& mapping) { return _Load(mapping); }
     
     //! Make sure our table has the necessary columns, if any
     BentleyStatus FindOrCreateColumnsInTable(ClassMap const&);

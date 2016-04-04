@@ -47,7 +47,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECDbSchemaWriter.h \
                 $(baseDir)ECSchemaValidator.h \
                 $(baseDir)SchemaImportContext.h \
-                $(baseDir)ClassMapInfo.h \
+                $(baseDir)ClassMappingInfo.h \
                 $(baseDir)ViewGenerator.h \
                 $(baseDir)ECDbProfileManager.h \
                 $(baseDir)ECDbProfileUpgrader.h \
@@ -148,15 +148,15 @@ MultiCompileDepends=$(_MakeFileSpec)
 #----------------------------------------------------------------------
 # Build objects
 #----------------------------------------------------------------------
-$(o)ECDbLogger$(oext):										$(baseDir)ECDbLogger.cpp                    $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECDbLogger$(oext):										$(baseDir)ECDbLogger.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)BeBriefcaseBasedIdSequence$(oext):						$(baseDir)BeBriefcaseBasedIdSequence.cpp   $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)BeBriefcaseBasedIdSequence$(oext):						$(baseDir)BeBriefcaseBasedIdSequence.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbMap$(oext):											$(baseDir)ECDbMap.cpp                       $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECDbMap$(oext):											$(baseDir)ECDbMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)MapStrategy$(oext):									    $(baseDir)MapStrategy.cpp                   $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)MapStrategy$(oext):									    $(baseDir)MapStrategy.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ClassMapInfo$(oext):									$(baseDir)ClassMapInfo.cpp                  $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ClassMappingInfo$(oext):                                $(baseDir)ClassMappingInfo.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ClassMap$(oext):										$(baseDir)ClassMap.cpp                      $(ECDbAllHeaders) ${MultiCompileDepends}
 

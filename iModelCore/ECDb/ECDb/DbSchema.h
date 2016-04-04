@@ -364,7 +364,7 @@ private:
     mutable DbColumn const* m_classIdColumn;
     std::vector<std::unique_ptr<DbConstraint>> m_constraints;
     EditHandle m_editHandle;
-    std::vector<DbTable const*> m_childTables;
+    std::vector<DbTable const*> m_joinedTables;
     std::vector<std::function<void(ColumnEvent, DbColumn&)>> m_columnEvents;
 
     DbColumn* CreateColumn(DbColumnId, Utf8CP name, DbColumn::Type, int position, DbColumn::Kind, PersistenceType);
@@ -379,7 +379,7 @@ public:
                  (tableType != Type::Joined && parentOfJoinedTable == nullptr) && "parentOfJoinedTable must be provided for Type::Joined and must be null for any other DbTable::Type.");
 
         if (tableType == Type::Joined && parentOfJoinedTable != nullptr)
-            const_cast<DbTable*>(parentOfJoinedTable)->m_childTables.push_back(this);
+            const_cast<DbTable*>(parentOfJoinedTable)->m_joinedTables.push_back(this);
         }
 
     ~DbTable() {}
@@ -401,7 +401,7 @@ public:
     BentleyStatus SetMinimumSharedColumnCount(int minimumSharedColumnCount);
     BentleyStatus EnsureMinimumNumberOfSharedColumns();
 
-    std::vector<DbTable const*> const& GetChildTables() const { return m_childTables; }
+    std::vector<DbTable const*> const& GetJoinedTables() const { return m_joinedTables; }
 
     BentleyStatus CreateTrigger(Utf8CP triggerName, DbTrigger::Type, Utf8CP condition, Utf8CP body);
     std::vector<const DbTrigger*> GetTriggers()const;
@@ -559,7 +559,7 @@ public:
 private:
     ECDbCR m_ecdb;
     PropertyPathMap m_propertyPaths;
-    bmap<ECN::ECPropertyId, bmap<Utf8CP, PropertyDbMapping::Path*, CompareUtf8>> m_propertyPathsByRootPropertyId;
+    bmap<ECN::ECPropertyId, bmap<Utf8CP, PropertyDbMapping::Path*, CompareIUtf8Ascii>> m_propertyPathsByRootPropertyId;
     ClassMappingMap m_classMappings;
     bmap<ECN::ECClassId, std::vector<ClassDbMapping const*>> m_classMappingsByClassId;
 

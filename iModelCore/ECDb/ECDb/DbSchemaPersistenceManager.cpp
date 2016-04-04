@@ -754,7 +754,7 @@ bool DbSchemaPersistenceManager::IsTableChanged(ECDbCR ecdb, DbTable const& tabl
         }
 
     //Create a fast hash set of existing db column list
-    bset<Utf8String> namesOfExistingColumnsSet;
+    bset<Utf8String, CompareIUtf8Ascii> namesOfExistingColumnsSet;
     for (Utf8StringCR name : namesOfExistingColumns)
         {
         namesOfExistingColumnsSet.insert(name);
@@ -810,7 +810,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateOrUpdateTable(ECDbCR ecdb, DbTab
         }
 
     //Create a fast hash set of existing db column list
-    bset<Utf8String> existingColumnNamesInDbSet;
+    bset<Utf8String, CompareIUtf8Ascii> existingColumnNamesInDbSet;
     for (Utf8StringCR existingDbColumn : existingColumnNamesInDb)
         {
         existingColumnNamesInDbSet.insert(existingDbColumn);
@@ -1070,7 +1070,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateOrUpdateIndexes(ECDbCR ecdb, DbS
 
         //populates the ec_Index table (even for indexes on virtual tables, as they might be necessary
         //if further schema imports introduce subclasses of abstract classes (which map to virtual tables))
-        if (SUCCESS != InsertIndex(ecdb, index))
+        if (BE_SQLITE_OK != InsertIndex(ecdb, index))
             return ERROR;
         }
 
