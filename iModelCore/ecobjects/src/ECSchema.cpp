@@ -1946,12 +1946,14 @@ SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSc
 
     SchemaXmlReader reader(schemaContext, *xmlDom.get());
     status = reader.Deserialize(schemaOut, checkSum);
-    if (SchemaReadStatus::DuplicateSchema == status)
-        return status; // already logged
 
     if (SchemaReadStatus::Success != status)
         {
-        LOG.errorv(L"Failed to read XML file: %ls", ecSchemaXmlFile);
+        if (SchemaReadStatus::DuplicateSchema == status)
+            LOG.errorv(L"Failed to read XML file: %ls.  \nSchema already loaded.  Use ECSchemaReadContext::LocateSchema to load schema", ecSchemaXmlFile);
+        else
+            LOG.errorv(L"Failed to read XML file: %ls", ecSchemaXmlFile);
+        
         schemaContext.RemoveSchema(*schemaOut);
         schemaOut = nullptr;
         }
@@ -1995,16 +1997,19 @@ ECSchemaReadContextR schemaContext
     uint32_t checkSum = CheckSumHelper::ComputeCheckSumForString (ecSchemaXml, stringByteCount);
     SchemaXmlReader reader(schemaContext, *xmlDom.get());
     status = reader.Deserialize(schemaOut, checkSum);
-    if (SchemaReadStatus::DuplicateSchema == status)
-        return status; // already logged
 
     if (SchemaReadStatus::Success != status)
         {
         Utf8Char first200Bytes[201];
-
-        BeStringUtilities::Strncpy (first200Bytes, ecSchemaXml, 200);
+        BeStringUtilities::Strncpy(first200Bytes, ecSchemaXml, 200);
         first200Bytes[200] = '\0';
-        LOG.errorv ("Failed to read XML from string (1st 200 characters approx.): %s", first200Bytes);
+        if (SchemaReadStatus::DuplicateSchema == status)
+            LOG.errorv(L"Failed to read XML from string(1st 200 characters approx.): %s.  \nSchema already loaded.  Use ECSchemaReadContext::LocateSchema to load schema", first200Bytes);
+        else
+            {
+            LOG.errorv("Failed to read XML from string (1st 200 characters approx.): %s", first200Bytes);
+            }
+
         schemaContext.RemoveSchema(*schemaOut);
         schemaOut = nullptr;
         }
@@ -2047,15 +2052,18 @@ ECSchemaReadContextR schemaContext
     uint32_t checkSum = CheckSumHelper::ComputeCheckSumForString(ecSchemaXml, stringSize);
     SchemaXmlReader reader(schemaContext, *xmlDom.get());
     status = reader.Deserialize(schemaOut, checkSum);
-    if (SchemaReadStatus::DuplicateSchema == status)
-        return status; // already logged
 
     if (SchemaReadStatus::Success != status)
         {
         WChar first200Characters[201];
-        wcsncpy (first200Characters, ecSchemaXml, 200);
+        wcsncpy(first200Characters, ecSchemaXml, 200);
         first200Characters[200] = L'\0';
-        LOG.errorv (L"Failed to read XML from string (1st 200 characters): %ls", first200Characters);
+        if (SchemaReadStatus::DuplicateSchema == status)
+            LOG.errorv(L"Failed to read XML from string(1st 200 characters approx.): %s.  \nSchema already loaded.  Use ECSchemaReadContext::LocateSchema to load schema", first200Characters);
+        else
+            {
+            LOG.errorv(L"Failed to read XML from string (1st 200 characters): %ls", first200Characters);
+            }
         schemaContext.RemoveSchema(*schemaOut);
         schemaOut = nullptr;
         }
