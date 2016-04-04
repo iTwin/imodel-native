@@ -1501,6 +1501,7 @@ template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit,
 
         virtual StatusInt _AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices) override;
 
+		// The binary buffer for each texture starts with three int numbers representing texture width, texture height and number of color channels
         virtual StatusInt _AddTextures(bvector<bvector<Byte>>& data, size_t numTextures, bool sibling = false) override;
 
         virtual StatusInt _AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture) override;
