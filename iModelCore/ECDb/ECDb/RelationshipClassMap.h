@@ -139,6 +139,8 @@ private:
         PropertyMapCP GetPropertyMapAfterNavProp() const { return m_propMapAfterNavProp; }
         };
 
+    static Utf8CP const DEFAULT_FKCOLUMNNAME_PREFIX;
+
     bool m_autogenerateForeignKeyColumns;
 
     RelationshipClassEndTableMap (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);

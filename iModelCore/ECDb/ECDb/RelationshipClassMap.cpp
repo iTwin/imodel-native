@@ -256,6 +256,9 @@ void RelationshipConstraintMap::SetAnyClassMatches () const
     }
 
 //************************ RelationshipClassEndTableMap **********************************
+//static
+Utf8CP const RelationshipClassEndTableMap::DEFAULT_FKCOLUMNNAME_PREFIX = "ForeignECInstanceId_";
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -406,8 +409,11 @@ MappingStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, Clas
         else if (fkColInfo.CanImplyFromNavigationProperty() && !fkColInfo.GetImpliedColumnName().empty())
             fkColName.assign(fkColInfo.GetImpliedColumnName());
         else
-            fkColName.append("ForeignECInstanceId_").append(relationshipClass.GetName());
-
+            {
+            //default name: prefix_<schema namespace prefix>_<rel class name>
+            fkColName.assign(DEFAULT_FKCOLUMNNAME_PREFIX).append(relationshipClass.GetSchema().GetNamespacePrefix()).append("_").append(relationshipClass.GetName());
+            }
+        
         for (DbTable const* foreignEndTable : foreignEndTables)
             {
             if (foreignEndTable->FindColumn(fkColName.c_str()) != nullptr)
