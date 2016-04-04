@@ -40,6 +40,9 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 #define DGNJSAPI_VALIDATE_ARGS(EXPR,RETVAL) {if (!(EXPR)) {DGNJSAPI_DGNSCRIPT_THROW("Args",#EXPR); return (RETVAL);}}
 
 #define DGNJSAPI_IS_VALID_JSOBJ(OBJ) ((OBJ) && (OBJ)->IsValid())
+#define DGNJSAPI_IS_VALID_JSELIFX(OBJ) ((OBJ) && (OBJ)->_ToJsDgnElementP()->IsValid())
+
+#define DGNJSAPI_ASSERT_ABSTRACT BeAssert(false && "This is just a placeholder for an interface");
 
 struct JsDgnDb;
 typedef JsDgnDb* JsDgnDbP;
@@ -80,14 +83,20 @@ typedef JsECProperty* JsECPropertyP;
 struct JsPrimitiveECProperty;
 typedef JsPrimitiveECProperty* JsPrimitiveECPropertyP;
 
+struct JsDgnElements;
+typedef JsDgnElements* JsDgnElementsP;
+
 struct JsDgnCategory;
 typedef JsDgnCategory* JsDgnCategoryP;
 
 struct JsPlacement3d;
 typedef JsPlacement3d* JsPlacement3dP;
 
-struct JsPhysicalElement;
-typedef JsPhysicalElement* JsPhysicalElementP;
+struct JsGeometrySource;
+typedef JsGeometrySource* JsGeometrySourceP;
+
+struct JsGeometrySource3d;
+typedef JsGeometrySource3d* JsGeometrySource3dP;
 
 struct JsGeometryCollection;
 typedef JsGeometryCollection* JsGeometryCollectionP;
@@ -262,21 +271,24 @@ struct JsPreparedECSqlStatement : RefCountedBaseWithCreate
 
     JsPreparedECSqlStatement(BeSQLite::EC::CachedECSqlStatement& stmt) : m_stmt(&stmt) {;}
     bool IsValid() const { return m_stmt.IsValid(); }
+    BentleyStatus CheckValueIndexInRange(int32_t idx);
 
-    void BindId(int parameterIndex, JsDgnObjectIdP value) {DGNJSAPI_VALIDATE_ARGS_VOID(IsValid() && DGNJSAPI_IS_VALID_JSOBJ(value)); m_stmt->BindInt64(parameterIndex, value->m_id);}
-    void BindText(int parameterIndex, Utf8StringCR value) {DGNJSAPI_VALIDATE_ARGS_VOID(IsValid()); m_stmt->BindText(parameterIndex, value.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);}
-    void BindInt(int parameterIndex, int32_t value) {DGNJSAPI_VALIDATE_ARGS_VOID(IsValid()); m_stmt->BindInt(parameterIndex, value);}
-    void BindDouble(int parameterIndex, double value) {DGNJSAPI_VALIDATE_ARGS_VOID(IsValid()); m_stmt->BindDouble(parameterIndex, value);}
+    void BindId(int parameterIndex, JsDgnObjectIdP value);
+    void BindText(int parameterIndex, Utf8StringCR value);
+    void BindInt(int parameterIndex, int32_t value);
+    void BindDouble(int parameterIndex, double value);
     void BindDPoint3d(int parameterIndex, JsDPoint3dP value);
+    void BindDRange3d(int parameterIndex, JsDRange3dP value);
 
-    BeSQLiteDbResult Step() {DGNJSAPI_VALIDATE_ARGS(IsValid(), BeSQLiteDbResult::BE_SQLITE_ERROR); return (BeSQLiteDbResult)m_stmt->Step(); }
-    int32_t GetParameterIndex(Utf8StringCR colName) { DGNJSAPI_VALIDATE_ARGS(IsValid(), 0); return m_stmt->GetParameterIndex(colName.c_str());}
-    Utf8String GetValueText(int32_t col) { DGNJSAPI_VALIDATE_ARGS(IsValid(), "");  return m_stmt->GetValueText(col); }
-    Utf8String GetValueDateTime(int32_t col) { DGNJSAPI_VALIDATE_ARGS(IsValid(), ""); return m_stmt->GetValueDateTime(col).ToUtf8String(); }
-    double GetValueDouble(int32_t col) { DGNJSAPI_VALIDATE_ARGS(IsValid(), 0.0); return m_stmt->GetValueDouble(col); }
-    JsDPoint3dP GetValueDPoint3d(int32_t col) { DGNJSAPI_VALIDATE_ARGS(IsValid(), nullptr); return new JsDPoint3d(m_stmt->GetValuePoint3D(col)); }
-    int32_t GetValueInt(int32_t col) { DGNJSAPI_VALIDATE_ARGS(IsValid(), 0); return m_stmt->GetValueInt(col); }
-    JsDgnObjectIdP GetValueId(int32_t col) { DGNJSAPI_VALIDATE_ARGS(IsValid(), nullptr); return new JsDgnObjectId(m_stmt->GetValueUInt64(col));}
+    BeSQLiteDbResult Step();
+    int32_t GetParameterIndex(Utf8StringCR colName);
+    Utf8String GetValueText(int32_t col);
+    Utf8String GetValueDateTime(int32_t col);
+    double GetValueDouble(int32_t col);
+    JsDPoint3dP GetValueDPoint3d(int32_t col);
+    JsDRange3dP GetValueDRange3d(int32_t col);
+    int32_t GetValueInt(int32_t col);
+    JsDgnObjectIdP GetValueId(int32_t col);
 };
 
 typedef JsPreparedECSqlStatement* JsPreparedECSqlStatementP;
@@ -292,9 +304,11 @@ struct JsDgnDb : RefCountedBaseWithCreate
 
     JsDgnModelsP GetModels();
     JsECDbSchemaManagerP GetSchemas();
+    JsDgnElementsP GetElements();
     JsPreparedECSqlStatementP GetPreparedECSqlSelectStatement(Utf8StringCR ecsql);
 
-    STUB_OUT_SET_METHOD(Models,JsDgnModelsP)
+    STUB_OUT_SET_METHOD(Models, JsDgnModelsP)
+    STUB_OUT_SET_METHOD(Elements, JsDgnElementsP)
     STUB_OUT_SET_METHOD(Schemas,JsECDbSchemaManagerP)
 };
 
@@ -332,12 +346,17 @@ struct JsDgnElement : RefCountedBaseWithCreate
             m_el->SetParentId(parent->m_el->GetElementId());
             }
         }
-    JsECValueP GetUnhandledProperty(Utf8StringCR);
-    int32_t SetUnhandledProperty(Utf8StringCR, JsECValueP);
+    JsECValueP GetProperty(Utf8StringCR);
+    int32_t SetProperty(Utf8StringCR, JsECValueP);
 
     bool ContainsUserProperty(Utf8StringCR name) const;
     JsAdHocJsonPropertyValueP GetUserProperty(Utf8StringCR name) const;
     void RemoveUserProperty(Utf8StringCR name) const;
+
+    JsGeometrySourceP ToGeometrySourceP();
+    JsGeometrySource3dP ToGeometrySource3dP();
+
+    static JsDgnElement* Create(JsDgnModelP model, Utf8StringCR elementClassName);
 
     STUB_OUT_SET_METHOD(Model, JsDgnModelP)
     STUB_OUT_SET_METHOD(ElementId,JsDgnObjectIdP)
@@ -348,34 +367,74 @@ struct JsDgnElement : RefCountedBaseWithCreate
 typedef JsDgnElement* JsDgnElementP;
 
 //=======================================================================================
+// While the real GeometrySource C++ is just an interface, this wrapper class must
+// actually function as another way to hold a reference to a DgnElement. It will typically
+// point to the same (read-write) DgnElement that some JsDgnElement owns.
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
-struct JsPhysicalElement : JsDgnElement
+struct JsGeometrySource// : RefCountedBaseWithCreate
 {
-    JsPhysicalElement(GeometricElement3d& el) : JsDgnElement(el) {;}
+    virtual JsDgnElementP _ToJsDgnElementP() = 0;
+};
 
-    JsPlacement3dP GetPlacement() const;
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      04/16
+//=======================================================================================
+struct JsGeometrySource3d : JsGeometrySource
+{
+};
 
-    int32_t Transform(JsTransformP transform);
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      04/16
+//=======================================================================================
+struct JsGeometricElement : JsDgnElement, JsGeometrySource
+    {
+    JsGeometricElement(GeometricElement& gs) : JsDgnElement(gs) {}
+    bool IsValid() const { return m_el.IsValid(); }
 
-    JsGeometryCollectionP GetGeometry() const;
-
-    JsDgnObjectIdP GetCategoryId() const 
+    JsDgnObjectIdP GetCategoryId() const
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
         return new JsDgnObjectId(m_el->ToGeometrySource()->GetCategoryId().GetValue());
         }
 
-    static JsPhysicalElement* Create(JsDgnModelP model, JsDgnObjectIdP categoryId, Utf8StringCR elementClassName);
+    int32_t SetCategoryId(JsDgnObjectIdP catid)
+        {
+        DGNJSAPI_VALIDATE_ARGS(IsValid() && DGNJSAPI_IS_VALID_JSOBJ(catid), -1);
+        return (int32_t)m_el->ToGeometrySourceP()->SetCategoryId(DgnCategoryId(catid->m_id));
+        }
 
-    STUB_OUT_SET_METHOD(Placement, JsPlacement3dP)
+    JsGeometryCollectionP GetGeometry() const;
+
     STUB_OUT_SET_METHOD(Geometry, JsGeometryCollectionP)
-    STUB_OUT_SET_METHOD(CategoryId, JsDgnObjectIdP)
+
+    JsDgnElementP ToDgnElementP() { return IsValid() ? new JsDgnElement(*m_el) : nullptr; }
+
+    JsGeometrySourceP ToGeometrySourceP() {return this;}
+    static GeometricElement* ToGeometricElement(DgnElementR el) { return dynamic_cast<GeometricElement*>(&el); } // *** WIP_DGNJSAPI - remove this when we get a _ToGeometricElement method on DgnElement
+    GeometricElement* GetGeometricElement() const { return m_el.IsValid() ? ToGeometricElement(*m_el) : nullptr; }
+    JsDgnElementP _ToJsDgnElementP() override { return this; }
+    };
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      04/16
+//=======================================================================================
+struct JsGeometricElement3d : JsGeometricElement, JsGeometrySource3d
+    {
+    JsGeometricElement3d(GeometricElement3d& gs) : JsGeometricElement(gs) {}
+
+    JsPlacement3dP GetPlacement() const;
+    STUB_OUT_SET_METHOD(Placement, JsPlacement3dP)
+        
+    int32_t Transform(JsTransformP transform);
+
+    JsGeometrySource3dP ToGeometrySource3dP() { return this; }
 
     // Utility methods called by C++
-    static GeometricElement3d* ToGeometricElement3d(DgnElementR el) {return dynamic_cast<GeometricElement3d*>(&el);} // *** WIP_DGNJSAPI - remove this when we get a _ToGeometricElement3d method on DgnElement
-    GeometricElement3d* GetGeometricElement3d() const {return m_el.IsValid()? ToGeometricElement3d(*m_el): nullptr;}
-};
+    static GeometricElement3d* ToGeometricElement3d(DgnElementR el) { return dynamic_cast<GeometricElement3d*>(&el); } // *** WIP_DGNJSAPI - remove this when we get a _ToGeometricElement3d method on DgnElement
+    GeometricElement3d* GetGeometricElement3d() const { return m_el.IsValid() ? ToGeometricElement3d(*m_el) : nullptr; }
+    JsDgnElementP _ToJsDgnElementP() override { return this; }
+    };
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
@@ -389,19 +448,20 @@ struct JsHitDetail : RefCountedBaseWithCreate
     JsDPoint3dP GetHitPoint() const { return new JsDPoint3d(m_detail.GetHitPoint()); }
     JsDPoint3dP GetTestPoint() const { return new JsDPoint3d(m_detail.GetTestPoint()); }
     GeometricElement3d* ToGeometricElement3d(DgnElementR el) const {return dynamic_cast<GeometricElement3d*>(&el);}
-    JsPhysicalElementP GetElement() const 
+    JsGeometrySource3dP GetElement() const 
         { 
-        auto geom = JsPhysicalElement::ToGeometricElement3d(const_cast<DgnElementR>(*m_detail.GetElement())); // *** WIP_DGNJSAPI - remove this when we get a _ToGeometricElement3d method on DgnElement
-        if (nullptr == geom)
-            return nullptr;
-        return new JsPhysicalElement(*geom); 
+        DgnElementCPtr el = m_detail.GetElement();
+        DGNJSAPI_VALIDATE_ARGS_NULL(el.IsValid());
+        auto gel = JsGeometricElement3d::ToGeometricElement3d(const_cast<DgnElementR>(*el));
+        DGNJSAPI_VALIDATE_ARGS_NULL(nullptr != gel);
+        return new JsGeometricElement3d(*gel);
         }
     Utf8String GetHitType() const { return (HitDetailType::Hit == m_detail.GetHitType()) ? "hit" : (HitDetailType::Snap == m_detail.GetHitType()) ? "snap" : "intersection"; }
 
     STUB_OUT_SET_METHOD(HitPoint, JsDPoint3dP)
     STUB_OUT_SET_METHOD(TestPoint, JsDPoint3dP)
     STUB_OUT_SET_METHOD(HitType, Utf8String)
-    STUB_OUT_SET_METHOD(Element, JsPhysicalElementP)
+    STUB_OUT_SET_METHOD(Element, JsGeometrySource3dP)
 };
 
 //=======================================================================================
@@ -461,6 +521,13 @@ struct JsPlacement3d : RefCountedBaseWithCreate
     void SetOrigin(JsDPoint3dP p) {m_placement.GetOriginR() = p->Get();}
     JsYawPitchRollAnglesP GetAngles() const {return new JsYawPitchRollAngles(m_placement.GetAngles());}
     void SetAngles(JsYawPitchRollAnglesP p) {m_placement.GetAnglesR() = p->GetYawPitchRollAngles();}
+
+    JsDRange3dP GetElementBox() const { return new JsDRange3d(m_placement.GetElementBox()); }
+    JsDRange3dP CalculateRange() const { return new JsDRange3d(m_placement.CalculateRange()); }
+    JsTransformP GetTransform() const {return new JsTransform(m_placement.GetTransform()); }
+
+    STUB_OUT_SET_METHOD(ElementBox, JsDRange3dP);
+    STUB_OUT_SET_METHOD(Transform, JsTransformP);
 };
 
 //=======================================================================================
@@ -670,11 +737,6 @@ struct JsGeometryCollection : RefCountedBaseWithCreate
 
     JsGeometryCollection(GeometrySourceCR el) : m_collection(el) {}
 
-    JsGeometryCollection(JsPhysicalElementP el) : m_collection(*el->GetGeometricElement3d()) 
-        {
-        DGNJSAPI_VALIDATE_ARGS_VOID(DGNJSAPI_IS_VALID_JSOBJ(el));
-        }
-
     JsGeometricPrimitiveP GetGeometry(JsGeometryCollectionIteratorP iter)
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(IsValid(iter));
@@ -708,14 +770,14 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
     GeometryBuilderPtr m_builder;
 
     JsGeometryBuilder(GeometryBuilderR gb) : m_builder(&gb) {}
-    JsGeometryBuilder(JsDgnElementP el, JsDPoint3dP o, JsYawPitchRollAnglesP angles);
-    JsGeometryBuilder(JsDgnElementP el, DPoint3dCR o, YawPitchRollAnglesCR angles);
+    JsGeometryBuilder(JsGeometrySourceP el, JsDPoint3dP o, JsYawPitchRollAnglesP angles);
+    JsGeometryBuilder(JsGeometrySourceP el, DPoint3dCR o, YawPitchRollAnglesCR angles);
     ~JsGeometryBuilder() {}
     bool IsValid() const {return m_builder.IsValid();}
 
-    static JsGeometryBuilderP CreateForElement(JsDgnElementP el, JsDPoint3dP o, JsYawPitchRollAnglesP angles)
+    static JsGeometryBuilderP CreateForElement(JsGeometrySourceP el, JsDPoint3dP o, JsYawPitchRollAnglesP angles)
         {
-        DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(el) && o && angles);
+        DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSELIFX(el) && o && angles);
         return new JsGeometryBuilder(el, o, angles);
         }
 
@@ -726,9 +788,9 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
         }
 
 
-    static JsGeometryBuilderP CreateForElementWithTransform(JsDgnElementP el, JsTransformP transform)
+    static JsGeometryBuilderP CreateForElementWithTransform(JsGeometrySourceP el, JsTransformP transform)
         {
-        DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(el) && transform);
+        DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSELIFX(el) && transform);
         DPoint3d origin;
         YawPitchRollAngles angles;
         if (!YawPitchRollAngles::TryFromTransform (origin, angles, transform->Get ()))
@@ -806,13 +868,12 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
             }
         }
 
-
-
-    BentleyStatus SetGeometryStreamAndPlacement (JsDgnElementP el)
+    BentleyStatus SetGeometryStreamAndPlacement (JsGeometrySourceP el)
         {
-        DGNJSAPI_VALIDATE_ARGS_ERROR(IsValid() && DGNJSAPI_IS_VALID_JSOBJ(el));
-        return m_builder->SetGeometryStreamAndPlacement(*el->m_el->ToGeometrySourceP());
+        DGNJSAPI_VALIDATE_ARGS_ERROR(IsValid() && (nullptr != el) && DGNJSAPI_IS_VALID_JSOBJ(el->_ToJsDgnElementP()));
+        return m_builder->SetGeometryStreamAndPlacement(*el->_ToJsDgnElementP()->m_el->ToGeometrySourceP());
         }
+
     BentleyStatus SetGeometryStream (JsDgnGeometryPartP part) {return m_builder->SetGeometryStream(*part->m_value);}
 
     void AppendCopyOfGeometry(JsGeometryBuilderP builder, JsPlacement3dP relativePlacement);
@@ -820,6 +881,23 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
 
     STUB_OUT_SET_METHOD(GeometryParams, JsRenderGeometryParamsP)
 };
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct JsDgnElements : RefCountedBaseWithCreate
+{
+    DgnElements& m_elements;
+
+    JsDgnElements(DgnElements& els) : m_elements(els) {}
+
+    JsDgnDbP GetDgnDb() const {return new JsDgnDb(m_elements.GetDgnDb()); }
+    JsDgnElementP FindElement(JsDgnObjectIdP id) const;
+    JsDgnElementP GetElement(JsDgnObjectIdP id) const;
+    JsDgnObjectIdP QueryElementIdByCode(Utf8StringCR codeAuthorityName, Utf8StringCR codeValue, Utf8StringCR nameSpace) const;
+
+    STUB_OUT_SET_METHOD(DgnDb, JsDgnDbP)
+    };
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
@@ -927,6 +1005,12 @@ struct JsECClass : RefCountedBaseWithCreate
 
     JsECClass(ECN::ECClassCR c) : m_ecClass(&c) {;}
 
+    JsDgnObjectIdP GetECClassId() const
+        {
+        DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
+        return new JsDgnObjectId(m_ecClass->GetId().GetValue());
+        }
+
     Utf8String GetName() 
         {
         DGNJSAPI_VALIDATE_ARGS(IsValid(), "");
@@ -961,6 +1045,7 @@ struct JsECClass : RefCountedBaseWithCreate
 
     JsECSchemaP GetSchema() const;
 
+    STUB_OUT_SET_METHOD(ECClassId, JsDgnObjectIdP)
     STUB_OUT_SET_METHOD(Name,Utf8String)
     STUB_OUT_SET_METHOD(ECSqlName,Utf8String)
     STUB_OUT_SET_METHOD(Schema,JsECSchemaP)
@@ -1009,7 +1094,14 @@ struct JsECDbSchemaManager : RefCountedBaseWithCreate
         auto eccls = m_schemas.GetECClass(ns.c_str(), cls.c_str());
         return eccls? new JsECClass(*eccls): nullptr;
         }
-};
+
+    JsECClassP GetECClassById(JsDgnObjectIdP clsid)
+        {
+        DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(clsid));
+        auto eccls = m_schemas.GetECClass(ECN::ECClassId(clsid->m_id));
+        return eccls ? new JsECClass(*eccls) : nullptr;
+        }
+    };
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15

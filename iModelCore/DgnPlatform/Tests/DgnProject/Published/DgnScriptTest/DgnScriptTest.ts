@@ -21,19 +21,62 @@ module DgnScriptTests {
     var shiftYsize = 2.5;
 
 
-    function testEcSql(db: be.DgnDb) {
+    function testEcSql(db: be.DgnDb, minGenericObjectsExpected: number) {
 
         var physObjClass = db.Schemas.GetECClass(be.GENERIC_ECSCHEMA_NAME, be.GENERIC_CLASSNAME_PhysicalObject);
+
+        // Demonstrate how to do a normal SELECT
+        var lastelid: be.DgnObjectId;
+        var count: number = 0;
                                                     //  0             1      2    3      4 
         var stmt = db.GetPreparedECSqlSelectStatement("ECInstanceId, Origin, Yaw, Pitch, Roll FROM " + physObjClass.ECSqlName);
-        while (stmt.Step() == be.BeSQLiteDbResult.BE_SQLITE_ROW) {
+        while (be.BeSQLiteDbResult.BE_SQLITE_ROW == stmt.Step()) {
             var elemid: be.DgnObjectId = stmt.GetValueId(0);
             var origin: be.DPoint3d = stmt.GetValueDPoint3d(1);
             var yaw: number = stmt.GetValueInt(2);
             var pitch: number = stmt.GetValueDouble(3);
             var roll: number = stmt.GetValueDouble(4);
 
-            be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, 'testEcSql ' + origin.X);
+            // The above code shows how to extract multiple columns from a statement. 
+            // In real code, we would do something with those values.
+
+            //  For purposes of this test, just remember the last element that we saw.
+            lastelid = elemid;
+            ++count;
+        }
+
+        if (count < minGenericObjectsExpected) {
+            be.Script.ReportError('SELECT should have found at least ' + minGenericObjectsExpected + ' elements. It actually found ' + count);
+            return;
+        }
+
+        var el: be.DgnElement = db.Elements.GetElement(lastelid);
+        if (el == null) {
+            be.Script.ReportError('db.Elements.Get(lastelid) failed');
+            return;
+        }
+
+        var pel: be.GeometrySource3d = el.ToGeometrySource3dP();
+        var aabbox = pel.Placement.CalculateRange();
+
+        // Test spatial query. In this example, I am testing for GENERIC_CLASSNAME_PhysicalObject. In a real app, I would
+        // be testing for valves and girders and so on.
+        var spatialQuery = db.GetPreparedECSqlSelectStatement(
+            "SELECT rt.ECInstanceId FROM dgn.SpatialIndex rt, " + physObjClass.ECSqlName +
+            " WHERE rt.ECInstanceId MATCH DGN_spatial_overlap_aabb(:bbox)"
+        );
+
+        // *** TBD: AxisAlignedBoundingBox aka Range
+        stmt.BindDRange3d(stmt.GetParameterIndex(":bbox"), aabbox);
+        var foundIt: boolean = false;
+        while ((be.BeSQLiteDbResult.BE_SQLITE_ROW == spatialQuery.Step()) && !foundIt) {
+            var elemid: be.DgnObjectId = stmt.GetValueId(0);
+            foundIt = (elemid == lastelid);
+        }
+
+        if (!foundIt) {
+            be.Script.ReportError('spatial query failed to find element overlapping aabbox');
+            return;
         }
 
     }
@@ -385,19 +428,19 @@ module DgnScriptTests {
     //---------------------------------------------------------------------------------------
     // @bsimethod                                   Sam.Wilson                      02/16
     //---------------------------------------------------------------------------------------
-    function testUnhandledProperties(el: be.DgnElement)
+    function testProperties(el: be.DgnElement)
     {
-        if (el.GetUnhandledProperty('StringProperty'))
+        if (el.GetProperty('StringProperty'))
             be.Script.ReportError('StringProperty should not be set at the outset');
 
-        if (0 != el.SetUnhandledProperty('StringProperty', be.ECValue.FromString('stuff')))
-            be.Script.ReportError('SetUnhandledProperty failed');
+        if (0 != el.SetProperty('StringProperty', be.ECValue.FromString('stuff')))
+            be.Script.ReportError('SetProperty failed');
 
         el.Update();
 
-        var prop = el.GetUnhandledProperty('StringProperty');
+        var prop = el.GetProperty('StringProperty');
         if (!prop || prop.GetString() != 'stuff')
-            be.Script.ReportError('SetUnhandledProperty failed - changed value not verified');
+            be.Script.ReportError('SetProperty failed - changed value not verified');
     }
 
     //---------------------------------------------------------------------------------------
@@ -588,15 +631,15 @@ module DgnScriptTests {
         //  Test EC API
         testEC(db);
 
-        //  DgnElement UnhandledProperties and UserProperties
-        testUnhandledProperties(ele);
-        testUserProperties(ele);
+        //  DgnElement Properties and UserProperties
+        testProperties(ele.ToDgnElementP());
+        testUserProperties(ele.ToDgnElementP());
 
         //  Test argument validation
         testInvalidArg();
 
         //  Test ECSql API
-        testEcSql(db);
+        testEcSql(db, 2);
 
         return 0;
     }
