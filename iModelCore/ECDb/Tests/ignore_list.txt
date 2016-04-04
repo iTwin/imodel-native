@@ -29,8 +29,5 @@ JoinedTableECDbMapStrategyTests.PolymorphicRelationshipWithStandAloneClass
 #TFS 368922
 ECDbMappingTestFixture.RelationshipWithAbstractConstraintClassAndNoSubclasses
 
-#TFS 388756
-ECSqlSelectTestFramework.StructTests
-
 #TFS 383266
 JsonReaderTests.ReadInstanceAlongWithRelatedInstances

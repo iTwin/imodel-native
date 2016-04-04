@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECSqlTestFramework_Tests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlTestFrameworkFixture.h"
@@ -40,6 +40,15 @@ TEST_F (ECSqlSelectTestFramework, CastTests)
     {
     auto dataset = ECSqlSelectTestDataset::CastTests (PerClassRowCount);
     RunTest (dataset);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  04/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlSelectTestFramework, CasingTests)
+    {
+    ECSqlTestDataset dataset = ECSqlCommonTestDataset::CasingTests(ECSqlType::Select, GetECDb(), PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
@@ -368,6 +377,15 @@ TEST_F (ECSqlInsertTestFramework, ArrayTests)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  04/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlInsertTestFramework, CasingTests)
+    {
+    ECSqlTestDataset dataset = ECSqlCommonTestDataset::CasingTests(ECSqlType::Insert, GetECDb(), PerClassRowCount);
+    RunTest(dataset);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  12/13
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlInsertTestFramework, CommonGeometryTests)
@@ -494,6 +512,15 @@ TEST_F (ECSqlUpdateTestFramework, ArrayTests)
     {
     auto dataset = ECSqlUpdateTestDataset::ArrayTests (PerClassRowCount);
     RunTest (dataset);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  04/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlUpdateTestFramework, CasingTests)
+    {
+    ECSqlTestDataset dataset = ECSqlCommonTestDataset::CasingTests(ECSqlType::Update, GetECDb(), PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
@@ -705,6 +732,15 @@ public:
     virtual ~ECSqlDeleteTestFramework () {}
     };
 
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  04/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlDeleteTestFramework, CasingTests)
+    {
+    ECSqlTestDataset dataset = ECSqlCommonTestDataset::CasingTests(ECSqlType::Delete, GetECDb(), PerClassRowCount);
+    RunTest(dataset);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14

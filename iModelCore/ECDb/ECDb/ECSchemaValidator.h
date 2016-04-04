@@ -249,10 +249,11 @@ struct ValidRelationshipConstraintsRule : ECSchemaValidationRule
             {
             enum class Kind
                 {
-                HasAnyClassConstraint = 0,
-                HasRelationshipClassAsConstraint = 1,
-                IsAbstractAndConstraintsAreDefined = 2,
-                IncompleteConstraintDefinition = 4
+                None = 0,
+                HasAnyClassConstraint = 1,
+                HasRelationshipClassAsConstraint = 2,
+                IsAbstractAndConstraintsAreDefined = 4,
+                IncompleteConstraintDefinition = 8
                 };
 
             private:
@@ -264,7 +265,9 @@ struct ValidRelationshipConstraintsRule : ECSchemaValidationRule
 
                     Inconsistency(ECN::ECRelationshipClassCR relClass, Kind kind, ECN::ECRelationshipClassCP relationshipClassAsConstraintClass)
                         : m_relationshipClass(&relClass), m_kind(kind), m_relationshipClassAsConstraintClass(relationshipClassAsConstraintClass)
-                        {}
+                        {
+                        BeAssert(kind != Kind::None);
+                        }
                     };
 
                 std::vector<Inconsistency> m_inconsistencies;

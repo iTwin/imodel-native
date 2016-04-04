@@ -553,7 +553,7 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
     std::vector<PropertyDbMapping const*> allPropertyMappings;
     mapInfo.GetPropertyMappings(allPropertyMappings, false);
 
-    std::set<Utf8CP, CompareUtf8> localPropSet;
+    std::set<Utf8CP, CompareIUtf8Ascii> localPropSet;
     for (auto property : GetClass().GetProperties(false))
         {
         localPropSet.insert(property->GetName().c_str());

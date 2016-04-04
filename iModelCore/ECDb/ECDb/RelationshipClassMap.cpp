@@ -817,35 +817,6 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(SchemaImportContext
         GetECDbMap().GetDbSchemaR().CreateIndex(persistenceEndTable, name.c_str(), isUniqueIndex, {referencedEndIdColumn}, true, true, GetClass().GetId());
         }
     }
-
-   
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool RelationshipClassEndTableMap::GetRelationshipColumnName (Utf8StringR columnName, DbTable const& table, Utf8CP prefix, bool mappingInProgress) const
-    {
-    columnName.assign(prefix);
-    columnName.append(GetClass().GetName());
-    
-    if (table.FindColumn(columnName.c_str()) == nullptr)
-        return true;
-
-    if (mappingInProgress)
-        {
-        LOG.errorv ("Table %s already contains column named %s. ECRelationship %s has failed to map.", 
-            table.GetName().c_str(), columnName.c_str(), GetClass().GetFullName());
-        return false;
-        }
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool RelationshipClassEndTableMap::GetReferencedEndKeyColumnName (Utf8StringR columnName, DbTable const& table, bool mappingInProgress) const
-    {
-    return GetRelationshipColumnName (columnName, table, "ForeignECInstanceId_", mappingInProgress);
-    }
     
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       11/2013
