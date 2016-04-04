@@ -347,6 +347,23 @@ JsECClassP JsDgnElement::GetElementClass()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
+JsPreparedECSqlStatementP JsDgnDb::GetPreparedECSqlSelectStatement(Utf8StringCR ecsqlFragment)
+    {
+    DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
+    Utf8String ecsql("SELECT ");
+    ecsql.append(ecsqlFragment);
+    auto stmt = m_db->GetPreparedECSqlStatement(ecsql.c_str());
+    if (!stmt.IsValid())
+        {
+        DGNJSAPI_DGNSCRIPT_THROW("ECSql", ecsql.c_str());
+        return nullptr;
+        }
+    return new JsPreparedECSqlStatement(*stmt);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
 JsDgnModelsP JsDgnDb::GetModels()
     {
     DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
@@ -598,6 +615,15 @@ void Logging::SetSeverity(Utf8StringCR category, LoggingSeverity severity)
 bool Logging::IsSeverityEnabled(Utf8StringCR category, LoggingSeverity severity)
     {
     return NativeLogging::LoggingManager::GetLogger(category.c_str())->isSeverityEnabled(toNativeLoggingSeverity(severity));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
+void JsPreparedECSqlStatement::BindDPoint3d(int parameterIndex, JsDPoint3dP value) 
+    {
+    DGNJSAPI_VALIDATE_ARGS_VOID(nullptr != value);
+    m_stmt->BindPoint3D(parameterIndex, value->GetCR());
     }
 
 //---------------------------------------------------------------------------------------

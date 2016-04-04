@@ -117,6 +117,18 @@ struct RefCountedBaseWithCreate : BeProjectedRefCounted
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      10/15
 //=======================================================================================
+BEJAVASCRIPT_EXPORT_CLASS(Bentley.Dgn)
+enum class BeSQLiteDbResult : uint32_t
+    {
+    BE_SQLITE_OK = 0,
+    BE_SQLITE_ERROR = 1,
+    BE_SQLITE_ROW = 100,
+    BE_SQLITE_DONE = 101
+    };
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      10/15
+//=======================================================================================
 BEJAVASCRIPT_EXPORT_CLASS (Bentley.Dgn)
 enum class ECPropertyPrimitiveType : uint32_t
     {
@@ -244,6 +256,34 @@ typedef JsAuthorityIssuedCode* JsAuthorityIssuedCodeP;
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
+struct JsPreparedECSqlStatement : RefCountedBaseWithCreate
+{
+    BeSQLite::EC::CachedECSqlStatementPtr m_stmt;
+
+    JsPreparedECSqlStatement(BeSQLite::EC::CachedECSqlStatement& stmt) : m_stmt(&stmt) {;}
+    bool IsValid() const { return m_stmt.IsValid(); }
+
+    void BindId(int parameterIndex, JsDgnObjectIdP value) {DGNJSAPI_VALIDATE_ARGS_VOID(IsValid() && DGNJSAPI_IS_VALID_JSOBJ(value)); m_stmt->BindInt64(parameterIndex, value->m_id);}
+    void BindText(int parameterIndex, Utf8StringCR value) {DGNJSAPI_VALIDATE_ARGS_VOID(IsValid()); m_stmt->BindText(parameterIndex, value.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);}
+    void BindInt(int parameterIndex, int32_t value) {DGNJSAPI_VALIDATE_ARGS_VOID(IsValid()); m_stmt->BindInt(parameterIndex, value);}
+    void BindDouble(int parameterIndex, double value) {DGNJSAPI_VALIDATE_ARGS_VOID(IsValid()); m_stmt->BindDouble(parameterIndex, value);}
+    void BindDPoint3d(int parameterIndex, JsDPoint3dP value);
+
+    BeSQLiteDbResult Step() {DGNJSAPI_VALIDATE_ARGS(IsValid(), BeSQLiteDbResult::BE_SQLITE_ERROR); return (BeSQLiteDbResult)m_stmt->Step(); }
+    int32_t GetParameterIndex(Utf8StringCR colName) { DGNJSAPI_VALIDATE_ARGS(IsValid(), 0); return m_stmt->GetParameterIndex(colName.c_str());}
+    Utf8String GetValueText(int32_t col) { DGNJSAPI_VALIDATE_ARGS(IsValid(), "");  return m_stmt->GetValueText(col); }
+    Utf8String GetValueDateTime(int32_t col) { DGNJSAPI_VALIDATE_ARGS(IsValid(), ""); return m_stmt->GetValueDateTime(col).ToUtf8String(); }
+    double GetValueDouble(int32_t col) { DGNJSAPI_VALIDATE_ARGS(IsValid(), 0.0); return m_stmt->GetValueDouble(col); }
+    JsDPoint3dP GetValueDPoint3d(int32_t col) { DGNJSAPI_VALIDATE_ARGS(IsValid(), nullptr); return new JsDPoint3d(m_stmt->GetValuePoint3D(col)); }
+    int32_t GetValueInt(int32_t col) { DGNJSAPI_VALIDATE_ARGS(IsValid(), 0); return m_stmt->GetValueInt(col); }
+    JsDgnObjectIdP GetValueId(int32_t col) { DGNJSAPI_VALIDATE_ARGS(IsValid(), nullptr); return new JsDgnObjectId(m_stmt->GetValueUInt64(col));}
+};
+
+typedef JsPreparedECSqlStatement* JsPreparedECSqlStatementP;
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
 struct JsDgnDb : RefCountedBaseWithCreate
 {
     DgnDbPtr m_db;
@@ -252,6 +292,7 @@ struct JsDgnDb : RefCountedBaseWithCreate
 
     JsDgnModelsP GetModels();
     JsECDbSchemaManagerP GetSchemas();
+    JsPreparedECSqlStatementP GetPreparedECSqlSelectStatement(Utf8StringCR ecsql);
 
     STUB_OUT_SET_METHOD(Models,JsDgnModelsP)
     STUB_OUT_SET_METHOD(Schemas,JsECDbSchemaManagerP)
@@ -891,7 +932,12 @@ struct JsECClass : RefCountedBaseWithCreate
         DGNJSAPI_VALIDATE_ARGS(IsValid(), "");
         return m_ecClass->GetName();
         }
-    JsECClassCollectionP GetBaseClasses() const 
+    Utf8String GetECSqlName() const
+        {
+        DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
+        return m_ecClass->GetECSqlName();
+        }
+    JsECClassCollectionP GetBaseClasses() const
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
         return new JsECClassCollection(m_ecClass->GetBaseClasses());
@@ -916,6 +962,7 @@ struct JsECClass : RefCountedBaseWithCreate
     JsECSchemaP GetSchema() const;
 
     STUB_OUT_SET_METHOD(Name,Utf8String)
+    STUB_OUT_SET_METHOD(ECSqlName,Utf8String)
     STUB_OUT_SET_METHOD(Schema,JsECSchemaP)
     STUB_OUT_SET_METHOD(Properties,JsECPropertyCollectionP)
     STUB_OUT_SET_METHOD(BaseClasses,JsECClassCollectionP)

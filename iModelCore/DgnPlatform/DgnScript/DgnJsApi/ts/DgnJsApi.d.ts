@@ -8,8 +8,7 @@
 /** @namespace Bentley::Dgn Types defined by the Bentley DgnPlatform TypeScript/JavaScript API
 */
 
-declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ 
-{
+declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
     /*** BEGIN_FORWARD_DECLARATIONS ***/
     class Transform { /*** NATIVE_TYPE_NAME = JsTransform ***/ }
     class DPoint3d { /*** NATIVE_TYPE_NAME = JsDPoint3d ***/ }
@@ -32,12 +31,13 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     enum ECPropertyPrimitiveType { }
 
+    enum BeSQLiteDbResult { }
+
     //! Logging serverity level.
     enum LoggingSeverity { }
 
     /** Access to the message log */
-    class Logging implements BeJsProjection_SuppressConstructor
-    {
+    class Logging implements BeJsProjection_SuppressConstructor {
 
         /**
         * Set the severity level for the specified category
@@ -63,8 +63,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     }
 
     /** A 3-D placement */
-    class Placement3d implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
-    {
+    class Placement3d implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted {
         /*** NATIVE_TYPE_NAME = JsPlacement3d ***/
         constructor(origin: DPoint3dP, angles: YawPitchRollAnglesP);
 
@@ -80,8 +79,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     type Placement3dP = cxx_pointer<Placement3d>;
 
     /** Script Management Utilities */
-    class Script implements BeJsProjection_SuppressConstructor
-    {
+    class Script implements BeJsProjection_SuppressConstructor {
 
         /**
          * Make sure that the specified script is loaded.
@@ -107,6 +105,97 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         static ReportError(description: Bentley_Utf8String): void;
     }
 
+    /** A prepared ECSqlStatement */
+    class PreparedECSqlStatement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsPreparedECSqlStatement ***/
+
+        /**
+          * Bind a DgnObjectId value to the specified parameter
+          * @param parameterIndex Parameter index
+          * @param value Value to bind.
+          */
+        BindId(parameterIndex: cxx_int32_t, value: DgnObjectIdP): void;
+
+        /**
+          * Bind a string value to the specified parameter
+          * @param parameterIndex Parameter index
+          * @param value Value to bind.
+          */
+        BindText(parameterIndex: cxx_int32_t, value: Bentley_Utf8String): void;
+
+        /**
+          * Bind an integer value to the specified parameter
+          * @param parameterIndex Parameter index
+          * @param value Value to bind.
+          */
+        BindInt(parameterIndex: cxx_int32_t, value: cxx_int32_t): void;
+
+        /**
+          * Bind a double value to the specified parameter
+          * @param parameterIndex Parameter index
+          * @param value Value to bind.
+          */
+        BindDouble(parameterIndex: cxx_int32_t, value: cxx_double): void;
+
+        /**
+          * Bind a DPoint3d value to the specified parameter
+          * @param parameterIndex Parameter index
+          * @param value Value to bind.
+          */
+        BindDPoint3d(parameterIndex: cxx_int32_t, value: DPoint3dP): void;
+
+        /**
+         * Step the statement to the next row.
+         * @return false if the query is done.
+         */
+        Step(): cxx_enum_class_uint32_t<BeSQLiteDbResult>;
+
+        /**
+         * Return the index of an SQL parameter given its name. The index value returned is suitable for use 
+         * as the second parameter to one of the Bind functions. A zero is returned if no matching parameter is found. 
+         * @note a named parameter is a placeholder in a WHERE clause that is identified by a name, rather than by a simple ?
+         * @param parameterName   parameterName Name of the binding parameter
+         */
+        GetParameterIndex(parameterName: Bentley_Utf8String): cxx_int32_t;
+
+        /**
+         * Get the value of the specified column as a string
+         * @param columnIndex Index of ECSQL column in result set (0-based)
+         */
+        GetValueText(columnIndex: cxx_int32_t): Bentley_Utf8String;
+        /**
+         * Get the value of the specified column as an integer
+         * @param columnIndex Index of ECSQL column in result set (0-based)
+         */
+        GetValueInt(columnIndex: cxx_int32_t): cxx_int32_t;
+        /**
+         * Get the value of the specified column as a double
+         * @param columnIndex Index of ECSQL column in result set (0-based)
+         */
+        GetValueDouble(columnIndex: cxx_int32_t): cxx_double;
+        /**
+         * Get the value of the specified column as a DgnObjectId
+         * @param columnIndex Index of ECSQL column in result set (0-based)
+         */
+        GetValueId(columnIndex: cxx_int32_t): DgnObjectIdP;
+        /**
+         * Get the value of the specified column as a DPoint3d
+         * @param columnIndex Index of ECSQL column in result set (0-based)
+         */
+        GetValueDPoint3d(columnIndex: cxx_int32_t): DPoint3dP;
+        /**
+         * Get the value of the specified column as a DateTime string
+         * @param columnIndex Index of ECSQL column in result set (0-based)
+         */
+        GetValueDateTime(columnIndex: cxx_int32_t): Bentley_Utf8String;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type PreparedECSqlStatementP = cxx_pointer<PreparedECSqlStatement>;
+
     /** DgnDb - Projection of BentleyApi::Dgn::DgnDb */
     class DgnDb implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
@@ -115,6 +204,14 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         Models: DgnModelsP;
         /** The collection of ECSchemas in the DgnDb */
         Schemas: SchemaManagerP;
+
+        /** Get a prepared ECSqlStatement for SELECTing rows from this DgnDb
+          * @param ecsql    The body of the ECSql SELECT statement that is to be executed. Do not include the SELECT keyword in ecsql. That will be added automatically.
+          * @return a prepared ECSql statement or null if the SQL statement is invalid.
+          * @see ECClass::ECSqlName
+          */
+        GetPreparedECSqlSelectStatement(ecsql: Bentley_Utf8String): PreparedECSqlStatementP;
+
         OnDispose(): void;
         Dispose(): void;
     }
@@ -817,6 +914,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     class SchemaManager implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsECDbSchemaManager ***/
+        /** Look up an ECClass by its name */
         GetECClass(schemaNameOrPrefix: Bentley_Utf8String, className: Bentley_Utf8String): ECClassP;
         OnDispose(): void;
         Dispose(): void;
@@ -848,6 +946,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
         /** The name of the class */
         Name: Bentley_Utf8String;
+
+        /** The ECSql name of the class */
+        ECSqlName: Bentley_Utf8String;
 
         /** The schema to which the class belongs */
         Schema: ECSchemaP;

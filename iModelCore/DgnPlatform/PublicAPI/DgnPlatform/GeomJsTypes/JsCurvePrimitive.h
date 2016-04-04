@@ -235,6 +235,12 @@ public:
                     ));
         }
 
+    static JsEllipticArc *CreateLargestFilletAtMiddlePoint (JsDPoint3dP pointA, JsDPoint3dP pointB, JsDPoint3dP pointC)
+        {
+        return new JsEllipticArc (DEllipse3d::FromFilletInBoundedCorner (pointA->Get (), pointB->Get (), pointC->Get ()));
+        }
+
+
     JsTransformP CenterFrameAtFraction (double fraction) const
         {
         DEllipse3d arc;

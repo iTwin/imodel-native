@@ -145,10 +145,15 @@ function t_FilletConstructions ()
 {
     var pointA = new Bentley.Dgn.DPoint3d (1,0,0);
     var pointB = new Bentley.Dgn.DPoint3d (5,0,0);
-    var pointC = new Bentley.Dgn.DPoint3d (5,5,0);
+    var pointC = new Bentley.Dgn.DPoint3d (5,8,0);
     var vectorX = new Bentley.Dgn.DVector3d (1,0,0);
     var planeNormal = new Bentley.Dgn.DVector3d (0,0,1);
     var arc1 = Bentley.Dgn.EllipticArc.CreateFilletAtMiddlePoint (pointA, pointB, pointC, 2.0);
+    var arc1a = Bentley.Dgn.EllipticArc.CreateLargestFilletAtMiddlePoint (pointA, pointB, pointC);
+// The lines are at 90 degrees, so we know this radius is the closer point, distance 5:
+    var dAB = pointA.Distance(pointB);
+    var radius = arc1a.GetVector0 ().Magnitude ();
+    checker.NearDouble (dAB, radius, true);
     var arc2 = Bentley.Dgn.EllipticArc.CreateStartTangentNormalRadiusSweep (pointA, vectorX, planeNormal, 3.0,
                     Bentley.Dgn.Angle.CreateDegrees (45));
     // a frenet frame at the start

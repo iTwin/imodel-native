@@ -605,12 +605,14 @@ bool GeometryStreamIO::Operation::IsGeometryOp() const
         case OpCode::CurvePrimitive:
         case OpCode::SolidPrimitive:
         case OpCode::BsplineSurface:
-        case OpCode::ParasolidBRep:
         case OpCode::OpenCascadeBRep:
+#if defined (DGNPLATFORM_WIP_PARASOLID)
+        case OpCode::ParasolidBRep:
         case OpCode::BRepPolyface:
         case OpCode::BRepPolyfaceExact:
         case OpCode::BRepEdges:
         case OpCode::BRepFaceIso:
+#endif
         case OpCode::TextString:
             return true;
 
@@ -917,9 +919,7 @@ void GeometryStreamIO::Writer::Append(MSBsplineSurfaceCR surface)
 void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
     {
     bool saveBRep = false, saveFacets = false, saveEdges = false, saveFaceIso = false, facetFailure = false;
-#if defined (DGNPLATFORM_WIP_PARASOLID)
     size_t currSize = m_buffer.size();
-#endif
     IFaceMaterialAttachmentsCP attachments = entity.GetFaceMaterialAttachments();
 
     switch (entity.GetEntityType())
@@ -963,7 +963,6 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
             }
         }
 
-#if defined (DGNPLATFORM_WIP_PARASOLID)
     // Make the parasolid data available for platforms that can support it...MUST BE ADDED FIRST!!!
     if (saveBRep)
         {
@@ -1032,7 +1031,6 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
         fbb.Finish(mloc);
         Append(Operation(OpCode::ParasolidBRep, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
         }
-#endif
 
     // Store mesh representation for quick display or when parasolid isn't available...
     if (saveFacets)
@@ -1055,11 +1053,7 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
                     continue;
 
                 Append(params[i], true);
-#if defined (DGNPLATFORM_WIP_PARASOLID)
                 Append(*polyfaces[i], OpCode::BRepPolyface);
-#else
-                Append(*polyfaces[i]);
-#endif
                 }
             }
         else
@@ -1068,21 +1062,15 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
 
             if (!(facetFailure = !polyface.IsValid()))
                 {
-#if defined (DGNPLATFORM_WIP_PARASOLID)
                 Append(*polyface, saveEdges ? OpCode::BRepPolyface : OpCode::BRepPolyfaceExact);
-#else
-                Append(*polyface);
-#endif
                 }
             }
-#if defined (DGNPLATFORM_WIP_PARASOLID)
+
         if (facetFailure)
             m_buffer.resize(currSize); // Remove OpCode::ParasolidBRep, body is invalid...
-#endif			
         }
 
 
-#if defined (DGNPLATFORM_WIP_PARASOLID)
     // When facetted representation is an approximation, we need to store the edge curves for snapping...
     if (saveEdges)
         {
@@ -1182,7 +1170,6 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
                 }
             }
         }
-#endif
     }
 #endif
 
@@ -1958,7 +1945,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometricPrimitivePtr&
             return true;
             }
 
-        case GeometryStreamIO::OpCode::ParasolidBRep:
+        case GeometryStreamIO::OpCode::OpenCascadeBRep:
             {
             ISolidKernelEntityPtr entityPtr;
 
@@ -1969,7 +1956,8 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometricPrimitivePtr&
             return true;
             }
 
-        case GeometryStreamIO::OpCode::OpenCascadeBRep:
+#if defined (BENTLEYCONFIG_PARASOLIDS)
+        case GeometryStreamIO::OpCode::ParasolidBRep:
             {
             ISolidKernelEntityPtr entityPtr;
 
@@ -2005,6 +1993,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometricPrimitivePtr&
             elemGeom = GeometricPrimitive::Create(curvePtr);
             return true;
             }
+#endif
 
         case GeometryStreamIO::OpCode::TextString:
             {
@@ -2505,6 +2494,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                 break;
                 }
 
+#if defined (BENTLEYCONFIG_PARASOLIDS)
             case GeometryStreamIO::OpCode::ParasolidBRep:
                 {
                 output._DoOutputLine(Utf8PrintfString("OpCode::ParasolidBRep\n").c_str());
@@ -2534,6 +2524,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                 output._DoOutputLine(Utf8PrintfString("OpCode::BRepFaceIso\n").c_str());
                 break;
                 }
+#endif
 
             case GeometryStreamIO::OpCode::AreaFill:
                 {
@@ -2846,11 +2837,13 @@ static void UpdatePixelSizeRange(Render::GraphicR graphic, double newMin, double
 void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR context, Render::GeometryParamsR geomParams, bool activateParams) const
     {
     bool isQVis = graphic.IsForDisplay();
+#if defined (DGNPLATFORM_WIP_PARASOLID)
     bool isWireframe = (RenderMode::Wireframe == context.GetViewFlags().GetRenderMode());
     bool isQVWireframe = (isQVis && isWireframe);
     bool isPick = (nullptr != context.GetIPickGeom());
     bool isSnap = (isPick && context.GetIPickGeom()->_IsSnap()); // Only need BRep edges/face iso if snapping, mesh good enough for locate...
     bool useBRep = !(isQVis || isPick);
+#endif
     bool geomParamsChanged = activateParams || !isQVis; // NOTE: Don't always bake initial symbology into SubGraphics, it's activated before drawing QvElem...
 
     GeometryStreamIO::Reader reader(context.GetDgnDb());
@@ -3113,16 +3106,14 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 ISolidKernelEntityPtr entityPtr;
 
                 if (!reader.Get(egOp, entityPtr))
-                    {
-                    useBRep = false;
                     break;
-                    }
 
                 DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
                 graphic.AddBody(*entityPtr);
                 break;
                 }
 
+#if defined (BENTLEYCONFIG_PARASOLIDS)
             case GeometryStreamIO::OpCode::ParasolidBRep:
                 {
                 GeometryStreamEntryIdHelper::Increment(context.GetGeometryStreamEntryIdR());
@@ -3254,6 +3245,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 graphic.AddCurveVector(*curvePtr, false);
                 break;
                 }
+#endif
 
             case GeometryStreamIO::OpCode::TextString:
                 {
@@ -3342,7 +3334,9 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
     GeometryCollection collection(*this);
     Render::GraphicPtr graphic;
 
+#if defined (DGNPLATFORM_WIP_PARASOLID)
     collection.SetBRepOutput(GeometryCollection::BRepOutput::Mesh);
+#endif
 
     for (auto iter : collection)
         {
@@ -3497,8 +3491,11 @@ GeometryCollection::Iterator::EntryType GeometryCollection::Iterator::GetEntryTy
         case GeometryStreamIO::OpCode::BsplineSurface:
             return EntryType::BsplineSurface;
 
-        case GeometryStreamIO::OpCode::ParasolidBRep:
         case GeometryStreamIO::OpCode::OpenCascadeBRep:
+            return EntryType::SolidKernelEntity;
+
+#if defined (DGNPLATFORM_WIP_PARASOLID)
+        case GeometryStreamIO::OpCode::ParasolidBRep:
             return EntryType::SolidKernelEntity;
 
         case GeometryStreamIO::OpCode::BRepPolyface:
@@ -3508,6 +3505,7 @@ GeometryCollection::Iterator::EntryType GeometryCollection::Iterator::GetEntryTy
         case GeometryStreamIO::OpCode::BRepEdges:
         case GeometryStreamIO::OpCode::BRepFaceIso:
             return EntryType::BRepCurveVector;
+#endif
 
         case GeometryStreamIO::OpCode::TextString:
             return EntryType::TextString;
@@ -3528,8 +3526,10 @@ bool GeometryCollection::Iterator::IsCurve() const
         case GeometryStreamIO::OpCode::PointPrimitive2d:
         case GeometryStreamIO::OpCode::ArcPrimitive:
         case GeometryStreamIO::OpCode::CurvePrimitive:
+#if defined (DGNPLATFORM_WIP_PARASOLID)
         case GeometryStreamIO::OpCode::BRepEdges: // brep edge/face iso are always unstructured open curves (boundary type none)...
         case GeometryStreamIO::OpCode::BRepFaceIso:
+#endif
             return true;
 
         case GeometryStreamIO::OpCode::CurveVector:
@@ -3569,8 +3569,10 @@ bool GeometryCollection::Iterator::IsSurface() const
             }
 
         case GeometryStreamIO::OpCode::Polyface:
+#if defined (DGNPLATFORM_WIP_PARASOLID)
         case GeometryStreamIO::OpCode::BRepPolyface: // NOTE: Won't be volumetric for a solid brep that had face attachments!
         case GeometryStreamIO::OpCode::BRepPolyfaceExact:
+#endif
             {
             GeometricPrimitivePtr geom = GetGeometryPtr();
 
@@ -3613,8 +3615,10 @@ bool GeometryCollection::Iterator::IsSolid() const
             }
 
         case GeometryStreamIO::OpCode::Polyface:
+#if defined (DGNPLATFORM_WIP_PARASOLID)
         case GeometryStreamIO::OpCode::BRepPolyface:
         case GeometryStreamIO::OpCode::BRepPolyfaceExact:
+#endif
             {
             GeometricPrimitivePtr geom = GetGeometryPtr();
 
@@ -3730,6 +3734,7 @@ void GeometryCollection::Iterator::ToNext()
 
             default:
                 {
+#if defined (DGNPLATFORM_WIP_PARASOLID)
                 bool    doOutput = false, doIncrement = false;
 
                 switch (m_egOp.m_opCode)
@@ -3738,11 +3743,7 @@ void GeometryCollection::Iterator::ToNext()
                         {
                         // Decide now on best "auto" output representation by checking if Parasolid is available...
                         if (BRepOutput::None != (BRepOutput::Auto & m_state->m_bRepOutput))
-#if defined (BENTLEYCONFIG_PARASOLIDS)
                             m_state->m_bRepOutput = ((m_state->m_bRepOutput & ~BRepOutput::Auto) | (DgnPlatformLib::QueryHost()->GetSolidsKernelAdmin()._IsParasolidLoaded() ? BRepOutput::BRep : BRepOutput::Mesh));
-#else
-                            m_state->m_bRepOutput = ((m_state->m_bRepOutput & ~BRepOutput::Auto) | (BRepOutput::BRep));
-#endif
 
                         doOutput = (BRepOutput::None != (BRepOutput::BRep & m_state->m_bRepOutput));
                         doIncrement = true;
@@ -3785,6 +3786,12 @@ void GeometryCollection::Iterator::ToNext()
 
                 if (!doOutput)
                     break;
+#else
+                if (!m_egOp.IsGeometryOp())
+                    break;
+
+                GeometryStreamEntryIdHelper::Increment(m_state->m_geomStreamEntryId);
+#endif
 
                 m_state->m_geometry = nullptr; // Defer extract until asked...
 
@@ -3806,7 +3813,9 @@ void GeometryCollection::SetNestedIteratorContext(Iterator const& iter)
     m_state.m_geomStreamEntryId = iter.m_state->m_geomStreamEntryId;
     m_state.m_sourceToWorld = iter.m_state->m_sourceToWorld;
     m_state.m_geomToSource = iter.m_state->m_geomToSource;
+#if defined (DGNPLATFORM_WIP_PARASOLID)
     m_state.m_bRepOutput = iter.m_state->m_bRepOutput;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3869,11 +3878,13 @@ GeometryStreamEntryId GeometryBuilder::GetGeometryStreamEntryId() const
                 break;
                 }
 
+#if defined (DGNPLATFORM_WIP_PARASOLID)
             case GeometryStreamIO::OpCode::BRepPolyface:
             case GeometryStreamIO::OpCode::BRepPolyfaceExact:
             case GeometryStreamIO::OpCode::BRepEdges:
             case GeometryStreamIO::OpCode::BRepFaceIso:
                 break; // These are considered part of OpCode::ParasolidBRep for purposes of GeometryStreamEntryId...
+#endif
 
             default:
                 {
@@ -3923,7 +3934,9 @@ BentleyStatus GeometryBuilder::SetGeometryStream(DgnGeometryPartR part)
         {
         GeometryCollection collection(part.GetGeometryStream(), m_dgnDb);
 
+#if defined (DGNPLATFORM_WIP_PARASOLID)
         collection.SetBRepOutput(GeometryCollection::BRepOutput::Mesh); // Can just use the mesh and avoid creating the ISolidKernelEntity...
+#endif
 
         for (auto iter : collection)
             {
