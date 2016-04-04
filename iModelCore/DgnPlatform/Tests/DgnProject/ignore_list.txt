@@ -43,3 +43,8 @@ DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad       # Unable to query line s
 
 #TFS 390510 Colin to address it
 ImportTests.simpleSchemaImport
+
+DgnECNavigatorTest.DgnLinksElementInfo # Need to add support for DgnLinks - JeffM
+DgnECNavigatorTest.IfcElementInfo # Need to add support for RelatedItemsDisplaySpecification - Carole
+
+
