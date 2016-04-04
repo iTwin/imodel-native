@@ -736,10 +736,28 @@ struct RealityDataCache : NonCopyableClass, IRealityDataStorageResponseReceiver,
         bool operator()(RefCountedPtr<T> const& lhs, RefCountedPtr<T> const& rhs) const {return lhs.get() < rhs.get();}
         };
 
+    struct Arrival : RefCountedBase
+    {
+    private:
+        Utf8String m_id;
+        IRealityDataBasePtr m_data;
+        RealityDataCacheResult m_result;
+    private:
+        Arrival(IRealityDataBase& data) : m_id(data.GetId()), m_data(&data), m_result(RealityDataCacheResult::Success) {}
+        Arrival(Utf8CP id, RealityDataCacheResult result) : m_id(id), m_result(result) {}
+    public:
+        static RefCountedPtr<Arrival> Create(IRealityDataBase& data) {return new Arrival(data);}
+        static RefCountedPtr<Arrival> Create(Utf8CP id, RealityDataCacheResult result) {return new Arrival(id, result);}
+        Utf8StringCR GetId() const {return m_id;}
+        IRealityDataBase* GetData() const {return m_data.get();}
+        RealityDataCacheResult GetResult() const {return m_result;}
+    };
+    typedef RefCountedPtr<Arrival> ArrivalPtr;
+
 private:
     bmap<Utf8String, IRealityDataStorageBasePtr> m_storages;
     bmap<Utf8String, IRealityDataSourceBasePtr>  m_sources;
-    ThreadSafeQueue<IRealityDataBasePtr> m_arrivals;
+    ThreadSafeQueue<ArrivalPtr> m_arrivals;
     int m_arrivalsQueueSize;
     bmap<Utf8String, bset<RefCountedPtr<IRealityDataStoragePersistHandler>, RefCountedPtrComparer<IRealityDataStoragePersistHandler>>> m_persistHandlers;
     BeMutex m_persistHandlersCS;
@@ -756,7 +774,7 @@ private:
     virtual void _OnResponseReceived(RealityDataStorageResponse const& response, IRealityDataStorageBase::SelectOptions const&, bool isAsync) override;
 
     RealityDataCacheResult HandleStorageResponse(RealityDataStorageResponse const& response, RealityDataCacheOptions const&);
-    void AddToArrivals(IRealityDataBase& data);
+    void AddToArrivals(Arrival&);
     RealityDataCacheResult ResolveResult(RealityDataStorageResult storageResult, RealityDataSourceResult sourceResult = RealityDataSourceResult::Error_NotFound) const;
     RefCountedPtr<IRealityDataSourceRequestHandler> DequeueRequestHandler(Utf8CP id, IRealityDataBase const&);
     RefCountedPtr<IRealityDataStoragePersistHandler> DequeuePersistHandler(Utf8CP id, IRealityDataBase const&);
@@ -770,7 +788,7 @@ private:
     DGNPLATFORM_EXPORT void QueuePersistHandler(Utf8CP id, IRealityDataStoragePersistHandler&);
     DGNPLATFORM_EXPORT void QueueRequestHandler(Utf8CP id, IRealityDataSourceRequestHandler&);
 
-    DGNPLATFORM_EXPORT BentleyStatus GetFromArrivals(IRealityDataBase& data, Utf8CP id, RealityDataCacheOptions const& options);
+    DGNPLATFORM_EXPORT ArrivalPtr GetFromArrivals(Utf8CP id, RealityDataCacheOptions const& options);
     DGNPLATFORM_EXPORT RealityDataCacheResult GetResult(IRealityDataBase& data, Utf8CP id, RealityDataStorageResult storageResult);
     DGNPLATFORM_EXPORT RealityDataCacheResult GetResult(Utf8CP id, RealityDataSourceResult sourceResult);
 
@@ -794,8 +812,14 @@ public:
     template<typename DataType> RealityDataCacheResult Get(RefCountedPtr<DataType>& data, Utf8CP id, typename DataType::RequestOptions const& options)
         {
         data = DataType::Create();
-        if (SUCCESS == GetFromArrivals(*data, id, options))
-            return RealityDataCacheResult::Success;
+
+        ArrivalPtr arrival = GetFromArrivals(id, options);
+        if (arrival.IsValid())
+            {
+            if (nullptr != arrival->GetData())
+                ((IRealityDataBase*)data.get())->_InitFrom(*arrival->GetData(), options);
+            return arrival->GetResult();
+            }
 
         if (!options.UseStorage())
             {
