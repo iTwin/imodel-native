@@ -31,19 +31,21 @@ BentleyStatus JsonReader::Read(JsonValueR jsonInstances, JsonValueR jsonDisplayI
 
     // Add any instances of the specified class itself
     ECRelationshipPath trivialPathToClass;
-    if (SUCCESS != GetTrivialPathToSelf(trivialPathToClass, *m_ecClass))
-        return ERROR;
-
-    if (SUCCESS != AddInstancesFromSpecifiedClassPath(jsonInstances, jsonDisplayInfo, trivialPathToClass, ecInstanceId, formatOptions))
-        return ERROR;
+    BentleyStatus status = GetTrivialPathToSelf(trivialPathToClass, *m_ecClass);
+    if (SUCCESS == status)
+        status = AddInstancesFromSpecifiedClassPath(jsonInstances, jsonDisplayInfo, trivialPathToClass, ecInstanceId, formatOptions);
 
     // Add any related instances according to the "RelatedItemsDisplaySpecification" custom attribute
-    if (SUCCESS != AddInstancesFromRelatedItems(jsonInstances, jsonDisplayInfo, *m_ecClass, trivialPathToClass, ecInstanceId, formatOptions))
-        return ERROR;
+    if (SUCCESS == status)
+        status = AddInstancesFromRelatedItems(jsonInstances, jsonDisplayInfo, *m_ecClass, trivialPathToClass, ecInstanceId, formatOptions);
 
-    jsonInstances = Json::nullValue;
-    jsonDisplayInfo = Json::nullValue;
-    return SUCCESS;
+    if (status != SUCCESS)
+        {
+        jsonInstances = Json::nullValue;
+        jsonDisplayInfo = Json::nullValue;
+        }
+
+    return status;
     }
 
 //---------------------------------------------------------------------------------------
