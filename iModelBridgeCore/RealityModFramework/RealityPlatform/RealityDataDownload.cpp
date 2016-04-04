@@ -126,6 +126,7 @@ RealityDataDownload::RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName
     m_pCurlHandle = curl_multi_init();
     m_pProgressFunc = nullptr;
     m_pStatusFunc = nullptr;
+    m_certPath = WString();
 
     m_curEntry = 0;
     m_nbEntry = pi_Link_FileName.size();
@@ -310,6 +311,12 @@ bool RealityDataDownload::SetupCurlandFile(size_t pi_index)
         curl_easy_setopt(pCurl, CURLOPT_HEADER, 0L);
         curl_easy_setopt(pCurl, CURLOPT_FAILONERROR, 1L);
         curl_easy_setopt(pCurl, CURLOPT_FOLLOWLOCATION, 1L);
+
+        if (!WString::IsNullOrEmpty(m_certPath.c_str()))
+            {
+            curl_easy_setopt(pCurl, CURLOPT_SSL_VERIFYPEER, 1);
+            curl_easy_setopt(pCurl, CURLOPT_CAINFO, Utf8String(m_certPath));
+            }
 
 
         /* Define our callback to get called when there's data to be written */

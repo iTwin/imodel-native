@@ -54,8 +54,8 @@ namespace IndexECPlugin.Source.Helpers
     internal class USGSDataFetcher : IUSGSDataFetcher
         {
         //TODO : Add outputFormat=JSON in WebReq???
-        const string WebReqCategories = "http://viewer.nationalmap.gov/tnmaccess/api/searchCategories?";
-        const string WebReq = "http://viewer.nationalmap.gov/tnmaccess/api/searchProducts?bbox=_bbox&q=&start=&end=&dateType=&datasets=_datasets&prodFormats=_prodFormats&prodExtents=&polyCode=&polyType=&max=_maxResults&offset=0";
+        const string WebReqCategories = "https://viewer.nationalmap.gov/tnmaccess/api/searchCategories?";
+        const string WebReq = "https://viewer.nationalmap.gov/tnmaccess/api/searchProducts?bbox=_bbox&q=&start=&end=&dateType=&datasets=_datasets&prodFormats=_prodFormats&prodExtents=&polyCode=&polyType=&max=_maxResults&offset=0";
         string MaxResults = ConfigurationRoot.GetAppSetting("RECPMaxResultsUSGS") ?? "400";
         //const int USGSIdLenght = 24;
         private readonly List<UsgsAPICategory> m_categoryTable = new List<UsgsAPICategory> 
