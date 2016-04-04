@@ -784,7 +784,6 @@ BentleyStatus ECDbMap::CreateOrUpdateIndexesInDb() const
         }
 
     IndexMappingInfoCache indexInfoCache (m_ecdb, *m_schemaImportContext);
-    bmap<Utf8String, DbIndex const*> comparableIndexDefs;
     for (DbIndex const* index : indexes)
         {
         const ECClassId classId = index->GetClassId();

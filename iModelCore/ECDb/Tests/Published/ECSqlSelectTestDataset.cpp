@@ -2516,10 +2516,10 @@ ECSqlTestDataset ECSqlSelectTestDataset::PrimitiveTests (int rowCountPerClass)
     //Primitive Property with different case
     {
     ecsql = "SELECT b FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT B, d FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, rowCountPerClass);
     }
 
         {

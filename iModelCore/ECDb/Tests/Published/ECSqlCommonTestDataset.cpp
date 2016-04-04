@@ -124,6 +124,16 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType ecsqlType, 
         {
         Utf8String ecsql;
 
+        //case insensitive tests
+        ecsql.Sprintf("%s WHERE B = NULL OR b = NULL", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        {
+        ecsql.Sprintf("%s WHERE i>=:myParam", pClassECSqlStub.c_str());
+        auto& testItem = AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+        testItem.AddParameterValue(ECSqlTestItem::ParameterValue("MypaRaM", ECValue(1)));
+        }
+
         ecsql.Sprintf("%s WHERE I IS 123", pClassECSqlStub.c_str());
         ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 

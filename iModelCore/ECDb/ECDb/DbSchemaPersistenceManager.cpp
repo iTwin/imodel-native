@@ -754,7 +754,7 @@ bool DbSchemaPersistenceManager::IsTableChanged(ECDbCR ecdb, DbTable const& tabl
         }
 
     //Create a fast hash set of existing db column list
-    bset<Utf8String> namesOfExistingColumnsSet;
+    bset<Utf8String, CompareIUtf8Ascii> namesOfExistingColumnsSet;
     for (Utf8StringCR name : namesOfExistingColumns)
         {
         namesOfExistingColumnsSet.insert(name);
@@ -810,7 +810,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateOrUpdateTable(ECDbCR ecdb, DbTab
         }
 
     //Create a fast hash set of existing db column list
-    bset<Utf8String> existingColumnNamesInDbSet;
+    bset<Utf8String, CompareIUtf8Ascii> existingColumnNamesInDbSet;
     for (Utf8StringCR existingDbColumn : existingColumnNamesInDb)
         {
         existingColumnNamesInDbSet.insert(existingDbColumn);

@@ -96,7 +96,7 @@ struct ECDbViewFactory
             bool m_supportUpdate;
             bool m_polymorphic;
             bool m_neverReturnNullView;
-            std::set<Utf8String> m_propertyPathFilter;
+            std::set<Utf8String, CompareIUtf8Ascii> m_propertyPathFilter;
         public:
             //! Create system view
             Param(bool polymorphic, bool neverReturnNullView, bool supportDelete, bool supportInsert, bool supportUpdate)

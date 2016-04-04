@@ -33,7 +33,7 @@ public:
     typedef std::vector<PropertyMapCP>::const_iterator const_iterator;
 
 private:
-    typedef std::map<Utf8CP, PropertyMapPtr, CompareUtf8> PropertyMapsByAccessString;
+    typedef std::map<Utf8CP, PropertyMapPtr, CompareIUtf8Ascii> PropertyMapsByAccessString;
 
     PropertyMapsByAccessString m_dictionary;
     std::vector<PropertyMapCP> m_orderedCollection;

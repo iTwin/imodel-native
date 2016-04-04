@@ -34,7 +34,7 @@ struct ECSqlPrepareContext
             private:
                 static bool IsSystemProperty(Utf8CP accessString)
                     {
-                    static std::set<Utf8CP, CompareUtf8> s_systemProperties
+                    static std::set<Utf8CP, CompareIUtf8Ascii> s_systemProperties
                         {
                         ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME,
                         ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME,
@@ -60,7 +60,7 @@ struct ECSqlPrepareContext
                     return output;
                     }
             private:
-                std::set<Utf8String> m_selection;
+                std::set<Utf8String, CompareIUtf8Ascii> m_selection;
             public:
                 SelectionOptions()
                     {}

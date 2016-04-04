@@ -73,7 +73,7 @@ struct PropertyMapSet : NonCopyableClass
     typedef std::vector<EndPoint const*> EndPoints;
     private:
         std::vector<std::unique_ptr<EndPoint>> m_orderedEndPoints;
-        std::map<Utf8CP, EndPoint const*, CompareUtf8> m_endPointByAccessString;
+        std::map<Utf8CP, EndPoint const*, CompareIUtf8Ascii> m_endPointByAccessString;
         ClassMap const& m_classMap;
 
         explicit PropertyMapSet(ClassMap const& classMap) : m_classMap(classMap) {}
