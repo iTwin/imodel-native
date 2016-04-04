@@ -18,7 +18,8 @@
         <ECProperty propertyName="Pb2d" typeName="point2d" readOnly="false"/>
         <ECArrayProperty propertyName="PBA" typeName="boolean" readOnly="false" minOccurs="5" maxOccurs="5"/>
     </ECEntityClass>
-    <ECStructClass typeName="C" modifier="None">
+    <ECEntityClass typeName="C" modifier="None">
+		<BaseClass>B</BaseClass>
         <ECProperty propertyName="PAC" typeName="binary" readOnly="false"/>
-    </ECStructClass>
+    </ECEntityClass>
 </ECSchema>
