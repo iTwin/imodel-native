@@ -239,10 +239,14 @@ void DgnECNavigatorTest::ValidateElementInfo (JsonValueR actualElementInfo, WCha
     bool readFileStatus = ReadJsonFromFile (expectedElementInfo, expectedFile.GetName());
     ASSERT_TRUE (readFileStatus);
     
-    // Ignore "$ECInstanceId" in comparison - it's too volatile. 
+    // Ignore "$ECInstanceId", "LastMod" in comparison - it's too volatile. 
     ASSERT_TRUE (actualElementInfo["ecInstances"].size() == expectedElementInfo["ecInstances"].size());
-    for (int ii=0; ii < (int) actualElementInfo["ecInstances"].size(); ii++)
-        actualElementInfo["ecInstances"][ii]["$ECInstanceId"] = "*";
+    for (int ii = 0; ii < (int) actualElementInfo["ecInstances"].size(); ii++)
+        {
+        JsonValueR jsonInstance = actualElementInfo["ecInstances"][ii];
+        jsonInstance["$ECInstanceId"] = "*";
+        jsonInstance["LastMod"] = "*";
+        }
 
     int compare = expectedElementInfo.compare (actualElementInfo);
     if (0 != compare)
