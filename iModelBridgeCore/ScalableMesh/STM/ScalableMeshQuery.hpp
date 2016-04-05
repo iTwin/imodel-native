@@ -2938,25 +2938,15 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTextures(bvect
 
     if (!m_node->IsTextured())
     {
-        // First node, texture are not initialised => save texture parcours all sibling node and save the texture id on it etc...
-        for (int i = 0; i < numTextures; i++)
+		// Contrarily to a previous version, store one texture per node instead of one texture shared between siblings
+		for (int i = 0; i < numTextures; i++)
         {
             m_meshNode->PushTexture(i, &data[i][0], data[i].size());
             m_meshNode->SetTextureDirty(i);
             m_meshNode->StoreTexture(i);
         }
 
-        auto nodeParent = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_meshNode->GetParentNode());
-        if (nodeParent != NULL)
-        {
-            for (int i = 0; i < nodeParent->m_apSubNodes.size(); i++)
-            {
-                nodeParent->m_apSubNodes[i]->m_nodeHeader.m_areTextured = true;
-                nodeParent->m_apSubNodes[i]->m_nodeHeader.m_nbTextures = numTextures;
-                nodeParent->m_apSubNodes[i]->m_nodeHeader.m_textureID = m_meshNode->m_nodeHeader.m_textureID;
-                nodeParent->m_apSubNodes[i]->SetDirty(true);
-            }
-        }
+		m_node->m_nodeHeader.m_areTextured = true;
     }
 
     return BSISUCCESS;
