@@ -394,6 +394,78 @@ ForeignKeyDbConstraint* DbTable::CreateForeignKeyConstraint(DbTable const& refer
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle    04/2016
+//---------------------------------------------------------------------------------------
+BentleyStatus DbTable::CreateForeignKeyConstraintsForExistingTableMapStrategy()
+    {
+    if (GetEditHandleR().AssertNotInEditMode())
+        return ERROR;
+
+    struct ConstraintInfo
+        {
+        DbTable const* m_referencedTable;
+        std::vector<Utf8String> m_fkColumnNames;
+        std::vector<Utf8String> m_referencedColumnNames;
+        ForeignKeyDbConstraint::ActionType m_onDelete;
+        ForeignKeyDbConstraint::ActionType m_onUpdate;
+
+        ConstraintInfo() : m_referencedTable(nullptr), m_onDelete(ForeignKeyDbConstraint::ActionType::NotSpecified), m_onUpdate(ForeignKeyDbConstraint::ActionType::NotSpecified) {}
+        };
+
+    Utf8String sql;
+    sql.Sprintf("pragma foreign_key_list('%s')", m_name.c_str());
+
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(m_dbSchema.GetECDb(), sql.c_str()))
+        {
+        m_dbSchema.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Could not prepare %s ti retrieve foreign key information for table %s.", sql.c_str(), m_name.c_str());
+        return ERROR;
+        }
+
+    std::vector<ConstraintInfo> fkConstraintInfos;
+    int64_t previousId = INT64_C(-1);
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(0), "id") == 0);
+        int64_t id = stmt.GetValueInt64(0);
+        if (id != previousId)
+            fkConstraintInfos.push_back(ConstraintInfo());
+
+        ConstraintInfo& constraintInfo = fkConstraintInfos.back();
+
+        if (id != previousId)
+            {
+            //only read when rows for a new constraint start.
+            BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(2), "table") == 0);
+            Utf8CP referencedTableName = stmt.GetValueText(2);
+            constraintInfo.m_referencedTable = m_dbSchema.FindTable(referencedTableName);
+            if (constraintInfo.m_referencedTable == nullptr)
+                {
+                BeAssert(false);
+                return ERROR;
+                }
+
+            BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(5), "on_update") == 0);
+            Utf8CP onUpdateActionStr = stmt.GetValueText(5);
+            constraintInfo.m_onUpdate = ForeignKeyDbConstraint::ToActionType(onUpdateActionStr);
+            BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(6), "on_delete") == 0);
+            Utf8CP onDeleteActionStr = stmt.GetValueText(6);
+            constraintInfo.m_onDelete = ForeignKeyDbConstraint::ToActionType(onDeleteActionStr);
+
+            previousId = id;
+            }
+
+        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(3), "from") == 0);
+        constraintInfo.m_fkColumnNames.push_back(Utf8String(stmt.GetValueText(3)));
+
+        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(4), "to") == 0);
+        constraintInfo.m_referencedColumnNames.push_back(Utf8String(stmt.GetValueText(4)));
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
 std::vector<DbConstraint const*> DbTable::GetConstraints() const
@@ -1091,16 +1163,16 @@ ForeignKeyDbConstraint::ActionType ForeignKeyDbConstraint::ToActionType(Utf8CP s
     if (BeStringUtilities::StricmpAscii(str, "Cascade") == 0)
         return ActionType::Cascade;
 
-    if (BeStringUtilities::StricmpAscii(str, "SetNull") == 0)
+    if (BeStringUtilities::StricmpAscii(str, "SetNull") == 0 || BeStringUtilities::StricmpAscii(str, "SET NULL") == 0)
         return ActionType::SetNull;
 
-    if (BeStringUtilities::StricmpAscii(str, "SetDefault") == 0)
+    if (BeStringUtilities::StricmpAscii(str, "SetDefault") == 0 || BeStringUtilities::StricmpAscii(str, "SET DEAULT") == 0)
         return ActionType::SetDefault;
 
     if (BeStringUtilities::StricmpAscii(str, "Restrict") == 0)
         return ActionType::Restrict;
 
-    if (BeStringUtilities::StricmpAscii(str, "NoAction") == 0)
+    if (BeStringUtilities::StricmpAscii(str, "NoAction") == 0 || BeStringUtilities::StricmpAscii(str, "NO ACTION") == 0)
         return ActionType::NoAction;
 
     return ActionType::NotSpecified;

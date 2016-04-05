@@ -410,18 +410,21 @@ public:
     std::weak_ptr<DbColumn> FindColumnWeakPtr(Utf8CP name) const;
     bool TryGetECClassIdColumn(DbColumn const*&) const;
     std::vector<DbColumn const*> const& GetColumns() const { return m_orderedColumns; }
-    EditHandle& GetEditHandleR() { return m_editHandle; }
-    EditHandle const& GetEditHandle() const { return m_editHandle; }
-    PrimaryKeyDbConstraint& GetPrimaryKeyConstraintR();
-    PrimaryKeyDbConstraint const* GetPrimaryKeyConstraint() const;
-    ForeignKeyDbConstraint* CreateForeignKeyConstraint(DbTable const& referencedTable);
-    BentleyStatus RemoveConstraint(DbConstraint const&);
-    std::vector<DbConstraint const*> GetConstraints() const;
     BentleyStatus GetFilteredColumnList(std::vector<DbColumn const*>&, PersistenceType) const;
     BentleyStatus GetFilteredColumnList(std::vector<DbColumn const*>&, DbColumn::Kind) const;
     DbColumn const* GetFilteredColumnFirst(DbColumn::Kind) const;
     bool DeleteColumn(Utf8CP name);
     void AddColumnEventHandler(std::function<void(ColumnEvent, DbColumn&)> columnEventHandler) { m_columnEvents.push_back(columnEventHandler); }
+
+    EditHandle& GetEditHandleR() { return m_editHandle; }
+    EditHandle const& GetEditHandle() const { return m_editHandle; }
+    PrimaryKeyDbConstraint& GetPrimaryKeyConstraintR();
+    PrimaryKeyDbConstraint const* GetPrimaryKeyConstraint() const;
+    ForeignKeyDbConstraint* CreateForeignKeyConstraint(DbTable const& referencedTable);
+    BentleyStatus CreateForeignKeyConstraintsForExistingTableMapStrategy();
+    std::vector<DbConstraint const*> GetConstraints() const;
+    BentleyStatus RemoveConstraint(DbConstraint const&);
+
     bool IsNullTable() const;
     bool IsValid() const { return m_columns.size() > 0; }
     };

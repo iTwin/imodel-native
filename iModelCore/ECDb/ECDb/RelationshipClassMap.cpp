@@ -398,13 +398,6 @@ MappingStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, Clas
                 {
                 if (SUCCESS != ValidateForeignKeyColumn(*fkCol, cardinalityImpliesNotNullOnFkCol, foreignKeyColumnKind))
                     return MappingStatus::Error;
-
-
-                /*GetECDbMap().GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                                                                                 "Failed to map ECRelationshipClass '%s'. ForeignKey column name '%s' is already used by another column in the foreign key end table %s.",
-                                                                                 relationshipClass.GetFullName(), fkColName.c_str(), foreignEndTable->GetName().c_str());
-
-                return MappingStatus::Error;*/
                 }
             else
                 {
@@ -413,7 +406,7 @@ MappingStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, Clas
                     return MappingStatus::Error;
 
                 const PersistenceType columnPersistenceType = foreignEndTable->IsOwnedByECDb() && foreignEndTable->GetPersistenceType() == PersistenceType::Persisted ? PersistenceType::Persisted : PersistenceType::Virtual;
-                DbColumn* fkCol = const_cast<DbTable*>(foreignEndTable)->CreateColumn(fkColName.c_str(), DbColumn::Type::Integer, fkColPosition, foreignKeyColumnKind, columnPersistenceType);
+                fkCol = const_cast<DbTable*>(foreignEndTable)->CreateColumn(fkColName.c_str(), DbColumn::Type::Integer, fkColPosition, foreignKeyColumnKind, columnPersistenceType);
                 if (fkCol == nullptr)
                     {
                     LOG.errorv("Could not create foreign key column %s in table %s for the ECRelationshipClass %s.",
