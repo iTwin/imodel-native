@@ -691,7 +691,7 @@ bool HFCStatHttpFileImpl::IsURLInternetImaging(const HFCURL* pi_pURL) const
         Utf8String SearchPart(((const HFCURLHTTPBase*)pi_pURL)->GetSearchPart(), 0, 4);
 
         // verify that it starts with "fif="
-        Result = SearchPart.CompareToI("fif=");
+        Result = SearchPart.EqualsI("fif=");
         }
 
     return (Result);

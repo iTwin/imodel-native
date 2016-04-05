@@ -427,7 +427,7 @@ bool HRFBilCreator::IsKindOfFileOpenFromExternalHeader(const HFCPtr<HFCURL>& pi_
                 (ValueStartPos[i] == '\n'))
                 {
                 // Get the Url for the ".bil" file, because we might be opening from a header file
-                UrlString.replace(UrlString.rfind('.') + 1, strlen("bi"), "bil");
+                UrlString.replace(UrlString.rfind('.') + 1, strlen("bil"), "bil");
                 BILUrl = HFCURL::Instanciate(UrlString);
 
 
@@ -455,7 +455,7 @@ bool HRFBilCreator::IsKindOfFileOpenFromExternalHeader(const HFCPtr<HFCURL>& pi_
         if(((NULL != ValueStartPos) && (NbBands == 1 || NbBands == 3)) ? true : false)
             {
             // Get the Url for the ".bil" file, because we might be opening from a header file
-            UrlString.replace(UrlString.rfind('.') + 1, strlen("bi"), "bil");
+            UrlString.replace(UrlString.rfind('.') + 1, strlen("bil"), "bil");
             BILUrl = HFCURL::Instanciate(UrlString);
 
             // Open the BMP File & place file pointer at the start of the file
@@ -1496,7 +1496,8 @@ void HRFBilFile::ReadLine
     while (!EndOfLine)
         {
         memset(Buffer, 0, BufferSize);
-        for (uint16_t i = 0; i < BufferSize && !EndOfLine; i++)
+        // (BufferSize-1) >> Do not write over the null char.
+        for (uint16_t i = 0; i < (BufferSize-1) && !EndOfLine; i++)
             {
             pi_pFile->Read(&Buffer[i], 1);
             EndOfLine = Buffer[i] == '\n' || pi_pFile->EndOfFile();

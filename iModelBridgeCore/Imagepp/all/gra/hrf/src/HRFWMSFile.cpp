@@ -301,13 +301,13 @@ HRFWMSFile::HRFWMSFile(const HFCPtr<HFCURL>& pi_rpURL,
     Utf8String versionString;
     pChildNode->GetContent(versionString);
 
-    if (versionString.Equals("1.0") == 0)
+    if (versionString.Equals("1.0"))
         ReadWMS_1_0(pMainNode);
-    else if (versionString.Equals("1.1") == 0)
+    else if (versionString.Equals("1.1"))
         ReadWMS_1_1(pMainNode);
-    else if (versionString.Equals("1.2") == 0)
+    else if (versionString.Equals("1.2"))
         ReadWMS_1_2(pMainNode, versionString);
-    else if (versionString.Equals("1.3") == 0)
+    else if (versionString.Equals("1.3"))
         ReadWMS_1_2(pMainNode, versionString);
     else
         throw HRFUnsupportedxWMSVersionException(pi_rpURL->GetURL());

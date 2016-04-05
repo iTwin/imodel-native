@@ -1213,8 +1213,6 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 bool HRFGifFile::ReadGifHeader(GifHeader* pio_pGifHeader, HFCBinStream* pi_pGifFile, HRFRasterFile* pi_pRaster)
     {
-    HPRECONDITION (pi_pRaster == 0);
-
     bool Status = false;
 
     if ((pi_pGifFile->Read(&pio_pGifHeader->Signature,    sizeof(Byte) * 3)                  != (sizeof(Byte) * 3))                  ||
@@ -1256,8 +1254,6 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 bool HRFGifFile::ReadGifImageDesc(GifImageDescriptor* pio_pGifImageDesc, HFCBinStream* pi_pGifFile, HRFRasterFile* pi_pRaster)
     {
-    HPRECONDITION (pi_pRaster == 0);
-
     bool Status = false;
 
     if ((pi_pGifFile->Read(&pio_pGifImageDesc->ImageLeft,   sizeof pio_pGifImageDesc->ImageLeft)   != (sizeof pio_pGifImageDesc->ImageLeft)) ||
@@ -1295,8 +1291,6 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 bool HRFGifFile::ReadGifGraphicControl(GifGraphicControl* pio_pGifGraphicControl, HFCBinStream* pi_pGifFile, HRFRasterFile* pi_pRaster)
     {
-    HPRECONDITION (pi_pRaster == 0);
-
     bool Status = true;
 
     if ((pi_pGifFile->Read(&pio_pGifGraphicControl->BlockSize,   sizeof pio_pGifGraphicControl->BlockSize)   != (sizeof pio_pGifGraphicControl->BlockSize)) ||
@@ -1319,8 +1313,6 @@ bool HRFGifFile::ReadGifGraphicControl(GifGraphicControl* pio_pGifGraphicControl
 //-----------------------------------------------------------------------------
 bool HRFGifFile::ReadGifPlainText(GifPlainText* pio_pGifPlainText, HFCBinStream* pi_pGifFile, HRFRasterFile* pi_pRaster)
     {
-    HPRECONDITION (pi_pRaster == 0);
-
     bool Status = false;
 
     if ((pi_pGifFile->Read(&pio_pGifPlainText->BlockSize,       sizeof pio_pGifPlainText->BlockSize)        != (sizeof pio_pGifPlainText->BlockSize)) ||
@@ -1356,8 +1348,6 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 bool HRFGifFile::ReadGifApplication(GifApplication* pio_pGifApplication, HFCBinStream* pi_pGifFile, HRFRasterFile* pi_pRaster)
     {
-    HPRECONDITION (pi_pRaster == 0);
-
     bool Status = false;
 
     if ((pi_pGifFile->Read(&pio_pGifApplication->BlockSize,   sizeof(pio_pGifApplication->BlockSize)) != (sizeof(pio_pGifApplication->BlockSize))) ||
@@ -1385,8 +1375,6 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 bool HRFGifFile::ReadGifComment(GifComment* pio_pGifComment, HFCBinStream* pi_pGifFile, HRFRasterFile* pi_pRaster)
     {
-    HPRECONDITION (pi_pRaster == 0);
-
     bool Status = true;
 
     // Read in the Comment data sub-blocks.
@@ -1411,8 +1399,6 @@ bool HRFGifFile::ReadGifComment(GifComment* pio_pGifComment, HFCBinStream* pi_pG
 //-----------------------------------------------------------------------------
 Byte* HRFGifFile::ReadDataSubBlocks(HFCBinStream* pi_pGifFile, HRFRasterFile* pi_pRaster)
     {
-    HPRECONDITION (pi_pRaster == 0);
-
 #define BUFFER_INCREMENT 4096
 
     Byte  blockDataSize(0);
