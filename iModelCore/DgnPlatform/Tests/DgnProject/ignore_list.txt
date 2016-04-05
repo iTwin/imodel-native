@@ -5,14 +5,11 @@
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
-DgnECPersistence.ConstructSimRelationshipsNonGeneric    # Fails on Android
 JsonTests.JsonValueStructure                            # Fails after geomlibs/ecobjects merge from topaz
 
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------
-DgnECNavigatorTest.Ifc_WithLatestDgnDb                  # WIP DgnItem
-
 ElementDisplayProperties.SetDisplayPattern              # informed Jeff
 
 UnitManagerTest.GetStandardUnitByName                   # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
@@ -43,3 +40,8 @@ DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad       # Unable to query line s
 
 #TFS 390510 Colin to address it
 ImportTests.simpleSchemaImport
+
+DgnECNavigatorTest.DgnLinksElementInfo # Need to add support for DgnLinks - JeffM
+DgnECNavigatorTest.IfcElementInfo # Need to add support for RelatedItemsDisplaySpecification - Carole
+
+
