@@ -2,7 +2,7 @@
 |
 |     $Source: TerrainModelNET/Bentley.Civil.DTM.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,6 +18,7 @@
 #using <Bentley.Exceptions.dll>
 #using <System.dll>
 
+#include <Bentley/ReleaseMarshaller.h>
 #include <TerrainModel/TerrainModel.h>
 #include <TerrainModel/Core/bcDTMClass.h>
 #include <TerrainModel/Core/dtm2dfns.h>

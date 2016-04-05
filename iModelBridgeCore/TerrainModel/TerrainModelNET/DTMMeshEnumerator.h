@@ -2,7 +2,7 @@
 |
 |     $Source: TerrainModelNET/DTMMeshEnumerator.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -26,21 +26,32 @@ public ref class DTMMeshEnumerator : System::Collections::Generic::IEnumerable <
     ref class Enumerator : System::Collections::Generic::IEnumerator<BGEO::PolyfaceHeader^>
         {
         DTMMeshEnumeratorImpl* m_impl;
+        ReleaseMarshaller* m_marshaller;
         Bentley::TerrainModel::DTMMeshEnumerator& m_native;
         internal:
-            Enumerator (Bentley::TerrainModel::DTMMeshEnumerator& native) : m_native (native)
+            Enumerator(Bentley::TerrainModel::DTMMeshEnumerator& native, ReleaseMarshaller* marshaller) : m_native(native), m_marshaller(marshaller)
                 {
                 m_native.AddRef ();
                 m_impl = nullptr;
                 }
-            ~Enumerator ()
+            ~Enumerator()
                 {
                 if (m_impl)
                     {
                     delete m_impl;
                     m_impl = nullptr;
                     }
-                m_native.Release ();
+                m_native.Release();
+                }
+            !Enumerator()
+                {
+                if (m_impl)
+                    {
+                    delete m_impl;
+                    m_impl = nullptr;
+                    }
+
+                m_marshaller->QueueEntry(&m_native);
                 }
         public:
             virtual bool MoveNext ()
@@ -63,7 +74,8 @@ public ref class DTMMeshEnumerator : System::Collections::Generic::IEnumerable <
             }
         virtual void Reset ()
             {
-            m_impl->m_current = m_impl->m_collection.begin ();
+            if (nullptr != m_impl)
+                m_impl->m_current = m_impl->m_collection.begin();
             }
 
         private:
@@ -78,13 +90,19 @@ public ref class DTMMeshEnumerator : System::Collections::Generic::IEnumerable <
 
     private:
         DTM^ m_dtm;
+        ReleaseMarshaller* m_marshaller;
         Bentley::TerrainModel::DTMMeshEnumerator* m_native;
 
     public:
         DTMMeshEnumerator (DTM^ dtm);
-        ~DTMMeshEnumerator ()
+        ~DTMMeshEnumerator()
             {
             m_native->Release();
+            m_native = nullptr;
+            }
+        !DTMMeshEnumerator()
+            {
+            m_marshaller->QueueEntry(m_native);
             }
 
         property int MaxTriangles
@@ -94,7 +112,7 @@ public ref class DTMMeshEnumerator : System::Collections::Generic::IEnumerable <
 
         virtual System::Collections::Generic::IEnumerator<BGEO::PolyfaceHeader^>^ GetEnumerator ()
             {
-            return gcnew Enumerator (*m_native);
+            return gcnew Enumerator (*m_native, m_marshaller);
             }
 
     private:

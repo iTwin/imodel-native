@@ -251,6 +251,13 @@ void LandXMLExporter::WriteBreakLines (BcDTMR dtm)
 
 bool LandXMLExporter::WriteBoundary (const DTMFeatureInfo& featureInfo)
     {
+    bvector<DPoint3d> points;
+    featureInfo.GetFeaturePoints(points);
+
+    BeAssert(points.size() >= 3);
+    if (points.size() < 3)
+        return true;
+
     if (!m_hasBoundaries)
         {
         m_writer->WriteElementStart ("Boundaries");
@@ -282,8 +289,6 @@ bool LandXMLExporter::WriteBoundary (const DTMFeatureInfo& featureInfo)
     // attribute name
     m_writer->WriteElementStart ("PntList3D");
 
-    bvector<DPoint3d> points;
-    featureInfo.GetFeaturePoints (points);
     WritePoints (points.data (), points.size ());
     m_writer->WriteElementEnd ();
     WriteFeatureStuff (L"Boundary", featureInfo, featureStyle);
@@ -297,9 +302,9 @@ void LandXMLExporter::WriteBoundaries (BcDTMR dtm)
     DTMFeatureEnumerator featureEnumerator (dtm);
 
     featureEnumerator.ExcludeAllFeatures ();
-    featureEnumerator.IncludeFeature (DTMFeatureType::Hull);
-    featureEnumerator.IncludeFeature (DTMFeatureType::Void);
-    featureEnumerator.IncludeFeature (DTMFeatureType::BreakVoid);
+    featureEnumerator.IncludeFeature(DTMFeatureType::Hull);
+    featureEnumerator.IncludeFeature(DTMFeatureType::Void);
+    featureEnumerator.IncludeFeature(DTMFeatureType::BreakVoid);
     featureEnumerator.IncludeFeature (DTMFeatureType::DrapeVoid);
     featureEnumerator.IncludeFeature (DTMFeatureType::Island);
     featureEnumerator.IncludeFeature (DTMFeatureType::Hole);

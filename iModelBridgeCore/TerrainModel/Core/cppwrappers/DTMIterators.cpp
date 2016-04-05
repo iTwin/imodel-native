@@ -2,7 +2,7 @@
 |
 |   $Source: Core/cppwrappers/DTMIterators.cpp $
 |
-| $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+| $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TerrainModel/TerrainModel.h>
@@ -101,11 +101,9 @@ long DTMFeatureInfo::FeatureIndex() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Daryl.Holmwood  11/2015
 //---------------------------------------------------------------------------------------
-static int featureIdCompareFunction(const DTMFeatureId& id1P, const DTMFeatureId& id2P)
+static bool featureIdCompareFunction(const DTMFeatureId& id1P, const DTMFeatureId& id2P)
     {
-    if (id1P < id2P) return -1;
-    if (id1P > id2P) return 1;
-    return(0);
+    return id1P < id2P;
     }
 
 //---------------------------------------------------------------------------------------
@@ -184,6 +182,7 @@ void DTMFeatureEnumerator::Initialize() const
     */
     long numCleanUpFeatures = 0;
     
+    m_isInitialized = true;
     InitializeForSorting ();
 
     for (long dtmFeature = 0; dtmFeature < m_dtmP->numFeatures; ++dtmFeature)
@@ -223,7 +222,7 @@ void DTMFeatureEnumerator::Initialize() const
     /*
     **     Sort Feature Ids
     */
-    if (numCleanUpFeatures > 1 && !m_sort)
+    if (numCleanUpFeatures > 1 && m_readSourceFeatures)
         std::sort (m_sourceFeatureIds.begin (), m_sourceFeatureIds.end (), &featureIdCompareFunction);
     }
 
@@ -252,8 +251,9 @@ bool DTMFeatureEnumerator::MoveNext(long& m_index, size_t& m_nextSourceFeatureIn
         if (!((dtmFeatureP->dtmFeatureState == DTMFeatureState::Data || dtmFeatureP->dtmFeatureState == DTMFeatureState::Tin || dtmFeatureP->dtmFeatureState == DTMFeatureState::TinError || dtmFeatureP->dtmFeatureState == DTMFeatureState::Rollback || dtmFeatureP->dtmFeatureState == DTMFeatureState::PointsArray) && dtmFeatureP->dtmFeatureType != DTMFeatureType::RandomSpots))
             continue;
 
-        // ToDo Check the feature type matches what the user wants
-        bool isSourceFeature = true;
+        // Check if the user doesn't want source Features.
+        if (!m_readSourceFeatures && dtmFeatureP->dtmFeatureState == DTMFeatureState::Rollback)
+            continue;
 
         if (m_filterByFeatureId && m_featureIdFilter != dtmFeatureP->dtmFeatureId)
             continue;
@@ -278,56 +278,63 @@ bool DTMFeatureEnumerator::MoveNext(long& m_index, size_t& m_nextSourceFeatureIn
         else if (m_excludeFeatureTypeByDefault)
             continue;
 
-        if (m_sort)
+        if (m_readSourceFeatures)
             {
-            if (dtmFeatureP->dtmFeatureState != DTMFeatureState::Rollback)
-                {
-                while (m_nextSourceFeatureIndex < m_sourceFeatureIds.size () && m_sourceFeatureIds[m_nextSourceFeatureIndex] < dtmFeatureP->dtmFeatureId)
-                    m_nextSourceFeatureIndex++;
+            bool isSourceFeature = true;
 
-                isSourceFeature = m_nextSourceFeatureIndex >= m_sourceFeatureIds.size () || m_sourceFeatureIds[m_nextSourceFeatureIndex] != dtmFeatureP->dtmFeatureId;
-                }
-            }
-        else
-            {
-            if (dtmFeatureP->dtmFeatureState != DTMFeatureState::Rollback)
+            if (m_sort)
                 {
-                if (m_sourceFeatureIds.size () == 1)
+                if (dtmFeatureP->dtmFeatureState != DTMFeatureState::Rollback)
                     {
-                    if (dtmFeatureP->dtmFeatureId == m_sourceFeatureIds[0])
-                        {
-                        isSourceFeature = false;
-                        }
+                    while (m_nextSourceFeatureIndex < m_sourceFeatureIds.size() && m_sourceFeatureIds[m_nextSourceFeatureIndex] < dtmFeatureP->dtmFeatureId)
+                        m_nextSourceFeatureIndex++;
+
+                    isSourceFeature = m_nextSourceFeatureIndex >= m_sourceFeatureIds.size() || m_sourceFeatureIds[m_nextSourceFeatureIndex] != dtmFeatureP->dtmFeatureId;
                     }
-                else if (m_sourceFeatureIds.size () > 1)
+                }
+            else
+                {
+                if (dtmFeatureP->dtmFeatureState != DTMFeatureState::Rollback)
                     {
-                    DTMFeatureId* featureIdsP = &m_sourceFeatureIds[0];
-                    DTMFeatureId* feat1P = featureIdsP;
-                    DTMFeatureId* feat2P = &featureIdsP[m_sourceFeatureIds.size () - 1];
-                    if (dtmFeatureP->dtmFeatureId == *feat1P || dtmFeatureP->dtmFeatureId == *feat2P)
-                        isSourceFeature = false;
-                    else
+                    if (m_sourceFeatureIds.size() == 1)
                         {
-                        DTMFeatureId *feat3P = &featureIdsP[((long)(feat1P - featureIdsP) + (long)(feat2P - featureIdsP)) / 2];
-                        while (feat3P != feat1P && feat3P != feat2P)
+                        if (dtmFeatureP->dtmFeatureId == m_sourceFeatureIds[0])
                             {
-                            if (dtmFeatureP->dtmFeatureId == *feat3P)
+                            isSourceFeature = false;
+                            }
+                        }
+                    else if (m_sourceFeatureIds.size() > 1)
+                        {
+                        DTMFeatureId* featureIdsP = &m_sourceFeatureIds[0];
+                        DTMFeatureId* feat1P = featureIdsP;
+                        DTMFeatureId* feat2P = &featureIdsP[m_sourceFeatureIds.size() - 1];
+                        if (dtmFeatureP->dtmFeatureId == *feat1P || dtmFeatureP->dtmFeatureId == *feat2P)
+                            isSourceFeature = false;
+                        else
+                            {
+                            DTMFeatureId *feat3P = &featureIdsP[((long)(feat1P - featureIdsP) + (long)(feat2P - featureIdsP)) / 2];
+                            while (feat3P != feat1P && feat3P != feat2P)
                                 {
-                                isSourceFeature = false;
-                                feat1P = feat2P = feat3P;
-                                }
-                            else
-                                {
-                                if (dtmFeatureP->dtmFeatureId < *feat3P) feat2P = feat3P;
-                                else if (dtmFeatureP->dtmFeatureId > *feat3P) feat1P = feat3P;
-                                feat3P = &featureIdsP[((long)(feat1P - featureIdsP) + (long)(feat2P - featureIdsP)) / 2];
+                                if (dtmFeatureP->dtmFeatureId == *feat3P)
+                                    {
+                                    isSourceFeature = false;
+                                    feat1P = feat2P = feat3P;
+                                    }
+                                else
+                                    {
+                                    if (dtmFeatureP->dtmFeatureId < *feat3P) feat2P = feat3P;
+                                    else if (dtmFeatureP->dtmFeatureId > *feat3P) feat1P = feat3P;
+                                    feat3P = &featureIdsP[((long)(feat1P - featureIdsP) + (long)(feat2P - featureIdsP)) / 2];
+                                    }
                                 }
                             }
                         }
                     }
                 }
+            if (isSourceFeature)
+                break;
             }
-        if (isSourceFeature)
+        else
             break;
         } while (true);
         return true;
@@ -358,8 +365,10 @@ DTMFeatureEnumerator::iterator DTMFeatureEnumerator::end() const
 //---------------------------------------------------------------------------------------
 const DTMMeshEnumerator::iterator& DTMMeshEnumerator::iterator::operator++ ()
     {
-    m_polyface = nullptr;
-    if (!m_p_vec->MoveNext (m_pos, m_pos2))
+    if (m_p_vec->m_polyface->GetRefCount() != 1)
+        m_p_vec->m_polyface = PolyfaceHeader::CreateFixedBlockIndexed(3);
+
+    if (!m_p_vec->MoveNext(m_pos, m_pos2))
         m_pos = -2;
     return *this;
     }
@@ -375,7 +384,7 @@ DTMMeshEnumerator::DTMMeshEnumerator(BcDTMR dtm) : m_dtm(&dtm)
     maxTriangles = 50000;
     m_tilingMode = false;
     zAxisFactor = 1;
-//D    m_polyface = PolyfaceHeader::CreateFixedBlockIndexed (3);
+    m_polyface = PolyfaceHeader::CreateFixedBlockIndexed (3);
     }
 
 //---------------------------------------------------------------------------------------
@@ -588,7 +597,7 @@ DTMStatusInt DTMMeshEnumerator::Initialize() const
     /*
     ** Allocate Memory For Mesh Faces
     */
-    meshFaces.resize (maxTriangles * 3);
+    m_polyface->PointIndex().resize(maxTriangles * 3);
     m_useFence = useFence;
     return DTM_SUCCESS;
 errexit:
@@ -904,7 +913,8 @@ bool DTMMeshEnumerator::MoveNext(long& pnt1, long& pnt2) const
         if (pnt1 == -1)
             pnt1 = leftMostPnt;
         // Reset the pointers/counters.
-        faceP = &meshFaces[0];
+        m_polyface->PointIndex().resize(maxTriangles * 3);		
+        faceP = m_polyface->PointIndex().data();
         numTriangles = 0;
         /*
         ** Scan DTM And Accumulate Triangle Mesh
@@ -999,7 +1009,7 @@ bool DTMMeshEnumerator::MoveNext(long& pnt1, long& pnt2) const
                     }
                 }
             }
-        meshFaces.resize (numTriangles * 3);
+        m_polyface->PointIndex().resize(numTriangles * 3);
         /*
         ** Check For Unloaded Triangles
         */
@@ -1047,15 +1057,20 @@ PolyfaceQueryP DTMMeshEnumerator::iterator::operator* () const
     /*
     ** Mark Mesh Points
     */
+    //if (m_p_vec->m_polyface.IsNull())
+    //    m_p_vec->m_polyface = PolyfaceHeader::CreateFixedBlockIndexed(3); // PolyfaceQueryCarrier(3, false, (size_t)m_p_vec->meshFaces.size(), (size_t)points.size(), points.GetCP(), m_p_vec->meshFaces.GetCP(), normals.size(), normals.GetCP(), m_p_vec->meshFaces.GetCP());
+    ////else
+    ////    *m_p_vec->m_polyface = PolyfaceQueryCarrier(3, false, (size_t)m_p_vec->meshFaces.size(), (size_t)points.size(), points.GetCP(), m_p_vec->meshFaces.GetCP(), normals.size(), normals.GetCP(), m_p_vec->meshFaces.GetCP());
+
     minTptrPnt = m_dtmP->numPoints;
     maxTptrPnt = -1;
-    BlockedVectorDPoint3dR points = m_p_vec->meshPoints;
-    BlockedVectorDVec3dR normals = m_p_vec->meshNormals;
-
+    BlockedVectorDPoint3dR points = m_p_vec->m_polyface->Point();
+    BlockedVectorDVec3dR normals = m_p_vec->m_polyface->Normal();
+    
     if (!m_p_vec->m_useRealPointIndexes)
         {
         numMeshPts = 0;
-        for (long face : m_p_vec->meshFaces)
+        for (long face : m_p_vec->m_polyface->PointIndex())
             {
             nodeP = nodeAddrP(m_dtmP, face);
             if (nodeP->tPtr == nullPnt)
@@ -1106,13 +1121,13 @@ PolyfaceQueryP DTMMeshEnumerator::iterator::operator* () const
         /*
         **                       Reset Point Indexes In Mesh Faces
         */
-        for (int& ptIndex : m_p_vec->meshFaces)
+        for (int& ptIndex : m_p_vec->m_polyface->PointIndex())
             ptIndex = nodeAddrP(m_dtmP, ptIndex)->tPtr;
         }
     else
         {
         numMeshPts = 0;
-        for (long face : m_p_vec->meshFaces)
+        for (long face : m_p_vec->m_polyface->PointIndex())
             {
             nodeP = nodeAddrP(m_dtmP, face);
             if (nodeP->tPtr == nullPnt)
@@ -1130,11 +1145,8 @@ PolyfaceQueryP DTMMeshEnumerator::iterator::operator* () const
     */
     for (node = minTptrPnt; node <= maxTptrPnt; ++node)
         nodeAddrP (m_dtmP, node)->tPtr = nullPnt;
-    if (!m_polyface)
-        m_polyface = new PolyfaceQueryCarrier (3, false, (size_t)m_p_vec->meshFaces.size (), (size_t)points.size (), points.GetCP (), m_p_vec->meshFaces.GetCP (), normals.size (), normals.GetCP (), m_p_vec->meshFaces.GetCP ());
-    else
-        *m_polyface = PolyfaceQueryCarrier (3, false, (size_t)m_p_vec->meshFaces.size (), (size_t)points.size (), points.GetCP (), m_p_vec->meshFaces.GetCP (), normals.size (), normals.GetCP (), m_p_vec->meshFaces.GetCP ());
-    return m_polyface;
+
+    return m_p_vec->m_polyface.get();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1145,14 +1157,14 @@ DRange3d DTMMeshEnumerator::iterator::GetRange () const
     DRange3d range;
     range.Init ();
 
-    if (!m_p_vec->meshFaces.empty ())
+    if (!m_p_vec->m_polyface->PointIndex().empty ())
         {
         BC_DTM_OBJ* m_dtmP = m_p_vec->m_dtm->GetTinHandle ();
         long nullPnt = m_dtmP->nullPnt;
         /*
         ** Mark Mesh Points
         */
-        for (long face : m_p_vec->meshFaces)
+        for (long face : m_p_vec->m_polyface->PointIndex())
             {
             range.Extend (*pointAddrP (m_dtmP, face));
             }

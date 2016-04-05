@@ -3311,6 +3311,10 @@ public ref class DTM
     {
     private:
         /// <summary>
+        /// The release Marshaller
+        /// </summary>
+        ReleaseMarshaller* m_marshaller;
+        /// <summary>
         /// Unmanaged DTM definition
         /// </summary>                    
         BcDTMP m_nativeDtm;
@@ -3369,7 +3373,10 @@ public ref class DTM
         //=======================================================================================
         !DTM();
 
-        void InternalDispose();
+        /// <summary>
+        /// Dispose the DTM
+        /// </summary>
+        void InternalDispose(bool disposing);
         //=======================================================================================
         /// <summary>
         /// Browses Dynamic feature

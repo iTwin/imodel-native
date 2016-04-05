@@ -1329,6 +1329,7 @@ DTM^ DTM::FromNativeDtmHandle (IntPtr handle)
 //=======================================================================================
 DTM::DTM (BcDTMP dtm)
     {
+    m_marshaller = ReleaseMarshaller::GetMarshaller();
 #ifdef DEBUG
     m_stackTrace = (gcnew System::Diagnostics::StackTrace(true))->ToString();
 #endif
@@ -1349,6 +1350,7 @@ DTM::DTM (BcDTMP dtm)
 //=======================================================================================
 DTM::DTM (int iniPoint, int incPoint)
     {
+    m_marshaller = ReleaseMarshaller::GetMarshaller();
 #ifdef DEBUG
     m_stackTrace = (gcnew System::Diagnostics::StackTrace(true))->ToString();
 #endif
@@ -1366,6 +1368,7 @@ DTM::DTM (int iniPoint, int incPoint)
 //=======================================================================================
 DTM::DTM ()
     {
+    m_marshaller = ReleaseMarshaller::GetMarshaller();
 #ifdef DEBUG
     m_stackTrace = (gcnew System::Diagnostics::StackTrace(true))->ToString();
 #endif
@@ -1383,7 +1386,7 @@ DTM::DTM ()
 //=======================================================================================
 DTM::~DTM ()
     {
-    InternalDispose();
+    InternalDispose(true);
     }
 
 //=======================================================================================
@@ -1394,10 +1397,10 @@ DTM::!DTM ()
 #ifdef DEBUG
 //    System::Diagnostics::Debug::Fail ("Failed to call Dispose " + m_stackTrace);
 #endif
-    InternalDispose ();
+    InternalDispose (false);
     }
 
-void DTM::InternalDispose()
+void DTM::InternalDispose(bool disposing)
     {
     if (m_memoryUsed)
         {
@@ -1406,15 +1409,18 @@ void DTM::InternalDispose()
         }
     try
         {
-        if (m_nativeDtm != NULL)
+        if (m_nativeDtm != nullptr)
             {
-            Handle->Release();
+            if (disposing)
+                Handle->Release();
+            else
+                m_marshaller->QueueEntry(Handle);
             }
         }
     catch(...)
         {
         }
-    m_nativeDtm = NULL;
+    m_nativeDtm = nullptr;
 
     }
 

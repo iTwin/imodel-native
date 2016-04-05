@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/PublicAPI/LandXMLImporter.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -74,6 +74,7 @@ struct LandXMLImporter : TerrainImporter
         bool m_secondPass;  // Second pass for pntRef resolution.
         mutable bool m_importAllDTMS;
         bool m_isMXProject;
+        bool m_isGeopakProject;
         mutable Bentley::GeoCoordinates::BaseGCSPtr m_gcs;
 
     private: LandXMLImporter (WCharCP filename);

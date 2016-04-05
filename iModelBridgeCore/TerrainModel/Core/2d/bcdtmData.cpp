@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmData.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -2016,8 +2016,13 @@ BENTLEYDTM_Public int bcdtmData_getInitialPointsForDtmFeatureDtmObject(BC_DTM_OB
     ** Set Feature Address
     */
     dtmFeatureP = ftableAddrP(dtmP,dtmFeature) ;
-    if( dtmFeatureP->dtmFeatureState != DTMFeatureState::Deleted )
+    if (dtmFeatureP->dtmFeatureState == DTMFeatureState::Tin && dtmFeatureP->dtmFeatureType == DTMFeatureType::Hull)
         {
+        if (bcdtmList_extractHullDtmObject(dtmP, featPtsPP, numFeatPtsP)) goto errexit;
+        }
+    else if( dtmFeatureP->dtmFeatureState != DTMFeatureState::Deleted )
+        {
+
         /*
         **  Count Number Of Feature Points For Feature In Tin State 
         */
@@ -2075,7 +2080,7 @@ BENTLEYDTM_Public int bcdtmData_getInitialPointsForDtmFeatureDtmObject(BC_DTM_OB
                 **     Get Points From Tin
                 */ 
             case DTMFeatureState::Tin  :       // Dtm Feature In Tin 
-                if( ( firstPnt = ftableAddrP(dtmP,dtmFeature)->dtmFeaturePts.firstPoint ) != dtmP->nullPnt )
+                if ((firstPnt = dtmFeatureP->dtmFeaturePts.firstPoint) != dtmP->nullPnt)
                     { 
                     pntP = *featPtsPP ;
                     nextPnt = firstPnt ;
@@ -2108,7 +2113,7 @@ BENTLEYDTM_Public int bcdtmData_getInitialPointsForDtmFeatureDtmObject(BC_DTM_OB
                 **     Default 
                 */
             default :
-                bcdtmWrite_message(2,0,0,"Unknown Dtm Feature State %2ld Not Yet Implemented",ftableAddrP(dtmP,dtmFeature)->dtmFeatureState) ;
+                bcdtmWrite_message(2, 0, 0, "Unknown Dtm Feature State %2ld Not Yet Implemented", dtmFeatureP->dtmFeatureState);
                 goto errexit ; 
                 break ;
             } ;
