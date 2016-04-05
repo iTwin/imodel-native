@@ -193,6 +193,10 @@ namespace IndexECPlugin.Source.QueryProviders
         private IECInstance CreateInstanceFromID (IECClass ecClass, string sourceID)
             {
 
+            if ( sourceID.Length != IndexConstants.USGSIdLenght )
+                {
+                return null;
+                }
             switch ( ecClass.Name )
                 {
                 case "SpatialEntityBase":

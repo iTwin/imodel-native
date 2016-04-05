@@ -12,7 +12,6 @@ appName     = RealityDbECPlugin
 appName     = RealityDbECPluginC
 %endif
 
-
 %include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
 
 
@@ -121,12 +120,18 @@ ASSEMBLY_STRONGNAME = 1
 
 ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/Helpers/DataReadingHelper.cs \
-            $(baseDir)Source/Helpers/ECToSQLMap.cs \
-            $(baseDir)Source/Helpers/ECQueryConverter.cs \
             $(baseDir)Source/Helpers/DBGeometryhelpers.cs \
-            $(baseDir)Source/Helpers/TableDescriptor.cs \
+            $(baseDir)Source/Helpers/ECQueryConverter.cs \
+            $(baseDir)Source/Helpers/ECToSQLMap.cs \
+            $(baseDir)Source/Helpers/InstanceComplement.cs \
+            $(baseDir)Source/Helpers/InstanceModifier.cs \
+            $(baseDir)Source/Helpers/InstanceOverrider.cs \
             $(baseDir)Source/Helpers/IUSGSDataExtractor.cs \
             $(baseDir)Source/Helpers/IUSGSDataFetcher.cs \
+            $(baseDir)Source/Helpers/SourceStringMap.cs \
+            $(baseDir)Source/Helpers/SqlQueryHelpers.cs \
+            $(baseDir)Source/Helpers/TableAliasCreator.cs \
+            $(baseDir)Source/Helpers/TableDescriptor.cs \
             $(baseDir)Source/FileRetrievalControllers/PackageRetrievalController.cs \
             $(baseDir)Source/FileRetrievalControllers/PackageStreamRetrievalController.cs \
             $(baseDir)Source/FileRetrievalControllers/SQLThumbnailRetrievalController.cs \
@@ -137,14 +142,17 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/SQLQueryBuilder/PagedSQLQueryBuilder.cs \
             $(baseDir)Source/SQLQueryBuilder/SQLQueryBuilder.cs \
             $(baseDir)Source/SQLQueryBuilder/StandardSQLQueryBuilder.cs \
+            $(baseDir)Source/IndexConstants.cs \
             $(baseDir)Source/IndexECPlugin.cs \
-            $(baseDir)Source/IndexPolicyHandler.cs \
             $(baseDir)Source/IndexFileRetrievalController.cs \
             $(baseDir)Source/IndexNavigationModule.cs \
-            $(baseDir)Source/models.cs \
-            $(baseDir)Source/IndexConstants.cs \
+            $(baseDir)Source/IndexPolicyHandler.cs \
             $(baseDir)Source/JTokenExtension.cs \
-            $(baseDir)Source/Log.cs 
+            $(baseDir)Source/Log.cs \
+            $(baseDir)Source/models.cs 
+            
+            
+             
 
 #ASSEMBLY_RESX_FILE_TO_BUILD = $(baseDir)LocalizableStrings.resx
 #ASSEMBLY_RES_TO_ADD = LocalizableStrings

@@ -77,7 +77,7 @@ namespace IndexECPlugin.Source
         /// <remarks>This is only made public to simplify testing.</remarks>
         public const string PLUGIN_NAME = "IndexECPlugin";
 
-        private string m_connectionString = "";
+        private string m_connectionString = ConfigurationRoot.GetAppSetting("RECPConnectionString");
 
         /// <summary>
         /// Make plugin available to contract tests.
@@ -149,11 +149,14 @@ namespace IndexECPlugin.Source
 
             //ParseConfigFile(location);
 
-            m_connectionString = ConfigurationRoot.GetAppSetting("RECPConnectionString");
+            if ( location == "Server" )
+                {
 
-            var identifier = new RepositoryIdentifier(module.ParentECPlugin.ECPluginId, location, location, location, null);
-            module.RepositoryVerified(session, identifier); //tells the module to include that repository in the list of known repositories from now on
-            return identifier;
+                var identifier = new RepositoryIdentifier(module.ParentECPlugin.ECPluginId, location, location, location, null);
+                module.RepositoryVerified(session, identifier); //tells the module to include that repository in the list of known repositories from now on
+                return identifier;
+                }
+            return null;
             //}
             }
 
@@ -211,38 +214,57 @@ namespace IndexECPlugin.Source
                         }
                     //IEnumerable<IECInstance> instanceList;
 
-                    switch ( source.ToLower() )
+                    InstanceOverrider instanceOverrider = new InstanceOverrider();
+                    InstanceComplement instanceComplement = new InstanceComplement();
+                    using ( SqlConnection sqlConnection = new SqlConnection(m_connectionString) )
                         {
-                        case "index":
-                            using ( SqlConnection sqlConnection = new SqlConnection(m_connectionString) )
-                                {
-                                string fullSchemaName = sender.ParentECPlugin.SchemaModule.GetSchemaFullNames(connection).First();
-                                IECSchema schema = sender.ParentECPlugin.SchemaModule.GetSchema(connection, fullSchemaName);
-                                helper = new SqlQueryProvider(query, querySettings, sqlConnection, schema);
-                                return helper.CreateInstanceList();
-                                }
+                        switch ( source.ToLower() )
+                            {
+                            case "index":
+                                    {
+                                    string fullSchemaName = sender.ParentECPlugin.SchemaModule.GetSchemaFullNames(connection).First();
+                                    IECSchema schema = sender.ParentECPlugin.SchemaModule.GetSchema(connection, fullSchemaName);
+                                    helper = new SqlQueryProvider(query, querySettings, sqlConnection, schema);
+                                    IEnumerable<IECInstance> instances = helper.CreateInstanceList();
+                                    instanceOverrider.Modify(instances, DataSource.Index, sqlConnection, querySettings);
+                                    instanceComplement.Modify(instances, DataSource.Index, sqlConnection, querySettings);
+                                    return instances;
+                                    }
 
-                        case "usgsapi":
-                            helper = new UsgsAPIQueryProvider(query, querySettings);
-                            return helper.CreateInstanceList();
+                            case "usgsapi":
+                                    {
 
-                        case "all":
-                            List<IECInstance> instanceList = new List<IECInstance>();
-                            using ( SqlConnection sqlConnection = new SqlConnection(m_connectionString) )
-                                {
-                                string fullSchemaName = sender.ParentECPlugin.SchemaModule.GetSchemaFullNames(connection).First();
-                                IECSchema schema = sender.ParentECPlugin.SchemaModule.GetSchema(connection, fullSchemaName);
-                                helper = new SqlQueryProvider(query, querySettings, sqlConnection, schema);
-                                instanceList = helper.CreateInstanceList().ToList();
-                                }
+                                    helper = new UsgsAPIQueryProvider(query, querySettings);
+                                    IEnumerable<IECInstance> instances = helper.CreateInstanceList();
+                                    instanceOverrider.Modify(instances, DataSource.USGS, sqlConnection, querySettings);
+                                    instanceComplement.Modify(instances, DataSource.USGS, sqlConnection, querySettings);
+                                    return instances;
+                                    }
+                            case "all":
+                                    {
 
-                            helper = new UsgsAPIQueryProvider(query, querySettings);
-                            instanceList.AddRange(helper.CreateInstanceList());
-                            return instanceList;
-                        default:
-                            //throw new UserFriendlyException(String.Format("The class {0} cannot be queried.", searchClass.Class.Name));
-                            //Log.Logger.error(String.Format("Query {0} aborted. The source chosen ({1}) is invalid", query.ID, source));
-                            throw new UserFriendlyException("The source \"" + source + "\" does not exist. Choose between \"index\", \"usgsapi\" or \"all\"");
+                                    List<IECInstance> instanceList = new List<IECInstance>();
+                                        {
+                                        string fullSchemaName = sender.ParentECPlugin.SchemaModule.GetSchemaFullNames(connection).First();
+                                        IECSchema schema = sender.ParentECPlugin.SchemaModule.GetSchema(connection, fullSchemaName);
+                                        helper = new SqlQueryProvider(query, querySettings, sqlConnection, schema);
+                                        instanceList = helper.CreateInstanceList().ToList();
+                                        instanceOverrider.Modify(instanceList, DataSource.Index, sqlConnection, querySettings);
+                                        instanceComplement.Modify(instanceList, DataSource.Index, sqlConnection, querySettings);
+
+                                        helper = new UsgsAPIQueryProvider(query, querySettings);
+                                        IEnumerable<IECInstance> instances = helper.CreateInstanceList();
+                                        instanceOverrider.Modify(instances, DataSource.USGS, sqlConnection, querySettings);
+                                        instanceComplement.Modify(instances, DataSource.USGS, sqlConnection, querySettings);
+                                        instanceList.AddRange(instances);
+                                        return instanceList;
+                                        }
+                                    }
+                            default:
+                                //throw new UserFriendlyException(String.Format("The class {0} cannot be queried.", searchClass.Class.Name));
+                                //Log.Logger.error(String.Format("Query {0} aborted. The source chosen ({1}) is invalid", query.ID, source));
+                                throw new UserFriendlyException("The source \"" + source + "\" does not exist. Choose between " + SourceStringMap.GetAllSourceStrings());
+                            }
                         }
                     }
                 }

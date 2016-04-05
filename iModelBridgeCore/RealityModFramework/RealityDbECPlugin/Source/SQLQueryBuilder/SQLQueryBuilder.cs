@@ -269,6 +269,8 @@ namespace IndexECPlugin.Source
         /// Builds the query according to the clauses added
         /// </summary>
         /// <returns>The SQL query string</returns>
+        /// 
+        //TODO : Include the query string, the DataReadingHelper and the paramNameValueMap in a single object returned by BuildQuery
         abstract public string BuildQuery (out DataReadingHelper dataReadingHelper);
 
         /// <summary>
