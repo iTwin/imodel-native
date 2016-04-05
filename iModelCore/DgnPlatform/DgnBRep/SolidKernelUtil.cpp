@@ -54,18 +54,42 @@ virtual void _SetEntityTransform (TransformCR transform) override
 
     if (!goopTrans.IsIdentity())
         {
-        gp_GTrsf goopTrsf = OCBRepUtil::ToGpGTrsf(goopTrans);
+        double  goopScale;
 
-        m_shape.Location(TopLoc_Location()); // NOTE: Need to ignore shape location...
-        BRepBuilderAPI_GTransform transformer(m_shape, goopTrsf);
-    
-        if (!transformer.IsDone())
+        goopTrans.GetMatrix(rMatrix);
+
+        if (rMatrix.IsUniformScale(goopScale))
             {
-            BeAssert(false);
-            return;
+            gp_Trsf goopTrsf = OCBRepUtil::ToGpTrsf(goopTrans);
+
+            m_shape.Location(TopLoc_Location()); // NOTE: Need to ignore shape location...
+            BRepBuilderAPI_Transform transformer(m_shape, goopTrsf);
+    
+            if (!transformer.IsDone())
+                {
+                BeAssert(false);
+                return;
+                }
+
+            m_shape = transformer.ModifiedShape(m_shape);
+            }
+        else
+            {
+            gp_GTrsf goopTrsf = OCBRepUtil::ToGpGTrsf(goopTrans);
+
+            m_shape.Location(TopLoc_Location()); // NOTE: Need to ignore shape location...
+            BRepBuilderAPI_GTransform transformer(m_shape, goopTrsf);
+    
+            if (!transformer.IsDone())
+                {
+                BeAssert(false);
+                return;
+                }
+
+            m_shape = transformer.ModifiedShape(m_shape);
             }
 
-        m_shape = transformer.ModifiedShape(m_shape);
+        BeAssert(m_shape.Location().IsIdentity());
         }
 
     m_shape.Location(OCBRepUtil::ToGpTrsf(shapeTrans));
@@ -191,13 +215,10 @@ bool SolidKernelUtil::IntersectRay(ISolidKernelEntityCR entity, DRay3dCR boresit
     if (!shint.IsDone() || 0 == shint.NbPnt())
         return false;
 
-    printf("\n");
     for (int iHit=1; iHit <= shint.NbPnt(); ++iHit)
         {
         const Handle(Geom_Surface)& surface = BRep_Tool::Surface(shint.Face(iHit));
         GeomLProp_SLProps props(surface, shint.UParameter(iHit), shint.VParameter(iHit), 1, Precision::Confusion()); // Need 1st derivative for normal...
-
-        printf("(%d) W: %lf\n", iHit, shint.WParameter(iHit));
 
         points.push_back(OCBRepUtil::ToDPoint3d(shint.Pnt(iHit)));
         normals.push_back(OCBRepUtil::ToDVec3d(props.Normal()));

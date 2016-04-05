@@ -206,6 +206,7 @@
     <Part Name="L10N-DgnPlatformXliffs-en" OnlyPlatforms="x64"
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/PushXliffsFromBuild.mke"
         BentleyBuildMakeOptions="-dBUILD_XLIFF_DIRECTORY=$(OutputRootDir)BuildContexts/DgnPlatform/Delivery/xliffs/ -dL10N_XLIFF_DIRECTORY=$(SrcRoot)l10n/l10n-DgnPlatform/en/">
+        <SubPart PartName="DgnPlatformDll"/>
     </Part>
 
     <!-- Translated Xliffs are linked into the BuildContext here -->
