@@ -484,7 +484,9 @@ public:
 
     DGNPLATFORM_EXPORT bool Append (DgnSubCategoryId);
     DGNPLATFORM_EXPORT bool Append (Render::GeometryParamsCR);
-    DGNPLATFORM_EXPORT bool Append (DgnGeometryPartId, TransformCR geomToElement); //! Placement must already be specified, not valid for CreateWorld.
+    DGNPLATFORM_EXPORT bool Append (DgnGeometryPartId, TransformCR geomToElement); //! Relative placement, not valid for CreateWorld.
+    DGNPLATFORM_EXPORT bool Append (DgnGeometryPartId, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles()); //! Relative placement, not valid for CreateWorld.
+    DGNPLATFORM_EXPORT bool Append (DgnGeometryPartId, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees()); //! Relative placement, not valid for CreateWorld.
     DGNPLATFORM_EXPORT bool Append (GeometricPrimitiveCR);
     DGNPLATFORM_EXPORT bool Append (ICurvePrimitiveCR);
     DGNPLATFORM_EXPORT bool Append (CurveVectorCR);
