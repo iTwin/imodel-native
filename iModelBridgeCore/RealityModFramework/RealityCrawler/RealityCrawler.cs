@@ -91,7 +91,10 @@ namespace Bentley.RealityPlatform.RealityCrawler
                     Console.WriteLine("----------------------");
                     Console.WriteLine();
                     timer.Start();
-                    Bentley.RealityPlatform.RealityCrawler.ServerWMS.Update();
+                    if (args.Length > 1)
+                        Bentley.RealityPlatform.RealityCrawler.ServerWMS.Update(args[1]);
+                    else
+                        Bentley.RealityPlatform.RealityCrawler.ServerWMS.Update();
                     }
                 }
             else
