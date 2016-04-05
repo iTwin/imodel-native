@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Client/WSError.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -37,7 +37,11 @@ struct WSError : public AsyncError
             Canceled,
             ServerNotSupported,
 
+            // Could not connect, connection lost, timeout, etc.
             ConnectionError,
+
+            // Could not verify HTTPS certificate
+            CertificateError,
 
             // See error id for more information
             ReceivedError

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/WSErrorTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -52,13 +52,18 @@ TEST_F(WSErrorTests, Ctor_CanceledHttpResponse_SetsStatusCanceled)
     EXPECT_EQ(WSError::Status::Canceled, error.GetStatus());
     }
 
-TEST_F(WSErrorTests, Ctor_HttpResponseWithConnectionStatusNonOkOrCanceled_SetsStatusNetworkErrorsOccurred)
+TEST_F(WSErrorTests, Ctor_HttpResponseWithConnectionStatusNonOkOrCanceled_SetsStatusConnectionError)
     {
     EXPECT_EQ(WSError::Status::ConnectionError, WSError(StubHttpResponse(ConnectionStatus::None)).GetStatus());
     EXPECT_EQ(WSError::Status::ConnectionError, WSError(StubHttpResponse(ConnectionStatus::CouldNotConnect)).GetStatus());
     EXPECT_EQ(WSError::Status::ConnectionError, WSError(StubHttpResponse(ConnectionStatus::ConnectionLost)).GetStatus());
     EXPECT_EQ(WSError::Status::ConnectionError, WSError(StubHttpResponse(ConnectionStatus::Timeout)).GetStatus());
     EXPECT_EQ(WSError::Status::ConnectionError, WSError(StubHttpResponse(ConnectionStatus::UnknownError)).GetStatus());
+    }
+
+TEST_F(WSErrorTests, Ctor_HttpResponseWithCertificateError_SetsStatusCertificateError)
+    {
+    EXPECT_EQ(WSError::Status::CertificateError, WSError(StubHttpResponse(ConnectionStatus::CertificateError)).GetStatus());
     }
 
 TEST_F(WSErrorTests, Ctor_JsonErrorFormatHasMissingField_SetsStatusServerNotSupported)
