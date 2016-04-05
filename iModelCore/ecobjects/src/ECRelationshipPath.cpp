@@ -605,14 +605,14 @@ BentleyStatus ECRelationshipPath::Combine(ECRelationshipPath const& pathToCombin
 BentleyStatus ECRelatedItemsDisplaySpecificationsCache::Initialize(bvector<ECSchemaCP> const& schemaList, IECClassLocater& classLocater)
     {
     ECClassCP ecClass = classLocater.LocateClass("Bentley_Standard_CustomAttributes", "RelatedItemsDisplaySpecifications");
-    if (ecClass != nullptr)
+    if (!ecClass)
         {
         BeAssert(false);
         return ERROR;
         }
 
     ECCustomAttributeClassCP relatedItemDisplaySpecCA = ecClass->GetCustomAttributeClassCP();
-    if (relatedItemDisplaySpecCA != nullptr)
+    if (!relatedItemDisplaySpecCA)
         {
         BeAssert(false);
         return ERROR;

@@ -20,6 +20,7 @@
         <SubPart PartName="GeomlibsSerialization" PartFile="geomlibs" Repository="GeomLibs" />
         <SubPart PartName="BeXmlDll"        PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
         <SubPart PartName="StandardSchemas" PartFile="ECStandards"  Repository="ECStandards"/>
+        <SubPart PartName="StandardSchemasV3" PartFile="ECStandards" Repository="ECStandards" />
         <SubPart PartName="V3ConversionSchemas" PartFile="ECStandards" Repository="ECStandards"/>
         <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
         <SubPart PartName="rapidjson"       PartFile="rapidjson" Repository="Libsrc-RapidJson"/>       
@@ -57,7 +58,6 @@
     <!-- This part enables the ECObjects unit tests to be built into the set of unit tests that run on multiple platforms. -->
 
     <Part Name="ECObjectsTestsBasicDependencies">
-        <SubPart PartName="StandardSchemas"      PartFile="ECStandards"             Repository="ECStandards"/>
         <SubPart PartName="ECObjectsNative" />
     </Part>
 
