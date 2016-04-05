@@ -101,10 +101,12 @@ void AsyncTaskRunnerPool::Stop ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AsyncTaskRunnerPool::OnBeforeTaskPushed ()
     {
-    std::call_once (m_initializeFlag, [this]
+    BeMutexHolder lock(m_mutex);
+    if (!m_initializeFlag)
         {
         Start ();
-        });
+        m_initializeFlag = true;
+        }
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -112,7 +114,7 @@ void AsyncTaskRunnerPool::OnBeforeTaskPushed ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AsyncTaskRunnerPool::OnAfterTaskPushed ()
     {
-    std::unique_lock<std::mutex> lock (m_thisPtrMutex);
+    BeMutexHolder lock (m_thisPtrMutex);
 
     if (m_thisPtr == nullptr)
         {
@@ -125,7 +127,7 @@ void AsyncTaskRunnerPool::OnAfterTaskPushed ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AsyncTaskRunnerPool::OnSchedulerEmpty ()
     {
-    std::unique_lock<std::mutex> lock (m_thisPtrMutex);
+    BeMutexHolder lock (m_thisPtrMutex);
 
     m_thisPtr = nullptr;
     }

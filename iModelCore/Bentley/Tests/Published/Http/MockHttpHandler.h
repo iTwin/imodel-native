@@ -27,7 +27,7 @@ public:
 private:
     int64_t m_expectedRequests;
     
-    std::map<uint32_t, OnResponseCallback> m_onSpecificRequestMap;
+    bmap<uint32_t, OnResponseCallback> m_onSpecificRequestMap;
     OnResponseCallback m_onAnyRequestCallback;
 
     uint32_t m_perfomedRequests;

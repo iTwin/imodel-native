@@ -13,6 +13,14 @@
 
 USING_NAMESPACE_BENTLEY_UNIT_TESTS
 #ifdef USE_GTEST
+
+bmap<Utf8String, Utf8String> GetHttpHeaders(Utf8String key, Utf8String value)
+    {
+    bmap<Utf8String, Utf8String> httpHeaders;
+    httpHeaders[key] = value;
+    return httpHeaders;
+    }
+
 TEST_F (AuthenticationHandlerTests, PerformRequest_AuthorisationHeaderHasValue_PassesRequestToSuppliedHandler)
     {
     MockAuthenticationHandler authHandler (GetHandlerPtr ());
@@ -22,8 +30,7 @@ TEST_F (AuthenticationHandlerTests, PerformRequest_AuthorisationHeaderHasValue_P
         EXPECT_EQ ("http://test.com", request.GetUrl ());
         return StubHttpResponse ();
         });
-
-    authHandler.PerformRequest (StubHttpGetRequest ("http://test.com", {{"Authorization", "Foo"}}))->Wait ();
+    authHandler.PerformRequest (StubHttpGetRequest ("http://test.com", GetHttpHeaders("Authorization", "Foo")))->Wait ();
 
     EXPECT_EQ (1, GetHandler ().GetRequestsPerformed ());
     }
@@ -39,8 +46,7 @@ TEST_F (AuthenticationHandlerTests, PerformRequest_AuthorisationHeaderHasNoValue
         }));
 
     GetHandler ().ForFirstRequest (StubHttpResponse ());
-
-    authHandler.PerformRequest (StubHttpGetRequest ("http://test.com", {{"Authorization", ""}}))->Wait ();
+    authHandler.PerformRequest (StubHttpGetRequest ("http://test.com", GetHttpHeaders("Authorization", "")))->Wait ();
 
     EXPECT_EQ (1, GetHandler ().GetRequestsPerformed ());
     }
@@ -57,8 +63,7 @@ TEST_F (AuthenticationHandlerTests, PerformRequest_AuthorizationHeaderHasNoValue
         EXPECT_TRUE (Utf8String::IsNullOrEmpty (request.GetHeaders ().GetAuthorization ()));
         return StubHttpResponse ();
         });
-
-    authHandler.PerformRequest (StubHttpGetRequest ("http://test.com", {{"Authorization", ""}}))->Wait ();
+    authHandler.PerformRequest (StubHttpGetRequest ("http://test.com", GetHttpHeaders("Authorization", "")))->Wait ();
 
     EXPECT_EQ (1, GetHandler ().GetRequestsPerformed ());
     }
@@ -72,7 +77,7 @@ TEST_F (AuthenticationHandlerTests, PerformRequest_FirstRequestHasAuthorizationB
     EXPECT_CALL (authHandler, _RetrieveAuthorization (_))
         .WillOnce (Return (CreateCompletedAsyncTask (AuthenticationHandler::AuthorizationResult::Error (AsyncError ("")))));
 
-    auto response = authHandler.PerformRequest (StubHttpGetRequest ("http://test.com", {{"Authorization", "Foo"}}))->GetResult ();
+    auto response = authHandler.PerformRequest (StubHttpGetRequest ("http://test.com", GetHttpHeaders("Authorization", "Foo")))->GetResult ();
 
     EXPECT_EQ (HttpStatus::Unauthorized, response.GetHttpStatus ());
     EXPECT_EQ ("TestBody", response.GetBody ().AsString ());
@@ -93,7 +98,7 @@ TEST_F (AuthenticationHandlerTests, PerformRequest_ResponseUnauthorized_Retrieve
         return StubHttpResponse ();
         });
 
-    authHandler.PerformRequest (StubHttpGetRequest ("http://test.com", {{"Authorization", "Foo"}}))->Wait ();
+    authHandler.PerformRequest (StubHttpGetRequest ("http://test.com", GetHttpHeaders("Authorization", "Foo")))->Wait ();
 
     EXPECT_EQ (2, GetHandler ().GetRequestsPerformed ());
     }
@@ -104,7 +109,7 @@ TEST_F (AuthenticationHandlerTests, PerformRequest_ResponseNonLoginError_Returns
 
     GetHandler ().ForFirstRequest (StubHttpResponse (HttpStatus::BadRequest));
 
-    auto response = authHandler.PerformRequest (StubHttpGetRequest ("http://test.com", {{"Authorization", "Foo"}}))->GetResult ();
+    auto response = authHandler.PerformRequest (StubHttpGetRequest ("http://test.com", GetHttpHeaders("Authorization", "Foo")))->GetResult ();
 
     EXPECT_EQ (HttpStatus::BadRequest, response.GetHttpStatus ());
     EXPECT_EQ (1, GetHandler ().GetRequestsPerformed ());

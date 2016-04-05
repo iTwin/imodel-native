@@ -33,7 +33,7 @@ private:
     IHttpHandlerPtr m_handler;
     Credentials m_credentials;
     static BeFileName s_assetsDirectoryPath;
-    static std::atomic<int> s_tasksInProgressCount;
+    static BeAtomic<int> s_tasksInProgressCount;
 
 public:
     //! Construct new client with predefined configuration

@@ -29,10 +29,10 @@ struct AsyncTasksManager
     //__PUBLISH_SECTION_END__
     private:
         static bmap<intptr_t, std::weak_ptr<struct ITaskRunner>> s_runners;
-        static std::mutex s_runnersMutex;
-        static std::condition_variable s_emptyRunnersCV;
+        static BeMutex s_runnersMutex;
+        static BeConditionVariable s_emptyRunnersCV;
 
-        static std::mutex s_threadingStoppingListenersMutex;
+        static BeMutex s_threadingStoppingListenersMutex;
         static bvector<std::function<void()>> s_onThreadingStoppingListeners;
 
         static std::weak_ptr<WorkerThreadPool> s_defaultThreadPool;

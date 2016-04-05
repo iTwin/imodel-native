@@ -63,7 +63,7 @@ void SimpleCancellationToken::SetCanceled ()
     if (!m_canceled)
         OnCancelled ();
 
-    m_canceled = true;
+    m_canceled.store(true);
     }
 
 /*--------------------------------------------------------------------------------------+

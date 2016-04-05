@@ -57,7 +57,7 @@ typedef std::shared_ptr<struct SimpleCancellationToken> SimpleCancellationTokenP
 struct SimpleCancellationToken : ICancellationToken
     {
     private:
-        std::atomic<bool> m_canceled;
+        BeAtomic<bool> m_canceled;
         bvector<std::weak_ptr<ICancellationListener>> m_listeners;
 
     private:

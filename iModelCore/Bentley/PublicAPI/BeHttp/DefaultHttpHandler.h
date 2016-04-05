@@ -18,11 +18,7 @@ BEGIN_BENTLEY_HTTP_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct DefaultHttpHandler
     {
-    private:
-        static std::once_flag s_initFlag;
-
-    public:
-        BEHTTP_EXPORT static IHttpHandlerPtr GetInstance ();
+    BEHTTP_EXPORT static IHttpHandlerPtr GetInstance ();
     };
 
 END_BENTLEY_HTTP_NAMESPACE

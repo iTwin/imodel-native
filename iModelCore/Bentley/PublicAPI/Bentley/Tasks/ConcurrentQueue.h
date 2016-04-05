@@ -46,15 +46,25 @@ struct ConcurrentQueue
                 }
             };
 
-        typedef std::priority_queue<DataContainer, std::vector<DataContainer>, DataContainerCompare> DataContainerQueue;
+        typedef std::priority_queue<DataContainer, bvector<DataContainer>, DataContainerCompare> DataContainerQueue;
 
         DataContainerQueue m_queue;
 
+        struct EmptyQueuePredicate : IConditionVariablePredicate
+            {
+            private:
+                DataContainerQueue const& m_queue;
+                bool m_expectedEmpty;
+            public:
+                EmptyQueuePredicate(DataContainerQueue const& queue, bool expectedEmpty) : m_queue(queue), m_expectedEmpty(expectedEmpty) {}
+                virtual bool  _TestCondition(BeConditionVariable &cv) override { return m_expectedEmpty==m_queue.empty (); }
+            };
+
         uint64_t m_queueIndex;
 
-        mutable std::mutex m_mutex;
-        std::condition_variable m_isEmptyCV;
-        std::condition_variable m_isNotEmptyCV;
+        mutable BeMutex m_mutex;
+        BeConditionVariable m_isEmptyCV;
+        BeConditionVariable m_isNotEmptyCV;
 
     public:
         ConcurrentQueue () :
@@ -62,14 +72,14 @@ struct ConcurrentQueue
             {
             };
 
-        std::mutex& GetMutex () const
+        BeMutex& GetMutex () const
             {
             return m_mutex;
             }
 
         void Push (const D& data)
             {
-            std::unique_lock<std::mutex> l (m_mutex);
+            BeMutexHolder l (m_mutex);
 
             DataContainer dataContainer;
             dataContainer.data = data;
@@ -82,7 +92,7 @@ struct ConcurrentQueue
 
         bool Empty () const
             {
-            std::lock_guard<std::mutex> lk (m_mutex);
+            BeMutexHolder lk (m_mutex);
             return ProtectedEmpty ();
             }
 
@@ -93,19 +103,19 @@ struct ConcurrentQueue
 
         inline int Size () const
             {
-            std::lock_guard<std::mutex> lk (m_mutex);
+            BeMutexHolder lk (m_mutex);
             return (int)m_queue.size ();
             }
 
         void WaitAndPop (D& poppedValue)
             {
-            std::unique_lock<std::mutex> lk (m_mutex);
+            BeMutexHolder lk (m_mutex);
             ProtectedWaitAndPop (poppedValue);
             }
 
         bool TryPop (D& poppedValue)
             {
-            std::lock_guard<std::mutex> lk (m_mutex);
+            BeMutexHolder lk (m_mutex);
             return ProtectedTryPop (poppedValue);
             }
 
@@ -124,12 +134,11 @@ struct ConcurrentQueue
             return true;
             }
 
-        void ProtectedWaitAndPop (D& poppedValue, std::unique_lock<std::mutex>& lk)
+
+        void ProtectedWaitAndPop (D& poppedValue, BeMutexHolder& lk)
             {
-            m_isNotEmptyCV.wait (lk, [this]
-                {
-                return !m_queue.empty ();
-                });
+            EmptyQueuePredicate predicate(m_queue, false);
+            m_isNotEmptyCV.ProtectedWaitOnCondition(lk, &predicate, m_isNotEmptyCV.Infinite);
 
             DataContainer dataContainer = m_queue.top ();
             m_queue.pop ();
@@ -142,12 +151,8 @@ struct ConcurrentQueue
 
         void WaitUntilEmpty () const
             {
-            std::unique_lock<std::mutex> lk (m_mutex);
-            m_isEmptyCV.wait (lk, [this]
-                {
-                return m_queue.empty ();
-                });
+            EmptyQueuePredicate predicate(m_queue, true);
+            m_isEmptyCV.WaitOnCondition(&predicate, m_isEmptyCV.Infinite);
             }
     };
-
 END_BENTLEY_TASKS_NAMESPACE

@@ -90,7 +90,7 @@ struct CurlHttpRequest::TransferInfo
     bool                bodyPositionSet;
     unsigned            retriesLeft;
     CURL*               curl;
-    std::atomic<bool>   requestNeedsToReset;
+    BeAtomic<bool>      requestNeedsToReset;
 
     TransferInfo (HttpResponseContentPtr responseContent, const ProgressInfo& progressInfo) :
         progressInfo (progressInfo),
@@ -137,7 +137,7 @@ void CurlHttpRequest::ResetAllRequests ()
     BeMutexHolder holder (s_transfersCS);
     for (CurlHttpRequest::TransferInfo* transfer : s_transfers)
         {
-        transfer->requestNeedsToReset = true;
+        transfer->requestNeedsToReset.store(true);
         }
     }
 
@@ -572,7 +572,7 @@ void CurlHttpRequest::PrepareRequest ()
     m_transferInfo->responseContent->GetHeaders ().Clear ();
     m_transferInfo->bodyPositionSet = false;
 
-    m_transferInfo->requestNeedsToReset = false;
+    m_transferInfo->requestNeedsToReset.store(false);
     m_transferInfo->progressInfo.wasCanceled = false;
 
     if (LOG.isSeverityEnabled (NativeLogging::LOG_INFO))

@@ -10,10 +10,8 @@
 
 #include <Bentley/Tasks/Tasks.h>
 #include <Bentley/bset.h>
-#include <atomic>
-#include <condition_variable>
 #include <functional>
-#include <mutex>
+#include <Bentley/BeThread.h>
 
 #if defined (THREADING_DEBUG)
     #include <MobileDgn/Utils/BeDbgHelp.h>
@@ -58,15 +56,15 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncTask : public std::enable_shared_from_this<A
             };
 
     private:
-        std::mutex m_mutex;
-        std::condition_variable m_completedCV;
+        BeMutex m_mutex;
+        BeConditionVariable m_completedCV;
 
         bset<std::weak_ptr<OnAsyncTaskCompletedListener>, std::owner_less<std::weak_ptr<OnAsyncTaskCompletedListener>>> m_onCompletedListeners;
 
         bool m_executed;
-        std::atomic<bool> m_completed;
+        BeAtomic<bool> m_completed;
 
-        bvector <std::pair<std::shared_ptr<AsyncTask>, std::shared_ptr<ITaskScheduler>>> m_thenTasks;
+        bvector <bpair<std::shared_ptr<AsyncTask>, std::shared_ptr<ITaskScheduler>>> m_thenTasks;
         bset<std::shared_ptr<AsyncTask>> m_subTasks;
         bset<std::shared_ptr<AsyncTask>> m_parentTasks;
 
@@ -79,8 +77,8 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncTask : public std::enable_shared_from_this<A
     private:
         void SetPriority (Priority priority);
 
-        void CheckCompletion (std::unique_lock<std::mutex>&& lock);
-        void OnCompleted (std::unique_lock<std::mutex>&& lock);
+        void CheckCompletion (BeMutexHolder& lock);
+        void OnCompleted (BeMutexHolder& lock);
 
         void AddSubTaskNoLock (std::shared_ptr<AsyncTask> task);
 
@@ -116,7 +114,7 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncTask : public std::enable_shared_from_this<A
         BENTLEYDLL_EXPORT static std::shared_ptr<PackagedAsyncTask<void>> WhenAll (bset<std::shared_ptr<AsyncTask>> tasks);
         
         //! Check if task has completed its execution and has no more sub tasks left
-        BENTLEYDLL_EXPORT bool IsCompleted ();
+        BENTLEYDLL_EXPORT bool IsCompleted () const;
 
         BENTLEYDLL_EXPORT Priority GetPriority () const;
 

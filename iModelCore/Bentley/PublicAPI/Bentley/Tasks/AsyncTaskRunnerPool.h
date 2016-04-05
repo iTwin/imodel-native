@@ -44,7 +44,8 @@ struct AsyncTaskRunnerPool : public ITaskScheduler, public std::enable_shared_fr
             };
 
     private:
-        std::once_flag m_initializeFlag;
+        bool m_initializeFlag = false;
+        BeMutex m_mutex;
 
     protected:
         int         m_runnerCount;
@@ -59,7 +60,7 @@ struct AsyncTaskRunnerPool : public ITaskScheduler, public std::enable_shared_fr
         std::shared_ptr<ITaskScheduler> m_defaultWorkerThreadPool;
 
         std::shared_ptr<AsyncTaskRunnerPool> m_thisPtr;
-        std::mutex  m_thisPtrMutex;
+        BeMutex  m_thisPtrMutex;
 
     protected:
         BENTLEYDLL_EXPORT void Start ();

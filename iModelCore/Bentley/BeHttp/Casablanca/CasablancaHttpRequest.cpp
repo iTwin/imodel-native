@@ -323,7 +323,7 @@ bool CasablancaHttpRequest::ShouldRetry (ConnectionStatus status)
     // If neither are available  the response body could end up being the incorrect size, due to lost connection.
     Utf8CP contentLength = m_transferInfo->responseContent->GetHeaders ().GetValue ("Content-Length");
     Utf8CP contentRange = m_transferInfo->responseContent->GetHeaders ().GetValue ("Content-Range");
-
+    
     if (contentRange != nullptr)
         {
         ContentRangeHeaderValue contentRangeValue;
@@ -337,7 +337,9 @@ bool CasablancaHttpRequest::ShouldRetry (ConnectionStatus status)
         }
     else if (contentLength != nullptr)
         {
-        if (std::stoull (contentLength) != m_httpRequest.GetResponseBody ()->GetLength ())
+        uint64_t responseContentLength;
+        BeStringUtilities::ParseUInt64(responseContentLength, contentLength);
+        if (responseContentLength != m_httpRequest.GetResponseBody ()->GetLength ())
             {
             return true;
             }
@@ -440,7 +442,7 @@ http::method CasablancaHttpRequest::StringToHttpMethod (Utf8String methodStr)
 void CasablancaHttpRequest::ConvertResponseHeaders (http::http_headers casaHeaders)
     {
     Utf8String logMessage = "Response Headers:\n";
-    for (const std::pair<string_t, string_t>& casaHeader : casaHeaders)
+    for (const bpair<string_t, string_t>& casaHeader : casaHeaders)
         {
         Utf8String key = ToUtf8String (casaHeader.first);
         Utf8String value = ToUtf8String (casaHeader.second);
@@ -749,7 +751,7 @@ pplx::task<CasablancaHttpRequest::StatusWrapper> CasablancaHttpRequest::SendCasa
         StatusWrapper status;
         status.httpStatusCode = httpResponse.status_code ();
 
-        std::vector<pplx::task<void>> completionTasks;
+        bvector<pplx::task<void>> completionTasks;
 
         completionTasks.push_back (responseBodyStream.close ());
         completionTasks.push_back (httpResponse.content_ready ().then ([] (http::http_response)

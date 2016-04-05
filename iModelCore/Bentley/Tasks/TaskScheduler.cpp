@@ -76,7 +76,7 @@ void TaskScheduler::RegisterTaskStart (std::shared_ptr<AsyncTask> task)
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<AsyncTask> TaskScheduler::WaitAndPop ()
     {
-    std::unique_lock<std::mutex> lk (m_taskQueue.GetMutex());
+    BeMutexHolder lk (m_taskQueue.GetMutex());
     
     std::shared_ptr<AsyncTask> task = nullptr;
     m_taskQueue.ProtectedWaitAndPop(task, lk);
@@ -91,7 +91,7 @@ std::shared_ptr<AsyncTask> TaskScheduler::WaitAndPop ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<AsyncTask> TaskScheduler::TryPop ()
     {
-    std::lock_guard<std::mutex> lock (m_taskQueue.GetMutex ());
+    BeMutexHolder lock (m_taskQueue.GetMutex ());
     
     std::shared_ptr<AsyncTask> task = nullptr;
     if (!m_taskQueue.ProtectedTryPop(task))
@@ -111,7 +111,7 @@ void TaskScheduler::_OnAsyncTaskCompleted (std::shared_ptr<AsyncTask> task)
     {
     task->UnregisterOnCompletedListener(shared_from_this());
     
-    std::unique_lock<std::mutex> lk (m_taskQueue.GetMutex ());
+    BeMutexHolder lk (m_taskQueue.GetMutex ());
     m_startedTasks.erase (task);
 
     if (!ProtectedHasRunningTasks ())
@@ -131,7 +131,7 @@ void TaskScheduler::_OnAsyncTaskCompleted (std::shared_ptr<AsyncTask> task)
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<void> TaskScheduler::OnEmpty () const
     {
-    std::lock_guard<std::mutex> lock (m_taskQueue.GetMutex ());
+    BeMutexHolder lock (m_taskQueue.GetMutex ());
     if (!ProtectedHasRunningTasks ())
         {
         return CreateCompletedAsyncTask ();
@@ -153,7 +153,7 @@ bool TaskScheduler::ProtectedHasRunningTasks () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TaskScheduler::HasRunningTasks() const
     {
-    std::lock_guard<std::mutex> lock (m_taskQueue.GetMutex ());
+    BeMutexHolder lock (m_taskQueue.GetMutex ());
     return ProtectedHasRunningTasks();
     }
 

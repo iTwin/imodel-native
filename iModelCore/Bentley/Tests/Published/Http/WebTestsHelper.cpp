@@ -9,7 +9,7 @@
 USING_NAMESPACE_BENTLEY_UNIT_TESTS
 
 
-HttpRequest UnitTests::StubHttpRequest (Utf8StringCR url, Utf8StringCR method, Utf8StringCR body, const std::map<Utf8String, Utf8String>& headers)
+HttpRequest UnitTests::StubHttpRequest (Utf8StringCR url, Utf8StringCR method, Utf8StringCR body, const bmap<Utf8String, Utf8String>& headers)
     {
     HttpRequest request (url, method);
     for (auto& header : headers)
@@ -23,7 +23,7 @@ HttpRequest UnitTests::StubHttpRequest (Utf8StringCR url, Utf8StringCR method, U
     return request;
     }
 
-HttpRequest UnitTests::StubHttpGetRequest (Utf8StringCR url, const std::map<Utf8String, Utf8String>& headers)
+HttpRequest UnitTests::StubHttpGetRequest (Utf8StringCR url, const bmap<Utf8String, Utf8String>& headers)
     {
     return StubHttpRequest (url, "GET", "", headers);
     }
@@ -38,12 +38,12 @@ HttpResponse UnitTests::StubHttpResponse (ConnectionStatus status)
     return HttpResponse (HttpResponseContent::Create (HttpStringBody::Create ()), "", status, httpStatus);
     }
 
-HttpResponse UnitTests::StubHttpResponse (HttpStatus httpStatus, Utf8StringCR body, const std::map<Utf8String, Utf8String>& headers)
+HttpResponse UnitTests::StubHttpResponse (HttpStatus httpStatus, Utf8StringCR body, const bmap<Utf8String, Utf8String>& headers)
     {
     return StubHttpResponse (httpStatus, HttpStringBody::Create (body), headers);
     }
 
-HttpResponse UnitTests::StubHttpResponse (HttpStatus httpStatus, HttpBodyPtr body, const std::map<Utf8String, Utf8String>& headers)
+HttpResponse UnitTests::StubHttpResponse (HttpStatus httpStatus, HttpBodyPtr body, const bmap<Utf8String, Utf8String>& headers)
     {
     ConnectionStatus status = ConnectionStatus::OK;
     if (httpStatus == HttpStatus::None)
@@ -58,7 +58,7 @@ HttpResponse UnitTests::StubHttpResponse (HttpStatus httpStatus, HttpBodyPtr bod
     return HttpResponse (content, "", status, httpStatus);
     }
 
-HttpResponse UnitTests::StubJsonHttpResponse (HttpStatus httpStatus, Utf8StringCR body, const std::map<Utf8String, Utf8String>& headers)
+HttpResponse UnitTests::StubJsonHttpResponse (HttpStatus httpStatus, Utf8StringCR body, const bmap<Utf8String, Utf8String>& headers)
     {
     auto newHeaders = headers;
     newHeaders["Content-Type"] = "application/json";

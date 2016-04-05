@@ -18,7 +18,7 @@
 USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_TASKS
 
-std::once_flag DefaultHttpHandler::s_initFlag;
+
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
@@ -32,20 +32,24 @@ static IHttpHandlerPtr createDefaultHandler ()
 #endif
     }
 
-static IHttpHandlerPtr s_instance = createDefaultHandler();
+
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Benediktas.Lipnickas    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 IHttpHandlerPtr DefaultHttpHandler::GetInstance ()
     {
-    std::call_once(s_initFlag, []
+    static BeMutex s_mutex;
+    static IHttpHandlerPtr s_instance = nullptr;
+    BeMutexHolder lock(s_mutex);
+    if (nullptr == s_instance)
         {
+        s_instance = createDefaultHandler();
         AsyncTasksManager::RegisterOnCompletedListener([]
             {
             s_instance.reset();
             });
-        });
+        }
 
     return s_instance;
     }

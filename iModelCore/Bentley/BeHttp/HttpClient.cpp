@@ -20,7 +20,7 @@
 
 USING_NAMESPACE_BENTLEY_HTTP
 
-std::atomic<int> HttpClient::s_tasksInProgressCount (0);
+BeAtomic<int> HttpClient::s_tasksInProgressCount (0);
 BeFileName HttpClient::s_assetsDirectoryPath;
 
 /*--------------------------------------------------------------------------------------+
