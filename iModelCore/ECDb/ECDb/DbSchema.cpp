@@ -380,89 +380,28 @@ PrimaryKeyDbConstraint& DbTable::GetPrimaryKeyConstraintR()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-ForeignKeyDbConstraint* DbTable::CreateForeignKeyConstraint(DbTable const& referencedTable)
+ForeignKeyDbConstraint const* DbTable::CreateForeignKeyConstraint(DbColumn const& fkColumn, DbColumn const& referencedColumn, ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction)
     {
     if (GetEditHandleR().AssertNotInEditMode())
         return nullptr;
 
+    if (fkColumn.GetPersistenceType() == PersistenceType::Virtual || referencedColumn.GetPersistenceType() == PersistenceType::Virtual)
+        {
+        BeAssert(false && "Cannot create FK constraint on virtual columns");
+        return nullptr;
+        }
+
     BeBriefcaseBasedId constraintId;
     m_dbSchema.GetECDb().GetECDbImplR().GetConstraintIdSequence().GetNextValue(constraintId);
 
-    ForeignKeyDbConstraint * constraint = new ForeignKeyDbConstraint(DbConstraintId(constraintId.GetValue()), *this, referencedTable);
-    m_constraints.push_back(std::unique_ptr<DbConstraint>(constraint));
-    return constraint;
-    }
+    std::unique_ptr<ForeignKeyDbConstraint> constraint (new ForeignKeyDbConstraint(DbConstraintId(constraintId.GetValue()), *this, fkColumn, referencedColumn, onDeleteAction, onUpdateAction));
+    ForeignKeyDbConstraint* constraintP = constraint.get();
+    m_constraints.push_back(std::move(constraint));
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle    04/2016
-//---------------------------------------------------------------------------------------
-BentleyStatus DbTable::CreateForeignKeyConstraintsForExistingTableMapStrategy()
-    {
-    if (GetEditHandleR().AssertNotInEditMode())
-        return ERROR;
+    //! remove the fk constraint if already exist due to another relationship on same column
+    constraintP->RemoveIfDuplicate();
 
-    struct ConstraintInfo
-        {
-        DbTable const* m_referencedTable;
-        std::vector<Utf8String> m_fkColumnNames;
-        std::vector<Utf8String> m_referencedColumnNames;
-        ForeignKeyDbConstraint::ActionType m_onDelete;
-        ForeignKeyDbConstraint::ActionType m_onUpdate;
-
-        ConstraintInfo() : m_referencedTable(nullptr), m_onDelete(ForeignKeyDbConstraint::ActionType::NotSpecified), m_onUpdate(ForeignKeyDbConstraint::ActionType::NotSpecified) {}
-        };
-
-    Utf8String sql;
-    sql.Sprintf("pragma foreign_key_list('%s')", m_name.c_str());
-
-    Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(m_dbSchema.GetECDb(), sql.c_str()))
-        {
-        m_dbSchema.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Could not prepare %s ti retrieve foreign key information for table %s.", sql.c_str(), m_name.c_str());
-        return ERROR;
-        }
-
-    std::vector<ConstraintInfo> fkConstraintInfos;
-    int64_t previousId = INT64_C(-1);
-    while (BE_SQLITE_ROW == stmt.Step())
-        {
-        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(0), "id") == 0);
-        int64_t id = stmt.GetValueInt64(0);
-        if (id != previousId)
-            fkConstraintInfos.push_back(ConstraintInfo());
-
-        ConstraintInfo& constraintInfo = fkConstraintInfos.back();
-
-        if (id != previousId)
-            {
-            //only read when rows for a new constraint start.
-            BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(2), "table") == 0);
-            Utf8CP referencedTableName = stmt.GetValueText(2);
-            constraintInfo.m_referencedTable = m_dbSchema.FindTable(referencedTableName);
-            if (constraintInfo.m_referencedTable == nullptr)
-                {
-                BeAssert(false);
-                return ERROR;
-                }
-
-            BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(5), "on_update") == 0);
-            Utf8CP onUpdateActionStr = stmt.GetValueText(5);
-            constraintInfo.m_onUpdate = ForeignKeyDbConstraint::ToActionType(onUpdateActionStr);
-            BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(6), "on_delete") == 0);
-            Utf8CP onDeleteActionStr = stmt.GetValueText(6);
-            constraintInfo.m_onDelete = ForeignKeyDbConstraint::ToActionType(onDeleteActionStr);
-
-            previousId = id;
-            }
-
-        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(3), "from") == 0);
-        constraintInfo.m_fkColumnNames.push_back(Utf8String(stmt.GetValueText(3)));
-
-        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(4), "to") == 0);
-        constraintInfo.m_referencedColumnNames.push_back(Utf8String(stmt.GetValueText(4)));
-        }
-
-    return SUCCESS;
+    return constraintP;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1091,45 +1030,11 @@ BentleyStatus PrimaryKeyDbConstraint::Remove(Utf8CP columnName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus ForeignKeyDbConstraint::Add(Utf8CP fkColumnName, Utf8CP referencedTableColumnName)
+ForeignKeyDbConstraint::ForeignKeyDbConstraint(DbConstraintId id, DbTable const& fkTable, DbColumn const& fkColumn, DbColumn const& referencedColumn, ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction)
+    : DbConstraint(Type::ForeignKey, fkTable), m_id(id), m_onDeleteAction(onDeleteAction), m_onUpdateAction(onUpdateAction)
     {
-    if (Utf8String::IsNullOrEmpty(fkColumnName) || Utf8String::IsNullOrEmpty(referencedTableColumnName))
-        {
-        BeAssert(false && "fkColumnName and target column cannot be empty of null");
-        return BentleyStatus::ERROR;
-        }
-
-    DbColumn const* fkColumn = GetForeignKeyTable().FindColumn(fkColumnName);
-    DbColumn const* referencedTableColumn = GetReferencedTable().FindColumn(referencedTableColumnName);
-
-    if (fkColumn == nullptr || referencedTableColumn == nullptr)
-        {
-        BeAssert(fkColumn != nullptr && "Failed to resolve fkColumnName in fk table while creating foreignKey constraint");
-        BeAssert(referencedTableColumn != nullptr && "Failed to resolve referencedTableColumnName in referenced table while creating foreignKey constraint");
-        return ERROR;
-        }
-
-    if (fkColumn->GetPersistenceType() == PersistenceType::Virtual)
-        {
-        BeAssert(false && "Virtual column cannot be use as foreign key");
-        return ERROR;
-        }
-
-    if (referencedTableColumn->GetPersistenceType() == PersistenceType::Virtual)
-        {
-        BeAssert(false && "Virtual column cannot be use as foreign key");
-        return ERROR;
-        }
-
-    for (size_t i = 0; i < m_fkColumns.size(); i++)
-        {
-        if (m_fkColumns[i]->GetName().EqualsI(fkColumnName) && m_referencedTableColumns[i]->GetName().EqualsI(referencedTableColumnName))
-            return SUCCESS;
-        }
-
-    m_fkColumns.push_back(fkColumn);
-    m_referencedTableColumns.push_back(referencedTableColumn);
-    return SUCCESS;
+    m_fkColumns.push_back(&fkColumn);
+    m_referencedTableColumns.push_back(&referencedColumn);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -1247,13 +1152,12 @@ void ForeignKeyDbConstraint::RemoveIfDuplicate()
         const_cast<DbTable&>(GetForeignKeyTable()).RemoveConstraint(*this);
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   03/2016
 //---------------------------------------------------------------------------------------
 bool ForeignKeyDbConstraint::IsValid() const
     {
-    return m_id.IsValid() && m_referencedTable.IsValid() && !m_fkColumns.empty() && m_fkColumns.size() == m_referencedTableColumns.size();
+    return m_id.IsValid() && GetReferencedTable().IsValid() && !m_fkColumns.empty() && m_fkColumns.size() == m_referencedTableColumns.size();
     }
 
 //---------------------------------------------------------------------------------------

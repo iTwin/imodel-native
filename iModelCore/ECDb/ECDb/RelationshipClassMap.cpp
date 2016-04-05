@@ -396,6 +396,14 @@ MappingStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, Clas
             DbColumn const* fkCol = foreignEndTable->FindColumn(fkColName.c_str());
             if (fkCol != nullptr)
                 {
+                //FK col is only allowed to exist if the table has MapStrategy "ExistingTable"
+                if (foreignEndTable->IsOwnedByECDb())
+                    {
+                    GetECDbMap().GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass '%s'. ForeignKey column name '%s' is already used by another column in the foreign key end table %s.",
+                                                                                    relationshipClass.GetFullName(), fkColName.c_str(), foreignEndTable->GetName().c_str());
+                    return MappingStatus::Error;
+                    }
+
                 if (SUCCESS != ValidateForeignKeyColumn(*fkCol, cardinalityImpliesNotNullOnFkCol, foreignKeyColumnKind))
                     return MappingStatus::Error;
                 }
@@ -555,23 +563,23 @@ MappingStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, Clas
                 }
             else
                 {
-                ForeignKeyDbConstraint* foreignKeyConstraint = fkTable.CreateForeignKeyConstraint(*referencedTable);
-                foreignKeyConstraint->Add(fkCol->GetName().c_str(), referencedTablePKCol->GetName().c_str());
+                ForeignKeyDbConstraint::ActionType onDelete = ForeignKeyDbConstraint::ActionType::NotSpecified;
+                ForeignKeyDbConstraint::ActionType onUpdate = ForeignKeyDbConstraint::ActionType::NotSpecified;
+                
                 if (userRequestedDeleteAction != ForeignKeyDbConstraint::ActionType::NotSpecified)
-                    foreignKeyConstraint->SetOnDeleteAction(userRequestedDeleteAction);
+                    onDelete = userRequestedDeleteAction;
                 else
                     {
                     if (relationshipClass.GetStrength() == StrengthType::Embedding)
-                        foreignKeyConstraint->SetOnDeleteAction(ForeignKeyDbConstraint::ActionType::Cascade);
+                        onDelete = ForeignKeyDbConstraint::ActionType::Cascade;
                     else
-                        foreignKeyConstraint->SetOnDeleteAction(ForeignKeyDbConstraint::ActionType::SetNull);
+                        onDelete = ForeignKeyDbConstraint::ActionType::SetNull;
                     }
 
                 if (userRequestedUpdateAction != ForeignKeyDbConstraint::ActionType::NotSpecified)
-                    foreignKeyConstraint->SetOnUpdateAction(userRequestedUpdateAction);
+                    onUpdate = userRequestedUpdateAction;
 
-                //! remove the fk constraint if already exist due to another relationship on same column
-                foreignKeyConstraint->RemoveIfDuplicate();
+                fkTable.CreateForeignKeyConstraint(*fkCol, *referencedTablePKCol, onDelete, onUpdate);
                 }
             }
         }
@@ -1258,23 +1266,16 @@ MappingStatus RelationshipClassLinkTableMap::_MapPart2 (SchemaImportContext& con
     if (GetPrimaryTable().GetType() != DbTable::Type::Existing)
         {
         //Create FK from Source-Primary to LinkTable
-        DbTable * sourceTable = const_cast<DbTable*>(*sourceTables.begin());
-        ForeignKeyDbConstraint* sourceFK = GetPrimaryTable().CreateForeignKeyConstraint(*sourceTable);
-        DbColumn const* souceColumn = sourceTable->GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
-        sourceFK->Add(GetSourceECInstanceIdPropMap()->GetSingleColumn()->GetName().c_str(), souceColumn->GetName().c_str());
-        sourceFK->SetOnDeleteAction(ForeignKeyDbConstraint::ActionType::Cascade);
-        sourceFK->RemoveIfDuplicate();
-        sourceFK = nullptr;
-
+        DbTable const* sourceTable = *sourceTables.begin();
+        DbColumn const* fkColumn = GetSourceECInstanceIdPropMap()->GetSingleColumn();
+        DbColumn const* referencedColumn = sourceTable->GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+        GetPrimaryTable().CreateForeignKeyConstraint(*fkColumn, *referencedColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified);
 
         //Create FK from Target-Primary to LinkTable
-        DbTable * targetTable = const_cast<DbTable*>(*targetTables.begin());
-        ForeignKeyDbConstraint* targetFK = GetPrimaryTable().CreateForeignKeyConstraint(*targetTable);
-        DbColumn const* targetColumn = targetTable->GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
-        targetFK->Add(GetTargetECInstanceIdPropMap()->GetSingleColumn()->GetName().c_str(), targetColumn->GetName().c_str());
-        targetFK->SetOnDeleteAction(ForeignKeyDbConstraint::ActionType::Cascade);
-        targetFK->RemoveIfDuplicate();
-        targetFK = nullptr;
+        DbTable const* targetTable = *targetTables.begin();
+        fkColumn = GetTargetECInstanceIdPropMap()->GetSingleColumn();
+        referencedColumn = targetTable->GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+        GetPrimaryTable().CreateForeignKeyConstraint(*fkColumn, *referencedColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified);
         }
 
     AddIndices (context, classMapInfo);
