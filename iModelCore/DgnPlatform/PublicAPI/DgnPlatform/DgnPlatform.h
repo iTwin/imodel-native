@@ -375,6 +375,10 @@ public:
     uint16_t GetIndex() const {return m_index;}
     uint16_t GetPartIndex() const {return m_partIndex;}
     bool IsValid() const {return 0 != m_index;}
+
+    void SetActive(bool enable) {if (m_partId.IsValid()) {if (!enable) SetGeometryPartId(DgnGeometryPartId()); return;} Init();}
+    void SetActiveGeometryPart(DgnGeometryPartId partId) {SetGeometryPartId(partId);}
+    void Increment() {if (m_partId.IsValid()) SetPartIndex(GetPartIndex()+1); else SetIndex(GetIndex()+1);}
 };
 
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
