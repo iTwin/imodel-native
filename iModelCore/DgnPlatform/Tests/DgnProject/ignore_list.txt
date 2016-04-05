@@ -43,5 +43,6 @@ ImportTests.simpleSchemaImport
 
 DgnECNavigatorTest.DgnLinksElementInfo # Need to add support for DgnLinks - JeffM
 DgnECNavigatorTest.IfcElementInfo # Need to add support for RelatedItemsDisplaySpecification - Carole
+DgnECNavigatorTest.PlantElementInfo # Need to figure transkit issues - Raman. 
 
 
