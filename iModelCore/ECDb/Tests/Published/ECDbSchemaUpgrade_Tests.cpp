@@ -961,11 +961,9 @@ TEST_F(ECDbSchemaUpgradeTests, UpdatingSchemaShouldNotDeleteExistingRelationship
     ECDbR ecdb = SetupECDb("schemaupgradetest.ecdb", BeFileName(L"DSCacheSchema.01.03.ecschema.xml"));
     ecdb.SaveChanges();
 
-    ASSERT_EQ(ecdb.ColumnExists("DSC_CachedFileInfo", "ForeignECClassId_CachedFileInfoRelationship"), true);
-    ASSERT_EQ(ecdb.ColumnExists("DSC_CachedFileInfo", "ForeignECInstanceId_CachedFileInfoRelationship"), true);
+    ASSERT_EQ(ecdb.ColumnExists("DSC_CachedFileInfo", "ForeignECInstanceId_DSC_CachedFileInfoRelationship"), true);
 
-    ASSERT_EQ(ecdb.ColumnExists("DSC_CachedInstanceInfo", "ForeignECInstanceId_CachedInstanceInfoRelationship"), true);
-    ASSERT_EQ(ecdb.ColumnExists("DSC_CachedInstanceInfo", "ForeignECClassId_CachedInstanceInfoRelationship"), true);
+    ASSERT_EQ(ecdb.ColumnExists("DSC_CachedInstanceInfo", "ForeignECInstanceId_DSC_CachedInstanceInfoRelationship"), true);
 
     ASSERT_EQ(ecdb.ColumnExists("DSCJS_RootRelationship", "SourceECInstanceId"), true);
     ASSERT_EQ(ecdb.ColumnExists("DSCJS_RootRelationship", "TargetECInstanceId"), true);

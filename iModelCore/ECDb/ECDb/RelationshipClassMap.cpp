@@ -368,40 +368,17 @@ MappingStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, Clas
         m_autogenerateForeignKeyColumns = false;
         for (DbColumn const* fkCol : fkTableFkCols)
             {
-            DbTable& fkTable = fkCol->GetTableR();
-
-            if (fkCol->GetConstraint().IsNotNull() != cardinalityImpliesNotNullOnFkCol)
-                {
-                Utf8CP error = nullptr;
-                if (cardinalityImpliesNotNullOnFkCol)
-                    error = "Failed to map ECRelationshipClass '%s'. It specified a KeyProperty which is nullable "
-                    "although the relationship's cardinality implies that the KeyProperty is not nullable. Either modify the cardinality or mark the property specifed as KeyProperty as not nullable.";
-                else
-                    error = "Failed to map ECRelationshipClass '%s'. It specified a KeyProperty which is not nullable "
-                    "although the relationship's cardinality implies that the KeyProperty is nullable. Please modify the cardinality accordingly.";
-
-                GetECDbMap().GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, error, relationshipClass.GetFullName());
+            if (SUCCESS != ValidateForeignKeyColumn(*fkCol, cardinalityImpliesNotNullOnFkCol, foreignKeyColumnKind))
                 return MappingStatus::Error;
-                }
-
-            const bool tableIsReadonly = !fkTable.GetEditHandle().CanEdit();
-            if (tableIsReadonly)
-                fkTable.GetEditHandleR().BeginEdit();
-
-            //Kind of existing columns must be modified so that they also have the constraint ecinstanceid kind
-            const_cast<DbColumn*>(fkCol)->AddKind(foreignKeyColumnKind);
-
-            if (tableIsReadonly)
-                fkTable.GetEditHandleR().EndEdit();
             }
         }
     else
         {
-        Utf8CP userProvidedFkColumnName = relationshipClassMapInfo.GetColumnsMapping(GetForeignEnd()).GetECInstanceIdColumnName();
-
         ForeignKeyColumnInfo fkColInfo;
         if (SUCCESS != TryGetForeignKeyColumnInfoFromNavigationProperty(fkColInfo, foreignEndConstraint, relationshipClass, GetForeignEnd()))
             return MappingStatus::Error;
+
+        Utf8CP userProvidedFkColumnName = relationshipClassMapInfo.GetColumnsMapping(GetForeignEnd()).GetECInstanceIdColumnName();
 
         Utf8String fkColName;
         if (!Utf8String::IsNullOrEmpty(userProvidedFkColumnName))
@@ -416,28 +393,34 @@ MappingStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, Clas
         
         for (DbTable const* foreignEndTable : foreignEndTables)
             {
-            if (foreignEndTable->FindColumn(fkColName.c_str()) != nullptr)
+            DbColumn const* fkCol = foreignEndTable->FindColumn(fkColName.c_str());
+            if (fkCol != nullptr)
                 {
-                GetECDbMap().GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                if (SUCCESS != ValidateForeignKeyColumn(*fkCol, cardinalityImpliesNotNullOnFkCol, foreignKeyColumnKind))
+                    return MappingStatus::Error;
+
+
+                /*GetECDbMap().GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
                                                                                  "Failed to map ECRelationshipClass '%s'. ForeignKey column name '%s' is already used by another column in the foreign key end table %s.",
                                                                                  relationshipClass.GetFullName(), fkColName.c_str(), foreignEndTable->GetName().c_str());
 
-                return MappingStatus::Error;
+                return MappingStatus::Error;*/
                 }
-
-
-            int fkColPosition = -1;
-            if (SUCCESS != TryDetermineForeignKeyColumnPosition(fkColPosition, *foreignEndTable, fkColInfo))
-                return MappingStatus::Error;
-
-            const PersistenceType columnPersistenceType = foreignEndTable->IsOwnedByECDb() && foreignEndTable->GetPersistenceType() == PersistenceType::Persisted ? PersistenceType::Persisted : PersistenceType::Virtual;
-            DbColumn* fkCol = const_cast<DbTable*>(foreignEndTable)->CreateColumn(fkColName.c_str(), DbColumn::Type::Integer, fkColPosition, foreignKeyColumnKind, columnPersistenceType);
-            if (fkCol == nullptr)
+            else
                 {
-                LOG.errorv("Could not create foreign key column %s in table %s for the ECRelationshipClass %s.",
-                           fkColName.c_str(), foreignEndTable->GetName().c_str(), relationshipClass.GetFullName());
-                BeAssert(false && "Could not create FK column for end table mapping");
-                return MappingStatus::Error;
+                int fkColPosition = -1;
+                if (SUCCESS != TryDetermineForeignKeyColumnPosition(fkColPosition, *foreignEndTable, fkColInfo))
+                    return MappingStatus::Error;
+
+                const PersistenceType columnPersistenceType = foreignEndTable->IsOwnedByECDb() && foreignEndTable->GetPersistenceType() == PersistenceType::Persisted ? PersistenceType::Persisted : PersistenceType::Virtual;
+                DbColumn* fkCol = const_cast<DbTable*>(foreignEndTable)->CreateColumn(fkColName.c_str(), DbColumn::Type::Integer, fkColPosition, foreignKeyColumnKind, columnPersistenceType);
+                if (fkCol == nullptr)
+                    {
+                    LOG.errorv("Could not create foreign key column %s in table %s for the ECRelationshipClass %s.",
+                               fkColName.c_str(), foreignEndTable->GetName().c_str(), relationshipClass.GetFullName());
+                    BeAssert(false && "Could not create FK column for end table mapping");
+                    return MappingStatus::Error;
+                    }
                 }
 
             fkTableFkCols.insert(fkCol);
@@ -600,7 +583,7 @@ MappingStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, Clas
             }
         }
 
-    //Create ECinstanceId for this classMap. This must map to current table for this class evaluate above and set through SetTable();
+    //Create ECInstanceId for this classMap. This must map to current table for this class evaluate above and set through SetTable();
     std::vector<DbColumn const*> fkTablePkColsVector(fkTablePkCols.begin(), fkTablePkCols.end());
     PropertyMapPtr ecInstanceIdPropMap = ECInstanceIdPropertyMap::Create(GetECDbMap().GetECDb().Schemas(), *this, fkTablePkColsVector);
     if (ecInstanceIdPropMap == nullptr)
@@ -789,6 +772,46 @@ BentleyStatus RelationshipClassEndTableMap::_Load(std::set<ClassMap const*>& loa
     m_targetConstraintMap.SetECClassIdPropMap(targetClassIdPropMap.get());
     return SUCCESS;
     }
+
+//--------------------------------------------------------------------------------------
+//@bsimethod                                 Krischan.Eberle                   04/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus RelationshipClassEndTableMap::ValidateForeignKeyColumn(DbColumn const& fkColumn, bool cardinalityImpliesNotNullOnFkCol, DbColumn::Kind fkColKind) const
+    {
+    DbTable& fkTable = fkColumn.GetTableR();
+
+    if (fkColumn.GetConstraint().IsNotNull() != cardinalityImpliesNotNullOnFkCol)
+        {
+        Utf8CP error = nullptr;
+        if (cardinalityImpliesNotNullOnFkCol)
+            error = "Failed to map ECRelationshipClass '%s'. It is mapped to an existing foreign key column which is nullable "
+            "although the relationship's cardinality implies that the column is not nullable. Either modify the cardinality or mark the property specified that maps to the foreign key column as not nullable.";
+        else
+            error = "Failed to map ECRelationshipClass '%s'. It is mapped to an existing foreign key column which is not nullable "
+            "although the relationship's cardinality implies that the column is nullable. Please modify the cardinality accordingly.";
+
+        GetECDbMap().GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, error, GetRelationshipClass().GetFullName());
+        return ERROR;
+        }
+
+    const bool tableIsReadonly = !fkTable.GetEditHandle().CanEdit();
+    if (tableIsReadonly)
+        fkTable.GetEditHandleR().BeginEdit();
+
+    //Kind of existing columns must be modified so that they also have the constraint ecinstanceid kind
+    const_cast<DbColumn&>(fkColumn).AddKind(fkColKind);
+
+    if (tableIsReadonly)
+        fkTable.GetEditHandleR().EndEdit();
+
+    if (!fkTable.IsOwnedByECDb())
+        {
+
+        }
+
+    return SUCCESS;
+    }
+
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan         9/2012
