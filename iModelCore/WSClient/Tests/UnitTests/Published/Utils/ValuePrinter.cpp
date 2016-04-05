@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/ValuePrinter.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ValuePrinter.h"
@@ -283,6 +283,7 @@ std::ostream& operator << (std::ostream &o, WSError::Status status)
         TO_VALUE_STRING_PAIR(WSError::Status::None),
         TO_VALUE_STRING_PAIR(WSError::Status::Canceled),
         TO_VALUE_STRING_PAIR(WSError::Status::ConnectionError),
+        TO_VALUE_STRING_PAIR(WSError::Status::CertificateError),
         TO_VALUE_STRING_PAIR(WSError::Status::ServerNotSupported),
         TO_VALUE_STRING_PAIR(WSError::Status::ReceivedError),
         };
