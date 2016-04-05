@@ -459,9 +459,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
     type DgnElementP = cxx_pointer<DgnElement>;
 
     /** GeometrySource */
-    class GeometrySource implements BeJsProjection_IsInterface {
+    class GeometrySource implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
         /*** NATIVE_TYPE_NAME = JsGeometrySource_PLACEHOLDER_ ***/
-        /* This is a projection of a C++ interface -- no instance is ever created -- needs no marshalling code * /
+        /* This is a projection of a C++ interface -- no instance is ever created -- it's always an alias for an instance of a concrete class, such as GeometricElement3d */
 
         /** Get the element's DgnCategoryId */
         CategoryId: DgnObjectIdP;
@@ -472,15 +472,35 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         /** Cast this element to DgnElement */
         ToDgnElementP(): DgnElementP;
 
+        ToGeometrySource2dP(): GeometrySource2dP;
         ToGeometrySource3dP(): GeometrySource3dP;
+
+        OnDispose(): void;
+        Dispose(): void;
     }
 
     type GeometrySourceP = cxx_pointer<GeometrySource>;
 
+    /** GeometrySource2d */
+    class GeometrySource2d extends GeometrySource implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+        /*** NATIVE_TYPE_NAME = JsGeometrySource2d_PLACEHOLDER_ ***/
+        /* This is a projection of a C++ interface -- no instance is ever created -- it's always an alias for an instance of a concrete class, such as GeometricElement2d */
+
+        // *** TBD
+
+        ToGeometrySource2dP(): GeometrySource2dP;
+        ToGeometrySource2dP(): GeometrySource2dP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type GeometrySource2dP = cxx_pointer<GeometrySource2d>;
+
     /** GeometrySource3d */
-    class GeometrySource3d extends GeometrySource implements BeJsProjection_IsInterface {
+    class GeometrySource3d extends GeometrySource implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
         /*** NATIVE_TYPE_NAME = JsGeometrySource3d_PLACEHOLDER_ ***/
-        /* This is a projection of a C++ interface -- no instance is ever created -- needs no marshalling code * /
+        /* This is a projection of a C++ interface -- no instance is ever created -- it's always an alias for an instance of a concrete class, such as GeometricElement3d */
 
         /** Get the placement of this element */
         Placement: Placement3dP;
@@ -491,7 +511,11 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         */
         Transform(transform: TransformP): cxx_int32_t;
 
+        ToGeometrySource2dP(): GeometrySource2dP;
         ToGeometrySource3dP(): GeometrySource3dP;
+
+        OnDispose(): void;
+        Dispose(): void;
     }
 
     type GeometrySource3dP = cxx_pointer<GeometrySource3d>;
@@ -525,6 +549,8 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
 
         /** Cast this element to GeometrySource3d */
         ToGeometrySource3dP(): GeometrySource3dP;
+
+        ToGeometrySource2dP(): GeometrySource2dP;
 
         /** Transform the element's Placement 
          * @param transform The transform to apply to the element's Placement. The transform must be pure rotation and/or translation.
