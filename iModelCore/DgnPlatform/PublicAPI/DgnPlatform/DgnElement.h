@@ -1331,6 +1331,9 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement3d : GeometricElement, GeometrySo
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_GeometricElement3d, GeometricElement)
     friend struct dgn_ElementHandler::Geometric3d;
 
+    DGNPLATFORM_EXPORT DgnDbStatus GetPlacementProperty(ECN::ECValueR value, Utf8CP name) const;
+    DGNPLATFORM_EXPORT DgnDbStatus SetPlacementProperty(Utf8CP name, ECN::ECValueCR value);
+
 public:
     //! Parameters for constructing a 3d geometric element
     struct CreateParams : T_Super::CreateParams
@@ -1384,7 +1387,10 @@ protected:
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement&);
 public:
     DGNPLATFORM_EXPORT static void AddClassParams(ECSqlClassParams& params);
-};
+
+    DGNPLATFORM_EXPORT DgnDbStatus _GetProperty(ECN::ECValueR value, Utf8CP name) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _SetProperty(Utf8CP name, ECN::ECValueCR value) override;
+    };
 
 //=======================================================================================
 //! Base class for elements with 2d geometry

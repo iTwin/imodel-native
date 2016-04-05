@@ -218,6 +218,12 @@ struct JsDgnObjectId : RefCountedBaseWithCreate
     explicit JsDgnObjectId(uint64_t v) : m_id(v) {;}
     bool IsValid() {return 0 != m_id;}
     bool Equals(JsDgnObjectId* rhs) {return rhs && rhs->m_id == m_id;}
+    Utf8String ToString() const {return Utf8PrintfString("%" PRIu64, m_id); }
+    void FromString(Utf8StringCR str) 
+        {
+        if (1 != sscanf(str.c_str(), "%" PRIu64, &m_id))
+            DGNJSAPI_DGNSCRIPT_THROW("Args", str.c_str());
+        }
 };
 
 typedef JsDgnObjectId* JsDgnObjectIdP;

@@ -10,7 +10,10 @@ module DgnScriptTests {
 
     import be = Bentley.Dgn;
 
+    //---------------------------------------------------------------------------------------
     // *** NB: Keep this consistent with {DgnScriptContext_Test.cpp}TEST_F(DgnScriptTest, RunScripts)
+    // @bsimethod                                   
+    //---------------------------------------------------------------------------------------
     class Params
     {
         modelName: string;
@@ -20,25 +23,35 @@ module DgnScriptTests {
     var shiftXSize = 5.0;
     var shiftYsize = 2.5;
 
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   
+    //---------------------------------------------------------------------------------------
+    function fmtDPoint3d(pt: be.DPoint3d) {
+        return "(" + pt.X + "," + pt.Y + "," + pt.Z + ")";
+    }
 
-    function testEcSql(db: be.DgnDb, minGenericObjectsExpected: number) {
-
-        var physObjClass = db.Schemas.GetECClass(be.GENERIC_ECSCHEMA_NAME, be.GENERIC_CLASSNAME_PhysicalObject);
-
-        // Demonstrate how to do a normal SELECT
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   
+    //---------------------------------------------------------------------------------------
+    function testEcSql_selectLastInstanceOf(db: be.DgnDb, cls: be.ECClass, minGenericObjectsExpected: number): be.DgnObjectId {
         var lastelid: be.DgnObjectId;
+
+        //  0             1      2    3      4 
+        var stmt = db.GetPreparedECSqlSelectStatement("ECInstanceId, Origin, Yaw, Pitch, Roll, BBoxLow, BBoxHigh FROM " + cls.ECSqlName);
         var count: number = 0;
-                                                    //  0             1      2    3      4 
-        var stmt = db.GetPreparedECSqlSelectStatement("ECInstanceId, Origin, Yaw, Pitch, Roll FROM " + physObjClass.ECSqlName);
         while (be.BeSQLiteDbResult.BE_SQLITE_ROW == stmt.Step()) {
             var elemid: be.DgnObjectId = stmt.GetValueId(0);
             var origin: be.DPoint3d = stmt.GetValueDPoint3d(1);
             var yaw: number = stmt.GetValueInt(2);
             var pitch: number = stmt.GetValueDouble(3);
             var roll: number = stmt.GetValueDouble(4);
+            var bboxLow: be.DPoint3d = stmt.GetValueDPoint3d(5);
+            var bboxHigh: be.DPoint3d = stmt.GetValueDPoint3d(6);
 
             // The above code shows how to extract multiple columns from a statement. 
             // In real code, we would do something with those values.
+
+            be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, "eid: " + elemid.ToString() + " bbox:{" + fmtDPoint3d(bboxLow) + "," + fmtDPoint3d(bboxHigh));
 
             //  For purposes of this test, just remember the last element that we saw.
             lastelid = elemid;
@@ -47,42 +60,65 @@ module DgnScriptTests {
 
         if (count < minGenericObjectsExpected) {
             be.Script.ReportError('SELECT should have found at least ' + minGenericObjectsExpected + ' elements. It actually found ' + count);
-            return;
+            return null;
         }
 
-        var el: be.DgnElement = db.Elements.GetElement(lastelid);
+        return lastelid;
+    }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   
+    //---------------------------------------------------------------------------------------
+    function getElementRange(db: be.DgnDb, eid: be.DgnObjectId): be.DRange3d {
+        var el: be.DgnElement = db.Elements.GetElement(eid);
         if (el == null) {
             be.Script.ReportError('db.Elements.Get(lastelid) failed');
-            return;
+            return null;
         }
 
         var pel: be.GeometrySource3d = el.ToGeometrySource3d();
         if (pel == null) {
             be.Script.ReportError('ToGeometrySource3d failed');
-            return;
+            return null;
         }
-        var aabbox = pel.Placement.CalculateRange();
+        return pel.Placement.CalculateRange();
+    }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   
+    //---------------------------------------------------------------------------------------
+    function testEcSql(db: be.DgnDb, minGenericObjectsExpected: number) {
+
+        var physObjClass = db.Schemas.GetECClass(be.GENERIC_ECSCHEMA_NAME, be.GENERIC_CLASSNAME_PhysicalObject);
+
+        // Demonstrate how to do a normal SELECT
+        var lastelid: be.DgnObjectId = testEcSql_selectLastInstanceOf(db, physObjClass, minGenericObjectsExpected);
+
+        var lastelrange = getElementRange(db, lastelid);
+
+        be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, "lastelid: " + lastelid.ToString() + " bbox:{" + fmtDPoint3d(lastelrange.Low) + "," + fmtDPoint3d(lastelrange.High));
 
         // Test spatial query. In this example, I am testing for GENERIC_CLASSNAME_PhysicalObject. In a real app, I would
         // be testing for valves and girders and so on.
         var spatialQuery = db.GetPreparedECSqlSelectStatement(
-            "SELECT rt.ECInstanceId FROM dgn.SpatialIndex rt, " + physObjClass.ECSqlName +
+            "SELECT rt.ECInstanceId FROM dgn.SpatialIndex rt " +
             " WHERE rt.ECInstanceId MATCH DGN_spatial_overlap_aabb(:bbox)"
         );
 
         // *** TBD: AxisAlignedBoundingBox aka Range
-        stmt.BindDRange3d(stmt.GetParameterIndex(":bbox"), aabbox);
+        spatialQuery.BindDRange3d(spatialQuery.GetParameterIndex("bbox"), lastelrange);
         var foundIt: boolean = false;
         while ((be.BeSQLiteDbResult.BE_SQLITE_ROW == spatialQuery.Step()) && !foundIt) {
-            var elemid: be.DgnObjectId = stmt.GetValueId(0);
-            foundIt = (elemid == lastelid);
+            var foundelemid: be.DgnObjectId = spatialQuery.GetValueId(0);
+            var foundelemrange: be.DRange3d = getElementRange(db, foundelemid);
+            be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, "foundelemid: " + foundelemid.ToString() + " bbox:{" + fmtDPoint3d(foundelemrange.Low) + "," + fmtDPoint3d(foundelemrange.High));
+            foundIt = foundelemid.Equals(lastelid);
         }
 
         if (!foundIt) {
             be.Script.ReportError('spatial query failed to find element overlapping aabbox');
             return;
         }
-
     }
 
     //---------------------------------------------------------------------------------------

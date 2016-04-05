@@ -246,10 +246,23 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
     class DgnObjectId implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
         /*** NATIVE_TYPE_NAME = JsDgnObjectId ***/
+
+        constructor();
+
         /** Tests if the ID is valid */
         IsValid(): cxx_bool;
         /** Tests if the ID matches another ID @param id The other ID */
         Equals(id: DgnObjectIdP): cxx_bool;
+        /**
+         * Gets the value of the ID as a string
+         */
+        ToString(): Bentley_Utf8String;
+        /**
+         * Sets the value of the ID from a string
+         * @param str   The new value as a string
+         */
+        FromString(str: Bentley_Utf8String): void;
+
         OnDispose(): void;
         Dispose(): void;
     }
