@@ -115,7 +115,7 @@ struct BitmapRleCreator : RasterCreator
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct cTiffPyramidCreator : RasterCreator
     {
-    cTiffPyramidCreator(HFCPtr<HRPPixelType> pixelType, WCharCP pFilePrefix) { m_pPixelType = pixelType; m_filePrefix = pFilePrefix; }
+    cTiffPyramidCreator(HFCPtr<HRPPixelType> pixelType, Utf8CP pFilePrefix) { m_pPixelType = pixelType; m_filePrefix = pFilePrefix; }
 
     virtual ~cTiffPyramidCreator(){};
 
@@ -151,16 +151,16 @@ struct cTiffPyramidCreator : RasterCreator
         {
         HFCPtr<HRFRasterFile> pRasterFile;
         s_filePrefixNumber++;
-        WString filePrefixNumber;
-        filePrefixNumber.Sprintf(L"%i", s_filePrefixNumber);
+        Utf8String filePrefixNumber;
+        filePrefixNumber.Sprintf("%i", s_filePrefixNumber);
         try
             {
             
-            WString filename = m_filePrefix + filePrefixNumber + L"cTiffPyramidCreator.ctiff";
+            BeFileName filename(m_filePrefix + filePrefixNumber + "cTiffPyramidCreator.ctiff");
             BeFileName outputFilePath;
             BeTest::GetHost().GetOutputRoot (outputFilePath);
             outputFilePath.AppendToPath(filename.c_str());
-            HFCPtr<HFCURL> pURL = new HFCURLFile(HFCURLFile::s_SchemeName() + L"://" + outputFilePath.c_str());
+            HFCPtr<HFCURL> pURL = new HFCURLFile(HFCURLFile::s_SchemeName() + "://" + outputFilePath.GetNameUtf8());
 
             pRasterFile = HRFcTiffCreator::GetInstance()->Create(pURL, HFC_READ_WRITE_CREATE); 
 
@@ -210,7 +210,7 @@ struct cTiffPyramidCreator : RasterCreator
         }    
 
     HFCPtr<HRPPixelType> m_pPixelType;
-    WString m_filePrefix;
+    Utf8String m_filePrefix;
     };
                            
 /*=================================================================================**//**
@@ -348,7 +348,7 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                   Mathieu.Marchand  10/2014
     +---------------+---------------+---------------+---------------+---------------+------*/
-    WString CompareResult(HFCPtr<HRARaster>& pRaster1, HFCPtr<HRARaster>& pRaster2)
+    Utf8String CompareResult(HFCPtr<HRARaster>& pRaster1, HFCPtr<HRARaster>& pRaster2)
         {
         HFCPtr<HRABitmap> pBitmap1 = ConvertToBitmap(pRaster1);
         HFCPtr<HRABitmap> pBitmap2 = ConvertToBitmap(pRaster2);            
@@ -359,7 +359,7 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                   Mathieu.Marchand  10/2014
     +---------------+---------------+---------------+---------------+---------------+------*/
-    WString CompareResult(HRABitmap& bitmap1, HRABitmap& bitmap2)
+    Utf8String CompareResult(HRABitmap& bitmap1, HRABitmap& bitmap2)
         {
         HFCPtr<HRPPixelType> pRGBAPixelType = new HRPPixelTypeV32R8G8B8A8();
         HFCPtr<HRPPixelConverter> pConvertSrc1 = bitmap1.GetPixelType()->GetConverterTo(pRGBAPixelType);
@@ -374,8 +374,8 @@ protected:
         if(Width != TEST_RASTER_WIDTH || Width2 != Width ||
            Height != TEST_RASTER_HEIGHT || Height2 != Height)
             {
-            WString result;
-            result.Sprintf(L"Invalid bitmap length. Expected(%d,%d), Bitmap1(%d,%d), Bitmap2(%d,%d)", 
+            Utf8String result;
+            result.Sprintf("Invalid bitmap length. Expected(%d,%d), Bitmap1(%d,%d), Bitmap2(%d,%d)", 
                 TEST_RASTER_WIDTH, TEST_RASTER_HEIGHT, Width, Height, Width2, Height2);
             return result;
             }
@@ -383,7 +383,7 @@ protected:
         if(bitmap1.GetCodec() != NULL && !bitmap1.GetCodec()->IsCompatibleWith(HCDCodecIdentity::CLASS_ID) ||
            bitmap2.GetCodec() != NULL && !bitmap2.GetCodec()->IsCompatibleWith(HCDCodecIdentity::CLASS_ID))
             {
-            return L"Only HRABitmap identity codec is supported";
+            return "Only HRABitmap identity codec is supported";
             }
            
         Byte* pBufferSrc1 = bitmap1.GetPacket()->GetBufferAddress();
@@ -404,8 +404,8 @@ protected:
                 {
                 if(*(uint32_t*)(pWorkline1 + Column*3) != *(uint32_t*)(pWorkline2 + Column*3))
                     {
-                    WString result;
-                    result.Sprintf(L"Difference at pixel(%d,%d).\nBitmap 1 RGBA(%d,%d,%d,%d)\nBitmap 2 RGBA(%d,%d,%d,%d)",
+                    Utf8String result;
+                    result.Sprintf("Difference at pixel(%d,%d).\nBitmap 1 RGBA(%d,%d,%d,%d)\nBitmap 2 RGBA(%d,%d,%d,%d)",
                                    Column, Line, pWorkline1[Column*3], pWorkline1[Column*3 +1], pWorkline1[Column*3 +2], pWorkline1[Column*3 +3],
                                    pWorkline2[Column*3], pWorkline2[Column*3 +1], pWorkline2[Column*3 +2], pWorkline2[Column*3 +3]);
                     return result;
@@ -413,7 +413,7 @@ protected:
                 }
             }
 
-        return L"";
+        return "";
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -616,7 +616,7 @@ TEST_P(HRARasterCopyFromTester, CopyFromTests)
     
     ASSERT_EQ(IMAGEPP_STATUS_Success, pSinkRaster->CopyFrom(*pSourceRaster, copyFromOpts));
     //pSinkRaster->CopyFrom(pSourceRaster, HRACopyFromOptions(false));
-    ASSERT_STREQ (L"", CompareResult(GetBase(), pSinkRaster).c_str());
+    ASSERT_STREQ ("", CompareResult(GetBase(), pSinkRaster).c_str());
     
     // If source has alpha repeat withs alpha blend
     if(sourceHasAlpha)
@@ -626,7 +626,7 @@ TEST_P(HRARasterCopyFromTester, CopyFromTests)
         copyFromOpts.SetAlphaBlend(true);
 
         ASSERT_EQ(IMAGEPP_STATUS_Success, pSinkRaster->CopyFrom(*pSourceRaster, copyFromOpts));
-        ASSERT_STREQ (L"", CompareResult(GetBase(), pSinkRaster).c_str());
+        ASSERT_STREQ ("", CompareResult(GetBase(), pSinkRaster).c_str());
         }
 
     //************* HIMMosaic and HRAReferenceToRaster Tests *******************
@@ -642,20 +642,20 @@ TEST_P(HRARasterCopyFromTester, CopyFromTests)
         pMovedRefToSink->Move(translation);
         ASSERT_EQ(IMAGEPP_STATUS_Success, pMovedRefToSink->CopyFrom(*pMovedRefToSource, copyFromOpts));
         //pMovedRefToSink->CopyFrom(pMovedRefToSource, HRACopyFromOptions(false));
-        ASSERT_STREQ(L"", CompareResult(GetBase(), pMovedRefToSink).c_str());
+        ASSERT_STREQ("", CompareResult(GetBase(), pMovedRefToSink).c_str());
 
         HFCPtr<HIMMosaic> pMosaic = new HIMMosaic(s_pHMRWorld->GetCoordSysReference(HGF2DWorld_UNKNOWNWORLD));
         pMosaic->Add(pMovedRefToSource);
         
         ASSERT_EQ(COPYFROM_STATUS_VoidRegion, pSinkRaster->CopyFrom(*pMosaic, copyFromOpts));
         ASSERT_EQ(IMAGEPP_STATUS_Success, pMovedRefToSink->CopyFrom(*pMosaic, copyFromOpts));
-        ASSERT_STREQ(L"", CompareResult(GetBase(), pMovedRefToSink).c_str());
+        ASSERT_STREQ("", CompareResult(GetBase(), pMovedRefToSink).c_str());
                        
         pMovedRefToSink->Clear();
         copyFromOpts.SetAlphaBlend(false);
 
         ASSERT_EQ(IMAGEPP_STATUS_Success, pMovedRefToSink->CopyFrom(*pMosaic, copyFromOpts));
-        ASSERT_STREQ (L"", CompareResult(GetBase(), pMovedRefToSink).c_str());
+        ASSERT_STREQ ("", CompareResult(GetBase(), pMovedRefToSink).c_str());
 
         // If source has alpha repeat withs alpha blend
         if(sourceHasAlpha)
@@ -664,7 +664,7 @@ TEST_P(HRARasterCopyFromTester, CopyFromTests)
             copyFromOpts.SetAlphaBlend(true);
 
             ASSERT_EQ(IMAGEPP_STATUS_Success, pMovedRefToSink->CopyFrom(*pMosaic, copyFromOpts));
-            ASSERT_STREQ (L"", CompareResult(GetBase(), pMovedRefToSink).c_str());
+            ASSERT_STREQ ("", CompareResult(GetBase(), pMovedRefToSink).c_str());
             }
         }
     }
@@ -726,7 +726,7 @@ TEST_P(HRARasterCopyFromTester2, ClearVSCopyFromTester)
     //Comparison
     HFCPtr<HRABitmap> pOutCopyFrom  = ConvertToBitmap(pRaster1Color2);
     HFCPtr<HRABitmap> pOutClear = ConvertToBitmap(pRaster2Color2);
-    ASSERT_STREQ(L"", CompareResult(*pOutCopyFrom, *pOutClear).c_str());
+    ASSERT_STREQ("", CompareResult(*pOutCopyFrom, *pOutClear).c_str());
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -744,11 +744,11 @@ static VectorCreators& s_SourceCreator()
         s_sourceVector.push_back(new BitmapCreator(new HRPPixelTypeI1R8G8B8A8()));
         s_sourceVector.push_back(new BitmapRleCreator(false/*withAlpha*/));
         s_sourceVector.push_back(new BitmapRleCreator(true/*withAlpha*/));
-        s_sourceVector.push_back(new cTiffPyramidCreator(new HRPPixelTypeV32R8G8B8A8(), L"srcV32"));
-        s_sourceVector.push_back(new cTiffPyramidCreator(new HRPPixelTypeV24B8G8R8(), L"srcV24"));
-        s_sourceVector.push_back(new cTiffPyramidCreator(new HRPPixelTypeI8R8G8B8(), L"srcI8"));
-        s_sourceVector.push_back(new cTiffPyramidCreator(new HRPPixelTypeI1R8G8B8(), L"srcI1"));
-        s_sourceVector.push_back(new cTiffPyramidCreator(new HRPPixelTypeI1R8G8B8A8(), L"srcI1A8"));
+        s_sourceVector.push_back(new cTiffPyramidCreator(new HRPPixelTypeV32R8G8B8A8(), "srcV32"));
+        s_sourceVector.push_back(new cTiffPyramidCreator(new HRPPixelTypeV24B8G8R8(), "srcV24"));
+        s_sourceVector.push_back(new cTiffPyramidCreator(new HRPPixelTypeI8R8G8B8(), "srcI8"));
+        s_sourceVector.push_back(new cTiffPyramidCreator(new HRPPixelTypeI1R8G8B8(), "srcI1"));
+        s_sourceVector.push_back(new cTiffPyramidCreator(new HRPPixelTypeI1R8G8B8A8(), "srcI1A8"));
         // + OnDemandMosaic.
         }
 
@@ -770,11 +770,11 @@ static VectorCreators& s_SinkCreator()
         s_sinkVector.push_back(new BitmapCreator(new HRPPixelTypeI1R8G8B8A8()));
         s_sinkVector.push_back(new BitmapRleCreator(false/*withAlpha*/));
         s_sinkVector.push_back(new BitmapRleCreator(true/*withAlpha*/));
-        s_sinkVector.push_back(new cTiffPyramidCreator(new HRPPixelTypeV32R8G8B8A8(), L"sinkV32"));
-        s_sinkVector.push_back(new cTiffPyramidCreator(new HRPPixelTypeV24B8G8R8(), L"sinkV24"));
-        s_sinkVector.push_back(new cTiffPyramidCreator(new HRPPixelTypeI8R8G8B8(), L"sinkI8"));
-        s_sinkVector.push_back(new cTiffPyramidCreator(new HRPPixelTypeI1R8G8B8(), L"sinkI1"));
-        s_sinkVector.push_back(new cTiffPyramidCreator(new HRPPixelTypeI1R8G8B8A8(), L"sinkI1A8"));
+        s_sinkVector.push_back(new cTiffPyramidCreator(new HRPPixelTypeV32R8G8B8A8(), "sinkV32"));
+        s_sinkVector.push_back(new cTiffPyramidCreator(new HRPPixelTypeV24B8G8R8(), "sinkV24"));
+        s_sinkVector.push_back(new cTiffPyramidCreator(new HRPPixelTypeI8R8G8B8(), "sinkI8"));
+        s_sinkVector.push_back(new cTiffPyramidCreator(new HRPPixelTypeI1R8G8B8(), "sinkI1"));
+        s_sinkVector.push_back(new cTiffPyramidCreator(new HRPPixelTypeI1R8G8B8A8(), "sinkI1A8"));
         }
 
     return s_sinkVector;

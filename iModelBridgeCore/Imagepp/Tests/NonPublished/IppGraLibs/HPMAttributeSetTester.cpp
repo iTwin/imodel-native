@@ -51,10 +51,10 @@ HPMAttributeSetTester::HPMAttributeSetTester()
     ByteValue =     '8';
     uint32_tValue =  8;
     UInt64Value =   8;
-    WStringValue =  L"Test";
+    Utf8StringValue =  u8"Test";
 
     //HPMAttribute
-    pHRFAttributeImageDescription =                 new HRFAttributeImageDescription(WStringValue); 
+    pHRFAttributeImageDescription =                 new HRFAttributeImageDescription(Utf8StringValue); 
     pHRFAttributeSampleValue =                      new HRFAttributeMinSampleValue(VectorDouble);
     pHRFAttributeVerticalUnitRatioToMeter =         new HRFAttributeVerticalUnitRatioToMeter(DoubleValue);
     pHRFAttributeResolutionUnit =                   new HRFAttributeResolutionUnit(UShortValue); 
@@ -65,7 +65,7 @@ HPMAttributeSetTester::HPMAttributeSetTester()
     pHRFAttributeGPSAltitudeRef =                   new HRFAttributeGPSAltitudeRef(ByteValue);
     pHRFAttributeISOSpeedRatings =                  new HRFAttributeISOSpeedRatings(VectorUShort);
     pHRFAttributeExifVersion =                      new HRFAttributeExifVersion(VectorChar);
-    pHRFAttributeOriginalFileFormat =               new HRFAttributeOriginalFileFormat(WStringValue);
+    pHRFAttributeOriginalFileFormat =               new HRFAttributeOriginalFileFormat(Utf8StringValue);
     pHRFAttributeOriginalFileSize =                 new HRFAttributeOriginalFileSize(UInt64Value);
     pHRFAttributeDontSupportPersistentColor =       new HRFAttributeDontSupportPersistentColor(true);
     pHRFAttribute3DTransformationMatrix =           new HRFAttribute3DTransformationMatrix(Matrix);
@@ -180,11 +180,11 @@ TEST_F (HPMAttributeSetTester, FindAttributeTest)
     { 
     //String
     HRFAttributeImageDescription const* pImage = AttributeSet.FindAttributeCP<HRFAttributeImageDescription>();
-    ASSERT_TRUE(WStringValue == pImage->GetData());
+    ASSERT_TRUE(Utf8StringValue == pImage->GetData());
     ASSERT_EQ((ImagePP::HPMAttributesID) HRFAttributeImageDescription::ATTRIBUTE_ID, pImage->GetID());
         
     HRFAttributeImageDescription* pImage2 = AttributeSet.FindAttributeP<HRFAttributeImageDescription>();
-    ASSERT_TRUE(WStringValue == pImage2->GetData());
+    ASSERT_TRUE(Utf8StringValue == pImage2->GetData());
     ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeImageDescription::ATTRIBUTE_ID, pImage2->GetID());
 
     //Vector<double>
@@ -296,11 +296,11 @@ TEST_F (HPMAttributeSetTester, FindAttributeTest)
 
     //WString
     HRFAttributeOriginalFileFormat const* pFFormat = AttributeSet.FindAttributeCP<HRFAttributeOriginalFileFormat>();
-    ASSERT_TRUE(WStringValue == pFFormat->GetData());
+    ASSERT_TRUE(Utf8StringValue == pFFormat->GetData());
     ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeOriginalFileFormat::ATTRIBUTE_ID, pFFormat->GetID());
 
     HRFAttributeOriginalFileFormat* pFFormat2 = AttributeSet.FindAttributeP<HRFAttributeOriginalFileFormat>();
-    ASSERT_TRUE(WStringValue == pFFormat2->GetData());
+    ASSERT_TRUE(Utf8StringValue == pFFormat2->GetData());
     ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeOriginalFileFormat::ATTRIBUTE_ID, pFFormat2->GetID());
 
     //UInt64
@@ -398,7 +398,7 @@ TEST_F (HPMAttributeSetTester, GetAttributeTest)
 
     //String 
     HFCPtr<HPMGenericAttribute> pImage = AttributeSet.GetAttribute(static_cast<HPMAttributesID>(HRFAttributeImageDescription::ATTRIBUTE_ID));
-    ASSERT_TRUE(WStringValue == static_cast<HRFAttributeImageDescription*>(pImage.GetPtr())->GetData());
+    ASSERT_TRUE(Utf8StringValue == static_cast<HRFAttributeImageDescription*>(pImage.GetPtr())->GetData());
     ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeImageDescription::ATTRIBUTE_ID, pImage->GetID());
 
     //Vector<double>
@@ -462,7 +462,7 @@ TEST_F (HPMAttributeSetTester, GetAttributeTest)
 
     //WString
     HFCPtr<HPMGenericAttribute> pFileFormat2 = AttributeSet.GetAttribute(static_cast<HPMAttributesID>(HRFAttributeOriginalFileFormat::ATTRIBUTE_ID));
-    ASSERT_TRUE(WStringValue == static_cast<HRFAttributeOriginalFileFormat*>(pFileFormat2.GetPtr())->GetData());
+    ASSERT_TRUE(Utf8StringValue == static_cast<HRFAttributeOriginalFileFormat*>(pFileFormat2.GetPtr())->GetData());
     ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeOriginalFileFormat::ATTRIBUTE_ID, pFileFormat2->GetID());
 
     //UInt64
