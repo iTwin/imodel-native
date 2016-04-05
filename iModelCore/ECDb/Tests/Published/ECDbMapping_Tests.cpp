@@ -5006,9 +5006,9 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
         AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships.ecdb");
         ASSERT_FALSE(asserted);
 
-        AssertIndex(ecdb, "ix_ts_B_fk_ts_Rel_target", false, "ts_B", {"ForeignECInstanceId_Rel"});
-        AssertIndex(ecdb, "uix_ts_B_fk_ts_Rel11_target", true, "ts_B", {"ForeignECInstanceId_Rel11"});
-        AssertIndex(ecdb, "uix_ts_A_fk_ts_Rel11Backwards_source", true, "ts_A", {"ForeignECInstanceId_Rel11Backwards"});
+        AssertIndex(ecdb, "ix_ts_B_fk_ts_Rel_target", false, "ts_B", {"ForeignECInstanceId_ts_Rel"});
+        AssertIndex(ecdb, "uix_ts_B_fk_ts_Rel11_target", true, "ts_B", {"ForeignECInstanceId_ts_Rel11"});
+        AssertIndex(ecdb, "uix_ts_A_fk_ts_Rel11Backwards_source", true, "ts_A", {"ForeignECInstanceId_ts_Rel11Backwards"});
 
         //For relationships with key property, index is created if unique (as this is to enforce cardinality
         AssertIndexExists(ecdb, "ix_ts_B_fk_ts_RelWithKeyProp_target", false);
@@ -5058,7 +5058,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
         bool asserted = false;
         AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships.ecdb");
         ASSERT_FALSE(asserted);
-        AssertIndex(ecdb, "ix_ts_B_fk_ts_Rel_target", false, "ts_B", {"ForeignECInstanceId_Rel"}, "([ForeignECInstanceId_Rel] IS NOT NULL)");
+        AssertIndex(ecdb, "ix_ts_B_fk_ts_Rel_target", false, "ts_B", {"ForeignECInstanceId_ts_Rel"}, "([ForeignECInstanceId_ts_Rel] IS NOT NULL)");
         }
 
         {
@@ -5229,7 +5229,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
         Utf8String indexWhereClause;
         indexWhereClause.Sprintf("([sc03] IS NOT NULL) AND (ECClassId=%llu)", b1ClassId.GetValue());
         AssertIndexExists(ecdb, "ix_ts_B_fk_ts_Rel1N_target", false);
-        AssertIndex(ecdb, "ix_ts_B_fk_ts_Rel1NNoKeyProp_target", false, "ts_B", {"ForeignECInstanceId_Rel1NNoKeyProp"}, "([ForeignECInstanceId_Rel1NNoKeyProp] IS NOT NULL)");
+        AssertIndex(ecdb, "ix_ts_B_fk_ts_Rel1NNoKeyProp_target", false, "ts_B", {"ForeignECInstanceId_ts_Rel1NNoKeyProp"}, "([ForeignECInstanceId_ts_Rel1NNoKeyProp] IS NOT NULL)");
         AssertIndex(ecdb, "ix_ts_B_ecclassid", false, "ts_B", {"ECClassId"});
 
         //Unique indexes on FK for Rel11 and AnotherRel11 are the same, therefore one is dropped
@@ -5438,12 +5438,12 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
         
         //RelNonPoly must exclude index on B11 as the constraint is non-polymorphic
         Utf8String indexWhereClause;
-        indexWhereClause.Sprintf("([ForeignECInstanceId_RelNonPoly] IS NOT NULL) AND (ECClassId=%llu OR ECClassId=%llu)", b1ClassId.GetValue(), b2ClassId.GetValue());
-        AssertIndex(ecdb, "uix_ts_B_fk_ts_RelNonPoly_target", true, "ts_B", {"ForeignECInstanceId_RelNonPoly"}, indexWhereClause.c_str());
+        indexWhereClause.Sprintf("([ForeignECInstanceId_ts_RelNonPoly] IS NOT NULL) AND (ECClassId=%llu OR ECClassId=%llu)", b1ClassId.GetValue(), b2ClassId.GetValue());
+        AssertIndex(ecdb, "uix_ts_B_fk_ts_RelNonPoly_target", true, "ts_B", {"ForeignECInstanceId_ts_RelNonPoly"}, indexWhereClause.c_str());
 
         //RelPoly must include index on B11 as the constraint is polymorphic
-        indexWhereClause.Sprintf("([ForeignECInstanceId_RelPoly] IS NOT NULL) AND (ECClassId<>%llu)", bClassId.GetValue());
-        AssertIndex(ecdb, "uix_ts_B_fk_ts_RelPoly_target", true, "ts_B", {"ForeignECInstanceId_RelPoly"}, indexWhereClause.c_str());
+        indexWhereClause.Sprintf("([ForeignECInstanceId_ts_RelPoly] IS NOT NULL) AND (ECClassId<>%llu)", bClassId.GetValue());
+        AssertIndex(ecdb, "uix_ts_B_fk_ts_RelPoly_target", true, "ts_B", {"ForeignECInstanceId_ts_RelPoly"}, indexWhereClause.c_str());
         }
 
         {
@@ -5587,10 +5587,10 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
         getDdl(ddl, ecdb, "ts_B");
         ASSERT_FALSE(ddl.empty());
 
-        ASSERT_TRUE(ddl.ContainsI("[ForeignECInstanceId_Rel0N] INTEGER,"));
-        ASSERT_TRUE(ddl.ContainsI("[ForeignECInstanceId_Rel1N] INTEGER NOT NULL,"));
-        ASSERT_TRUE(ddl.ContainsI("[ForeignECInstanceId_RelN0] INTEGER,"));
-        ASSERT_TRUE(ddl.ContainsI("[ForeignECInstanceId_RelN1] INTEGER NOT NULL,"));
+        ASSERT_TRUE(ddl.ContainsI("[ForeignECInstanceId_ts_Rel0N] INTEGER,"));
+        ASSERT_TRUE(ddl.ContainsI("[ForeignECInstanceId_ts_Rel1N] INTEGER NOT NULL,"));
+        ASSERT_TRUE(ddl.ContainsI("[ForeignECInstanceId_ts_RelN0] INTEGER,"));
+        ASSERT_TRUE(ddl.ContainsI("[ForeignECInstanceId_ts_RelN1] INTEGER NOT NULL,"));
     }
 
         {
@@ -6012,8 +6012,8 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyColumnPosition)
     AssertSchemaImport(ecdb, asserted, testItem, "fkcolumnposition.ecdb");
     ASSERT_FALSE(asserted);
 
-    AssertForeignKey(true, ecdb, "ts_Base", "ForeignECInstanceId_Rel");
-    assertColumnPosition(ecdb, "ts_Base", "ForeignECInstanceId_Rel", -1, testItem.m_name.c_str());
+    AssertForeignKey(true, ecdb, "ts_Base", "ForeignECInstanceId_ts_Rel");
+    assertColumnPosition(ecdb, "ts_Base", "ForeignECInstanceId_ts_Rel", -1, testItem.m_name.c_str());
     }
 
 
@@ -6466,23 +6466,23 @@ TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
         AssertSchemaImport(ecdb, asserted, testSchema, "onetoonerelationshipmappings.ecdb");
         ASSERT_FALSE(asserted);
 
-        AssertForeignKey(true, ecdb, "ts_b", "ForeignECInstanceId_Rel11");
-        AssertForeignKey(false, ecdb, "ts_a", "ForeignECInstanceId_Rel11");
-        AssertForeignKey(true, ecdb, "ts_b", "ForeignECInstanceId_Rel10");
-        AssertForeignKey(false, ecdb, "ts_a", "ForeignECInstanceId_Rel10");
-        AssertForeignKey(true, ecdb, "ts_b", "ForeignECInstanceId_Rel01");
-        AssertForeignKey(false, ecdb, "ts_a", "ForeignECInstanceId_Rel01");
-        AssertForeignKey(true, ecdb, "ts_b", "ForeignECInstanceId_Rel00");
-        AssertForeignKey(false, ecdb, "ts_a", "ForeignECInstanceId_Rel00");
+        AssertForeignKey(true, ecdb, "ts_b", "ForeignECInstanceId_ts_Rel11");
+        AssertForeignKey(false, ecdb, "ts_a", "ForeignECInstanceId_ts_Rel11");
+        AssertForeignKey(true, ecdb, "ts_b", "ForeignECInstanceId_ts_Rel10");
+        AssertForeignKey(false, ecdb, "ts_a", "ForeignECInstanceId_ts_Rel10");
+        AssertForeignKey(true, ecdb, "ts_b", "ForeignECInstanceId_ts_Rel01");
+        AssertForeignKey(false, ecdb, "ts_a", "ForeignECInstanceId_ts_Rel01");
+        AssertForeignKey(true, ecdb, "ts_b", "ForeignECInstanceId_ts_Rel00");
+        AssertForeignKey(false, ecdb, "ts_a", "ForeignECInstanceId_ts_Rel00");
 
-        AssertForeignKey(false, ecdb, "ts_b", "ForeignECInstanceId_Rel11back");
-        AssertForeignKey(true, ecdb, "ts_a", "ForeignECInstanceId_Rel11back");
-        AssertForeignKey(false, ecdb, "ts_b", "ForeignECInstanceId_Rel10back");
-        AssertForeignKey(true, ecdb, "ts_a", "ForeignECInstanceId_Rel10back");
-        AssertForeignKey(false, ecdb, "ts_b", "ForeignECInstanceId_Rel01back");
-        AssertForeignKey(true, ecdb, "ts_a", "ForeignECInstanceId_Rel01back");
-        AssertForeignKey(false, ecdb, "ts_b", "ForeignECInstanceId_Rel00back");
-        AssertForeignKey(true, ecdb, "ts_a", "ForeignECInstanceId_Rel00back");
+        AssertForeignKey(false, ecdb, "ts_b", "ForeignECInstanceId_ts_Rel11back");
+        AssertForeignKey(true, ecdb, "ts_a", "ForeignECInstanceId_ts_Rel11back");
+        AssertForeignKey(false, ecdb, "ts_b", "ForeignECInstanceId_ts_Rel10back");
+        AssertForeignKey(true, ecdb, "ts_a", "ForeignECInstanceId_ts_Rel10back");
+        AssertForeignKey(false, ecdb, "ts_b", "ForeignECInstanceId_ts_Rel01back");
+        AssertForeignKey(true, ecdb, "ts_a", "ForeignECInstanceId_ts_Rel01back");
+        AssertForeignKey(false, ecdb, "ts_b", "ForeignECInstanceId_ts_Rel00back");
+        AssertForeignKey(true, ecdb, "ts_a", "ForeignECInstanceId_ts_Rel00back");
         }
     }
 
@@ -7387,7 +7387,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithoutKeyProperty)
         auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
         ASSERT_TRUE(it != columns.end()) << childTableName << " table should contain a default-name extra foreign key column as there is the relationship map CA doesn't specify a value for ForeignKeyColumn";
 
-        AssertForeignKey(true, ecdb, childTableName, "ForeignECInstanceId_ParentHasChildren");
+        AssertForeignKey(true, ecdb, childTableName, "ForeignECInstanceId_ts_ParentHasChildren");
         }
 
         {
@@ -7441,7 +7441,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithoutKeyProperty)
         auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
         ASSERT_TRUE(it != columns.end()) << childTableName << " table should contain a default-name extra foreign key column as there is the relationship map CA doesn't specify a value for ForeignKeyColumn";
 
-        AssertForeignKey(true, ecdb, childTableName, "ForeignECInstanceId_ParentHasChildren");
+        AssertForeignKey(true, ecdb, childTableName, "ForeignECInstanceId_ts_ParentHasChildren");
         }
     }
 
