@@ -360,26 +360,24 @@ module DgnScriptTests {
         // Test Base/DerivecClasses and ECClassCollection
         // -----------------------------------------------
         var baseclasses: be.ECClassCollection = elementClass.BaseClasses;
-        var foundGeometricElement: boolean = false;
+        var foundSpatialElement: boolean = false;
         var baseCount: number = 0;
-        for (var clsiter = baseclasses.Begin(); baseclasses.IsValid(clsiter); baseclasses.ToNext(clsiter))
-        {
+        for (var clsiter = baseclasses.Begin(); baseclasses.IsValid(clsiter); baseclasses.ToNext(clsiter)) {
             var cls: be.ECClass = baseclasses.GetECClass(clsiter);
             be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, cls.Name);
-            if (cls.Name == 'GeometricElement')
-                foundGeometricElement = true;
+            if (cls.Name == 'SpatialElement')
+                foundSpatialElement = true;
             ++baseCount;
         }
-        if (!foundGeometricElement)
-            be.Script.ReportError('BaseClasses ECClassCollection must have failed -- I assume that GeometricElement3d is derived from GeometricElement, but that base class was not found');
+        if (!foundSpatialElement)
+            be.Script.ReportError('BaseClasses ECClassCollection must have failed -- I assume that PhysicalElement is derived from SpatialElement, but that base class was not found');
         if (baseCount != 1)
             be.Script.ReportError('BaseClasses ECClassCollection must have failed -- there should be 1 but I got ' + JSON.stringify(baseCount));
 
-        var se: be.ECClass = schemas.GetECClass(be.DGN_ECSCHEMA_NAME, be.DGN_CLASSNAME_GeometricElement);
+        var se: be.ECClass = schemas.GetECClass(be.DGN_ECSCHEMA_NAME, be.DGN_CLASSNAME_SpatialElement);
         var derivedclasses: be.ECClassCollection = se.DerivedClasses;
         var derivedCount: number = 0;
-        for (var clsiter = derivedclasses.Begin(); derivedclasses.IsValid(clsiter); derivedclasses.ToNext(clsiter))
-        {
+        for (var clsiter = derivedclasses.Begin(); derivedclasses.IsValid(clsiter); derivedclasses.ToNext(clsiter)) {
             var cls: be.ECClass = derivedclasses.GetECClass(clsiter);
             be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, cls.Name);
             ++derivedCount;
