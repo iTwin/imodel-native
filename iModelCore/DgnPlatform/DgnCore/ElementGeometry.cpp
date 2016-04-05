@@ -4149,6 +4149,28 @@ bool GeometryBuilder::Append(DgnGeometryPartId geomPartId, TransformCR geomToEle
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryBuilder::Append(DgnGeometryPartId geomPartId, DPoint3dCR origin, YawPitchRollAngles const& angles)
+    {
+    Transform   geomToElement = angles.ToTransform(origin);
+
+    return Append(geomPartId, geomToElement);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryBuilder::Append(DgnGeometryPartId geomPartId, DPoint2dCR origin, AngleInDegrees const& angle)
+    {
+    Transform   geomToElement;
+
+    geomToElement.InitFromOriginAngleAndLengths(origin, angle.Radians(), 1.0, 1.0);
+
+    return Append(geomPartId, geomToElement);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryBuilder::OnNewGeom(DRange3dCR localRange)
