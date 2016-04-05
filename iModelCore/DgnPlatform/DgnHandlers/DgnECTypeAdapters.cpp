@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
-#include    <DgnPlatform\DgnGeoCoord.h>
+#include    <DgnPlatform/DgnGeoCoord.h>
 #include    "DgnECTypeAdapters.h"
 #include    "DgnECInteropStringFormatter.h"
 
