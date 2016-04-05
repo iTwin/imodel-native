@@ -2,7 +2,7 @@
 #
 #     $Source: Android/MakeJUnitTestProject.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 #
@@ -251,7 +251,7 @@ $(libsDir)$(BENTLEY_ANDROID_AndroidABI)/gdb.setup : $(libsDir)$(BENTLEY_ANDROID_
 #--------------------------------------------------------------------------------------
 # Intermediates are not needed in our delivery, and cause MAX_PATH issues with saving LKGs.
 $(BuildContext)Delivery/ANJU/$(TEST_NAME)/Project : $(outputDir)project
-    @mkdir $@
+    !~@mkdir $@
     $(SrcRoot)bsicommon/build/CopyWithSymlinks.py "$<" "$@" --excludePattern=intermediates
 
 always:
