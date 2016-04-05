@@ -218,6 +218,71 @@ BENTLEY_TRANSLATABLE_STRINGS_START(DgnCoreL10N,dgncore_msg)
 
     L10N_STRING(REVISION_Merged)                                // =="Merged"==
 
+    L10N_STRING(ECTYPEADAPTER_True)                             // =="True"==
+    L10N_STRING(ECTYPEADAPTER_False)                            // =="False"==
+    L10N_STRING(ECTYPEADAPTER_ParensNull)                       // =="(null)"==
+    L10N_STRING(ECTYPEADAPTER_ParensNone)                       // =="(None)"==
+    L10N_STRING(ECTYPEADAPTER_ByLevel)                          // =="ByLevel"==
+    L10N_STRING(ECTYPEADAPTER_ByCell)                           // =="ByCell"==
+    L10N_STRING(ECTYPEADAPTER_Bytes)                            // =="bytes"==
+    L10N_STRING(ECTYPEADAPTER_KB)                               // =="KB"==
+    L10N_STRING(ECTYPEADAPTER_MB)                               // =="MB"==
+    L10N_STRING(ECTYPEADAPTER_GB)                               // =="GB"==
+    L10N_STRING(ECTYPEADAPTER_MemberOfSingle)                   // =="Member of 1 group"==
+    L10N_STRING(ECTYPEADAPTER_MemberOfPlural)                   // =="Member of %d groups"==
+    L10N_STRING(ECTYPEADAPTER_SheetScaleCustom)                 // =="CUSTOM"==
+    L10N_STRING(ECTYPEADAPTER_ElemClassPrimary)                 // =="Primary"==
+    L10N_STRING(ECTYPEADAPTER_ElemClassPatternComponent)        // =="Pattern Component"==
+    L10N_STRING(ECTYPEADAPTER_ElemClassConstruction)            // =="Construction"==
+    L10N_STRING(ECTYPEADAPTER_ElemClassDimension)               // =="Dimension"==
+    L10N_STRING(ECTYPEADAPTER_ElemClassPrimaryRule)             // =="Primary Rule"==
+    L10N_STRING(ECTYPEADAPTER_ElemClassLinearPatterned)         // =="Linear Patterned"==
+    L10N_STRING(ECTYPEADAPTER_ElemClassConstructionRule)        // =="Construction Rule"==
+    L10N_STRING(ECTYPEADAPTER_Yes)                              // =="Yes"==
+    L10N_STRING(ECTYPEADAPTER_No)                               // =="No"==
+    L10N_STRING(ECTYPEADAPTER_On)                               // =="On"==
+    L10N_STRING(ECTYPEADAPTER_Off)                              // =="Off"==
+    L10N_STRING(ECTYPEADAPTER_Enabled)                          // =="Enabled"==
+    L10N_STRING(ECTYPEADAPTER_Disabled)                         // =="Disabled"==
+    L10N_STRING(ECTYPEADAPTER_Acres)                            // =="Acres"==
+    L10N_STRING(ECTYPEADAPTER_WorkingUnits)                     // =="Working Units"==
+    L10N_STRING(ECTYPEADAPTER_PropertyUnused)                   // =="<Unused>"==
+    L10N_STRING(ECTYPEADAPTER_PropertyNone)                     // =="<None>"==
+    L10N_STRING(ECTYPEADAPTER_NotAvailable)                     // =="Not Available"==
+    L10N_STRING(ECTYPEADAPTER_GeopriorityAttachment)            // =="Attachment"==
+    L10N_STRING(ECTYPEADAPTER_GeopriorityHeader)                // =="Raster Header"==
+    L10N_STRING(ECTYPEADAPTER_GeoprioritySisterFile)            // =="Sister File"==
+    L10N_STRING(ECTYPEADAPTER_DisplayPriority_BackPlane)        // =="Background"==
+    L10N_STRING(ECTYPEADAPTER_DisplayPriority_DesignPlane)      // =="Design"==
+    L10N_STRING(ECTYPEADAPTER_DisplayPriority_FrontPlane)       // =="Foreground"==
+    L10N_STRING(ECTYPEADAPTER_ColorMode_Unknown)                // =="Unknown"==
+    L10N_STRING(ECTYPEADAPTER_ColorMode_RGB)                    // =="RGB"==
+    L10N_STRING(ECTYPEADAPTER_ColorMode_Palette16)              // =="16 Colors"==
+    L10N_STRING(ECTYPEADAPTER_ColorMode_Palette256)             // =="256 Colors"==
+    L10N_STRING(ECTYPEADAPTER_ColorMode_Greyscale)              // =="Grayscale"==
+    L10N_STRING(ECTYPEADAPTER_ColorMode_Monochrome)             // =="Monochrome"==
+    L10N_STRING(ECTYPEADAPTER_ColorMode_RGBA)                   // =="RGB Alpha"==
+    L10N_STRING(ECTYPEADAPTER_ColorMode_Palette256Alpha)        // =="256 Colors with Alpha"==
+    L10N_STRING(ECTYPEADAPTER_ColorMode_Greyscale16)            // =="16 bits Grayscale"==
+    L10N_STRING(ECTYPEADAPTER_ColorMode_Palette2)               // =="2 Colors"==
+    L10N_STRING(ECTYPEADAPTER_VariesAcross)                     // =="Varies Across"==
+    L10N_STRING(ECTYPEADAPTER_NoHistory)                        // =="No History"==
+    L10N_STRING(ECTYPEADAPTER_FromView)                         // =="From View"==
+    L10N_STRING(ECTYPEADAPTER_SolidFill)                        // =="Filled Hidden Line"==
+    L10N_STRING(ECTYPEADAPTER_HiddenLine)                       // =="Hidden Line"==
+    L10N_STRING(ECTYPEADAPTER_Wireframe)                        // =="Wireframe"==
+    L10N_STRING(ECTYPEADAPTER_Smooth)                           // =="Smooth"==
+    L10N_STRING(ECTYPEADAPTER_RenderModeSuffix)                 // =="Display"==
+
+    L10N_STRING(ECPROPERTYCATEGORY_Miscellaneous)               // =="Miscellaneous"==
+    L10N_STRING(ECPROPERTYCATEGORY_General)                     // =="General"==
+    L10N_STRING(ECPROPERTYCATEGORY_Extended)                    // =="Extended"==
+    L10N_STRING(ECPROPERTYCATEGORY_RawData)                     // =="Raw Data"==
+    L10N_STRING(ECPROPERTYCATEGORY_Geometry)                    // =="Geometry"==
+    L10N_STRING(ECPROPERTYCATEGORY_Groups)                      // =="Groups"==
+    L10N_STRING(ECPROPERTYCATEGORY_Material)                    // =="Material"==
+    L10N_STRING(ECPROPERTYCATEGORY_Relationships)               // =="Relationships"==
+
 BENTLEY_TRANSLATABLE_STRINGS_END
 
 END_BENTLEY_DGN_NAMESPACE

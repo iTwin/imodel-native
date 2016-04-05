@@ -63,7 +63,7 @@ public:
 //=======================================================================================
 struct BaseChangeIterator
 {
-friend struct BaseChangeEntry;
+    friend struct BaseChangeEntry;
 private:
     ChangeSummary::ColumnMapInfo m_instanceIdColumnMap;
     ChangeSummary::ColumnMapInfo m_codeAuthorityIdColumnMap;
@@ -85,7 +85,7 @@ public:
 //=======================================================================================
 struct ElementChangeEntry : BaseChangeEntry
 {
-DEFINE_T_SUPER(BaseChangeEntry);
+    DEFINE_T_SUPER(BaseChangeEntry);
 private:
     ElementChangeIterator const& m_parent;
     DgnModelId m_oldModelId;
@@ -103,12 +103,7 @@ public:
     DgnModelId GetOldModelId() const { return m_oldModelId; }
     DgnModelId GetNewModelId() const { return m_newModelId; }
 
-    ElementChangeEntry& operator++()
-        {
-        T_Super::operator++();
-        return *this;
-        }
-
+    ElementChangeEntry& operator++() {T_Super::operator++(); return *this;}
     ElementChangeEntry const& operator* () const { return *this; }
     bool operator!=(ElementChangeEntry const& rhs) const { return m_sqlChange != rhs.m_sqlChange; }
     bool operator==(ElementChangeEntry const& rhs) const { return m_sqlChange == rhs.m_sqlChange; }
@@ -119,10 +114,10 @@ public:
 //=======================================================================================
 struct ElementChangeIterator : BaseChangeIterator
 {
-DEFINE_T_SUPER(BaseChangeIterator);
-friend struct ElementChangeEntry;
-typedef ElementChangeEntry const_iterator;
-typedef const_iterator iterator;
+    DEFINE_T_SUPER(BaseChangeIterator);
+    friend struct ElementChangeEntry;
+    typedef ElementChangeEntry const_iterator;
+    typedef const_iterator iterator;
 
 private:
     ChangeSummary::ColumnMapInfo m_modelIdColumnMap;
@@ -141,7 +136,8 @@ public:
 //=======================================================================================
 struct ModelChangeEntry : BaseChangeEntry
 {
-DEFINE_T_SUPER(BaseChangeEntry);
+    DEFINE_T_SUPER(BaseChangeEntry);
+
 private:
     ModelChangeIterator const& m_parent;
 
@@ -160,10 +156,9 @@ public:
 //=======================================================================================
 struct ModelChangeIterator : BaseChangeIterator
 {
-DEFINE_T_SUPER(BaseChangeIterator);
-
-typedef ModelChangeEntry const_iterator;
-typedef const_iterator iterator;
+    DEFINE_T_SUPER(BaseChangeIterator);
+    typedef ModelChangeEntry const_iterator;
+    typedef const_iterator iterator;
 
 public:
     ModelChangeIterator(DgnDbCR dgndb, IChangeSet& changeSet);
@@ -177,7 +172,8 @@ public:
 //=======================================================================================
 struct GeometryPartChangeEntry : BaseChangeEntry
 {
-DEFINE_T_SUPER(BaseChangeEntry);
+    DEFINE_T_SUPER(BaseChangeEntry);
+
 private:
     GeometryPartChangeIterator const& m_parent;
 
@@ -196,9 +192,9 @@ public:
 //=======================================================================================
 struct GeometryPartChangeIterator : BaseChangeIterator
 {
-DEFINE_T_SUPER(BaseChangeIterator);
-typedef GeometryPartChangeEntry const_iterator;
-typedef const_iterator iterator;
+    DEFINE_T_SUPER(BaseChangeIterator);
+    typedef GeometryPartChangeEntry const_iterator;
+    typedef const_iterator iterator;
 
 public:
     GeometryPartChangeIterator(DgnDbCR dgndb, IChangeSet& changeSet);
