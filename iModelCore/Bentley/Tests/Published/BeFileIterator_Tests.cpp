@@ -13,7 +13,7 @@
 // @bsimethod                                      Majd.Uddin  10/2015
 //---------------------------------------------------------------------------------------
 static void createFiles(BeFileNameCR root)
-{
+    {
     if (!root.DoesPathExist())
         BeFileName::CreateNewDirectory(root.c_str());
 
@@ -53,9 +53,7 @@ static void createFiles(BeFileNameCR root)
     fileName31 = child31;
     fileName31.AppendToPath(L"File31.txt");
     file31.Create(fileName31, true);
-
-
-}
+    }
 //---------------------------------------------------------------------------------------
 // @betest                                      Sam.Wilson  05/2013
 //---------------------------------------------------------------------------------------

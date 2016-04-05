@@ -113,6 +113,7 @@ TEST_F (DoubleFormatterTest, FormatDecimal_TestZeros)
         { "100.1",          100.1,          PrecisionFormat::Decimal4Places, true,        false,        false,           '.',    ','},
         { "100.1000",       100.1,          PrecisionFormat::Decimal4Places, false,       true,         false,           '.',    ','},
         { "100.1",          100.1,          PrecisionFormat::Decimal4Places, false,       false,        false,           '.',    ','},
+        { "-100.1",          -100.1,        PrecisionFormat::Decimal4Places, false,       false,        false,           '.',    ','},
         };
 
     for (int iTest = 0; iTest < _countof (testDataArray); iTest++)

@@ -9,7 +9,12 @@
         <ProductDirectory Name="Libs"            Path="Libs"/>
         <ProductDirectory Name="TestBin"         Path="Dlls"/>
     </ProductDirectoryList>
-    
+
+    <!-- This part is designed to be the "ToolsetPart" that is run by bb once, before any other part. 
+          The name of this part must match the ToolsetPart declaration in your buildstrategy. 
+          For example, see DgnClientSdk.BuildStrategy.xml -->
+    <Part Name="BootStrapToolset" BentleyBuildMakeFile="BootStrapToolset.mke"/>
+
     <Part Name="BentleyLib" PrgOutputDir="BentleyLib">
         <SubPart PartName="BentleyDll" />
     </Part>
@@ -29,6 +34,7 @@
                 Delivery/bvector-notice.txt
                 Delivery/bvector-license.txt
             </VendorNotices>
+            <Directory SourceName="Dox/Pages/Bentley" SubPartDirectory="Dox/Pages/Bentley"/>
         </Bindings>
     </Part>
 
