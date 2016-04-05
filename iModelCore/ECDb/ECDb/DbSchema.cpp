@@ -103,48 +103,57 @@ DbTable* DbSchema::CreateTableAndColumnsForExistingTableMapStrategy(Utf8CP exist
 
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        Utf8CP name = stmt.GetValueText(1);
-        Utf8String type(stmt.GetValueText(2));
-        type.ToLower();
-        type.Trim();
-        const bool notnull = stmt.GetValueInt(3) == 1;
-        Utf8CP dflt_value = stmt.GetValueText(4);
-        const bool isPk = stmt.GetValueInt(5) == 1;
+        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(1), "name") == 0);
+        Utf8CP colName = stmt.GetValueText(1);
+
+        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(2), "type") == 0);
+        Utf8String colTypeName(stmt.GetValueText(2));
+        colTypeName.ToLower();
+        colTypeName.Trim();
+
+        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(3), "notnull") == 0);
+        const bool colIsNotNull = stmt.GetValueInt(3) == 1;
+
+        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(4), "dflt_value") == 0);
+        Utf8CP colDefaultValue = stmt.GetValueText(4);
+
+        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(5), "pk") == 0);
+        const bool isPkCol = stmt.GetValueInt(5) == 1;
 
         DbColumn::Type colType = DbColumn::Type::Any;
-        if (type.rfind("long") != Utf8String::npos ||
-            type.rfind("int") != Utf8String::npos)
+        if (colTypeName.rfind("long") != Utf8String::npos ||
+            colTypeName.rfind("int") != Utf8String::npos)
             colType = DbColumn::Type::Integer;
-        else if (type.rfind("char") != Utf8String::npos ||
-                 type.rfind("clob") != Utf8String::npos ||
-                 type.rfind("text") != Utf8String::npos)
+        else if (colTypeName.rfind("char") != Utf8String::npos ||
+                 colTypeName.rfind("clob") != Utf8String::npos ||
+                 colTypeName.rfind("text") != Utf8String::npos)
             colType = DbColumn::Type::Text;
-        else if (type.rfind("blob") != Utf8String::npos ||
-                 type.rfind("binary") != Utf8String::npos)
+        else if (colTypeName.rfind("blob") != Utf8String::npos ||
+                 colTypeName.rfind("binary") != Utf8String::npos)
             colType = DbColumn::Type::Blob;
-        else if (type.rfind("real") != Utf8String::npos ||
-                 type.rfind("floa") != Utf8String::npos ||
-                 type.rfind("doub") != Utf8String::npos)
+        else if (colTypeName.rfind("real") != Utf8String::npos ||
+                 colTypeName.rfind("floa") != Utf8String::npos ||
+                 colTypeName.rfind("doub") != Utf8String::npos)
             colType = DbColumn::Type::Real;
-        else if (type.rfind("date") != Utf8String::npos ||
-                 type.rfind("timestamp") != Utf8String::npos)
+        else if (colTypeName.rfind("date") != Utf8String::npos ||
+                 colTypeName.rfind("timestamp") != Utf8String::npos)
             colType = DbColumn::Type::TimeStamp;
-        else if (type.rfind("bool") != Utf8String::npos)
+        else if (colTypeName.rfind("bool") != Utf8String::npos)
             colType = DbColumn::Type::Boolean;
 
-        DbColumn* column = table->CreateColumn(name, colType, DbColumn::Kind::DataColumn, PersistenceType::Persisted);
+        DbColumn* column = table->CreateColumn(colName, colType, DbColumn::Kind::DataColumn, PersistenceType::Persisted);
         if (column == nullptr)
             {
             BeAssert(false && "Failed to create column");
             return nullptr;
             }
 
-        if (!Utf8String::IsNullOrEmpty(dflt_value))
-            column->GetConstraintR().SetDefaultExpression(dflt_value);
+        if (!Utf8String::IsNullOrEmpty(colDefaultValue))
+            column->GetConstraintR().SetDefaultExpression(colDefaultValue);
 
-        column->GetConstraintR().SetIsNotNull(notnull);
-        if (isPk)
-            table->GetPrimaryKeyConstraintR().Add(name);
+        column->GetConstraintR().SetIsNotNull(colIsNotNull);
+        if (isPkCol)
+            table->GetPrimaryKeyConstraintR().Add(colName);
         }
 
     table->GetEditHandleR().EndEdit(); //we do not want this table to be editable;
