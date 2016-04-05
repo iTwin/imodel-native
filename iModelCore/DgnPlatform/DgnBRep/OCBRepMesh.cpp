@@ -13,7 +13,7 @@ static const double s_minFacetAngleTol     = 0.10; // radians
 static const double s_defaultFacetAngleTol = 0.39; // radians
 
 static const double DEFAULT_CREASE_DEGREES = 45.0; // From SimplifyViewDrawGeom.
-static const double TOLERANCE_SamePoint = 1.0E-6;
+// unused - static const double TOLERANCE_SamePoint = 1.0E-6;
 
 //=======================================================================================
 //! @bsiclass                                                   Ray.Bentley     02/2016
