@@ -2003,8 +2003,49 @@ ECN::IECInstancePtr UnhandledProps::GetInstance(DgnElementCR elem)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::GetUnhandledPropertyValue(ECN::ECValueR value, Utf8CP name) const
+DgnDbStatus DgnElement::_GetProperty(ECN::ECValueR value, Utf8CP name) const
     {
+    /*
+    auto ecprop = GetElementClass()->GetPropertyP(name);
+    if (nullptr == ecprop)
+        return DgnDbStatus::NotFound;
+    */
+
+    if (0 == strcmp("Code", name))
+        {
+        //Json::Value json(Json::objectValue);
+        //GetCode().ToJson(json);
+        //value.SetUtf8CP(Json::FastWriter::ToString(json).c_str());
+        //return DgnDbStatus::Success;
+        // *** TBD: Create a IECInstance from the dgn.Code struct class and return it
+        return DgnDbStatus::BadRequest;
+        }
+    if (0 == strcmp("Id", name))
+        {
+        value.SetLong(GetElementId().GetValueUnchecked());
+        return DgnDbStatus::Success;
+        }
+    if (0 == strcmp("ModelId", name))
+        {
+        value.SetLong(GetModelId().GetValueUnchecked());
+        return DgnDbStatus::Success;
+        }
+    if (0 == strcmp("ParentId", name))
+        {
+        value.SetLong(GetParentId().GetValueUnchecked());
+        return DgnDbStatus::Success;
+        }
+    if (0 == strcmp("Label", name))
+        {
+        value.SetUtf8CP(GetLabel());
+        return DgnDbStatus::Success;
+        }
+    if (0 == strcmp("LastMod", name))
+        {
+        value.SetDateTime(QueryTimeStamp());
+        return DgnDbStatus::Success;
+        }
+
     ECN::IECInstancePtr inst = UnhandledProps::Get(*this).GetInstance(*this);
     if (!inst.IsValid())
         return DgnDbStatus::NotFound;
@@ -2014,8 +2055,41 @@ DgnDbStatus DgnElement::GetUnhandledPropertyValue(ECN::ECValueR value, Utf8CP na
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::SetUnhandledPropertyValue(Utf8CP name, ECN::ECValueCR value)
+DgnDbStatus DgnElement::_SetProperty(Utf8CP name, ECN::ECValueCR value)
     {
+    if (0 == strcmp("Code", name))
+        {
+        //Json::Value json(Json::objectValue);
+        //if (!Json::Reader::Parse(value.ToString(), json))
+        //    return DgnDbStatus::BadArg;
+        //DgnCode code;
+        //code.FromJson(json);
+        //return SetCode(code);
+        return DgnDbStatus::BadRequest;
+        }
+    if (0 == strcmp("Id", name))
+        {
+        return DgnDbStatus::ReadOnly;
+        }
+    if (0 == strcmp("ModelId", name))
+        {
+        return DgnDbStatus::ReadOnly;
+        }
+    if (0 == strcmp("ParentId", name))
+        {
+        return SetParentId(DgnElementId((uint64_t)value.GetLong()));
+        }
+    if (0 == strcmp("Label", name))
+        {
+        SetLabel(value.ToString().c_str());
+        return DgnDbStatus::Success;
+        }
+    if (0 == strcmp("LastMod", name))
+        {
+        return DgnDbStatus::BadRequest;
+        }
+
+
     UnhandledProps& props = UnhandledProps::Get(*this);
     
     ECN::IECInstancePtr inst = props.GetInstance(*this);

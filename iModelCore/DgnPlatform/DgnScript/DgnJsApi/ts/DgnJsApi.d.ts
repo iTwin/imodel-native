@@ -462,7 +462,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
     type DgnElementP = cxx_pointer<DgnElement>;
 
     /** GeometrySource */
-    class GeometrySource implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+    class GeometrySource implements BeJsProjection_IsInterface, IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
         /*** NATIVE_TYPE_NAME = JsGeometrySource ***/
         /* This is a projection of a C++ interface -- no instance is ever created -- it's always an alias for an instance of a concrete class, such as GeometricElement3d */
 
@@ -485,7 +485,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
     type GeometrySourceP = cxx_pointer<GeometrySource>;
 
     /** GeometrySource2d */
-    class GeometrySource2d extends GeometrySource implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+    class GeometrySource2d extends GeometrySource implements BeJsProjection_IsInterface, IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
         /*** NATIVE_TYPE_NAME = JsGeometrySource2d ***/
         /* This is a projection of a C++ interface -- no instance is ever created -- it's always an alias for an instance of a concrete class, such as GeometricElement2d */
 
@@ -501,7 +501,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
     type GeometrySource2dP = cxx_pointer<GeometrySource2d>;
 
     /** GeometrySource3d */
-    class GeometrySource3d extends GeometrySource implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+    class GeometrySource3d extends GeometrySource implements BeJsProjection_IsInterface, IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
         /*** NATIVE_TYPE_NAME = JsGeometrySource3d ***/
         /* This is a projection of a C++ interface -- no instance is ever created -- it's always an alias for an instance of a concrete class, such as GeometricElement3d */
 
