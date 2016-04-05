@@ -40,7 +40,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 #define DGNJSAPI_VALIDATE_ARGS(EXPR,RETVAL) {if (!(EXPR)) {DGNJSAPI_DGNSCRIPT_THROW("Args",#EXPR); return (RETVAL);}}
 
 #define DGNJSAPI_IS_VALID_JSOBJ(OBJ) ((OBJ) && (OBJ)->IsValid())
-#define DGNJSAPI_IS_VALID_JSELIFX(OBJ) ((OBJ) && (OBJ)->_ToJsDgnElementP()->IsValid())
+#define DGNJSAPI_IS_VALID_JSELEMENT_PLACEHOLDER(OBJ) DGNJSAPI_IS_VALID_JSOBJ(OBJ)
 
 #define DGNJSAPI_ASSERT_ABSTRACT BeAssert(false && "This is just a placeholder for an interface");
 
@@ -92,11 +92,11 @@ typedef JsDgnCategory* JsDgnCategoryP;
 struct JsPlacement3d;
 typedef JsPlacement3d* JsPlacement3dP;
 
-struct JsGeometrySource;
-typedef JsGeometrySource* JsGeometrySourceP;
+struct JsGeometrySource_PLACEHOLDER_;
+typedef JsGeometrySource_PLACEHOLDER_* JsGeometrySource_PLACEHOLDER_P;
 
-struct JsGeometrySource3d;
-typedef JsGeometrySource3d* JsGeometrySource3dP;
+struct JsGeometrySource3d_PLACEHOLDER_;
+typedef JsGeometrySource3d_PLACEHOLDER_* JsGeometrySource3d_PLACEHOLDER_P;
 
 struct JsGeometryCollection;
 typedef JsGeometryCollection* JsGeometryCollectionP;
@@ -319,6 +319,9 @@ struct JsDgnElement : RefCountedBaseWithCreate
 {
     DgnElementPtr m_el;
 
+protected:
+    JsDgnElement(){}
+public:
     JsDgnElement(DgnElementR el) : m_el(&el) {;}
     bool IsValid() const {return m_el.IsValid();}
     JsDgnObjectIdP GetElementId() 
@@ -353,8 +356,8 @@ struct JsDgnElement : RefCountedBaseWithCreate
     JsAdHocJsonPropertyValueP GetUserProperty(Utf8StringCR name) const;
     void RemoveUserProperty(Utf8StringCR name) const;
 
-    JsGeometrySourceP ToGeometrySourceP();
-    JsGeometrySource3dP ToGeometrySource3dP();
+    JsGeometrySource_PLACEHOLDER_P ToGeometrySourceP();
+    JsGeometrySource3d_PLACEHOLDER_P ToGeometrySource3dP();
 
     static JsDgnElement* Create(JsDgnModelP model, Utf8StringCR elementClassName);
 
@@ -367,27 +370,26 @@ struct JsDgnElement : RefCountedBaseWithCreate
 typedef JsDgnElement* JsDgnElementP;
 
 //=======================================================================================
-// While the real GeometrySource C++ is just an interface, this wrapper class must
-// actually function as another way to hold a reference to a DgnElement. It will typically
-// point to the same (read-write) DgnElement that some JsDgnElement owns.
+// 
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
-struct JsGeometrySource// : RefCountedBaseWithCreate
+struct JsGeometrySource_PLACEHOLDER_ : JsDgnElement
 {
-    virtual JsDgnElementP _ToJsDgnElementP() = 0;
+    virtual JsGeometrySource3d_PLACEHOLDER_P ToGeometrySource3d() = 0;
 };
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      04/16
 //=======================================================================================
-struct JsGeometrySource3d : JsGeometrySource
+struct JsGeometrySource3d_PLACEHOLDER_ : JsGeometrySource_PLACEHOLDER_
 {
+    JsGeometrySource3d_PLACEHOLDER_P ToGeometrySource3d() override {return this;}
 };
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      04/16
 //=======================================================================================
-struct JsGeometricElement : JsDgnElement, JsGeometrySource
+struct JsGeometricElement : JsDgnElement // ***NB: Like the real GeometricElement, this class does NOT derive from JsGeometrySource_PLACEHOLDER_, as that would cause JsGeometricElement3d to inherit JsGeometrySource_PLACEHOLDER_ twice
     {
     JsGeometricElement(GeometricElement& gs) : JsDgnElement(gs) {}
     bool IsValid() const { return m_el.IsValid(); }
@@ -410,16 +412,14 @@ struct JsGeometricElement : JsDgnElement, JsGeometrySource
 
     JsDgnElementP ToDgnElementP() { return IsValid() ? new JsDgnElement(*m_el) : nullptr; }
 
-    JsGeometrySourceP ToGeometrySourceP() {return this;}
-    static GeometricElement* ToGeometricElement(DgnElementR el) { return dynamic_cast<GeometricElement*>(&el); } // *** WIP_DGNJSAPI - remove this when we get a _ToGeometricElement method on DgnElement
+    static GeometricElement* ToGeometricElement(DgnElementR el) { return dynamic_cast<GeometricElement*>(&el); } // *** WIP_GeometricElement - remove this when we get a _ToGeometricElement method on DgnElement
     GeometricElement* GetGeometricElement() const { return m_el.IsValid() ? ToGeometricElement(*m_el) : nullptr; }
-    JsDgnElementP _ToJsDgnElementP() override { return this; }
     };
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      04/16
 //=======================================================================================
-struct JsGeometricElement3d : JsGeometricElement, JsGeometrySource3d
+struct JsGeometricElement3d : JsGeometricElement
     {
     JsGeometricElement3d(GeometricElement3d& gs) : JsGeometricElement(gs) {}
 
@@ -428,12 +428,14 @@ struct JsGeometricElement3d : JsGeometricElement, JsGeometrySource3d
         
     int32_t Transform(JsTransformP transform);
 
-    JsGeometrySource3dP ToGeometrySource3dP() { return this; }
+    JsGeometrySource_PLACEHOLDER_P ToGeometrySourceP() { return (JsGeometrySource_PLACEHOLDER_P)this; }
+    JsGeometrySource3d_PLACEHOLDER_P ToGeometrySource3dP() { return (JsGeometrySource3d_PLACEHOLDER_P)this; }
+
+    static JsGeometricElement3d* CreateGeometricElement3d(JsDgnModelP model, JsDgnObjectIdP catid, Utf8StringCR elementClassName);
 
     // Utility methods called by C++
-    static GeometricElement3d* ToGeometricElement3d(DgnElementR el) { return dynamic_cast<GeometricElement3d*>(&el); } // *** WIP_DGNJSAPI - remove this when we get a _ToGeometricElement3d method on DgnElement
+    static GeometricElement3d* ToGeometricElement3d(DgnElementR el) { return dynamic_cast<GeometricElement3d*>(&el); } // *** WIP_GeometricElement3d - remove this when we get a _ToGeometricElement3d method on DgnElement
     GeometricElement3d* GetGeometricElement3d() const { return m_el.IsValid() ? ToGeometricElement3d(*m_el) : nullptr; }
-    JsDgnElementP _ToJsDgnElementP() override { return this; }
     };
 
 //=======================================================================================
@@ -448,20 +450,20 @@ struct JsHitDetail : RefCountedBaseWithCreate
     JsDPoint3dP GetHitPoint() const { return new JsDPoint3d(m_detail.GetHitPoint()); }
     JsDPoint3dP GetTestPoint() const { return new JsDPoint3d(m_detail.GetTestPoint()); }
     GeometricElement3d* ToGeometricElement3d(DgnElementR el) const {return dynamic_cast<GeometricElement3d*>(&el);}
-    JsGeometrySource3dP GetElement() const 
+    JsGeometrySource3d_PLACEHOLDER_P GetElement() const 
         { 
         DgnElementCPtr el = m_detail.GetElement();
         DGNJSAPI_VALIDATE_ARGS_NULL(el.IsValid());
         auto gel = JsGeometricElement3d::ToGeometricElement3d(const_cast<DgnElementR>(*el));
         DGNJSAPI_VALIDATE_ARGS_NULL(nullptr != gel);
-        return new JsGeometricElement3d(*gel);
+        return (JsGeometrySource3d_PLACEHOLDER_P)(new JsGeometricElement3d(*gel));
         }
     Utf8String GetHitType() const { return (HitDetailType::Hit == m_detail.GetHitType()) ? "hit" : (HitDetailType::Snap == m_detail.GetHitType()) ? "snap" : "intersection"; }
 
     STUB_OUT_SET_METHOD(HitPoint, JsDPoint3dP)
     STUB_OUT_SET_METHOD(TestPoint, JsDPoint3dP)
     STUB_OUT_SET_METHOD(HitType, Utf8String)
-    STUB_OUT_SET_METHOD(Element, JsGeometrySource3dP)
+    STUB_OUT_SET_METHOD(Element, JsGeometrySource3d_PLACEHOLDER_P)
 };
 
 //=======================================================================================
@@ -770,14 +772,14 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
     GeometryBuilderPtr m_builder;
 
     JsGeometryBuilder(GeometryBuilderR gb) : m_builder(&gb) {}
-    JsGeometryBuilder(JsGeometrySourceP el, JsDPoint3dP o, JsYawPitchRollAnglesP angles);
-    JsGeometryBuilder(JsGeometrySourceP el, DPoint3dCR o, YawPitchRollAnglesCR angles);
+    JsGeometryBuilder(JsGeometrySource_PLACEHOLDER_P el, JsDPoint3dP o, JsYawPitchRollAnglesP angles);
+    JsGeometryBuilder(JsGeometrySource_PLACEHOLDER_P el, DPoint3dCR o, YawPitchRollAnglesCR angles);
     ~JsGeometryBuilder() {}
     bool IsValid() const {return m_builder.IsValid();}
 
-    static JsGeometryBuilderP CreateForElement(JsGeometrySourceP el, JsDPoint3dP o, JsYawPitchRollAnglesP angles)
+    static JsGeometryBuilderP CreateForElement(JsGeometrySource_PLACEHOLDER_P el, JsDPoint3dP o, JsYawPitchRollAnglesP angles)
         {
-        DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSELIFX(el) && o && angles);
+        DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSELEMENT_PLACEHOLDER(el) && o && angles);
         return new JsGeometryBuilder(el, o, angles);
         }
 
@@ -788,9 +790,9 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
         }
 
 
-    static JsGeometryBuilderP CreateForElementWithTransform(JsGeometrySourceP el, JsTransformP transform)
+    static JsGeometryBuilderP CreateForElementWithTransform(JsGeometrySource_PLACEHOLDER_P el, JsTransformP transform)
         {
-        DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSELIFX(el) && transform);
+        DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSELEMENT_PLACEHOLDER(el) && transform);
         DPoint3d origin;
         YawPitchRollAngles angles;
         if (!YawPitchRollAngles::TryFromTransform (origin, angles, transform->Get ()))
@@ -868,10 +870,10 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
             }
         }
 
-    BentleyStatus SetGeometryStreamAndPlacement (JsGeometrySourceP el)
+    BentleyStatus SetGeometryStreamAndPlacement (JsGeometrySource_PLACEHOLDER_P jgs)
         {
-        DGNJSAPI_VALIDATE_ARGS_ERROR(IsValid() && (nullptr != el) && DGNJSAPI_IS_VALID_JSOBJ(el->_ToJsDgnElementP()));
-        return m_builder->SetGeometryStreamAndPlacement(*el->_ToJsDgnElementP()->m_el->ToGeometrySourceP());
+        DGNJSAPI_VALIDATE_ARGS_ERROR(IsValid() && DGNJSAPI_IS_VALID_JSELEMENT_PLACEHOLDER(jgs))
+        return m_builder->SetGeometryStreamAndPlacement(*jgs->m_el->ToGeometrySourceP());
         }
 
     BentleyStatus SetGeometryStream (JsDgnGeometryPartP part) {return m_builder->SetGeometryStream(*part->m_value);}

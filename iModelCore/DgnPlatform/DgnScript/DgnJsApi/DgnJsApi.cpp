@@ -22,7 +22,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnElementPtr createGeometricElement3d(DgnModelR model, Utf8CP ecSqlClassName)
+static DgnElementPtr createElementByClass(DgnModelR model, Utf8CP ecSqlClassName)
     {
     if (!ecSqlClassName || !*ecSqlClassName)
         return nullptr;
@@ -61,11 +61,11 @@ static DgnElementPtr createGeometricElement3d(DgnModelR model, Utf8CP ecSqlClass
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15
 //---------------------------------------------------------------------------------------
-JsGeometryBuilder::JsGeometryBuilder(JsGeometrySourceP e, JsDPoint3dP o, JsYawPitchRollAnglesP a)
+JsGeometryBuilder::JsGeometryBuilder(JsGeometrySource_PLACEHOLDER_P jsgs, JsDPoint3dP o, JsYawPitchRollAnglesP a)
     {
-    DGNJSAPI_VALIDATE_ARGS_VOID(DGNJSAPI_IS_VALID_JSELIFX(e) && e->_ToJsDgnElementP()->m_el->ToGeometrySource() && o && a);
+    DGNJSAPI_VALIDATE_ARGS_VOID(DGNJSAPI_IS_VALID_JSELEMENT_PLACEHOLDER(jsgs) && jsgs->m_el->ToGeometrySource() && o && a);
+    auto el = jsgs->m_el;
 
-    auto el = e->_ToJsDgnElementP()->m_el;
     GeometrySource3dCP source3d = el->ToGeometrySource3d();
     if (nullptr != source3d)
         m_builder = GeometryBuilder::Create(*source3d, o->Get (), a->GetYawPitchRollAngles ());
@@ -80,11 +80,11 @@ JsGeometryBuilder::JsGeometryBuilder(JsGeometrySourceP e, JsDPoint3dP o, JsYawPi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Earlin.Lutz                      03/16
 //---------------------------------------------------------------------------------------
-JsGeometryBuilder::JsGeometryBuilder(JsGeometrySourceP e, DPoint3dCR o, YawPitchRollAnglesCR a)
+JsGeometryBuilder::JsGeometryBuilder(JsGeometrySource_PLACEHOLDER_P jsgs, DPoint3dCR o, YawPitchRollAnglesCR a)
     {
-    DGNJSAPI_VALIDATE_ARGS_VOID(DGNJSAPI_IS_VALID_JSELIFX(e) && e->_ToJsDgnElementP()->m_el->ToGeometrySource());
+    DGNJSAPI_VALIDATE_ARGS_VOID(DGNJSAPI_IS_VALID_JSELEMENT_PLACEHOLDER(jsgs) && jsgs->m_el->ToGeometrySource());
+    auto el = jsgs->m_el;
 
-    auto el = e->_ToJsDgnElementP()->m_el;
     GeometrySource3dCP source3d = el->ToGeometrySource3d();
     if (nullptr != source3d)
         m_builder = GeometryBuilder::Create(*source3d, o, a);
@@ -290,21 +290,20 @@ void JsDgnElement::RemoveUserProperty(Utf8StringCR name) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      04/16
 //---------------------------------------------------------------------------------------
-JsGeometrySourceP JsDgnElement::ToGeometrySourceP()
+JsGeometrySource_PLACEHOLDER_P JsDgnElement::ToGeometrySourceP()
     {
-    DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
-    auto ge = JsGeometricElement::ToGeometricElement(*m_el);        // *** NEEDS WORK: Support other kinds of geometrysources
-    return (nullptr != ge)? new JsGeometricElement(*ge): nullptr;
+    return ToGeometrySource3dP(); // *** NEEDS WORK: Support other kinds of geometrysources
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      04/16
 //---------------------------------------------------------------------------------------
-JsGeometrySource3dP JsDgnElement::ToGeometrySource3dP()
+JsGeometrySource3d_PLACEHOLDER_P JsDgnElement::ToGeometrySource3dP()
     {
     DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
-    auto ge = JsGeometricElement3d::ToGeometricElement3d(*m_el);        // *** NEEDS WORK: Support other kinds of geometrysources
-    return (nullptr != ge) ? new JsGeometricElement3d(*ge) : nullptr;
+    if (nullptr == JsGeometricElement3d::ToGeometricElement3d(*m_el))        // *** NEEDS WORK: Support other kinds of geometrysource3ds
+        return nullptr;
+    return (JsGeometrySource3d_PLACEHOLDER_P)(this);
     }
 
 //---------------------------------------------------------------------------------------
@@ -335,13 +334,36 @@ int32_t JsGeometricElement3d::Transform(JsTransformP jstransform)
 JsDgnElement* JsDgnElement::Create(JsDgnModelP model, Utf8StringCR ecSqlClassName)
     {
     DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(model))
-    auto el = createGeometricElement3d(*model->m_model, ecSqlClassName.c_str());
+    auto el = createElementByClass(*model->m_model, ecSqlClassName.c_str());
     if (!el.IsValid())
         {
         DGNJSAPI_DGNSCRIPT_THROW("DgnElement.Create", ecSqlClassName.c_str());
         return nullptr;
         }
     return new JsDgnElement(*el);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      06/15
+//---------------------------------------------------------------------------------------
+JsGeometricElement3d* JsGeometricElement3d::CreateGeometricElement3d(JsDgnModelP model, JsDgnObjectIdP catid, Utf8StringCR ecSqlClassName)
+    {
+    DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(model) && DGNJSAPI_IS_VALID_JSOBJ(catid))
+    auto el = createElementByClass(*model->m_model, ecSqlClassName.c_str());
+    if (!el.IsValid())
+        {
+        DGNJSAPI_DGNSCRIPT_THROW("JsGeometricElement3d.Create", ecSqlClassName.c_str());
+        return nullptr;
+        }
+    auto gel = dynamic_cast<GeometricElement3d*>(el.get());     // *** WIP_GeometricElement3d - DgnElement should have a _ToGeometricElement3d method
+    if (nullptr == gel)
+        {
+        Utf8PrintfString msg("[%s] is not a subclass of GeometricElement3d", ecSqlClassName.c_str());
+        DGNJSAPI_DGNSCRIPT_THROW("JsGeometricElement3d.Create", msg.c_str());
+        return nullptr;
+        }
+    gel->SetCategoryId(DgnCategoryId(catid->m_id));
+    return new JsGeometricElement3d(*gel);
     }
 
 //---------------------------------------------------------------------------------------

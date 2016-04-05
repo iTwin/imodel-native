@@ -57,6 +57,10 @@ module DgnScriptTests {
         }
 
         var pel: be.GeometrySource3d = el.ToGeometrySource3dP();
+        if (pel == null) {
+            be.Script.ReportError('ToGeometrySource3dP failed');
+            return;
+        }
         var aabbox = pel.Placement.CalculateRange();
 
         // Test spatial query. In this example, I am testing for GENERIC_CLASSNAME_PhysicalObject. In a real app, I would
@@ -179,7 +183,7 @@ module DgnScriptTests {
         geoms.push(sphere);
         var geompart: be.DgnGeometryPart = makeGeomPart(model.DgnDb, geoms);
 
-        var ele = be.PhysicalElement.Create(model, catid, be.GENERIC_ECSCHEMA_NAME + "." + be.GENERIC_CLASSNAME_PhysicalObject);
+        var ele: be.GeometricElement3d = be.GeometricElement3d.CreateGeometricElement3d(model, catid, be.GENERIC_ECSCHEMA_NAME + "." + be.GENERIC_CLASSNAME_PhysicalObject);
 
         var builder = new be.GeometryBuilder(ele, new be.DPoint3d(0, 0, 0), new be.YawPitchRollAngles(0, 0, 0));
 
@@ -250,7 +254,7 @@ module DgnScriptTests {
     //---------------------------------------------------------------------------------------
     function testGeomBuilderAggregation(model: be.DgnModel, catid: be.DgnObjectId): void
     {
-        var ele = be.PhysicalElement.Create(model, catid, '');
+        var ele = be.GeometricElement3d.CreateGeometricElement3d(model, catid, be.GENERIC_ECSCHEMA_NAME + "." + be.GENERIC_CLASSNAME_PhysicalObject);
 
         // Create separate builders
         var constructionClass = be.RenderDgnGeometryClass.Construction;
@@ -325,7 +329,7 @@ module DgnScriptTests {
         if (!foundCode)
             be.Script.ReportError('ECPropertyCollection must have failed -- the Code property was not found');
         if (propertyCount <= 2)
-            be.Script.ReportError('ECPropertyCollection must have failed -- there are more than 2 properties on PhysicalElement');
+            be.Script.ReportError('ECPropertyCollection must have failed -- there are more than 2 properties on GeometricElement3d');
 
         // -----------------------------------------------
         // Test GetProperty and PrimitiveECProperty
@@ -356,22 +360,22 @@ module DgnScriptTests {
         // Test Base/DerivecClasses and ECClassCollection
         // -----------------------------------------------
         var baseclasses: be.ECClassCollection = elementClass.BaseClasses;
-        var foundSpatialElement: boolean = false;
+        var foundGeometricElement: boolean = false;
         var baseCount: number = 0;
         for (var clsiter = baseclasses.Begin(); baseclasses.IsValid(clsiter); baseclasses.ToNext(clsiter))
         {
             var cls: be.ECClass = baseclasses.GetECClass(clsiter);
             be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, cls.Name);
-            if (cls.Name == 'SpatialElement')
-                foundSpatialElement = true;
+            if (cls.Name == 'GeometricElement')
+                foundGeometricElement = true;
             ++baseCount;
         }
-        if (!foundSpatialElement)
-            be.Script.ReportError('BaseClasses ECClassCollection must have failed -- I assume that PhysicalElement is derived from SpatialElement, but that base class was not found');
+        if (!foundGeometricElement)
+            be.Script.ReportError('BaseClasses ECClassCollection must have failed -- I assume that GeometricElement3d is derived from GeometricElement, but that base class was not found');
         if (baseCount != 1)
             be.Script.ReportError('BaseClasses ECClassCollection must have failed -- there should be 1 but I got ' + JSON.stringify(baseCount));
 
-        var se: be.ECClass = schemas.GetECClass(be.DGN_ECSCHEMA_NAME, be.DGN_CLASSNAME_SpatialElement);
+        var se: be.ECClass = schemas.GetECClass(be.DGN_ECSCHEMA_NAME, be.DGN_CLASSNAME_GeometricElement);
         var derivedclasses: be.ECClassCollection = se.DerivedClasses;
         var derivedCount: number = 0;
         for (var clsiter = derivedclasses.Begin(); derivedclasses.IsValid(clsiter); derivedclasses.ToNext(clsiter))
@@ -467,7 +471,7 @@ module DgnScriptTests {
 
         //  Create element
         var model = db.Models.GetModel(db.Models.QueryModelId(be.DgnModel.CreateModelCode(params.modelName)));
-        var ele = be.PhysicalElement.Create(model, catid, 'DgnPlatformTest.TestElementWithNoHandler');
+        var ele = be.GeometricElement3d.CreateGeometricElement3d(model, catid, 'DgnPlatformTest.TestElementWithNoHandler');
 
         //  Try out GeometryBuilder
         var builder = new be.GeometryBuilder(ele, new be.DPoint3d(0, 0, 0), new be.YawPitchRollAngles(0, 0, 0));

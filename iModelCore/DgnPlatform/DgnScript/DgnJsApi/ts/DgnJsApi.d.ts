@@ -460,7 +460,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
 
     /** GeometrySource */
     class GeometrySource implements BeJsProjection_IsInterface {
-        /*** NATIVE_TYPE_NAME = JsGeometrySource ***/
+        /*** NATIVE_TYPE_NAME = JsGeometrySource_PLACEHOLDER_ ***/
         /* This is a projection of a C++ interface -- no instance is ever created -- needs no marshalling code * /
 
         /** Get the element's DgnCategoryId */
@@ -471,13 +471,15 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
 
         /** Cast this element to DgnElement */
         ToDgnElementP(): DgnElementP;
+
+        ToGeometrySource3dP(): GeometrySource3dP;
     }
 
     type GeometrySourceP = cxx_pointer<GeometrySource>;
 
     /** GeometrySource3d */
     class GeometrySource3d extends GeometrySource implements BeJsProjection_IsInterface {
-        /*** NATIVE_TYPE_NAME = JsGeometrySource3d ***/
+        /*** NATIVE_TYPE_NAME = JsGeometrySource3d_PLACEHOLDER_ ***/
         /* This is a projection of a C++ interface -- no instance is ever created -- needs no marshalling code * /
 
         /** Get the placement of this element */
@@ -488,11 +490,13 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
          * @return non-zero error status if the element could not be transformed or if \a transform is invalid.
         */
         Transform(transform: TransformP): cxx_int32_t;
+
+        ToGeometrySource3dP(): GeometrySource3dP;
     }
 
     type GeometrySource3dP = cxx_pointer<GeometrySource3d>;
 
-    class GeometricElement extends DgnElement implements GeometrySource, IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+    class GeometricElement extends DgnElement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
         /*** NATIVE_TYPE_NAME = JsGeometricElement ***/
 
         /** Get the element's DgnCategoryId */
@@ -503,9 +507,6 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
 
         /** Cast this element to DgnElement */
         ToDgnElementP(): DgnElementP;
-
-        /** Cast this element to GeometrySource */
-        ToGeometrySourceP(): GeometrySourceP;
 
         OnDispose(): void;
         Dispose(): void;
@@ -519,6 +520,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         /** Get the placement of this element */
         Placement: Placement3dP;
 
+        /** Cast this element to GeometrySource */
+        ToGeometrySourceP(): GeometrySourceP;
+
         /** Cast this element to GeometrySource3d */
         ToGeometrySource3dP(): GeometrySource3dP;
 
@@ -527,6 +531,16 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
          * @return non-zero error status if the element could not be transformed or if \a transform is invalid.
         */
         Transform(transform: TransformP): cxx_int32_t;
+
+        /**
+         * Create a new GeometricElement3d
+         * @param model The model that is to contain the new element
+         * @param categoryId The new element's DgnCategoryId
+         * @param elementClassName The name of the element's ECClass. Must be a subclass of GeometricElement3d.
+         * @return a new, non-persistent GeometricElement3d or null if one of the parameters is invalid
+         * @see Insert
+        */
+        static CreateGeometricElement3d(model: DgnModelP, categoryId: DgnObjectIdP, elementClassName: Bentley_Utf8String): GeometricElement3dP;
 
         OnDispose(): void;
         Dispose(): void;
