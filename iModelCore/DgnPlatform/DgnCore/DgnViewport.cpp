@@ -12,7 +12,8 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::DestroyViewport()
     {
-    m_progressiveTasks.clear();
+    m_elementProgressiveTasks.clear();
+    m_terrainProgressiveTasks.clear();
     if (m_viewController.IsValid())
         {
         m_viewController->GetDgnDb().Models().DropGraphicsForViewport(*this);
@@ -1141,10 +1142,19 @@ ColorDef DgnViewport::GetBackgroundColor() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::ScheduleProgressiveTask(ProgressiveTask& task)
+void DgnViewport::ScheduleElementProgressiveTask(ProgressiveTask& task)
     {
     DgnDb::VerifyClientThread(); // this may only be called from the client thread.
-    m_progressiveTasks.push_back(&task);
+    m_elementProgressiveTasks.push_back(&task);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    04/2016
+//---------------------------------------------------------------------------------------
+void DgnViewport::ScheduleTerrainProgressiveTask(ProgressiveTask& task)
+    {
+    DgnDb::VerifyClientThread(); // this may only be called from the client thread.
+    m_terrainProgressiveTasks.push_back(&task);
     }
 
 /*---------------------------------------------------------------------------------**//**
