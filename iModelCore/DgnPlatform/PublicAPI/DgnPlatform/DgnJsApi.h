@@ -92,14 +92,14 @@ typedef JsDgnCategory* JsDgnCategoryP;
 struct JsPlacement3d;
 typedef JsPlacement3d* JsPlacement3dP;
 
-struct JsGeometrySource_PLACEHOLDER_;
-typedef JsGeometrySource_PLACEHOLDER_* JsGeometrySource_PLACEHOLDER_P;
+struct JsGeometrySource;
+typedef JsGeometrySource* JsGeometrySourceP;
 
-struct JsGeometrySource3d_PLACEHOLDER_;
-typedef JsGeometrySource3d_PLACEHOLDER_* JsGeometrySource3d_PLACEHOLDER_P;
+struct JsGeometrySource3d;
+typedef JsGeometrySource3d* JsGeometrySource3dP;
 
-struct JsGeometrySource2d_PLACEHOLDER_;
-typedef JsGeometrySource2d_PLACEHOLDER_* JsGeometrySource2d_PLACEHOLDER_P;
+struct JsGeometrySource2d;
+typedef JsGeometrySource2d* JsGeometrySource2dP;
 
 struct JsGeometryCollection;
 typedef JsGeometryCollection* JsGeometryCollectionP;
@@ -359,8 +359,9 @@ public:
     JsAdHocJsonPropertyValueP GetUserProperty(Utf8StringCR name) const;
     void RemoveUserProperty(Utf8StringCR name) const;
 
-    JsGeometrySource_PLACEHOLDER_P ToGeometrySourceP();
-    JsGeometrySource3d_PLACEHOLDER_P ToGeometrySource3dP();
+    virtual JsGeometrySourceP ToGeometrySource();
+    virtual JsGeometrySource3dP ToGeometrySource3d();
+    virtual JsGeometrySource2dP ToGeometrySource2d();
 
     static JsDgnElement* Create(JsDgnModelP model, Utf8StringCR elementClassName);
 
@@ -368,62 +369,63 @@ public:
     STUB_OUT_SET_METHOD(ElementId,JsDgnObjectIdP)
     STUB_OUT_SET_METHOD(Code,JsAuthorityIssuedCodeP)
     STUB_OUT_SET_METHOD(ElementClass, JsECClassP)
-
-    // Used by subclasses and interface placeholders:
-protected:
-    JsDgnObjectIdP Protected_GetCategoryId() const
-        {
-        DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
-        return new JsDgnObjectId(m_el->ToGeometrySource()->GetCategoryId().GetValue());
-        }
-
-    int32_t Protected_SetCategoryId(JsDgnObjectIdP catid)
-        {
-        DGNJSAPI_VALIDATE_ARGS(IsValid() && DGNJSAPI_IS_VALID_JSOBJ(catid), -1);
-        return (int32_t)m_el->ToGeometrySourceP()->SetCategoryId(DgnCategoryId(catid->m_id));
-        }
-
-    JsGeometryCollectionP Protected_GetGeometry() const;
-
-    JsPlacement3dP Protected_GetPlacement() const;
 };
 
 typedef JsDgnElement* JsDgnElementP;
 
 //=======================================================================================
-// This wraps a projection of a C++ interface -- no instance is ever created 
-// -- it's always an alias for an instance of a concrete class, such as GeometricElement3d
+// Base class for projections of geometry-related classes and interfaces.
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
-struct JsGeometrySource_PLACEHOLDER_ : JsDgnElement
-{
-    JsDgnObjectIdP GetCategoryId() const {return Protected_GetCategoryId();}
-    int32_t SetCategoryId(JsDgnObjectIdP catid) {return Protected_SetCategoryId(catid);}
-    JsGeometryCollectionP GetGeometry() const {return Protected_GetGeometry();}
+struct JsGeometricElementBase : JsDgnElement
+    {
+protected:
+    JsGeometricElementBase(DgnElement& el) : JsDgnElement(el) {}
 
-    virtual JsGeometrySource2d_PLACEHOLDER_P ToGeometrySource2d() = 0;
-    virtual JsGeometrySource3d_PLACEHOLDER_P ToGeometrySource3d() = 0;
+public:
+    JsDgnObjectIdP GetCategoryId() const
+        {
+        DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
+        return new JsDgnObjectId(m_el->ToGeometrySource()->GetCategoryId().GetValue());
+        }
 
+    int32_t SetCategoryId(JsDgnObjectIdP catid)
+        {
+        DGNJSAPI_VALIDATE_ARGS(IsValid() && DGNJSAPI_IS_VALID_JSOBJ(catid), -1);
+        return (int32_t)m_el->ToGeometrySourceP()->SetCategoryId(DgnCategoryId(catid->m_id));
+        }
+
+    JsGeometryCollectionP GetGeometry() const;
     STUB_OUT_SET_METHOD(Geometry, JsGeometryCollectionP)
+
+    JsPlacement3dP GetPlacement() const;
+    STUB_OUT_SET_METHOD(Placement, JsPlacement3dP)
+
+    int32_t Transform(JsTransformP transform);
+
+    JsDgnElementP ToDgnElement() { return this; }
+};
+
+//=======================================================================================
+// This wraps a projection of a C++ interface -- no instance is ever created 
+// -- it's always an alias for an instance of a concrete class, such as GeometricElement3d.
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct JsGeometrySource : JsGeometricElementBase
+{
+    JsGeometrySource(GeometrySource& gs) : JsGeometricElementBase(*gs.ToElementP()) {}
 };
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      04/16
 //=======================================================================================
-struct JsGeometricElement : JsDgnElement // *** NB: DO NOT USE MULTIPLE INHERITANCE ON A PROJECTED CLASS!!! ***
+struct JsGeometricElement : JsGeometricElementBase // *** NB: DO NOT USE MULTIPLE INHERITANCE ON A PROJECTED CLASS!!! ***
     {
-    JsGeometricElement(GeometricElement& gs) : JsDgnElement(gs) {}
+    JsGeometricElement(GeometricElement& gs) : JsGeometricElementBase(gs) {}
     bool IsValid() const { return m_el.IsValid(); }
-
-    JsDgnObjectIdP GetCategoryId() const {return Protected_GetCategoryId();}
-    int32_t SetCategoryId(JsDgnObjectIdP catid) {return Protected_SetCategoryId(catid);}
-    JsGeometryCollectionP GetGeometry() const {return Protected_GetGeometry();}
-
-    STUB_OUT_SET_METHOD(Geometry, JsGeometryCollectionP)
-
-    JsDgnElementP ToDgnElementP() { return this; }
-
-    static GeometricElement* ToGeometricElement(DgnElementR el) { return dynamic_cast<GeometricElement*>(&el); } // *** WIP_GeometricElement - remove this when we get a _ToGeometricElement method on DgnElement
+    
+    // Internal cast helper methods. *** WIP_GeometricElement - remove this when we get a _ToGeometricElement method on DgnElement
+    static GeometricElement* ToGeometricElement(DgnElementR el) { return dynamic_cast<GeometricElement*>(&el); }
     GeometricElement* GetGeometricElement() const { return m_el.IsValid() ? ToGeometricElement(*m_el) : nullptr; }
     };
 
@@ -432,14 +434,24 @@ struct JsGeometricElement : JsDgnElement // *** NB: DO NOT USE MULTIPLE INHERITA
 // -- it's always an alias for an instance of a concrete class, such as GeometricElement3d
 // @bsiclass                                                    Sam.Wilson      04/16
 //=======================================================================================
-struct JsGeometrySource3d_PLACEHOLDER_ : JsGeometrySource_PLACEHOLDER_
+struct JsGeometrySource3d : JsGeometrySource
 {
-    JsPlacement3dP GetPlacement() const {return Protected_GetPlacement();}
-    STUB_OUT_SET_METHOD(Placement, JsPlacement3dP)
-
-    JsGeometrySource2d_PLACEHOLDER_P ToGeometrySource2d() override {return nullptr;}
-    JsGeometrySource3d_PLACEHOLDER_P ToGeometrySource3d() override {return this;}
+    JsGeometrySource3d(GeometrySource3d& gs) : JsGeometrySource(gs) {}
+    JsGeometrySource2dP ToGeometrySource2d() {return nullptr;}
+    JsGeometrySource3dP ToGeometrySource3d() {return this;}
 };
+
+//=======================================================================================
+// This wraps a projection of a C++ interface -- no instance is ever created 
+// -- it's always an alias for an instance of a concrete class, such as GeometricElement2d
+// @bsiclass                                                    Sam.Wilson      04/16
+//=======================================================================================
+struct JsGeometrySource2d : JsGeometrySource
+    {
+    JsGeometrySource2d(GeometrySource2d& gs) : JsGeometrySource(gs) {}
+    JsGeometrySource2dP ToGeometrySource2d() { return this; }
+    JsGeometrySource3dP ToGeometrySource3d() { return nullptr; }
+    };
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      04/16
@@ -448,31 +460,12 @@ struct JsGeometricElement3d : JsGeometricElement // *** NB: DO NOT USE MULTIPLE 
     {
     JsGeometricElement3d(GeometricElement3d& gs) : JsGeometricElement(gs) {}
 
-    JsPlacement3dP GetPlacement() const {return Protected_GetPlacement();}
-    STUB_OUT_SET_METHOD(Placement, JsPlacement3dP)
-        
-    int32_t Transform(JsTransformP transform);
-
-    JsGeometrySource_PLACEHOLDER_P ToGeometrySourceP() { return (JsGeometrySource_PLACEHOLDER_P)this; }
-    JsGeometrySource3d_PLACEHOLDER_P ToGeometrySource3dP() { return (JsGeometrySource3d_PLACEHOLDER_P)this; }
-
     static JsGeometricElement3d* CreateGeometricElement3d(JsDgnModelP model, JsDgnObjectIdP catid, Utf8StringCR elementClassName);
 
-    // Utility methods called by C++
+    // Internal cast helper methods. *** WIP_GeometricElement - remove this when we get a _ToGeometricElement method on DgnElement
     static GeometricElement3d* ToGeometricElement3d(DgnElementR el) { return dynamic_cast<GeometricElement3d*>(&el); } // *** WIP_GeometricElement3d - remove this when we get a _ToGeometricElement3d method on DgnElement
     GeometricElement3d* GetGeometricElement3d() const { return m_el.IsValid() ? ToGeometricElement3d(*m_el) : nullptr; }
     };
-
-//=======================================================================================
-// This wraps a projection of a C++ interface -- no instance is ever created 
-// -- it's always an alias for an instance of a concrete class, such as GeometricElement2d
-// @bsiclass                                                    Sam.Wilson      04/16
-//=======================================================================================
-struct JsGeometrySource2d_PLACEHOLDER_ : JsGeometrySource_PLACEHOLDER_
-{
-    JsGeometrySource2d_PLACEHOLDER_P ToGeometrySource2d() override {return this;}
-    JsGeometrySource3d_PLACEHOLDER_P ToGeometrySource3d() override {return nullptr;}
-};
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
@@ -486,20 +479,20 @@ struct JsHitDetail : RefCountedBaseWithCreate
     JsDPoint3dP GetHitPoint() const { return new JsDPoint3d(m_detail.GetHitPoint()); }
     JsDPoint3dP GetTestPoint() const { return new JsDPoint3d(m_detail.GetTestPoint()); }
     GeometricElement3d* ToGeometricElement3d(DgnElementR el) const {return dynamic_cast<GeometricElement3d*>(&el);}
-    JsGeometrySource3d_PLACEHOLDER_P GetElement() const 
+    JsGeometrySource3dP GetElement() const 
         { 
         DgnElementCPtr el = m_detail.GetElement();
         DGNJSAPI_VALIDATE_ARGS_NULL(el.IsValid());
         auto gel = JsGeometricElement3d::ToGeometricElement3d(const_cast<DgnElementR>(*el));
         DGNJSAPI_VALIDATE_ARGS_NULL(nullptr != gel);
-        return (JsGeometrySource3d_PLACEHOLDER_P)(new JsGeometricElement3d(*gel));
+        return (JsGeometrySource3dP)(new JsGeometricElement3d(*gel));
         }
     Utf8String GetHitType() const { return (HitDetailType::Hit == m_detail.GetHitType()) ? "hit" : (HitDetailType::Snap == m_detail.GetHitType()) ? "snap" : "intersection"; }
 
     STUB_OUT_SET_METHOD(HitPoint, JsDPoint3dP)
     STUB_OUT_SET_METHOD(TestPoint, JsDPoint3dP)
     STUB_OUT_SET_METHOD(HitType, Utf8String)
-    STUB_OUT_SET_METHOD(Element, JsGeometrySource3d_PLACEHOLDER_P)
+    STUB_OUT_SET_METHOD(Element, JsGeometrySource3dP)
 };
 
 //=======================================================================================
@@ -808,12 +801,12 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
     GeometryBuilderPtr m_builder;
 
     JsGeometryBuilder(GeometryBuilderR gb) : m_builder(&gb) {}
-    JsGeometryBuilder(JsGeometrySource_PLACEHOLDER_P el, JsDPoint3dP o, JsYawPitchRollAnglesP angles);
-    JsGeometryBuilder(JsGeometrySource_PLACEHOLDER_P el, DPoint3dCR o, YawPitchRollAnglesCR angles);
+    JsGeometryBuilder(JsGeometrySourceP el, JsDPoint3dP o, JsYawPitchRollAnglesP angles);
+    JsGeometryBuilder(JsGeometrySourceP el, DPoint3dCR o, YawPitchRollAnglesCR angles);
     ~JsGeometryBuilder() {}
     bool IsValid() const {return m_builder.IsValid();}
 
-    static JsGeometryBuilderP CreateForElement(JsGeometrySource_PLACEHOLDER_P el, JsDPoint3dP o, JsYawPitchRollAnglesP angles)
+    static JsGeometryBuilderP CreateForElement(JsGeometrySourceP el, JsDPoint3dP o, JsYawPitchRollAnglesP angles)
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSELEMENT_PLACEHOLDER(el) && o && angles);
         return new JsGeometryBuilder(el, o, angles);
@@ -826,7 +819,7 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
         }
 
 
-    static JsGeometryBuilderP CreateForElementWithTransform(JsGeometrySource_PLACEHOLDER_P el, JsTransformP transform)
+    static JsGeometryBuilderP CreateForElementWithTransform(JsGeometrySourceP el, JsTransformP transform)
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSELEMENT_PLACEHOLDER(el) && transform);
         DPoint3d origin;
@@ -906,7 +899,7 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
             }
         }
 
-    BentleyStatus SetGeometryStreamAndPlacement (JsGeometrySource_PLACEHOLDER_P jgs)
+    BentleyStatus SetGeometryStreamAndPlacement (JsGeometrySourceP jgs)
         {
         DGNJSAPI_VALIDATE_ARGS_ERROR(IsValid() && DGNJSAPI_IS_VALID_JSELEMENT_PLACEHOLDER(jgs))
         return m_builder->SetGeometryStreamAndPlacement(*jgs->m_el->ToGeometrySourceP());

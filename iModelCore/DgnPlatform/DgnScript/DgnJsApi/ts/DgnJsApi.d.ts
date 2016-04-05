@@ -438,10 +438,13 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         RemoveUserProperty(name: Bentley_Utf8String): void;
 
         /** Cast this element to GeometrySource if possible */
-        ToGeometrySourceP(): GeometrySourceP;
+        ToGeometrySource(): GeometrySourceP;
 
         /** Cast this element to GeometrySource3d if possible */
-        ToGeometrySource3dP(): GeometrySource3dP;
+        ToGeometrySource3d(): GeometrySource3dP;
+
+        /** Cast this element to GeometrySource2d if possible */
+        ToGeometrySource2d(): GeometrySource2dP;
 
         /**
          * Create a new DgnElement
@@ -460,7 +463,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
 
     /** GeometrySource */
     class GeometrySource implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
-        /*** NATIVE_TYPE_NAME = JsGeometrySource_PLACEHOLDER_ ***/
+        /*** NATIVE_TYPE_NAME = JsGeometrySource ***/
         /* This is a projection of a C++ interface -- no instance is ever created -- it's always an alias for an instance of a concrete class, such as GeometricElement3d */
 
         /** Get the element's DgnCategoryId */
@@ -470,10 +473,10 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         Geometry: GeometryCollectionP;
 
         /** Cast this element to DgnElement */
-        ToDgnElementP(): DgnElementP;
+        ToDgnElement(): DgnElementP;
 
-        ToGeometrySource2dP(): GeometrySource2dP;
-        ToGeometrySource3dP(): GeometrySource3dP;
+        ToGeometrySource2d(): GeometrySource2dP;
+        ToGeometrySource3d(): GeometrySource3dP;
 
         OnDispose(): void;
         Dispose(): void;
@@ -483,13 +486,13 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
 
     /** GeometrySource2d */
     class GeometrySource2d extends GeometrySource implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
-        /*** NATIVE_TYPE_NAME = JsGeometrySource2d_PLACEHOLDER_ ***/
+        /*** NATIVE_TYPE_NAME = JsGeometrySource2d ***/
         /* This is a projection of a C++ interface -- no instance is ever created -- it's always an alias for an instance of a concrete class, such as GeometricElement2d */
 
         // *** TBD
 
-        ToGeometrySource2dP(): GeometrySource2dP;
-        ToGeometrySource2dP(): GeometrySource2dP;
+        ToGeometrySource2d(): GeometrySource2dP;
+        ToGeometrySource2d(): GeometrySource2dP;
 
         OnDispose(): void;
         Dispose(): void;
@@ -499,7 +502,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
 
     /** GeometrySource3d */
     class GeometrySource3d extends GeometrySource implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
-        /*** NATIVE_TYPE_NAME = JsGeometrySource3d_PLACEHOLDER_ ***/
+        /*** NATIVE_TYPE_NAME = JsGeometrySource3d ***/
         /* This is a projection of a C++ interface -- no instance is ever created -- it's always an alias for an instance of a concrete class, such as GeometricElement3d */
 
         /** Get the placement of this element */
@@ -511,8 +514,8 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         */
         Transform(transform: TransformP): cxx_int32_t;
 
-        ToGeometrySource2dP(): GeometrySource2dP;
-        ToGeometrySource3dP(): GeometrySource3dP;
+        ToGeometrySource2d(): GeometrySource2dP;
+        ToGeometrySource3d(): GeometrySource3dP;
 
         OnDispose(): void;
         Dispose(): void;
@@ -530,7 +533,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         Geometry: GeometryCollectionP;
 
         /** Cast this element to DgnElement */
-        ToDgnElementP(): DgnElementP;
+        ToDgnElement(): DgnElementP;
 
         OnDispose(): void;
         Dispose(): void;
@@ -545,12 +548,12 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         Placement: Placement3dP;
 
         /** Cast this element to GeometrySource */
-        ToGeometrySourceP(): GeometrySourceP;
+        ToGeometrySource(): GeometrySourceP;
 
         /** Cast this element to GeometrySource3d */
-        ToGeometrySource3dP(): GeometrySource3dP;
+        ToGeometrySource3d(): GeometrySource3dP;
 
-        ToGeometrySource2dP(): GeometrySource2dP;
+        ToGeometrySource2d(): GeometrySource2dP;
 
         /** Transform the element's Placement 
          * @param transform The transform to apply to the element's Placement. The transform must be pure rotation and/or translation.

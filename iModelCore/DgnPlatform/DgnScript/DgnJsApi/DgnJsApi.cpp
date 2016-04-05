@@ -61,7 +61,7 @@ static DgnElementPtr createElementByClass(DgnModelR model, Utf8CP ecSqlClassName
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15
 //---------------------------------------------------------------------------------------
-JsGeometryBuilder::JsGeometryBuilder(JsGeometrySource_PLACEHOLDER_P jsgs, JsDPoint3dP o, JsYawPitchRollAnglesP a)
+JsGeometryBuilder::JsGeometryBuilder(JsGeometrySourceP jsgs, JsDPoint3dP o, JsYawPitchRollAnglesP a)
     {
     DGNJSAPI_VALIDATE_ARGS_VOID(DGNJSAPI_IS_VALID_JSELEMENT_PLACEHOLDER(jsgs) && jsgs->m_el->ToGeometrySource() && o && a);
     auto el = jsgs->m_el;
@@ -80,7 +80,7 @@ JsGeometryBuilder::JsGeometryBuilder(JsGeometrySource_PLACEHOLDER_P jsgs, JsDPoi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Earlin.Lutz                      03/16
 //---------------------------------------------------------------------------------------
-JsGeometryBuilder::JsGeometryBuilder(JsGeometrySource_PLACEHOLDER_P jsgs, DPoint3dCR o, YawPitchRollAnglesCR a)
+JsGeometryBuilder::JsGeometryBuilder(JsGeometrySourceP jsgs, DPoint3dCR o, YawPitchRollAnglesCR a)
     {
     DGNJSAPI_VALIDATE_ARGS_VOID(DGNJSAPI_IS_VALID_JSELEMENT_PLACEHOLDER(jsgs) && jsgs->m_el->ToGeometrySource());
     auto el = jsgs->m_el;
@@ -158,7 +158,7 @@ void JsGeometryBuilder::AppendGeometryPart(JsDgnGeometryPartP part, JsPlacement3
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      02/16
 //---------------------------------------------------------------------------------------
-JsGeometryCollectionP JsGeometricElement::GetGeometry() const 
+JsGeometryCollectionP JsGeometricElementBase::GetGeometry() const
     {
     DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
     return new JsGeometryCollection(*m_el->ToGeometrySource());
@@ -290,26 +290,43 @@ void JsDgnElement::RemoveUserProperty(Utf8StringCR name) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      04/16
 //---------------------------------------------------------------------------------------
-JsGeometrySource_PLACEHOLDER_P JsDgnElement::ToGeometrySourceP()
+JsGeometrySourceP JsDgnElement::ToGeometrySource()
     {
-    return ToGeometrySource3dP(); // *** NEEDS WORK: Support other kinds of geometrysources
+    DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
+    GeometrySourceP gs = m_el->ToGeometrySourceP();
+    if (nullptr == gs)
+        return nullptr;
+    return new JsGeometrySource(*gs);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      04/16
 //---------------------------------------------------------------------------------------
-JsGeometrySource3d_PLACEHOLDER_P JsDgnElement::ToGeometrySource3dP()
+JsGeometrySource3dP JsDgnElement::ToGeometrySource3d()
     {
     DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
-    if (nullptr == JsGeometricElement3d::ToGeometricElement3d(*m_el))        // *** NEEDS WORK: Support other kinds of geometrysource3ds
+    GeometrySource3dP gs = m_el->ToGeometrySource3dP();
+    if (nullptr == gs)
         return nullptr;
-    return (JsGeometrySource3d_PLACEHOLDER_P)(this);
+    return new JsGeometrySource3d(*gs);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      04/16
+//---------------------------------------------------------------------------------------
+JsGeometrySource2dP JsDgnElement::ToGeometrySource2d()
+    {
+    DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
+    GeometrySource2dP gs = m_el->ToGeometrySource2dP();
+    if (nullptr == gs)
+        return nullptr;
+    return new JsGeometrySource2d(*gs);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
-JsPlacement3dP JsGeometricElement3d::GetPlacement() const 
+JsPlacement3dP JsGeometricElementBase::GetPlacement() const
     {
     DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
     return new JsPlacement3d(m_el->ToGeometrySource3d()->GetPlacement());
@@ -318,7 +335,7 @@ JsPlacement3dP JsGeometricElement3d::GetPlacement() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
-int32_t JsGeometricElement3d::Transform(JsTransformP jstransform)
+int32_t JsGeometricElementBase::Transform(JsTransformP jstransform)
     {
     DGNJSAPI_VALIDATE_ARGS_ERROR(IsValid());
 

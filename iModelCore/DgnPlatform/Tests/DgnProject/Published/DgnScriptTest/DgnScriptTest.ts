@@ -56,9 +56,9 @@ module DgnScriptTests {
             return;
         }
 
-        var pel: be.GeometrySource3d = el.ToGeometrySource3dP();
+        var pel: be.GeometrySource3d = el.ToGeometrySource3d();
         if (pel == null) {
-            be.Script.ReportError('ToGeometrySource3dP failed');
+            be.Script.ReportError('ToGeometrySource3d failed');
             return;
         }
         var aabbox = pel.Placement.CalculateRange();
@@ -634,8 +634,8 @@ module DgnScriptTests {
         testEC(db);
 
         //  DgnElement Properties and UserProperties
-        testProperties(ele.ToDgnElementP());
-        testUserProperties(ele.ToDgnElementP());
+        testProperties(ele);
+        testUserProperties(ele);
 
         //  Test argument validation
         testInvalidArg();
