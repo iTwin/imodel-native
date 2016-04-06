@@ -22,6 +22,8 @@
     #define BENTLEYCONFIG_OS_APPLE
     #define BENTLEYCONFIG_OS_UNIX
 
+//    #define BENTLEYCONFIG_OPENCASCADE
+
     #include <TargetConditionals.h>
     #if defined (TARGET_OS_IPHONE) || defined (TARGET_IPHONE_SIMULATOR)
         #define BENTLEYCONFIG_OS_APPLE_IOS
@@ -42,6 +44,8 @@
     #define BENTLEYCONFIG_GRAPHICS_OPENGLES
     #define BENTLEYCONFIG_GRAPHICS_OPENGL
     #define BENTLEYCONFIG_DISPLAY_ANDROID
+
+//    #define BENTLEYCONFIG_OPENCASCADE
 
 #elif defined (_WIN32)
 
