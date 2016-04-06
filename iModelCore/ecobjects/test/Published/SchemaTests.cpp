@@ -2213,14 +2213,14 @@ TEST_F(SchemaTest, RoundtripSchemaXmlCommentsTest)
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     schemaContext->SetPreserveXmlComments(true);
     ECSchemaPtr schema;
-	SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"dgn.02.00.ecschema.xml").c_str(), *schemaContext);
+	SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"dgn-testingonly.02.00.ecschema.xml").c_str(), *schemaContext);
 	EXPECT_EQ(SchemaReadStatus::Success, status);
 
-    SchemaWriteStatus statusW = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"dgn-result.02.00.ecschema.xml").c_str(), 2, 0, false);
+    SchemaWriteStatus statusW = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"dgn-testingonly-result.02.00.ecschema.xml").c_str(), 2, 0, false);
     EXPECT_EQ(SchemaWriteStatus::Success, statusW);
 
-    Utf8String serializedSchemaFile(ECTestFixture::GetTempDataPath(L"dgn-result.02.00.ecschema.xml"));
-    Utf8String expectedSchemaFile(ECTestFixture::GetTestDataPath(L"dgn-ExpectedResult.02.00.ecschema.xml"));
+    Utf8String serializedSchemaFile(ECTestFixture::GetTempDataPath(L"dgn-testingonly-result.02.00.ecschema.xml"));
+    Utf8String expectedSchemaFile(ECTestFixture::GetTestDataPath(L"dgn-testingonly-ExpectedResult.02.00.ecschema.xml"));
 
     // Deactivated because it might fail randomly because of varying order of <schemareference> in schema
     //EXPECT_TRUE(CompareFiles(&serializedSchemaFile, &expectedSchemaFile)) << "Serialized schema differs from expected schema";
