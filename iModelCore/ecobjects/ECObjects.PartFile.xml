@@ -27,6 +27,7 @@
         <Bindings>
             <Libs ProductDirectoryName="ECObjectsLibs" Required="false">Delivery/$(libprefix)ECObjects$(libext)</Libs>
             <Assemblies ProductDirectoryName="ECObjectsNativeAssemblies">Delivery/$(shlibprefix)ECObjects$(ApiNumber)$(shlibext)</Assemblies>
+            <Files ProductDirectoryName="PresentationRulesXsds" Required="false">Delivery/PresentationRuleSetSchema.xsd</Files>
         </Bindings>
     </Part>
 
