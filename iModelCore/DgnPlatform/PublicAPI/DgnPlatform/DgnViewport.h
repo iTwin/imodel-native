@@ -140,7 +140,8 @@ protected:
     double          m_frustFraction;
     Utf8String      m_viewTitle;
     ViewControllerPtr m_viewController;
-    bvector<ProgressiveTaskPtr> m_progressiveTasks;
+    bvector<ProgressiveTaskPtr> m_elementProgressiveTasks;
+    bvector<ProgressiveTaskPtr> m_terrainProgressiveTasks;
     DPoint3d        m_viewCmdTargetCenter;
     Utf8String      m_currentBaseline;
     ViewStateStack  m_forwardStack;
@@ -148,6 +149,7 @@ protected:
     mutable PartGraphicMap m_partGraphics;
 
     DGNPLATFORM_EXPORT void DestroyViewport();
+    DGNPLATFORM_EXPORT void SuspendViewport();
     DGNPLATFORM_EXPORT virtual void _AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewControllerCR) const;
     virtual bool _IsVisible() const {return true;}
     DGNPLATFORM_EXPORT virtual void _CallDecorators(DecorateContextR);
@@ -156,6 +158,7 @@ protected:
     virtual void _AdjustFencePts(RotMatrixCR viewRot, DPoint3dCR oldOrg, DPoint3dCR newOrg) const {}
     virtual void _SynchViewTitle() {}
     virtual void _Destroy() {DestroyViewport();}
+    virtual void _Suspend() {SuspendViewport();}
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(ViewControllerR, bool expandView);
     DGNPLATFORM_EXPORT virtual int _GetIndexedLineWidth(int index) const;
     DGNPLATFORM_EXPORT static void StartRenderThread();
@@ -166,6 +169,7 @@ protected:
     void CreateTerrain(UpdatePlan const& plan);
     StatusInt CreateScene(UpdatePlan const& plan);
     DGNPLATFORM_EXPORT void SaveViewUndo();
+    ProgressiveTask::Completion ProcessProgressiveTaskList(ProgressiveTask::WantShow& showFrame, ProgressiveContext& context, bvector<ProgressiveTaskPtr>& tasks);
 
 public:
     DgnViewport(Render::TargetP target) : m_renderTarget(target) {}
@@ -184,9 +188,10 @@ public:
     Render::Plan::AntiAliasPref WantAntiAliasText() const {return _WantAntiAliasText();}
     void AlignWithRootZ();
     ProgressiveTask::Completion DoProgressiveTasks();
-    void ClearProgressiveTasks() {m_progressiveTasks.clear();}
+    void ClearProgressiveTasks() {m_elementProgressiveTasks.clear(); m_terrainProgressiveTasks.clear();}
     DGNPLATFORM_EXPORT void InvalidateScene() const;
-    DGNPLATFORM_EXPORT void ScheduleProgressiveTask(ProgressiveTask& pd);
+    DGNPLATFORM_EXPORT void ScheduleElementProgressiveTask(ProgressiveTask& pd);
+    DGNPLATFORM_EXPORT void ScheduleTerrainProgressiveTask(ProgressiveTask& pd);
     DGNPLATFORM_EXPORT double GetFocusPlaneNpc();
     DGNPLATFORM_EXPORT StatusInt RootToNpcFromViewDef(DMap4d&, double&, CameraInfo const*, DPoint3dCR, DPoint3dCR, RotMatrixCR) const;
     DGNPLATFORM_EXPORT static int32_t GetMaxDisplayPriority();
