@@ -27,7 +27,8 @@ TextAnnotation::TextAnnotation(DgnDbR project) :
     {
     // Making additions or changes? Please check TextAnnotation::Reset.
     m_dgndb = &project;
-    m_documentTransform.InitIdentity();
+    m_origin = DPoint3d::FromZero();
+    m_anchorPoint = AnchorPoint::LeftTop;
     }
 
 //---------------------------------------------------------------------------------------
@@ -56,7 +57,9 @@ void TextAnnotation::CopyFrom(TextAnnotationCR rhs)
     for (auto const& rhsLeader : rhs.m_leaders)
         m_leaders.push_back(rhsLeader->Clone());
 
-    m_documentTransform = rhs.m_documentTransform;
+    m_anchorPoint   = rhs.m_anchorPoint;
+    m_origin        = rhs.m_origin;
+    m_orientation   = rhs.m_orientation;
     }
 
 //---------------------------------------------------------------------------------------
@@ -68,7 +71,10 @@ void TextAnnotation::Reset()
     m_text = NULL;
     m_frame = NULL;
     m_leaders.clear();
-    m_documentTransform.InitIdentity();
+
+    m_anchorPoint   = AnchorPoint::LeftTop;
+    m_origin        = DPoint3d::FromZero();
+    m_orientation   = YawPitchRollAngles::FromDegrees (0, 0, 0);
     }
 
 //---------------------------------------------------------------------------------------
