@@ -1375,8 +1375,8 @@ void HRFIntergraphTileEditor::MapStreamHole()
         UsedBlocItr = NextUsedBloc;
         NextUsedBloc++;
 
-        HDEBUGCODE( HRFIntergraphFile::StreamFreeBlock UsedB(*UsedBlocItr););
-        HDEBUGCODE( HRFIntergraphFile::StreamFreeBlock NextB(*NextUsedBloc););
+        HDEBUGCODE( HRFIntergraphFile::StreamFreeBlock UsedB(*UsedBlocItr);(void)UsedB);
+        HDEBUGCODE( HRFIntergraphFile::StreamFreeBlock NextB(*NextUsedBloc);(void)NextB);
 
         if (NextUsedBloc != ListOfUsedBlock.end())
             {
@@ -1414,8 +1414,8 @@ void HRFIntergraphTileEditor::MapStreamHole()
             UsedBlocItr = NextUsedBloc;
             NextUsedBloc++;
 
-            HDEBUGCODE( HRFIntergraphFile::StreamFreeBlock UsedB(*UsedBlocItr););
-            HDEBUGCODE( HRFIntergraphFile::StreamFreeBlock NextB(*NextUsedBloc););
+            HDEBUGCODE( HRFIntergraphFile::StreamFreeBlock UsedB(*UsedBlocItr);(void)UsedB);
+            HDEBUGCODE( HRFIntergraphFile::StreamFreeBlock NextB(*NextUsedBloc);(void)NextB);
 
             if (NextUsedBloc != ListOfUsedBlock.end())
                 {
@@ -1512,9 +1512,17 @@ void HRFIntergraphTileEditor::ApplyLUTColorCorrection(Byte* pio_pData, uint32_t 
 
         for (uint32_t PixelIndex = 0; PixelIndex < pi_pixelCount; PixelIndex++)
             {
-            pio_pData[ByteIndex] = pRedLUT  [pio_pData[ByteIndex++] ];
+/* &&ep o
+                pio_pData[ByteIndex] = pRedLUT  [pio_pData[ByteIndex++] ];
             pio_pData[ByteIndex] = pGreenLUT[pio_pData[ByteIndex++] ];
             pio_pData[ByteIndex] = pBlueLUT [pio_pData[ByteIndex++] ];
+*/
+            pio_pData[ByteIndex] = pRedLUT  [pio_pData[ByteIndex] ];
+            ByteIndex++;
+            pio_pData[ByteIndex] = pGreenLUT[pio_pData[ByteIndex] ];
+            ByteIndex++;
+            pio_pData[ByteIndex] = pBlueLUT [pio_pData[ByteIndex] ];
+            ByteIndex++;
             }
         }
     else if (m_BitPerPixel == 8)
@@ -1523,7 +1531,8 @@ void HRFIntergraphTileEditor::ApplyLUTColorCorrection(Byte* pio_pData, uint32_t 
 
         for (uint32_t PixelIndex = 0; PixelIndex < pi_pixelCount; PixelIndex++)
             {
-            pio_pData[ByteIndex] = pRedLUT  [pio_pData[ByteIndex++] ];
+            pio_pData[ByteIndex] = pRedLUT  [pio_pData[ByteIndex] ];
+            ByteIndex++;
             }
         }
     // Should not occur.  This situation mean we have an Intergraph file with an LUT

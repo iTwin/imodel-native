@@ -96,7 +96,7 @@ public:
     IMAGEPP_EXPORT virtual               ~HGFPolynomialModelAdapter();
     HGFPolynomialModelAdapter&          operator=(const HGFPolynomialModelAdapter& pi_rObj);
 
-    const HGF2DShape&                   GetApplicationArea() const {m_ApplicationArea;}
+//&&ep can delete ?    const HGF2DShape&                   GetApplicationArea() const {m_ApplicationArea;}
     double                              GetStepX() const {return m_StepX;}
     double                              GetStepY() const {return m_StepY;}
 

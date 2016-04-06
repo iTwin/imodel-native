@@ -656,7 +656,7 @@ void HRFGifFile::SaveGifFile(bool pi_CloseFile)
             if (pPageDescriptor->TagHasChanged(*pTag)) 
                 {
                 // Software tag
-                if (pTag->GetID() == HRFAttributeSoftware::ATTRIBUTE_ID)
+                if (pTag->GetID() == (HPMAttributesID)HRFAttributeSoftware::ATTRIBUTE_ID)
                     {
                     WString tagW(((HFCPtr<HRFAttributeSoftware>&)pTag)->GetData().c_str(), BentleyCharEncoding::Utf8);
                     AString tempStrA;
@@ -664,10 +664,10 @@ void HRFGifFile::SaveGifFile(bool pi_CloseFile)
                     Software = tempStrA.c_str();
                     }
                 // Application code tag
-                if (pTag->GetID() == HRFAttributeGIFApplicationCode::ATTRIBUTE_ID)
+                if (pTag->GetID() == (HPMAttributesID)HRFAttributeGIFApplicationCode::ATTRIBUTE_ID)
                     ApplicationCode = ((HFCPtr<HRFAttributeGIFApplicationCode>&)pTag)->GetData();
                 // Notes Tag
-                if (pTag->GetID() == HRFAttributeNotes::ATTRIBUTE_ID)
+                if (pTag->GetID() == (HPMAttributesID)HRFAttributeNotes::ATTRIBUTE_ID)
                     {
                     WString tagW(((HFCPtr<HRFAttributeNotes>&)pTag)->GetData().c_str(), BentleyCharEncoding::Utf8);
                     AString tempStrA;
@@ -675,7 +675,7 @@ void HRFGifFile::SaveGifFile(bool pi_CloseFile)
                     CommentData = tempStrA.c_str();
                     }
                 // Background Tag
-                if (pTag->GetID() == HRFAttributeBackground::ATTRIBUTE_ID)
+                if (pTag->GetID() == (HPMAttributesID)HRFAttributeBackground::ATTRIBUTE_ID)
                     Background = (Byte)((HFCPtr<HRFAttributeBackground>&)pTag)->GetData();
                 }
 
@@ -1759,7 +1759,7 @@ void HRFGifFile::SetGraphicControl(uint16_t    pi_DelayTime,              // TO 
     po_pGraphicControl->Label      = 0xf9;
     po_pGraphicControl->BlockSize  = 0x04;
 
-    if (pi_TransparentColorIndex == -1)
+    if (pi_TransparentColorIndex == (Byte) -1)
         po_pGraphicControl->PackedField = 0x00 |
                                           (pi_DisposalMethode << 2) |
                                           (pi_UserInput << 1);

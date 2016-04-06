@@ -1155,6 +1155,11 @@ const HFCPtr<HRPHistogram>   HRFSpotCAPFile::GetHistogramFromFile()const
         for (int32_t ChannelIndex = 0; ChannelIndex < 3; ChannelIndex++)
             {
             pEntryFrequencies   [ChannelIndex]  = new uint32_t[256];
+/* &&ep o - review modif
+Error is:
+ /Users/bentleyquebec/Dev/dgndb0601dev2/src/ImagePP/all/gra/hrf/src/HRFSpotCAPFile.cpp:1164:20: error: source of this 'memcpy' call is a pointer to dynamic class 'HFCBinStream'; vtable pointer will be copied [-Werror,-Wdynamic-class-memaccess]
+ /Users/bentleyquebec/Dev/dgndb0601dev2/src/ImagePP/all/gra/hrf/src/HRFSpotCAPFile.cpp:1164:20: note: explicitly cast the pointer to silence this warning
+
             memcpy(pEntryFrequencies[ChannelIndex],
                    m_pLeadFile
                    + ((m_LeadHeader.HeaderRecLength * 2
@@ -1162,6 +1167,16 @@ const HFCPtr<HRPHistogram>   HRFSpotCAPFile::GetHistogramFromFile()const
                    + m_LeadHeader.OffsetToHistoValuesPerRecord
                    - 1,
                    256 * sizeof(uint32_t));
+*/
+            memcpy(pEntryFrequencies[ChannelIndex],
+                   (uint32_t *)m_pLeadFile.get()
+                   + ((m_LeadHeader.HeaderRecLength * 2
+                       + m_LeadHeader.AncillaryRecordLength * (19 + ChannelIndex)))
+                   + m_LeadHeader.OffsetToHistoValuesPerRecord
+                   - 1,
+                   256 * sizeof(uint32_t));
+
+                
             }
         pHistogram = new HRPHistogram(pEntryFrequencies, 256, 3);
 
@@ -1327,11 +1342,11 @@ double HRFSpotCAPFile::ConvertStringToRadian(string* pio_pString) const
         {
         AngleRadian = (double)strtoul(pio_pString->substr(1,3).c_str(), NULL, 10);
         AngleToAdd  =  strtoul(pio_pString->substr(4,2).c_str(), NULL, 10);
-        if(AngleToAdd >= 0 && AngleToAdd <= 60)
+        if(AngleToAdd <= 60)
             {
             AngleRadian += ((double)AngleToAdd)/60;
             AngleToAdd  =  strtoul(pio_pString->substr(6,2).c_str(), NULL, 10);
-            if(AngleToAdd >= 0 && AngleToAdd <= 60)
+            if(AngleToAdd <= 60)
                 {
                 AngleRadian += ((double)AngleToAdd)/60;
                 //conversion from degrees to radian

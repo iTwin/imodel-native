@@ -1011,15 +1011,15 @@ bool HRFJpegFile::AssignPageToStruct2 (jpeg_compress_struct* pi_pTable)
             m_Jpeg.m_pCompress->write_JFIF_header = true;
 
             // RESOLUTIONUNIT Tag
-            if (pTag->GetID() == HRFAttributeResolutionUnit::ATTRIBUTE_ID)
+            if (pTag->GetID() == (HPMAttributesID)HRFAttributeResolutionUnit::ATTRIBUTE_ID)
                 m_Jpeg.m_pCompress->density_unit = (Byte)((HFCPtr<HRFAttributeResolutionUnit>&)pTag)->GetData() - 1;
 
             // XRESOLUTION Tag
-            else if (pTag->GetID() == HRFAttributeXResolution::ATTRIBUTE_ID)
+            else if (pTag->GetID() == (HPMAttributesID)HRFAttributeXResolution::ATTRIBUTE_ID)
                 m_Jpeg.m_pCompress->X_density = (uint16_t)((HFCPtr<HRFAttributeXResolution>&)pTag)->GetData();
 
             // YRESOLUTION Tag
-            else if (pTag->GetID() ==HRFAttributeYResolution::ATTRIBUTE_ID)
+            else if (pTag->GetID() ==(HPMAttributesID)HRFAttributeYResolution::ATTRIBUTE_ID)
                 m_Jpeg.m_pCompress->Y_density = (uint16_t)((HFCPtr<HRFAttributeYResolution>&)pTag)->GetData();
         }
     }

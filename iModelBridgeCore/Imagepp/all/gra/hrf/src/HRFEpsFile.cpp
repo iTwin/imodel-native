@@ -385,7 +385,7 @@ void HRFEpsFile::WriteHeader(HFCPtr<HRFResolutionDescriptor>& pi_rpResDescriptor
     m_pFile->Write(s_EndOfLine.c_str(), s_EndOfLine.size());
 
     // Boundingbox
-    sprintf(Temp, "0 0 %ld %ld", FileWidth, FileHeight);
+    sprintf(Temp, "0 0 %d %d", FileWidth, FileHeight);
     m_pFile->Write(s_BoundingBoxStatement.c_str(), s_BoundingBoxStatement.size());
     m_pFile->Write(Temp, (uint32_t)strlen(Temp));
     m_pFile->Write(s_EndOfLine.c_str(), s_EndOfLine.size());
@@ -413,7 +413,7 @@ void HRFEpsFile::WriteHeader(HFCPtr<HRFResolutionDescriptor>& pi_rpResDescriptor
     // variable definition
     // It must be big enough to hold one line of data.
     sprintf(Temp,
-            "/%s %ld %s",
+            "/%s %d %s",
             s_PicstrStatement.c_str(),
             IsRGBFile ? FileWidth * 3 : FileWidth,
             s_StringdefStatement.c_str());
@@ -421,13 +421,13 @@ void HRFEpsFile::WriteHeader(HFCPtr<HRFResolutionDescriptor>& pi_rpResDescriptor
     m_pFile->Write(s_EndOfLine.c_str(), s_EndOfLine.size());
 
     // Scale to dimensions
-    sprintf(Temp, "%ld %ld %s", FileWidth, FileHeight, s_ScaleStatement.c_str());
+    sprintf(Temp, "%d %d %s", FileWidth, FileHeight, s_ScaleStatement.c_str());
     m_pFile->Write(Temp, strlen(Temp));
     m_pFile->Write(s_EndOfLine.c_str(), s_EndOfLine.size());
 
     // Image data information. Fixed Upper left horizontal
     sprintf(Temp,
-            "%ld %ld %d [%ld 0 0 -%ld 0 %ld]",
+            "%d %d %d [%d 0 0 -%d 0 %d]",
             FileWidth,
             FileHeight,
             Is1Bit ? 1 : 8,

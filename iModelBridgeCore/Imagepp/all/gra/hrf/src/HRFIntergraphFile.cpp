@@ -433,17 +433,17 @@ void HRFIntergraphFile::IntergraphTagUpdate(HFCPtr<HRFPageDescriptor> pi_pPageDe
             RasterFileNeedUpdate = true;
 
             // X Resolution Tag
-            if (pTag->GetID() == HRFAttributeXResolution::ATTRIBUTE_ID)
+            if (pTag->GetID() == (HPMAttributesID)HRFAttributeXResolution::ATTRIBUTE_ID)
                 {
                 XResolution = ((HFCPtr<HRFAttributeXResolution>&)pTag)->GetData();
                 }
             // Y Resolution Tag
-            else if (pTag->GetID() == HRFAttributeYResolution::ATTRIBUTE_ID)
+            else if (pTag->GetID() == (HPMAttributesID)HRFAttributeYResolution::ATTRIBUTE_ID)
                 {
                 YResolution = ((HFCPtr<HRFAttributeYResolution>&)pTag)->GetData();
                 }
             // Resolution Unit Tag
-            else if (pTag->GetID() == HRFAttributeResolutionUnit::ATTRIBUTE_ID)
+            else if (pTag->GetID() == (HPMAttributesID)HRFAttributeResolutionUnit::ATTRIBUTE_ID)
                 {
                 Unit = ((HFCPtr<HRFAttributeResolutionUnit>&)pTag)->GetData();
                 }
@@ -1809,17 +1809,17 @@ bool HRFIntergraphFile::CreateFileHeader(HFCPtr<HRFPageDescriptor> pi_pPage)
         double YResolution = 0;
 
         // X Resolution Tag
-        if (pTag->GetID() == HRFAttributeXResolution::ATTRIBUTE_ID)
+        if (pTag->GetID() == (HPMAttributesID)HRFAttributeXResolution::ATTRIBUTE_ID)
             {
             XResolution = ((HFCPtr<HRFAttributeXResolution>&)pTag)->GetData();
             }
         // Y Resolution Tag
-        else if (pTag->GetID() == HRFAttributeYResolution::ATTRIBUTE_ID)
+        else if (pTag->GetID() == (HPMAttributesID)HRFAttributeYResolution::ATTRIBUTE_ID)
             {
             YResolution = ((HFCPtr<HRFAttributeYResolution>&)pTag)->GetData();
             }
         // Resolution Unit Tag
-        else if (pTag->GetID() == HRFAttributeResolutionUnit::ATTRIBUTE_ID)
+        else if (pTag->GetID() == (HPMAttributesID)HRFAttributeResolutionUnit::ATTRIBUTE_ID)
             {
             Unit = ((HFCPtr<HRFAttributeResolutionUnit>&)pTag)->GetData();
             }
@@ -2016,7 +2016,7 @@ void HRFIntergraphFile::CreateHeaderBlock1(HRFResolutionDescriptor*  pi_pResolut
         m_IntergraphHeader.IBlock1.dtc = HRF_INTERGRAPH_TILE_CODE; // Data type code
     else
         {
-        HASSERT(-1 != m_DataTypeCode);
+        HASSERT((uint16_t) -1 != m_DataTypeCode);
         m_IntergraphHeader.IBlock1.dtc = m_DataTypeCode;
         }
     m_IntergraphHeader.IBlock1.utc = 0;                        // Application Type
@@ -2895,7 +2895,7 @@ void HRFIntergraphFile::SetDatatypeCode(uint16_t pi_DataTypeCode)
 
 const uint16_t HRFIntergraphFile::GetDatatypeCode() const
     {
-    HPRECONDITION(-1 != m_DataTypeCode);
+    HPRECONDITION((uint16_t) -1 != m_DataTypeCode);
     return m_DataTypeCode;
     }
 

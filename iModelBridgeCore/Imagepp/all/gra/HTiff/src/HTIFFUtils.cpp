@@ -660,8 +660,8 @@ bool ImagePP::ErrorMsg (HTIFFError** pio_pError, HTIFFError& pi_rNewError)
 
 void ImagePP::SwabArrayOfShort (uint16_t* pio_pData, register size_t pi_Count)
     {
-    register unsigned char*    pData;
-    register int32_t        Tmp;
+    unsigned char*    pData;
+    int32_t           Tmp;
 
     /* XXX unroll loop some */
     while (pi_Count-- > 0)
@@ -680,8 +680,8 @@ void ImagePP::SwabArrayOfShort (uint16_t* pio_pData, register size_t pi_Count)
 
 void ImagePP::SwabArrayOfLong(register uint32_t* pio_pData, register size_t pi_Count)
     {
-    register unsigned char*    pData;
-    register int32_t        Tmp;
+    unsigned char*    pData;
+    int32_t           Tmp;
 
     /* XXX unroll loop some */
     while (pi_Count-- > 0)
@@ -703,8 +703,8 @@ void ImagePP::SwabArrayOfLong(register uint32_t* pio_pData, register size_t pi_C
 
 void ImagePP::SwabArrayOfDouble(double* pio_pData, register size_t pi_Count)
     {
-    register uint32_t* pLong = (uint32_t*) pio_pData;
-    register uint32_t Tmp;
+    uint32_t* pLong = (uint32_t*) pio_pData;
+    uint32_t Tmp;
 
     SwabArrayOfLong(pLong, pi_Count + pi_Count);
     while (pi_Count-- > 0)
@@ -718,8 +718,8 @@ void ImagePP::SwabArrayOfDouble(double* pio_pData, register size_t pi_Count)
 
 void ImagePP::SwabArrayOfUInt64(uint64_t* pio_pData, register size_t pi_Count)
     {
-    register uint32_t* pLong = (uint32_t*) pio_pData;
-    register uint32_t Tmp;
+    uint32_t* pLong = (uint32_t*) pio_pData;
+    uint32_t Tmp;
 
     SwabArrayOfLong(pLong, pi_Count + pi_Count);
     while (pi_Count-- > 0)

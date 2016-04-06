@@ -1476,17 +1476,17 @@ void ColorizedBinaryImageExpressionNode::Calculate()
 
         
 
-        if ((RLevel0 < 0) || (RLevel0 > 255))
+        if (RLevel0 > 255)
             throw HPSOutOfRangeException(GetSubNodes()[4], 0, 255);
-        if ((GLevel0 < 0) || (GLevel0 > 255))
+        if (GLevel0 > 255)
             throw HPSOutOfRangeException(GetSubNodes()[6], 0, 255);
-        if ((BLevel0 < 0) || (BLevel0 > 255))
+        if (BLevel0 > 255)
             throw HPSOutOfRangeException(GetSubNodes()[8], 0, 255);
-        if ((RLevel1 < 0) || (RLevel1 > 255))
+        if (RLevel1 > 255)
             throw HPSOutOfRangeException(GetSubNodes()[10], 0, 255);
-        if ((GLevel1 < 0) || (GLevel1 > 255))
+        if (GLevel1 > 255)
             throw HPSOutOfRangeException(GetSubNodes()[12], 0, 255);
-        if ((BLevel1 < 0) || (BLevel1 > 255))
+        if (BLevel1 > 255)
             throw HPSOutOfRangeException(GetSubNodes()[14], 0, 255);
 
         HRPPixelPalette Palette(2, HRPPixelTypeV24R8G8B8().GetChannelOrg());
@@ -2220,7 +2220,7 @@ void AutoContrastStretchExpressionNode::Calculate()
     if (pRasterObjectValue == NULL || pRasterObjectValue->m_pObject == NULL)
         throw HPSTypeMismatchException(GetSubNodes()[2],
                                        HPSTypeMismatchException::IMAGE);
-    if ((CutOffPercentage < 0) || (CutOffPercentage > 99))
+    if (CutOffPercentage > 99)
         throw HPSOutOfRangeException(GetSubNodes()[4], 0, 99);
     if ((HistogramPrecision < 1) || ( HistogramPrecision > 100))
         throw HPSOutOfRangeException(GetSubNodes()[6], 1, 100);
@@ -2273,7 +2273,7 @@ void ContrastStretchExpressionNode::Calculate()
     uint32_t CutOffLeft = (uint32_t)CalculateNumber(GetSubNodes()[2], true);
     uint32_t CutOffRight = (uint32_t)CalculateNumber(GetSubNodes()[4], true);
 
-    if ((CutOffLeft < 0) || (CutOffLeft > 99))
+    if (CutOffLeft > 99)
         throw HPSOutOfRangeException(GetSubNodes()[2], 0, 99);
     if ((CutOffRight < 1) || (CutOffRight > 100))
         throw HPSOutOfRangeException(GetSubNodes()[4], 1, 100);
@@ -2302,11 +2302,11 @@ void TintExpressionNode::Calculate()
         uint32_t RLevel = (uint32_t)CalculateNumber(GetSubNodes()[2], true);
         uint32_t GLevel = (uint32_t)CalculateNumber(GetSubNodes()[4], true);
         uint32_t BLevel = (uint32_t)CalculateNumber(GetSubNodes()[6], true);
-        if ((RLevel < 0) || (RLevel > 255))
+        if (RLevel > 255)
             throw HPSOutOfRangeException(GetSubNodes()[2], 0, 255);
-        if ((GLevel < 0) || (GLevel > 255))
+        if (GLevel > 255)
             throw HPSOutOfRangeException(GetSubNodes()[4], 0, 255);
-        if ((BLevel < 0) || (BLevel > 255))
+        if (BLevel > 255)
             throw HPSOutOfRangeException(GetSubNodes()[6], 0, 255);
         Level[0] = (unsigned char)RLevel;
         Level[1] = (unsigned char)GLevel;

@@ -599,13 +599,13 @@ bool HRFBmpFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
         HFCPtr<HPMGenericAttribute> pTag = (*TagIterator);
 
         // X Resolution Tag
-        if (pTag->GetID() == HRFAttributeXResolution::ATTRIBUTE_ID)
+        if (pTag->GetID() == (HPMAttributesID)HRFAttributeXResolution::ATTRIBUTE_ID)
             XResolution = ((HFCPtr<HRFAttributeXResolution>&)pTag)->GetData();
         // Y Resolution Tag
-        else if (pTag->GetID() == HRFAttributeYResolution::ATTRIBUTE_ID)
+        else if (pTag->GetID() == (HPMAttributesID)HRFAttributeYResolution::ATTRIBUTE_ID)
             YResolution = ((HFCPtr<HRFAttributeYResolution>&)pTag)->GetData();
         // Resolution Unit
-        else if (pTag->GetID() == HRFAttributeResolutionUnit::ATTRIBUTE_ID)
+        else if (pTag->GetID() == (HPMAttributesID)HRFAttributeResolutionUnit::ATTRIBUTE_ID)
             Unit = ((HFCPtr<HRFAttributeResolutionUnit>&)pTag)->GetData();
 
         }
@@ -902,21 +902,21 @@ void HRFBmpFile::SaveBmpFile(bool pi_CloseFile)
                 HFCPtr<HPMGenericAttribute> pTag = (*TagIterator);
 
                 // X Resolution Tag
-                if (pTag->GetID() == HRFAttributeXResolution::ATTRIBUTE_ID)
+                if (pTag->GetID() == (HPMAttributesID)HRFAttributeXResolution::ATTRIBUTE_ID)
                     {
                     XResolution = ((HFCPtr<HRFAttributeXResolution>&)pTag)->GetData();
                     if (pPageDescriptor->TagHasChanged(*pTag))
                         ResolutionChanged = true;
                     }
                 // Y Resolution Tag
-                else if (pTag->GetID() == HRFAttributeYResolution::ATTRIBUTE_ID)
+                else if (pTag->GetID() == (HPMAttributesID)HRFAttributeYResolution::ATTRIBUTE_ID)
                     {
                     YResolution = ((HFCPtr<HRFAttributeYResolution>&)pTag)->GetData();
                     if (pPageDescriptor->TagHasChanged(*pTag))
                         ResolutionChanged = true;
                     }
                 // Resolution Unit
-                else if (pTag->GetID() == HRFAttributeResolutionUnit::ATTRIBUTE_ID)
+                else if (pTag->GetID() == (HPMAttributesID)HRFAttributeResolutionUnit::ATTRIBUTE_ID)
                     {
                     Unit = ((HFCPtr<HRFAttributeResolutionUnit>&)pTag)->GetData();
                     if (pPageDescriptor->TagHasChanged(*pTag))

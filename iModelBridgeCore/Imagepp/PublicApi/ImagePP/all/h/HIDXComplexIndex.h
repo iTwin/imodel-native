@@ -113,7 +113,7 @@ public:
             {
             // Try innermost index first. If equal [pred(a,b) && pred(b,a)],
             // use outermost index.
-            register bool Pred2Result = m_Pred2(pi_rpFirst, pi_rpSecond);
+            bool Pred2Result = m_Pred2(pi_rpFirst, pi_rpSecond);
                 
             if (Pred2Result && m_Pred2(pi_rpSecond, pi_rpFirst))
                 return m_Pred1(pi_rpFirst, pi_rpSecond);

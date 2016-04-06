@@ -114,7 +114,8 @@ HSTATUS HRFBilLineEditor::Read24BitRgbBlock(uint64_t pi_PosBlockX,
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
 
     HSTATUS Status = H_ERROR;
-    uint32_t PixelIndex, BytePos = 0;
+    uint32_t BytePos = 0;
+    int32_t PixelIndex;
 
     int64_t RedChannel    = GetBilRasterFile()->GetRedChannel();
     int64_t GreenChannel  = GetBilRasterFile()->GetGreenChannel();

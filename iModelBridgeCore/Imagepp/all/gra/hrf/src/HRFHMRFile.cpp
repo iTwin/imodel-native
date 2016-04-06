@@ -460,50 +460,50 @@ void HRFHMRFile::SaveHmrFile()
                     if (pPageDescriptor->TagHasChanged(*pTag) || GetAccessMode().m_HasCreateAccess)
                         {
                         // DOCUMENTNAME Tag
-                        if (pTag->GetID() == HRFAttributeDocumentName::ATTRIBUTE_ID)
+                        if (pTag->GetID() == (HPMAttributesID)HRFAttributeDocumentName::ATTRIBUTE_ID)
                             GetFilePtr()->SetFieldA(DOCUMENTNAME, (AString(((HFCPtr<HRFAttributeDocumentName>&)pTag)->GetData().c_str()).c_str()));
 
                         // IMAGEDESCRIPTION Tag
-                        if (pTag->GetID() == HRFAttributeImageDescription::ATTRIBUTE_ID)
+                        if (pTag->GetID() == (HPMAttributesID)HRFAttributeImageDescription::ATTRIBUTE_ID)
                             GetFilePtr()->SetFieldA(IMAGEDESCRIPTION, AString(((HFCPtr<HRFAttributeImageDescription>&)pTag)->GetData().c_str()).c_str());
 
                         // PAGENAME Tag
-                        if (pTag->GetID() == HRFAttributePageName::ATTRIBUTE_ID)
+                        if (pTag->GetID() == (HPMAttributesID)HRFAttributePageName::ATTRIBUTE_ID)
                             GetFilePtr()->SetFieldA(PAGENAME, AString(((HFCPtr<HRFAttributePageName>&)pTag)->GetData().c_str()).c_str());
 
                         // SOFTWARE Tag
-                        if (pTag->GetID() == HRFAttributeSoftware::ATTRIBUTE_ID)
+                        if (pTag->GetID() == (HPMAttributesID)HRFAttributeSoftware::ATTRIBUTE_ID)
                             GetFilePtr()->SetFieldA(SOFTWARE, AString(((HFCPtr<HRFAttributeSoftware>&)pTag)->GetData().c_str()).c_str());
 
                         // DATETIME Tag
-                        if (pTag->GetID() == HRFAttributeDateTime::ATTRIBUTE_ID)
+                        if (pTag->GetID() == (HPMAttributesID)HRFAttributeDateTime::ATTRIBUTE_ID)
                             GetFilePtr()->SetFieldA(DATETIME, AString(((HFCPtr<HRFAttributeDateTime>&)pTag)->GetData().c_str()).c_str());
 
                         // ARTIST Tag
-                        if (pTag->GetID() == HRFAttributeArtist::ATTRIBUTE_ID)
+                        if (pTag->GetID() == (HPMAttributesID)HRFAttributeArtist::ATTRIBUTE_ID)
                             GetFilePtr()->SetFieldA(ARTIST, AString(((HFCPtr<HRFAttributeArtist>&)pTag)->GetData().c_str()).c_str());
 
                         // HOSTCOMPUTER Tag
-                        if (pTag->GetID() == HRFAttributeHostComputer::ATTRIBUTE_ID)
+                        if (pTag->GetID() == (HPMAttributesID)HRFAttributeHostComputer::ATTRIBUTE_ID)
                             GetFilePtr()->SetFieldA(HOSTCOMPUTER, AString(((HFCPtr<HRFAttributeHostComputer>&)pTag)->GetData().c_str()).c_str());
 
                         // INKNAMES Tag
-                        if (pTag->GetID() == HRFAttributeInkNames::ATTRIBUTE_ID)
+                        if (pTag->GetID() == (HPMAttributesID)HRFAttributeInkNames::ATTRIBUTE_ID)
                             GetFilePtr()->SetFieldA(INKNAMES, AString(((HFCPtr<HRFAttributeInkNames>&)pTag)->GetData().c_str()).c_str());
 
                         // RESOLUTIONUNIT Tag
-                        if (pTag->GetID() == HRFAttributeResolutionUnit::ATTRIBUTE_ID)
+                        if (pTag->GetID() == (HPMAttributesID)HRFAttributeResolutionUnit::ATTRIBUTE_ID)
                             GetFilePtr()->SetField(RESOLUTIONUNIT, ((HFCPtr<HRFAttributeResolutionUnit>&)pTag)->GetData());
 
                         // XRESOLUTION Tag
-                        if (pTag->GetID() == HRFAttributeXResolution::ATTRIBUTE_ID)
+                        if (pTag->GetID() == (HPMAttributesID)HRFAttributeXResolution::ATTRIBUTE_ID)
                             {
                             RATIONAL XResolution;
                             XResolution.Value = ((HFCPtr<HRFAttributeXResolution>&)pTag)->GetData();
                             GetFilePtr()->SetField(XRESOLUTION, XResolution);
                             }
                         // YRESOLUTION Tag
-                        if (pTag->GetID() == HRFAttributeYResolution::ATTRIBUTE_ID)
+                        if (pTag->GetID() == (HPMAttributesID)HRFAttributeYResolution::ATTRIBUTE_ID)
                             {
                             RATIONAL YResolution;
                             YResolution.Value = ((HFCPtr<HRFAttributeYResolution>&)pTag)->GetData();
@@ -511,7 +511,7 @@ void HRFHMRFile::SaveHmrFile()
                             }
 
                         // COPYRIGHT Tag
-                        if (pTag->GetID() == HRFAttributeCopyright::ATTRIBUTE_ID)
+                        if (pTag->GetID() == (HPMAttributesID)HRFAttributeCopyright::ATTRIBUTE_ID)
                             GetFilePtr()->SetFieldA(COPYRIGHT, AString(((HFCPtr<HRFAttributeCopyright>&)pTag)->GetData().c_str()).c_str());
                         }
 

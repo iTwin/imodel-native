@@ -1256,7 +1256,8 @@ void HRFTiffFile::AddResolutionToFile(uint32_t pi_Page,
             HFCPtr<HPMGenericAttribute> pTag = (*TagIterator);
 
             // Sample Minimum Value Tag
-            if (pTag->GetID() == HRFAttributeMinSampleValue::ATTRIBUTE_ID) 
+//&&ep ?            if (pTag->GetID() == HRFAttributeMinSampleValue::ATTRIBUTE_ID)
+            if (pTag->GetID() == (HPMAttributesID)HRFAttributeMinSampleValue::ATTRIBUTE_ID)
                 {
                 WriteSampleLimitValueToDir(static_cast<HRFAttributeMinSampleValue*>(pTag.GetPtr())->GetData(),
                                            true,
@@ -1264,7 +1265,7 @@ void HRFTiffFile::AddResolutionToFile(uint32_t pi_Page,
                 }
 
             // Sample Minimum Value Tag
-            else if (pTag->GetID() == HRFAttributeMaxSampleValue::ATTRIBUTE_ID)
+            else if (pTag->GetID() == (HPMAttributesID)HRFAttributeMaxSampleValue::ATTRIBUTE_ID)
                 {
                 WriteSampleLimitValueToDir(static_cast<HRFAttributeMaxSampleValue*>(pTag.GetPtr())->GetData(),
                                            false,
@@ -3201,58 +3202,58 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
                             if (GetPageDescriptor(Page)->TagHasChanged(*pTag) || GetAccessMode().m_HasCreateAccess)
                                 {
                                 // DOCUMENTNAME Tag
-                                if (pTag->GetID() == HRFAttributeDocumentName::ATTRIBUTE_ID)
+                                if (pTag->GetID() == (HPMAttributesID)HRFAttributeDocumentName::ATTRIBUTE_ID)
                                     GetFilePtr()->SetFieldA(DOCUMENTNAME, AString(((HFCPtr<HRFAttributeDocumentName>&)pTag)->GetData().c_str()).c_str());
 
                                 // IMAGEDESCRIPTION Tag
-                                else if (pTag->GetID() == HRFAttributeImageDescription::ATTRIBUTE_ID)
+                                else if (pTag->GetID() == (HPMAttributesID)HRFAttributeImageDescription::ATTRIBUTE_ID)
                                     GetFilePtr()->SetFieldA(IMAGEDESCRIPTION, AString(((HFCPtr<HRFAttributeImageDescription>&)pTag)->GetData().c_str()).c_str());
 
                                 // MAKE Tag
-                                else if (pTag->GetID() == HRFAttributeMake::ATTRIBUTE_ID)
+                                else if (pTag->GetID() == (HPMAttributesID)HRFAttributeMake::ATTRIBUTE_ID)
                                     GetFilePtr()->SetFieldA(MAKE, AString(((HFCPtr<HRFAttributeMake>&)pTag)->GetData().c_str()).c_str());
 
                                 // MODEL Tag
-                                else if (pTag->GetID() == HRFAttributeModel::ATTRIBUTE_ID)
+                                else if (pTag->GetID() == (HPMAttributesID)HRFAttributeModel::ATTRIBUTE_ID)
                                     GetFilePtr()->SetFieldA(MODEL, AString(((HFCPtr<HRFAttributeModel>&)pTag)->GetData().c_str()).c_str());
 
                                 // PAGENAME Tag
-                                else if (pTag->GetID() == HRFAttributePageName::ATTRIBUTE_ID)
+                                else if (pTag->GetID() == (HPMAttributesID)HRFAttributePageName::ATTRIBUTE_ID)
                                     GetFilePtr()->SetFieldA(PAGENAME, AString(((HFCPtr<HRFAttributePageName>&)pTag)->GetData().c_str()).c_str());
 
                                 // SOFTWARE Tag
-                                else if (pTag->GetID() == HRFAttributeSoftware::ATTRIBUTE_ID)
+                                else if (pTag->GetID() == (HPMAttributesID)HRFAttributeSoftware::ATTRIBUTE_ID)
                                     GetFilePtr()->SetFieldA(SOFTWARE, AString(((HFCPtr<HRFAttributeSoftware>&)pTag)->GetData().c_str()).c_str());
 
                                 // DATETIME Tag
-                                else if (pTag->GetID() == HRFAttributeDateTime::ATTRIBUTE_ID)
+                                else if (pTag->GetID() == (HPMAttributesID)HRFAttributeDateTime::ATTRIBUTE_ID)
                                     GetFilePtr()->SetFieldA(DATETIME, AString(((HFCPtr<HRFAttributeDateTime>&)pTag)->GetData().c_str()).c_str());
 
                                 // ARTIST Tag
-                                else if (pTag->GetID() == HRFAttributeArtist::ATTRIBUTE_ID)
+                                else if (pTag->GetID() == (HPMAttributesID)HRFAttributeArtist::ATTRIBUTE_ID)
                                     GetFilePtr()->SetFieldA(ARTIST, AString(((HFCPtr<HRFAttributeArtist>&)pTag)->GetData().c_str()).c_str());
 
                                 // HOSTCOMPUTER Tag
-                                else if (pTag->GetID() == HRFAttributeHostComputer::ATTRIBUTE_ID)
+                                else if (pTag->GetID() == (HPMAttributesID)HRFAttributeHostComputer::ATTRIBUTE_ID)
                                     GetFilePtr()->SetFieldA(HOSTCOMPUTER, AString(((HFCPtr<HRFAttributeHostComputer>&)pTag)->GetData().c_str()).c_str());
 
                                 // INKNAMES Tag
-                                else if (pTag->GetID() == HRFAttributeInkNames::ATTRIBUTE_ID)
+                                else if (pTag->GetID() == (HPMAttributesID)HRFAttributeInkNames::ATTRIBUTE_ID)
                                     GetFilePtr()->SetFieldA(INKNAMES, AString(((HFCPtr<HRFAttributeInkNames>&)pTag)->GetData().c_str()).c_str());
 
                                 // RESOLUTIONUNIT Tag
-                                else if (pTag->GetID() == HRFAttributeResolutionUnit::ATTRIBUTE_ID)
+                                else if (pTag->GetID() == (HPMAttributesID)HRFAttributeResolutionUnit::ATTRIBUTE_ID)
                                     GetFilePtr()->SetField(RESOLUTIONUNIT, ((HFCPtr<HRFAttributeResolutionUnit>&)pTag)->GetData());
 
                                 // XRESOLUTION Tag
-                                else if (pTag->GetID() == HRFAttributeXResolution::ATTRIBUTE_ID)
+                                else if (pTag->GetID() == (HPMAttributesID)HRFAttributeXResolution::ATTRIBUTE_ID)
                                     {
                                     RATIONAL XResolution;
                                     XResolution.Value = ((HFCPtr<HRFAttributeXResolution>&)pTag)->GetData();
                                     GetFilePtr()->SetField(XRESOLUTION, XResolution);
                                     }
                                 // YRESOLUTION Tag
-                                else if (pTag->GetID() == HRFAttributeYResolution::ATTRIBUTE_ID)
+                                else if (pTag->GetID() == (HPMAttributesID)HRFAttributeYResolution::ATTRIBUTE_ID)
                                     {
                                     RATIONAL YResolution;
                                     YResolution.Value = ((HFCPtr<HRFAttributeYResolution>&)pTag)->GetData();
@@ -3260,12 +3261,12 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
                                     }
 
                                 // COPYRIGHT Tag
-                                else if (pTag->GetID() == HRFAttributeCopyright::ATTRIBUTE_ID)
+                                else if (pTag->GetID() == (HPMAttributesID)HRFAttributeCopyright::ATTRIBUTE_ID)
                                     GetFilePtr()->SetFieldA(COPYRIGHT,
                                                            AString(((HFCPtr<HRFAttributeCopyright>&)pTag)->GetData().c_str()).c_str());
 
                                 // Sample Minimum Value Tag
-                                else if (pTag->GetID() == HRFAttributeMinSampleValue::ATTRIBUTE_ID)
+                                else if (pTag->GetID() == (HPMAttributesID)HRFAttributeMinSampleValue::ATTRIBUTE_ID)
                                     {
                                     isMinSampleTagPresent = true;
                                     WriteSampleLimitValueToDir(static_cast<HRFAttributeMinSampleValue*>(pTag.GetPtr())->GetData(),
@@ -3274,7 +3275,7 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
                                     }
 
                                 // Sample Minimum Value Tag
-                                else if (pTag->GetID() == HRFAttributeMaxSampleValue::ATTRIBUTE_ID)
+                                else if (pTag->GetID() == (HPMAttributesID)HRFAttributeMaxSampleValue::ATTRIBUTE_ID)
                                     {
                                     isMaxSampleTagPresent = true;
                                     WriteSampleLimitValueToDir(static_cast<HRFAttributeMaxSampleValue*>(pTag.GetPtr())->GetData(),

@@ -1298,7 +1298,7 @@ void HTagFile::PrintDirectory (FILE* po_pOutput, DirectoryID pi_Dir, uint32_t pi
     HTagFile::DirectoryID CurDir = CurrentDirectory();
     if (!SetDirectory (pi_Dir))
         {
-        fprintf (po_pOutput, "ERROR: Directory contains error or not found: %ld\n", pi_Dir);
+        fprintf (po_pOutput, "ERROR: Directory contains error or not found: %d\n", pi_Dir);
         // Want to print tags even if we do not support the file.
         //return;
         }

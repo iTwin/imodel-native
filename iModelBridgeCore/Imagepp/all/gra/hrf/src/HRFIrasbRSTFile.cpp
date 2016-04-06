@@ -54,7 +54,7 @@ void CleanUpString(string* pio_pString)
 
     if (pio_pString->size() > 0)
         {
-        size_t Pos = 0;
+        int32_t Pos = 0;
 
         // Remove the SPACE/TAB at the begin of the string
         while (Pos < pio_pString->size() && !IsValidChar((*pio_pString)[Pos]))
@@ -205,7 +205,7 @@ bool HRFIrasbRSTCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                 // Try to read all "layer" fields
                 // Sample: layer   0    0  1  11111111  0  d:\test\sample.cit
                 char pathName[MAX_PATH];
-                if (sscanf(currStr, "%ld %ld %d %ld %d %s", &layerNumber, &color, &visibility, &views, &lock, pathName) != 6)
+                if (sscanf(currStr, "%d %d %d %d %d %s", &layerNumber, &color, &visibility, &views, &lock, pathName) != 6)
                     goto WRAPUP;
                 }
             else if (bHasLayer)
@@ -267,7 +267,7 @@ void HRFIrasbRSTCreator::OpenFile(const HFCPtr<HFCURL>& pi_rpURL,
 
                 // Read all layers
                 RSTSubFileInfo info;
-                if (sscanf(currStr, "%ld %ld %ld %ld %ld", &info.layerNumber, &info.color, &info.visibility, &info.views, &info.lock) == 5)
+                if (sscanf(currStr, "%d %d %d %d %d", &info.layerNumber, &info.color, &info.visibility, &info.views, &info.lock) == 5)
                     {
                     // TR 176108 Unable to open rasters in .rst files when raster paths have spaces.
                     // Using the read settings, find the complete filename which may contain spaces.
@@ -284,7 +284,7 @@ void HRFIrasbRSTCreator::OpenFile(const HFCPtr<HFCURL>& pi_rpURL,
                     for (int32_t i = 0; i < 5; i++)
                         {
                         char settings[MAX_PATH];
-                        sprintf (settings, "%ld", pFoundSettings[i]);
+                        sprintf (settings, "%d", pFoundSettings[i]);
 
                         currStr = strstr (currStr, settings);
                         HASSERT (currStr);

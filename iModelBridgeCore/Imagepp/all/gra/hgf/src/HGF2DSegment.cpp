@@ -669,7 +669,7 @@ HGF2DSegment::CrossState HGF2DSegment::IntersectSegmentExtremityIncluded(const H
             }
 
         // Check if it reported parallel
-        if ((LineStatus == PARALLEL) && !SelfLine.IsVertical() && !GivenLine.IsVertical())
+        if ((LineStatus == HGF2DLiteLine::PARALLEL) && !SelfLine.IsVertical() && !GivenLine.IsVertical())
             {
             // There are some cases where the lines report parallel,
             // but they are not ... notably when slope is extremely small

@@ -121,7 +121,8 @@ HSTATUS HRFDoqEditor::Read24BitRgbBlock(uint64_t pi_PosBlockX,
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
 
     HSTATUS Status = H_ERROR;
-    uint32_t PixelIndex, BytePos = 0;
+    uint32_t BytePos = 0;
+    int32_t  PixelIndex;
 
     //TODO : implement access methods
     int64_t RedChannel    = 1;

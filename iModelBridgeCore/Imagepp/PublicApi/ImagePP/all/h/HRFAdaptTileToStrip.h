@@ -42,6 +42,8 @@ public:
     // Obtain the capabilities of stretcher
     virtual HRFBlockAdapterCapabilities* GetCapabilities() const;
 
+    virtual ~HRFAdaptTileToStripCreator();
+        
     // Creation of implementator
     virtual HRFBlockAdapter*             Create(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                                 uint32_t              pi_Page,

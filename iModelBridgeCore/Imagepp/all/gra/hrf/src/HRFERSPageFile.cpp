@@ -417,7 +417,7 @@ void HRFERSPageFile::ReadLine(string& po_rString)
 //-----------------------------------------------------------------------------
 void HRFERSPageFile::CleanUpString(string& pio_rString) const
     {
-    size_t Pos = 0;
+    int32_t Pos = 0;
 
     // Remove the SPACE/TAB at the begin of the string.
     while (Pos < pio_rString.size() && !IsValidChar(pio_rString[Pos]))

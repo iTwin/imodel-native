@@ -766,7 +766,7 @@ void HRFTWFPageFile::CleanUpString(string* pio_pString) const
     {
     HPRECONDITION(pio_pString != 0);
 
-    size_t Pos = 0;
+    int32_t Pos = 0;
 
     // Remove the SPACE/TAB at the begin of the string.
     while (Pos < pio_pString->size() && !IsValidChar((*pio_pString)[Pos]))

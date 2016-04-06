@@ -42,6 +42,13 @@ HRFAdaptLineToImageCapabilities::HRFAdaptLineToImageCapabilities()
 HFC_IMPLEMENT_SINGLETON(HRFAdaptLineToImageCreator)
 
 //-----------------------------------------------------------------------------
+// Destructor
+//-----------------------------------------------------------------------------
+HRFAdaptLineToImageCreator::~HRFAdaptLineToImageCreator()
+    {
+    }
+
+//-----------------------------------------------------------------------------
 // Obtain the capabilities of stretcher
 //-----------------------------------------------------------------------------
 HRFBlockAdapterCapabilities* HRFAdaptLineToImageCreator::GetCapabilities() const
