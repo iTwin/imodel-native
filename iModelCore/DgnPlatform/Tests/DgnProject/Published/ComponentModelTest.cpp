@@ -45,7 +45,9 @@ static DgnDbStatus createSpatialModel(SpatialModelPtr& catalogModel, DgnDbR db, 
 /*=================================================================================**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +===============+===============+===============+===============+===============+======*/
-struct DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler
+namespace 
+{
+struct ComponentModelTest_DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler
     {
     void _HandleScriptError(BeJsContextR, Category category, Utf8CP description, Utf8CP details) override
         {
@@ -58,6 +60,7 @@ struct DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHan
         printf ("%s\n", msg);
         }
     };
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
@@ -233,7 +236,7 @@ AutoCloseComponentDb(ComponentModelTest& t) : m_test(t) {;}
 +---------------+---------------+---------------+---------------+---------------+------*/
 ComponentModelTest::ComponentModelTest()
     {
-    T_HOST.GetScriptAdmin().RegisterScriptNotificationHandler(*new DetectJsErrors);
+    T_HOST.GetScriptAdmin().RegisterScriptNotificationHandler(*new ComponentModelTest_DetectJsErrors);
     m_host.SetFetchScriptCallback(this);
     }
 

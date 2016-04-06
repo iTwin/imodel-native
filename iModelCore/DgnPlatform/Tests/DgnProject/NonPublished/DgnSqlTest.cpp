@@ -660,7 +660,7 @@ TEST_F(SqlFunctionsTest, spatialQuery)
 
     //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_spatial_overlap_aabb.sampleCode
     // This query uses DGN_spatial_overlap_aabb to find elements whose range overlaps the argument :bbox and are of class :ecClass and have
-    // item property sc01 = :propertyValue.
+    // item property = :propertyValue.
     Statement stmt;
     stmt.Prepare(*m_db, 
         "SELECT aspect.ElementId,aspect.TestUniqueAspectProperty FROM " DGN_VTABLE_SpatialIndex " rt," DGN_TABLE(DGN_CLASSNAME_Element) " e,dptest_TestUniqueAspect aspect WHERE"
