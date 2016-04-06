@@ -13,7 +13,6 @@ static const double s_minFacetAngleTol     = 0.10; // radians
 static const double s_defaultFacetAngleTol = 0.39; // radians
 
 static const double DEFAULT_CREASE_DEGREES = 45.0; // From SimplifyViewDrawGeom.
-static const double TOLERANCE_SamePoint = 1.0E-6;
 
 //=======================================================================================
 //! @bsiclass                                                   Ray.Bentley     02/2016
@@ -83,7 +82,7 @@ PolyfaceHeaderPtr OCBRepUtil::IncrementalMesh(TopoDS_Shape const& shape, IFacetO
     double angleTol = restrictAngleTol(facetOptions.GetAngleTolerance(), s_defaultFacetAngleTol, s_minFacetAngleTol, s_maxFacetAngleTol);
     IPolyfaceConstructionPtr polyfaceBuilder = IPolyfaceConstruction::Create(facetOptions);
 
-    BRepMesh_IncrementalMesh(shape, facetOptions.GetChordTolerance(), false, angleTol);
+    BRepMesh_IncrementalMesh(shape, facetOptions.GetChordTolerance(), false, angleTol, true);
 
     if (facetOptions.GetNormalsRequired())
         BRepLib::EnsureNormalConsistency(shape, Angle::DegreesToRadians(DEFAULT_CREASE_DEGREES), true);
@@ -120,9 +119,9 @@ PolyfaceHeaderPtr OCBRepUtil::IncrementalMesh(TopoDS_Shape const& shape, IFacetO
             DPoint3d    point = OCBRepUtil::ToDPoint3d(points.Value(i));
 
             if (doLocationTransform)
-                locationTransform.Multiply (point);
+                locationTransform.Multiply(point);
 
-            indexMap[i] = (int) polyfaceBuilder->FindOrAddPoint (point);
+            indexMap[i] = (int) polyfaceBuilder->FindOrAddPoint(point);
             }
 
         if (polyTriangulation->HasNormals() && facetOptions.GetNormalsRequired())
@@ -130,20 +129,24 @@ PolyfaceHeaderPtr OCBRepUtil::IncrementalMesh(TopoDS_Shape const& shape, IFacetO
             TShort_Array1OfShortReal const& normals = polyTriangulation->Normals();
 
             for (int i=1, j=1; i <= normals.Length(); i += 3, j++)
-                normalIndexMap[j] = (int) polyfaceBuilder->FindOrAddNormal (DVec3d::From (normals.Value(i), normals.Value(i+1), normals.Value(i+2)));
+                {
+                DVec3d    normal = DVec3d::From(normals.Value(i), normals.Value(i+1), normals.Value(i+2));
+
+                normalIndexMap[j] = (int) polyfaceBuilder->FindOrAddNormal(normal);
+                }
             }
 
         if (polyTriangulation->HasUVNodes() && facetOptions.GetParamsRequired())
             {
-            TColgp_Array1OfPnt2d const&     uvNodes = polyTriangulation->UVNodes();
+            TColgp_Array1OfPnt2d const& uvNodes = polyTriangulation->UVNodes();
             DRange2d                    uvRange;
             DVec2d                      uvDelta;
 
-            BRepTools::UVBounds (face, uvRange.low.x, uvRange.high.x, uvRange.low.y, uvRange.high.y);
-            uvDelta.DifferenceOf (uvRange.high, uvRange.low);
+            BRepTools::UVBounds(face, uvRange.low.x, uvRange.high.x, uvRange.low.y, uvRange.high.y);
+            uvDelta.DifferenceOf(uvRange.high, uvRange.low);
 
             for (int i=1; i <= uvNodes.Length(); i++)
-                uvIndexMap[i] = (int) polyfaceBuilder->FindOrAddParam (DPoint2d::From ((uvNodes.Value(i).X() - uvRange.low.x) / uvDelta.x, (uvNodes.Value(i).Y() - uvRange.low.y) / uvDelta.y));
+                uvIndexMap[i] = (int) polyfaceBuilder->FindOrAddParam(DPoint2d::From((uvNodes.Value(i).X() - uvRange.low.x) / uvDelta.x, (uvNodes.Value(i).Y() - uvRange.low.y) / uvDelta.y));
             }
 
         Poly_Array1OfTriangle const& triangles = polyTriangulation->Triangles();
@@ -156,29 +159,29 @@ PolyfaceHeaderPtr OCBRepUtil::IncrementalMesh(TopoDS_Shape const& shape, IFacetO
                 {
                 int     tmp = triangle.Value(1);
 
-                triangle.ChangeValue(1) = triangle.Value (3);
+                triangle.ChangeValue(1) = triangle.Value(3);
                 triangle.ChangeValue(3) = tmp;
                 }
 
             for (int j=0; j < 3; j++)
-                polyfaceBuilder->AddPointIndex (indexMap[triangle.Value(j+1)], edgeIndicesSet.find (EdgeIndices (triangle.Value(j+1), triangle.Value(1 + (j+1) % 3))) != edgeIndicesSet.end());
+                polyfaceBuilder->AddPointIndex (indexMap[triangle.Value(j+1)], edgeIndicesSet.find(EdgeIndices(triangle.Value(j+1), triangle.Value(1 + (j+1) % 3))) != edgeIndicesSet.end());
 
             polyfaceBuilder->AddPointIndexTerminator();    
 
             if (!normalIndexMap.empty())
                 {
                 for (int j=1; j <= 3; j++)
-                    polyfaceBuilder->AddNormalIndex (normalIndexMap[triangle.Value(j)]);
+                    polyfaceBuilder->AddNormalIndex(normalIndexMap[triangle.Value(j)]);
 
-                polyfaceBuilder->AddNormalIndexTerminator ();
+                polyfaceBuilder->AddNormalIndexTerminator();
                 }
             
             if (!uvIndexMap.empty())
                 {
                 for (int j=1; j <= 3; j++)
-                    polyfaceBuilder->AddParamIndex (uvIndexMap[triangle.Value(j)]);
+                    polyfaceBuilder->AddParamIndex(uvIndexMap[triangle.Value(j)]);
 
-                polyfaceBuilder->AddParamIndexTerminator ();
+                polyfaceBuilder->AddParamIndexTerminator();
                 }
             }
         }

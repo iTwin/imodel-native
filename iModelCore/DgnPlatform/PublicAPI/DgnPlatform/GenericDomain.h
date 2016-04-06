@@ -29,6 +29,8 @@ DGNPLATFORM_REF_COUNTED_PTR(GenericPhysicalObject)
 #define GENERIC_CLASSNAME_SpatialLocation   "SpatialLocation"
 #define GENERIC_CLASSNAME_SpatialGroup      "SpatialGroup"
 #define GENERIC_CLASSNAME_GraphicGroup2d    "GraphicGroup2d"
+#define GENERIC_CLASSNAME_MultiAspect       "MultiAspect"
+#define GENERIC_RELCLASSNAME_Refers         "ElementRefersToElement"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
