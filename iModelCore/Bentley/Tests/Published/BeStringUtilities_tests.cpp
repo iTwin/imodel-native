@@ -1235,10 +1235,9 @@ TEST (BeStringUtilitiesTests, Wcslwr)
     EXPECT_STREQ(L"dgn v8", BeStringUtilities::Wcslwr(str3));
 
     // Start with a non-ascii string. In this case, it has no lower-case version.
-    WCharP nonasc = L"\u20AC"; // this is the Euro symbol
-    //  Convert to UTF8 and lowercase it
-    WString nonasc_wchar (nonasc);    // s/ be E2 82 AC 00
-    EXPECT_STREQ(nonasc, BeStringUtilities::Wcslwr(nonasc)); // s/ be a nop
+    WCharCP nonasc = L"\u20AC"; // this is the Euro symbol
+    WChar nonasc_lwr[2] = {L'\u20AC', L'\0'};
+    EXPECT_STREQ(nonasc, BeStringUtilities::Wcslwr(nonasc_lwr)); // s/ be a nop
     }
 //---------------------------------------------------------------------------------------
 // @betest                                      Umar.Hayat                    02/16
