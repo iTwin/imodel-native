@@ -437,9 +437,27 @@ $(BuildContext)ECSchemas/ECDb/ECDb_FileInfo.02.00.ecschema.xml : $(_MakeFilePath
 #----------------------------------------------------------------------
 # Deploy open source legal notices
 #----------------------------------------------------------------------
-
 $(BuildContext)Delivery/openoffice-notice.txt : $(baseDir)ECSql/Parser/NOTICE
     $(LinkFirstDepToFirstTarget)
 
 $(BuildContext)Delivery/openoffice-license.txt : $(baseDir)ECSql/Parser/LICENSE
     $(LinkFirstDepToFirstTarget)
+
+#----------------------------------------------------------------------------------------
+# Deploy documentation raw material for input into PublishApi+Doxygen by consuming SDKs
+#----------------------------------------------------------------------------------------
+$(BuildContext)Dox/Pages/ECDb : $(baseDir)docs/source
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)Dox/Images/ECDb : $(baseDir)docs/images
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)Dox/Files/ECDb : $(baseDir)docs/files
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+###### WIP: FIXME
+###### for the name of the latest version of the BSCA schema
+#####%include $(OutBuildContexts)ECStandards/StandardSchemas.delivery.mki
+#####
+#####always:
+#####    @CreateSymLinks.py "$(BuildContext)Dox/Files/ECDb/ECDbMap.ecschema.xml=$(OutBuildContexts)ECStandards/ECSchemas/Standard/$(ECDbMapSchemaName)"
