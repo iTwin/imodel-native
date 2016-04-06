@@ -2823,7 +2823,16 @@ ECObjectsStatus SchemaKey::ParseSchemaFullName (Utf8StringR schemaName, uint32_t
 
     schemaName.assign (fullName, nameLen);
 
-    return ParseVersionString (versionMajor, versionWrite, versionMinor, firstDot+1);
+    ECObjectsStatus stat = ParseVersionString(versionMajor, versionWrite, versionMinor, firstDot + 1);
+    if (ECObjectsStatus::Success != stat)
+        return stat;
+
+    // There are some schemas out there that reference the non-existent Unit_Attributes.1.1 schema.  We need to deliver 1.0, which does not match our criteria
+    // for LatestCompatible.
+    if (0 == schemaName.CompareTo("Unit_Attributes") && 1 == versionMajor && 1 == versionMinor)
+        versionMinor = 0;
+
+    return stat;
     }
 
 /*---------------------------------------------------------------------------------**//**
