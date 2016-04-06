@@ -255,13 +255,8 @@ public:
 //!
 //!  <h2>Properties</h2>
 //!  On any given element, there may be the following kinds of properties:
-//!  * Properties that are defined by the ECClass 
-//!          * Properties that are controlled by a C++ element subclass
-//!              * You must use methods on that class to access them
-//!          * Properties that are not controlled by the C++ element class – “Unhandled Properties”
-//!              * You must use the Get/SetUnhandledPropertyValue functions to access them
-//!  * Properties that are not defined by the ECClass but are added by the user – “User Properties”
-//!          * You must use the GetUserProperties methods to access them
+//!  * Properties that are defined by the ECClass - use _GetProperty and _SetProperty. Various subclasses may also have their own strongly typed property access functions.
+//!  * Properties that are not defined by the ECClass but are added by the user use GetUserProperties
 //!
 //! @ingroup DgnElementGroup
 // @bsiclass                                                     KeithBentley    10/13
@@ -1021,6 +1016,13 @@ public:
     //! @see GetLabel, GetCode, _GetDisplayLabel
     Utf8String GetDisplayLabel() const {return _GetDisplayLabel();}
 
+    //! Query the DgnDb for the children of this DgnElement.
+    //! @return DgnElementIdSet containing the DgnElementIds of all child elements of this DgnElement. Will be empty if no children.
+    DGNPLATFORM_EXPORT DgnElementIdSet QueryChildren() const;
+
+    //! @name Properties 
+    //! @{
+
     //! Get a user property on this DgnElement
     //! @param[in] name Get a user property value by name
     //! @remarks The element needs to be held in memory to access the returned property value. 
@@ -1037,25 +1039,19 @@ public:
     //! Clear all the user properties on this DgnElement
     DGNPLATFORM_EXPORT void ClearUserProperties();
 
-    //! Query the DgnDb for the children of this DgnElement.
-    //! @return DgnElementIdSet containing the DgnElementIds of all child elements of this DgnElement. Will be empty if no children.
-    DGNPLATFORM_EXPORT DgnElementIdSet QueryChildren() const;
-
-    //! @name Unhandled properties 
-    //! @{
-
-    //! Get the value of an unhandled property
+    //! Get the value of a property
     //! @param value The returned value
-    //! @param name The name of the unhandled property
-    //! @return non-zero error status if this element has no such unhandled property
-    DGNPLATFORM_EXPORT DgnDbStatus GetUnhandledPropertyValue(ECN::ECValueR value, Utf8CP name) const;
+    //! @param name The name of the property
+    //! @return DgnDbStatus::NotFound if this element has no such property or if the subclass has chosen not to expose it via this function
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _GetProperty(ECN::ECValueR value, Utf8CP name) const;
     
-    //! Set the value of an unhandled property. @note you must call Update in order to write the modified property to the DgnDb.
+    //! Set the value of a property. @note you must call Update in order to write the modified property to the DgnDb.
     //! @param value The returned value
-    //! @param name The name of the unhandled property
-    //! @return non-zero error status if this element has no such unhandled property
-    DGNPLATFORM_EXPORT DgnDbStatus SetUnhandledPropertyValue(Utf8CP name, ECN::ECValueCR value);
+    //! @param name The name of the property
+    //! @return non-zero error status if this element has no such property, if the value is illegal, or if the subclass has chosen not to expose the property via this function
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetProperty(Utf8CP name, ECN::ECValueCR value);
 
+    //! @private
     DGNPLATFORM_EXPORT void ComputeUnhandledProperties(bvector<ECN::ECPropertyCP>&) const;
     
     //! @}
@@ -1335,6 +1331,9 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement3d : GeometricElement, GeometrySo
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_GeometricElement3d, GeometricElement)
     friend struct dgn_ElementHandler::Geometric3d;
 
+    DGNPLATFORM_EXPORT DgnDbStatus GetPlacementProperty(ECN::ECValueR value, Utf8CP name) const;
+    DGNPLATFORM_EXPORT DgnDbStatus SetPlacementProperty(Utf8CP name, ECN::ECValueCR value);
+
 public:
     //! Parameters for constructing a 3d geometric element
     struct CreateParams : T_Super::CreateParams
@@ -1388,7 +1387,10 @@ protected:
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement&);
 public:
     DGNPLATFORM_EXPORT static void AddClassParams(ECSqlClassParams& params);
-};
+
+    DGNPLATFORM_EXPORT DgnDbStatus _GetProperty(ECN::ECValueR value, Utf8CP name) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _SetProperty(Utf8CP name, ECN::ECValueCR value) override;
+    };
 
 //=======================================================================================
 //! Base class for elements with 2d geometry

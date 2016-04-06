@@ -25,6 +25,7 @@
                 ECSchemas/dgn.02.00.ecschema.xml
                 ECSchemas/Generic.01.00.ecschema.xml
             </Files>
+            <Directory SourceName="Dox/Pages/DgnPlatform" SubPartDirectory="Dox/Pages/DgnPlatform"/>
         </Bindings>
     </Part>
 
@@ -67,14 +68,10 @@
         </Bindings>
     </Part>
 
-    <Part Name="DgnPlatformOverviewDocs" BentleyBuildMakeFile="docs/DgnPlatformOverviewDocs.mke">
+    <Part Name="DgnPlatformExtractions" BentleyBuildMakeFile="docs/DgnPlatformExtractions.mke">
         <SubPart PartName="DgnPlatformDoc-Build-SampleCode" />
         <Bindings>
-            <Directory SourceName="Docs/Source/DgnPlatform" SubPartDirectory="Docs/Source/DgnPlatform"/>
-            <!-- *** TBD doc images + files TBD ***
-            <Directory SourceName="Docs/Images/DgnPlatform" SubPartDirectory="Docs/Images/DgnPlatform"/>
-            <Directory SourceName="Docs/Files/DgnPlatform" SubPartDirectory="Docs/Files/DgnPlatform"/>
-            -->
+            <Directory SourceName="Dox/Extractions/DgnPlatform" SubPartDirectory="Dox/Extractions/DgnPlatform"/>
         </Bindings>
     </Part>
 

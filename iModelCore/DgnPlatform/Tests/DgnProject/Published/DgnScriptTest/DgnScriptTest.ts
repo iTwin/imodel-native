@@ -10,7 +10,10 @@ module DgnScriptTests {
 
     import be = Bentley.Dgn;
 
+    //---------------------------------------------------------------------------------------
     // *** NB: Keep this consistent with {DgnScriptContext_Test.cpp}TEST_F(DgnScriptTest, RunScripts)
+    // @bsimethod                                   
+    //---------------------------------------------------------------------------------------
     class Params
     {
         modelName: string;
@@ -20,22 +23,104 @@ module DgnScriptTests {
     var shiftXSize = 5.0;
     var shiftYsize = 2.5;
 
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   
+    //---------------------------------------------------------------------------------------
+    function fmtDPoint3d(pt: be.DPoint3d) {
+        return "(" + pt.X + "," + pt.Y + "," + pt.Z + ")";
+    }
 
-    function testEcSql(db: be.DgnDb) {
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   
+    //---------------------------------------------------------------------------------------
+    function testEcSql_selectLastInstanceOf(db: be.DgnDb, cls: be.ECClass, minGenericObjectsExpected: number): be.DgnObjectId {
+        var lastelid: be.DgnObjectId;
 
-        var physObjClass = db.Schemas.GetECClass(be.GENERIC_ECSCHEMA_NAME, be.GENERIC_CLASSNAME_PhysicalObject);
-                                                    //  0             1      2    3      4 
-        var stmt = db.GetPreparedECSqlSelectStatement("ECInstanceId, Origin, Yaw, Pitch, Roll FROM " + physObjClass.ECSqlName);
-        while (stmt.Step() == be.BeSQLiteDbResult.BE_SQLITE_ROW) {
+        //  0             1      2    3      4 
+        var stmt = db.GetPreparedECSqlSelectStatement("ECInstanceId, Origin, Yaw, Pitch, Roll, BBoxLow, BBoxHigh FROM " + cls.ECSqlName);
+        var count: number = 0;
+        while (be.BeSQLiteDbResult.BE_SQLITE_ROW == stmt.Step()) {
             var elemid: be.DgnObjectId = stmt.GetValueId(0);
             var origin: be.DPoint3d = stmt.GetValueDPoint3d(1);
             var yaw: number = stmt.GetValueInt(2);
             var pitch: number = stmt.GetValueDouble(3);
             var roll: number = stmt.GetValueDouble(4);
+            var bboxLow: be.DPoint3d = stmt.GetValueDPoint3d(5);
+            var bboxHigh: be.DPoint3d = stmt.GetValueDPoint3d(6);
 
-            be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, 'testEcSql ' + origin.X);
+            // The above code shows how to extract multiple columns from a statement. 
+            // In real code, we would do something with those values.
+
+            be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, "eid: " + elemid.ToString() + " bbox:{" + fmtDPoint3d(bboxLow) + "," + fmtDPoint3d(bboxHigh));
+
+            //  For purposes of this test, just remember the last element that we saw.
+            lastelid = elemid;
+            ++count;
         }
 
+        if (count < minGenericObjectsExpected) {
+            be.Script.ReportError('SELECT should have found at least ' + minGenericObjectsExpected + ' elements. It actually found ' + count);
+            return null;
+        }
+
+        return lastelid;
+    }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   
+    //---------------------------------------------------------------------------------------
+    function getElementRange(db: be.DgnDb, eid: be.DgnObjectId): be.DRange3d {
+        var el: be.DgnElement = db.Elements.GetElement(eid);
+        if (el == null) {
+            be.Script.ReportError('db.Elements.Get(lastelid) failed');
+            return null;
+        }
+
+        var pel: be.GeometrySource3d = el.ToGeometrySource3d();
+        if (pel == null) {
+            be.Script.ReportError('ToGeometrySource3d failed');
+            return null;
+        }
+        return pel.Placement.CalculateRange();
+    }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   
+    //---------------------------------------------------------------------------------------
+    function testEcSql(db: be.DgnDb, minGenericObjectsExpected: number) {
+
+        var physObjClass = db.Schemas.GetECClass(be.GENERIC_ECSCHEMA_NAME, be.GENERIC_CLASSNAME_PhysicalObject);
+
+        // Demonstrate how to do a normal SELECT
+        var lastelid: be.DgnObjectId = testEcSql_selectLastInstanceOf(db, physObjClass, minGenericObjectsExpected);
+
+        var lastelrange = getElementRange(db, lastelid);
+
+        be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, "lastelid: " + lastelid.ToString() + " bbox:{" + fmtDPoint3d(lastelrange.Low) + "," + fmtDPoint3d(lastelrange.High));
+
+        // Test spatial query. There are lots of ways to further refine the results. In this example,
+        // I specify the ECClass of the elements that I am interested in. (Of course, in a real app, I would
+        // be testing for valves and girders and so on.) I could also be testing for the properties aspects,
+        // or codes, or various other things.
+        var spatialQuery = db.GetPreparedECSqlSelectStatement(
+            "SELECT rt.ECInstanceId FROM dgn.SpatialIndex rt, " + physObjClass.ECSqlName + 
+            " WHERE rt.ECInstanceId MATCH DGN_spatial_overlap_aabb(:bbox)"
+        );
+
+        // *** TBD: AxisAlignedBoundingBox aka Range
+        spatialQuery.BindDRange3d(spatialQuery.GetParameterIndex("bbox"), lastelrange);
+        var foundIt: boolean = false;
+        while ((be.BeSQLiteDbResult.BE_SQLITE_ROW == spatialQuery.Step()) && !foundIt) {
+            var foundelemid: be.DgnObjectId = spatialQuery.GetValueId(0);
+            var foundelemrange: be.DRange3d = getElementRange(db, foundelemid);
+            be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, "foundelemid: " + foundelemid.ToString() + " bbox:{" + fmtDPoint3d(foundelemrange.Low) + "," + fmtDPoint3d(foundelemrange.High));
+            foundIt = foundelemid.Equals(lastelid);
+        }
+
+        if (!foundIt) {
+            be.Script.ReportError('spatial query failed to find element overlapping aabbox');
+            return;
+        }
     }
 
     //---------------------------------------------------------------------------------------
@@ -136,7 +221,7 @@ module DgnScriptTests {
         geoms.push(sphere);
         var geompart: be.DgnGeometryPart = makeGeomPart(model.DgnDb, geoms);
 
-        var ele = be.PhysicalElement.Create(model, catid, be.GENERIC_ECSCHEMA_NAME + "." + be.GENERIC_CLASSNAME_PhysicalObject);
+        var ele: be.GeometricElement3d = be.GeometricElement3d.CreateGeometricElement3d(model, catid, be.GENERIC_ECSCHEMA_NAME + "." + be.GENERIC_CLASSNAME_PhysicalObject);
 
         var builder = new be.GeometryBuilder(ele, new be.DPoint3d(0, 0, 0), new be.YawPitchRollAngles(0, 0, 0));
 
@@ -207,7 +292,7 @@ module DgnScriptTests {
     //---------------------------------------------------------------------------------------
     function testGeomBuilderAggregation(model: be.DgnModel, catid: be.DgnObjectId): void
     {
-        var ele = be.PhysicalElement.Create(model, catid, '');
+        var ele = be.GeometricElement3d.CreateGeometricElement3d(model, catid, be.GENERIC_ECSCHEMA_NAME + "." + be.GENERIC_CLASSNAME_PhysicalObject);
 
         // Create separate builders
         var constructionClass = be.RenderDgnGeometryClass.Construction;
@@ -282,7 +367,7 @@ module DgnScriptTests {
         if (!foundCode)
             be.Script.ReportError('ECPropertyCollection must have failed -- the Code property was not found');
         if (propertyCount <= 2)
-            be.Script.ReportError('ECPropertyCollection must have failed -- there are more than 2 properties on PhysicalElement');
+            be.Script.ReportError('ECPropertyCollection must have failed -- there are more than 2 properties on GeometricElement3d');
 
         // -----------------------------------------------
         // Test GetProperty and PrimitiveECProperty
@@ -315,8 +400,7 @@ module DgnScriptTests {
         var baseclasses: be.ECClassCollection = elementClass.BaseClasses;
         var foundSpatialElement: boolean = false;
         var baseCount: number = 0;
-        for (var clsiter = baseclasses.Begin(); baseclasses.IsValid(clsiter); baseclasses.ToNext(clsiter))
-        {
+        for (var clsiter = baseclasses.Begin(); baseclasses.IsValid(clsiter); baseclasses.ToNext(clsiter)) {
             var cls: be.ECClass = baseclasses.GetECClass(clsiter);
             be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, cls.Name);
             if (cls.Name == 'SpatialElement')
@@ -331,8 +415,7 @@ module DgnScriptTests {
         var se: be.ECClass = schemas.GetECClass(be.DGN_ECSCHEMA_NAME, be.DGN_CLASSNAME_SpatialElement);
         var derivedclasses: be.ECClassCollection = se.DerivedClasses;
         var derivedCount: number = 0;
-        for (var clsiter = derivedclasses.Begin(); derivedclasses.IsValid(clsiter); derivedclasses.ToNext(clsiter))
-        {
+        for (var clsiter = derivedclasses.Begin(); derivedclasses.IsValid(clsiter); derivedclasses.ToNext(clsiter)) {
             var cls: be.ECClass = derivedclasses.GetECClass(clsiter);
             be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, cls.Name);
             ++derivedCount;
@@ -385,19 +468,19 @@ module DgnScriptTests {
     //---------------------------------------------------------------------------------------
     // @bsimethod                                   Sam.Wilson                      02/16
     //---------------------------------------------------------------------------------------
-    function testUnhandledProperties(el: be.DgnElement)
+    function testProperties(el: be.DgnElement)
     {
-        if (el.GetUnhandledProperty('StringProperty'))
+        if (el.GetProperty('StringProperty'))
             be.Script.ReportError('StringProperty should not be set at the outset');
 
-        if (0 != el.SetUnhandledProperty('StringProperty', be.ECValue.FromString('stuff')))
-            be.Script.ReportError('SetUnhandledProperty failed');
+        if (0 != el.SetProperty('StringProperty', be.ECValue.FromString('stuff')))
+            be.Script.ReportError('SetProperty failed');
 
         el.Update();
 
-        var prop = el.GetUnhandledProperty('StringProperty');
+        var prop = el.GetProperty('StringProperty');
         if (!prop || prop.GetString() != 'stuff')
-            be.Script.ReportError('SetUnhandledProperty failed - changed value not verified');
+            be.Script.ReportError('SetProperty failed - changed value not verified');
     }
 
     //---------------------------------------------------------------------------------------
@@ -424,7 +507,7 @@ module DgnScriptTests {
 
         //  Create element
         var model = db.Models.GetModel(db.Models.QueryModelId(be.DgnModel.CreateModelCode(params.modelName)));
-        var ele = be.PhysicalElement.Create(model, catid, 'DgnPlatformTest.TestElementWithNoHandler');
+        var ele = be.GeometricElement3d.CreateGeometricElement3d(model, catid, 'DgnPlatformTest.TestElementWithNoHandler');
 
         //  Try out GeometryBuilder
         var builder = new be.GeometryBuilder(ele, new be.DPoint3d(0, 0, 0), new be.YawPitchRollAngles(0, 0, 0));
@@ -588,15 +671,15 @@ module DgnScriptTests {
         //  Test EC API
         testEC(db);
 
-        //  DgnElement UnhandledProperties and UserProperties
-        testUnhandledProperties(ele);
+        //  DgnElement Properties and UserProperties
+        testProperties(ele);
         testUserProperties(ele);
 
         //  Test argument validation
         testInvalidArg();
 
         //  Test ECSql API
-        testEcSql(db);
+        testEcSql(db, 2);
 
         return 0;
     }
