@@ -309,3 +309,9 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 #   NEEDSWORK : Temporary settings
 #----------------------------------------------------------------------
 %include $(sharedMki)linkLibrary.mki
+
+#----------------------------------------------------------------------
+#   Link presentation rules xsd
+#----------------------------------------------------------------------
+$(BuildContext)Delivery/PresentationRuleSetSchema.xsd : $(baseDir)presentation/PresentationRules/xsd/PresentationRuleSetSchema.xsd
+    ~linkfile $@ = $<
