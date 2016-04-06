@@ -862,7 +862,7 @@ ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams con
 //----------------------------------------------------------------------------------------
 ScalableMeshModel::~ScalableMeshModel()
     {
-
+    ScalableMeshTerrainModelAppData::Delete (GetDgnDb());
     }
 
 //----------------------------------------------------------------------------------------
@@ -919,7 +919,9 @@ ScalableMeshModelP ScalableMeshModel::CreateModel(BentleyApi::Dgn::DgnDbR dgnDb)
     BeAssert(classId.IsValid());
 
     ScalableMeshModelP model = new ScalableMeshModel(DgnModel::CreateParams(dgnDb, classId, DgnModel::CreateModelCode("scalableTerrain")));
-
+    
+    BeFileName terrainDefaultFileName(ScalableMeshModel::GetTerrainModelPath(dgnDb));
+    model->OpenFile(terrainDefaultFileName, dgnDb);
     model->Insert();
     ScalableMeshTerrainModelAppData* appData(ScalableMeshTerrainModelAppData::Get(dgnDb));
 
