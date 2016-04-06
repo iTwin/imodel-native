@@ -370,10 +370,6 @@ $(CoreObjs)RegionUtil$(oext) :                      $(DgnHandlersDir)RegionUtil.
 
 $(CoreObjs)ScopedDgnHost$(oext) :                   $(DgnHandlersDir)ScopedDgnHost.cpp  ${MultiCompileDepends}
 
-$(CoreObjs)DgnChangeSummary$(oext) :                $(DgnHandlersDir)DgnChangeSummary.cpp $(DgnPlatformAPISrc)DgnChangeSummary.h ${MultiCompileDepends}
-
-$(CoreObjs)DgnECSymbolProvider$(oext) :             $(DgnHandlersDir)DgnECSymbolProvider.cpp $(DgnPlatformAPISrc)DgnECSymbolProvider.h ${MultiCompileDepends}
-
 $(CoreObjs)AnnotationTable$(oext) :                 $(DgnCoreDir)AnnotationTable.cpp $(DgnPlatformAPISrc)AnnotationTable.h ${MultiCompileDepends}
 
 $(CoreObjs)AnnotationTableStroker$(oext) :          $(DgnCoreDir)AnnotationTableStroker.cpp $(DgnPlatformAPISrc)AnnotationTable.h ${MultiCompileDepends}
@@ -387,6 +383,8 @@ $(CoreObjs)LinearDimensionStroker$(oext) :          $(DgnCoreDir)Dimension\Linea
 $(o)ECUtils$(oext) :                                $(DgnCoreDir)ECUtils.cpp $(DgnPlatformAPISrc)ECUtils.h ${MultiCompileDepends}
 
 $(o)RenderMaterial$(oext) :                         $(DgnCoreDir)RenderMaterial.cpp $(DgnPlatformAPISrc)RenderMaterial.h ${MultiCompileDepends}
+
+$(o)DgnChangeIterator$(oext) :                      $(DgnCoreDir)DgnChangeIterator.cpp $(DgnCoreDir)DgnChangeIterator.h ${MultiCompileDepends}
 
 
 #----------------------------------------------------------------------
@@ -466,6 +464,31 @@ $(o)DgnScriptStubbedOut$(oext) :                    $(dgnScriptDir)DgnScriptStub
 $(o)w32tools$(oext) :                               $(ToolsDir)nonport/winnt/w32tools.cpp  ${MultiCompileDepends}
 
 %endif
+
+#----------------------------------------------------------------------
+#   DgnEC
+#----------------------------------------------------------------------
+DgnECDepends = \
+    $(DgnPlatformAPISrc)DgnChangeSummary.h \
+    $(DgnPlatformAPISrc)DgnECSymbolProvider.h \
+    $(DgnPlatformAPISrc)DgnECTypes.h \
+    $(DgnPlatformAPISrc)DgnECPersistence.h \
+    $(DgnHandlersDir)DgnECTypeAdapters.h \
+    $(DgnHandlersDir)DgnECInteropStringFormatter.h \
+
+ 
+$(CoreObjs)DgnChangeSummary$(oext) : $(DgnHandlersDir)DgnChangeSummary.cpp $(DgnECDepends) ${MultiCompileDepends}
+
+$(CoreObjs)DgnECSymbolProvider$(oext) : $(DgnHandlersDir)DgnECSymbolProvider.cpp $(DgnECDepends) ${MultiCompileDepends}
+
+$(CoreObjs)DgnECTypes$(oext) : $(DgnHandlersDir)DgnECTypes.cpp $(DgnECDepends) ${MultiCompileDepends}
+
+$(CoreObjs)DgnECTypeAdapters$(oext) : $(DgnHandlersDir)DgnECTypeAdapters.cpp $(DgnECDepends) ${MultiCompileDepends}
+
+$(CoreObjs)DgnECInteropStringFormatter$(oext) : $(DgnHandlersDir)DgnECInteropStringFormatter.cpp $(DgnECDepends) ${MultiCompileDepends}
+
+$(CoreObjs)DgnECPersistence$(oext) : $(DgnHandlersDir)DgnECPersistence.cpp $(DgnECDepends) ${MultiCompileDepends}
+
 
 #----------------------------------------------------------------------
 #   Annotations

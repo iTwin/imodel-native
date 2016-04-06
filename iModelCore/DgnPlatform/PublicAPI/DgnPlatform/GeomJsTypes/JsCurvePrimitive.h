@@ -59,6 +59,16 @@ public:
 
 
     double CurvePrimitiveType (){return (double)(int)m_curvePrimitive->GetCurvePrimitiveType ();}
+    JsTransformP FrenetFrameAtFraction (double f)
+        {
+        Transform transform;
+        if (m_curvePrimitive->FractionToFrenetFrame (f, transform))
+            {
+            return new JsTransform (transform);
+            }
+        return nullptr;
+        }
+
     JsDPoint3dP PointAtFraction (double f)
         {
         DPoint3d xyz;
@@ -196,6 +206,12 @@ public:
         Set(cp);
         }
 
+    DEllipse3d GetDEllipse3d () const
+        {
+        DEllipse3d arc;
+        m_curvePrimitive->TryGetArc (arc);
+        return arc;
+        }
     virtual JsEllipticArc * Clone () override {return new JsEllipticArc (m_curvePrimitive->Clone ());}
 
     static JsEllipticArc *CreateCircleXY (JsDPoint3dP center, double radius)
@@ -206,6 +222,35 @@ public:
     static JsEllipticArc *CreateCircleStartMidEnd (JsDPoint3dP pointA, JsDPoint3dP pointB, JsDPoint3dP pointC)
         {
         return new JsEllipticArc (DEllipse3d::FromPointsOnArc (pointA->Get (), pointB->Get (), pointC->Get ()));
+        }
+    static JsEllipticArc *CreateFilletAtMiddlePoint (JsDPoint3dP pointA, JsDPoint3dP pointB, JsDPoint3dP pointC, double radius)
+        {
+        return new JsEllipticArc (DEllipse3d::FromFilletInCorner (pointA->Get (), pointB->Get (), pointC->Get (), radius));
+        }
+    static JsEllipticArc *CreateStartTangentNormalRadiusSweep (JsDPoint3dP startPoint, JsDVector3dP startTangent, JsDVector3dP planeNormal, double radius, JsAngleP sweepAngle)
+        {
+        return new JsEllipticArc (DEllipse3d::FromStartTangentNormalRadiusSweep
+                    (
+                    startPoint->Get (), startTangent->Get (), planeNormal->Get (), radius, sweepAngle->GetRadians ()
+                    ));
+        }
+
+    static JsEllipticArc *CreateLargestFilletAtMiddlePoint (JsDPoint3dP pointA, JsDPoint3dP pointB, JsDPoint3dP pointC)
+        {
+        return new JsEllipticArc (DEllipse3d::FromFilletInBoundedCorner (pointA->Get (), pointB->Get (), pointC->Get ()));
+        }
+
+
+    JsTransformP CenterFrameAtFraction (double fraction) const
+        {
+        DEllipse3d arc;
+        if (m_curvePrimitive->TryGetArc (arc))
+            {
+            auto frame = arc.FractionToCenterFrame (fraction);
+            if (frame.IsValid ())
+                return new JsTransform (frame.Value ());
+            }
+        return nullptr;
         }
     //! return the complement of this arc.  Returns null if this arc is a full 360 degree sweep.
     JsEllipticArc *Complement () const;

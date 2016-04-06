@@ -840,6 +840,17 @@ void DgnElement::_CopyFrom(DgnElementCR other)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::CopyAppDataFrom(DgnElementCR source) const
+    {
+    for (auto a : source.m_appData)
+        {
+        AddAppData(*a.first, a.second.get());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 void DgnCode::RelocateToDestinationDb(DgnImportContext& importer)
     {
     m_authority = importer.RemapAuthorityId(m_authority);
@@ -1992,8 +2003,49 @@ ECN::IECInstancePtr UnhandledProps::GetInstance(DgnElementCR elem)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::GetUnhandledPropertyValue(ECN::ECValueR value, Utf8CP name) const
+DgnDbStatus DgnElement::_GetProperty(ECN::ECValueR value, Utf8CP name) const
     {
+    /*
+    auto ecprop = GetElementClass()->GetPropertyP(name);
+    if (nullptr == ecprop)
+        return DgnDbStatus::NotFound;
+    */
+
+    if (0 == strcmp("Code", name))
+        {
+        //Json::Value json(Json::objectValue);
+        //GetCode().ToJson(json);
+        //value.SetUtf8CP(Json::FastWriter::ToString(json).c_str());
+        //return DgnDbStatus::Success;
+        // *** TBD: Create a IECInstance from the dgn.Code struct class and return it
+        return DgnDbStatus::BadRequest;
+        }
+    if (0 == strcmp("Id", name))
+        {
+        value.SetLong(GetElementId().GetValueUnchecked());
+        return DgnDbStatus::Success;
+        }
+    if (0 == strcmp("ModelId", name))
+        {
+        value.SetLong(GetModelId().GetValueUnchecked());
+        return DgnDbStatus::Success;
+        }
+    if (0 == strcmp("ParentId", name))
+        {
+        value.SetLong(GetParentId().GetValueUnchecked());
+        return DgnDbStatus::Success;
+        }
+    if (0 == strcmp("Label", name))
+        {
+        value.SetUtf8CP(GetLabel());
+        return DgnDbStatus::Success;
+        }
+    if (0 == strcmp("LastMod", name))
+        {
+        value.SetDateTime(QueryTimeStamp());
+        return DgnDbStatus::Success;
+        }
+
     ECN::IECInstancePtr inst = UnhandledProps::Get(*this).GetInstance(*this);
     if (!inst.IsValid())
         return DgnDbStatus::NotFound;
@@ -2003,8 +2055,41 @@ DgnDbStatus DgnElement::GetUnhandledPropertyValue(ECN::ECValueR value, Utf8CP na
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::SetUnhandledPropertyValue(Utf8CP name, ECN::ECValueCR value)
+DgnDbStatus DgnElement::_SetProperty(Utf8CP name, ECN::ECValueCR value)
     {
+    if (0 == strcmp("Code", name))
+        {
+        //Json::Value json(Json::objectValue);
+        //if (!Json::Reader::Parse(value.ToString(), json))
+        //    return DgnDbStatus::BadArg;
+        //DgnCode code;
+        //code.FromJson(json);
+        //return SetCode(code);
+        return DgnDbStatus::BadRequest;
+        }
+    if (0 == strcmp("Id", name))
+        {
+        return DgnDbStatus::ReadOnly;
+        }
+    if (0 == strcmp("ModelId", name))
+        {
+        return DgnDbStatus::ReadOnly;
+        }
+    if (0 == strcmp("ParentId", name))
+        {
+        return SetParentId(DgnElementId((uint64_t)value.GetLong()));
+        }
+    if (0 == strcmp("Label", name))
+        {
+        SetLabel(value.ToString().c_str());
+        return DgnDbStatus::Success;
+        }
+    if (0 == strcmp("LastMod", name))
+        {
+        return DgnDbStatus::BadRequest;
+        }
+
+
     UnhandledProps& props = UnhandledProps::Get(*this);
     
     ECN::IECInstancePtr inst = props.GetInstance(*this);
@@ -2017,6 +2102,104 @@ DgnDbStatus DgnElement::SetUnhandledPropertyValue(Utf8CP name, ECN::ECValueCR va
     props.m_pendingEdits.insert(name);
     return DgnDbStatus::Success;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement3d::_GetProperty(ECN::ECValueR value, Utf8CP name) const
+    {
+    if (0 == strcmp(name, "GeometryStream"))
+        {
+        return DgnDbStatus::BadRequest;//  => Use GeometryCollection interface
+        }
+    if (0 == strcmp(name, "CategoryId"))
+        {
+        value.SetLong(GetCategoryId().GetValueUnchecked());
+        return DgnDbStatus::Success;
+        }
+    if (0 == strcmp(name, "InSpatialIndex"))
+        {
+        auto gmodel = GetModel()->ToGeometricModel();
+        if (nullptr == gmodel)
+            value.SetBoolean(false);
+        else
+            value.SetBoolean(CoordinateSpace::World == gmodel->GetCoordinateSpace());
+        return DgnDbStatus::Success;
+        }
+    DgnDbStatus res = GetPlacementProperty(value, name);
+    if (DgnDbStatus::NotFound != res)
+        return res;
+
+    return T_Super::_GetProperty(value, name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement3d::_SetProperty(Utf8CP name, ECN::ECValueCR value)
+    {
+    if (0 == strcmp(name, "GeometryStream"))
+        return DgnDbStatus::BadRequest;//  => Use ElementGeometryBuilder
+    if (0 == strcmp(name, "CategoryId"))
+        return SetCategoryId(DgnCategoryId((uint64_t)value.GetLong()));
+    if (0 == strcmp(name, "InSpatialIndex"))
+        return DgnDbStatus::ReadOnly;
+    DgnDbStatus res = SetPlacementProperty(name, value);
+    if (DgnDbStatus::NotFound != res)
+        return res;
+
+    return T_Super::_SetProperty(name, value);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement3d::GetPlacementProperty(ECN::ECValueR value, Utf8CP name) const
+    {
+    bool isplcprop;
+    if ((isplcprop = (0 == strcmp(name, "Origin"))))
+        value.SetPoint3D(GetPlacement().GetOrigin());
+    else if ((isplcprop = (0 == strcmp(name, "Yaw"))))
+        value.SetDouble(GetPlacement().GetAngles().GetYaw().Degrees());
+    else if ((isplcprop = (0 == strcmp(name, "Pitch"))))
+        value.SetDouble(GetPlacement().GetAngles().GetPitch().Degrees());
+    else if ((isplcprop = (0 == strcmp(name, "Roll"))))
+        value.SetDouble(GetPlacement().GetAngles().GetRoll().Degrees());
+    else if ((isplcprop = (0 == strcmp(name, "BBoxLow"))))
+        value.SetPoint3D(GetPlacement().GetElementBox().low);
+    else if ((isplcprop = (0 == strcmp(name, "BBoxHigh"))))
+        value.SetPoint3D(GetPlacement().GetElementBox().high);
+        
+    return isplcprop? DgnDbStatus::Success: DgnDbStatus::NotFound;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement3d::SetPlacementProperty(Utf8CP name, ECN::ECValueCR value)
+    {
+    Placement3d plc;
+    bool isplcprop;
+
+    if ((isplcprop = (0 == strcmp(name, "Origin"))))
+        (plc = GetPlacement()).GetOriginR() = value.GetPoint3D();
+    else if ((isplcprop = (0 == strcmp(name, "Yaw"))))
+        (plc = GetPlacement()).GetAnglesR().SetYaw(AngleInDegrees::FromRadians(value.GetDouble()));
+    else if ((isplcprop = (0 == strcmp(name, "Pitch"))))
+        (plc = GetPlacement()).GetAnglesR().SetPitch(AngleInDegrees::FromRadians(value.GetDouble()));
+    else if ((isplcprop = (0 == strcmp(name, "Roll"))))
+        (plc = GetPlacement()).GetAnglesR().SetRoll(AngleInDegrees::FromRadians(value.GetDouble()));
+    else if ((isplcprop = (0 == strcmp(name, "BBoxLow"))))
+        (plc = GetPlacement()).GetElementBoxR().low = value.GetPoint3D();
+    else if ((isplcprop = (0 == strcmp(name, "BBoxHigh"))))
+        (plc = GetPlacement()).GetElementBoxR().high = value.GetPoint3D();
+        
+   if (!isplcprop)
+       return DgnDbStatus::NotFound;
+   
+   SetPlacement(plc);
+   return DgnDbStatus::Success;
+   }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16

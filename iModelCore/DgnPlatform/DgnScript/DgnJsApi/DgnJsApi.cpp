@@ -22,10 +22,11 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static RefCountedPtr<GeometricElement3d> createGeometricElement3d(DgnModelR model, Utf8CP ecSqlClassName, DgnCategoryId catid)//, RefCountedPtr<T> geom)
+static DgnElementPtr createElementByClass(DgnModelR model, Utf8CP ecSqlClassName)
     {
     if (!ecSqlClassName || !*ecSqlClassName)
-        ecSqlClassName = GENERIC_SCHEMA(GENERIC_CLASSNAME_PhysicalObject);
+        return nullptr;
+
     Utf8CP dot = strchr(ecSqlClassName, '.');
     if (nullptr == dot)
         {
@@ -50,28 +51,27 @@ static RefCountedPtr<GeometricElement3d> createGeometricElement3d(DgnModelR mode
     DgnElementPtr el = handler->Create(DgnElement::CreateParams(db, model.GetModelId(), pclassId));
     if (!el.IsValid())
         {
-        Utf8PrintfString details ("class: %s category: %llx", ecSqlClassName, catid.GetValueUnchecked());
+        Utf8PrintfString details ("class: %s", ecSqlClassName);
         T_HOST.GetScriptAdmin().HandleScriptError(DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::Other, "dgn_ElementHandler::Geometric3d::GetHandler().Create failed", details.c_str());
         return nullptr;
         }
-    GeometricElement3d* geom = JsPhysicalElement::ToGeometricElement3d(*el);
-    geom->SetCategoryId(catid); // *** TRICKY: Generic ElementHandler::Create method does not set Category
-    return geom;
+    return el;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15
 //---------------------------------------------------------------------------------------
-JsGeometryBuilder::JsGeometryBuilder(JsDgnElementP e, JsDPoint3dP o, JsYawPitchRollAnglesP a)
+JsGeometryBuilder::JsGeometryBuilder(JsGeometrySourceP jsgs, JsDPoint3dP o, JsYawPitchRollAnglesP a)
     {
-    DGNJSAPI_VALIDATE_ARGS_VOID(DGNJSAPI_IS_VALID_JSOBJ(e) && e->m_el->ToGeometrySource() && o && a);
+    DGNJSAPI_VALIDATE_ARGS_VOID(DGNJSAPI_IS_VALID_JSELEMENT_PLACEHOLDER(jsgs) && jsgs->m_el->ToGeometrySource() && o && a);
+    auto el = jsgs->m_el;
 
-    GeometrySource3dCP source3d = e->m_el->ToGeometrySource3d();
+    GeometrySource3dCP source3d = el->ToGeometrySource3d();
     if (nullptr != source3d)
         m_builder = GeometryBuilder::Create(*source3d, o->Get (), a->GetYawPitchRollAngles ());
     else
         {
-        GeometrySource2dCP source2d = e->m_el->ToGeometrySource2d();
+        GeometrySource2dCP source2d = el->ToGeometrySource2d();
         if (nullptr != source2d)
             m_builder = GeometryBuilder::Create(*source2d, DPoint2d::From(o->GetX(), o->GetY()), AngleInDegrees::FromDegrees(a->GetYawDegrees ()));
         }
@@ -80,22 +80,21 @@ JsGeometryBuilder::JsGeometryBuilder(JsDgnElementP e, JsDPoint3dP o, JsYawPitchR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Earlin.Lutz                      03/16
 //---------------------------------------------------------------------------------------
-JsGeometryBuilder::JsGeometryBuilder(JsDgnElementP e, DPoint3dCR o, YawPitchRollAnglesCR a)
+JsGeometryBuilder::JsGeometryBuilder(JsGeometrySourceP jsgs, DPoint3dCR o, YawPitchRollAnglesCR a)
     {
-    DGNJSAPI_VALIDATE_ARGS_VOID(DGNJSAPI_IS_VALID_JSOBJ(e));
+    DGNJSAPI_VALIDATE_ARGS_VOID(DGNJSAPI_IS_VALID_JSELEMENT_PLACEHOLDER(jsgs) && jsgs->m_el->ToGeometrySource());
+    auto el = jsgs->m_el;
 
-    GeometrySource3dCP source3d = e->m_el->ToGeometrySource3d();
+    GeometrySource3dCP source3d = el->ToGeometrySource3d();
     if (nullptr != source3d)
         m_builder = GeometryBuilder::Create(*source3d, o, a);
     else
         {
-        GeometrySource2dCP source2d = e->m_el->ToGeometrySource2d();
+        GeometrySource2dCP source2d = el->ToGeometrySource2d();
         if (nullptr != source2d)
             m_builder = GeometryBuilder::Create(*source2d, DPoint2d::From(o.x, o.y), AngleInDegrees::FromDegrees(a.GetYaw ().Degrees ()));
         }
     }
-
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15
@@ -159,7 +158,7 @@ void JsGeometryBuilder::AppendGeometryPart(JsDgnGeometryPartP part, JsPlacement3
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      02/16
 //---------------------------------------------------------------------------------------
-JsGeometryCollectionP JsPhysicalElement::GetGeometry() const 
+JsGeometryCollectionP JsGeometricElementBase::GetGeometry() const
     {
     DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
     return new JsGeometryCollection(*m_el->ToGeometrySource());
@@ -243,11 +242,11 @@ int32_t JsDgnElement::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
-JsECValueP JsDgnElement::GetUnhandledProperty(Utf8StringCR name) 
+JsECValueP JsDgnElement::GetProperty(Utf8StringCR name) 
     {
     DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
     ECN::ECValue v;
-    if (m_el->GetUnhandledPropertyValue(v, name.c_str()) != DgnDbStatus::Success || v.IsNull())
+    if (m_el->_GetProperty(v, name.c_str()) != DgnDbStatus::Success || v.IsNull())
         return nullptr;
     return new JsECValue(v);
     }
@@ -255,10 +254,10 @@ JsECValueP JsDgnElement::GetUnhandledProperty(Utf8StringCR name)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
-int32_t JsDgnElement::SetUnhandledProperty(Utf8StringCR name, JsECValueP v)
+int32_t JsDgnElement::SetProperty(Utf8StringCR name, JsECValueP v)
     {
     DGNJSAPI_VALIDATE_ARGS_ERROR(IsValid());
-    return (int32_t) m_el->SetUnhandledPropertyValue(name.c_str(), v->m_value);
+    return (int32_t) m_el->_SetProperty(name.c_str(), v->m_value);
     }
 
 //---------------------------------------------------------------------------------------
@@ -289,9 +288,45 @@ void JsDgnElement::RemoveUserProperty(Utf8StringCR name) const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      04/16
+//---------------------------------------------------------------------------------------
+JsGeometrySourceP JsDgnElement::ToGeometrySource()
+    {
+    DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
+    GeometrySourceP gs = m_el->ToGeometrySourceP();
+    if (nullptr == gs)
+        return nullptr;
+    return new JsGeometrySource(*gs);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      04/16
+//---------------------------------------------------------------------------------------
+JsGeometrySource3dP JsDgnElement::ToGeometrySource3d()
+    {
+    DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
+    GeometrySource3dP gs = m_el->ToGeometrySource3dP();
+    if (nullptr == gs)
+        return nullptr;
+    return new JsGeometrySource3d(*gs);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      04/16
+//---------------------------------------------------------------------------------------
+JsGeometrySource2dP JsDgnElement::ToGeometrySource2d()
+    {
+    DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
+    GeometrySource2dP gs = m_el->ToGeometrySource2dP();
+    if (nullptr == gs)
+        return nullptr;
+    return new JsGeometrySource2d(*gs);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
-JsPlacement3dP JsPhysicalElement::GetPlacement() const 
+JsPlacement3dP JsGeometricElementBase::GetPlacement() const
     {
     DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
     return new JsPlacement3d(m_el->ToGeometrySource3d()->GetPlacement());
@@ -300,7 +335,7 @@ JsPlacement3dP JsPhysicalElement::GetPlacement() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
-int32_t JsPhysicalElement::Transform(JsTransformP jstransform)
+int32_t JsGeometricElementBase::Transform(JsTransformP jstransform)
     {
     DGNJSAPI_VALIDATE_ARGS_ERROR(IsValid());
 
@@ -313,17 +348,39 @@ int32_t JsPhysicalElement::Transform(JsTransformP jstransform)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15
 //---------------------------------------------------------------------------------------
-JsPhysicalElement* JsPhysicalElement::Create(JsDgnModelP model, JsDgnObjectIdP categoryId, Utf8StringCR ecSqlClassName)
+JsDgnElement* JsDgnElement::Create(JsDgnModelP model, Utf8StringCR ecSqlClassName)
     {
-    DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(model) && DGNJSAPI_IS_VALID_JSOBJ(categoryId))
-    DgnCategoryId catid(categoryId->m_id);
-    auto geom = createGeometricElement3d(*model->m_model, ecSqlClassName.c_str(), catid);
-    if (!geom.IsValid())
+    DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(model))
+    auto el = createElementByClass(*model->m_model, ecSqlClassName.c_str());
+    if (!el.IsValid())
         {
-        DGNJSAPI_DGNSCRIPT_THROW("Create", ecSqlClassName.c_str());
+        DGNJSAPI_DGNSCRIPT_THROW("DgnElement.Create", ecSqlClassName.c_str());
         return nullptr;
         }
-    return new JsPhysicalElement(*geom);
+    return new JsDgnElement(*el);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      06/15
+//---------------------------------------------------------------------------------------
+JsGeometricElement3d* JsGeometricElement3d::CreateGeometricElement3d(JsDgnModelP model, JsDgnObjectIdP catid, Utf8StringCR ecSqlClassName)
+    {
+    DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(model) && DGNJSAPI_IS_VALID_JSOBJ(catid))
+    auto el = createElementByClass(*model->m_model, ecSqlClassName.c_str());
+    if (!el.IsValid())
+        {
+        DGNJSAPI_DGNSCRIPT_THROW("JsGeometricElement3d.Create", ecSqlClassName.c_str());
+        return nullptr;
+        }
+    auto gel = dynamic_cast<GeometricElement3d*>(el.get());     // *** WIP_GeometricElement3d - DgnElement should have a _ToGeometricElement3d method
+    if (nullptr == gel)
+        {
+        Utf8PrintfString msg("[%s] is not a subclass of GeometricElement3d", ecSqlClassName.c_str());
+        DGNJSAPI_DGNSCRIPT_THROW("JsGeometricElement3d.Create", msg.c_str());
+        return nullptr;
+        }
+    gel->SetCategoryId(DgnCategoryId(catid->m_id));
+    return new JsGeometricElement3d(*gel);
     }
 
 //---------------------------------------------------------------------------------------
@@ -342,6 +399,74 @@ JsECClassP JsDgnElement::GetElementClass()
     {
     DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
     return new JsECClass(*m_el->GetElementClass());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+struct ECDbIssueListener : BeSQLite::EC::ECDb::IIssueListener
+    {
+    mutable BeSQLite::EC::ECDbIssueSeverity m_severity;
+    mutable Utf8String m_issue;
+
+    void _OnIssueReported(BeSQLite::EC::ECDbIssueSeverity severity, Utf8CP message) const override
+        {
+        m_severity = severity;
+        m_issue = message;
+        }
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      04/16
+//---------------------------------------------------------------------------------------
+JsPreparedECSqlStatementP JsDgnDb::GetPreparedECSqlSelectStatement(Utf8StringCR ecsqlFragment)
+    {
+    DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
+    Utf8String ecsql;
+    if (!ecsqlFragment.StartsWithI("SELECT"))
+        ecsql.append("SELECT "); // We want to prevent callers from doing INSERT, UPDATE, or DELETE. Pre-pending SELECT will guarantee a prepare error if ecsqlFragment also contains one of those keywords.
+    ecsql.append(ecsqlFragment);
+    ECDbIssueListener issues;
+    m_db->AddIssueListener(issues);
+    auto stmt = m_db->GetPreparedECSqlStatement(ecsql.c_str());
+    m_db->RemoveIssueListener();
+    if (!stmt.IsValid())
+        {
+        Utf8String msg (ecsql);
+        msg.append(" - ").append(issues.m_issue.c_str());
+        DGNJSAPI_DGNSCRIPT_THROW("ECSql", msg.c_str());
+        return nullptr;
+        }
+    return new JsPreparedECSqlStatement(*stmt);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      04/16
+//---------------------------------------------------------------------------------------
+JsDgnElementP JsDgnElements::FindElement(JsDgnObjectIdP id) const
+    {
+    DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(id));
+    auto el = m_elements.FindElement(DgnElementId(id->m_id));
+    return (nullptr != el) ? new JsDgnElement(*el->CopyForEdit()): nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      04/16
+//---------------------------------------------------------------------------------------
+JsDgnElementP JsDgnElements::GetElement(JsDgnObjectIdP id) const
+    {
+    DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(id));
+    auto el = m_elements.GetElement(DgnElementId(id->m_id));
+    return el.IsValid() ? new JsDgnElement(*el->CopyForEdit()) : nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      04/16
+//---------------------------------------------------------------------------------------
+JsDgnObjectIdP JsDgnElements::QueryElementIdByCode(Utf8StringCR codeAuthorityName, Utf8StringCR codeValue, Utf8StringCR nameSpace) const
+    {
+    DgnElementId id = m_elements.QueryElementIdByCode(codeAuthorityName.c_str(), codeValue, nameSpace);
+    return id.IsValid()? new JsDgnObjectId(id.GetValue()): nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -530,6 +655,15 @@ JsECDbSchemaManagerP JsDgnDb::GetSchemas()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+JsDgnElementsP JsDgnDb::GetElements()
+    {
+    DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
+    return new JsDgnElements(m_db->Elements());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 JsECInstanceP JsECClass::MakeInstance() 
     {
     DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
@@ -598,6 +732,122 @@ void Logging::SetSeverity(Utf8StringCR category, LoggingSeverity severity)
 bool Logging::IsSeverityEnabled(Utf8StringCR category, LoggingSeverity severity)
     {
     return NativeLogging::LoggingManager::GetLogger(category.c_str())->isSeverityEnabled(toNativeLoggingSeverity(severity));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
+BentleyStatus JsPreparedECSqlStatement::CheckValueIndexInRange(int idx)
+    {
+    if (0 <= idx && idx < m_stmt->GetColumnCount())
+        return BSISUCCESS;
+    DGNJSAPI_DGNSCRIPT_THROW("ECSql", "IndexOutOfRange");
+    return BSIERROR;
+    }
+
+#define CHECK_BIND_RESULT(BINDEXP) if (ECSqlStatus::Success != (BINDEXP)) {DGNJSAPI_DGNSCRIPT_THROW("ECSql", "BindError");}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      04/16
+//---------------------------------------------------------------------------------------
+void JsPreparedECSqlStatement::BindId(int parameterIndex, JsDgnObjectIdP value)
+    { 
+    DGNJSAPI_VALIDATE_ARGS_VOID(IsValid() && DGNJSAPI_IS_VALID_JSOBJ(value)); 
+    CHECK_BIND_RESULT(m_stmt->BindInt64(parameterIndex, value->m_id));
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      04/16
+//---------------------------------------------------------------------------------------
+void JsPreparedECSqlStatement::BindText(int parameterIndex, Utf8StringCR value)
+    { 
+    DGNJSAPI_VALIDATE_ARGS_VOID(IsValid()); 
+    CHECK_BIND_RESULT(m_stmt->BindText(parameterIndex, value.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes));
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      04/16
+//---------------------------------------------------------------------------------------
+void JsPreparedECSqlStatement::BindInt(int parameterIndex, int32_t value)
+    { 
+    DGNJSAPI_VALIDATE_ARGS_VOID(IsValid()); 
+    CHECK_BIND_RESULT(m_stmt->BindInt(parameterIndex, value));
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      04/16
+//---------------------------------------------------------------------------------------
+void JsPreparedECSqlStatement::BindDouble(int parameterIndex, double value)
+    { 
+    DGNJSAPI_VALIDATE_ARGS_VOID(IsValid()); 
+    CHECK_BIND_RESULT(m_stmt->BindDouble(parameterIndex, value));
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      04/16
+//---------------------------------------------------------------------------------------
+void JsPreparedECSqlStatement::BindDRange3d(int parameterIndex, JsDRange3dP value)
+    {
+    DGNJSAPI_VALIDATE_ARGS_VOID(IsValid() && value);
+    CHECK_BIND_RESULT(m_stmt->BindBinary(parameterIndex, &value->GetCR(), sizeof(DRange3d), IECSqlBinder::MakeCopy::Yes));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
+void JsPreparedECSqlStatement::BindDPoint3d(int parameterIndex, JsDPoint3dP value) 
+    {
+    DGNJSAPI_VALIDATE_ARGS_VOID(nullptr != value);
+    CHECK_BIND_RESULT(m_stmt->BindPoint3D(parameterIndex, value->GetCR()));
+    }
+
+#define CHECK_GET_VALUE_ARGS(COL,ERRVAL) DGNJSAPI_VALIDATE_ARGS(IsValid(), ERRVAL); if (BSISUCCESS != CheckValueIndexInRange(COL)) return ERRVAL;
+
+Utf8String JsPreparedECSqlStatement::GetValueText(int32_t col) { CHECK_GET_VALUE_ARGS(col,""); return m_stmt->GetValueText(col); }
+Utf8String JsPreparedECSqlStatement::GetValueDateTime(int32_t col) { CHECK_GET_VALUE_ARGS(col, ""); return m_stmt->GetValueDateTime(col).ToUtf8String(); }
+double JsPreparedECSqlStatement::GetValueDouble(int32_t col) { CHECK_GET_VALUE_ARGS(col, 0.0); return m_stmt->GetValueDouble(col); }
+JsDPoint3dP JsPreparedECSqlStatement::GetValueDPoint3d(int32_t col) { CHECK_GET_VALUE_ARGS(col, nullptr); return new JsDPoint3d(m_stmt->GetValuePoint3D(col)); }
+int32_t JsPreparedECSqlStatement::GetValueInt(int32_t col) { CHECK_GET_VALUE_ARGS(col, 0); return m_stmt->GetValueInt(col); }
+JsDgnObjectIdP JsPreparedECSqlStatement::GetValueId(int32_t col) { CHECK_GET_VALUE_ARGS(col, nullptr); return new JsDgnObjectId(m_stmt->GetValueUInt64(col)); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      04/16
+//---------------------------------------------------------------------------------------
+JsDRange3dP JsPreparedECSqlStatement::GetValueDRange3d(int32_t col)
+    {
+    CHECK_GET_VALUE_ARGS(col,nullptr);
+    int sz;
+    void const* p = m_stmt->GetValueBinary(col, &sz);
+    if (nullptr == p || sz != sizeof(DRange3d))
+        {
+        DGNJSAPI_DGNSCRIPT_THROW("ECSql", "ColumnType");
+        return nullptr;
+        }
+
+    return new JsDRange3d(*(DRange3d*)p);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      04/16
+//---------------------------------------------------------------------------------------
+BeSQLiteDbResult JsPreparedECSqlStatement::Step() 
+    {
+    DGNJSAPI_VALIDATE_ARGS(IsValid(), BeSQLiteDbResult::BE_SQLITE_ERROR);
+    switch (m_stmt->Step())
+        {
+        case BE_SQLITE_ROW: return BeSQLiteDbResult::BE_SQLITE_ROW;
+        case BE_SQLITE_DONE: return BeSQLiteDbResult::BE_SQLITE_DONE;
+        case BE_SQLITE_OK: return BeSQLiteDbResult::BE_SQLITE_OK;
+        }
+    return BeSQLiteDbResult::BE_SQLITE_ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      04/16
+//---------------------------------------------------------------------------------------
+int32_t JsPreparedECSqlStatement::GetParameterIndex(Utf8StringCR colName)
+    {
+    DGNJSAPI_VALIDATE_ARGS(IsValid(), 0); 
+    auto i = m_stmt->GetParameterIndex(colName.c_str()); 
+    if (-1 == i)
+        DGNJSAPI_DGNSCRIPT_THROW("ECSql", "NamedParameterNotFound");
+    return (int32_t)i;
     }
 
 //---------------------------------------------------------------------------------------

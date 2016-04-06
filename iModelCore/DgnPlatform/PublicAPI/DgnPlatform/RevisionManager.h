@@ -50,6 +50,7 @@ private:
     void SetChangeStreamFile(BeFileNameCR changeStreamFile) { m_changeStreamFile = changeStreamFile; }
     static BeFileName BuildChangeStreamPathname(Utf8String revisionId);
 
+    void CollectCodesFromChangeSet(DgnDbCR dgndb, BeSQLite::IChangeSet& changeSet);
 protected:    
     //! Constructor
     DgnRevision(Utf8StringCR revisionId, Utf8StringCR parentRevisionId, Utf8StringCR dbGuid) : m_id(revisionId), m_parentId(parentRevisionId), m_dbGuid(dbGuid) {}

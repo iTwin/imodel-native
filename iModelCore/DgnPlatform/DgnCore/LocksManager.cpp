@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnChangeSummary.h>
+#include "DgnChangeIterator.h"
 
 static const BeInt64Id s_dbId((uint64_t)1);
 
@@ -128,31 +129,28 @@ void LockRequest::FromRevision(DgnRevision& rev)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
+* @bsimethod                                                 Ramanujam.Raman   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LockRequest::FromChangeSummary(DgnChangeSummary const& summary, bool stopOnFirst)
+void LockRequest::FromChangeSet(DgnDbCR dgndb, IChangeSet& changeSet, bool stopOnFirst)
     {
     Clear();
 
-    for (auto const& entry : summary.MakeElementIterator())
+    for (ElementChangeEntry entry : DgnChangeIterator::MakeElementChangeIterator(dgndb, changeSet))
         {
-        if (entry.IsIndirectChange())
-            continue;   // ###TODO: Allow iterator options to specify exclusion of indirect changes
-
         DgnModelId modelId;
         switch (entry.GetDbOpcode())
             {
-            case DbOpcode::Insert:  modelId = entry.GetCurrentModelId(); break;
-            case DbOpcode::Delete:  modelId = entry.GetOriginalModelId(); break;
-            case DbOpcode::Update:
-                {
-                modelId = entry.GetCurrentModelId();
-                auto oldModelId = entry.GetOriginalModelId();
-                if (oldModelId != modelId)
-                    InsertLock(LockableId(oldModelId), LockLevel::Shared);
+                case DbOpcode::Insert:  modelId = entry.GetNewModelId(); break;
+                case DbOpcode::Delete:  modelId = entry.GetOldModelId(); break;
+                case DbOpcode::Update:
+                    {
+                    modelId = entry.GetNewModelId();
+                    auto oldModelId = entry.GetOldModelId();
+                    if (oldModelId != modelId)
+                        InsertLock(LockableId(oldModelId), LockLevel::Shared);
 
-                break;
-                }
+                    break;
+                    }
             }
 
         BeAssert(modelId.IsValid());
@@ -163,20 +161,15 @@ void LockRequest::FromChangeSummary(DgnChangeSummary const& summary, bool stopOn
         }
 
     // Any models directly changed?
-    ECClassId classId = summary.GetDgnDb().Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Model);
-    DgnChangeSummary::InstanceIterator::Options options(classId);
-    for (auto const& entry : summary.MakeInstanceIterator(options))
+    for (ModelChangeEntry entry : DgnChangeIterator::MakeModelChangeIterator(dgndb, changeSet))
         {
-        if (!entry.GetIndirect())
-            {
-            InsertLock(LockableId(LockableType::Model, entry.GetInstanceId()), LockLevel::Exclusive);
-            if (stopOnFirst && !IsEmpty())
-                return;
-            }
+        InsertLock(LockableId(LockableType::Model, entry.GetModelId()), LockLevel::Exclusive);
+        if (stopOnFirst && !IsEmpty())
+            return;
         }
 
     // Anything changed at all?
     if (!IsEmpty())
-        Insert(summary.GetDgnDb(), LockLevel::Shared);
+        Insert(dgndb, LockLevel::Shared);
     }
 

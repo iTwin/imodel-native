@@ -129,10 +129,11 @@ public:
     DGNPLATFORM_EXPORT BentleyStatus Load(DgnMaterialId materialId, DgnDbR dgnDb);
 
     double GetDouble(Utf8CP name, double defaultVal) const {return !m_value[name].isDouble() ? defaultVal : m_value[name].asDouble();}
+    void SetDouble(Utf8CP name, double val) {m_value[name]=val;}
     bool GetBool(Utf8CP name, bool defaultVal) const {return !m_value[name].isBool() ? defaultVal : m_value[name].asBool();}
+    void SetBool(Utf8CP name, bool val) {m_value[name]=val;}
     DGNPLATFORM_EXPORT RgbFactor GetColor(Utf8CP name) const;
     DGNPLATFORM_EXPORT void SetColor(Utf8CP name, RgbFactor);
-    void SetBool(Utf8CP name, bool val) {m_value[name]=val;}
     Json::Value& GetValueR() {return m_value;}
     Json::Value const& GetValue() const {return m_value;}
     DGNPLATFORM_EXPORT TextureMap GetPatternMap();

@@ -325,7 +325,7 @@ public:
     DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
     DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
 
-    void FromChangeSummary(DgnChangeSummary const& changes, bool stopOnFirst=false); //!< @private
+    void FromChangeSet(DgnDbCR dgndb, BeSQLite::IChangeSet& changeSet, bool stopOnFirst=false); //!< @private
     void ExtractLockSet(DgnLockSet& locks); //!< @private
     DGNPLATFORM_EXPORT void FromRevision(DgnRevision& revision); //!< @private
 };
