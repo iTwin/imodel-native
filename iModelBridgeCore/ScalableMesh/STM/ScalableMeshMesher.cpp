@@ -9,8 +9,8 @@
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-
-   
+        
+       
 #include <ScalableMeshPCH.h>
 #include "ImagePPHeaders.h"
 
@@ -26,7 +26,7 @@
 #include "ScalableMeshQuadTreeBCLIBFilters.h"
 #include "ScalableMeshMesher.h"
 #include "ScalableMeshMesher.hpp"
-
+ 
 //template class ScalableMesh2DDelaunayMesher<DPoint3d, IDTMFile::Extent3d64f>;
 
 //template class ScalableMeshAPSSOutOfCoreMesher<DPoint3d, IDTMFile::Extent3d64f>;
