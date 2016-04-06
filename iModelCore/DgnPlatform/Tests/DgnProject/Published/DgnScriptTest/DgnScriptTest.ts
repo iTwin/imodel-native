@@ -98,10 +98,12 @@ module DgnScriptTests {
 
         be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, "lastelid: " + lastelid.ToString() + " bbox:{" + fmtDPoint3d(lastelrange.Low) + "," + fmtDPoint3d(lastelrange.High));
 
-        // Test spatial query. In this example, I am testing for GENERIC_CLASSNAME_PhysicalObject. In a real app, I would
-        // be testing for valves and girders and so on.
+        // Test spatial query. There are lots of ways to further refine the results. In this example,
+        // I specify the ECClass of the elements that I am interested in. (Of course, in a real app, I would
+        // be testing for valves and girders and so on.) I could also be testing for the properties aspects,
+        // or codes, or various other things.
         var spatialQuery = db.GetPreparedECSqlSelectStatement(
-            "SELECT rt.ECInstanceId FROM dgn.SpatialIndex rt " +
+            "SELECT rt.ECInstanceId FROM dgn.SpatialIndex rt, " + physObjClass.ECSqlName + 
             " WHERE rt.ECInstanceId MATCH DGN_spatial_overlap_aabb(:bbox)"
         );
 
