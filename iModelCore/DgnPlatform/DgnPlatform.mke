@@ -647,7 +647,7 @@ LINKER_LIBRARIES_DELAYLOADED + \
 %ifndef BENTLEYCONFIG_NO_JAVASCRIPT
     LINKER_LIBRARIES +    $(ContextSubpartsLibs)$(libprefix)BeJavaScript$(stlibext)
     %if $(TARGET_PLATFORM) == "Windows"
-        %ifndef NDEBUG
+        %if !defined (NDEBUG) && !defined (DGNCLIENTFXJS_WINDOWS_FORCE_V8_ENGINE)
             %if defined (BEJAVASCRIPT_FORCE_JSRT_EDGE_MODE) && (" " != $[@findstring "[Version 10.", $[@readstdout ver]])
                 LINKER_LIBRARIES + chakrart.lib
             %else
