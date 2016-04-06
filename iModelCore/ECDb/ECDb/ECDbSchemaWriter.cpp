@@ -609,6 +609,20 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
         //VersionDigit1
         return ERROR;
        }
+
+    if (schemaChange.GetVersionWrite().IsValid())
+        {
+        if (schemaChange.GetVersionWrite().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionWrite().GetValue(ValueId::New).Value())
+            {
+            return Fail("ECSCHEMA-UPGRADE: Cannot downgrade ECSchema::VersionWrite. Failed on ECSchema %s.",
+                        oldSchema.GetFullSchemaName().c_str());
+
+            return ERROR;
+            }
+
+        updater.Set("VersionDigit2", schemaChange.GetVersionWrite().GetNew().Value());
+        }
+
     if (schemaChange.GetVersionMinor().IsValid())
         {
         if (schemaChange.GetVersionMinor().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionMinor().GetValue(ValueId::New).Value())
@@ -619,20 +633,9 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
             return ERROR;
             }
 
-        updater.Set("VersionDigit2", schemaChange.GetVersionMinor().GetNew().Value());
+        updater.Set("VersionDigit3", schemaChange.GetVersionMinor().GetNew().Value());
         }
-    if (schemaChange.GetVersionWrite().IsValid())
-        {
-        if (schemaChange.GetVersionWrite().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionWrite().GetValue(ValueId::New).Value())
-            {
-            return Fail ("ECSCHEMA-UPGRADE: Cannot downgrade ECSchema::VersionWrite. Failed on ECSchema %s.",
-                        oldSchema.GetFullSchemaName().c_str());
 
-            return ERROR;
-            }
-
-        updater.Set("VersionDigit3", schemaChange.GetVersionWrite().GetNew().Value());
-        }
     if (schemaChange.GetNamespacePrefix().IsValid())
         {
         if (schemaChange.GetNamespacePrefix().GetNew().IsNull())
