@@ -31,19 +31,21 @@ typedef AnnotationLeaderCollection const& AnnotationLeaderCollectionCR;
 //=======================================================================================
 struct TextAnnotation : RefCountedBase
 {
-public:
+    //=======================================================================================
+    // @bsiclass                                                    Josh.Schifter   04/2016
+    //=======================================================================================
     enum class AnchorPoint
-        {
-        LeftTop         = 1,
-        LeftMiddle      = 2,
-        LeftBottom      = 3,
-        CenterTop       = 4,
-        CenterMiddle    = 5,
-        CenterBottom    = 6,
-        RightTop        = 7,
-        RightMiddle     = 8,
-        RightBottom     = 9,
-        };
+    {
+        LeftTop = 1,
+        LeftMiddle = 2,
+        LeftBottom = 3,
+        CenterTop = 4,
+        CenterMiddle = 5,
+        CenterBottom = 6,
+        RightTop = 7,
+        RightMiddle = 8,
+        RightBottom = 9
+    };
 
 private:
     DEFINE_T_SUPER(RefCountedBase)
@@ -53,9 +55,9 @@ private:
     AnnotationTextBlockPtr m_text;
     AnnotationFramePtr m_frame;
     AnnotationLeaderCollection m_leaders;
-    AnchorPoint m_anchorPoint;
     DPoint3d m_origin;
     YawPitchRollAngles m_orientation;
+    AnchorPoint m_anchorPoint;
 
     DGNPLATFORM_EXPORT void CopyFrom(TextAnnotationCR);
     void Reset();
@@ -68,14 +70,13 @@ public:
     DGNPLATFORM_EXPORT static TextAnnotationPtr Create(DgnDbR, DgnElementId);
     TextAnnotationPtr Clone() const { return new TextAnnotation(*this); }
 
-    void TextAnnotation::SetAnchorPoint (AnchorPoint in) { m_anchorPoint = in; }
-    AnchorPoint TextAnnotation::GetAnchorPoint () const { return m_anchorPoint; }
-    void TextAnnotation::SetOrigin (DPoint3dCR in) { m_origin = in; }
-    DPoint3dCR TextAnnotation::GetOrigin () const { return m_origin; }
-    void TextAnnotation::SetOrientation (YawPitchRollAnglesCR in) { m_orientation = in; }
-    YawPitchRollAngles TextAnnotation::GetOrientation () const { return m_orientation; }
-
     DgnDbR GetDbR() const { return *m_dgndb; }                      
+    void SetOrigin(DPoint3dCR value) { m_origin = value; }
+    DPoint3dCR GetOrigin() const { return m_origin; }
+    void SetOrientation(YawPitchRollAnglesCR value) { m_orientation = value; }
+    YawPitchRollAngles GetOrientation() const { return m_orientation; }
+    void SetAnchorPoint(AnchorPoint value) { m_anchorPoint = value; }
+    AnchorPoint GetAnchorPoint() const { return m_anchorPoint; }
     AnnotationTextBlockCP GetTextCP() const { return m_text.get(); }
     AnnotationTextBlockP GetTextP() { return m_text.get(); }
     void SetText(AnnotationTextBlockCP value) { m_text = const_cast<AnnotationTextBlockP>(value); }
