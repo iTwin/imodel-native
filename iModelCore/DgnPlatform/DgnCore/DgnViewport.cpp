@@ -14,12 +14,25 @@ void DgnViewport::DestroyViewport()
     {
     m_elementProgressiveTasks.clear();
     m_terrainProgressiveTasks.clear();
+    RenderQueue().WaitForIdle();
     if (m_viewController.IsValid())
         {
         m_viewController->GetDgnDb().Models().DropGraphicsForViewport(*this);
         m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);        
         m_viewController = nullptr;
         }
+
+    m_renderTarget = nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    04/2016
+//---------------------------------------------------------------------------------------
+void DgnViewport::SuspendViewport()
+    {
+    m_elementProgressiveTasks.clear();
+    m_terrainProgressiveTasks.clear();
+    RenderQueue().WaitForIdle();
 
     m_renderTarget = nullptr;
     }
