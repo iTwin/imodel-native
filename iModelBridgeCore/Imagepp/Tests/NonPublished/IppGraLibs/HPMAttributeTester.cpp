@@ -52,30 +52,30 @@ HPMAttributeTester::HPMAttributeTester()
     ByteValue =     8;
     uint32_tValue =  8;
     UInt64Value =   8;
-    WStringValue =  L"Test";
+    Utf8StringValue =  u8"Test";
 
     //HPMGenericAttribute
-    pHRFAttributeImageDescription =         new HRFAttributeImageDescription(WStringValue);
-    pHRFAttributePageName =                 new HRFAttributePageName(WStringValue); 
-    pHRFAttributeDocumentName =             new HRFAttributeDocumentName(WStringValue);
-    pHRFAttributeTitle =                    new HRFAttributeTitle(WStringValue); 
-    pHRFAttributeNotes =                    new HRFAttributeNotes(WStringValue);
-    pHRFAttributeKeyWord =                  new HRFAttributeKeyWord(WStringValue);
-    pHRFAttributeMake =                     new HRFAttributeMake(WStringValue);
-    pHRFAttributeModel =                    new HRFAttributeModel(WStringValue);
-    pHRFAttributeSoftware =                 new HRFAttributeSoftware(WStringValue);
-    pHRFAttributeVersion =                  new HRFAttributeVersion(WStringValue);
-    pHRFAttributeCopyright =                new HRFAttributeCopyright(WStringValue);
-    pHRFAttributeArtist =                   new HRFAttributeArtist(WStringValue);
-    pHRFAttributeDirector =                 new HRFAttributeDirector(WStringValue);
-    pHRFAttributeCompany =                  new HRFAttributeCompany(WStringValue);
-    pHRFAttributeVendor =                   new HRFAttributeVendor(WStringValue);
-    pHRFAttributeHostComputer =             new HRFAttributeHostComputer(WStringValue);
-    pHRFAttributeDateTime =                 new HRFAttributeDateTime(WStringValue);
-    pHRFAttributeInkNames =                 new HRFAttributeInkNames(WStringValue);
-    pHRFAttributeSecurityLevel =            new HRFAttributeSecurityLevel(WStringValue);
-    pHRFAttributeLegalDisclaimer =          new HRFAttributeLegalDisclaimer(WStringValue);
-    pHRFAttributeContentWarning =           new HRFAttributeContentWarning(WStringValue);
+    pHRFAttributeImageDescription =         new HRFAttributeImageDescription(Utf8StringValue);
+    pHRFAttributePageName =                 new HRFAttributePageName(Utf8StringValue);
+    pHRFAttributeDocumentName =             new HRFAttributeDocumentName(Utf8StringValue);
+    pHRFAttributeTitle =                    new HRFAttributeTitle(Utf8StringValue);
+    pHRFAttributeNotes =                    new HRFAttributeNotes(Utf8StringValue);
+    pHRFAttributeKeyWord =                  new HRFAttributeKeyWord(Utf8StringValue);
+    pHRFAttributeMake =                     new HRFAttributeMake(Utf8StringValue);
+    pHRFAttributeModel =                    new HRFAttributeModel(Utf8StringValue);
+    pHRFAttributeSoftware =                 new HRFAttributeSoftware(Utf8StringValue);
+    pHRFAttributeVersion =                  new HRFAttributeVersion(Utf8StringValue);
+    pHRFAttributeCopyright =                new HRFAttributeCopyright(Utf8StringValue);
+    pHRFAttributeArtist =                   new HRFAttributeArtist(Utf8StringValue);
+    pHRFAttributeDirector =                 new HRFAttributeDirector(Utf8StringValue);
+    pHRFAttributeCompany =                  new HRFAttributeCompany(Utf8StringValue);
+    pHRFAttributeVendor =                   new HRFAttributeVendor(Utf8StringValue);
+    pHRFAttributeHostComputer =             new HRFAttributeHostComputer(Utf8StringValue);
+    pHRFAttributeDateTime =                 new HRFAttributeDateTime(Utf8StringValue);
+    pHRFAttributeInkNames =                 new HRFAttributeInkNames(Utf8StringValue);
+    pHRFAttributeSecurityLevel =            new HRFAttributeSecurityLevel(Utf8StringValue);
+    pHRFAttributeLegalDisclaimer =          new HRFAttributeLegalDisclaimer(Utf8StringValue);
+    pHRFAttributeContentWarning =           new HRFAttributeContentWarning(Utf8StringValue);
     pHRFAttributeVerticalUnitRatioToMeter = new HRFAttributeVerticalUnitRatioToMeter(DoubleValue);
     pHRFAttributeMinSampleValue =           new HRFAttributeMinSampleValue(VectorDouble);
     pHRFAttributeMaxSampleValue =           new HRFAttributeMaxSampleValue(VectorDouble);
@@ -86,14 +86,14 @@ HPMAttributeTester::HPMAttributeTester()
     pHRFAttributeForeground =               new HRFAttributeForeground(UInt32Value);
     pHRFAttributeBackground =               new HRFAttributeBackground(UInt32Value);
     pHRFAttributeGTModelType =              new HRFAttributeGTModelType(UShortValue);
-    pHRFAttributePCSCitation =              new HRFAttributePCSCitation(WStringValue);
+    pHRFAttributePCSCitation =              new HRFAttributePCSCitation(Utf8StringValue);
     pHRFAttributeProjectedCSType =          new HRFAttributeProjectedCSType(UShortValue);   
-    pHRFAttributeGTCitation =               new HRFAttributeGTCitation(WStringValue);
+    pHRFAttributeGTCitation =               new HRFAttributeGTCitation(Utf8StringValue);
     pHRFAttributeProjection =               new HRFAttributeProjection(UShortValue);
     pHRFAttributeProjCoordTrans =           new HRFAttributeProjCoordTrans(UShortValue);
     pHRFAttributeProjLinearUnits =          new HRFAttributeProjLinearUnits(UShortValue);
     pHRFAttributeGeographicType =           new HRFAttributeGeographicType(UShortValue);
-    pHRFAttributeGeogCitation =             new HRFAttributeGeogCitation(WStringValue);
+    pHRFAttributeGeogCitation =             new HRFAttributeGeogCitation(Utf8StringValue);
     pHRFAttributeGeogLinearUnits =          new HRFAttributeGeogLinearUnits(UShortValue);
     pHRFAttributeGeogEllipsoid =            new HRFAttributeGeogEllipsoid(UShortValue);
     pHRFAttributeGeogAzimuthUnits =         new HRFAttributeGeogAzimuthUnits(UShortValue);
@@ -105,40 +105,40 @@ HPMAttributeTester::HPMAttributeTester()
     pHRFAttributeProjCenterLat =            new HRFAttributeProjCenterLat(DoubleValue);
     pHRFAttributeProjAzimuthAngle =         new HRFAttributeProjAzimuthAngle(DoubleValue);
     pHRFAttributeVerticalCSType =           new HRFAttributeVerticalCSType(UShortValue);
-    pHRFAttributeVerticalCitation =         new HRFAttributeVerticalCitation(WStringValue);
+    pHRFAttributeVerticalCitation =         new HRFAttributeVerticalCitation(Utf8StringValue);
     pHRFAttributeVerticalDatum =            new HRFAttributeVerticalDatum(UShortValue);
     pHRFAttributeVerticalUnits =            new HRFAttributeVerticalUnits(UShortValue);
     pHRFAttributeVerticalUnitRatioToMeter = new HRFAttributeVerticalUnitRatioToMeter(DoubleValue);
     pHRFAttributeGPSVersionID =             new HRFAttributeGPSVersionID(VectorByte);
-    pHRFAttributeGPSLatitudeRef =           new HRFAttributeGPSLatitudeRef(WStringValue);
+    pHRFAttributeGPSLatitudeRef =           new HRFAttributeGPSLatitudeRef(Utf8StringValue);
     pHRFAttributeGPSLatitude =              new HRFAttributeGPSLatitude(VectorDouble);
-    pHRFAttributeGPSLongitudeRef =          new HRFAttributeGPSLongitudeRef(WStringValue);
+    pHRFAttributeGPSLongitudeRef =          new HRFAttributeGPSLongitudeRef(Utf8StringValue);
     pHRFAttributeGPSLongitude =             new HRFAttributeGPSLongitude(VectorDouble);
     pHRFAttributeGPSAltitudeRef =           new HRFAttributeGPSAltitudeRef(ByteValue); 
     pHRFAttributeGPSAltitude =              new HRFAttributeGPSAltitude(DoubleValue);
     pHRFAttributeGPSTimeStamp =             new HRFAttributeGPSTimeStamp(VectorDouble);
-    pHRFAttributeGPSSatellites =            new HRFAttributeGPSSatellites(WStringValue);
-    pHRFAttributeGPSStatus =                new HRFAttributeGPSStatus(WStringValue);
-    pHRFAttributeGPSMeasureMode =           new HRFAttributeGPSMeasureMode(WStringValue);
+    pHRFAttributeGPSSatellites =            new HRFAttributeGPSSatellites(Utf8StringValue);
+    pHRFAttributeGPSStatus =                new HRFAttributeGPSStatus(Utf8StringValue);
+    pHRFAttributeGPSMeasureMode =           new HRFAttributeGPSMeasureMode(Utf8StringValue);
     pHRFAttributeGPSDOP =                   new HRFAttributeGPSDOP(DoubleValue);
-    pHRFAttributeGPSSpeedRef =              new HRFAttributeGPSSpeedRef(WStringValue);
+    pHRFAttributeGPSSpeedRef =              new HRFAttributeGPSSpeedRef(Utf8StringValue);
     pHRFAttributeGPSSpeed =                 new HRFAttributeGPSSpeed(DoubleValue);
-    pHRFAttributeGPSTrackRef =              new HRFAttributeGPSTrackRef(WStringValue);
+    pHRFAttributeGPSTrackRef =              new HRFAttributeGPSTrackRef(Utf8StringValue);
     pHRFAttributeGPSTrack =                 new HRFAttributeGPSTrack(DoubleValue);
     pHRFAttributeGPSImgDirection =          new HRFAttributeGPSImgDirection(DoubleValue);
-    pHRFAttributeGPSMapDatum =              new HRFAttributeGPSMapDatum(WStringValue);
+    pHRFAttributeGPSMapDatum =              new HRFAttributeGPSMapDatum(Utf8StringValue);
     pHRFAttributeGPSDestLatitude =          new HRFAttributeGPSDestLatitude(VectorDouble);
     pHRFAttributeGPSDestLongitude =         new HRFAttributeGPSDestLongitude(VectorDouble);
     pHRFAttributeGPSDestDistance =          new HRFAttributeGPSDestDistance(DoubleValue);
     pHRFAttributeGPSDestBearing =           new HRFAttributeGPSDestBearing(DoubleValue);
-    pHRFAttributeGPSDateStamp =             new HRFAttributeGPSDateStamp(WStringValue);
+    pHRFAttributeGPSDateStamp =             new HRFAttributeGPSDateStamp(Utf8StringValue);
     pHRFAttributeGPSDifferential =          new HRFAttributeGPSDifferential(UShortValue);
     pHRFAttributeExposureTime =             new HRFAttributeExposureTime(DoubleValue);
     pHRFAttributeFNumber =                  new HRFAttributeFNumber(DoubleValue);
     pHRFAttributeExposureProgram =          new HRFAttributeExposureProgram(UShortValue);
     pHRFAttributeISOSpeedRatings =          new HRFAttributeISOSpeedRatings(VectorUShort);
     pHRFAttributeExifVersion =              new HRFAttributeExifVersion(VectorChar);
-    pHRFAttributeDateTimeOriginal =         new HRFAttributeDateTimeOriginal(WStringValue); 
+    pHRFAttributeDateTimeOriginal =         new HRFAttributeDateTimeOriginal(Utf8StringValue); 
     pHRFAttributeApertureValue =            new HRFAttributeApertureValue(DoubleValue);
     pHRFAttributeBrightnessValue =          new HRFAttributeBrightnessValue(DoubleValue); 
     pHRFAttributeMaxApertureValue =         new HRFAttributeMaxApertureValue(DoubleValue);
@@ -150,12 +150,12 @@ HPMAttributeTester::HPMAttributeTester()
     pHRFAttributeSubjectArea =              new HRFAttributeSubjectArea(VectorUShort);
     pHRFAttributeMakerNote =                new HRFAttributeMakerNote(VectorByte);
     pHRFAttributeUserComment =              new HRFAttributeUserComment(VectorByte);
-    pHRFAttributeSubSecTime =               new HRFAttributeSubSecTime(WStringValue);
+    pHRFAttributeSubSecTime =               new HRFAttributeSubSecTime(Utf8StringValue);
     pHRFAttributeFlashpixVersion =          new HRFAttributeFlashpixVersion(VectorByte);
     pHRFAttributeColorSpace =               new HRFAttributeColorSpace(UShortValue);
     pHRFAttributePixelXDimension =          new HRFAttributePixelXDimension(uint32_tValue); 
     pHRFAttributePixelYDimension =          new HRFAttributePixelYDimension(uint32_tValue);
-    pHRFAttributeRelatedSoundFile =         new HRFAttributeRelatedSoundFile(WStringValue);
+    pHRFAttributeRelatedSoundFile =         new HRFAttributeRelatedSoundFile(Utf8StringValue);
     pHRFAttributeFlashEnergy =              new HRFAttributeFlashEnergy(DoubleValue);
     pHRFAttributeSubjectLocation =          new HRFAttributeSubjectLocation(VectorUShort);
     pHRFAttributeExposureIndex =            new HRFAttributeExposureIndex(DoubleValue);
@@ -172,18 +172,18 @@ HPMAttributeTester::HPMAttributeTester()
     pHRFAttributeContrast =                 new HRFAttributeContrast(UShortValue);
     pHRFAttributeSaturation =               new HRFAttributeSaturation(UShortValue);
     pHRFAttributeSharpness =                new HRFAttributeSharpness(UShortValue);
-    pHRFAttributeImageUniqueID =            new HRFAttributeImageUniqueID(WStringValue);
+    pHRFAttributeImageUniqueID =            new HRFAttributeImageUniqueID(Utf8StringValue);
     pHRFAttributeImageGamma =               new HRFAttributeImageGamma(DoubleValue);
-    pHRFAttributeTimeModification =         new HRFAttributeTimeModification(WStringValue);
+    pHRFAttributeTimeModification =         new HRFAttributeTimeModification(Utf8StringValue);
     pHRFAttributeHGRFile =                  new HRFAttributeHGRFile(StringValue);
     pHRFAttributeHGRVersion =               new HRFAttributeHGRVersion(StringValue);
     pHRFAttributeHGROwner =                 new HRFAttributeHGROwner(StringValue);
     pHRFAttributeHGRDescription =           new HRFAttributeHGRDescription(StringValue);
     pHRFAttributeOriginalFileSize =         new HRFAttributeOriginalFileSize(UInt64Value);
-    pHPSAttributeImageDescription =         new HPSAttributeImageDescription(WStringValue);
+    pHPSAttributeImageDescription =         new HPSAttributeImageDescription(Utf8StringValue);
 
-    pHRFAttributeOriginalFileFormat =          new HRFAttributeOriginalFileFormat(WStringValue);
-    pHRFAttributeOriginalFileCompression =     new HRFAttributeOriginalFileCompression(WStringValue);     
+    pHRFAttributeOriginalFileFormat =          new HRFAttributeOriginalFileFormat(Utf8StringValue);
+    pHRFAttributeOriginalFileCompression =     new HRFAttributeOriginalFileCompression(Utf8StringValue);     
     pHRFAttributeSubjectDistanceRange =        new HRFAttributeSubjectDistanceRange(UShortValue);
     pHRFAttributeDeviceSettingDescription =    new HRFAttributeDeviceSettingDescription(VectorByte);
     pHRFAttributeFocalLengthIn35mmFilm =       new HRFAttributeFocalLengthIn35mmFilm(UShortValue);
@@ -191,10 +191,10 @@ HPMAttributeTester::HPMAttributeTester()
     pHRFAttributeFocalPlaneXResolution =       new HRFAttributeFocalPlaneXResolution(DoubleValue);
     pHRFAttributeFocalPlaneYResolution =       new HRFAttributeFocalPlaneYResolution(DoubleValue);
     pHRFAttributeFocalPlaneResolutionUnit =    new HRFAttributeFocalPlaneResolutionUnit(UShortValue);
-    pHRFAttributeSubSecTimeDigitized =         new HRFAttributeSubSecTimeDigitized(WStringValue);
-    pHRFAttributeSubSecTimeOriginal =          new HRFAttributeSubSecTimeOriginal(WStringValue);
+    pHRFAttributeSubSecTimeDigitized =         new HRFAttributeSubSecTimeDigitized(Utf8StringValue);
+    pHRFAttributeSubSecTimeOriginal =          new HRFAttributeSubSecTimeOriginal(Utf8StringValue);
     pHRFAttributeExposureBiasValue =           new HRFAttributeExposureBiasValue(DoubleValue); 
-    pHRFAttributeDateTimeDigitized =           new HRFAttributeDateTimeDigitized(WStringValue);
+    pHRFAttributeDateTimeDigitized =           new HRFAttributeDateTimeDigitized(Utf8StringValue);
     pHRFAttributeComponentsConfiguration =     new HRFAttributeComponentsConfiguration(VectorByte);
     pHRFAttributeCompressedBitsPerPixel =      new HRFAttributeCompressedBitsPerPixel(DoubleValue);
     pHRFAttributeShutterSpeedValue =           new HRFAttributeShutterSpeedValue(DoubleValue);
@@ -224,19 +224,19 @@ HPMAttributeTester::HPMAttributeTester()
     pHRFAttributeProjScaleAtCenter =           new HRFAttributeProjScaleAtCenter(DoubleValue); 
     pHRFAttributeProjStraightVertPoleLong =    new HRFAttributeProjStraightVertPoleLong(DoubleValue);
     pHRFAttributeProjRectifiedGridAngle =      new HRFAttributeProjRectifiedGridAngle(DoubleValue);
-    pHRFAttributeGPSImgDirectionRef =          new HRFAttributeGPSImgDirectionRef(WStringValue);
-    pHRFAttributeGPSDestLatitudeRef =          new HRFAttributeGPSDestLatitudeRef(WStringValue);
-    pHRFAttributeGPSDestLongitudeRef =         new HRFAttributeGPSDestLongitudeRef(WStringValue);
-    pHRFAttributeGPSDestBearingRef =           new HRFAttributeGPSDestBearingRef(WStringValue);
-    pHRFAttributeGPSDestDistanceRef =          new HRFAttributeGPSDestDistanceRef(WStringValue);    
+    pHRFAttributeGPSImgDirectionRef =          new HRFAttributeGPSImgDirectionRef(Utf8StringValue);
+    pHRFAttributeGPSDestLatitudeRef =          new HRFAttributeGPSDestLatitudeRef(Utf8StringValue);
+    pHRFAttributeGPSDestLongitudeRef =         new HRFAttributeGPSDestLongitudeRef(Utf8StringValue);
+    pHRFAttributeGPSDestBearingRef =           new HRFAttributeGPSDestBearingRef(Utf8StringValue);
+    pHRFAttributeGPSDestDistanceRef =          new HRFAttributeGPSDestDistanceRef(Utf8StringValue);    
     pHRFAttributeGPSProcessingMethod =         new HRFAttributeGPSProcessingMethod(VectorByte);
     pHRFAttributeGPSAreaInformation =          new HRFAttributeGPSAreaInformation(VectorByte);
-    pHRFAttributeSpectralSensitivity =         new HRFAttributeSpectralSensitivity(WStringValue);
+    pHRFAttributeSpectralSensitivity =         new HRFAttributeSpectralSensitivity(Utf8StringValue);
     pHRFAttributeOptoelectricConversionFactor =  new HRFAttributeOptoElectricConversionFactor(VectorByte);
     pHRFAttributeOriginalFileModificationDate =  new HRFAttributeOriginalFileModificationDate(UInt64Value);
 
     //HPMAttribute_T
-    pImageDescription =         new HRFAttributeImageDescription(WStringValue);
+    pImageDescription =         new HRFAttributeImageDescription(Utf8StringValue);
     pSampleValue =              new HRFAttributeMinSampleValue(VectorDouble);
     pResolutionUnit =           new HRFAttributeResolutionUnit(UShortValue);
     pTransfoMatrix =            new HRFAttribute3DTransformationMatrix(Matrix);
@@ -247,7 +247,7 @@ HPMAttributeTester::HPMAttributeTester()
     pGPSAltitudeRef =           new HRFAttributeGPSAltitudeRef(ByteValue);
     pISOSpeedRatings =          new HRFAttributeISOSpeedRatings(VectorUShort);
     pExifVersion =              new HRFAttributeExifVersion(VectorChar);
-    pOFileFormat =              new HRFAttributeOriginalFileFormat(WStringValue);
+    pOFileFormat =              new HRFAttributeOriginalFileFormat(Utf8StringValue);
     pOFileSize =                new HRFAttributeOriginalFileSize(UInt64Value);
     pColor =                    new HRFAttributeDontSupportPersistentColor(true);
 
@@ -261,10 +261,10 @@ TEST_F (HPMAttributeTester, DataTest)
     {
   
     //string
-    ASSERT_STREQ(WStringValue.c_str(), pImageDescription->GetData().c_str());
+    ASSERT_STREQ(Utf8StringValue.c_str(), pImageDescription->GetData().c_str());
 
-    pImageDescription->SetData(L"Nouveau");
-    ASSERT_STREQ(L"Nouveau", pImageDescription->GetData().c_str());
+    pImageDescription->SetData("Nouveau");
+    ASSERT_STREQ("Nouveau", pImageDescription->GetData().c_str());
 
     //vector<double>
     ASSERT_DOUBLE_EQ(VectorDouble.front(), pSampleValue->GetData().front());
@@ -345,10 +345,10 @@ TEST_F (HPMAttributeTester, DataTest)
     ASSERT_EQ('9', pExifVersion->GetData().back());
 
     //WString
-    ASSERT_STREQ(WStringValue.c_str(), pOFileFormat->GetData().c_str());
+    ASSERT_STREQ(Utf8StringValue.c_str(), pOFileFormat->GetData().c_str());
 
-    pOFileFormat->SetData(L"Nouveau");
-    ASSERT_STREQ(L"Nouveau", pOFileFormat->GetData().c_str());
+    pOFileFormat->SetData("Nouveau");
+    ASSERT_STREQ("Nouveau", pOFileFormat->GetData().c_str());
 
     //UInt64
     ASSERT_EQ(UInt64Value, pOFileSize->GetData());
@@ -431,7 +431,7 @@ TEST_F (HPMAttributeTester, SameAttributeAsTest)
     // Test for same attribute type not same type same data.
 
     //string
-    ASSERT_TRUE(pHRFAttributeImageDescription->SameAttributeAs(HRFAttributeImageDescription(L"__SameAttributeAsTest")));
+    ASSERT_TRUE(pHRFAttributeImageDescription->SameAttributeAs(HRFAttributeImageDescription("__SameAttributeAsTest")));
 
     //vector<double>
     ASSERT_TRUE(pHRFAttributeMinSampleValue->SameAttributeAs(HRFAttributeMinSampleValue()));
@@ -484,7 +484,7 @@ TEST_F (HPMAttributeTester, CloneTest)
     HPMGenericAttribute* pHRFAttributeImageDescriptionClone = pHRFAttributeImageDescription->Clone();
 
     ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeImageDescription::ATTRIBUTE_ID, pHRFAttributeImageDescriptionClone->GetID());
-    ASSERT_STREQ(WStringValue.c_str(), static_cast<HRFAttributeImageDescription*> (pHRFAttributeImageDescriptionClone)->GetData().c_str());
+    ASSERT_STREQ(Utf8StringValue.c_str(), static_cast<HRFAttributeImageDescription*> (pHRFAttributeImageDescriptionClone)->GetData().c_str());
 
     //vector<double>
     HPMGenericAttribute* pHRFAttributeSampleValueClone = pHRFAttributeMinSampleValue->Clone();
@@ -560,7 +560,7 @@ TEST_F (HPMAttributeTester, CloneTest)
     HPMGenericAttribute* pHRFAttributeOriginalFileFormatClone = pHRFAttributeOriginalFileFormat->Clone();
 
     ASSERT_EQ((ImagePP::HPMAttributesID)HRFAttributeOriginalFileFormat::ATTRIBUTE_ID, pHRFAttributeOriginalFileFormatClone->GetID());
-    ASSERT_STREQ(WStringValue.c_str(), static_cast<HRFAttributeOriginalFileFormat*> (pHRFAttributeOriginalFileFormatClone)->GetData().c_str());
+    ASSERT_STREQ(Utf8StringValue.c_str(), static_cast<HRFAttributeOriginalFileFormat*> (pHRFAttributeOriginalFileFormatClone)->GetData().c_str());
 
     //UInt64
     HPMGenericAttribute* pHRFAttributeOriginalFileSizeClone = pHRFAttributeOriginalFileSize->Clone();
@@ -577,43 +577,43 @@ TEST_F (HPMAttributeTester, GetValueAsStringTest)
     {
 
     //string
-    ASSERT_STREQ(L"Test", pHRFAttributeImageDescription->GetDataAsString().c_str());
+    ASSERT_STREQ("Test", pHRFAttributeImageDescription->GetDataAsString().c_str());
 
     //vector<double> 
-    ASSERT_STREQ(L"8, 9", pHRFAttributeMinSampleValue->GetDataAsString().c_str());
+    ASSERT_STREQ("8, 9", pHRFAttributeMinSampleValue->GetDataAsString().c_str());
 
     //UShort
-    ASSERT_STREQ(L"8", pHRFAttributeResolutionUnit->GetDataAsString().c_str());
+    ASSERT_STREQ("8", pHRFAttributeResolutionUnit->GetDataAsString().c_str());
 
     //UInt32
-    ASSERT_STREQ(L"8", pHRFAttributeForeground->GetDataAsString().c_str());
+    ASSERT_STREQ("8", pHRFAttributeForeground->GetDataAsString().c_str());
 
     //bool
-    ASSERT_STREQ(L"1", pHRFAttributeDontSupportPersistentColor->GetDataAsString().c_str());
+    ASSERT_STREQ("1", pHRFAttributeDontSupportPersistentColor->GetDataAsString().c_str());
 
     //double
-    ASSERT_STREQ(L"8", pHRFAttributeYResolution->GetDataAsString().c_str());
+    ASSERT_STREQ("8", pHRFAttributeYResolution->GetDataAsString().c_str());
 
     //uint32_t
-    ASSERT_STREQ(L"8", pHRFAttributeProjectedCSTypeLong->GetDataAsString().c_str());
+    ASSERT_STREQ("8", pHRFAttributeProjectedCSTypeLong->GetDataAsString().c_str());
 
     //vector<Byte>
-    ASSERT_STREQ(L"8, 9", pHRFAttributeGPSVersionID->GetDataAsString().c_str()); 
+    ASSERT_STREQ("8, 9", pHRFAttributeGPSVersionID->GetDataAsString().c_str()); 
 
     //Byte
-    ASSERT_STREQ(L"8", pHRFAttributeGPSAltitudeRef->GetDataAsString().c_str()); 
+    ASSERT_STREQ("8", pHRFAttributeGPSAltitudeRef->GetDataAsString().c_str()); 
 
     //vector<UShort>
-    ASSERT_STREQ(L"8, 9", pHRFAttributeISOSpeedRatings->GetDataAsString().c_str());
+    ASSERT_STREQ("8, 9", pHRFAttributeISOSpeedRatings->GetDataAsString().c_str());
 
     //<vector<char>
-    ASSERT_STREQ(L"8, 9", pHRFAttributeExifVersion->GetDataAsString().c_str());
+    ASSERT_STREQ("8, 9", pHRFAttributeExifVersion->GetDataAsString().c_str());
 
     //WString
-    ASSERT_STREQ(L"Test", pHRFAttributeOriginalFileFormat->GetDataAsString().c_str());
+    ASSERT_STREQ("Test", pHRFAttributeOriginalFileFormat->GetDataAsString().c_str());
 
     //UInt64
-    ASSERT_STREQ(L"8", pHRFAttributeOriginalFileSize->GetDataAsString().c_str());
+    ASSERT_STREQ("8", pHRFAttributeOriginalFileSize->GetDataAsString().c_str());
 
     }
 
@@ -624,45 +624,45 @@ TEST_F (HPMAttributeTester, GetNameTest)
     {
 
     //string
-    ASSERT_STREQ(L"Image Description", pHRFAttributeImageDescription->GetName().c_str());
+    ASSERT_STREQ("Image Description", pHRFAttributeImageDescription->GetName().c_str());
 
     //vector<double> 
-    ASSERT_STREQ(L"Sample Minimum Value", pHRFAttributeMinSampleValue->GetName().c_str());
+    ASSERT_STREQ("Sample Minimum Value", pHRFAttributeMinSampleValue->GetName().c_str());
 
     //UShort
-    ASSERT_STREQ(L"Resolution Unit", pHRFAttributeResolutionUnit->GetName().c_str());
+    ASSERT_STREQ("Resolution Unit", pHRFAttributeResolutionUnit->GetName().c_str());
 
     //HFCMatrix<4,4, double>
-    ASSERT_STREQ(L"3D Tranformation Matrix", pHRFAttribute3DTranformationMatrix->GetName().c_str());
+    ASSERT_STREQ("3D Tranformation Matrix", pHRFAttribute3DTranformationMatrix->GetName().c_str());
 
     //UInt32
-    ASSERT_STREQ(L"Foreground", pHRFAttributeForeground->GetName().c_str());
+    ASSERT_STREQ("Foreground", pHRFAttributeForeground->GetName().c_str());
 
     //bool
-    ASSERT_STREQ(L"Persistent Color", pHRFAttributeDontSupportPersistentColor->GetName().c_str());
+    ASSERT_STREQ("Persistent Color", pHRFAttributeDontSupportPersistentColor->GetName().c_str());
 
     //double
-    ASSERT_STREQ(L"Y Resolution", pHRFAttributeYResolution->GetName().c_str());
+    ASSERT_STREQ("Y Resolution", pHRFAttributeYResolution->GetName().c_str());
 
     //uint32_t
-    ASSERT_STREQ(L"ProjectedCSTypeLong", pHRFAttributeProjectedCSTypeLong->GetName().c_str());
+    ASSERT_STREQ("ProjectedCSTypeLong", pHRFAttributeProjectedCSTypeLong->GetName().c_str());
 
     //vector<Byte>
-    ASSERT_STREQ(L"GPSVersionID", pHRFAttributeGPSVersionID->GetName().c_str());
+    ASSERT_STREQ("GPSVersionID", pHRFAttributeGPSVersionID->GetName().c_str());
 
     //Byte
-    ASSERT_STREQ(L"GPSAltitudeRef", pHRFAttributeGPSAltitudeRef->GetName().c_str());
+    ASSERT_STREQ("GPSAltitudeRef", pHRFAttributeGPSAltitudeRef->GetName().c_str());
 
     //vector<UShort>
-    ASSERT_STREQ(L"ISOSpeedRatings", pHRFAttributeISOSpeedRatings->GetName().c_str());
+    ASSERT_STREQ("ISOSpeedRatings", pHRFAttributeISOSpeedRatings->GetName().c_str());
 
     //<vector<char>
-    ASSERT_STREQ(L"ExifVersion", pHRFAttributeExifVersion->GetName().c_str());
+    ASSERT_STREQ("ExifVersion", pHRFAttributeExifVersion->GetName().c_str());
 
     //WString
-    ASSERT_STREQ(L"Original File Format", pHRFAttributeOriginalFileFormat->GetName().c_str());
+    ASSERT_STREQ("Original File Format", pHRFAttributeOriginalFileFormat->GetName().c_str());
 
     //UInt64
-    ASSERT_STREQ(L"Original File Size", pHRFAttributeOriginalFileSize->GetName().c_str());
+    ASSERT_STREQ("Original File Size", pHRFAttributeOriginalFileSize->GetName().c_str());
 
     }
