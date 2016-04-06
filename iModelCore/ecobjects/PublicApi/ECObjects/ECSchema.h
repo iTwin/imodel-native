@@ -270,6 +270,7 @@ protected:
     void                                AddUniquePrimaryCustomAttributesToList(ECCustomAttributeCollection& returnList);
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const;
     virtual ECSchemaCP                  _GetContainerSchema() const = 0;// {return NULL;};
+    virtual CustomAttributeContainerType _GetContainerType() const = 0;
 
     ECOBJECTS_EXPORT virtual ~IECCustomAttributeContainer();
 
@@ -903,6 +904,7 @@ protected:
     virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const override;
     virtual bool                                _IsCalculated() const override;
     virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) override;
+    virtual CustomAttributeContainerType        _GetContainerType() const override { return CustomAttributeContainerType::PrimitiveProperty; }
 
 public:
     //! Sets the PrimitiveType of this ECProperty.  The default type is ::PRIMITIVETYPE_String
@@ -939,6 +941,7 @@ protected:
     virtual Utf8String                  _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
+    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::StructProperty; }
 
 //__PUBLISH_SECTION_START__
 public:
@@ -988,6 +991,7 @@ protected:
     virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const override;
     virtual bool                                _IsCalculated() const override;
     virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) override;
+    virtual CustomAttributeContainerType        _GetContainerType() const override { return CustomAttributeContainerType::ArrayProperty; }
 
 /*__PUBLISH_SECTION_END__*/
 public:
@@ -1042,6 +1046,7 @@ protected:
     virtual StructArrayECPropertyCP     _GetAsStructArrayPropertyCP() const override { return this; }
     virtual StructArrayECPropertyP      _GetAsStructArrayPropertyP()        override { return this; }
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
+    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::StructArrayProperty; }
 
 public:
     //! Sets the ECClass to be used for the array's struct elements
@@ -1088,6 +1093,7 @@ protected:
     virtual ECObjectsStatus         _SetTypeName(Utf8StringCR typeName) override { return ECObjectsStatus::OperationNotSupported; }
 
     virtual bool                    _CanOverride(ECPropertyCR baseProperty) const override;
+    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::NavigationProperty; }
 
 public:
     // !Gets the relationship class used to determine what related instance this navigation property points to
@@ -1813,6 +1819,7 @@ protected:
     virtual ECEntityClassCP _GetEntityClassCP() const override {return this;}
     virtual ECEntityClassP _GetEntityClassP() override { return this; }
     virtual ECClassType _GetClassType() const override { return ECClassType::Entity;}
+    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::EntityClass; }
 
 public:
     //! Creates a navigation property object using the relationship class and direction.  To succeed the relationship class, direction and name must all be valid.
@@ -1852,6 +1859,7 @@ protected:
     ECClassType _GetClassType() const override { return ECClassType::CustomAttribute;}
     ECCustomAttributeClassCP _GetCustomAttributeClassCP() const override { return this;}
     ECCustomAttributeClassP _GetCustomAttributeClassP() override { return this; }
+    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::CustomAttributeClass; }
 
 public:
     CustomAttributeContainerType GetContainerType() const { return m_containerType; }
@@ -1859,6 +1867,10 @@ public:
     //! Sets the container type which this custom attribute can be applied to. Use this carefully as it might render existing instances invalid!
     // @param[in]   containerType   The new container type to apply
     void SetContainerType(CustomAttributeContainerType containerType) { m_containerType = containerType; }
+
+    //! Returns true if the containerType is compatible with the CustomAttributeContainerType of this ECCustomAttributeClass
+    //@param[in]    containerType   The type of the container you wish to apply an instance of this class to
+    bool CanBeAppliedTo(CustomAttributeContainerType containerType) const { return 0 != static_cast<int>(m_containerType & containerType); } // Compare to 0 instead of containerType so comparisons like Class & Any return true
 };
 
 //---------------------------------------------------------------------------------------
@@ -1886,6 +1898,7 @@ protected:
     virtual ECClassType _GetClassType() const override { return ECClassType::Struct;}
     virtual ECStructClassCP _GetStructClassCP() const override { return this;}
     virtual ECStructClassP _GetStructClassP() override { return this; }
+    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::StructClass; }
 
 };
 
@@ -2024,7 +2037,7 @@ struct ECRelationshipConstraintClassList : NonCopyableClass
         ECRelationshipClassP m_relClass;
    //__PUBLISH_SECTION_START__
     public:
-        ECRelationshipConstraintClassList(ECRelationshipClassP relClass, bool isMultiple = false);
+        ECRelationshipConstraintClassList(ECRelationshipClassP relClass);
         ECOBJECTS_EXPORT iterator begin() const;    //!< Returns the beginning of the iterator
         ECOBJECTS_EXPORT iterator end() const;      //!< Returns the end of the iterator
         ECOBJECTS_EXPORT ECRelationshipConstraintClassCP operator[](size_t x)const; //!< Array operator overloaded
@@ -2065,6 +2078,7 @@ private:
     bool                        m_isPolymorphic;
     RelationshipCardinality*    m_cardinality;
     ECRelationshipClassP        m_relClass;
+    bool                        m_isSource;
 
     ECObjectsStatus             SetCardinality(uint32_t& lowerLimit, uint32_t& upperLimit);
 
@@ -2076,13 +2090,10 @@ private:
 
 protected:
     virtual ECSchemaCP          _GetContainerSchema() const override;
-
-    //! Initializes a new instance of the ECRelationshipConstraint class.
-    //! IsPolymorphic defaults to true and IsMultiple defaults to false
-    ECRelationshipConstraint(ECRelationshipClassP relationshipClass);  // WIP_CEM... should not be public... create a factory method
+    virtual CustomAttributeContainerType _GetContainerType() const override { return m_isSource ? CustomAttributeContainerType::SourceRelationshipConstraint : CustomAttributeContainerType::TargetRelationshipConstraint; }
 
     //! Initializes a new instance of the ECRelationshipConstraint class
-    ECRelationshipConstraint(ECRelationshipClassP relationshipClass, bool isMultiple); // WIP_CEM... should not be public... create a factory method
+    ECRelationshipConstraint(ECRelationshipClassP relationshipClass, bool isSource); // WIP_CEM... should not be public... create a factory method
 
 /*__PUBLISH_SECTION_START__*/
 public:
@@ -2200,6 +2211,7 @@ protected:
     virtual ECRelationshipClassP        _GetRelationshipClassP ()  override {return this;};
     virtual ECClassType                 _GetClassType() const override { return ECClassType::Relationship; }
     virtual ECObjectsStatus             _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false) override;
+    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::RelationshipClass; }
 
 //__PUBLISH_SECTION_START__
 public:
@@ -2998,6 +3010,7 @@ private:
 
 protected:
     virtual ECSchemaCP                  _GetContainerSchema() const override;
+    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::Schema; }
 
 /*__PUBLISH_SECTION_END__*/
 public:
