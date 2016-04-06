@@ -167,6 +167,7 @@ enum class ECObjectsStatus
     Error,
     RelationshipConstraintsNotCompatible,
     CaseCollision,
+    CustomAttributeContainerTypesNotCompatible,
     };
 
 //! Result status for deserializing an ECSchema from Xml
@@ -468,7 +469,10 @@ enum class CustomAttributeContainerType
     StructArrayProperty     = (0x0001 << 8),
     NavigationProperty      = (0x0001 << 9),
     AnyProperty             = PrimitiveProperty | StructProperty | ArrayProperty | StructArrayProperty | NavigationProperty,
-    Any                     = Schema | AnyClass | AnyProperty 
+    SourceRelationshipConstraint    = (0x0001 << 10),
+    TargetRelationshipConstraint    = (0x0001 << 11),
+    AnyRelationshipConstraint       = SourceRelationshipConstraint | TargetRelationshipConstraint,
+    Any                     = Schema | AnyClass | AnyProperty | AnyRelationshipConstraint
     };
 
 ENUM_IS_FLAGS(CustomAttributeContainerType)

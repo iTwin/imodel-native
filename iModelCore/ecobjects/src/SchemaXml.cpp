@@ -613,7 +613,11 @@ bool SchemaXmlReader3::ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, EC
     ECClassModifier modifier;
     if (BEXML_Success == classNode.GetAttributeStringValue(modifierStr, MODIFIER_ATTRIBUTE))
         {
-        ECXml::ParseModifierString(modifier, modifierStr);
+        if (ECObjectsStatus::Success != ECXml::ParseModifierString(modifier, modifierStr))
+            {
+            LOG.errorv("Class %s has an invalid modifier attribute value %s", ecClass->GetName().c_str(), modifierStr.c_str());
+            return false;
+            }
         ecClass->SetClassModifier(modifier);
         }
     return true;

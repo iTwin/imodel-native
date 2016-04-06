@@ -430,10 +430,24 @@ bool requireSchemaReference
 )
     {
     ECClassCR classDefinition = customAttributeInstance.GetClass();
-    if (!classDefinition.IsCustomAttributeClass())
+    ECCustomAttributeClassCP caClass = classDefinition.GetCustomAttributeClassCP();
+    if (nullptr == caClass)
         {
         BeAssert (false);
+        LOG.errorv("Cannot add instance of class %s:%s as a custom attribute because the class is not a custom attribute class",
+                   classDefinition.GetSchema().GetName().c_str(), classDefinition.GetName().c_str());
         return ECObjectsStatus::NotCustomAttributeClass;
+        }
+
+    CustomAttributeContainerType containerType = _GetContainerType();
+    if (!caClass->CanBeAppliedTo(containerType))
+        {
+        BeAssert(false);
+        Utf8String caContainerTypeString = ECXml::ContainerTypeToString(caClass->GetContainerType());
+        Utf8String containerTypeString = ECXml::ContainerTypeToString(containerType);
+        LOG.errorv("Cannot add custom attribute of class %s:%s to a container of type %s because the custom attribute has an incompatible 'appliesTo' attribute of %s",
+                   classDefinition.GetSchema().GetName().c_str(), classDefinition.GetName().c_str(), containerTypeString.c_str(), caContainerTypeString.c_str());
+        return ECObjectsStatus::CustomAttributeContainerTypesNotCompatible;
         }
 
     // first need to verify that this custom attribute instance is from either the current schema or a referenced schema

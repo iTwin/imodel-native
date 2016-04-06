@@ -947,7 +947,6 @@ ECClassCR sourceClass
         status = this->CreateStructClass(newStructClass, sourceClass.GetName());
         if (ECObjectsStatus::Success != status)
             return status;
-        // ECX_WIP: Set struct class properties
         targetClass = newStructClass;
         }
     else if (nullptr != sourceAsCAClass)
@@ -956,7 +955,7 @@ ECClassCR sourceClass
         status = this->CreateCustomAttributeClass(newCAClass, sourceClass.GetName());
         if (ECObjectsStatus::Success != status)
             return status;
-        // ECX_WIP: Set CA class properties
+        newCAClass->SetContainerType(sourceAsCAClass->GetContainerType());
         targetClass = newCAClass;
         }
     else

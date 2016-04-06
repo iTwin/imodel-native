@@ -1377,7 +1377,11 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
     Utf8String     modifierString;
     BeXmlStatus modifierStatus = classNode.GetAttributeStringValue(modifierString, MODIFIER_ATTRIBUTE);
     if (BEXML_Success == modifierStatus)
-        ECXml::ParseModifierString(m_modifier, modifierString);
+        if (ECObjectsStatus::Success != ECXml::ParseModifierString(m_modifier, modifierString))
+            {
+            LOG.errorv("Class %s has an invalid modifier attribute value %s", this->GetName().c_str(), modifierString.c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
 
     return SchemaReadStatus::Success;
     }
@@ -1902,7 +1906,7 @@ ECObjectsStatus ECEntityClass::CreateNavigationProperty(NavigationECPropertyP& e
 //---------------+---------------+---------------+---------------+---------------+-------
 ECCustomAttributeClass::ECCustomAttributeClass(ECSchemaCR schema) : ECClass(schema)
     {
-    m_containerType = static_cast<CustomAttributeContainerType>(0);
+    m_containerType = CustomAttributeContainerType::Any;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1933,7 +1937,13 @@ SchemaReadStatus ECCustomAttributeClass::_ReadXmlAttributes(BeXmlNodeR classNode
 
     Utf8String appliesTo;
     if (BEXML_Success == classNode.GetAttributeStringValue(appliesTo, CUSTOM_ATTRIBUTE_APPLIES_TO))
-        ECXml::ParseContainerString(this->m_containerType, appliesTo);
+        {
+        if (ECObjectsStatus::Success != ECXml::ParseContainerString(this->m_containerType, appliesTo))
+            {
+            LOG.errorv("appliesTo attribute value '%s' invalid on ECCustomAttributeClass %s:%s.  ", appliesTo.c_str(), this->GetSchema().GetName().c_str(), this->GetName().c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
     else
         m_containerType = CustomAttributeContainerType::Any;
 
@@ -2199,22 +2209,9 @@ RelationshipCardinalityCR RelationshipCardinality::OneMany
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECRelationshipConstraint::ECRelationshipConstraint
 (
-ECRelationshipClassP relationshipClass
-) :m_constraintClasses(relationshipClass)
-    {
-    m_relClass = relationshipClass;
-    m_cardinality = &s_zeroOneCardinality;
-    m_isPolymorphic = true;
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipConstraint::ECRelationshipConstraint
-(
 ECRelationshipClassP relationshipClass, 
-bool isMultiple
-) :m_constraintClasses(relationshipClass,isMultiple)
+bool isSource
+) :m_constraintClasses(relationshipClass), m_isSource(isSource)
     {
     m_relClass = relationshipClass;
     m_cardinality = &s_zeroOneCardinality;
@@ -2494,7 +2491,7 @@ const ECConstraintClassesList ECRelationshipConstraint::GetClasses() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Muhammad.Zaighum                 11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipConstraintClassList::ECRelationshipConstraintClassList(ECRelationshipClassP relClass, bool isMultiple) :m_relClass(relClass)
+ECRelationshipConstraintClassList::ECRelationshipConstraintClassList(ECRelationshipClassP relClass) :m_relClass(relClass)
     {}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
@@ -2750,8 +2747,8 @@ OrderIdStorageMode ECRelationshipConstraint::GetOrderIdStorageMode () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECRelationshipClass::ECRelationshipClass (ECN::ECSchemaCR schema) : ECEntityClass (schema), m_strength( StrengthType::Referencing), m_strengthDirection(ECRelatedInstanceDirection::Forward) 
     {
-    m_source = new ECRelationshipConstraint(this, false);
-    m_target = new ECRelationshipConstraint(this, true);
+    m_source = new ECRelationshipConstraint(this, true);
+    m_target = new ECRelationshipConstraint(this, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
