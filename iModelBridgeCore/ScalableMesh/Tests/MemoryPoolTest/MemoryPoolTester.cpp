@@ -75,10 +75,12 @@ class MemoryPool
     {
     private : 
 
-        uint64_t                   m_maxPoolSizeInBytes;
-        atomic<uint64_t>           m_currentPoolSizeInBytes;
-        bvector<MemoryPoolItemPtr> m_memPoolItems;
-        bvector<clock_t>           m_lastAccessTime;
+        uint64_t                    m_maxPoolSizeInBytes;
+        atomic<uint64_t>            m_currentPoolSizeInBytes;
+        bvector<MemoryPoolItemPtr>  m_memPoolItems;
+        bvector<std::mutex*>        m_memPoolItemMutex;
+        bvector<clock_t>            m_lastAccessTime;
+        
         //std::mutex                 m_poolItemMutex;
 
         /*
@@ -89,11 +91,27 @@ class MemoryPool
     public : 
 
         MemoryPool(uint64_t maxPoolSizeInBytes)            
+            : m_memPoolItemMutex(500)
             {
             m_currentPoolSizeInBytes = 0;
             m_maxPoolSizeInBytes = maxPoolSizeInBytes;            
             m_memPoolItems.resize(500);
             m_lastAccessTime.resize(500);
+            m_memPoolItemMutex.resize(500);
+
+            for (size_t itemId = 0; itemId < m_memPoolItemMutex.size(); itemId++)
+                {
+                m_memPoolItemMutex[itemId] = new mutex;                
+                }
+            }
+
+        virtual ~MemoryPool()
+            {
+            for (size_t itemId = 0; itemId < m_memPoolItemMutex.size(); itemId++)
+                {                
+                delete m_memPoolItemMutex[itemId];
+                }            
+                        
             /*
             m_lastAvailableInd = 0;
             m_isFull = false;
@@ -101,7 +119,8 @@ class MemoryPool
             }
 
         MemoryPoolItemPtr& GetItem(uint64_t id)
-            {            
+            {     
+            std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[id]);
             m_lastAccessTime[id] = clock();
             return m_memPoolItems[id];
             }
@@ -125,10 +144,19 @@ class MemoryPool
 
             for (; itemInd < (uint64_t)m_memPoolItems.size(); itemInd++)
                 {
-                if (!m_memPoolItems[itemInd].IsValid() || (needToFlush && (currentTime - m_lastAccessTime[itemInd] > s_timeDiff)))                
+                    {   
+                    std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[itemInd]);
+
+                    if (!m_memPoolItems[itemInd].IsValid())
+                        {
+                        break;
+                        }
+                    }
+
+                if ((needToFlush && (currentTime - m_lastAccessTime[itemInd] > s_timeDiff)))                
                     {
                     break;
-                    }
+                    }                
 
                 if (oldestTime > m_lastAccessTime[itemInd])
                     {
@@ -142,26 +170,32 @@ class MemoryPool
                 double flushTimeThreshold = (clock() + oldestTime) / 2.0;
 
                 for (size_t itemIndToDelete = 0; itemIndToDelete < m_memPoolItems.size() && m_currentPoolSizeInBytes > m_maxPoolSizeInBytes; itemIndToDelete++)
-                    {
-                    if (m_lastAccessTime[itemIndToDelete] < flushTimeThreshold && m_memPoolItems[itemIndToDelete].IsValid())                    
+                    {     
+                    std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[itemIndToDelete]);
+
+                    if (m_memPoolItems[itemIndToDelete].IsValid() && m_lastAccessTime[itemIndToDelete] < flushTimeThreshold)                    
                         {
-                        m_currentPoolSizeInBytes -= m_memPoolItems[itemIndToDelete]->GetSize();                
+                        m_currentPoolSizeInBytes -= m_memPoolItems[itemIndToDelete]->GetSize();                                        
                         m_memPoolItems[itemIndToDelete] = 0; 
                         itemInd = itemIndToDelete;
-                        }                    
+                        }                                        
                     }
                 }
             
             if (m_currentPoolSizeInBytes > m_maxPoolSizeInBytes * s_maxMemBeforeFlushing)
                 {
                 for (size_t itemIndToDelete = 0; itemIndToDelete < m_memPoolItems.size() && m_currentPoolSizeInBytes > m_maxPoolSizeInBytes; itemIndToDelete++)
-                    {                    
+                    {  
+                    std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[itemIndToDelete]);                    
+
                     if (m_memPoolItems[itemIndToDelete].IsValid())
                         {
                         m_currentPoolSizeInBytes -= m_memPoolItems[itemIndToDelete]->GetSize();                
                         m_memPoolItems[itemIndToDelete] = 0; 
                         itemInd = itemIndToDelete;
                         }
+
+                    m_memPoolItemMutex[itemIndToDelete]->unlock();
                     }
                 }            
 
@@ -178,6 +212,8 @@ class MemoryPool
                     }                
                 }
             
+            m_memPoolItemMutex[itemInd]->lock();
+
             if (m_memPoolItems[itemInd].IsValid())            
                 {                
                 m_currentPoolSizeInBytes -= m_memPoolItems[itemInd]->GetSize();
@@ -185,6 +221,8 @@ class MemoryPool
 
             m_memPoolItems[itemInd] = poolItem;
             m_lastAccessTime[itemInd] = clock();
+
+            m_memPoolItemMutex[itemInd]->unlock();
 
 #ifndef NDEBUG
             /*
