@@ -4,6 +4,26 @@
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
     <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap"/>
 
+    <ECCustomAttributes>
+        <SystemSchema xmlns='Bentley_Standard_CustomAttributes.01.09'/>
+        <RelatedItemsDisplaySpecifications xmlns="Bentley_Standard_CustomAttributes.01.09">
+            <Specifications>
+                <RelatedItemsDisplaySpecification>
+                    <ParentClass>GeometricElement2d</ParentClass>
+                    <RelationshipPath>GeometricElement2dIsInCategory:0:Category</RelationshipPath>
+                </RelatedItemsDisplaySpecification>
+                <RelatedItemsDisplaySpecification>
+                    <ParentClass>GeometricElement3d</ParentClass>
+                    <RelationshipPath>GeometricElement3dIsInCategory:0:Category</RelationshipPath>
+                </RelatedItemsDisplaySpecification>
+                <RelatedItemsDisplaySpecification>
+                    <ParentClass>Element</ParentClass>
+                    <RelationshipPath>ModelContainsElements:1:Model</RelationshipPath>
+                </RelatedItemsDisplaySpecification>
+            </Specifications>
+        </RelatedItemsDisplaySpecifications>
+    </ECCustomAttributes>
+
     <!-- Applied to an ECClass to indicate that a subclass of DgnDomain::Handler will be supplied for it at run-time.
          It must be applied to any ECClass if the application/domain registers a Handler for that ECClass.
          It should not be applied to any other ECClass.

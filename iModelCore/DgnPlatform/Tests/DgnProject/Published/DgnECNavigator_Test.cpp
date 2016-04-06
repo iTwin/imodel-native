@@ -108,11 +108,31 @@ private:
     ScopedDgnHost m_host;
     SyncInfoUtility m_syncInfoUtility;
     
+    void ReinitializeL10N()
+        {
+        BeFileName frameworkSqlang;
+        BeTest::GetHost().GetFrameworkSqlangFiles(frameworkSqlang);
+
+        if (frameworkSqlang.DoesPathExist())
+            {
+            BeSQLite::L10N::Shutdown();
+            BeSQLite::L10N::Initialize(frameworkSqlang);
+            }
+        }
+
 protected:
     DgnECNavigatorTest() {}
     virtual ~DgnECNavigatorTest () {};
     
     DgnDbPtr m_testDb;
+
+    virtual void SetUp() override 
+        {
+        ReinitializeL10N(); 
+        // Note: Seems to be needed since some test sets the pseudo lang pack instead of en causing an ATP failure
+        }
+
+    virtual void TearDown() override {}
 
     void OpenDgnDb(WCharCP testFileName)
         {
@@ -158,7 +178,45 @@ protected:
         return SUCCESS;
         }
 
-    static void ValidateElementInfo (JsonValueR actualElementInfo, WCharCP expectedFileName);
+    static void ValidateElementInfo(JsonValueR actualElementInfo, WCharCP expectedFileName)
+        {
+        BeFileName expectedFile;
+        BeTest::GetHost().GetDocumentsRoot(expectedFile);
+        expectedFile.AppendToPath(L"DgnDb");
+        expectedFile.AppendToPath(expectedFileName);
+
+        Json::Value expectedElementInfo;
+        bool readFileStatus = ReadJsonFromFile(expectedElementInfo, expectedFile.GetName());
+        ASSERT_TRUE(readFileStatus);
+
+        // Ignore "$ECInstanceId", "LastMod" in comparison - it's too volatile. 
+        // ASSERT_TRUE(actualElementInfo["ecInstances"].size() == expectedElementInfo["ecInstances"].size());
+        for (int ii = 0; ii < (int) actualElementInfo["ecInstances"].size(); ii++)
+            {
+            JsonValueR jsonInstance = actualElementInfo["ecInstances"][ii];
+            jsonInstance["$ECInstanceId"] = "*";
+            jsonInstance["LastMod"] = "*";
+            }
+
+        int compare = expectedElementInfo.compare(actualElementInfo);
+        if (0 != compare)
+            {
+            // For convenient android debugging
+            //LOG.debugv ("Expected ElementInfo:");
+            //DebugDumpJson (expectedElementInfo);
+            //LOG.debugv ("Actual ElementInfo:");
+            //DebugDumpJson (actualElementInfo);
+
+            BeFileName actualFile;
+            BeTest::GetHost().GetOutputRoot(actualFile);
+
+            WString tmpName = expectedFile.GetFileNameWithoutExtension() + L"_Actual.json";
+            actualFile.AppendToPath(tmpName.c_str());
+            WriteJsonToFile(actualFile.GetName(), actualElementInfo);
+
+            FAIL() << "Json retrieved from db \n\t" << actualFile.GetName() << "\ndoes not match expected \n\t" << expectedFile.GetName();
+            }
+        }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -224,48 +282,3 @@ TEST_F(DgnECNavigatorTest, IfcElementInfo)
 
     ValidateElementInfo(actualElementInfo, expectedFileName);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   05/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnECNavigatorTest::ValidateElementInfo (JsonValueR actualElementInfo, WCharCP expectedFileName)
-    {
-    BeFileName expectedFile;
-    BeTest::GetHost().GetDocumentsRoot (expectedFile);
-    expectedFile.AppendToPath (L"DgnDb");
-    expectedFile.AppendToPath (expectedFileName);
-
-    Json::Value expectedElementInfo;
-    bool readFileStatus = ReadJsonFromFile (expectedElementInfo, expectedFile.GetName());
-    ASSERT_TRUE (readFileStatus);
-    
-    // Ignore "$ECInstanceId", "LastMod" in comparison - it's too volatile. 
-    ASSERT_TRUE (actualElementInfo["ecInstances"].size() == expectedElementInfo["ecInstances"].size());
-    for (int ii = 0; ii < (int) actualElementInfo["ecInstances"].size(); ii++)
-        {
-        JsonValueR jsonInstance = actualElementInfo["ecInstances"][ii];
-        jsonInstance["$ECInstanceId"] = "*";
-        jsonInstance["LastMod"] = "*";
-        }
-
-    int compare = expectedElementInfo.compare (actualElementInfo);
-    if (0 != compare)
-        {
-        // For convenient android debugging
-        //LOG.debugv ("Expected ElementInfo:");
-        //DebugDumpJson (expectedElementInfo);
-        //LOG.debugv ("Actual ElementInfo:");
-        //DebugDumpJson (actualElementInfo);
-
-        BeFileName actualFile;
-        BeTest::GetHost().GetOutputRoot (actualFile);
-
-        WString tmpName = expectedFile.GetFileNameWithoutExtension() + L"_Actual.json";
-        actualFile.AppendToPath (tmpName.c_str());
-        WriteJsonToFile (actualFile.GetName(), actualElementInfo);
-
-        FAIL() << "Json retrieved from db \n\t" << actualFile.GetName() << "\ndoes not match expected \n\t" << expectedFile.GetName();
-        }
-    }
-
-
