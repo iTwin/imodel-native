@@ -240,23 +240,18 @@ public:
 
     private:
         DbConstraintId m_id;
-        DbTable const& m_referencedTable;
         std::vector<DbColumn const*> m_fkColumns;
         std::vector<DbColumn const*> m_referencedTableColumns;
         ActionType m_onDeleteAction;
         ActionType m_onUpdateAction;
 
     public:
-        ForeignKeyDbConstraint(DbConstraintId id, DbTable const& fkTable, DbTable const& referencedTable)
-            :DbConstraint(DbConstraint::Type::ForeignKey, fkTable), m_id(id), m_referencedTable(referencedTable), m_onDeleteAction(ActionType::NotSpecified), m_onUpdateAction(ActionType::NotSpecified)
-            {}
-
+        ForeignKeyDbConstraint(DbConstraintId id, DbTable const& fkTable, DbColumn const& fkColumn, DbColumn const& referencedColumn, ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction);
         ~ForeignKeyDbConstraint() {}
 
         DbConstraintId GetId() const { return m_id; }
-        void SetId(DbConstraintId id) { m_id = id; }
 
-        DbTable const& GetReferencedTable() const { return m_referencedTable; }
+        DbTable const& GetReferencedTable() const { BeAssert(!m_referencedTableColumns.empty()); return m_referencedTableColumns[0]->GetTable(); }
         DbTable const& GetForeignKeyTable() const { return GetTable(); }
 
         std::vector<DbColumn const*> const& GetFkColumns() const { return m_fkColumns; }
@@ -264,15 +259,12 @@ public:
 
         ActionType GetOnDeleteAction() const { return m_onDeleteAction; }
         ActionType GetOnUpdateAction() const { return m_onUpdateAction; }
-        void SetOnDeleteAction(ActionType action) { m_onDeleteAction = action; }
-        void SetOnUpdateAction(ActionType action) { m_onUpdateAction = action; }
 
         bool IsValid() const;
         bool IsDuplicate() const;
         void RemoveIfDuplicate();
         bool Equals(ForeignKeyDbConstraint const& rhs) const;
 
-        BentleyStatus Add(Utf8CP fkColumnName, Utf8CP referencedColumnName);
         BentleyStatus Remove(Utf8CP fkColumnName, Utf8CP referencedColumnName);
         BentleyStatus Remove(size_t index);
 
@@ -410,18 +402,20 @@ public:
     std::weak_ptr<DbColumn> FindColumnWeakPtr(Utf8CP name) const;
     bool TryGetECClassIdColumn(DbColumn const*&) const;
     std::vector<DbColumn const*> const& GetColumns() const { return m_orderedColumns; }
-    EditHandle& GetEditHandleR() { return m_editHandle; }
-    EditHandle const& GetEditHandle() const { return m_editHandle; }
-    PrimaryKeyDbConstraint& GetPrimaryKeyConstraintR();
-    PrimaryKeyDbConstraint const* GetPrimaryKeyConstraint() const;
-    ForeignKeyDbConstraint* CreateForeignKeyConstraint(DbTable const& referencedTable);
-    BentleyStatus RemoveConstraint(DbConstraint const&);
-    std::vector<DbConstraint const*> GetConstraints() const;
     BentleyStatus GetFilteredColumnList(std::vector<DbColumn const*>&, PersistenceType) const;
     BentleyStatus GetFilteredColumnList(std::vector<DbColumn const*>&, DbColumn::Kind) const;
     DbColumn const* GetFilteredColumnFirst(DbColumn::Kind) const;
     bool DeleteColumn(Utf8CP name);
     void AddColumnEventHandler(std::function<void(ColumnEvent, DbColumn&)> columnEventHandler) { m_columnEvents.push_back(columnEventHandler); }
+
+    EditHandle& GetEditHandleR() { return m_editHandle; }
+    EditHandle const& GetEditHandle() const { return m_editHandle; }
+    PrimaryKeyDbConstraint& GetPrimaryKeyConstraintR();
+    PrimaryKeyDbConstraint const* GetPrimaryKeyConstraint() const;
+    ForeignKeyDbConstraint const* CreateForeignKeyConstraint(DbColumn const& fkColumn, DbColumn const& referencedColumn, ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction);
+    std::vector<DbConstraint const*> GetConstraints() const;
+    BentleyStatus RemoveConstraint(DbConstraint const&);
+
     bool IsNullTable() const;
     bool IsValid() const { return m_columns.size() > 0; }
     };

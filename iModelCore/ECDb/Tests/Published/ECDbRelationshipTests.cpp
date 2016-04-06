@@ -302,7 +302,7 @@ TEST (ECDbRelationships, ImportECRelationshipInstances)
     ASSERT_EQ(SUCCESS, PersistRelationship(*relInstance, db));
     db.SaveChanges();
     ValidatePersistingRelationship (db, "sc_Asset", InstanceToId (*relInstance->GetTarget()), 
-        "ForeignECInstanceId_EmployeePhone", InstanceToId (*relInstance->GetSource()).GetValue ());
+        "ForeignECInstanceId_stco_EmployeePhone", InstanceToId (*relInstance->GetSource()).GetValue ());
     ValidateReadingRelationship (db,"StartupCompany", "EmployeePhone", *relInstance);
     ValidateReadingRelated (db, "StartupCompany", "EmployeePhone", relInstance->GetSource(), relInstance->GetTarget());
 
@@ -314,7 +314,7 @@ TEST (ECDbRelationships, ImportECRelationshipInstances)
     ASSERT_TRUE (relInstance.IsValid());
     ASSERT_EQ(SUCCESS, PersistRelationship (*relInstance, db));
     ValidatePersistingRelationship (db, "sc_Asset", InstanceToId (*relInstance->GetTarget()), 
-        "ForeignECInstanceId_EmployeeFurniture", InstanceToId (*relInstance->GetSource()).GetValue ());
+        "ForeignECInstanceId_stco_EmployeeFurniture", InstanceToId (*relInstance->GetSource()).GetValue ());
     ValidateReadingRelationship (db, "StartupCompany", "EmployeeFurniture", *relInstance);
     ValidateReadingRelated (db, "StartupCompany", "EmployeeFurniture", relInstance->GetSource(), relInstance->GetTarget());
 
@@ -322,7 +322,7 @@ TEST (ECDbRelationships, ImportECRelationshipInstances)
     ASSERT_TRUE (relInstance.IsValid());
     ASSERT_EQ(SUCCESS, PersistRelationship(*relInstance, db));
     ValidatePersistingRelationship (db, "sc_Asset", InstanceToId (*relInstance->GetTarget()),
-        "ForeignECInstanceId_EmployeeFurniture", InstanceToId (*relInstance->GetSource()).GetValue ());
+        "ForeignECInstanceId_stco_EmployeeFurniture", InstanceToId (*relInstance->GetSource()).GetValue ());
     ValidateReadingRelationship (db, "StartupCompany", "EmployeeFurniture", *relInstance);
     ValidateReadingRelated (db, "StartupCompany", "EmployeeFurniture", relInstance->GetSource(), relInstance->GetTarget());
 

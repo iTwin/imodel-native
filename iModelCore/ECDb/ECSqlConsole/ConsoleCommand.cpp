@@ -12,67 +12,11 @@
 #include "RandomECInstanceGenerator.h"
 #include <Bentley/BeDirectoryIterator.h>
 #include <json/json.h>
+
 using namespace std;
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
-
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-static const std::string base64_chars =
-"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-"abcdefghijklmnopqrstuvwxyz"
-"0123456789+/";
-
-
-static inline bool is_base64(unsigned char c) {
-    return (isalnum(c) || (c == '+') || (c == '/'));
-    }
-
-static Utf8String base64_encode(unsigned char const* bytes_to_encode, unsigned int in_len) {
-    Utf8String ret;
-    int i = 0;
-    int j = 0;
-    unsigned char char_array_3[3];
-    unsigned char char_array_4[4];
-
-    while (in_len--) {
-        char_array_3[i++] = *(bytes_to_encode++);
-        if (i == 3) {
-            char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
-            char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
-            char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
-            char_array_4[3] = char_array_3[2] & 0x3f;
-
-            for (i = 0; (i <4); i++)
-                ret += base64_chars[char_array_4[i]];
-            i = 0;
-            }
-        }
-
-    if (i)
-        {
-        for (j = i; j < 3; j++)
-            char_array_3[j] = '\0';
-
-        char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
-        char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
-        char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
-        char_array_4[3] = char_array_3[2] & 0x3f;
-
-        for (j = 0; (j < i + 1); j++)
-            ret += base64_chars[char_array_4[j]];
-
-        while ((i++ < 3))
-            ret += '=';
-
-        }
-
-    return ret;
-
-    }
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 //******************************* ConsoleCommand ******************
 //---------------------------------------------------------------------------------------
@@ -146,7 +90,7 @@ Utf8String HelpCommand::_GetUsage() const
 //---------------------------------------------------------------------------------------
 void HelpCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
-    BeAssert(m_commandMap.size() == 25 && "Command was added or removed, please update the HelpCommand accordingly.");
+    BeAssert(m_commandMap.size() == 26 && "Command was added or removed, please update the HelpCommand accordingly.");
     Console::WriteLine(m_commandMap.at(".help")->GetUsage().c_str());
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".open")->GetUsage().c_str());
@@ -169,6 +113,7 @@ void HelpCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& a
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".sql")->GetUsage().c_str());
     Console::WriteLine(m_commandMap.at(".parse")->GetUsage().c_str());
+    Console::WriteLine(m_commandMap.at(".dbschema")->GetUsage().c_str());
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".populate")->GetUsage().c_str());
     Console::WriteLine();
@@ -248,7 +193,7 @@ void OpenCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& a
         return;
         }
 
-    auto stat = session.GetECDbR ().OpenBeSQLiteDb(ecdbFile, ECDb::OpenParams(openMode));
+    auto stat = session.GetECDbR().OpenBeSQLiteDb(ecdbFile, ECDb::OpenParams(openMode));
     if (stat != BE_SQLITE_OK)
         {
         session.GetECDbR().CloseDb();//seems that open errors do not automatically close the handle again
@@ -770,7 +715,14 @@ void ExportCommand::ExportTable(ECSqlConsoleSession& session, Json::Value& out, 
             switch (stmt.GetColumnType(i))
                 {
                 case DbValueType::BlobVal:
-                    row[stmt.GetColumnName(i)] = Json::Value(base64_encode((unsigned char const*)stmt.GetValueBlob(i), stmt.GetColumnBytes(i))); break;
+                {
+                if (SUCCESS != ECJsonUtilities::BinaryToJson(row[stmt.GetColumnName(i)], (Byte const*) stmt.GetValueBlob(i), stmt.GetColumnBytes(i)))
+                    {
+                    Console::WriteErrorLine("Failed to export table %s", tableName);
+                    return;
+                    }
+                break;
+                }
                 case DbValueType::FloatVal:
                     row[stmt.GetColumnName(i)] = Json::Value(stmt.GetValueDouble(i)); break;
                 case DbValueType::IntegerVal:
@@ -1377,7 +1329,7 @@ void ECSchemaDiffCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> 
         }
     }
 
-//******************************* ECSchemaDiffCommand ******************
+//******************************* SqliteCommand ******************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     07/2015
 //---------------------------------------------------------------------------------------
@@ -1466,4 +1418,146 @@ void SqliteCommand::ExecuteNonSelect(ECSqlConsoleSession& session, Statement& st
         Console::WriteErrorLine("Failed to execute SQLite SQL statement %s: %s", statement.GetSql (), session.GetECDb ().GetLastError ().c_str());
         return;
         }
+    }
+
+//******************************* DbSchemaCommand ******************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     04/2016
+//---------------------------------------------------------------------------------------
+Utf8String DbSchemaCommand::_GetName() const
+    {
+    return ".dbschema";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     04/2016
+//---------------------------------------------------------------------------------------
+Utf8String DbSchemaCommand::_GetUsage() const
+    {
+    return " .dbschema search <search term> [<folder> <file extension>]\r\n"
+           "                                Searches the DB schemas in the current ECDb file or\r\n"
+           "                                in all ECDb files in the specified folder for the specified\r\n"
+           "                                search term.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     04/2016
+//---------------------------------------------------------------------------------------
+void DbSchemaCommand::_Run(ECSqlConsoleSession& session, std::vector<Utf8String> const& args) const
+    {
+    if (args.size() < 2)
+        {
+        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    Utf8StringCR switchArg = args[1];
+
+    if (switchArg.EqualsI("search"))
+        {
+        Search(session, args);
+        return;
+        }
+
+    Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     04/2016
+//---------------------------------------------------------------------------------------
+void DbSchemaCommand::Search(ECSqlConsoleSession& session, std::vector<Utf8String> const& args) const
+    {
+    const size_t argSize = args.size();
+    Utf8CP searchTerm = nullptr;
+    const bool isECDbOpen = session.HasECDb(false);
+
+    if (isECDbOpen && argSize != 3)
+        {
+        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+    else if (!isECDbOpen && argSize != 5)
+        {
+        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    searchTerm = args[2].c_str();
+
+    if (isECDbOpen)
+        {
+        Search(session.GetECDb(), searchTerm);
+        return;
+        }
+
+    bvector<BeFileName> ecdbFilePaths;
+    Utf8String ecdbFolder(args[3]);
+    ecdbFolder.Trim("\"");
+    
+    Utf8String fileExtension(args[4]);
+    Utf8String fileFilter;
+    if (fileExtension.StartsWith("*."))
+        fileFilter = fileExtension;
+    else if (fileExtension.StartsWith("."))
+        fileFilter.Sprintf("*%s", fileExtension.c_str());
+    else 
+        fileFilter.Sprintf("*.%s", fileExtension.c_str());
+
+    BeDirectoryIterator::WalkDirsAndMatch(ecdbFilePaths, BeFileName(ecdbFolder), WString(fileFilter.c_str(), BentleyCharEncoding::Utf8).c_str(), true);
+    
+    if (ecdbFilePaths.empty())
+        {
+        Console::WriteErrorLine("Command failed. Folder '%s' does not contain ECDb files with extension *.%s.",
+                   ecdbFolder, fileFilter.c_str());
+        return;
+        }
+
+    for (BeFileNameCR ecdbPath : ecdbFilePaths)
+        {
+        ECDb ecdb;
+        if (BE_SQLITE_OK != ecdb.OpenBeSQLiteDb(ecdbPath, ECDb::OpenParams(Db::OpenMode::Readonly)))
+            {
+            Console::WriteErrorLine("Skipping ECDb file '%s', because it could not be opened.",
+                                    ecdbPath.GetNameUtf8().c_str());
+            continue;
+            }
+
+        Search(ecdb, searchTerm);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     04/2016
+//---------------------------------------------------------------------------------------
+void DbSchemaCommand::Search(ECDbCR ecdb, Utf8CP searchTerm) const
+    {
+    Utf8CP sql = "SELECT name, type FROM sqlite_master WHERE sql LIKE ?";
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, sql))
+        {
+        Console::WriteErrorLine("Failed to prepare SQLite SQL statement %s: %s", sql, ecdb.GetLastError().c_str());
+        return;
+        }
+
+    Utf8String searchTermWithWildcards;
+    searchTermWithWildcards.Sprintf("%%%s%%", searchTerm);
+
+    if (BE_SQLITE_OK != stmt.BindText(1, searchTermWithWildcards, Statement::MakeCopy::No))
+        {
+        Console::WriteErrorLine("Failed to bind search term '%s' to SQLite SQL statement %s: %s", searchTermWithWildcards.c_str(), sql, ecdb.GetLastError().c_str());
+        return;
+        }
+
+    if (BE_SQLITE_ROW != stmt.Step())
+        {
+        Console::WriteLine("The search term '%s' was not found in the DB schema elements of the ECDb file '%s'", searchTerm, ecdb.GetDbFileName());
+        return;
+        }
+
+    Console::WriteLine("In the ECDb file '%s' the following DB schema elements contain the search term %s:", ecdb.GetDbFileName(), searchTerm);
+    do
+        {
+        Console::WriteLine(" %s [%s]", stmt.GetValueText(0), stmt.GetValueText(1));
+        }
+    while (BE_SQLITE_ROW == stmt.Step());
     }

@@ -267,8 +267,8 @@ TEST_F(ECDbSchemaTests, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (db.ColumnExists(tblAsset, "Breadth"));
     EXPECT_TRUE (db.ColumnExists(tblAsset, "Length"));
     //relation keys
-    EXPECT_TRUE(db.ColumnExists(tblAsset, "ForeignECInstanceId_EmployeePhone"));
-    EXPECT_TRUE (db.ColumnExists(tblAsset, "ForeignECInstanceId_EmployeeFurniture"));
+    EXPECT_TRUE(db.ColumnExists(tblAsset, "ForeignECInstanceId_stco_EmployeePhone"));
+    EXPECT_TRUE (db.ColumnExists(tblAsset, "ForeignECInstanceId_stco_EmployeeFurniture"));
     
     EXPECT_TRUE(db.ColumnExists(tblAsset, "HasWarranty"));
     EXPECT_TRUE(db.ColumnExists(tblAsset, "IsCompanyProperty"));
@@ -477,8 +477,8 @@ TEST_F(ECDbSchemaTests, VerifyDatabaseSchemaAfterImport)
     //Local properties
     EXPECT_TRUE (db.ColumnExists(tblBar, "stringBar"));
     //Relations
-    EXPECT_TRUE (db.ColumnExists(tblBar, "ForeignECInstanceId_Foo_has_Bars"));
-    EXPECT_TRUE (db.ColumnExists(tblBar, "ForeignECInstanceId_Foo_has_Bars_hint"));
+    EXPECT_TRUE (db.ColumnExists(tblBar, "ForeignECInstanceId_stco_Foo_has_Bars"));
+    EXPECT_TRUE (db.ColumnExists(tblBar, "ForeignECInstanceId_stco_Foo_has_Bars_hint"));
     
     //========================[sc_Foo]===========================================================
     Utf8CP tblFoo = "sc_Foo";
@@ -783,7 +783,7 @@ TEST_F(ECDbSchemaTests, ImportSchemaWithRelationshipAgainstExistingTable)
     //ImportSchema does not (yet) modify the existing tables. So it is expected that the ECInstanceId column is not added
     EXPECT_TRUE (ecdb.ColumnExists ("t_Goo", "ECInstanceId")) << "Existing column is expected to still be in the table after ImportECSchemas.";
     EXPECT_TRUE (ecdb.ColumnExists ("t_Goo", "Price")) << "Existing column is expected to still be in the table after ImportECSchemas.";
-    EXPECT_TRUE (ecdb.ColumnExists ("t_Goo", "ForeignECInstanceId_FooHasGoo")) << "ForeignECInstanceId_FooHasGoo column not expected to be in the table after ImportECSchemas as ImportECSchemas is not expected to modify existing tables.";
+    EXPECT_TRUE (ecdb.ColumnExists ("t_Goo", "ForeignECInstanceId_t_FooHasGoo")) << "ForeignECInstanceId_t_FooHasGoo column not expected to be in the table after ImportECSchemas as ImportECSchemas is not expected to modify existing tables.";
     EXPECT_TRUE (ecdb.TableExists ("t_RelFooGoo")) << "Existence of Link table not as expected.";
     }
 

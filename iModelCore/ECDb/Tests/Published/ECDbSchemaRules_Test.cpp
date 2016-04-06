@@ -1644,8 +1644,8 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_SupportedCases)
     ecdb.SaveChanges();
     //WIP_REL: Fails because ECSQL DELETE is incorrectly prepared (exp: 126=129)
     //ECSQL: DELETE FROM TestSchema.ParentHasChildren WHERE SourceECInstanceId=1 AND SourceECClassId=129 AND TargetECInstanceId=2 AND TargetECClassId=127
-    //->SQL: UPDATE [ts_Child] SET [ForeignECInstanceId_ParentHasChildren] = NULL
-    //       WHERE [ts_Child].[ForeignECInstanceId_ParentHasChildren] = 1 AND 126 = 129 AND [ts_Child].[ECInstanceId] = 2 AND [ts_Child].[ECClassId] = 127
+    //->SQL: UPDATE [ts_Child] SET [ForeignECInstanceId_ts_ParentHasChildren] = NULL
+    //       WHERE [ts_Child].[ForeignECInstanceId_ts_ParentHasChildren] = 1 AND 126 = 129 AND [ts_Child].[ECInstanceId] = 2 AND [ts_Child].[ECClassId] = 127
     AssertRelationship(ecdb, testSchema, "TestSchema", "ParentHasChildren", false, parentKey, childKey);
     }
 
@@ -1706,7 +1706,7 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_SupportedCases)
 
     //WIP_REL: Fails because ECSQL DELETE fails to prepare
     //ECSQL: DELETE FROM TestSchema.ParentHasChildren WHERE SourceECInstanceId=1 AND SourceECClassId=128 AND TargetECInstanceId=2 AND TargetECClassId=126
-    //->SQL: UPDATE [ts_Child] SET [ForeignECInstanceId_ParentHasChildren] = NULL WHERE [ts_Child].[ForeignECInstanceId_ParentHasChildren] = 1 AND [ts_Parent].[ECClassId] = 128 AND [ts_Child].[ECInstanceId] = 2 AND 126 = 126
+    //->SQL: UPDATE [ts_Child] SET [ForeignECInstanceId_ts_ParentHasChildren] = NULL WHERE [ts_Child].[ForeignECInstanceId_ts_ParentHasChildren] = 1 AND [ts_Parent].[ECClassId] = 128 AND [ts_Child].[ECInstanceId] = 2 AND 126 = 126
     //failed to prepare with error code BE_SQLITE_ERROR : no such column : ts_Parent.ECClassId(BE_SQLITE_ERROR)    
     AssertRelationship(ecdb, testSchema, "TestSchema", "ParentHasChildren", false, parentKey, childKey);
     }
@@ -1894,7 +1894,7 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_ReadonlyCases)
             ecdb.SaveChanges();
             //WIP_REL: Fails because ECSQL SELECT fails with assertion
             //ECSQL: SELECT SourceECInstanceId, SourceECClassId FROM TestSchema.ParentHasChildren WHERE TargetECInstanceId=2
-            //->SQL: SELECT [ParentHasChildren].[SourceECInstanceId], [ParentHasChildren].[SourceECClassId] FROM (SELECT [ts_Child].[ECInstanceId], 130 ECClassId, [ts_Child].ForeignECInstanceId_ParentHasChildren SourceECInstanceId, 129 [SourceECClassId], [ts_Child].ECInstanceId TargetECInstanceId,  FROM [ts_Child] WHERE [SourceECInstanceId] IS NOT NULL) [ParentHasChildren]  WHERE [ParentHasChildren].[TargetECInstanceId] = 2
+            //->SQL: SELECT [ParentHasChildren].[SourceECInstanceId], [ParentHasChildren].[SourceECClassId] FROM (SELECT [ts_Child].[ECInstanceId], 130 ECClassId, [ts_Child].ForeignECInstanceId_ts_ParentHasChildren SourceECInstanceId, 129 [SourceECClassId], [ts_Child].ECInstanceId TargetECInstanceId,  FROM [ts_Child] WHERE [SourceECInstanceId] IS NOT NULL) [ParentHasChildren]  WHERE [ParentHasChildren].[TargetECInstanceId] = 2
             //failed to prepare with error code BE_SQLITE_ERROR : near "FROM" : syntax error(BE_SQLITE_ERROR)
             AssertRelationship(ecdb, testSchema, "TestSchema", "ParentHasChildren", true, parentKey, childKey);
             }

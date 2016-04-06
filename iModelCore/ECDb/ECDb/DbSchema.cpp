@@ -103,48 +103,57 @@ DbTable* DbSchema::CreateTableAndColumnsForExistingTableMapStrategy(Utf8CP exist
 
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        Utf8CP name = stmt.GetValueText(1);
-        Utf8String type(stmt.GetValueText(2));
-        type.ToLower();
-        type.Trim();
-        const bool notnull = stmt.GetValueInt(3) == 1;
-        Utf8CP dflt_value = stmt.GetValueText(4);
-        const bool isPk = stmt.GetValueInt(5) == 1;
+        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(1), "name") == 0);
+        Utf8CP colName = stmt.GetValueText(1);
+
+        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(2), "type") == 0);
+        Utf8String colTypeName(stmt.GetValueText(2));
+        colTypeName.ToLower();
+        colTypeName.Trim();
+
+        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(3), "notnull") == 0);
+        const bool colIsNotNull = stmt.GetValueInt(3) == 1;
+
+        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(4), "dflt_value") == 0);
+        Utf8CP colDefaultValue = stmt.GetValueText(4);
+
+        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(5), "pk") == 0);
+        const bool isPkCol = stmt.GetValueInt(5) == 1;
 
         DbColumn::Type colType = DbColumn::Type::Any;
-        if (type.rfind("long") != Utf8String::npos ||
-            type.rfind("int") != Utf8String::npos)
+        if (colTypeName.rfind("long") != Utf8String::npos ||
+            colTypeName.rfind("int") != Utf8String::npos)
             colType = DbColumn::Type::Integer;
-        else if (type.rfind("char") != Utf8String::npos ||
-                 type.rfind("clob") != Utf8String::npos ||
-                 type.rfind("text") != Utf8String::npos)
+        else if (colTypeName.rfind("char") != Utf8String::npos ||
+                 colTypeName.rfind("clob") != Utf8String::npos ||
+                 colTypeName.rfind("text") != Utf8String::npos)
             colType = DbColumn::Type::Text;
-        else if (type.rfind("blob") != Utf8String::npos ||
-                 type.rfind("binary") != Utf8String::npos)
+        else if (colTypeName.rfind("blob") != Utf8String::npos ||
+                 colTypeName.rfind("binary") != Utf8String::npos)
             colType = DbColumn::Type::Blob;
-        else if (type.rfind("real") != Utf8String::npos ||
-                 type.rfind("floa") != Utf8String::npos ||
-                 type.rfind("doub") != Utf8String::npos)
+        else if (colTypeName.rfind("real") != Utf8String::npos ||
+                 colTypeName.rfind("floa") != Utf8String::npos ||
+                 colTypeName.rfind("doub") != Utf8String::npos)
             colType = DbColumn::Type::Real;
-        else if (type.rfind("date") != Utf8String::npos ||
-                 type.rfind("timestamp") != Utf8String::npos)
+        else if (colTypeName.rfind("date") != Utf8String::npos ||
+                 colTypeName.rfind("timestamp") != Utf8String::npos)
             colType = DbColumn::Type::TimeStamp;
-        else if (type.rfind("bool") != Utf8String::npos)
+        else if (colTypeName.rfind("bool") != Utf8String::npos)
             colType = DbColumn::Type::Boolean;
 
-        DbColumn* column = table->CreateColumn(name, colType, DbColumn::Kind::DataColumn, PersistenceType::Persisted);
+        DbColumn* column = table->CreateColumn(colName, colType, DbColumn::Kind::DataColumn, PersistenceType::Persisted);
         if (column == nullptr)
             {
             BeAssert(false && "Failed to create column");
             return nullptr;
             }
 
-        if (!Utf8String::IsNullOrEmpty(dflt_value))
-            column->GetConstraintR().SetDefaultExpression(dflt_value);
+        if (!Utf8String::IsNullOrEmpty(colDefaultValue))
+            column->GetConstraintR().SetDefaultExpression(colDefaultValue);
 
-        column->GetConstraintR().SetIsNotNull(notnull);
-        if (isPk)
-            table->GetPrimaryKeyConstraintR().Add(name);
+        column->GetConstraintR().SetIsNotNull(colIsNotNull);
+        if (isPkCol)
+            table->GetPrimaryKeyConstraintR().Add(colName);
         }
 
     table->GetEditHandleR().EndEdit(); //we do not want this table to be editable;
@@ -371,17 +380,28 @@ PrimaryKeyDbConstraint& DbTable::GetPrimaryKeyConstraintR()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-ForeignKeyDbConstraint* DbTable::CreateForeignKeyConstraint(DbTable const& referencedTable)
+ForeignKeyDbConstraint const* DbTable::CreateForeignKeyConstraint(DbColumn const& fkColumn, DbColumn const& referencedColumn, ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction)
     {
     if (GetEditHandleR().AssertNotInEditMode())
         return nullptr;
 
+    if (fkColumn.GetPersistenceType() == PersistenceType::Virtual || referencedColumn.GetPersistenceType() == PersistenceType::Virtual)
+        {
+        BeAssert(false && "Cannot create FK constraint on virtual columns");
+        return nullptr;
+        }
+
     BeBriefcaseBasedId constraintId;
     m_dbSchema.GetECDb().GetECDbImplR().GetConstraintIdSequence().GetNextValue(constraintId);
 
-    ForeignKeyDbConstraint * constraint = new ForeignKeyDbConstraint(DbConstraintId(constraintId.GetValue()), *this, referencedTable);
-    m_constraints.push_back(std::unique_ptr<DbConstraint>(constraint));
-    return constraint;
+    std::unique_ptr<ForeignKeyDbConstraint> constraint (new ForeignKeyDbConstraint(DbConstraintId(constraintId.GetValue()), *this, fkColumn, referencedColumn, onDeleteAction, onUpdateAction));
+    ForeignKeyDbConstraint* constraintP = constraint.get();
+    m_constraints.push_back(std::move(constraint));
+
+    //! remove the fk constraint if already exist due to another relationship on same column
+    constraintP->RemoveIfDuplicate();
+
+    return constraintP;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1010,45 +1030,11 @@ BentleyStatus PrimaryKeyDbConstraint::Remove(Utf8CP columnName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus ForeignKeyDbConstraint::Add(Utf8CP fkColumnName, Utf8CP referencedTableColumnName)
+ForeignKeyDbConstraint::ForeignKeyDbConstraint(DbConstraintId id, DbTable const& fkTable, DbColumn const& fkColumn, DbColumn const& referencedColumn, ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction)
+    : DbConstraint(Type::ForeignKey, fkTable), m_id(id), m_onDeleteAction(onDeleteAction), m_onUpdateAction(onUpdateAction)
     {
-    if (Utf8String::IsNullOrEmpty(fkColumnName) || Utf8String::IsNullOrEmpty(referencedTableColumnName))
-        {
-        BeAssert(false && "fkColumnName and target column cannot be empty of null");
-        return BentleyStatus::ERROR;
-        }
-
-    DbColumn const* fkColumn = GetForeignKeyTable().FindColumn(fkColumnName);
-    DbColumn const* referencedTableColumn = GetReferencedTable().FindColumn(referencedTableColumnName);
-
-    if (fkColumn == nullptr || referencedTableColumn == nullptr)
-        {
-        BeAssert(fkColumn != nullptr && "Failed to resolve fkColumnName in fk table while creating foreignKey constraint");
-        BeAssert(referencedTableColumn != nullptr && "Failed to resolve referencedTableColumnName in referenced table while creating foreignKey constraint");
-        return ERROR;
-        }
-
-    if (fkColumn->GetPersistenceType() == PersistenceType::Virtual)
-        {
-        BeAssert(false && "Virtual column cannot be use as foreign key");
-        return ERROR;
-        }
-
-    if (referencedTableColumn->GetPersistenceType() == PersistenceType::Virtual)
-        {
-        BeAssert(false && "Virtual column cannot be use as foreign key");
-        return ERROR;
-        }
-
-    for (size_t i = 0; i < m_fkColumns.size(); i++)
-        {
-        if (m_fkColumns[i]->GetName().EqualsI(fkColumnName) && m_referencedTableColumns[i]->GetName().EqualsI(referencedTableColumnName))
-            return SUCCESS;
-        }
-
-    m_fkColumns.push_back(fkColumn);
-    m_referencedTableColumns.push_back(referencedTableColumn);
-    return SUCCESS;
+    m_fkColumns.push_back(&fkColumn);
+    m_referencedTableColumns.push_back(&referencedColumn);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -1082,16 +1068,16 @@ ForeignKeyDbConstraint::ActionType ForeignKeyDbConstraint::ToActionType(Utf8CP s
     if (BeStringUtilities::StricmpAscii(str, "Cascade") == 0)
         return ActionType::Cascade;
 
-    if (BeStringUtilities::StricmpAscii(str, "SetNull") == 0)
+    if (BeStringUtilities::StricmpAscii(str, "SetNull") == 0 || BeStringUtilities::StricmpAscii(str, "SET NULL") == 0)
         return ActionType::SetNull;
 
-    if (BeStringUtilities::StricmpAscii(str, "SetDefault") == 0)
+    if (BeStringUtilities::StricmpAscii(str, "SetDefault") == 0 || BeStringUtilities::StricmpAscii(str, "SET DEAULT") == 0)
         return ActionType::SetDefault;
 
     if (BeStringUtilities::StricmpAscii(str, "Restrict") == 0)
         return ActionType::Restrict;
 
-    if (BeStringUtilities::StricmpAscii(str, "NoAction") == 0)
+    if (BeStringUtilities::StricmpAscii(str, "NoAction") == 0 || BeStringUtilities::StricmpAscii(str, "NO ACTION") == 0)
         return ActionType::NoAction;
 
     return ActionType::NotSpecified;
@@ -1166,13 +1152,12 @@ void ForeignKeyDbConstraint::RemoveIfDuplicate()
         const_cast<DbTable&>(GetForeignKeyTable()).RemoveConstraint(*this);
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   03/2016
 //---------------------------------------------------------------------------------------
 bool ForeignKeyDbConstraint::IsValid() const
     {
-    return m_id.IsValid() && m_referencedTable.IsValid() && !m_fkColumns.empty() && m_fkColumns.size() == m_referencedTableColumns.size();
+    return m_id.IsValid() && GetReferencedTable().IsValid() && !m_fkColumns.empty() && m_fkColumns.size() == m_referencedTableColumns.size();
     }
 
 //---------------------------------------------------------------------------------------

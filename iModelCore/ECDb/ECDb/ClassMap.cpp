@@ -171,9 +171,8 @@ MappingStatus ClassMap::_MapPart2(SchemaImportContext& schemaImportContext, Clas
 
             if (createFKConstraint)
                 {
-                auto fkConstraint = GetJoinedTable().CreateForeignKeyConstraint(parentClassMap->GetJoinedTable());
-                fkConstraint->Add(foreignKeyColumn->GetName().c_str(), primaryKeyColumn->GetName().c_str());
-                fkConstraint->SetOnDeleteAction(ForeignKeyDbConstraint::ActionType::Cascade);
+                if (GetJoinedTable().CreateForeignKeyConstraint(*foreignKeyColumn, *primaryKeyColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified) == nullptr)
+                    return MappingStatus::Error;
                 }
             }
         }

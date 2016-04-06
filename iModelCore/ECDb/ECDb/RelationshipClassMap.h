@@ -139,6 +139,8 @@ private:
         PropertyMapCP GetPropertyMapAfterNavProp() const { return m_propMapAfterNavProp; }
         };
 
+    static Utf8CP const DEFAULT_FKCOLUMNNAME_PREFIX;
+
     bool m_autogenerateForeignKeyColumns;
 
     RelationshipClassEndTableMap (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
@@ -158,6 +160,8 @@ private:
     BentleyStatus TryDetermineForeignKeyColumnPosition(int& position, DbTable const&, ForeignKeyColumnInfo const&) const;
 
     virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ClassMapLoadContext&, ClassDbMapping const&, ClassMap const* parentClassMap) override;
+
+    BentleyStatus ValidateForeignKeyColumn(DbColumn const& fkColumn, bool cardinalityImpliesNotNullOnFkCol, DbColumn::Kind) const;
 
 public:
     ~RelationshipClassEndTableMap () {}
