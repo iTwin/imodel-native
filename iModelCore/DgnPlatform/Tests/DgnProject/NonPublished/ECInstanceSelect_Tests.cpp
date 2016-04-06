@@ -287,16 +287,27 @@ TEST_F (ECInstanceSelectTests, VerifyInstanceCountFor04Plant)
 
     BenchMark["ArcPlates"] = 9;
     BenchMark["ArcShapes"] = 40;
+    BenchMark["Area"] = 0;
+    BenchMark["Assemblies"] = 0;
+    BenchMark["BendPlates"] = 0;
+    BenchMark["BendShapes"] = 0;
+    BenchMark["Bolts"] = 0;
     BenchMark["Component"] = 787;
     BenchMark["Equipment"] = 29;
     BenchMark["Equipment_Part"] = 15;
+    BenchMark["Groups"] = 0;
+    BenchMark["MiscAttachment"] = 0;
     BenchMark["NonComponent"] = 21;
     BenchMark["Nozzle"] = 55;
     BenchMark["Object"] = 503;
     BenchMark["Pipeline"] = 61;
     BenchMark["PipingComponent"] = 703;
     BenchMark["Plates"] = 1;
+    BenchMark["Port"] = 0;
+    BenchMark["Service"] = 0;
     BenchMark["Shapes"] = 433;
+    BenchMark["SubGroups"] = 0;
+    BenchMark["Unit"] = 0;
     BenchMark["VolBodies"] = 20;
     BenchMark["Volume"] = 503;
 

@@ -983,6 +983,7 @@ void ElementGeomIO::Writer::Append(ISolidKernelEntityCR entity, bool saveBRepOnl
             }
         }
 
+#if defined (DGNPLATFORM_WIP_PARASOLID)
     // Make the parasolid data available for platforms that can support it...MUST BE ADDED FIRST!!!
     if (saveBRep)
         {
@@ -1051,6 +1052,7 @@ void ElementGeomIO::Writer::Append(ISolidKernelEntityCR entity, bool saveBRepOnl
         fbb.Finish(mloc);
         Append(Operation(OpCode::ParasolidBRep, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
         }
+#endif
 
     // Store mesh representation for quick display or when parasolid isn't available...
     if (saveFacets)
@@ -1069,6 +1071,7 @@ void ElementGeomIO::Writer::Append(ISolidKernelEntityCR entity, bool saveBRepOnl
                 if (0 == polyfaces[i]->GetPointCount())
                     continue;
 
+#if defined (DGNPLATFORM_WIP_PARASOLID)
                 bvector<Byte> buffer;
 
                 BentleyGeometryFlatBuffer::GeometryToBytes(*polyfaces[i], buffer);
@@ -1078,6 +1081,10 @@ void ElementGeomIO::Writer::Append(ISolidKernelEntityCR entity, bool saveBRepOnl
 
                 Append(params[i], true);
                 Append(Operation(OpCode::BRepPolyface, (uint32_t) buffer.size(), &buffer.front()));
+#else
+                Append(params[i], true);
+                Append(*polyfaces[i]);
+#endif
                 }
             }
         else
@@ -1086,16 +1093,21 @@ void ElementGeomIO::Writer::Append(ISolidKernelEntityCR entity, bool saveBRepOnl
 
             if (polyface.IsValid())
                 {
+#if defined (DGNPLATFORM_WIP_PARASOLID)
                 bvector<Byte> buffer;
 
                 BentleyGeometryFlatBuffer::GeometryToBytes(*polyface, buffer);
 
                 if (0 != buffer.size())
                     Append(Operation(saveEdges ? OpCode::BRepPolyface : OpCode::BRepPolyfaceExact, (uint32_t) buffer.size(), &buffer.front()));
+#else
+                Append(*polyface);
+#endif
                 }
             }
         }
 
+#if defined (DGNPLATFORM_WIP_PARASOLID)
     // When facetted representation is an approximation, we need to store the edge curves for snapping...
     if (saveEdges)
         {
@@ -1179,6 +1191,7 @@ void ElementGeomIO::Writer::Append(ISolidKernelEntityCR entity, bool saveBRepOnl
                 }
             }
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

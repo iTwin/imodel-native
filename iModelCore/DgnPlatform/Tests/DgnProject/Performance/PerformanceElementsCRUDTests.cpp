@@ -1350,13 +1350,13 @@ void PerformanceElementsCRUDTestFixture::ExtractSelectParams (BeSQLite::Statemen
 //static
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement1SelectParams (ECSqlStatement& stmt)
     {
-    //printf ("\n String Prop : %s", stmt.GetValueText (14));
-    //printf ("\n int Prop : %lld", stmt.GetValueInt64 (15));
-    //printf ("\n double Prop : %f", stmt.GetValueDouble (16));
+    //printf ("\n String Prop : %s", stmt.GetValueText (15));
+    //printf ("\n int Prop : %lld", stmt.GetValueInt64 (16));
+    //printf ("\n double Prop : %f", stmt.GetValueDouble (17));
 
-    if ((0 != strcmp ("Element1 - InitValue", stmt.GetValueText (14))) ||
-        (stmt.GetValueInt64 (15) != 10000000) ||
-        (stmt.GetValueDouble (16) != -3.1415))
+    if ((0 != strcmp ("Element1 - InitValue", stmt.GetValueText (15))) ||
+        (stmt.GetValueInt64 (16) != 10000000) ||
+        (stmt.GetValueDouble (17) != -3.1415))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1369,9 +1369,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement1SelectParams (ECS
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement2SelectParams (ECSqlStatement& stmt)
     {
     if ((DgnDbStatus::Success != ExtractElement1SelectParams (stmt)) ||
-        (0 != strcmp ("Element2 - InitValue", stmt.GetValueText (17))) ||
-        (stmt.GetValueInt64 (18) != 20000000) ||
-        (stmt.GetValueDouble (19) != 2.71828))
+        (0 != strcmp ("Element2 - InitValue", stmt.GetValueText (18))) ||
+        (stmt.GetValueInt64 (19) != 20000000) ||
+        (stmt.GetValueDouble (20) != 2.71828))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1384,9 +1384,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement2SelectParams (ECS
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement3SelectParams (ECSqlStatement& stmt)
     {
     if ((DgnDbStatus::Success != ExtractElement2SelectParams (stmt)) ||
-        (0 != strcmp ("Element3 - InitValue", stmt.GetValueText (20))) ||
-        (stmt.GetValueInt64 (21) != 30000000) ||
-        (stmt.GetValueDouble (22) != 1.414121))
+        (0 != strcmp ("Element3 - InitValue", stmt.GetValueText (21))) ||
+        (stmt.GetValueInt64 (22) != 30000000) ||
+        (stmt.GetValueDouble (23) != 1.414121))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1399,9 +1399,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement3SelectParams (ECS
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement4SelectParams (ECSqlStatement& stmt)
     {
     if ((DgnDbStatus::Success != ExtractElement3SelectParams (stmt)) ||
-        (0 != strcmp ("Element4 - InitValue", stmt.GetValueText (23))) ||
-        (stmt.GetValueInt64 (24) != 40000000) ||
-        (stmt.GetValueDouble (25) != 1.61803398874))
+        (0 != strcmp ("Element4 - InitValue", stmt.GetValueText (24))) ||
+        (stmt.GetValueInt64 (25) != 40000000) ||
+        (stmt.GetValueDouble (26) != 1.61803398874))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -2090,10 +2090,10 @@ void PerformanceElementsCRUDTestFixture::LogTiming(StopWatch& timer, Utf8CP desc
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (PerformanceElementsCRUDTestFixture, InsertSQLite)
     {
-    SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
-    SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
-    SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);
-    SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS);
+    //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
+    //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS);
+    //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);
+    //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2123,10 +2123,10 @@ TEST_F (PerformanceElementsCRUDTestFixture, InsertApi)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (PerformanceElementsCRUDTestFixture, SelectSQLite)
     {
-    SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false /* optimal SQL */, false);
-    SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false /* optimal SQL */, false);
-    SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false /* optimal SQL */, false);
-    SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false /* optimal SQL */, false);
+    //SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false /* optimal SQL */, false);
+    //SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false /* optimal SQL */, false);
+    //SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false /* optimal SQL */, false);
+    //SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false /* optimal SQL */, false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2134,10 +2134,10 @@ TEST_F (PerformanceElementsCRUDTestFixture, SelectSQLite)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (PerformanceElementsCRUDTestFixture, SelectSQLite_NoECClassIdFilter)
     {
-    SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false /* optimal SQL */, true);
-    SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false /* optimal SQL */, true);
-    SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false /* optimal SQL */, true);
-    SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false /* optimal SQL */, true);
+    //SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false /* optimal SQL */, true);
+    //SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false /* optimal SQL */, true);
+    //SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false /* optimal SQL */, true);
+    //SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false /* optimal SQL */, true);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2145,10 +2145,10 @@ TEST_F (PerformanceElementsCRUDTestFixture, SelectSQLite_NoECClassIdFilter)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (PerformanceElementsCRUDTestFixture, SelectSQLiteAsGeneratedByECSql)
     {
-    SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT1_CLASS, true /* SQL as generated by ECSQL */, false);
-    SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT2_CLASS, true /* SQL as generated by ECSQL */, false);
-    SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT3_CLASS, true /* SQL as generated by ECSQL */, false);
-    SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT4_CLASS, true /* SQL as generated by ECSQL */, false);
+    //SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT1_CLASS, true /* SQL as generated by ECSQL */, false);
+    //SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT2_CLASS, true /* SQL as generated by ECSQL */, false);
+    //SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT3_CLASS, true /* SQL as generated by ECSQL */, false);
+    //SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT4_CLASS, true /* SQL as generated by ECSQL */, false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2156,10 +2156,10 @@ TEST_F (PerformanceElementsCRUDTestFixture, SelectSQLiteAsGeneratedByECSql)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (PerformanceElementsCRUDTestFixture, SelectSQLiteAsGeneratedByECSql_NoECClassIdFilter)
     {
-    SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT1_CLASS, true /* SQL as generated by ECSQL */, true);
-    SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT2_CLASS, true /* SQL as generated by ECSQL */, true);
-    SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT3_CLASS, true /* SQL as generated by ECSQL */, true);
-    SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT4_CLASS, true /* SQL as generated by ECSQL */, true);
+    //SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT1_CLASS, true /* SQL as generated by ECSQL */, true);
+    //SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT2_CLASS, true /* SQL as generated by ECSQL */, true);
+    //SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT3_CLASS, true /* SQL as generated by ECSQL */, true);
+    //SqlSelectTime (ELEMENT_PERFORMANCE_ELEMENT4_CLASS, true /* SQL as generated by ECSQL */, true);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2200,10 +2200,10 @@ TEST_F(PerformanceElementsCRUDTestFixture, SelectApi)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (PerformanceElementsCRUDTestFixture, UpdateSQLite)
     {
-    SqlUpdateTime (ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false);
-    SqlUpdateTime (ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false);
-    SqlUpdateTime (ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false);
-    SqlUpdateTime (ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false);
+    //SqlUpdateTime (ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false);
+    //SqlUpdateTime (ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false);
+    //SqlUpdateTime (ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false);
+    //SqlUpdateTime (ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2211,10 +2211,10 @@ TEST_F (PerformanceElementsCRUDTestFixture, UpdateSQLite)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (PerformanceElementsCRUDTestFixture, UpdateSQLite_NoECClassIdFilter)
     {
-    SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, true);
-    SqlUpdateTime (ELEMENT_PERFORMANCE_ELEMENT2_CLASS, true);
-    SqlUpdateTime (ELEMENT_PERFORMANCE_ELEMENT3_CLASS, true);
-    SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, true);
+    //SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, true);
+    //SqlUpdateTime (ELEMENT_PERFORMANCE_ELEMENT2_CLASS, true);
+    //SqlUpdateTime (ELEMENT_PERFORMANCE_ELEMENT3_CLASS, true);
+    //SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, true);
     }
 
 //---------------------------------------------------------------------------------------
