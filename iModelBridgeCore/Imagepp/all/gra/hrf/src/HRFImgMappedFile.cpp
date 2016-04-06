@@ -226,7 +226,7 @@ bool HRFImgMappedCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     // ... header size
     pBuffer = &aBuffer[2];
 
-    if (sscanf(pBuffer, "%lu", &HeaderSize) != 1)
+    if (sscanf(pBuffer, "%u", &HeaderSize) != 1)
         goto WRAPUP;
 
     // Dimensions and color space

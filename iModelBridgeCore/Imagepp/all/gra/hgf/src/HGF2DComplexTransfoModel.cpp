@@ -749,11 +749,11 @@ void HGF2DComplexTransfoModel::Prepare()
     if (m_ListOfModels.size() > 0)
         {
         // Check that the input units of first model are identical to those of the complex model
-        List_TransfoModel::iterator Itr = m_ListOfModels.begin();
+        List_TransfoModel::iterator Itr = m_ListOfModels.begin(); (void)Itr;
 
 
         // Check that the inverse units of last model are identical to those of complex model
-        List_TransfoModel::reverse_iterator rItr = m_ListOfModels.rbegin();
+        List_TransfoModel::reverse_iterator rItr = m_ListOfModels.rbegin(); (void)rItr;
         }
     }
 

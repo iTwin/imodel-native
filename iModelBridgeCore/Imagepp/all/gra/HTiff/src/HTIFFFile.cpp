@@ -3611,7 +3611,7 @@ void HTIFFFile::ReadWriteNewPosition(uint64_t& p_CountFreeBlockTotal,
         p_PositionSortedData++;
 
     //Move the Tile/Strip data in the file.
-    for (p_IteratorPositionSortedData; p_IteratorPositionSortedData < p_PositionSortedData; p_IteratorPositionSortedData++)
+    for ((void)p_IteratorPositionSortedData; p_IteratorPositionSortedData < p_PositionSortedData; p_IteratorPositionSortedData++)
         {
         uint64_t SumByteToMoved    = m_MergedDirectories[p_IteratorPositionSortedData].Size;
         uint64_t InitialPosition   = m_MergedDirectories[p_IteratorPositionSortedData].Offset;

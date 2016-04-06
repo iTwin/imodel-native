@@ -66,6 +66,7 @@ typedef struct {
 
 typedef my_source_mgr* my_src_ptr;
 
+/* &&ep d
 // NaturalOrderIndexes[i] is the natural-order position of the i'th element
 // of a zigzag-ordered matrix.
 
@@ -80,6 +81,7 @@ static const uint16_t s_NaturalOrderIndexes[64] =
     58, 59, 52, 45, 38, 31, 39, 46,
     53, 60, 61, 54, 47, 55, 62, 63,
     };
+*/
 
 //-----------------------------------------------------------------------------
 // Friend

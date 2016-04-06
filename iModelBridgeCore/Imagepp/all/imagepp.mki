@@ -10,8 +10,8 @@ BUILD_NO_STACK_CHECK        = 1
 
 # &&ep - temporary defines to decrease build errors on iOS.
 # We'll have to fix build errors on iOS when we remove these flags.
-IS_THIRD_PARTY_LIBRARY              = 1
-NO_DEFAULT_CLANG_WARNINGS   = 1
+# &&ep try remove: IS_THIRD_PARTY_LIBRARY              = 1
+# &&ep try remove: NO_DEFAULT_CLANG_WARNINGS   = 1
 
 # DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
 # If we define appName and use it for DLM_NAME, MultiCppCompileRule.mki will use it for CCompPDBName, and linkLibrary.mki will use DLM_NAME for LIB_NAME.

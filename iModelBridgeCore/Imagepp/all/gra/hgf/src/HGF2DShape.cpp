@@ -731,13 +731,13 @@ void HGF2DShape::GetBestOrientedExtent(HGF2DPositionCollection* po_pMinimalBoxCo
 
             //Increment the corresponding index
             if (HDOUBLE_EQUAL_EPSILON(minAngle, FirstAngle))
-                (++VerticalMinIndex % nbPoints);
+                VerticalMinIndex = (++VerticalMinIndex % nbPoints);
             else if (HDOUBLE_EQUAL_EPSILON(minAngle, SecondAngle))
-                (++VerticalMaxIndex % nbPoints);
+                VerticalMaxIndex = (++VerticalMaxIndex % nbPoints);
             else if (HDOUBLE_EQUAL_EPSILON(minAngle, ThirdAngle))
-                (++HorizontalMinIndex % nbPoints);
+                HorizontalMinIndex = (++HorizontalMinIndex % nbPoints);
             else if (HDOUBLE_EQUAL_EPSILON(minAngle, FourthAngle))
-                (++HorizontalMaxIndex % nbPoints);
+                HorizontalMaxIndex = (++HorizontalMaxIndex % nbPoints);
 
             //Intersect the lines to form the rectangle
             HGF2DPosition Corner1, Corner2, Corner3, Corner4;

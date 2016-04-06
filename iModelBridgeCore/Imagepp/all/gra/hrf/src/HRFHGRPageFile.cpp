@@ -874,11 +874,11 @@ void HRFHGRPageFile::WriteFile()
     Data += string(aBuffer);
     NewSize += m_pFile->Write(Data.c_str(), Data.length());
 
-    sprintf(aBuffer, "%ld\r\n", m_ImageWidth);
+    sprintf(aBuffer, "%d\r\n", m_ImageWidth);
     Data = string(IMAGE_WIDTH) + string("=") + aBuffer;
     NewSize += m_pFile->Write(Data.c_str(), Data.length());
 
-    sprintf(aBuffer, "%ld\r\n", m_ImageHeight);
+    sprintf(aBuffer, "%d\r\n", m_ImageHeight);
     Data = string(IMAGE_HEIGHT) + string("=") + aBuffer;
     NewSize += m_pFile->Write(Data.c_str(), Data.length());
 

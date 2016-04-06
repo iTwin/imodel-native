@@ -40,6 +40,8 @@ class HRFAdaptTileToImageCreator : public HRFBlockAdapterCreator
     HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFAdaptTileToImageCreator)
 
 public:
+    virtual ~HRFAdaptTileToImageCreator();
+        
     // Obtain the capabilities of stretcher
     virtual HRFBlockAdapterCapabilities* GetCapabilities() const;
 

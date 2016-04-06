@@ -615,7 +615,6 @@ bool HRFDoqFile::GetKeywordLine(KeywordName pi_Keyword)const
     uint32_t KeywordLength = 0;
     uint16_t CurrentKeywordNb = 0;
 
-    KeywordMap::const_iterator loc_end = m_KeywordMap.find(END);
     KeywordMap::const_iterator loc_keyword = m_KeywordMap.find(pi_Keyword);
 
 

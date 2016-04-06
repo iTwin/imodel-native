@@ -700,7 +700,7 @@ void HRFTgaFile::SaveTgaFile(bool pi_CloseFile)
             if (pPageDescriptor->TagHasChanged(*pTag) || GetAccessMode().m_HasCreateAccess)
                 {
                 // AuthorName Tag
-                if (pTag->GetID() == HRFAttributeArtist::ATTRIBUTE_ID) 
+                if (pTag->GetID() == (HPMAttributesID)HRFAttributeArtist::ATTRIBUTE_ID)
                     {
                     WString nameW(((HFCPtr<HRFAttributeArtist>&)pTag)->GetData().c_str(), BentleyCharEncoding::Utf8);
                     AString nameA(nameW.c_str());
@@ -710,7 +710,7 @@ void HRFTgaFile::SaveTgaFile(bool pi_CloseFile)
 
 
                 // AuthorComment Tag
-                if (pTag->GetID() == HRFAttributeNotes::ATTRIBUTE_ID)
+                if (pTag->GetID() == (HPMAttributesID)HRFAttributeNotes::ATTRIBUTE_ID)
                     {
                     WString commentW(((HFCPtr<HRFAttributeNotes>&)pTag)->GetData().c_str(), BentleyCharEncoding::Utf8);
                     AString commentA(commentW.c_str());
@@ -720,7 +720,7 @@ void HRFTgaFile::SaveTgaFile(bool pi_CloseFile)
                     }
 
                 // Date/Time Tag
-                if (pTag->GetID() == HRFAttributeDateTime::ATTRIBUTE_ID)
+                if (pTag->GetID() == (HPMAttributesID)HRFAttributeDateTime::ATTRIBUTE_ID)
                     {
                     BE_STRING_UTILITIES_UTF8_SSCANF(((HFCPtr<HRFAttributeDateTime>&)pTag)->GetData().c_str(),
                                                 "%hu/%hu/%hu %hu:%hu:%hu",
@@ -754,7 +754,7 @@ void HRFTgaFile::SaveTgaFile(bool pi_CloseFile)
                 //                }
 
                 // SoftwareId Tag
-                if (pTag->GetID() == HRFAttributeSoftware::ATTRIBUTE_ID)
+                if (pTag->GetID() == (HPMAttributesID)HRFAttributeSoftware::ATTRIBUTE_ID)
                     {
                     WString softNameW(((HFCPtr<HRFAttributeSoftware>&)pTag)->GetData().c_str(), BentleyCharEncoding::Utf8);
                     AString softNameA(softNameW.c_str());
@@ -763,11 +763,12 @@ void HRFTgaFile::SaveTgaFile(bool pi_CloseFile)
                     }
 
                 // SoftwareVersion Tag
-                if (pTag->GetID() == HRFAttributeVersion::ATTRIBUTE_ID)
+                if (pTag->GetID() == (HPMAttributesID)HRFAttributeVersion::ATTRIBUTE_ID)
                     {
                     float temp;
+//&&ep test
                     BE_STRING_UTILITIES_UTF8_SSCANF(((HFCPtr<HRFAttributeVersion>&)pTag)->GetData().c_str(),
-                                                "%f%hc",
+                                                "%f%c",
                                                 &temp,
                                                 &m_pTgaExtentionArea->m_SoftwareVersionLetter);
                     //temp = (float)atof (((HFCPtr<HRFAttributeVersion>&)pTag)->GetData().c_str());
@@ -776,7 +777,7 @@ void HRFTgaFile::SaveTgaFile(bool pi_CloseFile)
                     }
 
                 // BackGround Color
-                if (pTag->GetID() == HRFAttributeBackground::ATTRIBUTE_ID)
+                if (pTag->GetID() == (HPMAttributesID)HRFAttributeBackground::ATTRIBUTE_ID)
                     {
                     m_pTgaExtentionArea->m_BackgroundColor = ((HFCPtr<HRFAttributeBackground>&)pTag)->GetData();
                     HasExt = true;

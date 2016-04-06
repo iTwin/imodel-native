@@ -2073,7 +2073,7 @@ void HCDCodecCCITTFax4::CCITT4State::GetWhiteCodes()
 //-----------------------------------------------------------------------------
 void HCDCodecCCITTFax4::CCITT4State::GetBlackCodes()
     {
-    register int32_t value;
+    int32_t value;
 
     GetBlack();
     if (m_code <= 63)
@@ -3294,9 +3294,9 @@ ERRORX:
 //-----------------------------------------------------------------------------
 int32_t HCDCodecCCITTFax4::CCITT4State::FindSpan(Byte** bpp, int32_t bs, int32_t be, register Byte const* tab) const
     {
-    register Byte* bp = *bpp;
-    register int32_t bits = be - bs;
-    register int32_t n, span;
+    Byte* bp = *bpp;
+    int32_t bits = be - bs;
+    int32_t n, span;
 
     /*
     * Check partial byte on lhs.

@@ -1832,7 +1832,7 @@ void HRFBilFile::CleanUpString(string* pio_pString)
     {
     HPRECONDITION(pio_pString != 0);
 
-    size_t Pos = 0;
+    int32_t Pos = 0;
 
     // Remove the SPACE/TAB at the begin of the string.
     while (Pos < pio_pString->size() && !IsValidChar((*pio_pString)[Pos]))

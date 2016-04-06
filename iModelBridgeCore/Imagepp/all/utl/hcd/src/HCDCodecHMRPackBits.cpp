@@ -273,8 +273,23 @@ again:
 
             case LITERAL_RUN:
 
+/* &&ep o
                 if( IdenticalBytes == 1 &&
                     pOut[-2] == (char)-1 &&
+                    *pLastLiteral < 126)
+                    {
+                    State = (((*pLastLiteral) += 2) == 127 ? BASE: LITERAL);
+
+                    pOut[-2] = pOut[-1];
+                    }
+                else
+                    {
+                    State = RUN;
+                    }
+*/
+                char tmpc = (char)-1;
+                if( IdenticalBytes == 1 &&
+                    pOut[-2] == tmpc &&
                     *pLastLiteral < 126)
                     {
                     State = (((*pLastLiteral) += 2) == 127 ? BASE: LITERAL);

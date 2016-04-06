@@ -486,7 +486,6 @@ void HRFRasterFileBlockAdapter::CreateDescriptors(const BlockDescriptorMap& pi_r
                 // BestMatch a resolution descriptor and insert it to the list
                 uint32_t            BlockWidth=0;
                 uint32_t            BlockHeight=0;
-                HRFBlockAccess      BlockAccess = HRFBlockAccess::RANDOM;
 
 
                 HFCPtr<HRFRasterFileCapabilities> pPixelTypeCapabilities;

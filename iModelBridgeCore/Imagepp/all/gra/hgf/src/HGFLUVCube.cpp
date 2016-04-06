@@ -96,9 +96,9 @@ void HGFLUVCube::BuildLookupTable()
     double NormalizedValue;
 
     // Given by Poynton's : RGB Standard to Rec 709 (D65 white point)
-    double XYZToRBGMatrix [3][3] = { 0.412453, 0.357580, 0.180423,
-                                      0.212671, 0.715160, 0.072169,
-                                      0.019334, 0.119193, 0.950227
+    double XYZToRBGMatrix [3][3] = { {0.412453, 0.357580, 0.180423},
+                                     {0.212671, 0.715160, 0.072169},
+                                     {0.019334, 0.119193, 0.950227}
                                     };
 
     /* // Given by Poynton's : International Standard (D65) adopted for HDTV

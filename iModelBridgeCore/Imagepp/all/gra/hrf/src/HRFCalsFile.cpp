@@ -714,7 +714,7 @@ bool HRFCalsFile::ComputeRasterDimension()
         int32_t Width;
         int32_t Height;
 
-        if (sscanf(&PelCount[9], "%ld,%ld", &Width, &Height) == 2)
+        if (sscanf(&PelCount[9], "%d,%d", &Width, &Height) == 2)
             {
             if (Width > 0 && Height > 0)
                 {

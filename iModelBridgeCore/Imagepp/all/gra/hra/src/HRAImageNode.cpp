@@ -664,12 +664,12 @@ bool ImageTransformNode::ComputeSourceGridFromDestination(HFCInclusiveGrid* sour
     HDEBUGCODE
         (
         HVEShape srcSampleExtentShape(dest0Offset.x, dest0Offset.y, dest0Offset.x + dest0Grid.GetWidth(), dest0Offset.y + dest0Grid.GetHeight(), GetPhysicalCoordSys());
-        srcSampleExtentShape.ChangeCoordSys(GetSourceNodeP()->GetPhysicalCoordSys()); srcSampleExtentShape;
+        srcSampleExtentShape.ChangeCoordSys(GetSourceNodeP()->GetPhysicalCoordSys()); (void)srcSampleExtentShape;
 
         BeAssert(srcSampleExtentShape.GetExtent().IsEqualTo(srcSampleExtent, HGLOBAL_EPSILON));
 
         HVEShape srcPhysicalInDestCS(GetSourceNodeP()->GetPhysicalExtent());
-        srcPhysicalInDestCS.ChangeCoordSys(GetPhysicalCoordSys()); srcPhysicalInDestCS;
+        srcPhysicalInDestCS.ChangeCoordSys(GetPhysicalCoordSys()); (void)srcPhysicalInDestCS;
         srcPhysicalInDestCS.GetExtent();
         )
 
