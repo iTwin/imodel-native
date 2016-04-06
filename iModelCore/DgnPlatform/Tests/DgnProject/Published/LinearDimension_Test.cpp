@@ -119,7 +119,7 @@ LinearDimension2dPtr    CreateBasicDimension (bvector<DPoint3d> const& points, A
     LinearDimension2dPtr             dimension = LinearDimension2d::Create(createParams, GetDimensionStyleId(), points[1]);
     EXPECT_TRUE (dimension.IsValid());
 
-    for (int iPoint = 2; iPoint < points.size(); iPoint++)
+    for (size_t iPoint = 2; iPoint < points.size(); iPoint++)
         dimension->AppendPoint (points[iPoint]);
 
     return dimension;
