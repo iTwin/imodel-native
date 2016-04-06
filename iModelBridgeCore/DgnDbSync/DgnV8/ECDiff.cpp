@@ -1998,6 +1998,7 @@ MergeStatus ECSchemaMergeTool::MergeClass (ECDiffNodeR diff, ECClassCP defaultCl
         }
     else if (isCAClass)
         {
+        // TODO: Merge appliesTo attribute.
         ECCustomAttributeClassP newClass;
         if (GetMerged().CreateCustomAttributeClass(newClass, defaultClass->GetName()) != ECObjectsStatus::Success)
             return MergeStatus::ErrorMergeClassAlreadyExist;
