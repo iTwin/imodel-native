@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/GroupingRule.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -240,6 +240,7 @@ struct PropertyGroup : public GroupSpecification
     private:
         Utf8String              m_imageId;
         bool                    m_createGroupForSingleItem;
+        bool                    m_createGroupForUnspecifiedValues;
         Utf8String              m_propertyName;
         PropertyRangeGroupList  m_ranges;
 
@@ -272,6 +273,12 @@ struct PropertyGroup : public GroupSpecification
 
         //! Idendifies whether a group should be created even if there is only single of particular group.
         ECOBJECTS_EXPORT bool                     GetCreateGroupForSingleItem (void) const;
+        
+        //! Idendifies whether a group should be created for unspecified (NULL) values.
+        ECOBJECTS_EXPORT bool                     GetCreateGroupForUnspecifiedValues() const;
+        
+        //! Should a group should be created for unspecified (NULL) values.
+        ECOBJECTS_EXPORT void                     SetCreateGroupForUnspecifiedValues(bool value);
 
         //! ECProperty name to group ECInstances by.
         ECOBJECTS_EXPORT Utf8StringCR             GetPropertyName (void) const;
