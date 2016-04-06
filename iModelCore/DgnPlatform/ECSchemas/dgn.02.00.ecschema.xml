@@ -791,9 +791,24 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>AnnotationElement2d</BaseClass>
         <ECProperty propertyName="StyleId" typeName="long"/>
         <ECProperty propertyName="Points" typeName="binary" description="Location of dimension points"/>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="LinearDimension2d">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>AnnotationElement2d</BaseClass>
+        <BaseClass>LinearDimension</BaseClass>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="LinearDimension3d">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>GraphicalElement3d</BaseClass>
+        <BaseClass>LinearDimension</BaseClass>
     </ECEntityClass>
 
     <ECEntityClass typeName="ViewAttachment">
