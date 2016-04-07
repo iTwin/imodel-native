@@ -2,13 +2,13 @@
 |
 |     $Source: Core/2d/bcdtmTin.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TerrainModel\Core\bcDTMBaseDef.h>
 #include <TerrainModel\Core\dtmevars.h>
 #include <TerrainModel\Core\bcdtminlines.h>
-//#pragma optimize( "p", on )
+#pragma float_control(precise, on, push)
 #include <TerrainModel\Core\partitionarray.h>
 #include <algorithm>
 #include <list>

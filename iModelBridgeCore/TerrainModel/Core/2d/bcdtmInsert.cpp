@@ -2,14 +2,14 @@
 |
 ** Module Code  bcdtmInsert.c
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
 #include "bcdtminlines.h"
 
-//#pragma optimize( "p", on )
+#pragma float_control(precise, on, push)
 thread_local long numPrecisionError = 0, numSnapFix = 0; // These are only used in Debug code.
 
 /*-------------------------------------------------------------------+

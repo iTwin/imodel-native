@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmLoadContours.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -11,7 +11,7 @@
 #include "Drainage\PublicAPI\drainage.h"
 #include "Drainage\bcdtmDrainagePond.h"
 #include <ppl.h>
-//#pragma optimize( "p", on )
+#pragma float_control(precise, on, push)
 
 thread_local static DPoint3d  *conPtsP = nullptr;               /* DTM Contour Points                                      */
 thread_local static long *conWghtP=nullptr ;                   /* Weighting Of Each Contour Point                         */

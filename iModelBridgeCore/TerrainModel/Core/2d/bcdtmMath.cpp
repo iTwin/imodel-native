@@ -2,14 +2,14 @@
 |
 |     $Source: Core/2d/bcdtmMath.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
 #include "bcdtminlines.h" 
 
-//#pragma optimize( "p", on )
+#pragma float_control(precise, on, push)
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -2670,7 +2670,6 @@ BENTLEYDTM_Public int bcdtmMath_getPointArrayExtents
  goto cleanup ;
 }
 
-//#pragma optimize( "p",on)
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
