@@ -848,7 +848,7 @@ void RasterProgressiveDisplay::Draw (RenderContextR context)
         }
 
     if(!m_queriedTiles.empty())
-        context.GetViewportR().ScheduleProgressiveTask(*this);
+        context.GetViewportR().ScheduleTerrainProgressiveTask(*this);
     }
 
 //----------------------------------------------------------------------------------------

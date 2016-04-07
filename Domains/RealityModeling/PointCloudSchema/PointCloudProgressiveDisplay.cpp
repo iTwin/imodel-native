@@ -186,7 +186,7 @@ void PointCloudProgressiveDisplay::DrawView (Dgn::RenderContextR context)
     int64_t pointsToLoad = 0;
     if (!DrawPointCloud(pointsToLoad, context, densityType, density, false/*checkStop*/) || pointsToLoad > 0 || density < 1.0f)
         {
-        context.GetViewportR().ScheduleProgressiveTask(*this);
+        context.GetViewportR().ScheduleTerrainProgressiveTask(*this);
         m_waitTime = 100;
         m_nextRetryTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + m_waitTime;
         m_lastTentativeStopped = true;   // do not wait to display full res. do it right away

@@ -137,7 +137,7 @@ void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
     loadContext.m_system = &context.GetViewport()->GetRenderTarget()->GetSystem();
 
     if (m_scene->Draw(context, loadContext))
-        context.GetViewport()->ScheduleProgressiveTask(*new ThreeMxProgressive(*this));
+        context.GetViewport()->ScheduleTerrainProgressiveTask(*new ThreeMxProgressive(*this));
     }
 
 //----------------------------------------------------------------------------------------
