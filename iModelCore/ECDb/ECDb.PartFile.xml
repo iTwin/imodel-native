@@ -34,25 +34,25 @@
             <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/ECDb" SubPartDirectory="ECSchemas/ECDb">
                 ECSchemas/ECDb/*.ecschema.xml
             </Files>
+            <Directory SourceName="Dox/Pages/ECDb" SubPartDirectory="Dox/Pages/ECDb"/>
+            <Directory SourceName="Dox/Images/ECDb" SubPartDirectory="Dox/Images/ECDb"/>
+            <Directory SourceName="Dox/Files/ECDb" SubPartDirectory="Dox/Files/ECDb"/>
         </Bindings>
     </Part>
 
-   
-    <Part Name="ECDbPrepareDocGeneration" BentleyBuildMakeFile="ECDb/docs/preparedocgeneration.mke">
+    <Part Name="ECDbPrepareDocGeneration">
         <SubPart PartName="PublishedApi" />
         <SubPart PartName="ECDbExtractCodeSamples" />
         <SubPart PartName="ECDbBuildCodeSamples" />
         <SubPart PartName="StandardSchemas" PartFile="ECStandards"  Repository="ECStandards"/>
-        <Bindings>
-            <Directory SourceName="Docs/Source/ECDb" SubPartDirectory="Docs/Source/ECDb"/>
-            <Directory SourceName="Docs/Images/ECDb" SubPartDirectory="Docs/Images/ECDb"/>
-            <Directory SourceName="Docs/Files/ECDb" SubPartDirectory="Docs/Files/ECDb"/>
-        </Bindings>
     </Part>
 
-    <Part Name="ECDbExtractCodeSamples" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/Extractions.mke" BMakeOptions="-dEXTRACTIONS_SOURCE_DIR=$(SrcRoot)ECDb/ECDb/docs/samplecode -dEXTRACTIONS_OUTPUT_BUILD_SUBDIR=ECDb/docs/extractedsamplecode -dEXTRACTIONS_NO_PROVENANCE">
+    <Part Name="ECDbExtractCodeSamples" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/Extractions.mke" BMakeOptions="-dEXTRACTIONS_SOURCE_DIR=$(SrcRoot)ECDb/ECDb/docs/samplecode -dEXTRACTIONS_OUTPUT_BUILD_SUBDIR=ECDb/docs/extractedsamplecode -dEXTRACTIONS_NO_PROVENANCE -dEXTRACTIONS_OUTPUT_BUILDCONTEXT_SUBDIR=Dox/Extractions/ECDb">
         <SubPart PartName="ECDbLibrary" />
         <SubPart PartName="PublishedApi" />
+        <Bindings>
+            <Directory SourceName="Dox/Extractions/ECDb" SubPartDirectory="Dox/Extractions/ECDb"/>
+        </Bindings>
     </Part>
 
     <Part Name="ECDbBuildCodeSamples" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/BuildSampleCode.mke" BMakeOptions="-dBUILD_SAMPLE_CODE_SOURCE_DIR=$(SrcRoot)ECDb/ECDb/docs/samplecode -dBUILD_SAMPLE_CODE_SUB_DIR=ecdbsamplecode -dPolicyFile=$(SrcRoot)ECDb/ECDb/ECDbPolicy.mki">

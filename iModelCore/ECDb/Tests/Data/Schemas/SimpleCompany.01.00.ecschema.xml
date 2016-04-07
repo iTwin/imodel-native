@@ -3,9 +3,9 @@
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
     <ECSchemaReference name="EditorCustomAttributes" version="01.02" prefix="beca"/>
     <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="unitSpec"/>
-    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap"/>
+    <ECSchemaReference name="ECDbMap" version="01.00.01" prefix="ecdbmap"/>
     <ECCustomAttributes>
-        <SchemaMap xmlns="ECDbMap.01.00">
+        <SchemaMap xmlns="ECDbMap.01.00.01">
             <TablePrefix>sic</TablePrefix>
         </SchemaMap>
     </ECCustomAttributes>
@@ -16,7 +16,7 @@
     </ECStructClass>
     <ECEntityClass typeName="Employee" modifier="None">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
+            <ClassMap xmlns="ECDbMap.01.00.01">
                 <MapStrategy>
                     <Strategy>SharedTable</Strategy>
                     <AppliesToSubclasses>True</AppliesToSubclasses>

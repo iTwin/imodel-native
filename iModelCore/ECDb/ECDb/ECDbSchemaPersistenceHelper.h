@@ -29,6 +29,20 @@ enum class ECPropertyKind
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ECDbSchemaPersistenceHelper
     {
+public:
+    //!This enum generalizes ECObjects' ones and is used to persist CA instances along with the container type
+    //!in the table ec_CustomAttribute. In that table we don't need to store the exact container type, so
+    //!the extra enum is for type-safety and to be robust against changes in the ECObjects enum (enforced through
+    //!separate static asserts)
+    enum class GeneralizedCustomAttributeContainerType : std::underlying_type<ECN::CustomAttributeContainerType>::type
+        {
+        Schema = std::underlying_type<ECN::CustomAttributeContainerType>::type(ECN::CustomAttributeContainerType::Schema),
+        Class = std::underlying_type<ECN::CustomAttributeContainerType>::type(ECN::CustomAttributeContainerType::AnyClass),
+        Property = std::underlying_type<ECN::CustomAttributeContainerType>::type(ECN::CustomAttributeContainerType::AnyProperty),
+        SourceRelationshipConstraint = std::underlying_type<ECN::CustomAttributeContainerType>::type(ECN::CustomAttributeContainerType::SourceRelationshipConstraint),
+        TargetRelationshipConstraint = std::underlying_type<ECN::CustomAttributeContainerType>::type(ECN::CustomAttributeContainerType::TargetRelationshipConstraint)
+        };
+
 private:
     ECDbSchemaPersistenceHelper();
     ~ECDbSchemaPersistenceHelper();
@@ -51,7 +65,6 @@ public:
     static BentleyStatus SerializeECEnumerationValues(Utf8StringR jsonStr, ECEnumerationCR);
     static BentleyStatus DeserializeECEnumerationValues(ECEnumerationR, Utf8CP jsonStr);
     static bool ContainsECSchemaWithNamespacePrefix(ECDbCR db, Utf8CP namespacePrefix);
-
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

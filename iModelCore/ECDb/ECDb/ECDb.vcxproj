@@ -215,11 +215,10 @@
     <ClInclude Include="ViewGenerator.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="docs\preparedocgeneration.mke" />
-    <None Include="docs\source\ECDb.overviewPage" />
-    <None Include="docs\source\ECDbExamples.overviewPage" />
-    <None Include="docs\source\ECSQL.overviewPage" />
-    <None Include="docs\source\ECSqlStatement.overviewPage" />
+    <None Include="docs\source\ECDbExamples.doxpage" />
+    <None Include="docs\source\ECDbOverview.doxpage" />
+    <None Include="docs\source\ECSqlOverview.doxpage" />
+    <None Include="docs\source\ECSqlStatement.doxpage" />
     <None Include="ECDb.mke" />
     <None Include="ECSql\Parser\LICENSE" />
     <None Include="ECSql\Parser\NOTICE" />
