@@ -62,7 +62,9 @@
         </Bindings>
     </Part>
 
-  <Part Name="MemoryPoolTestExe" BentleyBuildMakeFile="Tests/MemoryPoolTest/MemoryPoolTester.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">        
+  <Part Name="MemoryPoolTestExe" BentleyBuildMakeFile="Tests/MemoryPoolTest/MemoryPoolTester.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
+    <SubPart PartName="Base"     PartFile="Bentley"  Repository="Bentley" />
+    <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs"/>    
     <Bindings>
       <Files ProductDirectoryName="MemoryPoolTester">Delivery\MemoryPoolTester.exe</Files>
     </Bindings>
@@ -183,10 +185,17 @@
     </Product>
 
 
+
+    <ProductDirectoryList ListName="MemoryPoolTest">
+      <ProductDirectory Name="BentleyNativeAssemblies" Path=""/>      
+      <ProductDirectory Name="GeomNativeAssemblies" Path=""/>      
+      <ProductDirectory Name="MemoryPoolTester" Path="" Deliver="true"/>            
+    </ProductDirectoryList>
+  
   
     <Product Name="MemoryPoolTest" SaveProduct="true" >
-        <SubPart PartName="MemoryPoolTestExe" />
-        <ProductDirectory Name="MemoryPoolTestExe" Path=""/>
+        <SubPart PartName="MemoryPoolTestExe" />                           
+        <Directories DirectoryListName="MemoryPoolTest" />      
     </Product> 
                  
 
