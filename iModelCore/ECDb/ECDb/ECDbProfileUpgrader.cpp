@@ -15,7 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle        04/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
-DbResult ECDbProfileUpgrader_3203::_Upgrade(ECDbR ecdb) const
+DbResult ECDbProfileUpgrader_3300::_Upgrade(ECDbR ecdb) const
     {
     if (BE_SQLITE_OK != ecdb.ExecuteSql("ALTER TABLE ec_Class ADD COLUMN CustomAttributeContainerType INTEGER;"))
         {
@@ -24,6 +24,10 @@ DbResult ECDbProfileUpgrader_3203::_Upgrade(ECDbR ecdb) const
         }
 
     LOG.debug("ECDb profile upgrade: Table 'ec_Class': added column 'CustomAttributeContainerType'.");
+
+    DbResult stat = UpdateGeneralizedCustomContainerTypeInCAInstanceTable(ecdb);
+    if (BE_SQLITE_OK != stat)
+        return stat;
 
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT Id FROM ec_Schema WHERE Name='ECDbMap'"))
@@ -48,27 +52,27 @@ DbResult ECDbProfileUpgrader_3203::_Upgrade(ECDbR ecdb) const
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    DbResult stat = UpdateCustomContainerType(ecdb, stmt, "SchemaMap", CustomAttributeContainerType::Schema);
+    stat = SetCustomContainerType(ecdb, stmt, "SchemaMap", CustomAttributeContainerType::Schema);
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = UpdateCustomContainerType(ecdb, stmt, "ClassMap", CustomAttributeContainerType::EntityClass | CustomAttributeContainerType::RelationshipClass);
+    stat = SetCustomContainerType(ecdb, stmt, "ClassMap", CustomAttributeContainerType::EntityClass | CustomAttributeContainerType::RelationshipClass);
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = UpdateCustomContainerType(ecdb, stmt, "DisableECInstanceIdAutogeneration", CustomAttributeContainerType::EntityClass);
+    stat = SetCustomContainerType(ecdb, stmt, "DisableECInstanceIdAutogeneration", CustomAttributeContainerType::EntityClass);
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = UpdateCustomContainerType(ecdb, stmt, "PropertyMap", CustomAttributeContainerType::PrimitiveProperty);
+    stat = SetCustomContainerType(ecdb, stmt, "PropertyMap", CustomAttributeContainerType::PrimitiveProperty);
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = UpdateCustomContainerType(ecdb, stmt, "LinkTableRelationshipMap", CustomAttributeContainerType::RelationshipClass);
+    stat = SetCustomContainerType(ecdb, stmt, "LinkTableRelationshipMap", CustomAttributeContainerType::RelationshipClass);
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = UpdateCustomContainerType(ecdb, stmt, "ForeignKeyRelationshipMap", CustomAttributeContainerType::RelationshipClass);
+    stat = SetCustomContainerType(ecdb, stmt, "ForeignKeyRelationshipMap", CustomAttributeContainerType::RelationshipClass);
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -83,7 +87,37 @@ DbResult ECDbProfileUpgrader_3203::_Upgrade(ECDbR ecdb) const
 // @bsimethod                                                    Krischan.Eberle        04/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ECDbProfileUpgrader_3203::UpdateCustomContainerType(ECDbCR ecdb, Statement& stmt, Utf8CP caClassName, CustomAttributeContainerType type)
+DbResult ECDbProfileUpgrader_3300::UpdateGeneralizedCustomContainerTypeInCAInstanceTable(ECDbCR ecdb)
+    {
+    Utf8String sql;
+    sql.Sprintf("UPDATE ec_customattribute SET ContainerType = CASE ContainerType "
+                "WHEN 1 THEN %d "
+                "WHEN 2 THEN %d "
+                "WHEN 3 THEN %d "
+                "WHEN 4 THEN %d "
+                "WHEN 5 THEN %d "
+                "ELSE ContainerType END",
+                Enum::ToInt(ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema),
+                Enum::ToInt(ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class),
+                Enum::ToInt(ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property),
+                Enum::ToInt(ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint),
+                Enum::ToInt(ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint));
+
+    if (BE_SQLITE_OK != ecdb.ExecuteSql(sql.c_str()))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Updating ContainerType values in ec_CustomAttribute to enum GeneralizedCustomAttributeContainerType failed. %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debug("ECDb profile upgrade: Updated values of column 'ContainerType' in table 'ec_CustomAttribute' to enum GeneralizedCustomAttributeContainerType.");
+    return BE_SQLITE_OK;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle        04/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+DbResult ECDbProfileUpgrader_3300::SetCustomContainerType(ECDbCR ecdb, Statement& stmt, Utf8CP caClassName, CustomAttributeContainerType type)
     {
     if (BE_SQLITE_OK != stmt.BindText(stmt.GetParameterIndex(":name"), caClassName, Statement::MakeCopy::No) ||
         BE_SQLITE_OK != stmt.BindInt(stmt.GetParameterIndex(":type"), Enum::ToInt(type)))
@@ -116,45 +150,13 @@ DbResult ECDbProfileUpgrader_3203::UpdateCustomContainerType(ECDbCR ecdb, Statem
     
     while (BE_SQLITE_ROW == validateStmt->Step())
         {
-        const ECContainerType actualType = Enum::FromInt<ECContainerType>(validateStmt->GetValueInt(1));
-        switch (actualType)
+        const ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType actualType = Enum::FromInt<ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType>(validateStmt->GetValueInt(1));
+        if (!Enum::Intersects(type, (CustomAttributeContainerType) actualType))
             {
-                case ECContainerType::Schema:
-                {
-                if (Enum::Contains(type, CustomAttributeContainerType::Schema))
-                    continue;
-
-                break;
-                }
-                case ECContainerType::Class:
-                {
-                if (Enum::Intersects(type, CustomAttributeContainerType::AnyClass))
-                    continue;
-
-                break;
-                }
-                case ECContainerType::Property:
-                {
-                if (Enum::Intersects(type, CustomAttributeContainerType::AnyProperty))
-                    continue;
-
-                break;
-                }
-                case ECContainerType::RelationshipConstraintSource:
-                case ECContainerType::RelationshipConstraintTarget:
-                {
-                if (Enum::Contains(type, CustomAttributeContainerType::RelationshipConstraint))
-                    continue;
-
-                break;
-                }
-
-                default:
-                    break;
+            LOG.errorv("ECDb profile upgrade failed: Found %s custom attribute instance on a container which is not supported for this custom attribute class. (rowid %lld in table ec_CustomAttribute)",
+                         caClassName, validateStmt->GetValueInt64(0));
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
             }
-
-        LOG.warningv("Found %s custom attribute instance with on a container which is not supported for this custom attribute class. (rowid %lld in table ec_CustomAttribute)",
-                     caClassName, validateStmt->GetValueInt64(0));
         }
 
     return BE_SQLITE_OK;

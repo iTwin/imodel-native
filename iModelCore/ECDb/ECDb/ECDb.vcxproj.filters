@@ -406,19 +406,16 @@
     <None Include="ECSql\Parser\NOTICE">
       <Filter>ECSql\OSQLParser</Filter>
     </None>
-    <None Include="docs\preparedocgeneration.mke">
-      <Filter>docs</Filter>
-    </None>
-    <None Include="docs\source\ECSQL.overviewPage">
+    <None Include="docs\source\ECDbExamples.doxpage">
       <Filter>docs\source</Filter>
     </None>
-    <None Include="docs\source\ECDb.overviewPage">
+    <None Include="docs\source\ECDbOverview.doxpage">
       <Filter>docs\source</Filter>
     </None>
-    <None Include="docs\source\ECDbExamples.overviewPage">
+    <None Include="docs\source\ECSqlOverview.doxpage">
       <Filter>docs\source</Filter>
     </None>
-    <None Include="docs\source\ECSqlStatement.overviewPage">
+    <None Include="docs\source\ECSqlStatement.doxpage">
       <Filter>docs\source</Filter>
     </None>
   </ItemGroup>

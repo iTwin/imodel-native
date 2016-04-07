@@ -456,8 +456,7 @@ $(BuildContext)Dox/Files/ECDb : $(baseDir)docs/files
     $(LinkFirstDepToFirstTargetAsDirectory)
 
 ###### WIP: FIXME
-###### for the name of the latest version of the BSCA schema
-#####%include $(OutBuildContexts)ECStandards/StandardSchemas.delivery.mki
-#####
-#####always:
-#####    @CreateSymLinks.py "$(BuildContext)Dox/Files/ECDb/ECDbMap.ecschema.xml=$(OutBuildContexts)ECStandards/ECSchemas/Standard/$(ECDbMapSchemaName)"
+# for the name of the latest version of the ECDbMap ECSchema
+%include $(OutBuildContexts)ECStandards/StandardSchemasV3.delivery.mki
+always:
+    @CreateSymLinks.py "$(BuildContext)Dox/Files/ECDb/ECDbMap.ecschema.xml=$(OutBuildContexts)ECStandards/ECSchemas/Standard/$(ECDbMapSchemaName)"

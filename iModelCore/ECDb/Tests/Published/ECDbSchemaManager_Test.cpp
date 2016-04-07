@@ -505,8 +505,7 @@ TEST_F(ECDbSchemaManagerTests, ImportSchemaWithReferenceToECDbMap10)
                 "        <ECProperty propertyName='Price' typeName='double' />"
                 "    </ECEntityClass>"
                 "</ECSchema>",
-                true);//should actually fail, but ECObjects doesn't validate this
-                //false, "SchemaMap CA cannot be applied to an ECClass");
+                false, "SchemaMap CA cannot be applied to an ECClass");
 
             AssertSchemaImport(testSchema, "ecdbmap10schemareferencetest.ecdb");
             }

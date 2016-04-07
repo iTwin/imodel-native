@@ -115,10 +115,10 @@ ECClassP ECDbSchemaReader::GetECClass(Context& ctx, ECClassId ecClassId) const
     if (!ecClassId.IsValid())
         return nullptr;
 
-    BeMutexHolder lock (m_criticalSection);
+    BeMutexHolder lock(m_criticalSection);
     ECDbExpressionSymbolContext symbolsContext(m_db);
 
-    DbECClassEntryMap::const_iterator classKeyIterator = m_ecClassCache.find (ecClassId);
+    DbECClassEntryMap::const_iterator classKeyIterator = m_ecClassCache.find(ecClassId);
     if (classKeyIterator != m_ecClassCache.end())
         return classKeyIterator->second->m_cachedECClass;
 
@@ -232,7 +232,7 @@ ECClassP ECDbSchemaReader::GetECClass(Context& ctx, ECClassId ecClassId) const
     if (SUCCESS != LoadECPropertiesFromDb(ecClass, ctx, ecClassId))
         return nullptr;
 
-    if (SUCCESS != LoadCAFromDb(*ecClass, ctx, ECContainerId(ecClassId), ECContainerType::Class))
+    if (SUCCESS != LoadCAFromDb(*ecClass, ctx, ECContainerId(ecClassId), ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class))
         return nullptr;
 
     ECRelationshipClassP relClass = ecClass->GetRelationshipClassP();
@@ -392,15 +392,15 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaDefinition(DbECSchemaEntry*& schemaE
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaReader::ReadECSchema(DbECSchemaEntry*& outECSchemaKey, Context& ctx, ECSchemaId ctxECSchemaId, bool ensureAllClassesLoaded) const
     {
-    BeMutexHolder lock (m_criticalSection);
+    BeMutexHolder lock(m_criticalSection);
     bvector<DbECSchemaEntry*> newlyLoadedSchemas;
-    if (SUCCESS != LoadECSchemaDefinition (outECSchemaKey, newlyLoadedSchemas, ctxECSchemaId))
+    if (SUCCESS != LoadECSchemaDefinition(outECSchemaKey, newlyLoadedSchemas, ctxECSchemaId))
         return ERROR;
 
     for (DbECSchemaEntry* newlyLoadedSchema : newlyLoadedSchemas)
         {
         ECSchemaR schema = *newlyLoadedSchema->m_cachedECSchema;
-        if (SUCCESS != LoadCAFromDb(schema, ctx, ECContainerId(schema.GetId()), ECContainerType::Schema))
+        if (SUCCESS != LoadCAFromDb(schema, ctx, ECContainerId(schema.GetId()), ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema))
             return ERROR;
         }
 
@@ -409,7 +409,7 @@ BentleyStatus ECDbSchemaReader::ReadECSchema(DbECSchemaEntry*& outECSchemaKey, C
         std::set<DbECSchemaEntry*> fullyLoadedSchemas;
         if (SUCCESS != LoadClassesAndEnumsFromDb(outECSchemaKey, ctx, fullyLoadedSchemas))
             return ERROR;
-        
+
         }
     return SUCCESS;
     }
@@ -488,8 +488,8 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaFromDb(DbECSchemaEntry*& schemaEntry
     {
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT S.Name, S.DisplayLabel,S.Description,S.NamespacePrefix,S.VersionDigit1,S.VersionDigit2,S.VersionDigit3, "
-        "(SELECT COUNT(*) FROM ec_Class C WHERE S.Id = C.SchemaID) + (SELECT COUNT(*) FROM ec_Enumeration e WHERE S.Id = e.SchemaID) "
-        "FROM ec_Schema S WHERE S.Id=?"))
+                                                "(SELECT COUNT(*) FROM ec_Class C WHERE S.Id = C.SchemaID) + (SELECT COUNT(*) FROM ec_Enumeration e WHERE S.Id = e.SchemaID) "
+                                                "FROM ec_Schema S WHERE S.Id=?"))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, ecSchemaId))
@@ -624,7 +624,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
                     }
                 else
                     rowInfo.m_enumId = stmt->GetValueId<ECEnumerationId>(enumIx);
-                    
+
 
                 if (stmt->IsColumnNull(minOccursIx) || stmt->IsColumnNull(maxOccursIx))
                     {
@@ -650,7 +650,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
                     }
                 else
                     rowInfo.m_navPropDirection = stmt->GetValueInt(navPropDirectionIx);
-                    
+
 
                 rows.push_back(rowInfo);
                 }
@@ -816,7 +816,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
         if (!rowInfo.m_displayLabel.empty())
             prop->SetDisplayLabel(rowInfo.m_displayLabel);
 
-        if (SUCCESS != LoadCAFromDb(*prop, ctx, ECContainerId(rowInfo.m_id), ECContainerType::Property))
+        if (SUCCESS != LoadCAFromDb(*prop, ctx, ECContainerId(rowInfo.m_id), ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property))
             return ERROR;
 
         // For ECDb symbol provider ensure the calculated property specification is created (must do that after
@@ -868,7 +868,7 @@ BentleyStatus ECDbSchemaReader::LoadBaseClassesFromDb(ECClassP& ecClass, Context
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR caConstainer, Context& ctx, ECContainerId containerId, ECContainerType containerType) const
+BentleyStatus ECDbSchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR caConstainer, Context& ctx, ECContainerId containerId, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType) const
     {
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT ClassId,Instance FROM ec_CustomAttribute WHERE ContainerId=? AND ContainerType=? ORDER BY Ordinal"))
@@ -916,7 +916,7 @@ BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintFromDb(ECRelationshi
 
     if (BE_SQLITE_ROW != stmt->Step())
         return ERROR;
-   
+
     ECRelationshipConstraintR constraint = (relationshipEnd == ECRelationshipEnd_Target) ? ecRelationship->GetTarget() : ecRelationship->GetSource();
 
     constraint.SetCardinality(RelationshipCardinality(stmt->GetValueInt(0), stmt->GetValueInt(1)));
@@ -928,8 +928,8 @@ BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintFromDb(ECRelationshi
     if (SUCCESS != LoadECRelationshipConstraintClassesFromDb(constraint, ctx, relationshipClassId, relationshipEnd))
         return ERROR;
 
-    ECContainerType containerType = 
-        relationshipEnd == ECRelationshipEnd_Target ? ECContainerType::RelationshipConstraintTarget : ECContainerType::RelationshipConstraintSource;
+    ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType =
+        relationshipEnd == ECRelationshipEnd_Target ? ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint : ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint;
 
     return LoadCAFromDb(constraint, ctx, ECContainerId(relationshipClassId), containerType);
     }
@@ -996,14 +996,14 @@ bool ECDbSchemaReader::TryGetECClassId(ECClassId& id, Utf8CP schemaName, Utf8CP 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECDbSchemaReader::ClearCache ()
+void ECDbSchemaReader::ClearCache()
     {
-    BeMutexHolder lock (m_criticalSection);
+    BeMutexHolder lock(m_criticalSection);
 
     m_ecEnumCache.clear();
-    m_ecClassCache.clear ();
-    m_ecSchemaCache.clear ();
-    m_cache.Clear ();
+    m_ecClassCache.clear();
+    m_ecSchemaCache.clear();
+    m_cache.Clear();
     }
 
 

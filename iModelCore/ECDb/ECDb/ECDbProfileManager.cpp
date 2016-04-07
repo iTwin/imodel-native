@@ -246,7 +246,7 @@ ECDbProfileManager::ECDbProfileUpgraderSequence const& ECDbProfileManager::GetUp
         s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3200()));
         s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3201()));
         s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3202()));
-        s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3203()));
+        s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3300()));
         }
 
     return s_upgraderSequence;
