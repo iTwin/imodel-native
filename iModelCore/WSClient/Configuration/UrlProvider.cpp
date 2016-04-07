@@ -171,6 +171,15 @@ void UrlProvider::Initialize(Environment env, int64_t cacheTimeoutMs, ILocalStat
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Grigas.Petraitis                03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void UrlProvider::Uninitialize()
+    {
+    s_buddi = nullptr;
+    s_customHandler = nullptr;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                Julija.Semenenko   06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<Utf8String> UrlProvider::GetUrl(Utf8StringCR urlName, const Utf8String* defaultUrls)

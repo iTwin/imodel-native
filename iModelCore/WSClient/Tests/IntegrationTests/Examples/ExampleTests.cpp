@@ -140,3 +140,64 @@ TEST_F(ExampleTests, CachingDataSource_PWConnectionCreationAndQuery)
         BeDebugLog(("Got: " + name).c_str());
         }
     }
+
+TEST_F(ExampleTests, CachingDataSource_PWDocumentRenameAndSync)
+    {
+    BeFileName rootPath = GetTestsTempDir();
+
+    Utf8String serverUrl = "https://viltest2-8.bentley.com/ws23";
+    Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Mobile_SS3";
+    Credentials creds("admin", "admin");
+
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo());
+    client->SetCredentials(creds);
+
+    BeFileName cachePath(rootPath + L"/cache.ecdb");
+    CacheEnvironment env;
+    env.persistentFileCacheDir = BeFileName(rootPath + L"/Persitent");
+    env.temporaryFileCacheDir = BeFileName(rootPath + L"/Temp");
+
+    auto openResult = CachingDataSource::OpenOrCreate(client, cachePath, env)->GetResult();
+    if (!openResult.IsSuccess())
+        {
+        BeDebugLog(openResult.GetError().GetMessage().c_str());
+        return;
+        }
+
+    ICachingDataSourcePtr ds = openResult.GetValue();
+    ObjectId documentId("PW_WSG.Document", "19ddddb1-8652-4141-874b-5de930435a3b");
+
+    auto txn1 = ds->StartCacheTransaction();
+    txn1.GetCache().LinkInstanceToRoot(nullptr, documentId);
+    txn1.Commit();
+
+    auto result = ds->GetObject(documentId, ICachingDataSource::DataOrigin::RemoteData, IDataSourceCache::JsonFormat::Raw)->GetResult();
+    if (!result.IsSuccess())
+        {
+        BeDebugLog(result.GetError().GetMessage().c_str());
+        return;
+        }
+
+    auto txn = ds->StartCacheTransaction();
+    auto documentKey = txn.GetCache().FindInstance(documentId);
+
+    Json::Value properties;
+    txn.GetCache().GetAdapter().GetJsonInstance(properties, documentKey);
+
+    properties["Name"] = ("Renamed " + DateTime::GetCurrentTime().ToUtf8String()).c_str();
+    txn.GetCache().GetChangeManager().ModifyObject(documentKey, properties);
+    txn.Commit();
+
+    auto syncResult = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
+    if (!syncResult.IsSuccess())
+        {
+        BeDebugLog(syncResult.GetError().GetMessage().c_str());
+        return;
+        }
+    if (!syncResult.GetValue().empty())
+        {
+        for (auto failure : syncResult.GetValue())
+            BeDebugLog(failure.GetError().GetMessage().c_str());
+        return;
+        }
+    }
