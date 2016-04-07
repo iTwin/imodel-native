@@ -245,6 +245,8 @@ ECDbProfileManager::ECDbProfileUpgraderSequence const& ECDbProfileManager::GetUp
         s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3100()));
         s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3200()));
         s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3201()));
+        s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3202()));
+        s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3203()));
         }
 
     return s_upgraderSequence;
@@ -298,7 +300,8 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
                            "Type INTEGER NOT NULL,"
                            "Modifier INTEGER NOT NULL,"
                            "RelationshipStrength INTEGER,"
-                           "RelationshipStrengthDirection INTEGER)");
+                           "RelationshipStrengthDirection INTEGER,"
+                           "CustomAttributeContainerType INTEGER)");
     if (BE_SQLITE_OK != stat)
         return stat;
 

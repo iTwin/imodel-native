@@ -130,8 +130,9 @@ ECClassP ECDbSchemaReader::GetECClass(Context& ctx, ECClassId ecClassId) const
     const int modifierColIx = 5;
     const int relStrengthColIx = 6;
     const int relStrengthDirColIx = 7;
+    const int caContainerTypeIx = 8;
 
-    BeSQLite::CachedStatementPtr stmt = m_db.GetCachedStatement("SELECT SchemaId,Name,DisplayLabel,Description,Type,Modifier,RelationshipStrength,RelationshipStrengthDirection FROM ec_Class WHERE Id=?");
+    BeSQLite::CachedStatementPtr stmt = m_db.GetCachedStatement("SELECT SchemaId,Name,DisplayLabel,Description,Type,Modifier,RelationshipStrength,RelationshipStrengthDirection,CustomAttributeContainerType FROM ec_Class WHERE Id=?");
     if (stmt == nullptr)
         return nullptr;
 
@@ -161,6 +162,11 @@ ECClassP ECDbSchemaReader::GetECClass(Context& ctx, ECClassId ecClassId) const
             ECCustomAttributeClassP newClass = nullptr;
             if (schema.CreateCustomAttributeClass(newClass, className) != ECObjectsStatus::Success)
                 return nullptr;
+
+            if (!stmt->IsColumnNull(caContainerTypeIx))
+                newClass->SetContainerType(Enum::FromInt<CustomAttributeContainerType>(stmt->GetValueInt(caContainerTypeIx)));
+            else
+                newClass->SetContainerType(CustomAttributeContainerType::Any);
 
             ecClass = newClass;
             break;
