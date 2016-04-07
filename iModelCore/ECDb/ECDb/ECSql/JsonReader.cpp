@@ -85,11 +85,11 @@ BentleyStatus JsonReader::AddInstancesFromRelatedItems(JsonValueR allInstances, 
                                                        ECRelationshipPath const& pathFromParent, ECInstanceId ecInstanceId, JsonECSqlSelectAdapter::FormatOptions const& formatOptions) const
     {
     bvector<ECRelationshipPath> appendPathsFromParent;
-    ECRelatedItemsDisplaySpecCacheAppData* appData = ECRelatedItemsDisplaySpecCacheAppData::Get(m_ecDb);
+    JsonReader::ECRelatedItemsDisplaySpecificationsCache* appData = JsonReader::ECRelatedItemsDisplaySpecificationsCache::Get(m_ecDb);
     if (appData == nullptr)
         return ERROR;
 
-    if (!appData->GetCache().TryGetRelatedPaths(appendPathsFromParent, parentClass))
+    if (!appData->TryGetRelatedPaths(appendPathsFromParent, parentClass))
         return SUCCESS;
 
     ECRelationshipPath pathToParent;
@@ -116,7 +116,7 @@ BentleyStatus JsonReader::AddInstancesFromRelatedItems(JsonValueR allInstances, 
 BentleyStatus JsonReader::AddInstancesFromSpecifiedClassPath(JsonValueR allInstances, JsonValueR allDisplayInfo, ECRelationshipPath const& pathFromRelatedClass, ECInstanceId ecInstanceId, JsonECSqlSelectAdapter::FormatOptions const& formatOptions) const
     {
     CachedECSqlStatementPtr statement = nullptr;
-    if (SUCCESS != PrepareECSql(statement, pathFromRelatedClass, ecInstanceId, false /* selectInstanceKeyOnly*/, false/*isPolymorphic*/))
+    if (SUCCESS != PrepareECSql(statement, pathFromRelatedClass, ecInstanceId, false /* selectInstanceKeyOnly*/, true/*isPolymorphic*/))
         return ERROR;
 
     Utf8String pathFromRelatedClassStr = pathFromRelatedClass.ToString();
@@ -343,32 +343,212 @@ BentleyStatus JsonReader::AddInstancesFromPreparedStatement(JsonValueR allInstan
 // @bsimethod                                    Ramanujam.Raman                 05 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-JsonReader::ECRelatedItemsDisplaySpecCacheAppData* JsonReader::ECRelatedItemsDisplaySpecCacheAppData::Get(ECDbCR ecdb)
+JsonReader::ECRelatedItemsDisplaySpecificationsCache* JsonReader::ECRelatedItemsDisplaySpecificationsCache::Get(ECDbCR ecdb)
     {
-    //WIP_FOR_RAMAN It is dangerous to keep this cache together with the ECDb with pointers to ECSchema entities, because whenever
-    //ClearCache is called (or a schema import is done), the pointers are invalid.
-    ECRelatedItemsDisplaySpecCacheAppData* appData = reinterpret_cast <ECRelatedItemsDisplaySpecCacheAppData*> (ecdb.FindAppData(ECRelatedItemsDisplaySpecCacheAppData::GetKey()));
+    ECRelatedItemsDisplaySpecificationsCache* appData = reinterpret_cast <ECRelatedItemsDisplaySpecificationsCache*> (ecdb.FindAppData(ECRelatedItemsDisplaySpecificationsCache::GetKey()));
+    if (appData)
+        return appData;
 
-    if (nullptr == appData)
+    ECSchemaList allSchemas;
+    if (SUCCESS != ecdb.Schemas().GetECSchemas(allSchemas, false))
         {
-        ECSchemaList allSchemas;
-        if (SUCCESS != ecdb.Schemas().GetECSchemas(allSchemas, false))
-            {
-            BeAssert(false);
-            return nullptr;
-            }
-
-        appData = new ECRelatedItemsDisplaySpecCacheAppData(ecdb);
-        if (SUCCESS != appData->m_cache.Initialize(allSchemas, ecdb.GetClassLocater()))
-            {
-            delete appData;
-            return nullptr;
-            }
-
-        ecdb.AddAppData(ECRelatedItemsDisplaySpecCacheAppData::GetKey(), appData, true);
+        BeAssert(false);
+        return nullptr;
         }
 
+    appData = new ECRelatedItemsDisplaySpecificationsCache(ecdb);
+    if (SUCCESS != appData->Initialize(allSchemas, ecdb.GetClassLocater()))
+        {
+        delete appData;
+        return nullptr;
+        }
+
+    ecdb.AddAppData(ECRelatedItemsDisplaySpecificationsCache::GetKey(), appData, true);
     return appData;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 05 / 2014
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus JsonReader::ECRelatedItemsDisplaySpecificationsCache::Initialize(bvector<ECSchemaCP> const& schemaList, IECClassLocater& classLocater)
+    {
+    ECClassCP ecClass = classLocater.LocateClass("Bentley_Standard_CustomAttributes", "RelatedItemsDisplaySpecifications");
+    if (!ecClass)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    ECCustomAttributeClassCP relatedItemDisplaySpecCA = ecClass->GetCustomAttributeClassCP();
+    if (!relatedItemDisplaySpecCA)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    BentleyStatus status = SUCCESS;
+    for (ECSchemaCP schema : schemaList)
+        {
+        IECInstancePtr customAttribute = schema->GetCustomAttribute(*relatedItemDisplaySpecCA);
+        if (customAttribute.IsNull())
+            continue;
+
+        ECValue specificationsValue;
+        if (ECObjectsStatus::Success != customAttribute->GetValue(specificationsValue, "Specifications"))
+            continue;
+
+        ArrayInfo arrayInfo = specificationsValue.GetArrayInfo();
+        for (int ii = 0; ii < (int) arrayInfo.GetCount(); ii++)
+            {
+            ECValue specificationValue;
+            customAttribute->GetValue(specificationValue, "Specifications", ii);
+            IECInstancePtr specificationInstance = specificationValue.GetStruct();
+            if (specificationInstance.IsNull())
+                continue;
+
+            if (SUCCESS != ExtractFromCustomAttribute(*specificationInstance, classLocater, *schema))
+                {
+                status = ERROR;
+                continue; // best effort
+                }
+            }
+        }
+
+    return SUCCESS;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 01 / 2014
+//+---------------+---------------+---------------+---------------+---------------+------
+ECClassCP ResolveClass(Utf8StringCR possiblyQualifiedClassName, IECClassLocaterR classLocater, ECSchemaCP defaultSchema)
+    {
+    Utf8String schemaName, className;
+    if (ECObjectsStatus::Success != ECClass::ParseClassName(schemaName, className, possiblyQualifiedClassName))
+        return nullptr;
+
+    if (!schemaName.empty())
+        return classLocater.LocateClass(schemaName.c_str(), className.c_str());
+
+    return classLocater.LocateClass(defaultSchema->GetName().c_str(), className.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 01 / 2014
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus JsonReader::ECRelatedItemsDisplaySpecificationsCache::ExtractFromCustomAttribute(IECInstanceCR customAttributeSpecification, IECClassLocater& classLocater, ECSchemaCR customAttributeContainerSchema)
+    {
+    // Construct "end-to-end" relationship paths that prepends the ParentClass to the specified RelationshipPath. 
+    Utf8String relationshipPathString;
+
+    // Find parent or "root" class
+    ECValue ecValueParentClass;
+    ECObjectsStatus ecStatus = customAttributeSpecification.GetValue(ecValueParentClass, "ParentClass");
+    PRECONDITION(ECObjectsStatus::Success == ecStatus && !ecValueParentClass.IsNull(), ERROR);
+
+    // Append parent or "root" class
+    relationshipPathString.append(ecValueParentClass.GetUtf8CP());
+
+    // Append relationship path string
+    ECValue ecValueRelationshipPath;
+    ecStatus = customAttributeSpecification.GetValue(ecValueRelationshipPath, "RelationshipPath");
+    PRECONDITION(ECObjectsStatus::Success == ecStatus && !ecValueRelationshipPath.IsNull(), ERROR);
+    relationshipPathString.append(".");
+    relationshipPathString.append(ecValueRelationshipPath.GetUtf8CP());
+
+    // Create relationship path from string (contains the base class as the leaf class)
+    ECRelationshipPath basePath;
+    if (SUCCESS != basePath.InitFromString(relationshipPathString, classLocater, &customAttributeContainerSchema))
+        return ERROR;
+    if (!basePath.Validate())
+        return ERROR;
+    
+    // Create a relationship path for every DerivedClass specified
+    BentleyStatus status = SUCCESS;
+    bool hasDerivedClasses = false;
+    ECValue derivedClassesValue;
+    ecStatus = customAttributeSpecification.GetValue(derivedClassesValue, "DerivedClasses");
+    if (ecStatus == ECObjectsStatus::Success)
+        {
+        ArrayInfo arrayInfo = derivedClassesValue.GetArrayInfo();
+        for (int ii = 0; ii < (int) arrayInfo.GetCount(); ii++)
+            {
+            ECValue val;
+            customAttributeSpecification.GetValue(val, "DerivedClasses", ii);
+            if (val.IsNull())
+                continue;
+
+            Utf8String derivedClassName(val.GetUtf8CP());
+            ECClassCP derivedClass = ResolveClass(derivedClassName, classLocater, &customAttributeContainerSchema);
+            if (!EXPECTED_CONDITION(derivedClass != nullptr))
+                continue;
+
+            ECRelationshipPath derivedPath = basePath;
+            derivedPath.SetEndClass(*derivedClass, ECRelationshipPath::End::Leaf);
+
+            if (!derivedPath.Validate())
+                {
+                status = ERROR;
+                continue;
+                }
+
+            AddPathToCache(derivedPath);
+            hasDerivedClasses = true;
+            }
+        }
+    
+    if (!hasDerivedClasses)
+        AddPathToCache(basePath); // Use the base path if there aren't any derived classes specified. 
+
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 05 / 2014
+//+---------------+---------------+---------------+---------------+---------------+------
+void JsonReader::ECRelatedItemsDisplaySpecificationsCache::AddPathToCache(ECRelationshipPath const& path)
+    {
+    ECClassCP parentClass = path.GetEndClass(ECRelationshipPath::End::Root);
+
+    auto it = m_pathsByClass.find(parentClass->GetId());
+    bvector<ECRelationshipPath>* pathVector = nullptr;
+    if (it != m_pathsByClass.end())
+        pathVector = &it->second;
+    else
+        pathVector = &m_pathsByClass[parentClass->GetId()];
+
+    BeAssert(pathVector != nullptr);
+
+    // Check for duplicate entries!!
+    for (ECRelationshipPath& existingPath : *pathVector)
+        {
+        Utf8String existingPathStr = existingPath.ToString();
+        Utf8String currentPathStr = path.ToString();
+        if (existingPathStr.Equals(currentPathStr))
+            return;
+        }
+
+    pathVector->push_back(path);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 05 / 2014
+//+---------------+---------------+---------------+---------------+---------------+------
+bool JsonReader::ECRelatedItemsDisplaySpecificationsCache::TryGetRelatedPaths(bvector<ECRelationshipPath>& relationshipPathVec, ECClassCR ecClass) const
+    {
+    for (bmap<ECClassId, bvector<ECRelationshipPath>>::const_iterator iter = m_pathsByClass.begin(); iter != m_pathsByClass.end(); iter++)
+        {
+        ECClassId classId = iter->first;
+        ECClassCP pathClass = m_ecDb.Schemas().GetECClass(classId);
+        if (ecClass.Is(pathClass))
+            {
+            bvector<ECRelationshipPath> const& pathVector = iter->second;
+            relationshipPathVec.insert(relationshipPathVec.end(), pathVector.begin(), pathVector.end());
+            }
+        }
+
+    return !relationshipPathVec.empty();
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

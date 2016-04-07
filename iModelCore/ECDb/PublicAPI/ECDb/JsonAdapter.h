@@ -373,8 +373,6 @@ public:
     ECDB_EXPORT bool GetRowAsIs(JsonValueR ecJsonRow) const;
     };
 
-#if !defined (DOCUMENTATION_GENERATOR)
-
 //=================================================================================
 //! Reads information associated with an instance of the class in the JSON format.
 //! @remarks This is mainly a convenience wrapper over @ref ECSqlStatement and
@@ -388,25 +386,28 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct JsonReader : NonCopyableClass
     {
-private:
-    struct ECRelatedItemsDisplaySpecCacheAppData : public BeSQLite::Db::AppData
+    struct ECRelatedItemsDisplaySpecificationsCache : public BeSQLite::Db::AppData
         {
-    private:
-        ECDbCR m_ecDb;
-        ECN::ECRelatedItemsDisplaySpecificationsCache m_cache;
+        private:
+            ECDbCR m_ecDb;
+            bmap<ECN::ECClassId, bvector<ECN::ECRelationshipPath>> m_pathsByClass;
 
-        ECRelatedItemsDisplaySpecCacheAppData(ECDbCR ecDb) : Db::AppData(), m_ecDb(ecDb) {}
+            BentleyStatus ExtractFromCustomAttribute(ECN::IECInstanceCR customAttributeSpecification, ECN::IECClassLocater&, ECN::ECSchemaCR customAttributeContainerSchema);
+            void AddPathToCache(ECN::ECRelationshipPath const& path);
 
-        static BeSQLite::Db::AppData::Key const& GetKey() { static BeSQLite::Db::AppData::Key s_key; return s_key; }
+            static BeSQLite::Db::AppData::Key const& GetKey() { static BeSQLite::Db::AppData::Key s_key; return s_key; }
+            
+        public:
+            explicit ECRelatedItemsDisplaySpecificationsCache(ECDbCR ecDb) : Db::AppData(), m_ecDb(ecDb) {}
+            ~ECRelatedItemsDisplaySpecificationsCache() {}
 
-    public:
-        ~ECRelatedItemsDisplaySpecCacheAppData() {}
+            static ECRelatedItemsDisplaySpecificationsCache* Get(ECDbCR);
 
-        ECN::ECRelatedItemsDisplaySpecificationsCache const& GetCache() const { return m_cache; }
-
-        static ECRelatedItemsDisplaySpecCacheAppData* Get(ECDbCR);
+            BentleyStatus Initialize(bvector<ECN::ECSchemaCP> const&, ECN::IECClassLocater&);
+            bool TryGetRelatedPaths(bvector<ECN::ECRelationshipPath>&, ECN::ECClassCR) const;
         };
 
+private:
     ECDbCR m_ecDb;
     ECN::ECClassCP m_ecClass;
     ECSqlStatementCache m_statementCache;
@@ -435,7 +436,8 @@ public:
     //! @param ecdb [in] ECDb
     //! @param ecClassId [in] ECClassId indicating the class of the instance that needs to be retrieved. 
     //! @remarks Holds some cached state to speed up future lookups of the same class. Keep the 
-    //! reader around when retrieving many instances of the same class. 
+    //! reader around when retrieving many instances of the same class. Note that the cache 
+    //! stores information on classes, and if schemas are re-imported the reader may have to be recreated.
     ECDB_EXPORT JsonReader (ECDbCR ecdb, ECN::ECClassId ecClassId);
     ~JsonReader() {}
 
@@ -466,8 +468,6 @@ public:
     //! @see Read()
     ECDB_EXPORT BentleyStatus ReadInstance(JsonValueR jsonInstance, ECInstanceId ecInstanceId, JsonECSqlSelectAdapter::FormatOptions formatOptions = JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::FormattedStrings)) const;
     };
-
-#endif
 
 //=======================================================================================
 //! Insert JSON instances into ECDb file.
@@ -603,4 +603,6 @@ public:
     //! the specified @p instanceId or in case of other errors.
     ECDB_EXPORT BentleyStatus Delete (ECInstanceId const& instanceId) const;
     };
+
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
