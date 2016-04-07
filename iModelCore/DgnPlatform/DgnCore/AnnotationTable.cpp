@@ -1923,11 +1923,14 @@ void TextBlockHolder::_AppendGeometry (DPoint2dCR origin, DVec2dCR direction, Ta
         textOrigin.SumOf (origin, adjustDirection, adjustDistance);
         }
 
-    Transform   transform = Transform::FromOriginAndXVector (textOrigin, direction);
-
     TextAnnotation textAnnotation (textBlock->GetDocument().GetDbR());
     textAnnotation.SetText (&textBlock->GetDocument());
-    textAnnotation.SetDocumentTransform(transform);
+
+    DVec2d  xVec = DVec2d::From (1.0, 0.0);
+
+    textAnnotation.SetOrigin (DPoint3d::From (textOrigin));
+    textAnnotation.SetOrientation (YawPitchRollAngles::FromRadians (0.0, 0.0, xVec.AngleTo (direction)));
+    textAnnotation.SetAnchorPoint (TextAnnotation::AnchorPoint::LeftTop);
 
     builder.Append (textAnnotation);
     }

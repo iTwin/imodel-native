@@ -605,7 +605,6 @@ bool ViewContext::VisitAllViewElements(BSIRectCP updateRect)
 
     _InitScanRangeAndPolyhedron();
 
-    SetScanReturn();
     _VisitAllModelElements();
 
     return WasAborted();
@@ -616,6 +615,8 @@ bool ViewContext::VisitAllViewElements(BSIRectCP updateRect)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewContext::_VisitAllModelElements()
     {
+    SetScanReturn();
+
     // The ViewController must orchestrate the display of all of the elements in the view.
     m_viewport->GetViewControllerR().DrawView(*this);
 
