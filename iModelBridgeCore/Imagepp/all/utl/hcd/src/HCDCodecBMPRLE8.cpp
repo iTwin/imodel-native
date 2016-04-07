@@ -13,8 +13,6 @@
 
 #include <Imagepp/all/h/HCDCodecBMPRLE8.h>
 
-//&&ep d static const Byte s_BitMask[8]    = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
-
 #define HCD_CODEC_NAME "BMP RLE8bits"
 
 //-----------------------------------------------------------------------------

@@ -1841,7 +1841,7 @@ void HRFBilFile::CleanUpString(string* pio_pString)
     *pio_pString = pio_pString->substr(Pos);
 
     // Remove the SPACE/TAB/ENTER at the end of the string.
-    Pos = pio_pString->size() - 1;
+    Pos = (int32_t) pio_pString->size() - 1;
     while(Pos >= 0 && !IsValidChar((*pio_pString)[Pos]))
         Pos--;
 

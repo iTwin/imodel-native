@@ -766,7 +766,6 @@ void HRFTgaFile::SaveTgaFile(bool pi_CloseFile)
                 if (pTag->GetID() == (HPMAttributesID)HRFAttributeVersion::ATTRIBUTE_ID)
                     {
                     float temp;
-//&&ep test
                     BE_STRING_UTILITIES_UTF8_SSCANF(((HFCPtr<HRFAttributeVersion>&)pTag)->GetData().c_str(),
                                                 "%f%c",
                                                 &temp,

@@ -55,7 +55,6 @@ private:
     int32_t* m_pPrefixCode;
     Byte* m_pSecondByte;
     Byte* m_pDecodeStack;
-//&&ep d    Byte  m_LZWCodeSize;
     int32_t m_NumBits;
     int32_t m_MaxCode;
 
@@ -68,7 +67,6 @@ private:
     Byte const* m_pInputBuffer;      // compressed data
     size_t m_pInputBytesCount;
     uint32_t m_CurrentPos;
-//&&ep d    uint16_t m_Predictor;
 
 #ifdef LZW_A_SLOW_DECODER
     string  m_decodeCodeTable[LZW_TABLE_SIZE];

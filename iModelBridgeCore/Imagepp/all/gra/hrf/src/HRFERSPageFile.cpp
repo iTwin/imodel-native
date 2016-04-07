@@ -428,7 +428,7 @@ void HRFERSPageFile::CleanUpString(string& pio_rString) const
     // Remove the SPACE/TAB/ENTER at the end of the string.
     if (pio_rString.size() > 0)
         {
-        Pos = pio_rString.size() - 1;
+        Pos = (int32_t) pio_rString.size() - 1;
         while(Pos >= 0 && !IsValidChar(pio_rString[Pos]))
             Pos--;
 

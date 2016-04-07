@@ -7,10 +7,6 @@
 #--------------------------------------------------------------------------------------
 BUILD_NO_STACK_CHECK        = 1
 
-# &&ep - temporary define to decrease build errors on iOS.
-# We'll have to fix build errors on iOS when we remove this flag.
-# &&ep try remove: IS_THIRD_PARTY_LIBRARY              = 1
-
 %include mdl.mki
 
 #----------------------------------------------------------

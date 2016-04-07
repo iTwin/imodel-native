@@ -210,7 +210,7 @@ HSTATUS HRFSpotCAPLineEditor::Read24BitRgbBlock(uint32_t pi_PosBlockX,
 
     if (GetResolutionDescriptor()->GetScanlineOrientation().IsLeft())
         {
-        for (PixelIndex = 0; PixelIndex < m_LineWidth; PixelIndex++)
+        for (PixelIndex = 0; PixelIndex < (int32_t) m_LineWidth; PixelIndex++)
             {
             // po_pData[BytePos++]= (m_pRedLineBuffer  [PixelIndex] - m_pRasterFile->GetRedMinValue()  ) * m_RedBandScaling;
             // po_pData[BytePos++]= (m_pGreenLineBuffer[PixelIndex] - m_pRasterFile->GetGreenMinValue()) * m_GreenBandScaling;

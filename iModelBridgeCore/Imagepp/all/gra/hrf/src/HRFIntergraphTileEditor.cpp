@@ -1512,11 +1512,6 @@ void HRFIntergraphTileEditor::ApplyLUTColorCorrection(Byte* pio_pData, uint32_t 
 
         for (uint32_t PixelIndex = 0; PixelIndex < pi_pixelCount; PixelIndex++)
             {
-/* &&ep o
-                pio_pData[ByteIndex] = pRedLUT  [pio_pData[ByteIndex++] ];
-            pio_pData[ByteIndex] = pGreenLUT[pio_pData[ByteIndex++] ];
-            pio_pData[ByteIndex] = pBlueLUT [pio_pData[ByteIndex++] ];
-*/
             pio_pData[ByteIndex] = pRedLUT  [pio_pData[ByteIndex] ];
             ByteIndex++;
             pio_pData[ByteIndex] = pGreenLUT[pio_pData[ByteIndex] ];

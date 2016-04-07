@@ -101,7 +101,6 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
     uint64_t Val64;
     HFCMonitor Monitor(m_Key);
 
-//&&ep o    fprintf(po_pOutput, "TIFF Directory at offset 0x%I64x\n", DirectoryOffset(m_CurDir));
     fprintf(po_pOutput, "TIFF Directory at offset (0x%jx)\n", DirectoryOffset(m_CurDir));
 
     if (m_pCurDir->TagIsPresent(SUBFILETYPE))
@@ -117,7 +116,6 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
         if (ValL == FILETYPE_MASK)
             fprintf(po_pOutput, "transparency mask");
 
-//&&ep o        fprintf(po_pOutput, " (%lu = 0x%lx)\n", ValL, ValL);
         fprintf(po_pOutput, " (%u = 0x%x)\n", ValL, ValL);
         }
 
@@ -1987,7 +1985,6 @@ void HTIFFFile::PrintEXIFTags(uint32_t pi_PageDirInd,
     //Check for a private IFD
     if (m_ppListDir[pi_PageDirInd]->GetValues(EXIFDIRECTORY, &EXIFIFDOffset))
         {
-//&&ep o        fprintf(po_pOutput, "\nEXIF Directory at offset 0x%I32x\n", EXIFIFDOffset);
         fprintf(po_pOutput, "\nEXIF Directory at offset 0x%ux\n", EXIFIFDOffset);
 
         pExifDir = new HTIFFDirectory(m_rTagInfo, &m_ByteOrder, IsTiff64());

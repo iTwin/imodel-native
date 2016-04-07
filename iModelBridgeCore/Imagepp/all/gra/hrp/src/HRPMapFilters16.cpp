@@ -440,10 +440,6 @@ void HRPHistogramScalingFilter16::SetInterval(Byte  pi_ChannelIndex,
                                               uint16_t pi_MaxValue)
     {
     HPRECONDITION(pi_MinValue <= pi_MaxValue);
-/* &&ep d
-    HPRECONDITION(pi_MinValue < 65536);
-    HPRECONDITION(pi_MaxValue < 65536);
-*/
 
     // Build the map
     uint16_t Map[65536];

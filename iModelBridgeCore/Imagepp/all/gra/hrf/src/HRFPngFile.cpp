@@ -566,7 +566,6 @@ bool HRFPngFile::AssignStructTo(HFCPtr<HRFPageDescriptor> pi_pPage)
             {
             m_pPngInfo->valid  |= PNG_INFO_tIME;
 
-//&&ep test
             BE_STRING_UTILITIES_UTF8_SSCANF(((HFCPtr<HRFAttributeTimeModification>&)pTag)->GetData().c_str(),
                     "%04hd:%02c:%02c %02c:%02c:%02c",
                     &m_pPngInfo->mod_time.year,

@@ -222,7 +222,6 @@ size_t HCDCodecJPEGAlpha::DecompressSubset(const void* pi_pInData,
             Byte* pSrcData   = (Byte*)po_pOutBuffer + SrcStart;
             Byte* pDestData  = (Byte*)po_pOutBuffer + DestStart;
             Byte* pAlphaData = pRLE8Data + AlphaStart;
-//&&ep review            for (; pSrcData >= po_pOutBuffer; pSrcData-=3, pDestData-=4, pAlphaData - 1)
             for (; pSrcData >= po_pOutBuffer; pSrcData-=3, pDestData-=4, pAlphaData -= 1)
                 {
                 *((uint32_t*)pDestData)  = 0x000000FF;
@@ -240,7 +239,6 @@ size_t HCDCodecJPEGAlpha::DecompressSubset(const void* pi_pInData,
             Byte* pSrcData   = (Byte*)po_pOutBuffer + SrcStart;
             Byte* pDestData  = (Byte*)po_pOutBuffer + DestStart;
             Byte* pAlphaData = pRLE8Data + SrcStart;
-//&&ep review            for (; pSrcData >= po_pOutBuffer; pSrcData-=1, pDestData-=2, pAlphaData - 1)
             for (; pSrcData >= po_pOutBuffer; pSrcData-=1, pDestData-=2, pAlphaData -= 1)
                 {
                 *((uint16_t*)pDestData)  = 0x00FF;

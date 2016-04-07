@@ -301,7 +301,7 @@ HPANode* HPAFloatEnabledDefaultTokenizer::GetToken()
             while (CharAvailable && (isalnum(LastChar) || (LastChar == '_')))
                 {
                 ReadToken.append(1, LastChar);
-                UppercaseToken.append(1, toupper(LastChar));
+                UppercaseToken.append(1, static_cast<Utf8Char> (toupper(LastChar)));
                 CharAvailable = GetChar(pStream, &LastChar);
                 RightPos.m_Column++;
                 }
@@ -516,7 +516,7 @@ HPANode* HPADefaultTokenizer::GetToken()
             while (CharAvailable && (isalnum(LastChar) || (LastChar == '_')))
                 {
                 ReadToken.append(1, LastChar);
-                UppercaseToken.append(1, toupper(LastChar));
+                UppercaseToken.append(1, static_cast<Utf8Char> (toupper(LastChar)));
                 CharAvailable = GetChar(pStream, &LastChar);
                 RightPos.m_Column++;
                 }

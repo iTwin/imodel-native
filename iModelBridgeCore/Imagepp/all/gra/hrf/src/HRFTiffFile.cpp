@@ -1256,7 +1256,6 @@ void HRFTiffFile::AddResolutionToFile(uint32_t pi_Page,
             HFCPtr<HPMGenericAttribute> pTag = (*TagIterator);
 
             // Sample Minimum Value Tag
-//&&ep ?            if (pTag->GetID() == HRFAttributeMinSampleValue::ATTRIBUTE_ID)
             if (pTag->GetID() == (HPMAttributesID)HRFAttributeMinSampleValue::ATTRIBUTE_ID)
                 {
                 WriteSampleLimitValueToDir(static_cast<HRFAttributeMinSampleValue*>(pTag.GetPtr())->GetData(),

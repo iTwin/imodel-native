@@ -286,7 +286,6 @@ HRAImageSamplePtr HRAImageSample::CreateBufferReference(ImagePPStatus& status, u
         return NULL;
 
     // Can't reference outside
-//&&ep o    if (xOrigin < 0 || xOrigin + GetWidth() > width || yOrigin < 0 || yOrigin + GetHeight() > height)
     if (xOrigin + GetWidth() > width || yOrigin + GetHeight() > height)
         return NULL;
 

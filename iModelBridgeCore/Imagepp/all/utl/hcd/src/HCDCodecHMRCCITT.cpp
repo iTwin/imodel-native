@@ -1966,11 +1966,6 @@ DECLARE2(find_horiz_mode_prefix, int32_t, prefix, char, color)
         exit(1);
         }
     /* OK, there's room... */
-/* &&ep o
-    if (verbose)
-        fprintf(stderr, "\nhoriz mode prefix %d, color %c = 0x%x ",
-                (int32_t) horiz_mode_prefix_count, "WB"[color], prefix);
-*/
     char colChar;
     if (color == 0)
         colChar = 'W';

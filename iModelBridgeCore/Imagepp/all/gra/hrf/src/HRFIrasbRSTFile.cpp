@@ -65,7 +65,7 @@ void CleanUpString(string* pio_pString)
         // Remove the SPACE/TAB/ENTER at the end of the string
         if (pio_pString->size() > 0)
             {
-            Pos = pio_pString->size() - 1;
+            Pos = (int32_t) pio_pString->size() - 1;
             while(Pos >= 0 && !IsValidChar((*pio_pString)[Pos]))
                 Pos--;
 
