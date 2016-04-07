@@ -84,7 +84,7 @@ gp_Circ OCBRepUtil::ToGpCirc(double& start, double& end, DEllipse3dCR ellipse)
     RotMatrix   rMatrix;
 
     ellipse.GetScaledRotMatrix(center, rMatrix, r0, r1, startAngle, sweepAngle);
-    BeAssert(DoubleOps::AlmostEqual(r0, r1));
+    BeAssert(DoubleOps::WithinTolerance(r0, r1, Precision::Confusion()));
 
     rMatrix.GetColumn(xVec, 0);
     rMatrix.GetColumn(zVec, 2);

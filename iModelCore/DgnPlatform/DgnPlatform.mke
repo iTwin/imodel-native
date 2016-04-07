@@ -644,7 +644,12 @@ LINKER_LIBRARIES_DELAYLOADED + \
 
 # ModelingAlgorithms
 LINKER_LIBRARIES_DELAYLOADED + \
+    $(ContextSubPartsLibs)TKBool.lib \
+    $(ContextSubPartsLibs)TKBO.lib \
+    $(ContextSubPartsLibs)TKOffset.lib \
+    $(ContextSubPartsLibs)TKPrim.lib \
     $(ContextSubPartsLibs)TKMesh.lib \
+    $(ContextSubPartsLibs)TKGeomAlgo.lib \
     $(ContextSubPartsLibs)TKTopAlgo.lib
 %endif
 

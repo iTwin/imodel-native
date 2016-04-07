@@ -43,6 +43,10 @@
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
+#include <BRepBuilderAPI_MakePolygon.hxx>
+#include <BRepBuilderAPI_MakeSolid.hxx>
+#include <BRepBuilderAPI_Sewing.hxx>
+#include <BRepOffsetAPI_ThruSections.hxx>
 #include <BRepPrimAPI_MakeCone.hxx>
 #include <BRepPrimAPI_MakeCylinder.hxx>
 #include <BRepPrimAPI_MakeTorus.hxx>
@@ -78,6 +82,7 @@ static gp_Trsf ToGpTrsf(TransformCR transform) {gp_Trsf trsf; trsf.SetValues(tra
 static gp_GTrsf ToGpGTrsf(TransformCR transform) {DPoint3d origin; RotMatrix rMatrix; transform.GetTranslation(origin); transform.GetMatrix(rMatrix); gp_GTrsf trsf(ToGpMat(rMatrix), ToGpXYZ(origin)); return trsf;}
 DGNPLATFORM_EXPORT static gp_Circ ToGpCirc(double& start, double& end, DEllipse3dCR ellipse);
 DGNPLATFORM_EXPORT static gp_Elips ToGpElips(double& start, double& end, DEllipse3dCR ellipse);
+DGNPLATFORM_EXPORT static Handle(Geom_BSplineCurve) ToGeomBSplineCurve(MSBsplineCurveCR bcurve, TransformCP transform = nullptr);
 
 // Initialize Dgn type from Open Cascade type...
 static DPoint3d ToDPoint3d(gp_Pnt const& gpPoint) {return DPoint3d::From(gpPoint.X(), gpPoint.Y(), gpPoint.Z());}
@@ -95,19 +100,35 @@ static DRange3d ToDRange3d(Bnd_Box const& box) {DRange3d range; box.Get(range.lo
 // static DEllipse3d ToDEllipse3d(gp_Elips const& gpEllipse, double start, double end);
 // static DEllipse3d ToDEllipse3d(gp_Elips2d const& gpEllipse, double start, double end);
 
-DGNPLATFORM_EXPORT static Handle(Geom_BSplineCurve) ToGeomBSplineCurve(MSBsplineCurveCR bcurve, TransformCP transform = nullptr);
-
 DGNPLATFORM_EXPORT static PolyfaceHeaderPtr IncrementalMesh(TopoDS_Shape const&, IFacetOptionsR);
 
 //! Support for the creation of new bodies from other types of geometry.
 struct Create
     {
     //! Create a new wire or planar sheet from a CurveVector that represents an open path, closed path, region with holes, or union region.
-    //! @param[out] out The new shape.
+    //! @param[out] shape The new shape.
     //! @param[in] curve The curve vector to create a shape from.
     //! @note The CurvePrimitives that define an open path or closed loop are expected to be connected head-to-tail and may not intersect except at a vertex. A vertex can be shared by at most 2 edges.
     //! @return SUCCESS if shape was created.
-    DGNPLATFORM_EXPORT static BentleyStatus ShapeFromCurveVector(TopoDS_Shape& shape, CurveVectorCR curve);
+    DGNPLATFORM_EXPORT static BentleyStatus TopoShapeFromCurveVector(TopoDS_Shape& shape, CurveVectorCR curve);
+
+    //! Create a new sheet or solid from a Polyface.
+    //! @param[out] out The new shape.
+    //! @param[in] mesh The polyface to create a shape from.
+    //! @return SUCCESS if shape was created.
+    DGNPLATFORM_EXPORT static BentleyStatus TopoShapeFromPolyface(TopoDS_Shape& shape, PolyfaceQueryCR mesh);
+
+//    DGNPLATFORM_EXPORT static BentleyStatus BodyFromBox (IOcctEntityPtr& occtBody, DgnBoxDetailCR box, double solidToDgnScale);
+    DGNPLATFORM_EXPORT static BentleyStatus TopoShapeFromCone(TopoDS_Shape& shape, DgnConeDetailCR cone);
+//    DGNPLATFORM_EXPORT static BentleyStatus BodyFromSphere (IOcctEntityPtr& occtBody, DPoint3dCR center, RotMatrixCR rMatrix, double radius, double solidToDgnScale);
+//    DGNPLATFORM_EXPORT static BentleyStatus BodyFromTorus (IOcctEntityPtr& occtBody, DgnTorusPipeDetailCR cone, double solidToDgnScale);
+//    DGNPLATFORM_EXPORT static BentleyStatus BodyFromExtrusion (IOcctEntityPtr& occtBody, DgnExtrusionDetailCR detail, double solidToDgnScale, bool capped);
+//    DGNPLATFORM_EXPORT static BentleyStatus BodyFromRotationalSweep (IOcctEntityPtr& occtBody, DgnRotationalSweepDetailCR detail, double solidToDgnScale, bool capped);
+//    DGNPLATFORM_EXPORT static BentleyStatus BodyFromRuledSweep (IOcctEntityPtr& occtBody, DgnRuledSweepDetailCR detail, double solidToDgnScale, bool capped);
+//    DGNPLATFORM_EXPORT static BentleyStatus BodyFromSolidPrimitive (IOcctEntityPtr& occtBody, ISolidPrimitiveCR primitive, DgnModelRefP modelRef);
+//    DGNPLATFORM_EXPORT static BentleyStatus BodiesFromElementGraphics (bvector<IOcctEntityPtr>& occtBody, ElementHandleCR);
+//    DGNPLATFORM_EXPORT static BentleyStatus BodyFromCurveVector (IOcctEntityPtr& occtBody, CurveVectorCR curveVector, bool coverClosed, DgnModelRefP modelRef);
+//    DGNPLATFORM_EXPORT static BentleyStatus BodyFromBsplineSurface (IOcctEntityPtr& occtBody, MSBsplineSurfaceCR, DgnModelRefP modelRef);
     };
 
 }; // OCBRepUtil
