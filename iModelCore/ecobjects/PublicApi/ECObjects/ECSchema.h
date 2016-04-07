@@ -2255,46 +2255,46 @@ enum class SchemaMatchType
     LatestMajorCompatible,
     };
 
-/*=================================================================================**//**
-* Fully defines a schema with its name, major and minor versions, and a checksum
-* 
-* The following table shows how schema version changes over time
-* 
-* |                             | Changes Write Compatible | Changes Read Compatible | Version Number |
-* |-----------------------------|--------------------------|-------------------------|----------------|
-* | Initial schema release      | N/A                      | N/A                     | 1.0.0          |
-* | Additions to schema         | Yes                      | Yes                     | 1.0.1          |
-* | Additions to schema         | Yes                      | Yes                     | 1.0.2          |
-* | Additions to schema         | No                       | Yes                     | 1.1.0          |
-* | Additions to schema         | Yes                      | Yes                     | 1.1.1          |
-* | Additions to schema         | Yes                      | Yes                     | 1.1.2          |
-* | Additions to schema         | Yes                      | Yes                     | 1.1.3          |
-* | Additions to schema         | Yes                      | Yes                     | 1.2.0          |
-* | Significant schema revision | No                       | No                      | 2.0.0          |
-* 
-* The general logic for an application written for a particular version of a schema working with a repository that potentially
-* has a different version of the schema would be:
-*   •	If schema in the repository is newer (or same):
-*       o	If first digit matches, app can safely read
-*       o	If first two digits match, app can safely write (and read)
-*   •	If schema in the repository is older:
-*       o	If first two digits match, app can upgrade repository schema without breaking read or write for other apps
-*       o	If only first digit matches, app can upgrade repository, but upgrade will prevent some older apps from writing
-* 
-* For traditional EC developers it may be difficult to envision when a schema change would require a change
-* to the middle version number. Consider in schema 1 that we have a Student class that stores grades and has (double) properties:
-*   •	Language
-*   •	Math
-*   •	Science
-*   •	Music
-*   •	Overall GPA (an average of the previous 4 properties)
-* 
-* If schema 2 adds to Student a double property Psychology, the meaning of Overall GPA changes slightly and hence, applications written for Schema 1:
-*   •	Can still safely read all the values that were in schema 1
-*   •	Cannot modify any values that were in schema 1 because they will likely set Overall GPA incorrectly.
-* 
-* @bsistruct                                                Robert.Schili            03/2016
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! Fully defines a schema with its name, major and minor versions, and a checksum
+//! 
+//! The following table shows how schema version changes over time
+//! 
+//! |                             | Changes Write Compatible | Changes Read Compatible | Version Number |
+//! |-----------------------------|--------------------------|-------------------------|----------------|
+//! | Initial schema release      | N/A                      | N/A                     | 1.0.0          |
+//! | Additions to schema         | Yes                      | Yes                     | 1.0.1          |
+//! | Additions to schema         | Yes                      | Yes                     | 1.0.2          |
+//! | Additions to schema         | No                       | Yes                     | 1.1.0          |
+//! | Additions to schema         | Yes                      | Yes                     | 1.1.1          |
+//! | Additions to schema         | Yes                      | Yes                     | 1.1.2          |
+//! | Additions to schema         | Yes                      | Yes                     | 1.1.3          |
+//! | Additions to schema         | Yes                      | Yes                     | 1.2.0          |
+//! | Significant schema revision | No                       | No                      | 2.0.0          |
+//! 
+//! The general logic for an application written for a particular version of a schema working with a repository that potentially
+//! has a different version of the schema would be:
+//!   •	If schema in the repository is newer (or same):
+//!       o	If first digit matches, app can safely read
+//!       o	If first two digits match, app can safely write (and read)
+//!   •	If schema in the repository is older:
+//!       o	If first two digits match, app can upgrade repository schema without breaking read or write for other apps
+//!       o	If only first digit matches, app can upgrade repository, but upgrade will prevent some older apps from writing
+//! 
+//! For traditional EC developers it may be difficult to envision when a schema change would require a change
+//! to the middle version number. Consider in schema 1 that we have a Student class that stores grades and has (double) properties:
+//!   •	Language
+//!   •	Math
+//!   •	Science
+//!   •	Music
+//!   •	Overall GPA (an average of the previous 4 properties)
+//! 
+//! If schema 2 adds to Student a double property Psychology, the meaning of Overall GPA changes slightly and hence, applications written for Schema 1:
+//!   •	Can still safely read all the values that were in schema 1
+//!   •	Cannot modify any values that were in schema 1 because they will likely set Overall GPA incorrectly.
+//! 
+// @bsistruct                                                Robert.Schili            03/2016
+//=======================================================================================
 struct SchemaKey
     {
     Utf8String    m_schemaName;
