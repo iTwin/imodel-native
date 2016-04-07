@@ -12,13 +12,27 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::DestroyViewport()
     {
-    m_progressiveTasks.clear();
+    m_elementProgressiveTasks.clear();
+    m_terrainProgressiveTasks.clear();
+    RenderQueue().WaitForIdle();
     if (m_viewController.IsValid())
         {
         m_viewController->GetDgnDb().Models().DropGraphicsForViewport(*this);
         m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);        
         m_viewController = nullptr;
         }
+
+    m_renderTarget = nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    04/2016
+//---------------------------------------------------------------------------------------
+void DgnViewport::SuspendViewport()
+    {
+    m_elementProgressiveTasks.clear();
+    m_terrainProgressiveTasks.clear();
+    RenderQueue().WaitForIdle();
 
     m_renderTarget = nullptr;
     }
@@ -1141,10 +1155,19 @@ ColorDef DgnViewport::GetBackgroundColor() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::ScheduleProgressiveTask(ProgressiveTask& task)
+void DgnViewport::ScheduleElementProgressiveTask(ProgressiveTask& task)
     {
     DgnDb::VerifyClientThread(); // this may only be called from the client thread.
-    m_progressiveTasks.push_back(&task);
+    m_elementProgressiveTasks.push_back(&task);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    04/2016
+//---------------------------------------------------------------------------------------
+void DgnViewport::ScheduleTerrainProgressiveTask(ProgressiveTask& task)
+    {
+    DgnDb::VerifyClientThread(); // this may only be called from the client thread.
+    m_terrainProgressiveTasks.push_back(&task);
     }
 
 /*---------------------------------------------------------------------------------**//**
