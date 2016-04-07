@@ -31,6 +31,22 @@ typedef AnnotationLeaderCollection const& AnnotationLeaderCollectionCR;
 //=======================================================================================
 struct TextAnnotation : RefCountedBase
 {
+    //=======================================================================================
+    // @bsiclass                                                    Josh.Schifter   04/2016
+    //=======================================================================================
+    enum class AnchorPoint
+    {
+        LeftTop = 1,
+        LeftMiddle = 2,
+        LeftBottom = 3,
+        CenterTop = 4,
+        CenterMiddle = 5,
+        CenterBottom = 6,
+        RightTop = 7,
+        RightMiddle = 8,
+        RightBottom = 9
+    };
+
 private:
     DEFINE_T_SUPER(RefCountedBase)
 
@@ -39,7 +55,9 @@ private:
     AnnotationTextBlockPtr m_text;
     AnnotationFramePtr m_frame;
     AnnotationLeaderCollection m_leaders;
-    Transform m_documentTransform;
+    DPoint3d m_origin;
+    YawPitchRollAngles m_orientation;
+    AnchorPoint m_anchorPoint;
 
     DGNPLATFORM_EXPORT void CopyFrom(TextAnnotationCR);
     void Reset();
@@ -51,10 +69,14 @@ public:
     static TextAnnotationPtr Create(DgnDbR project) { return new TextAnnotation(project); }
     DGNPLATFORM_EXPORT static TextAnnotationPtr Create(DgnDbR, DgnElementId);
     TextAnnotationPtr Clone() const { return new TextAnnotation(*this); }
-    TransformCR GetDocumentTransform() const { return m_documentTransform; }
-    void SetDocumentTransform(TransformCR value) { m_documentTransform = value; }
 
     DgnDbR GetDbR() const { return *m_dgndb; }                      
+    void SetOrigin(DPoint3dCR value) { m_origin = value; }
+    DPoint3dCR GetOrigin() const { return m_origin; }
+    void SetOrientation(YawPitchRollAnglesCR value) { m_orientation = value; }
+    YawPitchRollAngles GetOrientation() const { return m_orientation; }
+    void SetAnchorPoint(AnchorPoint value) { m_anchorPoint = value; }
+    AnchorPoint GetAnchorPoint() const { return m_anchorPoint; }
     AnnotationTextBlockCP GetTextCP() const { return m_text.get(); }
     AnnotationTextBlockP GetTextP() { return m_text.get(); }
     void SetText(AnnotationTextBlockCP value) { m_text = const_cast<AnnotationTextBlockP>(value); }

@@ -25,7 +25,13 @@
                 ECSchemas/dgn.02.00.ecschema.xml
                 ECSchemas/Generic.01.00.ecschema.xml
             </Files>
+            <Directory SourceName="Dox/Pages/DgnPlatform" SubPartDirectory="Dox/Pages/DgnPlatform"/>
         </Bindings>
+    </Part>
+
+    <!-- We need this shim part because there is no LKG for WinRT, and thus WinRT builds cannot get a partfile from the LKG to see that the part excludes WinRT. -->
+    <Part Name="OpenCASCADEShim" ExcludePlatforms="WinRT*">
+        <SubPart PartName="OpenCASCADE" PartFile="OpenCASCADE" Repository="Libsrc-OpenCASCADE"/>
     </Part>
 
     <!-- NOTE: DgnDb uses "G" as a library suffix to differentiate from DgnV8 libraries -->
@@ -42,7 +48,7 @@
         <SubPart PartName="BeLibJpegTurbo"      PartFile="BeLibJpegTurbo" Repository="Libsrc-libjpegturbo"/>
         <SubPart PartName="Headers"             PartFile="flatbuffers"  Repository="libsrc-flatbuffers"/>
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     Repository="geocoord"/>
-        <!-- <SubPart PartName="OpenCASCADE"         PartFile="OpenCASCADE"  Repository="Libsrc-OpenCASCADE"/> -->
+        <SubPart PartName="OpenCASCADEShim"/>
         <SubPart PartName="PublicApi"           PartFile="csmap"        Repository="libsrc-csmap"/>
         <SubPart PartName="GeoCoordDataMinimal" PartFile="csmap"        Repository="libsrc-csmap"/>
         <SubPart PartName="BeJavaScript"        PartFile="BePortableUi" Repository="BePortableUi"/>
@@ -62,14 +68,10 @@
         </Bindings>
     </Part>
 
-    <Part Name="DgnPlatformOverviewDocs" BentleyBuildMakeFile="docs/DgnPlatformOverviewDocs.mke">
+    <Part Name="DgnPlatformExtractions" BentleyBuildMakeFile="docs/DgnPlatformExtractions.mke">
         <SubPart PartName="DgnPlatformDoc-Build-SampleCode" />
         <Bindings>
-            <Directory SourceName="Docs/Source/DgnPlatform" SubPartDirectory="Docs/Source/DgnPlatform"/>
-            <!-- *** TBD doc images + files TBD ***
-            <Directory SourceName="Docs/Images/DgnPlatform" SubPartDirectory="Docs/Images/DgnPlatform"/>
-            <Directory SourceName="Docs/Files/DgnPlatform" SubPartDirectory="Docs/Files/DgnPlatform"/>
-            -->
+            <Directory SourceName="Dox/Extractions/DgnPlatform" SubPartDirectory="Dox/Extractions/DgnPlatform"/>
         </Bindings>
     </Part>
 

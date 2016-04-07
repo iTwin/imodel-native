@@ -780,7 +780,7 @@ void WebMercatorDisplay::DrawView(TerrainContextR context)
         DEBUG_PRINTF("%d missing tiles", m_missingTilesToBeRequested.size());
         m_waitTime = 100;
         m_nextRetryTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + m_waitTime;
-        context.GetViewport()->ScheduleProgressiveTask(*this);
+        context.GetViewport()->ScheduleTerrainProgressiveTask(*this);
         }
     }
 

@@ -1,22 +1,47 @@
-#--------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------
 #
 #     $Source: DgnPlatform.prewire.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
-#--------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------
 SrcDgnPlatform                  = $(SrcRoot)DgnPlatform/
 DgnPlatformPublicAPISrc         = $(SrcDgnPlatform)PublicAPI/
 
 %include mdl.mki
 
-# Wire in my own public header files.
+#----------------------------------------------------------------------------------------
+#   Wire in my own public header files.
+#----------------------------------------------------------------------------------------
 always:
     ~linkdir "$(BuildContext)PublicAPI/DgnPlatform=$(DgnPlatformPublicAPISrc)DgnPlatform"
     ~linkdir "$(BuildContext)ECSchemas=$(SrcDgnPlatform)ECSchemas"
 
-# Wire in my own private header files (for unit tests).
+#----------------------------------------------------------------------------------------
+#   Wire in my own private header files (for unit tests).
+#----------------------------------------------------------------------------------------
 DgnPlatformInternalApiSrc = $(SrcDgnPlatform)PrivateApi/DgnPlatformInternal/
 
 always:
     ~linkdir "$(BuildContext)PrivateAPI/DgnPlatformInternal=$(DgnPlatformInternalApiSrc)"
+
+#----------------------------------------------------------------------------------------
+#   Wire in raw material for input into Doxygen by consuming SDKs
+#----------------------------------------------------------------------------------------
+$(BuildContext)Dox/Pages/DgnPlatform/CategoryOverview.doxpage : $(_MakeFilePath)docs/overview/CategoryOverview.doxpage
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Dox/Pages/DgnPlatform/DgnPlatformOverview.doxpage : $(_MakeFilePath)docs/overview/DgnPlatformOverview.doxpage
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Dox/Pages/DgnPlatform/ElementOverview.doxpage : $(_MakeFilePath)docs/overview/ElementOverview.doxpage
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Dox/Pages/DgnPlatform/ModelOverview.doxpage : $(_MakeFilePath)docs/overview/ModelOverview.doxpage
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Dox/Pages/DgnPlatform/ViewOverview.doxpage : $(_MakeFilePath)docs/overview/ViewOverview.doxpage
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Dox/Pages/DgnPlatform/DgnSqlFuncs.doxpage : $(_MakeFilePath)DgnCore/DgnSqlFuncs.cpp
+    $(LinkFirstDepToFirstTarget)

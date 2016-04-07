@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
-#include    <DgnPlatform\DgnGeoCoord.h>
+#include    <DgnPlatform/DgnGeoCoord.h>
 #include    "DgnECTypeAdapters.h"
 #include    "DgnECInteropStringFormatter.h"
 
@@ -1903,7 +1903,7 @@ bool PointFormatTypeAdapter::ExtractOptions(DPoint3d& pt, bool& useX, bool& useY
         useX = useY = false;
         pt = DPoint3d::FromXYZ (0, 0, v.GetDouble());
         break;
-    case -1:
+    case (uint32_t)-1:
         {
         int32_t coordOpts = getIntOrDefault (opts, "Coordinates", 0);
         if (coordOpts == 0)     // default
@@ -2330,7 +2330,11 @@ bool AngleTypeAdapter::_ConvertToString (Utf8StringR str, ECValueCR v, IDgnECTyp
 #if defined (_MSC_VER)
     #pragma warning (disable : 4428)   // Workaround incorrect -W4 compiler warning - http://msdn.microsoft.com/en-us/library/ttw8abkd.aspx
 #endif // defined (_MSC_VER)
-        if (-2 == angleFormat && !str.empty() && L'\u00B0' == str[str.length()-1])
+        // Cannot compare character values over 127 on a UTF-8 encoded string.
+        // It should be sufficient to use a WString here; the value in question will fit in all known WString encodings,
+        //  and if it does match, interchanging str and strW for purposes of using the last character should also be safe.
+        WString strW(str.c_str(), BentleyCharEncoding::Utf8);
+        if (-2 == angleFormat && !strW.empty() && L'\u00B0' == strW[strW.length()-1])
 #if defined (_MSC_VER)
     #pragma warning (default: 4428)
 #endif // defined (_MSC_VER)
