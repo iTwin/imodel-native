@@ -57,7 +57,7 @@ void CleanUpString(string* pio_pString)
         int32_t Pos = 0;
 
         // Remove the SPACE/TAB at the begin of the string
-        while (Pos < pio_pString->size() && !IsValidChar((*pio_pString)[Pos]))
+        while (Pos < (int32_t) pio_pString->size() && !IsValidChar((*pio_pString)[Pos]))
             Pos++;
 
         *pio_pString = pio_pString->substr(Pos);

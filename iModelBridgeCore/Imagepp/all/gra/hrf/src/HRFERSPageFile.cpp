@@ -420,7 +420,7 @@ void HRFERSPageFile::CleanUpString(string& pio_rString) const
     int32_t Pos = 0;
 
     // Remove the SPACE/TAB at the begin of the string.
-    while (Pos < pio_rString.size() && !IsValidChar(pio_rString[Pos]))
+    while (Pos < (int32_t) pio_rString.size() && !IsValidChar(pio_rString[Pos]))
         Pos++;
 
     pio_rString = pio_rString.substr(Pos);
