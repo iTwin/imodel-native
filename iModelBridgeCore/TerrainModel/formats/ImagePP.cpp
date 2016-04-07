@@ -2368,14 +2368,15 @@ WCharCP    projectionKeyP
     ** Set Image File Name
     */
     WString DEMRasterFilePath = WString (L"file://") + imageFileNameP;
+    Utf8String DEMRasterFilePathUtf8(DEMRasterFilePath);
     /*
     **   Instanciate
     */
     try
         {
         if (dbg) bcdtmWrite_message (0, 0, 0, "Instantiating");
-        HFCPtr<HFCURLFile> pDEMRasterFilePathURL ((HFCURLFile*)HFCURL::Instanciate (DEMRasterFilePath));
-        HUTDEMRasterXYZPointsExtractor RasterPointExtractor (DEMRasterFilePath, pPool);
+        HFCPtr<HFCURLFile> pDEMRasterFilePathURL((HFCURLFile*)HFCURL::Instanciate(DEMRasterFilePathUtf8));
+        HUTDEMRasterXYZPointsExtractor RasterPointExtractor(DEMRasterFilePathUtf8, pPool);
 
         if (dbg) bcdtmWrite_message (0, 0, 0, "Instantiated");
 
@@ -2439,7 +2440,7 @@ WCharCP    projectionKeyP
         */
         uint32_t NbPoints;
         const double* pXYZPoints;
-        HAutoPtr<HUTDEMRasterXYZPointsIterator> PointsIterator (RasterPointExtractor.CreateXYZPointsIterator (destCoordSysKeyName, scaleFactor)); // RobC - Inconsisently Crashes here and never reprojects
+        HAutoPtr<HUTDEMRasterXYZPointsIterator> PointsIterator (RasterPointExtractor.CreateXYZPointsIterator (Utf8String(destCoordSysKeyName), scaleFactor)); // RobC - Inconsisently Crashes here and never reprojects
         if (dbg)
             {
             if (PointsIterator->IsDestCoordSysCreationFailed () == true)  bcdtmWrite_message (0, 0, 0, "Failed To Create Destination Projection %s", destCoordSysKeyName.c_str ());
@@ -2596,9 +2597,10 @@ void ImagePPConverter::GetImageProperties ()
         try
             {
             WString DEMRasterFilePath = WString (L"file://") + m_filename;
-            HFCPtr<HFCURLFile> pDEMRasterFilePathURL = new HFCURLFile (DEMRasterFilePath);
+            Utf8String DEMRasterFilePathUtf8(DEMRasterFilePath);
+            HFCPtr<HFCURLFile> pDEMRasterFilePathURL = new HFCURLFile(DEMRasterFilePathUtf8);
 
-            HUTDEMRasterXYZPointsExtractor RasterPointExtractor (DEMRasterFilePath, pPool);
+            HUTDEMRasterXYZPointsExtractor RasterPointExtractor(DEMRasterFilePathUtf8, pPool);
             RasterPointExtractor.GetDimensionInPixels (&m_widthInPixels, &m_heightInPixels);
             //   Get BaseGCS Pointer To Raster Coordinate System
             if(RasterPointExtractor.GetDEMRasterCoordSysCP () != nullptr)
