@@ -91,7 +91,7 @@ static bvector<WString> const& s_GetListOfCoordinateSystems ()
 
     
 //==================================================================================
-// Domain
+// Basic instanciation tests
 //==================================================================================
 TEST_P (GCSUnaryTester, InstantiationTest)
     {
@@ -100,6 +100,7 @@ TEST_P (GCSUnaryTester, InstantiationTest)
     // Check transformation properties
     EXPECT_TRUE(!toto.IsNull());
     
+    // The two OSGB GCS may not be valid since they will only be properly created in the present co the OSGB specific grid shift files
     const WChar* keyname = toto->GetName();
     WString theKeyname(keyname);
     if (theKeyname.CompareTo(L"OSGB-GPS-2002") == 0 || theKeyname.CompareTo(L"OSGB-GPS-1997"))

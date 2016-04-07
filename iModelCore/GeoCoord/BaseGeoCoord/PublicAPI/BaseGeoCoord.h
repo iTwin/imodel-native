@@ -346,7 +346,7 @@ BASEGEOCOORD_EXPORTED static BaseGCSPtr CreateGCS (BaseGCSCR baseGcs);
 * @param    scale           IN      This argument is ignored. The scale is always 1.0.
 * @param    falseEasting    IN      The value to add to each Cartesian X value.
 * @param    falseNorthing   IN      The value to add to each Cartesian Y value.
-* @param    quadrant        IN      Quadrant for the cartesian coordinate system. If north is up and east is right, pass 0.
+* @param    quadrant        IN      Quadrant for the cartesian coordinate system. If north is up and east is right, pass 1.
 * @bsimethod                                                    Barry.Bentley   07/06
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED StatusInt         InitAzimuthalEqualArea
@@ -357,6 +357,35 @@ WCharCP                 unitName,
 double                  originLongitude,
 double                  originLatitude,
 double                  azimuthAngle,
+double                  scale,
+double                  falseEasting,
+double                  falseNorthing,
+int                     quadrant
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Used in conjunction with the no-argument contructor to set the BaseGCS to
+* an Transverse Mercator projection. 
+* @return   SUCCESS or a CS_MAP error code.
+* @param    errorMsg        OUT     if non-NULL, the WString is filled in with the CS_MAP error
+*                                   message when an error occurs.
+* @param    datumName       IN      The name of the datum used in the GCS, such as "WGS84".
+* @param    unitName        IN      The name of the linear unit for the Cartesian coordinates, such as "METER".
+* @param    originLongitude IN      The longitude of the tangency point.
+* @param    originLatitude  IN      The latitude of the tangency point.
+* @param    scale           IN      This scale reduction at the origin.
+* @param    falseEasting    IN      The value to add to each Cartesian X value.
+* @param    falseNorthing   IN      The value to add to each Cartesian Y value.
+* @param    quadrant        IN      Quadrant for the cartesian coordinate system. If north is up and east is right, pass 1.
+* @bsimethod                                                    Alain.Robert   03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BASEGEOCOORD_EXPORTED StatusInt         InitTransverseMercator
+(
+WStringP                errorMsg,
+WCharCP                 datumName,
+WCharCP                 unitName,
+double                  originLongitude,
+double                  originLatitude,
 double                  scale,
 double                  falseEasting,
 double                  falseNorthing,
