@@ -2257,7 +2257,43 @@ enum class SchemaMatchType
 
 /*=================================================================================**//**
 * Fully defines a schema with its name, major and minor versions, and a checksum
-* @bsistruct
+* 
+* The following table shows how schema version changes over time
+* 
+* |                             | Changes Write Compatible | Changes Read Compatible | Version Number |
+* |-----------------------------|--------------------------|-------------------------|----------------|
+* | Initial schema release      | N/A                      | N/A                     | 1.0.0          |
+* | Additions to schema         | Yes                      | Yes                     | 1.0.1          |
+* | Additions to schema         | Yes                      | Yes                     | 1.0.2          |
+* | Additions to schema         | No                       | Yes                     | 1.1.0          |
+* | Additions to schema         | Yes                      | Yes                     | 1.1.1          |
+* | Additions to schema         | Yes                      | Yes                     | 1.1.2          |
+* | Additions to schema         | Yes                      | Yes                     | 1.1.3          |
+* | Additions to schema         | Yes                      | Yes                     | 1.2.0          |
+* | Significant schema revision | No                       | No                      | 2.0.0          |
+* 
+* The general logic for an application written for a particular version of a schema working with a repository that potentially
+* has a different version of the schema would be:
+*   •	If schema in the repository is newer (or same):
+*       o	If first digit matches, app can safely read
+*       o	If first two digits match, app can safely write (and read)
+*   •	If schema in the repository is older:
+*       o	If first two digits match, app can upgrade repository schema without breaking read or write for other apps
+*       o	If only first digit matches, app can upgrade repository, but upgrade will prevent some older apps from writing
+* 
+* For traditional EC developers it may be difficult to envision when a schema change would require a change
+* to the middle version number. Consider in schema 1 that we have a Student class that stores grades and has (double) properties:
+*   •	Language
+*   •	Math
+*   •	Science
+*   •	Music
+*   •	Overall GPA (an average of the previous 4 properties)
+* 
+* If schema 2 adds to Student a double property Psychology, the meaning of Overall GPA changes slightly and hence, applications written for Schema 1:
+*   •	Can still safely read all the values that were in schema 1
+*   •	Cannot modify any values that were in schema 1 because they will likely set Overall GPA incorrectly.
+* 
+* @bsistruct                                                Robert.Schili            03/2016
 +===============+===============+===============+===============+===============+======*/
 struct SchemaKey
     {
@@ -2282,6 +2318,20 @@ struct SchemaKey
 
     //! Default constructor
     SchemaKey () : m_versionMajor(DEFAULT_VERSION_MAJOR), m_versionWrite(DEFAULT_VERSION_WRITE), m_versionMinor(DEFAULT_VERSION_MINOR), m_checkSum(0) {}
+
+    Utf8StringCR GetName() const { return m_schemaName; }
+
+    //! Gets the major schema version. Identifies the generation of the schema that guarantees that newer schemas can be
+    //! read by older software.
+    //! Example: 
+    uint32_t GetVersionMajor() const { return m_versionMajor; };
+
+    //! Gets the major for write version. This is less significant than the major version. It identifies the generation of the schema
+    //! that guarantees that newer schemas can be written by older software.
+    uint32_t GetVersionWrite() const { return m_versionWrite; };
+
+    //! Least significant version number that increments with read/write compatible additions.
+    uint32_t GetVersionMinor() const { return m_versionMinor; };
 
     //! Given a full schema name (which includes the version information), will return a SchemaKey with the schema name and version information set
     //! @param[out] key             A SchemaKey with the schema's name and version set
@@ -2380,11 +2430,6 @@ struct SchemaKey
 
     //! Returns whether this SchemaKey's checksum is less than the target SchemaKey's.
     bool operator < (SchemaKeyCR rhs) const { return LessThan (rhs, SchemaMatchType::Identical); }
-
-    Utf8StringCR GetName() const {return m_schemaName;}
-    uint32_t GetVersionMajor() const { return m_versionMajor; };
-    uint32_t GetVersionWrite() const { return m_versionWrite; };
-    uint32_t GetVersionMinor() const { return m_versionMinor; };
     };
 
 //---------------------------------------------------------------------------------------
@@ -2946,6 +2991,7 @@ public:
 
 //=======================================================================================
 //! The in-memory representation of a schema as defined by ECSchemaXML
+//! For information about schema versioning please check SchemaKey class documentation.
 //! @bsiclass
 //=======================================================================================
 struct ECSchema : RefCountedBase, IECCustomAttributeContainer
@@ -3058,17 +3104,17 @@ public:
     ECOBJECTS_EXPORT Utf8StringCR       GetDisplayLabel() const;
     //! Gets the invariant display label for this ECSchema.
     ECOBJECTS_EXPORT Utf8StringCR       GetInvariantDisplayLabel() const;
-    //! Sets the major version of this schema
+    //! Sets the major version of this schema, check SchemaKey doc for detailed description.
     ECOBJECTS_EXPORT ECObjectsStatus    SetVersionMajor(uint32_t value);
-    //! Gets the major version of this schema
+    //! Gets the major version of this schema, check SchemaKey doc for detailed description.
     ECOBJECTS_EXPORT uint32_t           GetVersionMajor() const;
-    //! Sets the write compatibility version of this schema (major version for read compatibility)
+    //! Sets the write compatibility version of this schema, check SchemaKey doc for detailed description.
     ECOBJECTS_EXPORT ECObjectsStatus    SetVersionWrite(uint32_t value);
-    //! Gets the write compatibility version of this schema (major version for read compatibility)
+    //! Gets the write compatibility version of this schema, check SchemaKey doc for detailed description.
     ECOBJECTS_EXPORT uint32_t           GetVersionWrite() const;
-    //! Sets the minor version of this schema
+    //! Sets the minor version of this schema, check SchemaKey doc for detailed description.
     ECOBJECTS_EXPORT ECObjectsStatus    SetVersionMinor(uint32_t value);
-    //! Gets the minor version of this schema
+    //! Gets the minor version of this schema, check SchemaKey doc for detailed description.
     ECOBJECTS_EXPORT uint32_t           GetVersionMinor() const;
     //! Returns an iterable container of ECClasses sorted by name. For unsorted called overload.
     ECOBJECTS_EXPORT ECClassContainerCR GetClasses() const;
