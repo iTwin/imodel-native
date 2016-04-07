@@ -667,7 +667,7 @@ namespace dgn_TxnTable
      */
     struct RelationshipLinkTables : TxnTable
         {
-        friend struct TxnManager;
+            friend struct Dgn::TxnManager;
       private:
         bool m_changes;
         BeSQLite::Statement m_stmt;

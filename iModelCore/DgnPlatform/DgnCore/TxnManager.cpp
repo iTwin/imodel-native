@@ -149,7 +149,7 @@ TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20)
     {
     m_action = TxnAction::None;
 
-    m_unifiedRelationshipLinkTables = new dgn_TxnTable::RelationshipLinkTables(*const_cast<TxnManager*>(this));
+    m_unifiedRelationshipLinkTables = new dgn_TxnTable::RelationshipLinkTables(*this);
     m_unifiedRelationshipLinkTables->AddRef();
     m_tables.push_back(m_unifiedRelationshipLinkTables); // the singleton that manages changes to all relationship link tables
 
