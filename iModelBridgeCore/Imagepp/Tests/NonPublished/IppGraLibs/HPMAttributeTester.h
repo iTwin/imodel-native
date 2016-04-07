@@ -39,12 +39,12 @@ protected :
 
     string                  StringValue;
     double                  DoubleValue;
-    uint16_t          UShortValue;
+    uint16_t                UShortValue;
     uint32_t                UInt32Value;
     Byte                    ByteValue;
     uint32_t                 uint32_tValue;
     uint64_t                UInt64Value;
-    WString                 WStringValue;
+    Utf8String              Utf8StringValue;
 
     //HPMGenericAttribute
     HFCPtr<HPMGenericAttribute>  pHRFAttributeImageDescription;
