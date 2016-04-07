@@ -446,17 +446,12 @@ $(BuildContext)Delivery/openoffice-license.txt : $(baseDir)ECSql/Parser/LICENSE
 #----------------------------------------------------------------------------------------
 # Deploy documentation raw material for input into PublishApi+Doxygen by consuming SDKs
 #----------------------------------------------------------------------------------------
-$(BuildContext)Dox/Pages/ECDb : $(baseDir)docs/source
-    $(LinkFirstDepToFirstTargetAsDirectory)
-
-$(BuildContext)Dox/Images/ECDb : $(baseDir)docs/images
-    $(LinkFirstDepToFirstTargetAsDirectory)
-
-$(BuildContext)Dox/Files/ECDb : $(baseDir)docs/files
-    $(LinkFirstDepToFirstTargetAsDirectory)
-
-###### WIP: FIXME
 # for the name of the latest version of the ECDbMap ECSchema
 %include $(OutBuildContexts)ECStandards/StandardSchemasV3.delivery.mki
+
 always:
+    ~linkdir "$(BuildContext)Dox/Pages/ECDb=$(baseDir)docs/source"
+    ~linkdir "$(BuildContext)Dox/Images/ECDb=$(baseDir)docs/images"
+    @CreateSymLinks.py -m"$(BuildContext)Dox/Files/ECDb=$(baseDir)docs/files"
     @CreateSymLinks.py "$(BuildContext)Dox/Files/ECDb/ECDbMap.ecschema.xml=$(OutBuildContexts)ECStandards/ECSchemas/Standard/$(ECDbMapSchemaName)"
+  
