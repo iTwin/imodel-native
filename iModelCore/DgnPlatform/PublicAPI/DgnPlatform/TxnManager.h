@@ -19,6 +19,7 @@ DGNPLATFORM_REF_COUNTED_PTR(DynamicChangeTracker)
 #define TXN_TABLE_Elements TXN_TABLE("Elements")
 #define TXN_TABLE_Depend   TXN_TABLE("Depend")
 #define TXN_TABLE_Models   TXN_TABLE("Models")
+#define TXN_TABLE_RelationshipLinkTables TXN_TABLE("RelationshipLinkTables")
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -61,7 +62,7 @@ struct TxnMonitor
     virtual void _OnUndoRedo(TxnManager&, TxnAction) {}
 };
 
-namespace dgn_TxnTable {struct Element; struct ElementDep; struct Model;}
+namespace dgn_TxnTable {struct Element; struct ElementDep; struct Model; struct RelationshipLinkTables;}
 
 //=======================================================================================
 //! An instance of a TxnTable is created for a single SQLite table of a DgnDb via a DgnDomain::TableHandler.
@@ -257,6 +258,9 @@ private:
     DgnDbR m_dgndb;
     T_TxnTablesByName m_tablesByName;
     T_TxnTables m_tables;
+    dgn_TxnTable::RelationshipLinkTables* m_unifiedRelationshipLinkTables;
+    bmap<Utf8String,ECN::ECClassCP> m_relationshipClassesByTable;
+    Utf8String m_currentTable;
     TxnId m_curr;
     TxnAction m_action;
     bvector<TxnId> m_multiTxnOp;
@@ -297,8 +301,11 @@ public:
     void OnEndValidate(); //!< @private
     void AddTxnTable(DgnDomain::TableHandler*);//!< @private
     DGNPLATFORM_EXPORT TxnManager(DgnDbR); //!< @private
+    DGNPLATFORM_EXPORT ~TxnManager(); //!< @private
     BeSQLite::DbResult InitializeTableHandlers(); //!< @private
-
+    Utf8StringCR GetCurrentTable() const {return m_currentTable;}
+    ECN::ECClassCP GetRelationshipClassByTableName(Utf8StringCR tname) const;
+    
     //! A statement cache exclusively for Txn-based statements.
     BeSQLite::CachedStatementPtr GetTxnStatement(Utf8CP sql) const;
 
@@ -326,6 +333,9 @@ public:
 
     //! Get the dgn_TxnTable::Model TxnTable for this TxnManager
     DGNPLATFORM_EXPORT dgn_TxnTable::Model& Models() const;
+
+    //! Get the dgn_TxnTable::Model TxnTable for this TxnManager
+    DGNPLATFORM_EXPORT dgn_TxnTable::RelationshipLinkTables& RelationshipLinkTables() const;
 
     //! Get the description of a previously committed Txn, given its TxnId.
     DGNPLATFORM_EXPORT Utf8String GetTxnDescription(TxnId txnId);
@@ -464,6 +474,14 @@ public:
 
     //! Returns true if a dynamic transaction is in progress.
     bool InDynamicTxn() const { return !m_dynamicTxns.empty(); }
+
+    //! Tell the TxnManager to track changes to instances of the specified ECRelationship class.
+    //! Relationship-specific changes will be captured in the Txn summary in different ways, depending on how the relationship was mapped. 
+    //! Specifically:
+    //!     * Changes to ECRelationships that are mapped to foreign keys will result in element table changes only. The Txn summary will not have any separate record of a change to the ECRelationship.
+    //!     * Changes to all ECRelationships that are mapped to link tables will be gathered into the RelationshipLinkTables table in the Txn summary.
+    DGNPLATFORM_EXPORT DgnDbStatus BeginTrackingRelationship(ECN::ECClassCR relClass);
+
 };
 
 //=======================================================================================
@@ -640,6 +658,44 @@ namespace dgn_TxnTable
         bool HasChanges() const {return m_changes;}
     };
 
+    /** 
+     * Tracks changes to ECRelationships that are mapped to link tables. Includes only relationships for which tracking has been requested.
+     * A single table is used to track instances of all link-table-based ECRElationships.
+     * To query changes, TxnMonitor should create a (cached) statement like this:
+     * @code
+       @endcode
+     * @see TxnManager::BeginTrackingRelationship
+     */
+    struct RelationshipLinkTables : TxnTable
+        {
+        friend struct TxnManager;
+      private:
+        bool m_changes;
+        BeSQLite::Statement m_stmt;
+      
+        Utf8CP _GetTableName() const { BeAssert(false); return ""; } // many tables are merged into this. So, this handler must be installed specially.
+        RelationshipLinkTables(TxnManager& mgr) : TxnTable(mgr), m_changes(false) {}
+        void UpdateSummary(BeSQLite::Changes::Change change, ChangeType changeType);
+      
+        void _Initialize() override;
+        void _OnValidate() override;
+        void _OnValidateAdd(BeSQLite::Changes::Change const& change) override { UpdateSummary(change, TxnTable::ChangeType::Insert); }
+        void _OnValidateDelete(BeSQLite::Changes::Change const& change) override { UpdateSummary(change, TxnTable::ChangeType::Delete); }
+        void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override { UpdateSummary(change, TxnTable::ChangeType::Update); }
+        void _PropagateChanges() override {}
+        void _OnValidated() override;
+      
+      public:
+        bool HasChanges() const { return m_changes; }
+
+        DGNPLATFORM_EXPORT static Utf8CP s_TableName; //!< The name of the RelationshipLinkTables table. @note Do not attempt to modify the table!
+        DGNPLATFORM_EXPORT static Utf8CP s_ECInstanceIdColName; //!< The name of the column that contains the relationship's own ID. Type = BeSQLite::EC::ECInstanceId
+        DGNPLATFORM_EXPORT static Utf8CP s_ECClassIdColName; //!< The name of the column that contains the ID of the relationship class. Type = ECN::ECClassId 
+        DGNPLATFORM_EXPORT static Utf8CP s_SourceECInstanceIdColName; //!< The name of the column that contains the ID of the source element. Type = DgnElementId
+        DGNPLATFORM_EXPORT static Utf8CP s_TargetECInstanceIdColName; //!< The name of the column that contains the ID of the target element. Type = DgnElementId
+        DGNPLATFORM_EXPORT static Utf8CP s_ChangeTypeColName; //!< The name of the column that identifies what kind of change this is. Type = TxnTable::ChangeType 
+        };
+        
     struct BeProperties : TxnTable
     {
         static Utf8CP MyTableName() {return BEDB_TABLE_Property;}

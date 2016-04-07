@@ -77,6 +77,26 @@
         <ECProperty propertyName="Property1" typeName="string" />
     </ECRelationshipClass>
 
+    <ECRelationshipClass typeName="TestElementIsRelatedToElement" isDomainClass="True" strength="referencing" strengthDirection="forward" >
+        <Source cardinality="(0,N)" polymorphic="True">
+            <Class class="dgn:Element" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="dgn:Element" />
+        </Target>
+        <ECProperty propertyName="Property1" typeName="string" />
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="TestElementIsRelatedToElement2" isDomainClass="True" strength="referencing" strengthDirection="forward" >
+        <Source cardinality="(0,N)" polymorphic="True">
+            <Class class="dgn:Element" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="dgn:Element" />
+        </Target>
+        <ECProperty propertyName="Property1" typeName="string" />
+    </ECRelationshipClass>
+
     <ECClass typeName="TestGroup" isDomainClass="True">
         <!-- Used to test the IElementGroup interface -->
         <ECCustomAttributes>
