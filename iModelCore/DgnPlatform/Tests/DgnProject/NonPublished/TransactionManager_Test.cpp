@@ -1398,9 +1398,7 @@ TEST_F(DynamicTxnsTest, IndirectChanges)
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson      01/15
 +===============+===============+===============+===============+===============+======*/
-//__PUBLISH_EXTRACT_START__ RelationshipLinkTableTrackingTxnMonitor_Define_.sampleCode
 struct TestRelationshipLinkTableTrackingTxnMonitor : TxnMonitor
-//__PUBLISH_EXTRACT_END__
     {
     struct RelDef
         {
@@ -1415,11 +1413,9 @@ struct TestRelationshipLinkTableTrackingTxnMonitor : TxnMonitor
     BeSQLite::CachedStatementPtr m_stmt;
     bvector<ECN::ECClassId> m_classesToTrack;
 
-//__PUBLISH_EXTRACT_START__ RelationshipLinkTableTrackingTxnMonitor_Register_.sampleCode
     TestRelationshipLinkTableTrackingTxnMonitor()
         {
         DgnPlatformLib::GetHost().GetTxnAdmin().AddTxnMonitor(*this);
-//__PUBLISH_EXTRACT_END__
         Clear();
         }
     ~TestRelationshipLinkTableTrackingTxnMonitor()
