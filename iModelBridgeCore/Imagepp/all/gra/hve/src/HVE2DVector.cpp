@@ -694,6 +694,8 @@ HFCPtr<HGFTolerance> HVE2DVector::GetStrokeTolerance() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HVE2DVector::SetStrokeTolerance(const HFCPtr<HGFTolerance> & pi_Tolerance)
     {
+    ClearPeer();
+        
     if (pi_Tolerance != NULL)
         m_pStrokeTolerance = new HGFTolerance(*pi_Tolerance);
     else

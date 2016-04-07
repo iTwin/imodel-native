@@ -67,7 +67,7 @@ void HVE2DDisjointedComplexLinear::InsertLinear(const HVE2DLinear& pi_rLinear)
     if (m_LinearList.empty())
         {
         // Since empty we must also set the end point
-        m_EndPoint.Set(pi_rLinear.GetEndPoint());
+        SetLinearEndPoint(pi_rLinear.GetEndPoint());
         }
 
     // Update tolerance if needed
@@ -88,7 +88,7 @@ void HVE2DDisjointedComplexLinear::InsertLinear(const HVE2DLinear& pi_rLinear)
     m_LinearList.push_front(pTempLinear);
 
     // Update start point
-    m_StartPoint.Set(pi_rLinear.GetStartPoint());
+    SetLinearStartPoint(pi_rLinear.GetStartPoint());
 
     // Indicate extent and length are no more up to date
     m_ExtentUpToDate = false;
@@ -135,14 +135,13 @@ void HVE2DDisjointedComplexLinear::InsertLinearPtrSCS(HVE2DLinear* pi_pLinear)
 
     // The given linear must link to present complex at start point if not empty
     HPRECONDITION(m_LinearList.empty() ||
-                  (m_StartPoint.IsEqualTo(pi_pLinear->GetEndPoint(), GetTolerance())));
+                  (GetStartPoint().IsEqualTo(pi_pLinear->GetEndPoint(), GetTolerance())));
 
     // Check if self is empty
     if (m_LinearList.empty())
         {
         // Since empty we must also set the end point
-        m_EndPoint.SetX(pi_pLinear->GetEndPoint().GetX());
-        m_EndPoint.SetY(pi_pLinear->GetEndPoint().GetY());
+        SetLinearEndPoint(HGF2DLocation(pi_pLinear->GetEndPoint().GetX(), pi_pLinear->GetEndPoint().GetY(), GetCoordSys()));
         }
 
     // Update tolerance if needed
@@ -160,8 +159,7 @@ void HVE2DDisjointedComplexLinear::InsertLinearPtrSCS(HVE2DLinear* pi_pLinear)
     m_LinearList.push_front(pi_pLinear);
 
     // Update start point
-    m_StartPoint.SetX(pi_pLinear->GetStartPoint().GetX());
-    m_StartPoint.SetY(pi_pLinear->GetStartPoint().GetY());
+    SetLinearStartPoint(HGF2DLocation(pi_pLinear->GetStartPoint().GetX(), pi_pLinear->GetStartPoint().GetY(), GetCoordSys()));
 
     // Indicate extent and length are no more up to date
     m_ExtentUpToDate = false;
@@ -201,7 +199,7 @@ void HVE2DDisjointedComplexLinear::AppendLinear(const HVE2DLinear& pi_rLinear)
     if (m_LinearList.empty())
         {
         // Since empty we must also set the start point
-        m_StartPoint.Set(pi_rLinear.GetStartPoint());
+        SetLinearStartPoint(pi_rLinear.GetStartPoint());
         }
 
     // Update tolerance if needed
@@ -222,7 +220,7 @@ void HVE2DDisjointedComplexLinear::AppendLinear(const HVE2DLinear& pi_rLinear)
     m_LinearList.push_back(pTempLinear);
 
     // Update end point
-    m_EndPoint.Set(pi_rLinear.GetEndPoint());
+    SetLinearEndPoint(pi_rLinear.GetEndPoint());
 
     // Indicate extent and length are no more up to date
     m_ExtentUpToDate = false;
@@ -270,8 +268,7 @@ void HVE2DDisjointedComplexLinear::AppendLinearPtrSCS(HVE2DLinear* pi_pLinear)
     if (m_LinearList.empty())
         {
         // Since empty we must also set the start point
-        m_StartPoint.SetX(pi_pLinear->GetStartPoint().GetX());
-        m_StartPoint.SetY(pi_pLinear->GetStartPoint().GetY());
+        SetLinearStartPoint(HGF2DLocation(pi_pLinear->GetStartPoint().GetX(), pi_pLinear->GetStartPoint().GetY(), GetCoordSys()));
         }
 
     // Update tolerance if needed
@@ -289,8 +286,7 @@ void HVE2DDisjointedComplexLinear::AppendLinearPtrSCS(HVE2DLinear* pi_pLinear)
     m_LinearList.push_back(pi_pLinear);
 
     // Update end point
-    m_EndPoint.SetX(pi_pLinear->GetEndPoint().GetX());
-    m_EndPoint.SetY(pi_pLinear->GetEndPoint().GetY());
+    SetLinearEndPoint(HGF2DLocation(pi_pLinear->GetEndPoint().GetX(), pi_pLinear->GetEndPoint().GetY(), GetCoordSys()));
 
     // Indicate extent and length are no more up to date
     m_ExtentUpToDate = false;
@@ -347,7 +343,7 @@ void HVE2DDisjointedComplexLinear::InsertComplexLinear(const HVE2DDisjointedComp
         {
         // The self complex is originaly empty ... and given is not
         // We set end point appropriately
-        m_EndPoint = pi_rDisComplexLinear.GetEndPoint();
+        SetLinearEndPoint(pi_rDisComplexLinear.GetEndPoint());
         }
 
     // Update tolerance if needed
@@ -377,7 +373,7 @@ void HVE2DDisjointedComplexLinear::InsertComplexLinear(const HVE2DDisjointedComp
         }
 
     // Update start point
-    m_StartPoint = pi_rDisComplexLinear.GetStartPoint();
+    SetLinearStartPoint(pi_rDisComplexLinear.GetStartPoint());
 
     // Indicate extent and length are no more up to date
     m_ExtentUpToDate = false;
@@ -431,7 +427,7 @@ void HVE2DDisjointedComplexLinear::AppendComplexLinear(const HVE2DDisjointedComp
         {
         // The self complex is originaly empty ... and given is not
         // We set start point appropriately
-        m_StartPoint = pi_rDisComplexLinear.GetStartPoint();
+        SetLinearStartPoint(pi_rDisComplexLinear.GetStartPoint());
         }
 
     if (IsAutoToleranceActive())
@@ -459,7 +455,7 @@ void HVE2DDisjointedComplexLinear::AppendComplexLinear(const HVE2DDisjointedComp
         }
 
     // Update end point
-    m_EndPoint = pi_rDisComplexLinear.GetEndPoint();
+    SetLinearEndPoint(pi_rDisComplexLinear.GetEndPoint());
 
     // Indicate extent and length are no more up to date
     m_ExtentUpToDate = false;

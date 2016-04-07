@@ -470,6 +470,17 @@ public:
     virtual void       PrintState(ostream& po_rOutput) const;
 
 protected:
+    void SetLinearStartPoint(const HGF2DPosition& newStartPoint)
+        {
+        m_StartPoint = newStartPoint;
+        }
+        
+    void SetLinearEndPoint(const HGF2DPosition& newEndPoint)
+        {
+        m_EndPoint = newEndPoint;
+        }        
+    
+private:
     // Those are protected for performance reason only
     HGF2DPosition           m_StartPoint;
     HGF2DPosition           m_EndPoint;

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DSegment.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DSegment
@@ -218,6 +218,14 @@ public:
     IMAGEPP_EXPORT virtual void
                         PrintState(ostream& po_rOutput) const;
 
+    // THIS SHOULD BE PRIVATE BUT MOVED TEMPORARILY HERE TO BE ACCESSED FROM HVE2DSegment
+    bool                AreContiguousAtAndGetWithSegment(const HGF2DSegment& pi_rSegment,
+                                                         HGF2DPosition* po_pFirstPoint,
+                                                         HGF2DPosition* po_pSecondPoint)const;
+    size_t              ObtainContiguousnessPointsWithSegment(const HGF2DSegment& pi_rSegment,
+                                                              HGF2DPositionCollection* po_pContiguousnessPoints) const;        
+    bool                AreSegmentsContiguous(const HGF2DSegment& pi_rSegment) const;
+
 protected:
 
 private:
@@ -225,17 +233,13 @@ private:
 
     bool                AreSegmentsAdjacent(const HGF2DSegment& pi_rSegment) const;
     bool                AreSegmentsFlirting(const HGF2DSegment& pi_rSegment) const;
-    bool                AreSegmentsContiguous(const HGF2DSegment& pi_rSegment) const;
     bool                AreSegmentsTouching(const HGF2DSegment& pi_rSegment) const;
     bool                AreSegmentsCrossing(const HGF2DSegment& pi_rSegment) const;
-    size_t              ObtainContiguousnessPointsWithSegment(const HGF2DSegment& pi_rSegment,
-                                                              HGF2DPositionCollection* po_pContiguousnessPoints) const;
+
 
     bool                IsPointOnLineOnSegment(const HGF2DPosition& pi_rTestPoint,
                                                double pi_Tolerance = HGF_USE_INTERNAL_EPSILON) const;
-    bool                AreContiguousAtAndGetWithSegment(const HGF2DSegment& pi_rSegment,
-                                                         HGF2DPosition* po_pFirstPoint,
-                                                         HGF2DPosition* po_pSecondPoint)const;
+
 
     void                ResetTolerance();
     };

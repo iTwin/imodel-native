@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DLinear.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -123,6 +123,8 @@ inline HVE2DLinear& HVE2DLinear::operator=(const HVE2DLinear& pi_rObj)
     // Check that object to copy is not self
     if (this != &pi_rObj)
         {
+        ClearPeer();
+        
         // Invoque ancester copy
         HVE2DVector::operator=(pi_rObj);
 
@@ -238,6 +240,8 @@ inline const HGF2DLocation& HVE2DLinear::GetEndPoint() const
 //-----------------------------------------------------------------------------
 inline void    HVE2DLinear::Move(const HGF2DDisplacement& pi_rDisplacement)
     {
+    ClearPeer();
+    
     m_StartPoint += pi_rDisplacement;
     m_EndPoint += pi_rDisplacement;
     }
@@ -253,6 +257,8 @@ inline void HVE2DLinear::Scale(double pi_ScaleFactor,
     {
     // The given scale factor may not be equal to 0.0
     HPRECONDITION(pi_ScaleFactor != 0.0);
+    
+    ClearPeer();  
 
     // Obtain the scale origin in the current coordinate system
     HGF2DLocation   MyScaleOrigin(pi_rScaleOrigin, GetCoordSys());
@@ -351,6 +357,8 @@ inline bool HVE2DLinear::IsAtAnExtremity(const HGF2DLocation& pi_rLocation,
 */
 inline void HVE2DLinear::Reverse()
     {
+    ClearPeer();
+        
     // Swap start and end point
     HGF2DLocation   DummyPoint(m_StartPoint);
     m_StartPoint = m_EndPoint;

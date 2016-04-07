@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DLinear.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DLinear
@@ -480,10 +480,22 @@ public:
 
 protected:
 
+
     IMAGEPP_EXPORT virtual void
     SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rpNewCoordSys);
 
-    // Those are protected for performance reason only
+    void SetLinearStartPoint(const HGF2DLocation& point)
+        {
+        ClearPeer();
+        m_StartPoint = point;        
+        }
+        
+    void SetLinearEndPoint(const HGF2DLocation& point)
+        {
+        ClearPeer();
+        m_EndPoint = point;
+        }
+private:
     HGF2DLocation           m_StartPoint;
     HGF2DLocation           m_EndPoint;
 

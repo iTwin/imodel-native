@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DPolygonOfSegments.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DPolygonOfSegments
@@ -244,7 +244,7 @@ private:
         HASSERT(m_PolySegment.IsAutoToleranceActive() == IsAutoToleranceActive());
 
         // Polysegment must close on itself
-        HASSERT(m_PolySegment.m_StartPoint == m_PolySegment.m_EndPoint);
+        HASSERT(m_PolySegment.GetStartPoint() == m_PolySegment.GetEndPoint());
 
         // Polysegment may not cross itself
         HASSERTSUPERDEBUG(!m_PolySegment.AutoCrosses());

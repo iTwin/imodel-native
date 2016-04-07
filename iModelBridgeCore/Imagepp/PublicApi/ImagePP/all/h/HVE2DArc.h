@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DArc.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DArc
@@ -193,8 +193,8 @@ private:
         HASSERT(m_Center.GetCoordSys() == GetCoordSys());
 
         // The start and end points must always be in same coordinate system as arc
-        HASSERT(m_StartPoint.GetCoordSys() == GetCoordSys());
-        HASSERT(m_EndPoint.GetCoordSys() == GetCoordSys());
+        HASSERT(GetStartPoint().GetCoordSys() == GetCoordSys());
+        HASSERT(GetEndPoint().GetCoordSys() == GetCoordSys());
         }
 #endif
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DPolySegment.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -172,7 +172,7 @@ private:
 #ifdef HVERIFYCONTRACT
     void               ValidateInvariants() const
         {
-        HASSERT(m_Points.size() == 0 || (m_StartPoint.GetPosition() == m_Points[0] && m_EndPoint.GetPosition() == m_Points.back()));
+        HASSERT(m_Points.size() == 0 || (GetStartPoint().GetPosition() == m_Points[0] && GetEndPoint().GetPosition() == m_Points.back()));
         }
 #endif
 

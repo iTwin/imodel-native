@@ -28,7 +28,7 @@ inline HGF2DPolySegment::HGF2DPolySegment(const HGF2DPosition& pi_rFirstPoint,
     {
     // The start and end points are set ... all we need is to copy them\
     // to the positions list
-    m_Points.push_back(m_StartPoint);
+    m_Points.push_back(GetStartPoint());
     m_Points.push_back(pi_rSecondPoint);
 
     // Set tolerance

@@ -244,7 +244,7 @@ private:
         HASSERT(m_PolySegment.IsAutoToleranceActive() == IsAutoToleranceActive());
 
         // Polysegment must close on itself
-        HASSERT(m_PolySegment.m_StartPoint == m_PolySegment.m_EndPoint);
+        HASSERT(m_PolySegment.GetStartPoint() == m_PolySegment.GetEndPoint());
 
         // Polysegment may not cross itself
         HASSERTSUPERDEBUG(!m_PolySegment.AutoCrosses());

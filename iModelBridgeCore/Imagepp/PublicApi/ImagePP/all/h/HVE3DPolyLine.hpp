@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE3DPolyLine.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -78,7 +78,7 @@ inline HVE3DPolyLine::HVE3DPolyLine(const HGF3DPoint& i_rFirstPoint,
     {
     // The start and end points are set ... all we need is to copy them\
     // to the positions list
-    m_Points.push_back(m_StartPoint.GetPosition());
+    m_Points.push_back(GetStartPoint().GetPosition());
     m_Points.push_back(pi_rSecondPoint.ExpressedIn(GetCoordSys()).GetPosition());
 
     // Set tolerance

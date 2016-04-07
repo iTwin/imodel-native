@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DArc.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -58,10 +58,10 @@ inline HVE2DArc::HVE2DArc(const HGF2DLocation& pi_rCenter,
     HPRECONDITION(pi_Radius > 0.0);
 
     // Calculate start point
-    m_StartPoint = m_Center + HGF2DDisplacement(pi_rStartBearing, pi_Radius);
+    SetLinearStartPoint(m_Center + HGF2DDisplacement(pi_rStartBearing, pi_Radius));
 
     // Calculate end point
-    m_EndPoint = m_Center + HGF2DDisplacement(pi_rEndBearing, pi_Radius);
+    SetLinearEndPoint(m_Center + HGF2DDisplacement(pi_rEndBearing, pi_Radius));
     }
 
 
@@ -97,11 +97,11 @@ inline HVE2DArc::HVE2DArc(const HVE2DCircle& pi_rCircle,
     HPRECONDITION(fabs(pi_Sweep) < 2*PI);
 
     // Calculate start point
-    m_StartPoint = m_Center + HGF2DDisplacement(pi_rStartBearing, pi_rCircle.GetRadius());
+    SetLinearStartPoint(m_Center + HGF2DDisplacement(pi_rStartBearing, pi_rCircle.GetRadius()));
 
     // Calculate end point
-    m_EndPoint = m_Center + HGF2DDisplacement(pi_rStartBearing + pi_Sweep,
-                                              pi_rCircle.GetRadius());
+    SetLinearEndPoint(m_Center + HGF2DDisplacement(pi_rStartBearing + pi_Sweep,
+                                              pi_rCircle.GetRadius()));
 
     if (pi_Sweep > 0.0)
         m_RotationDirection = HGFAngle::CCW;
@@ -208,7 +208,7 @@ inline HVE2DCircle HVE2DArc::CalculateCircle() const
     HPRECONDITION(!IsNull());
 
     // Return center
-    return(HVE2DCircle(m_Center, (m_StartPoint - m_Center).CalculateLength()));
+    return(HVE2DCircle(m_Center, (GetStartPoint() - m_Center).CalculateLength()));
     }
 
 /** -----------------------------------------------------------------------------
@@ -261,8 +261,8 @@ inline double HVE2DArc::CalculateAngularAcceleration(
 
     // The acceleration on an arc is constant
     // Obtain bearing difference between start and end point
-    double DiffAngle = (m_Center - m_EndPoint).CalculateBearing() -
-                       (m_Center - m_StartPoint).CalculateBearing();
+    double DiffAngle = (m_Center - GetEndPoint()).CalculateBearing() -
+                       (m_Center - GetStartPoint()).CalculateBearing();
 
     // Obtain a 1 radian angle
     double  UnaryAngle = 1.0;
@@ -274,11 +274,11 @@ inline double HVE2DArc::CalculateAngularAcceleration(
     if (((m_RotationDirection == HGFAngle::CCW) && (pi_Direction == HVE2DVector::BETA)) ||
         ((m_RotationDirection == HGFAngle::CW) && (pi_Direction != HVE2DVector::BETA)))
         {
-        TheAcceleration = UnaryAngle / (m_Center - m_StartPoint).CalculateLength();
+        TheAcceleration = UnaryAngle / (m_Center - GetStartPoint()).CalculateLength();
         }
     else
         {
-        TheAcceleration = - UnaryAngle / (m_Center - m_StartPoint).CalculateLength();
+        TheAcceleration = - UnaryAngle / (m_Center - GetStartPoint()).CalculateLength();
         }
 
     return(TheAcceleration);
@@ -294,7 +294,7 @@ inline double HVE2DArc::CalculateRayArea(const HGF2DLocation& pi_rPoint) const
     {
     double Radius = CalculateRadius();
 
-    return(((m_StartPoint.GetX() * ((m_EndPoint - pi_rPoint).GetDeltaY())) +
+    return(((GetStartPoint().GetX() * ((GetEndPoint() - pi_rPoint).GetDeltaY())) +
             (Radius * Radius * CalculateNormalizedTrigoValue(CalculateSweep()))) / 2);
     }
 
@@ -308,7 +308,7 @@ inline double HVE2DArc::CalculateRayArea(const HGF2DLocation& pi_rPoint) const
 */
 inline HGFBearing HVE2DArc::CalculateStartBearing() const
     {
-    return((m_StartPoint - m_Center).CalculateBearing());
+    return((GetStartPoint() - m_Center).CalculateBearing());
     }
 
 
@@ -322,7 +322,7 @@ inline HGFBearing HVE2DArc::CalculateStartBearing() const
 */
 inline HGFBearing HVE2DArc::CalculateEndBearing() const
     {
-    return((m_EndPoint - m_Center).CalculateBearing());
+    return((GetEndPoint() - m_Center).CalculateBearing());
     }
 
 //-----------------------------------------------------------------------------
@@ -335,7 +335,7 @@ inline HGF2DLocation HVE2DArc::CalculateRelativePoint(double pi_RelativePos) con
     HPRECONDITION((pi_RelativePos >= 0.0) && (pi_RelativePos <= 1.0));
 
     // Obtain displacement from center to start point
-    HGF2DDisplacement  FromCenterToStart(m_StartPoint - m_Center);
+    HGF2DDisplacement  FromCenterToStart(GetStartPoint() - m_Center);
 
     // Compute full angle sweep
     double  Sweep(CalculateSweep());
@@ -382,8 +382,8 @@ inline void HVE2DArc::Shorten(const HGF2DLocation& pi_rNewStartPoint,
                    CalculateRelativePosition(pi_rNewEndPoint)));
 
     // Set extremity points while keeping expression in the arc coordinate system
-    m_EndPoint.Set(pi_rNewEndPoint);
-    m_StartPoint.Set(pi_rNewStartPoint);
+    SetLinearEndPoint(pi_rNewEndPoint);
+    SetLinearStartPoint(pi_rNewStartPoint);
     }
 
 
@@ -398,7 +398,7 @@ inline void HVE2DArc::ShortenTo(const HGF2DLocation& pi_rNewEndPoint)
 
     // The end point is set while keeping interpretation coordinate system
     // to the one of the arc
-    m_EndPoint.Set(pi_rNewEndPoint);
+    SetLinearEndPoint(pi_rNewEndPoint);
     }
 
 //-----------------------------------------------------------------------------
@@ -425,7 +425,7 @@ inline void HVE2DArc::ShortenFrom(const HGF2DLocation& pi_rNewStartPoint)
 
     // The start point is set while keeping interpretation coordinate system
     // to the one of the arc
-    m_StartPoint.Set(pi_rNewStartPoint);
+    SetLinearStartPoint(pi_rNewStartPoint);
     }
 
 
@@ -505,7 +505,7 @@ inline double HVE2DArc::CalculateLength() const
 */
 inline double HVE2DArc::CalculateRadius() const
     {
-    return ((m_Center - m_StartPoint).CalculateLength());
+    return ((m_Center - GetStartPoint()).CalculateLength());
     }
 
 
@@ -522,10 +522,10 @@ inline double HVE2DArc::CalculateRadius() const
 inline double HVE2DArc::CalculateSweep() const
     {
     return (m_RotationDirection == HGFAngle::CCW ?
-            ((m_EndPoint - m_Center).CalculateBearing() -
-             (m_StartPoint - m_Center).CalculateBearing()) :
-            -((m_StartPoint - m_Center).CalculateBearing() -
-              (m_EndPoint - m_Center).CalculateBearing()));
+            ((GetEndPoint() - m_Center).CalculateBearing() -
+             (GetStartPoint() - m_Center).CalculateBearing()) :
+            -((GetStartPoint() - m_Center).CalculateBearing() -
+              (GetEndPoint() - m_Center).CalculateBearing()));
     }
 
 
@@ -535,7 +535,7 @@ inline double HVE2DArc::CalculateSweep() const
 //-----------------------------------------------------------------------------
 inline bool HVE2DArc::IsNull() const
     {
-    return(m_StartPoint.IsEqualTo(m_EndPoint) && HDOUBLE_EQUAL(CalculateLength(), 0.0));
+    return(GetStartPoint().IsEqualTo(GetEndPoint()) && HDOUBLE_EQUAL(CalculateLength(), 0.0));
     }
 
 //-----------------------------------------------------------------------------
@@ -546,9 +546,9 @@ inline bool HVE2DArc::IsNull() const
 //-----------------------------------------------------------------------------
 inline void HVE2DArc::AdjustStartPointTo(const HGF2DLocation& pi_rPoint)
     {
-    HPRECONDITION(m_StartPoint.IsEqualTo(pi_rPoint, GetTolerance()));
+    HPRECONDITION(GetStartPoint().IsEqualTo(pi_rPoint, GetTolerance()));
 
-    m_StartPoint.Set(pi_rPoint);
+    SetLinearStartPoint(pi_rPoint);
     }
 
 //-----------------------------------------------------------------------------
@@ -559,9 +559,9 @@ inline void HVE2DArc::AdjustStartPointTo(const HGF2DLocation& pi_rPoint)
 //-----------------------------------------------------------------------------
 inline void HVE2DArc::AdjustEndPointTo(const HGF2DLocation& pi_rPoint)
     {
-    HPRECONDITION(m_EndPoint.IsEqualTo(pi_rPoint, GetTolerance()));
+    HPRECONDITION(GetEndPoint().IsEqualTo(pi_rPoint, GetTolerance()));
 
-    m_EndPoint.Set(pi_rPoint);
+    SetLinearEndPoint(pi_rPoint);
     }
 
 END_IMAGEPP_NAMESPACE

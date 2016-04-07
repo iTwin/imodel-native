@@ -84,6 +84,9 @@ inline HVE2DSegment& HVE2DSegment::operator=(const HVE2DSegment& pi_rObj)
     // Invoque the ancester operator
     HVE2DBasicLinear::operator=(pi_rObj);
 
+    // clear peer
+    ClearPeer();
+    
     // Return reference to self
     return (*this);
     }
@@ -126,10 +129,13 @@ inline void HVE2DSegment::SetStartPoint(const HGF2DLocation& pi_rNewStartPoint)
     {
     // Set the start point to given expressed in the segment coordinate
     // system
-    m_StartPoint.Set(pi_rNewStartPoint);
+    SetLinearStartPoint(pi_rNewStartPoint);
 
     // Reset tolerance
     ResetTolerance();
+    
+    // clear peer
+    ClearPeer();
     }
 
 /** -----------------------------------------------------------------------------
@@ -161,10 +167,13 @@ inline void HVE2DSegment::SetEndPoint(const HGF2DLocation& pi_rNewEndPoint)
     {
     // Set the end point to given expressed in the segment coordinate
     // system
-    m_EndPoint.Set(pi_rNewEndPoint);
+    SetLinearEndPoint(pi_rNewEndPoint);
 
     // Reset tolerance
     ResetTolerance();
+    
+    // clear peer
+    ClearPeer();
     }
 
 /** -----------------------------------------------------------------------------
@@ -195,11 +204,13 @@ inline void HVE2DSegment::SetEndPoint(const HGF2DLocation& pi_rNewEndPoint)
 */
 inline void HVE2DSegment::SetRawStartPoint(double pi_X, double pi_Y)
     {
-    m_StartPoint.SetX(pi_X);
-    m_StartPoint.SetY(pi_Y);
+    SetStartPoint(HGF2DLocation(pi_X, pi_Y, GetCoordSys()));
 
     // Reset tolerance
     ResetTolerance();
+    
+    // clear peer
+    ClearPeer();
     }
 
 /** -----------------------------------------------------------------------------
@@ -230,11 +241,13 @@ inline void HVE2DSegment::SetRawStartPoint(double pi_X, double pi_Y)
 */
 inline void HVE2DSegment::SetRawEndPoint(double pi_X, double pi_Y)
     {
-    m_EndPoint.SetX(pi_X);
-    m_EndPoint.SetY(pi_Y);
+    SetEndPoint(HGF2DLocation(pi_X, pi_Y, GetCoordSys()));
 
     // Reset tolerance
     ResetTolerance();
+    
+    // clear peer
+    ClearPeer();
     }
 
 
@@ -254,7 +267,7 @@ inline void HVE2DSegment::SetRawEndPoint(double pi_X, double pi_Y)
 */
 inline HGF2DLine HVE2DSegment::CalculateLine() const
     {
-    return (HGF2DLine(m_StartPoint, m_EndPoint));
+    return (HGF2DLine(GetStartPoint(), GetEndPoint()));
     }
 
 /** -----------------------------------------------------------------------------
@@ -276,7 +289,7 @@ inline HGF2DLine HVE2DSegment::CalculateLine() const
 inline bool HVE2DSegment::IsParallelTo(const HGF2DLine& pi_rLine) const
     {
     // Check if given line and the line the segment belongs are parallel
-    return (pi_rLine.IsParallelTo(HGF2DLine(m_StartPoint, m_EndPoint)));
+    return (pi_rLine.IsParallelTo(HGF2DLine(GetStartPoint(), GetEndPoint())));
     }
 
 /** -----------------------------------------------------------------------------
@@ -308,9 +321,9 @@ inline bool HVE2DSegment::IsParallelTo(const HGF2DLine& pi_rLine) const
 inline bool HVE2DSegment::IsParallelTo(const HVE2DSegment& pi_rSegment) const
     {
     // Check if the lines the segments belong to are parallel
-    return (HGF2DLine(m_StartPoint,
-                      m_EndPoint).IsParallelTo(HGF2DLine(pi_rSegment.m_StartPoint,
-                                                         pi_rSegment.m_EndPoint)));
+    return (HGF2DLine(GetStartPoint(),
+                      GetEndPoint()).IsParallelTo(HGF2DLine(pi_rSegment.GetStartPoint(),
+                                                         pi_rSegment.GetEndPoint())));
     }
 
 //-----------------------------------------------------------------------------
@@ -321,15 +334,15 @@ inline HGFBearing HVE2DSegment::CalculateBearing(const HGF2DLocation& pi_rPoint,
                                                  HVE2DVector::ArbitraryDirection pi_Direction) const
     {
     // The segment must not be NULL
-    HPRECONDITION(m_StartPoint != m_EndPoint);
+    HPRECONDITION(GetStartPoint() != GetEndPoint());
 
     // The point must be located on segment
     HPRECONDITION(IsPointOn(pi_rPoint));
 
     // The bearing on a segment is constant whatever the given point
     return (pi_Direction == HVE2DVector::BETA ?
-            (m_EndPoint - m_StartPoint).CalculateBearing() :
-            (m_StartPoint - m_EndPoint).CalculateBearing());
+            (GetEndPoint() - GetStartPoint()).CalculateBearing() :
+            (GetStartPoint() - GetEndPoint()).CalculateBearing());
     }
 
 //-----------------------------------------------------------------------------
@@ -354,7 +367,7 @@ inline double HVE2DSegment::CalculateAngularAcceleration(const HGF2DLocation& pi
 //-----------------------------------------------------------------------------
 inline double HVE2DSegment::CalculateRayArea(const HGF2DLocation& pi_rPoint) const
     {
-    return ((m_StartPoint.GetX() * ((m_EndPoint - pi_rPoint).GetDeltaY())) / 2);
+    return ((GetStartPoint().GetX() * ((GetEndPoint() - pi_rPoint).GetDeltaY())) / 2);
     }
 
 //-----------------------------------------------------------------------------
@@ -366,7 +379,7 @@ inline HGF2DLocation HVE2DSegment::CalculateRelativePoint(double pi_RelativePos)
     // The relative position must be between 0.0 and 1.0
     HPRECONDITION((pi_RelativePos >= 0.0) && (pi_RelativePos <= 1.0));
 
-    return (m_StartPoint + (pi_RelativePos * (m_EndPoint - m_StartPoint)));
+    return (GetStartPoint() + (pi_RelativePos * (GetEndPoint() - GetStartPoint())));
     }
 
 //-----------------------------------------------------------------------------
@@ -379,28 +392,9 @@ inline double HVE2DSegment::CalculateRelativePosition(const HGF2DLocation& pi_rP
     HPRECONDITION(IsPointOn(pi_rPointOnLinear));
 
     // The segment must not be null
-    HPRECONDITION(m_StartPoint != m_EndPoint);
+    HPRECONDITION(GetStartPoint() != GetEndPoint());
 
-    // The relative position is distance ratio between distance to given and to end point
-    // from start point
-
-    // Check if segment is vertical or close but not perfectly horizontal
-    double relativePosition;
-    double deltaX = m_EndPoint.GetX() - m_StartPoint.GetX();
-    double deltaY = m_EndPoint.GetY() - m_StartPoint.GetY();
-
-    if (fabs(deltaX) > fabs(deltaY))
-        relativePosition = (pi_rPointOnLinear.GetX() - m_StartPoint.GetX()) / deltaX;
-    else
-        relativePosition = (pi_rPointOnLinear.GetY() - m_StartPoint.GetY()) / deltaY;
-
-    // Computation errors may result in values slightly lower than 0 or higher than 1 (within tolerance)
-    // we thus clamp
-    if (relativePosition < 0.0)
-        relativePosition = 0.0;
-    if (relativePosition > 1.0)
-        relativePosition = 1.0;
-    return relativePosition;
+    return GetSegmentPeer().CalculateRelativePosition(pi_rPointOnLinear.ExpressedIn(GetCoordSys()).GetPosition());
     }
 
 //-----------------------------------------------------------------------------
@@ -417,17 +411,17 @@ inline void HVE2DSegment::Shorten(double pi_StartRelativePos, double pi_EndRelat
     // relative position
     HPRECONDITION(pi_StartRelativePos <= pi_EndRelativePos);
 
-    double     DeltaX(m_EndPoint.GetX() - m_StartPoint.GetX());
-    double     DeltaY(m_EndPoint.GetY() - m_StartPoint.GetY());
+    double     DeltaX(GetEndPoint().GetX() - GetStartPoint().GetX());
+    double     DeltaY(GetEndPoint().GetY() - GetStartPoint().GetY());
 
-    m_EndPoint.SetX(m_StartPoint.GetX() + (DeltaX * pi_EndRelativePos));
-    m_EndPoint.SetY(m_StartPoint.GetY() + (DeltaY * pi_EndRelativePos));
-
-    m_StartPoint.SetX(m_StartPoint.GetX() + (DeltaX * pi_StartRelativePos));
-    m_StartPoint.SetY(m_StartPoint.GetY() + (DeltaY * pi_StartRelativePos));
+    SetEndPoint(HGF2DLocation(GetStartPoint().GetX() + (DeltaX * pi_EndRelativePos),  GetStartPoint().GetY() + (DeltaY * pi_EndRelativePos), GetCoordSys()));
+    SetStartPoint(HGF2DLocation(GetStartPoint().GetX() + (DeltaX * pi_StartRelativePos), GetStartPoint().GetY() + (DeltaY * pi_StartRelativePos), GetCoordSys()));
 
     // Reset tolerance
     ResetTolerance();
+    
+    // clear peer
+    ClearPeer();
     }
 
 
@@ -447,11 +441,14 @@ inline void HVE2DSegment::Shorten(const HGF2DLocation& pi_rNewStartPoint,
                   (HDOUBLE_SMALLER_OR_EQUAL_EPSILON(CalculateRelativePosition(pi_rNewStartPoint), CalculateRelativePosition(pi_rNewEndPoint))));
 
     // Set extremity points while keeping expression in the segment coordinate system
-    m_EndPoint.Set(pi_rNewEndPoint);
-    m_StartPoint.Set(pi_rNewStartPoint);
+    SetEndPoint(pi_rNewEndPoint);
+    SetStartPoint(pi_rNewStartPoint);
 
     // Reset tolerance
     ResetTolerance();
+    
+    // clear peer
+    ClearPeer();
     }
 
 
@@ -469,10 +466,13 @@ inline void HVE2DSegment::ShortenTo(const HGF2DLocation& pi_rNewEndPoint)
 
     // The end point is set while keeping interpretation coordinate system
     // to the one of the segment
-    m_EndPoint.Set(pi_rNewEndPoint);
+    SetEndPoint(pi_rNewEndPoint);
 
     // Reset tolerance
     ResetTolerance();
+    
+    // clear peer
+    ClearPeer();
     }
 
 //-----------------------------------------------------------------------------
@@ -486,13 +486,17 @@ inline void HVE2DSegment::ShortenTo(double pi_EndRelativePos)
 
     // Change the segment which will go from current start point to
     // described end point
-    m_EndPoint.SetX(m_StartPoint.GetX() +
-                       (pi_EndRelativePos * (m_EndPoint.GetX() - m_StartPoint.GetX())));
-    m_EndPoint.SetY(m_StartPoint.GetY() +
-                       (pi_EndRelativePos * (m_EndPoint.GetY() - m_StartPoint.GetY())));
+    SetEndPoint(HGF2DLocation(GetStartPoint().GetX() +
+                               (pi_EndRelativePos * (GetEndPoint().GetX() - GetStartPoint().GetX())),
+                              GetStartPoint().GetY() +
+                               (pi_EndRelativePos * (GetEndPoint().GetY() - GetStartPoint().GetY())),
+                            GetCoordSys()));
 
     // Reset tolerance
     ResetTolerance();
+    
+    // clear peer
+    ClearPeer();
     }
 
 
@@ -510,10 +514,13 @@ inline void HVE2DSegment::ShortenFrom(const HGF2DLocation& pi_rNewStartPoint)
 
     // The start point is set while keeping interpretation coordinate system
     // to the one of the segment
-    m_StartPoint.Set(pi_rNewStartPoint);
+    SetStartPoint(pi_rNewStartPoint);
 
     // Reset tolerance
     ResetTolerance();
+    
+    // clear peer
+    ClearPeer();
     }
 
 
@@ -527,11 +534,15 @@ inline void HVE2DSegment::ShortenFrom(double pi_StartRelativePos)
     HPRECONDITION((pi_StartRelativePos >= 0.0) && (pi_StartRelativePos <= 1.0));
 
     // Change the segment which will go from described start point
-    m_StartPoint.SetX(m_StartPoint.GetX() + (pi_StartRelativePos * (m_EndPoint.GetX() - m_StartPoint.GetX())));
-    m_StartPoint.SetY(m_StartPoint.GetY() + (pi_StartRelativePos * (m_EndPoint.GetY() - m_StartPoint.GetY())));
+    SetStartPoint(HGF2DLocation(GetStartPoint().GetX() + (pi_StartRelativePos * (GetEndPoint().GetX() - GetStartPoint().GetX())), 
+                                GetStartPoint().GetY() + (pi_StartRelativePos * (GetEndPoint().GetY() - GetStartPoint().GetY())),
+                                GetCoordSys()));
 
     // Reset tolerance
     ResetTolerance();
+    
+    // clear peer
+    ClearPeer();
     }
 
 
@@ -545,20 +556,6 @@ inline bool HVE2DSegment::AutoCrosses() const
     return(false);
     }
 
-#if (0)
-//-----------------------------------------------------------------------------
-// AutoIntersect
-// Finds and returns all auto intersection points of linear
-//-----------------------------------------------------------------------------
-inline size_t HVE2DSegment::AutoIntersect(HGF2DLocationCollection* po_pPoints) const
-    {
-    HPRECONDITION(po_pPoints);
-
-    // A segment cannot auto intersect
-    return(0);
-    }
-#endif
-
 
 //-----------------------------------------------------------------------------
 // GetExtent
@@ -566,10 +563,10 @@ inline size_t HVE2DSegment::AutoIntersect(HGF2DLocationCollection* po_pPoints) c
 //-----------------------------------------------------------------------------
 inline HGF2DExtent HVE2DSegment::GetExtent() const
     {
-    return(HGF2DExtent(MIN(m_StartPoint.GetX(), m_EndPoint.GetX()),
-                       MIN(m_StartPoint.GetY(), m_EndPoint.GetY()),
-                       MAX(m_StartPoint.GetX(), m_EndPoint.GetX()),
-                       MAX(m_StartPoint.GetY(), m_EndPoint.GetY()),
+    return(HGF2DExtent(MIN(GetStartPoint().GetX(), GetEndPoint().GetX()),
+                       MIN(GetStartPoint().GetY(), GetEndPoint().GetY()),
+                       MAX(GetStartPoint().GetX(), GetEndPoint().GetX()),
+                       MAX(GetStartPoint().GetY(), GetEndPoint().GetY()),
                        GetCoordSys()));
     }
 
@@ -656,7 +653,7 @@ inline bool HVE2DSegment::AreSegmentsAdjacent(const HVE2DSegment& pi_rSegment) c
     // share the same line
     // and be connected on each other at any point
     return (GetExtent().OutterOverlaps(pi_rSegment.GetExtent(), MIN(GetTolerance(), pi_rSegment.GetTolerance())) &&
-            (HGF2DLine(m_StartPoint, m_EndPoint) == HGF2DLine(pi_rSegment.m_StartPoint, pi_rSegment.m_EndPoint)) &&
+            (HGF2DLine(GetStartPoint(), GetEndPoint()) == HGF2DLine(pi_rSegment.GetStartPoint(), pi_rSegment.GetEndPoint())) &&
             (ConnectsTo(pi_rSegment) || pi_rSegment.ConnectsTo(*this)));
     }
 
@@ -672,7 +669,7 @@ inline bool HVE2DSegment::AreSegmentsAdjacentSCS(const HVE2DSegment& pi_rSegment
     // share the same line
     // and be connected on each other at any point
     return (GetExtent().OutterOverlaps(pi_rSegment.GetExtent(), MIN(GetTolerance(), pi_rSegment.GetTolerance())) &&
-            (HGF2DLine(m_StartPoint, m_EndPoint) == HGF2DLine(pi_rSegment.m_StartPoint, pi_rSegment.m_EndPoint)) &&
+            (HGF2DLine(GetStartPoint(), GetEndPoint()) == HGF2DLine(pi_rSegment.GetStartPoint(), pi_rSegment.GetEndPoint())) &&
             (ConnectsTo(pi_rSegment) || pi_rSegment.ConnectsTo(*this)));
     }
 
@@ -702,7 +699,7 @@ inline bool HVE2DSegment::AreSegmentsFlirting(const HVE2DSegment& pi_rSegment) c
 //-----------------------------------------------------------------------------
 inline bool HVE2DSegment::IsNull() const
     {
-    return(m_StartPoint.IsEqualToSCS(m_EndPoint, GetTolerance()));
+    return(GetStartPoint().IsEqualToSCS(GetEndPoint(), GetTolerance()));
     }
 
 //-----------------------------------------------------------------------------
@@ -712,10 +709,13 @@ inline bool HVE2DSegment::IsNull() const
 //-----------------------------------------------------------------------------
 inline void HVE2DSegment::AdjustStartPointTo(const HGF2DLocation& pi_rPoint)
     {
-    HPRECONDITION(m_StartPoint.IsEqualTo(pi_rPoint, GetTolerance()));
+    HPRECONDITION(GetStartPoint().IsEqualTo(pi_rPoint, GetTolerance()));
 
-    m_StartPoint.Set(pi_rPoint);
+    SetStartPoint(pi_rPoint);
 
+    // clear peer
+    ClearPeer();
+    
     // Tolerance is not adjusted since change is only minor
     }
 
@@ -726,9 +726,12 @@ inline void HVE2DSegment::AdjustStartPointTo(const HGF2DLocation& pi_rPoint)
 //-----------------------------------------------------------------------------
 inline void HVE2DSegment::AdjustEndPointTo(const HGF2DLocation& pi_rPoint)
     {
-    HPRECONDITION(m_EndPoint.IsEqualTo(pi_rPoint, GetTolerance()));
+    HPRECONDITION(GetEndPoint().IsEqualTo(pi_rPoint, GetTolerance()));
 
-    m_EndPoint.Set(pi_rPoint);
+    SetEndPoint(pi_rPoint);
+    
+    // clear peer
+    ClearPeer();
 
     // Tolerance is not adjusted since change is only minor
     }
@@ -754,17 +757,18 @@ inline void HVE2DSegment::Drop(HGF2DLocationCollection* po_pPoints,
         po_pPoints->reserve(2);
 
         // Add both points
-        po_pPoints->push_back(m_StartPoint);
-        po_pPoints->push_back(m_EndPoint);
+        po_pPoints->push_back(GetStartPoint());
+        po_pPoints->push_back(GetEndPoint());
         }
     else
         {
         // Add only the start point
-        po_pPoints->push_back(m_StartPoint);
+        po_pPoints->push_back(GetStartPoint());
         }
 
     }
 
+//-----------------------------------------------------------------------------
 // ResetTolerance
 // PRIVATE method
 // Recalculates the tolerance if needed and permitted
@@ -780,10 +784,10 @@ inline void HVE2DSegment::ResetTolerance()
         // If coordinates are greater than global tolerance divided by
         // float precision (~= 1E-8 / 1E-15 -> 1E7 ... 1E6 for all cases)
         // Then we use global epsilon * coordinate
-        Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_StartPoint.GetX()));
-        Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_StartPoint.GetY()));
-        Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_EndPoint.GetX()));
-        Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_EndPoint.GetY()));
+        Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(GetStartPoint().GetX()));
+        Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(GetStartPoint().GetY()));
+        Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(GetEndPoint().GetX()));
+        Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(GetEndPoint().GetY()));
 
         SetTolerance(MIN(HMAX_EPSILON, Tolerance));
         }

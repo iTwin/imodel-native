@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DLiteSegment.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -215,10 +215,10 @@ inline bool   HGF2DLiteSegment::LinksTo(const HGF2DLiteSegment& pi_rSegment) con
 
     double Tolerance = MIN(m_Tolerance, pi_rSegment.m_Tolerance);
 
-    return ((m_EndPoint.IsEqualTo(pi_rSegment.m_StartPoint, Tolerance)) ||
-            (m_EndPoint.IsEqualTo(pi_rSegment.m_EndPoint, Tolerance)) ||
+    return ((GetEndPoint().IsEqualTo(pi_rSegment.m_StartPoint, Tolerance)) ||
+            (GetEndPoint().IsEqualTo(pi_rSegment.GetEndPoint(), Tolerance)) ||
             (m_StartPoint.IsEqualTo(pi_rSegment.m_StartPoint, Tolerance)) ||
-            (m_StartPoint.IsEqualTo(pi_rSegment.m_EndPoint, Tolerance)));
+            (m_StartPoint.IsEqualTo(pi_rSegment.GetEndPoint(), Tolerance)));
     }
 
 END_IMAGEPP_NAMESPACE

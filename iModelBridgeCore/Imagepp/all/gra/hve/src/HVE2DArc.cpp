@@ -84,10 +84,10 @@ HVE2DArc::HVE2DArc(const HGF2DLocation& pi_rCenter,
     HPRECONDITION(fabs(pi_Sweep) < 2*PI);
 
     // Calculate start point
-    m_StartPoint = m_Center + HGF2DDisplacement(pi_rStartBearing, pi_Radius);
+    SetLinearStartPoint(m_Center + HGF2DDisplacement(pi_rStartBearing, pi_Radius));
 
     // Calculate end point
-    m_EndPoint = m_Center + HGF2DDisplacement(pi_rStartBearing + pi_Sweep, pi_Radius);
+    SetLinearEndPoint(m_Center + HGF2DDisplacement(pi_rStartBearing + pi_Sweep, pi_Radius));
 
     if (pi_Sweep > 0.0)
         m_RotationDirection = HGFAngle::CCW;
@@ -109,8 +109,8 @@ HGF2DExtent HVE2DArc::GetExtent() const
     HGF2DExtent TheArcExtent(GetCoordSys());
 
     // Add extremity points to extent
-    TheArcExtent.Add(m_StartPoint);
-    TheArcExtent.Add(m_EndPoint);
+    TheArcExtent.Add(GetStartPoint());
+    TheArcExtent.Add(GetEndPoint());
 
     // The extent may be greater ...
     // We must extend from radius in the 4 orthogonal directions
@@ -118,7 +118,7 @@ HGF2DExtent HVE2DArc::GetExtent() const
     // add it to extent
 
     // Calculate radius
-    double     Radius = (m_Center - m_StartPoint).CalculateLength();
+    double     Radius = (m_Center - GetStartPoint()).CalculateLength();
 
     // Process the north point
     HGFBearing      NorthBearing(PI/2);
@@ -180,22 +180,21 @@ void HVE2DArc::Rotate(double               pi_Angle,
     Similitude.AddRotation(pi_Angle, Origin.GetX(), Origin.GetY());
 
     // Transform coordinates of start point
-    double NewX = m_StartPoint.GetX();
-    double NewY = m_StartPoint.GetY();
+    double NewX = GetStartPoint().GetX();
+    double NewY = GetStartPoint().GetY();
     Similitude.ConvertDirect(&NewX, &NewY);
 
     // Set new start point
-    m_StartPoint.SetX(NewX);
-    m_StartPoint.SetY(NewY);
+    SetLinearStartPoint(HGF2DLocation(newX, newY, GetCoordSys()));
 
     // Transform coordinates of end point
-    NewX = m_EndPoint.GetX();
-    NewY = m_EndPoint.GetY();
+    NewX = GetEndPoint().GetX();
+    NewY = GetEndPoint().GetY();
     Similitude.ConvertDirect(&NewX, &NewY);
 
     // Set new start point
-    m_EndPoint.SetX(NewX);
-    m_EndPoint.SetY(NewY);
+    SetLinearEndPoint(HGF@DLocation(NewX, NewY, GetCoordSys());
+
 
     // Transform coordinates of center point
     NewX = m_Center.GetX();
@@ -241,8 +240,8 @@ double HVE2DArc::CalculateRelativePosition(const HGF2DLocation& pi_rPointOnLinea
     // The relative position is distance ratio between angle to given and to end point
     // from start point
 
-    HGF2DDisplacement  FromCenterToStart(m_StartPoint - m_Center);
-    HGF2DDisplacement  FromCenterToEnd(m_EndPoint - m_Center);
+    HGF2DDisplacement  FromCenterToStart(GetStartPoint() - m_Center);
+    HGF2DDisplacement  FromCenterToEnd(GetEndPoint() - m_Center);
 
     // Compute full angle sweep
     double  Sweep;
@@ -297,8 +296,8 @@ void HVE2DArc::SetByPoints(const HGF2DLocation& pi_rStartPoint,
     double RightAngle = PI / 2.0;
 
     // Set extremity points
-    m_StartPoint = pi_rStartPoint.ExpressedIn(GetCoordSys());
-    m_EndPoint = pi_rEndPoint.ExpressedIn(GetCoordSys());
+    SetLinearStartPoint(pi_rStartPoint.ExpressedIn(GetCoordSys()));
+    SetLinearEndPoint(pi_rEndPoint.ExpressedIn(GetCoordSys()));
 
     HGF2DLocation   MiddlePoint(pi_rMiddlePoint, GetCoordSys());
 
@@ -332,9 +331,9 @@ void HVE2DArc::SetByPoints(const HGF2DLocation& pi_rStartPoint,
 
     // We compute angle differences (sweep) from start to middle, then start to end
     double  DiffAngle1 = (MiddlePoint - m_Center).CalculateBearing() -
-                           (m_StartPoint - m_Center).CalculateBearing();
+                           (GetStartPoint() - m_Center).CalculateBearing();
     double  DiffAngle2 = (EndPoint - m_Center).CalculateBearing() -
-                           (m_StartPoint - m_Center).CalculateBearing();
+                           (GetStartPoint() - m_Center).CalculateBearing();
 
     // If sweep from start to middle is smaller than total arc sweep
     if (CalculateNormalizedTrigoValue(DiffAngle1) < CalculateNormalizedTrigoValue(DiffAngle2))
@@ -1008,9 +1007,9 @@ HVE2DVector* HVE2DArc::AllocateCopyInCoordSys(const HFCPtr<HGF2DCoordSys>& pi_rp
             HGF2DLocation MiddlePoint(CalculateRelativePoint(0.5));
 
             // The model preserves Shape ... we can transform the points directly
-            pMyResultVector = new HVE2DArc(m_StartPoint.ExpressedIn(pi_rpCoordSys),
+            pMyResultVector = new HVE2DArc(GetStartPoint().ExpressedIn(pi_rpCoordSys),
                                            MiddlePoint,
-                                           m_EndPoint.ExpressedIn(pi_rpCoordSys));
+                                           GetEndPoint().ExpressedIn(pi_rpCoordSys));
             }
         else
             {
@@ -1035,8 +1034,8 @@ void HVE2DArc::AppendItselfInCoordSys(HVE2DComplexLinear& pio_rResultComplex,
     HGF2DLocation   IntermediatePoint(CalculateRelativePoint(0.5));
 
     // Transform start point, end point and intermediate point
-    HVE2DSegment    TransformedSegment(m_StartPoint.ExpressedIn(pi_rpCoordSys),
-                                       m_EndPoint.ExpressedIn(pi_rpCoordSys));
+    HVE2DSegment    TransformedSegment(GetStartPoint().ExpressedIn(pi_rpCoordSys),
+                                       GetEndPoint().ExpressedIn(pi_rpCoordSys));
     HGF2DLocation   NewIntermediatePoint(IntermediatePoint, pi_rpCoordSys);
 
     // Check if tolerance is respected
@@ -1132,8 +1131,8 @@ int32_t HVE2DArc::IntersectLine(const HGF2DLine& pi_rLine,
         // The circle and line did cross .. check if the cross point is part of the arc
         // but not on an extremity
         if (IsPointOnCircleOnArc(FirstCrossPoint) &&
-            (!m_StartPoint.IsEqualTo(FirstCrossPoint)) &&
-            (!m_EndPoint.IsEqualTo(FirstCrossPoint)))
+            (!GetStartPoint().IsEqualTo(FirstCrossPoint)) &&
+            (!GetEndPoint().IsEqualTo(FirstCrossPoint)))
             {
             // The point is part of the arc ... a cross has been found
             *po_pFirstPoint = FirstCrossPoint;
@@ -1144,8 +1143,8 @@ int32_t HVE2DArc::IntersectLine(const HGF2DLine& pi_rLine,
         if (NumCross == 2)
             {
             if (IsPointOnCircleOnArc(SecondCrossPoint) &&
-                (!m_StartPoint.IsEqualTo(SecondCrossPoint)) &&
-                (!m_EndPoint.IsEqualTo(SecondCrossPoint)))
+                (!GetStartPoint().IsEqualTo(SecondCrossPoint)) &&
+                (!GetEndPoint().IsEqualTo(SecondCrossPoint)))
                 {
                 // The point is part of the arc ... a cross has been found
                 if (FinalNumCross > 0)
@@ -1264,10 +1263,10 @@ int32_t HVE2DArc::IntersectArc(const HVE2DArc& pi_rArc,
 
         // The circle did cross .. check if the cross point is part of both arc
         if (IsPointOnCircleOnArc(FirstCrossPoint) && pi_rArc.IsPointOn(FirstCrossPoint) &&
-            (!FirstCrossPoint.IsEqualTo(m_StartPoint)) &&
-            (!FirstCrossPoint.IsEqualTo(m_EndPoint)) &&
-            (!FirstCrossPoint.IsEqualTo(pi_rArc.m_StartPoint)) &&
-            (!FirstCrossPoint.IsEqualTo(pi_rArc.m_EndPoint)))
+            (!FirstCrossPoint.IsEqualTo(GetStartPoint())) &&
+            (!FirstCrossPoint.IsEqualTo(GetEndPoint())) &&
+            (!FirstCrossPoint.IsEqualTo(pi_rArc.GetStartPoint())) &&
+            (!FirstCrossPoint.IsEqualTo(pi_rArc.GetEndPoint())))
             {
             // The point is part of both arc ... a cross has been found
             *po_pFirstPoint = FirstCrossPoint;
@@ -1276,10 +1275,10 @@ int32_t HVE2DArc::IntersectArc(const HVE2DArc& pi_rArc,
 
         // Check if second points is part of arcs
         if (IsPointOnCircleOnArc(SecondCrossPoint) && pi_rArc.IsPointOn(SecondCrossPoint) &&
-            (!SecondCrossPoint.IsEqualTo(m_StartPoint)) &&
-            (!SecondCrossPoint.IsEqualTo(m_EndPoint)) &&
-            (!SecondCrossPoint.IsEqualTo(pi_rArc.m_StartPoint)) &&
-            (!SecondCrossPoint.IsEqualTo(pi_rArc.m_EndPoint)))
+            (!SecondCrossPoint.IsEqualTo(GetStartPoint())) &&
+            (!SecondCrossPoint.IsEqualTo(GetEndPoint())) &&
+            (!SecondCrossPoint.IsEqualTo(pi_rArc.GetStartPoint())) &&
+            (!SecondCrossPoint.IsEqualTo(pi_rArc.GetEndPoint())))
             {
             // The second point is part of both arc ... a cross has been found
             if (FinalNumCross > 0)
@@ -1329,84 +1328,84 @@ size_t HVE2DArc::ObtainContiguousnessPointsWithArc(
 
 
     // We check if the start points are equal
-    if (m_StartPoint.IsEqualTo(pi_rArc.m_StartPoint) &&
-        CalculateBearing(m_StartPoint, HVE2DVector::BETA).
-        IsEqualTo(pi_rArc.CalculateBearing(pi_rArc.m_StartPoint, HVE2DVector::BETA)))
+    if (GetStartPoint().IsEqualTo(pi_rArc.GetStartPoint()) &&
+        CalculateBearing(GetStartPoint(), HVE2DVector::BETA).
+        IsEqualTo(pi_rArc.CalculateBearing(pi_rArc.GetStartPoint(), HVE2DVector::BETA)))
         {
         // The two start points are on top of each other
         // It is therefore one of the contiguousness points
-        po_pContiguousnessPoints->push_back(m_StartPoint);
+        po_pContiguousnessPoints->push_back(GetStartPoint());
 
         // The second point is either one of the end points
 
         // Check if the end points are equal
-        if (m_EndPoint.IsEqualTo(pi_rArc.m_EndPoint))
-            po_pContiguousnessPoints->push_back(m_EndPoint);
+        if (GetEndPoint().IsEqualTo(pi_rArc.GetEndPoint()))
+            po_pContiguousnessPoints->push_back(GetEndPoint());
         else
             {
             // Since the end points are not equal, then the one that is on the other arc
             // is the result
-            if (IsPointOn(pi_rArc.m_EndPoint))
-                po_pContiguousnessPoints->push_back(pi_rArc.m_EndPoint);
+            if (IsPointOn(pi_rArc.GetEndPoint()))
+                po_pContiguousnessPoints->push_back(pi_rArc.GetEndPoint());
             else
-                po_pContiguousnessPoints->push_back(m_EndPoint);
+                po_pContiguousnessPoints->push_back(GetEndPoint());
             }
         }
-    else if (m_EndPoint.IsEqualTo(pi_rArc.m_EndPoint) &&
-             CalculateBearing(m_EndPoint, HVE2DVector::ALPHA).
-             IsEqualTo(pi_rArc.CalculateBearing(pi_rArc.m_EndPoint, HVE2DVector::ALPHA)))
+    else if (GetEndPoint().IsEqualTo(pi_rArc.GetEndPoint()) &&
+             CalculateBearing(GetEndPoint(), HVE2DVector::ALPHA).
+             IsEqualTo(pi_rArc.CalculateBearing(pi_rArc.GetEndPoint(), HVE2DVector::ALPHA)))
         {
         // The two end points are on top of each other
 
         // The other point is either one of the start point
         // the one that is on the other arc is the result
-        if (IsPointOn(pi_rArc.m_StartPoint))
-            po_pContiguousnessPoints->push_back(pi_rArc.m_StartPoint);
+        if (IsPointOn(pi_rArc.GetStartPoint()))
+            po_pContiguousnessPoints->push_back(pi_rArc.GetStartPoint());
         else
-            po_pContiguousnessPoints->push_back(m_StartPoint);
+            po_pContiguousnessPoints->push_back(GetStartPoint());
 
         // The end point is therefore one of the contiguousness points
-        po_pContiguousnessPoints->push_back(m_EndPoint);
+        po_pContiguousnessPoints->push_back(GetEndPoint());
 
         }
-    else if (m_StartPoint.IsEqualTo(pi_rArc.m_EndPoint) &&
-             CalculateBearing(m_StartPoint, HVE2DVector::BETA).
-             IsEqualTo(pi_rArc.CalculateBearing(pi_rArc.m_EndPoint, HVE2DVector::ALPHA)))
+    else if (GetStartPoint().IsEqualTo(pi_rArc.GetEndPoint()) &&
+             CalculateBearing(GetStartPoint(), HVE2DVector::BETA).
+             IsEqualTo(pi_rArc.CalculateBearing(pi_rArc.GetEndPoint(), HVE2DVector::ALPHA)))
         {
         // The self start point in on top of the given end point
         // It is therefore one of the contiguousness points
-        po_pContiguousnessPoints->push_back(m_StartPoint);
+        po_pContiguousnessPoints->push_back(GetStartPoint());
 
         // The second point is either one of the other point
 
         // Check if the other extremity points are equal
-        if (m_EndPoint.IsEqualTo(pi_rArc.m_StartPoint))
-            po_pContiguousnessPoints->push_back(m_EndPoint);
+        if (GetEndPoint().IsEqualTo(pi_rArc.GetStartPoint()))
+            po_pContiguousnessPoints->push_back(GetEndPoint());
         else
             {
             // Since the those points are not equal, then the one that is on the other arc
             // is the result
-            if (IsPointOn(pi_rArc.m_StartPoint))
-                po_pContiguousnessPoints->push_back(pi_rArc.m_StartPoint);
+            if (IsPointOn(pi_rArc.GetStartPoint()))
+                po_pContiguousnessPoints->push_back(pi_rArc.GetStartPoint());
             else
-                po_pContiguousnessPoints->push_back(m_EndPoint);
+                po_pContiguousnessPoints->push_back(GetEndPoint());
             }
         }
-    else if (m_EndPoint.IsEqualTo(pi_rArc.m_StartPoint) &&
-             CalculateBearing(m_EndPoint, HVE2DVector::ALPHA).
-             IsEqualTo(pi_rArc.CalculateBearing(pi_rArc.m_StartPoint, HVE2DVector::BETA)))
+    else if (GetEndPoint().IsEqualTo(pi_rArc.GetStartPoint()) &&
+             CalculateBearing(GetEndPoint(), HVE2DVector::ALPHA).
+             IsEqualTo(pi_rArc.CalculateBearing(pi_rArc.GetStartPoint(), HVE2DVector::BETA)))
         {
         // The self end point in on top of the given start point
 
         // The second point is either one of the other extremity point
         // the one that is on the other arc is the result
-        if (IsPointOn(pi_rArc.m_EndPoint))
-            po_pContiguousnessPoints->push_back(pi_rArc.m_EndPoint);
+        if (IsPointOn(pi_rArc.GetEndPoint()))
+            po_pContiguousnessPoints->push_back(pi_rArc.GetEndPoint());
         else
-            po_pContiguousnessPoints->push_back(m_StartPoint);
+            po_pContiguousnessPoints->push_back(GetStartPoint());
 
         // The end point is therefore one of the contiguousness points
-        po_pContiguousnessPoints->push_back(m_EndPoint);
+        po_pContiguousnessPoints->push_back(GetEndPoint());
 
         // The second point is either one of the other point
 
@@ -1416,10 +1415,10 @@ size_t HVE2DArc::ObtainContiguousnessPointsWithArc(
         // General case, no extremity is on the other
         // Note than two arcs can have two contiguousness regions
 
-        bool SelfStartIsOn = pi_rArc.IsPointOn(m_StartPoint);
-        bool SelfEndIsOn = pi_rArc.IsPointOn(m_EndPoint);
-        bool GivenStartIsOn = IsPointOn(pi_rArc.m_StartPoint);
-        bool GivenEndIsOn = IsPointOn(pi_rArc.m_EndPoint);
+        bool SelfStartIsOn = pi_rArc.IsPointOn(GetStartPoint());
+        bool SelfEndIsOn = pi_rArc.IsPointOn(GetEndPoint());
+        bool GivenStartIsOn = IsPointOn(pi_rArc.GetStartPoint());
+        bool GivenEndIsOn = IsPointOn(pi_rArc.GetEndPoint());
 
         // Check if all four extremities are on
         if (SelfStartIsOn && SelfEndIsOn && GivenStartIsOn && GivenEndIsOn)
@@ -1428,44 +1427,44 @@ size_t HVE2DArc::ObtainContiguousnessPointsWithArc(
             // This implies possible dual contiguousness regions
             // We must eleminate the case of linking
 
-            if (m_StartPoint.IsEqualTo(pi_rArc.m_StartPoint))
+            if (GetStartPoint().IsEqualTo(pi_rArc.GetStartPoint()))
                 {
-                po_pContiguousnessPoints->push_back(pi_rArc.m_EndPoint);
-                po_pContiguousnessPoints->push_back(m_EndPoint);
+                po_pContiguousnessPoints->push_back(pi_rArc.GetEndPoint());
+                po_pContiguousnessPoints->push_back(GetEndPoint());
                 }
-            else if (m_StartPoint.IsEqualTo(pi_rArc.m_EndPoint))
+            else if (GetStartPoint().IsEqualTo(pi_rArc.GetEndPoint()))
                 {
-                po_pContiguousnessPoints->push_back(pi_rArc.m_StartPoint);
-                po_pContiguousnessPoints->push_back(m_EndPoint);
+                po_pContiguousnessPoints->push_back(pi_rArc.GetStartPoint());
+                po_pContiguousnessPoints->push_back(GetEndPoint());
                 }
-            else if (m_EndPoint.IsEqualTo(pi_rArc.m_StartPoint))
+            else if (GetEndPoint().IsEqualTo(pi_rArc.GetStartPoint()))
                 {
-                po_pContiguousnessPoints->push_back(pi_rArc.m_EndPoint);
-                po_pContiguousnessPoints->push_back(m_EndPoint);
+                po_pContiguousnessPoints->push_back(pi_rArc.GetEndPoint());
+                po_pContiguousnessPoints->push_back(GetEndPoint());
                 }
-            else if (m_EndPoint.IsEqualTo(pi_rArc.m_EndPoint))
+            else if (GetEndPoint().IsEqualTo(pi_rArc.GetEndPoint()))
                 {
-                po_pContiguousnessPoints->push_back(pi_rArc.m_StartPoint);
-                po_pContiguousnessPoints->push_back(m_StartPoint);
+                po_pContiguousnessPoints->push_back(pi_rArc.GetStartPoint());
+                po_pContiguousnessPoints->push_back(GetStartPoint());
                 }
             else
                 {
                 // We have dual contiguousness
-                po_pContiguousnessPoints->push_back(m_StartPoint);
+                po_pContiguousnessPoints->push_back(GetStartPoint());
 
                 // Compare arc direction
                 if (m_RotationDirection == pi_rArc.m_RotationDirection)
                     {
-                    po_pContiguousnessPoints->push_back(pi_rArc.m_EndPoint);
-                    po_pContiguousnessPoints->push_back(pi_rArc.m_StartPoint);
+                    po_pContiguousnessPoints->push_back(pi_rArc.GetEndPoint());
+                    po_pContiguousnessPoints->push_back(pi_rArc.GetStartPoint());
                     }
                 else
                     {
-                    po_pContiguousnessPoints->push_back(pi_rArc.m_StartPoint);
-                    po_pContiguousnessPoints->push_back(pi_rArc.m_EndPoint);
+                    po_pContiguousnessPoints->push_back(pi_rArc.GetStartPoint());
+                    po_pContiguousnessPoints->push_back(pi_rArc.GetEndPoint());
                     }
 
-                po_pContiguousnessPoints->push_back(m_EndPoint);
+                po_pContiguousnessPoints->push_back(GetEndPoint());
                 }
             }
         else
@@ -1474,7 +1473,7 @@ size_t HVE2DArc::ObtainContiguousnessPointsWithArc(
 
             // We start with arc start point
             if (SelfStartIsOn)
-                po_pContiguousnessPoints->push_back(m_StartPoint);
+                po_pContiguousnessPoints->push_back(GetStartPoint());
 
             // Check if the arcs are oriented in the same direction
             if (m_RotationDirection == pi_rArc.m_RotationDirection)
@@ -1482,24 +1481,24 @@ size_t HVE2DArc::ObtainContiguousnessPointsWithArc(
                 // The two arcs are oriented likewise ...
                 // we check in end to start order
                 if (GivenStartIsOn)
-                    po_pContiguousnessPoints->push_back(pi_rArc.m_StartPoint);
+                    po_pContiguousnessPoints->push_back(pi_rArc.GetStartPoint());
                 if (GivenEndIsOn)
-                    po_pContiguousnessPoints->push_back(pi_rArc.m_EndPoint);
+                    po_pContiguousnessPoints->push_back(pi_rArc.GetEndPoint());
                 }
             else
                 {
                 // The two arcs are oriented differently
                 // we check in end to start order
                 if (GivenEndIsOn)
-                    po_pContiguousnessPoints->push_back(pi_rArc.m_EndPoint);
+                    po_pContiguousnessPoints->push_back(pi_rArc.GetEndPoint());
                 if (GivenStartIsOn)
-                    po_pContiguousnessPoints->push_back(pi_rArc.m_StartPoint);
+                    po_pContiguousnessPoints->push_back(pi_rArc.GetStartPoint());
 
                 }
 
             // The last possible point is end point
             if (SelfEndIsOn)
-                po_pContiguousnessPoints->push_back(m_EndPoint);
+                po_pContiguousnessPoints->push_back(GetEndPoint());
             }
         }
 
@@ -1589,12 +1588,12 @@ HGF2DLocation HVE2DArc::CalculateClosestPoint(const HGF2DLocation& pi_rPoint) co
         {
         // The point is not located on the arc ....
         // Calculate distances from extremities to point
-        double FromStart((m_StartPoint - pi_rPoint).CalculateLength());
-        double FromEnd((m_EndPoint - pi_rPoint).CalculateLength());
+        double FromStart((GetStartPoint() - pi_rPoint).CalculateLength());
+        double FromEnd((GetEndPoint() - pi_rPoint).CalculateLength());
 
         // Since the closest point on line is not located on arc, then the
         // closest point is the closest of the start point or the end point.
-        ClosestPoint = ((FromStart < FromEnd) ? m_StartPoint : m_EndPoint);
+        ClosestPoint = ((FromStart < FromEnd) ? GetStartPoint() : GetEndPoint());
         }
 
     return (ClosestPoint);
@@ -1680,8 +1679,8 @@ bool   HVE2DArc::IsPointOnSCS(const HGF2DLocation& pi_rTestPoint,
             {
             // The caller wishes to exclude extremities from operation
             // We check it is different from extremity
-            Answer = (!m_StartPoint.IsEqualToSCS(pi_rTestPoint, Tolerance) &&
-                      !m_EndPoint.IsEqualToSCS(pi_rTestPoint, Tolerance));
+            Answer = (!GetStartPoint().IsEqualToSCS(pi_rTestPoint, Tolerance) &&
+                      !GetEndPoint().IsEqualToSCS(pi_rTestPoint, Tolerance));
             }
         }
 
@@ -1767,9 +1766,9 @@ bool HVE2DArc::AreArcsContiguous(const HVE2DArc& pi_rArc) const
     if ((GetCoordSys() != pi_rArc.GetCoordSys()) &&
         (!GetCoordSys()->HasDirectionPreservingRelationTo(pi_rArc.GetCoordSys())))
         {
-        TempArc.SetByPoints(pi_rArc.m_StartPoint.ExpressedIn(GetCoordSys()),
+        TempArc.SetByPoints(pi_rArc.GetStartPoint().ExpressedIn(GetCoordSys()),
                             pi_rArc.CalculateRelativePoint(0.5).ExpressedIn(GetCoordSys()),
-                            pi_rArc.m_EndPoint.ExpressedIn(GetCoordSys()));
+                            pi_rArc.GetEndPoint().ExpressedIn(GetCoordSys()));
         }
 
 
@@ -1855,9 +1854,9 @@ bool HVE2DArc::AreArcsContiguousAt(const HVE2DArc& pi_rArc,
     if ((GetCoordSys() != pi_rArc.GetCoordSys()) &&
         (!GetCoordSys()->HasDirectionPreservingRelationTo(pi_rArc.GetCoordSys())))
         {
-        TempArc.SetByPoints(pi_rArc.m_StartPoint.ExpressedIn(GetCoordSys()),
+        TempArc.SetByPoints(pi_rArc.GetStartPoint().ExpressedIn(GetCoordSys()),
                             pi_rArc.CalculateRelativePoint(0.5).ExpressedIn(GetCoordSys()),
-                            pi_rArc.m_EndPoint.ExpressedIn(GetCoordSys()));
+                            pi_rArc.GetEndPoint().ExpressedIn(GetCoordSys()));
         }
 
     // Pre-compute tolerance
@@ -1882,8 +1881,8 @@ bool HVE2DArc::AreArcsContiguousAt(const HVE2DArc& pi_rArc,
         bool PointIsAtGivenStart;
 
         // Check if given location is equal to either point of the self arc
-        if ((PointIsAtSelfStart = m_StartPoint.IsEqualTo(pi_rPoint, Tolerance)) ||
-            m_EndPoint.IsEqualTo(pi_rPoint, Tolerance))
+        if ((PointIsAtSelfStart = GetStartPoint().IsEqualTo(pi_rPoint, Tolerance)) ||
+            GetEndPoint().IsEqualTo(pi_rPoint, Tolerance))
             {
             // The given point is effectively located at an end point of self arc
             // Check the same for other arc
@@ -1956,9 +1955,9 @@ bool HVE2DArc::AreArcsAdjacent(const HVE2DArc& pi_rArc) const
     if (GetCoordSys() != pi_rArc.GetCoordSys())
         {
         // We convert arc to self coordinate system
-        TempArc.SetByPoints(pi_rArc.m_StartPoint.ExpressedIn(GetCoordSys()),
+        TempArc.SetByPoints(pi_rArc.GetStartPoint().ExpressedIn(GetCoordSys()),
                             pi_rArc.CalculateRelativePoint(0.5).ExpressedIn(GetCoordSys()),
-                            pi_rArc.m_EndPoint.ExpressedIn(GetCoordSys()));
+                            pi_rArc.GetEndPoint().ExpressedIn(GetCoordSys()));
         }
 
 
@@ -2117,7 +2116,7 @@ void HVE2DArc::Drop(HGF2DLocationCollection* po_pPoints,
     // Check if end point must be added
     if (pi_EndPointProcessing == HVE2DLinear::INCLUDE_END_POINT)
         {
-        po_pPoints->push_back(m_EndPoint);
+        po_pPoints->push_back(GetEndPoint());
         }
     }
 

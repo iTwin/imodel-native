@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DVector.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -60,6 +60,8 @@ inline HVE2DVector& HVE2DVector::operator=(const HVE2DVector& pi_rObj)
     // Check that object is not self
     if (this != &pi_rObj)
         {
+        ClearPeer();
+            
         HGFGraphicObject::operator=(pi_rObj);
         m_Tolerance = pi_rObj.m_Tolerance;
         m_AutoToleranceActive = pi_rObj.m_AutoToleranceActive;
@@ -138,6 +140,9 @@ inline void HVE2DVector::SetTolerance(double pi_Tolerance)
     HPRECONDITION(pi_Tolerance <= HMAX_EPSILON);
 
     m_Tolerance = pi_Tolerance;
+    
+    ClearPeer();
+    
     }
 
 /** -----------------------------------------------------------------------------
@@ -185,6 +190,8 @@ inline bool HVE2DVector::IsAutoToleranceActive() const
 inline void HVE2DVector::SetAutoToleranceActive(bool pi_ActiveAutoTolerance)
     {
     m_AutoToleranceActive = pi_ActiveAutoTolerance;
+    
+    ClearPeer();    
     }
 
 

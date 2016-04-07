@@ -627,8 +627,8 @@ void HGF2DPolySegment::RemoveAutoContiguousNeedles(bool pi_ClosedProcessing)
                         m_Points.push_back(*(m_Points.begin()));
 
                         // Reset start and end points
-                        m_StartPoint = HGF2DPosition(*(m_Points.begin()));
-                        m_EndPoint = m_StartPoint;
+                        SetLinearStartPoint(HGF2DPosition(*(m_Points.begin())));
+                        SetLinearEndPoint(GetStartPoint());
                         ResetTolerance();
                         }
                     else
@@ -866,8 +866,8 @@ void HGF2DPolySegment::RemoveAutoContiguousNeedles(bool pi_ClosedProcessing)
                     }
 
                 // Set start and end point
-                m_StartPoint = HGF2DPosition(*(m_Points.begin()));
-                m_EndPoint = m_StartPoint;
+                SetLinearStartPoint(HGF2DPosition(*(m_Points.begin())));
+                SetLinearEndPoint(GetStartPoint());
                 ResetTolerance();
                 }
 #else
@@ -899,8 +899,8 @@ void HGF2DPolySegment::RemoveAutoContiguousNeedles(bool pi_ClosedProcessing)
                     }
 
                 // Set start and end point
-                m_StartPoint = HGF2DPosition(*(m_Points.begin()));
-                m_EndPoint = m_StartPoint;
+                SetLinearStartPoint(HGF2DPosition(*(m_Points.begin())));
+                SetLinearEndPoint(GetStartPoint());
                 ResetTolerance();
 
                 if (m_Points.size() >= 3)
@@ -1183,10 +1183,10 @@ HGF2DPolySegment::HGF2DPolySegment(const HGF2DPositionCollection& pi_rListOfPoin
     HPRECONDITION(pi_rListOfPoints.size() >= 2);
 
     // We set start point
-    m_StartPoint = HGF2DPosition(*(pi_rListOfPoints.begin()));
+    SetLinearStartPoint(HGF2DPosition(*(pi_rListOfPoints.begin())));
 
     // Set end point
-    m_EndPoint = HGF2DPosition(*(pi_rListOfPoints.rbegin()));
+    SetLinearEndPoint(HGF2DPosition(*(pi_rListOfPoints.rbegin())));
 
     // Reset tolerance
     ResetTolerance();
@@ -1223,10 +1223,10 @@ HGF2DPolySegment::HGF2DPolySegment(size_t pi_BufferLength,
         }
 
     // Set start and end points
-    m_StartPoint = HGF2DPosition(m_Points.begin()->GetX(),
-                                 m_Points.begin()->GetY());
-    m_EndPoint = HGF2DPosition(m_Points.rbegin()->GetX(),
-                               m_Points.rbegin()->GetY());
+    SetLinearStartPoint(HGF2DPosition(m_Points.begin()->GetX(),
+                                m_Points.begin()->GetY()));
+    SetLinearEndPoint(HGF2DPosition(m_Points.rbegin()->GetX(),
+                              m_Points.rbegin()->GetY()));
 
     ResetTolerance();
 
@@ -1496,14 +1496,14 @@ void HGF2DPolySegment::AppendPoint(const HGF2DPosition& pi_rNewPoint)
     if (m_Points.size() == 0)
         {
         // It is the first point ... we must set start point
-        m_StartPoint = pi_rNewPoint;
+        SetLinearStartPoint(pi_rNewPoint);
         }
 
     // Add position
     m_Points.push_back(pi_rNewPoint);
 
     // In all case, this point becomes the end point
-    m_EndPoint = pi_rNewPoint;
+    SetLinearEndPoint(pi_rNewPoint);
 
     // Indicate extent in no more up to date
     m_ExtentUpToDate = false;
@@ -1548,11 +1548,11 @@ void HGF2DPolySegment::RemovePoint(size_t pi_Index)
         // Reset start and end point if required
         if (pi_Index == 0)
             {
-            m_StartPoint = m_Points.front();
+            SetLinearStartPoint(m_Points.front());
             }
         if (pi_Index == m_Points.size())
             {
-            m_EndPoint = m_Points.back();
+            SetLinearEndPoint(m_Points.back());
             }
         }
 
@@ -1580,22 +1580,20 @@ void HGF2DPolySegment::Rotate(double pi_Angle,
     Similitude.AddRotation(pi_Angle, pi_rOrigin.GetX(), pi_rOrigin.GetY());
 
     // Transform coordinates of start point
-    double NewX = m_StartPoint.GetX();
-    double NewY = m_StartPoint.GetY();
+    double NewX = GetStartPoint().GetX();
+    double NewY = GetStartPoint().GetY();
     Similitude.ConvertDirect(&NewX, &NewY);
 
     // Set new start point
-    m_StartPoint.SetX(NewX);
-    m_StartPoint.SetY(NewY);
+    SetLinearStartPoint(HGF2DPosition(NewX, NewY));
 
     // Transform coordinates of end point
-    NewX = m_EndPoint.GetX();
-    NewY = m_EndPoint.GetY();
+    NewX = GetEndPoint().GetX();
+    NewY = GetEndPoint().GetY();
     Similitude.ConvertDirect(&NewX, &NewY);
 
     // Set new end point
-    m_EndPoint.SetX(NewX);
-    m_EndPoint.SetY(NewY);
+    SetLinearEndPoint(HGF2DPosition(NewX, NewY));
 
     // For every point in list...
     HGF2DPositionCollection::iterator Itr;
@@ -2261,7 +2259,7 @@ HGF2DPosition HGF2DPolySegment::CalculateRelativePoint(double pi_RelativePos) co
 //    HPRECONDITION(CalculateLength() > 0.0);
 
     // Declare result variable
-    HGF2DPosition   ResultPoint = m_StartPoint;
+    HGF2DPosition   ResultPoint = GetStartPoint();
 
     // Check if poly segment is not empty or null (note ... a polysegment with one point is invalid while a null length polysegment is not
     // In both case we will return the start point.
@@ -2274,13 +2272,13 @@ HGF2DPosition HGF2DPolySegment::CalculateRelativePoint(double pi_RelativePos) co
         if (pi_RelativePos == 0.0)
             {
             // Start point is asked for
-            ResultPoint = m_StartPoint;
+            ResultPoint = GetStartPoint();
             }
         // NOTE: In the following the EXACT compare operation is voluntary
         else if (pi_RelativePos == 1.0)
             {
             // End point is asked for
-            ResultPoint = m_EndPoint;
+            ResultPoint = GetEndPoint();
             }
         else
             {
@@ -2694,8 +2692,8 @@ void HGF2DPolySegment::Shorten(double pi_StartRelativePos, double pi_EndRelative
         }
 
     // We update start and end points
-    m_StartPoint = m_Points[0];
-    m_EndPoint = m_Points[m_Points.size() - 1];
+    SetLinearStartPoint(m_Points[0]);
+    SetLinearEndPoint(m_Points[m_Points.size() - 1]);
 
     // Indicate extent is no more up to date
     m_ExtentUpToDate = false;
@@ -2907,16 +2905,16 @@ void HGF2DPolySegment::AdjustStartPointTo(const HGF2DPosition& pi_rPoint)
     HINVARIANTS;
 
     // The adjust point must be virtually identical to start point
-    HPRECONDITION(m_StartPoint.IsEqualTo(pi_rPoint, GetTolerance()));
+    HPRECONDITION(GetStartPoint().IsEqualTo(pi_rPoint, GetTolerance()));
 
     // The polysegment must not be nul
     HPRECONDITION(m_Points.size() >= 2);
 
     // Set start point
-    m_StartPoint = pi_rPoint;
+    SetLinearStartPoint(pi_rPoint);
 
     // Adjust point collection
-    m_Points[0] = m_StartPoint;
+    m_Points[0] = GetStartPoint();
 
     // Tolerance is not adjusted since change is only minor
     }
@@ -2931,16 +2929,16 @@ void HGF2DPolySegment::AdjustEndPointTo(const HGF2DPosition& pi_rPoint)
     HINVARIANTS;
 
     // The end point must be equal within tolerance to given point
-    HPRECONDITION(m_EndPoint.IsEqualTo(pi_rPoint, GetTolerance()));
+    HPRECONDITION(GetEndPoint().IsEqualTo(pi_rPoint, GetTolerance()));
 
     // The polysegment must not be nul
     HPRECONDITION(m_Points.size() >= 2);
 
     // Adjust end point
-    m_EndPoint = pi_rPoint;
+    SetLinearEndPoint(pi_rPoint);
 
     // Adjust point collection
-    m_Points[m_Points.size() - 1] = m_EndPoint;
+    m_Points[m_Points.size() - 1] = GetEndPoint();
 
     // Tolerance is not adjusted since change is only minor
     }
@@ -2985,7 +2983,7 @@ void HGF2DPolySegment::Drop(HGF2DPositionCollection* po_pPoints,
     if (pi_EndPointProcessing == HGF2DLinear::INCLUDE_END_POINT)
         {
         // We must add end point
-        po_pPoints->push_back(m_EndPoint);
+        po_pPoints->push_back(GetEndPoint());
         }
 
     }
@@ -5617,7 +5615,7 @@ bool HGF2DPolySegment::SplitIntoNonAutoCrossing(list<HFCPtr<HGF2DPolySegment> >*
     HASSERTSUPERDEBUG(AutoCrosses());
 
     // If process closed is set to true, then self must autoclose
-    HPRECONDITION(!pi_ProcessClosed || (m_StartPoint == m_EndPoint));
+    HPRECONDITION(!pi_ProcessClosed || (GetStartPoint() == GetEndPoint()));
 
     // Obtain all autointersect points
     HGF2DPositionCollection MyAutoIntersectPoints;
@@ -5655,7 +5653,7 @@ bool HGF2DPolySegment::SplitIntoNonAutoCrossing(list<HFCPtr<HGF2DPolySegment> >*
                 HFCPtr<HGF2DPolySegment> pNewMiddlePolySegment = new HGF2DPolySegment(**PolySegmentItr);
 
                 // Check if the split point is also start point
-                if (MySplitPointItr->IsEqualTo((*PolySegmentItr)->m_StartPoint, GetTolerance()))
+                if (MySplitPointItr->IsEqualTo((*PolySegmentItr)->GetStartPoint(), GetTolerance()))
                     {
                     // Reverse the current polysegments
                     (*PolySegmentItr)->Reverse();
@@ -5726,7 +5724,7 @@ void HGF2DPolySegment::RecomposeClosedPolySegments(list<HFCPtr<HGF2DPolySegment>
     HPRECONDITION (pio_pListOfResultPolySegments->size() > 0);
 
     // In such case we first determine if the original polysegment rotation direction
-    double TotalAreaSigned = CalculateRayArea(m_StartPoint);
+    double TotalAreaSigned = CalculateRayArea(GetStartPoint());
 
     bool GoesCW = (TotalAreaSigned < 0.0);
 
@@ -5979,10 +5977,13 @@ HFCPtr<HGF2DPolySegment> HGF2DPolySegment::AllocPolySegmentTransformDirect(const
                 }
 
             // Transform start and end points
-            pMyResultPolySegment->m_StartPoint = m_StartPoint;
-            pi_rModel.ConvertPosDirect(&(pMyResultPolySegment->m_StartPoint));
-            pMyResultPolySegment->m_EndPoint = m_EndPoint;
-            pi_rModel.ConvertPosDirect(&(pMyResultPolySegment->m_EndPoint));
+            HGF2DPosition newStartPoint = GetStartPoint();
+            pi_rModel.ConvertPosDirect(&newStartPoint);
+            pMyResultPolySegment->SetLinearStartPoint(newStartPoint);
+            
+            HGF2DPosition newEndPoint = GetEndPoint();
+            pi_rModel.ConvertPosDirect(&newEndPoint);
+            pMyResultPolySegment->SetLinearEndPoint(newEndPoint);
 
             // Reset tolerance of new polysegment
             pMyResultPolySegment->SetTolerance(MIN(HMAX_EPSILON, Tolerance));
@@ -6039,14 +6040,17 @@ HFCPtr<HGF2DPolySegment> HGF2DPolySegment::AllocPolySegmentTransformDirectNonLin
 
     // Transform start and end points.
 // HChk AR If domain error thrown ... we should do something!!!!
-    pNewPolySegment->m_StartPoint = m_StartPoint;
-    pi_rModel.ConvertPosDirect(&(pNewPolySegment->m_StartPoint));
-    pNewPolySegment->m_EndPoint   = m_EndPoint;
-    pi_rModel.ConvertPosDirect(&(pNewPolySegment->m_EndPoint));
+    HGF2DPosition newStartPoint = GetStartPoint();
+    pi_rModel.ConvertPosDirect(&newStartPoint);
+    pNewPolySegment->SetLinearStartPoint(newStartPoint);
+    
+    HGF2DPosition newEndPoint = GetEndPoint();
+    pi_rModel.ConvertPosDirect(&newEndPoint);
+    pNewPolySegment->SetLinearEndPoint(newEndPoint);
 
 // HChk AR If domain error thrown ... we should do something!!!!
     // Obtain a transformed value of start point
-    HGF2DPosition TransStartPoint = pNewPolySegment->m_StartPoint;
+    HGF2DPosition TransStartPoint = pNewPolySegment->GetStartPoint();
 
     // Append start point first
     pNewPolySegment->m_Points.push_back(TransStartPoint);
@@ -6075,11 +6079,11 @@ HFCPtr<HGF2DPolySegment> HGF2DPolySegment::AllocPolySegmentTransformDirectNonLin
 
     // In some imprecise transformation models there could be a variation
     // between conversion of two identical coordinates ... adjust if applicable
-    if (m_StartPoint.IsEqualTo(m_EndPoint))
+    if (GetStartPoint().IsEqualTo(GetEndPoint()))
         pNewPolySegment->AdjustEndPointTo(pNewPolySegment->GetStartPoint());
 
     // If the start point and end points were originally equal then they should be equal in the result
-    HASSERT(!m_StartPoint.IsEqualTo(m_EndPoint) || pNewPolySegment->GetStartPoint().IsEqualTo(pNewPolySegment->GetEndPoint()));
+    HASSERT(!GetStartPoint().IsEqualTo(GetEndPoint()) || pNewPolySegment->GetStartPoint().IsEqualTo(pNewPolySegment->GetEndPoint()));
 
     // Reactive auto tolearnce determination if applicable
     pNewPolySegment->SetAutoToleranceActive(IsAutoToleranceActive());
@@ -6135,7 +6139,7 @@ void HGF2DPolySegment::TransformAndAppendSegment(const HGF2DLiteSegment& pi_rSeg
         // The epsilon is respected ... we add this last segment to linear
         m_Points.push_back(TransformedEndPoint);
 
-        m_EndPoint = TransformedEndPoint;
+        SetLinearEndPoint(TransformedEndPoint);
         }
     else
         {

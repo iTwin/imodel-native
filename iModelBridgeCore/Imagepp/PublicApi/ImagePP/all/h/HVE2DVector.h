@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DVector.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DVector
@@ -677,6 +677,30 @@ public:
 
 
 protected:
+
+    mutable HFCPtr<HGF2DVector> m_Peer;
+    
+    HGF2DVector&  GetPeer() const
+        {
+        if (m_Peer == nullptr)
+            {
+            CreatePeer();
+            HASSERT(m_Peer != nullptr);
+            }        
+        return *(const_cast<HGF2DVector *>(m_Peer.GetPtr()));
+        }
+        
+    virtual void CreatePeer() const
+        {
+        // Default implementation creates nothing and will thus result in assertion in debug (crash in release)
+        // The GetPeer() method can only be called for classes that create a valid peer
+        HASSERT(!"CreatePeer() must be overridden");
+        }
+        
+    void ClearPeer() const
+        {
+        m_Peer = nullptr;
+        }
 
     IMAGEPP_EXPORT virtual bool      IntersectsAtSplitPoint(const HVE2DVector& pi_rVector,
                                                      const HGF2DLocation& pi_rTestPoint,

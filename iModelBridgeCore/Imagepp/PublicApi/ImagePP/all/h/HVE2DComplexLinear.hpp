@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DComplexLinear.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -151,7 +151,7 @@ inline const HVE2DLinear& HVE2DComplexLinear::GetLinear(size_t pi_Index) const
 // ShortenTo
 // Shortens the complex linear definition by specification of a new end point
 // In the case of a complex linear this is identical to setting a new end point with
-// SetEndPoint(), except that it is required that new point be located ON
+// SetLinearEndPoint(), except that it is required that new point be located ON
 // complex linear
 //-----------------------------------------------------------------------------
 inline void HVE2DComplexLinear::ShortenTo(const HGF2DLocation& pi_rNewEndPoint)
@@ -167,7 +167,7 @@ inline void HVE2DComplexLinear::ShortenTo(const HGF2DLocation& pi_rNewEndPoint)
 // ShortenFrom
 // Shortens the complex linear definition by specification of a new start point
 // In the case of a complex linear this is identical to setting a new end point with
-// SetEndPoint(), except that it is required that new point be located ON
+// SetLinearEndPoint(), except that it is required that new point be located ON
 // complex linear
 //-----------------------------------------------------------------------------
 inline void HVE2DComplexLinear::ShortenFrom(const HGF2DLocation& pi_rNewStartPoint)

@@ -42,8 +42,8 @@ bool HGF2DLiteSegment::IntersectsAtSplitPoint(const HGF2DLiteSegment& pi_rFirstS
     HPRECONDITION(IsPointOn(pi_rFirstSegment.GetEndPoint()));
 
     // The split point must be different from an extremity of self
-    HPRECONDITION(!pi_rFirstSegment.GetEndPoint().IsEqualTo(m_StartPoint, m_Tolerance));
-    HPRECONDITION(!pi_rFirstSegment.GetEndPoint().IsEqualTo(m_EndPoint, m_Tolerance));
+    HPRECONDITION(!pi_rFirstSegment.GetEndPoint().IsEqualTo(GetStartPoint(), m_Tolerance));
+    HPRECONDITION(!pi_rFirstSegment.GetEndPoint().IsEqualTo(GetEndPoint(), m_Tolerance));
 
     // Neither segment must be contiguous to self
     HPRECONDITION(!AreContiguous(pi_rFirstSegment));
@@ -51,8 +51,8 @@ bool HGF2DLiteSegment::IntersectsAtSplitPoint(const HGF2DLiteSegment& pi_rFirstS
 
     // We first obtain the parametrized line equation at split point perpendicular to self
     // This equation is of the form Line = Anchor + K*(P - Anchor) in vectorial form
-    double DeltaY = m_EndPoint.GetY() - pi_rFirstSegment.GetEndPoint().GetY();
-    double DeltaX = m_EndPoint.GetX() - pi_rFirstSegment.GetEndPoint().GetX();
+    double DeltaY = GetEndPoint().GetY() - pi_rFirstSegment.GetEndPoint().GetY();
+    double DeltaX = GetEndPoint().GetX() - pi_rFirstSegment.GetEndPoint().GetX();
 
     // THE FOLLOWING ENABLES OBTAINING THE PERPENDICULAR
     double SwapVar = DeltaX;
@@ -147,16 +147,16 @@ bool HGF2DLiteSegment::AreAdjacent(const HGF2DLiteSegment& pi_rSegment) const
         double SelfIntercept;
 
         // Check if segment vertical
-        if (m_StartPoint.GetX() == m_EndPoint.GetX())
+        if (GetStartPoint().GetX() == GetEndPoint().GetX())
             {
             SelfVertical = true;
-            SelfIntercept = m_StartPoint.GetX();
+            SelfIntercept = GetStartPoint().GetX();
             }
         else
             {
-            SelfSlope = (m_StartPoint.GetY() - m_EndPoint.GetY()) /
-                        (m_StartPoint.GetX() - m_EndPoint.GetX());
-            SelfIntercept = m_StartPoint.GetY() - (m_StartPoint.GetX() * SelfSlope);
+            SelfSlope = (GetStartPoint().GetY() - GetEndPoint().GetY()) /
+                        (GetStartPoint().GetX() - GetEndPoint().GetX());
+            SelfIntercept = GetStartPoint().GetY() - (GetStartPoint().GetX() * SelfSlope);
             }
 
         // Obtain given segment line parameters
@@ -165,17 +165,17 @@ bool HGF2DLiteSegment::AreAdjacent(const HGF2DLiteSegment& pi_rSegment) const
         double GivenIntercept;
 
         // Check if segment vertical
-        if (pi_rSegment.m_StartPoint.GetX() == pi_rSegment.m_EndPoint.GetX())
+        if (pi_rSegment.GetStartPoint().GetX() == pi_rSegment.GetEndPoint().GetX())
             {
             GivenVertical = true;
-            GivenIntercept = pi_rSegment.m_StartPoint.GetX();
+            GivenIntercept = pi_rSegment.GetStartPoint().GetX();
             }
         else
             {
-            GivenSlope = (pi_rSegment.m_StartPoint.GetY() - pi_rSegment.m_EndPoint.GetY()) /
-                         (pi_rSegment.m_StartPoint.GetX() - pi_rSegment.m_EndPoint.GetX());
-            GivenIntercept = pi_rSegment.m_StartPoint.GetY() -
-                             (pi_rSegment.m_StartPoint.GetX() * GivenSlope);
+            GivenSlope = (pi_rSegment.GetStartPoint().GetY() - pi_rSegment.GetEndPoint().GetY()) /
+                         (pi_rSegment.GetStartPoint().GetX() - pi_rSegment.GetEndPoint().GetX());
+            GivenIntercept = pi_rSegment.GetStartPoint().GetY() -
+                             (pi_rSegment.GetStartPoint().GetX() * GivenSlope);
             }
 
         // Compare if they are on the same line
@@ -212,16 +212,16 @@ bool HGF2DLiteSegment::AreParallel(const HGF2DLiteSegment& pi_rSegment,
     double SelfIntercept;
 
     // Check if segment vertical
-    if (m_StartPoint.GetX() == m_EndPoint.GetX())
+    if (GetStartPoint().GetX() == GetEndPoint().GetX())
         {
         SelfVertical = true;
-        SelfIntercept = m_StartPoint.GetX();
+        SelfIntercept = GetStartPoint().GetX();
         }
     else
         {
-        SelfSlope = (m_StartPoint.GetY() - m_EndPoint.GetY()) /
-                    (m_StartPoint.GetX() - m_EndPoint.GetX());
-        SelfIntercept = m_StartPoint.GetY() - (m_StartPoint.GetX() * SelfSlope);
+        SelfSlope = (GetStartPoint().GetY() - GetEndPoint().GetY()) /
+                    (GetStartPoint().GetX() - GetEndPoint().GetX());
+        SelfIntercept = GetStartPoint().GetY() - (GetStartPoint().GetX() * SelfSlope);
         }
 
     // Obtain given segment line parameters
@@ -230,17 +230,17 @@ bool HGF2DLiteSegment::AreParallel(const HGF2DLiteSegment& pi_rSegment,
     double GivenIntercept;
 
     // Check if segment vertical
-    if (pi_rSegment.m_StartPoint.GetX() == pi_rSegment.m_EndPoint.GetX())
+    if (pi_rSegment.GetStartPoint().GetX() == pi_rSegment.GetEndPoint().GetX())
         {
         GivenVertical = true;
-        GivenIntercept = pi_rSegment.m_StartPoint.GetX();
+        GivenIntercept = pi_rSegment.GetStartPoint().GetX();
         }
     else
         {
-        GivenSlope = (pi_rSegment.m_StartPoint.GetY() - pi_rSegment.m_EndPoint.GetY()) /
-                     (pi_rSegment.m_StartPoint.GetX() - pi_rSegment.m_EndPoint.GetX());
-        GivenIntercept = pi_rSegment.m_StartPoint.GetY() -
-                         (pi_rSegment.m_StartPoint.GetX() * GivenSlope);
+        GivenSlope = (pi_rSegment.GetStartPoint().GetY() - pi_rSegment.GetEndPoint().GetY()) /
+                     (pi_rSegment.GetStartPoint().GetX() - pi_rSegment.GetEndPoint().GetX());
+        GivenIntercept = pi_rSegment.GetStartPoint().GetY() -
+                         (pi_rSegment.GetStartPoint().GetX() * GivenSlope);
         }
 
     // Compare if they are on the same line
@@ -323,11 +323,11 @@ bool HGF2DLiteSegment::AreContiguous(const HGF2DLiteSegment& pi_rSegment) const
 
     int32_t NumberOfContiguousnessPoints = 0;
 
-    if (!m_StartPoint.IsEqualTo(m_EndPoint, Tolerance) &&
-        !pi_rSegment.m_StartPoint.IsEqualTo(pi_rSegment.m_EndPoint, Tolerance))
+    if (!GetStartPoint().IsEqualTo(GetEndPoint(), Tolerance) &&
+        !pi_rSegment.GetStartPoint().IsEqualTo(pi_rSegment.GetEndPoint(), Tolerance))
         {
         // We check if the start points are equal
-        if (m_StartPoint.IsEqualTo(pi_rSegment.m_StartPoint, Tolerance))
+        if (GetStartPoint().IsEqualTo(pi_rSegment.GetStartPoint(), Tolerance))
             {
             // The two start points are on top of each other
             // It is therefore one of the contiguousness points
@@ -336,34 +336,34 @@ bool HGF2DLiteSegment::AreContiguous(const HGF2DLiteSegment& pi_rSegment) const
             // The second point is either one of the end points
 
             // Check if the end points are equal
-            if (m_EndPoint.IsEqualTo(pi_rSegment.m_EndPoint, Tolerance))
+            if (GetEndPoint().IsEqualTo(pi_rSegment.GetEndPoint(), Tolerance))
                 NumberOfContiguousnessPoints++;
             else
                 {
                 // Since the end points are not equal, then the one that is on the other segment
                 // is the result
-                if (IsPointOn(pi_rSegment.m_EndPoint))
+                if (IsPointOn(pi_rSegment.GetEndPoint()))
                     NumberOfContiguousnessPoints++;
-                else if(pi_rSegment.IsPointOn(m_EndPoint))
+                else if(pi_rSegment.IsPointOn(GetEndPoint()))
                     NumberOfContiguousnessPoints++;
                 }
             }
-        else if (m_EndPoint.IsEqualTo(pi_rSegment.m_EndPoint, Tolerance))
+        else if (GetEndPoint().IsEqualTo(pi_rSegment.GetEndPoint(), Tolerance))
             {
             // The two end points are on top of each other
 
             // The other point is either one of the start point
             // the one that is on the other segment is the result
-            if (IsPointOn(pi_rSegment.m_StartPoint))
+            if (IsPointOn(pi_rSegment.GetStartPoint()))
                 NumberOfContiguousnessPoints++;
-            else if (pi_rSegment.IsPointOn(m_StartPoint))
+            else if (pi_rSegment.IsPointOn(GetStartPoint()))
                 NumberOfContiguousnessPoints++;
 
             // The end point is therefore one of the contiguousness points
             NumberOfContiguousnessPoints++;
 
             }
-        else if (m_StartPoint.IsEqualTo(pi_rSegment.m_EndPoint, Tolerance))
+        else if (GetStartPoint().IsEqualTo(pi_rSegment.GetEndPoint(), Tolerance))
             {
             // The self start point in on top of the given end point
             // It is therefore one of the contiguousness points
@@ -372,27 +372,27 @@ bool HGF2DLiteSegment::AreContiguous(const HGF2DLiteSegment& pi_rSegment) const
             // The second point is either one of the other point
 
             // Check if the other extremity points are equal
-            if (m_EndPoint.IsEqualTo(pi_rSegment.m_StartPoint, Tolerance))
+            if (GetEndPoint().IsEqualTo(pi_rSegment.GetStartPoint(), Tolerance))
                 NumberOfContiguousnessPoints++;
             else
                 {
                 // Since the those points are not equal, then the one that is on the other segment
                 // is the result
-                if (IsPointOn(pi_rSegment.m_StartPoint))
+                if (IsPointOn(pi_rSegment.GetStartPoint()))
                     NumberOfContiguousnessPoints++;
-                else if (pi_rSegment.IsPointOn(m_EndPoint))
+                else if (pi_rSegment.IsPointOn(GetEndPoint()))
                     NumberOfContiguousnessPoints++;
                 }
             }
-        else if (m_EndPoint.IsEqualTo(pi_rSegment.m_StartPoint, Tolerance))
+        else if (GetEndPoint().IsEqualTo(pi_rSegment.GetStartPoint(), Tolerance))
             {
             // The self end point in on top of the given start point
 
             // The second point is either one of the other extremity point
             // the one that is on the other segment is the result
-            if (IsPointOn(pi_rSegment.m_EndPoint))
+            if (IsPointOn(pi_rSegment.GetEndPoint()))
                 NumberOfContiguousnessPoints++;
-            else if (pi_rSegment.IsPointOn(m_StartPoint))
+            else if (pi_rSegment.IsPointOn(GetStartPoint()))
                 NumberOfContiguousnessPoints++;
 
             // The end point is therefore one of the contiguousness points
@@ -407,18 +407,18 @@ bool HGF2DLiteSegment::AreContiguous(const HGF2DLiteSegment& pi_rSegment) const
             // Two points are on the other segment and they are the result
 
             // We start with segment start point
-            if (pi_rSegment.IsPointOn(m_StartPoint))
+            if (pi_rSegment.IsPointOn(GetStartPoint()))
                 NumberOfContiguousnessPoints++;
 
             // The two segments are oriented likewise ...
             // we check in start to end order
-            if (IsPointOn(pi_rSegment.m_StartPoint))
+            if (IsPointOn(pi_rSegment.GetStartPoint()))
                 NumberOfContiguousnessPoints++;
-            if (IsPointOn(pi_rSegment.m_EndPoint))
+            if (IsPointOn(pi_rSegment.GetEndPoint()))
                 NumberOfContiguousnessPoints++;
 
             // The last possible point is end point
-            if (pi_rSegment.IsPointOn(m_EndPoint))
+            if (pi_rSegment.IsPointOn(GetEndPoint()))
                 NumberOfContiguousnessPoints++;
             }
         }
@@ -461,76 +461,76 @@ size_t HGF2DLiteSegment::ObtainContiguousnessPoints(const HGF2DLiteSegment& pi_r
 
 
     // We check if the start points are equal
-    if (m_StartPoint.IsEqualTo(pi_rSegment.m_StartPoint, m_Tolerance))
+    if (GetStartPoint().IsEqualTo(pi_rSegment.GetStartPoint(), m_Tolerance))
         {
         // The two start points are on top of each other
         // It is therefore one of the contiguousness points
-        po_pContiguousnessPoints->push_back(m_StartPoint);
+        po_pContiguousnessPoints->push_back(GetStartPoint());
 
         // The second point is either one of the end points
 
         // Check if the end points are equal
-        if (m_EndPoint.IsEqualTo(pi_rSegment.m_EndPoint, m_Tolerance))
-            po_pContiguousnessPoints->push_back(m_EndPoint);
+        if (GetEndPoint().IsEqualTo(pi_rSegment.GetEndPoint(), m_Tolerance))
+            po_pContiguousnessPoints->push_back(GetEndPoint());
         else
             {
             // Since the end points are not equal, then the one that is on the other segment
             // is the result
-            if (IsPointOn(pi_rSegment.m_EndPoint))
-                po_pContiguousnessPoints->push_back(pi_rSegment.m_EndPoint);
+            if (IsPointOn(pi_rSegment.GetEndPoint()))
+                po_pContiguousnessPoints->push_back(pi_rSegment.GetEndPoint());
             else
-                po_pContiguousnessPoints->push_back(m_EndPoint);
+                po_pContiguousnessPoints->push_back(GetEndPoint());
             }
         }
-    else if (m_EndPoint.IsEqualTo(pi_rSegment.m_EndPoint, m_Tolerance))
+    else if (GetEndPoint().IsEqualTo(pi_rSegment.GetEndPoint(), m_Tolerance))
         {
         // The two end points are on top of each other
 
         // The other point is either one of the start point
         // the one that is on the other segment is the result
-        if (IsPointOn(pi_rSegment.m_StartPoint))
-            po_pContiguousnessPoints->push_back(pi_rSegment.m_StartPoint);
+        if (IsPointOn(pi_rSegment.GetStartPoint()))
+            po_pContiguousnessPoints->push_back(pi_rSegment.GetStartPoint());
         else
-            po_pContiguousnessPoints->push_back(m_StartPoint);
+            po_pContiguousnessPoints->push_back(GetStartPoint());
 
         // The end point is therefore one of the contiguousness points
-        po_pContiguousnessPoints->push_back(m_EndPoint);
+        po_pContiguousnessPoints->push_back(GetEndPoint());
 
         }
-    else if (m_StartPoint.IsEqualTo(pi_rSegment.m_EndPoint, m_Tolerance))
+    else if (GetStartPoint().IsEqualTo(pi_rSegment.GetEndPoint(), m_Tolerance))
         {
         // The self start point in on top of the given end point
         // It is therefore one of the contiguousness points
-        po_pContiguousnessPoints->push_back(m_StartPoint);
+        po_pContiguousnessPoints->push_back(GetStartPoint());
 
         // The second point is either one of the other point
 
         // Check if the other extremity points are equal
-        if (m_EndPoint.IsEqualTo(pi_rSegment.m_StartPoint, m_Tolerance))
-            po_pContiguousnessPoints->push_back(m_EndPoint);
+        if (GetEndPoint().IsEqualTo(pi_rSegment.GetStartPoint(), m_Tolerance))
+            po_pContiguousnessPoints->push_back(GetEndPoint());
         else
             {
             // Since the those points are not equal, then the one that is on the other segment
             // is the result
-            if (IsPointOn(pi_rSegment.m_StartPoint))
-                po_pContiguousnessPoints->push_back(pi_rSegment.m_StartPoint);
+            if (IsPointOn(pi_rSegment.GetStartPoint()))
+                po_pContiguousnessPoints->push_back(pi_rSegment.GetStartPoint());
             else
-                po_pContiguousnessPoints->push_back(m_EndPoint);
+                po_pContiguousnessPoints->push_back(GetEndPoint());
             }
         }
-    else if (m_EndPoint.IsEqualTo(pi_rSegment.m_StartPoint, m_Tolerance))
+    else if (GetEndPoint().IsEqualTo(pi_rSegment.GetStartPoint(), m_Tolerance))
         {
         // The self end point in on top of the given start point
 
         // The second point is either one of the other extremity point
         // the one that is on the other segment is the result
-        if (IsPointOn(pi_rSegment.m_EndPoint))
-            po_pContiguousnessPoints->push_back(pi_rSegment.m_EndPoint);
+        if (IsPointOn(pi_rSegment.GetEndPoint()))
+            po_pContiguousnessPoints->push_back(pi_rSegment.GetEndPoint());
         else
-            po_pContiguousnessPoints->push_back(m_StartPoint);
+            po_pContiguousnessPoints->push_back(GetStartPoint());
 
         // The end point is therefore one of the contiguousness points
-        po_pContiguousnessPoints->push_back(m_EndPoint);
+        po_pContiguousnessPoints->push_back(GetEndPoint());
 
         // The second point is either one of the other point
 
@@ -541,8 +541,8 @@ size_t HGF2DLiteSegment::ObtainContiguousnessPoints(const HGF2DLiteSegment& pi_r
         // Two points are on the other segment and they are the result
 
         // We start with segment start point
-        if (pi_rSegment.IsPointOn(m_StartPoint))
-            po_pContiguousnessPoints->push_back(m_StartPoint);
+        if (pi_rSegment.IsPointOn(GetStartPoint()))
+            po_pContiguousnessPoints->push_back(GetStartPoint());
 
         // Check if the segments are oriented in the same direction
         bool SameDirection;
@@ -553,20 +553,20 @@ size_t HGF2DLiteSegment::ObtainContiguousnessPoints(const HGF2DLiteSegment& pi_r
             double GivenSlope;
 
             // Check if segment vertical
-            if (m_StartPoint.GetX() == m_EndPoint.GetX())
-                SelfSlope = m_StartPoint.GetY() - m_EndPoint.GetY();
+            if (GetStartPoint().GetX() == GetEndPoint().GetX())
+                SelfSlope = GetStartPoint().GetY() - GetEndPoint().GetY();
             else
-                SelfSlope = (m_StartPoint.GetY() - m_EndPoint.GetY()) /
-                            (m_StartPoint.GetX() - m_EndPoint.GetX());
+                SelfSlope = (GetStartPoint().GetY() - GetEndPoint().GetY()) /
+                            (GetStartPoint().GetX() - GetEndPoint().GetX());
 
             // Obtain second line parameters
 
             // Check if segment vertical
-            if (pi_rSegment.m_StartPoint.GetX() == pi_rSegment.m_EndPoint.GetX())
-                GivenSlope = pi_rSegment.m_StartPoint.GetY() - pi_rSegment.m_EndPoint.GetY();
+            if (pi_rSegment.GetStartPoint().GetX() == pi_rSegment.GetEndPoint().GetX())
+                GivenSlope = pi_rSegment.GetStartPoint().GetY() - pi_rSegment.GetEndPoint().GetY();
             else
-                GivenSlope = (pi_rSegment.m_StartPoint.GetY() - pi_rSegment.m_EndPoint.GetY()) /
-                             (pi_rSegment.m_StartPoint.GetX() - pi_rSegment.m_EndPoint.GetX());
+                GivenSlope = (pi_rSegment.GetStartPoint().GetY() - pi_rSegment.GetEndPoint().GetY()) /
+                             (pi_rSegment.GetStartPoint().GetX() - pi_rSegment.GetEndPoint().GetX());
 
             // If the slopes have the same sign, then they are in the same direction
             SameDirection = (SelfSlope * GivenSlope > 0.0);
@@ -575,24 +575,24 @@ size_t HGF2DLiteSegment::ObtainContiguousnessPoints(const HGF2DLiteSegment& pi_r
             {
             // The two segments are oriented likewise ...
             // we check in start to end order
-            if (IsPointOn(pi_rSegment.m_StartPoint))
-                po_pContiguousnessPoints->push_back(pi_rSegment.m_StartPoint);
-            if (IsPointOn(pi_rSegment.m_EndPoint))
-                po_pContiguousnessPoints->push_back(pi_rSegment.m_EndPoint);
+            if (IsPointOn(pi_rSegment.GetStartPoint()))
+                po_pContiguousnessPoints->push_back(pi_rSegment.GetStartPoint());
+            if (IsPointOn(pi_rSegment.GetEndPoint()))
+                po_pContiguousnessPoints->push_back(pi_rSegment.GetEndPoint());
             }
         else
             {
             // The two segments are oriented differently
             // we check in end to start order
-            if (IsPointOn(pi_rSegment.m_EndPoint))
-                po_pContiguousnessPoints->push_back(pi_rSegment.m_EndPoint);
-            if (IsPointOn(pi_rSegment.m_StartPoint))
-                po_pContiguousnessPoints->push_back(pi_rSegment.m_StartPoint);
+            if (IsPointOn(pi_rSegment.GetEndPoint()))
+                po_pContiguousnessPoints->push_back(pi_rSegment.GetEndPoint());
+            if (IsPointOn(pi_rSegment.GetStartPoint()))
+                po_pContiguousnessPoints->push_back(pi_rSegment.GetStartPoint());
             }
 
         // The last possible point is end point
-        if (pi_rSegment.IsPointOn(m_EndPoint))
-            po_pContiguousnessPoints->push_back(m_EndPoint);
+        if (pi_rSegment.IsPointOn(GetEndPoint()))
+            po_pContiguousnessPoints->push_back(GetEndPoint());
         }
 
     return (po_pContiguousnessPoints->size() - InitialNumberOfPoints);
@@ -631,10 +631,10 @@ bool   HGF2DLiteSegment::IsPointOn(const HGF2DPosition& pi_rTestPoint, Extremity
     bool   Answer = false;
 
     // Obtain extremes of segment
-    double XMin = MIN(m_StartPoint.GetX(), m_EndPoint.GetX());
-    double XMax = MAX(m_StartPoint.GetX(), m_EndPoint.GetX());
-    double YMin = MIN(m_StartPoint.GetY(), m_EndPoint.GetY());
-    double YMax = MAX(m_StartPoint.GetY(), m_EndPoint.GetY());
+    double XMin = MIN(GetStartPoint().GetX(), GetEndPoint().GetX());
+    double XMax = MAX(GetStartPoint().GetX(), GetEndPoint().GetX());
+    double YMin = MIN(GetStartPoint().GetY(), GetEndPoint().GetY());
+    double YMax = MAX(GetStartPoint().GetY(), GetEndPoint().GetY());
 
     double X = pi_rTestPoint.GetX();
     double Y = pi_rTestPoint.GetY();
@@ -662,20 +662,20 @@ bool   HGF2DLiteSegment::IsPointOn(const HGF2DPosition& pi_rTestPoint, Extremity
             double SelfIntercept;
             bool InvertSlope = false;
 
-            SelfSlope = ((m_StartPoint.GetY() - m_EndPoint.GetY())) /
-                        (m_StartPoint.GetX() - m_EndPoint.GetX());
+            SelfSlope = ((GetStartPoint().GetY() - GetEndPoint().GetY())) /
+                        (GetStartPoint().GetX() - GetEndPoint().GetX());
 
             if (SelfSlope > 1.0)
                 {
                 InvertSlope = true;
-                SelfSlope = ((m_StartPoint.GetX() - m_EndPoint.GetX())) /
-                            (m_StartPoint.GetY() - m_EndPoint.GetY());
+                SelfSlope = ((GetStartPoint().GetX() - GetEndPoint().GetX())) /
+                            (GetStartPoint().GetY() - GetEndPoint().GetY());
 
-                SelfIntercept = m_StartPoint.GetX() - (m_StartPoint.GetY() * SelfSlope);
+                SelfIntercept = GetStartPoint().GetX() - (GetStartPoint().GetY() * SelfSlope);
                 }
             else
                 {
-                SelfIntercept = m_StartPoint.GetY() - (m_StartPoint.GetX() * SelfSlope);
+                SelfIntercept = GetStartPoint().GetY() - (GetStartPoint().GetX() * SelfSlope);
                 }
 
             // Calculate distance from point to line
@@ -703,10 +703,10 @@ bool   HGF2DLiteSegment::IsPointOn(const HGF2DPosition& pi_rTestPoint, Extremity
             double x2;
             double y2;
 
-            x1 = m_EndPoint.GetX() - m_StartPoint.GetX();
-            y1 = m_EndPoint.GetY() - m_StartPoint.GetY();
-            x2 = X - m_StartPoint.GetX();
-            y2 = Y - m_StartPoint.GetY();
+            x1 = GetEndPoint().GetX() - GetStartPoint().GetX();
+            y1 = GetEndPoint().GetY() - GetStartPoint().GetY();
+            x2 = X - GetStartPoint().GetX();
+            y2 = Y - GetStartPoint().GetY();
 
             double Det = ((x1*y2) - (x2*y1)); // Determinant is 2 times the area of the triangle formed by three points.
 
@@ -724,14 +724,14 @@ bool   HGF2DLiteSegment::IsPointOn(const HGF2DPosition& pi_rTestPoint, Extremity
             {
             // The caller wishes to exclude extremities from operation
             // We check it is different from extremity
-            Answer = (!m_StartPoint.IsEqualTo(pi_rTestPoint, m_Tolerance) &&
-                      !m_EndPoint.IsEqualTo(pi_rTestPoint, m_Tolerance));
+            Answer = (!GetStartPoint().IsEqualTo(pi_rTestPoint, m_Tolerance) &&
+                      !GetEndPoint().IsEqualTo(pi_rTestPoint, m_Tolerance));
             }
 
         if ((!Answer) && (pi_ExtremityProcessing == HGF2DLiteSegment::INCLUDE_EXTREMITIES))
             {
-            Answer = (m_StartPoint.IsEqualTo(pi_rTestPoint, m_Tolerance) ||
-                      m_EndPoint.IsEqualTo(pi_rTestPoint, m_Tolerance));
+            Answer = (GetStartPoint().IsEqualTo(pi_rTestPoint, m_Tolerance) ||
+                      GetEndPoint().IsEqualTo(pi_rTestPoint, m_Tolerance));
             }
         }
 
@@ -756,10 +756,10 @@ bool HGF2DLiteSegment::ArePointsOnDifferentSides(const HGF2DPosition& pi_rPoint1
     bool ResultPoint2;
 
     // Check if segment vertical
-    if (HDOUBLE_EQUAL(m_StartPoint.GetX(), m_EndPoint.GetX(), m_Tolerance))
+    if (HDOUBLE_EQUAL(GetStartPoint().GetX(), GetEndPoint().GetX(), m_Tolerance))
         {
-        if (HDOUBLE_EQUAL(pi_rPoint1.GetX(), m_StartPoint.GetX(), m_Tolerance) ||
-            HDOUBLE_EQUAL(pi_rPoint2.GetX(), m_StartPoint.GetX(), m_Tolerance))
+        if (HDOUBLE_EQUAL(pi_rPoint1.GetX(), GetStartPoint().GetX(), m_Tolerance) ||
+            HDOUBLE_EQUAL(pi_rPoint2.GetX(), GetStartPoint().GetX(), m_Tolerance))
             {
             // Arbitrary. Same value = not on different sides.
             ResultPoint1 = true;
@@ -767,15 +767,15 @@ bool HGF2DLiteSegment::ArePointsOnDifferentSides(const HGF2DPosition& pi_rPoint1
             }
         else
             {
-            ResultPoint1 = HDOUBLE_GREATER(pi_rPoint1.GetX(), m_StartPoint.GetX(), m_Tolerance);
-            ResultPoint2 = HDOUBLE_GREATER(pi_rPoint2.GetX(), m_StartPoint.GetX(), m_Tolerance);
+            ResultPoint1 = HDOUBLE_GREATER(pi_rPoint1.GetX(), GetStartPoint().GetX(), m_Tolerance);
+            ResultPoint2 = HDOUBLE_GREATER(pi_rPoint2.GetX(), GetStartPoint().GetX(), m_Tolerance);
             }
         }
     else
         {
-        double SelfSlope = (m_StartPoint.GetY() - m_EndPoint.GetY()) /
-                            (m_StartPoint.GetX() - m_EndPoint.GetX());
-        double SelfIntercept = m_StartPoint.GetY() - (m_StartPoint.GetX() * SelfSlope);
+        double SelfSlope = (GetStartPoint().GetY() - GetEndPoint().GetY()) /
+                            (GetStartPoint().GetX() - GetEndPoint().GetX());
+        double SelfIntercept = GetStartPoint().GetY() - (GetStartPoint().GetX() * SelfSlope);
 
         if (SelfSlope > 1.0 || SelfSlope < -1.0)
             {
@@ -823,8 +823,8 @@ bool HGF2DLiteSegment::ArePointsOnDifferentSides(const HGF2DPosition& pi_rPoint1
 //-----------------------------------------------------------------------------
 bool HGF2DLiteSegment::operator==(const HGF2DLiteSegment& pi_rObj) const
     {
-    return ((m_StartPoint.IsEqualTo(pi_rObj.m_StartPoint) || m_StartPoint.IsEqualTo(pi_rObj.m_EndPoint)) &&
-            (m_EndPoint.IsEqualTo(pi_rObj.m_EndPoint) || m_EndPoint.IsEqualTo(pi_rObj.m_StartPoint)));
+    return ((GetStartPoint().IsEqualTo(pi_rObj.GetStartPoint()) || GetStartPoint().IsEqualTo(pi_rObj.GetEndPoint())) &&
+            (GetEndPoint().IsEqualTo(pi_rObj.GetEndPoint()) || GetEndPoint().IsEqualTo(pi_rObj.GetStartPoint())));
     }
 
 
@@ -850,16 +850,16 @@ HGF2DLiteSegment::CrossState HGF2DLiteSegment::IntersectSegment(
     double EffectiveTolerance = MIN(m_Tolerance, pi_rSegment.m_Tolerance);
 
     // Obtain extremes of self segment
-    double XMin1 = MIN(m_StartPoint.GetX(), m_EndPoint.GetX());
-    double XMax1 = MAX(m_StartPoint.GetX(), m_EndPoint.GetX());
-    double YMin1 = MIN(m_StartPoint.GetY(), m_EndPoint.GetY());
-    double YMax1 = MAX(m_StartPoint.GetY(), m_EndPoint.GetY());
+    double XMin1 = MIN(GetStartPoint().GetX(), GetEndPoint().GetX());
+    double XMax1 = MAX(GetStartPoint().GetX(), GetEndPoint().GetX());
+    double YMin1 = MIN(GetStartPoint().GetY(), GetEndPoint().GetY());
+    double YMax1 = MAX(GetStartPoint().GetY(), GetEndPoint().GetY());
 
     // Obtain extremes of given segment
-    double XMin2 = MIN(pi_rSegment.m_StartPoint.GetX(), pi_rSegment.m_EndPoint.GetX());
-    double XMax2 = MAX(pi_rSegment.m_StartPoint.GetX(), pi_rSegment.m_EndPoint.GetX());
-    double YMin2 = MIN(pi_rSegment.m_StartPoint.GetY(), pi_rSegment.m_EndPoint.GetY());
-    double YMax2 = MAX(pi_rSegment.m_StartPoint.GetY(), pi_rSegment.m_EndPoint.GetY());
+    double XMin2 = MIN(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
+    double XMax2 = MAX(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
+    double YMin2 = MIN(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
+    double YMax2 = MAX(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
 
 
     // Check if their extent overlaps (outter overlap)
@@ -881,16 +881,16 @@ HGF2DLiteSegment::CrossState HGF2DLiteSegment::IntersectSegment(
 
         {
             // Check if segment vertical
-            if (m_StartPoint.GetX() == m_EndPoint.GetX())
+            if (GetStartPoint().GetX() == GetEndPoint().GetX())
             {
                 SelfVertical = true;
-                SelfIntercept = m_StartPoint.GetX();
+                SelfIntercept = GetStartPoint().GetX();
             }
             else
             {
-                SelfSlope = (m_StartPoint.GetY() - m_EndPoint.GetY()) /
-                            (m_StartPoint.GetX() - m_EndPoint.GetX());
-                SelfIntercept = m_StartPoint.GetY() - (m_StartPoint.GetX() * SelfSlope);
+                SelfSlope = (GetStartPoint().GetY() - GetEndPoint().GetY()) /
+                            (GetStartPoint().GetX() - GetEndPoint().GetX());
+                SelfIntercept = GetStartPoint().GetY() - (GetStartPoint().GetX() * SelfSlope);
             }
         }
 
@@ -901,17 +901,17 @@ HGF2DLiteSegment::CrossState HGF2DLiteSegment::IntersectSegment(
 
         {
             // Check if segment vertical
-            if (pi_rSegment.m_StartPoint.GetX() == pi_rSegment.m_EndPoint.GetX())
+            if (pi_rSegment.GetStartPoint().GetX() == pi_rSegment.GetEndPoint().GetX())
             {
                 GivenVertical = true;
-                GivenIntercept = pi_rSegment.m_StartPoint.GetX();
+                GivenIntercept = pi_rSegment.GetStartPoint().GetX();
             }
             else
             {
-                GivenSlope = (pi_rSegment.m_StartPoint.GetY() - pi_rSegment.m_EndPoint.GetY()) /
-                             (pi_rSegment.m_StartPoint.GetX() - pi_rSegment.m_EndPoint.GetX());
-                GivenIntercept = pi_rSegment.m_StartPoint.GetY() -
-                                 (pi_rSegment.m_StartPoint.GetX() * GivenSlope);
+                GivenSlope = (pi_rSegment.GetStartPoint().GetY() - pi_rSegment.GetEndPoint().GetY()) /
+                             (pi_rSegment.GetStartPoint().GetX() - pi_rSegment.GetEndPoint().GetX());
+                GivenIntercept = pi_rSegment.GetStartPoint().GetY() -
+                                 (pi_rSegment.GetStartPoint().GetX() * GivenSlope);
             }
         }
 
@@ -931,14 +931,14 @@ HGF2DLiteSegment::CrossState HGF2DLiteSegment::IntersectSegment(
             {
                 // Self is vertical and given slope is great
                 // they cross if segments are not contiguous
-                if ((HDOUBLE_GREATER(pi_rSegment.m_StartPoint.GetX(),
-                                     m_StartPoint.GetX(), EffectiveTolerance) &&
-                     HDOUBLE_SMALLER(pi_rSegment.m_EndPoint.GetX(),
-                                     m_StartPoint.GetX(), EffectiveTolerance)) ||
-                    (HDOUBLE_GREATER(pi_rSegment.m_EndPoint.GetX(),
-                                     m_StartPoint.GetX(), EffectiveTolerance) &&
-                     HDOUBLE_SMALLER(pi_rSegment.m_StartPoint.GetX(),
-                                     m_StartPoint.GetX(), EffectiveTolerance)))
+                if ((HDOUBLE_GREATER(pi_rSegment.GetStartPoint().GetX(),
+                                     GetStartPoint().GetX(), EffectiveTolerance) &&
+                     HDOUBLE_SMALLER(pi_rSegment.GetEndPoint().GetX(),
+                                     GetStartPoint().GetX(), EffectiveTolerance)) ||
+                    (HDOUBLE_GREATER(pi_rSegment.GetEndPoint().GetX(),
+                                     GetStartPoint().GetX(), EffectiveTolerance) &&
+                     HDOUBLE_SMALLER(pi_rSegment.GetStartPoint().GetX(),
+                                     GetStartPoint().GetX(), EffectiveTolerance)))
                 {
                     TheState = (AreContiguous(pi_rSegment) ? PARALLEL : CROSS_FOUND);
                 }
@@ -950,14 +950,14 @@ HGF2DLiteSegment::CrossState HGF2DLiteSegment::IntersectSegment(
                 // Given is vertical and other slope is great
                 // Check if they may intersect
                 // Check if one X on one side and other X on other side
-                if ((HDOUBLE_GREATER(m_StartPoint.GetX(),
-                                     pi_rSegment.m_StartPoint.GetX(), EffectiveTolerance) &&
-                     HDOUBLE_SMALLER(m_EndPoint.GetX(),
-                                     pi_rSegment.m_StartPoint.GetX(), EffectiveTolerance)) ||
-                    (HDOUBLE_GREATER(m_EndPoint.GetX(),
-                                     pi_rSegment.m_StartPoint.GetX(), EffectiveTolerance) &&
-                     HDOUBLE_SMALLER(m_StartPoint.GetX(),
-                                     pi_rSegment.m_StartPoint.GetX(), EffectiveTolerance)))
+                if ((HDOUBLE_GREATER(GetStartPoint().GetX(),
+                                     pi_rSegment.GetStartPoint().GetX(), EffectiveTolerance) &&
+                     HDOUBLE_SMALLER(GetEndPoint().GetX(),
+                                     pi_rSegment.GetStartPoint().GetX(), EffectiveTolerance)) ||
+                    (HDOUBLE_GREATER(GetEndPoint().GetX(),
+                                     pi_rSegment.GetStartPoint().GetX(), EffectiveTolerance) &&
+                     HDOUBLE_SMALLER(GetStartPoint().GetX(),
+                                     pi_rSegment.GetStartPoint().GetX(), EffectiveTolerance)))
                 {
                     TheState = (AreContiguous(pi_rSegment) ? PARALLEL : CROSS_FOUND);
                 }
@@ -982,14 +982,14 @@ HGF2DLiteSegment::CrossState HGF2DLiteSegment::IntersectSegment(
             // First check if the given coordinates are on opposite sides of
             // line formed by self
 
-            if ((HDOUBLE_GREATER(pi_rSegment.m_StartPoint.GetX(),
-                                 MIN(m_StartPoint.GetX(), m_EndPoint.GetX()), EffectiveTolerance) &&
-                 HDOUBLE_SMALLER(pi_rSegment.m_EndPoint.GetX(),
-                                 MAX(m_StartPoint.GetX(), m_EndPoint.GetX()), EffectiveTolerance)) ||
-                (HDOUBLE_GREATER(pi_rSegment.m_EndPoint.GetX(),
-                                 MIN(m_StartPoint.GetX(), m_EndPoint.GetX()), EffectiveTolerance) &&
-                 HDOUBLE_SMALLER(pi_rSegment.m_StartPoint.GetX(),
-                                 MAX(m_StartPoint.GetX(), m_EndPoint.GetX()), EffectiveTolerance)))
+            if ((HDOUBLE_GREATER(pi_rSegment.GetStartPoint().GetX(),
+                                 MIN(GetStartPoint().GetX(), GetEndPoint().GetX()), EffectiveTolerance) &&
+                 HDOUBLE_SMALLER(pi_rSegment.GetEndPoint().GetX(),
+                                 MAX(GetStartPoint().GetX(), GetEndPoint().GetX()), EffectiveTolerance)) ||
+                (HDOUBLE_GREATER(pi_rSegment.GetEndPoint().GetX(),
+                                 MIN(GetStartPoint().GetX(), GetEndPoint().GetX()), EffectiveTolerance) &&
+                 HDOUBLE_SMALLER(pi_rSegment.GetStartPoint().GetX(),
+                                 MAX(GetStartPoint().GetX(), GetEndPoint().GetX()), EffectiveTolerance)))
             {
 
                 // Segments may cross ... if not contiguous
@@ -1066,21 +1066,21 @@ HGF2DLiteSegment::CrossState HGF2DLiteSegment::IntersectSegment(
                         // First check if the given coordinates are on opposite sides of
                         // line formed by self
 
-                        if ((HDOUBLE_GREATER(pi_rSegment.m_StartPoint.GetY(),
-                                             m_StartPoint.GetY(), EffectiveTolerance) &&
-                             HDOUBLE_SMALLER(pi_rSegment.m_EndPoint.GetY(),
-                                             m_StartPoint.GetY(), EffectiveTolerance)) ||
-                            (HDOUBLE_GREATER(pi_rSegment.m_EndPoint.GetY(),
-                                             m_StartPoint.GetY(), EffectiveTolerance) &&
-                             HDOUBLE_SMALLER(pi_rSegment.m_StartPoint.GetY(),
-                                             m_StartPoint.GetY(), EffectiveTolerance)))
+                        if ((HDOUBLE_GREATER(pi_rSegment.GetStartPoint().GetY(),
+                                             GetStartPoint().GetY(), EffectiveTolerance) &&
+                             HDOUBLE_SMALLER(pi_rSegment.GetEndPoint().GetY(),
+                                             GetStartPoint().GetY(), EffectiveTolerance)) ||
+                            (HDOUBLE_GREATER(pi_rSegment.GetEndPoint().GetY(),
+                                             GetStartPoint().GetY(), EffectiveTolerance) &&
+                             HDOUBLE_SMALLER(pi_rSegment.GetStartPoint().GetY(),
+                                             GetStartPoint().GetY(), EffectiveTolerance)))
                         {
                             // The Y coordinate are on opposite sides of self Y coordinate
                             // We assume a cross exists
                             TheState = CROSS_FOUND;
 
                             // Obtain coordinate of given on Y of self
-                            po_pPoint->SetY(m_StartPoint.GetY());
+                            po_pPoint->SetY(GetStartPoint().GetY());
 
                             // Since slope is very small, the computations are highly imprecise
                             // We may not compute the X coordinate precisely using slope
@@ -1098,21 +1098,21 @@ HGF2DLiteSegment::CrossState HGF2DLiteSegment::IntersectSegment(
                         // First check if the given coordinates are on opposite sides of
                         // line formed by self
 
-                        if ((HDOUBLE_GREATER(m_StartPoint.GetY(),
-                                             pi_rSegment.m_StartPoint.GetY(), EffectiveTolerance) &&
-                             HDOUBLE_SMALLER(m_EndPoint.GetY(),
-                                             pi_rSegment.m_StartPoint.GetY(), EffectiveTolerance)) ||
-                            (HDOUBLE_GREATER(m_EndPoint.GetY(),
-                                             pi_rSegment.m_StartPoint.GetY(), EffectiveTolerance) &&
-                             HDOUBLE_SMALLER(m_StartPoint.GetY(),
-                                             pi_rSegment.m_StartPoint.GetY(), EffectiveTolerance)))
+                        if ((HDOUBLE_GREATER(GetStartPoint().GetY(),
+                                             pi_rSegment.GetStartPoint().GetY(), EffectiveTolerance) &&
+                             HDOUBLE_SMALLER(GetEndPoint().GetY(),
+                                             pi_rSegment.GetStartPoint().GetY(), EffectiveTolerance)) ||
+                            (HDOUBLE_GREATER(GetEndPoint().GetY(),
+                                             pi_rSegment.GetStartPoint().GetY(), EffectiveTolerance) &&
+                             HDOUBLE_SMALLER(GetStartPoint().GetY(),
+                                             pi_rSegment.GetStartPoint().GetY(), EffectiveTolerance)))
                         {
                             // The Y coordinate are on opposite sides of self Y coordinate
                             // We assume a cross exists
                             TheState = CROSS_FOUND;
 
                             // Obtain coordinate of given on Y of given
-                            po_pPoint->SetY(pi_rSegment.m_StartPoint.GetY());
+                            po_pPoint->SetY(pi_rSegment.GetStartPoint().GetY());
 
                             // Obtain X by calculation
                             po_pPoint->SetX((po_pPoint->GetY() - SelfIntercept) / SelfSlope);
@@ -1127,17 +1127,17 @@ HGF2DLiteSegment::CrossState HGF2DLiteSegment::IntersectSegment(
                         // First check if the given coordinates are on opposite sides of
                         // line formed by self
 
-                        if ((HDOUBLE_GREATER(pi_rSegment.m_StartPoint.GetY(),
-                                             MIN(m_StartPoint.GetY(), m_EndPoint.GetY()),
+                        if ((HDOUBLE_GREATER(pi_rSegment.GetStartPoint().GetY(),
+                                             MIN(GetStartPoint().GetY(), GetEndPoint().GetY()),
                                              EffectiveTolerance) &&
-                             HDOUBLE_SMALLER(pi_rSegment.m_EndPoint.GetY(),
-                                             MAX(m_StartPoint.GetY(), m_EndPoint.GetY()),
+                             HDOUBLE_SMALLER(pi_rSegment.GetEndPoint().GetY(),
+                                             MAX(GetStartPoint().GetY(), GetEndPoint().GetY()),
                                              EffectiveTolerance)) ||
-                            (HDOUBLE_GREATER(pi_rSegment.m_EndPoint.GetY(),
-                                             MIN(m_StartPoint.GetY(), m_EndPoint.GetY()),
+                            (HDOUBLE_GREATER(pi_rSegment.GetEndPoint().GetY(),
+                                             MIN(GetStartPoint().GetY(), GetEndPoint().GetY()),
                                              EffectiveTolerance) &&
-                             HDOUBLE_SMALLER(pi_rSegment.m_StartPoint.GetY(),
-                                             MAX(m_StartPoint.GetY(), m_EndPoint.GetY()),
+                             HDOUBLE_SMALLER(pi_rSegment.GetStartPoint().GetY(),
+                                             MAX(GetStartPoint().GetY(), GetEndPoint().GetY()),
                                              EffectiveTolerance)))
                         {
                             // The Y coordinate are on opposite sides of self Y coordinate
@@ -1176,10 +1176,10 @@ HGF2DLiteSegment::CrossState HGF2DLiteSegment::IntersectSegment(
                 ((Y >= YMin2) || HDOUBLE_EQUAL(Y, YMin2, EffectiveTolerance)) &&
                 ((Y <= YMax2) || HDOUBLE_EQUAL(Y, YMax2, EffectiveTolerance))))
            {
-                if ((!po_pPoint->IsEqualTo(m_StartPoint, EffectiveTolerance)) &&
-                    (!po_pPoint->IsEqualTo(m_EndPoint, EffectiveTolerance)) &&
-                    (!po_pPoint->IsEqualTo(pi_rSegment.m_StartPoint, EffectiveTolerance)) &&
-                    (!po_pPoint->IsEqualTo(pi_rSegment.m_EndPoint, EffectiveTolerance)) &&
+                if ((!po_pPoint->IsEqualTo(GetStartPoint(), EffectiveTolerance)) &&
+                    (!po_pPoint->IsEqualTo(GetEndPoint(), EffectiveTolerance)) &&
+                    (!po_pPoint->IsEqualTo(pi_rSegment.GetStartPoint(), EffectiveTolerance)) &&
+                    (!po_pPoint->IsEqualTo(pi_rSegment.GetEndPoint(), EffectiveTolerance)) &&
                     (!LinksTo(pi_rSegment)))
                     // The point is part of both segment ... a cross has been found
                     Status = CROSS_FOUND;
@@ -1293,16 +1293,16 @@ HGF2DLiteSegment::CrossState HGF2DLiteSegment::IntersectSegmentExtremityIncluded
     double EffectiveTolerance = MIN(m_Tolerance, pi_rSegment.m_Tolerance);
 
     // Obtain extremes of self segment
-    double XMin1 = MIN(m_StartPoint.GetX(), m_EndPoint.GetX());
-    double XMax1 = MAX(m_StartPoint.GetX(), m_EndPoint.GetX());
-    double YMin1 = MIN(m_StartPoint.GetY(), m_EndPoint.GetY());
-    double YMax1 = MAX(m_StartPoint.GetY(), m_EndPoint.GetY());
+    double XMin1 = MIN(GetStartPoint().GetX(), GetEndPoint().GetX());
+    double XMax1 = MAX(GetStartPoint().GetX(), GetEndPoint().GetX());
+    double YMin1 = MIN(GetStartPoint().GetY(), GetEndPoint().GetY());
+    double YMax1 = MAX(GetStartPoint().GetY(), GetEndPoint().GetY());
 
     // Obtain extremes of given segment
-    double XMin2 = MIN(pi_rSegment.m_StartPoint.GetX(), pi_rSegment.m_EndPoint.GetX());
-    double XMax2 = MAX(pi_rSegment.m_StartPoint.GetX(), pi_rSegment.m_EndPoint.GetX());
-    double YMin2 = MIN(pi_rSegment.m_StartPoint.GetY(), pi_rSegment.m_EndPoint.GetY());
-    double YMax2 = MAX(pi_rSegment.m_StartPoint.GetY(), pi_rSegment.m_EndPoint.GetY());
+    double XMin2 = MIN(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
+    double XMax2 = MAX(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
+    double YMin2 = MIN(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
+    double YMax2 = MAX(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
 
 
     // Check if their extent overlaps (outter overlap)
@@ -1336,11 +1336,11 @@ HGF2DLiteSegment::CrossState HGF2DLiteSegment::IntersectSegmentExtremityIncluded
             {
             // Since the segments are not parallel, then K1 cannot be 0.0
 
-            double K2 = (SelfDx * (pi_rSegment.m_StartPoint.GetY() - m_StartPoint.GetY()) +
-                          SelfDy * (m_StartPoint.GetX() - pi_rSegment.m_StartPoint.GetX())) / K1;
+            double K2 = (SelfDx * (pi_rSegment.GetStartPoint().GetY() - GetStartPoint().GetY()) +
+                          SelfDy * (GetStartPoint().GetX() - pi_rSegment.GetStartPoint().GetX())) / K1;
 
-            po_pPoint->SetX(pi_rSegment.m_StartPoint.GetX() + (K2 * GivenDx));
-            po_pPoint->SetY(pi_rSegment.m_StartPoint.GetY() + (K2 * GivenDy));
+            po_pPoint->SetX(pi_rSegment.GetStartPoint().GetX() + (K2 * GivenDx));
+            po_pPoint->SetY(pi_rSegment.GetStartPoint().GetY() + (K2 * GivenDy));
 
 
             // The lines do cross ... now we check if the cross point is located
@@ -1365,10 +1365,10 @@ HGF2DLiteSegment::CrossState HGF2DLiteSegment::IntersectSegmentExtremityIncluded
                     if (NULL != po_pIntersectsAtExtremity)
                         {
                         // We want to know if the segments intersect at an extremity
-                        if ((!po_pPoint->IsEqualTo(m_StartPoint, EffectiveTolerance)) &&
-                            (!po_pPoint->IsEqualTo(m_EndPoint, EffectiveTolerance)) &&
-                            (!po_pPoint->IsEqualTo(pi_rSegment.m_StartPoint, EffectiveTolerance)) &&
-                            (!po_pPoint->IsEqualTo(pi_rSegment.m_EndPoint, EffectiveTolerance)) &&
+                        if ((!po_pPoint->IsEqualTo(GetStartPoint(), EffectiveTolerance)) &&
+                            (!po_pPoint->IsEqualTo(GetEndPoint(), EffectiveTolerance)) &&
+                            (!po_pPoint->IsEqualTo(pi_rSegment.GetStartPoint(), EffectiveTolerance)) &&
+                            (!po_pPoint->IsEqualTo(pi_rSegment.GetEndPoint(), EffectiveTolerance)) &&
                             (!LinksTo(pi_rSegment)))
                             {
                             // The intersection is not at an extremity
@@ -1413,8 +1413,8 @@ void HGF2DLiteSegment::GetDeltas(double* po_pDx,
     HPRECONDITION(po_pDy != 0);
 
     // Calculate deltas based on points
-    double Dx = m_EndPoint.GetX() - m_StartPoint.GetX();
-    double Dy = m_EndPoint.GetY() - m_StartPoint.GetY();
+    double Dx = GetEndPoint().GetX() - GetStartPoint().GetX();
+    double Dy = GetEndPoint().GetY() - GetStartPoint().GetY();
 
     // Obtain absolute values of both deltas
     double AbsDx = fabs(Dx);
@@ -1447,14 +1447,14 @@ void HGF2DLiteSegment::GetDeltas(double* po_pDx,
 HGF2DPosition HGF2DLiteSegment::CalculateClosestPoint(const HGF2DPosition& pi_rPoint) const
     {
     // Calculate closest point to line the segment is part of
-    HGF2DPosition   ClosestPoint(HGF2DLiteLine(m_StartPoint, m_EndPoint).CalculateClosestPoint(pi_rPoint));
+    HGF2DPosition   ClosestPoint(HGF2DLiteLine(GetStartPoint(), GetEndPoint()).CalculateClosestPoint(pi_rPoint));
 
     // Check if this point is not located on the segment
     if (!IsPointOnLineOnSegment(ClosestPoint))
         {
         // Calculate distances from extremities to point
-        double FromStart = m_StartPoint.CalculateLengthTo(pi_rPoint);
-        double FromEnd = m_EndPoint.CalculateLengthTo(pi_rPoint);
+        double FromStart = GetStartPoint().CalculateLengthTo(pi_rPoint);
+        double FromEnd = GetEndPoint().CalculateLengthTo(pi_rPoint);
 
         // Check if distances are equal
         // KEEP AS OPERATOR==
@@ -1465,7 +1465,7 @@ HGF2DPosition HGF2DLiteSegment::CalculateClosestPoint(const HGF2DPosition& pi_rP
             if (CalculateLength() == 0.0)
                 {
                 // We have a null segment ... any point will do
-                ClosestPoint =  m_StartPoint;
+                ClosestPoint =  GetStartPoint();
                 }
             else
                 {
@@ -1473,15 +1473,15 @@ HGF2DPosition HGF2DLiteSegment::CalculateClosestPoint(const HGF2DPosition& pi_rP
                 // We know that the tentative closest point is very far from either start
                 // or end point, and is aligned to it ... we use bearings if not infinity
                 if (!BeNumerical::BeFinite(FromStart))
-                    ClosestPoint = m_StartPoint;
+                    ClosestPoint = GetStartPoint();
                 else
                     {
-                    HGF2DDisplacement displacement1(m_StartPoint.GetX() - ClosestPoint.GetX(), m_StartPoint.GetY() - ClosestPoint.GetY());
+                    HGF2DDisplacement displacement1(GetStartPoint().GetX() - ClosestPoint.GetX(), GetStartPoint().GetY() - ClosestPoint.GetY());
                     HGFBearing   FromStartBearing = displacement1.CalculateBearing();
-                    HGF2DDisplacement displacement2(m_EndPoint.GetX() - m_StartPoint.GetX(), m_EndPoint.GetY() - m_StartPoint.GetY());
+                    HGF2DDisplacement displacement2(GetEndPoint().GetX() - GetStartPoint().GetX(), GetEndPoint().GetY() - GetStartPoint().GetY());
                     HGFBearing   SegmentBearing = displacement2.CalculateBearing();
 
-                    ClosestPoint = ((FromStartBearing.IsEqualTo(SegmentBearing)) ? m_StartPoint : m_EndPoint);
+                    ClosestPoint = ((FromStartBearing.IsEqualTo(SegmentBearing)) ? GetStartPoint() : GetEndPoint());
                     }
                 }
             }
@@ -1489,7 +1489,7 @@ HGF2DPosition HGF2DLiteSegment::CalculateClosestPoint(const HGF2DPosition& pi_rP
             {
             // Since the closest point on line is not located on segment, then the
             // closest point is the closest of the start point or the end point.
-            ClosestPoint = ((FromStart < FromEnd) ? m_StartPoint : m_EndPoint);
+            ClosestPoint = ((FromStart < FromEnd) ? GetStartPoint() : GetEndPoint());
             }
         }
 
@@ -1508,10 +1508,10 @@ bool   HGF2DLiteSegment::IsPointOnLineOnSegment(const HGF2DPosition& pi_rTestPoi
     double Y = pi_rTestPoint.GetY();
 
     // Obtain extremes of segment
-    double XMin = MIN(m_StartPoint.GetX(), m_EndPoint.GetX());
-    double XMax = MAX(m_StartPoint.GetX(), m_EndPoint.GetX());
-    double YMin = MIN(m_StartPoint.GetY(), m_EndPoint.GetY());
-    double YMax = MAX(m_StartPoint.GetY(), m_EndPoint.GetY());
+    double XMin = MIN(GetStartPoint().GetX(), GetEndPoint().GetX());
+    double XMax = MAX(GetStartPoint().GetX(), GetEndPoint().GetX());
+    double YMin = MIN(GetStartPoint().GetY(), GetEndPoint().GetY());
+    double YMax = MAX(GetStartPoint().GetY(), GetEndPoint().GetY());
 
     double Tolerance = GetTolerance();
 
@@ -1529,8 +1529,8 @@ bool   HGF2DLiteSegment::IsPointOnLineOnSegment(const HGF2DPosition& pi_rTestPoi
 //-----------------------------------------------------------------------------
 double HGF2DLiteSegment::CalculateLength() const
     {
-    double DeltaX(m_EndPoint.GetX()-m_StartPoint.GetX());
-    double DeltaY(m_EndPoint.GetY()-m_StartPoint.GetY());
+    double DeltaX(GetEndPoint().GetX()-GetStartPoint().GetX());
+    double DeltaY(GetEndPoint().GetY()-GetStartPoint().GetY());
 
     return sqrt((DeltaX * DeltaX) + (DeltaY * DeltaY));
     }

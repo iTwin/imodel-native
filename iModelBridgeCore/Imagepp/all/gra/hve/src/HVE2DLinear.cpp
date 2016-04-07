@@ -21,6 +21,8 @@ HPM_REGISTER_ABSTRACT_CLASS(HVE2DLinear, HVE2DVector)
 //-----------------------------------------------------------------------------
 void HVE2DLinear::SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rpNewCoordSys)
     {
+    ClearPeer();
+        
     // Change the ancester coord sys
     HVE2DVector::SetCoordSysImplementation(pi_rpNewCoordSys);
 

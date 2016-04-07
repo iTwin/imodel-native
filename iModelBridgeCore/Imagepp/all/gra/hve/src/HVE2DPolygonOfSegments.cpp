@@ -512,8 +512,8 @@ void HVE2DPolygonOfSegments::Simplify()
         // Set last point to new first point
         m_PolySegment.m_Points.back() = m_PolySegment.m_Points[0];
 
-        m_PolySegment.m_StartPoint = HGF2DLocation(m_PolySegment.m_Points.front(), GetCoordSys());
-        m_PolySegment.m_EndPoint = m_PolySegment.m_StartPoint;
+        m_PolySegment.SetLinearStartPoint(HGF2DLocation(m_PolySegment.m_Points.front(), GetCoordSys()));
+        m_PolySegment.SetLinearEndPoint(m_PolySegment.GetStartPoint());
         }
 
     HPOSTCONDITION(m_PolySegment.m_Points[0] == m_PolySegment.m_Points[m_PolySegment.GetSize() - 1]);
@@ -733,8 +733,8 @@ HVE2DPolygonOfSegments::HVE2DPolygonOfSegments(const HGF2DPolygonOfSegments&  pi
         }
 
     // Adjust start and end points
-    m_PolySegment.m_StartPoint = HGF2DLocation(m_PolySegment.m_Points[0], pi_rpCoordSys);
-    m_PolySegment.m_EndPoint = HGF2DLocation (m_PolySegment.m_Points[m_PolySegment.m_Points.size() - 1], pi_rpCoordSys);
+    m_PolySegment.SetLinearStartPoint(HGF2DLocation(m_PolySegment.m_Points[0], pi_rpCoordSys));
+    m_PolySegment.SetLinearEndPoint(HGF2DLocation (m_PolySegment.m_Points[m_PolySegment.m_Points.size() - 1], pi_rpCoordSys));
 
     // Adjust tolerance if needed
     ResetTolerance();
@@ -3054,7 +3054,7 @@ bool HVE2DPolygonOfSegments::SuperScan(const HVE2DPolygonOfSegments&  pi_rGiven,
 
             // Append the current part of self
             pMyNewPoly->m_PolySegment.m_Points.push_back(PreviousPoint);
-            pMyNewPoly->m_PolySegment.m_StartPoint = HGF2DLocation(PreviousPoint, GetCoordSys());
+            pMyNewPoly->m_PolySegment.SetLinearStartPoint(HGF2DLocation(PreviousPoint, GetCoordSys()));
             pMyNewPoly->m_PolySegment.m_Points.push_back(CurrentPoint);
 
             // Followed shape is self
@@ -3408,7 +3408,7 @@ bool HVE2DPolygonOfSegments::SuperScan(const HVE2DPolygonOfSegments&  pi_rGiven,
                         pMyNewPoly->m_PolySegment.m_Points.back() = pMyNewPoly->m_PolySegment.m_Points.front();
                         }
 
-                    pMyNewPoly->m_PolySegment.m_EndPoint = HGF2DLocation(pMyNewPoly->m_PolySegment.m_Points.back(), GetCoordSys());
+                    pMyNewPoly->m_PolySegment.SetLinearEndPoint(HGF2DLocation(pMyNewPoly->m_PolySegment.m_Points.back(), GetCoordSys()));
 
                     // Set tolerance for new polygon
                     pMyNewPoly->SetAutoToleranceActive(IsAutoToleranceActive());
@@ -3661,7 +3661,7 @@ bool HVE2DPolygonOfSegments::SuperScan2(const HVE2DPolygonOfSegments&  pi_rGiven
 
             // Append the current part of self
             pMyNewPoly->m_PolySegment.m_Points.push_back(PreviousPoint);
-            pMyNewPoly->m_PolySegment.m_StartPoint = HGF2DLocation(PreviousPoint, GetCoordSys());
+            pMyNewPoly->m_PolySegment.SetLinearStartPoint(HGF2DLocation(PreviousPoint, GetCoordSys()));
             pMyNewPoly->m_PolySegment.m_Points.push_back(CurrentPoint);
 
             // Followed shape is self
@@ -3854,7 +3854,7 @@ bool HVE2DPolygonOfSegments::SuperScan2(const HVE2DPolygonOfSegments&  pi_rGiven
                     pMyNewPoly->m_PolySegment.m_Points.back() = pMyNewPoly->m_PolySegment.m_Points.front();
                     }
 
-                pMyNewPoly->m_PolySegment.m_EndPoint = HGF2DLocation(pMyNewPoly->m_PolySegment.m_Points.back(), GetCoordSys());
+                pMyNewPoly->m_PolySegment.SetLinearEndPoint(HGF2DLocation(pMyNewPoly->m_PolySegment.m_Points.back(), GetCoordSys()));
 
                 // Remove needles (rare occurence)
                 pMyNewPoly->m_PolySegment.RemoveAutoContiguousNeedles(true);
@@ -4923,8 +4923,8 @@ HVE2DShape* HVE2DPolygonOfSegments::AllocateComplexShapeFromAutoContiguousPolySe
 
         // We have a new polysegment
         // Set start and end point.
-        NewPolySegment.m_StartPoint = HGF2DLocation(NewPolySegment.m_Points[0], NewPolySegment.GetCoordSys());
-        NewPolySegment.m_EndPoint = HGF2DLocation(NewPolySegment.m_Points[0], NewPolySegment.GetCoordSys());
+        NewPolySegment.SetLinearStartPoint(HGF2DLocation(NewPolySegment.m_Points[0], NewPolySegment.GetCoordSys()));
+        NewPolySegment.SetLinearEndPoint(HGF2DLocation(NewPolySegment.m_Points[0], NewPolySegment.GetCoordSys()));
 
         // The end point must be approximatively equal to start point (within tolerance)
         HASSERT(NewPolySegment.m_Points[0].IsEqualTo(NewPolySegment.m_Points[NewPolySegment.m_Points.size() - 1], Tolerance));

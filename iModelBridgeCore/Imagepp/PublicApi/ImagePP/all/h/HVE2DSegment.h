@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DSegment.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DSegment
@@ -225,9 +225,22 @@ public:
     IMAGEPP_EXPORT virtual void     PrintState(ostream& po_rOutput) const;
 
 protected:
+    
+    HGF2DSegment&  GetSegmentPeer() const
+        {
+        return (*static_cast<HGF2DSegment*>(&(GetPeer())));
+        }
+        
+    virtual void CreatePeer() const override
+        {
+        m_Peer = new HGF2DSegment(GetStartPoint().GetPosition(), GetEndPoint().GetPosition());
+        m_Peer->SetTolerance(GetTolerance());            
+        }
 
 private:
 
+
+    
 
     HVE2DVector* AllocateCopyInComplexCoordSys(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys) const;
     void         AppendItselfInCoordSys(HVE2DComplexLinear& pio_rResultComplex,

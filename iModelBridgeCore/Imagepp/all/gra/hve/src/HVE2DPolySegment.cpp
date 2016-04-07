@@ -635,8 +635,8 @@ void HVE2DPolySegment::RemoveAutoContiguousNeedles(bool pi_ClosedProcessing)
                         m_Points.push_back(*(m_Points.begin()));
 
                         // Reset start and end points
-                        m_StartPoint = HGF2DLocation(*(m_Points.begin()), GetCoordSys());
-                        m_EndPoint = m_StartPoint;
+                        SetLinearStartPoint(HGF2DLocation(*(m_Points.begin()), GetCoordSys()));
+                        SetLinearEndPoint(GetStartPoint());
                         ResetTolerance();
                         }
                     else
@@ -874,8 +874,8 @@ void HVE2DPolySegment::RemoveAutoContiguousNeedles(bool pi_ClosedProcessing)
                     }
 
                 // Set start and end point
-                m_StartPoint = HGF2DLocation(*(m_Points.begin()), GetCoordSys());
-                m_EndPoint = m_StartPoint;
+                SetLinearStartPoint(HGF2DLocation(*(m_Points.begin()), GetCoordSys()));
+                SetLinearEndPoint(GetStartPoint());
                 ResetTolerance();
                 }
 #else
@@ -907,8 +907,8 @@ void HVE2DPolySegment::RemoveAutoContiguousNeedles(bool pi_ClosedProcessing)
                     }
 
                 // Set start and end point
-                m_StartPoint = HGF2DLocation(*(m_Points.begin()), GetCoordSys());
-                m_EndPoint = m_StartPoint;
+                SetLinearStartPoint(HGF2DLocation(*(m_Points.begin()), GetCoordSys()));
+                SetLinearEndPoint(GetStartPoint());
                 ResetTolerance();
 
                 if (m_Points.size() >= 3)
@@ -1194,10 +1194,10 @@ HVE2DPolySegment::HVE2DPolySegment(const HGF2DPositionCollection& pi_rListOfPoin
     HPRECONDITION(pi_rListOfPoints.size() >= 2);
 
     // We set start point
-    m_StartPoint = HGF2DLocation(*(pi_rListOfPoints.begin()), pi_rpCoordSys);
+    SetLinearStartPoint(HGF2DLocation(*(pi_rListOfPoints.begin()), pi_rpCoordSys));
 
     // Set end point
-    m_EndPoint = HGF2DLocation(*(pi_rListOfPoints.rbegin()), pi_rpCoordSys);
+    SetLinearEndPoint(HGF2DLocation(*(pi_rListOfPoints.rbegin()), pi_rpCoordSys));
 
     // Reset tolerance
     ResetTolerance();
@@ -1219,11 +1219,10 @@ HVE2DPolySegment::HVE2DPolySegment(const HGF2DLocationCollection& pi_rListOfPoin
     HPRECONDITION(pi_rListOfPoints.size() >= 2);
 
     // We set start point
-    m_StartPoint = *(pi_rListOfPoints.begin());
+    SetLinearStartPoint(*(pi_rListOfPoints.begin()));
 
     // Set end point
-    m_EndPoint = *(pi_rListOfPoints.rbegin());
-    m_EndPoint.ChangeCoordSys(GetCoordSys());   // Just make sure...
+    SetLinearEndPoint(HGF2DLocation(*(pi_rListOfPoints.rbegin()), GetCoordSys()));
 
     // We copy the locations to the position collection
     HGF2DLocationCollection::const_iterator Itr(pi_rListOfPoints.begin());
@@ -1269,12 +1268,12 @@ HVE2DPolySegment::HVE2DPolySegment(size_t pi_BufferLength,
         }
 
     // Set start and end points
-    m_StartPoint = HGF2DLocation(m_Points.begin()->GetX(),
+    SetLinearStartPoint(HGF2DLocation(m_Points.begin()->GetX(),
                                  m_Points.begin()->GetY(),
-                                 pi_rpCoordSys);
-    m_EndPoint = HGF2DLocation(m_Points.rbegin()->GetX(),
+                                 pi_rpCoordSys));
+    SetLinearEndPoint(HGF2DLocation(m_Points.rbegin()->GetX(),
                                m_Points.rbegin()->GetY(),
-                               pi_rpCoordSys);
+                               pi_rpCoordSys));
 
     ResetTolerance();
 
@@ -1553,14 +1552,14 @@ void HVE2DPolySegment::AppendPoint(const HGF2DLocation& pi_rNewPoint)
     if (m_Points.size() == 0)
         {
         // It is the first point ... we must set start point
-        m_StartPoint = ThePoint;
+        SetLinearStartPoint(ThePoint);
         }
 
     // Add position
     m_Points.push_back(ThePoint.GetPosition());
 
     // In all case, this point becomes the end point
-    m_EndPoint = ThePoint;
+    SetLinearEndPoint(ThePoint);
 
     // Indicate extent in no more up to date
     m_ExtentUpToDate = false;
@@ -1581,14 +1580,14 @@ void HVE2DPolySegment::AppendPosition(const HGF2DPosition& pi_rNewPoint)
     if (m_Points.size() == 0)
         {
         // It is the first point ... we must set start point
-        m_StartPoint = HGF2DLocation(pi_rNewPoint, GetCoordSys());
+        SetLinearStartPoint(HGF2DLocation(pi_rNewPoint, GetCoordSys()));
         }
 
     // Add position
     m_Points.push_back(pi_rNewPoint);
 
     // In all case, this point becomes the end point
-    m_EndPoint = HGF2DLocation(pi_rNewPoint, GetCoordSys());
+    SetLinearEndPoint(HGF2DLocation(pi_rNewPoint, GetCoordSys()));
 
     // Indicate extent in no more up to date
     m_ExtentUpToDate = false;
@@ -1633,11 +1632,11 @@ void HVE2DPolySegment::RemovePoint(size_t pi_Index)
         // Reset start and end point if required
         if (pi_Index == 0)
             {
-            m_StartPoint = HGF2DLocation(m_Points.front(), GetCoordSys());
+            SetLinearStartPoint(HGF2DLocation(m_Points.front(), GetCoordSys()));
             }
         if (pi_Index == m_Points.size())
             {
-            m_EndPoint = HGF2DLocation(m_Points.back(), GetCoordSys());
+            SetLinearEndPoint(HGF2DLocation(m_Points.back(), GetCoordSys()));
             }
         }
 
@@ -1668,22 +1667,20 @@ void HVE2DPolySegment::Rotate(double               pi_Angle,
     Similitude.AddRotation(pi_Angle, Origin.GetX(), Origin.GetY());
 
     // Transform coordinates of start point
-    double NewX = m_StartPoint.GetX();
-    double NewY = m_StartPoint.GetY();
+    double NewX = GetStartPoint().GetX();
+    double NewY = GetStartPoint().GetY();
     Similitude.ConvertDirect(&NewX, &NewY);
 
     // Set new start point
-    m_StartPoint.SetX(NewX);
-    m_StartPoint.SetY(NewY);
+    SetLinearStartPoint(HGF2DLocation(NewX, NewY, GetCoordSys()));
 
     // Transform coordinates of end point
-    NewX = m_EndPoint.GetX();
-    NewY = m_EndPoint.GetY();
+    NewX = GetEndPoint().GetX();
+    NewY = GetEndPoint().GetY();
     Similitude.ConvertDirect(&NewX, &NewY);
 
     // Set new end point
-    m_EndPoint.SetX(NewX);
-    m_EndPoint.SetY(NewY);
+    SetLinearEndPoint(HGF2DLocation(NewX, NewY, GetCoordSys()));
 
     // For every point in list...
     HGF2DPositionCollection::iterator Itr;
@@ -2318,8 +2315,8 @@ HVE2DVector* HVE2DPolySegment::AllocateCopyInCoordSys(const HFCPtr<HGF2DCoordSys
                 }
 
             // Transform start and end points
-            pMyResultPolySegment->m_StartPoint = m_StartPoint.ExpressedIn(pi_rpCoordSys);
-            pMyResultPolySegment->m_EndPoint   = m_EndPoint.ExpressedIn(pi_rpCoordSys);
+            pMyResultPolySegment->SetLinearStartPoint(GetStartPoint().ExpressedIn(pi_rpCoordSys));
+            pMyResultPolySegment->SetLinearEndPoint(GetEndPoint().ExpressedIn(pi_rpCoordSys));
 
             // Reset tolerance of new polysegment
             pMyResultPolySegment->SetTolerance(MIN(HMAX_EPSILON, Tolerance));
@@ -2446,7 +2443,7 @@ HGF2DLocation HVE2DPolySegment::CalculateRelativePoint(double pi_RelativePos) co
 //    HPRECONDITION(CalculateLength() > 0.0);
 
     // Declare result variable
-    HGF2DLocation   ResultPoint(m_StartPoint);
+    HGF2DLocation   ResultPoint(GetStartPoint());
 
     // Check if poly segment is not empty
     if ((m_Points.size() >= 2)&& !(CalculateLength() == 0.0))
@@ -2458,13 +2455,13 @@ HGF2DLocation HVE2DPolySegment::CalculateRelativePoint(double pi_RelativePos) co
         if (pi_RelativePos == 0.0)
             {
             // Start point is asked for
-            ResultPoint = m_StartPoint;
+            ResultPoint = GetStartPoint();
             }
         // NOTE: In the following the EXACT compare operation is voluntary
         else if (pi_RelativePos == 1.0)
             {
             // End point is asked for
-            ResultPoint = m_EndPoint;
+            ResultPoint = GetEndPoint();
             }
         else
             {
@@ -2889,8 +2886,8 @@ void HVE2DPolySegment::Shorten(double startRelativePos, double endRelativePos)
     // as it may create division by 0.0 issues. See here-above.   
 
     // We update start and end points
-    m_StartPoint = HGF2DLocation(m_Points[0], GetCoordSys());
-    m_EndPoint = HGF2DLocation(m_Points[m_Points.size() - 1], GetCoordSys());
+    SetLinearStartPoint(HGF2DLocation(m_Points[0], GetCoordSys()));
+    SetLinearEndPoint(HGF2DLocation(m_Points[m_Points.size() - 1], GetCoordSys()));
 
     // Indicate extent is no more up to date
     m_ExtentUpToDate = false;
@@ -3135,16 +3132,16 @@ void HVE2DPolySegment::AdjustStartPointTo(const HGF2DLocation& pi_rPoint)
     HINVARIANTS;
 
     // The adjust point must be virtually identical to start point
-    HPRECONDITION(m_StartPoint.IsEqualTo(pi_rPoint, GetTolerance()));
+    HPRECONDITION(GetStartPoint().IsEqualTo(pi_rPoint, GetTolerance()));
 
     // The polysegment must not be nul
     HPRECONDITION(m_Points.size() >= 2);
 
     // Set start point
-    m_StartPoint.Set(pi_rPoint);
+    SetLinearStartPoint(pi_rPoint);
 
     // Adjust point collection
-    m_Points[0] = m_StartPoint.GetPosition();
+    m_Points[0] = GetStartPoint().GetPosition();
 
     // Tolerance is not adjusted since change is only minor
     }
@@ -3159,16 +3156,16 @@ void HVE2DPolySegment::AdjustEndPointTo(const HGF2DLocation& pi_rPoint)
     HINVARIANTS;
 
     // The end point must be equal within tolerance to given point
-    HPRECONDITION(m_EndPoint.IsEqualTo(pi_rPoint, GetTolerance()));
+    HPRECONDITION(GetEndPoint().IsEqualTo(pi_rPoint, GetTolerance()));
 
     // The polysegment must not be nul
     HPRECONDITION(m_Points.size() >= 2);
 
     // Adjust end point
-    m_EndPoint.Set(pi_rPoint);
+    SetLinearEndPoint(pi_rPoint);
 
     // Adjust point collection
-    m_Points[m_Points.size() - 1] = m_EndPoint.GetPosition();
+    m_Points[m_Points.size() - 1] = GetEndPoint().GetPosition();
 
     // Tolerance is not adjusted since change is only minor
     }
@@ -3213,7 +3210,7 @@ void HVE2DPolySegment::Drop(HGF2DLocationCollection* po_pPoints,
     if (pi_EndPointProcessing == HVE2DLinear::INCLUDE_END_POINT)
         {
         // We must add end point
-        po_pPoints->push_back(m_EndPoint);
+        po_pPoints->push_back(GetEndPoint());
         }
 
     }
@@ -7941,7 +7938,7 @@ void HVE2DPolySegment::AppendSegmentInCoordSys(const HVE2DSegment& pi_rSegment)
         // The epsilon is respected ... we add this last segment to linear
         m_Points.push_back(TransformedEndPoint.GetPosition());
 
-        m_EndPoint = TransformedEndPoint;
+        SetLinearEndPoint(TransformedEndPoint);
         }
     else
         {
@@ -7986,12 +7983,12 @@ HVE2DVector* HVE2DPolySegment::AllocateCopyInComplexCoordSys(const HFCPtr<HGF2DC
 
     // Transform start and end points.
 // HChk AR If domain error thrown ... we should do something!!!!
-    pNewPolySegment->m_StartPoint = m_StartPoint.ExpressedIn(pi_rpCoordSys);
-    pNewPolySegment->m_EndPoint   = m_EndPoint.ExpressedIn(pi_rpCoordSys);
+    pNewPolySegment->SetLinearStartPoint(GetStartPoint().ExpressedIn(pi_rpCoordSys));
+    pNewPolySegment->SetLinearEndPoint(GetEndPoint().ExpressedIn(pi_rpCoordSys));
 
 // HChk AR If domain error thrown ... we should do something!!!!
     // Obtain a transformed value of start point
-    HGF2DLocation TransStartPoint(m_StartPoint, pi_rpCoordSys);
+    HGF2DLocation TransStartPoint(GetStartPoint(), pi_rpCoordSys);
 
     // Append start point first
     pNewPolySegment->m_Points.push_back(TransStartPoint.GetPosition());
@@ -8021,11 +8018,11 @@ HVE2DVector* HVE2DPolySegment::AllocateCopyInComplexCoordSys(const HFCPtr<HGF2DC
 
     // In some imprecise transformation models there could be a variation
     // between conversion of two identical coordinates ... adjust if applicable
-    if (m_StartPoint.IsEqualTo(m_EndPoint))
+    if (GetStartPoint().IsEqualTo(GetEndPoint()))
         pNewPolySegment->AdjustEndPointTo(pNewPolySegment->GetStartPoint());
 
     // If the start point and end points were originally equal then they should be equal in the result
-    HASSERT(!m_StartPoint.IsEqualTo(m_EndPoint) || pNewPolySegment->GetStartPoint().IsEqualTo(pNewPolySegment->GetEndPoint()));
+    HASSERT(!GetStartPoint().IsEqualTo(GetEndPoint()) || pNewPolySegment->GetStartPoint().IsEqualTo(pNewPolySegment->GetEndPoint()));
 
     // Reactive auto tolearnce determination if applicable
     pNewPolySegment->SetAutoToleranceActive(IsAutoToleranceActive());
@@ -8767,7 +8764,7 @@ bool HVE2DPolySegment::SplitIntoNonAutoCrossing(list<HFCPtr<HVE2DPolySegment> >*
     HASSERTSUPERDEBUG(AutoCrosses());
 
     // If process closed is set to true, then self must autoclose
-    HPRECONDITION(!pi_ProcessClosed || (m_StartPoint == m_EndPoint));
+    HPRECONDITION(!pi_ProcessClosed || (GetStartPoint() == GetEndPoint()));
 
     // Obtain all autointersect points
     HGF2DLocationCollection MyAutoIntersectPoints;
@@ -8805,7 +8802,7 @@ bool HVE2DPolySegment::SplitIntoNonAutoCrossing(list<HFCPtr<HVE2DPolySegment> >*
                 HFCPtr<HVE2DPolySegment> pNewMiddlePolySegment = new HVE2DPolySegment(**PolySegmentItr);
 
                 // Check if the split point is also start point
-                if (MySplitPointItr->IsEqualTo((*PolySegmentItr)->m_StartPoint, GetTolerance()))
+                if (MySplitPointItr->IsEqualTo((*PolySegmentItr)->GetStartPoint(), GetTolerance()))
                     {
                     // Reverse the current polysegments
                     (*PolySegmentItr)->Reverse();
@@ -8876,7 +8873,7 @@ void HVE2DPolySegment::RecomposeClosedPolySegments(list<HFCPtr<HVE2DPolySegment>
     HPRECONDITION (pio_pListOfResultPolySegments->size() > 0);
 
     // In such case we first determine if the original polysegment rotation direction
-    double TotalAreaSigned = CalculateRayArea(HGF2DLocation(m_StartPoint, GetCoordSys()));
+    double TotalAreaSigned = CalculateRayArea(HGF2DLocation(GetStartPoint(), GetCoordSys()));
 
     bool GoesCW = (TotalAreaSigned < 0.0);
 

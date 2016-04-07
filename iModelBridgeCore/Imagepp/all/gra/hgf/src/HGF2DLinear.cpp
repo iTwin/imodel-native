@@ -29,11 +29,11 @@ void HGF2DLinear::PrintState(ostream& po_rOutput) const
 
     // Dump the end points
     char    DumString[256];
-    sprintf(DumString, "Start Point : %5.15lf , %5.15lf", m_StartPoint.GetX(), m_StartPoint.GetY());
+    sprintf(DumString, "Start Point : %5.15lf , %5.15lf", GetStartPoint().GetX(), GetStartPoint().GetY());
     po_rOutput << DumString << endl;
     HDUMP0(DumString);
     HDUMP0("\n");
-    sprintf(DumString, "End Point   : %5.15lf , %5.15lf", m_EndPoint.GetX(), m_EndPoint.GetY());
+    sprintf(DumString, "End Point   : %5.15lf , %5.15lf", GetEndPoint().GetX(), GetEndPoint().GetY());
     po_rOutput << DumString << endl;
     HDUMP0(DumString);
     HDUMP0("\n");
