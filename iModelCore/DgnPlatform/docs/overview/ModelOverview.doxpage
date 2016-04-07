@@ -63,7 +63,7 @@ __PUBLISH_INSERT_FILE__ Model_CreateAndInsert.sampleCode
 If custom <i>container</i> behavior is desired, it is also possible to subclass one of the base model classes.
 To accomplish this, the first step is to create an ECEntityClass in the ecschema.xml file (data model) that subclasses the appropriate DgnPlatform ECEntityClass:
 
-<b>WIP: Insert ECSchema snippet</b>
+__PUBLISH_INSERT_FILE__ ToyTileECSchema_ToyTileModel.sampleCode
 
 The next step is to create a C++ class that subclasses the appropriate DgnModel C++ class:
 
