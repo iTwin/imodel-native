@@ -296,16 +296,16 @@ private:
     void OnEndApplyChanges();
 
 public:
-    DgnDbStatus DeleteFromStartTo(TxnId lastId);
-    void DeleteReversedTxns();
+    DgnDbStatus DeleteFromStartTo(TxnId lastId); //!< @private
+    void DeleteReversedTxns(); //!< @private
     void OnBeginValidate(); //!< @private
     void OnEndValidate(); //!< @private
     void AddTxnTable(DgnDomain::TableHandler*);//!< @private
     DGNPLATFORM_EXPORT TxnManager(DgnDbR); //!< @private
     DGNPLATFORM_EXPORT ~TxnManager(); //!< @private
     BeSQLite::DbResult InitializeTableHandlers(); //!< @private
-    Utf8StringCR GetCurrentTable() const {return m_currentTable;}
-    ECN::ECClassCP GetRelationshipClassByTableName(Utf8StringCR tname) const;
+    Utf8StringCR GetCurrentTable() const {return m_currentTable;} //!< @private
+    ECN::ECClassCP GetRelationshipClassByTableName(Utf8StringCR tname) const; //!< @private
     
     //! A statement cache exclusively for Txn-based statements.
     BeSQLite::CachedStatementPtr GetTxnStatement(Utf8CP sql) const;
@@ -335,7 +335,7 @@ public:
     //! Get the dgn_TxnTable::Model TxnTable for this TxnManager
     DGNPLATFORM_EXPORT dgn_TxnTable::Model& Models() const;
 
-    //! Get the dgn_TxnTable::Model TxnTable for this TxnManager
+    //! Get the RelationshipLinkTables table for this TxnManager
     DGNPLATFORM_EXPORT dgn_TxnTable::RelationshipLinkTables& RelationshipLinkTables() const;
 
     //! Get the description of a previously committed Txn, given its TxnId.
@@ -660,9 +660,8 @@ namespace dgn_TxnTable
     };
 
     /** 
-     * Tracks changes to ECRelationships that are mapped to link tables. Includes only relationships for which tracking has been requested.
-     * A single table is used to track instances of all link-table-based ECRElationships.
-     * <p>See TxnManager::BeginTrackingRelationship for how to start tracking an ECRelationship.
+     * Tracks changes to ECRelationships that are mapped to link tables. 
+     * Includes only relationships for which tracking has been requested. See TxnManager::BeginTrackingRelationship for how to start tracking an ECRelationship.
      * <p>To query changes, a TxnMonitor should query the RelationshipLinkTables. Here is an example:
      __PUBLISH_INSERT_FILE__ RelationshipLinkTableTrackingTxnMonitor_OnCommit_.sampleCode
      */
