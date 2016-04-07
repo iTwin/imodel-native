@@ -663,7 +663,7 @@ namespace dgn_TxnTable
      * Tracks changes to ECRelationships that are mapped to link tables. 
      * Includes only relationships for which tracking has been requested. See TxnManager::BeginTrackingRelationship for how to start tracking an ECRelationship.
      * <p>To query changes, a TxnMonitor should query the RelationshipLinkTables. Here is an example:
-     __PUBLISH_INSERT_FILE__ RelationshipLinkTableTrackingTxnMonitor_OnCommit_.sampleCode
+     COMMENTOUTPUBLISH_INSERT_FILECOMMENTOUT RelationshipLinkTableTrackingTxnMonitor_OnCommit_.sampleCode
      */
     struct RelationshipLinkTables : TxnTable
         {
