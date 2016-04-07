@@ -1398,7 +1398,9 @@ TEST_F(DynamicTxnsTest, IndirectChanges)
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson      01/15
 +===============+===============+===============+===============+===============+======*/
+//__PUBLISH_EXTRACT_START__ RelationshipLinkTableTrackingTxnMonitor_Define_.sampleCode
 struct TestRelationshipLinkTableTrackingTxnMonitor : TxnMonitor
+//__PUBLISH_EXTRACT_END__
     {
     struct RelDef
         {
@@ -1413,9 +1415,11 @@ struct TestRelationshipLinkTableTrackingTxnMonitor : TxnMonitor
     BeSQLite::CachedStatementPtr m_stmt;
     bvector<ECN::ECClassId> m_classesToTrack;
 
+//__PUBLISH_EXTRACT_START__ RelationshipLinkTableTrackingTxnMonitor_Register_.sampleCode
     TestRelationshipLinkTableTrackingTxnMonitor()
         {
         DgnPlatformLib::GetHost().GetTxnAdmin().AddTxnMonitor(*this);
+//__PUBLISH_EXTRACT_END__
         Clear();
         }
     ~TestRelationshipLinkTableTrackingTxnMonitor()
@@ -1426,6 +1430,7 @@ struct TestRelationshipLinkTableTrackingTxnMonitor : TxnMonitor
         {
         m_changes.clear();
         }
+    //__PUBLISH_EXTRACT_START__ RelationshipLinkTableTrackingTxnMonitor_OnCommit_.sampleCode
     void _OnCommit(TxnManager& txnMgr) override
         {
         // In this example, I track a particular ECRelationshipClass. A real app could have a variety
@@ -1466,6 +1471,7 @@ struct TestRelationshipLinkTableTrackingTxnMonitor : TxnMonitor
         m_stmt->Reset();
         m_stmt->ClearBindings();
         }
+    //__PUBLISH_EXTRACT_END__
 
     bool HasChanges() const {return !m_changes.empty(); }
 

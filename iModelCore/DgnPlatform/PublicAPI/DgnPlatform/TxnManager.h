@@ -52,6 +52,7 @@ enum class TxnAction
 
 //=======================================================================================
 //! Interface to be implemented to monitor changes to a DgnDb.
+//! Call DgnPlatformLib::GetHost().GetTxnAdmin().AddTxnMonitor to register a TxnMonitor.
 //! @ingroup TxnMgr
 // @bsiclass                                                      Keith.Bentley   10/07
 //=======================================================================================
@@ -661,10 +662,9 @@ namespace dgn_TxnTable
     /** 
      * Tracks changes to ECRelationships that are mapped to link tables. Includes only relationships for which tracking has been requested.
      * A single table is used to track instances of all link-table-based ECRElationships.
-     * To query changes, TxnMonitor should create a (cached) statement like this:
-     * @code
-       @endcode
-     * @see TxnManager::BeginTrackingRelationship
+     * <p>See TxnManager::BeginTrackingRelationship for how to start tracking an ECRelationship.
+     * <p>To query changes, a TxnMonitor should query the RelationshipLinkTables. Here is an example:
+     __PUBLISH_INSERT_FILE__ RelationshipLinkTableTrackingTxnMonitor_OnCommit_.sampleCode
      */
     struct RelationshipLinkTables : TxnTable
         {
