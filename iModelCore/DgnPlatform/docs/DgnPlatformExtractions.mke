@@ -24,6 +24,9 @@ $(PublishExtractInput)DgnModel.cpp : $(_MakeFilePath)../DgnCore/DgnModel.cpp
 $(PublishExtractInput)DgnSqlTest.cpp : $(_MakeFilePath)../Tests/DgnProject/NonPublished/DgnSqlTest.cpp
     $(LinkFirstDepToFirstTarget)
 
+$(PublishExtractInput)TransactionManager_Test.cpp : $(_MakeFilePath)../Tests/DgnProject/NonPublished/TransactionManager_Test.cpp
+    $(LinkFirstDepToFirstTarget)
+
 $(PublishExtractInput)Category.sample.cpp : $(_MakeFilePath)samplecode/Category.sample.cpp
     $(LinkFirstDepToFirstTarget)
 
