@@ -216,18 +216,18 @@ inline bool HTagFile::GetField (HTagID pi_Tag, uint64_t* po_pVal) const
     return m_pCurDir->GetValues(pi_Tag, po_pVal);
     }
 
-inline bool HTagFile::GetField (HTagID pi_Tag, char** po_ppVal) const
+inline bool HTagFile::GetFieldA (HTagID pi_Tag, CharP* po_ppVal) const
     {
     HPRECONDITION(po_ppVal != 0);
     HFCMonitor Monitor(m_Key);
-    return m_pCurDir->GetValues(pi_Tag, po_ppVal);
+    return m_pCurDir->GetValuesA(pi_Tag, po_ppVal);
     }
 
-inline bool HTagFile::GetField (HTagID pi_Tag, WChar** po_ppVal) const
+inline bool HTagFile::GetFieldW (HTagID pi_Tag, WCharP* po_ppVal) const
     {
     HPRECONDITION(po_ppVal != 0);
     HFCMonitor Monitor(m_Key);
-    return m_pCurDir->GetValues(pi_Tag, po_ppVal);
+    return m_pCurDir->GetValuesW(pi_Tag, po_ppVal);
     }
 
 inline bool HTagFile::GetField (HTagID pi_Tag, uint16_t* po_pVal1, uint16_t* po_pVal2) const
@@ -304,13 +304,13 @@ inline bool HTagFile::SetField (HTagID pi_Tag, uint64_t pi_Val)
     return m_pCurDir->SetValues(pi_Tag, pi_Val);
     }
 
-inline bool HTagFile::SetFieldA (HTagID pi_Tag, const char* pi_pVal)
+inline bool HTagFile::SetFieldA (HTagID pi_Tag, CharCP pi_pVal)
     {
     HFCMonitor Monitor(m_Key);
     return m_pCurDir->SetValuesA(pi_Tag, pi_pVal);
     }
 
-inline bool HTagFile::SetFieldW (HTagID pi_Tag, const WChar* pi_pVal)
+inline bool HTagFile::SetFieldW (HTagID pi_Tag, WCharCP pi_pVal)
     {
     HFCMonitor Monitor(m_Key);
     return m_pCurDir->SetValuesW(pi_Tag, pi_pVal);

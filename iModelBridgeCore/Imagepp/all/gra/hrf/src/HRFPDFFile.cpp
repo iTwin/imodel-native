@@ -64,7 +64,7 @@ ExtensionID gExtensionID = 0;       // For PDF!!!
 
 typedef struct
     {
-    WString                          FileName;
+    Utf8String                          FileName;
     const HFCAuthenticationCallback* pPasswordCallback;
     uint16_t                  RetryCount;
     bool                            Canceled;
@@ -86,7 +86,7 @@ public:
         {}
 
 private:
-    virtual WString _ToString() const
+    virtual Utf8String _ToString() const
         {
         return m_RelatedException.GetExceptionMessage();
         }
@@ -154,7 +154,7 @@ class IppPDFWrapper : public PDFWrapper
     {
 public:
 
-    IppPDFWrapper(const WString& pi_rFileName)
+    IppPDFWrapper(const Utf8String& pi_rFileName)
         {
         HPRECONDITION(!pi_rFileName.empty());
 
@@ -285,7 +285,7 @@ public:
                                                                  RestrictionPassword,
                                                                  1,   // message ID
                                                                  11,  // Sub message ID
-                                                                 L"File protected. Enter a Permission Password",
+                                                                 "File protected. Enter a Permission Password",
                                                                  Retry,
                                                                  &pPassword,
                                                                  &PasswordSize);
@@ -297,7 +297,7 @@ public:
                                                                  HRFPasswordCallback::RestrictionPassword,
                                                                  1,   // message ID
                                                                  12,  // Sub message ID
-                                                                 L"This PDF document is protected using Password Secutity.",
+                                                                 "This PDF document is protected using Password Secutity.",
                                                                  Retry,
                                                                  &pPassword,
                                                                  &PasswordSize);
@@ -306,7 +306,7 @@ public:
                             {
 
                                 HAutoPtr<char> pmbPassword;
-                                pmbPassword =  HFCUnicodeConverter::FromWideCharToMultiByte((WChar*)pPassword);
+                                pmbPassword =  HFCUnicodeConverter::FromWideCharToMultiByte((Utf8Char*)pPassword);
 
                                 if (PDDocAuthorize(m_Document, pdPermCopy, pmbPassword) != pdPermCopy)
                                 {
@@ -509,7 +509,7 @@ private:
     PDDoc                     m_Document;
 
     uint32_t                 m_MainThreadId;
-    WString                   m_FileName;
+    Utf8String                   m_FileName;
     };
 
 
@@ -678,21 +678,21 @@ bool HRFPDFCreator::CanRegister() const
     }
 
 // Identification information
-WString HRFPDFCreator::GetLabel() const
+Utf8String HRFPDFCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_PDF()); //Adobe File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_PDF()); //Adobe File Format
     }
 
 // Identification information
-WString HRFPDFCreator::GetSchemes() const
+Utf8String HRFPDFCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 // Identification information
-WString HRFPDFCreator::GetExtensions() const
+Utf8String HRFPDFCreator::GetExtensions() const
     {
-    return WString(L"*.pdf");
+    return Utf8String("*.pdf");
     }
 
 // allow to Open an image file
@@ -722,11 +722,11 @@ bool HRFPDFCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         if (HRFPDFFile::CanLoadPDFWrapper())
             {
             FILE* pFile;
-            WString FileName = ((const HFCPtr<HFCURLFile>&)pi_rpURL)->GetHost() +
-                               L"\\" +
+            Utf8String FileName = ((const HFCPtr<HFCURLFile>&)pi_rpURL)->GetHost() +
+                               "\\" +
                                ((const HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
 
-            if ((pFile = _wfopen(FileName.c_str(), L"rb")) != 0)
+            if ((pFile = _wfopen(FileName.c_str(), "rb")) != 0)
                 {
                 char aBuffer[5] = {0, 0, 0, 0, 0};
                 fread(aBuffer, 1, 5, pFile);
@@ -788,7 +788,7 @@ int32_t HRFPDFFile::InitializePDFLibraryInThread()
     {
     //BEIJING_WIP_THREADS.
     if (!PdfLibInitializerManager::Initialize())
-        throw HFCDllNotFoundException(L"Adobe PDF Dlls");
+        throw HFCDllNotFoundException("Adobe PDF Dlls");
 
     PDFLDataRec* pPDFLData = PdfLibInitializerManager::GetPDFLDataInitInfo();
     ASInt32 Status = PDFLInitHFT(pPDFLData);
@@ -1312,10 +1312,10 @@ HRFPDFFile::HRFPDFFile(const HFCPtr<HFCURL>& pi_rURL,
 
     m_MainThreadId  = GetCurrentThreadId();
 
-    WString FileName;
+    Utf8String FileName;
 
     FileName = ((const HFCPtr<HFCURLFile>&)pi_rURL)->GetHost() +
-               L"\\" +
+               "\\" +
                ((const HFCPtr<HFCURLFile>&)pi_rURL)->GetPath();
 
     //Read-Only format

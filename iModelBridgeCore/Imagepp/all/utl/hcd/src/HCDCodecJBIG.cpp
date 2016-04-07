@@ -16,7 +16,7 @@
 
 #include <Imagepp/all/h/D:\BSI\08.09.00.xx\src\imagepp\ext\jbigkit\libjbig\jbig.h>
 
-#define HCD_CODEC_NAME L"JBIG"
+#define HCD_CODEC_NAME "JBIG"
 
 //-----------------------------------------------------------------------------
 // public

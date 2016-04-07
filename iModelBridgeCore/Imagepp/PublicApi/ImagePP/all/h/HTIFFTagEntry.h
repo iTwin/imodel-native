@@ -64,8 +64,8 @@ public:
     void                GetValues (uint32_t* po_pVal);
     void                GetValues (double* po_pVal);
     void                GetValues (uint64_t* po_pVal);
-    void                GetValues (char** po_ppVal);
-    void                GetValues (WChar** po_ppVal);
+    void                GetValuesA (CharP*);
+    void                GetValuesW (WCharP*);
     void                GetValues (uint16_t* po_pVal1, uint16_t* po_pVal2);
     void                GetValues (uint32_t* po_pVal1, uint32_t* po_pVal2);                     // RATIONAL
     void                GetValues (uint32_t* po_pCount, uint16_t** po_ppVal);
@@ -78,8 +78,8 @@ public:
     bool               SetValues (uint32_t pi_Val);
     bool               SetValues (double pi_Val);
     bool               SetValues (uint64_t pi_Val);
-    bool               SetValuesA (const char*  pi_pVal);
-    bool               SetValuesW (const WChar*  pi_pVal);
+    bool               SetValuesA (CharCP  pi_pVal);
+    bool               SetValuesW (WCharCP pi_pVal);
     bool               SetValues (uint16_t pi_Val1,  uint16_t pi_Val2);
     bool               SetValues (uint32_t pi_pVal1, uint32_t pi_pVal2);     // RATIONAL
     bool               SetValues (uint32_t pi_Count, const uint16_t* pi_pVal);

@@ -13,7 +13,7 @@
 #include <Imagepp/all/h/HCDCodecBMPRLE4.h>
 #include <Imagepp/all/h/HFCMath.h>
 
-#define HCD_CODEC_NAME L"BMP RLE 4 bits"
+#define HCD_CODEC_NAME "BMP RLE 4 bits"
 
 //-----------------------------------------------------------------------------
 // public

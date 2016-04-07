@@ -28,9 +28,9 @@ public :
     typedef vector<HGF2DLocationCollection*> PointCollections;
 
 
-    HRFAnnotationInfoPDF(const WString&             pi_rMsg,
+    HRFAnnotationInfoPDF(const Utf8String&             pi_rMsg,
                          const HFCPtr<HVE2DVector>& pi_rp2DSelectionZone,
-                         const WString&             pi_rAnnotationType,
+                         const Utf8String&             pi_rAnnotationType,
                          bool                      pi_IsSupported,
                          double                    pi_SetTolerance = 2.0,
                          bool                      pi_IsFilled = false);

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFMappedSurface.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGFMappedSurface
@@ -33,15 +33,15 @@ BEGIN_IMAGEPP_NAMESPACE
     Il est possible de construire une surface en y associant directement un
     "coordsys". Il est possible également de "fitter" la surface dans un
     "extent". Le constructeur s'occupe alors de calculer les ratios de "scaling"
-    à appliquer à l'interne. ATTENTION: Dans ce dernier cas, l'orientation
+    à appliquer à 'interne. ATTENTION: Dans ce dernier cas, l'orientation
     de la surface géoréférencée suivra celle du système de coordonnées
-    de l'"extent", même s'il y a un "scale" appliqué.
+    de '"extent", même s'il y a un "scale" appliqué.
 
     Pour obtenir le "coordsys" de la surface (le véritable "coordsys" qui
     mappe chaque pixel physique de la surface, on doit appeler la méthode
     GetSurfaceCoordSys().
 
-    Il est possible que l'on veuille ne travailler qu'avec une portion de
+    Il est possible que 'on veuille ne travailler qu'avec une portion de
     la surface, c'est-à-dire "mapper" seulement une portion rectangulaire de
     la surface totale.  Pour ce faire, on peut définir des "offsets"
     qui précisent où comment cette portion. La portion possède des

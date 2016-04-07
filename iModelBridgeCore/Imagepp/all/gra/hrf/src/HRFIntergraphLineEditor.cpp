@@ -700,12 +700,12 @@ WRAPUP:
 
 void HRFIntergraphLineEditor::DumpStatOnDisk(void)
     {
-    FILE* FilePtr = _wfopen(L"e:\\SebDump.txt", L"wt");
+    FILE* FilePtr = _wfopen("e:\\SebDump.txt", "wt");
 
     if (FilePtr)
         {
         for (uint32_t i=0; i< m_pResolutionDescriptor->GetHeight(); i++)
-            _ftprintf(FilePtr, L"%d\n", m_DumpStatArray[i]);
+            _ftprintf(FilePtr, "%d\n", m_DumpStatArray[i]);
         fclose(FilePtr);
         }
     }
@@ -1046,9 +1046,12 @@ void HRFIntergraphLineEditor::ApplyLUTColorCorrection(Byte* pio_pData, uint32_t 
 
         for (uint32_t PixelIndex = 0; PixelIndex < pi_pixelCount; PixelIndex++)
             {
-            pio_pData[ByteIndex] = pRedLUT  [pio_pData[ByteIndex++]];
-            pio_pData[ByteIndex] = pGreenLUT[pio_pData[ByteIndex++]];
-            pio_pData[ByteIndex] = pBlueLUT [pio_pData[ByteIndex++]];
+            pio_pData[ByteIndex] = pRedLUT  [pio_pData[ByteIndex]];
+            ByteIndex++;
+            pio_pData[ByteIndex] = pGreenLUT[pio_pData[ByteIndex]];
+            ByteIndex++;
+            pio_pData[ByteIndex] = pBlueLUT [pio_pData[ByteIndex]];
+            ByteIndex++;
             }
         }
     else if (m_BitPerPixel == 8)
@@ -1057,7 +1060,8 @@ void HRFIntergraphLineEditor::ApplyLUTColorCorrection(Byte* pio_pData, uint32_t 
 
         for (uint32_t PixelIndex = 0; PixelIndex < pi_pixelCount; PixelIndex++)
             {
-            pio_pData[ByteIndex] = pRedLUT  [pio_pData[ByteIndex++]];
+            pio_pData[ByteIndex] = pRedLUT  [pio_pData[ByteIndex]];
+            ByteIndex++;
             }
         }
     // Should not occur.  This situation mean we have an Intergraph file with an LUT

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLMemFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -47,29 +47,29 @@ public:
     HDECLARE_CLASS_ID(HFCURLId_MemFile, HFCURL);
 
     // Define the Scheme label
-    static const WString& s_SchemeName()
-        {   static const WString Val(L"memory");
+    static const Utf8String& s_SchemeName()
+        {   static const Utf8String Val("memory");
         FREEZE_STL_STRING(Val);
         return Val;
         }
 
     //:> Primary methods
 
-    IMAGEPP_EXPORT                      HFCURLMemFile(WStringCR pi_URL, const HFCPtr<HFCBuffer>& pi_rpBuffer = HFCPtr<HFCBuffer>());
+    IMAGEPP_EXPORT                      HFCURLMemFile(Utf8StringCR pi_URL, const HFCPtr<HFCBuffer>& pi_rpBuffer = HFCPtr<HFCBuffer>());
     IMAGEPP_EXPORT virtual              ~HFCURLMemFile();
 
     //:> Content access methods
-    virtual WString GetURL() const override;
+    virtual Utf8String GetURL() const override;
     
-    IMAGEPP_EXPORT WStringCR GetFilename() const;
+    IMAGEPP_EXPORT Utf8StringCR GetFilename() const;
     
-    IMAGEPP_EXPORT WString GetExtension() const;
+    IMAGEPP_EXPORT Utf8String GetExtension() const;
 
     //:> Overriden methods, used in relative path management
 
     virtual bool                HasPathTo(HFCURL* pi_pURL) override;
-    virtual WString             FindPathTo(HFCURL* pi_pDest) override;
-    virtual HFCURL*             MakeURLTo(const WString& pi_Path) override;
+    virtual Utf8String             FindPathTo(HFCURL* pi_pDest) override;
+    virtual HFCURL*             MakeURLTo(const Utf8String& pi_Path) override;
 
     IMAGEPP_EXPORT HFCPtr<HFCBuffer>& GetBuffer();
     IMAGEPP_EXPORT void               SetBuffer(HFCPtr<HFCBuffer>& pi_rpBuffer);
@@ -97,7 +97,7 @@ private:
 
 
     //:> Components of the scheme-specific part of the URL string.
-    WString                 m_Filename;
+    Utf8String                 m_Filename;
     HFCPtr<HFCBuffer>       m_pBuffer;
     time_t                  m_creationTime;
     time_t                  m_modificationTime;

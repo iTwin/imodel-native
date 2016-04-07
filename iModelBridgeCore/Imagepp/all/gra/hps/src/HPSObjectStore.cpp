@@ -330,7 +330,7 @@ HFCPtr<HRARaster> HPSObjectStore::LoadRaster(uint32_t pi_PageID)
 
         pODRastersInfoAttr = m_pCacheFileForPSS->GetPageDescriptor(0)->FindTagCP<HRFAttributeOnDemandRastersInfo>();
 
-        if (pMosaic->Add(pODRastersInfoAttr->GetData(), GetPool(), m_pWorldCluster, m_pURL) == false)
+        if (pMosaic->Add(pODRastersInfoAttr->GetData().c_str(), GetPool(), m_pWorldCluster, m_pURL) == false)
             {
             throw HRFInvalidSisterFileException(m_pCacheFileForPSS->GetURL()->GetURL());
             }                

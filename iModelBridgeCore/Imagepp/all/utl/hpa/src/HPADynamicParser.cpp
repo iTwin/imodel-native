@@ -88,15 +88,15 @@ GrammarObjectNode::GrammarObjectNode(HPAGrammarObject* pi_pObj,
             m_pDesignatedObject = (*itr).second;
         else
             {
-            if (pNode->GetText() == L"STRING")
+            if (pNode->GetText() == "STRING")
                 {
                 m_pDesignatedObject = pParser->m_pStringToken;
                 }
-            else if (pNode->GetText() == L"NUMBER")
+            else if (pNode->GetText() == "NUMBER")
                 {
                 m_pDesignatedObject = pParser->m_pNumberToken;
                 }
-            else if (pNode->GetText() == L"IDENTIFIER")
+            else if (pNode->GetText() == "IDENTIFIER")
                 {
                 m_pDesignatedObject = pParser->m_pIdentifierToken;
                 }
@@ -334,12 +334,12 @@ HPADynamicParser::HPADynamicParser()
     // Tokenizer setup
 
     HPADefaultTokenizer* pTok = new HPADefaultTokenizer;
-    pTok->AddSymbol(L"=",             EQ_tk);
-    pTok->AddSymbol(L"|",             OR_tk);
-    pTok->AddSymbol(L";",             SC_tk);
-    pTok->AddSymbol(L"TOKEN",         TOKEN_tk);
-    pTok->AddSymbol(L"GRAMMAR_BEGIN", BEGIN_tk);
-    pTok->AddSymbol(L"GRAMMAR_END",   END_tk);
+    pTok->AddSymbol("=",             EQ_tk);
+    pTok->AddSymbol("|",             OR_tk);
+    pTok->AddSymbol(";",             SC_tk);
+    pTok->AddSymbol("TOKEN",         TOKEN_tk);
+    pTok->AddSymbol("GRAMMAR_BEGIN", BEGIN_tk);
+    pTok->AddSymbol("GRAMMAR_END",   END_tk);
     pTok->SetNumberToken(Number_tk);
     pTok->SetStringToken(String_tk);
     pTok->SetIdentifierToken(Identifier_tk);

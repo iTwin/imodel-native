@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HUTDEMRasterXYZPointsIterator.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -24,7 +24,7 @@ public :
 
     // Deprecated. Factor from the extractor
     IMAGEPP_EXPORT                          HUTDEMRasterXYZPointsIterator          (HUTDEMRasterXYZPointsExtractor*    pi_pRasterPointExtractor,
-                                                                            const WString&                     pi_rDestCoordSysKeyName,
+                                                                            const Utf8String&                     pi_rDestCoordSysKeyName,
                                                                             double                             pi_ScaleFactor);
 
     IMAGEPP_EXPORT virtual                  ~HUTDEMRasterXYZPointsIterator         ();
@@ -60,16 +60,16 @@ private :
 
     static HUTDEMRasterXYZPointsIterator*
     CreateFor                              (HUTDEMRasterXYZPointsExtractor&    pi_rExtractor,
-                                            const WString&                     pi_rDestCoordSysKeyName,
+                                            const Utf8String&                     pi_rDestCoordSysKeyName,
                                             double                             pi_ScaleFactor);
 
     explicit                        HUTDEMRasterXYZPointsIterator          (Impl*                              pi_pImpl,
-                                                                            const WString&                     pi_rDestCoordSysKeyName,
+                                                                            const Utf8String&                     pi_rDestCoordSysKeyName,
                                                                             double                             pi_ScaleFactor);
 
 
     void                            Init                                   (HUTDEMRasterXYZPointsExtractor&    pi_rExtractor,
-                                                                            const WString&                     pi_rDestCoordSysKeyName,
+                                                                            const Utf8String&                     pi_rDestCoordSysKeyName,
                                                                             double                             pi_ScaleFactor);
 
     uint32_t                       ComputeStripHeight                     () const;

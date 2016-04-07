@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecVector.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -61,9 +61,9 @@ protected:
 
     // constructors
 
-    HCDCodecVector(const WString&   pi_rCodecName);
+    HCDCodecVector(const Utf8String&   pi_rCodecName);
 
-    HCDCodecVector(const WString&   pi_rCodecName,
+    HCDCodecVector(const Utf8String&   pi_rCodecName,
                    size_t           pi_DataSize);
 
     HCDCodecVector(const HCDCodecVector& pi_rObj);

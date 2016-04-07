@@ -272,9 +272,9 @@ again:
                 break;
 
             case LITERAL_RUN:
-
+                char tmpc = (char)-1;
                 if( IdenticalBytes == 1 &&
-                    pOut[-2] == (char)-1 &&
+                    pOut[-2] == tmpc &&
                     *pLastLiteral < 126)
                     {
                     State = (((*pLastLiteral) += 2) == 127 ? BASE: LITERAL);

@@ -181,9 +181,9 @@ HRFPictCreator::HRFPictCreator()
 // Public (HRFPictCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFPictCreator::GetLabel() const
+Utf8String HRFPictCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_PICT()); // Pict File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_PICT()); // Pict File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -191,9 +191,9 @@ WString HRFPictCreator::GetLabel() const
 // Public (HRFBmpCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFPictCreator::GetSchemes() const
+Utf8String HRFPictCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 //-----------------------------------------------------------------------------
@@ -201,9 +201,9 @@ WString HRFPictCreator::GetSchemes() const
 // Public (HRFPictCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFPictCreator::GetExtensions() const
+Utf8String HRFPictCreator::GetExtensions() const
     {
-    return WString(L"*.pct;*.pict");
+    return Utf8String("*.pct;*.pict");
     }
 
 //-----------------------------------------------------------------------------

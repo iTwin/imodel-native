@@ -195,7 +195,7 @@ size_t HCDLZWDecoder::Decode(Byte const* pi_pInputBuffer, size_t pi_inputBytesCo
                 else
                     {
                     Pos++;
-                    *m_pStackTop--;
+                    m_pStackTop--;
                     }
                 }
 

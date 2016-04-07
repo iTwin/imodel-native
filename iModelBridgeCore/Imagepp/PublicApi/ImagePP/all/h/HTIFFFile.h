@@ -44,7 +44,7 @@ class HTIFFFile : public HTagFile
 public:
     // Primary methods
 
-    IMAGEPP_EXPORT HTIFFFile   (const WString&         pi_pFilename,
+    IMAGEPP_EXPORT HTIFFFile   (const Utf8String&         pi_pFilename,
                         HFCAccessMode          pi_Mode,
                         uint64_t              pi_OriginOffset = 0,
                         bool                  pi_CreateBigTifFormat = false,
@@ -155,7 +155,7 @@ public:
 
     // Utility function
     //
-    static HTIFFFile* UndoRedoFile(const WString& pi_rFilename, HFCAccessMode pi_Mode);
+    static HTIFFFile* UndoRedoFile(const Utf8String& pi_rFilename, HFCAccessMode pi_Mode);
 
 protected:
 

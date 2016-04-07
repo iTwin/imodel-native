@@ -49,23 +49,23 @@ bool HCPGCoordUtility::GetUnitsFromMeters(double& unitFromMeter, uint32_t EPSGUn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeoCoordinates::BaseGCSPtr HCPGCoordUtility::CreateRasterGcsFromERSIDS(uint32_t pi_EPSGCode, WStringCR pi_rErmProjection, WStringCR pi_rErmDatum, WStringCR pi_rErmUnits)
+GeoCoordinates::BaseGCSPtr HCPGCoordUtility::CreateRasterGcsFromERSIDS(uint32_t EPSGCode, CharCP pErmProjection, CharCP pErmDatum, CharCP pErmUnits)
     {
     // To have a GCS we need the engine initialized
     if (!GeoCoordinates::BaseGCS::IsLibraryInitialized())
         return nullptr;
 
     // First part ... we try to set the geokeys by ourselves ...
-    if (pi_rErmProjection == L"RAW")
+    if (BeStringUtilities::Stricmp(pErmProjection, "RAW") == 0)
         return nullptr;// no geotiff info
 
     GeoCoordinates::BaseGCSPtr pBaseGcs = GeoCoordinates::BaseGCS::CreateGCS();
 
     uint32_t ModelType;
 
-    if (pi_rErmProjection == L"GEODETIC" || pi_rErmProjection == L"LOCAL")
+    if (BeStringUtilities::Stricmp(pErmProjection, "GEODETIC") == 0 || BeStringUtilities::Stricmp(pErmProjection, "LOCAL") == 0)
         ModelType = TIFFGeo_ModelTypeGeographic;
-    else if (pi_rErmProjection == L"GEOCENTRIC")
+    else if (BeStringUtilities::Stricmp(pErmProjection, "GEOCENTRIC") == 0)
         {
         ModelType = TIFFGeo_ModelTypeGeocentric;
         HASSERT(ModelType != 3); // not supported for now, see next statement!
@@ -81,15 +81,15 @@ GeoCoordinates::BaseGCSPtr HCPGCoordUtility::CreateRasterGcsFromERSIDS(uint32_t 
     uint32_t GeogAngularUnit = 0;
 
     // Set Unit field
-    if ((pi_rErmUnits == L"FEET") || (pi_rErmUnits == L"U.S. SURVEY FOOT"))
+    if (BeStringUtilities::Stricmp(pErmUnits, "FEET") == 0 || BeStringUtilities::Stricmp(pErmUnits, "U.S. SURVEY FOOT") == 0)
         ProjLinearUnit = TIFFGeo_Linear_Foot_US_Survey; // US Foot
-    else if (pi_rErmUnits ==  L"IFEET")
+    else if (BeStringUtilities::Stricmp(pErmUnits, "IFEET") == 0)
         ProjLinearUnit = TIFFGeo_Linear_Foot; // Foot
-    else if (pi_rErmUnits ==  L"DEGREES")
+    else if (BeStringUtilities::Stricmp(pErmUnits, "DEGREES") == 0)
         GeogAngularUnit = 9102; // Degree
-    else if (pi_rErmUnits == L"METERS")
+    else if (BeStringUtilities::Stricmp(pErmUnits, "METERS") == 0)
         ProjLinearUnit = TIFFGeo_Linear_Meter; // Meter
-    else if (pi_rErmUnits == L"IMPERIAL YARD")
+    else if (BeStringUtilities::Stricmp(pErmUnits, "IMPERIAL YARD") == 0)
         ProjLinearUnit = TIFFGeo_British_Yard_1895;
     else
         {
@@ -102,13 +102,13 @@ GeoCoordinates::BaseGCSPtr HCPGCoordUtility::CreateRasterGcsFromERSIDS(uint32_t 
     geoKeys.AddKey(GTModelType, ModelType);
 
     if (ModelType == TIFFGeo_ModelTypeGeographic)
-        geoKeys.AddKey(GeographicType, pi_EPSGCode);
+        geoKeys.AddKey(GeographicType, EPSGCode);
     else
         {
-        if (pi_EPSGCode > USHRT_MAX)
-            geoKeys.AddKey(ProjectedCSTypeLong, pi_EPSGCode);
+        if (EPSGCode > USHRT_MAX)
+            geoKeys.AddKey(ProjectedCSTypeLong, EPSGCode);
         else
-            geoKeys.AddKey(ProjectedCSType, pi_EPSGCode);
+            geoKeys.AddKey(ProjectedCSType, EPSGCode);
         }
 
     if (ProjLinearUnit != 0)
@@ -117,7 +117,7 @@ GeoCoordinates::BaseGCSPtr HCPGCoordUtility::CreateRasterGcsFromERSIDS(uint32_t 
     if (GeogAngularUnit != 0)
         geoKeys.AddKey(GeogAngularUnits, GeogAngularUnit);
     
-    if (pi_EPSGCode != TIFFGeo_UserDefined)
+    if (EPSGCode != TIFFGeo_UserDefined)
         {
         // First tentative to obtain a valid BaseGCS using the GeoTIFF keys we generated using
         // ECW identifiers given it is not user defined.
@@ -126,17 +126,18 @@ GeoCoordinates::BaseGCSPtr HCPGCoordUtility::CreateRasterGcsFromERSIDS(uint32_t 
             // First attempt from geotiff keys failed ... we use a fallback solution
             // using GDAL we convert ECW ids into WKT
 #ifdef IPP_HAVE_GDAL_SUPPORT
-            WString wkt;
-            HRFGdalUtilities::ConvertERMToOGCWKT(wkt, pi_rErmProjection, pi_rErmDatum, pi_rErmUnits);
+            AString wkt;
+            HRFGdalUtilities::ConvertERMToOGCWKT(wkt, pErmProjection, pErmDatum, pErmUnits);
         
-            if (!WString::IsNullOrEmpty(wkt.c_str()))
+            if (!wkt.empty())
                 {
+                WString wktWide(wkt.c_str(), BentleyCharEncoding::Locale);
                 // WKT was obtained from GDAL
-                StatusInt Status = pBaseGcs->InitFromWellKnownText(nullptr, nullptr, GeoCoordinates::BaseGCS::wktFlavorOGC, wkt.c_str());
+                StatusInt Status = pBaseGcs->InitFromWellKnownText(nullptr, nullptr, GeoCoordinates::BaseGCS::wktFlavorOGC, wktWide.c_str());
                 if (SUCCESS != Status)
                     {
                     // Sometimes the suposedly OGC compliant WKT from GDAL is not OGC compliant ... we try with wktFlavorUnknown flavor in case it may work
-                    Status = pBaseGcs->InitFromWellKnownText(nullptr, nullptr, GeoCoordinates::BaseGCS::wktFlavorUnknown, wkt.c_str());
+                    Status = pBaseGcs->InitFromWellKnownText(nullptr, nullptr, GeoCoordinates::BaseGCS::wktFlavorUnknown, wktWide.c_str());
         
                     if (SUCCESS != Status)
                         return NULL; // Too bad!

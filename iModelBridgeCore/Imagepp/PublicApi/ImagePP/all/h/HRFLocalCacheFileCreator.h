@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFLocalCacheFileCreator.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFLocalCacheFileCreator
@@ -31,11 +31,11 @@ public:
     static void                     SetCacheTags(HFCPtr<HRFRasterFile>& pi_rpFile);
     static bool                     IsValidCache(const HFCPtr<HRFRasterFile>& pi_rpFile);
     HFCPtr<HFCURL>                  GetTentativeURLFor(const HFCPtr<HFCURL>& pi_rpURLFileName,
-                                                       const WString&        pi_Extension,
+                                                       const Utf8String&        pi_Extension,
                                                        uint64_t             pi_Offset = 0) const;
 
     HFCPtr<HFCURL>                  ComposeURLFor(const HFCPtr<HFCURL>& pi_rpURLFileName,
-                                                  const WString&        pi_Extension,
+                                                  const Utf8String&        pi_Extension,
                                                   uint64_t             pi_Offset = 0) const;
 
 protected:
@@ -43,7 +43,7 @@ protected:
     HFCPtr<HFCURL> m_pDefaultPath;
 
 
-    WString                         ComposeFilenameFor(const HFCPtr<HFCURL>& pi_rpURLFileName) const;
+    Utf8String                         ComposeFilenameFor(const HFCPtr<HFCURL>& pi_rpURLFileName) const;
 
     HRFLocalCacheFileCreator();
 private:

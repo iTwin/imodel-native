@@ -113,7 +113,6 @@ private:
     HGF2DExtent m_physicalExtent;
     uint32_t    m_width;
     uint32_t    m_height;
-    size_t      m_bytesPerRow;
     };
 
 
@@ -229,7 +228,7 @@ void HRABitmapRLE::Clear(const HRAClearOptions& pi_rOptions)
 
         if (pi_rOptions.HasRLEMask())
             {
-            HASSERT(!L"Not supported yet");
+            HASSERT(!"Not supported yet");
             }
         else if (pi_rOptions.HasScanlines())
             {

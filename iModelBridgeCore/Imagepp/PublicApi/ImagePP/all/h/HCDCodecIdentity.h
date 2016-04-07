@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecIdentity.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecIdentity
@@ -43,7 +43,7 @@ public:
 
     virtual HCDCodec* Clone() const override;
 
-    void            SetName(const WString& pi_rName);
+    void            SetName(const Utf8String& pi_rName);
 
 
 protected:

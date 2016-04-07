@@ -166,18 +166,18 @@ HRFIntergraphCitCreator::HRFIntergraphCitCreator()
 // Identification information
 //-----------------------------------------------------------------------------
 
-WString HRFIntergraphCitCreator::GetLabel() const
+Utf8String HRFIntergraphCitCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_CIT()); // Intergraph cit File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_CIT()); // Intergraph cit File Format
     }
 
 //-----------------------------------------------------------------------------
 // Identification information
 //-----------------------------------------------------------------------------
 
-WString HRFIntergraphCitCreator::GetExtensions() const
+Utf8String HRFIntergraphCitCreator::GetExtensions() const
     {
-    return WString(L"*.cit");
+    return Utf8String("*.cit");
     }
 
 //-----------------------------------------------------------------------------
@@ -333,7 +333,7 @@ void HRFIntergraphCitFile::CreateDescriptors()
 
             if ((HasTileAccess(ResIndex) != FirstResIsTile) && (AccessMode.m_HasCreateAccess || AccessMode.m_HasWriteAccess))
                 {
-                WString CurrentFileName(GetURL()->GetURL());
+                Utf8String CurrentFileName(GetURL()->GetURL());
 
                 throw HRFSubResAccessDifferReadOnlyException(CurrentFileName);
                 }

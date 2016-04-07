@@ -70,9 +70,9 @@ __forceinline void HFCProfiler::Stop(int32_t pi_CounterID, LARGE_INTEGER pi_Star
         {
         if (s_pFunctionStack->back() != pi_CounterID)
             {
-            WChar Message[512];
-            swprintf(Message, L"Missing STOP call in %s\n", m_Counters[s_pFunctionStack->back()].m_Name.c_str());
-            HDEBUGTEXT(Utf8String(Message));
+            Utf8Char Message[512];
+            sprintf(Message, "Missing STOP call in %s\n", m_Counters[s_pFunctionStack->back()].m_Name.c_str());
+            HDEBUGTEXT(Message);
             if (m_BreakOnError)
                 DebugBreak();
             }

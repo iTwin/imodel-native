@@ -18,9 +18,9 @@ struct URLFileCreator : public HFCURL::Creator
     {
     URLFileCreator()
         {
-        HFCURLFile::GetSchemeList().insert(HFCURLFile::SchemeList::value_type(HFCURLFile::s_SchemeName(), this));
+        HFCURL::RegisterCreator(HFCURLFile::s_SchemeName(), this);
         }
-    virtual HFCURL* Create(const WString& pi_URL) const
+    virtual HFCURL* Create(const Utf8String& pi_URL) const
         {
         return new HFCURLFile(pi_URL);
         }
@@ -47,9 +47,9 @@ struct URLFileCreator : public HFCURL::Creator
  @inheritance This class is an instanciable one that correspond to one precise
               kind of URL and no child of it are expected to be defined.
 -----------------------------------------------------------------------------*/
-HFCURLFile::HFCURLFile(const WString& pi_Host,
-                       const WString& pi_Path)
-    : HFCURL(s_SchemeName(), WString(L"//") + pi_Host + pi_Path),
+HFCURLFile::HFCURLFile(const Utf8String& pi_Host,
+                       const Utf8String& pi_Path)
+    : HFCURL(s_SchemeName(), Utf8String("//") + pi_Host + pi_Path),
       m_Host(pi_Host), m_Path(pi_Path)
     {
     FREEZE_STL_STRING(m_Host);
@@ -76,16 +76,16 @@ HFCURLFile::HFCURLFile(const WString& pi_Host,
  @inheritance This class is an instanciable one that correspond to one precise
               kind of URL and no child of it are expected to be defined.
 -----------------------------------------------------------------------------*/
-HFCURLFile::HFCURLFile(const WString& pi_URL)
+HFCURLFile::HFCURLFile(const Utf8String& pi_URL)
     : HFCURL(pi_URL)
     {
     // Is there a double-slash at beginning?
 
     if (GetSchemeSpecificPart().length() >= 2)
         {
-        WString::size_type Pos = 0;
-        if ((GetSchemeSpecificPart().substr(Pos,2).compare(L"//") == 0) ||
-            (GetSchemeSpecificPart().substr(Pos,2).compare(L"\\\\") == 0))
+        Utf8String::size_type Pos = 0;
+        if ((GetSchemeSpecificPart().substr(Pos,2).compare("//") == 0) ||
+            (GetSchemeSpecificPart().substr(Pos,2).compare("\\\\") == 0))
             {
             Pos += 2;
 
@@ -105,16 +105,16 @@ HFCURLFile::HFCURLFile(const WString& pi_URL)
                 //       path = cert\dataset\image++
                 //
                 bool HaveUNC = true;
-                if (GetSchemeSpecificPart().substr(Pos, 2).compare(L"\\\\") == 0)
+                if (GetSchemeSpecificPart().substr(Pos, 2).compare("\\\\") == 0)
                     Pos += 2;
-                else if (GetSchemeSpecificPart().substr(Pos, 2).compare(L"//") == 0)
+                else if (GetSchemeSpecificPart().substr(Pos, 2).compare("//") == 0)
                     Pos += 2;
                 else
                     HaveUNC = false;
 
-                WString::size_type SingleSlashPos =
-                    GetSchemeSpecificPart().find_first_of(L"\\/", Pos);
-                if (SingleSlashPos != WString::npos)
+                Utf8String::size_type SingleSlashPos =
+                    GetSchemeSpecificPart().find_first_of("\\/", Pos);
+                if (SingleSlashPos != Utf8String::npos)
                     {
                     m_Host = GetSchemeSpecificPart().substr(2, SingleSlashPos - 2);
                     m_Path = GetSchemeSpecificPart().substr(SingleSlashPos + 1,
@@ -130,15 +130,15 @@ HFCURLFile::HFCURLFile(const WString& pi_URL)
                 // UNC host without the additional double-slash (ie: file://host/path)
                 // Then we add a double-slash...
 
-                WString::size_type SlashOrColonPos = m_Host.find_first_of(L"\\/:", 0);
-                if (m_Host.length() != 0 && SlashOrColonPos == WString::npos)
-                    m_Host = L"\\\\" + m_Host;
+                Utf8String::size_type SlashOrColonPos = m_Host.find_first_of("\\/:", 0);
+                if (m_Host.length() != 0 && SlashOrColonPos == Utf8String::npos)
+                    m_Host = "\\\\" + m_Host;
                 }
             }
         else
             {
             // No : is there a drive spec at beginning?
-            if (GetSchemeSpecificPart()[1] == L':')
+            if (GetSchemeSpecificPart()[1] == ':')
                 {
                 // yes : extract it as the host, then extract the path
                 m_Host = GetSchemeSpecificPart().substr(0,2);
@@ -167,12 +167,12 @@ HFCURLFile::~HFCURLFile()
 
  @see HFCURL
 -----------------------------------------------------------------------------*/
-WString HFCURLFile::GetURL() const
+Utf8String HFCURLFile::GetURL() const
     {
     if (m_Host.length () != 0)
-        return WString(s_SchemeName() + L"://") + m_Host + L"\\" + m_Path;
+        return Utf8String(s_SchemeName() + "://") + m_Host + DIR_SEPARATOR + m_Path;
     else
-        return WString(s_SchemeName() + L"://") + m_Path;
+        return Utf8String(s_SchemeName() + "://") + m_Path;
     }
 
 /**----------------------------------------------------------------------------
@@ -182,10 +182,10 @@ WString HFCURLFile::GetURL() const
 
  @see HFCURL
 -----------------------------------------------------------------------------*/
-WString HFCURLFile::GetAbsoluteFileName() const
+Utf8String HFCURLFile::GetAbsoluteFileName() const
     {
     if (m_Host.length () != 0)
-        return m_Host + WCSDIR_SEPARATOR + m_Path;
+        return m_Host + DIR_SEPARATOR + m_Path;
     else
         return m_Path;
     }
@@ -213,7 +213,7 @@ bool HFCURLFile::HasPathTo(HFCURL* pi_pURL)
 
  @see HFCURL
 -----------------------------------------------------------------------------*/
-WString HFCURLFile::FindPathTo(HFCURL* pi_pDest)
+Utf8String HFCURLFile::FindPathTo(HFCURL* pi_pDest)
     {
     HPRECONDITION(HasPathTo(pi_pDest));
     return FindPath(GetPath(), ((HFCURLFile*)pi_pDest)->GetPath());
@@ -227,7 +227,7 @@ WString HFCURLFile::FindPathTo(HFCURL* pi_pDest)
 
  @see HFCURL
 -----------------------------------------------------------------------------*/
-HFCURL* HFCURLFile::MakeURLTo(const WString& pi_Path)
+HFCURL* HFCURLFile::MakeURLTo(const Utf8String& pi_Path)
     {
     return new HFCURLFile(GetHost(), /* string("\\") + */ AddPath(GetPath(), pi_Path));  //!!!! //HChk BB
     }
@@ -235,15 +235,15 @@ HFCURL* HFCURLFile::MakeURLTo(const WString& pi_Path)
 /**----------------------------------------------------------------------------
  Returns a string containing the name of the resource without any path.
 -----------------------------------------------------------------------------*/
-WString HFCURLFile::GetFilename() const
+Utf8String HFCURLFile::GetFilename() const
     {
-    WString::size_type LastSlashPos = m_Path.find_last_of(L"\\/");
-    if (LastSlashPos != WString::npos)
+    Utf8String::size_type LastSlashPos = m_Path.find_last_of("\\/");
+    if (LastSlashPos != Utf8String::npos)
         {
         if (LastSlashPos < (m_Path.length() - 1))
             return m_Path.substr(LastSlashPos + 1, m_Path.length() - LastSlashPos - 1);
         else
-            return WString();
+            return Utf8String();
         }
     else
         return m_Path;
@@ -252,12 +252,12 @@ WString HFCURLFile::GetFilename() const
 /**----------------------------------------------------------------------------
  Sets the file name of the URL.
 -----------------------------------------------------------------------------*/
-void HFCURLFile::SetFileName(const WString& pi_rFileName)
+void HFCURLFile::SetFileName(const Utf8String& pi_rFileName)
     {
-    HPRECONDITION(pi_rFileName.find_last_of(L"\\/") == WString::npos);
+    HPRECONDITION(pi_rFileName.find_last_of("\\/") == Utf8String::npos);
 
-    WString::size_type LastSlashPos = m_Path.find_last_of(L"\\/");
-    if (LastSlashPos != WString::npos)
+    Utf8String::size_type LastSlashPos = m_Path.find_last_of("\\/");
+    if (LastSlashPos != Utf8String::npos)
         {
         if (LastSlashPos < (m_Path.length() - 1))
             {
@@ -278,13 +278,13 @@ void HFCURLFile::SetFileName(const WString& pi_rFileName)
  Returns a string containing the extension part of the name of the resource,
  which is the text after the last dot in its name.
 -----------------------------------------------------------------------------*/
-WString HFCURLFile::GetExtension() const
+Utf8String HFCURLFile::GetExtension() const
     {
-    WString::size_type LastDotPos = m_Path.find_last_of(L".");
-    if ((LastDotPos != WString::npos) && (LastDotPos < (m_Path.length() - 1)))
+    Utf8String::size_type LastDotPos = m_Path.find_last_of(".");
+    if ((LastDotPos != Utf8String::npos) && (LastDotPos < (m_Path.length() - 1)))
         return m_Path.substr(LastDotPos + 1, m_Path.length() - LastDotPos - 1);
     else
-        return WString();
+        return Utf8String();
     }
 
 
@@ -297,33 +297,35 @@ bool HFCURLFile::CreatePath()
     bool Result = true;
 
     // Extract the drive, Path and filename from URL
-    WString Path(GetHost());
-    Path += L"\\";
+    Utf8String Path(GetHost());
+    Path += "\\";
     Path += GetPath();
 
     // Replace all '\\' with '/'
-    WString::size_type Pos;
-    while ((Pos = Path.find(L'\\', 0)) != WString::npos)
-        Path[Pos] = L'/';
+    Utf8String::size_type Pos;
+    while ((Pos = Path.find('\\', 0)) != Utf8String::npos)
+        Path[Pos] = '/';
 
     Pos = 0;
     // Parse each dir level to verify if it exists and if not, create it
-    while (Result && (Pos < Path.size()) && (Pos != WString::npos))
+    while (Result && (Pos < Path.size()) && (Pos != Utf8String::npos))
         {
         // find the end of the current sub-dir level
-        WString::size_type EndPos = Path.find(L'/', Pos);
-        if (EndPos == WString::npos)
+        Utf8String::size_type EndPos = Path.find('/', Pos);
+        if (EndPos == Utf8String::npos)
             EndPos = Path.size();
 
         // Create a sub-string of the current dir sub-level
-        WString SubDir(Path, 0, EndPos);
+        Utf8String SubDir(Path, 0, EndPos);
+
+        BeFileName subDirFilename(SubDir);
 
         // If the sub-dir doesn't exist, create it
-        if (!BeFileName::DoesPathExist(SubDir.c_str()))
+        if (!subDirFilename.DoesPathExist())
             {
             // Any error means we're in trouble, since we already
             // know that the directory doesn't exist.
-            if (BeFileName::CreateNewDirectory(SubDir.c_str()) != BeFileNameStatus::Success)
+            if (BeFileName::CreateNewDirectory(subDirFilename.c_str()) != BeFileNameStatus::Success)
                 Result = false;
             }
 

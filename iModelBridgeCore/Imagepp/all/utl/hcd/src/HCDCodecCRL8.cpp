@@ -13,7 +13,7 @@
 #include <Imagepp/all/h/HCDCodecCRL8.h>
 
 
-#define HCD_CODEC_NAME L"CRL8bits"
+#define HCD_CODEC_NAME "CRL8bits"
 
 //-----------------------------------------------------------------------------
 // public

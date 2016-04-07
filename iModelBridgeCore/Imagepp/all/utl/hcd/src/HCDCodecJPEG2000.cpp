@@ -12,7 +12,7 @@
 
 #include <Imagepp/all/h/HCDCodecJPEG2000.h>
 
-#define HCD_CODEC_NAME     L"JPEG2000"
+#define HCD_CODEC_NAME     "JPEG2000"
 
 //-----------------------------------------------------------------------------
 // public
@@ -436,7 +436,7 @@ private:
 
 HPM_REGISTER_CLASS(HCDCodecJPEG2000, HCDCodecErMapperSupported)
 
-#define HCD_CODEC_NAME L"JPEG2000"
+#define HCD_CODEC_NAME "JPEG2000"
 
 //-----------------------------------------------------------------------------
 // public

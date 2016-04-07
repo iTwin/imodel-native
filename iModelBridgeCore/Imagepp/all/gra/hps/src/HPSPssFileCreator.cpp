@@ -40,7 +40,7 @@ HPSPssFileCreator::~HPSPssFileCreator()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    StephanePoulin  01/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
-HSTATUS HPSPssFileCreator::CreateFileW(WString const& pi_rPssFileName)
+HSTATUS HPSPssFileCreator::CreateFileW(Utf8String const& pi_rPssFileName)
     {
     if (m_imageList.empty())
         return H_ERROR;
@@ -114,7 +114,7 @@ HSTATUS HPSPssFileCreator::CreateFileW(WString const& pi_rPssFileName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    StephanePoulin  01/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HPSPssFileCreator::AddImage(WString const& pi_rImageName, uint32_t pi_pageNumber, GeoCoordinates::BaseGCSP pi_projection)
+void HPSPssFileCreator::AddImage(Utf8String const& pi_rImageName, uint32_t pi_pageNumber, GeoCoordinates::BaseGCSP pi_projection)
     {
     ImageDef imageDef;
     imageDef.m_imageName = pi_rImageName;
@@ -142,13 +142,13 @@ GeoCoordinates::BaseGCSCP HPSPssFileCreator::GetDstProjectionCP() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    StephanePoulin  01/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
-HFCPtr<HRFRasterFile> HPSPssFileCreator::GetRasterFile(WString const& rImageName) const
+HFCPtr<HRFRasterFile> HPSPssFileCreator::GetRasterFile(Utf8String const& rImageName) const
     {
     // Create an URL
     HFCPtr<HFCURL> pURL(HFCURL::Instanciate(rImageName));
     if (pURL == 0)
         {
-        pURL = HFCURL::Instanciate(WString(L"file://") + rImageName);
+        pURL = HFCURL::Instanciate(Utf8String("file://") + rImageName);
 
         HASSERT(pURL != 0);
         }

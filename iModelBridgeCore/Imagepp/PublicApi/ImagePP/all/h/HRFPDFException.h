@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFPDFException.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFPDFException
@@ -16,12 +16,12 @@ class HRFPDFException : public HRFException
     {
 public:
     typedef uint32_t     ErrorCode;
-    HRFPDFException (const WString&              pi_rFileName, const ErrorCode             pi_ErrorCode);
+    HRFPDFException (const Utf8String&              pi_rFileName, const ErrorCode             pi_ErrorCode);
     virtual ~HRFPDFException       ();
     const ErrorCode    GetErrorCode                        () const;
     ExceptionID  GetExceptionIDForCode(ErrorCode pi_ErrorCode) const;
     HRFPDFException (const HRFPDFException&     pi_rObj); 
-    virtual WString GetExceptionMessage() const override;
+    virtual Utf8String GetExceptionMessage() const override;
     virtual HFCException* Clone() const override; 
     virtual void ThrowMyself() const override {throw *this;} 
 protected:

@@ -13,7 +13,7 @@
 
 #include <Imagepp/all/h/HCDCodecPackBits.h>
 
-#define HCD_CODEC_NAME L"PackBits"
+#define HCD_CODEC_NAME "PackBits"
 
 //-----------------------------------------------------------------------------
 // public

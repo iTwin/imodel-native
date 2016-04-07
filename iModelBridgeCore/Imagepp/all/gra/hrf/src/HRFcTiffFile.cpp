@@ -814,21 +814,21 @@ HRFcTiffCreator::HRFcTiffCreator()
     }
 
 // Identification information
-WString HRFcTiffCreator::GetLabel() const
+Utf8String HRFcTiffCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_cTiff()); //Cache TIFF File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_cTiff()); //Cache TIFF File Format
     }
 
 // Identification information
-WString HRFcTiffCreator::GetSchemes() const
+Utf8String HRFcTiffCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 // Identification information
-WString HRFcTiffCreator::GetExtensions() const
+Utf8String HRFcTiffCreator::GetExtensions() const
     {
-    return WString(L"*.cTIFF");
+    return Utf8String("*.cTIFF");
     }
 
 // allow to Open an image file
@@ -1435,78 +1435,78 @@ void HRFcTiffFile::CreateDescriptors()
             HAutoPtr<HRFClipShape> pClipShape(GetClipShape(pHMRHeader));
 
             // Tag information
-            char*  pSystem;
+            CharP  fieldA = nullptr;
             HPMAttributeSet TagList;
             HFCPtr<HPMGenericAttribute> pTag;
 
             // DOCUMENTNAME Tag
-            if (GetFilePtr()->GetField(DOCUMENTNAME, &pSystem))
+            if (GetFilePtr()->GetFieldA(DOCUMENTNAME, &fieldA))
                 {
-                pTag = new HRFAttributeDocumentName(WString(pSystem,false));
+                pTag = new HRFAttributeDocumentName(fieldA);
                 TagList.Set(pTag);
                 }
 
             // IMAGEDESCRIPTION Tag
-            if (GetFilePtr()->GetField(IMAGEDESCRIPTION, &pSystem))
+            if (GetFilePtr()->GetFieldA(IMAGEDESCRIPTION, &fieldA))
                 {
-                pTag = new HRFAttributeImageDescription(WString(pSystem,false));
+                pTag = new HRFAttributeImageDescription(fieldA);
                 TagList.Set(pTag);
                 }
 
             // PAGENAME Tag
-            if (GetFilePtr()->GetField(PAGENAME, &pSystem))
+            if (GetFilePtr()->GetFieldA(PAGENAME, &fieldA))
                 {
-                pTag = new HRFAttributePageName(WString(pSystem,false));
+                pTag = new HRFAttributePageName(fieldA);
                 TagList.Set(pTag);
                 }
 
             // MAKE Tag
-            if (GetFilePtr()->GetField(MAKE, &pSystem))
+            if (GetFilePtr()->GetFieldA(MAKE, &fieldA))
                 {
-                pTag = new HRFAttributeMake(WString(pSystem,false));
+                pTag = new HRFAttributeMake(fieldA);
                 TagList.Set(pTag);
                 }
 
             // MODEL Tag
-            if (GetFilePtr()->GetField(MODEL, &pSystem))
+            if (GetFilePtr()->GetFieldA(MODEL, &fieldA))
                 {
-                pTag = new HRFAttributeModel(WString(pSystem,false));
+                pTag = new HRFAttributeModel(fieldA);
                 TagList.Set(pTag);
                 }
 
 
             // SOFTWARE Tag
-            if (GetFilePtr()->GetField(SOFTWARE, &pSystem))
+            if (GetFilePtr()->GetFieldA(SOFTWARE, &fieldA))
                 {
-                pTag = new HRFAttributeSoftware(WString(pSystem,false));
+                pTag = new HRFAttributeSoftware(fieldA);
                 TagList.Set(pTag);
                 }
 
             // DATETIME Tag
-            if (GetFilePtr()->GetField(DATETIME, &pSystem))
+            if (GetFilePtr()->GetFieldA(DATETIME, &fieldA))
                 {
-                pTag = new HRFAttributeDateTime(WString(pSystem,false));
+                pTag = new HRFAttributeDateTime(fieldA);
                 TagList.Set(pTag);
                 }
 
             // ARTIST Tag
-            if (GetFilePtr()->GetField(ARTIST, &pSystem))
+            if (GetFilePtr()->GetFieldA(ARTIST, &fieldA))
                 {
-                pTag = new HRFAttributeArtist(WString(pSystem,false));
+                pTag = new HRFAttributeArtist(fieldA);
                 TagList.Set(pTag);
                 }
 
             // HOSTCOMPUTER Tag
-            if (GetFilePtr()->GetField(HOSTCOMPUTER, &pSystem))
+            if (GetFilePtr()->GetFieldA(HOSTCOMPUTER, &fieldA))
                 {
-                pTag = new HRFAttributeHostComputer(WString(pSystem,false));
+                pTag = new HRFAttributeHostComputer(fieldA);
                 TagList.Set(pTag);
                 }
 
             // INKNAMES Tag
-            if (GetFilePtr()->GetField(INKNAMES, &pSystem))
+            if (GetFilePtr()->GetFieldA(INKNAMES, &fieldA))
                 {
-                pTag = new HRFAttributeInkNames(WString(pSystem,false));
+                pTag = new HRFAttributeInkNames(fieldA);
                 TagList.Set(pTag);
                 }
 
@@ -1532,9 +1532,9 @@ void HRFcTiffFile::CreateDescriptors()
                 TagList.Set(pTag);
                 }
             // COPYRIGHT Tag
-            if (GetFilePtr()->GetField(COPYRIGHT, &pSystem))
+            if (GetFilePtr()->GetFieldA(COPYRIGHT, &fieldA))
                 {
-                pTag = new HRFAttributeCopyright(WString(pSystem,false));
+                pTag = new HRFAttributeCopyright(fieldA);
                 TagList.Set(pTag);
                 }
 
@@ -1838,11 +1838,11 @@ HRPFilter* HRFcTiffFile::GetFilter()
     HPRECONDITION (m_IsOpen);
 
     bool               HasComplexFilter = false;
-    char*              pFilterDesc;
+    CharP              pFilterDesc = nullptr;
     HAutoPtr<HRPFilter> pFilter;
 
     // Get the filters value.
-    if (GetFilePtr()->GetField(HMR_FILTERS, &pFilterDesc))
+    if (GetFilePtr()->GetFieldA(HMR_FILTERS, &pFilterDesc))
         {
         HAutoPtr<HRPFilter> pTmpFilter;
         istringstream       FiltersStream(pFilterDesc);

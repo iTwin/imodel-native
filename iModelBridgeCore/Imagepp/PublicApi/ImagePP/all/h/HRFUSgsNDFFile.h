@@ -211,9 +211,9 @@ public :
                                                      uint64_t             pi_Offset) const;
 
     // Identification information
-    virtual WString                   GetLabel      ()  const;
-    virtual WString                   GetSchemes    ()  const;
-    virtual WString                   GetExtensions ()  const;
+    virtual Utf8String                   GetLabel      ()  const;
+    virtual Utf8String                   GetSchemes    ()  const;
+    virtual Utf8String                   GetExtensions ()  const;
 
     // capabilities of Raster file.
     virtual const HFCPtr<HRFRasterFileCapabilities>& GetCapabilities();
@@ -296,7 +296,7 @@ private:
     int32_t                     m_ImgBlueBand;
 
     bool                        GetHeaderFile               (HFCBinStream& pi_rHeaderFile);
-    bool                        GetBandNumber               (int32_t& pio_rBand, const WString& pi_rFileName);
+    bool                        GetBandNumber               (int32_t& pio_rBand, const Utf8String& pi_rFileName);
     bool                        Create                      ();
 
     bool                        GetCoordSystem               (int16_t& po_rCode);

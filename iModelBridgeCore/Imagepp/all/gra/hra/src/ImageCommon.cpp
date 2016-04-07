@@ -61,8 +61,8 @@ bool Rle1Manip::ValidateLineIntegrity(uint16_t const* pLine, uint32_t width, siz
         // Detect zero len run that should not exits.
         if(pLine[index] == 0 && pLine[index-1] != 32767)
             {
-            //WString result;
-            //result.Sprintf(L"Inward zero len run at line %i", line);
+            //Utf8String result;
+            //result.Sprintf("Inward zero len run at line %i", line);
             return false;
             }
 
@@ -72,7 +72,7 @@ bool Rle1Manip::ValidateLineIntegrity(uint16_t const* pLine, uint32_t width, siz
 
     if(pixelCount != width)
         {
-        //result.Sprintf(L"Invalid pixel count at line %i", line);
+        //result.Sprintf("Invalid pixel count at line %i", line);
         return false;
         }    
 
@@ -81,7 +81,7 @@ bool Rle1Manip::ValidateLineIntegrity(uint16_t const* pLine, uint32_t width, siz
         {
         if(pLine[index] != 0)                
             {
-            //result.Sprintf(L"End of line(%i) is not on black state", line);
+            //result.Sprintf("End of line(%i) is not on black state", line);
             return false;
             }
 
@@ -90,7 +90,7 @@ bool Rle1Manip::ValidateLineIntegrity(uint16_t const* pLine, uint32_t width, siz
 
     if(index*2 != dataSize)
         {
-        //result.Sprintf(L"Invalid line data size at line %i", line);
+        //result.Sprintf("Invalid line data size at line %i", line);
         return false;
         }       
 

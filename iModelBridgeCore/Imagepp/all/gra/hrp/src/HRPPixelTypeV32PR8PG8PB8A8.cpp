@@ -53,7 +53,7 @@ public:
                     }
                 else
                     {
-                    register unsigned NewValue;
+                    unsigned NewValue;
 
                     // Cdst' = Csrc + (1 - Asrc) * Cdst
                     NewValue = pSourceComposite[0] + pQuotients->UnsignedDivideBy255((255-pSourceComposite[3])*pDestComposite[0]);
@@ -145,7 +145,7 @@ public:
                 {
                 Byte* pDestComposite = (Byte*)rDestPalette.GetCompositeValue(*pDest);
 
-                register unsigned NewValue;
+                unsigned NewValue;
 
                 // alpha * (S - D) + D = (alpha*s) - (alpha*D) + D --> PR_S - (alpha*D) + D
                 NewValue = pSourceComposite[0] - pQuotients->UnsignedDivideBy255(pDestComposite[0]*pSourceComposite[3]) + pDestComposite[0];
@@ -243,7 +243,7 @@ public:
             // If source pixel is fully transparent, destination is unaltered
             if (pSourceComposite[3] != 0)
                 {
-                register unsigned NewValue;
+                unsigned NewValue;
 
                 // alpha * (S - D) + D = ((alpha*s) - (alpha*D)) + D --> (PR_S - (alpha*D)) + D
                 NewValue = pSourceComposite[2] - pQuotients->UnsignedDivideBy255(pDestComposite[0]*pSourceComposite[3]) + pDestComposite[0];
@@ -323,7 +323,7 @@ public:
             // If source pixel is fully transparent, destination is unaltered
             if (pSourceComposite[3] != 0)
                 {
-                register unsigned NewValue;
+                unsigned NewValue;
 
                 // alpha * (S - D) + D = (alpha*s) - (alpha*D) + D --> PR_S - (alpha*D) + D
                 NewValue = pSourceComposite[0] - pQuotients->UnsignedDivideBy255(pDestComposite[0]*pSourceComposite[3]) + pDestComposite[0];
@@ -449,7 +449,7 @@ public:
                     uint32_t ComposedDestAlpha = (255 - pSourceComposite[3]) * pDestComposite[3];
                     uint32_t TotalWeight = pSourceComposite[3] + ComposedDestAlpha;
 
-                    register unsigned NewValue;
+                    unsigned NewValue;
 
                     // Cdst' = Csrc * Asrc + ( (1 - Asrc) * Adst * Cdst ) / (Asrc + ((1 - Asrc) * Adst))
                     // Both alphas need to be taken into account, and weight the result

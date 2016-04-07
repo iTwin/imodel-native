@@ -212,21 +212,21 @@ HRFNitfCreator::HRFNitfCreator()
     }
 
 // Identification information
-WString HRFNitfCreator::GetLabel() const
+Utf8String HRFNitfCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_NITF()); // NITF File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_NITF()); // NITF File Format
     }
 
 // Identification information
-WString HRFNitfCreator::GetSchemes() const
+Utf8String HRFNitfCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return HFCURLFile::s_SchemeName();
     }
 
 // Identification information
-WString HRFNitfCreator::GetExtensions() const
+Utf8String HRFNitfCreator::GetExtensions() const
     {
-    return WString(L"*.ntf;*.nsf");
+    return Utf8String("*.ntf;*.nsf");
     }
 
 // allow to Open an image file
@@ -433,7 +433,7 @@ void HRFNitfFile::CreateDescriptors()
     // Tag information
     const char* pNITF_IDATIM = GetDataSet()->GetMetadataItem("NITF_IDATIM");
     if(pNITF_IDATIM != NULL)
-        TagList.Set(new HRFAttributeDateTime(WString(pNITF_IDATIM,false)));
+        TagList.Set(new HRFAttributeDateTime(pNITF_IDATIM));
 
 //     NITF_IID2 not supported available in NITF2.0
 //     const char* pNITF_IID2 = GetDataSet()->GetMetadataItem("NITF_IID2");
@@ -442,15 +442,15 @@ void HRFNitfFile::CreateDescriptors()
 
     const char* pNITF_OSTAID = GetDataSet()->GetMetadataItem("NITF_OSTAID");
     if(pNITF_OSTAID != NULL)
-        TagList.Set(new HRFAttributeSoftware(WString(pNITF_OSTAID,false)));
+        TagList.Set(new HRFAttributeSoftware(pNITF_OSTAID));
     
     const char* pNITF_IID1 = GetDataSet()->GetMetadataItem("NITF_IID1");
     if(pNITF_IID1 != NULL)
-        TagList.Set(new HRFAttributePageName(WString(pNITF_IID1,false)));
+        TagList.Set(new HRFAttributePageName(pNITF_IID1));
 
     const char* pNITF_FTITLE = GetDataSet()->GetMetadataItem("NITF_FTITLE");
     if(pNITF_FTITLE != NULL)
-        TagList.Set(new HRFAttributeTitle(WString(pNITF_FTITLE,false)));
+        TagList.Set(new HRFAttributeTitle(pNITF_FTITLE));
     
     HRFGdalSupportedFile::CreateDescriptorsWith(new HCDCodecIdentity(), TagList);
     }

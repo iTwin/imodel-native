@@ -227,7 +227,7 @@ HRFWebFile::HRFWebFile
     HPRECONDITION(pi_Offset == 0);
     HPRECONDITION(HRFWebFileCreator::GetInstance()->IsKindOfFile(pi_rpURL));
 
-    WChar filename[MAX_PATH];
+    WChar filenameW[MAX_PATH];
 
 #ifdef BENTLEY_WIN32        // Keep using URLDownloadToCacheFile since it provides a cache mechanism.
     // URLDownloadToCacheFile(...)
@@ -236,14 +236,14 @@ HRFWebFile::HRFWebFile
     //  URLOSTRM_GETNEWESTVERSION       Download the resource from the Internet, if it is newer, and store it in the cache.
     //  URLOSTRM_USECACHEDCOPY          Download the resource from the cache if it is available; otherwise, download it from the Internet.
     //  URLOSTRM_USECACHEDCOPY_ONLY     Only download the resource from the cache.
-
-    if(0 != URLDownloadToCacheFileW(NULL, pi_rpURL->GetURL().c_str(), filename, URLOSTRM_GETNEWESTVERSION, 0, NULL))
+    WString urlW(pi_rpURL->GetURL().c_str(), BentleyCharEncoding::Utf8);
+    if(0 != URLDownloadToCacheFileW(NULL, urlW.c_str(), filenameW, URLOSTRM_GETNEWESTVERSION, 0, NULL))
         {
         throw HRFCannotDownloadToInternetCacheException(pi_rpURL->GetURL());
         }
 #else
 //     HttpSession session;
-//     HttpRequest request(Utf8String(pi_rpURL->GetURL()).c_str());
+//     HttpRequest request(pi_rpURL->GetURL().c_str());
 //     HttpResponsePtr response;
 //     if(HttpRequestStatus::Success != session.Request(response, request) || response.IsNull() || response->GetBody().empty())
 //         throw HRFCannotDownloadToInternetCacheException(pi_rpURL->GetURL());
@@ -255,8 +255,8 @@ HRFWebFile::HRFWebFile
 
 
     // compute local URL
-    WString  localURL(L"file://");
-    localURL.append(filename);
+    Utf8String  localURL("file://");
+    localURL.append(Utf8String(filenameW));
     m_pLocalURL = HFCURL::Instanciate(localURL);
 
     // Instanciate the local file
@@ -367,8 +367,8 @@ void HRFWebFile::Save()
 //-----------------------------------------------------------------------------
 HRFWebFileCreator::HRFWebFileCreator()
     : HRFRasterFileCreator(HRFWebFile::CLASS_ID),
-      m_Label(L"Web File"),
-      m_Schemes(L"http")
+      m_Label("Web File"),
+      m_Schemes("http")
     {
     }
 
@@ -377,7 +377,7 @@ HRFWebFileCreator::HRFWebFileCreator()
 //
 //
 //-----------------------------------------------------------------------------
-WString HRFWebFileCreator::GetLabel() const
+Utf8String HRFWebFileCreator::GetLabel() const
     {
     return m_Label;
     }
@@ -387,7 +387,7 @@ WString HRFWebFileCreator::GetLabel() const
 //
 //
 //-----------------------------------------------------------------------------
-WString HRFWebFileCreator::GetSchemes() const
+Utf8String HRFWebFileCreator::GetSchemes() const
     {
     return m_Schemes;
     }
@@ -396,7 +396,7 @@ WString HRFWebFileCreator::GetSchemes() const
 //
 //
 //-----------------------------------------------------------------------------
-WString HRFWebFileCreator::GetExtensions() const
+Utf8String HRFWebFileCreator::GetExtensions() const
     {
     return m_Extensions;
     }

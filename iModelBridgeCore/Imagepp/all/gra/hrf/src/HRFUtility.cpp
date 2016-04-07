@@ -138,9 +138,6 @@ static HFCPtr<HGSMemorySurfaceDescriptor> sf1BitBestQualityStretcher (HGSMemoryS
 
 static HFCPtr<HGSMemorySurfaceDescriptor> sfBestQualityStretcher(HGSMemorySurfaceDescriptor const& pi_SrcSurfaceDesc, uint32_t pi_PreferedHeight);
 
-static WString sfHRFGeoKeyTagToString     (const HFCPtr<HPMGenericAttribute>& pi_rpGeoKeyTag, uint16_t pi_GeoKey);
-static uint16_t sfHRFDecodeGeoKeyFromString(const HFCPtr<HPMGenericAttribute>& pi_rpTag);
-
 
 
 

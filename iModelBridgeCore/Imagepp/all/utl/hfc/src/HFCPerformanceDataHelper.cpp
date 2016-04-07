@@ -75,7 +75,7 @@ void HFCPerformanceDataHelper::Close()
 // HFC_PERFORMANCE_COUNTER* pi_pCtrHandle: The pointer that will
 //                                         receive the counter handle
 //-----------------------------------------------------------------
-HFC_PERFORMANCE_STATUS HFCPerformanceDataHelper::AddCounter(const WString& pi_rCounterPath,
+HFC_PERFORMANCE_STATUS HFCPerformanceDataHelper::AddCounter(const Utf8String& pi_rCounterPath,
                                                             HFC_PERFORMANCE_COUNTER* pi_pCtrHandle)
     {
     HFC_PERFORMANCE_STATUS pdhStatus;
@@ -190,8 +190,8 @@ HFC_PERFORMANCE_STATUS HFCPerformanceDataHelper::QueryData()
 void HFCPerformanceDataHelper::EnumObjects()
     {
     DWORD  BufLen  = 0;
-    WCharP pBuffer = 0;
-    WCharP pObject;
+    Utf8P pBuffer = 0;
+    Utf8P pObject;
 
     // Clear the list
     m_ObjectList.erase(m_ObjectList.begin(), m_ObjectList.end());
@@ -199,15 +199,15 @@ void HFCPerformanceDataHelper::EnumObjects()
     // Get the len of the buffer
     if( PdhEnumObjects(0, 0, 0, &BufLen, PERF_DETAIL_WIZARD, false) == ERROR_SUCCESS )
         {
-        pBuffer = new WChar[BufLen];
+        pBuffer = new Utf8Char[BufLen];
         if( PdhEnumObjects(0, 0, pBuffer, &BufLen, PERF_DETAIL_WIZARD, false) == ERROR_SUCCESS )
             {
             BufLen  = 0;
             pObject = pBuffer;
-            while( wcscmp(pObject, L"") != 0 )
+            while( strcmp(pObject, "") != 0 )
                 {
                 m_ObjectList.push_back(pObject);
-                BufLen += (DWORD)wcslen(pObject) + 1;
+                BufLen += (DWORD) strlen(pObject) + 1;
                 pObject = pBuffer + BufLen;
                 }
             }
@@ -236,14 +236,14 @@ const HFCPerformanceDataHelper::PERFORMANCE_OBJECT_LIST& HFCPerformanceDataHelpe
 // HFCPerformanceDataHelper::POID pi_pRetStc: A pointer to the
 //                                            return struct.
 //-----------------------------------------------------------------
-HFC_PERFORMANCE_STATUS  HFCPerformanceDataHelper::EnumObjectItems(const WString& pi_rObjectName,
+HFC_PERFORMANCE_STATUS  HFCPerformanceDataHelper::EnumObjectItems(const Utf8String& pi_rObjectName,
                                                                   HFCPerformanceDataHelper::POID pi_pRetStc)
     {
     HFC_PERFORMANCE_STATUS pdhStatus;
     DWORD  CounterListLen  = 0;
     DWORD  InstanceListLen = 0;
-    WCharP pCounterList    = 0;
-    WCharP pInstanceList   = 0;
+    Utf8P pCounterList    = 0;
+    Utf8P pInstanceList   = 0;
 
     HPRECONDITION(pi_pRetStc != 0);
 
@@ -262,10 +262,10 @@ HFC_PERFORMANCE_STATUS  HFCPerformanceDataHelper::EnumObjectItems(const WString&
         {
         // Allocate memory
         if( CounterListLen > 0 )
-            pCounterList  = new WChar[CounterListLen];
+            pCounterList  = new Utf8Char[CounterListLen];
 
         if( InstanceListLen > 0 )
-            pInstanceList = new WChar[InstanceListLen];
+            pInstanceList = new Utf8Char[InstanceListLen];
 
         // Get objects
         pdhStatus = PdhEnumObjectItems(0,

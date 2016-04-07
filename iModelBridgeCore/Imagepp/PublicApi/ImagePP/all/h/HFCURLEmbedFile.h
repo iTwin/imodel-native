@@ -27,28 +27,28 @@ public:
 
     HDECLARE_CLASS_ID(HFCURLId_EmbedFile, HFCURL);
     // Define the Scheme label
-    static const WString& s_SchemeName()
-        {   static const WString Val(L"embed");
+    static const Utf8String& s_SchemeName()
+        {   static const Utf8String Val("embed");
         FREEZE_STL_STRING(Val);
         return Val;
         }
 
     // Primary methods
 
-    IMAGEPP_EXPORT                  HFCURLEmbedFile(const WString& pi_rURL, IFileReaderHandler* pi_pHandler);
+    IMAGEPP_EXPORT                  HFCURLEmbedFile(const Utf8String& pi_rURL, IFileReaderHandler* pi_pHandler);
 
     IMAGEPP_EXPORT virtual         ~HFCURLEmbedFile();
 
     // Content access methods
 
-    IMAGEPP_EXPORT virtual WString  GetURL() const;
-    IMAGEPP_EXPORT const WString&   GetPath() const;
+    IMAGEPP_EXPORT virtual Utf8String  GetURL() const;
+    IMAGEPP_EXPORT const Utf8String&   GetPath() const;
 
     // Overriden methods, used in relative path management
 
     virtual bool            HasPathTo(HFCURL* pi_pURL);
-    virtual WString          FindPathTo(HFCURL* pi_pDest);
-    virtual HFCURL*          MakeURLTo(const WString& pi_Path);
+    virtual Utf8String          FindPathTo(HFCURL* pi_pDest);
+    virtual HFCURL*          MakeURLTo(const Utf8String& pi_Path);
 
 
     IMAGEPP_EXPORT  void             RegisterFileReaderHandler(HFCPtr<IFileReaderHandler> pi_pHandler);
@@ -78,7 +78,7 @@ private:
 
     // Components of the scheme-specific part of the URL string.
 
-    WString      m_Path;
+    Utf8String      m_Path;
     time_t       m_creationTime;
     time_t       m_modificationTime;
 

@@ -482,7 +482,7 @@ void HRAImageBilinearSamplerN8<ChannelCount_T, Data_T>::Warp_T(HRAImageSampleR o
                     }
                 else
                     {
-                    float result = p1*w1 + p2 * w2 + p3 * w3 + p4 * w4; result;
+                    float result = p1*w1 + p2 * w2 + p3 * w3 + p4 * w4; (void)result;
 
                     //It's faster without clip_cast and since the weights have a total of 1.0. it should not be required to clip_cast<Data_T>(result)
                     // unless we have precision error?!

@@ -177,7 +177,8 @@ HFCPtr<HRFRasterFile> HRFRasterFileBlockAdapter::CreateBestAdapterBasedOnCacheFo
             pCacheFile = 0;
 
             HASSERT(fileName->IsCompatibleWith(HFCURLFile::CLASS_ID) == true);
-            BeFileName::BeDeleteFile((static_cast<HFCURLFile*>(fileName.GetPtr()))->GetAbsoluteFileName().c_str());
+            BeFileName file((static_cast<HFCURLFile*>(fileName.GetPtr()))->GetAbsoluteFileName().c_str());
+            file.BeDeleteFile();
 
             return CreateBestAdapterFor(pi_rpForRasterFile);    // Invalid cache, create a new one
             }
@@ -485,7 +486,6 @@ void HRFRasterFileBlockAdapter::CreateDescriptors(const BlockDescriptorMap& pi_r
                 // BestMatch a resolution descriptor and insert it to the list
                 uint32_t            BlockWidth=0;
                 uint32_t            BlockHeight=0;
-                HRFBlockAccess      BlockAccess = HRFBlockAccess::RANDOM;
 
 
                 HFCPtr<HRFRasterFileCapabilities> pPixelTypeCapabilities;

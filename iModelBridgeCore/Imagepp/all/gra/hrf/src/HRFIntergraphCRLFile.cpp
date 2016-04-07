@@ -167,18 +167,18 @@ HRFIntergraphCRLCreator::HRFIntergraphCRLCreator()
 // Identification information
 //-----------------------------------------------------------------------------
 
-WString HRFIntergraphCRLCreator::GetLabel() const
+Utf8String HRFIntergraphCRLCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_CRL()); // Intergraph 10
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_CRL()); // Intergraph 10
     }
 
 //-----------------------------------------------------------------------------
 // Identification information
 //-----------------------------------------------------------------------------
 
-WString HRFIntergraphCRLCreator::GetExtensions() const
+Utf8String HRFIntergraphCRLCreator::GetExtensions() const
     {
-    return WString(L"*.crl;*.tpe;*.lsr");
+    return Utf8String("*.crl;*.tpe;*.lsr");
     }
 
 //-----------------------------------------------------------------------------

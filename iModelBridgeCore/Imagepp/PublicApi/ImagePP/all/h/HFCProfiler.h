@@ -35,7 +35,7 @@ public:
     ~HFCProfiler();
 
 
-    size_t          RegisterCounter(const WString& pi_rName);
+    size_t          RegisterCounter(const Utf8String& pi_rName);
 
     LARGE_INTEGER   Start(int32_t pi_CounterID);
     void            Stop(int32_t pi_CounterID, LARGE_INTEGER);
@@ -48,7 +48,7 @@ private:
 
     struct Counter
         {
-        Counter(const WString& pi_rName)
+        Counter(const Utf8String& pi_rName)
             : m_Name(pi_rName)
             {
             m_Calls = 0;
@@ -82,7 +82,7 @@ private:
                    (pi_rObj.m_TotalMilliSeconds - pi_rObj.m_ChildrenMilliSeconds);
             }
 
-        WString m_Name;
+        Utf8String m_Name;
         int32_t     m_Calls;
         int32_t     m_Overheads;
         double  m_TotalMilliSeconds;

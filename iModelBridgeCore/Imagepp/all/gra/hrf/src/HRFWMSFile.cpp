@@ -46,7 +46,7 @@
 // Static Members
 //-----------------------------------------------------------------------------
 
-static const  WString s_Device(L"WMS connection");
+static const  Utf8String s_Device("WMS connection");
 static        uint32_t s_ConnectionTimeOut = 60000; // default : 60 sec
 
 #define NB_BLOCK_READER_THREAD  4
@@ -84,9 +84,9 @@ HRFWMSCreator::HRFWMSCreator()
 // GetLabel
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFWMSCreator::GetLabel() const
+Utf8String HRFWMSCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_WMS()); // WMS File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_WMS()); // WMS File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -94,9 +94,9 @@ WString HRFWMSCreator::GetLabel() const
 // GetSchemes
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFWMSCreator::GetSchemes() const
+Utf8String HRFWMSCreator::GetSchemes() const
     {
-    return HFCURLFile::s_SchemeName() + L";" + HFCURLMemFile::s_SchemeName();
+    return HFCURLFile::s_SchemeName() + ";" + HFCURLMemFile::s_SchemeName();
     }
 
 //-----------------------------------------------------------------------------
@@ -107,9 +107,9 @@ WString HRFWMSCreator::GetSchemes() const
 // Note : IsKindOfFile use GetExtensions. Adapt the method if the extensions
 //        change...
 //-----------------------------------------------------------------------------
-WString HRFWMSCreator::GetExtensions() const
+Utf8String HRFWMSCreator::GetExtensions() const
     {
-    return WString(L"*.xwms");
+    return Utf8String("*.xwms");
     }
 
 //-----------------------------------------------------------------------------
@@ -149,12 +149,9 @@ bool HRFWMSCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         {
         HFCPtr<HFCURLFile>& rpURL((HFCPtr<HFCURLFile>&)pi_rpURL);
         // at least, the file must be have the right extension...
-        if (BeStringUtilities::Wcsicmp(rpURL->GetExtension().c_str(), L"xwms") == 0)
+        if (rpURL->GetExtension().EqualsI("xwms"))
             {
-            WString XMLFileName;
-            XMLFileName = ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetHost();
-            XMLFileName += L"\\";
-            XMLFileName += ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
+            Utf8String XMLFileName = rpURL->GetAbsoluteFileName();
 
             // *** At some point in the development of WMS we were creating bad formated XML files.
             // The SERVERCAPABILITIES tag was closed with "</SERVERCAPABILTIES>" notice the missing 'I'.
@@ -177,7 +174,7 @@ bool HRFWMSCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     else if (pi_rpURL->IsCompatibleWith(HFCURLMemFile::CLASS_ID))
         {
         HFCPtr<HFCURLMemFile>& rpURL((HFCPtr<HFCURLMemFile>&)pi_rpURL);
-        if (BeStringUtilities::Wcsicmp(rpURL->GetExtension().c_str(), L"xwms") == 0)
+        if (rpURL->GetExtension().EqualsI("xwms"))
             {
             HFCPtr<HFCBuffer> pBuffer(((HFCPtr<HFCURLMemFile>&)pi_rpURL)->GetBuffer());
 
@@ -247,9 +244,9 @@ HRFWMSFile::HRFWMSFile(const HFCPtr<HFCURL>& pi_rpURL,
     BeXmlStatus xmlStatus=BEXML_ParseError;
     if (pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID))
         {
-        WString XMLFileName;
+        Utf8String XMLFileName;
         XMLFileName = ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetHost();
-        XMLFileName += L"\\";
+        XMLFileName += "\\";
         XMLFileName += ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
 
         // Open XML file
@@ -299,18 +296,18 @@ HRFWMSFile::HRFWMSFile(const HFCPtr<HFCURL>& pi_rpURL,
     BeXmlNodeP pChildNode;
     if ((pChildNode = pMainNode->SelectSingleNode("VERSION")) == NULL)
         throw HRFMissingParameterException(GetURL()->GetURL(),
-                                        L"VERSION");
+                                        "VERSION");
 
-    WString versionString;
+    Utf8String versionString;
     pChildNode->GetContent(versionString);
 
-    if (wcscmp(versionString.c_str(), L"1.0") == 0)
+    if (versionString.Equals("1.0"))
         ReadWMS_1_0(pMainNode);
-    else if (wcscmp(versionString.c_str(), L"1.1") == 0)
+    else if (versionString.Equals("1.1"))
         ReadWMS_1_1(pMainNode);
-    else if (wcscmp(versionString.c_str(), L"1.2") == 0)
+    else if (versionString.Equals("1.2"))
         ReadWMS_1_2(pMainNode, versionString);
-    else if (wcscmp(versionString.c_str(), L"1.3") == 0)
+    else if (versionString.Equals("1.3"))
         ReadWMS_1_2(pMainNode, versionString);
     else
         throw HRFUnsupportedxWMSVersionException(pi_rpURL->GetURL());
@@ -324,20 +321,18 @@ HRFWMSFile::HRFWMSFile(const HFCPtr<HFCURL>& pi_rpURL,
     if (pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID))
         m_pFile = HFCBinStream::Instanciate(pi_rpURL, pi_AccessMode);
 
-    Utf8String templateUrl;
-
     // We are being to nice here. xwms file should contain a valid http/https URL but unfortunately we have files that have bad URL. why we created that?
     HFCPtr<HFCURL> pURL = HFCURL::Instanciate(m_ServerURL);
     if (pURL == nullptr)
         {
         // create an HTTP URL
-        WString httpURL = L"http://" + m_ServerURL;
+        Utf8String httpURL = "http://" + m_ServerURL;
         HFCPtr<HFCURLHTTP> pHttpURL = new HFCURLHTTP(httpURL);
 
         // if we have an user or password, change the http url for an https url
         if (!pHttpURL->GetUser().empty() || !pHttpURL->GetPassword().empty())
             {
-            httpURL = L"https://" + m_ServerURL;
+            httpURL = "https://" + m_ServerURL;
             pHttpURL = new HFCURLHTTP(httpURL);
             }
         pURL = pHttpURL.GetPtr();
@@ -347,7 +342,7 @@ HRFWMSFile::HRFWMSFile(const HFCPtr<HFCURL>& pi_rpURL,
         throw HFCInternetConnectionException(s_Device, HFCInternetConnectionException::CANNOT_CONNECT);
 
     HFCURLHTTPBase* pHttpUrl = static_cast<HFCURLHTTPBase*>(pURL.GetPtr());
-    WString searchBase;
+    Utf8String searchBase;
     if (!pHttpUrl->GetSearchPart().empty())
             searchBase = pHttpUrl->GetSearchPart();
 
@@ -432,8 +427,8 @@ void HRFWMSFile::SetContext(uint32_t                 pi_Page,
 
         HFCPtr<HMDVolatileLayers> pVolatileLayers((HFCPtr<HMDVolatileLayers>&)pDataContainer);
 
-        WString Layers;
-        WString Styles;
+        Utf8String Layers;
+        Utf8String Styles;
         const HMDLayerInfoWMS* pLayer;
         for (uint16_t Index = 0; Index < pVolatileLayers->GetNbVolatileLayers(); ++Index)
             {
@@ -444,8 +439,8 @@ void HRFWMSFile::SetContext(uint32_t                 pi_Page,
                 pLayer = (const HMDLayerInfoWMS*)pVolatileLayers->GetLayerInfo(Index);
                 if (!Layers.empty())
                     {
-                    Layers += L",";
-                    Styles += L",";
+                    Layers += ",";
+                    Styles += ",";
                     }
 
                 Layers += pLayer->GetLayerName();
@@ -454,9 +449,9 @@ void HRFWMSFile::SetContext(uint32_t                 pi_Page,
             }
         m_Request = m_BaseRequest;
         m_Request += "&LAYERS=";
-        m_Request += Utf8String(Layers);
+        m_Request += Layers;
         m_Request += "&STYLES=";
-        m_Request += Utf8String(Styles);
+        m_Request += Styles;
 
         // Notify each editor that the context changed
         // find the resolution editor into the ResolutionEditorRegistry
@@ -520,7 +515,7 @@ void HRFWMSFile::CreateDescriptors(uint64_t pi_Width,
 
     if (Pos == string::npos)
         throw HRFMissingParameterException(GetURL()->GetURL(),
-                                        L"srs or crs");
+                                        "srs or crs");
 
     // skip "srs="
     Pos += 4;
@@ -651,24 +646,19 @@ void HRFWMSFile::ReadWMS_1_0(BeXmlNodeP pi_pBentleyXMLFileNode)
 
     // tag URL (mandatory)
     if ((pChildNode = pi_pBentleyXMLFileNode->SelectSingleNode("URL")) == NULL)
-        throw HRFMissingParameterException(GetURL()->GetURL(),
-                                        L"URL");
+        throw HRFMissingParameterException(GetURL()->GetURL(), "URL");
 
     pChildNode->GetContent(m_ServerURL);
 
     // tag REQUEST (mandatory)
     if ((pChildNode = pi_pBentleyXMLFileNode->SelectSingleNode("REQUEST")) == NULL)
-        throw HRFMissingParameterException(GetURL()->GetURL(),
-                                        L"REQUEST");
+        throw HRFMissingParameterException(GetURL()->GetURL(), "REQUEST");
 
-    WString content;
-    pChildNode->GetContent(content);
-
-    LangCodePage codePage;
-    BeStringUtilities::GetCurrentCodePage (codePage);
+    WString requestW;
+    pChildNode->GetContent(requestW);
 
     AString requestA;
-    BeStringUtilities::WCharToLocaleChar (requestA, codePage, content.c_str());
+    BeStringUtilities::WCharToCurrentLocaleChar(requestA, requestW.c_str());
 
     m_BaseRequest = requestA.c_str();
 
@@ -681,11 +671,11 @@ void HRFWMSFile::ReadWMS_1_0(BeXmlNodeP pi_pBentleyXMLFileNode)
         if (Request.find("crs=") == string::npos)
             {
             throw HRFMissingParameterException(GetURL()->GetURL(),
-                                            L"crs");
+                                            "crs");
             }
 
         throw HRFMissingParameterException(GetURL()->GetURL(),
-                                        L"srs");
+                                        "srs");
         }
 
     // skip "srs=" or "crs="
@@ -697,7 +687,7 @@ void HRFWMSFile::ReadWMS_1_0(BeXmlNodeP pi_pBentleyXMLFileNode)
     // format
     if ((Pos = Request.find("format=")) == string::npos)
         throw HRFMissingParameterException(GetURL()->GetURL(),
-                                        L"format");
+                                        "format");
 
     // skip "format="
     Pos += 7;
@@ -708,17 +698,17 @@ void HRFWMSFile::ReadWMS_1_0(BeXmlNodeP pi_pBentleyXMLFileNode)
         BeStringUtilities::Stricmp(m_Format.c_str(), "image/png") != 0 &&
         BeStringUtilities::Stricmp(m_Format.c_str(), "image/bmp") != 0)
         throw HRFMimeFormatNotSupportedException(GetURL()->GetURL(),
-                                        L"format");
+                                        "format");
 
     // tag BBOX (mandatory)
     if ((pChildNode = pi_pBentleyXMLFileNode->SelectSingleNode("BBOX")) == NULL)
         throw HRFMissingParameterException(GetURL()->GetURL(),
-                                        L"BBOX");
+                                        "BBOX");
 
     bvector<double> BBoxValues;
     if(BEXML_Success != pChildNode->GetContentDoubleValues(BBoxValues) || BBoxValues.size() != 4)
         throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                        L"BBOX");
+                                        "BBOX");
 
     m_BBoxMinX = BBoxValues[0];
     m_BBoxMinY = BBoxValues[1];
@@ -727,30 +717,30 @@ void HRFWMSFile::ReadWMS_1_0(BeXmlNodeP pi_pBentleyXMLFileNode)
 
     if (HDOUBLE_EQUAL_EPSILON(m_BBoxMaxX - m_BBoxMinX, 0.0) || HDOUBLE_EQUAL_EPSILON(m_BBoxMaxY - m_BBoxMinY, 0.0))
         throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                        L"BBOX invalid");
+                                        "BBOX invalid");
 
     // tag IMAGESIZE (mandatory)
     if ((pChildNode = pi_pBentleyXMLFileNode->SelectSingleNode("IMAGESIZE")) == NULL)
         throw HRFMissingParameterException(GetURL()->GetURL(),
-                                        L"IMAGESIZE");
+                                        "IMAGESIZE");
 
     // tag IMAGESIZE.WIDTH (mandatory)
     if ((pSubChildNode = pChildNode->SelectSingleNode("WIDTH")) == NULL)
         throw HRFMissingParameterException(GetURL()->GetURL(),
-                                        L"IMAGESIZE.WIDTH");
+                                        "IMAGESIZE.WIDTH");
 
     if (BEXML_Success != pSubChildNode->GetContentUInt64Value(m_Width))
         throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                        L"IMAGESIZE.WIDTH");
+                                        "IMAGESIZE.WIDTH");
 
     // tag IMAGESIZE.HEIGHT (mandatory)
     if ((pSubChildNode = pChildNode->SelectSingleNode("HEIGHT")) == NULL)
         throw HRFMissingParameterException(GetURL()->GetURL(),
-                                        L"IMAGESIZE.HEIGHT");
+                                        "IMAGESIZE.HEIGHT");
 
     if (BEXML_Success != pSubChildNode->GetContentUInt64Value(m_Height))
         throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                        L"IMAGESIZE.HEIGHT");
+                                        "IMAGESIZE.HEIGHT");
 
     // tag SERVERCAPABILTIES (optional)
     if ((pChildNode = pi_pBentleyXMLFileNode->SelectSingleNode("SERVERCAPABILITIES")) != NULL)
@@ -758,20 +748,20 @@ void HRFWMSFile::ReadWMS_1_0(BeXmlNodeP pi_pBentleyXMLFileNode)
         // tag SERVERCAPABILITIES.MAXWIDTH (mandatory)
         if ((pSubChildNode = pChildNode->SelectSingleNode("MAXWIDTH")) == NULL)
             throw HRFMissingParameterException(GetURL()->GetURL(),
-                                            L"SERVERCAPABILITIES.MAXWIDTH");
+                                            "SERVERCAPABILITIES.MAXWIDTH");
 
         if (BEXML_Success != pSubChildNode->GetContentUInt64Value(m_MaxBitmapSize.m_Width))
             throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                            L"SERVERCAPABILITIES.MAXWIDTH");
+                                            "SERVERCAPABILITIES.MAXWIDTH");
 
         // tag SERVERCAPABILITIES.MAXHEIGHT (mandatory)
         if ((pSubChildNode = pChildNode->SelectSingleNode("MAXHEIGHT")) == NULL)
             throw HRFMissingParameterException(GetURL()->GetURL(),
-                                            L"SERVERCAPABILITIES.MAXHEIGHT");
+                                            "SERVERCAPABILITIES.MAXHEIGHT");
 
         if (BEXML_Success != pSubChildNode->GetContentUInt64Value(m_MaxBitmapSize.m_Height))
             throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                            L"SERVERCAPABILITIES.MAXHEIGHT");
+                                            "SERVERCAPABILITIES.MAXHEIGHT");
         }
 
     // tag CONNECTIONTIMEOUT (optional)
@@ -780,7 +770,7 @@ void HRFWMSFile::ReadWMS_1_0(BeXmlNodeP pi_pBentleyXMLFileNode)
         {
         if (BEXML_Success != pChildNode->GetContentUInt32Value(m_ConnectionTimeOut))
             throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                            L"CONNECTIONTIMEOUT");
+                                            "CONNECTIONTIMEOUT");
 
         m_ConnectionTimeOut *= 1000; // the value is in second, convert it in millisecond
         }
@@ -802,14 +792,14 @@ void HRFWMSFile::ReadWMS_1_1(BeXmlNodeP pi_pBentleyWMSFileNode)
     // tag URL
     if ((pChildNode = pi_pBentleyWMSFileNode->SelectSingleNode("URL")) == 0)
         throw HRFMissingParameterException(GetURL()->GetURL(),
-                                        L"URL");
+                                        "URL");
 
     pChildNode->GetContent(m_ServerURL);
 
     // tag REQUEST (mandatory)
     if ((pChildNode = pi_pBentleyWMSFileNode->SelectSingleNode("REQUEST")) == 0)
         throw HRFMissingParameterException(GetURL()->GetURL(),
-                                        L"REQUEST");
+                                        "REQUEST");
 
     m_BBoxMinX = 0.0;
     m_BBoxMinY = 0.0;
@@ -818,19 +808,16 @@ void HRFWMSFile::ReadWMS_1_1(BeXmlNodeP pi_pBentleyWMSFileNode)
 
     m_BaseRequest = "SERVICE=WMS&REQUEST=GetMap";
 
-    LangCodePage codePage;
-    BeStringUtilities::GetCurrentCodePage (codePage);
-
     for(BeXmlNodeP pSubNode = pChildNode->GetFirstChild (); NULL != pSubNode; pSubNode = pSubNode->GetNextSibling())
         {
-        WString content;
+        Utf8String content;
     
         if (BeStringUtilities::Stricmp(pSubNode->GetName(), "BBOX") == 0)
             {
             bvector<double> BBoxValues;
             if(BEXML_Success != pSubNode->GetContentDoubleValues(BBoxValues) || BBoxValues.size() != 4)
                 throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                                L"BBOX");
+                                                "BBOX");
             m_BBoxMinX = BBoxValues[0];
             m_BBoxMinY = BBoxValues[1];
             m_BBoxMaxX = BBoxValues[2];
@@ -840,21 +827,21 @@ void HRFWMSFile::ReadWMS_1_1(BeXmlNodeP pi_pBentleyWMSFileNode)
             {
             if (BEXML_Success != pSubNode->GetContentUInt64Value(m_Width) || m_Width == 0)
                 throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                                L"WIDTH");
+                                                "WIDTH");
             }
         else if (BeStringUtilities::Stricmp(pSubNode->GetName(), "HEIGHT") == 0)
             {
             if (BEXML_Success != pSubNode->GetContentUInt64Value(m_Height) || m_Height == 0)
                 throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                                L"HEIGHT");
+                                                "HEIGHT");
             }
         else
             {
-            WString content;
-            pSubNode->GetContent(content);
+            WString contentW;
+            pSubNode->GetContent(contentW);
             
             AString contentA;
-            BeStringUtilities::WCharToLocaleChar (contentA, codePage, content.c_str());
+            BeStringUtilities::WCharToCurrentLocaleChar(contentA, contentW.c_str());
 
             m_BaseRequest += "&";
 
@@ -874,11 +861,11 @@ void HRFWMSFile::ReadWMS_1_1(BeXmlNodeP pi_pBentleyWMSFileNode)
                     if (BeStringUtilities::Stricmp(pSubNode->GetName(), "CRS") == 0)
                         {
                         throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                                        L"CRS");
+                                                        "CRS");
                         }
 
                     throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                                    L"SRS");
+                                                    "SRS");
                     }
                 }
             else if (BeStringUtilities::Stricmp(pSubNode->GetName(), "FORMAT") == 0)
@@ -887,7 +874,7 @@ void HRFWMSFile::ReadWMS_1_1(BeXmlNodeP pi_pBentleyWMSFileNode)
                 if (m_Format.empty())
                     {
                     throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                                    L"FORMAT");
+                                                    "FORMAT");
                     }
                 }
             }
@@ -896,35 +883,35 @@ void HRFWMSFile::ReadWMS_1_1(BeXmlNodeP pi_pBentleyWMSFileNode)
     // BBOX, WIDTH and HEIGHT are mandatory
     if (m_BBoxMinX == 0 && m_BBoxMaxX == 0 && m_BBoxMinY == 0 && m_BBoxMaxY == 0)
         throw HRFMissingParameterException(GetURL()->GetURL(),
-                                        L"BBOX");
+                                        "BBOX");
 
     if (HDOUBLE_EQUAL_EPSILON(m_BBoxMaxX - m_BBoxMinX, 0.0) || HDOUBLE_EQUAL_EPSILON(m_BBoxMaxY - m_BBoxMinY, 0.0))
         throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                        L"BBOX invalid");
+                                        "BBOX invalid");
 
 
     if (m_Width == 0)
         throw HRFMissingParameterException(GetURL()->GetURL(),
-                                        L"WIDTH");
+                                        "WIDTH");
 
     if (m_Height == 0)
         throw HRFMissingParameterException(GetURL()->GetURL(),
-                                        L"HEIGHT");
+                                        "HEIGHT");
 
     if (m_CRS.empty())
         throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                        L"CRS");
+                                        "CRS");
 
     if (m_Format.empty())
         throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                        L"FORMAT");
+                                        "FORMAT");
 
     if (BeStringUtilities::Stricmp(m_Format.c_str(), "image/jpeg") != 0 &&
         BeStringUtilities::Stricmp(m_Format.c_str(), "image/png") != 0 &&
         BeStringUtilities::Stricmp(m_Format.c_str(), "image/bmp") != 0 &&
         BeStringUtilities::Stricmp(m_Format.c_str(), "image/gif") != 0)
         throw HRFMimeFormatNotSupportedException(GetURL()->GetURL(),
-                                        L"FORMAT");
+                                        "FORMAT");
 
     // tag IMAGESIZE (optional)
     if ((pChildNode = pi_pBentleyWMSFileNode->SelectSingleNode("IMAGESIZE")) != 0)
@@ -937,11 +924,11 @@ void HRFWMSFile::ReadWMS_1_1(BeXmlNodeP pi_pBentleyWMSFileNode)
 
             if (m_MinImageSize.m_Width == 0)
                 throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                                L"IMAGESIZE.MINSIZE.width");
+                                                "IMAGESIZE.MINSIZE.width");
 
             if (m_MinImageSize.m_Height == 0)
                 throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                                L"IMAGESIZE.MINSIZE.height");
+                                                "IMAGESIZE.MINSIZE.height");
             }
 
         // tag IMAGESIZE.MAXSIZE (optional)
@@ -952,11 +939,11 @@ void HRFWMSFile::ReadWMS_1_1(BeXmlNodeP pi_pBentleyWMSFileNode)
 
             if (m_MaxImageSize.m_Width == 0)
                 throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                                L"IMAGESIZE.MAXSIZE.width");
+                                                "IMAGESIZE.MAXSIZE.width");
 
             if (m_MaxImageSize.m_Height == 0)
                 throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                                L"IMAGESIZE.MAXSIZE.height");
+                                                "IMAGESIZE.MAXSIZE.height");
             }
         }
 
@@ -971,11 +958,11 @@ void HRFWMSFile::ReadWMS_1_1(BeXmlNodeP pi_pBentleyWMSFileNode)
 
             if (m_MaxBitmapSize.m_Width == 0)
                 throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                                L"SERVERCAPABILITIES.MAXBITMAPSIZE.width");
+                                                "SERVERCAPABILITIES.MAXBITMAPSIZE.width");
 
             if (m_MaxBitmapSize.m_Width == 0)
                 throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                                L"SERVERCAPABILITIES.MAXBITMAPSIZE.height");
+                                                "SERVERCAPABILITIES.MAXBITMAPSIZE.height");
             }
         }
 
@@ -985,7 +972,7 @@ void HRFWMSFile::ReadWMS_1_1(BeXmlNodeP pi_pBentleyWMSFileNode)
         {
         if (BEXML_Success != pChildNode->GetContentUInt32Value(m_ConnectionTimeOut))
             throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                            L"CONNECTIONTIMEOUT");
+                                            "CONNECTIONTIMEOUT");
 
         m_ConnectionTimeOut *= 1000; // the value is in second, convert it in millisecond
         }
@@ -999,7 +986,7 @@ void HRFWMSFile::ReadWMS_1_1(BeXmlNodeP pi_pBentleyWMSFileNode)
 //
 // Read the version 1.2 and 1.3 of WMS file
 //-----------------------------------------------------------------------------
-void HRFWMSFile::ReadWMS_1_2(BeXmlNodeP pi_pBentleyWMSFileNode, WString const& version)
+void HRFWMSFile::ReadWMS_1_2(BeXmlNodeP pi_pBentleyWMSFileNode, Utf8String const& version)
     {
     HPRECONDITION(pi_pBentleyWMSFileNode != 0);
 
@@ -1009,7 +996,7 @@ void HRFWMSFile::ReadWMS_1_2(BeXmlNodeP pi_pBentleyWMSFileNode, WString const& v
     // tag URL
     if ((pChildNode = pi_pBentleyWMSFileNode->SelectSingleNode("URL")) == 0)
         throw HRFMissingParameterException(GetURL()->GetURL(),
-                                        L"URL");
+                                        "URL");
 
     pChildNode->GetContent(m_ServerURL);
 
@@ -1017,12 +1004,10 @@ void HRFWMSFile::ReadWMS_1_2(BeXmlNodeP pi_pBentleyWMSFileNode, WString const& v
     // tag REQUEST (mandatory)
     if ((pChildNode = pi_pBentleyWMSFileNode->SelectSingleNode("REQUEST")) == 0)
         throw HRFMissingParameterException(GetURL()->GetURL(),
-                                        L"REQUEST");
+                                        "REQUEST");
 
     m_BaseRequest = "SERVICE=WMS&REQUEST=GetMap";
 
-    LangCodePage codePage;
-    BeStringUtilities::GetCurrentCodePage (codePage);
 
     // We need to extract the WMS version in order to correctly form the SRS or CRS request (MWS 1.3 requires CRS)
     bool WMSVersionIs1_3 = true;
@@ -1031,9 +1016,9 @@ void HRFWMSFile::ReadWMS_1_2(BeXmlNodeP pi_pBentleyWMSFileNode, WString const& v
         if (BeStringUtilities::Stricmp(pSubNode->GetName(), "VERSION") == 0)
             {
             // If the version is not 1.3 then we set the flag
-            WString version;
+            Utf8String version;
             pSubNode->GetContent(version);
-            if (BeStringUtilities::Wcsnicmp(version.c_str(), L"1.3", 3) != 0)
+            if (BeStringUtilities::Strnicmp(version.c_str(), "1.3", 3) != 0)
                 WMSVersionIs1_3 = false;
             
             // Only one VERSION clause is possible ... we can break out of the loop
@@ -1076,11 +1061,11 @@ void HRFWMSFile::ReadWMS_1_2(BeXmlNodeP pi_pBentleyWMSFileNode, WString const& v
                 if (BeStringUtilities::Stricmp(pSubNode->GetName(), "CRS") == 0)
                     {
                     throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                                    L"CRS");
+                                                    "CRS");
                     }
 
                 throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                                L"SRS");
+                                                "SRS");
                 }
             }
         else if (BeStringUtilities::Stricmp(pSubNode->GetName(), "FORMAT") == 0)
@@ -1089,7 +1074,7 @@ void HRFWMSFile::ReadWMS_1_2(BeXmlNodeP pi_pBentleyWMSFileNode, WString const& v
             if (m_Format.empty())
                 {
                 throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                                L"FORMAT");
+                                                "FORMAT");
                 }
             }
         }
@@ -1097,28 +1082,28 @@ void HRFWMSFile::ReadWMS_1_2(BeXmlNodeP pi_pBentleyWMSFileNode, WString const& v
 
     if (m_CRS.empty())
         throw HRFMissingParameterException(GetURL()->GetURL(),
-                                        L"CRS");
+                                        "CRS");
 
     if (m_Format.empty())
         throw HRFMissingParameterException(GetURL()->GetURL(),
-                                        L"FORMAT");
+                                        "FORMAT");
 
     if (BeStringUtilities::Stricmp(m_Format.c_str(), "image/jpeg") != 0 &&
         BeStringUtilities::Stricmp(m_Format.c_str(), "image/png") != 0 &&
         BeStringUtilities::Stricmp(m_Format.c_str(), "image/bmp") != 0 &&
         BeStringUtilities::Stricmp(m_Format.c_str(), "image/gif") != 0)
         throw HRFMimeFormatNotSupportedException(GetURL()->GetURL(),
-                                        L"FORMAT");
+                                        "FORMAT");
 
     // tag MAPEXTENT (mandatory)
     if ((pChildNode = pi_pBentleyWMSFileNode->SelectSingleNode("MAPEXTENT")) == 0)
         throw HRFMissingParameterException(GetURL()->GetURL(),
-                                        L"MAPEXTENT");
+                                        "MAPEXTENT");
 
     // tag BBOX (mandatory)
     if ((pSubChildNode = pChildNode->SelectSingleNode("BBOX")) == 0)
         throw HRFMissingParameterException(GetURL()->GetURL(),
-                                        L"BBOX");
+                                        "BBOX");
 
     m_BBoxMinX = 0.0;
     m_BBoxMinY = 0.0;
@@ -1128,7 +1113,7 @@ void HRFWMSFile::ReadWMS_1_2(BeXmlNodeP pi_pBentleyWMSFileNode, WString const& v
     bvector<double> BBoxValues;
     if(BEXML_Success != pSubChildNode->GetContentDoubleValues(BBoxValues) || BBoxValues.size() != 4)
         throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                        L"BBOX");
+                                        "BBOX");
     m_BBoxMinX = BBoxValues[0];
     m_BBoxMinY = BBoxValues[1];
     m_BBoxMaxX = BBoxValues[2];
@@ -1137,10 +1122,10 @@ void HRFWMSFile::ReadWMS_1_2(BeXmlNodeP pi_pBentleyWMSFileNode, WString const& v
     if (HDOUBLE_EQUAL_EPSILON(m_BBoxMaxX - m_BBoxMinX, 0.0) ||
         HDOUBLE_EQUAL_EPSILON(m_BBoxMaxY - m_BBoxMinY, 0.0))
         throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                        L"BBOX invalid");
+                                        "BBOX invalid");
 
 
-    if (version == L"1.3")
+    if (version == "1.3")
         {
         m_Width = WMS_MIN_SIZE_X;
 
@@ -1167,21 +1152,21 @@ void HRFWMSFile::ReadWMS_1_2(BeXmlNodeP pi_pBentleyWMSFileNode, WString const& v
             {
             if (BEXML_Success != pSubChildNode->GetContentUInt64Value(m_MaxBitmapSize.m_Width) || m_MaxBitmapSize.m_Width == 0)
                 throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                                L"MaxWidth");
+                                                "MaxWidth");
             }
 
         if ((pSubChildNode = pChildNode->SelectSingleNode("MAXHEIGHT")) != 0)
             {
             if (BEXML_Success != pSubChildNode->GetContentUInt64Value(m_MaxBitmapSize.m_Height) || m_MaxBitmapSize.m_Width == 0)
                 throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                                L"MaxHeight");
+                                                "MaxHeight");
             }
 
         if ((pSubChildNode = pChildNode->SelectSingleNode("LOGINREQUIRED")) != 0)
             {
             if (BEXML_Success != pSubChildNode->GetContentBooleanValue(m_NeedAuthentification))
                 throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                                L"LOGINREQUIRED");
+                                                "LOGINREQUIRED");
             }
         }
 
@@ -1193,7 +1178,7 @@ void HRFWMSFile::ReadWMS_1_2(BeXmlNodeP pi_pBentleyWMSFileNode, WString const& v
         {
         if (BEXML_Success != pChildNode->GetContentUInt32Value(m_ConnectionTimeOut))
             throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                            L"CONNECTIONTIMEOUT");
+                                            "CONNECTIONTIMEOUT");
 
         m_ConnectionTimeOut *= 1000; // the value is in second, convert it in millisecond
         }
@@ -1205,13 +1190,13 @@ void HRFWMSFile::ReadWMS_1_2(BeXmlNodeP pi_pBentleyWMSFileNode, WString const& v
 
         for(BeXmlNodeP pLayerNode = pChildNode->GetFirstChild (); NULL != pLayerNode; pLayerNode = pLayerNode->GetNextSibling())
             {
-            WString LayerName;
-            WString LayerTitle;
-            WString LayerAbstract;
+            Utf8String LayerName;
+            Utf8String LayerTitle;
+            Utf8String LayerAbstract;
             uint32_t LayerOpaque = 0;
-            WString StyleName;
-            WString StyleTitle;
-            WString StyleAbstract;
+            Utf8String StyleName;
+            Utf8String StyleTitle;
+            Utf8String StyleAbstract;
             double MinScaleHint = -1;
             double MaxScaleHint = -1;
              

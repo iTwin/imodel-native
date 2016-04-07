@@ -23,7 +23,7 @@
     case 0:  ;            \
     }
 
-#define HCD_CODEC_NAME     L"LZW"
+#define HCD_CODEC_NAME     "LZW"
 
 // Extracted from http://rosettacode.org/wiki/LZW_compression
 #ifdef LZW_ANOTHER_DECODER  // for testing.

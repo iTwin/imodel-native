@@ -158,7 +158,7 @@ HRFRasterFileResBooster::HRFRasterFileResBooster(HFCPtr<HRFRasterFile>&         
 //-----------------------------------------------------------------------------
 HRFRasterFileResBooster::~HRFRasterFileResBooster()
     {
-    WString FileName;
+    Utf8String FileName;
 
     if (m_AutoErase && (m_pBoosterFile != 0))
         {
@@ -172,7 +172,9 @@ HRFRasterFileResBooster::~HRFRasterFileResBooster()
     if (m_AutoErase && !FileName.empty())
         {
         m_pBoosterFile = 0;
-        BeFileName::BeDeleteFile(FileName.c_str());
+
+        WString filenameW(FileName.c_str(), BentleyCharEncoding::Utf8);
+        BeFileName::BeDeleteFile(filenameW.c_str());
         }
     }
 

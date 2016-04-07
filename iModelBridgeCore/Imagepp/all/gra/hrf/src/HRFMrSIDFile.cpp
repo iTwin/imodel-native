@@ -224,9 +224,9 @@ HRFMrSIDCreator::HRFMrSIDCreator()
 // Public (HRFMrSIDCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFMrSIDCreator::GetLabel() const
+Utf8String HRFMrSIDCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_MrSid()); // MrSID File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_MrSid()); // MrSID File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -234,9 +234,9 @@ WString HRFMrSIDCreator::GetLabel() const
 // Public (HRFMrSIDCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFMrSIDCreator::GetSchemes() const
+Utf8String HRFMrSIDCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 //-----------------------------------------------------------------------------
@@ -244,9 +244,9 @@ WString HRFMrSIDCreator::GetSchemes() const
 // Public (HRFMrSIDCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFMrSIDCreator::GetExtensions() const
+Utf8String HRFMrSIDCreator::GetExtensions() const
     {
-    return WString(L"*.sid");
+    return Utf8String("*.sid");
     }
 
 //-----------------------------------------------------------------------------
@@ -1110,7 +1110,7 @@ void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
                     {
                     HASSERT(pMetaRecord->getDataType() == LTI_METADATA_DATATYPE_ASCII);
                     ppData = (const void**)pMetaRecord->getArrayData(NumDims, pDims);
-                    WString Name((char*)*ppData,false);
+                    Utf8String Name((char*)*ppData);
                     pTag = new HRFAttributeDocumentName(Name);
                     po_rTagList.Set(pTag);
                     }
@@ -1124,7 +1124,7 @@ void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
                     {
                     HASSERT(pMetaRecord->getDataType() == LTI_METADATA_DATATYPE_ASCII);
                     ppData = (const void**)pMetaRecord->getArrayData(NumDims, pDims);
-                    WString Name((char*)*ppData,false);
+                    Utf8String Name((char*)*ppData);
                     pTag = new HRFAttributeDateTime(Name);
                     po_rTagList.Set(pTag);
                     }
@@ -1134,7 +1134,7 @@ void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
             po_pFileGeocoding = GeoCoordinates::BaseGCS::CreateGCS();
             po_pFileGeocoding->InitFromGeoTiffKeys(nullptr, nullptr, po_rpGeoTiffKeys, true);
 
-            WString WKT;
+            Utf8String WKT;
 
             // TR 239138 - If a WKT is found in the file and a BaseGCS object cannot
             // be created with the GeoTIFF keys, try to create a BaseGCS object with the WKT
@@ -1151,7 +1151,7 @@ void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
                     BeStringUtilities::CurrentLocaleCharToWChar( WKT,(char*)*ppData);
                     }
 
-                if ((WKT != L"") && (po_rpGeoTiffKeys->GetNbKeys() > 0))
+                if ((WKT != "") && (po_rpGeoTiffKeys->GetNbKeys() > 0))
                     {
                     if (po_pFileGeocoding == NULL || !(po_pFileGeocoding->IsValid()))
                         {

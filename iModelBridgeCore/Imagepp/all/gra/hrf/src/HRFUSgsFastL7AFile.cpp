@@ -132,25 +132,25 @@ HRFUSgsFastL7ACreator::HRFUSgsFastL7ACreator()
 //-----------------------------------------------------------------------------
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFUSgsFastL7ACreator::GetLabel() const
+Utf8String HRFUSgsFastL7ACreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_USGS_FastL7A());  // USGS FastL7A File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_USGS_FastL7A());  // USGS FastL7A File Format
     }
 
 //-----------------------------------------------------------------------------
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFUSgsFastL7ACreator::GetSchemes() const
+Utf8String HRFUSgsFastL7ACreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 //-----------------------------------------------------------------------------
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFUSgsFastL7ACreator::GetExtensions() const
+Utf8String HRFUSgsFastL7ACreator::GetExtensions() const
     {
-    return WString(L"*.dat;*.fst;*.usgs");
+    return Utf8String("*.dat;*.fst;*.usgs");
     }
 
 //-----------------------------------------------------------------------------
@@ -281,13 +281,13 @@ bool HRFUSgsFastL7ACreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
     HFCPtr<HFCURLFile>& rpURL((HFCPtr<HFCURLFile>&)pi_rpURL);
 
-    if (BeStringUtilities::Wcsicmp(rpURL->GetExtension().c_str(), L"usgs") == 0)
+    if (rpURL->GetExtension().EqualsI("usgs"))
         {
-        WString USGSFileName;
+        Utf8String USGSFileName;
 
         // Extract the standard file name from the main URL
         USGSFileName =  rpURL->GetHost();
-        USGSFileName += L"\\";
+        USGSFileName += "\\";
         USGSFileName += rpURL->GetPath();
 
         // Open XML file
@@ -309,13 +309,13 @@ bool HRFUSgsFastL7ACreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
             goto WRAPUP;
 
         // Validate HEADER node presence
-        WString HeaderFileStr;
+        Utf8String HeaderFileStr;
         BeXmlNodeP pHeaderNode = pMainNode->SelectSingleNode("HEADER");
         if(NULL == pHeaderNode || BEXML_Success != pHeaderNode->GetContent(HeaderFileStr))
             goto WRAPUP;
 
-        WString HeaderExtensionStr = HeaderFileStr.substr(HeaderFileStr.find(L".")+1);
-        if (BeStringUtilities::Wcsicmp(HeaderExtensionStr.c_str(), L"fst") != 0)
+        Utf8String HeaderExtensionStr = HeaderFileStr.substr(HeaderFileStr.find(".")+1);
+        if (!HeaderExtensionStr.EqualsI("fst"))
             goto WRAPUP;
 
         // Validate CHANNELS node presence
@@ -378,39 +378,39 @@ WRAPUP:
 // URL composition utility
 //-----------------------------------------------------------------------------
 static HFCPtr<HFCURL> ComposeChannelURL(const HFCPtr<HFCURLFile>& pi_rpFileURL,
-                                        const WString             pi_ChannelStr)
+                                        const Utf8String             pi_ChannelStr)
     {
     HPRECONDITION(pi_rpFileURL != 0);
     HPRECONDITION(!pi_ChannelStr.empty());
 
     HFCPtr<HFCURL> pChURL = 0;
-    WString NewChPathNameStr;
+    Utf8String NewChPathNameStr;
 
     // Compose URL string
-    if ((pi_ChannelStr.find(L":\\\\") != WString::npos) || (pi_ChannelStr.find(L"://") != WString::npos))
+    if ((pi_ChannelStr.find(":\\\\") != Utf8String::npos) || (pi_ChannelStr.find("://") != Utf8String::npos))
         {
         // Complete URL nothing to do
         NewChPathNameStr = pi_ChannelStr;
         }
-    else if (  (pi_ChannelStr.find(L"\\\\") != WString::npos) || (pi_ChannelStr.find(L"//") != WString::npos)
-               || (pi_ChannelStr.find(L":\\") != WString::npos) || (pi_ChannelStr.find(L":/") != WString::npos) )
+    else if (  (pi_ChannelStr.find("\\\\") != Utf8String::npos) || (pi_ChannelStr.find("//") != Utf8String::npos)
+               || (pi_ChannelStr.find(":\\") != Utf8String::npos) || (pi_ChannelStr.find(":/") != Utf8String::npos) )
         {
         // Path is complete but we must add "file://" prefix
-        NewChPathNameStr = WString(HFCURLFile::s_SchemeName() + L"://") + pi_ChannelStr;
+        NewChPathNameStr = Utf8String(HFCURLFile::s_SchemeName() + "://") + pi_ChannelStr;
         }
     else
         {
         // Path is relative to file location
-        WString Path     = pi_rpFileURL->GetPath();
-        WString FileName = pi_rpFileURL->GetFilename();
+        Utf8String Path     = pi_rpFileURL->GetPath();
+        Utf8String FileName = pi_rpFileURL->GetFilename();
 
-        WString::size_type FileNamePos = Path.rfind(FileName);
+        Utf8String::size_type FileNamePos = Path.rfind(FileName);
 
-        if (FileNamePos != WString::npos)
+        if (FileNamePos != Utf8String::npos)
             Path = Path.substr(0, FileNamePos);
 
-        NewChPathNameStr = WString(HFCURLFile::s_SchemeName() + L"://")
-                           + pi_rpFileURL->GetHost() + L"\\"
+        NewChPathNameStr = Utf8String(HFCURLFile::s_SchemeName() + "://")
+                           + pi_rpFileURL->GetHost() + "\\"
                            + Path
                            + pi_ChannelStr;
         }
@@ -434,10 +434,10 @@ static HFCPtr<HFCURL> ComposeChannelURL(const HFCPtr<HFCURLFile>& pi_rpFileURL,
 //-----------------------------------------------------------------------------
 bool HRFUSgsFastL7AFile::Open()
     {
-    WString HeaderFileNameStr;
-    WString RedFileNameStr;
-    WString GreenFileNameStr;
-    WString BlueFileNameStr;
+    Utf8String HeaderFileNameStr;
+    Utf8String RedFileNameStr;
+    Utf8String GreenFileNameStr;
+    Utf8String BlueFileNameStr;
 
     HFCPtr<HFCURL> pHeaderFileURL = 0;
     HFCPtr<HFCURL> pRedFileURL    = 0;
@@ -450,13 +450,13 @@ bool HRFUSgsFastL7AFile::Open()
         {
         HFCPtr<HFCURLFile>& rpURL((HFCPtr<HFCURLFile>&)GetURL());
 
-        if (BeStringUtilities::Wcsicmp(rpURL->GetExtension().c_str(), L"usgs") == 0)
+        if (rpURL->GetExtension().EqualsI("usgs"))
             {
-            WString USGSFileName;
+            Utf8String USGSFileName;
 
             // Extract the standard file name from the main URL
             USGSFileName =  rpURL->GetHost();
-            USGSFileName += L"\\";
+            USGSFileName += "\\";
             USGSFileName += rpURL->GetPath();
 
             // Open USGS file
@@ -500,18 +500,18 @@ bool HRFUSgsFastL7AFile::Open()
                 // Get red band number
                 if (!GetBandNumber(m_ImgRedBand, RedFileNameStr))
                     throw HRFUSGSBandNotFoundInHeaderFileException(GetURL()->GetURL(),
-                                                    L"RED");
+                                                    "RED");
                 // Get green band number
                 if (!GetBandNumber(m_ImgGreenBand, GreenFileNameStr))
                     throw HRFUSGSBandNotFoundInHeaderFileException(GetURL()->GetURL(),
-                                                    L"GREEN");
+                                                    "GREEN");
                 // Get blue band number
                 if (!GetBandNumber(m_ImgBlueBand, BlueFileNameStr))
                     throw HRFUSGSBandNotFoundInHeaderFileException(GetURL()->GetURL(),
-                                                    L"BLUE");
+                                                    "BLUE");
                 }
 
-            BeStringUtilities::CurrentLocaleCharToWChar( RedFileNameStr, m_HeaderInfo.m_Bands[m_ImgRedBand].m_FileName);
+            RedFileNameStr = m_HeaderInfo.m_Bands[m_ImgRedBand].m_FileName;
 
 
             if (!(pRedFileURL = ComposeChannelURL(rpURL, RedFileNameStr)))
@@ -523,8 +523,8 @@ bool HRFUSgsFastL7AFile::Open()
 
             if (m_HeaderInfo.m_NumberOfBands > 2)
                 {
-                BeStringUtilities::CurrentLocaleCharToWChar( GreenFileNameStr, m_HeaderInfo.m_Bands[m_ImgGreenBand].m_FileName);
-                BeStringUtilities::CurrentLocaleCharToWChar( BlueFileNameStr, m_HeaderInfo.m_Bands[m_ImgBlueBand].m_FileName);
+                GreenFileNameStr = m_HeaderInfo.m_Bands[m_ImgGreenBand].m_FileName;
+                BlueFileNameStr  = m_HeaderInfo.m_Bands[m_ImgBlueBand].m_FileName;
 
                 if (!(pGreenFileURL = ComposeChannelURL(rpURL, GreenFileNameStr)))
                     throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
@@ -1152,20 +1152,18 @@ void HRFUSgsFastL7AFile::GetGeoKeyTag(HFCPtr<HCPGeoTiffKeys>& po_rpGeoTiffKeys)
 // GetBandNumber
 // Get the band number of band filename
 //-----------------------------------------------------------------------------
-bool HRFUSgsFastL7AFile::GetBandNumber(int32_t& pio_rBand,
-                                        const WString& pi_rFileName)
+bool HRFUSgsFastL7AFile::GetBandNumber(int32_t& pio_rBand, const Utf8String& pi_rFileName)
     {
     bool Result = false;
     string FileName;
-    WString FileNameStr;
+    Utf8String FileNameStr;
 
     for(int32_t i = 0; i < m_HeaderInfo.m_NumberOfBands && !Result; i++)
         {
         FileName = m_HeaderInfo.m_Bands[i].m_FileName;
         RTrim(FileName);
-        BeStringUtilities::CurrentLocaleCharToWChar( FileNameStr,FileName.c_str());
-
-        if (BeStringUtilities::Wcsicmp(pi_rFileName.c_str(),FileNameStr.c_str()) == 0)
+        
+        if (pi_rFileName.EqualsI(FileName.c_str()))
             {
             pio_rBand = i;
             Result = true;

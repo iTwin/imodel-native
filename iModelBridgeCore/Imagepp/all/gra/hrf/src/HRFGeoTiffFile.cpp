@@ -130,9 +130,9 @@ HRFGeoTiffCreator::HRFGeoTiffCreator()
 // Identification information
 //-----------------------------------------------------------------------------
 
-WString HRFGeoTiffCreator::GetLabel() const
+Utf8String HRFGeoTiffCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_GeoTiff()); //Geo TIFF Tagged Image File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_GeoTiff()); //Geo TIFF Tagged Image File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -903,9 +903,9 @@ void HRFGeoTiffFile::CreateDescriptors()
 
 
         // INKNAMES Tag
-        if (GetFilePtr()->GetField(INKNAMES, &pSystem))
+        if (GetFilePtr()->GetFieldA(INKNAMES, &pSystem))
             {
-            pTag = new HRFAttributeInkNames(WString(pSystem,false));
+            pTag = new HRFAttributeInkNames(pSystem);
             TagList.Set(pTag);
             }
 

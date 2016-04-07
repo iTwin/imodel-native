@@ -286,7 +286,7 @@ HRAImageSamplePtr HRAImageSample::CreateBufferReference(ImagePPStatus& status, u
         return NULL;
 
     // Can't reference outside
-    if (xOrigin < 0 || xOrigin + GetWidth() > width || yOrigin < 0 || yOrigin + GetHeight() > height)
+    if (xOrigin + GetWidth() > width || yOrigin + GetHeight() > height)
         return NULL;
 
     size_t pixelSize = GetPixelType().CountPixelRawDataBits() / 8;       

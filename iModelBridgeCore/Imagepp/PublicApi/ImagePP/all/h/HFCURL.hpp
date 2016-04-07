@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURL.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -23,7 +23,7 @@ BEGIN_IMAGEPP_NAMESPACE
 
  @see GetSchemeSpecificPart
 -----------------------------------------------------------------------------*/
-inline const WString& HFCURL::GetSchemeType() const
+inline const Utf8String& HFCURL::GetSchemeType() const
     {
     return m_SchemeType;
     }
@@ -44,21 +44,9 @@ inline const WString& HFCURL::GetSchemeType() const
  @see GetSchemeType
  @see GetURL
 -----------------------------------------------------------------------------*/
-inline const WString& HFCURL::GetSchemeSpecificPart() const
+inline const Utf8String& HFCURL::GetSchemeSpecificPart() const
     {
     return m_SchemeSpecificPart;
-    }
-
-/**----------------------------------------------------------------------------
- Scheme list access method.  This static method is required to insure proper
- initialization of the list, which is allocated on the heap instead of
- created statically, because order of creation of static objects is unknown.
------------------------------------------------------------------------------*/
-inline HFCURL::SchemeList& HFCURL::GetSchemeList()
-    {
-    if (!s_pSchemeList)
-        s_pSchemeList = new SchemeList;
-    return *s_pSchemeList;
     }
 
 

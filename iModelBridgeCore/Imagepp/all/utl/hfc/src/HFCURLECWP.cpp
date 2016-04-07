@@ -14,7 +14,7 @@
 
 // Constants
 
-static const WString s_DefaultPort(L"80");
+static const Utf8String s_DefaultPort("80");
 
 //URLECWPCreator g_URLECWPCreator;
 //:Ignore
@@ -24,9 +24,9 @@ struct URLECWPCreator : public HFCURL::Creator
     {
     URLECWPCreator()
         {
-        HFCURLECWP::GetSchemeList().insert(HFCURLECWP::SchemeList::value_type(HFCURLECWP::s_SchemeName(), this));
+        HFCURL::RegisterCreator(HFCURLECWP::s_SchemeName(), this);
         }
-    virtual HFCURL* Create(const WString& pi_URL) const
+    virtual HFCURL* Create(const Utf8String& pi_URL) const
         {
         return new HFCURLECWP(pi_URL);
         }
@@ -38,11 +38,11 @@ struct URLECWPCreator : public HFCURL::Creator
 // a path and a search expression.  Used by constructor.  Needed because
 // compiler have difficulties with "?:" expressions and strings.
 
-static WString BuildURLPathString(const WString& pi_Path, const WString& pi_SearchPart)
+static Utf8String BuildURLPathString(const Utf8String& pi_Path, const Utf8String& pi_SearchPart)
     {
-    WString Result(pi_Path);
+    Utf8String Result(pi_Path);
     if (!pi_SearchPart.empty())
-        Result += L"?" + pi_SearchPart;
+        Result += "?" + pi_SearchPart;
     return Result;
     }
 
@@ -83,12 +83,12 @@ static WString BuildURLPathString(const WString& pi_Path, const WString& pi_Sear
               precise kind of URL and no child of it are expected to be
               defined.
 -----------------------------------------------------------------------------*/
-HFCURLECWP::HFCURLECWP(const WString& pi_User,
-                       const WString& pi_Password,
-                       const WString& pi_Host,
-                       const WString& pi_Port,
-                       const WString& pi_Path,
-                       const WString& pi_SearchPart)
+HFCURLECWP::HFCURLECWP(const Utf8String& pi_User,
+                       const Utf8String& pi_Password,
+                       const Utf8String& pi_Host,
+                       const Utf8String& pi_Port,
+                       const Utf8String& pi_Path,
+                       const Utf8String& pi_SearchPart)
     : HFCURLCommonInternet(s_SchemeName(), pi_User, pi_Password, pi_Host, (pi_Port.empty() ? s_DefaultPort : pi_Port),
                            BuildURLPathString(pi_Path, pi_SearchPart)),
     m_Path(pi_Path), m_SearchPart(pi_SearchPart)
@@ -109,7 +109,7 @@ HFCURLECWP::HFCURLECWP(const WString& pi_User,
               precise kind of URL and no child of it are expected to be
               defined.
 -----------------------------------------------------------------------------*/
-HFCURLECWP::HFCURLECWP(const WString& pi_pURL)
+HFCURLECWP::HFCURLECWP(const Utf8String& pi_pURL)
     : HFCURLCommonInternet(pi_pURL)
     {
     // if no port was detect in the URL, set it to the default
@@ -117,8 +117,8 @@ HFCURLECWP::HFCURLECWP(const WString& pi_pURL)
         m_Port = s_DefaultPort;
 
     // Get the URL path and search part
-    WString::size_type QuestionMarkPos = GetURLPath().find(L'?');
-    if (QuestionMarkPos != WString::npos)
+    Utf8String::size_type QuestionMarkPos = GetURLPath().find('?');
+    if (QuestionMarkPos != Utf8String::npos)
         {
         m_SearchPart = GetURLPath().substr(QuestionMarkPos+1,
                                            GetURLPath().length() - QuestionMarkPos - 1);
@@ -144,30 +144,30 @@ HFCURLECWP::~HFCURLECWP()
 
  @see HFCURL
 -----------------------------------------------------------------------------*/
-WString HFCURLECWP::GetURL() const
+Utf8String HFCURLECWP::GetURL() const
     {
-    WString Result(s_SchemeName() + L"://");
+    Utf8String Result(s_SchemeName() + "://");
     if (!GetUser().empty())
         {
         Result += GetUser();
         if (!GetPassword().empty())
             {
-            Result += L":";
+            Result += ":";
             Result += GetPassword();
             }
-        Result += L"@";
+        Result += "@";
         }
     Result += GetHost();
     if (!GetPort().empty())
         {
-        Result += L":";
+        Result += ":";
         Result += GetPort();
         }
-    Result += L"/";
+    Result += "/";
     Result += GetPath();
     if (!GetSearchPart().empty())
         {
-        Result += L"?";
+        Result += "?";
         Result += GetSearchPart();
         }
     return Result;
@@ -196,7 +196,7 @@ bool HFCURLECWP::HasPathTo(HFCURL* pi_pURL)
 
  @see HFCURL
 -----------------------------------------------------------------------------*/
-WString HFCURLECWP::FindPathTo(HFCURL* pi_pDest)
+Utf8String HFCURLECWP::FindPathTo(HFCURL* pi_pDest)
     {
     HPRECONDITION(HasPathTo(pi_pDest));
     return FindPath(GetPath(), ((HFCURLECWP*)pi_pDest)->GetPath());
@@ -207,10 +207,10 @@ WString HFCURLECWP::FindPathTo(HFCURL* pi_pDest)
 
  @see HFCURL
 -----------------------------------------------------------------------------*/
-HFCURL* HFCURLECWP::MakeURLTo(const WString& pi_Path)
+HFCURL* HFCURLECWP::MakeURLTo(const Utf8String& pi_Path)
     {
     return new HFCURLECWP(GetUser(), GetPassword(), GetHost(), GetPort(),
-                          AddPath(GetPath(), pi_Path), WString());
+                          AddPath(GetPath(), pi_Path), Utf8String());
     }
 
 

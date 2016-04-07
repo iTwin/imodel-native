@@ -45,7 +45,7 @@ public:
     struct Creator : public HRFRasterFileCreator
         {
         Creator(HCLASS_ID pi_ClassID);
-        virtual WString GetSchemes () const;
+        virtual Utf8String GetSchemes () const;
 
         bool IsMultiPage(HFCBinStream& pi_rSrcFile, uint32_t pi_HeaderBlockcount) const;
         };

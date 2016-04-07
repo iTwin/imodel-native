@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMOnDemandMosaic.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -79,7 +79,7 @@ inline uint32_t HIMOnDemandMosaic::CountElements(IteratorHandle pi_Handle) const
     Set representative PSS for worlds
     ---------------------------------------------------------------------------
 */
-inline void HIMOnDemandMosaic::SetRepresentativePSSForWorlds(WString& pi_rPSSDescriptiveNode)
+inline void HIMOnDemandMosaic::SetRepresentativePSSForWorlds(Utf8String& pi_rPSSDescriptiveNode)
     {
     m_WorldDescriptivePSS = pi_rPSSDescriptiveNode;
     }

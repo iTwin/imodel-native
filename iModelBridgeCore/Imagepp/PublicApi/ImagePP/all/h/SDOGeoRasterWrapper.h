@@ -30,7 +30,7 @@ public:
         static const int32_t NO_CODE = -1;
         OracleError() : m_ErrorCode(NO_CODE) {};
 
-        WString  m_ErrorMsg;
+        Utf8String  m_ErrorMsg;
         int32_t m_ErrorCode;
         };
 
@@ -62,25 +62,25 @@ public:
                                                 size_t         pi_BufferSize) = 0;
 
     IMAGEPP_EXPORT virtual bool        GetWkt      (uint32_t       pi_SRID,
-                                                       WStringR        po_rWKT) = 0;
+                                                       Utf8StringR        po_rWKT) = 0;
 
     // static methods
     IMAGEPP_EXPORT static SDOGeoRasterWrapper*
-    GetWrapper(WStringCR  pi_rTableName,
-               WStringCR  pi_rColumnName,
-               WStringCR  pi_rImageID,
-               WStringCR  pi_rRasterDataTableName = WString(L""),
+    GetWrapper(Utf8StringCR  pi_rTableName,
+               Utf8StringCR  pi_rColumnName,
+               Utf8StringCR  pi_rImageID,
+               Utf8StringCR  pi_rRasterDataTableName = Utf8String(""),
                const Utf16Char*   pi_pXMLGeoRasterHeader = 0,
                size_t         pi_XMLSize = 0);
 
     IMAGEPP_EXPORT static bool       IsConnected     ();
 
-    IMAGEPP_EXPORT static bool       Connect         (          WStringCR      pi_rUser,
-                                                        WStringCR      pi_rPassword,
-                                                        WStringCR      pi_rDatabase,
+    IMAGEPP_EXPORT static bool       Connect         (          Utf8StringCR      pi_rUser,
+                                                        Utf8StringCR      pi_rPassword,
+                                                        Utf8StringCR      pi_rDatabase,
                                                         OracleError*       po_pError = 0);
 
-    IMAGEPP_EXPORT static bool       Connect         (          WStringCR      pi_rConnectionString,
+    IMAGEPP_EXPORT static bool       Connect         (          Utf8StringCR      pi_rConnectionString,
                                                         OracleError*       po_pError = 0);
 
     IMAGEPP_EXPORT static bool       Disconnect      ();
@@ -89,15 +89,15 @@ public:
 #if 0
     IMAGEPP_EXPORT static void* CreateEnvironment();
     IMAGEPP_EXPORT static void* CreateConnection(void* pi_pEnvironment,
-                                              WStringCR pi_rUserName,
-                                              WStringCR pi_rPassword,
-                                              WStringCR pi_rService);
+                                              Utf8StringCR pi_rUserName,
+                                              Utf8StringCR pi_rPassword,
+                                              Utf8StringCR pi_rService);
 
     IMAGEPP_EXPORT static void  GetGeoRaster(void*            pi_pConnection,
-                                          WStringCR    pi_rTableName,
-                                          WStringCR    pi_rColumnName,
-                                          WStringCR    pi_rRasterID,
-                                          WStringP     po_pRasterDataTable,
+                                          Utf8StringCR    pi_rTableName,
+                                          Utf8StringCR    pi_rColumnName,
+                                          Utf8StringCR    pi_rRasterID,
+                                          Utf8StringP     po_pRasterDataTable,
                                           Utf16Char**  po_ppHeader,
                                           size_t*      po_pHeaderSize);
 
@@ -105,18 +105,18 @@ public:
 
 
 protected:
-    SDOGeoRasterWrapper    (WStringCR      pi_rTableName,
-                            WStringCR      pi_rColumnName,
-                            WStringCR      pi_RasterID,
-                            WStringCR      pi_rRasterDataTableName = WString(L""),
+    SDOGeoRasterWrapper    (Utf8StringCR      pi_rTableName,
+                            Utf8StringCR      pi_rColumnName,
+                            Utf8StringCR      pi_RasterID,
+                            Utf8StringCR      pi_rRasterDataTableName = Utf8String(""),
                             const Utf16Char* pi_pXMLGeoRasterHeader = 0,
                             size_t           pi_XMLSize = 0);
 
     HArrayAutoPtr<Utf16Char>    m_pXMLHeader;
     size_t                      m_XMLHeaderSize;
 
-    WString                 m_RasterDataTable;
-    WString                 m_RasterID;
+    Utf8String                 m_RasterDataTable;
+    Utf8String                 m_RasterID;
     SDOGeoRasterWrapper*    m_pImpl;
     };
 END_IMAGEPP_NAMESPACE

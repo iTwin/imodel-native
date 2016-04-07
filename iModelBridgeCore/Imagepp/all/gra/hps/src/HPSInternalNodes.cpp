@@ -103,7 +103,7 @@ static inline double CalculateNumber(HPANode* pi_pNode, bool pi_MustBeAnInteger 
     return ((HPSValueNode*)pi_pNode)->GetValue().m_Number;
     }
 
-static inline WString CalculateString(HPANode* pi_pNode)
+static inline Utf8String CalculateString(HPANode* pi_pNode)
     {
     ((HPSValueNode*)pi_pNode)->Calculate();
     if (((HPSValueNode*)pi_pNode)->GetValueType() != HPSValueNode::STRING)
@@ -271,7 +271,7 @@ SetLayerStatementNode::SetLayerStatementNode(HPAGrammarObject*         pi_pObj,
 
     bool DisplayMode;
 
-    if (pi_pObj->GetName() == L"SetLayerOnStatement")
+    if (pi_pObj->GetName() == "SetLayerOnStatement")
         {
         DisplayMode = true;
         }
@@ -288,7 +288,7 @@ SetLayerStatementNode::SetLayerStatementNode(HPAGrammarObject*         pi_pObj,
 
     //First four nodes are always "SETLAYERON ( imContext," or "SETLO ( imContext,"
     HFCPtr<HMDLayers> pLayers(new HMDLayers());
-    WString           LayerId;
+    Utf8String           LayerId;
 
     HPANode* pNode = GetSubNodes()[4];
     while (pNode)
@@ -446,7 +446,7 @@ void VariableTokenNode::Calculate()
         m_IsCalculated = true;
         m_Type = m_pExpressionNode->GetValueType();
         if (m_Type == HPSValueNode::STRING)
-            m_Value.m_pString = new WString(*(m_pExpressionNode->GetValue().m_pString));
+            m_Value.m_pString = new Utf8String(*(m_pExpressionNode->GetValue().m_pString));
         else
             {
             m_Value = m_pExpressionNode->GetValue();
@@ -790,17 +790,17 @@ void ImageFileExpressionNode::GetFileURL(HFCPtr<HFCURL>& po_rpFileURL) const
 #if 0
     // The file names in a PSS should be encoded in UTF8.
     AString FileNameA(CalculateString(GetSubNodes()[2]).c_str());
-    WString FileName(FileNameA.c_str(), true/*isUtf8*/);
+    Utf8String FileName(FileNameA.c_str(), true/*isUtf8*/);
 #else
-    WString FileName(CalculateString(GetSubNodes()[2]).c_str());
+    Utf8String FileName(CalculateString(GetSubNodes()[2]).c_str());
 #endif
 
     po_rpFileURL = HFCURL::Instanciate(FileName);  // Is it a fully qualified URL?
     if (po_rpFileURL == 0)  // no, maybe it a fully qualified pathname with drive letter
         {
         if ((FileName.size() > 2) &&
-            ((FileName[1] == L':') || (FileName.substr(0, 2) == L"\\\\") || (FileName.substr(0,2) == L"//")))
-            po_rpFileURL = new HFCURLFile(WString(HFCURLFile::s_SchemeName() + L"://") + FileName);
+            ((FileName[1] == ':') || (FileName.substr(0, 2) == "\\\\") || (FileName.substr(0,2) == "//")))
+            po_rpFileURL = new HFCURLFile(Utf8String(HFCURLFile::s_SchemeName() + "://") + FileName);
         else
             po_rpFileURL = SESSION->GetURL()->MakeURLTo(FileName);  // otherwise it is a relative path
         }
@@ -869,7 +869,7 @@ void OnDemandMosaicExpressionNode::Calculate()
     HIMOnDemandMosaic::RasterList Rasters;
     HFCPtr<HRAOnDemandRaster>     pOnDemandRaster;
     HFCPtr<HIMOnDemandMosaic>     pMosaic;
-    WString                       PSSDescriptiveNode;
+    Utf8String                       PSSDescriptiveNode;
     HFCPtr<HPANode>               pNode(GetSubNodes()[2]);
 
     while (pNode)
@@ -1008,7 +1008,7 @@ void OnDemandMosaicExpressionNode::UpdatePixelSizeRange(HFCPtr<HRARaster>&      
                                          m_PixelSizeRangeMaxExt);
     }
 
-HFCMemoryLineStream& OnDemandMosaicExpressionNode::GetLineStream(WString& pi_rPSSFileName)
+HFCMemoryLineStream& OnDemandMosaicExpressionNode::GetLineStream(Utf8String& pi_rPSSFileName)
     {
     LineStreamList::const_iterator LineStreamIter    = m_pLineStreams.begin();
     LineStreamList::const_iterator LineStreamIterEnd = m_pLineStreams.end();
@@ -1052,14 +1052,14 @@ HFCMemoryLineStream& OnDemandMosaicExpressionNode::GetLineStream(WString& pi_rPS
 
 void OnDemandMosaicExpressionNode::GetRasterDescriptivePSS(const HFCPtr<HPANode>& pi_rpRasterNode,
                                                            bool                  pi_EnclosedLastLineByPG,
-                                                           WString&               po_rPSS)
+                                                           Utf8String&               po_rPSS)
     {
     HPRECONDITION(pi_rpRasterNode->GetStartPos().m_pURL->GetURL() ==
                   pi_rpRasterNode->GetEndPos().m_pURL->GetURL());
 
     list<DescriptivePSSFileInfo> DescriptivePSS;
     HAutoPtr<HFCLocalBinStream>  pFileStream;
-    WString                      FileName;
+    Utf8String                      FileName;
     bool                        IsFileInfoOfStartingNode = false;
 
     //Get the lines of each file that contains statement describing the raster
@@ -1076,7 +1076,7 @@ void OnDemandMosaicExpressionNode::GetRasterDescriptivePSS(const HFCPtr<HPANode>
 
         FileInfoIter->m_Lines.sort();
 
-        WString                       LineRead;
+        Utf8String                       LineRead;
         int32_t                     StartingColPos;
         int32_t                     EndingColPos;
         list<uint32_t>::const_iterator LineIter    = FileInfoIter->m_Lines.begin();
@@ -1097,7 +1097,7 @@ void OnDemandMosaicExpressionNode::GetRasterDescriptivePSS(const HFCPtr<HPANode>
                 {
                 if (pi_rpRasterNode->GetStartPos().m_Line == *LineIter)
                     {
-                    po_rPSS += L"PAGE(";
+                    po_rPSS += "PAGE(";
                     StartingColPos = pi_rpRasterNode->GetStartPos().m_Column - 1;
                     }
 
@@ -1116,17 +1116,17 @@ void OnDemandMosaicExpressionNode::GetRasterDescriptivePSS(const HFCPtr<HPANode>
 
     if (pi_EnclosedLastLineByPG == true)
         {
-        po_rPSS += L")";
+        po_rPSS += ")";
         }
     }
 
 void OnDemandMosaicExpressionNode::AddLineToDescriptivePSS(HFCMemoryLineStream& pi_rLineStream,
                                                            uint32_t            pi_LineNb,
-                                                           WString&             po_rPSS,
+                                                           Utf8String&             po_rPSS,
                                                            int32_t            pi_StartingColPos,
                                                            int32_t            pi_EndingColPos)
     {
-    WString LineToWrite;
+    Utf8String LineToWrite;
     size_t  NbBytesRead = pi_rLineStream.ReadLine(pi_LineNb - 1, LineToWrite);
 
     HASSERT(NbBytesRead != 0);
@@ -1153,7 +1153,7 @@ void OnDemandMosaicExpressionNode::AddLineToDescriptivePSS(HFCMemoryLineStream& 
                                          pi_EndingColPos - 1);
         }
 
-    po_rPSS = po_rPSS + LineToWrite + L"\n";
+    po_rPSS = po_rPSS + LineToWrite + "\n";
     }
 
 void OnDemandMosaicExpressionNode::GetDescriptivePSSInfoFromNodes(const HFCPtr<HPANode>&        pi_rDescriptiveNode,
@@ -1476,17 +1476,17 @@ void ColorizedBinaryImageExpressionNode::Calculate()
 
         
 
-        if ((RLevel0 < 0) || (RLevel0 > 255))
+        if (RLevel0 > 255)
             throw HPSOutOfRangeException(GetSubNodes()[4], 0, 255);
-        if ((GLevel0 < 0) || (GLevel0 > 255))
+        if (GLevel0 > 255)
             throw HPSOutOfRangeException(GetSubNodes()[6], 0, 255);
-        if ((BLevel0 < 0) || (BLevel0 > 255))
+        if (BLevel0 > 255)
             throw HPSOutOfRangeException(GetSubNodes()[8], 0, 255);
-        if ((RLevel1 < 0) || (RLevel1 > 255))
+        if (RLevel1 > 255)
             throw HPSOutOfRangeException(GetSubNodes()[10], 0, 255);
-        if ((GLevel1 < 0) || (GLevel1 > 255))
+        if (GLevel1 > 255)
             throw HPSOutOfRangeException(GetSubNodes()[12], 0, 255);
-        if ((BLevel1 < 0) || (BLevel1 > 255))
+        if (BLevel1 > 255)
             throw HPSOutOfRangeException(GetSubNodes()[14], 0, 255);
 
         HRPPixelPalette Palette(2, HRPPixelTypeV24R8G8B8().GetChannelOrg());
@@ -2220,7 +2220,7 @@ void AutoContrastStretchExpressionNode::Calculate()
     if (pRasterObjectValue == NULL || pRasterObjectValue->m_pObject == NULL)
         throw HPSTypeMismatchException(GetSubNodes()[2],
                                        HPSTypeMismatchException::IMAGE);
-    if ((CutOffPercentage < 0) || (CutOffPercentage > 99))
+    if (CutOffPercentage > 99)
         throw HPSOutOfRangeException(GetSubNodes()[4], 0, 99);
     if ((HistogramPrecision < 1) || ( HistogramPrecision > 100))
         throw HPSOutOfRangeException(GetSubNodes()[6], 1, 100);
@@ -2273,7 +2273,7 @@ void ContrastStretchExpressionNode::Calculate()
     uint32_t CutOffLeft = (uint32_t)CalculateNumber(GetSubNodes()[2], true);
     uint32_t CutOffRight = (uint32_t)CalculateNumber(GetSubNodes()[4], true);
 
-    if ((CutOffLeft < 0) || (CutOffLeft > 99))
+    if (CutOffLeft > 99)
         throw HPSOutOfRangeException(GetSubNodes()[2], 0, 99);
     if ((CutOffRight < 1) || (CutOffRight > 100))
         throw HPSOutOfRangeException(GetSubNodes()[4], 1, 100);
@@ -2302,11 +2302,11 @@ void TintExpressionNode::Calculate()
         uint32_t RLevel = (uint32_t)CalculateNumber(GetSubNodes()[2], true);
         uint32_t GLevel = (uint32_t)CalculateNumber(GetSubNodes()[4], true);
         uint32_t BLevel = (uint32_t)CalculateNumber(GetSubNodes()[6], true);
-        if ((RLevel < 0) || (RLevel > 255))
+        if (RLevel > 255)
             throw HPSOutOfRangeException(GetSubNodes()[2], 0, 255);
-        if ((GLevel < 0) || (GLevel > 255))
+        if (GLevel > 255)
             throw HPSOutOfRangeException(GetSubNodes()[4], 0, 255);
-        if ((BLevel < 0) || (BLevel > 255))
+        if (BLevel > 255)
             throw HPSOutOfRangeException(GetSubNodes()[6], 0, 255);
         Level[0] = (unsigned char)RLevel;
         Level[1] = (unsigned char)GLevel;

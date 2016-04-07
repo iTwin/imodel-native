@@ -165,18 +165,18 @@ HRFIntergraphTG4Creator::HRFIntergraphTG4Creator()
 // Identification information
 //-----------------------------------------------------------------------------
 
-WString HRFIntergraphTG4Creator::GetLabel() const
+Utf8String HRFIntergraphTG4Creator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_TG4()); //Intergraph tg4 File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_TG4()); //Intergraph tg4 File Format
     }
 
 //-----------------------------------------------------------------------------
 // Identification information
 //-----------------------------------------------------------------------------
 
-WString HRFIntergraphTG4Creator::GetExtensions() const
+Utf8String HRFIntergraphTG4Creator::GetExtensions() const
     {
-    return WString(L"*.tg4");
+    return Utf8String("*.tg4");
     }
 
 //-----------------------------------------------------------------------------
@@ -335,7 +335,7 @@ void HRFIntergraphTG4File::CreateDescriptors()
 
             if ((HasTileAccess(ResIndex) != FirstResIsTile) && (AccessMode.m_HasCreateAccess || AccessMode.m_HasWriteAccess))
                 {
-                WString CurrentFileName(GetURL()->GetURL());
+                Utf8String CurrentFileName(GetURL()->GetURL());
 
                 throw HRFSubResAccessDifferReadOnlyException(CurrentFileName);
                 }

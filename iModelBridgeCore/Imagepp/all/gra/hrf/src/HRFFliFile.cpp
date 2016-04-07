@@ -188,10 +188,10 @@ HRFFliCreator::HRFFliCreator()
 // Public (HRFFliCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFFliCreator::GetLabel() const
+Utf8String HRFFliCreator::GetLabel() const
     {
     // FLI/FLIC File Format
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_FLI()); // FLI/FLIC File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_FLI()); // FLI/FLIC File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -199,9 +199,9 @@ WString HRFFliCreator::GetLabel() const
 // Public (HRFFliCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFFliCreator::GetSchemes() const
+Utf8String HRFFliCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 //-----------------------------------------------------------------------------
@@ -209,9 +209,9 @@ WString HRFFliCreator::GetSchemes() const
 // Public (HRFFliCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFFliCreator::GetExtensions() const
+Utf8String HRFFliCreator::GetExtensions() const
     {
-    return WString(L"*.fli;*.flc");
+    return Utf8String("*.fli;*.flc");
     }
 
 //-----------------------------------------------------------------------------

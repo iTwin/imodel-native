@@ -73,7 +73,7 @@ public:
     virtual bool            HasRandomAccess() const;
     virtual bool            IsCodecImage() const;
     virtual bool            IsCodecVector() const;
-    virtual const WString&  GetName() const;
+    virtual const Utf8String&  GetName() const;
 
     virtual HCDCodecRLEInterface* 
                             GetRLEInterface();
@@ -81,14 +81,14 @@ public:
 protected:
 
     // constructors
-    HCDCodec(const WString& pi_rCodecName);
+    HCDCodec(const Utf8String& pi_rCodecName);
     HCDCodec(const HCDCodec& pi_rObj);
 
 
     // compression
     void                    SetCurrentState(State pi_State);
 
-    WString         m_CodecName;
+    Utf8String         m_CodecName;
 
 private:
 

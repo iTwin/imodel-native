@@ -314,26 +314,26 @@ struct HRFRasterFileCreator
                                                      uint64_t                pi_Offset = 0) const = 0;
 
     IMAGEPP_EXPORT virtual bool                NeedRasterDllDirectory() const;
-    IMAGEPP_EXPORT virtual void                SetRasterDllDirectory(const WString& pi_rDllDirectory);
-    IMAGEPP_EXPORT const WString&              GetRasterDllDirectory() const;
+    IMAGEPP_EXPORT virtual void                SetRasterDllDirectory(const Utf8String& pi_rDllDirectory);
+    IMAGEPP_EXPORT const Utf8String&              GetRasterDllDirectory() const;
 
 
     // Returns the class ID of the raster file associated with the create
     IMAGEPP_EXPORT virtual HCLASS_ID             GetRasterFileClassID() const;
 
     // Identification information
-    IMAGEPP_EXPORT virtual WString               GetLabel() const = 0;
-    IMAGEPP_EXPORT virtual WString               GetSchemes() const = 0;
-    IMAGEPP_EXPORT virtual WString               GetDefaultExtension() const;
-    IMAGEPP_EXPORT virtual WString               GetExtensions() const = 0;
+    IMAGEPP_EXPORT virtual Utf8String               GetLabel() const = 0;
+    IMAGEPP_EXPORT virtual Utf8String               GetSchemes() const = 0;
+    IMAGEPP_EXPORT virtual Utf8String               GetDefaultExtension() const;
+    IMAGEPP_EXPORT virtual Utf8String               GetExtensions() const = 0;
 
     // Get the supported access mode for this file - logic const function
     IMAGEPP_EXPORT virtual HFCAccessMode         GetSupportedAccessMode() const;
 
     // Capability - The Generic SupportsURL function can be overwrite
     IMAGEPP_EXPORT virtual bool                 SupportsURL(const HFCPtr<HFCURL>& pi_rpURL) const;
-    IMAGEPP_EXPORT virtual bool                 SupportsScheme(const WString& pi_rScheme) const;
-    IMAGEPP_EXPORT virtual bool                 SupportsExtension(const WString& pi_rExtension) const;
+    IMAGEPP_EXPORT virtual bool                 SupportsScheme(const Utf8String& pi_rScheme) const;
+    IMAGEPP_EXPORT virtual bool                 SupportsExtension(const Utf8String& pi_rExtension) const;
 
     // Raster file made of multiple files - Get the list of related files from a given URL
     IMAGEPP_EXPORT virtual bool                 GetRelatedURLs(const HFCPtr<HFCURL>& pi_rpURL,
@@ -361,7 +361,7 @@ protected:
     // Keep the computed access mode for the file format
     HFCAccessMode                      m_AccessMode;
 
-    WString                           m_DllDirectory;
+    Utf8String                           m_DllDirectory;
     };
 END_IMAGEPP_NAMESPACE
 

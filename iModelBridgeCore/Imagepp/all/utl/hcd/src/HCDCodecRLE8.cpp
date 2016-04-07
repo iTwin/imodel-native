@@ -12,7 +12,7 @@
 
 #include <Imagepp/all/h/HCDCodecRLE8.h>
 
-#define HCD_CODEC_NAME L"RLE8bits"
+#define HCD_CODEC_NAME "RLE8bits"
 
 //-----------------------------------------------------------------------------
 // public

@@ -64,8 +64,8 @@ struct NCSObjects
 //Ensure that the .objs related to these object are included in the final
 //executable, otherwise, the global variables whose constructors
 //register these schemes are never created.
-HFCURLECWP  dummy(L"");
-HFCURLECWPS dummy2(L"");
+HFCURLECWP  dummy("");
+HFCURLECWPS dummy2("");
 
 //-----------------------------------------------------------------------------
 // HRFEcwBlockCapabilities
@@ -430,9 +430,9 @@ HRFEcwCreator::HRFEcwCreator()
 // Public (HRFEcwCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFEcwCreator::GetLabel() const
+Utf8String HRFEcwCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_ECW());
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_ECW());
     }
 
 //-----------------------------------------------------------------------------
@@ -440,10 +440,10 @@ WString HRFEcwCreator::GetLabel() const
 // Public (HRFEcwCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFEcwCreator::GetSchemes() const
+Utf8String HRFEcwCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName() + L";" +
-                   HFCURLECWP::s_SchemeName() + L";" +
+    return Utf8String(HFCURLFile::s_SchemeName() + ";" +
+                   HFCURLECWP::s_SchemeName() + ";" +
                    HFCURLECWPS::s_SchemeName());
     }
 
@@ -452,9 +452,9 @@ WString HRFEcwCreator::GetSchemes() const
 // Public (HRFEcwCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFEcwCreator::GetExtensions() const
+Utf8String HRFEcwCreator::GetExtensions() const
     {
-    return WString(L"*.ecw");
+    return Utf8String("*.ecw");
     }
 
 //-----------------------------------------------------------------------------
@@ -530,7 +530,8 @@ bool HRFEcwCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
             UrlOffset = 7; //Ignore the file:// placed at the front of the url
             } 
 
-        NCSError error = NCScbmOpenFileViewW(pi_rpURL->GetURL().substr(UrlOffset).c_str(), &pView, 0);
+        WString filename(pi_rpURL->GetURL().substr(UrlOffset).c_str(), BentleyCharEncoding::Utf8);
+        NCSError error = NCScbmOpenFileViewW(filename.c_str(), &pView, 0);
 
         if (error == NCS_SUCCESS)
             {
@@ -696,9 +697,9 @@ HRFJpeg2000Creator::HRFJpeg2000Creator()
 // Public (HRFEcwCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFJpeg2000Creator::GetLabel() const
+Utf8String HRFJpeg2000Creator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_Jpeg2000());
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_Jpeg2000());
     }
 
 //-----------------------------------------------------------------------------
@@ -706,9 +707,9 @@ WString HRFJpeg2000Creator::GetLabel() const
 // Public (HRFEcwCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFJpeg2000Creator::GetSchemes() const
+Utf8String HRFJpeg2000Creator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 //-----------------------------------------------------------------------------
@@ -716,9 +717,9 @@ WString HRFJpeg2000Creator::GetSchemes() const
 // Public (HRFEcwCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFJpeg2000Creator::GetExtensions() const
+Utf8String HRFJpeg2000Creator::GetExtensions() const
     {
-    return WString(L"*.jp2;*.j2k;*.jpm;*.j2c;*.jpc;*.jpx;*.jpf");
+    return Utf8String("*.jp2;*.j2k;*.jpm;*.j2c;*.jpc;*.jpx;*.jpf");
     }
 
 //-----------------------------------------------------------------------------
@@ -758,7 +759,9 @@ bool HRFJpeg2000Creator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
     HRFErMapperSupportedFile::InitErMapperLibrary();
 
-    NCSError error = NCScbmOpenFileViewW(static_cast<HFCURLFile*>(pi_rpURL.GetPtr())->GetAbsoluteFileName().c_str(), &pView, 0);
+    WString filename(static_cast<HFCURLFile*>(pi_rpURL.GetPtr())->GetAbsoluteFileName().c_str(), BentleyCharEncoding::Utf8);
+
+    NCSError error = NCScbmOpenFileViewW(filename.c_str(), &pView, 0);
     if (error == NCS_SUCCESS)
         {
         //Check if it is really an ECW since ErMapper can also open Jpeg2000 files.
@@ -968,7 +971,8 @@ bool HRFErMapperSupportedFile::Open()
             UrlOffset = 7; //Ignore the file:// placed at the front of the url
             }
 
-        NCSError error = NCScbmOpenFileViewW(m_pURL->GetURL().substr(UrlOffset).c_str(), &m_pNcsObjs->m_pFileView, 0);
+        WString filename(m_pURL->GetURL().substr(UrlOffset).c_str(), BentleyCharEncoding::Utf8);
+        NCSError error = NCScbmOpenFileViewW(filename.c_str(), &m_pNcsObjs->m_pFileView, 0);
 
         if (error != 0)
             {
@@ -1319,61 +1323,48 @@ void HRFErMapperSupportedFile::CreateDescriptors ()
 //-----------------------------------------------------------------------------
 GeoCoordinates::BaseGCSPtr HRFErMapperSupportedFile::ExtractGeocodingInformation(double & factorModelToMeter) const
     {
-    WString osUnits;
+    AString osUnits;
 
     if (m_pNcsObjs->m_pFileInfo->eCellSizeUnits == ECW_CELL_UNITS_FEET )
         {
         if (ImageppLib::GetHost().GetImageppLibAdmin()._IsErMapperUseFeetInsteadofSurveyFeet())
             {
             factorModelToMeter = 0.3048000000;//  meters by international feet.
-            osUnits = L"IFEET";
+            osUnits = "IFEET";
             }
         else
             {
             factorModelToMeter = 12000.0 / 39370.0; //0.30480060960121919 meters by survey feet.
-            osUnits = L"FEET";
+            osUnits = "FEET";
             }
         }
     else if (m_pNcsObjs->m_pFileInfo->eCellSizeUnits == ECW_CELL_UNITS_METERS)
         {
         factorModelToMeter=1.0;
-        osUnits = L"METERS";
+        osUnits = "METERS";
         }
     else if (m_pNcsObjs->m_pFileInfo->eCellSizeUnits == ECW_CELL_UNITS_DEGREES)
         {
         factorModelToMeter = 1.0;
-        osUnits = L"DEGREES";
+        osUnits = "DEGREES";
         }
 
-    WString projection;
-    WString datum;
-
-    BeStringUtilities::CurrentLocaleCharToWChar(projection, m_pNcsObjs->m_pFileInfo->szProjection);
-    BeStringUtilities::CurrentLocaleCharToWChar(datum, m_pNcsObjs->m_pFileInfo->szDatum);
-
-    uint32_t EPSGCodeFomrERLibrary = GetEPSGFromProjectionAndDatum(projection, datum);
-    GeoCoordinates::BaseGCSPtr pBaseGCS = HCPGCoordUtility::CreateRasterGcsFromERSIDS(EPSGCodeFomrERLibrary, projection,datum,osUnits);
+    uint32_t EPSGCodeFomrERLibrary = GetEPSGFromProjectionAndDatum(m_pNcsObjs->m_pFileInfo->szProjection, m_pNcsObjs->m_pFileInfo->szDatum);
+    GeoCoordinates::BaseGCSPtr pBaseGCS = HCPGCoordUtility::CreateRasterGcsFromERSIDS(EPSGCodeFomrERLibrary, m_pNcsObjs->m_pFileInfo->szProjection, m_pNcsObjs->m_pFileInfo->szDatum, osUnits.c_str());
 
     return pBaseGCS;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t HRFErMapperSupportedFile::GetEPSGFromProjectionAndDatum(WStringCR pi_rErmProjection, WStringCR pi_rErmDatum)
+uint32_t HRFErMapperSupportedFile::GetEPSGFromProjectionAndDatum(CharCP ErmProjection, CharCP ErmDatum)
     {
     INT32 nEPSGCode = TIFFGeo_UserDefined;
 
     // We try to obtain the EPSG code
-    size_t  destinationBuffSize = pi_rErmProjection.GetMaxLocaleCharBytes();
-    char*  szProjectionMBS= (char*)_alloca (destinationBuffSize);
-    BeStringUtilities::WCharToCurrentLocaleChar(szProjectionMBS,pi_rErmProjection.c_str(),destinationBuffSize);
-    destinationBuffSize = pi_rErmDatum.GetMaxLocaleCharBytes();
-    char*  szDatumMBS= (char*)_alloca (destinationBuffSize);
-    BeStringUtilities::WCharToCurrentLocaleChar(szDatumMBS,pi_rErmDatum.c_str(),destinationBuffSize);
-
-    if (NCS_SUCCESS != NCSGetEPSGCode(szProjectionMBS, szDatumMBS, &nEPSGCode))
+    if (NCS_SUCCESS != NCSGetEPSGCode(ErmProjection, ErmDatum, &nEPSGCode))
         {
-        if (NCS_SUCCESS != NCSGetEPSGCode(szDatumMBS, szProjectionMBS, &nEPSGCode))
+        if (NCS_SUCCESS != NCSGetEPSGCode(ErmDatum, ErmProjection, &nEPSGCode))
             {
             nEPSGCode = TIFFGeo_UserDefined;
             }
@@ -1535,17 +1526,16 @@ void HRFErMapperSupportedFile::InitErMapperLibrary()
 
     if (sIsLibraryInitialized == false)
         {
-        WString pProperty;
-        if (BSISUCCESS != ImageppLib::GetHost().GetImageppLibAdmin()._GetECWDataPath(pProperty))
+        BeFileName ecwDataPath;
+        if (BSISUCCESS != ImageppLib::GetHost().GetImageppLibAdmin()._GetECWDataPath(ecwDataPath))
             return;
 
         NCSecwInit();
 
-        size_t  destinationBuffSize = pProperty.GetMaxLocaleCharBytes();
-        char*   multiByteDestination= (char*)_alloca (destinationBuffSize);
-        BeStringUtilities::WCharToCurrentLocaleChar(multiByteDestination,pProperty.c_str(),destinationBuffSize);
+        AString ecwDataPathA;
+        BeStringUtilities::WCharToCurrentLocaleChar(ecwDataPathA, ecwDataPath);
 
-        NCSSetGDTPath(multiByteDestination);
+        NCSSetGDTPath(ecwDataPathA.c_str());
 //DMx        CNCSGDTLocation::SetGuessPath(true);
 
 #if defined(BENTLEY_WIN32)

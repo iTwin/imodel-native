@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLSql.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -14,7 +14,7 @@ BEGIN_IMAGEPP_NAMESPACE
 // Returns a reference to a string that contains the host part of the
 // URL string.
 //-----------------------------------------------------------------------------
-inline const WString& HFCURLSql::GetQuery() const
+inline const Utf8String& HFCURLSql::GetQuery() const
     {
     return m_Query;
     }

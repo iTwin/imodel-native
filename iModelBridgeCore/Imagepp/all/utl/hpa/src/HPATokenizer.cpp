@@ -40,7 +40,7 @@
 // the range to U+0000 to U+FFFF.)
 //
 template <typename InputIterator,typename OutputIterator>
-WString& utf8_to_wchar_t(InputIterator begin, InputIterator end, WString& result)
+Utf8String& utf8_to_wchar_t(InputIterator begin, InputIterator end, Utf8String& result)
     {
     for (; begin != end; ++begin, ++result)
         {
@@ -106,7 +106,7 @@ public:
         // since we are not the owner of m_pStream.
         }
 
-    bool GetNextChar(WChar& next)
+    bool GetNextChar(Utf8Char& next)
         {
         if(!HaveCharInLine())
             {
@@ -148,9 +148,9 @@ private:
          return 0 != m_bufferDataSize;             
          }
 
-     bool GetLine(WString& line)
+     bool GetLine(Utf8String& lineUTF8)
          {
-         Utf8String lineUTF8;
+         lineUTF8.clear();
 
          while(1)
              {
@@ -170,9 +170,11 @@ private:
                  }
              }
 
-         line.AssignUtf8(lineUTF8.c_str());     // Convert UTF8 to Unicode.
-
-         return !line.empty();
+         // Trim utf8 BOOM if any.
+         if (lineUTF8.size() > 3 && lineUTF8[0] == 0xEF && lineUTF8[1] == 0xBB && lineUTF8[2] == 0xBF)
+             lineUTF8 = lineUTF8.substr(3);
+         
+         return !lineUTF8.empty();
          }
 
     HFCBinStream*   m_pStream;
@@ -181,7 +183,7 @@ private:
     uint32_t        m_bufferDataSize;
     uint32_t        m_bufferIndex;
 
-    WString         m_decodedLine;
+    Utf8String         m_decodedLine;
     uint32_t        m_decodedLineIndex;
     };
 // Global token descriptors
@@ -233,10 +235,10 @@ HPANode* HPAFloatEnabledDefaultTokenizer::GetToken()
     // an ident of a symbol, other : we have a symbol.
 
     HPANode* pNode = 0;
-    WString ReadToken;
-    WString UppercaseToken;
+    Utf8String ReadToken;
+    Utf8String UppercaseToken;
     HPAToken* pFoundToken = 0;
-    WChar LastChar;
+    Utf8Char LastChar;
     bool CharAvailable = GetChar(pStream, &LastChar);
     if (CharAvailable)
         {
@@ -245,9 +247,9 @@ HPANode* HPAFloatEnabledDefaultTokenizer::GetToken()
 
         // Skipping whitespace, counting lines
 
-        while (CharAvailable && (iswspace(LastChar) || iswcntrl(LastChar)))
+        while (CharAvailable && (isspace(LastChar) || iscntrl(LastChar)))
             {
-            if (LastChar == L'\n')
+            if (LastChar == '\n')
                 {
                 LeftPos.m_Line++;
                 LeftPos.m_Column = 1;
@@ -263,21 +265,21 @@ HPANode* HPAFloatEnabledDefaultTokenizer::GetToken()
 
         // Extracting a number
 
-        if (iswdigit(LastChar))
+        if (isdigit(LastChar))
             {
-            while (CharAvailable && (iswdigit(LastChar) ||
-                                     (LastChar == L'.') ||
-                                     (LastChar == L'-') ||
-                                     (LastChar == L'+') ||
-                                     (LastChar == L'E') ||
-                                     (LastChar == L'e')))
+            while (CharAvailable && (isdigit(LastChar) ||
+                                     (LastChar == '.') ||
+                                     (LastChar == '-') ||
+                                     (LastChar == '+') ||
+                                     (LastChar == 'E') ||
+                                     (LastChar == 'e')))
                 {
                 ReadToken.append(1, LastChar);
                 CharAvailable = GetChar(pStream, &LastChar);
                 RightPos.m_Column++;
                 }
 #if (0)
-            while (CharAvailable && (iswdigit(LastChar) || (LastChar == L'.')))
+            while (CharAvailable && (isdigit(LastChar) || (LastChar == '.')))
                 {
                 ReadToken.append(1, LastChar);
                 CharAvailable = GetChar(pStream, &LastChar);
@@ -294,12 +296,12 @@ HPANode* HPAFloatEnabledDefaultTokenizer::GetToken()
 
         // Extracting an alphanumeric symbol
 
-        else if (iswalpha(LastChar) || (LastChar == L'_'))
+        else if (isalpha(LastChar) || (LastChar == '_'))
             {
-            while (CharAvailable && (iswalnum(LastChar) || (LastChar == L'_')))
+            while (CharAvailable && (isalnum(LastChar) || (LastChar == '_')))
                 {
                 ReadToken.append(1, LastChar);
-                UppercaseToken.append(1, towupper(LastChar));
+                UppercaseToken.append(1, static_cast<Utf8Char> (toupper(LastChar)));
                 CharAvailable = GetChar(pStream, &LastChar);
                 RightPos.m_Column++;
                 }
@@ -322,12 +324,12 @@ HPANode* HPAFloatEnabledDefaultTokenizer::GetToken()
 
         // Extracting a string
 
-        else if (LastChar == L'"')
+        else if (LastChar == '"')
             {
             do
                 {
                 CharAvailable = GetChar(pStream, &LastChar);
-                if (LastChar == L'"')
+                if (LastChar == '"')
                     break;
                 else
                     ReadToken.append(1, LastChar);
@@ -341,7 +343,7 @@ HPANode* HPAFloatEnabledDefaultTokenizer::GetToken()
 
         else if (LastChar == m_CommentMarker)
             {
-            while (CharAvailable && (LastChar != L'\n'))
+            while (CharAvailable && (LastChar != '\n'))
                 CharAvailable = GetChar(pStream, &LastChar);
             LeftPos.m_Line++;
             LeftPos.m_Column = 1;
@@ -426,8 +428,8 @@ HPADefaultTokenizer::~HPADefaultTokenizer()
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-inline bool HPADefaultTokenizer::GetChar(HPAStreamReaderUTF8* pi_pStream,
-                                          WChar* po_pChar)
+bool HPADefaultTokenizer::GetChar(HPAStreamReaderUTF8* pi_pStream,
+                                          Utf8Char* po_pChar)
     {
     if (m_PushedChars.size())
         {
@@ -443,7 +445,7 @@ inline bool HPADefaultTokenizer::GetChar(HPAStreamReaderUTF8* pi_pStream,
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-inline void HPADefaultTokenizer::PushChar(WChar pi_Char)
+void HPADefaultTokenizer::PushChar(Utf8Char pi_Char)
     {
     m_PushedChars.push_front(pi_Char);
     }
@@ -461,10 +463,10 @@ HPANode* HPADefaultTokenizer::GetToken()
     // an ident of a symbol, other : we have a symbol.
 
     HPANode* pNode = 0;
-    WString ReadToken;
-    WString UppercaseToken;
+    Utf8String ReadToken;
+    Utf8String UppercaseToken;
     HPAToken* pFoundToken = 0;
-    WChar LastChar;
+    Utf8Char LastChar;
     bool CharAvailable = GetChar(pStream, &LastChar);
     if (CharAvailable)
         {
@@ -473,9 +475,9 @@ HPANode* HPADefaultTokenizer::GetToken()
 
         // Skipping whitespace, counting lines
 
-        while (CharAvailable && (iswspace(LastChar) || iswcntrl(LastChar)))
+        while (CharAvailable && (isspace(LastChar) || iscntrl(LastChar)))
             {
-            if (LastChar == L'\n')
+            if (LastChar == '\n')
                 {
                 LeftPos.m_Line++;
                 LeftPos.m_Column = 1;
@@ -491,9 +493,9 @@ HPANode* HPADefaultTokenizer::GetToken()
 
         // Extracting a number
 
-        if (iswdigit(LastChar))
+        if (isdigit(LastChar))
             {
-            while (CharAvailable && (iswdigit(LastChar) || (LastChar == L'.')))
+            while (CharAvailable && (isdigit(LastChar) || (LastChar == '.')))
                 {
                 ReadToken.append(1, LastChar);
                 CharAvailable = GetChar(pStream, &LastChar);
@@ -509,12 +511,12 @@ HPANode* HPADefaultTokenizer::GetToken()
 
         // Extracting an alphanumeric symbol
 
-        else if (iswalpha(LastChar) || (LastChar == L'_'))
+        else if (isalpha(LastChar) || (LastChar == '_'))
             {
-            while (CharAvailable && (iswalnum(LastChar) || (LastChar == L'_')))
+            while (CharAvailable && (isalnum(LastChar) || (LastChar == '_')))
                 {
                 ReadToken.append(1, LastChar);
-                UppercaseToken.append(1, towupper(LastChar));
+                UppercaseToken.append(1, static_cast<Utf8Char> (toupper(LastChar)));
                 CharAvailable = GetChar(pStream, &LastChar);
                 RightPos.m_Column++;
                 }
@@ -537,12 +539,12 @@ HPANode* HPADefaultTokenizer::GetToken()
 
         // Extracting a string
 
-        else if (LastChar == L'"')
+        else if (LastChar == '"')
             {
             do
                 {
                 CharAvailable = GetChar(pStream, &LastChar);
-                if (LastChar == L'"')
+                if (LastChar == '"')
                     break;
                 else
                     ReadToken.append(1, LastChar);
@@ -556,7 +558,7 @@ HPANode* HPADefaultTokenizer::GetToken()
 
         else if (LastChar == m_CommentMarker)
             {
-            while (CharAvailable && (LastChar != L'\n'))
+            while (CharAvailable && (LastChar != '\n'))
                 CharAvailable = GetChar(pStream, &LastChar);
             LeftPos.m_Line++;
             LeftPos.m_Column = 1;
@@ -614,7 +616,7 @@ HPANode* HPADefaultTokenizer::GetToken()
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-HPANode* HPADefaultTokenizer::MakeNode(HPAToken* pi_pToken, const WString& pi_rText,
+HPANode* HPADefaultTokenizer::MakeNode(HPAToken* pi_pToken, const Utf8String& pi_rText,
                                        const HPASourcePos& pi_rLeft,
                                        const HPASourcePos& pi_rRight,
                                        HPASession* pi_pSession)
@@ -622,11 +624,11 @@ HPANode* HPADefaultTokenizer::MakeNode(HPAToken* pi_pToken, const WString& pi_rT
     HPANode* pNode;
     if (pi_pToken == m_pNumberToken)
         {
-        WChar* pDummy;
+        Utf8Char* pDummy;
         pNode = new HPANumberTokenNode(pi_pToken, pi_rText,
                                        pi_rLeft, pi_rRight,
                                        pi_pSession,
-                                       wcstod(pi_rText.c_str(), &pDummy));
+                                       strtod(pi_rText.c_str(), &pDummy));
         }
     else
         pNode = new HPATokenNode(pi_pToken, pi_rText,
@@ -679,14 +681,14 @@ bool HPADefaultTokenizer::Include(HFCBinStream* pi_pStream)
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-void HPADefaultTokenizer::AddSymbol(const WString& pi_rString, HPAToken& pi_rToken)
+void HPADefaultTokenizer::AddSymbol(const Utf8String& pi_rString, HPAToken& pi_rToken)
     {
-    WString SymbolText = pi_rString;
+    Utf8String SymbolText = pi_rString;
     if (m_IsCaseSensitive)
-        CaseInsensitiveStringTools().ToUpper(SymbolText);
+        SymbolText.ToUpper();
 
     m_SymbolTable.insert(SymbolTable::value_type(SymbolText, &pi_rToken));
-    pi_rToken.SetName(L"Token : " + pi_rString);
+    pi_rToken.SetName("Token : " + pi_rString);
     }
 
 

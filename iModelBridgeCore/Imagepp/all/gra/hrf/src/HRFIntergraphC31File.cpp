@@ -158,18 +158,18 @@ HRFIntergraphC31Creator::HRFIntergraphC31Creator()
 // Identification information
 //-----------------------------------------------------------------------------
 
-WString HRFIntergraphC31Creator::GetLabel() const
+Utf8String HRFIntergraphC31Creator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_C31()); //Intergraph C31
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_C31()); //Intergraph C31
     }
 
 //-----------------------------------------------------------------------------
 // Identification information
 //-----------------------------------------------------------------------------
 
-WString HRFIntergraphC31Creator::GetExtensions() const
+Utf8String HRFIntergraphC31Creator::GetExtensions() const
     {
-    return WString(L"*.c31");
+    return Utf8String("*.c31");
     }
 
 //-----------------------------------------------------------------------------

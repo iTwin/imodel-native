@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPSException.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -54,7 +54,7 @@ protected:
     //Those constructors are protected to make sure we always throw a specific exception and don't lose type information
     HPSException(HFCPtr<HPANode>   pi_pOffendingNode);
     HPSException                   (const HPSException&     pi_rObj);
-    virtual WString _BuildMessage(const ImagePPExceptions::StringId& pi_rsID) const override;
+    virtual Utf8String _BuildMessage(const ImagePPExceptions::StringId& pi_rsID) const override;
     };
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                                   Julien.Rossignol 07/2013
@@ -67,7 +67,7 @@ public:
     HPSException_T (const HPSException_T& pi_rObj) : HPSException(pi_rObj){} 
     virtual HFCException* Clone() const override {return new HPSException_T(*this);}
     virtual void ThrowMyself() const override {throw *this;} 
-    virtual WString GetExceptionMessage()const override
+    virtual Utf8String GetExceptionMessage()const override
         {
         return HPSException::_BuildMessage(GetStringId());
         }
@@ -120,7 +120,7 @@ public:
     const ExpectedType    GetExpectedType                        () const;
     HPSTypeMismatchException                   (const HPSTypeMismatchException&     pi_rObj);
     virtual HFCException* Clone() const override; 
-    virtual WString GetExceptionMessage() const override;
+    virtual Utf8String GetExceptionMessage() const override;
     virtual void ThrowMyself() const override {throw *this;} 
 protected: 
     ExpectedType m_ExpectedType;
@@ -138,7 +138,7 @@ public:
     const double    GetLower                        () const;
     const double    GetUpper                        () const;
     HPSOutOfRangeException                   (const HPSOutOfRangeException&     pi_rObj); 
-    virtual WString GetExceptionMessage() const override;
+    virtual Utf8String GetExceptionMessage() const override;
     virtual HFCException* Clone() const override; 
     virtual void ThrowMyself() const override {throw *this;} 
     protected:
@@ -152,15 +152,15 @@ public:
 class HPSAlreadyDefinedException : public HPSException
     {
 public:
-    HPSAlreadyDefinedException(HFCPtr<HPANode>        pi_pOffendingNode, const WString&       pi_rName);
+    HPSAlreadyDefinedException(HFCPtr<HPANode>        pi_pOffendingNode, const Utf8String&       pi_rName);
     virtual        ~HPSAlreadyDefinedException();
-    WStringCR    GetName                        () const;
+    Utf8StringCR    GetName                        () const;
     HPSAlreadyDefinedException                   (const HPSAlreadyDefinedException&     pi_rObj); 
-    virtual WString GetExceptionMessage() const override;
+    virtual Utf8String GetExceptionMessage() const override;
     virtual HFCException* Clone() const override; 
     virtual void ThrowMyself() const override {throw *this;} 
     protected :
-    WString         m_Name;   
+    Utf8String         m_Name;   
     };
 
 END_IMAGEPP_NAMESPACE

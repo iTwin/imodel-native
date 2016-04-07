@@ -18,9 +18,9 @@ struct URLMemoryCreator : public HFCURL::Creator
     {
     URLMemoryCreator()
         {
-        HFCURLMemFile::GetSchemeList().insert(HFCURLMemFile::SchemeList::value_type(HFCURLMemFile::s_SchemeName(), this));
+        HFCURL::RegisterCreator(HFCURLMemFile::s_SchemeName(), this);
         }
-    virtual HFCURL* Create(const WString& pi_URL) const
+    virtual HFCURL* Create(const Utf8String& pi_URL) const
         {
         return new HFCURLMemFile(pi_URL);
         }
@@ -39,7 +39,7 @@ struct URLMemoryCreator : public HFCURL::Creator
  @inheritance This class is an instanciable one that correspond to one precise
               kind of URL and no child of it are expected to be defined.
 -----------------------------------------------------------------------------*/
-HFCURLMemFile::HFCURLMemFile(const WString& pi_URL,
+HFCURLMemFile::HFCURLMemFile(const Utf8String& pi_URL,
                              const HFCPtr<HFCBuffer>& pi_pBuffer)
     : HFCURL(pi_URL),
       m_pBuffer(pi_pBuffer)
@@ -51,7 +51,7 @@ HFCURLMemFile::HFCURLMemFile(const WString& pi_URL,
     m_modificationTime=m_creationTime;
 
     // Filename part is not interpreted we only skip the leading "//" 
-    if (GetSchemeSpecificPart().substr(0,2).compare(L"//") == 0)
+    if (GetSchemeSpecificPart().substr(0,2).compare("//") == 0)
         m_Filename = GetSchemeSpecificPart().substr(2);
     else
         m_Filename = GetSchemeSpecificPart();
@@ -74,9 +74,9 @@ HFCURLMemFile::~HFCURLMemFile()
 
  @see HFCURL
 -----------------------------------------------------------------------------*/
-WString HFCURLMemFile::GetURL() const
+Utf8String HFCURLMemFile::GetURL() const
     {
-    return s_SchemeName() + L"://" + m_Filename;
+    return s_SchemeName() + "://" + m_Filename;
     }
 
 /**----------------------------------------------------------------------------
@@ -102,7 +102,7 @@ bool HFCURLMemFile::HasPathTo(HFCURL* pi_pURL)
 
  @see HFCURL
 -----------------------------------------------------------------------------*/
-WString HFCURLMemFile::FindPathTo(HFCURL* pi_pDest)
+Utf8String HFCURLMemFile::FindPathTo(HFCURL* pi_pDest)
     {
     HPRECONDITION(HasPathTo(pi_pDest));
     return FindPath(GetSchemeSpecificPart(), pi_pDest->GetSchemeSpecificPart());
@@ -116,15 +116,15 @@ WString HFCURLMemFile::FindPathTo(HFCURL* pi_pDest)
 
  @see HFCURL
 -----------------------------------------------------------------------------*/
-HFCURL* HFCURLMemFile::MakeURLTo(const WString& pi_Path)
+HFCURL* HFCURLMemFile::MakeURLTo(const Utf8String& pi_Path)
     {
-    return new HFCURLMemFile(s_SchemeName() + L"://" + AddPath(GetSchemeSpecificPart(), pi_Path));  //!!!! //HChk BB
+    return new HFCURLMemFile(s_SchemeName() + "://" + AddPath(GetSchemeSpecificPart(), pi_Path));  //!!!! //HChk BB
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.Marchand  10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR HFCURLMemFile::GetFilename() const
+Utf8StringCR HFCURLMemFile::GetFilename() const
     {
     return m_Filename;
     }
@@ -133,13 +133,13 @@ WStringCR HFCURLMemFile::GetFilename() const
  Returns a string containing the extension part of the name of the resource,
  which is the text after the last dot in its name.
 -----------------------------------------------------------------------------*/
-WString HFCURLMemFile::GetExtension() const
+Utf8String HFCURLMemFile::GetExtension() const
     {
-    WString::size_type LastDotPos = m_Filename.find_last_of(L".");
-    if ((LastDotPos != WString::npos) && (LastDotPos < (m_Filename.length() - 1)))
+    Utf8String::size_type LastDotPos = m_Filename.find_last_of(".");
+    if ((LastDotPos != Utf8String::npos) && (LastDotPos < (m_Filename.length() - 1)))
         return m_Filename.substr(LastDotPos + 1, m_Filename.length() - LastDotPos - 1);
    
-    return WString();
+    return Utf8String();
     }
 
 /**----------------------------------------------------------------------------

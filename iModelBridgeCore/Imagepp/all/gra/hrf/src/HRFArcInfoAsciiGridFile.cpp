@@ -219,23 +219,23 @@ HRFArcInfoAsciiGridCreator::HRFArcInfoAsciiGridCreator()
 
 
 // Identification information
-WString HRFArcInfoAsciiGridCreator::GetLabel() const
+Utf8String HRFArcInfoAsciiGridCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_ArcInfoASCII());
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_ArcInfoASCII());
     }
 
 
 // Identification information
-WString HRFArcInfoAsciiGridCreator::GetSchemes() const
+Utf8String HRFArcInfoAsciiGridCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return HFCURLFile::s_SchemeName();
     }
 
 
 // Identification information
-WString HRFArcInfoAsciiGridCreator::GetExtensions() const
+Utf8String HRFArcInfoAsciiGridCreator::GetExtensions() const
     {
-    return L"*.asc;*.grd";
+    return "*.asc;*.grd";
     }
 
 

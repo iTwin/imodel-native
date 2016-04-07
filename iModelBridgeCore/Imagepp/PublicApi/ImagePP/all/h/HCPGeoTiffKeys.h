@@ -96,11 +96,11 @@ public:
 
     IMAGEPP_EXPORT bool             GetValue (uint16_t pi_Key, uint32_t*  po_pVal) const;
     IMAGEPP_EXPORT bool             GetValue (uint16_t pi_Key, double* po_pVal) const;
-    IMAGEPP_EXPORT bool             GetValue (uint16_t pi_Key, WString* po_pVal) const;
+    IMAGEPP_EXPORT bool             GetValue (uint16_t pi_Key, AStringR) const;
 
     IMAGEPP_EXPORT bool             SetValue (uint16_t pi_Key, uint32_t pi_Val);
     IMAGEPP_EXPORT bool             SetValue (uint16_t pi_Key, double pi_Val);
-    IMAGEPP_EXPORT bool             SetValue (uint16_t pi_Key, WString& pi_Val);
+    IMAGEPP_EXPORT bool             SetValue (uint16_t pi_Key, AStringCR);
 
     // From IGeoTiffKeysList
     IMAGEPP_EXPORT virtual bool     GetFirstKey(GeoKeyItem* po_Key) const override;
@@ -121,7 +121,7 @@ public:
 
 
     //Static methods
-    IMAGEPP_EXPORT static uint16_t DecodeGeoKeyIDFromString(const WString& pi_rGeoTagLabel);
+    IMAGEPP_EXPORT static uint16_t DecodeGeoKeyIDFromString(const Utf8String& pi_rGeoTagLabel);
 
     IMAGEPP_EXPORT static HFCPtr<HGF2DTransfoModel> GetTransfoModelForReprojection(const HFCPtr<HGF2DCoordSys>&        pi_rpRasterCoordSys,
                                                                                   const HGF2DExtent&                   pi_rRasterExtent,

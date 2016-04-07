@@ -2283,9 +2283,9 @@ void HCDCodecCCITTRLE::CCITTRLEState::EncodeLine()
 //-----------------------------------------------------------------------------
 int32_t HCDCodecCCITTRLE::CCITTRLEState::FindSpan(Byte** bpp, int32_t bs, int32_t be, register Byte const* tab) const
     {
-    register Byte* bp = *bpp;
-    register int32_t bits = be - bs;
-    register int32_t n, span;
+    Byte* bp = *bpp;
+    int32_t bits = be - bs;
+    int32_t n, span;
 
     /*
     * Check partial byte on lhs.

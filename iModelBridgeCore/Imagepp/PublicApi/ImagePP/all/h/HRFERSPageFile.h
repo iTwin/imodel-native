@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFERSPageFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFHGRPageFile
@@ -77,12 +77,12 @@ private:
             m_CoordinateType = UNDEFINED;
             }
 
-        WString     m_Datum;
-        WString     m_Projection;
+        AString     m_Datum;
+        AString     m_Projection;
         CoordType   m_CoordinateType;
 
         //Optional entries
-        HAutoPtr<WString>   m_pUnits;
+        HAutoPtr<AString>   m_pUnits;
         HAutoPtr<double>   m_pRotation;     //Radians
         };
 
@@ -139,7 +139,7 @@ private:
             VECTOR
             };
 
-        WString                 m_Version;
+        AString                 m_Version;
         DatasetType             m_DatasetType;
         DataType                m_DataType;
         ERSCoordinateSpaceInfo  m_CoordSpaceInfo;
@@ -152,8 +152,7 @@ private:
     ERSDatasetHeaderInfo    m_ERSInfo;
 
     // Private methods
-    bool                   ReadEntryValue(const string&  pi_rStringToParse,
-                                           WString&       po_rValue) const;
+    bool                   ReadEntryValue(const string& pi_rStringToParse, AStringR po_rValue) const;
 
     void                    ReadLine(string& po_rString);
     void                    CleanUpString(string& pio_rString) const;
@@ -161,8 +160,7 @@ private:
 
     bool                   IsValidERSFile() const;
 
-    bool                   ConvertStringToDouble(const WString&        pi_rString,
-                                                  double*              po_pDouble) const;
+    bool                   ConvertStringToDouble(AStringCR pi_rString, double* po_pDouble) const;
 
     void                    ReadFile();
 

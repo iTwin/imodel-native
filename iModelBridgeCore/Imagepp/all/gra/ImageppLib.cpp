@@ -253,7 +253,7 @@ ImageppLib::Host& ImageppLib::GetHost()
     {
     ImagePPHostCriticalSection __Serialize__;
 
-    BeAssert (IsInitialized() && L"ImageppLib library needs to be initialize!");  
+    BeAssert (IsInitialized() && "ImageppLib library needs to be initialize!");  
     return *t_ImageppLibHost;
     }
 

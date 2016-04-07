@@ -140,23 +140,23 @@ HFCPtr<HFCURL> HRFPRJPageFileCreator::ComposeURLFor(const HFCPtr<HFCURL>& pi_rpU
         throw HFCInvalidUrlForSisterFileException(pi_rpURLFileName->GetURL());
 
     // Decompose the file name
-    WString DriveDirName;
+    Utf8String DriveDirName;
 
     // Extract the Path
-    WString Path(((HFCPtr<HFCURLFile>&)pi_rpURLFileName)->GetHost()+WString(L"\\")+((HFCPtr<HFCURLFile>&)pi_rpURLFileName)->GetPath());
+    Utf8String Path(((HFCPtr<HFCURLFile>&)pi_rpURLFileName)->GetHost()+Utf8String("\\")+((HFCPtr<HFCURLFile>&)pi_rpURLFileName)->GetPath());
 
     // Find the file extension
-    WString::size_type DotPos = Path.rfind(L'.');
+    Utf8String::size_type DotPos = Path.rfind('.');
 
     // Extract the extension and the drive dir name
-    if (DotPos != WString::npos)
+    if (DotPos != Utf8String::npos)
         {
         // Compose the decoration file name
         DriveDirName = Path.substr(0, DotPos);
-        URLForPageFile = new HFCURLFile(WString(HFCURLFile::s_SchemeName() + L"://") + DriveDirName + WString(L".prj"));
+        URLForPageFile = new HFCURLFile(Utf8String(HFCURLFile::s_SchemeName() + "://") + DriveDirName + Utf8String(".prj"));
         }
     else
-        URLForPageFile = new HFCURLFile(WString(HFCURLFile::s_SchemeName() + L"://") + Path + WString(L".prj"));
+        URLForPageFile = new HFCURLFile(Utf8String(HFCURLFile::s_SchemeName() + "://") + Path + Utf8String(".prj"));
 
     return URLForPageFile;
     }

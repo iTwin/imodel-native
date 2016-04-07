@@ -67,7 +67,7 @@ using namespace ImagePP;
 
 struct SDOObjectInfo
     {
-    WString        RasterType;
+    Utf8String        RasterType;
     bool           IsBlank;
     uint32_t       DefaultRed;
     uint32_t       DefaultGreen;
@@ -90,7 +90,7 @@ struct SDORasterInfo
     uint32_t        BlockHeight;
     uint32_t        BandBlockSize;
     uint32_t        ResolutionCount;
-    WString         Compression;
+    Utf8String         Compression;
     Byte            CompressionQuality;
     bool            IsValid;
     bool            IsSupported;
@@ -103,7 +103,7 @@ struct SDOSpatialReferenceInfo
     uint32_t        SRID;
     double          ScaleX;
     double          ScaleY;
-    WString         CoordLocation;
+    Utf8String         CoordLocation;
     HArrayAutoPtr<double> pRowCoefficient;
     HArrayAutoPtr<double> pColumnCoefficient;
     bool            IsValid;
@@ -134,7 +134,7 @@ public:
 
 private:
 
-    virtual WString _ToString() const
+    virtual Utf8String _ToString() const
         {
         return m_RelatedException.GetExceptionMessage();
         }
@@ -400,8 +400,8 @@ bool HRFGeoRasterCreator::CanRegister() const
     uint32_t CurErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS);
 
 
-    //hWnd = LoadLibraryW(L"Bentley.ImagePP3.dll");
-    WString OciDllFilename(DLL_NAME_FOR_OCI);
+    //hWnd = LoadLibraryW("Bentley.ImagePP3.dll");
+    Utf8String OciDllFilename(DLL_NAME_FOR_OCI);
     hWnd = LoadLibraryW(OciDllFilename.c_str());
 
     SetErrorMode(CurErrorMode);
@@ -416,26 +416,26 @@ bool HRFGeoRasterCreator::CanRegister() const
     }
 
 // Identification information
-WString HRFGeoRasterCreator::GetLabel() const
+Utf8String HRFGeoRasterCreator::GetLabel() const
     {
 
 // to be define
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_SDOGeoRaster()); // SDO GeoRaster File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_SDOGeoRaster()); // SDO GeoRaster File Format
     }
 
 // Identification information
-WString HRFGeoRasterCreator::GetSchemes() const
+Utf8String HRFGeoRasterCreator::GetSchemes() const
     {
 // to be define
-    return WString(HFCURLFile::s_SchemeName() + L";" +
+    return Utf8String(HFCURLFile::s_SchemeName() + ";" +
                    HFCURLMemFile::s_SchemeName());
     }
 
 // Identification information
-WString HRFGeoRasterCreator::GetExtensions() const
+Utf8String HRFGeoRasterCreator::GetExtensions() const
     {
 // to be define
-    return WString(L"*.xora");
+    return Utf8String("*.xora");
     }
 
 // allow to Open an image file
@@ -463,12 +463,12 @@ bool HRFGeoRasterCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     if (pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID))
         {
         // at least, the file must be have the right extension...
-        if (BeStringUtilities::Wcsicmp(((const  HFCPtr<HFCURLFile>&)pi_rpURL)->GetExtension().c_str(), L"xora") != 0)
+        if (BeStringUtilities::Wcsicmp(((const  HFCPtr<HFCURLFile>&)pi_rpURL)->GetExtension().c_str(), "xora") != 0)
             return bResult;
 
-        WString XMLFileName;
+        Utf8String XMLFileName;
         XMLFileName = ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetHost();
-        XMLFileName += L"\\";
+        XMLFileName += "\\";
         XMLFileName += ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
 
         // Open XML file
@@ -485,7 +485,7 @@ bool HRFGeoRasterCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     else if (pi_rpURL->IsCompatibleWith(HFCURLMemFile::CLASS_ID))
         {
         // at least, the file must be have the right extension...
-        if (BeStringUtilities::Wcsicmp(((const HFCPtr<HFCURLMemFile>&)pi_rpURL)->GetExtension().c_str(), L"xora") != 0)
+        if (BeStringUtilities::Wcsicmp(((const HFCPtr<HFCURLMemFile>&)pi_rpURL)->GetExtension().c_str(), "xora") != 0)
             return bResult;
 
         HFCPtr<HFCBuffer> pBuffer(((HFCPtr<HFCURLMemFile>&)pi_rpURL)->GetBuffer());
@@ -608,9 +608,9 @@ HRFGeoRasterFile::HRFGeoRasterFile(const HFCPtr<HFCURL>& pi_rpURL,
 
     if (pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID))
         {
-        WString XMLFileName;
+        Utf8String XMLFileName;
         XMLFileName = ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetHost();
-        XMLFileName += L"\\";
+        XMLFileName += "\\";
         XMLFileName += ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
 
         // Open XML file
@@ -633,10 +633,10 @@ HRFGeoRasterFile::HRFGeoRasterFile(const HFCPtr<HFCURL>& pi_rpURL,
 
     BeXmlNodeP pMainNode = pXmlDom->GetRootElement();
     if (NULL == pMainNode || BeStringUtilities::Stricmp (pMainNode->GetName(), "BentleyOracleGeoRaster") != 0)
-        throw HRFMissingParameterException(pi_rpURL->GetURL(), L"");
+        throw HRFMissingParameterException(pi_rpURL->GetURL(), "");
 
     // Optional "version" tag. Default is 1.0 if not present.
-    WString versionStr(L"1.0");    
+    Utf8String versionStr("1.0");    
     BeXmlNodeP pVersionNode = NULL;
     //New XML reader is case sensitive and it seems we can have both "version" and "Version"...
     if ((pVersionNode = pMainNode->SelectSingleNode("version")) != NULL)
@@ -644,9 +644,9 @@ HRFGeoRasterFile::HRFGeoRasterFile(const HFCPtr<HFCURL>& pi_rpURL,
     else if ((pVersionNode = pMainNode->SelectSingleNode("Version")) != NULL)
         pVersionNode->GetContent(versionStr);
   
-    if (BeStringUtilities::Wcsicmp(versionStr.c_str(), L"1.0") == 0)
+    if (BeStringUtilities::Wcsicmp(versionStr.c_str(), "1.0") == 0)
         ReadXORA_1_0(pMainNode, SDOGeoRasterWrapper::IsConnected());
-    else if (BeStringUtilities::Wcsicmp(versionStr.c_str(), L"1.1") == 0)
+    else if (BeStringUtilities::Wcsicmp(versionStr.c_str(), "1.1") == 0)
         ReadXORA_1_1(pMainNode, SDOGeoRasterWrapper::IsConnected());
     else
         throw HFCFileNotSupportedException(GetURL()->GetURL());
@@ -691,7 +691,7 @@ HRFGeoRasterFile::HRFGeoRasterFile(const HFCPtr<HFCURL>& pi_rpURL,
 
         if (IsConnect == false)
             {
-            throw HFCCannotConnectToDBException(L"");
+            throw HFCCannotConnectToDBException("");
             }
         }
 
@@ -799,7 +799,7 @@ void HRFGeoRasterFile::CreateDescriptors()
 
                 if (pLayerInfo == 0)
                     {
-                    HASSERT(!L"HRFGeoRasterFile::CreateDescriptor() : unsupported pixel type");
+                    HASSERT(!"HRFGeoRasterFile::CreateDescriptor() : unsupported pixel type");
                     throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
                     }
 
@@ -811,7 +811,7 @@ void HRFGeoRasterFile::CreateDescriptors()
                     }
                 else
                     {
-                    HASSERT(!L"HRFGeoRasterFile::CreateDescriptor() : unsupported pixel type");
+                    HASSERT(!"HRFGeoRasterFile::CreateDescriptor() : unsupported pixel type");
                     throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
                     }
                 }
@@ -828,7 +828,7 @@ void HRFGeoRasterFile::CreateDescriptors()
 
                 if (pLayerInfo == 0)
                     {
-                    HASSERT(!L"HRFGeoRasterFile::CreateDescriptor() : unsupported pixel type");
+                    HASSERT(!"HRFGeoRasterFile::CreateDescriptor() : unsupported pixel type");
                     throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
                     }
 
@@ -840,7 +840,7 @@ void HRFGeoRasterFile::CreateDescriptors()
                     }
                 else
                     {
-                    HASSERT(!L"HRFGeoRasterFile::CreateDescriptor() : unsupported pixel type");
+                    HASSERT(!"HRFGeoRasterFile::CreateDescriptor() : unsupported pixel type");
                     throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
                     }
                 }
@@ -853,7 +853,7 @@ void HRFGeoRasterFile::CreateDescriptors()
                 {
                 if (pLayerInfo == 0)
                     {
-                    HASSERT(!L"HRFGeoRasterFile::CreateDescriptor() : unsupported pixel type");
+                    HASSERT(!"HRFGeoRasterFile::CreateDescriptor() : unsupported pixel type");
                     throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
                     }
 
@@ -880,7 +880,7 @@ void HRFGeoRasterFile::CreateDescriptors()
                             pPixelType = new HRPPixelTypeV24B8G8R8();
                         else
                             {
-                            HASSERT(!L"HRFGeoRasterFile::CreateDescriptor() : unsupported pixel type");
+                            HASSERT(!"HRFGeoRasterFile::CreateDescriptor() : unsupported pixel type");
                             throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
                             }
                         break;
@@ -888,14 +888,14 @@ void HRFGeoRasterFile::CreateDescriptors()
                     case 4:
                         if (ObjectInfo.DefaultRed != 1 || ObjectInfo.DefaultGreen != 2 || ObjectInfo.DefaultBlue != 3)
                             {
-                            HASSERT(!L"HRFGeoRasterFile::CreateDescriptor() : unsupported pixel type");
+                            HASSERT(!"HRFGeoRasterFile::CreateDescriptor() : unsupported pixel type");
                             throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
                             }
                         pPixelType = new HRPPixelTypeV32R8G8B8A8();
                         break;
 
                     default:
-                        HASSERT(!L"HRFGeoRasterFile::CreateDescriptor() : unsupported pixel type");
+                        HASSERT(!"HRFGeoRasterFile::CreateDescriptor() : unsupported pixel type");
                         throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
                     }
                 }
@@ -950,7 +950,7 @@ void HRFGeoRasterFile::CreateDescriptors()
     HFCPtr<HCDCodec> pCodec;
     if (!RasterInfo.Compression.empty())
         {
-        if (BeStringUtilities::Wcsicmp(RasterInfo.Compression.c_str(), L"JPEG-B") == 0)
+        if (BeStringUtilities::Wcsicmp(RasterInfo.Compression.c_str(), "JPEG-B") == 0)
             {
             if (RasterInfo.BandBlockSize == 1)
                 pCodec = new HCDCodecIJG(RasterInfo.BlockWidth, RasterInfo.BlockHeight, 8);
@@ -958,7 +958,7 @@ void HRFGeoRasterFile::CreateDescriptors()
                 pCodec = new HCDCodecIJG(RasterInfo.BlockWidth, RasterInfo.BlockHeight, 24);
             else
                 {
-                HASSERT(!L"HRFGeoRasterFile::CreateDescriptor() : unsupported compression");
+                HASSERT(!"HRFGeoRasterFile::CreateDescriptor() : unsupported compression");
                 throw HRFCodecNotSupportedException(GetURL()->GetURL());
                 }
 
@@ -966,7 +966,7 @@ void HRFGeoRasterFile::CreateDescriptors()
             if (RasterInfo.CompressionQuality != -1)
                 ((HFCPtr<HCDCodecIJG>&)pCodec)->SetQuality(RasterInfo.CompressionQuality);
             }
-        else if (BeStringUtilities::Wcsicmp(RasterInfo.Compression.c_str(), L"JPEG-F") == 0)
+        else if (BeStringUtilities::Wcsicmp(RasterInfo.Compression.c_str(), "JPEG-F") == 0)
             {
             if (RasterInfo.BandBlockSize == 1)
                 pCodec = new HCDCodecIJG(RasterInfo.BlockWidth, RasterInfo.BlockHeight, 8);
@@ -974,7 +974,7 @@ void HRFGeoRasterFile::CreateDescriptors()
                 pCodec = new HCDCodecIJG(RasterInfo.BlockWidth, RasterInfo.BlockHeight, 24);
             else
                 {
-                HASSERT(!L"HRFGeoRasterFile::CreateDescriptor() : unsupported compression");
+                HASSERT(!"HRFGeoRasterFile::CreateDescriptor() : unsupported compression");
                 throw HRFCodecNotSupportedException(GetURL()->GetURL());
                 }
 
@@ -984,17 +984,17 @@ void HRFGeoRasterFile::CreateDescriptors()
             if (RasterInfo.CompressionQuality != -1)
                 ((HFCPtr<HCDCodecIJG>&)pCodec)->SetQuality(RasterInfo.CompressionQuality);
             }
-        else if (BeStringUtilities::Wcsicmp(RasterInfo.Compression.c_str(), L"DEFLATE") == 0)
+        else if (BeStringUtilities::Wcsicmp(RasterInfo.Compression.c_str(), "DEFLATE") == 0)
             {
             pCodec = new HCDCodecZlib();
             }
-        else if (BeStringUtilities::Wcsicmp(RasterInfo.Compression.c_str(), L"NONE") == 0)
+        else if (BeStringUtilities::Wcsicmp(RasterInfo.Compression.c_str(), "NONE") == 0)
             {
             pCodec = new HCDCodecIdentity;
             }
         else
             {
-            HASSERT(!L"HRFGeoRasterFile::CreateDescriptor() : unsupported compression type");
+            HASSERT(!"HRFGeoRasterFile::CreateDescriptor() : unsupported compression type");
             throw HRFCodecNotSupportedException(GetURL()->GetURL());
             }
         }
@@ -1063,7 +1063,7 @@ void HRFGeoRasterFile::CreateDescriptors()
 
         pAffineModel->Reverse();
 
-        if (BeStringUtilities::Wcsicmp(pSpatialReferenceInfo->CoordLocation.c_str(), L"CENTER") == 0)
+        if (BeStringUtilities::Wcsicmp(pSpatialReferenceInfo->CoordLocation.c_str(), "CENTER") == 0)
             {
             // see HRFTWFPageFile::BuildTransfoModel() for detail
             HFCMatrix<3,3> Matrix(pAffineModel->GetMatrix());
@@ -1113,7 +1113,7 @@ void HRFGeoRasterFile::CreateDescriptors()
 // private
 // ConnectToOracle
 //-----------------------------------------------------------------------------
-bool HRFGeoRasterFile::ConnectToOracle (WStringCR pi_rConnectionString)
+bool HRFGeoRasterFile::ConnectToOracle (Utf8StringCR pi_rConnectionString)
     {
     bool IsConnect = false;
 
@@ -1202,49 +1202,49 @@ void HRFGeoRasterFile::ReadXORA_1_0(BeXmlNodeP pi_pMainNode, bool pi_Connected)
         if (NULL == pUsr && NULL ==  pPwd && NULL == pService)
             {
             SDOGeoRasterWrapper::OracleError Error;
-            if (!SDOGeoRasterWrapper::Connect(WString(),&Error))
-                throw HFCCannotConnectToDBException(L"");
+            if (!SDOGeoRasterWrapper::Connect(Utf8String(),&Error))
+                throw HFCCannotConnectToDBException("");
             }
         else if (NULL != pUsr)
             {
-            WString ConnectionString;
+            Utf8String ConnectionString;
             pUsr->GetContent(ConnectionString);
 
-            WString content;
+            Utf8String content;
             if (NULL != pPwd && BEXML_Success == pPwd->GetContent(content) && !content.empty())
                 {
-                ConnectionString += L"/";
+                ConnectionString += "/";
                 ConnectionString += content;
                 }
 
             if (NULL != pService && BEXML_Success == pService->GetContent(content) && !content.empty())
                 {
-                ConnectionString += L"@";
+                ConnectionString += "@";
                 ConnectionString += content;
                 }
 
             if (!ConnectToOracle(ConnectionString))
-                throw HFCCannotConnectToDBException(L"");
+                throw HFCCannotConnectToDBException("");
             }
         else
-            throw HFCCannotConnectToDBException(L"");
+            throw HFCCannotConnectToDBException("");
         }
 
     BeXmlNodeP pTableNameNode = pi_pMainNode->SelectSingleNode("tablename");
     BeXmlNodeP pColumnNameNode = pi_pMainNode->SelectSingleNode("columnname");
     BeXmlNodeP pRasterIDNode = pi_pMainNode->SelectSingleNode("rasterid");
 
-    WString tableName, ColumnName, RasterId;
+    Utf8String tableName, ColumnName, RasterId;
 
     if (NULL == pTableNameNode || BEXML_Success != pTableNameNode->GetContent(tableName))
         throw HRFMissingParameterException(GetURL()->GetURL(),
-                                        L"tablename");
+                                        "tablename");
     if (NULL == pColumnNameNode || BEXML_Success != pColumnNameNode->GetContent(ColumnName))
         throw HRFMissingParameterException(GetURL()->GetURL(),
-                                        L"columnname");
+                                        "columnname");
     if (NULL == pRasterIDNode || BEXML_Success != pRasterIDNode->GetContent(RasterId))
         throw HRFMissingParameterException(GetURL()->GetURL(),
-                                        L"rasterid");
+                                        "rasterid");
 
     m_pSDOGeoRasterWrapper = SDOGeoRasterWrapper::GetWrapper(tableName, ColumnName, RasterId);
     }
@@ -1263,11 +1263,11 @@ void HRFGeoRasterFile::ReadXORA_1_1(BeXmlNodeP pi_pMainNode, bool pi_Connected)
         {
         BeXmlNodeP pConnectionString = pi_pMainNode->SelectSingleNode("connectionstring");
 
-        WString connectString;
+        Utf8String connectString;
         pConnectionString->GetContent(connectString);
 
         if (!ConnectToOracle(connectString))
-            throw HFCCannotConnectToDBException(L"");
+            throw HFCCannotConnectToDBException("");
         }
 
     //New XML reader is case sensitive and it seems we can have both "version" and "Version"...
@@ -1278,22 +1278,22 @@ void HRFGeoRasterFile::ReadXORA_1_1(BeXmlNodeP pi_pMainNode, bool pi_Connected)
         pGeoRaster = pi_pMainNode->SelectSingleNode("georaster");
         if (NULL == pGeoRaster)
             throw HRFMissingParameterException(GetURL()->GetURL(),
-                L"GEORASTER");
+                "GEORASTER");
         }
 
-    WString tableAttribute, ColumnAttribute, RasterIdAttribute;
+    Utf8String tableAttribute, ColumnAttribute, RasterIdAttribute;
 
     if (BEXML_Success != pGeoRaster->GetAttributeStringValue(tableAttribute, "table") || tableAttribute.empty())
         throw HRFMissingParameterException(GetURL()->GetURL(),
-                                        L"table");
+                                        "table");
 
     if (BEXML_Success != pGeoRaster->GetAttributeStringValue(ColumnAttribute, "column") || ColumnAttribute.empty())
         throw HRFMissingParameterException(GetURL()->GetURL(),
-                                        L"column");
+                                        "column");
 
     if (BEXML_Success != pGeoRaster->GetAttributeStringValue(RasterIdAttribute, "rasterid") || RasterIdAttribute.empty())
         throw HRFMissingParameterException(GetURL()->GetURL(),
-                                        L"rasterid");
+                                        "rasterid");
 
     m_pSDOGeoRasterWrapper = SDOGeoRasterWrapper::GetWrapper(tableAttribute, ColumnAttribute, RasterIdAttribute);
     }
@@ -1337,7 +1337,7 @@ void HRFGeoRasterFile::ReadObjectInfo(BeXmlNodeP        pi_pObjectInfoNode,
             {
             if (BEXML_Success != pSubNode->GetContentUInt32Value(po_pSDOObjectInfo->DefaultRed))
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadObjectInfo() : invalid XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadObjectInfo() : invalid XML header");
                 po_pSDOObjectInfo->IsValid = false;
                 }
             }
@@ -1347,7 +1347,7 @@ void HRFGeoRasterFile::ReadObjectInfo(BeXmlNodeP        pi_pObjectInfoNode,
             {
             if (BEXML_Success != pSubNode->GetContentUInt32Value(po_pSDOObjectInfo->DefaultGreen))
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadObjectInfo() : invalid XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadObjectInfo() : invalid XML header");
                 po_pSDOObjectInfo->IsValid = false;
                 }
             }
@@ -1357,7 +1357,7 @@ void HRFGeoRasterFile::ReadObjectInfo(BeXmlNodeP        pi_pObjectInfoNode,
             {
             if (BEXML_Success != pSubNode->GetContentUInt32Value(po_pSDOObjectInfo->DefaultBlue))
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadObjectInfo() : invalid XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadObjectInfo() : invalid XML header");
                 po_pSDOObjectInfo->IsValid = false;
                 }
             }
@@ -1397,15 +1397,15 @@ void HRFGeoRasterFile::ReadRasterInfo(BeXmlNodeP     pi_pRasterInfoNode,
         NULL != pSubNode && po_pSDORasterInfo->IsValid && po_pSDORasterInfo->IsSupported;
         pSubNode = pSubNode->GetNextSibling())
         {
-        WString nodeContent;
+        Utf8String nodeContent;
 
         // cellRepresentation
         if (BeStringUtilities::Stricmp(pSubNode->GetName(), "cellRepresentation") == 0)
             {
             pSubNode->GetContent(nodeContent);
-            if (BeStringUtilities::Wcsicmp(nodeContent.c_str(), L"UNDEFINED") != 0)
+            if (BeStringUtilities::Wcsicmp(nodeContent.c_str(), "UNDEFINED") != 0)
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadRasterInfo() : unsupported XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadRasterInfo() : unsupported XML header");
                 po_pSDORasterInfo->IsSupported = false;
                 }
             }
@@ -1418,46 +1418,46 @@ void HRFGeoRasterFile::ReadRasterInfo(BeXmlNodeP     pi_pRasterInfoNode,
 
             pSubNode->GetContent(nodeContent);
 
-            if (BeStringUtilities::Wcsicmp(nodeContent.c_str(), L"1BIT") == 0)
+            if (BeStringUtilities::Wcsicmp(nodeContent.c_str(), "1BIT") == 0)
                 po_pSDORasterInfo->CellDepth = 1;
-            else if (BeStringUtilities::Wcsicmp(nodeContent.c_str(), L"2BIT") == 0)
+            else if (BeStringUtilities::Wcsicmp(nodeContent.c_str(), "2BIT") == 0)
                 po_pSDORasterInfo->CellDepth = 2;
-            else if (BeStringUtilities::Wcsicmp(nodeContent.c_str(), L"4BIT") == 0)
+            else if (BeStringUtilities::Wcsicmp(nodeContent.c_str(), "4BIT") == 0)
                 po_pSDORasterInfo->CellDepth = 4;
-            else if (BeStringUtilities::Wcsicmp(nodeContent.c_str(), L"8BIT_U") == 0)
+            else if (BeStringUtilities::Wcsicmp(nodeContent.c_str(), "8BIT_U") == 0)
                 po_pSDORasterInfo->CellDepth = 8;
-            else if (BeStringUtilities::Wcsicmp(nodeContent.c_str(), L"8BIT_S") == 0)
+            else if (BeStringUtilities::Wcsicmp(nodeContent.c_str(), "8BIT_S") == 0)
                 {
                 po_pSDORasterInfo->CellDepth = 8;
                 po_pSDORasterInfo->CellDepthSigned = true;
                 }
-            else if (BeStringUtilities::Wcsicmp(nodeContent.c_str(), L"16BIT_U") == 0)
+            else if (BeStringUtilities::Wcsicmp(nodeContent.c_str(), "16BIT_U") == 0)
                 po_pSDORasterInfo->CellDepth = 16;
-            else if (BeStringUtilities::Wcsicmp(nodeContent.c_str(), L"16BIT_S") == 0)
+            else if (BeStringUtilities::Wcsicmp(nodeContent.c_str(), "16BIT_S") == 0)
                 {
                 po_pSDORasterInfo->CellDepth = 16;
                 po_pSDORasterInfo->CellDepthSigned = true;
                 }
-            else if (BeStringUtilities::Wcsicmp(nodeContent.c_str(), L"32BIT_U") == 0)
+            else if (BeStringUtilities::Wcsicmp(nodeContent.c_str(), "32BIT_U") == 0)
                 po_pSDORasterInfo->CellDepth = 32;
-            else if (BeStringUtilities::Wcsicmp(nodeContent.c_str(), L"32BIT_S") == 0)
+            else if (BeStringUtilities::Wcsicmp(nodeContent.c_str(), "32BIT_S") == 0)
                 {
                 po_pSDORasterInfo->CellDepth = 32;
                 po_pSDORasterInfo->CellDepthSigned = true;
                 }
-            else if (BeStringUtilities::Wcsicmp(nodeContent.c_str(), L"32BIT_REAL") == 0)
+            else if (BeStringUtilities::Wcsicmp(nodeContent.c_str(), "32BIT_REAL") == 0)
                 {
                 po_pSDORasterInfo->CellDepth = 32;
                 po_pSDORasterInfo->CellDepthReal = true;
                 po_pSDORasterInfo->CellDepthSigned = true;
                 }
-            else if (BeStringUtilities::Wcsicmp(nodeContent.c_str(), L"64BIT_REAL") == 0)
+            else if (BeStringUtilities::Wcsicmp(nodeContent.c_str(), "64BIT_REAL") == 0)
                 {
                 po_pSDORasterInfo->CellDepth = 64;
                 po_pSDORasterInfo->CellDepthReal = true;
                 po_pSDORasterInfo->CellDepthSigned = true;
                 }
-            else if (BeStringUtilities::Wcsicmp(nodeContent.c_str(), L"128BIT_REAL") == 0)
+            else if (BeStringUtilities::Wcsicmp(nodeContent.c_str(), "128BIT_REAL") == 0)
                 {
                 po_pSDORasterInfo->CellDepth = 128;
                 po_pSDORasterInfo->CellDepthReal = true;
@@ -1465,7 +1465,7 @@ void HRFGeoRasterFile::ReadRasterInfo(BeXmlNodeP     pi_pRasterInfoNode,
                 }
             else
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadRasterInfo() : unsupported XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadRasterInfo() : unsupported XML header");
                 po_pSDORasterInfo->IsSupported = false;
                 }
             }
@@ -1475,7 +1475,7 @@ void HRFGeoRasterFile::ReadRasterInfo(BeXmlNodeP     pi_pRasterInfoNode,
             {
             if (BEXML_Success != pSubNode->GetContentUInt32Value(po_pSDORasterInfo->TotalDimension))
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadRasterInfo() : invalid XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadRasterInfo() : invalid XML header");
                 po_pSDORasterInfo->IsValid = false;
                 }
             }
@@ -1484,50 +1484,50 @@ void HRFGeoRasterFile::ReadRasterInfo(BeXmlNodeP     pi_pRasterInfoNode,
         else if (BeStringUtilities::Stricmp(pSubNode->GetName(), "dimensionSize") == 0)
             {
             BeXmlNodeP pNode;
-            WString AttValue;
+            Utf8String AttValue;
             pSubNode->GetAttributeStringValue(AttValue, "type");
 
-            if (BeStringUtilities::Wcsicmp(AttValue.c_str(), L"ROW") == 0)
+            if (BeStringUtilities::Wcsicmp(AttValue.c_str(), "ROW") == 0)
                 {
                 if ((pNode = pSubNode->SelectSingleNode(GEORASTER_NAMESPACE_PREFIX ":" "size")) == 0)
                     {
-                    HASSERT(!L"HRFGeoRasterFile::ReadRasterInfo() : unsupported XML header");
+                    HASSERT(!"HRFGeoRasterFile::ReadRasterInfo() : unsupported XML header");
                     po_pSDORasterInfo->IsSupported = false;
                     }
 
                 if (BEXML_Success != pNode->GetContentUInt32Value(po_pSDORasterInfo->Height))
                     {
-                    HASSERT(!L"HRFGeoRasterFile::ReadRasterInfo() : invalid XML header");
+                    HASSERT(!"HRFGeoRasterFile::ReadRasterInfo() : invalid XML header");
                     po_pSDORasterInfo->IsValid = false;
                     }
 
                 }
-            else if (BeStringUtilities::Wcsicmp(AttValue.c_str(), L"COLUMN") == 0)
+            else if (BeStringUtilities::Wcsicmp(AttValue.c_str(), "COLUMN") == 0)
                 {
                 if ((pNode = pSubNode->SelectSingleNode(GEORASTER_NAMESPACE_PREFIX ":" "size")) == 0)
                     {
-                    HASSERT(!L"HRFGeoRasterFile::ReadRasterInfo() : unsupported XML header");
+                    HASSERT(!"HRFGeoRasterFile::ReadRasterInfo() : unsupported XML header");
                     po_pSDORasterInfo->IsSupported = false;
                     }
 
                 if (BEXML_Success != pNode->GetContentUInt32Value(po_pSDORasterInfo->Width))
                     {
-                    HASSERT(!L"HRFGeoRasterFile::ReadRasterInfo() : invalid XML header");
+                    HASSERT(!"HRFGeoRasterFile::ReadRasterInfo() : invalid XML header");
                     po_pSDORasterInfo->IsValid = false;
                     }
                 }
-            else if (BeStringUtilities::Wcsicmp(AttValue.c_str(), L"BAND") == 0)
+            else if (BeStringUtilities::Wcsicmp(AttValue.c_str(), "BAND") == 0)
                 {
                 if ((pNode = pSubNode->SelectSingleNode(GEORASTER_NAMESPACE_PREFIX ":" "size")) == 0)
                     {
-                    HASSERT(!L"HRFGeoRasterFile::ReadRasterInfo() : unsupported XML header");
+                    HASSERT(!"HRFGeoRasterFile::ReadRasterInfo() : unsupported XML header");
                     po_pSDORasterInfo->IsSupported = false;
                     }
 
                 uint32_t nbBand = 0;
                 if (BEXML_Success != pNode->GetContentUInt32Value(nbBand) || nbBand > USHRT_MAX)
                     {
-                    HASSERT(!L"HRFGeoRasterFile::ReadRasterInfo() : invalid XML header");
+                    HASSERT(!"HRFGeoRasterFile::ReadRasterInfo() : invalid XML header");
                     po_pSDORasterInfo->IsValid = false;
                     }
                 else
@@ -1535,7 +1535,7 @@ void HRFGeoRasterFile::ReadRasterInfo(BeXmlNodeP     pi_pRasterInfoNode,
                 }
             else
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadRasterInfo() : unsupported XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadRasterInfo() : unsupported XML header");
                 po_pSDORasterInfo->IsSupported;
                 }
             }
@@ -1549,7 +1549,7 @@ void HRFGeoRasterFile::ReadRasterInfo(BeXmlNodeP     pi_pRasterInfoNode,
                 {
                 if (BEXML_Success != pNode->GetContentUInt32Value(po_pSDORasterInfo->BlockHeight))
                     {
-                    HASSERT(!L"HRFGeoRasterFile::ReadRasterInfo() : Invalid XML header");
+                    HASSERT(!"HRFGeoRasterFile::ReadRasterInfo() : Invalid XML header");
                     po_pSDORasterInfo->IsValid = false;
                     }
                 }
@@ -1558,7 +1558,7 @@ void HRFGeoRasterFile::ReadRasterInfo(BeXmlNodeP     pi_pRasterInfoNode,
                 {
                 if (BEXML_Success != pNode->GetContentUInt32Value(po_pSDORasterInfo->BlockWidth))
                     {
-                    HASSERT(!L"HRFGeoRasterFile::ReadRasterInfo() : Invalid XML header");
+                    HASSERT(!"HRFGeoRasterFile::ReadRasterInfo() : Invalid XML header");
                     po_pSDORasterInfo->IsValid = false;
                     }
                 }
@@ -1567,7 +1567,7 @@ void HRFGeoRasterFile::ReadRasterInfo(BeXmlNodeP     pi_pRasterInfoNode,
                 {
                 if (BEXML_Success != pNode->GetContentUInt32Value(po_pSDORasterInfo->BandBlockSize))
                     {
-                    HASSERT(!L"HRFGeoRasterFile::ReadRasterInfo() : Invalid XML header");
+                    HASSERT(!"HRFGeoRasterFile::ReadRasterInfo() : Invalid XML header");
                     po_pSDORasterInfo->IsValid = false;
                     }
                 }
@@ -1576,18 +1576,18 @@ void HRFGeoRasterFile::ReadRasterInfo(BeXmlNodeP     pi_pRasterInfoNode,
         // interleaving
         else if (BeStringUtilities::Stricmp(pSubNode->GetName(), "interleaving") == 0)
             {
-            WString content;
+            Utf8String content;
             pSubNode->GetContent(content);
 
-            if (BeStringUtilities::Wcsicmp(content.c_str(), L"BSQ") == 0)
+            if (BeStringUtilities::Wcsicmp(content.c_str(), "BSQ") == 0)
                 po_pSDORasterInfo->pInterleave = new HRFInterleaveType(HRFInterleaveType::PLANE);
-            else if (BeStringUtilities::Wcsicmp(content.c_str(), L"BIL") == 0)
+            else if (BeStringUtilities::Wcsicmp(content.c_str(), "BIL") == 0)
                 po_pSDORasterInfo->pInterleave = new HRFInterleaveType(HRFInterleaveType::LINE);
-            else if (BeStringUtilities::Wcsicmp(content.c_str(), L"BIP") == 0)
+            else if (BeStringUtilities::Wcsicmp(content.c_str(), "BIP") == 0)
                 po_pSDORasterInfo->pInterleave = new HRFInterleaveType(HRFInterleaveType::PIXEL);
             else
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadRasterInfo() : unsupported XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadRasterInfo() : unsupported XML header");
                 po_pSDORasterInfo->IsSupported = false;
                 }
             }
@@ -1598,34 +1598,34 @@ void HRFGeoRasterFile::ReadRasterInfo(BeXmlNodeP     pi_pRasterInfoNode,
             BeXmlNodeP pTypeNode;
             if ((pTypeNode = pSubNode->SelectSingleNode(GEORASTER_NAMESPACE_PREFIX ":" "type")) == 0)
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadRasterInfo() : unsupported XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadRasterInfo() : unsupported XML header");
                 po_pSDORasterInfo->IsSupported = false;
                 }
 
-            WString typeContent;
+            Utf8String typeContent;
             pTypeNode->GetContent(typeContent);
 
-            if (BeStringUtilities::Wcsicmp(typeContent.c_str(), L"DECREASE") == 0)
+            if (BeStringUtilities::Wcsicmp(typeContent.c_str(), "DECREASE") == 0)
                 {
                 BeXmlNodeP maxLevelNode;
                 // maxLevel
                 if ((maxLevelNode = pSubNode->SelectSingleNode(GEORASTER_NAMESPACE_PREFIX ":" "maxLevel")) == 0)
                     {
-                    HASSERT(!L"HRFGeoRasterFile::ReadRasterInfo() : unsupported XML header");
+                    HASSERT(!"HRFGeoRasterFile::ReadRasterInfo() : unsupported XML header");
                     po_pSDORasterInfo->IsSupported = false;
                     }
 
                 if (BEXML_Success != maxLevelNode->GetContentUInt32Value(po_pSDORasterInfo->ResolutionCount))
                     {
-                    HASSERT(!L"HRFGeoRasterFile::ReadRasterInfo() : invalid XML header");
+                    HASSERT(!"HRFGeoRasterFile::ReadRasterInfo() : invalid XML header");
                     po_pSDORasterInfo->IsValid = false;
                     }
                 }
-            else if (BeStringUtilities::Wcsicmp(typeContent.c_str(), L"NONE") == 0)
+            else if (BeStringUtilities::Wcsicmp(typeContent.c_str(), "NONE") == 0)
                 po_pSDORasterInfo->ResolutionCount = 1;
             else
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadRasterInfo() : unsupported XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadRasterInfo() : unsupported XML header");
                 po_pSDORasterInfo->IsSupported = false;
                 }
             }
@@ -1640,7 +1640,7 @@ void HRFGeoRasterFile::ReadRasterInfo(BeXmlNodeP     pi_pRasterInfoNode,
                 }
             else
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadRasterInfo() : unsupported XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadRasterInfo() : unsupported XML header");
                 po_pSDORasterInfo->IsSupported = false;
                 }
 
@@ -1650,13 +1650,13 @@ void HRFGeoRasterFile::ReadRasterInfo(BeXmlNodeP     pi_pRasterInfoNode,
                 uint32_t Quality;
                 if (BEXML_Success != pQualityNode->GetContentUInt32Value(Quality))
                     {
-                    HASSERT(!L"HRFGeoRasterFile::ReadRasterInfo() : invalid XML header");
+                    HASSERT(!"HRFGeoRasterFile::ReadRasterInfo() : invalid XML header");
                     po_pSDORasterInfo->IsValid = false;
                     }
 
                 if (Quality > 100)
                     {
-                    HASSERT(!L"HRFGeoRasterFile::ReadRasterInfo() : invalid XML header");
+                    HASSERT(!"HRFGeoRasterFile::ReadRasterInfo() : invalid XML header");
                     po_pSDORasterInfo->IsValid = false;
                     }
 
@@ -1691,7 +1691,7 @@ void HRFGeoRasterFile::ReadSpatialReferenceInfo(BeXmlNodeP                  pi_p
         NULL != pSubNode && po_pSDOSpatialReferenceInfo->IsValid && po_pSDOSpatialReferenceInfo->IsSupported;
         pSubNode = pSubNode->GetNextSibling())
         {    
-        WString nodeContent;
+        Utf8String nodeContent;
 
         // isReferenced
         if (BeStringUtilities::Stricmp(pSubNode->GetName(), "isReferenced") == 0)
@@ -1712,7 +1712,7 @@ void HRFGeoRasterFile::ReadSpatialReferenceInfo(BeXmlNodeP                  pi_p
             {
             if(BEXML_Success != pSubNode->GetContentUInt32Value(po_pSDOSpatialReferenceInfo->SRID))
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : invalid XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : invalid XML header");
                 po_pSDOSpatialReferenceInfo->IsValid = false;
                 goto WRAPUP;
                 }
@@ -1723,44 +1723,44 @@ void HRFGeoRasterFile::ReadSpatialReferenceInfo(BeXmlNodeP                  pi_p
             {
             BeXmlNodeP pNode;
 
-            WString dimensionType;
+            Utf8String dimensionType;
             pSubNode->GetAttributeStringValue(dimensionType, "dimensionType");
 
-            if (BeStringUtilities::Wcsicmp(dimensionType.c_str(), L"X") == 0)
+            if (BeStringUtilities::Wcsicmp(dimensionType.c_str(), "X") == 0)
                 {
                 if ((pNode = pSubNode->SelectSingleNode(GEORASTER_NAMESPACE_PREFIX ":" "resolution")) == 0)
                     {
-                    HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : invalid XML header");
+                    HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : invalid XML header");
                     po_pSDOSpatialReferenceInfo->IsSupported = false;
                     goto WRAPUP;
                     }
 
                 if (BEXML_Success != pNode->GetContentDoubleValue(po_pSDOSpatialReferenceInfo->ScaleX))
                     {
-                    HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : invalid XML header");
+                    HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : invalid XML header");
                     po_pSDOSpatialReferenceInfo->IsSupported = false;
                     goto WRAPUP;
                     }
                 }
-            else if (BeStringUtilities::Wcsicmp(dimensionType.c_str(), L"Y") == 0)
+            else if (BeStringUtilities::Wcsicmp(dimensionType.c_str(), "Y") == 0)
                 {
                 if ((pNode = pSubNode->SelectSingleNode(GEORASTER_NAMESPACE_PREFIX ":" "resolution")) == 0)
                     {
-                    HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : invalid XML header");
+                    HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : invalid XML header");
                     po_pSDOSpatialReferenceInfo->IsSupported = false;
                     goto WRAPUP;
                     }
 
                 if (BEXML_Success != pNode->GetContentDoubleValue(po_pSDOSpatialReferenceInfo->ScaleY))
                     {
-                    HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : invalid XML header");
+                    HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : invalid XML header");
                     po_pSDOSpatialReferenceInfo->IsSupported = false;
                     goto WRAPUP;
                     }
                 }
             else
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
                 po_pSDOSpatialReferenceInfo->IsSupported = false;
                 goto WRAPUP;
                 }
@@ -1773,9 +1773,9 @@ void HRFGeoRasterFile::ReadSpatialReferenceInfo(BeXmlNodeP                  pi_p
         // modelType
         else if (BeStringUtilities::Stricmp(pSubNode->GetName(), "modelType") == 0 &&
                  BEXML_Success != pSubNode->GetContent(nodeContent) && 
-                 BeStringUtilities::Wcsicmp(nodeContent.c_str(), L"FunctionalFitting") != 0)
+                 BeStringUtilities::Wcsicmp(nodeContent.c_str(), "FunctionalFitting") != 0)
             {
-            HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
+            HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
             po_pSDOSpatialReferenceInfo->IsSupported = false;
             goto WRAPUP;
             }
@@ -1795,7 +1795,7 @@ void HRFGeoRasterFile::ReadSpatialReferenceInfo(BeXmlNodeP                  pi_p
                BEXML_Success != pSubNode->GetAttributeDoubleValue(AttValue, "yScale") || AttValue != 1.0 ||
                BEXML_Success != pSubNode->GetAttributeDoubleValue(AttValue, "zScale") || AttValue != 1.0)
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
                 po_pSDOSpatialReferenceInfo->IsSupported = false;
                 goto WRAPUP;
                 }
@@ -1804,7 +1804,7 @@ void HRFGeoRasterFile::ReadSpatialReferenceInfo(BeXmlNodeP                  pi_p
             // pPolynomial
             if ((pPolynomial = pSubNode->SelectSingleNode(GEORASTER_NAMESPACE_PREFIX ":" "pPolynomial")) == 0)
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
                 po_pSDOSpatialReferenceInfo->IsSupported = false;
                 goto WRAPUP;
                 }
@@ -1815,14 +1815,14 @@ void HRFGeoRasterFile::ReadSpatialReferenceInfo(BeXmlNodeP                  pi_p
                 BEXML_Success != pPolynomial->GetAttributeDoubleValue(AttValue, "order") || AttValue != 1 ||
                 BEXML_Success != pPolynomial->GetAttributeDoubleValue(AttValue, "nCoefficients") || AttValue != 3)
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
                 po_pSDOSpatialReferenceInfo->IsSupported = false;
                 goto WRAPUP;
                 }
 
             if ((pCoefficients = pPolynomial->SelectSingleNode(GEORASTER_NAMESPACE_PREFIX ":" "polynomialCoefficients")) == 0)
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
                 po_pSDOSpatialReferenceInfo->IsSupported = false;
                 goto WRAPUP;
                 }
@@ -1830,16 +1830,16 @@ void HRFGeoRasterFile::ReadSpatialReferenceInfo(BeXmlNodeP                  pi_p
             pCoefficients->GetContent(nodeContent);
 
             po_pSDOSpatialReferenceInfo->pRowCoefficient = new double[3];
-            HArrayAutoPtr<WChar> pValues(new WChar[nodeContent.length() + 1]);
-            WCharP pBegin;
-            WCharP pEnd;
+            HArrayAutoPtr<Utf8Char> pValues(new Utf8Char[nodeContent.length() + 1]);
+            Utf8P pBegin;
+            Utf8P pEnd;
             wcscpy(pValues, nodeContent.c_str());
             pBegin = pValues;
             errno = 0;
             po_pSDOSpatialReferenceInfo->pRowCoefficient[0] = wcstod(pBegin, &pEnd);
             if (pEnd == pBegin || errno != 0)
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : invalid XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : invalid XML header");
                 po_pSDOSpatialReferenceInfo->IsValid = false;
                 goto WRAPUP;
                 }
@@ -1848,7 +1848,7 @@ void HRFGeoRasterFile::ReadSpatialReferenceInfo(BeXmlNodeP                  pi_p
             po_pSDOSpatialReferenceInfo->pRowCoefficient[1] = wcstod(pBegin, &pEnd);
             if (pEnd == pBegin || errno != 0)
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : invalid XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : invalid XML header");
                 po_pSDOSpatialReferenceInfo->IsValid = false;
                 goto WRAPUP;
                 }
@@ -1857,7 +1857,7 @@ void HRFGeoRasterFile::ReadSpatialReferenceInfo(BeXmlNodeP                  pi_p
             po_pSDOSpatialReferenceInfo->pRowCoefficient[2] = wcstod(pBegin, &pEnd);
             if (pEnd == pBegin || errno != 0)
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : invalid XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : invalid XML header");
                 po_pSDOSpatialReferenceInfo->IsValid = false;
                 goto WRAPUP;
                 }
@@ -1865,7 +1865,7 @@ void HRFGeoRasterFile::ReadSpatialReferenceInfo(BeXmlNodeP                  pi_p
             // qPolynomial
             if ((pPolynomial = pSubNode->SelectSingleNode(GEORASTER_NAMESPACE_PREFIX ":" "qPolynomial")) == 0)
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
                 po_pSDOSpatialReferenceInfo->IsSupported = false;
                 goto WRAPUP;
                 }
@@ -1875,14 +1875,14 @@ void HRFGeoRasterFile::ReadSpatialReferenceInfo(BeXmlNodeP                  pi_p
                BEXML_Success != pPolynomial->GetAttributeDoubleValue(AttValue, "order") || AttValue != 0 ||
                BEXML_Success != pPolynomial->GetAttributeDoubleValue(AttValue, "nCoefficients") || AttValue != 1)
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
                 po_pSDOSpatialReferenceInfo->IsSupported = false;
                 goto WRAPUP;
                 }
 
             if ((pCoefficients = pPolynomial->SelectSingleNode(GEORASTER_NAMESPACE_PREFIX ":" "polynomialCoefficients")) == 0)
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
                 po_pSDOSpatialReferenceInfo->IsSupported = false;
                 goto WRAPUP;
                 }
@@ -1890,7 +1890,7 @@ void HRFGeoRasterFile::ReadSpatialReferenceInfo(BeXmlNodeP                  pi_p
             double Coefficient;
             if (BEXML_Success != pCoefficients->GetContentDoubleValue(Coefficient) || Coefficient != 1.0)
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
                 po_pSDOSpatialReferenceInfo->IsSupported = false;
                 goto WRAPUP;
                 }
@@ -1898,7 +1898,7 @@ void HRFGeoRasterFile::ReadSpatialReferenceInfo(BeXmlNodeP                  pi_p
             // rPolynomial
             if ((pPolynomial = pSubNode->SelectSingleNode(GEORASTER_NAMESPACE_PREFIX ":" "rPolynomial")) == 0)
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
                 po_pSDOSpatialReferenceInfo->IsSupported = false;
                 goto WRAPUP;
                 }
@@ -1908,14 +1908,14 @@ void HRFGeoRasterFile::ReadSpatialReferenceInfo(BeXmlNodeP                  pi_p
                BEXML_Success != pPolynomial->GetAttributeDoubleValue(AttValue, "order") || AttValue != 1 ||
                BEXML_Success != pPolynomial->GetAttributeDoubleValue(AttValue, "nCoefficients") || AttValue != 3)
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
                 po_pSDOSpatialReferenceInfo->IsSupported = false;
                 goto WRAPUP;
                 }
 
             if ((pCoefficients = pPolynomial->SelectSingleNode(GEORASTER_NAMESPACE_PREFIX ":" "polynomialCoefficients")) == 0)
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
                 po_pSDOSpatialReferenceInfo->IsSupported = false;
                 goto WRAPUP;
                 }
@@ -1923,14 +1923,14 @@ void HRFGeoRasterFile::ReadSpatialReferenceInfo(BeXmlNodeP                  pi_p
             pCoefficients->GetContent(nodeContent);
 
             po_pSDOSpatialReferenceInfo->pColumnCoefficient = new double[3];
-            pValues = new WChar[nodeContent.length() + 1];
+            pValues = new Utf8Char[nodeContent.length() + 1];
             wcscpy(pValues, nodeContent.c_str());
             pBegin = pValues;
             errno = 0;
             po_pSDOSpatialReferenceInfo->pColumnCoefficient[0] = wcstod(pBegin, &pEnd);
             if (pEnd == pBegin || errno != 0)
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : invalid XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : invalid XML header");
                 po_pSDOSpatialReferenceInfo->IsValid = false;
                 goto WRAPUP;
                 }
@@ -1939,7 +1939,7 @@ void HRFGeoRasterFile::ReadSpatialReferenceInfo(BeXmlNodeP                  pi_p
             po_pSDOSpatialReferenceInfo->pColumnCoefficient[1] = wcstod(pBegin, &pEnd);
             if (pEnd == pBegin || errno != 0)
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : invalid XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : invalid XML header");
                 po_pSDOSpatialReferenceInfo->IsValid = false;
                 goto WRAPUP;
                 }
@@ -1948,7 +1948,7 @@ void HRFGeoRasterFile::ReadSpatialReferenceInfo(BeXmlNodeP                  pi_p
             po_pSDOSpatialReferenceInfo->pColumnCoefficient[2] = wcstod(pBegin, &pEnd);
             if (pEnd == pBegin || errno != 0)
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : invalid XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : invalid XML header");
                 po_pSDOSpatialReferenceInfo->IsValid = false;
                 goto WRAPUP;
                 }
@@ -1956,7 +1956,7 @@ void HRFGeoRasterFile::ReadSpatialReferenceInfo(BeXmlNodeP                  pi_p
             // sPolynomial
             if ((pPolynomial = pSubNode->SelectSingleNode(GEORASTER_NAMESPACE_PREFIX ":" "sPolynomial")) == 0)
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
                 po_pSDOSpatialReferenceInfo->IsSupported = false;
                 goto WRAPUP;
                 }
@@ -1966,21 +1966,21 @@ void HRFGeoRasterFile::ReadSpatialReferenceInfo(BeXmlNodeP                  pi_p
                BEXML_Success != pPolynomial->GetAttributeDoubleValue(AttValue, "order") || AttValue != 0 ||
                BEXML_Success != pPolynomial->GetAttributeDoubleValue(AttValue, "nCoefficients") || AttValue != 1)
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
                 po_pSDOSpatialReferenceInfo->IsSupported = false;
                 goto WRAPUP;
                 }
 
             if ((pCoefficients = pPolynomial->SelectSingleNode(GEORASTER_NAMESPACE_PREFIX ":" "polynomialCoefficients")) == 0)
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
                 po_pSDOSpatialReferenceInfo->IsSupported = false;
                 goto WRAPUP;
                 }
 
             if (BEXML_Success != pCoefficients->GetContentDoubleValue(Coefficient) || Coefficient != 1.0)
                 {
-                HASSERT(!L"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
+                HASSERT(!"HRFGeoRasterFile::ReadSpatialReferenceInfo() : unsupported XML header");
                 po_pSDOSpatialReferenceInfo->IsSupported = false;
                 goto WRAPUP;
                 }
@@ -2030,7 +2030,7 @@ void HRFGeoRasterFile::ReadLayerInfo(BeXmlNodeP     pi_pLayerInfoNode,
                     {
                     if(po_pSDOLayerInfo->PaletteEntryCount >= 255)
                         {
-                        HASSERT(!L"HRFGeoRasterFile::CreateDescriptor() : unsupported color map");
+                        HASSERT(!"HRFGeoRasterFile::CreateDescriptor() : unsupported color map");
                         po_pSDOLayerInfo->IsSupported = false;
                         goto WRAPUP;
                         }
@@ -2047,7 +2047,7 @@ void HRFGeoRasterFile::ReadLayerInfo(BeXmlNodeP     pi_pLayerInfoNode,
                         BEXML_Success != pSubNode->GetAttributeUInt32Value(Green, "green") || Green > 255 ||
                         BEXML_Success != pSubNode->GetAttributeUInt32Value(Blue, "blue") || Blue > 255)
                         {
-                        HASSERT(!L"HRFGeoRasterFile::ReadLayerInfo() : invalid color map");
+                        HASSERT(!"HRFGeoRasterFile::ReadLayerInfo() : invalid color map");
                         po_pSDOLayerInfo->IsSupported = false;
                         goto WRAPUP;
                         }
@@ -2056,7 +2056,7 @@ void HRFGeoRasterFile::ReadLayerInfo(BeXmlNodeP     pi_pLayerInfoNode,
                         Alpha = 255;
                     else if (Alpha > 255)
                         {
-                        HASSERT(!L"HRFGeoRasterFile::ReadLayerInfo() : invalid color map");
+                        HASSERT(!"HRFGeoRasterFile::ReadLayerInfo() : invalid color map");
                         po_pSDOLayerInfo->IsSupported = false;
                         goto WRAPUP;
                         }
@@ -2089,17 +2089,17 @@ GeoCoordinates::BaseGCSPtr HRFGeoRasterFile::ExtractGeocodingInformation(SDOSpat
     // We try to obtain the baseGCS directly from dictionary
     if ((pi_rSpatialRefInfo.SRID > 0) && (pi_rSpatialRefInfo.SRID < 32767))
         {
-        WChar  TempBuffer[10];
+        Utf8Char  TempBuffer[10];
         errno_t Err = _itow_s(pi_rSpatialRefInfo.SRID,
                               TempBuffer,
-                              sizeof(TempBuffer) / sizeof(WChar),
+                              sizeof(TempBuffer) / sizeof(Utf8Char),
                               10);
 
         HASSERT(Err == 0);
 
-        WString EspgBasedKeyName(L"EPSG:");
+        Utf8String EspgBasedKeyName("EPSG:");
 
-        EspgBasedKeyName += WString(TempBuffer);
+        EspgBasedKeyName += Utf8String(TempBuffer);
 
         pGeocoding = GeoCoordinates::BaseGCS::CreateGCS(EspgBasedKeyName.c_str());
         }
@@ -2107,7 +2107,7 @@ GeoCoordinates::BaseGCSPtr HRFGeoRasterFile::ExtractGeocodingInformation(SDOSpat
     // If the baseGCS was not determined ... we will try parsing the WKT
     if (nullptr == pGeoCoding || !pGeoCoding->IsValid())
         {
-        WString WKTFromOracle;
+        Utf8String WKTFromOracle;
         if (m_pSDOGeoRasterWrapper->GetWkt(pi_rSpatialRefInfo.SRID, WKTFromOracle))
             {
             pGeocoding = GeoCoordinates::BaseGCS::CreateGCS();

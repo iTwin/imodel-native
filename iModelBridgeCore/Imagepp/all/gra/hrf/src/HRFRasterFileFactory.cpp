@@ -27,8 +27,8 @@
     // Private COM interface for external file formats recognized by Image++ (version 2)
     // CDC3B8C7-9AAD-4CE7-B893-6EF9CBC4AC14
     //const IID HRF_COM2_IID_IClassID = {0xCDC3B8C7,0x9AAD,0x4CE7,{0xB8,0x93,0x6E,0xF9,0xCB,0xC4,0xAC,0x14}};
-    #define COM1_LIST_REG_KEY L"SOFTWARE\\Bentley\\AdditionalImageFileFormats"
-    #define COM2_LIST_REG_KEY L"SOFTWARE\\Bentley\\AdditionalImageFileFormats\\HRFCOM2"
+    #define COM1_LIST_REG_KEY "SOFTWARE\\Bentley\\AdditionalImageFileFormats"
+    #define COM2_LIST_REG_KEY "SOFTWARE\\Bentley\\AdditionalImageFileFormats\\HRFCOM2"
 #endif
 
 // Singleton
@@ -294,12 +294,10 @@ HFCAccessMode HRFRasterFileFactory::DetectAccessMode(const HFCPtr<HFCURL>& pi_rp
     // Automatic detect file access
     if (pi_rpURL->GetSchemeType().compare(HFCURLFile::s_SchemeName()) == 0)
         {
-        WString FileName(((HFCPtr<HFCURLFile>&)pi_rpURL)->GetHost());
-        FileName += L"\\";
-        FileName += ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
+        BeFileName FileName(((HFCPtr<HFCURLFile>&)pi_rpURL)->GetAbsoluteFileName());
 
         // Try to find the access mode of the specified file.
-        if (static_cast<int32_t>(BeFileName::CheckAccess(FileName.c_str(), BeFileNameAccess::ReadWrite)) == 0) 
+        if (BeFileNameStatus::Success == FileName.CheckAccess(BeFileNameAccess::ReadWrite))
             AccessMode = HFC_READ_WRITE_OPEN | HFC_SHARE_READ_ONLY;
         else
             AccessMode = HFC_READ_ONLY | HFC_SHARE_READ_WRITE;
@@ -491,7 +489,7 @@ void HRFRasterFileFactory::RegisterCreator(const HRFRasterFileCreator* pi_pCreat
     }
 
 
-void HRFRasterFileFactory::SetRasterDllDirectory(HCLASS_ID pi_ClassID, const WString& pi_rDir)
+void HRFRasterFileFactory::SetRasterDllDirectory(HCLASS_ID pi_ClassID, const Utf8String& pi_rDir)
     {
     DllDirMap::iterator Itr(m_DllDir.find(pi_ClassID));
     if (Itr == m_DllDir.end())

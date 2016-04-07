@@ -186,22 +186,22 @@ public:
 
     //:> Primary methods.
 
-    HFCURL(const WString& pi_URL);
-    HFCURL(const WString& pi_SchemeType,
-           const WString& pi_SchemeSpecificPart);
+    HFCURL(const Utf8String& pi_URL);
+    HFCURL(const Utf8String& pi_SchemeType,
+           const Utf8String& pi_SchemeSpecificPart);
     virtual                 ~HFCURL();
 
     //:> This static method replaces the constructor.  Use it to create
     //:> a correctly-typed object for specified URL.
 
-    IMAGEPP_EXPORT static HFCURL*          Instanciate(const WString& pi_URL);
+    IMAGEPP_EXPORT static HFCURL*          Instanciate(const Utf8String& pi_URL);
     IMAGEPP_EXPORT static HFCURL*          CreateFrom(const BeFileName& pi_beFilename);
 
     //:> Content access methods
 
-    virtual WString         GetURL() const = 0;
-    const WString&          GetSchemeType() const;
-    const WString&          GetSchemeSpecificPart() const;
+    virtual Utf8String         GetURL() const = 0;
+    const Utf8String&          GetSchemeType() const;
+    const Utf8String&          GetSchemeSpecificPart() const;
 
     //:> Specify if the URL is UTF8 or not, usefull when the URL is URL-Encoded
     IMAGEPP_EXPORT         void     SetUTF8URL (bool pi_UTF8);
@@ -214,16 +214,18 @@ public:
     //:> Methods used in relative path management
 
     virtual bool           HasPathTo(HFCURL* pi_pURL);
-    virtual WString         FindPathTo(HFCURL* pi_pDest) = 0;
-    virtual HFCURL*         MakeURLTo(const WString& pi_Path) = 0;
+    virtual Utf8String         FindPathTo(HFCURL* pi_pDest) = 0;
+    virtual HFCURL*         MakeURLTo(const Utf8String& pi_Path) = 0;
 
     // This is a utility class.  There will be a class that derives from this one
     // for each URL class.  It is used in scheme list.
 
     struct Creator
         {
-        virtual HFCURL* Create(const WString& pi_URL) const = 0;
+        virtual HFCURL* Create(const Utf8String& pi_URL) const = 0;
         };
+
+    static void RegisterCreator(Utf8StringCR schemeType, Creator*);
 
 #ifdef __HMR_DEBUG_MEMBER
     virtual void PrintState() const = 0;
@@ -232,8 +234,7 @@ public:
 
 //DM-Android     Not able to build if private members
     // The type of the scheme list
-    typedef map<WString, Creator*, CaseInsensitiveStringCompare, allocator<Creator*> >
-        SchemeList;    // The scheme list.
+    typedef map<Utf8String, Creator*, CaseInsensitiveStringCompareUtf8, allocator<Creator*> > SchemeList;    // The scheme list.
     static SchemeList*      s_pSchemeList;
     //:> Scheme list access
     IMAGEPP_EXPORT static SchemeList&         GetSchemeList();     // from protected
@@ -243,8 +244,8 @@ protected:
 
     //:> Utility functions provided as static methods available for derived classes.
 
-    IMAGEPP_EXPORT static WString AddPath(const WString& pi_Source, const WString& pi_Path);
-    IMAGEPP_EXPORT static WString FindPath(const WString& pi_Source, const WString& pi_Dest);
+    IMAGEPP_EXPORT static Utf8String AddPath(const Utf8String& pi_Source, const Utf8String& pi_Path);
+    IMAGEPP_EXPORT static Utf8String FindPath(const Utf8String& pi_Source, const Utf8String& pi_Dest);
 
 private:
 
@@ -252,8 +253,8 @@ private:
 
     // First level of decomposition of URL string
 
-    WString                 m_SchemeType;
-    WString                 m_SchemeSpecificPart;
+    Utf8String                 m_SchemeType;
+    Utf8String                 m_SchemeSpecificPart;
     bool                   m_UTF8URL;
     bool                   m_EncodedURL;
 

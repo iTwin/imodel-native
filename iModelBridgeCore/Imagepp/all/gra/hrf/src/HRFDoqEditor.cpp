@@ -121,7 +121,8 @@ HSTATUS HRFDoqEditor::Read24BitRgbBlock(uint64_t pi_PosBlockX,
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
 
     HSTATUS Status = H_ERROR;
-    uint32_t PixelIndex, BytePos = 0;
+    uint32_t BytePos = 0;
+    int32_t  PixelIndex;
 
     //TODO : implement access methods
     int64_t RedChannel    = 1;
@@ -174,7 +175,7 @@ HSTATUS HRFDoqEditor::Read24BitRgbBlock(uint64_t pi_PosBlockX,
 
     if (GetResolutionDescriptor()->GetScanlineOrientation().IsLeft())
         {
-        for (PixelIndex = 0; PixelIndex < m_LineWidth; PixelIndex++)
+        for (PixelIndex = 0; PixelIndex < (int32_t) m_LineWidth; PixelIndex++)
             {
 
             po_pData[BytePos++]= m_pRedLineBuffer  [PixelIndex];

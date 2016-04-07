@@ -12,7 +12,7 @@
 
 #include <Imagepp/all/h/HCDCodecSingleColor.h>
 
-#define HCD_CODEC_NAME L"Single Color"
+#define HCD_CODEC_NAME "Single Color"
 
 //-----------------------------------------------------------------------------
 // public

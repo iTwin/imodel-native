@@ -54,10 +54,10 @@ void CleanUpString(string* pio_pString)
 
     if (pio_pString->size() > 0)
         {
-        size_t Pos = 0;
+        int32_t Pos = 0;
 
         // Remove the SPACE/TAB at the begin of the string
-        while (Pos < pio_pString->size() && !IsValidChar((*pio_pString)[Pos]))
+        while (Pos < (int32_t) pio_pString->size() && !IsValidChar((*pio_pString)[Pos]))
             Pos++;
 
         *pio_pString = pio_pString->substr(Pos);
@@ -65,7 +65,7 @@ void CleanUpString(string* pio_pString)
         // Remove the SPACE/TAB/ENTER at the end of the string
         if (pio_pString->size() > 0)
             {
-            Pos = pio_pString->size() - 1;
+            Pos = (int32_t) pio_pString->size() - 1;
             while(Pos >= 0 && !IsValidChar((*pio_pString)[Pos]))
                 Pos--;
 
@@ -86,7 +86,7 @@ void ReadLine(const HAutoPtr<HFCBinStream>& pi_pFile,
 
     const int32_t BufferSize = MAX_PATH*3;
     char      Buffer[BufferSize + 1];
-    // WString    CurrentLine;
+    // Utf8String    CurrentLine;
 
     bool EndOfLine = false;
     po_pString->erase();
@@ -120,27 +120,27 @@ HRFIrasbRSTCreator::HRFIrasbRSTCreator()
     Return file format label
     ---------------------------------------------------------------------------
  */
-WString HRFIrasbRSTCreator::GetLabel() const
+Utf8String HRFIrasbRSTCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_IrasbRST());  //Raster Save Set
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_IrasbRST());  //Raster Save Set
     }
 
 /** ---------------------------------------------------------------------------
     Return file format scheme
     ---------------------------------------------------------------------------
  */
-WString HRFIrasbRSTCreator::GetSchemes() const
+Utf8String HRFIrasbRSTCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 /** ---------------------------------------------------------------------------
     Return file format extension
     ---------------------------------------------------------------------------
  */
-WString HRFIrasbRSTCreator::GetExtensions() const
+Utf8String HRFIrasbRSTCreator::GetExtensions() const
     {
-    return WString(L"*.rst");
+    return Utf8String("*.rst");
     }
 
 /** ---------------------------------------------------------------------------
@@ -205,7 +205,7 @@ bool HRFIrasbRSTCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                 // Try to read all "layer" fields
                 // Sample: layer   0    0  1  11111111  0  d:\test\sample.cit
                 char pathName[MAX_PATH];
-                if (sscanf(currStr, "%ld %ld %d %ld %d %s", &layerNumber, &color, &visibility, &views, &lock, pathName) != 6)
+                if (sscanf(currStr, "%d %d %d %d %d %s", &layerNumber, &color, &visibility, &views, &lock, pathName) != 6)
                     goto WRAPUP;
                 }
             else if (bHasLayer)
@@ -267,7 +267,7 @@ void HRFIrasbRSTCreator::OpenFile(const HFCPtr<HFCURL>& pi_rpURL,
 
                 // Read all layers
                 RSTSubFileInfo info;
-                if (sscanf(currStr, "%ld %ld %ld %ld %ld", &info.layerNumber, &info.color, &info.visibility, &info.views, &info.lock) == 5)
+                if (sscanf(currStr, "%d %d %d %d %d", &info.layerNumber, &info.color, &info.visibility, &info.views, &info.lock) == 5)
                     {
                     // TR 176108 Unable to open rasters in .rst files when raster paths have spaces.
                     // Using the read settings, find the complete filename which may contain spaces.
@@ -284,7 +284,7 @@ void HRFIrasbRSTCreator::OpenFile(const HFCPtr<HFCURL>& pi_rpURL,
                     for (int32_t i = 0; i < 5; i++)
                         {
                         char settings[MAX_PATH];
-                        sprintf (settings, "%ld", pFoundSettings[i]);
+                        sprintf (settings, "%d", pFoundSettings[i]);
 
                         currStr = strstr (currStr, settings);
                         HASSERT (currStr);
@@ -297,7 +297,7 @@ void HRFIrasbRSTCreator::OpenFile(const HFCPtr<HFCURL>& pi_rpURL,
                         currStr++;
                         }
 
-                    BeStringUtilities::Utf8ToWChar(info.fileName,currStr);
+                    info.fileName.AssignA(currStr);
                     po_rListOfRSTSubFileInfo.push_back(info);
                     }
                 }
@@ -327,34 +327,34 @@ bool HRFIrasbRSTCreator::GetRelatedURLs(const HFCPtr<HFCURL>& pi_rpURL,
     // Scan all files
     for (list<RSTSubFileInfo>::const_iterator Itr = listOfRSTSubFileInfo.begin(); Itr != listOfRSTSubFileInfo.end(); ++Itr)
         {
-        WString FileName;
+        Utf8String FileName;
 
-        if ((Itr->fileName).find(L"\\") == WString::npos)
+        if ((Itr->fileName).find(L"\\") == BeFileName::npos)
             {
             // If file has no path, build complete path from RSP file
-            WString Path = ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
+            Utf8String Path = ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
 
-            WString::size_type SepPos = Path.rfind(L"\\");
+            Utf8String::size_type SepPos = Path.rfind("\\");
 
-            if (SepPos != WString::npos)
+            if (SepPos != Utf8String::npos)
                 Path = Path.substr(0, SepPos);
 
             // Compose url
-            FileName = WString(HFCURLFile::s_SchemeName() + L"://")
-                       + ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetHost() + WString(L"\\")
-                       + Path + Itr->fileName;
+            FileName = Utf8String(HFCURLFile::s_SchemeName() + "://")
+                       + ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetHost() + Utf8String("\\")
+                       + Path + Utf8String(Itr->fileName);
             }
         else
-            FileName = WString(HFCURLFile::s_SchemeName() + L"://" + Itr->fileName);
+            FileName = Utf8String(HFCURLFile::s_SchemeName() + "://" + Utf8String(Itr->fileName));
 
         // Remove (x:n:format) from mpf files since we want to refer the file, not the page
 
         // Find the file extension
-        WString::size_type DotPos = FileName.rfind(L'.');
-        WString::size_type SepPos = FileName.rfind(L"\\");
+        Utf8String::size_type DotPos = FileName.rfind('.');
+        Utf8String::size_type SepPos = FileName.rfind("\\");
 
-        if ((DotPos != WString::npos)
-            && (BeStringUtilities::Wcsnicmp(FileName.c_str() + DotPos + 1, L"mpf", 3) == 0)
+        if ((DotPos != Utf8String::npos)
+            && (BeStringUtilities::Strnicmp(FileName.c_str() + DotPos + 1, "mpf", 3) == 0)
             && (SepPos < DotPos)
             && (FileName.c_str()[DotPos+4] == '(')
             && (FileName.c_str()[FileName.length()-1] == ')'))

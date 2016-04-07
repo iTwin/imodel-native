@@ -108,9 +108,9 @@ HRFWbmpCreator::HRFWbmpCreator()
 // Public (HRFWbmpCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFWbmpCreator::GetLabel() const
+Utf8String HRFWbmpCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_WirelessBitmap()); // WBMP File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_WirelessBitmap()); // WBMP File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -118,9 +118,9 @@ WString HRFWbmpCreator::GetLabel() const
 // Public (HRFWbmpCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFWbmpCreator::GetSchemes() const
+Utf8String HRFWbmpCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 //-----------------------------------------------------------------------------
@@ -128,9 +128,9 @@ WString HRFWbmpCreator::GetSchemes() const
 // Public (HRFWbmpCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFWbmpCreator::GetExtensions() const
+Utf8String HRFWbmpCreator::GetExtensions() const
     {
-    return WString(L"*.wbmp");
+    return Utf8String("*.wbmp");
     }
 
 //-----------------------------------------------------------------------------

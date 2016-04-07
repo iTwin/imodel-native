@@ -1356,12 +1356,11 @@ void HRFPDFLibInterface::CreateGeocodingFromWKT(const string&                  p
     HPRECONDITION(pi_rWKT.empty() == false);
     HPRECONDITION(po_rpGeocoding == 0);
 
-    WString TempWKT;
-    BeStringUtilities::CurrentLocaleCharToWChar( TempWKT,pi_rWKT.c_str());
+    WString  wkt(pi_rWKT.c_str(), BentleyCharEncoding::Locale);
 
     //The flavor of the WKT stored in the PDF is not known yet, so unknown is used.
     GeoCoordinates::BaseGCSPtr pBaseGcs = GeoCoordinates::BaseGCS::CreateGCS();
-    if(SUCCESS != pBaseGcs->InitFromWellKnownText (NULL, NULL, GeoCoordinates::BaseGCS::WktFlavorESRI, TempWKT.c_str()))
+    if(SUCCESS != pBaseGcs->InitFromWellKnownText (NULL, NULL, GeoCoordinates::BaseGCS::WktFlavorESRI, wkt.c_str()))
         {
         pBaseGcs = GeoCoordinates::BaseGCS::CreateGCS();
         HFCPtr<HCPGeoTiffKeys> pGeoKeys = HRFGdalUtilities::ConvertOGCWKTtoGeotiffKeys(pi_rWKT.c_str());

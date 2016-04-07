@@ -68,7 +68,7 @@ private:
 
     void ReadWMS_1_0(BeXmlNodeP pi_pNode);
     void ReadWMS_1_1(BeXmlNodeP pi_pNode);
-    void ReadWMS_1_2(BeXmlNodeP pi_pNode, WString const& version);
+    void ReadWMS_1_2(BeXmlNodeP pi_pNode, Utf8String const& version);
 
     // Methods Disabled
     HRFWMSFile(const HRFWMSFile& pi_rObj);
@@ -84,9 +84,9 @@ struct HRFWMSCreator : public HRFRasterFileCreator
                                                    uint64_t                pi_Offset = 0) const;
 
     // Identification information
-    virtual WString                   GetLabel() const;
-    virtual WString                   GetSchemes() const;
-    virtual WString                   GetExtensions() const;
+    virtual Utf8String                   GetLabel() const;
+    virtual Utf8String                   GetSchemes() const;
+    virtual Utf8String                   GetExtensions() const;
 
     // capabilities of Raster file.
     virtual const HFCPtr<HRFRasterFileCapabilities>&

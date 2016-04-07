@@ -66,7 +66,7 @@ public:
     IMAGEPP_EXPORT void                   RegisterCreator (const HRFRasterFileCreator*   pi_pCreator);
 
     IMAGEPP_EXPORT void                   SetRasterDllDirectory(HCLASS_ID         pi_ClassID,
-                                                  const WString&    pi_rDir);
+                                                  const Utf8String&    pi_rDir);
 
     IMAGEPP_EXPORT const HRFRasterFileCreator*   FindCreator(const HFCPtr<HFCURL>&  pi_rpURL,
                                                              HFCAccessMode          pi_AccessMode = HFC_READ_WRITE,
@@ -113,7 +113,7 @@ private:
     CreatorsMap m_WriteCreatorsMap;
     CreatorsMap m_CreateCreatorsMap;
 
-    typedef map<HCLASS_ID, WString> DllDirMap;
+    typedef map<HCLASS_ID, Utf8String> DllDirMap;
     DllDirMap   m_DllDir;
 
     // ProjectWise Handler

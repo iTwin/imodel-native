@@ -223,7 +223,7 @@ void HTIFFError::AddError (HTIFFError::ErrorCode     pi_ErrorCode,
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
-void HTIFFError::GetErrorMsg(WString& po_rErrorMsg) const
+void HTIFFError::GetErrorMsg(Utf8String& po_rErrorMsg) const
     {
     HSTATICASSERTMSG(HTIFFError::ERROR_COUNT == 43, "Missing HTIFF error message.");
 
@@ -281,7 +281,7 @@ void HTIFFError::GetErrorMsg(WString& po_rErrorMsg) const
         }
 
     // Do not want to translate HTIFF. That's the name of our tiff lib.
-    po_rErrorMsg.Sprintf(L"HTIFF(%.4d) - %ls", m_ErrorCode, ImagePPMessages::GetStringW(messageID).c_str());
+    po_rErrorMsg.Sprintf("HTIFF(%.4d) - %s", m_ErrorCode, ImagePPMessages::GetString(messageID).c_str());
 
     if (m_pErrorInfo != 0)
         m_pErrorInfo->FormatErrorMessage(po_rErrorMsg);
@@ -310,7 +310,7 @@ void HTIFFError::CopyData(const HTIFFError& pi_rSrcObj)
 // Class HTIFFStream
 //-----------------------------------------------------------------------------
 
-HTIFFStream::HTIFFStream(const WString& pi_rFilename, HFCAccessMode pi_Mode, uint64_t pi_OriginOffset)
+HTIFFStream::HTIFFStream(const Utf8String& pi_rFilename, HFCAccessMode pi_Mode, uint64_t pi_OriginOffset)
     {
     m_ListDirty = false;
     m_ListOfFreeBlock.clear();
@@ -660,8 +660,8 @@ bool ImagePP::ErrorMsg (HTIFFError** pio_pError, HTIFFError& pi_rNewError)
 
 void ImagePP::SwabArrayOfShort (uint16_t* pio_pData, register size_t pi_Count)
     {
-    register unsigned char*    pData;
-    register int32_t        Tmp;
+    unsigned char*    pData;
+    int32_t           Tmp;
 
     /* XXX unroll loop some */
     while (pi_Count-- > 0)
@@ -680,8 +680,8 @@ void ImagePP::SwabArrayOfShort (uint16_t* pio_pData, register size_t pi_Count)
 
 void ImagePP::SwabArrayOfLong(register uint32_t* pio_pData, register size_t pi_Count)
     {
-    register unsigned char*    pData;
-    register int32_t        Tmp;
+    unsigned char*    pData;
+    int32_t           Tmp;
 
     /* XXX unroll loop some */
     while (pi_Count-- > 0)
@@ -703,8 +703,8 @@ void ImagePP::SwabArrayOfLong(register uint32_t* pio_pData, register size_t pi_C
 
 void ImagePP::SwabArrayOfDouble(double* pio_pData, register size_t pi_Count)
     {
-    register uint32_t* pLong = (uint32_t*) pio_pData;
-    register uint32_t Tmp;
+    uint32_t* pLong = (uint32_t*) pio_pData;
+    uint32_t Tmp;
 
     SwabArrayOfLong(pLong, pi_Count + pi_Count);
     while (pi_Count-- > 0)
@@ -718,8 +718,8 @@ void ImagePP::SwabArrayOfDouble(double* pio_pData, register size_t pi_Count)
 
 void ImagePP::SwabArrayOfUInt64(uint64_t* pio_pData, register size_t pi_Count)
     {
-    register uint32_t* pLong = (uint32_t*) pio_pData;
-    register uint32_t Tmp;
+    uint32_t* pLong = (uint32_t*) pio_pData;
+    uint32_t Tmp;
 
     SwabArrayOfLong(pLong, pi_Count + pi_Count);
     while (pi_Count-- > 0)

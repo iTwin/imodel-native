@@ -18,7 +18,7 @@
 // protected
 // Default constructor
 //-----------------------------------------------------------------------------
-HCDCodecVector::HCDCodecVector(const WString& pi_rCodecName)
+HCDCodecVector::HCDCodecVector(const Utf8String& pi_rCodecName)
     : HCDCodec(pi_rCodecName)
     {
     // default values
@@ -32,7 +32,7 @@ HCDCodecVector::HCDCodecVector(const WString& pi_rCodecName)
 // protected
 // Constructor
 //-----------------------------------------------------------------------------
-HCDCodecVector::HCDCodecVector(const WString&   pi_rCodecName,
+HCDCodecVector::HCDCodecVector(const Utf8String&   pi_rCodecName,
                                size_t           pi_DataSize)
     : HCDCodec(pi_rCodecName)
     {

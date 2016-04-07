@@ -189,21 +189,21 @@ HRFUSgsDEMCreator::HRFUSgsDEMCreator()
     }
 
 // Identification information
-WString HRFUSgsDEMCreator::GetLabel() const
+Utf8String HRFUSgsDEMCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_USGS_ASCII()); // USGS DEM File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_USGS_ASCII()); // USGS DEM File Format
     }
 
 // Identification information
-WString HRFUSgsDEMCreator::GetSchemes() const
+Utf8String HRFUSgsDEMCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 // Identification information
-WString HRFUSgsDEMCreator::GetExtensions() const
+Utf8String HRFUSgsDEMCreator::GetExtensions() const
     {
-    return WString(L"*.dem");
+    return Utf8String("*.dem");
     }
 
 // allow to Open an image file

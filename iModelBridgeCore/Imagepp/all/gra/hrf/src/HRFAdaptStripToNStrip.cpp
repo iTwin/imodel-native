@@ -60,6 +60,13 @@ HRFAdaptStripToNStripCapabilities::HRFAdaptStripToNStripCapabilities()
 HFC_IMPLEMENT_SINGLETON(HRFAdaptStripToNStripCreator)
 
 //-----------------------------------------------------------------------------
+// Destructor
+//-----------------------------------------------------------------------------
+HRFAdaptStripToNStripCreator::~HRFAdaptStripToNStripCreator()
+    {
+    }
+
+//-----------------------------------------------------------------------------
 // Obtain the capabilities of stretcher
 //-----------------------------------------------------------------------------
 HRFBlockAdapterCapabilities* HRFAdaptStripToNStripCreator::GetCapabilities() const

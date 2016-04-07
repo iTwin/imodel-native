@@ -229,8 +229,7 @@ bool HTIFFTagEntry::ReadData (const HTagInfo&      pi_rTagInfo,
             {
             HTIFFError::TagIOErInfo ErInfo;
             ErInfo.m_DataLength = NbByte;
-            string TagName(m_pTagDef->GetTagName());
-            ErInfo.m_TagName   = WString(TagName.c_str(),false);
+            ErInfo.m_TagName   = m_pTagDef->GetTagName();
             ErInfo.m_TagFileNb = m_pTagDef->GetFileTag();
 
             ErrorMsg (&m_pError, HTIFFError::TAG_READ_ERROR, &ErInfo, true);
@@ -626,8 +625,7 @@ bool HTIFFTagEntry::WriteData (const HTagInfo&     pi_rTagInfo,
             {
             HTIFFError::TagIOErInfo ErInfo;
             ErInfo.m_DataLength = NbByte;
-            string TagName(m_pTagDef->GetTagName());
-            ErInfo.m_TagName   = WString(TagName.c_str(),false);
+            ErInfo.m_TagName   = m_pTagDef->GetTagName();
             ErInfo.m_TagFileNb = m_pTagDef->GetFileTag();
             ErrorMsg (&m_pError, HTIFFError::TAG_READ_ERROR, &ErInfo, true);
 
@@ -784,7 +782,7 @@ void HTIFFTagEntry::GetValues (uint64_t* po_pVal)
     *po_pVal = *((uint64_t*)m_pEntry->pData);
     }
 
-void HTIFFTagEntry::GetValues (char** po_ppVal)
+void HTIFFTagEntry::GetValuesA(CharP* po_ppVal)
     {
     HPRECONDITION(m_pEntry != 0);
     HPRECONDITION(m_pTagDef != 0);
@@ -796,12 +794,10 @@ void HTIFFTagEntry::GetValues (char** po_ppVal)
         SwapData (m_pEntry->pData);
         }
 
-    *po_ppVal = (char*)m_pEntry->pData;
-
-
+    *po_ppVal = (CharP)m_pEntry->pData;
     }
 
-void HTIFFTagEntry::GetValues (WChar** po_ppVal)
+void HTIFFTagEntry::GetValuesW (WCharP* po_ppVal)
     {
     HPRECONDITION(m_pEntry != 0);
     HPRECONDITION(m_pTagDef != 0);
@@ -813,7 +809,7 @@ void HTIFFTagEntry::GetValues (WChar** po_ppVal)
         SwapData (m_pEntry->pData);
         }
 
-    *po_ppVal = (WChar*)m_pEntry->pData;
+    *po_ppVal = (WCharP)m_pEntry->pData;
     }
 
 void HTIFFTagEntry::GetValues (uint16_t* po_pVal1, uint16_t* po_pVal2)
@@ -1030,7 +1026,7 @@ bool HTIFFTagEntry::SetValues (uint64_t pi_Val)
     else
         return false;
     }
-bool HTIFFTagEntry::SetValuesA (const char*  pi_pVal)
+bool HTIFFTagEntry::SetValuesA (CharCP pi_pVal)
     {
     HPRECONDITION(m_pEntry != 0);
     HPRECONDITION(m_pTagDef != 0);
@@ -1046,7 +1042,7 @@ bool HTIFFTagEntry::SetValuesA (const char*  pi_pVal)
     return true;
     }
 
-bool HTIFFTagEntry::SetValuesW (const WChar* pi_pVal)
+bool HTIFFTagEntry::SetValuesW (WCharCP pi_pVal)
     {
     HPRECONDITION(m_pEntry != 0);
     HPRECONDITION(m_pTagDef != 0);
@@ -1213,8 +1209,7 @@ bool HTIFFTagEntry::ValidateDataLen (uint64_t pi_Count, bool pi_Read)
             if ((uint32_t)m_pTagDef->GetReadCount() != pi_Count)
                 {
                 HTIFFError::BadTagCountIOErInfo ErInfo;
-                string TagName(m_pTagDef->GetTagName());
-                ErInfo.m_TagName       = WString(TagName.c_str(),false);
+                ErInfo.m_TagName = m_pTagDef->GetTagName();
                 ErInfo.m_Count         = pi_Count;
                 ErInfo.m_ExpectedCount = m_pTagDef->GetReadCount();
                 ErrorMsg(&m_pError, HTIFFError::INCORRECT_COUNT_FOR_TAG_READ, &ErInfo, false);
@@ -1231,9 +1226,7 @@ bool HTIFFTagEntry::ValidateDataLen (uint64_t pi_Count, bool pi_Read)
             if ((uint32_t)m_pTagDef->GetWriteCount() != pi_Count)
                 {
                 HTIFFError::BadTagCountIOErInfo ErInfo;
-
-                string TagName(m_pTagDef->GetTagName());
-                ErInfo.m_TagName       = WString(TagName.c_str(),false);
+                ErInfo.m_TagName       = m_pTagDef->GetTagName();
                 ErInfo.m_Count         = pi_Count;
                 ErInfo.m_ExpectedCount = m_pTagDef->GetWriteCount();
                 ErrorMsg(&m_pError, HTIFFError::INCORRECT_COUNT_FOR_TAG_WRITTEN, &ErInfo, false);

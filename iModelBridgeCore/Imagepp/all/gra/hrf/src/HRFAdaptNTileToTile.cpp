@@ -40,6 +40,13 @@ HRFAdaptNTileToTileCapabilities::HRFAdaptNTileToTileCapabilities()
 HFC_IMPLEMENT_SINGLETON(HRFAdaptNTileToTileCreator)
 
 //-----------------------------------------------------------------------------
+// Destructor
+//-----------------------------------------------------------------------------
+HRFAdaptNTileToTileCreator::~HRFAdaptNTileToTileCreator()
+    {
+    }
+
+//-----------------------------------------------------------------------------
 // Obtain the capabilities of stretcher
 //-----------------------------------------------------------------------------
 HRFBlockAdapterCapabilities* HRFAdaptNTileToTileCreator::GetCapabilities() const

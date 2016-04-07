@@ -41,7 +41,7 @@ static struct EmbedBinStreamCreator : public HFCBinStream::Creator
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-HFCEmbedBinStream::HFCEmbedBinStream(WString const& pi_Filename, IFileReaderHandler* pi_pHandler)
+HFCEmbedBinStream::HFCEmbedBinStream(Utf8String const& pi_Filename, IFileReaderHandler* pi_pHandler)
     :m_pHandler(pi_pHandler),
      m_Filename(pi_Filename)
     {
@@ -59,7 +59,7 @@ HFCEmbedBinStream::~HFCEmbedBinStream()
 //---------------------------------------------------------------------------
 HFCPtr<HFCURL>  HFCEmbedBinStream::GetURL() const
     {
-    return new HFCURLFile(WString(HFCURLFile::s_SchemeName() + L"://") + m_Filename);
+    return new HFCURLFile(HFCURLFile::s_SchemeName() + "://" + m_Filename);
     }
 
 //---------------------------------------------------------------------------

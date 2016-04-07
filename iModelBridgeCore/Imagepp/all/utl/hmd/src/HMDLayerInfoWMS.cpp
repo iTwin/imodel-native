@@ -17,15 +17,15 @@
 // Public
 // Constructor
 //-----------------------------------------------------------------------------
-HMDLayerInfoWMS::HMDLayerInfoWMS(const WString& pi_rKeyName,
-                                 const WString& pi_rLayerName,
-                                 const WString& pi_rLayerTitle,
-                                 const WString& pi_rLayerAbstract,
+HMDLayerInfoWMS::HMDLayerInfoWMS(const Utf8String& pi_rKeyName,
+                                 const Utf8String& pi_rLayerName,
+                                 const Utf8String& pi_rLayerTitle,
+                                 const Utf8String& pi_rLayerAbstract,
                                  const double  pi_MinScaleHint,
                                  const double  pi_MaxScaleHint,
-                                 const WString& pi_rStyleName,
-                                 const WString& pi_rStyleTitle,
-                                 const WString& pi_rStyleAbstract,
+                                 const Utf8String& pi_rStyleName,
+                                 const Utf8String& pi_rStyleTitle,
+                                 const Utf8String& pi_rStyleAbstract,
                                  bool          pi_Opaque)
     : HMDLayerInfo(pi_rKeyName, true),
       m_LayerName(pi_rLayerName),
@@ -53,7 +53,7 @@ HMDLayerInfoWMS::~HMDLayerInfoWMS()
 // Public
 // GetLayerName
 //-----------------------------------------------------------------------------
-const WString& HMDLayerInfoWMS::GetLayerName() const
+const Utf8String& HMDLayerInfoWMS::GetLayerName() const
     {
     return m_LayerName;
     }
@@ -62,7 +62,7 @@ const WString& HMDLayerInfoWMS::GetLayerName() const
 // Public
 // GetLayerTile
 //-----------------------------------------------------------------------------
-const WString& HMDLayerInfoWMS::GetLayerTitle() const
+const Utf8String& HMDLayerInfoWMS::GetLayerTitle() const
     {
     return m_LayerTitle;
     }
@@ -71,7 +71,7 @@ const WString& HMDLayerInfoWMS::GetLayerTitle() const
 // Public
 // GetLayerAbstract
 //-----------------------------------------------------------------------------
-const WString& HMDLayerInfoWMS::GetLayerAbstract() const
+const Utf8String& HMDLayerInfoWMS::GetLayerAbstract() const
     {
     return m_LayerAbstract;
     }
@@ -80,7 +80,7 @@ const WString& HMDLayerInfoWMS::GetLayerAbstract() const
 // Public
 // GetStyleName
 //-----------------------------------------------------------------------------
-const WString& HMDLayerInfoWMS::GetStyleName() const
+const Utf8String& HMDLayerInfoWMS::GetStyleName() const
     {
     return m_StyleName;
     }
@@ -89,7 +89,7 @@ const WString& HMDLayerInfoWMS::GetStyleName() const
 // Public
 // GetStyleTitle
 //-----------------------------------------------------------------------------
-const WString& HMDLayerInfoWMS::GetStyleTitle() const
+const Utf8String& HMDLayerInfoWMS::GetStyleTitle() const
     {
     return m_StyleTitle;
     }
@@ -98,7 +98,7 @@ const WString& HMDLayerInfoWMS::GetStyleTitle() const
 // Public
 // GetStyleAbstract
 //-----------------------------------------------------------------------------
-const WString& HMDLayerInfoWMS::GetStyleAbstract() const
+const Utf8String& HMDLayerInfoWMS::GetStyleAbstract() const
     {
     return m_StyleAbstract;
     }

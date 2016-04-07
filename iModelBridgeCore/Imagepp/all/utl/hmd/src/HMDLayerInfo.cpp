@@ -14,7 +14,7 @@
 // Public
 // Constructor
 //-----------------------------------------------------------------------------
-HMDLayerInfo::HMDLayerInfo(const WString& pi_rKeyName,
+HMDLayerInfo::HMDLayerInfo(const Utf8String& pi_rKeyName,
                                   bool          pi_InitialVisibleState)
     {
     m_KeyName = pi_rKeyName;
@@ -64,7 +64,7 @@ bool HMDLayerInfo::GetInitialVisibleState() const
 // Public
 // Get the key name
 //-----------------------------------------------------------------------------
-const WString& HMDLayerInfo::GetKeyName() const
+const Utf8String& HMDLayerInfo::GetKeyName() const
     {
     return m_KeyName;
     }

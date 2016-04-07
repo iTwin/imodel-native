@@ -533,10 +533,10 @@ bool HRFIntergraphMonochromeFile::SetGlobalTransfoModel(const HFCPtr<HGF2DTransf
     Valid = Valid && (MyMatrix[2][1] == 0.0);
     Valid = Valid && (MyMatrix[2][2] == 1.0);
 
+#if IRASB_STYLE
+
     // Obtain current scanline orientation
     HRFScanlineOrientation OriginalSLO = GetScanlineOrientation();
-
-#if IRASB_STYLE
 
     double ScaleX;
     double ScaleY;

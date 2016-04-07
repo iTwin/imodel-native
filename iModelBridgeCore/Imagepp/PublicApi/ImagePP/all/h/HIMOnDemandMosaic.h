@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMOnDemandMosaic.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -143,7 +143,7 @@ public:
 
     //:> Added methods
     virtual void    Add(const RasterList& pi_rRasters);
-    bool            Add(const string&                    pi_rOnDemandRastersInfo, 
+    bool            Add(Utf8StringCR                     pi_rOnDemandRastersInfo, 
                         HPMPool*                         pi_pMemPool,
                         const HFCPtr<HGF2DWorldCluster>& pi_rAppWorldCluster,
                         const HFCPtr<HFCURL>&            pi_rpPSSUrl = HFCPtr<HFCURL>());
@@ -171,12 +171,12 @@ public:
     //:> Serialization Methods
     IMAGEPP_EXPORT void  GetOnDemandRastersInfo(Utf8String* po_pOnDemandRastersInfoUTF8) const;
 
-    void  SetRepresentativePSSForWorlds(WString& pi_rPSSDescriptiveNode);
+    void  SetRepresentativePSSForWorlds(Utf8String& pi_rPSSDescriptiveNode);
 
     //:> Cache Methods
         IMAGEPP_EXPORT bool                                     GetSourceFileURLs(ListOfRelatedURLs& po_rRelatedURLs);
 
-        IMAGEPP_EXPORT void CreateCacheFile(const WString&                            pi_rCacheFileName, 
+        IMAGEPP_EXPORT void CreateCacheFile(const Utf8String&                            pi_rCacheFileName, 
                                     const HFCPtr<HGF2DWorldCluster>&          pi_pWorldCluster, 
                                     HPMPool*                                  pi_pMemoryPool, 
                                     HRFDownSamplingMethod::DownSamplingMethod pi_DownSamplingMethod);
@@ -191,12 +191,12 @@ public:
 
                void  RemoveCache();        
 
-    IMAGEPP_EXPORT bool  SetCacheFile(const WString&                   pi_rCacheFileName,
+    IMAGEPP_EXPORT bool  SetCacheFile(const Utf8String&                   pi_rCacheFileName,
                                   const HFCPtr<HGF2DWorldCluster>& pi_rpWorldCluster, 
                                   HPMPool*                         pi_pMemoryPool);
 
     //:> Miscellaneous Methods
-    IMAGEPP_EXPORT void  CreatePssFile(const WString& pi_rFileName) const;
+    IMAGEPP_EXPORT void  CreatePssFile(const Utf8String& pi_rFileName) const;
 
     IMAGEPP_EXPORT void  GetRasterList(HIMOnDemandMosaic::RasterList& po_rRasters) const;
         
@@ -254,7 +254,7 @@ private:
     mutable HAutoPtr<HGF2DExtent> m_pMinimumPixelSizeRange;
     mutable HAutoPtr<HGF2DExtent> m_pMaximumPixelSizeRange;
 
-    WString                       m_WorldDescriptivePSS;
+    Utf8String                       m_WorldDescriptivePSS;
                                     
     //On-demand mosaic cache
     HRFDownSamplingMethod::DownSamplingMethod m_CacheFileDownSamplingMethod;

@@ -13,7 +13,7 @@
 #include <Imagepp/all/h/HCDCodecPCX.h>
 
 
-#define HCD_CODEC_NAME L"PCX"
+#define HCD_CODEC_NAME "PCX"
 
 //-----------------------------------------------------------------------------
 // public

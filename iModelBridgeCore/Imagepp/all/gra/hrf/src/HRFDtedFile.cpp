@@ -156,21 +156,21 @@ HRFDtedCreator::HRFDtedCreator()
     }
 
 // Identification information
-WString HRFDtedCreator::GetLabel() const
+Utf8String HRFDtedCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_DTED()); // DTED File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_DTED()); // DTED File Format
     }
 
 // Identification information
-WString HRFDtedCreator::GetSchemes() const
+Utf8String HRFDtedCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 // Identification information
-WString HRFDtedCreator::GetExtensions() const
+Utf8String HRFDtedCreator::GetExtensions() const
     {
-    return WString(L"*.dt0;*.dt1;*.dt2");
+    return Utf8String("*.dt0;*.dt1;*.dt2");
     }
 
 // allow to Open an image file

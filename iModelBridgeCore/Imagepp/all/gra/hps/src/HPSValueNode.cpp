@@ -112,10 +112,10 @@ void HPSValueNode::SetValue(double pi_Value)
     }
 
 //---------------------------------------------------------------------------
-void HPSValueNode::SetValue(const WString& pi_rString)
+void HPSValueNode::SetValue(const Utf8String& pi_rString)
     {
     m_Type = STRING;
-    m_Value.m_pString = new WString(pi_rString);
+    m_Value.m_pString = new Utf8String(pi_rString);
     m_IsOwnerOfValue = true;
     }
 
@@ -135,7 +135,7 @@ void HPSValueNode::SetValueFrom(HPSValueNode* pi_pNode)
         {
         if (m_Value.m_pString == 0)
             {
-            m_Value.m_pString = new WString(*(pi_pNode->m_Value.m_pString));
+            m_Value.m_pString = new Utf8String(*(pi_pNode->m_Value.m_pString));
             }
         }
     else
@@ -160,7 +160,7 @@ void HPSValueNode::SetValue(const HPSValueNode::Value& pi_rValue)
         {
         if (m_Value.m_pString == 0)
             {
-            m_Value.m_pString = new WString(*(pi_rValue.m_pString));
+            m_Value.m_pString = new Utf8String(*(pi_rValue.m_pString));
             }
         }
     else

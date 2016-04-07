@@ -111,14 +111,14 @@ public:
 
         virtual ErInfo& operator=(const ErInfo&) = 0;
         virtual ErInfo* Clone() const = 0;
-        virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const = 0;
+        virtual void FormatErrorMessage(Utf8String& pio_rUnformattedErrMsg) const = 0;
         };
 
     //Detailed error information
     struct NegativeValueForRationalErInfo : ErInfo
         {
         double m_RationalValue;
-        WString m_TagName;
+        Utf8String m_TagName;
 
         virtual ~NegativeValueForRationalErInfo() {}
 
@@ -129,11 +129,10 @@ public:
             return *((ErInfo*)this);
             }
 
-        virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
+        virtual void FormatErrorMessage(Utf8String& pio_rUnformattedErrMsg) const
             {
-            WChar TempBuffer[2048]; 
-            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() , m_RationalValue,m_TagName.c_str()); 
-            pio_rUnformattedErrMsg = WString(TempBuffer); 
+            Utf8PrintfString message(pio_rUnformattedErrMsg.c_str(), m_RationalValue, m_TagName.c_str());
+            pio_rUnformattedErrMsg = message;
             }
 
         IMPLEMENT_CLONE_FNC(NegativeValueForRationalErInfo)
@@ -153,11 +152,10 @@ public:
             return *((ErInfo*)this);
             }
 
-        virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
+        virtual void FormatErrorMessage(Utf8String& pio_rUnformattedErrMsg) const
             {
-            WChar TempBuffer[2048]; 
-            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() , m_Offset,m_Length); 
-            pio_rUnformattedErrMsg = WString(TempBuffer); 
+            Utf8PrintfString message(pio_rUnformattedErrMsg.c_str(), m_Offset, m_Length);
+            pio_rUnformattedErrMsg = message; 
             }
 
         IMPLEMENT_CLONE_FNC(CannotWritePWblobErInfo)
@@ -175,11 +173,10 @@ public:
             return *((ErInfo*)this);
             }
 
-        virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
+        virtual void FormatErrorMessage(Utf8String& pio_rUnformattedErrMsg) const
             {
-            WChar TempBuffer[2048]; 
-            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() ,m_MagicNb); 
-            pio_rUnformattedErrMsg = WString(TempBuffer); 
+            Utf8PrintfString message(pio_rUnformattedErrMsg.c_str(), m_MagicNb);
+            pio_rUnformattedErrMsg = message;
             }
 
         IMPLEMENT_CLONE_FNC(BadMagicNbErInfo)
@@ -197,11 +194,10 @@ public:
             return *((ErInfo*)this);
             }
 
-        virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
+        virtual void FormatErrorMessage(Utf8String& pio_rUnformattedErrMsg) const
             {
-            WChar TempBuffer[2048]; 
-            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() ,m_VersionNb); 
-            pio_rUnformattedErrMsg = WString(TempBuffer); 
+            Utf8PrintfString message(pio_rUnformattedErrMsg.c_str(), m_VersionNb);
+            pio_rUnformattedErrMsg = message;
             }
 
         IMPLEMENT_CLONE_FNC(BadVersionNbErInfo)
@@ -219,11 +215,10 @@ public:
             return *((ErInfo*)this);
             }
 
-        virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
+        virtual void FormatErrorMessage(Utf8String& pio_rUnformattedErrMsg) const
             {
-            WChar TempBuffer[2048]; 
-            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() ,m_BlockNb); 
-            pio_rUnformattedErrMsg = WString(TempBuffer); 
+            Utf8PrintfString message(pio_rUnformattedErrMsg.c_str(), m_BlockNb);
+            pio_rUnformattedErrMsg = message;
             }
 
         IMPLEMENT_CLONE_FNC(BadBlockNbErInfo)
@@ -245,11 +240,10 @@ public:
             return *((ErInfo*)this);
             }
 
-        virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
+        virtual void FormatErrorMessage(Utf8String& pio_rUnformattedErrMsg) const
             {
-            WChar TempBuffer[2048]; 
-            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() , m_BlockNb, m_Offset, m_Length); 
-            pio_rUnformattedErrMsg = WString(TempBuffer); 
+            Utf8PrintfString message(pio_rUnformattedErrMsg.c_str(), m_BlockNb, m_Offset, m_Length);
+            pio_rUnformattedErrMsg = message;
             }
 
         IMPLEMENT_CLONE_FNC(BadBlockNbErInfo)
@@ -267,11 +261,10 @@ public:
             return *((ErInfo*)this);
             }
 
-        virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
+        virtual void FormatErrorMessage(Utf8String& pio_rUnformattedErrMsg) const
             {
-            WChar TempBuffer[2048]; 
-            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() , m_CompressionType); 
-            pio_rUnformattedErrMsg = WString(TempBuffer); 
+            Utf8PrintfString message(pio_rUnformattedErrMsg.c_str(), m_CompressionType);
+            pio_rUnformattedErrMsg = message;
             }
 
         IMPLEMENT_CLONE_FNC(UnknownCompressionErInfo)
@@ -289,11 +282,10 @@ public:
             return *((ErInfo*)this);
             }
 
-        virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
+        virtual void FormatErrorMessage(Utf8String& pio_rUnformattedErrMsg) const
             {
-            WChar TempBuffer[2048]; 
-            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() , m_GeoKey); 
-            pio_rUnformattedErrMsg = WString(TempBuffer); 
+            Utf8PrintfString message(pio_rUnformattedErrMsg.c_str(), m_GeoKey);
+            pio_rUnformattedErrMsg = message;
             }
 
         IMPLEMENT_CLONE_FNC(InvalidGeotiffCountOrIndexErInfo)
@@ -313,11 +305,10 @@ public:
             return *((ErInfo*)this);
             }
 
-        virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
+        virtual void FormatErrorMessage(Utf8String& pio_rUnformattedErrMsg) const
             {
-            WChar TempBuffer[2048]; 
-            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() ,  m_GeoKey, m_Tag); 
-            pio_rUnformattedErrMsg = WString(TempBuffer); 
+            Utf8PrintfString message(pio_rUnformattedErrMsg.c_str(), m_GeoKey, m_Tag);
+            pio_rUnformattedErrMsg = message;
             }
 
         IMPLEMENT_CLONE_FNC(InvalidGeotiffTagErInfo)
@@ -335,11 +326,10 @@ public:
             return *((ErInfo*)this);
             }
 
-        virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
+        virtual void FormatErrorMessage(Utf8String& pio_rUnformattedErrMsg) const
             {
-            WChar TempBuffer[2048]; 
-            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() ,m_Tag); 
-            pio_rUnformattedErrMsg = WString(TempBuffer); 
+            Utf8PrintfString message(pio_rUnformattedErrMsg.c_str(), m_Tag);
+            pio_rUnformattedErrMsg = message;
             }
 
         IMPLEMENT_CLONE_FNC(UnknownTagEnumErInfo)
@@ -348,7 +338,7 @@ public:
     struct WrongTagDataTypeErInfo : ErInfo
         {
         int16_t m_Type;
-        WString m_TagName;
+        Utf8String m_TagName;
         int32_t m_TagFileNb;
 
         virtual ~WrongTagDataTypeErInfo() {}
@@ -361,11 +351,10 @@ public:
             return *((ErInfo*)this);
             }
 
-        virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
+        virtual void FormatErrorMessage(Utf8String& pio_rUnformattedErrMsg) const
             {
-            WChar TempBuffer[2048]; 
-            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() ,m_TagName.c_str(), m_Type); 
-            pio_rUnformattedErrMsg = WString(TempBuffer); 
+            Utf8PrintfString message(pio_rUnformattedErrMsg.c_str(), m_TagName.c_str(), m_Type);
+            pio_rUnformattedErrMsg = message;
             }
 
         IMPLEMENT_CLONE_FNC(WrongTagDataTypeErInfo)
@@ -374,7 +363,7 @@ public:
     struct UnknownTagErInfo : ErInfo
         {
         int32_t m_TagFileNb;
-        WString m_Type;
+        Utf8String m_Type;
         uint64_t m_Length;
         uint64_t m_Offset;
 
@@ -389,11 +378,10 @@ public:
             return *((ErInfo*)this);
             }
 
-        virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
+        virtual void FormatErrorMessage(Utf8String& pio_rUnformattedErrMsg) const
             {
-            WChar TempBuffer[2048]; 
-            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() ,m_TagFileNb, m_Type.c_str(), m_Length, m_Offset); 
-            pio_rUnformattedErrMsg = WString(TempBuffer); 
+            Utf8PrintfString message(pio_rUnformattedErrMsg.c_str(), m_TagFileNb, m_Type.c_str(), m_Length, m_Offset);
+            pio_rUnformattedErrMsg = message;
             }
 
         IMPLEMENT_CLONE_FNC(UnknownTagErInfo)
@@ -412,11 +400,10 @@ public:
             return *((ErInfo*)this);
             }
 
-        virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
+        virtual void FormatErrorMessage(Utf8String& pio_rUnformattedErrMsg) const
             {
-            WChar TempBuffer[2048]; 
-            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() ,m_TagFile); 
-            pio_rUnformattedErrMsg = WString(TempBuffer); 
+            Utf8PrintfString message(pio_rUnformattedErrMsg.c_str(), m_TagFile);
+            pio_rUnformattedErrMsg = message;
             }
 
         IMPLEMENT_CLONE_FNC(UnkwnownFirstTagErInfo)
@@ -424,7 +411,7 @@ public:
 
     struct TagIOErInfo : ErInfo
         {
-        WString m_TagName;
+        Utf8String m_TagName;
         int32_t m_TagFileNb;
         int32_t m_DataLength;
 
@@ -438,11 +425,10 @@ public:
             return *((ErInfo*)this);
             }
 
-        virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
+        virtual void FormatErrorMessage(Utf8String& pio_rUnformattedErrMsg) const
             {
-            WChar TempBuffer[2048]; 
-            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() ,m_TagName.c_str(), m_TagFileNb, m_DataLength); 
-            pio_rUnformattedErrMsg = WString(TempBuffer); 
+            Utf8PrintfString message(pio_rUnformattedErrMsg.c_str(), m_TagName.c_str(), m_TagFileNb, m_DataLength);
+            pio_rUnformattedErrMsg = message;
             }
 
         IMPLEMENT_CLONE_FNC(TagIOErInfo)
@@ -450,7 +436,7 @@ public:
 
     struct BadTagCountIOErInfo : ErInfo
         {
-        WString m_TagName;
+        Utf8String m_TagName;
         int64_t m_Count;
         int16_t m_ExpectedCount;
 
@@ -464,11 +450,10 @@ public:
             return *((ErInfo*)this);
             }
 
-        virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
+        virtual void FormatErrorMessage(Utf8String& pio_rUnformattedErrMsg) const
             {
-            WChar TempBuffer[2048]; 
-            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() ,m_TagName.c_str(), m_Count, m_ExpectedCount); 
-            pio_rUnformattedErrMsg = WString(TempBuffer); 
+            Utf8PrintfString message(pio_rUnformattedErrMsg.c_str(), m_TagName.c_str(), m_Count, m_ExpectedCount);
+            pio_rUnformattedErrMsg = message;
             }
 
         IMPLEMENT_CLONE_FNC(BadTagCountIOErInfo)
@@ -543,7 +528,7 @@ public:
     const ErInfo*   GetErrorInfo ()   {
         return m_pErrorInfo;
         }
-    IMAGEPP_EXPORT void     GetErrorMsg(WString& po_rErrorMsg) const;
+    IMAGEPP_EXPORT void     GetErrorMsg(Utf8String& po_rErrorMsg) const;
     bool           IsFatal()   {
         return m_Fatal;
         }
@@ -618,7 +603,7 @@ struct HTIFFStreamFreeBlock
 class HTIFFStream
     {
 public:
-    HTIFFStream(const WString& pi_rFilename, HFCAccessMode pi_Mode, uint64_t pi_OriginOffset=0);
+    HTIFFStream(const Utf8String& pi_rFilename, HFCAccessMode pi_Mode, uint64_t pi_OriginOffset=0);
     HTIFFStream(const HFCPtr<HFCURL>& pi_rpURL, HFCAccessMode pi_AccessMode = HFC_READ_ONLY, uint64_t pi_OriginOffset=0);
     virtual ~HTIFFStream();
 
