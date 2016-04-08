@@ -2,7 +2,7 @@
 |
 |     $Source: PointCloudSchema/PointCloudDomain.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <PointCloudSchemaInternal.h>
@@ -14,7 +14,7 @@ DOMAIN_DEFINE_MEMBERS(PointCloudDomain)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Eric.Paquet         05/2015
 //-----------------------------------------------------------------------------------------
-PointCloudDomain::PointCloudDomain() : DgnDomain(BENTLEY_POINTCLOUD_SCHEMA_NAME, "Bentley Point Cloud Domain", 1) 
+PointCloudDomain::PointCloudDomain() : DgnDomain(POINTCLOUD_SCHEMA_NAME, "Point Cloud Domain", 1) 
     {
     RegisterHandler(PointCloudModelHandler::GetHandler());
 

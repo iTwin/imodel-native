@@ -36,7 +36,7 @@
         <Bindings>
             <PublicAPI Domain="PointCloudSchema"/>
             <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
-                ECSchemas/Domain/BentleyPointCloud*.xml
+                ECSchemas/Domain/PointCloud*.xml
             </Files>
         </Bindings>
     </Part>
@@ -62,7 +62,7 @@
         <Bindings>
             <PublicAPI Domain="RasterSchema"/>
             <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
-                ECSchemas/Domain/BentleyRaster*.xml
+                ECSchemas/Domain/Raster*.xml
             </Files>
         </Bindings>
     </Part>
@@ -87,7 +87,7 @@
         <Bindings>
             <PublicAPI Domain="ThreeMxSchema"/>
             <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
-                ECSchemas/Domain/BentleyThreeMx*.xml
+                ECSchemas/Domain/ThreeMx*.xml
             </Files>
         </Bindings>
     </Part>

@@ -19,7 +19,7 @@ BEGIN_BENTLEY_SCALABLEMESH_SCHEMA_NAMESPACE
 struct ITerrainTileChangedHandler
     {
     public:
-        virtual void TilesChanged(const bvector<bpair<uint32_t, uint32_t>>& modifiedTiles) = 0;
+        virtual void TilesChanged(const bvector<bpair<uint32_t, uint32_t>>& modifiedTiles, bool loadTextures) = 0;
     };
 
 
