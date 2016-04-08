@@ -424,6 +424,11 @@ namespace IndexECPlugin.Source
                 throw new ProgrammerException("The ECSchema is not valid. PackageRequest must have an array property.");
                 }
 
+            if ((requestedEntitiesECArray.Count == 0) && (osm == false))
+                {
+                throw new UserFriendlyException("The request is empty. Please specify items to include in the package");
+                }
+
             //List<RequestedEntity> bentleyFileInfoList = new List<RequestedEntity>();
             List<RequestedEntity> wmsRequestedEntities = new List<RequestedEntity>();
             List<RequestedEntity> usgsRequestedEntities = new List<RequestedEntity>();

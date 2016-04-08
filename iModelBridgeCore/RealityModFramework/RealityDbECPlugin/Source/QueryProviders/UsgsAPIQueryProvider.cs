@@ -688,8 +688,19 @@ namespace IndexECPlugin.Source.QueryProviders
         private string ExtractFormatFromURI (string uri)
             {
             string[] splitURI = uri.Split('.');
-
-            return splitURI[splitURI.Length - 1];
+            string extension = splitURI[splitURI.Length - 1].ToLower();
+            switch ( extension )
+                {
+                case "jpeg":
+                case "jpg":
+                case "png":
+                case "gif":
+                case "jp2":
+                    return extension;
+                default:
+                    return "Unknown";
+                }
+            //return splitURI[splitURI.Length - 1];
             }
 
         private string ExtractNameFromURI (string uri)
