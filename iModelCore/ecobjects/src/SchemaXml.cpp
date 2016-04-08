@@ -903,7 +903,12 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     LOG.tracev("Reading class contents for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingClassContents.GetElapsedSeconds());
 
     StopWatch readingCustomAttributes("Reading custom attributes", true);
-    schemaOut->ReadCustomAttributes(*schemaNode, m_schemaContext, *schemaOut);
+    if (CustomAttributeReadStatus::InvalidCustomAttributes == schemaOut->ReadCustomAttributes(*schemaNode, m_schemaContext, *schemaOut, ecXmlMajorVersion))
+        {
+        LOG.errorv("Failed to read schema because one or more invalid custom attributes were applied to it.", schemaOut->GetName().c_str());
+        return SchemaReadStatus::InvalidECSchemaXml;
+        }
+    
     readingCustomAttributes.Stop();
     LOG.tracev("Reading custom attributes for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingCustomAttributes.GetElapsedSeconds());
 

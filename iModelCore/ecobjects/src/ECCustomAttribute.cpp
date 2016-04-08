@@ -588,9 +588,9 @@ ECClassCR classDefinition
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeXmlNodeR containerNode, ECSchemaReadContextR schemaContext, ECSchemaCR fallBackSchema)
+CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeXmlNodeR containerNode, ECSchemaReadContextR schemaContext, ECSchemaCR fallBackSchema, int ecXmlVersionMajor)
     {
-    InstanceReadStatus status = InstanceReadStatus::Success;
+    CustomAttributeReadStatus status = CustomAttributeReadStatus::Success;
 
     // allow for multiple <ECCustomAttributes> nodes, even though we only ever write one.
     for (BeXmlNodeP customAttributeNode = containerNode.GetFirstChild (); NULL != customAttributeNode; customAttributeNode = customAttributeNode->GetNextSibling ())
@@ -613,12 +613,17 @@ InstanceReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeXmlNodeR
                 thisStatus = IECInstance::ReadFromBeXmlNode (customAttributeInstance, *customAttributeClassNode, *context);
             if (InstanceReadStatus::Success != thisStatus && InstanceReadStatus::CommentOnly != thisStatus)
                 {
-                // skip this attribute, but continue processing any remaining.
-                if (InstanceReadStatus::Success == status)
-                    status = thisStatus;
+                // In EC3 we will fail to load the schema if any invalid custom attributes are found, for EC2 schemas we will skip the invalid attributes and continue to load the schema
+                if (ecXmlVersionMajor >= 3)
+                    status = CustomAttributeReadStatus::InvalidCustomAttributes;
+                else if (CustomAttributeReadStatus::Success == status) 
+                    status = CustomAttributeReadStatus::SkippedCustomAttributes;
                 }
             if (customAttributeInstance.IsValid())
-                SetCustomAttribute (*customAttributeInstance);
+                if (ECObjectsStatus::CustomAttributeContainerTypesNotCompatible == SetCustomAttribute(*customAttributeInstance))
+                    {
+                    status = CustomAttributeReadStatus::InvalidCustomAttributes;
+                    }
             }
         }
     return status;

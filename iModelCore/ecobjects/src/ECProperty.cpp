@@ -306,10 +306,10 @@ ECSchemaCP ECProperty::_GetContainerSchema () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR context)
+SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR context, int ecXmlVersionMajor)
     {  
     Utf8String value;
-    READ_REQUIRED_XML_ATTRIBUTE (propertyNode, PROPERTY_NAME_ATTRIBUTE, this, Name, propertyNode.GetName())        
+    READ_REQUIRED_XML_ATTRIBUTE (propertyNode, PROPERTY_NAME_ATTRIBUTE, this, Name, propertyNode.GetName())
     
     // OPTIONAL attributes - If these attributes exist they MUST be valid    
     READ_OPTIONAL_XML_ATTRIBUTE (propertyNode, DESCRIPTION_ATTRIBUTE,         this, Description)
@@ -322,7 +322,11 @@ SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadCont
     ECObjectsStatus setterStatus;
     READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (propertyNode, READONLY_ATTRIBUTE,            this, IsReadOnly)
 
-    ReadCustomAttributes (propertyNode, context, GetClass().GetSchema());
+    if(CustomAttributeReadStatus::InvalidCustomAttributes == ReadCustomAttributes (propertyNode, context, GetClass().GetSchema(), ecXmlVersionMajor))
+        {
+        LOG.errorv("Failed to read property %s because one or more invalid custom attributes were applied to it.", this->GetName().c_str());
+        return SchemaReadStatus::InvalidECSchemaXml;
+        }
     return SchemaReadStatus::Success;
     }
 
@@ -382,9 +386,9 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR context)
+SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR context, int ecXmlVersionMajor)
     {  
-    SchemaReadStatus status = T_Super::_ReadXml (propertyNode, context);
+    SchemaReadStatus status = T_Super::_ReadXml (propertyNode, context, ecXmlVersionMajor);
     if (status != SchemaReadStatus::Success)
         return status;
     
@@ -789,9 +793,9 @@ bool ArrayECProperty::_SetCalculatedPropertySpecification (IECInstanceP attr)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus StructECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR context)
+SchemaReadStatus StructECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR context, int ecXmlVersionMajor)
     {  
-    SchemaReadStatus status = T_Super::_ReadXml (propertyNode, context);
+    SchemaReadStatus status = T_Super::_ReadXml (propertyNode, context, ecXmlVersionMajor);
     if (status != SchemaReadStatus::Success)
         return status;
 
@@ -936,9 +940,9 @@ ECObjectsStatus StructECProperty::SetType (ECStructClassCR structType)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ArrayECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR context)
+SchemaReadStatus ArrayECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR context, int ecXmlVersionMajor)
     {  
-    SchemaReadStatus status = T_Super::_ReadXml (propertyNode, context);
+    SchemaReadStatus status = T_Super::_ReadXml (propertyNode, context, ecXmlVersionMajor);
     if (status != SchemaReadStatus::Success)
         return status;
 
@@ -1376,9 +1380,9 @@ bool NavigationECProperty::Verify()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus NavigationECProperty::_ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext)
+SchemaReadStatus NavigationECProperty::_ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext, int ecXmlVersionMajor)
     {
-    SchemaReadStatus status = T_Super::_ReadXml(propertyNode, schemaContext);
+    SchemaReadStatus status = T_Super::_ReadXml(propertyNode, schemaContext, ecXmlVersionMajor);
     if (status != SchemaReadStatus::Success)
         return status;
 

@@ -646,6 +646,57 @@ bool TestValue(CustomAttributeContainerType compareType, CustomAttributeContaine
     return false;
     }
 
+TEST_F(CustomAttributeTest, FailsToLoadSchemaWithInvalidCustomAttributes_EC3)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+
+    Utf8Char schemaXML[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+        "    <ECCustomAttributes>"
+        "        <AppliesToClass xmlns=\"TestSchema.01.00\"/>"
+        "    </ECCustomAttributes>"
+        "    <ECCustomAttributeClass typeName=\"AppliesToClass\" appliesTo=\"AnyClass\" />"
+        "</ECSchema>";
+
+    SchemaReadStatus status;
+    {
+    DISABLE_ASSERTS
+    status = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
+    }
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "Expected deserialization to fail when custom attribute is applied to a container that conflicts with the CAs appliesTo attribute";
+
+    Utf8Char schemaXML2[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+        "    <ECCustomAttributes>"
+        "        <DoesNotExist xmlns=\"TestSchema.01.00\"/>"
+        "    </ECCustomAttributes>"
+        "    <ECCustomAttributeClass typeName=\"AppliesToClass\" appliesTo=\"AnyClass\" />"
+        "</ECSchema>";
+    {
+    DISABLE_ASSERTS
+    status = ECSchema::ReadFromXmlString(schema, schemaXML2, *schemaContext);
+    }
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "Expected deserialization to fail when custom attribute is applied but it's class cannot be found";
+    }
+
+TEST_F(CustomAttributeTest, CanLoadSchemaWithInvalidCustomAttributes_EC2)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+
+    Utf8Char schemaXML[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "    <ECCustomAttributes>"
+        "        <DoesNotExist xmlns=\"TestSchema.01.00\"/>"
+        "    </ECCustomAttributes>"
+        "    <ECClass typeName=\"AppliesToClass\"/>"
+        "</ECSchema>";
+
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "Expected deserialization to succeed when custom attribute is applied but it's class cannot be found";
+    }
+
 TEST_F(CustomAttributeTest, InvalidContainerTypeDeserialization)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();

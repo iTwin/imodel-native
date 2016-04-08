@@ -192,6 +192,17 @@ enum class SchemaWriteStatus
     FailedToWriteFile,
     };
 
+//! Result status for the deserialization of custom attributes applied to a custom attribute container
+enum class CustomAttributeReadStatus
+    {
+    //! Successfully deserialized and applied all custom attributes for the container
+    Success,
+    //! One or more custom attributes skipped, non fatal error
+    SkippedCustomAttributes,
+    //! One or more custom attributes found which were invalid for this container because their CustomAttributeContainerType did not match the actual container type, fatal error
+    InvalidCustomAttributes,
+    };
+
 //! Result status of deserializing an IECInstance from Xml
 enum class InstanceReadStatus
     {

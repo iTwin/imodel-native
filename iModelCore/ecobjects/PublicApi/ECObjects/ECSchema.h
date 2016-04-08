@@ -261,7 +261,7 @@ protected:
     //! Does not check if the container's ECSchema references the requisite ECSchema(s). @see SupplementedSchemaBuilder::SetMergedCustomAttribute
     ECObjectsStatus                     SetSupplementedCustomAttribute(IECInstanceR customAttributeInstance);
 
-    InstanceReadStatus                  ReadCustomAttributes (BeXmlNodeR containerNode, ECSchemaReadContextR context, ECSchemaCR fallBackSchema);
+    CustomAttributeReadStatus           ReadCustomAttributes (BeXmlNodeR containerNode, ECSchemaReadContextR context, ECSchemaCR fallBackSchema, int ecXmlVersionMajor);
     SchemaWriteStatus                   WriteCustomAttributes(BeXmlWriterR xmlWriter) const;
     //! Only copies primary ones, not consolidated ones. Does not check if the container's ECSchema references the requisite ECSchema(s). @see SupplementedSchemaBuilder::SetMergedCustomAttribute
     ECObjectsStatus                     CopyCustomAttributesTo(IECCustomAttributeContainerR destContainer) const;
@@ -672,7 +672,7 @@ protected:
 
     ECObjectsStatus                     SetName (Utf8StringCR name);
 
-    virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext);
+    virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext, int ecXmlVersionMajor);
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor);
     SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, int ecXmlVersionMajor, bvector<bpair<Utf8CP, Utf8CP>>* attributes=nullptr, bool writeType=true);
     virtual Utf8String                  _GetTypeNameForXml(int ecXmlVersionMajor) const { return GetTypeName(); }
@@ -892,7 +892,7 @@ private:
     PrimitiveECProperty(ECClassCR ecClass) : m_primitiveType(PRIMITIVETYPE_String), ExtendedTypeECProperty(ecClass), m_enumeration(nullptr) {};
 
 protected:
-    virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
+    virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext, int ecXmlVersionMajor) override;
     virtual SchemaWriteStatus           _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) override;
     virtual bool                        _IsPrimitive () const override { return true;}
     virtual PrimitiveECPropertyCP       _GetAsPrimitivePropertyCP() const override { return this; }
@@ -933,7 +933,7 @@ private:
     StructECProperty (ECClassCR ecClass) : m_structType(NULL), ECProperty(ecClass) {};
 
 protected:
-    virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
+    virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext, int ecXmlVersionMajor) override;
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) override;
     virtual bool                        _IsStruct () const override { return true;}
     virtual StructECPropertyCP          _GetAsStructPropertyCP() const override { return this; }
@@ -979,7 +979,7 @@ protected:
     ECObjectsStatus                     SetMaxOccurs(Utf8StringCR maxOccurs);
 
 protected:
-    virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
+    virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext, int ecXmlVersionMajor) override;
     virtual SchemaWriteStatus           _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) override;
     virtual bool                        _IsArray () const override { return true;}
     virtual bool                        _IsPrimitiveArray() const override { return ARRAYKIND_Primitive == m_arrayKind; }
@@ -1081,7 +1081,7 @@ protected:
     Utf8String                      GetRelationshipClassName() const;
 
 protected:
-    virtual SchemaReadStatus        _ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
+    virtual SchemaReadStatus        _ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext, int ecXmlVersionMajor) override;
     virtual SchemaWriteStatus       _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) override;
 
     virtual bool                    _IsNavigation() const override { return true; }
@@ -1296,7 +1296,7 @@ protected:
     void _ReadCommentsInSameLine(BeXmlNodeR childNode, bvector<Utf8String>& comments);
 
     SchemaReadStatus                    _ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaReadContextR context);
-    SchemaReadStatus                    _ReadPropertyFromXmlAndAddToClass( ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, Utf8CP childNodeName );
+    SchemaReadStatus                    _ReadPropertyFromXmlAndAddToClass( ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, Utf8CP childNodeName, int ecXmlVersionMajor);
 
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const;
     SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const;
@@ -2083,7 +2083,7 @@ private:
     ECObjectsStatus             SetCardinality(uint32_t& lowerLimit, uint32_t& upperLimit);
 
     SchemaWriteStatus           WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName) const;
-    SchemaReadStatus            ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext);
+    SchemaReadStatus            ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext, int ecXmlVersionMajor);
 
     ECObjectsStatus             ValidateClassConstraint(ECEntityClassCR constraintClass) const;
     ECObjectsStatus             ValidateCardinalityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit) const;
