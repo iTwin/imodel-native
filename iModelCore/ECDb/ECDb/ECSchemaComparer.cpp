@@ -251,6 +251,9 @@ BentleyStatus ECSchemaComparer::CompareECSchema(ECSchemaChange& change, ECSchema
 
     //if (CompareKindOfQuantities(change.KindOfQuantities(), a.GetKindOfQuantities(), b.GetKindOfQuantities()) != SUCCESS)
     //    return ERROR;
+    
+    if (CompareReferences(change.References(), a.GetReferencedSchemas(), b.GetReferencedSchemas()) != SUCCESS)
+        return ERROR;
 
     return CompareCustomAttributes(change.CustomAttributes(), a, b);
     }
@@ -1048,30 +1051,29 @@ BentleyStatus ECSchemaComparer::CompareBaseClasses(BaseClassChanges& changes, EC
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSchemaComparer::CompareReferences(ReferenceChanges& changes, ECSchemaReferenceListCR a, ECSchemaReferenceListCR b)
     {
-    std::set<Utf8String, CompareIUtf8Ascii> aMap, bMap, cMap;
+    std::map<Utf8CP, ECSchemaCP, CompareIUtf8Ascii> aMap, bMap, cMap;
     for (auto& ref : a)
-        aMap.insert(ref.first.GetFullSchemaName());
+        aMap[ref.first.GetName().c_str()] = ref.second.get();
 
     for (auto& ref : b)
-        bMap.insert(ref.first.GetFullSchemaName());
+        bMap[ref.first.GetName().c_str()] = ref.second.get();
 
     cMap.insert(aMap.cbegin(), aMap.cend());
     cMap.insert(bMap.cbegin(), bMap.cend());
 
     for (auto& u : cMap)
         {
-        auto itorA = aMap.find(u);
-        auto itorB = bMap.find(u);
+        auto itorA = aMap.find(u.first);
+        auto itorB = bMap.find(u.first);
 
         bool existInA = itorA != aMap.end();
         bool existInB = itorB != bMap.end();
         if (existInA && existInB)
-            {
-            }
+            changes.Add(ChangeState::Modified).SetValue(itorA->second->GetFullSchemaName(), itorB->second->GetFullSchemaName());
         else if (existInA && !existInB)
-            changes.Add(ChangeState::Deleted).SetValue(ValueId::Deleted, u);
+            changes.Add(ChangeState::Deleted).SetValue(ValueId::Deleted, itorA->second->GetFullSchemaName());
         else if (!existInA && existInB)
-            changes.Add(ChangeState::New).SetValue(ValueId::New, u);
+            changes.Add(ChangeState::New).SetValue(ValueId::New, itorB->second->GetFullSchemaName());
         }
     return SUCCESS;
     }
@@ -1405,7 +1407,7 @@ std::vector<Utf8String> ECSchemaComparer::Split(Utf8StringCR path)
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 ECChange::ECChange(ChangeState state, SystemId systemId, ECChange const* parent, Utf8CP customId)
-    :m_systemId(systemId), m_customId(customId), m_state(state), m_applied(false), m_parent(parent)
+    :m_systemId(systemId), m_customId(customId), m_state(state), m_status(Status::Pending), m_parent(parent)
     {}
 
 //---------------------------------------------------------------------------------------

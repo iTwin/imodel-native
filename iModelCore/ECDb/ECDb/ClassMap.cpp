@@ -307,6 +307,7 @@ MappingStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, ClassMap const
             if (ERROR == propMap->Load(*classMapping))
                 {
                 //ECSchema Upgrade
+                GetColumnFactoryR().Update();
                 if (SUCCESS != propMap->FindOrCreateColumnsInTable(*this))
                     {
                     BeAssert(false);
