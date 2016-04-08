@@ -149,6 +149,10 @@ TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20)
     {
     m_action = TxnAction::None;
 
+    m_unifiedRelationshipLinkTables = new dgn_TxnTable::RelationshipLinkTables(*this);
+    m_unifiedRelationshipLinkTables->AddRef();
+    m_tables.push_back(m_unifiedRelationshipLinkTables); // the singleton that manages changes to all relationship link tables
+
     m_dgndb.SetChangeTracker(this);
 
     Statement stmt;
@@ -168,6 +172,14 @@ TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TxnManager::~TxnManager()
+    {
+    m_unifiedRelationshipLinkTables->Release();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::InitializeTableHandlers()
@@ -179,6 +191,41 @@ DbResult TxnManager::InitializeTableHandlers()
         table->_Initialize();
 
     return m_dgndb.SaveChanges(); // "Commit" the creation of temp tables, so that a subsequent call to AbandonChanges will not un-create them.
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TxnManager::BeginTrackingRelationship(ECN::ECClassCR relClass)
+    {
+    if (m_dgndb.IsReadonly())
+        return DgnDbStatus::ReadOnly;
+
+    if (!relClass.IsRelationshipClass())
+        return DgnDbStatus::BadArg;
+
+    ChangeSummary::TableMapInfo tinfo;
+    if (BSISUCCESS != ChangeSummary::GetPrimaryTableMapInfo(tinfo, relClass, m_dgndb))
+        return DgnDbStatus::BadArg;
+
+    if (nullptr != FindTxnTable(tinfo.GetTableName().c_str()))
+        return DgnDbStatus::DuplicateName;
+    
+    //  Relationships of all classes are tracked in a single temp table, which is managed by the m_unifiedRelationshipLinkTables singleton.
+    m_tablesByName.Insert(tinfo.GetTableName().c_str(), RefCountedPtr<dgn_TxnTable::RelationshipLinkTables>(m_unifiedRelationshipLinkTables));
+
+    m_relationshipClassesByTable[tinfo.GetTableName()] = &relClass;
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ECN::ECClassCP TxnManager::GetRelationshipClassByTableName(Utf8StringCR tname) const
+    {
+    auto i = m_relationshipClassesByTable.find(tname);
+    return (i == m_relationshipClassesByTable.end()) ? nullptr : i->second;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -204,6 +251,14 @@ TxnTable* TxnManager::FindTxnTable(Utf8CP tableName) const
     {
     auto it = m_tablesByName.find(tableName);
     return it != m_tablesByName.end() ? it->second.get() : NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+dgn_TxnTable::RelationshipLinkTables& TxnManager::RelationshipLinkTables() const
+    {
+    return *m_unifiedRelationshipLinkTables;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -663,7 +718,6 @@ bool TxnManager::HasFatalErrors() const
 void TxnManager::AddChanges(Changes const& changes)
     {
     BeAssert(!m_dgndb.IsReadonly());
-    Utf8String currTable;
     TxnTable* txnTable = 0;
     TxnManager& txns = m_dgndb.Txns();
 
@@ -679,9 +733,9 @@ void TxnManager::AddChanges(Changes const& changes)
         BeAssert(rc==BE_SQLITE_OK);
         UNUSED_VARIABLE(rc);
 
-        if (0 != strcmp(currTable.c_str(), tableName)) // changes within a changeset are grouped by table
+        if (0 != strcmp(m_currentTable.c_str(), tableName)) // changes within a changeset are grouped by table
             {
-            currTable = tableName;
+            m_currentTable = tableName;
             txnTable = txns.FindTxnTable(tableName);
             }
 
@@ -703,6 +757,8 @@ void TxnManager::AddChanges(Changes const& changes)
                 BeAssert(false);
             }
         }
+
+    m_currentTable.clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1493,6 +1549,121 @@ void dgn_TxnTable::ModelDep::CheckDirection(ECInstanceId relid)
     DgnModels::Model root, dep;
     m_txnMgr.GetDgnDb().Models().QueryModelById(&root, rootModel);
     m_txnMgr.GetDgnDb().Models().QueryModelById(&dep, depModel);
+    }
+
+Utf8CP dgn_TxnTable::RelationshipLinkTables::s_TableName = TEMP_TABLE(TXN_TABLE_RelationshipLinkTables);
+Utf8CP dgn_TxnTable::RelationshipLinkTables::s_ECInstanceIdColName = "ECInstanceId";
+Utf8CP dgn_TxnTable::RelationshipLinkTables::s_ECClassIdColName = "ECClassId";
+Utf8CP dgn_TxnTable::RelationshipLinkTables::s_SourceECInstanceIdColName = "SourceECInstanceId";
+Utf8CP dgn_TxnTable::RelationshipLinkTables::s_TargetECInstanceIdColName = "TargetECInstanceId";
+Utf8CP dgn_TxnTable::RelationshipLinkTables::s_ChangeTypeColName = "ChangeType";
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                   04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::RelationshipLinkTables::_Initialize()
+    {
+    Utf8String ddl;
+    ddl.append(s_ECInstanceIdColName).append(" INTEGER NOT NULL PRIMARY KEY,");
+    ddl.append(s_ECClassIdColName).append(" INTEGER NOT NULL,");
+    ddl.append(s_SourceECInstanceIdColName).append(" INTEGER NOT NULL,");
+    ddl.append(s_TargetECInstanceIdColName).append(" INTEGER NOT NULL,");
+    ddl.append(s_ChangeTypeColName).append(" INT");
+    m_txnMgr.GetDgnDb().CreateTable(TEMP_TABLE(TXN_TABLE_RelationshipLinkTables), ddl.c_str());
+    m_txnMgr.GetDgnDb().ExecuteSql(Utf8PrintfString("CREATE INDEX " TEMP_TABLE(TXN_TABLE_RelationshipLinkTables) "_ClassIdx ON " TXN_TABLE_RelationshipLinkTables "(%s)", s_ECClassIdColName).c_str());
+    m_txnMgr.GetDgnDb().ExecuteSql(Utf8PrintfString("CREATE INDEX " TEMP_TABLE(TXN_TABLE_RelationshipLinkTables) "_SourceIdx ON " TXN_TABLE_RelationshipLinkTables "(%s)", s_SourceECInstanceIdColName).c_str());
+    m_txnMgr.GetDgnDb().ExecuteSql(Utf8PrintfString("CREATE INDEX " TEMP_TABLE(TXN_TABLE_RelationshipLinkTables) "_TargetIdx ON " TXN_TABLE_RelationshipLinkTables "(%s)", s_TargetECInstanceIdColName).c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::RelationshipLinkTables::UpdateSummary(Changes::Change change, ChangeType changeType)
+    {
+    m_changes = true;
+    
+    Changes::Change::Stage stage = (ChangeType::Insert == changeType) ? Changes::Change::Stage::New : Changes::Change::Stage::Old;
+
+    //  Every relationship link table is laid out like this: 
+    //      [0]ECInstanceId 
+    //      [1]SourceECInstanceId 
+    //      [2]TargetECInstanceId 
+    //      [3...] relationship instance properties ...     which we DO NOT TRACK HERE
+    int const ECInstanceId_LTColId = 0;
+    int const SourceECInstanceId_LTColId = 1;
+    int const TargetECInstanceId_LTColId = 2;
+    ECInstanceId relid = change.GetValue(ECInstanceId_LTColId, stage).GetValueId<ECInstanceId>();
+    BeAssert(relid.IsValid());
+
+    //  ECClassId is *not* stored in a link table.
+    auto ecclass = m_txnMgr.GetRelationshipClassByTableName(m_txnMgr.GetCurrentTable());
+    if (nullptr == ecclass)
+        {
+        BeAssert(false);
+        return;
+        }
+    ECClassId relclsid = ecclass->GetId();
+
+    DgnElementId srcelemid, tgtelemid;
+    if (ChangeType::Insert == changeType || ChangeType::Delete == changeType)
+        {
+        srcelemid = change.GetValue(SourceECInstanceId_LTColId, stage).GetValueId<DgnElementId>();
+        tgtelemid = change.GetValue(TargetECInstanceId_LTColId, stage).GetValueId<DgnElementId>();
+        }
+    else
+        {
+        //  SourceECInstanceId and TargetECInstanceId never change.
+        auto selectOrig = m_txnMgr.GetDgnDb().GetCachedStatement(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM %s WHERE ECInstanceId=?", m_txnMgr.GetCurrentTable().c_str()).c_str());
+        selectOrig->BindId(1, relid);
+        if (BE_SQLITE_ROW == selectOrig->Step())
+            {
+            srcelemid = selectOrig->GetValueId<DgnElementId>(0);
+            tgtelemid = selectOrig->GetValueId<DgnElementId>(1);
+            }
+        }
+
+    m_stmt.BindId(1, relid);                                // *** KEEP THESE COL INDICES CONSISTENT WITH _OnValidate ***
+    m_stmt.BindId(2, relclsid);                             // *** KEEP THESE COL INDICES CONSISTENT WITH _OnValidate ***
+    m_stmt.BindId(3, srcelemid);                            // *** KEEP THESE COL INDICES CONSISTENT WITH _OnValidate ***
+    m_stmt.BindId(4, tgtelemid);                            // *** KEEP THESE COL INDICES CONSISTENT WITH _OnValidate ***
+    m_stmt.BindInt(5, (int)changeType);                     // *** KEEP THESE COL INDICES CONSISTENT WITH _OnValidate ***
+
+    auto rc = m_stmt.Step();
+    BeAssert(rc == BE_SQLITE_DONE);
+    UNUSED_VARIABLE(rc);
+
+    m_stmt.Reset();
+    m_stmt.ClearBindings();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                   04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::RelationshipLinkTables::_OnValidate()
+    {
+    m_changes = false;
+    if (m_stmt.IsPrepared())
+        return;
+
+    Utf8String sql("INSERT INTO " TEMP_TABLE(TXN_TABLE_RelationshipLinkTables) " (");
+                                                            // *** KEEP THESE COL INDICES CONSISTENT WITH UpdateSummary ***
+    sql.append(s_ECInstanceIdColName).append(",");          // 1
+    sql.append(s_ECClassIdColName).append(",");             // 2
+    sql.append(s_SourceECInstanceIdColName).append(",");    // 3
+    sql.append(s_TargetECInstanceIdColName).append(",");    // 4
+    sql.append(s_ChangeTypeColName);                        // 5
+    sql.append(") VALUES(?,?,?,?,?)");
+    m_stmt.Prepare(m_txnMgr.GetDgnDb(), sql.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                   04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::RelationshipLinkTables::_OnValidated()
+    {
+    // for cancel, the temp table is automatically rolled back, so we don't (can't actually, because there's no Txn active) need to empty it.
+    if (m_changes && TxnAction::Abandon != m_txnMgr.GetCurrentAction())
+        m_txnMgr.GetDgnDb().ExecuteSql("DELETE FROM " TEMP_TABLE(TXN_TABLE_RelationshipLinkTables));
     }
 
 /*---------------------------------------------------------------------------------**//**

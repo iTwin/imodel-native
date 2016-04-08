@@ -374,11 +374,11 @@ $(CoreObjs)AnnotationTable$(oext) :                 $(DgnCoreDir)AnnotationTable
 
 $(CoreObjs)AnnotationTableStroker$(oext) :          $(DgnCoreDir)AnnotationTableStroker.cpp $(DgnPlatformAPISrc)AnnotationTable.h ${MultiCompileDepends}
 
-$(CoreObjs)DimensionStyle$(oext) :                  $(DgnCoreDir)Dimension\DimensionStyle.cpp $(DgnPlatformAPISrc)Dimension\Dimension.h ${MultiCompileDepends}
+$(CoreObjs)DimensionStyle$(oext) :                  $(DgnCoreDir)Dimension/DimensionStyle.cpp $(DgnPlatformAPISrc)Dimension/Dimension.h ${MultiCompileDepends}
 
-$(CoreObjs)LinearDimension$(oext) :                 $(DgnCoreDir)Dimension\LinearDimension.cpp $(DgnPlatformAPISrc)Dimension\Dimension.h ${MultiCompileDepends}
+$(CoreObjs)LinearDimension$(oext) :                 $(DgnCoreDir)Dimension/LinearDimension.cpp $(DgnPlatformAPISrc)Dimension/Dimension.h ${MultiCompileDepends}
 
-$(CoreObjs)LinearDimensionStroker$(oext) :          $(DgnCoreDir)Dimension\LinearDimensionStroker.cpp $(DgnPlatformAPISrc)Dimension\Dimension.h ${MultiCompileDepends}
+$(CoreObjs)LinearDimensionStroker$(oext) :          $(DgnCoreDir)Dimension/LinearDimensionStroker.cpp $(DgnPlatformAPISrc)Dimension/Dimension.h ${MultiCompileDepends}
 
 $(o)ECUtils$(oext) :                                $(DgnCoreDir)ECUtils.cpp $(DgnPlatformAPISrc)ECUtils.h ${MultiCompileDepends}
 
@@ -648,9 +648,14 @@ LINKER_LIBRARIES_DELAYLOADED + \
     $(ContextSubPartsLibs)TKBrep.lib \
     $(ContextSubPartsLibs)TKGeomBase.lib
 
-# ModelingAlgorithms
+# ModelingAlgorithms (also TKHLR TKFillet TKFeat TKXMesh TKShHealing)
 LINKER_LIBRARIES_DELAYLOADED + \
+    $(ContextSubPartsLibs)TKBool.lib \
+    $(ContextSubPartsLibs)TKBO.lib \
+    $(ContextSubPartsLibs)TKOffset.lib \
+    $(ContextSubPartsLibs)TKPrim.lib \
     $(ContextSubPartsLibs)TKMesh.lib \
+    $(ContextSubPartsLibs)TKGeomAlgo.lib \
     $(ContextSubPartsLibs)TKTopAlgo.lib
 %endif
 
