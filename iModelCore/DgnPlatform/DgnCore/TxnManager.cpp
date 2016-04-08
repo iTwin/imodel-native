@@ -1579,12 +1579,12 @@ void dgn_TxnTable::ModelDep::CheckDirection(ECInstanceId relid)
     m_txnMgr.GetDgnDb().Models().QueryModelById(&dep, depModel);
     }
 
-Utf8CP TxnRelationshipLinkTables::s_TableName = TEMP_TABLE(TXN_TABLE_RelationshipLinkTables);
-Utf8CP TxnRelationshipLinkTables::s_ECInstanceIdColName = "ECInstanceId";
-Utf8CP TxnRelationshipLinkTables::s_ECClassIdColName = "ECClassId";
-Utf8CP TxnRelationshipLinkTables::s_SourceECInstanceIdColName = "SourceECInstanceId";
-Utf8CP TxnRelationshipLinkTables::s_TargetECInstanceIdColName = "TargetECInstanceId";
-Utf8CP TxnRelationshipLinkTables::s_ChangeTypeColName = "ChangeType";
+Utf8CP TxnRelationshipLinkTables::TABLE_NAME = TEMP_TABLE(TXN_TABLE_RelationshipLinkTables);
+Utf8CP TxnRelationshipLinkTables::COLNAME_ECInstanceId = "ECInstanceId";
+Utf8CP TxnRelationshipLinkTables::COLNAME_ECClassId = "ECClassId";
+Utf8CP TxnRelationshipLinkTables::COLNAME_SourceECInstanceId = "SourceECInstanceId";
+Utf8CP TxnRelationshipLinkTables::COLNAME_TargetECInstanceId = "TargetECInstanceId";
+Utf8CP TxnRelationshipLinkTables::COLNAME_ChangeType = "ChangeType";
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2016
@@ -1603,15 +1603,15 @@ TxnRelationshipLinkTables::TxnRelationshipLinkTables(TxnManagerR t) : m_txnMgr(t
         return;
 
     Utf8String ddl;
-    ddl.append(s_ECInstanceIdColName).append(" INTEGER NOT NULL PRIMARY KEY,");
-    ddl.append(s_ECClassIdColName).append(" INTEGER NOT NULL,");
-    ddl.append(s_SourceECInstanceIdColName).append(" INTEGER NOT NULL,");
-    ddl.append(s_TargetECInstanceIdColName).append(" INTEGER NOT NULL,");
-    ddl.append(s_ChangeTypeColName).append(" INT");
+    ddl.append(COLNAME_ECInstanceId).append(" INTEGER NOT NULL PRIMARY KEY,");
+    ddl.append(COLNAME_ECClassId).append(" INTEGER NOT NULL,");
+    ddl.append(COLNAME_SourceECInstanceId).append(" INTEGER NOT NULL,");
+    ddl.append(COLNAME_TargetECInstanceId).append(" INTEGER NOT NULL,");
+    ddl.append(COLNAME_ChangeType).append(" INT");
     m_txnMgr.GetDgnDb().CreateTable(TEMP_TABLE(TXN_TABLE_RelationshipLinkTables), ddl.c_str());
-    m_txnMgr.GetDgnDb().ExecuteSql(Utf8PrintfString("CREATE INDEX " TEMP_TABLE(TXN_TABLE_RelationshipLinkTables) "_ClassIdx ON " TXN_TABLE_RelationshipLinkTables "(%s)", s_ECClassIdColName).c_str());
-    m_txnMgr.GetDgnDb().ExecuteSql(Utf8PrintfString("CREATE INDEX " TEMP_TABLE(TXN_TABLE_RelationshipLinkTables) "_SourceIdx ON " TXN_TABLE_RelationshipLinkTables "(%s)", s_SourceECInstanceIdColName).c_str());
-    m_txnMgr.GetDgnDb().ExecuteSql(Utf8PrintfString("CREATE INDEX " TEMP_TABLE(TXN_TABLE_RelationshipLinkTables) "_TargetIdx ON " TXN_TABLE_RelationshipLinkTables "(%s)", s_TargetECInstanceIdColName).c_str());
+    m_txnMgr.GetDgnDb().ExecuteSql(Utf8PrintfString("CREATE INDEX " TEMP_TABLE(TXN_TABLE_RelationshipLinkTables) "_ClassIdx ON " TXN_TABLE_RelationshipLinkTables "(%s)", COLNAME_ECClassId).c_str());
+    m_txnMgr.GetDgnDb().ExecuteSql(Utf8PrintfString("CREATE INDEX " TEMP_TABLE(TXN_TABLE_RelationshipLinkTables) "_SourceIdx ON " TXN_TABLE_RelationshipLinkTables "(%s)", COLNAME_SourceECInstanceId).c_str());
+    m_txnMgr.GetDgnDb().ExecuteSql(Utf8PrintfString("CREATE INDEX " TEMP_TABLE(TXN_TABLE_RelationshipLinkTables) "_TargetIdx ON " TXN_TABLE_RelationshipLinkTables "(%s)", COLNAME_TargetECInstanceId).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1622,11 +1622,11 @@ BeSQLite::DbResult TxnRelationshipLinkTables::Insert(BeSQLite::EC::ECInstanceId 
     if (!m_stmt.IsValid() || !m_stmt->IsPrepared())
         {
         Utf8String sql("INSERT INTO " TEMP_TABLE(TXN_TABLE_RelationshipLinkTables) " (");
-        sql.append(s_ECInstanceIdColName).append(",");          // 1
-        sql.append(s_ECClassIdColName).append(",");             // 2
-        sql.append(s_SourceECInstanceIdColName).append(",");    // 3
-        sql.append(s_TargetECInstanceIdColName).append(",");    // 4
-        sql.append(s_ChangeTypeColName);                        // 5
+        sql.append(COLNAME_ECInstanceId).append(",");          // 1
+        sql.append(COLNAME_ECClassId).append(",");             // 2
+        sql.append(COLNAME_SourceECInstanceId).append(",");    // 3
+        sql.append(COLNAME_TargetECInstanceId).append(",");    // 4
+        sql.append(COLNAME_ChangeType);                        // 5
         sql.append(") VALUES(?,?,?,?,?)");
         m_stmt = m_txnMgr.GetTxnStatement(sql.c_str());
         }

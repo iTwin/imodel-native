@@ -166,12 +166,12 @@ struct TxnRelationshipLinkTables
     TxnRelationshipLinkTables(TxnManagerR t);
     BeSQLite::DbResult Insert(BeSQLite::EC::ECInstanceId relid, ECN::ECClassId relclsid, DgnElementId srcelemid, DgnElementId tgtelemid, TxnTable::ChangeType changeType);
   public:      
-    DGNPLATFORM_EXPORT static Utf8CP s_TableName; //!< The name of the TEMP table that TxnRelationshipLinkTables uses to record changes. @note Do not attempt to modify the table!
-    DGNPLATFORM_EXPORT static Utf8CP s_ECInstanceIdColName; //!< The name of the column that contains the relationship's own ID. Type = BeSQLite::EC::ECInstanceId
-    DGNPLATFORM_EXPORT static Utf8CP s_ECClassIdColName; //!< The name of the column that contains the ID of the relationship class. Type = ECN::ECClassId 
-    DGNPLATFORM_EXPORT static Utf8CP s_SourceECInstanceIdColName; //!< The name of the column that contains the ID of the source element. Type = DgnElementId
-    DGNPLATFORM_EXPORT static Utf8CP s_TargetECInstanceIdColName; //!< The name of the column that contains the ID of the target element. Type = DgnElementId
-    DGNPLATFORM_EXPORT static Utf8CP s_ChangeTypeColName; //!< The name of the column that identifies what kind of change this is. Type = TxnTable::ChangeType
+    DGNPLATFORM_EXPORT static Utf8CP TABLE_NAME; //!< The name of the temp table that TxnRelationshipLinkTables uses to record changes. @note Do not attempt to modify the table!
+    DGNPLATFORM_EXPORT static Utf8CP COLNAME_ECInstanceId; //!< The name of the column that contains the relationship's own ID. Type = BeSQLite::EC::ECInstanceId
+    DGNPLATFORM_EXPORT static Utf8CP COLNAME_ECClassId; //!< The name of the column that contains the ID of the relationship class. Type = ECN::ECClassId 
+    DGNPLATFORM_EXPORT static Utf8CP COLNAME_SourceECInstanceId; //!< The name of the column that contains the ID of the source element. Type = DgnElementId
+    DGNPLATFORM_EXPORT static Utf8CP COLNAME_TargetECInstanceId; //!< The name of the column that contains the ID of the target element. Type = DgnElementId
+    DGNPLATFORM_EXPORT static Utf8CP COLNAME_ChangeType; //!< The name of the column that identifies what kind of change this is. Type = TxnTable::ChangeType
     };
 
 //=======================================================================================

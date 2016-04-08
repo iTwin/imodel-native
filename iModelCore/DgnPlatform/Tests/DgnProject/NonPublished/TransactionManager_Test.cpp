@@ -1436,13 +1436,13 @@ struct TestRelationshipLinkTableTrackingTxnMonitor : TxnMonitor
             {
             typedef TxnRelationshipLinkTables RLT;
             Utf8String sql = "SELECT ";
-            sql.append(RLT::s_ECInstanceIdColName).append(",");             // 0
-            sql.append(RLT::s_ECClassIdColName).append(",");                // 1
-            sql.append(RLT::s_SourceECInstanceIdColName).append(",");       // 2
-            sql.append(RLT::s_TargetECInstanceIdColName).append(",");       // 3
-            sql.append(RLT::s_ChangeTypeColName);                           // 4
-            sql.append(" FROM ").append(RLT::s_TableName);
-            sql.append(" WHERE ").append(RLT::s_ECClassIdColName).append(" IN (");
+            sql.append(RLT::COLNAME_ECInstanceId).append(",");             // 0
+            sql.append(RLT::COLNAME_ECClassId).append(",");                // 1
+            sql.append(RLT::COLNAME_SourceECInstanceId).append(",");       // 2
+            sql.append(RLT::COLNAME_TargetECInstanceId).append(",");       // 3
+            sql.append(RLT::COLNAME_ChangeType);                           // 4
+            sql.append(" FROM ").append(RLT::TABLE_NAME);
+            sql.append(" WHERE ").append(RLT::COLNAME_ECClassId).append(" IN (");
             Utf8CP comma="";
             for (auto clsid : m_classesToTrack)
                 {
