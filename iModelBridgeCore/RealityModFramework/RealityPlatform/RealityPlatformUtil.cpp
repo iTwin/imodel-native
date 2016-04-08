@@ -212,15 +212,14 @@ HFCPtr<HRFRasterFile> RasterFacility::GetRasterFile(Utf8CP inFilename)
         if (Utf8String::IsNullOrEmpty(inFilename))
             return NULL;
 
-        WString filename;
-        BeStringUtilities::Utf8ToWChar(filename, inFilename);
+        Utf8String filename = inFilename;
 
         // Create URL
         HFCPtr<HFCURL>  srcFilename(HFCURL::Instanciate(filename));
         if (srcFilename == 0)
             {
             // Open the raster file as a file
-            srcFilename = new HFCURLFile(WString(HFCURLFile::s_SchemeName() + L"://") + filename);
+            srcFilename = new HFCURLFile(Utf8PrintfString("%s://%s", HFCURLFile::s_SchemeName().c_str(), inFilename));
             }
 
         // Open Raster file
@@ -232,7 +231,7 @@ HFCPtr<HRFRasterFile> RasterFacility::GetRasterFile(Utf8CP inFilename)
         if (srcFilename == 0)
             {
             // Open the raster file as a file
-            srcFilename = new HFCURLFile(WString(HFCURLFile::s_SchemeName() + L"://") + filename);
+            srcFilename = new HFCURLFile(Utf8PrintfString("%s://%s", HFCURLFile::s_SchemeName().c_str(), inFilename));
             }
 
         // Open Raster file without checking "isKindOfFile"
