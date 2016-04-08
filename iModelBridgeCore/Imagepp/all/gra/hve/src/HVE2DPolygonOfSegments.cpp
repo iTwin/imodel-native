@@ -1892,7 +1892,7 @@ size_t HVE2DPolygonOfSegments::Intersect(const HVE2DVector& pi_rVector, HGF2DLoc
 // PRIVATE
 // This method decomposes the different parts of two polygon of segments interaction
 //-----------------------------------------------------------------------------
-void HVE2DPolygonOfSegments::Decompose(const HVE2DPolygonOfSegments& pi_rPolygon,
+bool HVE2DPolygonOfSegments::Decompose(const HVE2DPolygonOfSegments& pi_rPolygon,
                                        const HGF2DPositionCollection& pi_rPoly1,
                                        const HGF2DPositionCollection& pi_rPoly2,
                                        HVE2DPolygonOfSegments::DecomposeOperation pi_Operation,
@@ -1904,25 +1904,27 @@ void HVE2DPolygonOfSegments::Decompose(const HVE2DPolygonOfSegments& pi_rPolygon
 
     bool AllOnPoints = false;
 
+    bool haveDecomposeException = false;
+
     switch (pi_Operation)
         {
         case HVE2DPolygonOfSegments::DIFF :
             // Perform super scan in DIFF mode
-            SuperScan(pi_rPolygon, pi_rPoly1, pi_rPoly2, false, true, true, false, pi_rListOfShapes, &AllOnPoints);
+            haveDecomposeException = SuperScan(pi_rPolygon, pi_rPoly1, pi_rPoly2, false, true, true, false, pi_rListOfShapes, &AllOnPoints);
             break;
 
         case HVE2DPolygonOfSegments::DIFFFROM :
             // Perform super scan in DIFF mode
-            SuperScan(pi_rPolygon, pi_rPoly1, pi_rPoly2, true, false, false, true, pi_rListOfShapes, &AllOnPoints);
+            haveDecomposeException = SuperScan(pi_rPolygon, pi_rPoly1, pi_rPoly2, true, false, false, true, pi_rListOfShapes, &AllOnPoints);
 
             // If there are no shapes in result either both are equal or self is
             // completely outside of the other, If they are equal then void is the result
             // , otherwise given is the result
             // Since the shapes interact, it is odd that no result appear ... inverse operation
-            if (pi_rListOfShapes.size() == 0)
+            if (!haveDecomposeException && pi_rListOfShapes.size() == 0)
                 {
                 // Perform super scan in DIFF mode
-                pi_rPolygon.SuperScan(*this, pi_rPoly2, pi_rPoly1, false, true, true, false, pi_rListOfShapes, &AllOnPoints);
+                haveDecomposeException = pi_rPolygon.SuperScan(*this, pi_rPoly2, pi_rPoly1, false, true, true, false, pi_rListOfShapes, &AllOnPoints);
 
                 // If the result is null, then effectively, they are equal ...
                 // and this is the result.
@@ -1932,19 +1934,18 @@ void HVE2DPolygonOfSegments::Decompose(const HVE2DPolygonOfSegments& pi_rPolygon
         case HVE2DPolygonOfSegments::INTERSECT:
 
             // Perform superscan in intersect mode
-            SuperScan(pi_rPolygon, pi_rPoly1, pi_rPoly2, true, true, true, true, pi_rListOfShapes, &AllOnPoints);
+            haveDecomposeException = SuperScan(pi_rPolygon, pi_rPoly1, pi_rPoly2, true, true, true, true, pi_rListOfShapes, &AllOnPoints);
 
             // If there are no shapes in result either both are equal or self is
             // completely outside of the other, If they are equal then either one is
             // the result, otherwise the including part is the result
-            if (pi_rListOfShapes.size() == 0)
+            if (!haveDecomposeException && pi_rListOfShapes.size() == 0)
                 {
                 // SuperScan is now way much faster than calculate spatial positon
                 // So we inverse operations
-                pi_rPolygon.SuperScan(*this, pi_rPoly2, pi_rPoly1, true, true, true, true, pi_rListOfShapes, &AllOnPoints);
+                haveDecomposeException = pi_rPolygon.SuperScan(*this, pi_rPoly2, pi_rPoly1, true, true, true, true, pi_rListOfShapes, &AllOnPoints);
 
-
-                if (pi_rListOfShapes.size() == 0)
+                if (!haveDecomposeException && pi_rListOfShapes.size() == 0)
                     {
                     // In some extremely RARE cases such as the following:
                     // Self = -1.4901161193848E-8, -1.4901161193848E-8
@@ -1958,7 +1959,7 @@ void HVE2DPolygonOfSegments::Decompose(const HVE2DPolygonOfSegments& pi_rPolygon
                     // The operation does not work ... it is because, the
                     // shapes are super close to be identical ...
                     // we take either one
-                    // It may also occur that the shapes are dizsjoint but very closely flirting
+                    // It may also occur that the shapes are disjoint but very closely flirting
                     // Resolution of the two cases is performed by checking if all points are on.
                     if (AllOnPoints)
                         pi_rListOfShapes.push_back((HVE2DPolygonOfSegments*)pi_rPolygon.Clone());
@@ -1970,11 +1971,11 @@ void HVE2DPolygonOfSegments::Decompose(const HVE2DPolygonOfSegments& pi_rPolygon
 
         case HVE2DPolygonOfSegments::UNION:
             // Perform superscan in union mode
-            SuperScan(pi_rPolygon, pi_rPoly1, pi_rPoly2, false, true, false, true, pi_rListOfShapes, &AllOnPoints);
+            haveDecomposeException = SuperScan(pi_rPolygon, pi_rPoly1, pi_rPoly2, false, true, false, true, pi_rListOfShapes, &AllOnPoints);
             // If there are no shapes in result either both are equal or self is
             // completely included in the other, If they are equal then either one is
             // the result, otherwise the excluding part is the result
-            if (pi_rListOfShapes.size() == 0)
+            if (!haveDecomposeException && pi_rListOfShapes.size() == 0)
                 {
                 // Obtain spatial position of self in given
                 HVE2DShape::SpatialPosition SelfSpatialPosition = pi_rPolygon.CalculateSpatialPositionOfPolygonOfSegmentsSCS(*this);
@@ -1995,6 +1996,8 @@ void HVE2DPolygonOfSegments::Decompose(const HVE2DPolygonOfSegments& pi_rPolygon
             break;
 
         }
+
+    return haveDecomposeException;
     }
 
 
@@ -2146,16 +2149,18 @@ HVE2DShape* HVE2DPolygonOfSegments::DifferentiateFromCrossingPolygonSCS(const HV
     // neither shape must be empty
     HPRECONDITION(!IsEmpty() && !pi_rPolygon.IsEmpty());
 
-    HVE2DShape*     pMyResultShape;
+    HVE2DShape*     pMyResultShape = nullptr;
 
     // Create recipient list
     HVE2DShape::HoleList   MyListOfPolygons;
 
     // Perform decomposition process
-    Decompose(pi_rPolygon, pi_rPoly1, pi_rPoly2, HVE2DPolygonOfSegments::DIFFFROM, MyListOfPolygons);
+    bool haveDecomposeException = Decompose(pi_rPolygon, pi_rPoly1, pi_rPoly2, HVE2DPolygonOfSegments::DIFFFROM, MyListOfPolygons);
 
+    //&&AR TODO haveDecomposeException. for now return void.
+ 
     // In the case of a differentiation, all the different shapes returned are disjoint
-    if (MyListOfPolygons.size() == 0)
+    if (haveDecomposeException || MyListOfPolygons.size() == 0)
         {
         // The two shapes were either identical or ...
         pMyResultShape = new HVE2DVoidShape(GetCoordSys());
@@ -2341,16 +2346,7 @@ HVE2DShape* HVE2DPolygonOfSegments::DifferentiateCrossingPolygonSCS(const HVE2DP
     // Create recipient list
     HVE2DShape::HoleList   MyListOfPolygons;
 
-    bool SpecialProcessing  = false;
-    try
-        {
-        // Perform decomposition process
-        Decompose(pi_rPolygon, pi_rPoly1, pi_rPoly2, HVE2DPolygonOfSegments::DIFF, MyListOfPolygons);
-        }
-    catch (HVEDecompositionException&)
-        {
-        SpecialProcessing = true;
-        }
+    bool SpecialProcessing = Decompose(pi_rPolygon, pi_rPoly1, pi_rPoly2, HVE2DPolygonOfSegments::DIFF, MyListOfPolygons);
 
     if (SpecialProcessing)
         {
@@ -2599,16 +2595,9 @@ HVE2DShape* HVE2DPolygonOfSegments::IntersectCrossingPolygonSCS(const HVE2DPolyg
 
     // Perform decomposition process
     // Patch from AlainR to solve TR 75690
-    bool SpecialProcessing  = false;
-    try
-        {
-        // Perform decomposition process
-        Decompose(pi_rPolygon, pi_rPoly1, pi_rPoly2, HVE2DPolygonOfSegments::INTERSECT, MyListOfPolygons);
-        }
-    catch (HFCException&)
-        {
-        SpecialProcessing = true;
-        }
+
+    bool SpecialProcessing = Decompose(pi_rPolygon, pi_rPoly1, pi_rPoly2, HVE2DPolygonOfSegments::INTERSECT, MyListOfPolygons);
+
     if (SpecialProcessing)
         {
         HFCPtr<HVE2DShape> pNewShape1 = static_cast<HVE2DShape*>(this->Clone());
@@ -2818,17 +2807,7 @@ HVE2DShape* HVE2DPolygonOfSegments::UnifyCrossingPolygonSCS(const HVE2DPolygonOf
     // Create recipient list
     HVE2DShape::HoleList   MyListOfPolygons;
 
-    bool SpecialProcessing = FALSE;
-
-    try
-    	{
-        // Perform decomposition process
-        Decompose(pi_rPolygon, pi_rPoly1, pi_rPoly2, HVE2DPolygonOfSegments::UNION, MyListOfPolygons);
-    	}
-    catch (HFCException&)
-    	{
-        SpecialProcessing = TRUE;
-    	}
+    bool SpecialProcessing = Decompose(pi_rPolygon, pi_rPoly1, pi_rPoly2, HVE2DPolygonOfSegments::UNION, MyListOfPolygons);
 
     if (SpecialProcessing)
     	{
@@ -2930,7 +2909,7 @@ HVE2DShape* HVE2DPolygonOfSegments::UnifyCrossingPolygonSCS(const HVE2DPolygonOf
 // the points must include all interaction points between polygons INCLUDING
 // flirting points
 //-----------------------------------------------------------------------------
-void HVE2DPolygonOfSegments::SuperScan(const HVE2DPolygonOfSegments&  pi_rGiven,
+bool HVE2DPolygonOfSegments::SuperScan(const HVE2DPolygonOfSegments&  pi_rGiven,
                                        const HGF2DPositionCollection& pi_rPoly1,
                                        const HGF2DPositionCollection& pi_rPoly2,
                                        bool                          pi_WantInPtsOfShape1,
@@ -2967,7 +2946,7 @@ void HVE2DPolygonOfSegments::SuperScan(const HVE2DPolygonOfSegments&  pi_rGiven,
 
     // Allocate a list of flags the same size as new self linear
     size_t          NumberOfFlags = pi_rPoly1.size();
-    PointUsage*     pMyFlags = new PointUsage[NumberOfFlags];
+    std::unique_ptr<PointUsage[]> pMyFlags(new PointUsage[NumberOfFlags]);
 
     // Initialize all flags to false
     for (size_t FlagIndex = 0 ; FlagIndex < NumberOfFlags ; FlagIndex++)
@@ -3500,22 +3479,20 @@ void HVE2DPolygonOfSegments::SuperScan(const HVE2DPolygonOfSegments&  pi_rGiven,
 
         if (!*po_pAllOn)
             {
-
-
-            SuperScan2(pi_rGiven,
-                       pi_rPoly1,
-                       pi_rPoly2,
-                       pi_WantInPtsOfShape1,
-                       pi_ScanShape1CW,
-                       pi_WantInPtsOfShape2,
-                       pi_ScanShape2CW,
-                       pi_rListOfShapes,
-                       po_pAllOn);
+            if(SuperScan2(pi_rGiven,
+                           pi_rPoly1,
+                           pi_rPoly2,
+                           pi_WantInPtsOfShape1,
+                           pi_ScanShape1CW,
+                           pi_WantInPtsOfShape2,
+                           pi_ScanShape2CW,
+                           pi_rListOfShapes,
+                           po_pAllOn))
+                       return true; // decompose exception.
             }
         }
 
-    delete[] pMyFlags;
-
+    return false;
     }
 
 
@@ -3530,7 +3507,7 @@ void HVE2DPolygonOfSegments::SuperScan(const HVE2DPolygonOfSegments&  pi_rGiven,
 // the points must include all interaction points between polygons INCLUDING
 // flirting points
 //-----------------------------------------------------------------------------
-void HVE2DPolygonOfSegments::SuperScan2(const HVE2DPolygonOfSegments&  pi_rGiven,
+bool HVE2DPolygonOfSegments::SuperScan2(const HVE2DPolygonOfSegments&  pi_rGiven,
                                         const HGF2DPositionCollection& pi_rPoly1,
                                         const HGF2DPositionCollection& pi_rPoly2,
                                         bool                          pi_WantInPtsOfShape1,
@@ -3581,8 +3558,8 @@ void HVE2DPolygonOfSegments::SuperScan2(const HVE2DPolygonOfSegments&  pi_rGiven
     // Allocate a list of flags the same size as new self linear
     size_t          NumberOfFlagsSelf = ListPoly1.size();
     size_t          NumberOfFlagsGiven = ListPoly2.size();
-    PointUsage*     pMyFlagsSelf = new PointUsage[NumberOfFlagsSelf];
-    PointUsage*     pMyFlagsGiven = new PointUsage[NumberOfFlagsGiven];
+    std::unique_ptr<PointUsage[]> pMyFlagsSelf(new PointUsage[NumberOfFlagsSelf]);
+    std::unique_ptr<PointUsage[]> pMyFlagsGiven(new PointUsage[NumberOfFlagsGiven]);
 
     // Initialize all flags of self to false
     size_t FlagIndex;
@@ -3603,7 +3580,7 @@ void HVE2DPolygonOfSegments::SuperScan2(const HVE2DPolygonOfSegments&  pi_rGiven
     const HVE2DPolygonOfSegments* const     apPoly[2] = {this, &pi_rGiven};
     const HGF2DPositionCollection*     apPoints[2] = {&ListPoly1, &ListPoly2};
     bool                                   PolyIn[2] = {pi_WantInPtsOfShape1, pi_WantInPtsOfShape2};
-    PointUsage*                             Flags[2] = {pMyFlagsSelf, pMyFlagsGiven};
+    PointUsage*                             Flags[2] = {pMyFlagsSelf.get(), pMyFlagsGiven.get()};
 
     // Do Until all parts of self have been processed ...
     size_t      Index = 1;
@@ -3734,7 +3711,7 @@ void HVE2DPolygonOfSegments::SuperScan2(const HVE2DPolygonOfSegments&  pi_rGiven
                         Flags[ShapeIndex][Index] = USED;
 
 
-                        ChangeShape(apPoly,
+                        if(ChangeShape(apPoly,
                                     apPoints,
                                     PolyExtents,
                                     Flags,
@@ -3745,7 +3722,8 @@ void HVE2DPolygonOfSegments::SuperScan2(const HVE2DPolygonOfSegments&  pi_rGiven
                                     PrevIndex,
                                     PreviousPoint,
                                     CurrentPoint,
-                                    Tolerance);
+                                    Tolerance))
+                                    return true;    // decomposition exception
 
                         // Indicate this new part has been processed (discarded) if it is on self
                         Flags[ShapeIndex][Index] = USED;
@@ -3756,7 +3734,7 @@ void HVE2DPolygonOfSegments::SuperScan2(const HVE2DPolygonOfSegments&  pi_rGiven
                         {
                         Flags[ShapeIndex][Index] = ON_POINT;
 
-                        ChangeShape(apPoly,
+                        if(ChangeShape(apPoly,
                                     apPoints,
                                     PolyExtents,
                                     Flags,
@@ -3767,7 +3745,8 @@ void HVE2DPolygonOfSegments::SuperScan2(const HVE2DPolygonOfSegments&  pi_rGiven
                                     PrevIndex,
                                     PreviousPoint,
                                     CurrentPoint,
-                                    Tolerance);
+                                    Tolerance))
+                                    return true; // decomposition exception
 
                         Flags[ShapeIndex][Index] = USED;
                         }
@@ -3855,7 +3834,8 @@ void HVE2DPolygonOfSegments::SuperScan2(const HVE2DPolygonOfSegments&  pi_rGiven
                     HASSERTDUMP2(false, *this, pi_rGiven);
 #endif
 
-                    throw HVEDecompositionException();
+                    //throw HVEDecompositionException();
+                    return true;
                     }
             }
             while (!StopLoop);
@@ -3921,7 +3901,8 @@ void HVE2DPolygonOfSegments::SuperScan2(const HVE2DPolygonOfSegments&  pi_rGiven
             // Debug dump
             HASSERTDUMP2(false, *this, pi_rGiven);
 
-            throw HVEDecompositionException();
+            //throw HVEDecompositionException();
+            return true;
             }
 
         }
@@ -3938,9 +3919,7 @@ void HVE2DPolygonOfSegments::SuperScan2(const HVE2DPolygonOfSegments&  pi_rGiven
             ;
         }
 
-    delete pMyFlagsSelf;
-    delete pMyFlagsGiven;
-
+    return false;
     }
 
 
@@ -5311,7 +5290,7 @@ void HVE2DPolygonOfSegments::InsertAutoFlirtPoints(HGF2DPositionCollection& pio_
 // PRIVATE
 //
 //-----------------------------------------------------------------------------
-void HVE2DPolygonOfSegments::ChangeShape(const HVE2DPolygonOfSegments* const* apPoly,
+bool HVE2DPolygonOfSegments::ChangeShape(const HVE2DPolygonOfSegments* const* apPoly,
                                          const HGF2DPositionCollection**  apPoints,
                                          HGF2DLiteExtent* PolyExtents,
                                          PointUsage** Flags,
@@ -5395,7 +5374,8 @@ void HVE2DPolygonOfSegments::ChangeShape(const HVE2DPolygonOfSegments* const* ap
                 if (AbsNotFound)
                     {
                     // No point found ...
-                    throw HVEDecompositionException();
+                    //throw HVEDecompositionException();
+                    return true;
                     }
                 }
             }
@@ -5417,6 +5397,8 @@ void HVE2DPolygonOfSegments::ChangeShape(const HVE2DPolygonOfSegments* const* ap
         }
 
     CurrentPoint = (*(apPoints[ShapeIndex]))[Index];
+
+    return false;
     }
 
 
