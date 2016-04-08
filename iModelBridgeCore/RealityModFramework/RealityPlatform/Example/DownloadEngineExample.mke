@@ -42,7 +42,8 @@ EXE_OBJS     = $(o)DownloadEngineExample$(oext)
 
 LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
-                       $(ContextDeliveryDir)RealityPlatform.lib
+                       $(ContextDeliveryDir)RealityPlatform.lib \
+                       $(ContextDeliveryDir)RealityPackage.lib 
 
 %include $(SharedMki)linktool.mki
 
