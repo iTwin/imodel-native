@@ -147,9 +147,13 @@ template<typename READER> static BentleyStatus readPngToBuffer(ByteStream& outPi
 //---------------------------------------------------------------------------------------
 BentleyStatus RgbImageInfo::ReadImageFromPngBuffer(Render::Image& image, Byte const*inputBuffer, size_t numberBytes)
     {
-    image.Initialize(m_width, m_height);
+    image.Initialize(m_width, m_height); // zero...we haven't read the dimensions yet...
     PngReadData pngData(inputBuffer, numberBytes);
-    return readPngToBuffer(image.GetByteStreamR(), *this, pngData);
+    auto status = readPngToBuffer(image.GetByteStreamR(), *this, pngData);
+    if (SUCCESS == status)
+        image.SetSize(m_width, m_height);   // now we know the dimensions...
+
+    return status;
     }
 
 //---------------------------------------------------------------------------------------

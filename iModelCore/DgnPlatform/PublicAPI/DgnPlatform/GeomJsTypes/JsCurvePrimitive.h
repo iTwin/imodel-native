@@ -150,6 +150,8 @@ public:
             }
         return false;
         }
+    // FORWARD DECL -- CurveLocationDetail needed.
+    virtual JsCurveLocationDetailP ClosestPointBounded (JsDPoint3dP spacePoint);
 };
 
 struct JsLineSegment : JsCurvePrimitive
