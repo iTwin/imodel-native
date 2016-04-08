@@ -146,8 +146,6 @@ HSTATUS HRFVirtualEarthEditor::ReadBlock(uint64_t pi_PosBlockX, uint64_t pi_PosB
 //-----------------------------------------------------------------------------
 HRFVirtualEarthEditor::ReadTileStatus HRFVirtualEarthEditor::QueryTile(Byte* po_pData, uint64_t pi_PosBlockX, uint64_t pi_PosBlockY)
     {
-    ReadTileStatus readStatus = ReadTileStatus::Error;
-
     // check if the tile is already in the pool
     uint64_t TileID = m_TileIDDescriptor.ComputeID(pi_PosBlockX, pi_PosBlockY, m_Resolution);
 
