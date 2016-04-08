@@ -33,7 +33,7 @@ BentleyStatus JsonReader::Read(JsonValueR jsonInstances, JsonValueR jsonDisplayI
     ECRelationshipPath trivialPathToClass;
     BentleyStatus status = GetTrivialPathToSelf(trivialPathToClass, *m_ecClass);
     if (SUCCESS == status)
-        status = AddInstancesFromSpecifiedClassPath(jsonInstances, jsonDisplayInfo, trivialPathToClass, ecInstanceId, formatOptions);
+        status = AddInstancesFromSpecifiedClassPath(jsonInstances, jsonDisplayInfo, trivialPathToClass, ecInstanceId, formatOptions, false /*isPolymorphic*/);
 
     // Add any related instances according to the "RelatedItemsDisplaySpecification" custom attribute
     if (SUCCESS == status)
@@ -60,8 +60,12 @@ BentleyStatus JsonReader::ReadInstance(Json::Value& jsonValue, ECInstanceId ecIn
     if (SUCCESS != GetTrivialPathToSelf(emptyPath, *m_ecClass))
         return ERROR;
 
+    Utf8String ecSql;
+    if (SUCCESS != GenerateECSql(ecSql, emptyPath, false/*selectInstanceKeyOnly*/, false/*isPolymorphic*/))
+        return ERROR;
+
     CachedECSqlStatementPtr statement = nullptr;
-    if (SUCCESS != PrepareECSql(statement, emptyPath, ecInstanceId, false/*selectInstanceKeyOnly*/, false/*isPolymorphic*/))
+    if (SUCCESS != PrepareAndBindStatement(statement, ecSql, ecInstanceId))
         return ERROR;
 
     DbResult stepStatus = statement->Step();
@@ -103,7 +107,7 @@ BentleyStatus JsonReader::AddInstancesFromRelatedItems(JsonValueR allInstances, 
         ECRelationshipPath pathFromRelatedClass;
         pathToRelatedClass.Reverse(pathFromRelatedClass);
 
-        if (SUCCESS != AddInstancesFromSpecifiedClassPath(allInstances, allDisplayInfo, pathFromRelatedClass, ecInstanceId, formatOptions))
+        if (SUCCESS != AddInstancesFromSpecifiedClassPath(allInstances, allDisplayInfo, pathFromRelatedClass, ecInstanceId, formatOptions, true /*isPolymorphic*/))
             return ERROR;
         }
 
@@ -113,14 +117,39 @@ BentleyStatus JsonReader::AddInstancesFromRelatedItems(JsonValueR allInstances, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 01 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonReader::AddInstancesFromSpecifiedClassPath(JsonValueR allInstances, JsonValueR allDisplayInfo, ECRelationshipPath const& pathFromRelatedClass, ECInstanceId ecInstanceId, JsonECSqlSelectAdapter::FormatOptions const& formatOptions) const
+BentleyStatus JsonReader::AddInstancesFromSpecifiedClassPath(JsonValueR allInstances, JsonValueR allDisplayInfo, ECRelationshipPath const& pathFromRelatedClass, ECInstanceId ecInstanceId, JsonECSqlSelectAdapter::FormatOptions const& formatOptions, bool isPolymorphic) const
     {
-    CachedECSqlStatementPtr statement = nullptr;
-    if (SUCCESS != PrepareECSql(statement, pathFromRelatedClass, ecInstanceId, false /* selectInstanceKeyOnly*/, true/*isPolymorphic*/))
+    // Note: We just do this in two stages to accommodate polymorphic cases - get the instance keys, and make a subsequent query with the classes that were found
+    Utf8String ecSqlKey;
+    if (SUCCESS != GenerateECSql(ecSqlKey, pathFromRelatedClass, true /* selectInstanceKeyOnly*/, isPolymorphic))
         return ERROR;
 
-    Utf8String pathFromRelatedClassStr = pathFromRelatedClass.ToString();
-    return AddInstancesFromPreparedStatement(allInstances, allDisplayInfo, *statement, formatOptions, pathFromRelatedClassStr);
+    CachedECSqlStatementPtr statementKey = nullptr;
+    if (SUCCESS != PrepareAndBindStatement(statementKey, ecSqlKey, ecInstanceId))
+        return ERROR;
+
+    while (BE_SQLITE_ROW == statementKey->Step())
+        {
+        ECClassId selectClassId = statementKey->GetValueId<ECClassId>(0);
+        ECInstanceId selectInstanceId = statementKey->GetValueId<ECInstanceId>(1);
+
+        ECClassCP selectClass = m_ecDb.Schemas().GetECClass(selectClassId);
+        BeAssert(selectClass != nullptr);
+
+        Utf8PrintfString ecSql("SELECT * FROM ONLY %s AS el WHERE el.ECInstanceId=?", selectClass->GetECSqlName().c_str());
+
+        CachedECSqlStatementPtr statement = nullptr;
+        if (SUCCESS != PrepareAndBindStatement(statement, ecSql, selectInstanceId))
+            return ERROR;
+
+        ECRelationshipPath pathFromDerivedClass = pathFromRelatedClass;
+        pathFromDerivedClass.SetEndClass(*selectClass, ECRelationshipPath::End::Root);
+
+        if (SUCCESS != AddInstancesFromPreparedStatement(allInstances, allDisplayInfo, *statement, formatOptions, pathFromDerivedClass.ToString()))
+            return ERROR;
+        }
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -138,25 +167,9 @@ BentleyStatus JsonReader::GetTrivialPathToSelf(ECRelationshipPath& emptyPath, EC
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 01 / 2014
+// @bsimethod                                    Ramanujam.Raman                 04/ 2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonReader::PrepareECSql(CachedECSqlStatementPtr& statement, Utf8StringCR ecSql) const
-    {
-    statement = m_statementCache.GetPreparedStatement(m_ecDb, ecSql.c_str());
-    if (statement == nullptr)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// Prepare ECSQL to retrieve the instance specified by the path
-// @bsimethod                                    Ramanujam.Raman                 01 / 2014
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonReader::PrepareECSql(CachedECSqlStatementPtr& statement, ECRelationshipPath const& pathFromRelatedClass, ECInstanceId ecInstanceId, bool selectInstanceKeyOnly, bool isPolymorphic) const
+BentleyStatus JsonReader::GenerateECSql(Utf8StringR ecSql, ECRelationshipPath const& pathFromRelatedClass, bool selectInstanceKeyOnly, bool isPolymorphic) const
     {
     Utf8String fromClause, joinClause;
     ECRelationshipPath::GeneratedEndInfo rootInfo, leafInfo;
@@ -170,10 +183,23 @@ BentleyStatus JsonReader::PrepareECSql(CachedECSqlStatementPtr& statement, ECRel
     else
         selectClause.Sprintf("SELECT [%s].*", rootInfo.GetAlias().c_str());
 
-    Utf8PrintfString ecSqlRelated("%s %s %s WHERE %s.ECInstanceId=?",
-                                  selectClause.c_str(), fromClause.c_str(), joinClause.c_str(), leafInfo.GetAlias().c_str());
-    if (SUCCESS != PrepareECSql(statement, ecSqlRelated))
+    ecSql.Sprintf("%s %s %s WHERE %s.ECInstanceId=?", selectClause.c_str(), fromClause.c_str(), joinClause.c_str(), leafInfo.GetAlias().c_str());
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// Prepare ECSQL to retrieve the instance specified by the path
+// @bsimethod                                    Ramanujam.Raman                 01 / 2014
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus JsonReader::PrepareAndBindStatement(CachedECSqlStatementPtr& statement, Utf8StringCR ecSql, ECInstanceId ecInstanceId) const
+    {
+    statement = m_statementCache.GetPreparedStatement(m_ecDb, ecSql.c_str());
+    if (statement == nullptr)
+        {
+        BeAssert(false);
         return ERROR;
+        }
 
     ECSqlStatus bindStatus = statement->BindId(1, ecInstanceId);
     if (!bindStatus.IsSuccess())
@@ -285,8 +311,7 @@ void JsonReader::AddInstances(JsonValueR allInstances, JsonValueR addInstances, 
 // @bsimethod                                    Ramanujam.Raman                 01 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus JsonReader::AddInstancesFromPreparedStatement(JsonValueR allInstances, JsonValueR allDisplayInfo, ECSqlStatement& statement,
-                                                           JsonECSqlSelectAdapter::FormatOptions const& formatOptions, Utf8StringCR pathFromRelatedClassStr)
+BentleyStatus JsonReader::AddInstancesFromPreparedStatement(JsonValueR allInstances, JsonValueR allDisplayInfo, ECSqlStatement& statement, JsonECSqlSelectAdapter::FormatOptions const& formatOptions, Utf8StringCR pathFromRelatedClassStr)
     {
     statement.Reset();
     JsonECSqlSelectAdapter jsonAdapter(statement, formatOptions);
