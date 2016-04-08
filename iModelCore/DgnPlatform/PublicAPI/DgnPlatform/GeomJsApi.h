@@ -100,7 +100,7 @@ JsSTRUCT(JsGeometryNode)
 
 JsSTRUCT(JsPolyfaceVisitor)
 
-JsSTRUCT(JsCurveLocationDetail)     // NOT REFCOUNTED
+JsSTRUCT(JsCurveLocationDetail)
 JsSTRUCT(JsPartialCurveDetail)      // NOT REFCOUNTED
 JsSTRUCT(JsPartialCurveDetailPair)  // NOT REFCOUNTED
 JsSTRUCT(JsPartialCurveDetailPairArray)
@@ -210,14 +210,15 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 #include <DgnPlatform/GeomJsTypes/JsDPoint3dArray.h>
 
+
+
 // This has CurvePrimitive, LineSegment, EllipticArc, BsplineCurve ...
 #include <DgnPlatform/GeomJsTypes/JsCurvePrimitive.h>
 #include <DgnPlatform/GeomJsTypes/JsCurveVector.h>
-
+#include <DgnPlatform/GeomJsTypes/JsCurveLocationDetail.h>
 #include <DgnPlatform/GeomJsTypes/JsPolyfaceMesh.h>
 #include <DgnPlatform/GeomJsTypes/JsPolyfaceVisitor.h>
 #include <DgnPlatform/GeomJsTypes/JsDgnXXXDetail.h>
-#include <DgnPlatform/GeomJsTypes/JsCurveLocationDetail.h>
 
 
 

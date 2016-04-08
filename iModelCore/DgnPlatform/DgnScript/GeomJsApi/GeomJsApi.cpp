@@ -230,6 +230,14 @@ JsGeometryP JsGeometry::CreateStronglyTypedJsGeometry (IGeometryPtr geometry)
     return nullptr;
     }
 
+// Per forward declaration ..
+JsCurveLocationDetailP JsCurvePrimitive::ClosestPointBounded (JsDPoint3dP spacePoint)
+    {
+    CurveLocationDetail detail;
+    m_curvePrimitive->ClosestPointBounded (spacePoint->Get (), detail);
+    return new JsCurveLocationDetail (detail);
+    }
+
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15
