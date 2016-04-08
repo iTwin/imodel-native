@@ -1434,7 +1434,7 @@ struct TestRelationshipLinkTableTrackingTxnMonitor : TxnMonitor
         // Do not attempt to modify the table!
         if (!m_stmt.IsValid())
             {
-            typedef dgn_TxnTable::RelationshipLinkTables RLT;
+            typedef TxnRelationshipLinkTables RLT;
             Utf8String sql = "SELECT ";
             sql.append(RLT::s_ECInstanceIdColName).append(",");             // 0
             sql.append(RLT::s_ECClassIdColName).append(",");                // 1
