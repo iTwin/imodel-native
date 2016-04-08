@@ -111,7 +111,7 @@ struct ECDbProfileUpgrader_3202 : ECDbProfileUpgrader
     };
 
 //=======================================================================================
-// @bsiclass                                                 Krischan.Eberle      0/2016
+// @bsiclass                                                 Krischan.Eberle      04/2016
 //+===============+===============+===============+===============+===============+======
 struct ECDbProfileUpgrader_3300 : ECDbProfileUpgrader
     {
@@ -127,20 +127,30 @@ private:
     };
 
 //=======================================================================================
+// @bsiclass                                                 Krischan.Eberle      04/2016
+//+===============+===============+===============+===============+===============+======
+struct ECDbProfileUpgrader_3301 : ECDbProfileUpgrader
+    {
+    //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
+    private:
+        virtual SchemaVersion _GetTargetVersion() const override { return SchemaVersion(3, 3, 0, 1); }
+        //Just there to trigger a reimport of the system schemas.
+        virtual DbResult _Upgrade(ECDbR) const override { return BE_SQLITE_OK; }
+    };
+
+//=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      07/2013
 //+===============+===============+===============+===============+===============+======
 struct ECDbProfileECSchemaUpgrader
     {
 private:
-    static ECN::SchemaKey s_ecdbfileinfoSchemaKey; // cannot be const as schema location modifies the checksum in the key (which is not relevant for us)
-
     ECDbProfileECSchemaUpgrader();
     ~ECDbProfileECSchemaUpgrader();
 
     static Utf8CP GetECDbSystemECSchemaXml();
 
     static BentleyStatus ReadECDbSystemSchema(ECN::ECSchemaReadContextR readContext, Utf8CP ecdbFileName);
-    static BentleyStatus ReadECDbFileInfoSchema(ECN::ECSchemaReadContextR readContext, Utf8CP ecdbFileName);
+    static BentleyStatus ReadSchemaFromDisk(ECN::ECSchemaReadContextR readContext, SchemaKey&, Utf8CP ecdbFileName);
 
 public:
     static DbResult ImportProfileSchemas(ECDbCR);

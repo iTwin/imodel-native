@@ -16,132 +16,8 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //=======================================================================================
 // @bsistruct                                                   Mike.Embick     12/15
 //=======================================================================================
-struct ECSqlMetadataQueryTest : SchemaImportTestFixture
+struct ECSqlMetadataQueryTestFixture : SchemaImportTestFixture
     {
-    virtual void SetUp() override
-        {
-        SetupECDb("ECSqlMetadataQueryTest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
-
-        //The metaschema should be imported into every ECDb file; it shouldn't have to be imported here.
-        //When the metaschema is finished and this is refactored, remove this SchemaItem,
-        //  the #defined XML string above, and the import lines below it.
-        SchemaItem metaschemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                  "<ECSchema schemaName='MetaSchema' nameSpacePrefix='ms' version='2.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                  "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
-                                  "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                                  "    <ECEntityClass typeName='ECClassDef' description='ECClass' displayLabel='ECClass' >"
-                                  "        <ECCustomAttributes>"
-                                  "            <InstanceLabelSpecification xmlns='Bentley_Standard_CustomAttributes.01.00'>"
-                                  "                <PropertyName>DisplayLabel</PropertyName>"
-                                  "            </InstanceLabelSpecification>"
-                                  "            <ClassMap xmlns='ECDbMap.01.00'>"
-                                  "                <MapStrategy>"
-                                  "                    <Strategy>ExistingTable</Strategy>"
-                                  "                </MapStrategy>"
-                                  "                <TableName>ec_Class</TableName>"
-                                  "                <ECInstanceIdColumn>Id</ECInstanceIdColumn>"
-                                  "            </ClassMap>"
-                                  "        </ECCustomAttributes>"
-                                  "        <ECProperty propertyName='Name' typeName='string' />"
-                                  "        <ECProperty propertyName='DisplayLabel' typeName='string' />"
-                                  "        <ECProperty propertyName='Description' typeName='string' />"
-                                  "        <ECProperty propertyName='Type' typeName='int' />"
-                                  "        <ECProperty propertyName='Modifier' typeName='int' />"
-                                  "        <ECProperty propertyName='SchemaId' typeName='long' />"
-                                  "    </ECEntityClass>"
-                                  "    <ECEntityClass typeName='ECPropertyDef' description='ECProperty' displayLabel='ECProperty' >"
-                                  "        <ECCustomAttributes>"
-                                  "            <InstanceLabelSpecification xmlns='Bentley_Standard_CustomAttributes.01.00'>"
-                                  "                <PropertyName>DisplayLabel</PropertyName>"
-                                  "            </InstanceLabelSpecification>"
-                                  "            <ClassMap xmlns='ECDbMap.01.00'>"
-                                  "                <MapStrategy>"
-                                  "                    <Strategy>ExistingTable</Strategy>"
-                                  "                </MapStrategy>"
-                                  "                <TableName>ec_Property</TableName>"
-                                  "                <ECInstanceIdColumn>Id</ECInstanceIdColumn>"
-                                  "            </ClassMap>"
-                                  "        </ECCustomAttributes>"
-                                  "        <ECProperty propertyName='Name' typeName='string' />"
-                                  "        <ECProperty propertyName='DisplayLabel' typeName='string' />"
-                                  "        <ECProperty propertyName='Description' typeName='string' />"
-                                  "        <ECProperty propertyName='IsReadOnly' typeName='boolean' />"
-                                  "        <ECProperty propertyName='Kind' typeName='int' />"
-                                  "        <ECProperty propertyName='PrimitiveType' typeName='int' />"
-                                  "        <ECProperty propertyName='NonPrimitiveType' typeName='long' />"
-                                  "        <ECProperty propertyName='ArrayMinOccurs' typeName='int' />"
-                                  "        <ECProperty propertyName='ArrayMaxOccurs' typeName='int' />"
-                                  "        <ECProperty propertyName='ClassId' typeName='long' />"
-                                  "    </ECEntityClass>"
-                                  "    <ECRelationshipClass typeName='ClassHasLocalProperty' strength='embedding'>"
-                                  "        <Source cardinality='(1,1)' roleLabel='ClassHasLocalProperty'>"
-                                  "            <Class class='ECClassDef' />"
-                                  "        </Source>"
-                                  "        <Target cardinality='(0,N)' roleLabel='ClassHasLocalProperty (reversed)'>"
-                                  "            <Class class='ECPropertyDef'>"
-                                  "                <Key>"
-                                  "                    <Property name='ClassId' />"
-                                  "                </Key>"
-                                  "            </Class>"
-                                  "        </Target>"
-                                  "    </ECRelationshipClass>"
-                                  "    <ECEntityClass typeName='ECSchemaDef' description='ECSchema' displayLabel='ECSchema' >"
-                                  "        <ECCustomAttributes>"
-                                  "            <InstanceLabelSpecification xmlns='Bentley_Standard_CustomAttributes.01.00'>"
-                                  "                <PropertyName>DisplayLabel</PropertyName>"
-                                  "            </InstanceLabelSpecification>"
-                                  "            <ClassMap xmlns='ECDbMap.01.00'>"
-                                  "                <MapStrategy>"
-                                  "                    <Strategy>ExistingTable</Strategy>"
-                                  "                </MapStrategy>"
-                                  "                <TableName>ec_Schema</TableName>"
-                                  "                <ECInstanceIdColumn>Id</ECInstanceIdColumn>"
-                                  "            </ClassMap>"
-                                  "        </ECCustomAttributes>"
-                                  "        <ECProperty propertyName='Name' typeName='string' />"
-                                  "        <ECProperty propertyName='DisplayLabel' typeName='string' />"
-                                  "        <ECProperty propertyName='NameSpacePrefix' typeName='string' />"
-                                  "        <ECProperty propertyName='Description' typeName='string' />"
-                                  "        <ECProperty propertyName='VersionMajor' typeName='int' >"
-                                  "          <ECCustomAttributes>"
-                                  "            <PropertyMap xmlns='ECDbMap.01.00'>"
-                                  "               <ColumnName>VersionDigit1</ColumnName>"
-                                  "            </PropertyMap>"
-                                  "          </ECCustomAttributes>"
-                                  "        </ECProperty>"
-                                  "        <ECProperty propertyName='VersionWrite' typeName='int' >"
-                                  "          <ECCustomAttributes>"
-                                  "            <PropertyMap xmlns='ECDbMap.01.00'>"
-                                  "               <ColumnName>VersionDigit2</ColumnName>"
-                                  "            </PropertyMap>"
-                                  "          </ECCustomAttributes>"
-                                  "        </ECProperty>"
-                                  "        <ECProperty propertyName='VersionMinor' typeName='int' >"
-                                  "          <ECCustomAttributes>"
-                                  "            <PropertyMap xmlns='ECDbMap.01.00'>"
-                                  "               <ColumnName>VersionDigit3</ColumnName>"
-                                  "            </PropertyMap>"
-                                  "          </ECCustomAttributes>"
-                                  "        </ECProperty>"
-                                  "    </ECEntityClass>"
-                                  "    <ECRelationshipClass typeName='SchemaHasClass' strength='embedding'>"
-                                  "        <Source cardinality='(1,1)' roleLabel='SchemaHasClass'>"
-                                  "            <Class class='ECSchemaDef' />"
-                                  "        </Source>"
-                                  "        <Target cardinality='(0,N)' roleLabel='SchemaHasClass (reversed)'>"
-                                  "            <Class class='ECClassDef'>"
-                                  "                <Key>"
-                                  "                    <Property name='SchemaId' />"
-                                  "                </Key>"
-                                  "            </Class>"
-                                  "        </Target>"
-                                  "    </ECRelationshipClass>"
-                                  "</ECSchema>");
-        bool asserted = false;
-        AssertSchemaImport(asserted, GetECDb(), metaschemaItem);
-        ASSERT_FALSE(asserted);
-        }
-
     void ComparePropertyDefProperties(ECPropertyCR expectedProperty, IECInstanceCR actualProperty);
     void ComparePropertyDefLists(bvector<ECPropertyCP> & expectedProperties, bvector<IECInstancePtr> & actualProperties);
     void CompareClassDefProperties(ECClassCR expectedClass, IECInstanceCR actualClass);
@@ -170,7 +46,7 @@ struct FindMatchingNamePredicate
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mike.Embick     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSqlMetadataQueryTest::ComparePropertyDefProperties(ECPropertyCR expectedProperty, IECInstanceCR actualProperty)
+void ECSqlMetadataQueryTestFixture::ComparePropertyDefProperties(ECPropertyCR expectedProperty, IECInstanceCR actualProperty)
     {
     ECValue u, v;
 
@@ -194,6 +70,7 @@ void ECSqlMetadataQueryTest::ComparePropertyDefProperties(ECPropertyCR expectedP
     actualProperty.GetValue(v, "Description");
     EXPECT_TRUE(u.Equals(v));
 
+    /* Not implemented in MetaSchema yet
     enum class ECPropertyKind
         {
         Primitive = 0,
@@ -263,12 +140,13 @@ void ECSqlMetadataQueryTest::ComparePropertyDefProperties(ECPropertyCR expectedP
     u.SetBoolean(expectedProperty.GetIsReadOnly());
     actualProperty.GetValue(v, "IsReadOnly");
     EXPECT_TRUE(u.Equals(v));
+    */
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mike.Embick     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSqlMetadataQueryTest::ComparePropertyDefLists(bvector<ECPropertyCP> & expectedProperties, bvector<IECInstancePtr> & actualProperties)
+void ECSqlMetadataQueryTestFixture::ComparePropertyDefLists(bvector<ECPropertyCP> & expectedProperties, bvector<IECInstancePtr> & actualProperties)
     {
     for (ECPropertyCP const& expectedProperty : expectedProperties)
         {
@@ -302,7 +180,7 @@ void ECSqlMetadataQueryTest::ComparePropertyDefLists(bvector<ECPropertyCP> & exp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mike.Embick     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSqlMetadataQueryTest::CompareClassDefProperties(ECClassCR expectedClass, IECInstanceCR actualClass)
+void ECSqlMetadataQueryTestFixture::CompareClassDefProperties(ECClassCR expectedClass, IECInstanceCR actualClass)
     {
     ECValue u, v;
 
@@ -338,7 +216,7 @@ void ECSqlMetadataQueryTest::CompareClassDefProperties(ECClassCR expectedClass, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mike.Embick     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSqlMetadataQueryTest::CompareClassDefLists(bvector<ECClassCP> & expectedClasses, bvector<IECInstancePtr> & actualClasses)
+void ECSqlMetadataQueryTestFixture::CompareClassDefLists(bvector<ECClassCP> & expectedClasses, bvector<IECInstancePtr> & actualClasses)
     {
     for (ECClassCP const& expectedClass : expectedClasses)
         {
@@ -364,9 +242,9 @@ void ECSqlMetadataQueryTest::CompareClassDefLists(bvector<ECClassCP> & expectedC
 
             bvector<IECInstancePtr> actualProperties;
             Utf8String propQuery =
-            "SELECT prop.* FROM ms.ECPropertyDef prop \
-            JOIN ms.ECClassDef cl USING ms.ClassHasLocalProperty \
-            JOIN ms.ECSchemaDef sch USING ms.SchemaHasClass \
+            "SELECT prop.* FROM ec.ECPropertyDef prop \
+            JOIN ec.ECClassDef cl USING ec.ClassOwnsProperties \
+            JOIN ec.ECSchemaDef sch USING ec.SchemaOwnsClasses \
             WHERE sch.Name='ECSqlTest' AND cl.Name='";
             propQuery += expectedClass->GetName().c_str();
             propQuery += "'";
@@ -406,7 +284,7 @@ void ECSqlMetadataQueryTest::CompareClassDefLists(bvector<ECClassCP> & expectedC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mike.Embick     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSqlMetadataQueryTest::CompareSchemaDefProperties(ECSchemaCR expectedSchema, IECInstanceCR actualSchema)
+void ECSqlMetadataQueryTestFixture::CompareSchemaDefProperties(ECSchemaCR expectedSchema, IECInstanceCR actualSchema)
     {
     ECValue u, v;
 
@@ -446,17 +324,18 @@ void ECSqlMetadataQueryTest::CompareSchemaDefProperties(ECSchemaCR expectedSchem
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mike.Embick     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECSqlMetadataQueryTest, VerifyQueries)
+TEST_F(ECSqlMetadataQueryTestFixture, VerifyQueries)
     {
+    SetupECDb("metaschematests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema"));
     ECDbSchemaManager const& manager = GetECDb().Schemas();
     ECSchemaCP expectedSchema = manager.GetECSchema("ECSqlTest");
 
     Utf8String schemaQuery =
-    "SELECT ECSchemaDef.* FROM ms.ECSchemaDef \
+    "SELECT ECSchemaDef.* FROM ec.ECSchemaDef \
     WHERE ECSchemaDef.Name='ECSqlTest'";
     ECSqlStatement schemaStatement;
     schemaStatement.Prepare(GetECDb(), schemaQuery.c_str());
-    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == schemaStatement.Step());
+    ASSERT_TRUE(BE_SQLITE_ROW == schemaStatement.Step());
     ECInstanceECSqlSelectAdapter schemaAdapter(schemaStatement);
     IECInstancePtr actualSchema = schemaAdapter.GetInstance();
 
