@@ -39,14 +39,12 @@ HMGMessageSender::~HMGMessageSender()
     {
     if (m_pNonPersistentNotifiees != 0)
         {
-        NotifieesList::iterator Itr = m_pNonPersistentNotifiees->begin();
-
         // non-persistent receivers...
-        while (Itr != m_pNonPersistentNotifiees->end())
+        for (NotifieesList::iterator Itr = m_pNonPersistentNotifiees->begin(); Itr != m_pNonPersistentNotifiees->end(); Itr++)
             {
             // Tell them to remove all messages received after
             // our last save.
-            (*Itr++).first->SenderDestroyed(this);
+            (*Itr).first->SenderDestroyed(this);
             }
 
         delete m_pNonPersistentNotifiees;

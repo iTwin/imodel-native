@@ -141,7 +141,7 @@ HRFEcwCapabilities::HRFEcwCapabilities()
     Add(new HRFTransfoModelCapability(HFC_READ_CREATE, HGF2DIdentity::CLASS_ID));
     Add(new HRFTransfoModelCapability(HFC_READ_CREATE, HGF2DTranslation::CLASS_ID));
     Add(new HRFTransfoModelCapability(HFC_READ_CREATE, HGF2DStretch::CLASS_ID));
-#if 0 //DMx ECW SDK 5.0 support Geotiff Tag
+#if 0 //DMx ECW SDK 5.0 support Geotiff Tag --> Version 3
     Add(new HRFTransfoModelCapability(HFC_READ_CREATE, HGF2DSimilitude::CLASS_ID));
     Add(new HRFTransfoModelCapability(HFC_READ_CREATE, HGF2DAffine::CLASS_ID));
     Add(new HRFTransfoModelCapability(HFC_READ_CREATE, HGF2DProjective::CLASS_ID));
@@ -1325,6 +1325,8 @@ GeoCoordinates::BaseGCSPtr HRFErMapperSupportedFile::ExtractGeocodingInformation
     {
     AString osUnits;
 
+//DMx ECW SDK 5.0 support Geotiff Tag --> Version 3
+//   Should we extract geocoding from geotiff tag?
     if (m_pNcsObjs->m_pFileInfo->eCellSizeUnits == ECW_CELL_UNITS_FEET )
         {
         if (ImageppLib::GetHost().GetImageppLibAdmin()._IsErMapperUseFeetInsteadofSurveyFeet())
@@ -1361,6 +1363,8 @@ uint32_t HRFErMapperSupportedFile::GetEPSGFromProjectionAndDatum(CharCP ErmProje
     {
     INT32 nEPSGCode = TIFFGeo_UserDefined;
 
+//DMx ECW SDK 5.0 support Geotiff Tag --> Version 3
+//   Should we extract geocoding from geotiff tag?
     // We try to obtain the EPSG code
     if (NCS_SUCCESS != NCSGetEPSGCode(ErmProjection, ErmDatum, &nEPSGCode))
         {
@@ -1382,8 +1386,8 @@ void HRFErMapperSupportedFile::BuildTransfoModelMatrix(HFCPtr<HGF2DTransfoModel>
     {
     HFCMatrix<3, 3> TransfoMatrix;
 
-#if 0       //DMx ECW SDK 5.0 support Geotiff Tag
-            // If we want to use Geotiff tag, we need to update the code below to support it.    
+#if 0       //DMx ECW SDK 5.0 support Geotiff Tag --> Version 3
+            // Version 3 stores Georeference and geocoding in Geotiff tag.   
     double         *pFileMatrix=nullptr;
     int32_t            NbPoints;
     if (NCSGetGeotiffTag((NCSFileView *)GetFileView(), GTIFF_TRANSMATRIX, &NbPoints, &pFileMatrix) == NCS_SUCCESS &&
@@ -1538,14 +1542,22 @@ void HRFErMapperSupportedFile::InitErMapperLibrary()
         NCSSetGDTPath(ecwDataPathA.c_str());
 //DMx        CNCSGDTLocation::SetGuessPath(true);
 
+        uint64_t maxMemoryValue(512 * 1024 * 1024); //in bytes
+        if (ImageppLib::GetHost().GetImageppLibAdmin()._ErMapperCacheMaxMemorySize(maxMemoryValue))
+            {
+            NCSecwSetConfig(NCSCFG_CACHE_MAXMEM_64, maxMemoryValue);
+            }
+        else
+            {
 #if defined(BENTLEY_WIN32)
-        //By default, the doc says that it is going to use 25% of the RAM, that seems to be much more than that.
-        // Since we already cache on top of ECW library, we decided to limit to 512 MB.
-        NCSecwSetConfig(NCSCFG_CACHE_MAXMEM, 512*1024*1024);    // tr #243826, limit the cache to 8 meg in 2008
-                                                                   // Now we need a minimum of 128Meg in 64Bit (2013)
+            //By default, the doc says that it is going to use 25% of the RAM, that seems to be much more than that.
+            // Since we already cache on top of ECW library, we decided to limit to 512 MB.
+            NCSecwSetConfig(NCSCFG_CACHE_MAXMEM, 512 * 1024 * 1024);    // tr #243826, limit the cache to 8 meg in 2008
+                                                                       // Now we need a minimum of 128Meg in 64Bit (2013)
 #else
-    #error Need to setup ErMapper MEM usage using available hardware RAM.
+#error Need to setup ErMapper MEM usage using available hardware RAM.
 #endif
+            }
 
         sIsLibraryInitialized = true;
         }
