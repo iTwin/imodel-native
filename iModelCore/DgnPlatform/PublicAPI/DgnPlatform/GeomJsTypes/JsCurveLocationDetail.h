@@ -21,7 +21,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 // 1) It does not carry componentFraction, numComponent, and componentIndex
 // 2) It has a full ICurvePrimitivePtr, not just the pair ICurvePrimitive*
 //=======================================================================================
-struct JsCurveLocationDetail
+struct JsCurveLocationDetail : BeProjectedRefCounted
 {
 private:
 ICurvePrimitivePtr m_curve;

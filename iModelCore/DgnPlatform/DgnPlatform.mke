@@ -648,7 +648,7 @@ LINKER_LIBRARIES_DELAYLOADED + \
     $(ContextSubPartsLibs)TKBrep.lib \
     $(ContextSubPartsLibs)TKGeomBase.lib
 
-# ModelingAlgorithms
+# ModelingAlgorithms (also TKHLR TKFillet TKFeat TKXMesh TKShHealing)
 LINKER_LIBRARIES_DELAYLOADED + \
     $(ContextSubPartsLibs)TKBool.lib \
     $(ContextSubPartsLibs)TKBO.lib \

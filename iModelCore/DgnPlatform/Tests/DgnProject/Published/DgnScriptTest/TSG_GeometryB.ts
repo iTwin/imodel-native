@@ -165,6 +165,15 @@ function t_FilletConstructions ()
     checker.IsNearDPoint3d (frenetC.GetTranslation (), arc2.GetCenter ());
     var torus = Bentley.Dgn.DgnTorusPipe.CreateFromArc (arc1, 0.1, false);
 }
+
+function t_closestPoint ()
+{
+        var segment0 = Bentley.Dgn.LineSegment.CreateXYZ (1,2,3,4,5,6);
+        var f0 = 0.4;
+        var point0 = segment0.PointAtFraction (f0);
+        var detail = segment0.ClosestPointBounded (new Bentley.Dgn.DPoint3d (1,2,6));
+        checker.NearDouble (f0, detail.Fraction, true );
+}
     //debugger ;
     logMessage('TSG_GeometryB t_pointVectorOps3d');
     t_pointVectorOps3d(new Bentley.Dgn.DPoint3d(1, 2, 3),
@@ -193,6 +202,7 @@ function t_FilletConstructions ()
     logMessage('TSG_GeometryB t_GeometryNode');
     
     t_GeometryNode ();
+    t_closestPoint ();
     //t_FilletConstructions ();
     logMessage('TSG_GeometryB B Exit');
 }
