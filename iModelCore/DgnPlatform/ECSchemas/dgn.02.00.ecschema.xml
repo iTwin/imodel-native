@@ -20,6 +20,10 @@
                     <ParentClass>Element</ParentClass>
                     <RelationshipPath>ModelContainsElements:1:Model</RelationshipPath>
                 </RelatedItemsDisplaySpecification>
+                <RelatedItemsDisplaySpecification>
+                    <ParentClass>Element</ParentClass>
+                    <RelationshipPath>Generic:ElementOwnsMultiAspect:0:Generic:MultiAspect</RelationshipPath>
+                </RelatedItemsDisplaySpecification>
             </Specifications>
         </RelatedItemsDisplaySpecifications>
     </ECCustomAttributes>
