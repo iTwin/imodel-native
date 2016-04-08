@@ -36,7 +36,7 @@ static BentleyStatus bodyFromPolyface(TopoDS_Shape& shape, PolyfaceQueryCR mesh,
         for (DPoint3d point : visitor->Point())
             {
             dgnToSolid.Multiply(point);
-            polyBuilder.Add(OCBRepUtil::ToGpPnt(point));
+            polyBuilder.Add(OCBRep::ToGpPnt(point));
             }
 
         TopoDS_Wire wire = polyBuilder.Wire();
@@ -78,7 +78,7 @@ static BentleyStatus bodyFromPolyface(TopoDS_Shape& shape, PolyfaceQueryCR mesh,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus OCBRepUtil::Create::TopoShapeFromPolyface(TopoDS_Shape& shape, PolyfaceQueryCR mesh)
+BentleyStatus OCBRep::Create::TopoShapeFromPolyface(TopoDS_Shape& shape, PolyfaceQueryCR mesh)
     {
     if (mesh.GetPointCount() < 3)
         return ERROR;
@@ -92,11 +92,218 @@ BentleyStatus OCBRepUtil::Create::TopoShapeFromPolyface(TopoDS_Shape& shape, Pol
         return ERROR;
 
     if (!solidToDgn.IsIdentity())
-        shape.Location(TopLoc_Location(OCBRepUtil::ToGpTrsf(solidToDgn)));
+        shape.Location(TopLoc_Location(OCBRep::ToGpTrsf(solidToDgn)));
 
     return SUCCESS;
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus createBSurfEdgeWireFromBoundary(TopoDS_Wire& wire, Handle(Geom_BSplineSurface) const& geomSurface, CurveVectorCR boundary)
+    {
+    if (CurveVector::BOUNDARY_TYPE_Outer != boundary.GetBoundaryType())
+        {
+        BeAssert(false && "Unexpected BSurf Boundary Type");
+        return ERROR;
+        }
+
+    BRepBuilderAPI_MakeWire wireBuilder;
+
+    for (auto& curvePrimitive : boundary)
+        {
+        if (nullptr == curvePrimitive->GetBsplineCurveCP())
+            {
+            BeAssert(false && "FUnexpected BSurf Boundary Primitive");
+            return ERROR;
+            }
+
+        Handle(Geom2d_BSplineCurve) boundaryGeomCurve = OCBRep::ToGeom2dBSplineCurve(*curvePrimitive->GetBsplineCurveCP(), nullptr);
+
+        if (boundaryGeomCurve.IsNull())
+            {
+            BeAssert(false && "BSurf Boundary Creation Error");
+            return ERROR;
+            }
+
+        BRepBuilderAPI_MakeEdge edgeBuilder(boundaryGeomCurve, geomSurface);
+
+        if (!edgeBuilder.IsDone())
+            {
+            BeAssert(false && "Edge Builder error on bSurf edge");
+            return ERROR;
+            }
+
+        wireBuilder.Add(edgeBuilder);
+
+        if (!wireBuilder.IsDone())
+            {
+            BeAssert(false && "Wire Builder error on bSurf edge");
+            return ERROR;
+            }
+        }
+
+    wire = wireBuilder.Wire();
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus bodyFromBSurface(TopoDS_Shape& shape, MSBsplineSurfaceCR bSurface, TransformCR dgnToSolid)
+    {
+    MSBsplineSurfacePtr surface = bSurface.CreateCopyTransformed(dgnToSolid);
+
+    if (surface->GetIsUClosed())
+        surface->MakeOpen(0.0, BSSURF_U); // Needs work -- Can we somehow send periodic knot vector intact??  -- for now ignore periodic knot nonsense.
+
+    if (surface->GetIsVClosed())
+        surface->MakeOpen(0.0, BSSURF_V); // Needs work -- Can we somehow send periodic knot vector intact??  -- for now ignore periodic knot nonsense.
+
+    bvector<double> uKnots, vKnots;
+    TColStd_Array1OfReal* occtUKnots = nullptr;
+    TColStd_Array1OfReal* occtVKnots = nullptr;
+    TColStd_Array1OfInteger* occtUMultiplicities = nullptr;
+    TColStd_Array1OfInteger* occtVMultiplicities = nullptr;
+    TColgp_Array2OfPnt occtPoles(1, (int) surface->GetIntNumUPoles(), 1, surface->GetIntNumVPoles());
+
+    surface->GetUKnots(uKnots);
+    surface->GetVKnots(vKnots);
+    OCBRep::GetOcctKnots(occtUKnots, occtUMultiplicities, uKnots, surface->GetIntUOrder());
+    OCBRep::GetOcctKnots(occtVKnots, occtVMultiplicities, vKnots, surface->GetIntVOrder());
+    
+    for (int i=0; i < surface->GetIntNumUPoles(); i++)
+        for (int j=0; j < surface->GetIntNumVPoles(); j++)
+            occtPoles.ChangeValue(i+1, j+1) = OCBRep::ToGpPnt(surface->GetUnWeightedPole(i, j));
+       
+    Handle(Geom_BSplineSurface) geomSurface;
+
+    if (surface->HasWeights())                          
+        {
+        TColStd_Array2OfReal occtWeights(1, (int) surface->GetIntNumUPoles(), 1, surface->GetIntNumVPoles());
+
+        for (int i=0; i < (int) surface->GetIntNumUPoles(); i++)
+            for (int j=0; j < (int) surface->GetIntNumVPoles(); j++)
+                occtWeights.ChangeValue(i+1, j+1) = surface->GetWeight(i, j);
+
+        geomSurface = new Geom_BSplineSurface(occtPoles, occtWeights, *occtUKnots, *occtVKnots, *occtUMultiplicities, *occtVMultiplicities, surface->GetIntUOrder()-1, surface->GetIntVOrder()-1, false, false);
+        }
+    else
+        {
+        geomSurface = new Geom_BSplineSurface(occtPoles, *occtUKnots, *occtVKnots,  *occtUMultiplicities, *occtVMultiplicities, surface->GetIntUOrder()-1, surface->GetIntVOrder()-1, false, false);
+        }
+
+    DELETE_AND_CLEAR(occtUKnots)
+    DELETE_AND_CLEAR(occtUMultiplicities);
+    DELETE_AND_CLEAR(occtVKnots)
+    DELETE_AND_CLEAR(occtVMultiplicities);
+    
+    if (0 == surface->GetNumBounds())
+        {
+        BRepBuilderAPI_MakeShell shellBuilder(geomSurface);
+                                                      
+        if (!shellBuilder.IsDone())
+            return ERROR;
+
+        shape = shellBuilder.Shell();
+        BRepLib::BuildCurves3d (shape);
+
+        return (shape.IsNull() ? ERROR : SUCCESS);
+        }
+
+    CurveVectorPtr uvBoundaries = surface->GetUVBoundaryCurves(true, true);
+    
+    switch (uvBoundaries->GetBoundaryType())
+        {
+        case CurveVector::BOUNDARY_TYPE_Outer:
+            {
+            TopoDS_Wire boundaryWire;
+
+            if (SUCCESS == createBSurfEdgeWireFromBoundary(boundaryWire, geomSurface, *uvBoundaries))
+                {
+                BRepBuilderAPI_MakeFace faceBuilder(geomSurface, boundaryWire);
+
+                if (!faceBuilder.IsDone())
+                    {
+                    BeAssert(false && "Face Builder Error");
+                    return ERROR;
+                    }
+
+                shape = faceBuilder.Face();
+                }
+            break;
+            }
+
+        case CurveVector::BOUNDARY_TYPE_ParityRegion:
+            {
+            TopoDS_Face face;
+
+            for (auto& uvBoundary : *uvBoundaries)
+                {
+                TopoDS_Wire     boundaryWire;
+                CurveVectorPtr  childCurveVector = uvBoundary->GetChildCurveVectorP();
+                    
+                if (childCurveVector.IsNull())
+                    childCurveVector = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, uvBoundary);
+
+                if (SUCCESS != createBSurfEdgeWireFromBoundary(boundaryWire, geomSurface, *childCurveVector))
+                    {
+                    BeAssert(false && "BSurf Boundary extraction error");
+                    return ERROR;
+                    }
+
+                BRepBuilderAPI_MakeFace faceBuilder;
+
+                if (face.IsNull())
+                    faceBuilder = BRepBuilderAPI_MakeFace(geomSurface, boundaryWire);
+                else
+                    faceBuilder = BRepBuilderAPI_MakeFace(face, boundaryWire);
+
+                if (!faceBuilder.IsDone())
+                    {
+                    BeAssert(false && "Face Builder Error");
+                    return ERROR;
+                    }
+
+                face = faceBuilder.Face();
+                }
+
+            shape = face;
+            break;
+            }
+
+        default:
+            {
+            BeAssert(false && "Unexpected boundary type");
+            return ERROR;
+            }
+        }
+
+    BRepLib::BuildCurves3d(shape);
+
+    return (shape.IsNull() ? ERROR : SUCCESS);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus OCBRep::Create::TopoShapeFromBSurface(TopoDS_Shape& shape, MSBsplineSurfaceCR bSurface)
+    {
+    Transform   solidToDgn, dgnToSolid;
+
+    solidToDgn = Transform::From(bSurface.GetUnWeightedPole(0, 0));
+    dgnToSolid.InverseOf(solidToDgn);
+
+    if (SUCCESS != bodyFromBSurface(shape, bSurface, dgnToSolid))
+        return ERROR;
+
+    if (!solidToDgn.IsIdentity())
+        shape.Location(TopLoc_Location(OCBRep::ToGpTrsf(solidToDgn)));
+
+    return SUCCESS;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -339,7 +546,7 @@ static BentleyStatus bodyFromCurveVector(TopoDS_Shape& shape, CurveVectorCR curv
                         continue;
                         }
 
-                    BRepBuilderAPI_MakeEdge edgeBuilder(OCBRepUtil::ToGpPnt(segment.point[0]), OCBRepUtil::ToGpPnt(segment.point[1]));
+                    BRepBuilderAPI_MakeEdge edgeBuilder(OCBRep::ToGpPnt(segment.point[0]), OCBRep::ToGpPnt(segment.point[1]));
 
                     if (!edgeBuilder.IsDone())
                         {
@@ -368,12 +575,12 @@ static BentleyStatus bodyFromCurveVector(TopoDS_Shape& shape, CurveVectorCR curv
 
                 if (ellipse.IsCircular())
                     {
-                    gp_Circ gpCirc = OCBRepUtil::ToGpCirc(start, end, ellipse);
+                    gp_Circ gpCirc = OCBRep::ToGpCirc(start, end, ellipse);
                     edgeBuilder = BRepBuilderAPI_MakeEdge(gpCirc, start, end);
                     }
                 else
                     {
-                    gp_Elips gpEllipse = OCBRepUtil::ToGpElips(start, end, ellipse);
+                    gp_Elips gpEllipse = OCBRep::ToGpElips(start, end, ellipse);
                     edgeBuilder = BRepBuilderAPI_MakeEdge(gpEllipse, start, end);
                     }
 
@@ -407,7 +614,7 @@ static BentleyStatus bodyFromCurveVector(TopoDS_Shape& shape, CurveVectorCR curv
                     return ERROR;
                     }
 
-                Handle(Geom_BSplineCurve) geomBCurve = OCBRepUtil::ToGeomBSplineCurve(*bcurve, &dgnToSolid);
+                Handle(Geom_BSplineCurve) geomBCurve = OCBRep::ToGeomBSplineCurve(*bcurve, &dgnToSolid);
 
                 if (geomBCurve.IsNull())
                     {
@@ -472,7 +679,7 @@ static BentleyStatus bodyFromTopLevelCurveVector(TopoDS_Shape& shape, CurveVecto
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus OCBRepUtil::Create::TopoShapeFromCurveVector(TopoDS_Shape& shape, CurveVectorCR curves)
+BentleyStatus OCBRep::Create::TopoShapeFromCurveVector(TopoDS_Shape& shape, CurveVectorCR curves)
     {
     if (1 > curves.size())
         return ERROR;
@@ -491,7 +698,7 @@ BentleyStatus OCBRepUtil::Create::TopoShapeFromCurveVector(TopoDS_Shape& shape, 
         return ERROR;
 
     if (!solidToDgn.IsIdentity())
-        shape.Location(TopLoc_Location(OCBRepUtil::ToGpTrsf(solidToDgn)));
+        shape.Location(TopLoc_Location(OCBRep::ToGpTrsf(solidToDgn)));
 
     return SUCCESS;
     }
@@ -499,7 +706,7 @@ BentleyStatus OCBRepUtil::Create::TopoShapeFromCurveVector(TopoDS_Shape& shape, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus OCBRepUtil::Create::TopoShapeFromCone(TopoDS_Shape& shape, DgnConeDetailCR cone)
+BentleyStatus OCBRep::Create::TopoShapeFromCone(TopoDS_Shape& shape, DgnConeDetailCR cone)
     {
     bool        capped;
     double      radiusA, radiusB;
@@ -522,8 +729,8 @@ BentleyStatus OCBRepUtil::Create::TopoShapeFromCone(TopoDS_Shape& shape, DgnCone
         {
         BRepOffsetAPI_ThruSections builder(capped, true);
 
-        builder.AddWire(BRepBuilderAPI_MakeWire(BRepBuilderAPI_MakeEdge(gp_Circ(OCBRepUtil::ToGpAx2(DPoint3d::FromZero(), rMatrix), radiusA))));
-        builder.AddWire(BRepBuilderAPI_MakeWire(BRepBuilderAPI_MakeEdge(gp_Circ(OCBRepUtil::ToGpAx2(DPoint3d::From(centerB.x-centerA.x, centerB.y-centerA.y, centerB.z-centerA.z), rMatrix), radiusB))));
+        builder.AddWire(BRepBuilderAPI_MakeWire(BRepBuilderAPI_MakeEdge(gp_Circ(OCBRep::ToGpAx2(DPoint3d::FromZero(), rMatrix), radiusA))));
+        builder.AddWire(BRepBuilderAPI_MakeWire(BRepBuilderAPI_MakeEdge(gp_Circ(OCBRep::ToGpAx2(DPoint3d::From(centerB.x-centerA.x, centerB.y-centerA.y, centerB.z-centerA.z), rMatrix), radiusB))));
         builder.Build();
 
         if (!builder.IsDone())
@@ -541,7 +748,7 @@ BentleyStatus OCBRepUtil::Create::TopoShapeFromCone(TopoDS_Shape& shape, DgnCone
       
         if (DoubleOps::WithinTolerance(radiusA, radiusB, Precision::Confusion()))
             {
-            BRepPrimAPI_MakeCylinder cylinderBuilder(OCBRepUtil::ToGpAx2(DPoint3d::FromZero(), rMatrix), radiusA, delta.Magnitude());
+            BRepPrimAPI_MakeCylinder cylinderBuilder(OCBRep::ToGpAx2(DPoint3d::FromZero(), rMatrix), radiusA, delta.Magnitude());
 
             cylinderBuilder.Build();
 
@@ -555,7 +762,7 @@ BentleyStatus OCBRepUtil::Create::TopoShapeFromCone(TopoDS_Shape& shape, DgnCone
             }
         else
             {
-            BRepPrimAPI_MakeCone coneBuilder(OCBRepUtil::ToGpAx2(DPoint3d::FromZero(), rMatrix), radiusA, radiusB, delta.Magnitude());
+            BRepPrimAPI_MakeCone coneBuilder(OCBRep::ToGpAx2(DPoint3d::FromZero(), rMatrix), radiusA, radiusB, delta.Magnitude());
 
             coneBuilder.Build();
 
@@ -575,7 +782,7 @@ BentleyStatus OCBRepUtil::Create::TopoShapeFromCone(TopoDS_Shape& shape, DgnCone
     Transform   solidToDgn = Transform::From(centerA);
 
     if (!solidToDgn.IsIdentity())
-        shape.Location(TopLoc_Location(OCBRepUtil::ToGpTrsf(solidToDgn)));
+        shape.Location(TopLoc_Location(OCBRep::ToGpTrsf(solidToDgn)));
 
     return SUCCESS;
     }
